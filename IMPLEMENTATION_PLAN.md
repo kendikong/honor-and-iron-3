@@ -98,7 +98,7 @@ Players: left third, near vertical center. Enemies: right third.
 - All 7 size presets; walkable spawns guaranteed
 - **Audit 2:** 10 seeds × 7 sizes; spawn validation
 
-### Phase 3 — Tactical combat scene shell
+### Phase 3 — Tactical combat scene shell ✅
 - `scenes/TacticalCombat.tscn` (MapRoot + sky + effects)
 - `TacticalMapView` (extracted from `test_map.gd`)
 - BattleSetup → Random Skirmish size picker

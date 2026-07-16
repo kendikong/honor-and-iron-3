@@ -24,6 +24,7 @@ MenuNavigation="*res://ui/menu_navigation.gd"
 EventBus="*res://presentation/event_bus.gd"
 NetworkManager="*res://core/systems/network_manager.gd"
 GlobalTimeline="*res://core/state/global_timeline.gd"
+SkirmishLaunch="*res://autoload/skirmish_launch.gd"
 
 [display]
 

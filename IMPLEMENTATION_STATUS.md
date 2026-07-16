@@ -1,6 +1,6 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** 3 (tactical combat scene shell)  
+**Current phase:** 4 (simulation integration)  
 **Last updated:** 2026-07-16  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
@@ -146,7 +146,50 @@
 **Audit result:** **PASS**
 
 ### Next
-- Phase 3: `scenes/TacticalCombat.tscn` shell + `TacticalMapView` + BattleSetup size picker
+- Phase 4: `CombatDirector` on generated encounters + `TacticalCombatHud`
+
+---
+
+## Phase 3 — Tactical combat scene shell ✅
+
+**Closed:** commit TBD — TacticalCombat scene, TacticalMapView, BattleSetup skirmish picker.
+
+### Deliverables
+- [x] `scenes/TacticalCombat.tscn` — MapRoot, sky, TileMapLayers (nearest filter), Options only
+- [x] `presentation/tactical_map_view.gd` — skirmish load/render, `MapCameraController`, no dev panels
+- [x] `autoload/skirmish_launch.gd` — passes `SkirmishConfig` BattleSetup → combat scene
+- [x] `ui/battle_setup.gd` — Random Skirmish card + 7-preset size picker
+- [x] Combat HUD: back to Battle Setup, skirmish title (size + seed)
+
+### Phase 3 Audit (iteration 1 — 2026-07-16)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | All Phase 3 deliverables on disk |
+| Correct coding | PASS | `TacticalMapView` typed; camera insets 0/0 (no side panels) |
+| Inconsistencies | PASS | `z_index` stack matches `test_map.tscn`; `TILE_PX` via `TacticalConstants` |
+| Issues | PASS | 2 deferred (≤2 cap) |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Visual compositor / shader runtime not verified on agent PATH | Low | Deferred — user F5 on 40×20 preset |
+| 2 | Effects toggles still on sandbox `EffectsPanel` not Options (combat) | Low | Deferred — Phase 7 |
+
+**Visual compositor gates (Audit 3):**
+
+| Gate | Result | Notes |
+|------|--------|-------|
+| Draw order | PASS (code) | Ground 0 → Shadow 1 → Overlay 2 → VFX 4 → Trees 5 → Sky 7 |
+| Blend mode / nearest | PASS (code) | `texture_filter = 0` on all `TileMapLayer` in `TacticalCombat.tscn` |
+| Sprite authorship | PENDING | User F5 — living map from `AutoDecorator` |
+| Runtime 10s / shader compile | PENDING | User F5 — `_init_tile_pipeline` → `_regenerate` path |
+| Camera pan/zoom large map | PASS (code) | `MapCameraController` wired; 0 side insets |
+
+**Final issue count:** 2  
+**Audit result:** **PASS** (pending user F5 compositor confirm)
+
+### Next
+- Phase 4: `CombatDirector` + timeline HUD on `TacticalMapView` encounter
 
 ---
 

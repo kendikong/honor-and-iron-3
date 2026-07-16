@@ -23,7 +23,9 @@ func _ready() -> void:
 		var map = DataLibrary.get_all_maps()[i]
 		var card := _build_map_card(map, i)
 		grid.add_child(card)
-		
+
+	grid.add_child(_build_skirmish_card())
+	
 	var custom_card := _build_custom_card()
 	grid.add_child(custom_card)
 	
@@ -68,6 +70,100 @@ func _build_map_card(map: MapData, index: int) -> Control:
 	vbox.add_child(desc)
 	
 	return btn
+
+func _build_skirmish_card() -> Control:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(300, 200)
+	btn.pressed.connect(_show_skirmish_picker)
+
+	var vbox := VBoxContainer.new()
+	vbox.anchor_right = 1.0
+	vbox.anchor_bottom = 1.0
+	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn.add_child(vbox)
+
+	var color := ColorRect.new()
+	color.custom_minimum_size = Vector2(0, 100)
+	color.color = Color(0.15, 0.35, 0.22)
+	color.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vbox.add_child(color)
+
+	var title := Label.new()
+	title.text = "Random Skirmish"
+	title.add_theme_font_size_override("font_size", 24)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var desc := Label.new()
+	desc.text = "Procedural mana-seed map. Pick a size preset — Knight vs enemy squad."
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
+	desc.add_theme_font_size_override("font_size", 16)
+	vbox.add_child(desc)
+
+	return btn
+
+
+func _show_skirmish_picker() -> void:
+	var overlay := ColorRect.new()
+	overlay.name = "SkirmishPicker"
+	overlay.anchor_right = 1.0
+	overlay.anchor_bottom = 1.0
+	overlay.color = Color(0, 0, 0, 0.88)
+	add_child(overlay)
+
+	var panel := VBoxContainer.new()
+	panel.anchor_left = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -220
+	panel.offset_top = -240
+	panel.offset_right = 220
+	panel.offset_bottom = 240
+	panel.add_theme_constant_override("separation", 12)
+	overlay.add_child(panel)
+
+	var title := Label.new()
+	title.text = "Skirmish Size"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 28)
+	panel.add_child(title)
+
+	var hint := Label.new()
+	hint.text = "Players spawn left · enemies right · seed random each launch"
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD
+	panel.add_child(hint)
+
+	var preset_grid := GridContainer.new()
+	preset_grid.columns = 2
+	preset_grid.add_theme_constant_override("h_separation", 12)
+	preset_grid.add_theme_constant_override("v_separation", 10)
+	panel.add_child(preset_grid)
+
+	for preset: Vector2i in TacticalConstants.SKIRMISH_PRESETS:
+		var launch := Button.new()
+		launch.text = "%d × %d" % [preset.x, preset.y]
+		launch.custom_minimum_size = Vector2(180, 44)
+		launch.pressed.connect(_launch_skirmish.bind(preset))
+		preset_grid.add_child(launch)
+
+	var cancel := Button.new()
+	cancel.text = "Cancel"
+	cancel.pressed.connect(func() -> void: overlay.queue_free())
+	panel.add_child(cancel)
+
+
+func _launch_skirmish(size_preset: Vector2i) -> void:
+	var picker: Node = get_node_or_null("SkirmishPicker")
+	if picker != null:
+		picker.queue_free()
+	var config := SkirmishGenerator.SkirmishConfig.new()
+	config.size_preset = size_preset
+	config.map_seed = randi()
+	SkirmishLaunch.set_pending(config)
+	get_tree().change_scene_to_file("res://scenes/TacticalCombat.tscn")
+
 
 func _build_custom_card() -> Control:
 	var btn := Button.new()
