@@ -22,18 +22,28 @@ var _profile: CharacterGenProfile = CharacterGenProfile.new()
 var _actors: Dictionary = {}
 var _selected_id: int = -1
 var _move_tweens: Dictionary = {}
+var _active_push_tweens: int = 0
+
+signal push_tweens_idle
+
+
+func get_active_push_tweens() -> int:
+	return _active_push_tweens
 
 
 func get_actor(unit_id: int) -> CharacterActor:
 	return _actors.get(unit_id)
 
 
-func setup(map_view: TacticalMapView, director: CombatDirector) -> void:
+func setup(map_view: TacticalMapView, director: CombatDirector, profile: CharacterGenProfile = null) -> void:
 	_map_view = map_view
 	_director = director
 	z_as_relative = false
 	z_index = 6
-	_load_profile()
+	if profile != null:
+		_profile = profile
+	else:
+		_load_profile()
 	_catalog = LpcCatalog.load_from_disk()
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
@@ -86,14 +96,8 @@ func apply_sim_event(event: SimEvent) -> void:
 	match event.type:
 		GameEnums.SimEventType.UNIT_MOVED:
 			_animate_move(event)
-		GameEnums.SimEventType.UNIT_PUSHED:
-			var unit_id: int = int(event.data.get("actor", event.data.get("unit", -1)))
-			var to_coord: Variant = event.data.get("to", null)
-			if to_coord is Vector2i:
-				var unit := _board.get_unit_by_id(unit_id)
-				if unit != null:
-					unit.position = to_coord
-					_tween_to_cell(unit_id, to_coord, CombatDirector.MOVE_STEP_TIME)
+		GameEnums.SimEventType.UNIT_PUSHED, GameEnums.SimEventType.COLLISION:
+			_animate_push(event)
 		GameEnums.SimEventType.ABILITY_USED:
 			_play_attack_anim(int(event.data.get("actor", -1)), int(event.data.get("facing", GameEnums.Facing.SOUTH)))
 		GameEnums.SimEventType.UNIT_DAMAGED:
@@ -229,6 +233,46 @@ func _animate_move(event: SimEvent) -> void:
 		actor.set_walking(false)
 		_update_depth(unit_id)
 	)
+
+
+func _animate_push(event: SimEvent) -> void:
+	var unit_id: int = int(event.data.get("actor", event.data.get("unit", -1)))
+	var to_coord: Variant = event.data.get("to", null)
+	if not to_coord is Vector2i:
+		return
+	var unit := _board.get_unit_by_id(unit_id)
+	if unit != null:
+		unit.position = to_coord
+	_tween_push(unit_id, to_coord as Vector2i)
+
+
+func _tween_push(unit_id: int, cell: Vector2i) -> void:
+	_active_push_tweens += 1
+	var actor: CharacterActor = _actors.get(unit_id)
+	if actor == null:
+		_position_actor(unit_id, cell)
+		_finish_push_tween()
+		return
+	_kill_move_tween(unit_id)
+	var tween: Tween = create_tween()
+	_move_tweens[unit_id] = tween
+	tween.tween_property(
+		actor,
+		"position",
+		_map_view.grid_to_foot_local(cell),
+		0.22,
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.finished.connect(func() -> void:
+		_move_tweens.erase(unit_id)
+		_update_depth(unit_id)
+		_finish_push_tween()
+	)
+
+
+func _finish_push_tween() -> void:
+	_active_push_tweens = maxi(0, _active_push_tweens - 1)
+	if _active_push_tweens == 0:
+		push_tweens_idle.emit()
 
 
 func _tween_to_cell(unit_id: int, cell: Vector2i, step_time: float) -> void:

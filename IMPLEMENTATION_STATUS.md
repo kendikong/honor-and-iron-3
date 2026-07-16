@@ -513,8 +513,8 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 | # | Issue | Severity | Pillar | Status |
 |---|-------|----------|--------|--------|
-| **1** | **Character scale slider inaccessible in combat** — `IMPLEMENTATION_PLAN.md` specifies scale under Options → Display; slider lives in Map Settings, which `set_combat_mode(true)` hides. `TacticalMapView` never calls `OptionsMenu.setup_character_gen()`. | **MEDIUM** | Inconsistency / Phase 7 | **Deferred** — post-MVP UI fix |
-| **2** | **Push animation gate is instant on tactical scene** — `TacticalSimPresenter._finish_push_animations()` emits `push_animations_complete` immediately; `CombatDirector._await_push_animations` does not wait for LPC push tweens. Moves OK (director timer matches `MOVE_STEP_TIME`). | **MEDIUM** | Correct coding / Phase 6 | **Deferred** — post-MVP presenter |
+| **1** | ~~Character scale slider inaccessible in combat~~ | ~~MEDIUM~~ | — | **Fixed** — Display panel "Units" section + `setup_character_gen` |
+| **2** | ~~Push animation gate instant~~ | ~~MEDIUM~~ | — | **Fixed** — `TacticalUnitLayer` push tweens + `push_tweens_idle` |
 | 3 | Tree/scatter trunk blocking: `WalkabilityBaker.bake` + `SpawnPlacer` use null `TileMapLayer`s — sim may allow cells visually blocked by trunks | Low | Phase 1–3 | Deferred (known) |
 | 4 | Godot F5 + headless CLI not verified on agent PATH | Low | All visual phases | Deferred (user) |
 | 5 | `SettingsManager` + `GameSettings` duplicate display prefs | Low | Phase 0/7 | Deferred (post-MVP) |
@@ -537,14 +537,12 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 ---
 
-### Recommended fix order (post-MVP slice)
+### System audit follow-up (2026-07-16)
 
-1. Expose character scale in combat Options (Display panel or combat-only Character section) + `setup_character_gen` + live `refresh_display_scale`.
-2. `TacticalSimPresenter`: await push/move tween completion before `push_animations_complete` (mirror `board_view` `_await_planning_push_animations`).
-3. User F5: 40×20 preset, 60s idle, full Knight turn, toggle ecology off.
+- **Fixed #1:** `Options → Display → Units → Character display scale` (combat mode); live resize via `character_gen_changed` → `TacticalUnitLayer.refresh_display_scale()`.
+- **Fixed #2:** Push/collision tweens (0.22s) on unit layer; presenter waits for `push_tweens_idle` before `push_animations_complete`.
 
-**Final issue count (actionable now):** 0 — all documented with defer targets  
-**System audit result:** **PASS**
+**Remaining open (≤2 cap):** issues #3–#7 unchanged (tree bake null layers, F5/CLI, Settings dup, water_burst noop, board_view port).
 
 ---
 

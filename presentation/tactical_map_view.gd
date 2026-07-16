@@ -44,6 +44,7 @@ var _skirmish: SkirmishGenerator.SkirmishResult
 var _encounter: EncounterData
 var _biome_variant: int = 1
 var _last_tree_variant_b: bool = false
+var _char_profile: CharacterGenProfile = CharacterGenProfile.new()
 
 
 func _ready() -> void:
@@ -70,8 +71,11 @@ func _ready() -> void:
 	_decorator.logical_provenance = _logical_provenance
 
 	_options.setup(_settings, _on_display_settings_applied)
+	_load_char_profile()
+	_options.setup_character_gen(_char_profile)
 	_options.setup_combat_effects(_effects.settings, _on_effects_settings_changed)
 	_options.set_combat_mode(true)
+	_options.character_gen_changed.connect(_on_character_gen_changed)
 	_options.opened.connect(_on_options_opened)
 	_options.closed.connect(_on_options_closed)
 
@@ -144,7 +148,7 @@ func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 func _start_combat() -> void:
 	_director.start_from_encounter(_encounter)
 	_combat_hud.setup(_director, self, _sfx)
-	_unit_layer.setup(self, _director)
+	_unit_layer.setup(self, _director, _char_profile)
 	_unit_overlay.setup(self, _director, _unit_layer)
 	_planning_overlay.setup(self, _director)
 	_sim_presenter.setup(_director, _unit_overlay, _unit_layer)
@@ -227,6 +231,16 @@ func _on_options_closed() -> void:
 func _on_effects_settings_changed() -> void:
 	_effects.settings.save_to_disk()
 	_apply_effects()
+
+
+func _load_char_profile() -> void:
+	var cfg := ConfigFile.new()
+	if FileAccess.file_exists("user://character_gen.cfg"):
+		cfg.load("user://character_gen.cfg")
+	_char_profile.load_from_config(cfg)
+
+
+func _on_character_gen_changed() -> void:
 	if _unit_layer != null:
 		_unit_layer.refresh_display_scale()
 

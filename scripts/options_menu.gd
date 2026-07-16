@@ -29,6 +29,9 @@ var _map_scale_value: Label
 var _text_size_option: OptionButton
 var _panel_width_slider: HSlider
 var _panel_width_value: Label
+var _combat_char_section: VBoxContainer
+var _display_char_scale_slider: HSlider
+var _display_char_scale_value: Label
 
 var _map_panel: PanelContainer
 var _char_scale_slider: HSlider
@@ -73,6 +76,13 @@ func set_combat_mode(enabled: bool) -> void:
 	_combat_mode = enabled
 	if _map_settings_btn != null:
 		_map_settings_btn.visible = not enabled
+	if _combat_char_section != null:
+		_combat_char_section.visible = enabled
+		if enabled and _char_profile != null and _display_char_scale_slider != null:
+			_display_char_scale_slider.set_block_signals(true)
+			_display_char_scale_slider.value = _char_profile.display_scale
+			_on_display_char_scale_changed(_char_profile.display_scale)
+			_display_char_scale_slider.set_block_signals(false)
 
 
 func is_open() -> bool:
@@ -233,6 +243,25 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	_panel_width_value.custom_minimum_size = Vector2(48, 0)
 	width_row.add_child(_panel_width_value)
 
+	_combat_char_section = VBoxContainer.new()
+	_combat_char_section.visible = false
+	vbox.add_child(_combat_char_section)
+	_add_section(_combat_char_section, "Units")
+	var char_scale_row: HBoxContainer = HBoxContainer.new()
+	char_scale_row.add_theme_constant_override("separation", 10)
+	_combat_char_section.add_child(_label("Character display scale"))
+	_combat_char_section.add_child(char_scale_row)
+	_display_char_scale_slider = HSlider.new()
+	_display_char_scale_slider.min_value = 0.25
+	_display_char_scale_slider.max_value = 4.0
+	_display_char_scale_slider.step = 0.05
+	_display_char_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_display_char_scale_slider.value_changed.connect(_on_display_char_scale_changed)
+	char_scale_row.add_child(_display_char_scale_slider)
+	_display_char_scale_value = Label.new()
+	_display_char_scale_value.custom_minimum_size = Vector2(40, 0)
+	char_scale_row.add_child(_display_char_scale_value)
+
 	vbox.add_child(HSeparator.new())
 	var actions: HBoxContainer = HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 8)
@@ -332,6 +361,9 @@ func _sync_controls_from_settings() -> void:
 	if _char_profile != null:
 		_char_scale_slider.value = _char_profile.display_scale
 		_on_char_scale_changed(_char_profile.display_scale)
+	if _display_char_scale_slider != null and _char_profile != null:
+		_display_char_scale_slider.value = _char_profile.display_scale
+		_on_display_char_scale_changed(_char_profile.display_scale)
 
 
 func _read_controls_to_settings() -> void:
@@ -386,6 +418,19 @@ func _on_char_scale_changed(value: float) -> void:
 	_char_scale_value.text = "%.2f×" % value
 	if _char_profile != null:
 		_char_profile.display_scale = value
+	character_gen_changed.emit()
+
+
+func _on_display_char_scale_changed(value: float) -> void:
+	if _display_char_scale_value != null:
+		_display_char_scale_value.text = "%.2f×" % value
+	if _char_profile != null:
+		_char_profile.display_scale = value
+		var cfg := ConfigFile.new()
+		if FileAccess.file_exists("user://character_gen.cfg"):
+			cfg.load("user://character_gen.cfg")
+		_char_profile.save_to_config(cfg)
+		cfg.save("user://character_gen.cfg")
 	character_gen_changed.emit()
 
 
