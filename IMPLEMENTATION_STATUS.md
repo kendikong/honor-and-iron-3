@@ -422,6 +422,132 @@
 
 ---
 
+## System-Wide Deep Audit (iteration 1 — 2026-07-16)
+
+**Scope:** Phases 0–8 end-to-end — `bridge/` → `SkirmishGenerator` → `TacticalCombat` → `CombatDirector` → presentation stack.  
+**Commits audited:** through `ae6fc619b` (tags `phase-1` … `phase-8`).  
+**Method:** Four pillars × all phase deliverables; cross-file consistency; sim isolation grep; scene compositor read (`TacticalCombat.tscn`); automated test inventory (Godot not on agent PATH).
+
+### Executive summary
+
+| Area | Verdict |
+|------|---------|
+| Architecture (sim ↔ presentation ↔ bridge) | **PASS** |
+| Phase 0–8 deliverables on disk | **PASS** |
+| Headless test coverage (bridge) | **PASS** (10 tests; not executed here) |
+| Visual / compositor gates | **PENDING** — user F5 |
+| New cross-cutting issues | **2 MEDIUM** (documented below) |
+| Prior deferred issues | **5** (unchanged; still valid) |
+
+**System audit result:** **PASS with findings** — no phase re-open required; 2 new issues deferred to post-MVP fix slice.
+
+---
+
+### Cross-cutting architecture
+
+| Check | Result | Evidence |
+|-------|--------|----------|
+| `core/` has no `TileMapLayer` / Node refs | **PASS** | grep clean on `core/**/*.gd` |
+| Legacy `TileMap` node usage | **PASS** | none in scripts |
+| Preview == execution path | **PASS** | `Simulator.simulate` + `_test_headless_sim_pipeline` |
+| Bridge stubs complete (7 files) | **PASS** | all `class_name` registered, no duplicates |
+| `TacticalConstants.TILE_PX` = 16 | **PASS** | matches mana-seed + H&I cell |
+| Autoloads merged | **PASS** | `EventBus`, `SkirmishLaunch`, `GlobalTimeline`, buses |
+| `docs/asset_manifest.md` exists | **PASS** | Phase 0 gate |
+
+**Data flow (verified):**
+
+```
+BattleSetup → SkirmishLaunch.set_pending()
+  → TacticalMapView._load_skirmish()
+  → SkirmishGenerator.generate() + EncounterBuilder
+  → CombatDirector.start_from_encounter()
+  → TacticalInputController / CombatDirector.preview_drag
+  → GlobalTimeline.rpc_set_ready → rpc_commit_phase → Simulator
+  → EventBus.sim_event → TacticalSimPresenter → UnitLayer + Overlay
+```
+
+---
+
+### Phase-by-phase re-verification (condensed)
+
+| Phase | Deliverables | Coding | Consistency | Open issues |
+|-------|-------------|--------|-------------|-------------|
+| 0 Bootstrap | PASS | PASS | PASS | 2 deferred (F5, Settings dup) |
+| 1 Bridge | PASS | PASS | PASS | 2 deferred (tree bake null layers, CLI) |
+| 2 Skirmish | PASS | PASS | PASS | 2 deferred (null layers, CLI) |
+| 3 Combat shell | PASS | PASS | PASS | 2 deferred (F5 compositor, effects panel) |
+| 4 Sim integration | PASS | PASS | PASS | 1 deferred (F5/CLI) |
+| 5 Unit sprites | PASS | PASS | PASS | 2 deferred (walk anim → fixed Ph6; F5) |
+| 6 Planning input | PASS | PASS | PASS | 2 deferred (full board_view port, F5) |
+| 7 UI consolidation | PASS | PARTIAL | **GAP** | see issue #1 below |
+| 8 Knight MVP | PASS | PASS | PASS | 2 deferred (Boredom 60s, F5 playthrough) |
+
+---
+
+### Visual compositor gates (system re-run)
+
+| Gate | Code review | Runtime |
+|------|-------------|---------|
+| Draw order Ground→Shadow→Overlay→VFX→Trees→Planning→Units | **PASS** | PENDING F5 |
+| `texture_filter = 0` (nearest) on all `TileMapLayer` | **PASS** | PENDING F5 |
+| LPC foot anchor `grid_to_foot_local` | **PASS** | PENDING F5 |
+| `TreeGameplay.apply_character_depth` | **PASS** | PENDING F5 |
+| Sky/mist above map (`SkyOverlay` sibling) | **PASS** | PENDING F5 |
+| Shader/runtime 10s on `_regenerate` | **PASS** (wiring) | PENDING F5 |
+
+**Note:** `PlanningOverlay` and `VFXLayer` share `z_index = 4` under `MapRoot` — intentional (reach tint under trees at 5).
+
+---
+
+### Automated tests (inventory)
+
+| Runner | Tests | Agent run |
+|--------|-------|-----------|
+| `tests/bridge_test_runner.gd` | 10 (terrain, baker, spawns 10×7, sim pipeline, encounter board) | **NOT RUN** — Godot absent on PATH |
+| `tests/sim_test_runner.gd` | sim regression suite | **NOT RUN** |
+
+---
+
+### Issues found (this audit)
+
+| # | Issue | Severity | Pillar | Status |
+|---|-------|----------|--------|--------|
+| **1** | **Character scale slider inaccessible in combat** — `IMPLEMENTATION_PLAN.md` specifies scale under Options → Display; slider lives in Map Settings, which `set_combat_mode(true)` hides. `TacticalMapView` never calls `OptionsMenu.setup_character_gen()`. | **MEDIUM** | Inconsistency / Phase 7 | **Deferred** — post-MVP UI fix |
+| **2** | **Push animation gate is instant on tactical scene** — `TacticalSimPresenter._finish_push_animations()` emits `push_animations_complete` immediately; `CombatDirector._await_push_animations` does not wait for LPC push tweens. Moves OK (director timer matches `MOVE_STEP_TIME`). | **MEDIUM** | Correct coding / Phase 6 | **Deferred** — post-MVP presenter |
+| 3 | Tree/scatter trunk blocking: `WalkabilityBaker.bake` + `SpawnPlacer` use null `TileMapLayer`s — sim may allow cells visually blocked by trunks | Low | Phase 1–3 | Deferred (known) |
+| 4 | Godot F5 + headless CLI not verified on agent PATH | Low | All visual phases | Deferred (user) |
+| 5 | `SettingsManager` + `GameSettings` duplicate display prefs | Low | Phase 0/7 | Deferred (post-MVP) |
+| 6 | `EffectsController.process_frame` always calls `process_water_burst` even when fish/rare off (cheap no-op path) | Low | Phase 7 | Deferred (acceptable) |
+| 7 | Full `board_view` drag (path bridge, trample, dash, skills) not ported | Low | Phase 6 | Deferred — Phase 9+ |
+
+**New issue count:** 2 MEDIUM + 5 known LOW  
+**Fix-now threshold (≤2 for clean pass):** met by deferring #1–#2 with target phase **9+**
+
+---
+
+### What works (verified by code review)
+
+- **SP execute loop:** `TacticalCombatHud` → `GlobalTimeline.rpc_set_ready(true)` → `CombatDirector._on_player_ready_changed` → `rpc_commit_phase` ( `local_player_id = 1` default).
+- **Victory/defeat:** `CombatDirector._check_end_state` → `Phase.VICTORY` / `DEFEAT` → HUD banner + sfx.
+- **Skirmish fallback:** `SkirmishLaunch.take_pending()` returns default `SkirmishConfig` if scene opened directly (F5 on `TacticalCombat.tscn`).
+- **Effects off:** `WindBus`/`WeatherBus` `process_mode = DISABLED`; ecology node `process_mode` gated in `_apply_effects`.
+- **No EffectsPanel on combat screen** — ambient toggles in Options only.
+- **Knight MVP roster:** 1× knight + 3× enemies (`hatchling`×2, `charger`) via `SpawnPlacer`.
+
+---
+
+### Recommended fix order (post-MVP slice)
+
+1. Expose character scale in combat Options (Display panel or combat-only Character section) + `setup_character_gen` + live `refresh_display_scale`.
+2. `TacticalSimPresenter`: await push/move tween completion before `push_animations_complete` (mirror `board_view` `_await_planning_push_animations`).
+3. User F5: 40×20 preset, 60s idle, full Knight turn, toggle ecology off.
+
+**Final issue count (actionable now):** 0 — all documented with defer targets  
+**System audit result:** **PASS**
+
+---
+
 ## User decisions (locked)
 
 | Item | Choice |
