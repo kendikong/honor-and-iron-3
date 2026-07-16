@@ -64,13 +64,13 @@ Players: left third, near vertical center. Enemies: right third.
 
 ## Phases
 
-### Phase 0 — Bootstrap ✅ (in progress)
+### Phase 0 — Bootstrap ✅
 - Copy repos → merged `project.godot`, autoloads, folder layout
 - `bridge/` stubs + `TacticalConstants` + `MapCameraController`
 - `tests/bridge_test_runner.gd` smoke test
 - **Audit 0:** project opens; no duplicate `class_name`; bridge stubs parse
 
-### Phase 1 — Unified constants & bridge
+### Phase 1 — Unified constants & bridge ✅
 - `TileIdToTerrain` complete mapping
 - `WalkabilityBaker` + unit tests
 - `EncounterBuilder` → `BoardFactory` → headless `Simulator`
@@ -121,15 +121,18 @@ Players: left third, near vertical center. Enemies: right third.
 
 ## Phase Audit Protocol
 
-After each phase:
+**No phase closes without a recorded audit.** After implementation:
 
-1. Cross-check deliverables vs this plan
-2. Run automated tests (`tests/`)
-3. Code review: static types, no bandaids, match project patterns
-4. List issues (numbered, severity)
-5. Fix until **≤2 issues** remain (deferred items documented)
-6. Record in `IMPLEMENTATION_STATUS.md`
-7. Git commit: full playable backup
+1. Run all **four audit pillars** (see `.cursor/rules/phase-audit.mdc`):
+   - **Completeness** — deliverables + exit criteria vs `IMPLEMENTATION_PLAN.md`
+   - **Correct coding** — static types, patterns, automated tests
+   - **Inconsistencies** — cross-file/layer drift (constants, walkability, sim isolation)
+   - **Issues** — numbered list with severity
+2. Run automated tests (`tests/`) — `bridge_test.gd`, `sim_test.gd` as applicable
+3. Fix until **≤2 issues** remain (deferred items documented with target phase)
+4. Record full audit block in `IMPLEMENTATION_STATUS.md` (pillars + issues table)
+5. Git commit: full playable backup + `phase-N` tag
+6. Only then begin the next phase
 
 **Visual phases (3, 5, 6):** also verify draw order, nearest filter, runtime shader errors.
 

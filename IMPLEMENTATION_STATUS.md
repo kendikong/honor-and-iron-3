@@ -1,7 +1,8 @@
 # Implementation Status — Honor & Iron 3
 
 **Current phase:** 2 (skirmish generation)  
-**Last updated:** 2026-07-16
+**Last updated:** 2026-07-16  
+**Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
 ---
 
@@ -21,19 +22,43 @@
 
 ### Phase 0 Audit (iteration 1 — 2026-07-15)
 
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | All bootstrap deliverables on disk |
+| Correct coding | PASS | Bridge stubs `RefCounted`; no duplicate `class_name` |
+| Inconsistencies | PASS | `TacticalConstants.TILE_PX` = 16 matches mana-seed grid |
+
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
 | 1 | Godot editor not run on agent PATH — runtime verify pending | Low | Deferred — user F5 |
-| 2 | `SettingsManager` + `GameSettings` duplicate display prefs (two cfg files) | Low | Deferred — unify Phase 7 |
+| 2 | `SettingsManager` + `GameSettings` duplicate display prefs (two cfg files) | Low | Deferred — Phase 7 |
 
-**Final issue count:** 2 (pass)  
+**Final issue count:** 2  
+**Audit result:** **PASS**
+
+### Phase 0 Audit (iteration 2 — 2026-07-16) — completeness review
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | `project.godot` main scene, all 6 `bridge/` files, `MapCameraController` in `test_map.gd` |
+| Correct coding | PASS | All bridge stubs parse; `class_name` registry has no duplicates |
+| Inconsistencies | PASS | Autoload list merges both repos without name collision |
+| Issues | PASS | 2 deferred (≤2 cap) |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Godot F5 / MainMenu runtime not verified on agent PATH | Low | Deferred — user F5 |
+| 2 | `SettingsManager` + `GameSettings` duplicate display prefs | Low | Deferred — Phase 7 |
+
+**Final issue count:** 2  
 **Audit result:** **PASS**
 
 ---
 
 ## Phase 1 — Unified constants & bridge ✅
 
-**Closed:** commit `cc938b765` — Phase 1 bridge tests: WalkabilityBaker, encounter pipeline, headless Simulator smoke.
+**Closed:** commit `cc938b765` — Phase 1 bridge tests: WalkabilityBaker, encounter pipeline, headless Simulator smoke.  
+**Tag:** `phase-1` on `0c537fc47`
 
 ### Deliverables
 - [x] `TileIdToTerrain` complete mapping (impassable logical tiles → wall)
@@ -44,16 +69,48 @@
 
 ### Phase 1 Audit (iteration 1 — 2026-07-16)
 
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | All Phase 1 deliverables implemented |
+| Correct coding | PARTIAL | Determinism tested; input immutability not in bridge pipeline yet |
+| Inconsistencies | PASS | `TileIdToTerrain` aligns with `Walkability.blocks_movement_tile` |
+
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| 1 | Tree/scatter blocking untested headlessly (null layers only) | Low | Deferred — Phase 2/3 with real TileMapLayers |
-| 2 | Godot headless not run on agent PATH — bridge_test pending user CLI | Low | Deferred — user run |
+| 1 | Tree/scatter blocking untested headlessly (null layers only) | Low | Deferred — Phase 2/3 |
+| 2 | Godot headless not run on agent PATH | Low | Deferred — user CLI |
 
-**Final issue count:** 2 (pass)  
-**Audit result:** **PASS** (pending user `bridge_test.gd` + `sim_test.gd` CLI)
+**Final issue count:** 2  
+**Audit result:** **PASS** (pending user CLI)
+
+### Phase 1 Audit (iteration 2 — 2026-07-16) — completeness review
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | Exit criteria met: baker tests, full encounter→sim pipeline, CLI runner |
+| Correct coding | PASS | Bridge files statically typed; `core/` sim has no `TileMapLayer`/Node refs; pipeline asserts determinism + input not mutated |
+| Inconsistencies | PASS | WATER/ROCK/RUIN → wall matches walkability; `TILE_PX`/`CELL` = 16 consistent |
+| Issues | PASS | 2 deferred (≤2 cap) |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Tree/scatter blocking untested headlessly (null TileMapLayers only) | Low | Deferred — Phase 2/3 with real layers |
+| 2 | `bridge_test.gd` / `sim_test.gd` not executed on agent PATH | Low | Deferred — user CLI run |
+
+**Gate checks (Audit 1 exit criteria):**
+
+| Check | Result |
+|-------|--------|
+| Determinism smoke test | PASS — `_test_headless_sim_pipeline` runs `Simulator` twice, hashes match |
+| Static typing (`bridge/`) | PASS — all public functions typed |
+| No sim→Node refs (`core/simulation`, `core/state`, `core/systems` combat path) | PASS — grep clean |
+
+**Final issue count:** 2  
+**Audit result:** **PASS**
 
 ### Next
 - Phase 2: `SkirmishGenerator` spawn bands + walkable spawn guarantee (10 seeds × 7 sizes)
+- **Phase 2 will not start implementation until Phase 2 audit block is prepared at close**
 
 ---
 

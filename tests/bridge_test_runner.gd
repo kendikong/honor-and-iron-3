@@ -134,8 +134,12 @@ static func _test_headless_sim_pipeline(failures: Array[String]) -> void:
 	board.intents = EnemyPlanner.plan(board)
 
 	var plan := Timeline.new()
+	var board_hash_before: String = _hash_board(board)
 	var result_a := Simulator.simulate(board, plan)
 	var result_b := Simulator.simulate(board, plan)
+
+	if _hash_board(board) != board_hash_before:
+		failures.append("headless sim pipeline: Simulator mutated input board")
 
 	if result_a.final_state.units.size() < 2:
 		failures.append("headless sim pipeline: expected at least 2 units on board")

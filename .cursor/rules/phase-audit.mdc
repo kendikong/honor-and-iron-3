@@ -43,6 +43,42 @@ Cross-check the phase deliverables and exit criteria against:
 
 An issue may remain open only if it is explicitly documented with a reason and a target phase. Undocumented gaps always count as issues.
 
+## Mandatory audit pillars (every phase)
+
+Before closing a phase, run **all four pillars** and record pass/fail in `IMPLEMENTATION_STATUS.md`:
+
+| Pillar | What to verify |
+|--------|----------------|
+| **Completeness** | Every deliverable and exit criterion from `IMPLEMENTATION_PLAN.md` exists on disk and works as specified |
+| **Correct coding** | Static types, project patterns, no bandaids, fail-loud; automated tests in `tests/` run (or documented user CLI) |
+| **Inconsistencies** | Cross-layer drift: constants, walkability vs terrain mapping, naming, duplicate `class_name`, sim→Node leaks |
+| **Issues** | Numbered list with severity; **fix if 3+** found, then re-audit whole phase; **≤2** may defer with target phase |
+
+**Fail any pillar with a HIGH-severity issue → audit FAIL** (fix before phase close).
+
+## Audit record template (`IMPLEMENTATION_STATUS.md`)
+
+Each closed phase must include:
+
+```
+### Phase N Audit (iteration X — date)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS/FAIL | … |
+| Correct coding | PASS/FAIL | … |
+| Inconsistencies | PASS/FAIL | … |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | … | High/Med/Low | Fixed / Deferred — Phase M |
+
+**Final issue count:** N (must be ≤ 2 to pass)
+**Audit result:** PASS / FAIL
+```
+
+Re-audit (increment iteration) after any fix pass or when user requests a completeness review.
+
 ## Visual / compositor gates (mandatory for lighting & VFX slices)
 
 Code review alone is **not sufficient** for shadows, mist, clouds, or any effect that changes how pixels composite. Each audit iteration must explicitly answer:
