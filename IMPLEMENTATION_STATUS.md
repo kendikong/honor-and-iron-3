@@ -1,11 +1,13 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** 0 (bootstrap)  
-**Last updated:** 2026-07-15
+**Current phase:** 1 (unified constants & bridge)  
+**Last updated:** 2026-07-16
 
 ---
 
-## Phase 0 — Bootstrap
+## Phase 0 — Bootstrap ✅
+
+**Closed:** commit `213043474` — Bootstrap Phase 0: honor-and-iron-3 merge foundation with bridge stubs and map camera.
 
 ### Deliverables
 - [x] Copy `mana-seed-test` → `honor-and-iron-3` (exclude `.godot`, `.git`)
@@ -25,12 +27,31 @@
 | 2 | `SettingsManager` + `GameSettings` duplicate display prefs (two cfg files) | Low | Deferred — unify Phase 7 |
 
 **Final issue count:** 2 (pass)  
-**Expected debt (not counted):** legacy `board_view.gd` CELL=56 replaced in Phase 6.
+**Audit result:** **PASS**
 
-**Audit result:** **PASS** (pending user F5 MainMenu)
+---
+
+## Phase 1 — Unified constants & bridge (in progress)
+
+### Deliverables
+- [x] `TileIdToTerrain` complete mapping (impassable logical tiles → wall)
+- [x] `WalkabilityBaker` unit tests (grid-only, null TileMapLayers)
+- [x] `EncounterBuilder` blocked-cell → wall override test
+- [x] Headless pipeline: `SkirmishGenerator` → `WalkabilityBaker` → `EncounterBuilder` → `BoardFactory` → `Simulator`
+- [x] `tests/bridge_test.gd` CLI runner (`godot --headless --script res://tests/bridge_test.gd`)
+
+### Phase 1 Audit (iteration 1 — 2026-07-16)
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Tree/scatter blocking untested headlessly (null layers only) | Low | Deferred — Phase 2/3 with real TileMapLayers |
+| 2 | Godot headless not run on agent PATH — bridge_test pending user CLI | Low | Deferred — user run |
+
+**Final issue count:** 2 (pass)  
+**Audit result:** **PASS** (pending user `bridge_test.gd` + `sim_test.gd` CLI)
 
 ### Next
-- Phase 1: `WalkabilityBaker` tests + headless `Simulator` on generated encounter
+- Phase 2: `SkirmishGenerator` spawn bands + walkable spawn guarantee (10 seeds × 7 sizes)
 
 ---
 

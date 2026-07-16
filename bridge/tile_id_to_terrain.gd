@@ -10,11 +10,11 @@ static func terrain_for_tile_id(tile_id: int) -> TerrainData:
 		TileId.Type.DIRT:
 			return DataLibrary.get_terrain(&"plain")
 		TileId.Type.WATER:
-			return DataLibrary.get_terrain(&"water")
+			return DataLibrary.get_terrain(&"wall")
 		TileId.Type.ROCK:
 			return DataLibrary.get_terrain(&"wall")
 		TileId.Type.RUIN:
-			return DataLibrary.get_terrain(&"plain")
+			return DataLibrary.get_terrain(&"wall")
 		TileId.Type.TREE:
 			return DataLibrary.get_terrain(&"plain")
 		_:
