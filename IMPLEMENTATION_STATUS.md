@@ -1,6 +1,6 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** 1 (unified constants & bridge)  
+**Current phase:** 2 (skirmish generation)  
 **Last updated:** 2026-07-16
 
 ---
@@ -31,7 +31,9 @@
 
 ---
 
-## Phase 1 — Unified constants & bridge (in progress)
+## Phase 1 — Unified constants & bridge ✅
+
+**Closed:** commit `cc938b765` — Phase 1 bridge tests: WalkabilityBaker, encounter pipeline, headless Simulator smoke.
 
 ### Deliverables
 - [x] `TileIdToTerrain` complete mapping (impassable logical tiles → wall)
