@@ -112,7 +112,7 @@
 
 ## Phase 2 — Skirmish generation ✅
 
-**Closed:** commit TBD — SpawnPlacer left/right bands, 10×7 spawn validation tests.
+**Closed:** commit `deb4249e2` — Phase 2 skirmish spawns: SpawnPlacer bands, 10×7 validation tests.
 
 ### Deliverables
 - [x] `bridge/spawn_placer.gd` — left/right third bands, MVP roster (1 knight + 3 enemies)
