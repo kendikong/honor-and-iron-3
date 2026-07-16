@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://bvtacticalcombat01"]
+[gd_scene load_steps=7 format=3 uid="uid://bvtacticalcombat01"]
 
 [ext_resource type="Script" path="res://presentation/tactical_map_view.gd" id="1_tactical"]
 [ext_resource type="Script" path="res://scripts/options_menu.gd" id="2_options"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://presentation/tactical_combat_hud.gd" id="4_hud"]
 [ext_resource type="Script" path="res://presentation/tactical_sim_presenter.gd" id="5_presenter"]
 [ext_resource type="Script" path="res://presentation/tactical_unit_overlay.gd" id="6_overlay"]
+[ext_resource type="Script" path="res://presentation/tactical_unit_layer.gd" id="7_unit_layer"]
 
 [node name="TacticalCombat" type="Node2D"]
 script = ExtResource("1_tactical")
@@ -47,6 +48,11 @@ texture_filter = 0
 y_sort_enabled = true
 z_as_relative = false
 z_index = 5
+
+[node name="UnitLayer" type="Node2D" parent="WorldModulate/MapRoot"]
+script = ExtResource("7_unit_layer")
+z_as_relative = false
+z_index = 6
 
 [node name="UnitOverlay" type="Node2D" parent="WorldModulate/MapRoot"]
 script = ExtResource("6_overlay")

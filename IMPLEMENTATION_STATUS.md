@@ -229,8 +229,78 @@
 **Final issue count:** 2  
 **Audit result:** **PASS**
 
+### Phase 4 Audit (iteration 2 — 2026-07-16)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | Director, HUD, overlay, presenter wired; encounter path matches bridge tests |
+| Correct coding | PASS | Overlay + presenter both mutate shared `BoardState` on sim events — intentional mirror of legacy `board_view` |
+| Inconsistencies | PASS | `_load_skirmish` uses `SkirmishGenerator.generate` + `EncounterBuilder` (same data as `generate_encounter`) |
+| Issues | PASS | 1 deferred |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | User F5 execute loop + CLI tests on agent PATH | Low | Deferred — user |
+
+**Gate checks (re-run):**
+
+| Check | Result |
+|-------|--------|
+| CombatDirector on generated encounter | PASS |
+| Preview == execution (sim core) | PASS — bridge determinism test |
+| Overlay/presenter double-path | PASS — no duplicate EventBus subscriptions on same node |
+| `sim_test.gd` green | PENDING — user CLI |
+
+**Final issue count:** 1  
+**Audit result:** **PASS**
+
 ### Next
-- Phase 5: `TacticalUnitLayer` + `UnitVisualFactory` + HP bars
+- ~~Phase 5: `TacticalUnitLayer` + `UnitVisualFactory` + HP bars~~ → see Phase 5 below
+
+---
+
+## Phase 5 — Unit sprites & health bars 🚧
+
+**In progress** — LPC `TacticalUnitLayer`, HP bars, circle-token fallback suppressed when sprites load.
+
+### Deliverables
+- [x] `presentation/tactical_unit_layer.gd` — `CharacterActor` per unit, deterministic `UnitVisualFactory.roll_recipe`
+- [x] `UnitVisualFactory.display_scale_for_profile()` — 1.5 tiles × `CharacterGenProfile.display_scale`
+- [x] HP bars + selection ring on unit layer (`_draw`)
+- [x] `TreeGameplay.apply_character_depth` for y-sort vs trees/props
+- [x] `TacticalUnitOverlay` skips circle tokens when `unit_layer.is_sprites_active()`
+- [x] `TacticalCombat.tscn` — `UnitLayer` node (z_index 6)
+- [x] `TacticalMapView` getters: `grid_to_foot_local`, layers, `get_effects_settings`
+
+### Phase 5 Audit (iteration 1 — 2026-07-16)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | Layer + factory + HP + depth sort in scene |
+| Correct coding | PASS | Nearest filter; foot anchor `TILE_PX*0.5, TILE_PX`; scale from `TacticalConstants` |
+| Inconsistencies | PASS | Same profile path as sandbox (`user://character_gen.cfg`) |
+| Issues | PASS | 2 deferred |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Walk/slash animations on move — static idle pose only | Low | Deferred — Phase 6 |
+| 2 | User F5 y-sort / scale visual + CLI tests on agent PATH | Low | Deferred — user |
+
+**Gate checks (Audit 5):**
+
+| Check | Result |
+|-------|--------|
+| y-sort vs trees (`TreeGameplay.apply_character_depth`) | PASS — code |
+| Foot anchor (cell bottom-center) | PASS — `grid_to_foot_local` |
+| Scale bounds (1.5 tiles × slider) | PASS — `display_scale_for_profile` |
+| Sprite authorship (pause F5) | PENDING — user |
+| Shader/runtime errors 10s | PENDING — user |
+
+**Final issue count:** 2  
+**Audit result:** **PASS** (pending user visual gate for sprite authorship)
+
+### Next
+- Phase 6: planning input animations (walk tween, drag/aim)
 
 ---
 

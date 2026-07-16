@@ -23,6 +23,7 @@ const TILE_PX: int = TacticalConstants.TILE_PX
 @onready var _director: CombatDirector = $CombatDirector
 @onready var _combat_hud: TacticalCombatHud = $CombatHud
 @onready var _unit_overlay: TacticalUnitOverlay = $WorldModulate/MapRoot/UnitOverlay
+@onready var _unit_layer: TacticalUnitLayer = $WorldModulate/MapRoot/UnitLayer
 @onready var _sim_presenter: TacticalSimPresenter = $SimPresenter
 
 var _tile_set: TileSet
@@ -97,6 +98,32 @@ func grid_to_local(cell: Vector2i) -> Vector2:
 	return Vector2(local_cell) * float(TILE_PX) + Vector2(TILE_PX, TILE_PX) * 0.5
 
 
+func grid_to_foot_local(cell: Vector2i) -> Vector2:
+	var used: Rect2i = _ground.get_used_rect()
+	var local_cell: Vector2i = cell - used.position
+	return Vector2(local_cell) * float(TILE_PX) + Vector2(TILE_PX * 0.5, TILE_PX)
+
+
+func get_player_grid() -> PlayerGrid:
+	return _player_grid
+
+
+func get_trees_layer() -> TileMapLayer:
+	return _trees
+
+
+func get_overlay_layer() -> TileMapLayer:
+	return _overlay
+
+
+func get_scatter_layer() -> TileMapLayer:
+	return _scatter
+
+
+func get_effects_settings() -> EffectsSettings:
+	return _effects.settings
+
+
 func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 	var zoom: float = _map_root.scale.x
 	if zoom < 0.001:
@@ -112,7 +139,8 @@ func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 func _start_combat() -> void:
 	_director.start_from_encounter(_encounter)
 	_combat_hud.setup(_director, self)
-	_unit_overlay.setup(self, _director)
+	_unit_layer.setup(self, _director)
+	_unit_overlay.setup(self, _director, _unit_layer)
 	_sim_presenter.setup(_director, _unit_overlay)
 
 
@@ -243,3 +271,5 @@ func _center_map() -> void:
 	position = layout["scene_position"]
 	if _unit_overlay != null:
 		_unit_overlay.queue_redraw()
+	if _unit_layer != null:
+		_unit_layer.queue_redraw()

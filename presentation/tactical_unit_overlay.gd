@@ -9,6 +9,7 @@ var _map_view: TacticalMapView
 var _director: CombatDirector
 var _board: BoardState
 var _preview_board: BoardState
+var _unit_layer: TacticalUnitLayer
 
 const _COLOR_PLAYER := Color(0.36, 0.62, 0.92, 0.92)
 const _COLOR_ENEMY := Color(0.86, 0.38, 0.34, 0.92)
@@ -17,9 +18,10 @@ const _COLOR_GHOST := Color(0.98, 0.88, 0.38, 0.35)
 const _COLOR_REACH := Color(0.28, 0.58, 0.48, 0.28)
 
 
-func setup(map_view: TacticalMapView, director: CombatDirector) -> void:
+func setup(map_view: TacticalMapView, director: CombatDirector, unit_layer: TacticalUnitLayer = null) -> void:
 	_map_view = map_view
 	_director = director
+	_unit_layer = unit_layer
 	z_as_relative = false
 	z_index = 6
 	EventBus.selection_changed.connect(func(_id: int) -> void: queue_redraw())
@@ -108,6 +110,8 @@ func _draw() -> void:
 		_draw_reach_tiles(_preview_board, selected_id)
 	for unit in _board.units:
 		if not unit.is_alive():
+			continue
+		if _unit_layer != null and _unit_layer.is_sprites_active():
 			continue
 		var center: Vector2 = _map_view.grid_to_local(unit.position)
 		var color: Color = _COLOR_ENEMY if unit.team == GameEnums.Team.ENEMY else _COLOR_PLAYER
