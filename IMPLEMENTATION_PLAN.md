@@ -110,23 +110,23 @@ Players: left third, near vertical center. Enemies: right third.
 - `TacticalCombatHud` (timeline, phase commit)
 - **Audit 4:** preview == execution; `sim_test_runner` green
 
-### Phase 5 — Unit sprites & health bars
+### Phase 5 — Unit sprites & health bars ✅
 - `TacticalUnitLayer` + `UnitVisualFactory`
 - Character scale: 1.5 tiles × user slider
 - **Audit 5:** y-sort vs trees; foot anchor; scale bounds
 
-### Phase 6 — Planning input & animations
+### Phase 6 — Planning input & animations ✅
 - Split `board_view.gd` → input overlay + unit layer
 - Drag: LPC walk/slash/spellcast (no emoji cursors)
 - Aim: vector class icon, rescaled
 - **Audit 6:** full Knight turn playable; overlay z-order
 
-### Phase 7 — UI consolidation
+### Phase 7 — UI consolidation ✅
 - Effects/inspector → Options only
 - ESC blocks combat input
 - **Audit 7:** toggle off = zero ecology CPU
 
-### Phase 8 — Knight MVP
+### Phase 8 — Knight MVP ✅
 - Victory/defeat, sfx, all size presets playtest
 - Compendium link
 - **Audit 8:** Boredom-style 60s idle optional; ≤2 open issues

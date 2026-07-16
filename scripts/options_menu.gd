@@ -39,6 +39,12 @@ var _boredom_water_check: CheckButton
 
 var _char_profile: CharacterGenProfile
 var _is_open: bool = false
+var _combat_mode: bool = false
+var _effects_panel: PanelContainer
+var _effects_settings: EffectsSettings
+var _effects_checks: Dictionary = {}
+var _on_effects_changed: Callable
+var _map_settings_btn: Button
 
 
 func _ready() -> void:
@@ -55,6 +61,18 @@ func setup(settings: GameSettings, on_applied: Callable) -> void:
 
 func setup_character_gen(profile: CharacterGenProfile) -> void:
 	_char_profile = profile
+
+
+func setup_combat_effects(settings: EffectsSettings, on_changed: Callable) -> void:
+	_effects_settings = settings
+	_on_effects_changed = on_changed
+	_build_combat_effects_panel()
+
+
+func set_combat_mode(enabled: bool) -> void:
+	_combat_mode = enabled
+	if _map_settings_btn != null:
+		_map_settings_btn.visible = not enabled
 
 
 func is_open() -> bool:
@@ -142,6 +160,10 @@ func _build_ui() -> void:
 	center.add_child(_map_panel)
 	_build_map_menu(_map_panel)
 
+	_effects_panel = _make_panel()
+	_effects_panel.visible = false
+	center.add_child(_effects_panel)
+
 
 func _make_panel() -> PanelContainer:
 	var panel: PanelContainer = PanelContainer.new()
@@ -157,7 +179,8 @@ func _build_main_menu(panel: PanelContainer) -> void:
 	_add_hint(vbox, "Press O or Esc to close")
 	vbox.add_child(HSeparator.new())
 	_add_button(vbox, "Display…", _show_display)
-	_add_button(vbox, "Map Settings…", _show_map_settings)
+	_map_settings_btn = _add_button(vbox, "Map Settings…", _show_map_settings)
+	_add_button(vbox, "Ambient Effects…", _show_effects)
 	vbox.add_child(HSeparator.new())
 	_add_button(vbox, "Close", close_menu)
 
@@ -324,6 +347,17 @@ func _show_main() -> void:
 	_main_panel.visible = true
 	_display_panel.visible = false
 	_map_panel.visible = false
+	if _effects_panel != null:
+		_effects_panel.visible = false
+
+
+func _show_effects() -> void:
+	_sync_effects_checks()
+	_main_panel.visible = false
+	_display_panel.visible = false
+	_map_panel.visible = false
+	if _effects_panel != null:
+		_effects_panel.visible = true
 
 
 func _show_display() -> void:
@@ -331,6 +365,8 @@ func _show_display() -> void:
 	_main_panel.visible = false
 	_display_panel.visible = true
 	_map_panel.visible = false
+	if _effects_panel != null:
+		_effects_panel.visible = false
 
 
 func _show_map_settings() -> void:
@@ -338,6 +374,8 @@ func _show_map_settings() -> void:
 	_main_panel.visible = false
 	_display_panel.visible = false
 	_map_panel.visible = true
+	if _effects_panel != null:
+		_effects_panel.visible = false
 
 
 func _on_map_scale_slider_changed(value: float) -> void:
@@ -388,19 +426,20 @@ func _add_hint(vbox: VBoxContainer, text: String) -> void:
 	vbox.add_child(hint)
 
 
-func _add_button(vbox: VBoxContainer, text: String, callback: Callable) -> void:
+func _add_button(vbox: VBoxContainer, text: String, callback: Callable) -> Button:
 	var row: HBoxContainer = HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(row)
-	_add_button_to(row, text, callback)
+	return _add_button_to(row, text, callback)
 
 
-func _add_button_to(parent: BoxContainer, text: String, callback: Callable) -> void:
+func _add_button_to(parent: BoxContainer, text: String, callback: Callable) -> Button:
 	var button: Button = Button.new()
 	button.text = text
 	button.custom_minimum_size = Vector2(120, 32)
 	button.pressed.connect(callback)
 	parent.add_child(button)
+	return button
 
 
 func _label(text: String) -> Label:
@@ -418,6 +457,67 @@ func _add_labeled_option(vbox: VBoxContainer, label_text: String, items: PackedS
 		option.add_item(item)
 	vbox.add_child(option)
 	return option
+
+
+func _build_combat_effects_panel() -> void:
+	if _effects_panel == null or _effects_settings == null:
+		return
+	if _effects_panel.get_child_count() > 0:
+		return
+	var margin: MarginContainer = _margin(_effects_panel)
+	var vbox: VBoxContainer = _vbox(margin)
+	_add_title(vbox, "Ambient Effects")
+	_add_hint(vbox, "Combat map living systems · saved automatically")
+	vbox.add_child(HSeparator.new())
+	var toggles: Array[Dictionary] = [
+		{"key": "wind_field", "label": "Wind field"},
+		{"key": "time_light", "label": "Day / night cycle"},
+		{"key": "cloud_shadows", "label": "Cloud shadows"},
+		{"key": "mist", "label": "Mist overlay"},
+		{"key": "water_ripples", "label": "Water ripples"},
+		{"key": "shoreline_foam", "label": "Shoreline foam"},
+		{"key": "water_sparkles", "label": "Water sparkles"},
+		{"key": "fish_splash", "label": "Fish splash"},
+		{"key": "ambient_particles", "label": "Ambient particles"},
+		{"key": "ecology_actors", "label": "Ecology actors"},
+		{"key": "rare_events", "label": "Rare ambient events"},
+		{"key": "oblique_contact_shadows", "label": "Contact shadows"},
+	]
+	for entry: Dictionary in toggles:
+		var key: String = entry["key"]
+		var check: CheckButton = CheckButton.new()
+		check.text = entry["label"]
+		check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		check.toggled.connect(func(pressed: bool) -> void: _on_effect_toggled(key, pressed))
+		vbox.add_child(check)
+		_effects_checks[key] = check
+	vbox.add_child(HSeparator.new())
+	var actions: HBoxContainer = HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(actions)
+	_add_button_to(actions, "Back", _show_main)
+
+
+func _sync_effects_checks() -> void:
+	if _effects_settings == null:
+		return
+	for key: Variant in _effects_checks.keys():
+		var check: CheckButton = _effects_checks[key] as CheckButton
+		if check == null:
+			continue
+		check.set_block_signals(true)
+		check.button_pressed = bool(_effects_settings.get(key))
+		check.set_block_signals(false)
+
+
+func _on_effect_toggled(key: String, pressed: bool) -> void:
+	if _effects_settings == null:
+		return
+	_effects_settings.set(key, pressed)
+	_effects_settings.save_to_disk()
+	_effects_settings.changed.emit()
+	if _on_effects_changed.is_valid():
+		_on_effects_changed.call()
 
 
 func _panel_style() -> StyleBoxFlat:

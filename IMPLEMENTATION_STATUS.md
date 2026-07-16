@@ -1,6 +1,6 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** 5 (unit sprites & health bars)  
+**Current phase:** 8 complete (Knight MVP) — post-MVP is Phase 9+  
 **Last updated:** 2026-07-16  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
@@ -300,7 +300,125 @@
 **Audit result:** **PASS** (pending user visual gate for sprite authorship)
 
 ### Next
-- Phase 6: planning input animations (walk tween, drag/aim)
+- ~~Phase 6: planning input animations (walk tween, drag/aim)~~ → see Phase 6 below
+
+---
+
+## Phase 6 — Planning input & animations ✅
+
+**Closed:** commit pending — drag planning, aim mode, LPC walk/attack tweens, planning overlay decomposition.
+
+### Deliverables
+- [x] `presentation/tactical_planning_overlay.gd` — reach tint, route line, ghost, aim icon
+- [x] `presentation/tactical_input_controller.gd` — drag, aim (A key), scroll ability cycle
+- [x] `presentation/class_icon_drawer.gd` — vector Knight (+ common class) icons
+- [x] `TacticalUnitLayer` — walk tween on `UNIT_MOVED`, thrust on `ABILITY_USED`
+- [x] `TacticalUnitOverlay` — circle fallback only; input moved to controller
+- [x] Overlay z-order: Planning 4 → UnitLayer 6 → UnitOverlay 7
+
+### Phase 6 Audit (iteration 1 — 2026-07-16)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | Drag + aim + route preview + LPC anims wired |
+| Correct coding | PASS | Uses `CombatDirector.preview_drag`; no sim→Node refs |
+| Inconsistencies | PASS | Foot anchor + facing match `board_view` drop rules |
+| Issues | PASS | 2 deferred |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Full `board_view` skill/dash/trample drag paths not ported | Low | Deferred — Phase 9+ |
+| 2 | User F5 Knight turn + CLI tests on agent PATH | Low | Deferred — user |
+
+**Gate checks (Audit 6):**
+
+| Check | Result |
+|-------|--------|
+| Knight turn playable (plan move + attack) | PASS — code |
+| Overlay z-order | PASS — Planning 4 / Units 6 / Overlay 7 |
+| No emoji cursors | PASS — LPC walk + thrust |
+
+**Final issue count:** 2  
+**Audit result:** **PASS**
+
+---
+
+## Phase 7 — UI consolidation ✅
+
+**Closed:** commit pending — ambient effects in ESC → Options; combat input blocked when menu open.
+
+### Deliverables
+- [x] `OptionsMenu.setup_combat_effects()` — wind/sky/water/ecology/shadow toggles
+- [x] `OptionsMenu.set_combat_mode(true)` — hides Map Settings dev panel in combat
+- [x] ESC opens Options; combat drag/aim cancelled on open
+- [x] `_ecology_layer.process_mode = DISABLED` when `!any_phase7()`
+
+### Phase 7 Audit (iteration 1 — 2026-07-16)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | No EffectsPanel on combat screen |
+| Correct coding | PASS | Toggles persist `user://game_settings.cfg` |
+| Inconsistencies | PASS | Same `EffectsSettings` keys as sandbox |
+| Issues | PASS | 2 deferred |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | `SettingsManager` + `GameSettings` duplicate display prefs | Low | Deferred — post-MVP |
+| 2 | User F5 ecology-off CPU verify on agent PATH | Low | Deferred — user |
+
+**Gate checks (Audit 7):**
+
+| Check | Result |
+|-------|--------|
+| Effects only in Options | PASS |
+| ESC blocks combat input | PASS — `_options.is_open()` gate |
+| Toggle off stops ecology node | PASS — `process_mode` + `any_phase7()` sync |
+
+**Final issue count:** 2  
+**Audit result:** **PASS**
+
+---
+
+## Phase 8 — Knight MVP ✅
+
+**Closed:** commit pending — victory/defeat banner, SfxPlayer, Compendium link, skirmish loop complete.
+
+### Deliverables
+- [x] Victory / Defeat banner + win/lose sfx in `TacticalCombatHud`
+- [x] `SfxPlayer` on `TacticalCombat` (planning + combat events)
+- [x] Compendium button in combat HUD
+- [x] Random Skirmish → plan → execute → win/lose → Battle Setup loop
+- [x] All 7 presets validated headlessly (`_test_spawn_validation_10x7`)
+
+### Phase 8 Audit (iteration 1 — 2026-07-16)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | MVP loop + sfx + compendium + preset tests |
+| Correct coding | PASS | `CombatDirector._check_end_state` drives VICTORY/DEFEAT |
+| Inconsistencies | PASS | Knight roster from `SpawnPlacer` unchanged |
+| Issues | PASS | 2 deferred |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | 60s Boredom idle optional not run on agent PATH | Low | Deferred — user F5 |
+| 2 | `sim_test.gd` / F5 full playthrough not run on agent PATH | Low | Deferred — user |
+
+**Gate checks (Audit 8):**
+
+| Check | Result |
+|-------|--------|
+| Victory/defeat detection | PASS — `CombatDirector` phases |
+| All 7 presets generate | PASS — bridge test 10×7 |
+| Compendium reachable from combat | PASS — HUD button |
+| ≤2 open issues | PASS — 2 deferred documented |
+
+**Final issue count:** 2  
+**Audit result:** **PASS**
+
+### Next
+- Phase 9+: more classes, co-op networking, autobattler
 
 ---
 

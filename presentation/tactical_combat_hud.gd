@@ -12,14 +12,19 @@ var _warn_label: Label
 var _execute_btn: Button
 var _undo_btn: Button
 var _clear_btn: Button
+var _banner: PanelContainer
+var _banner_label: Label
 var _is_ready: bool = false
+var _sfx: SfxPlayer
 
 
-func setup(director: CombatDirector, map_view: TacticalMapView) -> void:
+func setup(director: CombatDirector, map_view: TacticalMapView, sfx: SfxPlayer = null) -> void:
 	_director = director
 	_map_view = map_view
+	_sfx = sfx
 	layer = 20
 	_build_ui()
+	_build_banner()
 	EventBus.turn_phase_changed.connect(_on_phase_changed)
 	EventBus.timeline_changed.connect(_on_timeline_changed)
 	EventBus.action_rejected.connect(_on_action_rejected)
@@ -44,6 +49,11 @@ func _build_ui() -> void:
 	back.text = "← Battle Setup"
 	back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/BattleSetup.tscn"))
 	top_row.add_child(back)
+
+	var compendium := Button.new()
+	compendium.text = "Compendium"
+	compendium.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/Compendium.tscn"))
+	top_row.add_child(compendium)
 
 	var title := Label.new()
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -109,6 +119,34 @@ func _build_ui() -> void:
 	buttons.add_child(_clear_btn)
 
 
+func _build_banner() -> void:
+	_banner = PanelContainer.new()
+	_banner.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_banner.offset_left = -180
+	_banner.offset_right = 180
+	_banner.offset_top = -60
+	_banner.offset_bottom = 60
+	_banner.visible = false
+	add_child(_banner)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 24)
+	margin.add_theme_constant_override("margin_right", 24)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_bottom", 16)
+	_banner.add_child(margin)
+	var vbox := VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	margin.add_child(vbox)
+	_banner_label = Label.new()
+	_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_banner_label.add_theme_font_size_override("font_size", 32)
+	vbox.add_child(_banner_label)
+	var restart := Button.new()
+	restart.text = "Back to Battle Setup"
+	restart.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/BattleSetup.tscn"))
+	vbox.add_child(restart)
+
+
 func _on_phase_changed(phase: int) -> void:
 	var names: Dictionary = {
 		CombatDirector.Phase.PLANNING_PHASE_1: "PLANNING 1",
@@ -130,6 +168,16 @@ func _on_phase_changed(phase: int) -> void:
 	if not planning:
 		_is_ready = false
 		_execute_btn.text = "Ready — Execute Phase"
+	if phase == CombatDirector.Phase.VICTORY:
+		_show_banner("Victory!")
+		if _sfx != null:
+			_sfx.play("win")
+	elif phase == CombatDirector.Phase.DEFEAT:
+		_show_banner("Defeat")
+		if _sfx != null:
+			_sfx.play("lose")
+	else:
+		_hide_banner()
 
 
 func _on_timeline_changed(_timeline: Timeline, statuses: PackedStringArray) -> void:
@@ -149,7 +197,7 @@ func _refresh_timeline(statuses: PackedStringArray = PackedStringArray()) -> voi
 			"[b]%s[/b]  ·  P1: %s  ·  P2: %s" % [unit.definition.display_name, p1, p2],
 		)
 	if lines.is_empty():
-		_timeline_label.text = "[i]Click a blue token to select · click a tile to move · click enemy to attack[/i]"
+		_timeline_label.text = "[i]Drag to move · scroll wheel cycles ability · [b]A[/b] aim mode · Esc = Options[/i]"
 	else:
 		var body: String = ""
 		for line: String in lines:
@@ -204,3 +252,15 @@ func _on_undo_pressed() -> void:
 func _on_clear_pressed() -> void:
 	if _director != null:
 		_director.clear_plan()
+
+
+func _show_banner(text: String) -> void:
+	if _banner_label != null:
+		_banner_label.text = text
+	if _banner != null:
+		_banner.visible = true
+
+
+func _hide_banner() -> void:
+	if _banner != null:
+		_banner.visible = false

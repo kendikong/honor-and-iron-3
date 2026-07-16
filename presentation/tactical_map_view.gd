@@ -24,7 +24,10 @@ const TILE_PX: int = TacticalConstants.TILE_PX
 @onready var _combat_hud: TacticalCombatHud = $CombatHud
 @onready var _unit_overlay: TacticalUnitOverlay = $WorldModulate/MapRoot/UnitOverlay
 @onready var _unit_layer: TacticalUnitLayer = $WorldModulate/MapRoot/UnitLayer
+@onready var _planning_overlay: TacticalPlanningOverlay = $WorldModulate/MapRoot/PlanningOverlay
 @onready var _sim_presenter: TacticalSimPresenter = $SimPresenter
+@onready var _input_controller: TacticalInputController = $InputController
+@onready var _sfx: SfxPlayer = $SfxPlayer
 
 var _tile_set: TileSet
 var _decorator: AutoDecorator = AutoDecorator.new()
@@ -67,6 +70,8 @@ func _ready() -> void:
 	_decorator.logical_provenance = _logical_provenance
 
 	_options.setup(_settings, _on_display_settings_applied)
+	_options.setup_combat_effects(_effects.settings, _on_effects_settings_changed)
+	_options.set_combat_mode(true)
 	_options.opened.connect(_on_options_opened)
 	_options.closed.connect(_on_options_closed)
 
@@ -138,10 +143,19 @@ func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 
 func _start_combat() -> void:
 	_director.start_from_encounter(_encounter)
-	_combat_hud.setup(_director, self)
+	_combat_hud.setup(_director, self, _sfx)
 	_unit_layer.setup(self, _director)
 	_unit_overlay.setup(self, _director, _unit_layer)
-	_sim_presenter.setup(_director, _unit_overlay)
+	_planning_overlay.setup(self, _director)
+	_sim_presenter.setup(_director, _unit_overlay, _unit_layer)
+	_input_controller.setup(
+		self,
+		_director,
+		_planning_overlay,
+		_sfx,
+		func() -> bool: return _options.is_open(),
+	)
+	_sfx._director = _director
 
 
 func _load_skirmish() -> void:
@@ -201,11 +215,20 @@ func _on_viewport_resized() -> void:
 
 
 func _on_options_opened() -> void:
-	pass
+	if _input_controller != null:
+		_input_controller.cancel_drag()
+		_input_controller.cancel_aim()
 
 
 func _on_options_closed() -> void:
-	pass
+	_apply_effects()
+
+
+func _on_effects_settings_changed() -> void:
+	_effects.settings.save_to_disk()
+	_apply_effects()
+	if _unit_layer != null:
+		_unit_layer.refresh_display_scale()
 
 
 func _on_display_settings_applied() -> void:
@@ -220,9 +243,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _options.is_open():
 		return
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		var cell: Vector2i = screen_to_grid(event.position)
-		_unit_overlay.handle_grid_click(cell)
+	if _input_controller != null and _input_controller.handle_input(event):
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -256,6 +277,12 @@ func _sync_tree_variant_setting() -> void:
 func _apply_effects() -> void:
 	var water_ratio: float = 0.22 if _player_grid != null else 0.0
 	_effects.apply_all(_player_grid, water_ratio, _decorator.ecology_hints)
+	if _ecology_layer != null:
+		_ecology_layer.process_mode = (
+			Node.PROCESS_MODE_INHERIT
+			if _effects.settings.any_phase7()
+			else Node.PROCESS_MODE_DISABLED
+		)
 
 
 func _center_map() -> void:
@@ -273,3 +300,5 @@ func _center_map() -> void:
 		_unit_overlay.queue_redraw()
 	if _unit_layer != null:
 		_unit_layer.queue_redraw()
+	if _planning_overlay != null:
+		_planning_overlay.queue_redraw()
