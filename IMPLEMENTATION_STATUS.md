@@ -306,7 +306,7 @@
 
 ## Phase 6 — Planning input & animations ✅
 
-**Closed:** commit pending — drag planning, aim mode, LPC walk/attack tweens, planning overlay decomposition.
+**Closed:** commit `239399785` — drag planning, aim mode, LPC walk/attack tweens, planning overlay decomposition.
 
 ### Deliverables
 - [x] `presentation/tactical_planning_overlay.gd` — reach tint, route line, ghost, aim icon
@@ -345,7 +345,7 @@
 
 ## Phase 7 — UI consolidation ✅
 
-**Closed:** commit pending — ambient effects in ESC → Options; combat input blocked when menu open.
+**Closed:** commit `239399785` — ambient effects in ESC → Options; combat input blocked when menu open.
 
 ### Deliverables
 - [x] `OptionsMenu.setup_combat_effects()` — wind/sky/water/ecology/shadow toggles
@@ -382,7 +382,7 @@
 
 ## Phase 8 — Knight MVP ✅
 
-**Closed:** commit pending — victory/defeat banner, SfxPlayer, Compendium link, skirmish loop complete.
+**Closed:** commit `239399785` — victory/defeat banner, SfxPlayer, Compendium link, skirmish loop complete.
 
 ### Deliverables
 - [x] Victory / Defeat banner + win/lose sfx in `TacticalCombatHud`
