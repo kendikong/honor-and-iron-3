@@ -152,7 +152,7 @@
 
 ## Phase 3 — Tactical combat scene shell ✅
 
-**Closed:** commit TBD — TacticalCombat scene, TacticalMapView, BattleSetup skirmish picker.
+**Closed:** commit `6c85781d7` — Phase 3 combat shell: TacticalCombat scene, map view, skirmish picker.
 
 ### Deliverables
 - [x] `scenes/TacticalCombat.tscn` — MapRoot, sky, TileMapLayers (nearest filter), Options only
