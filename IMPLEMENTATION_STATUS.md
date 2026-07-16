@@ -1,6 +1,6 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** 2 (skirmish generation)  
+**Current phase:** 3 (tactical combat scene shell)  
 **Last updated:** 2026-07-16  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
@@ -108,9 +108,45 @@
 **Final issue count:** 2  
 **Audit result:** **PASS**
 
+---
+
+## Phase 2 — Skirmish generation ✅
+
+**Closed:** commit TBD — SpawnPlacer left/right bands, 10×7 spawn validation tests.
+
+### Deliverables
+- [x] `bridge/spawn_placer.gd` — left/right third bands, MVP roster (1 knight + 3 enemies)
+- [x] `SkirmishGenerator` bakes walkability + places spawns; `generate_encounter()` helper
+- [x] All 7 `TacticalConstants.SKIRMISH_PRESETS` generate with non-empty spawns
+- [x] `_test_spawn_validation_10x7` — 10 seeds × 7 sizes: walkable, in-band, no overlap
+
+### Phase 2 Audit (iteration 1 — 2026-07-16)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | SpawnPlacer, generator wiring, preset + 10×7 tests on disk |
+| Correct coding | PASS | Static types; deterministic seeded placement; bridge tests expanded |
+| Inconsistencies | PASS | Band math uses `width/3` and `2*width/3` per `IMPLEMENTATION_PLAN.md` |
+| Issues | PASS | 2 deferred (≤2 cap) |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Spawn placement uses null TileMapLayers (tree/scatter trunk blocks not in band tests) | Low | Deferred — Phase 3 |
+| 2 | `bridge_test.gd` not executed on agent PATH | Low | Deferred — user CLI |
+
+**Gate checks (Audit 2 exit criteria):**
+
+| Check | Result |
+|-------|--------|
+| 10 seeds × 7 sizes spawn validation | PASS — `_test_spawn_validation_10x7` |
+| Walkable spawns guaranteed | PASS — every spawn checked with `Walkability.is_walkable` |
+| Left/right band placement | PASS — `_test_spawn_placer_bands` + 10×7 band asserts |
+
+**Final issue count:** 2  
+**Audit result:** **PASS**
+
 ### Next
-- Phase 2: `SkirmishGenerator` spawn bands + walkable spawn guarantee (10 seeds × 7 sizes)
-- **Phase 2 will not start implementation until Phase 2 audit block is prepared at close**
+- Phase 3: `scenes/TacticalCombat.tscn` shell + `TacticalMapView` + BattleSetup size picker
 
 ---
 

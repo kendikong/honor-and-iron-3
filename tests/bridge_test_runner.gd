@@ -10,6 +10,9 @@ static func run_all() -> Dictionary:
 	_test_walkability_baker(failures)
 	_test_encounter_blocked_override(failures)
 	_test_encounter_builder(failures)
+	_test_spawn_placer_bands(failures)
+	_test_skirmish_all_presets(failures)
+	_test_spawn_validation_10x7(failures)
 	_test_headless_sim_pipeline(failures)
 	return {"passed": failures.is_empty(), "failures": failures}
 
@@ -91,44 +94,117 @@ static func _test_encounter_builder(failures: Array[String]) -> void:
 		failures.append("EncounterBuilder produced no tile_terrains")
 
 
+static func _test_spawn_placer_bands(failures: Array[String]) -> void:
+	var config := SkirmishGenerator.SkirmishConfig.new()
+	config.size_preset = Vector2i(32, 16)
+	config.map_seed = 42
+	var skirmish: SkirmishGenerator.SkirmishResult = SkirmishGenerator.generate(config)
+	if skirmish.player_spawns.size() != SpawnPlacer.MVP_PLAYER_COUNT:
+		failures.append("SpawnPlacer: expected %d player spawns, got %d" % [
+			SpawnPlacer.MVP_PLAYER_COUNT, skirmish.player_spawns.size(),
+		])
+	if skirmish.enemy_spawns.size() != SpawnPlacer.MVP_ENEMY_COUNT:
+		failures.append("SpawnPlacer: expected %d enemy spawns, got %d" % [
+			SpawnPlacer.MVP_ENEMY_COUNT, skirmish.enemy_spawns.size(),
+		])
+	for placement: UnitPlacement in skirmish.player_spawns:
+		if not SpawnPlacer.is_in_player_band(placement.coord, skirmish.grid.width):
+			failures.append("SpawnPlacer: player spawn %s outside left band" % placement.coord)
+	for placement: UnitPlacement in skirmish.enemy_spawns:
+		if not SpawnPlacer.is_in_enemy_band(placement.coord, skirmish.grid.width):
+			failures.append("SpawnPlacer: enemy spawn %s outside right band" % placement.coord)
+
+
+static func _test_skirmish_all_presets(failures: Array[String]) -> void:
+	for preset: Vector2i in TacticalConstants.SKIRMISH_PRESETS:
+		var config := SkirmishGenerator.SkirmishConfig.new()
+		config.size_preset = preset
+		config.map_seed = 1
+		var skirmish: SkirmishGenerator.SkirmishResult = SkirmishGenerator.generate(config)
+		if skirmish.grid.width != preset.x or skirmish.grid.height != preset.y:
+			failures.append("SkirmishGenerator preset %s produced %dx%d" % [
+				preset, skirmish.grid.width, skirmish.grid.height,
+			])
+		if skirmish.player_spawns.is_empty() or skirmish.enemy_spawns.is_empty():
+			failures.append("SkirmishGenerator preset %s produced empty spawns" % preset)
+
+
+const _PHASE2_TEST_SEEDS: Array[int] = [
+	1, 42, 123, 999, 12345, 54321, 777, 2024, 65536, 314159,
+]
+
+
+static func _test_spawn_validation_10x7(failures: Array[String]) -> void:
+	for preset: Vector2i in TacticalConstants.SKIRMISH_PRESETS:
+		for map_seed: int in _PHASE2_TEST_SEEDS:
+			var config := SkirmishGenerator.SkirmishConfig.new()
+			config.size_preset = preset
+			config.map_seed = map_seed
+			var skirmish: SkirmishGenerator.SkirmishResult = SkirmishGenerator.generate(config)
+			if skirmish.player_spawns.size() != SpawnPlacer.MVP_PLAYER_COUNT:
+				failures.append(
+					"spawn validation: seed=%d preset=%s missing player spawns" % [map_seed, preset],
+				)
+				continue
+			if skirmish.enemy_spawns.size() != SpawnPlacer.MVP_ENEMY_COUNT:
+				failures.append(
+					"spawn validation: seed=%d preset=%s missing enemy spawns" % [map_seed, preset],
+				)
+				continue
+			var occupied: Dictionary = {}
+			for placement: UnitPlacement in skirmish.player_spawns:
+				if not Walkability.is_walkable(
+					skirmish.grid, placement.coord, null, null, null, null,
+				):
+					failures.append(
+						"spawn validation: player %s not walkable (seed=%d preset=%s)" % [
+							placement.coord, map_seed, preset,
+						],
+					)
+				if not SpawnPlacer.is_in_player_band(placement.coord, skirmish.grid.width):
+					failures.append(
+						"spawn validation: player %s outside left band (seed=%d)" % [
+							placement.coord, map_seed,
+						],
+					)
+				if occupied.has(placement.coord):
+					failures.append("spawn validation: duplicate spawn at %s" % placement.coord)
+				occupied[placement.coord] = true
+			for placement: UnitPlacement in skirmish.enemy_spawns:
+				if not Walkability.is_walkable(
+					skirmish.grid, placement.coord, null, null, null, null,
+				):
+					failures.append(
+						"spawn validation: enemy %s not walkable (seed=%d preset=%s)" % [
+							placement.coord, map_seed, preset,
+						],
+					)
+				if not SpawnPlacer.is_in_enemy_band(placement.coord, skirmish.grid.width):
+					failures.append(
+						"spawn validation: enemy %s outside right band (seed=%d)" % [
+							placement.coord, map_seed,
+						],
+					)
+				if occupied.has(placement.coord):
+					failures.append("spawn validation: duplicate spawn at %s" % placement.coord)
+				occupied[placement.coord] = true
+
+
 static func _test_headless_sim_pipeline(failures: Array[String]) -> void:
 	var config := SkirmishGenerator.SkirmishConfig.new()
 	config.size_preset = Vector2i(16, 8)
 	config.map_seed = 12345
 	var skirmish: SkirmishGenerator.SkirmishResult = SkirmishGenerator.generate(config)
-	var blocked: Dictionary = WalkabilityBaker.bake(skirmish.grid, null, null, null, null)
 
-	var player_spawn: Vector2i = Walkability.find_spawn_cell(
-		skirmish.grid, Vector2i(2, 4), null, null, null, null,
-	)
-	var enemy_spawn: Vector2i = Walkability.find_spawn_cell(
-		skirmish.grid, Vector2i(13, 4), null, null, null, null,
-	)
-	if not Walkability.is_walkable(skirmish.grid, player_spawn, null, null, null, null):
-		failures.append("headless sim pipeline: player spawn not walkable")
-	if not Walkability.is_walkable(skirmish.grid, enemy_spawn, null, null, null, null):
-		failures.append("headless sim pipeline: enemy spawn not walkable")
-
-	var knight: UnitData = DataLibrary.get_unit(&"knight")
-	var hatchling: UnitData = DataLibrary.get_unit(&"hatchling")
-	if knight == null or hatchling == null:
-		failures.append("headless sim pipeline: DataLibrary missing knight or hatchling")
+	if skirmish.player_spawns.is_empty() or skirmish.enemy_spawns.is_empty():
+		failures.append("headless sim pipeline: SkirmishGenerator returned empty spawns")
 		return
 
-	var player_placements: Array[UnitPlacement] = []
-	var player_placement := UnitPlacement.new()
-	player_placement.unit = knight
-	player_placement.coord = player_spawn
-	player_placements.append(player_placement)
-
-	var enemy_placements: Array[UnitPlacement] = []
-	var enemy_placement := UnitPlacement.new()
-	enemy_placement.unit = hatchling
-	enemy_placement.coord = enemy_spawn
-	enemy_placements.append(enemy_placement)
-
 	var encounter: EncounterData = EncounterBuilder.build_from_player_grid(
-		skirmish.grid, blocked, player_placements, enemy_placements,
+		skirmish.grid,
+		skirmish.blocked_cells,
+		skirmish.player_spawns,
+		skirmish.enemy_spawns,
 	)
 	var board: BoardState = BoardFactory.build_from_encounter(encounter)
 	board.intents = EnemyPlanner.plan(board)

@@ -1,0 +1,238 @@
+class_name SpawnPlacer
+extends RefCounted
+
+## Deterministic spawn placement for random skirmishes.
+## Players: left third, near vertical center. Enemies: right third.
+
+const MVP_PLAYER_COUNT: int = 1
+const MVP_ENEMY_COUNT: int = 3
+const MIN_SPAWN_GAP: int = 2
+
+const MVP_ENEMY_IDS: Array[StringName] = [&"hatchling", &"hatchling", &"charger"]
+
+
+static func player_band_x_max(grid_width: int) -> int:
+	return maxi(0, grid_width / 3 - 1)
+
+
+static func enemy_band_x_min(grid_width: int) -> int:
+	return grid_width * 2 / 3
+
+
+static func prefer_player_anchor(grid: PlayerGrid) -> Vector2i:
+	return Vector2i(maxi(0, grid.width / 6), grid.height / 2)
+
+
+static func prefer_enemy_anchor(grid: PlayerGrid) -> Vector2i:
+	return Vector2i(mini(grid.width - 1, grid.width * 5 / 6), grid.height / 2)
+
+
+static func is_in_player_band(cell: Vector2i, grid_width: int) -> bool:
+	return cell.x <= player_band_x_max(grid_width)
+
+
+static func is_in_enemy_band(cell: Vector2i, grid_width: int) -> bool:
+	return cell.x >= enemy_band_x_min(grid_width)
+
+
+static func place_mvp_roster(
+	grid: PlayerGrid,
+	_blocked_cells: Dictionary,
+	map_seed: int,
+	trees: TileMapLayer = null,
+	overlay: TileMapLayer = null,
+	settings: EffectsSettings = null,
+	scatter: TileMapLayer = null,
+) -> Dictionary:
+	var player_cells: Array[Vector2i] = _pick_band_spawns(
+		grid,
+		0,
+		player_band_x_max(grid.width) + 1,
+		MVP_PLAYER_COUNT,
+		map_seed,
+		9109,
+		prefer_player_anchor(grid),
+		trees,
+		overlay,
+		settings,
+		scatter,
+	)
+	var enemy_cells: Array[Vector2i] = _pick_band_spawns(
+		grid,
+		enemy_band_x_min(grid.width),
+		grid.width,
+		MVP_ENEMY_COUNT,
+		map_seed,
+		9203,
+		prefer_enemy_anchor(grid),
+		trees,
+		overlay,
+		settings,
+		scatter,
+	)
+
+	var player_spawns: Array[UnitPlacement] = []
+	var knight: UnitData = DataLibrary.get_unit(&"knight")
+	if knight != null and not player_cells.is_empty():
+		var placement := UnitPlacement.new()
+		placement.unit = knight
+		placement.coord = player_cells[0]
+		player_spawns.append(placement)
+
+	var enemy_spawns: Array[UnitPlacement] = []
+	for i: int in range(enemy_cells.size()):
+		var enemy_id: StringName = MVP_ENEMY_IDS[i % MVP_ENEMY_IDS.size()]
+		var enemy_def: UnitData = DataLibrary.get_unit(enemy_id)
+		if enemy_def == null:
+			continue
+		var placement := UnitPlacement.new()
+		placement.unit = enemy_def
+		placement.coord = enemy_cells[i]
+		enemy_spawns.append(placement)
+
+	return {
+		"player_spawns": player_spawns,
+		"enemy_spawns": enemy_spawns,
+	}
+
+
+static func _pick_band_spawns(
+	grid: PlayerGrid,
+	x_min: int,
+	x_max_exclusive: int,
+	count: int,
+	map_seed: int,
+	salt: int,
+	prefer: Vector2i,
+	trees: TileMapLayer,
+	overlay: TileMapLayer,
+	settings: EffectsSettings,
+	scatter: TileMapLayer,
+) -> Array[Vector2i]:
+	if count <= 0:
+		return []
+
+	var candidates: Array[Vector2i] = _walkable_cells_in_band(
+		grid, x_min, x_max_exclusive, trees, overlay, settings, scatter,
+	)
+	var picked: Array[Vector2i] = _pick_spaced_cells(candidates, count, map_seed, salt)
+	if picked.size() >= count:
+		return picked
+
+	var used: Dictionary = {}
+	for cell: Vector2i in picked:
+		used[cell] = true
+
+	while picked.size() < count:
+		var fallback: Vector2i = _find_band_spawn(
+			grid,
+			prefer,
+			x_min,
+			x_max_exclusive,
+			used,
+			trees,
+			overlay,
+			settings,
+			scatter,
+		)
+		if fallback.x < 0:
+			break
+		picked.append(fallback)
+		used[fallback] = true
+		prefer = fallback + Vector2i(1, 0)
+
+	return picked
+
+
+static func _walkable_cells_in_band(
+	grid: PlayerGrid,
+	x_min: int,
+	x_max_exclusive: int,
+	trees: TileMapLayer,
+	overlay: TileMapLayer,
+	settings: EffectsSettings,
+	scatter: TileMapLayer,
+) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for y: int in range(grid.height):
+		for x: int in range(x_min, mini(x_max_exclusive, grid.width)):
+			var cell := Vector2i(x, y)
+			if Walkability.is_walkable(grid, cell, trees, overlay, settings, scatter):
+				cells.append(cell)
+	cells.sort_custom(_sort_cells)
+	return cells
+
+
+static func _sort_cells(a: Vector2i, b: Vector2i) -> bool:
+	if a.y != b.y:
+		return a.y < b.y
+	return a.x < b.x
+
+
+static func _pick_spaced_cells(
+	candidates: Array[Vector2i],
+	count: int,
+	map_seed: int,
+	salt: int,
+) -> Array[Vector2i]:
+	if candidates.is_empty() or count <= 0:
+		return []
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _mix_seed(map_seed, salt)
+	var start_idx: int = rng.randi() % candidates.size()
+	var picked: Array[Vector2i] = []
+
+	for offset: int in range(candidates.size()):
+		if picked.size() >= count:
+			break
+		var cell: Vector2i = candidates[(start_idx + offset) % candidates.size()]
+		if _has_spawn_gap(cell, picked):
+			picked.append(cell)
+
+	return picked
+
+
+static func _find_band_spawn(
+	grid: PlayerGrid,
+	prefer: Vector2i,
+	x_min: int,
+	x_max_exclusive: int,
+	used: Dictionary,
+	trees: TileMapLayer,
+	overlay: TileMapLayer,
+	settings: EffectsSettings,
+	scatter: TileMapLayer,
+) -> Vector2i:
+	var max_radius: int = maxi(grid.width, grid.height)
+	for radius: int in range(0, max_radius + 1):
+		for dy: int in range(-radius, radius + 1):
+			for dx: int in range(-radius, radius + 1):
+				if maxi(absi(dx), absi(dy)) != radius:
+					continue
+				var cell: Vector2i = prefer + Vector2i(dx, dy)
+				if cell.x < x_min or cell.x >= x_max_exclusive:
+					continue
+				if used.has(cell):
+					continue
+				if not Walkability.is_walkable(grid, cell, trees, overlay, settings, scatter):
+					continue
+				if not _has_spawn_gap(cell, used.keys()):
+					continue
+				return cell
+	return Vector2i(-1, -1)
+
+
+static func _has_spawn_gap(cell: Vector2i, others: Array) -> bool:
+	for other: Variant in others:
+		if other is Vector2i and _chebyshev_distance(cell, other) < MIN_SPAWN_GAP:
+			return false
+	return true
+
+
+static func _chebyshev_distance(a: Vector2i, b: Vector2i) -> int:
+	return maxi(absi(a.x - b.x), absi(a.y - b.y))
+
+
+static func _mix_seed(map_seed: int, salt: int) -> int:
+	return int(hash(Vector2i(map_seed, salt)))

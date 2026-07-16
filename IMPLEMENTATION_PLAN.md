@@ -76,7 +76,7 @@ Players: left third, near vertical center. Enemies: right third.
 - `EncounterBuilder` → `BoardFactory` → headless `Simulator`
 - **Audit 1:** determinism smoke test; static typing; no sim→Node refs
 
-### Phase 2 — Skirmish generation
+### Phase 2 — Skirmish generation ✅
 - `SkirmishGenerator` + `SpawnPlacer` (left/right bands)
 - All 7 size presets; walkable spawns guaranteed
 - **Audit 2:** 10 seeds × 7 sizes; spawn validation
