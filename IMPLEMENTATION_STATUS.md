@@ -195,7 +195,7 @@
 
 ## Phase 4 — Simulation integration ✅
 
-**Closed:** commit TBD — CombatDirector on TacticalCombat, HUD, unit overlay, sim presenter.
+**Closed:** commit `e36436b9b` — Phase 4 sim integration: CombatDirector, tactical HUD, unit overlay on skirmish.
 
 ### Deliverables
 - [x] `CombatDirector` on `TacticalCombat` via `start_from_encounter()`
