@@ -105,7 +105,7 @@ Players: left third, near vertical center. Enemies: right third.
 - `MapCameraController` wired (no side panels in combat)
 - **Audit 3:** visual compositor gates; shader errors; camera pan/zoom on large maps
 
-### Phase 4 — Simulation integration
+### Phase 4 — Simulation integration ✅
 - `CombatDirector` on generated encounters
 - `TacticalCombatHud` (timeline, phase commit)
 - **Audit 4:** preview == execution; `sim_test_runner` green

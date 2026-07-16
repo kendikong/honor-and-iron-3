@@ -20,6 +20,10 @@ const TILE_PX: int = TacticalConstants.TILE_PX
 @onready var _trees: TileMapLayer = $WorldModulate/MapRoot/TreeLayer
 @onready var _vfx: TileMapLayer = $WorldModulate/MapRoot/VFXLayer
 @onready var _options: OptionsMenu = $OptionsMenu
+@onready var _director: CombatDirector = $CombatDirector
+@onready var _combat_hud: TacticalCombatHud = $CombatHud
+@onready var _unit_overlay: TacticalUnitOverlay = $WorldModulate/MapRoot/UnitOverlay
+@onready var _sim_presenter: TacticalSimPresenter = $SimPresenter
 
 var _tile_set: TileSet
 var _decorator: AutoDecorator = AutoDecorator.new()
@@ -35,8 +39,6 @@ var _ecology_layer: EcologyLayer
 var _skirmish: SkirmishGenerator.SkirmishResult
 var _encounter: EncounterData
 var _biome_variant: int = 1
-var _combat_hud: CanvasLayer
-var _title_label: Label
 var _last_tree_variant_b: bool = false
 
 
@@ -71,10 +73,10 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	get_window().close_requested.connect(_persist_settings)
 
-	_build_combat_hud()
 	_load_skirmish()
 	_init_tile_pipeline()
 	_regenerate()
+	_start_combat()
 
 
 func get_encounter() -> EncounterData:
@@ -83,6 +85,35 @@ func get_encounter() -> EncounterData:
 
 func get_skirmish() -> SkirmishGenerator.SkirmishResult:
 	return _skirmish
+
+
+func get_ground_used_rect() -> Rect2i:
+	return _ground.get_used_rect()
+
+
+func grid_to_local(cell: Vector2i) -> Vector2:
+	var used: Rect2i = _ground.get_used_rect()
+	var local_cell: Vector2i = cell - used.position
+	return Vector2(local_cell) * float(TILE_PX) + Vector2(TILE_PX, TILE_PX) * 0.5
+
+
+func screen_to_grid(screen_pos: Vector2) -> Vector2i:
+	var zoom: float = _map_root.scale.x
+	if zoom < 0.001:
+		zoom = 1.0
+	var map_local: Vector2 = (screen_pos - position) / zoom
+	var used: Rect2i = _ground.get_used_rect()
+	return Vector2i(
+		int(floor(map_local.x / float(TILE_PX))) + used.position.x,
+		int(floor(map_local.y / float(TILE_PX))) + used.position.y,
+	)
+
+
+func _start_combat() -> void:
+	_director.start_from_encounter(_encounter)
+	_combat_hud.setup(_director, self)
+	_unit_overlay.setup(self, _director)
+	_sim_presenter.setup(_director, _unit_overlay)
 
 
 func _load_skirmish() -> void:
@@ -97,7 +128,6 @@ func _load_skirmish() -> void:
 		_skirmish.enemy_spawns,
 	)
 	_decorator.map_seed = _skirmish.map_seed
-	_update_title()
 
 
 func _init_tile_pipeline() -> void:
@@ -127,44 +157,6 @@ func _init_tile_pipeline() -> void:
 	_effects.set_map_seed(_skirmish.map_seed)
 
 
-func _build_combat_hud() -> void:
-	_combat_hud = CanvasLayer.new()
-	_combat_hud.name = "CombatHud"
-	_combat_hud.layer = 10
-	add_child(_combat_hud)
-
-	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_right", 16)
-	_combat_hud.add_child(margin)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
-	margin.add_child(row)
-
-	var back := Button.new()
-	back.text = "← Battle Setup"
-	back.pressed.connect(_on_back_pressed)
-	row.add_child(back)
-
-	_title_label = Label.new()
-	_title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_title_label.add_theme_font_size_override("font_size", 22)
-	row.add_child(_title_label)
-
-
-func _update_title() -> void:
-	if _title_label == null or _skirmish == null:
-		return
-	_title_label.text = "Random Skirmish — %dx%d · seed %d" % [
-		_skirmish.grid.width,
-		_skirmish.grid.height,
-		_skirmish.map_seed,
-	]
-
-
 func _exit_tree() -> void:
 	_persist_settings()
 
@@ -173,10 +165,6 @@ func _persist_settings() -> void:
 	_settings.capture_from_window(get_window())
 	_settings.save_to_disk()
 	_effects.settings.save_to_disk()
-
-
-func _on_back_pressed() -> void:
-	get_tree().change_scene_to_file("res://scenes/BattleSetup.tscn")
 
 
 func _on_viewport_resized() -> void:
@@ -203,6 +191,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if _options.is_open():
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		var cell: Vector2i = screen_to_grid(event.position)
+		_unit_overlay.handle_grid_click(cell)
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
@@ -248,3 +241,5 @@ func _center_map() -> void:
 	)
 	_map_root.scale = layout["map_root_scale"]
 	position = layout["scene_position"]
+	if _unit_overlay != null:
+		_unit_overlay.queue_redraw()

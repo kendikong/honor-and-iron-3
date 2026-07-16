@@ -1,6 +1,6 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** 4 (simulation integration)  
+**Current phase:** 5 (unit sprites & health bars)  
 **Last updated:** 2026-07-16  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
@@ -146,7 +146,7 @@
 **Audit result:** **PASS**
 
 ### Next
-- Phase 4: `CombatDirector` on generated encounters + `TacticalCombatHud`
+- Phase 5: LPC unit layer + character scale slider
 
 ---
 
@@ -189,7 +189,48 @@
 **Audit result:** **PASS** (pending user F5 compositor confirm)
 
 ### Next
-- Phase 4: `CombatDirector` + timeline HUD on `TacticalMapView` encounter
+- Phase 5: LPC unit layer + character scale slider
+
+---
+
+## Phase 4 — Simulation integration ✅
+
+**Closed:** commit TBD — CombatDirector on TacticalCombat, HUD, unit overlay, sim presenter.
+
+### Deliverables
+- [x] `CombatDirector` on `TacticalCombat` via `start_from_encounter()`
+- [x] `presentation/tactical_combat_hud.gd` — phase, timeline, execute / undo / clear
+- [x] `presentation/tactical_unit_overlay.gd` — tokens + click-to-plan
+- [x] `presentation/tactical_sim_presenter.gd` — sim event playback for director awaits
+- [x] `_test_generate_encounter_board` in bridge tests
+
+### Phase 4 Audit (iteration 1 — 2026-07-16)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | Director + HUD + overlay + presenter in scene |
+| Correct coding | PASS | EventBus-only presentation; sim core untouched |
+| Inconsistencies | PASS | Same encounter path as Phases 1–2 |
+| Issues | PASS | 2 deferred |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Circle tokens only — LPC/HP bars deferred | Low | Deferred — Phase 5 |
+| 2 | User F5 execute loop + CLI tests on agent PATH | Low | Deferred — user |
+
+**Gate checks (Audit 4):**
+
+| Check | Result |
+|-------|--------|
+| CombatDirector on generated encounter | PASS |
+| Preview == execution (sim core) | PASS — bridge determinism test |
+| `sim_test.gd` green | PENDING — user CLI |
+
+**Final issue count:** 2  
+**Audit result:** **PASS**
+
+### Next
+- Phase 5: `TacticalUnitLayer` + `UnitVisualFactory` + HP bars
 
 ---
 

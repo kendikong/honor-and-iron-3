@@ -14,6 +14,7 @@ static func run_all() -> Dictionary:
 	_test_skirmish_all_presets(failures)
 	_test_spawn_validation_10x7(failures)
 	_test_headless_sim_pipeline(failures)
+	_test_generate_encounter_board(failures)
 	return {"passed": failures.is_empty(), "failures": failures}
 
 
@@ -223,6 +224,20 @@ static func _test_headless_sim_pipeline(failures: Array[String]) -> void:
 		failures.append("headless sim pipeline: board state not deterministic")
 	if _hash_events(result_a.events) != _hash_events(result_b.events):
 		failures.append("headless sim pipeline: event log not deterministic")
+
+
+static func _test_generate_encounter_board(failures: Array[String]) -> void:
+	var config := SkirmishGenerator.SkirmishConfig.new()
+	config.size_preset = Vector2i(24, 12)
+	config.map_seed = 4242
+	var encounter: EncounterData = SkirmishGenerator.generate_encounter(config)
+	var board: BoardState = BoardFactory.build_from_encounter(encounter)
+	if board.units.size() < SpawnPlacer.MVP_PLAYER_COUNT + SpawnPlacer.MVP_ENEMY_COUNT:
+		failures.append("generate_encounter board missing units")
+	if not board.has_living_team(GameEnums.Team.PLAYER):
+		failures.append("generate_encounter board has no living player team")
+	if not board.has_living_team(GameEnums.Team.ENEMY):
+		failures.append("generate_encounter board has no living enemy team")
 
 
 static func _hash_board(board: BoardState) -> String:
