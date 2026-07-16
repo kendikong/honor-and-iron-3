@@ -64,6 +64,23 @@ Players: left third, near vertical center. Enemies: right third.
 
 ## Phases
 
+### Phase overview (what each phase is for)
+
+| Phase | Purpose |
+|-------|---------|
+| **0 — Bootstrap** | Merge the two repos into one Godot project: folder layout, autoloads, bridge stubs, camera controller, smoke tests. Proves the project opens and parses. |
+| **1 — Unified constants & bridge** | Wire mana-seed tiles to H&I simulation: terrain mapping, walkability bake, encounter builder, headless `Simulator` pipeline. Proves tactics can run on generated grid data without the editor. |
+| **2 — Skirmish generation** | Procedural random battles: map presets, left/right spawn bands, guaranteed walkable spawns. Proves every skirmish size produces a valid encounter. |
+| **3 — Tactical combat scene shell** | First playable combat **scene**: living map visuals (sky, effects, TileMapLayers) without dev side panels; BattleSetup launches Random Skirmish. Proves the merged world **looks** right and camera works on large maps. |
+| **4 — Simulation integration** | Hook `CombatDirector`, timeline HUD, planning/commit loop on generated encounters. Proves preview == execution in the real scene. |
+| **5 — Unit sprites & health bars** | LPC unit visuals on the tactical grid: scale, y-sort, foot anchor, HP bars. Proves units read correctly on the mana-seed map. |
+| **6 — Planning input & animations** | Split legacy `board_view.gd`; drag-to-move, aim mode, class icons, overlay z-order. Proves a full Knight turn is playable on the new map. |
+| **7 — UI consolidation** | Move effects/dev tools to ESC → Options only; toggles stop ecology CPU when off. Proves combat screen stays clean. |
+| **8 — Knight MVP** | Victory/defeat, sfx, all presets playtested, compendium link. Proves shippable single-player skirmish loop. |
+| **9+ — Post-MVP** | More classes, co-op networking, autobattler on `EncounterBuilder`. |
+
+---
+
 ### Phase 0 — Bootstrap ✅
 - Copy repos → merged `project.godot`, autoloads, folder layout
 - `bridge/` stubs + `TacticalConstants` + `MapCameraController`
