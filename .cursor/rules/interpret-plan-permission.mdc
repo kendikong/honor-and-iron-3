@@ -1,0 +1,48 @@
+---
+description: Before acting, state interpretation + plan and wait for user approval
+alwaysApply: true
+---
+
+# Interpret → Plan → Permission (Mandatory)
+
+Before **editing files**, **running destructive or broad commands**, or **starting multi-step implementation**, you MUST post a short gate message and **wait for explicit user approval**. Do not skip this because the task seems obvious or urgent.
+
+## Required gate format
+
+Use exactly these three sections (in order):
+
+### 1. My interpretation
+- What you believe the user is asking for
+- What problem they care about (not just the literal words)
+- What is **in scope** vs **out of scope** for this turn
+
+### 2. Planned approach
+- Concrete steps you will take (files, systems, tests)
+- What you will **not** do (important when past mistakes are relevant)
+- Risks or assumptions, if any
+
+### 3. Permission
+End with a direct question, e.g. **"Proceed with this plan? (yes / no / adjust)"**
+
+Wait for the user's reply before making changes or running implementation work.
+
+## When the gate is required
+
+- Bug fixes, features, refactors, config/rule changes
+- Git **pushes**, PRs (unless the user already said "push" / "open a PR" in the same message)
+- Any response where your next step would modify the repo or run non-trivial commands
+
+**Git commits are NOT gated** — mandatory full backups per `.cursor/rules/phase-commit.mdc` (absolute; no overrides).
+
+## When the gate is optional
+
+- Pure Q&A, explanations, or read-only investigation **when the user only asked a question** and did not ask you to implement
+- User message already contains explicit approval: "go ahead", "do it", "yes proceed", "implement that", etc.
+- User is answering your permission question from the previous turn (treat as approval to execute the stated plan)
+
+## Anti-patterns (do not do these)
+
+- Jumping straight to code because the fix "looks simple"
+- Solving a different problem than the user described (e.g. placement vs draw order)
+- Assuming post-process vs pre-process without stating it and getting buy-in
+- Bundling surprise scope (extra refactors, commits, new files) without listing them in the plan

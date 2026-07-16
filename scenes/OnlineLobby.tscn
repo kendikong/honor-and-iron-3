@@ -1,0 +1,202 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/online_lobby.gd" id="1"]
+
+[node name="OnlineLobby" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.121569, 0.121569, 0.121569, 1)
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 50.0
+offset_right = 250.0
+offset_bottom = 150.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 64
+text = "Online Co-op"
+horizontal_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -250.0
+offset_right = 300.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="UsernameInput" type="LineEdit" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+placeholder_text = "Enter Username"
+alignment = 1
+
+[node name="TopBar" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="RefreshButton" type="Button" parent="VBoxContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Refresh List"
+
+[node name="CreateButton" type="Button" parent="VBoxContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Create Room"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RoomList" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="BackButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Back to Menu"
+
+[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Connecting to lobby..."
+horizontal_alignment = 1
+
+[node name="CreateRoomPopup" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="CreateRoomPopup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="Label" type="Label" parent="CreateRoomPopup/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Create Room"
+horizontal_alignment = 1
+
+[node name="RoomNameInput" type="LineEdit" parent="CreateRoomPopup/VBox"]
+layout_mode = 2
+placeholder_text = "Room Name"
+
+[node name="RoomPassInput" type="LineEdit" parent="CreateRoomPopup/VBox"]
+layout_mode = 2
+placeholder_text = "Password (Optional)"
+secret = true
+
+[node name="HBox" type="HBoxContainer" parent="CreateRoomPopup/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="CancelButton" type="Button" parent="CreateRoomPopup/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancel"
+
+[node name="ConfirmButton" type="Button" parent="CreateRoomPopup/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Create"
+
+[node name="JoinRoomPopup" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -100.0
+offset_right = 200.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="JoinRoomPopup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="Label" type="Label" parent="JoinRoomPopup/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Enter Password"
+horizontal_alignment = 1
+
+[node name="RoomPassInput" type="LineEdit" parent="JoinRoomPopup/VBox"]
+layout_mode = 2
+placeholder_text = "Password"
+secret = true
+
+[node name="HBox" type="HBoxContainer" parent="JoinRoomPopup/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="CancelButton" type="Button" parent="JoinRoomPopup/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancel"
+
+[node name="ConfirmButton" type="Button" parent="JoinRoomPopup/VBox/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Join"

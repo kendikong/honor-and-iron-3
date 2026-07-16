@@ -1,0 +1,22 @@
+---
+description: Mandatory roadmap — read before any implementation work in mana-seed-test
+alwaysApply: true
+---
+
+# Roadmap Is Source of Truth
+
+Before planning or implementing features in this repo:
+
+1. Read **`ROADMAP.md`** — canonical phased build plan (do not skip phases).
+2. Read **`sandbox_map_system.md`** — Living Stillness, pixel integrity, Boredom Test, channel audit.
+3. Check **`IMPLEMENTATION_STATUS.md`** — current phase, completed criteria, known gaps.
+
+## Rules
+
+- **Never replace or truncate `ROADMAP.md`.** Append progress only to `IMPLEMENTATION_STATUS.md`.
+- **Never hallucinate assets.** Only use files listed in `docs/asset_manifest.md` (created Phase 0).
+- **Work the current phase only** unless the user explicitly approves advancing or fixing a prior phase gate failure.
+- **`IMPLEMENTATION_PLAN.md` is a pointer** — the real plan is `ROADMAP.md`.
+- **Auto-commit (absolute):** `.cursor/rules/auto-commit-absolute.mdc` — full-backup git commit every edit turn; no overrides.
+- **Phase audit gate:** every phase must be rigorously audited for coherence to rules and code; re-audit until ≤ 2 issues remain. See `.cursor/rules/phase-audit.mdc`.
+- **Phase commit gate:** tag `phase-N` when phase closes; per-turn commits still mandatory via auto-commit-absolute. See `.cursor/rules/phase-commit.mdc`.

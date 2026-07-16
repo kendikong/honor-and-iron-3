@@ -1,0 +1,76 @@
+[gd_scene load_steps=8 format=3 uid="uid://c8samplemap01"]
+
+[ext_resource type="Script" path="res://scripts/test_map.gd" id="1_test_map"]
+[ext_resource type="Script" path="res://scripts/tile_debug_overlay.gd" id="2_debug"]
+[ext_resource type="Script" path="res://scripts/tile_inspector_panel.gd" id="3_inspector"]
+[ext_resource type="Script" path="res://scripts/tile_pick_overlay.gd" id="4_pick"]
+[ext_resource type="Script" path="res://scripts/options_menu.gd" id="5_options"]
+[ext_resource type="Script" path="res://scripts/effects_panel.gd" id="6_effects"]
+
+[ext_resource type="Script" path="res://scripts/walkability_debug_overlay.gd" id="7_walk"]
+
+[node name="TestMap" type="Node2D"]
+script = ExtResource("1_test_map")
+
+[node name="WorldModulate" type="CanvasModulate" parent="."]
+
+[node name="MapRoot" type="Node2D" parent="WorldModulate"]
+
+[node name="GroundLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+z_index = 0
+
+[node name="ScatterLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+z_index = 0
+
+[node name="PhantomLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+visible = false
+modulate = Color(1, 1, 1, 0.22)
+z_index = 0
+
+[node name="OverlayLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+y_sort_enabled = true
+z_as_relative = false
+z_index = 2
+
+[node name="VFXLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+z_index = 4
+
+[node name="ShadowSprites" type="Node2D" parent="WorldModulate/MapRoot"]
+z_as_relative = false
+z_index = 1
+
+[node name="TreeLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+y_sort_enabled = true
+z_as_relative = false
+z_index = 5
+
+[node name="SkyOverlay" type="Node2D" parent="WorldModulate"]
+z_index = 7
+
+[node name="CloudShadows" type="ColorRect" parent="WorldModulate/SkyOverlay"]
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="MistOverlay" type="ColorRect" parent="WorldModulate/SkyOverlay"]
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="EffectsPanel" type="CanvasLayer" parent="."]
+script = ExtResource("6_effects")
+
+[node name="TileDebugOverlay" type="CanvasLayer" parent="."]
+visible = false
+script = ExtResource("2_debug")
+
+[node name="WalkabilityDebugOverlay" type="CanvasLayer" parent="."]
+visible = false
+script = ExtResource("7_walk")
+
+[node name="TilePickOverlay" type="CanvasLayer" parent="."]
+script = ExtResource("4_pick")
+
+[node name="TileInspectorPanel" type="CanvasLayer" parent="."]
+script = ExtResource("3_inspector")
+
+[node name="OptionsMenu" type="CanvasLayer" parent="."]
+script = ExtResource("5_options")

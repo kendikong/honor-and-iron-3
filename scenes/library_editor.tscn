@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d3yq5r24x8q1b"]
+
+[ext_resource type="Script" path="res://scripts/library_editor.gd" id="1_library"]
+
+[node name="LibraryEditor" type="CanvasLayer"]
+script = ExtResource("1_library")

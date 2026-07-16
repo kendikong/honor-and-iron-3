@@ -1,0 +1,19 @@
+---
+description: Full-backup commits every edit turn + phase gates (see auto-commit-absolute.mdc)
+alwaysApply: true
+---
+
+# Phase & Turn Commit Gate
+
+**Primary rule:** `.cursor/rules/auto-commit-absolute.mdc` — read and follow every session.
+
+## Phase completion (additive)
+
+When a roadmap phase passes audit:
+
+1. Ensure working tree matches a **full backup** (same standard as auto-commit).
+2. Commit message: `Complete Phase N: <short description>`
+3. Tag: `phase-N`
+4. Record hash in `IMPLEMENTATION_STATUS.md`
+
+Phase commit is **in addition to** per-turn commits — not a substitute.

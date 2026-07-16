@@ -1,0 +1,172 @@
+class_name BruiserFactory
+extends RefCounted
+
+static func build(basic_axe: WeaponData) -> UnitData:
+	var def := UnitData.new()
+	def.id = &"bruiser"
+	def.display_name = "Bruiser"
+	def.base_constitution = 7
+	def.move_points = 3
+	def.action_points = 1
+	def.base_strength = 4
+	def.base_defense = 2
+	def.base_magic = 1
+	def.equipped_weapon = basic_axe
+	
+	# Movement Skill (Push Through)
+	var push_through := DataLibrary._make_ability(&"bruiser_push_through", "Push Through", 2, [
+		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
+		DataLibrary._effect(GameEnums.EffectType.SWAP, 0)
+	], 0, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
+	push_through.upgrade_description = "Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack."
+	push_through.upgraded_effects = DataLibrary._duplicate_effects(push_through.effects)
+	# Implementing the MOV cost reduction requires logic in the AbilitySystem, but the data is here.
+	def.abilities.append(push_through)
+	
+	# Passives
+	def.passives.append(DataLibrary._make_passive(&"cellular_regeneration", "Cellular Regeneration", "HEAL 1 if adjacent to 1+ enemies at turn start.", "[+] Also gain +1 STR if adjacent to 2+ enemies."))
+	def.passives.append(DataLibrary._make_passive(&"blood_for_blood", "Blood for Blood", "If damaged last turn, attacks apply BLEED X.", "[+] Attacks also gain ATK +1."))
+	def.passives.append(DataLibrary._make_passive(&"adrenaline_junkie", "Adrenaline Junkie", "Gain MOVE +1 and STR +1 per 10% missing HP.", "[+] Also gain +1 DEF for every 20% missing HP."))
+	def.passives.append(DataLibrary._make_passive(&"enraged", "Enraged", "Gain +1 STR per unique debuff/hazard.", "[+] Also gain +1 MOV per debuff/hazard."))
+	def.passives.append(DataLibrary._make_passive(&"last_stand", "Last Stand", "When HP < 25%, gain +2 STR and +2 DEF.", "[+] Gain +3 STR and +3 DEF instead."))
+	
+	def.passives.append(DataLibrary._make_passive(&"colossal_mass", "Colossal Mass", "Gain +1 STR for every 15 Max HP.", "[+] Gain +1 STR for every 10 Max HP instead."))
+	def.passives.append(DataLibrary._make_passive(&"overwhelming_bulk", "Overwhelming Bulk", "If Current HP > target Max HP, attacks gain PIERCE.", "[+] Attacks also apply PUSH 1."))
+	def.passives.append(DataLibrary._make_passive(&"thrill_of_pain", "Thrill of Pain", "Damage taken in Phase 1 adds ATK +2 and PUSH 1 to Phase 2 attack.", "[+] Next attack gains ATK +3 instead."))
+	def.passives.append(DataLibrary._make_passive(&"momentum_of_titan", "Momentum of the Titan", "PUSH collision adds damage = 10% Max HP.", "[+] Damage increases to 20% Max HP."))
+	def.passives.append(DataLibrary._make_passive(&"scar_tissue", "Scar Tissue", "Reduce physical damage by 1 per 20 Max HP or missing HP.", "[+] Reduce damage by additional 1."))
+	
+	def.passives.append(DataLibrary._make_passive(&"momentum_transfer", "Momentum Transfer", "Applying PUSH collision HEALS 1.", "[+] HEAL 1 and gain +1 STR."))
+	def.passives.append(DataLibrary._make_passive(&"crowd_breaker", "Crowd Breaker", "+1 STR per adjacent enemy. Splash damage ATK 1.", "[+] Splash damage ATK 2."))
+	def.passives.append(DataLibrary._make_passive(&"juggernaut", "Juggernaut", "Moving over traps destroys them for 0 damage.", "[+] Destroying trap grants SHIELD 1."))
+	def.passives.append(DataLibrary._make_passive(&"battering_ram", "Battering Ram", "PUSH pushes 1 additional tile.", "[+] Pushed enemies hitting walls suffer STUN."))
+	def.passives.append(DataLibrary._make_passive(&"unstoppable_force", "Unstoppable Force", "Immune to STUN/ROOT. Resisting grants SHIELD 1.", "[+] Resisting grants SHIELD 2."))
+	
+	# Actives
+	var charge_strike = DataLibrary._make_ability(&"bruiser_charge_strike", "Charge Strike", 2, [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3),
+		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
+	], 1, GameEnums.StatType.PHYSICAL)
+	charge_strike.upgrade_description = "Gain GHOST during MOVE. Gain ATK +2 if passing through terrain."
+	charge_strike.upgraded_effects = DataLibrary._duplicate_effects(charge_strike.effects)
+	def.abilities.append(charge_strike)
+
+	var concussion_blow = DataLibrary._make_ability(&"bruiser_concussion_blow", "Concussion Blow", 1, [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
+		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
+	], 1, GameEnums.StatType.PHYSICAL)
+	concussion_blow.upgrade_description = "Enemy collision applies STUN to both units."
+	concussion_blow.upgraded_effects = DataLibrary._duplicate_effects(concussion_blow.effects)
+	def.abilities.append(concussion_blow)
+
+	var cleave = DataLibrary._make_ability(&"bruiser_cleave", "Cleave", 1, [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
+	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.ARC, 1)
+	cleave.upgrade_description = "Apply BLEED X (where X = your WPN) to all targets."
+	cleave.upgraded_effects = DataLibrary._duplicate_effects(cleave.effects)
+	def.abilities.append(cleave)
+
+	var suplex = DataLibrary._make_ability(&"bruiser_suplex", "Suplex", 1, [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 4),
+		DataLibrary._effect(GameEnums.EffectType.SWAP, 0)
+	], 1, GameEnums.StatType.PHYSICAL)
+	suplex.upgrade_description = "Gain ATK +1 for every 10 Current HP you possess."
+	suplex.upgraded_effects = DataLibrary._duplicate_effects(suplex.effects)
+	def.abilities.append(suplex)
+
+	var adrenaline_surge = DataLibrary._make_ability(&"bruiser_adrenaline_surge", "Adrenaline Surge", 0, [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 5),
+		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_STR, 1),
+		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_MOV, 1)
+	], 1)
+	adrenaline_surge.upgrade_description = "On Kill: HEAL 1 and gain SHIELD 2."
+	adrenaline_surge.upgraded_effects = DataLibrary._duplicate_effects(adrenaline_surge.effects)
+	def.abilities.append(adrenaline_surge)
+
+	var earthshatter = DataLibrary._make_ability(&"bruiser_earthshatter", "Earthshatter", 1, [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
+		DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0)
+	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.ARC, 1)
+	earthshatter.upgrade_description = "Gain ATK +1 per destroyed object."
+	earthshatter.upgraded_effects = DataLibrary._duplicate_effects(earthshatter.effects)
+	def.abilities.append(earthshatter)
+
+	var meat_shield = DataLibrary._make_ability(&"bruiser_meat_shield", "Meat Shield", 1, [
+		DataLibrary._effect(GameEnums.EffectType.SWAP, 0),
+		DataLibrary._status_effect_self(GameEnums.StatusType.INTERCEPT, 1)
+	], 1)
+	meat_shield.upgrade_description = "RANGE 3. Gain STR +2 per interception."
+	meat_shield.upgraded_range_tiles = 3
+	meat_shield.upgraded_effects = DataLibrary._duplicate_effects(meat_shield.effects)
+	def.abilities.append(meat_shield)
+
+	var frenzy = DataLibrary._make_ability(&"bruiser_frenzy", "Frenzy", 1, [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
+	], 1, GameEnums.StatType.PHYSICAL)
+	frenzy.upgrade_description = "On Kill: Gain 1 AP."
+	frenzy.upgraded_effects = DataLibrary._duplicate_effects(frenzy.effects)
+	def.abilities.append(frenzy)
+
+	var guttural_roar = DataLibrary._make_ability(&"bruiser_guttural_roar", "Guttural Roar", 0, [
+		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
+		DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1)
+	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_SQUARE, 2)
+	guttural_roar.effects[1].amount = -2
+	guttural_roar.upgrade_description = "PUSH 1 all items/coins/scrap. Item collision: ATK 1."
+	guttural_roar.upgraded_effects = DataLibrary._duplicate_effects(guttural_roar.effects)
+	def.abilities.append(guttural_roar)
+
+	var headbutt = DataLibrary._make_ability(&"bruiser_headbutt", "Headbutt", 1, [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3),
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 1),
+		DataLibrary._status_effect(GameEnums.StatusType.STUN, 1),
+		DataLibrary._status_effect_self(GameEnums.StatusType.STUN, 1)
+	], 1, GameEnums.StatType.PHYSICAL)
+	headbutt.upgrade_description = "Deal bonus damage equal to 10% of your Max HP."
+	headbutt.upgraded_effects = DataLibrary._duplicate_effects(headbutt.effects)
+	def.abilities.append(headbutt)
+
+	var blood_boil = DataLibrary._make_ability(&"bruiser_blood_boil", "Blood Boil", 0, [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 5),
+		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_STR, 1)
+	], 1)
+	blood_boil.effects[1].amount = 3
+	blood_boil.upgrade_description = "Spend 10 HP to gain STR +5 instead."
+	blood_boil.upgraded_effects = DataLibrary._duplicate_effects(blood_boil.effects)
+	blood_boil.upgraded_effects[0].amount = 10
+	blood_boil.upgraded_effects[1].amount = 5
+	def.abilities.append(blood_boil)
+
+	var violent_collision = DataLibrary._make_ability(&"bruiser_violent_collision", "Violent Collision", 3, [
+		DataLibrary._effect(GameEnums.EffectType.DASH, 3)
+	], 1, GameEnums.StatType.NONE)
+	violent_collision.upgrade_description = "Collisions apply STUN (1 turn)."
+	violent_collision.upgraded_effects = DataLibrary._duplicate_effects(violent_collision.effects)
+	def.abilities.append(violent_collision)
+
+	var crimson_whirlwind = DataLibrary._make_ability(&"bruiser_crimson_whirlwind", "Crimson Whirlwind", 0, [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
+	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.AOE_SQUARE, 1)
+	crimson_whirlwind.upgrade_description = "HEAL 1 for every target successfully hit."
+	crimson_whirlwind.upgraded_effects = DataLibrary._duplicate_effects(crimson_whirlwind.effects)
+	def.abilities.append(crimson_whirlwind)
+
+	var belly_flop = DataLibrary._make_ability(&"bruiser_belly_flop", "Belly Flop", 2, [
+		DataLibrary._effect(GameEnums.EffectType.TELEPORT_CASTER, 2),
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
+	], 1, GameEnums.StatType.PHYSICAL)
+	belly_flop.upgrade_description = "Landing applies PUSH 1 to all adjacent enemies."
+	belly_flop.upgraded_effects = DataLibrary._duplicate_effects(belly_flop.effects)
+	def.abilities.append(belly_flop)
+
+	var breaching_dash = DataLibrary._make_ability(&"bruiser_breaching_dash", "Breaching Dash", 3, [
+		DataLibrary._effect(GameEnums.EffectType.DASH, 3),
+		DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0)
+	], 1, GameEnums.StatType.PHYSICAL)
+	breaching_dash.upgrade_description = "Your next attack this turn gains PIERCE."
+	breaching_dash.upgraded_effects = DataLibrary._duplicate_effects(breaching_dash.effects)
+	def.abilities.append(breaching_dash)
+
+	return def

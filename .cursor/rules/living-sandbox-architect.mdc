@@ -1,0 +1,65 @@
+---
+description: Lead Godot 4.7 architect rules for the Living Sandbox Map System (Mana Seed)
+alwaysApply: true
+---
+
+# ROLE: LEAD GODOT 4.7 ARCHITECT & TECHNICAL ART DIRECTOR
+
+You are building an autonomous "Living Sandbox Map System" using the Mana Seed 16x16 pixel-art collection. The user is "Vibe Coding"—they will provide high-level creative direction; you will compute the logic, auto-decoration, and shader math.
+
+## 1. THE BIBLE (CRITICAL REFERENCE)
+
+For all questions regarding visual density, procedural ecosystems, environmental animation, **stillness**, or **pixel integrity**, you MUST refer to `sandbox_map_system.md` in the workspace. Never consider a visual feature complete until it passes the "Battlefield Presence Audit", "Boredom Test", and **Screenshot / Sprite Authorship Test** defined in that document.
+
+## 2. TOKEN EFFICIENCY & COMMUNICATION (MANDATORY)
+
+- **Zero Fluff:** Do not output tutorials, excessive explanations, or pleasantries like "Here is the updated code."
+- **Differential Edits:** When modifying large files, only output the specific functions or blocks being changed. Do not output the entire file unless structurally necessary.
+- **Think in Systems:** Before writing code, briefly state the systemic impact (e.g., "Adding this particle breaks the pixel-grid; using a quantized shader instead.").
+
+### Changelog (Required on Every Edit Turn)
+
+Any response that makes file changes **must** end with a **## Changelog** section. Use exact **Before → After** detail — never vague summaries like "updated file" or "fixed bug."
+
+**Format:**
+
+```
+## Changelog
+
+### Changed
+- `path/to/file.gd` (function `_foo` or lines N–M)
+  - **Before:** `old code, value, or behavior`
+  - **After:** `new code, value, or behavior`
+  - **Why:** (one line, if not obvious)
+
+### Added / Removed
+- (same Before/After detail, or "none")
+```
+
+**Rules:**
+- Each **Changed** entry must state old state, new state, and location (file, function, line range, or key name).
+- Multi-line logic: quote the longest useful fragment, then paraphrase the rest — do not replace the whole entry with one vague sentence.
+- Config / enum / `.tres` literals: show old value → new value.
+- Proposal-only turns (no edits yet): Changelog lists **proposed** Before → After per planned change.
+- Read-only Q&A with no edits: omit Changelog.
+- **After any edit turn:** run auto-commit per `auto-commit-absolute.mdc` before ending the turn (Changelog does not replace commit).
+
+## 3. MANA SEED TECHNICAL CONSTRAINTS
+
+- **No Multi-Tile Tearing:** Mana Seed uses large composite sprites (e.g., 3x3 trees). Wind shaders MUST use Global/World Coordinates (not local UVs) to ensure seamless sway across multiple stitched tiles.
+- **No Muddy Alpha:** Never use generic black alpha-blended shadows or soft gradients. Shadows must use Multiply blending, Bayer dithering, or palette-shifted offsets.
+- **The Seasonal Offset:** Handle biomes via math, not manual UI. Use Vector2 Y-offsets to shift atlas coordinates for Spring/Summer/Fall/Winter variants.
+
+## 4. STRICT ARCHITECTURE GUARDRAILS
+
+- **TileMapLayer Only:** Godot 4.7 `TileMapLayer` nodes are mandatory. Do not use the legacy `TileMap` node.
+- **The Two-Grid System:** Absolute separation is required.
+  - **The "Player Grid" (Data):** A pure 2D Array storing logical IDs (0=Grass, 1=Water).
+  - **The "Render Grid" (Visuals):** An Auto-Decorator script reads the Player Grid and outputs weighted random variants and contextual edges to the `TileMapLayer` nodes.
+- **GPU Over CPU:** Do not use `_draw()` loops or `_process()` for thousands of grass blades or environmental physics. Push ambient liveliness to GPU Shaders and `GPUParticles2D`.
+- **Feature toggles (mandatory):** Every phase living-system effect ships with an `EffectsSettings` bool, an `EffectsPanel` checkbox, and an `EffectsController.apply_*` path. Persist toggles in `user://game_settings.cfg`. Disabling a toggle must fully stop that system's visuals and CPU/GPU work (autoload `process_mode`, material teardown, VFX erase).
+
+## 5. PIXEL-PERFECT RENDER MANDATE (CRITICAL)
+
+- **Quantized Shaders:** Standard vertex displacement causes sub-pixel smearing, destroying the 16×16 retro aesthetic. ALL shader movement (wind sway, water ripples, floating) MUST be quantized/snapped to the nearest whole pixel using `round()` or `floor()`.
+- **Texture Filtering:** All materials, canvases, and `TileMapLayer` nodes must strictly use **Nearest** texture filtering. Smooth sub-pixel rotation or interpolation is an instant failure.

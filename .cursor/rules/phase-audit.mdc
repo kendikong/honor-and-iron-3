@@ -1,0 +1,56 @@
+---
+description: Mandatory phase audit gate — coherence to rules and code before closing any phase
+alwaysApply: true
+---
+
+# Phase Audit Gate (Mandatory)
+
+Every roadmap phase must pass a **rigorous audit** before it is declared complete or before advancing to the next phase.
+
+## What to audit
+
+Cross-check the phase deliverables and exit criteria against:
+
+1. **`ROADMAP.md`** — phase scope, deliverables, exit criteria
+2. **`sandbox_map_system.md`** — Boredom Test, channel audit, constraints (when applicable)
+3. **`.cursor/rules/living-sandbox-architect.mdc`** — architecture, Mana Seed technical constraints
+4. **Actual code and docs on disk** — not the plan alone
+
+## Pass criterion
+
+- Audit **must be re-run** until **≤ 2 issues** remain discovered.
+- If **3+ issues** are found: fix them, then **re-audit** the whole phase.
+- Do not mark the phase complete in `IMPLEMENTATION_STATUS.md` until the audit passes **and** a phase commit exists (see `.cursor/rules/phase-commit.mdc`).
+
+## Phase completion order
+
+1. Implement phase deliverables
+2. Audit until ≤ 2 issues remain
+3. **Commit** — standalone full backup (`phase-commit.mdc`)
+4. Mark phase complete in `IMPLEMENTATION_STATUS.md` (include commit hash)
+5. Begin next phase
+
+## Record each audit in `IMPLEMENTATION_STATUS.md`
+
+- Phase number
+- Audit iteration count
+- Issues found (numbered list with severity)
+- Issues fixed vs deferred
+- Final issue count (must be ≤ 2 to pass)
+- Pass / fail
+
+## Deferred issues (count toward the ≤ 2 cap)
+
+An issue may remain open only if it is explicitly documented with a reason and a target phase. Undocumented gaps always count as issues.
+
+## Visual / compositor gates (mandatory for lighting & VFX slices)
+
+Code review alone is **not sufficient** for shadows, mist, clouds, or any effect that changes how pixels composite. Each audit iteration must explicitly answer:
+
+1. **Draw order** — effect layer `z_index` vs ground / obstacle art (read `scenes/test_map.tscn`, not docs).
+2. **Blend mode** — multiply vs mix vs add; matches `sandbox_map_system.md` §3 (no muddy alpha blobs).
+3. **Sprite authorship** — pause F5: does output look like hand-authored ground darken, or a duplicated/stamped sprite?
+4. **Runtime** — run scene 10s; Godot Output must not accumulate shader/material errors.
+5. **Shader compile** — no errors on first map generate (`_ready` → `_generate_map` path).
+
+Record pass/fail per gate in `IMPLEMENTATION_STATUS.md` for the slice. **Fail any HIGH gate → audit FAIL** regardless of math-on-paper.
