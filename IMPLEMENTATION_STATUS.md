@@ -259,9 +259,9 @@
 
 ---
 
-## Phase 5 — Unit sprites & health bars 🚧
+## Phase 5 — Unit sprites & health bars ✅
 
-**In progress** — LPC `TacticalUnitLayer`, HP bars, circle-token fallback suppressed when sprites load.
+**Closed:** commit `1226781d8` — LPC `TacticalUnitLayer`, HP bars, circle-token fallback suppressed when sprites load.
 
 ### Deliverables
 - [x] `presentation/tactical_unit_layer.gd` — `CharacterActor` per unit, deterministic `UnitVisualFactory.roll_recipe`
