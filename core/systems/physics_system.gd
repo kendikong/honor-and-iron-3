@@ -356,9 +356,9 @@ static func _emit_collision(
 		elif ability_id == &"knight_shield_bash" and pusher.is_ability_upgraded(&"knight_shield_bash"):
 			stun_on_hit = true
 		if stun_on_hit:
-			target.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STUN, 1))
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STUN, 1))
 		if pusher.has_passive(&"spiked_barricade") and pusher.is_passive_upgraded(&"spiked_barricade"):
-			target.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, -1))
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, -1))
 	if blocker != null:
 		if blocker.has_passive(&"collision_retaliator") and blocker.team != target.team:
 			if target.id != collision_immune_id:

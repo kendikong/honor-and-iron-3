@@ -86,7 +86,7 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 			if indomitable_will_expired:
 				unit.armor = 0
 				if unit.is_ability_upgraded(&"knight_indomitable_will"):
-					unit.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_STR, 99, 2))
+					unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 99, 2))
 			if to_remove.size() > 0 or indomitable_will_expired:
 				unit._recalculate_stats()
 
@@ -120,7 +120,7 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 			
 			if has_rallying_knight:
 				var mov_bonus = 2 if rally_upgraded else 1
-				unit.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_MP, 1, mov_bonus))
+				unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_MP, 1, mov_bonus))
 				unit._recalculate_stats()
 
 static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> void:

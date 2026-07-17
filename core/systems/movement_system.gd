@@ -249,7 +249,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 					"coord": step,
 				}))
 				if unit.has_passive(&"trample_move") and unit.is_passive_upgraded(&"trample_move"):
-					occ.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1, -1))
+					occ.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, -1))
 
 		TerrainSystem.apply_entry_at(board, unit, step, events)
 

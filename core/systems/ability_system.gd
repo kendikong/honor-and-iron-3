@@ -160,7 +160,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				break
 		if is_redirect:
 			var def_bonus = 3 if actor.is_passive_upgraded(&"intercept_tactics") else 2
-			actor.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1, def_bonus))
+			actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, def_bonus))
 			actor._recalculate_stats()
 			
 	if actor != null and actor.is_alive() and actor.has_passive(&"kinetic_redirection"):
@@ -264,7 +264,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if GridSystem.manhattan(actor.position, target.position) == 1:
 					base_amt += 2
 				if actor.is_ability_upgraded(&"knight_shield_slam"):
-					temp_def_debuff = DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1)
+					temp_def_debuff = DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1)
 					target.active_statuses.append(temp_def_debuff)
 					target._recalculate_stats()
 			
@@ -667,13 +667,13 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 				for i in range(push_ev_start, events.size()):
 					var ev = events[i]
 					if ev.type == GameEnums.SimEventType.COLLISION and ev.data.get("unit") == target.id:
-						target.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STUN, 1))
+						target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STUN, 1))
 						target._recalculate_stats()
 						break
 			
 			if push.get("vulnerable_on_adjacent", false) and actor != null:
 				if GridSystem.manhattan(actor.position, target.position) == 1:
-					target.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.VULNERABLE, 1))
+					target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.VULNERABLE, 1))
 					target._recalculate_stats()
 					
 		elif push_type == "dash":
