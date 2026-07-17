@@ -417,9 +417,21 @@ func _on_sim_event(event: SimEvent) -> void:
 		GameEnums.SimEventType.UNIT_DIED,
 	]:
 		var unit_id: int = int(event.data.get("unit", event.data.get("actor", -1)))
-		var unit := _board.get_unit_by_id(unit_id)
-		if unit != null:
-			_hit_markers.append([unit.position, 0.4])
+		var marker_pos: Vector2i = Vector2i(-999, -999)
+		if event.data.has("to") and event.data["to"] is Vector2i:
+			marker_pos = event.data["to"]
+		elif event.data.has("position") and event.data["position"] is Vector2i:
+			marker_pos = event.data["position"]
+		if marker_pos.x <= -900:
+			var unit := _board.get_unit_by_id(unit_id)
+			if unit != null:
+				marker_pos = unit.position
+			elif _committed_preview.preview_board != null:
+				var pv := _committed_preview.preview_board.get_unit_by_id(unit_id)
+				if pv != null:
+					marker_pos = pv.position
+		if _board.is_in_bounds(marker_pos):
+			_hit_markers.append([marker_pos, 0.4])
 
 
 func _on_preview_updated(result: SimResult) -> void:
@@ -706,7 +718,7 @@ func _draw_danger_area() -> void:
 		_danger_tiles_dirty = false
 	for c: Variant in _danger_tiles_cache:
 		if c is Vector2i:
-			_draw_tile_tint(c, _COLOR_DANGER, _COLOR_DANGER.a)
+			_draw_tile_tint(c as Vector2i, _COLOR_DANGER, _COLOR_DANGER.a)
 
 
 func _draw_preview_arrows() -> void:
@@ -870,15 +882,9 @@ func _draw_ghosts() -> void:
 			if voluntary_dest != unit.position:
 				var ghost_center: Vector2 = _map_view.grid_to_local(voluntary_dest)
 				var alpha: float = 0.25 if (_planning_input != null and _planning_input.skill_interaction_active()) else 0.1
-				draw_arc(
-					ghost_center,
-					_token_radius(),
-					0.0,
-					TAU,
-					24,
-					Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, alpha),
-					2.0,
-				)
+				var ghost_col := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, alpha)
+				draw_circle(ghost_center, _token_radius(), Color(ghost_col.r, ghost_col.g, ghost_col.b, alpha * 0.55))
+				draw_arc(ghost_center, _token_radius(), 0.0, TAU, 24, ghost_col, 2.0)
 				var pv_enemy := prev.preview_board.get_unit_by_id(unit.id) if prev.preview_board != null else null
 				var face: int = pv_enemy.facing if pv_enemy != null else unit.facing
 				_draw_facing_wedge(ghost_center, face, Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, alpha + 0.15))
@@ -1156,7 +1162,7 @@ func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int)
 
 func _update_hover_action_icon() -> void:
 	if _planning_input != null:
-		_hover_action_icon = _planning_input._compute_hover_action_icon(_hover_coord)
+		_hover_action_icon = _planning_input.compute_hover_action_icon(_hover_coord)
 		return
 	_hover_action_icon = ""
 

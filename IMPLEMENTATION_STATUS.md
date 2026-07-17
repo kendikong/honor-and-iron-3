@@ -884,25 +884,24 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 **INVALID** — falsely claimed PASS with 2 issues. Superseded by iteration 6.
 
-### Intent / preview parity audit (iteration 6 — 2026-07-16)
+### Intent / preview parity audit (iteration 7 — 2026-07-16)
 
-Full 38-gap remediation pass vs `board_view.gd`.
+Audit follow-up on iteration-6 bugs.
 
 | Pillar | Result | Notes |
 |--------|--------|-------|
-| Completeness | **PARTIAL** | 6 HIGH + majority MED addressed in code; F5 not run this session |
-| Correct coding | **PASS** | Linter clean on touched files |
-| Inconsistencies | **PASS** | Overlay `_proj_unit` aligned to projected + live preview boards |
-| Issues | **OPEN** | Requires user F5 verification |
+| Completeness | **CONDITIONAL** | Audit bugs 1–6 fixed in code; autobattler HUD still stub (matches H&I) |
+| Correct coding | **PASS** | `_end_drag_interaction`, `board_changed` handler, hover-restore sync |
+| Inconsistencies | **PASS** | Drag release mirrors `board_view._on_board_changed` cleanup paths |
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| 1 | Full autobattler score HUD (`_get_action_autobattler_scores` stub in H&I too) | LOW | Deferred — Phase 15 |
-| 2 | User F5 verification of all 38 gaps | MED | Open — manual playtest |
+| 1 | Autobattler score HUD (stub in H&I too) | LOW | Deferred — Phase 15 |
+| 2 | User F5 verification | MED | Open — manual playtest |
 
-**Fixed iteration 6:** live preview board → `CombatIntentState`; MP ownership; drag-fail 🚫; cancel-aim restore; hover-over-UI clear; `_proj_unit` projected/live; per-player arrow colors; ghost facing wedges; fortitude HP segment; full status icons; hit markers; warnings panel; sidebar base_board info; danger cache invalidation; phase teardown; selection SFX; sub-tile drag offset.
+**Fixed iteration 7:** `_restore_hover_preview` syncs live board; `_end_drag_interaction` on all drag exits; `EventBus.board_changed` planning reset; `drag_preview_failed` on attack-hover drag; removed duplicate drag SFX; public `compute_hover_action_icon`; hit marker position from event `to`; enemy ghost fill.
 
-**Final issue count:** 2 (1 deferred LOW + 1 F5 gate) — **CONDITIONAL** pending playtest
+**Final issue count:** 2 — **CONDITIONAL PASS** pending F5
 
 ---
 
