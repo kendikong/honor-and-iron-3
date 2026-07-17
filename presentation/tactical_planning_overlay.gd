@@ -6,7 +6,8 @@ extends Node2D
 const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
 const _COLOR_THREAT := Color(0.92, 0.38, 0.32, 0.20)
 const _COLOR_MOVE_FILL_ALPHA: float = 0.22
-const _COLOR_THREAT_FILL_ALPHA: float = 0.18
+const _COLOR_THREAT_FILL_ALPHA: float = 0.24
+const _COLOR_THREAT_PERIMETER_ALPHA: float = 0.72
 const _COLOR_TILE_BORDER_ALPHA: float = 0.32
 const _COLOR_ROUTE := Color(0.98, 0.88, 0.38, 0.95)
 const _COLOR_GHOST := Color(0.98, 0.88, 0.38, 0.45)
@@ -534,6 +535,7 @@ func _draw_hover_tiles() -> void:
 		_draw_tile_tint(cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA, false)
 	for cell: Vector2i in _hover_threat_tiles:
 		_draw_tile_tint(cell, _COLOR_THREAT, _COLOR_THREAT_FILL_ALPHA, false)
+	_draw_threat_perimeter(_hover_threat_tiles)
 
 
 func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float, draw_border: bool = false) -> void:
@@ -545,6 +547,35 @@ func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float, draw_border
 	draw_rect(rect, Color(tint.r, tint.g, tint.b, fill_alpha), true)
 	if draw_border:
 		draw_rect(rect, Color(tint.r, tint.g, tint.b, _COLOR_TILE_BORDER_ALPHA), false, 1.0)
+
+
+func _draw_threat_perimeter(cells: Array[Vector2i]) -> void:
+	if cells.is_empty() or _map_view == null:
+		return
+	var occupied: Dictionary = {}
+	for cell: Vector2i in cells:
+		occupied[cell] = true
+	var half_extent: float = float(TacticalConstants.TILE_PX) * 0.5 - 1.0
+	var color := Color(
+		_COLOR_THREAT.r,
+		_COLOR_THREAT.g,
+		_COLOR_THREAT.b,
+		_COLOR_THREAT_PERIMETER_ALPHA,
+	)
+	for cell: Vector2i in cells:
+		var center: Vector2 = _map_view.grid_to_local(cell)
+		var top_left := center + Vector2(-half_extent, -half_extent)
+		var top_right := center + Vector2(half_extent, -half_extent)
+		var bottom_right := center + Vector2(half_extent, half_extent)
+		var bottom_left := center + Vector2(-half_extent, half_extent)
+		if not occupied.has(cell + Vector2i.UP):
+			draw_line(top_left, top_right, color, 1.0)
+		if not occupied.has(cell + Vector2i.RIGHT):
+			draw_line(top_right, bottom_right, color, 1.0)
+		if not occupied.has(cell + Vector2i.DOWN):
+			draw_line(bottom_right, bottom_left, color, 1.0)
+		if not occupied.has(cell + Vector2i.LEFT):
+			draw_line(bottom_left, top_left, color, 1.0)
 
 
 func _draw_hover_tile() -> void:

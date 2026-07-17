@@ -11,7 +11,7 @@ extends Node
 const SAMPLE_RATE: int = 44100
 const VOICES: int = 8
 
-## kind: chime | tick | thud | whoosh | buzz | fanfare
+## kind: chime | tick | thud | impact | whoosh | buzz | fanfare
 const DEFS := {
 	"select":  {"kind": &"chime",    "freq": 784.0,  "freq2": 988.0,  "dur": 0.07, "vol": 0.16},
 	"move":    {"kind": &"tick",     "freq": 320.0,  "freq2": 0.0,    "dur": 0.05, "vol": 0.12},
@@ -20,7 +20,7 @@ const DEFS := {
 	"cancel":  {"kind": &"tick",     "freq": 280.0,  "freq2": 220.0,  "dur": 0.08, "vol": 0.11},
 	"execute": {"kind": &"chime",    "freq": 392.0,  "freq2": 587.0,  "dur": 0.16, "vol": 0.20},
 	"step":    {"kind": &"tick",     "freq": 260.0,  "freq2": 0.0,    "dur": 0.04, "vol": 0.09},
-	"hit":     {"kind": &"thud",     "freq": 140.0,  "freq2": 90.0,   "dur": 0.10, "vol": 0.22},
+	"hit":     {"kind": &"impact",   "freq": 190.0,  "freq2": 72.0,   "dur": 0.08, "vol": 0.34},
 	"push":    {"kind": &"whoosh",   "freq": 360.0,  "freq2": 220.0,  "dur": 0.09, "vol": 0.14},
 	"thud":    {"kind": &"thud",     "freq": 95.0,   "freq2": 70.0,   "dur": 0.12, "vol": 0.24},
 	"die":     {"kind": &"chime",    "freq": 440.0,  "freq2": 165.0,  "dur": 0.22, "vol": 0.18},
@@ -83,7 +83,12 @@ func _on_sim_event(event: SimEvent) -> void:
 		GameEnums.SimEventType.UNIT_FACED:
 			play("move")
 		GameEnums.SimEventType.UNIT_DAMAGED:
-			play("hit")
+			var damage_taken: int = (
+				int(event.data.get("hp_damaged", 0))
+				+ int(event.data.get("armor_damaged", 0))
+			)
+			if damage_taken > 0:
+				play("hit")
 		GameEnums.SimEventType.COLLISION:
 			play("thud")
 		GameEnums.SimEventType.UNIT_DIED:
@@ -123,6 +128,11 @@ func _bake(def: Dictionary) -> AudioStreamWAV:
 				var low := sin(phase * 0.5) * 0.65
 				var click := _noise(noise_seed + i) * 0.35 * (1.0 - smoothstep(0.0, 0.12, t))
 				sample = low + click
+			&"impact":
+				var body := sin(phase * 0.5) * 0.62
+				var snap := _noise(noise_seed + i * 5) * 0.58 * (1.0 - smoothstep(0.0, 0.09, t))
+				var crack := sin(phase * 3.2) * 0.24 * (1.0 - smoothstep(0.0, 0.18, t))
+				sample = body + snap + crack
 			&"whoosh":
 				var n := _noise(noise_seed + i * 3)
 				sample = n * 0.55 + sin(phase) * 0.25
@@ -151,6 +161,8 @@ func _envelope(kind: StringName, t: float) -> float:
 			return exp(-7.0 * t)
 		&"thud":
 			return exp(-5.5 * t) * smoothstep(0.0, 0.02, t)
+		&"impact":
+			return exp(-8.5 * t)
 		&"buzz":
 			return (1.0 - smoothstep(0.35, 1.0, t)) * exp(-3.0 * t)
 	return exp(-5.0 * t)

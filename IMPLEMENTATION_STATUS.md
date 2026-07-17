@@ -933,6 +933,20 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** â
 
 ---
 
+## Tactical Feedback Polish (2026-07-17) â€” USER VERIFICATION PENDING
+
+- Removed the persistent grey facing wedge from live tactical units.
+- Threat fill alpha increased from `0.18` to `0.24`.
+- Threat regions now draw a 1px outer perimeter with no internal cell seams.
+- Real HP/armor damage triggers a red sprite flash, authored LPC hurt playback, and a punchier synthesized impact.
+- MVP roster increased from one Knight to two deterministic Knight spawns.
+
+**Known asset constraint:** LPC provides only `hurt_down`; presentation restores the unit's logical facing after playback rather than fabricating unauthored directional frames.
+
+**Verification:** Static diff checks passed. Godot executable was not available on PATH; F5 validation remains required.
+
+---
+
 ## User decisions (locked)
 
 | Item | Choice |

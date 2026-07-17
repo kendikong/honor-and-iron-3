@@ -5,6 +5,8 @@ extends Node2D
 
 const _C = preload("res://scripts/lpc/lpc_constants.gd")
 const _ContactShadow = preload("res://scripts/lpc/character_contact_shadow.gd")
+const HURT_ANIM: StringName = &"hurt_down"
+const HURT_SPEED_SCALE: float = 1.6
 
 const META_ITEM_ID: StringName = &"lpc_item_id"
 
@@ -13,6 +15,8 @@ var _pool: Array[AnimatedSprite2D] = []
 var _facing: StringName = &"walk_down"
 var _walking: bool = false
 var _contact_shadow: CharacterContactShadow
+var _one_shot_generation: int = 0
+var _hurt_tween: Tween
 
 
 func _ready() -> void:
@@ -99,6 +103,8 @@ func _rebuild_contact_shadow_silhouette() -> void:
 
 func set_facing(anim: StringName) -> void:
 	_facing = anim
+	if _one_shot_generation > 0:
+		return
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
 	_rebuild_contact_shadow_silhouette()
@@ -108,7 +114,56 @@ func set_walking(moving: bool) -> void:
 	if _walking == moving:
 		return
 	_walking = moving
+	if _one_shot_generation > 0:
+		return
 	for spr: AnimatedSprite2D in _layers:
+		_apply_motion_state(spr)
+	_rebuild_contact_shadow_silhouette()
+
+
+func play_hurt(facing_anim: StringName) -> void:
+	_facing = facing_anim
+	_walking = false
+	_one_shot_generation += 1
+	var generation: int = _one_shot_generation
+	var duration: float = 0.35
+	for spr: AnimatedSprite2D in _layers:
+		if spr.sprite_frames == null:
+			continue
+		LpcSheetFrames.ensure_animation(spr.sprite_frames, HURT_ANIM)
+		if not spr.sprite_frames.has_animation(HURT_ANIM):
+			continue
+		spr.sprite_frames.set_animation_loop(HURT_ANIM, false)
+		spr.animation = HURT_ANIM
+		spr.speed_scale = HURT_SPEED_SCALE
+		spr.frame = 0
+		spr.play()
+		var fps: float = spr.sprite_frames.get_animation_speed(HURT_ANIM) * HURT_SPEED_SCALE
+		var frame_count: int = spr.sprite_frames.get_frame_count(HURT_ANIM)
+		if fps > 0.0:
+			duration = maxf(duration, float(frame_count) / fps)
+	_flash_layers_red()
+	get_tree().create_timer(duration).timeout.connect(
+		_finish_hurt.bind(generation),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func _flash_layers_red() -> void:
+	if _hurt_tween != null and _hurt_tween.is_valid():
+		_hurt_tween.kill()
+	_hurt_tween = create_tween().set_parallel(true)
+	for spr: AnimatedSprite2D in _layers:
+		spr.self_modulate = Color(1.0, 0.18, 0.18, 1.0)
+		_hurt_tween.tween_property(spr, "self_modulate", Color.WHITE, 0.2)
+
+
+func _finish_hurt(generation: int) -> void:
+	if generation != _one_shot_generation:
+		return
+	_one_shot_generation = 0
+	for spr: AnimatedSprite2D in _layers:
+		spr.speed_scale = 1.0
 		_apply_motion_state(spr)
 	_rebuild_contact_shadow_silhouette()
 

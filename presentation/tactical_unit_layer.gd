@@ -153,7 +153,15 @@ func apply_sim_event(event: SimEvent) -> void:
 			var target := _board.get_unit_by_id(target_id)
 			if target != null:
 				target.health.current_hp = hp
-			_damage_flash[target_id] = 0.45
+			var damage_taken: int = (
+				int(event.data.get("hp_damaged", 0))
+				+ int(event.data.get("armor_damaged", 0))
+			)
+			if damage_taken > 0:
+				_damage_flash[target_id] = 0.45
+				var actor: CharacterActor = _actors.get(target_id)
+				if actor != null and target != null:
+					actor.play_hurt(_facing_anim(target.facing))
 		GameEnums.SimEventType.UNIT_DIED:
 			var dead_id: int = int(event.data.get("unit", -1))
 			var dead := _board.get_unit_by_id(dead_id)
@@ -496,10 +504,8 @@ func _draw() -> void:
 		if _drag_preview_active and unit.id == _drag_preview_id:
 			continue
 		_draw_hp_bar(unit)
-		var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
 		if unit.id == _selected_id and CombatDirector.is_planning_phase(_phase):
 			_draw_select_outline(unit.position)
-		_draw_facing_wedge(foot + Vector2(0.0, -10.0), unit.facing, Color(1.0, 1.0, 1.0, 0.75))
 	if _drag_preview_active and _drag_preview_id >= 0 and _drag_preview_failed:
 		var drag_unit := _board.get_unit_by_id(_drag_preview_id) if _board != null else null
 		if drag_unit != null:
@@ -698,29 +704,6 @@ func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int)
 		return
 	var sz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px)
 	draw_string(font, pos - sz * 0.5, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, color)
-
-
-func _facing_vector(facing: int) -> Vector2:
-	match facing:
-		GameEnums.Facing.NORTH:
-			return Vector2(0.0, -1.0)
-		GameEnums.Facing.SOUTH:
-			return Vector2(0.0, 1.0)
-		GameEnums.Facing.WEST:
-			return Vector2(-1.0, 0.0)
-		_:
-			return Vector2(1.0, 0.0)
-
-
-func _draw_facing_wedge(center: Vector2, facing: int, color: Color) -> void:
-	var dir: Vector2 = _facing_vector(facing)
-	if dir == Vector2.ZERO:
-		return
-	var perp := Vector2(-dir.y, dir.x)
-	var tip: Vector2 = center + dir * 14.0
-	var base: Vector2 = center + dir * 8.0
-	var pts := PackedVector2Array([tip, base + perp * 5.0, base - perp * 5.0])
-	draw_colored_polygon(pts, color)
 
 
 func _any_predicted_change() -> bool:

@@ -4,7 +4,7 @@ extends RefCounted
 ## Deterministic spawn placement for random skirmishes.
 ## Players: center-left band. Enemies: center-right band. Y: middle rows only.
 
-const MVP_PLAYER_COUNT: int = 1
+const MVP_PLAYER_COUNT: int = 2
 const MVP_ENEMY_COUNT: int = 3
 const MIN_SPAWN_GAP: int = 2
 
@@ -105,11 +105,12 @@ static func place_mvp_roster(
 
 	var player_spawns: Array[UnitPlacement] = []
 	var knight: UnitData = DataLibrary.get_unit(&"knight")
-	if knight != null and not player_cells.is_empty():
-		var placement := UnitPlacement.new()
-		placement.unit = knight
-		placement.coord = player_cells[0]
-		player_spawns.append(placement)
+	if knight != null:
+		for player_cell: Vector2i in player_cells:
+			var placement := UnitPlacement.new()
+			placement.unit = knight
+			placement.coord = player_cell
+			player_spawns.append(placement)
 
 	var enemy_spawns: Array[UnitPlacement] = []
 	for i: int in range(enemy_cells.size()):
