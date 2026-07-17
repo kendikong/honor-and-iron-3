@@ -17,6 +17,7 @@ const _COLOR_HP_PREDICTED := Color(0.95, 0.45, 0.35, 0.85)
 const _COLOR_HP_LOSS := Color(0.95, 0.25, 0.22)
 const _COLOR_ARMOR := Color(0.9, 0.8, 0.2)
 const _COLOR_SELECT := Color(0.98, 0.86, 0.32, 0.95)
+const _COLOR_SELECT_GLOW := Color(0.98, 0.86, 0.32, 0.25)
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -509,7 +510,8 @@ func _draw() -> void:
 			CombatDirector.Phase.PLANNING_PHASE_1,
 			CombatDirector.Phase.PLANNING_PHASE_2,
 		]:
-			draw_arc(ring_center, 9.0, 0.0, TAU, 24, _COLOR_SELECT, 2.0)
+			draw_arc(ring_center, 15.0, 0.0, TAU, 48, _COLOR_SELECT_GLOW, 5.0)
+			draw_arc(ring_center, 11.0, 0.0, TAU, 40, _COLOR_SELECT, 3.5)
 		if unit.id == _timeline_hover_id:
 			draw_arc(ring_center, 12.0, 0.0, TAU, 32, _COLOR_TIMELINE_HOVER, 2.5)
 		if unit.is_enemy() and _intent_units.has(unit.id):

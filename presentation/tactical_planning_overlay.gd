@@ -16,6 +16,14 @@ const _COLOR_PLAYER_ARROW := Color(0.45, 0.85, 0.55, 0.98)
 const _COLOR_TARGET := Color(0.98, 0.72, 0.38, 0.85)
 const _COLOR_DRAGPATH := Color(0.98, 0.88, 0.38, 0.95)
 const _COLOR_DANGER := Color(0.9, 0.2, 0.2, 0.2)
+const _COLOR_SELECT_TILE := Color(0.98, 0.86, 0.32, 0.35)
+## Route widths in map-local px (MapRoot scale applies on screen — do not divide by ui_scale).
+const _ROUTE_GLOW_W: float = 5.0
+const _ROUTE_LINE_W: float = 3.0
+const _ROUTE_HEAD_LEN: float = 10.0
+const _ROUTE_HEAD_PERP: float = 5.0
+const _DASH_LINE_W: float = 3.0
+const _DASH_WING_LEN: float = 8.0
 
 signal live_preview_changed
 
@@ -335,6 +343,12 @@ func recompute_hover_ranges(
 	_cached_hover_force = cache_force
 	_hover_move_tiles.clear()
 	_hover_threat_tiles.clear()
+	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
+	var mt: int = (
+		unit.definition.movement_type
+		if unit.definition != null
+		else GameEnums.MovementType.WALK
+	)
 	var exhausted := false
 	if not unit.is_enemy() and unit.id == _director.selected_unit_id:
 		var p_unit := _proj_unit(unit.id)
@@ -344,10 +358,42 @@ func recompute_hover_ranges(
 			elif _phase == CombatDirector.Phase.PLANNING_PHASE_2:
 				exhausted = p_unit.phase_2_action_used
 	if exhausted:
+		if not unit.is_enemy() and unit.id == _director.selected_unit_id:
+			var p_exhausted := _proj_unit(unit.id)
+			if p_exhausted != null:
+				var sim_board: BoardState = (
+					_director.projected_state if _director.projected_state != null else _board
+				)
+				var bleed_cost: int = (
+					2 if p_exhausted.has_status(GameEnums.StatusType.BLEED) else 1
+				)
+				var p_mt: int = (
+					p_exhausted.definition.movement_type
+					if p_exhausted.definition != null
+					else GameEnums.MovementType.WALK
+				)
+				_hover_move_tiles = MovementSystem.get_reachable_tiles(
+					sim_board,
+					p_exhausted.position,
+					p_exhausted.movement.points_left,
+					p_mt,
+					bleed_cost,
+				)
+				if selected_ability >= 0:
+					var p_origin: Vector2i = p_exhausted.position
+					var ability: AbilityData = _selected_ability_data(p_exhausted, selected_ability)
+					if ability != null and AbilitySystem.ability_has_dash(ability):
+						_hover_threat_tiles = _dash_threat_tiles(p_origin, _dash_amount(ability))
+					else:
+						var self_aoe: Array[Vector2i] = _self_aoe_threat_tiles(
+							p_exhausted, ability, p_origin,
+						)
+						if not self_aoe.is_empty():
+							_hover_threat_tiles = self_aoe
+						else:
+							_populate_attack_threat_tiles(p_exhausted, p_origin, selected_ability)
 		queue_redraw()
 		return
-	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
-	var mt: int = unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
 	_hover_move_tiles = MovementSystem.get_reachable_tiles(
 		_board,
 		origin,
@@ -460,6 +506,7 @@ func _draw() -> void:
 		CombatDirector.Phase.PLANNING_PHASE_2,
 	]
 	if show_planning:
+		_draw_selected_unit_tile()
 		_draw_danger_area()
 		_draw_move_ghosts()
 	_draw_hover_tiles()
@@ -490,6 +537,22 @@ func _draw() -> void:
 	for entry: Array in _hit_markers:
 		if entry.size() >= 2 and entry[0] is Vector2i:
 			_draw_death_marker(entry[0] as Vector2i)
+
+
+func _draw_selected_unit_tile() -> void:
+	if _director == null or _director.selected_unit_id < 0:
+		return
+	var unit := _proj_unit(_director.selected_unit_id)
+	if unit == null or not unit.is_alive() or unit.is_enemy():
+		return
+	_draw_tile_tint(unit.position, _COLOR_SELECT_TILE, 0.28)
+	var tile_px: float = float(TacticalConstants.TILE_PX)
+	var center: Vector2 = _map_view.grid_to_local(unit.position)
+	var rect := Rect2(
+		center - Vector2(tile_px * 0.5, tile_px * 0.5),
+		Vector2(tile_px, tile_px),
+	).grow(-1.0)
+	draw_rect(rect, Color(_COLOR_SELECT_TILE.r, _COLOR_SELECT_TILE.g, _COLOR_SELECT_TILE.b, 0.95), false, 3.0)
 
 
 func _draw_hover_tiles() -> void:
@@ -566,6 +629,10 @@ func _draw_ability_intents() -> void:
 
 
 func _display_intent_list() -> Array:
+	if _planning_input != null and _planning_input.selected_phase_action_exhausted():
+		if _board != null:
+			return _board.intents
+		return []
 	if _planning_input != null:
 		var use_live: bool = (
 			_planning_input.dragging
@@ -584,6 +651,8 @@ func _display_intent_list() -> Array:
 
 
 func _active_preview() -> CombatPlanningPreview:
+	if _planning_input != null and _planning_input.selected_phase_action_exhausted():
+		return _committed_preview
 	if _planning_input != null:
 		var use_live: bool = (
 			_planning_input.dragging
@@ -596,6 +665,8 @@ func _active_preview() -> CombatPlanningPreview:
 
 
 func _should_draw_interaction_overlay() -> bool:
+	if _planning_input != null and _planning_input.selected_phase_action_exhausted():
+		return false
 	if _planning_input == null:
 		return _live_preview.preview_board != null
 	if _planning_input.dragging:
@@ -650,7 +721,7 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 		var d: float = start_d
 		while d < end_d:
 			var draw_end: float = minf(d + dash, end_d)
-			draw_line(p1 + dir * d, p1 + dir * draw_end, color, 2.0 / _ui_scale())
+			draw_line(p1 + dir * d, p1 + dir * draw_end, color, _DASH_LINE_W)
 			d += dash + gap
 	var t: float = Time.get_ticks_msec() / 1000.0
 	var flow_speed := 45.0
@@ -681,11 +752,11 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 				var p1: Vector2 = segment_starts[seg_idx]
 				var dir: Vector2 = segment_dirs[seg_idx]
 				var tip: Vector2 = p1 + dir * current_d
-				var wing_len := 6.0 / _ui_scale()
+				var wing_len := _DASH_WING_LEN
 				var wing1: Vector2 = tip - dir.rotated(deg_to_rad(30.0)) * wing_len
 				var wing2: Vector2 = tip - dir.rotated(deg_to_rad(-30.0)) * wing_len
-				draw_line(tip, wing1, color, 3.0 / _ui_scale())
-				draw_line(tip, wing2, color, 3.0 / _ui_scale())
+				draw_line(tip, wing1, color, _ROUTE_LINE_W)
+				draw_line(tip, wing2, color, _ROUTE_LINE_W)
 		arrow_pos += wave_spacing
 
 
@@ -814,13 +885,13 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 	if with_head:
 		pts[last] -= end_dir * token_r
 	var glow := Color(color.r, color.g, color.b, color.a * 0.22)
-	draw_polyline(pts, glow, 5.0 / _ui_scale())
-	draw_polyline(pts, color, 2.5 / _ui_scale())
+	draw_polyline(pts, glow, _ROUTE_GLOW_W)
+	draw_polyline(pts, color, _ROUTE_LINE_W)
 	if with_head:
 		var tip: Vector2 = pts[last]
-		var perp: Vector2 = Vector2(-end_dir.y, end_dir.x) * (5.0 / _ui_scale())
-		draw_line(tip, tip - end_dir * (8.0 / _ui_scale()) + perp, color, 2.0 / _ui_scale())
-		draw_line(tip, tip - end_dir * (8.0 / _ui_scale()) - perp, color, 2.0 / _ui_scale())
+		var perp: Vector2 = Vector2(-end_dir.y, end_dir.x) * _ROUTE_HEAD_PERP
+		draw_line(tip, tip - end_dir * _ROUTE_HEAD_LEN + perp, color, _ROUTE_LINE_W)
+		draw_line(tip, tip - end_dir * _ROUTE_HEAD_LEN - perp, color, _ROUTE_LINE_W)
 
 
 func _draw_death_marker(cell: Vector2i) -> void:

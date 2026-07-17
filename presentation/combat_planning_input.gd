@@ -474,10 +474,28 @@ func get_hover_tile_for_ui() -> Vector2i:
 func is_live_preview_active() -> bool:
 	if _director == null:
 		return false
+	if selected_phase_action_exhausted():
+		return false
 	if dragging or aiming:
 		return preview_state.preview_board != null
 	if _skill_interaction_active():
 		return preview_state.preview_board != null
+	return false
+
+
+func selected_phase_action_exhausted(unit_id: int = -1) -> bool:
+	if _director == null:
+		return false
+	var id: int = unit_id if unit_id >= 0 else _director.selected_unit_id
+	if id < 0:
+		return false
+	var p_unit := _proj_unit(id)
+	if p_unit == null or p_unit.is_enemy():
+		return false
+	if _director.phase == CombatDirector.Phase.PLANNING_PHASE_1:
+		return p_unit.phase_1_action_used
+	if _director.phase == CombatDirector.Phase.PLANNING_PHASE_2:
+		return p_unit.phase_2_action_used
 	return false
 
 
@@ -516,6 +534,9 @@ func _refresh_selected_interaction_preview() -> void:
 	if p_unit == null or p_unit.is_enemy() or not p_unit.is_alive():
 		_restore_hover_preview()
 		return
+	if selected_phase_action_exhausted():
+		_restore_hover_preview()
+		return
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
 		var target_id := _hover_attack_target_id()
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
@@ -550,6 +571,8 @@ func _update_hover_attack_preview() -> void:
 		return
 	var p_unit := _proj_unit(_director.selected_unit_id)
 	if p_unit == null or p_unit.is_enemy() or not p_unit.is_alive():
+		return
+	if selected_phase_action_exhausted():
 		return
 	if p_unit.active_abilities.is_empty() or _director.selected_ability_index < 0:
 		return
