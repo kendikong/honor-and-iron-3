@@ -57,6 +57,8 @@ func cancel_aim() -> void:
 	aiming = false
 	if _planning != null:
 		_planning.set_aim_mode(false)
+		_planning.clear_threat_origin()
+		_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_skill_mode()
 	_restore_hover_preview()
 	refresh_mouse_cursor(_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999))
@@ -222,6 +224,9 @@ func update_drag(local: Vector2) -> void:
 		_route_waypoints(),
 	)
 	_apply_live_preview(preview)
+	if _planning != null:
+		_planning.set_threat_origin(_drag_last_free)
+		_planning._recompute_hover_ranges_from_inputs()
 	_planning.set_drag_route(_drag_route)
 	_update_drag_sprite(local, cell, preview)
 	_sync_intent_live_board()
@@ -280,8 +285,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 	if preview.has("temp_board") and _planning != null:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
 		if dragging and pv_actor != null:
-			_planning.set_fixed_range_origin(pv_actor.position)
-			_planning._invalidate_hover_cache()
+			_planning.set_threat_origin(pv_actor.position)
 			_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_live_board()
 
@@ -306,6 +310,7 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	_drag_route = [unit.position]
 	_drag_last_free = unit.position
 	_planning.set_fixed_range_origin(unit.position)
+	_planning.set_threat_origin(unit.position)
 	_planning.set_drag_route(_drag_route)
 	_planning._recompute_hover_ranges_from_inputs()
 	_planning.begin_drag_sprite(unit.id)
@@ -318,6 +323,7 @@ func _end_drag_interaction(restore_committed: bool) -> void:
 	if _planning != null:
 		_planning.clear_drag_route()
 		_planning.clear_fixed_range_origin()
+		_planning.clear_threat_origin()
 		_planning.end_drag_sprite()
 		_planning.mark_danger_dirty()
 		_planning._invalidate_hover_cache()
@@ -352,6 +358,7 @@ func _on_board_changed(_board: BoardState) -> void:
 	if _planning != null:
 		_planning.clear_drag_route()
 		_planning.clear_fixed_range_origin()
+		_planning.clear_threat_origin()
 		_planning.end_drag_sprite()
 		_planning.mark_danger_dirty()
 		_planning._invalidate_hover_cache()
@@ -404,6 +411,14 @@ func _on_ability_selected(index: int) -> void:
 	if _director.selected_unit_id >= 0:
 		unit_selected_abilities[_director.selected_unit_id] = index
 	if _planning != null and _director != null:
+		if aiming and _intent_state != null and _director.board != null:
+			var cell: Vector2i = _intent_state.hover_coord
+			if _director.board.is_in_bounds(cell):
+				_planning.set_threat_origin(cell)
+			else:
+				_planning.clear_threat_origin()
+		elif not dragging:
+			_planning.clear_threat_origin()
 		_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_skill_mode()
 	_refresh_hover_if_planning()
@@ -443,6 +458,13 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_intent_state.set_hover_coord(cell)
 		if _planning != null:
 			_planning.set_hover_coord(cell)
+			if aiming:
+				if _director.board.is_in_bounds(cell):
+					_planning.set_threat_origin(cell)
+				else:
+					_planning.clear_threat_origin()
+			elif not dragging:
+				_planning.clear_threat_origin()
 	if not _is_planning() or dragging:
 		return
 	if not _director.board.is_in_bounds(cell):

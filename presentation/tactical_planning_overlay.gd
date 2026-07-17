@@ -48,6 +48,9 @@ var _cached_hover_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_ability: int = -1
 var _cached_hover_force: bool = false
 var _fixed_range_origin: Vector2i = Vector2i(-999, -999)
+## Separate from move range: follows cursor during drag / aim. Invalid = use move origin.
+var _threat_range_origin: Vector2i = Vector2i(-999, -999)
+var _cached_hover_threat_origin: Vector2i = Vector2i(-999, -999)
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -143,6 +146,7 @@ func bind_planning_input(input: CombatPlanningInput) -> void:
 func _invalidate_hover_cache() -> void:
 	_cached_hover_unit_id = -1
 	_cached_hover_origin = Vector2i(-999, -999)
+	_cached_hover_threat_origin = Vector2i(-999, -999)
 	_cached_hover_ability = -1
 
 
@@ -299,6 +303,20 @@ func clear_fixed_range_origin() -> void:
 	_fixed_range_origin = Vector2i(-999, -999)
 
 
+func set_threat_origin(coord: Vector2i) -> void:
+	if coord == _threat_range_origin:
+		return
+	_threat_range_origin = coord
+	_invalidate_hover_cache()
+
+
+func clear_threat_origin() -> void:
+	if _threat_range_origin.x <= -900:
+		return
+	_threat_range_origin = Vector2i(-999, -999)
+	_invalidate_hover_cache()
+
+
 func set_hover_action_icon(icon: String) -> void:
 	_hover_action_icon = icon
 	queue_redraw()
@@ -325,20 +343,25 @@ func recompute_hover_ranges(
 		_hover_threat_tiles.clear()
 		queue_redraw()
 		return
-	var origin: Vector2i = _proj_origin(unit)
+	var move_origin: Vector2i = _proj_origin(unit)
 	if dragging and _fixed_range_origin.x >= 0:
-		origin = _fixed_range_origin
+		move_origin = _fixed_range_origin
+	var threat_origin: Vector2i = move_origin
+	if _threat_range_origin.x > -900:
+		threat_origin = _threat_range_origin
 	var cache_ability: int = selected_ability if unit.id == _director.selected_unit_id else -1
 	var cache_force: bool = force_basic if unit.id == _director.selected_unit_id else false
 	if (
 		_cached_hover_unit_id == unit.id
-		and _cached_hover_origin == origin
+		and _cached_hover_origin == move_origin
+		and _cached_hover_threat_origin == threat_origin
 		and _cached_hover_ability == cache_ability
 		and _cached_hover_force == cache_force
 	):
 		return
 	_cached_hover_unit_id = unit.id
-	_cached_hover_origin = origin
+	_cached_hover_origin = move_origin
+	_cached_hover_threat_origin = threat_origin
 	_cached_hover_ability = cache_ability
 	_cached_hover_force = cache_force
 	_hover_move_tiles.clear()
@@ -377,7 +400,7 @@ func recompute_hover_ranges(
 					bleed_cost,
 				)
 				if selected_ability >= 0:
-					var p_origin: Vector2i = p_exhausted.position
+					var p_origin: Vector2i = threat_origin
 					var ability: AbilityData = _selected_ability_data(p_exhausted, selected_ability)
 					if ability != null and AbilitySystem.ability_has_dash(ability):
 						_hover_threat_tiles = _dash_threat_tiles(p_origin, _dash_amount(ability))
@@ -393,19 +416,19 @@ func recompute_hover_ranges(
 		return
 	_hover_move_tiles = MovementSystem.get_reachable_tiles(
 		_board,
-		origin,
+		move_origin,
 		unit.movement.points_left,
 		mt,
 		move_cost,
 	)
 	if force_basic and unit.id == _director.selected_unit_id and not unit.is_enemy():
-		_populate_attack_threat_tiles(unit, origin, selected_ability)
+		_populate_attack_threat_tiles(unit, threat_origin, selected_ability)
 		queue_redraw()
 		return
 	if unit.id == _director.selected_unit_id and not force_basic and selected_ability >= 0:
 		var ability: AbilityData = _selected_ability_data(unit, selected_ability)
 		if ability != null and AbilitySystem.ability_has_dash(ability):
-			_hover_threat_tiles = _dash_threat_tiles(origin, _dash_amount(ability))
+			_hover_threat_tiles = _dash_threat_tiles(threat_origin, _dash_amount(ability))
 			if AbilitySystem.ability_blocks_basic_movement(ability):
 				_hover_move_tiles.clear()
 			queue_redraw()
@@ -414,17 +437,17 @@ func recompute_hover_ranges(
 			_hover_move_tiles.clear()
 			var dash_ab: AbilityData = _selected_ability_data(unit, selected_ability)
 			if dash_ab != null:
-				_hover_threat_tiles = _dash_threat_tiles(origin, _dash_amount(dash_ab))
+				_hover_threat_tiles = _dash_threat_tiles(threat_origin, _dash_amount(dash_ab))
 			queue_redraw()
 			return
-		var self_aoe: Array[Vector2i] = _self_aoe_threat_tiles(unit, ability, origin)
+		var self_aoe: Array[Vector2i] = _self_aoe_threat_tiles(unit, ability, threat_origin)
 		if not self_aoe.is_empty():
 			_hover_threat_tiles = self_aoe
 			queue_redraw()
 			return
 	_populate_attack_threat_tiles(
 		unit,
-		origin,
+		threat_origin,
 		selected_ability if unit.id == _director.selected_unit_id else -1,
 	)
 	queue_redraw()

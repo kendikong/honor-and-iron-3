@@ -52,6 +52,8 @@ func handle_input(event: InputEvent) -> bool:
 			if _intent_state != null:
 				_intent_state.set_hover_coord(cell)
 			_planning.set_hover_coord(cell)
+			if _director.board != null and _director.board.is_in_bounds(cell):
+				_planning.set_threat_origin(cell)
 			_planning.set_aim_mode(true, local, _selected_class_id())
 			_planning.recompute_hover_ranges(
 				_planning_input.force_basic_movement,
@@ -94,10 +96,20 @@ func _handle_key(event: InputEventKey) -> bool:
 			cancel_drag()
 			if _intent_state != null:
 				_intent_state.set_skill_interaction_active(true)
+			var aim_local: Vector2 = _screen_to_map_local(get_viewport().get_mouse_position())
 			_planning.set_aim_mode(
 				true,
-				_screen_to_map_local(get_viewport().get_mouse_position()),
+				aim_local,
 				_selected_class_id(),
+			)
+			var cell: Vector2i = _map_view.screen_to_grid(get_viewport().get_mouse_position())
+			if _director.board != null and _director.board.is_in_bounds(cell):
+				_planning.set_threat_origin(cell)
+			_planning.recompute_hover_ranges(
+				_planning_input.force_basic_movement,
+				_director.selected_ability_index,
+				false,
+				-1,
 			)
 			_play_sfx("select")
 		else:
