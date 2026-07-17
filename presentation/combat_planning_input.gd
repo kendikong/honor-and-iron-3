@@ -470,7 +470,7 @@ func _update_hover_attack_preview() -> void:
 		return
 	if p_unit.active_abilities.is_empty() or _director.selected_ability_index < 0:
 		return
-	if _movement_blocked_by_dash(p_unit) and not force_basic_movement:
+	if _unit_movement_blocked_by_dash(p_unit) and not force_basic_movement:
 		var dash_ability := _selected_ability_data(p_unit)
 		if dash_ability != null and _is_valid_dash_target(p_unit.position, cell, dash_ability.range_tiles):
 			var dash_res: Dictionary = _director.preview_dash(
@@ -569,7 +569,7 @@ func _should_use_dash_on_input(ability: AbilityData) -> bool:
 	return AbilitySystem.ability_blocks_basic_movement(ability)
 
 
-func _movement_blocked_by_dash(unit: UnitState) -> bool:
+func _unit_movement_blocked_by_dash(unit: UnitState) -> bool:
 	if _director.selected_ability_index < 0:
 		return false
 	var ability := _selected_ability_data(unit)
