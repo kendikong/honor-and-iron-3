@@ -27,6 +27,7 @@ var _intent_label: RichTextLabel
 var _skill_list: VBoxContainer
 var _log_label: RichTextLabel
 var _force_basic_check: CheckBox
+var _danger_area_check: CheckBox
 
 var _board: BoardState
 var _preview_board: BoardState
@@ -58,6 +59,8 @@ func apply_settings(settings: GameSettings) -> void:
 		_log_label.add_theme_font_size_override("normal_font_size", CombatUiFormatters.scaled_font_size(LOG_FONT_SIZE))
 	if _force_basic_check != null:
 		_force_basic_check.add_theme_font_size_override("font_size", hint_sz)
+	if _danger_area_check != null:
+		_danger_area_check.add_theme_font_size_override("font_size", hint_sz)
 	_on_viewport_resized()
 	_last_skill_rebuild_key = ""
 	_rebuild_ability_buttons()
@@ -144,6 +147,10 @@ func _make_panel_column(left_side: bool) -> Control:
 		_force_basic_check.text = "Force Basic Movement"
 		_force_basic_check.toggled.connect(_on_force_basic_toggled)
 		col.add_child(_force_basic_check)
+		_danger_area_check = CheckBox.new()
+		_danger_area_check.text = "Danger Area"
+		_danger_area_check.toggled.connect(_on_danger_area_toggled)
+		col.add_child(_danger_area_check)
 		_tile_info_label = _add_weighted_rich_panel(col, "Tile", 0.2)
 		_log_label = _add_weighted_log_panel(col, 0.6)
 		_intent_label = _add_weighted_rich_panel(col, "Enemy Intent", 0.2)
@@ -253,6 +260,21 @@ func _on_viewport_resized() -> void:
 func _on_force_basic_toggled(pressed: bool) -> void:
 	if _planning_input != null:
 		_planning_input.force_basic_movement = pressed
+	if _planning_overlay != null and _director != null:
+		_planning_overlay.recompute_hover_ranges(
+			pressed,
+			_director.selected_ability_index,
+			_planning_input.dragging if _planning_input != null else false,
+			_planning_input.get_drag_unit_id() if _planning_input != null else -1,
+		)
+	if _planning_input != null:
+		var cell: Vector2i = _planning_input.get_hover_tile_for_ui()
+		_planning_input.on_hover_moved(cell)
+
+
+func _on_danger_area_toggled(pressed: bool) -> void:
+	if _planning_overlay != null:
+		_planning_overlay.set_show_danger_area(pressed)
 
 
 func _add_rich_panel(parent: VBoxContainer, title: String, min_h: int = 120) -> RichTextLabel:

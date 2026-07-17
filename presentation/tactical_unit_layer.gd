@@ -36,6 +36,7 @@ var _active_push_tweens: int = 0
 var _damage_flash: Dictionary = {}
 var _drag_preview_id: int = -1
 var _drag_preview_active: bool = false
+var _planning_input: CombatPlanningInput
 
 enum DragPreviewAnim { IDLE, WALK, ATTACK, SPELL }
 
@@ -83,6 +84,10 @@ func set_timeline_hover(unit_id: int) -> void:
 func set_intent_units(units: Dictionary) -> void:
 	_intent_units = units
 	queue_redraw()
+
+
+func bind_planning_input(input: CombatPlanningInput) -> void:
+	_planning_input = input
 
 
 func set_predicted_stats(hp: Dictionary, armor: Dictionary) -> void:
@@ -476,7 +481,6 @@ func _facing_anim(facing: int) -> StringName:
 func _draw() -> void:
 	if _board == null or _map_view == null:
 		return
-	_tick_damage_flash()
 	for unit in _board.units:
 		if not unit.is_alive():
 			continue
@@ -485,6 +489,11 @@ func _draw() -> void:
 		_draw_hp_bar(unit)
 		var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
 		var ring_center: Vector2 = foot + Vector2(0.0, -10.0)
+		if _phase in [
+			CombatDirector.Phase.PLANNING_PHASE_1,
+			CombatDirector.Phase.PLANNING_PHASE_2,
+		]:
+			_draw_movement_pips(ring_center, unit)
 		if unit.id == _selected_id and _phase in [
 			CombatDirector.Phase.PLANNING_PHASE_1,
 			CombatDirector.Phase.PLANNING_PHASE_2,
@@ -494,7 +503,111 @@ func _draw() -> void:
 			draw_arc(ring_center, 12.0, 0.0, TAU, 32, _COLOR_TIMELINE_HOVER, 2.5)
 		if unit.is_enemy() and _intent_units.has(unit.id):
 			draw_arc(ring_center, 8.0, 0.0, TAU, 24, Color(_COLOR_INTENT, 0.25), 4.0)
-			draw_arc(ring_center, 5.0, 0.0, TAU, 20, _COLOR_INTENT, 2.0)
+			draw_arc(ring_center, 5.0, 0.0, TAU, 20, _COLOR_INTENT, 2.0		)
+
+
+func _proj_unit(unit_id: int) -> UnitState:
+	if _preview_board != null:
+		var pv := _preview_board.get_unit_by_id(unit_id)
+		if pv != null:
+			return pv
+	if _board != null:
+		return _board.get_unit_by_id(unit_id)
+	return null
+
+
+func _draw_movement_pips(center: Vector2, unit: UnitState) -> void:
+	if unit.definition == null or _director == null:
+		return
+	var p_unit := _proj_unit(unit.id)
+	if p_unit == null:
+		return
+	var max_move: int = maxi(1, p_unit.definition.move_points)
+	var points_left: int = p_unit.movement.points_left
+	var is_drag: bool = (
+		_planning_input != null
+		and _planning_input.dragging
+		and _planning_input.get_drag_unit_id() == unit.id
+	)
+	if is_drag:
+		points_left = maxi(0, points_left - maxi(0, _planning_input.get_drag_route().size() - 1))
+	var is_attack_queued := false
+	var is_skill_queued := false
+	if not unit.is_enemy():
+		var plan_to_use: Timeline = (
+			_director.plan_phase_1
+			if _phase == CombatDirector.Phase.PLANNING_PHASE_1
+			else _director.plan_phase_2
+		)
+		if plan_to_use != null:
+			for action: TimelineAction in plan_to_use.entries:
+				if action.actor_id == unit.id and action.type == GameEnums.ActionType.ABILITY:
+					is_skill_queued = true
+					if action.ability != null:
+						for effect: EffectData in action.ability.effects:
+							if effect.type == GameEnums.EffectType.DAMAGE:
+								is_attack_queued = true
+								break
+	elif _intent_units.has(unit.id):
+		var intent_list: Array = _board.intents if _board != null else []
+		if (
+			_planning_input != null
+			and _planning_input.is_live_preview_active()
+			and not _planning_input.preview_state.live_intents.is_empty()
+		):
+			intent_list = _planning_input.preview_state.live_intents
+		for intent_v: Variant in intent_list:
+			if not intent_v is Intent:
+				continue
+			var intent: Intent = intent_v as Intent
+			if intent.enemy_id != unit.id:
+				continue
+			for action: TimelineAction in intent.actions:
+				if action.type == GameEnums.ActionType.ABILITY:
+					is_skill_queued = true
+					if action.ability != null:
+						for effect: EffectData in action.ability.effects:
+							if effect.type == GameEnums.EffectType.DAMAGE:
+								is_attack_queued = true
+								break
+	var accent: Color = _COLOR_SELECT if not unit.is_enemy() else _COLOR_INTENT
+	var ring_radius := 11.0
+	var segments := maxi(1, max_move)
+	var gap := 0.2
+	var arc_len := (TAU - gap * float(segments)) / float(segments)
+	draw_arc(center, ring_radius, 0.0, TAU, 48, Color(0.1, 0.1, 0.1, 0.6), 6.0)
+	for i: int in range(segments):
+		var start_ang: float = -PI / 2.0 + float(i) * (arc_len + gap)
+		var end_ang: float = start_ang + arc_len
+		var segment_color: Color = accent
+		if i >= points_left:
+			segment_color = Color(0.0, 0.0, 0.0, 0.3)
+		var flash_color: Color = segment_color
+		if is_attack_queued and i < points_left:
+			var atk_blink: float = 0.6 + 0.4 * sin(Time.get_ticks_msec() / 150.0)
+			flash_color = Color(1.0, 0.0, 0.0, atk_blink)
+		elif is_skill_queued and i < points_left:
+			var sk_blink: float = 0.6 + 0.4 * sin(Time.get_ticks_msec() / 150.0)
+			flash_color = Color(1.0, 1.0, 1.0, sk_blink)
+		draw_arc(center, ring_radius, start_ang, end_ang, 12, flash_color, 4.0)
+
+
+func _status_icon(status_type: int) -> String:
+	match status_type:
+		GameEnums.StatusType.STAT_BUFF_STR:
+			return "💪"
+		GameEnums.StatusType.STAT_BUFF_MAG:
+			return "🔮"
+		GameEnums.StatusType.STAT_BUFF_MP:
+			return "👟"
+		GameEnums.StatusType.STAT_BUFF_ACC:
+			return "🎯"
+		GameEnums.StatusType.STAT_DEBUFF_DEF:
+			return "💔"
+		GameEnums.StatusType.BLEED:
+			return "🩸"
+		_:
+			return "✨"
 
 
 func _draw_hp_bar(unit: UnitState) -> void:
@@ -556,6 +669,25 @@ func _draw_hp_bar(unit: UnitState) -> void:
 			Color(_COLOR_ARMOR.r, _COLOR_ARMOR.g, _COLOR_ARMOR.b, blink),
 			true,
 		)
+	if not unit.active_statuses.is_empty():
+		var icon_x: float = origin.x
+		var icon_y: float = origin.y + BAR_H + 2.0
+		var shown := 0
+		for status: StatusData in unit.active_statuses:
+			if shown >= 3:
+				break
+			_draw_status_icon(Vector2(icon_x, icon_y), _status_icon(status.type))
+			icon_x += 8.0
+			shown += 1
+
+
+func _draw_status_icon(pos: Vector2, text: String) -> void:
+	var font: Font = ThemeDB.fallback_font
+	if font == null:
+		return
+	var size_px := 8
+	var sz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px)
+	draw_string(font, pos - Vector2(0.0, sz.y * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, Color.WHITE)
 
 
 func _any_predicted_change() -> bool:
@@ -579,6 +711,11 @@ func _process(delta: float) -> void:
 		_tick_damage_flash(delta)
 		need_redraw = true
 	if _any_predicted_change():
+		need_redraw = true
+	if _phase in [
+		CombatDirector.Phase.PLANNING_PHASE_1,
+		CombatDirector.Phase.PLANNING_PHASE_2,
+	]:
 		need_redraw = true
 	if need_redraw:
 		queue_redraw()

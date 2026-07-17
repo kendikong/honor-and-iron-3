@@ -332,17 +332,39 @@ func _on_selection_changed(unit_id: int) -> void:
 			dragging,
 			_drag_unit_id,
 		)
+	_refresh_hover_if_planning()
 
 
 func _on_ability_selected(index: int) -> void:
 	if _director.selected_unit_id >= 0:
 		unit_selected_abilities[_director.selected_unit_id] = index
+	if _planning != null and _director != null:
+		_planning.recompute_hover_ranges(
+			force_basic_movement,
+			_director.selected_ability_index,
+			dragging,
+			_drag_unit_id,
+		)
+	_refresh_hover_if_planning()
 
 
 func _on_preview_updated(_result: SimResult) -> void:
 	_drag_saved_preview = null
-	if not dragging:
-		_clear_hover_preview()
+	if dragging:
+		return
+	_refresh_hover_if_planning()
+
+
+func _refresh_hover_if_planning() -> void:
+	if dragging or not _is_planning() or _intent_state == null or _director == null:
+		return
+	var cell: Vector2i = _intent_state.hover_coord
+	if _director.board == null or not _director.board.is_in_bounds(cell):
+		return
+	if _director.selected_unit_id >= 0:
+		_refresh_selected_interaction_preview()
+	else:
+		_update_hover_attack_preview()
 
 
 func on_hover_moved(cell: Vector2i) -> void:
@@ -820,14 +842,32 @@ func _hover_attack_target_id() -> int:
 	var actor := _proj_unit(_director.selected_unit_id)
 	if actor == null:
 		return -1
-	var hover_unit := _aim_enemy_board().get_unit_at(cell) if aiming else _proj().get_unit_at(cell)
-	if hover_unit == null:
-		return -1
-	if hover_unit.id == actor.id:
-		return actor.id if _ability_range(actor) == 0 else -1
-	if _in_ability_range(actor, hover_unit):
-		return hover_unit.id
+	for board: Variant in _boards_for_hover_target():
+		if board == null:
+			continue
+		var hover_unit: UnitState = (board as BoardState).get_unit_at(cell)
+		if hover_unit == null:
+			continue
+		var target_id := _resolve_hover_attack_target(actor, hover_unit)
+		if target_id >= 0:
+			return target_id
 	return -1
+
+
+func _boards_for_hover_target() -> Array:
+	var boards: Array = []
+	if _director != null and _director.board != null:
+		boards.append(_director.board)
+	var proj := _proj()
+	if proj != null:
+		boards.append(proj)
+	if preview_state.preview_board != null:
+		boards.append(preview_state.preview_board)
+	if _planning != null:
+		var committed_pb := _planning.get_preview_board()
+		if committed_pb != null:
+			boards.append(committed_pb)
+	return boards
 
 
 func _aim_enemy_board() -> BoardState:

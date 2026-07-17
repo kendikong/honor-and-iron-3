@@ -15,6 +15,7 @@ const _COLOR_ENEMY_ARROW := Color(0.95, 0.35, 0.35, 0.95)
 const _COLOR_PLAYER_ARROW := Color(0.45, 0.85, 0.55, 0.98)
 const _COLOR_TARGET := Color(0.98, 0.72, 0.38, 0.85)
 const _COLOR_DRAGPATH := Color(0.98, 0.88, 0.38, 0.95)
+const _COLOR_DANGER := Color(0.9, 0.2, 0.2, 0.2)
 
 signal live_preview_changed
 
@@ -42,6 +43,9 @@ var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _unit_layer: TacticalUnitLayer
 var _planning_input: CombatPlanningInput
 var _attack_target_id: int = -1
+var _show_danger_area: bool = false
+var _danger_tiles_cache: Dictionary = {}
+var _danger_tiles_dirty: bool = true
 
 
 func setup(
@@ -78,6 +82,16 @@ func setup(
 			_hover_coord = coord
 			queue_redraw(),
 		)
+	set_process(true)
+
+
+func set_show_danger_area(enabled: bool) -> void:
+	_show_danger_area = enabled
+	queue_redraw()
+
+
+func get_show_danger_area() -> bool:
+	return _show_danger_area
 
 
 func bind_unit_layer(layer: TacticalUnitLayer) -> void:
@@ -289,8 +303,17 @@ func recompute_hover_ranges(
 
 func _on_board_changed(board: BoardState) -> void:
 	set_board(board)
+	_danger_tiles_dirty = true
 	if _director != null:
 		recompute_hover_ranges(false, _director.selected_ability_index, false, -1)
+
+
+func _process(_delta: float) -> void:
+	if _phase in [
+		CombatDirector.Phase.PLANNING_PHASE_1,
+		CombatDirector.Phase.PLANNING_PHASE_2,
+	]:
+		queue_redraw()
 
 
 func _on_preview_updated(result: SimResult) -> void:
@@ -315,6 +338,7 @@ func _draw() -> void:
 		CombatDirector.Phase.PLANNING_PHASE_2,
 	]
 	if show_planning:
+		_draw_danger_area()
 		_draw_move_ghosts()
 	_draw_hover_tiles()
 	_draw_target_rings()
@@ -469,14 +493,88 @@ func _intent_visible(unit: UnitState) -> bool:
 func _draw_dashed_route(cells: Array, color: Color) -> void:
 	if cells.size() < 2:
 		return
-	var p1: Vector2 = _map_view.grid_to_local(cells[0])
-	var p2: Vector2 = _map_view.grid_to_local(cells[cells.size() - 1])
-	var dir: Vector2 = (p2 - p1).normalized()
-	var end_d: float = p1.distance_to(p2)
-	var d: float = 0.0
-	while d < end_d:
-		draw_circle(p1 + dir * d, 4.0, color)
-		d += 7.0
+	var dash := 6.0
+	var gap := 4.0
+	var offset := _token_radius() + 4.0
+	for i: int in range(cells.size() - 1):
+		var p1: Vector2 = _map_view.grid_to_local(cells[i])
+		var p2: Vector2 = _map_view.grid_to_local(cells[i + 1])
+		var dir: Vector2 = (p2 - p1).normalized()
+		var dist: float = p1.distance_to(p2)
+		var start_d: float = offset if i == 0 else 0.0
+		var end_d: float = dist - offset if i == cells.size() - 2 else dist
+		var d: float = start_d
+		while d < end_d:
+			var draw_end: float = minf(d + dash, end_d)
+			draw_line(p1 + dir * d, p1 + dir * draw_end, color, 2.0 / _ui_scale())
+			d += dash + gap
+	var t: float = Time.get_ticks_msec() / 1000.0
+	var flow_speed := 45.0
+	var wave_spacing := 60.0
+	var total_len := 0.0
+	var segment_lengths: Array[float] = []
+	var segment_dirs: Array[Vector2] = []
+	var segment_starts: Array[Vector2] = []
+	for i: int in range(cells.size() - 1):
+		var p1: Vector2 = _map_view.grid_to_local(cells[i])
+		var p2: Vector2 = _map_view.grid_to_local(cells[i + 1])
+		var dir: Vector2 = (p2 - p1).normalized()
+		var dist: float = p1.distance_to(p2)
+		segment_starts.append(p1)
+		segment_dirs.append(dir)
+		segment_lengths.append(dist)
+		total_len += dist
+	var path_offset: float = fmod(t * flow_speed, wave_spacing)
+	var arrow_pos: float = path_offset
+	while arrow_pos < total_len - offset:
+		if arrow_pos > offset:
+			var current_d: float = arrow_pos
+			var seg_idx := 0
+			while seg_idx < segment_lengths.size() and current_d > segment_lengths[seg_idx]:
+				current_d -= segment_lengths[seg_idx]
+				seg_idx += 1
+			if seg_idx < segment_lengths.size():
+				var p1: Vector2 = segment_starts[seg_idx]
+				var dir: Vector2 = segment_dirs[seg_idx]
+				var tip: Vector2 = p1 + dir * current_d
+				var wing_len := 6.0 / _ui_scale()
+				var wing1: Vector2 = tip - dir.rotated(deg_to_rad(30.0)) * wing_len
+				var wing2: Vector2 = tip - dir.rotated(deg_to_rad(-30.0)) * wing_len
+				draw_line(tip, wing1, color, 3.0 / _ui_scale())
+				draw_line(tip, wing2, color, 3.0 / _ui_scale())
+		arrow_pos += wave_spacing
+
+
+func _draw_danger_area() -> void:
+	if not _show_danger_area or _board == null or _director == null:
+		return
+	if _danger_tiles_dirty:
+		_danger_tiles_cache.clear()
+		for u: UnitState in _board.units:
+			if not u.is_alive() or not u.is_enemy():
+				continue
+			var reach: Array[Vector2i] = [u.position]
+			for y: int in range(_board.grid_size.y):
+				for x: int in range(_board.grid_size.x):
+					var c := Vector2i(x, y)
+					if c == u.position:
+						continue
+					var path: Array = MovementSystem.find_path(
+						_board, u.position, c, u.movement.points_left,
+					)
+					if not path.is_empty() and path[path.size() - 1] == c:
+						reach.append(c)
+			var rng: int = _unit_attack_range(u, -1)
+			for r: Vector2i in reach:
+				for y2: int in range(_board.grid_size.y):
+					for x2: int in range(_board.grid_size.x):
+						var c2 := Vector2i(x2, y2)
+						if GridSystem.manhattan(c2, r) <= rng:
+							_danger_tiles_cache[c2] = true
+		_danger_tiles_dirty = false
+	for c: Variant in _danger_tiles_cache:
+		if c is Vector2i:
+			_draw_tile_tint(c, _COLOR_DANGER, _COLOR_DANGER.a)
 
 
 func _draw_preview_arrows() -> void:

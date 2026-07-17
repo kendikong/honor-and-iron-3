@@ -128,6 +128,9 @@ func _cycle_ability(delta: int) -> void:
 	_play_sfx("select")
 	if _planning_input != null and _planning_input.dragging:
 		_planning_input.refresh_live_preview()
+	if _planning_input != null and not _planning_input.dragging:
+		var cell: Vector2i = _map_view.screen_to_grid(get_viewport().get_mouse_position())
+		_planning_input.on_hover_moved(cell)
 	if _planning != null:
 		_planning.recompute_hover_ranges(
 			_planning_input.force_basic_movement if _planning_input != null else false,
