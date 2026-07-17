@@ -58,7 +58,8 @@ func apply_settings(settings: GameSettings) -> void:
 	if _force_basic_check != null:
 		_force_basic_check.add_theme_font_size_override("font_size", hint_sz)
 	_on_viewport_resized()
-	_refresh_ability_buttons_if_dirty()
+	_last_skill_rebuild_key = ""
+	_rebuild_ability_buttons()
 	_refresh_info()
 	_refresh_intent_label()
 
@@ -367,7 +368,8 @@ func _rebuild_ability_buttons() -> void:
 				_director.select_ability(index)
 		)
 		row_btn.tooltip_text = CombatUiFormatters.ability_desc(ability, unit)
-		row_btn.custom_minimum_size.y = 64.0 * _ui_scale
+		var row_h: float = 64.0 * _ui_scale * maxf(1.0, _text_scale)
+		row_btn.custom_minimum_size.y = row_h
 		_skill_list.add_child(row_btn)
 		var vbox := VBoxContainer.new()
 		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
