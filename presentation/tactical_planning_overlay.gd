@@ -40,6 +40,8 @@ var _fixed_range_origin: Vector2i = Vector2i(-999, -999)
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
+var _stashed_committed: CombatPlanningPreview = CombatPlanningPreview.new()
+var _has_stashed_committed: bool = false
 var _unit_layer: TacticalUnitLayer
 var _planning_input: CombatPlanningInput
 var _attack_target_id: int = -1
@@ -84,6 +86,9 @@ func setup(
 		_intent_state.intents_changed.connect(func(_units: Dictionary) -> void: queue_redraw())
 		_intent_state.hover_coord_changed.connect(func(coord: Vector2i) -> void:
 			_hover_coord = coord
+			if _director != null and _director.selected_unit_id < 0:
+				_invalidate_hover_cache()
+				_recompute_hover_ranges_from_inputs()
 			queue_redraw(),
 		)
 	set_process(true)
@@ -124,6 +129,8 @@ func _recompute_hover_ranges_from_inputs() -> void:
 
 
 func get_preview_board() -> BoardState:
+	if _committed_preview.preview_board != null:
+		return _committed_preview.preview_board
 	return _preview_board
 
 
@@ -139,6 +146,19 @@ func clear_live_preview() -> void:
 	restore_committed_display()
 
 
+func stash_committed_preview() -> void:
+	_stashed_committed.copy_from(_committed_preview)
+	_has_stashed_committed = true
+
+
+func restore_stashed_committed() -> void:
+	if _has_stashed_committed:
+		_committed_preview.copy_from(_stashed_committed)
+		_preview_board = _committed_preview.preview_board
+		_has_stashed_committed = false
+	restore_committed_display()
+
+
 func restore_committed_display() -> void:
 	_live_preview.clear_interaction()
 	_live_preview.preview_board = null
@@ -146,6 +166,7 @@ func restore_committed_display() -> void:
 	_live_preview.preview_splits.clear()
 	_live_preview.preview_pushes.clear()
 	_attack_target_id = -1
+	_preview_board = _committed_preview.preview_board
 	if _unit_layer != null:
 		_unit_layer.set_predicted_stats(
 			_committed_preview.predicted_hp,
@@ -162,8 +183,6 @@ func apply_preview_state(
 ) -> void:
 	_live_preview.copy_from(state)
 	_attack_target_id = attack_target_id
-	if state.preview_board != null:
-		_preview_board = state.preview_board
 	if _unit_layer != null:
 		_unit_layer.set_predicted_stats(state.predicted_hp, state.predicted_armor)
 	live_preview_changed.emit()
@@ -189,6 +208,9 @@ func set_hover_coord(coord: Vector2i) -> void:
 	if coord == _hover_coord:
 		return
 	_hover_coord = coord
+	if _director != null and _director.selected_unit_id < 0:
+		_invalidate_hover_cache()
+		_recompute_hover_ranges_from_inputs()
 	if _planning_input != null:
 		_planning_input.refresh_mouse_cursor(coord)
 	else:
@@ -360,6 +382,8 @@ func _on_preview_updated(result: SimResult) -> void:
 	_invalidate_hover_cache()
 	if _director != null and _board != null:
 		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
+		_preview_board = _committed_preview.preview_board
+	_has_stashed_committed = false
 	_recompute_hover_ranges_from_inputs()
 	if _planning_input == null or not _planning_input.is_live_preview_active():
 		if _unit_layer != null:
@@ -482,9 +506,15 @@ func _draw_ability_intents() -> void:
 
 func _display_intent_list() -> Array:
 	if _planning_input != null:
-		var use_live: bool = _planning_input.dragging or _planning_input.skill_interaction_active()
+		var use_live: bool = (
+			_planning_input.dragging
+			or _planning_input.skill_interaction_active()
+			or _planning_input.aiming
+		)
 		if use_live:
 			var live: Array = _live_preview.live_intents
+			if live.is_empty():
+				live = _planning_input.preview_state.live_intents
 			if not live.is_empty():
 				return live
 	if _board != null:
@@ -493,17 +523,15 @@ func _display_intent_list() -> Array:
 
 
 func _active_preview() -> CombatPlanningPreview:
-	if _planning_input != null and _planning_input.is_live_preview_active():
-		if _live_preview.preview_board != null:
+	if _planning_input != null:
+		var use_live: bool = (
+			_planning_input.dragging
+			or _planning_input.skill_interaction_active()
+			or _planning_input.aiming
+		)
+		if use_live and _live_preview.preview_board != null:
 			return _live_preview
 	return _committed_preview
-
-
-func _display_preview_board() -> BoardState:
-	var preview: CombatPlanningPreview = _active_preview()
-	if preview.preview_board != null:
-		return preview.preview_board
-	return _preview_board
 
 
 func _should_draw_interaction_overlay() -> bool:
@@ -511,9 +539,20 @@ func _should_draw_interaction_overlay() -> bool:
 		return _live_preview.preview_board != null
 	if _planning_input.dragging:
 		return false
-	if _planning_input.skill_interaction_active():
+	if (
+		_planning_input.skill_interaction_active()
+		or _planning_input.aiming
+		or _planning_input.force_basic_movement
+	):
 		return _live_preview.preview_board != null
 	return false
+
+
+func _display_preview_board() -> BoardState:
+	var preview: CombatPlanningPreview = _active_preview()
+	if preview.preview_board != null:
+		return preview.preview_board
+	return _preview_board
 
 
 func _ui_scale() -> float:
@@ -942,10 +981,15 @@ func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:
 		var ability: AbilityData = _selected_ability_data(unit, selected_ability)
 		if ability != null:
 			return unit.get_ability_range(ability)
-	if unit.is_enemy() and unit.definition != null and unit.definition.behavior != null:
-		var att: AbilityData = unit.definition.behavior.attack
-		if att != null:
-			return att.range_tiles
+	if unit.is_enemy():
+		if unit.definition != null and unit.definition.behavior != null:
+			var att: AbilityData = unit.definition.behavior.attack
+			if att != null:
+				return att.range_tiles
+		var best: int = 0
+		for ability: AbilityData in unit.active_abilities:
+			best = maxi(best, unit.get_ability_range(ability))
+		return best if best > 0 else 1
 	var best: int = 0
 	for ability: AbilityData in unit.active_abilities:
 		best = maxi(best, unit.get_ability_range(ability))
@@ -969,6 +1013,8 @@ func _populate_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_a
 	for y: int in range(_board.grid_size.y):
 		for x: int in range(_board.grid_size.x):
 			var coord := Vector2i(x, y)
+			if _hover_threat_tiles.has(coord):
+				continue
 			for src: Vector2i in threat_sources:
 				if GridSystem.manhattan(coord, src) <= rng:
 					_hover_threat_tiles.append(coord)

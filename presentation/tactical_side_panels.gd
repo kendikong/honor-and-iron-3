@@ -396,7 +396,11 @@ func _refresh_intent_label() -> void:
 		return
 	var intent_list: Array = _board.intents
 	if _planning_input != null:
-		var use_live: bool = _planning_input.dragging or _planning_input.skill_interaction_active()
+		var use_live: bool = (
+			_planning_input.dragging
+			or _planning_input.skill_interaction_active()
+			or _planning_input.aiming
+		)
 		if use_live:
 			var live: Array = _planning_input.preview_state.live_intents
 			if not live.is_empty():

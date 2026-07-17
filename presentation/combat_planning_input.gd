@@ -280,8 +280,8 @@ func _apply_live_preview(preview: Dictionary) -> void:
 
 
 func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
-	_clear_hover_preview()
 	_stash_committed_preview()
+	_clear_hover_preview()
 	_sync_intent_skill_mode()
 	dragging = true
 	_drag_unit_id = unit.id
@@ -299,21 +299,22 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 
 func _stash_committed_preview() -> void:
 	if _planning != null:
+		_planning.stash_committed_preview()
 		_drag_saved_preview = _planning.get_preview_board()
 
 
 func _restore_committed_preview() -> void:
-	if _drag_saved_preview != null and _planning != null:
-		_planning.set_preview_board(_drag_saved_preview)
 	_drag_saved_preview = null
 	preview_state.clear_all()
 	if _planning != null:
-		_planning.restore_committed_display()
+		_planning.restore_stashed_committed()
 
 
 func _on_selection_changed(unit_id: int) -> void:
 	if _director == null:
 		return
+	if _drag_saved_preview == null and _planning != null:
+		_planning.stash_committed_preview()
 	if unit_selected_abilities.has(unit_id):
 		_director.select_ability(int(unit_selected_abilities[unit_id]))
 	elif unit_id < 0:
@@ -327,6 +328,8 @@ func _on_selection_changed(unit_id: int) -> void:
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
+	if _drag_saved_preview == null and _planning != null:
+		_planning.stash_committed_preview()
 	if _director.selected_unit_id >= 0:
 		unit_selected_abilities[_director.selected_unit_id] = index
 	if _planning != null and _director != null:
@@ -373,6 +376,9 @@ func on_hover_moved(cell: Vector2i) -> void:
 	if not _director.board.is_in_bounds(cell):
 		if _director.selected_unit_id >= 0:
 			_restore_hover_preview()
+		elif _planning != null:
+			_planning._invalidate_hover_cache()
+			_planning._recompute_hover_ranges_from_inputs()
 		return
 	if _planning != null:
 		_planning._recompute_hover_ranges_from_inputs()
@@ -442,7 +448,14 @@ func _refresh_selected_interaction_preview() -> void:
 
 
 func _restore_hover_preview() -> void:
-	_clear_hover_preview()
+	preview_state.clear_interaction()
+	preview_state.preview_board = null
+	preview_state.preview_paths.clear()
+	preview_state.preview_splits.clear()
+	preview_state.preview_pushes.clear()
+	drag_preview_failed = false
+	if _planning != null:
+		_planning.restore_committed_display()
 
 
 func _update_hover_attack_preview() -> void:
@@ -486,6 +499,15 @@ func _update_hover_attack_preview() -> void:
 	var target_id := _resolve_hover_attack_target(p_unit, hover_unit)
 	if target_id < 0:
 		return
+	var rng: int = _ability_range(p_unit)
+	if (
+		rng >= 0
+		and _phase == CombatDirector.Phase.PLANNING_PHASE_2
+		and target_id != p_unit.id
+	):
+		var target := _proj().get_unit_by_id(target_id)
+		if target != null and GridSystem.manhattan(p_unit.position, target.position) > rng:
+			return
 	var res: Dictionary = _director.preview_drag(_director.selected_unit_id, p_unit.position, target_id)
 	_apply_hover_preview_dict(res)
 

@@ -880,6 +880,26 @@ BattleSetup → SkirmishLaunch.set_pending()
 **Final issue count:** 1 LOW — **PASS**  
 **Tag:** `phase-14` — gap-closure commit `a251a3627`
 
+### Intent / preview parity audit (iteration 5 — 2026-07-16)
+
+Cross-check vs `presentation/board_view.gd` hover, stash, threat rings, live intents.
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | **PASS** | Stash/restore, hover-enemy ranges, phase-2 range guard, aiming gate, committed vs live preview split |
+| Correct coding | **PASS** | No linter errors; `get_preview_board()` returns committed board only |
+| Inconsistencies | **PASS** | Force-basic shows threat tiles (intentional tactical improvement over H&I) |
+| Issues | **PASS** | ≤2 LOW deferred |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Planning warnings panel (`board_view._set_warnings`) not ported | LOW | Deferred — Phase 15 |
+| 2 | Facing-direction wedge on unit tokens (`board_view._draw_facing`) | LOW | Deferred — Phase 15 |
+
+**Fixed this iteration:** full `CombatPlanningPreview` stash on drag/selection; `restore_stashed_committed` on drag cancel; hover restore via `restore_committed_display`; enemy default attack range `1`; hover-enemy cache invalidate on coord change; phase-2 manhattan range guard; `aiming` in live-intent gates; live preview no longer overwrites committed `_preview_board`.
+
+**Final issue count:** 2 LOW — **PASS**
+
 ---
 
 ## User decisions (locked)
