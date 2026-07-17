@@ -1,5 +1,10 @@
 ; Engine configuration file.
-; Honor & Iron 3 — mana-seed visuals + H&I tactics simulation
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -28,11 +33,11 @@ SkirmishLaunch="*res://autoload/skirmish_launch.gd"
 
 [display]
 
-window/size/viewport_width=1920
-window/size/viewport_height=1080
+window/size/viewport_width=3840
+window/size/viewport_height=1800
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/stretch/scale_mode="integer"
+window/stretch/scale_mode="fractional"
 
 [physics]
 

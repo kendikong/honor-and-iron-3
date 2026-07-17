@@ -6,29 +6,21 @@ func _ready() -> void:
 	load_settings()
 
 func load_settings() -> void:
-	var config = ConfigFile.new()
+	var config := ConfigFile.new()
+	var w: int = 3840
+	var h: int = 1800
+	var fs: bool = false
+	var px: int = -1
+	var py: int = -1
 	if config.load(SETTINGS_FILE) == OK:
-		var w = config.get_value("video", "width", 1600)
-		var h = config.get_value("video", "height", 900)
-		var fs = config.get_value("video", "fullscreen", false)
-		
-		var px = config.get_value("video", "pos_x", -1)
-		var py = config.get_value("video", "pos_y", -1)
-		
-		if fs:
-			get_window().mode = Window.MODE_FULLSCREEN
-		else:
-			get_window().mode = Window.MODE_WINDOWED
-			
-		get_window().size = Vector2i(w, h)
-		
-		if px != -1 and py != -1:
-			get_window().position = Vector2i(px, py)
-		else:
-			var screen_id = get_window().current_screen
-			if screen_id >= 0:
-				var screen_size = DisplayServer.screen_get_size(screen_id)
-				get_window().position = (screen_size - get_window().size) / 2
+		w = int(config.get_value("video", "width", w))
+		h = int(config.get_value("video", "height", h))
+		fs = bool(config.get_value("video", "fullscreen", fs))
+		px = int(config.get_value("video", "pos_x", -1))
+		py = int(config.get_value("video", "pos_y", -1))
+	DisplayWindowHelper.apply_resolution(get_window(), Vector2i(w, h), fs, px < 0 or py < 0)
+	if not fs and px >= 0 and py >= 0:
+		get_window().position = Vector2i(px, py)
 
 func save_settings(w: int, h: int, fs: bool) -> void:
 	var config = ConfigFile.new()

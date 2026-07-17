@@ -91,11 +91,10 @@ func save_to_disk() -> void:
 
 
 func apply_to_window(window: Window) -> void:
-	DisplayServer.window_set_mode(window_mode)
 	if window_mode == DisplayServer.WINDOW_MODE_WINDOWED:
-		window.size = resolution
-		var screen: Vector2i = DisplayServer.screen_get_size()
-		window.position = (screen - resolution) / 2
+		DisplayWindowHelper.apply_resolution(window, resolution, false)
+	else:
+		DisplayServer.window_set_mode(window_mode)
 
 
 func resolution_index() -> int:

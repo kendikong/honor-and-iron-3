@@ -5,19 +5,19 @@ signal close_requested
 func _ready() -> void:
 	$BackButton.pressed.connect(_on_back_pressed)
 	MenuNavigation.register(self, _on_back_pressed)
-	
-	var main_hbox = HBoxContainer.new()
-	main_hbox.set_anchors_preset(PRESET_CENTER)
-	main_hbox.grow_horizontal = GROW_DIRECTION_BOTH
-	main_hbox.grow_vertical = GROW_DIRECTION_BOTH
-	main_hbox.custom_minimum_size = Vector2(800, 500)
-	main_hbox.position.y += 20
-	add_child(main_hbox)
-	
-	var tab_container = TabContainer.new()
+
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 48)
+	margin.add_theme_constant_override("margin_right", 48)
+	margin.add_theme_constant_override("margin_top", 120)
+	margin.add_theme_constant_override("margin_bottom", 48)
+	add_child(margin)
+
+	var tab_container := TabContainer.new()
 	tab_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	main_hbox.add_child(tab_container)
+	margin.add_child(tab_container)
 	
 	_build_display_tab(tab_container)
 	_build_graphics_tab(tab_container)
@@ -54,17 +54,9 @@ func _build_display_tab(parent: TabContainer) -> void:
 	res_hbox.add_child(res_lbl)
 	
 	var res_dd = OptionButton.new()
-	var res_list = [
-		Vector2i(1280, 720),
-		Vector2i(1600, 900),
-		Vector2i(1920, 1080),
-		Vector2i(2560, 1440),
-		Vector2i(3200, 1800),
-		Vector2i(3840, 1800),
-		Vector2i(3840, 2160),
-	]
-	for i in range(res_list.size()):
-		res_dd.add_item("%dx%d" % [res_list[i].x, res_list[i].y], i)
+	var res_list: Array[Vector2i] = GameSettings.RESOLUTION_PRESETS
+	for i: int in range(res_list.size()):
+		res_dd.add_item("%d × %d" % [res_list[i].x, res_list[i].y], i)
 		
 	var current_sz = get_window().size
 	for i in range(res_list.size()):
@@ -79,18 +71,9 @@ func _build_display_tab(parent: TabContainer) -> void:
 	var apply_btn = Button.new()
 	apply_btn.text = "Apply Settings"
 	apply_btn.pressed.connect(func():
-		var target_res = res_list[res_dd.get_selected_id()]
-		var is_fs = fs_check.button_pressed
-		
-		if is_fs:
-			get_window().mode = Window.MODE_FULLSCREEN
-		else:
-			get_window().mode = Window.MODE_WINDOWED
-			get_window().size = target_res
-			var screen_id = get_window().current_screen
-			var screen_size = DisplayServer.screen_get_size(screen_id)
-			get_window().position = (screen_size - target_res) / 2
-			
+		var target_res: Vector2i = res_list[res_dd.get_selected_id()]
+		var is_fs: bool = fs_check.button_pressed
+		DisplayWindowHelper.apply_resolution(get_window(), target_res, is_fs)
 		SettingsManager.save_settings(target_res.x, target_res.y, is_fs)
 	)
 	vbox.add_child(apply_btn)
