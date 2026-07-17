@@ -17,7 +17,7 @@ const _COLOR_PLAYER_ARROW := Color(0.45, 0.85, 0.55, 0.98)
 const _COLOR_TARGET := Color(0.98, 0.72, 0.38, 0.85)
 const _COLOR_DRAGPATH := Color(0.98, 0.88, 0.38, 0.95)
 const _COLOR_DANGER := Color(0.9, 0.2, 0.2, 0.2)
-const _COLOR_SELECT_TILE := Color(0.98, 0.86, 0.32, 0.35)
+const _COLOR_SELECT_TILE := Color(0.36, 0.62, 0.92, 0.35)
 ## Route widths in map-local px (MapRoot scale applies on screen — do not divide by ui_scale).
 const _ROUTE_GLOW_W: float = 5.0
 const _ROUTE_LINE_W: float = 3.0
@@ -494,12 +494,8 @@ func _on_preview_updated(result: SimResult) -> void:
 func _draw() -> void:
 	if _board == null or _map_view == null or _director == null:
 		return
-	var show_planning: bool = _phase in [
-		CombatDirector.Phase.PLANNING,
-		CombatDirector.Phase.PLANNING,
-	]
+	var show_planning: bool = CombatDirector.is_planning_phase(_phase)
 	if show_planning:
-		_draw_selected_unit_tile()
 		_draw_danger_area()
 		_draw_move_ghosts()
 	_draw_hover_tiles()
@@ -530,22 +526,6 @@ func _draw() -> void:
 	for entry: Array in _hit_markers:
 		if entry.size() >= 2 and entry[0] is Vector2i:
 			_draw_death_marker(entry[0] as Vector2i)
-
-
-func _draw_selected_unit_tile() -> void:
-	if _director == null or _director.selected_unit_id < 0:
-		return
-	var unit := _proj_unit(_director.selected_unit_id)
-	if unit == null or not unit.is_alive() or unit.is_enemy():
-		return
-	_draw_tile_tint(unit.position, _COLOR_SELECT_TILE, 0.28)
-	var tile_px: float = float(TacticalConstants.TILE_PX)
-	var center: Vector2 = _map_view.grid_to_local(unit.position)
-	var rect := Rect2(
-		center - Vector2(tile_px * 0.5, tile_px * 0.5),
-		Vector2(tile_px, tile_px),
-	).grow(-1.0)
-	draw_rect(rect, Color(_COLOR_SELECT_TILE.r, _COLOR_SELECT_TILE.g, _COLOR_SELECT_TILE.b, 0.95), false, 1.0)
 
 
 func _draw_hover_tiles() -> void:

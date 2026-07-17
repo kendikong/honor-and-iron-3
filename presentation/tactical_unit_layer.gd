@@ -11,15 +11,10 @@ const BAR_OFFSET_Y: float = 6.0
 
 const _COLOR_HP_BG := Color(0.08, 0.08, 0.10, 0.92)
 const _COLOR_HP_FILL := Color(0.38, 0.78, 0.46)
-const _COLOR_INTENT := Color(0.95, 0.35, 0.35, 0.7)
-const _COLOR_TIMELINE_HOVER := Color(1.0, 1.0, 1.0, 0.8)
 const _COLOR_HP_PREDICTED := Color(0.95, 0.45, 0.35, 0.85)
 const _COLOR_HP_LOSS := Color(0.95, 0.25, 0.22)
 const _COLOR_ARMOR := Color(0.9, 0.8, 0.2)
-const _COLOR_SELECT := Color(0.98, 0.86, 0.32, 0.95)
-const _COLOR_SELECT_GLOW := Color(0.98, 0.86, 0.32, 0.25)
-const _COLOR_PLAYER_PIP := Color(0.36, 0.62, 0.92)
-const _COLOR_ENEMY_PIP := Color(0.86, 0.38, 0.34)
+const _COLOR_SELECT_OUTLINE := Color(0.36, 0.62, 0.92, 0.95)
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -502,24 +497,27 @@ func _draw() -> void:
 			continue
 		_draw_hp_bar(unit)
 		var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
-		var ring_center: Vector2 = foot + Vector2(0.0, -10.0)
-		if CombatDirector.is_planning_phase(_phase):
-			_draw_movement_pips(ring_center, unit)
 		if unit.id == _selected_id and CombatDirector.is_planning_phase(_phase):
-			draw_arc(ring_center, 15.0, 0.0, TAU, 48, _COLOR_SELECT_GLOW, 5.0)
-			draw_arc(ring_center, 11.0, 0.0, TAU, 40, _COLOR_SELECT, 3.5)
-		if unit.id == _timeline_hover_id:
-			draw_arc(ring_center, 12.0, 0.0, TAU, 32, _COLOR_TIMELINE_HOVER, 2.5)
-		if unit.is_enemy() and _intent_units.has(unit.id):
-			draw_arc(ring_center, 8.0, 0.0, TAU, 24, Color(_COLOR_INTENT, 0.25), 4.0)
-			draw_arc(ring_center, 5.0, 0.0, TAU, 20, _COLOR_INTENT, 2.0)
-		_draw_facing_wedge(ring_center, unit.facing, Color(1.0, 1.0, 1.0, 0.75))
+			_draw_select_outline(unit.position)
+		_draw_facing_wedge(foot + Vector2(0.0, -10.0), unit.facing, Color(1.0, 1.0, 1.0, 0.75))
 	if _drag_preview_active and _drag_preview_id >= 0 and _drag_preview_failed:
 		var drag_unit := _board.get_unit_by_id(_drag_preview_id) if _board != null else null
 		if drag_unit != null:
 			var actor: CharacterActor = _actors.get(_drag_preview_id)
 			if actor != null:
 				_draw_centered_icon(actor.position + Vector2(0.0, -18.0), "🚫", Color.WHITE, 14)
+
+
+func _draw_select_outline(cell: Vector2i) -> void:
+	if _map_view == null:
+		return
+	var tile_px: float = float(TacticalConstants.TILE_PX)
+	var center: Vector2 = _map_view.grid_to_local(cell)
+	var rect := Rect2(
+		center - Vector2(tile_px * 0.5, tile_px * 0.5),
+		Vector2(tile_px, tile_px),
+	).grow(-1.0)
+	draw_rect(rect, _COLOR_SELECT_OUTLINE, false, 1.0)
 
 
 func _proj_unit(unit_id: int) -> UnitState:
@@ -536,104 +534,6 @@ func _proj_unit(unit_id: int) -> UnitState:
 	if _board != null:
 		return _board.get_unit_by_id(unit_id)
 	return null
-
-
-func _enemy_targets_player(unit: UnitState) -> bool:
-	var intent_list: Array = _board.intents if _board != null else []
-	if (
-		_planning_input != null
-		and _planning_input.is_live_preview_active()
-		and not _planning_input.preview_state.live_intents.is_empty()
-	):
-		intent_list = _planning_input.preview_state.live_intents
-	for intent_v: Variant in intent_list:
-		if not intent_v is Intent:
-			continue
-		var intent: Intent = intent_v as Intent
-		if intent.enemy_id != unit.id:
-			continue
-		for action: TimelineAction in intent.actions:
-			if action.type != GameEnums.ActionType.ABILITY:
-				continue
-			var tgt := _board.get_unit_by_id(action.target_unit_id) if _board != null else null
-			if tgt != null and not tgt.is_enemy():
-				return true
-	return false
-
-
-func _draw_movement_pips(center: Vector2, unit: UnitState) -> void:
-	if unit.definition == null or _director == null:
-		return
-	var p_unit := _proj_unit(unit.id)
-	if p_unit == null:
-		return
-	var max_move: int = maxi(1, p_unit.definition.move_points)
-	var points_left: int = p_unit.movement.points_left
-	var is_drag: bool = (
-		_planning_input != null
-		and _planning_input.dragging
-		and _planning_input.get_drag_unit_id() == unit.id
-	)
-	if is_drag:
-		points_left = maxi(0, points_left - maxi(0, _planning_input.get_drag_route().size() - 1))
-	var is_attack_queued := false
-	var is_skill_queued := false
-	if not unit.is_enemy():
-		var plan_to_use: Timeline = _director.get_player_plan()
-		if plan_to_use != null:
-			for action: TimelineAction in plan_to_use.entries:
-				if action.actor_id == unit.id and action.type == GameEnums.ActionType.ABILITY:
-					is_skill_queued = true
-					if action.ability != null:
-						for effect: EffectData in action.ability.effects:
-							if effect.type == GameEnums.EffectType.DAMAGE:
-								is_attack_queued = true
-								break
-	elif unit.is_enemy() and (_intent_units.has(unit.id) or _enemy_targets_player(unit)):
-		var intent_list: Array = _board.intents if _board != null else []
-		if (
-			_planning_input != null
-			and _planning_input.is_live_preview_active()
-			and not _planning_input.preview_state.live_intents.is_empty()
-		):
-			intent_list = _planning_input.preview_state.live_intents
-		for intent_v: Variant in intent_list:
-			if not intent_v is Intent:
-				continue
-			var intent: Intent = intent_v as Intent
-			if intent.enemy_id != unit.id:
-				continue
-			for action: TimelineAction in intent.actions:
-				if action.type == GameEnums.ActionType.ABILITY:
-					var tgt := _board.get_unit_by_id(action.target_unit_id) if _board != null else null
-					if tgt != null and not tgt.is_enemy():
-						is_skill_queued = true
-						if action.ability != null:
-							for effect: EffectData in action.ability.effects:
-								if effect.type == GameEnums.EffectType.DAMAGE:
-									is_attack_queued = true
-									break
-						break
-	var accent: Color = _COLOR_ENEMY_PIP if unit.is_enemy() else _COLOR_PLAYER_PIP
-	var ring_radius := 7.0
-	var segments := maxi(1, max_move)
-	var gap := 0.2
-	var arc_len := (TAU - gap * float(segments)) / float(segments)
-	draw_arc(center, ring_radius, 0.0, TAU, 48, Color(0.1, 0.1, 0.1, 0.5), 4.0)
-	for i: int in range(segments):
-		var start_ang: float = -PI / 2.0 + float(i) * (arc_len + gap)
-		var end_ang: float = start_ang + arc_len
-		var segment_color: Color = accent
-		if i >= points_left:
-			segment_color = Color(0.0, 0.0, 0.0, 0.3)
-		var flash_color: Color = segment_color
-		if is_attack_queued and i < points_left:
-			var atk_blink: float = 0.6 + 0.4 * sin(Time.get_ticks_msec() / 150.0)
-			flash_color = Color(1.0, 0.0, 0.0, atk_blink)
-		elif is_skill_queued and i < points_left:
-			var sk_blink: float = 0.6 + 0.4 * sin(Time.get_ticks_msec() / 150.0)
-			flash_color = Color(1.0, 1.0, 1.0, sk_blink)
-		draw_arc(center, ring_radius, start_ang, end_ang, 12, flash_color, 2.5)
 
 
 func _status_icon(status_type: int) -> String:

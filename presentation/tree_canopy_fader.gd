@@ -69,17 +69,17 @@ func _fade_tree(anchor: Vector2i) -> void:
 		"alt": _trees.get_cell_alternative_tile(anchor),
 	}
 	var td: TileData = _trees.get_cell_tile_data(anchor)
-	if td == null:
+	var atlas_tex: AtlasTexture = _atlas_texture_for_cell(anchor)
+	if atlas_tex == null:
 		_stored_cells.erase(anchor)
 		return
 	var spr := Sprite2D.new()
-	spr.texture = td.texture
-	spr.region_enabled = true
-	spr.region_rect = td.texture_region
+	spr.texture = atlas_tex
 	spr.centered = false
+	var origin := Vector2(td.texture_origin) if td != null else Vector2.ZERO
 	var top_left: Vector2 = (
 		_trees.map_to_local(anchor)
-		- Vector2(td.texture_origin)
+		- origin
 		- Vector2(TreeGameplay.TREE_SPRITE_SIZE) * 0.5
 	)
 	spr.position = top_left
@@ -90,6 +90,25 @@ func _fade_tree(anchor: Vector2i) -> void:
 	_trees.erase_cell(anchor)
 	add_child(spr)
 	_fade_sprites[anchor] = spr
+
+
+func _atlas_texture_for_cell(cell: Vector2i) -> AtlasTexture:
+	var source_id: int = _trees.get_cell_source_id(cell)
+	if source_id < 0:
+		return null
+	var atlas_coords: Vector2i = _trees.get_cell_atlas_coords(cell)
+	var tile_set: TileSet = _trees.tile_set
+	if tile_set == null:
+		return null
+	var source: TileSetAtlasSource = tile_set.get_source(source_id) as TileSetAtlasSource
+	if source == null:
+		return null
+	var region_size: Vector2i = source.texture_region_size
+	var tex: AtlasTexture = AtlasTexture.new()
+	tex.atlas = source.texture
+	tex.region = Rect2(Vector2(atlas_coords) * Vector2(region_size), Vector2(region_size))
+	tex.filter_clip = true
+	return tex
 
 
 func _restore_tree(anchor: Vector2i) -> void:
