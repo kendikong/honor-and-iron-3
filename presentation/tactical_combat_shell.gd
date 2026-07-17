@@ -96,6 +96,7 @@ func start_combat(encounter: EncounterData) -> void:
 		_sfx,
 	)
 	_planning_overlay.bind_planning_input(planning_input)
+	_map_view.set_planning_input(planning_input)
 	_input_controller.setup(
 		_map_view,
 		_director,

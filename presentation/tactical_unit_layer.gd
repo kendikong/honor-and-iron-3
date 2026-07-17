@@ -14,6 +14,8 @@ const _COLOR_HP_FILL := Color(0.38, 0.78, 0.46)
 const _COLOR_INTENT := Color(0.95, 0.35, 0.35, 0.7)
 const _COLOR_TIMELINE_HOVER := Color(1.0, 1.0, 1.0, 0.8)
 const _COLOR_HP_PREDICTED := Color(0.95, 0.45, 0.35, 0.85)
+const _COLOR_HP_LOSS := Color(0.95, 0.25, 0.22)
+const _COLOR_ARMOR := Color(0.9, 0.8, 0.2)
 const _COLOR_SELECT := Color(0.98, 0.86, 0.32, 0.95)
 
 var _map_view: TacticalMapView
@@ -501,30 +503,85 @@ func _draw_hp_bar(unit: UnitState) -> void:
 	var current_hp: int = unit.health.current_hp
 	var predicted: int = int(_predicted_hp.get(unit.id, current_hp))
 	var max_hp: int = unit.health.max_hp
-	var frac: float = 1.0
-	if max_hp > 0:
-		frac = clampf(float(current_hp) / float(max_hp), 0.0, 1.0)
+	if max_hp <= 0:
+		return
+	var armor: int = maxi(0, unit.armor)
+	var predicted_armor: int = int(_predicted_armor.get(unit.id, armor))
 	var flash: float = float(_damage_flash.get(unit.id, 0.0))
 	if flash > 0.0:
 		var pulse: float = 0.5 + 0.5 * sin(flash * 40.0)
-		draw_rect(Rect2(origin - Vector2(1.0, 1.0), Vector2(BAR_W + 2.0, BAR_H + 2.0)), Color(1.0, 0.1, 0.1, 0.35 * pulse), true)
-	draw_rect(Rect2(origin, Vector2(BAR_W, BAR_H)), _COLOR_HP_BG)
-	var fill_color: Color = _COLOR_HP_FILL
-	if flash > 0.0:
-		fill_color = fill_color.lerp(Color(1.0, 0.15, 0.15), minf(1.0, flash * 2.0))
-	draw_rect(Rect2(origin, Vector2(BAR_W * frac, BAR_H)), fill_color)
-	if predicted < current_hp and max_hp > 0:
-		var pred_frac: float = clampf(float(predicted) / float(max_hp), 0.0, 1.0)
-		var pred_w: float = BAR_W * pred_frac
-		var dmg_w: float = BAR_W * frac - pred_w
-		if dmg_w > 0.5:
-			draw_rect(Rect2(origin + Vector2(pred_w, 0.0), Vector2(dmg_w, BAR_H)), _COLOR_HP_PREDICTED)
+		draw_rect(
+			Rect2(origin - Vector2(1.0, 1.0), Vector2(BAR_W + 2.0, BAR_H + 2.0)),
+			Color(1.0, 0.1, 0.1, 0.35 * pulse),
+			true,
+		)
+	var total_max: int = maxi(max_hp, maxi(current_hp + armor, predicted + predicted_armor))
+	draw_rect(Rect2(origin, Vector2(BAR_W, BAR_H)), _COLOR_HP_BG, true)
+	var survive: int = clampi(mini(current_hp, predicted), 0, max_hp)
+	var loss: int = clampi(current_hp - survive, 0, max_hp)
+	var heal: int = clampi(predicted - current_hp, 0, maxi(0, total_max - current_hp))
+	var survive_armor: int = clampi(mini(armor, predicted_armor), 0, total_max)
+	var armor_loss: int = clampi(armor - survive_armor, 0, total_max)
+	var armor_gain: int = clampi(predicted_armor - armor, 0, total_max)
+	var survive_w: float = BAR_W * (float(survive) / float(total_max))
+	var loss_w: float = BAR_W * (float(loss) / float(total_max))
+	var heal_w: float = BAR_W * (float(heal) / float(total_max))
+	var survive_armor_w: float = BAR_W * (float(survive_armor) / float(total_max))
+	var armor_loss_w: float = BAR_W * (float(armor_loss) / float(total_max))
+	var armor_gain_w: float = BAR_W * (float(armor_gain) / float(total_max))
+	if survive_w > 0.0:
+		var fill_color: Color = _COLOR_HP_FILL
+		if flash > 0.0:
+			fill_color = fill_color.lerp(Color(1.0, 0.15, 0.15), minf(1.0, flash * 2.0))
+		draw_rect(Rect2(origin, Vector2(survive_w, BAR_H)), fill_color, true)
+	var blink: float = 0.35 + 0.45 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 110.0))
+	if loss_w > 0.0:
+		var col := Color(_COLOR_HP_LOSS.r, _COLOR_HP_LOSS.g, _COLOR_HP_LOSS.b, blink)
+		draw_rect(Rect2(origin + Vector2(survive_w, 0.0), Vector2(loss_w, BAR_H)), col, true)
+	if heal_w > 0.0:
+		var col := Color(_COLOR_HP_FILL.r, _COLOR_HP_FILL.g, _COLOR_HP_FILL.b, blink)
+		draw_rect(Rect2(origin + Vector2(survive_w, 0.0), Vector2(heal_w, BAR_H)), col, true)
+	var hp_end_w: float = survive_w + maxf(loss_w, heal_w)
+	if survive_armor_w > 0.0:
+		draw_rect(Rect2(origin + Vector2(hp_end_w, 0.0), Vector2(survive_armor_w, BAR_H)), _COLOR_ARMOR, true)
+	if armor_loss_w > 0.0:
+		draw_rect(
+			Rect2(origin + Vector2(hp_end_w + survive_armor_w, 0.0), Vector2(armor_loss_w, BAR_H)),
+			Color(_COLOR_ARMOR.r, _COLOR_ARMOR.g, _COLOR_ARMOR.b, blink),
+			true,
+		)
+	if armor_gain_w > 0.0:
+		draw_rect(
+			Rect2(origin + Vector2(hp_end_w + survive_armor_w, 0.0), Vector2(armor_gain_w, BAR_H)),
+			Color(_COLOR_ARMOR.r, _COLOR_ARMOR.g, _COLOR_ARMOR.b, blink),
+			true,
+		)
+
+
+func _any_predicted_change() -> bool:
+	if _board == null:
+		return false
+	for unit: UnitState in _board.units:
+		if not unit.is_alive():
+			continue
+		var cur_hp: int = unit.health.current_hp
+		var pred_hp: int = int(_predicted_hp.get(unit.id, cur_hp))
+		var cur_ar: int = maxi(0, unit.armor)
+		var pred_ar: int = int(_predicted_armor.get(unit.id, cur_ar))
+		if pred_hp != cur_hp or pred_ar != cur_ar:
+			return true
+	return false
 
 
 func _process(delta: float) -> void:
-	if _damage_flash.is_empty():
-		return
-	_tick_damage_flash(delta)
+	var need_redraw := false
+	if not _damage_flash.is_empty():
+		_tick_damage_flash(delta)
+		need_redraw = true
+	if _any_predicted_change():
+		need_redraw = true
+	if need_redraw:
+		queue_redraw()
 
 
 func _tick_damage_flash(delta: float = 0.0) -> void:

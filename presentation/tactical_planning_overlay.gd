@@ -13,6 +13,8 @@ const _COLOR_AIM := Color(0.95, 0.95, 1.0, 0.95)
 const _COLOR_HOVER := Color(0.45, 0.75, 1.0)
 const _COLOR_ENEMY_ARROW := Color(0.95, 0.35, 0.35, 0.95)
 const _COLOR_PLAYER_ARROW := Color(0.45, 0.85, 0.55, 0.98)
+const _COLOR_TARGET := Color(0.98, 0.72, 0.38, 0.85)
+const _COLOR_DRAGPATH := Color(0.98, 0.88, 0.38, 0.95)
 
 signal live_preview_changed
 
@@ -36,6 +38,7 @@ var _cached_hover_force: bool = false
 var _fixed_range_origin: Vector2i = Vector2i(-999, -999)
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
+var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _unit_layer: TacticalUnitLayer
 var _planning_input: CombatPlanningInput
 var _attack_target_id: int = -1
@@ -98,10 +101,22 @@ func get_live_preview() -> CombatPlanningPreview:
 
 
 func clear_live_preview() -> void:
-	_live_preview.clear_all()
+	restore_committed_display()
+
+
+func restore_committed_display() -> void:
+	_live_preview.clear_interaction()
+	_live_preview.preview_board = null
+	_live_preview.preview_paths.clear()
+	_live_preview.preview_splits.clear()
+	_live_preview.preview_pushes.clear()
 	_attack_target_id = -1
 	if _unit_layer != null:
-		_unit_layer.clear_predicted_stats()
+		_unit_layer.set_predicted_stats(
+			_committed_preview.predicted_hp,
+			_committed_preview.predicted_armor,
+		)
+	live_preview_changed.emit()
 	queue_redraw()
 
 
@@ -110,7 +125,7 @@ func apply_preview_state(
 	selected_id: int,
 	attack_target_id: int,
 ) -> void:
-	_live_preview = state
+	_live_preview.copy_from(state)
 	_attack_target_id = attack_target_id
 	if state.preview_board != null:
 		_preview_board = state.preview_board
@@ -280,21 +295,37 @@ func _on_board_changed(board: BoardState) -> void:
 
 func _on_preview_updated(result: SimResult) -> void:
 	set_preview_board(result.final_state)
+	if _director != null and _board != null:
+		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
+	if _planning_input == null or not _planning_input.is_live_preview_active():
+		if _unit_layer != null:
+			_unit_layer.set_predicted_stats(
+				_committed_preview.predicted_hp,
+				_committed_preview.predicted_armor,
+			)
+		live_preview_changed.emit()
+	queue_redraw()
 
 
 func _draw() -> void:
 	if _board == null or _map_view == null:
 		return
-	var selected_id: int = _director.selected_unit_id if _director != null else -1
-	var preview: BoardState = _preview_board if _preview_board != null else _board
-	if preview != null and selected_id > 0:
-		var ghost := preview.get_unit_by_id(selected_id)
-		if ghost != null and ghost.is_alive():
-			draw_circle(_map_view.grid_to_local(ghost.position), 5.0, _COLOR_GHOST)
+	var show_planning: bool = _phase in [
+		CombatDirector.Phase.PLANNING_PHASE_1,
+		CombatDirector.Phase.PLANNING_PHASE_2,
+	]
+	if show_planning:
+		_draw_move_ghosts()
 	_draw_hover_tiles()
-	_draw_preview_arrows()
-	_draw_interaction_overlay()
-	if _route.size() >= 2:
+	_draw_target_rings()
+	if show_planning:
+		_draw_ghosts()
+		_draw_preview_arrows()
+		if _should_draw_interaction_overlay():
+			_draw_interaction_overlay()
+		if _planning_input != null and _planning_input.dragging:
+			_draw_drag_path()
+	elif _route.size() >= 2:
 		_draw_route_line(_route, _COLOR_ROUTE, true, true)
 	_draw_ability_intents()
 	_draw_hover_tile()
@@ -360,7 +391,7 @@ func _draw_ability_intents() -> void:
 					start_pos = act.target_coord
 					break
 			_draw_dashed_route([start_pos, action.target_coord], _COLOR_PLAYER_ARROW)
-	var preview_board: BoardState = _live_preview.preview_board if _live_preview.preview_board != null else _preview_board
+	var preview_board: BoardState = _display_preview_board()
 	for intent: Variant in _display_intent_list():
 		if not intent is Intent:
 			continue
@@ -384,13 +415,37 @@ func _draw_ability_intents() -> void:
 
 
 func _display_intent_list() -> Array:
-	if _planning_input != null and (_planning_input.dragging or _planning_input.aiming):
+	if _planning_input != null and _planning_input.is_live_preview_active():
 		var live: Array = _live_preview.live_intents
 		if not live.is_empty():
 			return live
 	if _board != null:
 		return _board.intents
 	return []
+
+
+func _active_preview() -> CombatPlanningPreview:
+	if _planning_input != null and _planning_input.is_live_preview_active():
+		if _live_preview.preview_board != null:
+			return _live_preview
+	return _committed_preview
+
+
+func _display_preview_board() -> BoardState:
+	var preview: CombatPlanningPreview = _active_preview()
+	if preview.preview_board != null:
+		return preview.preview_board
+	return _preview_board
+
+
+func _should_draw_interaction_overlay() -> bool:
+	if _planning_input == null:
+		return _live_preview.preview_board != null
+	if _planning_input.dragging:
+		return false
+	if _planning_input.skill_interaction_active():
+		return _live_preview.preview_board != null
+	return false
 
 
 func _ui_scale() -> float:
@@ -425,18 +480,20 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 
 
 func _draw_preview_arrows() -> void:
-	if _board == null or _live_preview.preview_board == null:
+	var prev: CombatPlanningPreview = _active_preview()
+	if _board == null or prev.preview_board == null:
 		return
 	var dragging: bool = _planning_input != null and _planning_input.dragging
 	var drag_unit_id: int = _planning_input.get_drag_unit_id() if _planning_input != null else -1
 	var selected_id: int = _director.selected_unit_id if _director != null else -1
+	var skill_priority: bool = _planning_input.skill_interaction_active() if _planning_input != null else false
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or not _intent_visible(unit):
 			continue
-		var route: Array = _live_preview.preview_paths.get(unit.id, [])
+		var route: Array = prev.preview_paths.get(unit.id, [])
 		if route.is_empty():
 			continue
-		var split: int = int(_live_preview.preview_splits.get(unit.id, route.size()))
+		var split: int = int(prev.preview_splits.get(unit.id, route.size()))
 		var player_leg: Array = route.slice(0, split)
 		var enemy_leg: Array = route.slice(maxi(split - 1, 0))
 		if player_leg.size() >= 2:
@@ -444,17 +501,19 @@ func _draw_preview_arrows() -> void:
 			if not unit.is_enemy() and unit.id == selected_id:
 				if dragging and unit.id == drag_unit_id:
 					skip_live_route = true
+				elif skill_priority and not dragging:
+					skip_live_route = true
 			if not skip_live_route:
 				var dim_col := Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.35)
 				_draw_route_line(player_leg, dim_col, true, true)
 		if enemy_leg.size() >= 2:
 			var dim_enemy := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, 0.35)
 			_draw_route_line(enemy_leg, dim_enemy, split <= 1, true)
-		var pushes: Array = _live_preview.preview_pushes.get(unit.id, [])
+		var pushes: Array = prev.preview_pushes.get(unit.id, [])
 		for push: Variant in pushes:
 			if push is Array and push.size() >= 2:
 				_draw_push_arrow(push[0], push[1])
-		var pv := _live_preview.preview_board.get_unit_by_id(unit.id)
+		var pv := prev.preview_board.get_unit_by_id(unit.id)
 		if pv == null or not pv.is_alive():
 			var end_tile: Vector2i = unit.position
 			if not pushes.is_empty():
@@ -469,18 +528,23 @@ func _draw_preview_arrows() -> void:
 func _draw_interaction_overlay() -> void:
 	if _director == null or _director.selected_unit_id < 0:
 		return
-	var actor := _live_preview.preview_board.get_unit_by_id(_director.selected_unit_id) \
-		if _live_preview.preview_board != null else _board.get_unit_by_id(_director.selected_unit_id)
+	var prev: CombatPlanningPreview = _active_preview()
+	if prev.preview_board == null:
+		return
+	var actor := prev.preview_board.get_unit_by_id(_director.selected_unit_id)
+	if actor == null:
+		actor = _board.get_unit_by_id(_director.selected_unit_id)
 	if actor == null:
 		return
-	var route: Array = _live_preview.preview_paths.get(actor.id, [])
+	var route: Array = prev.preview_paths.get(actor.id, [])
 	if route.size() >= 2:
 		_draw_route_line(route, _COLOR_PLAYER_ARROW, true, true)
 	if _attack_target_id >= 0:
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord
-		var target_unit := _live_preview.preview_board.get_unit_by_id(_attack_target_id) \
-			if _live_preview.preview_board != null else _board.get_unit_by_id(_attack_target_id)
+		var target_unit := prev.preview_board.get_unit_by_id(_attack_target_id)
+		if target_unit == null and _board != null:
+			target_unit = _board.get_unit_by_id(_attack_target_id)
 		if target_unit != null:
 			target_coord = target_unit.position
 		if origin != target_coord:
@@ -539,6 +603,132 @@ func _draw_push_arrow(from: Vector2i, to: Vector2i) -> void:
 	while d < end_d:
 		draw_circle(p1 + dir * d, 4.0, color)
 		d += 7.0
+
+
+func _draw_ghosts() -> void:
+	var prev: CombatPlanningPreview = _active_preview()
+	if prev.preview_board == null or _board == null or _director == null:
+		return
+	var plan_to_use: Timeline = (
+		_director.plan_phase_1
+		if _phase == CombatDirector.Phase.PLANNING_PHASE_1
+		else _director.plan_phase_2
+	)
+	for unit: UnitState in _board.units:
+		if not unit.is_alive() or not _intent_visible(unit):
+			continue
+		if not unit.is_enemy() and plan_to_use != null:
+			for action: TimelineAction in plan_to_use.entries:
+				if (
+					action.actor_id == unit.id
+					and action.type == GameEnums.ActionType.ABILITY
+					and action.ability != null
+					and AbilitySystem.ability_has_dash(action.ability)
+				):
+					var start_pos: Vector2i = _proj_origin(unit)
+					if action.target_coord != start_pos:
+						var center: Vector2 = _map_view.grid_to_local(action.target_coord)
+						draw_circle(center, _token_radius(), Color(_COLOR_GHOST.r, _COLOR_GHOST.g, _COLOR_GHOST.b, 0.35))
+					break
+		if unit.is_enemy():
+			var route: Array = prev.preview_paths.get(unit.id, [])
+			var voluntary_dest: Vector2i = route[route.size() - 1] if route.size() > 0 else unit.position
+			if voluntary_dest != unit.position:
+				var ghost_center: Vector2 = _map_view.grid_to_local(voluntary_dest)
+				var alpha: float = 0.25 if (_planning_input != null and _planning_input.skill_interaction_active()) else 0.1
+				draw_arc(ghost_center, _token_radius(), 0.0, TAU, 24, Color(_COLOR_ENEMY_ARROW, alpha), 2.0)
+
+
+func _draw_move_ghosts() -> void:
+	if _director == null or _board == null or _planning_input == null:
+		return
+	if _director.selected_unit_id < 0 or not _board.is_in_bounds(_hover_coord):
+		return
+	var unit := _proj_unit(_director.selected_unit_id)
+	if unit == null or not unit.is_alive():
+		return
+	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
+	if ability == null or not AbilitySystem.ability_has_dash(ability):
+		return
+	var origin: Vector2i = _proj_origin(unit)
+	if not _is_valid_dash_hover(origin, _hover_coord, ability.range_tiles):
+		return
+	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
+	draw_circle(center, _token_radius() + 1.0, Color(_COLOR_GHOST.r, _COLOR_GHOST.g, _COLOR_GHOST.b, 0.45))
+	_draw_dashed_route([origin, _hover_coord], Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.85))
+
+
+func _draw_drag_path() -> void:
+	if _planning_input == null or _board == null or not _planning_input.dragging:
+		return
+	var drag_unit := _board.get_unit_by_id(_planning_input.get_drag_unit_id())
+	if drag_unit == null:
+		return
+	var ability: AbilityData = _selected_ability_data(drag_unit, _director.selected_ability_index)
+	if (
+		ability != null
+		and AbilitySystem.ability_has_dash(ability)
+		and _is_valid_dash_hover(_proj_origin(drag_unit), _hover_coord, ability.range_tiles)
+	):
+		_draw_dashed_route(
+			[_proj_origin(drag_unit), _hover_coord],
+			Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.95),
+		)
+		return
+	if _route.size() >= 2:
+		var hovered_unit := _board.get_unit_at(_hover_coord) if _board.is_in_bounds(_hover_coord) else null
+		if hovered_unit != null and hovered_unit.id != _planning_input.get_drag_unit_id():
+			var idx: int = _route.find(_planning_input.drag_sim_actor_pos)
+			var move_route: Array = _route.slice(0, idx + 1) if idx >= 0 else _route.slice(0, _route.size() - 1)
+			if move_route.size() >= 2:
+				_draw_route_line(move_route, _COLOR_DRAGPATH, true, true)
+			_draw_dashed_route(
+				[_planning_input.drag_sim_actor_pos, _hover_coord],
+				Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.95),
+			)
+		else:
+			_draw_route_line(_route, _COLOR_DRAGPATH, true, true)
+
+
+func _draw_target_rings() -> void:
+	if _director == null or _director.selected_unit_id < 0 or _board == null:
+		return
+	var unit := _proj_unit(_director.selected_unit_id)
+	if unit == null or not unit.is_alive() or unit.is_enemy():
+		return
+	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
+	if ability == null:
+		return
+	var origin: Vector2i = _proj_origin(unit)
+	if AbilitySystem.ability_has_dash(ability):
+		for cell: Vector2i in _dash_threat_tiles(origin, _dash_amount(ability)):
+			_draw_tile_tint(cell, _COLOR_TARGET, 0.35)
+		return
+	var self_aoe: Array[Vector2i] = _self_aoe_threat_tiles(unit, ability, origin)
+	if not self_aoe.is_empty():
+		for cell: Vector2i in self_aoe:
+			_draw_tile_tint(cell, _COLOR_TARGET, 0.35)
+		return
+	var rng: int = ability.range_tiles
+	if rng < 0:
+		return
+	var preview_board: BoardState = _display_preview_board()
+	for other: UnitState in preview_board.units:
+		if not other.is_alive() or other.id == unit.id:
+			continue
+		if GridSystem.manhattan(origin, other.position) <= rng:
+			var center: Vector2 = _map_view.grid_to_local(other.position)
+			draw_arc(center, _token_radius() + 4.0, 0.0, TAU, 24, _COLOR_TARGET, 2.0)
+
+
+func _is_valid_dash_hover(origin: Vector2i, coord: Vector2i, max_range: int) -> bool:
+	if coord == origin or max_range <= 0:
+		return false
+	var delta: Vector2i = coord - origin
+	if delta.x != 0 and delta.y != 0:
+		return false
+	var dist: int = GridSystem.manhattan(origin, coord)
+	return dist >= 1 and dist <= max_range
 
 
 func _proj_unit(unit_id: int) -> UnitState:

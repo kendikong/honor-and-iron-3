@@ -56,6 +56,7 @@ var _char_profile: CharacterGenProfile = CharacterGenProfile.new()
 var _fps_hud: FpsHud
 var _clock_hud: WorldClockHud
 var _tree_fader: TreeCanopyFader
+var _planning_input: CombatPlanningInput
 
 
 func _ready() -> void:
@@ -150,6 +151,10 @@ func get_skirmish() -> SkirmishGenerator.SkirmishResult:
 
 func get_ground_used_rect() -> Rect2i:
 	return _ground.get_used_rect()
+
+
+func set_planning_input(input: CombatPlanningInput) -> void:
+	_planning_input = input
 
 
 func get_map_root_scale() -> float:
@@ -430,7 +435,10 @@ func _update_hover_coord() -> void:
 	if get_viewport().gui_get_hovered_control() != null:
 		return
 	var cell: Vector2i = screen_to_grid(get_viewport().get_mouse_position())
-	if _side_panels != null:
-		_side_panels.set_hover_coord(cell)
-	if _planning_overlay != null:
-		_planning_overlay.set_hover_coord(cell)
+	if _planning_input != null:
+		_planning_input.on_hover_moved(cell)
+	else:
+		if _side_panels != null:
+			_side_panels.set_hover_coord(cell)
+		if _planning_overlay != null:
+			_planning_overlay.set_hover_coord(cell)

@@ -26,6 +26,8 @@ var _drag_press_time_ms: int = 0
 var _drag_unit_was_selected: bool = false
 var _drag_saved_preview: BoardState = null
 var preview_state: CombatPlanningPreview = CombatPlanningPreview.new()
+var drag_sim_actor_pos: Vector2i = Vector2i.ZERO
+var drag_preview_failed: bool = false
 
 
 func setup(
@@ -49,10 +51,12 @@ func cancel_drag() -> void:
 	dragging = false
 	_drag_unit_id = -1
 	_drag_route.clear()
+	drag_preview_failed = false
 	if _planning != null:
 		_planning.clear_drag_route()
 		_planning.end_drag_sprite()
 	_restore_committed_preview()
+	_clear_hover_preview()
 
 
 func cancel_aim() -> void:
@@ -259,11 +263,29 @@ func _apply_live_preview(preview: Dictionary) -> void:
 	if preview.is_empty():
 		return
 	preview_state.apply_result(preview, _director)
+	drag_preview_failed = false
+	var actor_id: int = _drag_unit_id if dragging else _director.selected_unit_id
+	for event: Variant in preview.get("events", []):
+		if event is SimEvent:
+			var sim: SimEvent = event as SimEvent
+			if (
+				sim.type == GameEnums.SimEventType.ACTION_FAILED
+				and int(sim.data.get("actor", -1)) == actor_id
+			):
+				drag_preview_failed = true
+				break
+	var temp_board: BoardState = preview.get("temp_board")
+	var pv_actor: UnitState = temp_board.get_unit_by_id(actor_id) if temp_board != null else null
+	if pv_actor != null:
+		drag_sim_actor_pos = pv_actor.position
+	elif dragging:
+		drag_sim_actor_pos = _drag_last_free
 	if preview.has("temp_board") and _planning != null:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
 
 
 func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
+	_clear_hover_preview()
 	_stash_committed_preview()
 	dragging = true
 	_drag_unit_id = unit.id
@@ -295,7 +317,7 @@ func _restore_committed_preview() -> void:
 	_drag_saved_preview = null
 	preview_state.clear_all()
 	if _planning != null:
-		_planning.clear_live_preview()
+		_planning.restore_committed_display()
 
 
 func _on_selection_changed(unit_id: int) -> void:
@@ -319,6 +341,224 @@ func _on_ability_selected(index: int) -> void:
 
 func _on_preview_updated(_result: SimResult) -> void:
 	_drag_saved_preview = null
+	if not dragging:
+		_clear_hover_preview()
+
+
+func on_hover_moved(cell: Vector2i) -> void:
+	if _director == null or _director.board == null:
+		return
+	if not dragging:
+		if _intent_state != null:
+			_intent_state.set_hover_coord(cell)
+		if _planning != null:
+			_planning.set_hover_coord(cell)
+	if not _is_planning() or dragging:
+		return
+	if not _director.board.is_in_bounds(cell):
+		if _director.selected_unit_id >= 0:
+			_restore_hover_preview()
+		return
+	if _planning != null:
+		_planning.recompute_hover_ranges(
+			force_basic_movement,
+			_director.selected_ability_index,
+			false,
+			-1,
+		)
+	if _director.selected_unit_id >= 0:
+		_refresh_selected_interaction_preview()
+	else:
+		_update_hover_attack_preview()
+	refresh_mouse_cursor(cell)
+
+
+func get_hover_tile_for_ui() -> Vector2i:
+	if dragging:
+		return _drag_last_free
+	if _intent_state != null:
+		return _intent_state.hover_coord
+	return Vector2i(-999, -999)
+
+
+func is_live_preview_active() -> bool:
+	if dragging or aiming:
+		return preview_state.preview_board != null
+	if _skill_interaction_active():
+		return preview_state.preview_board != null
+	return false
+
+
+func skill_interaction_active() -> bool:
+	return _skill_interaction_active()
+
+
+func get_drag_route() -> Array[Vector2i]:
+	return _drag_route
+
+
+func _clear_hover_preview() -> void:
+	preview_state.clear_interaction()
+	preview_state.preview_board = null
+	preview_state.preview_paths.clear()
+	preview_state.preview_splits.clear()
+	preview_state.preview_pushes.clear()
+	drag_preview_failed = false
+	if _planning != null:
+		_planning.restore_committed_display()
+
+
+func _refresh_selected_interaction_preview() -> void:
+	if dragging or _director == null or _director.board == null:
+		return
+	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	if _director.selected_unit_id < 0 or not _director.board.is_in_bounds(cell):
+		_restore_hover_preview()
+		return
+	var p_unit := _proj_unit(_director.selected_unit_id)
+	if p_unit == null or p_unit.is_enemy() or not p_unit.is_alive():
+		_restore_hover_preview()
+		return
+	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
+		var target_id := _hover_attack_target_id()
+		_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
+		return
+	if force_basic_movement and _can_move_to(p_unit, cell):
+		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
+		return
+	_restore_hover_preview()
+
+
+func _restore_hover_preview() -> void:
+	_clear_hover_preview()
+
+
+func _update_hover_attack_preview() -> void:
+	if aiming or dragging or _director == null or _director.board == null:
+		return
+	if _phase_not_planning():
+		return
+	if _director.selected_unit_id < 0:
+		return
+	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	if not _director.board.is_in_bounds(cell):
+		return
+	var p_unit := _proj_unit(_director.selected_unit_id)
+	if p_unit == null or p_unit.is_enemy() or not p_unit.is_alive():
+		return
+	if p_unit.active_abilities.is_empty() or _director.selected_ability_index < 0:
+		return
+	if _movement_blocked_by_dash(p_unit) and not force_basic_movement:
+		var dash_ability := _selected_ability_data(p_unit)
+		if dash_ability != null and _is_valid_dash_target(p_unit.position, cell, dash_ability.range_tiles):
+			var dash_res: Dictionary = _director.preview_dash(
+				_director.selected_unit_id, cell, _director.selected_ability_index,
+			)
+			_apply_hover_preview_dict(dash_res)
+		return
+	if _skill_takes_priority_over_basic_move():
+		var skill_ability := _selected_ability_data(p_unit)
+		if (
+			skill_ability != null
+			and _ability_has_dash(skill_ability)
+			and _is_valid_dash_target(_proj_origin(p_unit), cell, skill_ability.range_tiles)
+		):
+			var dash_res: Dictionary = _director.preview_dash(
+				_director.selected_unit_id, cell, _director.selected_ability_index,
+			)
+			_apply_hover_preview_dict(dash_res)
+			return
+	var hover_unit := _proj().get_unit_at(cell)
+	if hover_unit == null:
+		return
+	var target_id := _resolve_hover_attack_target(p_unit, hover_unit)
+	if target_id < 0:
+		return
+	var res: Dictionary = _director.preview_drag(_director.selected_unit_id, p_unit.position, target_id)
+	_apply_hover_preview_dict(res)
+
+
+func _apply_hover_preview_dict(res: Dictionary) -> void:
+	if res.is_empty():
+		return
+	preview_state.apply_result(res, _director)
+	if _planning != null:
+		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
+
+
+func _refresh_live_interaction_preview(
+	unit_id: int,
+	move_coord: Vector2i,
+	attack_target_id: int = -1,
+	waypoints: Array[Vector2i] = [],
+) -> void:
+	if _director == null or _director.board == null or unit_id < 0:
+		return
+	var unit := _director.board.get_unit_by_id(unit_id)
+	if unit == null:
+		return
+	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else move_coord
+	var cur_ability: int = _director.selected_ability_index
+	var dash_preview := false
+	var dash_ab := _selected_ability_data(unit)
+	if _director.board.is_in_bounds(cell) and _should_use_dash_on_input(dash_ab):
+		dash_preview = _is_valid_dash_target(_proj_origin(unit), cell, dash_ab.range_tiles)
+	var res: Dictionary
+	if dash_preview:
+		res = _director.preview_dash(unit_id, cell, cur_ability)
+		drag_sim_actor_pos = _proj_origin(unit)
+	else:
+		res = _director.preview_drag(unit_id, move_coord, attack_target_id, waypoints)
+		var temp_board: BoardState = res.get("temp_board")
+		var pv_actor: UnitState = temp_board.get_unit_by_id(unit_id) if temp_board != null else null
+		drag_sim_actor_pos = pv_actor.position if pv_actor != null else move_coord
+	drag_preview_failed = false
+	for event: Variant in res.get("events", []):
+		if event is SimEvent:
+			var sim: SimEvent = event as SimEvent
+			if (
+				sim.type == GameEnums.SimEventType.ACTION_FAILED
+				and int(sim.data.get("actor", -1)) == unit_id
+			):
+				drag_preview_failed = true
+				break
+	_apply_live_preview(res)
+
+
+func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> int:
+	if _skill_interaction_active() or aiming:
+		if hover_unit.id == p_unit.id:
+			return p_unit.id if _ability_range(p_unit) == 0 else -1
+		if _in_ability_range(p_unit, hover_unit):
+			return hover_unit.id
+		return -1
+	if hover_unit.is_enemy():
+		return hover_unit.id
+	return -1
+
+
+func _should_use_dash_on_input(ability: AbilityData) -> bool:
+	if ability == null or not _ability_has_dash(ability) or _director.selected_ability_index < 0:
+		return false
+	if _skill_interaction_active() or aiming:
+		return true
+	if not force_basic_movement:
+		return true
+	return AbilitySystem.ability_blocks_basic_movement(ability)
+
+
+func _movement_blocked_by_dash(unit: UnitState) -> bool:
+	if _director.selected_ability_index < 0:
+		return false
+	var ability := _selected_ability_data(unit)
+	return ability != null and AbilitySystem.ability_blocks_basic_movement(ability)
+
+
+func _phase_not_planning() -> bool:
+	return _director.phase not in [
+		CombatDirector.Phase.PLANNING_PHASE_1,
+		CombatDirector.Phase.PLANNING_PHASE_2,
+	]
 
 
 func _plan_approach_or_trample_on_enemy(
@@ -726,11 +966,7 @@ func _skill_takes_priority_over_basic_move() -> bool:
 
 
 func _skill_interaction_active() -> bool:
-	if not _skill_takes_priority_over_basic_move() or _director.selected_unit_id < 0 or dragging:
-		return false
-	if aiming:
-		return true
-	return _intent_state != null and _intent_state.is_skill_interaction_active()
+	return _skill_takes_priority_over_basic_move() and _director.selected_unit_id >= 0 and not dragging
 
 
 func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) -> void:

@@ -97,7 +97,10 @@ func setup(
 			_refresh_info(),
 		)
 	if _planning_overlay != null:
-		_planning_overlay.live_preview_changed.connect(func() -> void: _refresh_intent_label())
+		_planning_overlay.live_preview_changed.connect(func() -> void:
+			_refresh_intent_label()
+			_refresh_info(),
+		)
 	_on_viewport_resized()
 
 
@@ -343,6 +346,10 @@ func _refresh_info() -> void:
 	if _board == null or _info_label == null or _tile_info_label == null:
 		return
 	var hov: Vector2i = _hover_coord
+	if _planning_input != null:
+		var ui_hov: Vector2i = _planning_input.get_hover_tile_for_ui()
+		if _board.is_in_bounds(ui_hov):
+			hov = ui_hov
 	_tile_info_label.text = CombatUiFormatters.tile_info(_board, hov)
 	if _selected_id >= 0:
 		var u := _board.get_unit_by_id(_selected_id)
@@ -366,7 +373,7 @@ func _refresh_intent_label() -> void:
 	if _intent_label == null or _board == null:
 		return
 	var intent_list: Array = _board.intents
-	if _planning_input != null and (_planning_input.dragging or _planning_input.aiming):
+	if _planning_input != null and _planning_input.is_live_preview_active():
 		var live: Array = _planning_input.preview_state.live_intents
 		if not live.is_empty():
 			intent_list = live
