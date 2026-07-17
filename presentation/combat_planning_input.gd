@@ -51,6 +51,7 @@ func cancel_drag() -> void:
 	_drag_route.clear()
 	if _planning != null:
 		_planning.clear_drag_route()
+		_planning.end_drag_sprite()
 	_restore_committed_preview()
 
 
@@ -60,6 +61,7 @@ func cancel_aim() -> void:
 		_intent_state.set_skill_interaction_active(false)
 	if _planning != null:
 		_planning.set_aim_mode(false)
+	refresh_mouse_cursor(_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999))
 
 
 func on_left_press(local: Vector2) -> void:
@@ -168,6 +170,7 @@ func on_left_release(local: Vector2) -> void:
 			_try_plan_basic_move(_drag_unit_id, cell, local, waypoints)
 	_drag_route.clear()
 	_planning.clear_fixed_range_origin()
+	_planning.end_drag_sprite()
 	_planning.recompute_hover_ranges(
 		force_basic_movement,
 		_director.selected_ability_index,
@@ -222,7 +225,10 @@ func update_drag(local: Vector2) -> void:
 	)
 	_apply_live_preview(preview)
 	_planning.set_drag_route(_drag_route)
-	queue_redraw()
+	_update_drag_sprite(local, cell, preview)
+	refresh_mouse_cursor(cell)
+	if _planning != null:
+		_planning.queue_redraw()
 
 
 func get_drag_unit_id() -> int:
@@ -274,6 +280,7 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 		true,
 		_drag_unit_id,
 	)
+	_planning.begin_drag_sprite(unit.id)
 	_play_sfx("select")
 
 
@@ -612,3 +619,195 @@ func _is_planning() -> bool:
 func _play_sfx(key: String) -> void:
 	if _sfx != null:
 		_sfx.play(key)
+
+
+func refresh_mouse_cursor(cell: Vector2i) -> void:
+	var icon: String = _compute_hover_action_icon(cell)
+	if _planning != null:
+		_planning.set_hover_action_icon(icon)
+	if icon != "":
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	else:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
+func _compute_hover_action_icon(cell: Vector2i) -> String:
+	if _director == null or _director.board == null or not _director.board.is_in_bounds(cell):
+		return ""
+	if dragging:
+		if _drag_unit_was_selected and _drag_unit_id >= 0:
+			var drag_unit := _director.board.get_unit_by_id(_drag_unit_id)
+			if drag_unit != null and not drag_unit.is_enemy() and cell == drag_unit.position:
+				var ability := _selected_ability_data(drag_unit)
+				if ability != null and ability.range_tiles == 0:
+					return _ability_action_icon(ability)
+		return ""
+	var sel_id: int = _director.selected_unit_id
+	if sel_id < 0:
+		return ""
+	var sel_unit := _director.board.get_unit_by_id(sel_id)
+	if sel_unit == null or sel_unit.is_enemy():
+		return ""
+	var p_unit := _proj_unit(sel_id)
+	if p_unit == null:
+		return ""
+	var hover_unit: UnitState = (
+		_aim_enemy_board().get_unit_at(cell)
+		if _skill_interaction_active()
+		else _proj().get_unit_at(cell)
+	)
+	if _skill_interaction_active():
+		if force_basic_movement and hover_unit == null and cell != p_unit.position and _can_move_to(p_unit, cell):
+			return "🏃"
+		var valid_aim := false
+		if hover_unit != null:
+			if hover_unit.id == p_unit.id:
+				valid_aim = _ability_range(p_unit) == 0
+			else:
+				valid_aim = _in_ability_range(p_unit, hover_unit)
+		elif _director.selected_ability_index >= 0 and _director.selected_ability_index < p_unit.active_abilities.size():
+			var aim_ability: AbilityData = p_unit.active_abilities[_director.selected_ability_index]
+			if _ability_has_dash(aim_ability):
+				valid_aim = _is_valid_dash_target(p_unit.position, cell, aim_ability.range_tiles)
+		if valid_aim:
+			var abilities := p_unit.active_abilities
+			if _director.selected_ability_index >= 0 and _director.selected_ability_index < abilities.size():
+				return _ability_action_icon(abilities[_director.selected_ability_index])
+	else:
+		if hover_unit != null and hover_unit.is_enemy():
+			if _prefer_approach_over_trample_move(p_unit, hover_unit):
+				return "⚔️"
+			if _can_move_to(p_unit, cell):
+				return "🏃"
+			return "⚔️"
+		if hover_unit == null and cell != p_unit.position:
+			var hover_ability := _selected_ability_data(p_unit)
+			if (
+				_skill_takes_priority_over_basic_move()
+				and hover_ability != null
+				and _ability_has_dash(hover_ability)
+				and _is_valid_dash_target(_proj_origin(p_unit), cell, hover_ability.range_tiles)
+			):
+				if AbilitySystem.ability_is_offensive_dash(hover_ability):
+					return "⚔️"
+				return "✨"
+			if (
+				_basic_move_allowed()
+				and not MovementSystem.find_path(
+					_proj(), p_unit.position, cell, p_unit.movement.points_left,
+				).is_empty()
+			):
+				return "🏃"
+	return ""
+
+
+func _ability_action_icon(ability: AbilityData) -> String:
+	if ability == null:
+		return ""
+	if AbilitySystem.ability_is_offensive_dash(ability):
+		return "⚔️"
+	if AbilitySystem.ability_has_dash(ability):
+		return "✨"
+	for eff: EffectData in ability.effects:
+		match eff.type:
+			GameEnums.EffectType.DAMAGE:
+				return "⚔️"
+			GameEnums.EffectType.HEAL:
+				return "💚"
+			GameEnums.EffectType.ARMOR_UP:
+				return "🛡️"
+			GameEnums.EffectType.SWAP:
+				return "🔄"
+	return "✨"
+
+
+func _skill_takes_priority_over_basic_move() -> bool:
+	return not force_basic_movement and _director.selected_ability_index >= 0
+
+
+func _skill_interaction_active() -> bool:
+	if not _skill_takes_priority_over_basic_move() or _director.selected_unit_id < 0 or dragging:
+		return false
+	if aiming:
+		return true
+	return _intent_state != null and _intent_state.is_skill_interaction_active()
+
+
+func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) -> void:
+	if _planning == null:
+		return
+	var unit := _director.board.get_unit_by_id(_drag_unit_id) if _director.board != null else null
+	if unit == null:
+		return
+	for event: Variant in preview.get("events", []):
+		if event is SimEvent:
+			var sim: SimEvent = event as SimEvent
+			if (
+				sim.type == GameEnums.SimEventType.ACTION_FAILED
+				and int(sim.data.get("actor", -1)) == _drag_unit_id
+			):
+				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.IDLE, unit.facing)
+				return
+	var actor := _proj_unit(_drag_unit_id)
+	if actor == null:
+		actor = unit
+	var occ := _director.board.get_unit_at(cell)
+	if occ != null and occ.is_enemy() and occ.id != _drag_unit_id:
+		var atk_face: int = _facing_toward(_drag_last_free, occ.position)
+		if _prefer_approach_over_trample_move(actor, occ) or not _can_move_to(actor, occ.position):
+			var ability := _selected_ability_data(actor)
+			if ability != null and AbilitySystem.ability_has_dash(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
+				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, atk_face)
+			else:
+				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.ATTACK, atk_face)
+			return
+		if _can_move_to(actor, occ.position):
+			var walk_face: int = _facing_toward(actor.position, occ.position)
+			_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.WALK, walk_face)
+			return
+	if cell == actor.position and _drag_unit_was_selected and _director.selected_ability_index >= 0:
+		if _ability_range(actor) == 0:
+			var self_face: int = _facing_from_drop(local, cell)
+			if self_face < 0:
+				self_face = actor.facing
+			_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, self_face)
+			return
+	if not force_basic_movement and _director.selected_ability_index >= 0:
+		var dash_ability := _selected_ability_data(actor)
+		if (
+			dash_ability != null
+			and _ability_has_dash(dash_ability)
+			and _is_valid_dash_target(_proj_origin(actor), cell, dash_ability.range_tiles)
+		):
+			var dash_face: int = _facing_toward(_proj_origin(actor), cell)
+			var mode: int = (
+				TacticalUnitLayer.DragPreviewAnim.ATTACK
+				if AbilitySystem.ability_is_offensive_dash(dash_ability)
+				else TacticalUnitLayer.DragPreviewAnim.SPELL
+			)
+			_planning.update_drag_sprite(local, mode, dash_face)
+			return
+	if _drag_route.size() > 1 or _drag_last_free != unit.position:
+		var move_face: int = _facing_from_drop(local, _drag_last_free)
+		if _drag_route.size() >= 2:
+			move_face = _facing_toward(_drag_route[_drag_route.size() - 2], _drag_route[_drag_route.size() - 1])
+		elif _drag_last_free != unit.position:
+			move_face = _facing_toward(unit.position, _drag_last_free)
+		_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.WALK, move_face)
+		return
+	var idle_face: int = _facing_from_drop(local, cell)
+	if idle_face < 0:
+		idle_face = actor.facing
+	_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.IDLE, idle_face)
+
+
+func _facing_toward(from: Vector2i, to: Vector2i) -> int:
+	if to.x > from.x:
+		return GameEnums.Facing.EAST
+	if to.x < from.x:
+		return GameEnums.Facing.WEST
+	if to.y > from.y:
+		return GameEnums.Facing.SOUTH
+	if to.y < from.y:
+		return GameEnums.Facing.NORTH
+	return GameEnums.Facing.EAST

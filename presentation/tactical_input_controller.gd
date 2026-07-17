@@ -48,7 +48,17 @@ func handle_input(event: InputEvent) -> bool:
 		if _planning_input.dragging:
 			_planning_input.update_drag(local)
 		elif _planning_input.aiming:
+			var cell: Vector2i = _map_view.screen_to_grid(event.position)
+			if _intent_state != null:
+				_intent_state.set_hover_coord(cell)
+			_planning.set_hover_coord(cell)
 			_planning.set_aim_mode(true, local, _selected_class_id())
+			_planning.recompute_hover_ranges(
+				_planning_input.force_basic_movement,
+				_director.selected_ability_index,
+				false,
+				-1,
+			)
 		return _planning_input.dragging or _planning_input.aiming
 	if event is InputEventMouseButton:
 		return _handle_mouse_button(event as InputEventMouseButton)

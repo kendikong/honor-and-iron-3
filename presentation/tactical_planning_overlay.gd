@@ -35,6 +35,7 @@ var _fixed_range_origin: Vector2i = Vector2i(-999, -999)
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _unit_layer: TacticalUnitLayer
+var _planning_input: CombatPlanningInput
 var _attack_target_id: int = -1
 
 
@@ -76,6 +77,10 @@ func setup(
 
 func bind_unit_layer(layer: TacticalUnitLayer) -> void:
 	_unit_layer = layer
+
+
+func bind_planning_input(input: CombatPlanningInput) -> void:
+	_planning_input = input
 
 
 func get_preview_board() -> BoardState:
@@ -123,8 +128,26 @@ func set_hover_coord(coord: Vector2i) -> void:
 	if coord == _hover_coord:
 		return
 	_hover_coord = coord
-	_update_hover_action_icon()
+	if _planning_input != null:
+		_planning_input.refresh_mouse_cursor(coord)
+	else:
+		_update_hover_action_icon()
 	queue_redraw()
+
+
+func begin_drag_sprite(unit_id: int) -> void:
+	if _unit_layer != null:
+		_unit_layer.begin_drag_preview(unit_id)
+
+
+func update_drag_sprite(map_local: Vector2, anim_mode: int, facing: int) -> void:
+	if _unit_layer != null:
+		_unit_layer.update_drag_preview(map_local, anim_mode, facing)
+
+
+func end_drag_sprite() -> void:
+	if _unit_layer != null:
+		_unit_layer.end_drag_preview()
 
 
 func set_drag_route(route: Array[Vector2i]) -> void:
@@ -141,6 +164,14 @@ func set_aim_mode(active: bool, local_pos: Vector2 = Vector2.ZERO, class_id: Str
 	_aiming = active
 	_aim_local = local_pos
 	_aim_class_id = class_id
+	if active and _map_view != null:
+		var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
+		if _board != null and _board.is_in_bounds(cell):
+			_hover_coord = cell
+	if _planning_input != null:
+		_planning_input.refresh_mouse_cursor(_hover_coord)
+	elif active:
+		_update_hover_action_icon()
 	queue_redraw()
 
 
@@ -262,7 +293,7 @@ func _draw() -> void:
 	if _aiming:
 		ClassIconDrawer.draw_icon(self, _aim_local, _aim_class_id, _COLOR_AIM, 1.2)
 	if _hover_action_icon != "":
-		_draw_centered_icon(get_global_mouse_position() + Vector2(10.0, 10.0), _hover_action_icon, Color.WHITE, 28)
+		_draw_centered_icon(get_local_mouse_position() + Vector2(10.0, 10.0), _hover_action_icon, Color.WHITE, 28)
 
 
 func _draw_hover_tiles() -> void:

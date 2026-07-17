@@ -48,6 +48,10 @@ func set_skill_interaction_active(active: bool) -> void:
 	recompute()
 
 
+func is_skill_interaction_active() -> bool:
+	return _skill_interaction_active
+
+
 func set_hover_coord(coord: Vector2i) -> void:
 	if coord == hover_coord:
 		return

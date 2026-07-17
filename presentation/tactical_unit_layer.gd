@@ -32,6 +32,10 @@ var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
 var _move_tweens: Dictionary = {}
 var _active_push_tweens: int = 0
 var _damage_flash: Dictionary = {}
+var _drag_preview_id: int = -1
+var _drag_preview_active: bool = false
+
+enum DragPreviewAnim { IDLE, WALK, ATTACK, SPELL }
 
 signal push_tweens_idle
 
@@ -169,9 +173,10 @@ func _sync_actors() -> void:
 			continue
 		live[unit.id] = true
 		_ensure_actor(unit)
-		if not _move_tweens.has(unit.id):
+		if not _move_tweens.has(unit.id) and not (_drag_preview_active and unit.id == _drag_preview_id):
 			_position_actor(unit.id, unit.position)
-		_apply_facing(unit.id, unit.facing)
+		if not (_drag_preview_active and unit.id == _drag_preview_id):
+			_apply_facing(unit.id, unit.facing)
 		_update_depth(unit.id)
 	for id: Variant in _actors.keys():
 		if not live.has(id):
@@ -394,6 +399,68 @@ func _facing_toward(from: Vector2i, to: Vector2i) -> int:
 	return GameEnums.Facing.EAST
 
 
+func begin_drag_preview(unit_id: int) -> void:
+	_drag_preview_id = unit_id
+	_drag_preview_active = true
+	_kill_move_tween(unit_id)
+
+
+func end_drag_preview() -> void:
+	if _drag_preview_id < 0:
+		return
+	var unit_id: int = _drag_preview_id
+	_drag_preview_active = false
+	_drag_preview_id = -1
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	if unit != null:
+		_position_actor(unit_id, unit.position)
+		_apply_facing(unit_id, unit.facing)
+		_update_depth(unit_id)
+	var actor: CharacterActor = _actors.get(unit_id)
+	if actor != null:
+		actor.modulate = Color.WHITE
+		actor.set_walking(false)
+
+
+func update_drag_preview(map_local: Vector2, anim_mode: int, facing: int) -> void:
+	if not _drag_preview_active or _drag_preview_id < 0 or _map_view == null:
+		return
+	var actor: CharacterActor = _actors.get(_drag_preview_id)
+	if actor == null:
+		return
+	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
+	var foot: Vector2 = _map_view.grid_to_foot_local(cell)
+	var center: Vector2 = _map_view.grid_to_local(cell)
+	actor.position = foot + (map_local - center)
+	match anim_mode:
+		DragPreviewAnim.WALK:
+			actor.set_facing(_facing_anim(facing))
+			actor.set_walking(true)
+		DragPreviewAnim.ATTACK:
+			actor.set_facing(_attack_anim(facing))
+			actor.set_walking(true)
+		DragPreviewAnim.SPELL:
+			actor.set_facing(_spell_anim(facing))
+			actor.set_walking(true)
+		_:
+			if facing >= 0:
+				actor.set_facing(_facing_anim(facing))
+			actor.set_walking(false)
+	_update_depth(_drag_preview_id)
+
+
+func _spell_anim(facing: int) -> StringName:
+	match facing:
+		GameEnums.Facing.NORTH:
+			return &"spellcast_up"
+		GameEnums.Facing.WEST:
+			return &"spellcast_left"
+		GameEnums.Facing.SOUTH:
+			return &"spellcast_down"
+		_:
+			return &"spellcast_right"
+
+
 func _facing_anim(facing: int) -> StringName:
 	match facing:
 		GameEnums.Facing.NORTH:
@@ -412,6 +479,8 @@ func _draw() -> void:
 	_tick_damage_flash()
 	for unit in _board.units:
 		if not unit.is_alive():
+			continue
+		if _drag_preview_active and unit.id == _drag_preview_id:
 			continue
 		_draw_hp_bar(unit)
 		var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
