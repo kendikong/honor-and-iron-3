@@ -11,6 +11,7 @@ var _director: CombatDirector
 var _board: BoardState
 var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
 var _selected_id: int = -1
+var _timeline_hover_id: int = -1
 var _header_font_px: int = 13
 var _cell_font_px: int = 11
 
