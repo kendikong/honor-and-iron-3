@@ -582,7 +582,8 @@ func _update_hover_attack_preview() -> void:
 	var rng: int = _ability_range(p_unit)
 	if (
 		rng >= 0
-		and _phase == CombatDirector.Phase.PLANNING_PHASE_2
+		and _director != null
+		and _director.phase == CombatDirector.Phase.PLANNING_PHASE_2
 		and target_id != p_unit.id
 	):
 		var target := _proj().get_unit_by_id(target_id)
