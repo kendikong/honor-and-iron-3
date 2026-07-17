@@ -67,14 +67,14 @@ static func _action_in_bucket(action: TimelineAction, bucket: ActionBucket) -> b
 			return action.type in [
 				GameEnums.ActionType.MOVE,
 				GameEnums.ActionType.FACE,
-			] and action.phase == 1
+			] and action.move_timing == GameEnums.MoveTiming.PRE_ACTION
 		ActionBucket.ACTION:
 			return action.type == GameEnums.ActionType.ABILITY
 		ActionBucket.POST_MOVE:
 			return action.type in [
 				GameEnums.ActionType.MOVE,
 				GameEnums.ActionType.FACE,
-			] and action.phase == 2
+			] and action.move_timing == GameEnums.MoveTiming.POST_ACTION
 	return false
 
 

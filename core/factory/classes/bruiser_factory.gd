@@ -32,7 +32,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	
 	def.passives.append(DataLibrary._make_passive(&"colossal_mass", "Colossal Mass", "Gain +1 STR for every 15 Max HP.", "[+] Gain +1 STR for every 10 Max HP instead."))
 	def.passives.append(DataLibrary._make_passive(&"overwhelming_bulk", "Overwhelming Bulk", "If Current HP > target Max HP, attacks gain PIERCE.", "[+] Attacks also apply PUSH 1."))
-	def.passives.append(DataLibrary._make_passive(&"thrill_of_pain", "Thrill of Pain", "Damage taken in Phase 1 adds ATK +2 and PUSH 1 to Phase 2 attack.", "[+] Next attack gains ATK +3 instead."))
+	def.passives.append(DataLibrary._make_passive(&"thrill_of_pain", "Thrill of Pain", "Damage taken before your action adds ATK +2 and PUSH 1 to your next attack.", "[+] Next attack gains ATK +3 instead."))
 	def.passives.append(DataLibrary._make_passive(&"momentum_of_titan", "Momentum of the Titan", "PUSH collision adds damage = 10% Max HP.", "[+] Damage increases to 20% Max HP."))
 	def.passives.append(DataLibrary._make_passive(&"scar_tissue", "Scar Tissue", "Reduce physical damage by 1 per 20 Max HP or missing HP.", "[+] Reduce damage by additional 1."))
 	

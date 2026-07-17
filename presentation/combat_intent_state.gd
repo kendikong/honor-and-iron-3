@@ -16,7 +16,7 @@ var _preview_board: BoardState
 var _live_preview_board: BoardState
 var _director: CombatDirector
 var _selected_id: int = -1
-var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
+var _phase: int = CombatDirector.Phase.PLANNING
 var _skill_interaction_active: bool = false
 
 
@@ -135,12 +135,7 @@ func intent_visible(unit: UnitState) -> bool:
 		return true
 	if _phase == CombatDirector.Phase.ENEMY_TURN:
 		return true
-	if _phase in [
-		CombatDirector.Phase.PLANNING_PHASE_1,
-		CombatDirector.Phase.PLANNING_PHASE_2,
-		CombatDirector.Phase.EXECUTING_PHASE_1,
-		CombatDirector.Phase.EXECUTING_PHASE_2,
-	]:
+	if CombatDirector.is_planning_phase(_phase) or CombatDirector.is_executing_phase(_phase):
 		return intent_units.has(unit.id)
 	return false
 

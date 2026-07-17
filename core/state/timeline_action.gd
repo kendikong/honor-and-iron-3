@@ -10,7 +10,8 @@ extends RefCounted
 
 var actor_id: int = -1
 var type: GameEnums.ActionType = GameEnums.ActionType.MOVE
-var phase: int = 1
+## MOVE/FACE only: resolve before or after the unit's ability this turn.
+var move_timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION
 
 ## MOVE: destination tile.
 ## ABILITY: target tile (used when target_unit_id is -1).
@@ -33,30 +34,46 @@ var waypoints: Array[Vector2i] = []
 ## (e.g. trample push) and cannot be undone.
 var irreversible: bool = false
 
-static func make_move(p_actor_id: int, p_target_coord: Vector2i, p_face_dir: int = -1, p_waypoints: Array[Vector2i] = [], p_phase: int = 1) -> TimelineAction:
+static func make_move(
+	p_actor_id: int,
+	p_target_coord: Vector2i,
+	p_face_dir: int = -1,
+	p_waypoints: Array[Vector2i] = [],
+	p_move_timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION,
+) -> TimelineAction:
 	var action := TimelineAction.new()
 	action.actor_id = p_actor_id
 	action.type = GameEnums.ActionType.MOVE
-	action.phase = p_phase
+	action.move_timing = p_move_timing
 	action.target_coord = p_target_coord
 	action.face_dir = p_face_dir
 	action.waypoints = p_waypoints
 	return action
 
 ## Turn in place without moving (the destination is the unit's own tile).
-static func make_face(p_actor_id: int, p_face_dir: int, p_phase: int = 1) -> TimelineAction:
+static func make_face(
+	p_actor_id: int,
+	p_face_dir: int,
+	p_move_timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION,
+) -> TimelineAction:
 	var action := TimelineAction.new()
 	action.actor_id = p_actor_id
 	action.type = GameEnums.ActionType.FACE
-	action.phase = p_phase
+	action.move_timing = p_move_timing
 	action.face_dir = p_face_dir
 	return action
 
-static func make_ability(p_actor_id: int, p_ability: AbilityData, p_target_coord: Vector2i, p_target_unit_id: int = -1, p_phase: int = 1) -> TimelineAction:
+static func make_ability(
+	p_actor_id: int,
+	p_ability: AbilityData,
+	p_target_coord: Vector2i,
+	p_target_unit_id: int = -1,
+	p_move_timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION,
+) -> TimelineAction:
 	var action := TimelineAction.new()
 	action.actor_id = p_actor_id
 	action.type = GameEnums.ActionType.ABILITY
-	action.phase = p_phase
+	action.move_timing = p_move_timing
 	action.ability = p_ability
 	action.target_coord = p_target_coord
 	action.target_unit_id = p_target_unit_id
@@ -66,7 +83,7 @@ func clone() -> TimelineAction:
 	var copy := TimelineAction.new()
 	copy.actor_id = actor_id
 	copy.type = type
-	copy.phase = phase
+	copy.move_timing = move_timing
 	copy.target_coord = target_coord
 	copy.ability = ability  # shared immutable definition
 	copy.target_unit_id = target_unit_id

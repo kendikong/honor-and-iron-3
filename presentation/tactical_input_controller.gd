@@ -148,10 +148,7 @@ func _selected_class_id() -> StringName:
 
 
 func _is_planning() -> bool:
-	return _director.phase in [
-		CombatDirector.Phase.PLANNING_PHASE_1,
-		CombatDirector.Phase.PLANNING_PHASE_2,
-	]
+	return CombatDirector.is_planning_phase(_director.phase)
 
 
 func _screen_to_map_local(screen_pos: Vector2) -> Vector2:

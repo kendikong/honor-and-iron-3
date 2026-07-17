@@ -602,7 +602,7 @@ func _update_hover_attack_preview() -> void:
 	if (
 		rng >= 0
 		and _director != null
-		and _director.phase == CombatDirector.Phase.PLANNING_PHASE_1
+		and _director.phase == CombatDirector.Phase.PLANNING
 		and target_id != p_unit.id
 	):
 		var target := _proj().get_unit_by_id(target_id)
@@ -690,10 +690,7 @@ func _unit_movement_blocked_by_dash(unit: UnitState) -> bool:
 
 
 func _phase_not_planning() -> bool:
-	return _director.phase not in [
-		CombatDirector.Phase.PLANNING_PHASE_1,
-		CombatDirector.Phase.PLANNING_PHASE_2,
-	]
+	return not CombatDirector.is_planning_phase(_director.phase)
 
 
 func _plan_approach_or_trample_on_enemy(
@@ -1005,10 +1002,7 @@ func _facing_from_drop(local: Vector2, coord: Vector2i) -> int:
 func _is_planning() -> bool:
 	if _director == null:
 		return false
-	return _director.phase in [
-		CombatDirector.Phase.PLANNING_PHASE_1,
-		CombatDirector.Phase.PLANNING_PHASE_2,
-	]
+	return CombatDirector.is_planning_phase(_director.phase)
 
 
 func _play_sfx(key: String) -> void:

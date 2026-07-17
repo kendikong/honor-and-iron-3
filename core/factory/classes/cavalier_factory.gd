@@ -28,7 +28,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	def.passives.append(DataLibrary._make_passive(&"frontline_defense", "Frontline Defense", "Gain +1 DEF and Ranged immunity if moved 3+ tiles.", "[+] Also gain SHIELD 1."))
 	def.passives.append(DataLibrary._make_passive(&"flanking_strike", "Flanking Strike", "Side attacks ignore 2 DEF.", "[+] Ignores 4 DEF instead."))
 	
-	def.passives.append(DataLibrary._make_passive(&"plunging_attack", "Plunging Attack", "Using an AP jump/teleport in Phase 1 adds +3 ATK to Phase 2.", "[+] Attack gains PIERCE."))
+	def.passives.append(DataLibrary._make_passive(&"plunging_attack", "Plunging Attack", "Using an AP jump/teleport before your action adds +3 ATK to that action.", "[+] Attack gains PIERCE."))
 	def.passives.append(DataLibrary._make_passive(&"crashing_impact", "Crashing Impact", "Landing creates shockwave (PUSH 1 adjacent).", "[+] Pushed enemies hitting obstacles suffer STUN."))
 	def.passives.append(DataLibrary._make_passive(&"pole_plant", "Pole-Plant", "0-AP Push works on traps. Destroying trap = SHIELD 2.", "[+] Destroying trap deals 2 unmitigated damage to adjacent."))
 	def.passives.append(DataLibrary._make_passive(&"spear_drop", "Spear Drop", "Attacking an enemy you vaulted over ignores 2 DEF and applies BLEED X.", "[+] Ignores 4 DEF."))

@@ -33,7 +33,7 @@ var _timeline_hover_id: int = -1
 var _intent_units: Dictionary = {}
 var _predicted_hp: Dictionary = {}
 var _predicted_armor: Dictionary = {}
-var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
+var _phase: int = CombatDirector.Phase.PLANNING
 var _move_tweens: Dictionary = {}
 var _active_push_tweens: int = 0
 var _damage_flash: Dictionary = {}
@@ -503,15 +503,9 @@ func _draw() -> void:
 		_draw_hp_bar(unit)
 		var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
 		var ring_center: Vector2 = foot + Vector2(0.0, -10.0)
-		if _phase in [
-			CombatDirector.Phase.PLANNING_PHASE_1,
-			CombatDirector.Phase.PLANNING_PHASE_2,
-		]:
+		if CombatDirector.is_planning_phase(_phase):
 			_draw_movement_pips(ring_center, unit)
-		if unit.id == _selected_id and _phase in [
-			CombatDirector.Phase.PLANNING_PHASE_1,
-			CombatDirector.Phase.PLANNING_PHASE_2,
-		]:
+		if unit.id == _selected_id and CombatDirector.is_planning_phase(_phase):
 			draw_arc(ring_center, 15.0, 0.0, TAU, 48, _COLOR_SELECT_GLOW, 5.0)
 			draw_arc(ring_center, 11.0, 0.0, TAU, 40, _COLOR_SELECT, 3.5)
 		if unit.id == _timeline_hover_id:
@@ -585,11 +579,7 @@ func _draw_movement_pips(center: Vector2, unit: UnitState) -> void:
 	var is_attack_queued := false
 	var is_skill_queued := false
 	if not unit.is_enemy():
-		var plan_to_use: Timeline = (
-			_director.plan_phase_1
-			if _phase == CombatDirector.Phase.PLANNING_PHASE_1
-			else _director.plan_phase_2
-		)
+		var plan_to_use: Timeline = _director.get_player_plan()
 		if plan_to_use != null:
 			for action: TimelineAction in plan_to_use.entries:
 				if action.actor_id == unit.id and action.type == GameEnums.ActionType.ABILITY:
@@ -855,10 +845,7 @@ func _process(delta: float) -> void:
 		need_redraw = true
 	if _any_predicted_change():
 		need_redraw = true
-	if _phase in [
-		CombatDirector.Phase.PLANNING_PHASE_1,
-		CombatDirector.Phase.PLANNING_PHASE_2,
-	]:
+	if CombatDirector.is_planning_phase(_phase):
 		need_redraw = true
 	if need_redraw:
 		queue_redraw()

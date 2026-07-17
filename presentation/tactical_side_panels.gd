@@ -32,7 +32,7 @@ var _danger_area_check: CheckBox
 
 var _board: BoardState
 var _preview_board: BoardState
-var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
+var _phase: int = CombatDirector.Phase.PLANNING
 var _selected_id: int = -1
 var _selected_ability: int = 0
 var _hover_coord: Vector2i = Vector2i(-999, -999)
@@ -411,10 +411,7 @@ func _refresh_info() -> void:
 func _append_hover_action_hint() -> void:
 	if _planning_input == null or _director == null or _info_label == null:
 		return
-	if _phase not in [
-		CombatDirector.Phase.PLANNING_PHASE_1,
-		CombatDirector.Phase.PLANNING_PHASE_2,
-	]:
+	if not CombatDirector.is_planning_phase(_phase):
 		return
 	var hov: Vector2i = _planning_input.get_hover_tile_for_ui()
 	if not _board.is_in_bounds(hov):

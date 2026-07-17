@@ -1,7 +1,7 @@
 class_name TacticalTimelineGrid
 extends GridContainer
 
-## Turn-order grid — Name / Class / Stats / Phase 1 / Phase 2 (ported from board_view).
+## Turn-order grid — Name / Class / Stats / Pre-Move / Action.
 
 const COLOR_FAIL: Color = Color(1.0, 0.35, 0.35)
 const BG_ACTIVE: Color = Color(1.0, 1.0, 0.0, 0.25)
@@ -9,7 +9,7 @@ const COLOR_DIM_HEADER: Color = Color(0.6, 0.6, 0.6)
 
 var _director: CombatDirector
 var _board: BoardState
-var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
+var _phase: int = CombatDirector.Phase.PLANNING
 var _selected_id: int = -1
 var _timeline_hover_id: int = -1
 var _header_font_px: int = 13
@@ -178,7 +178,7 @@ func _find_pre_action(plan: Timeline, unit_id: int) -> TimelineAction:
 	for action: TimelineAction in plan.entries:
 		if action.actor_id != unit_id:
 			continue
-		if action.type == GameEnums.ActionType.MOVE and action.phase == 1:
+		if action.type == GameEnums.ActionType.MOVE and action.move_timing == GameEnums.MoveTiming.PRE_ACTION:
 			return action
 	return null
 
@@ -192,7 +192,7 @@ func _find_post_action(plan: Timeline, unit_id: int) -> TimelineAction:
 			continue
 		if action.type == GameEnums.ActionType.ABILITY:
 			ability_action = action
-		elif action.type == GameEnums.ActionType.MOVE and action.phase == 2:
+		elif action.type == GameEnums.ActionType.MOVE and action.move_timing == GameEnums.MoveTiming.POST_ACTION:
 			return action
 	return ability_action
 

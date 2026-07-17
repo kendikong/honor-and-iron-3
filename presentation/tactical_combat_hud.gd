@@ -253,10 +253,8 @@ func _build_banner() -> void:
 
 func _on_phase_changed(phase: int) -> void:
 	var names: Dictionary = {
-		CombatDirector.Phase.PLANNING_PHASE_1: "PLANNING",
-		CombatDirector.Phase.PLANNING_PHASE_2: "PLANNING",
-		CombatDirector.Phase.EXECUTING_PHASE_1: "EXECUTING…",
-		CombatDirector.Phase.EXECUTING_PHASE_2: "EXECUTING…",
+		CombatDirector.Phase.PLANNING: "PLANNING",
+		CombatDirector.Phase.EXECUTING: "EXECUTING…",
 		CombatDirector.Phase.ENEMY_TURN: "ENEMY TURN…",
 		CombatDirector.Phase.VICTORY: "VICTORY",
 		CombatDirector.Phase.DEFEAT: "DEFEAT",
@@ -378,8 +376,7 @@ func _refresh_undo_button() -> void:
 	if _undo_btn == null or _director == null:
 		return
 	var planning: bool = (
-		_director.phase == CombatDirector.Phase.PLANNING_PHASE_1
-		or _director.phase == CombatDirector.Phase.PLANNING_PHASE_2
+		CombatDirector.is_planning_phase(_director.phase)
 	)
 	_undo_btn.disabled = (
 		not planning

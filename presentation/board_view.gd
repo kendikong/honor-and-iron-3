@@ -136,7 +136,7 @@ var _preview: BoardState
 var _selected_id: int = -1
 var _timeline_hover_id: int = -1
 var _selected_ability: int = 0
-var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
+var _phase: int = CombatDirector.Phase.PLANNING
 var _aiming: bool = false
 var _force_basic_movement: bool = false
 var _is_local_ready: bool = false
@@ -348,7 +348,7 @@ func _process(delta: float) -> void:
 				v["shake_offset"] = Vector2.ZERO
 				
 	# Keep redrawing while planning or moving so dashed arrows and damage bars animate.
-	if moving or _phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2:
+	if moving or CombatDirector.is_planning_phase(_phase):
 		queue_redraw()
 
 # --- Input --------------------------------------------------------------------
@@ -382,7 +382,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			_update_hover(local)
 		return
-	if _phase != CombatDirector.Phase.PLANNING_PHASE_1 and _phase != CombatDirector.Phase.PLANNING_PHASE_2:
+	if not CombatDirector.is_planning_phase(_phase):
 		return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
@@ -422,7 +422,7 @@ func _on_right_click() -> void:
 		_cancel_aim()
 		_sfx.play("cancel")
 		return
-	if (_phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2) and _selected_id >= 0:
+	if (CombatDirector.is_planning_phase(_phase)) and _selected_id >= 0:
 		if _unit_has_undoable_actions(_selected_id):
 			_remove_last_for_unit(_selected_id)
 			_sfx.play("cancel")
@@ -883,22 +883,22 @@ func _on_timeline_changed(timeline: Timeline, statuses: PackedStringArray) -> vo
 	if _board == null:
 		return
 		
-	# Determine which phase columns are active for dimming/highlighting
-	var p1_active := _phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.EXECUTING_PHASE_1
-	var p2_active := _phase == CombatDirector.Phase.PLANNING_PHASE_2 or _phase == CombatDirector.Phase.EXECUTING_PHASE_2
-	var BG_ACTIVE := Color(1.0, 1.0, 0.0, 0.25)  ## pure bright yellow background highlight for active phase
-	var COLOR_DIM_HEADER := Color(0.6, 0.6, 0.6)   ## slightly grey for inactive phase column
-	var headers := ["Name", "Class", "Stats", "Phase 1", "Phase 2"]
+	var plan_active := CombatDirector.is_planning_phase(_phase) or CombatDirector.is_executing_phase(_phase)
+	var pre_col_active: bool = plan_active
+	var action_col_active: bool = plan_active
+	var BG_ACTIVE := Color(1.0, 1.0, 0.0, 0.25)
+	var COLOR_DIM_HEADER := Color(0.6, 0.6, 0.6)
+	var headers := ["Name", "Class", "Stats", "Pre-Move", "Action"]
 	for i in headers.size():
 		var h: String = headers[i]
 		var hcol := Color.WHITE
 		var hbg := Color.TRANSPARENT
-		if i == 3:  # Phase 1 column
-			hcol = Color.WHITE if p1_active else COLOR_DIM_HEADER
-			hbg = BG_ACTIVE if p1_active else Color.TRANSPARENT
-		elif i == 4:  # Phase 2 column
-			hcol = Color.WHITE if p2_active else COLOR_DIM_HEADER
-			hbg = BG_ACTIVE if p2_active else Color.TRANSPARENT
+		if i == 3:
+			hcol = Color.WHITE if pre_col_active else COLOR_DIM_HEADER
+			hbg = BG_ACTIVE if pre_col_active else Color.TRANSPARENT
+		elif i == 4:
+			hcol = Color.WHITE if action_col_active else COLOR_DIM_HEADER
+			hbg = BG_ACTIVE if action_col_active else Color.TRANSPARENT
 		_make_table_cell(_timeline_box, h, "", hcol, true, hbg)
 		
 	var first_warning: Array[String] = []
@@ -925,57 +925,43 @@ func _on_timeline_changed(timeline: Timeline, statuses: PackedStringArray) -> vo
 		var stats_tooltip := "Level: %d, Health: %d/%d, Armor: %d, Strength: %d, Magic: %d, Defense: %d, Move: %d" % [unit.level, unit.health.current_hp, unit.health.max_hp, unit.armor, unit.current_strength, unit.current_magic, unit.current_defense, unit.movement.max_points]
 		var stats_lbl := _make_table_cell(_timeline_box, stats_text, stats_tooltip, dim_color, false, bg_color)
 		
-		var p1_action: TimelineAction = null
-		if _director != null:
-			for a in _director.plan_phase_1.entries:
-				if a.actor_id == unit.id:
-					p1_action = a
-					break
-		
-		# Phase 1 cell
-		var p1_text := _action_symbol_text(p1_action, unit)
-		var p1_tooltip := _describe_action(p1_action) if p1_action != null else "No action queued"
-		var p1_col := row_color if p1_active else Color(row_color.r * 0.45, row_color.g * 0.45, row_color.b * 0.45)
-		var p1_bg := bg_color.blend(BG_ACTIVE) if p1_active else bg_color
-		var p1_lbl := _make_table_cell(_timeline_box, p1_text, p1_tooltip, p1_col, false, p1_bg)
-		if p1_action == null:
-			p1_lbl.modulate = Color(1, 1, 1, 0.25 if not p1_active else 0.4)
+		var pre_action: TimelineAction = _timeline_pre_move_action(timeline, unit.id)
+		var pre_text := _action_symbol_text(pre_action, unit)
+		var pre_tooltip := _describe_action(pre_action) if pre_action != null else "No action queued"
+		var pre_col := row_color if pre_col_active else Color(row_color.r * 0.45, row_color.g * 0.45, row_color.b * 0.45)
+		var pre_bg := bg_color.blend(BG_ACTIVE) if pre_col_active else bg_color
+		var pre_lbl := _make_table_cell(_timeline_box, pre_text, pre_tooltip, pre_col, false, pre_bg)
+		if pre_action == null:
+			pre_lbl.modulate = Color(1, 1, 1, 0.25 if not pre_col_active else 0.4)
 		else:
-			var combined_idx := timeline.entries.find(p1_action)
+			var combined_idx := timeline.entries.find(pre_action)
 			if combined_idx >= 0 and combined_idx < statuses.size():
 				var reason := statuses[combined_idx]
 				if reason != "":
-					p1_lbl.add_theme_color_override("font_color", COLOR_FAIL)
+					pre_lbl.add_theme_color_override("font_color", COLOR_FAIL)
 					if first_warning.is_empty():
 						first_warning.append("Action %d (%s): %s" % [combined_idx + 1, unit.definition.display_name, _reason_text(reason)])
-						
-		# Phase 2 cell
-		var p2_action: TimelineAction = null
-		if _director != null:
-			for a in _director.plan_phase_2.entries:
-				if a.actor_id == unit.id:
-					p2_action = a
-					break
-					
-		var p2_text := _action_symbol_text(p2_action, unit)
-		var p2_tooltip := _describe_action(p2_action) if p2_action != null else "No action queued"
-		var p2_col := row_color if p2_active else Color(row_color.r * 0.45, row_color.g * 0.45, row_color.b * 0.45)
-		var p2_bg := bg_color.blend(BG_ACTIVE) if p2_active else bg_color
-		var p2_lbl := _make_table_cell(_timeline_box, p2_text, p2_tooltip, p2_col, false, p2_bg)
-		if p2_action == null:
-			p2_lbl.modulate = Color(1, 1, 1, 0.25 if not p2_active else 0.4)
+
+		var action_entry: TimelineAction = _timeline_action_slot(timeline, unit.id)
+		var action_text := _action_symbol_text(action_entry, unit)
+		var action_tooltip := _describe_action(action_entry) if action_entry != null else "No action queued"
+		var action_col := row_color if action_col_active else Color(row_color.r * 0.45, row_color.g * 0.45, row_color.b * 0.45)
+		var action_bg := bg_color.blend(BG_ACTIVE) if action_col_active else bg_color
+		var action_lbl := _make_table_cell(_timeline_box, action_text, action_tooltip, action_col, false, action_bg)
+		if action_entry == null:
+			action_lbl.modulate = Color(1, 1, 1, 0.25 if not action_col_active else 0.4)
 		else:
-			var combined_idx := timeline.entries.find(p2_action)
+			var combined_idx := timeline.entries.find(action_entry)
 			if combined_idx >= 0 and combined_idx < statuses.size():
 				var reason := statuses[combined_idx]
 				if reason != "":
-					p2_lbl.add_theme_color_override("font_color", COLOR_FAIL)
+					action_lbl.add_theme_color_override("font_color", COLOR_FAIL)
 					if first_warning.is_empty():
 						first_warning.append("Action %d (%s): %s" % [combined_idx + 1, unit.definition.display_name, _reason_text(reason)])
-						
+
 		var u_id = unit.id
-		var row_labels := [name_lbl, class_lbl, stats_lbl, p1_lbl, p2_lbl]
-		var base_colors := [bg_color, bg_color, bg_color, p1_bg, p2_bg]
+		var row_labels := [name_lbl, class_lbl, stats_lbl, pre_lbl, action_lbl]
+		var base_colors := [bg_color, bg_color, bg_color, pre_bg, action_bg]
 		var hover_colors: Array[Color] = []
 		for c in base_colors:
 			hover_colors.append(c.lightened(0.2) if c != Color.TRANSPARENT else Color(1, 1, 1, 0.1))
@@ -1011,7 +997,7 @@ func _on_timeline_changed(timeline: Timeline, statuses: PackedStringArray) -> vo
 	_recompute_intent_units()
 	_update_intent_label()
 	_refresh_info()
-	if _phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2:
+	if CombatDirector.is_planning_phase(_phase):
 		_undo_btn.disabled = not _unit_has_undoable_actions(_selected_id)
 	_rebuild_ability_buttons()
 
@@ -1054,11 +1040,9 @@ func _on_phase_changed(phase: int) -> void:
 	_phase = phase
 	_clear_hover_attack_preview()
 	var _phase_names := {
-		CombatDirector.Phase.PLANNING_PHASE_1: "PLANNING",
-		CombatDirector.Phase.PLANNING_PHASE_2: "PLANNING",
-		CombatDirector.Phase.EXECUTING_PHASE_1: "EXECUTING...",
-		CombatDirector.Phase.EXECUTING_PHASE_2: "EXECUTING...",
-		CombatDirector.Phase.ENEMY_TURN: "EXECUTING ENEMY PHASE...",
+		CombatDirector.Phase.PLANNING: "PLANNING",
+		CombatDirector.Phase.EXECUTING: "EXECUTING...",
+		CombatDirector.Phase.ENEMY_TURN: "EXECUTING ENEMY TURN...",
 		CombatDirector.Phase.VICTORY: "VICTORY",
 	}
 	_phase_label.text = _phase_names.get(phase, CombatDirector.Phase.keys()[phase])
@@ -1066,7 +1050,7 @@ func _on_phase_changed(phase: int) -> void:
 		_phase_label.add_theme_color_override("font_color", Color.RED)
 	else:
 		_phase_label.add_theme_color_override("font_color", Color.html(HEX_PHASE))
-	var planning := phase == CombatDirector.Phase.PLANNING_PHASE_1 or phase == CombatDirector.Phase.PLANNING_PHASE_2
+	var planning := CombatDirector.is_planning_phase(phase)
 	if planning:
 		_aiming = false
 		_execute_btn.text = "Ready to Execute"
@@ -1100,7 +1084,7 @@ func _find_action(events: Array[SimEvent], unit_id: int) -> TimelineAction:
 	var last_act: TimelineAction = null
 	for e in events:
 		if e.type == GameEnums.SimEventType.UNIT_MOVED and e.data.get("actor", -1) == unit_id:
-			last_act = TimelineAction.make_move(unit_id, e.data["to"], -1, [], 1)
+			last_act = TimelineAction.make_move(unit_id, e.data["to"], -1, [], GameEnums.MoveTiming.PRE_ACTION)
 		elif e.type == GameEnums.SimEventType.ABILITY_USED and e.data.get("actor", -1) == unit_id:
 			var act := TimelineAction.new()
 			act.type = GameEnums.ActionType.ABILITY
@@ -1209,7 +1193,7 @@ func _draw() -> void:
 	_draw_particles(t)
 	
 	_draw_danger_area()
-	var show_planning := _phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2
+	var show_planning := CombatDirector.is_planning_phase(_phase)
 	var show_preview := show_planning
 	if show_planning:
 		_draw_move_ghosts()
@@ -1608,7 +1592,7 @@ func _draw_ability_range() -> void:
 func _draw_ghosts() -> void:
 	if _display_preview_board() == null:
 		return
-	var plan_to_use = _director.plan_phase_1 if _phase == CombatDirector.Phase.PLANNING_PHASE_1 else _director.plan_phase_2
+	var plan_to_use = _director.get_player_plan()
 	for unit in _board.units:
 		if not unit.is_alive():
 			continue
@@ -1820,7 +1804,7 @@ func _draw_push_arrow(from: Vector2i, to: Vector2i) -> void:
 	draw_line(tip2, tip2 - dir * 10.0 - perp, color, 3.0)
 
 func _draw_ability_intents() -> void:
-	var plan_to_use = _director.plan_phase_1 if _phase == CombatDirector.Phase.PLANNING_PHASE_1 else _director.plan_phase_2
+	var plan_to_use = _director.get_player_plan()
 	if plan_to_use != null:
 		for action in plan_to_use.entries:
 			if action.type == GameEnums.ActionType.ABILITY:
@@ -1927,7 +1911,7 @@ func _draw_single_unit(id: int, v: Dictionary, is_drag_token: bool) -> void:
 	var center: Vector2 = _drag_pos if is_drag_token else v["pos"] + v.get("shake_offset", Vector2.ZERO)
 	var body: Color = v["body"]
 	var accent: Color = v["accent"]
-	var selected: bool = int(id) == _selected_id and (_phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2)
+	var selected: bool = int(id) == _selected_id and (CombatDirector.is_planning_phase(_phase))
 	if selected:
 		draw_arc(center, UNIT_RADIUS + 8.0, 0.0, TAU, 48, COLOR_SELECT_GLOW, 5.0)
 		draw_arc(center, UNIT_RADIUS + 5.0, 0.0, TAU, 40, COLOR_SELECT, 3.0)
@@ -1947,7 +1931,7 @@ func _draw_single_unit(id: int, v: Dictionary, is_drag_token: bool) -> void:
 	var current: int = v["hp"]
 	var predicted := current
 	var predicted_armor := -1
-	if _phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2:
+	if CombatDirector.is_planning_phase(_phase):
 		predicted = _get_display_predicted_hp(id, current)
 		var current_armor := 0
 		var u_ref: UnitState = v.get("unit")
@@ -2006,18 +1990,18 @@ func _draw_unit_token(center: Vector2, body: Color, accent: Color, unit: UnitSta
 	if is_drag_token:
 		points_left = maxi(0, points_left - maxi(0, _drag_route.size() - 1))
 	
-	if not ghost and not is_enemy and (_phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2):
+	if not ghost and not is_enemy and (CombatDirector.is_planning_phase(_phase)):
 		var p_unit = _proj_unit(unit.id)
 		if p_unit != null:
 			if not is_drag_token:
 				points_left = p_unit.movement.points_left
-			var plan_to_use = _director.plan_phase_1 if _phase == CombatDirector.Phase.PLANNING_PHASE_1 else _director.plan_phase_2
+			var plan_to_use = _director.get_player_plan()
 			for action in plan_to_use.entries:
 				if action.actor_id == unit.id and action.type == GameEnums.ActionType.ABILITY:
 					is_skill_queued = true
 					if action.ability != null and action.ability.effects.any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
 						is_attack_queued = true
-	elif not ghost and is_enemy and (_phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2):
+	elif not ghost and is_enemy and (CombatDirector.is_planning_phase(_phase)):
 		var is_enemy_targeting := false
 		var is_enemy_attack := false
 		if _intent_visible(unit):
@@ -2449,12 +2433,7 @@ func _rebuild_visual(board: BoardState) -> void:
 	_visual.clear()
 	var start_board := _director.base_board if (_director != null and _director.base_board != null) else board
 	var is_full_autobattle := _autobattler_hook != null and _autobattler_hook._active and _autobattler_hook._auto_commit
-	var is_planning_or_executing := _phase in [
-		CombatDirector.Phase.PLANNING_PHASE_1,
-		CombatDirector.Phase.PLANNING_PHASE_2,
-		CombatDirector.Phase.EXECUTING_PHASE_1,
-		CombatDirector.Phase.EXECUTING_PHASE_2
-	]
+	var is_planning_or_executing := CombatDirector.is_planning_phase(_phase) or CombatDirector.is_executing_phase(_phase)
 	
 	for unit in board.units:
 		if not unit.is_alive():
@@ -2648,7 +2627,7 @@ func _update_hover_attack_preview() -> void:
 	_hover_predicted_armor.clear()
 	if _aiming or _dragging or _director == null or _board == null:
 		return
-	if _phase != CombatDirector.Phase.PLANNING_PHASE_1 and _phase != CombatDirector.Phase.PLANNING_PHASE_2:
+	if not CombatDirector.is_planning_phase(_phase):
 		return
 	if _selected_id < 0 or not _board.is_in_bounds(_hover_coord):
 		return
@@ -3193,7 +3172,7 @@ func _intent_visible(unit: UnitState) -> bool:
 		return true
 	if _phase == CombatDirector.Phase.ENEMY_TURN:
 		return true
-	if _phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2 or _phase == CombatDirector.Phase.EXECUTING_PHASE_1 or _phase == CombatDirector.Phase.EXECUTING_PHASE_2:
+	if CombatDirector.is_planning_phase(_phase) or CombatDirector.is_executing_phase(_phase):
 		return _intent_units.has(unit.id)
 	return false
 
@@ -3231,14 +3210,14 @@ func _refresh_info() -> void:
 		_info_label.text = text
 	
 	var score_updated := false
-	if _selected_id >= 0 and (_phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2):
+	if _selected_id >= 0 and (CombatDirector.is_planning_phase(_phase)):
 		var start_board := _director.base_board if (_director != null and _director.base_board != null) else _board
 		var actor := start_board.get_unit_by_id(_selected_id)
 		if actor != null and actor.is_alive():
 			var action: TimelineAction = null
 			if _skill_interaction_active() or _skill_takes_priority_over_basic_move():
 				if _force_basic_movement and _can_basic_move_to(actor, _hover_coord):
-					action = TimelineAction.make_move(actor.id, _hover_coord, -1, [], _phase_num())
+					action = TimelineAction.make_move(actor.id, _hover_coord, -1, [], _move_timing_bucket())
 				else:
 					var ability_index := _selected_ability
 					var abilities := actor.active_abilities
@@ -3248,23 +3227,23 @@ func _refresh_info() -> void:
 							var p_actor := _proj_unit(actor.id)
 							var dash_origin := p_actor.position if p_actor != null else actor.position
 							if _is_valid_dash_target(dash_origin, _hover_coord, ability.range_tiles):
-								action = TimelineAction.make_ability(actor.id, ability, _hover_coord, -1, _phase_num())
+								action = TimelineAction.make_ability(actor.id, ability, _hover_coord, -1, _move_timing_bucket())
 						elif GridSystem.manhattan(actor.position, _hover_coord) <= ability.range_tiles:
 							var target_unit := start_board.get_unit_at(_hover_coord)
 							var target_id := target_unit.id if target_unit != null else -1
-							action = TimelineAction.make_ability(actor.id, ability, _hover_coord, target_id, _phase_num())
+							action = TimelineAction.make_ability(actor.id, ability, _hover_coord, target_id, _move_timing_bucket())
 			elif _basic_move_allowed():
 				var points := actor.movement.points_left
 				if points > 0 and _hover_coord != actor.position:
 					if not MovementSystem.find_path(start_board, actor.position, _hover_coord, points).is_empty():
-						action = TimelineAction.make_move(actor.id, _hover_coord, -1, [], _phase_num())
+						action = TimelineAction.make_move(actor.id, _hover_coord, -1, [], _move_timing_bucket())
 						
 			if action != null:
 				var data := _get_action_autobattler_scores(action)
 				_update_score_hud(data)
 				score_updated = true
 			
-	if not score_updated and _selected_id >= 0 and (_phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.PLANNING_PHASE_2):
+	if not score_updated and _selected_id >= 0 and (CombatDirector.is_planning_phase(_phase)):
 		var queued := _get_queued_action_for_selected()
 		if queued != null:
 			var data := _get_action_autobattler_scores(queued)
@@ -4002,7 +3981,7 @@ func _update_players_panel() -> void:
 	if _players_label == null: return
 	var text = "[b]Players[/b]\n"
 	var status_text = "Planning"
-	if _phase == CombatDirector.Phase.EXECUTING_PHASE_1 or _phase == CombatDirector.Phase.EXECUTING_PHASE_2:
+	if CombatDirector.is_executing_phase(_phase):
 		status_text = "Executing"
 		
 	if NetworkManager != null and NetworkManager.is_multiplayer:
@@ -5078,11 +5057,36 @@ func _set_timeline_ready(is_ready: bool) -> void:
 	else:
 		GlobalTimeline.rpc_set_ready(is_ready)
 
-func _phase_num() -> int:
+func _move_timing_bucket() -> int:
 	if _director == null or _selected_id < 0:
-		return 1
-	var bucket := _director.get_planning_input_phase(_selected_id)
-	return bucket if bucket > 0 else 1
+		return GameEnums.MoveTiming.PRE_ACTION
+	var bucket := _director.get_planning_move_timing(_selected_id)
+	return bucket if bucket > 0 else GameEnums.MoveTiming.PRE_ACTION
+
+
+func _timeline_pre_move_action(plan: Timeline, unit_id: int) -> TimelineAction:
+	if plan == null:
+		return null
+	for action: TimelineAction in plan.entries:
+		if action.actor_id != unit_id:
+			continue
+		if action.type == GameEnums.ActionType.MOVE and action.move_timing == GameEnums.MoveTiming.PRE_ACTION:
+			return action
+	return null
+
+
+func _timeline_action_slot(plan: Timeline, unit_id: int) -> TimelineAction:
+	if plan == null:
+		return null
+	var ability_action: TimelineAction = null
+	for action: TimelineAction in plan.entries:
+		if action.actor_id != unit_id:
+			continue
+		if action.type == GameEnums.ActionType.ABILITY:
+			ability_action = action
+		elif action.type == GameEnums.ActionType.MOVE and action.move_timing == GameEnums.MoveTiming.POST_ACTION:
+			return action
+	return ability_action
 
 ## True when the selected unit has actions undoable in the *current* planning phase only.
 func _unit_has_undoable_actions(unit_id: int) -> bool:
@@ -5235,7 +5239,7 @@ func _c_val_unsigned(val: float) -> String:
 func _get_queued_action_for_selected() -> TimelineAction:
 	if _selected_id < 0 or _director == null:
 		return null
-	var plan := _director.plan_phase_1 if _phase == CombatDirector.Phase.PLANNING_PHASE_1 else _director.plan_phase_2
+	var plan := _director.get_player_plan()
 	for action in plan.entries:
 		if action.actor_id == _selected_id:
 			return action

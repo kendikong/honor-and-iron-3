@@ -13,10 +13,8 @@ extends Node
 ##   subscribed to EventBus, so no initial signal is missed.
 
 enum Phase {
-	PLANNING_PHASE_1,
-	PLANNING_PHASE_2,
-	EXECUTING_PHASE_1,
-	EXECUTING_PHASE_2,
+	PLANNING,
+	EXECUTING,
 	ENEMY_TURN,
 	VICTORY,
 	DEFEAT,
@@ -33,9 +31,9 @@ const PUSH_ANIM_FALLBACK: float = 1.0 ## Safety timeout if push signal never arr
 
 var base_board: BoardState
 var board: BoardState
-var plan_phase_1: Timeline
-var plan_phase_2: Timeline
-var phase: Phase = Phase.PLANNING_PHASE_1
+var plan_pre_move: Timeline
+var plan_post_move: Timeline
+var phase: Phase = Phase.PLANNING
 var selected_unit_id: int = -1
 var selected_ability_index: int = 0
 ## Board after ONLY the player's queued actions (no enemy intents). Drives range,
@@ -50,11 +48,11 @@ var turn_start_board: BoardState
 
 
 static func is_planning_phase(p: Phase) -> bool:
-	return p == Phase.PLANNING_PHASE_1 or p == Phase.PLANNING_PHASE_2
+	return p == Phase.PLANNING
 
 
 static func is_executing_phase(p: Phase) -> bool:
-	return p == Phase.EXECUTING_PHASE_1 or p == Phase.EXECUTING_PHASE_2
+	return p == Phase.EXECUTING
 
 func start() -> void:
 	# Fallback to demo if nothing was passed
@@ -75,15 +73,15 @@ func start_from_custom(new_board: BoardState) -> void:
 func _init_combat() -> void:
 	_run_id += 1
 	board = base_board.clone()
-	plan_phase_1 = Timeline.new()
-	plan_phase_2 = Timeline.new()
+	plan_pre_move = Timeline.new()
+	plan_post_move = Timeline.new()
 	_lock_enemy_intents()
 	
 	# Start with no unit selected
 	selected_unit_id = -1
 			
 	selected_ability_index = 0
-	_set_phase(Phase.PLANNING_PHASE_1)
+	_set_phase(Phase.PLANNING)
 	EventBus.board_changed.emit(board)
 	EventBus.selection_changed.emit(selected_unit_id)
 	EventBus.ability_selected.emit(selected_ability_index)
@@ -91,7 +89,7 @@ func _init_combat() -> void:
 	_capture_turn_start()
 
 func select_unit(unit_id: int) -> void:
-	if phase != Phase.PLANNING_PHASE_1 and phase != Phase.PLANNING_PHASE_2:
+	if not is_planning_phase(phase):
 		return
 	if unit_id == -1:
 		selected_unit_id = -1
@@ -115,7 +113,7 @@ func select_unit(unit_id: int) -> void:
 
 ## Choose which of the selected unit's abilities a queued attack will use.
 func select_ability(index: int) -> void:
-	if phase != Phase.PLANNING_PHASE_1 and phase != Phase.PLANNING_PHASE_2:
+	if not is_planning_phase(phase):
 		return
 	var unit := board.get_unit_by_id(selected_unit_id)
 	if unit == null or index < 0 or index >= unit.active_abilities.size():
@@ -123,33 +121,37 @@ func select_ability(index: int) -> void:
 	selected_ability_index = index
 	EventBus.ability_selected.emit(selected_ability_index)
 
-func _get_planning_state(_target_phase: int = 1) -> BoardState:
+func _get_planning_state(_target_timing: int = 1) -> BoardState:
 	return base_board.clone()
 
 
-func get_planning_input_phase(unit_id: int) -> int:
-	return _get_target_phase(unit_id)
+func get_planning_move_timing(unit_id: int) -> int:
+	return _get_move_timing(unit_id)
 
 
-func _get_target_phase(unit_id: int) -> int:
+func _get_move_timing(unit_id: int) -> int:
 	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else board.get_unit_by_id(unit_id)
 	if p_unit == null:
 		return -1
 	if p_unit.turn_action_used:
-		return 2 if _unit_can_post_move(unit_id, p_unit) else -1
-	return 1
+		return GameEnums.MoveTiming.POST_ACTION if _unit_can_post_move(unit_id, p_unit) else -1
+	return GameEnums.MoveTiming.PRE_ACTION
+
+
+func _plan_for_timing(timing: int) -> Timeline:
+	return plan_post_move if timing == GameEnums.MoveTiming.POST_ACTION else plan_pre_move
 
 
 func _unit_has_pre_move_queued(unit_id: int) -> bool:
-	for a: TimelineAction in plan_phase_1.entries:
-		if a.actor_id == unit_id and a.type == GameEnums.ActionType.MOVE and a.phase == 1:
+	for a: TimelineAction in plan_pre_move.entries:
+		if a.actor_id == unit_id and a.type == GameEnums.ActionType.MOVE and a.move_timing == GameEnums.MoveTiming.PRE_ACTION:
 			return true
 	return false
 
 
 func _unit_has_post_move_queued(unit_id: int) -> bool:
 	for a: TimelineAction in _get_combined_plan().entries:
-		if a.actor_id == unit_id and a.type == GameEnums.ActionType.MOVE and a.phase == 2:
+		if a.actor_id == unit_id and a.type == GameEnums.ActionType.MOVE and a.move_timing == GameEnums.MoveTiming.POST_ACTION:
 			return true
 	return false
 
@@ -170,17 +172,17 @@ func rpc_plan_move(unit_id: int, coord: Vector2i, face_dir: int, waypoints: Arra
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id():
 			return
 	
-	if (phase != Phase.PLANNING_PHASE_1 and phase != Phase.PLANNING_PHASE_2) or unit_id < 0:
+	if (not is_planning_phase(phase)) or unit_id < 0:
 		return
 
-	var target_phase = _get_target_phase(unit_id)
-	if target_phase == -1:
+	var target_timing = _get_move_timing(unit_id)
+	if target_timing == -1:
 		EventBus.action_rejected.emit("no_actions_left")
 		return
 		
-	_clear_unit_from_plans(unit_id, target_phase)
-	var action := TimelineAction.make_move(unit_id, coord, face_dir, waypoints, target_phase)
-	var plan_to_use = plan_phase_1 if target_phase == 1 else plan_phase_2
+	_clear_unit_from_plans(unit_id, target_timing)
+	var action := TimelineAction.make_move(unit_id, coord, face_dir, waypoints, target_timing)
+	var plan_to_use = _plan_for_timing(target_timing)
 	_try_add(action, plan_to_use)
 
 @rpc("any_peer", "call_local", "reliable")
@@ -189,7 +191,7 @@ func rpc_plan_face(unit_id: int, face_dir: int) -> void:
 		var u := base_board.get_unit_by_id(unit_id)
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id(): return
 
-	if (phase != Phase.PLANNING_PHASE_1 and phase != Phase.PLANNING_PHASE_2) or unit_id < 0 or face_dir < 0:
+	if (not is_planning_phase(phase)) or unit_id < 0 or face_dir < 0:
 		return
 	var unit := base_board.get_unit_by_id(unit_id)
 	if unit != null:
@@ -207,14 +209,14 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id():
 			return
 
-	if (phase != Phase.PLANNING_PHASE_1 and phase != Phase.PLANNING_PHASE_2) or unit_id < 0:
+	if (not is_planning_phase(phase)) or unit_id < 0:
 		return
-	var target_phase = _get_target_phase(unit_id)
-	if target_phase == -1:
+	var target_timing = _get_move_timing(unit_id)
+	if target_timing == -1:
 		return
-	var plan_to_use = plan_phase_1 if target_phase == 1 else plan_phase_2
+	var plan_to_use = _plan_for_timing(target_timing)
 
-	var proj := _get_planning_state(target_phase)
+	var proj := _get_planning_state(target_timing)
 	var actor := proj.get_unit_by_id(unit_id)
 	var target := proj.get_unit_by_id(target_unit_id)
 	if actor == null or target == null or actor.active_abilities.is_empty():
@@ -230,33 +232,33 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 			EventBus.action_rejected.emit("cannot_use_ability")
 			return
 		
-		# If we need an approach, that consumes the target_phase (e.g. phase 1)
-		# The attack would then consume target_phase + 1 (e.g. phase 2)
-		if target_phase == 2 and not _unit_can_post_move(unit_id, proj.get_unit_by_id(unit_id)):
+		# If we need an approach, that consumes the target_timing (e.g. phase 1)
+		# The attack would then consume target_timing + 1 (e.g. phase 2)
+		if target_timing == GameEnums.MoveTiming.POST_ACTION and not _unit_can_post_move(unit_id, proj.get_unit_by_id(unit_id)):
 			EventBus.action_rejected.emit("no_actions_left")
 			return
 			
 		var max_steps := actor.movement.max_points if actor.movement != null else 0
 		var mov_type := actor.definition.movement_type if actor.definition != null else GameEnums.MovementType.WALK
 		var waypoints := MovementSystem.find_path(proj, actor.position, approach, max_steps, mov_type)
-		move_action = TimelineAction.make_move(unit_id, approach, -1, waypoints, 1)
+		move_action = TimelineAction.make_move(unit_id, approach, -1, waypoints, GameEnums.MoveTiming.PRE_ACTION)
 
 	var trial := proj.clone()
 	
 	if move_action != null:
-		# Approach is Phase 1/Phase 2 (queued)
+		# Approach move + ability queued together in pre-action bucket
 		var after_actor := trial.get_unit_by_id(target_unit_id)
 		var attack_action := TimelineAction.make_ability(unit_id, ability,
-			after_actor.position if after_actor != null else target.position, target_unit_id, 1)
-		_clear_unit_from_plans(unit_id, 1)
-		_try_add_multiple([move_action, attack_action], [plan_phase_1, plan_phase_1])
+			after_actor.position if after_actor != null else target.position, target_unit_id, GameEnums.MoveTiming.PRE_ACTION)
+		_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+		_try_add_multiple([move_action, attack_action], [plan_pre_move, plan_pre_move])
 		return
 
 	# No approach needed, just attack
-	_clear_unit_from_plans(unit_id, target_phase)
+	_clear_unit_from_plans(unit_id, target_timing)
 	var after_actor := trial.get_unit_by_id(target_unit_id)
 	var attack_action := TimelineAction.make_ability(unit_id, ability,
-		after_actor.position if after_actor != null else target.position, target_unit_id, target_phase)
+		after_actor.position if after_actor != null else target.position, target_unit_id, target_timing)
 	_try_add(attack_action, plan_to_use)
 
 
@@ -284,18 +286,15 @@ func _is_attack_tile(state: BoardState, actor: UnitState, coord: Vector2i, targe
 	var path := MovementSystem.find_path(state, actor.position, coord, actor.movement.points_left)
 	return not path.is_empty() and path[path.size() - 1] == coord
 
-func _apply_phase_1_to_2_transition(_board: BoardState) -> void:
-	pass
-
-func _clear_unit_from_plans(unit_id: int, from_phase: int) -> void:
-	if from_phase <= 1:
+func _clear_unit_from_plans(unit_id: int, from_timing: int) -> void:
+	if from_timing <= GameEnums.MoveTiming.PRE_ACTION:
 		var kept_1: Array[TimelineAction] = []
-		for a in plan_phase_1.entries: if a.actor_id != unit_id: kept_1.append(a)
-		plan_phase_1.entries = kept_1
-	if from_phase <= 2:
+		for a in plan_pre_move.entries: if a.actor_id != unit_id: kept_1.append(a)
+		plan_pre_move.entries = kept_1
+	if from_timing <= GameEnums.MoveTiming.POST_ACTION:
 		var kept_2: Array[TimelineAction] = []
-		for a in plan_phase_2.entries: if a.actor_id != unit_id: kept_2.append(a)
-		plan_phase_2.entries = kept_2
+		for a in plan_post_move.entries: if a.actor_id != unit_id: kept_2.append(a)
+		plan_post_move.entries = kept_2
 
 func _try_add(action: TimelineAction, target_plan: Timeline) -> void:
 	_try_add_multiple([action], [target_plan])
@@ -303,15 +302,15 @@ func _try_add(action: TimelineAction, target_plan: Timeline) -> void:
 func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timeline]) -> void:
 	var temp_p1 := Timeline.new()
 	var temp_p2 := Timeline.new()
-	for a: TimelineAction in plan_phase_1.entries:
+	for a: TimelineAction in plan_pre_move.entries:
 		temp_p1.add(a)
-	for a: TimelineAction in plan_phase_2.entries:
+	for a: TimelineAction in plan_post_move.entries:
 		temp_p2.add(a)
 	var new_actors: Array[int] = []
 	for i: int in range(actions.size()):
 		var a: TimelineAction = actions[i]
 		new_actors.append(a.actor_id)
-		if target_plans[i] == plan_phase_2:
+		if target_plans[i] == plan_post_move:
 			temp_p2.add(a)
 		else:
 			temp_p1.add(a)
@@ -341,17 +340,17 @@ func get_player_plan() -> Timeline:
 
 func _get_combined_plan() -> Timeline:
 	var combined = Timeline.new()
-	for a in plan_phase_1.entries: combined.add(a)
-	for a in plan_phase_2.entries: combined.add(a)
+	for a in plan_pre_move.entries: combined.add(a)
+	for a in plan_post_move.entries: combined.add(a)
 	return combined
 
 func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 	var combined := Timeline.new()
-	for a: TimelineAction in plan_phase_1.entries:
+	for a: TimelineAction in plan_pre_move.entries:
 		if a.actor_id == unit_id:
 			continue
 		combined.add(a)
-	for a: TimelineAction in plan_phase_2.entries:
+	for a: TimelineAction in plan_post_move.entries:
 		if a.actor_id == unit_id:
 			continue
 		combined.add(a)
@@ -376,8 +375,8 @@ func _preview_from_plan(combined: Timeline) -> Dictionary:
 
 
 func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, waypoints: Array[Vector2i] = []) -> Dictionary:
-	var phase_val: int = _get_target_phase(unit_id)
-	if phase_val < 0:
+	var move_timing: int = _get_move_timing(unit_id)
+	if move_timing < 0:
 		return {"intents": [], "events": [], "temp_board": base_board.clone()}
 	var start_board: BoardState = base_board.clone()
 	var actor := start_board.get_unit_by_id(unit_id)
@@ -391,20 +390,20 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 			if GridSystem.manhattan(actor.position, target.position) > rng:
 				var approach := _find_approach_tile(start_board, actor, target.position, rng, coord)
 				if approach != actor.position:
-					new_actions.append(TimelineAction.make_move(unit_id, approach, -1, [], 1))
+					new_actions.append(TimelineAction.make_move(unit_id, approach, -1 , [], GameEnums.MoveTiming.PRE_ACTION))
 				new_actions.append(
 					TimelineAction.make_ability(
-						unit_id, ability, target.position, attack_target_id, 1,
+						unit_id, ability, target.position, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
 					),
 				)
 			else:
 				new_actions.append(
 					TimelineAction.make_ability(
-						unit_id, ability, target.position, attack_target_id, 1,
+						unit_id, ability, target.position, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
 					),
 				)
 	else:
-		new_actions.append(TimelineAction.make_move(unit_id, coord, -1, waypoints, phase_val))
+		new_actions.append(TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing))
 	return _preview_from_plan(_build_preview_plan(unit_id, new_actions))
 
 
@@ -416,7 +415,7 @@ func preview_dash(unit_id: int, target_coord: Vector2i, ability_index: int = -1)
 	var index: int = ability_index if ability_index >= 0 else selected_ability_index
 	index = clampi(index, 0, actor.active_abilities.size() - 1)
 	var ability: AbilityData = actor.active_abilities[index]
-	var dash_action := TimelineAction.make_ability(unit_id, ability, target_coord, -1, 1)
+	var dash_action := TimelineAction.make_ability(unit_id, ability, target_coord, -1, GameEnums.MoveTiming.PRE_ACTION)
 	return _preview_from_plan(_build_preview_plan(unit_id, [dash_action]))
 
 @rpc("any_peer", "call_local", "reliable")
@@ -429,7 +428,7 @@ func rpc_reorder_action(from_index: int, to_index: int) -> void:
 		var u := base_board.get_unit_by_id(action.actor_id)
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id(): return
 		
-	var plan_to_use = plan_phase_1 if action.phase == 1 else plan_phase_2
+	var plan_to_use = _plan_for_timing(action.move_timing)
 	
 	# Compute local index
 	var local_from = -1
@@ -439,8 +438,8 @@ func rpc_reorder_action(from_index: int, to_index: int) -> void:
 			break
 			
 	var action_at_to = combined.entries[clampi(to_index, 0, combined.size() - 1)]
-	if action_at_to.phase != action.phase:
-		return # Cannot reorder across phases
+	if action_at_to.move_timing != action.move_timing:
+		return # Cannot reorder across move-timing buckets
 		
 	var local_to = -1
 	for i in range(plan_to_use.size()):
@@ -457,11 +456,11 @@ func rpc_plan_attack(unit_id: int, ability_index: int, target_unit_id: int) -> v
 		var u := base_board.get_unit_by_id(unit_id)
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id(): return
 
-	if (phase != Phase.PLANNING_PHASE_1 and phase != Phase.PLANNING_PHASE_2) or unit_id < 0:
+	if (not is_planning_phase(phase)) or unit_id < 0:
 		return
-	var target_phase = _get_target_phase(unit_id)
-	if target_phase == -1: return
-	var plan_to_use = plan_phase_1 if target_phase == 1 else plan_phase_2
+	var target_timing = _get_move_timing(unit_id)
+	if target_timing == -1: return
+	var plan_to_use = _plan_for_timing(target_timing)
 	
 	var attacker := board.get_unit_by_id(unit_id)
 	if attacker == null or attacker.active_abilities.is_empty(): return
@@ -470,10 +469,10 @@ func rpc_plan_attack(unit_id: int, ability_index: int, target_unit_id: int) -> v
 	var index := clampi(ability_index, 0, attacker.active_abilities.size() - 1)
 	var ability: AbilityData = attacker.active_abilities[index]
 	
-	var proj := _get_planning_state(target_phase)
+	var proj := _get_planning_state(target_timing)
 	var projected_target := proj.get_unit_by_id(target_unit_id)
 	var coord: Vector2i = projected_target.position if projected_target != null else target.position
-	_try_add(TimelineAction.make_ability(unit_id, ability, coord, target_unit_id, target_phase), plan_to_use)
+	_try_add(TimelineAction.make_ability(unit_id, ability, coord, target_unit_id, target_timing), plan_to_use)
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i) -> void:
@@ -482,20 +481,20 @@ func rpc_plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id():
 			return
 
-	if (phase != Phase.PLANNING_PHASE_1 and phase != Phase.PLANNING_PHASE_2) or unit_id < 0:
+	if (not is_planning_phase(phase)) or unit_id < 0:
 		return
-	var target_phase = _get_target_phase(unit_id)
-	if target_phase == -1:
+	var target_timing = _get_move_timing(unit_id)
+	if target_timing == -1:
 		return
-	var plan_to_use = plan_phase_1 if target_phase == 1 else plan_phase_2
+	var plan_to_use = _plan_for_timing(target_timing)
 
 	var attacker := board.get_unit_by_id(unit_id)
 	if attacker == null or attacker.active_abilities.is_empty():
 		return
 	var index := clampi(ability_index, 0, attacker.active_abilities.size() - 1)
 	var ability: AbilityData = attacker.active_abilities[index]
-	_clear_unit_from_plans(unit_id, target_phase)
-	_try_add(TimelineAction.make_ability(unit_id, ability, coord, -1, target_phase), plan_to_use)
+	_clear_unit_from_plans(unit_id, target_timing)
+	_try_add(TimelineAction.make_ability(unit_id, ability, coord, -1, target_timing), plan_to_use)
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_remove_last_for_unit(unit_id: int) -> void:
@@ -504,22 +503,22 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id(): return
 
 	if is_planning_phase(phase):
-		if plan_phase_2.size() > 0:
-			for i in range(plan_phase_2.size() - 1, -1, -1):
-				if plan_phase_2.entries[i].actor_id == unit_id:
-					if plan_phase_2.entries[i].irreversible:
+		if plan_post_move.size() > 0:
+			for i in range(plan_post_move.size() - 1, -1, -1):
+				if plan_post_move.entries[i].actor_id == unit_id:
+					if plan_post_move.entries[i].irreversible:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
-					plan_phase_2.remove_at(i)
+					plan_post_move.remove_at(i)
 					_refresh_plan()
 					return
-		if plan_phase_1.size() > 0:
-			for i in range(plan_phase_1.size() - 1, -1, -1):
-				if plan_phase_1.entries[i].actor_id == unit_id:
-					if plan_phase_1.entries[i].irreversible:
+		if plan_pre_move.size() > 0:
+			for i in range(plan_pre_move.size() - 1, -1, -1):
+				if plan_pre_move.entries[i].actor_id == unit_id:
+					if plan_pre_move.entries[i].irreversible:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
-					plan_phase_1.remove_at(i)
+					plan_pre_move.remove_at(i)
 					_refresh_plan()
 					return
 
@@ -532,16 +531,16 @@ func rpc_remove_action(index: int) -> void:
 		var u := base_board.get_unit_by_id(action.actor_id)
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id(): return
 
-	if index < plan_phase_1.size():
-		if plan_phase_1.entries[index].irreversible:
+	if index < plan_pre_move.size():
+		if plan_pre_move.entries[index].irreversible:
 			EventBus.action_rejected.emit("cannot_undo_trample")
 			return
-		plan_phase_1.remove_at(index)
-	elif index - plan_phase_1.size() < plan_phase_2.size():
-		if plan_phase_2.entries[index - plan_phase_1.size()].irreversible:
+		plan_pre_move.remove_at(index)
+	elif index - plan_pre_move.size() < plan_post_move.size():
+		if plan_post_move.entries[index - plan_pre_move.size()].irreversible:
 			EventBus.action_rejected.emit("cannot_undo_trample")
 			return
-		plan_phase_2.remove_at(index - plan_phase_1.size())
+		plan_post_move.remove_at(index - plan_pre_move.size())
 	_refresh_plan()
 
 func move_action(index: int, delta: int) -> void:
@@ -564,7 +563,7 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 			EventBus.action_rejected.emit("Undo not possible: initial square occupied")
 			return
 
-	for plan in [plan_phase_1, plan_phase_2]:
+	for plan in [plan_pre_move, plan_post_move]:
 		for a in plan.entries:
 			if a.actor_id == unit_id and a.irreversible:
 				EventBus.action_rejected.emit("cannot_undo_trample")
@@ -572,21 +571,21 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 
 	if is_planning_phase(phase):
 		var kept_1: Array[TimelineAction] = []
-		for a in plan_phase_1.entries:
+		for a in plan_pre_move.entries:
 			if a.actor_id != unit_id:
 				kept_1.append(a)
-		plan_phase_1.entries = kept_1
+		plan_pre_move.entries = kept_1
 		var kept_2: Array[TimelineAction] = []
-		for a in plan_phase_2.entries:
+		for a in plan_post_move.entries:
 			if a.actor_id != unit_id:
 				kept_2.append(a)
-		plan_phase_2.entries = kept_2
+		plan_post_move.entries = kept_2
 	_refresh_plan()
 
 func clear_plan() -> void:
 	if is_planning_phase(phase):
-		plan_phase_1.clear()
-		plan_phase_2.clear()
+		plan_pre_move.clear()
+		plan_post_move.clear()
 	_refresh_plan()
 
 func restart_turn() -> void:
@@ -595,11 +594,11 @@ func restart_turn() -> void:
 	_run_id += 1
 	base_board = turn_start_board.clone()
 	board = base_board.clone()
-	plan_phase_1.clear()
-	plan_phase_2.clear()
+	plan_pre_move.clear()
+	plan_post_move.clear()
 	selected_unit_id = -1
 	selected_ability_index = 0
-	_set_phase(Phase.PLANNING_PHASE_1)
+	_set_phase(Phase.PLANNING)
 	EventBus.board_changed.emit(board)
 	EventBus.selection_changed.emit(selected_unit_id)
 	EventBus.ability_selected.emit(selected_ability_index)
@@ -616,26 +615,19 @@ func execute_turn() -> void:
 	var current_run_id: int = _run_id
 	var combined := _get_combined_plan()
 	var result: SimResult = Simulator.simulate(base_board, combined)
-	_set_phase(Phase.EXECUTING_PHASE_1)
+	_set_phase(Phase.EXECUTING)
 	await _play_events(result.events)
 	if current_run_id != _run_id:
 		return
 	base_board = result.final_state
-	plan_phase_1.clear()
-	plan_phase_2.clear()
+	plan_pre_move.clear()
+	plan_post_move.clear()
 	if _check_end_state():
 		return
 	_refresh_plan()
-	_set_phase(Phase.PLANNING_PHASE_1)
+	_set_phase(Phase.PLANNING)
 	_capture_turn_start()
 
-
-func execute_phase_1() -> void:
-	await execute_turn()
-
-
-func execute_phase_2() -> void:
-	pass
 
 func _ready() -> void:
 	if not GlobalTimeline.player_ready_changed.is_connected(_on_player_ready_changed):
@@ -644,7 +636,7 @@ func _ready() -> void:
 func _on_player_ready_changed(_player_id: int, _is_ready: bool) -> void:
 	if NetworkManager == null or not NetworkManager.is_multiplayer or multiplayer.is_server():
 		if GlobalTimeline.is_everyone_ready():
-			if phase == Phase.PLANNING_PHASE_1 or phase == Phase.PLANNING_PHASE_2:
+			if is_planning_phase(phase):
 				if multiplayer.has_multiplayer_peer():
 					rpc_commit_phase.rpc()
 				else:
@@ -885,7 +877,7 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 			_: # TURN_ENDED, ACTION_FAILED, UNIT_SPAWNED, etc.
 				meta_events.append(event)
 	
-	# --- Phase 1: Movements — all units move at the same time ---
+	# --- Movement batch: all units move at the same time ---
 	if not move_events.is_empty():
 		var max_path_len := 0
 		for e in move_events:
@@ -895,7 +887,7 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 		await get_tree().create_timer(max(1, max_path_len) * MOVE_STEP_TIME + 0.05).timeout
 		if run_id != _run_id: return
 	
-	# --- Phase 2: Attacks — sequential, one action at a time ---
+	# --- Attack batch: sequential, one action at a time ---
 	for e in attack_events:
 		if run_id != _run_id: return
 		EventBus.sim_event.emit(e)
@@ -952,7 +944,7 @@ func _cancel_plans_for_displacement(mover_id: int, pre_board: BoardState, events
 	if displaced.is_empty():
 		return false
 	var cancelled := false
-	for plan in [plan_phase_1, plan_phase_2]:
+	for plan in [plan_pre_move, plan_post_move]:
 		var kept: Array[TimelineAction] = []
 		for a in plan.entries:
 			if a.type != GameEnums.ActionType.ABILITY or a.actor_id == mover_id:
@@ -995,12 +987,12 @@ func unit_has_undoable_action(unit_id: int) -> bool:
 		return false
 	if not is_planning_phase(phase):
 		return false
-	for i in range(plan_phase_2.size() - 1, -1, -1):
-		if plan_phase_2.entries[i].actor_id == unit_id:
-			return not plan_phase_2.entries[i].irreversible
-	for i in range(plan_phase_1.size() - 1, -1, -1):
-		if plan_phase_1.entries[i].actor_id == unit_id:
-			return not plan_phase_1.entries[i].irreversible
+	for i in range(plan_post_move.size() - 1, -1, -1):
+		if plan_post_move.entries[i].actor_id == unit_id:
+			return not plan_post_move.entries[i].irreversible
+	for i in range(plan_pre_move.size() - 1, -1, -1):
+		if plan_pre_move.entries[i].actor_id == unit_id:
+			return not plan_pre_move.entries[i].irreversible
 	return false
 
 
@@ -1099,7 +1091,7 @@ func _check_end_state() -> bool:
 func _set_phase(new_phase: Phase) -> void:
 	phase = new_phase
 	# UI uses simple Phase.PLANNING check sometimes. 
-	# (Assuming view might break if we send new phase without updating view layer. Let's send 0 for PLANNING_PHASE_1 and PLANNING_PHASE_2 if view expects it... actually EventBus can just emit it, and if UI expects PLANNING=0, we'll see.)
+	# (Assuming view might break if we send new phase without updating view layer. Let's send 0 for PLANNING and PLANNING if view expects it... actually EventBus can just emit it, and if UI expects PLANNING=0, we'll see.)
 	EventBus.turn_phase_changed.emit(phase)
 
 func _build_demo_encounter() -> BoardState:

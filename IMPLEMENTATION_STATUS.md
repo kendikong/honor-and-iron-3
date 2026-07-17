@@ -926,7 +926,7 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** �
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
 | 1 | F5 playtest — move+skill ordering, CANTO, execute flow | HIGH | Open |
-| 2 | `board_view` timeline columns still "Phase 1/2" not Pre-Move/Action/Post-Move | MED | Deferred |
+| 2 | `board_view` timeline columns still "Phase 1/2" not Pre-Move/Action/Post-Move | MED | **Fixed** |
 | 3 | Headless Godot not on PATH — sim tests not run this session | MED | Open |
 
 **Audit result:** NOT CLOSED — requires F5 + test run

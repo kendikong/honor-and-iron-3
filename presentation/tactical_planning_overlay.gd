@@ -39,7 +39,7 @@ var _aiming: bool = false
 var _aim_local: Vector2 = Vector2.ZERO
 var _aim_class_id: StringName = &"knight"
 var _hover_coord: Vector2i = Vector2i(-999, -999)
-var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
+var _phase: int = CombatDirector.Phase.PLANNING
 var _hover_move_tiles: Array[Vector2i] = []
 var _hover_threat_tiles: Array[Vector2i] = []
 var _cached_hover_unit_id: int = -1
@@ -91,10 +91,7 @@ func setup(
 	)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		_phase = phase
-		var planning: bool = phase in [
-			CombatDirector.Phase.PLANNING_PHASE_1,
-			CombatDirector.Phase.PLANNING_PHASE_2,
-		]
+		var planning: bool = CombatDirector.is_planning_phase(phase)
 		if not planning and _planning_input != null:
 			_planning_input.clear_interaction_preview()
 		_invalidate_hover_cache()
@@ -445,10 +442,7 @@ func _process(delta: float) -> void:
 		entry[1] = float(entry[1]) - delta
 		if float(entry[1]) <= 0.0:
 			_hit_markers.remove_at(i)
-	if _phase in [
-		CombatDirector.Phase.PLANNING_PHASE_1,
-		CombatDirector.Phase.PLANNING_PHASE_2,
-	]:
+	if CombatDirector.is_planning_phase(_phase):
 		queue_redraw()
 	elif not _hit_markers.is_empty():
 		queue_redraw()
@@ -501,8 +495,8 @@ func _draw() -> void:
 	if _board == null or _map_view == null or _director == null:
 		return
 	var show_planning: bool = _phase in [
-		CombatDirector.Phase.PLANNING_PHASE_1,
-		CombatDirector.Phase.PLANNING_PHASE_2,
+		CombatDirector.Phase.PLANNING,
+		CombatDirector.Phase.PLANNING,
 	]
 	if show_planning:
 		_draw_selected_unit_tile()
@@ -586,11 +580,7 @@ func _draw_hover_tile() -> void:
 func _draw_ability_intents() -> void:
 	if _director == null or _board == null:
 		return
-	var plan_to_use: Timeline = (
-		_director.plan_phase_1
-		if _phase == CombatDirector.Phase.PLANNING_PHASE_1
-		else _director.plan_phase_2
-	)
+	var plan_to_use: Timeline = _director.get_player_plan()
 	if plan_to_use != null:
 		for action: TimelineAction in plan_to_use.entries:
 			if action.type != GameEnums.ActionType.ABILITY:
@@ -935,11 +925,7 @@ func _draw_ghosts() -> void:
 	var prev: CombatPlanningPreview = _active_preview()
 	if prev.preview_board == null or _board == null or _director == null:
 		return
-	var plan_to_use: Timeline = (
-		_director.plan_phase_1
-		if _phase == CombatDirector.Phase.PLANNING_PHASE_1
-		else _director.plan_phase_2
-	)
+	var plan_to_use: Timeline = _director.get_player_plan()
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or not _intent_visible(unit):
 			continue

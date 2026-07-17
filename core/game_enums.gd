@@ -132,6 +132,12 @@ static func is_debuff(status: StatusType) -> bool:
 	return false
 
 ## What a single timeline entry does.
+## When a MOVE/FACE resolves relative to the unit's action: before or after ability.
+enum MoveTiming {
+	PRE_ACTION = 1,
+	POST_ACTION = 2,
+}
+
 enum ActionType {
 	MOVE,
 	ABILITY,
