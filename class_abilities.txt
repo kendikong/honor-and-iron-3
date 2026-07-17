@@ -202,7 +202,7 @@ The Sentinel:
 The Juggernaut:
  (+4 STR, +4 DEF, 0 MOV) Maximize retaliation damage by pulling enemies into you.
 The Cataphract:
- (+2 CON, +2 DEF, +1 MOV) Gains a heavy draft horse. Focuses on rushing to project ally buffs and intercepting damage.
+ (+2 CON, +2 DEF, +2 MOV) Gains a heavy draft horse. Focuses on rushing to project ally buffs and intercepting damage.
 Passives
 (The Juggernaut) Collision Retaliator:
  When an enemy collides with you, they suffer ATK 2. You take 0 damage from collisions. [+] The enemy is also PUSHED 1 tile after the collision.
@@ -283,7 +283,7 @@ The Behemoth:
 The 
 Siegebreaker
 :
- (+4 STR, +2 CON, +1 MOV) High momentum. Discards defensive gear to sprint at top speed and shatter enemy lines.
+ (+4 STR, +2 CON, +2 MOV) High momentum. Discards defensive gear to sprint at top speed and shatter enemy lines.
 Passives
 (The 
 Bloodrager
@@ -407,9 +407,9 @@ Swordmaster
 :
  (+4 STR, +2 DEF, +2 CON, 0 MOV) Combo-focused build setting up and finishing high-value targets.
 The Blade Dancer:
- (+4 STR, +2 CON, +1 MOV) Discards medium armor for lightweight weaving and evasion.
+ (+4 STR, +2 CON, +2 MOV) Discards medium armor for lightweight weaving and evasion.
 The Headhunter:
- (+6 STR, +2 DEF, +1 MOV) Driven by predatory adrenaline. Focus on finisher skills to eliminate low HP targets efficiently.
+ (+6 STR, +2 DEF, +2 MOV) Driven by predatory adrenaline. Focus on finisher skills to eliminate low HP targets efficiently.
 Passives
 (The 
 Swordmaster
@@ -504,11 +504,11 @@ Innate Trait:
 â†³ [+] Upgrade: Moving directly through an enemy unit counts as a perfect setupâ€”your next attack against them this turn completely ignores their DEF.
 Advanced Classes (Promotion Boosts)
 The Assassin:
- (+4 STR, +2 CON, +1 MOV) Uses shadow magic to slip past terrain friction. Focus on teleportation.
+ (+4 STR, +2 CON, +2 MOV) Uses shadow magic to slip past terrain friction. Focus on teleportation.
 The Ninja:
- (+2 STR, +2 MOV) Vaults obstacles and wall-runs. High-speed elemental assassin specializing in clones.
+ (+2 STR, +3 MOV) Vaults obstacles and wall-runs. High-speed elemental assassin specializing in clones.
 The Saboteur:
- (+4 STR, +2 CON, +1 MOV) Injects alchemical stimulants to artificially boost sprint speed. Utilizes confusion.
+ (+4 STR, +2 CON, +2 MOV) Injects alchemical stimulants to artificially boost sprint speed. Utilizes confusion.
 Passives
 (The Assassin) Backstab:
  Attacks originating directly behind an enemy ignore all DEF. [+] Attack also applies BLEED X (X = your WPN).
@@ -588,7 +588,7 @@ The Mystic:
 The 
 Windwalker
 :
- (+4 STR, +2 DEF, +1 MOV) Channels air currents to hover an inch off the ground. Evasive positional manipulator.
+ (+4 STR, +2 DEF, +2 MOV) Channels air currents to hover an inch off the ground. Evasive positional manipulator.
 Passives
 (The Avatar) Elemental Attunement:
  Whenever you attack an enemy standing on an elemental surface, your attack gains PIERCE. [+] Attack also applies BURN X or BLEED X (where X = your MAG) depending on surface.
@@ -687,11 +687,11 @@ tiles
  away.
 Advanced Classes (Promotion Boosts)
 The Griffin Rider:
- (+4 STR, +2 CON, +1 MOV) Gains AIRBORNE trait. The aerial predator focused strictly on isolating targets, vertical abduction, and dropping enemies into hazards.
+ (+4 STR, +2 CON, +2 MOV) Gains AIRBORNE trait. The aerial predator focused strictly on isolating targets, vertical abduction, and dropping enemies into hazards.
 The Wyvern Lord:
  (+4 STR, +2 DEF, +2 CON, 0 MOV) Gains AIRBORNE trait. Heavy dive-bomber utilizing sheer physical force. (Armor prevents movement boost).
 The Apex Predator:
- (+4 STR, +2 MOV) Stays grounded. Strips barding to sprint at maximum speed. Focuses on bleed and hunting low-HP targets.
+ (+4 STR, +3 MOV) Stays grounded. Strips barding to sprint at maximum speed. Focuses on bleed and hunting low-HP targets.
 Passives
 (The Griffin Rider) Isolation Tactics:
  Attacks against enemies with no adjacent allies gain +2 STR. [+] Gain ATK +1 per 1 tile moved this turn.
@@ -774,7 +774,7 @@ Archmage
 The 
 Graviturge
 :
- (+4 MAG, +2 DEF, +1 MOV) Alters their own gravity for weightless, rapid drift. Focus on field manipulation.
+ (+4 MAG, +2 DEF, +2 MOV) Alters their own gravity for weightless, rapid drift. Focus on field manipulation.
 Passives
 (The Geomancer) 
 Elementalist
@@ -903,11 +903,11 @@ Innate Trait:
 â†³ [+] Upgrade: You permanently ignore all Traps. Additionally, if you move 0 tiles during Phase 1, you gain +1 RANGE and +1 STR on your Phase 2 attack.
 Advanced Classes (Promotion Boosts)
 The Sniper:
- (+6 STR, +1 MOV) Sprints to vantage points. Focus on absolute line-of-sight dominance and piercing shots.
+ (+6 STR, +2 MOV) Sprints to vantage points. Focus on absolute line-of-sight dominance and piercing shots.
 The Trapper:
  (+4 STR, +4 DEF, 0 MOV) Area denier utilizing traps and difficult terrain.
 The Nomad:
- (+2 STR, +2 CON, +2 MOV) Mounts a swift horse to act as light cavalry. Focuses on galloping around flanks, marking targets, and pelt the frontline.
+ (+2 STR, +2 CON, +3 MOV) Mounts a swift horse to act as light cavalry. Focuses on galloping around flanks, marking targets, and pelt the frontline.
 Passives
 (The Sniper) Overwatch:
  If you end Player Phase 2 without spending your AP, the first enemy to move within your Line of Sight during the Enemy Turn automatically suffers an ATK 1 attack.
@@ -981,9 +981,9 @@ Movement Skill:
 â†³ [+] Upgrade: Range becomes GLOBAL. Upon arrival, the target ally is immediately CLEANSED.
 Advanced Classes (Promotion Boosts)
 The Paladin:
- (+2 CON, +2 DEF, +2 MOV) Mounts an armored warhorse to act as a frontline emergency responder. Balances damage mitigation and point-blank heals.
+ (+2 CON, +2 DEF, +3 MOV) Mounts an armored warhorse to act as a frontline emergency responder. Balances damage mitigation and point-blank heals.
 The Seraph:
- (+6 MAG, +1 MOV) Channels pure holy energy to manifest ethereal wings for gliding. Focus on utility, crowd control, and cleansing.
+ (+6 MAG, +2 MOV) Channels pure holy energy to manifest ethereal wings for gliding. Focus on utility, crowd control, and cleansing.
 The Zealot:
  (+4 MAG, +4 STR, 0 MOV) Focus on retaliation mechanics and punishing enemy aggression.
 Passives
@@ -1067,7 +1067,7 @@ Bloodweaver
 The 
 Soulwalker
 :
- (+6 MAG, +1 MOV) Steps halfway into the spirit realm for eerie, gliding speed. Focuses on permanent stat debuffs.
+ (+6 MAG, +2 MOV) Steps halfway into the spirit realm for eerie, gliding speed. Focuses on permanent stat debuffs.
 Passives
 (The Spirit Caller) Echoing Spirits:
  Totems pulse twice per turn. Whenever an enemy takes damage from a Hazard or Debuff, your next attack gains +1 MAG. [+] Totems also gain +2 HP.
@@ -1204,12 +1204,12 @@ Movement Skill:
 â†³ [+] Upgrade: Limit once per turn. Pushing a unit grants you +1 STR for your next attack this turn.
 Advanced Classes (Promotion Boosts)
 The Cavalier:
- (+2 STR, +2 CON, +2 MOV) Mounts a light warhorse. Focuses on straight-line 
+ (+2 STR, +2 CON, +3 MOV) Mounts a light warhorse. Focuses on straight-line 
 momentum, gaining extreme damage by crashing through the enemy formation.
 The 
 Skystriker
 :
- (+4 STR, +2 CON, +1 MOV) Weaponizing the Z-Axis. Vaults over the frontline to strike the backline 
+ (+4 STR, +2 CON, +2 MOV) Weaponizing the Z-Axis. Vaults over the frontline to strike the backline 
 squishies
 , using gravity as raw damage.
 The Halberdier:
@@ -1317,7 +1317,7 @@ Siegecrafter
 The Demolitionist:
  (+4 STR, +4 CON, 0 MOV) Focus on aggressive chain reactions and weaponizing your own constructs.
 The Mechanist:
- (+4 CON, +2 DEF, +1 MOV) Builds pneumatic, steam-powered 
+ (+4 CON, +2 DEF, +2 MOV) Builds pneumatic, steam-powered 
 exo
 -suit braces for their legs to stride faster. Focus on repair and overclocking.
 Passives
