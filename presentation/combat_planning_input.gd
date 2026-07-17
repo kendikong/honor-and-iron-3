@@ -321,6 +321,8 @@ func _restore_committed_preview() -> void:
 
 
 func _on_selection_changed(unit_id: int) -> void:
+	if _director == null:
+		return
 	if unit_selected_abilities.has(unit_id):
 		_director.select_ability(int(unit_selected_abilities[unit_id]))
 	elif unit_id < 0:
@@ -336,6 +338,8 @@ func _on_selection_changed(unit_id: int) -> void:
 
 
 func _on_ability_selected(index: int) -> void:
+	if _director == null:
+		return
 	if _director.selected_unit_id >= 0:
 		unit_selected_abilities[_director.selected_unit_id] = index
 	if _planning != null and _director != null:
@@ -404,6 +408,8 @@ func get_hover_tile_for_ui() -> Vector2i:
 
 
 func is_live_preview_active() -> bool:
+	if _director == null:
+		return false
 	if dragging or aiming:
 		return preview_state.preview_board != null
 	if _skill_interaction_active():
@@ -890,6 +896,8 @@ func _facing_from_drop(local: Vector2, coord: Vector2i) -> int:
 
 
 func _is_planning() -> bool:
+	if _director == null:
+		return false
 	return _director.phase in [
 		CombatDirector.Phase.PLANNING_PHASE_1,
 		CombatDirector.Phase.PLANNING_PHASE_2,
@@ -1002,6 +1010,8 @@ func _ability_action_icon(ability: AbilityData) -> String:
 
 
 func _skill_takes_priority_over_basic_move() -> bool:
+	if _director == null:
+		return false
 	return not force_basic_movement and _director.selected_ability_index >= 0
 
 

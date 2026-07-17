@@ -61,12 +61,16 @@ func setup(
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.selection_changed.connect(func(_id: int) -> void:
+		if _director == null:
+			return
 		_cached_hover_unit_id = -1
 		recompute_hover_ranges(false, _director.selected_ability_index, false, -1)
 		_update_hover_action_icon()
 		queue_redraw(),
 	)
 	EventBus.ability_selected.connect(func(_idx: int) -> void:
+		if _director == null:
+			return
 		_cached_hover_unit_id = -1
 		recompute_hover_ranges(false, _director.selected_ability_index, false, -1)
 		_update_hover_action_icon()
@@ -331,7 +335,7 @@ func _on_preview_updated(result: SimResult) -> void:
 
 
 func _draw() -> void:
-	if _board == null or _map_view == null:
+	if _board == null or _map_view == null or _director == null:
 		return
 	var show_planning: bool = _phase in [
 		CombatDirector.Phase.PLANNING_PHASE_1,
@@ -892,7 +896,7 @@ func _self_aoe_threat_tiles(unit: UnitState, ability: AbilityData, origin: Vecto
 
 
 func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:
-	if unit == null:
+	if unit == null or _director == null:
 		return 0
 	if unit.id == _director.selected_unit_id and selected_ability >= 0:
 		var ability: AbilityData = _selected_ability_data(unit, selected_ability)
