@@ -191,6 +191,7 @@ func _sync_actors() -> void:
 			_position_actor(unit.id, unit.position)
 		if not (_drag_preview_active and unit.id == _drag_preview_id):
 			_apply_facing(unit.id, unit.facing)
+			_apply_exhaustion_state(unit)
 		_update_depth(unit.id)
 	for id: Variant in _actors.keys():
 		if not live.has(id):
@@ -235,6 +236,32 @@ func _apply_facing(unit_id: int, facing: int) -> void:
 	actor.set_walking(false)
 
 
+func _apply_exhaustion_state(unit: UnitState) -> void:
+	var actor: CharacterActor = _actors.get(unit.id)
+	if actor == null:
+		return
+	if (
+		_director == null
+		or not CombatDirector.is_planning_phase(_director.phase)
+		or not unit.is_player()
+	):
+		actor.modulate = Color.WHITE
+		return
+	var projected := _director.projected_state
+	var current: UnitState = projected.get_unit_by_id(unit.id) if projected != null else unit
+	if current == null:
+		actor.modulate = Color.WHITE
+		return
+	var can_act: bool = current.ability.points_left > 0 and not current.turn_action_used
+	var can_move: bool = (
+		current.movement.points_left > 0
+		and not current.has_status(GameEnums.StatusType.ROOT)
+		and not current.has_status(GameEnums.StatusType.STUN)
+		and _director.get_planning_move_timing(current.id) >= 0
+	)
+	actor.modulate = Color.WHITE if can_act or can_move else Color(0.50, 0.50, 0.54, 0.78)
+
+
 func _update_depth(unit_id: int) -> void:
 	var actor: CharacterActor = _actors.get(unit_id)
 	if actor == null or _map_view == null:
@@ -260,6 +287,13 @@ func _animate_move(event: SimEvent) -> void:
 	if event.data.get("is_dash", false):
 		step_time = float(event.data.get("dash_step_time", CombatDirector.DASH_STEP_TIME))
 	var from_coord: Vector2i = event.data.get("from", unit.position)
+	var movement_points_before: int = int(
+		event.data.get("movement_points_before", unit.movement.points_left)
+	)
+	var movement_points_left: int = int(
+		event.data.get("movement_points_left", unit.movement.points_left)
+	)
+	var movement_cost_per_tile: int = int(event.data.get("movement_cost_per_tile", 0))
 	var cells: Array[Vector2i] = []
 	if path.is_empty():
 		cells.append(from_coord)
@@ -270,11 +304,8 @@ func _animate_move(event: SimEvent) -> void:
 	if cells.is_empty():
 		return
 	var start_cell: Vector2i = from_coord
-	if cells.size() >= 2:
-		start_cell = cells[0]
-	elif cells.size() == 1:
-		start_cell = cells[0]
 	unit.position = cells[cells.size() - 1]
+	unit.movement.points_left = movement_points_before
 	var facing: int = unit.facing
 	if cells.size() >= 2:
 		facing = _facing_toward(cells[cells.size() - 2], cells[cells.size() - 1])
@@ -290,13 +321,26 @@ func _animate_move(event: SimEvent) -> void:
 	actor.set_walking(true)
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
-	for cell: Vector2i in cells:
+	for step_index: int in range(cells.size()):
+		var cell: Vector2i = cells[step_index]
 		tween.tween_property(actor, "position", _map_view.grid_to_foot_local(cell), step_time)
+		var remaining: int = maxi(
+			movement_points_left,
+			movement_points_before - ((step_index + 1) * movement_cost_per_tile),
+		)
+		tween.tween_callback(_set_movement_points.bind(unit_id, remaining))
 	tween.finished.connect(func() -> void:
 		_move_tweens.erase(unit_id)
 		actor.set_walking(false)
 		_update_depth(unit_id)
 	)
+
+
+func _set_movement_points(unit_id: int, points_left: int) -> void:
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	if unit != null:
+		unit.movement.points_left = points_left
+	queue_redraw()
 
 
 func _animate_push(event: SimEvent) -> void:
@@ -435,6 +479,8 @@ func end_drag_preview() -> void:
 	if actor != null:
 		actor.modulate = Color.WHITE
 		actor.set_walking(false)
+	if unit != null:
+		_apply_exhaustion_state(unit)
 
 
 func update_drag_preview(

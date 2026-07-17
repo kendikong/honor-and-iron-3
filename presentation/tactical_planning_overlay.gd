@@ -828,7 +828,7 @@ func _draw_preview_arrows() -> void:
 					skip_live_route = true
 				elif skill_priority and not dragging:
 					skip_live_route = true
-			if not skip_live_route:
+			if not skip_live_route and _unit_can_still_move(unit.id):
 				var p_col: Color = _player_color_for_unit(unit)
 				var dim_col := Color(p_col.r, p_col.g, p_col.b, 0.35)
 				_draw_route_line(player_leg, dim_col, true, true)
@@ -864,7 +864,7 @@ func _draw_interaction_overlay() -> void:
 		return
 	var route: Array = prev.preview_paths.get(actor.id, [])
 	var p_col: Color = _player_color_for_unit(actor)
-	if route.size() >= 2:
+	if route.size() >= 2 and _unit_can_still_move(actor.id):
 		_draw_route_line(route, Color(p_col.r, p_col.g, p_col.b, 0.95), true, true)
 	if _attack_target_id >= 0:
 		var origin: Vector2i = actor.position
@@ -876,6 +876,18 @@ func _draw_interaction_overlay() -> void:
 			target_coord = target_unit.position
 		if origin != target_coord:
 			_draw_dashed_route([origin, target_coord], Color(p_col.r, p_col.g, p_col.b, 0.95))
+
+
+func _unit_can_still_move(unit_id: int) -> bool:
+	if unit_id < 0 or _director == null:
+		return false
+	var projected := _director.projected_state
+	if projected == null:
+		return false
+	var unit: UnitState = projected.get_unit_by_id(unit_id)
+	if unit == null or not unit.is_player() or unit.movement.points_left <= 0:
+		return false
+	return _director.get_planning_move_timing(unit_id) >= 0
 
 
 func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: bool) -> void:

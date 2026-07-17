@@ -24,7 +24,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		dist = PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
 	if dist > actor.get_ability_range(ability):
 		return false
-	if dist == 0 and actor.get_ability_range(ability) > 0:
+	if dist == 0 and actor.get_ability_range(ability) > 0 and not can_target_self(actor, ability):
 		return false
 		
 	if dist > 1:
@@ -51,6 +51,31 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			if steps < 1 or steps > effect.amount:
 				return false
 				
+	return true
+
+
+static func can_target_self(actor: UnitState, ability: AbilityData) -> bool:
+	if actor == null or ability == null:
+		return false
+	if actor.get_ability_range(ability) == 0:
+		return true
+	var effects: Array[EffectData] = ability.effects
+	if actor.is_ability_upgraded(ability.id) and not ability.upgraded_effects.is_empty():
+		effects = ability.upgraded_effects
+	if effects.is_empty():
+		return false
+	for effect: EffectData in effects:
+		match effect.type:
+			GameEnums.EffectType.ADD_STATUS_SELF, GameEnums.EffectType.DAMAGE_SELF:
+				continue
+			GameEnums.EffectType.HEAL, GameEnums.EffectType.ARMOR_UP, GameEnums.EffectType.CLEANSE:
+				continue
+			GameEnums.EffectType.ADD_STATUS:
+				if GameEnums.is_buff(effect.status_type):
+					continue
+				return false
+			_:
+				return false
 	return true
 
 

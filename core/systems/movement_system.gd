@@ -191,6 +191,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 			}))
 			return
 		var from := unit.position
+		var points_before: int = unit.movement.points_left
 		GridSystem.set_occupant(board, unit.position, -1)
 		unit.position = dest
 		GridSystem.set_occupant(board, unit.position, unit.id)
@@ -202,6 +203,9 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 			"actor": unit.id, "from": from, "to": unit.position,
 			"steps": 1, "path": [dest], "teleport": true,
+			"movement_points_before": points_before,
+			"movement_points_left": unit.movement.points_left,
+			"movement_cost_per_tile": 0,
 		}))
 		if action.move_timing == GameEnums.MoveTiming.PRE_ACTION:
 			unit.pre_move_used_this_turn = true
@@ -223,6 +227,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		return
 
 	var from := unit.position
+	var points_before: int = unit.movement.points_left
 	GridSystem.set_occupant(board, unit.position, -1)
 	var trample_hit_ids: Dictionary = {}
 	
@@ -285,6 +290,9 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		"to": unit.position,
 		"steps": path.size(),
 		"path": path,  # ordered tiles entered, so presentation animates orthogonally
+		"movement_points_before": points_before,
+		"movement_points_left": unit.movement.points_left,
+		"movement_cost_per_tile": move_cost,
 	}))
 	if action.move_timing == GameEnums.MoveTiming.PRE_ACTION:
 		unit.pre_move_used_this_turn = true

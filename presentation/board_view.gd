@@ -447,7 +447,8 @@ func _on_left_press(local: Vector2) -> void:
 		
 		if _aiming and unit.id == _selected_id:
 			var actor := _proj_unit(_selected_id)
-			if actor != null and _ability_range(actor) == 0:
+			var self_ability := _selected_ability_data(actor)
+			if actor != null and AbilitySystem.can_target_self(actor, self_ability):
 				_plan_attack(_selected_id, _selected_ability, unit.id)
 				_sfx.play("ability")
 				Input.set_default_cursor_shape(Input.CURSOR_ARROW)
@@ -472,7 +473,8 @@ func _on_left_press(local: Vector2) -> void:
 		var target := _aim_enemy_board().get_unit_at(coord)
 		if target != null and actor != null:
 			if target.id == actor.id:
-				if _ability_range(actor) == 0:
+				var self_ability := _selected_ability_data(actor)
+				if AbilitySystem.can_target_self(actor, self_ability):
 					_plan_attack(_selected_id, _selected_ability, target.id)
 					_sfx.play("ability")
 					Input.set_default_cursor_shape(Input.CURSOR_ARROW)
@@ -723,8 +725,9 @@ func _on_left_release(local: Vector2) -> void:
 				approach_waypoints.append(_drag_route[i])
 		_plan_approach_or_trample_on_enemy(_drag_unit_id, dropped_on, local, _drag_last_free, approach_waypoints)
 	elif coord == actor.position:
-		if _selected_ability >= 0 and _ability_range(actor) == 0 \
-		and _drag_unit_was_selected and _drag_self_skill_intent(local):
+		var self_ability := _selected_ability_data(actor)
+		if _selected_ability >= 0 and _drag_unit_was_selected \
+		and AbilitySystem.can_target_self(actor, self_ability):
 			_plan_attack(_drag_unit_id, _selected_ability, actor.id)
 			_sfx.play("ability")
 			if _director != null:
@@ -2614,7 +2617,8 @@ func _update_hover(local: Vector2) -> void:
 func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> int:
 	if _skill_interaction_active():
 		if hover_unit.id == p_unit.id:
-			return p_unit.id if _ability_range(p_unit) == 0 else -1
+			var ability := _selected_ability_data(p_unit)
+			return p_unit.id if AbilitySystem.can_target_self(p_unit, ability) else -1
 		if _in_ability_range(p_unit, hover_unit):
 			return hover_unit.id
 		return -1
@@ -2832,7 +2836,8 @@ func _update_mouse_cursor() -> void:
 						var valid_aim := false
 						if hover_unit != null:
 							if hover_unit.id == p_unit.id:
-								valid_aim = _ability_range(p_unit) == 0
+								var self_ability := _selected_ability_data(p_unit)
+								valid_aim = AbilitySystem.can_target_self(p_unit, self_ability)
 							else:
 								valid_aim = _in_ability_range(p_unit, hover_unit)
 						elif _selected_ability >= 0 and _selected_ability < p_unit.active_abilities.size():
@@ -3081,7 +3086,7 @@ func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) 
 	var target := _proj().get_unit_at(coord)
 	if target != null:
 		if target.id == actor.id:
-			if _ability_range(actor) == 0:
+			if AbilitySystem.can_target_self(actor, ability):
 				_plan_attack(unit.id, _selected_ability, target.id)
 				_sfx.play("ability")
 				return true

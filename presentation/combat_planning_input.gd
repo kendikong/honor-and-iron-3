@@ -3,8 +3,6 @@ extends RefCounted
 
 ## H&I planning semantics ported from board_view — used by TacticalInputController.
 
-const DRAG_CLICK_MOVE_THRESHOLD: float = 8.0
-const DRAG_SELF_SKILL_DELAY_MS: int = 150
 
 var force_basic_movement: bool = false
 var unit_selected_abilities: Dictionary = {}
@@ -21,8 +19,6 @@ var aiming: bool = false
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
 var _drag_last_free: Vector2i = Vector2i(-1, -1)
-var _drag_press_local: Vector2 = Vector2.ZERO
-var _drag_press_time_ms: int = 0
 var _drag_unit_was_selected: bool = false
 var _drag_saved_preview: BoardState = null
 var preview_state: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -79,7 +75,8 @@ func on_left_press(local: Vector2) -> void:
 				return
 		if aiming and unit.id == _director.selected_unit_id:
 			var actor := _proj_unit(_director.selected_unit_id)
-			if actor != null and _ability_range(actor) == 0:
+			var self_ability := _selected_ability_data(actor)
+			if actor != null and AbilitySystem.can_target_self(actor, self_ability):
 				_director.rpc_plan_attack(_director.selected_unit_id, _director.selected_ability_index, unit.id)
 				_play_sfx("ability")
 				cancel_aim()
@@ -100,7 +97,8 @@ func on_left_press(local: Vector2) -> void:
 		var target := _aim_enemy_board().get_unit_at(cell)
 		if target != null and actor != null:
 			if target.id == actor.id:
-				if _ability_range(actor) == 0:
+				var self_ability := _selected_ability_data(actor)
+				if AbilitySystem.can_target_self(actor, self_ability):
 					_director.rpc_plan_attack(_director.selected_unit_id, _director.selected_ability_index, target.id)
 					_play_sfx("ability")
 				else:
@@ -157,11 +155,11 @@ func on_left_release(local: Vector2) -> void:
 		var waypoints: Array[Vector2i] = _route_waypoints()
 		_plan_approach_or_trample_on_enemy(released_unit_id, dropped_on, local, _drag_last_free, waypoints)
 	elif cell == actor.position:
+		var self_ability := _selected_ability_data(actor)
 		if (
 			_director.selected_ability_index >= 0
-			and _ability_range(actor) == 0
 			and _drag_unit_was_selected
-			and _drag_self_skill_intent(local)
+			and AbilitySystem.can_target_self(actor, self_ability)
 		):
 			_director.rpc_plan_attack(released_unit_id, _director.selected_ability_index, actor.id)
 			_play_sfx("ability")
@@ -281,6 +279,10 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		drag_sim_actor_pos = _drag_last_free
 	if preview.has("temp_board") and _planning != null:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
+		if dragging and pv_actor != null:
+			_planning.set_fixed_range_origin(pv_actor.position)
+			_planning._invalidate_hover_cache()
+			_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_live_board()
 
 
@@ -301,8 +303,6 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	dragging = true
 	_drag_unit_id = unit.id
 	_drag_unit_was_selected = was_already_selected
-	_drag_press_local = local
-	_drag_press_time_ms = Time.get_ticks_msec()
 	_drag_route = [unit.position]
 	_drag_last_free = unit.position
 	_planning.set_fixed_range_origin(unit.position)
@@ -663,7 +663,8 @@ func _refresh_live_interaction_preview(
 func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> int:
 	if _skill_interaction_active() or aiming:
 		if hover_unit.id == p_unit.id:
-			return p_unit.id if _ability_range(p_unit) == 0 else -1
+			var ability := _selected_ability_data(p_unit)
+			return p_unit.id if AbilitySystem.can_target_self(p_unit, ability) else -1
 		if _in_ability_range(p_unit, hover_unit):
 			return hover_unit.id
 		return -1
@@ -759,7 +760,7 @@ func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) 
 	var target := _proj().get_unit_at(coord)
 	if target != null:
 		if target.id == actor.id:
-			if _ability_range(actor) == 0:
+			if AbilitySystem.can_target_self(actor, ability):
 				_director.rpc_plan_attack(unit.id, _director.selected_ability_index, target.id)
 				_play_sfx("ability")
 				return true
@@ -851,14 +852,6 @@ func _route_waypoints() -> Array[Vector2i]:
 		for i: int in range(1, _drag_route.size()):
 			waypoints.append(_drag_route[i])
 	return waypoints
-
-
-func _drag_self_skill_intent(release_local: Vector2) -> bool:
-	if _drag_route.size() > 1:
-		return true
-	if release_local.distance_to(_drag_press_local) >= DRAG_CLICK_MOVE_THRESHOLD:
-		return true
-	return Time.get_ticks_msec() - _drag_press_time_ms >= DRAG_SELF_SKILL_DELAY_MS
 
 
 func _ability_has_dash(ability: AbilityData) -> bool:
@@ -1055,7 +1048,8 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 		var valid_aim := false
 		if hover_unit != null:
 			if hover_unit.id == p_unit.id:
-				valid_aim = _ability_range(p_unit) == 0
+				var self_ability := _selected_ability_data(p_unit)
+				valid_aim = AbilitySystem.can_target_self(p_unit, self_ability)
 			else:
 				valid_aim = _in_ability_range(p_unit, hover_unit)
 		elif _director.selected_ability_index >= 0 and _director.selected_ability_index < p_unit.active_abilities.size():
@@ -1168,7 +1162,8 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.WALK, walk_face, preview_cell, drag_preview_failed)
 			return
 	if cell == actor.position and _drag_unit_was_selected and _director.selected_ability_index >= 0:
-		if _ability_range(actor) == 0:
+		var self_ability := _selected_ability_data(actor)
+		if AbilitySystem.can_target_self(actor, self_ability):
 			var self_face: int = _facing_from_drop(local, cell)
 			if self_face < 0:
 				self_face = actor.facing

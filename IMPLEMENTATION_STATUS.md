@@ -947,6 +947,18 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** â
 
 ---
 
+## Tactical Planning Interaction Follow-up (2026-07-17) â€” USER VERIFICATION PENDING
+
+- Drag previews now recompute threat tiles from the dragged unit's simulated destination.
+- Blue player movement arrows are suppressed when the projected unit has no legal movement remaining.
+- `UNIT_MOVED` events carry before/after MP and per-tile cost; presentation consumes MP after each animated step.
+- Player sprites desaturate only when projected state permits neither an action nor movement.
+- Friendly/self-only skills with non-zero range can target their caster through one shared `AbilitySystem.can_target_self()` rule.
+
+**Verification:** Godot 4.7 headless editor parse passed with no script errors. Existing CLI simulation/bridge runners remain blocked by pre-existing standalone autoload/bootstrap failures; F5 interaction validation remains required.
+
+---
+
 ## User decisions (locked)
 
 | Item | Choice |
