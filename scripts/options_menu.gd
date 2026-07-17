@@ -102,6 +102,7 @@ func is_open() -> bool:
 func open() -> void:
 	if _settings == null:
 		return
+	_settings.capture_from_window(get_window())
 	layer = 40
 	_sync_controls_from_settings()
 	_show_main()
@@ -256,7 +257,10 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	scale_row.add_child(_map_scale_value)
 
 	_text_size_option = _add_labeled_option(vbox, "Inspector text", GameSettings.TEXT_SIZE_LABELS)
-	_text_size_option.item_selected.connect(func(_idx: int) -> void: _apply_display_live())
+	_text_size_option.item_selected.connect(func(_idx: int) -> void:
+		if not _sync_blocked:
+			_apply_display_live(),
+	)
 
 	var ui_scale_row: HBoxContainer = HBoxContainer.new()
 	ui_scale_row.add_theme_constant_override("separation", 10)
@@ -397,29 +401,56 @@ func _apply_display() -> void:
 func _apply_display_live() -> void:
 	if _settings == null:
 		return
-	_read_controls_to_settings()
+	_read_live_controls_to_settings()
 	_settings.save_to_disk()
 	if _on_applied.is_valid():
 		_on_applied.call()
 
 
 func _sync_controls_from_settings() -> void:
+	_set_sync_blocked(true)
 	_resolution_option.select(_settings.resolution_index())
 	_window_mode_option.select(_settings.window_mode_index())
 	_map_zoom_option.select(_settings.map_zoom_mode)
+	_map_scale_slider.set_block_signals(true)
 	_map_scale_slider.value = _settings.map_zoom_multiplier
+	_map_scale_slider.set_block_signals(false)
 	_on_map_scale_slider_changed(_settings.map_zoom_multiplier)
 	_text_size_option.select(_settings.inspector_text_size_index)
+	_panel_width_slider.set_block_signals(true)
 	_panel_width_slider.value = float(_settings.inspector_panel_width)
+	_panel_width_slider.set_block_signals(false)
 	_on_panel_width_slider_changed(float(_settings.inspector_panel_width))
+	_ui_scale_slider.set_block_signals(true)
 	_ui_scale_slider.value = _settings.combat_ui_scale
+	_ui_scale_slider.set_block_signals(false)
 	_on_ui_scale_slider_changed(_settings.combat_ui_scale)
 	if _char_profile != null:
+		_char_scale_slider.set_block_signals(true)
 		_char_scale_slider.value = _char_profile.display_scale
+		_char_scale_slider.set_block_signals(false)
 		_on_char_scale_changed(_char_profile.display_scale)
 	if _display_char_scale_slider != null and _char_profile != null:
+		_display_char_scale_slider.set_block_signals(true)
 		_display_char_scale_slider.value = _char_profile.display_scale
+		_display_char_scale_slider.set_block_signals(false)
 		_on_display_char_scale_changed(_char_profile.display_scale)
+	_set_sync_blocked(false)
+
+
+var _sync_blocked: bool = false
+
+
+func _set_sync_blocked(blocked: bool) -> void:
+	_sync_blocked = blocked
+
+
+func _read_live_controls_to_settings() -> void:
+	_settings.map_zoom_mode = _map_zoom_option.selected as GameSettings.MapZoomMode
+	_settings.map_zoom_multiplier = _map_scale_slider.value
+	_settings.inspector_text_size_index = _text_size_option.selected
+	_settings.inspector_panel_width = int(_panel_width_slider.value)
+	_settings.combat_ui_scale = _ui_scale_slider.value
 
 
 func _read_controls_to_settings() -> void:
@@ -489,12 +520,14 @@ func _on_display_char_scale_changed(value: float) -> void:
 
 func _on_panel_width_slider_changed(value: float) -> void:
 	_panel_width_value.text = "%d" % int(value)
-	_apply_display_live()
+	if not _sync_blocked:
+		_apply_display_live()
 
 
 func _on_ui_scale_slider_changed(value: float) -> void:
 	_ui_scale_value.text = "%.2f×" % value
-	_apply_display_live()
+	if not _sync_blocked:
+		_apply_display_live()
 
 
 func _margin(panel: PanelContainer) -> MarginContainer:

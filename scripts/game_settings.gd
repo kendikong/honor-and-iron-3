@@ -106,11 +106,23 @@ func apply_to_window(window: Window, preserve_placement: bool = true) -> void:
 		DisplayServer.window_set_mode(window_mode)
 
 
-func resolution_index() -> int:
+func resolution_index_for(size: Vector2i) -> int:
 	for i: int in range(RESOLUTION_PRESETS.size()):
-		if RESOLUTION_PRESETS[i] == resolution:
+		if RESOLUTION_PRESETS[i] == size:
 			return i
-	return 4
+	var best_index: int = 0
+	var best_dist: int = 0x7FFFFFFF
+	for i: int in range(RESOLUTION_PRESETS.size()):
+		var preset: Vector2i = RESOLUTION_PRESETS[i]
+		var dist: int = absi(preset.x - size.x) + absi(preset.y - size.y)
+		if dist < best_dist:
+			best_dist = dist
+			best_index = i
+	return best_index
+
+
+func resolution_index() -> int:
+	return resolution_index_for(resolution)
 
 
 func set_resolution_index(index: int) -> void:
