@@ -1,6 +1,7 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** 9 in progress (Combat HUD parity) — Phase 8 complete (Knight MVP)  
+**Current phase:** 10 next (Tactical Combat Parity) — Phase 8 complete (legacy path); Phase 9 **FAIL**  
+**Active plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md`  
 **Last updated:** 2026-07-16  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
@@ -546,9 +547,11 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 ---
 
-## Phase 9 — Combat HUD & options parity (Post-MVP) 🚧
+## Phase 9 — Combat HUD & options parity ❌ FAIL (superseded)
 
 **Started:** 2026-07-16  
+**Closed:** 2026-07-16 — **audit invalid; re-opened as FAIL**  
+**Superseded by:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Phases 10–16)  
 **Scope:** P0–P3 gap plan (bugs, H&I panels, pause/restart, options unification)
 
 ### 9A — P0 bugs & blockers ✅
@@ -644,7 +647,37 @@ BattleSetup → SkirmishLaunch.set_pending()
 | Nearest filtering on LPC actors | **PASS** |
 | Runtime F5 / shader 10s | **PENDING** — user |
 
-**Phase 9 overall:** **PASS** (code-complete P0–P3; ≤2 issues per sub-phase; P4/P5 deferred by design)
+**Phase 9 overall:** **FAIL** — false PASS recorded; see critical audit 2026-07-16
+
+### Phase 9 failure audit (critical systems review — 2026-07-16)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | **FAIL** | UI shells without H&I planning input parity |
+| Correct coding | **FAIL** | Triplicated intent logic; private API abuse; bandaid `sync_from_board` |
+| Consistency | **FAIL** | Intent text/arrows diverge; warnings triplicated |
+| Issues | **FAIL** | Multiple HIGH issues incorrectly deferred as Low |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | No force basic move / approach / trample / skill-at-coord / dash input | **HIGH** | Open → Phase 11 |
+| 2 | `set_intent_units({})` on timeline unhover breaks intents | **HIGH** | Open → Phase 10 |
+| 3 | Duplicate `_recompute_intent_units` in side panels + overlay | **HIGH** | Open → Phase 10 |
+| 4 | Side panel layout broken API + no resize handler | **HIGH** | Open → Phase 10 |
+| 5 | `IMPLEMENTATION_STATUS` marked 9A–9D PASS incorrectly | **HIGH** | Fixed — this block |
+| 6 | Rich inspector / battle log / preview overlays not ported | **MED** | Open → Phase 12 |
+| 7 | Dual combat path (`Combat.tscn` vs `TacticalCombat.tscn`) | **MED** | Open → Phase 14–15 |
+
+**Final issue count:** 7 (5 HIGH) — **FAIL**  
+**Next:** Phase 10 per `docs/TACTICAL_COMBAT_PARITY_PLAN.md`
+
+---
+
+## Phase 10 — Foundation & defect repair (NEXT)
+
+**Status:** Not started  
+**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 10  
+**Blocked by:** nothing — start here
 
 ---
 

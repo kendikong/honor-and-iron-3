@@ -131,8 +131,25 @@ Players: left third, near vertical center. Enemies: right third.
 - Compendium link
 - **Audit 8:** Boredom-style 60s idle optional; ≤2 open issues
 
-### Phase 9+ (post-MVP)
-- Bruiser, Cavalier; local/online co-op; autobattler on `EncounterBuilder`
+### Phase 9 (FAILED — superseded)
+- 2026-07-16 slice added UI shells without H&I planning parity; audits were invalid.
+- **Do not continue Phase 9.** Follow **`docs/TACTICAL_COMBAT_PARITY_PLAN.md`** (Phases 10–16).
+
+### Phases 10–16 — Tactical combat parity (ACTIVE)
+See **`docs/TACTICAL_COMBAT_PARITY_PLAN.md`** for full deliverables, Knight playtest scripts (K1–K8, M1–M8), and **mandatory full audit protocol** per phase.
+
+| Phase | Summary |
+|-------|---------|
+| **10** | Foundation: `CombatIntentState`, `TacticalCombatShell`, Phase 9 bug fixes |
+| **11** | H&I planning input: force basic move, approach/trample, dash, skill-at-coord |
+| **12** | Inspector + overlays + layout parity |
+| **13** | Pause, ready UI, log/SFX/HP prediction |
+| **14** | Knight MVP re-gate on tactical path only |
+| **15** | MP, sandbox, danger, autobattler (optional) |
+| **16** | Options unification (optional) |
+
+### Phase 17+ (post-MVP)
+- Additional classes; full `board_view` retirement; autobattler on `EncounterBuilder`
 
 ---
 
