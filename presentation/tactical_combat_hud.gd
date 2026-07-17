@@ -253,10 +253,10 @@ func _build_banner() -> void:
 
 func _on_phase_changed(phase: int) -> void:
 	var names: Dictionary = {
-		CombatDirector.Phase.PLANNING_PHASE_1: "PLANNING 1",
-		CombatDirector.Phase.PLANNING_PHASE_2: "PLANNING 2",
-		CombatDirector.Phase.EXECUTING_PHASE_1: "EXECUTING 1…",
-		CombatDirector.Phase.EXECUTING_PHASE_2: "EXECUTING 2…",
+		CombatDirector.Phase.PLANNING_PHASE_1: "PLANNING",
+		CombatDirector.Phase.PLANNING_PHASE_2: "PLANNING",
+		CombatDirector.Phase.EXECUTING_PHASE_1: "EXECUTING…",
+		CombatDirector.Phase.EXECUTING_PHASE_2: "EXECUTING…",
 		CombatDirector.Phase.ENEMY_TURN: "ENEMY TURN…",
 		CombatDirector.Phase.VICTORY: "VICTORY",
 		CombatDirector.Phase.DEFEAT: "DEFEAT",
@@ -264,10 +264,7 @@ func _on_phase_changed(phase: int) -> void:
 	_phase_label.text = "Phase: %s" % names.get(phase, str(phase))
 	if _timeline_grid != null:
 		_timeline_grid.set_phase(phase)
-	var planning: bool = (
-		phase == CombatDirector.Phase.PLANNING_PHASE_1
-		or phase == CombatDirector.Phase.PLANNING_PHASE_2
-	)
+	var planning: bool = CombatDirector.is_planning_phase(phase)
 	_execute_btn.disabled = not planning
 	_undo_btn.visible = planning
 	_clear_btn.disabled = not planning
@@ -316,14 +313,7 @@ func _refresh_timeline(statuses: PackedStringArray = PackedStringArray()) -> voi
 		_timeline_grid.set_board(_director.board)
 	_timeline_grid.set_phase(_director.phase)
 	_timeline_grid.set_selected(_director.selected_unit_id)
-	var plan: Timeline = (
-		_director.plan_phase_1
-		if (
-			_director.phase == CombatDirector.Phase.PLANNING_PHASE_1
-			or _director.phase == CombatDirector.Phase.EXECUTING_PHASE_1
-		)
-		else _director.plan_phase_2
-	)
+	var plan: Timeline = _director.get_player_plan()
 	_timeline_grid.rebuild(plan, statuses)
 	if statuses.size() > 0:
 		for reason: String in statuses:

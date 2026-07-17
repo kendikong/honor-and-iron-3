@@ -44,13 +44,17 @@ var projected_state: BoardState
 var _run_id: int = 0
 ## Moves just added via _try_add_multiple that may need a planning commit animation.
 var _commit_animate_actions: Array[TimelineAction] = []
-## True after Phase 1 is executed for the current turn. Phase 1 plan entries are kept
-## for UI display but must not be re-applied on top of base_board during Phase 2 planning.
-var phase_1_executed: bool = false
-
 var initial_board: BoardState
-## Snapshot at the start of the current player turn (planning phase 1).
+## Snapshot at the start of the current player turn (planning).
 var turn_start_board: BoardState
+
+
+static func is_planning_phase(p: Phase) -> bool:
+	return p == Phase.PLANNING_PHASE_1 or p == Phase.PLANNING_PHASE_2
+
+
+static func is_executing_phase(p: Phase) -> bool:
+	return p == Phase.EXECUTING_PHASE_1 or p == Phase.EXECUTING_PHASE_2
 
 func start() -> void:
 	# Fallback to demo if nothing was passed
@@ -73,7 +77,6 @@ func _init_combat() -> void:
 	board = base_board.clone()
 	plan_phase_1 = Timeline.new()
 	plan_phase_2 = Timeline.new()
-	phase_1_executed = false
 	_lock_enemy_intents()
 	
 	# Start with no unit selected
@@ -120,33 +123,45 @@ func select_ability(index: int) -> void:
 	selected_ability_index = index
 	EventBus.ability_selected.emit(selected_ability_index)
 
-func _get_planning_state(target_phase: int) -> BoardState:
-	var state := base_board.clone()
-	var ev: Array[SimEvent] = []
-	if target_phase > 1:
-		_apply_phase_1_plan_to_state(state, ev)
-	return state
+func _get_planning_state(_target_phase: int = 1) -> BoardState:
+	return base_board.clone()
 
-## Apply queued Phase 1 plan to a cloned board. Skipped once Phase 1 has been executed
-## because base_board already reflects those committed actions.
-func _apply_phase_1_plan_to_state(state: BoardState, events: Array[SimEvent]) -> void:
-	if phase_1_executed:
-		return
-	for a in plan_phase_1.entries:
-		ResolutionPipeline.apply_action(state, a, events)
-	ResolutionPipeline.resolve_pending_pushes(state, events)
-	_apply_phase_1_to_2_transition(state)
+
+func get_planning_input_phase(unit_id: int) -> int:
+	return _get_target_phase(unit_id)
+
 
 func _get_target_phase(unit_id: int) -> int:
-	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state else board.get_unit_by_id(unit_id)
-	if p_unit == null: return -1
-	if phase == Phase.PLANNING_PHASE_1:
-		if p_unit.phase_1_action_used:
-			return -1 if p_unit.phase_2_action_used else 2
-		return 1
-	elif phase == Phase.PLANNING_PHASE_2:
-		return -1 if p_unit.phase_2_action_used else 2
-	return -1
+	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else board.get_unit_by_id(unit_id)
+	if p_unit == null:
+		return -1
+	if p_unit.turn_action_used:
+		return 2 if _unit_can_post_move(unit_id, p_unit) else -1
+	return 1
+
+
+func _unit_has_pre_move_queued(unit_id: int) -> bool:
+	for a: TimelineAction in plan_phase_1.entries:
+		if a.actor_id == unit_id and a.type == GameEnums.ActionType.MOVE and a.phase == 1:
+			return true
+	return false
+
+
+func _unit_has_post_move_queued(unit_id: int) -> bool:
+	for a: TimelineAction in _get_combined_plan().entries:
+		if a.actor_id == unit_id and a.type == GameEnums.ActionType.MOVE and a.phase == 2:
+			return true
+	return false
+
+
+func _unit_can_post_move(unit_id: int, p_unit: UnitState) -> bool:
+	if _unit_has_post_move_queued(unit_id):
+		return false
+	if not p_unit.turn_action_used:
+		return false
+	if _unit_has_pre_move_queued(unit_id):
+		return p_unit.has_passive(&"canto") or p_unit.has_status(GameEnums.StatusType.CANTO)
+	return true
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_plan_move(unit_id: int, coord: Vector2i, face_dir: int, waypoints: Array[Vector2i]) -> void:
@@ -217,8 +232,7 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 		
 		# If we need an approach, that consumes the target_phase (e.g. phase 1)
 		# The attack would then consume target_phase + 1 (e.g. phase 2)
-		if target_phase == 2:
-			# Cannot do both move + attack if only phase 2 action is left
+		if target_phase == 2 and not _unit_can_post_move(unit_id, proj.get_unit_by_id(unit_id)):
 			EventBus.action_rejected.emit("no_actions_left")
 			return
 			
@@ -233,9 +247,9 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 		# Approach is Phase 1/Phase 2 (queued)
 		var after_actor := trial.get_unit_by_id(target_unit_id)
 		var attack_action := TimelineAction.make_ability(unit_id, ability,
-			after_actor.position if after_actor != null else target.position, target_unit_id, 2)
-		_clear_unit_from_plans(unit_id, target_phase)
-		_try_add_multiple([move_action, attack_action], [plan_phase_1, plan_phase_2])
+			after_actor.position if after_actor != null else target.position, target_unit_id, 1)
+		_clear_unit_from_plans(unit_id, 1)
+		_try_add_multiple([move_action, attack_action], [plan_phase_1, plan_phase_1])
 		return
 
 	# No approach needed, just attack
@@ -270,11 +284,8 @@ func _is_attack_tile(state: BoardState, actor: UnitState, coord: Vector2i, targe
 	var path := MovementSystem.find_path(state, actor.position, coord, actor.movement.points_left)
 	return not path.is_empty() and path[path.size() - 1] == coord
 
-func _apply_phase_1_to_2_transition(board: BoardState) -> void:
-	for unit in board.units:
-		if unit.is_alive() and not unit.is_enemy():
-			var rec = floori(unit.definition.move_points / 2.0)
-			unit.movement.points_left = mini(unit.definition.move_points, unit.movement.points_left + rec)
+func _apply_phase_1_to_2_transition(_board: BoardState) -> void:
+	pass
 
 func _clear_unit_from_plans(unit_id: int, from_phase: int) -> void:
 	if from_phase <= 1:
@@ -292,41 +303,41 @@ func _try_add(action: TimelineAction, target_plan: Timeline) -> void:
 func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timeline]) -> void:
 	var temp_p1 := Timeline.new()
 	var temp_p2 := Timeline.new()
-	for a in plan_phase_1.entries: temp_p1.add(a)
-	for a in plan_phase_2.entries: temp_p2.add(a)
-	
-	var new_actors := []
-	for i in range(actions.size()):
-		var a = actions[i]
+	for a: TimelineAction in plan_phase_1.entries:
+		temp_p1.add(a)
+	for a: TimelineAction in plan_phase_2.entries:
+		temp_p2.add(a)
+	var new_actors: Array[int] = []
+	for i: int in range(actions.size()):
+		var a: TimelineAction = actions[i]
 		new_actors.append(a.actor_id)
-		if target_plans[i] == plan_phase_1: temp_p1.add(a)
-		else: temp_p2.add(a)
-		
-	var trial := base_board.clone()
+		if target_plans[i] == plan_phase_2:
+			temp_p2.add(a)
+		else:
+			temp_p1.add(a)
+	var trial: BoardState = base_board.clone()
 	var ev: Array[SimEvent] = []
-
-	if not phase_1_executed:
-		for a in temp_p1.entries:
-			ResolutionPipeline.apply_action(trial, a, ev)
-		ResolutionPipeline.resolve_pending_pushes(trial, ev)
-		_apply_phase_1_to_2_transition(trial)
-
-	for a in temp_p2.entries:
-		ResolutionPipeline.apply_action(trial, a, ev)
-	ResolutionPipeline.resolve_pending_pushes(trial, ev)
-	
-	for e in ev:
+	var combined := Timeline.new()
+	for a: TimelineAction in temp_p1.entries:
+		combined.add(a)
+	for a: TimelineAction in temp_p2.entries:
+		combined.add(a)
+	Simulator.simulate_player_turn(trial, combined, ev)
+	for e: SimEvent in ev:
 		if e.type == GameEnums.SimEventType.ACTION_FAILED:
-			var failed_actor = e.data.get("actor", -1)
+			var failed_actor: int = int(e.data.get("actor", -1))
 			if failed_actor in new_actors:
 				EventBus.action_rejected.emit(String(e.data.get("reason", "failed")))
 				return
-				
-	for i in range(actions.size()):
+	for i: int in range(actions.size()):
 		target_plans[i].add(actions[i])
 		if actions[i].type == GameEnums.ActionType.MOVE:
 			_commit_animate_actions.append(actions[i])
 	_refresh_plan()
+
+func get_player_plan() -> Timeline:
+	return _get_combined_plan()
+
 
 func _get_combined_plan() -> Timeline:
 	var combined = Timeline.new()
@@ -334,136 +345,79 @@ func _get_combined_plan() -> Timeline:
 	for a in plan_phase_2.entries: combined.add(a)
 	return combined
 
-func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, waypoints: Array[Vector2i] = []) -> Dictionary:
-	var phase_val := 1 if phase == Phase.PLANNING_PHASE_1 else 2
+func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
+	var combined := Timeline.new()
+	for a: TimelineAction in plan_phase_1.entries:
+		if a.actor_id == unit_id:
+			continue
+		combined.add(a)
+	for a: TimelineAction in plan_phase_2.entries:
+		if a.actor_id == unit_id:
+			continue
+		combined.add(a)
+	for a: Variant in new_actions:
+		if a is TimelineAction:
+			combined.add(a)
+	return combined
+
+
+func _preview_from_plan(combined: Timeline) -> Dictionary:
 	var ev: Array[SimEvent] = []
-	
-	# Determine the actor's start state for the active phase to calculate approach tile correctly
-	var start_board := base_board.clone()
-	if phase == Phase.PLANNING_PHASE_2 and not phase_1_executed:
-		var discard_ev: Array[SimEvent] = []
-		_apply_phase_1_plan_to_state(start_board, discard_ev)
-		
+	var temp: BoardState = base_board.clone()
+	Simulator.simulate_player_turn(temp, combined, ev)
+	var intents: Array = EnemyPlanner.plan(temp)
+	for intent: Variant in intents:
+		if not intent is Intent:
+			continue
+		for action: TimelineAction in (intent as Intent).actions:
+			ResolutionPipeline.apply_action(temp, action, ev)
+	ResolutionPipeline.resolve_pending_pushes(temp, ev)
+	return {"intents": intents, "events": ev, "temp_board": temp}
+
+
+func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, waypoints: Array[Vector2i] = []) -> Dictionary:
+	var phase_val: int = _get_target_phase(unit_id)
+	if phase_val < 0:
+		return {"intents": [], "events": [], "temp_board": base_board.clone()}
+	var start_board: BoardState = base_board.clone()
 	var actor := start_board.get_unit_by_id(unit_id)
-	var move_action: TimelineAction = null
-	var attack_action: TimelineAction = null
-	
+	var new_actions: Array[TimelineAction] = []
 	if attack_target_id >= 0:
 		var target := start_board.get_unit_by_id(attack_target_id)
 		if actor != null and target != null and not actor.active_abilities.is_empty():
 			var index := clampi(selected_ability_index, 0, actor.active_abilities.size() - 1)
 			var ability: AbilityData = actor.active_abilities[index]
 			var rng: int = ability.range_tiles
-			
 			if GridSystem.manhattan(actor.position, target.position) > rng:
-				if phase == Phase.PLANNING_PHASE_1:
-					var approach := _find_approach_tile(start_board, actor, target.position, rng, coord)
-					if approach != actor.position:
-						move_action = TimelineAction.make_move(unit_id, approach, -1, [], 1)
-						attack_action = TimelineAction.make_ability(unit_id, ability, target.position, attack_target_id, 2)
-				else:
-					attack_action = TimelineAction.make_ability(unit_id, ability, target.position, attack_target_id, phase_val)
+				var approach := _find_approach_tile(start_board, actor, target.position, rng, coord)
+				if approach != actor.position:
+					new_actions.append(TimelineAction.make_move(unit_id, approach, -1, [], 1))
+				new_actions.append(
+					TimelineAction.make_ability(
+						unit_id, ability, target.position, attack_target_id, 1,
+					),
+				)
 			else:
-				attack_action = TimelineAction.make_ability(unit_id, ability, target.position, attack_target_id, phase_val)
+				new_actions.append(
+					TimelineAction.make_ability(
+						unit_id, ability, target.position, attack_target_id, 1,
+					),
+				)
 	else:
-		move_action = TimelineAction.make_move(unit_id, coord, -1, waypoints, phase_val)
+		new_actions.append(TimelineAction.make_move(unit_id, coord, -1, waypoints, phase_val))
+	return _preview_from_plan(_build_preview_plan(unit_id, new_actions))
 
-	# Now build the full timeline exactly like _update_preview, replacing unit_id's action
-	var temp := base_board.clone()
-	
-	var p1 := Timeline.new()
-	for a in plan_phase_1.entries:
-		if phase_val == 1 and a.actor_id == unit_id: continue
-		p1.add(a)
-	if phase_val == 1:
-		if move_action != null: p1.add(move_action)
-		if attack_action != null and attack_action.phase == 1: p1.add(attack_action)
-
-	if not phase_1_executed:
-		for a in p1.entries:
-			ResolutionPipeline.apply_action(temp, a, ev)
-		ResolutionPipeline.resolve_pending_pushes(temp, ev)
-		_apply_phase_1_to_2_transition(temp)
-
-	var p2 := Timeline.new()
-	for a in plan_phase_2.entries:
-		if a.actor_id == unit_id: continue
-		p2.add(a)
-	if phase_val == 2:
-		if move_action != null: p2.add(move_action)
-		if attack_action != null and attack_action.phase == 2: p2.add(attack_action)
-	elif phase_val == 1 and attack_action != null and attack_action.phase == 2:
-		p2.add(attack_action)
-		
-	# Fix targets for attacks right before p2 executes
-	if phase_val == 1 and attack_action != null and attack_action.phase == 2:
-		var tgt := temp.get_unit_by_id(attack_target_id)
-		if tgt != null:
-			attack_action.target_coord = tgt.position
-			
-	for a in p2.entries:
-		ResolutionPipeline.apply_action(temp, a, ev)
-	ResolutionPipeline.resolve_pending_pushes(temp, ev)
-		
-	var intents := EnemyPlanner.plan(temp)
-	for intent in intents:
-		for action in intent.actions:
-			ResolutionPipeline.apply_action(temp, action, ev)
-	ResolutionPipeline.resolve_pending_pushes(temp, ev)
-			
-	return {
-		"intents": intents,
-		"events": ev,
-		"temp_board": temp
-	}
 
 func preview_dash(unit_id: int, target_coord: Vector2i, ability_index: int = -1) -> Dictionary:
-	var phase_val := 1 if phase == Phase.PLANNING_PHASE_1 else 2
-	var ev: Array[SimEvent] = []
-	var start_board := base_board.clone()
-	if phase == Phase.PLANNING_PHASE_2 and not phase_1_executed:
-		var discard_ev: Array[SimEvent] = []
-		_apply_phase_1_plan_to_state(start_board, discard_ev)
+	var start_board: BoardState = base_board.clone()
 	var actor := start_board.get_unit_by_id(unit_id)
 	if actor == null or actor.active_abilities.is_empty():
-		return {"intents": [], "events": ev, "temp_board": start_board}
-	var index := ability_index if ability_index >= 0 else selected_ability_index
+		return {"intents": [], "events": [], "temp_board": start_board}
+	var index: int = ability_index if ability_index >= 0 else selected_ability_index
 	index = clampi(index, 0, actor.active_abilities.size() - 1)
 	var ability: AbilityData = actor.active_abilities[index]
-	var dash_action := TimelineAction.make_ability(unit_id, ability, target_coord, -1, phase_val)
-	var temp := base_board.clone()
-	var p1 := Timeline.new()
-	for a in plan_phase_1.entries:
-		if phase_val == 1 and a.actor_id == unit_id:
-			continue
-		p1.add(a)
-	if phase_val == 1:
-		p1.add(dash_action)
-	if not phase_1_executed:
-		for a in p1.entries:
-			ResolutionPipeline.apply_action(temp, a, ev)
-		ResolutionPipeline.resolve_pending_pushes(temp, ev)
-		_apply_phase_1_to_2_transition(temp)
-	var p2 := Timeline.new()
-	for a in plan_phase_2.entries:
-		if a.actor_id == unit_id:
-			continue
-		p2.add(a)
-	if phase_val == 2:
-		p2.add(dash_action)
-	for a in p2.entries:
-		ResolutionPipeline.apply_action(temp, a, ev)
-	ResolutionPipeline.resolve_pending_pushes(temp, ev)
-	var intents := EnemyPlanner.plan(temp)
-	for intent in intents:
-		for action in intent.actions:
-			ResolutionPipeline.apply_action(temp, action, ev)
-	ResolutionPipeline.resolve_pending_pushes(temp, ev)
-	return {
-		"intents": intents,
-		"events": ev,
-		"temp_board": temp
-	}
+	var dash_action := TimelineAction.make_ability(unit_id, ability, target_coord, -1, 1)
+	return _preview_from_plan(_build_preview_plan(unit_id, [dash_action]))
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_reorder_action(from_index: int, to_index: int) -> void:
@@ -549,7 +503,7 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 		var u := base_board.get_unit_by_id(unit_id)
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id(): return
 
-	if phase == Phase.PLANNING_PHASE_1:
+	if is_planning_phase(phase):
 		if plan_phase_2.size() > 0:
 			for i in range(plan_phase_2.size() - 1, -1, -1):
 				if plan_phase_2.entries[i].actor_id == unit_id:
@@ -566,16 +520,6 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
 					plan_phase_1.remove_at(i)
-					_refresh_plan()
-					return
-	elif phase == Phase.PLANNING_PHASE_2:
-		if plan_phase_2.size() > 0:
-			for i in range(plan_phase_2.size() - 1, -1, -1):
-				if plan_phase_2.entries[i].actor_id == unit_id:
-					if plan_phase_2.entries[i].irreversible:
-						EventBus.action_rejected.emit("cannot_undo_trample")
-						return
-					plan_phase_2.remove_at(i)
 					_refresh_plan()
 					return
 
@@ -613,7 +557,7 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id(): return
 
 	var base_unit := base_board.get_unit_by_id(unit_id)
-	if base_unit != null and phase == Phase.PLANNING_PHASE_1:
+	if base_unit != null and is_planning_phase(phase):
 		# Occupancy check: if the unit moved, and its start square is now occupied by ANOTHER unit, reject clear.
 		var occ := board.get_unit_at(base_unit.position)
 		if occ != null and occ.id != unit_id:
@@ -626,7 +570,7 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 				EventBus.action_rejected.emit("cannot_undo_trample")
 				return
 
-	if phase == Phase.PLANNING_PHASE_1:
+	if is_planning_phase(phase):
 		var kept_1: Array[TimelineAction] = []
 		for a in plan_phase_1.entries:
 			if a.actor_id != unit_id:
@@ -637,19 +581,11 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 			if a.actor_id != unit_id:
 				kept_2.append(a)
 		plan_phase_2.entries = kept_2
-	elif phase == Phase.PLANNING_PHASE_2:
-		var kept_p2: Array[TimelineAction] = []
-		for a in plan_phase_2.entries:
-			if a.actor_id != unit_id:
-				kept_p2.append(a)
-		plan_phase_2.entries = kept_p2
 	_refresh_plan()
 
 func clear_plan() -> void:
-	if phase == Phase.PLANNING_PHASE_1:
+	if is_planning_phase(phase):
 		plan_phase_1.clear()
-		plan_phase_2.clear()
-	elif phase == Phase.PLANNING_PHASE_2:
 		plan_phase_2.clear()
 	_refresh_plan()
 
@@ -661,7 +597,6 @@ func restart_turn() -> void:
 	board = base_board.clone()
 	plan_phase_1.clear()
 	plan_phase_2.clear()
-	phase_1_executed = false
 	selected_unit_id = -1
 	selected_ability_index = 0
 	_set_phase(Phase.PLANNING_PHASE_1)
@@ -675,80 +610,32 @@ func restart() -> void:
 		base_board = initial_board.clone()
 	_init_combat()
 
-func execute_phase_1() -> void:
-	if phase != Phase.PLANNING_PHASE_1: return
-	
-	var current_run_id = _run_id
-	var events: Array[SimEvent] = []
-	var sim_board := base_board.clone()
-	
-	Simulator._tick_start_of_turn(sim_board, events, GameEnums.Team.PLAYER)
-	
-	for action in plan_phase_1.entries:
-		ResolutionPipeline.apply_action(sim_board, action, events)
-	ResolutionPipeline.resolve_pending_pushes(sim_board, events)
-		
+func execute_turn() -> void:
+	if not is_planning_phase(phase):
+		return
+	var current_run_id: int = _run_id
+	var combined := _get_combined_plan()
+	var result: SimResult = Simulator.simulate(base_board, combined)
 	_set_phase(Phase.EXECUTING_PHASE_1)
-	await _play_events(events)
-	if current_run_id != _run_id: return
-	
-	_apply_phase_1_to_2_transition(sim_board)
-	
-	base_board = sim_board
-	phase_1_executed = true
-
-	if _check_end_state(): return
-	
-	_refresh_plan()
-	_set_phase(Phase.PLANNING_PHASE_2)
-
-func execute_phase_2() -> void:
-	if phase != Phase.PLANNING_PHASE_2: return
-	
-	var current_run_id = _run_id
-	var events: Array[SimEvent] = []
-	var sim_board := base_board.clone()
-	for action in plan_phase_2.entries:
-		ResolutionPipeline.apply_action(sim_board, action, events)
-	ResolutionPipeline.resolve_pending_pushes(sim_board, events)
-	
-	Simulator._refund_movement(sim_board)
-	Simulator._tick_statuses(sim_board, events)
-	
-	events.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
-	
-	Simulator._tick_start_of_turn(sim_board, events, GameEnums.Team.ENEMY)
-	
-	for intent in base_board.intents:
-		for action in intent.actions:
-			ResolutionPipeline.apply_action(sim_board, action, events)
-	ResolutionPipeline.resolve_pending_pushes(sim_board, events)
-			
-	Simulator._tick_end_of_turn(sim_board, events)
-			
-	sim_board.turn_index += 1
-	for unit in sim_board.units:
-		if unit.is_alive():
-			unit.reset_for_turn()
-			
-	Simulator._tick_statuses(sim_board, events)
-	events.append(SimEvent.make(GameEnums.SimEventType.TURN_ENDED, {
-		"turn": sim_board.turn_index,
-	}))
-	_set_phase(Phase.EXECUTING_PHASE_2)
-	await _play_events(events)
-	if current_run_id != _run_id: return
-	
-	base_board = sim_board
+	await _play_events(result.events)
+	if current_run_id != _run_id:
+		return
+	base_board = result.final_state
 	plan_phase_1.clear()
 	plan_phase_2.clear()
-	phase_1_executed = false
-	
-	if _check_end_state(): return
-	
+	if _check_end_state():
+		return
 	_refresh_plan()
 	_set_phase(Phase.PLANNING_PHASE_1)
 	_capture_turn_start()
+
+
+func execute_phase_1() -> void:
+	await execute_turn()
+
+
+func execute_phase_2() -> void:
+	pass
 
 func _ready() -> void:
 	if not GlobalTimeline.player_ready_changed.is_connected(_on_player_ready_changed):
@@ -766,10 +653,8 @@ func _on_player_ready_changed(_player_id: int, _is_ready: bool) -> void:
 @rpc("authority", "call_local", "reliable")
 func rpc_commit_phase() -> void:
 	GlobalTimeline.rpc_reset_ready_states()
-	if phase == Phase.PLANNING_PHASE_1:
-		execute_phase_1()
-	elif phase == Phase.PLANNING_PHASE_2:
-		execute_phase_2()
+	if is_planning_phase(phase):
+		execute_turn()
 
 # --- Internal -----------------------------------------------------------------
 
@@ -1108,17 +993,14 @@ func _extract_commit_anim_events(events: Array[SimEvent]) -> Array[SimEvent]:
 func unit_has_undoable_action(unit_id: int) -> bool:
 	if unit_id < 0:
 		return false
-	if phase == Phase.PLANNING_PHASE_1:
-		for i in range(plan_phase_2.size() - 1, -1, -1):
-			if plan_phase_2.entries[i].actor_id == unit_id:
-				return not plan_phase_2.entries[i].irreversible
-		for i in range(plan_phase_1.size() - 1, -1, -1):
-			if plan_phase_1.entries[i].actor_id == unit_id:
-				return not plan_phase_1.entries[i].irreversible
-	elif phase == Phase.PLANNING_PHASE_2:
-		for i in range(plan_phase_2.size() - 1, -1, -1):
-			if plan_phase_2.entries[i].actor_id == unit_id:
-				return not plan_phase_2.entries[i].irreversible
+	if not is_planning_phase(phase):
+		return false
+	for i in range(plan_phase_2.size() - 1, -1, -1):
+		if plan_phase_2.entries[i].actor_id == unit_id:
+			return not plan_phase_2.entries[i].irreversible
+	for i in range(plan_phase_1.size() - 1, -1, -1):
+		if plan_phase_1.entries[i].actor_id == unit_id:
+			return not plan_phase_1.entries[i].irreversible
 	return false
 
 
@@ -1129,7 +1011,7 @@ func _refresh_plan() -> void:
 	var anim_events: Array[SimEvent] = []
 	var any_cancelled := false
 	
-	var plan_to_run = plan_phase_1 if phase == Phase.PLANNING_PHASE_1 else plan_phase_2
+	var plan_to_run := _get_combined_plan()
 	
 	for action in plan_to_run.entries:
 		var events: Array[SimEvent] = []

@@ -20,8 +20,10 @@ var health: HealthComponent
 var movement: MovementComponent
 var ability: AbilityComponent
 
-var phase_1_action_used: bool = false
-var phase_2_action_used: bool = false
+## True after this unit uses their one skill/basic attack this turn (1-phase turn system).
+var turn_action_used: bool = false
+## Set when a phase-1 (pre-action) move resolves; blocks post-action move unless CANTO.
+var pre_move_used_this_turn: bool = false
 
 var armor: int = 0
 
@@ -213,8 +215,8 @@ func is_boss() -> bool:
 func reset_for_turn() -> void:
 	movement.reset()
 	ability.reset()
-	phase_1_action_used = false
-	phase_2_action_used = false
+	turn_action_used = false
+	pre_move_used_this_turn = false
 	armor = 0
 
 func clone() -> UnitState:
@@ -228,8 +230,8 @@ func clone() -> UnitState:
 	copy.health = health.clone()
 	copy.movement = movement.clone()
 	copy.ability = ability.clone()
-	copy.phase_1_action_used = phase_1_action_used
-	copy.phase_2_action_used = phase_2_action_used
+	copy.turn_action_used = turn_action_used
+	copy.pre_move_used_this_turn = pre_move_used_this_turn
 	copy.armor = armor
 	copy.level = level
 	copy.scrap = scrap

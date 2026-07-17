@@ -52,15 +52,10 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 		child.queue_free()
 	if _board == null or _director == null:
 		return
-	var p1_active: bool = (
-		_phase == CombatDirector.Phase.PLANNING_PHASE_1
-		or _phase == CombatDirector.Phase.EXECUTING_PHASE_1
-	)
-	var p2_active: bool = (
-		_phase == CombatDirector.Phase.PLANNING_PHASE_2
-		or _phase == CombatDirector.Phase.EXECUTING_PHASE_2
-	)
-	var headers: PackedStringArray = ["Name", "Class", "Stats", "Phase 1", "Phase 2"]
+	var headers: PackedStringArray = ["Name", "Class", "Stats", "Pre-Move", "Action"]
+	var plan_active: bool = CombatDirector.is_planning_phase(_phase) or CombatDirector.is_executing_phase(_phase)
+	var p1_active: bool = plan_active
+	var p2_active: bool = plan_active
 	for i: int in headers.size():
 		var hcol: Color = Color.WHITE
 		var hbg: Color = Color.TRANSPARENT
@@ -99,7 +94,7 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 			]
 		)
 		var stats_lbl := _make_cell(stats_text, stats_text, dim_color, false, bg_color)
-		var p1_action: TimelineAction = _find_action(_director.plan_phase_1, unit.id)
+		var p1_action: TimelineAction = _find_pre_action(timeline, unit.id)
 		var p1_text: String = CombatUiFormatters.action_symbol_text(_board, p1_action, unit)
 		var p1_tooltip: String = (
 			CombatUiFormatters.describe_action(_board, p1_action)
@@ -120,7 +115,7 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 						unit.definition.display_name,
 						CombatUiFormatters.reason_text(statuses[combined_idx]),
 					]
-		var p2_action: TimelineAction = _find_action(_director.plan_phase_2, unit.id)
+		var p2_action: TimelineAction = _find_post_action(timeline, unit.id)
 		var p2_text: String = CombatUiFormatters.action_symbol_text(_board, p2_action, unit)
 		var p2_tooltip: String = (
 			CombatUiFormatters.describe_action(_board, p2_action)
@@ -175,6 +170,31 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 
 func get_hover_unit_id() -> int:
 	return _timeline_hover_id
+
+
+func _find_pre_action(plan: Timeline, unit_id: int) -> TimelineAction:
+	if plan == null:
+		return null
+	for action: TimelineAction in plan.entries:
+		if action.actor_id != unit_id:
+			continue
+		if action.type == GameEnums.ActionType.MOVE and action.phase == 1:
+			return action
+	return null
+
+
+func _find_post_action(plan: Timeline, unit_id: int) -> TimelineAction:
+	if plan == null:
+		return null
+	var ability_action: TimelineAction = null
+	for action: TimelineAction in plan.entries:
+		if action.actor_id != unit_id:
+			continue
+		if action.type == GameEnums.ActionType.ABILITY:
+			ability_action = action
+		elif action.type == GameEnums.ActionType.MOVE and action.phase == 2:
+			return action
+	return ability_action
 
 
 func _find_action(plan: Timeline, unit_id: int) -> TimelineAction:

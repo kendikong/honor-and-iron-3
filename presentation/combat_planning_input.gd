@@ -492,11 +492,7 @@ func selected_phase_action_exhausted(unit_id: int = -1) -> bool:
 	var p_unit := _proj_unit(id)
 	if p_unit == null or p_unit.is_enemy():
 		return false
-	if _director.phase == CombatDirector.Phase.PLANNING_PHASE_1:
-		return p_unit.phase_1_action_used
-	if _director.phase == CombatDirector.Phase.PLANNING_PHASE_2:
-		return p_unit.phase_2_action_used
-	return false
+	return p_unit.turn_action_used
 
 
 func skill_interaction_active() -> bool:
@@ -606,7 +602,7 @@ func _update_hover_attack_preview() -> void:
 	if (
 		rng >= 0
 		and _director != null
-		and _director.phase == CombatDirector.Phase.PLANNING_PHASE_2
+		and _director.phase == CombatDirector.Phase.PLANNING_PHASE_1
 		and target_id != p_unit.id
 	):
 		var target := _proj().get_unit_by_id(target_id)

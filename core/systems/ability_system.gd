@@ -104,10 +104,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var actor := board.get_unit_by_id(action.actor_id)
 	var ability := action.ability
 	actor.ability.points_left -= action.ability.action_point_cost
-	if action.phase == 1:
-		actor.phase_1_action_used = true
-	else:
-		actor.phase_2_action_used = true
+	actor.turn_action_used = true
 
 	var target_coord := _resolve_target_coord(board, action)
 	
@@ -180,7 +177,24 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				for status in to_remove:
 					actor.active_statuses.erase(status)
 				actor._recalculate_stats()
-				
+
+	apply_canto_move_refund(actor)
+
+
+static func apply_canto_move_refund(actor: UnitState) -> void:
+	if actor == null:
+		return
+	if actor.has_passive(&"canto") or actor.has_status(GameEnums.StatusType.CANTO):
+		actor.movement.points_left = actor.movement.max_points
+		var has_canto_status := false
+		for status: StatusData in actor.active_statuses:
+			if status.type == GameEnums.StatusType.CANTO:
+				has_canto_status = true
+				break
+		if not has_canto_status:
+			actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.CANTO, 1, 0))
+		actor._recalculate_stats()
+
 static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: TimelineAction, effect: EffectData, events: Array[SimEvent], tile_coord: Vector2i, target: UnitState) -> void:
 	if target != null and actor != target and actor != null:
 		var dist = GridSystem.manhattan(actor.position, target.position)

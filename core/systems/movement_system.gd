@@ -163,12 +163,22 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		}))
 		return
 		
-	var used_action = unit.phase_1_action_used if action.phase == 1 else unit.phase_2_action_used
-	if used_action and not unit.has_status(GameEnums.StatusType.CANTO):
+	if action.phase == 1 and unit.turn_action_used:
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 			"actor": action.actor_id, "reason": "cannot_move_after_action",
 		}))
 		return
+	if action.phase == 2 and not unit.turn_action_used:
+		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+			"actor": action.actor_id, "reason": "cannot_move_before_action",
+		}))
+		return
+	if action.phase == 2 and unit.pre_move_used_this_turn:
+		if not unit.has_passive(&"canto") and not unit.has_status(GameEnums.StatusType.CANTO):
+			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+				"actor": action.actor_id, "reason": "cannot_move_after_pre_move",
+			}))
+			return
 
 	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
 
@@ -193,6 +203,8 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 			"actor": unit.id, "from": from, "to": unit.position,
 			"steps": 1, "path": [dest], "teleport": true,
 		}))
+		if action.phase == 1:
+			unit.pre_move_used_this_turn = true
 		TerrainSystem.apply_landing(board, unit, events)
 		return
 
@@ -274,6 +286,8 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		"steps": path.size(),
 		"path": path,  # ordered tiles entered, so presentation animates orthogonally
 	}))
+	if action.phase == 1:
+		unit.pre_move_used_this_turn = true
 
 ## True when `route` is a contiguous, in-budget walk of cardinal steps onto passable
 ## tiles starting from `start`. Empty routes are not legal walks (use pathfinding).

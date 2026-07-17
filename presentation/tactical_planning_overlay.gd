@@ -355,10 +355,7 @@ func recompute_hover_ranges(
 	if not unit.is_enemy() and unit.id == _director.selected_unit_id:
 		var p_unit := _proj_unit(unit.id)
 		if p_unit != null:
-			if _phase == CombatDirector.Phase.PLANNING_PHASE_1:
-				exhausted = p_unit.phase_1_action_used
-			elif _phase == CombatDirector.Phase.PLANNING_PHASE_2:
-				exhausted = p_unit.phase_2_action_used
+			exhausted = p_unit.turn_action_used
 	if exhausted:
 		if not unit.is_enemy() and unit.id == _director.selected_unit_id:
 			var p_exhausted := _proj_unit(unit.id)

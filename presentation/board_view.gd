@@ -1021,7 +1021,7 @@ func _refresh_timeline_grid() -> void:
 	if _timeline_box == null or _director == null:
 		return
 	# Re-emit a fake timeline_changed using the current phase's plan with blank statuses.
-	var plan_to_use := _director.plan_phase_1 if (_phase == CombatDirector.Phase.PLANNING_PHASE_1 or _phase == CombatDirector.Phase.EXECUTING_PHASE_1) else _director.plan_phase_2
+	var plan_to_use := _director.get_player_plan()
 	var statuses := PackedStringArray()
 	for _i in plan_to_use.entries.size():
 		statuses.append("")
@@ -1054,10 +1054,10 @@ func _on_phase_changed(phase: int) -> void:
 	_phase = phase
 	_clear_hover_attack_preview()
 	var _phase_names := {
-		CombatDirector.Phase.PLANNING_PHASE_1: "PHASE 1",
-		CombatDirector.Phase.PLANNING_PHASE_2: "PHASE 2",
-		CombatDirector.Phase.EXECUTING_PHASE_1: "EXECUTING PHASE 1...",
-		CombatDirector.Phase.EXECUTING_PHASE_2: "EXECUTING PHASE 2...",
+		CombatDirector.Phase.PLANNING_PHASE_1: "PLANNING",
+		CombatDirector.Phase.PLANNING_PHASE_2: "PLANNING",
+		CombatDirector.Phase.EXECUTING_PHASE_1: "EXECUTING...",
+		CombatDirector.Phase.EXECUTING_PHASE_2: "EXECUTING...",
 		CombatDirector.Phase.ENEMY_TURN: "EXECUTING ENEMY PHASE...",
 		CombatDirector.Phase.VICTORY: "VICTORY",
 	}
@@ -2473,10 +2473,7 @@ func _rebuild_visual(board: BoardState) -> void:
 		if not unit.is_enemy():
 			var p_unit := _proj_unit(unit.id)
 			if p_unit != null:
-				if _phase == CombatDirector.Phase.PLANNING_PHASE_1:
-					exhausted = p_unit.phase_1_action_used
-				elif _phase == CombatDirector.Phase.PLANNING_PHASE_2:
-					exhausted = p_unit.phase_2_action_used
+				exhausted = p_unit.turn_action_used
 		
 		var body := _color_from_unit(unit)
 		var accent := _accent_from_unit(unit)
@@ -2690,7 +2687,7 @@ func _update_hover_attack_preview() -> void:
 	var rng := _ability_range(p_unit)
 	if rng < 0:
 		return
-	if _phase == CombatDirector.Phase.PLANNING_PHASE_2 and target_id != p_unit.id:
+	if p_unit.turn_action_used and target_id != p_unit.id:
 		var target := _proj().get_unit_by_id(target_id)
 		if target != null and GridSystem.manhattan(p_unit.position, target.position) > rng:
 			return
@@ -2930,10 +2927,7 @@ func _recompute_hover_ranges() -> void:
 	if not unit.is_enemy():
 		var p_unit := _proj_unit(unit.id)
 		if p_unit != null:
-			if _phase == CombatDirector.Phase.PLANNING_PHASE_1:
-				exhausted = p_unit.phase_1_action_used
-			elif _phase == CombatDirector.Phase.PLANNING_PHASE_2:
-				exhausted = p_unit.phase_2_action_used
+			exhausted = p_unit.turn_action_used
 	if exhausted:
 		return
 		
@@ -5085,7 +5079,10 @@ func _set_timeline_ready(is_ready: bool) -> void:
 		GlobalTimeline.rpc_set_ready(is_ready)
 
 func _phase_num() -> int:
-	return 1 if _phase == CombatDirector.Phase.PLANNING_PHASE_1 else 2
+	if _director == null or _selected_id < 0:
+		return 1
+	var bucket := _director.get_planning_input_phase(_selected_id)
+	return bucket if bucket > 0 else 1
 
 ## True when the selected unit has actions undoable in the *current* planning phase only.
 func _unit_has_undoable_actions(unit_id: int) -> bool:
@@ -5095,8 +5092,7 @@ func _unit_has_undoable_actions(unit_id: int) -> bool:
 
 func _get_evaluation_timeline(proposed_action: TimelineAction) -> Timeline:
 	var timeline := Timeline.new()
-	var plan_to_use := _director.plan_phase_1 if _phase == CombatDirector.Phase.PLANNING_PHASE_1 else _director.plan_phase_2
-	for action in plan_to_use.entries:
+	for action in _director.get_player_plan().entries:
 		if action.actor_id != _selected_id:
 			timeline.add(action)
 	timeline.add(proposed_action)

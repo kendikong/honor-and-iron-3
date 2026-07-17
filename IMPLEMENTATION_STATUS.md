@@ -905,6 +905,34 @@ Audit follow-up on iteration-6 bugs.
 
 ---
 
+## 1-Phase Combat Redesign (2026-07-16) — IN PROGRESS
+
+Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** → execute player turn → enemy phase.
+
+### Core
+- `Simulator.simulate_player_turn()` — buckets: PRE_MOVE (phase-1 move/face) → ACTION (abilities) → POST_MOVE (phase-2 move/face)
+- `UnitState.turn_action_used` replaces `phase_1_action_used` / `phase_2_action_used`
+- `UnitState.pre_move_used_this_turn` — blocks post-action move without CANTO
+- `AbilitySystem.apply_canto_move_refund()` — full MOV refund + CANTO status
+- `MovementSystem` — enforces move-before-action / move-after-action ordering
+
+### Presentation
+- `CombatDirector.execute_turn()` — single commit via `Simulator.simulate()`
+- Planning API uses `_get_target_phase()` / `get_planning_input_phase()` for pre vs post-move bucket
+- Tactical HUD/timeline: PLANNING / EXECUTING labels; combined `get_player_plan()`
+- `board_view` — phase labels + `_phase_num()` delegates to director (legacy timeline columns still Phase 1/2 layout)
+
+### Open / deferred
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | F5 playtest — move+skill ordering, CANTO, execute flow | HIGH | Open |
+| 2 | `board_view` timeline columns still "Phase 1/2" not Pre-Move/Action/Post-Move | MED | Deferred |
+| 3 | Headless Godot not on PATH — sim tests not run this session | MED | Open |
+
+**Audit result:** NOT CLOSED — requires F5 + test run
+
+---
+
 ## User decisions (locked)
 
 | Item | Choice |

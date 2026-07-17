@@ -64,21 +64,6 @@ static func apply_action(board: BoardState, action: TimelineAction, events: Arra
 	for i in range(starting_event_count, events.size()):
 		events[i].data["actor_id"] = action.actor_id
 
-	# Check if the action succeeded (no ACTION_FAILED was emitted during this step)
-	var failed := false
-	for i in range(starting_event_count, events.size()):
-		if events[i].type == GameEnums.SimEventType.ACTION_FAILED:
-			failed = true
-			break
-			
-	if not failed:
-		var actor := board.get_unit_by_id(action.actor_id)
-		if actor != null and action.type != GameEnums.ActionType.FACE:
-			if action.phase == 1:
-				actor.phase_1_action_used = true
-			else:
-				actor.phase_2_action_used = true
-
 static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -> void:
 	if board.pending_pushes.size() > 0:
 		AbilitySystem.resolve_pending_pushes(board, events)
