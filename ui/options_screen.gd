@@ -54,7 +54,15 @@ func _build_display_tab(parent: TabContainer) -> void:
 	res_hbox.add_child(res_lbl)
 	
 	var res_dd = OptionButton.new()
-	var res_list = [Vector2i(1280, 720), Vector2i(1600, 900), Vector2i(1920, 1080), Vector2i(2560, 1440), Vector2i(3840, 2160)]
+	var res_list = [
+		Vector2i(1280, 720),
+		Vector2i(1600, 900),
+		Vector2i(1920, 1080),
+		Vector2i(2560, 1440),
+		Vector2i(3200, 1800),
+		Vector2i(3840, 1800),
+		Vector2i(3840, 2160),
+	]
 	for i in range(res_list.size()):
 		res_dd.add_item("%dx%d" % [res_list[i].x, res_list[i].y], i)
 		
