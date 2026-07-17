@@ -7,8 +7,9 @@ var _director: CombatDirector
 var _map_view: TacticalMapView
 
 var _phase_label: Label
-var _timeline_label: RichTextLabel
+var _timeline_grid: TacticalTimelineGrid
 var _warn_label: Label
+var _side_panels: TacticalSidePanels
 var _execute_btn: Button
 var _undo_btn: Button
 var _clear_btn: Button
@@ -18,19 +19,46 @@ var _is_ready: bool = false
 var _sfx: SfxPlayer
 
 
-func setup(director: CombatDirector, map_view: TacticalMapView, sfx: SfxPlayer = null) -> void:
+func setup(
+	director: CombatDirector,
+	map_view: TacticalMapView,
+	sfx: SfxPlayer = null,
+	side_panels: TacticalSidePanels = null,
+) -> void:
 	_director = director
 	_map_view = map_view
 	_sfx = sfx
+	_side_panels = side_panels
 	layer = 20
 	_build_ui()
 	_build_banner()
 	EventBus.turn_phase_changed.connect(_on_phase_changed)
 	EventBus.timeline_changed.connect(_on_timeline_changed)
 	EventBus.action_rejected.connect(_on_action_rejected)
-	EventBus.board_changed.connect(func(_b: BoardState) -> void: _refresh_timeline())
+	EventBus.board_changed.connect(_on_board_changed)
+	EventBus.selection_changed.connect(func(id: int) -> void:
+		if _timeline_grid != null:
+			_timeline_grid.set_selected(id),
+	)
+	if _timeline_grid != null:
+		_timeline_grid.row_hovered.connect(func(id: int) -> void:
+			if _side_panels != null:
+				_side_panels.set_intent_units({id: true}),
+		)
+		_timeline_grid.row_unhovered.connect(func(_id: int) -> void:
+			if _side_panels != null:
+				_side_panels.set_intent_units({}),
+		)
+		_timeline_grid.warning_changed.connect(func(text: String) -> void:
+			if _side_panels != null:
+				_side_panels.set_warning(text),
+		)
 	_on_phase_changed(_director.phase)
 	_refresh_timeline()
+
+
+func get_timeline_grid() -> TacticalTimelineGrid:
+	return _timeline_grid
 
 
 func _build_ui() -> void:
@@ -63,7 +91,7 @@ func _build_ui() -> void:
 
 	var bottom := PanelContainer.new()
 	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_top = -220
+	bottom.offset_top = -260
 	add_child(bottom)
 
 	var margin := MarginContainer.new()
@@ -87,12 +115,18 @@ func _build_ui() -> void:
 	_phase_label.add_theme_font_size_override("font_size", 18)
 	left.add_child(_phase_label)
 
-	_timeline_label = RichTextLabel.new()
-	_timeline_label.bbcode_enabled = true
-	_timeline_label.fit_content = true
-	_timeline_label.custom_minimum_size = Vector2(0, 120)
-	_timeline_label.scroll_active = true
-	left.add_child(_timeline_label)
+	var hint := Label.new()
+	hint.text = "Drag to move · scroll = ability · A = aim · Esc = pause"
+	hint.add_theme_font_size_override("font_size", 11)
+	hint.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	left.add_child(hint)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size = Vector2(0, 140)
+	left.add_child(scroll)
+	_timeline_grid = TacticalTimelineGrid.new()
+	_timeline_grid.setup(_director)
+	scroll.add_child(_timeline_grid)
 
 	_warn_label = Label.new()
 	_warn_label.add_theme_color_override("font_color", Color(0.95, 0.45, 0.4))
@@ -158,6 +192,8 @@ func _on_phase_changed(phase: int) -> void:
 		CombatDirector.Phase.DEFEAT: "DEFEAT",
 	}
 	_phase_label.text = "Phase: %s" % names.get(phase, str(phase))
+	if _timeline_grid != null:
+		_timeline_grid.set_phase(phase)
 	var planning: bool = (
 		phase == CombatDirector.Phase.PLANNING_PHASE_1
 		or phase == CombatDirector.Phase.PLANNING_PHASE_2
@@ -184,56 +220,38 @@ func _on_timeline_changed(_timeline: Timeline, statuses: PackedStringArray) -> v
 	_refresh_timeline(statuses)
 
 
+func _on_board_changed(board: BoardState) -> void:
+	if _timeline_grid != null:
+		_timeline_grid.set_board(board)
+	_refresh_timeline()
+
+
 func _refresh_timeline(statuses: PackedStringArray = PackedStringArray()) -> void:
-	if _director == null or _timeline_label == null:
+	if _director == null or _timeline_grid == null:
 		return
-	var lines: Array[String] = []
-	for unit in _director.board.units:
-		if unit.team != GameEnums.Team.PLAYER or not unit.is_alive():
-			continue
-		var p1: String = _describe_action(_find_action(_director.plan_phase_1, unit.id))
-		var p2: String = _describe_action(_find_action(_director.plan_phase_2, unit.id))
-		lines.append(
-			"[b]%s[/b]  ·  P1: %s  ·  P2: %s" % [unit.definition.display_name, p1, p2],
+	if _director.board != null:
+		_timeline_grid.set_board(_director.board)
+	_timeline_grid.set_phase(_director.phase)
+	_timeline_grid.set_selected(_director.selected_unit_id)
+	var plan: Timeline = (
+		_director.plan_phase_1
+		if (
+			_director.phase == CombatDirector.Phase.PLANNING_PHASE_1
+			or _director.phase == CombatDirector.Phase.EXECUTING_PHASE_1
 		)
-	if lines.is_empty():
-		_timeline_label.text = "[i]Drag to move · scroll wheel cycles ability · [b]A[/b] aim mode · Esc = Options[/i]"
-	else:
-		var body: String = ""
-		for line: String in lines:
-			body += "[li]%s[/li]" % line
-		_timeline_label.text = "[ul]%s[/ul]" % body
+		else _director.plan_phase_2
+	)
+	_timeline_grid.rebuild(plan, statuses)
 	if statuses.size() > 0:
 		for reason: String in statuses:
 			if reason != "":
-				_warn_label.text = "Plan issue: %s" % reason
+				_warn_label.text = "Plan issue: %s" % TacticalCombatInfo.reason_text(reason)
 				return
 	_warn_label.text = ""
 
 
-func _find_action(plan: Timeline, unit_id: int) -> TimelineAction:
-	for action: TimelineAction in plan.entries:
-		if action.actor_id == unit_id:
-			return action
-	return null
-
-
-func _describe_action(action: TimelineAction) -> String:
-	if action == null:
-		return "—"
-	match action.type:
-		GameEnums.ActionType.MOVE:
-			return "Move → %s" % action.target_coord
-		GameEnums.ActionType.FACE:
-			return "Face"
-		GameEnums.ActionType.ABILITY:
-			var ability_name: String = action.ability.display_name if action.ability != null else "Ability"
-			return "%s → #%d" % [ability_name, action.target_unit_id]
-	return "?"
-
-
 func _on_action_rejected(reason: String) -> void:
-	_warn_label.text = "Rejected: %s" % reason
+	_warn_label.text = "Rejected: %s" % TacticalCombatInfo.reason_text(reason)
 
 
 func _on_execute_pressed() -> void:

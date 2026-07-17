@@ -29,6 +29,10 @@ const TILE_PX: int = TacticalConstants.TILE_PX
 @onready var _input_controller: TacticalInputController = $InputController
 @onready var _sfx: SfxPlayer = $SfxPlayer
 
+var _side_panels: TacticalSidePanels
+var _pause_menu: TacticalPauseMenu
+var _asset_preloader: LpcAssetPreloader
+
 var _tile_set: TileSet
 var _decorator: AutoDecorator = AutoDecorator.new()
 var _atmosphere: AtmosphereBinder = AtmosphereBinder.new()
@@ -75,9 +79,23 @@ func _ready() -> void:
 	_options.setup_character_gen(_char_profile)
 	_options.setup_combat_effects(_effects.settings, _on_effects_settings_changed)
 	_options.set_combat_mode(true)
+	_options.setup_combat_director(_director)
 	_options.character_gen_changed.connect(_on_character_gen_changed)
 	_options.opened.connect(_on_options_opened)
 	_options.closed.connect(_on_options_closed)
+
+	_asset_preloader = LpcAssetPreloader.new()
+	_asset_preloader.name = "LpcAssetPreloader"
+	add_child(_asset_preloader)
+	_asset_preloader.start(LpcCatalog.load_from_disk())
+
+	_side_panels = TacticalSidePanels.new()
+	_side_panels.name = "SidePanels"
+	add_child(_side_panels)
+
+	_pause_menu = TacticalPauseMenu.new()
+	_pause_menu.name = "PauseMenu"
+	add_child(_pause_menu)
 
 	_camera.changed.connect(_center_map)
 	get_viewport().size_changed.connect(_on_viewport_resized)
@@ -146,18 +164,22 @@ func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 
 
 func _start_combat() -> void:
-	_director.start_from_encounter(_encounter)
-	_combat_hud.setup(_director, self, _sfx)
+	# Wire presentation before director emits board_changed (fixes invisible units on load).
 	_unit_layer.setup(self, _director, _char_profile)
 	_unit_overlay.setup(self, _director, _unit_layer)
 	_planning_overlay.setup(self, _director)
-	_sim_presenter.setup(_director, _unit_overlay, _unit_layer)
+	_side_panels.setup(_director, self)
+	_pause_menu.setup(_director, self, _options)
+	_director.start_from_encounter(_encounter)
+	_unit_layer.sync_from_board(_director.board)
+	_combat_hud.setup(_director, self, _sfx, _side_panels)
+	_sim_presenter.setup(_director, _unit_overlay, _unit_layer, self)
 	_input_controller.setup(
 		self,
 		_director,
 		_planning_overlay,
 		_sfx,
-		func() -> bool: return _options.is_open(),
+		func() -> bool: return _options.is_open() or _pause_menu.is_open(),
 	)
 	_sfx._director = _director
 
@@ -248,26 +270,33 @@ func _on_display_settings_applied() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _camera.handle_input(event, _options.is_open()):
+	if _camera.handle_input(event, _options.is_open() or _pause_menu.is_open()):
 		_center_map()
 		get_viewport().set_input_as_handled()
 		return
-	if _options.is_open():
+	if _options.is_open() or _pause_menu.is_open():
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+			if _options.is_open():
+				_options.close_menu()
+			elif _pause_menu.is_open():
+				_pause_menu.close_menu()
+			get_viewport().set_input_as_handled()
 		return
 	if _input_controller != null and _input_controller.handle_input(event):
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
-			if _options.is_open():
-				_options.close_menu()
-			else:
-				_options.open()
+			_pause_menu.open()
+			get_viewport().set_input_as_handled()
+		elif event.keycode == KEY_O:
+			_options.open()
 			get_viewport().set_input_as_handled()
 
 
 func _process(delta: float) -> void:
 	_effects.process_frame(delta)
+	_update_hover_coord()
 
 
 func _regenerate() -> void:
@@ -313,3 +342,13 @@ func _center_map() -> void:
 		_unit_layer.queue_redraw()
 	if _planning_overlay != null:
 		_planning_overlay.queue_redraw()
+
+
+func _update_hover_coord() -> void:
+	if _director == null or _director.board == null:
+		return
+	var cell: Vector2i = screen_to_grid(get_viewport().get_mouse_position())
+	if _side_panels != null:
+		_side_panels.set_hover_coord(cell)
+	if _planning_overlay != null:
+		_planning_overlay.set_hover_coord(cell)

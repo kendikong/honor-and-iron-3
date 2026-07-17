@@ -43,6 +43,8 @@ var _boredom_water_check: CheckButton
 var _char_profile: CharacterGenProfile
 var _is_open: bool = false
 var _combat_mode: bool = false
+var _combat_director: CombatDirector
+var _combat_actions: VBoxContainer
 var _effects_panel: PanelContainer
 var _effects_settings: EffectsSettings
 var _effects_checks: Dictionary = {}
@@ -72,10 +74,16 @@ func setup_combat_effects(settings: EffectsSettings, on_changed: Callable) -> vo
 	_build_combat_effects_panel()
 
 
+func setup_combat_director(director: CombatDirector) -> void:
+	_combat_director = director
+
+
 func set_combat_mode(enabled: bool) -> void:
 	_combat_mode = enabled
 	if _map_settings_btn != null:
 		_map_settings_btn.visible = not enabled
+	if _combat_actions != null:
+		_combat_actions.visible = enabled
 	if _combat_char_section != null:
 		_combat_char_section.visible = enabled
 		if enabled and _char_profile != null and _display_char_scale_slider != null:
@@ -190,6 +198,18 @@ func _build_main_menu(panel: PanelContainer) -> void:
 	vbox.add_child(HSeparator.new())
 	_add_button(vbox, "Display…", _show_display)
 	_map_settings_btn = _add_button(vbox, "Map Settings…", _show_map_settings)
+	_combat_actions = VBoxContainer.new()
+	_combat_actions.visible = false
+	vbox.add_child(_combat_actions)
+	_add_section(_combat_actions, "Battle")
+	_add_button(_combat_actions, "Restart Turn", func() -> void:
+		if _combat_director != null:
+			_combat_director.restart_turn()
+	)
+	_add_button(_combat_actions, "Restart Battle", func() -> void:
+		if _combat_director != null:
+			_combat_director.restart()
+	)
 	_add_button(vbox, "Ambient Effects…", _show_effects)
 	vbox.add_child(HSeparator.new())
 	_add_button(vbox, "Close", close_menu)

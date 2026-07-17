@@ -1,10 +1,14 @@
 class_name TacticalSimPresenter
 extends Node
 
-## Execution feedback for TacticalCombat — overlay sync + LPC move/attack playback.
+## Execution feedback for TacticalCombat — overlay sync, LPC playback, floating damage.
+
+const _FloatingTextScene = preload("res://presentation/floating_text.tscn")
 
 var _overlay: TacticalUnitOverlay
 var _unit_layer: TacticalUnitLayer
+var _map_view: TacticalMapView
+var _director: CombatDirector
 var _push_flush_scheduled: bool = false
 
 
@@ -12,9 +16,12 @@ func setup(
 	director: CombatDirector,
 	overlay: TacticalUnitOverlay,
 	unit_layer: TacticalUnitLayer = null,
+	map_view: TacticalMapView = null,
 ) -> void:
+	_director = director
 	_overlay = overlay
 	_unit_layer = unit_layer
+	_map_view = map_view
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.sim_event.connect(_on_sim_event)
@@ -38,8 +45,33 @@ func _on_sim_event(event: SimEvent) -> void:
 		_overlay.apply_sim_event(event)
 	if _unit_layer != null:
 		_unit_layer.apply_sim_event(event)
+	if event.type == GameEnums.SimEventType.UNIT_DAMAGED:
+		_spawn_damage_text(event)
 	if _is_push_event(event):
 		_schedule_push_flush()
+
+
+func _spawn_damage_text(event: SimEvent) -> void:
+	if _map_view == null:
+		return
+	var unit_id: int = int(event.data.get("unit", -1))
+	var amount: int = int(event.data.get("amount", 0))
+	if amount <= 0:
+		return
+	var screen_pos: Vector2
+	var actor := _unit_layer.get_actor(unit_id) if _unit_layer != null else null
+	if actor != null:
+		screen_pos = actor.position
+	elif _director != null and _director.board != null:
+		var unit := _director.board.get_unit_by_id(unit_id)
+		if unit == null:
+			return
+		screen_pos = _map_view.grid_to_local(unit.position)
+	else:
+		return
+	var ft: FloatingText = _FloatingTextScene.instantiate()
+	ft.setup(screen_pos, str(amount), Color(1.0, 0.35, 0.35))
+	_map_view.add_child(ft)
 
 
 func _on_planning_commit_events(events: Array) -> void:

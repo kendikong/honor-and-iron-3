@@ -51,6 +51,13 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	queue_redraw()
 
 
+## Call after director.start_from_encounter when board_changed may have fired early.
+func sync_from_board(board: BoardState) -> void:
+	_board = board
+	_sync_actors()
+	queue_redraw()
+
+
 func is_sprites_active() -> bool:
 	return not _actors.is_empty()
 

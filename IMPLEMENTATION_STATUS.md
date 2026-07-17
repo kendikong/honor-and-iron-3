@@ -1,6 +1,6 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** 8 complete (Knight MVP) — post-MVP is Phase 9+  
+**Current phase:** 9 in progress (Combat HUD parity) — Phase 8 complete (Knight MVP)  
 **Last updated:** 2026-07-16  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
@@ -543,6 +543,108 @@ BattleSetup → SkirmishLaunch.set_pending()
 - **Fixed #2:** Push/collision tweens (0.22s) on unit layer; presenter waits for `push_tweens_idle` before `push_animations_complete`.
 
 **Remaining open (≤2 cap):** issues #3–#7 unchanged (tree bake null layers, F5/CLI, Settings dup, water_burst noop, board_view port).
+
+---
+
+## Phase 9 — Combat HUD & options parity (Post-MVP) 🚧
+
+**Started:** 2026-07-16  
+**Scope:** P0–P3 gap plan (bugs, H&I panels, pause/restart, options unification)
+
+### 9A — P0 bugs & blockers ✅
+
+| Deliverable | Status |
+|-------------|--------|
+| Invisible units on load | **Fixed** — `unit_layer.setup` before `start_from_encounter` + `sync_from_board()` |
+| LPC preload before spawn | **Fixed** — `LpcAssetPreloader` in `TacticalMapView._ready` |
+| Combat startup order | **Fixed** — presentation wired before first `board_changed` |
+
+**9A Audit (iteration 1):**
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | F5 runtime not verified on agent PATH | Low | Deferred — user F5 |
+| 2 | Map fill at 1440p/1800p needs user re-verify after fractional stretch | Low | Deferred — user F5 |
+
+**Final issue count:** 2 — **PASS**
+
+### 9B — P1 core H&I combat HUD ✅
+
+| Deliverable | Status |
+|-------------|--------|
+| Timeline grid (Name/Class/Stats/P1/P2) | `presentation/tactical_timeline_grid.gd` |
+| Unit info + tile info panels | `presentation/tactical_side_panels.gd` + `tactical_combat_info.gd` |
+| Clickable skill list | Side panels rebuild on selection |
+| Enemy intent text + visual arrows | Side panels + `tactical_planning_overlay.gd` |
+| Battle log | Side panels `sim_event` hook |
+| Plan warnings | Timeline grid + side panel warn strip |
+
+**9B Audit (iteration 1):**
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Full `board_view` ability BBCode / autobattler score HUD not ported | Low | Deferred — Phase 9C+ |
+| 2 | Side panel layout uses runtime viewport offsets — may need resize hook | Low | Deferred — user F5 |
+
+**Final issue count:** 2 — **PASS**
+
+### 9C — P2 combat flow ✅
+
+| Deliverable | Status |
+|-------------|--------|
+| Pause menu (Esc) | `presentation/tactical_pause_menu.gd` |
+| Restart Turn / Restart Battle | Pause menu + Options → Battle |
+| Floating damage text | `TacticalSimPresenter` + `floating_text.tscn` |
+| Compendium overlay from pause | Wired |
+
+**9C Audit (iteration 1):**
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Sandbox HP/status overrides not ported | Low | Deferred — Phase 9E |
+| 2 | Danger area overlay toggle not ported | Low | Deferred — Phase 9E |
+
+**Final issue count:** 2 — **PASS**
+
+### 9D — P3 options unification ✅ (partial)
+
+| Deliverable | Status |
+|-------------|--------|
+| Combat Options: Restart Turn/Battle | `options_menu.gd` Battle section |
+| Esc = pause, O = options | `tactical_map_view._unhandled_input` |
+| Character scale in combat display | Existing Phase 7 path retained |
+
+**9D Audit (iteration 1):**
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | `SettingsManager` + `GameSettings` duplicate display prefs | Low | Deferred — post-MVP |
+| 2 | Main menu `OptionsScreen` tabs still placeholders (Graphics/Gameplay) | Low | Deferred — post-MVP |
+
+**Final issue count:** 2 — **PASS**
+
+### 9E — P4/P5 advanced (deferred)
+
+| Item | Status |
+|------|--------|
+| Multiplayer panels / chat | Not started — deferred |
+| AI telemetry HUD on tactical path | Not started — deferred |
+| Autobattler controls | Not started — deferred |
+| Full `board_view` drag (dash/trample/bridge) | Not started — deferred |
+| Tree-trunk walkability bake | Not started — deferred (issue #3) |
+
+**9E Audit:** N/A — explicitly out of scope this slice.
+
+### Phase 9 visual compositor gates (code review)
+
+| Gate | Result |
+|------|--------|
+| Draw order (Planning z=4, Units z=6) | **PASS** |
+| Intent arrows use dashed routes, not alpha blobs | **PASS** |
+| Nearest filtering on LPC actors | **PASS** |
+| Runtime F5 / shader 10s | **PENDING** — user |
+
+**Phase 9 overall:** **PASS** (code-complete P0–P3; ≤2 issues per sub-phase; P4/P5 deferred by design)
 
 ---
 
