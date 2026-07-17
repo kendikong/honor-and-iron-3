@@ -18,6 +18,8 @@ const _COLOR_HP_LOSS := Color(0.95, 0.25, 0.22)
 const _COLOR_ARMOR := Color(0.9, 0.8, 0.2)
 const _COLOR_SELECT := Color(0.98, 0.86, 0.32, 0.95)
 const _COLOR_SELECT_GLOW := Color(0.98, 0.86, 0.32, 0.25)
+const _COLOR_PLAYER_PIP := Color(0.36, 0.62, 0.92)
+const _COLOR_ENEMY_PIP := Color(0.86, 0.38, 0.34)
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -61,7 +63,7 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	_map_view = map_view
 	_director = director
 	z_as_relative = false
-	z_index = 6
+	z_index = 10
 	if profile != null:
 		_profile = profile
 	else:
@@ -622,12 +624,12 @@ func _draw_movement_pips(center: Vector2, unit: UnitState) -> void:
 									is_attack_queued = true
 									break
 						break
-	var accent: Color = _COLOR_SELECT if not unit.is_enemy() else _COLOR_INTENT
-	var ring_radius := 11.0
+	var accent: Color = _COLOR_ENEMY_PIP if unit.is_enemy() else _COLOR_PLAYER_PIP
+	var ring_radius := 7.0
 	var segments := maxi(1, max_move)
 	var gap := 0.2
 	var arc_len := (TAU - gap * float(segments)) / float(segments)
-	draw_arc(center, ring_radius, 0.0, TAU, 48, Color(0.1, 0.1, 0.1, 0.6), 6.0)
+	draw_arc(center, ring_radius, 0.0, TAU, 48, Color(0.1, 0.1, 0.1, 0.5), 4.0)
 	for i: int in range(segments):
 		var start_ang: float = -PI / 2.0 + float(i) * (arc_len + gap)
 		var end_ang: float = start_ang + arc_len
@@ -641,7 +643,7 @@ func _draw_movement_pips(center: Vector2, unit: UnitState) -> void:
 		elif is_skill_queued and i < points_left:
 			var sk_blink: float = 0.6 + 0.4 * sin(Time.get_ticks_msec() / 150.0)
 			flash_color = Color(1.0, 1.0, 1.0, sk_blink)
-		draw_arc(center, ring_radius, start_ang, end_ang, 12, flash_color, 4.0)
+		draw_arc(center, ring_radius, start_ang, end_ang, 12, flash_color, 2.5)
 
 
 func _status_icon(status_type: int) -> String:

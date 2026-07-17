@@ -5,8 +5,9 @@ extends Node2D
 
 const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
 const _COLOR_THREAT := Color(0.92, 0.38, 0.32, 0.20)
-const _COLOR_MOVE_FILL_ALPHA: float = 0.40
-const _COLOR_THREAT_FILL_ALPHA: float = 0.38
+const _COLOR_MOVE_FILL_ALPHA: float = 0.22
+const _COLOR_THREAT_FILL_ALPHA: float = 0.18
+const _COLOR_TILE_BORDER_ALPHA: float = 0.32
 const _COLOR_ROUTE := Color(0.98, 0.88, 0.38, 0.95)
 const _COLOR_GHOST := Color(0.98, 0.88, 0.38, 0.45)
 const _COLOR_AIM := Color(0.95, 0.95, 1.0, 0.95)
@@ -22,8 +23,9 @@ const _ROUTE_GLOW_W: float = 5.0
 const _ROUTE_LINE_W: float = 3.0
 const _ROUTE_HEAD_LEN: float = 10.0
 const _ROUTE_HEAD_PERP: float = 5.0
-const _DASH_LINE_W: float = 3.0
-const _DASH_WING_LEN: float = 8.0
+const _DASH_LINE_W: float = 2.0
+const _DASH_WING_LEN: float = 5.0
+const _INTENT_ROUTE_ALPHA: float = 0.40
 
 signal live_preview_changed
 
@@ -552,25 +554,26 @@ func _draw_selected_unit_tile() -> void:
 		center - Vector2(tile_px * 0.5, tile_px * 0.5),
 		Vector2(tile_px, tile_px),
 	).grow(-1.0)
-	draw_rect(rect, Color(_COLOR_SELECT_TILE.r, _COLOR_SELECT_TILE.g, _COLOR_SELECT_TILE.b, 0.95), false, 3.0)
+	draw_rect(rect, Color(_COLOR_SELECT_TILE.r, _COLOR_SELECT_TILE.g, _COLOR_SELECT_TILE.b, 0.95), false, 1.0)
 
 
 func _draw_hover_tiles() -> void:
 	# Move under threat so attack-range cells stay visible on overlap (H&I readability).
 	for cell: Vector2i in _hover_move_tiles:
-		_draw_tile_tint(cell, _COLOR_MOVE, 0.40)
+		_draw_tile_tint(cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA, false)
 	for cell: Vector2i in _hover_threat_tiles:
-		_draw_tile_tint(cell, _COLOR_THREAT, 0.40)
+		_draw_tile_tint(cell, _COLOR_THREAT, _COLOR_THREAT_FILL_ALPHA, false)
 
 
-func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float) -> void:
+func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float, draw_border: bool = false) -> void:
 	var tile_px: float = float(TacticalConstants.TILE_PX)
 	var rect := Rect2(
 		_map_view.grid_to_local(cell) - Vector2(tile_px * 0.5, tile_px * 0.5),
 		Vector2(tile_px, tile_px),
 	).grow(-2.0)
 	draw_rect(rect, Color(tint.r, tint.g, tint.b, fill_alpha), true)
-	draw_rect(rect, Color(tint.r, tint.g, tint.b, 0.9), false, 2.0)
+	if draw_border:
+		draw_rect(rect, Color(tint.r, tint.g, tint.b, _COLOR_TILE_BORDER_ALPHA), false, 1.0)
 
 
 func _draw_hover_tile() -> void:
@@ -579,8 +582,8 @@ func _draw_hover_tile() -> void:
 	var tile_px: float = float(TacticalConstants.TILE_PX)
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var rect := Rect2(center - Vector2(tile_px * 0.5, tile_px * 0.5), Vector2(tile_px, tile_px)).grow(-2.0)
-	draw_rect(rect, Color(_COLOR_HOVER, 0.12), true)
-	draw_rect(rect, _COLOR_HOVER, false, 2.0)
+	draw_rect(rect, Color(_COLOR_HOVER, 0.10), true)
+	draw_rect(rect, Color(_COLOR_HOVER.r, _COLOR_HOVER.g, _COLOR_HOVER.b, 0.45), false, 1.0)
 
 
 func _draw_ability_intents() -> void:
@@ -604,7 +607,10 @@ func _draw_ability_intents() -> void:
 					start_pos = act.target_coord
 					break
 			var p_col: Color = _player_color_for_unit(actor)
-			_draw_dashed_route([start_pos, action.target_coord], Color(p_col.r, p_col.g, p_col.b, 0.95))
+			_draw_dashed_route(
+				[start_pos, action.target_coord],
+				Color(p_col.r, p_col.g, p_col.b, _INTENT_ROUTE_ALPHA),
+			)
 	var preview_board: BoardState = _display_preview_board()
 	for intent: Variant in _display_intent_list():
 		if not intent is Intent:
@@ -622,7 +628,15 @@ func _draw_ability_intents() -> void:
 		for action: TimelineAction in row.actions:
 			match action.type:
 				GameEnums.ActionType.ABILITY:
-					_draw_dashed_route([enemy_pos, action.target_coord], _COLOR_ENEMY_ARROW)
+					_draw_dashed_route(
+						[enemy_pos, action.target_coord],
+						Color(
+							_COLOR_ENEMY_ARROW.r,
+							_COLOR_ENEMY_ARROW.g,
+							_COLOR_ENEMY_ARROW.b,
+							_INTENT_ROUTE_ALPHA,
+						),
+					)
 				GameEnums.ActionType.MOVE:
 					if action.target_coord != enemy_pos:
 						_draw_route_line([enemy_pos, action.target_coord], _COLOR_ENEMY_ARROW, true, true)
@@ -725,7 +739,7 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 			d += dash + gap
 	var t: float = Time.get_ticks_msec() / 1000.0
 	var flow_speed := 45.0
-	var wave_spacing := 60.0
+	var wave_spacing := 90.0
 	var total_len := 0.0
 	var segment_lengths: Array[float] = []
 	var segment_dirs: Array[Vector2] = []
