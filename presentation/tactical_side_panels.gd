@@ -17,6 +17,7 @@ var _director: CombatDirector
 var _map_view: TacticalMapView
 var _intent_state: CombatIntentState
 var _planning_input: CombatPlanningInput
+var _planning_overlay: TacticalPlanningOverlay
 
 var _left_anchor: Control
 var _right_anchor: Control
@@ -73,11 +74,13 @@ func setup(
 	map_view: TacticalMapView,
 	intent_state: CombatIntentState = null,
 	planning_input: CombatPlanningInput = null,
+	planning_overlay: TacticalPlanningOverlay = null,
 ) -> void:
 	_director = director
 	_map_view = map_view
 	_intent_state = intent_state
 	_planning_input = planning_input
+	_planning_overlay = planning_overlay
 	layer = 21
 	_build_ui()
 	get_viewport().size_changed.connect(_on_viewport_resized)
@@ -93,6 +96,8 @@ func setup(
 			_hover_coord = coord
 			_refresh_info(),
 		)
+	if _planning_overlay != null:
+		_planning_overlay.live_preview_changed.connect(func() -> void: _refresh_intent_label())
 	_on_viewport_resized()
 
 
@@ -360,7 +365,12 @@ func _refresh_info() -> void:
 func _refresh_intent_label() -> void:
 	if _intent_label == null or _board == null:
 		return
-	var body: String = CombatUiFormatters.summarize_intents(_board, _phase, _intent_units)
+	var intent_list: Array = _board.intents
+	if _planning_input != null and (_planning_input.dragging or _planning_input.aiming):
+		var live: Array = _planning_input.preview_state.live_intents
+		if not live.is_empty():
+			intent_list = live
+	var body: String = CombatUiFormatters.summarize_intents(_board, _phase, _intent_units, intent_list)
 	_intent_label.text = "💀 Enemy intent:\n%s" % body
 
 

@@ -14,6 +14,8 @@ const _COLOR_HOVER := Color(0.45, 0.75, 1.0)
 const _COLOR_ENEMY_ARROW := Color(0.95, 0.35, 0.35, 0.95)
 const _COLOR_PLAYER_ARROW := Color(0.45, 0.85, 0.55, 0.98)
 
+signal live_preview_changed
+
 var _map_view: TacticalMapView
 var _director: CombatDirector
 var _intent_state: CombatIntentState
@@ -87,6 +89,14 @@ func get_preview_board() -> BoardState:
 	return _preview_board
 
 
+func get_live_intents() -> Array:
+	return _live_preview.live_intents
+
+
+func get_live_preview() -> CombatPlanningPreview:
+	return _live_preview
+
+
 func clear_live_preview() -> void:
 	_live_preview.clear_all()
 	_attack_target_id = -1
@@ -106,6 +116,7 @@ func apply_preview_state(
 		_preview_board = state.preview_board
 	if _unit_layer != null:
 		_unit_layer.set_predicted_stats(state.predicted_hp, state.predicted_armor)
+	live_preview_changed.emit()
 	queue_redraw()
 
 
@@ -140,9 +151,9 @@ func begin_drag_sprite(unit_id: int) -> void:
 		_unit_layer.begin_drag_preview(unit_id)
 
 
-func update_drag_sprite(map_local: Vector2, anim_mode: int, facing: int) -> void:
+func update_drag_sprite(map_local: Vector2, anim_mode: int, facing: int, preview_cell: Vector2i) -> void:
 	if _unit_layer != null:
-		_unit_layer.update_drag_preview(map_local, anim_mode, facing)
+		_unit_layer.update_drag_preview(map_local, anim_mode, facing, preview_cell)
 
 
 func end_drag_sprite() -> void:
@@ -284,16 +295,21 @@ func _draw() -> void:
 	_draw_preview_arrows()
 	_draw_interaction_overlay()
 	if _route.size() >= 2:
-		for i: int in range(_route.size() - 1):
-			var a: Vector2 = _map_view.grid_to_local(_route[i])
-			var b: Vector2 = _map_view.grid_to_local(_route[i + 1])
-			draw_line(a, b, _COLOR_ROUTE, 3.0)
+		_draw_route_line(_route, _COLOR_ROUTE, true, true)
 	_draw_ability_intents()
 	_draw_hover_tile()
 	if _aiming:
-		ClassIconDrawer.draw_icon(self, _aim_local, _aim_class_id, _COLOR_AIM, 1.2)
+		var aim_scale: float = 0.55 / _ui_scale()
+		ClassIconDrawer.draw_icon(self, _aim_local, _aim_class_id, _COLOR_AIM, aim_scale)
 	if _hover_action_icon != "":
-		_draw_centered_icon(get_local_mouse_position() + Vector2(10.0, 10.0), _hover_action_icon, Color.WHITE, 28)
+		var icon_pos: Vector2 = get_local_mouse_position() + Vector2(8.0, 8.0) / _ui_scale()
+		ActionIconDrawer.draw(
+			self,
+			icon_pos,
+			ActionIconDrawer.key_from_emoji(_hover_action_icon),
+			Color.WHITE,
+			1.0 / _ui_scale(),
+		)
 
 
 func _draw_hover_tiles() -> void:
@@ -344,19 +360,47 @@ func _draw_ability_intents() -> void:
 					start_pos = act.target_coord
 					break
 			_draw_dashed_route([start_pos, action.target_coord], _COLOR_PLAYER_ARROW)
-	for intent in _board.intents:
-		var enemy := _board.get_unit_by_id(intent.enemy_id)
+	var preview_board: BoardState = _live_preview.preview_board if _live_preview.preview_board != null else _preview_board
+	for intent: Variant in _display_intent_list():
+		if not intent is Intent:
+			continue
+		var row: Intent = intent as Intent
+		var enemy := _board.get_unit_by_id(row.enemy_id)
 		if enemy == null or not enemy.is_alive():
 			continue
 		if not _intent_visible(enemy):
 			continue
 		var enemy_pos: Vector2i = enemy.position
-		var pv := _preview_board.get_unit_by_id(enemy.id) if _preview_board != null else null
+		var pv := preview_board.get_unit_by_id(enemy.id) if preview_board != null else null
 		if pv != null:
 			enemy_pos = pv.position
-		for action: TimelineAction in intent.actions:
-			if action.type == GameEnums.ActionType.ABILITY:
-				_draw_dashed_route([enemy_pos, action.target_coord], _COLOR_ENEMY_ARROW)
+		for action: TimelineAction in row.actions:
+			match action.type:
+				GameEnums.ActionType.ABILITY:
+					_draw_dashed_route([enemy_pos, action.target_coord], _COLOR_ENEMY_ARROW)
+				GameEnums.ActionType.MOVE:
+					if action.target_coord != enemy_pos:
+						_draw_route_line([enemy_pos, action.target_coord], _COLOR_ENEMY_ARROW, true, true)
+
+
+func _display_intent_list() -> Array:
+	if _planning_input != null and (_planning_input.dragging or _planning_input.aiming):
+		var live: Array = _live_preview.live_intents
+		if not live.is_empty():
+			return live
+	if _board != null:
+		return _board.intents
+	return []
+
+
+func _ui_scale() -> float:
+	if _map_view == null:
+		return 1.0
+	return maxf(_map_view.get_map_root_scale(), 0.25)
+
+
+func _token_radius() -> float:
+	return float(TacticalConstants.TILE_PX) * 0.42
 
 
 func _intent_visible(unit: UnitState) -> bool:
@@ -383,20 +427,43 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 func _draw_preview_arrows() -> void:
 	if _board == null or _live_preview.preview_board == null:
 		return
+	var dragging: bool = _planning_input != null and _planning_input.dragging
+	var drag_unit_id: int = _planning_input.get_drag_unit_id() if _planning_input != null else -1
+	var selected_id: int = _director.selected_unit_id if _director != null else -1
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or not _intent_visible(unit):
 			continue
 		var route: Array = _live_preview.preview_paths.get(unit.id, [])
-		if route.size() < 2:
+		if route.is_empty():
 			continue
 		var split: int = int(_live_preview.preview_splits.get(unit.id, route.size()))
 		var player_leg: Array = route.slice(0, split)
+		var enemy_leg: Array = route.slice(maxi(split - 1, 0))
 		if player_leg.size() >= 2:
-			_draw_route_line(player_leg, _COLOR_PLAYER_ARROW.lightened(0.2), true)
+			var skip_live_route := false
+			if not unit.is_enemy() and unit.id == selected_id:
+				if dragging and unit.id == drag_unit_id:
+					skip_live_route = true
+			if not skip_live_route:
+				var dim_col := Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.35)
+				_draw_route_line(player_leg, dim_col, true, true)
+		if enemy_leg.size() >= 2:
+			var dim_enemy := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, 0.35)
+			_draw_route_line(enemy_leg, dim_enemy, split <= 1, true)
 		var pushes: Array = _live_preview.preview_pushes.get(unit.id, [])
 		for push: Variant in pushes:
 			if push is Array and push.size() >= 2:
 				_draw_push_arrow(push[0], push[1])
+		var pv := _live_preview.preview_board.get_unit_by_id(unit.id)
+		if pv == null or not pv.is_alive():
+			var end_tile: Vector2i = unit.position
+			if not pushes.is_empty():
+				var last_push: Variant = pushes[pushes.size() - 1]
+				if last_push is Array and last_push.size() >= 2:
+					end_tile = last_push[1]
+			elif route.size() > 0:
+				end_tile = route[route.size() - 1]
+			_draw_death_marker(end_tile)
 
 
 func _draw_interaction_overlay() -> void:
@@ -408,7 +475,7 @@ func _draw_interaction_overlay() -> void:
 		return
 	var route: Array = _live_preview.preview_paths.get(actor.id, [])
 	if route.size() >= 2:
-		_draw_route_line(route, _COLOR_PLAYER_ARROW, true)
+		_draw_route_line(route, _COLOR_PLAYER_ARROW, true, true)
 	if _attack_target_id >= 0:
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord
@@ -420,13 +487,42 @@ func _draw_interaction_overlay() -> void:
 			_draw_dashed_route([origin, target_coord], _COLOR_PLAYER_ARROW)
 
 
-func _draw_route_line(route: Array, color: Color, cardinal_only: bool) -> void:
+func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: bool) -> void:
 	if route.size() < 2:
 		return
-	for i: int in range(route.size() - 1):
-		var a: Vector2 = _map_view.grid_to_local(route[i])
-		var b: Vector2 = _map_view.grid_to_local(route[i + 1])
-		draw_line(a, b, color, 3.0)
+	var pts := PackedVector2Array()
+	for tile: Variant in route:
+		if tile is Vector2i:
+			pts.append(_map_view.grid_to_local(tile))
+	if pts.size() < 2:
+		return
+	var last: int = pts.size() - 1
+	var token_r: float = _token_radius()
+	if trim_start:
+		var d0: Vector2 = pts[1] - pts[0]
+		if d0.length() > 0.0:
+			pts[0] += d0.normalized() * token_r
+	var end_dir: Vector2 = (pts[last] - pts[last - 1]).normalized()
+	if with_head:
+		pts[last] -= end_dir * token_r
+	var glow := Color(color.r, color.g, color.b, color.a * 0.22)
+	draw_polyline(pts, glow, 5.0 / _ui_scale())
+	draw_polyline(pts, color, 2.5 / _ui_scale())
+	if with_head:
+		var tip: Vector2 = pts[last]
+		var perp: Vector2 = Vector2(-end_dir.y, end_dir.x) * (5.0 / _ui_scale())
+		draw_line(tip, tip - end_dir * (8.0 / _ui_scale()) + perp, color, 2.0 / _ui_scale())
+		draw_line(tip, tip - end_dir * (8.0 / _ui_scale()) - perp, color, 2.0 / _ui_scale())
+
+
+func _draw_death_marker(cell: Vector2i) -> void:
+	var center: Vector2 = _map_view.grid_to_local(cell)
+	var token_r: float = _token_radius()
+	var death_col := Color(0.95, 0.25, 0.25, 0.9)
+	draw_arc(center, token_r + 2.0, 0.0, TAU, 24, Color(death_col, 0.25), 2.5 / _ui_scale())
+	var r: float = token_r * 0.65
+	draw_line(center + Vector2(-r, -r), center + Vector2(r, r), death_col, 2.5 / _ui_scale())
+	draw_line(center + Vector2(-r, r), center + Vector2(r, -r), death_col, 2.5 / _ui_scale())
 
 
 func _draw_push_arrow(from: Vector2i, to: Vector2i) -> void:

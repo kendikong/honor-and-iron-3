@@ -177,14 +177,19 @@ static func summarize_intents(
 	board: BoardState,
 	phase: int,
 	intent_units: Dictionary,
+	intent_list: Array = [],
 ) -> String:
 	if board == null:
 		return "  (none)"
 	var lines: Array[String] = []
 	var show_all: bool = phase == CombatDirector.Phase.ENEMY_TURN
-	for intent in board.intents:
-		if show_all or intent_units.has(intent.enemy_id):
-			lines.append("  - %s" % intent.summary)
+	var intents: Array = intent_list if not intent_list.is_empty() else board.intents
+	for intent: Variant in intents:
+		if not intent is Intent:
+			continue
+		var row: Intent = intent as Intent
+		if show_all or intent_units.has(row.enemy_id):
+			lines.append("  - %s" % row.summary)
 	if lines.is_empty():
 		if show_all:
 			return "  (none)"

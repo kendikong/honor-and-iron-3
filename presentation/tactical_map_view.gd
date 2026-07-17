@@ -152,6 +152,12 @@ func get_ground_used_rect() -> Rect2i:
 	return _ground.get_used_rect()
 
 
+func get_map_root_scale() -> float:
+	if _map_root == null:
+		return 1.0
+	return maxf(_map_root.scale.x, 0.001)
+
+
 func grid_to_local(cell: Vector2i) -> Vector2:
 	var used: Rect2i = _ground.get_used_rect()
 	var local_cell: Vector2i = cell - used.position

@@ -739,6 +739,11 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 	var unit := _director.board.get_unit_by_id(_drag_unit_id) if _director.board != null else null
 	if unit == null:
 		return
+	var preview_cell: Vector2i = _drag_last_free
+	if preview_state.preview_board != null:
+		var pv := preview_state.preview_board.get_unit_by_id(_drag_unit_id)
+		if pv != null:
+			preview_cell = pv.position
 	for event: Variant in preview.get("events", []):
 		if event is SimEvent:
 			var sim: SimEvent = event as SimEvent
@@ -746,7 +751,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 				sim.type == GameEnums.SimEventType.ACTION_FAILED
 				and int(sim.data.get("actor", -1)) == _drag_unit_id
 			):
-				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.IDLE, unit.facing)
+				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.IDLE, unit.facing, preview_cell)
 				return
 	var actor := _proj_unit(_drag_unit_id)
 	if actor == null:
@@ -757,20 +762,20 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 		if _prefer_approach_over_trample_move(actor, occ) or not _can_move_to(actor, occ.position):
 			var ability := _selected_ability_data(actor)
 			if ability != null and AbilitySystem.ability_has_dash(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
-				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, atk_face)
+				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, atk_face, preview_cell)
 			else:
-				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.ATTACK, atk_face)
+				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.ATTACK, atk_face, preview_cell)
 			return
 		if _can_move_to(actor, occ.position):
 			var walk_face: int = _facing_toward(actor.position, occ.position)
-			_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.WALK, walk_face)
+			_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.WALK, walk_face, preview_cell)
 			return
 	if cell == actor.position and _drag_unit_was_selected and _director.selected_ability_index >= 0:
 		if _ability_range(actor) == 0:
 			var self_face: int = _facing_from_drop(local, cell)
 			if self_face < 0:
 				self_face = actor.facing
-			_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, self_face)
+			_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, self_face, preview_cell)
 			return
 	if not force_basic_movement and _director.selected_ability_index >= 0:
 		var dash_ability := _selected_ability_data(actor)
@@ -785,7 +790,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 				if AbilitySystem.ability_is_offensive_dash(dash_ability)
 				else TacticalUnitLayer.DragPreviewAnim.SPELL
 			)
-			_planning.update_drag_sprite(local, mode, dash_face)
+			_planning.update_drag_sprite(local, mode, dash_face, preview_cell)
 			return
 	if _drag_route.size() > 1 or _drag_last_free != unit.position:
 		var move_face: int = _facing_from_drop(local, _drag_last_free)
@@ -793,12 +798,12 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			move_face = _facing_toward(_drag_route[_drag_route.size() - 2], _drag_route[_drag_route.size() - 1])
 		elif _drag_last_free != unit.position:
 			move_face = _facing_toward(unit.position, _drag_last_free)
-		_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.WALK, move_face)
+		_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.WALK, move_face, preview_cell)
 		return
 	var idle_face: int = _facing_from_drop(local, cell)
 	if idle_face < 0:
 		idle_face = actor.facing
-	_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.IDLE, idle_face)
+	_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.IDLE, idle_face, preview_cell)
 
 
 func _facing_toward(from: Vector2i, to: Vector2i) -> int:

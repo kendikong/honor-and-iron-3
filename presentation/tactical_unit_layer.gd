@@ -422,16 +422,14 @@ func end_drag_preview() -> void:
 		actor.set_walking(false)
 
 
-func update_drag_preview(map_local: Vector2, anim_mode: int, facing: int) -> void:
+func update_drag_preview(_map_local: Vector2, anim_mode: int, facing: int, preview_cell: Vector2i) -> void:
 	if not _drag_preview_active or _drag_preview_id < 0 or _map_view == null:
 		return
 	var actor: CharacterActor = _actors.get(_drag_preview_id)
 	if actor == null:
 		return
-	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
-	var foot: Vector2 = _map_view.grid_to_foot_local(cell)
-	var center: Vector2 = _map_view.grid_to_local(cell)
-	actor.position = foot + (map_local - center)
+	actor.position = _map_view.grid_to_foot_local(preview_cell)
+	actor.modulate = Color(1.0, 1.0, 1.0, 0.58)
 	match anim_mode:
 		DragPreviewAnim.WALK:
 			actor.set_facing(_facing_anim(facing))

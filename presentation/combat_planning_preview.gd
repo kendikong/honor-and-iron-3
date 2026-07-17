@@ -9,11 +9,13 @@ var preview_paths: Dictionary = {}
 var preview_splits: Dictionary = {}
 var preview_pushes: Dictionary = {}
 var preview_board: BoardState = null
+var live_intents: Array = []
 
 
 func clear_interaction() -> void:
 	predicted_hp.clear()
 	predicted_armor.clear()
+	live_intents.clear()
 
 
 func clear_all() -> void:
@@ -22,6 +24,7 @@ func clear_all() -> void:
 	preview_splits.clear()
 	preview_pushes.clear()
 	preview_board = null
+	live_intents.clear()
 
 
 func apply_result(res: Dictionary, director: CombatDirector) -> void:
@@ -35,6 +38,7 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 		predicted_hp[unit.id] = unit.health.current_hp
 		predicted_armor[unit.id] = unit.armor
 	var events: Array = res.get("events", [])
+	live_intents = res.get("intents", [])
 	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes)
 
 
