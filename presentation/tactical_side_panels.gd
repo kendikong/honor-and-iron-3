@@ -136,58 +136,99 @@ func _make_panel_column(left_side: bool) -> Control:
 		_force_basic_check.text = "Force Basic Movement"
 		_force_basic_check.toggled.connect(_on_force_basic_toggled)
 		col.add_child(_force_basic_check)
-		var skill_panel := PanelContainer.new()
-		skill_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		col.add_child(skill_panel)
-		var skill_margin := MarginContainer.new()
-		skill_margin.add_theme_constant_override("margin_left", 8)
-		skill_margin.add_theme_constant_override("margin_right", 8)
-		skill_margin.add_theme_constant_override("margin_top", 8)
-		skill_margin.add_theme_constant_override("margin_bottom", 8)
-		skill_panel.add_child(skill_margin)
-		var skill_vbox := VBoxContainer.new()
-		skill_margin.add_child(skill_vbox)
-		var skill_title := Label.new()
-		skill_title.text = "Skills"
-		skill_title.add_theme_font_size_override("font_size", 14)
-		_section_titles.append(skill_title)
-		skill_vbox.add_child(skill_title)
-		var skill_scroll := ScrollContainer.new()
-		skill_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		skill_scroll.custom_minimum_size.y = 180
-		skill_vbox.add_child(skill_scroll)
-		_skill_list = VBoxContainer.new()
-		_skill_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		skill_scroll.add_child(_skill_list)
-		_info_label = _add_rich_panel(col, "Unit Info")
-		_tile_info_label = _add_rich_panel(col, "Tile", 72)
+		_tile_info_label = _add_weighted_rich_panel(col, "Tile", 0.2)
+		_log_label = _add_weighted_log_panel(col, 0.6)
+		_intent_label = _add_weighted_rich_panel(col, "Enemy Intent", 0.2)
 	else:
-		_intent_label = _add_rich_panel(col, "Enemy Intent", 100)
-		var log_panel := PanelContainer.new()
-		log_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		col.add_child(log_panel)
-		var log_margin := MarginContainer.new()
-		log_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		log_margin.add_theme_constant_override("margin_left", 8)
-		log_margin.add_theme_constant_override("margin_right", 8)
-		log_margin.add_theme_constant_override("margin_top", 8)
-		log_margin.add_theme_constant_override("margin_bottom", 8)
-		log_panel.add_child(log_margin)
-		var log_vbox := VBoxContainer.new()
-		log_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		log_margin.add_child(log_vbox)
-		var log_title := Label.new()
-		log_title.text = "Battle Log"
-		log_title.add_theme_font_size_override("font_size", 14)
-		_section_titles.append(log_title)
-		log_vbox.add_child(log_title)
-		_log_label = RichTextLabel.new()
-		_log_label.bbcode_enabled = true
-		_log_label.scroll_following = true
-		_log_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		_log_label.add_theme_font_size_override("normal_font_size", LOG_FONT_SIZE)
-		log_vbox.add_child(_log_label)
+		_info_label = _add_weighted_rich_panel(col, "Unit Info", 0.5)
+		_skill_list = _add_weighted_skill_panel(col, 0.5)
 	return anchor
+
+
+func _add_weighted_rich_panel(parent: VBoxContainer, title: String, weight: float) -> RichTextLabel:
+	var panel := PanelContainer.new()
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.size_flags_stretch_ratio = weight
+	parent.add_child(panel)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	panel.add_child(margin)
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(vbox)
+	var lbl := Label.new()
+	lbl.text = title
+	lbl.add_theme_font_size_override("font_size", 14)
+	_section_titles.append(lbl)
+	vbox.add_child(lbl)
+	var rich := RichTextLabel.new()
+	rich.bbcode_enabled = true
+	rich.fit_content = false
+	rich.scroll_active = true
+	rich.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_rich_labels.append(rich)
+	vbox.add_child(rich)
+	return rich
+
+
+func _add_weighted_log_panel(parent: VBoxContainer, weight: float) -> RichTextLabel:
+	var panel := PanelContainer.new()
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.size_flags_stretch_ratio = weight
+	parent.add_child(panel)
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	panel.add_child(margin)
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(vbox)
+	var log_title := Label.new()
+	log_title.text = "Battle Log"
+	log_title.add_theme_font_size_override("font_size", 14)
+	_section_titles.append(log_title)
+	vbox.add_child(log_title)
+	var rich := RichTextLabel.new()
+	rich.bbcode_enabled = true
+	rich.scroll_following = true
+	rich.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rich.add_theme_font_size_override("normal_font_size", LOG_FONT_SIZE)
+	vbox.add_child(rich)
+	return rich
+
+
+func _add_weighted_skill_panel(parent: VBoxContainer, weight: float) -> VBoxContainer:
+	var panel := PanelContainer.new()
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.size_flags_stretch_ratio = weight
+	parent.add_child(panel)
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	panel.add_child(margin)
+	var skill_vbox := VBoxContainer.new()
+	skill_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(skill_vbox)
+	var skill_title := Label.new()
+	skill_title.text = "Skills"
+	skill_title.add_theme_font_size_override("font_size", 14)
+	_section_titles.append(skill_title)
+	skill_vbox.add_child(skill_title)
+	var skill_scroll := ScrollContainer.new()
+	skill_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	skill_vbox.add_child(skill_scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	skill_scroll.add_child(list)
+	return list
 
 
 func _on_viewport_resized() -> void:

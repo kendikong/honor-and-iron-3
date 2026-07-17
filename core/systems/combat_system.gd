@@ -324,7 +324,7 @@ static func deal_damage(
 						if intercept_amount > 0:
 							amount -= intercept_amount
 							if is_upgraded:
-								ally.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2))
+								ally.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2))
 								ally._recalculate_stats()
 							CombatSystem.deal_damage(
 								board, ally, intercept_amount, events, source_type, pierce, true, attacker, source_label, intercept_amount
@@ -362,7 +362,7 @@ static func deal_damage(
 	var mitigated_amount = amount - incoming
 	if incoming <= 0:
 		if mitigated_amount > 0 and target.has_passive(&"kinetic_redirection"):
-			target.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
 			"unit": target.id,
 			"amount": 0,
@@ -382,7 +382,7 @@ static func deal_damage(
 	
 	if old_armor > 0 and target.armor <= 0 and target.has_status(GameEnums.StatusType.INDOMITABLE_WILL):
 		if target.is_ability_upgraded(&"knight_indomitable_will"):
-			target.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_STR, 99, 2))
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 99, 2))
 		var to_remove = []
 		for status in target.active_statuses:
 			if status.type == GameEnums.StatusType.INDOMITABLE_WILL:
@@ -425,12 +425,12 @@ static func deal_damage(
 			var stacks = target.passive_flags.get("kinetic_redirection_stacks", 0)
 			if stacks < 3:
 				target.passive_flags["kinetic_redirection_stacks"] = stacks + 1
-				target.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_STR, -1, 1)) # Duration -1 for custom tracking
+				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, -1, 1))
 			
 		if target.has_passive(&"kinetic_converter"):
 			var str_buff = 2 if target.is_passive_upgraded(&"kinetic_converter") else 1
-			target.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_STR, 1, str_buff))
-			target.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_MOV, 1, 1))
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, str_buff))
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_MOV, 1, 1))
 				
 		if target.has_passive(&"thorny_carapace") and attacker != null:
 			if GridSystem.manhattan(target.position, attacker.position) == 1:
@@ -471,7 +471,7 @@ static func deal_damage(
 		target.armor += target.current_defense
 		target.passive_flags["bastion_used"] = true
 		if target.is_passive_upgraded(&"indestructible_bastion"):
-			target.active_statuses.append(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_STR, 99, 2))
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 99, 2))
 			
 	if was_alive and not target.is_alive():
 		GridSystem.set_occupant(board, target.position, -1)

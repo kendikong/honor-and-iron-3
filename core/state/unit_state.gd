@@ -77,7 +77,10 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 		if config.has("upgraded_passives"):
 			unit.upgraded_passives.assign(config.upgraded_passives)
 	else:
-		unit.active_passives = def.passives.duplicate()
+		if p_team == GameEnums.Team.PLAYER and not def.is_construct:
+			_roll_starting_passives(unit, def.passives)
+		else:
+			unit.active_passives = def.passives.duplicate()
 		if p_team == GameEnums.Team.PLAYER and not def.is_construct:
 			var basic_attack: AbilityData = null
 			var class_abilities: Array[AbilityData] = []
@@ -100,6 +103,19 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 		
 	unit._recalculate_stats()
 	return unit
+
+
+static func _roll_starting_passives(unit: UnitState, pool: Array[PassiveData]) -> void:
+	unit.active_passives.clear()
+	if pool.is_empty():
+		return
+	var remaining: Array[PassiveData] = pool.duplicate()
+	var count: int = mini(2, remaining.size())
+	for _i: int in range(count):
+		var idx: int = randi() % remaining.size()
+		unit.active_passives.append(remaining[idx])
+		remaining.remove_at(idx)
+
 
 func is_ability_upgraded(ability_id: StringName) -> bool:
 	return upgraded_abilities.has(ability_id)

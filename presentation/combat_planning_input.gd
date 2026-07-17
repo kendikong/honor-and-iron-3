@@ -167,6 +167,13 @@ func on_left_release(local: Vector2) -> void:
 		if not _try_plan_skill_at_coord(actor, cell, local):
 			_try_plan_basic_move(_drag_unit_id, cell, local, waypoints)
 	_drag_route.clear()
+	_planning.clear_fixed_range_origin()
+	_planning.recompute_hover_ranges(
+		force_basic_movement,
+		_director.selected_ability_index,
+		false,
+		-1,
+	)
 
 
 func on_right_click() -> void:
@@ -215,12 +222,7 @@ func update_drag(local: Vector2) -> void:
 	)
 	_apply_live_preview(preview)
 	_planning.set_drag_route(_drag_route)
-	_planning.recompute_hover_ranges(
-		force_basic_movement,
-		_director.selected_ability_index,
-		dragging,
-		_drag_unit_id,
-	)
+	queue_redraw()
 
 
 func get_drag_unit_id() -> int:
@@ -264,7 +266,14 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	_drag_press_time_ms = Time.get_ticks_msec()
 	_drag_route = [unit.position]
 	_drag_last_free = unit.position
+	_planning.set_fixed_range_origin(unit.position)
 	_planning.set_drag_route(_drag_route)
+	_planning.recompute_hover_ranges(
+		force_basic_movement,
+		_director.selected_ability_index,
+		true,
+		_drag_unit_id,
+	)
 	_play_sfx("select")
 
 

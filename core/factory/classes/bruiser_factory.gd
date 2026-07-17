@@ -6,7 +6,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.id = &"bruiser"
 	def.display_name = "Bruiser"
 	def.base_constitution = 7
-	def.move_points = 3
+	def.move_points = 4
 	def.action_points = 1
 	def.base_strength = 4
 	def.base_defense = 2

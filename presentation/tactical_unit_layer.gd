@@ -7,7 +7,7 @@ const _CharacterActor = preload("res://scripts/lpc/character_actor.gd")
 
 const BAR_W: float = 14.0
 const BAR_H: float = 3.0
-const BAR_OFFSET_Y: float = 22.0
+const BAR_OFFSET_Y: float = 6.0
 
 const _COLOR_HP_BG := Color(0.08, 0.08, 0.10, 0.92)
 const _COLOR_HP_FILL := Color(0.38, 0.78, 0.46)
@@ -31,6 +31,7 @@ var _predicted_armor: Dictionary = {}
 var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
 var _move_tweens: Dictionary = {}
 var _active_push_tweens: int = 0
+var _damage_flash: Dictionary = {}
 
 signal push_tweens_idle
 
@@ -64,6 +65,7 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 		_phase = phase
 		queue_redraw(),
 	)
+	set_process(true)
 	queue_redraw()
 
 
@@ -134,13 +136,14 @@ func apply_sim_event(event: SimEvent) -> void:
 		GameEnums.SimEventType.UNIT_PUSHED, GameEnums.SimEventType.COLLISION:
 			_animate_push(event)
 		GameEnums.SimEventType.ABILITY_USED:
-			_play_attack_anim(int(event.data.get("actor", -1)), int(event.data.get("facing", GameEnums.Facing.SOUTH)))
+			_play_attack_anim(event)
 		GameEnums.SimEventType.UNIT_DAMAGED:
 			var target_id: int = int(event.data.get("unit", -1))
 			var hp: int = int(event.data.get("hp", 0))
 			var target := _board.get_unit_by_id(target_id)
 			if target != null:
 				target.health.current_hp = hp
+			_damage_flash[target_id] = 0.45
 		GameEnums.SimEventType.UNIT_DIED:
 			var dead_id: int = int(event.data.get("unit", -1))
 			var dead := _board.get_unit_by_id(dead_id)
@@ -166,7 +169,8 @@ func _sync_actors() -> void:
 			continue
 		live[unit.id] = true
 		_ensure_actor(unit)
-		_position_actor(unit.id, unit.position)
+		if not _move_tweens.has(unit.id):
+			_position_actor(unit.id, unit.position)
 		_apply_facing(unit.id, unit.facing)
 		_update_depth(unit.id)
 	for id: Variant in _actors.keys():
@@ -246,6 +250,11 @@ func _animate_move(event: SimEvent) -> void:
 				cells.append(raw)
 	if cells.is_empty():
 		return
+	var start_cell: Vector2i = from_coord
+	if cells.size() >= 2:
+		start_cell = cells[0]
+	elif cells.size() == 1:
+		start_cell = cells[0]
 	unit.position = cells[cells.size() - 1]
 	var facing: int = unit.facing
 	if cells.size() >= 2:
@@ -258,6 +267,7 @@ func _animate_move(event: SimEvent) -> void:
 		_position_actor(unit_id, unit.position)
 		_update_depth(unit_id)
 		return
+	actor.position = _map_view.grid_to_foot_local(start_cell)
 	actor.set_walking(true)
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
@@ -334,10 +344,22 @@ func _kill_move_tween(unit_id: int) -> void:
 	_move_tweens.erase(unit_id)
 
 
-func _play_attack_anim(unit_id: int, facing: int) -> void:
+func _play_attack_anim(event: SimEvent) -> void:
+	var unit_id: int = int(event.data.get("actor", -1))
 	var actor: CharacterActor = _actors.get(unit_id)
 	if actor == null:
 		return
+	var facing: int = int(event.data.get("facing", GameEnums.Facing.SOUTH))
+	if event.data.has("target_coord"):
+		var target_coord: Vector2i = event.data["target_coord"]
+		var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+		if unit != null:
+			facing = _facing_toward(unit.position, target_coord)
+	elif event.data.has("target_unit"):
+		var target := _board.get_unit_by_id(int(event.data["target_unit"])) if _board != null else null
+		var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+		if target != null and unit != null:
+			facing = _facing_toward(unit.position, target.position)
 	var anim: StringName = _attack_anim(facing)
 	actor.set_facing(anim)
 	actor.set_walking(true)
@@ -387,6 +409,7 @@ func _facing_anim(facing: int) -> StringName:
 func _draw() -> void:
 	if _board == null or _map_view == null:
 		return
+	_tick_damage_flash()
 	for unit in _board.units:
 		if not unit.is_alive():
 			continue
@@ -407,18 +430,46 @@ func _draw() -> void:
 
 func _draw_hp_bar(unit: UnitState) -> void:
 	var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
-	var origin := foot + Vector2(-BAR_W * 0.5, -BAR_OFFSET_Y)
+	var origin := foot + Vector2(-BAR_W * 0.5, BAR_OFFSET_Y)
 	var current_hp: int = unit.health.current_hp
 	var predicted: int = int(_predicted_hp.get(unit.id, current_hp))
 	var max_hp: int = unit.health.max_hp
 	var frac: float = 1.0
 	if max_hp > 0:
 		frac = clampf(float(current_hp) / float(max_hp), 0.0, 1.0)
+	var flash: float = float(_damage_flash.get(unit.id, 0.0))
+	if flash > 0.0:
+		var pulse: float = 0.5 + 0.5 * sin(flash * 40.0)
+		draw_rect(Rect2(origin - Vector2(1.0, 1.0), Vector2(BAR_W + 2.0, BAR_H + 2.0)), Color(1.0, 0.1, 0.1, 0.35 * pulse), true)
 	draw_rect(Rect2(origin, Vector2(BAR_W, BAR_H)), _COLOR_HP_BG)
-	draw_rect(Rect2(origin, Vector2(BAR_W * frac, BAR_H)), _COLOR_HP_FILL)
+	var fill_color: Color = _COLOR_HP_FILL
+	if flash > 0.0:
+		fill_color = fill_color.lerp(Color(1.0, 0.15, 0.15), minf(1.0, flash * 2.0))
+	draw_rect(Rect2(origin, Vector2(BAR_W * frac, BAR_H)), fill_color)
 	if predicted < current_hp and max_hp > 0:
 		var pred_frac: float = clampf(float(predicted) / float(max_hp), 0.0, 1.0)
 		var pred_w: float = BAR_W * pred_frac
 		var dmg_w: float = BAR_W * frac - pred_w
 		if dmg_w > 0.5:
 			draw_rect(Rect2(origin + Vector2(pred_w, 0.0), Vector2(dmg_w, BAR_H)), _COLOR_HP_PREDICTED)
+
+
+func _process(delta: float) -> void:
+	if _damage_flash.is_empty():
+		return
+	_tick_damage_flash(delta)
+
+
+func _tick_damage_flash(delta: float = 0.0) -> void:
+	if _damage_flash.is_empty():
+		return
+	var step: float = delta if delta > 0.0 else 0.016
+	var stale: Array[int] = []
+	for unit_id: Variant in _damage_flash:
+		_damage_flash[unit_id] = float(_damage_flash[unit_id]) - step
+		if float(_damage_flash[unit_id]) <= 0.0:
+			stale.append(int(unit_id))
+	for unit_id: int in stale:
+		_damage_flash.erase(unit_id)
+	if not stale.is_empty() or delta > 0.0:
+		queue_redraw()

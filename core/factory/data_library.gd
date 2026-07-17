@@ -325,6 +325,10 @@ static func _status_effect_self(type: GameEnums.StatusType, duration: int, value
 	e.amount = value
 	return e
 
+
+static func make_status(type: GameEnums.StatusType, duration: int, value: int = 0) -> StatusData:
+	return StatusData.new(type, duration, value)
+
 static func _make_ability(p_id: StringName, p_name: String, p_range: int, effects: Array[EffectData], ap_cost: int = 1, stat: GameEnums.StatType = GameEnums.StatType.NONE, shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE, shape_size: int = 1) -> AbilityData:
 	var ability := AbilityData.new()
 	ability.id = p_id

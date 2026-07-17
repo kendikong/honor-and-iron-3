@@ -207,7 +207,7 @@ func _build_ui() -> void:
 	hbox.add_child(buttons)
 
 	_execute_btn = Button.new()
-	_execute_btn.text = "Ready — Execute Phase"
+	_execute_btn.text = "Ready to Execute"
 	_execute_btn.custom_minimum_size = Vector2(200, 48)
 	_execute_btn.pressed.connect(_on_execute_pressed)
 	buttons.add_child(_execute_btn)
@@ -272,9 +272,15 @@ func _on_phase_changed(phase: int) -> void:
 	_undo_btn.visible = planning
 	_clear_btn.disabled = not planning
 	_refresh_undo_button()
-	if not planning:
+	if planning:
 		_is_ready = false
-		_execute_btn.text = "Ready — Execute Phase"
+		if GlobalTimeline != null:
+			GlobalTimeline.rpc_reset_ready_states()
+		_execute_btn.text = "Ready to Execute"
+		_execute_btn.modulate = Color.WHITE
+	elif not planning:
+		_is_ready = false
+		_execute_btn.text = "Executing..."
 		_execute_btn.modulate = Color.WHITE
 	if phase == CombatDirector.Phase.VICTORY:
 		_show_banner("Victory!")
@@ -336,10 +342,11 @@ func _on_action_rejected(reason: String) -> void:
 func _on_execute_pressed() -> void:
 	if _sfx != null:
 		_sfx.play("execute")
+	var next_ready: bool = not _is_ready
 	if NetworkManager != null and NetworkManager.is_multiplayer:
-		GlobalTimeline.rpc_set_ready(not _is_ready)
+		GlobalTimeline.rpc_set_ready(next_ready)
 	else:
-		GlobalTimeline.rpc_set_ready(true)
+		GlobalTimeline.rpc_set_ready(next_ready)
 
 
 func _on_player_ready_changed(_player_id: int, is_ready: bool) -> void:
@@ -350,7 +357,7 @@ func _on_player_ready_changed(_player_id: int, is_ready: bool) -> void:
 		_execute_btn.text = "Cancel Ready"
 		_execute_btn.modulate = Color(0.4, 0.9, 0.4)
 	else:
-		_execute_btn.text = "Ready — Execute Phase"
+		_execute_btn.text = "Ready to Execute"
 		_execute_btn.modulate = Color.WHITE
 
 
