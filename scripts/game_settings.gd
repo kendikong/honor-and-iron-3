@@ -45,6 +45,7 @@ var map_zoom_reference: Vector2 = Vector2(1280.0, 720.0)
 var map_zoom_multiplier: float = 1.0
 var inspector_text_size_index: int = 1
 var inspector_panel_width: int = 520
+var combat_ui_scale: float = 1.0
 
 
 func load_from_disk() -> void:
@@ -66,6 +67,7 @@ func load_from_disk() -> void:
 	map_zoom_multiplier = float(cfg.get_value("display", "map_zoom_multiplier", map_zoom_multiplier))
 	inspector_text_size_index = int(cfg.get_value("display", "inspector_text_size_index", inspector_text_size_index))
 	inspector_panel_width = int(cfg.get_value("display", "inspector_panel_width", inspector_panel_width))
+	combat_ui_scale = float(cfg.get_value("display", "combat_ui_scale", combat_ui_scale))
 
 
 func capture_from_window(window: Window) -> void:
@@ -87,12 +89,19 @@ func save_to_disk() -> void:
 	cfg.set_value("display", "map_zoom_multiplier", map_zoom_multiplier)
 	cfg.set_value("display", "inspector_text_size_index", inspector_text_size_index)
 	cfg.set_value("display", "inspector_panel_width", inspector_panel_width)
+	cfg.set_value("display", "combat_ui_scale", combat_ui_scale)
 	cfg.save(CONFIG_PATH)
 
 
-func apply_to_window(window: Window) -> void:
+func apply_to_window(window: Window, preserve_placement: bool = true) -> void:
+	var saved_screen: int = window.current_screen
+	var saved_position: Vector2i = window.position
 	if window_mode == DisplayServer.WINDOW_MODE_WINDOWED:
-		DisplayWindowHelper.apply_resolution(window, resolution, false)
+		DisplayWindowHelper.apply_resolution(window, resolution, false, not preserve_placement)
+		if preserve_placement:
+			if saved_screen >= 0:
+				window.current_screen = saved_screen
+			window.position = saved_position
 	else:
 		DisplayServer.window_set_mode(window_mode)
 
@@ -161,7 +170,7 @@ func compute_map_zoom(map_pixels: Vector2, zoom_viewport: Vector2) -> int:
 	return maxi(1, scaled)
 
 
-func apply_and_save(window: Window) -> void:
-	apply_to_window(window)
+func apply_and_save(window: Window, preserve_placement: bool = true) -> void:
+	apply_to_window(window, preserve_placement)
 	save_to_disk()
 	changed.emit()

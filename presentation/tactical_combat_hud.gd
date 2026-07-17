@@ -14,6 +14,9 @@ var _intent_state: CombatIntentState
 var _execute_btn: Button
 var _undo_btn: Button
 var _clear_btn: Button
+var _bottom_panel: PanelContainer
+var _panel_width: int = 280
+var _ui_scale: float = 1.0
 var _banner: PanelContainer
 var _banner_label: Label
 var _is_ready: bool = false
@@ -33,7 +36,7 @@ func setup(
 	_sfx = sfx
 	_side_panels = side_panels
 	_intent_state = intent_state
-	layer = 20
+	layer = 22
 	_build_ui()
 	_build_banner()
 	EventBus.turn_phase_changed.connect(_on_phase_changed)
@@ -59,6 +62,49 @@ func setup(
 		_timeline_grid.warning_changed.connect(_on_timeline_warning)
 	_on_phase_changed(_director.phase)
 	_refresh_timeline()
+
+
+func apply_settings(settings: GameSettings) -> void:
+	if settings == null:
+		return
+	_ui_scale = settings.combat_ui_scale
+	_panel_width = int(round(float(settings.inspector_panel_width) * _ui_scale))
+	var title_sz: int = int(round(float(settings.inspector_title_font()) * _ui_scale))
+	var body_sz: int = int(round(float(settings.inspector_hint_font()) * _ui_scale))
+	if _phase_label != null:
+		_phase_label.add_theme_font_size_override("font_size", title_sz)
+	for child: Node in get_children():
+		_apply_ui_scale_recursive(child, body_sz, title_sz)
+	if _execute_btn != null:
+		_execute_btn.custom_minimum_size = Vector2(200.0 * _ui_scale, 48.0 * _ui_scale)
+		_execute_btn.add_theme_font_size_override("font_size", body_sz)
+	if _undo_btn != null:
+		_undo_btn.add_theme_font_size_override("font_size", body_sz)
+	if _clear_btn != null:
+		_clear_btn.add_theme_font_size_override("font_size", body_sz)
+	_layout_bottom_insets()
+
+
+func _apply_ui_scale_recursive(node: Node, body_sz: int, title_sz: int) -> void:
+	if node is Label and node != _phase_label:
+		var lbl := node as Label
+		if lbl.text == "Tactical Combat":
+			lbl.add_theme_font_size_override("font_size", title_sz)
+		else:
+			lbl.add_theme_font_size_override("font_size", body_sz)
+	elif node is Button and node != _execute_btn and node != _undo_btn and node != _clear_btn:
+		(node as Button).add_theme_font_size_override("font_size", body_sz)
+	for child: Node in node.get_children():
+		_apply_ui_scale_recursive(child, body_sz, title_sz)
+
+
+func _layout_bottom_insets() -> void:
+	if _bottom_panel == null:
+		return
+	var inset: float = float(_panel_width) + 16.0
+	_bottom_panel.offset_left = inset
+	_bottom_panel.offset_right = -inset
+	_bottom_panel.offset_top = -int(round(280.0 * _ui_scale))
 
 
 func _on_timeline_warning(text: String) -> void:
@@ -102,7 +148,8 @@ func _build_ui() -> void:
 
 	var bottom := PanelContainer.new()
 	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_top = -260
+	bottom.offset_top = -280
+	_bottom_panel = bottom
 	add_child(bottom)
 
 	var margin := MarginContainer.new()

@@ -6,7 +6,7 @@ extends Node
 ##   1. Map pipeline + options (map view _ready)
 ##   2. shell.setup() — bind listeners before director emits board_changed
 ##   3. director.start_from_encounter()
-## Layer z: SidePanels=21, Hud=20, Pause=35, Options=30
+## Layer z: SidePanels=21, Hud=22, Pause=35, Options=40 (when open)
 
 var intent_state: CombatIntentState = CombatIntentState.new()
 var planning_input: CombatPlanningInput = CombatPlanningInput.new()
@@ -64,6 +64,8 @@ func setup(
 func bind_settings(settings: GameSettings) -> void:
 	if _side_panels != null:
 		_side_panels.apply_settings(settings)
+	if _combat_hud != null:
+		_combat_hud.apply_settings(settings)
 
 
 func start_combat(encounter: EncounterData) -> void:

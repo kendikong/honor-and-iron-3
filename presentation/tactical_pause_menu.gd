@@ -63,8 +63,9 @@ func _build_ui() -> void:
 	vbox.add_child(title)
 	_add_button(vbox, "Resume", close_menu)
 	_add_button(vbox, "Settings", func() -> void:
+		close_menu()
 		if _options != null:
-			_options.open(),
+			_options.open_display(),
 	)
 	_add_button(vbox, "Compendium", func() -> void:
 		var comp: CompendiumScreen = load("res://scenes/Compendium.tscn").instantiate()

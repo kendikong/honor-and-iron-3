@@ -29,6 +29,8 @@ var _map_scale_value: Label
 var _text_size_option: OptionButton
 var _panel_width_slider: HSlider
 var _panel_width_value: Label
+var _ui_scale_slider: HSlider
+var _ui_scale_value: Label
 var _combat_char_section: VBoxContainer
 var _display_char_scale_slider: HSlider
 var _display_char_scale_value: Label
@@ -100,6 +102,7 @@ func is_open() -> bool:
 func open() -> void:
 	if _settings == null:
 		return
+	layer = 40
 	_sync_controls_from_settings()
 	_show_main()
 	_root.visible = true
@@ -107,11 +110,17 @@ func open() -> void:
 	opened.emit()
 
 
+func open_display() -> void:
+	open()
+	_show_display()
+
+
 func close_menu() -> void:
 	if not _is_open:
 		return
 	_root.visible = false
 	_is_open = false
+	layer = 30
 	closed.emit()
 
 
@@ -219,7 +228,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	var margin: MarginContainer = _margin(panel)
 	var vbox: VBoxContainer = _vbox(margin)
 	_add_title(vbox, "Display")
-	_add_hint(vbox, "Changes apply when you click Apply")
+	_add_hint(vbox, "UI scale and text apply immediately. Resolution applies on Apply.")
 
 	_resolution_option = OptionButton.new()
 	_resolution_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -247,6 +256,22 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	scale_row.add_child(_map_scale_value)
 
 	_text_size_option = _add_labeled_option(vbox, "Inspector text", GameSettings.TEXT_SIZE_LABELS)
+	_text_size_option.item_selected.connect(func(_idx: int) -> void: _apply_display_live())
+
+	var ui_scale_row: HBoxContainer = HBoxContainer.new()
+	ui_scale_row.add_theme_constant_override("separation", 10)
+	vbox.add_child(_label("Combat UI scale"))
+	vbox.add_child(ui_scale_row)
+	_ui_scale_slider = HSlider.new()
+	_ui_scale_slider.min_value = 0.75
+	_ui_scale_slider.max_value = 2.5
+	_ui_scale_slider.step = 0.05
+	_ui_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_ui_scale_slider.value_changed.connect(_on_ui_scale_slider_changed)
+	ui_scale_row.add_child(_ui_scale_slider)
+	_ui_scale_value = Label.new()
+	_ui_scale_value.custom_minimum_size = Vector2(48, 0)
+	ui_scale_row.add_child(_ui_scale_value)
 
 	var width_row: HBoxContainer = HBoxContainer.new()
 	width_row.add_theme_constant_override("separation", 10)
@@ -363,10 +388,19 @@ func _apply_display() -> void:
 	if _settings == null:
 		return
 	_read_controls_to_settings()
-	_settings.apply_and_save(get_window())
+	_settings.apply_and_save(get_window(), true)
 	if _on_applied.is_valid():
 		_on_applied.call()
 	close_menu()
+
+
+func _apply_display_live() -> void:
+	if _settings == null:
+		return
+	_read_controls_to_settings()
+	_settings.save_to_disk()
+	if _on_applied.is_valid():
+		_on_applied.call()
 
 
 func _sync_controls_from_settings() -> void:
@@ -378,6 +412,8 @@ func _sync_controls_from_settings() -> void:
 	_text_size_option.select(_settings.inspector_text_size_index)
 	_panel_width_slider.value = float(_settings.inspector_panel_width)
 	_on_panel_width_slider_changed(float(_settings.inspector_panel_width))
+	_ui_scale_slider.value = _settings.combat_ui_scale
+	_on_ui_scale_slider_changed(_settings.combat_ui_scale)
 	if _char_profile != null:
 		_char_scale_slider.value = _char_profile.display_scale
 		_on_char_scale_changed(_char_profile.display_scale)
@@ -393,6 +429,7 @@ func _read_controls_to_settings() -> void:
 	_settings.map_zoom_multiplier = _map_scale_slider.value
 	_settings.inspector_text_size_index = _text_size_option.selected
 	_settings.inspector_panel_width = int(_panel_width_slider.value)
+	_settings.combat_ui_scale = _ui_scale_slider.value
 
 
 func _show_main() -> void:
@@ -452,6 +489,12 @@ func _on_display_char_scale_changed(value: float) -> void:
 
 func _on_panel_width_slider_changed(value: float) -> void:
 	_panel_width_value.text = "%d" % int(value)
+	_apply_display_live()
+
+
+func _on_ui_scale_slider_changed(value: float) -> void:
+	_ui_scale_value.text = "%.2f×" % value
+	_apply_display_live()
 
 
 func _margin(panel: PanelContainer) -> MarginContainer:

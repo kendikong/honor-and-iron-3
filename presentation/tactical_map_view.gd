@@ -182,6 +182,7 @@ func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 
 func _start_combat() -> void:
 	_combat_shell.start_combat(_encounter)
+	_combat_shell.bind_settings(_settings)
 
 
 func _load_skirmish() -> void:
@@ -265,6 +266,7 @@ func _on_character_gen_changed() -> void:
 
 
 func _on_display_settings_applied() -> void:
+	_combat_shell.bind_settings(_settings)
 	_center_map()
 	_apply_effects()
 

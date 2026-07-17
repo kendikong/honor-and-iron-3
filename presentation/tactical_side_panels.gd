@@ -8,6 +8,9 @@ const COLOR_SKILL_DISABLED: Color = Color(0.55, 0.55, 0.55, 0.85)
 const LOG_FONT_SIZE: int = 10
 
 var _panel_width: int = 280
+var _ui_scale: float = 1.0
+var _section_titles: Array[Label] = []
+var _rich_labels: Array[RichTextLabel] = []
 
 var _director: CombatDirector
 var _map_view: TacticalMapView
@@ -36,8 +39,21 @@ var _last_math_telemetry: Dictionary = {}
 func apply_settings(settings: GameSettings) -> void:
 	if settings == null:
 		return
-	_panel_width = settings.inspector_panel_width
+	_ui_scale = settings.combat_ui_scale
+	_panel_width = int(round(float(settings.inspector_panel_width) * _ui_scale))
+	var title_sz: int = int(round(float(settings.inspector_title_font()) * _ui_scale))
+	var body_sz: int = int(round(float(settings.inspector_body_font()) * _ui_scale))
+	var hint_sz: int = int(round(float(settings.inspector_hint_font()) * _ui_scale))
+	for title: Label in _section_titles:
+		title.add_theme_font_size_override("font_size", title_sz)
+	for rich: RichTextLabel in _rich_labels:
+		rich.add_theme_font_size_override("normal_font_size", body_sz)
+	if _log_label != null:
+		_log_label.add_theme_font_size_override("normal_font_size", int(round(float(LOG_FONT_SIZE) * _ui_scale)))
+	if _force_basic_check != null:
+		_force_basic_check.add_theme_font_size_override("font_size", hint_sz)
 	_on_viewport_resized()
+	_rebuild_ability_buttons_if_dirty()
 
 
 func setup(
@@ -99,8 +115,8 @@ func _make_panel_column(left_side: bool) -> Control:
 	anchor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var col := VBoxContainer.new()
 	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	col.offset_top = 72
-	col.offset_bottom = -260
+	col.offset_top = int(round(72.0 * _ui_scale))
+	col.offset_bottom = -int(round(280.0 * _ui_scale))
 	col.add_theme_constant_override("separation", 8)
 	anchor.add_child(col)
 	if left_side:
@@ -122,6 +138,7 @@ func _make_panel_column(left_side: bool) -> Control:
 		var skill_title := Label.new()
 		skill_title.text = "Skills"
 		skill_title.add_theme_font_size_override("font_size", 14)
+		_section_titles.append(skill_title)
 		skill_vbox.add_child(skill_title)
 		var skill_scroll := ScrollContainer.new()
 		skill_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -150,6 +167,7 @@ func _make_panel_column(left_side: bool) -> Control:
 		var log_title := Label.new()
 		log_title.text = "Battle Log"
 		log_title.add_theme_font_size_override("font_size", 14)
+		_section_titles.append(log_title)
 		log_vbox.add_child(log_title)
 		_log_label = RichTextLabel.new()
 		_log_label.bbcode_enabled = true
@@ -191,12 +209,14 @@ func _add_rich_panel(parent: VBoxContainer, title: String, min_h: int = 120) -> 
 	var lbl := Label.new()
 	lbl.text = title
 	lbl.add_theme_font_size_override("font_size", 14)
+	_section_titles.append(lbl)
 	vbox.add_child(lbl)
 	var rich := RichTextLabel.new()
 	rich.bbcode_enabled = true
 	rich.fit_content = true
 	rich.scroll_active = true
 	rich.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_rich_labels.append(rich)
 	vbox.add_child(rich)
 	return rich
 
@@ -328,18 +348,18 @@ func _rebuild_ability_buttons() -> void:
 				_director.select_ability(index)
 		)
 		row_btn.tooltip_text = CombatUiFormatters.ability_desc(ability, unit)
-		row_btn.custom_minimum_size.y = 54
+		row_btn.custom_minimum_size.y = 54.0 * _ui_scale
 		_skill_list.add_child(row_btn)
 		var vbox := VBoxContainer.new()
 		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row_btn.add_child(vbox)
 		var name_lbl := Label.new()
 		name_lbl.text = ability.display_name
-		name_lbl.add_theme_font_size_override("font_size", 9)
+		name_lbl.add_theme_font_size_override("font_size", int(round(9.0 * _ui_scale)))
 		vbox.add_child(name_lbl)
 		var stats := Label.new()
 		stats.text = "🔵%d  🏹%d" % [ability.action_point_cost, ability.range_tiles]
-		stats.add_theme_font_size_override("font_size", 9)
+		stats.add_theme_font_size_override("font_size", int(round(9.0 * _ui_scale)))
 		vbox.add_child(stats)
 		var special := RichTextLabel.new()
 		special.bbcode_enabled = true

@@ -56,8 +56,10 @@ static func tile_info(board: BoardState, coord: Vector2i) -> String:
 static func unit_info(board: BoardState, unit: UnitState) -> String:
 	var lines: Array[String] = []
 	lines.append(
-		"[color=#4DB8FF][font_size=13][b]%s[/b][/font_size][/color]"
-		+ "  [font_size=10][color=#aaaaaa](%s)[/color][/font_size]"
+		(
+			"[color=#4DB8FF][font_size=13][b]%s[/b][/font_size][/color]"
+			+ "  [font_size=10][color=#aaaaaa](%s)[/color][/font_size]"
+		)
 		% [unit.definition.display_name, "Player" if not unit.is_enemy() else "Enemy"],
 	)
 	var move_type: String = GameEnums.MovementType.keys()[unit.definition.movement_type].capitalize()
@@ -70,8 +72,10 @@ static func unit_info(board: BoardState, unit: UnitState) -> String:
 		% [unit.health.current_hp, unit.health.max_hp, facing_name(unit.facing)],
 	)
 	lines.append(
-		"[font_size=9][color=#F1C40F][b][hint=Movement Points]👢 MP:[/hint] %d/%d[/b][/color]"
-		+ "    [color=#E74C3C][b][hint=Action Points]⚔️ AP:[/hint] %d/%d[/b][/color][/font_size]"
+		(
+			"[font_size=9][color=#F1C40F][b][hint=Movement Points]👢 MP:[/hint] %d/%d[/b][/color]"
+			+ "    [color=#E74C3C][b][hint=Action Points]⚔️ AP:[/hint] %d/%d[/b][/color][/font_size]"
+		)
 		% [
 			unit.movement.points_left, unit.movement.max_points,
 			unit.ability.points_left, unit.ability.max_points,
