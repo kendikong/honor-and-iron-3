@@ -426,11 +426,7 @@ func _on_display_char_scale_changed(value: float) -> void:
 		_display_char_scale_value.text = "%.2f×" % value
 	if _char_profile != null:
 		_char_profile.display_scale = value
-		var cfg := ConfigFile.new()
-		if FileAccess.file_exists("user://character_gen.cfg"):
-			cfg.load("user://character_gen.cfg")
-		_char_profile.save_to_config(cfg)
-		cfg.save("user://character_gen.cfg")
+		_char_profile.save_to_user_disk()
 	character_gen_changed.emit()
 
 

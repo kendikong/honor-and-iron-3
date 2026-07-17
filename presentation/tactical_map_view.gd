@@ -234,10 +234,7 @@ func _on_effects_settings_changed() -> void:
 
 
 func _load_char_profile() -> void:
-	var cfg := ConfigFile.new()
-	if FileAccess.file_exists("user://character_gen.cfg"):
-		cfg.load("user://character_gen.cfg")
-	_char_profile.load_from_config(cfg)
+	_char_profile.load_from_user_disk()
 
 
 func _on_character_gen_changed() -> void:

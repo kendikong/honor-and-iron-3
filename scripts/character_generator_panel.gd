@@ -6,7 +6,6 @@ extends CanvasLayer
 ## a Generate button, and an embedded CharacterPreview viewport.
 
 const PANEL_WIDTH: int = 405
-const CFG_PATH: String = "user://character_gen.cfg"
 
 # Slot names as displayed in the UI (mirrors web app categories).
 const DISPLAY_SLOTS: PackedStringArray = [
@@ -81,14 +80,11 @@ func set_part_visible(item_id: String, visible: bool) -> void:
 # ---- config persistence ----
 
 func _load_config() -> void:
-	var cfg := ConfigFile.new()
-	if cfg.load(CFG_PATH) == OK:
-		_profile.load_from_config(cfg)
+	_profile.load_from_user_disk()
+
 
 func _save_config() -> void:
-	var cfg := ConfigFile.new()
-	_profile.save_to_config(cfg)
-	cfg.save(CFG_PATH)
+	_profile.save_to_user_disk()
 
 
 # ---- UI construction ----

@@ -165,10 +165,7 @@ func _sync_map_tool_panel() -> void:
 
 
 func _load_character_profile() -> void:
-	var cfg: ConfigFile = ConfigFile.new()
-	if FileAccess.file_exists("user://character_gen.cfg"):
-		cfg.load("user://character_gen.cfg")
-	_char_profile.load_from_config(cfg)
+	_char_profile.load_from_user_disk()
 
 
 func _exit_tree() -> void:

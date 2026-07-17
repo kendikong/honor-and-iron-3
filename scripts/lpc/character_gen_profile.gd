@@ -6,6 +6,9 @@ extends RefCounted
 signal changed
 
 const CONFIG_SECTION: String = "character_gen"
+## Shared with mana-seed-test — Godot user:// is per project name; weights live here instead.
+const SHARED_USERDATA_PROJECT: String = "mana-seed-test"
+const CFG_FILE_NAME: String = "character_gen.cfg"
 
 var seed: int = 42
 var display_scale: float = 2.0
@@ -97,3 +100,47 @@ func set_item_gender_tag(item_id: String, tag: String) -> void:
 	else:
 		item_gender_tags[item_id] = tag
 	emit_changed()
+
+
+static func user_config_path() -> String:
+	return (
+		OS.get_data_dir()
+		.path_join("Godot")
+		.path_join("app_userdata")
+		.path_join(SHARED_USERDATA_PROJECT)
+		.path_join(CFG_FILE_NAME)
+	)
+
+
+static func ensure_user_config_dir() -> void:
+	DirAccess.make_dir_recursive_absolute(user_config_path().get_base_dir())
+
+
+static func load_user_config(cfg: ConfigFile) -> Error:
+	var shared: String = user_config_path()
+	if FileAccess.file_exists(shared):
+		return cfg.load(shared)
+	var local: String = "user://character_gen.cfg"
+	if FileAccess.file_exists(local):
+		var err: Error = cfg.load(local)
+		if err == OK:
+			save_user_config(cfg)
+		return err
+	return ERR_FILE_NOT_FOUND
+
+
+static func save_user_config(cfg: ConfigFile) -> Error:
+	ensure_user_config_dir()
+	return cfg.save(user_config_path())
+
+
+func load_from_user_disk() -> void:
+	var cfg: ConfigFile = ConfigFile.new()
+	if load_user_config(cfg) == OK:
+		load_from_config(cfg)
+
+
+func save_to_user_disk() -> void:
+	var cfg: ConfigFile = ConfigFile.new()
+	save_to_config(cfg)
+	save_user_config(cfg)

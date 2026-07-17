@@ -64,10 +64,7 @@ func refresh_display_scale() -> void:
 
 
 func _load_profile() -> void:
-	var cfg := ConfigFile.new()
-	if FileAccess.file_exists("user://character_gen.cfg"):
-		cfg.load("user://character_gen.cfg")
-	_profile.load_from_config(cfg)
+	_profile.load_from_user_disk()
 
 
 func _display_scale() -> float:
