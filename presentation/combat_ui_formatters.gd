@@ -370,14 +370,6 @@ static func _color(hex: String, text: String) -> String:
 	return "[color=#%s]%s[/color]" % [hex, text]
 
 
-static func _status_name(t: GameEnums.StatusType) -> String:
-	match t:
-		GameEnums.StatusType.IRON_GRIP_DEBUFF: return "Iron Grip"
-		GameEnums.StatusType.TRAMPLE: return "Trample"
-		GameEnums.StatusType.GHOST: return "Ghost"
-		_: return GameEnums.StatusType.keys()[t].capitalize()
-
-
 static func _terrain_desc(def: TerrainData) -> String:
 	if def.id == &"tall_grass" or def.id == &"forest":
 		return "Tall Grass. +1 Fortitude."
@@ -405,6 +397,99 @@ static func ability_desc(ability: AbilityData, unit: UnitState = null) -> String
 	]
 
 
+static func _status_name(t: GameEnums.StatusType) -> String:
+	match t:
+		GameEnums.StatusType.IRON_GRIP_DEBUFF:
+			return "Iron Grip"
+		GameEnums.StatusType.RETALIATION_PROTOCOL:
+			return "Retaliation Protocol"
+		GameEnums.StatusType.INDOMITABLE_WILL:
+			return "Indomitable Will"
+		GameEnums.StatusType.THORNS:
+			return "Thorns"
+		GameEnums.StatusType.STAT_BUFF_STR:
+			return "STR UP"
+		GameEnums.StatusType.STAT_BUFF_MAG:
+			return "MAG UP"
+		GameEnums.StatusType.STAT_BUFF_DEF:
+			return "DEF UP"
+		GameEnums.StatusType.STAT_BUFF_MOV:
+			return "MOV UP"
+		GameEnums.StatusType.STAT_BUFF_ACC:
+			return "ACC UP"
+		GameEnums.StatusType.STAT_DEBUFF_DEF:
+			return "DEF DOWN"
+		GameEnums.StatusType.STAT_DEBUFF_ACC:
+			return "ACC DOWN"
+		GameEnums.StatusType.STAT_DEBUFF_MOV:
+			return "MOV DOWN"
+		_:
+			return GameEnums.StatusType.keys()[t].capitalize()
+
+
+static func _status_desc(t: GameEnums.StatusType) -> String:
+	match t:
+		GameEnums.StatusType.STURDY:
+			return "Ignores the next displacement effect (push/pull)."
+		GameEnums.StatusType.MARK:
+			return "Next attack against this unit will Backstab."
+		GameEnums.StatusType.INTERCEPT:
+			return "Takes damage in place of adjacent allies."
+		GameEnums.StatusType.STEALTH:
+			return "Cannot be targeted by direct attacks."
+		GameEnums.StatusType.TAUNT:
+			return "Forces enemies to target this unit."
+		GameEnums.StatusType.ROOT:
+			return "Cannot move."
+		GameEnums.StatusType.STUN:
+			return "Cannot act or move."
+		GameEnums.StatusType.VULNERABLE:
+			return "Takes additional damage."
+		GameEnums.StatusType.THORNS:
+			return "Reflects damage back to attackers."
+		GameEnums.StatusType.IRON_GRIP_DEBUFF:
+			return "Target Defense (DEF) is halved on their next turn (rounded up)."
+		_:
+			return _status_name(t)
+
+
+static func _append_status_effect_part(
+	parts: Array[String],
+	effect: EffectData,
+	self_target: bool,
+	bbcode: bool,
+) -> void:
+	if effect == null:
+		return
+	var dur: String = "" if effect.status_duration == 1 else " (%d turns)" % effect.status_duration
+	var label: String = _status_name(effect.status_type)
+	var hint: String = _status_desc(effect.status_type)
+	var amount_str: String = _effect_amount_string(effect)
+	if amount_str != "0" and amount_str != "":
+		match effect.status_type:
+			GameEnums.StatusType.STAT_BUFF_STR:
+				hint = "Increases Strength (STR) by %s." % amount_str
+			GameEnums.StatusType.STAT_BUFF_MAG:
+				hint = "Increases Magic (MAG) by %s." % amount_str
+			GameEnums.StatusType.STAT_BUFF_DEF:
+				hint = "Increases Defense (DEF) by %s." % amount_str
+			GameEnums.StatusType.STAT_BUFF_MOV:
+				hint = "Increases Movement Points (MP) by %s." % amount_str
+			GameEnums.StatusType.STAT_BUFF_ACC:
+				hint = "Increases Accuracy (ACC) by %s." % amount_str
+			GameEnums.StatusType.STAT_DEBUFF_DEF:
+				hint = "Decreases Defense (DEF) by %s." % amount_str
+			GameEnums.StatusType.STAT_DEBUFF_MOV:
+				hint = "Decreases Movement Points (MP) by %s." % amount_str
+			GameEnums.StatusType.STAT_DEBUFF_ACC:
+				hint = "Decreases Accuracy (ACC) by %s." % amount_str
+	var prefix: String = "Self " if self_target else "Apply "
+	if bbcode:
+		parts.append("%s%s%s" % [prefix, _kw_hint(label, hint), dur])
+	else:
+		parts.append("%s%s%s" % [prefix, label, dur])
+
+
 static func ability_effect_string(ability: AbilityData, _unit: UnitState = null) -> String:
 	if ability == null:
 		return ""
@@ -419,10 +504,30 @@ static func ability_effect_string(ability: AbilityData, _unit: UnitState = null)
 				parts.append("HEAL %s" % _effect_amount_string(effect))
 			GameEnums.EffectType.PUSH:
 				parts.append("PUSH %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.PULL:
+				parts.append("PULL %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.SWAP:
+				parts.append("SWAP")
+			GameEnums.EffectType.ARMOR_UP:
+				parts.append("SHIELD %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.EXPLODE:
+				parts.append("EXPLODE %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.RANGED_EXPLODE:
+				parts.append("AOE ATK %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.SPAWN:
+				parts.append("SPAWN %s" % str(effect.spawn_unit_id).capitalize())
+			GameEnums.EffectType.ADD_STATUS:
+				_append_status_effect_part(parts, effect, false, false)
+			GameEnums.EffectType.ADD_STATUS_SELF:
+				_append_status_effect_part(parts, effect, true, false)
 			GameEnums.EffectType.DASH:
 				parts.append("DASH %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.PURGE:
+				parts.append("PURGE")
+			GameEnums.EffectType.CLEANSE:
+				parts.append("CLEANSE")
 			_:
-				parts.append(GameEnums.EffectType.keys()[effect.type])
+				parts.append(GameEnums.EffectType.keys()[effect.type].capitalize())
 	return " | ".join(parts) if not parts.is_empty() else "No effect"
 
 
@@ -445,13 +550,40 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 				parts.append(_kw_hint("HEAL %s" % _effect_amount_string(effect), "Restores target HP."))
 			GameEnums.EffectType.PUSH:
 				parts.append(_kw_hint("PUSH %s" % _effect_amount_string(effect), "Displaces target away."))
+			GameEnums.EffectType.PULL:
+				parts.append(_kw_hint("PULL %s" % _effect_amount_string(effect), "Displaces target toward caster."))
+			GameEnums.EffectType.SWAP:
+				parts.append(_kw_hint("SWAP", "Caster and target exchange positions."))
 			GameEnums.EffectType.DASH:
 				parts.append(_kw_hint("DASH %s" % _effect_amount_string(effect), "Straight-line movement."))
 			GameEnums.EffectType.ARMOR_UP:
 				parts.append(_kw_hint("SHIELD %s" % _effect_amount_string(effect), "Temporary armor."))
+			GameEnums.EffectType.EXPLODE:
+				parts.append(_kw_hint("EXPLODE %s" % _effect_amount_string(effect), "Damages adjacent units."))
+			GameEnums.EffectType.RANGED_EXPLODE:
+				parts.append(_kw_hint("AOE ATK %s" % _effect_amount_string(effect), "Damages units in target shape."))
+			GameEnums.EffectType.SPAWN:
+				parts.append(_kw_hint("SPAWN %s" % str(effect.spawn_unit_id).capitalize(), "Summons a unit."))
+			GameEnums.EffectType.ADD_STATUS:
+				_append_status_effect_part(parts, effect, false, true)
+			GameEnums.EffectType.ADD_STATUS_SELF:
+				_append_status_effect_part(parts, effect, true, true)
+			GameEnums.EffectType.PURGE:
+				parts.append(_kw_hint("PURGE", "Removes positive buffs and shields."))
+			GameEnums.EffectType.CLEANSE:
+				parts.append(_kw_hint("CLEANSE", "Removes negative status effects."))
 			_:
 				parts.append(_effect_amount_string(effect))
-	return " | ".join(parts) if not parts.is_empty() else "No effect"
+	var body: String = " | ".join(parts) if not parts.is_empty() else "No effect"
+	if ability.target_shape != GameEnums.TargetShape.SINGLE:
+		var shape_name: String = GameEnums.TargetShape.keys()[ability.target_shape].capitalize().replace("Aoe ", "")
+		var shape: String = "%s: %s %d | " % [
+			_kw_hint("AOE", "Area effect — hits multiple tiles."),
+			shape_name,
+			ability.target_shape_size,
+		]
+		return shape + body
+	return body
 
 
 static func format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, armor_dmg: int) -> String:
@@ -497,7 +629,7 @@ static func _fmt_calc_num(value: float) -> String:
 
 
 static func _kw_hint(word: String, hint: String) -> String:
-	return "[hint=\"%s\"]%s[/hint]" % [hint, word]
+	return "[hint=\"%s\"][color=#FBBF24]%s[/color][/hint]" % [hint, word]
 
 
 static func _format_stat_with_tooltip(unit: UnitState, stat_type: GameEnums.StatType) -> String:

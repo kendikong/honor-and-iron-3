@@ -287,6 +287,13 @@ func _on_selection_changed(unit_id: int) -> void:
 		_director.select_ability(int(unit_selected_abilities[unit_id]))
 	elif unit_id < 0:
 		pass
+	if _planning != null and _director != null:
+		_planning.recompute_hover_ranges(
+			force_basic_movement,
+			_director.selected_ability_index,
+			dragging,
+			_drag_unit_id,
+		)
 
 
 func _on_ability_selected(index: int) -> void:

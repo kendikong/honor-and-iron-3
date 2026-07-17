@@ -3,14 +3,16 @@ extends Node2D
 
 ## Range tints, move route, aim icon, intent arrows, hover tile.
 
-const _COLOR_REACH := Color(0.28, 0.58, 0.48, 0.28)
-const _COLOR_THREAT := Color(0.95, 0.45, 0.35, 0.22)
-const _COLOR_ROUTE := Color(0.98, 0.88, 0.38, 0.85)
-const _COLOR_GHOST := Color(0.98, 0.88, 0.38, 0.35)
+const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
+const _COLOR_THREAT := Color(0.92, 0.38, 0.32, 0.20)
+const _COLOR_MOVE_FILL_ALPHA: float = 0.40
+const _COLOR_THREAT_FILL_ALPHA: float = 0.38
+const _COLOR_ROUTE := Color(0.98, 0.88, 0.38, 0.95)
+const _COLOR_GHOST := Color(0.98, 0.88, 0.38, 0.45)
 const _COLOR_AIM := Color(0.95, 0.95, 1.0, 0.95)
 const _COLOR_HOVER := Color(0.45, 0.75, 1.0)
-const _COLOR_ENEMY_ARROW := Color(0.95, 0.35, 0.35, 0.9)
-const _COLOR_PLAYER_ARROW := Color(0.45, 0.85, 0.55, 0.95)
+const _COLOR_ENEMY_ARROW := Color(0.95, 0.35, 0.35, 0.95)
+const _COLOR_PLAYER_ARROW := Color(0.45, 0.85, 0.55, 0.98)
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -39,7 +41,7 @@ func setup(
 	_director = director
 	_intent_state = intent_state
 	z_as_relative = false
-	z_index = 4
+	z_index = 5
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.selection_changed.connect(func(_id: int) -> void:
@@ -174,6 +176,8 @@ func recompute_hover_ranges(
 
 func _on_board_changed(board: BoardState) -> void:
 	set_board(board)
+	if _director != null:
+		recompute_hover_ranges(false, _director.selected_ability_index, false, -1)
 
 
 func _on_preview_updated(result: SimResult) -> void:
@@ -196,7 +200,7 @@ func _draw() -> void:
 		for i: int in range(_route.size() - 1):
 			var a: Vector2 = _map_view.grid_to_local(_route[i])
 			var b: Vector2 = _map_view.grid_to_local(_route[i + 1])
-			draw_line(a, b, _COLOR_ROUTE, 2.0)
+			draw_line(a, b, _COLOR_ROUTE, 3.0)
 	_draw_ability_intents()
 	_draw_hover_tile()
 	if _aiming:
@@ -204,20 +208,20 @@ func _draw() -> void:
 
 
 func _draw_hover_tiles() -> void:
-	var tile_px: float = float(TacticalConstants.TILE_PX)
-	for cell: Vector2i in _hover_move_tiles:
-		var rect := Rect2(
-			_map_view.grid_to_local(cell) - Vector2(tile_px * 0.5, tile_px * 0.5),
-			Vector2(tile_px, tile_px),
-		)
-		draw_rect(rect, _COLOR_REACH, false, 1.0)
 	for cell: Vector2i in _hover_threat_tiles:
-		var rect2 := Rect2(
-			_map_view.grid_to_local(cell) - Vector2(tile_px * 0.5, tile_px * 0.5),
-			Vector2(tile_px, tile_px),
-		)
-		draw_rect(rect2, _COLOR_THREAT, true)
-		draw_rect(rect2, _COLOR_THREAT, false, 1.0)
+		_draw_tile_tint(cell, _COLOR_THREAT, _COLOR_THREAT_FILL_ALPHA)
+	for cell: Vector2i in _hover_move_tiles:
+		_draw_tile_tint(cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA)
+
+
+func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float) -> void:
+	var tile_px: float = float(TacticalConstants.TILE_PX)
+	var rect := Rect2(
+		_map_view.grid_to_local(cell) - Vector2(tile_px * 0.5, tile_px * 0.5),
+		Vector2(tile_px, tile_px),
+	).grow(-2.0)
+	draw_rect(rect, Color(tint.r, tint.g, tint.b, fill_alpha), true)
+	draw_rect(rect, Color(tint.r, tint.g, tint.b, 0.9), false, 2.0)
 
 
 func _draw_hover_tile() -> void:
@@ -226,8 +230,8 @@ func _draw_hover_tile() -> void:
 	var tile_px: float = float(TacticalConstants.TILE_PX)
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var rect := Rect2(center - Vector2(tile_px * 0.5, tile_px * 0.5), Vector2(tile_px, tile_px)).grow(-2.0)
-	draw_rect(rect, Color(_COLOR_HOVER, 0.12), true)
-	draw_rect(rect, _COLOR_HOVER, false, 2.0)
+	draw_rect(rect, Color(_COLOR_HOVER, 0.28), true)
+	draw_rect(rect, _COLOR_HOVER, false, 2.5)
 
 
 func _draw_ability_intents() -> void:
@@ -283,8 +287,8 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 	var end_d: float = p1.distance_to(p2)
 	var d: float = 0.0
 	while d < end_d:
-		draw_circle(p1 + dir * d, 2.5, color)
-		d += 8.0
+		draw_circle(p1 + dir * d, 4.0, color)
+		d += 7.0
 
 
 func _draw_preview_arrows() -> void:
@@ -333,7 +337,7 @@ func _draw_route_line(route: Array, color: Color, cardinal_only: bool) -> void:
 	for i: int in range(route.size() - 1):
 		var a: Vector2 = _map_view.grid_to_local(route[i])
 		var b: Vector2 = _map_view.grid_to_local(route[i + 1])
-		draw_line(a, b, color, 2.0)
+		draw_line(a, b, color, 3.0)
 
 
 func _draw_push_arrow(from: Vector2i, to: Vector2i) -> void:
@@ -348,5 +352,5 @@ func _draw_push_arrow(from: Vector2i, to: Vector2i) -> void:
 	var color := Color(1.0, 0.65, 0.2, 0.95)
 	var d: float = start_d
 	while d < end_d:
-		draw_circle(p1 + dir * d, 2.5, color)
-		d += 8.0
+		draw_circle(p1 + dir * d, 4.0, color)
+		d += 7.0

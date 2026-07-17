@@ -368,28 +368,65 @@ func _rebuild_ability_buttons() -> void:
 				_director.select_ability(index)
 		)
 		row_btn.tooltip_text = CombatUiFormatters.ability_desc(ability, unit)
-		var row_h: float = 64.0 * _ui_scale * maxf(1.0, _text_scale)
-		row_btn.custom_minimum_size.y = row_h
-		_skill_list.add_child(row_btn)
-		var vbox := VBoxContainer.new()
-		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		vbox.add_theme_constant_override("separation", 2)
-		row_btn.add_child(vbox)
+		var btn_vbox := VBoxContainer.new()
+		btn_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn_vbox.add_theme_constant_override("separation", 2)
+		row_btn.add_child(btn_vbox)
 		var name_lbl := Label.new()
 		name_lbl.text = ability.display_name
 		name_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(10))
-		vbox.add_child(name_lbl)
-		var stats := Label.new()
-		stats.text = "🔵%d  🏹%d" % [ability.action_point_cost, ability.range_tiles]
-		stats.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(9))
-		vbox.add_child(stats)
-		var effect_lbl := Label.new()
-		effect_lbl.text = CombatUiFormatters.ability_effect_string(ability, unit)
-		effect_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		effect_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(9))
-		effect_lbl.add_theme_color_override("font_color", Color(0.85, 0.78, 0.45))
-		effect_lbl.custom_minimum_size.x = float(_panel_width - 48)
-		vbox.add_child(effect_lbl)
+		btn_vbox.add_child(name_lbl)
+		var values_hbox := HBoxContainer.new()
+		values_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		values_hbox.add_theme_constant_override("separation", 16)
+		btn_vbox.add_child(values_hbox)
+		values_hbox.add_child(_make_skill_icon("🔵", str(ability.action_point_cost), "AP (Action Points required)"))
+		values_hbox.add_child(_make_skill_icon("🏹", str(ability.range_tiles), "Range (Max target distance)"))
+		var effect_lbl := RichTextLabel.new()
+		effect_lbl.bbcode_enabled = true
+		effect_lbl.fit_content = true
+		effect_lbl.scroll_active = false
+		effect_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		effect_lbl.custom_minimum_size.x = float(maxi(120, _panel_width - 48))
+		var effect_px: int = CombatUiFormatters.scaled_font_size(9)
+		effect_lbl.add_theme_font_size_override("normal_font_size", effect_px)
+		var eff_bbcode: String = CombatUiFormatters.ability_effect_bbcode(ability, unit)
+		effect_lbl.text = "[font_size=%d]%s[/font_size]" % [effect_px, eff_bbcode]
+		btn_vbox.add_child(effect_lbl)
+		var plain_len: int = _bbcode_plain_length(eff_bbcode)
+		var text_lines: int = 1 + int(plain_len / 38.0)
+		var base_h: float = float(CombatUiFormatters.scaled_font_size(10)) * 4.5
+		row_btn.custom_minimum_size.y = base_h + float(text_lines * effect_px)
+		_skill_list.add_child(row_btn)
+
+
+func _make_skill_icon(emoji: String, val: String, tip: String) -> Control:
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.tooltip_text = tip
+	var emoji_lbl := Label.new()
+	emoji_lbl.text = emoji
+	emoji_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(10))
+	var val_lbl := Label.new()
+	val_lbl.text = val
+	val_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(10))
+	row.add_child(emoji_lbl)
+	row.add_child(val_lbl)
+	return row
+
+
+func _bbcode_plain_length(bbcode: String) -> int:
+	var plain := ""
+	var in_tag := false
+	for i: int in bbcode.length():
+		var c: String = bbcode[i]
+		if c == "[":
+			in_tag = true
+		elif c == "]":
+			in_tag = false
+		elif not in_tag:
+			plain += c
+	return plain.length()
 
 
 func _proj_unit(unit_id: int) -> UnitState:
