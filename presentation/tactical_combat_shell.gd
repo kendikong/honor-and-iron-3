@@ -61,11 +61,21 @@ func setup(
 	_wire_unit_feedback()
 
 
+var _settings: GameSettings
+
+
 func bind_settings(settings: GameSettings) -> void:
+	_settings = settings
+	_apply_ui_settings()
+
+
+func _apply_ui_settings() -> void:
+	if _settings == null:
+		return
 	if _side_panels != null:
-		_side_panels.apply_settings(settings)
+		_side_panels.apply_settings(_settings)
 	if _combat_hud != null:
-		_combat_hud.apply_settings(settings)
+		_combat_hud.apply_settings(_settings)
 
 
 func start_combat(encounter: EncounterData) -> void:
@@ -97,6 +107,7 @@ func start_combat(encounter: EncounterData) -> void:
 	_sfx.bind_director(_director)
 	if _director.board != null:
 		intent_state.set_board(_director.board)
+	_apply_ui_settings()
 
 
 func _wire_intent_state() -> void:

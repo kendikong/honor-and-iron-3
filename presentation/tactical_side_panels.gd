@@ -35,11 +35,13 @@ var _selected_ability: int = 0
 var _hover_coord: Vector2i = Vector2i(-999, -999)
 var _intent_units: Dictionary = {}
 var _last_math_telemetry: Dictionary = {}
+var _settings: GameSettings
 
 
 func apply_settings(settings: GameSettings) -> void:
 	if settings == null:
 		return
+	_settings = settings
 	_ui_scale = settings.combat_ui_scale
 	_text_scale = settings.combat_text_scale
 	_panel_width = int(round(float(settings.inspector_panel_width) * _ui_scale))
@@ -222,8 +224,9 @@ func _add_rich_panel(parent: VBoxContainer, title: String, min_h: int = 120) -> 
 	vbox.add_child(lbl)
 	var rich := RichTextLabel.new()
 	rich.bbcode_enabled = true
-	rich.fit_content = true
+	rich.fit_content = false
 	rich.scroll_active = true
+	rich.custom_minimum_size.y = float(mini(min_h, 120))
 	rich.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_rich_labels.append(rich)
 	vbox.add_child(rich)
@@ -337,6 +340,8 @@ func _refresh_ability_buttons_if_dirty() -> void:
 func _rebuild_ability_buttons() -> void:
 	if _skill_list == null:
 		return
+	if _settings != null:
+		CombatUiFormatters.configure_body_font(_settings.scaled_body_font())
 	for c: Node in _skill_list.get_children():
 		_skill_list.remove_child(c)
 		c.queue_free()
@@ -362,29 +367,27 @@ func _rebuild_ability_buttons() -> void:
 				_director.select_ability(index)
 		)
 		row_btn.tooltip_text = CombatUiFormatters.ability_desc(ability, unit)
-		row_btn.custom_minimum_size.y = 54.0 * _ui_scale
+		row_btn.custom_minimum_size.y = 64.0 * _ui_scale
 		_skill_list.add_child(row_btn)
 		var vbox := VBoxContainer.new()
 		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vbox.add_theme_constant_override("separation", 2)
 		row_btn.add_child(vbox)
 		var name_lbl := Label.new()
 		name_lbl.text = ability.display_name
-		name_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(9))
+		name_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(10))
 		vbox.add_child(name_lbl)
 		var stats := Label.new()
 		stats.text = "🔵%d  🏹%d" % [ability.action_point_cost, ability.range_tiles]
 		stats.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(9))
 		vbox.add_child(stats)
-		var special := RichTextLabel.new()
-		special.bbcode_enabled = true
-		special.fit_content = true
-		special.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		special.custom_minimum_size.x = float(_panel_width - 48)
-		special.text = "[font_size=%d]%s[/font_size]" % [
-			CombatUiFormatters.scaled_font_size(10),
-			CombatUiFormatters.ability_effect_bbcode(ability, unit),
-		]
-		vbox.add_child(special)
+		var effect_lbl := Label.new()
+		effect_lbl.text = CombatUiFormatters.ability_effect_string(ability, unit)
+		effect_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		effect_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(9))
+		effect_lbl.add_theme_color_override("font_color", Color(0.85, 0.78, 0.45))
+		effect_lbl.custom_minimum_size.x = float(_panel_width - 48)
+		vbox.add_child(effect_lbl)
 
 
 func _proj_unit(unit_id: int) -> UnitState:

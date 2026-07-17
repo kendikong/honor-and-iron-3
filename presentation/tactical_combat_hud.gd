@@ -22,6 +22,8 @@ var _banner_label: Label
 var _is_ready: bool = false
 var _sfx: SfxPlayer
 var _compendium_overlay: CompendiumScreen
+var _settings: GameSettings
+var _hint_label: Label
 
 
 func setup(
@@ -46,6 +48,7 @@ func setup(
 	EventBus.selection_changed.connect(func(id: int) -> void:
 		if _timeline_grid != null:
 			_timeline_grid.set_selected(id)
+		_refresh_timeline()
 		_refresh_undo_button(),
 	)
 	if GlobalTimeline.player_ready_changed.is_connected(_on_player_ready_changed) == false:
@@ -67,13 +70,19 @@ func setup(
 func apply_settings(settings: GameSettings) -> void:
 	if settings == null:
 		return
+	_settings = settings
 	_ui_scale = settings.combat_ui_scale
 	CombatUiFormatters.configure_body_font(settings.scaled_body_font())
 	_panel_width = int(round(float(settings.inspector_panel_width) * _ui_scale))
 	var title_sz: int = settings.scaled_title_font()
 	var body_sz: int = settings.scaled_hint_font()
+	var cell_sz: int = settings.scaled_body_font()
 	if _phase_label != null:
 		_phase_label.add_theme_font_size_override("font_size", title_sz)
+	if _hint_label != null:
+		_hint_label.add_theme_font_size_override("font_size", body_sz)
+	if _timeline_grid != null:
+		_timeline_grid.apply_font_sizes(title_sz, cell_sz)
 	for child: Node in get_children():
 		_apply_ui_scale_recursive(child, body_sz, title_sz)
 	if _execute_btn != null:
@@ -84,6 +93,7 @@ func apply_settings(settings: GameSettings) -> void:
 	if _clear_btn != null:
 		_clear_btn.add_theme_font_size_override("font_size", body_sz)
 	_layout_bottom_insets()
+	_refresh_timeline()
 
 
 func _apply_ui_scale_recursive(node: Node, body_sz: int, title_sz: int) -> void:
@@ -178,6 +188,7 @@ func _build_ui() -> void:
 	hint.text = "Drag to move · scroll = ability · A = aim · Esc = pause"
 	hint.add_theme_font_size_override("font_size", 11)
 	hint.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	_hint_label = hint
 	left.add_child(hint)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL

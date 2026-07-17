@@ -11,7 +11,8 @@ var _director: CombatDirector
 var _board: BoardState
 var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
 var _selected_id: int = -1
-var _timeline_hover_id: int = -1
+var _header_font_px: int = 13
+var _cell_font_px: int = 11
 
 signal row_hovered(unit_id: int)
 signal row_unhovered(unit_id: int)
@@ -37,6 +38,11 @@ func set_phase(phase: int) -> void:
 
 func set_selected(unit_id: int) -> void:
 	_selected_id = unit_id
+
+
+func apply_font_sizes(header_px: int, cell_px: int) -> void:
+	_header_font_px = maxi(8, header_px)
+	_cell_font_px = maxi(8, cell_px)
 
 
 func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
@@ -188,7 +194,7 @@ func _make_cell(
 ) -> Label:
 	var lbl := Label.new()
 	lbl.text = text
-	lbl.add_theme_font_size_override("font_size", 13 if is_header else 9)
+	lbl.add_theme_font_size_override("font_size", _header_font_px if is_header else _cell_font_px)
 	lbl.mouse_filter = Control.MOUSE_FILTER_PASS
 	if tooltip != "":
 		lbl.tooltip_text = tooltip

@@ -17,10 +17,10 @@ const LOG_FONT_SIZE: int = 10
 ## Legacy BBCode tier keys → ratio of inspector body font (medium body = 20px design ref).
 const _FONT_TIER_RATIO: Dictionary = {
 	13: 1.0,
-	10: 0.85,
-	9: 0.75,
-	8: 0.65,
-	7: 0.55,
+	10: 0.9,
+	9: 0.82,
+	8: 0.75,
+	7: 0.65,
 }
 
 static var _body_font_px: int = 20
