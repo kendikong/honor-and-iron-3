@@ -53,7 +53,7 @@ func apply_settings(settings: GameSettings) -> void:
 	if _force_basic_check != null:
 		_force_basic_check.add_theme_font_size_override("font_size", hint_sz)
 	_on_viewport_resized()
-	_rebuild_ability_buttons_if_dirty()
+	_refresh_ability_buttons_if_dirty()
 
 
 func setup(
