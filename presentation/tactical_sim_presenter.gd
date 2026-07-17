@@ -12,6 +12,13 @@ var _director: CombatDirector
 var _push_flush_scheduled: bool = false
 
 
+var _game_settings: GameSettings
+
+
+func set_game_settings(settings: GameSettings) -> void:
+	_game_settings = settings
+
+
 func setup(
 	director: CombatDirector,
 	overlay: TacticalUnitOverlay,
@@ -52,6 +59,8 @@ func _on_sim_event(event: SimEvent) -> void:
 
 
 func _spawn_damage_text(event: SimEvent) -> void:
+	if _game_settings != null and not _game_settings.show_damage_numbers:
+		return
 	if _map_view == null:
 		return
 	var unit_id: int = int(event.data.get("unit", -1))

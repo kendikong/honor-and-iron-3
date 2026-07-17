@@ -52,6 +52,11 @@ var _effects_settings: EffectsSettings
 var _effects_checks: Dictionary = {}
 var _on_effects_changed: Callable
 var _map_settings_btn: Button
+var _damage_numbers_check: CheckButton
+var _sound_panel: PanelContainer
+var _master_slider: HSlider
+var _sfx_slider: HSlider
+var _music_slider: HSlider
 
 
 func _ready() -> void:
@@ -192,6 +197,11 @@ func _build_ui() -> void:
 	_effects_panel.visible = false
 	center.add_child(_effects_panel)
 
+	_sound_panel = _make_panel()
+	_sound_panel.visible = false
+	center.add_child(_sound_panel)
+	_build_sound_menu(_sound_panel)
+
 
 func _make_panel() -> PanelContainer:
 	var panel: PanelContainer = PanelContainer.new()
@@ -207,6 +217,7 @@ func _build_main_menu(panel: PanelContainer) -> void:
 	_add_hint(vbox, "Press O or Esc to close")
 	vbox.add_child(HSeparator.new())
 	_add_button(vbox, "Display…", _show_display)
+	_add_button(vbox, "Sound…", _show_sound)
 	_map_settings_btn = _add_button(vbox, "Map Settings…", _show_map_settings)
 	_combat_actions = VBoxContainer.new()
 	_combat_actions.visible = false
@@ -244,6 +255,10 @@ func _build_display_menu(panel: PanelContainer) -> void:
 			_apply_window_mode_live(),
 	)
 	_map_zoom_option = _add_labeled_option(vbox, "Map tile zoom", GameSettings.MAP_ZOOM_LABELS)
+	_map_zoom_option.item_selected.connect(func(_idx: int) -> void:
+		if not _sync_blocked:
+			_apply_display_live(),
+	)
 
 	var scale_row: HBoxContainer = HBoxContainer.new()
 	scale_row.add_theme_constant_override("separation", 10)
@@ -295,6 +310,16 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	_panel_width_value = Label.new()
 	_panel_width_value.custom_minimum_size = Vector2(48, 0)
 	width_row.add_child(_panel_width_value)
+
+	_damage_numbers_check = CheckButton.new()
+	_damage_numbers_check.text = "Show floating damage numbers"
+	_damage_numbers_check.toggled.connect(func(pressed: bool) -> void:
+		if _settings != null:
+			_settings.show_damage_numbers = pressed
+			if not _sync_blocked:
+				_apply_display_live(),
+	)
+	vbox.add_child(_damage_numbers_check)
 
 	_combat_char_section = VBoxContainer.new()
 	_combat_char_section.visible = false
@@ -371,8 +396,8 @@ func _build_map_menu(panel: PanelContainer) -> void:
 	var actions: HBoxContainer = HBoxContainer.new()
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	vbox.add_child(actions)
-	_add_button_to(actions, "Apply Settings", _apply_display)
 	_add_button_to(actions, "Back", _show_main)
+
 
 func _add_tool_check(parent: VBoxContainer, label_text: String, on_toggled: Callable) -> CheckButton:
 	var check: CheckButton = CheckButton.new()
@@ -397,6 +422,7 @@ func _apply_display() -> void:
 		return
 	_read_controls_to_settings()
 	_settings.apply_and_save(get_window(), true)
+	_settings.apply_audio_buses()
 	if _on_applied.is_valid():
 		_on_applied.call()
 	close_menu()
@@ -407,6 +433,7 @@ func _apply_window_mode_live() -> void:
 		return
 	_settings.set_window_mode_index(_window_mode_option.selected)
 	_settings.apply_to_window(get_window(), true)
+	_settings.apply_audio_buses()
 	_settings.save_to_disk()
 	if _on_applied.is_valid():
 		_on_applied.call()
@@ -417,6 +444,7 @@ func _apply_display_live() -> void:
 		return
 	_read_live_controls_to_settings()
 	_settings.save_to_disk()
+	_settings.apply_audio_buses()
 	if _on_applied.is_valid():
 		_on_applied.call()
 
@@ -439,6 +467,10 @@ func _sync_controls_from_settings() -> void:
 	_ui_scale_slider.value = _settings.combat_ui_scale
 	_ui_scale_slider.set_block_signals(false)
 	_on_ui_scale_slider_changed(_settings.combat_ui_scale)
+	if _damage_numbers_check != null:
+		_damage_numbers_check.set_block_signals(true)
+		_damage_numbers_check.button_pressed = _settings.show_damage_numbers
+		_damage_numbers_check.set_block_signals(false)
 	if _char_profile != null:
 		_char_scale_slider.set_block_signals(true)
 		_char_scale_slider.value = _char_profile.display_scale
@@ -465,6 +497,9 @@ func _read_live_controls_to_settings() -> void:
 	_settings.inspector_text_size_index = _text_size_option.selected
 	_settings.inspector_panel_width = int(_panel_width_slider.value)
 	_settings.combat_ui_scale = _ui_scale_slider.value
+	_settings.show_damage_numbers = (
+		_damage_numbers_check.button_pressed if _damage_numbers_check != null else _settings.show_damage_numbers
+	)
 
 
 func _read_controls_to_settings() -> void:
@@ -475,12 +510,17 @@ func _read_controls_to_settings() -> void:
 	_settings.inspector_text_size_index = _text_size_option.selected
 	_settings.inspector_panel_width = int(_panel_width_slider.value)
 	_settings.combat_ui_scale = _ui_scale_slider.value
+	_settings.show_damage_numbers = (
+		_damage_numbers_check.button_pressed if _damage_numbers_check != null else _settings.show_damage_numbers
+	)
 
 
 func _show_main() -> void:
 	_main_panel.visible = true
 	_display_panel.visible = false
 	_map_panel.visible = false
+	if _sound_panel != null:
+		_sound_panel.visible = false
 	if _effects_panel != null:
 		_effects_panel.visible = false
 
@@ -490,6 +530,8 @@ func _show_effects() -> void:
 	_main_panel.visible = false
 	_display_panel.visible = false
 	_map_panel.visible = false
+	if _sound_panel != null:
+		_sound_panel.visible = false
 	if _effects_panel != null:
 		_effects_panel.visible = true
 
@@ -499,8 +541,21 @@ func _show_display() -> void:
 	_main_panel.visible = false
 	_display_panel.visible = true
 	_map_panel.visible = false
+	if _sound_panel != null:
+		_sound_panel.visible = false
 	if _effects_panel != null:
 		_effects_panel.visible = false
+
+
+func _show_sound() -> void:
+	_sync_sound_sliders()
+	_main_panel.visible = false
+	_display_panel.visible = false
+	_map_panel.visible = false
+	if _effects_panel != null:
+		_effects_panel.visible = false
+	if _sound_panel != null:
+		_sound_panel.visible = true
 
 
 func _show_map_settings() -> void:
@@ -508,6 +563,8 @@ func _show_map_settings() -> void:
 	_main_panel.visible = false
 	_display_panel.visible = false
 	_map_panel.visible = true
+	if _sound_panel != null:
+		_sound_panel.visible = false
 	if _effects_panel != null:
 		_effects_panel.visible = false
 
@@ -608,6 +665,73 @@ func _add_labeled_option(vbox: VBoxContainer, label_text: String, items: PackedS
 		option.add_item(item)
 	vbox.add_child(option)
 	return option
+
+
+func _build_sound_menu(panel: PanelContainer) -> void:
+	var margin: MarginContainer = _margin(panel)
+	var vbox: VBoxContainer = _vbox(margin)
+	_add_title(vbox, "Sound")
+	_add_hint(vbox, "Volume changes apply immediately.")
+	_master_slider = _add_sound_volume_row(vbox, "Master volume", &"master")
+	_sfx_slider = _add_sound_volume_row(vbox, "Sound effects", &"sfx")
+	_music_slider = _add_sound_volume_row(vbox, "Music", &"music")
+	vbox.add_child(HSeparator.new())
+	var actions: HBoxContainer = HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(actions)
+	_add_button_to(actions, "Back", _show_main)
+
+
+func _add_sound_volume_row(parent: VBoxContainer, title: String, bus_key: StringName) -> HSlider:
+	parent.add_child(_label(title))
+	var row: HBoxContainer = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var slider: HSlider = HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 100.0
+	slider.step = 1.0
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var value_lbl: Label = Label.new()
+	value_lbl.custom_minimum_size = Vector2(40, 0)
+	slider.value_changed.connect(func(v: float) -> void:
+		value_lbl.text = "%d%%" % int(v)
+		if _settings == null:
+			return
+		match bus_key:
+			&"master":
+				_settings.master_volume = v / 100.0
+			&"sfx":
+				_settings.sfx_volume = v / 100.0
+			&"music":
+				_settings.music_volume = v / 100.0
+		_settings.save_to_disk()
+		_settings.apply_audio_buses(),
+	)
+	row.add_child(slider)
+	row.add_child(value_lbl)
+	parent.add_child(row)
+	return slider
+
+
+func _sync_sound_sliders() -> void:
+	if _settings == null:
+		return
+	_set_slider_value(_master_slider, _settings.master_volume)
+	_set_slider_value(_sfx_slider, _settings.sfx_volume)
+	_set_slider_value(_music_slider, _settings.music_volume)
+
+
+func _set_slider_value(slider: HSlider, volume: float) -> void:
+	if slider == null:
+		return
+	slider.set_block_signals(true)
+	slider.value = volume * 100.0
+	slider.set_block_signals(false)
+	var row: HBoxContainer = slider.get_parent() as HBoxContainer
+	if row != null and row.get_child_count() > 1:
+		var value_lbl: Label = row.get_child(1) as Label
+		if value_lbl != null:
+			value_lbl.text = "%d%%" % int(slider.value)
 
 
 func _build_combat_effects_panel() -> void:

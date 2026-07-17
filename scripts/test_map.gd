@@ -56,6 +56,7 @@ func _ready() -> void:
 	_settings.load_from_disk()
 	_load_character_profile()
 	_settings.apply_to_window(get_window())
+	_settings.apply_audio_buses()
 
 	_lpc_catalog = LpcCatalog.load_from_disk()
 	if not LpcConstants.spritesheets_available():
@@ -158,10 +159,16 @@ func _on_preload_complete(total: int, missing: int) -> void:
 
 func _sync_map_tool_panel() -> void:
 	_options.set_map_tool_state(
-		_debug_overlay.visible,
-		_boredom_atmosphere_mode,
-		_boredom_water_mode
+		_settings.dev_tile_labels or _debug_overlay.visible,
+		_settings.dev_boredom_atmosphere or _boredom_atmosphere_mode,
+		_settings.dev_boredom_water or _boredom_water_mode,
 	)
+	if _settings.dev_tile_labels:
+		_set_tile_labels(true)
+	if _settings.dev_boredom_atmosphere:
+		_set_boredom_atmosphere_mode(true)
+	if _settings.dev_boredom_water:
+		_set_boredom_water_mode(true)
 
 
 func _load_character_profile() -> void:
@@ -378,6 +385,8 @@ func _set_tile_labels(enabled: bool) -> void:
 	if _debug_overlay.visible == enabled:
 		return
 	_debug_overlay.visible = enabled
+	_settings.dev_tile_labels = enabled
+	_settings.save_to_disk()
 	_sync_phantom_visibility()
 	_debug_overlay.sync(_player_grid, _map_root, _ground, _phantom, _render_provenance)
 	_sync_map_tool_panel()
@@ -409,6 +418,10 @@ func _set_boredom_atmosphere_mode(enabled: bool) -> void:
 	if _boredom_atmosphere_mode == enabled:
 		return
 	_boredom_atmosphere_mode = enabled
+	_settings.dev_boredom_atmosphere = enabled
+	if enabled:
+		_settings.dev_boredom_water = false
+	_settings.save_to_disk()
 	if _boredom_atmosphere_mode:
 		_boredom_water_mode = false
 		_generator.width = 16
@@ -427,6 +440,10 @@ func _set_boredom_water_mode(enabled: bool) -> void:
 	if _boredom_water_mode == enabled:
 		return
 	_boredom_water_mode = enabled
+	_settings.dev_boredom_water = enabled
+	if enabled:
+		_settings.dev_boredom_atmosphere = false
+	_settings.save_to_disk()
 	if _boredom_water_mode:
 		_boredom_atmosphere_mode = false
 		_generator.width = 16

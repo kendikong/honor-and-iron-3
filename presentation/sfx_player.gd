@@ -47,7 +47,7 @@ func _ready() -> void:
 		_streams[key] = _bake(DEFS[key])
 	for i in VOICES:
 		var p := AudioStreamPlayer.new()
-		p.bus = "Master"
+		p.bus = &"SFX"
 		add_child(p)
 		_voices.append(p)
 	EventBus.sim_event.connect(_on_sim_event)

@@ -1,10 +1,79 @@
 extends Control
 
+## Main-menu options — all tabs wired to GameSettings + EffectsSettings (no placeholders).
+
 signal close_requested
+
+const _EFFECT_TOGGLES: Array[Dictionary] = [
+	{"key": "wind_field", "label": "Wind field"},
+	{"key": "time_light", "label": "Day / night cycle"},
+	{"key": "cloud_shadows", "label": "Cloud shadows"},
+	{"key": "mist", "label": "Mist overlay"},
+	{"key": "water_ripples", "label": "Water ripples"},
+	{"key": "shoreline_foam", "label": "Shoreline foam"},
+	{"key": "water_sparkles", "label": "Water sparkles"},
+	{"key": "fish_splash", "label": "Fish splash"},
+	{"key": "ambient_particles", "label": "Ambient particles"},
+	{"key": "ecology_actors", "label": "Ecology actors"},
+	{"key": "rare_events", "label": "Rare ambient events"},
+	{"key": "oblique_contact_shadows", "label": "Contact shadows"},
+]
+
+const _DEV_SHADOW_TOGGLES: Array[Dictionary] = [
+	{"key": "shadow_perf_mode", "label": "Shadow performance mode"},
+	{"key": "shadow_freeze_time", "label": "Freeze shadow time"},
+	{"key": "shadow_edge_soften", "label": "Soften shadow edges"},
+]
+
+const _CONTROLS_TEXT: String = """[b]Tactical combat[/b]
+• Left click — select unit, plan move, or use ability
+• Right click — undo last action or deselect
+• Scroll wheel — change selected ability
+• A — aim mode (vector-target skills)
+• O — open in-game options
+• Esc — pause menu
+
+[b]Map camera[/b]
+• Middle mouse drag — pan map
+• Ctrl + scroll — zoom multiplier (session)
+
+[b]Menus[/b]
+• Esc / Back — return from sub-screens"""
+
+var _game_settings: GameSettings
+var _effects_settings: EffectsSettings
+
+var _resolution_option: OptionButton
+var _window_mode_option: OptionButton
+var _map_zoom_option: OptionButton
+var _map_scale_slider: HSlider
+var _map_scale_label: Label
+var _ui_scale_slider: HSlider
+var _ui_scale_label: Label
+var _text_size_option: OptionButton
+var _panel_width_slider: HSlider
+var _panel_width_label: Label
+var _master_slider: HSlider
+var _sfx_slider: HSlider
+var _music_slider: HSlider
+var _damage_numbers_check: CheckButton
+var _effect_checks: Dictionary = {}
+var _dev_shadow_checks: Dictionary = {}
+var _dev_tile_labels_check: CheckButton
+var _dev_boredom_atmo_check: CheckButton
+var _dev_boredom_water_check: CheckButton
+
 
 func _ready() -> void:
 	$BackButton.pressed.connect(_on_back_pressed)
 	MenuNavigation.register(self, _on_back_pressed)
+
+	_game_settings = GameSettings.new()
+	_game_settings.load_from_disk()
+	_game_settings.capture_from_window(get_window())
+
+	_effects_settings = EffectsSettings.new()
+	_effects_settings.load_from_disk()
 
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -18,7 +87,7 @@ func _ready() -> void:
 	tab_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_child(tab_container)
-	
+
 	_build_display_tab(tab_container)
 	_build_graphics_tab(tab_container)
 	_build_sound_tab(tab_container)
@@ -26,152 +95,346 @@ func _ready() -> void:
 	_build_controls_tab(tab_container)
 	_build_interface_tab(tab_container)
 	_build_developer_tab(tab_container)
-	
+
+
 func _build_display_tab(parent: TabContainer) -> void:
-	var margin = MarginContainer.new()
-	margin.name = "Display"
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_top", 20)
-	var vbox = VBoxContainer.new()
-	margin.add_child(vbox)
-	parent.add_child(margin)
+	var scroll := _scroll_tab(parent, "Display")
+	var vbox := _vbox(scroll)
+	_add_hint(vbox, "Resolution and window mode use Apply. Map zoom applies immediately.")
 
-	var settings := GameSettings.new()
-	settings.load_from_disk()
-	settings.capture_from_window(get_window())
+	_resolution_option = OptionButton.new()
+	for res: Vector2i in GameSettings.RESOLUTION_PRESETS:
+		_resolution_option.add_item("%d × %d" % [res.x, res.y])
+	_resolution_option.select(_game_settings.resolution_index())
+	vbox.add_child(_label("Resolution"))
+	vbox.add_child(_resolution_option)
 
-	var mode_hbox = HBoxContainer.new()
-	var mode_lbl = Label.new()
-	mode_lbl.text = "Window mode: "
-	mode_hbox.add_child(mode_lbl)
+	_window_mode_option = OptionButton.new()
+	for label: String in GameSettings.WINDOW_MODE_LABELS:
+		_window_mode_option.add_item(label)
+	_window_mode_option.select(_game_settings.window_mode_index())
+	_window_mode_option.item_selected.connect(func(_i: int) -> void: _apply_window_mode())
+	vbox.add_child(_label("Window mode"))
+	vbox.add_child(_window_mode_option)
 
-	var mode_dd = OptionButton.new()
-	for i: int in range(GameSettings.WINDOW_MODE_LABELS.size()):
-		mode_dd.add_item(GameSettings.WINDOW_MODE_LABELS[i], i)
-	mode_dd.select(settings.window_mode_index())
-	mode_hbox.add_child(mode_dd)
-	vbox.add_child(mode_hbox)
+	_map_zoom_option = OptionButton.new()
+	for label: String in GameSettings.MAP_ZOOM_LABELS:
+		_map_zoom_option.add_item(label)
+	_map_zoom_option.select(_game_settings.map_zoom_mode)
+	_map_zoom_option.item_selected.connect(func(_i: int) -> void: _apply_map_zoom_live())
+	vbox.add_child(_label("Map tile zoom"))
+	vbox.add_child(_map_zoom_option)
 
-	var res_hbox = HBoxContainer.new()
-	var res_lbl = Label.new()
-	res_lbl.text = "Resolution: "
-	res_hbox.add_child(res_lbl)
+	var scale_row := HBoxContainer.new()
+	_map_scale_slider = HSlider.new()
+	_map_scale_slider.min_value = 0.5
+	_map_scale_slider.max_value = 3.0
+	_map_scale_slider.step = 0.25
+	_map_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_map_scale_slider.value = _game_settings.map_zoom_multiplier
+	_map_scale_slider.value_changed.connect(_on_map_scale_changed)
+	_map_scale_label = Label.new()
+	_map_scale_label.custom_minimum_size.x = 48
+	scale_row.add_child(_map_scale_slider)
+	scale_row.add_child(_map_scale_label)
+	vbox.add_child(_label("Map scale multiplier"))
+	vbox.add_child(scale_row)
+	_on_map_scale_changed(_game_settings.map_zoom_multiplier)
 
-	var res_dd = OptionButton.new()
-	var res_list: Array[Vector2i] = GameSettings.RESOLUTION_PRESETS
-	for i: int in range(res_list.size()):
-		res_dd.add_item("%d × %d" % [res_list[i].x, res_list[i].y], i)
-	res_dd.select(settings.resolution_index())
-	res_hbox.add_child(res_dd)
-	vbox.add_child(res_hbox)
+	vbox.add_child(HSeparator.new())
+	_add_button(vbox, "Apply resolution & window mode", _apply_display_video)
 
-	vbox.add_child(Control.new()) # Spacer
-
-	var apply_btn = Button.new()
-	apply_btn.text = "Apply Settings"
-	apply_btn.pressed.connect(func():
-		settings.set_window_mode_index(mode_dd.selected)
-		settings.set_resolution_index(res_dd.selected)
-		settings.apply_and_save(get_window(), true)
-		SettingsManager.save_settings(settings.resolution.x, settings.resolution.y, settings.window_mode != DisplayServer.WINDOW_MODE_WINDOWED)
-	)
-	vbox.add_child(apply_btn)
 
 func _build_graphics_tab(parent: TabContainer) -> void:
-	var margin = MarginContainer.new()
-	margin.name = "Graphics"
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_top", 20)
-	var lbl = Label.new()
-	lbl.text = "Graphics options placeholder..."
-	margin.add_child(lbl)
-	parent.add_child(margin)
+	var scroll := _scroll_tab(parent, "Graphics")
+	var vbox := _vbox(scroll)
+	_add_hint(vbox, "Ambient living-map effects — saved automatically.")
+
+	for entry: Dictionary in _EFFECT_TOGGLES:
+		var key: String = entry["key"]
+		var check := CheckButton.new()
+		check.text = entry["label"]
+		check.button_pressed = bool(_effects_settings.get(key))
+		check.toggled.connect(func(pressed: bool) -> void: _on_effect_toggled(key, pressed))
+		vbox.add_child(check)
+		_effect_checks[key] = check
+
 
 func _build_sound_tab(parent: TabContainer) -> void:
-	var margin = MarginContainer.new()
-	margin.name = "Sound"
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_top", 20)
-	var vbox = VBoxContainer.new()
-	margin.add_child(vbox)
-	parent.add_child(margin)
-	
-	var m_lbl = Label.new(); m_lbl.text = "Master Volume"
-	var m_slider = HSlider.new(); m_slider.value = 100; m_slider.custom_minimum_size.x = 200
-	vbox.add_child(m_lbl); vbox.add_child(m_slider)
-	
-	var s_lbl = Label.new(); s_lbl.text = "Sound Effects"
-	var s_slider = HSlider.new(); s_slider.value = 100; s_slider.custom_minimum_size.x = 200
-	vbox.add_child(s_lbl); vbox.add_child(s_slider)
-	
-	var mu_lbl = Label.new(); mu_lbl.text = "Music"
-	var mu_slider = HSlider.new(); mu_slider.value = 100; mu_slider.custom_minimum_size.x = 200
-	vbox.add_child(mu_lbl); vbox.add_child(mu_slider)
+	var scroll := _scroll_tab(parent, "Sound")
+	var vbox := _vbox(scroll)
+	_add_hint(vbox, "Volume changes apply immediately.")
+
+	_master_slider = _add_volume_row(vbox, "Master volume", _game_settings.master_volume)
+	_sfx_slider = _add_volume_row(vbox, "Sound effects", _game_settings.sfx_volume)
+	_music_slider = _add_volume_row(vbox, "Music", _game_settings.music_volume)
+
 
 func _build_gameplay_tab(parent: TabContainer) -> void:
-	var margin = MarginContainer.new()
-	margin.name = "Gameplay"
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_top", 20)
-	var lbl = Label.new()
-	lbl.text = "Gameplay options placeholder..."
-	margin.add_child(lbl)
-	parent.add_child(margin)
+	var scroll := _scroll_tab(parent, "Gameplay")
+	var vbox := _vbox(scroll)
+	_add_hint(vbox, "Combat presentation preferences.")
+
+	_damage_numbers_check = CheckButton.new()
+	_damage_numbers_check.text = "Show floating damage numbers"
+	_damage_numbers_check.button_pressed = _game_settings.show_damage_numbers
+	_damage_numbers_check.toggled.connect(func(pressed: bool) -> void:
+		_game_settings.show_damage_numbers = pressed
+		_save_game_settings(),
+	)
+	vbox.add_child(_damage_numbers_check)
+
+	var info := Label.new()
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.text = (
+		"Honor & Iron uses perfect information: enemy intent is always visible "
+		+ "during planning. Timeline programming is always available in combat."
+	)
+	vbox.add_child(info)
+
 
 func _build_controls_tab(parent: TabContainer) -> void:
-	var margin = MarginContainer.new()
-	margin.name = "Controls"
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_top", 20)
-	var vbox = VBoxContainer.new()
-	margin.add_child(vbox)
-	parent.add_child(margin)
-	
-	var kb_lbl = Label.new(); kb_lbl.text = "Keyboard (Placeholder)"
-	var ct_lbl = Label.new(); ct_lbl.text = "Controller (Placeholder)"
-	vbox.add_child(kb_lbl); vbox.add_child(ct_lbl)
+	var scroll := _scroll_tab(parent, "Controls")
+	var vbox := _vbox(scroll)
+	var rich := RichTextLabel.new()
+	rich.bbcode_enabled = true
+	rich.fit_content = true
+	rich.scroll_active = true
+	rich.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rich.text = _CONTROLS_TEXT
+	vbox.add_child(rich)
+	_add_hint(vbox, "Key rebinding is not available yet; bindings are fixed.")
+
 
 func _build_interface_tab(parent: TabContainer) -> void:
-	var margin = MarginContainer.new()
-	margin.name = "Interface"
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_top", 20)
-	var vbox = VBoxContainer.new()
-	margin.add_child(vbox)
-	parent.add_child(margin)
-	
-	var c1 = CheckBox.new(); c1.text = "Show Damage Numbers"; c1.button_pressed = true; vbox.add_child(c1)
-	var c2 = CheckBox.new(); c2.text = "Show Tile Display"; c2.button_pressed = true; vbox.add_child(c2)
-	
-	var s_lbl = Label.new(); s_lbl.text = "UI Scale"
-	var s_slider = HSlider.new(); s_slider.value = 100; s_slider.custom_minimum_size.x = 200
-	vbox.add_child(s_lbl); vbox.add_child(s_slider)
-	
-	var c3 = CheckBox.new(); c3.text = "Large Font"; vbox.add_child(c3)
-	var c4 = CheckBox.new(); c4.text = "Show Tooltips"; c4.button_pressed = true; vbox.add_child(c4)
-	var c5 = CheckBox.new(); c5.text = "Show Action Planning Window"; c5.button_pressed = true; vbox.add_child(c5)
-	var c6 = CheckBox.new(); c6.text = "Show Prediction"; c6.button_pressed = true; vbox.add_child(c6)
-	
-	var indent = MarginContainer.new()
-	indent.add_theme_constant_override("margin_left", 20)
-	var sub_vbox = VBoxContainer.new()
-	indent.add_child(sub_vbox)
-	vbox.add_child(indent)
-	
-	var c7 = CheckBox.new(); c7.text = "Movement Prediction"; c7.button_pressed = true; sub_vbox.add_child(c7)
-	var c8 = CheckBox.new(); c8.text = "Attack Prediction"; c8.button_pressed = true; sub_vbox.add_child(c8)
-	
-	var c9 = CheckBox.new(); c9.text = "Show Autobattler HUD"; c9.button_pressed = true; vbox.add_child(c9)
+	var scroll := _scroll_tab(parent, "Interface")
+	var vbox := _vbox(scroll)
+	_add_hint(vbox, "Changes apply immediately.")
+
+	_ui_scale_slider = HSlider.new()
+	_ui_scale_slider.min_value = 0.75
+	_ui_scale_slider.max_value = 2.5
+	_ui_scale_slider.step = 0.05
+	_ui_scale_slider.value = _game_settings.combat_ui_scale
+	_ui_scale_slider.value_changed.connect(_on_ui_scale_changed)
+	_ui_scale_label = Label.new()
+	var ui_row := HBoxContainer.new()
+	ui_row.add_child(_ui_scale_slider)
+	ui_row.add_child(_ui_scale_label)
+	vbox.add_child(_label("Combat UI scale"))
+	vbox.add_child(ui_row)
+	_on_ui_scale_changed(_game_settings.combat_ui_scale)
+
+	_text_size_option = OptionButton.new()
+	for label: String in GameSettings.TEXT_SIZE_LABELS:
+		_text_size_option.add_item(label)
+	_text_size_option.select(_game_settings.inspector_text_size_index)
+	_text_size_option.item_selected.connect(func(_i: int) -> void:
+		_game_settings.inspector_text_size_index = _text_size_option.selected
+		_save_game_settings(),
+	)
+	vbox.add_child(_label("Inspector text size"))
+	vbox.add_child(_text_size_option)
+
+	_panel_width_slider = HSlider.new()
+	_panel_width_slider.min_value = 320.0
+	_panel_width_slider.max_value = 960.0
+	_panel_width_slider.step = 20.0
+	_panel_width_slider.value = float(_game_settings.inspector_panel_width)
+	_panel_width_slider.value_changed.connect(_on_panel_width_changed)
+	_panel_width_label = Label.new()
+	_panel_width_label.custom_minimum_size.x = 48
+	var width_row := HBoxContainer.new()
+	width_row.add_child(_panel_width_slider)
+	width_row.add_child(_panel_width_label)
+	vbox.add_child(_label("Inspector panel width"))
+	vbox.add_child(width_row)
+	_on_panel_width_changed(float(_game_settings.inspector_panel_width))
+
 
 func _build_developer_tab(parent: TabContainer) -> void:
-	var margin = MarginContainer.new()
-	margin.name = "Developer"
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_top", 20)
-	var lbl = Label.new()
-	lbl.text = "Developer options placeholder..."
-	margin.add_child(lbl)
+	var scroll := _scroll_tab(parent, "Developer")
+	var vbox := _vbox(scroll)
+	_add_hint(vbox, "Sandbox / debug tools — apply in test map and tactical scenes.")
+
+	_dev_tile_labels_check = _add_dev_check(
+		vbox,
+		"Tile ID labels (sandbox map)",
+		_game_settings.dev_tile_labels,
+		func(pressed: bool) -> void: _game_settings.dev_tile_labels = pressed,
+	)
+	_dev_boredom_atmo_check = _add_dev_check(
+		vbox,
+		"Boredom test — atmosphere only",
+		_game_settings.dev_boredom_atmosphere,
+		func(pressed: bool) -> void: _game_settings.dev_boredom_atmosphere = pressed,
+	)
+	_dev_boredom_water_check = _add_dev_check(
+		vbox,
+		"Boredom test — water only",
+		_game_settings.dev_boredom_water,
+		func(pressed: bool) -> void: _game_settings.dev_boredom_water = pressed,
+	)
+
+	vbox.add_child(HSeparator.new())
+	_add_section(vbox, "Shadow debug")
+	for entry: Dictionary in _DEV_SHADOW_TOGGLES:
+		var key: String = entry["key"]
+		var check := CheckButton.new()
+		check.text = entry["label"]
+		check.button_pressed = bool(_effects_settings.get(key))
+		check.toggled.connect(func(pressed: bool) -> void: _on_shadow_debug_toggled(key, pressed))
+		vbox.add_child(check)
+		_dev_shadow_checks[key] = check
+
+
+func _apply_display_video() -> void:
+	_game_settings.set_resolution_index(_resolution_option.selected)
+	_game_settings.set_window_mode_index(_window_mode_option.selected)
+	_game_settings.apply_and_save(get_window(), true)
+
+
+func _apply_window_mode() -> void:
+	_game_settings.set_window_mode_index(_window_mode_option.selected)
+	_game_settings.apply_to_window(get_window(), true)
+	_save_game_settings()
+
+
+func _apply_map_zoom_live() -> void:
+	_game_settings.map_zoom_mode = _map_zoom_option.selected as GameSettings.MapZoomMode
+	_save_game_settings()
+
+
+func _on_map_scale_changed(value: float) -> void:
+	_map_scale_label.text = "%.2f×" % value
+	_game_settings.map_zoom_multiplier = value
+	_save_game_settings()
+
+
+func _on_ui_scale_changed(value: float) -> void:
+	_ui_scale_label.text = "%.2f×" % value
+	_game_settings.combat_ui_scale = value
+	_save_game_settings()
+
+
+func _on_panel_width_changed(value: float) -> void:
+	_panel_width_label.text = "%d" % int(value)
+	_game_settings.inspector_panel_width = int(value)
+	_save_game_settings()
+
+
+func _on_effect_toggled(key: String, pressed: bool) -> void:
+	_effects_settings.set(key, pressed)
+	_effects_settings.save_to_disk()
+
+
+func _on_shadow_debug_toggled(key: String, pressed: bool) -> void:
+	_effects_settings.set(key, pressed)
+	_effects_settings.save_to_disk()
+
+
+func _add_dev_check(
+	parent: VBoxContainer,
+	text: String,
+	initial: bool,
+	on_changed: Callable,
+) -> CheckButton:
+	var check := CheckButton.new()
+	check.text = text
+	check.button_pressed = initial
+	check.toggled.connect(func(pressed: bool) -> void:
+		on_changed.call(pressed)
+		_save_game_settings(),
+	)
+	parent.add_child(check)
+	return check
+
+
+func _add_volume_row(parent: VBoxContainer, title: String, initial: float) -> HSlider:
+	parent.add_child(_label(title))
+	var row := HBoxContainer.new()
+	var slider := HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 100.0
+	slider.step = 1.0
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value = initial * 100.0
+	var value_lbl := Label.new()
+	value_lbl.custom_minimum_size.x = 40
+	value_lbl.text = "%d%%" % int(slider.value)
+	slider.value_changed.connect(func(v: float) -> void:
+		value_lbl.text = "%d%%" % int(v)
+		match title:
+			"Master volume":
+				_game_settings.master_volume = v / 100.0
+			"Sound effects":
+				_game_settings.sfx_volume = v / 100.0
+			"Music":
+				_game_settings.music_volume = v / 100.0
+		_game_settings.apply_audio_buses()
+		_save_game_settings(),
+	)
+	row.add_child(slider)
+	row.add_child(value_lbl)
+	parent.add_child(row)
+	return slider
+
+
+func _save_game_settings() -> void:
+	_game_settings.save_to_disk()
+	_game_settings.changed.emit()
+
+
+func _scroll_tab(parent: TabContainer, tab_name: String) -> ScrollContainer:
+	var margin := MarginContainer.new()
+	margin.name = tab_name
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_bottom", 12)
 	parent.add_child(margin)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(scroll)
+	return scroll
+
+
+func _vbox(parent: Control) -> VBoxContainer:
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", 10)
+	parent.add_child(vbox)
+	return vbox
+
+
+func _label(text: String) -> Label:
+	var lbl := Label.new()
+	lbl.text = text
+	return lbl
+
+
+func _add_hint(parent: VBoxContainer, text: String) -> void:
+	var hint := Label.new()
+	hint.text = text
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.add_theme_color_override("font_color", Color(0.7, 0.72, 0.8))
+	parent.add_child(hint)
+
+
+func _add_section(parent: VBoxContainer, text: String) -> void:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", 16)
+	parent.add_child(lbl)
+
+
+func _add_button(parent: VBoxContainer, text: String, callback: Callable) -> void:
+	var btn := Button.new()
+	btn.text = text
+	btn.pressed.connect(callback)
+	parent.add_child(btn)
+
 
 func _on_back_pressed() -> void:
 	if close_requested.get_connections().size() > 0:

@@ -55,6 +55,7 @@ var _char_profile: CharacterGenProfile = CharacterGenProfile.new()
 func _ready() -> void:
 	_settings.load_from_disk()
 	_settings.apply_to_window(get_window())
+	_settings.apply_audio_buses()
 
 	_atmosphere.setup(_world_modulate, _sky_overlay, _map_root)
 	_shadow_sprites.z_as_relative = false
@@ -183,6 +184,7 @@ func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 func _start_combat() -> void:
 	_combat_shell.start_combat(_encounter)
 	_combat_shell.bind_settings(_settings)
+	_sim_presenter.set_game_settings(_settings)
 
 
 func _load_skirmish() -> void:
@@ -266,7 +268,9 @@ func _on_character_gen_changed() -> void:
 
 
 func _on_display_settings_applied() -> void:
+	_sim_presenter.set_game_settings(_settings)
 	_combat_shell.bind_settings(_settings)
+	_settings.apply_audio_buses()
 	_center_map()
 	_apply_effects()
 

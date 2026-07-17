@@ -46,6 +46,13 @@ var map_zoom_multiplier: float = 1.0
 var inspector_text_size_index: int = 1
 var inspector_panel_width: int = 520
 var combat_ui_scale: float = 1.0
+var master_volume: float = 1.0
+var sfx_volume: float = 1.0
+var music_volume: float = 1.0
+var show_damage_numbers: bool = true
+var dev_tile_labels: bool = false
+var dev_boredom_atmosphere: bool = false
+var dev_boredom_water: bool = false
 
 
 func load_from_disk() -> void:
@@ -68,6 +75,13 @@ func load_from_disk() -> void:
 	inspector_text_size_index = int(cfg.get_value("display", "inspector_text_size_index", inspector_text_size_index))
 	inspector_panel_width = int(cfg.get_value("display", "inspector_panel_width", inspector_panel_width))
 	combat_ui_scale = float(cfg.get_value("display", "combat_ui_scale", combat_ui_scale))
+	master_volume = float(cfg.get_value("audio", "master_volume", master_volume))
+	sfx_volume = float(cfg.get_value("audio", "sfx_volume", sfx_volume))
+	music_volume = float(cfg.get_value("audio", "music_volume", music_volume))
+	show_damage_numbers = bool(cfg.get_value("interface", "show_damage_numbers", show_damage_numbers))
+	dev_tile_labels = bool(cfg.get_value("developer", "tile_labels", dev_tile_labels))
+	dev_boredom_atmosphere = bool(cfg.get_value("developer", "boredom_atmosphere", dev_boredom_atmosphere))
+	dev_boredom_water = bool(cfg.get_value("developer", "boredom_water", dev_boredom_water))
 
 
 func capture_from_window(window: Window) -> void:
@@ -90,6 +104,13 @@ func save_to_disk() -> void:
 	cfg.set_value("display", "inspector_text_size_index", inspector_text_size_index)
 	cfg.set_value("display", "inspector_panel_width", inspector_panel_width)
 	cfg.set_value("display", "combat_ui_scale", combat_ui_scale)
+	cfg.set_value("audio", "master_volume", master_volume)
+	cfg.set_value("audio", "sfx_volume", sfx_volume)
+	cfg.set_value("audio", "music_volume", music_volume)
+	cfg.set_value("interface", "show_damage_numbers", show_damage_numbers)
+	cfg.set_value("developer", "tile_labels", dev_tile_labels)
+	cfg.set_value("developer", "boredom_atmosphere", dev_boredom_atmosphere)
+	cfg.set_value("developer", "boredom_water", dev_boredom_water)
 	cfg.save(CONFIG_PATH)
 
 
@@ -195,5 +216,30 @@ func compute_map_zoom(map_pixels: Vector2, zoom_viewport: Vector2) -> int:
 
 func apply_and_save(window: Window, preserve_placement: bool = true) -> void:
 	apply_to_window(window, preserve_placement)
+	apply_audio_buses()
 	save_to_disk()
 	changed.emit()
+
+
+func apply_audio_buses() -> void:
+	_ensure_audio_bus(&"SFX", &"Master")
+	_ensure_audio_bus(&"Music", &"Master")
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(&"Master"), _volume_db(master_volume))
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(&"SFX"), _volume_db(sfx_volume))
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(&"Music"), _volume_db(music_volume))
+
+
+static func _ensure_audio_bus(bus_name: StringName, send_to: StringName) -> void:
+	if AudioServer.get_bus_index(bus_name) >= 0:
+		return
+	AudioServer.add_bus()
+	var idx: int = AudioServer.get_bus_count() - 1
+	AudioServer.set_bus_name(idx, bus_name)
+	AudioServer.set_bus_send(idx, send_to)
+
+
+static func _volume_db(linear: float) -> float:
+	var clamped: float = clampf(linear, 0.0, 1.0)
+	if clamped <= 0.001:
+		return -80.0
+	return linear_to_db(clamped)
