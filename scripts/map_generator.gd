@@ -35,6 +35,8 @@ var dirt_path_max_steps: int = 26
 var water_avoid_center_half: bool = true
 ## Lateral lake spread (~1.6 ≈ +60% vs baseline 1.0; same water_ratio).
 var water_spread_scale: float = 1.6
+## Skirmish / bridge: use width & height exactly (no snap_widescreen).
+var force_custom_size: bool = false
 
 const _MIN_SIZE: int = 16
 const _MAX_SIZE: int = 32
@@ -65,9 +67,15 @@ static func snap_widescreen(requested_width: int, requested_height: int) -> Vect
 
 
 func generate(provenance: PlayerGridProvenance = null) -> PlayerGrid:
-	var wide_size: Vector2i = snap_widescreen(width, height)
-	var w: int = wide_size.x
-	var h: int = wide_size.y
+	var w: int
+	var h: int
+	if force_custom_size:
+		w = width
+		h = height
+	else:
+		var wide_size: Vector2i = snap_widescreen(width, height)
+		w = wide_size.x
+		h = wide_size.y
 	width = w
 	height = h
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
