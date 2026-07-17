@@ -57,22 +57,22 @@ func setup(
 	_director = director
 	_intent_state = intent_state
 	z_as_relative = false
-	z_index = 5
+	z_index = 8
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.selection_changed.connect(func(_id: int) -> void:
 		if _director == null:
 			return
-		_cached_hover_unit_id = -1
-		recompute_hover_ranges(false, _director.selected_ability_index, false, -1)
+		_invalidate_hover_cache()
+		_recompute_hover_ranges_from_inputs()
 		_update_hover_action_icon()
 		queue_redraw(),
 	)
 	EventBus.ability_selected.connect(func(_idx: int) -> void:
 		if _director == null:
 			return
-		_cached_hover_unit_id = -1
-		recompute_hover_ranges(false, _director.selected_ability_index, false, -1)
+		_invalidate_hover_cache()
+		_recompute_hover_ranges_from_inputs()
 		_update_hover_action_icon()
 		queue_redraw(),
 	)
@@ -104,6 +104,23 @@ func bind_unit_layer(layer: TacticalUnitLayer) -> void:
 
 func bind_planning_input(input: CombatPlanningInput) -> void:
 	_planning_input = input
+	_invalidate_hover_cache()
+	_recompute_hover_ranges_from_inputs()
+
+
+func _invalidate_hover_cache() -> void:
+	_cached_hover_unit_id = -1
+	_cached_hover_origin = Vector2i(-999, -999)
+	_cached_hover_ability = -1
+
+
+func _recompute_hover_ranges_from_inputs() -> void:
+	if _director == null:
+		return
+	var force_basic: bool = _planning_input.force_basic_movement if _planning_input != null else false
+	var dragging: bool = _planning_input.dragging if _planning_input != null else false
+	var drag_id: int = _planning_input.get_drag_unit_id() if _planning_input != null else -1
+	recompute_hover_ranges(force_basic, _director.selected_ability_index, dragging, drag_id)
 
 
 func get_preview_board() -> BoardState:
@@ -245,10 +262,10 @@ func recompute_hover_ranges(
 		unit = _board.get_unit_by_id(drag_unit_id)
 	elif _director.selected_unit_id >= 0:
 		unit = _board.get_unit_by_id(_director.selected_unit_id)
+	elif _board.is_in_bounds(_hover_coord):
+		unit = _board.get_unit_at(_hover_coord)
 	if unit == null or not unit.is_alive():
-		_cached_hover_unit_id = -1
-		_cached_hover_origin = Vector2i(-999, -999)
-		_cached_hover_ability = -1
+		_invalidate_hover_cache()
 		_hover_move_tiles.clear()
 		_hover_threat_tiles.clear()
 		queue_redraw()
@@ -257,28 +274,31 @@ func recompute_hover_ranges(
 	if dragging and _fixed_range_origin.x >= 0:
 		origin = _fixed_range_origin
 	var cache_ability: int = selected_ability if unit.id == _director.selected_unit_id else -1
+	var cache_force: bool = force_basic if unit.id == _director.selected_unit_id else false
 	if (
 		_cached_hover_unit_id == unit.id
 		and _cached_hover_origin == origin
 		and _cached_hover_ability == cache_ability
-		and _cached_hover_force == force_basic
+		and _cached_hover_force == cache_force
 	):
 		return
 	_cached_hover_unit_id = unit.id
 	_cached_hover_origin = origin
 	_cached_hover_ability = cache_ability
-	_cached_hover_force = force_basic
+	_cached_hover_force = cache_force
 	_hover_move_tiles.clear()
 	_hover_threat_tiles.clear()
+	var exhausted := false
 	if not unit.is_enemy() and unit.id == _director.selected_unit_id:
 		var p_unit := _proj_unit(unit.id)
 		if p_unit != null:
-			if _phase == CombatDirector.Phase.PLANNING_PHASE_1 and p_unit.phase_1_action_used:
-				queue_redraw()
-				return
-			if _phase == CombatDirector.Phase.PLANNING_PHASE_2 and p_unit.phase_2_action_used:
-				queue_redraw()
-				return
+			if _phase == CombatDirector.Phase.PLANNING_PHASE_1:
+				exhausted = p_unit.phase_1_action_used
+			elif _phase == CombatDirector.Phase.PLANNING_PHASE_2:
+				exhausted = p_unit.phase_2_action_used
+	if exhausted:
+		queue_redraw()
+		return
 	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
 	var mt: int = unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
 	_hover_move_tiles = MovementSystem.get_reachable_tiles(
@@ -289,7 +309,7 @@ func recompute_hover_ranges(
 		move_cost,
 	)
 	if force_basic and unit.id == _director.selected_unit_id and not unit.is_enemy():
-		_add_attack_threat_tiles(unit, origin, selected_ability)
+		_populate_attack_threat_tiles(unit, origin, selected_ability)
 		queue_redraw()
 		return
 	if unit.id == _director.selected_unit_id and not force_basic and selected_ability >= 0:
@@ -312,15 +332,19 @@ func recompute_hover_ranges(
 			_hover_threat_tiles = self_aoe
 			queue_redraw()
 			return
-	_add_attack_threat_tiles(unit, origin, selected_ability if unit.id == _director.selected_unit_id else -1)
+	_populate_attack_threat_tiles(
+		unit,
+		origin,
+		selected_ability if unit.id == _director.selected_unit_id else -1,
+	)
 	queue_redraw()
 
 
 func _on_board_changed(board: BoardState) -> void:
 	set_board(board)
 	_danger_tiles_dirty = true
-	if _director != null:
-		recompute_hover_ranges(false, _director.selected_ability_index, false, -1)
+	_invalidate_hover_cache()
+	_recompute_hover_ranges_from_inputs()
 
 
 func _process(_delta: float) -> void:
@@ -333,13 +357,10 @@ func _process(_delta: float) -> void:
 
 func _on_preview_updated(result: SimResult) -> void:
 	set_preview_board(result.final_state)
-	_cached_hover_unit_id = -1
+	_invalidate_hover_cache()
 	if _director != null and _board != null:
 		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
-		var force_basic: bool = _planning_input.force_basic_movement if _planning_input != null else false
-		var dragging: bool = _planning_input.dragging if _planning_input != null else false
-		var drag_id: int = _planning_input.get_drag_unit_id() if _planning_input != null else -1
-		recompute_hover_ranges(force_basic, _director.selected_ability_index, dragging, drag_id)
+	_recompute_hover_ranges_from_inputs()
 	if _planning_input == null or not _planning_input.is_live_preview_active():
 		if _unit_layer != null:
 			_unit_layer.set_predicted_stats(
@@ -388,10 +409,11 @@ func _draw() -> void:
 
 
 func _draw_hover_tiles() -> void:
-	for cell: Vector2i in _hover_threat_tiles:
-		_draw_tile_tint(cell, _COLOR_THREAT, _COLOR_THREAT_FILL_ALPHA)
+	# Move under threat so attack-range cells stay visible on overlap (H&I readability).
 	for cell: Vector2i in _hover_move_tiles:
-		_draw_tile_tint(cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA)
+		_draw_tile_tint(cell, _COLOR_MOVE, 0.40)
+	for cell: Vector2i in _hover_threat_tiles:
+		_draw_tile_tint(cell, _COLOR_THREAT, 0.40)
 
 
 func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float) -> void:
@@ -459,10 +481,12 @@ func _draw_ability_intents() -> void:
 
 
 func _display_intent_list() -> Array:
-	if _planning_input != null and _planning_input.is_live_preview_active():
-		var live: Array = _live_preview.live_intents
-		if not live.is_empty():
-			return live
+	if _planning_input != null:
+		var use_live: bool = _planning_input.dragging or _planning_input.skill_interaction_active()
+		if use_live:
+			var live: Array = _live_preview.live_intents
+			if not live.is_empty():
+				return live
 	if _board != null:
 		return _board.intents
 	return []
@@ -928,7 +952,7 @@ func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:
 	return best
 
 
-func _add_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
+func _populate_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
 	var rng: int = _unit_attack_range(unit, selected_ability)
 	if rng <= 0:
 		return
@@ -937,6 +961,11 @@ func _add_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_abilit
 		threat_sources = _hover_move_tiles.duplicate()
 		if threat_sources.is_empty():
 			threat_sources = [origin]
+	if unit.id == _director.selected_unit_id:
+		var sel_ability: AbilityData = _selected_ability_data(unit, selected_ability)
+		if sel_ability != null and AbilitySystem.ability_has_dash(sel_ability):
+			_hover_threat_tiles = _dash_threat_tiles(origin, _dash_amount(sel_ability))
+			return
 	for y: int in range(_board.grid_size.y):
 		for x: int in range(_board.grid_size.x):
 			var coord := Vector2i(x, y)
@@ -944,6 +973,10 @@ func _add_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_abilit
 				if GridSystem.manhattan(coord, src) <= rng:
 					_hover_threat_tiles.append(coord)
 					break
+
+
+func _add_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
+	_populate_attack_threat_tiles(unit, origin, selected_ability)
 
 
 func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int) -> void:

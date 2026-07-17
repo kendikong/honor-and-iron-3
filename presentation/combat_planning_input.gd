@@ -55,16 +55,16 @@ func cancel_drag() -> void:
 	if _planning != null:
 		_planning.clear_drag_route()
 		_planning.end_drag_sprite()
+	_sync_intent_skill_mode()
 	_restore_committed_preview()
 	_clear_hover_preview()
 
 
 func cancel_aim() -> void:
 	aiming = false
-	if _intent_state != null:
-		_intent_state.set_skill_interaction_active(false)
 	if _planning != null:
 		_planning.set_aim_mode(false)
+	_sync_intent_skill_mode()
 	refresh_mouse_cursor(_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999))
 
 
@@ -175,12 +175,7 @@ func on_left_release(local: Vector2) -> void:
 	_drag_route.clear()
 	_planning.clear_fixed_range_origin()
 	_planning.end_drag_sprite()
-	_planning.recompute_hover_ranges(
-		force_basic_movement,
-		_director.selected_ability_index,
-		false,
-		-1,
-	)
+	_planning._recompute_hover_ranges_from_inputs()
 
 
 func on_right_click() -> void:
@@ -287,6 +282,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
 	_clear_hover_preview()
 	_stash_committed_preview()
+	_sync_intent_skill_mode()
 	dragging = true
 	_drag_unit_id = unit.id
 	_drag_unit_was_selected = was_already_selected
@@ -296,12 +292,7 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	_drag_last_free = unit.position
 	_planning.set_fixed_range_origin(unit.position)
 	_planning.set_drag_route(_drag_route)
-	_planning.recompute_hover_ranges(
-		force_basic_movement,
-		_director.selected_ability_index,
-		true,
-		_drag_unit_id,
-	)
+	_planning._recompute_hover_ranges_from_inputs()
 	_planning.begin_drag_sprite(unit.id)
 	_play_sfx("select")
 
@@ -328,12 +319,8 @@ func _on_selection_changed(unit_id: int) -> void:
 	elif unit_id < 0:
 		pass
 	if _planning != null and _director != null:
-		_planning.recompute_hover_ranges(
-			force_basic_movement,
-			_director.selected_ability_index,
-			dragging,
-			_drag_unit_id,
-		)
+		_planning._recompute_hover_ranges_from_inputs()
+	_sync_intent_skill_mode()
 	_refresh_hover_if_planning()
 
 
@@ -343,12 +330,8 @@ func _on_ability_selected(index: int) -> void:
 	if _director.selected_unit_id >= 0:
 		unit_selected_abilities[_director.selected_unit_id] = index
 	if _planning != null and _director != null:
-		_planning.recompute_hover_ranges(
-			force_basic_movement,
-			_director.selected_ability_index,
-			dragging,
-			_drag_unit_id,
-		)
+		_planning._recompute_hover_ranges_from_inputs()
+	_sync_intent_skill_mode()
 	_refresh_hover_if_planning()
 
 
@@ -371,10 +354,16 @@ func _refresh_hover_if_planning() -> void:
 		_update_hover_attack_preview()
 
 
+func _sync_intent_skill_mode() -> void:
+	if _intent_state != null:
+		_intent_state.set_skill_interaction_active(_skill_interaction_active() or aiming)
+
+
 func on_hover_moved(cell: Vector2i) -> void:
 	if _director == null or _director.board == null:
 		return
 	if not dragging:
+		_sync_intent_skill_mode()
 		if _intent_state != null:
 			_intent_state.set_hover_coord(cell)
 		if _planning != null:
@@ -386,12 +375,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_restore_hover_preview()
 		return
 	if _planning != null:
-		_planning.recompute_hover_ranges(
-			force_basic_movement,
-			_director.selected_ability_index,
-			false,
-			-1,
-		)
+		_planning._recompute_hover_ranges_from_inputs()
 	if _director.selected_unit_id >= 0:
 		_refresh_selected_interaction_preview()
 	else:

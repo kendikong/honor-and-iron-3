@@ -395,10 +395,12 @@ func _refresh_intent_label() -> void:
 	if _intent_label == null or _board == null:
 		return
 	var intent_list: Array = _board.intents
-	if _planning_input != null and _planning_input.is_live_preview_active():
-		var live: Array = _planning_input.preview_state.live_intents
-		if not live.is_empty():
-			intent_list = live
+	if _planning_input != null:
+		var use_live: bool = _planning_input.dragging or _planning_input.skill_interaction_active()
+		if use_live:
+			var live: Array = _planning_input.preview_state.live_intents
+			if not live.is_empty():
+				intent_list = live
 	var body: String = CombatUiFormatters.summarize_intents(_board, _phase, _intent_units, intent_list)
 	_intent_label.text = "💀 Enemy intent:\n%s" % body
 
