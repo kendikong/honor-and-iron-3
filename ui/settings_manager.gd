@@ -18,7 +18,13 @@ func load_settings() -> void:
 		fs = bool(config.get_value("video", "fullscreen", fs))
 		px = int(config.get_value("video", "pos_x", -1))
 		py = int(config.get_value("video", "pos_y", -1))
-	DisplayWindowHelper.apply_resolution(get_window(), Vector2i(w, h), fs, px < 0 or py < 0)
+	DisplayWindowHelper.apply_resolution(
+		get_window(),
+		Vector2i(w, h),
+		fs,
+		DisplayServer.window_get_current_screen(),
+		px < 0 or py < 0,
+	)
 	if not fs and px >= 0 and py >= 0:
 		get_window().position = Vector2i(px, py)
 

@@ -94,14 +94,17 @@ func save_to_disk() -> void:
 
 
 func apply_to_window(window: Window, preserve_placement: bool = true) -> void:
-	var saved_screen: int = window.current_screen
-	var saved_position: Vector2i = window.position
 	if window_mode == DisplayServer.WINDOW_MODE_WINDOWED:
-		DisplayWindowHelper.apply_resolution(window, resolution, false, not preserve_placement)
-		if preserve_placement:
-			if saved_screen >= 0:
-				window.current_screen = saved_screen
-			window.position = saved_position
+		var screen_id: int = window.current_screen
+		if screen_id < 0:
+			screen_id = DisplayServer.window_get_current_screen()
+		DisplayWindowHelper.apply_resolution(
+			window,
+			resolution,
+			false,
+			screen_id,
+			preserve_placement,
+		)
 	else:
 		DisplayServer.window_set_mode(window_mode)
 

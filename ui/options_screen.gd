@@ -73,7 +73,14 @@ func _build_display_tab(parent: TabContainer) -> void:
 	apply_btn.pressed.connect(func():
 		var target_res: Vector2i = res_list[res_dd.get_selected_id()]
 		var is_fs: bool = fs_check.button_pressed
-		DisplayWindowHelper.apply_resolution(get_window(), target_res, is_fs)
+		var screen_id: int = get_window().current_screen
+		DisplayWindowHelper.apply_resolution(
+			get_window(),
+			target_res,
+			is_fs,
+			screen_id,
+			true,
+		)
 		SettingsManager.save_settings(target_res.x, target_res.y, is_fs)
 	)
 	vbox.add_child(apply_btn)
