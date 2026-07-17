@@ -1067,24 +1067,11 @@ func _is_valid_dash_hover(origin: Vector2i, coord: Vector2i, max_range: int) -> 
 func _proj_unit(unit_id: int) -> UnitState:
 	if unit_id < 0:
 		return null
-	if _planning_input != null and _live_preview.preview_board != null:
-		var live_active: bool = (
-			_planning_input.dragging
-			or _planning_input.aiming
-			or _planning_input.skill_interaction_active()
-		)
-		if live_active:
-			var live_u := _live_preview.preview_board.get_unit_by_id(unit_id)
-			if live_u != null:
-				return live_u
+	# Match board_view: ranges/selection use committed projection only — never live hover board.
 	if _director != null and _director.projected_state != null:
 		var proj_u := _director.projected_state.get_unit_by_id(unit_id)
 		if proj_u != null:
 			return proj_u
-	if _committed_preview.preview_board != null:
-		var committed_u := _committed_preview.preview_board.get_unit_by_id(unit_id)
-		if committed_u != null:
-			return committed_u
 	if _board != null:
 		return _board.get_unit_by_id(unit_id)
 	return null

@@ -529,16 +529,6 @@ func _draw() -> void:
 func _proj_unit(unit_id: int) -> UnitState:
 	if unit_id < 0:
 		return null
-	if _planning_input != null and _planning_input.preview_state.preview_board != null:
-		var live_active: bool = (
-			_planning_input.dragging
-			or _planning_input.aiming
-			or _planning_input.skill_interaction_active()
-		)
-		if live_active:
-			var live_u := _planning_input.preview_state.preview_board.get_unit_by_id(unit_id)
-			if live_u != null:
-				return live_u
 	if _director != null and _director.projected_state != null:
 		var proj_u := _director.projected_state.get_unit_by_id(unit_id)
 		if proj_u != null:
