@@ -398,6 +398,8 @@ func _on_selection_changed(unit_id: int) -> void:
 	elif unit_id < 0:
 		pass
 	if _planning != null and _director != null:
+		if _intent_state != null:
+			_sync_threat_origin_from_cell(_intent_state.hover_coord)
 		_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_skill_mode()
 	_refresh_hover_if_planning()
@@ -411,14 +413,8 @@ func _on_ability_selected(index: int) -> void:
 	if _director.selected_unit_id >= 0:
 		unit_selected_abilities[_director.selected_unit_id] = index
 	if _planning != null and _director != null:
-		if aiming and _intent_state != null and _director.board != null:
-			var cell: Vector2i = _intent_state.hover_coord
-			if _director.board.is_in_bounds(cell):
-				_planning.set_threat_origin(cell)
-			else:
-				_planning.clear_threat_origin()
-		elif not dragging:
-			_planning.clear_threat_origin()
+		if _intent_state != null:
+			_sync_threat_origin_from_cell(_intent_state.hover_coord)
 		_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_skill_mode()
 	_refresh_hover_if_planning()
@@ -458,13 +454,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_intent_state.set_hover_coord(cell)
 		if _planning != null:
 			_planning.set_hover_coord(cell)
-			if aiming:
-				if _director.board.is_in_bounds(cell):
-					_planning.set_threat_origin(cell)
-				else:
-					_planning.clear_threat_origin()
-			elif not dragging:
-				_planning.clear_threat_origin()
+			_sync_threat_origin_from_cell(cell)
 	if not _is_planning() or dragging:
 		return
 	if not _director.board.is_in_bounds(cell):
@@ -1138,6 +1128,19 @@ func _skill_takes_priority_over_basic_move() -> bool:
 
 func _skill_interaction_active() -> bool:
 	return _skill_takes_priority_over_basic_move() and _director.selected_unit_id >= 0 and not dragging
+
+
+func _threat_follows_cursor() -> bool:
+	return aiming or _skill_interaction_active()
+
+
+func _sync_threat_origin_from_cell(cell: Vector2i) -> void:
+	if _planning == null or _director == null or _director.board == null or dragging:
+		return
+	if _threat_follows_cursor() and _director.board.is_in_bounds(cell):
+		_planning.set_threat_origin(cell)
+	else:
+		_planning.clear_threat_origin()
 
 
 func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) -> void:
