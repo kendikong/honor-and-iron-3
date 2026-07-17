@@ -113,11 +113,15 @@ static func _test_spawn_placer_bands(failures: Array[String]) -> void:
 			SpawnPlacer.MVP_ENEMY_COUNT, skirmish.enemy_spawns.size(),
 		])
 	for placement: UnitPlacement in skirmish.player_spawns:
-		if not SpawnPlacer.is_in_player_band(placement.coord, skirmish.grid.width):
-			failures.append("SpawnPlacer: player spawn %s outside center-left band" % placement.coord)
+		if not SpawnPlacer.is_in_player_spawn_zone(
+			placement.coord, skirmish.grid.width, skirmish.grid.height,
+		):
+			failures.append("SpawnPlacer: player spawn %s outside center-left zone" % placement.coord)
 	for placement: UnitPlacement in skirmish.enemy_spawns:
-		if not SpawnPlacer.is_in_enemy_band(placement.coord, skirmish.grid.width):
-			failures.append("SpawnPlacer: enemy spawn %s outside center-right band" % placement.coord)
+		if not SpawnPlacer.is_in_enemy_spawn_zone(
+			placement.coord, skirmish.grid.width, skirmish.grid.height,
+		):
+			failures.append("SpawnPlacer: enemy spawn %s outside center-right zone" % placement.coord)
 
 
 static func _test_skirmish_all_presets(failures: Array[String]) -> void:
@@ -166,9 +170,11 @@ static func _test_spawn_validation_10x7(failures: Array[String]) -> void:
 							placement.coord, map_seed, preset,
 						],
 					)
-				if not SpawnPlacer.is_in_player_band(placement.coord, skirmish.grid.width):
+				if not SpawnPlacer.is_in_player_spawn_zone(
+					placement.coord, skirmish.grid.width, skirmish.grid.height,
+				):
 					failures.append(
-						"spawn validation: player %s outside center-left band (seed=%d)" % [
+						"spawn validation: player %s outside center-left zone (seed=%d)" % [
 							placement.coord, map_seed,
 						],
 					)
@@ -184,9 +190,11 @@ static func _test_spawn_validation_10x7(failures: Array[String]) -> void:
 							placement.coord, map_seed, preset,
 						],
 					)
-				if not SpawnPlacer.is_in_enemy_band(placement.coord, skirmish.grid.width):
+				if not SpawnPlacer.is_in_enemy_spawn_zone(
+					placement.coord, skirmish.grid.width, skirmish.grid.height,
+				):
 					failures.append(
-						"spawn validation: enemy %s outside center-right band (seed=%d)" % [
+						"spawn validation: enemy %s outside center-right zone (seed=%d)" % [
 							placement.coord, map_seed,
 						],
 					)

@@ -7,6 +7,7 @@ const _SparkleSprites = preload("res://scripts/water_sparkle_sprites.gd")
 const _EcologyLayer = preload("res://scripts/ecology_layer.gd")
 const _FpsHud = preload("res://scripts/fps_hud.gd")
 const _WorldClockHud = preload("res://scripts/world_clock_hud.gd")
+const _TreeCanopyFader = preload("res://presentation/tree_canopy_fader.gd")
 const _C = preload("res://scripts/mana_seed_constants.gd")
 
 const TILE_PX: int = TacticalConstants.TILE_PX
@@ -54,6 +55,7 @@ var _last_tree_variant_b: bool = false
 var _char_profile: CharacterGenProfile = CharacterGenProfile.new()
 var _fps_hud: FpsHud
 var _clock_hud: WorldClockHud
+var _tree_fader: TreeCanopyFader
 
 
 func _ready() -> void:
@@ -134,6 +136,7 @@ func _ready() -> void:
 	_load_skirmish()
 	_init_tile_pipeline()
 	_regenerate()
+	_refine_spawn_positions()
 	_start_combat()
 
 
@@ -320,16 +323,47 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	_effects.process_frame(delta)
 	_update_hover_coord()
+	_sync_tree_canopy_fade()
 
 
 func _regenerate() -> void:
 	_sync_tree_variant_setting()
+	if _tree_fader != null:
+		_tree_fader.clear_all()
 	_decorator.regenerate(_player_grid)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _decorator.map_seed
 	_effects.rebuild_water_vfx_cache(_player_grid, rng)
+	if _tree_fader == null:
+		_tree_fader = _TreeCanopyFader.new()
+		_tree_fader.name = "TreeCanopyFader"
+		_map_root.add_child(_tree_fader)
+	_tree_fader.setup(_trees, _player_grid, _effects.settings)
 	_center_map()
 	_apply_effects()
+
+
+func _refine_spawn_positions() -> void:
+	if _encounter == null or _player_grid == null:
+		return
+	SpawnPlacer.refine_encounter_spawns(
+		_player_grid,
+		_encounter.player_spawns,
+		_encounter.enemy_spawns,
+		_skirmish.map_seed,
+		_trees,
+		_overlay,
+		_effects.settings,
+		_scatter,
+	)
+	_skirmish.player_spawns = _encounter.player_spawns
+	_skirmish.enemy_spawns = _encounter.enemy_spawns
+
+
+func _sync_tree_canopy_fade() -> void:
+	if _tree_fader == null or _unit_layer == null:
+		return
+	_tree_fader.sync_actors(_unit_layer.get_actor_map())
 
 
 func _sync_tree_variant_setting() -> void:

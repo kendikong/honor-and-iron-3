@@ -43,6 +43,10 @@ func get_actor(unit_id: int) -> CharacterActor:
 	return _actors.get(unit_id)
 
 
+func get_actor_map() -> Dictionary:
+	return _actors
+
+
 func setup(map_view: TacticalMapView, director: CombatDirector, profile: CharacterGenProfile = null) -> void:
 	_map_view = map_view
 	_director = director

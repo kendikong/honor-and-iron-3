@@ -2,13 +2,25 @@ class_name SpawnPlacer
 extends RefCounted
 
 ## Deterministic spawn placement for random skirmishes.
-## Players: center-left band. Enemies: center-right band.
+## Players: center-left band. Enemies: center-right band. Y: middle rows only.
 
 const MVP_PLAYER_COUNT: int = 1
 const MVP_ENEMY_COUNT: int = 3
 const MIN_SPAWN_GAP: int = 2
 
 const MVP_ENEMY_IDS: Array[StringName] = [&"hatchling", &"hatchling", &"charger"]
+
+
+static func spawn_edge_margin(grid_height: int) -> int:
+	return maxi(2, grid_height / 5)
+
+
+static func spawn_y_min(grid_height: int) -> int:
+	return spawn_edge_margin(grid_height)
+
+
+static func spawn_y_max(grid_height: int) -> int:
+	return maxi(spawn_y_min(grid_height), grid_height - 1 - spawn_edge_margin(grid_height))
 
 
 static func player_band_x_min(grid_width: int) -> int:
@@ -35,12 +47,24 @@ static func prefer_enemy_anchor(grid: PlayerGrid) -> Vector2i:
 	return Vector2i(mini(grid.width - 1, grid.width * 3 / 5), grid.height / 2)
 
 
+static func is_in_spawn_y_band(cell: Vector2i, grid_height: int) -> bool:
+	return cell.y >= spawn_y_min(grid_height) and cell.y <= spawn_y_max(grid_height)
+
+
 static func is_in_player_band(cell: Vector2i, grid_width: int) -> bool:
 	return cell.x >= player_band_x_min(grid_width) and cell.x <= player_band_x_max(grid_width)
 
 
 static func is_in_enemy_band(cell: Vector2i, grid_width: int) -> bool:
 	return cell.x >= enemy_band_x_min(grid_width) and cell.x < enemy_band_x_max_exclusive(grid_width)
+
+
+static func is_in_player_spawn_zone(cell: Vector2i, grid_width: int, grid_height: int) -> bool:
+	return is_in_player_band(cell, grid_width) and is_in_spawn_y_band(cell, grid_height)
+
+
+static func is_in_enemy_spawn_zone(cell: Vector2i, grid_width: int, grid_height: int) -> bool:
+	return is_in_enemy_band(cell, grid_width) and is_in_spawn_y_band(cell, grid_height)
 
 
 static func place_mvp_roster(
@@ -104,6 +128,52 @@ static func place_mvp_roster(
 	}
 
 
+static func refine_encounter_spawns(
+	grid: PlayerGrid,
+	player_spawns: Array[UnitPlacement],
+	enemy_spawns: Array[UnitPlacement],
+	map_seed: int,
+	trees: TileMapLayer,
+	overlay: TileMapLayer,
+	settings: EffectsSettings,
+	scatter: TileMapLayer,
+) -> void:
+	if grid == null:
+		return
+	var player_cells: Array[Vector2i] = _pick_band_spawns(
+		grid,
+		player_band_x_min(grid.width),
+		player_band_x_max(grid.width) + 1,
+		player_spawns.size(),
+		map_seed,
+		9311,
+		prefer_player_anchor(grid),
+		trees,
+		overlay,
+		settings,
+		scatter,
+	)
+	var enemy_cells: Array[Vector2i] = _pick_band_spawns(
+		grid,
+		enemy_band_x_min(grid.width),
+		enemy_band_x_max_exclusive(grid.width),
+		enemy_spawns.size(),
+		map_seed,
+		9317,
+		prefer_enemy_anchor(grid),
+		trees,
+		overlay,
+		settings,
+		scatter,
+	)
+	for i: int in range(player_spawns.size()):
+		if i < player_cells.size():
+			player_spawns[i].coord = player_cells[i]
+	for i: int in range(enemy_spawns.size()):
+		if i < enemy_cells.size():
+			enemy_spawns[i].coord = enemy_cells[i]
+
+
 static func _pick_band_spawns(
 	grid: PlayerGrid,
 	x_min: int,
@@ -120,10 +190,12 @@ static func _pick_band_spawns(
 	if count <= 0:
 		return []
 
+	var y_min: int = spawn_y_min(grid.height)
+	var y_max: int = spawn_y_max(grid.height)
 	var candidates: Array[Vector2i] = _walkable_cells_in_band(
-		grid, x_min, x_max_exclusive, trees, overlay, settings, scatter,
+		grid, x_min, x_max_exclusive, y_min, y_max, trees, overlay, settings, scatter, prefer,
 	)
-	var picked: Array[Vector2i] = _pick_spaced_cells(candidates, count, map_seed, salt)
+	var picked: Array[Vector2i] = _pick_spaced_cells(candidates, count, map_seed, salt, prefer)
 	if picked.size() >= count:
 		return picked
 
@@ -137,6 +209,8 @@ static func _pick_band_spawns(
 			prefer,
 			x_min,
 			x_max_exclusive,
+			y_min,
+			y_max,
 			used,
 			trees,
 			overlay,
@@ -156,22 +230,34 @@ static func _walkable_cells_in_band(
 	grid: PlayerGrid,
 	x_min: int,
 	x_max_exclusive: int,
+	y_min: int,
+	y_max: int,
 	trees: TileMapLayer,
 	overlay: TileMapLayer,
 	settings: EffectsSettings,
 	scatter: TileMapLayer,
+	prefer: Vector2i,
 ) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
-	for y: int in range(grid.height):
+	for y: int in range(y_min, y_max + 1):
 		for x: int in range(x_min, mini(x_max_exclusive, grid.width)):
 			var cell := Vector2i(x, y)
-			if Walkability.is_walkable(grid, cell, trees, overlay, settings, scatter):
-				cells.append(cell)
-	cells.sort_custom(_sort_cells)
+			if not Walkability.is_walkable(grid, cell, trees, overlay, settings, scatter):
+				continue
+			if TreeGameplay.spawn_cell_occluded_by_tree(cell, trees, settings):
+				continue
+			cells.append(cell)
+	cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return _sort_cells_by_prefer(a, b, prefer),
+	)
 	return cells
 
 
-static func _sort_cells(a: Vector2i, b: Vector2i) -> bool:
+static func _sort_cells_by_prefer(a: Vector2i, b: Vector2i, prefer: Vector2i) -> bool:
+	var da: int = (a - prefer).length_squared()
+	var db: int = (b - prefer).length_squared()
+	if da != db:
+		return da < db
 	if a.y != b.y:
 		return a.y < b.y
 	return a.x < b.x
@@ -182,19 +268,24 @@ static func _pick_spaced_cells(
 	count: int,
 	map_seed: int,
 	salt: int,
+	prefer: Vector2i,
 ) -> Array[Vector2i]:
 	if candidates.is_empty() or count <= 0:
 		return []
 
+	var sorted: Array[Vector2i] = candidates.duplicate()
+	sorted.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return _sort_cells_by_prefer(a, b, prefer),
+	)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _mix_seed(map_seed, salt)
-	var start_idx: int = rng.randi() % candidates.size()
+	var start_idx: int = rng.randi() % sorted.size()
 	var picked: Array[Vector2i] = []
 
-	for offset: int in range(candidates.size()):
+	for offset: int in range(sorted.size()):
 		if picked.size() >= count:
 			break
-		var cell: Vector2i = candidates[(start_idx + offset) % candidates.size()]
+		var cell: Vector2i = sorted[(start_idx + offset) % sorted.size()]
 		if _has_spawn_gap(cell, picked):
 			picked.append(cell)
 
@@ -206,6 +297,8 @@ static func _find_band_spawn(
 	prefer: Vector2i,
 	x_min: int,
 	x_max_exclusive: int,
+	y_min: int,
+	y_max: int,
 	used: Dictionary,
 	trees: TileMapLayer,
 	overlay: TileMapLayer,
@@ -221,9 +314,13 @@ static func _find_band_spawn(
 				var cell: Vector2i = prefer + Vector2i(dx, dy)
 				if cell.x < x_min or cell.x >= x_max_exclusive:
 					continue
+				if cell.y < y_min or cell.y > y_max:
+					continue
 				if used.has(cell):
 					continue
 				if not Walkability.is_walkable(grid, cell, trees, overlay, settings, scatter):
+					continue
+				if TreeGameplay.spawn_cell_occluded_by_tree(cell, trees, settings):
 					continue
 				if not _has_spawn_gap(cell, used.keys()):
 					continue

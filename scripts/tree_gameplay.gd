@@ -136,9 +136,38 @@ static func character_behind_trees(
 	if grid == null or trees == null:
 		return false
 	for anchor: Vector2i in tree_anchors(trees):
-		if not _sprite_depth_overlap(char_x, sort_y, trees, anchor, TREE_SPRITE_SIZE, TREE_DEPTH_WEST_SPILL_PX):
-			continue
-		if sort_y < trunk_sort_line_y(anchor, grid, trees, settings):
+		if tree_occludes_character(char_x, sort_y, cell_from_world(Vector2(char_x, sort_y)), anchor, grid, trees, settings):
+			return true
+	return false
+
+
+static func tree_occludes_character(
+	char_x: float,
+	sort_y: float,
+	char_cell: Vector2i,
+	anchor: Vector2i,
+	grid: PlayerGrid,
+	trees: TileMapLayer,
+	settings: EffectsSettings = null,
+) -> bool:
+	if trees == null or grid == null:
+		return false
+	if not _sprite_depth_overlap(char_x, sort_y, trees, anchor, TREE_SPRITE_SIZE, TREE_DEPTH_WEST_SPILL_PX):
+		return false
+	if sort_y < trunk_sort_line_y(anchor, grid, trees, settings):
+		return true
+	return _under_canopy(char_cell, anchor, settings)
+
+
+static func spawn_cell_occluded_by_tree(
+	cell: Vector2i,
+	trees: TileMapLayer,
+	settings: EffectsSettings = null,
+) -> bool:
+	if trees == null:
+		return false
+	for anchor: Vector2i in tree_anchors(trees):
+		if _under_canopy(cell, anchor, settings):
 			return true
 	return false
 
