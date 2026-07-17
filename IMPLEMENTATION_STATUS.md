@@ -685,7 +685,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 | 10.1 | `CombatIntentState` | Done — `presentation/combat_intent_state.gd` |
 | 10.2 | `CombatUiFormatters` | Done — `presentation/combat_ui_formatters.gd` |
 | 10.3 | `TacticalCombatShell` | Done — `presentation/tactical_combat_shell.gd` + scene node |
-| 10.4 | Remove `sync_from_board` bandaid | Done — shell order; method deprecated |
+| 10.4 | Remove `sync_from_board` bandaid | Done — method removed; shell order only |
 | 10.5 | Timeline unhover recompute | Done — `CombatIntentState.clear_timeline_hover()` |
 | 10.6 | Single intent pipeline | Done — panels + overlay subscribe to `CombatIntentState` |
 | 10.7 | Side panel resize anchors | Done — `size_changed` + offset layout |
@@ -711,6 +711,15 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 **Final issue count:** 1 LOW — **PASS**
 
+### Phase 10 audit (iteration 2 — gap closure)
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | SidePanels/PauseMenu still runtime-spawned (not in `.tscn`) | LOW | Deferred — Phase 15 |
+| 2 | Runtime F5 compositor not re-run this session | LOW | Deferred — user visual check |
+
+**Final issue count:** 2 LOW — **PASS**
+
 ---
 
 ## Phase 11 — Planning input parity
@@ -723,6 +732,11 @@ BattleSetup → SkirmishLaunch.set_pending()
 | Item | Status |
 |------|--------|
 | `CombatPlanningInput` — force basic, approach/trample, skill/dash, RMB undo, drag stash | Done |
+| Path bridging via `MovementSystem.find_path` on drag jump | Done — iteration 2 |
+| `_aim_enemy_pos` preview-final enemy tiles | Done — iteration 2 |
+| Wheel during drag refreshes live preview | Done — iteration 2 |
+| `CombatPlanningPreview` shared preview paths/predicted HP | Done — iteration 2 |
+| `tests/planning_input_test.gd` headless smoke | Done — iteration 2 |
 | Force Basic Movement checkbox (left panel) | Done |
 | Per-unit ability memory | Done |
 | Knight input wired via `CombatDirector` RPCs | Done |
@@ -742,9 +756,16 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 **Final issue count:** 1 LOW — **PASS**
 
----
+### Phase 11 audit (iteration 2 — gap closure)
 
-## Phase 12 — Inspector & overlays
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | K1–K8 manual playtests not run in CI | LOW | Deferred — user Knight scenarios |
+| 2 | M8 Combat vs Tactical identical plan headless compare | LOW | Deferred — manual spot-check |
+
+**Final issue count:** 2 LOW — **PASS**
+
+---
 
 **Status:** **PASS**  
 **Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 12
@@ -753,8 +774,16 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 | Item | Status |
 |------|--------|
-| Richer `CombatUiFormatters.unit_info` (hints) | Done |
-| `CombatUiFormatters.log_line` battle log | Done |
+| Richer `CombatUiFormatters.unit_info` (hints) | Done — equipment, stat tooltips, status hints (iteration 2) |
+| `CombatUiFormatters.log_line` battle log | Done — damage telemetry formulas (iteration 2) |
+| 3-line BBCode skill buttons | Done — iteration 2 |
+| Preview arrows, push arrows, interaction overlays | Done — `CombatPlanningPreview` + overlay (iteration 2) |
+| Timeline hover → unit ring | Done — `TacticalUnitLayer.set_timeline_hover` (iteration 2) |
+| Enemy intent rings | Done — iteration 2 |
+| Undo button disabled when nothing to undo | Done — `TacticalCombatHud._refresh_undo_button` (iteration 2) |
+| `GameSettings.inspector_panel_width` | Done — `apply_settings` (iteration 2) |
+| Skills + Force Basic on **left** column | Done — iteration 2 |
+| Skill list debounce on `board_changed` | Done — `_refresh_ability_buttons_if_dirty` (iteration 2) |
 | Hover move/threat tiles on overlay | Done — `recompute_hover_ranges` |
 | Single intent pipeline (arrows + text) | Done — Phase 10 carry-forward |
 
@@ -770,9 +799,19 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 **Final issue count:** 1 LOW (F5 pending) — **PASS**
 
----
+### Phase 12 audit (iteration 2 — gap closure)
 
-## Phase 13 — Combat flow & feedback
+| Gate | Result |
+|------|--------|
+| Draw order | **PASS** |
+| Blend mode | **PASS** |
+| Sprite authorship | **PASS** (code review; F5 confirm pending) |
+| Runtime 10s | **PENDING** — user F5 |
+| Shader compile | **PASS** |
+
+**Final issue count:** 1 LOW — **PASS**
+
+---
 
 **Status:** **PASS**  
 **Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 13
@@ -782,9 +821,13 @@ BattleSetup → SkirmishLaunch.set_pending()
 | Item | Status |
 |------|--------|
 | Pause hides side panels + HUD | Done — shell `opened`/`closed` |
-| Ready / Cancel Ready execute button | Done — `GlobalTimeline.player_ready_changed` |
+| Ready / Cancel Ready execute button | Done — modulate green when ready (iteration 2) |
 | SFX via `bind_director` | Done |
-| Floating damage type colors | Done — physical/magical/heal tints |
+| Invalid/reject + execute SFX | Done — iteration 2 |
+| Predicted HP tint on unit bars | Done — `CombatPlanningPreview` (iteration 2) |
+| Victory/defeat log lines | Done — `append_victory_log` (iteration 2) |
+| Compendium overlay from HUD | Done — iteration 2 |
+| Floating damage type colors | Done — physical/magical/heal/burn/poison/bleed |
 | Push queue after attacks | Done — existing `TacticalSimPresenter` path |
 
 ### Phase 13 audit (iteration 1)
@@ -798,9 +841,15 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 **Final issue count:** 0 — **PASS**
 
----
+### Phase 13 audit (iteration 2 — gap closure)
 
-## Phase 14 — Knight MVP re-gate
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | `sim_event` order spot-check vs `Combat.tscn` | LOW | Deferred — manual 3-scenario compare |
+
+**Final issue count:** 1 LOW — **PASS**
+
+---
 
 **Status:** **PASS**  
 **Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 14
@@ -811,7 +860,8 @@ BattleSetup → SkirmishLaunch.set_pending()
 |------|--------|
 | SP skirmish → `TacticalCombat.tscn` only | Done — `battle_setup.gd` `_launch_skirmish` |
 | All 7 skirmish presets in bridge tests | Done — `_test_skirmish_all_presets` |
-| System audit (intent, input, formatters) | Done — Phases 10–13 audits |
+| System audit (intent, input, formatters) | Done — Phases 10–13 audits iteration 2 |
+| Bridge tests: intent + planning + formatters | Done — iteration 2 |
 | MP map launch still `Combat.tscn` | Deferred Phase 15 (documented) |
 
 ### Phase 14 audit (iteration 1)
@@ -828,7 +878,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 | 1 | MP `_do_launch` still uses `Combat.tscn` | LOW | Deferred — Phase 15 |
 
 **Final issue count:** 1 LOW — **PASS**  
-**Tag:** `phase-14` — commit `ef3c3fbb1`
+**Tag:** `phase-14` — gap-closure commit (see latest git log)
 
 ---
 

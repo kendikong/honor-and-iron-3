@@ -16,6 +16,9 @@ static func run_all() -> Dictionary:
 	_test_headless_sim_pipeline(failures)
 	_test_generate_encounter_board(failures)
 	_test_combat_intent_state(failures)
+	_test_combat_planning_preview(failures)
+	_test_combat_ui_formatters(failures)
+	PlanningInputTest.run_all(failures)
 	return {"passed": failures.is_empty(), "failures": failures}
 
 
@@ -272,6 +275,34 @@ static func _test_combat_intent_state(failures: Array[String]) -> void:
 	state.clear_timeline_hover()
 	if state.intent_units.has(2):
 		failures.append("CombatIntentState: clear timeline hover should remove highlight when nothing else selected")
+
+
+static func _test_combat_planning_preview(failures: Array[String]) -> void:
+	var preview := CombatPlanningPreview.new()
+	var paths: Dictionary = {}
+	var splits: Dictionary = {}
+	var pushes: Dictionary = {}
+	var move := SimEvent.new()
+	move.type = GameEnums.SimEventType.UNIT_MOVED
+	move.data = {"actor": 1, "path": [Vector2i(2, 1), Vector2i(3, 1)]}
+	var push := SimEvent.new()
+	push.type = GameEnums.SimEventType.UNIT_PUSHED
+	push.data = {"unit": 2, "to": Vector2i(4, 1)}
+	CombatPlanningPreview.build_preview_paths([move, push], null, paths, splits, pushes)
+	if paths.is_empty():
+		failures.append("CombatPlanningPreview: paths empty without director (expected no crash)")
+
+
+static func _test_combat_ui_formatters(failures: Array[String]) -> void:
+	var formula: String = CombatUiFormatters.format_damage_telemetry(
+		{"base": 3, "wpn": 2, "stat_val": 5, "multiplier_raw": 7.0, "target_def": 1, "fortitude": 0},
+		6, 4, 2,
+	)
+	if formula.find("incoming") < 0:
+		failures.append("CombatUiFormatters: format_damage_telemetry missing incoming")
+	var desc: String = CombatUiFormatters.reason_text("no_path")
+	if desc != "can't reach":
+		failures.append("CombatUiFormatters: reason_text no_path mismatch")
 
 
 static func _hash_board(board: BoardState) -> String:

@@ -58,12 +58,19 @@ func setup(
 	intent_state.bind(director)
 	_wire_intent_state()
 	_wire_pause_visibility()
+	_wire_unit_feedback()
+
+
+func bind_settings(settings: GameSettings) -> void:
+	if _side_panels != null:
+		_side_panels.apply_settings(settings)
 
 
 func start_combat(encounter: EncounterData) -> void:
 	_unit_layer.setup(_map_view, _director, _char_profile)
 	_unit_overlay.setup(_map_view, _director, _unit_layer)
 	_planning_overlay.setup(_map_view, _director, intent_state)
+	_planning_overlay.bind_unit_layer(_unit_layer)
 	_side_panels.setup(_director, _map_view, intent_state, planning_input)
 	_pause_menu.setup(_director, _map_view, _options)
 	_director.start_from_encounter(encounter)
@@ -119,4 +126,15 @@ func _wire_pause_visibility() -> void:
 			_side_panels.visible = true
 		if _combat_hud != null:
 			_combat_hud.visible = true,
+	)
+
+
+func _wire_unit_feedback() -> void:
+	if _unit_layer == null or intent_state == null:
+		return
+	intent_state.intents_changed.connect(func(units: Dictionary) -> void:
+		_unit_layer.set_intent_units(units),
+	)
+	intent_state.timeline_hover_changed.connect(func(unit_id: int) -> void:
+		_unit_layer.set_timeline_hover(unit_id),
 	)

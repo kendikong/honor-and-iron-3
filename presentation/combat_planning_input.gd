@@ -25,6 +25,7 @@ var _drag_press_local: Vector2 = Vector2.ZERO
 var _drag_press_time_ms: int = 0
 var _drag_unit_was_selected: bool = false
 var _drag_saved_preview: BoardState = null
+var preview_state: CombatPlanningPreview = CombatPlanningPreview.new()
 
 
 func setup(
@@ -212,8 +213,7 @@ func update_drag(local: Vector2) -> void:
 		drag_target_id,
 		_route_waypoints(),
 	)
-	if preview.has("temp_board"):
-		_planning.set_preview_board(preview["temp_board"])
+	_apply_live_preview(preview)
 	_planning.set_drag_route(_drag_route)
 	_planning.recompute_hover_ranges(
 		force_basic_movement,
@@ -221,6 +221,38 @@ func update_drag(local: Vector2) -> void:
 		dragging,
 		_drag_unit_id,
 	)
+
+
+func get_drag_unit_id() -> int:
+	return _drag_unit_id
+
+
+func refresh_live_preview() -> void:
+	if not dragging or _drag_unit_id < 0:
+		return
+	var board: BoardState = _director.board
+	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
+	if not board.is_in_bounds(cell):
+		return
+	var occ := board.get_unit_at(cell)
+	var drag_target_id: int = -1
+	if occ != null and occ.id != _drag_unit_id:
+		drag_target_id = occ.id
+	var preview: Dictionary = _director.preview_drag(
+		_drag_unit_id,
+		_drag_last_free,
+		drag_target_id,
+		_route_waypoints(),
+	)
+	_apply_live_preview(preview)
+
+
+func _apply_live_preview(preview: Dictionary) -> void:
+	if preview.is_empty():
+		return
+	preview_state.apply_result(preview, _director)
+	if preview.has("temp_board") and _planning != null:
+		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
 
 
 func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
@@ -245,6 +277,9 @@ func _restore_committed_preview() -> void:
 	if _drag_saved_preview != null and _planning != null:
 		_planning.set_preview_board(_drag_saved_preview)
 	_drag_saved_preview = null
+	preview_state.clear_all()
+	if _planning != null:
+		_planning.clear_live_preview()
 
 
 func _on_selection_changed(unit_id: int) -> void:
@@ -382,21 +417,37 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	if _drag_route.size() >= 2 and cell == _drag_route[_drag_route.size() - 2]:
 		_drag_route.remove_at(_drag_route.size() - 1)
 		return
-	if GridSystem.manhattan(last, cell) != 1:
-		return
 	var board: BoardState = _director.board
 	var unit := board.get_unit_by_id(_drag_unit_id)
 	if unit == null:
 		return
-	if not MovementSystem.is_walkable_for(board, cell, unit):
+	if GridSystem.manhattan(last, cell) != 1:
+		for c: Vector2i in MovementSystem.find_path(board, last, cell, 999):
+			_append_route_tile(c)
+		return
+	_append_route_tile(cell)
+
+
+func _append_route_tile(coord: Vector2i) -> void:
+	var board: BoardState = _director.board
+	var unit := board.get_unit_by_id(_drag_unit_id)
+	if unit == null or _drag_route.is_empty():
+		return
+	var last: Vector2i = _drag_route[_drag_route.size() - 1]
+	if coord == last:
+		return
+	if _drag_route.size() >= 2 and coord == _drag_route[_drag_route.size() - 2]:
+		_drag_route.remove_at(_drag_route.size() - 1)
+		return
+	if GridSystem.manhattan(last, coord) != 1 or not MovementSystem.is_walkable_for(board, coord, unit):
 		return
 	if not force_basic_movement and _director.selected_ability_index >= 0:
-		var occ := board.get_unit_at(cell)
+		var occ := board.get_unit_at(coord)
 		if occ != null and occ.is_enemy() and MovementSystem.has_trample(unit):
 			return
 	if _drag_route.size() - 1 >= unit.movement.points_left:
 		return
-	_drag_route.append(cell)
+	_drag_route.append(coord)
 
 
 func _route_waypoints() -> Array[Vector2i]:
@@ -451,7 +502,10 @@ func _in_ability_range(actor: UnitState, target: UnitState) -> bool:
 	if rng < 0:
 		return false
 	var actor_pos: Vector2i = _proj_origin(actor) if aiming else actor.position
-	return GridSystem.manhattan(actor_pos, target.position) <= rng
+	var target_pos: Vector2i = target.position
+	if aiming and target.is_enemy():
+		target_pos = _aim_enemy_pos(target.id)
+	return GridSystem.manhattan(actor_pos, target_pos) <= rng
 
 
 func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
@@ -482,6 +536,35 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	if pv != null:
 		return pv.position
 	return unit.position
+
+
+func _aim_enemy_pos(unit_id: int) -> Vector2i:
+	var live := _director.board.get_unit_by_id(unit_id) if _director.board != null else null
+	if live == null:
+		return Vector2i.ZERO
+	if not aiming or not live.is_enemy():
+		return live.position
+	var preview_unit := _aim_enemy_board().get_unit_by_id(unit_id)
+	return preview_unit.position if preview_unit != null else live.position
+
+
+func _hover_attack_target_id() -> int:
+	if _director == null or _director.board == null:
+		return -1
+	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	if not _director.board.is_in_bounds(cell):
+		return -1
+	var actor := _proj_unit(_director.selected_unit_id)
+	if actor == null:
+		return -1
+	var hover_unit := _aim_enemy_board().get_unit_at(cell) if aiming else _proj().get_unit_at(cell)
+	if hover_unit == null:
+		return -1
+	if hover_unit.id == actor.id:
+		return actor.id if _ability_range(actor) == 0 else -1
+	if _in_ability_range(actor, hover_unit):
+		return hover_unit.id
+	return -1
 
 
 func _aim_enemy_board() -> BoardState:

@@ -25,6 +25,9 @@ var _hover_coord: Vector2i = Vector2i(-999, -999)
 var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
 var _hover_move_tiles: Array[Vector2i] = []
 var _hover_threat_tiles: Array[Vector2i] = []
+var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
+var _unit_layer: TacticalUnitLayer
+var _attack_target_id: int = -1
 
 
 func setup(
@@ -55,8 +58,39 @@ func setup(
 		)
 
 
+func bind_unit_layer(layer: TacticalUnitLayer) -> void:
+	_unit_layer = layer
+
+
 func get_preview_board() -> BoardState:
 	return _preview_board
+
+
+func clear_live_preview() -> void:
+	_live_preview.clear_all()
+	_attack_target_id = -1
+	if _unit_layer != null:
+		_unit_layer.clear_predicted_stats()
+	queue_redraw()
+
+
+func apply_preview_state(
+	state: CombatPlanningPreview,
+	selected_id: int,
+	attack_target_id: int,
+) -> void:
+	_live_preview = state
+	_attack_target_id = attack_target_id
+	if state.preview_board != null:
+		_preview_board = state.preview_board
+	if _unit_layer != null:
+		_unit_layer.set_predicted_stats(state.predicted_hp, state.predicted_armor)
+	queue_redraw()
+
+
+func set_live_preview(state: CombatPlanningPreview) -> void:
+	_live_preview = state
+	queue_redraw()
 
 
 func set_board(board: BoardState) -> void:
@@ -156,6 +190,8 @@ func _draw() -> void:
 		if ghost != null and ghost.is_alive():
 			draw_circle(_map_view.grid_to_local(ghost.position), 5.0, _COLOR_GHOST)
 	_draw_hover_tiles()
+	_draw_preview_arrows()
+	_draw_interaction_overlay()
 	if _route.size() >= 2:
 		for i: int in range(_route.size() - 1):
 			var a: Vector2 = _map_view.grid_to_local(_route[i])
@@ -246,6 +282,71 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 	var dir: Vector2 = (p2 - p1).normalized()
 	var end_d: float = p1.distance_to(p2)
 	var d: float = 0.0
+	while d < end_d:
+		draw_circle(p1 + dir * d, 2.5, color)
+		d += 8.0
+
+
+func _draw_preview_arrows() -> void:
+	if _board == null or _live_preview.preview_board == null:
+		return
+	for unit: UnitState in _board.units:
+		if not unit.is_alive() or not _intent_visible(unit):
+			continue
+		var route: Array = _live_preview.preview_paths.get(unit.id, [])
+		if route.size() < 2:
+			continue
+		var split: int = int(_live_preview.preview_splits.get(unit.id, route.size()))
+		var player_leg: Array = route.slice(0, split)
+		if player_leg.size() >= 2:
+			_draw_route_line(player_leg, _COLOR_PLAYER_ARROW.lightened(0.2), true)
+		var pushes: Array = _live_preview.preview_pushes.get(unit.id, [])
+		for push: Variant in pushes:
+			if push is Array and push.size() >= 2:
+				_draw_push_arrow(push[0], push[1])
+
+
+func _draw_interaction_overlay() -> void:
+	if _director == null or _director.selected_unit_id < 0:
+		return
+	var actor := _live_preview.preview_board.get_unit_by_id(_director.selected_unit_id) \
+		if _live_preview.preview_board != null else _board.get_unit_by_id(_director.selected_unit_id)
+	if actor == null:
+		return
+	var route: Array = _live_preview.preview_paths.get(actor.id, [])
+	if route.size() >= 2:
+		_draw_route_line(route, _COLOR_PLAYER_ARROW, true)
+	if _attack_target_id >= 0:
+		var origin: Vector2i = actor.position
+		var target_coord: Vector2i = _hover_coord
+		var target_unit := _live_preview.preview_board.get_unit_by_id(_attack_target_id) \
+			if _live_preview.preview_board != null else _board.get_unit_by_id(_attack_target_id)
+		if target_unit != null:
+			target_coord = target_unit.position
+		if origin != target_coord:
+			_draw_dashed_route([origin, target_coord], _COLOR_PLAYER_ARROW)
+
+
+func _draw_route_line(route: Array, color: Color, cardinal_only: bool) -> void:
+	if route.size() < 2:
+		return
+	for i: int in range(route.size() - 1):
+		var a: Vector2 = _map_view.grid_to_local(route[i])
+		var b: Vector2 = _map_view.grid_to_local(route[i + 1])
+		draw_line(a, b, color, 2.0)
+
+
+func _draw_push_arrow(from: Vector2i, to: Vector2i) -> void:
+	var p1: Vector2 = _map_view.grid_to_local(from)
+	var p2: Vector2 = _map_view.grid_to_local(to)
+	var dir: Vector2 = (p2 - p1).normalized()
+	var dist: float = p1.distance_to(p2)
+	var start_d: float = 8.0
+	var end_d: float = dist - 8.0
+	if start_d >= end_d:
+		return
+	var color := Color(1.0, 0.65, 0.2, 0.95)
+	var d: float = start_d
 	while d < end_d:
 		draw_circle(p1 + dir * d, 2.5, color)
 		d += 8.0

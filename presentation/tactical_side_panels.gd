@@ -6,7 +6,8 @@ extends CanvasLayer
 const COLOR_SELECT: Color = Color(0.98, 0.86, 0.32, 0.95)
 const COLOR_SKILL_DISABLED: Color = Color(0.55, 0.55, 0.55, 0.85)
 const LOG_FONT_SIZE: int = 10
-const PANEL_WIDTH: int = 280
+
+var _panel_width: int = 280
 
 var _director: CombatDirector
 var _map_view: TacticalMapView
@@ -30,6 +31,13 @@ var _selected_ability: int = 0
 var _hover_coord: Vector2i = Vector2i(-999, -999)
 var _intent_units: Dictionary = {}
 var _last_math_telemetry: Dictionary = {}
+
+
+func apply_settings(settings: GameSettings) -> void:
+	if settings == null:
+		return
+	_panel_width = settings.inspector_panel_width
+	_on_viewport_resized()
 
 
 func setup(
@@ -100,10 +108,6 @@ func _make_panel_column(left_side: bool) -> Control:
 		_force_basic_check.text = "Force Basic Movement"
 		_force_basic_check.toggled.connect(_on_force_basic_toggled)
 		col.add_child(_force_basic_check)
-		_info_label = _add_rich_panel(col, "Unit Info")
-		_tile_info_label = _add_rich_panel(col, "Tile", 72)
-	else:
-		_intent_label = _add_rich_panel(col, "Enemy Intent", 100)
 		var skill_panel := PanelContainer.new()
 		skill_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		col.add_child(skill_panel)
@@ -126,6 +130,10 @@ func _make_panel_column(left_side: bool) -> Control:
 		_skill_list = VBoxContainer.new()
 		_skill_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		skill_scroll.add_child(_skill_list)
+		_info_label = _add_rich_panel(col, "Unit Info")
+		_tile_info_label = _add_rich_panel(col, "Tile", 72)
+	else:
+		_intent_label = _add_rich_panel(col, "Enemy Intent", 100)
 		var log_panel := PanelContainer.new()
 		log_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		col.add_child(log_panel)
@@ -154,11 +162,12 @@ func _make_panel_column(left_side: bool) -> Control:
 
 func _on_viewport_resized() -> void:
 	var vp: Vector2 = get_viewport().get_visible_rect().size
+	var w: float = float(_panel_width)
 	if _left_anchor != null:
 		_left_anchor.offset_left = 8
-		_left_anchor.offset_right = -(vp.x - float(PANEL_WIDTH) - 16.0)
+		_left_anchor.offset_right = -(vp.x - w - 16.0)
 	if _right_anchor != null:
-		_right_anchor.offset_left = maxf(0.0, vp.x - float(PANEL_WIDTH) - 16.0)
+		_right_anchor.offset_left = maxf(0.0, vp.x - w - 16.0)
 		_right_anchor.offset_right = -8
 
 
@@ -192,11 +201,14 @@ func _add_rich_panel(parent: VBoxContainer, title: String, min_h: int = 120) -> 
 	return rich
 
 
+var _last_skill_rebuild_key: String = ""
+
+
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
 	_refresh_info()
 	_refresh_intent_label()
-	_rebuild_ability_buttons()
+	_refresh_ability_buttons_if_dirty()
 
 
 func _on_preview_updated(result: SimResult) -> void:
@@ -209,6 +221,7 @@ func _on_preview_updated(result: SimResult) -> void:
 
 func _on_selection_changed(unit_id: int) -> void:
 	_selected_id = unit_id
+	_last_skill_rebuild_key = ""
 	if _intent_state != null:
 		_intent_state.set_selection(unit_id)
 	_refresh_info()
@@ -218,6 +231,10 @@ func _on_selection_changed(unit_id: int) -> void:
 func _on_ability_selected(index: int) -> void:
 	_selected_ability = index
 	_rebuild_ability_buttons()
+
+
+func get_log_label() -> RichTextLabel:
+	return _log_label
 
 
 func _on_phase_changed(phase: int) -> void:
@@ -268,6 +285,21 @@ func _refresh_intent_label() -> void:
 	_intent_label.text = "💀 Enemy intent:\n%s" % body
 
 
+func _refresh_ability_buttons_if_dirty() -> void:
+	if _selected_id < 0:
+		return
+	var unit := _proj_unit(_selected_id)
+	if unit == null:
+		unit = _board.get_unit_by_id(_selected_id) if _board != null else null
+	if unit == null or unit.is_enemy():
+		return
+	var key: String = "%d:%d:%d" % [_selected_id, _selected_ability, unit.ability.points_left]
+	if key == _last_skill_rebuild_key:
+		return
+	_last_skill_rebuild_key = key
+	_rebuild_ability_buttons()
+
+
 func _rebuild_ability_buttons() -> void:
 	if _skill_list == null:
 		return
@@ -295,20 +327,27 @@ func _rebuild_ability_buttons() -> void:
 			if _director != null:
 				_director.select_ability(index)
 		)
-		row_btn.tooltip_text = ability.display_name
-		row_btn.custom_minimum_size.y = 44
+		row_btn.tooltip_text = CombatUiFormatters.ability_desc(ability, unit)
+		row_btn.custom_minimum_size.y = 54
 		_skill_list.add_child(row_btn)
 		var vbox := VBoxContainer.new()
 		vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row_btn.add_child(vbox)
 		var name_lbl := Label.new()
 		name_lbl.text = ability.display_name
-		name_lbl.add_theme_font_size_override("font_size", 10)
+		name_lbl.add_theme_font_size_override("font_size", 9)
 		vbox.add_child(name_lbl)
 		var stats := Label.new()
 		stats.text = "🔵%d  🏹%d" % [ability.action_point_cost, ability.range_tiles]
 		stats.add_theme_font_size_override("font_size", 9)
 		vbox.add_child(stats)
+		var special := RichTextLabel.new()
+		special.bbcode_enabled = true
+		special.fit_content = true
+		special.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		special.custom_minimum_size.x = float(_panel_width - 48)
+		special.text = "[font_size=10]%s[/font_size]" % CombatUiFormatters.ability_effect_bbcode(ability, unit)
+		vbox.add_child(special)
 
 
 func _proj_unit(unit_id: int) -> UnitState:

@@ -113,6 +113,7 @@ func _ready() -> void:
 		_options,
 		_char_profile,
 	)
+	_combat_shell.bind_settings(_settings)
 	_camera.changed.connect(_center_map)
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	get_window().close_requested.connect(_persist_settings)

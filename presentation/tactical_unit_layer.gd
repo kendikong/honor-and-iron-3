@@ -11,6 +11,9 @@ const BAR_OFFSET_Y: float = 22.0
 
 const _COLOR_HP_BG := Color(0.08, 0.08, 0.10, 0.92)
 const _COLOR_HP_FILL := Color(0.38, 0.78, 0.46)
+const _COLOR_INTENT := Color(0.95, 0.35, 0.35, 0.7)
+const _COLOR_TIMELINE_HOVER := Color(1.0, 1.0, 1.0, 0.8)
+const _COLOR_HP_PREDICTED := Color(0.95, 0.45, 0.35, 0.85)
 const _COLOR_SELECT := Color(0.98, 0.86, 0.32, 0.95)
 
 var _map_view: TacticalMapView
@@ -21,6 +24,11 @@ var _catalog: LpcCatalog
 var _profile: CharacterGenProfile = CharacterGenProfile.new()
 var _actors: Dictionary = {}
 var _selected_id: int = -1
+var _timeline_hover_id: int = -1
+var _intent_units: Dictionary = {}
+var _predicted_hp: Dictionary = {}
+var _predicted_armor: Dictionary = {}
+var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
 var _move_tweens: Dictionary = {}
 var _active_push_tweens: int = 0
 
@@ -48,12 +56,33 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.selection_changed.connect(_on_selection_changed)
+	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
+		_phase = phase
+		queue_redraw(),
+	)
 	queue_redraw()
 
 
-## Deprecated — shell guarantees listener order before board_changed.
-func sync_from_board(board: BoardState) -> void:
-	_on_board_changed(board)
+func set_timeline_hover(unit_id: int) -> void:
+	_timeline_hover_id = unit_id
+	queue_redraw()
+
+
+func set_intent_units(units: Dictionary) -> void:
+	_intent_units = units
+	queue_redraw()
+
+
+func set_predicted_stats(hp: Dictionary, armor: Dictionary) -> void:
+	_predicted_hp = hp
+	_predicted_armor = armor
+	queue_redraw()
+
+
+func clear_predicted_stats() -> void:
+	_predicted_hp.clear()
+	_predicted_armor.clear()
+	queue_redraw()
 
 
 func is_sprites_active() -> bool:
@@ -358,16 +387,34 @@ func _draw() -> void:
 		if not unit.is_alive():
 			continue
 		_draw_hp_bar(unit)
-		if unit.id == _selected_id:
-			var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
-			draw_arc(foot + Vector2(0.0, -10.0), 9.0, 0.0, TAU, 24, _COLOR_SELECT, 2.0)
+		var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
+		var ring_center: Vector2 = foot + Vector2(0.0, -10.0)
+		if unit.id == _selected_id and _phase in [
+			CombatDirector.Phase.PLANNING_PHASE_1,
+			CombatDirector.Phase.PLANNING_PHASE_2,
+		]:
+			draw_arc(ring_center, 9.0, 0.0, TAU, 24, _COLOR_SELECT, 2.0)
+		if unit.id == _timeline_hover_id:
+			draw_arc(ring_center, 12.0, 0.0, TAU, 32, _COLOR_TIMELINE_HOVER, 2.5)
+		if unit.is_enemy() and _intent_units.has(unit.id):
+			draw_arc(ring_center, 8.0, 0.0, TAU, 24, Color(_COLOR_INTENT, 0.25), 4.0)
+			draw_arc(ring_center, 5.0, 0.0, TAU, 20, _COLOR_INTENT, 2.0)
 
 
 func _draw_hp_bar(unit: UnitState) -> void:
 	var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
 	var origin := foot + Vector2(-BAR_W * 0.5, -BAR_OFFSET_Y)
+	var current_hp: int = unit.health.current_hp
+	var predicted: int = int(_predicted_hp.get(unit.id, current_hp))
+	var max_hp: int = unit.health.max_hp
 	var frac: float = 1.0
-	if unit.health.max_hp > 0:
-		frac = clampf(float(unit.health.current_hp) / float(unit.health.max_hp), 0.0, 1.0)
+	if max_hp > 0:
+		frac = clampf(float(current_hp) / float(max_hp), 0.0, 1.0)
 	draw_rect(Rect2(origin, Vector2(BAR_W, BAR_H)), _COLOR_HP_BG)
 	draw_rect(Rect2(origin, Vector2(BAR_W * frac, BAR_H)), _COLOR_HP_FILL)
+	if predicted < current_hp and max_hp > 0:
+		var pred_frac: float = clampf(float(predicted) / float(max_hp), 0.0, 1.0)
+		var pred_w: float = BAR_W * pred_frac
+		var dmg_w: float = BAR_W * frac - pred_w
+		if dmg_w > 0.5:
+			draw_rect(Rect2(origin + Vector2(pred_w, 0.0), Vector2(dmg_w, BAR_H)), _COLOR_HP_PREDICTED)

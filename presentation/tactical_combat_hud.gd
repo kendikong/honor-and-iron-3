@@ -18,6 +18,7 @@ var _banner: PanelContainer
 var _banner_label: Label
 var _is_ready: bool = false
 var _sfx: SfxPlayer
+var _compendium_overlay: CompendiumScreen
 
 
 func setup(
@@ -41,7 +42,8 @@ func setup(
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.selection_changed.connect(func(id: int) -> void:
 		if _timeline_grid != null:
-			_timeline_grid.set_selected(id),
+			_timeline_grid.set_selected(id)
+		_refresh_undo_button(),
 	)
 	if GlobalTimeline.player_ready_changed.is_connected(_on_player_ready_changed) == false:
 		GlobalTimeline.player_ready_changed.connect(_on_player_ready_changed)
@@ -89,7 +91,7 @@ func _build_ui() -> void:
 
 	var compendium := Button.new()
 	compendium.text = "Compendium"
-	compendium.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/Compendium.tscn"))
+	compendium.pressed.connect(_open_compendium_overlay)
 	top_row.add_child(compendium)
 
 	var title := Label.new()
@@ -208,25 +210,32 @@ func _on_phase_changed(phase: int) -> void:
 		or phase == CombatDirector.Phase.PLANNING_PHASE_2
 	)
 	_execute_btn.disabled = not planning
-	_undo_btn.disabled = not planning
+	_undo_btn.visible = planning
 	_clear_btn.disabled = not planning
+	_refresh_undo_button()
 	if not planning:
 		_is_ready = false
 		_execute_btn.text = "Ready — Execute Phase"
+		_execute_btn.modulate = Color.WHITE
 	if phase == CombatDirector.Phase.VICTORY:
 		_show_banner("Victory!")
 		if _sfx != null:
 			_sfx.play("win")
+		if _side_panels != null:
+			CombatUiFormatters.append_victory_log(_side_panels.get_log_label(), true)
 	elif phase == CombatDirector.Phase.DEFEAT:
 		_show_banner("Defeat")
 		if _sfx != null:
 			_sfx.play("lose")
+		if _side_panels != null:
+			CombatUiFormatters.append_victory_log(_side_panels.get_log_label(), false)
 	else:
 		_hide_banner()
 
 
 func _on_timeline_changed(_timeline: Timeline, statuses: PackedStringArray) -> void:
 	_refresh_timeline(statuses)
+	_refresh_undo_button()
 
 
 func _on_board_changed(board: BoardState) -> void:
@@ -261,9 +270,13 @@ func _refresh_timeline(statuses: PackedStringArray = PackedStringArray()) -> voi
 
 func _on_action_rejected(reason: String) -> void:
 	_warn_label.text = "Rejected: %s" % CombatUiFormatters.reason_text(reason)
+	if _sfx != null:
+		_sfx.play("invalid")
 
 
 func _on_execute_pressed() -> void:
+	if _sfx != null:
+		_sfx.play("execute")
 	if NetworkManager != null and NetworkManager.is_multiplayer:
 		GlobalTimeline.rpc_set_ready(not _is_ready)
 	else:
@@ -276,8 +289,10 @@ func _on_player_ready_changed(_player_id: int, is_ready: bool) -> void:
 		return
 	if is_ready:
 		_execute_btn.text = "Cancel Ready"
+		_execute_btn.modulate = Color(0.4, 0.9, 0.4)
 	else:
 		_execute_btn.text = "Ready — Execute Phase"
+		_execute_btn.modulate = Color.WHITE
 
 
 func _on_undo_pressed() -> void:
@@ -296,6 +311,31 @@ func _show_banner(text: String) -> void:
 		_banner_label.text = text
 	if _banner != null:
 		_banner.visible = true
+
+
+func _refresh_undo_button() -> void:
+	if _undo_btn == null or _director == null:
+		return
+	var planning: bool = (
+		_director.phase == CombatDirector.Phase.PLANNING_PHASE_1
+		or _director.phase == CombatDirector.Phase.PLANNING_PHASE_2
+	)
+	_undo_btn.disabled = (
+		not planning
+		or _director.selected_unit_id < 0
+		or not _director.unit_has_undoable_action(_director.selected_unit_id)
+	)
+
+
+func _open_compendium_overlay() -> void:
+	if _compendium_overlay != null and is_instance_valid(_compendium_overlay):
+		_compendium_overlay.queue_free()
+	_compendium_overlay = load("res://scenes/Compendium.tscn").instantiate() as CompendiumScreen
+	if _compendium_overlay == null:
+		return
+	_compendium_overlay.overlay_mode = true
+	_compendium_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(_compendium_overlay)
 
 
 func _hide_banner() -> void:

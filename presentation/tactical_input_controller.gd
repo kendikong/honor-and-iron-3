@@ -116,6 +116,15 @@ func _cycle_ability(delta: int) -> void:
 	var next: int = (_director.selected_ability_index + delta + count) % count
 	_director.select_ability(next)
 	_play_sfx("select")
+	if _planning_input != null and _planning_input.dragging:
+		_planning_input.refresh_live_preview()
+	if _planning != null:
+		_planning.recompute_hover_ranges(
+			_planning_input.force_basic_movement if _planning_input != null else false,
+			_director.selected_ability_index,
+			_planning_input.dragging if _planning_input != null else false,
+			_planning_input.get_drag_unit_id() if _planning_input != null else -1,
+		)
 
 
 func _selected_class_id() -> StringName:

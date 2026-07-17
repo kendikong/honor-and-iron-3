@@ -12,6 +12,7 @@ const HEX_DMG: String = "f5b15a"
 const HEX_ATTACK: String = "e2b7f0"
 const HEX_TURN: String = "7fd4ff"
 const LOG_FORMULA_FONT_SIZE: int = 7
+const LOG_FONT_SIZE: int = 10
 
 
 static func facing_name(facing: int) -> String:
@@ -77,11 +78,16 @@ static func unit_info(board: BoardState, unit: UnitState) -> String:
 		],
 	)
 	lines.append(
-		"[font_size=10]💪 STR: %d  ✨ MAG: %d  🛡️ DEF: %d"
-		% [unit.current_strength, unit.current_magic, unit.current_defense]
+		"[font_size=10]💪 STR: %s  ✨ MAG: %s  🛡️ DEF: %s"
+		% [
+			_format_stat_with_tooltip(unit, GameEnums.StatType.PHYSICAL),
+			_format_stat_with_tooltip(unit, GameEnums.StatType.MAGICAL),
+			_format_stat_with_tooltip(unit, GameEnums.StatType.DEFENSE),
+		]
 		+ ("  [hint=Armor]🪖 ARM:[/hint] %d" % unit.armor if unit.armor > 0 else "")
 		+ "[/font_size]",
 	)
+	lines.append(_equipment_info(unit))
 	if unit.is_enemy():
 		if unit.definition.behavior != null and unit.definition.behavior.attack != null:
 			var att: AbilityData = unit.definition.behavior.attack
@@ -89,19 +95,31 @@ static func unit_info(board: BoardState, unit: UnitState) -> String:
 	else:
 		var names: Array[String] = []
 		for ability: AbilityData in unit.active_abilities:
-			names.append(ability.display_name)
+			names.append("[hint=\"%s\"]%s[/hint]" % [ability_desc(ability, unit), ability.display_name])
 		lines.append(
 			"[font_size=8]Abilities: %s[/font_size]"
 			% (", ".join(names) if not names.is_empty() else "None"),
 		)
+		var passives: Array[String] = []
+		for p: PassiveData in unit.active_passives:
+			passives.append("%s: %s" % [p.display_name, _parse_keywords(p.description)])
+		if not passives.is_empty():
+			lines.append("[font_size=8][b]Passives[/b][/font_size]")
+			for line: String in passives:
+				lines.append("[font_size=8]%s[/font_size]" % line)
 	if board != null and board.is_in_bounds(unit.position):
 		var tile := board.get_tile(unit.position)
 		if tile != null and tile.definition != null and tile.definition.fortitude != 0:
 			var fort_val: int = tile.definition.fortitude
 			var sign_str: String = "+" if fort_val > 0 else ""
 			lines.append(
-				"[font_size=10]🌿 Terrain: %s (%s%d Fortitude)[/font_size]"
-				% [tile.definition.display_name, sign_str, fort_val],
+				"[font_size=10][hint=\"%s\"]🌿 Terrain: %s (%s%d Fortitude)[/hint][/font_size]"
+				% [
+					"Reduces incoming damage." if fort_val > 0 else "Increases incoming damage.",
+					tile.definition.display_name,
+					sign_str,
+					fort_val,
+				],
 			)
 	if unit.active_statuses.size() > 0:
 		var status_strs: Array[String] = []
@@ -109,7 +127,11 @@ static func unit_info(board: BoardState, unit: UnitState) -> String:
 			var s_name: String = _status_name(status.type)
 			if status.duration > 1:
 				s_name += " (%d)" % status.duration
-			status_strs.append(s_name)
+			var hint: String = _status_hint(status.type)
+			if hint != "":
+				status_strs.append("[hint=\"%s\"]%s[/hint]" % [hint, s_name])
+			else:
+				status_strs.append(s_name)
 		lines.append("[color=#%s]Statuses: %s[/color]" % [HEX_INTENT, ", ".join(status_strs)])
 	return "\n".join(lines)
 
@@ -244,6 +266,7 @@ static func log_line(board: BoardState, event: SimEvent, last_telemetry: Diction
 			line = _color(HEX_DMG, detail)
 		GameEnums.SimEventType.MATH_TELEMETRY:
 			telemetry = d.duplicate(true)
+			line = ""
 		GameEnums.SimEventType.ABILITY_USED:
 			if not d.get("is_dash", false):
 				telemetry.clear()
@@ -279,6 +302,10 @@ static func log_line(board: BoardState, event: SimEvent, last_telemetry: Diction
 				line = _color(HEX_DMG, "%s takes 0 damage (fully mitigated)" % [
 					_unit_name(board, d.get("unit", -1)),
 				])
+			elif not telemetry.is_empty():
+				var formula: String = format_damage_telemetry(telemetry, incoming, hp_dmg, int(d.get("armor_damaged", 0)))
+				line += "\n[color=#aaaaaa][font_size=%d]   %s[/font_size][/color]" % [LOG_FORMULA_FONT_SIZE, formula]
+				telemetry.clear()
 		GameEnums.SimEventType.UNIT_DIED:
 			telemetry.clear()
 			line = _color(HEX_DEATH, "%s is defeated" % _unit_name(board, d.get("unit", -1)))
@@ -328,3 +355,187 @@ static func _terrain_desc(def: TerrainData) -> String:
 	if def.blocks_movement:
 		return "Wall. Blocks movement; displaced units collide with it."
 	return "Open ground. No special effect."
+
+
+static func ability_desc(ability: AbilityData, unit: UnitState = null) -> String:
+	if ability == null:
+		return ""
+	return "%s (RANGE %d | AP %d | %s)" % [
+		ability.display_name,
+		ability.range_tiles,
+		ability.action_point_cost,
+		ability_effect_string(ability, unit),
+	]
+
+
+static func ability_effect_string(ability: AbilityData, _unit: UnitState = null) -> String:
+	if ability == null:
+		return ""
+	if ability.id == &"knight_bowling_charge":
+		return "DASH 3 | TRAMPLE | PUSH 1 | COLLISION"
+	var parts: Array[String] = []
+	for effect: EffectData in ability.effects:
+		match effect.type:
+			GameEnums.EffectType.DAMAGE:
+				parts.append("ATK %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.HEAL:
+				parts.append("HEAL %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.PUSH:
+				parts.append("PUSH %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.DASH:
+				parts.append("DASH %s" % _effect_amount_string(effect))
+			_:
+				parts.append(GameEnums.EffectType.keys()[effect.type])
+	return " | ".join(parts) if not parts.is_empty() else "No effect"
+
+
+static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> String:
+	if ability == null:
+		return ""
+	if ability.id == &"knight_bowling_charge":
+		return "%s | %s | %s | %s" % [
+			_kw_hint("DASH 3", "Move up to 3 tiles in a straight line."),
+			_kw_hint("TRAMPLE", "Pass through enemy tiles."),
+			_kw_hint("PUSH 1", "Push enemies on contact."),
+			_kw_hint("COLLISION", "Collision damage on contact."),
+		]
+	var parts: Array[String] = []
+	for effect: EffectData in ability.effects:
+		match effect.type:
+			GameEnums.EffectType.DAMAGE:
+				parts.append(_kw_hint("ATK %s" % _effect_amount_string(effect), "Reduces target HP."))
+			GameEnums.EffectType.HEAL:
+				parts.append(_kw_hint("HEAL %s" % _effect_amount_string(effect), "Restores target HP."))
+			GameEnums.EffectType.PUSH:
+				parts.append(_kw_hint("PUSH %s" % _effect_amount_string(effect), "Displaces target away."))
+			GameEnums.EffectType.DASH:
+				parts.append(_kw_hint("DASH %s" % _effect_amount_string(effect), "Straight-line movement."))
+			GameEnums.EffectType.ARMOR_UP:
+				parts.append(_kw_hint("SHIELD %s" % _effect_amount_string(effect), "Temporary armor."))
+			_:
+				parts.append(_effect_amount_string(effect))
+	return " | ".join(parts) if not parts.is_empty() else "No effect"
+
+
+static func format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, armor_dmg: int) -> String:
+	var base: int = int(m.get("base", 0))
+	var wpn: int = int(m.get("wpn", 0))
+	var stat_val: int = int(m.get("stat_val", 0))
+	var stat_mult: float = 1.0 + float(stat_val) / 5.0
+	var mult_raw: float = float(m.get("multiplier_raw", m.get("floored", m.get("final_raw", 0))))
+	var t_def: int = int(m.get("target_def", 0))
+	var fort: int = int(m.get("fortitude", m.get("fort", 0)))
+	var formula := "(%s + %s) × %s = %s" % [base, wpn, _fmt_calc_num(stat_mult), _fmt_calc_num(mult_raw)]
+	formula += " - %s" % t_def
+	if fort != 0:
+		formula += " - %s" % fort
+	formula += " → %d incoming" % incoming
+	if armor_dmg > 0:
+		formula += " (-%d armor → %d HP)" % [armor_dmg, hp_dmg]
+	return formula
+
+
+static func append_victory_log(log_label: RichTextLabel, victory: bool) -> void:
+	if log_label == null:
+		return
+	var hex: String = HEX_TURN if victory else HEX_DEATH
+	var text: String = "=== Victory ===" if victory else "=== Defeat ==="
+	log_label.append_text("[color=#%s][font_size=%d]%s[/font_size]\n" % [hex, LOG_FONT_SIZE, text])
+
+
+static func _effect_amount_string(eff: EffectData) -> String:
+	if eff == null:
+		return "0"
+	if eff.scaling_stat != GameEnums.StatType.NONE and eff.amount > 0:
+		return "%d + %s" % [eff.amount, GameEnums.StatType.keys()[eff.scaling_stat]]
+	if eff.scaling_stat != GameEnums.StatType.NONE:
+		return GameEnums.StatType.keys()[eff.scaling_stat]
+	return str(eff.amount)
+
+
+static func _fmt_calc_num(value: float) -> String:
+	if not is_equal_approx(value, snappedf(value, 0.1)):
+		return "%.2f" % value
+	return "%.1f" % value
+
+
+static func _kw_hint(word: String, hint: String) -> String:
+	return "[hint=\"%s\"]%s[/hint]" % [hint, word]
+
+
+static func _format_stat_with_tooltip(unit: UnitState, stat_type: GameEnums.StatType) -> String:
+	var base_val: int = 0
+	var w_bonus: int = 0
+	var final_val: int = 0
+	var level_bonus: int = 0
+	match stat_type:
+		GameEnums.StatType.PHYSICAL:
+			base_val = unit.definition.base_strength
+			w_bonus = unit.definition.equipped_weapon.bonus_strength if unit.definition.equipped_weapon != null else 0
+			if unit.definition.preferred_stat == GameEnums.StatType.PHYSICAL:
+				level_bonus = (unit.level - 1) * 2
+			final_val = unit.current_strength
+		GameEnums.StatType.MAGICAL:
+			base_val = unit.definition.base_magic
+			w_bonus = unit.definition.equipped_weapon.bonus_magic if unit.definition.equipped_weapon != null else 0
+			if unit.definition.preferred_stat == GameEnums.StatType.MAGICAL:
+				level_bonus = (unit.level - 1) * 2
+			final_val = unit.current_magic
+		GameEnums.StatType.DEFENSE:
+			base_val = unit.definition.base_defense
+			w_bonus = unit.definition.equipped_weapon.bonus_defense if unit.definition.equipped_weapon != null else 0
+			if unit.definition.preferred_stat == GameEnums.StatType.DEFENSE:
+				level_bonus = (unit.level - 1) * 2
+			final_val = unit.current_defense
+			if unit.has_status(GameEnums.StatusType.IRON_GRIP_DEBUFF):
+				final_val = int(ceil(float(final_val) * 0.5))
+	var tooltip := "Base %d" % base_val
+	if w_bonus != 0:
+		tooltip += " + WPN %d" % w_bonus
+	if level_bonus != 0:
+		tooltip += " + Lv %d" % level_bonus
+	tooltip += " = %d" % final_val
+	return "[hint=\"%s\"]%d[/hint]" % [tooltip, final_val]
+
+
+static func _equipment_info(unit: UnitState) -> String:
+	var wpn: WeaponData = unit.definition.equipped_weapon if unit.definition != null else null
+	if wpn == null:
+		return "[font_size=9]🗡️ [b]Equipment:[/b] None[/font_size]"
+	var stat_parts: Array[String] = ["WPN %d" % wpn.might]
+	if wpn.bonus_strength != 0:
+		stat_parts.append("STR %+d" % wpn.bonus_strength)
+	if wpn.bonus_magic != 0:
+		stat_parts.append("MAG %+d" % wpn.bonus_magic)
+	if wpn.bonus_defense != 0:
+		stat_parts.append("DEF %+d" % wpn.bonus_defense)
+	var tooltip := "Might %d — added to ability base power in damage formula." % wpn.might
+	return "[font_size=9]🗡️ [b]Equipment:[/b] %s  |  [hint=\"%s\"]%s[/hint][/font_size]" % [
+		wpn.display_name, tooltip, ", ".join(stat_parts),
+	]
+
+
+static func _parse_keywords(text: String) -> String:
+	var manual: Dictionary = {
+		"ATK": "Reduces target HP. Resisted by Armor.",
+		"HEAL": "Restores target HP.",
+		"PUSH": "Displaces target away from caster.",
+		"DASH": "Moves in a straight line.",
+		"TRAMPLE": "Pass through enemy tiles.",
+		"COLLISION": "Collision damage from displacement.",
+	}
+	var out: String = text
+	for key: String in manual.keys():
+		if out.find(key) >= 0:
+			out = out.replace(key, _kw_hint(key, String(manual[key])))
+	return out
+
+
+static func _status_hint(t: GameEnums.StatusType) -> String:
+	match t:
+		GameEnums.StatusType.STURDY: return "Ignores the next displacement effect."
+		GameEnums.StatusType.BURN: return "Takes 1 damage per turn."
+		GameEnums.StatusType.BLEED: return "Takes 1 damage whenever moving."
+		GameEnums.StatusType.STUN: return "Cannot act or move."
+		GameEnums.StatusType.IRON_GRIP_DEBUFF: return "Defense is halved."
+		_: return ""

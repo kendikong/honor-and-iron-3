@@ -64,6 +64,12 @@ func _spawn_damage_text(event: SimEvent) -> void:
 		color = Color(0.35, 0.95, 0.45)
 	elif dmg_type == &"magical":
 		color = Color(0.65, 0.45, 0.95)
+	elif dmg_type == &"burn":
+		color = Color(1.0, 0.5, 0.0)
+	elif dmg_type == &"poison":
+		color = Color(0.6, 1.0, 0.4)
+	elif dmg_type == &"bleed":
+		color = Color(1.0, 0.2, 0.2)
 	var screen_pos: Vector2
 	var actor := _unit_layer.get_actor(unit_id) if _unit_layer != null else null
 	if actor != null:
