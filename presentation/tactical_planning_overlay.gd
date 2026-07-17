@@ -885,7 +885,7 @@ func _unit_can_still_move(unit_id: int) -> bool:
 	if projected == null:
 		return false
 	var unit: UnitState = projected.get_unit_by_id(unit_id)
-	if unit == null or not unit.is_player() or unit.movement.points_left <= 0:
+	if unit == null or unit.is_enemy() or unit.movement.points_left <= 0:
 		return false
 	return _director.get_planning_move_timing(unit_id) >= 0
 

@@ -243,7 +243,7 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 	if (
 		_director == null
 		or not CombatDirector.is_planning_phase(_director.phase)
-		or not unit.is_player()
+		or unit.is_enemy()
 	):
 		actor.modulate = Color.WHITE
 		return
