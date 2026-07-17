@@ -28,6 +28,7 @@ const TILE_PX: int = TacticalConstants.TILE_PX
 @onready var _sim_presenter: TacticalSimPresenter = $SimPresenter
 @onready var _input_controller: TacticalInputController = $InputController
 @onready var _sfx: SfxPlayer = $SfxPlayer
+@onready var _combat_shell: TacticalCombatShell = $CombatShell
 
 var _side_panels: TacticalSidePanels
 var _pause_menu: TacticalPauseMenu
@@ -97,6 +98,21 @@ func _ready() -> void:
 	_pause_menu.name = "PauseMenu"
 	add_child(_pause_menu)
 
+	_combat_shell.setup(
+		self,
+		_director,
+		_side_panels,
+		_pause_menu,
+		_combat_hud,
+		_unit_layer,
+		_unit_overlay,
+		_planning_overlay,
+		_sim_presenter,
+		_input_controller,
+		_sfx,
+		_options,
+		_char_profile,
+	)
 	_camera.changed.connect(_center_map)
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	get_window().close_requested.connect(_persist_settings)
@@ -164,24 +180,7 @@ func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 
 
 func _start_combat() -> void:
-	# Wire presentation before director emits board_changed (fixes invisible units on load).
-	_unit_layer.setup(self, _director, _char_profile)
-	_unit_overlay.setup(self, _director, _unit_layer)
-	_planning_overlay.setup(self, _director)
-	_side_panels.setup(_director, self)
-	_pause_menu.setup(_director, self, _options)
-	_director.start_from_encounter(_encounter)
-	_unit_layer.sync_from_board(_director.board)
-	_combat_hud.setup(_director, self, _sfx, _side_panels)
-	_sim_presenter.setup(_director, _unit_overlay, _unit_layer, self)
-	_input_controller.setup(
-		self,
-		_director,
-		_planning_overlay,
-		_sfx,
-		func() -> bool: return _options.is_open() or _pause_menu.is_open(),
-	)
-	_sfx._director = _director
+	_combat_shell.start_combat(_encounter)
 
 
 func _load_skirmish() -> void:
@@ -346,6 +345,8 @@ func _center_map() -> void:
 
 func _update_hover_coord() -> void:
 	if _director == null or _director.board == null:
+		return
+	if get_viewport().gui_get_hovered_control() != null:
 		return
 	var cell: Vector2i = screen_to_grid(get_viewport().get_mouse_position())
 	if _side_panels != null:

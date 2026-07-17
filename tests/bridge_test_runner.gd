@@ -15,6 +15,7 @@ static func run_all() -> Dictionary:
 	_test_spawn_validation_10x7(failures)
 	_test_headless_sim_pipeline(failures)
 	_test_generate_encounter_board(failures)
+	_test_combat_intent_state(failures)
 	return {"passed": failures.is_empty(), "failures": failures}
 
 
@@ -238,6 +239,39 @@ static func _test_generate_encounter_board(failures: Array[String]) -> void:
 		failures.append("generate_encounter board has no living player team")
 	if not board.has_living_team(GameEnums.Team.ENEMY):
 		failures.append("generate_encounter board has no living enemy team")
+
+
+static func _test_combat_intent_state(failures: Array[String]) -> void:
+	var state := CombatIntentState.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(5, 5)
+	var player := UnitState.new()
+	player.id = 1
+	player.team = GameEnums.Team.PLAYER
+	player.position = Vector2i(1, 1)
+	var enemy := UnitState.new()
+	enemy.id = 2
+	enemy.team = GameEnums.Team.ENEMY
+	enemy.position = Vector2i(3, 3)
+	board.units = [player, enemy]
+	var intent := Intent.new()
+	intent.enemy_id = 2
+	var action := TimelineAction.new()
+	action.type = GameEnums.ActionType.ABILITY
+	action.target_unit_id = 1
+	intent.actions = [action]
+	board.intents = [intent]
+	state.set_board(board)
+	state.set_selection(1)
+	if not state.intent_units.has(2):
+		failures.append("CombatIntentState: enemy targeting selected player not visible")
+	state.set_selection(-1)
+	state.set_timeline_hover(2)
+	if not state.intent_units.has(2):
+		failures.append("CombatIntentState: timeline hover should show enemy intent")
+	state.clear_timeline_hover()
+	if state.intent_units.has(2):
+		failures.append("CombatIntentState: clear timeline hover should remove highlight when nothing else selected")
 
 
 static func _hash_board(board: BoardState) -> String:

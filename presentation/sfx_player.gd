@@ -36,6 +36,11 @@ var _rng := RandomNumberGenerator.new()
 
 var _director: CombatDirector
 
+
+func bind_director(director: CombatDirector) -> void:
+	_director = director
+
+
 func _ready() -> void:
 	_rng.randomize()
 	for key in DEFS.keys():

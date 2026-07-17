@@ -9,6 +9,7 @@ var _options: OptionsMenu
 var _root: ColorRect
 var _visible_state: bool = false
 
+signal opened
 signal closed
 
 
@@ -33,6 +34,7 @@ func is_open() -> bool:
 func open() -> void:
 	_root.visible = true
 	_visible_state = true
+	opened.emit()
 
 
 func close_menu() -> void:

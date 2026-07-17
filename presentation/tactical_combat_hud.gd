@@ -10,6 +10,7 @@ var _phase_label: Label
 var _timeline_grid: TacticalTimelineGrid
 var _warn_label: Label
 var _side_panels: TacticalSidePanels
+var _intent_state: CombatIntentState
 var _execute_btn: Button
 var _undo_btn: Button
 var _clear_btn: Button
@@ -24,11 +25,13 @@ func setup(
 	map_view: TacticalMapView,
 	sfx: SfxPlayer = null,
 	side_panels: TacticalSidePanels = null,
+	intent_state: CombatIntentState = null,
 ) -> void:
 	_director = director
 	_map_view = map_view
 	_sfx = sfx
 	_side_panels = side_panels
+	_intent_state = intent_state
 	layer = 20
 	_build_ui()
 	_build_banner()
@@ -40,21 +43,27 @@ func setup(
 		if _timeline_grid != null:
 			_timeline_grid.set_selected(id),
 	)
+	if GlobalTimeline.player_ready_changed.is_connected(_on_player_ready_changed) == false:
+		GlobalTimeline.player_ready_changed.connect(_on_player_ready_changed)
 	if _timeline_grid != null:
 		_timeline_grid.row_hovered.connect(func(id: int) -> void:
-			if _side_panels != null:
-				_side_panels.set_intent_units({id: true}),
+			if _intent_state != null:
+				_intent_state.set_timeline_hover(id),
 		)
 		_timeline_grid.row_unhovered.connect(func(_id: int) -> void:
-			if _side_panels != null:
-				_side_panels.set_intent_units({}),
+			if _intent_state != null:
+				_intent_state.clear_timeline_hover(),
 		)
-		_timeline_grid.warning_changed.connect(func(text: String) -> void:
-			if _side_panels != null:
-				_side_panels.set_warning(text),
-		)
+		_timeline_grid.warning_changed.connect(_on_timeline_warning)
 	_on_phase_changed(_director.phase)
 	_refresh_timeline()
+
+
+func _on_timeline_warning(text: String) -> void:
+	if text.is_empty():
+		_warn_label.text = ""
+	else:
+		_warn_label.text = "Plan issue: %s" % CombatUiFormatters.reason_text(text)
 
 
 func get_timeline_grid() -> TacticalTimelineGrid:
@@ -245,13 +254,13 @@ func _refresh_timeline(statuses: PackedStringArray = PackedStringArray()) -> voi
 	if statuses.size() > 0:
 		for reason: String in statuses:
 			if reason != "":
-				_warn_label.text = "Plan issue: %s" % TacticalCombatInfo.reason_text(reason)
+				_warn_label.text = "Plan issue: %s" % CombatUiFormatters.reason_text(reason)
 				return
 	_warn_label.text = ""
 
 
 func _on_action_rejected(reason: String) -> void:
-	_warn_label.text = "Rejected: %s" % TacticalCombatInfo.reason_text(reason)
+	_warn_label.text = "Rejected: %s" % CombatUiFormatters.reason_text(reason)
 
 
 func _on_execute_pressed() -> void:
@@ -259,6 +268,16 @@ func _on_execute_pressed() -> void:
 		GlobalTimeline.rpc_set_ready(not _is_ready)
 	else:
 		GlobalTimeline.rpc_set_ready(true)
+
+
+func _on_player_ready_changed(_player_id: int, is_ready: bool) -> void:
+	_is_ready = is_ready
+	if _execute_btn == null:
+		return
+	if is_ready:
+		_execute_btn.text = "Cancel Ready"
+	else:
+		_execute_btn.text = "Ready — Execute Phase"
 
 
 func _on_undo_pressed() -> void:

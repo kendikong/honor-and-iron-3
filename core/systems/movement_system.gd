@@ -108,6 +108,10 @@ static func find_path(board: BoardState, start: Vector2i, goal: Vector2i, max_st
 		
 	return path
 
+static func is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState) -> bool:
+	return _is_walkable_for(board, coord, unit)
+
+
 static func _is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState) -> bool:
 	if not GridSystem.is_in_bounds(board, coord) or GridSystem.is_wall(board, coord):
 		return false

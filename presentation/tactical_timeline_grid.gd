@@ -77,7 +77,7 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 			bg_color = Color(0.2, 0.3, 0.5, 0.5)
 		var name_lbl := _make_cell(unit.definition.display_name, unit.definition.display_name, row_color, false, bg_color)
 		var class_lbl := _make_cell(
-			TacticalCombatInfo.class_symbol(unit),
+			CombatUiFormatters.class_symbol(unit),
 			unit.definition.display_name,
 			row_color,
 			false,
@@ -93,9 +93,9 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 		)
 		var stats_lbl := _make_cell(stats_text, stats_text, dim_color, false, bg_color)
 		var p1_action: TimelineAction = _find_action(_director.plan_phase_1, unit.id)
-		var p1_text: String = TacticalCombatInfo.action_symbol_text(_board, p1_action, unit)
+		var p1_text: String = CombatUiFormatters.action_symbol_text(_board, p1_action, unit)
 		var p1_tooltip: String = (
-			TacticalCombatInfo.describe_action(_board, p1_action)
+			CombatUiFormatters.describe_action(_board, p1_action)
 			if p1_action != null else "No action queued"
 		)
 		var p1_col: Color = row_color if p1_active else Color(row_color.r * 0.45, row_color.g * 0.45, row_color.b * 0.45)
@@ -111,12 +111,12 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 					first_warning = "Action %d (%s): %s" % [
 						combined_idx + 1,
 						unit.definition.display_name,
-						TacticalCombatInfo.reason_text(statuses[combined_idx]),
+						CombatUiFormatters.reason_text(statuses[combined_idx]),
 					]
 		var p2_action: TimelineAction = _find_action(_director.plan_phase_2, unit.id)
-		var p2_text: String = TacticalCombatInfo.action_symbol_text(_board, p2_action, unit)
+		var p2_text: String = CombatUiFormatters.action_symbol_text(_board, p2_action, unit)
 		var p2_tooltip: String = (
-			TacticalCombatInfo.describe_action(_board, p2_action)
+			CombatUiFormatters.describe_action(_board, p2_action)
 			if p2_action != null else "No action queued"
 		)
 		var p2_col: Color = row_color if p2_active else Color(row_color.r * 0.45, row_color.g * 0.45, row_color.b * 0.45)
@@ -132,7 +132,7 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 					first_warning = "Action %d (%s): %s" % [
 						combined_idx + 1,
 						unit.definition.display_name,
-						TacticalCombatInfo.reason_text(statuses[combined_idx]),
+						CombatUiFormatters.reason_text(statuses[combined_idx]),
 					]
 		var row_labels: Array[Label] = [name_lbl, class_lbl, stats_lbl, p1_lbl, p2_lbl]
 		var base_colors: Array[Color] = [bg_color, bg_color, bg_color, p1_bg, p2_bg]

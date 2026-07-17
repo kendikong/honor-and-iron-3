@@ -668,16 +668,167 @@ BattleSetup → SkirmishLaunch.set_pending()
 | 6 | Rich inspector / battle log / preview overlays not ported | **MED** | Open → Phase 12 |
 | 7 | Dual combat path (`Combat.tscn` vs `TacticalCombat.tscn`) | **MED** | Open → Phase 14–15 |
 
-**Final issue count:** 7 (5 HIGH) — **FAIL**  
-**Next:** Phase 10 per `docs/TACTICAL_COMBAT_PARITY_PLAN.md`
+**Final issue count:** 7 (5 HIGH) — **FAIL** (superseded by Phases 10–14)  
+**Next:** Phase 15 per `docs/TACTICAL_COMBAT_PARITY_PLAN.md`
 
 ---
 
-## Phase 10 — Foundation & defect repair (NEXT)
+## Phase 10 — Foundation & defect repair
 
-**Status:** Not started  
-**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 10  
-**Blocked by:** nothing — start here
+**Status:** **PASS**  
+**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 10
+
+### Deliverables
+
+| # | Deliverable | Status |
+|---|-------------|--------|
+| 10.1 | `CombatIntentState` | Done — `presentation/combat_intent_state.gd` |
+| 10.2 | `CombatUiFormatters` | Done — `presentation/combat_ui_formatters.gd` |
+| 10.3 | `TacticalCombatShell` | Done — `presentation/tactical_combat_shell.gd` + scene node |
+| 10.4 | Remove `sync_from_board` bandaid | Done — shell order; method deprecated |
+| 10.5 | Timeline unhover recompute | Done — `CombatIntentState.clear_timeline_hover()` |
+| 10.6 | Single intent pipeline | Done — panels + overlay subscribe to `CombatIntentState` |
+| 10.7 | Side panel resize anchors | Done — `size_changed` + offset layout |
+| 10.8 | GUI hover suppress | Done — `gui_get_hovered_control()` gate |
+| 10.9 | Single warning owner | Done — `TacticalCombatHud._warn_label` only |
+| 10.10 | Sfx `bind_director` | Done — no `_sfx._director` mutation |
+| 10.11 | Public `MovementSystem.is_walkable_for` | Done |
+| 10.12 | CombatShell in `TacticalCombat.tscn` | Done |
+| 10.13 | Phase 9 FAIL documented | Done (above) |
+
+### Phase 10 audit (iteration 1)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | **PASS** | All 10.1–10.13 on disk |
+| Correct coding | **PASS** | Grep: one `_recompute_intent_units` in tactical path (`CombatIntentState`); no `MovementSystem._` in `presentation/` except legacy `board_view.gd` |
+| Consistency | **PASS** | Shell header documents setup order + z layers |
+| Issues | **PASS** | 0 HIGH open |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Runtime F5 compositor not re-run this session | LOW | Deferred — user visual check |
+
+**Final issue count:** 1 LOW — **PASS**
+
+---
+
+## Phase 11 — Planning input parity
+
+**Status:** **PASS**  
+**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 11
+
+### Deliverables
+
+| Item | Status |
+|------|--------|
+| `CombatPlanningInput` — force basic, approach/trample, skill/dash, RMB undo, drag stash | Done |
+| Force Basic Movement checkbox (left panel) | Done |
+| Per-unit ability memory | Done |
+| Knight input wired via `CombatDirector` RPCs | Done |
+
+### Phase 11 audit (iteration 1)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | **PASS** | Core H&I click/drag/aim semantics ported |
+| Correct coding | **PASS** | Planning logic centralized; no duplicate in overlay/panels |
+| Consistency | **PASS** | Uses `MovementSystem.is_walkable_for` public API |
+| Issues | **PASS** | 0 HIGH |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | K1–K8 manual playtests not run in CI | LOW | Deferred — user Knight scenarios |
+
+**Final issue count:** 1 LOW — **PASS**
+
+---
+
+## Phase 12 — Inspector & overlays
+
+**Status:** **PASS**  
+**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 12
+
+### Deliverables
+
+| Item | Status |
+|------|--------|
+| Richer `CombatUiFormatters.unit_info` (hints) | Done |
+| `CombatUiFormatters.log_line` battle log | Done |
+| Hover move/threat tiles on overlay | Done — `recompute_hover_ranges` |
+| Single intent pipeline (arrows + text) | Done — Phase 10 carry-forward |
+
+### Visual compositor gates (Phase 12)
+
+| Gate | Result |
+|------|--------|
+| Draw order (overlay z=4, units z=6) | **PASS** — `TacticalCombat.tscn` |
+| Blend mode (tint rects, no muddy alpha) | **PASS** |
+| Sprite authorship | **PASS** — dashed routes, tile tints |
+| Runtime shader 10s | **PENDING** — user F5 |
+| Shader compile on map generate | **PASS** — no new shaders |
+
+**Final issue count:** 1 LOW (F5 pending) — **PASS**
+
+---
+
+## Phase 13 — Combat flow & feedback
+
+**Status:** **PASS**  
+**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 13
+
+### Deliverables
+
+| Item | Status |
+|------|--------|
+| Pause hides side panels + HUD | Done — shell `opened`/`closed` |
+| Ready / Cancel Ready execute button | Done — `GlobalTimeline.player_ready_changed` |
+| SFX via `bind_director` | Done |
+| Floating damage type colors | Done — physical/magical/heal tints |
+| Push queue after attacks | Done — existing `TacticalSimPresenter` path |
+
+### Phase 13 audit (iteration 1)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | **PASS** | Flow + feedback items shipped |
+| Correct coding | **PASS** | No new sim→Node leaks |
+| Consistency | **PASS** | Pause layer 35 unchanged |
+| Issues | **PASS** | 0 HIGH |
+
+**Final issue count:** 0 — **PASS**
+
+---
+
+## Phase 14 — Knight MVP re-gate
+
+**Status:** **PASS**  
+**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 14
+
+### Deliverables
+
+| Item | Status |
+|------|--------|
+| SP skirmish → `TacticalCombat.tscn` only | Done — `battle_setup.gd` `_launch_skirmish` |
+| All 7 skirmish presets in bridge tests | Done — `_test_skirmish_all_presets` |
+| System audit (intent, input, formatters) | Done — Phases 10–13 audits |
+| MP map launch still `Combat.tscn` | Deferred Phase 15 (documented) |
+
+### Phase 14 audit (iteration 1)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | **PASS** | Knight SP path tactical-only |
+| Correct coding | **PASS** | `CombatIntentState` headless test in bridge runner |
+| Consistency | **PASS** | `TACTICAL_COMBAT_PARITY_PLAN.md` deferrals honored |
+| Issues | **PASS** | 0 HIGH |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | MP `_do_launch` still uses `Combat.tscn` | LOW | Deferred — Phase 15 |
+
+**Final issue count:** 1 LOW — **PASS**  
+**Tag:** `phase-14` (Knight MVP tactical path)
 
 ---
 

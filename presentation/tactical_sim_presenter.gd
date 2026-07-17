@@ -58,6 +58,12 @@ func _spawn_damage_text(event: SimEvent) -> void:
 	var amount: int = int(event.data.get("amount", 0))
 	if amount <= 0:
 		return
+	var dmg_type: StringName = event.data.get("damage_type", &"physical")
+	var color: Color = Color(1.0, 0.35, 0.35)
+	if dmg_type == &"heal" or int(event.data.get("hp_damaged", amount)) < 0:
+		color = Color(0.35, 0.95, 0.45)
+	elif dmg_type == &"magical":
+		color = Color(0.65, 0.45, 0.95)
 	var screen_pos: Vector2
 	var actor := _unit_layer.get_actor(unit_id) if _unit_layer != null else null
 	if actor != null:
@@ -70,7 +76,7 @@ func _spawn_damage_text(event: SimEvent) -> void:
 	else:
 		return
 	var ft: FloatingText = _FloatingTextScene.instantiate()
-	ft.setup(screen_pos, str(amount), Color(1.0, 0.35, 0.35))
+	ft.setup(screen_pos, str(amount), color)
 	_map_view.add_child(ft)
 
 

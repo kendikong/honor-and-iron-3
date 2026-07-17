@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://bvtacticalcombat01"]
+[gd_scene load_steps=12 format=3 uid="uid://bvtacticalcombat01"]
 
 [ext_resource type="Script" path="res://presentation/tactical_map_view.gd" id="1_tactical"]
 [ext_resource type="Script" path="res://scripts/options_menu.gd" id="2_options"]
@@ -10,6 +10,8 @@
 [ext_resource type="Script" path="res://presentation/tactical_planning_overlay.gd" id="8_planning"]
 [ext_resource type="Script" path="res://presentation/tactical_input_controller.gd" id="9_input"]
 [ext_resource type="Script" path="res://presentation/sfx_player.gd" id="10_sfx"]
+
+[ext_resource type="Script" path="res://presentation/tactical_combat_shell.gd" id="11_shell"]
 
 [node name="TacticalCombat" type="Node2D"]
 script = ExtResource("1_tactical")
@@ -95,3 +97,6 @@ script = ExtResource("9_input")
 
 [node name="SfxPlayer" type="Node" parent="."]
 script = ExtResource("10_sfx")
+
+[node name="CombatShell" type="Node" parent="."]
+script = ExtResource("11_shell")

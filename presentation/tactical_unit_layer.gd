@@ -51,11 +51,9 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	queue_redraw()
 
 
-## Call after director.start_from_encounter when board_changed may have fired early.
+## Deprecated — shell guarantees listener order before board_changed.
 func sync_from_board(board: BoardState) -> void:
-	_board = board
-	_sync_actors()
-	queue_redraw()
+	_on_board_changed(board)
 
 
 func is_sprites_active() -> bool:
