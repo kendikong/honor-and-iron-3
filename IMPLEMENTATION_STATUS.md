@@ -828,7 +828,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 | 1 | MP `_do_launch` still uses `Combat.tscn` | LOW | Deferred — Phase 15 |
 
 **Final issue count:** 1 LOW — **PASS**  
-**Tag:** `phase-14` (Knight MVP tactical path)
+**Tag:** `phase-14` — commit `ef3c3fbb1`
 
 ---
 
