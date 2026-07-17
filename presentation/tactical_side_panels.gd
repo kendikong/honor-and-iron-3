@@ -43,7 +43,7 @@ func apply_settings(settings: GameSettings) -> void:
 	_ui_scale = settings.combat_ui_scale
 	_text_scale = settings.combat_text_scale
 	_panel_width = int(round(float(settings.inspector_panel_width) * _ui_scale))
-	CombatUiFormatters.set_text_scale(_text_scale)
+	CombatUiFormatters.configure_body_font(settings.scaled_body_font())
 	var title_sz: int = settings.scaled_title_font()
 	var body_sz: int = settings.scaled_body_font()
 	var hint_sz: int = settings.scaled_hint_font()
@@ -306,7 +306,10 @@ func _refresh_info() -> void:
 	if unit != null:
 		_info_label.text = CombatUiFormatters.unit_info(_board, unit)
 	else:
-		_info_label.text = "[color=#%s]Hover a unit or tile for details.[/color]" % CombatUiFormatters.HEX_DIM
+		_info_label.text = "[font_size=%d][color=#%s]Hover a unit or tile for details.[/color][/font_size]" % [
+			CombatUiFormatters.scaled_font_size(10),
+			CombatUiFormatters.HEX_DIM,
+		]
 
 
 func _refresh_intent_label() -> void:

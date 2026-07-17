@@ -68,7 +68,7 @@ func apply_settings(settings: GameSettings) -> void:
 	if settings == null:
 		return
 	_ui_scale = settings.combat_ui_scale
-	CombatUiFormatters.set_text_scale(settings.combat_text_scale)
+	CombatUiFormatters.configure_body_font(settings.scaled_body_font())
 	_panel_width = int(round(float(settings.inspector_panel_width) * _ui_scale))
 	var title_sz: int = settings.scaled_title_font()
 	var body_sz: int = settings.scaled_hint_font()

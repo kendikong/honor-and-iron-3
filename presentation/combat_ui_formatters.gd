@@ -14,15 +14,30 @@ const HEX_TURN: String = "7fd4ff"
 const LOG_FORMULA_FONT_SIZE: int = 7
 const LOG_FONT_SIZE: int = 10
 
-static var _text_scale: float = 1.0
+## Legacy BBCode tier keys → ratio of inspector body font (medium body = 20px design ref).
+const _FONT_TIER_RATIO: Dictionary = {
+	13: 1.0,
+	10: 0.85,
+	9: 0.75,
+	8: 0.65,
+	7: 0.55,
+}
+
+static var _body_font_px: int = 20
 
 
-static func set_text_scale(scale: float) -> void:
-	_text_scale = clampf(scale, 0.5, 3.0)
+static func configure_body_font(body_px: int) -> void:
+	_body_font_px = maxi(10, body_px)
 
 
-static func scaled_font_size(base: int) -> int:
-	return maxi(1, int(round(float(base) * _text_scale)))
+static func set_text_scale(_scale: float) -> void:
+	# Kept for call-site compat; body font already includes text scale via GameSettings.
+	pass
+
+
+static func scaled_font_size(legacy_tier: int) -> int:
+	var ratio: float = float(_FONT_TIER_RATIO.get(legacy_tier, float(legacy_tier) / 20.0))
+	return maxi(1, int(round(float(_body_font_px) * ratio)))
 
 
 static func facing_name(facing: int) -> String:
@@ -49,7 +64,10 @@ static func reason_text(code: String) -> String:
 
 static func tile_info(board: BoardState, coord: Vector2i) -> String:
 	if board == null or not board.is_in_bounds(coord):
-		return "[color=#%s]Hover a tile for details.[/color]" % HEX_DIM
+		return "[font_size=%d][color=#%s]Hover a tile for details.[/color][/font_size]" % [
+			CombatUiFormatters.scaled_font_size(10),
+			HEX_DIM,
+		]
 	var tile := board.get_tile(coord)
 	if tile == null or tile.definition == null:
 		return (
