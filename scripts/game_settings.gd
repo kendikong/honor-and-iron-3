@@ -23,8 +23,8 @@ const RESOLUTION_PRESETS: Array[Vector2i] = [
 
 const WINDOW_MODE_LABELS: PackedStringArray = [
 	"Windowed",
-	"Fullscreen",
-	"Borderless fullscreen",
+	"Fullscreen (Borderless Window)",
+	"Exclusive Fullscreen",
 ]
 
 const MAP_ZOOM_LABELS: PackedStringArray = [
@@ -94,19 +94,27 @@ func save_to_disk() -> void:
 
 
 func apply_to_window(window: Window, preserve_placement: bool = true) -> void:
-	if window_mode == DisplayServer.WINDOW_MODE_WINDOWED:
-		var screen_id: int = window.current_screen
-		if screen_id < 0:
-			screen_id = DisplayServer.window_get_current_screen()
-		DisplayWindowHelper.apply_resolution(
-			window,
-			resolution,
-			false,
-			screen_id,
-			preserve_placement,
-		)
-	else:
-		DisplayServer.window_set_mode(window_mode)
+	var screen_id: int = window.current_screen
+	if screen_id < 0:
+		screen_id = DisplayServer.window_get_current_screen()
+
+	match window_mode:
+		DisplayServer.WINDOW_MODE_WINDOWED:
+			DisplayWindowHelper.apply_resolution(
+				window,
+				resolution,
+				false,
+				screen_id,
+				preserve_placement,
+			)
+		DisplayServer.WINDOW_MODE_FULLSCREEN:
+			if screen_id >= 0:
+				window.current_screen = screen_id
+			window.mode = Window.MODE_FULLSCREEN
+		DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
+			if screen_id >= 0:
+				window.current_screen = screen_id
+			window.mode = Window.MODE_EXCLUSIVE_FULLSCREEN
 
 
 func resolution_index_for(size: Vector2i) -> int:

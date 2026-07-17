@@ -35,53 +35,45 @@ func _build_display_tab(parent: TabContainer) -> void:
 	var vbox = VBoxContainer.new()
 	margin.add_child(vbox)
 	parent.add_child(margin)
-	
-	var fs_check = CheckBox.new()
-	fs_check.text = "Fullscreen"
-	fs_check.button_pressed = get_window().mode == Window.MODE_FULLSCREEN
-	vbox.add_child(fs_check)
-	
-	fs_check.toggled.connect(func(t: bool):
-		if t:
-			get_window().mode = Window.MODE_FULLSCREEN
-		else:
-			get_window().mode = Window.MODE_WINDOWED
-	)
-	
+
+	var settings := GameSettings.new()
+	settings.load_from_disk()
+	settings.capture_from_window(get_window())
+
+	var mode_hbox = HBoxContainer.new()
+	var mode_lbl = Label.new()
+	mode_lbl.text = "Window mode: "
+	mode_hbox.add_child(mode_lbl)
+
+	var mode_dd = OptionButton.new()
+	for i: int in range(GameSettings.WINDOW_MODE_LABELS.size()):
+		mode_dd.add_item(GameSettings.WINDOW_MODE_LABELS[i], i)
+	mode_dd.select(settings.window_mode_index())
+	mode_hbox.add_child(mode_dd)
+	vbox.add_child(mode_hbox)
+
 	var res_hbox = HBoxContainer.new()
 	var res_lbl = Label.new()
 	res_lbl.text = "Resolution: "
 	res_hbox.add_child(res_lbl)
-	
+
 	var res_dd = OptionButton.new()
 	var res_list: Array[Vector2i] = GameSettings.RESOLUTION_PRESETS
 	for i: int in range(res_list.size()):
 		res_dd.add_item("%d × %d" % [res_list[i].x, res_list[i].y], i)
-		
-	var current_sz = get_window().size
-	for i in range(res_list.size()):
-		if current_sz == res_list[i]:
-			res_dd.select(i)
-			break
+	res_dd.select(settings.resolution_index())
 	res_hbox.add_child(res_dd)
 	vbox.add_child(res_hbox)
-	
+
 	vbox.add_child(Control.new()) # Spacer
-	
+
 	var apply_btn = Button.new()
 	apply_btn.text = "Apply Settings"
 	apply_btn.pressed.connect(func():
-		var target_res: Vector2i = res_list[res_dd.get_selected_id()]
-		var is_fs: bool = fs_check.button_pressed
-		var screen_id: int = get_window().current_screen
-		DisplayWindowHelper.apply_resolution(
-			get_window(),
-			target_res,
-			is_fs,
-			screen_id,
-			true,
-		)
-		SettingsManager.save_settings(target_res.x, target_res.y, is_fs)
+		settings.set_window_mode_index(mode_dd.selected)
+		settings.set_resolution_index(res_dd.selected)
+		settings.apply_and_save(get_window(), true)
+		SettingsManager.save_settings(settings.resolution.x, settings.resolution.y, settings.window_mode != DisplayServer.WINDOW_MODE_WINDOWED)
 	)
 	vbox.add_child(apply_btn)
 

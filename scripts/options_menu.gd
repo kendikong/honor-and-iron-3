@@ -229,7 +229,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	var margin: MarginContainer = _margin(panel)
 	var vbox: VBoxContainer = _vbox(margin)
 	_add_title(vbox, "Display")
-	_add_hint(vbox, "UI scale and text apply immediately. Resolution applies on Apply.")
+	_add_hint(vbox, "UI scale and text apply immediately. Window mode applies immediately. Resolution uses Apply.")
 
 	_resolution_option = OptionButton.new()
 	_resolution_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -239,6 +239,10 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	vbox.add_child(_resolution_option)
 
 	_window_mode_option = _add_labeled_option(vbox, "Window mode", GameSettings.WINDOW_MODE_LABELS)
+	_window_mode_option.item_selected.connect(func(_idx: int) -> void:
+		if not _sync_blocked:
+			_apply_window_mode_live(),
+	)
 	_map_zoom_option = _add_labeled_option(vbox, "Map tile zoom", GameSettings.MAP_ZOOM_LABELS)
 
 	var scale_row: HBoxContainer = HBoxContainer.new()
@@ -396,6 +400,16 @@ func _apply_display() -> void:
 	if _on_applied.is_valid():
 		_on_applied.call()
 	close_menu()
+
+
+func _apply_window_mode_live() -> void:
+	if _settings == null:
+		return
+	_settings.set_window_mode_index(_window_mode_option.selected)
+	_settings.apply_to_window(get_window(), true)
+	_settings.save_to_disk()
+	if _on_applied.is_valid():
+		_on_applied.call()
 
 
 func _apply_display_live() -> void:
