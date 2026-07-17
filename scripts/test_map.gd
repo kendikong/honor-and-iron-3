@@ -527,7 +527,7 @@ func _center_map() -> void:
 
 
 func _sync_clock_hud(map_origin: Vector2 = Vector2.ZERO, map_size: Vector2 = Vector2.ZERO) -> void:
-	if _clock_hud == null:
+	if _clock_hud == null and _fps_hud == null:
 		return
 	if map_size.x < 1.0:
 		var used: Rect2i = _ground.get_used_rect()
@@ -544,8 +544,11 @@ func _sync_clock_hud(map_origin: Vector2 = Vector2.ZERO, map_size: Vector2 = Vec
 		)
 		map_size = map_pixels * float(zoom)
 		map_origin = Vector2(left_w, 0.0) + (map_viewport - map_size) * 0.5
-	_clock_hud.configure_map_rect(Rect2(map_origin, map_size))
+	if _clock_hud != null:
+		_clock_hud.visible = _settings.show_time_of_day_hud
+		_clock_hud.configure_map_rect(Rect2(map_origin, map_size))
 	if _fps_hud != null:
+		_fps_hud.visible = _settings.show_fps_hud
 		_fps_hud.configure_map_rect(Rect2(map_origin, map_size))
 
 

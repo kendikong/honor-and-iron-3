@@ -31,6 +31,8 @@ var _panel_width_slider: HSlider
 var _panel_width_value: Label
 var _ui_scale_slider: HSlider
 var _ui_scale_value: Label
+var _text_scale_slider: HSlider
+var _text_scale_value: Label
 var _combat_char_section: VBoxContainer
 var _display_char_scale_slider: HSlider
 var _display_char_scale_value: Label
@@ -53,6 +55,8 @@ var _effects_checks: Dictionary = {}
 var _on_effects_changed: Callable
 var _map_settings_btn: Button
 var _damage_numbers_check: CheckButton
+var _show_fps_check: CheckButton
+var _show_tod_check: CheckButton
 var _sound_panel: PanelContainer
 var _master_slider: HSlider
 var _sfx_slider: HSlider
@@ -130,6 +134,10 @@ func close_menu() -> void:
 	closed.emit()
 
 
+func go_back() -> void:
+	_navigate_back()
+
+
 func set_map_tool_state(tile_labels: bool, boredom_atmosphere: bool, boredom_water: bool) -> void:
 	if _tile_labels_check != null:
 		_tile_labels_check.set_block_signals(true)
@@ -158,8 +166,38 @@ func _input(event: InputEvent) -> void:
 			toggle()
 			get_viewport().set_input_as_handled()
 		elif _is_open and event.keycode == KEY_ESCAPE:
-			close_menu()
+			_navigate_back()
 			get_viewport().set_input_as_handled()
+	elif _is_open and event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			_navigate_back()
+			get_viewport().set_input_as_handled()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _is_open:
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		_navigate_back()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		_navigate_back()
+		get_viewport().set_input_as_handled()
+
+
+func _navigate_back() -> void:
+	if not _is_open:
+		return
+	if _display_panel.visible or _map_panel.visible:
+		_show_main()
+		return
+	if _sound_panel != null and _sound_panel.visible:
+		_show_main()
+		return
+	if _effects_panel != null and _effects_panel.visible:
+		_show_main()
+		return
+	close_menu()
 
 
 func _build_ui() -> void:
@@ -172,6 +210,7 @@ func _build_ui() -> void:
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.color = Color(0.0, 0.0, 0.0, 0.55)
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.gui_input.connect(_on_dim_gui_input)
 	_root.add_child(dim)
 
 	var center: CenterContainer = CenterContainer.new()
@@ -240,7 +279,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	var margin: MarginContainer = _margin(panel)
 	var vbox: VBoxContainer = _vbox(margin)
 	_add_title(vbox, "Display")
-	_add_hint(vbox, "UI scale and text apply immediately. Window mode applies immediately. Resolution uses Apply.")
+	_add_hint(vbox, "UI layout scale affects panels/buttons only. Text scale affects fonts. Map scale applies live.")
 
 	_resolution_option = OptionButton.new()
 	_resolution_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -283,7 +322,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 
 	var ui_scale_row: HBoxContainer = HBoxContainer.new()
 	ui_scale_row.add_theme_constant_override("separation", 10)
-	vbox.add_child(_label("Combat UI scale"))
+	vbox.add_child(_label("UI layout scale (panels & buttons)"))
 	vbox.add_child(ui_scale_row)
 	_ui_scale_slider = HSlider.new()
 	_ui_scale_slider.min_value = 0.75
@@ -295,6 +334,21 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	_ui_scale_value = Label.new()
 	_ui_scale_value.custom_minimum_size = Vector2(48, 0)
 	ui_scale_row.add_child(_ui_scale_value)
+
+	var text_scale_row: HBoxContainer = HBoxContainer.new()
+	text_scale_row.add_theme_constant_override("separation", 10)
+	vbox.add_child(_label("Text scale"))
+	vbox.add_child(text_scale_row)
+	_text_scale_slider = HSlider.new()
+	_text_scale_slider.min_value = 0.75
+	_text_scale_slider.max_value = 2.5
+	_text_scale_slider.step = 0.05
+	_text_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_text_scale_slider.value_changed.connect(_on_text_scale_slider_changed)
+	text_scale_row.add_child(_text_scale_slider)
+	_text_scale_value = Label.new()
+	_text_scale_value.custom_minimum_size = Vector2(48, 0)
+	text_scale_row.add_child(_text_scale_value)
 
 	var width_row: HBoxContainer = HBoxContainer.new()
 	width_row.add_theme_constant_override("separation", 10)
@@ -320,6 +374,26 @@ func _build_display_menu(panel: PanelContainer) -> void:
 				_apply_display_live(),
 	)
 	vbox.add_child(_damage_numbers_check)
+
+	_show_fps_check = CheckButton.new()
+	_show_fps_check.text = "Show FPS counter"
+	_show_fps_check.toggled.connect(func(pressed: bool) -> void:
+		if _settings != null:
+			_settings.show_fps_hud = pressed
+			if not _sync_blocked:
+				_apply_display_live(),
+	)
+	vbox.add_child(_show_fps_check)
+
+	_show_tod_check = CheckButton.new()
+	_show_tod_check.text = "Show time-of-day clock"
+	_show_tod_check.toggled.connect(func(pressed: bool) -> void:
+		if _settings != null:
+			_settings.show_time_of_day_hud = pressed
+			if not _sync_blocked:
+				_apply_display_live(),
+	)
+	vbox.add_child(_show_tod_check)
 
 	_combat_char_section = VBoxContainer.new()
 	_combat_char_section.visible = false
@@ -467,10 +541,22 @@ func _sync_controls_from_settings() -> void:
 	_ui_scale_slider.value = _settings.combat_ui_scale
 	_ui_scale_slider.set_block_signals(false)
 	_on_ui_scale_slider_changed(_settings.combat_ui_scale)
+	_text_scale_slider.set_block_signals(true)
+	_text_scale_slider.value = _settings.combat_text_scale
+	_text_scale_slider.set_block_signals(false)
+	_on_text_scale_slider_changed(_settings.combat_text_scale)
 	if _damage_numbers_check != null:
 		_damage_numbers_check.set_block_signals(true)
 		_damage_numbers_check.button_pressed = _settings.show_damage_numbers
 		_damage_numbers_check.set_block_signals(false)
+	if _show_fps_check != null:
+		_show_fps_check.set_block_signals(true)
+		_show_fps_check.button_pressed = _settings.show_fps_hud
+		_show_fps_check.set_block_signals(false)
+	if _show_tod_check != null:
+		_show_tod_check.set_block_signals(true)
+		_show_tod_check.button_pressed = _settings.show_time_of_day_hud
+		_show_tod_check.set_block_signals(false)
 	if _char_profile != null:
 		_char_scale_slider.set_block_signals(true)
 		_char_scale_slider.value = _char_profile.display_scale
@@ -497,8 +583,15 @@ func _read_live_controls_to_settings() -> void:
 	_settings.inspector_text_size_index = _text_size_option.selected
 	_settings.inspector_panel_width = int(_panel_width_slider.value)
 	_settings.combat_ui_scale = _ui_scale_slider.value
+	_settings.combat_text_scale = _text_scale_slider.value if _text_scale_slider != null else _settings.combat_text_scale
 	_settings.show_damage_numbers = (
 		_damage_numbers_check.button_pressed if _damage_numbers_check != null else _settings.show_damage_numbers
+	)
+	_settings.show_fps_hud = (
+		_show_fps_check.button_pressed if _show_fps_check != null else _settings.show_fps_hud
+	)
+	_settings.show_time_of_day_hud = (
+		_show_tod_check.button_pressed if _show_tod_check != null else _settings.show_time_of_day_hud
 	)
 
 
@@ -510,8 +603,15 @@ func _read_controls_to_settings() -> void:
 	_settings.inspector_text_size_index = _text_size_option.selected
 	_settings.inspector_panel_width = int(_panel_width_slider.value)
 	_settings.combat_ui_scale = _ui_scale_slider.value
+	_settings.combat_text_scale = _text_scale_slider.value if _text_scale_slider != null else _settings.combat_text_scale
 	_settings.show_damage_numbers = (
 		_damage_numbers_check.button_pressed if _damage_numbers_check != null else _settings.show_damage_numbers
+	)
+	_settings.show_fps_hud = (
+		_show_fps_check.button_pressed if _show_fps_check != null else _settings.show_fps_hud
+	)
+	_settings.show_time_of_day_hud = (
+		_show_tod_check.button_pressed if _show_tod_check != null else _settings.show_time_of_day_hud
 	)
 
 
@@ -571,6 +671,22 @@ func _show_map_settings() -> void:
 
 func _on_map_scale_slider_changed(value: float) -> void:
 	_map_scale_value.text = "%.2f×" % value
+	if not _sync_blocked:
+		_apply_display_live()
+
+
+func _on_text_scale_slider_changed(value: float) -> void:
+	_text_scale_value.text = "%.2f×" % value
+	if not _sync_blocked:
+		_apply_display_live()
+
+
+func _on_dim_gui_input(event: InputEvent) -> void:
+	if not _is_open:
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		_navigate_back()
+		get_viewport().set_input_as_handled()
 
 
 func _on_char_scale_changed(value: float) -> void:

@@ -68,9 +68,10 @@ func apply_settings(settings: GameSettings) -> void:
 	if settings == null:
 		return
 	_ui_scale = settings.combat_ui_scale
+	CombatUiFormatters.set_text_scale(settings.combat_text_scale)
 	_panel_width = int(round(float(settings.inspector_panel_width) * _ui_scale))
-	var title_sz: int = int(round(float(settings.inspector_title_font()) * _ui_scale))
-	var body_sz: int = int(round(float(settings.inspector_hint_font()) * _ui_scale))
+	var title_sz: int = settings.scaled_title_font()
+	var body_sz: int = settings.scaled_hint_font()
 	if _phase_label != null:
 		_phase_label.add_theme_font_size_override("font_size", title_sz)
 	for child: Node in get_children():

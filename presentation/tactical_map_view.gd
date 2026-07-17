@@ -5,6 +5,8 @@ extends Node2D
 
 const _SparkleSprites = preload("res://scripts/water_sparkle_sprites.gd")
 const _EcologyLayer = preload("res://scripts/ecology_layer.gd")
+const _FpsHud = preload("res://scripts/fps_hud.gd")
+const _WorldClockHud = preload("res://scripts/world_clock_hud.gd")
 const _C = preload("res://scripts/mana_seed_constants.gd")
 
 const TILE_PX: int = TacticalConstants.TILE_PX
@@ -50,6 +52,8 @@ var _encounter: EncounterData
 var _biome_variant: int = 1
 var _last_tree_variant_b: bool = false
 var _char_profile: CharacterGenProfile = CharacterGenProfile.new()
+var _fps_hud: FpsHud
+var _clock_hud: WorldClockHud
 
 
 func _ready() -> void:
@@ -118,6 +122,14 @@ func _ready() -> void:
 	_camera.changed.connect(_center_map)
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	get_window().close_requested.connect(_persist_settings)
+
+	_clock_hud = _WorldClockHud.new()
+	_clock_hud.name = "WorldClockHud"
+	add_child(_clock_hud)
+	_fps_hud = _FpsHud.new()
+	_fps_hud.name = "FpsHud"
+	add_child(_fps_hud)
+	_apply_overlay_hud_visibility()
 
 	_load_skirmish()
 	_init_tile_pipeline()
@@ -271,6 +283,7 @@ func _on_display_settings_applied() -> void:
 	_sim_presenter.set_game_settings(_settings)
 	_combat_shell.bind_settings(_settings)
 	_settings.apply_audio_buses()
+	_apply_overlay_hud_visibility()
 	_center_map()
 	_apply_effects()
 
@@ -283,10 +296,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _options.is_open() or _pause_menu.is_open():
 		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
 			if _options.is_open():
-				_options.close_menu()
+				_options.go_back()
 			elif _pause_menu.is_open():
 				_pause_menu.close_menu()
 			get_viewport().set_input_as_handled()
+		elif _options.is_open() and event is InputEventMouseButton and event.pressed:
+			if event.button_index == MOUSE_BUTTON_RIGHT:
+				_options.go_back()
+				get_viewport().set_input_as_handled()
 		return
 	if _input_controller != null and _input_controller.handle_input(event):
 		get_viewport().set_input_as_handled()
@@ -342,12 +359,29 @@ func _center_map() -> void:
 	)
 	_map_root.scale = layout["map_root_scale"]
 	position = layout["scene_position"]
+	_sync_overlay_huds(layout["origin"], layout["scaled_size"])
 	if _unit_overlay != null:
 		_unit_overlay.queue_redraw()
 	if _unit_layer != null:
 		_unit_layer.queue_redraw()
 	if _planning_overlay != null:
 		_planning_overlay.queue_redraw()
+
+
+func _apply_overlay_hud_visibility() -> void:
+	if _fps_hud != null:
+		_fps_hud.visible = _settings.show_fps_hud
+	if _clock_hud != null:
+		_clock_hud.visible = _settings.show_time_of_day_hud
+
+
+func _sync_overlay_huds(map_origin: Vector2, map_size: Vector2) -> void:
+	_apply_overlay_hud_visibility()
+	var rect := Rect2(map_origin, map_size)
+	if _fps_hud != null:
+		_fps_hud.configure_map_rect(rect)
+	if _clock_hud != null:
+		_clock_hud.configure_map_rect(rect)
 
 
 func _update_hover_coord() -> void:

@@ -46,6 +46,9 @@ var map_zoom_multiplier: float = 1.0
 var inspector_text_size_index: int = 1
 var inspector_panel_width: int = 520
 var combat_ui_scale: float = 1.0
+var combat_text_scale: float = 1.0
+var show_fps_hud: bool = true
+var show_time_of_day_hud: bool = true
 var master_volume: float = 1.0
 var sfx_volume: float = 1.0
 var music_volume: float = 1.0
@@ -75,6 +78,9 @@ func load_from_disk() -> void:
 	inspector_text_size_index = int(cfg.get_value("display", "inspector_text_size_index", inspector_text_size_index))
 	inspector_panel_width = int(cfg.get_value("display", "inspector_panel_width", inspector_panel_width))
 	combat_ui_scale = float(cfg.get_value("display", "combat_ui_scale", combat_ui_scale))
+	combat_text_scale = float(cfg.get_value("display", "combat_text_scale", combat_text_scale))
+	show_fps_hud = bool(cfg.get_value("interface", "show_fps_hud", show_fps_hud))
+	show_time_of_day_hud = bool(cfg.get_value("interface", "show_time_of_day_hud", show_time_of_day_hud))
 	master_volume = float(cfg.get_value("audio", "master_volume", master_volume))
 	sfx_volume = float(cfg.get_value("audio", "sfx_volume", sfx_volume))
 	music_volume = float(cfg.get_value("audio", "music_volume", music_volume))
@@ -104,10 +110,13 @@ func save_to_disk() -> void:
 	cfg.set_value("display", "inspector_text_size_index", inspector_text_size_index)
 	cfg.set_value("display", "inspector_panel_width", inspector_panel_width)
 	cfg.set_value("display", "combat_ui_scale", combat_ui_scale)
+	cfg.set_value("display", "combat_text_scale", combat_text_scale)
 	cfg.set_value("audio", "master_volume", master_volume)
 	cfg.set_value("audio", "sfx_volume", sfx_volume)
 	cfg.set_value("audio", "music_volume", music_volume)
 	cfg.set_value("interface", "show_damage_numbers", show_damage_numbers)
+	cfg.set_value("interface", "show_fps_hud", show_fps_hud)
+	cfg.set_value("interface", "show_time_of_day_hud", show_time_of_day_hud)
 	cfg.set_value("developer", "tile_labels", dev_tile_labels)
 	cfg.set_value("developer", "boredom_atmosphere", dev_boredom_atmosphere)
 	cfg.set_value("developer", "boredom_water", dev_boredom_water)
@@ -192,6 +201,18 @@ func inspector_title_font() -> int:
 
 func inspector_hint_font() -> int:
 	return TEXT_SIZE_HINT[clampi(inspector_text_size_index, 0, TEXT_SIZE_HINT.size() - 1)]
+
+
+func scaled_body_font() -> int:
+	return int(round(float(inspector_body_font()) * combat_text_scale))
+
+
+func scaled_title_font() -> int:
+	return int(round(float(inspector_title_font()) * combat_text_scale))
+
+
+func scaled_hint_font() -> int:
+	return int(round(float(inspector_hint_font()) * combat_text_scale))
 
 
 func map_zoom_viewport_size(viewport_size: Vector2, inspector_width: float, effects_width: float = 0.0) -> Vector2:

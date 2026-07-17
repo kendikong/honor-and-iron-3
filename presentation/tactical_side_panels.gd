@@ -9,6 +9,7 @@ const LOG_FONT_SIZE: int = 10
 
 var _panel_width: int = 280
 var _ui_scale: float = 1.0
+var _text_scale: float = 1.0
 var _section_titles: Array[Label] = []
 var _rich_labels: Array[RichTextLabel] = []
 
@@ -40,20 +41,28 @@ func apply_settings(settings: GameSettings) -> void:
 	if settings == null:
 		return
 	_ui_scale = settings.combat_ui_scale
+	_text_scale = settings.combat_text_scale
 	_panel_width = int(round(float(settings.inspector_panel_width) * _ui_scale))
-	var title_sz: int = int(round(float(settings.inspector_title_font()) * _ui_scale))
-	var body_sz: int = int(round(float(settings.inspector_body_font()) * _ui_scale))
-	var hint_sz: int = int(round(float(settings.inspector_hint_font()) * _ui_scale))
+	CombatUiFormatters.set_text_scale(_text_scale)
+	var title_sz: int = settings.scaled_title_font()
+	var body_sz: int = settings.scaled_body_font()
+	var hint_sz: int = settings.scaled_hint_font()
 	for title: Label in _section_titles:
 		title.add_theme_font_size_override("font_size", title_sz)
 	for rich: RichTextLabel in _rich_labels:
 		rich.add_theme_font_size_override("normal_font_size", body_sz)
 	if _log_label != null:
-		_log_label.add_theme_font_size_override("normal_font_size", int(round(float(LOG_FONT_SIZE) * _ui_scale)))
+		_log_label.add_theme_font_size_override("normal_font_size", CombatUiFormatters.scaled_font_size(LOG_FONT_SIZE))
 	if _force_basic_check != null:
 		_force_basic_check.add_theme_font_size_override("font_size", hint_sz)
 	_on_viewport_resized()
 	_refresh_ability_buttons_if_dirty()
+	_refresh_info()
+	_refresh_intent_label()
+
+
+func get_panel_width() -> int:
+	return _panel_width
 
 
 func setup(
@@ -275,7 +284,9 @@ func _on_sim_event(event: SimEvent) -> void:
 
 
 func _append_log(text: String) -> void:
-	_log_label.append_text("[font_size=%d]%s[/font_size]\n" % [LOG_FONT_SIZE, text])
+	_log_label.append_text(
+		"[font_size=%d]%s[/font_size]\n" % [CombatUiFormatters.scaled_font_size(LOG_FONT_SIZE), text],
+	)
 
 
 func _refresh_info() -> void:
@@ -355,18 +366,21 @@ func _rebuild_ability_buttons() -> void:
 		row_btn.add_child(vbox)
 		var name_lbl := Label.new()
 		name_lbl.text = ability.display_name
-		name_lbl.add_theme_font_size_override("font_size", int(round(9.0 * _ui_scale)))
+		name_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(9))
 		vbox.add_child(name_lbl)
 		var stats := Label.new()
 		stats.text = "🔵%d  🏹%d" % [ability.action_point_cost, ability.range_tiles]
-		stats.add_theme_font_size_override("font_size", int(round(9.0 * _ui_scale)))
+		stats.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(9))
 		vbox.add_child(stats)
 		var special := RichTextLabel.new()
 		special.bbcode_enabled = true
 		special.fit_content = true
 		special.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		special.custom_minimum_size.x = float(_panel_width - 48)
-		special.text = "[font_size=10]%s[/font_size]" % CombatUiFormatters.ability_effect_bbcode(ability, unit)
+		special.text = "[font_size=%d]%s[/font_size]" % [
+			CombatUiFormatters.scaled_font_size(10),
+			CombatUiFormatters.ability_effect_bbcode(ability, unit),
+		]
 		vbox.add_child(special)
 
 

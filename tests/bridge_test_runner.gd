@@ -114,10 +114,10 @@ static func _test_spawn_placer_bands(failures: Array[String]) -> void:
 		])
 	for placement: UnitPlacement in skirmish.player_spawns:
 		if not SpawnPlacer.is_in_player_band(placement.coord, skirmish.grid.width):
-			failures.append("SpawnPlacer: player spawn %s outside left band" % placement.coord)
+			failures.append("SpawnPlacer: player spawn %s outside center-left band" % placement.coord)
 	for placement: UnitPlacement in skirmish.enemy_spawns:
 		if not SpawnPlacer.is_in_enemy_band(placement.coord, skirmish.grid.width):
-			failures.append("SpawnPlacer: enemy spawn %s outside right band" % placement.coord)
+			failures.append("SpawnPlacer: enemy spawn %s outside center-right band" % placement.coord)
 
 
 static func _test_skirmish_all_presets(failures: Array[String]) -> void:
@@ -168,7 +168,7 @@ static func _test_spawn_validation_10x7(failures: Array[String]) -> void:
 					)
 				if not SpawnPlacer.is_in_player_band(placement.coord, skirmish.grid.width):
 					failures.append(
-						"spawn validation: player %s outside left band (seed=%d)" % [
+						"spawn validation: player %s outside center-left band (seed=%d)" % [
 							placement.coord, map_seed,
 						],
 					)
@@ -186,7 +186,7 @@ static func _test_spawn_validation_10x7(failures: Array[String]) -> void:
 					)
 				if not SpawnPlacer.is_in_enemy_band(placement.coord, skirmish.grid.width):
 					failures.append(
-						"spawn validation: enemy %s outside right band (seed=%d)" % [
+						"spawn validation: enemy %s outside center-right band (seed=%d)" % [
 							placement.coord, map_seed,
 						],
 					)

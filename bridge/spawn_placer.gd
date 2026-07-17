@@ -2,7 +2,7 @@ class_name SpawnPlacer
 extends RefCounted
 
 ## Deterministic spawn placement for random skirmishes.
-## Players: left third, near vertical center. Enemies: right third.
+## Players: center-left band. Enemies: center-right band.
 
 const MVP_PLAYER_COUNT: int = 1
 const MVP_ENEMY_COUNT: int = 3
@@ -11,28 +11,36 @@ const MIN_SPAWN_GAP: int = 2
 const MVP_ENEMY_IDS: Array[StringName] = [&"hatchling", &"hatchling", &"charger"]
 
 
+static func player_band_x_min(grid_width: int) -> int:
+	return maxi(0, grid_width / 4)
+
+
 static func player_band_x_max(grid_width: int) -> int:
-	return maxi(0, grid_width / 3 - 1)
+	return maxi(0, grid_width / 2 - 1)
 
 
 static func enemy_band_x_min(grid_width: int) -> int:
-	return grid_width * 2 / 3
+	return mini(grid_width - 1, grid_width / 2)
+
+
+static func enemy_band_x_max_exclusive(grid_width: int) -> int:
+	return mini(grid_width, grid_width * 3 / 4)
 
 
 static func prefer_player_anchor(grid: PlayerGrid) -> Vector2i:
-	return Vector2i(maxi(0, grid.width / 6), grid.height / 2)
+	return Vector2i(maxi(0, grid.width * 2 / 5), grid.height / 2)
 
 
 static func prefer_enemy_anchor(grid: PlayerGrid) -> Vector2i:
-	return Vector2i(mini(grid.width - 1, grid.width * 5 / 6), grid.height / 2)
+	return Vector2i(mini(grid.width - 1, grid.width * 3 / 5), grid.height / 2)
 
 
 static func is_in_player_band(cell: Vector2i, grid_width: int) -> bool:
-	return cell.x <= player_band_x_max(grid_width)
+	return cell.x >= player_band_x_min(grid_width) and cell.x <= player_band_x_max(grid_width)
 
 
 static func is_in_enemy_band(cell: Vector2i, grid_width: int) -> bool:
-	return cell.x >= enemy_band_x_min(grid_width)
+	return cell.x >= enemy_band_x_min(grid_width) and cell.x < enemy_band_x_max_exclusive(grid_width)
 
 
 static func place_mvp_roster(
@@ -46,7 +54,7 @@ static func place_mvp_roster(
 ) -> Dictionary:
 	var player_cells: Array[Vector2i] = _pick_band_spawns(
 		grid,
-		0,
+		player_band_x_min(grid.width),
 		player_band_x_max(grid.width) + 1,
 		MVP_PLAYER_COUNT,
 		map_seed,
@@ -60,7 +68,7 @@ static func place_mvp_roster(
 	var enemy_cells: Array[Vector2i] = _pick_band_spawns(
 		grid,
 		enemy_band_x_min(grid.width),
-		grid.width,
+		enemy_band_x_max_exclusive(grid.width),
 		MVP_ENEMY_COUNT,
 		map_seed,
 		9203,

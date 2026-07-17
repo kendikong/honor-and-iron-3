@@ -14,6 +14,16 @@ const HEX_TURN: String = "7fd4ff"
 const LOG_FORMULA_FONT_SIZE: int = 7
 const LOG_FONT_SIZE: int = 10
 
+static var _text_scale: float = 1.0
+
+
+static func set_text_scale(scale: float) -> void:
+	_text_scale = clampf(scale, 0.5, 3.0)
+
+
+static func scaled_font_size(base: int) -> int:
+	return maxi(1, int(round(float(base) * _text_scale)))
+
 
 static func facing_name(facing: int) -> String:
 	return GameEnums.Facing.keys()[facing].capitalize()
@@ -43,53 +53,57 @@ static func tile_info(board: BoardState, coord: Vector2i) -> String:
 	var tile := board.get_tile(coord)
 	if tile == null or tile.definition == null:
 		return (
-			"[font_size=9][color=#%s][b]Unknown[/b][/color]"
+			"[font_size=%d][color=#%s][b]Unknown[/b][/color]"
 			+ "[right][color=#aaaaaa](%d, %d)[/color][/right][/font_size]"
-		) % [HEX_DIM, coord.x, coord.y]
+		) % [scaled_font_size(9), HEX_DIM, coord.x, coord.y]
 	var desc: String = _terrain_desc(tile.definition)
 	return (
-		"[font_size=9][color=#%s][b]%s[/b][/color]"
-		+ "[right][color=#aaaaaa](%d, %d)[/color][/right][/font_size]\n[font_size=10]%s[/font_size]"
-	) % [HEX_TILE, tile.definition.display_name, coord.x, coord.y, desc]
+		"[font_size=%d][color=#%s][b]%s[/b][/color]"
+		+ "[right][color=#aaaaaa](%d, %d)[/color][/right][/font_size]\n[font_size=%d]%s[/font_size]"
+	) % [scaled_font_size(9), HEX_TILE, tile.definition.display_name, coord.x, coord.y, scaled_font_size(10), desc]
 
 
 static func unit_info(board: BoardState, unit: UnitState) -> String:
 	var lines: Array[String] = []
 	lines.append(
 		(
-			"[color=#4DB8FF][font_size=13][b]%s[/b][/font_size][/color]"
-			+ "  [font_size=10][color=#aaaaaa](%s)[/color][/font_size]"
+			"[color=#4DB8FF][font_size=%d][b]%s[/b][/font_size][/color]"
+			+ "  [font_size=%d][color=#aaaaaa](%s)[/color][/font_size]"
 		)
-		% [unit.definition.display_name, "Player" if not unit.is_enemy() else "Enemy"],
+		% [scaled_font_size(13), unit.definition.display_name, scaled_font_size(10), "Player" if not unit.is_enemy() else "Enemy"],
 	)
 	var move_type: String = GameEnums.MovementType.keys()[unit.definition.movement_type].capitalize()
 	lines.append(
-		"[font_size=10]Lv.%d %s  |  Move: %s[/font_size]"
-		% [unit.level, String(unit.definition.id).capitalize(), move_type],
+		"[font_size=%d]Lv.%d %s  |  Move: %s[/font_size]"
+		% [scaled_font_size(10), unit.level, String(unit.definition.id).capitalize(), move_type],
 	)
 	lines.append(
-		"[font_size=9][color=#4ADE80][b][hint=Hit Points]❤️ HP:[/hint] %d/%d[/b][/color]    Facing %s[/font_size]"
-		% [unit.health.current_hp, unit.health.max_hp, facing_name(unit.facing)],
+		"[font_size=%d][color=#4ADE80][b][hint=Hit Points]❤️ HP:[/hint] %d/%d[/b][/color]    Facing %s[/font_size]"
+		% [scaled_font_size(9), unit.health.current_hp, unit.health.max_hp, facing_name(unit.facing)],
 	)
 	lines.append(
 		(
-			"[font_size=9][color=#F1C40F][b][hint=Movement Points]👢 MP:[/hint] %d/%d[/b][/color]"
+			"[font_size=%d][color=#F1C40F][b][hint=Movement Points]👢 MP:[/hint] %d/%d[/b][/color]"
 			+ "    [color=#E74C3C][b][hint=Action Points]⚔️ AP:[/hint] %d/%d[/b][/color][/font_size]"
 		)
 		% [
+			scaled_font_size(9),
 			unit.movement.points_left, unit.movement.max_points,
 			unit.ability.points_left, unit.ability.max_points,
 		],
 	)
 	lines.append(
-		"[font_size=10]💪 STR: %s  ✨ MAG: %s  🛡️ DEF: %s"
-		% [
-			_format_stat_with_tooltip(unit, GameEnums.StatType.PHYSICAL),
-			_format_stat_with_tooltip(unit, GameEnums.StatType.MAGICAL),
-			_format_stat_with_tooltip(unit, GameEnums.StatType.DEFENSE),
-		]
-		+ ("  [hint=Armor]🪖 ARM:[/hint] %d" % unit.armor if unit.armor > 0 else "")
-		+ "[/font_size]",
+		(
+			"[font_size=%d]💪 STR: %s  ✨ MAG: %s  🛡️ DEF: %s"
+			% [
+				scaled_font_size(10),
+				_format_stat_with_tooltip(unit, GameEnums.StatType.PHYSICAL),
+				_format_stat_with_tooltip(unit, GameEnums.StatType.MAGICAL),
+				_format_stat_with_tooltip(unit, GameEnums.StatType.DEFENSE),
+			]
+			+ ("  [hint=Armor]🪖 ARM:[/hint] %d" % unit.armor if unit.armor > 0 else "")
+			+ "[/font_size]"
+		),
 	)
 	lines.append(_equipment_info(unit))
 	if unit.is_enemy():
@@ -101,24 +115,25 @@ static func unit_info(board: BoardState, unit: UnitState) -> String:
 		for ability: AbilityData in unit.active_abilities:
 			names.append("[hint=\"%s\"]%s[/hint]" % [ability_desc(ability, unit), ability.display_name])
 		lines.append(
-			"[font_size=8]Abilities: %s[/font_size]"
-			% (", ".join(names) if not names.is_empty() else "None"),
+			"[font_size=%d]Abilities: %s[/font_size]"
+			% [scaled_font_size(8), ", ".join(names) if not names.is_empty() else "None"],
 		)
 		var passives: Array[String] = []
 		for p: PassiveData in unit.active_passives:
 			passives.append("%s: %s" % [p.display_name, _parse_keywords(p.description)])
 		if not passives.is_empty():
-			lines.append("[font_size=8][b]Passives[/b][/font_size]")
+			lines.append("[font_size=%d][b]Passives[/b][/font_size]" % scaled_font_size(8))
 			for line: String in passives:
-				lines.append("[font_size=8]%s[/font_size]" % line)
+				lines.append("[font_size=%d]%s[/font_size]" % [scaled_font_size(8), line])
 	if board != null and board.is_in_bounds(unit.position):
 		var tile := board.get_tile(unit.position)
 		if tile != null and tile.definition != null and tile.definition.fortitude != 0:
 			var fort_val: int = tile.definition.fortitude
 			var sign_str: String = "+" if fort_val > 0 else ""
 			lines.append(
-				"[font_size=10][hint=\"%s\"]🌿 Terrain: %s (%s%d Fortitude)[/hint][/font_size]"
+				"[font_size=%d][hint=\"%s\"]🌿 Terrain: %s (%s%d Fortitude)[/hint][/font_size]"
 				% [
+					scaled_font_size(10),
 					"Reduces incoming damage." if fort_val > 0 else "Increases incoming damage.",
 					tile.definition.display_name,
 					sign_str,
@@ -308,7 +323,7 @@ static func log_line(board: BoardState, event: SimEvent, last_telemetry: Diction
 				])
 			elif not telemetry.is_empty():
 				var formula: String = format_damage_telemetry(telemetry, incoming, hp_dmg, int(d.get("armor_damaged", 0)))
-				line += "\n[color=#aaaaaa][font_size=%d]   %s[/font_size][/color]" % [LOG_FORMULA_FONT_SIZE, formula]
+				line += "\n[color=#aaaaaa][font_size=%d]   %s[/font_size][/color]" % [scaled_font_size(LOG_FORMULA_FONT_SIZE), formula]
 				telemetry.clear()
 		GameEnums.SimEventType.UNIT_DIED:
 			telemetry.clear()
@@ -444,7 +459,7 @@ static func append_victory_log(log_label: RichTextLabel, victory: bool) -> void:
 		return
 	var hex: String = HEX_TURN if victory else HEX_DEATH
 	var text: String = "=== Victory ===" if victory else "=== Defeat ==="
-	log_label.append_text("[color=#%s][font_size=%d]%s[/font_size]\n" % [hex, LOG_FONT_SIZE, text])
+	log_label.append_text("[color=#%s][font_size=%d]%s[/font_size]\n" % [hex, scaled_font_size(LOG_FONT_SIZE), text])
 
 
 static func _effect_amount_string(eff: EffectData) -> String:
@@ -505,7 +520,7 @@ static func _format_stat_with_tooltip(unit: UnitState, stat_type: GameEnums.Stat
 static func _equipment_info(unit: UnitState) -> String:
 	var wpn: WeaponData = unit.definition.equipped_weapon if unit.definition != null else null
 	if wpn == null:
-		return "[font_size=9]🗡️ [b]Equipment:[/b] None[/font_size]"
+		return "[font_size=%d]🗡️ [b]Equipment:[/b] None[/font_size]" % scaled_font_size(9)
 	var stat_parts: Array[String] = ["WPN %d" % wpn.might]
 	if wpn.bonus_strength != 0:
 		stat_parts.append("STR %+d" % wpn.bonus_strength)
@@ -514,8 +529,8 @@ static func _equipment_info(unit: UnitState) -> String:
 	if wpn.bonus_defense != 0:
 		stat_parts.append("DEF %+d" % wpn.bonus_defense)
 	var tooltip := "Might %d — added to ability base power in damage formula." % wpn.might
-	return "[font_size=9]🗡️ [b]Equipment:[/b] %s  |  [hint=\"%s\"]%s[/hint][/font_size]" % [
-		wpn.display_name, tooltip, ", ".join(stat_parts),
+	return "[font_size=%d]🗡️ [b]Equipment:[/b] %s  |  [hint=\"%s\"]%s[/hint][/font_size]" % [
+		scaled_font_size(9), wpn.display_name, tooltip, ", ".join(stat_parts),
 	]
 
 

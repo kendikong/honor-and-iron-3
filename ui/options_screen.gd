@@ -50,6 +50,8 @@ var _map_scale_slider: HSlider
 var _map_scale_label: Label
 var _ui_scale_slider: HSlider
 var _ui_scale_label: Label
+var _text_scale_slider: HSlider
+var _text_scale_label: Label
 var _text_size_option: OptionButton
 var _panel_width_slider: HSlider
 var _panel_width_label: Label
@@ -57,6 +59,8 @@ var _master_slider: HSlider
 var _sfx_slider: HSlider
 var _music_slider: HSlider
 var _damage_numbers_check: CheckButton
+var _show_fps_check: CheckButton
+var _show_tod_check: CheckButton
 var _effect_checks: Dictionary = {}
 var _dev_shadow_checks: Dictionary = {}
 var _dev_tile_labels_check: CheckButton
@@ -141,6 +145,24 @@ func _build_display_tab(parent: TabContainer) -> void:
 	vbox.add_child(scale_row)
 	_on_map_scale_changed(_game_settings.map_zoom_multiplier)
 
+	_show_fps_check = CheckButton.new()
+	_show_fps_check.text = "Show FPS counter"
+	_show_fps_check.button_pressed = _game_settings.show_fps_hud
+	_show_fps_check.toggled.connect(func(pressed: bool) -> void:
+		_game_settings.show_fps_hud = pressed
+		_save_game_settings(),
+	)
+	vbox.add_child(_show_fps_check)
+
+	_show_tod_check = CheckButton.new()
+	_show_tod_check.text = "Show time-of-day clock"
+	_show_tod_check.button_pressed = _game_settings.show_time_of_day_hud
+	_show_tod_check.toggled.connect(func(pressed: bool) -> void:
+		_game_settings.show_time_of_day_hud = pressed
+		_save_game_settings(),
+	)
+	vbox.add_child(_show_tod_check)
+
 	vbox.add_child(HSeparator.new())
 	_add_button(vbox, "Apply resolution & window mode", _apply_display_video)
 
@@ -209,7 +231,7 @@ func _build_controls_tab(parent: TabContainer) -> void:
 func _build_interface_tab(parent: TabContainer) -> void:
 	var scroll := _scroll_tab(parent, "Interface")
 	var vbox := _vbox(scroll)
-	_add_hint(vbox, "Changes apply immediately.")
+	_add_hint(vbox, "UI layout scale affects panels/buttons. Text scale affects fonts only.")
 
 	_ui_scale_slider = HSlider.new()
 	_ui_scale_slider.min_value = 0.75
@@ -221,9 +243,24 @@ func _build_interface_tab(parent: TabContainer) -> void:
 	var ui_row := HBoxContainer.new()
 	ui_row.add_child(_ui_scale_slider)
 	ui_row.add_child(_ui_scale_label)
-	vbox.add_child(_label("Combat UI scale"))
+	vbox.add_child(_label("UI layout scale (panels & buttons)"))
 	vbox.add_child(ui_row)
 	_on_ui_scale_changed(_game_settings.combat_ui_scale)
+
+	_text_scale_slider = HSlider.new()
+	_text_scale_slider.min_value = 0.75
+	_text_scale_slider.max_value = 2.5
+	_text_scale_slider.step = 0.05
+	_text_scale_slider.value = _game_settings.combat_text_scale
+	_text_scale_slider.value_changed.connect(_on_text_scale_changed)
+	_text_scale_label = Label.new()
+	_text_scale_label.custom_minimum_size.x = 48
+	var text_row := HBoxContainer.new()
+	text_row.add_child(_text_scale_slider)
+	text_row.add_child(_text_scale_label)
+	vbox.add_child(_label("Text scale"))
+	vbox.add_child(text_row)
+	_on_text_scale_changed(_game_settings.combat_text_scale)
 
 	_text_size_option = OptionButton.new()
 	for label: String in GameSettings.TEXT_SIZE_LABELS:
@@ -314,6 +351,12 @@ func _on_map_scale_changed(value: float) -> void:
 func _on_ui_scale_changed(value: float) -> void:
 	_ui_scale_label.text = "%.2f×" % value
 	_game_settings.combat_ui_scale = value
+	_save_game_settings()
+
+
+func _on_text_scale_changed(value: float) -> void:
+	_text_scale_label.text = "%.2f×" % value
+	_game_settings.combat_text_scale = value
 	_save_game_settings()
 
 
