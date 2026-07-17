@@ -122,7 +122,7 @@ func _on_timeline_warning(text: String) -> void:
 	if text.is_empty():
 		_warn_label.text = ""
 	else:
-		_warn_label.text = "Plan issue: %s" % CombatUiFormatters.reason_text(text)
+		_warn_label.text = "[color=#%s]! %s[/color]" % [CombatUiFormatters.HEX_DEATH, CombatUiFormatters.reason_text(text)]
 
 
 func get_timeline_grid() -> TacticalTimelineGrid:
@@ -334,7 +334,12 @@ func _refresh_timeline(statuses: PackedStringArray = PackedStringArray()) -> voi
 
 
 func _on_action_rejected(reason: String) -> void:
-	_warn_label.text = "Rejected: %s" % CombatUiFormatters.reason_text(reason)
+	_warn_label.text = "[color=#%s]! %s[/color]" % [
+		CombatUiFormatters.HEX_DEATH,
+		CombatUiFormatters.reason_text(reason),
+	]
+	if _side_panels != null:
+		_side_panels.set_warning(CombatUiFormatters.reason_text(reason))
 	if _sfx != null:
 		_sfx.play("invalid")
 

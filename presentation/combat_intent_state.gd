@@ -13,6 +13,7 @@ var intent_units: Dictionary = {}
 
 var _board: BoardState
 var _preview_board: BoardState
+var _live_preview_board: BoardState
 var _director: CombatDirector
 var _selected_id: int = -1
 var _phase: int = CombatDirector.Phase.PLANNING_PHASE_1
@@ -30,6 +31,18 @@ func set_board(board: BoardState) -> void:
 
 func set_preview_board(board: BoardState) -> void:
 	_preview_board = board
+	recompute()
+
+
+func set_live_preview_board(board: BoardState) -> void:
+	_live_preview_board = board
+	recompute()
+
+
+func clear_live_preview_board() -> void:
+	if _live_preview_board == null:
+		return
+	_live_preview_board = null
 	recompute()
 
 
@@ -94,7 +107,12 @@ func recompute() -> void:
 	if _board.is_in_bounds(hover_coord):
 		var hovered: UnitState = null
 		if _skill_interaction_active:
-			for board: BoardState in [_board, _preview_board, _projected_board()]:
+			for board: BoardState in [
+				_board,
+				_projected_board(),
+				_preview_board,
+				_live_preview_board,
+			]:
 				if board == null:
 					continue
 				hovered = board.get_unit_at(hover_coord)

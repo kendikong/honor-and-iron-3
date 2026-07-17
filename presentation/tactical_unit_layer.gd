@@ -36,6 +36,7 @@ var _active_push_tweens: int = 0
 var _damage_flash: Dictionary = {}
 var _drag_preview_id: int = -1
 var _drag_preview_active: bool = false
+var _drag_preview_failed: bool = false
 var _planning_input: CombatPlanningInput
 
 enum DragPreviewAnim { IDLE, WALK, ATTACK, SPELL }
@@ -418,6 +419,7 @@ func end_drag_preview() -> void:
 	var unit_id: int = _drag_preview_id
 	_drag_preview_active = false
 	_drag_preview_id = -1
+	_drag_preview_failed = false
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if unit != null:
 		_position_actor(unit_id, unit.position)
@@ -429,14 +431,23 @@ func end_drag_preview() -> void:
 		actor.set_walking(false)
 
 
-func update_drag_preview(_map_local: Vector2, anim_mode: int, facing: int, preview_cell: Vector2i) -> void:
+func update_drag_preview(
+	map_local: Vector2,
+	anim_mode: int,
+	facing: int,
+	preview_cell: Vector2i,
+	failed: bool = false,
+) -> void:
 	if not _drag_preview_active or _drag_preview_id < 0 or _map_view == null:
 		return
+	_drag_preview_failed = failed
 	var actor: CharacterActor = _actors.get(_drag_preview_id)
 	if actor == null:
 		return
-	actor.position = _map_view.grid_to_foot_local(preview_cell)
-	actor.modulate = Color(1.0, 1.0, 1.0, 0.58)
+	var foot: Vector2 = _map_view.grid_to_foot_local(preview_cell)
+	var offset: Vector2 = map_local - _map_view.grid_to_local(preview_cell)
+	actor.position = foot + Vector2(offset.x, offset.y * 0.35)
+	actor.modulate = Color(1.0, 0.35, 0.35, 0.58) if failed else Color(1.0, 1.0, 1.0, 0.58)
 	match anim_mode:
 		DragPreviewAnim.WALK:
 			actor.set_facing(_facing_anim(facing))
@@ -503,10 +514,33 @@ func _draw() -> void:
 			draw_arc(ring_center, 12.0, 0.0, TAU, 32, _COLOR_TIMELINE_HOVER, 2.5)
 		if unit.is_enemy() and _intent_units.has(unit.id):
 			draw_arc(ring_center, 8.0, 0.0, TAU, 24, Color(_COLOR_INTENT, 0.25), 4.0)
-			draw_arc(ring_center, 5.0, 0.0, TAU, 20, _COLOR_INTENT, 2.0		)
+			draw_arc(ring_center, 5.0, 0.0, TAU, 20, _COLOR_INTENT, 2.0)
+		_draw_facing_wedge(ring_center, unit.facing, Color(1.0, 1.0, 1.0, 0.75))
+	if _drag_preview_active and _drag_preview_id >= 0 and _drag_preview_failed:
+		var drag_unit := _board.get_unit_by_id(_drag_preview_id) if _board != null else null
+		if drag_unit != null:
+			var actor: CharacterActor = _actors.get(_drag_preview_id)
+			if actor != null:
+				_draw_centered_icon(actor.position + Vector2(0.0, -18.0), "🚫", Color.WHITE, 14)
 
 
 func _proj_unit(unit_id: int) -> UnitState:
+	if unit_id < 0:
+		return null
+	if _planning_input != null and _planning_input.preview_state.preview_board != null:
+		var live_active: bool = (
+			_planning_input.dragging
+			or _planning_input.aiming
+			or _planning_input.skill_interaction_active()
+		)
+		if live_active:
+			var live_u := _planning_input.preview_state.preview_board.get_unit_by_id(unit_id)
+			if live_u != null:
+				return live_u
+	if _director != null and _director.projected_state != null:
+		var proj_u := _director.projected_state.get_unit_by_id(unit_id)
+		if proj_u != null:
+			return proj_u
 	if _preview_board != null:
 		var pv := _preview_board.get_unit_by_id(unit_id)
 		if pv != null:
@@ -514,6 +548,29 @@ func _proj_unit(unit_id: int) -> UnitState:
 	if _board != null:
 		return _board.get_unit_by_id(unit_id)
 	return null
+
+
+func _enemy_targets_player(unit: UnitState) -> bool:
+	var intent_list: Array = _board.intents if _board != null else []
+	if (
+		_planning_input != null
+		and _planning_input.is_live_preview_active()
+		and not _planning_input.preview_state.live_intents.is_empty()
+	):
+		intent_list = _planning_input.preview_state.live_intents
+	for intent_v: Variant in intent_list:
+		if not intent_v is Intent:
+			continue
+		var intent: Intent = intent_v as Intent
+		if intent.enemy_id != unit.id:
+			continue
+		for action: TimelineAction in intent.actions:
+			if action.type != GameEnums.ActionType.ABILITY:
+				continue
+			var tgt := _board.get_unit_by_id(action.target_unit_id) if _board != null else null
+			if tgt != null and not tgt.is_enemy():
+				return true
+	return false
 
 
 func _draw_movement_pips(center: Vector2, unit: UnitState) -> void:
@@ -548,7 +605,7 @@ func _draw_movement_pips(center: Vector2, unit: UnitState) -> void:
 							if effect.type == GameEnums.EffectType.DAMAGE:
 								is_attack_queued = true
 								break
-	elif _intent_units.has(unit.id):
+	elif unit.is_enemy() and (_intent_units.has(unit.id) or _enemy_targets_player(unit)):
 		var intent_list: Array = _board.intents if _board != null else []
 		if (
 			_planning_input != null
@@ -564,12 +621,15 @@ func _draw_movement_pips(center: Vector2, unit: UnitState) -> void:
 				continue
 			for action: TimelineAction in intent.actions:
 				if action.type == GameEnums.ActionType.ABILITY:
-					is_skill_queued = true
-					if action.ability != null:
-						for effect: EffectData in action.ability.effects:
-							if effect.type == GameEnums.EffectType.DAMAGE:
-								is_attack_queued = true
-								break
+					var tgt := _board.get_unit_by_id(action.target_unit_id) if _board != null else null
+					if tgt != null and not tgt.is_enemy():
+						is_skill_queued = true
+						if action.ability != null:
+							for effect: EffectData in action.ability.effects:
+								if effect.type == GameEnums.EffectType.DAMAGE:
+									is_attack_queued = true
+									break
+						break
 	var accent: Color = _COLOR_SELECT if not unit.is_enemy() else _COLOR_INTENT
 	var ring_radius := 11.0
 	var segments := maxi(1, max_move)
@@ -604,8 +664,60 @@ func _status_icon(status_type: int) -> String:
 			return "🎯"
 		GameEnums.StatusType.STAT_DEBUFF_DEF:
 			return "💔"
+		GameEnums.StatusType.STAT_DEBUFF_ACC:
+			return "👁️‍🗨️"
+		GameEnums.StatusType.ELECTRIFIED:
+			return "⚡"
+		GameEnums.StatusType.WEAK_TRAP:
+			return "🪤"
+		GameEnums.StatusType.BURN:
+			return "🔥"
 		GameEnums.StatusType.BLEED:
 			return "🩸"
+		GameEnums.StatusType.POISON:
+			return "🧪"
+		GameEnums.StatusType.WEAKEN:
+			return "📉"
+		GameEnums.StatusType.VULNERABLE:
+			return "🎯"
+		GameEnums.StatusType.STUN:
+			return "💫"
+		GameEnums.StatusType.ROOT:
+			return "🪢"
+		GameEnums.StatusType.SILENCE:
+			return "🤐"
+		GameEnums.StatusType.TAUNT:
+			return "🤬"
+		GameEnums.StatusType.BLIND:
+			return "🕶️"
+		GameEnums.StatusType.PACIFY:
+			return "🕊️"
+		GameEnums.StatusType.FEAR:
+			return "😱"
+		GameEnums.StatusType.CONFUSION:
+			return "😵"
+		GameEnums.StatusType.PIERCE:
+			return "🗡️"
+		GameEnums.StatusType.GHOST:
+			return "👻"
+		GameEnums.StatusType.TRAMPLE:
+			return "🦏"
+		GameEnums.StatusType.STEALTH:
+			return "🥷"
+		GameEnums.StatusType.INTERCEPT:
+			return "🛡️"
+		GameEnums.StatusType.MARK:
+			return "👁️"
+		GameEnums.StatusType.STURDY:
+			return "🧱"
+		GameEnums.StatusType.INVULNERABLE:
+			return "⭐"
+		GameEnums.StatusType.AIRBORNE:
+			return "🦅"
+		GameEnums.StatusType.CANTO:
+			return "🐎"
+		GameEnums.StatusType.POLYMORPH:
+			return "🐸"
 		_:
 			return "✨"
 
@@ -620,6 +732,11 @@ func _draw_hp_bar(unit: UnitState) -> void:
 		return
 	var armor: int = maxi(0, unit.armor)
 	var predicted_armor: int = int(_predicted_armor.get(unit.id, armor))
+	var fortitude: int = 0
+	if _board != null and _board.is_in_bounds(unit.position):
+		var tile := _board.get_tile(unit.position)
+		if tile != null and tile.definition != null:
+			fortitude = maxi(0, tile.definition.fortitude)
 	var flash: float = float(_damage_flash.get(unit.id, 0.0))
 	if flash > 0.0:
 		var pulse: float = 0.5 + 0.5 * sin(flash * 40.0)
@@ -669,16 +786,17 @@ func _draw_hp_bar(unit: UnitState) -> void:
 			Color(_COLOR_ARMOR.r, _COLOR_ARMOR.g, _COLOR_ARMOR.b, blink),
 			true,
 		)
+	if fortitude > 0:
+		var fort_w: float = maxf(2.0, BAR_W * 0.12)
+		draw_rect(Rect2(origin + Vector2(BAR_W - fort_w, 0.0), Vector2(fort_w, BAR_H)), Color(0.35, 0.65, 0.35, 0.9), true)
 	if not unit.active_statuses.is_empty():
-		var icon_x: float = origin.x
-		var icon_y: float = origin.y + BAR_H + 2.0
-		var shown := 0
+		var start_x: float = origin.x + 4.0
+		var start_y: float = origin.y + BAR_H + 2.0
+		var count := 0
 		for status: StatusData in unit.active_statuses:
-			if shown >= 3:
-				break
-			_draw_status_icon(Vector2(icon_x, icon_y), _status_icon(status.type))
-			icon_x += 8.0
-			shown += 1
+			var pos := Vector2(start_x + float(count % 3) * 12.0, start_y + float(count / 3) * 12.0)
+			_draw_status_icon(pos, _status_icon(status.type))
+			count += 1
 
 
 func _draw_status_icon(pos: Vector2, text: String) -> void:
@@ -688,6 +806,37 @@ func _draw_status_icon(pos: Vector2, text: String) -> void:
 	var size_px := 8
 	var sz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px)
 	draw_string(font, pos - Vector2(0.0, sz.y * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, Color.WHITE)
+
+
+func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int) -> void:
+	var font: Font = ThemeDB.fallback_font
+	if font == null:
+		return
+	var sz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px)
+	draw_string(font, pos - sz * 0.5, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, color)
+
+
+func _facing_vector(facing: int) -> Vector2:
+	match facing:
+		GameEnums.Facing.NORTH:
+			return Vector2(0.0, -1.0)
+		GameEnums.Facing.SOUTH:
+			return Vector2(0.0, 1.0)
+		GameEnums.Facing.WEST:
+			return Vector2(-1.0, 0.0)
+		_:
+			return Vector2(1.0, 0.0)
+
+
+func _draw_facing_wedge(center: Vector2, facing: int, color: Color) -> void:
+	var dir: Vector2 = _facing_vector(facing)
+	if dir == Vector2.ZERO:
+		return
+	var perp := Vector2(-dir.y, dir.x)
+	var tip: Vector2 = center + dir * 14.0
+	var base: Vector2 = center + dir * 8.0
+	var pts := PackedVector2Array([tip, base + perp * 5.0, base - perp * 5.0])
+	draw_colored_polygon(pts, color)
 
 
 func _any_predicted_change() -> bool:

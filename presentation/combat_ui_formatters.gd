@@ -14,6 +14,13 @@ const HEX_TURN: String = "7fd4ff"
 const LOG_FORMULA_FONT_SIZE: int = 7
 const LOG_FONT_SIZE: int = 10
 
+const PLAYER_COLORS: Array[Color] = [
+	Color(0.36, 0.62, 0.92),
+	Color(0.36, 0.92, 0.62),
+	Color(0.92, 0.92, 0.36),
+	Color(0.92, 0.36, 0.92),
+]
+
 ## Legacy BBCode tier keys → ratio of inspector body font (medium body = 20px design ref).
 const _FONT_TIER_RATIO: Dictionary = {
 	13: 1.0,
@@ -38,6 +45,17 @@ static func set_text_scale(_scale: float) -> void:
 static func scaled_font_size(legacy_tier: int) -> int:
 	var ratio: float = float(_FONT_TIER_RATIO.get(legacy_tier, float(legacy_tier) / 20.0))
 	return maxi(1, int(round(float(_body_font_px) * ratio)))
+
+
+static func player_color(player_id: int) -> Color:
+	if NetworkManager == null or not NetworkManager.is_multiplayer:
+		return PLAYER_COLORS[0]
+	var keys: Array = NetworkManager.player_usernames.keys()
+	keys.sort()
+	var idx: int = keys.find(player_id)
+	if idx >= 0 and idx < PLAYER_COLORS.size():
+		return PLAYER_COLORS[idx]
+	return PLAYER_COLORS[0]
 
 
 static func facing_name(facing: int) -> String:

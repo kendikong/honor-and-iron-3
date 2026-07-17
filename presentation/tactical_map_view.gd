@@ -432,7 +432,12 @@ func _sync_overlay_huds(map_origin: Vector2, map_size: Vector2) -> void:
 func _update_hover_coord() -> void:
 	if _director == null or _director.board == null:
 		return
-	if get_viewport().gui_get_hovered_control() != null:
+	var hc: Control = get_viewport().gui_get_hovered_control()
+	if hc != null and _hover_blocked_by_ui(hc):
+		if _planning_input != null:
+			_planning_input.on_hover_moved(Vector2i(-999, -999))
+		elif _side_panels != null:
+			_side_panels.set_hover_coord(Vector2i(-999, -999))
 		return
 	var cell: Vector2i = screen_to_grid(get_viewport().get_mouse_position())
 	if _planning_input != null:
@@ -442,3 +447,16 @@ func _update_hover_coord() -> void:
 			_side_panels.set_hover_coord(cell)
 		if _planning_overlay != null:
 			_planning_overlay.set_hover_coord(cell)
+
+
+func _hover_blocked_by_ui(ctrl: Control) -> bool:
+	var node: Node = ctrl
+	while node != null:
+		if node is CanvasLayer:
+			var layer: CanvasLayer = node as CanvasLayer
+			if layer.layer >= 21:
+				return true
+		if node.name in ["OptionsMenu", "PauseMenu", "OptionsScreen"]:
+			return true
+		node = node.get_parent()
+	return false

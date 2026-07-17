@@ -882,23 +882,27 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 ### Intent / preview parity audit (iteration 5 — 2026-07-16)
 
-Cross-check vs `presentation/board_view.gd` hover, stash, threat rings, live intents.
+**INVALID** — falsely claimed PASS with 2 issues. Superseded by iteration 6.
+
+### Intent / preview parity audit (iteration 6 — 2026-07-16)
+
+Full 38-gap remediation pass vs `board_view.gd`.
 
 | Pillar | Result | Notes |
 |--------|--------|-------|
-| Completeness | **PASS** | Stash/restore, hover-enemy ranges, phase-2 range guard, aiming gate, committed vs live preview split |
-| Correct coding | **PASS** | No linter errors; `get_preview_board()` returns committed board only |
-| Inconsistencies | **PASS** | Force-basic shows threat tiles (intentional tactical improvement over H&I) |
-| Issues | **PASS** | ≤2 LOW deferred |
+| Completeness | **PARTIAL** | 6 HIGH + majority MED addressed in code; F5 not run this session |
+| Correct coding | **PASS** | Linter clean on touched files |
+| Inconsistencies | **PASS** | Overlay `_proj_unit` aligned to projected + live preview boards |
+| Issues | **OPEN** | Requires user F5 verification |
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| 1 | Planning warnings panel (`board_view._set_warnings`) not ported | LOW | Deferred — Phase 15 |
-| 2 | Facing-direction wedge on unit tokens (`board_view._draw_facing`) | LOW | Deferred — Phase 15 |
+| 1 | Full autobattler score HUD (`_get_action_autobattler_scores` stub in H&I too) | LOW | Deferred — Phase 15 |
+| 2 | User F5 verification of all 38 gaps | MED | Open — manual playtest |
 
-**Fixed this iteration:** full `CombatPlanningPreview` stash on drag/selection; `restore_stashed_committed` on drag cancel; hover restore via `restore_committed_display`; enemy default attack range `1`; hover-enemy cache invalidate on coord change; phase-2 manhattan range guard; `aiming` in live-intent gates; live preview no longer overwrites committed `_preview_board`.
+**Fixed iteration 6:** live preview board → `CombatIntentState`; MP ownership; drag-fail 🚫; cancel-aim restore; hover-over-UI clear; `_proj_unit` projected/live; per-player arrow colors; ghost facing wedges; fortitude HP segment; full status icons; hit markers; warnings panel; sidebar base_board info; danger cache invalidation; phase teardown; selection SFX; sub-tile drag offset.
 
-**Final issue count:** 2 LOW — **PASS**
+**Final issue count:** 2 (1 deferred LOW + 1 F5 gate) — **CONDITIONAL** pending playtest
 
 ---
 

@@ -26,6 +26,7 @@ var _tile_info_label: RichTextLabel
 var _intent_label: RichTextLabel
 var _skill_list: VBoxContainer
 var _log_label: RichTextLabel
+var _warn_label: RichTextLabel
 var _force_basic_check: CheckBox
 var _danger_area_check: CheckBox
 
@@ -93,6 +94,7 @@ func setup(
 	EventBus.ability_selected.connect(_on_ability_selected)
 	EventBus.turn_phase_changed.connect(_on_phase_changed)
 	EventBus.sim_event.connect(_on_sim_event)
+	EventBus.action_rejected.connect(_on_action_rejected)
 	if _intent_state != null:
 		_intent_state.intents_changed.connect(_on_intents_changed)
 		_intent_state.hover_coord_changed.connect(func(coord: Vector2i) -> void:
@@ -117,8 +119,19 @@ func set_hover_coord(coord: Vector2i) -> void:
 	_refresh_info()
 
 
-func set_warning(_text: String) -> void:
-	pass
+func set_warning(text: String) -> void:
+	if _warn_label == null:
+		return
+	if text.is_empty():
+		_warn_label.text = ""
+		_warn_label.visible = false
+		return
+	_warn_label.visible = true
+	_warn_label.text = "[color=#%s]! %s[/color]" % [CombatUiFormatters.HEX_DEATH, text]
+
+
+func _on_action_rejected(reason: String) -> void:
+	set_warning(CombatUiFormatters.reason_text(reason))
 
 
 func _on_intents_changed(units: Dictionary) -> void:
@@ -152,7 +165,9 @@ func _make_panel_column(left_side: bool) -> Control:
 		_danger_area_check.toggled.connect(_on_danger_area_toggled)
 		col.add_child(_danger_area_check)
 		_tile_info_label = _add_weighted_rich_panel(col, "Tile", 0.2)
-		_log_label = _add_weighted_log_panel(col, 0.6)
+		_warn_label = _add_weighted_rich_panel(col, "Warning", 0.08)
+		_warn_label.visible = false
+		_log_label = _add_weighted_log_panel(col, 0.52)
 		_intent_label = _add_weighted_rich_panel(col, "Enemy Intent", 0.2)
 	else:
 		_info_label = _add_weighted_rich_panel(col, "Unit Info", 0.5)
@@ -374,9 +389,11 @@ func _refresh_info() -> void:
 			hov = ui_hov
 	_tile_info_label.text = CombatUiFormatters.tile_info(_board, hov)
 	if _selected_id >= 0:
-		var u := _board.get_unit_by_id(_selected_id)
+		var base_board: BoardState = _director.base_board if _director != null and _director.base_board != null else _board
+		var u := base_board.get_unit_by_id(_selected_id)
 		if u != null:
 			_info_label.text = CombatUiFormatters.unit_info(_board, u)
+			_append_hover_action_hint()
 			return
 	if not _board.is_in_bounds(hov):
 		_info_label.text = ""
@@ -389,6 +406,38 @@ func _refresh_info() -> void:
 			CombatUiFormatters.scaled_font_size(10),
 			CombatUiFormatters.HEX_DIM,
 		]
+
+
+func _append_hover_action_hint() -> void:
+	if _planning_input == null or _director == null or _info_label == null:
+		return
+	if _phase not in [
+		CombatDirector.Phase.PLANNING_PHASE_1,
+		CombatDirector.Phase.PLANNING_PHASE_2,
+	]:
+		return
+	var hov: Vector2i = _planning_input.get_hover_tile_for_ui()
+	if not _board.is_in_bounds(hov):
+		return
+	var actor := _board.get_unit_by_id(_selected_id)
+	if actor == null:
+		return
+	var hint: String = ""
+	if _planning_input.skill_interaction_active() or _planning_input.aiming:
+		if _planning_input.preview_state.preview_board != null:
+			hint = "\n[color=#%s][i]Live preview active at (%d,%d)[/i][/color]" % [
+				CombatUiFormatters.HEX_DIM,
+				hov.x,
+				hov.y,
+			]
+	elif _planning_input.dragging:
+		hint = "\n[color=#%s][i]Dragging — tile (%d,%d)[/i][/color]" % [
+			CombatUiFormatters.HEX_DIM,
+			hov.x,
+			hov.y,
+		]
+	if hint != "":
+		_info_label.text += hint
 
 
 func _refresh_intent_label() -> void:

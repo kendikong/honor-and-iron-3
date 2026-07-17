@@ -48,6 +48,7 @@ var _attack_target_id: int = -1
 var _show_danger_area: bool = false
 var _danger_tiles_cache: Dictionary = {}
 var _danger_tiles_dirty: bool = true
+var _hit_markers: Array = []
 
 
 func setup(
@@ -80,8 +81,22 @@ func setup(
 	)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		_phase = phase
+		var planning: bool = phase in [
+			CombatDirector.Phase.PLANNING_PHASE_1,
+			CombatDirector.Phase.PLANNING_PHASE_2,
+		]
+		if not planning and _planning_input != null:
+			_planning_input.clear_interaction_preview()
+		_invalidate_hover_cache()
+		if planning:
+			_recompute_hover_ranges_from_inputs()
+		else:
+			_hover_move_tiles.clear()
+			_hover_threat_tiles.clear()
+		mark_danger_dirty()
 		queue_redraw(),
 	)
+	EventBus.sim_event.connect(_on_sim_event)
 	if _intent_state != null:
 		_intent_state.intents_changed.connect(func(_units: Dictionary) -> void: queue_redraw())
 		_intent_state.hover_coord_changed.connect(func(coord: Vector2i) -> void:
@@ -97,6 +112,10 @@ func setup(
 func set_show_danger_area(enabled: bool) -> void:
 	_show_danger_area = enabled
 	queue_redraw()
+
+
+func mark_danger_dirty() -> void:
+	_danger_tiles_dirty = true
 
 
 func get_show_danger_area() -> bool:
@@ -223,9 +242,15 @@ func begin_drag_sprite(unit_id: int) -> void:
 		_unit_layer.begin_drag_preview(unit_id)
 
 
-func update_drag_sprite(map_local: Vector2, anim_mode: int, facing: int, preview_cell: Vector2i) -> void:
+func update_drag_sprite(
+	map_local: Vector2,
+	anim_mode: int,
+	facing: int,
+	preview_cell: Vector2i,
+	failed: bool = false,
+) -> void:
 	if _unit_layer != null:
-		_unit_layer.update_drag_preview(map_local, anim_mode, facing, preview_cell)
+		_unit_layer.update_drag_preview(map_local, anim_mode, facing, preview_cell, failed)
 
 
 func end_drag_sprite() -> void:
@@ -369,12 +394,32 @@ func _on_board_changed(board: BoardState) -> void:
 	_recompute_hover_ranges_from_inputs()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	for i: int in range(_hit_markers.size() - 1, -1, -1):
+		var entry: Array = _hit_markers[i]
+		entry[1] = float(entry[1]) - delta
+		if float(entry[1]) <= 0.0:
+			_hit_markers.remove_at(i)
 	if _phase in [
 		CombatDirector.Phase.PLANNING_PHASE_1,
 		CombatDirector.Phase.PLANNING_PHASE_2,
 	]:
 		queue_redraw()
+	elif not _hit_markers.is_empty():
+		queue_redraw()
+
+
+func _on_sim_event(event: SimEvent) -> void:
+	if event == null or _board == null or _map_view == null:
+		return
+	if event.type in [
+		GameEnums.SimEventType.UNIT_DAMAGED,
+		GameEnums.SimEventType.UNIT_DIED,
+	]:
+		var unit_id: int = int(event.data.get("unit", event.data.get("actor", -1)))
+		var unit := _board.get_unit_by_id(unit_id)
+		if unit != null:
+			_hit_markers.append([unit.position, 0.4])
 
 
 func _on_preview_updated(result: SimResult) -> void:
@@ -422,14 +467,17 @@ func _draw() -> void:
 		var aim_scale: float = 0.55 / _ui_scale()
 		ClassIconDrawer.draw_icon(self, _aim_local, _aim_class_id, _COLOR_AIM, aim_scale)
 	if _hover_action_icon != "":
-		var icon_pos: Vector2 = get_local_mouse_position() + Vector2(8.0, 8.0) / _ui_scale()
+		var icon_pos: Vector2 = get_local_mouse_position() + Vector2(10.0, 10.0) / _ui_scale()
 		ActionIconDrawer.draw(
 			self,
 			icon_pos,
 			ActionIconDrawer.key_from_emoji(_hover_action_icon),
 			Color.WHITE,
-			1.0 / _ui_scale(),
+			1.15 / _ui_scale(),
 		)
+	for entry: Array in _hit_markers:
+		if entry.size() >= 2 and entry[0] is Vector2i:
+			_draw_death_marker(entry[0] as Vector2i)
 
 
 func _draw_hover_tiles() -> void:
@@ -456,8 +504,8 @@ func _draw_hover_tile() -> void:
 	var tile_px: float = float(TacticalConstants.TILE_PX)
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var rect := Rect2(center - Vector2(tile_px * 0.5, tile_px * 0.5), Vector2(tile_px, tile_px)).grow(-2.0)
-	draw_rect(rect, Color(_COLOR_HOVER, 0.28), true)
-	draw_rect(rect, _COLOR_HOVER, false, 2.5)
+	draw_rect(rect, Color(_COLOR_HOVER, 0.12), true)
+	draw_rect(rect, _COLOR_HOVER, false, 2.0)
 
 
 func _draw_ability_intents() -> void:
@@ -480,7 +528,8 @@ func _draw_ability_intents() -> void:
 				if act.actor_id == action.actor_id and act.type == GameEnums.ActionType.MOVE:
 					start_pos = act.target_coord
 					break
-			_draw_dashed_route([start_pos, action.target_coord], _COLOR_PLAYER_ARROW)
+			var p_col: Color = _player_color_for_unit(actor)
+			_draw_dashed_route([start_pos, action.target_coord], Color(p_col.r, p_col.g, p_col.b, 0.95))
 	var preview_board: BoardState = _display_preview_board()
 	for intent: Variant in _display_intent_list():
 		if not intent is Intent:
@@ -685,7 +734,8 @@ func _draw_preview_arrows() -> void:
 				elif skill_priority and not dragging:
 					skip_live_route = true
 			if not skip_live_route:
-				var dim_col := Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.35)
+				var p_col: Color = _player_color_for_unit(unit)
+				var dim_col := Color(p_col.r, p_col.g, p_col.b, 0.35)
 				_draw_route_line(player_leg, dim_col, true, true)
 		if enemy_leg.size() >= 2:
 			var dim_enemy := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, 0.35)
@@ -718,8 +768,9 @@ func _draw_interaction_overlay() -> void:
 	if actor == null:
 		return
 	var route: Array = prev.preview_paths.get(actor.id, [])
+	var p_col: Color = _player_color_for_unit(actor)
 	if route.size() >= 2:
-		_draw_route_line(route, _COLOR_PLAYER_ARROW, true, true)
+		_draw_route_line(route, Color(p_col.r, p_col.g, p_col.b, 0.95), true, true)
 	if _attack_target_id >= 0:
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord
@@ -729,7 +780,7 @@ func _draw_interaction_overlay() -> void:
 		if target_unit != null:
 			target_coord = target_unit.position
 		if origin != target_coord:
-			_draw_dashed_route([origin, target_coord], _COLOR_PLAYER_ARROW)
+			_draw_dashed_route([origin, target_coord], Color(p_col.r, p_col.g, p_col.b, 0.95))
 
 
 func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: bool) -> void:
@@ -809,7 +860,9 @@ func _draw_ghosts() -> void:
 					var start_pos: Vector2i = _proj_origin(unit)
 					if action.target_coord != start_pos:
 						var center: Vector2 = _map_view.grid_to_local(action.target_coord)
-						draw_circle(center, _token_radius(), Color(_COLOR_GHOST.r, _COLOR_GHOST.g, _COLOR_GHOST.b, 0.35))
+						var ghost_col: Color = _player_color_for_unit(unit)
+						draw_circle(center, _token_radius(), Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.35))
+						_draw_facing_wedge(center, unit.facing, Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.8))
 					break
 		if unit.is_enemy():
 			var route: Array = prev.preview_paths.get(unit.id, [])
@@ -817,7 +870,18 @@ func _draw_ghosts() -> void:
 			if voluntary_dest != unit.position:
 				var ghost_center: Vector2 = _map_view.grid_to_local(voluntary_dest)
 				var alpha: float = 0.25 if (_planning_input != null and _planning_input.skill_interaction_active()) else 0.1
-				draw_arc(ghost_center, _token_radius(), 0.0, TAU, 24, Color(_COLOR_ENEMY_ARROW, alpha), 2.0)
+				draw_arc(
+					ghost_center,
+					_token_radius(),
+					0.0,
+					TAU,
+					24,
+					Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, alpha),
+					2.0,
+				)
+				var pv_enemy := prev.preview_board.get_unit_by_id(unit.id) if prev.preview_board != null else null
+				var face: int = pv_enemy.facing if pv_enemy != null else unit.facing
+				_draw_facing_wedge(ghost_center, face, Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, alpha + 0.15))
 
 
 func _draw_move_ghosts() -> void:
@@ -835,8 +899,23 @@ func _draw_move_ghosts() -> void:
 	if not _is_valid_dash_hover(origin, _hover_coord, ability.range_tiles):
 		return
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
-	draw_circle(center, _token_radius() + 1.0, Color(_COLOR_GHOST.r, _COLOR_GHOST.g, _COLOR_GHOST.b, 0.45))
-	_draw_dashed_route([origin, _hover_coord], Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.85))
+	var p_col: Color = _player_color_for_unit(unit)
+	draw_circle(center, _token_radius() + 1.0, Color(p_col.r, p_col.g, p_col.b, 0.45))
+	var dash_face: int = _facing_toward(origin, _hover_coord)
+	_draw_facing_wedge(center, dash_face, Color(p_col.r, p_col.g, p_col.b, 0.85))
+	_draw_dashed_route([origin, _hover_coord], Color(p_col.r, p_col.g, p_col.b, 0.85))
+
+
+func _facing_toward(from: Vector2i, to: Vector2i) -> int:
+	if to.x > from.x:
+		return GameEnums.Facing.EAST
+	if to.x < from.x:
+		return GameEnums.Facing.WEST
+	if to.y > from.y:
+		return GameEnums.Facing.SOUTH
+	if to.y < from.y:
+		return GameEnums.Facing.NORTH
+	return GameEnums.Facing.SOUTH
 
 
 func _draw_drag_path() -> void:
@@ -846,15 +925,14 @@ func _draw_drag_path() -> void:
 	if drag_unit == null:
 		return
 	var ability: AbilityData = _selected_ability_data(drag_unit, _director.selected_ability_index)
+	var p_col: Color = _player_color_for_unit(drag_unit)
+	var route_col: Color = Color(p_col.r, p_col.g, p_col.b, 0.95)
 	if (
 		ability != null
 		and AbilitySystem.ability_has_dash(ability)
 		and _is_valid_dash_hover(_proj_origin(drag_unit), _hover_coord, ability.range_tiles)
 	):
-		_draw_dashed_route(
-			[_proj_origin(drag_unit), _hover_coord],
-			Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.95),
-		)
+		_draw_dashed_route([_proj_origin(drag_unit), _hover_coord], route_col)
 		return
 	if _route.size() >= 2:
 		var hovered_unit := _board.get_unit_at(_hover_coord) if _board.is_in_bounds(_hover_coord) else null
@@ -863,10 +941,7 @@ func _draw_drag_path() -> void:
 			var move_route: Array = _route.slice(0, idx + 1) if idx >= 0 else _route.slice(0, _route.size() - 1)
 			if move_route.size() >= 2:
 				_draw_route_line(move_route, _COLOR_DRAGPATH, true, true)
-			_draw_dashed_route(
-				[_planning_input.drag_sim_actor_pos, _hover_coord],
-				Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.95),
-			)
+			_draw_dashed_route([_planning_input.drag_sim_actor_pos, _hover_coord], route_col)
 		else:
 			_draw_route_line(_route, _COLOR_DRAGPATH, true, true)
 
@@ -913,13 +988,59 @@ func _is_valid_dash_hover(origin: Vector2i, coord: Vector2i, max_range: int) -> 
 
 
 func _proj_unit(unit_id: int) -> UnitState:
-	if _preview_board != null:
-		var u := _preview_board.get_unit_by_id(unit_id)
-		if u != null:
-			return u
+	if unit_id < 0:
+		return null
+	if _planning_input != null and _live_preview.preview_board != null:
+		var live_active: bool = (
+			_planning_input.dragging
+			or _planning_input.aiming
+			or _planning_input.skill_interaction_active()
+		)
+		if live_active:
+			var live_u := _live_preview.preview_board.get_unit_by_id(unit_id)
+			if live_u != null:
+				return live_u
+	if _director != null and _director.projected_state != null:
+		var proj_u := _director.projected_state.get_unit_by_id(unit_id)
+		if proj_u != null:
+			return proj_u
+	if _committed_preview.preview_board != null:
+		var committed_u := _committed_preview.preview_board.get_unit_by_id(unit_id)
+		if committed_u != null:
+			return committed_u
 	if _board != null:
 		return _board.get_unit_by_id(unit_id)
 	return null
+
+
+func _player_color_for_unit(unit: UnitState) -> Color:
+	if unit == null:
+		return _COLOR_PLAYER_ARROW
+	return CombatUiFormatters.player_color(unit.controlling_player_id)
+
+
+func _facing_vector(facing: int) -> Vector2:
+	match facing:
+		GameEnums.Facing.NORTH:
+			return Vector2(0.0, -1.0)
+		GameEnums.Facing.SOUTH:
+			return Vector2(0.0, 1.0)
+		GameEnums.Facing.WEST:
+			return Vector2(-1.0, 0.0)
+		_:
+			return Vector2(1.0, 0.0)
+
+
+func _draw_facing_wedge(center: Vector2, facing: int, color: Color) -> void:
+	var dir: Vector2 = _facing_vector(facing)
+	if dir == Vector2.ZERO:
+		return
+	var perp := Vector2(-dir.y, dir.x)
+	var radius: float = _token_radius()
+	var tip: Vector2 = center + dir * (radius + 6.0)
+	var base: Vector2 = center + dir * (radius - 3.0)
+	var pts := PackedVector2Array([tip, base + perp * 6.0, base - perp * 6.0])
+	draw_colored_polygon(pts, color)
 
 
 func _proj_origin(unit: UnitState) -> Vector2i:
@@ -1034,25 +1155,10 @@ func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int)
 
 
 func _update_hover_action_icon() -> void:
+	if _planning_input != null:
+		_hover_action_icon = _planning_input._compute_hover_action_icon(_hover_coord)
+		return
 	_hover_action_icon = ""
-	if _director == null or _board == null or not _board.is_in_bounds(_hover_coord):
-		return
-	var sel_id: int = _director.selected_unit_id
-	if sel_id < 0:
-		return
-	var unit := _proj_unit(sel_id)
-	if unit == null or not unit.is_alive():
-		return
-	if _aiming:
-		var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
-		if ability != null:
-			_hover_action_icon = _ability_action_icon(ability)
-		return
-	var occ := _board.get_unit_at(_hover_coord)
-	if occ != null and occ.is_enemy() and occ.id != sel_id:
-		_hover_action_icon = "⚔️"
-	elif _hover_move_tiles.has(_hover_coord):
-		_hover_action_icon = "🏃"
 
 
 func _ability_action_icon(ability: AbilityData) -> String:
