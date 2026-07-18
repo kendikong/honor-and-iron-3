@@ -24,6 +24,8 @@ var _drag_saved_preview: BoardState = null
 var preview_state: CombatPlanningPreview = CombatPlanningPreview.new()
 var drag_sim_actor_pos: Vector2i = Vector2i.ZERO
 var drag_preview_failed: bool = false
+var _last_planning_hover_cell: Vector2i = Vector2i(-9999, -9999)
+var _hover_preview_cache_key: String = ""
 
 
 func setup(
@@ -338,6 +340,7 @@ func _sync_intent_live_board() -> void:
 
 
 func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
+	_invalidate_planning_hover_cache()
 	_stash_committed_preview()
 	_clear_hover_preview()
 	_sync_intent_skill_mode()
@@ -353,6 +356,7 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 
 
 func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> void:
+	_invalidate_planning_hover_cache()
 	_drag_route.clear()
 	drag_preview_failed = false
 	preview_state.clear_interaction()
@@ -377,6 +381,7 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 
 
 func _on_board_changed(_board: BoardState) -> void:
+	_invalidate_planning_hover_cache()
 	if aiming:
 		cancel_aim()
 	aiming = false
@@ -425,6 +430,7 @@ func _restore_committed_preview() -> void:
 func _on_selection_changed(unit_id: int) -> void:
 	if _director == null:
 		return
+	_invalidate_planning_hover_cache()
 	if unit_id >= 0:
 		_play_sfx("select")
 	if _drag_saved_preview == null and _planning != null:
@@ -444,6 +450,7 @@ func _on_selection_changed(unit_id: int) -> void:
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
+	_invalidate_planning_hover_cache()
 	if _drag_saved_preview == null and _planning != null:
 		_planning.stash_committed_preview()
 	if _director.selected_unit_id >= 0:
@@ -481,6 +488,11 @@ func _sync_intent_skill_mode() -> void:
 		_intent_state.set_skill_interaction_active(_skill_interaction_active() or aiming)
 
 
+func _invalidate_planning_hover_cache() -> void:
+	_last_planning_hover_cell = Vector2i(-9999, -9999)
+	_hover_preview_cache_key = ""
+
+
 func on_hover_moved(cell: Vector2i) -> void:
 	if _director == null or _director.board == null:
 		return
@@ -493,6 +505,9 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_sync_threat_origin_from_cell(cell)
 	if not _is_planning() or dragging:
 		return
+	if cell == _last_planning_hover_cell:
+		return
+	_last_planning_hover_cell = cell
 	if not _director.board.is_in_bounds(cell):
 		if _director.selected_unit_id >= 0:
 			_restore_hover_preview()
@@ -621,6 +636,7 @@ func _refresh_click_target_highlight() -> void:
 
 
 func _restore_hover_preview() -> void:
+	_hover_preview_cache_key = ""
 	if _planning != null:
 		_planning.set_drag_attack_target(-1)
 	preview_state.clear_interaction()
@@ -718,6 +734,16 @@ func _refresh_live_interaction_preview(
 	var dash_ab := _selected_ability_data(unit)
 	if _director.board.is_in_bounds(cell) and _should_use_dash_on_input(dash_ab):
 		dash_preview = _is_valid_dash_target(_proj_origin(unit), cell, dash_ab.range_tiles)
+	var cache_key: String = "%d|%s|%d|%d|%s" % [
+		unit_id,
+		str(move_coord),
+		attack_target_id,
+		cur_ability,
+		"1" if dash_preview else "0",
+	]
+	if cache_key == _hover_preview_cache_key:
+		return
+	_hover_preview_cache_key = cache_key
 	var res: Dictionary
 	if dash_preview:
 		res = _director.preview_dash(unit_id, cell, cur_ability)

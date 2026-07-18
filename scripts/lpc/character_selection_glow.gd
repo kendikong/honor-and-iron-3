@@ -105,7 +105,6 @@ func _process(_delta: float) -> void:
 	if not enabled:
 		return
 	_sync_outline_frames()
-	_update_outline_alpha()
 
 
 func _sync_outline_frames() -> void:
@@ -121,6 +120,9 @@ func _sync_outline_frames() -> void:
 				return
 			var outline: AnimatedSprite2D = _outline_sprites[outline_idx]
 			if outline.get_parent() == spr:
+				if outline.animation == spr.animation and outline.frame == spr.frame and outline.visible == spr.visible:
+					outline_idx += 1
+					continue
 				outline.animation = spr.animation
 				outline.frame = spr.frame
 				outline.visible = spr.visible

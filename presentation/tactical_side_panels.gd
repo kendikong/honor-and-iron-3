@@ -344,7 +344,7 @@ func _on_selection_changed(unit_id: int) -> void:
 	if _intent_state != null:
 		_intent_state.set_selection(unit_id)
 	_refresh_info()
-	_rebuild_ability_buttons()
+	call_deferred("_rebuild_ability_buttons")
 
 
 func _on_ability_selected(index: int) -> void:

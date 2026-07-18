@@ -596,7 +596,7 @@ func _sync_planning_unit_position(unit: UnitState) -> void:
 		_update_depth(unit.id)
 		return
 	if _should_rubberband_planning_move(unit.id, current_cell, target):
-		_rubberband_actor_to_cell(unit.id, target)
+		_snap_actor_rubberband(unit.id, target)
 		return
 	_animate_planning_path(unit.id, current_cell, target, _unit_uses_run_anim(unit.id))
 
@@ -622,34 +622,40 @@ func _should_rubberband_planning_move(
 	return GridSystem.manhattan(to_cell, start_cell) < GridSystem.manhattan(from_cell, start_cell)
 
 
-func _rubberband_actor_to_cell(unit_id: int, cell: Vector2i) -> void:
+func _snap_actor_rubberband(unit_id: int, grid_cell: Vector2i) -> void:
 	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
 	if actor == null or _map_view == null:
 		return
-	var dest: Vector2 = _map_view.grid_to_foot_local(cell)
-	if actor.position.distance_to(dest) <= 1.5:
-		_position_actor(unit_id, cell)
-		var unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
-		if unit != null:
-			_apply_facing(unit_id, unit.facing)
-			_update_depth(unit_id)
+	var home: Vector2 = _map_view.grid_to_foot_local(grid_cell)
+	if actor.position.distance_to(home) <= 1.5:
+		_finish_snap_at_cell(unit_id, grid_cell)
 		return
 	_kill_move_tween(unit_id)
 	actor.set_running(false)
-	actor.set_walking(false)
+	actor.set_walking(true)
+	actor.modulate = Color.WHITE
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_BACK)
-	tween.tween_property(actor, "position", dest, DRAG_SNAPBACK_SEC)
+	tween.tween_property(actor, "position", home, DRAG_SNAPBACK_SEC)
 	tween.finished.connect(func() -> void:
 		_move_tweens.erase(unit_id)
-		_position_actor(unit_id, cell)
-		var u: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
-		if u != null:
-			_apply_facing(unit_id, u.facing)
-			_update_depth(unit_id)
+		_finish_snap_at_cell(unit_id, grid_cell)
 	)
+
+
+func _finish_snap_at_cell(unit_id: int, grid_cell: Vector2i) -> void:
+	_position_actor(unit_id, grid_cell)
+	var unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
+	if unit != null:
+		_apply_facing(unit_id, unit.facing)
+	_update_depth(unit_id)
+	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
+	if actor != null:
+		actor.modulate = Color.WHITE
+		actor.set_running(false)
+		actor.set_walking(false)
 
 
 func _actor_grid_cell(unit_id: int) -> Vector2i:
@@ -959,32 +965,13 @@ func end_drag_preview(snap_back: bool = false) -> void:
 		return
 	var home: Vector2 = _map_view.grid_to_foot_local(unit.position)
 	if snap_back and actor.position.distance_to(home) > 1.5:
-		_kill_move_tween(unit_id)
-		actor.set_running(false)
-		actor.set_walking(true)
-		actor.modulate = Color.WHITE
-		var tween: Tween = create_tween()
-		_move_tweens[unit_id] = tween
-		tween.set_ease(Tween.EASE_OUT)
-		tween.set_trans(Tween.TRANS_BACK)
-		tween.tween_property(actor, "position", home, DRAG_SNAPBACK_SEC)
-		tween.finished.connect(func() -> void:
-			_move_tweens.erase(unit_id)
-			_finish_drag_preview_at_home(unit_id, unit)
-		)
+		_snap_actor_rubberband(unit_id, unit.position)
 		return
 	_finish_drag_preview_at_home(unit_id, unit)
 
 
 func _finish_drag_preview_at_home(unit_id: int, unit: UnitState) -> void:
-	_position_actor(unit_id, unit.position)
-	_apply_facing(unit_id, unit.facing)
-	_update_depth(unit_id)
-	var actor: CharacterActor = _actors.get(unit_id)
-	if actor != null:
-		actor.modulate = Color.WHITE
-		actor.set_running(false)
-		actor.set_walking(false)
+	_finish_snap_at_cell(unit_id, unit.position)
 	_apply_exhaustion_state(unit)
 
 
@@ -1342,8 +1329,6 @@ func _process(delta: float) -> void:
 		_apply_drag_target_modulate()
 		need_redraw = true
 	if _any_predicted_change():
-		need_redraw = true
-	if CombatDirector.is_planning_phase(_phase):
 		need_redraw = true
 	if need_redraw:
 		queue_redraw()

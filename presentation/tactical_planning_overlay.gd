@@ -562,15 +562,35 @@ func _on_board_changed(board: BoardState) -> void:
 
 
 func _process(delta: float) -> void:
+	var need_redraw := false
 	for i: int in range(_hit_markers.size() - 1, -1, -1):
 		var entry: Array = _hit_markers[i]
 		entry[1] = float(entry[1]) - delta
 		if float(entry[1]) <= 0.0:
 			_hit_markers.remove_at(i)
-	if CombatDirector.is_planning_phase(_phase):
+		need_redraw = true
+	if need_redraw:
+		queue_redraw()
+	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
 		queue_redraw()
 	elif not _hit_markers.is_empty():
 		queue_redraw()
+
+
+func _overlay_needs_flow_animation() -> bool:
+	if _planning_input != null and _planning_input.dragging:
+		return true
+	if _planning_input != null and _planning_input.is_live_preview_active():
+		return true
+	if _director != null:
+		var plan: Timeline = _director.get_player_plan()
+		if plan != null:
+			for action: TimelineAction in plan.entries:
+				if action.type == GameEnums.ActionType.ABILITY:
+					return true
+	if _route.size() >= 2:
+		return true
+	return false
 
 
 func _on_sim_event(event: SimEvent) -> void:
@@ -924,10 +944,12 @@ func _draw_danger_area() -> void:
 			)
 			var rng: int = _unit_attack_range(u, -1)
 			for r: Vector2i in reach:
-				for y2: int in range(_board.grid_size.y):
-					for x2: int in range(_board.grid_size.x):
-						var c2 := Vector2i(x2, y2)
-						if GridSystem.manhattan(c2, r) <= rng:
+				for dy: int in range(-rng, rng + 1):
+					for dx: int in range(-rng, rng + 1):
+						if absi(dx) + absi(dy) > rng:
+							continue
+						var c2 := r + Vector2i(dx, dy)
+						if _board.is_in_bounds(c2):
 							_danger_tiles_cache[c2] = true
 		_danger_tiles_dirty = false
 	for c: Variant in _danger_tiles_cache:
