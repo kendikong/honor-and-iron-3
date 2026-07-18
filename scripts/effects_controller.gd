@@ -35,7 +35,6 @@ var _last_grid: PlayerGrid
 var _character_contact_shadow_sync: Callable = Callable()
 var _character_contact_shadow_full_sync: Callable = Callable()
 var _last_actor_shadow_map_epoch: int = -1
-var _actor_foot_composite: Sprite2D
 
 
 func setup(
@@ -78,7 +77,6 @@ func setup(
 	WeatherBus.apply_biome_profile(biome_profile)
 	_wire_weather_bus()
 	_ensure_shadow_draw_order()
-	_ensure_actor_foot_composite()
 	apply_all(null, 0.0)
 
 
@@ -205,19 +203,10 @@ static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsS
 			sorted.append(actor)
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
-	ShadowPlacer.apply_actor_foot_shadow_composite(sorted, ShadowPlacer.foot_composite_sprite(), settings)
 
 
 static func sync_contact_shadow_drift_on_actors(actors: Dictionary, settings: EffectsSettings) -> void:
 	if settings == null or not settings.oblique_contact_shadows:
-		return
-	if ShadowPlacer.is_actor_foot_composite_active():
-		var composite: Sprite2D = ShadowPlacer.foot_composite_sprite()
-		ShadowPlacer.sync_actor_cloud_drift_only(
-			composite,
-			settings,
-			composite.get_instance_id(),
-		)
 		return
 	for actor: Variant in actors.values():
 		sync_contact_shadow_drift_on_actor(actor as Node, settings)
@@ -236,26 +225,13 @@ static func sync_contact_shadow_drift_on_actor(actor: Node, settings: EffectsSet
 static func sync_contact_shadow_drift_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
 	if settings == null or not settings.oblique_contact_shadows:
 		return
-	if ShadowPlacer.is_actor_foot_composite_active():
-		var composite: Sprite2D = ShadowPlacer.foot_composite_sprite()
-		ShadowPlacer.sync_actor_cloud_drift_only(
-			composite,
-			settings,
-			composite.get_instance_id(),
-		)
-		return
 	for actor: Variant in actors:
 		sync_contact_shadow_drift_on_actor(actor as Node, settings)
 
 
 static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
-	var sorted: Array = []
 	for actor: Variant in actors:
-		if actor != null and is_instance_valid(actor):
-			sorted.append(actor)
-	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
-	ShadowPlacer.apply_actor_foot_shadow_composite(sorted, ShadowPlacer.foot_composite_sprite(), settings)
 
 
 func _sync_contact_shadow_mask() -> void:
@@ -345,22 +321,6 @@ func _apply_oblique_contact_shadows(grid: PlayerGrid) -> void:
 	_shadow_sprites.process_mode = Node.PROCESS_MODE_INHERIT
 	_shadow_sprites.visible = true
 	ShadowPlacer.apply(grid, _shadow_sprites, _ground, _trees, _overlay, null, settings, _scatter)
-
-
-func _ensure_actor_foot_composite() -> void:
-	if _actor_foot_composite != null or _map_root == null:
-		return
-	const _LPC = preload("res://scripts/lpc/lpc_constants.gd")
-	_actor_foot_composite = Sprite2D.new()
-	_actor_foot_composite.name = "ActorFootShadowComposite"
-	_actor_foot_composite.centered = false
-	_actor_foot_composite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_actor_foot_composite.z_as_relative = false
-	_actor_foot_composite.z_index = _LPC.Z_CHARACTER - 1
-	_actor_foot_composite.visible = false
-	_actor_foot_composite.material = ShadowPlacer.duplicate_shadow_material()
-	_map_root.add_child(_actor_foot_composite)
-	ShadowPlacer.set_foot_composite_sprite(_actor_foot_composite)
 
 
 func _ensure_shadow_draw_order() -> void:

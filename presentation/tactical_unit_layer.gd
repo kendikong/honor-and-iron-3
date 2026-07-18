@@ -156,8 +156,6 @@ func _on_board_changed(board: BoardState) -> void:
 		queue_redraw()
 		return
 	_sync_actors()
-	if _map_view != null:
-		sync_all_contact_shadows_full(_map_view.get_effects_settings())
 	_refresh_planning_visuals()
 	queue_redraw()
 
