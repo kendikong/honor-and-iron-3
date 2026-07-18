@@ -622,8 +622,6 @@ func _draw() -> void:
 		_draw_preview_arrows()
 		if _should_draw_interaction_overlay():
 			_draw_interaction_overlay()
-		if _planning_input != null and _planning_input.dragging:
-			_draw_drag_path()
 	elif _route.size() >= 2:
 		_draw_route_line(_route, _COLOR_ROUTE, true, true)
 	_draw_ability_intents()

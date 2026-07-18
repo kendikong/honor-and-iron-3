@@ -159,8 +159,7 @@ func on_left_release(local: Vector2) -> void:
 		return
 	var dropped_on := board.get_unit_at(cell)
 	if dropped_on != null and dropped_on.id != actor.id:
-		var waypoints: Array[Vector2i] = _route_waypoints()
-		_plan_approach_or_trample_on_enemy(released_unit_id, dropped_on, local, _drag_last_free, waypoints)
+		_plan_approach_or_trample_on_enemy(released_unit_id, dropped_on, local, _drag_last_free, [])
 	elif cell == actor.position:
 		if _drag_unit_was_selected:
 			if not _drag_had_movement():
@@ -191,10 +190,9 @@ func on_left_release(local: Vector2) -> void:
 				_director.rpc_plan_face(released_unit_id, face_idle)
 				_play_sfx("move")
 	elif dropped_on == null:
-		var waypoints: Array[Vector2i] = _route_waypoints()
-		if not _try_commit_move_with_self_skill(released_unit_id, cell, local, waypoints):
+		if not _try_commit_move_with_self_skill(released_unit_id, cell, local, []):
 			if not _try_plan_skill_at_coord(actor, cell, local):
-				_try_plan_basic_move(released_unit_id, cell, local, waypoints)
+				_try_plan_basic_move(released_unit_id, cell, local, [])
 	_drag_unit_id = -1
 	_end_drag_interaction(false)
 
@@ -220,8 +218,6 @@ func update_drag(local: Vector2) -> void:
 		return
 	if _intent_state != null:
 		_intent_state.set_hover_coord(cell)
-	if _basic_move_allowed():
-		_extend_drag_route(cell)
 	var occ := board.get_unit_at(cell)
 	var drag_unit := board.get_unit_by_id(_drag_unit_id)
 	if occ == null or occ.id == _drag_unit_id:
@@ -239,13 +235,12 @@ func update_drag(local: Vector2) -> void:
 		_drag_unit_id,
 		_drag_last_free,
 		drag_target_id,
-		_route_waypoints(),
+		[],
 	)
 	_apply_live_preview(preview)
 	if _planning != null:
 		_planning.set_threat_origin(_drag_last_free)
 		_planning._recompute_hover_ranges_from_inputs()
-	_planning.set_drag_route(_drag_route)
 	_update_drag_sprite(local, cell, preview)
 	_sync_intent_live_board()
 	if _intent_state != null:
@@ -273,7 +268,7 @@ func refresh_live_preview() -> void:
 		_drag_unit_id,
 		_drag_last_free,
 		drag_target_id,
-		_route_waypoints(),
+		[],
 	)
 	_apply_live_preview(preview)
 
@@ -328,7 +323,6 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	_drag_last_free = unit.position
 	_planning.set_fixed_range_origin(unit.position)
 	_planning.set_threat_origin(unit.position)
-	_planning.set_drag_route(_drag_route)
 	_planning._recompute_hover_ranges_from_inputs()
 	_planning.begin_drag_sprite(unit.id)
 
@@ -988,8 +982,6 @@ func _ability_has_dash(ability: AbilityData) -> bool:
 
 
 func _drag_had_movement() -> bool:
-	if _drag_route.size() > 1:
-		return true
 	if _drag_route.is_empty():
 		return false
 	return _drag_last_free != _drag_route[0]
@@ -1448,30 +1440,20 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			_planning.update_drag_sprite(local, mode, dash_face, preview_cell, drag_preview_failed)
 			_set_drag_attack_target(drag_target_id, preview)
 			return
-	if _drag_route.size() > 1 or _drag_last_free != unit.position:
+	if _drag_last_free != unit.position:
 		if not force_basic_movement and _director.selected_ability_index >= 0:
 			var move_self_ability := _selected_ability_data(actor)
 			if (
 				AbilitySystem.can_target_self(actor, move_self_ability)
 				and not AbilitySystem.is_run_ability(move_self_ability)
 			):
-				var self_move_face: int = _facing_from_drop(local, _drag_last_free)
-				if _drag_route.size() >= 2:
-					self_move_face = _facing_toward(
-						_drag_route[_drag_route.size() - 2], _drag_route[_drag_route.size() - 1],
-					)
-				elif _drag_last_free != unit.position:
-					self_move_face = _facing_toward(unit.position, _drag_last_free)
+				var self_move_face: int = _facing_toward(unit.position, _drag_last_free)
 				_planning.update_drag_sprite(
 					local, TacticalUnitLayer.DragPreviewAnim.SPELL, self_move_face, preview_cell, drag_preview_failed,
 				)
 				_set_drag_attack_target(-1, preview)
 				return
-		var move_face: int = _facing_from_drop(local, _drag_last_free)
-		if _drag_route.size() >= 2:
-			move_face = _facing_toward(_drag_route[_drag_route.size() - 2], _drag_route[_drag_route.size() - 1])
-		elif _drag_last_free != unit.position:
-			move_face = _facing_toward(unit.position, _drag_last_free)
+		var move_face: int = _facing_toward(unit.position, _drag_last_free)
 		_planning.update_drag_sprite(
 			local, _drag_move_preview_mode(actor), move_face, preview_cell, drag_preview_failed,
 		)
