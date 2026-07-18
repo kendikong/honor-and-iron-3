@@ -273,6 +273,10 @@ static func action_symbol_text(
 	if action.type == GameEnums.ActionType.ABILITY:
 		var symbol: String = "✨"
 		if action.ability != null:
+			if action.ability.id == &"universal_run":
+				return "🏃 Run"
+			if action.ability.id == &"universal_swap":
+				return "↔️ Swap"
 			var has_damage: bool = false
 			var has_heal: bool = false
 			for eff: EffectData in action.ability.effects:
@@ -300,6 +304,43 @@ static func action_symbol_text(
 			return "%s %s > %s" % [symbol, ability_name, target_name]
 		return "%s %s" % [symbol, target_name]
 	return "❓"
+
+
+static func format_unit_plan_timeline(
+	board: BoardState,
+	plan: Timeline,
+	unit: UnitState,
+	statuses: PackedStringArray,
+) -> Dictionary:
+	var steps: Array[TimelineAction] = UnitPlanOrder.ordered_steps_for_unit(plan, unit.id)
+	if steps.is_empty():
+		return {
+			"text": "—",
+			"tooltip": "No actions queued",
+			"failed": false,
+		}
+	var parts: PackedStringArray = []
+	var tooltip_lines: PackedStringArray = []
+	var failed: bool = false
+	for i: int in range(steps.size()):
+		var step: TimelineAction = steps[i]
+		var symbol: String = action_symbol_text(board, step, unit)
+		parts.append("%d. %s" % [i + 1, symbol])
+		var detail: String = describe_action(board, step)
+		var reason: String = UnitPlanOrder.status_for_action(plan, statuses, step)
+		if reason != "":
+			failed = true
+			tooltip_lines.append(
+				"%d. %s — %s" % [i + 1, detail, reason_text(reason)],
+			)
+		else:
+			tooltip_lines.append("%d. %s" % [i + 1, detail])
+	var arrow: String = " → "
+	return {
+		"text": arrow.join(parts),
+		"tooltip": "\n".join(tooltip_lines),
+		"failed": failed,
+	}
 
 
 ## Returns { "line": String, "telemetry": Dictionary } — pass telemetry dict in/out for damage formulas.

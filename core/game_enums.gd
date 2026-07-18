@@ -112,6 +112,7 @@ enum StatusType {
 	INVULNERABLE,
 	AIRBORNE,
 	CANTO,
+	RUNNING,
 	POLYMORPH,
 	RETALIATION_PROTOCOL,
 	INDOMITABLE_WILL,
@@ -121,7 +122,7 @@ enum StatusType {
 
 static func is_buff(status: StatusType) -> bool:
 	match status:
-		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RETALIATION_PROTOCOL, StatusType.INDOMITABLE_WILL, StatusType.THORNS:
+		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RUNNING, StatusType.RETALIATION_PROTOCOL, StatusType.INDOMITABLE_WILL, StatusType.THORNS:
 			return true
 	return false
 

@@ -86,14 +86,18 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 		if p_team == GameEnums.Team.PLAYER and not def.is_construct:
 			var basic_attack: AbilityData = null
 			var class_abilities: Array[AbilityData] = []
-			for ab in def.abilities:
+			for ab: AbilityData in def.abilities:
 				if DataLibrary.is_basic_ability(ab.id):
 					basic_attack = ab
+				elif DataLibrary.is_movement_ability(ab.id):
+					continue
 				else:
 					class_abilities.append(ab)
 			if basic_attack == null:
 				basic_attack = DataLibrary._make_class_basic_attack(def.id)
 			unit.active_abilities.append(basic_attack)
+			unit.active_abilities.append(DataLibrary.get_universal_swap())
+			unit.active_abilities.append(DataLibrary.get_universal_run())
 			if unit.level == 1:
 				if not class_abilities.is_empty():
 					var idx := randi() % class_abilities.size()

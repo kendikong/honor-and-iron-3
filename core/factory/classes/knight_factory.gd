@@ -14,7 +14,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.preferred_stat = GameEnums.StatType.DEFENSE
 	def.equipped_weapon = basic_axe
 	
-	# Movement Skill (Swap)
+	# Movement Skill (Swap) — universal via DataLibrary.get_universal_swap(); class upgrade kept for data only.
 	var swap := DataLibrary._make_ability(&"knight_swap", "Swap", 1, [
 		DataLibrary._effect(GameEnums.EffectType.SWAP, 0)
 	], 0)

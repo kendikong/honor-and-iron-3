@@ -338,6 +338,10 @@ func get_player_plan() -> Timeline:
 	return _get_combined_plan()
 
 
+func get_unit_plan_steps(unit_id: int) -> Array[TimelineAction]:
+	return UnitPlanOrder.ordered_steps_for_unit(get_player_plan(), unit_id)
+
+
 func _get_combined_plan() -> Timeline:
 	var combined = Timeline.new()
 	for a in plan_pre_move.entries: combined.add(a)
@@ -1093,9 +1097,11 @@ func _refresh_plan() -> void:
 		
 	var dummy_ev: Array[SimEvent] = []
 	ResolutionPipeline.resolve_pending_pushes(full_proj, dummy_ev)
+
+	projected_state = base_board.clone()
+	Simulator.simulate_player_turn(projected_state, plan_to_run, [])
 		
 	board = move_only
-	projected_state = full_proj
 	var new_intents := EnemyPlanner.plan(projected_state)
 	base_board.intents = new_intents
 	board.intents = new_intents

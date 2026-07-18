@@ -9,6 +9,8 @@ static var _player_units: Array[UnitData] = []
 static var _enemy_units: Array[UnitData] = []
 static var _all_units_dict: Dictionary = {}
 static var _maps: Array[MapData] = []
+static var _universal_swap: AbilityData
+static var _universal_run: AbilityData
 
 static func get_all_player_units() -> Array[UnitData]:
 	_ensure_init()
@@ -29,6 +31,17 @@ static func get_unit(id: StringName) -> UnitData:
 static func _ensure_init() -> void:
 	if not _player_units.is_empty():
 		return
+
+	_universal_swap = _make_ability(
+		&"universal_swap", "Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0,
+	)
+	_universal_run = _make_ability(
+		&"universal_run",
+		"Run",
+		0,
+		[_status_effect_self(GameEnums.StatusType.RUNNING, 1)],
+		0,
+	)
 		
 	var _trade := _make_ability(&"swap", "Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
 	
@@ -344,6 +357,23 @@ static func _make_ability(p_id: StringName, p_name: String, p_range: int, effect
 
 static func is_basic_ability(ability_id: StringName) -> bool:
 	return ability_id == &"basic_attack" or String(ability_id).ends_with("_basic")
+
+
+static func is_movement_ability(ability_id: StringName) -> bool:
+	if ability_id in [&"universal_swap", &"universal_run", &"swap"]:
+		return true
+	return String(ability_id).ends_with("_swap")
+
+
+static func get_universal_swap() -> AbilityData:
+	_ensure_init()
+	return _universal_swap
+
+
+static func get_universal_run() -> AbilityData:
+	_ensure_init()
+	return _universal_run
+
 
 static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 	var id: StringName = &"basic_attack"

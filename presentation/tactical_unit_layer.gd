@@ -164,9 +164,9 @@ func clear_drag_attack_target() -> void:
 func _reset_drag_target_modulate() -> void:
 	if _drag_target_id < 0:
 		return
-	var actor: CharacterActor = _actors.get(_drag_target_id)
-	if actor != null:
-		actor.modulate = Color.WHITE
+	var unit := _board.get_unit_by_id(_drag_target_id) if _board != null else null
+	if unit != null:
+		_apply_exhaustion_state(unit)
 
 
 func _apply_drag_target_modulate() -> void:
@@ -416,12 +416,14 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 		or not CombatDirector.is_planning_phase(_director.phase)
 		or unit.is_enemy()
 	):
-		actor.modulate = Color.WHITE
+		actor.set_planning_exhausted(false)
+		actor.set_running(false)
 		return
 	var projected := _director.projected_state
 	var current: UnitState = projected.get_unit_by_id(unit.id) if projected != null else unit
 	if current == null:
-		actor.modulate = Color.WHITE
+		actor.set_planning_exhausted(false)
+		actor.set_running(false)
 		return
 	var can_act: bool = current.ability.points_left > 0 and not current.turn_action_used
 	var can_move: bool = (
@@ -430,7 +432,8 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 		and not current.has_status(GameEnums.StatusType.STUN)
 		and _director.get_planning_move_timing(current.id) >= 0
 	)
-	actor.modulate = Color.WHITE if can_act or can_move else Color(0.50, 0.50, 0.54, 0.78)
+	actor.set_planning_exhausted(not can_act and not can_move)
+	actor.set_running(current.has_status(GameEnums.StatusType.RUNNING))
 
 
 func _update_depth(unit_id: int) -> void:
@@ -489,6 +492,7 @@ func _animate_move(event: SimEvent) -> void:
 		_update_depth(unit_id)
 		return
 	actor.position = _map_view.grid_to_foot_local(start_cell)
+	actor.set_running(unit.has_status(GameEnums.StatusType.RUNNING))
 	actor.set_walking(true)
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
@@ -503,6 +507,8 @@ func _animate_move(event: SimEvent) -> void:
 	tween.finished.connect(func() -> void:
 		_move_tweens.erase(unit_id)
 		actor.set_walking(false)
+		var live := _board.get_unit_by_id(unit_id) if _board != null else null
+		actor.set_running(live != null and live.has_status(GameEnums.StatusType.RUNNING))
 		_update_depth(unit_id)
 	)
 
@@ -609,6 +615,9 @@ func _play_attack_anim(event: SimEvent) -> void:
 				thrust_dir = Vector2(delta2).normalized()
 	var ability_id: StringName = event.data.get("ability", &"")
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
+	if ability_data != null and DataLibrary.is_movement_ability(ability_data.id):
+		actor.play_spellcast(_spell_anim(facing))
+		return
 	if ability_data != null and not AbilitySystem.ability_uses_attack_animation(ability_data):
 		actor.play_spellcast(_spell_anim(facing))
 		return
@@ -674,6 +683,9 @@ func end_drag_preview() -> void:
 	if actor != null:
 		actor.modulate = Color.WHITE
 		actor.set_walking(false)
+		var unit := _board.get_unit_by_id(_drag_preview_id) if _board != null else null
+		if unit != null:
+			_apply_exhaustion_state(unit)
 	if unit != null:
 		_apply_exhaustion_state(unit)
 
@@ -694,7 +706,10 @@ func update_drag_preview(
 	var foot: Vector2 = _map_view.grid_to_foot_local(preview_cell)
 	var offset: Vector2 = map_local - _map_view.grid_to_local(preview_cell)
 	actor.position = foot + Vector2(offset.x, offset.y * 0.35)
-	actor.modulate = Color(1.0, 0.35, 0.35, 0.58) if failed else Color(1.0, 1.0, 1.0, 0.58)
+	if failed:
+		actor.modulate = Color(1.0, 0.35, 0.35, 0.58)
+	else:
+		actor.modulate = Color(1.0, 1.0, 1.0, 0.58)
 	match anim_mode:
 		DragPreviewAnim.WALK:
 			actor.set_facing(_facing_anim(facing))

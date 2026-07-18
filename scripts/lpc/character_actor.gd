@@ -26,6 +26,9 @@ var _hurt_tween: Tween
 var _combat_tween: Tween
 var _anchor_position: Vector2 = Vector2.ZERO
 var _is_dying: bool = false
+var _running: bool = false
+var _planning_exhausted: bool = false
+const _EXHAUSTED_TINT := Color(0.50, 0.50, 0.54, 0.78)
 
 
 func _ready() -> void:
@@ -128,6 +131,31 @@ func set_walking(moving: bool) -> void:
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
 	_rebuild_contact_shadow_silhouette()
+
+
+func set_running(running: bool) -> void:
+	if _running == running:
+		return
+	_running = running
+	if _one_shot_generation > 0:
+		return
+	for spr: AnimatedSprite2D in _layers:
+		_apply_motion_state(spr)
+	_rebuild_contact_shadow_silhouette()
+
+
+func set_planning_exhausted(exhausted: bool) -> void:
+	_planning_exhausted = exhausted
+	_apply_visual_tint()
+
+
+func _apply_visual_tint() -> void:
+	var tint: Color = _EXHAUSTED_TINT if _planning_exhausted else Color.WHITE
+	modulate = tint
+	if _contact_shadow != null:
+		_contact_shadow.modulate = tint
+	for spr: AnimatedSprite2D in _layers:
+		spr.modulate = tint
 
 
 func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:
@@ -398,7 +426,7 @@ func _apply_recolor_material(
 func _apply_motion_state(spr: AnimatedSprite2D) -> void:
 	if spr.sprite_frames == null:
 		return
-	var anim: StringName = _facing if _walking else _idle_for(_facing)
+	var anim: StringName = _resolve_motion_anim(_facing if _walking else _idle_for(_facing))
 	
 	LpcSheetFrames.ensure_animation(spr.sprite_frames, anim)
 	
@@ -443,3 +471,10 @@ static func _idle_for(action_anim: StringName) -> StringName:
 	if parts.size() > 1:
 		return StringName("idle_" + parts[1])
 	return &"idle_down"
+
+
+func _resolve_motion_anim(action_anim: StringName) -> StringName:
+	var anim_name: String = str(action_anim)
+	if _running and anim_name.begins_with("walk_"):
+		return StringName("run_" + anim_name.substr(5))
+	return action_anim

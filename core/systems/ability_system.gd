@@ -97,7 +97,7 @@ static func ability_blocks_basic_movement(ability: AbilityData) -> bool:
 	return true
 
 static func ability_uses_attack_animation(ability: AbilityData) -> bool:
-	if ability == null:
+	if ability == null or DataLibrary.is_movement_ability(ability.id):
 		return false
 	if ability_is_offensive_dash(ability):
 		return true
@@ -664,6 +664,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					"actor": actor.id, "reason": "status_prevented_by_invulnerable",
 				}))
 				return
+			if effect.status_type == GameEnums.StatusType.RUNNING:
+				_apply_running_boost(actor, events)
+				return
 			var status := StatusData.new(effect.status_type, effect.status_duration, effect.amount)
 			actor.active_statuses.append(status)
 			actor._recalculate_stats()
@@ -678,6 +681,25 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				board, actor, effect.amount, events, &"true", true, false, null,
 				"%s (self)" % action.ability.display_name, effect.amount
 			)
+
+static func _apply_running_boost(actor: UnitState, events: Array[SimEvent]) -> void:
+	if actor.has_status(GameEnums.StatusType.RUNNING):
+		return
+	var base_max: int = actor.movement.max_points
+	var bonus: int = int(floor(float(base_max) * 0.5))
+	if bonus <= 0:
+		return
+	actor.movement.max_points += bonus
+	actor.movement.points_left += bonus
+	actor.active_statuses.append(StatusData.new(GameEnums.StatusType.RUNNING, 1, bonus))
+	actor._recalculate_stats()
+	events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+		"unit": actor.id,
+		"status_type": GameEnums.StatusType.RUNNING,
+		"duration": 1,
+		"amount": bonus,
+	}))
+
 
 static func _resolve_target(board: BoardState, action: TimelineAction) -> UnitState:
 	if action.target_unit_id >= 0:
