@@ -615,7 +615,9 @@ func _play_attack_anim(event: SimEvent) -> void:
 				thrust_dir = Vector2(delta2).normalized()
 	var ability_id: StringName = event.data.get("ability", &"")
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
-	if ability_data != null and DataLibrary.is_movement_ability(ability_data.id):
+	if ability_data != null and (
+		ability_data.is_movement_skill or DataLibrary.is_universal_run(ability_data.id)
+	):
 		actor.play_spellcast(_spell_anim(facing))
 		return
 	if ability_data != null and not AbilitySystem.ability_uses_attack_animation(ability_data):

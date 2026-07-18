@@ -14,7 +14,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.equipped_weapon = basic_axe
 	
 	# Movement Skill (Push Through)
-	var push_through := DataLibrary._make_ability(&"bruiser_push_through", "Push Through", 2, [
+	var push_through := DataLibrary._make_movement_ability(&"bruiser_push_through", "Push Through", 2, [
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
 		DataLibrary._effect(GameEnums.EffectType.SWAP, 0)
 	], 0, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)

@@ -97,7 +97,7 @@ static func ability_blocks_basic_movement(ability: AbilityData) -> bool:
 	return true
 
 static func ability_uses_attack_animation(ability: AbilityData) -> bool:
-	if ability == null or DataLibrary.is_movement_ability(ability.id):
+	if ability == null or ability.is_movement_skill or DataLibrary.is_universal_run(ability.id):
 		return false
 	if ability_is_offensive_dash(ability):
 		return true

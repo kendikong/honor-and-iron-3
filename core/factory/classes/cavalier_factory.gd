@@ -14,7 +14,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	def.equipped_weapon = basic_lance
 	
 	# Movement Skill (Push)
-	var push := DataLibrary._make_ability(&"cavalier_push", "Push", 0, [
+	var push := DataLibrary._make_movement_ability(&"cavalier_push", "Push", 0, [
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
 	], 0, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
 	push.upgrade_description = "Limit once per turn. Pushing unit grants +1 STR for next attack."

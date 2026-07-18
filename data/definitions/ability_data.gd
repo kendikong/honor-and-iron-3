@@ -46,3 +46,7 @@ extends Resource
 
 ## Determines which stat (STR/MAG/NONE) scales the damage of this ability.
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
+
+## Class movement skill from the Master Bible (Swap, Push Through, Leap, etc.).
+## Always granted separately — never part of the rolled active-skill pool.
+@export var is_movement_skill: bool = false

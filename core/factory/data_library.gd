@@ -9,7 +9,6 @@ static var _player_units: Array[UnitData] = []
 static var _enemy_units: Array[UnitData] = []
 static var _all_units_dict: Dictionary = {}
 static var _maps: Array[MapData] = []
-static var _universal_swap: AbilityData
 static var _universal_run: AbilityData
 
 static func get_all_player_units() -> Array[UnitData]:
@@ -32,9 +31,6 @@ static func _ensure_init() -> void:
 	if not _player_units.is_empty():
 		return
 
-	_universal_swap = _make_ability(
-		&"universal_swap", "Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0,
-	)
 	_universal_run = _make_ability(
 		&"universal_run",
 		"Run",
@@ -67,7 +63,7 @@ static func _ensure_init() -> void:
 	# 2. PALADIN (SWORD)
 	var p_paladin = _make_passive(&"holy_shield", "Holy Shield", "Resists magic.")
 	var paladin_heal := _make_ability(&"paladin_heal", "Lay on Hands", 1, [_effect(GameEnums.EffectType.HEAL, 2)], 1, GameEnums.StatType.MAGICAL)
-	var paladin_swap := _make_ability(&"paladin_swap", "Holy Swap", 2, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
+	var paladin_swap := _make_movement_ability(&"paladin_swap", "Holy Swap", 2, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
 	var paladin := _make_unit_data(&"paladin", "Paladin", 5, 3, 1, [paladin_heal, paladin_swap], null, GameEnums.MovementType.WALK, 3, 2, 4, basic_sword, [p_paladin])
 
 	# 3. BRUISER (AXE)
@@ -85,37 +81,37 @@ static func _ensure_init() -> void:
 	# 6. MAGE (MAGIC)
 	var p_mage = _make_passive(&"focus", "Focus", "More magic damage.")
 	var mage_fireball := _make_ability(&"mage_fireball", "Fireball", 3, [_effect(GameEnums.EffectType.DAMAGE, 3)], 1, GameEnums.StatType.MAGICAL)
-	var mage_swap := _make_ability(&"mage_swap", "Phase Swap", 2, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
+	var mage_swap := _make_movement_ability(&"mage_swap", "Phase Swap", 2, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
 	var mage := _make_unit_data(&"mage", "Mage", 2, 3, 1, [mage_fireball, mage_swap], null, GameEnums.MovementType.WALK, 0, 5, 1, basic_staff, [p_mage])
 
 	# 7. CLERIC (STAFF)
 	var p_cleric = _make_passive(&"blessing", "Blessing", "Heals adjacent allies.")
 	var cleric_blessing := _make_ability(&"cleric_blessing", "Divine Shield", 2, [_effect(GameEnums.EffectType.ARMOR_UP, 2)], 1)
-	var cleric_pull := _make_ability(&"cleric_pull", "Rescue Pull", 2, [_effect(GameEnums.EffectType.PULL, 1)], 0)
+	var cleric_pull := _make_movement_ability(&"cleric_pull", "Rescue Pull", 2, [_effect(GameEnums.EffectType.PULL, 1)], 0)
 	var cleric := _make_unit_data(&"cleric", "Cleric", 3, 3, 1, [cleric_blessing, cleric_pull], null, GameEnums.MovementType.WALK, 0, 3, 2, basic_staff, [p_cleric])
 
 	# 8. ASSASSIN
 	var p_assassin = _make_passive(&"lethal", "Lethal", "Backstabs do extra damage.")
 	var assassin_execute := _make_ability(&"assassin_execute", "Assassinate", 1, [_effect(GameEnums.EffectType.DAMAGE, 3)], 1, GameEnums.StatType.PHYSICAL)
-	var assassin_swap := _make_ability(&"assassin_swap", "Shadow Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
+	var assassin_swap := _make_movement_ability(&"assassin_swap", "Shadow Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
 	var assassin := _make_unit_data(&"assassin", "Assassin", 3, 4, 1, [assassin_execute, assassin_swap], null, GameEnums.MovementType.WALK, 4, 0, 1, basic_sword, [p_assassin])
 
 	# 9. MERCENARY (SWORD)
 	var p_merc = _make_passive(&"veteran", "Veteran", "Reliable criticals.")
 	var merc_rend := _make_ability(&"merc_rend", "Rend", 1, [_effect(GameEnums.EffectType.DAMAGE, 2)], 1, GameEnums.StatType.PHYSICAL)
-	var merc_kick := _make_ability(&"merc_kick", "Boot Kick", 1, [_effect(GameEnums.EffectType.PUSH, 1)], 0)
+	var merc_kick := _make_movement_ability(&"merc_kick", "Boot Kick", 1, [_effect(GameEnums.EffectType.PUSH, 1)], 0)
 	var mercenary := _make_unit_data(&"mercenary", "Mercenary", 4, 4, 1, [merc_rend, merc_kick], null, GameEnums.MovementType.WALK, 4, 0, 3, basic_sword, [p_merc])
 
 	# 10. GRYPHON RIDER (LANCE)
 	var p_gryphon = _make_passive(&"air_superiority", "Air Superiority", "Evades ground attacks.")
 	var gryphon_swoop := _make_ability(&"gryphon_swoop", "Swoop Attack", 2, [_effect(GameEnums.EffectType.DAMAGE, 2)], 1, GameEnums.StatType.PHYSICAL)
-	var gryphon_shove := _make_ability(&"gryphon_shove", "Wing Buffet", 2, [_effect(GameEnums.EffectType.PUSH, 1)], 0)
+	var gryphon_shove := _make_movement_ability(&"gryphon_shove", "Wing Buffet", 2, [_effect(GameEnums.EffectType.PUSH, 1)], 0)
 	var gryphon := _make_unit_data(&"gryphon", "Gryphon Rider", 4, 5, 1, [gryphon_swoop, gryphon_shove], null, GameEnums.MovementType.FLY, 3, 0, 2, basic_lance, [p_gryphon])
 
 	# 11. MONK (FIST)
 	var p_monk = _make_passive(&"flurry", "Flurry", "Multiple quick attacks.")
 	var monk_palm := _make_ability(&"monk_palm", "Palm Strike", 1, [_effect(GameEnums.EffectType.DAMAGE, 2), _effect(GameEnums.EffectType.PUSH, 1)], 1, GameEnums.StatType.PHYSICAL)
-	var monk_swap := _make_ability(&"monk_swap", "Vault Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
+	var monk_swap := _make_movement_ability(&"monk_swap", "Vault Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
 	var monk := _make_unit_data(&"monk", "Monk", 4, 4, 1, [monk_palm, monk_swap], null, GameEnums.MovementType.WALK, 3, 1, 3, basic_fist, [p_monk])
 
 	# 12. ENGINEER (GUN/EXPLOSIVES)
@@ -355,19 +351,37 @@ static func _make_ability(p_id: StringName, p_name: String, p_range: int, effect
 	ability.target_shape_size = shape_size
 	return ability
 
+static func _make_movement_ability(
+	p_id: StringName,
+	p_name: String,
+	p_range: int,
+	effects: Array[EffectData],
+	ap_cost: int = 0,
+	stat: GameEnums.StatType = GameEnums.StatType.NONE,
+	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
+	shape_size: int = 1,
+) -> AbilityData:
+	var ability := _make_ability(p_id, p_name, p_range, effects, ap_cost, stat, shape, shape_size)
+	ability.is_movement_skill = true
+	return ability
+
+
 static func is_basic_ability(ability_id: StringName) -> bool:
 	return ability_id == &"basic_attack" or String(ability_id).ends_with("_basic")
 
 
+static func is_universal_run(ability_id: StringName) -> bool:
+	return ability_id == &"universal_run"
+
+
+static func is_movement_skill(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	return ability.is_movement_skill
+
+
 static func is_movement_ability(ability_id: StringName) -> bool:
-	if ability_id in [&"universal_swap", &"universal_run", &"swap"]:
-		return true
-	return String(ability_id).ends_with("_swap")
-
-
-static func get_universal_swap() -> AbilityData:
-	_ensure_init()
-	return _universal_swap
+	return is_universal_run(ability_id)
 
 
 static func get_universal_run() -> AbilityData:
