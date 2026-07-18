@@ -60,9 +60,6 @@ static var _async_pending: Dictionary = {}
 static var _map_oblique_overlay: Dictionary = {}
 static var _overlay_sample_image: Image
 static var _overlay_sample_epoch: int = -1
-static var _actor_contact_sync_cache: Dictionary = {}
-static var _actor_shadow_bases: Dictionary = {}
-static var _peer_actor_shadow_registry: Dictionary = {}
 
 const ACTOR_SHADOW_BAND_COUNT: int = 3
 const ACTOR_SHADOW_MAJORITY_RATIO: float = 0.5
@@ -295,14 +292,8 @@ static func sync_actor_contact_shadow(
 		_last_actor_bake_key = -1
 		_last_actor_applied_epoch = -1
 		_last_actor_synced_silhouette = -1
-		if actor != null:
-			var aid: int = actor.get_instance_id()
-			_actor_contact_sync_cache.erase(aid)
-			_actor_shadow_bases.erase(aid)
-			_peer_actor_shadow_registry.erase(aid)
 		_clear_actor_sprite(sprite)
 		return
-	var actor_id: int = actor.get_instance_id() if actor != null else -1
 	var want_actor_rebake: bool = not geometry_blocked and (map_applied or silhouette_stale)
 	var need_geometry: bool = (
 		_snapshot_sundial(settings).visible
@@ -336,177 +327,22 @@ static func sync_actor_contact_shadow(
 		_last_actor_applied_epoch = map_epoch if map_has_casters else 0
 		_last_actor_synced_silhouette = silhouette_version
 		_last_actor_bake_key = map_epoch * 1000 + silhouette_version
-		if actor_id >= 0:
-			_actor_shadow_bases[actor_id] = img.duplicate()
 	var show: bool = is_present and sprite.texture != null and actor_visible_enough
-	var actor_pos: Vector2 = actor.position if actor != null else Vector2.ZERO
-	var pos_key: Vector2i = Vector2i(int(round(actor_pos.x)), int(round(actor_pos.y)))
-	var heavy_key: int = hash([
-		silhouette_version,
-		map_epoch,
-		tint,
-		strength,
-		is_present,
-		actor_visible_enough,
-		geometry_blocked,
-		need_geometry,
-	])
-	var light_key: int = hash([pos_key, _cloud_drift_key(), map_epoch])
-	var cached: Dictionary = _actor_contact_sync_cache.get(actor_id, {})
-	if (
-		not need_geometry
-		and cached.get("heavy_key", -1) == heavy_key
-		and bool(cached.get("visible", false)) == show
-	):
-		if cached.get("light_key", -1) == light_key:
-			return
-		_sync_actor_map_oblique(sprite, actor)
-		_sync_actor_cloud_uniforms(sprite, settings, actor_id)
-		cached["light_key"] = light_key
-		_actor_contact_sync_cache[actor_id] = cached
-		return
-	_actor_contact_sync_cache[actor_id] = {
-		"heavy_key": heavy_key,
-		"light_key": light_key,
-		"visible": show,
-	}
 	sprite.visible = show
 	sprite.modulate = Color.WHITE
 	sprite.texture_filter = _shadow_texture_filter(settings)
 	sync_shadow_material(sprite.material as ShaderMaterial, settings)
 	_sync_actor_map_oblique(sprite, actor)
-	_sync_actor_cloud_uniforms(sprite, settings, actor_id)
-
-
-static func _sync_actor_cloud_uniforms(
-	sprite: Sprite2D,
-	settings: EffectsSettings = null,
-	actor_id: int = -1,
-) -> void:
+	
+	# Actor shadows yield to cloud shadows to prevent double-darkening (since clouds don't read actor silhouettes).
 	var mat: ShaderMaterial = sprite.material as ShaderMaterial
-	if mat == null:
-		return
-	var atmo: Dictionary = WeatherBus.atmosphere_uniforms()
-	var has_clouds: float = 0.0
-	if settings != null and settings.cloud_shadows and float(atmo.get("cloud_shadow_strength", 1.0)) >= 0.01:
-		has_clouds = 1.0
-	mat.set_shader_parameter("has_cloud_shadow", has_clouds)
-	mat.set_shader_parameter("cloud_drift_offset", atmo["cloud_drift_offset"])
-	if actor_id >= 0:
-		var entry: Dictionary = _actor_contact_sync_cache.get(actor_id, {})
-		entry["drift_key"] = _cloud_drift_key()
-		_actor_contact_sync_cache[actor_id] = entry
-
-
-static func _cloud_drift_key() -> int:
-	var d: Vector2 = WeatherBus.cloud_drift_offset
-	return hash(Vector2i(int(floor(d.x * 64.0)), int(floor(d.y * 64.0))))
-
-
-static func sync_actor_cloud_drift_only(
-	sprite: Sprite2D,
-	settings: EffectsSettings,
-	actor_id: int,
-) -> void:
-	if settings == null or not settings.cloud_shadows:
-		return
-	if sprite == null or not sprite.visible:
-		return
-	var drift_key: int = _cloud_drift_key()
-	var cached: Dictionary = _actor_contact_sync_cache.get(actor_id, {})
-	if cached.get("drift_key", -1) == drift_key:
-		return
-	_sync_actor_cloud_uniforms(sprite, settings, actor_id)
-
-
-static func apply_actor_peer_shadow_batch(actors: Array) -> void:
-	_peer_actor_shadow_registry.clear()
-	var sorted: Array = actors.duplicate()
-	sorted.sort_custom(
-		func(a: Variant, b: Variant) -> bool:
-			if a == null or not is_instance_valid(a as Node):
-				return false
-			if b == null or not is_instance_valid(b as Node):
-				return true
-			return (a as Node).get_instance_id() < (b as Node).get_instance_id()
-	)
-	for actor_var: Variant in sorted:
-		var actor: Node2D = actor_var as Node2D
-		if actor == null:
-			continue
-		var sprite: Sprite2D = _actor_shadow_sprite(actor)
-		if sprite == null or not sprite.visible or sprite.texture == null:
-			continue
-		var base: Image = _actor_shadow_bases.get(actor.get_instance_id()) as Image
-		if base == null or base.is_empty():
-			continue
-		var img: Image = base.duplicate()
-		if img.is_compressed():
-			img.decompress()
-		var map_origin: Vector2 = _actor_shadow_map_origin(sprite, actor)
-		_punch_peer_actor_shadows(img, map_origin, actor)
-		var tex: ImageTexture = sprite.texture as ImageTexture
-		if tex != null:
-			tex.set_image(img)
-		_register_peer_actor_shadow(actor, img, map_origin)
-
-
-static func _actor_shadow_sprite(actor: Node2D) -> Sprite2D:
-	if actor == null:
-		return null
-	if actor.has_method("get_contact_shadow_sprite"):
-		return actor.call("get_contact_shadow_sprite") as Sprite2D
-	return null
-
-
-static func _actor_shadow_map_origin(sprite: Sprite2D, actor: Node2D) -> Vector2:
-	if sprite == null:
-		return Vector2.ZERO
-	if actor == null:
-		return sprite.position
-	return actor.position + sprite.position * actor.scale
-
-
-static func _register_peer_actor_shadow(actor: Node2D, img: Image, map_origin: Vector2) -> void:
-	if actor == null or img == null:
-		return
-	_peer_actor_shadow_registry[actor.get_instance_id()] = {
-		"image": img.duplicate(),
-		"origin": map_origin,
-	}
-
-
-static func _punch_peer_actor_shadows(dst: Image, dst_origin: Vector2, actor: Node2D) -> void:
-	if dst == null or actor == null:
-		return
-	var self_id: int = actor.get_instance_id()
-	for peer_id: Variant in _peer_actor_shadow_registry:
-		if int(peer_id) >= self_id:
-			continue
-		var peer: Dictionary = _peer_actor_shadow_registry[peer_id]
-		var peer_img: Image = peer.get("image") as Image
-		if peer_img == null or peer_img.is_empty():
-			continue
-		_punch_image_alpha_at(peer_img, peer.get("origin", Vector2.ZERO), dst, dst_origin)
-
-
-static func _punch_image_alpha_at(
-	src: Image,
-	src_origin: Vector2,
-	dst: Image,
-	dst_origin: Vector2,
-) -> void:
-	var ox: int = int(round(src_origin.x - dst_origin.x))
-	var oy: int = int(round(src_origin.y - dst_origin.y))
-	for sy: int in range(src.get_height()):
-		for sx: int in range(src.get_width()):
-			if src.get_pixel(sx, sy).a < 0.04:
-				continue
-			var dx: int = ox + sx
-			var dy: int = oy + sy
-			if dx < 0 or dy < 0 or dx >= dst.get_width() or dy >= dst.get_height():
-				continue
-			dst.set_pixel(dx, dy, Color(0.0, 0.0, 0.0, 0.0))
+	if mat != null:
+		var atmo: Dictionary = WeatherBus.atmosphere_uniforms()
+		var has_clouds: float = 0.0
+		if settings != null and settings.cloud_shadows and float(atmo.get("cloud_shadow_strength", 1.0)) >= 0.01:
+			has_clouds = 1.0
+		mat.set_shader_parameter("has_cloud_shadow", has_clouds)
+		mat.set_shader_parameter("cloud_drift_offset", atmo["cloud_drift_offset"])
 
 
 static func _sync_actor_map_oblique(sprite: Sprite2D, actor: Node2D) -> void:
@@ -1771,9 +1607,7 @@ static func actor_oblique_band_modulates(
 	bands.resize(ACTOR_SHADOW_BAND_COUNT)
 	for i: int in ACTOR_SHADOW_BAND_COUNT:
 		bands[i] = Color.WHITE
-	if actor == null or settings == null:
-		return bands
-	if not settings.oblique_contact_shadows:
+	if settings == null or not settings.oblique_contact_shadows or actor == null:
 		return bands
 	var foot: Vector2 = actor.position
 	var scale_y: float = actor.scale.y

@@ -48,5 +48,4 @@ const Z_ECOLOGY: int = 3
 const Z_VFX: int = 4
 const Z_TREE: int = 5
 const Z_BIRD: int = 6
-## Above Z_CHARACTER (8) and tactical UnitLayer (10) — cloud/mist multiply hits actors.
-const Z_SKY: int = 11
+const Z_SKY: int = 7

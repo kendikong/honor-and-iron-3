@@ -261,7 +261,6 @@ func _init_tile_pipeline() -> void:
 	ShadowPlacer.clear_bake_cache()
 	_effects.set_map_seed(_skirmish.map_seed)
 	_effects.set_character_contact_shadow_sync(_unit_layer.sync_all_contact_shadows)
-	_effects.set_character_contact_shadow_full_sync(_unit_layer.sync_all_contact_shadows_full)
 
 
 func _exit_tree() -> void:
@@ -414,7 +413,6 @@ func _center_map() -> void:
 	)
 	_map_root.scale = layout["map_root_scale"]
 	position = layout["scene_position"]
-	_atmosphere.sync_sky_transform()
 	_sync_overlay_huds(layout["origin"], layout["scaled_size"])
 	if _unit_overlay != null:
 		_unit_overlay.queue_redraw()

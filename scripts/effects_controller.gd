@@ -33,8 +33,6 @@ var _ground_wired: bool = false
 var _weather_wired: bool = false
 var _last_grid: PlayerGrid
 var _character_contact_shadow_sync: Callable = Callable()
-var _character_contact_shadow_full_sync: Callable = Callable()
-var _last_actor_shadow_map_epoch: int = -1
 
 
 func setup(
@@ -77,7 +75,6 @@ func setup(
 	WeatherBus.apply_biome_profile(biome_profile)
 	_wire_weather_bus()
 	_ensure_shadow_draw_order()
-	_ensure_sky_draw_order()
 	apply_all(null, 0.0)
 
 
@@ -167,22 +164,12 @@ func process_frame(delta: float) -> void:
 		else:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
 	_sync_contact_shadow_mask()
-	if settings.oblique_contact_shadows:
-		var map_epoch: int = ShadowPlacer.map_composite_apply_epoch()
-		if map_epoch != _last_actor_shadow_map_epoch:
-			_last_actor_shadow_map_epoch = map_epoch
-			if _character_contact_shadow_full_sync.is_valid():
-				_character_contact_shadow_full_sync.call(settings)
-		elif _character_contact_shadow_sync.is_valid():
-			_character_contact_shadow_sync.call(settings)
+	if _character_contact_shadow_sync.is_valid():
+		_character_contact_shadow_sync.call(settings)
 
 
 func set_character_contact_shadow_sync(callback: Callable) -> void:
 	_character_contact_shadow_sync = callback
-
-
-func set_character_contact_shadow_full_sync(callback: Callable) -> void:
-	_character_contact_shadow_full_sync = callback
 
 
 static func sync_contact_shadow_on_actor(actor: Node, settings: EffectsSettings) -> void:
@@ -198,55 +185,13 @@ static func sync_contact_shadow_on_actor(actor: Node, settings: EffectsSettings)
 
 
 static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsSettings) -> void:
-	var sorted: Array = []
 	for actor: Variant in actors.values():
-		if actor != null and is_instance_valid(actor):
-			sorted.append(actor)
-	sorted.sort_custom(
-		func(a: Node, b: Node) -> bool: return a.get_instance_id() < b.get_instance_id()
-	)
-	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
-	ShadowPlacer.apply_actor_peer_shadow_batch(sorted)
-
-
-static func sync_contact_shadow_drift_on_actors(actors: Dictionary, settings: EffectsSettings) -> void:
-	if settings == null or not settings.oblique_contact_shadows:
-		return
-	for actor: Variant in actors.values():
-		sync_contact_shadow_drift_on_actor(actor as Node, settings)
-
-
-static func sync_contact_shadow_drift_on_actor(actor: Node, settings: EffectsSettings) -> void:
-	if actor == null or not is_instance_valid(actor) or not actor is CharacterActor:
-		return
-	var char_actor: CharacterActor = actor as CharacterActor
-	var sprite: Sprite2D = char_actor.get_contact_shadow_sprite()
-	if sprite == null:
-		return
-	ShadowPlacer.sync_actor_cloud_drift_only(sprite, settings, actor.get_instance_id())
-
-
-static func sync_contact_shadow_drift_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
-	if settings == null or not settings.oblique_contact_shadows:
-		return
-	for actor: Variant in actors:
-		sync_contact_shadow_drift_on_actor(actor as Node, settings)
 
 
 static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
-	var sorted: Array = actors.duplicate()
-	sorted.sort_custom(
-		func(a: Variant, b: Variant) -> bool:
-			if a == null or not is_instance_valid(a as Node):
-				return false
-			if b == null or not is_instance_valid(b as Node):
-				return true
-			return (a as Node).get_instance_id() < (b as Node).get_instance_id()
-	)
-	for actor: Variant in sorted:
+	for actor: Variant in actors:
 		sync_contact_shadow_on_actor(actor as Node, settings)
-	ShadowPlacer.apply_actor_peer_shadow_batch(sorted)
 
 
 func _sync_contact_shadow_mask() -> void:
@@ -320,7 +265,6 @@ func _apply_atmosphere_visuals(grid: PlayerGrid, water_ratio: float) -> void:
 		_world_modulate.color = Color.WHITE
 	if settings.cloud_shadows:
 		_atmosphere.push_cloud_shadow_uniforms(settings)
-	_ensure_sky_draw_order()
 	_sync_contact_shadow_mask()
 
 
@@ -334,7 +278,6 @@ func _apply_oblique_contact_shadows(grid: PlayerGrid) -> void:
 		_sync_contact_shadow_mask()
 		return
 	_ensure_shadow_draw_order()
-	_ensure_sky_draw_order()
 	_shadow_sprites.process_mode = Node.PROCESS_MODE_INHERIT
 	_shadow_sprites.visible = true
 	ShadowPlacer.apply(grid, _shadow_sprites, _ground, _trees, _overlay, null, settings, _scatter)
@@ -351,15 +294,6 @@ func _ensure_shadow_draw_order() -> void:
 	var tree_idx: int = _trees.get_index()
 	if tree_idx >= 0 and _shadow_sprites.get_parent() == _map_root:
 		_map_root.move_child(_shadow_sprites, tree_idx)
-
-
-func _ensure_sky_draw_order() -> void:
-	if _sky_overlay == null:
-		return
-	_sky_overlay.z_as_relative = false
-	_sky_overlay.z_index = _C.Z_SKY
-	if _atmosphere != null:
-		_atmosphere.sync_sky_transform()
 
 
 func _apply_water_vfx(grid: PlayerGrid) -> void:

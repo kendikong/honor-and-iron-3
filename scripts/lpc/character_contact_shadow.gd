@@ -61,10 +61,6 @@ func sync(settings: EffectsSettings = null) -> void:
 	)
 
 
-func get_shadow_sprite() -> Sprite2D:
-	return _sprite
-
-
 func _composite_layers(layers: Array[AnimatedSprite2D], anim: StringName) -> Image:
 	if layers.is_empty():
 		return null

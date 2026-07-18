@@ -54,7 +54,7 @@ float blob_field(vec2 p) {
 }
 
 float shadow_mask(float field) {
-	return smoothstep(0.48, 0.58, field);
+	return smoothstep(0.58, 0.60, field);
 }
 
 
