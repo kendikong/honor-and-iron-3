@@ -184,15 +184,6 @@ func _push_uniforms(map_root: Node2D, grid: PlayerGrid) -> void:
 		for key: String in tree_params:
 			tree_material.set_shader_parameter(key, tree_params[key])
 		_apply_mask(tree_material, _tree_mask, "participation_tex", "has_participation")
-		if map_root != null and grid != null:
-			tree_material.set_shader_parameter("map_origin_px", map_root.global_position)
-			tree_material.set_shader_parameter("map_size_cells", Vector2(grid.width, grid.height))
-			tree_material.set_shader_parameter("tile_px", TILE_PX)
-			tree_material.set_shader_parameter("map_scale", map_root.scale.x)
-
-
-func tree_shader_material() -> ShaderMaterial:
-	return tree_material
 
 
 func _push_ripple_uniforms(mat: ShaderMaterial) -> void:

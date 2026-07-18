@@ -387,17 +387,8 @@ func _on_weather_changed() -> void:
 
 
 func _apply_tile_cloud_receive(grid: PlayerGrid) -> void:
-	_tile_cloud.apply(
-		settings,
-		grid,
-		settings.wind_field and _ground_wired,
-		_ground_effects.tree_shader_material(),
-	)
+	_tile_cloud.apply(settings, grid)
 
 
 func _apply_tile_cloud_drift() -> void:
-	_tile_cloud.sync_drift(
-		settings,
-		settings.wind_field and _ground_wired,
-		_ground_effects.tree_shader_material(),
-	)
+	_tile_cloud.sync_drift(settings)
