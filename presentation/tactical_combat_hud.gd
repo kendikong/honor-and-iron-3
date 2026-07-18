@@ -6,6 +6,7 @@ extends CanvasLayer
 var _director: CombatDirector
 var _map_view: TacticalMapView
 
+var _phase_caption: Label
 var _phase_label: Label
 var _timeline_grid: TacticalTimelineGrid
 var _warn_label: Label
@@ -77,10 +78,12 @@ func apply_settings(settings: GameSettings) -> void:
 	var title_sz: int = settings.scaled_title_font()
 	var body_sz: int = settings.scaled_hint_font()
 	var cell_sz: int = settings.scaled_body_font()
+	if _phase_caption != null:
+		_phase_caption.add_theme_font_size_override("font_size", maxi(9, body_sz - 1))
 	if _phase_label != null:
 		_phase_label.add_theme_font_size_override("font_size", title_sz)
 	if _hint_label != null:
-		_hint_label.add_theme_font_size_override("font_size", body_sz)
+		_hint_label.add_theme_font_size_override("font_size", maxi(9, body_sz - 1))
 	if _timeline_grid != null:
 		_timeline_grid.apply_font_sizes(title_sz, cell_sz)
 	for child: Node in get_children():
@@ -97,7 +100,7 @@ func apply_settings(settings: GameSettings) -> void:
 
 
 func _apply_ui_scale_recursive(node: Node, body_sz: int, title_sz: int) -> void:
-	if node is Label and node != _phase_label:
+	if node is Label and node != _phase_label and node != _phase_caption and node != _hint_label and node != _warn_label:
 		var lbl := node as Label
 		if lbl.text == "Tactical Combat":
 			lbl.add_theme_font_size_override("font_size", title_sz)
@@ -177,22 +180,36 @@ func _build_ui() -> void:
 	margin.add_child(hbox)
 
 	var phase_sidebar := VBoxContainer.new()
-	phase_sidebar.custom_minimum_size = Vector2(96, 0)
+	phase_sidebar.custom_minimum_size = Vector2(118, 0)
 	phase_sidebar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	phase_sidebar.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	phase_sidebar.add_theme_constant_override("separation", 4)
 	hbox.add_child(phase_sidebar)
 
+	_phase_caption = Label.new()
+	_phase_caption.text = "Phase"
+	_phase_caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_phase_caption.add_theme_font_size_override("font_size", 10)
+	_phase_caption.add_theme_color_override("font_color", Color(0.55, 0.58, 0.65))
+	phase_sidebar.add_child(_phase_caption)
+
 	_phase_label = Label.new()
-	_phase_label.text = "Phase:\nPLANNING"
-	_phase_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_phase_label.add_theme_font_size_override("font_size", 14)
+	_phase_label.text = "PLANNING"
+	_phase_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_phase_label.add_theme_font_size_override("font_size", 16)
+	_phase_label.add_theme_color_override("font_color", Color(0.95, 0.96, 1.0))
 	phase_sidebar.add_child(_phase_label)
 
+	var phase_rule := ColorRect.new()
+	phase_rule.custom_minimum_size = Vector2(0, 1)
+	phase_rule.color = Color(0.28, 0.32, 0.40, 0.9)
+	phase_sidebar.add_child(phase_rule)
+
 	var hint := Label.new()
-	hint.text = "Drag move\nScroll ability\nA aim · Esc pause"
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.add_theme_font_size_override("font_size", 8)
-	hint.add_theme_color_override("font_color", Color(0.50, 0.54, 0.62))
+	hint.text = "Drag to move\nScroll = ability\nA = aim · Esc = pause"
+	hint.autowrap_mode = TextServer.AUTOWRAP_OFF
+	hint.add_theme_font_size_override("font_size", 9)
+	hint.add_theme_color_override("font_color", Color(0.58, 0.62, 0.70))
 	_hint_label = hint
 	phase_sidebar.add_child(hint)
 
@@ -292,7 +309,7 @@ func _on_phase_changed(phase: int) -> void:
 		CombatDirector.Phase.VICTORY: "VICTORY",
 		CombatDirector.Phase.DEFEAT: "DEFEAT",
 	}
-	_phase_label.text = "Phase:\n%s" % names.get(phase, str(phase))
+	_phase_label.text = String(names.get(phase, str(phase)))
 	if _timeline_grid != null:
 		_timeline_grid.set_phase(phase)
 	var planning: bool = CombatDirector.is_planning_phase(phase)

@@ -11,7 +11,7 @@ const W_STATS: int = 132
 const ROW_HEIGHT: int = 38
 const COLOR_FAIL: Color = Color(1.0, 0.38, 0.38)
 const COLOR_HEADER: Color = Color(0.58, 0.62, 0.70)
-const COLOR_MUTED: Color = Color(0.42, 0.45, 0.52)
+const COLOR_MUTED: Color = Color(0.58, 0.62, 0.70)
 const COLOR_EMPTY: Color = Color(0.35, 0.38, 0.44)
 const COLOR_ROW: Color = Color(0.13, 0.15, 0.19, 0.88)
 const COLOR_ROW_SEL: Color = Color(0.18, 0.30, 0.46, 0.95)
@@ -130,8 +130,8 @@ func _add_party_row(
 	row_panel.add_theme_stylebox_override("panel", _panel_style(row_bg, is_selected))
 	var row := _make_row_container(0)
 	row_panel.add_child(row)
-	var player_col: Color = CombatUiFormatters.player_color(slot)
-	_add_body_cell(row, "P%d" % slot, "", player_col if not is_empty else COLOR_EMPTY, W_PLAYER, false)
+	var player_col: Color = CombatUiFormatters.player_color(slot) if not is_empty else COLOR_EMPTY
+	_add_body_cell(row, "P%d" % slot, "", player_col, W_PLAYER, false)
 	var name_text: String = "— open —" if is_empty else unit.definition.display_name
 	var name_col: Color = COLOR_EMPTY if is_empty else Color.WHITE
 	if is_selected and not is_empty:
@@ -160,7 +160,7 @@ func _add_party_row(
 			unit.current_magic, unit.armor,
 		]
 	)
-	_add_body_cell(row, stats_text, stats_tip, COLOR_MUTED if not is_selected else Color(0.78, 0.82, 0.88), W_STATS, true)
+	_add_body_cell(row, stats_text, stats_tip, Color(0.72, 0.76, 0.82) if is_selected else COLOR_MUTED, W_STATS, true)
 	var slots: Dictionary = _plan_slots_for_unit(timeline, unit.id)
 	var warn: String = ""
 	var cell_warn: String = _append_plan_cell(
