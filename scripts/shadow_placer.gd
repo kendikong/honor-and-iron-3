@@ -2174,15 +2174,16 @@ static func _sample_unit_feet_channel_alpha_at(map_px: Vector2) -> float:
 		var img: Image = slot.get("image") as Image
 		if img == null or img.is_empty():
 			continue
-		var origin: Vector2 = slot.get("map_origin", Vector2.ZERO) as Vector2
-		var size: Vector2 = Vector2(float(img.get_width()), float(img.get_height()))
-		var local: Vector2 = map_px - origin
-		if local.x < 0.0 or local.y < 0.0 or local.x >= size.x or local.y >= size.y:
+		var rect: Vector4 = slot.get("map_rect", Vector4.ZERO) as Vector4
+		if rect.z < 1.0 or rect.w < 1.0:
 			continue
-		alpha = maxf(
-			alpha,
-			_sample_alpha_nearest(img, int(floor(local.x)), int(floor(local.y))),
-		)
+		var local: Vector2 = map_px - Vector2(rect.x, rect.y)
+		if local.x < 0.0 or local.y < 0.0 or local.x >= rect.z or local.y >= rect.w:
+			continue
+		var uv: Vector2 = Vector2(local.x / rect.z, local.y / rect.w)
+		var sx: int = int(floor(uv.x * float(img.get_width())))
+		var sy: int = int(floor(uv.y * float(img.get_height())))
+		alpha = maxf(alpha, _sample_alpha_nearest(img, sx, sy))
 	return alpha
 
 
