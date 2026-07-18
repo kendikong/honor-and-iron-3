@@ -35,7 +35,7 @@ func apply(settings: EffectsSettings, grid: PlayerGrid) -> void:
 	if _overlay != null:
 		_overlay.material = _cloud_material
 		_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_enable_cloud_uniforms()
+	_enable_cloud_uniforms(settings)
 	_active = true
 
 
@@ -43,6 +43,7 @@ func sync_drift(settings: EffectsSettings) -> void:
 	if settings == null or not settings.cloud_shadows or not _active:
 		return
 	_push_drift_only()
+	CloudTuning.push_shader_uniforms(_cloud_material, settings)
 
 
 func _teardown() -> void:
@@ -68,14 +69,14 @@ func _set_map_uniforms(origin: Vector2, scale: float) -> void:
 	_cloud_material.set_shader_parameter("tile_px", TILE_PX)
 
 
-func _enable_cloud_uniforms() -> void:
+func _enable_cloud_uniforms(settings: EffectsSettings = null) -> void:
 	if _cloud_material == null:
 		return
 	_cloud_material.set_shader_parameter("enable_cloud_shadows", 1.0)
 	_cloud_material.set_shader_parameter("cloud_drift_offset", WeatherBus.cloud_drift_offset)
 	_cloud_material.set_shader_parameter("cloud_shadow_tint", AtmosphereBinder.CLOUD_SHADOW_TINT)
-	_cloud_material.set_shader_parameter("cloud_shadow_strength", AtmosphereBinder.CLOUD_SHADOW_STRENGTH)
 	_cloud_material.set_shader_parameter("tile_px", TILE_PX)
+	CloudTuning.push_shader_uniforms(_cloud_material, settings)
 
 
 func _push_drift_only() -> void:

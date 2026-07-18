@@ -99,6 +99,7 @@ func set_biome_variant(variant: int) -> void:
 func apply_all(grid: PlayerGrid, water_ratio: float, ecology_hints: Dictionary = {}) -> void:
 	if grid != null:
 		_last_grid = grid
+	CloudTuning.sync_runtime(settings)
 	ShadowDebug.sync_weather_bus(settings)
 	_apply_wind_bus()
 	_apply_ground_effects(grid)

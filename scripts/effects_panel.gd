@@ -16,6 +16,9 @@ var _shadow_tuning_widgets: Dictionary = {}
 var _shadow_tuning_specs: Dictionary = {}
 var _shadow_tuning_readout: Label
 var _shadow_tuning_reset_btn: Button
+var _cloud_tuning_widgets: Dictionary = {}
+var _cloud_tuning_specs: Dictionary = {}
+var _cloud_tuning_reset_btn: Button
 var _shadow_stats_label: Label
 var _shadow_stats_reset_btn: Button
 var _shadow_stats_accum: float = 0.0
@@ -127,6 +130,7 @@ func _build_ui() -> void:
 	_add_section(vbox, "Sky & time")
 	_add_toggle(vbox, "time_light", "Day / night cycle (CanvasModulate)")
 	_add_toggle(vbox, "cloud_shadows", "Cloud shadows")
+	_add_cloud_tuning_sliders(vbox)
 
 	vbox.add_child(HSeparator.new())
 	_add_section(vbox, "Water")
@@ -255,6 +259,107 @@ func _add_toggle(
 	_checks[key] = check
 
 
+func _add_cloud_tuning_sliders(parent: VBoxContainer) -> void:
+	_add_section(parent, "Cloud tuning")
+	var hint: Label = Label.new()
+	hint.text = "Cloud field tuning · live while dragging · saved on release"
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.add_theme_font_size_override("font_size", 13)
+	hint.add_theme_color_override("font_color", Color(0.66, 0.70, 0.80))
+	parent.add_child(hint)
+	for spec: Dictionary in CloudTuning.panel_slider_specs():
+		var key: String = str(spec.get("key", ""))
+		if key.is_empty():
+			continue
+		_cloud_tuning_specs[key] = spec
+		var caption: Label = Label.new()
+		caption.text = str(spec.get("label", key))
+		caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		caption.add_theme_font_size_override("font_size", 14)
+		caption.add_theme_color_override("font_color", Color(0.76, 0.80, 0.90))
+		parent.add_child(caption)
+		var row: HBoxContainer = HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		parent.add_child(row)
+		var slider: HSlider = HSlider.new()
+		slider.min_value = float(spec.get("min", 0.0))
+		slider.max_value = float(spec.get("max", 1.0))
+		slider.step = float(spec.get("step", 0.01))
+		slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		slider.value_changed.connect(_on_cloud_tuning_slider_changed.bind(key))
+		slider.drag_ended.connect(_on_cloud_tuning_slider_drag_ended)
+		row.add_child(slider)
+		var value_label: Label = Label.new()
+		value_label.custom_minimum_size = Vector2(88.0, 0.0)
+		value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		value_label.add_theme_font_size_override("font_size", 13)
+		value_label.add_theme_color_override("font_color", Color(0.84, 0.86, 0.94))
+		row.add_child(value_label)
+		_cloud_tuning_widgets[key] = {"slider": slider, "value": value_label}
+	_cloud_tuning_reset_btn = Button.new()
+	_cloud_tuning_reset_btn.text = "Reset cloud tuning to defaults"
+	_cloud_tuning_reset_btn.add_theme_font_size_override("font_size", 14)
+	_cloud_tuning_reset_btn.pressed.connect(_on_cloud_tuning_reset_pressed)
+	parent.add_child(_cloud_tuning_reset_btn)
+
+
+func _sync_cloud_tuning_sliders() -> void:
+	if _settings == null:
+		return
+	for key: String in _cloud_tuning_widgets:
+		var widgets: Dictionary = _cloud_tuning_widgets[key] as Dictionary
+		var slider: HSlider = widgets.get("slider") as HSlider
+		if slider == null:
+			continue
+		slider.set_block_signals(true)
+		slider.value = float(_settings.get(key))
+		slider.set_block_signals(false)
+		_update_cloud_tuning_label(key, float(_settings.get(key)))
+
+
+func _update_cloud_tuning_label(key: String, value: float) -> void:
+	var widgets: Dictionary = _cloud_tuning_widgets.get(key, {}) as Dictionary
+	var value_label: Label = widgets.get("value") as Label
+	var spec: Dictionary = _cloud_tuning_specs.get(key, {}) as Dictionary
+	if value_label == null or spec.is_empty():
+		return
+	value_label.text = CloudTuning.format_slider_value(spec, value)
+
+
+func _apply_cloud_tuning_live(persist: bool) -> void:
+	if _settings == null:
+		return
+	CloudTuning.clamp_all(_settings)
+	CloudTuning.sync_runtime(_settings)
+	_sync_cloud_tuning_sliders()
+	if persist:
+		_settings.save_to_disk()
+	toggled.emit()
+	if _on_changed.is_valid():
+		_on_changed.call()
+
+
+func _on_cloud_tuning_slider_changed(value: float, key: String) -> void:
+	if _settings == null:
+		return
+	_settings.set(key, value)
+	_update_cloud_tuning_label(key, float(value))
+	_apply_cloud_tuning_live(false)
+
+
+func _on_cloud_tuning_slider_drag_ended(_value_changed: bool) -> void:
+	if _settings == null:
+		return
+	_settings.save_to_disk()
+
+
+func _on_cloud_tuning_reset_pressed() -> void:
+	if _settings == null:
+		return
+	CloudTuning.apply_defaults(_settings)
+	_apply_cloud_tuning_live(true)
+
+
 func _add_shadow_tuning_sliders(parent: VBoxContainer) -> void:
 	parent.add_child(HSeparator.new())
 	_add_section(parent, "Shadow twilight tuning")
@@ -377,6 +482,7 @@ func _sync_checks_from_settings() -> void:
 		check.set_block_signals(false)
 	_sync_biome_option()
 	_sync_shadow_tuning_sliders()
+	_sync_cloud_tuning_sliders()
 
 
 func _add_shadow_stats_row(parent: VBoxContainer) -> void:

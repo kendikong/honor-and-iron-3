@@ -704,7 +704,9 @@ static func _sync_ground_shadow_uniforms(
 	mat.set_shader_parameter("shadow_tint", params["shadow_tint"])
 	mat.set_shader_parameter("shadow_strength", params["shadow_strength"])
 	mat.set_shader_parameter("cloud_shadow_tint", AtmosphereBinder.CLOUD_SHADOW_TINT)
-	mat.set_shader_parameter("cloud_shadow_strength", AtmosphereBinder.CLOUD_SHADOW_STRENGTH)
+	var cloud_strength: float = CloudTuning.strength(settings)
+	mat.set_shader_parameter("cloud_shadow_strength", cloud_strength)
+	CloudTuning.push_shader_uniforms(mat, settings)
 	var map_overlay: Dictionary = map_oblique_overlay()
 	if bool(map_overlay.get("active", false)):
 		mat.set_shader_parameter("has_map_oblique", 1.0)
@@ -733,6 +735,7 @@ static func _ground_static_uniform_signature(settings: EffectsSettings = null) -
 		is_foot_bake_dirty(),
 		settings.cloud_shadows if settings != null else false,
 		settings.oblique_contact_shadows if settings != null else false,
+		CloudTuning.tuning_signature(settings),
 		params.get("shadow_tint", Color.WHITE),
 		params.get("shadow_strength", 0.0),
 		_map_size_px,
@@ -2152,9 +2155,13 @@ static func map_composite_apply_epoch() -> int:
 	return _map_composite_apply_epoch
 
 
-static func cloud_drift_stamp() -> int:
+static func cloud_drift_stamp(settings: EffectsSettings = null) -> int:
 	var drift: Vector2 = WeatherBus.cloud_drift_offset
-	return hash([int(floor(drift.x * 32.0)), int(floor(drift.y * 32.0))])
+	return hash([
+		int(floor(drift.x * 32.0)),
+		int(floor(drift.y * 32.0)),
+		CloudTuning.tuning_signature(settings),
+	])
 
 
 static func map_oblique_overlay() -> Dictionary:
@@ -2278,7 +2285,7 @@ static func actor_oblique_band_modulates(
 							WeatherBus.cloud_drift_offset,
 						),
 					)
-			mod_cloud = _modulate_from_cloud_coverage(peak_cloud, 0.125)
+			mod_cloud = _modulate_from_cloud_coverage(peak_cloud, 0.125, settings)
 		bands[band_i] = _combine_environment_modulates(mod_map, mod_cloud)
 	return bands
 
@@ -2307,11 +2314,15 @@ static func _modulate_from_shadow_coverage(coverage: float, settings: EffectsSet
 	)
 
 
-static func _modulate_from_cloud_coverage(coverage: float, min_mask: float = 0.04) -> Color:
+static func _modulate_from_cloud_coverage(
+	coverage: float,
+	min_mask: float = 0.04,
+	settings: EffectsSettings = null,
+) -> Color:
 	if coverage < min_mask:
 		return Color.WHITE
 	var tint: Color = AtmosphereBinder.CLOUD_SHADOW_TINT
-	var strength: float = coverage * AtmosphereBinder.CLOUD_SHADOW_STRENGTH
+	var strength: float = coverage * CloudTuning.strength(settings)
 	return Color(
 		lerpf(1.0, tint.r, strength),
 		lerpf(1.0, tint.g, strength),
@@ -2330,7 +2341,7 @@ static func _modulate_from_environment_coverage(
 		mod_map = _modulate_from_shadow_coverage(map_alpha, settings)
 	var mod_cloud: Color = Color.WHITE
 	if cloud_alpha >= 0.04:
-		mod_cloud = _modulate_from_cloud_coverage(cloud_alpha)
+		mod_cloud = _modulate_from_cloud_coverage(cloud_alpha, 0.04, settings)
 	return _combine_environment_modulates(mod_map, mod_cloud)
 
 

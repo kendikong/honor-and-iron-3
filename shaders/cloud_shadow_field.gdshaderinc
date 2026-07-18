@@ -1,5 +1,12 @@
 // Shared cloud shadow field — used by ground_shadow_composite.gdshader (single resolve pass).
 
+uniform float cloud_scale_tiles = 32.0;
+uniform float cloud_mask_low = 0.49;
+uniform float cloud_mask_high = 0.55;
+uniform float cloud_mask_steps = 8.0;
+uniform float cloud_shape_mix = 0.62;
+uniform float cloud_shape_scale = 1.73;
+
 vec2 cloud_hash22(vec2 p) {
 	p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
 	return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
@@ -32,17 +39,21 @@ float cloud_fbm(vec2 p) {
 
 float cloud_blob_field(vec2 p) {
 	float a = cloud_fbm(p);
-	float b = cloud_fbm(p * 1.73 + vec2(4.7, 2.1));
-	return a * 0.62 + b * 0.38;
+	float b = cloud_fbm(p * cloud_shape_scale + vec2(4.7, 2.1));
+	float mix_b = 1.0 - cloud_shape_mix;
+	return a * cloud_shape_mix + b * mix_b;
 }
 
 float cloud_field_at_pixel(vec2 map_local, vec2 drift_time, float tile_px) {
-	vec2 p = map_local / (tile_px * 32.0);
+	vec2 p = map_local / (tile_px * max(cloud_scale_tiles, 1.0));
 	vec2 uv = vec2(0.86 * p.x - 0.51 * p.y, 0.51 * p.x + 0.86 * p.y) + drift_time;
 	return cloud_blob_field(uv);
 }
 
 float cloud_shadow_mask(float field) {
-	float s = smoothstep(0.52, 0.58, field);
-	return round(s * 8.0) / 8.0;
+	float lo = min(cloud_mask_low, cloud_mask_high - 0.001);
+	float hi = max(cloud_mask_high, lo + 0.001);
+	float s = smoothstep(lo, hi, field);
+	float steps = max(cloud_mask_steps, 1.0);
+	return round(s * steps) / steps;
 }

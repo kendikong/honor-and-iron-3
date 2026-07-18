@@ -9,8 +9,7 @@ const ALPHA_CUTOFF: float = 0.04
 
 static func shadow_mask_at(map_local: Vector2, drift: Vector2) -> float:
 	var field: float = _field_at_pixel(map_local, drift)
-	var s: float = smoothstep(0.52, 0.58, field)
-	return snappedf(s * 8.0, 1.0 / 8.0)
+	return _shadow_mask(field)
 
 
 static func shadow_strength_at(
@@ -22,15 +21,26 @@ static func shadow_strength_at(
 
 
 static func _field_at_pixel(map_local: Vector2, drift_time: Vector2) -> float:
-	var p: Vector2 = map_local / (TILE_PX * 32.0)
+	var scale_tiles: float = maxf(CloudTuning.scale_tiles(), 1.0)
+	var p: Vector2 = map_local / (TILE_PX * scale_tiles)
 	var uv: Vector2 = Vector2(0.86 * p.x - 0.51 * p.y, 0.51 * p.x + 0.86 * p.y) + drift_time
 	return _blob_field(uv)
 
 
 static func _blob_field(p: Vector2) -> float:
+	var mix_a: float = CloudTuning.shape_mix()
+	var mix_b: float = 1.0 - mix_a
 	var a: float = _fbm(p)
-	var b: float = _fbm(p * 1.73 + Vector2(4.7, 2.1))
-	return a * 0.62 + b * 0.38
+	var b: float = _fbm(p * CloudTuning.shape_scale() + Vector2(4.7, 2.1))
+	return a * mix_a + b * mix_b
+
+
+static func _shadow_mask(field: float) -> float:
+	var lo: float = minf(CloudTuning.mask_low(), CloudTuning.mask_high() - 0.001)
+	var hi: float = maxf(CloudTuning.mask_high(), lo + 0.001)
+	var s: float = smoothstep(lo, hi, field)
+	var steps: float = maxf(CloudTuning.mask_steps(), 1.0)
+	return snappedf(s * steps, 1.0 / steps)
 
 
 static func _fbm(p: Vector2) -> float:

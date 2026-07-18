@@ -15,6 +15,15 @@ var time_light: bool = true
 var cloud_shadows: bool = true
 var mist: bool = false
 
+## Cloud shadow field tuning — GPU + CPU share CloudTuning.
+var cloud_shadow_strength: float = CloudTuning.STRENGTH_DEFAULT
+var cloud_scale_tiles: float = CloudTuning.SCALE_TILES_DEFAULT
+var cloud_coverage: float = CloudTuning.COVERAGE_DEFAULT
+var cloud_edge_softness: float = CloudTuning.EDGE_SOFTNESS_DEFAULT
+var cloud_mask_steps: float = CloudTuning.MASK_STEPS_DEFAULT
+var cloud_shape_mix: float = CloudTuning.SHAPE_MIX_DEFAULT
+var cloud_shape_scale: float = CloudTuning.SHAPE_SCALE_DEFAULT
+
 # Phase 9 — Composites & pixel-height shadows (each deliverable = one toggle)
 var oblique_contact_shadows: bool = true
 var tree_variant_b: bool = true
@@ -112,6 +121,9 @@ func load_from_disk() -> void:
 	for key: String in ShadowTuning.PERSIST_KEYS:
 		set(key, ShadowTuning.load_scalar(cfg, key, float(get(key))))
 	ShadowTuning.clamp_all(self)
+	for key: String in CloudTuning.PERSIST_KEYS:
+		set(key, CloudTuning.load_scalar(cfg, key, float(get(key))))
+	CloudTuning.clamp_all(self)
 	water_ripples = bool(cfg.get_value("effects", "water_ripples", water_ripples))
 	shoreline_foam = bool(cfg.get_value("effects", "shoreline_foam", shoreline_foam))
 	water_sparkles = bool(cfg.get_value("effects", "water_sparkles", water_sparkles))
@@ -136,6 +148,8 @@ func save_to_disk() -> void:
 	for key: String in SHADOW_DEBUG_KEYS:
 		cfg.set_value("effects", key, bool(get(key)))
 	for key: String in ShadowTuning.PERSIST_KEYS:
+		cfg.set_value("effects", key, float(get(key)))
+	for key: String in CloudTuning.PERSIST_KEYS:
 		cfg.set_value("effects", key, float(get(key)))
 	cfg.set_value("effects", "water_ripples", water_ripples)
 	cfg.set_value("effects", "shoreline_foam", shoreline_foam)

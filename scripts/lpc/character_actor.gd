@@ -211,7 +211,7 @@ func _sync_oblique_modulate(settings: EffectsSettings = null) -> void:
 		ShadowPlacer.map_composite_apply_epoch() if settings.oblique_contact_shadows else 0
 	)
 	var cloud_stamp: int = (
-		ShadowPlacer.cloud_drift_stamp() if settings.cloud_shadows else 0
+		ShadowPlacer.cloud_drift_stamp(settings) if settings.cloud_shadows else 0
 	)
 	var pos_tile: Vector2i = Vector2i(
 		int(floor(position.x / float(ShadowPlacer.TILE_PX))),
