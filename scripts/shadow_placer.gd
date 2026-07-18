@@ -332,38 +332,6 @@ static func sync_actor_contact_shadow(
 	sprite.modulate = Color.WHITE
 	sprite.texture_filter = _shadow_texture_filter(settings)
 	sync_shadow_material(sprite.material as ShaderMaterial, settings)
-	_sync_actor_map_oblique(sprite, actor)
-	
-	# Actor shadows yield to cloud shadows to prevent double-darkening (since clouds don't read actor silhouettes).
-	var mat: ShaderMaterial = sprite.material as ShaderMaterial
-	if mat != null:
-		var atmo: Dictionary = WeatherBus.atmosphere_uniforms()
-		var has_clouds: float = 0.0
-		if settings != null and settings.cloud_shadows and float(atmo.get("cloud_shadow_strength", 1.0)) >= 0.01:
-			has_clouds = 1.0
-		mat.set_shader_parameter("has_cloud_shadow", has_clouds)
-		mat.set_shader_parameter("cloud_drift_offset", atmo["cloud_drift_offset"])
-
-
-static func _sync_actor_map_oblique(sprite: Sprite2D, actor: Node2D) -> void:
-	var mat: ShaderMaterial = sprite.material as ShaderMaterial
-	if mat == null:
-		return
-	var overlay: Dictionary = map_oblique_overlay()
-	if not bool(overlay.get("active", false)):
-		mat.set_shader_parameter("has_map_oblique", 0.0)
-		return
-	mat.set_shader_parameter("has_map_oblique", 1.0)
-	mat.set_shader_parameter("map_oblique_tex", overlay.get("tex"))
-	mat.set_shader_parameter("map_oblique_origin", overlay.get("origin", Vector2.ZERO))
-	mat.set_shader_parameter("map_oblique_size", overlay.get("size", Vector2.ONE))
-	var map_origin: Vector2 = sprite.position
-	var sprite_scale: Vector2 = Vector2.ONE
-	if actor != null:
-		sprite_scale = actor.scale
-		map_origin = actor.position + sprite.position * sprite_scale
-	mat.set_shader_parameter("sprite_map_origin", map_origin)
-	mat.set_shader_parameter("sprite_scale", sprite_scale)
 
 
 static func _clear_actor_sprite(sprite: Sprite2D) -> void:

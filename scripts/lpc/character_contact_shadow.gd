@@ -25,9 +25,6 @@ func _ready() -> void:
 	_sprite.z_index = 0
 	_sprite.visible = false
 	_sprite.material = ShadowPlacer.duplicate_shadow_material()
-	var mat: ShaderMaterial = _sprite.material as ShaderMaterial
-	if mat != null:
-		mat.set_shader_parameter("has_map_oblique", 0.0)
 	add_child(_sprite)
 
 
