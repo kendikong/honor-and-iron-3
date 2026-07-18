@@ -6,6 +6,7 @@ extends Node2D
 const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
 const _COLOR_THREAT := Color(0.92, 0.38, 0.32, 0.20)
 const _COLOR_MOVE_FILL_ALPHA: float = 0.22
+const _COLOR_MOVE_PERIMETER_ALPHA: float = 0.72
 const _COLOR_THREAT_FILL_ALPHA: float = 0.24
 const _COLOR_THREAT_PERIMETER_ALPHA: float = 0.72
 const _COLOR_TILE_BORDER_ALPHA: float = 0.32
@@ -658,7 +659,8 @@ func _draw_hover_tiles() -> void:
 		_draw_tile_tint(cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA, false)
 	for cell: Vector2i in _hover_threat_tiles:
 		_draw_tile_tint(cell, _COLOR_THREAT, _COLOR_THREAT_FILL_ALPHA, false)
-	_draw_threat_perimeter(_hover_threat_tiles)
+	_draw_tile_perimeter(_hover_move_tiles, _COLOR_MOVE, _COLOR_MOVE_PERIMETER_ALPHA)
+	_draw_tile_perimeter(_hover_threat_tiles, _COLOR_THREAT, _COLOR_THREAT_PERIMETER_ALPHA)
 
 
 func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float, draw_border: bool = false) -> void:
@@ -672,19 +674,14 @@ func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float, draw_border
 		draw_rect(rect, Color(tint.r, tint.g, tint.b, _COLOR_TILE_BORDER_ALPHA), false, 1.0)
 
 
-func _draw_threat_perimeter(cells: Array[Vector2i]) -> void:
+func _draw_tile_perimeter(cells: Array[Vector2i], tint: Color, perimeter_alpha: float) -> void:
 	if cells.is_empty() or _map_view == null:
 		return
 	var occupied: Dictionary = {}
 	for cell: Vector2i in cells:
 		occupied[cell] = true
 	var half_extent: float = float(TacticalConstants.TILE_PX) * 0.5 - 1.0
-	var color := Color(
-		_COLOR_THREAT.r,
-		_COLOR_THREAT.g,
-		_COLOR_THREAT.b,
-		_COLOR_THREAT_PERIMETER_ALPHA,
-	)
+	var color := Color(tint.r, tint.g, tint.b, perimeter_alpha)
 	for cell: Vector2i in cells:
 		var center: Vector2 = _map_view.grid_to_local(cell)
 		var top_left := center + Vector2(-half_extent, -half_extent)
