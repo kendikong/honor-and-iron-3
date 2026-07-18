@@ -270,6 +270,15 @@ func end_drag_sprite() -> void:
 		_unit_layer.end_drag_preview()
 
 
+func set_drag_attack_target(unit_id: int) -> void:
+	if _unit_layer == null:
+		return
+	if unit_id >= 0:
+		_unit_layer.set_drag_attack_target(unit_id)
+	else:
+		_unit_layer.clear_drag_attack_target()
+
+
 func set_drag_route(route: Array[Vector2i]) -> void:
 	_route = route
 	queue_redraw()

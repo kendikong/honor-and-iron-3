@@ -15,6 +15,8 @@ const _COLOR_HP_PREDICTED := Color(0.95, 0.45, 0.35, 0.85)
 const _COLOR_HP_LOSS := Color(0.95, 0.25, 0.22)
 const _COLOR_ARMOR := Color(0.9, 0.8, 0.2)
 const _COLOR_SELECT_OUTLINE := Color(0.36, 0.62, 0.92, 0.95)
+const _COLOR_DRAG_TARGET := Color(1.0, 0.38, 0.22, 0.92)
+const _COLOR_HIT_BURST := Color(1.0, 0.2, 0.15, 0.9)
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -32,6 +34,10 @@ var _phase: int = CombatDirector.Phase.PLANNING
 var _move_tweens: Dictionary = {}
 var _active_push_tweens: int = 0
 var _damage_flash: Dictionary = {}
+var _hit_bursts: Array = []
+var _last_attacker_pos: Dictionary = {}
+var _pending_death: Dictionary = {}
+var _drag_target_id: int = -1
 var _drag_preview_id: int = -1
 var _drag_preview_active: bool = false
 var _drag_preview_failed: bool = false
@@ -137,6 +143,20 @@ func _on_selection_changed(unit_id: int) -> void:
 	queue_redraw()
 
 
+func set_drag_attack_target(unit_id: int) -> void:
+	if _drag_target_id == unit_id:
+		return
+	_drag_target_id = unit_id
+	queue_redraw()
+
+
+func clear_drag_attack_target() -> void:
+	if _drag_target_id < 0:
+		return
+	_drag_target_id = -1
+	queue_redraw()
+
+
 func apply_sim_event(event: SimEvent) -> void:
 	if _board == null:
 		return
@@ -146,6 +166,10 @@ func apply_sim_event(event: SimEvent) -> void:
 		GameEnums.SimEventType.UNIT_PUSHED, GameEnums.SimEventType.COLLISION:
 			_animate_push(event)
 		GameEnums.SimEventType.ABILITY_USED:
+			_record_attack_source(event)
+			_play_attack_anim(event)
+		GameEnums.SimEventType.COUNTER_ATTACK:
+			_record_counter_source(event)
 			_play_attack_anim(event)
 		GameEnums.SimEventType.UNIT_DAMAGED:
 			var target_id: int = int(event.data.get("unit", -1))
@@ -158,16 +182,14 @@ func apply_sim_event(event: SimEvent) -> void:
 				+ int(event.data.get("armor_damaged", 0))
 			)
 			if damage_taken > 0:
-				_damage_flash[target_id] = 0.45
+				_damage_flash[target_id] = 0.85
+				_spawn_hit_burst(target_id)
 				var actor: CharacterActor = _actors.get(target_id)
-				if actor != null and target != null:
-					actor.play_hurt(_facing_anim(target.facing))
+				if actor != null and target != null and not actor.is_dying():
+					var kb: Vector2 = _knockback_dir_for(target_id)
+					actor.play_hurt(_facing_anim(target.facing), kb)
 		GameEnums.SimEventType.UNIT_DIED:
-			var dead_id: int = int(event.data.get("unit", -1))
-			var dead := _board.get_unit_by_id(dead_id)
-			if dead != null:
-				dead.health.current_hp = 0
-				_remove_actor(dead_id)
+			_begin_death(int(event.data.get("unit", -1)))
 		GameEnums.SimEventType.UNIT_FACED:
 			var face_id: int = int(event.data.get("unit", -1))
 			var faced := _board.get_unit_by_id(face_id)
@@ -194,8 +216,83 @@ func _sync_actors() -> void:
 			_apply_exhaustion_state(unit)
 		_update_depth(unit.id)
 	for id: Variant in _actors.keys():
-		if not live.has(id):
+		if not live.has(id) and not _pending_death.has(id):
 			_remove_actor(int(id))
+
+
+func _record_attack_source(event: SimEvent) -> void:
+	var target_id: int = int(event.data.get("target_unit", -1))
+	var actor_id: int = int(event.data.get("actor", -1))
+	var attacker := _board.get_unit_by_id(actor_id) if _board != null else null
+	if target_id >= 0 and attacker != null:
+		_last_attacker_pos[target_id] = attacker.position
+
+
+func _record_counter_source(event: SimEvent) -> void:
+	var target_id: int = int(event.data.get("target_unit", -1))
+	var actor_id: int = int(event.data.get("actor", -1))
+	var attacker := _board.get_unit_by_id(actor_id) if _board != null else null
+	if target_id >= 0 and attacker != null:
+		_last_attacker_pos[target_id] = attacker.position
+
+
+func _knockback_dir_for(unit_id: int) -> Vector2:
+	var victim := _board.get_unit_by_id(unit_id) if _board != null else null
+	if victim == null:
+		return Vector2.ZERO
+	if _last_attacker_pos.has(unit_id):
+		var from_pos: Vector2i = _last_attacker_pos[unit_id]
+		var delta := victim.position - from_pos
+		if delta != Vector2i.ZERO:
+			return Vector2(delta).normalized()
+	return -_facing_vector(victim.facing)
+
+
+func _facing_vector(facing: int) -> Vector2:
+	match facing:
+		GameEnums.Facing.NORTH:
+			return Vector2(0.0, -1.0)
+		GameEnums.Facing.WEST:
+			return Vector2(-1.0, 0.0)
+		GameEnums.Facing.SOUTH:
+			return Vector2(0.0, 1.0)
+		_:
+			return Vector2(1.0, 0.0)
+
+
+func _spawn_hit_burst(unit_id: int) -> void:
+	var actor: CharacterActor = _actors.get(unit_id)
+	if actor == null:
+		return
+	_hit_bursts.append({
+		"pos": actor.position,
+		"time": 0.38,
+		"max": 0.38,
+	})
+
+
+func _begin_death(dead_id: int) -> void:
+	if dead_id < 0 or _pending_death.has(dead_id):
+		return
+	var dead := _board.get_unit_by_id(dead_id) if _board != null else null
+	if dead != null:
+		dead.health.current_hp = 0
+	_pending_death[dead_id] = true
+	var kb: Vector2 = _knockback_dir_for(dead_id)
+	_last_attacker_pos.erase(dead_id)
+	var actor: CharacterActor = _actors.get(dead_id)
+	if actor == null:
+		_finish_death(dead_id)
+		return
+	var facing: int = dead.facing if dead != null else GameEnums.Facing.SOUTH
+	actor.play_death(_facing_anim(facing), kb, func() -> void:
+		_finish_death(dead_id)
+	)
+
+
+func _finish_death(unit_id: int) -> void:
+	_pending_death.erase(unit_id)
+	_remove_actor(unit_id)
 
 
 func _ensure_actor(unit: UnitState) -> void:
@@ -225,7 +322,11 @@ func _position_actor(unit_id: int, cell: Vector2i) -> void:
 	var actor: CharacterActor = _actors.get(unit_id)
 	if actor == null:
 		return
-	actor.position = _map_view.grid_to_foot_local(cell)
+	var foot: Vector2 = _map_view.grid_to_foot_local(cell)
+	if actor.is_dying():
+		actor.snap_to_anchor(foot)
+	else:
+		actor.position = foot
 
 
 func _apply_facing(unit_id: int, facing: int) -> void:
@@ -409,28 +510,34 @@ func _kill_move_tween(unit_id: int) -> void:
 
 func _play_attack_anim(event: SimEvent) -> void:
 	var unit_id: int = int(event.data.get("actor", -1))
+	_kill_move_tween(unit_id)
 	var actor: CharacterActor = _actors.get(unit_id)
 	if actor == null:
 		return
 	var facing: int = int(event.data.get("facing", GameEnums.Facing.SOUTH))
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if event.data.has("target_coord"):
 		var target_coord: Vector2i = event.data["target_coord"]
-		var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 		if unit != null:
 			facing = _facing_toward(unit.position, target_coord)
 	elif event.data.has("target_unit"):
 		var target := _board.get_unit_by_id(int(event.data["target_unit"])) if _board != null else null
-		var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 		if target != null and unit != null:
 			facing = _facing_toward(unit.position, target.position)
 	var anim: StringName = _attack_anim(facing)
-	actor.set_facing(anim)
-	actor.set_walking(true)
-	get_tree().create_timer(CombatDirector.ATTACK_ANIM_TIME).timeout.connect(func() -> void:
-		if is_instance_valid(actor):
-			actor.set_walking(false)
-			_apply_facing(unit_id, facing)
-	)
+	var thrust_dir: Vector2 = _facing_vector(facing)
+	if unit != null and event.data.has("target_coord"):
+		var to_coord: Vector2i = event.data["target_coord"]
+		var delta := to_coord - unit.position
+		if delta != Vector2i.ZERO:
+			thrust_dir = Vector2(delta).normalized()
+	elif unit != null and event.data.has("target_unit"):
+		var target_unit := _board.get_unit_by_id(int(event.data["target_unit"]))
+		if target_unit != null:
+			var delta2 := target_unit.position - unit.position
+			if delta2 != Vector2i.ZERO:
+				thrust_dir = Vector2(delta2).normalized()
+	actor.play_attack_thrust(thrust_dir, anim)
 
 
 func _attack_anim(facing: int) -> StringName:
@@ -470,6 +577,7 @@ func end_drag_preview() -> void:
 	_drag_preview_active = false
 	_drag_preview_id = -1
 	_drag_preview_failed = false
+	clear_drag_attack_target()
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if unit != null:
 		_position_actor(unit_id, unit.position)
@@ -545,13 +653,16 @@ func _draw() -> void:
 	if _board == null or _map_view == null:
 		return
 	for unit in _board.units:
-		if not unit.is_alive():
+		if not unit.is_alive() or _pending_death.has(unit.id):
 			continue
 		if _drag_preview_active and unit.id == _drag_preview_id:
 			continue
 		_draw_hp_bar(unit)
 		if unit.id == _selected_id and CombatDirector.is_planning_phase(_phase):
 			_draw_select_outline(unit.position)
+	if _drag_target_id >= 0:
+		_draw_drag_target_glow(_drag_target_id)
+	_draw_hit_bursts()
 	if _drag_preview_active and _drag_preview_id >= 0 and _drag_preview_failed:
 		var drag_unit := _board.get_unit_by_id(_drag_preview_id) if _board != null else null
 		if drag_unit != null:
@@ -570,6 +681,51 @@ func _draw_select_outline(cell: Vector2i) -> void:
 		Vector2(tile_px, tile_px),
 	).grow(-1.0)
 	draw_rect(rect, _COLOR_SELECT_OUTLINE, false, 1.0)
+
+
+func _draw_drag_target_glow(unit_id: int) -> void:
+	if _map_view == null or _board == null:
+		return
+	var unit := _board.get_unit_by_id(unit_id)
+	if unit == null:
+		return
+	var actor: CharacterActor = _actors.get(unit_id)
+	var center: Vector2 = actor.position if actor != null else _map_view.grid_to_foot_local(unit.position)
+	var pulse: float = 0.55 + 0.4 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 95.0))
+	var tile_px: float = float(TacticalConstants.TILE_PX)
+	var rect := Rect2(
+		center - Vector2(tile_px * 0.5, tile_px * 0.5 + 26.0),
+		Vector2(tile_px, tile_px),
+	).grow(-1.0)
+	var glow := Color(_COLOR_DRAG_TARGET.r, _COLOR_DRAG_TARGET.g, _COLOR_DRAG_TARGET.b, pulse * 0.35)
+	draw_rect(rect.grow(3.0), glow, true)
+	draw_rect(rect, Color(_COLOR_DRAG_TARGET.r, _COLOR_DRAG_TARGET.g, _COLOR_DRAG_TARGET.b, pulse), false, 2.0)
+
+
+func _draw_hit_bursts() -> void:
+	var stale: Array[int] = []
+	for i: int in range(_hit_bursts.size()):
+		var burst: Dictionary = _hit_bursts[i]
+		var pos: Vector2 = burst.get("pos", Vector2.ZERO)
+		var t: float = float(burst.get("time", 0.0))
+		var max_t: float = float(burst.get("max", 0.38))
+		if t <= 0.0:
+			stale.append(i)
+			continue
+		var progress: float = 1.0 - (t / maxf(max_t, 0.001))
+		var radius: float = lerpf(4.0, 22.0, progress)
+		var alpha: float = (1.0 - progress) * 0.75
+		draw_arc(pos + Vector2(0.0, -20.0), radius, 0.0, TAU, 24, Color(1.0, 0.95, 0.9, alpha * 0.5), 2.0)
+		draw_arc(pos + Vector2(0.0, -20.0), radius * 0.65, 0.0, TAU, 18, Color(_COLOR_HIT_BURST.r, _COLOR_HIT_BURST.g, _COLOR_HIT_BURST.b, alpha), 2.5)
+	for idx: int in range(stale.size() - 1, -1, -1):
+		_hit_bursts.remove_at(stale[idx])
+
+
+func _tick_hit_bursts(delta: float) -> void:
+	if _hit_bursts.is_empty():
+		return
+	for burst: Dictionary in _hit_bursts:
+		burst["time"] = float(burst.get("time", 0.0)) - delta
 
 
 func _proj_unit(unit_id: int) -> UnitState:
@@ -675,10 +831,10 @@ func _draw_hp_bar(unit: UnitState) -> void:
 			fortitude = maxi(0, tile.definition.fortitude)
 	var flash: float = float(_damage_flash.get(unit.id, 0.0))
 	if flash > 0.0:
-		var pulse: float = 0.5 + 0.5 * sin(flash * 40.0)
+		var pulse: float = 0.65 + 0.35 * sin(flash * 28.0)
 		draw_rect(
-			Rect2(origin - Vector2(1.0, 1.0), Vector2(BAR_W + 2.0, BAR_H + 2.0)),
-			Color(1.0, 0.1, 0.1, 0.35 * pulse),
+			Rect2(origin - Vector2(2.0, 2.0), Vector2(BAR_W + 4.0, BAR_H + 4.0)),
+			Color(1.0, 0.08, 0.08, 0.55 * pulse),
 			true,
 		)
 	var total_max: int = maxi(max_hp, maxi(current_hp + armor, predicted + predicted_armor))
@@ -698,7 +854,7 @@ func _draw_hp_bar(unit: UnitState) -> void:
 	if survive_w > 0.0:
 		var fill_color: Color = _COLOR_HP_FILL
 		if flash > 0.0:
-			fill_color = fill_color.lerp(Color(1.0, 0.15, 0.15), minf(1.0, flash * 2.0))
+			fill_color = fill_color.lerp(Color(1.0, 0.08, 0.08), minf(1.0, flash * 2.8))
 		draw_rect(Rect2(origin, Vector2(survive_w, BAR_H)), fill_color, true)
 	var blink: float = 0.35 + 0.45 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 110.0))
 	if loss_w > 0.0:
@@ -771,6 +927,11 @@ func _process(delta: float) -> void:
 	var need_redraw := false
 	if not _damage_flash.is_empty():
 		_tick_damage_flash(delta)
+		need_redraw = true
+	if not _hit_bursts.is_empty():
+		_tick_hit_bursts(delta)
+		need_redraw = true
+	if _drag_target_id >= 0:
 		need_redraw = true
 	if _any_predicted_change():
 		need_redraw = true

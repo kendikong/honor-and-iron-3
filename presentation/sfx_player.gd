@@ -11,7 +11,7 @@ extends Node
 const SAMPLE_RATE: int = 44100
 const VOICES: int = 8
 
-## kind: chime | tick | thud | impact | whoosh | buzz | fanfare
+## kind: chime | tick | thud | impact | crunch | faint | whoosh | buzz | fanfare
 const DEFS := {
 	"select":  {"kind": &"chime",    "freq": 784.0,  "freq2": 988.0,  "dur": 0.07, "vol": 0.16},
 	"move":    {"kind": &"tick",     "freq": 320.0,  "freq2": 0.0,    "dur": 0.05, "vol": 0.12},
@@ -20,10 +20,10 @@ const DEFS := {
 	"cancel":  {"kind": &"tick",     "freq": 280.0,  "freq2": 220.0,  "dur": 0.08, "vol": 0.11},
 	"execute": {"kind": &"chime",    "freq": 392.0,  "freq2": 587.0,  "dur": 0.16, "vol": 0.20},
 	"step":    {"kind": &"tick",     "freq": 260.0,  "freq2": 0.0,    "dur": 0.04, "vol": 0.09},
-	"hit":     {"kind": &"impact",   "freq": 190.0,  "freq2": 72.0,   "dur": 0.08, "vol": 0.34},
+	"hit":     {"kind": &"crunch",   "freq": 145.0,  "freq2": 52.0,   "dur": 0.17, "vol": 0.44},
 	"push":    {"kind": &"whoosh",   "freq": 360.0,  "freq2": 220.0,  "dur": 0.09, "vol": 0.14},
 	"thud":    {"kind": &"thud",     "freq": 95.0,   "freq2": 70.0,   "dur": 0.12, "vol": 0.24},
-	"die":     {"kind": &"chime",    "freq": 440.0,  "freq2": 165.0,  "dur": 0.22, "vol": 0.18},
+	"die":     {"kind": &"faint",    "freq": 420.0,  "freq2": 88.0,   "dur": 0.58, "vol": 0.30},
 	"turn":    {"kind": &"tick",     "freq": 350.0,  "freq2": 0.0,    "dur": 0.08, "vol": 0.10},
 	"win":     {"kind": &"fanfare",  "freq": 523.0,  "freq2": 784.0,  "dur": 0.38, "vol": 0.22},
 	"lose":    {"kind": &"chime",    "freq": 330.0,  "freq2": 147.0,  "dur": 0.35, "vol": 0.16},
@@ -133,6 +133,16 @@ func _bake(def: Dictionary) -> AudioStreamWAV:
 				var snap := _noise(noise_seed + i * 5) * 0.58 * (1.0 - smoothstep(0.0, 0.09, t))
 				var crack := sin(phase * 3.2) * 0.24 * (1.0 - smoothstep(0.0, 0.18, t))
 				sample = body + snap + crack
+			&"crunch":
+				var thump := sin(phase * 0.42) * 0.72
+				var snap2 := _noise(noise_seed + i * 7) * 0.62 * (1.0 - smoothstep(0.0, 0.14, t))
+				var bite := sin(phase * 2.6) * 0.18 * (1.0 - smoothstep(0.2, 0.55, t))
+				sample = thump + snap2 + bite
+			&"faint":
+				var tone := sin(phase) * 0.42 * (1.0 - t * 0.35)
+				var low := sin(phase * 0.35) * 0.55
+				var wobble := sin(phase * 1.7 + t * 8.0) * 0.12 * (1.0 - t)
+				sample = tone + low + wobble
 			&"whoosh":
 				var n := _noise(noise_seed + i * 3)
 				sample = n * 0.55 + sin(phase) * 0.25
@@ -163,6 +173,10 @@ func _envelope(kind: StringName, t: float) -> float:
 			return exp(-5.5 * t) * smoothstep(0.0, 0.02, t)
 		&"impact":
 			return exp(-8.5 * t)
+		&"crunch":
+			return exp(-5.0 * t) * smoothstep(0.0, 0.015, t)
+		&"faint":
+			return (1.0 - smoothstep(0.55, 1.0, t)) * exp(-2.2 * t)
 		&"buzz":
 			return (1.0 - smoothstep(0.35, 1.0, t)) * exp(-3.0 * t)
 	return exp(-5.0 * t)
