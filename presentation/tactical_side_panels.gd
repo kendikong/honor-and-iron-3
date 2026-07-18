@@ -573,6 +573,8 @@ func _add_wait_skill_button(unit: UnitState) -> void:
 
 
 func _is_unit_action_exhausted() -> bool:
+	if _director != null and _selected_id >= 0 and _director.unit_has_wait_planned(_selected_id):
+		return true
 	if _planning_input != null:
 		return _planning_input.selected_phase_action_exhausted(_selected_id)
 	if _selected_id < 0 or _board == null:

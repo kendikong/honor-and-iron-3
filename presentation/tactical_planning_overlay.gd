@@ -382,63 +382,62 @@ func recompute_hover_ranges(
 		if unit.definition != null
 		else GameEnums.MovementType.WALK
 	)
-	var exhausted := false
-	if not unit.is_enemy() and unit.id == _director.selected_unit_id:
-		var p_unit := _proj_unit(unit.id)
-		if p_unit != null:
-			exhausted = p_unit.turn_action_used
-	if exhausted:
-		if not unit.is_enemy() and unit.id == _director.selected_unit_id:
-			var p_exhausted := _proj_unit(unit.id)
-			if p_exhausted != null:
-				var sim_board: BoardState = (
-					_director.projected_state if _director.projected_state != null else _board
-				)
-				var bleed_cost: int = (
-					2 if p_exhausted.has_status(GameEnums.StatusType.BLEED) else 1
-				)
-				var p_mt: int = (
-					p_exhausted.definition.movement_type
-					if p_exhausted.definition != null
-					else GameEnums.MovementType.WALK
-				)
-				_hover_move_tiles = MovementSystem.get_reachable_tiles(
-					sim_board,
-					p_exhausted.position,
-					p_exhausted.movement.points_left,
-					p_mt,
-					bleed_cost,
-				)
-				if selected_ability >= 0:
-					var p_origin: Vector2i = threat_origin
-					var ability: AbilityData = _selected_ability_data(p_exhausted, selected_ability)
-					if ability != null and AbilitySystem.ability_has_dash(ability):
-						_hover_threat_tiles = _dash_threat_tiles(p_origin, _dash_amount(ability))
-					else:
-						var self_aoe: Array[Vector2i] = _self_aoe_threat_tiles(
-							p_exhausted, ability, p_origin,
-						)
-						if not self_aoe.is_empty():
-							_hover_threat_tiles = self_aoe
-						else:
-							_populate_attack_threat_tiles(p_exhausted, p_origin, selected_ability)
+	var is_selected_player: bool = (
+		not unit.is_enemy() and unit.id == _director.selected_unit_id
+	)
+	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
+	if is_selected_player:
+		if CombatDirector.is_wait_ability_index(selected_ability):
+			queue_redraw()
+			return
+		if _director.unit_has_wait_planned(unit.id):
+			queue_redraw()
+			return
+		if _planning_input != null and _planning_input.selected_phase_action_exhausted(unit.id):
+			queue_redraw()
+			return
+	var move_board: BoardState = _board
+	var move_from: Vector2i = move_origin
+	var move_budget: int = 0
+	if is_selected_player and p_unit != null:
+		move_cost = 2 if p_unit.has_status(GameEnums.StatusType.BLEED) else 1
+		mt = (
+			p_unit.definition.movement_type
+			if p_unit.definition != null
+			else GameEnums.MovementType.WALK
+		)
+		if _director.get_planning_move_timing(unit.id) >= 0 and p_unit.movement.points_left > 0:
+			move_board = _director.projected_state if _director.projected_state != null else _board
+			move_from = p_unit.position
+			move_budget = _move_budget_for_hover(p_unit, selected_ability)
+	elif not is_selected_player:
+		move_budget = unit.movement.points_left
+	if move_budget > 0:
+		_hover_move_tiles = MovementSystem.get_reachable_tiles(
+			move_board,
+			move_from,
+			move_budget,
+			mt,
+			move_cost,
+		)
+	var can_threat: bool = true
+	if is_selected_player and p_unit != null:
+		if p_unit.turn_action_used or p_unit.ability.points_left <= 0:
+			can_threat = false
+	elif not unit.is_enemy():
+		can_threat = false
+	if not can_threat:
 		queue_redraw()
 		return
-	_hover_move_tiles = MovementSystem.get_reachable_tiles(
-		_board,
-		move_origin,
-		_move_budget_for_hover(unit, selected_ability),
-		mt,
-		move_cost,
-	)
-	if force_basic and unit.id == _director.selected_unit_id and not unit.is_enemy():
+	if force_basic and is_selected_player:
 		_populate_attack_threat_tiles(unit, threat_origin, selected_ability)
 		queue_redraw()
 		return
-	if unit.id == _director.selected_unit_id and not force_basic and selected_ability >= 0:
+	if is_selected_player and not force_basic and selected_ability >= 0:
 		var ability: AbilityData = _selected_ability_data(unit, selected_ability)
 		if ability != null and AbilitySystem.is_run_ability(ability):
-			if unit.ability.points_left >= ability.action_point_cost:
+			var budget_unit: UnitState = p_unit if p_unit != null else unit
+			if budget_unit.ability.points_left >= ability.action_point_cost:
 				queue_redraw()
 				return
 		if ability != null and AbilitySystem.ability_has_dash(ability):

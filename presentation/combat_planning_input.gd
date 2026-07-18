@@ -514,6 +514,8 @@ func selected_phase_action_exhausted(unit_id: int = -1) -> bool:
 	var id: int = unit_id if unit_id >= 0 else _director.selected_unit_id
 	if id < 0:
 		return false
+	if _director.unit_has_wait_planned(id):
+		return true
 	var p_unit := _proj_unit(id)
 	if p_unit == null or p_unit.is_enemy():
 		return false
@@ -992,6 +994,9 @@ func _try_plan_wait(unit_id: int) -> bool:
 		_play_sfx("invalid")
 		return false
 	_director.rpc_plan_wait(unit_id)
+	if _planning != null:
+		_planning.clear_threat_origin()
+	_director.select_ability(-1)
 	return true
 
 

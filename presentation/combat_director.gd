@@ -156,12 +156,24 @@ func rpc_plan_wait(unit_id: int) -> void:
 	if p_unit == null or p_unit.turn_action_used:
 		EventBus.action_rejected.emit("no_actions_left")
 		return
-	_clear_unit_abilities_from_plan(unit_id, target_timing)
+	_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 	var wait_ability: AbilityData = DataLibrary.get_universal_wait()
 	_try_add(
 		TimelineAction.make_ability(unit_id, wait_ability, p_unit.position, unit_id, target_timing),
 		plan_pre_move,
 	)
+	selected_ability_index = -1
+	EventBus.ability_selected.emit(selected_ability_index)
+
+
+func unit_has_wait_planned(unit_id: int) -> bool:
+	for plan: Timeline in [plan_pre_move, plan_post_move]:
+		for action: TimelineAction in plan.entries:
+			if action.actor_id != unit_id or action.type != GameEnums.ActionType.ABILITY:
+				continue
+			if action.ability != null and DataLibrary.is_universal_wait(action.ability.id):
+				return true
+	return false
 
 
 func _clear_unit_abilities_from_plan(unit_id: int, timing: int) -> void:
@@ -210,6 +222,8 @@ func _unit_has_post_move_queued(unit_id: int) -> bool:
 
 
 func _unit_can_post_move(unit_id: int, p_unit: UnitState) -> bool:
+	if unit_has_wait_planned(unit_id):
+		return false
 	if _unit_has_post_move_queued(unit_id):
 		return false
 	if not p_unit.turn_action_used:
