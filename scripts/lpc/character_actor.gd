@@ -43,13 +43,17 @@ func _ready() -> void:
 	_selection_glow = _SelectionGlow.new()
 	_selection_glow.name = "SelectionGlow"
 	add_child(_selection_glow)
+	move_child(_selection_glow, 1)
+	_selection_glow.bind_actor(self)
+
+
+func get_sprite_layers() -> Array[AnimatedSprite2D]:
+	return _layers
 
 
 func set_selection_glow(active: bool, color: Color = Color(0.36, 0.62, 0.92, 0.95)) -> void:
 	if _selection_glow == null:
 		return
-	if active:
-		move_child(_selection_glow, -1)
 	_selection_glow.set_active(active, color)
 
 
@@ -62,6 +66,8 @@ func clear_layers() -> void:
 		spr.visible = false
 		_pool.append(spr)
 	_layers.clear()
+	if _selection_glow != null and _selection_glow.is_active():
+		_selection_glow.rebuild_from_layers()
 	if _contact_shadow != null:
 		_contact_shadow.rebuild_silhouette([], &"walk_down")
 
@@ -99,6 +105,8 @@ func add_layer(
 	_apply_motion_state(spr)
 	_layers.append(spr)
 	move_child(spr, -1)
+	if _selection_glow != null and _selection_glow.is_active():
+		_selection_glow.rebuild_from_layers()
 
 
 ## Show or hide all sprite layers that belong to a given item_id.

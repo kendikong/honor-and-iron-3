@@ -11,7 +11,8 @@ const W_STATS_MIN: int = 200
 const ROW_HEIGHT: int = 40
 const ROW_INSET: int = 8
 const COL_SEPARATION: int = 14
-const STAT_CHIP_SEPARATION: int = 6
+const STAT_CHIP_SEPARATION: int = 12
+const STAT_FILL_RATIO: float = 0.75
 const INFO_COL_GAP: int = 6
 const PLAN_COL_SEPARATION: int = 12
 const STRETCH_INFO: float = 4.0
@@ -113,9 +114,19 @@ func _add_header_row(plan_active: bool) -> void:
 	var info := _make_info_section()
 	row.add_child(info)
 	_add_header_cell(info, "P", W_PLAYER)
+	_add_info_gap(info)
 	_add_header_cell(info, "Unit", W_NAME)
 	_add_header_cell(info, "", W_CLASS)
-	_add_header_cell(info, "Stats", W_STATS_MIN, true)
+	_add_info_gap(info)
+	var stats_shell: Dictionary = _make_stats_column_shell()
+	info.add_child(stats_shell["root"])
+	var stats_hdr := Label.new()
+	stats_hdr.text = "Stats"
+	stats_hdr.add_theme_font_size_override("font_size", _header_font_px)
+	stats_hdr.add_theme_color_override("font_color", COLOR_HEADER)
+	stats_hdr.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	stats_hdr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stats_shell["chips"].add_child(stats_hdr)
 	var plan := _make_plan_section()
 	row.add_child(plan)
 	_add_plan_header_cell(plan, "Pre-Move", STRETCH_PRE, COLOR_ACCENT_PRE if plan_active else Color.TRANSPARENT)
@@ -160,7 +171,15 @@ func _add_party_row(
 	_add_body_cell(info, class_text, unit.definition.display_name if unit != null else "", name_col, W_CLASS, false)
 	_add_info_gap(info)
 	if is_empty:
-		_add_body_cell(info, "—", "", COLOR_MUTED, W_STATS_MIN, true)
+		var stats_shell: Dictionary = _make_stats_column_shell()
+		info.add_child(stats_shell["root"])
+		var empty_lbl := Label.new()
+		empty_lbl.text = "—"
+		empty_lbl.add_theme_font_size_override("font_size", _cell_font_px)
+		empty_lbl.add_theme_color_override("font_color", COLOR_MUTED)
+		empty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		empty_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		stats_shell["chips"].add_child(empty_lbl)
 		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_PRE, plan_active, STRETCH_PRE)
 		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_ACT, plan_active, STRETCH_ACTION)
 		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_POST, plan_active, STRETCH_POST)
@@ -309,13 +328,35 @@ func _add_info_gap(row: HBoxContainer) -> void:
 	row.add_child(gap)
 
 
+func _make_stats_column_shell() -> Dictionary:
+	var root := HBoxContainer.new()
+	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root.custom_minimum_size.x = float(W_STATS_MIN)
+	var pad_ratio: float = (1.0 - STAT_FILL_RATIO) * 0.5
+	var left_pad := Control.new()
+	left_pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left_pad.size_flags_stretch_ratio = pad_ratio
+	left_pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(left_pad)
+	var chips := HBoxContainer.new()
+	chips.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chips.size_flags_stretch_ratio = STAT_FILL_RATIO
+	chips.alignment = BoxContainer.ALIGNMENT_CENTER
+	chips.add_theme_constant_override("separation", STAT_CHIP_SEPARATION)
+	chips.mouse_filter = Control.MOUSE_FILTER_PASS
+	root.add_child(chips)
+	var right_pad := Control.new()
+	right_pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_pad.size_flags_stretch_ratio = pad_ratio
+	right_pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(right_pad)
+	return {"root": root, "chips": chips}
+
+
 func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
-	var stats_box := HBoxContainer.new()
-	stats_box.add_theme_constant_override("separation", STAT_CHIP_SEPARATION)
-	stats_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stats_box.custom_minimum_size.x = float(W_STATS_MIN)
-	stats_box.mouse_filter = Control.MOUSE_FILTER_PASS
-	row.add_child(stats_box)
+	var stats_shell: Dictionary = _make_stats_column_shell()
+	row.add_child(stats_shell["root"])
+	var chips: HBoxContainer = stats_shell["chips"] as HBoxContainer
 	var entries: Array = [
 		["⭐%d" % unit.level, "Level — unit experience tier"],
 		[
@@ -329,7 +370,7 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	]
 	for entry: Variant in entries:
 		var pair: Array = entry as Array
-		_add_stat_chip(stats_box, str(pair[0]), str(pair[1]), col)
+		_add_stat_chip(chips, str(pair[0]), str(pair[1]), col)
 
 
 func _add_stat_chip(row: HBoxContainer, text: String, tooltip: String, col: Color) -> void:
@@ -339,6 +380,9 @@ func _add_stat_chip(row: HBoxContainer, text: String, tooltip: String, col: Colo
 	lbl.add_theme_font_size_override("font_size", _cell_font_px)
 	lbl.add_theme_color_override("font_color", col)
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl.size_flags_stretch_ratio = 1.0
 	lbl.mouse_filter = Control.MOUSE_FILTER_PASS
 	lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	row.add_child(lbl)
