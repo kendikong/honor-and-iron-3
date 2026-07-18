@@ -263,7 +263,7 @@ func _apply_atmosphere_visuals(grid: PlayerGrid, water_ratio: float) -> void:
 	var mist_rect: ColorRect = _sky_overlay.get_node("MistOverlay") as ColorRect
 	_sky_overlay.visible = settings.cloud_shadows or settings.mist
 	mist_rect.visible = settings.mist
-	cloud_rect.visible = settings.cloud_shadows
+	cloud_rect.visible = false
 
 	if settings.time_light:
 		_world_modulate.color = WeatherBus.canvas_modulate_color()
