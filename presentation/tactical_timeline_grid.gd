@@ -4,7 +4,11 @@ extends VBoxContainer
 ## Party planning table — up to 4 co-op player slots, pre / action / post columns.
 
 const MAX_PARTY_SLOTS: int = 4
-const ROW_HEIGHT: int = 46
+const W_PLAYER: int = 30
+const W_NAME: int = 72
+const W_CLASS: int = 30
+const W_STATS: int = 132
+const ROW_HEIGHT: int = 38
 const COLOR_FAIL: Color = Color(1.0, 0.38, 0.38)
 const COLOR_HEADER: Color = Color(0.58, 0.62, 0.70)
 const COLOR_MUTED: Color = Color(0.42, 0.45, 0.52)
@@ -16,11 +20,6 @@ const COLOR_SLOT_EMPTY: Color = Color(0.10, 0.11, 0.14, 0.55)
 const COLOR_ACCENT_PRE: Color = Color(0.35, 0.55, 0.85, 0.18)
 const COLOR_ACCENT_ACT: Color = Color(0.85, 0.55, 0.25, 0.18)
 const COLOR_ACCENT_POST: Color = Color(0.45, 0.75, 0.45, 0.18)
-
-const W_PLAYER: int = 34
-const W_NAME: int = 82
-const W_CLASS: int = 34
-const W_STATS: int = 188
 
 var _director: CombatDirector
 var _board: BoardState
@@ -40,7 +39,7 @@ func setup(director: CombatDirector) -> void:
 	_director = director
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
-	add_theme_constant_override("separation", 4)
+	add_theme_constant_override("separation", 2)
 
 
 func set_board(board: BoardState) -> void:
@@ -70,7 +69,7 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 	_add_header_row(plan_active)
 	_rows_root = VBoxContainer.new()
 	_rows_root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_rows_root.add_theme_constant_override("separation", 3)
+	_rows_root.add_theme_constant_override("separation", 2)
 	add_child(_rows_root)
 	var first_warning: String = ""
 	var units_by_player: Dictionary = _units_by_player_id()
@@ -100,11 +99,11 @@ func _units_by_player_id() -> Dictionary:
 
 
 func _add_header_row(plan_active: bool) -> void:
-	var row := _make_row_container(28)
+	var row := _make_row_container(22)
 	_add_header_cell(row, "P", W_PLAYER)
 	_add_header_cell(row, "Unit", W_NAME)
 	_add_header_cell(row, "", W_CLASS)
-	_add_header_cell(row, "Stats", W_STATS)
+	_add_header_cell(row, "Stats", W_STATS, true)
 	_add_header_cell(row, "Pre-Move", 0, true, COLOR_ACCENT_PRE if plan_active else Color.TRANSPARENT)
 	_add_header_cell(row, "Action", 0, true, COLOR_ACCENT_ACT if plan_active else Color.TRANSPARENT)
 	_add_header_cell(row, "Post-Move", 0, true, COLOR_ACCENT_POST if plan_active else Color.TRANSPARENT)
@@ -147,12 +146,11 @@ func _add_party_row(
 		_add_plan_cell(row, "—", "", false, COLOR_ACCENT_POST, plan_active)
 		row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return ""
-	var stats_text: String = "Lv%d  HP %d/%d  MOV %d  STR %d" % [
+	var stats_text: String = "Lv%d  %d/%d HP  Mov %d" % [
 		unit.level,
 		unit.health.current_hp,
 		unit.health.max_hp,
 		unit.movement.max_points,
-		unit.current_strength,
 	]
 	var stats_tip: String = (
 		"Level %d · HP %d/%d · MOV %d · STR %d · DEF %d · MAG %d · Armor %d"
@@ -162,7 +160,7 @@ func _add_party_row(
 			unit.current_magic, unit.armor,
 		]
 	)
-	_add_body_cell(row, stats_text, stats_tip, COLOR_MUTED if not is_selected else Color(0.78, 0.82, 0.88), W_STATS, false)
+	_add_body_cell(row, stats_text, stats_tip, COLOR_MUTED if not is_selected else Color(0.78, 0.82, 0.88), W_STATS, true)
 	var slots: Dictionary = _plan_slots_for_unit(timeline, unit.id)
 	var warn: String = ""
 	var cell_warn: String = _append_plan_cell(
@@ -285,7 +283,7 @@ func _add_header_cell(
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if expand:
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lbl.size_flags_stretch_ratio = 1.0
+		lbl.size_flags_stretch_ratio = 0.35 if width >= W_STATS else 1.0
 	elif width > 0:
 		lbl.custom_minimum_size.x = float(width)
 	if bg.a > 0.01:

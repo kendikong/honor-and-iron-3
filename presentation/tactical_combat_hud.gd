@@ -115,7 +115,7 @@ func _layout_bottom_insets() -> void:
 	var inset: float = float(_panel_width) + 16.0
 	_bottom_panel.offset_left = inset
 	_bottom_panel.offset_right = -inset
-	_bottom_panel.offset_top = -int(round(300.0 * _ui_scale))
+	_bottom_panel.offset_top = -int(round(248.0 * _ui_scale))
 
 
 func _on_timeline_warning(text: String) -> void:
@@ -159,7 +159,7 @@ func _build_ui() -> void:
 
 	var bottom := PanelContainer.new()
 	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_top = -300
+	bottom.offset_top = -248
 	_bottom_panel = bottom
 	_apply_bottom_panel_style(bottom)
 	add_child(bottom)
@@ -168,44 +168,55 @@ func _build_ui() -> void:
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 12)
 	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
+	margin.add_theme_constant_override("margin_top", 6)
+	margin.add_theme_constant_override("margin_bottom", 6)
 	bottom.add_child(margin)
 
 	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 16)
+	hbox.add_theme_constant_override("separation", 12)
 	margin.add_child(hbox)
 
-	var left := VBoxContainer.new()
-	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox.add_child(left)
+	var phase_sidebar := VBoxContainer.new()
+	phase_sidebar.custom_minimum_size = Vector2(96, 0)
+	phase_sidebar.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	phase_sidebar.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hbox.add_child(phase_sidebar)
 
 	_phase_label = Label.new()
-	_phase_label.text = "Phase: PLANNING"
-	_phase_label.add_theme_font_size_override("font_size", 16)
-	left.add_child(_phase_label)
+	_phase_label.text = "Phase:\nPLANNING"
+	_phase_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_phase_label.add_theme_font_size_override("font_size", 14)
+	phase_sidebar.add_child(_phase_label)
 
 	var hint := Label.new()
-	hint.text = "Drag to move · scroll = ability · A = aim · Esc = pause"
-	hint.add_theme_font_size_override("font_size", 10)
-	hint.add_theme_color_override("font_color", Color(0.55, 0.58, 0.65))
+	hint.text = "Drag move\nScroll ability\nA aim · Esc pause"
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.add_theme_font_size_override("font_size", 8)
+	hint.add_theme_color_override("font_color", Color(0.50, 0.54, 0.62))
 	_hint_label = hint
-	left.add_child(hint)
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(0, 228)
-	left.add_child(scroll)
+	phase_sidebar.add_child(hint)
+
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	phase_sidebar.add_child(spacer)
+
+	_warn_label = Label.new()
+	_warn_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_warn_label.add_theme_font_size_override("font_size", 9)
+	_warn_label.add_theme_color_override("font_color", Color(0.95, 0.45, 0.4))
+	phase_sidebar.add_child(_warn_label)
+
+	var table_col := VBoxContainer.new()
+	table_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	table_col.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hbox.add_child(table_col)
+
 	_timeline_grid = TacticalTimelineGrid.new()
 	_timeline_grid.setup(_director)
 	_timeline_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(_timeline_grid)
-
-	_warn_label = Label.new()
-	_warn_label.add_theme_color_override("font_color", Color(0.95, 0.45, 0.4))
-	left.add_child(_warn_label)
+	_timeline_grid.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_timeline_grid.custom_minimum_size = Vector2(0, 186)
+	table_col.add_child(_timeline_grid)
 
 	var buttons := VBoxContainer.new()
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -281,7 +292,7 @@ func _on_phase_changed(phase: int) -> void:
 		CombatDirector.Phase.VICTORY: "VICTORY",
 		CombatDirector.Phase.DEFEAT: "DEFEAT",
 	}
-	_phase_label.text = "Phase: %s" % names.get(phase, str(phase))
+	_phase_label.text = "Phase:\n%s" % names.get(phase, str(phase))
 	if _timeline_grid != null:
 		_timeline_grid.set_phase(phase)
 	var planning: bool = CombatDirector.is_planning_phase(phase)
