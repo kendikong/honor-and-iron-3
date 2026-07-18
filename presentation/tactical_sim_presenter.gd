@@ -3,14 +3,11 @@ extends Node
 
 ## Execution feedback for TacticalCombat — overlay sync, LPC playback, floating damage.
 
-const _FloatingTextScene = preload("res://presentation/floating_text.tscn")
-
 var _overlay: TacticalUnitOverlay
 var _unit_layer: TacticalUnitLayer
 var _map_view: TacticalMapView
 var _director: CombatDirector
 var _push_flush_scheduled: bool = false
-
 
 var _game_settings: GameSettings
 
@@ -52,8 +49,11 @@ func _on_sim_event(event: SimEvent) -> void:
 		_overlay.apply_sim_event(event)
 	if _unit_layer != null:
 		_unit_layer.apply_sim_event(event)
-	if event.type == GameEnums.SimEventType.UNIT_DAMAGED:
-		_spawn_damage_text(event)
+	match event.type:
+		GameEnums.SimEventType.UNIT_DAMAGED:
+			_spawn_damage_text(event)
+		GameEnums.SimEventType.UNIT_HEALED:
+			_spawn_heal_text(event)
 	if _is_push_event(event):
 		_schedule_push_flush()
 
@@ -61,38 +61,29 @@ func _on_sim_event(event: SimEvent) -> void:
 func _spawn_damage_text(event: SimEvent) -> void:
 	if _game_settings != null and not _game_settings.show_damage_numbers:
 		return
-	if _map_view == null:
+	if _unit_layer == null:
 		return
-	var unit_id: int = int(event.data.get("unit", -1))
+	var hp_dmg: int = int(event.data.get("hp_damaged", 0))
+	var armor_dmg: int = int(event.data.get("armor_damaged", 0))
+	var amount: int = int(event.data.get("amount", 0))
+	var shown: int = amount
+	if shown <= 0:
+		shown = hp_dmg + armor_dmg
+	if shown <= 0:
+		return
+	var dmg_type: StringName = event.data.get("damage_type", &"physical")
+	_unit_layer.spawn_floating_damage(int(event.data.get("unit", -1)), shown, dmg_type)
+
+
+func _spawn_heal_text(event: SimEvent) -> void:
+	if _game_settings != null and not _game_settings.show_damage_numbers:
+		return
+	if _unit_layer == null:
+		return
 	var amount: int = int(event.data.get("amount", 0))
 	if amount <= 0:
 		return
-	var dmg_type: StringName = event.data.get("damage_type", &"physical")
-	var color: Color = Color(1.0, 0.35, 0.35)
-	if dmg_type == &"heal" or int(event.data.get("hp_damaged", amount)) < 0:
-		color = Color(0.35, 0.95, 0.45)
-	elif dmg_type == &"magical":
-		color = Color(0.65, 0.45, 0.95)
-	elif dmg_type == &"burn":
-		color = Color(1.0, 0.5, 0.0)
-	elif dmg_type == &"poison":
-		color = Color(0.6, 1.0, 0.4)
-	elif dmg_type == &"bleed":
-		color = Color(1.0, 0.2, 0.2)
-	var screen_pos: Vector2
-	var actor := _unit_layer.get_actor(unit_id) if _unit_layer != null else null
-	if actor != null:
-		screen_pos = actor.position
-	elif _director != null and _director.board != null:
-		var unit := _director.board.get_unit_by_id(unit_id)
-		if unit == null:
-			return
-		screen_pos = _map_view.grid_to_local(unit.position)
-	else:
-		return
-	var ft: FloatingText = _FloatingTextScene.instantiate()
-	ft.setup(screen_pos, str(amount), color)
-	_map_view.add_child(ft)
+	_unit_layer.spawn_floating_damage(int(event.data.get("unit", -1)), amount, &"heal")
 
 
 func _on_planning_commit_events(events: Array) -> void:

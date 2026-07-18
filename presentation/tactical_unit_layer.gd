@@ -4,6 +4,7 @@ extends Node2D
 ## LPC unit sprites on the tactical grid (Phase 5).
 
 const _CharacterActor = preload("res://scripts/lpc/character_actor.gd")
+const _FloatingTextScene = preload("res://presentation/floating_text.tscn")
 
 const BAR_W: float = 14.0
 const BAR_H: float = 3.0
@@ -309,6 +310,58 @@ func _ensure_actor(unit: UnitState) -> void:
 	actor.set_display_scale(_display_scale())
 	actor.rebuild_contact_shadow(_map_view.get_effects_settings())
 	_actors[unit.id] = actor
+
+
+func spawn_floating_damage(unit_id: int, amount: int, dmg_type: StringName) -> void:
+	if amount <= 0 or _map_view == null:
+		return
+	var actor: CharacterActor = _actors.get(unit_id)
+	var spawn_pos: Vector2
+	if actor != null:
+		spawn_pos = actor.position + Vector2(0.0, -30.0)
+	elif _board != null:
+		var unit := _board.get_unit_by_id(unit_id)
+		if unit == null:
+			return
+		spawn_pos = _map_view.grid_to_foot_local(unit.position) + Vector2(0.0, -30.0)
+	else:
+		return
+	spawn_pos += Vector2(randf_range(-4.0, 4.0), randf_range(-3.0, 2.0))
+	var color: Color = _damage_number_color(dmg_type)
+	var ui_scale: float = _floating_text_scale()
+	var label: String = ("+%d" % amount) if dmg_type == &"heal" else str(amount)
+	var ft: FloatingText = _FloatingTextScene.instantiate()
+	ft.z_index = 40
+	add_child(ft)
+	ft.setup(spawn_pos, label, color, ui_scale)
+
+
+func _floating_text_scale() -> float:
+	var char_scale: float = _display_scale()
+	var map_scale: float = 1.0
+	if _map_view != null:
+		map_scale = _map_view.get_map_root_scale()
+	return clampf(char_scale / maxf(map_scale, 0.5), 0.75, 1.35)
+
+
+func _damage_number_color(dmg_type: StringName) -> Color:
+	match dmg_type:
+		&"physical":
+			return Color(1.0, 0.95, 0.9, 1.0)
+		&"magical":
+			return Color(0.72, 0.52, 1.0, 1.0)
+		&"burn":
+			return Color(1.0, 0.55, 0.12, 1.0)
+		&"poison":
+			return Color(0.62, 1.0, 0.42, 1.0)
+		&"bleed":
+			return Color(1.0, 0.22, 0.22, 1.0)
+		&"heal":
+			return Color(0.35, 0.98, 0.48, 1.0)
+		&"hazard", &"chasm", &"collision":
+			return Color(0.85, 0.45, 0.15, 1.0)
+		_:
+			return Color(1.0, 0.95, 0.9, 1.0)
 
 
 func _remove_actor(unit_id: int) -> void:

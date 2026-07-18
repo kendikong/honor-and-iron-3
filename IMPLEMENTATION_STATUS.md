@@ -967,6 +967,7 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** â
 - Hit VFX: expanding red/white burst rings + stronger HP bar red flash.
 - SFX: new `crunch` hit and `faint` death bake kinds (longer, bass-heavy).
 - Drag attack targeting: pulsing warm outline on hovered enemy during drag-attack preview.
+- Floating damage numbers restored on tactical LPC path (unit-layer coords, 8px nearest-filtered floaters, map/char scale aware).
 
 ---
 
