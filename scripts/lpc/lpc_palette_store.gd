@@ -9,7 +9,7 @@ const ULPC_DIR: String = (
 )
 const MAX_PAIRS: int = 12
 ## Hair sheets ship with either ULPC or LPCR orange bases; include both when unknown.
-const HAIR_FALLBACK_VERSIONS: PackedStringArray = PackedStringArray(["ulpc", "lpcr"])
+const HAIR_FALLBACK_VERSIONS: Array = ["ulpc", "lpcr"]
 const SHADER: Shader = preload("res://shaders/lpc_palette_recolor.gdshader")
 
 const KIND_TO_MATERIAL: Dictionary = {
