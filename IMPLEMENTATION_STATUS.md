@@ -991,7 +991,7 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** �
 - [x] `shaders/cloud_shadow_field.gdshaderinc` + `scripts/cloud_shadow_field.gd` — shared cloud field (GPU + CPU body receive)
 - [x] Map-sized `GroundShadows` ColorRect on `ShadowSprites` (replaces separate sky cloud multiply + per-foot multiply stacks)
 - [x] Dynamic `unit_feet_tex` atlas (max-alpha blit on move/layout change)
-- [x] 3-band body receive via `sample_unified_shadow_alpha_at()`
+- [x] 3-band body receive via `sample_environment_shadow_alpha_at()` (map + cloud only — **not** unit feet; feet are ground-only)
 - [x] Removed punch paths: cloud↔contact mask, foot shader yields, `ActorFootShadowCompositor`
 
 ### Unified Shadow Audit (iteration 1 — 2026-07-18)
@@ -1012,3 +1012,7 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** �
 **Audit result:** **PASS** (conditional on user F5 visual gate)
 
 **Revert:** `git checkout backup-pre-unified-shadow-mask` or `git checkout backup-pre-unified-shadow`
+
+### Blob-stack fix (2026-07-18)
+- **Cause:** Each LPC actor's 3-band `self_modulate` sampled `sample_unified_shadow_alpha_at()` including the unit-feet atlas → per-actor foot ovals stacked when clustered (looked like multiply blobs on grass).
+- **Fix:** Body receive uses `sample_environment_shadow_alpha_at()` (trees/props + cloud only). Unit feet render exclusively on `GroundShadows` via max-blitted atlas.

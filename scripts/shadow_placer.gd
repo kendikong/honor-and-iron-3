@@ -396,6 +396,7 @@ static func rebuild_unit_feet_atlas(
 	var entries: Array[Dictionary] = _collect_foot_shadow_entries(actors, shadow_root)
 	for actor_var: Variant in actors:
 		_purge_legacy_foot_sprites(actor_var as Node)
+	_purge_stray_shadow_root_sprites(shadow_root)
 	var layout_key: int = _foot_cluster_layout_hash(entries)
 	if layout_key == _unit_feet_layout_key:
 		_sync_ground_shadow_uniforms(settings, shadow_root)
@@ -604,6 +605,18 @@ static func _purge_legacy_foot_sprites(actor: Node) -> void:
 		return
 	for child: Node in contact.get_children():
 		if child is Sprite2D and str(child.name) == "ShadowSprite":
+			var spr: Sprite2D = child as Sprite2D
+			spr.visible = false
+			spr.material = null
+			spr.texture = null
+			spr.queue_free()
+
+
+static func _purge_stray_shadow_root_sprites(shadow_root: Node2D) -> void:
+	if shadow_root == null:
+		return
+	for child: Node in shadow_root.get_children():
+		if child is Sprite2D:
 			var spr: Sprite2D = child as Sprite2D
 			spr.visible = false
 			spr.material = null
@@ -1839,8 +1852,23 @@ static func map_oblique_overlay() -> Dictionary:
 	return _map_oblique_overlay
 
 
-static func sample_map_oblique_alpha_at(map_px: Vector2) -> float:
-	return sample_unified_shadow_alpha_at(map_px)
+## Body receive + tree sampling — excludes unit feet (those render only on GroundShadows).
+static func sample_map_oblique_alpha_at(
+	map_px: Vector2,
+	settings: EffectsSettings = null,
+) -> float:
+	return sample_environment_shadow_alpha_at(map_px, settings)
+
+
+static func sample_environment_shadow_alpha_at(
+	map_px: Vector2,
+	settings: EffectsSettings = null,
+) -> float:
+	var static_a: float = _sample_map_oblique_channel_alpha_at(map_px)
+	var cloud_a: float = 0.0
+	if settings != null and settings.cloud_shadows and WeatherBus.shadows_visible():
+		cloud_a = _CLOUD_FIELD.shadow_mask_at(map_px, WeatherBus.cloud_drift_offset)
+	return maxf(static_a, cloud_a)
 
 
 static func sample_unified_shadow_alpha_at(
@@ -1912,7 +1940,7 @@ static func actor_oblique_band_modulates(
 			var y_px: float = float(y_off) * scale_y
 			for x_off: Variant in ACTOR_SHADOW_BAND_X:
 				sample_count += 1
-				var alpha: float = sample_unified_shadow_alpha_at(
+				var alpha: float = sample_environment_shadow_alpha_at(
 					foot + Vector2(float(x_off) * actor.scale.x, y_px),
 					settings,
 				)
