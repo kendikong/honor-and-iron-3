@@ -86,8 +86,6 @@ func setup(
 	EventBus.selection_changed.connect(func(_id: int) -> void:
 		if _director == null:
 			return
-		_invalidate_hover_cache()
-		_recompute_hover_ranges_from_inputs()
 		_update_hover_action_icon()
 		queue_redraw(),
 	)
@@ -911,17 +909,19 @@ func _draw_danger_area() -> void:
 		for u: UnitState in _board.units:
 			if not u.is_alive() or not u.is_enemy():
 				continue
-			var reach: Array[Vector2i] = [u.position]
-			for y: int in range(_board.grid_size.y):
-				for x: int in range(_board.grid_size.x):
-					var c := Vector2i(x, y)
-					if c == u.position:
-						continue
-					var path: Array = MovementSystem.find_path(
-						_board, u.position, c, u.movement.points_left,
-					)
-					if not path.is_empty() and path[path.size() - 1] == c:
-						reach.append(c)
+			var move_cost: int = 2 if u.has_status(GameEnums.StatusType.BLEED) else 1
+			var mt: int = (
+				u.definition.movement_type
+				if u.definition != null
+				else GameEnums.MovementType.WALK
+			)
+			var reach: Array[Vector2i] = MovementSystem.get_reachable_tiles(
+				_board,
+				u.position,
+				u.movement.points_left,
+				mt,
+				move_cost,
+			)
 			var rng: int = _unit_attack_range(u, -1)
 			for r: Vector2i in reach:
 				for y2: int in range(_board.grid_size.y):

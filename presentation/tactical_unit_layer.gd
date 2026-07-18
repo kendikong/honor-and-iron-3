@@ -29,6 +29,7 @@ var _catalog: LpcCatalog
 var _profile: CharacterGenProfile = CharacterGenProfile.new()
 var _actors: Dictionary = {}
 var _selected_id: int = -1
+var _glow_selected_id: int = -1
 var _timeline_hover_id: int = -1
 var _intent_units: Dictionary = {}
 var _predicted_hp: Dictionary = {}
@@ -178,20 +179,23 @@ func _refresh_planning_visuals() -> void:
 
 func _refresh_selection_glow() -> void:
 	var planning: bool = CombatDirector.is_planning_phase(_phase)
-	for unit_id: Variant in _actors:
-		var actor: CharacterActor = _actors[unit_id] as CharacterActor
-		if actor == null:
-			continue
-		var unit := _board.get_unit_by_id(int(unit_id)) if _board != null else null
-		var active: bool = planning and int(unit_id) == _selected_id and unit != null
+	var new_glow_id: int = _selected_id if planning else -1
+	if new_glow_id == _glow_selected_id:
+		return
+	if _glow_selected_id >= 0:
+		_set_unit_selection_glow(_glow_selected_id, false)
+	_glow_selected_id = new_glow_id
+	if new_glow_id >= 0:
+		var unit := _board.get_unit_by_id(new_glow_id) if _board != null else null
 		var color: Color = _COLOR_SELECT_ENEMY if unit != null and unit.is_enemy() else _COLOR_SELECT_PLAYER
-		actor.set_selection_glow(active, color)
-	if _selected_id >= 0:
-		var selected_actor: CharacterActor = _actors.get(_selected_id) as CharacterActor
-		if selected_actor != null:
-			var glow := selected_actor.get_selection_glow()
-			if glow != null and glow.is_active():
-				glow.rebuild_from_layers()
+		_set_unit_selection_glow(new_glow_id, true, color)
+
+
+func _set_unit_selection_glow(unit_id: int, active: bool, color: Color = _COLOR_SELECT_PLAYER) -> void:
+	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
+	if actor == null:
+		return
+	actor.set_selection_glow(active, color)
 
 
 func set_drag_attack_target(unit_id: int) -> void:
@@ -591,7 +595,61 @@ func _sync_planning_unit_position(unit: UnitState) -> void:
 		_apply_facing(unit.id, unit.facing)
 		_update_depth(unit.id)
 		return
+	if _should_rubberband_planning_move(unit.id, current_cell, target):
+		_rubberband_actor_to_cell(unit.id, target)
+		return
 	_animate_planning_path(unit.id, current_cell, target, _unit_uses_run_anim(unit.id))
+
+
+func _turn_start_cell(unit_id: int) -> Vector2i:
+	if _director != null and _director.base_board != null:
+		var start_unit: UnitState = _director.base_board.get_unit_by_id(unit_id)
+		if start_unit != null:
+			return start_unit.position
+	if _board != null:
+		var live_unit: UnitState = _board.get_unit_by_id(unit_id)
+		if live_unit != null:
+			return live_unit.position
+	return Vector2i.ZERO
+
+
+func _should_rubberband_planning_move(
+	unit_id: int,
+	from_cell: Vector2i,
+	to_cell: Vector2i,
+) -> bool:
+	var start_cell: Vector2i = _turn_start_cell(unit_id)
+	return GridSystem.manhattan(to_cell, start_cell) < GridSystem.manhattan(from_cell, start_cell)
+
+
+func _rubberband_actor_to_cell(unit_id: int, cell: Vector2i) -> void:
+	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
+	if actor == null or _map_view == null:
+		return
+	var dest: Vector2 = _map_view.grid_to_foot_local(cell)
+	if actor.position.distance_to(dest) <= 1.5:
+		_position_actor(unit_id, cell)
+		var unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
+		if unit != null:
+			_apply_facing(unit_id, unit.facing)
+			_update_depth(unit_id)
+		return
+	_kill_move_tween(unit_id)
+	actor.set_running(false)
+	actor.set_walking(false)
+	var tween: Tween = create_tween()
+	_move_tweens[unit_id] = tween
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_BACK)
+	tween.tween_property(actor, "position", dest, DRAG_SNAPBACK_SEC)
+	tween.finished.connect(func() -> void:
+		_move_tweens.erase(unit_id)
+		_position_actor(unit_id, cell)
+		var u: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
+		if u != null:
+			_apply_facing(unit_id, u.facing)
+			_update_depth(unit_id)
+	)
 
 
 func _actor_grid_cell(unit_id: int) -> Vector2i:

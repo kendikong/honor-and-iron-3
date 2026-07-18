@@ -438,7 +438,7 @@ func _on_selection_changed(unit_id: int) -> void:
 			_sync_threat_origin_from_cell(_intent_state.hover_coord)
 		_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_skill_mode()
-	_refresh_hover_if_planning()
+	call_deferred("_refresh_hover_if_planning")
 
 
 func _on_ability_selected(index: int) -> void:
