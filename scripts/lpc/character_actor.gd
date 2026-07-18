@@ -5,6 +5,7 @@ extends Node2D
 
 const _C = preload("res://scripts/lpc/lpc_constants.gd")
 const _ContactShadow = preload("res://scripts/lpc/character_contact_shadow.gd")
+const _SelectionGlow = preload("res://scripts/lpc/character_selection_glow.gd")
 const HURT_ANIM: StringName = &"hurt_down"
 const HURT_SPEED_SCALE: float = 1.6
 const DEATH_GROUND_LINGER_SEC: float = 1.75
@@ -21,6 +22,7 @@ var _pool: Array[AnimatedSprite2D] = []
 var _facing: StringName = &"walk_down"
 var _walking: bool = false
 var _contact_shadow: CharacterContactShadow
+var _selection_glow: CharacterSelectionGlow
 var _one_shot_generation: int = 0
 var _hurt_tween: Tween
 var _combat_tween: Tween
@@ -38,6 +40,17 @@ func _ready() -> void:
 	_contact_shadow.name = "ContactShadow"
 	add_child(_contact_shadow)
 	move_child(_contact_shadow, 0)
+	_selection_glow = _SelectionGlow.new()
+	_selection_glow.name = "SelectionGlow"
+	add_child(_selection_glow)
+
+
+func set_selection_glow(active: bool, color: Color = Color(0.36, 0.62, 0.92, 0.95)) -> void:
+	if _selection_glow == null:
+		return
+	if active:
+		move_child(_selection_glow, -1)
+	_selection_glow.set_active(active, color)
 
 
 func clear_layers() -> void:

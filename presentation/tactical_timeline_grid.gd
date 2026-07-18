@@ -4,13 +4,15 @@ extends VBoxContainer
 ## Party planning table — up to 4 co-op player slots, pre / action / post columns.
 
 const MAX_PARTY_SLOTS: int = 4
-const W_PLAYER: int = 30
-const W_NAME: int = 72
-const W_CLASS: int = 30
+const W_PLAYER: int = 32
+const W_NAME: int = 76
+const W_CLASS: int = 32
 const W_STATS_MIN: int = 200
-const ROW_HEIGHT: int = 38
+const ROW_HEIGHT: int = 40
 const ROW_INSET: int = 8
-const COL_SEPARATION: int = 8
+const COL_SEPARATION: int = 14
+const STAT_CHIP_SEPARATION: int = 6
+const INFO_COL_GAP: int = 6
 const PLAN_COL_SEPARATION: int = 12
 const STRETCH_INFO: float = 4.0
 const STRETCH_PLAN_TOTAL: float = 6.0
@@ -77,7 +79,7 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 	_add_header_row(plan_active)
 	_rows_root = VBoxContainer.new()
 	_rows_root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_rows_root.add_theme_constant_override("separation", 2)
+	_rows_root.add_theme_constant_override("separation", 3)
 	add_child(_rows_root)
 	var first_warning: String = ""
 	var units_by_player: Dictionary = _units_by_player_id()
@@ -148,6 +150,7 @@ func _add_party_row(
 	row_panel.add_child(_wrap_row_inset(row))
 	var player_col: Color = CombatUiFormatters.player_color(slot) if not is_empty else COLOR_EMPTY
 	_add_body_cell(info, "P%d" % slot, "", player_col, W_PLAYER, false)
+	_add_info_gap(info)
 	var name_text: String = "— open —" if is_empty else unit.definition.display_name
 	var name_col: Color = COLOR_EMPTY if is_empty else Color.WHITE
 	if is_selected and not is_empty:
@@ -155,6 +158,7 @@ func _add_party_row(
 	_add_body_cell(info, name_text, name_text, name_col, W_NAME, false)
 	var class_text: String = "" if is_empty else CombatUiFormatters.class_symbol(unit)
 	_add_body_cell(info, class_text, unit.definition.display_name if unit != null else "", name_col, W_CLASS, false)
+	_add_info_gap(info)
 	if is_empty:
 		_add_body_cell(info, "—", "", COLOR_MUTED, W_STATS_MIN, true)
 		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_PRE, plan_active, STRETCH_PRE)
@@ -162,26 +166,8 @@ func _add_party_row(
 		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_POST, plan_active, STRETCH_POST)
 		row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return ""
-	var stats_text: String = (
-		"⭐%d ♥%d/%d 💪%d 🛡️%d 🔮%d 👟%d"
-		% [
-			unit.level, unit.health.current_hp, unit.health.max_hp,
-			unit.current_strength, unit.armor, unit.current_magic,
-			unit.movement.max_points,
-		]
-	)
-	var stats_tip: String = (
-		"Level %d · HP %d/%d · MOV %d · STR %d · DEF %d · MAG %d · Armor %d"
-		% [
-			unit.level, unit.health.current_hp, unit.health.max_hp,
-			unit.movement.max_points, unit.current_strength, unit.current_defense,
-			unit.current_magic, unit.armor,
-		]
-	)
-	_add_body_cell(
-		info, stats_text, stats_tip,
-		Color(0.72, 0.76, 0.82) if is_selected else COLOR_MUTED, W_STATS_MIN, true,
-	)
+	var stats_col: Color = Color(0.72, 0.76, 0.82) if is_selected else COLOR_MUTED
+	_add_stats_cells(info, unit, stats_col)
 	var slots: Dictionary = _plan_slots_for_unit(timeline, unit.id)
 	var warn: String = ""
 	var cell_warn: String = _append_plan_cell(
@@ -316,6 +302,48 @@ func _make_plan_section() -> HBoxContainer:
 	return plan
 
 
+func _add_info_gap(row: HBoxContainer) -> void:
+	var gap := Control.new()
+	gap.custom_minimum_size.x = float(INFO_COL_GAP)
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(gap)
+
+
+func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
+	var stats_box := HBoxContainer.new()
+	stats_box.add_theme_constant_override("separation", STAT_CHIP_SEPARATION)
+	stats_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stats_box.custom_minimum_size.x = float(W_STATS_MIN)
+	stats_box.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.add_child(stats_box)
+	var entries: Array = [
+		["⭐%d" % unit.level, "Level — unit experience tier"],
+		[
+			"♥%d/%d" % [unit.health.current_hp, unit.health.max_hp],
+			"Health — current / maximum hit points",
+		],
+		["💪%d" % unit.current_strength, "Strength — physical attack power"],
+		["🛡️%d" % unit.armor, "Armor — absorbs damage before HP"],
+		["🔮%d" % unit.current_magic, "Magic — spell and ability power"],
+		["👟%d" % unit.movement.max_points, "Movement — tiles you can move per turn"],
+	]
+	for entry: Variant in entries:
+		var pair: Array = entry as Array
+		_add_stat_chip(stats_box, str(pair[0]), str(pair[1]), col)
+
+
+func _add_stat_chip(row: HBoxContainer, text: String, tooltip: String, col: Color) -> void:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.tooltip_text = tooltip
+	lbl.add_theme_font_size_override("font_size", _cell_font_px)
+	lbl.add_theme_color_override("font_color", col)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.mouse_filter = Control.MOUSE_FILTER_PASS
+	lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
+	row.add_child(lbl)
+
+
 func _add_header_cell(
 	row: HBoxContainer,
 	text: String,
@@ -418,8 +446,8 @@ func _panel_style(bg: Color, selected: bool) -> StyleBoxFlat:
 	sb.set_corner_radius_all(4)
 	sb.content_margin_left = 0
 	sb.content_margin_right = 0
-	sb.content_margin_top = 4
-	sb.content_margin_bottom = 4
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
 	if selected:
 		sb.border_color = Color(0.45, 0.72, 1.0, 0.85)
 		sb.set_border_width_all(1)
@@ -435,6 +463,6 @@ func _cell_style(bg: Color) -> StyleBoxFlat:
 	sb.set_corner_radius_all(3)
 	sb.content_margin_left = 10
 	sb.content_margin_right = 10
-	sb.content_margin_top = 4
-	sb.content_margin_bottom = 4
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
 	return sb

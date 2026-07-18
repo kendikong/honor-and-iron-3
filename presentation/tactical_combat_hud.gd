@@ -118,7 +118,7 @@ func _layout_bottom_insets() -> void:
 	var inset: float = float(_panel_width) + 16.0
 	_bottom_panel.offset_left = inset
 	_bottom_panel.offset_right = -inset
-	_bottom_panel.offset_top = -int(round(248.0 * _ui_scale))
+	_bottom_panel.offset_top = -int(round(272.0 * _ui_scale))
 
 
 func _on_timeline_warning(text: String) -> void:
@@ -162,7 +162,7 @@ func _build_ui() -> void:
 
 	var bottom := PanelContainer.new()
 	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_top = -248
+	bottom.offset_top = -272
 	_bottom_panel = bottom
 	_apply_bottom_panel_style(bottom)
 	add_child(bottom)
@@ -172,7 +172,7 @@ func _build_ui() -> void:
 	margin.add_theme_constant_override("margin_left", 12)
 	margin.add_theme_constant_override("margin_right", 12)
 	margin.add_theme_constant_override("margin_top", 6)
-	margin.add_theme_constant_override("margin_bottom", 6)
+	margin.add_theme_constant_override("margin_bottom", 10)
 	bottom.add_child(margin)
 
 	var hbox := HBoxContainer.new()
@@ -232,7 +232,7 @@ func _build_ui() -> void:
 	_timeline_grid.setup(_director)
 	_timeline_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_timeline_grid.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_timeline_grid.custom_minimum_size = Vector2(0, 186)
+	_timeline_grid.custom_minimum_size = Vector2(0, 204)
 	table_col.add_child(_timeline_grid)
 
 	var buttons := VBoxContainer.new()

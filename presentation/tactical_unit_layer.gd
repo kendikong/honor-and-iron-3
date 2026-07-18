@@ -15,7 +15,8 @@ const _COLOR_HP_FILL := Color(0.38, 0.78, 0.46)
 const _COLOR_HP_PREDICTED := Color(0.95, 0.45, 0.35, 0.85)
 const _COLOR_HP_LOSS := Color(0.95, 0.25, 0.22)
 const _COLOR_ARMOR := Color(0.9, 0.8, 0.2)
-const _COLOR_SELECT_OUTLINE := Color(0.36, 0.62, 0.92, 0.95)
+const _COLOR_SELECT_PLAYER := Color(0.36, 0.62, 0.92, 0.95)
+const _COLOR_SELECT_ENEMY := Color(0.95, 0.28, 0.24, 0.95)
 const _COLOR_DRAG_TARGET := Color(1.0, 0.38, 0.22, 0.92)
 const _COLOR_HIT_BURST := Color(1.0, 0.2, 0.15, 0.9)
 
@@ -81,6 +82,7 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 				if actor is CharacterActor:
 					(actor as CharacterActor).set_planning_exhausted(false)
 					(actor as CharacterActor).set_running(false)
+		_refresh_selection_glow()
 		queue_redraw(),
 	)
 	set_process(true)
@@ -146,7 +148,20 @@ func _on_preview_updated(result: SimResult) -> void:
 
 func _on_selection_changed(unit_id: int) -> void:
 	_selected_id = unit_id
+	_refresh_selection_glow()
 	queue_redraw()
+
+
+func _refresh_selection_glow() -> void:
+	var planning: bool = CombatDirector.is_planning_phase(_phase)
+	for unit_id: Variant in _actors:
+		var actor: CharacterActor = _actors[unit_id] as CharacterActor
+		if actor == null:
+			continue
+		var unit := _board.get_unit_by_id(int(unit_id)) if _board != null else null
+		var active: bool = planning and int(unit_id) == _selected_id and unit != null
+		var color: Color = _COLOR_SELECT_ENEMY if unit != null and unit.is_enemy() else _COLOR_SELECT_PLAYER
+		actor.set_selection_glow(active, color)
 
 
 func set_drag_attack_target(unit_id: int) -> void:
@@ -245,6 +260,7 @@ func _sync_actors() -> void:
 	for id: Variant in _actors.keys():
 		if not live.has(id) and not _pending_death.has(id):
 			_remove_actor(int(id))
+	_refresh_selection_glow()
 
 
 func _record_attack_source(event: SimEvent) -> void:
@@ -771,8 +787,6 @@ func _draw() -> void:
 		if _drag_preview_active and unit.id == _drag_preview_id:
 			continue
 		_draw_hp_bar(unit)
-		if unit.id == _selected_id and CombatDirector.is_planning_phase(_phase):
-			_draw_select_outline(unit.position)
 	if _drag_target_id >= 0:
 		_draw_drag_target_glow(_drag_target_id)
 	_draw_hit_bursts()
@@ -782,18 +796,6 @@ func _draw() -> void:
 			var actor: CharacterActor = _actors.get(_drag_preview_id)
 			if actor != null:
 				_draw_centered_icon(actor.position + Vector2(0.0, -18.0), "🚫", Color.WHITE, 14)
-
-
-func _draw_select_outline(cell: Vector2i) -> void:
-	if _map_view == null:
-		return
-	var foot: Vector2 = _map_view.grid_to_foot_local(cell)
-	var tile_px: float = float(TacticalConstants.TILE_PX)
-	var ring_w: float = tile_px * 0.72
-	var ring_h: float = 6.0
-	var rect := Rect2(foot - Vector2(ring_w * 0.5, ring_h * 0.5), Vector2(ring_w, ring_h))
-	draw_rect(rect.grow(2.0), Color(_COLOR_SELECT_OUTLINE.r, _COLOR_SELECT_OUTLINE.g, _COLOR_SELECT_OUTLINE.b, 0.35), true)
-	draw_rect(rect, _COLOR_SELECT_OUTLINE, false, 2.0)
 
 
 func _draw_drag_target_glow(unit_id: int) -> void:
