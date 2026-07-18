@@ -179,6 +179,12 @@ func clear_oblique_modulate() -> void:
 	_apply_modulate_stack()
 
 
+func get_contact_shadow_sprite() -> Sprite2D:
+	if _contact_shadow == null:
+		return null
+	return _contact_shadow.get_shadow_sprite()
+
+
 func force_environment_shadow_sync(settings: EffectsSettings = null) -> void:
 	invalidate_environment_shadow_sync()
 	sync_contact_shadow(settings)
