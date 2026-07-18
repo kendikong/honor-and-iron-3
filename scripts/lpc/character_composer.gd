@@ -144,7 +144,9 @@ static func _load_plane_layer(
 	# We just supply the path_prefix, recolor, and variant to the lazy loader.
 	part["path"] = walk_path
 	
-	var frames: SpriteFrames = LpcSheetFrames.get_lazy_frames(path_prefix, recolor, variant)
+	var frames: SpriteFrames = LpcSheetFrames.get_lazy_frames(
+		path_prefix, recolor, variant, recolor_kind, palette_base,
+	)
 	return {
 		"z": z_pos,
 		"frames": frames,

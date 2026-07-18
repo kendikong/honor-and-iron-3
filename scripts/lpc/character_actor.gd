@@ -502,10 +502,8 @@ func _apply_recolor_material(
 	recolor: String,
 	palette_base: String = "",
 ) -> void:
-	if not LpcPaletteStore.palettes_available():
-		spr.material = null
-		return
-	spr.material = LpcPaletteStore.get_recolor_material(recolor_kind, recolor, palette_base)
+	# Recolor is baked into sheet textures in LpcSheetFrames._load_nearest_texture.
+	spr.material = null
 
 
 func _apply_motion_state(spr: AnimatedSprite2D) -> void:

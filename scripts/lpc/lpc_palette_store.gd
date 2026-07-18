@@ -49,28 +49,71 @@ static func get_recolor_material(
 	target_name: String,
 	palette_base: String = "",
 ) -> ShaderMaterial:
+	# Palette swap is baked into textures at load (see apply_recolor_to_image).
+	return null
+
+
+## CPU palette swap — matches chargen.js tolerance (1/255 per channel).
+static func apply_recolor_to_image(
+	img: Image,
+	recolor_kind: String,
+	target_name: String,
+	palette_base: String = "",
+) -> Image:
+	if img == null or img.is_empty():
+		return img
 	if recolor_kind.is_empty() or target_name.is_empty() or recolor_kind == "none":
-		return null
+		return img
+	if not palettes_available():
+		return img
 	var resolved_target: String = _resolve_target_name(recolor_kind, target_name)
-	var cache_key: String = "%s:%s:%s" % [
-		recolor_kind,
-		palette_base if not palette_base.is_empty() else "_",
-		resolved_target,
-	]
-	if _material_cache.has(cache_key):
-		return _material_cache[cache_key]
 	var built: Dictionary = _build_pair_arrays(recolor_kind, resolved_target, palette_base)
 	if built.is_empty():
 		if not _is_identity_recolor(recolor_kind, resolved_target, palette_base):
 			_warn_missing_target(recolor_kind, target_name, resolved_target, palette_base)
-		return null
-	var mat: ShaderMaterial = ShaderMaterial.new()
-	mat.shader = SHADER
-	mat.set_shader_parameter("pair_count", int(built["count"]))
-	mat.set_shader_parameter("source_colors", built["source"] as PackedColorArray)
-	mat.set_shader_parameter("target_colors", built["target"] as PackedColorArray)
-	_material_cache[cache_key] = mat
-	return mat
+		return img
+	return _recolor_image_pairs(img, built)
+
+
+static func _recolor_image_pairs(img: Image, built: Dictionary) -> Image:
+	var count: int = int(built.get("count", 0))
+	if count < 1:
+		return img
+	var source: PackedColorArray = built["source"] as PackedColorArray
+	var target: PackedColorArray = built["target"] as PackedColorArray
+	var out: Image = img.duplicate()
+	if out.is_compressed():
+		out.decompress()
+	var width: int = out.get_width()
+	var height: int = out.get_height()
+	for y: int in range(height):
+		for x: int in range(width):
+			var pixel: Color = out.get_pixel(x, y)
+			if pixel.a < 0.01:
+				continue
+			var rgb8: Vector3i = _color_to_rgb8(pixel)
+			for i: int in count:
+				if _rgb8_near(rgb8, _color_to_rgb8(source[i])):
+					var mapped: Color = target[i]
+					out.set_pixel(x, y, Color(mapped.r, mapped.g, mapped.b, pixel.a))
+					break
+	return out
+
+
+static func _color_to_rgb8(color: Color) -> Vector3i:
+	return Vector3i(
+		int(round(color.r * 255.0)),
+		int(round(color.g * 255.0)),
+		int(round(color.b * 255.0)),
+	)
+
+
+static func _rgb8_near(a: Vector3i, b: Vector3i, tolerance: int = 1) -> bool:
+	return (
+		absi(a.x - b.x) <= tolerance
+		and absi(a.y - b.y) <= tolerance
+		and absi(a.z - b.z) <= tolerance
+	)
 
 
 static func _build_pair_arrays(
@@ -252,4 +295,3 @@ static func _warn_missing_target(
 		"LPC palette: no mapping for %s roll '%s' (resolved '%s', base '%s')"
 		% [kind, rolled, resolved, palette_base if not palette_base.is_empty() else "default"]
 	)
-
