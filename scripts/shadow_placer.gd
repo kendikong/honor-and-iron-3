@@ -69,6 +69,8 @@ static var _foot_cluster_layout_key: int = -1
 static var _foot_drift_cache: Dictionary = {}
 static var _unit_feet_overlay: Dictionary = {}
 static var _unit_feet_tex: ImageTexture
+static var _unit_feet_layout_key: int = -1
+static var _foot_atlas_dirty: bool = true
 static var _map_size_px: Vector2 = Vector2.ZERO
 static var _ground_shadow_material: ShaderMaterial
 static var _map_oblique_tex: ImageTexture
@@ -363,27 +365,40 @@ static func sync_actor_contact_shadow(
 			_foot_bake_cache[actor.get_instance_id()] = {
 				"image": img.duplicate(),
 				"bake_sig": bake_sig,
+				"global_origin": sprite.global_position,
+				"scale": actor.global_scale,
 			}
+			_mark_foot_atlas_dirty()
 	elif actor != null and sprite.texture != null and not _foot_bake_cache.has(actor.get_instance_id()):
 		var existing: Image = (sprite.texture as ImageTexture).get_image()
 		if existing != null and not existing.is_empty():
 			_foot_bake_cache[actor.get_instance_id()] = {
 				"image": existing.duplicate(),
 				"bake_sig": bake_sig,
+				"global_origin": sprite.global_position,
+				"scale": actor.global_scale,
 			}
-	var show: bool = is_present and sprite.texture != null and actor_visible_enough
-	sprite.visible = show
-	sprite.modulate = Color.WHITE
-	sprite.texture_filter = _shadow_texture_filter(settings)
-	sync_shadow_material(sprite.material as ShaderMaterial, settings)
-	_sync_actor_map_oblique(sprite, actor)
-	_apply_cloud_uniforms(sprite, settings)
+			_mark_foot_atlas_dirty()
+	elif actor != null and _foot_bake_cache.has(actor.get_instance_id()):
+		var cached_entry: Dictionary = _foot_bake_cache[actor.get_instance_id()] as Dictionary
+		var prev_origin: Vector2 = cached_entry.get("global_origin", Vector2(-99999.0, -99999.0)) as Vector2
+		var prev_scale: Vector2 = cached_entry.get("scale", Vector2.ZERO) as Vector2
+		if sprite.global_position != prev_origin or actor.global_scale != prev_scale:
+			cached_entry["global_origin"] = sprite.global_position
+			cached_entry["scale"] = actor.global_scale
+			_mark_foot_atlas_dirty()
+	var has_feet: bool = is_present and sprite.texture != null and actor_visible_enough
+	sprite.visible = false
+	if has_feet:
+		sprite.modulate = Color.WHITE
+		sprite.texture_filter = _shadow_texture_filter(settings)
 
 
 static func clear_actor_foot_bake(actor: Node2D) -> void:
 	if actor == null:
 		return
 	_foot_bake_cache.erase(actor.get_instance_id())
+	_mark_foot_atlas_dirty()
 	if actor.has_method("get_contact_shadow_sprite"):
 		var sprite: Sprite2D = actor.call("get_contact_shadow_sprite") as Sprite2D
 		_clear_actor_sprite(sprite)
@@ -398,63 +413,99 @@ static func set_foot_cluster_root(root: Node2D) -> void:
 
 
 static func invalidate_foot_cluster_layout() -> void:
+	_unit_feet_layout_key = -1
 	_foot_cluster_layout_key = -1
+	_mark_foot_atlas_dirty()
+
+
+static func is_foot_atlas_dirty() -> bool:
+	return _foot_atlas_dirty
+
+
+static func _mark_foot_atlas_dirty() -> void:
+	_foot_atlas_dirty = true
+
+
+static func _mark_foot_atlas_clean() -> void:
+	_foot_atlas_dirty = false
 
 
 static func rebuild_foot_shadow_clusters(
 	actors: Array,
 	settings: EffectsSettings = null,
-	_shadow_root: Node2D = null,
+	shadow_root: Node2D = null,
 ) -> void:
-	if _foot_cluster_root == null:
-		return
-	var entries: Array[Dictionary] = _collect_foot_shadow_entries(actors)
-	if entries.is_empty():
+	rebuild_unit_feet_atlas(actors, settings, shadow_root)
+	if _foot_cluster_root != null:
 		_foot_cluster_root.clear_clusters()
-		_foot_cluster_layout_key = -1
-		return
-	var clusters: Array = _cluster_foot_shadow_entries(entries)
-	_apply_foot_cluster_visibility(entries, clusters)
-	var layout_key: int = _foot_cluster_layout_hash(entries)
-	if layout_key == _foot_cluster_layout_key:
-		_sync_foot_cluster_cloud_drift(settings)
-		return
-	_foot_cluster_layout_key = layout_key
-	_foot_cluster_root.clear_clusters()
-	for cluster: Array in clusters:
-		if cluster.size() < 2:
-			continue
-		_spawn_foot_cluster_sprite(cluster, settings)
 
 
-static func _apply_foot_cluster_visibility(entries: Array[Dictionary], clusters: Array) -> void:
+static func rebuild_unit_feet_atlas(
+	actors: Array,
+	settings: EffectsSettings = null,
+	shadow_root: Node2D = null,
+) -> void:
+	if shadow_root == null:
+		shadow_root = _active_shadow_root
+	if settings == null or not settings.oblique_contact_shadows:
+		_unit_feet_overlay = {}
+		_sync_ground_shadow_uniforms(settings, shadow_root)
+		_mark_foot_atlas_clean()
+		return
+	var entries: Array[Dictionary] = _collect_foot_atlas_entries(actors)
+	var layout_key: int = _foot_atlas_layout_hash(entries)
+	if layout_key == _unit_feet_layout_key:
+		_mark_foot_atlas_clean()
+		return
+	_unit_feet_layout_key = layout_key
+	if entries.is_empty():
+		_unit_feet_overlay = {}
+		_sync_ground_shadow_uniforms(settings, shadow_root)
+		_mark_foot_atlas_clean()
+		return
+	var min_x: float = INF
+	var min_y: float = INF
+	var max_x: float = -INF
+	var max_y: float = -INF
 	for entry: Dictionary in entries:
-		var spr: Sprite2D = entry["sprite"] as Sprite2D
-		if spr != null:
-			spr.visible = true
-	for cluster: Array in clusters:
-		if cluster.size() < 2:
-			continue
-		for entry: Dictionary in cluster:
-			var spr: Sprite2D = entry["sprite"] as Sprite2D
-			if spr != null:
-				spr.visible = false
+		var rect: Rect2 = _foot_atlas_entry_rect(entry)
+		min_x = minf(min_x, rect.position.x)
+		min_y = minf(min_y, rect.position.y)
+		max_x = maxf(max_x, rect.end.x)
+		max_y = maxf(max_y, rect.end.y)
+	var width: int = maxi(1, int(ceil(max_x - min_x)))
+	var height: int = maxi(1, int(ceil(max_y - min_y)))
+	var atlas: Image = Image.create(width, height, false, Image.FORMAT_RGBA8)
+	atlas.fill(Color(0.0, 0.0, 0.0, 0.0))
+	var origin: Vector2 = Vector2(min_x, min_y)
+	for entry: Dictionary in entries:
+		var img: Image = entry["image"] as Image
+		var map_origin: Vector2 = entry["global_origin"] as Vector2
+		var offset: Vector2i = Vector2i(
+			int(round(map_origin.x - origin.x)),
+			int(round(map_origin.y - origin.y)),
+		)
+		_max_blit_foot_alpha(atlas, img, offset)
+	if _unit_feet_tex == null:
+		_unit_feet_tex = ImageTexture.create_from_image(atlas)
+	else:
+		_unit_feet_tex.set_image(atlas)
+	_unit_feet_overlay = {
+		"active": true,
+		"tex": _unit_feet_tex,
+		"origin": origin,
+		"size": Vector2(float(width), float(height)),
+		"image": atlas,
+	}
+	_sync_ground_shadow_uniforms(settings, shadow_root)
+	_mark_foot_atlas_clean()
 
 
-static func sync_foot_shadow_cloud_drift(actors: Array, settings: EffectsSettings) -> void:
-	if settings == null or not settings.cloud_shadows:
-		return
-	for actor_var: Variant in actors:
-		var actor: Node = actor_var as Node
-		if actor == null or not is_instance_valid(actor) or not actor.has_method("get_contact_shadow_sprite"):
-			continue
-		var sprite: Sprite2D = actor.call("get_contact_shadow_sprite") as Sprite2D
-		if sprite != null and sprite.visible:
-			_sync_sprite_cloud_drift(sprite, settings)
-	_sync_foot_cluster_cloud_drift(settings)
+static func sync_foot_shadow_cloud_drift(_actors: Array, _settings: EffectsSettings) -> void:
+	pass
 
 
-static func _collect_foot_shadow_entries(actors: Array) -> Array[Dictionary]:
+static func _collect_foot_atlas_entries(actors: Array) -> Array[Dictionary]:
 	var entries: Array[Dictionary] = []
 	for actor_var: Variant in actors:
 		var actor: Node2D = actor_var as Node2D
@@ -473,18 +524,18 @@ static func _collect_foot_shadow_entries(actors: Array) -> Array[Dictionary]:
 			baked = cached as Image
 		if baked == null or baked.is_empty():
 			continue
+		var draw_img: Image = _foot_image_for_actor(actor, baked)
 		entries.append({
 			"actor": actor,
 			"actor_id": actor.get_instance_id(),
-			"sprite": sprite,
-			"image": baked,
+			"image": draw_img,
 			"global_origin": sprite.global_position,
 		})
 	return entries
 
 
-static func _foot_cluster_layout_hash(entries: Array[Dictionary]) -> int:
-	var parts: Array = []
+static func _foot_atlas_layout_hash(entries: Array[Dictionary]) -> int:
+	var parts: Array = [applied_cycle_bake_signature(), _map_composite_apply_epoch]
 	for entry: Dictionary in entries:
 		var origin: Vector2 = entry["global_origin"] as Vector2
 		var img: Image = entry["image"] as Image
@@ -498,155 +549,35 @@ static func _foot_cluster_layout_hash(entries: Array[Dictionary]) -> int:
 	return hash(parts)
 
 
-static func _cluster_foot_shadow_entries(entries: Array[Dictionary]) -> Array:
-	var count: int = entries.size()
-	if count < 2:
-		return [entries] if count == 1 else []
-	var parent: PackedInt32Array = PackedInt32Array()
-	parent.resize(count)
-	for i: int in count:
-		parent[i] = i
-	var rects: Array[Rect2] = []
-	for entry: Dictionary in entries:
-		rects.append(_foot_entry_rect(entry))
-	for i: int in count:
-		for j: int in range(i + 1, count):
-			if _rects_overlap(rects[i], rects[j]):
-				_union_foot_cluster(parent, i, j)
-	var groups: Dictionary = {}
-	for i: int in count:
-		var root: int = _find_foot_cluster(parent, i)
-		if not groups.has(root):
-			groups[root] = []
-		(groups[root] as Array).append(entries[i])
-	return groups.values()
-
-
-static func _foot_entry_rect(entry: Dictionary) -> Rect2:
+static func _foot_atlas_entry_rect(entry: Dictionary) -> Rect2:
 	var origin: Vector2 = entry["global_origin"] as Vector2
 	var img: Image = entry["image"] as Image
 	return Rect2(origin, Vector2(float(img.get_width()), float(img.get_height())))
 
 
-static func _rects_overlap(a: Rect2, b: Rect2) -> bool:
-	if not a.intersects(b):
-		return false
-	var hit: Rect2 = a.intersection(b)
-	return hit.size.x > 0.5 and hit.size.y > 0.5
+static func _foot_image_for_actor(actor: Node2D, img: Image) -> Image:
+	if actor == null or img == null or img.is_empty():
+		return img
+	var scale_factor: float = maxf(absf(actor.global_scale.x), absf(actor.global_scale.y))
+	if is_equal_approx(scale_factor, 1.0):
+		return img
+	var width: int = maxi(1, int(round(float(img.get_width()) * scale_factor)))
+	var height: int = maxi(1, int(round(float(img.get_height()) * scale_factor)))
+	var scaled: Image = img.duplicate()
+	scaled.resize(width, height, Image.INTERPOLATE_NEAREST)
+	return scaled
 
 
-static func _find_foot_cluster(parent: PackedInt32Array, i: int) -> int:
-	if parent[i] != i:
-		parent[i] = _find_foot_cluster(parent, parent[i])
-	return parent[i]
+static func _collect_foot_shadow_entries(actors: Array) -> Array[Dictionary]:
+	return _collect_foot_atlas_entries(actors)
 
 
-static func _union_foot_cluster(parent: PackedInt32Array, a: int, b: int) -> void:
-	var ra: int = _find_foot_cluster(parent, a)
-	var rb: int = _find_foot_cluster(parent, b)
-	if ra != rb:
-		parent[rb] = ra
+static func _foot_cluster_layout_hash(entries: Array[Dictionary]) -> int:
+	return _foot_atlas_layout_hash(entries)
 
 
-static func _spawn_foot_cluster_sprite(cluster: Array, settings: EffectsSettings) -> void:
-	var min_x: float = INF
-	var min_y: float = INF
-	var max_x: float = -INF
-	var max_y: float = -INF
-	var z_index: int = 999999
-	for entry: Dictionary in cluster:
-		var rect: Rect2 = _foot_entry_rect(entry)
-		min_x = minf(min_x, rect.position.x)
-		min_y = minf(min_y, rect.position.y)
-		max_x = maxf(max_x, rect.end.x)
-		max_y = maxf(max_y, rect.end.y)
-		var cluster_actor: Node2D = entry["actor"] as Node2D
-		if cluster_actor != null:
-			z_index = mini(z_index, cluster_actor.z_index - 1)
-	var width: int = maxi(1, int(ceil(max_x - min_x)))
-	var height: int = maxi(1, int(ceil(max_y - min_y)))
-	var atlas: Image = Image.create(width, height, false, Image.FORMAT_RGBA8)
-	atlas.fill(Color(0.0, 0.0, 0.0, 0.0))
-	var origin: Vector2 = Vector2(min_x, min_y)
-	for entry: Dictionary in cluster:
-		var img: Image = entry["image"] as Image
-		var global_origin: Vector2 = entry["global_origin"] as Vector2
-		var offset: Vector2i = Vector2i(
-			int(round(global_origin.x - origin.x)),
-			int(round(global_origin.y - origin.y)),
-		)
-		_max_blit_foot_alpha(atlas, img, offset)
-	var sprite: Sprite2D = Sprite2D.new()
-	sprite.name = "FootCluster"
-	sprite.centered = false
-	sprite.texture_filter = _shadow_texture_filter(settings)
-	sprite.z_as_relative = false
-	sprite.z_index = z_index if z_index < 999999 else 0
-	sprite.global_position = origin
-	sprite.texture = ImageTexture.create_from_image(atlas)
-	sprite.material = duplicate_shadow_material()
-	sync_shadow_material(sprite.material as ShaderMaterial, settings)
-	_sync_actor_map_oblique(sprite, null)
-	_apply_cloud_uniforms(sprite, settings)
-	_foot_cluster_root.add_child(sprite)
-
-
-static func _sync_foot_cluster_cloud_drift(settings: EffectsSettings) -> void:
-	if _foot_cluster_root == null:
-		return
-	for child: Node in _foot_cluster_root.get_children():
-		var sprite: Sprite2D = child as Sprite2D
-		if sprite != null and sprite.visible:
-			_sync_sprite_cloud_drift(sprite, settings)
-
-
-static func _sync_sprite_cloud_drift(sprite: Sprite2D, settings: EffectsSettings) -> void:
-	if settings == null or not settings.cloud_shadows or sprite == null or not sprite.visible:
-		return
-	var drift_key: int = _cloud_drift_key()
-	var sprite_id: int = sprite.get_instance_id()
-	if _foot_drift_cache.get(sprite_id, -1) == drift_key:
-		return
-	_apply_cloud_uniforms(sprite, settings)
-	_foot_drift_cache[sprite_id] = drift_key
-
-
-static func _apply_cloud_uniforms(sprite: Sprite2D, settings: EffectsSettings) -> void:
-	var mat: ShaderMaterial = sprite.material as ShaderMaterial
-	if mat == null:
-		return
-	var atmo: Dictionary = WeatherBus.atmosphere_uniforms()
-	var has_clouds: float = 0.0
-	if settings != null and settings.cloud_shadows and float(atmo.get("cloud_shadow_strength", 1.0)) >= 0.01:
-		has_clouds = 1.0
-	mat.set_shader_parameter("has_cloud_shadow", has_clouds)
-	mat.set_shader_parameter("cloud_drift_offset", atmo["cloud_drift_offset"])
-
-
-static func _cloud_drift_key() -> int:
-	var d: Vector2 = WeatherBus.cloud_drift_offset
-	return hash(Vector2i(int(floor(d.x * 64.0)), int(floor(d.y * 64.0))))
-
-
-static func _sync_actor_map_oblique(sprite: Sprite2D, actor: Node2D) -> void:
-	var mat: ShaderMaterial = sprite.material as ShaderMaterial
-	if mat == null:
-		return
-	var overlay: Dictionary = map_oblique_overlay()
-	if not bool(overlay.get("active", false)):
-		mat.set_shader_parameter("has_map_oblique", 0.0)
-		return
-	mat.set_shader_parameter("has_map_oblique", 1.0)
-	mat.set_shader_parameter("map_oblique_tex", overlay.get("tex"))
-	mat.set_shader_parameter("map_oblique_origin", overlay.get("origin", Vector2.ZERO))
-	mat.set_shader_parameter("map_oblique_size", overlay.get("size", Vector2.ONE))
-	var map_origin: Vector2 = sprite.position
-	var sprite_scale: Vector2 = Vector2.ONE
-	if actor != null:
-		sprite_scale = actor.scale
-		map_origin = actor.position + sprite.position * sprite_scale
-	mat.set_shader_parameter("sprite_map_origin", map_origin)
-	mat.set_shader_parameter("sprite_scale", sprite_scale)
+static func _foot_entry_rect(entry: Dictionary) -> Rect2:
+	return _foot_atlas_entry_rect(entry)
 
 
 static func _clear_actor_sprite(sprite: Sprite2D) -> void:

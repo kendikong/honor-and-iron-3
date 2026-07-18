@@ -1,7 +1,7 @@
 class_name CharacterContactShadow
 extends Node2D
 
-## Oblique multiply contact shadow for LPC actor — delegates to ShadowPlacer.sync_actor_contact_shadow.
+## Oblique multiply contact shadow for LPC actor — bake target; display is unified on GroundShadows.
 
 const _LPC = preload("res://scripts/lpc/lpc_constants.gd")
 const FOOT_LOCAL_Y: float = 0.0
