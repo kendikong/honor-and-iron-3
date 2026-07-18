@@ -10,7 +10,7 @@ static var _enemy_units: Array[UnitData] = []
 static var _all_units_dict: Dictionary = {}
 static var _maps: Array[MapData] = []
 static var _universal_run: AbilityData
-var _universal_wait: AbilityData
+static var _universal_wait: AbilityData
 
 static func get_all_player_units() -> Array[UnitData]:
 	_ensure_init()
