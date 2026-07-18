@@ -58,6 +58,7 @@ var _pending_refresh_board: BoardState
 var _pending_refresh_plan: Timeline
 var _pending_refresh_statuses: PackedStringArray
 var _pending_refresh_preview: SimResult
+var _last_refresh_movement_only: bool = false
 
 
 static func is_planning_phase(p: Phase) -> bool:
@@ -439,20 +440,22 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 			temp_p2.add(a)
 		else:
 			temp_p1.add(a)
-	var trial: BoardState = base_board.clone()
-	var ev: Array[SimEvent] = []
 	var combined := Timeline.new()
 	for a: TimelineAction in temp_p1.entries:
 		combined.add(a)
 	for a: TimelineAction in temp_p2.entries:
 		combined.add(a)
-	Simulator.simulate_player_turn(trial, combined, ev)
-	for e: SimEvent in ev:
-		if e.type == GameEnums.SimEventType.ACTION_FAILED:
-			var failed_actor: int = int(e.data.get("actor", -1))
-			if failed_actor in new_actors:
-				EventBus.action_rejected.emit(String(e.data.get("reason", "failed")))
-				return
+	var movement_only: bool = _plan_is_movement_only(combined)
+	if not movement_only:
+		var trial: BoardState = base_board.clone()
+		var ev: Array[SimEvent] = []
+		Simulator.simulate_player_turn(trial, combined, ev)
+		for e: SimEvent in ev:
+			if e.type == GameEnums.SimEventType.ACTION_FAILED:
+				var failed_actor: int = int(e.data.get("actor", -1))
+				if failed_actor in new_actors:
+					EventBus.action_rejected.emit(String(e.data.get("reason", "failed")))
+					return
 	for i: int in range(actions.size()):
 		target_plans[i].add(actions[i])
 		if actions[i].type == GameEnums.ActionType.MOVE:
@@ -1304,13 +1307,16 @@ func unit_has_undoable_action(unit_id: int) -> bool:
 
 
 func _refresh_plan() -> void:
+	var plan_to_run := _get_combined_plan()
+	if _plan_is_movement_only(plan_to_run):
+		_refresh_plan_movement_only(plan_to_run)
+		return
+	_last_refresh_movement_only = false
 	var move_only := base_board.clone()
 	var full_proj := base_board.clone()
 	var statuses := PackedStringArray()
 	var anim_events: Array[SimEvent] = []
 	var any_cancelled := false
-	
-	var plan_to_run := _get_combined_plan()
 	
 	for action in plan_to_run.entries:
 		var events: Array[SimEvent] = []
@@ -1357,19 +1363,67 @@ func _refresh_plan() -> void:
 		EventBus.planning_commit_events.emit(anim_events)
 	plan_revision += 1
 
-	var movement_only: bool = _plan_is_movement_only(plan_to_run)
-	var preview_board: BoardState
-	var evs: Array[SimEvent]
-	if movement_only:
-		preview_board = projected_state.clone()
-		evs = _build_movement_only_preview_events(plan_to_run, new_intents, preview_board)
-	else:
-		preview_board = base_board.clone()
-		evs = _build_ghost_events(preview_board, plan_to_run, new_intents)
+	var preview_board := base_board.clone()
+	var evs := _build_ghost_events(preview_board, plan_to_run, new_intents)
 
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = evs
 	_defer_plan_refresh_signals(board, plan_to_run, statuses, sim_res)
+
+
+func _refresh_plan_movement_only(plan: Timeline) -> void:
+	_last_refresh_movement_only = true
+	var anim_events: Array[SimEvent] = []
+	var any_cancelled := false
+	var trial: BoardState = base_board.clone()
+	for action: TimelineAction in plan.entries:
+		if action.type != GameEnums.ActionType.MOVE:
+			continue
+		var pre_board: BoardState = trial.clone()
+		var move_ev: Array[SimEvent] = []
+		ResolutionPipeline.apply_action(trial, action, move_ev)
+		ResolutionPipeline.resolve_pending_pushes(trial, move_ev)
+		if _move_has_commit_side_effects(move_ev):
+			action.irreversible = true
+			if _cancel_plans_for_displacement(action.actor_id, pre_board, move_ev):
+				any_cancelled = true
+			if action in _commit_animate_actions:
+				anim_events.append_array(_extract_commit_anim_events(move_ev))
+	_commit_animate_actions.clear()
+	if any_cancelled:
+		_refresh_plan()
+		return
+
+	projected_state = base_board.clone()
+	Simulator.simulate_player_turn(projected_state, plan, [])
+	board = projected_state
+
+	var new_intents := EnemyPlanner.plan(projected_state)
+	base_board.intents = new_intents
+	board.intents = new_intents
+	projected_state.intents = new_intents
+
+	if not anim_events.is_empty():
+		EventBus.planning_commit_events.emit(anim_events)
+	plan_revision += 1
+
+	var preview_board: BoardState = projected_state.clone()
+	var evs: Array[SimEvent] = _build_movement_only_preview_events(plan, new_intents, preview_board)
+	var sim_res := SimResult.new(preview_board)
+	sim_res.events = evs
+	var statuses := PackedStringArray()
+	statuses.resize(maxi(plan.size(), 1))
+	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
+
+
+func peek_movement_only_refresh() -> bool:
+	return _last_refresh_movement_only
+
+
+func consume_movement_only_refresh() -> bool:
+	var was_movement_only: bool = _last_refresh_movement_only
+	_last_refresh_movement_only = false
+	return was_movement_only
 
 
 func _plan_is_movement_only(plan: Timeline) -> bool:

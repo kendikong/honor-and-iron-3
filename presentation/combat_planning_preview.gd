@@ -51,6 +51,34 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes, preview_post_splits)
 
 
+static func apply_movement_result(
+	preview: CombatPlanningPreview,
+	result: SimResult,
+	director: CombatDirector,
+	base_board: BoardState,
+) -> void:
+	if preview == null or result == null or result.final_state == null:
+		return
+	preview.preview_board = result.final_state
+	build_preview_paths(
+		result.events,
+		director,
+		preview.preview_paths,
+		preview.preview_splits,
+		preview.preview_pushes,
+		preview.preview_post_splits,
+	)
+	if base_board != null:
+		for unit: UnitState in base_board.units:
+			var pv := result.final_state.get_unit_by_id(unit.id)
+			if pv != null and pv.is_alive():
+				preview.predicted_hp[unit.id] = pv.health.current_hp
+				preview.predicted_armor[unit.id] = pv.armor
+			else:
+				preview.predicted_hp[unit.id] = 0
+				preview.predicted_armor[unit.id] = 0
+
+
 static func from_sim_result(
 	result: SimResult,
 	director: CombatDirector,
