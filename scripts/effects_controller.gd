@@ -158,6 +158,11 @@ func process_frame(delta: float) -> void:
 		_atmosphere.refresh_cloud_drift()
 	if settings.cloud_shadows and _atmosphere != null:
 		_atmosphere.push_cloud_shadow_uniforms(settings)
+	if settings.cloud_shadows and WeatherBus.shadows_visible() and _last_grid != null:
+		var map_size_px: Vector2 = Vector2(_last_grid.width, _last_grid.height) * AtmosphereBinder.TILE_PX
+		CloudShadowSampler.ensure_baked(map_size_px)
+	elif not settings.cloud_shadows:
+		CloudShadowSampler.clear_bake()
 	if settings.oblique_contact_shadows and _shadow_sprites != null and _last_grid != null:
 		if WeatherBus.shadows_visible() and ShadowPlacer.is_layer_cache_empty():
 			_apply_oblique_contact_shadows(_last_grid)

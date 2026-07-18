@@ -1,11 +1,15 @@
 class_name CloudShadowSampler
 extends RefCounted
 
-## CPU mirror of `shaders/cloud_shadow.gdshader` for actors drawn above SkyOverlay.
+## CPU mirror of `shaders/cloud_shadow.gdshader` — baked once per drift step, not per actor sample.
 
 const TILE_PX: float = 16.0
 const FIELD_TILE_SPAN: float = TILE_PX * 32.0
 const MASK_CUTOFF: float = 0.01
+## One mask cell per tile — clouds are huge; actor bands only need coarse coverage.
+const BAKE_STRIDE_PX: int = 16
+## Re-bake when drift crosses this threshold (smooth enough vs ~8 updates/sec at default speed).
+const DRIFT_QUANT: float = 128.0
 
 const _ROT: Transform2D = Transform2D(
 	Vector2(0.8, 0.6),
@@ -13,15 +17,45 @@ const _ROT: Transform2D = Transform2D(
 	Vector2.ZERO,
 )
 
+static var _mask_image: Image
+static var _mask_cells: Vector2i = Vector2i.ZERO
+static var _mask_map_size_px: Vector2 = Vector2.ZERO
+static var _mask_drift_key: Vector2i = Vector2i(-999999, -999999)
+static var _bake_epoch: int = 0
+
 
 static func environment_stamp() -> int:
-	var d: Vector2 = WeatherBus.cloud_drift_offset
-	return hash(Vector2i(int(floor(d.x * 2048.0)), int(floor(d.y * 2048.0))))
+	return _bake_epoch
+
+
+static func clear_bake() -> void:
+	_mask_image = null
+	_mask_cells = Vector2i.ZERO
+	_mask_map_size_px = Vector2.ZERO
+	_mask_drift_key = Vector2i(-999999, -999999)
+	_bake_epoch = 0
+
+
+static func ensure_baked(map_size_px: Vector2) -> void:
+	if map_size_px.x < 1.0 or map_size_px.y < 1.0:
+		return
+	var drift_key: Vector2i = _drift_key(WeatherBus.cloud_drift_offset)
+	if (
+		_mask_image != null
+		and not _mask_image.is_empty()
+		and drift_key == _mask_drift_key
+		and map_size_px.is_equal_approx(_mask_map_size_px)
+	):
+		return
+	_bake_mask(map_size_px, WeatherBus.cloud_drift_offset, drift_key)
 
 
 static func sample_mask_at_map_px(map_px: Vector2) -> float:
-	var map_local: Vector2 = Vector2(floor(map_px.x), floor(map_px.y))
-	return _shadow_mask(_field_at_pixel(map_local, WeatherBus.cloud_drift_offset))
+	if _mask_image == null or _mask_image.is_empty():
+		return 0.0
+	var cx: int = clampi(int(floor(map_px.x / float(BAKE_STRIDE_PX))), 0, _mask_cells.x - 1)
+	var cy: int = clampi(int(floor(map_px.y / float(BAKE_STRIDE_PX))), 0, _mask_cells.y - 1)
+	return _mask_image.get_pixel(cx, cy).r
 
 
 static func modulate_from_mask(mask: float, settings: EffectsSettings = null) -> Color:
@@ -36,6 +70,34 @@ static func modulate_from_mask(mask: float, settings: EffectsSettings = null) ->
 		lerpf(1.0, tint.g, shade),
 		lerpf(1.0, tint.b, shade),
 		1.0,
+	)
+
+
+static func _bake_mask(map_size_px: Vector2, drift: Vector2, drift_key: Vector2i) -> void:
+	var cells: Vector2i = Vector2i(
+		maxi(1, int(ceil(map_size_px.x / float(BAKE_STRIDE_PX)))),
+		maxi(1, int(ceil(map_size_px.y / float(BAKE_STRIDE_PX)))),
+	)
+	var img: Image = Image.create(cells.x, cells.y, false, Image.FORMAT_RF)
+	for cy: int in range(cells.y):
+		for cx: int in range(cells.x):
+			var map_local: Vector2 = Vector2(
+				float(cx * BAKE_STRIDE_PX),
+				float(cy * BAKE_STRIDE_PX),
+			)
+			var mask: float = _shadow_mask(_field_at_pixel(map_local, drift))
+			img.set_pixel(cx, cy, Color(mask, 0.0, 0.0, 1.0))
+	_mask_image = img
+	_mask_cells = cells
+	_mask_map_size_px = map_size_px
+	_mask_drift_key = drift_key
+	_bake_epoch += 1
+
+
+static func _drift_key(drift: Vector2) -> Vector2i:
+	return Vector2i(
+		int(floor(drift.x * DRIFT_QUANT)),
+		int(floor(drift.y * DRIFT_QUANT)),
 	)
 
 
