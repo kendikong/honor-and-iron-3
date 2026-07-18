@@ -69,7 +69,6 @@ func clear_layers() -> void:
 		spr.stop()
 		spr.sprite_frames = null
 		spr.material = null
-		_disconnect_layer_shadow_signals(spr)
 		spr.modulate = Color.WHITE
 		spr.self_modulate = Color.WHITE
 		spr.z_index = 0
@@ -121,7 +120,6 @@ func add_layer(
 	spr.sprite_frames = frames
 	_apply_recolor_material(spr, recolor_kind, recolor, palette_base)
 	_apply_motion_state(spr)
-	_connect_layer_shadow_signals(spr)
 	_layers.append(spr)
 	move_child(spr, -1)
 	if _planning_exhausted:
@@ -176,29 +174,6 @@ func _sync_sprite_shadow_receive(settings: EffectsSettings = null) -> void:
 		if spr == null or not is_instance_valid(spr) or spr.material == null:
 			continue
 		ShadowPlacer.sync_lpc_sprite_layer_shadow_instance(spr, self, settings)
-
-
-func _connect_layer_shadow_signals(spr: AnimatedSprite2D) -> void:
-	if spr == null:
-		return
-	if not spr.frame_changed.is_connected(_on_layer_animation_tick):
-		spr.frame_changed.connect(_on_layer_animation_tick)
-	if not spr.animation_changed.is_connected(_on_layer_animation_tick):
-		spr.animation_changed.connect(_on_layer_animation_tick)
-
-
-func _disconnect_layer_shadow_signals(spr: AnimatedSprite2D) -> void:
-	if spr == null:
-		return
-	if spr.frame_changed.is_connected(_on_layer_animation_tick):
-		spr.frame_changed.disconnect(_on_layer_animation_tick)
-	if spr.animation_changed.is_connected(_on_layer_animation_tick):
-		spr.animation_changed.disconnect(_on_layer_animation_tick)
-
-
-func _on_layer_animation_tick() -> void:
-	invalidate_environment_shadow_sync()
-	_rebuild_contact_shadow_silhouette()
 
 
 func _rebuild_contact_shadow_silhouette() -> void:
