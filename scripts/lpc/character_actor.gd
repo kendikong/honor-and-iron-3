@@ -30,9 +30,9 @@ var _anchor_position: Vector2 = Vector2.ZERO
 var _is_dying: bool = false
 var _running: bool = false
 var _planning_exhausted: bool = false
-## Opaque grey multiply on the actor root — never use alpha < 1 (that reads as muddy transparency).
-const _EXHAUSTED_TINT := Color(0.68, 0.68, 0.72, 1.0)
-const _EXHAUSTED_SHADOW_TINT := Color(0.52, 0.52, 0.56, 1.0)
+## Per-layer self_modulate — parent modulate does not reach LPC recolor shader output reliably.
+const _EXHAUSTED_LAYER_MODULATE := Color(0.28, 0.28, 0.32, 1.0)
+const _EXHAUSTED_SHADOW_TINT := Color(0.40, 0.40, 0.44, 1.0)
 
 
 func _ready() -> void:
@@ -45,7 +45,6 @@ func _ready() -> void:
 	_selection_glow = _SelectionGlow.new()
 	_selection_glow.name = "SelectionGlow"
 	add_child(_selection_glow)
-	move_child(_selection_glow, 1)
 	_selection_glow.bind_actor(self)
 
 
@@ -57,6 +56,10 @@ func set_selection_glow(active: bool, color: Color = Color(0.36, 0.62, 0.92, 0.9
 	if _selection_glow == null:
 		return
 	_selection_glow.set_active(active, color)
+
+
+func get_selection_glow() -> CharacterSelectionGlow:
+	return _selection_glow
 
 
 func clear_layers() -> void:
@@ -179,20 +182,17 @@ func set_planning_exhausted(exhausted: bool) -> void:
 
 
 func _apply_visual_tint() -> void:
-	if _planning_exhausted:
-		modulate = _EXHAUSTED_TINT
-		if _contact_shadow != null:
-			_contact_shadow.modulate = _EXHAUSTED_SHADOW_TINT
-		if _selection_glow != null:
-			_selection_glow.set_muted(true)
-	else:
-		modulate = Color.WHITE
-		if _contact_shadow != null:
-			_contact_shadow.modulate = Color.WHITE
-		if _selection_glow != null:
-			_selection_glow.set_muted(false)
+	modulate = Color.WHITE
+	if _contact_shadow != null:
+		_contact_shadow.modulate = _EXHAUSTED_SHADOW_TINT if _planning_exhausted else Color.WHITE
+	if _selection_glow != null:
+		_selection_glow.set_muted(_planning_exhausted)
 	for spr: AnimatedSprite2D in _layers:
 		spr.modulate = Color.WHITE
+		if _planning_exhausted:
+			spr.self_modulate = _EXHAUSTED_LAYER_MODULATE
+		else:
+			spr.self_modulate = Color.WHITE
 
 
 func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:

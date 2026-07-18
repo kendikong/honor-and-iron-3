@@ -162,6 +162,12 @@ func _refresh_selection_glow() -> void:
 		var active: bool = planning and int(unit_id) == _selected_id and unit != null
 		var color: Color = _COLOR_SELECT_ENEMY if unit != null and unit.is_enemy() else _COLOR_SELECT_PLAYER
 		actor.set_selection_glow(active, color)
+	if _selected_id >= 0:
+		var selected_actor: CharacterActor = _actors.get(_selected_id) as CharacterActor
+		if selected_actor != null:
+			var glow := selected_actor.get_selection_glow()
+			if glow != null and glow.is_active():
+				glow.rebuild_from_layers()
 
 
 func set_drag_attack_target(unit_id: int) -> void:

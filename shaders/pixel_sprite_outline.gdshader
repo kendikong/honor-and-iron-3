@@ -3,7 +3,7 @@ render_mode blend_mix;
 
 uniform vec4 outline_color : source_color = vec4(0.36, 0.62, 0.92, 1.0);
 uniform float outline_alpha : hint_range(0.0, 1.0) = 1.0;
-uniform int outline_px : hint_range(1, 3) = 2;
+uniform int outline_px : hint_range(1, 4) = 3;
 
 void fragment() {
 	vec4 col = texture(TEXTURE, UV);

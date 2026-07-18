@@ -20,5 +20,5 @@ void fragment() {
 			}
 		}
 	}
-	COLOR = out_col;
+	COLOR = out_col * COLOR;
 }
