@@ -959,6 +959,17 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** �
 
 ---
 
+## Combat Feel Amplification (2026-07-17) — USER VERIFICATION PENDING
+
+- Attack thrust: wind-up pullback → lunge forward → thrust anim (`character_actor.play_attack_thrust`).
+- Hurt knockback: sprite pushed away from attacker on damage.
+- Death linger: hurt pose held **1.75s** on ground, then **0.4s** fade before removal.
+- Hit VFX: expanding red/white burst rings + stronger HP bar red flash.
+- SFX: new `crunch` hit and `faint` death bake kinds (longer, bass-heavy).
+- Drag attack targeting: pulsing warm outline on hovered enemy during drag-attack preview.
+
+---
+
 ## User decisions (locked)
 
 | Item | Choice |
