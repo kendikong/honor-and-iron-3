@@ -95,7 +95,8 @@ func _ready() -> void:
 		ecology_layer,
 		_scatter,
 	)
-	_effects.set_character_contact_shadow_sync(_sync_test_char_contact_shadow)
+	_effects.set_character_contact_shadow_sync(_sync_test_char_contact_shadow_drift)
+	_effects.set_character_contact_shadow_full_sync(_sync_test_char_contact_shadow_full)
 	biome_variant = _effects.settings.biome_variant
 	_apply_biome_swap(false)
 
@@ -279,8 +280,23 @@ func _process(delta: float) -> void:
 	_effects.process_frame(delta)
 
 
-func _sync_test_char_contact_shadow(settings: EffectsSettings) -> void:
+func _sync_test_char_contact_shadow_drift(settings: EffectsSettings) -> void:
+	EffectsController.sync_contact_shadow_drift_on_actor_list(_test_unit_actors(), settings)
+
+
+func _sync_test_char_contact_shadow_full(settings: EffectsSettings) -> void:
 	EffectsController.sync_contact_shadow_on_actor_list(_test_unit_actors(), settings)
+
+
+func _on_unit_step_finished(_cell: Vector2i) -> void:
+	_sync_test_char_contact_shadow_full(_effects.settings)
+
+
+func _connect_mover_shadow_sync(mover: CharacterGridMover) -> void:
+	if mover == null:
+		return
+	if not mover.step_finished.is_connected(_on_unit_step_finished):
+		mover.step_finished.connect(_on_unit_step_finished)
 
 
 func _test_unit_actors() -> Array[CharacterActor]:
@@ -294,9 +310,7 @@ func _test_unit_actors() -> Array[CharacterActor]:
 
 
 func _sync_all_test_unit_shadows() -> void:
-	var settings: EffectsSettings = _effects.settings
-	for actor: CharacterActor in _test_unit_actors():
-		actor.force_environment_shadow_sync(settings)
+	_sync_test_char_contact_shadow_full(_effects.settings)
 
 
 func _on_effects_toggled() -> void:
@@ -640,6 +654,7 @@ func _spawn_extra_units() -> void:
 			_scatter,
 		)
 		mover.refresh_depth_sort()
+		_connect_mover_shadow_sync(mover)
 		_extra_actors.append(actor)
 		_extra_movers.append(mover)
 
@@ -712,6 +727,7 @@ func _place_player_actor() -> void:
 	_char_mover.setup(
 		_char_actor, _player_grid, spawn_cells[0], _trees, _overlay, _effects.settings, _scatter,
 	)
+	_connect_mover_shadow_sync(_char_mover)
 
 
 func _reroll_character() -> void:
