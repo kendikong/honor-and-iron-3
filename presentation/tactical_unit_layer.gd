@@ -143,6 +143,9 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
+	if _is_planning_phase():
+		queue_redraw()
+		return
 	_sync_actors()
 	_refresh_planning_visuals()
 	queue_redraw()
@@ -593,6 +596,10 @@ func _sync_planning_actor_positions() -> void:
 			continue
 		if _drag_preview_active and unit.id == _drag_preview_id:
 			continue
+		var target: Vector2i = unit.position
+		var current_cell: Vector2i = _actor_grid_cell(unit.id)
+		if current_cell == target and not force_sync.has(unit.id):
+			continue
 		if force_sync.has(unit.id):
 			_kill_move_tween(unit.id)
 		elif _move_tweens.has(unit.id):
@@ -639,6 +646,12 @@ func _snap_actor_rubberband(unit_id: int, grid_cell: Vector2i) -> void:
 	if actor == null or _map_view == null:
 		return
 	var home: Vector2 = _map_view.grid_to_foot_local(grid_cell)
+	var from_cell: Vector2i = _actor_grid_cell(unit_id)
+	if from_cell != grid_cell:
+		var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+		if unit != null:
+			unit.facing = _facing_toward(from_cell, grid_cell)
+			_apply_facing(unit_id, unit.facing)
 	if actor.position.distance_to(home) <= 1.5:
 		_finish_snap_at_cell(unit_id, grid_cell)
 		return
@@ -730,7 +743,6 @@ func _animate_planning_path(
 	if cells.size() >= 1:
 		var prev: Vector2i = from_cell if cells.size() == 1 else cells[cells.size() - 2]
 		unit.facing = _facing_toward(prev, cells[cells.size() - 1])
-	_apply_facing(unit_id, unit.facing)
 	_play_cell_path_tween(unit_id, from_cell, cells, CombatDirector.MOVE_STEP_TIME, use_run)
 
 
@@ -740,7 +752,7 @@ func _play_cell_path_tween(
 	cells: Array[Vector2i],
 	step_time: float,
 	use_run: bool,
-	per_step: Callable = Callable(),
+	per_step: Variant = null,
 ) -> void:
 	var actor: CharacterActor = _actors.get(unit_id)
 	if actor == null or _map_view == null or cells.is_empty():
@@ -749,20 +761,36 @@ func _play_cell_path_tween(
 	actor.position = _map_view.grid_to_foot_local(start_cell)
 	actor.set_running(use_run)
 	actor.set_walking(true)
+	_apply_path_step_facing(unit_id, _facing_toward(start_cell, cells[0]))
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
 	for step_index: int in range(cells.size()):
 		var cell: Vector2i = cells[step_index]
 		tween.tween_property(actor, "position", _map_view.grid_to_foot_local(cell), step_time)
-		if per_step.is_valid():
-			tween.tween_callback(per_step.bind(step_index))
+		if per_step is Callable and (per_step as Callable).is_valid():
+			tween.tween_callback((per_step as Callable).bind(step_index))
+		if step_index + 1 < cells.size():
+			var next_cell: Vector2i = cells[step_index + 1]
+			var next_facing: int = _facing_toward(cell, next_cell)
+			tween.tween_callback(func() -> void:
+				_apply_path_step_facing(unit_id, next_facing)
+			)
 	tween.finished.connect(func() -> void:
 		_move_tweens.erase(unit_id)
 		actor.set_walking(false)
 		var live := _board.get_unit_by_id(unit_id) if _board != null else null
 		actor.set_running(live != null and live.has_status(GameEnums.StatusType.RUNNING))
+		if live != null:
+			_apply_facing(unit_id, live.facing)
 		_update_depth(unit_id)
 	)
+
+
+func _apply_path_step_facing(unit_id: int, facing: int) -> void:
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	if unit != null:
+		unit.facing = facing
+	_apply_facing(unit_id, facing)
 
 
 func _animate_move(event: SimEvent) -> void:
@@ -800,7 +828,6 @@ func _animate_move(event: SimEvent) -> void:
 	if cells.size() >= 2:
 		facing = _facing_toward(cells[cells.size() - 2], cells[cells.size() - 1])
 		unit.facing = facing
-	_apply_facing(unit_id, facing)
 	if _actors.get(unit_id) == null:
 		_position_actor(unit_id, unit.position)
 		_update_depth(unit_id)
