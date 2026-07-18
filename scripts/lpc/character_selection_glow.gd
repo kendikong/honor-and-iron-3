@@ -1,7 +1,7 @@
 class_name CharacterSelectionGlow
 extends Node
 
-## Pixel-accurate selection outline — duplicate layers drawn ON TOP so the ring is visible.
+## Selection ring — one outline duplicate behind each LPC layer (no full-sprite wash on top).
 
 const _OUTLINE_SHADER: Shader = preload("res://shaders/pixel_sprite_outline.gdshader")
 
@@ -43,30 +43,28 @@ func rebuild_from_layers() -> void:
 	if _actor == null or not enabled:
 		return
 	var layers: Array[AnimatedSprite2D] = _actor.get_sprite_layers()
-	var layer_idx: int = 0
 	for spr: AnimatedSprite2D in layers:
 		if spr == null or not spr.visible or spr.sprite_frames == null:
 			continue
 		var outline := AnimatedSprite2D.new()
-		outline.name = "SelOutline_%d" % layer_idx
+		outline.name = "SelOutline"
 		outline.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		outline.centered = spr.centered
-		outline.position = spr.position
+		outline.position = Vector2.ZERO
 		outline.sprite_frames = spr.sprite_frames
 		outline.animation = spr.animation
 		outline.frame = spr.frame
-		outline.z_as_relative = false
-		outline.z_index = 120 + layer_idx
-		outline.show_behind_parent = false
+		outline.z_as_relative = true
+		outline.z_index = -1
+		outline.self_modulate = Color.WHITE
 		var mat: ShaderMaterial = _outline_material.duplicate() as ShaderMaterial
 		mat.set_shader_parameter("outline_color", _draw_color())
 		mat.set_shader_parameter("outline_alpha", 1.0)
-		mat.set_shader_parameter("outline_px", 3)
+		mat.set_shader_parameter("outline_px", 2)
 		outline.material = mat
-		_actor.add_child(outline)
-		_actor.move_child(outline, -1)
+		spr.add_child(outline)
+		spr.move_child(outline, 0)
 		_outline_sprites.append(outline)
-		layer_idx += 1
 	_sync_outline_frames()
 	_update_outline_alpha()
 
@@ -109,16 +107,18 @@ func _sync_outline_frames() -> void:
 		if outline_idx >= _outline_sprites.size():
 			break
 		var outline: AnimatedSprite2D = _outline_sprites[outline_idx]
+		if outline.get_parent() != spr:
+			outline_idx += 1
+			continue
 		outline.animation = spr.animation
 		outline.frame = spr.frame
-		outline.position = spr.position
 		outline.visible = spr.visible
 		outline_idx += 1
 
 
 func _update_outline_alpha() -> void:
 	var draw_color: Color = _draw_color()
-	var alpha: float = 0.92 if not _muted else 0.80
+	var alpha: float = 1.0 if not _muted else 0.85
 	for spr: AnimatedSprite2D in _outline_sprites:
 		var mat: ShaderMaterial = spr.material as ShaderMaterial
 		if mat != null:

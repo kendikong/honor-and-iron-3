@@ -95,6 +95,8 @@ func add_layer(
 		add_child(spr)
 	else:
 		spr = _pool.pop_back()
+		for child: Node in spr.get_children():
+			child.queue_free()
 	
 	# Godot 2D draws in tree index order.
 	# We must move the sprite to the end of the children array so it draws on top of previous layers.
@@ -177,8 +179,12 @@ func set_running(running: bool) -> void:
 
 
 func set_planning_exhausted(exhausted: bool) -> void:
+	if _planning_exhausted == exhausted:
+		return
 	_planning_exhausted = exhausted
 	_apply_visual_tint()
+	if _selection_glow != null and _selection_glow.is_active():
+		_selection_glow.rebuild_from_layers()
 
 
 func _apply_visual_tint() -> void:

@@ -75,6 +75,7 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.selection_changed.connect(_on_selection_changed)
+	EventBus.timeline_changed.connect(_on_timeline_changed)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		_phase = phase
 		if not CombatDirector.is_planning_phase(phase):
@@ -138,6 +139,7 @@ func _display_scale() -> float:
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
 	_sync_actors()
+	_refresh_planning_visuals()
 	queue_redraw()
 
 
@@ -148,8 +150,24 @@ func _on_preview_updated(result: SimResult) -> void:
 
 func _on_selection_changed(unit_id: int) -> void:
 	_selected_id = unit_id
-	_refresh_selection_glow()
+	_refresh_planning_visuals()
 	queue_redraw()
+
+
+func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
+	_refresh_planning_visuals()
+
+
+func _refresh_planning_visuals() -> void:
+	for unit_id: Variant in _actors:
+		var actor: CharacterActor = _actors[unit_id] as CharacterActor
+		if actor != null:
+			actor.modulate = Color.WHITE
+	if _board != null:
+		for unit: UnitState in _board.units:
+			if unit.is_alive() and not unit.is_enemy():
+				_apply_exhaustion_state(unit)
+	_refresh_selection_glow()
 
 
 func _refresh_selection_glow() -> void:
@@ -735,10 +753,9 @@ func update_drag_preview(
 	var foot: Vector2 = _map_view.grid_to_foot_local(preview_cell)
 	var offset: Vector2 = map_local - _map_view.grid_to_local(preview_cell)
 	actor.position = foot + Vector2(offset.x, offset.y * 0.35)
+	actor.modulate = Color.WHITE
 	if failed:
-		actor.modulate = Color(1.0, 0.35, 0.35, 0.58)
-	else:
-		actor.modulate = Color(1.0, 1.0, 1.0, 0.58)
+		actor.modulate = Color(1.0, 0.45, 0.45, 1.0)
 	match anim_mode:
 		DragPreviewAnim.WALK:
 			actor.set_running(false)

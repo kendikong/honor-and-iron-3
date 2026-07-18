@@ -697,6 +697,11 @@ func _draw_threat_perimeter(cells: Array[Vector2i]) -> void:
 func _draw_hover_tile() -> void:
 	if not _board.is_in_bounds(_hover_coord):
 		return
+	if _planning_input != null and _director != null and _director.selected_unit_id >= 0:
+		if _planning_input.selected_phase_action_exhausted(_director.selected_unit_id):
+			return
+		if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+			return
 	var tile_px: float = float(TacticalConstants.TILE_PX)
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var rect := Rect2(center - Vector2(tile_px * 0.5, tile_px * 0.5), Vector2(tile_px, tile_px)).grow(-2.0)
