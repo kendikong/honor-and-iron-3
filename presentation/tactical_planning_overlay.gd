@@ -273,9 +273,9 @@ func update_drag_sprite(
 		_unit_layer.update_drag_preview(map_local, anim_mode, facing, preview_cell, failed, cursor_cell)
 
 
-func end_drag_sprite() -> void:
+func end_drag_sprite(snap_back: bool = false) -> void:
 	if _unit_layer != null:
-		_unit_layer.end_drag_preview()
+		_unit_layer.end_drag_preview(snap_back)
 
 
 func set_drag_attack_target(unit_id: int) -> void:

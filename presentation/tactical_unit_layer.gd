@@ -18,6 +18,7 @@ const _COLOR_ARMOR := Color(0.9, 0.8, 0.2)
 const _COLOR_SELECT_PLAYER := Color(0.36, 0.62, 0.92, 0.95)
 const _COLOR_SELECT_ENEMY := Color(0.95, 0.28, 0.24, 0.95)
 const _COLOR_DRAG_TARGET := Color(1.0, 0.38, 0.22, 0.92)
+const DRAG_SNAPBACK_SEC: float = 0.24
 const _COLOR_HIT_BURST := Color(1.0, 0.2, 0.15, 0.9)
 
 var _map_view: TacticalMapView
@@ -716,7 +717,7 @@ func begin_drag_preview(unit_id: int) -> void:
 	_kill_move_tween(unit_id)
 
 
-func end_drag_preview() -> void:
+func end_drag_preview(snap_back: bool = false) -> void:
 	if _drag_preview_id < 0:
 		return
 	var unit_id: int = _drag_preview_id
@@ -725,17 +726,38 @@ func end_drag_preview() -> void:
 	_drag_preview_failed = false
 	clear_drag_attack_target()
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
-	if unit != null:
-		_position_actor(unit_id, unit.position)
-		_apply_facing(unit_id, unit.facing)
-		_update_depth(unit_id)
+	var actor: CharacterActor = _actors.get(unit_id)
+	if unit == null or actor == null:
+		return
+	var home: Vector2 = _map_view.grid_to_foot_local(unit.position)
+	if snap_back and actor.position.distance_to(home) > 1.5:
+		_kill_move_tween(unit_id)
+		actor.set_running(false)
+		actor.set_walking(true)
+		actor.modulate = Color.WHITE
+		var tween: Tween = create_tween()
+		_move_tweens[unit_id] = tween
+		tween.set_ease(Tween.EASE_OUT)
+		tween.set_trans(Tween.TRANS_BACK)
+		tween.tween_property(actor, "position", home, DRAG_SNAPBACK_SEC)
+		tween.finished.connect(func() -> void:
+			_move_tweens.erase(unit_id)
+			_finish_drag_preview_at_home(unit_id, unit)
+		)
+		return
+	_finish_drag_preview_at_home(unit_id, unit)
+
+
+func _finish_drag_preview_at_home(unit_id: int, unit: UnitState) -> void:
+	_position_actor(unit_id, unit.position)
+	_apply_facing(unit_id, unit.facing)
+	_update_depth(unit_id)
 	var actor: CharacterActor = _actors.get(unit_id)
 	if actor != null:
 		actor.modulate = Color.WHITE
 		actor.set_running(false)
 		actor.set_walking(false)
-	if unit != null:
-		_apply_exhaustion_state(unit)
+	_apply_exhaustion_state(unit)
 
 
 func update_drag_preview(

@@ -47,9 +47,10 @@ func setup(
 func cancel_drag() -> void:
 	if not dragging:
 		return
+	var snap_back: bool = _drag_had_movement()
 	dragging = false
 	_drag_unit_id = -1
-	_end_drag_interaction(true)
+	_end_drag_interaction(true, snap_back)
 	_clear_hover_preview()
 
 
@@ -149,26 +150,30 @@ func on_left_release(local: Vector2) -> void:
 		return
 	var released_unit_id: int = _drag_unit_id
 	dragging = false
+	var committed: bool = false
 	var board: BoardState = _director.board
 	var actor := board.get_unit_by_id(released_unit_id) if board != null else null
 	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
 	if actor == null or board == null or not board.is_in_bounds(cell):
 		_drag_unit_id = released_unit_id
-		_end_drag_interaction(true)
+		_end_drag_interaction(true, _drag_had_movement())
 		_drag_unit_id = -1
 		return
 	var dropped_on := board.get_unit_at(cell)
 	if dropped_on != null and dropped_on.id != actor.id:
 		_plan_approach_or_trample_on_enemy(released_unit_id, dropped_on, local, _drag_last_free, [])
+		committed = not drag_preview_failed
 	elif cell == actor.position:
 		if _drag_unit_was_selected:
 			if not _drag_had_movement():
-				if _try_plan_wait(released_unit_id):
+				committed = _try_plan_wait(released_unit_id)
+				if committed:
 					_play_sfx("ability")
 			elif CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 				_director.rpc_plan_wait(released_unit_id)
 				_play_sfx("ability")
 				_director.select_ability(-1)
+				committed = true
 			else:
 				var self_ability := _selected_ability_data(actor)
 				if (
@@ -179,22 +184,29 @@ func on_left_release(local: Vector2) -> void:
 					_director.rpc_plan_attack(released_unit_id, _director.selected_ability_index, actor.id)
 					_play_sfx("ability")
 					_director.select_ability(-1)
+					committed = true
 				else:
 					var face: int = _facing_from_drop(local, cell)
 					if face >= 0:
 						_director.rpc_plan_face(released_unit_id, face)
 						_play_sfx("move")
+						committed = true
 		else:
 			var face_idle: int = _facing_from_drop(local, cell)
 			if face_idle >= 0:
 				_director.rpc_plan_face(released_unit_id, face_idle)
 				_play_sfx("move")
+				committed = true
 	elif dropped_on == null:
-		if not _try_commit_move_with_self_skill(released_unit_id, cell, local, []):
-			if not _try_plan_skill_at_coord(actor, cell, local):
-				_try_plan_basic_move(released_unit_id, cell, local, [])
+		if _try_commit_move_with_self_skill(released_unit_id, cell, local, []):
+			committed = true
+		elif _try_plan_skill_at_coord(actor, cell, local):
+			committed = true
+		elif _try_plan_basic_move(released_unit_id, cell, local, []):
+			committed = true
+	var snap_back: bool = _drag_had_movement() and not committed
 	_drag_unit_id = -1
-	_end_drag_interaction(false)
+	_end_drag_interaction(false, snap_back)
 
 
 func on_right_click() -> void:
@@ -330,7 +342,7 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	_planning.begin_drag_sprite(unit.id)
 
 
-func _end_drag_interaction(restore_committed: bool) -> void:
+func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> void:
 	_drag_route.clear()
 	drag_preview_failed = false
 	preview_state.clear_interaction()
@@ -338,7 +350,7 @@ func _end_drag_interaction(restore_committed: bool) -> void:
 		_planning.clear_drag_route()
 		_planning.clear_fixed_range_origin()
 		_planning.clear_threat_origin()
-		_planning.end_drag_sprite()
+		_planning.end_drag_sprite(snap_back)
 		_planning.mark_danger_dirty()
 		_planning._invalidate_hover_cache()
 		_planning._recompute_hover_ranges_from_inputs()
