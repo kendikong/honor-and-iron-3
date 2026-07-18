@@ -30,7 +30,9 @@ var _anchor_position: Vector2 = Vector2.ZERO
 var _is_dying: bool = false
 var _running: bool = false
 var _planning_exhausted: bool = false
-const _EXHAUSTED_TINT := Color(0.50, 0.50, 0.54, 0.78)
+## Opaque grey multiply on the actor root — never use alpha < 1 (that reads as muddy transparency).
+const _EXHAUSTED_TINT := Color(0.68, 0.68, 0.72, 1.0)
+const _EXHAUSTED_SHADOW_TINT := Color(0.52, 0.52, 0.56, 1.0)
 
 
 func _ready() -> void:
@@ -62,6 +64,8 @@ func clear_layers() -> void:
 		spr.stop()
 		spr.sprite_frames = null
 		spr.material = null
+		spr.modulate = Color.WHITE
+		spr.self_modulate = Color.WHITE
 		spr.z_index = 0
 		spr.visible = false
 		_pool.append(spr)
@@ -100,11 +104,15 @@ func add_layer(
 	spr.z_index = 0
 	spr.z_as_relative = true
 	spr.visible = true
+	spr.modulate = Color.WHITE
+	spr.self_modulate = Color.WHITE
 	spr.sprite_frames = frames
 	_apply_recolor_material(spr, recolor_kind, recolor, palette_base)
 	_apply_motion_state(spr)
 	_layers.append(spr)
 	move_child(spr, -1)
+	if _planning_exhausted:
+		_apply_visual_tint()
 	if _selection_glow != null and _selection_glow.is_active():
 		_selection_glow.rebuild_from_layers()
 
@@ -171,12 +179,20 @@ func set_planning_exhausted(exhausted: bool) -> void:
 
 
 func _apply_visual_tint() -> void:
-	var tint: Color = _EXHAUSTED_TINT if _planning_exhausted else Color.WHITE
-	modulate = tint
-	if _contact_shadow != null:
-		_contact_shadow.modulate = tint
+	if _planning_exhausted:
+		modulate = _EXHAUSTED_TINT
+		if _contact_shadow != null:
+			_contact_shadow.modulate = _EXHAUSTED_SHADOW_TINT
+		if _selection_glow != null:
+			_selection_glow.set_muted(true)
+	else:
+		modulate = Color.WHITE
+		if _contact_shadow != null:
+			_contact_shadow.modulate = Color.WHITE
+		if _selection_glow != null:
+			_selection_glow.set_muted(false)
 	for spr: AnimatedSprite2D in _layers:
-		spr.modulate = tint
+		spr.modulate = Color.WHITE
 
 
 func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:

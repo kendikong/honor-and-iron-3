@@ -7,6 +7,7 @@ const _OUTLINE_SHADER: Shader = preload("res://shaders/pixel_sprite_outline.gdsh
 
 var enabled: bool = false
 var glow_color: Color = Color(0.36, 0.62, 0.92, 1.0)
+var _muted: bool = false
 var _actor: CharacterActor
 var _outline_root: Node2D
 var _outline_sprites: Array[AnimatedSprite2D] = []
@@ -41,6 +42,11 @@ func set_active(active: bool, color: Color = glow_color) -> void:
 	else:
 		_clear_outlines()
 	set_process(active)
+
+
+func set_muted(muted: bool) -> void:
+	_muted = muted
+	_update_outline_alpha()
 
 
 func rebuild_from_layers() -> void:
@@ -104,8 +110,11 @@ func _sync_outline_frames() -> void:
 
 func _update_outline_alpha() -> void:
 	var pulse: float = 0.62 + 0.38 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 100.0))
+	var draw_color: Color = (
+		Color(0.58, 0.58, 0.62, 1.0) if _muted else glow_color
+	)
 	for spr: AnimatedSprite2D in _outline_sprites:
 		var mat: ShaderMaterial = spr.material as ShaderMaterial
 		if mat != null:
-			mat.set_shader_parameter("outline_color", glow_color)
-			mat.set_shader_parameter("outline_alpha", pulse)
+			mat.set_shader_parameter("outline_color", draw_color)
+			mat.set_shader_parameter("outline_alpha", pulse if not _muted else 0.85)

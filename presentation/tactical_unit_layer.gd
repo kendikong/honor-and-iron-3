@@ -446,6 +446,10 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 		actor.set_planning_exhausted(false)
 		actor.set_running(false)
 		return
+	if _director.unit_has_wait_planned(current.id):
+		actor.set_planning_exhausted(true)
+		actor.set_running(current.has_status(GameEnums.StatusType.RUNNING))
+		return
 	var can_act: bool = current.ability.points_left > 0 and not current.turn_action_used
 	var can_move: bool = (
 		current.movement.points_left > 0
