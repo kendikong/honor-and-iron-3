@@ -409,19 +409,29 @@ static func rebuild_foot_shadow_clusters(
 	if _foot_cluster_root == null:
 		return
 	var entries: Array[Dictionary] = _collect_foot_shadow_entries(actors)
+	if entries.is_empty():
+		_foot_cluster_root.clear_clusters()
+		_foot_cluster_layout_key = -1
+		return
+	var clusters: Array = _cluster_foot_shadow_entries(entries)
+	_apply_foot_cluster_visibility(entries, clusters)
 	var layout_key: int = _foot_cluster_layout_hash(entries)
 	if layout_key == _foot_cluster_layout_key:
 		_sync_foot_cluster_cloud_drift(settings)
 		return
 	_foot_cluster_layout_key = layout_key
 	_foot_cluster_root.clear_clusters()
+	for cluster: Array in clusters:
+		if cluster.size() < 2:
+			continue
+		_spawn_foot_cluster_sprite(cluster, settings)
+
+
+static func _apply_foot_cluster_visibility(entries: Array[Dictionary], clusters: Array) -> void:
 	for entry: Dictionary in entries:
 		var spr: Sprite2D = entry["sprite"] as Sprite2D
 		if spr != null:
 			spr.visible = true
-	if entries.is_empty():
-		return
-	var clusters: Array = _cluster_foot_shadow_entries(entries)
 	for cluster: Array in clusters:
 		if cluster.size() < 2:
 			continue
@@ -429,7 +439,6 @@ static func rebuild_foot_shadow_clusters(
 			var spr: Sprite2D = entry["sprite"] as Sprite2D
 			if spr != null:
 				spr.visible = false
-		_spawn_foot_cluster_sprite(cluster, settings)
 
 
 static func sync_foot_shadow_cloud_drift(actors: Array, settings: EffectsSettings) -> void:
@@ -454,7 +463,7 @@ static func _collect_foot_shadow_entries(actors: Array) -> Array[Dictionary]:
 		if not actor.has_method("get_contact_shadow_sprite"):
 			continue
 		var sprite: Sprite2D = actor.call("get_contact_shadow_sprite") as Sprite2D
-		if sprite == null or not sprite.visible or sprite.texture == null:
+		if sprite == null or sprite.texture == null:
 			continue
 		var baked: Image = null
 		var cached: Variant = _foot_bake_cache.get(actor.get_instance_id())
