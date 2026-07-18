@@ -260,6 +260,7 @@ func _init_tile_pipeline() -> void:
 	)
 	ShadowPlacer.clear_bake_cache()
 	_effects.set_map_seed(_skirmish.map_seed)
+	_effects.set_character_contact_shadow_sync(_unit_layer.sync_all_contact_shadows)
 
 
 func _exit_tree() -> void:

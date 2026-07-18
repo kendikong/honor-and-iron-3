@@ -32,6 +32,7 @@ var _map_seed: int = 1
 var _ground_wired: bool = false
 var _weather_wired: bool = false
 var _last_grid: PlayerGrid
+var _character_contact_shadow_sync: Callable = Callable()
 
 
 func setup(
@@ -163,6 +164,29 @@ func process_frame(delta: float) -> void:
 		else:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
 	_sync_contact_shadow_mask()
+	if settings.oblique_contact_shadows and _character_contact_shadow_sync.is_valid():
+		_character_contact_shadow_sync.call(settings)
+
+
+func set_character_contact_shadow_sync(callback: Callable) -> void:
+	_character_contact_shadow_sync = callback
+
+
+static func sync_contact_shadow_on_actor(actor: Node, settings: EffectsSettings) -> void:
+	if actor == null or not is_instance_valid(actor):
+		return
+	if settings == null or not settings.oblique_contact_shadows:
+		return
+	if not actor is CharacterActor:
+		return
+	(actor as CharacterActor).sync_contact_shadow(settings)
+
+
+static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsSettings) -> void:
+	if settings == null or not settings.oblique_contact_shadows:
+		return
+	for actor: Variant in actors.values():
+		sync_contact_shadow_on_actor(actor as Node, settings)
 
 
 func _sync_contact_shadow_mask() -> void:

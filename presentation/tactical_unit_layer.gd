@@ -64,6 +64,10 @@ func get_actor_map() -> Dictionary:
 	return _actors
 
 
+func sync_all_contact_shadows(settings: EffectsSettings) -> void:
+	EffectsController.sync_contact_shadow_on_actors(_actors, settings)
+
+
 func setup(map_view: TacticalMapView, director: CombatDirector, profile: CharacterGenProfile = null) -> void:
 	_map_view = map_view
 	_director = director

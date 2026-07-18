@@ -92,6 +92,7 @@ func _ready() -> void:
 		ecology_layer,
 		_scatter,
 	)
+	_effects.set_character_contact_shadow_sync(_sync_test_char_contact_shadow)
 	biome_variant = _effects.settings.biome_variant
 	_apply_biome_swap(false)
 
@@ -273,8 +274,10 @@ func _try_character_step(event: InputEventKey) -> bool:
 
 func _process(delta: float) -> void:
 	_effects.process_frame(delta)
-	if _char_actor != null and is_instance_valid(_char_actor):
-		_char_actor.sync_contact_shadow(_effects.settings)
+
+
+func _sync_test_char_contact_shadow(settings: EffectsSettings) -> void:
+	EffectsController.sync_contact_shadow_on_actor(_char_actor, settings)
 
 
 func _on_effects_toggled() -> void:
