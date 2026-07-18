@@ -21,5 +21,5 @@ void fragment() {
 		discard;
 	}
 	COLOR = tex;
-	COLOR.rgb = apply_environment_cloud_receive_rgb(COLOR.rgb, v_map_local);
+	COLOR.rgb = apply_environment_cloud_receive_rgb(COLOR.rgb, v_map_local, tile_px);
 }

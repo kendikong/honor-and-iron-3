@@ -1,11 +1,4 @@
-// Shared cloud shadow field — used by ground_shadow_composite.gdshader (single resolve pass).
-
-uniform float cloud_scale_tiles = 32.0;
-uniform float cloud_mask_low = 0.49;
-uniform float cloud_mask_high = 0.55;
-uniform float cloud_mask_steps = 8.0;
-uniform float cloud_shape_mix = 0.62;
-uniform float cloud_shape_scale = 1.73;
+// Shared cloud shadow field — functions only (uniforms live in parent .gdshader files).
 
 vec2 cloud_hash22(vec2 p) {
 	p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
@@ -37,23 +30,30 @@ float cloud_fbm(vec2 p) {
 	return v;
 }
 
-float cloud_blob_field(vec2 p) {
+float cloud_blob_field(vec2 p, float shape_mix, float shape_scale) {
 	float a = cloud_fbm(p);
-	float b = cloud_fbm(p * cloud_shape_scale + vec2(4.7, 2.1));
-	float mix_b = 1.0 - cloud_shape_mix;
-	return a * cloud_shape_mix + b * mix_b;
+	float b = cloud_fbm(p * shape_scale + vec2(4.7, 2.1));
+	float mix_b = 1.0 - shape_mix;
+	return a * shape_mix + b * mix_b;
 }
 
-float cloud_field_at_pixel(vec2 map_local, vec2 drift_time, float tile_px) {
-	vec2 p = map_local / (tile_px * max(cloud_scale_tiles, 1.0));
+float cloud_field_at_pixel(
+	vec2 map_local,
+	vec2 drift_time,
+	float tile_px,
+	float scale_tiles,
+	float shape_mix,
+	float shape_scale
+) {
+	vec2 p = map_local / (tile_px * max(scale_tiles, 1.0));
 	vec2 uv = vec2(0.86 * p.x - 0.51 * p.y, 0.51 * p.x + 0.86 * p.y) + drift_time;
-	return cloud_blob_field(uv);
+	return cloud_blob_field(uv, shape_mix, shape_scale);
 }
 
-float cloud_shadow_mask(float field) {
-	float lo = min(cloud_mask_low, cloud_mask_high - 0.001);
-	float hi = max(cloud_mask_high, lo + 0.001);
+float cloud_shadow_mask(float field, float mask_low, float mask_high, float mask_steps) {
+	float lo = min(mask_low, mask_high - 0.001);
+	float hi = max(mask_high, lo + 0.001);
 	float s = smoothstep(lo, hi, field);
-	float steps = max(cloud_mask_steps, 1.0);
+	float steps = max(mask_steps, 1.0);
 	return round(s * steps) / steps;
 }

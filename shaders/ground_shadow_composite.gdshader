@@ -26,6 +26,12 @@ uniform vec4 shadow_tint : source_color = vec4(0.74, 0.72, 0.80, 1.0);
 uniform float shadow_strength : hint_range(0.0, 1.0) = 1.0;
 uniform vec4 cloud_shadow_tint : source_color = vec4(0.75, 0.73, 0.82, 1.0);
 uniform float cloud_shadow_strength : hint_range(0.0, 1.0) = 0.72;
+uniform float cloud_scale_tiles = 32.0;
+uniform float cloud_mask_low = 0.49;
+uniform float cloud_mask_high = 0.55;
+uniform float cloud_mask_steps = 8.0;
+uniform float cloud_shape_mix = 0.62;
+uniform float cloud_shape_scale = 1.73;
 
 const float ALPHA_CUTOFF = 0.04;
 
@@ -77,8 +83,17 @@ void fragment() {
 
 	float cloud_shade = 0.0;
 	if (enable_cloud_shadows > 0.5) {
-		float field = cloud_field_at_pixel(map_local, cloud_drift_offset, tile_px);
-		float cloud_mask = cloud_shadow_mask(field);
+		float field = cloud_field_at_pixel(
+			map_local,
+			cloud_drift_offset,
+			tile_px,
+			cloud_scale_tiles,
+			cloud_shape_mix,
+			cloud_shape_scale
+		);
+		float cloud_mask = cloud_shadow_mask(
+			field, cloud_mask_low, cloud_mask_high, cloud_mask_steps
+		);
 		cloud_shade = cloud_mask * cloud_shadow_strength;
 	}
 
