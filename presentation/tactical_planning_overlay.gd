@@ -79,7 +79,7 @@ func setup(
 	z_index = 8
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
-	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: Dictionary) -> void:
+	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
 		_invalidate_hover_cache()
 		_recompute_hover_ranges_from_inputs()
 	)

@@ -9,21 +9,21 @@ void fragment() {
 	vec4 col = texture(TEXTURE, UV);
 	if (col.a > 0.01) {
 		COLOR = vec4(0.0);
-		return;
-	}
-	vec2 ps = TEXTURE_PIXEL_SIZE * float(outline_px);
-	float max_a = 0.0;
-	max_a = max(max_a, texture(TEXTURE, UV + vec2(ps.x, 0.0)).a);
-	max_a = max(max_a, texture(TEXTURE, UV + vec2(-ps.x, 0.0)).a);
-	max_a = max(max_a, texture(TEXTURE, UV + vec2(0.0, ps.y)).a);
-	max_a = max(max_a, texture(TEXTURE, UV + vec2(0.0, -ps.y)).a);
-	max_a = max(max_a, texture(TEXTURE, UV + vec2(ps.x, ps.y)).a);
-	max_a = max(max_a, texture(TEXTURE, UV + vec2(-ps.x, ps.y)).a);
-	max_a = max(max_a, texture(TEXTURE, UV + vec2(ps.x, -ps.y)).a);
-	max_a = max(max_a, texture(TEXTURE, UV + vec2(-ps.x, -ps.y)).a);
-	if (max_a > 0.08) {
-		COLOR = vec4(outline_color.rgb, outline_color.a * outline_alpha);
 	} else {
-		COLOR = vec4(0.0);
+		vec2 ps = TEXTURE_PIXEL_SIZE * float(outline_px);
+		float max_a = 0.0;
+		max_a = max(max_a, texture(TEXTURE, UV + vec2(ps.x, 0.0)).a);
+		max_a = max(max_a, texture(TEXTURE, UV + vec2(-ps.x, 0.0)).a);
+		max_a = max(max_a, texture(TEXTURE, UV + vec2(0.0, ps.y)).a);
+		max_a = max(max_a, texture(TEXTURE, UV + vec2(0.0, -ps.y)).a);
+		max_a = max(max_a, texture(TEXTURE, UV + vec2(ps.x, ps.y)).a);
+		max_a = max(max_a, texture(TEXTURE, UV + vec2(-ps.x, ps.y)).a);
+		max_a = max(max_a, texture(TEXTURE, UV + vec2(ps.x, -ps.y)).a);
+		max_a = max(max_a, texture(TEXTURE, UV + vec2(-ps.x, -ps.y)).a);
+		if (max_a > 0.08) {
+			COLOR = vec4(outline_color.rgb, outline_color.a * outline_alpha);
+		} else {
+			COLOR = vec4(0.0);
+		}
 	}
 }
