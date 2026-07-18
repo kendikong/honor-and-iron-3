@@ -54,6 +54,7 @@ var plan_revision: int = 0
 ## Units touched by the latest plan add/remove (lightweight view refresh).
 var plan_affected_unit_ids: Array[int] = []
 var _queued_preview: SimResult = null
+var _pending_preview_build: Dictionary = {}
 ## Populated by _try_add_multiple to skip a second simulate_player_turn in _refresh_plan.
 var _pending_refresh_sim: Dictionary = {}
 
@@ -432,7 +433,6 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 		target_plans[i].add(actions[i])
 		if actions[i].type == GameEnums.ActionType.MOVE:
 			_commit_animate_actions.append(actions[i])
-	plan_affected_unit_ids = new_actors.duplicate()
 	_pending_refresh_sim = {
 		"projected": trial.clone(),
 		"player_events": ev.duplicate(),
@@ -1311,6 +1311,7 @@ func _refresh_plan() -> void:
 
 	if any_cancelled:
 		_pending_refresh_sim.clear()
+		_pending_preview_build.clear()
 		_refresh_plan()
 		return
 
@@ -1341,31 +1342,43 @@ func _refresh_plan() -> void:
 	EventBus.board_changed.emit(board)
 	EventBus.timeline_changed.emit(plan_to_run, statuses)
 	
-	var preview_board: BoardState = projected_state.clone()
-	var evs: Array[SimEvent] = []
-	for e: SimEvent in player_events:
-		evs.append(e)
-	evs.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
-	for intent: Intent in new_intents:
-		for action: TimelineAction in intent.actions:
-			ResolutionPipeline.apply_action(preview_board, action, evs)
-	ResolutionPipeline.resolve_pending_pushes(preview_board, evs)
-	
-	var sim_res := SimResult.new(preview_board)
-	sim_res.events = evs
-	_queue_preview_updated(sim_res)
+	_pending_preview_build = {
+		"projected": projected_state.clone(),
+		"player_events": player_events.duplicate(),
+		"intents": new_intents.duplicate(),
+	}
+	_queue_preview_updated()
 
-func _queue_preview_updated(result: SimResult) -> void:
-	_queued_preview = result
+func _queue_preview_updated() -> void:
 	call_deferred("_emit_queued_preview")
 
 
 func _emit_queued_preview() -> void:
-	if _queued_preview == null:
+	if _pending_preview_build.is_empty():
+		if _queued_preview != null:
+			var res: SimResult = _queued_preview
+			_queued_preview = null
+			EventBus.preview_updated.emit(res)
 		return
-	var res: SimResult = _queued_preview
-	_queued_preview = null
-	EventBus.preview_updated.emit(res)
+	var projected: BoardState = _pending_preview_build["projected"] as BoardState
+	var player_events: Array = _pending_preview_build["player_events"]
+	var new_intents: Array = _pending_preview_build["intents"]
+	_pending_preview_build.clear()
+	var preview_board: BoardState = projected.clone()
+	var evs: Array[SimEvent] = []
+	for e: Variant in player_events:
+		if e is SimEvent:
+			evs.append(e)
+	evs.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
+	for intent: Variant in new_intents:
+		if not intent is Intent:
+			continue
+		for action: TimelineAction in (intent as Intent).actions:
+			ResolutionPipeline.apply_action(preview_board, action, evs)
+	ResolutionPipeline.resolve_pending_pushes(preview_board, evs)
+	var sim_res := SimResult.new(preview_board)
+	sim_res.events = evs
+	EventBus.preview_updated.emit(sim_res)
 
 func _capture_turn_start() -> void:
 	turn_start_board = base_board.clone()
