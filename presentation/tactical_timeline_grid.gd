@@ -165,9 +165,21 @@ func _add_party_row(
 	_add_body_cell(row, stats_text, stats_tip, COLOR_MUTED if not is_selected else Color(0.78, 0.82, 0.88), W_STATS, false)
 	var slots: Dictionary = _plan_slots_for_unit(timeline, unit.id)
 	var warn: String = ""
-	warn = _append_plan_cell(row, slots.get("pre", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_PRE) or warn
-	warn = _append_plan_cell(row, slots.get("action", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_ACT) or warn
-	warn = _append_plan_cell(row, slots.get("post", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_POST) or warn
+	var cell_warn: String = _append_plan_cell(
+		row, slots.get("pre", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_PRE,
+	)
+	if not cell_warn.is_empty():
+		warn = cell_warn
+	cell_warn = _append_plan_cell(
+		row, slots.get("action", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_ACT,
+	)
+	if not cell_warn.is_empty() and warn.is_empty():
+		warn = cell_warn
+	cell_warn = _append_plan_cell(
+		row, slots.get("post", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_POST,
+	)
+	if not cell_warn.is_empty() and warn.is_empty():
+		warn = cell_warn
 	var unit_id: int = unit.id
 	row_panel.mouse_entered.connect(func() -> void:
 		if is_empty:
