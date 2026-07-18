@@ -192,24 +192,32 @@ static func sync_contact_shadow_on_actor(actor: Node, settings: EffectsSettings)
 	char_actor.sync_contact_shadow(settings)
 
 
-static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsSettings) -> void:
+static func sync_contact_shadow_on_actors(
+	actors: Dictionary,
+	settings: EffectsSettings,
+	shadow_root: Node2D = null,
+) -> void:
 	var sorted: Array = []
 	for actor: Variant in actors.values():
 		if actor != null and is_instance_valid(actor):
 			sorted.append(actor)
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
-	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings, null)
+	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings, shadow_root)
 
 
-static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
+static func sync_contact_shadow_on_actor_list(
+	actors: Array,
+	settings: EffectsSettings,
+	shadow_root: Node2D = null,
+) -> void:
 	var sorted: Array = []
 	for actor: Variant in actors:
 		if actor != null and is_instance_valid(actor):
 			sorted.append(actor)
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
-	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings, null)
+	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings, shadow_root)
 
 
 func _sync_contact_shadow_mask() -> void:

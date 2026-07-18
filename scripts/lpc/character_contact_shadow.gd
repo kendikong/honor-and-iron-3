@@ -1,7 +1,7 @@
 class_name CharacterContactShadow
 extends Node2D
 
-## Oblique multiply contact shadow for LPC actor — delegates to ShadowPlacer.sync_actor_contact_shadow.
+## Oblique contact shadow bake for LPC actors — ground display is unified in GroundShadows (no per-sprite multiply).
 
 const _LPC = preload("res://scripts/lpc/lpc_constants.gd")
 const TILE_PX: int = 16
@@ -24,10 +24,6 @@ func _ready() -> void:
 	_sprite.z_as_relative = true
 	_sprite.z_index = 0
 	_sprite.visible = false
-	_sprite.material = ShadowPlacer.duplicate_shadow_material()
-	var mat: ShaderMaterial = _sprite.material as ShaderMaterial
-	if mat != null:
-		mat.set_shader_parameter("has_map_oblique", 0.0)
 	add_child(_sprite)
 
 

@@ -203,6 +203,10 @@ func get_effects_settings() -> EffectsSettings:
 	return _effects.settings
 
 
+func get_shadow_sprites() -> Node2D:
+	return _shadow_sprites
+
+
 func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 	var zoom: float = _map_root.scale.x
 	if zoom < 0.001:

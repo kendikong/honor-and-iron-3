@@ -280,7 +280,11 @@ func _process(delta: float) -> void:
 
 
 func _sync_test_char_contact_shadow(settings: EffectsSettings) -> void:
-	EffectsController.sync_contact_shadow_on_actor_list(_test_unit_actors(), settings)
+	EffectsController.sync_contact_shadow_on_actor_list(
+		_test_unit_actors(),
+		settings,
+		_shadow_sprites,
+	)
 
 
 func _test_unit_actors() -> Array[CharacterActor]:

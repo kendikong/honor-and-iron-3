@@ -65,7 +65,10 @@ func get_actor_map() -> Dictionary:
 
 
 func sync_all_contact_shadows(settings: EffectsSettings) -> void:
-	EffectsController.sync_contact_shadow_on_actors(_actors, settings)
+	var shadow_root: Node2D = null
+	if _map_view != null:
+		shadow_root = _map_view.get_shadow_sprites()
+	EffectsController.sync_contact_shadow_on_actors(_actors, settings, shadow_root)
 
 
 func setup(map_view: TacticalMapView, director: CombatDirector, profile: CharacterGenProfile = null) -> void:

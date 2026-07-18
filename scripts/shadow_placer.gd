@@ -309,7 +309,7 @@ static func sync_actor_contact_shadow(
 		_last_actor_synced_silhouette = -1
 		if actor != null:
 			_foot_bake_cache.erase(actor.get_instance_id())
-		_clear_actor_sprite(sprite)
+		_suppress_foot_sprite_display(sprite)
 		return
 	var want_actor_rebake: bool = not geometry_blocked and (map_applied or silhouette_stale)
 	var need_geometry: bool = (
@@ -330,7 +330,7 @@ static func sync_actor_contact_shadow(
 			caster, foot_center_tex, foot_local, settings,
 		)
 		if baked.is_empty():
-			_clear_actor_sprite(sprite)
+			_suppress_foot_sprite_display(sprite)
 			return
 		debug_record_actor_bake(int((Time.get_ticks_usec() - t0_us) / 1000))
 		var img: Image = baked["image"] as Image
@@ -345,16 +345,21 @@ static func sync_actor_contact_shadow(
 		_last_actor_synced_silhouette = silhouette_version
 		_last_actor_bake_key = map_epoch * 1000 + silhouette_version
 		if actor != null:
-			_foot_bake_cache[actor.get_instance_id()] = img.duplicate()
+			_store_foot_bake_cache(actor.get_instance_id(), img, _foot_map_origin(sprite))
 	elif actor != null and sprite.texture != null and not _foot_bake_cache.has(actor.get_instance_id()):
 		var existing: Image = (sprite.texture as ImageTexture).get_image()
 		if existing != null and not existing.is_empty():
-			_foot_bake_cache[actor.get_instance_id()] = existing.duplicate()
+			_store_foot_bake_cache(actor.get_instance_id(), existing.duplicate(), _foot_map_origin(sprite))
+	if actor != null and _foot_bake_cache.has(actor.get_instance_id()):
+		var map_origin: Vector2 = _foot_map_origin(sprite)
+		var entry: Dictionary = _foot_bake_cache[actor.get_instance_id()] as Dictionary
+		var old_origin: Vector2 = entry.get("map_origin", Vector2.ZERO) as Vector2
+		entry["map_origin"] = map_origin
+		if old_origin.distance_to(map_origin) > 0.5:
+			_unit_feet_layout_key = -1
 	if need_geometry:
 		_unit_feet_layout_key = -1
-	sprite.visible = false
-	sprite.modulate = Color.WHITE
-	sprite.texture_filter = _shadow_texture_filter(settings)
+	_suppress_foot_sprite_display(sprite)
 
 
 static func set_active_shadow_root(root: Node2D) -> void:
@@ -389,14 +394,15 @@ static func rebuild_unit_feet_atlas(
 		_sync_ground_shadow_uniforms(settings, shadow_root)
 		return
 	var entries: Array[Dictionary] = _collect_foot_shadow_entries(actors, shadow_root)
+	_hide_actor_foot_sprites(actors)
 	var layout_key: int = _foot_cluster_layout_hash(entries)
 	if layout_key == _unit_feet_layout_key:
+		_sync_ground_shadow_uniforms(settings, shadow_root)
 		return
 	_unit_feet_layout_key = layout_key
 	for entry: Dictionary in entries:
 		var spr: Sprite2D = entry["sprite"] as Sprite2D
-		if spr != null:
-			spr.visible = false
+		_suppress_foot_sprite_display(spr)
 	if entries.is_empty():
 		_unit_feet_overlay = {}
 		_sync_ground_shadow_uniforms(settings, shadow_root)
@@ -453,19 +459,21 @@ static func _collect_foot_shadow_entries(
 			continue
 		if not actor.has_method("get_contact_shadow_sprite"):
 			continue
+		var cached: Variant = _foot_bake_cache.get(actor.get_instance_id())
+		if cached == null:
+			continue
+		var baked: Image = null
+		var map_origin: Vector2 = Vector2.ZERO
+		if cached is Dictionary:
+			baked = cached.get("image") as Image
+			map_origin = cached.get("map_origin", Vector2.ZERO) as Vector2
+		elif cached is Image:
+			baked = cached as Image
 		var sprite: Sprite2D = actor.call("get_contact_shadow_sprite") as Sprite2D
-		if sprite == null or sprite.texture == null:
-			continue
-		var baked: Image = _foot_bake_cache.get(actor.get_instance_id()) as Image
-		if baked == null or baked.is_empty():
-			var tex: ImageTexture = sprite.texture as ImageTexture
-			if tex != null:
-				baked = tex.get_image()
 		if baked == null or baked.is_empty():
 			continue
-		var map_origin: Vector2 = sprite.global_position
-		if shadow_root != null:
-			map_origin = shadow_root.to_local(sprite.global_position)
+		if map_origin.is_equal_approx(Vector2.ZERO) and sprite != null:
+			map_origin = _foot_map_origin(sprite, shadow_root)
 		entries.append({
 			"actor": actor,
 			"actor_id": actor.get_instance_id(),
@@ -597,10 +605,46 @@ static func _sync_ground_shadow_uniforms(
 
 
 static func _clear_actor_sprite(sprite: Sprite2D) -> void:
+	_suppress_foot_sprite_display(sprite)
+
+
+static func _suppress_foot_sprite_display(sprite: Sprite2D) -> void:
 	if sprite == null:
 		return
-	sprite.texture = null
 	sprite.visible = false
+	sprite.material = null
+	sprite.texture = null
+
+
+static func _hide_actor_foot_sprites(actors: Array) -> void:
+	for actor_var: Variant in actors:
+		var actor: Node = actor_var as Node
+		if actor == null or not is_instance_valid(actor):
+			continue
+		if not actor.has_method("get_contact_shadow_sprite"):
+			continue
+		var sprite: Sprite2D = actor.call("get_contact_shadow_sprite") as Sprite2D
+		_suppress_foot_sprite_display(sprite)
+
+
+static func _foot_map_origin(sprite: Sprite2D, shadow_root: Node2D = null) -> Vector2:
+	if sprite == null:
+		return Vector2.ZERO
+	if shadow_root == null:
+		shadow_root = _active_shadow_root
+	if shadow_root != null:
+		return shadow_root.to_local(sprite.global_position)
+	return sprite.global_position
+
+
+static func _store_foot_bake_cache(actor_id: int, image: Image, map_origin: Vector2) -> void:
+	if image == null or image.is_empty():
+		_foot_bake_cache.erase(actor_id)
+		return
+	_foot_bake_cache[actor_id] = {
+		"image": image.duplicate(),
+		"map_origin": map_origin,
+	}
 
 
 static func _fade_visibility(presence: float, contrast: float) -> float:
