@@ -191,6 +191,13 @@ static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsS
 		sync_contact_shadow_on_actor(actor as Node, settings)
 
 
+static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
+	if settings == null or not settings.oblique_contact_shadows:
+		return
+	for actor: Variant in actors:
+		sync_contact_shadow_on_actor(actor as Node, settings)
+
+
 func _sync_contact_shadow_mask() -> void:
 	if _atmosphere == null:
 		return

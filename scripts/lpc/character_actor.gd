@@ -138,6 +138,17 @@ func set_item_visibility(item_id: String, visible: bool) -> void:
 
 func rebuild_contact_shadow(settings: EffectsSettings = null) -> void:
 	_rebuild_contact_shadow_silhouette()
+	invalidate_environment_shadow_sync()
+	sync_contact_shadow(settings)
+
+
+func invalidate_environment_shadow_sync() -> void:
+	_sprite_shadow_stamp = -1
+	_sprite_shadow_pos = Vector2(1.0e9, 1.0e9)
+
+
+func force_environment_shadow_sync(settings: EffectsSettings = null) -> void:
+	invalidate_environment_shadow_sync()
 	sync_contact_shadow(settings)
 
 

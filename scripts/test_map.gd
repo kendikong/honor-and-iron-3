@@ -280,9 +280,24 @@ func _process(delta: float) -> void:
 
 
 func _sync_test_char_contact_shadow(settings: EffectsSettings) -> void:
-	EffectsController.sync_contact_shadow_on_actor(_char_actor, settings)
+	EffectsController.sync_contact_shadow_on_actor_list(_test_unit_actors(), settings)
+
+
+func _test_unit_actors() -> Array[CharacterActor]:
+	var actors: Array[CharacterActor] = []
+	if _char_actor != null and is_instance_valid(_char_actor):
+		actors.append(_char_actor)
 	for actor: CharacterActor in _extra_actors:
-		EffectsController.sync_contact_shadow_on_actor(actor, settings)
+		if actor != null and is_instance_valid(actor):
+			actors.append(actor)
+	return actors
+
+
+func _sync_all_test_unit_shadows() -> void:
+	var settings: EffectsSettings = _effects.settings
+	LpcPaletteStore.sync_shared_shadow_uniforms(settings)
+	for actor: CharacterActor in _test_unit_actors():
+		actor.force_environment_shadow_sync(settings)
 
 
 func _on_effects_toggled() -> void:
@@ -491,6 +506,7 @@ func _regenerate() -> void:
 	if _char_mover != null and _player_grid != null:
 		_char_mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter)
 	_sync_extra_unit_grids()
+	_sync_all_test_unit_shadows()
 
 
 func _sync_debug_views() -> void:
@@ -581,6 +597,7 @@ func _spawn_character_actor() -> void:
 	_reroll_character()
 	_place_player_actor()
 	_spawn_extra_units()
+	_sync_all_test_unit_shadows()
 
 
 func _clear_extra_units() -> void:
@@ -739,6 +756,7 @@ func _reroll_character() -> void:
 		)
 	if _char_mover != null and is_instance_valid(_char_mover):
 		_char_mover.refresh_depth_sort()
+	_sync_all_test_unit_shadows()
 
 
 func _export_player_grid() -> void:
@@ -784,3 +802,4 @@ func _on_character_gen_changed() -> void:
 	for actor: CharacterActor in _extra_actors:
 		if actor != null and is_instance_valid(actor):
 			actor.set_display_scale(_char_profile.display_scale)
+	_sync_all_test_unit_shadows()
