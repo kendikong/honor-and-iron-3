@@ -198,17 +198,7 @@ static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSe
 func _sync_contact_shadow_mask() -> void:
 	if _atmosphere == null:
 		return
-	if not settings.cloud_shadows or not settings.oblique_contact_shadows:
-		_atmosphere.set_contact_shadow_overlay(null, Vector2.ZERO, false)
-		return
-	if _shadow_sprites == null or _shadow_sprites.get_child_count() < 1:
-		_atmosphere.set_contact_shadow_overlay(null, Vector2.ZERO, false)
-		return
-	var sprite: Sprite2D = _shadow_sprites.get_child(0) as Sprite2D
-	if sprite == null or sprite.texture == null:
-		_atmosphere.set_contact_shadow_overlay(null, Vector2.ZERO, false)
-		return
-	_atmosphere.set_contact_shadow_overlay(sprite.texture, sprite.position, true)
+	_atmosphere.set_contact_shadow_overlay(null, Vector2.ZERO, false)
 
 
 func _apply_wind_bus() -> void:
