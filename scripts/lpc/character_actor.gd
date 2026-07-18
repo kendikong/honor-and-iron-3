@@ -140,6 +140,14 @@ func rebuild_contact_shadow(settings: EffectsSettings = null) -> void:
 func sync_contact_shadow(settings: EffectsSettings = null) -> void:
 	if _contact_shadow != null:
 		_contact_shadow.sync(settings)
+	_sync_sprite_shadow_receive(settings)
+
+
+func _sync_sprite_shadow_receive(settings: EffectsSettings = null) -> void:
+	for spr: AnimatedSprite2D in _layers:
+		if spr == null or not is_instance_valid(spr):
+			continue
+		ShadowPlacer.sync_lpc_sprite_shadow_receive(spr, self, settings)
 
 
 func _rebuild_contact_shadow_silhouette() -> void:
@@ -463,7 +471,11 @@ func _apply_recolor_material(
 	if not LpcPaletteStore.palettes_available():
 		spr.material = null
 		return
-	spr.material = LpcPaletteStore.get_recolor_material(recolor_kind, recolor, palette_base)
+	var shared: ShaderMaterial = LpcPaletteStore.get_recolor_material(recolor_kind, recolor, palette_base)
+	if shared == null:
+		spr.material = null
+		return
+	spr.material = shared.duplicate()
 
 
 func _apply_motion_state(spr: AnimatedSprite2D) -> void:
