@@ -24,7 +24,6 @@ var _drag_route: Array[Vector2i] = []
 var _drag_last_free: Vector2i = Vector2i(-1, -1)
 var _drag_unit_was_selected: bool = false
 var _drag_saved_preview: BoardState = null
-var _drag_committed_preview_stashed: bool = false
 var preview_state: CombatPlanningPreview = CombatPlanningPreview.new()
 var drag_sim_actor_pos: Vector2i = Vector2i.ZERO
 var drag_preview_failed: bool = false
@@ -443,8 +442,12 @@ func _on_board_changed(_board: BoardState) -> void:
 	_drag_route.clear()
 	drag_preview_failed = false
 	drag_sim_actor_pos = Vector2i.ZERO
-	_drag_committed_preview_stashed = false
-	preview_state.clear_interaction()
+	if _drag_saved_preview != null:
+		_restore_committed_preview()
+	else:
+		preview_state.clear_interaction()
+		if _planning != null:
+			_planning.restore_committed_display()
 	if _planning != null:
 		_planning.clear_drag_route()
 		_planning.clear_fixed_range_origin()
@@ -459,12 +462,10 @@ func _stash_committed_preview() -> void:
 	if _planning != null:
 		_planning.stash_committed_preview()
 		_drag_saved_preview = _planning.get_preview_board()
-		_drag_committed_preview_stashed = true
 
 
 func _restore_committed_preview() -> void:
 	_drag_saved_preview = null
-	_drag_committed_preview_stashed = false
 	preview_state.clear_all()
 	if _planning != null:
 		_planning.restore_stashed_committed()
@@ -504,7 +505,7 @@ func _run_planning_selection_refresh() -> void:
 
 
 func _finish_selection_changed() -> void:
-	if not _drag_committed_preview_stashed and _planning != null:
+	if _drag_saved_preview == null and _planning != null:
 		_planning.stash_committed_preview()
 	_request_planning_selection_refresh()
 
@@ -519,7 +520,6 @@ func _on_ability_selected(index: int) -> void:
 
 func _on_preview_updated(_result: SimResult) -> void:
 	_drag_saved_preview = null
-	_drag_committed_preview_stashed = false
 	if dragging:
 		return
 	_schedule_plan_refresh_followup()

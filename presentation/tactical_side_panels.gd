@@ -335,7 +335,7 @@ func _on_preview_updated(result: SimResult) -> void:
 	if _intent_state != null:
 		_intent_state.set_preview_board(result.final_state)
 	_refresh_info()
-	_refresh_ability_buttons_if_dirty()
+	_rebuild_ability_buttons()
 
 
 func _on_selection_changed(unit_id: int) -> void:

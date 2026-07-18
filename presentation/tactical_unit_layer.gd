@@ -143,29 +143,9 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
-	if _is_planning_phase():
-		_lightweight_planning_board_refresh()
-	else:
-		_sync_actors()
-		_refresh_planning_visuals()
+	_sync_actors()
+	_refresh_planning_visuals()
 	queue_redraw()
-
-
-func _lightweight_planning_board_refresh() -> void:
-	if _board == null:
-		return
-	for unit: UnitState in _board.units:
-		if not unit.is_alive():
-			continue
-		_ensure_actor(unit)
-		if unit.is_enemy():
-			if not _move_tweens.has(unit.id):
-				_position_actor(unit.id, unit.position)
-				_apply_facing(unit.id, unit.facing)
-		else:
-			_apply_exhaustion_state(unit)
-		_update_depth(unit.id)
-	_refresh_selection_glow()
 
 
 func _on_preview_updated(result: SimResult) -> void:
@@ -188,25 +168,14 @@ func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> 
 		_sync_planning_actor_positions()
 
 
-func _refresh_planning_visuals(affected_unit_ids: Array[int] = []) -> void:
-	if affected_unit_ids.is_empty():
-		for unit_id: Variant in _actors:
-			var actor: CharacterActor = _actors[unit_id] as CharacterActor
-			if actor != null:
-				actor.modulate = Color.WHITE
-		if _board != null:
-			for unit: UnitState in _board.units:
-				if unit.is_alive() and not unit.is_enemy():
-					_apply_exhaustion_state(unit)
-	else:
-		for unit_id: int in affected_unit_ids:
-			var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
-			if actor != null:
-				actor.modulate = Color.WHITE
-			if _board == null:
-				continue
-			var unit: UnitState = _board.get_unit_by_id(unit_id)
-			if unit != null and unit.is_alive() and not unit.is_enemy():
+func _refresh_planning_visuals() -> void:
+	for unit_id: Variant in _actors:
+		var actor: CharacterActor = _actors[unit_id] as CharacterActor
+		if actor != null:
+			actor.modulate = Color.WHITE
+	if _board != null:
+		for unit: UnitState in _board.units:
+			if unit.is_alive() and not unit.is_enemy():
 				_apply_exhaustion_state(unit)
 	_refresh_selection_glow()
 
@@ -214,17 +183,17 @@ func _refresh_planning_visuals(affected_unit_ids: Array[int] = []) -> void:
 func _refresh_selection_glow() -> void:
 	var planning: bool = CombatDirector.is_planning_phase(_phase)
 	var new_glow_id: int = _selected_id if planning else -1
-	if new_glow_id < 0:
-		if _glow_selected_id >= 0:
-			_set_unit_selection_glow(_glow_selected_id, false)
-		_glow_selected_id = -1
+	if new_glow_id == _glow_selected_id:
 		return
-	if _glow_selected_id >= 0 and _glow_selected_id != new_glow_id:
+	if _glow_selected_id >= 0:
 		_set_unit_selection_glow(_glow_selected_id, false)
-	_glow_selected_id = new_glow_id
+	_glow_selected_id = -1
+	if new_glow_id < 0:
+		return
 	var unit := _board.get_unit_by_id(new_glow_id) if _board != null else null
 	var color: Color = _COLOR_SELECT_ENEMY if unit != null and unit.is_enemy() else _COLOR_SELECT_PLAYER
 	_set_unit_selection_glow(new_glow_id, true, color)
+	_glow_selected_id = new_glow_id
 
 
 func _set_unit_selection_glow(unit_id: int, active: bool, color: Color = _COLOR_SELECT_PLAYER) -> void:
@@ -330,6 +299,7 @@ func _sync_actors() -> void:
 		elif _move_tweens.has(unit.id):
 			pass
 		elif _is_planning_phase() and not unit.is_enemy():
+			# Planning walk/snap is driven by timeline_changed (and commit anim events).
 			pass
 		else:
 			_position_actor(unit.id, unit.position)
@@ -614,19 +584,12 @@ func _is_planning_phase() -> bool:
 func _sync_planning_actor_positions() -> void:
 	if _board == null or _map_view == null or not _is_planning_phase():
 		return
-	var force_sync: Dictionary = {}
-	if _director != null:
-		for unit_id: int in _director.plan_affected_unit_ids:
-			force_sync[unit_id] = true
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or unit.is_enemy():
 			continue
-		_ensure_actor(unit)
 		if _drag_preview_active and unit.id == _drag_preview_id:
 			continue
-		if force_sync.has(unit.id):
-			_kill_move_tween(unit.id)
-		elif _move_tweens.has(unit.id):
+		if _move_tweens.has(unit.id):
 			continue
 		_sync_planning_unit_position(unit)
 
