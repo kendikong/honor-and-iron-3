@@ -7,7 +7,7 @@ const MAX_PARTY_SLOTS: int = 4
 const W_PLAYER: int = 30
 const W_NAME: int = 72
 const W_CLASS: int = 30
-const W_STATS: int = 132
+const W_STATS: int = 148
 const ROW_HEIGHT: int = 38
 const COLOR_FAIL: Color = Color(1.0, 0.38, 0.38)
 const COLOR_HEADER: Color = Color(0.58, 0.62, 0.70)
@@ -146,12 +146,14 @@ func _add_party_row(
 		_add_plan_cell(row, "—", "", false, COLOR_ACCENT_POST, plan_active)
 		row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return ""
-	var stats_text: String = "Lv%d  %d/%d HP  Mov %d" % [
-		unit.level,
-		unit.health.current_hp,
-		unit.health.max_hp,
-		unit.movement.max_points,
-	]
+	var stats_text: String = (
+		"⭐%d  ♥%d/%d\n💪%d 🛡️%d 🔮%d 👟%d"
+		% [
+			unit.level, unit.health.current_hp, unit.health.max_hp,
+			unit.current_strength, unit.armor, unit.current_magic,
+			unit.movement.max_points,
+		]
+	)
 	var stats_tip: String = (
 		"Level %d · HP %d/%d · MOV %d · STR %d · DEF %d · MAG %d · Armor %d"
 		% [
