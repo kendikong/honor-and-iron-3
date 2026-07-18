@@ -607,7 +607,24 @@ func _play_attack_anim(event: SimEvent) -> void:
 			var delta2 := target_unit.position - unit.position
 			if delta2 != Vector2i.ZERO:
 				thrust_dir = Vector2(delta2).normalized()
+	var ability_id: StringName = event.data.get("ability", &"")
+	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
+	if ability_data != null and not AbilitySystem.ability_uses_attack_animation(ability_data):
+		actor.play_spellcast(_spell_anim(facing))
+		return
 	actor.play_attack_thrust(thrust_dir, anim)
+
+
+func _ability_for_event(unit_id: int, ability_id: StringName) -> AbilityData:
+	if _board == null or ability_id == &"":
+		return null
+	var unit := _board.get_unit_by_id(unit_id)
+	if unit == null:
+		return null
+	for ability: AbilityData in unit.active_abilities:
+		if ability.id == ability_id:
+			return ability
+	return null
 
 
 func _attack_anim(facing: int) -> StringName:
@@ -953,10 +970,10 @@ func _draw_hp_bar(unit: UnitState) -> void:
 		draw_rect(Rect2(origin + Vector2(BAR_W - fort_w, 0.0), Vector2(fort_w, BAR_H)), Color(0.35, 0.65, 0.35, 0.9), true)
 	if not unit.active_statuses.is_empty():
 		var start_x: float = origin.x + 4.0
-		var start_y: float = origin.y + BAR_H + 2.0
+		var start_y: float = origin.y + BAR_H + 1.0
 		var count := 0
 		for status: StatusData in unit.active_statuses:
-			var pos := Vector2(start_x + float(count % 3) * 12.0, start_y + float(count / 3) * 12.0)
+			var pos := Vector2(start_x + float(count % 4) * 7.0, start_y + float(count / 4) * 7.0)
 			_draw_status_icon(pos, _status_icon(status.type))
 			count += 1
 
@@ -965,7 +982,7 @@ func _draw_status_icon(pos: Vector2, text: String) -> void:
 	var font: Font = ThemeDB.fallback_font
 	if font == null:
 		return
-	var size_px := 8
+	var size_px := 5
 	var sz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px)
 	draw_string(font, pos - Vector2(0.0, sz.y * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, Color.WHITE)
 

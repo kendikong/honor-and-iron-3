@@ -160,6 +160,42 @@ func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:
 	)
 
 
+func play_spellcast(cast_anim: StringName) -> void:
+	_kill_combat_tween()
+	_walking = true
+	_facing = cast_anim
+	_one_shot_generation += 1
+	var generation: int = _one_shot_generation
+	var duration: float = 0.45
+	for spr: AnimatedSprite2D in _layers:
+		if spr.sprite_frames == null:
+			continue
+		LpcSheetFrames.ensure_animation(spr.sprite_frames, cast_anim)
+		if not spr.sprite_frames.has_animation(cast_anim):
+			continue
+		spr.sprite_frames.set_animation_loop(cast_anim, false)
+		spr.animation = cast_anim
+		spr.speed_scale = 1.0
+		spr.frame = 0
+		spr.play()
+		var fps: float = spr.sprite_frames.get_animation_speed(cast_anim)
+		var frame_count: int = spr.sprite_frames.get_frame_count(cast_anim)
+		if fps > 0.0:
+			duration = maxf(duration, float(frame_count) / fps)
+	_rebuild_contact_shadow_silhouette()
+	get_tree().create_timer(duration).timeout.connect(
+		_finish_spellcast.bind(generation),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func _finish_spellcast(generation: int) -> void:
+	if generation != _one_shot_generation:
+		return
+	_one_shot_generation = 0
+	set_walking(false)
+
+
 func play_hurt(facing_anim: StringName, knockback_dir: Vector2 = Vector2.ZERO) -> void:
 	if _is_dying:
 		return

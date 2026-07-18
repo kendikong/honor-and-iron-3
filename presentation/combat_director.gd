@@ -386,11 +386,27 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 		if actor != null and target != null and not actor.active_abilities.is_empty():
 			var index := clampi(selected_ability_index, 0, actor.active_abilities.size() - 1)
 			var ability: AbilityData = actor.active_abilities[index]
-			var rng: int = ability.range_tiles
-			if GridSystem.manhattan(actor.position, target.position) > rng:
+			var rng: int = actor.get_ability_range(ability)
+			var self_after_move: bool = (
+				attack_target_id == unit_id
+				and coord != actor.position
+				and AbilitySystem.can_target_self(actor, ability)
+			)
+			if self_after_move:
+				new_actions.append(
+					TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing),
+				)
+				new_actions.append(
+					TimelineAction.make_ability(
+						unit_id, ability, coord, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
+					),
+				)
+			elif GridSystem.manhattan(actor.position, target.position) > rng:
 				var approach := _find_approach_tile(start_board, actor, target.position, rng, coord)
 				if approach != actor.position:
-					new_actions.append(TimelineAction.make_move(unit_id, approach, -1 , [], GameEnums.MoveTiming.PRE_ACTION))
+					new_actions.append(
+						TimelineAction.make_move(unit_id, approach, -1, [], move_timing),
+					)
 				new_actions.append(
 					TimelineAction.make_ability(
 						unit_id, ability, target.position, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
@@ -449,6 +465,47 @@ func rpc_reorder_action(from_index: int, to_index: int) -> void:
 	
 	plan_to_use.reorder(local_from, local_to)
 	_refresh_plan()
+
+@rpc("any_peer", "call_local", "reliable")
+func rpc_plan_move_with_self_ability(
+	unit_id: int,
+	move_coord: Vector2i,
+	face_dir: int,
+	waypoints: Array[Vector2i],
+	ability_index: int,
+) -> void:
+	if NetworkManager != null and NetworkManager.is_multiplayer:
+		var u := base_board.get_unit_by_id(unit_id)
+		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id():
+			return
+	if (not is_planning_phase(phase)) or unit_id < 0:
+		return
+	var target_timing := _get_move_timing(unit_id)
+	if target_timing == -1:
+		EventBus.action_rejected.emit("no_actions_left")
+		return
+	var plan_to_use := _plan_for_timing(target_timing)
+	var attacker := board.get_unit_by_id(unit_id)
+	if attacker == null or attacker.active_abilities.is_empty():
+		return
+	var index := clampi(ability_index, 0, attacker.active_abilities.size() - 1)
+	var ability: AbilityData = attacker.active_abilities[index]
+	if not AbilitySystem.can_target_self(attacker, ability):
+		EventBus.action_rejected.emit("cannot_use_ability")
+		return
+	_clear_unit_from_plans(unit_id, target_timing)
+	if move_coord == attacker.position:
+		_try_add(
+			TimelineAction.make_ability(unit_id, ability, move_coord, unit_id, target_timing),
+			plan_to_use,
+		)
+		return
+	var move_action := TimelineAction.make_move(unit_id, move_coord, face_dir, waypoints, target_timing)
+	var ability_action := TimelineAction.make_ability(
+		unit_id, ability, move_coord, unit_id, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	_try_add_multiple([move_action, ability_action], [plan_to_use, plan_to_use])
+
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_plan_attack(unit_id: int, ability_index: int, target_unit_id: int) -> void:

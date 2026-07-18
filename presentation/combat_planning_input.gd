@@ -129,7 +129,9 @@ func on_left_press(local: Vector2) -> void:
 	else:
 		var sel_unit := board.get_unit_by_id(_director.selected_unit_id) if _director.selected_unit_id >= 0 else null
 		if sel_unit != null and not sel_unit.is_enemy():
-			if not _try_plan_skill_at_coord(sel_unit, cell, local) and _basic_move_allowed():
+			if _try_commit_move_with_self_skill(_director.selected_unit_id, cell, local, []):
+				pass
+			elif not _try_plan_skill_at_coord(sel_unit, cell, local) and _basic_move_allowed():
 				_director.rpc_plan_move(
 					_director.selected_unit_id,
 					cell,
@@ -173,8 +175,9 @@ func on_left_release(local: Vector2) -> void:
 				_play_sfx("move")
 	elif dropped_on == null:
 		var waypoints: Array[Vector2i] = _route_waypoints()
-		if not _try_plan_skill_at_coord(actor, cell, local):
-			_try_plan_basic_move(released_unit_id, cell, local, waypoints)
+		if not _try_commit_move_with_self_skill(released_unit_id, cell, local, waypoints):
+			if not _try_plan_skill_at_coord(actor, cell, local):
+				_try_plan_basic_move(released_unit_id, cell, local, waypoints)
 	_drag_unit_id = -1
 	_end_drag_interaction(false)
 
@@ -214,9 +217,7 @@ func update_drag(local: Vector2) -> void:
 		and force_basic_movement
 	):
 		_drag_last_free = cell
-	var drag_target_id: int = -1
-	if occ != null and occ.id != _drag_unit_id:
-		drag_target_id = occ.id
+	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
 	var preview: Dictionary = _director.preview_drag(
 		_drag_unit_id,
 		_drag_last_free,
@@ -249,9 +250,8 @@ func refresh_live_preview() -> void:
 	if not board.is_in_bounds(cell):
 		return
 	var occ := board.get_unit_at(cell)
-	var drag_target_id: int = -1
-	if occ != null and occ.id != _drag_unit_id:
-		drag_target_id = occ.id
+	var drag_unit := board.get_unit_by_id(_drag_unit_id)
+	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
 	var preview: Dictionary = _director.preview_drag(
 		_drag_unit_id,
 		_drag_last_free,
@@ -718,6 +718,26 @@ func _plan_approach_or_trample_on_enemy(
 		actor = _director.board.get_unit_by_id(unit_id) if _director.board != null else null
 	if actor == null:
 		return
+	var ability := _selected_ability_data(actor)
+	if (
+		ability != null
+		and AbilitySystem.can_target_self(actor, ability)
+		and _director.selected_ability_index >= 0
+	):
+		if _try_commit_move_with_self_skill(unit_id, preferred_tile, local, waypoints):
+			return
+		if preferred_tile != actor.position and _can_move_to(actor, preferred_tile):
+			_director.rpc_plan_move(
+				unit_id,
+				preferred_tile,
+				_facing_from_drop(local, preferred_tile),
+				waypoints,
+			)
+			_play_sfx("move")
+			return
+		_director.rpc_plan_attack(unit_id, _director.selected_ability_index, actor.id)
+		_play_sfx("ability")
+		return
 	if _prefer_approach_over_trample_move(actor, enemy):
 		_director.rpc_plan_attack_with_approach(
 			unit_id,
@@ -752,6 +772,39 @@ func _prefer_approach_over_trample_move(actor: UnitState, enemy: UnitState) -> b
 	if _director.selected_ability_index < 0:
 		return false
 	return MovementSystem.has_trample(actor) and _can_move_to(actor, enemy.position)
+
+
+func _try_commit_move_with_self_skill(
+	unit_id: int,
+	coord: Vector2i,
+	local: Vector2,
+	waypoints: Array[Vector2i] = [],
+) -> bool:
+	if force_basic_movement or _director.selected_ability_index < 0:
+		return false
+	var actor := _proj_unit(unit_id)
+	if actor == null:
+		actor = _director.board.get_unit_by_id(unit_id) if _director.board != null else null
+	if actor == null:
+		return false
+	var ability := _selected_ability_data(actor)
+	if ability == null or not AbilitySystem.can_target_self(actor, ability):
+		return false
+	if coord == actor.position:
+		_director.rpc_plan_attack(unit_id, _director.selected_ability_index, unit_id)
+		_play_sfx("ability")
+		return true
+	if not _can_move_to(actor, coord):
+		return false
+	_director.rpc_plan_move_with_self_ability(
+		unit_id,
+		coord,
+		_facing_from_drop(local, coord),
+		waypoints,
+		_director.selected_ability_index,
+	)
+	_play_sfx("ability")
+	return true
 
 
 func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) -> bool:
@@ -1143,6 +1196,22 @@ func _sync_threat_origin_from_cell(cell: Vector2i) -> void:
 		_planning.clear_threat_origin()
 
 
+func _drag_preview_target_id(drag_unit: UnitState, occ: UnitState) -> int:
+	if occ != null and drag_unit != null and occ.id != drag_unit.id:
+		return occ.id
+	if (
+		drag_unit != null
+		and not drag_unit.is_enemy()
+		and _director.selected_ability_index >= 0
+		and not force_basic_movement
+		and _drag_last_free != drag_unit.position
+	):
+		var self_ability := _selected_ability_data(drag_unit)
+		if AbilitySystem.can_target_self(drag_unit, self_ability):
+			return drag_unit.id
+	return -1
+
+
 func _set_drag_attack_target(target_id: int, preview: Dictionary) -> void:
 	if target_id < 0:
 		target_id = _preview_attack_target_id(preview, _drag_unit_id)
@@ -1245,6 +1314,21 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			_set_drag_attack_target(drag_target_id, preview)
 			return
 	if _drag_route.size() > 1 or _drag_last_free != unit.position:
+		if not force_basic_movement and _director.selected_ability_index >= 0:
+			var move_self_ability := _selected_ability_data(actor)
+			if AbilitySystem.can_target_self(actor, move_self_ability):
+				var self_move_face: int = _facing_from_drop(local, _drag_last_free)
+				if _drag_route.size() >= 2:
+					self_move_face = _facing_toward(
+						_drag_route[_drag_route.size() - 2], _drag_route[_drag_route.size() - 1],
+					)
+				elif _drag_last_free != unit.position:
+					self_move_face = _facing_toward(unit.position, _drag_last_free)
+				_planning.update_drag_sprite(
+					local, TacticalUnitLayer.DragPreviewAnim.SPELL, self_move_face, preview_cell, drag_preview_failed,
+				)
+				_set_drag_attack_target(-1, preview)
+				return
 		var move_face: int = _facing_from_drop(local, _drag_last_free)
 		if _drag_route.size() >= 2:
 			move_face = _facing_toward(_drag_route[_drag_route.size() - 2], _drag_route[_drag_route.size() - 1])

@@ -96,6 +96,27 @@ static func ability_blocks_basic_movement(ability: AbilityData) -> bool:
 		return false
 	return true
 
+static func ability_uses_attack_animation(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	if ability_is_offensive_dash(ability):
+		return true
+	var offensive_effects: Array[GameEnums.EffectType] = [
+		GameEnums.EffectType.DAMAGE,
+		GameEnums.EffectType.PUSH,
+		GameEnums.EffectType.PULL,
+		GameEnums.EffectType.EXPLODE,
+		GameEnums.EffectType.RANGED_EXPLODE,
+	]
+	for eff: EffectData in ability.effects:
+		if eff.type in offensive_effects:
+			return true
+	for eff: EffectData in ability.upgraded_effects:
+		if eff.type in offensive_effects:
+			return true
+	return false
+
+
 static func ability_is_offensive_dash(ability: AbilityData) -> bool:
 	if not ability_has_dash(ability):
 		return false
