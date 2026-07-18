@@ -149,6 +149,7 @@ func on_left_release(local: Vector2) -> void:
 	if not dragging:
 		return
 	var released_unit_id: int = _drag_unit_id
+	var legal_move_tiles: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
 	dragging = false
 	var committed: bool = false
 	var board: BoardState = _director.board
@@ -161,7 +162,9 @@ func on_left_release(local: Vector2) -> void:
 		return
 	var dropped_on := board.get_unit_at(cell)
 	if dropped_on != null and dropped_on.id != actor.id:
-		committed = _plan_approach_or_trample_on_enemy(released_unit_id, dropped_on, local, cell, [])
+		committed = _plan_approach_or_trample_on_enemy(
+			released_unit_id, dropped_on, local, cell, [], legal_move_tiles,
+		)
 	elif cell == actor.position:
 		if _drag_unit_was_selected:
 			if not _drag_had_movement():
@@ -197,11 +200,13 @@ func on_left_release(local: Vector2) -> void:
 				_play_sfx("move")
 				committed = true
 	elif dropped_on == null:
-		if _try_commit_move_with_self_skill(released_unit_id, cell, local, []):
-			committed = true
-		elif _try_plan_skill_at_coord(actor, cell, local):
-			committed = true
-		elif _try_plan_basic_move(released_unit_id, cell, local, []):
+		var move_drop_ok: bool = _drop_allows_move_tile(cell, legal_move_tiles, actor)
+		if move_drop_ok:
+			if _try_commit_move_with_self_skill(released_unit_id, cell, local, [], legal_move_tiles):
+				committed = true
+			elif _try_plan_basic_move(released_unit_id, cell, local, [], legal_move_tiles):
+				committed = true
+		if not committed and _try_plan_skill_at_coord(actor, cell, local):
 			committed = true
 	var snap_back: bool = _drag_had_movement() and not committed
 	_drag_unit_id = -1
@@ -234,8 +239,11 @@ func update_drag(local: Vector2) -> void:
 		return
 	var occ := board.get_unit_at(cell)
 	var drag_unit := board.get_unit_by_id(_drag_unit_id)
+	var legal_move_tiles: Array[Vector2i] = (
+		_planning.get_hover_move_tiles() if _planning != null else []
+	)
 	if drag_unit != null and (occ == null or occ.id == _drag_unit_id):
-		if cell == drag_unit.position or _can_move_to(drag_unit, cell):
+		if cell == drag_unit.position or legal_move_tiles.has(cell):
 			_drag_last_free = cell
 	elif (
 		drag_unit != null
@@ -244,7 +252,7 @@ func update_drag(local: Vector2) -> void:
 		and occ.is_enemy()
 		and MovementSystem.has_trample(drag_unit)
 		and force_basic_movement
-		and _can_move_to(drag_unit, occ.position)
+		and legal_move_tiles.has(occ.position)
 	):
 		_drag_last_free = occ.position
 	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
@@ -772,21 +780,31 @@ func _plan_approach_or_trample_on_enemy(
 	local: Vector2,
 	preferred_tile: Vector2i,
 	waypoints: Array[Vector2i] = [],
+	legal_move_tiles: Array[Vector2i] = [],
 ) -> bool:
 	var actor := _proj_unit(unit_id)
 	if actor == null:
 		actor = _director.board.get_unit_by_id(unit_id) if _director.board != null else null
 	if actor == null:
 		return false
+	if _in_ability_range(actor, enemy):
+		_director.rpc_plan_attack(unit_id, _director.selected_ability_index, enemy.id)
+		_play_sfx("ability")
+		return true
 	var ability := _selected_ability_data(actor)
 	if (
 		ability != null
 		and AbilitySystem.can_target_self(actor, ability)
 		and _director.selected_ability_index >= 0
 	):
-		if _try_commit_move_with_self_skill(unit_id, preferred_tile, local, waypoints):
+		if _try_commit_move_with_self_skill(
+			unit_id, preferred_tile, local, waypoints, legal_move_tiles,
+		):
 			return true
-		if preferred_tile != actor.position and _can_move_to(actor, preferred_tile):
+		if (
+			preferred_tile != actor.position
+			and _drop_allows_move_tile(preferred_tile, legal_move_tiles, actor)
+		):
 			_director.rpc_plan_move(
 				unit_id,
 				preferred_tile,
@@ -799,6 +817,8 @@ func _plan_approach_or_trample_on_enemy(
 		_play_sfx("ability")
 		return true
 	if _prefer_approach_over_trample_move(actor, enemy):
+		if not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
+			return false
 		_director.rpc_plan_attack_with_approach(
 			unit_id,
 			_director.selected_ability_index,
@@ -807,7 +827,7 @@ func _plan_approach_or_trample_on_enemy(
 		)
 		_play_sfx("ability")
 		return true
-	if _can_move_to(actor, enemy.position):
+	if _drop_allows_move_tile(enemy.position, legal_move_tiles, actor):
 		_director.rpc_plan_move(
 			unit_id,
 			enemy.position,
@@ -816,6 +836,8 @@ func _plan_approach_or_trample_on_enemy(
 		)
 		_play_sfx("move")
 		return true
+	if not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
+		return false
 	_director.rpc_plan_attack_with_approach(
 		unit_id,
 		_director.selected_ability_index,
@@ -841,6 +863,7 @@ func _try_commit_move_with_self_skill(
 	coord: Vector2i,
 	local: Vector2,
 	waypoints: Array[Vector2i] = [],
+	legal_move_tiles: Array[Vector2i] = [],
 ) -> bool:
 	if force_basic_movement or _director.selected_ability_index < 0:
 		return false
@@ -855,7 +878,7 @@ func _try_commit_move_with_self_skill(
 	if AbilitySystem.is_run_ability(ability):
 		if coord == actor.position:
 			return false
-		if not _can_move_to(actor, coord):
+		if not _drop_allows_move_tile(coord, legal_move_tiles, actor):
 			return false
 		var face_dir: int = _facing_from_drop(local, coord)
 		if AbilitySystem.movement_requires_run(_proj(), actor, coord, waypoints):
@@ -871,7 +894,7 @@ func _try_commit_move_with_self_skill(
 		_director.rpc_plan_attack(unit_id, _director.selected_ability_index, unit_id)
 		_play_sfx("ability")
 		return true
-	if not _can_move_to(actor, coord):
+	if not _drop_allows_move_tile(coord, legal_move_tiles, actor):
 		return false
 	_director.rpc_plan_move_with_self_ability(
 		unit_id,
@@ -918,13 +941,14 @@ func _try_plan_basic_move(
 	coord: Vector2i,
 	local: Vector2,
 	waypoints: Array[Vector2i] = [],
+	legal_move_tiles: Array[Vector2i] = [],
 ) -> bool:
 	if not _basic_move_allowed():
 		return false
 	var actor := _proj_unit(unit_id)
 	if actor == null:
 		actor = _director.board.get_unit_by_id(unit_id) if _director.board != null else null
-	if actor == null or not _can_move_to(actor, coord):
+	if actor == null or not _drop_allows_move_tile(coord, legal_move_tiles, actor):
 		return false
 	_director.rpc_plan_move(unit_id, coord, _facing_from_drop(local, coord), waypoints)
 	_play_sfx("move")
@@ -1089,6 +1113,50 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	if not MovementSystem.can_end_movement_on(board, coord, unit):
 		return false
 	return not MovementSystem.find_path(board, unit.position, coord, _move_budget(unit)).is_empty()
+
+
+func _snapshot_drag_legal_move_tiles() -> Array[Vector2i]:
+	if _planning == null:
+		return []
+	return _planning.get_hover_move_tiles()
+
+
+func _drop_allows_move_tile(
+	cell: Vector2i,
+	legal_move_tiles: Array[Vector2i],
+	actor: UnitState,
+) -> bool:
+	if actor == null or cell == actor.position:
+		return false
+	if not legal_move_tiles.is_empty():
+		return legal_move_tiles.has(cell)
+	return _can_move_to(actor, cell)
+
+
+func _enemy_attackable_from_legal_tiles(
+	actor: UnitState,
+	enemy: UnitState,
+	legal_move_tiles: Array[Vector2i],
+) -> bool:
+	if actor == null or enemy == null:
+		return false
+	if _in_ability_range(actor, enemy):
+		return true
+	if legal_move_tiles.is_empty():
+		return true
+	var ability := _selected_ability_data(actor)
+	var rng: int = 1
+	if ability != null:
+		rng = actor.get_ability_range(ability)
+	elif _director.selected_ability_index >= 0:
+		return false
+	var origin: Vector2i = _proj_origin(actor)
+	if GridSystem.manhattan(origin, enemy.position) <= rng:
+		return true
+	for tile: Vector2i in legal_move_tiles:
+		if GridSystem.manhattan(tile, enemy.position) <= rng:
+			return true
+	return false
 
 
 func _proj() -> BoardState:

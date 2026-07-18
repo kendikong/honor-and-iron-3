@@ -179,6 +179,14 @@ func get_live_preview() -> CombatPlanningPreview:
 	return _live_preview
 
 
+func get_hover_move_tiles() -> Array[Vector2i]:
+	return _hover_move_tiles.duplicate()
+
+
+func is_hover_move_tile(cell: Vector2i) -> bool:
+	return _hover_move_tiles.has(cell)
+
+
 func clear_live_preview() -> void:
 	restore_committed_display()
 
