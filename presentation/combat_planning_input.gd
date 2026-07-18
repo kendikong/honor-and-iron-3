@@ -446,8 +446,6 @@ func _on_board_changed(_board: BoardState) -> void:
 		_restore_committed_preview()
 	else:
 		preview_state.clear_interaction()
-		if _planning != null:
-			_planning.restore_committed_display()
 	if _planning != null:
 		_planning.clear_drag_route()
 		_planning.clear_fixed_range_origin()

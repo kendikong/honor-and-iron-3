@@ -30,6 +30,7 @@ var _profile: CharacterGenProfile = CharacterGenProfile.new()
 var _actors: Dictionary = {}
 var _selected_id: int = -1
 var _glow_selected_id: int = -1
+var _planning_board_sync_pending: bool = false
 var _timeline_hover_id: int = -1
 var _intent_units: Dictionary = {}
 var _predicted_hp: Dictionary = {}
@@ -143,8 +144,30 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
+	if _is_planning_phase():
+		_schedule_planning_board_sync()
+		return
 	_sync_actors()
 	_refresh_planning_visuals()
+	queue_redraw()
+
+
+func _schedule_planning_board_sync() -> void:
+	if _planning_board_sync_pending:
+		return
+	_planning_board_sync_pending = true
+	call_deferred("_flush_planning_board_sync")
+
+
+func _flush_planning_board_sync() -> void:
+	_planning_board_sync_pending = false
+	if not _is_planning_phase() or _board == null:
+		return
+	_sync_actors()
+	var affected: Array[int] = []
+	if _director != null:
+		affected = _director.plan_affected_unit_ids
+	_refresh_planning_visuals(affected)
 	queue_redraw()
 
 
@@ -168,14 +191,25 @@ func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> 
 		_sync_planning_actor_positions()
 
 
-func _refresh_planning_visuals() -> void:
-	for unit_id: Variant in _actors:
-		var actor: CharacterActor = _actors[unit_id] as CharacterActor
-		if actor != null:
-			actor.modulate = Color.WHITE
-	if _board != null:
-		for unit: UnitState in _board.units:
-			if unit.is_alive() and not unit.is_enemy():
+func _refresh_planning_visuals(affected_unit_ids: Array[int] = []) -> void:
+	if affected_unit_ids.is_empty():
+		for unit_id: Variant in _actors:
+			var actor: CharacterActor = _actors[unit_id] as CharacterActor
+			if actor != null:
+				actor.modulate = Color.WHITE
+		if _board != null:
+			for unit: UnitState in _board.units:
+				if unit.is_alive() and not unit.is_enemy():
+					_apply_exhaustion_state(unit)
+	else:
+		for unit_id: int in affected_unit_ids:
+			var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
+			if actor != null:
+				actor.modulate = Color.WHITE
+			if _board == null:
+				continue
+			var unit: UnitState = _board.get_unit_by_id(unit_id)
+			if unit != null and unit.is_alive() and not unit.is_enemy():
 				_apply_exhaustion_state(unit)
 	_refresh_selection_glow()
 

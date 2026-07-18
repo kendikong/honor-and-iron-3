@@ -51,6 +51,11 @@ var initial_board: BoardState
 var turn_start_board: BoardState
 ## Incremented on every successful _refresh_plan — cheap cache-bust for hover previews.
 var plan_revision: int = 0
+## Units touched by the latest plan add/remove (lightweight view refresh).
+var plan_affected_unit_ids: Array[int] = []
+var _queued_preview: SimResult = null
+## Populated by _try_add_multiple to skip a second simulate_player_turn in _refresh_plan.
+var _pending_refresh_sim: Dictionary = {}
 
 
 static func is_planning_phase(p: Phase) -> bool:
@@ -427,6 +432,11 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 		target_plans[i].add(actions[i])
 		if actions[i].type == GameEnums.ActionType.MOVE:
 			_commit_animate_actions.append(actions[i])
+	plan_affected_unit_ids = new_actors.duplicate()
+	_pending_refresh_sim = {
+		"projected": trial.clone(),
+		"player_events": ev.duplicate(),
+	}
 	_refresh_plan()
 
 func get_player_plan() -> Timeline:
@@ -778,6 +788,7 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
 					plan_post_move.remove_at(i)
+					plan_affected_unit_ids = [unit_id]
 					_refresh_plan()
 					return
 		if plan_pre_move.size() > 0:
@@ -787,6 +798,7 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
 					plan_pre_move.remove_at(i)
+					plan_affected_unit_ids = [unit_id]
 					_refresh_plan()
 					return
 
@@ -848,6 +860,7 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 			if a.actor_id != unit_id:
 				kept_2.append(a)
 		plan_post_move.entries = kept_2
+		plan_affected_unit_ids = [unit_id]
 	_refresh_plan()
 
 func clear_plan() -> void:
@@ -1297,6 +1310,7 @@ func _refresh_plan() -> void:
 		statuses.append(reason)
 
 	if any_cancelled:
+		_pending_refresh_sim.clear()
 		_refresh_plan()
 		return
 
@@ -1305,8 +1319,15 @@ func _refresh_plan() -> void:
 	var dummy_ev: Array[SimEvent] = []
 	ResolutionPipeline.resolve_pending_pushes(full_proj, dummy_ev)
 
-	projected_state = base_board.clone()
-	Simulator.simulate_player_turn(projected_state, plan_to_run, [])
+	var player_events: Array[SimEvent] = []
+	if not _pending_refresh_sim.is_empty():
+		projected_state = (_pending_refresh_sim["projected"] as BoardState).clone()
+		for e: SimEvent in _pending_refresh_sim["player_events"]:
+			player_events.append(e)
+		_pending_refresh_sim.clear()
+	else:
+		projected_state = base_board.clone()
+		Simulator.simulate_player_turn(projected_state, plan_to_run, player_events)
 		
 	board = move_only
 	var new_intents := EnemyPlanner.plan(projected_state)
@@ -1320,29 +1341,31 @@ func _refresh_plan() -> void:
 	EventBus.board_changed.emit(board)
 	EventBus.timeline_changed.emit(plan_to_run, statuses)
 	
-	# Compute ghost events and final state by diffing base_board and projected_state
-	# The view layer uses preview_updated for ghosts and expected HP.
-	var preview_board := base_board.clone()
-	var evs := _build_ghost_events(preview_board, plan_to_run, base_board.intents)
+	var preview_board: BoardState = projected_state.clone()
+	var evs: Array[SimEvent] = []
+	for e: SimEvent in player_events:
+		evs.append(e)
+	evs.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
+	for intent: Intent in new_intents:
+		for action: TimelineAction in intent.actions:
+			ResolutionPipeline.apply_action(preview_board, action, evs)
+	ResolutionPipeline.resolve_pending_pushes(preview_board, evs)
 	
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = evs
-	EventBus.preview_updated.emit(sim_res)
+	_queue_preview_updated(sim_res)
 
-func _build_ghost_events(sim: BoardState, timeline: Timeline, intents: Array[Intent]) -> Array[SimEvent]:
-	var evs: Array[SimEvent] = []
-	for action in timeline.entries:
-		ResolutionPipeline.apply_action(sim, action, evs)
-	ResolutionPipeline.resolve_pending_pushes(sim, evs)
-	
-	# Add Enemy intents for preview
-	evs.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
-	for intent in intents:
-		for action in intent.actions:
-			ResolutionPipeline.apply_action(sim, action, evs)
-	ResolutionPipeline.resolve_pending_pushes(sim, evs)
-	
-	return evs
+func _queue_preview_updated(result: SimResult) -> void:
+	_queued_preview = result
+	call_deferred("_emit_queued_preview")
+
+
+func _emit_queued_preview() -> void:
+	if _queued_preview == null:
+		return
+	var res: SimResult = _queued_preview
+	_queued_preview = null
+	EventBus.preview_updated.emit(res)
 
 func _capture_turn_start() -> void:
 	turn_start_board = base_board.clone()
