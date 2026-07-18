@@ -5,7 +5,6 @@ extends RefCounted
 
 
 var force_basic_movement: bool = false
-var unit_selected_abilities: Dictionary = {}
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -26,6 +25,7 @@ var drag_sim_actor_pos: Vector2i = Vector2i.ZERO
 var drag_preview_failed: bool = false
 var _last_planning_hover_cell: Vector2i = Vector2i(-9999, -9999)
 var _hover_preview_cache_key: String = ""
+var _selection_refresh_pending: bool = false
 
 
 func setup(
@@ -434,44 +434,44 @@ func _on_selection_changed(unit_id: int) -> void:
 	if unit_id < 0:
 		_restore_hover_preview()
 		_sync_intent_skill_mode()
-		if _intent_state != null:
-			_intent_state.set_selection(unit_id)
 		if _planning != null:
 			_planning._recompute_hover_ranges_from_inputs()
 		return
 	_play_sfx("select")
 	if _drag_saved_preview == null and _planning != null:
 		_planning.stash_committed_preview()
-	if unit_selected_abilities.has(unit_id):
-		_director.select_ability(int(unit_selected_abilities[unit_id]))
-	call_deferred("_finish_select_planning")
+	call_deferred("_finish_selection_changed")
 
 
-func _finish_select_planning() -> void:
-	if _planning != null and _director != null:
-		if _intent_state != null:
-			_sync_threat_origin_from_cell(_intent_state.hover_coord)
-		_planning._recompute_hover_ranges_from_inputs()
-	_sync_intent_skill_mode()
+func _request_planning_selection_refresh() -> void:
+	if _selection_refresh_pending:
+		return
+	_selection_refresh_pending = true
+	call_deferred("_run_planning_selection_refresh")
+
+
+func _run_planning_selection_refresh() -> void:
+	_selection_refresh_pending = false
+	if _director == null or _planning == null:
+		return
 	if _intent_state != null:
-		_intent_state.set_selection(_director.selected_unit_id if _director != null else -1)
+		_sync_threat_origin_from_cell(_intent_state.hover_coord)
+	_planning._recompute_hover_ranges_from_inputs()
+	_sync_intent_skill_mode()
 	call_deferred("_refresh_hover_if_planning")
+
+
+func _finish_selection_changed() -> void:
+	_request_planning_selection_refresh()
 
 
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
 	_invalidate_planning_hover_cache()
-	if _drag_saved_preview == null and _planning != null:
-		_planning.stash_committed_preview()
 	if _director.selected_unit_id >= 0:
-		unit_selected_abilities[_director.selected_unit_id] = index
-	if _planning != null and _director != null:
-		if _intent_state != null:
-			_sync_threat_origin_from_cell(_intent_state.hover_coord)
-		_planning._recompute_hover_ranges_from_inputs()
-	_sync_intent_skill_mode()
-	_refresh_hover_if_planning()
+		_director.remember_unit_ability(_director.selected_unit_id, index)
+	_request_planning_selection_refresh()
 
 
 func _on_preview_updated(_result: SimResult) -> void:

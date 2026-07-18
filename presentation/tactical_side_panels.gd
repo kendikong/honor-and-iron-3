@@ -340,8 +340,8 @@ func _on_preview_updated(result: SimResult) -> void:
 
 func _on_selection_changed(unit_id: int) -> void:
 	_selected_id = unit_id
-	if _intent_state != null:
-		_intent_state.set_selection(unit_id)
+	if unit_id >= 0 and _director != null:
+		_selected_ability = _director.selected_ability_index
 	_refresh_info()
 	if unit_id < 0:
 		_clear_skill_buttons()
@@ -361,6 +361,8 @@ func _clear_skill_buttons() -> void:
 
 func _on_ability_selected(index: int) -> void:
 	_selected_ability = index
+	if _director != null and _director.selected_unit_id >= 0:
+		_director.remember_unit_ability(_director.selected_unit_id, index)
 	_rebuild_ability_buttons()
 
 

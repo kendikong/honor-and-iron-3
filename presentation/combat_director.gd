@@ -38,6 +38,8 @@ var plan_post_move: Timeline
 var phase: Phase = Phase.PLANNING
 var selected_unit_id: int = -1
 var selected_ability_index: int = 0
+## Last chosen ability slot per unit (planning UI memory).
+var unit_ability_memory: Dictionary = {}
 ## Board after ONLY the player's queued actions (no enemy intents). Drives range,
 ## reachability and target highlights so they follow planned moves, not start tiles.
 var projected_state: BoardState
@@ -109,22 +111,31 @@ func select_unit(unit_id: int) -> void:
 	if unit_id == -1:
 		selected_unit_id = -1
 		selected_ability_index = 0
-		EventBus.selection_changed.emit(selected_unit_id)
-		EventBus.ability_selected.emit(selected_ability_index)
-		_refresh_plan()
+		_emit_planning_selection()
 		return
-		
 	var unit := board.get_unit_by_id(unit_id)
 	if unit == null or not unit.is_alive():
 		return
 	var switched := unit_id != selected_unit_id
 	selected_unit_id = unit_id
 	if not switched:
-		return  # Re-grabbing the same unit must not reset the chosen ability.
-	selected_ability_index = 0
+		return
+	var restored: int = int(unit_ability_memory.get(unit_id, 0))
+	if restored < 0 or restored >= unit.active_abilities.size():
+		restored = 0
+	selected_ability_index = restored
+	_emit_planning_selection()
+
+
+func remember_unit_ability(unit_id: int, ability_index: int) -> void:
+	if unit_id < 0:
+		return
+	unit_ability_memory[unit_id] = ability_index
+
+
+func _emit_planning_selection() -> void:
 	EventBus.selection_changed.emit(selected_unit_id)
 	EventBus.ability_selected.emit(selected_ability_index)
-	_refresh_plan()
 
 ## Choose which of the selected unit's abilities a queued attack will use.
 func select_ability(index: int) -> void:

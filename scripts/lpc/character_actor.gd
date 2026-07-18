@@ -73,8 +73,10 @@ func clear_layers() -> void:
 		spr.visible = false
 		_pool.append(spr)
 	_layers.clear()
-	if _selection_glow != null and _selection_glow.is_active():
-		_selection_glow.rebuild_from_layers()
+	if _selection_glow != null:
+		_selection_glow.on_layers_cleared()
+		if _selection_glow.is_active():
+			_selection_glow.set_active(true)
 	if _contact_shadow != null:
 		_contact_shadow.rebuild_silhouette([], &"walk_down")
 
@@ -119,7 +121,7 @@ func add_layer(
 	if _planning_exhausted:
 		_apply_visual_tint()
 	if _selection_glow != null and _selection_glow.is_active():
-		_selection_glow.rebuild_from_layers()
+		_selection_glow.on_layer_added(spr)
 
 
 ## Show or hide all sprite layers that belong to a given item_id.
@@ -183,8 +185,6 @@ func set_planning_exhausted(exhausted: bool) -> void:
 		return
 	_planning_exhausted = exhausted
 	_apply_visual_tint()
-	if _selection_glow != null and _selection_glow.is_active():
-		_selection_glow.rebuild_from_layers()
 
 
 func _apply_visual_tint() -> void:
@@ -506,8 +506,6 @@ func _apply_motion_state(spr: AnimatedSprite2D) -> void:
 	else:
 		spr.stop()
 		spr.frame = 0
-	if _selection_glow != null and _selection_glow.is_active():
-		_selection_glow.sync_layer(spr)
 
 
 

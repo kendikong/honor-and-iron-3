@@ -67,6 +67,7 @@ static func get_recolor_material(
 	mat.set_shader_parameter("pair_count", int(built["count"]))
 	mat.set_shader_parameter("source_colors", built["source"] as PackedColorArray)
 	mat.set_shader_parameter("target_colors", built["target"] as PackedColorArray)
+	mat.set_shader_parameter("selection_active", 0.0)
 	_material_cache[cache_key] = mat
 	return mat
 

@@ -185,10 +185,7 @@ func _refresh_selection_glow() -> void:
 	var planning: bool = CombatDirector.is_planning_phase(_phase)
 	var new_glow_id: int = _selected_id if planning else -1
 	if new_glow_id == _glow_selected_id:
-		if new_glow_id < 0:
-			return
-		if _selection_glow_is_live(new_glow_id):
-			return
+		return
 	if _glow_selected_id >= 0:
 		_set_unit_selection_glow(_glow_selected_id, false)
 	_glow_selected_id = -1
@@ -196,26 +193,15 @@ func _refresh_selection_glow() -> void:
 		return
 	var unit := _board.get_unit_by_id(new_glow_id) if _board != null else null
 	var color: Color = _COLOR_SELECT_ENEMY if unit != null and unit.is_enemy() else _COLOR_SELECT_PLAYER
-	if _set_unit_selection_glow(new_glow_id, true, color):
-		_glow_selected_id = new_glow_id
+	_set_unit_selection_glow(new_glow_id, true, color)
+	_glow_selected_id = new_glow_id
 
 
-func _selection_glow_is_live(unit_id: int) -> bool:
-	if unit_id < 0:
-		return false
+func _set_unit_selection_glow(unit_id: int, active: bool, color: Color = _COLOR_SELECT_PLAYER) -> void:
 	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
 	if actor == null:
-		return false
-	var glow: CharacterSelectionGlow = actor.get_selection_glow()
-	return glow != null and glow.is_active() and not glow.is_outline_empty()
-
-
-func _set_unit_selection_glow(unit_id: int, active: bool, color: Color = _COLOR_SELECT_PLAYER) -> bool:
-	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
-	if actor == null:
-		return false
+		return
 	actor.set_selection_glow(active, color)
-	return true
 
 
 func set_drag_attack_target(unit_id: int) -> void:
