@@ -12,7 +12,7 @@ const _SHADOW_SHADER: Shader = preload("res://shaders/oblique_contact_shadow.gds
 const _SHADOW_SHADER_PERF: Shader = preload("res://shaders/oblique_contact_shadow_perf.gdshader")
 const _GROUND_SHADOW_SHADER: Shader = preload("res://shaders/ground_shadow_composite.gdshader")
 const _CLOUD_FIELD = preload("res://scripts/cloud_shadow_field.gd")
-const _GROUND_SHADOW_NODE: StringName = &"GroundShadows"
+const _GROUND_SHADOW_NODE: NodePath = ^"GroundShadows"
 
 const TILE_PX: int = 16
 
@@ -544,7 +544,7 @@ static func _ensure_ground_shadow_rect(shadow_root: Node2D, settings: EffectsSet
 	var rect: ColorRect = shadow_root.get_node_or_null(_GROUND_SHADOW_NODE) as ColorRect
 	if rect == null:
 		rect = ColorRect.new()
-		rect.name = _GROUND_SHADOW_NODE
+		rect.name = StringName(_GROUND_SHADOW_NODE)
 		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		shadow_root.add_child(rect)
