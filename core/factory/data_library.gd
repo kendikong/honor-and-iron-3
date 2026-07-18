@@ -359,7 +359,7 @@ static func _make_movement_ability(
 	ap_cost: int = 0,
 	stat: GameEnums.StatType = GameEnums.StatType.NONE,
 	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
-	shape_size: int = 1,
+	shape_size: int = 1
 ) -> AbilityData:
 	var ability := _make_ability(p_id, p_name, p_range, effects, ap_cost, stat, shape, shape_size)
 	ability.is_movement_skill = true
@@ -372,12 +372,6 @@ static func is_basic_ability(ability_id: StringName) -> bool:
 
 static func is_universal_run(ability_id: StringName) -> bool:
 	return ability_id == &"universal_run"
-
-
-static func is_movement_skill(ability: AbilityData) -> bool:
-	if ability == null:
-		return false
-	return ability.is_movement_skill
 
 
 static func is_movement_ability(ability_id: StringName) -> bool:
