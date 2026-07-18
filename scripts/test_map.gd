@@ -299,8 +299,10 @@ func _test_unit_actors() -> Array[CharacterActor]:
 
 func _sync_all_test_unit_shadows() -> void:
 	var settings: EffectsSettings = _effects.settings
-	for actor: CharacterActor in _test_unit_actors():
+	var actors: Array[CharacterActor] = _test_unit_actors()
+	for actor: CharacterActor in actors:
 		actor.force_environment_shadow_sync(settings)
+	ShadowPlacer.rebuild_foot_shadow_clusters(actors, settings, _shadow_sprites)
 
 
 func _on_effects_toggled() -> void:

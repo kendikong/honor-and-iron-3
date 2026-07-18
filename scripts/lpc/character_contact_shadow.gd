@@ -1,38 +1,28 @@
 class_name CharacterContactShadow
 extends Node2D
 
-## Oblique contact shadow bake for LPC actors — ground display is unified in GroundShadows (no per-sprite multiply).
+## Oblique contact shadow bake for LPC actors — ground display is unified in GroundShadows only.
 
 const _LPC = preload("res://scripts/lpc/lpc_constants.gd")
-const TILE_PX: int = 16
 const FOOT_LOCAL_Y: float = 0.0
 
-var _sprite: Sprite2D
 var _caster: Image
 var _foot_center_tex: Vector2 = Vector2.ZERO
 var _silhouette_version: int = 0
 
 
 func _ready() -> void:
+	visible = false
+	show_behind_parent = true
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	z_as_relative = true
 	z_index = -1
-	_sprite = Sprite2D.new()
-	_sprite.name = "ShadowSprite"
-	_sprite.centered = false
-	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_sprite.z_as_relative = true
-	_sprite.z_index = 0
-	_sprite.visible = false
-	add_child(_sprite)
 
 
 func rebuild_silhouette(layers: Array[AnimatedSprite2D], anim: StringName) -> void:
 	_caster = _composite_layers(layers, anim)
 	if _caster == null:
 		_foot_center_tex = Vector2.ZERO
-		_sprite.visible = false
-		_sprite.texture = null
 		return
 	_foot_center_tex = ShadowPlacer.foot_center_from_image(_caster)
 	_silhouette_version += 1
@@ -40,25 +30,24 @@ func rebuild_silhouette(layers: Array[AnimatedSprite2D], anim: StringName) -> vo
 
 
 func sync(settings: EffectsSettings = null) -> void:
-	if _sprite == null:
+	var actor: Node2D = get_parent() as Node2D
+	if actor == null:
 		return
 	if settings == null or not settings.oblique_contact_shadows or _caster == null:
-		_sprite.visible = false
-		_sprite.texture = null
+		ShadowPlacer.clear_actor_foot_bake(actor)
 		return
 	ShadowPlacer.sync_actor_contact_shadow(
-		_sprite,
+		actor,
 		_caster,
 		_foot_center_tex,
 		Vector2(0.0, FOOT_LOCAL_Y),
 		_silhouette_version,
 		settings,
-		get_parent() as Node2D,
 	)
 
 
 func get_shadow_sprite() -> Sprite2D:
-	return _sprite
+	return null
 
 
 func _composite_layers(layers: Array[AnimatedSprite2D], anim: StringName) -> Image:

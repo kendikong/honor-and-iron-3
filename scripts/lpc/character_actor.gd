@@ -206,6 +206,8 @@ func _sync_oblique_modulate(settings: EffectsSettings = null) -> void:
 		_apply_modulate_stack()
 		return
 	_oblique_modulate_stamp = stamp
+	if not position.is_equal_approx(_oblique_modulate_pos):
+		ShadowPlacer.invalidate_foot_cluster_layout()
 	_oblique_modulate_pos = position
 	_oblique_band_modulates = ShadowPlacer.actor_oblique_band_modulates(self, settings)
 	_apply_modulate_stack()
