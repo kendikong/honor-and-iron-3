@@ -135,8 +135,12 @@ func _cycle_ability(delta: int) -> void:
 	if unit == null or unit.active_abilities.is_empty():
 		return
 	var count: int = unit.active_abilities.size()
-	var next: int = (_director.selected_ability_index + delta + count) % count
-	_director.select_ability(next)
+	var cur: int = _director.selected_ability_index
+	if CombatDirector.is_wait_ability_index(cur) or cur < 0 or cur >= count:
+		cur = 0 if delta > 0 else count - 1
+	else:
+		cur = (cur + delta + count) % count
+	_director.select_ability(cur)
 	_play_sfx("select")
 	if _planning_input != null and _planning_input.dragging:
 		_planning_input.refresh_live_preview()

@@ -531,6 +531,59 @@ func _rebuild_ability_buttons() -> void:
 		row_btn.custom_minimum_size.y = base_h + float(text_lines * effect_px)
 		_skill_list.add_child(row_btn)
 
+	_add_wait_skill_button(unit)
+
+
+func _add_wait_skill_button(unit: UnitState) -> void:
+	var wait_index: int = CombatDirector.WAIT_ABILITY_INDEX
+	var row_btn := Button.new()
+	row_btn.disabled = _is_unit_action_exhausted()
+	row_btn.modulate = COLOR_SELECT if _selected_ability == wait_index else Color.WHITE
+	row_btn.pressed.connect(func() -> void:
+		if _director != null:
+			_director.select_ability(wait_index)
+	)
+	row_btn.tooltip_text = "End this unit's action phase without using a skill."
+	var btn_vbox := VBoxContainer.new()
+	btn_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	btn_vbox.add_theme_constant_override("separation", 2)
+	row_btn.add_child(btn_vbox)
+	var name_lbl := Label.new()
+	name_lbl.text = "Wait"
+	name_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(10))
+	btn_vbox.add_child(name_lbl)
+	var values_hbox := HBoxContainer.new()
+	values_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	values_hbox.add_theme_constant_override("separation", 16)
+	btn_vbox.add_child(values_hbox)
+	values_hbox.add_child(_make_skill_icon("🔵", "0", "AP (Action Points required)"))
+	values_hbox.add_child(_make_skill_icon("🏹", "0", "Range (self only)"))
+	var effect_lbl := RichTextLabel.new()
+	effect_lbl.bbcode_enabled = true
+	effect_lbl.fit_content = true
+	effect_lbl.scroll_active = false
+	effect_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	effect_lbl.custom_minimum_size.x = float(maxi(120, _panel_width - 48))
+	var effect_px: int = CombatUiFormatters.scaled_font_size(9)
+	effect_lbl.add_theme_font_size_override("normal_font_size", effect_px)
+	effect_lbl.text = "[font_size=%d]Skip action — unit is exhausted for this phase.[/font_size]" % effect_px
+	btn_vbox.add_child(effect_lbl)
+	row_btn.custom_minimum_size.y = float(CombatUiFormatters.scaled_font_size(10)) * 5.5
+	_skill_list.add_child(row_btn)
+
+
+func _is_unit_action_exhausted() -> bool:
+	if _planning_input != null:
+		return _planning_input.selected_phase_action_exhausted(_selected_id)
+	if _selected_id < 0 or _board == null:
+		return true
+	var unit := _proj_unit(_selected_id)
+	if unit == null:
+		unit = _board.get_unit_by_id(_selected_id)
+	if unit == null:
+		return true
+	return unit.turn_action_used or unit.ability.points_left <= 0
+
 
 func _make_skill_icon(emoji: String, val: String, tip: String) -> Control:
 	var row := HBoxContainer.new()

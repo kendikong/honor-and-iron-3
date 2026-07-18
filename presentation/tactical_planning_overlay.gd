@@ -1195,9 +1195,7 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 
 
 func _selected_ability_data(unit: UnitState, ability_index: int) -> AbilityData:
-	if unit == null or ability_index < 0 or ability_index >= unit.active_abilities.size():
-		return null
-	return unit.active_abilities[ability_index]
+	return CombatDirector.resolve_selected_ability(unit, ability_index)
 
 
 func _dash_amount(ability: AbilityData) -> int:

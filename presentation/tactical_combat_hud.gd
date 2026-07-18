@@ -89,8 +89,12 @@ func apply_settings(settings: GameSettings) -> void:
 	for child: Node in get_children():
 		_apply_ui_scale_recursive(child, body_sz, title_sz)
 	if _execute_btn != null:
-		_execute_btn.custom_minimum_size = Vector2(168.0 * _ui_scale, 42.0 * _ui_scale)
-		_execute_btn.add_theme_font_size_override("font_size", body_sz)
+		_execute_btn.custom_minimum_size = Vector2(220.0 * _ui_scale, 52.0 * _ui_scale)
+		_execute_btn.add_theme_font_size_override("font_size", body_sz + 1)
+	if _undo_btn != null:
+		_undo_btn.custom_minimum_size = Vector2(220.0 * _ui_scale, 34.0 * _ui_scale)
+	if _clear_btn != null:
+		_clear_btn.custom_minimum_size = Vector2(220.0 * _ui_scale, 34.0 * _ui_scale)
 	if _undo_btn != null:
 		_undo_btn.add_theme_font_size_override("font_size", body_sz)
 	if _clear_btn != null:
@@ -238,23 +242,34 @@ func _build_ui() -> void:
 	var buttons := VBoxContainer.new()
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	buttons.size_flags_horizontal = Control.SIZE_SHRINK_END
+	buttons.custom_minimum_size = Vector2(220, 0)
+	buttons.add_theme_constant_override("separation", 8)
 	hbox.add_child(buttons)
 
 	_execute_btn = Button.new()
 	_execute_btn.text = "Ready to Execute"
-	_execute_btn.custom_minimum_size = Vector2(168, 42)
+	_execute_btn.clip_text = false
+	_execute_btn.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_execute_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_execute_btn.custom_minimum_size = Vector2(220, 52)
 	_execute_btn.pressed.connect(_on_execute_pressed)
 	buttons.add_child(_execute_btn)
 
+	var action_spacer := Control.new()
+	action_spacer.custom_minimum_size = Vector2(0, 4)
+	buttons.add_child(action_spacer)
+
 	_undo_btn = Button.new()
 	_undo_btn.text = "Undo Unit"
-	_undo_btn.custom_minimum_size = Vector2(168, 34)
+	_undo_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_undo_btn.custom_minimum_size = Vector2(220, 34)
 	_undo_btn.pressed.connect(_on_undo_pressed)
 	buttons.add_child(_undo_btn)
 
 	_clear_btn = Button.new()
 	_clear_btn.text = "Clear Phase Plan"
-	_clear_btn.custom_minimum_size = Vector2(168, 34)
+	_clear_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_clear_btn.custom_minimum_size = Vector2(220, 34)
 	_clear_btn.pressed.connect(_on_clear_pressed)
 	buttons.add_child(_clear_btn)
 

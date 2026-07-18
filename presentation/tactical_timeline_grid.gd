@@ -40,6 +40,8 @@ var _timeline_hover_id: int = -1
 var _header_font_px: int = 12
 var _cell_font_px: int = 12
 var _rows_root: VBoxContainer
+var _last_row_click_unit: int = -1
+var _last_row_click_ms: int = 0
 
 signal row_hovered(unit_id: int)
 signal row_unhovered(unit_id: int)
@@ -225,6 +227,15 @@ func _add_party_row(
 		if is_empty:
 			return
 		if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			var now_ms: int = Time.get_ticks_msec()
+			if unit_id == _last_row_click_unit and (now_ms - _last_row_click_ms) < 450:
+				if _director != null:
+					_director.rpc_plan_wait(unit_id)
+				_last_row_click_unit = -1
+				_last_row_click_ms = 0
+				return
+			_last_row_click_unit = unit_id
+			_last_row_click_ms = now_ms
 			if _director != null:
 				_director.select_unit(unit_id)
 	)

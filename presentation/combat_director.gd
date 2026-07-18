@@ -22,6 +22,8 @@ enum Phase {
 
 ## Unit the cursor starts on; any living player unit can be selected by clicking.
 const FIRST_PLAYER_ID: int = 1
+## Virtual skill-list index for Wait (not in active_abilities; scroll wheel skips it).
+const WAIT_ABILITY_INDEX: int = -2
 
 ## How long each kind of event lingers during animated playback, in seconds.
 const MOVE_STEP_TIME: float = 0.24   ## seconds per tile of movement
@@ -53,6 +55,19 @@ static func is_planning_phase(p: Phase) -> bool:
 
 static func is_executing_phase(p: Phase) -> bool:
 	return p == Phase.EXECUTING
+
+
+static func is_wait_ability_index(index: int) -> bool:
+	return index == WAIT_ABILITY_INDEX
+
+
+static func resolve_selected_ability(unit: UnitState, index: int) -> AbilityData:
+	if is_wait_ability_index(index):
+		return DataLibrary.get_universal_wait()
+	if unit == null or index < 0 or index >= unit.active_abilities.size():
+		return null
+	return unit.active_abilities[index]
+
 
 func start() -> void:
 	# Fallback to demo if nothing was passed
@@ -115,11 +130,49 @@ func select_unit(unit_id: int) -> void:
 func select_ability(index: int) -> void:
 	if not is_planning_phase(phase):
 		return
+	if is_wait_ability_index(index):
+		selected_ability_index = index
+		EventBus.ability_selected.emit(selected_ability_index)
+		return
 	var unit := board.get_unit_by_id(selected_unit_id)
 	if unit == null or index < 0 or index >= unit.active_abilities.size():
 		return
 	selected_ability_index = index
 	EventBus.ability_selected.emit(selected_ability_index)
+
+@rpc("any_peer", "call_local", "reliable")
+func rpc_plan_wait(unit_id: int) -> void:
+	if NetworkManager != null and NetworkManager.is_multiplayer:
+		var u := base_board.get_unit_by_id(unit_id)
+		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id():
+			return
+	if (not is_planning_phase(phase)) or unit_id < 0:
+		return
+	var target_timing: int = _get_move_timing(unit_id)
+	if target_timing != GameEnums.MoveTiming.PRE_ACTION:
+		EventBus.action_rejected.emit("no_actions_left")
+		return
+	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else board.get_unit_by_id(unit_id)
+	if p_unit == null or p_unit.turn_action_used:
+		EventBus.action_rejected.emit("no_actions_left")
+		return
+	_clear_unit_abilities_from_plan(unit_id, target_timing)
+	var wait_ability: AbilityData = DataLibrary.get_universal_wait()
+	_try_add(
+		TimelineAction.make_ability(unit_id, wait_ability, p_unit.position, unit_id, target_timing),
+		plan_pre_move,
+	)
+
+
+func _clear_unit_abilities_from_plan(unit_id: int, timing: int) -> void:
+	var plan: Timeline = plan_pre_move if timing == GameEnums.MoveTiming.PRE_ACTION else plan_post_move
+	var kept: Array[TimelineAction] = []
+	for action: TimelineAction in plan.entries:
+		if action.actor_id == unit_id and action.type == GameEnums.ActionType.ABILITY:
+			continue
+		kept.append(action)
+	plan.entries = kept
+
 
 func _get_planning_state(_target_timing: int = 1) -> BoardState:
 	return base_board.clone()
@@ -615,6 +668,9 @@ func rpc_plan_attack(unit_id: int, ability_index: int, target_unit_id: int) -> v
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id(): return
 
 	if (not is_planning_phase(phase)) or unit_id < 0:
+		return
+	if is_wait_ability_index(ability_index):
+		rpc_plan_wait(unit_id)
 		return
 	var target_timing = _get_move_timing(unit_id)
 	if target_timing == -1: return

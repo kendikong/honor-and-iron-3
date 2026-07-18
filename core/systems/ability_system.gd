@@ -57,6 +57,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 static func can_target_self(actor: UnitState, ability: AbilityData) -> bool:
 	if actor == null or ability == null:
 		return false
+	if DataLibrary.is_universal_wait(ability.id):
+		return true
 	if actor.get_ability_range(ability) == 0:
 		return true
 	var effects: Array[EffectData] = ability.effects
@@ -90,6 +92,10 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 
 static func is_run_ability(ability: AbilityData) -> bool:
 	return ability != null and DataLibrary.is_universal_run(ability.id)
+
+
+static func is_wait_ability(ability: AbilityData) -> bool:
+	return ability != null and DataLibrary.is_universal_wait(ability.id)
 
 
 static func running_move_bonus(max_move: int) -> int:
@@ -131,6 +137,8 @@ static func ability_blocks_basic_movement(ability: AbilityData) -> bool:
 
 static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 	if ability == null or ability.is_movement_skill or DataLibrary.is_universal_run(ability.id):
+		return false
+	if DataLibrary.is_universal_wait(ability.id):
 		return false
 	if ability_is_offensive_dash(ability):
 		return true

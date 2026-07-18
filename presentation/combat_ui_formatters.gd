@@ -275,6 +275,8 @@ static func action_symbol_text(
 		if action.ability != null:
 			if action.ability.id == &"universal_run":
 				return "🏃 Run"
+			if action.ability.id == &"universal_wait":
+				return "⏸ Wait"
 			if action.ability.is_movement_skill:
 				return "↔️ %s" % action.ability.display_name
 			var has_damage: bool = false

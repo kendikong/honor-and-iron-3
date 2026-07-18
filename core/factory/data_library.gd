@@ -10,6 +10,7 @@ static var _enemy_units: Array[UnitData] = []
 static var _all_units_dict: Dictionary = {}
 static var _maps: Array[MapData] = []
 static var _universal_run: AbilityData
+var _universal_wait: AbilityData
 
 static func get_all_player_units() -> Array[UnitData]:
 	_ensure_init()
@@ -38,6 +39,7 @@ static func _ensure_init() -> void:
 		[_status_effect_self(GameEnums.StatusType.RUNNING, 1)],
 		1,
 	)
+	_universal_wait = _make_ability(&"universal_wait", "Wait", 0, [], 0)
 		
 	var _trade := _make_ability(&"swap", "Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
 	
@@ -374,6 +376,10 @@ static func is_universal_run(ability_id: StringName) -> bool:
 	return ability_id == &"universal_run"
 
 
+static func is_universal_wait(ability_id: StringName) -> bool:
+	return ability_id == &"universal_wait"
+
+
 static func is_movement_ability(ability_id: StringName) -> bool:
 	return is_universal_run(ability_id)
 
@@ -381,6 +387,11 @@ static func is_movement_ability(ability_id: StringName) -> bool:
 static func get_universal_run() -> AbilityData:
 	_ensure_init()
 	return _universal_run
+
+
+static func get_universal_wait() -> AbilityData:
+	_ensure_init()
+	return _universal_wait
 
 
 static func _make_class_basic_attack(class_id: StringName) -> AbilityData:

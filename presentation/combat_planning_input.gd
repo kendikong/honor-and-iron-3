@@ -89,6 +89,10 @@ func on_left_press(local: Vector2) -> void:
 		if aiming:
 			cancel_aim()
 		var was_selected: bool = unit.id == _director.selected_unit_id
+		if was_selected:
+			if _try_plan_wait(unit.id):
+				_play_sfx("ability")
+			return
 		_director.select_unit(unit.id)
 		_begin_drag(unit, local, was_selected)
 		return
@@ -161,20 +165,30 @@ func on_left_release(local: Vector2) -> void:
 		var waypoints: Array[Vector2i] = _route_waypoints()
 		_plan_approach_or_trample_on_enemy(released_unit_id, dropped_on, local, _drag_last_free, waypoints)
 	elif cell == actor.position:
-		var self_ability := _selected_ability_data(actor)
-		if (
-			_director.selected_ability_index >= 0
-			and _drag_unit_was_selected
-			and AbilitySystem.can_target_self(actor, self_ability)
-			and not AbilitySystem.is_run_ability(self_ability)
-		):
-			_director.rpc_plan_attack(released_unit_id, _director.selected_ability_index, actor.id)
-			_play_sfx("ability")
-			_director.select_ability(-1)
+		if _drag_unit_was_selected:
+			if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+				_director.rpc_plan_wait(released_unit_id)
+				_play_sfx("ability")
+				_director.select_ability(-1)
+			else:
+				var self_ability := _selected_ability_data(actor)
+				if (
+					_director.selected_ability_index >= 0
+					and AbilitySystem.can_target_self(actor, self_ability)
+					and not AbilitySystem.is_run_ability(self_ability)
+				):
+					_director.rpc_plan_attack(released_unit_id, _director.selected_ability_index, actor.id)
+					_play_sfx("ability")
+					_director.select_ability(-1)
+				else:
+					var face: int = _facing_from_drop(local, cell)
+					if face >= 0:
+						_director.rpc_plan_face(released_unit_id, face)
+						_play_sfx("move")
 		else:
-			var face: int = _facing_from_drop(local, cell)
-			if face >= 0:
-				_director.rpc_plan_face(released_unit_id, face)
+			var face_idle: int = _facing_from_drop(local, cell)
+			if face_idle >= 0:
+				_director.rpc_plan_face(released_unit_id, face_idle)
 				_play_sfx("move")
 	elif dropped_on == null:
 		var waypoints: Array[Vector2i] = _route_waypoints()
@@ -971,13 +985,20 @@ func _ability_has_dash(ability: AbilityData) -> bool:
 	return AbilitySystem.ability_has_dash(ability)
 
 
+func _try_plan_wait(unit_id: int) -> bool:
+	if _director == null or not _is_planning():
+		return false
+	if selected_phase_action_exhausted(unit_id):
+		_play_sfx("invalid")
+		return false
+	_director.rpc_plan_wait(unit_id)
+	return true
+
+
 func _selected_ability_data(unit: UnitState) -> AbilityData:
-	if unit == null:
+	if _director == null or unit == null:
 		return null
-	var idx: int = _director.selected_ability_index
-	if idx < 0 or idx >= unit.active_abilities.size():
-		return null
-	return unit.active_abilities[idx]
+	return CombatDirector.resolve_selected_ability(unit, _director.selected_ability_index)
 
 
 func run_mode_selected(unit: UnitState = null) -> bool:
@@ -1194,14 +1215,18 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 				valid_aim = AbilitySystem.can_target_self(p_unit, self_ability)
 			else:
 				valid_aim = _in_ability_range(p_unit, hover_unit)
+		elif CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+			valid_aim = cell == p_unit.position
 		elif _director.selected_ability_index >= 0 and _director.selected_ability_index < p_unit.active_abilities.size():
 			var aim_ability: AbilityData = p_unit.active_abilities[_director.selected_ability_index]
 			if _ability_has_dash(aim_ability):
 				valid_aim = _is_valid_dash_target(p_unit.position, cell, aim_ability.range_tiles)
 		if valid_aim:
-			var abilities := p_unit.active_abilities
-			if _director.selected_ability_index >= 0 and _director.selected_ability_index < abilities.size():
-				return _ability_action_icon(abilities[_director.selected_ability_index])
+			var aim_ability := CombatDirector.resolve_selected_ability(p_unit, _director.selected_ability_index)
+			if aim_ability != null:
+				if AbilitySystem.is_wait_ability(aim_ability):
+					return "⏸"
+				return _ability_action_icon(aim_ability)
 	else:
 		if hover_unit != null and hover_unit.is_enemy():
 			if _prefer_approach_over_trample_move(p_unit, hover_unit):
@@ -1381,15 +1406,23 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			)
 			_planning.set_drag_attack_target(-1)
 			return
-	if cell == actor.position and _drag_unit_was_selected and _director.selected_ability_index >= 0:
-		var self_ability := _selected_ability_data(actor)
-		if AbilitySystem.can_target_self(actor, self_ability):
-			var self_face: int = _facing_from_drop(local, cell)
-			if self_face < 0:
-				self_face = actor.facing
-			_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, self_face, preview_cell, drag_preview_failed)
+	if cell == actor.position and _drag_unit_was_selected:
+		if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+			var wait_face: int = _facing_from_drop(local, cell)
+			if wait_face < 0:
+				wait_face = actor.facing
+			_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, wait_face, preview_cell, drag_preview_failed)
 			_planning.set_drag_attack_target(-1)
 			return
+		if _director.selected_ability_index >= 0:
+			var self_ability := _selected_ability_data(actor)
+			if AbilitySystem.can_target_self(actor, self_ability):
+				var self_face: int = _facing_from_drop(local, cell)
+				if self_face < 0:
+					self_face = actor.facing
+				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, self_face, preview_cell, drag_preview_failed)
+				_planning.set_drag_attack_target(-1)
+				return
 	if not force_basic_movement and _director.selected_ability_index >= 0:
 		var dash_ability := _selected_ability_data(actor)
 		if (
