@@ -735,6 +735,14 @@ static func _actor_foot_on_shadow_root(actor: Node2D, shadow_root: Node2D) -> Ve
 	return actor.global_position
 
 
+static func _foot_entry_rect(entry: Dictionary) -> Rect2:
+	var origin: Vector2 = entry.get("map_origin", Vector2.ZERO) as Vector2
+	var img: Image = entry.get("image") as Image
+	if img == null:
+		return Rect2(origin, Vector2.ZERO)
+	return Rect2(origin, Vector2(float(img.get_width()), float(img.get_height())))
+
+
 static func _restore_map_oblique_without_feet(
 	settings: EffectsSettings = null,
 	shadow_root: Node2D = null,
