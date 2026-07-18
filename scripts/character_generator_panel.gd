@@ -40,6 +40,10 @@ var _item_sliders: Dictionary = {}      # item_id -> HSlider
 var _item_section_vbox: VBoxContainer
 var _item_section_toggle: Button
 var _item_section_visible: bool = false
+var _color_sliders: Dictionary = {}     # "hair:blonde" -> HSlider
+var _color_section_vbox: VBoxContainer
+var _color_section_toggle: Button
+var _color_section_visible: bool = false
 var _generate_btn: Button
 var _seed_spin: SpinBox
 var _report_label: Label
@@ -66,6 +70,8 @@ func _ready() -> void:
 
 func set_catalog(catalog: LpcCatalog) -> void:
 	_catalog = catalog
+	if _color_section_vbox != null:
+		_rebuild_color_sliders()
 
 func get_profile() -> CharacterGenProfile:
 	return _profile
@@ -292,6 +298,21 @@ func _build_ui() -> void:
 		)
 		_body_sliders[bt] = sl
 
+	# Recolor weights (skin / hair / cloth pools from catalog)
+	_color_section_toggle = Button.new()
+	_color_section_toggle.text = "▶  Recolor Weights"
+	_color_section_toggle.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_color_section_toggle.flat = true
+	_color_section_toggle.pressed.connect(_toggle_color_section)
+	vbox.add_child(_color_section_toggle)
+
+	_color_section_vbox = VBoxContainer.new()
+	_color_section_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_color_section_vbox.add_theme_constant_override("separation", 4)
+	_color_section_vbox.visible = false
+	vbox.add_child(_color_section_vbox)
+	_rebuild_color_sliders()
+
 	# Slot weights
 	_add_section_label(vbox, "Slot Weights")
 	for slot: String in DISPLAY_SLOTS:
@@ -344,6 +365,51 @@ func _toggle_item_section() -> void:
 	_item_section_visible = not _item_section_visible
 	_item_section_vbox.visible = _item_section_visible
 	_item_section_toggle.text = ("▼  Item Weights" if _item_section_visible else "▶  Item Weights")
+
+
+func _toggle_color_section() -> void:
+	_color_section_visible = not _color_section_visible
+	_color_section_vbox.visible = _color_section_visible
+	_color_section_toggle.text = (
+		"▼  Recolor Weights" if _color_section_visible else "▶  Recolor Weights"
+	)
+
+
+func _rebuild_color_sliders() -> void:
+	if _color_section_vbox == null:
+		return
+	for c: Node in _color_section_vbox.get_children():
+		c.queue_free()
+	_color_sliders.clear()
+	if _catalog == null:
+		return
+	_add_recolor_weight_group("Skin Colors", "skin", _catalog.skin_recolors)
+	_add_recolor_weight_group("Hair Colors", "hair", _catalog.hair_recolors)
+	_add_recolor_weight_group("Cloth Colors", "cloth", _catalog.cloth_recolors)
+
+
+func _add_recolor_weight_group(title: String, prefix: String, names: PackedStringArray) -> void:
+	if names.is_empty():
+		return
+	var hdr := Label.new()
+	hdr.text = title
+	hdr.add_theme_font_size_override("font_size", 14)
+	hdr.add_theme_color_override("font_color", Color(0.75, 0.82, 0.9))
+	_color_section_vbox.add_child(hdr)
+	for color_name: String in names:
+		var weight_key: String = "%s:%s" % [prefix, color_name]
+		var w: float = float(_profile.item_weights.get(weight_key, 1.0))
+		var sl := _add_labeled_slider(
+			_color_section_vbox,
+			color_name,
+			0.0,
+			1.0,
+			w,
+			func(v: float, wk: String = weight_key) -> void:
+				_profile.set_item_weight(wk, v)
+				_save_config()
+		)
+		_color_sliders[weight_key] = sl
 
 
 # ---- actions ----
@@ -504,6 +570,8 @@ func _add_part_toggle_row(parent: VBoxContainer, item_id: String, weight_key: St
 		toggle.set_pressed_no_signal(v > 0.0)
 		if _item_sliders.has(wk):
 			_item_sliders[wk].set_value_no_signal(v)
+		if _color_sliders.has(wk):
+			_color_sliders[wk].set_value_no_signal(v)
 		_save_config()
 	)
 
@@ -519,6 +587,8 @@ func _add_part_toggle_row(parent: VBoxContainer, item_id: String, weight_key: St
 			_profile.set_item_weight(wk, restore)
 			if _item_sliders.has(wk):
 				_item_sliders[wk].set_value_no_signal(restore)
+			if _color_sliders.has(wk):
+				_color_sliders[wk].set_value_no_signal(restore)
 			set_part_visible(iid, true)
 		else:
 			# Save current then zero
@@ -528,6 +598,8 @@ func _add_part_toggle_row(parent: VBoxContainer, item_id: String, weight_key: St
 			_profile.set_item_weight(wk, 0.0)
 			if _item_sliders.has(wk):
 				_item_sliders[wk].set_value_no_signal(0.0)
+			if _color_sliders.has(wk):
+				_color_sliders[wk].set_value_no_signal(0.0)
 			set_part_visible(iid, false)
 		_save_config()
 	)
