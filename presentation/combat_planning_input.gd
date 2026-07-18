@@ -798,10 +798,15 @@ func _try_commit_move_with_self_skill(
 			return false
 		if not _can_move_to(actor, coord):
 			return false
-		_director.rpc_plan_run_and_move(
-			unit_id, coord, _facing_from_drop(local, coord), waypoints, _director.selected_ability_index,
-		)
-		_play_sfx("ability")
+		var face_dir: int = _facing_from_drop(local, coord)
+		if AbilitySystem.movement_requires_run(_proj(), actor, coord, waypoints):
+			_director.rpc_plan_run_and_move(
+				unit_id, coord, face_dir, waypoints, _director.selected_ability_index,
+			)
+			_play_sfx("ability")
+		else:
+			_director.rpc_plan_move(unit_id, coord, face_dir, waypoints)
+			_play_sfx("move")
 		return true
 	if coord == actor.position:
 		_director.rpc_plan_attack(unit_id, _director.selected_ability_index, unit_id)

@@ -108,6 +108,43 @@ static func find_path(board: BoardState, start: Vector2i, goal: Vector2i, max_st
 		
 	return path
 
+static func move_cost_for(unit: UnitState) -> int:
+	if unit != null and unit.has_status(GameEnums.StatusType.BLEED):
+		return 2
+	return 1
+
+
+static func resolve_move_path(
+	board: BoardState,
+	unit: UnitState,
+	target_coord: Vector2i,
+	waypoints: Array[Vector2i],
+	max_steps: int,
+) -> Array[Vector2i]:
+	if unit == null:
+		return []
+	var move_cost: int = move_cost_for(unit)
+	var mt: GameEnums.MovementType = (
+		unit.definition.movement_type
+		if unit.definition != null
+		else GameEnums.MovementType.WALK
+	)
+	if _is_legal_walk(board, unit.position, waypoints, max_steps, move_cost):
+		return waypoints.duplicate()
+	return find_path(board, unit.position, target_coord, max_steps, mt, move_cost)
+
+
+static func can_reach_coord(
+	board: BoardState,
+	unit: UnitState,
+	target_coord: Vector2i,
+	waypoints: Array[Vector2i],
+	max_steps: int,
+) -> bool:
+	var path: Array[Vector2i] = resolve_move_path(board, unit, target_coord, waypoints, max_steps)
+	return not path.is_empty() and path[path.size() - 1] == target_coord
+
+
 static func is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState) -> bool:
 	return _is_walkable_for(board, coord, unit)
 

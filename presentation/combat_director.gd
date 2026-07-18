@@ -384,6 +384,8 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 		return {"intents": [], "events": [], "temp_board": base_board.clone()}
 	var start_board: BoardState = base_board.clone()
 	var actor := start_board.get_unit_by_id(unit_id)
+	var plan_board: BoardState = projected_state if projected_state != null else start_board
+	var plan_actor: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else actor
 	var new_actions: Array[TimelineAction] = []
 	if attack_target_id >= 0:
 		var target := start_board.get_unit_by_id(attack_target_id)
@@ -397,14 +399,19 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 				and AbilitySystem.can_target_self(actor, ability)
 			)
 			if self_after_move and AbilitySystem.is_run_ability(ability):
-				new_actions.append(
-					TimelineAction.make_ability(
-						unit_id, ability, actor.position, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
-					),
-				)
-				new_actions.append(
-					TimelineAction.make_move(unit_id, coord, -1, waypoints, GameEnums.MoveTiming.POST_ACTION),
-				)
+				if plan_actor != null and AbilitySystem.movement_requires_run(plan_board, plan_actor, coord, waypoints):
+					new_actions.append(
+						TimelineAction.make_ability(
+							unit_id, ability, actor.position, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
+						),
+					)
+					new_actions.append(
+						TimelineAction.make_move(unit_id, coord, -1, waypoints, GameEnums.MoveTiming.POST_ACTION),
+					)
+				else:
+					new_actions.append(
+						TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing),
+					)
 			elif self_after_move:
 				new_actions.append(
 					TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing),
@@ -440,14 +447,17 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 		):
 			var ability: AbilityData = actor.active_abilities[selected_ability_index]
 			if AbilitySystem.is_run_ability(ability) and coord != actor.position:
-				new_actions.append(
-					TimelineAction.make_ability(
-						unit_id, ability, actor.position, unit_id, GameEnums.MoveTiming.PRE_ACTION,
-					),
-				)
-				new_actions.append(
-					TimelineAction.make_move(unit_id, coord, -1, waypoints, GameEnums.MoveTiming.POST_ACTION),
-				)
+				if plan_actor != null and AbilitySystem.movement_requires_run(plan_board, plan_actor, coord, waypoints):
+					new_actions.append(
+						TimelineAction.make_ability(
+							unit_id, ability, actor.position, unit_id, GameEnums.MoveTiming.PRE_ACTION,
+						),
+					)
+					new_actions.append(
+						TimelineAction.make_move(unit_id, coord, -1, waypoints, GameEnums.MoveTiming.POST_ACTION),
+					)
+				else:
+					new_actions.append(TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing))
 			else:
 				new_actions.append(TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing))
 		else:
@@ -528,7 +538,18 @@ func rpc_plan_move_with_self_ability(
 	if AbilitySystem.is_run_ability(ability):
 		if move_coord == attacker.position:
 			return
-		rpc_plan_run_and_move(unit_id, move_coord, face_dir, waypoints, index)
+		var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else attacker
+		if p_unit == null:
+			p_unit = attacker
+		var plan_board: BoardState = projected_state if projected_state != null else board
+		if AbilitySystem.movement_requires_run(plan_board, p_unit, move_coord, waypoints):
+			rpc_plan_run_and_move(unit_id, move_coord, face_dir, waypoints, index)
+		else:
+			_clear_unit_from_plans(unit_id, target_timing)
+			_try_add(
+				TimelineAction.make_move(unit_id, move_coord, face_dir, waypoints, target_timing),
+				plan_to_use,
+			)
 		return
 	_clear_unit_from_plans(unit_id, target_timing)
 	if move_coord == attacker.position:
@@ -569,6 +590,13 @@ func rpc_plan_run_and_move(
 		EventBus.action_rejected.emit("cannot_use_ability")
 		return
 	if move_coord == attacker.position:
+		return
+	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else attacker
+	if p_unit == null:
+		p_unit = attacker
+	var plan_board: BoardState = projected_state if projected_state != null else board
+	if not AbilitySystem.movement_requires_run(plan_board, p_unit, move_coord, waypoints):
+		rpc_plan_move(unit_id, move_coord, face_dir, waypoints)
 		return
 	_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 	var ability_action := TimelineAction.make_ability(

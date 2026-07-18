@@ -104,6 +104,22 @@ static func preview_move_budget_with_run(unit: UnitState) -> int:
 	return unit.movement.points_left + running_move_bonus(unit.movement.max_points)
 
 
+static func movement_requires_run(
+	board: BoardState,
+	unit: UnitState,
+	target_coord: Vector2i,
+	waypoints: Array[Vector2i] = [],
+) -> bool:
+	if unit == null or unit.has_status(GameEnums.StatusType.RUNNING):
+		return false
+	var base_mp: int = unit.movement.points_left
+	if MovementSystem.can_reach_coord(board, unit, target_coord, waypoints, base_mp):
+		return false
+	return MovementSystem.can_reach_coord(
+		board, unit, target_coord, waypoints, preview_move_budget_with_run(unit),
+	)
+
+
 ## True when selecting this ability should suppress basic walk (drag route, move highlights).
 ## Trample dashes like Bowling Charge are optional skills — basic movement stays available.
 static func ability_blocks_basic_movement(ability: AbilityData) -> bool:
