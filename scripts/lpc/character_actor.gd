@@ -32,6 +32,7 @@ var _running: bool = false
 var _planning_exhausted: bool = false
 var _sprite_shadow_stamp: int = -1
 var _sprite_shadow_pos: Vector2 = Vector2.ZERO
+var _sprite_shadow_layer_count: int = 0
 ## Per-layer self_modulate — parent modulate does not reach LPC recolor shader output reliably.
 const _EXHAUSTED_LAYER_MODULATE := Color(0.28, 0.28, 0.32, 1.0)
 const _EXHAUSTED_SHADOW_TINT := Color(0.40, 0.40, 0.44, 1.0)
@@ -77,6 +78,7 @@ func clear_layers() -> void:
 	_layers.clear()
 	_sprite_shadow_stamp = -1
 	_sprite_shadow_pos = Vector2.ZERO
+	_sprite_shadow_layer_count = 0
 	if _selection_glow != null:
 		_selection_glow.on_layers_cleared()
 		if _selection_glow.is_active():
@@ -122,6 +124,7 @@ func add_layer(
 	_apply_motion_state(spr)
 	_layers.append(spr)
 	move_child(spr, -1)
+	invalidate_environment_shadow_sync()
 	if _planning_exhausted:
 		_apply_visual_tint()
 	if _selection_glow != null and _selection_glow.is_active():
@@ -145,6 +148,7 @@ func rebuild_contact_shadow(settings: EffectsSettings = null) -> void:
 func invalidate_environment_shadow_sync() -> void:
 	_sprite_shadow_stamp = -1
 	_sprite_shadow_pos = Vector2(1.0e9, 1.0e9)
+	_sprite_shadow_layer_count = -1
 
 
 func force_environment_shadow_sync(settings: EffectsSettings = null) -> void:
@@ -163,13 +167,16 @@ func _sync_sprite_shadow_receive(settings: EffectsSettings = null) -> void:
 		return
 	var enabled: bool = settings != null and settings.oblique_contact_shadows
 	var stamp: int = ShadowPlacer.map_composite_apply_epoch() if enabled else -1
+	var layer_count: int = _layers.size()
 	if (
 		stamp == _sprite_shadow_stamp
 		and position.is_equal_approx(_sprite_shadow_pos)
+		and layer_count == _sprite_shadow_layer_count
 	):
 		return
 	_sprite_shadow_stamp = stamp
 	_sprite_shadow_pos = position
+	_sprite_shadow_layer_count = layer_count
 	for spr: AnimatedSprite2D in _layers:
 		if spr == null or not is_instance_valid(spr) or spr.material == null:
 			continue
