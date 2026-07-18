@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Honor and Iron 3"
 config/description="Mana Seed living maps + Honor & Iron deterministic tactics"
-run/main_scene="res://scenes/MainMenu.tscn"
+run/main_scene="uid://c8samplemap01"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 

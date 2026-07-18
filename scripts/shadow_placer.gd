@@ -1609,9 +1609,7 @@ static func actor_oblique_band_modulates(
 		bands[i] = Color.WHITE
 	if actor == null or settings == null:
 		return bands
-	var wants_tree: bool = settings.oblique_contact_shadows
-	var wants_cloud: bool = settings.cloud_shadows and WeatherBus.shadows_visible()
-	if not wants_tree and not wants_cloud:
+	if not settings.oblique_contact_shadows:
 		return bands
 	var foot: Vector2 = actor.position
 	var scale_y: float = actor.scale.y
@@ -1619,72 +1617,26 @@ static func actor_oblique_band_modulates(
 		var y_rows: Variant = ACTOR_SHADOW_BAND_Y[band_i]
 		if typeof(y_rows) != TYPE_ARRAY:
 			continue
-		var tree_mod: Color = Color.WHITE
-		var cloud_mod: Color = Color.WHITE
-		if wants_tree:
-			tree_mod = _tree_band_modulate(actor, foot, scale_y, y_rows, settings)
-		if wants_cloud:
-			cloud_mod = _cloud_band_modulate(actor, foot, scale_y, y_rows, settings)
-		bands[band_i] = _multiply_shadow_modulates(tree_mod, cloud_mod)
+		var hit_count: int = 0
+		var sample_count: int = 0
+		var alpha_sum: float = 0.0
+		for y_off: Variant in y_rows:
+			var y_px: float = float(y_off) * scale_y
+			for x_off: Variant in ACTOR_SHADOW_BAND_X:
+				sample_count += 1
+				var alpha: float = sample_map_oblique_alpha_at(
+					foot + Vector2(float(x_off) * actor.scale.x, y_px)
+				)
+				if alpha >= 0.04:
+					hit_count += 1
+					alpha_sum += alpha
+		if sample_count < 1:
+			continue
+		if float(hit_count) / float(sample_count) < ACTOR_SHADOW_MAJORITY_RATIO:
+			continue
+		var coverage: float = alpha_sum / float(hit_count)
+		bands[band_i] = _modulate_from_shadow_coverage(coverage, settings)
 	return bands
-
-
-static func _tree_band_modulate(
-	actor: Node2D,
-	foot: Vector2,
-	scale_y: float,
-	y_rows: Variant,
-	settings: EffectsSettings,
-) -> Color:
-	var hit_count: int = 0
-	var sample_count: int = 0
-	var alpha_sum: float = 0.0
-	for y_off: Variant in y_rows:
-		var y_px: float = float(y_off) * scale_y
-		for x_off: Variant in ACTOR_SHADOW_BAND_X:
-			sample_count += 1
-			var alpha: float = sample_map_oblique_alpha_at(
-				foot + Vector2(float(x_off) * actor.scale.x, y_px)
-			)
-			if alpha >= 0.04:
-				hit_count += 1
-				alpha_sum += alpha
-	if sample_count < 1:
-		return Color.WHITE
-	if float(hit_count) / float(sample_count) < ACTOR_SHADOW_MAJORITY_RATIO:
-		return Color.WHITE
-	return _modulate_from_shadow_coverage(alpha_sum / float(hit_count), settings)
-
-
-static func _cloud_band_modulate(
-	actor: Node2D,
-	foot: Vector2,
-	scale_y: float,
-	y_rows: Variant,
-	settings: EffectsSettings,
-) -> Color:
-	var hit_count: int = 0
-	var sample_count: int = 0
-	var mask_sum: float = 0.0
-	for y_off: Variant in y_rows:
-		var y_px: float = float(y_off) * scale_y
-		for x_off: Variant in ACTOR_SHADOW_BAND_X:
-			sample_count += 1
-			var mask: float = CloudShadowSampler.sample_mask_at_map_px(
-				foot + Vector2(float(x_off) * actor.scale.x, y_px)
-			)
-			if mask >= CloudShadowSampler.MASK_CUTOFF:
-				hit_count += 1
-				mask_sum += mask
-	if sample_count < 1:
-		return Color.WHITE
-	if float(hit_count) / float(sample_count) < ACTOR_SHADOW_MAJORITY_RATIO:
-		return Color.WHITE
-	return CloudShadowSampler.modulate_from_mask(mask_sum / float(hit_count), settings)
-
-
-static func _multiply_shadow_modulates(a: Color, b: Color) -> Color:
-	return Color(a.r * b.r, a.g * b.g, a.b * b.b, 1.0)
 
 
 ## Legacy single-tint path — darkest band that passed majority gate.

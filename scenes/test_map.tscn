@@ -45,7 +45,7 @@ z_as_relative = false
 z_index = 5
 
 [node name="SkyOverlay" type="Node2D" parent="WorldModulate"]
-z_index = 7
+z_index = 11
 
 [node name="CloudShadows" type="ColorRect" parent="WorldModulate/SkyOverlay"]
 mouse_filter = 2
