@@ -193,7 +193,6 @@ static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsS
 	sorted.sort_custom(
 		func(a: Node, b: Node) -> bool: return a.get_instance_id() < b.get_instance_id()
 	)
-	ShadowPlacer.begin_peer_shadow_sync()
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
 
@@ -208,7 +207,6 @@ static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSe
 				return true
 			return (a as Node).get_instance_id() < (b as Node).get_instance_id()
 	)
-	ShadowPlacer.begin_peer_shadow_sync()
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
 
