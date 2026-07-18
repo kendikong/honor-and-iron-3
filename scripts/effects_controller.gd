@@ -33,6 +33,8 @@ var _ground_wired: bool = false
 var _weather_wired: bool = false
 var _last_grid: PlayerGrid
 var _character_contact_shadow_sync: Callable = Callable()
+var _foot_compositor: ActorFootShadowCompositor
+var _last_foot_shadow_map_epoch: int = -1
 
 
 func setup(
@@ -75,6 +77,7 @@ func setup(
 	WeatherBus.apply_biome_profile(biome_profile)
 	_wire_weather_bus()
 	_ensure_shadow_draw_order()
+	_ensure_foot_compositor()
 	apply_all(null, 0.0)
 
 
@@ -159,6 +162,10 @@ func process_frame(delta: float) -> void:
 	if settings.cloud_shadows and _atmosphere != null:
 		_atmosphere.push_cloud_shadow_uniforms(settings)
 	if settings.oblique_contact_shadows and _shadow_sprites != null and _last_grid != null:
+		var map_epoch: int = ShadowPlacer.map_composite_apply_epoch()
+		if map_epoch != _last_foot_shadow_map_epoch:
+			_last_foot_shadow_map_epoch = map_epoch
+			ShadowPlacer.invalidate_foot_cluster_layout()
 		if WeatherBus.shadows_visible() and ShadowPlacer.is_layer_cache_empty():
 			_apply_oblique_contact_shadows(_last_grid)
 		else:
@@ -185,13 +192,23 @@ static func sync_contact_shadow_on_actor(actor: Node, settings: EffectsSettings)
 
 
 static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsSettings) -> void:
+	var sorted: Array = []
 	for actor: Variant in actors.values():
+		if actor != null and is_instance_valid(actor):
+			sorted.append(actor)
+	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
+	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings)
 
 
 static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
+	var sorted: Array = []
 	for actor: Variant in actors:
+		if actor != null and is_instance_valid(actor):
+			sorted.append(actor)
+	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
+	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings)
 
 
 func _sync_contact_shadow_mask() -> void:
@@ -281,6 +298,14 @@ func _apply_oblique_contact_shadows(grid: PlayerGrid) -> void:
 	_shadow_sprites.process_mode = Node.PROCESS_MODE_INHERIT
 	_shadow_sprites.visible = true
 	ShadowPlacer.apply(grid, _shadow_sprites, _ground, _trees, _overlay, null, settings, _scatter)
+
+
+func _ensure_foot_compositor() -> void:
+	if _foot_compositor != null or _map_root == null:
+		return
+	_foot_compositor = ActorFootShadowCompositor.new()
+	_map_root.add_child(_foot_compositor)
+	ShadowPlacer.set_foot_cluster_root(_foot_compositor)
 
 
 func _ensure_shadow_draw_order() -> void:
