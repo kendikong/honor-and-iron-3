@@ -309,6 +309,9 @@ func _add_body_cell(
 		lbl.tooltip_text = tooltip
 	if expand:
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lbl.size_flags_stretch_ratio = 0.35
+		if width > 0:
+			lbl.custom_minimum_size.x = float(width)
 	elif width > 0:
 		lbl.custom_minimum_size.x = float(width)
 	row.add_child(lbl)
