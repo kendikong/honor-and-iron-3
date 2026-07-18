@@ -79,8 +79,9 @@ void fragment() {
 		) {
 			vec2 oblique_uv = oblique_local / map_oblique_size;
 			float oblique_a = texture(map_oblique_tex, oblique_uv).a;
-			float yield_map = smoothstep(ALPHA_CUTOFF, 0.16, oblique_a);
-			tint = mix(tint, vec3(1.0), yield_map);
+			if (oblique_a >= ALPHA_CUTOFF) {
+				tint = vec3(1.0);
+			}
 		}
 	}
 	if (has_cloud_shadow > 0.5) {

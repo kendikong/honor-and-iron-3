@@ -203,6 +203,7 @@ static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsS
 			sorted.append(actor)
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
+	ShadowPlacer.apply_actor_foot_shadow_cell_occlusion(sorted)
 
 
 static func sync_contact_shadow_drift_on_actors(actors: Dictionary, settings: EffectsSettings) -> void:
@@ -230,8 +231,13 @@ static func sync_contact_shadow_drift_on_actor_list(actors: Array, settings: Eff
 
 
 static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
+	var sorted: Array = []
 	for actor: Variant in actors:
+		if actor != null and is_instance_valid(actor):
+			sorted.append(actor)
+	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
+	ShadowPlacer.apply_actor_foot_shadow_cell_occlusion(sorted)
 
 
 func _sync_contact_shadow_mask() -> void:

@@ -376,6 +376,37 @@ static func _cloud_drift_key() -> int:
 	return hash(Vector2i(int(floor(d.x * 64.0)), int(floor(d.y * 64.0))))
 
 
+## One foot shadow per grid cell — higher instance_id yields so multiply layers do not stack.
+static func apply_actor_foot_shadow_cell_occlusion(actors: Array) -> void:
+	var cell_winners: Dictionary = {}
+	for actor_var: Variant in actors:
+		var actor: Node2D = actor_var as Node2D
+		if actor == null or not is_instance_valid(actor):
+			continue
+		var cell: Vector2i = Vector2i(
+			int(floor(actor.position.x / float(TILE_PX))),
+			int(floor(actor.position.y / float(TILE_PX))),
+		)
+		var winner_id: int = int(cell_winners.get(cell, -1))
+		var actor_id: int = actor.get_instance_id()
+		if winner_id < 0 or actor_id < winner_id:
+			cell_winners[cell] = actor_id
+	for actor_var: Variant in actors:
+		var actor: Node2D = actor_var as Node2D
+		if actor == null or not actor.has_method("get_contact_shadow_sprite"):
+			continue
+		var sprite: Sprite2D = actor.call("get_contact_shadow_sprite") as Sprite2D
+		if sprite == null or not sprite.visible:
+			continue
+		var cell: Vector2i = Vector2i(
+			int(floor(actor.position.x / float(TILE_PX))),
+			int(floor(actor.position.y / float(TILE_PX))),
+		)
+		var winner_id: int = int(cell_winners.get(cell, actor.get_instance_id()))
+		if actor.get_instance_id() != winner_id:
+			sprite.visible = false
+
+
 static func _sync_actor_map_oblique(sprite: Sprite2D, actor: Node2D) -> void:
 	var mat: ShaderMaterial = sprite.material as ShaderMaterial
 	if mat == null:
