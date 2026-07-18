@@ -143,9 +143,6 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
-	if _is_planning_phase():
-		queue_redraw()
-		return
 	_sync_actors()
 	_refresh_planning_visuals()
 	queue_redraw()
@@ -406,6 +403,9 @@ func _ensure_actor(unit: UnitState) -> void:
 	actor.set_display_scale(_display_scale())
 	actor.rebuild_contact_shadow(_map_view.get_effects_settings())
 	_actors[unit.id] = actor
+	_position_actor(unit.id, unit.position)
+	_apply_facing(unit.id, unit.facing)
+	_update_depth(unit.id)
 
 
 func spawn_floating_damage(unit_id: int, amount: int, dmg_type: StringName) -> void:
