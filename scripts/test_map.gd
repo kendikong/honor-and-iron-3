@@ -9,6 +9,7 @@ const _CharacterActor = preload("res://scripts/lpc/character_actor.gd")
 const _CharacterGridMover = preload("res://scripts/lpc/character_grid_mover.gd")
 
 const TILE_PX: int = TacticalConstants.TILE_PX
+const TEST_UNIT_COUNT: int = 10
 
 @export_range(1, 3) var biome_variant: int = 1
 
@@ -50,6 +51,8 @@ var _char_actor: CharacterActor
 var _char_mover: CharacterGridMover
 var _char_recipe: CharacterRecipe
 var _asset_preloader: LpcAssetPreloader
+var _extra_actors: Array[CharacterActor] = []
+var _extra_movers: Array[CharacterGridMover] = []
 
 
 func _ready() -> void:
@@ -278,6 +281,8 @@ func _process(delta: float) -> void:
 
 func _sync_test_char_contact_shadow(settings: EffectsSettings) -> void:
 	EffectsController.sync_contact_shadow_on_actor(_char_actor, settings)
+	for actor: CharacterActor in _extra_actors:
+		EffectsController.sync_contact_shadow_on_actor(actor, settings)
 
 
 func _on_effects_toggled() -> void:
@@ -411,6 +416,7 @@ func _set_walkability_overlay(enabled: bool) -> void:
 func _refresh_walk_gameplay() -> void:
 	if _char_mover != null and _player_grid != null:
 		_char_mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter)
+	_sync_extra_unit_grids()
 	if _walkability_overlay.visible:
 		_walkability_overlay.sync(
 			_player_grid, _map_root, _trees, _overlay, _effects.settings,
@@ -484,6 +490,7 @@ func _regenerate() -> void:
 	_inspector.invalidate_display_cache()
 	if _char_mover != null and _player_grid != null:
 		_char_mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter)
+	_sync_extra_unit_grids()
 
 
 func _sync_debug_views() -> void:
@@ -561,6 +568,7 @@ func _sync_tree_variant_setting() -> void:
 
 
 func _spawn_character_actor() -> void:
+	_clear_extra_units()
 	if _char_actor != null:
 		_char_actor.queue_free()
 	_char_actor = _CharacterActor.new()
@@ -571,14 +579,123 @@ func _spawn_character_actor() -> void:
 	_char_mover.name = "GridMover"
 	_char_actor.add_child(_char_mover)
 	_reroll_character()
-	if _player_grid != null:
-		var center: Vector2i = Vector2i(_player_grid.width >> 1, _player_grid.height >> 1)
-		var spawn: Vector2i = Walkability.find_spawn_cell(
-			_player_grid, center, _trees, _overlay, _effects.settings, _scatter,
+	_place_player_actor()
+	_spawn_extra_units()
+
+
+func _clear_extra_units() -> void:
+	for actor: CharacterActor in _extra_actors:
+		if actor != null and is_instance_valid(actor):
+			actor.queue_free()
+	_extra_actors.clear()
+	_extra_movers.clear()
+
+
+func _spawn_extra_units() -> void:
+	_clear_extra_units()
+	if _player_grid == null or TEST_UNIT_COUNT <= 1:
+		return
+	var center: Vector2i = Vector2i(_player_grid.width >> 1, _player_grid.height >> 1)
+	var player_cell: Vector2i = center
+	if _char_mover != null:
+		player_cell = _char_mover.grid_cell
+	var spawn_cells: Array[Vector2i] = _find_distinct_spawn_cells(
+		center,
+		TEST_UNIT_COUNT - 1,
+		[player_cell],
+	)
+	for i: int in range(spawn_cells.size()):
+		var actor: CharacterActor = _CharacterActor.new()
+		actor.name = "LpcCharacter_%d" % (i + 1)
+		_map_root.add_child(actor)
+		_map_root.move_child(actor, -1)
+		var mover: CharacterGridMover = _CharacterGridMover.new()
+		mover.name = "GridMover"
+		mover.process_mode = Node.PROCESS_MODE_DISABLED
+		actor.add_child(mover)
+		_roll_and_apply_actor(actor, (_char_profile.seed + (i + 1) * 7919) & 0x7fffffff)
+		mover.setup(
+			actor,
+			_player_grid,
+			spawn_cells[i],
+			_trees,
+			_overlay,
+			_effects.settings,
+			_scatter,
 		)
-		_char_mover.setup(
-			_char_actor, _player_grid, spawn, _trees, _overlay, _effects.settings, _scatter,
-		)
+		mover.refresh_depth_sort()
+		_extra_actors.append(actor)
+		_extra_movers.append(mover)
+
+
+func _find_distinct_spawn_cells(
+	prefer: Vector2i,
+	count: int,
+	reserved: Array[Vector2i],
+) -> Array[Vector2i]:
+	var found: Array[Vector2i] = []
+	if _player_grid == null or count < 1:
+		return found
+	var blocked: Dictionary = {}
+	for cell: Vector2i in reserved:
+		blocked[cell] = true
+	var candidates: Array[Vector2i] = []
+	var max_radius: int = maxi(_player_grid.width, _player_grid.height)
+	for radius: int in range(0, max_radius + 1):
+		if radius == 0:
+			candidates.append(prefer)
+		else:
+			for dy: int in range(-radius, radius + 1):
+				for dx: int in range(-radius, radius + 1):
+					if maxi(absi(dx), absi(dy)) != radius:
+						continue
+					candidates.append(prefer + Vector2i(dx, dy))
+	for y: int in range(_player_grid.height):
+		for x: int in range(_player_grid.width):
+			candidates.append(Vector2i(x, y))
+	for cell: Vector2i in candidates:
+		if found.size() >= count:
+			break
+		if blocked.has(cell):
+			continue
+		if not Walkability.is_walkable(
+			_player_grid, cell, _trees, _overlay, _effects.settings, _scatter,
+		):
+			continue
+		found.append(cell)
+		blocked[cell] = true
+	while found.size() < count:
+		found.append(prefer)
+	return found
+
+
+func _roll_and_apply_actor(actor: CharacterActor, roll_seed: int) -> void:
+	var recipe: CharacterRecipe = CharacterRoller.roll(_lpc_catalog, _char_profile, roll_seed)
+	CharacterComposer.apply(actor, recipe)
+	actor.set_display_scale(_char_profile.display_scale)
+	actor.rebuild_contact_shadow(_effects.settings)
+
+
+func _sync_extra_unit_grids() -> void:
+	if _player_grid == null:
+		return
+	for mover: CharacterGridMover in _extra_movers:
+		if mover == null or not is_instance_valid(mover):
+			continue
+		mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter)
+		mover.refresh_depth_sort()
+
+
+func _place_player_actor() -> void:
+	if _player_grid == null or _char_mover == null:
+		return
+	var center: Vector2i = Vector2i(_player_grid.width >> 1, _player_grid.height >> 1)
+	var spawn_cells: Array[Vector2i] = _find_distinct_spawn_cells(center, 1, [])
+	if spawn_cells.is_empty():
+		return
+	_char_mover.setup(
+		_char_actor, _player_grid, spawn_cells[0], _trees, _overlay, _effects.settings, _scatter,
+	)
 
 
 func _reroll_character() -> void:
@@ -664,3 +781,6 @@ func _warn_missing_head(report: Dictionary) -> void:
 func _on_character_gen_changed() -> void:
 	if _char_actor != null:
 		_char_actor.set_display_scale(_char_profile.display_scale)
+	for actor: CharacterActor in _extra_actors:
+		if actor != null and is_instance_valid(actor):
+			actor.set_display_scale(_char_profile.display_scale)
