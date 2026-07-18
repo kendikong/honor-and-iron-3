@@ -56,6 +56,9 @@ var show_damage_numbers: bool = true
 var dev_tile_labels: bool = false
 var dev_boredom_atmosphere: bool = false
 var dev_boredom_water: bool = false
+var screen_index: int = 0
+var window_position: Vector2i = Vector2i.ZERO
+var _has_saved_window_placement: bool = false
 
 
 func load_from_disk() -> void:
@@ -88,12 +91,25 @@ func load_from_disk() -> void:
 	dev_tile_labels = bool(cfg.get_value("developer", "tile_labels", dev_tile_labels))
 	dev_boredom_atmosphere = bool(cfg.get_value("developer", "boredom_atmosphere", dev_boredom_atmosphere))
 	dev_boredom_water = bool(cfg.get_value("developer", "boredom_water", dev_boredom_water))
+	if cfg.has_section_key("display", "screen_index"):
+		screen_index = int(cfg.get_value("display", "screen_index", screen_index))
+		window_position = Vector2i(
+			int(cfg.get_value("display", "window_position_x", window_position.x)),
+			int(cfg.get_value("display", "window_position_y", window_position.y)),
+		)
+		_has_saved_window_placement = true
 
 
 func capture_from_window(window: Window) -> void:
 	window_mode = DisplayServer.window_get_mode()
+	if window != null:
+		screen_index = window.current_screen
+	else:
+		screen_index = DisplayServer.window_get_current_screen()
 	if window_mode == DisplayServer.WINDOW_MODE_WINDOWED and window != null:
 		resolution = window.size
+		window_position = window.position
+		_has_saved_window_placement = true
 
 
 func save_to_disk() -> void:
@@ -120,23 +136,42 @@ func save_to_disk() -> void:
 	cfg.set_value("developer", "tile_labels", dev_tile_labels)
 	cfg.set_value("developer", "boredom_atmosphere", dev_boredom_atmosphere)
 	cfg.set_value("developer", "boredom_water", dev_boredom_water)
+	cfg.set_value("display", "screen_index", screen_index)
+	cfg.set_value("display", "window_position_x", window_position.x)
+	cfg.set_value("display", "window_position_y", window_position.y)
 	cfg.save(CONFIG_PATH)
 
 
-func apply_to_window(window: Window, preserve_placement: bool = true) -> void:
-	var screen_id: int = window.current_screen
-	if screen_id < 0:
-		screen_id = DisplayServer.window_get_current_screen()
+func apply_to_window(window: Window, preserve_center_on_resize: bool = false) -> void:
+	var screen_id: int = _validated_screen_index(screen_index)
 
 	match window_mode:
 		DisplayServer.WINDOW_MODE_WINDOWED:
-			DisplayWindowHelper.apply_resolution(
-				window,
-				resolution,
-				false,
-				screen_id,
-				preserve_placement,
-			)
+			if preserve_center_on_resize:
+				DisplayWindowHelper.apply_resolution(
+					window,
+					resolution,
+					false,
+					screen_id,
+					true,
+				)
+			elif _has_saved_window_placement:
+				window.mode = Window.MODE_WINDOWED
+				window.current_screen = screen_id
+				window.size = resolution
+				window.position = DisplayWindowHelper.clamp_to_usable_rect(
+					window_position,
+					resolution,
+					screen_id,
+				)
+			else:
+				DisplayWindowHelper.apply_resolution(
+					window,
+					resolution,
+					false,
+					screen_id,
+					false,
+				)
 		DisplayServer.WINDOW_MODE_FULLSCREEN:
 			if screen_id >= 0:
 				window.current_screen = screen_id
@@ -145,6 +180,13 @@ func apply_to_window(window: Window, preserve_placement: bool = true) -> void:
 			if screen_id >= 0:
 				window.current_screen = screen_id
 			window.mode = Window.MODE_EXCLUSIVE_FULLSCREEN
+
+
+func _validated_screen_index(preferred: int) -> int:
+	var count: int = DisplayServer.get_screen_count()
+	if preferred >= 0 and preferred < count:
+		return preferred
+	return DisplayServer.get_primary_screen()
 
 
 func resolution_index_for(size: Vector2i) -> int:
@@ -235,8 +277,8 @@ func compute_map_zoom(map_pixels: Vector2, zoom_viewport: Vector2) -> int:
 	return maxi(1, scaled)
 
 
-func apply_and_save(window: Window, preserve_placement: bool = true) -> void:
-	apply_to_window(window, preserve_placement)
+func apply_and_save(window: Window, preserve_center_on_resize: bool = false) -> void:
+	apply_to_window(window, preserve_center_on_resize)
 	apply_audio_buses()
 	save_to_disk()
 	changed.emit()

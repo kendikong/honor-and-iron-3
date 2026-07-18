@@ -10,7 +10,7 @@ func _ready() -> void:
 func load_settings() -> void:
 	var settings := GameSettings.new()
 	settings.load_from_disk()
-	settings.apply_to_window(get_window(), true)
+	settings.apply_to_window(get_window())
 	settings.apply_audio_buses()
 
 
