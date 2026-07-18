@@ -36,7 +36,7 @@ static func _ensure_init() -> void:
 		"Run",
 		0,
 		[_status_effect_self(GameEnums.StatusType.RUNNING, 1)],
-		0,
+		1,
 	)
 		
 	var _trade := _make_ability(&"swap", "Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)

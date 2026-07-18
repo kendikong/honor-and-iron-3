@@ -87,6 +87,23 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 			return true
 	return false
 
+
+static func is_run_ability(ability: AbilityData) -> bool:
+	return ability != null and DataLibrary.is_universal_run(ability.id)
+
+
+static func running_move_bonus(max_move: int) -> int:
+	return int(floor(float(max_move) * 0.5))
+
+
+static func preview_move_budget_with_run(unit: UnitState) -> int:
+	if unit == null:
+		return 0
+	if unit.has_status(GameEnums.StatusType.RUNNING):
+		return unit.movement.points_left
+	return unit.movement.points_left + running_move_bonus(unit.movement.max_points)
+
+
 ## True when selecting this ability should suppress basic walk (drag route, move highlights).
 ## Trample dashes like Bowling Charge are optional skills — basic movement stays available.
 static func ability_blocks_basic_movement(ability: AbilityData) -> bool:
@@ -685,8 +702,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 static func _apply_running_boost(actor: UnitState, events: Array[SimEvent]) -> void:
 	if actor.has_status(GameEnums.StatusType.RUNNING):
 		return
-	var base_max: int = actor.movement.max_points
-	var bonus: int = int(floor(float(base_max) * 0.5))
+	var bonus: int = running_move_bonus(actor.movement.max_points)
 	if bonus <= 0:
 		return
 	actor.movement.max_points += bonus

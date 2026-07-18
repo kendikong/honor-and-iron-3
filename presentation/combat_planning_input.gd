@@ -79,8 +79,9 @@ func on_left_press(local: Vector2) -> void:
 			var actor := _proj_unit(_director.selected_unit_id)
 			var self_ability := _selected_ability_data(actor)
 			if actor != null and AbilitySystem.can_target_self(actor, self_ability):
-				_director.rpc_plan_attack(_director.selected_unit_id, _director.selected_ability_index, unit.id)
-				_play_sfx("ability")
+				if not AbilitySystem.is_run_ability(self_ability):
+					_director.rpc_plan_attack(_director.selected_unit_id, _director.selected_ability_index, unit.id)
+					_play_sfx("ability")
 				cancel_aim()
 				return
 			_play_sfx("invalid")
@@ -101,8 +102,9 @@ func on_left_press(local: Vector2) -> void:
 			if target.id == actor.id:
 				var self_ability := _selected_ability_data(actor)
 				if AbilitySystem.can_target_self(actor, self_ability):
-					_director.rpc_plan_attack(_director.selected_unit_id, _director.selected_ability_index, target.id)
-					_play_sfx("ability")
+					if not AbilitySystem.is_run_ability(self_ability):
+						_director.rpc_plan_attack(_director.selected_unit_id, _director.selected_ability_index, target.id)
+						_play_sfx("ability")
 				else:
 					_play_sfx("invalid")
 			elif _in_ability_range(actor, target):
@@ -164,6 +166,7 @@ func on_left_release(local: Vector2) -> void:
 			_director.selected_ability_index >= 0
 			and _drag_unit_was_selected
 			and AbilitySystem.can_target_self(actor, self_ability)
+			and not AbilitySystem.is_run_ability(self_ability)
 		):
 			_director.rpc_plan_attack(released_unit_id, _director.selected_ability_index, actor.id)
 			_play_sfx("ability")
@@ -790,6 +793,16 @@ func _try_commit_move_with_self_skill(
 	var ability := _selected_ability_data(actor)
 	if ability == null or not AbilitySystem.can_target_self(actor, ability):
 		return false
+	if AbilitySystem.is_run_ability(ability):
+		if coord == actor.position:
+			return false
+		if not _can_move_to(actor, coord):
+			return false
+		_director.rpc_plan_run_and_move(
+			unit_id, coord, _facing_from_drop(local, coord), waypoints, _director.selected_ability_index,
+		)
+		_play_sfx("ability")
+		return true
 	if coord == actor.position:
 		_director.rpc_plan_attack(unit_id, _director.selected_ability_index, unit_id)
 		_play_sfx("ability")
@@ -825,7 +838,7 @@ func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) 
 	var target := _proj().get_unit_at(coord)
 	if target != null:
 		if target.id == actor.id:
-			if AbilitySystem.can_target_self(actor, ability):
+			if AbilitySystem.can_target_self(actor, ability) and not AbilitySystem.is_run_ability(ability):
 				_director.rpc_plan_attack(unit.id, _director.selected_ability_index, target.id)
 				_play_sfx("ability")
 				return true
@@ -906,7 +919,7 @@ func _append_route_tile(coord: Vector2i) -> void:
 		var occ := board.get_unit_at(coord)
 		if occ != null and occ.is_enemy() and MovementSystem.has_trample(unit):
 			return
-	if _drag_route.size() - 1 >= unit.movement.points_left:
+	if _drag_route.size() - 1 >= _move_budget(unit):
 		return
 	_drag_route.append(coord)
 
@@ -930,6 +943,28 @@ func _selected_ability_data(unit: UnitState) -> AbilityData:
 	if idx < 0 or idx >= unit.active_abilities.size():
 		return null
 	return unit.active_abilities[idx]
+
+
+func _run_mode_selected(unit: UnitState = null) -> bool:
+	if _director == null or _director.selected_unit_id < 0:
+		return false
+	var actor := unit if unit != null else _proj_unit(_director.selected_unit_id)
+	if actor == null:
+		actor = _director.board.get_unit_by_id(_director.selected_unit_id) if _director.board != null else null
+	if actor == null:
+		return false
+	var ability := _selected_ability_data(actor)
+	if not AbilitySystem.is_run_ability(ability):
+		return false
+	return actor.ability.points_left >= ability.action_point_cost
+
+
+func _move_budget(unit: UnitState) -> int:
+	if unit == null:
+		return 0
+	if _run_mode_selected(unit):
+		return AbilitySystem.preview_move_budget_with_run(unit)
+	return unit.movement.points_left
 
 
 func _ability_range(actor: UnitState) -> int:
@@ -964,12 +999,12 @@ func _in_ability_range(actor: UnitState, target: UnitState) -> bool:
 func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	if unit == null or coord == unit.position:
 		return false
-	if unit.movement.points_left <= 0:
+	if unit.movement.points_left <= 0 and not _run_mode_selected(unit):
 		return false
 	var board := _proj()
 	if not MovementSystem.can_end_movement_on(board, coord, unit):
 		return false
-	return not MovementSystem.find_path(board, unit.position, coord, unit.movement.points_left).is_empty()
+	return not MovementSystem.find_path(board, unit.position, coord, _move_budget(unit)).is_empty()
 
 
 func _proj() -> BoardState:
@@ -1146,7 +1181,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 			if (
 				_basic_move_allowed()
 				and not MovementSystem.find_path(
-					_proj(), p_unit.position, cell, p_unit.movement.points_left,
+					_proj(), p_unit.position, cell, _move_budget(p_unit),
 				).is_empty()
 			):
 				return "🏃"
@@ -1176,6 +1211,8 @@ func _ability_action_icon(ability: AbilityData) -> String:
 func _skill_takes_priority_over_basic_move() -> bool:
 	if _director == null:
 		return false
+	if _run_mode_selected():
+		return false
 	return not force_basic_movement and _director.selected_ability_index >= 0
 
 
@@ -1204,6 +1241,7 @@ func _drag_preview_target_id(drag_unit: UnitState, occ: UnitState) -> int:
 		and not drag_unit.is_enemy()
 		and _director.selected_ability_index >= 0
 		and not force_basic_movement
+		and not _run_mode_selected(drag_unit)
 		and _drag_last_free != drag_unit.position
 	):
 		var self_ability := _selected_ability_data(drag_unit)

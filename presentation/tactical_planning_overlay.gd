@@ -426,7 +426,7 @@ func recompute_hover_ranges(
 	_hover_move_tiles = MovementSystem.get_reachable_tiles(
 		_board,
 		move_origin,
-		unit.movement.points_left,
+		_move_budget_for_hover(unit, selected_ability),
 		mt,
 		move_cost,
 	)
@@ -436,6 +436,10 @@ func recompute_hover_ranges(
 		return
 	if unit.id == _director.selected_unit_id and not force_basic and selected_ability >= 0:
 		var ability: AbilityData = _selected_ability_data(unit, selected_ability)
+		if ability != null and AbilitySystem.is_run_ability(ability):
+			if unit.ability.points_left >= ability.action_point_cost:
+				queue_redraw()
+				return
 		if ability != null and AbilitySystem.ability_has_dash(ability):
 			_hover_threat_tiles = _dash_threat_tiles(threat_origin, _dash_amount(ability))
 			if AbilitySystem.ability_blocks_basic_movement(ability):
@@ -1194,6 +1198,21 @@ func _dash_threat_tiles(origin: Vector2i, steps: int) -> Array[Vector2i]:
 func _movement_blocked_by_dash(unit: UnitState, selected_ability: int) -> bool:
 	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
 	return ability != null and AbilitySystem.ability_blocks_basic_movement(ability)
+
+
+func _move_budget_for_hover(unit: UnitState, selected_ability: int) -> int:
+	var p_unit := _proj_unit(unit.id)
+	var budget_unit: UnitState = p_unit if p_unit != null else unit
+	if selected_ability < 0:
+		return budget_unit.movement.points_left
+	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
+	if (
+		ability != null
+		and AbilitySystem.is_run_ability(ability)
+		and budget_unit.ability.points_left >= ability.action_point_cost
+	):
+		return AbilitySystem.preview_move_budget_with_run(budget_unit)
+	return budget_unit.movement.points_left
 
 
 func _self_aoe_threat_tiles(unit: UnitState, ability: AbilityData, origin: Vector2i) -> Array[Vector2i]:
