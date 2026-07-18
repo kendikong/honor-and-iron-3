@@ -58,6 +58,18 @@ static var _async_mutex: Mutex
 static var _async_result: Dictionary = {}
 static var _async_pending: Dictionary = {}
 static var _map_oblique_overlay: Dictionary = {}
+static var _overlay_sample_image: Image
+static var _overlay_sample_epoch: int = -1
+
+const ACTOR_SHADOW_BAND_COUNT: int = 3
+const ACTOR_SHADOW_MAJORITY_RATIO: float = 0.5
+const ACTOR_SHADOW_BAND_X: Array = [-16.0, -8.0, 0.0, 8.0, 16.0]
+## Vertical bands from actor foot (y=0): lower legs, torso, head/hair.
+const ACTOR_SHADOW_BAND_Y: Array = [
+	[0.0, -8.0, -16.0],
+	[-14.0, -22.0, -30.0],
+	[-28.0, -38.0, -48.0],
+]
 static var _dbg_map_queued: int = 0
 static var _dbg_map_applied: int = 0
 static var _dbg_map_stale: int = 0
@@ -1576,29 +1588,66 @@ static func sample_map_oblique_alpha_at(map_px: Vector2) -> float:
 	var overlay: Dictionary = map_oblique_overlay()
 	if not bool(overlay.get("active", false)):
 		return 0.0
-	var tex: Texture2D = overlay.get("tex") as Texture2D
-	if tex == null:
+	var img: Image = _shadow_overlay_image()
+	if img == null or img.is_empty():
 		return 0.0
 	var origin: Vector2 = overlay.get("origin", Vector2.ZERO)
 	var size: Vector2 = overlay.get("size", Vector2.ONE)
 	var local: Vector2 = map_px - origin
 	if local.x < 0.0 or local.y < 0.0 or local.x >= size.x or local.y >= size.y:
 		return 0.0
-	var img: Image = tex.get_image()
-	if img == null or img.is_empty():
-		return 0.0
 	return _sample_alpha_nearest(img, floor(local.x), floor(local.y))
 
 
-static func actor_oblique_modulate(actor: Node2D, settings: EffectsSettings = null) -> Color:
+static func actor_oblique_band_modulates(
+	actor: Node2D,
+	settings: EffectsSettings = null,
+) -> Array[Color]:
+	var bands: Array[Color] = []
+	bands.resize(ACTOR_SHADOW_BAND_COUNT)
+	for i: int in ACTOR_SHADOW_BAND_COUNT:
+		bands[i] = Color.WHITE
 	if settings == null or not settings.oblique_contact_shadows or actor == null:
-		return Color.WHITE
+		return bands
 	var foot: Vector2 = actor.position
 	var scale_y: float = actor.scale.y
-	var coverage: float = 0.0
-	for offset_y: float in [0.0, -14.0, -28.0]:
-		var map_px: Vector2 = foot + Vector2(0.0, offset_y * scale_y)
-		coverage = maxf(coverage, sample_map_oblique_alpha_at(map_px))
+	for band_i: int in ACTOR_SHADOW_BAND_COUNT:
+		var y_rows: Variant = ACTOR_SHADOW_BAND_Y[band_i]
+		if typeof(y_rows) != TYPE_ARRAY:
+			continue
+		var hit_count: int = 0
+		var sample_count: int = 0
+		var alpha_sum: float = 0.0
+		for y_off: Variant in y_rows:
+			var y_px: float = float(y_off) * scale_y
+			for x_off: Variant in ACTOR_SHADOW_BAND_X:
+				sample_count += 1
+				var alpha: float = sample_map_oblique_alpha_at(
+					foot + Vector2(float(x_off) * actor.scale.x, y_px)
+				)
+				if alpha >= 0.04:
+					hit_count += 1
+					alpha_sum += alpha
+		if sample_count < 1:
+			continue
+		if float(hit_count) / float(sample_count) < ACTOR_SHADOW_MAJORITY_RATIO:
+			continue
+		var coverage: float = alpha_sum / float(hit_count)
+		bands[band_i] = _modulate_from_shadow_coverage(coverage, settings)
+	return bands
+
+
+## Legacy single-tint path — darkest band that passed majority gate.
+static func actor_oblique_modulate(actor: Node2D, settings: EffectsSettings = null) -> Color:
+	var bands: Array[Color] = actor_oblique_band_modulates(actor, settings)
+	var darkest: Color = Color.WHITE
+	for band: Color in bands:
+		if band.r < darkest.r:
+			darkest = band
+	return darkest
+
+
+static func _modulate_from_shadow_coverage(coverage: float, settings: EffectsSettings) -> Color:
 	if coverage < 0.04:
 		return Color.WHITE
 	var params: Dictionary = ShadowPalette.multiply_shader_params(settings)
@@ -1610,6 +1659,27 @@ static func actor_oblique_modulate(actor: Node2D, settings: EffectsSettings = nu
 		lerpf(1.0, tint.b, strength),
 		1.0,
 	)
+
+
+static func _shadow_overlay_image() -> Image:
+	if _overlay_sample_epoch == _map_composite_apply_epoch and _overlay_sample_image != null:
+		return _overlay_sample_image
+	var overlay: Dictionary = map_oblique_overlay()
+	if not bool(overlay.get("active", false)):
+		_overlay_sample_image = null
+		_overlay_sample_epoch = -1
+		return null
+	var tex: Texture2D = overlay.get("tex") as Texture2D
+	if tex == null:
+		return null
+	var img: Image = tex.get_image()
+	if img == null or img.is_empty():
+		return null
+	if img.is_compressed():
+		img.decompress()
+	_overlay_sample_image = img
+	_overlay_sample_epoch = _map_composite_apply_epoch
+	return _overlay_sample_image
 
 
 static func _refresh_map_oblique_overlay(shadow_root: Node2D) -> void:
@@ -1625,6 +1695,8 @@ static func _refresh_map_oblique_overlay(shadow_root: Node2D) -> void:
 		"origin": sprite.position,
 		"size": sprite.texture.get_size(),
 	}
+	_overlay_sample_image = null
+	_overlay_sample_epoch = -1
 
 
 static func duplicate_shadow_material() -> ShaderMaterial:
