@@ -66,8 +66,10 @@ static var _overlay_sample_epoch: int = -1
 static var _foot_bake_cache: Dictionary = {}
 static var _foot_cluster_root: Node2D
 static var _foot_cluster_layout_key: int = -1
+static var _unit_feet_gpu_layout_key: int = -1
 static var _foot_drift_cache: Dictionary = {}
 static var _unit_feet_gpu_slots: Array[Dictionary] = []
+static var _ground_static_uniform_sig: int = -1
 static var _unit_feet_placeholder: ImageTexture
 const MAX_UNIT_FEET_GPU: int = 16
 static var _foot_bake_dirty: bool = true
@@ -371,6 +373,7 @@ static func sync_actor_contact_shadow(
 				"draw_image": draw_img,
 				"draw_scale": actor.global_scale,
 				"gpu_tex": ImageTexture.create_from_image(draw_img),
+				"foot_center_tex": foot_center_tex,
 			}
 			_foot_bake_cache[actor_id] = cache_entry
 			_mark_foot_bake_dirty()
@@ -412,6 +415,9 @@ static func set_foot_cluster_root(root: Node2D) -> void:
 
 static func invalidate_foot_cluster_layout() -> void:
 	_foot_cluster_layout_key = -1
+	_unit_feet_gpu_layout_key = -1
+	_ground_static_uniform_sig = -1
+	_unit_feet_gpu_layout_key = -1
 	_mark_foot_bake_dirty()
 
 
@@ -444,22 +450,30 @@ static func sync_unit_feet_gpu(
 ) -> void:
 	if shadow_root == null:
 		shadow_root = _active_shadow_root
-	_unit_feet_gpu_slots.clear()
 	if settings == null or not settings.oblique_contact_shadows:
+		_unit_feet_gpu_slots.clear()
+		_unit_feet_gpu_layout_key = -1
 		_sync_ground_shadow_uniforms(settings, shadow_root)
 		return
-	for actor_var: Variant in actors:
-		var actor: Node2D = actor_var as Node2D
-		if actor == null or not is_instance_valid(actor):
-			continue
-		var slot: Dictionary = _build_unit_foot_gpu_slot(actor, shadow_root)
-		if slot.is_empty():
-			continue
-		_unit_feet_gpu_slots.append(slot)
-		if _unit_feet_gpu_slots.size() >= MAX_UNIT_FEET_GPU:
-			break
-	_sync_ground_shadow_uniforms(settings, shadow_root)
-	_mark_foot_bake_clean()
+	var layout_key: int = _unit_feet_gpu_layout_hash(actors, shadow_root)
+	if layout_key != _unit_feet_gpu_layout_key or is_foot_bake_dirty():
+		_unit_feet_gpu_slots.clear()
+		for actor_var: Variant in actors:
+			var actor: Node2D = actor_var as Node2D
+			if actor == null or not is_instance_valid(actor):
+				continue
+			var slot: Dictionary = _build_unit_foot_gpu_slot(actor, shadow_root)
+			if slot.is_empty():
+				continue
+			_unit_feet_gpu_slots.append(slot)
+			if _unit_feet_gpu_slots.size() >= MAX_UNIT_FEET_GPU:
+				break
+		_unit_feet_gpu_layout_key = layout_key
+		_ground_static_uniform_sig = -1
+		_mark_foot_bake_clean()
+	else:
+		_refresh_unit_feet_gpu_origins(actors, shadow_root)
+	sync_ground_shadow_drift(settings, shadow_root)
 
 
 static func sync_foot_shadow_cloud_drift(_actors: Array, _settings: EffectsSettings) -> void:
@@ -503,10 +517,99 @@ static func _build_unit_foot_gpu_slot(actor: Node2D, shadow_root: Node2D) -> Dic
 	elif tex.get_width() != draw_img.get_width() or tex.get_height() != draw_img.get_height():
 		tex.set_image(draw_img)
 	return {
-		"map_origin": _foot_sprite_map_origin(sprite, shadow_root),
+		"actor_id": actor_id,
+		"map_origin": _foot_gpu_map_origin(sprite, shadow_root, baked, draw_img, cached),
 		"texture": tex,
 		"image": draw_img,
 	}
+
+
+static func _foot_gpu_map_origin(
+	sprite: Sprite2D,
+	shadow_root: Node2D,
+	baked: Image,
+	draw_img: Image,
+	cached: Variant,
+) -> Vector2:
+	var origin: Vector2 = _foot_sprite_map_origin(sprite, shadow_root)
+	if baked == null or draw_img == null or baked.is_empty():
+		return origin
+	var baked_w: int = baked.get_width()
+	if baked_w < 1 or draw_img.get_width() == baked_w:
+		return origin
+	var scale_factor: float = float(draw_img.get_width()) / float(baked_w)
+	var foot_center: Vector2 = Vector2.ZERO
+	if cached is Dictionary:
+		foot_center = (cached as Dictionary).get("foot_center_tex", Vector2.ZERO) as Vector2
+	origin -= foot_center * (1.0 - scale_factor)
+	return origin
+
+
+static func _unit_feet_gpu_layout_hash(actors: Array, shadow_root: Node2D) -> int:
+	var parts: Array = []
+	for actor_var: Variant in actors:
+		var actor: Node2D = actor_var as Node2D
+		if actor == null or not is_instance_valid(actor):
+			continue
+		if not actor.has_method("get_contact_shadow_sprite"):
+			continue
+		var sprite: Sprite2D = actor.call("get_contact_shadow_sprite") as Sprite2D
+		if sprite == null or sprite.texture == null:
+			continue
+		var actor_id: int = actor.get_instance_id()
+		var cached: Variant = _foot_bake_cache.get(actor_id)
+		if cached == null:
+			continue
+		var baked: Image = null
+		var bake_sig: int = -1
+		if cached is Dictionary:
+			var entry: Dictionary = cached as Dictionary
+			baked = entry.get("image") as Image
+			bake_sig = int(entry.get("bake_sig", -1))
+		elif cached is Image:
+			baked = cached as Image
+		if baked == null or baked.is_empty():
+			continue
+		var draw_img: Image = _foot_draw_image_for_actor(actor_id, actor, baked)
+		parts.append([
+			actor_id,
+			bake_sig,
+			draw_img.get_width(),
+			draw_img.get_height(),
+			int(round(actor.global_scale.x * 1000.0)),
+			int(round(actor.global_scale.y * 1000.0)),
+		])
+	return hash(parts)
+
+
+static func _refresh_unit_feet_gpu_origins(actors: Array, shadow_root: Node2D) -> void:
+	if _unit_feet_gpu_slots.is_empty():
+		return
+	var slot_by_actor: Dictionary = {}
+	for slot: Dictionary in _unit_feet_gpu_slots:
+		slot_by_actor[int(slot.get("actor_id", 0))] = slot
+	for actor_var: Variant in actors:
+		var actor: Node2D = actor_var as Node2D
+		if actor == null or not is_instance_valid(actor):
+			continue
+		var slot: Variant = slot_by_actor.get(actor.get_instance_id())
+		if slot == null:
+			continue
+		if not actor.has_method("get_contact_shadow_sprite"):
+			continue
+		var sprite: Sprite2D = actor.call("get_contact_shadow_sprite") as Sprite2D
+		if sprite == null:
+			continue
+		var cached: Variant = _foot_bake_cache.get(actor.get_instance_id())
+		var baked: Image = null
+		if cached is Dictionary:
+			baked = (cached as Dictionary).get("image") as Image
+		var draw_img: Image = slot.get("image") as Image
+		if baked == null:
+			baked = draw_img
+		(slot as Dictionary)["map_origin"] = _foot_gpu_map_origin(
+			sprite, shadow_root, baked, draw_img, cached,
+		)
 
 
 static func _foot_sprite_map_origin(sprite: Sprite2D, shadow_root: Node2D) -> Vector2:
@@ -583,7 +686,15 @@ static func _max_blit_foot_alpha(dst: Image, src: Image, offset: Vector2i) -> vo
 
 
 static func sync_ground_shadow_drift(settings: EffectsSettings, shadow_root: Node2D) -> void:
-	_sync_ground_shadow_uniforms(settings, shadow_root)
+	if shadow_root == null:
+		return
+	_ensure_ground_shadow_rect(shadow_root, settings)
+	var sig: int = _ground_static_uniform_signature(settings)
+	if sig != _ground_static_uniform_sig:
+		_ground_static_uniform_sig = sig
+		_sync_ground_shadow_uniforms(settings, shadow_root)
+	else:
+		_push_ground_shadow_drift_only(settings, shadow_root)
 
 
 static func _has_ground_shadow_rect(shadow_root: Node2D) -> bool:
@@ -649,10 +760,48 @@ static func _sync_ground_shadow_uniforms(
 		mat.set_shader_parameter("has_map_oblique", 0.0)
 	_push_unit_feet_gpu_uniforms(mat)
 	var enable_cloud: float = 0.0
-	if settings != null and settings.cloud_shadows and WeatherBus.shadows_visible():
+	if settings != null and settings.cloud_shadows:
 		enable_cloud = 1.0
 	mat.set_shader_parameter("enable_cloud_shadows", enable_cloud)
 	mat.set_shader_parameter("cloud_drift_offset", WeatherBus.cloud_drift_offset)
+	_ground_static_uniform_sig = _ground_static_uniform_signature(settings)
+
+
+static func _ground_static_uniform_signature(settings: EffectsSettings = null) -> int:
+	var params: Dictionary = ShadowPalette.multiply_shader_params(settings)
+	var map_overlay: Dictionary = map_oblique_overlay()
+	return hash([
+		_map_composite_apply_epoch,
+		bool(map_overlay.get("active", false)),
+		int(_unit_feet_gpu_layout_key),
+		_unit_feet_gpu_slots.size(),
+		is_foot_bake_dirty(),
+		settings.cloud_shadows if settings != null else false,
+		settings.oblique_contact_shadows if settings != null else false,
+		params.get("shadow_tint", Color.WHITE),
+		params.get("shadow_strength", 0.0),
+		_map_size_px,
+	])
+
+
+static func _push_ground_shadow_drift_only(
+	settings: EffectsSettings = null,
+	shadow_root: Node2D = null,
+) -> void:
+	if shadow_root == null:
+		return
+	var rect: ColorRect = shadow_root.get_node_or_null(_GROUND_SHADOW_NODE) as ColorRect
+	if rect == null:
+		return
+	var mat: ShaderMaterial = rect.material as ShaderMaterial
+	if mat == null:
+		return
+	mat.set_shader_parameter("cloud_drift_offset", WeatherBus.cloud_drift_offset)
+	var enable_cloud: float = 0.0
+	if settings != null and settings.cloud_shadows:
+		enable_cloud = 1.0
+	mat.set_shader_parameter("enable_cloud_shadows", enable_cloud)
+	_push_unit_feet_gpu_uniforms(mat)
 
 
 static func _push_unit_feet_gpu_uniforms(mat: ShaderMaterial) -> void:
@@ -1155,6 +1304,8 @@ static func _apply_composite_result(
 	_overlay_sample_image = null
 	_overlay_sample_epoch = -1
 	_foot_cluster_layout_key = -1
+	_unit_feet_gpu_layout_key = -1
+	_ground_static_uniform_sig = -1
 	_sync_ground_shadow_uniforms(settings, shadow_root)
 	_last_bake_signature = int(result.get("bake_sig", -1))
 	_map_composite_apply_epoch += 1
@@ -2053,9 +2204,9 @@ static func map_oblique_overlay() -> Dictionary:
 ## Body receive + tree sampling — excludes unit feet (those render only on GroundShadows).
 static func sample_map_oblique_alpha_at(
 	map_px: Vector2,
-	settings: EffectsSettings = null,
+	_settings: EffectsSettings = null,
 ) -> float:
-	return sample_environment_shadow_alpha_at(map_px, settings)
+	return _sample_map_oblique_channel_alpha_at(map_px)
 
 
 static func sample_environment_shadow_alpha_at(
@@ -2137,7 +2288,7 @@ static func actor_oblique_band_modulates(
 			var y_px: float = float(y_off) * scale_y
 			for x_off: Variant in ACTOR_SHADOW_BAND_X:
 				sample_count += 1
-				var alpha: float = sample_environment_shadow_alpha_at(
+				var alpha: float = sample_map_oblique_alpha_at(
 					foot + Vector2(float(x_off) * actor.scale.x, y_px),
 					settings,
 				)
@@ -2286,6 +2437,8 @@ static func clear_immediate(shadow_root: Node2D) -> void:
 	_map_oblique_tex = null
 	_map_oblique_base_image = null
 	_foot_cluster_layout_key = -1
+	_unit_feet_gpu_layout_key = -1
+	_ground_static_uniform_sig = -1
 	var children: Array[Node] = shadow_root.get_children()
 	for child: Node in children:
 		if child is ColorRect:
