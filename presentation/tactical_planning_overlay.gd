@@ -51,6 +51,7 @@ var _fixed_range_origin: Vector2i = Vector2i(-999, -999)
 ## Separate from move range: follows cursor during drag / aim. Invalid = use move origin.
 var _threat_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_threat_origin: Vector2i = Vector2i(-999, -999)
+var _cached_hover_proj_key: int = -1
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -77,6 +78,10 @@ func setup(
 	z_index = 8
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
+	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: Dictionary) -> void:
+		_invalidate_hover_cache()
+		_recompute_hover_ranges_from_inputs()
+	)
 	EventBus.selection_changed.connect(func(_id: int) -> void:
 		if _director == null:
 			return
@@ -148,6 +153,7 @@ func _invalidate_hover_cache() -> void:
 	_cached_hover_origin = Vector2i(-999, -999)
 	_cached_hover_threat_origin = Vector2i(-999, -999)
 	_cached_hover_ability = -1
+	_cached_hover_proj_key = -1
 
 
 func _recompute_hover_ranges_from_inputs() -> void:
@@ -332,6 +338,92 @@ func set_hover_action_icon(icon: String) -> void:
 	queue_redraw()
 
 
+func _is_selected_player_unit(unit: UnitState) -> bool:
+	return (
+		unit != null
+		and not unit.is_enemy()
+		and _director != null
+		and unit.id == _director.selected_unit_id
+	)
+
+
+func _intent_tiles_blocked(unit: UnitState, selected_ability: int) -> bool:
+	if not _is_selected_player_unit(unit):
+		return false
+	if CombatDirector.is_wait_ability_index(selected_ability):
+		return true
+	if _director.unit_has_wait_planned(unit.id):
+		return true
+	if _planning_input != null and _planning_input.selected_phase_action_exhausted(unit.id):
+		return true
+	return false
+
+
+func _movement_status_blocked(unit: UnitState) -> bool:
+	if unit == null:
+		return true
+	return unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STUN)
+
+
+func _hover_proj_cache_key(unit: UnitState) -> int:
+	if unit == null or _director == null:
+		return 0
+	var p_unit := _proj_unit(unit.id)
+	if p_unit == null:
+		return 0
+	var key: int = p_unit.position.x
+	key = key * 1000 + p_unit.position.y
+	key = key * 100 + p_unit.movement.points_left
+	key = key * 10 + (1 if p_unit.turn_action_used else 0)
+	if _director.unit_has_wait_planned(unit.id):
+		key += 10000000
+	return key
+
+
+func _compute_move_budget(unit: UnitState, p_unit: UnitState, selected_ability: int) -> int:
+	if p_unit == null or _movement_status_blocked(p_unit):
+		return 0
+	if _director.get_planning_move_timing(unit.id) < 0:
+		return 0
+	if p_unit.movement.points_left <= 0:
+		return 0
+	return _move_budget_for_hover(p_unit, selected_ability)
+
+
+func _can_show_move_tiles(unit: UnitState, selected_ability: int) -> bool:
+	if unit == null:
+		return false
+	if _intent_tiles_blocked(unit, selected_ability):
+		return false
+	if _is_selected_player_unit(unit):
+		return _compute_move_budget(unit, _proj_unit(unit.id), selected_ability) > 0
+	return unit.movement.points_left > 0 and not _movement_status_blocked(unit)
+
+
+func _can_show_threat_tiles(unit: UnitState, selected_ability: int, force_basic: bool) -> bool:
+	if unit == null:
+		return false
+	if _intent_tiles_blocked(unit, selected_ability):
+		return false
+	if not _is_selected_player_unit(unit):
+		return unit.is_enemy()
+	var p_unit := _proj_unit(unit.id)
+	if p_unit == null:
+		return false
+	if p_unit.turn_action_used or p_unit.ability.points_left <= 0:
+		return false
+	if p_unit.has_status(GameEnums.StatusType.STUN) or p_unit.has_status(GameEnums.StatusType.SILENCE):
+		return false
+	if force_basic:
+		return true
+	if selected_ability < 0:
+		return false
+	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
+	if ability == null or AbilitySystem.is_wait_ability(ability):
+		return false
+	return p_unit.ability.points_left >= ability.action_point_cost
+
+
 func recompute_hover_ranges(
 	force_basic: bool,
 	selected_ability: int,
@@ -361,12 +453,14 @@ func recompute_hover_ranges(
 		threat_origin = _threat_range_origin
 	var cache_ability: int = selected_ability if unit.id == _director.selected_unit_id else -1
 	var cache_force: bool = force_basic if unit.id == _director.selected_unit_id else false
+	var proj_key: int = _hover_proj_cache_key(unit) if _is_selected_player_unit(unit) else 0
 	if (
 		_cached_hover_unit_id == unit.id
 		and _cached_hover_origin == move_origin
 		and _cached_hover_threat_origin == threat_origin
 		and _cached_hover_ability == cache_ability
 		and _cached_hover_force == cache_force
+		and _cached_hover_proj_key == proj_key
 	):
 		return
 	_cached_hover_unit_id = unit.id
@@ -374,66 +468,52 @@ func recompute_hover_ranges(
 	_cached_hover_threat_origin = threat_origin
 	_cached_hover_ability = cache_ability
 	_cached_hover_force = cache_force
+	_cached_hover_proj_key = proj_key
 	_hover_move_tiles.clear()
 	_hover_threat_tiles.clear()
+	if _intent_tiles_blocked(unit, selected_ability):
+		queue_redraw()
+		return
 	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
 	var mt: int = (
 		unit.definition.movement_type
 		if unit.definition != null
 		else GameEnums.MovementType.WALK
 	)
-	var is_selected_player: bool = (
-		not unit.is_enemy() and unit.id == _director.selected_unit_id
-	)
+	var is_selected_player: bool = _is_selected_player_unit(unit)
 	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
-	if is_selected_player:
-		if CombatDirector.is_wait_ability_index(selected_ability):
-			queue_redraw()
-			return
-		if _director.unit_has_wait_planned(unit.id):
-			queue_redraw()
-			return
-		if _planning_input != null and _planning_input.selected_phase_action_exhausted(unit.id):
-			queue_redraw()
-			return
-	var move_board: BoardState = _board
-	var move_from: Vector2i = move_origin
-	var move_budget: int = 0
-	if is_selected_player and p_unit != null:
-		move_cost = 2 if p_unit.has_status(GameEnums.StatusType.BLEED) else 1
-		mt = (
-			p_unit.definition.movement_type
-			if p_unit.definition != null
-			else GameEnums.MovementType.WALK
-		)
-		if _director.get_planning_move_timing(unit.id) >= 0 and p_unit.movement.points_left > 0:
+	if _can_show_move_tiles(unit, selected_ability):
+		var move_board: BoardState = _board
+		var move_from: Vector2i = move_origin
+		var move_budget: int = 0
+		if is_selected_player and p_unit != null:
+			move_cost = 2 if p_unit.has_status(GameEnums.StatusType.BLEED) else 1
+			mt = (
+				p_unit.definition.movement_type
+				if p_unit.definition != null
+				else GameEnums.MovementType.WALK
+			)
 			move_board = _director.projected_state if _director.projected_state != null else _board
 			move_from = p_unit.position
-			move_budget = _move_budget_for_hover(p_unit, selected_ability)
-	elif not is_selected_player:
-		move_budget = unit.movement.points_left
-	if move_budget > 0:
-		_hover_move_tiles = MovementSystem.get_reachable_tiles(
-			move_board,
-			move_from,
-			move_budget,
-			mt,
-			move_cost,
-		)
-	var can_threat: bool = true
-	if is_selected_player and p_unit != null:
-		if p_unit.turn_action_used or p_unit.ability.points_left <= 0:
-			can_threat = false
-	elif not unit.is_enemy():
-		can_threat = false
-	if not can_threat:
+			move_budget = _compute_move_budget(unit, p_unit, selected_ability)
+		else:
+			move_budget = unit.movement.points_left
+		if move_budget > 0:
+			_hover_move_tiles = MovementSystem.get_reachable_tiles(
+				move_board,
+				move_from,
+				move_budget,
+				mt,
+				move_cost,
+			)
+	if not _can_show_threat_tiles(unit, selected_ability, cache_force):
 		queue_redraw()
 		return
-	if force_basic and is_selected_player:
+	if cache_force and is_selected_player:
 		_populate_attack_threat_tiles(unit, threat_origin, selected_ability)
 		queue_redraw()
 		return
-	if is_selected_player and not force_basic and selected_ability >= 0:
+	if is_selected_player and not cache_force and selected_ability >= 0:
 		var ability: AbilityData = _selected_ability_data(unit, selected_ability)
 		if ability != null and AbilitySystem.is_run_ability(ability):
 			var budget_unit: UnitState = p_unit if p_unit != null else unit
@@ -461,7 +541,7 @@ func recompute_hover_ranges(
 	_populate_attack_threat_tiles(
 		unit,
 		threat_origin,
-		selected_ability if unit.id == _director.selected_unit_id else -1,
+		selected_ability if is_selected_player else -1,
 	)
 	queue_redraw()
 
@@ -1048,6 +1128,9 @@ func _draw_move_ghosts() -> void:
 	var unit := _proj_unit(_director.selected_unit_id)
 	if unit == null or not unit.is_alive():
 		return
+	var force_basic: bool = _planning_input.force_basic_movement
+	if not _can_show_threat_tiles(unit, _director.selected_ability_index, force_basic):
+		return
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null or not AbilitySystem.ability_has_dash(ability):
 		return
@@ -1107,6 +1190,9 @@ func _draw_target_rings() -> void:
 		return
 	var unit := _proj_unit(_director.selected_unit_id)
 	if unit == null or not unit.is_alive() or unit.is_enemy():
+		return
+	var force_basic: bool = _planning_input.force_basic_movement if _planning_input != null else false
+	if not _can_show_threat_tiles(unit, _director.selected_ability_index, force_basic):
 		return
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null:
