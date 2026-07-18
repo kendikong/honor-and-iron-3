@@ -2150,6 +2150,11 @@ static func map_composite_apply_epoch() -> int:
 	return _map_composite_apply_epoch
 
 
+static func cloud_drift_stamp() -> int:
+	var drift: Vector2 = WeatherBus.cloud_drift_offset
+	return hash([int(floor(drift.x * 32.0)), int(floor(drift.y * 32.0))])
+
+
 static func map_oblique_overlay() -> Dictionary:
 	return _map_oblique_overlay
 
@@ -2227,7 +2232,11 @@ static func actor_oblique_band_modulates(
 	bands.resize(ACTOR_SHADOW_BAND_COUNT)
 	for i: int in ACTOR_SHADOW_BAND_COUNT:
 		bands[i] = Color.WHITE
-	if settings == null or not settings.oblique_contact_shadows or actor == null:
+	if settings == null or actor == null:
+		return bands
+	var want_oblique: bool = settings.oblique_contact_shadows
+	var want_cloud: bool = settings.cloud_shadows
+	if not want_oblique and not want_cloud:
 		return bands
 	var foot: Vector2 = actor.position
 	var scale_y: float = actor.scale.y
@@ -2235,28 +2244,20 @@ static func actor_oblique_band_modulates(
 		var y_rows: Variant = ACTOR_SHADOW_BAND_Y[band_i]
 		if typeof(y_rows) != TYPE_ARRAY:
 			continue
-		var hit_count: int = 0
-		var sample_count: int = 0
-		var alpha_sum: float = 0.0
+		var peak_map: float = 0.0
+		var peak_cloud: float = 0.0
 		for y_off: Variant in y_rows:
 			var y_px: float = float(y_off) * scale_y
 			for x_off: Variant in ACTOR_SHADOW_BAND_X:
-				sample_count += 1
 				var sample_px: Vector2 = foot + Vector2(float(x_off) * actor.scale.x, y_px)
-				var alpha: float = 0.0
-				if band_i == 0:
-					alpha = sample_map_oblique_alpha_at(sample_px, settings)
-				else:
-					alpha = sample_environment_shadow_alpha_at(sample_px, settings)
-				if alpha >= 0.04:
-					hit_count += 1
-					alpha_sum += alpha
-		if sample_count < 1:
-			continue
-		if float(hit_count) / float(sample_count) < ACTOR_SHADOW_MAJORITY_RATIO:
-			continue
-		var coverage: float = alpha_sum / float(hit_count)
-		bands[band_i] = _modulate_from_shadow_coverage(coverage, settings)
+				if want_oblique:
+					peak_map = maxf(peak_map, sample_map_oblique_alpha_at(sample_px, settings))
+				if want_cloud:
+					peak_cloud = maxf(
+						peak_cloud,
+						_CLOUD_FIELD.shadow_mask_at(sample_px, WeatherBus.cloud_drift_offset),
+					)
+		bands[band_i] = _modulate_from_environment_coverage(peak_map, peak_cloud, settings)
 	return bands
 
 
@@ -2282,6 +2283,31 @@ static func _modulate_from_shadow_coverage(coverage: float, settings: EffectsSet
 		lerpf(1.0, tint.b, strength),
 		1.0,
 	)
+
+
+static func _modulate_from_cloud_coverage(coverage: float) -> Color:
+	if coverage < 0.04:
+		return Color.WHITE
+	var tint: Color = AtmosphereBinder.CLOUD_SHADOW_TINT
+	var strength: float = coverage * AtmosphereBinder.CLOUD_SHADOW_STRENGTH
+	return Color(
+		lerpf(1.0, tint.r, strength),
+		lerpf(1.0, tint.g, strength),
+		lerpf(1.0, tint.b, strength),
+		1.0,
+	)
+
+
+static func _modulate_from_environment_coverage(
+	map_alpha: float,
+	cloud_alpha: float,
+	settings: EffectsSettings,
+) -> Color:
+	if map_alpha < 0.04 and cloud_alpha < 0.04:
+		return Color.WHITE
+	if cloud_alpha >= map_alpha:
+		return _modulate_from_cloud_coverage(cloud_alpha)
+	return _modulate_from_shadow_coverage(map_alpha, settings)
 
 
 static func _shadow_overlay_image() -> Image:

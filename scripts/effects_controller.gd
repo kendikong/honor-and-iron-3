@@ -11,6 +11,7 @@ var settings: EffectsSettings = EffectsSettings.new()
 var biome_profile: BiomeProfile = BiomeProfile.for_variant(1)
 
 var _ground_effects: GroundEffectsBinder = GroundEffectsBinder.new()
+var _tile_cloud: TileCloudReceiveBinder = TileCloudReceiveBinder.new()
 var _water_vfx: WaterVfxPlacer = WaterVfxPlacer.new()
 var _water_burst: WaterBurstDirector = WaterBurstDirector.new()
 var _ambient_director: AmbientEventDirector = AmbientEventDirector.new()
@@ -78,6 +79,7 @@ func setup(
 	_wire_weather_bus()
 	_ensure_shadow_draw_order()
 	ShadowPlacer.set_active_shadow_root(_shadow_sprites)
+	_tile_cloud.setup(_trees, _overlay, _map_root)
 	apply_all(null, 0.0)
 
 
@@ -100,6 +102,7 @@ func apply_all(grid: PlayerGrid, water_ratio: float, ecology_hints: Dictionary =
 	ShadowDebug.sync_weather_bus(settings)
 	_apply_wind_bus()
 	_apply_ground_effects(grid)
+	_apply_tile_cloud_receive(grid)
 	_apply_weather_bus()
 	_apply_atmosphere_visuals(grid, water_ratio)
 	_apply_oblique_contact_shadows(grid)
@@ -159,13 +162,15 @@ func process_frame(delta: float) -> void:
 	process_water_burst(delta)
 	if settings.cloud_shadows and _atmosphere != null:
 		_atmosphere.refresh_cloud_drift()
-	if settings.oblique_contact_shadows and _character_contact_shadow_sync.is_valid():
-		_character_contact_shadow_sync.call(settings)
-	var want_ground_shadows: bool = (
+	var want_env_receive: bool = (
 		settings.oblique_contact_shadows or settings.cloud_shadows
 	)
+	if want_env_receive and _character_contact_shadow_sync.is_valid():
+		_character_contact_shadow_sync.call(settings)
+	var want_ground_shadows: bool = want_env_receive
 	if want_ground_shadows and _shadow_sprites != null:
 		ShadowPlacer.sync_ground_shadow_drift(settings, _shadow_sprites)
+	_apply_tile_cloud_drift()
 	if settings.oblique_contact_shadows and _shadow_sprites != null and _last_grid != null:
 		var map_epoch: int = ShadowPlacer.map_composite_apply_epoch()
 		if map_epoch != _last_foot_shadow_map_epoch:
@@ -187,7 +192,9 @@ static func sync_contact_shadow_on_actor(actor: Node, settings: EffectsSettings)
 	if not actor is CharacterActor:
 		return
 	var char_actor: CharacterActor = actor as CharacterActor
-	if settings == null or not settings.oblique_contact_shadows:
+	if settings == null or (
+		not settings.oblique_contact_shadows and not settings.cloud_shadows
+	):
 		char_actor.clear_oblique_modulate()
 		return
 	char_actor.sync_contact_shadow(settings)
@@ -284,6 +291,8 @@ func sync_map_transform() -> void:
 		_atmosphere.sync_sky_transform()
 		if settings.cloud_shadows:
 			_atmosphere.push_cloud_shadow_uniforms(settings)
+	if settings.cloud_shadows and _last_grid != null:
+		_apply_tile_cloud_receive(_last_grid)
 
 
 func _apply_oblique_contact_shadows(grid: PlayerGrid) -> void:
@@ -374,3 +383,21 @@ func _on_weather_changed() -> void:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
 	if settings.cloud_shadows:
 		sync_map_transform()
+	_apply_tile_cloud_drift()
+
+
+func _apply_tile_cloud_receive(grid: PlayerGrid) -> void:
+	_tile_cloud.apply(
+		settings,
+		grid,
+		settings.wind_field and _ground_wired,
+		_ground_effects.tree_shader_material(),
+	)
+
+
+func _apply_tile_cloud_drift() -> void:
+	_tile_cloud.sync_drift(
+		settings,
+		settings.wind_field and _ground_wired,
+		_ground_effects.tree_shader_material(),
+	)

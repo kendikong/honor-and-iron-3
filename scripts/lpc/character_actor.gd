@@ -32,6 +32,7 @@ var _running: bool = false
 var _planning_exhausted: bool = false
 var _oblique_band_modulates: Array[Color] = [Color.WHITE, Color.WHITE, Color.WHITE]
 var _oblique_modulate_stamp: int = -1
+var _oblique_cloud_stamp: int = -1
 var _oblique_modulate_pos_px: Vector2i = Vector2i(999999, 999999)
 ## Per-layer self_modulate — parent modulate does not reach LPC recolor shader output reliably.
 const _EXHAUSTED_LAYER_MODULATE := Color(0.28, 0.28, 0.32, 1.0)
@@ -170,6 +171,7 @@ func rebuild_contact_shadow(settings: EffectsSettings = null) -> void:
 
 func invalidate_environment_shadow_sync() -> void:
 	_oblique_modulate_stamp = -1
+	_oblique_cloud_stamp = -1
 	_oblique_modulate_pos_px = Vector2i(999999, 999999)
 
 
@@ -197,16 +199,33 @@ func sync_contact_shadow(settings: EffectsSettings = null) -> void:
 
 
 func _sync_oblique_modulate(settings: EffectsSettings = null) -> void:
-	var enabled: bool = settings != null and settings.oblique_contact_shadows
-	var stamp: int = ShadowPlacer.map_composite_apply_epoch() if enabled else -1
+	var want_env: bool = (
+		settings != null
+		and (settings.oblique_contact_shadows or settings.cloud_shadows)
+	)
+	if not want_env:
+		_reset_oblique_band_modulates()
+		_apply_modulate_stack()
+		return
+	var stamp: int = (
+		ShadowPlacer.map_composite_apply_epoch() if settings.oblique_contact_shadows else 0
+	)
+	var cloud_stamp: int = (
+		ShadowPlacer.cloud_drift_stamp() if settings.cloud_shadows else 0
+	)
 	var pos_tile: Vector2i = Vector2i(
 		int(floor(position.x / float(ShadowPlacer.TILE_PX))),
 		int(floor(position.y / float(ShadowPlacer.TILE_PX))),
 	)
-	if stamp == _oblique_modulate_stamp and pos_tile == _oblique_modulate_pos_px:
+	if (
+		stamp == _oblique_modulate_stamp
+		and cloud_stamp == _oblique_cloud_stamp
+		and pos_tile == _oblique_modulate_pos_px
+	):
 		_apply_modulate_stack()
 		return
 	_oblique_modulate_stamp = stamp
+	_oblique_cloud_stamp = cloud_stamp
 	_oblique_modulate_pos_px = pos_tile
 	_oblique_band_modulates = ShadowPlacer.actor_oblique_band_modulates(self, settings)
 	_apply_modulate_stack()

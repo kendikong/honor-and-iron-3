@@ -2,6 +2,8 @@ shader_type canvas_item;
 
 // OverlayLayer TREE stubs — whole-sprite integer shift, slower stepped clock (~5 fps).
 
+#include "res://shaders/environment_cloud_receive.gdshaderinc"
+
 uniform vec2 wind_dir = vec2(1.0, 0.0);
 uniform float wind_turbulence = 0.0;
 uniform float gust_strength = 0.0;
@@ -13,6 +15,8 @@ uniform float tile_px = 16.0;
 uniform float map_scale = 1.0;
 uniform sampler2D participation_tex : filter_nearest, repeat_disable;
 uniform float has_participation = 0.0;
+
+varying vec2 v_map_local;
 
 float cell_hash(vec2 cell) {
 	return fract(sin(dot(cell, vec2(269.5, 183.3))) * 43758.5453);
@@ -45,8 +49,10 @@ void vertex() {
 	float shift = round(amount);
 	vec2 delta = vec2(round(shift * dir.x), round(shift * dir.y));
 	VERTEX.xy += delta;
+	v_map_local = map_local;
 }
 
 void fragment() {
 	COLOR = texture(TEXTURE, UV);
+	COLOR.rgb = apply_environment_cloud_receive_rgb(COLOR.rgb, v_map_local);
 }
