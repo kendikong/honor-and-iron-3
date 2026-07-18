@@ -474,12 +474,13 @@ func _position_actor(unit_id: int, cell: Vector2i) -> void:
 		actor.position = foot
 
 
-func _apply_facing(unit_id: int, facing: int) -> void:
+func _apply_facing(unit_id: int, facing: int, keep_walking: bool = false) -> void:
 	var actor: CharacterActor = _actors.get(unit_id)
 	if actor == null:
 		return
 	actor.set_facing(_facing_anim(facing))
-	actor.set_walking(false)
+	if not keep_walking:
+		actor.set_walking(false)
 
 
 func _apply_exhaustion_state(unit: UnitState) -> void:
@@ -790,7 +791,7 @@ func _apply_path_step_facing(unit_id: int, facing: int) -> void:
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if unit != null:
 		unit.facing = facing
-	_apply_facing(unit_id, facing)
+	_apply_facing(unit_id, facing, true)
 
 
 func _animate_move(event: SimEvent) -> void:

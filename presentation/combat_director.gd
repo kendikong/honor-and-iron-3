@@ -53,6 +53,11 @@ var turn_start_board: BoardState
 var plan_revision: int = 0
 ## Units whose plan was removed this refresh — forces visual resync (e.g. undo during walk).
 var plan_affected_unit_ids: Array[int] = []
+var _plan_refresh_emit_pending: bool = false
+var _pending_refresh_board: BoardState
+var _pending_refresh_plan: Timeline
+var _pending_refresh_statuses: PackedStringArray
+var _pending_refresh_preview: SimResult
 
 
 static func is_planning_phase(p: Phase) -> bool:
@@ -1351,18 +1356,83 @@ func _refresh_plan() -> void:
 	if not anim_events.is_empty():
 		EventBus.planning_commit_events.emit(anim_events)
 	plan_revision += 1
-	EventBus.board_changed.emit(board)
-	EventBus.timeline_changed.emit(plan_to_run, statuses)
-	plan_affected_unit_ids.clear()
-	
-	# Compute ghost events and final state by diffing base_board and projected_state
-	# The view layer uses preview_updated for ghosts and expected HP.
-	var preview_board := base_board.clone()
-	var evs := _build_ghost_events(preview_board, plan_to_run, base_board.intents)
-	
+
+	var movement_only: bool = _plan_is_movement_only(plan_to_run)
+	var preview_board: BoardState
+	var evs: Array[SimEvent]
+	if movement_only:
+		preview_board = projected_state.clone()
+		evs = _build_movement_only_preview_events(plan_to_run, new_intents, preview_board)
+	else:
+		preview_board = base_board.clone()
+		evs = _build_ghost_events(preview_board, plan_to_run, new_intents)
+
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = evs
-	EventBus.preview_updated.emit(sim_res)
+	_defer_plan_refresh_signals(board, plan_to_run, statuses, sim_res)
+
+
+func _plan_is_movement_only(plan: Timeline) -> bool:
+	if plan == null:
+		return true
+	for action: TimelineAction in plan.entries:
+		if action.type == GameEnums.ActionType.ABILITY:
+			return false
+	return true
+
+
+func _build_movement_only_preview_events(
+	plan: Timeline,
+	intents: Array[Intent],
+	enemy_sim: BoardState,
+) -> Array[SimEvent]:
+	var evs: Array[SimEvent] = []
+	for action: TimelineAction in plan.entries:
+		if action.type != GameEnums.ActionType.MOVE:
+			continue
+		var path: Array = action.waypoints.duplicate()
+		if path.is_empty():
+			path = [action.target_coord]
+		evs.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+			"actor": action.actor_id,
+			"path": path,
+			"move_timing": action.move_timing,
+		}))
+	evs.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
+	for intent: Intent in intents:
+		for action: TimelineAction in intent.actions:
+			ResolutionPipeline.apply_action(enemy_sim, action, evs)
+	ResolutionPipeline.resolve_pending_pushes(enemy_sim, evs)
+	return evs
+
+
+func _defer_plan_refresh_signals(
+	board_state: BoardState,
+	plan: Timeline,
+	statuses: PackedStringArray,
+	preview: SimResult,
+) -> void:
+	_pending_refresh_board = board_state
+	_pending_refresh_plan = plan
+	_pending_refresh_statuses = statuses
+	_pending_refresh_preview = preview
+	if _plan_refresh_emit_pending:
+		return
+	_plan_refresh_emit_pending = true
+	call_deferred("_flush_plan_refresh_signals")
+
+
+func _flush_plan_refresh_signals() -> void:
+	_plan_refresh_emit_pending = false
+	if _pending_refresh_board == null:
+		return
+	EventBus.board_changed.emit(_pending_refresh_board)
+	EventBus.timeline_changed.emit(_pending_refresh_plan, _pending_refresh_statuses)
+	EventBus.preview_updated.emit(_pending_refresh_preview)
+	plan_affected_unit_ids.clear()
+	_pending_refresh_board = null
+	_pending_refresh_plan = null
+	_pending_refresh_preview = null
 
 func _build_ghost_events(sim: BoardState, timeline: Timeline, intents: Array[Intent]) -> Array[SimEvent]:
 	var evs: Array[SimEvent] = []
