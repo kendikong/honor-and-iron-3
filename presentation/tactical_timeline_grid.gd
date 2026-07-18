@@ -7,8 +7,10 @@ const MAX_PARTY_SLOTS: int = 4
 const W_PLAYER: int = 30
 const W_NAME: int = 72
 const W_CLASS: int = 30
-const W_STATS: int = 148
+const W_STATS: int = 220
 const ROW_HEIGHT: int = 38
+const STRETCH_STATS: float = 3.2
+const STRETCH_PLAN: float = 0.45
 const COLOR_FAIL: Color = Color(1.0, 0.38, 0.38)
 const COLOR_HEADER: Color = Color(0.58, 0.62, 0.70)
 const COLOR_MUTED: Color = Color(0.58, 0.62, 0.70)
@@ -140,14 +142,14 @@ func _add_party_row(
 	var class_text: String = "" if is_empty else CombatUiFormatters.class_symbol(unit)
 	_add_body_cell(row, class_text, unit.definition.display_name if unit != null else "", name_col, W_CLASS, false)
 	if is_empty:
-		_add_body_cell(row, "—", "", COLOR_MUTED, W_STATS, false)
+		_add_body_cell(row, "—", "", COLOR_MUTED, W_STATS, true)
 		_add_plan_cell(row, "—", "", false, COLOR_ACCENT_PRE, plan_active)
 		_add_plan_cell(row, "—", "", false, COLOR_ACCENT_ACT, plan_active)
 		_add_plan_cell(row, "—", "", false, COLOR_ACCENT_POST, plan_active)
 		row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return ""
 	var stats_text: String = (
-		"⭐%d  ♥%d/%d\n💪%d 🛡️%d 🔮%d 👟%d"
+		"⭐%d ♥%d/%d 💪%d 🛡️%d 🔮%d 👟%d"
 		% [
 			unit.level, unit.health.current_hp, unit.health.max_hp,
 			unit.current_strength, unit.armor, unit.current_magic,
@@ -285,7 +287,7 @@ func _add_header_cell(
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if expand:
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lbl.size_flags_stretch_ratio = 0.35 if width >= W_STATS else 1.0
+		lbl.size_flags_stretch_ratio = STRETCH_STATS if width >= W_STATS else STRETCH_PLAN
 	elif width > 0:
 		lbl.custom_minimum_size.x = float(width)
 	if bg.a > 0.01:
@@ -306,12 +308,13 @@ func _add_body_cell(
 	lbl.add_theme_font_size_override("font_size", _cell_font_px)
 	lbl.add_theme_color_override("font_color", col)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	lbl.clip_text = true
+	lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
+	lbl.clip_text = false
 	if tooltip != "":
 		lbl.tooltip_text = tooltip
 	if expand:
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lbl.size_flags_stretch_ratio = 0.35
+		lbl.size_flags_stretch_ratio = STRETCH_STATS
 		if width > 0:
 			lbl.custom_minimum_size.x = float(width)
 	elif width > 0:
@@ -343,7 +346,7 @@ func _add_plan_cell(
 	else:
 		lbl.add_theme_color_override("font_color", COLOR_MUTED)
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl.size_flags_stretch_ratio = 1.0
+	lbl.size_flags_stretch_ratio = STRETCH_PLAN
 	var bg: Color = accent if plan_active else Color(0.12, 0.13, 0.17, 0.4)
 	lbl.add_theme_stylebox_override("normal", _cell_style(bg))
 	row.add_child(lbl)
