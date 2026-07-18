@@ -625,15 +625,35 @@ func _sync_planning_unit_position(unit: UnitState) -> void:
 
 
 func _turn_start_cell(unit_id: int) -> Vector2i:
-	if _director != null and _director.base_board != null:
-		var start_unit: UnitState = _director.base_board.get_unit_by_id(unit_id)
+	if _director != null and _director.turn_start_board != null:
+		var start_unit: UnitState = _director.turn_start_board.get_unit_by_id(unit_id)
 		if start_unit != null:
 			return start_unit.position
+	if _director != null and _director.base_board != null:
+		var base_unit: UnitState = _director.base_board.get_unit_by_id(unit_id)
+		if base_unit != null:
+			return base_unit.position
 	if _board != null:
 		var live_unit: UnitState = _board.get_unit_by_id(unit_id)
 		if live_unit != null:
 			return live_unit.position
 	return Vector2i.ZERO
+
+
+func _turn_start_facing(unit_id: int) -> int:
+	if _director != null and _director.turn_start_board != null:
+		var start_unit: UnitState = _director.turn_start_board.get_unit_by_id(unit_id)
+		if start_unit != null:
+			return start_unit.facing
+	if _director != null and _director.base_board != null:
+		var base_unit: UnitState = _director.base_board.get_unit_by_id(unit_id)
+		if base_unit != null:
+			return base_unit.facing
+	if _board != null:
+		var live_unit: UnitState = _board.get_unit_by_id(unit_id)
+		if live_unit != null:
+			return live_unit.facing
+	return GameEnums.Facing.SOUTH
 
 
 func _should_rubberband_planning_move(
@@ -650,12 +670,11 @@ func _snap_actor_rubberband(unit_id: int, grid_cell: Vector2i) -> void:
 	if actor == null or _map_view == null:
 		return
 	var home: Vector2 = _map_view.grid_to_foot_local(grid_cell)
-	var from_cell: Vector2i = _actor_grid_cell(unit_id)
-	if from_cell != grid_cell:
-		var unit := _board.get_unit_by_id(unit_id) if _board != null else null
-		if unit != null:
-			unit.facing = _facing_toward(from_cell, grid_cell)
-			_apply_facing(unit_id, unit.facing)
+	var unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
+	if unit != null:
+		if grid_cell == _turn_start_cell(unit_id):
+			unit.facing = _turn_start_facing(unit_id)
+		_apply_facing(unit_id, unit.facing, true)
 	if actor.position.distance_to(home) <= 1.5:
 		_finish_snap_at_cell(unit_id, grid_cell)
 		return
