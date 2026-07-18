@@ -42,7 +42,7 @@ func sync_actors(actors: Dictionary) -> void:
 			continue
 		var char_x: float = actor.position.x
 		var sort_y: float = TreeGameplay.character_fade_sort_y(actor)
-		for anchor: Vector2i in TreeGameplay.tree_anchors(_trees):
+		for anchor: Vector2i in _all_check_anchors():
 			if _anchor_needs_fade(anchor, char_x, sort_y):
 				need_fade[anchor] = true
 
@@ -56,6 +56,26 @@ func sync_actors(actors: Dictionary) -> void:
 	for anchor: Variant in need_fade:
 		if not _fade_sprites.has(anchor):
 			_fade_tree(anchor as Vector2i)
+
+
+## Faded trees are erased from TileMapLayer — must keep checking their anchors until restore.
+func _all_check_anchors() -> Array[Vector2i]:
+	var seen: Dictionary = {}
+	var out: Array[Vector2i] = []
+	for anchor: Vector2i in TreeGameplay.tree_anchors(_trees):
+		var key: String = "%d,%d" % [anchor.x, anchor.y]
+		if seen.has(key):
+			continue
+		seen[key] = true
+		out.append(anchor)
+	for anchor: Variant in _fade_sprites.keys():
+		var faded: Vector2i = anchor as Vector2i
+		var key: String = "%d,%d" % [faded.x, faded.y]
+		if seen.has(key):
+			continue
+		seen[key] = true
+		out.append(faded)
+	return out
 
 
 func _anchor_needs_fade(anchor: Vector2i, char_x: float, sort_y: float) -> bool:
