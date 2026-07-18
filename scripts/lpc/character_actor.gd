@@ -499,13 +499,15 @@ func _apply_motion_state(spr: AnimatedSprite2D) -> void:
 		
 	if not spr.get_meta("user_hidden", false):
 		spr.visible = true
-		
+
 	spr.animation = anim
 	if _walking or anim.begins_with("idle_"):
 		spr.play()
 	else:
 		spr.stop()
 		spr.frame = 0
+	if _selection_glow != null and _selection_glow.is_active():
+		_selection_glow.sync_layer(spr)
 
 
 
