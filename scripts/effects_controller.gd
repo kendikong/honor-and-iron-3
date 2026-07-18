@@ -178,7 +178,7 @@ static func sync_contact_shadow_on_actor(actor: Node, settings: EffectsSettings)
 	if not actor is CharacterActor:
 		return
 	var char_actor: CharacterActor = actor as CharacterActor
-	if settings == null or not settings.oblique_contact_shadows:
+	if settings == null or (not settings.oblique_contact_shadows and not settings.cloud_shadows):
 		char_actor.clear_oblique_modulate()
 		return
 	char_actor.sync_contact_shadow(settings)

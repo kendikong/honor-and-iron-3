@@ -32,6 +32,7 @@ var _running: bool = false
 var _planning_exhausted: bool = false
 var _oblique_band_modulates: Array[Color] = [Color.WHITE, Color.WHITE, Color.WHITE]
 var _oblique_modulate_stamp: int = -1
+var _oblique_cloud_stamp: int = -1
 var _oblique_modulate_pos: Vector2 = Vector2.ZERO
 ## Per-layer self_modulate — parent modulate does not reach LPC recolor shader output reliably.
 const _EXHAUSTED_LAYER_MODULATE := Color(0.28, 0.28, 0.32, 1.0)
@@ -170,6 +171,7 @@ func rebuild_contact_shadow(settings: EffectsSettings = null) -> void:
 
 func invalidate_environment_shadow_sync() -> void:
 	_oblique_modulate_stamp = -1
+	_oblique_cloud_stamp = -1
 	_oblique_modulate_pos = Vector2(1.0e9, 1.0e9)
 
 
@@ -191,15 +193,30 @@ func sync_contact_shadow(settings: EffectsSettings = null) -> void:
 
 
 func _sync_oblique_modulate(settings: EffectsSettings = null) -> void:
-	var enabled: bool = settings != null and settings.oblique_contact_shadows
-	var stamp: int = ShadowPlacer.map_composite_apply_epoch() if enabled else -1
+	var tree_enabled: bool = settings != null and settings.oblique_contact_shadows
+	var cloud_enabled: bool = (
+		settings != null
+		and settings.cloud_shadows
+		and WeatherBus.shadows_visible()
+	)
+	if not tree_enabled and not cloud_enabled:
+		if _oblique_modulate_stamp != -1 or _oblique_cloud_stamp != -1:
+			_reset_oblique_band_modulates()
+			_oblique_modulate_stamp = -1
+			_oblique_cloud_stamp = -1
+			_apply_modulate_stack()
+		return
+	var composite_stamp: int = ShadowPlacer.map_composite_apply_epoch() if tree_enabled else -1
+	var cloud_stamp: int = CloudShadowSampler.environment_stamp() if cloud_enabled else -1
 	if (
-		stamp == _oblique_modulate_stamp
+		composite_stamp == _oblique_modulate_stamp
+		and cloud_stamp == _oblique_cloud_stamp
 		and position.is_equal_approx(_oblique_modulate_pos)
 	):
 		_apply_modulate_stack()
 		return
-	_oblique_modulate_stamp = stamp
+	_oblique_modulate_stamp = composite_stamp
+	_oblique_cloud_stamp = cloud_stamp
 	_oblique_modulate_pos = position
 	_oblique_band_modulates = ShadowPlacer.actor_oblique_band_modulates(self, settings)
 	_apply_modulate_stack()
