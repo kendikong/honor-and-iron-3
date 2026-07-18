@@ -9,11 +9,19 @@ uniform float shadow_strength : hint_range(0.0, 1.0) = 1.0;
 uniform float lpc_shadow_global = 0.0;
 uniform float has_map_oblique = 0.0;
 
+// Map pixel position at the sprite center (AnimatedSprite2D local origin).
 instance uniform float lpc_shadow_enabled = 0.0;
 instance uniform vec2 sprite_map_origin = vec2(0.0);
 instance uniform vec2 sprite_scale = vec2(1.0);
 
+varying vec2 lpc_v_map_local;
+
 const float LPC_SHADOW_ALPHA_CUTOFF = 0.04;
+
+void lpc_shadow_vertex() {
+	// VERTEX is local draw space — stable across atlas frames (no per-frame CPU sync).
+	lpc_v_map_local = sprite_map_origin + VERTEX * sprite_scale;
+}
 
 vec3 lpc_shadow_darken(vec2 map_local_px) {
 	if (lpc_shadow_global < 0.5 || lpc_shadow_enabled < 0.5) {
@@ -43,6 +51,6 @@ vec4 lpc_apply_shadow_receive(vec4 col, vec2 map_local_px) {
 	return col;
 }
 
-vec2 lpc_sprite_map_local(vec2 uv, vec2 texture_pixel_size) {
-	return sprite_map_origin + (uv / texture_pixel_size) * sprite_scale;
+vec2 lpc_fragment_map_local() {
+	return floor(lpc_v_map_local);
 }
