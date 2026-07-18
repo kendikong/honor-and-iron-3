@@ -12,6 +12,7 @@ const TREE_TRUNK_OFFSET_FROM_CENTER: Vector2i = Vector2i(0, 2)
 ## Same as ShadowPlacer — empirical align with Mana Seed tree art (+ shadow bake).
 const TREE_SHADOW_NUDGE_CELLS: Vector2i = Vector2i(-2, -3)
 const TREE_SPRITE_SIZE: Vector2i = Vector2i(80, 96)
+const TREE_CANOPY_FADE_HEIGHT_PX: int = 72
 const TREE_DEPTH_WEST_SPILL_PX: int = 16
 const PROP_SPRITE_SIZE: Vector2i = Vector2i(32, 32)
 const TILE_PX: int = 16
@@ -215,6 +216,26 @@ static func character_behind_ground_rocks(
 	return false
 
 
+## Canopy fade only — stricter than depth sort; unit feet must sit inside the upper canopy.
+static func tree_should_fade_canopy(
+	char_x: float,
+	sort_y: float,
+	anchor: Vector2i,
+	grid: PlayerGrid,
+	trees: TileMapLayer,
+	settings: EffectsSettings = null,
+	margin_px: float = 0.0,
+) -> bool:
+	if trees == null or grid == null:
+		return false
+	if sort_y >= trunk_sort_line_y(anchor, grid, trees, settings):
+		return false
+	var canopy_rect: Rect2 = _canopy_fade_rect(trees, anchor)
+	if margin_px > 0.0:
+		canopy_rect = canopy_rect.grow(margin_px)
+	return canopy_rect.has_point(Vector2(char_x, sort_y))
+
+
 static func prop_anchors(overlay: TileMapLayer) -> Array[Vector2i]:
 	var anchors: Array[Vector2i] = []
 	if overlay == null:
@@ -291,6 +312,12 @@ static func _sprite_rect(layer: TileMapLayer, anchor: Vector2i, sprite_size: Vec
 		return Rect2(fallback - Vector2(sprite_size) * 0.5, Vector2(sprite_size))
 	var top_left: Vector2 = layer.map_to_local(anchor) - Vector2(td.texture_origin) - Vector2(sprite_size) * 0.5
 	return Rect2(top_left, Vector2(sprite_size))
+
+
+static func _canopy_fade_rect(layer: TileMapLayer, anchor: Vector2i) -> Rect2:
+	var full: Rect2 = _sprite_rect(layer, anchor, TREE_SPRITE_SIZE)
+	var canopy_h: float = minf(float(TREE_CANOPY_FADE_HEIGHT_PX), full.size.y)
+	return Rect2(full.position, Vector2(full.size.x, canopy_h))
 
 
 static func _sprite_depth_overlap(

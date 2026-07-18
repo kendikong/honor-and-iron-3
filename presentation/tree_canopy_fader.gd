@@ -4,6 +4,7 @@ extends Node2D
 ## Swaps opaque tree tiles for semi-transparent sprites when units stand behind them.
 
 const FADE_ALPHA: float = 0.38
+const FADE_EXIT_MARGIN_PX: float = 14.0
 const _C = preload("res://scripts/mana_seed_constants.gd")
 
 var _trees: TileMapLayer
@@ -41,10 +42,10 @@ func sync_actors(actors: Dictionary) -> void:
 			continue
 		var char_x: float = actor.position.x
 		var sort_y: float = TreeGameplay.character_sort_y(actor)
-		var char_cell: Vector2i = TreeGameplay.cell_from_world(actor.position)
 		for anchor: Vector2i in TreeGameplay.tree_anchors(_trees):
-			if TreeGameplay.tree_occludes_character(
-				char_x, sort_y, char_cell, anchor, _grid, _trees, _settings,
+			var margin: float = FADE_EXIT_MARGIN_PX if _fade_sprites.has(anchor) else 0.0
+			if TreeGameplay.tree_should_fade_canopy(
+				char_x, sort_y, anchor, _grid, _trees, _settings, margin,
 			):
 				need_fade[anchor] = true
 
