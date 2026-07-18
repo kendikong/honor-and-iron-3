@@ -89,11 +89,8 @@ func on_left_press(local: Vector2) -> void:
 		if aiming:
 			cancel_aim()
 		var was_selected: bool = unit.id == _director.selected_unit_id
-		if was_selected:
-			if _try_plan_wait(unit.id):
-				_play_sfx("ability")
-			return
-		_director.select_unit(unit.id)
+		if not was_selected:
+			_director.select_unit(unit.id)
 		_begin_drag(unit, local, was_selected)
 		return
 	if aiming:
@@ -166,7 +163,10 @@ func on_left_release(local: Vector2) -> void:
 		_plan_approach_or_trample_on_enemy(released_unit_id, dropped_on, local, _drag_last_free, waypoints)
 	elif cell == actor.position:
 		if _drag_unit_was_selected:
-			if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+			if not _drag_had_movement():
+				if _try_plan_wait(released_unit_id):
+					_play_sfx("ability")
+			elif CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 				_director.rpc_plan_wait(released_unit_id)
 				_play_sfx("ability")
 				_director.select_ability(-1)
@@ -985,6 +985,14 @@ func _route_waypoints() -> Array[Vector2i]:
 
 func _ability_has_dash(ability: AbilityData) -> bool:
 	return AbilitySystem.ability_has_dash(ability)
+
+
+func _drag_had_movement() -> bool:
+	if _drag_route.size() > 1:
+		return true
+	if _drag_route.is_empty():
+		return false
+	return _drag_last_free != _drag_route[0]
 
 
 func _try_plan_wait(unit_id: int) -> bool:
