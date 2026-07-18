@@ -80,9 +80,25 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		_phase = phase
 		if not CombatDirector.is_planning_phase(phase):
-			for actor: Variant in _actors.values():
-				if actor is CharacterActor:
-					(actor as CharacterActor).set_planning_exhausted(false)
+			for unit_id: Variant in _move_tweens.keys():
+				_kill_move_tween(int(unit_id))
+			var snap_board: BoardState = _board
+			if (
+				CombatDirector.is_executing_phase(phase)
+				and _director != null
+				and _director.base_board != null
+			):
+				snap_board = _director.base_board
+			if snap_board != null:
+				for unit: UnitState in snap_board.units:
+					if unit.is_alive():
+						_position_actor(unit.id, unit.position)
+						_apply_facing(unit.id, unit.facing)
+						_update_depth(unit.id)
+		for actor: Variant in _actors.values():
+			if actor is CharacterActor:
+				(actor as CharacterActor).set_planning_exhausted(false)
+				if not CombatDirector.is_planning_phase(phase):
 					(actor as CharacterActor).set_running(false)
 		_refresh_selection_glow()
 		queue_redraw(),
@@ -157,6 +173,8 @@ func _on_selection_changed(unit_id: int) -> void:
 
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	_refresh_planning_visuals()
+	if CombatDirector.is_planning_phase(_phase):
+		_sync_planning_actor_positions()
 
 
 func _refresh_planning_visuals() -> void:
@@ -229,7 +247,10 @@ func apply_sim_event(event: SimEvent) -> void:
 		return
 	match event.type:
 		GameEnums.SimEventType.UNIT_MOVED:
-			_animate_move(event)
+			if _should_animate_move(event):
+				_animate_move(event)
+			else:
+				_snap_move(event)
 		GameEnums.SimEventType.UNIT_PUSHED, GameEnums.SimEventType.COLLISION:
 			_animate_push(event)
 		GameEnums.SimEventType.ABILITY_USED:
@@ -277,7 +298,13 @@ func _sync_actors() -> void:
 			continue
 		live[unit.id] = true
 		_ensure_actor(unit)
-		if not _move_tweens.has(unit.id) and not (_drag_preview_active and unit.id == _drag_preview_id):
+		if _drag_preview_active and unit.id == _drag_preview_id:
+			pass
+		elif _move_tweens.has(unit.id):
+			pass
+		elif CombatDirector.is_planning_phase(_phase) and not unit.is_enemy():
+			_sync_planning_unit_position(unit)
+		else:
 			_position_actor(unit.id, unit.position)
 		if not (_drag_preview_active and unit.id == _drag_preview_id):
 			_apply_facing(unit.id, unit.facing)
@@ -500,6 +527,155 @@ func _update_depth(unit_id: int) -> void:
 	)
 
 
+func _should_animate_move(event: SimEvent) -> bool:
+	if event.data.get("teleport", false):
+		return false
+	var unit_id: int = int(event.data.get("actor", -1))
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	if CombatDirector.is_planning_phase(_phase):
+		return unit != null and not unit.is_enemy()
+	if unit != null and unit.is_enemy():
+		return true
+	if event.data.get("is_dash", false):
+		return true
+	if CombatDirector.is_executing_phase(_phase):
+		var timing: int = int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION))
+		return timing == GameEnums.MoveTiming.POST_ACTION
+	return true
+
+
+func _snap_move(event: SimEvent) -> void:
+	var unit_id: int = int(event.data.get("actor", -1))
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	if unit == null:
+		return
+	var path: Array = event.data.get("path", [])
+	var to_coord: Variant = event.data.get("to", null)
+	if not path.is_empty():
+		var last: Variant = path[path.size() - 1]
+		if last is Vector2i:
+			unit.position = last
+	elif to_coord is Vector2i:
+		unit.position = to_coord
+	var from_coord: Vector2i = event.data.get("from", unit.position)
+	if not path.is_empty():
+		var last_cell: Variant = path[path.size() - 1]
+		if last_cell is Vector2i:
+			var prev: Vector2i = from_coord
+			if path.size() >= 2 and path[path.size() - 2] is Vector2i:
+				prev = path[path.size() - 2]
+			unit.facing = _facing_toward(prev, last_cell)
+	elif event.data.has("facing"):
+		unit.facing = int(event.data.get("facing", unit.facing))
+	_kill_move_tween(unit_id)
+	_position_actor(unit_id, unit.position)
+	_apply_facing(unit_id, unit.facing)
+	_update_depth(unit_id)
+
+
+func _sync_planning_actor_positions() -> void:
+	if _board == null or _map_view == null or not CombatDirector.is_planning_phase(_phase):
+		return
+	for unit: UnitState in _board.units:
+		if not unit.is_alive() or unit.is_enemy():
+			continue
+		if _drag_preview_active and unit.id == _drag_preview_id:
+			continue
+		if _move_tweens.has(unit.id):
+			continue
+		_sync_planning_unit_position(unit)
+
+
+func _sync_planning_unit_position(unit: UnitState) -> void:
+	var target: Vector2i = unit.position
+	var current_cell: Vector2i = _actor_grid_cell(unit.id)
+	if current_cell == target:
+		_apply_facing(unit.id, unit.facing)
+		_update_depth(unit.id)
+		return
+	_animate_planning_path(unit.id, current_cell, target, _unit_uses_run_anim(unit.id))
+
+
+func _actor_grid_cell(unit_id: int) -> Vector2i:
+	var actor: CharacterActor = _actors.get(unit_id)
+	if actor == null or _map_view == null:
+		return Vector2i(-999, -999)
+	return _map_view.foot_local_to_grid(actor.position)
+
+
+func _unit_uses_run_anim(unit_id: int) -> bool:
+	var projected := _proj_unit(unit_id)
+	if projected != null and projected.has_status(GameEnums.StatusType.RUNNING):
+		return true
+	return false
+
+
+func _find_display_path(from_cell: Vector2i, to_cell: Vector2i, unit: UnitState) -> Array[Vector2i]:
+	if from_cell == to_cell or _board == null:
+		return []
+	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
+	var mt: int = (
+		unit.definition.movement_type
+		if unit.definition != null
+		else GameEnums.MovementType.WALK
+	)
+	return MovementSystem.find_path(_board, from_cell, to_cell, 999, mt, move_cost)
+
+
+func _animate_planning_path(
+	unit_id: int,
+	from_cell: Vector2i,
+	to_cell: Vector2i,
+	use_run: bool,
+) -> void:
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	if unit == null:
+		return
+	var cells: Array[Vector2i] = _find_display_path(from_cell, to_cell, unit)
+	if cells.is_empty():
+		_position_actor(unit_id, to_cell)
+		_apply_facing(unit_id, unit.facing)
+		_update_depth(unit_id)
+		return
+	unit.position = to_cell
+	if cells.size() >= 1:
+		var prev: Vector2i = from_cell if cells.size() == 1 else cells[cells.size() - 2]
+		unit.facing = _facing_toward(prev, cells[cells.size() - 1])
+	_apply_facing(unit_id, unit.facing)
+	_play_cell_path_tween(unit_id, from_cell, cells, CombatDirector.MOVE_STEP_TIME, use_run)
+
+
+func _play_cell_path_tween(
+	unit_id: int,
+	start_cell: Vector2i,
+	cells: Array[Vector2i],
+	step_time: float,
+	use_run: bool,
+	per_step: Callable = Callable(),
+) -> void:
+	var actor: CharacterActor = _actors.get(unit_id)
+	if actor == null or _map_view == null or cells.is_empty():
+		return
+	_kill_move_tween(unit_id)
+	actor.position = _map_view.grid_to_foot_local(start_cell)
+	actor.set_running(use_run)
+	actor.set_walking(true)
+	var tween: Tween = create_tween()
+	_move_tweens[unit_id] = tween
+	for step_index: int in range(cells.size()):
+		var cell: Vector2i = cells[step_index]
+		tween.tween_property(actor, "position", _map_view.grid_to_foot_local(cell), step_time)
+		if per_step.is_valid():
+			tween.tween_callback(per_step.bind(step_index))
+	tween.finished.connect(func() -> void:
+		_move_tweens.erase(unit_id)
+		actor.set_walking(false)
+		var live := _board.get_unit_by_id(unit_id) if _board != null else null
+		actor.set_running(live != null and live.has_status(GameEnums.StatusType.RUNNING))
+		_update_depth(unit_id)
+	)
+
+
 func _animate_move(event: SimEvent) -> void:
 	var unit_id: int = int(event.data.get("actor", -1))
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
@@ -536,32 +712,21 @@ func _animate_move(event: SimEvent) -> void:
 		facing = _facing_toward(cells[cells.size() - 2], cells[cells.size() - 1])
 		unit.facing = facing
 	_apply_facing(unit_id, facing)
-	_kill_move_tween(unit_id)
-	var actor: CharacterActor = _actors.get(unit_id)
-	if actor == null:
+	if _actors.get(unit_id) == null:
 		_position_actor(unit_id, unit.position)
 		_update_depth(unit_id)
 		return
-	actor.position = _map_view.grid_to_foot_local(start_cell)
-	actor.set_running(unit.has_status(GameEnums.StatusType.RUNNING))
-	actor.set_walking(true)
-	var tween: Tween = create_tween()
-	_move_tweens[unit_id] = tween
-	for step_index: int in range(cells.size()):
-		var cell: Vector2i = cells[step_index]
-		tween.tween_property(actor, "position", _map_view.grid_to_foot_local(cell), step_time)
+	var use_run: bool = (
+		unit.has_status(GameEnums.StatusType.RUNNING)
+		or _unit_uses_run_anim(unit_id)
+	)
+	var step_cb := func(step_index: int) -> void:
 		var remaining: int = maxi(
 			movement_points_left,
 			movement_points_before - ((step_index + 1) * movement_cost_per_tile),
 		)
-		tween.tween_callback(_set_movement_points.bind(unit_id, remaining))
-	tween.finished.connect(func() -> void:
-		_move_tweens.erase(unit_id)
-		actor.set_walking(false)
-		var live := _board.get_unit_by_id(unit_id) if _board != null else null
-		actor.set_running(live != null and live.has_status(GameEnums.StatusType.RUNNING))
-		_update_depth(unit_id)
-	)
+		_set_movement_points(unit_id, remaining)
+	_play_cell_path_tween(unit_id, start_cell, cells, step_time, use_run, step_cb)
 
 
 func _set_movement_points(unit_id: int, points_left: int) -> void:

@@ -175,6 +175,14 @@ func grid_to_foot_local(cell: Vector2i) -> Vector2:
 	return Vector2(local_cell) * float(TILE_PX) + Vector2(TILE_PX * 0.5, TILE_PX)
 
 
+func foot_local_to_grid(foot_local: Vector2) -> Vector2i:
+	var used: Rect2i = _ground.get_used_rect()
+	var tile_px: float = float(TILE_PX)
+	var local_x: int = int(round((foot_local.x - tile_px * 0.5) / tile_px))
+	var local_y: int = int(round((foot_local.y - tile_px) / tile_px))
+	return Vector2i(local_x, local_y) + used.position
+
+
 func get_player_grid() -> PlayerGrid:
 	return _player_grid
 
