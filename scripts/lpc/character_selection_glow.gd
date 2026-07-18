@@ -25,6 +25,10 @@ func is_active() -> bool:
 	return enabled
 
 
+func is_outline_empty() -> bool:
+	return _outline_sprites.is_empty()
+
+
 func set_active(active: bool, color: Color = glow_color) -> void:
 	enabled = active
 	glow_color = color
@@ -120,9 +124,6 @@ func _sync_outline_frames() -> void:
 				return
 			var outline: AnimatedSprite2D = _outline_sprites[outline_idx]
 			if outline.get_parent() == spr:
-				if outline.animation == spr.animation and outline.frame == spr.frame and outline.visible == spr.visible:
-					outline_idx += 1
-					continue
 				outline.animation = spr.animation
 				outline.frame = spr.frame
 				outline.visible = spr.visible

@@ -155,6 +155,7 @@ func _on_preview_updated(result: SimResult) -> void:
 
 func _on_selection_changed(unit_id: int) -> void:
 	_selected_id = unit_id
+	_glow_selected_id = -1
 	_refresh_planning_visuals()
 	queue_redraw()
 
@@ -180,22 +181,41 @@ func _refresh_planning_visuals() -> void:
 func _refresh_selection_glow() -> void:
 	var planning: bool = CombatDirector.is_planning_phase(_phase)
 	var new_glow_id: int = _selected_id if planning else -1
-	if new_glow_id == _glow_selected_id:
+	if new_glow_id == _glow_selected_id and _selection_glow_is_live(new_glow_id):
 		return
-	if _glow_selected_id >= 0:
+	if _glow_selected_id >= 0 and _glow_selected_id != new_glow_id:
 		_set_unit_selection_glow(_glow_selected_id, false)
-	_glow_selected_id = new_glow_id
-	if new_glow_id >= 0:
-		var unit := _board.get_unit_by_id(new_glow_id) if _board != null else null
-		var color: Color = _COLOR_SELECT_ENEMY if unit != null and unit.is_enemy() else _COLOR_SELECT_PLAYER
-		_set_unit_selection_glow(new_glow_id, true, color)
+	if new_glow_id < 0:
+		_glow_selected_id = -1
+		return
+	var unit := _board.get_unit_by_id(new_glow_id) if _board != null else null
+	var color: Color = _COLOR_SELECT_ENEMY if unit != null and unit.is_enemy() else _COLOR_SELECT_PLAYER
+	if _set_unit_selection_glow(new_glow_id, true, color):
+		_glow_selected_id = new_glow_id
+	else:
+		_glow_selected_id = -1
 
 
-func _set_unit_selection_glow(unit_id: int, active: bool, color: Color = _COLOR_SELECT_PLAYER) -> void:
+func _selection_glow_is_live(unit_id: int) -> bool:
+	if unit_id < 0:
+		return true
 	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
 	if actor == null:
-		return
+		return false
+	var glow: CharacterSelectionGlow = actor.get_selection_glow()
+	return glow != null and glow.is_active() and not glow.is_outline_empty()
+
+
+func _set_unit_selection_glow(unit_id: int, active: bool, color: Color = _COLOR_SELECT_PLAYER) -> bool:
+	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
+	if actor == null:
+		return false
 	actor.set_selection_glow(active, color)
+	if active:
+		var glow: CharacterSelectionGlow = actor.get_selection_glow()
+		if glow != null and glow.is_active():
+			glow.rebuild_from_layers()
+	return true
 
 
 func set_drag_attack_target(unit_id: int) -> void:
