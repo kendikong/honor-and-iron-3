@@ -60,7 +60,17 @@ static var _async_pending: Dictionary = {}
 static var _map_oblique_overlay: Dictionary = {}
 static var _overlay_sample_image: Image
 static var _overlay_sample_epoch: int = -1
+static var _peer_actor_shadow_registry: Dictionary = {}
 
+const ACTOR_SHADOW_BAND_COUNT: int = 3
+const ACTOR_SHADOW_MAJORITY_RATIO: float = 0.5
+const ACTOR_SHADOW_BAND_X: Array = [-16.0, -8.0, 0.0, 8.0, 16.0]
+## Vertical bands from actor foot (y=0): lower legs, torso, head/hair.
+const ACTOR_SHADOW_BAND_Y: Array = [
+	[0.0, -8.0, -16.0],
+	[-14.0, -22.0, -30.0],
+	[-28.0, -38.0, -48.0],
+]
 static var _dbg_map_queued: int = 0
 static var _dbg_map_applied: int = 0
 static var _dbg_map_stale: int = 0
@@ -283,6 +293,7 @@ static func sync_actor_contact_shadow(
 		_last_actor_bake_key = -1
 		_last_actor_applied_epoch = -1
 		_last_actor_synced_silhouette = -1
+		unregister_peer_actor_shadow(actor)
 		_clear_actor_sprite(sprite)
 		return
 	var want_actor_rebake: bool = not geometry_blocked and (map_applied or silhouette_stale)
@@ -334,6 +345,76 @@ static func sync_actor_contact_shadow(
 			has_clouds = 1.0
 		mat.set_shader_parameter("has_cloud_shadow", has_clouds)
 		mat.set_shader_parameter("cloud_drift_offset", atmo["cloud_drift_offset"])
+	_apply_actor_peer_shadow_stack(sprite, actor)
+
+
+static func begin_peer_shadow_sync() -> void:
+	_peer_actor_shadow_registry.clear()
+
+
+static func unregister_peer_actor_shadow(actor: Node2D) -> void:
+	if actor == null:
+		return
+	_peer_actor_shadow_registry.erase(actor.get_instance_id())
+
+
+static func _apply_actor_peer_shadow_stack(sprite: Sprite2D, actor: Node2D) -> void:
+	if sprite == null or not sprite.visible or sprite.texture == null or actor == null:
+		return
+	var tex: Texture2D = sprite.texture
+	var img: Image = tex.get_image()
+	if img == null or img.is_empty():
+		return
+	if img.is_compressed():
+		img.decompress()
+	img = img.duplicate()
+	var map_origin: Vector2 = actor.position + sprite.position * actor.scale
+	_punch_peer_actor_shadows(img, map_origin, actor)
+	if tex is ImageTexture:
+		(tex as ImageTexture).set_image(img)
+	_register_peer_actor_shadow(actor, img, map_origin)
+
+
+static func _register_peer_actor_shadow(actor: Node2D, img: Image, map_origin: Vector2) -> void:
+	if actor == null or img == null:
+		return
+	_peer_actor_shadow_registry[actor.get_instance_id()] = {
+		"image": img.duplicate(),
+		"origin": map_origin,
+	}
+
+
+static func _punch_peer_actor_shadows(dst: Image, dst_origin: Vector2, actor: Node2D) -> void:
+	if dst == null or actor == null:
+		return
+	var self_id: int = actor.get_instance_id()
+	for peer_id: Variant in _peer_actor_shadow_registry:
+		if int(peer_id) >= self_id:
+			continue
+		var peer: Dictionary = _peer_actor_shadow_registry[peer_id]
+		var peer_img: Image = peer.get("image") as Image
+		if peer_img == null or peer_img.is_empty():
+			continue
+		_punch_image_alpha_at(peer_img, peer.get("origin", Vector2.ZERO), dst, dst_origin)
+
+
+static func _punch_image_alpha_at(
+	src: Image,
+	src_origin: Vector2,
+	dst: Image,
+	dst_origin: Vector2,
+) -> void:
+	var ox: int = int(round(src_origin.x - dst_origin.x))
+	var oy: int = int(round(src_origin.y - dst_origin.y))
+	for sy: int in range(src.get_height()):
+		for sx: int in range(src.get_width()):
+			if src.get_pixel(sx, sy).a < 0.04:
+				continue
+			var dx: int = ox + sx
+			var dy: int = oy + sy
+			if dx < 0 or dy < 0 or dx >= dst.get_width() or dy >= dst.get_height():
+				continue
+			dst.set_pixel(dx, dy, Color(0.0, 0.0, 0.0, 0.0))
 
 
 static func _sync_actor_map_oblique(sprite: Sprite2D, actor: Node2D) -> void:
@@ -1590,16 +1671,54 @@ static func sample_map_oblique_alpha_at(map_px: Vector2) -> float:
 	return _sample_alpha_nearest(img, floor(local.x), floor(local.y))
 
 
-static func actor_oblique_modulate(actor: Node2D, settings: EffectsSettings = null) -> Color:
-	if settings == null or not settings.oblique_contact_shadows or actor == null:
-		return Color.WHITE
+static func actor_oblique_band_modulates(
+	actor: Node2D,
+	settings: EffectsSettings = null,
+) -> Array[Color]:
+	var bands: Array[Color] = []
+	bands.resize(ACTOR_SHADOW_BAND_COUNT)
+	for i: int in ACTOR_SHADOW_BAND_COUNT:
+		bands[i] = Color.WHITE
+	if actor == null or settings == null:
+		return bands
+	if not settings.oblique_contact_shadows:
+		return bands
 	var foot: Vector2 = actor.position
 	var scale_y: float = actor.scale.y
-	var coverage: float = 0.0
-	for offset_y: float in [0.0, -14.0, -28.0]:
-		var map_px: Vector2 = foot + Vector2(0.0, offset_y * scale_y)
-		coverage = maxf(coverage, sample_map_oblique_alpha_at(map_px))
-	return _modulate_from_shadow_coverage(coverage, settings)
+	for band_i: int in ACTOR_SHADOW_BAND_COUNT:
+		var y_rows: Variant = ACTOR_SHADOW_BAND_Y[band_i]
+		if typeof(y_rows) != TYPE_ARRAY:
+			continue
+		var hit_count: int = 0
+		var sample_count: int = 0
+		var alpha_sum: float = 0.0
+		for y_off: Variant in y_rows:
+			var y_px: float = float(y_off) * scale_y
+			for x_off: Variant in ACTOR_SHADOW_BAND_X:
+				sample_count += 1
+				var alpha: float = sample_map_oblique_alpha_at(
+					foot + Vector2(float(x_off) * actor.scale.x, y_px)
+				)
+				if alpha >= 0.04:
+					hit_count += 1
+					alpha_sum += alpha
+		if sample_count < 1:
+			continue
+		if float(hit_count) / float(sample_count) < ACTOR_SHADOW_MAJORITY_RATIO:
+			continue
+		var coverage: float = alpha_sum / float(hit_count)
+		bands[band_i] = _modulate_from_shadow_coverage(coverage, settings)
+	return bands
+
+
+## Legacy single-tint path — darkest band that passed majority gate.
+static func actor_oblique_modulate(actor: Node2D, settings: EffectsSettings = null) -> Color:
+	var bands: Array[Color] = actor_oblique_band_modulates(actor, settings)
+	var darkest: Color = Color.WHITE
+	for band: Color in bands:
+		if band.r < darkest.r:
+			darkest = band
+	return darkest
 
 
 static func _modulate_from_shadow_coverage(coverage: float, settings: EffectsSettings) -> Color:

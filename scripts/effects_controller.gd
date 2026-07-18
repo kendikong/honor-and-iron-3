@@ -186,12 +186,30 @@ static func sync_contact_shadow_on_actor(actor: Node, settings: EffectsSettings)
 
 
 static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsSettings) -> void:
+	var sorted: Array = []
 	for actor: Variant in actors.values():
+		if actor != null and is_instance_valid(actor):
+			sorted.append(actor)
+	sorted.sort_custom(
+		func(a: Node, b: Node) -> bool: return a.get_instance_id() < b.get_instance_id()
+	)
+	ShadowPlacer.begin_peer_shadow_sync()
+	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
 
 
 static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
-	for actor: Variant in actors:
+	var sorted: Array = actors.duplicate()
+	sorted.sort_custom(
+		func(a: Variant, b: Variant) -> bool:
+			if a == null or not is_instance_valid(a as Node):
+				return false
+			if b == null or not is_instance_valid(b as Node):
+				return true
+			return (a as Node).get_instance_id() < (b as Node).get_instance_id()
+	)
+	ShadowPlacer.begin_peer_shadow_sync()
+	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
 
 

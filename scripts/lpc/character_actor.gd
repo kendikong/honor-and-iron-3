@@ -30,12 +30,36 @@ var _anchor_position: Vector2 = Vector2.ZERO
 var _is_dying: bool = false
 var _running: bool = false
 var _planning_exhausted: bool = false
-var _oblique_modulate: Color = Color.WHITE
+var _oblique_band_modulates: Array[Color] = [Color.WHITE, Color.WHITE, Color.WHITE]
 var _oblique_modulate_stamp: int = -1
 var _oblique_modulate_pos: Vector2 = Vector2.ZERO
 ## Per-layer self_modulate — parent modulate does not reach LPC recolor shader output reliably.
 const _EXHAUSTED_LAYER_MODULATE := Color(0.28, 0.28, 0.32, 1.0)
 const _EXHAUSTED_SHADOW_TINT := Color(0.40, 0.40, 0.44, 1.0)
+const _LOWER_SHADOW_SLOTS: Dictionary = {
+	"legs": true,
+	"shoes": true,
+	"shoes_toe": true,
+	"socks": true,
+}
+const _UPPER_SHADOW_SLOTS: Dictionary = {
+	"head": true,
+	"hair": true,
+	"hairextl": true,
+	"hairextr": true,
+	"ponytail": true,
+	"updo": true,
+	"hairtie": true,
+	"hairtie_rune": true,
+	"hat": true,
+	"ears": true,
+	"horns": true,
+	"nose": true,
+	"eyebrows": true,
+	"eyes": true,
+	"beard": true,
+	"mustache": true,
+}
 
 
 func _ready() -> void:
@@ -78,6 +102,7 @@ func clear_layers() -> void:
 	_layers.clear()
 	_oblique_modulate_stamp = -1
 	_oblique_modulate_pos = Vector2.ZERO
+	_reset_oblique_band_modulates()
 	if _selection_glow != null:
 		_selection_glow.on_layers_cleared()
 		if _selection_glow.is_active():
@@ -149,7 +174,7 @@ func invalidate_environment_shadow_sync() -> void:
 
 
 func clear_oblique_modulate() -> void:
-	_oblique_modulate = Color.WHITE
+	_reset_oblique_band_modulates()
 	invalidate_environment_shadow_sync()
 	_apply_modulate_stack()
 
@@ -176,12 +201,43 @@ func _sync_oblique_modulate(settings: EffectsSettings = null) -> void:
 		return
 	_oblique_modulate_stamp = stamp
 	_oblique_modulate_pos = position
-	_oblique_modulate = ShadowPlacer.actor_oblique_modulate(self, settings)
+	_oblique_band_modulates = ShadowPlacer.actor_oblique_band_modulates(self, settings)
 	_apply_modulate_stack()
 
 
+func _reset_oblique_band_modulates() -> void:
+	_oblique_band_modulates = [Color.WHITE, Color.WHITE, Color.WHITE]
+
+
+func _shadow_band_index_for_slot(slot: String) -> int:
+	if _LOWER_SHADOW_SLOTS.has(slot):
+		return 0
+	if _UPPER_SHADOW_SLOTS.has(slot):
+		return 2
+	if slot.begins_with("hair") or slot.begins_with("hat") or slot.begins_with("hairext"):
+		return 2
+	return 1
+
+
+func _layer_self_modulate(spr: AnimatedSprite2D) -> Color:
+	var slot: String = str(spr.get_meta("lpc_slot", ""))
+	var band_i: int = clampi(_shadow_band_index_for_slot(slot), 0, 2)
+	var shadow: Color = _oblique_band_modulates[band_i]
+	if not _planning_exhausted:
+		return shadow
+	return Color(
+		shadow.r * _EXHAUSTED_LAYER_MODULATE.r,
+		shadow.g * _EXHAUSTED_LAYER_MODULATE.g,
+		shadow.b * _EXHAUSTED_LAYER_MODULATE.b,
+		1.0,
+	)
+
+
 func _apply_modulate_stack() -> void:
-	modulate = _oblique_modulate
+	modulate = Color.WHITE
+	for spr: AnimatedSprite2D in _layers:
+		spr.modulate = Color.WHITE
+		spr.self_modulate = _layer_self_modulate(spr)
 
 
 func _rebuild_contact_shadow_silhouette() -> void:
@@ -235,12 +291,6 @@ func _apply_visual_tint() -> void:
 		_contact_shadow.modulate = _EXHAUSTED_SHADOW_TINT if _planning_exhausted else Color.WHITE
 	if _selection_glow != null:
 		_selection_glow.set_muted(_planning_exhausted)
-	for spr: AnimatedSprite2D in _layers:
-		spr.modulate = Color.WHITE
-		if _planning_exhausted:
-			spr.self_modulate = _EXHAUSTED_LAYER_MODULATE
-		else:
-			spr.self_modulate = Color.WHITE
 
 
 func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:

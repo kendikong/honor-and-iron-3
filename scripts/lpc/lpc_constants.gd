@@ -53,7 +53,7 @@ static func get_base_action(anim_name: StringName) -> StringName:
 		return &"combat_idle"
 	return StringName(s.split("_")[0])
 
-## Above Z_SKY (7) so cloud/mist overlays do not cover the preview actor.
+## Below Z_SKY (11) — cloud/mist overlays multiply on top at runtime.
 const Z_CHARACTER: int = 8
 
 static var _spritesheet_root: String = ""
