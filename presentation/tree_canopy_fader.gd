@@ -4,7 +4,7 @@ extends Node2D
 ## Swaps opaque tree tiles for semi-transparent sprites when units stand behind them.
 
 const FADE_ALPHA: float = 0.38
-const FADE_EXIT_MARGIN_PX: float = 14.0
+const FADE_EXIT_MARGIN_PX: float = 20.0
 const _C = preload("res://scripts/mana_seed_constants.gd")
 
 var _trees: TileMapLayer
@@ -41,12 +41,9 @@ func sync_actors(actors: Dictionary) -> void:
 		if actor == null:
 			continue
 		var char_x: float = actor.position.x
-		var sort_y: float = TreeGameplay.character_sort_y(actor)
+		var sort_y: float = TreeGameplay.character_fade_sort_y(actor)
 		for anchor: Vector2i in TreeGameplay.tree_anchors(_trees):
-			var margin: float = FADE_EXIT_MARGIN_PX if _fade_sprites.has(anchor) else 0.0
-			if TreeGameplay.tree_should_fade_canopy(
-				char_x, sort_y, anchor, _grid, _trees, _settings, margin,
-			):
+			if _anchor_needs_fade(anchor, char_x, sort_y):
 				need_fade[anchor] = true
 
 	var stale: Array[Vector2i] = []
@@ -61,13 +58,37 @@ func sync_actors(actors: Dictionary) -> void:
 			_fade_tree(anchor as Vector2i)
 
 
+func _anchor_needs_fade(anchor: Vector2i, char_x: float, sort_y: float) -> bool:
+	var margin: float = FADE_EXIT_MARGIN_PX if _fade_sprites.has(anchor) else 0.0
+	var stored: Dictionary = _stored_cells.get(anchor, {})
+	if stored.has("canopy_rect"):
+		return _fade_test_cached(stored, char_x, sort_y, margin)
+	return TreeGameplay.tree_should_fade_canopy(
+		char_x, sort_y, anchor, _grid, _trees, _settings, margin,
+	)
+
+
+func _fade_test_cached(stored: Dictionary, char_x: float, sort_y: float, margin_px: float) -> bool:
+	var trunk_y: float = float(stored.get("trunk_y", INF))
+	if sort_y >= trunk_y:
+		return false
+	var canopy_rect: Rect2 = stored["canopy_rect"]
+	if margin_px > 0.0:
+		canopy_rect = canopy_rect.grow(margin_px)
+	return canopy_rect.has_point(Vector2(char_x, sort_y))
+
+
 func _fade_tree(anchor: Vector2i) -> void:
 	if _trees.get_cell_source_id(anchor) < 0:
 		return
+	var canopy_rect: Rect2 = TreeGameplay.canopy_fade_rect(_trees, anchor)
+	var trunk_y: float = TreeGameplay.trunk_sort_line_y(anchor, _grid, _trees, _settings)
 	_stored_cells[anchor] = {
 		"source": _trees.get_cell_source_id(anchor),
 		"atlas": _trees.get_cell_atlas_coords(anchor),
 		"alt": _trees.get_cell_alternative_tile(anchor),
+		"canopy_rect": canopy_rect,
+		"trunk_y": trunk_y,
 	}
 	var td: TileData = _trees.get_cell_tile_data(anchor)
 	var atlas_tex: AtlasTexture = _atlas_texture_for_cell(anchor)

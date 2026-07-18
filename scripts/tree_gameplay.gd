@@ -116,6 +116,12 @@ static func cell_from_world(world_pos: Vector2) -> Vector2i:
 	)
 
 
+## Grid-snapped feet Y for canopy fade — avoids sub-pixel walk tween flicker at boundaries.
+static func character_fade_sort_y(actor: Node2D) -> float:
+	var cell: Vector2i = cell_from_world(actor.position)
+	return (float(cell.y) + 1.0) * float(TILE_PX) - 1.0
+
+
 static func character_sort_y(actor: Node2D) -> float:
 	# Since the actor's origin is now exactly at their visual feet (the bottom of their grid cell),
 	# we can simply use their exact Y position as the sort key. This prevents float boundary 
@@ -217,6 +223,10 @@ static func character_behind_ground_rocks(
 
 
 ## Canopy fade only — stricter than depth sort; unit feet must sit inside the upper canopy.
+static func canopy_fade_rect(layer: TileMapLayer, anchor: Vector2i) -> Rect2:
+	return _canopy_fade_rect(layer, anchor)
+
+
 static func tree_should_fade_canopy(
 	char_x: float,
 	sort_y: float,
