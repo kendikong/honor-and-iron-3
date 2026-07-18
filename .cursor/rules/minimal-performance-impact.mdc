@@ -1,0 +1,43 @@
+---
+description: Every change must weigh and minimize runtime CPU/GPU cost
+alwaysApply: true
+---
+
+# Minimal Performance Impact (Mandatory)
+
+All implementations, fixes, and refactors must **prefer the lowest-cost approach that still meets the requirement**. Performance is a first-class constraint — not an afterthought.
+
+## Before shipping a change, ask
+
+1. **Does this add per-frame work?** (`_process`, `_physics_process`, `process_frame`, signal storms)
+2. **Does this scale with entity count?** (units × layers × tiles)
+3. **Does this duplicate data or materials** that could stay shared?
+4. **Does this force GPU sync or shader recompile** every frame?
+
+If yes to any, **throttle, batch, cache, or move to GPU** — or document why the cost is unavoidable.
+
+## Hard rules
+
+- **No unbounded per-frame loops** over all actors, all sprite layers, or all tiles unless gated (dirty flag, epoch, distance, visibility).
+- **No `frame_changed` / `animation_changed` hooks** that trigger full scene sync, material rebuilds, or shadow rebakes — use stable screen-space math or update only on pose/position/epoch change.
+- **Never `material.duplicate()` per layer per frame**; use shared materials + instance uniforms (or one duplicate at compose time only).
+- **Prefer existing autoload buses / composite layers** (e.g. multiply overlays, `EffectsController.process_frame`) over per-node `_process` duplicates.
+- **GPU over CPU** for ambient motion, wind, water, shadows — match `living-sandbox-architect.mdc` and `sandbox_map_system.md`.
+
+## Acceptable patterns
+
+- Sync when **position, map epoch, or settings** change — not every animation frame.
+- **Dirty flags**: skip work when inputs unchanged (`is_equal_approx`, cached stamp).
+- **One shared update** per frame (e.g. palette/shadow globals once in `EffectsController`) instead of N×M per-sprite calls.
+- **Defer** non-critical work (`call_deferred`, async bake queues already in `ShadowPlacer`).
+
+## Red flags (stop and redesign)
+
+- Hooking every `AnimatedSprite2D` frame tick to invalidate shaders or rebuild silhouettes.
+- Calling `sync_*` on all units every frame when standing still with no epoch change.
+- `_draw()` or CPU pixel loops for effects that belong in shaders.
+- Disabling throttling "to fix flicker" without measuring frame time.
+
+## When trade-offs are required
+
+State the cost in the plan/Changelog (e.g. "adds 10× `set_instance_shader_parameter` per move, not per frame"). If perf regresses, **revert the hot path first**, then find a cheaper design.
