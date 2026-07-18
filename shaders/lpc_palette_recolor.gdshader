@@ -1,7 +1,5 @@
 shader_type canvas_item;
 
-#include "res://shaders/lpc_shadow_receive.gdshaderinc"
-
 // ULPC palette swap — tolerance matches chargen WebGL (~1/255 per channel).
 uniform vec4 source_colors[8];
 uniform vec4 target_colors[8];
@@ -22,7 +20,5 @@ void fragment() {
 			}
 		}
 	}
-	vec2 map_local = lpc_sprite_map_local(UV, TEXTURE_PIXEL_SIZE);
-	out_col = lpc_apply_shadow_receive(out_col, map_local);
 	COLOR = out_col * COLOR;
 }
