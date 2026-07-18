@@ -1420,13 +1420,6 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			_planning.set_drag_attack_target(-1)
 			return
 	if cell == actor.position and _drag_unit_was_selected:
-		if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
-			var wait_face: int = _facing_from_drop(local, cell)
-			if wait_face < 0:
-				wait_face = actor.facing
-			_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, wait_face, preview_cell, drag_preview_failed)
-			_planning.set_drag_attack_target(-1)
-			return
 		if _director.selected_ability_index >= 0:
 			var self_ability := _selected_ability_data(actor)
 			if AbilitySystem.can_target_self(actor, self_ability):

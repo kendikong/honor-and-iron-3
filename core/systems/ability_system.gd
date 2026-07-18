@@ -193,6 +193,11 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	actor.ability.points_left -= action.ability.action_point_cost
 	actor.turn_action_used = true
 
+	# Wait is an exhaustion state — consumes the action slot silently (no VFX / log event).
+	if DataLibrary.is_universal_wait(ability.id):
+		apply_canto_move_refund(actor)
+		return
+
 	var target_coord := _resolve_target_coord(board, action)
 	
 	# Turn to face the target before resolving (positioning matters next exchange).

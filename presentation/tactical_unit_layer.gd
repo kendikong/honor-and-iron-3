@@ -232,8 +232,9 @@ func apply_sim_event(event: SimEvent) -> void:
 		GameEnums.SimEventType.UNIT_PUSHED, GameEnums.SimEventType.COLLISION:
 			_animate_push(event)
 		GameEnums.SimEventType.ABILITY_USED:
-			_record_attack_source(event)
-			_play_attack_anim(event)
+			if not DataLibrary.is_universal_wait(event.data.get("ability", &"")):
+				_record_attack_source(event)
+				_play_attack_anim(event)
 		GameEnums.SimEventType.COUNTER_ATTACK:
 			_record_counter_source(event)
 			_play_attack_anim(event)

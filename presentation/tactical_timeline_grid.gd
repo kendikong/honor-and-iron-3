@@ -27,6 +27,8 @@ const COLOR_EMPTY: Color = Color(0.35, 0.38, 0.44)
 const COLOR_ROW: Color = Color(0.13, 0.15, 0.19, 0.88)
 const COLOR_ROW_SEL: Color = Color(0.18, 0.30, 0.46, 0.95)
 const COLOR_ROW_HOVER: Color = Color(0.16, 0.20, 0.28, 0.92)
+const COLOR_ROW_EXHAUSTED: Color = Color(0.09, 0.10, 0.12, 0.82)
+const COLOR_PLAN_EXHAUSTED: Color = Color(0.48, 0.50, 0.54, 1.0)
 const COLOR_SLOT_EMPTY: Color = Color(0.10, 0.11, 0.14, 0.55)
 const COLOR_ACCENT_PRE: Color = Color(0.35, 0.55, 0.85, 0.18)
 const COLOR_ACCENT_ACT: Color = Color(0.85, 0.55, 0.25, 0.18)
@@ -151,8 +153,13 @@ func _add_party_row(
 	_rows_root.add_child(row_panel)
 	var is_empty: bool = unit == null
 	var is_selected: bool = unit != null and unit.id == _selected_id
+	var is_exhausted: bool = (
+		unit != null and _director != null and _director.unit_has_wait_planned(unit.id)
+	)
 	var row_bg: Color = COLOR_SLOT_EMPTY if is_empty else COLOR_ROW
-	if is_selected:
+	if is_exhausted:
+		row_bg = COLOR_ROW_EXHAUSTED
+	elif is_selected:
 		row_bg = COLOR_ROW_SEL
 	row_panel.add_theme_stylebox_override("panel", _panel_style(row_bg, is_selected))
 	var row := _make_row_container(0)
@@ -160,6 +167,8 @@ func _add_party_row(
 	row.add_child(info)
 	var plan := _make_plan_section()
 	row.add_child(plan)
+	if is_exhausted:
+		plan.modulate = COLOR_PLAN_EXHAUSTED
 	row_panel.add_child(_wrap_row_inset(row))
 	var player_col: Color = CombatUiFormatters.player_color(slot) if not is_empty else COLOR_EMPTY
 	_add_body_cell(info, "P%d" % slot, "", player_col, W_PLAYER, false)
@@ -191,18 +200,22 @@ func _add_party_row(
 	_add_stats_cells(info, unit, stats_col)
 	var slots: Dictionary = _plan_slots_for_unit(timeline, unit.id)
 	var warn: String = ""
+	var exhausted_tooltip: String = "Waiting — no further actions this phase" if is_exhausted else ""
 	var cell_warn: String = _append_plan_cell(
 		plan, slots.get("pre", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_PRE, STRETCH_PRE,
+		is_exhausted, exhausted_tooltip,
 	)
 	if not cell_warn.is_empty():
 		warn = cell_warn
 	cell_warn = _append_plan_cell(
 		plan, slots.get("action", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_ACT, STRETCH_ACTION,
+		is_exhausted, exhausted_tooltip,
 	)
 	if not cell_warn.is_empty() and warn.is_empty():
 		warn = cell_warn
 	cell_warn = _append_plan_cell(
 		plan, slots.get("post", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_POST, STRETCH_POST,
+		is_exhausted, exhausted_tooltip,
 	)
 	if not cell_warn.is_empty() and warn.is_empty():
 		warn = cell_warn
@@ -253,6 +266,8 @@ func _plan_slots_for_unit(plan: Timeline, unit_id: int) -> Dictionary:
 			continue
 		match action.type:
 			GameEnums.ActionType.ABILITY:
+				if action.ability != null and DataLibrary.is_universal_wait(action.ability.id):
+					continue
 				abilities.append(action)
 			GameEnums.ActionType.MOVE, GameEnums.ActionType.FACE:
 				if action.move_timing == GameEnums.MoveTiming.POST_ACTION:
@@ -271,16 +286,21 @@ func _append_plan_cell(
 	plan_active: bool,
 	accent: Color,
 	stretch: float,
+	exhausted: bool = false,
+	exhausted_tooltip: String = "",
 ) -> String:
 	var text: String = "—"
-	var tooltip: String = "No action queued"
+	var tooltip: String = exhausted_tooltip if exhausted else "No action queued"
 	var failed: bool = false
 	var first_warn: String = ""
 	if not steps.is_empty():
 		var parts: PackedStringArray = []
 		var tips: PackedStringArray = []
 		for step: TimelineAction in steps:
-			parts.append(CombatUiFormatters.action_symbol_text(_board, step, unit))
+			var symbol: String = CombatUiFormatters.action_symbol_text(_board, step, unit)
+			if symbol == "":
+				continue
+			parts.append(symbol)
 			tips.append(CombatUiFormatters.describe_action(_board, step))
 			var reason: String = UnitPlanOrder.status_for_action(timeline, statuses, step)
 			if reason != "":
@@ -290,11 +310,17 @@ func _append_plan_cell(
 						unit.definition.display_name,
 						CombatUiFormatters.reason_text(reason),
 					]
-		text = " → ".join(parts)
-		tooltip = "\n".join(tips)
+		if not parts.is_empty():
+			text = " → ".join(parts)
+			tooltip = "\n".join(tips)
+		elif exhausted:
+			tooltip = exhausted_tooltip
 	var lbl := _add_plan_cell(row, text, tooltip, failed, accent, plan_active, stretch)
 	if text == "—":
-		lbl.modulate = Color(1, 1, 1, 0.35 if plan_active else 0.22)
+		var empty_alpha: float = 0.35 if plan_active else 0.22
+		if exhausted:
+			empty_alpha = 0.28
+		lbl.modulate = Color(1, 1, 1, empty_alpha)
 	return first_warn
 
 

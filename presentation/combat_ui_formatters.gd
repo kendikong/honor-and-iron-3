@@ -271,12 +271,12 @@ static func action_symbol_text(
 	if action.type == GameEnums.ActionType.FACE:
 		return "👀 %s" % facing_name(action.face_dir)
 	if action.type == GameEnums.ActionType.ABILITY:
+		if action.ability != null and DataLibrary.is_universal_wait(action.ability.id):
+			return ""
 		var symbol: String = "✨"
 		if action.ability != null:
 			if action.ability.id == &"universal_run":
 				return "🏃 Run"
-			if action.ability.id == &"universal_wait":
-				return "⏸ Wait"
 			if action.ability.is_movement_skill:
 				return "↔️ %s" % action.ability.display_name
 			var has_damage: bool = false
@@ -327,7 +327,9 @@ static func format_unit_plan_timeline(
 	for i: int in range(steps.size()):
 		var step: TimelineAction = steps[i]
 		var symbol: String = action_symbol_text(board, step, unit)
-		parts.append("%d. %s" % [i + 1, symbol])
+		if symbol == "":
+			continue
+		parts.append("%d. %s" % [parts.size() + 1, symbol])
 		var detail: String = describe_action(board, step)
 		var reason: String = UnitPlanOrder.status_for_action(plan, statuses, step)
 		if reason != "":
@@ -336,7 +338,13 @@ static func format_unit_plan_timeline(
 				"%d. %s — %s" % [i + 1, detail, reason_text(reason)],
 			)
 		else:
-			tooltip_lines.append("%d. %s" % [i + 1, detail])
+			tooltip_lines.append("%d. %s" % [parts.size(), detail])
+	if parts.is_empty():
+		return {
+			"text": "—",
+			"tooltip": "No actions queued",
+			"failed": false,
+		}
 	var arrow: String = " → "
 	return {
 		"text": arrow.join(parts),
@@ -371,6 +379,9 @@ static func log_line(board: BoardState, event: SimEvent, last_telemetry: Diction
 			telemetry = d.duplicate(true)
 			line = ""
 		GameEnums.SimEventType.ABILITY_USED:
+			if d.get("ability") == &"universal_wait":
+				line = ""
+				return {"line": line, "telemetry": telemetry}
 			if not d.get("is_dash", false):
 				telemetry.clear()
 			var ability_name: String = d.get("ability_name", "an ability")
