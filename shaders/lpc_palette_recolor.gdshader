@@ -7,6 +7,10 @@ uniform vec4 source_colors[8];
 uniform vec4 target_colors[8];
 uniform int pair_count = 0;
 
+void vertex() {
+	lpc_shadow_vertex();
+}
+
 void fragment() {
 	vec4 col = texture(TEXTURE, UV);
 	vec4 out_col = col;
@@ -22,7 +26,6 @@ void fragment() {
 			}
 		}
 	}
-	vec2 map_local = lpc_sprite_map_local(UV, TEXTURE_PIXEL_SIZE);
-	out_col = lpc_apply_shadow_receive(out_col, map_local);
+	out_col = lpc_apply_shadow_receive(out_col, lpc_fragment_map_local());
 	COLOR = out_col * COLOR;
 }

@@ -342,14 +342,10 @@ static func sync_lpc_sprite_layer_shadow_instance(
 	if sprite == null or actor == null or sprite.material == null:
 		return
 	var enabled: float = 1.0 if settings != null and settings.oblique_contact_shadows else 0.0
-	var frame_half: Vector2 = Vector2(
-		float(_LPC.FRAME_SIZE) * 0.5,
-		float(_LPC.FRAME_SIZE) * 0.5,
-	)
 	var actor_scale: Vector2 = actor.scale
-	var map_origin: Vector2 = actor.position + (sprite.position - frame_half) * actor_scale
+	var map_center: Vector2 = actor.position + sprite.position * actor_scale
 	sprite.set_instance_shader_parameter("lpc_shadow_enabled", enabled)
-	sprite.set_instance_shader_parameter("sprite_map_origin", map_origin)
+	sprite.set_instance_shader_parameter("sprite_map_origin", map_center)
 	sprite.set_instance_shader_parameter("sprite_scale", actor_scale)
 
 
