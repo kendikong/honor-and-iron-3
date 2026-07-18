@@ -177,7 +177,7 @@ func _build_ui() -> void:
 		"Disable caster punch-out (no tree-shaped holes)",
 	)
 	_add_toggle(vbox, "shadow_disable_tree_nudge", "Disable tree shadow nudge")
-	_add_toggle(vbox, "shadow_freeze_time", "Freeze shadows at current time")
+	_add_toggle(vbox, "shadow_freeze_time", "Freeze game time")
 	_add_shadow_tuning_sliders(vbox)
 	_add_shadow_stats_row(vbox)
 

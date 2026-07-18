@@ -19,7 +19,7 @@ var mist: bool = false
 var oblique_contact_shadows: bool = true
 var tree_variant_b: bool = true
 
-# Shadow debug (not shown in panel — sun/length/tint follow time_light when on)
+# Debug — freeze entire WeatherBus clock (day/night, clouds, sun) at toggle moment
 var shadow_freeze_time: bool = false
 var shadow_cycle_sun_angle: bool = false
 var shadow_cycle_length: bool = false

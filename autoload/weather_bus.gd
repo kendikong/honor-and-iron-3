@@ -140,9 +140,10 @@ func _rng_init() -> void:
 
 
 func _process(delta: float) -> void:
-	_advance_time_preset(delta)
-	_advance_cloud_drift(delta)
-	cloud_drift_offset += cloud_drift_dir.normalized() * delta * CLOUD_DRIFT_SPEED
+	if not game_time_frozen:
+		_advance_time_preset(delta)
+		_advance_cloud_drift(delta)
+		cloud_drift_offset += cloud_drift_dir.normalized() * delta * CLOUD_DRIFT_SPEED
 	_recompute_mist()
 	_emit_accum += delta
 	if _emit_accum < STATE_EMIT_INTERVAL_SEC:
@@ -697,6 +698,7 @@ func shadow_cast_direction_pixels_for_sun(
 
 var time_speed_mult: float = 1.0
 var fast_night: bool = true
+var game_time_frozen: bool = false
 
 func set_time_speed(speed: float) -> void:
 	time_speed_mult = speed
@@ -704,8 +706,14 @@ func set_time_speed(speed: float) -> void:
 func set_fast_night(fast: bool) -> void:
 	fast_night = fast
 
+func freeze_game_time() -> void:
+	game_time_frozen = true
+
+func unfreeze_game_time() -> void:
+	game_time_frozen = false
+
 func _advance_time_preset(delta: float) -> void:
-	if time_speed_mult <= 0.0:
+	if game_time_frozen or time_speed_mult <= 0.0:
 		return
 	
 	var current_mult: float = time_speed_mult

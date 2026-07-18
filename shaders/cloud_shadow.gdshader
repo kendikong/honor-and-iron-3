@@ -56,7 +56,7 @@ float field_at_pixel(vec2 map_local, vec2 drift_time) {
 float shadow_mask(float field) {
 	// Quantize to pixel depth for pixel art consistency.
 	// Step is 0.58 to 0.60 to make edges sharper than before (was 0.56 to 0.60).
-	float s = smoothstep(0.58, 0.60, field);
+	float s = smoothstep(0.52, 0.58, field);
 	return round(s * 8.0) / 8.0;
 }
 

@@ -235,8 +235,16 @@ static func sync_cycle(shadow_root: Node2D, settings: EffectsSettings = null) ->
 	_last_shadow_geometry_lo_fi = geometry_blocked
 	if shadow_root == null:
 		return
+	var want_cloud: bool = settings != null and settings.cloud_shadows
 	if not is_present:
 		_last_bake_signature = -1
+		if want_cloud:
+			_clear_oblique_map_overlay()
+			_ensure_ground_shadow_rect(shadow_root, settings)
+			shadow_root.visible = true
+			shadow_root.process_mode = Node.PROCESS_MODE_INHERIT
+			_sync_ground_shadow_uniforms(settings, shadow_root)
+			return
 		if _has_ground_shadow_rect(shadow_root):
 			clear_immediate(shadow_root)
 			_pending_composite_apply = {}
@@ -263,10 +271,14 @@ static func sync_cycle(shadow_root: Node2D, settings: EffectsSettings = null) ->
 			_last_composite_queue_ms = now_ms
 			_queue_async_composite(shadow_root, _shadow_layer_cache, settings, contrast, bake_sig)
 	var show: bool = _has_ground_shadow_rect(shadow_root)
+	if want_cloud:
+		if not show:
+			_ensure_ground_shadow_rect(shadow_root, settings)
+			show = _has_ground_shadow_rect(shadow_root)
 	if settings == null or not settings.cloud_shadows:
 		show = show and is_present
 	else:
-		show = show and (is_present or WeatherBus.shadows_visible())
+		show = show and (is_present or want_cloud)
 	shadow_root.visible = show
 	shadow_root.modulate = Color.WHITE
 	_sync_ground_shadow_uniforms(settings, shadow_root)
@@ -624,10 +636,11 @@ static func _max_blit_foot_alpha(dst: Image, src: Image, offset: Vector2i) -> vo
 static func sync_ground_shadow_drift(settings: EffectsSettings, shadow_root: Node2D) -> void:
 	if shadow_root == null:
 		return
-	_ensure_ground_shadow_rect(shadow_root, settings)
-	if settings != null and settings.cloud_shadows:
+	var want_cloud: bool = settings != null and settings.cloud_shadows
+	if want_cloud:
 		shadow_root.visible = true
 		shadow_root.process_mode = Node.PROCESS_MODE_INHERIT
+	_ensure_ground_shadow_rect(shadow_root, settings)
 	var sig: int = _ground_static_uniform_signature(settings)
 	if sig != _ground_static_uniform_sig:
 		_ground_static_uniform_sig = sig
@@ -666,6 +679,7 @@ static func _ensure_ground_shadow_rect(shadow_root: Node2D, settings: EffectsSet
 		shadow_root.add_child(rect)
 	rect.position = Vector2.ZERO
 	rect.size = _map_size_px
+	rect.visible = true
 	rect.material = _ground_material()
 	_sync_ground_shadow_uniforms(settings, shadow_root)
 
@@ -2154,7 +2168,7 @@ static func sample_environment_shadow_alpha_at(
 ) -> float:
 	var static_a: float = _sample_map_oblique_channel_alpha_at(map_px)
 	var cloud_a: float = 0.0
-	if settings != null and settings.cloud_shadows and WeatherBus.shadows_visible():
+	if settings != null and settings.cloud_shadows:
 		cloud_a = _CLOUD_FIELD.shadow_mask_at(map_px, WeatherBus.cloud_drift_offset)
 	return maxf(static_a, cloud_a)
 
@@ -2166,7 +2180,7 @@ static func sample_unified_shadow_alpha_at(
 	var static_a: float = _sample_map_oblique_channel_alpha_at(map_px)
 	var feet_a: float = _sample_unit_feet_channel_alpha_at(map_px)
 	var cloud_a: float = 0.0
-	if settings != null and settings.cloud_shadows and WeatherBus.shadows_visible():
+	if settings != null and settings.cloud_shadows:
 		cloud_a = _CLOUD_FIELD.shadow_mask_at(map_px, WeatherBus.cloud_drift_offset)
 	return maxf(maxf(static_a, feet_a), cloud_a)
 
@@ -2370,17 +2384,21 @@ static func clear(shadow_root: Node2D) -> void:
 		child.queue_free()
 
 
+static func _clear_oblique_map_overlay() -> void:
+	_map_oblique_overlay = {}
+	_map_oblique_overlay_base = {}
+	_map_oblique_tex = null
+	_map_oblique_base_image = null
+	_ground_static_uniform_sig = -1
+
+
 static func clear_immediate(shadow_root: Node2D) -> void:
 	if shadow_root == null:
 		return
-	_map_oblique_overlay = {}
-	_map_oblique_overlay_base = {}
+	_clear_oblique_map_overlay()
 	_unit_feet_gpu_slots.clear()
-	_map_oblique_tex = null
-	_map_oblique_base_image = null
 	_foot_cluster_layout_key = -1
 	_unit_feet_gpu_layout_key = -1
-	_ground_static_uniform_sig = -1
 	var children: Array[Node] = shadow_root.get_children()
 	for child: Node in children:
 		if child is ColorRect:

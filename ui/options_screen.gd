@@ -21,7 +21,7 @@ const _EFFECT_TOGGLES: Array[Dictionary] = [
 
 const _DEV_SHADOW_TOGGLES: Array[Dictionary] = [
 	{"key": "shadow_perf_mode", "label": "Shadow performance mode"},
-	{"key": "shadow_freeze_time", "label": "Freeze shadow time"},
+	{"key": "shadow_freeze_time", "label": "Freeze game time"},
 	{"key": "shadow_edge_soften", "label": "Soften shadow edges"},
 ]
 

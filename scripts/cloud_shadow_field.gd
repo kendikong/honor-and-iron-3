@@ -9,7 +9,7 @@ const ALPHA_CUTOFF: float = 0.04
 
 static func shadow_mask_at(map_local: Vector2, drift: Vector2) -> float:
 	var field: float = _field_at_pixel(map_local, drift)
-	var s: float = smoothstep(0.58, 0.60, field)
+	var s: float = smoothstep(0.52, 0.58, field)
 	return snappedf(s * 8.0, 1.0 / 8.0)
 
 

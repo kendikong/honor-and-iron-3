@@ -43,6 +43,6 @@ float cloud_field_at_pixel(vec2 map_local, vec2 drift_time, float tile_px) {
 }
 
 float cloud_shadow_mask(float field) {
-	float s = smoothstep(0.58, 0.60, field);
+	float s = smoothstep(0.52, 0.58, field);
 	return round(s * 8.0) / 8.0;
 }
