@@ -164,7 +164,6 @@ func _on_selection_changed(unit_id: int) -> void:
 
 
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
-	_refresh_planning_visuals()
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
 		_sync_planning_actor_positions()
 
@@ -300,7 +299,8 @@ func _sync_actors() -> void:
 		elif _move_tweens.has(unit.id):
 			pass
 		elif _is_planning_phase() and not unit.is_enemy():
-			_sync_planning_unit_position(unit)
+			# Planning walk/snap is driven by timeline_changed (and commit anim events).
+			pass
 		else:
 			_position_actor(unit.id, unit.position)
 		if not (_drag_preview_active and unit.id == _drag_preview_id):
@@ -678,6 +678,14 @@ func _unit_uses_run_anim(unit_id: int) -> bool:
 	return false
 
 
+func _resolve_planning_path_cells(from_cell: Vector2i, to_cell: Vector2i, unit: UnitState) -> Array[Vector2i]:
+	if _director != null and unit != null:
+		var waypoints: Array[Vector2i] = _director.get_planned_move_waypoints(unit.id)
+		if not waypoints.is_empty() and waypoints[waypoints.size() - 1] == to_cell:
+			return waypoints
+	return _find_display_path(from_cell, to_cell, unit)
+
+
 func _find_display_path(from_cell: Vector2i, to_cell: Vector2i, unit: UnitState) -> Array[Vector2i]:
 	if from_cell == to_cell or _board == null or unit == null:
 		return []
@@ -706,7 +714,7 @@ func _animate_planning_path(
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if unit == null:
 		return
-	var cells: Array[Vector2i] = _find_display_path(from_cell, to_cell, unit)
+	var cells: Array[Vector2i] = _resolve_planning_path_cells(from_cell, to_cell, unit)
 	if cells.is_empty():
 		_position_actor(unit_id, to_cell)
 		_apply_facing(unit_id, unit.facing)

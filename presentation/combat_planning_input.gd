@@ -30,6 +30,8 @@ var drag_preview_failed: bool = false
 var _last_planning_hover_cell: Vector2i = Vector2i(-9999, -9999)
 var _hover_preview_cache_key: String = ""
 var _selection_refresh_pending: bool = false
+var _plan_refresh_followup_pending: bool = false
+var _hover_preview_refresh_pending: bool = false
 
 
 func setup(
@@ -431,7 +433,6 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 
 
 func _on_board_changed(_board: BoardState) -> void:
-	_invalidate_planning_hover_cache()
 	if aiming:
 		cancel_aim()
 	aiming = false
@@ -454,14 +455,7 @@ func _on_board_changed(_board: BoardState) -> void:
 		_planning.end_drag_sprite()
 		_planning.mark_danger_dirty()
 		_planning._invalidate_hover_cache()
-		_planning._recompute_hover_ranges_from_inputs()
-	_sync_intent_live_board()
-	_sync_intent_skill_mode()
-	if _intent_state != null:
-		_intent_state.recompute()
-	refresh_mouse_cursor(
-		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999),
-	)
+	_schedule_plan_refresh_followup()
 
 
 func _stash_committed_preview() -> void:
@@ -527,9 +521,39 @@ func _on_ability_selected(index: int) -> void:
 
 func _on_preview_updated(_result: SimResult) -> void:
 	_drag_saved_preview = null
-	_sync_intent_live_board()
 	if dragging:
 		return
+	_schedule_plan_refresh_followup()
+	_schedule_hover_preview_refresh()
+
+
+func _schedule_plan_refresh_followup() -> void:
+	if _plan_refresh_followup_pending:
+		return
+	_plan_refresh_followup_pending = true
+	call_deferred("_finish_plan_refresh_followup")
+
+
+func _finish_plan_refresh_followup() -> void:
+	_plan_refresh_followup_pending = false
+	_sync_intent_live_board()
+	_sync_intent_skill_mode()
+	if _intent_state != null:
+		_intent_state.recompute()
+	refresh_mouse_cursor(
+		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999),
+	)
+
+
+func _schedule_hover_preview_refresh() -> void:
+	if _hover_preview_refresh_pending:
+		return
+	_hover_preview_refresh_pending = true
+	call_deferred("_flush_hover_preview_refresh")
+
+
+func _flush_hover_preview_refresh() -> void:
+	_hover_preview_refresh_pending = false
 	_refresh_hover_if_planning()
 
 
@@ -796,7 +820,8 @@ func _refresh_live_interaction_preview(
 	var dash_ab := _selected_ability_data(unit)
 	if _director.board.is_in_bounds(cell) and _should_use_dash_on_input(dash_ab):
 		dash_preview = _is_valid_dash_target(_proj_origin(unit), cell, dash_ab.range_tiles)
-	var cache_key: String = "%d|%s|%d|%d|%s" % [
+	var cache_key: String = "%d|%d|%s|%d|%d|%s" % [
+		_director.plan_revision if _director != null else 0,
 		unit_id,
 		str(move_coord),
 		attack_target_id,

@@ -49,6 +49,8 @@ var _commit_animate_actions: Array[TimelineAction] = []
 var initial_board: BoardState
 ## Snapshot at the start of the current player turn (planning).
 var turn_start_board: BoardState
+## Incremented on every successful _refresh_plan — cheap cache-bust for hover previews.
+var plan_revision: int = 0
 
 
 static func is_planning_phase(p: Phase) -> bool:
@@ -429,6 +431,18 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 
 func get_player_plan() -> Timeline:
 	return _get_combined_plan()
+
+
+func get_planned_move_waypoints(unit_id: int) -> Array[Vector2i]:
+	for i: int in range(plan_post_move.size() - 1, -1, -1):
+		var action: TimelineAction = plan_post_move.entries[i]
+		if action.actor_id == unit_id and action.type == GameEnums.ActionType.MOVE:
+			return action.waypoints.duplicate()
+	for i: int in range(plan_pre_move.size() - 1, -1, -1):
+		var action: TimelineAction = plan_pre_move.entries[i]
+		if action.actor_id == unit_id and action.type == GameEnums.ActionType.MOVE:
+			return action.waypoints.duplicate()
+	return []
 
 
 func get_unit_plan_steps(unit_id: int) -> Array[TimelineAction]:
@@ -1302,6 +1316,7 @@ func _refresh_plan() -> void:
 
 	if not anim_events.is_empty():
 		EventBus.planning_commit_events.emit(anim_events)
+	plan_revision += 1
 	EventBus.board_changed.emit(board)
 	EventBus.timeline_changed.emit(plan_to_run, statuses)
 	

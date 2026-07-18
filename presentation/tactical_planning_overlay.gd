@@ -65,6 +65,7 @@ var _show_danger_area: bool = false
 var _danger_tiles_cache: Dictionary = {}
 var _danger_tiles_dirty: bool = true
 var _hit_markers: Array = []
+var _hover_recompute_pending: bool = false
 
 
 func setup(
@@ -81,7 +82,6 @@ func setup(
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
 		_invalidate_hover_cache()
-		_recompute_hover_ranges_from_inputs()
 	)
 	EventBus.selection_changed.connect(func(_id: int) -> void:
 		if _director == null:
@@ -558,7 +558,6 @@ func _on_board_changed(board: BoardState) -> void:
 	set_board(board)
 	_danger_tiles_dirty = true
 	_invalidate_hover_cache()
-	_recompute_hover_ranges_from_inputs()
 
 
 func _process(delta: float) -> void:
@@ -618,6 +617,18 @@ func _on_sim_event(event: SimEvent) -> void:
 			_hit_markers.append([marker_pos, 0.4])
 
 
+func _schedule_hover_recompute() -> void:
+	if _hover_recompute_pending:
+		return
+	_hover_recompute_pending = true
+	call_deferred("_flush_hover_recompute")
+
+
+func _flush_hover_recompute() -> void:
+	_hover_recompute_pending = false
+	_recompute_hover_ranges_from_inputs()
+
+
 func _on_preview_updated(result: SimResult) -> void:
 	set_preview_board(result.final_state)
 	_invalidate_hover_cache()
@@ -625,7 +636,7 @@ func _on_preview_updated(result: SimResult) -> void:
 		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
 		_preview_board = _committed_preview.preview_board
 	_has_stashed_committed = false
-	_recompute_hover_ranges_from_inputs()
+	_schedule_hover_recompute()
 	if _planning_input == null or not _planning_input.is_live_preview_active():
 		if _unit_layer != null:
 			_unit_layer.set_predicted_stats(
