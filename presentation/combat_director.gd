@@ -251,6 +251,25 @@ func _unit_has_post_move_queued(unit_id: int) -> bool:
 	return false
 
 
+func unit_has_move_planned_at_timing(unit_id: int, timing: int) -> bool:
+	return _unit_has_move_queued_for_timing(unit_id, timing)
+
+
+func _unit_has_move_queued_for_timing(unit_id: int, timing: int) -> bool:
+	if timing == GameEnums.MoveTiming.PRE_ACTION:
+		return _unit_has_pre_move_queued(unit_id)
+	if timing == GameEnums.MoveTiming.POST_ACTION:
+		return _unit_has_post_move_queued(unit_id)
+	return false
+
+
+func _reject_if_move_slot_filled(unit_id: int, timing: int) -> bool:
+	if not _unit_has_move_queued_for_timing(unit_id, timing):
+		return false
+	EventBus.action_rejected.emit("move_already_planned")
+	return true
+
+
 func _unit_can_post_move(unit_id: int, p_unit: UnitState) -> bool:
 	if unit_has_wait_planned(unit_id):
 		return false
@@ -276,7 +295,9 @@ func rpc_plan_move(unit_id: int, coord: Vector2i, face_dir: int, waypoints: Arra
 	if target_timing == -1:
 		EventBus.action_rejected.emit("no_actions_left")
 		return
-		
+	if _reject_if_move_slot_filled(unit_id, target_timing):
+		return
+
 	_clear_unit_from_plans(unit_id, target_timing)
 	var action := TimelineAction.make_move(unit_id, coord, face_dir, waypoints, target_timing)
 	var plan_to_use = _plan_for_timing(target_timing)
@@ -343,6 +364,8 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 	var trial := proj.clone()
 	
 	if move_action != null:
+		if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
+			return
 		# Approach move + ability queued together in pre-action bucket
 		var after_actor := trial.get_unit_by_id(target_unit_id)
 		var attack_action := TimelineAction.make_ability(unit_id, ability,
@@ -654,19 +677,24 @@ func rpc_plan_move_with_self_ability(
 		if AbilitySystem.movement_requires_run(plan_board, p_unit, move_coord, waypoints):
 			rpc_plan_run_and_move(unit_id, move_coord, face_dir, waypoints, index)
 		else:
+			if _reject_if_move_slot_filled(unit_id, target_timing):
+				return
 			_clear_unit_from_plans(unit_id, target_timing)
 			_try_add(
 				TimelineAction.make_move(unit_id, move_coord, face_dir, waypoints, target_timing),
 				plan_to_use,
 			)
 		return
-	_clear_unit_from_plans(unit_id, target_timing)
 	if move_coord == attacker.position:
+		_clear_unit_from_plans(unit_id, target_timing)
 		_try_add(
 			TimelineAction.make_ability(unit_id, ability, attacker.position, unit_id, target_timing),
 			plan_to_use,
 		)
 		return
+	if _reject_if_move_slot_filled(unit_id, target_timing):
+		return
+	_clear_unit_from_plans(unit_id, target_timing)
 	var move_action := TimelineAction.make_move(unit_id, move_coord, face_dir, waypoints, target_timing)
 	var ability_action := TimelineAction.make_ability(
 		unit_id, ability, attacker.position, unit_id, GameEnums.MoveTiming.PRE_ACTION,

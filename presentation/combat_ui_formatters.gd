@@ -76,6 +76,8 @@ static func reason_text(code: String) -> String:
 			return "ally plan cancelled — target moved"
 		"cannot_undo_trample":
 			return "cannot undo trample move"
+		"move_already_planned":
+			return "undo move before planning another"
 		_:
 			return code
 

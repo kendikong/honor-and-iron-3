@@ -401,6 +401,13 @@ func _compute_move_budget(unit: UnitState, p_unit: UnitState, selected_ability: 
 func _can_show_move_tiles(unit: UnitState, selected_ability: int) -> bool:
 	if unit == null:
 		return false
+	if _director != null:
+		var move_timing: int = _director.get_planning_move_timing(unit.id)
+		if (
+			move_timing != -1
+			and _director.unit_has_move_planned_at_timing(unit.id, move_timing)
+		):
+			return false
 	if _intent_tiles_blocked(unit, selected_ability):
 		return false
 	if _is_selected_player_unit(unit):

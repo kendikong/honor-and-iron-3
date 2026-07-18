@@ -1057,6 +1057,12 @@ func _try_plan_basic_move(
 ) -> bool:
 	if not _basic_move_allowed():
 		return false
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	if (
+		move_timing != -1
+		and _director.unit_has_move_planned_at_timing(unit_id, move_timing)
+	):
+		return false
 	var actor := _proj_unit(unit_id)
 	if actor == null:
 		actor = _director.board.get_unit_by_id(unit_id) if _director.board != null else null
