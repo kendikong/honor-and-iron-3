@@ -164,8 +164,10 @@ func process_frame(delta: float) -> void:
 		else:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
 	_sync_contact_shadow_mask()
-	if settings.oblique_contact_shadows and _character_contact_shadow_sync.is_valid():
-		_character_contact_shadow_sync.call(settings)
+	if settings.oblique_contact_shadows:
+		LpcPaletteStore.sync_shared_shadow_uniforms(settings)
+		if _character_contact_shadow_sync.is_valid():
+			_character_contact_shadow_sync.call(settings)
 
 
 func set_character_contact_shadow_sync(callback: Callable) -> void:

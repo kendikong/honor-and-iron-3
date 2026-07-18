@@ -10,6 +10,7 @@ const _BAKE_FAIL: Dictionary = {}
 
 const _SHADOW_SHADER: Shader = preload("res://shaders/oblique_contact_shadow.gdshader")
 const _SHADOW_SHADER_PERF: Shader = preload("res://shaders/oblique_contact_shadow_perf.gdshader")
+const _LPC = preload("res://scripts/lpc/lpc_constants.gd")
 
 const TILE_PX: int = 16
 
@@ -331,6 +332,25 @@ static func sync_actor_contact_shadow(
 			has_clouds = 1.0
 		mat.set_shader_parameter("has_cloud_shadow", has_clouds)
 		mat.set_shader_parameter("cloud_drift_offset", atmo["cloud_drift_offset"])
+
+
+static func sync_lpc_sprite_layer_shadow_instance(
+	sprite: CanvasItem,
+	actor: Node2D,
+	settings: EffectsSettings = null,
+) -> void:
+	if sprite == null or actor == null or sprite.material == null:
+		return
+	var enabled: float = 1.0 if settings != null and settings.oblique_contact_shadows else 0.0
+	var frame_half: Vector2 = Vector2(
+		float(_LPC.FRAME_SIZE) * 0.5,
+		float(_LPC.FRAME_SIZE) * 0.5,
+	)
+	var actor_scale: Vector2 = actor.scale
+	var map_origin: Vector2 = actor.position + (sprite.position - frame_half) * actor_scale
+	sprite.set_instance_shader_parameter("lpc_shadow_enabled", enabled)
+	sprite.set_instance_shader_parameter("sprite_map_origin", map_origin)
+	sprite.set_instance_shader_parameter("sprite_scale", actor_scale)
 
 
 static func _sync_actor_map_oblique(sprite: Sprite2D, actor: Node2D) -> void:
