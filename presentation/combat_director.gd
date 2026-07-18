@@ -156,7 +156,9 @@ func rpc_plan_wait(unit_id: int) -> void:
 	if p_unit == null or p_unit.turn_action_used:
 		EventBus.action_rejected.emit("no_actions_left")
 		return
-	_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+	_clear_unit_abilities_from_plan(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+	_clear_unit_abilities_from_plan(unit_id, GameEnums.MoveTiming.POST_ACTION)
+	_clear_unit_post_moves_from_plan(unit_id)
 	var wait_ability: AbilityData = DataLibrary.get_universal_wait()
 	_try_add(
 		TimelineAction.make_ability(unit_id, wait_ability, p_unit.position, unit_id, target_timing),
@@ -184,6 +186,19 @@ func _clear_unit_abilities_from_plan(unit_id: int, timing: int) -> void:
 			continue
 		kept.append(action)
 	plan.entries = kept
+
+
+func _clear_unit_post_moves_from_plan(unit_id: int) -> void:
+	var kept: Array[TimelineAction] = []
+	for action: TimelineAction in plan_post_move.entries:
+		if (
+			action.actor_id == unit_id
+			and action.type == GameEnums.ActionType.MOVE
+			and action.move_timing == GameEnums.MoveTiming.POST_ACTION
+		):
+			continue
+		kept.append(action)
+	plan_post_move.entries = kept
 
 
 func _get_planning_state(_target_timing: int = 1) -> BoardState:
