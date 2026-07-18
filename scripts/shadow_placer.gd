@@ -70,6 +70,8 @@ static var _unit_feet_layout_key: int = -1
 static var _map_size_px: Vector2 = Vector2.ZERO
 static var _ground_shadow_material: ShaderMaterial
 static var _map_oblique_tex: ImageTexture
+static var _map_oblique_base_image: Image
+static var _map_oblique_overlay_base: Dictionary = {}
 static var _active_shadow_root: Node2D
 
 const ACTOR_SHADOW_BAND_COUNT: int = 3
@@ -309,11 +311,19 @@ static func sync_actor_contact_shadow(
 		_last_actor_synced_silhouette = -1
 		clear_actor_foot_bake(actor)
 		return
-	var want_actor_rebake: bool = not geometry_blocked and (map_applied or silhouette_stale)
+	var bake_sig: int = actor_shadow_bake_signature(settings)
+	var cached_bake_sig: int = -1
+	if _foot_bake_cache.has(actor_id):
+		cached_bake_sig = int((_foot_bake_cache[actor_id] as Dictionary).get("bake_sig", -1))
+	var sun_stale: bool = _foot_bake_cache.has(actor_id) and cached_bake_sig != bake_sig
+	var want_actor_rebake: bool = not geometry_blocked and (
+		map_applied or silhouette_stale or sun_stale
+	)
 	var need_geometry: bool = (
 		_snapshot_sundial(settings).visible
 		and (want_first_actor_bake or want_actor_rebake)
 	)
+	var foot_root: Vector2 = _actor_foot_on_shadow_root(actor, _active_shadow_root)
 	if (
 		need_geometry
 		and not want_first_actor_bake
@@ -325,28 +335,29 @@ static func sync_actor_contact_shadow(
 	if need_geometry:
 		var t0_us: int = Time.get_ticks_usec()
 		var baked: Dictionary = rebake_actor_shadow(
-			caster, foot_center_tex, foot_local, settings,
+			caster, foot_center_tex, foot_root, settings,
 		)
 		if baked.is_empty():
 			_foot_bake_cache.erase(actor_id)
 			return
 		debug_record_actor_bake(int((Time.get_ticks_usec() - t0_us) / 1000))
 		var img: Image = baked["image"] as Image
-		var foot_offset: Vector2 = baked["position"] as Vector2
+		var bake_offset: Vector2 = baked.get("bake_offset", Vector2.ZERO) as Vector2
 		_last_actor_applied_epoch = map_epoch if map_has_casters else 0
 		_last_actor_synced_silhouette = silhouette_version
 		_last_actor_bake_key = map_epoch * 1000 + silhouette_version
 		_store_foot_bake_cache(
 			actor_id,
 			img,
-			_foot_map_origin_for_bake(actor, foot_offset),
-			foot_offset,
+			foot_root + bake_offset,
+			bake_offset,
+			bake_sig,
 		)
 	elif _foot_bake_cache.has(actor_id):
 		var entry: Dictionary = _foot_bake_cache[actor_id] as Dictionary
-		var foot_offset: Vector2 = entry.get("foot_offset", Vector2.ZERO) as Vector2
+		var bake_offset: Vector2 = entry.get("bake_offset", Vector2.ZERO) as Vector2
 		var old_origin: Vector2 = entry.get("map_origin", Vector2.ZERO) as Vector2
-		var map_origin: Vector2 = _foot_map_origin_for_bake(actor, foot_offset)
+		var map_origin: Vector2 = foot_root + bake_offset
 		entry["map_origin"] = map_origin
 		if old_origin.distance_to(map_origin) > 0.5:
 			_unit_feet_layout_key = -1
@@ -403,44 +414,9 @@ static func rebuild_unit_feet_atlas(
 		return
 	_unit_feet_layout_key = layout_key
 	if entries.is_empty():
-		_unit_feet_overlay = {}
-		_sync_ground_shadow_uniforms(settings, shadow_root)
+		_restore_map_oblique_without_feet(settings, shadow_root)
 		return
-	var min_x: float = INF
-	var min_y: float = INF
-	var max_x: float = -INF
-	var max_y: float = -INF
-	for entry: Dictionary in entries:
-		var rect: Rect2 = _foot_entry_rect(entry)
-		min_x = minf(min_x, rect.position.x)
-		min_y = minf(min_y, rect.position.y)
-		max_x = maxf(max_x, rect.end.x)
-		max_y = maxf(max_y, rect.end.y)
-	var width: int = maxi(1, int(ceil(max_x - min_x)))
-	var height: int = maxi(1, int(ceil(max_y - min_y)))
-	var atlas: Image = Image.create(width, height, false, Image.FORMAT_RGBA8)
-	atlas.fill(Color(0.0, 0.0, 0.0, 0.0))
-	var origin: Vector2 = Vector2(min_x, min_y)
-	for entry: Dictionary in entries:
-		var img: Image = entry["image"] as Image
-		var map_origin: Vector2 = entry["map_origin"] as Vector2
-		var offset: Vector2i = Vector2i(
-			int(round(map_origin.x - origin.x)),
-			int(round(map_origin.y - origin.y)),
-		)
-		_max_blit_foot_alpha(atlas, img, offset)
-	if _unit_feet_tex == null:
-		_unit_feet_tex = ImageTexture.create_from_image(atlas)
-	else:
-		_unit_feet_tex.set_image(atlas)
-	_unit_feet_overlay = {
-		"active": true,
-		"tex": _unit_feet_tex,
-		"origin": origin,
-		"size": Vector2(float(width), float(height)),
-		"image": atlas,
-	}
-	_sync_ground_shadow_uniforms(settings, shadow_root)
+	_publish_merged_ground_shadow(entries, settings, shadow_root)
 
 
 static func sync_foot_shadow_cloud_drift(_actors: Array, _settings: EffectsSettings) -> void:
@@ -479,7 +455,7 @@ static func _collect_foot_shadow_entries(
 
 
 static func _foot_cluster_layout_hash(entries: Array[Dictionary]) -> int:
-	var parts: Array = []
+	var parts: Array = [applied_cycle_bake_signature(), _map_composite_apply_epoch]
 	for entry: Dictionary in entries:
 		var origin: Vector2 = entry["map_origin"] as Vector2
 		var img: Image = entry["image"] as Image
@@ -624,24 +600,101 @@ static func _purge_stray_shadow_root_sprites(shadow_root: Node2D) -> void:
 			spr.queue_free()
 
 
-static func _foot_map_origin_for_bake(actor: Node2D, foot_offset: Vector2) -> Vector2:
+static func _actor_foot_on_shadow_root(actor: Node2D, shadow_root: Node2D) -> Vector2:
 	if actor == null:
 		return Vector2.ZERO
-	var contact: Node2D = actor.get_node_or_null("ContactShadow") as Node2D
-	var world: Vector2 = actor.global_position + foot_offset
-	if contact != null:
-		world = contact.global_position + foot_offset
-	var shadow_root: Node2D = _active_shadow_root
 	if shadow_root != null:
-		return shadow_root.to_local(world)
-	return world
+		return shadow_root.to_local(actor.global_position)
+	return actor.global_position
+
+
+static func _restore_map_oblique_without_feet(
+	settings: EffectsSettings = null,
+	shadow_root: Node2D = null,
+) -> void:
+	_unit_feet_overlay = {}
+	if _map_oblique_base_image != null and not _map_oblique_base_image.is_empty():
+		if _map_oblique_tex == null:
+			_map_oblique_tex = ImageTexture.create_from_image(_map_oblique_base_image.duplicate())
+		else:
+			_map_oblique_tex.set_image(_map_oblique_base_image.duplicate())
+		if not _map_oblique_overlay_base.is_empty():
+			_map_oblique_overlay = _map_oblique_overlay_base.duplicate()
+		_overlay_sample_image = null
+		_overlay_sample_epoch = -1
+	_sync_ground_shadow_uniforms(settings, shadow_root)
+
+
+static func _publish_merged_ground_shadow(
+	entries: Array[Dictionary],
+	settings: EffectsSettings = null,
+	shadow_root: Node2D = null,
+) -> void:
+	var min_x: float = INF
+	var min_y: float = INF
+	var max_x: float = -INF
+	var max_y: float = -INF
+	var has_map: bool = _map_oblique_base_image != null and not _map_oblique_base_image.is_empty()
+	if has_map and bool(_map_oblique_overlay_base.get("active", false)):
+		var map_origin: Vector2 = _map_oblique_overlay_base.get("origin", Vector2.ZERO) as Vector2
+		var map_size: Vector2 = _map_oblique_overlay_base.get("size", Vector2.ONE) as Vector2
+		min_x = minf(min_x, map_origin.x)
+		min_y = minf(min_y, map_origin.y)
+		max_x = maxf(max_x, map_origin.x + map_size.x)
+		max_y = maxf(max_y, map_origin.y + map_size.y)
+	for entry: Dictionary in entries:
+		var rect: Rect2 = _foot_entry_rect(entry)
+		min_x = minf(min_x, rect.position.x)
+		min_y = minf(min_y, rect.position.y)
+		max_x = maxf(max_x, rect.end.x)
+		max_y = maxf(max_y, rect.end.y)
+	if min_x == INF:
+		_unit_feet_overlay = {}
+		_sync_ground_shadow_uniforms(settings, shadow_root)
+		return
+	var width: int = maxi(1, int(ceil(max_x - min_x)))
+	var height: int = maxi(1, int(ceil(max_y - min_y)))
+	var merged: Image = Image.create(width, height, false, Image.FORMAT_RGBA8)
+	merged.fill(Color(0.0, 0.0, 0.0, 0.0))
+	var origin: Vector2 = Vector2(min_x, min_y)
+	if has_map:
+		var map_origin: Vector2 = _map_oblique_overlay_base.get("origin", Vector2.ZERO) as Vector2
+		var map_offset: Vector2i = Vector2i(
+			int(round(map_origin.x - origin.x)),
+			int(round(map_origin.y - origin.y)),
+		)
+		_max_blit_foot_alpha(merged, _map_oblique_base_image, map_offset)
+	for entry: Dictionary in entries:
+		var map_origin: Vector2 = entry["map_origin"] as Vector2
+		var img: Image = entry["image"] as Image
+		var foot_offset: Vector2i = Vector2i(
+			int(round(map_origin.x - origin.x)),
+			int(round(map_origin.y - origin.y)),
+		)
+		_max_blit_foot_alpha(merged, img, foot_offset)
+	if _map_oblique_tex == null:
+		_map_oblique_tex = ImageTexture.create_from_image(merged)
+	else:
+		_map_oblique_tex.set_image(merged)
+	_map_oblique_overlay = {
+		"active": true,
+		"tex": _map_oblique_tex,
+		"origin": origin,
+		"size": Vector2(float(width), float(height)),
+	}
+	_overlay_sample_image = null
+	_overlay_sample_epoch = -1
+	_unit_feet_overlay = {}
+	_ensure_ground_shadow_rect(shadow_root, settings)
+	_sync_ground_shadow_uniforms(settings, shadow_root)
 
 
 static func _store_foot_bake_cache(
 	actor_id: int,
 	image: Image,
 	map_origin: Vector2,
-	foot_offset: Vector2,
+	bake_offset: Vector2,
+	bake_sig: int,
 ) -> void:
 	if image == null or image.is_empty():
 		_foot_bake_cache.erase(actor_id)
@@ -649,7 +702,8 @@ static func _store_foot_bake_cache(
 	_foot_bake_cache[actor_id] = {
 		"image": image.duplicate(),
 		"map_origin": map_origin,
-		"foot_offset": foot_offset,
+		"bake_offset": bake_offset,
+		"bake_sig": bake_sig,
 	}
 
 
@@ -953,12 +1007,17 @@ static func _apply_composite_result(
 	var composite: Image = result.get("composite") as Image
 	if composite == null:
 		return
+	_map_oblique_base_image = composite.duplicate()
 	if _map_oblique_tex == null:
-		_map_oblique_tex = ImageTexture.create_from_image(composite)
+		_map_oblique_tex = ImageTexture.create_from_image(_map_oblique_base_image.duplicate())
 	else:
-		_map_oblique_tex.set_image(composite)
+		_map_oblique_tex.set_image(_map_oblique_base_image.duplicate())
 	_ensure_ground_shadow_rect(shadow_root, settings)
 	_refresh_map_oblique_overlay(shadow_root, result.origin as Vector2)
+	_map_oblique_overlay_base = _map_oblique_overlay.duplicate()
+	_overlay_sample_image = null
+	_overlay_sample_epoch = -1
+	_unit_feet_layout_key = -1
 	_sync_ground_shadow_uniforms(settings, shadow_root)
 	_last_bake_signature = int(result.get("bake_sig", -1))
 	_map_composite_apply_epoch += 1
@@ -1150,9 +1209,11 @@ static func _rebake_entry_with_sundial(
 		return {}
 	var foot_world: Vector2 = entry["foot_world"] as Vector2
 	var nudge: Vector2 = entry.get("nudge", Vector2.ZERO)
+	var bake_offset: Vector2 = bake["offset"] as Vector2
 	return {
 		"image": img,
-		"position": foot_world + (bake["offset"] as Vector2) + nudge,
+		"position": foot_world + bake_offset + nudge,
+		"bake_offset": bake_offset + nudge,
 	}
 
 
@@ -2067,9 +2128,11 @@ static func rebake_actor_shadow(
 	var img: Image = baked["image"] as Image
 	if img == null:
 		return {}
+	var bake_offset: Vector2 = baked.get("bake_offset", Vector2.ZERO) as Vector2
 	return {
 		"image": img,
 		"position": baked["position"] as Vector2,
+		"bake_offset": bake_offset,
 	}
 
 
@@ -2084,8 +2147,10 @@ static func clear_immediate(shadow_root: Node2D) -> void:
 	if shadow_root == null:
 		return
 	_map_oblique_overlay = {}
+	_map_oblique_overlay_base = {}
 	_unit_feet_overlay = {}
 	_map_oblique_tex = null
+	_map_oblique_base_image = null
 	_unit_feet_layout_key = -1
 	var children: Array[Node] = shadow_root.get_children()
 	for child: Node in children:

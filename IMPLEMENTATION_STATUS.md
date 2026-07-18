@@ -1016,3 +1016,7 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** â
 ### Blob-stack fix (2026-07-18)
 - **Cause:** Each LPC actor's 3-band `self_modulate` sampled `sample_unified_shadow_alpha_at()` including the unit-feet atlas â†’ per-actor foot ovals stacked when clustered (looked like multiply blobs on grass).
 - **Fix:** Body receive uses `sample_environment_shadow_alpha_at()` (trees/props + cloud only). Unit feet render exclusively on `GroundShadows` via max-blitted atlas.
+
+### Actor foot direction fix (2026-07-18)
+- **Cause:** Unit feet used a separate `unit_feet_tex` channel with actor-local placement; sundial rebakes could stale; LPC bake silhouette ignored sprite `centered` + `position.y=-26` transform.
+- **Fix:** Feet max-blitted into the same `map_oblique_tex` as tree shadows (union bounds, one multiply channel); `foot_world` in shadow-root space; rebake on sundial signature change; LPC composite matches on-screen sprite layout.
