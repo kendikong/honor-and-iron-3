@@ -683,9 +683,6 @@ func end_drag_preview() -> void:
 	if actor != null:
 		actor.modulate = Color.WHITE
 		actor.set_walking(false)
-		var unit := _board.get_unit_by_id(_drag_preview_id) if _board != null else null
-		if unit != null:
-			_apply_exhaustion_state(unit)
 	if unit != null:
 		_apply_exhaustion_state(unit)
 
