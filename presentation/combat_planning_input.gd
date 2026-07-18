@@ -14,6 +14,10 @@ var _sfx: SfxPlayer
 
 var dragging: bool = false
 var aiming: bool = false
+var _drag_armed: bool = false
+var _drag_press_local: Vector2 = Vector2.ZERO
+
+const _DRAG_THRESHOLD_PX: float = 6.0
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -47,6 +51,7 @@ func setup(
 
 
 func cancel_drag() -> void:
+	_cancel_drag_armed()
 	if not dragging:
 		return
 	var snap_back: bool = _drag_had_movement()
@@ -94,7 +99,7 @@ func on_left_press(local: Vector2) -> void:
 		var was_selected: bool = unit.id == _director.selected_unit_id
 		if not was_selected:
 			_director.select_unit(unit.id)
-		_begin_drag(unit, local, was_selected)
+		_arm_drag(unit, local, was_selected)
 		return
 	if aiming:
 		var actor := _proj_unit(_director.selected_unit_id)
@@ -148,6 +153,9 @@ func on_left_press(local: Vector2) -> void:
 
 
 func on_left_release(local: Vector2) -> void:
+	if _drag_armed and not dragging:
+		_cancel_drag_armed()
+		return
 	if not dragging:
 		return
 	var released_unit_id: int = _drag_unit_id
@@ -195,12 +203,6 @@ func on_left_release(local: Vector2) -> void:
 						_director.rpc_plan_face(released_unit_id, face)
 						_play_sfx("move")
 						committed = true
-		else:
-			var face_idle: int = _facing_from_drop(local, cell)
-			if face_idle >= 0:
-				_director.rpc_plan_face(released_unit_id, face_idle)
-				_play_sfx("move")
-				committed = true
 	elif dropped_on == null:
 		var move_drop_ok: bool = _drop_allows_move_tile(cell, legal_move_tiles, actor)
 		if move_drop_ok:
@@ -339,6 +341,43 @@ func _sync_intent_live_board() -> void:
 		_intent_state.clear_live_preview_board()
 
 
+func try_activate_drag(local: Vector2) -> void:
+	if not _drag_armed or dragging or _director == null or _director.board == null:
+		return
+	if local.distance_to(_drag_press_local) < _DRAG_THRESHOLD_PX:
+		return
+	var unit: UnitState = _director.board.get_unit_by_id(_drag_unit_id)
+	if unit == null or not unit.is_alive():
+		_cancel_drag_armed()
+		return
+	_drag_armed = false
+	_begin_drag(unit, local, _drag_unit_was_selected)
+	update_drag(local)
+
+
+func is_drag_armed() -> bool:
+	return _drag_armed
+
+
+func _arm_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
+	_cancel_drag_armed()
+	_drag_armed = true
+	_drag_press_local = local
+	_drag_unit_id = unit.id
+	_drag_unit_was_selected = was_already_selected
+	_drag_route = [unit.position]
+	_drag_last_free = unit.position
+
+
+func _cancel_drag_armed() -> void:
+	_drag_armed = false
+	_drag_press_local = Vector2.ZERO
+	if dragging:
+		return
+	_drag_unit_id = -1
+	_drag_route.clear()
+
+
 func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
 	_invalidate_planning_hover_cache()
 	_stash_committed_preview()
@@ -377,7 +416,7 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 	_sync_intent_skill_mode()
 	if _intent_state != null:
 		_intent_state.recompute()
-	_refresh_hover_if_planning()
+	_request_planning_selection_refresh()
 
 
 func _on_board_changed(_board: BoardState) -> void:
@@ -386,6 +425,7 @@ func _on_board_changed(_board: BoardState) -> void:
 		cancel_aim()
 	aiming = false
 	dragging = false
+	_drag_armed = false
 	_drag_unit_id = -1
 	_drag_route.clear()
 	drag_preview_failed = false

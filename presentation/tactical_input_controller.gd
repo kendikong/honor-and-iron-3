@@ -47,6 +47,8 @@ func handle_input(event: InputEvent) -> bool:
 		var local: Vector2 = _screen_to_map_local(event.position)
 		if _planning_input.dragging:
 			_planning_input.update_drag(local)
+		elif _planning_input.is_drag_armed():
+			_planning_input.try_activate_drag(local)
 		elif _planning_input.aiming or _planning_input.skill_interaction_active():
 			var cell: Vector2i = _map_view.screen_to_grid(event.position)
 			if _intent_state != null:
@@ -61,7 +63,12 @@ func handle_input(event: InputEvent) -> bool:
 				false,
 				-1,
 			)
-		return _planning_input.dragging or _planning_input.aiming or _planning_input.skill_interaction_active()
+		return (
+			_planning_input.dragging
+			or _planning_input.is_drag_armed()
+			or _planning_input.aiming
+			or _planning_input.skill_interaction_active()
+		)
 	if event is InputEventMouseButton:
 		return _handle_mouse_button(event as InputEventMouseButton)
 	if event is InputEventKey and event.pressed and not event.echo:
