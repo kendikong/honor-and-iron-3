@@ -161,8 +161,7 @@ func on_left_release(local: Vector2) -> void:
 		return
 	var dropped_on := board.get_unit_at(cell)
 	if dropped_on != null and dropped_on.id != actor.id:
-		_plan_approach_or_trample_on_enemy(released_unit_id, dropped_on, local, _drag_last_free, [])
-		committed = not drag_preview_failed
+		committed = _plan_approach_or_trample_on_enemy(released_unit_id, dropped_on, local, cell, [])
 	elif cell == actor.position:
 		if _drag_unit_was_selected:
 			if not _drag_had_movement():
@@ -235,16 +234,19 @@ func update_drag(local: Vector2) -> void:
 		return
 	var occ := board.get_unit_at(cell)
 	var drag_unit := board.get_unit_by_id(_drag_unit_id)
-	if occ == null or occ.id == _drag_unit_id:
-		_drag_last_free = cell
+	if drag_unit != null and (occ == null or occ.id == _drag_unit_id):
+		if cell == drag_unit.position or _can_move_to(drag_unit, cell):
+			_drag_last_free = cell
 	elif (
 		drag_unit != null
 		and not drag_unit.is_enemy()
+		and occ != null
 		and occ.is_enemy()
 		and MovementSystem.has_trample(drag_unit)
 		and force_basic_movement
+		and _can_move_to(drag_unit, occ.position)
 	):
-		_drag_last_free = cell
+		_drag_last_free = occ.position
 	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
 	var preview: Dictionary = _director.preview_drag(
 		_drag_unit_id,
@@ -770,12 +772,12 @@ func _plan_approach_or_trample_on_enemy(
 	local: Vector2,
 	preferred_tile: Vector2i,
 	waypoints: Array[Vector2i] = [],
-) -> void:
+) -> bool:
 	var actor := _proj_unit(unit_id)
 	if actor == null:
 		actor = _director.board.get_unit_by_id(unit_id) if _director.board != null else null
 	if actor == null:
-		return
+		return false
 	var ability := _selected_ability_data(actor)
 	if (
 		ability != null
@@ -783,7 +785,7 @@ func _plan_approach_or_trample_on_enemy(
 		and _director.selected_ability_index >= 0
 	):
 		if _try_commit_move_with_self_skill(unit_id, preferred_tile, local, waypoints):
-			return
+			return true
 		if preferred_tile != actor.position and _can_move_to(actor, preferred_tile):
 			_director.rpc_plan_move(
 				unit_id,
@@ -792,10 +794,10 @@ func _plan_approach_or_trample_on_enemy(
 				waypoints,
 			)
 			_play_sfx("move")
-			return
+			return true
 		_director.rpc_plan_attack(unit_id, _director.selected_ability_index, actor.id)
 		_play_sfx("ability")
-		return
+		return true
 	if _prefer_approach_over_trample_move(actor, enemy):
 		_director.rpc_plan_attack_with_approach(
 			unit_id,
@@ -804,7 +806,8 @@ func _plan_approach_or_trample_on_enemy(
 			preferred_tile,
 		)
 		_play_sfx("ability")
-	elif _can_move_to(actor, enemy.position):
+		return true
+	if _can_move_to(actor, enemy.position):
 		_director.rpc_plan_move(
 			unit_id,
 			enemy.position,
@@ -812,14 +815,15 @@ func _plan_approach_or_trample_on_enemy(
 			waypoints,
 		)
 		_play_sfx("move")
-	else:
-		_director.rpc_plan_attack_with_approach(
-			unit_id,
-			_director.selected_ability_index,
-			enemy.id,
-			preferred_tile,
-		)
-		_play_sfx("ability")
+		return true
+	_director.rpc_plan_attack_with_approach(
+		unit_id,
+		_director.selected_ability_index,
+		enemy.id,
+		preferred_tile,
+	)
+	_play_sfx("ability")
+	return true
 
 
 func _prefer_approach_over_trample_move(actor: UnitState, enemy: UnitState) -> bool:
