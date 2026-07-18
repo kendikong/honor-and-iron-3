@@ -584,12 +584,18 @@ func _is_planning_phase() -> bool:
 func _sync_planning_actor_positions() -> void:
 	if _board == null or _map_view == null or not _is_planning_phase():
 		return
+	var force_sync: Dictionary = {}
+	if _director != null:
+		for unit_id: int in _director.plan_affected_unit_ids:
+			force_sync[unit_id] = true
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or unit.is_enemy():
 			continue
 		if _drag_preview_active and unit.id == _drag_preview_id:
 			continue
-		if _move_tweens.has(unit.id):
+		if force_sync.has(unit.id):
+			_kill_move_tween(unit.id)
+		elif _move_tweens.has(unit.id):
 			continue
 		_sync_planning_unit_position(unit)
 

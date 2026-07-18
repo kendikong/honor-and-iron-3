@@ -51,6 +51,8 @@ var initial_board: BoardState
 var turn_start_board: BoardState
 ## Incremented on every successful _refresh_plan — cheap cache-bust for hover previews.
 var plan_revision: int = 0
+## Units whose plan was removed this refresh — forces visual resync (e.g. undo during walk).
+var plan_affected_unit_ids: Array[int] = []
 
 
 static func is_planning_phase(p: Phase) -> bool:
@@ -778,6 +780,7 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
 					plan_post_move.remove_at(i)
+					plan_affected_unit_ids = [unit_id]
 					_refresh_plan()
 					return
 		if plan_pre_move.size() > 0:
@@ -787,6 +790,7 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
 					plan_pre_move.remove_at(i)
+					plan_affected_unit_ids = [unit_id]
 					_refresh_plan()
 					return
 
@@ -809,6 +813,7 @@ func rpc_remove_action(index: int) -> void:
 			EventBus.action_rejected.emit("cannot_undo_trample")
 			return
 		plan_post_move.remove_at(index - plan_pre_move.size())
+	plan_affected_unit_ids = [action.actor_id]
 	_refresh_plan()
 
 func move_action(index: int, delta: int) -> void:
@@ -848,6 +853,7 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 			if a.actor_id != unit_id:
 				kept_2.append(a)
 		plan_post_move.entries = kept_2
+		plan_affected_unit_ids = [unit_id]
 	_refresh_plan()
 
 func clear_plan() -> void:
@@ -1319,6 +1325,7 @@ func _refresh_plan() -> void:
 	plan_revision += 1
 	EventBus.board_changed.emit(board)
 	EventBus.timeline_changed.emit(plan_to_run, statuses)
+	plan_affected_unit_ids.clear()
 	
 	# Compute ghost events and final state by diffing base_board and projected_state
 	# The view layer uses preview_updated for ghosts and expected HP.
