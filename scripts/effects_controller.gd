@@ -263,7 +263,7 @@ func _apply_atmosphere_visuals(grid: PlayerGrid, water_ratio: float) -> void:
 	var mist_rect: ColorRect = _sky_overlay.get_node("MistOverlay") as ColorRect
 	_sky_overlay.visible = settings.cloud_shadows or settings.mist
 	mist_rect.visible = settings.mist
-	cloud_rect.visible = false
+	cloud_rect.visible = settings.cloud_shadows
 
 	if settings.time_light:
 		_world_modulate.color = WeatherBus.canvas_modulate_color()
@@ -274,6 +274,16 @@ func _apply_atmosphere_visuals(grid: PlayerGrid, water_ratio: float) -> void:
 		_atmosphere.sync_map(grid, water_ratio)
 	elif not settings.time_light:
 		_world_modulate.color = Color.WHITE
+	if settings.cloud_shadows and _atmosphere != null:
+		_atmosphere.push_cloud_shadow_uniforms(settings)
+		_atmosphere.sync_sky_transform()
+
+
+func sync_map_transform() -> void:
+	if _atmosphere != null:
+		_atmosphere.sync_sky_transform()
+		if settings.cloud_shadows:
+			_atmosphere.push_cloud_shadow_uniforms(settings)
 
 
 func _apply_oblique_contact_shadows(grid: PlayerGrid) -> void:
@@ -290,8 +300,7 @@ func _apply_oblique_contact_shadows(grid: PlayerGrid) -> void:
 	_shadow_sprites.process_mode = Node.PROCESS_MODE_INHERIT
 	_shadow_sprites.visible = true
 	ShadowPlacer.apply(grid, _shadow_sprites, _ground, _trees, _overlay, null, settings, _scatter)
-	if settings.cloud_shadows:
-		ShadowPlacer.sync_ground_shadow_drift(settings, _shadow_sprites)
+	sync_map_transform()
 
 
 func _ensure_shadow_draw_order() -> void:
@@ -364,4 +373,4 @@ func _on_weather_changed() -> void:
 		else:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
 	if settings.cloud_shadows:
-		ShadowPlacer.sync_ground_shadow_drift(settings, _shadow_sprites)
+		sync_map_transform()

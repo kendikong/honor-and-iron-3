@@ -115,6 +115,10 @@ func refresh_cloud_drift() -> void:
 	_cloud_material.set_shader_parameter("cloud_drift_offset", WeatherBus.cloud_drift_offset)
 
 
+func sync_sky_transform() -> void:
+	_sync_sky_transform()
+
+
 func push_cloud_shadow_uniforms(settings: EffectsSettings = null) -> void:
 	if _cloud_material == null or _cloud_material.shader == null or _cloud_rect == null:
 		return

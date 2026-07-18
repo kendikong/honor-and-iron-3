@@ -552,6 +552,7 @@ func _center_map() -> void:
 	var scaled_size: Vector2 = layout["scaled_size"]
 	var origin: Vector2 = layout["origin"]
 	position = layout["scene_position"]
+	_effects.sync_map_transform()
 	_pick_overlay.set_chrome_insets(int(left_w), int(right_inset))
 	_pick_overlay.mark_transform_dirty()
 	_sync_clock_hud(origin, scaled_size)
