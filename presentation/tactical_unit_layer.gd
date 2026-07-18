@@ -82,19 +82,6 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 		if not CombatDirector.is_planning_phase(phase):
 			for unit_id: Variant in _move_tweens.keys():
 				_kill_move_tween(int(unit_id))
-			var snap_board: BoardState = _board
-			if (
-				CombatDirector.is_executing_phase(phase)
-				and _director != null
-				and _director.base_board != null
-			):
-				snap_board = _director.base_board
-			if snap_board != null:
-				for unit: UnitState in snap_board.units:
-					if unit.is_alive():
-						_position_actor(unit.id, unit.position)
-						_apply_facing(unit.id, unit.facing)
-						_update_depth(unit.id)
 		for actor: Variant in _actors.values():
 			if actor is CharacterActor:
 				(actor as CharacterActor).set_planning_exhausted(false)
@@ -568,6 +555,10 @@ func _snap_move(event: SimEvent) -> void:
 	elif event.data.has("facing"):
 		unit.facing = int(event.data.get("facing", unit.facing))
 	_kill_move_tween(unit_id)
+	if _actor_grid_cell(unit_id) == unit.position:
+		_apply_facing(unit_id, unit.facing)
+		_update_depth(unit_id)
+		return
 	_position_actor(unit_id, unit.position)
 	_apply_facing(unit_id, unit.facing)
 	_update_depth(unit_id)
