@@ -29,6 +29,9 @@ const _PROPS_32_FOOTPRINT: Vector2i = Vector2i(2, 2)
 ## Only forest scatter #88 gets oblique shadows — low 1×1 decor pebble cluster.
 const _SCATTER_PEBBLE_SHADOW_ID: int = 88
 const _PEBBLE_88_SHADOW_HEIGHT_MULT: float = 0.28
+## LPC feet: cap oblique cast ~1.5× visible sprite height (not tree-length dawn casts).
+const _ACTOR_SHADOW_HEIGHT_MULT: float = 0.32
+const _ACTOR_SHADOW_MAX_AXIS_PX: int = 72
 ## Scatter tiles share a cell with ground; baked offset lands one tile low without this.
 const _PEBBLE_88_SHADOW_NUDGE: Vector2 = Vector2(0.0, -float(TILE_PX))
 ## Guard against sunset cot blow-up allocating gigapixel shadow atlases.
@@ -67,6 +70,7 @@ static var _foot_bake_cache: Dictionary = {}
 static var _unit_feet_overlay: Dictionary = {}
 static var _unit_feet_tex: ImageTexture
 static var _unit_feet_layout_key: int = -1
+static var _foot_atlas_dirty: bool = true
 static var _map_size_px: Vector2 = Vector2.ZERO
 static var _ground_shadow_material: ShaderMaterial
 static var _map_oblique_tex: ImageTexture
@@ -219,6 +223,8 @@ static func sync_cycle(shadow_root: Node2D, settings: EffectsSettings = null) ->
 	)
 	if not need_first_bake and not entering_geometry and not visual_changed and not sun_changed:
 		return
+	if sun_changed:
+		invalidate_foot_cluster_layout()
 	_last_shadow_tint = tint
 	_last_shadow_strength = strength
 	_last_shadow_presence = presence
@@ -324,6 +330,14 @@ static func sync_actor_contact_shadow(
 		and (want_first_actor_bake or want_actor_rebake)
 	)
 	var foot_root: Vector2 = _actor_foot_on_shadow_root(actor, _active_shadow_root)
+	var foot_px: Vector2i = _foot_pixel_on_shadow_root(foot_root)
+	if (
+		not need_geometry
+		and _foot_bake_cache.has(actor_id)
+		and int((_foot_bake_cache[actor_id] as Dictionary).get("bake_sig", -1)) == bake_sig
+		and (_foot_bake_cache[actor_id] as Dictionary).get("foot_px", Vector2i(999999, 999999)) == foot_px
+	):
+		return
 	if (
 		need_geometry
 		and not want_first_actor_bake
@@ -354,24 +368,22 @@ static func sync_actor_contact_shadow(
 			bake_sig,
 			foot_root,
 		)
+		_foot_atlas_dirty = true
 	elif _foot_bake_cache.has(actor_id):
 		var entry: Dictionary = _foot_bake_cache[actor_id] as Dictionary
 		var bake_offset: Vector2 = entry.get("bake_offset", Vector2.ZERO) as Vector2
-		var foot_px: Vector2i = _foot_pixel_on_shadow_root(foot_root)
 		var last_px: Vector2i = entry.get("foot_px", Vector2i(999999, 999999)) as Vector2i
 		if foot_px != last_px:
 			entry["foot_px"] = foot_px
 			entry["map_origin"] = _foot_map_origin_snapped(foot_root, bake_offset)
-			_unit_feet_layout_key = -1
-	if need_geometry:
-		_unit_feet_layout_key = -1
+			_foot_atlas_dirty = true
 
 
 static func clear_actor_foot_bake(actor: Node2D) -> void:
 	if actor == null:
 		return
 	_foot_bake_cache.erase(actor.get_instance_id())
-	_unit_feet_layout_key = -1
+	_foot_atlas_dirty = true
 	_purge_legacy_foot_sprites(actor)
 
 
@@ -385,6 +397,15 @@ static func set_foot_cluster_root(_root: Node2D) -> void:
 
 static func invalidate_foot_cluster_layout() -> void:
 	_unit_feet_layout_key = -1
+	_foot_atlas_dirty = true
+
+
+static func is_foot_atlas_dirty() -> bool:
+	return _foot_atlas_dirty
+
+
+static func _mark_foot_atlas_clean() -> void:
+	_foot_atlas_dirty = false
 
 
 static func rebuild_foot_shadow_clusters(
@@ -409,11 +430,13 @@ static func rebuild_unit_feet_atlas(
 	var entries: Array[Dictionary] = _collect_foot_shadow_entries(actors, shadow_root)
 	var layout_key: int = _foot_cluster_layout_hash(entries)
 	if layout_key == _unit_feet_layout_key:
+		_mark_foot_atlas_clean()
 		return
 	_unit_feet_layout_key = layout_key
 	if entries.is_empty():
 		_unit_feet_overlay = {}
 		_sync_ground_shadow_uniforms(settings, shadow_root)
+		_mark_foot_atlas_clean()
 		return
 	var min_x: float = INF
 	var min_y: float = INF
@@ -450,6 +473,7 @@ static func rebuild_unit_feet_atlas(
 		"image": atlas,
 	}
 	_sync_ground_shadow_uniforms(settings, shadow_root)
+	_mark_foot_atlas_clean()
 
 
 static func sync_foot_shadow_cloud_drift(_actors: Array, _settings: EffectsSettings) -> void:
@@ -513,8 +537,15 @@ static func _max_blit_foot_alpha(dst: Image, src: Image, offset: Vector2i) -> vo
 		return
 	if src.is_compressed():
 		src.decompress()
-	for sy: int in range(src.get_height()):
-		for sx: int in range(src.get_width()):
+	var used: Rect2i = src.get_used_rect()
+	if used.size == Vector2i.ZERO:
+		return
+	var x0: int = used.position.x
+	var y0: int = used.position.y
+	var x1: int = x0 + used.size.x
+	var y1: int = y0 + used.size.y
+	for sy: int in range(y0, y1):
+		for sx: int in range(x0, x1):
 			var a: float = src.get_pixel(sx, sy).a
 			if a < 0.04:
 				continue
@@ -642,10 +673,12 @@ static func _foot_pixel_on_shadow_root(foot_root: Vector2) -> Vector2i:
 
 static func _foot_map_origin_snapped(foot_root: Vector2, bake_offset: Vector2) -> Vector2:
 	var foot_px: Vector2i = _foot_pixel_on_shadow_root(foot_root)
-	# Keep sub-tile offset within the cell so oblique shadow slides smoothly on the grid.
-	var cell_origin: Vector2 = Vector2(float(foot_px.x), float(foot_px.y)) * float(TILE_PX)
-	var local: Vector2 = foot_root - cell_origin
-	return cell_origin + local + bake_offset
+	# Tile foot anchor (matches CharacterGridMover) — no sub-tile tween drift.
+	var foot_anchor: Vector2 = Vector2(
+		float(foot_px.x) * float(TILE_PX) + float(TILE_PX) * 0.5,
+		float(foot_px.y) * float(TILE_PX),
+	)
+	return foot_anchor + bake_offset
 
 
 static func _actor_foot_on_shadow_root(actor: Node2D, shadow_root: Node2D) -> Vector2:
@@ -2163,6 +2196,7 @@ static func rebake_actor_shadow(
 		"foot_world": foot_world,
 		"foot_center_tex": foot_center_tex,
 		"nudge": Vector2.ZERO,
+		"height_mult": _ACTOR_SHADOW_HEIGHT_MULT,
 	}
 	var bake_contrast: float = _shadow_bake_contrast(settings)
 	var baked: Dictionary = _rebake_entry_with_sundial(
@@ -2170,7 +2204,7 @@ static func rebake_actor_shadow(
 		sundial,
 		_oblique_bake_cache,
 		false,
-		_use_edge_soften(settings),
+		false,
 		bake_contrast,
 	)
 	if baked.is_empty():
@@ -2179,6 +2213,11 @@ static func rebake_actor_shadow(
 	if img == null:
 		return {}
 	var bake_offset: Vector2 = baked.get("bake_offset", Vector2.ZERO) as Vector2
+	var capped: Dictionary = _fit_image_to_max_axis(
+		img, bake_offset, _ACTOR_SHADOW_MAX_AXIS_PX, true,
+	)
+	img = capped["image"] as Image
+	bake_offset = capped["offset"] as Vector2
 	return {
 		"image": img,
 		"position": baked["position"] as Vector2,

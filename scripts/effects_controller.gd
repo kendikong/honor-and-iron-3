@@ -172,7 +172,7 @@ func process_frame(delta: float) -> void:
 			_apply_oblique_contact_shadows(_last_grid)
 		else:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
-	if _character_contact_shadow_sync.is_valid():
+	if _character_contact_shadow_sync.is_valid() and ShadowPlacer.is_foot_atlas_dirty():
 		_character_contact_shadow_sync.call(settings)
 
 

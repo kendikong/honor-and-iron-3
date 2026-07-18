@@ -1025,3 +1025,8 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** �
 - **Lag:** Per-frame full-map CPU merge of tree + feet atlases during movement; sub-pixel layout invalidation every tween frame.
 - **Tiny shadow:** Centered LPC composite clipped feet to a bottom strip → stub bake.
 - **Fix:** Restored small `unit_feet_tex` atlas only; reverted LPC composite to full 64×64 frame; tile-grid foot snap (rebuild on cell change, not every frame); actor rebake always full-quality (no bake LOD).
+
+### Actor shadow size + idle perf (2026-07-18)
+- **Large blobs:** Actor bakes used full silhouette height × dawn cot (tree-length casts); cluster overlap max-merge looked like one huge patch.
+- **Lag:** Sub-tile foot origin drift during walk tweens rebuilt atlas every frame; contact-shadow sync ran all actors every `process_frame`.
+- **Fix:** `_ACTOR_SHADOW_HEIGHT_MULT` (0.32) + 72px max-axis cap (~1.5× sprite); tile-foot anchor (no sub-tile drift); foot sync gated on `_foot_atlas_dirty` when standing still.
