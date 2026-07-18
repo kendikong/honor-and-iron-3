@@ -267,9 +267,10 @@ func update_drag_sprite(
 	facing: int,
 	preview_cell: Vector2i,
 	failed: bool = false,
+	cursor_cell: Vector2i = Vector2i(-999999, -999999),
 ) -> void:
 	if _unit_layer != null:
-		_unit_layer.update_drag_preview(map_local, anim_mode, facing, preview_cell, failed)
+		_unit_layer.update_drag_preview(map_local, anim_mode, facing, preview_cell, failed, cursor_cell)
 
 
 func end_drag_sprite() -> void:

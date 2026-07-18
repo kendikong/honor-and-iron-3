@@ -744,6 +744,7 @@ func update_drag_preview(
 	facing: int,
 	preview_cell: Vector2i,
 	failed: bool = false,
+	cursor_cell: Vector2i = Vector2i(-999999, -999999),
 ) -> void:
 	if not _drag_preview_active or _drag_preview_id < 0 or _map_view == null:
 		return
@@ -751,9 +752,17 @@ func update_drag_preview(
 	var actor: CharacterActor = _actors.get(_drag_preview_id)
 	if actor == null:
 		return
-	var foot: Vector2 = _map_view.grid_to_foot_local(preview_cell)
-	var offset: Vector2 = map_local - _map_view.grid_to_local(preview_cell)
-	actor.position = foot + Vector2(offset.x, offset.y * 0.35)
+	if _board != null and _board.is_in_bounds(cursor_cell):
+		var cell_center: Vector2 = _map_view.grid_to_local(cursor_cell)
+		var foot: Vector2 = _map_view.grid_to_foot_local(cursor_cell)
+		actor.position = foot + (map_local - cell_center)
+	elif _board != null and _board.is_in_bounds(preview_cell):
+		var cell_center: Vector2 = _map_view.grid_to_local(preview_cell)
+		var foot: Vector2 = _map_view.grid_to_foot_local(preview_cell)
+		actor.position = foot + (map_local - cell_center)
+	else:
+		var tile_px: float = float(TacticalConstants.TILE_PX)
+		actor.position = map_local + Vector2(0.0, tile_px * 0.5)
 	actor.modulate = Color.WHITE
 	if failed:
 		actor.modulate = Color(1.0, 0.45, 0.45, 1.0)

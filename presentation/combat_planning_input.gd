@@ -214,10 +214,13 @@ func on_right_click() -> void:
 func update_drag(local: Vector2) -> void:
 	var board: BoardState = _director.board
 	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
-	if not board.is_in_bounds(cell):
-		return
 	if _intent_state != null:
 		_intent_state.set_hover_coord(cell)
+	if board == null or not board.is_in_bounds(cell):
+		_update_drag_sprite(local, cell, {})
+		if _planning != null:
+			_planning.queue_redraw()
+		return
 	var occ := board.get_unit_at(cell)
 	var drag_unit := board.get_unit_by_id(_drag_unit_id)
 	if occ == null or occ.id == _drag_unit_id:
@@ -1368,6 +1371,10 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 	if unit == null:
 		_planning.set_drag_attack_target(-1)
 		return
+	var emit_drag_sprite := func(
+		anim_mode: int, facing: int, p_cell: Vector2i, failed: bool,
+	) -> void:
+		_planning.update_drag_sprite(local, anim_mode, facing, p_cell, failed, cell)
 	var preview_cell: Vector2i = _drag_last_free
 	if preview_state.preview_board != null:
 		var pv := preview_state.preview_board.get_unit_by_id(active_unit_id)
@@ -1380,8 +1387,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 				sim.type == GameEnums.SimEventType.ACTION_FAILED
 				and int(sim.data.get("actor", -1)) == active_unit_id
 			):
-				_planning.update_drag_sprite(
-					local,
+				emit_drag_sprite.call(
 					TacticalUnitLayer.DragPreviewAnim.IDLE,
 					unit.facing,
 					preview_cell,
@@ -1399,16 +1405,14 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			drag_target_id = occ.id
 			var ability := _selected_ability_data(actor)
 			if ability != null and AbilitySystem.ability_has_dash(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
-				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, atk_face, preview_cell, drag_preview_failed)
+				emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.SPELL, atk_face, preview_cell, drag_preview_failed)
 			else:
-				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.ATTACK, atk_face, preview_cell, drag_preview_failed)
+				emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.ATTACK, atk_face, preview_cell, drag_preview_failed)
 			_set_drag_attack_target(drag_target_id, preview)
 			return
 		if _can_move_to(actor, occ.position):
 			var walk_face: int = _facing_toward(actor.position, occ.position)
-			_planning.update_drag_sprite(
-				local, _drag_move_preview_mode(actor), walk_face, preview_cell, drag_preview_failed,
-			)
+			emit_drag_sprite.call(_drag_move_preview_mode(actor), walk_face, preview_cell, drag_preview_failed)
 			_planning.set_drag_attack_target(-1)
 			return
 	if cell == actor.position and _drag_unit_was_selected:
@@ -1418,7 +1422,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 				var self_face: int = _facing_from_drop(local, cell)
 				if self_face < 0:
 					self_face = actor.facing
-				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, self_face, preview_cell, drag_preview_failed)
+				emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.SPELL, self_face, preview_cell, drag_preview_failed)
 				_planning.set_drag_attack_target(-1)
 				return
 	if not force_basic_movement and _director.selected_ability_index >= 0:
@@ -1437,7 +1441,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			var dash_target := _director.board.get_unit_at(cell)
 			if dash_target != null and dash_target.is_enemy():
 				drag_target_id = dash_target.id
-			_planning.update_drag_sprite(local, mode, dash_face, preview_cell, drag_preview_failed)
+			emit_drag_sprite.call(mode, dash_face, preview_cell, drag_preview_failed)
 			_set_drag_attack_target(drag_target_id, preview)
 			return
 	if _drag_last_free != unit.position:
@@ -1448,21 +1452,17 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 				and not AbilitySystem.is_run_ability(move_self_ability)
 			):
 				var self_move_face: int = _facing_toward(unit.position, _drag_last_free)
-				_planning.update_drag_sprite(
-					local, TacticalUnitLayer.DragPreviewAnim.SPELL, self_move_face, preview_cell, drag_preview_failed,
-				)
+				emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.SPELL, self_move_face, preview_cell, drag_preview_failed)
 				_set_drag_attack_target(-1, preview)
 				return
 		var move_face: int = _facing_toward(unit.position, _drag_last_free)
-		_planning.update_drag_sprite(
-			local, _drag_move_preview_mode(actor), move_face, preview_cell, drag_preview_failed,
-		)
+		emit_drag_sprite.call(_drag_move_preview_mode(actor), move_face, preview_cell, drag_preview_failed)
 		_set_drag_attack_target(-1, preview)
 		return
 	var idle_face: int = _facing_from_drop(local, cell)
 	if idle_face < 0:
 		idle_face = actor.facing
-	_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.IDLE, idle_face, preview_cell, drag_preview_failed)
+	emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.IDLE, idle_face, preview_cell, drag_preview_failed)
 	_planning.set_drag_attack_target(-1)
 
 
