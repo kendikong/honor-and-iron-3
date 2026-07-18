@@ -7,7 +7,9 @@ const ULPC_DIR: String = (
 	"Universal-LPC-Spritesheet-Character-Generator-master"
 	+ "/Universal-LPC-Spritesheet-Character-Generator-master"
 )
-const MAX_PAIRS: int = 8
+const MAX_PAIRS: int = 12
+## Hair sheets ship with either ULPC or LPCR orange bases; include both when unknown.
+const HAIR_FALLBACK_VERSIONS: PackedStringArray = PackedStringArray(["ulpc", "lpcr"])
 const SHADER: Shader = preload("res://shaders/lpc_palette_recolor.gdshader")
 
 const KIND_TO_MATERIAL: Dictionary = {
@@ -82,34 +84,76 @@ static func _build_pair_arrays(
 	var meta: Dictionary = _load_meta(material)
 	if meta.is_empty():
 		return {}
-	var version: String = str(meta.get("default", "ulpc"))
-	var base_name: String = (
-		palette_base_override
-		if not palette_base_override.is_empty()
-		else str(meta.get("base", ""))
+	var default_version: String = str(meta.get("default", "ulpc"))
+	var default_base: String = str(meta.get("base", ""))
+	var parsed: Dictionary = _parse_palette_ref(
+		palette_base_override,
+		default_version,
+		default_base,
 	)
+	var base_name: String = str(parsed.get("base", ""))
 	if base_name.is_empty() or target_name == base_name:
 		return {}
-	var palette: Dictionary = _load_palette_json(material, version)
-	if not palette.has(base_name) or not palette.has(target_name):
-		return {}
-	var source_hex: Array = palette[base_name]
-	var target_hex: Array = palette[target_name]
-	var count: int = mini(source_hex.size(), target_hex.size())
-	count = mini(count, MAX_PAIRS)
-	if count < 1:
-		return {}
+	var versions: Array[String] = _palette_versions_for(kind, str(parsed.get("version", "")), base_name, palette_base_override)
 	var source: PackedColorArray = PackedColorArray()
 	var target: PackedColorArray = PackedColorArray()
 	source.resize(MAX_PAIRS)
 	target.resize(MAX_PAIRS)
-	for i: int in count:
-		source[i] = _hex_to_color(str(source_hex[i]))
-		target[i] = _hex_to_color(str(target_hex[i]))
+	var count: int = 0
+	for version: String in versions:
+		var palette: Dictionary = _load_palette_json(material, version)
+		if not palette.has(base_name) or not palette.has(target_name):
+			continue
+		var source_hex: Array = palette[base_name]
+		var target_hex: Array = palette[target_name]
+		var pair_count: int = mini(source_hex.size(), target_hex.size())
+		for i: int in pair_count:
+			if count >= MAX_PAIRS:
+				break
+			source[count] = _hex_to_color(str(source_hex[i]))
+			target[count] = _hex_to_color(str(target_hex[i]))
+			count += 1
+		if count >= MAX_PAIRS:
+			break
+	if count < 1:
+		return {}
 	for i: int in range(count, MAX_PAIRS):
 		source[i] = Color.BLACK
 		target[i] = Color.BLACK
 	return {"count": count, "source": source, "target": target}
+
+
+static func _parse_palette_ref(
+	token: String,
+	default_version: String,
+	default_base: String,
+) -> Dictionary:
+	var trimmed: String = token.strip_edges()
+	if trimmed.is_empty():
+		return {"version": default_version, "base": default_base}
+	var parts: PackedStringArray = PackedStringArray(trimmed.split("."))
+	if parts.size() >= 2:
+		return {"version": parts[0], "base": parts[1]}
+	return {"version": default_version, "base": parts[0]}
+
+
+static func _palette_versions_for(
+	kind: String,
+	version: String,
+	base_name: String,
+	palette_base_override: String,
+) -> Array[String]:
+	if not palette_base_override.is_empty():
+		return [version]
+	if kind == "hair" and base_name == "orange":
+		var out: Array[String] = []
+		if not out.has(version):
+			out.append(version)
+		for ver: String in HAIR_FALLBACK_VERSIONS:
+			if not out.has(ver):
+				out.append(ver)
+		return out
+	return [version]
 
 
 static func _load_meta(material: String) -> Dictionary:
@@ -178,11 +222,12 @@ static func _is_identity_recolor(
 	var meta: Dictionary = _load_meta(material)
 	if meta.is_empty():
 		return false
-	var base_name: String = (
-		palette_base_override
-		if not palette_base_override.is_empty()
-		else str(meta.get("base", ""))
+	var parsed: Dictionary = _parse_palette_ref(
+		palette_base_override,
+		str(meta.get("default", "ulpc")),
+		str(meta.get("base", "")),
 	)
+	var base_name: String = str(parsed.get("base", ""))
 	return not base_name.is_empty() and target_name == base_name
 
 
