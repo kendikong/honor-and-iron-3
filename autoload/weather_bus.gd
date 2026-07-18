@@ -142,8 +142,8 @@ func _rng_init() -> void:
 func _process(delta: float) -> void:
 	if not game_time_frozen:
 		_advance_time_preset(delta)
-		_advance_cloud_drift(delta)
-		cloud_drift_offset += cloud_drift_dir.normalized() * delta * CLOUD_DRIFT_SPEED
+	_advance_cloud_drift(delta)
+	cloud_drift_offset += cloud_drift_dir.normalized() * delta * CLOUD_DRIFT_SPEED
 	_recompute_mist()
 	_emit_accum += delta
 	if _emit_accum < STATE_EMIT_INTERVAL_SEC:

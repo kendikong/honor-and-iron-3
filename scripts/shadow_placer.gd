@@ -83,6 +83,8 @@ static var _active_shadow_root: Node2D
 const ACTOR_SHADOW_BAND_COUNT: int = 3
 const ACTOR_SHADOW_MAJORITY_RATIO: float = 0.5
 const ACTOR_SHADOW_BAND_X: Array = [-16.0, -8.0, 0.0, 8.0, 16.0]
+## Narrow column for cloud-on-body — large-scale field; avoid lateral ground-shadow bleed.
+const ACTOR_CLOUD_BAND_X: Array = [0.0]
 ## Vertical bands from actor foot (y=0): lower legs, torso, head/hair.
 const ACTOR_SHADOW_BAND_Y: Array = [
 	[-8.0, -16.0],
@@ -2240,24 +2242,44 @@ static func actor_oblique_band_modulates(
 		return bands
 	var foot: Vector2 = actor.position
 	var scale_y: float = actor.scale.y
+	var scale_x: float = actor.scale.x
 	for band_i: int in ACTOR_SHADOW_BAND_COUNT:
 		var y_rows: Variant = ACTOR_SHADOW_BAND_Y[band_i]
 		if typeof(y_rows) != TYPE_ARRAY:
 			continue
-		var peak_map: float = 0.0
-		var peak_cloud: float = 0.0
-		for y_off: Variant in y_rows:
-			var y_px: float = float(y_off) * scale_y
-			for x_off: Variant in ACTOR_SHADOW_BAND_X:
-				var sample_px: Vector2 = foot + Vector2(float(x_off) * actor.scale.x, y_px)
-				if want_oblique:
-					peak_map = maxf(peak_map, sample_map_oblique_alpha_at(sample_px, settings))
-				if want_cloud:
+		var mod_map: Color = Color.WHITE
+		if want_oblique:
+			var hit_count: int = 0
+			var sample_count: int = 0
+			var alpha_sum: float = 0.0
+			for y_off: Variant in y_rows:
+				var y_px: float = float(y_off) * scale_y
+				for x_off: Variant in ACTOR_SHADOW_BAND_X:
+					sample_count += 1
+					var alpha: float = sample_map_oblique_alpha_at(
+						foot + Vector2(float(x_off) * scale_x, y_px),
+						settings,
+					)
+					if alpha >= 0.04:
+						hit_count += 1
+						alpha_sum += alpha
+			if sample_count > 0 and float(hit_count) / float(sample_count) >= ACTOR_SHADOW_MAJORITY_RATIO:
+				mod_map = _modulate_from_shadow_coverage(alpha_sum / float(hit_count), settings)
+		var mod_cloud: Color = Color.WHITE
+		if want_cloud:
+			var peak_cloud: float = 0.0
+			for y_off: Variant in y_rows:
+				var y_px: float = float(y_off) * scale_y
+				for x_off: Variant in ACTOR_CLOUD_BAND_X:
 					peak_cloud = maxf(
 						peak_cloud,
-						_CLOUD_FIELD.shadow_mask_at(sample_px, WeatherBus.cloud_drift_offset),
+						_CLOUD_FIELD.shadow_mask_at(
+							foot + Vector2(float(x_off) * scale_x, y_px),
+							WeatherBus.cloud_drift_offset,
+						),
 					)
-		bands[band_i] = _modulate_from_environment_coverage(peak_map, peak_cloud, settings)
+			mod_cloud = _modulate_from_cloud_coverage(peak_cloud, 0.125)
+		bands[band_i] = _combine_environment_modulates(mod_map, mod_cloud)
 	return bands
 
 
@@ -2285,8 +2307,8 @@ static func _modulate_from_shadow_coverage(coverage: float, settings: EffectsSet
 	)
 
 
-static func _modulate_from_cloud_coverage(coverage: float) -> Color:
-	if coverage < 0.04:
+static func _modulate_from_cloud_coverage(coverage: float, min_mask: float = 0.04) -> Color:
+	if coverage < min_mask:
 		return Color.WHITE
 	var tint: Color = AtmosphereBinder.CLOUD_SHADOW_TINT
 	var strength: float = coverage * AtmosphereBinder.CLOUD_SHADOW_STRENGTH
@@ -2303,11 +2325,22 @@ static func _modulate_from_environment_coverage(
 	cloud_alpha: float,
 	settings: EffectsSettings,
 ) -> Color:
-	if map_alpha < 0.04 and cloud_alpha < 0.04:
-		return Color.WHITE
-	if cloud_alpha >= map_alpha:
-		return _modulate_from_cloud_coverage(cloud_alpha)
-	return _modulate_from_shadow_coverage(map_alpha, settings)
+	var mod_map: Color = Color.WHITE
+	if map_alpha >= 0.04:
+		mod_map = _modulate_from_shadow_coverage(map_alpha, settings)
+	var mod_cloud: Color = Color.WHITE
+	if cloud_alpha >= 0.04:
+		mod_cloud = _modulate_from_cloud_coverage(cloud_alpha)
+	return _combine_environment_modulates(mod_map, mod_cloud)
+
+
+static func _combine_environment_modulates(mod_map: Color, mod_cloud: Color) -> Color:
+	return Color(
+		minf(mod_map.r, mod_cloud.r),
+		minf(mod_map.g, mod_cloud.g),
+		minf(mod_map.b, mod_cloud.b),
+		1.0,
+	)
 
 
 static func _shadow_overlay_image() -> Image:
