@@ -10,7 +10,6 @@ const _BAKE_FAIL: Dictionary = {}
 
 const _SHADOW_SHADER: Shader = preload("res://shaders/oblique_contact_shadow.gdshader")
 const _SHADOW_SHADER_PERF: Shader = preload("res://shaders/oblique_contact_shadow_perf.gdshader")
-const _LPC = preload("res://scripts/lpc/lpc_constants.gd")
 
 const TILE_PX: int = 16
 
@@ -332,21 +331,6 @@ static func sync_actor_contact_shadow(
 			has_clouds = 1.0
 		mat.set_shader_parameter("has_cloud_shadow", has_clouds)
 		mat.set_shader_parameter("cloud_drift_offset", atmo["cloud_drift_offset"])
-
-
-static func sync_lpc_sprite_layer_shadow_instance(
-	sprite: CanvasItem,
-	actor: Node2D,
-	settings: EffectsSettings = null,
-) -> void:
-	if sprite == null or actor == null or sprite.material == null:
-		return
-	var enabled: float = 1.0 if settings != null and settings.oblique_contact_shadows else 0.0
-	var actor_scale: Vector2 = actor.scale
-	var map_center: Vector2 = actor.position + sprite.position * actor_scale
-	sprite.set_instance_shader_parameter("lpc_shadow_enabled", enabled)
-	sprite.set_instance_shader_parameter("sprite_map_origin", map_center)
-	sprite.set_instance_shader_parameter("sprite_scale", actor_scale)
 
 
 static func _sync_actor_map_oblique(sprite: Sprite2D, actor: Node2D) -> void:
@@ -1586,6 +1570,46 @@ static func map_composite_apply_epoch() -> int:
 
 static func map_oblique_overlay() -> Dictionary:
 	return _map_oblique_overlay
+
+
+static func sample_map_oblique_alpha_at(map_px: Vector2) -> float:
+	var overlay: Dictionary = map_oblique_overlay()
+	if not bool(overlay.get("active", false)):
+		return 0.0
+	var tex: Texture2D = overlay.get("tex") as Texture2D
+	if tex == null:
+		return 0.0
+	var origin: Vector2 = overlay.get("origin", Vector2.ZERO)
+	var size: Vector2 = overlay.get("size", Vector2.ONE)
+	var local: Vector2 = map_px - origin
+	if local.x < 0.0 or local.y < 0.0 or local.x >= size.x or local.y >= size.y:
+		return 0.0
+	var img: Image = tex.get_image()
+	if img == null or img.is_empty():
+		return 0.0
+	return _sample_alpha_nearest(img, floor(local.x), floor(local.y))
+
+
+static func actor_oblique_modulate(actor: Node2D, settings: EffectsSettings = null) -> Color:
+	if settings == null or not settings.oblique_contact_shadows or actor == null:
+		return Color.WHITE
+	var foot: Vector2 = actor.position
+	var scale_y: float = actor.scale.y
+	var coverage: float = 0.0
+	for offset_y: float in [0.0, -14.0, -28.0]:
+		var map_px: Vector2 = foot + Vector2(0.0, offset_y * scale_y)
+		coverage = maxf(coverage, sample_map_oblique_alpha_at(map_px))
+	if coverage < 0.04:
+		return Color.WHITE
+	var params: Dictionary = ShadowPalette.multiply_shader_params(settings)
+	var tint: Color = params.get("shadow_tint", Color(0.74, 0.72, 0.80, 1.0))
+	var strength: float = float(params.get("shadow_strength", 1.0)) * coverage
+	return Color(
+		lerpf(1.0, tint.r, strength),
+		lerpf(1.0, tint.g, strength),
+		lerpf(1.0, tint.b, strength),
+		1.0,
+	)
 
 
 static func _refresh_map_oblique_overlay(shadow_root: Node2D) -> void:

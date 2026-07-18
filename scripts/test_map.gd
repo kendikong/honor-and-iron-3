@@ -295,7 +295,6 @@ func _test_unit_actors() -> Array[CharacterActor]:
 
 func _sync_all_test_unit_shadows() -> void:
 	var settings: EffectsSettings = _effects.settings
-	LpcPaletteStore.sync_shared_shadow_uniforms(settings)
 	for actor: CharacterActor in _test_unit_actors():
 		actor.force_environment_shadow_sync(settings)
 

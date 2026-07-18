@@ -26,7 +26,6 @@ static var _meta_cache: Dictionary = {}
 static var _palette_cache: Dictionary = {}
 static var _material_cache: Dictionary = {}
 static var _warned_missing_target: Dictionary = {}
-static var _shadow_uniform_stamp: int = -1
 
 
 static func ulpc_root() -> String:
@@ -68,42 +67,8 @@ static func get_recolor_material(
 	mat.set_shader_parameter("pair_count", int(built["count"]))
 	mat.set_shader_parameter("source_colors", built["source"] as PackedColorArray)
 	mat.set_shader_parameter("target_colors", built["target"] as PackedColorArray)
-	mat.set_shader_parameter("lpc_shadow_global", 0.0)
-	mat.set_shader_parameter("has_map_oblique", 0.0)
 	_material_cache[cache_key] = mat
 	return mat
-
-
-## Push map oblique + tint uniforms to every shared recolor material once per composite epoch.
-static func sync_shared_shadow_uniforms(settings: EffectsSettings = null) -> void:
-	if _material_cache.is_empty():
-		return
-	var stamp: int = ShadowPlacer.map_composite_apply_epoch()
-	var enabled: bool = settings != null and settings.oblique_contact_shadows
-	if not enabled:
-		stamp = -1
-	if stamp == _shadow_uniform_stamp:
-		return
-	_shadow_uniform_stamp = stamp
-	var params: Dictionary = ShadowPalette.multiply_shader_params(settings)
-	var tint: Color = params.get("shadow_tint", Color(0.74, 0.72, 0.80, 1.0))
-	var strength: float = float(params.get("shadow_strength", 1.0))
-	var overlay: Dictionary = ShadowPlacer.map_oblique_overlay()
-	var has_oblique: bool = enabled and bool(overlay.get("active", false))
-	for mat: Variant in _material_cache.values():
-		var material: ShaderMaterial = mat as ShaderMaterial
-		if material == null:
-			continue
-		material.set_shader_parameter("lpc_shadow_global", 1.0 if enabled else 0.0)
-		material.set_shader_parameter("shadow_tint", tint)
-		material.set_shader_parameter("shadow_strength", strength)
-		if has_oblique:
-			material.set_shader_parameter("has_map_oblique", 1.0)
-			material.set_shader_parameter("map_oblique_tex", overlay.get("tex"))
-			material.set_shader_parameter("map_oblique_origin", overlay.get("origin", Vector2.ZERO))
-			material.set_shader_parameter("map_oblique_size", overlay.get("size", Vector2.ONE))
-		else:
-			material.set_shader_parameter("has_map_oblique", 0.0)
 
 
 static func _build_pair_arrays(

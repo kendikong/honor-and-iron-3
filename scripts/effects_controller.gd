@@ -164,10 +164,8 @@ func process_frame(delta: float) -> void:
 		else:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
 	_sync_contact_shadow_mask()
-	if settings.oblique_contact_shadows:
-		LpcPaletteStore.sync_shared_shadow_uniforms(settings)
-		if _character_contact_shadow_sync.is_valid():
-			_character_contact_shadow_sync.call(settings)
+	if _character_contact_shadow_sync.is_valid():
+		_character_contact_shadow_sync.call(settings)
 
 
 func set_character_contact_shadow_sync(callback: Callable) -> void:
@@ -177,23 +175,21 @@ func set_character_contact_shadow_sync(callback: Callable) -> void:
 static func sync_contact_shadow_on_actor(actor: Node, settings: EffectsSettings) -> void:
 	if actor == null or not is_instance_valid(actor):
 		return
-	if settings == null or not settings.oblique_contact_shadows:
-		return
 	if not actor is CharacterActor:
 		return
-	(actor as CharacterActor).sync_contact_shadow(settings)
+	var char_actor: CharacterActor = actor as CharacterActor
+	if settings == null or not settings.oblique_contact_shadows:
+		char_actor.clear_oblique_modulate()
+		return
+	char_actor.sync_contact_shadow(settings)
 
 
 static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsSettings) -> void:
-	if settings == null or not settings.oblique_contact_shadows:
-		return
 	for actor: Variant in actors.values():
 		sync_contact_shadow_on_actor(actor as Node, settings)
 
 
 static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
-	if settings == null or not settings.oblique_contact_shadows:
-		return
 	for actor: Variant in actors:
 		sync_contact_shadow_on_actor(actor as Node, settings)
 
