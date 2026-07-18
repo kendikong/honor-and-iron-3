@@ -61,8 +61,8 @@ static var _map_oblique_overlay: Dictionary = {}
 static var _overlay_sample_image: Image
 static var _overlay_sample_epoch: int = -1
 static var _actor_shadow_bases: Dictionary = {}
-static var _peer_actor_shadow_registry: Dictionary = {}
 static var _actor_drift_cache: Dictionary = {}
+static var _foot_composite_sprite: Sprite2D
 
 const ACTOR_SHADOW_BAND_COUNT: int = 3
 const ACTOR_SHADOW_MAJORITY_RATIO: float = 0.5
@@ -298,7 +298,6 @@ static func sync_actor_contact_shadow(
 		if actor != null:
 			var aid: int = actor.get_instance_id()
 			_actor_shadow_bases.erase(aid)
-			_peer_actor_shadow_registry.erase(aid)
 			_actor_drift_cache.erase(aid)
 		_clear_actor_sprite(sprite)
 		return
@@ -383,18 +382,27 @@ static func _cloud_drift_key() -> int:
 	return hash(Vector2i(int(floor(d.x * 64.0)), int(floor(d.y * 64.0))))
 
 
-static func apply_actor_peer_shadow_batch(actors: Array) -> void:
-	_peer_actor_shadow_registry.clear()
-	var sorted: Array = actors.duplicate()
-	sorted.sort_custom(
-		func(a: Variant, b: Variant) -> bool:
-			if a == null or not is_instance_valid(a as Node):
-				return false
-			if b == null or not is_instance_valid(b as Node):
-				return true
-			return (a as Node).get_instance_id() < (b as Node).get_instance_id()
-	)
-	for actor_var: Variant in sorted:
+static func set_foot_composite_sprite(sprite: Sprite2D) -> void:
+	_foot_composite_sprite = sprite
+
+
+static func foot_composite_sprite() -> Sprite2D:
+	return _foot_composite_sprite
+
+
+static func is_actor_foot_composite_active() -> bool:
+	return _foot_composite_sprite != null and _foot_composite_sprite.visible
+
+
+static func apply_actor_foot_shadow_composite(
+	actors: Array,
+	composite_sprite: Sprite2D,
+	settings: EffectsSettings = null,
+) -> void:
+	if composite_sprite == null:
+		return
+	var entries: Array[Dictionary] = []
+	for actor_var: Variant in actors:
 		var actor: Node2D = actor_var as Node2D
 		if actor == null or not actor.has_method("get_contact_shadow_sprite"):
 			continue
@@ -404,63 +412,87 @@ static func apply_actor_peer_shadow_batch(actors: Array) -> void:
 		var base: Image = _actor_shadow_bases.get(actor.get_instance_id()) as Image
 		if base == null or base.is_empty():
 			continue
-		var img: Image = base.duplicate()
-		if img.is_compressed():
-			img.decompress()
-		var map_origin: Vector2 = _actor_shadow_map_origin(sprite, actor)
-		_punch_peer_actor_shadows(img, map_origin, actor)
-		var tex: ImageTexture = sprite.texture as ImageTexture
-		if tex != null:
-			tex.set_image(img)
-		_register_peer_actor_shadow(actor, img, map_origin)
+		entries.append({
+			"sprite": sprite,
+			"image": base,
+			"origin": _actor_shadow_map_origin(sprite, actor),
+		})
+	if entries.size() <= 1:
+		composite_sprite.visible = false
+		composite_sprite.texture = null
+		return
+	for entry: Dictionary in entries:
+		var spr: Sprite2D = entry["sprite"] as Sprite2D
+		if spr != null:
+			spr.visible = false
+	var min_x: float = INF
+	var min_y: float = INF
+	var max_x: float = -INF
+	var max_y: float = -INF
+	for entry: Dictionary in entries:
+		var img: Image = entry["image"] as Image
+		var origin: Vector2 = entry["origin"] as Vector2
+		min_x = minf(min_x, origin.x)
+		min_y = minf(min_y, origin.y)
+		max_x = maxf(max_x, origin.x + float(img.get_width()))
+		max_y = maxf(max_y, origin.y + float(img.get_height()))
+	var width: int = maxi(1, int(ceil(max_x - min_x)))
+	var height: int = maxi(1, int(ceil(max_y - min_y)))
+	var composite: Image = Image.create(width, height, false, Image.FORMAT_RGBA8)
+	composite.fill(Color(0.0, 0.0, 0.0, 0.0))
+	for entry: Dictionary in entries:
+		var img: Image = entry["image"] as Image
+		var origin: Vector2 = entry["origin"] as Vector2
+		var offset: Vector2i = Vector2i(
+			int(round(origin.x - min_x)),
+			int(round(origin.y - min_y)),
+		)
+		_max_blit_shadow_alpha(composite, img, offset)
+	var tex: ImageTexture = composite_sprite.texture as ImageTexture
+	if tex == null:
+		tex = ImageTexture.create_from_image(composite)
+		composite_sprite.texture = tex
+	else:
+		tex.set_image(composite)
+	composite_sprite.position = Vector2(min_x, min_y)
+	composite_sprite.visible = true
+	composite_sprite.modulate = Color.WHITE
+	composite_sprite.texture_filter = _shadow_texture_filter(settings)
+	sync_shadow_material(composite_sprite.material as ShaderMaterial, settings)
+	_sync_actor_map_oblique(composite_sprite, null)
+	var mat: ShaderMaterial = composite_sprite.material as ShaderMaterial
+	if mat != null:
+		var atmo: Dictionary = WeatherBus.atmosphere_uniforms()
+		var has_clouds: float = 0.0
+		if settings != null and settings.cloud_shadows and float(atmo.get("cloud_shadow_strength", 1.0)) >= 0.01:
+			has_clouds = 1.0
+		mat.set_shader_parameter("has_cloud_shadow", has_clouds)
+		mat.set_shader_parameter("cloud_drift_offset", atmo["cloud_drift_offset"])
+		_actor_drift_cache[composite_sprite.get_instance_id()] = _cloud_drift_key()
+
+
+static func _max_blit_shadow_alpha(dst: Image, src: Image, offset: Vector2i) -> void:
+	if dst == null or src == null or src.is_empty():
+		return
+	if src.is_compressed():
+		src.decompress()
+	for sy: int in range(src.get_height()):
+		for sx: int in range(src.get_width()):
+			var a: float = src.get_pixel(sx, sy).a
+			if a < 0.04:
+				continue
+			var dx: int = offset.x + sx
+			var dy: int = offset.y + sy
+			if dx < 0 or dy < 0 or dx >= dst.get_width() or dy >= dst.get_height():
+				continue
+			var prev: float = dst.get_pixel(dx, dy).a
+			dst.set_pixel(dx, dy, Color(1.0, 1.0, 1.0, maxf(prev, a)))
 
 
 static func _actor_shadow_map_origin(sprite: Sprite2D, actor: Node2D) -> Vector2:
 	if actor == null:
 		return sprite.position if sprite != null else Vector2.ZERO
 	return actor.position + sprite.position * actor.scale
-
-
-static func _register_peer_actor_shadow(actor: Node2D, img: Image, map_origin: Vector2) -> void:
-	if actor == null or img == null:
-		return
-	_peer_actor_shadow_registry[actor.get_instance_id()] = {
-		"image": img.duplicate(),
-		"origin": map_origin,
-	}
-
-
-static func _punch_peer_actor_shadows(dst: Image, dst_origin: Vector2, actor: Node2D) -> void:
-	if dst == null or actor == null:
-		return
-	var self_id: int = actor.get_instance_id()
-	for peer_id: Variant in _peer_actor_shadow_registry:
-		if int(peer_id) >= self_id:
-			continue
-		var peer: Dictionary = _peer_actor_shadow_registry[peer_id]
-		var peer_img: Image = peer.get("image") as Image
-		if peer_img == null or peer_img.is_empty():
-			continue
-		_punch_actor_shadow_alpha_at(peer_img, peer.get("origin", Vector2.ZERO), dst, dst_origin)
-
-
-static func _punch_actor_shadow_alpha_at(
-	src: Image,
-	src_origin: Vector2,
-	dst: Image,
-	dst_origin: Vector2,
-) -> void:
-	var ox: int = int(round(src_origin.x - dst_origin.x))
-	var oy: int = int(round(src_origin.y - dst_origin.y))
-	for sy: int in range(src.get_height()):
-		for sx: int in range(src.get_width()):
-			if src.get_pixel(sx, sy).a < 0.04:
-				continue
-			var dx: int = ox + sx
-			var dy: int = oy + sy
-			if dx < 0 or dy < 0 or dx >= dst.get_width() or dy >= dst.get_height():
-				continue
-			dst.set_pixel(dx, dy, Color(0.0, 0.0, 0.0, 0.0))
 
 
 static func _sync_actor_map_oblique(sprite: Sprite2D, actor: Node2D) -> void:
