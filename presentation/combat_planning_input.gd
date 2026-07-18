@@ -191,26 +191,25 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 	if cell == actor.position:
 		if _drag_unit_was_selected:
 			if not had_movement:
-				committed = _try_plan_wait(released_unit_id)
-				if committed:
+				if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+					_director.rpc_plan_wait(released_unit_id)
 					_play_sfx("ability")
+					_director.select_ability(-1)
+					committed = true
+				elif _try_plan_self_target_attack(released_unit_id):
+					committed = true
+				else:
+					committed = _try_plan_wait(released_unit_id)
+					if committed:
+						_play_sfx("ability")
 			elif CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 				_director.rpc_plan_wait(released_unit_id)
 				_play_sfx("ability")
 				_director.select_ability(-1)
 				committed = true
+			elif _try_plan_self_target_attack(released_unit_id):
+				committed = true
 			else:
-				var self_ability := _selected_ability_data(actor)
-				if (
-					_director.selected_ability_index >= 0
-					and AbilitySystem.can_target_self(actor, self_ability)
-					and not AbilitySystem.is_run_ability(self_ability)
-				):
-					_director.rpc_plan_attack(released_unit_id, _director.selected_ability_index, actor.id)
-					_play_sfx("ability")
-					_director.select_ability(-1)
-					committed = true
-				else:
 					var face: int = _facing_from_drop(local, cell)
 					if face >= 0:
 						_director.rpc_plan_face(released_unit_id, face)
@@ -1128,6 +1127,30 @@ func _try_plan_wait(unit_id: int) -> bool:
 	_director.rpc_plan_wait(unit_id)
 	if _planning != null:
 		_planning.clear_threat_origin()
+	_director.select_ability(-1)
+	return true
+
+
+func _try_plan_self_target_attack(unit_id: int) -> bool:
+	if _director == null or not _is_planning():
+		return false
+	if _director.selected_ability_index < 0:
+		return false
+	if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+		return false
+	var board: BoardState = _director.board
+	var actor := board.get_unit_by_id(unit_id) if board != null else null
+	if actor == null:
+		return false
+	var self_ability := _selected_ability_data(actor)
+	if (
+		self_ability == null
+		or not AbilitySystem.can_target_self(actor, self_ability)
+		or AbilitySystem.is_run_ability(self_ability)
+	):
+		return false
+	_director.rpc_plan_attack(unit_id, _director.selected_ability_index, actor.id)
+	_play_sfx("ability")
 	_director.select_ability(-1)
 	return true
 
