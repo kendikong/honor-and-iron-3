@@ -1,11 +1,14 @@
 class_name TacticalTimelineGrid
-extends GridContainer
+extends VBoxContainer
 
 ## Per-unit planning timeline — ordered action steps in simulation order.
 
 const COLOR_FAIL: Color = Color(1.0, 0.35, 0.35)
 const BG_ACTIVE: Color = Color(1.0, 1.0, 0.0, 0.25)
 const COLOR_DIM_HEADER: Color = Color(0.6, 0.6, 0.6)
+const COL_NAME_W: int = 72
+const COL_CLASS_W: int = 40
+const COL_STATS_MIN_W: int = 148
 
 var _director: CombatDirector
 var _board: BoardState
@@ -22,11 +25,9 @@ signal warning_changed(text: String)
 
 func setup(director: CombatDirector) -> void:
 	_director = director
-	columns = 4
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
-	add_theme_constant_override("h_separation", 4)
-	add_theme_constant_override("v_separation", 2)
+	add_theme_constant_override("separation", 2)
 
 
 func set_board(board: BoardState) -> void:
@@ -53,14 +54,13 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 	if _board == null or _director == null:
 		return
 	var plan_active: bool = CombatDirector.is_planning_phase(_phase) or CombatDirector.is_executing_phase(_phase)
-	var headers: PackedStringArray = ["Name", "Class", "Stats", "Timeline"]
-	for i: int in headers.size():
-		var hcol: Color = Color.WHITE
-		var hbg: Color = Color.TRANSPARENT
-		if i == 3:
-			hcol = Color.WHITE if plan_active else COLOR_DIM_HEADER
-			hbg = BG_ACTIVE if plan_active else Color.TRANSPARENT
-		_make_cell(headers[i], "", hcol, true, hbg)
+	var header_row := _make_row()
+	_add_row_cell(header_row, "Name", "", Color.WHITE, true, Color.TRANSPARENT, COL_NAME_W, false)
+	_add_row_cell(header_row, "Class", "", Color.WHITE, true, Color.TRANSPARENT, COL_CLASS_W, false)
+	_add_row_cell(header_row, "Stats", "", Color.WHITE, true, Color.TRANSPARENT, COL_STATS_MIN_W, false)
+	var timeline_header_bg: Color = BG_ACTIVE if plan_active else Color.TRANSPARENT
+	var timeline_header_col: Color = Color.WHITE if plan_active else COLOR_DIM_HEADER
+	_add_row_cell(header_row, "Timeline", "", timeline_header_col, true, timeline_header_bg, 0, true)
 	var first_warning: String = ""
 	for unit: UnitState in _board.units:
 		if unit.is_enemy():
@@ -72,23 +72,25 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 			row_color = Color(1.0, 1.0, 0.3)
 			dim_color = Color(0.9, 0.9, 0.2)
 			bg_color = Color(0.2, 0.3, 0.5, 0.5)
-		var name_lbl := _make_cell(unit.definition.display_name, unit.definition.display_name, row_color, false, bg_color)
-		var class_lbl := _make_cell(
-			CombatUiFormatters.class_symbol(unit),
-			unit.definition.display_name,
-			row_color,
-			false,
-			bg_color,
+		var row := _make_row()
+		var name_lbl := _add_row_cell(
+			row, unit.definition.display_name, unit.definition.display_name,
+			row_color, false, bg_color, COL_NAME_W, false,
+		)
+		var class_lbl := _add_row_cell(
+			row, CombatUiFormatters.class_symbol(unit), unit.definition.display_name,
+			row_color, false, bg_color, COL_CLASS_W, false,
 		)
 		var stats_text: String = (
-			"🌟%d ❤️%d/%d 🛡️%d 💪%d 🔮%d 🏰%d 👟%d"
+			"⭐%d  ♥%d/%d\n💪%d 🛡️%d 🔮%d 👟%d"
 			% [
-				unit.level, unit.health.current_hp, unit.health.max_hp, unit.armor,
-				unit.current_strength, unit.current_magic, unit.current_defense,
+				unit.level, unit.health.current_hp, unit.health.max_hp,
+				unit.current_strength, unit.armor, unit.current_magic,
 				unit.movement.max_points,
 			]
 		)
-		var stats_lbl := _make_cell(stats_text, stats_text, dim_color, false, bg_color)
+		var stats_lbl := _add_row_cell(row, stats_text, stats_text, dim_color, false, bg_color, COL_STATS_MIN_W, false)
+		stats_lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 		var timeline_info: Dictionary = CombatUiFormatters.format_unit_plan_timeline(
 			_board, timeline, unit, statuses,
 		)
@@ -99,7 +101,9 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 			row_color.r * 0.45, row_color.g * 0.45, row_color.b * 0.45,
 		)
 		var timeline_bg: Color = bg_color.blend(BG_ACTIVE) if plan_active else bg_color
-		var timeline_lbl := _make_cell(timeline_text, timeline_tooltip, timeline_col, false, timeline_bg)
+		var timeline_lbl := _add_row_cell(
+			row, timeline_text, timeline_tooltip, timeline_col, false, timeline_bg, 0, true,
+		)
 		timeline_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		if timeline_text == "—":
 			timeline_lbl.modulate = Color(1, 1, 1, 0.25 if not plan_active else 0.4)
@@ -151,6 +155,34 @@ func get_hover_unit_id() -> int:
 	return _timeline_hover_id
 
 
+func _make_row() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	add_child(row)
+	return row
+
+
+func _add_row_cell(
+	row: HBoxContainer,
+	text: String,
+	tooltip: String,
+	col: Color,
+	is_header: bool,
+	bg_color: Color,
+	min_width: int,
+	expand: bool,
+) -> Label:
+	var lbl := _make_cell(text, tooltip, col, is_header, bg_color)
+	if expand:
+		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lbl.size_flags_stretch_ratio = 5.0
+	elif min_width > 0:
+		lbl.custom_minimum_size.x = float(min_width)
+	row.add_child(lbl)
+	return lbl
+
+
 func _make_cell(
 	text: String,
 	tooltip: String,
@@ -170,10 +202,9 @@ func _make_cell(
 		lbl.add_theme_color_override("font_color", Color(0.67, 0.67, 0.67))
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg_color
-	sb.content_margin_left = 4
-	sb.content_margin_right = 4
-	sb.content_margin_top = 2
-	sb.content_margin_bottom = 2
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 3
+	sb.content_margin_bottom = 3
 	lbl.add_theme_stylebox_override("normal", sb)
-	add_child(lbl)
 	return lbl

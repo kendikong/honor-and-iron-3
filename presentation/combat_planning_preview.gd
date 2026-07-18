@@ -7,6 +7,7 @@ var predicted_hp: Dictionary = {}
 var predicted_armor: Dictionary = {}
 var preview_paths: Dictionary = {}
 var preview_splits: Dictionary = {}
+var preview_post_splits: Dictionary = {}
 var preview_pushes: Dictionary = {}
 var preview_board: BoardState = null
 var live_intents: Array = []
@@ -22,6 +23,7 @@ func clear_all() -> void:
 	clear_interaction()
 	preview_paths.clear()
 	preview_splits.clear()
+	preview_post_splits.clear()
 	preview_pushes.clear()
 	preview_board = null
 	live_intents.clear()
@@ -46,7 +48,7 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 				predicted_armor[unit.id] = 0
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
-	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes)
+	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes, preview_post_splits)
 
 
 static func from_sim_result(
@@ -64,6 +66,7 @@ static func from_sim_result(
 		preview.preview_paths,
 		preview.preview_splits,
 		preview.preview_pushes,
+		preview.preview_post_splits,
 	)
 	if base_board != null:
 		for unit: UnitState in base_board.units:
@@ -83,10 +86,12 @@ static func build_preview_paths(
 	paths: Dictionary,
 	splits: Dictionary,
 	pushes: Dictionary,
+	post_splits: Dictionary = {},
 ) -> void:
 	paths.clear()
 	splits.clear()
 	pushes.clear()
+	post_splits.clear()
 	var start_board: BoardState = director.base_board if director.base_board != null else director.board
 	if start_board == null:
 		return
@@ -94,6 +99,7 @@ static func build_preview_paths(
 	for unit: UnitState in start_board.units:
 		paths[unit.id] = [unit.position]
 		splits[unit.id] = 1
+		post_splits[unit.id] = 1
 		pushes[unit.id] = []
 		current_positions[unit.id] = unit.position
 	var enemy_phase: bool = false
@@ -108,7 +114,16 @@ static func build_preview_paths(
 				var id: int = int(d.get("actor", -1))
 				if paths.has(id):
 					var path: Array = d.get("path", [])
+					var move_timing: int = int(
+						d.get("move_timing", GameEnums.MoveTiming.PRE_ACTION)
+					)
 					for c: Variant in path:
+						if (
+							not enemy_phase
+							and move_timing == GameEnums.MoveTiming.POST_ACTION
+							and int(post_splits[id]) == int(splits[id])
+						):
+							post_splits[id] = (paths[id] as Array).size()
 						(paths[id] as Array).append(c)
 						if not enemy_phase:
 							splits[id] = int(splits[id]) + 1
@@ -142,4 +157,5 @@ func copy_from(other: CombatPlanningPreview) -> void:
 	preview_board = other.preview_board
 	preview_paths = other.preview_paths.duplicate(true)
 	preview_splits = other.preview_splits.duplicate()
+	preview_post_splits = other.preview_post_splits.duplicate()
 	preview_pushes = other.preview_pushes.duplicate(true)

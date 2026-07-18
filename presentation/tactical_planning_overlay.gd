@@ -195,6 +195,7 @@ func restore_committed_display() -> void:
 	_live_preview.preview_board = null
 	_live_preview.preview_paths.clear()
 	_live_preview.preview_splits.clear()
+	_live_preview.preview_post_splits.clear()
 	_live_preview.preview_pushes.clear()
 	_attack_target_id = -1
 	_preview_board = _committed_preview.preview_board
@@ -247,6 +248,14 @@ func set_hover_coord(coord: Vector2i) -> void:
 	else:
 		_update_hover_action_icon()
 	queue_redraw()
+
+
+func begin_click_preview(unit_id: int) -> void:
+	begin_drag_sprite(unit_id)
+
+
+func end_click_preview() -> void:
+	end_drag_sprite()
 
 
 func begin_drag_sprite(unit_id: int) -> void:
@@ -686,6 +695,8 @@ func _display_intent_list() -> Array:
 			_planning_input.dragging
 			or _planning_input.skill_interaction_active()
 			or _planning_input.aiming
+			or _planning_input.run_mode_selected()
+			or _planning_input.is_live_preview_active()
 		)
 		if use_live:
 			var live: Array = _live_preview.live_intents
@@ -706,6 +717,8 @@ func _active_preview() -> CombatPlanningPreview:
 			_planning_input.dragging
 			or _planning_input.skill_interaction_active()
 			or _planning_input.aiming
+			or _planning_input.run_mode_selected()
+			or _planning_input.is_live_preview_active()
 		)
 		if use_live and _live_preview.preview_board != null:
 			return _live_preview
@@ -718,11 +731,13 @@ func _should_draw_interaction_overlay() -> bool:
 	if _planning_input == null:
 		return _live_preview.preview_board != null
 	if _planning_input.dragging:
-		return false
+		return _live_preview.preview_board != null
 	if (
 		_planning_input.skill_interaction_active()
 		or _planning_input.aiming
 		or _planning_input.force_basic_movement
+		or _planning_input.run_mode_selected()
+		or _planning_input.is_live_preview_active()
 	):
 		return _live_preview.preview_board != null
 	return false
@@ -855,9 +870,15 @@ func _draw_preview_arrows() -> void:
 		if route.is_empty():
 			continue
 		var split: int = int(prev.preview_splits.get(unit.id, route.size()))
-		var player_leg: Array = route.slice(0, split)
-		var enemy_leg: Array = route.slice(maxi(split - 1, 0))
-		if player_leg.size() >= 2:
+		var post_split: int = int(prev.preview_post_splits.get(unit.id, split))
+		var pre_action_leg: Array = route.slice(0, mini(post_split, split))
+		var post_action_leg: Array = []
+		if post_split < split:
+			post_action_leg = route.slice(maxi(post_split - 1, 0), split)
+		var enemy_leg: Array = []
+		if split < route.size():
+			enemy_leg = route.slice(maxi(split - 1, 0))
+		if pre_action_leg.size() >= 2:
 			var skip_live_route := false
 			if not unit.is_enemy() and unit.id == selected_id:
 				if dragging and unit.id == drag_unit_id:
@@ -867,7 +888,18 @@ func _draw_preview_arrows() -> void:
 			if not skip_live_route and _unit_can_still_move(unit.id):
 				var p_col: Color = _player_color_for_unit(unit)
 				var dim_col := Color(p_col.r, p_col.g, p_col.b, 0.35)
-				_draw_route_line(player_leg, dim_col, true, true)
+				_draw_route_line(pre_action_leg, dim_col, true, true)
+		if post_action_leg.size() >= 2:
+			var skip_post := false
+			if not unit.is_enemy() and unit.id == selected_id:
+				if dragging and unit.id == drag_unit_id:
+					skip_post = true
+				elif skill_priority and not dragging:
+					skip_post = true
+			if not skip_post and _unit_can_still_move(unit.id):
+				var p_col: Color = _player_color_for_unit(unit)
+				var post_col := Color(p_col.r, p_col.g, p_col.b, 0.78)
+				_draw_route_line(post_action_leg, post_col, post_split <= 1, true)
 		if enemy_leg.size() >= 2:
 			var dim_enemy := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, 0.35)
 			_draw_route_line(enemy_leg, dim_enemy, split <= 1, true)

@@ -243,6 +243,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 			"movement_points_before": points_before,
 			"movement_points_left": unit.movement.points_left,
 			"movement_cost_per_tile": 0,
+			"move_timing": action.move_timing,
 		}))
 		if action.move_timing == GameEnums.MoveTiming.PRE_ACTION:
 			unit.pre_move_used_this_turn = true
@@ -330,6 +331,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		"movement_points_before": points_before,
 		"movement_points_left": unit.movement.points_left,
 		"movement_cost_per_tile": move_cost,
+		"move_timing": action.move_timing,
 	}))
 	if action.move_timing == GameEnums.MoveTiming.PRE_ACTION:
 		unit.pre_move_used_this_turn = true

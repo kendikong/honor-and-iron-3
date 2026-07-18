@@ -191,11 +191,14 @@ func _build_ui() -> void:
 	_hint_label = hint
 	left.add_child(hint)
 	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.custom_minimum_size = Vector2(0, 140)
 	left.add_child(scroll)
 	_timeline_grid = TacticalTimelineGrid.new()
 	_timeline_grid.setup(_director)
+	_timeline_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_timeline_grid)
 
 	_warn_label = Label.new()
@@ -204,6 +207,7 @@ func _build_ui() -> void:
 
 	var buttons := VBoxContainer.new()
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons.size_flags_horizontal = Control.SIZE_SHRINK_END
 	hbox.add_child(buttons)
 
 	_execute_btn = Button.new()

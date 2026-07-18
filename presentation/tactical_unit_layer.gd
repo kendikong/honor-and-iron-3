@@ -76,6 +76,11 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	EventBus.selection_changed.connect(_on_selection_changed)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		_phase = phase
+		if not CombatDirector.is_planning_phase(phase):
+			for actor: Variant in _actors.values():
+				if actor is CharacterActor:
+					(actor as CharacterActor).set_planning_exhausted(false)
+					(actor as CharacterActor).set_running(false)
 		queue_redraw(),
 	)
 	set_process(true)
@@ -175,8 +180,8 @@ func _apply_drag_target_modulate() -> void:
 	var actor: CharacterActor = _actors.get(_drag_target_id)
 	if actor == null:
 		return
-	var pulse: float = 0.5 + 0.5 * sin(Time.get_ticks_msec() / 95.0)
-	actor.modulate = Color(1.0 + 0.62 * pulse, 1.0 + 0.28 * pulse, 0.66 + 0.2 * pulse, 1.0)
+	var pulse: float = 0.65 + 0.35 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 85.0))
+	actor.modulate = Color(1.0 + 1.1 * pulse, 1.0 + 0.65 * pulse, 0.35 + 0.45 * pulse, 1.0)
 
 
 func apply_sim_event(event: SimEvent) -> void:
@@ -773,13 +778,13 @@ func _draw() -> void:
 func _draw_select_outline(cell: Vector2i) -> void:
 	if _map_view == null:
 		return
+	var foot: Vector2 = _map_view.grid_to_foot_local(cell)
 	var tile_px: float = float(TacticalConstants.TILE_PX)
-	var center: Vector2 = _map_view.grid_to_local(cell)
-	var rect := Rect2(
-		center - Vector2(tile_px * 0.5, tile_px * 0.5),
-		Vector2(tile_px, tile_px),
-	).grow(-1.0)
-	draw_rect(rect, _COLOR_SELECT_OUTLINE, false, 1.0)
+	var ring_w: float = tile_px * 0.72
+	var ring_h: float = 6.0
+	var rect := Rect2(foot - Vector2(ring_w * 0.5, ring_h * 0.5), Vector2(ring_w, ring_h))
+	draw_rect(rect.grow(2.0), Color(_COLOR_SELECT_OUTLINE.r, _COLOR_SELECT_OUTLINE.g, _COLOR_SELECT_OUTLINE.b, 0.35), true)
+	draw_rect(rect, _COLOR_SELECT_OUTLINE, false, 2.0)
 
 
 func _draw_drag_target_glow(unit_id: int) -> void:
@@ -790,15 +795,20 @@ func _draw_drag_target_glow(unit_id: int) -> void:
 		return
 	var actor: CharacterActor = _actors.get(unit_id)
 	var center: Vector2 = actor.position if actor != null else _map_view.grid_to_foot_local(unit.position)
-	var pulse: float = 0.55 + 0.4 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 95.0))
+	var pulse: float = 0.65 + 0.35 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 85.0))
 	var tile_px: float = float(TacticalConstants.TILE_PX)
+	var ring_w: float = tile_px * 0.95
+	var ring_h: float = tile_px * 1.02
+	var foot_y: float = 2.0
 	var rect := Rect2(
-		center - Vector2(tile_px * 0.5, tile_px * 0.5 + 26.0),
-		Vector2(tile_px, tile_px),
-	).grow(-1.0)
-	var glow := Color(_COLOR_DRAG_TARGET.r, _COLOR_DRAG_TARGET.g, _COLOR_DRAG_TARGET.b, pulse * 0.35)
-	draw_rect(rect.grow(3.0), glow, true)
-	draw_rect(rect, Color(_COLOR_DRAG_TARGET.r, _COLOR_DRAG_TARGET.g, _COLOR_DRAG_TARGET.b, pulse), false, 2.0)
+		center - Vector2(ring_w * 0.5, ring_h * 0.5 + foot_y),
+		Vector2(ring_w, ring_h),
+	)
+	var glow := Color(_COLOR_DRAG_TARGET.r, _COLOR_DRAG_TARGET.g, _COLOR_DRAG_TARGET.b, pulse * 0.62)
+	draw_rect(rect.grow(8.0), glow, true)
+	draw_rect(rect.grow(5.0), Color(_COLOR_DRAG_TARGET.r, _COLOR_DRAG_TARGET.g, _COLOR_DRAG_TARGET.b, pulse * 0.38), true)
+	draw_rect(rect.grow(2.5), Color(_COLOR_DRAG_TARGET.r, _COLOR_DRAG_TARGET.g, _COLOR_DRAG_TARGET.b, pulse * 0.9), false, 4.0)
+	draw_rect(rect, Color.WHITE, false, 1.5)
 
 
 func _draw_hit_bursts() -> void:
