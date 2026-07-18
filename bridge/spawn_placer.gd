@@ -4,7 +4,7 @@ extends RefCounted
 ## Deterministic spawn placement for random skirmishes.
 ## Players: center-left band. Enemies: center-right band. Y: middle rows only.
 
-const MVP_PLAYER_COUNT: int = 2
+const MVP_PLAYER_COUNT: int = 4
 const MVP_ENEMY_COUNT: int = 3
 const MIN_SPAWN_GAP: int = 2
 

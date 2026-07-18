@@ -86,7 +86,7 @@ func apply_settings(settings: GameSettings) -> void:
 	for child: Node in get_children():
 		_apply_ui_scale_recursive(child, body_sz, title_sz)
 	if _execute_btn != null:
-		_execute_btn.custom_minimum_size = Vector2(200.0 * _ui_scale, 48.0 * _ui_scale)
+		_execute_btn.custom_minimum_size = Vector2(168.0 * _ui_scale, 42.0 * _ui_scale)
 		_execute_btn.add_theme_font_size_override("font_size", body_sz)
 	if _undo_btn != null:
 		_undo_btn.add_theme_font_size_override("font_size", body_sz)
@@ -115,7 +115,7 @@ func _layout_bottom_insets() -> void:
 	var inset: float = float(_panel_width) + 16.0
 	_bottom_panel.offset_left = inset
 	_bottom_panel.offset_right = -inset
-	_bottom_panel.offset_top = -int(round(280.0 * _ui_scale))
+	_bottom_panel.offset_top = -int(round(300.0 * _ui_scale))
 
 
 func _on_timeline_warning(text: String) -> void:
@@ -159,8 +159,9 @@ func _build_ui() -> void:
 
 	var bottom := PanelContainer.new()
 	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_top = -280
+	bottom.offset_top = -300
 	_bottom_panel = bottom
+	_apply_bottom_panel_style(bottom)
 	add_child(bottom)
 
 	var margin := MarginContainer.new()
@@ -180,21 +181,22 @@ func _build_ui() -> void:
 	hbox.add_child(left)
 
 	_phase_label = Label.new()
-	_phase_label.text = "Phase: PLANNING 1"
-	_phase_label.add_theme_font_size_override("font_size", 18)
+	_phase_label.text = "Phase: PLANNING"
+	_phase_label.add_theme_font_size_override("font_size", 16)
 	left.add_child(_phase_label)
 
 	var hint := Label.new()
 	hint.text = "Drag to move · scroll = ability · A = aim · Esc = pause"
-	hint.add_theme_font_size_override("font_size", 11)
-	hint.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	hint.add_theme_font_size_override("font_size", 10)
+	hint.add_theme_color_override("font_color", Color(0.55, 0.58, 0.65))
 	_hint_label = hint
 	left.add_child(hint)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(0, 140)
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(0, 228)
 	left.add_child(scroll)
 	_timeline_grid = TacticalTimelineGrid.new()
 	_timeline_grid.setup(_director)
@@ -212,19 +214,35 @@ func _build_ui() -> void:
 
 	_execute_btn = Button.new()
 	_execute_btn.text = "Ready to Execute"
-	_execute_btn.custom_minimum_size = Vector2(200, 48)
+	_execute_btn.custom_minimum_size = Vector2(168, 42)
 	_execute_btn.pressed.connect(_on_execute_pressed)
 	buttons.add_child(_execute_btn)
 
 	_undo_btn = Button.new()
 	_undo_btn.text = "Undo Unit"
+	_undo_btn.custom_minimum_size = Vector2(168, 34)
 	_undo_btn.pressed.connect(_on_undo_pressed)
 	buttons.add_child(_undo_btn)
 
 	_clear_btn = Button.new()
 	_clear_btn.text = "Clear Phase Plan"
+	_clear_btn.custom_minimum_size = Vector2(168, 34)
 	_clear_btn.pressed.connect(_on_clear_pressed)
 	buttons.add_child(_clear_btn)
+
+
+func _apply_bottom_panel_style(panel: PanelContainer) -> void:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.07, 0.08, 0.11, 0.96)
+	sb.border_color = Color(0.22, 0.26, 0.34, 0.95)
+	sb.set_border_width_all(1)
+	sb.corner_radius_top_left = 8
+	sb.corner_radius_top_right = 8
+	sb.content_margin_left = 4
+	sb.content_margin_right = 4
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 4
+	panel.add_theme_stylebox_override("panel", sb)
 
 
 func _build_banner() -> void:

@@ -26,10 +26,12 @@ static func build_from_encounter(data: EncounterData, player_assignments: Dictio
 		if tile != null:
 			tile.definition = data.tile_terrains[coord]
 			
-	# 4. Spawns (Player)
+	# 4. Spawns (Player) — default slot index → player id (P1..P4 co-op)
 	var id_counter = 1
-	for p in data.player_spawns:
-		var pid = player_assignments.get(id_counter, 1)
+	for i: int in range(data.player_spawns.size()):
+		var p: UnitPlacement = data.player_spawns[i]
+		var slot: int = i + 1
+		var pid: int = int(player_assignments.get(slot, slot))
 		_place(board, id_counter, p.unit, GameEnums.Team.PLAYER, p.coord, pid)
 		id_counter += 1
 		
