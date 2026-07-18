@@ -32,7 +32,7 @@ var _running: bool = false
 var _planning_exhausted: bool = false
 var _oblique_band_modulates: Array[Color] = [Color.WHITE, Color.WHITE, Color.WHITE]
 var _oblique_modulate_stamp: int = -1
-var _oblique_modulate_pos: Vector2 = Vector2.ZERO
+var _oblique_modulate_pos_px: Vector2i = Vector2i(999999, 999999)
 ## Per-layer self_modulate — parent modulate does not reach LPC recolor shader output reliably.
 const _EXHAUSTED_LAYER_MODULATE := Color(0.28, 0.28, 0.32, 1.0)
 const _EXHAUSTED_SHADOW_TINT := Color(0.40, 0.40, 0.44, 1.0)
@@ -101,7 +101,7 @@ func clear_layers() -> void:
 		_pool.append(spr)
 	_layers.clear()
 	_oblique_modulate_stamp = -1
-	_oblique_modulate_pos = Vector2.ZERO
+	_oblique_modulate_pos_px = Vector2i(999999, 999999)
 	_reset_oblique_band_modulates()
 	if _selection_glow != null:
 		_selection_glow.on_layers_cleared()
@@ -170,7 +170,7 @@ func rebuild_contact_shadow(settings: EffectsSettings = null) -> void:
 
 func invalidate_environment_shadow_sync() -> void:
 	_oblique_modulate_stamp = -1
-	_oblique_modulate_pos = Vector2(1.0e9, 1.0e9)
+	_oblique_modulate_pos_px = Vector2i(999999, 999999)
 
 
 func clear_oblique_modulate() -> void:
@@ -199,16 +199,17 @@ func sync_contact_shadow(settings: EffectsSettings = null) -> void:
 func _sync_oblique_modulate(settings: EffectsSettings = null) -> void:
 	var enabled: bool = settings != null and settings.oblique_contact_shadows
 	var stamp: int = ShadowPlacer.map_composite_apply_epoch() if enabled else -1
-	if (
-		stamp == _oblique_modulate_stamp
-		and position.is_equal_approx(_oblique_modulate_pos)
-	):
+	var pos_tile: Vector2i = Vector2i(
+		int(floor(position.x / float(ShadowPlacer.TILE_PX))),
+		int(floor(position.y / float(ShadowPlacer.TILE_PX))),
+	)
+	if stamp == _oblique_modulate_stamp and pos_tile == _oblique_modulate_pos_px:
 		_apply_modulate_stack()
 		return
 	_oblique_modulate_stamp = stamp
-	if not position.is_equal_approx(_oblique_modulate_pos):
+	if pos_tile != _oblique_modulate_pos_px:
 		ShadowPlacer.invalidate_foot_cluster_layout()
-	_oblique_modulate_pos = position
+	_oblique_modulate_pos_px = pos_tile
 	_oblique_band_modulates = ShadowPlacer.actor_oblique_band_modulates(self, settings)
 	_apply_modulate_stack()
 

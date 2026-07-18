@@ -65,7 +65,6 @@ func _composite_layers(layers: Array[AnimatedSprite2D], anim: StringName) -> Ima
 	if layers.is_empty():
 		return null
 	var frame_size: int = _LPC.FRAME_SIZE
-	var half: float = float(frame_size) * 0.5
 	var out: Image = Image.create(frame_size, frame_size, false, Image.FORMAT_RGBA8)
 	out.fill(Color(0.0, 0.0, 0.0, 0.0))
 	var drew: bool = false
@@ -90,18 +89,13 @@ func _composite_layers(layers: Array[AnimatedSprite2D], anim: StringName) -> Ima
 			img.decompress()
 		var w: int = mini(img.get_width(), frame_size)
 		var h: int = mini(img.get_height(), frame_size)
-		var spr_pos: Vector2 = spr.position
 		for y: int in range(h):
 			for x: int in range(w):
 				var a: float = img.get_pixel(x, y).a
 				if a < 0.04:
 					continue
-				var dx: int = int(round(float(x) - half + spr_pos.x))
-				var dy: int = int(round(float(y) - half + spr_pos.y))
-				if dx < 0 or dy < 0 or dx >= frame_size or dy >= frame_size:
-					continue
-				var prev: float = out.get_pixel(dx, dy).a
-				out.set_pixel(dx, dy, Color(1.0, 1.0, 1.0, maxf(prev, a)))
+				var prev: float = out.get_pixel(x, y).a
+				out.set_pixel(x, y, Color(1.0, 1.0, 1.0, maxf(prev, a)))
 				drew = true
 	if not drew:
 		return null

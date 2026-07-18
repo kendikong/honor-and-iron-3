@@ -1020,3 +1020,8 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** �
 ### Actor foot direction fix (2026-07-18)
 - **Cause:** Unit feet used a separate `unit_feet_tex` channel with actor-local placement; sundial rebakes could stale; LPC bake silhouette ignored sprite `centered` + `position.y=-26` transform.
 - **Fix:** Feet max-blitted into the same `map_oblique_tex` as tree shadows (union bounds, one multiply channel); `foot_world` in shadow-root space; rebake on sundial signature change; LPC composite matches on-screen sprite layout.
+
+### Foot shadow perf + tiny blob fix (2026-07-18)
+- **Lag:** Per-frame full-map CPU merge of tree + feet atlases during movement; sub-pixel layout invalidation every tween frame.
+- **Tiny shadow:** Centered LPC composite clipped feet to a bottom strip → stub bake.
+- **Fix:** Restored small `unit_feet_tex` atlas only; reverted LPC composite to full 64×64 frame; tile-grid foot snap (rebuild on cell change, not every frame); actor rebake always full-quality (no bake LOD).

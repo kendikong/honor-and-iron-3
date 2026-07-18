@@ -349,17 +349,19 @@ static func sync_actor_contact_shadow(
 		_store_foot_bake_cache(
 			actor_id,
 			img,
-			foot_root + bake_offset,
+			_foot_map_origin_snapped(foot_root, bake_offset),
 			bake_offset,
 			bake_sig,
+			foot_root,
 		)
 	elif _foot_bake_cache.has(actor_id):
 		var entry: Dictionary = _foot_bake_cache[actor_id] as Dictionary
 		var bake_offset: Vector2 = entry.get("bake_offset", Vector2.ZERO) as Vector2
-		var old_origin: Vector2 = entry.get("map_origin", Vector2.ZERO) as Vector2
-		var map_origin: Vector2 = foot_root + bake_offset
-		entry["map_origin"] = map_origin
-		if old_origin.distance_to(map_origin) > 0.5:
+		var foot_px: Vector2i = _foot_pixel_on_shadow_root(foot_root)
+		var last_px: Vector2i = entry.get("foot_px", Vector2i(999999, 999999)) as Vector2i
+		if foot_px != last_px:
+			entry["foot_px"] = foot_px
+			entry["map_origin"] = _foot_map_origin_snapped(foot_root, bake_offset)
 			_unit_feet_layout_key = -1
 	if need_geometry:
 		_unit_feet_layout_key = -1
@@ -405,18 +407,49 @@ static func rebuild_unit_feet_atlas(
 		_sync_ground_shadow_uniforms(settings, shadow_root)
 		return
 	var entries: Array[Dictionary] = _collect_foot_shadow_entries(actors, shadow_root)
-	for actor_var: Variant in actors:
-		_purge_legacy_foot_sprites(actor_var as Node)
-	_purge_stray_shadow_root_sprites(shadow_root)
 	var layout_key: int = _foot_cluster_layout_hash(entries)
 	if layout_key == _unit_feet_layout_key:
-		_sync_ground_shadow_uniforms(settings, shadow_root)
 		return
 	_unit_feet_layout_key = layout_key
 	if entries.is_empty():
-		_restore_map_oblique_without_feet(settings, shadow_root)
+		_unit_feet_overlay = {}
+		_sync_ground_shadow_uniforms(settings, shadow_root)
 		return
-	_publish_merged_ground_shadow(entries, settings, shadow_root)
+	var min_x: float = INF
+	var min_y: float = INF
+	var max_x: float = -INF
+	var max_y: float = -INF
+	for entry: Dictionary in entries:
+		var rect: Rect2 = _foot_entry_rect(entry)
+		min_x = minf(min_x, rect.position.x)
+		min_y = minf(min_y, rect.position.y)
+		max_x = maxf(max_x, rect.end.x)
+		max_y = maxf(max_y, rect.end.y)
+	var width: int = maxi(1, int(ceil(max_x - min_x)))
+	var height: int = maxi(1, int(ceil(max_y - min_y)))
+	var atlas: Image = Image.create(width, height, false, Image.FORMAT_RGBA8)
+	atlas.fill(Color(0.0, 0.0, 0.0, 0.0))
+	var origin: Vector2 = Vector2(min_x, min_y)
+	for entry: Dictionary in entries:
+		var img: Image = entry["image"] as Image
+		var map_origin: Vector2 = entry["map_origin"] as Vector2
+		var offset: Vector2i = Vector2i(
+			int(round(map_origin.x - origin.x)),
+			int(round(map_origin.y - origin.y)),
+		)
+		_max_blit_foot_alpha(atlas, img, offset)
+	if _unit_feet_tex == null:
+		_unit_feet_tex = ImageTexture.create_from_image(atlas)
+	else:
+		_unit_feet_tex.set_image(atlas)
+	_unit_feet_overlay = {
+		"active": true,
+		"tex": _unit_feet_tex,
+		"origin": origin,
+		"size": Vector2(float(width), float(height)),
+		"image": atlas,
+	}
+	_sync_ground_shadow_uniforms(settings, shadow_root)
 
 
 static func sync_foot_shadow_cloud_drift(_actors: Array, _settings: EffectsSettings) -> void:
@@ -600,6 +633,21 @@ static func _purge_stray_shadow_root_sprites(shadow_root: Node2D) -> void:
 			spr.queue_free()
 
 
+static func _foot_pixel_on_shadow_root(foot_root: Vector2) -> Vector2i:
+	return Vector2i(
+		int(floor(foot_root.x / float(TILE_PX))),
+		int(floor(foot_root.y / float(TILE_PX))),
+	)
+
+
+static func _foot_map_origin_snapped(foot_root: Vector2, bake_offset: Vector2) -> Vector2:
+	var foot_px: Vector2i = _foot_pixel_on_shadow_root(foot_root)
+	# Keep sub-tile offset within the cell so oblique shadow slides smoothly on the grid.
+	var cell_origin: Vector2 = Vector2(float(foot_px.x), float(foot_px.y)) * float(TILE_PX)
+	var local: Vector2 = foot_root - cell_origin
+	return cell_origin + local + bake_offset
+
+
 static func _actor_foot_on_shadow_root(actor: Node2D, shadow_root: Node2D) -> Vector2:
 	if actor == null:
 		return Vector2.ZERO
@@ -695,6 +743,7 @@ static func _store_foot_bake_cache(
 	map_origin: Vector2,
 	bake_offset: Vector2,
 	bake_sig: int,
+	foot_root: Vector2,
 ) -> void:
 	if image == null or image.is_empty():
 		_foot_bake_cache.erase(actor_id)
@@ -704,6 +753,7 @@ static func _store_foot_bake_cache(
 		"map_origin": map_origin,
 		"bake_offset": bake_offset,
 		"bake_sig": bake_sig,
+		"foot_px": _foot_pixel_on_shadow_root(foot_root),
 	}
 
 
@@ -1009,9 +1059,9 @@ static func _apply_composite_result(
 		return
 	_map_oblique_base_image = composite.duplicate()
 	if _map_oblique_tex == null:
-		_map_oblique_tex = ImageTexture.create_from_image(_map_oblique_base_image.duplicate())
+		_map_oblique_tex = ImageTexture.create_from_image(_map_oblique_base_image)
 	else:
-		_map_oblique_tex.set_image(_map_oblique_base_image.duplicate())
+		_map_oblique_tex.set_image(_map_oblique_base_image)
 	_ensure_ground_shadow_rect(shadow_root, settings)
 	_refresh_map_oblique_overlay(shadow_root, result.origin as Vector2)
 	_map_oblique_overlay_base = _map_oblique_overlay.duplicate()
@@ -2095,7 +2145,7 @@ static func sync_shadow_material(mat: ShaderMaterial, settings: EffectsSettings 
 	mat.set_shader_parameter("shadow_strength", params["shadow_strength"])
 
 
-## Rebake one moving actor silhouette — foot_world is contact point in parent local space.
+## Rebake one moving actor silhouette — foot_world is foot contact in shadow-root space.
 static func rebake_actor_shadow(
 	caster_source: Image,
 	foot_center_tex: Vector2,
@@ -2118,8 +2168,8 @@ static func rebake_actor_shadow(
 	var baked: Dictionary = _rebake_entry_with_sundial(
 		entry,
 		sundial,
-		{},
-		_bake_lod_active(settings, bake_contrast),
+		_oblique_bake_cache,
+		false,
 		_use_edge_soften(settings),
 		bake_contrast,
 	)
