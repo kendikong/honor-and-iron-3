@@ -85,7 +85,7 @@ const ACTOR_SHADOW_MAJORITY_RATIO: float = 0.5
 const ACTOR_SHADOW_BAND_X: Array = [-16.0, -8.0, 0.0, 8.0, 16.0]
 ## Vertical bands from actor foot (y=0): lower legs, torso, head/hair.
 const ACTOR_SHADOW_BAND_Y: Array = [
-	[0.0, -8.0, -16.0],
+	[-8.0, -16.0],
 	[-14.0, -22.0, -30.0],
 	[-28.0, -38.0, -48.0],
 ]
@@ -262,7 +262,11 @@ static func sync_cycle(shadow_root: Node2D, settings: EffectsSettings = null) ->
 		if interval_ms <= 0 or now_ms - _last_composite_queue_ms >= interval_ms or not _async_busy():
 			_last_composite_queue_ms = now_ms
 			_queue_async_composite(shadow_root, _shadow_layer_cache, settings, contrast, bake_sig)
-	var show: bool = is_present and _has_ground_shadow_rect(shadow_root)
+	var show: bool = _has_ground_shadow_rect(shadow_root)
+	if settings == null or not settings.cloud_shadows:
+		show = show and is_present
+	else:
+		show = show and (is_present or WeatherBus.shadows_visible())
 	shadow_root.visible = show
 	shadow_root.modulate = Color.WHITE
 	_sync_ground_shadow_uniforms(settings, shadow_root)
@@ -377,6 +381,7 @@ static func sync_actor_contact_shadow(
 			_foot_bake_cache[actor.get_instance_id()] = {
 				"image": existing.duplicate(),
 				"bake_sig": bake_sig,
+				"gpu_tex": ImageTexture.create_from_image(existing),
 			}
 			_mark_foot_bake_dirty()
 	var has_feet: bool = is_present and sprite.texture != null and actor_visible_enough
@@ -429,6 +434,7 @@ static func rebuild_foot_shadow_clusters(
 	sync_unit_feet_gpu(actors, settings, shadow_root)
 	if _foot_cluster_root != null:
 		_foot_cluster_root.clear_clusters()
+	_purge_stray_foot_cluster_multiply_sprites()
 
 
 static func sync_unit_feet_gpu(
@@ -505,23 +511,25 @@ static func _build_unit_foot_gpu_slot(actor: Node2D, shadow_root: Node2D) -> Dic
 			(cached as Dictionary)["gpu_tex"] = tex
 	return {
 		"actor_id": actor_id,
+		"actor": actor,
 		"sprite": sprite,
 		"texture": tex,
 		"image": image,
-		"map_rect": _foot_slot_map_rect(sprite, shadow_root, image),
+		"map_rect": _foot_slot_map_rect(actor, sprite, image),
 	}
 
 
-static func _foot_slot_map_rect(sprite: Sprite2D, shadow_root: Node2D, image: Image) -> Vector4:
-	if sprite == null or image == null or shadow_root == null:
+static func _foot_slot_map_rect(actor: Node2D, sprite: Sprite2D, image: Image) -> Vector4:
+	if actor == null or sprite == null or image == null or image.is_empty():
 		return Vector4.ZERO
-	var origin: Vector2 = shadow_root.to_local(sprite.global_position)
-	var gs: Vector2 = sprite.global_scale
+	# MapRoot-local pixels — actor.scale only (not global_scale; MapRoot zoom is on the canvas).
+	var actor_scale: Vector2 = actor.scale
+	var origin: Vector2 = actor.position + sprite.position * actor_scale
 	return Vector4(
 		origin.x,
 		origin.y,
-		float(image.get_width()) * absf(gs.x),
-		float(image.get_height()) * absf(gs.y),
+		float(image.get_width()) * absf(actor_scale.x),
+		float(image.get_height()) * absf(actor_scale.y),
 	)
 
 
@@ -578,7 +586,7 @@ static func _refresh_unit_feet_gpu_slots(actors: Array, shadow_root: Node2D) -> 
 		var image: Image = slot.get("image") as Image
 		if image == null:
 			continue
-		(slot as Dictionary)["map_rect"] = _foot_slot_map_rect(sprite, shadow_root, image)
+		(slot as Dictionary)["map_rect"] = _foot_slot_map_rect(actor, sprite, image)
 
 
 static func _clear_actor_sprite(sprite: Sprite2D) -> void:
@@ -617,6 +625,9 @@ static func sync_ground_shadow_drift(settings: EffectsSettings, shadow_root: Nod
 	if shadow_root == null:
 		return
 	_ensure_ground_shadow_rect(shadow_root, settings)
+	if settings != null and settings.cloud_shadows:
+		shadow_root.visible = true
+		shadow_root.process_mode = Node.PROCESS_MODE_INHERIT
 	var sig: int = _ground_static_uniform_signature(settings)
 	if sig != _ground_static_uniform_sig:
 		_ground_static_uniform_sig = sig
@@ -751,6 +762,13 @@ static func _push_unit_feet_gpu_uniforms(mat: ShaderMaterial) -> void:
 	mat.set_shader_parameter("unit_feet_count", count)
 	mat.set_shader_parameter("unit_feet_rect", rects)
 	mat.set_shader_parameter("unit_feet_slots", textures)
+
+
+static func _purge_stray_foot_cluster_multiply_sprites() -> void:
+	if _foot_cluster_root == null:
+		return
+	for child: Node in _foot_cluster_root.get_children():
+		child.queue_free()
 
 
 static func _purge_legacy_foot_sprites(actor: Node) -> void:
@@ -2210,10 +2228,12 @@ static func actor_oblique_band_modulates(
 			var y_px: float = float(y_off) * scale_y
 			for x_off: Variant in ACTOR_SHADOW_BAND_X:
 				sample_count += 1
-				var alpha: float = sample_map_oblique_alpha_at(
-					foot + Vector2(float(x_off) * actor.scale.x, y_px),
-					settings,
-				)
+				var sample_px: Vector2 = foot + Vector2(float(x_off) * actor.scale.x, y_px)
+				var alpha: float = 0.0
+				if band_i == 0:
+					alpha = sample_map_oblique_alpha_at(sample_px, settings)
+				else:
+					alpha = sample_environment_shadow_alpha_at(sample_px, settings)
 				if alpha >= 0.04:
 					hit_count += 1
 					alpha_sum += alpha
