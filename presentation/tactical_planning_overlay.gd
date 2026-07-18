@@ -93,7 +93,7 @@ func setup(
 		if _director == null:
 			return
 		_invalidate_hover_cache()
-		_recompute_hover_ranges_from_inputs()
+		_schedule_hover_recompute()
 		_update_hover_action_icon()
 		queue_redraw(),
 	)

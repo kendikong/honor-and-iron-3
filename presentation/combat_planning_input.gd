@@ -475,16 +475,14 @@ func _restore_committed_preview() -> void:
 func _on_selection_changed(unit_id: int) -> void:
 	if _director == null:
 		return
-	_invalidate_planning_hover_cache()
 	if unit_id < 0:
+		_invalidate_planning_hover_cache()
 		_restore_hover_preview()
 		_sync_intent_skill_mode()
 		if _planning != null:
 			_planning._recompute_hover_ranges_from_inputs()
 		return
 	_play_sfx("select")
-	if _drag_saved_preview == null and _planning != null:
-		_planning.stash_committed_preview()
 	call_deferred("_finish_selection_changed")
 
 
@@ -507,13 +505,14 @@ func _run_planning_selection_refresh() -> void:
 
 
 func _finish_selection_changed() -> void:
+	if _drag_saved_preview == null and _planning != null:
+		_planning.stash_committed_preview()
 	_request_planning_selection_refresh()
 
 
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
-	_invalidate_planning_hover_cache()
 	if _director.selected_unit_id >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
 	_request_planning_selection_refresh()

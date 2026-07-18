@@ -32,12 +32,25 @@ func is_outline_empty() -> bool:
 
 
 func set_active(active: bool, color: Color = glow_color) -> void:
-	enabled = active
+	var color_changed: bool = glow_color != color
 	glow_color = color
 	if active:
-		rebuild_from_layers()
+		enabled = true
+		if _outline_sprites.is_empty() or not _outlines_match_layers():
+			rebuild_from_layers()
+		else:
+			_reconnect_layer_signals()
+			for spr: AnimatedSprite2D in _actor.get_sprite_layers():
+				_sync_outline_for_layer(spr)
+			_set_outlines_visible(true)
+			if color_changed:
+				_update_outline_alpha()
 	else:
-		_clear_outlines()
+		if not enabled:
+			return
+		enabled = false
+		_disconnect_layer_signals()
+		_set_outlines_visible(false)
 
 
 func set_muted(muted: bool) -> void:
@@ -128,6 +141,15 @@ func _draw_color() -> Color:
 
 
 func _clear_outlines() -> void:
+	_disconnect_layer_signals()
+	for spr: AnimatedSprite2D in _outline_sprites:
+		if is_instance_valid(spr):
+			spr.queue_free()
+	_outline_sprites.clear()
+	_layer_to_outline.clear()
+
+
+func _disconnect_layer_signals() -> void:
 	for layer: Variant in _layer_frame_handlers.keys():
 		var spr: AnimatedSprite2D = layer as AnimatedSprite2D
 		if spr == null or not is_instance_valid(spr):
@@ -140,11 +162,30 @@ func _clear_outlines() -> void:
 			spr.animation_changed.disconnect(anim_handler)
 	_layer_frame_handlers.clear()
 	_layer_anim_handlers.clear()
+
+
+func _reconnect_layer_signals() -> void:
+	if _actor == null:
+		return
+	for spr: AnimatedSprite2D in _actor.get_sprite_layers():
+		if spr != null and spr.visible and spr.sprite_frames != null:
+			_connect_layer_signals(spr)
+
+
+func _set_outlines_visible(visible: bool) -> void:
 	for spr: AnimatedSprite2D in _outline_sprites:
 		if is_instance_valid(spr):
-			spr.queue_free()
-	_outline_sprites.clear()
-	_layer_to_outline.clear()
+			spr.visible = visible
+
+
+func _outlines_match_layers() -> bool:
+	if _actor == null:
+		return false
+	var expected: int = 0
+	for spr: AnimatedSprite2D in _actor.get_sprite_layers():
+		if spr != null and spr.visible and spr.sprite_frames != null:
+			expected += 1
+	return expected > 0 and expected == _outline_sprites.size()
 
 
 func _on_layer_frame_changed(layer: AnimatedSprite2D) -> void:

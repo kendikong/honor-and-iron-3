@@ -346,8 +346,7 @@ func _on_selection_changed(unit_id: int) -> void:
 	if unit_id < 0:
 		_clear_skill_buttons()
 		return
-	_last_skill_rebuild_key = ""
-	call_deferred("_rebuild_ability_buttons")
+	call_deferred("_refresh_ability_buttons_if_dirty")
 
 
 func _clear_skill_buttons() -> void:
@@ -363,7 +362,7 @@ func _on_ability_selected(index: int) -> void:
 	_selected_ability = index
 	if _director != null and _director.selected_unit_id >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
-	_rebuild_ability_buttons()
+	_refresh_ability_buttons_if_dirty()
 
 
 func get_log_label() -> RichTextLabel:
