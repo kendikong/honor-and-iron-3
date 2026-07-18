@@ -7,9 +7,16 @@ const MAX_PARTY_SLOTS: int = 4
 const W_PLAYER: int = 30
 const W_NAME: int = 72
 const W_CLASS: int = 30
-const W_STATS: int = 236
+const W_STATS_MIN: int = 200
 const ROW_HEIGHT: int = 38
-const STRETCH_PLAN: float = 1.0
+const ROW_INSET: int = 8
+const COL_SEPARATION: int = 8
+const PLAN_COL_SEPARATION: int = 12
+const STRETCH_INFO: float = 4.0
+const STRETCH_PLAN_TOTAL: float = 6.0
+const STRETCH_PRE: float = 1.0
+const STRETCH_ACTION: float = 2.0
+const STRETCH_POST: float = 1.0
 const COLOR_FAIL: Color = Color(1.0, 0.38, 0.38)
 const COLOR_HEADER: Color = Color(0.58, 0.62, 0.70)
 const COLOR_MUTED: Color = Color(0.58, 0.62, 0.70)
@@ -101,14 +108,18 @@ func _units_by_player_id() -> Dictionary:
 
 func _add_header_row(plan_active: bool) -> void:
 	var row := _make_row_container(22)
-	_add_header_cell(row, "P", W_PLAYER)
-	_add_header_cell(row, "Unit", W_NAME)
-	_add_header_cell(row, "", W_CLASS)
-	_add_header_cell(row, "Stats", W_STATS, false)
-	_add_header_cell(row, "Pre-Move", 0, true, COLOR_ACCENT_PRE if plan_active else Color.TRANSPARENT)
-	_add_header_cell(row, "Action", 0, true, COLOR_ACCENT_ACT if plan_active else Color.TRANSPARENT)
-	_add_header_cell(row, "Post-Move", 0, true, COLOR_ACCENT_POST if plan_active else Color.TRANSPARENT)
-	add_child(row)
+	var info := _make_info_section()
+	row.add_child(info)
+	_add_header_cell(info, "P", W_PLAYER)
+	_add_header_cell(info, "Unit", W_NAME)
+	_add_header_cell(info, "", W_CLASS)
+	_add_header_cell(info, "Stats", W_STATS_MIN, true)
+	var plan := _make_plan_section()
+	row.add_child(plan)
+	_add_plan_header_cell(plan, "Pre-Move", STRETCH_PRE, COLOR_ACCENT_PRE if plan_active else Color.TRANSPARENT)
+	_add_plan_header_cell(plan, "Action", STRETCH_ACTION, COLOR_ACCENT_ACT if plan_active else Color.TRANSPARENT)
+	_add_plan_header_cell(plan, "Post-Move", STRETCH_POST, COLOR_ACCENT_POST if plan_active else Color.TRANSPARENT)
+	add_child(_wrap_row_inset(row))
 
 
 func _add_party_row(
@@ -130,21 +141,25 @@ func _add_party_row(
 		row_bg = COLOR_ROW_SEL
 	row_panel.add_theme_stylebox_override("panel", _panel_style(row_bg, is_selected))
 	var row := _make_row_container(0)
-	row_panel.add_child(row)
+	var info := _make_info_section()
+	row.add_child(info)
+	var plan := _make_plan_section()
+	row.add_child(plan)
+	row_panel.add_child(_wrap_row_inset(row))
 	var player_col: Color = CombatUiFormatters.player_color(slot) if not is_empty else COLOR_EMPTY
-	_add_body_cell(row, "P%d" % slot, "", player_col, W_PLAYER, false)
+	_add_body_cell(info, "P%d" % slot, "", player_col, W_PLAYER, false)
 	var name_text: String = "— open —" if is_empty else unit.definition.display_name
 	var name_col: Color = COLOR_EMPTY if is_empty else Color.WHITE
 	if is_selected and not is_empty:
 		name_col = Color(1.0, 0.95, 0.55)
-	_add_body_cell(row, name_text, name_text, name_col, W_NAME, false)
+	_add_body_cell(info, name_text, name_text, name_col, W_NAME, false)
 	var class_text: String = "" if is_empty else CombatUiFormatters.class_symbol(unit)
-	_add_body_cell(row, class_text, unit.definition.display_name if unit != null else "", name_col, W_CLASS, false)
+	_add_body_cell(info, class_text, unit.definition.display_name if unit != null else "", name_col, W_CLASS, false)
 	if is_empty:
-		_add_body_cell(row, "—", "", COLOR_MUTED, W_STATS, false)
-		_add_plan_cell(row, "—", "", false, COLOR_ACCENT_PRE, plan_active)
-		_add_plan_cell(row, "—", "", false, COLOR_ACCENT_ACT, plan_active)
-		_add_plan_cell(row, "—", "", false, COLOR_ACCENT_POST, plan_active)
+		_add_body_cell(info, "—", "", COLOR_MUTED, W_STATS_MIN, true)
+		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_PRE, plan_active, STRETCH_PRE)
+		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_ACT, plan_active, STRETCH_ACTION)
+		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_POST, plan_active, STRETCH_POST)
 		row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return ""
 	var stats_text: String = (
@@ -163,21 +178,24 @@ func _add_party_row(
 			unit.current_magic, unit.armor,
 		]
 	)
-	_add_body_cell(row, stats_text, stats_tip, Color(0.72, 0.76, 0.82) if is_selected else COLOR_MUTED, W_STATS, false)
+	_add_body_cell(
+		info, stats_text, stats_tip,
+		Color(0.72, 0.76, 0.82) if is_selected else COLOR_MUTED, W_STATS_MIN, true,
+	)
 	var slots: Dictionary = _plan_slots_for_unit(timeline, unit.id)
 	var warn: String = ""
 	var cell_warn: String = _append_plan_cell(
-		row, slots.get("pre", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_PRE,
+		plan, slots.get("pre", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_PRE, STRETCH_PRE,
 	)
 	if not cell_warn.is_empty():
 		warn = cell_warn
 	cell_warn = _append_plan_cell(
-		row, slots.get("action", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_ACT,
+		plan, slots.get("action", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_ACT, STRETCH_ACTION,
 	)
 	if not cell_warn.is_empty() and warn.is_empty():
 		warn = cell_warn
 	cell_warn = _append_plan_cell(
-		row, slots.get("post", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_POST,
+		plan, slots.get("post", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_POST, STRETCH_POST,
 	)
 	if not cell_warn.is_empty() and warn.is_empty():
 		warn = cell_warn
@@ -236,6 +254,7 @@ func _append_plan_cell(
 	statuses: PackedStringArray,
 	plan_active: bool,
 	accent: Color,
+	stretch: float,
 ) -> String:
 	var text: String = "—"
 	var tooltip: String = "No action queued"
@@ -257,7 +276,7 @@ func _append_plan_cell(
 					]
 		text = " → ".join(parts)
 		tooltip = "\n".join(tips)
-	var lbl := _add_plan_cell(row, text, tooltip, failed, accent, plan_active)
+	var lbl := _add_plan_cell(row, text, tooltip, failed, accent, plan_active, stretch)
 	if text == "—":
 		lbl.modulate = Color(1, 1, 1, 0.35 if plan_active else 0.22)
 	return first_warn
@@ -265,11 +284,36 @@ func _append_plan_cell(
 
 func _make_row_container(min_height: int) -> HBoxContainer:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
+	row.add_theme_constant_override("separation", 0)
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if min_height > 0:
 		row.custom_minimum_size.y = float(min_height)
 	return row
+
+
+func _wrap_row_inset(row: HBoxContainer) -> MarginContainer:
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", ROW_INSET)
+	margin.add_theme_constant_override("margin_right", ROW_INSET)
+	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	margin.add_child(row)
+	return margin
+
+
+func _make_info_section() -> HBoxContainer:
+	var info := HBoxContainer.new()
+	info.add_theme_constant_override("separation", COL_SEPARATION)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info.size_flags_stretch_ratio = STRETCH_INFO
+	return info
+
+
+func _make_plan_section() -> HBoxContainer:
+	var plan := HBoxContainer.new()
+	plan.add_theme_constant_override("separation", PLAN_COL_SEPARATION)
+	plan.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	plan.size_flags_stretch_ratio = STRETCH_PLAN_TOTAL
+	return plan
 
 
 func _add_header_cell(
@@ -277,18 +321,32 @@ func _add_header_cell(
 	text: String,
 	width: int,
 	expand: bool = false,
-	bg: Color = Color.TRANSPARENT,
 ) -> void:
 	var lbl := Label.new()
 	lbl.text = text
 	lbl.add_theme_font_size_override("font_size", _header_font_px)
 	lbl.add_theme_color_override("font_color", COLOR_HEADER)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if expand:
 		lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		lbl.size_flags_stretch_ratio = STRETCH_PLAN
+		if width > 0:
+			lbl.custom_minimum_size.x = float(width)
 	elif width > 0:
 		lbl.custom_minimum_size.x = float(width)
+	row.add_child(lbl)
+
+
+func _add_plan_header_cell(row: HBoxContainer, text: String, stretch: float, bg: Color) -> void:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", _header_font_px)
+	lbl.add_theme_color_override("font_color", COLOR_HEADER)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lbl.size_flags_stretch_ratio = stretch
 	if bg.a > 0.01:
 		lbl.add_theme_stylebox_override("normal", _cell_style(bg))
 	row.add_child(lbl)
@@ -306,6 +364,7 @@ func _add_body_cell(
 	lbl.text = text
 	lbl.add_theme_font_size_override("font_size", _cell_font_px)
 	lbl.add_theme_color_override("font_color", col)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	lbl.clip_text = false
@@ -328,10 +387,12 @@ func _add_plan_cell(
 	failed: bool,
 	accent: Color,
 	plan_active: bool,
+	stretch: float,
 ) -> Label:
 	var lbl := Label.new()
 	lbl.text = text
 	lbl.add_theme_font_size_override("font_size", _cell_font_px)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	lbl.clip_text = true
@@ -344,7 +405,7 @@ func _add_plan_cell(
 	else:
 		lbl.add_theme_color_override("font_color", COLOR_MUTED)
 	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lbl.size_flags_stretch_ratio = STRETCH_PLAN
+	lbl.size_flags_stretch_ratio = stretch
 	var bg: Color = accent if plan_active else Color(0.12, 0.13, 0.17, 0.4)
 	lbl.add_theme_stylebox_override("normal", _cell_style(bg))
 	row.add_child(lbl)
@@ -355,8 +416,8 @@ func _panel_style(bg: Color, selected: bool) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
 	sb.set_corner_radius_all(4)
-	sb.content_margin_left = 8
-	sb.content_margin_right = 8
+	sb.content_margin_left = 0
+	sb.content_margin_right = 0
 	sb.content_margin_top = 4
 	sb.content_margin_bottom = 4
 	if selected:
@@ -372,8 +433,8 @@ func _cell_style(bg: Color) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
 	sb.set_corner_radius_all(3)
-	sb.content_margin_left = 6
-	sb.content_margin_right = 6
-	sb.content_margin_top = 3
-	sb.content_margin_bottom = 3
+	sb.content_margin_left = 10
+	sb.content_margin_right = 10
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 4
 	return sb
