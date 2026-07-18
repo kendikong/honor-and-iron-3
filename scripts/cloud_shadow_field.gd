@@ -65,6 +65,10 @@ static func _hash22(p: Vector2) -> Vector2:
 	var a: float = p.dot(Vector2(127.1, 311.7))
 	var b: float = p.dot(Vector2(269.5, 183.3))
 	return Vector2(-1.0, -1.0) + 2.0 * Vector2(
-		fract(sin(a) * 43758.5453123),
-		fract(sin(b) * 43758.5453123),
+		_fract(sin(a) * 43758.5453123),
+		_fract(sin(b) * 43758.5453123),
 	)
+
+
+static func _fract(v: float) -> float:
+	return v - floor(v)
