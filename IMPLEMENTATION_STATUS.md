@@ -979,3 +979,36 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** �
 | Aim mode | H&I vector class icon |
 | Ambient effects | Options toggle, default on |
 | Extras v1 | Compendium, online co-op, autobattler |
+
+---
+
+## Unified Shadow Mask Rework (2026-07-18)
+
+**Backup:** branch `backup/pre-unified-shadow-mask`, tag `backup-pre-unified-shadow` @ `817e0171b0ba55c0e3523932fa612fe200d75040`
+
+### Deliverables
+- [x] `shaders/ground_shadow_composite.gdshader` — single multiply pass: `max(map oblique, unit feet, cloud FBM)`
+- [x] `shaders/cloud_shadow_field.gdshaderinc` + `scripts/cloud_shadow_field.gd` — shared cloud field (GPU + CPU body receive)
+- [x] Map-sized `GroundShadows` ColorRect on `ShadowSprites` (replaces separate sky cloud multiply + per-foot multiply stacks)
+- [x] Dynamic `unit_feet_tex` atlas (max-alpha blit on move/layout change)
+- [x] 3-band body receive via `sample_unified_shadow_alpha_at()`
+- [x] Removed punch paths: cloud↔contact mask, foot shader yields, `ActorFootShadowCompositor`
+
+### Unified Shadow Audit (iteration 1 — 2026-07-18)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | All four phases landed: ground shader, feet atlas, body receive, dead-path removal |
+| Correct coding | PASS | Static typing preserved; feet bake-only (sprites hidden); drift via `sync_ground_shadow_drift` |
+| Inconsistencies | PASS | Cloud FBM duplicated CPU/GPU intentionally for body sampling without readback |
+| Visual compositor | PARTIAL | Draw order: `GroundShadows` @ `Z_SHADOW=1`; blend_mul; no punch-outs — **F5 not run on agent** |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Godot F5 visual gate not run (party stack, tree edge, cloud drift, 60s idle) | Med | Deferred — user F5 |
+| 2 | `_punch_all_casters` still in bake path when `shadow_disable_caster_punch` false | Low | Deferred — default off; remove in follow-up |
+
+**Final issue count:** 2  
+**Audit result:** **PASS** (conditional on user F5 visual gate)
+
+**Revert:** `git checkout backup-pre-unified-shadow-mask` or `git checkout backup-pre-unified-shadow`

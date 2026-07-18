@@ -33,7 +33,6 @@ var _ground_wired: bool = false
 var _weather_wired: bool = false
 var _last_grid: PlayerGrid
 var _character_contact_shadow_sync: Callable = Callable()
-var _foot_compositor: ActorFootShadowCompositor
 var _last_foot_shadow_map_epoch: int = -1
 
 
@@ -77,7 +76,7 @@ func setup(
 	WeatherBus.apply_biome_profile(biome_profile)
 	_wire_weather_bus()
 	_ensure_shadow_draw_order()
-	_ensure_foot_compositor()
+	ShadowPlacer.set_active_shadow_root(_shadow_sprites)
 	apply_all(null, 0.0)
 
 
@@ -159,8 +158,11 @@ func process_frame(delta: float) -> void:
 	process_water_burst(delta)
 	if settings.cloud_shadows and _atmosphere != null:
 		_atmosphere.refresh_cloud_drift()
-	if settings.cloud_shadows and _atmosphere != null:
-		_atmosphere.push_cloud_shadow_uniforms(settings)
+	var want_ground_shadows: bool = (
+		settings.oblique_contact_shadows or settings.cloud_shadows
+	)
+	if want_ground_shadows and _shadow_sprites != null:
+		ShadowPlacer.sync_ground_shadow_drift(settings, _shadow_sprites)
 	if settings.oblique_contact_shadows and _shadow_sprites != null and _last_grid != null:
 		var map_epoch: int = ShadowPlacer.map_composite_apply_epoch()
 		if map_epoch != _last_foot_shadow_map_epoch:
@@ -170,7 +172,6 @@ func process_frame(delta: float) -> void:
 			_apply_oblique_contact_shadows(_last_grid)
 		else:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
-	_sync_contact_shadow_mask()
 	if _character_contact_shadow_sync.is_valid():
 		_character_contact_shadow_sync.call(settings)
 
@@ -198,7 +199,7 @@ static func sync_contact_shadow_on_actors(actors: Dictionary, settings: EffectsS
 			sorted.append(actor)
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
-	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings)
+	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings, null)
 
 
 static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSettings) -> void:
@@ -208,23 +209,11 @@ static func sync_contact_shadow_on_actor_list(actors: Array, settings: EffectsSe
 			sorted.append(actor)
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
-	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings)
+	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings, null)
 
 
 func _sync_contact_shadow_mask() -> void:
-	if _atmosphere == null:
-		return
-	if not settings.cloud_shadows or not settings.oblique_contact_shadows:
-		_atmosphere.set_contact_shadow_overlay(null, Vector2.ZERO, false)
-		return
-	if _shadow_sprites == null or _shadow_sprites.get_child_count() < 1:
-		_atmosphere.set_contact_shadow_overlay(null, Vector2.ZERO, false)
-		return
-	var sprite: Sprite2D = _shadow_sprites.get_child(0) as Sprite2D
-	if sprite == null or sprite.texture == null:
-		_atmosphere.set_contact_shadow_overlay(null, Vector2.ZERO, false)
-		return
-	_atmosphere.set_contact_shadow_overlay(sprite.texture, sprite.position, true)
+	pass
 
 
 func _apply_wind_bus() -> void:
@@ -265,11 +254,7 @@ func _apply_atmosphere_visuals(grid: PlayerGrid, water_ratio: float) -> void:
 	var mist_rect: ColorRect = _sky_overlay.get_node("MistOverlay") as ColorRect
 	_sky_overlay.visible = settings.cloud_shadows or settings.mist
 	mist_rect.visible = settings.mist
-	var shadow_params: Dictionary = ShadowPalette.multiply_shader_params(settings)
-	var cloud_present: bool = true
-	if settings.time_light:
-		cloud_present = WeatherBus.shadows_visible()
-	cloud_rect.visible = settings.cloud_shadows and cloud_present
+	cloud_rect.visible = false
 
 	if settings.time_light:
 		_world_modulate.color = WeatherBus.canvas_modulate_color()
@@ -280,32 +265,24 @@ func _apply_atmosphere_visuals(grid: PlayerGrid, water_ratio: float) -> void:
 		_atmosphere.sync_map(grid, water_ratio)
 	elif not settings.time_light:
 		_world_modulate.color = Color.WHITE
-	if settings.cloud_shadows:
-		_atmosphere.push_cloud_shadow_uniforms(settings)
-	_sync_contact_shadow_mask()
 
 
 func _apply_oblique_contact_shadows(grid: PlayerGrid) -> void:
 	if _shadow_sprites == null:
 		return
-	if not settings.oblique_contact_shadows or grid == null:
+	if not settings.oblique_contact_shadows and not settings.cloud_shadows:
 		ShadowPlacer.clear(_shadow_sprites)
 		_shadow_sprites.visible = false
 		_shadow_sprites.process_mode = Node.PROCESS_MODE_DISABLED
-		_sync_contact_shadow_mask()
+		return
+	if grid == null:
 		return
 	_ensure_shadow_draw_order()
 	_shadow_sprites.process_mode = Node.PROCESS_MODE_INHERIT
 	_shadow_sprites.visible = true
 	ShadowPlacer.apply(grid, _shadow_sprites, _ground, _trees, _overlay, null, settings, _scatter)
-
-
-func _ensure_foot_compositor() -> void:
-	if _foot_compositor != null or _map_root == null:
-		return
-	_foot_compositor = ActorFootShadowCompositor.new()
-	_map_root.add_child(_foot_compositor)
-	ShadowPlacer.set_foot_cluster_root(_foot_compositor)
+	if settings.cloud_shadows:
+		ShadowPlacer.sync_ground_shadow_drift(settings, _shadow_sprites)
 
 
 func _ensure_shadow_draw_order() -> void:
@@ -352,9 +329,14 @@ func _on_weather_changed() -> void:
 		_world_modulate.color = WeatherBus.canvas_modulate_color()
 	if _ground_wired and settings.water_ripples:
 		_ground_effects.refresh_uniforms()
-	if not settings.oblique_contact_shadows or _last_grid == null:
+	if not settings.oblique_contact_shadows and not settings.cloud_shadows:
 		return
-	if WeatherBus.shadows_visible() and ShadowPlacer.is_layer_cache_empty():
-		_apply_oblique_contact_shadows(_last_grid)
+	if _last_grid == null or _shadow_sprites == null:
 		return
-	ShadowPlacer.sync_cycle(_shadow_sprites, settings)
+	if settings.oblique_contact_shadows:
+		if WeatherBus.shadows_visible() and ShadowPlacer.is_layer_cache_empty():
+			_apply_oblique_contact_shadows(_last_grid)
+		else:
+			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
+	if settings.cloud_shadows:
+		ShadowPlacer.sync_ground_shadow_drift(settings, _shadow_sprites)

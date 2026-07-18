@@ -8,10 +8,6 @@ uniform vec2 cloud_drift_offset = vec2(0.0);
 uniform float tile_px = 16.0;
 uniform vec4 shadow_tint : source_color = vec4(0.75, 0.73, 0.82, 1.0);
 uniform float shadow_strength : hint_range(0.0, 1.0) = 0.72;
-uniform sampler2D contact_shadow_tex : filter_nearest, repeat_disable;
-uniform vec2 contact_shadow_origin = vec2(0.0);
-uniform vec2 contact_shadow_size = vec2(1.0);
-uniform float has_contact_shadow = 0.0;
 
 vec2 hash22(vec2 p) {
 	p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
@@ -76,22 +72,6 @@ void fragment() {
 		discard;
 	}
 	vec3 darken = mix(vec3(1.0), shadow_tint.rgb, shade);
-
-	if (has_contact_shadow > 0.5) {
-		vec2 contact_local = map_local - contact_shadow_origin;
-		if (
-			contact_local.x >= 0.0
-			&& contact_local.y >= 0.0
-			&& contact_local.x < contact_shadow_size.x
-			&& contact_local.y < contact_shadow_size.y
-		) {
-			vec2 contact_uv = contact_local / contact_shadow_size;
-			float contact_a = texture(contact_shadow_tex, contact_uv).a;
-			if (contact_a >= 0.04) { // ALPHA_CUTOFF used in oblique shader
-				darken = vec3(1.0);
-			}
-		}
-	}
 
 	COLOR = vec4(darken, 1.0);
 }

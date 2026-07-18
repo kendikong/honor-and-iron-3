@@ -132,17 +132,9 @@ func push_cloud_shadow_uniforms(settings: EffectsSettings = null) -> void:
 	_cloud_rect.modulate = Color.WHITE
 
 
-## Oblique contact shadows are a separate layer — never punch through cloud multiply.
-func set_contact_shadow_overlay(tex: Texture2D, origin: Vector2, active: bool) -> void:
-	if _cloud_material == null or _cloud_material.shader == null:
-		return
-	if active and tex != null:
-		_cloud_material.set_shader_parameter("contact_shadow_tex", tex)
-		_cloud_material.set_shader_parameter("contact_shadow_origin", origin)
-		_cloud_material.set_shader_parameter("contact_shadow_size", tex.get_size())
-		_cloud_material.set_shader_parameter("has_contact_shadow", 1.0)
-	else:
-		_cloud_material.set_shader_parameter("has_contact_shadow", 0.0)
+## Retired — cloud shadows resolve in ground_shadow_composite.gdshader.
+func set_contact_shadow_overlay(_tex: Texture2D, _origin: Vector2, _active: bool) -> void:
+	pass
 
 
 func _push_uniforms(grid: PlayerGrid) -> void:
