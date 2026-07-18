@@ -173,7 +173,7 @@ func process_frame(delta: float) -> void:
 			_apply_oblique_contact_shadows(_last_grid)
 		else:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
-	if _character_contact_shadow_sync.is_valid() and ShadowPlacer.is_foot_atlas_dirty():
+	if settings.oblique_contact_shadows and _character_contact_shadow_sync.is_valid():
 		_character_contact_shadow_sync.call(settings)
 
 
@@ -204,6 +204,7 @@ static func sync_contact_shadow_on_actors(
 			sorted.append(actor)
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
+	ShadowPlacer.track_unit_foot_layout(sorted, shadow_root)
 	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings, shadow_root)
 
 
@@ -218,6 +219,7 @@ static func sync_contact_shadow_on_actor_list(
 			sorted.append(actor)
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
+	ShadowPlacer.track_unit_foot_layout(sorted, shadow_root)
 	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings, shadow_root)
 
 
