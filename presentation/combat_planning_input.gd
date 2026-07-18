@@ -154,30 +154,43 @@ func on_left_press(local: Vector2) -> void:
 
 func on_left_release(local: Vector2) -> void:
 	if _drag_armed and not dragging:
+		_process_unit_drop(local, false)
 		_cancel_drag_armed()
 		return
 	if not dragging:
 		return
+	var had_movement: bool = _drag_had_movement()
+	dragging = false
+	var board: BoardState = _director.board
+	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
+	var actor := board.get_unit_by_id(_drag_unit_id) if board != null else null
+	if actor == null or board == null or not board.is_in_bounds(cell):
+		_drag_unit_id = -1
+		_end_drag_interaction(true, had_movement)
+		return
+	var committed: bool = _process_unit_drop(local, had_movement)
+	var snap_back: bool = had_movement and not committed
+	_drag_unit_id = -1
+	_end_drag_interaction(false, snap_back)
+
+
+func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 	var released_unit_id: int = _drag_unit_id
 	var legal_move_tiles: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
-	dragging = false
 	var committed: bool = false
 	var board: BoardState = _director.board
 	var actor := board.get_unit_by_id(released_unit_id) if board != null else null
 	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
 	if actor == null or board == null or not board.is_in_bounds(cell):
-		_drag_unit_id = released_unit_id
-		_end_drag_interaction(true, _drag_had_movement())
-		_drag_unit_id = -1
-		return
+		return false
 	var dropped_on := board.get_unit_at(cell)
 	if dropped_on != null and dropped_on.id != actor.id:
-		committed = _plan_approach_or_trample_on_enemy(
+		return _plan_approach_or_trample_on_enemy(
 			released_unit_id, dropped_on, local, cell, [], legal_move_tiles,
 		)
-	elif cell == actor.position:
+	if cell == actor.position:
 		if _drag_unit_was_selected:
-			if not _drag_had_movement():
+			if not had_movement:
 				committed = _try_plan_wait(released_unit_id)
 				if committed:
 					_play_sfx("ability")
@@ -203,7 +216,8 @@ func on_left_release(local: Vector2) -> void:
 						_director.rpc_plan_face(released_unit_id, face)
 						_play_sfx("move")
 						committed = true
-	elif dropped_on == null:
+		return committed
+	if dropped_on == null:
 		var move_drop_ok: bool = _drop_allows_move_tile(cell, legal_move_tiles, actor)
 		if move_drop_ok:
 			if _try_commit_move_with_self_skill(released_unit_id, cell, local, [], legal_move_tiles):
@@ -212,9 +226,7 @@ func on_left_release(local: Vector2) -> void:
 				committed = true
 		if not committed and _try_plan_skill_at_coord(actor, cell, local):
 			committed = true
-	var snap_back: bool = _drag_had_movement() and not committed
-	_drag_unit_id = -1
-	_end_drag_interaction(false, snap_back)
+	return committed
 
 
 func on_right_click() -> void:
