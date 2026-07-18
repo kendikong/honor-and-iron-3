@@ -66,6 +66,10 @@ func _resize_overlays(grid: PlayerGrid) -> void:
 	_sync_sky_transform()
 
 
+func sync_sky_transform() -> void:
+	_sync_sky_transform()
+
+
 func _sync_sky_transform() -> void:
 	if _sky_overlay == null or _map_root == null:
 		return

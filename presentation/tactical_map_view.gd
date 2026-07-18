@@ -413,6 +413,7 @@ func _center_map() -> void:
 	)
 	_map_root.scale = layout["map_root_scale"]
 	position = layout["scene_position"]
+	_atmosphere.sync_sky_transform()
 	_sync_overlay_huds(layout["origin"], layout["scaled_size"])
 	if _unit_overlay != null:
 		_unit_overlay.queue_redraw()

@@ -304,6 +304,8 @@ func _ensure_sky_draw_order() -> void:
 		return
 	_sky_overlay.z_as_relative = false
 	_sky_overlay.z_index = _C.Z_SKY
+	if _atmosphere != null:
+		_atmosphere.sync_sky_transform()
 
 
 func _apply_water_vfx(grid: PlayerGrid) -> void:
