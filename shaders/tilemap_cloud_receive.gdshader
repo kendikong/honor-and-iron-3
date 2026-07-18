@@ -31,22 +31,20 @@ void fragment() {
 		discard;
 	}
 	COLOR = tex;
-	if (enable_cloud_shadows < 0.5) {
-		return;
+	if (enable_cloud_shadows >= 0.5) {
+		vec2 snapped = floor(v_map_local);
+		float field = cloud_field_at_pixel(
+			snapped,
+			cloud_drift_offset,
+			tile_px,
+			cloud_scale_tiles,
+			cloud_shape_mix,
+			cloud_shape_scale
+		);
+		float mask = cloud_shadow_mask(field, cloud_mask_low, cloud_mask_high, cloud_mask_steps);
+		float shade = mask * cloud_shadow_strength;
+		if (shade >= 0.01) {
+			COLOR.rgb = mix(COLOR.rgb, cloud_shadow_tint.rgb, shade);
+		}
 	}
-	vec2 snapped = floor(v_map_local);
-	float field = cloud_field_at_pixel(
-		snapped,
-		cloud_drift_offset,
-		tile_px,
-		cloud_scale_tiles,
-		cloud_shape_mix,
-		cloud_shape_scale
-	);
-	float mask = cloud_shadow_mask(field, cloud_mask_low, cloud_mask_high, cloud_mask_steps);
-	float shade = mask * cloud_shadow_strength;
-	if (shade < 0.01) {
-		return;
-	}
-	COLOR.rgb = mix(COLOR.rgb, cloud_shadow_tint.rgb, shade);
 }
