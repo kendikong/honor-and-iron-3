@@ -61,15 +61,6 @@ static var _map_oblique_overlay: Dictionary = {}
 static var _overlay_sample_image: Image
 static var _overlay_sample_epoch: int = -1
 
-const ACTOR_SHADOW_BAND_COUNT: int = 3
-const ACTOR_SHADOW_MAJORITY_RATIO: float = 0.5
-const ACTOR_SHADOW_BAND_X: Array = [-16.0, -8.0, 0.0, 8.0, 16.0]
-## Vertical bands from actor foot (y=0): lower legs, torso, head/hair.
-const ACTOR_SHADOW_BAND_Y: Array = [
-	[0.0, -8.0, -16.0],
-	[-14.0, -22.0, -30.0],
-	[-28.0, -38.0, -48.0],
-]
 static var _dbg_map_queued: int = 0
 static var _dbg_map_applied: int = 0
 static var _dbg_map_stale: int = 0
@@ -1599,54 +1590,16 @@ static func sample_map_oblique_alpha_at(map_px: Vector2) -> float:
 	return _sample_alpha_nearest(img, floor(local.x), floor(local.y))
 
 
-static func actor_oblique_band_modulates(
-	actor: Node2D,
-	settings: EffectsSettings = null,
-) -> Array[Color]:
-	var bands: Array[Color] = []
-	bands.resize(ACTOR_SHADOW_BAND_COUNT)
-	for i: int in ACTOR_SHADOW_BAND_COUNT:
-		bands[i] = Color.WHITE
-	if actor == null or settings == null:
-		return bands
-	if not settings.oblique_contact_shadows:
-		return bands
+static func actor_oblique_modulate(actor: Node2D, settings: EffectsSettings = null) -> Color:
+	if settings == null or not settings.oblique_contact_shadows or actor == null:
+		return Color.WHITE
 	var foot: Vector2 = actor.position
 	var scale_y: float = actor.scale.y
-	for band_i: int in ACTOR_SHADOW_BAND_COUNT:
-		var y_rows: Variant = ACTOR_SHADOW_BAND_Y[band_i]
-		if typeof(y_rows) != TYPE_ARRAY:
-			continue
-		var hit_count: int = 0
-		var sample_count: int = 0
-		var alpha_sum: float = 0.0
-		for y_off: Variant in y_rows:
-			var y_px: float = float(y_off) * scale_y
-			for x_off: Variant in ACTOR_SHADOW_BAND_X:
-				sample_count += 1
-				var alpha: float = sample_map_oblique_alpha_at(
-					foot + Vector2(float(x_off) * actor.scale.x, y_px)
-				)
-				if alpha >= 0.04:
-					hit_count += 1
-					alpha_sum += alpha
-		if sample_count < 1:
-			continue
-		if float(hit_count) / float(sample_count) < ACTOR_SHADOW_MAJORITY_RATIO:
-			continue
-		var coverage: float = alpha_sum / float(hit_count)
-		bands[band_i] = _modulate_from_shadow_coverage(coverage, settings)
-	return bands
-
-
-## Legacy single-tint path — darkest band that passed majority gate.
-static func actor_oblique_modulate(actor: Node2D, settings: EffectsSettings = null) -> Color:
-	var bands: Array[Color] = actor_oblique_band_modulates(actor, settings)
-	var darkest: Color = Color.WHITE
-	for band: Color in bands:
-		if band.r < darkest.r:
-			darkest = band
-	return darkest
+	var coverage: float = 0.0
+	for offset_y: float in [0.0, -14.0, -28.0]:
+		var map_px: Vector2 = foot + Vector2(0.0, offset_y * scale_y)
+		coverage = maxf(coverage, sample_map_oblique_alpha_at(map_px))
+	return _modulate_from_shadow_coverage(coverage, settings)
 
 
 static func _modulate_from_shadow_coverage(coverage: float, settings: EffectsSettings) -> Color:
