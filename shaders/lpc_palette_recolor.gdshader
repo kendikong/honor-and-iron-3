@@ -1,7 +1,5 @@
 shader_type canvas_item;
 
-#include "res://shaders/lpc_selection_outline.gdshaderinc"
-
 // ULPC palette swap — tolerance matches chargen WebGL (~1/255 per channel).
 uniform vec4 source_colors[8];
 uniform vec4 target_colors[8];
@@ -22,6 +20,5 @@ void fragment() {
 			}
 		}
 	}
-	out_col = lpc_selection_outline(TEXTURE, UV, TEXTURE_PIXEL_SIZE, out_col);
 	COLOR = out_col * COLOR;
 }

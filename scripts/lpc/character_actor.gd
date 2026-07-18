@@ -76,7 +76,7 @@ func clear_layers() -> void:
 	if _selection_glow != null:
 		_selection_glow.on_layers_cleared()
 		if _selection_glow.is_active():
-			_selection_glow.set_active(true)
+			_selection_glow.rebuild_from_layers()
 	if _contact_shadow != null:
 		_contact_shadow.rebuild_silhouette([], &"walk_down")
 
