@@ -204,7 +204,6 @@ static func sync_contact_shadow_on_actors(
 			sorted.append(actor)
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
-	ShadowPlacer.track_unit_foot_layout(sorted, shadow_root)
 	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings, shadow_root)
 
 
@@ -219,7 +218,6 @@ static func sync_contact_shadow_on_actor_list(
 			sorted.append(actor)
 	for actor: Variant in sorted:
 		sync_contact_shadow_on_actor(actor as Node, settings)
-	ShadowPlacer.track_unit_foot_layout(sorted, shadow_root)
 	ShadowPlacer.rebuild_foot_shadow_clusters(sorted, settings, shadow_root)
 
 

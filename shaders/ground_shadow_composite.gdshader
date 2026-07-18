@@ -1,9 +1,11 @@
 shader_type canvas_item;
 render_mode blend_mul, unshaded;
 
-// Unified ground shadow resolve: max(static map oblique, unit feet, cloud FBM) → one multiply.
+// Unified ground shadow resolve: max(static map oblique, unit feet slots, cloud FBM) → one multiply.
 
 #include "res://shaders/cloud_shadow_field.gdshaderinc"
+
+const int MAX_UNIT_FEET = 16;
 
 uniform vec2 map_size_px = vec2(256.0);
 uniform float tile_px = 16.0;
@@ -13,10 +15,9 @@ uniform vec2 map_oblique_origin = vec2(0.0);
 uniform vec2 map_oblique_size = vec2(1.0);
 uniform float has_map_oblique = 0.0;
 
-uniform sampler2D unit_feet_tex : filter_nearest, repeat_disable;
-uniform vec2 unit_feet_origin = vec2(0.0);
-uniform vec2 unit_feet_size = vec2(1.0);
-uniform float has_unit_feet = 0.0;
+uniform int unit_feet_count = 0;
+uniform vec4 unit_feet_rect[MAX_UNIT_FEET];
+uniform sampler2D unit_feet_slots[MAX_UNIT_FEET] : filter_nearest, repeat_disable;
 
 uniform vec2 cloud_drift_offset = vec2(0.0);
 uniform float enable_cloud_shadows = 0.0;
@@ -46,15 +47,30 @@ float sample_channel_alpha(
 	return texture(tex, channel_uv).a;
 }
 
+float sample_unit_feet_at(vec2 map_local) {
+	float a = 0.0;
+	for (int i = 0; i < MAX_UNIT_FEET; i++) {
+		if (i >= unit_feet_count) {
+			break;
+		}
+		vec4 rect = unit_feet_rect[i];
+		vec2 local = map_local - rect.xy;
+		if (local.x < 0.0 || local.y < 0.0 || local.x >= rect.z || local.y >= rect.w) {
+			continue;
+		}
+		vec2 uv = local / rect.zw;
+		a = max(a, texture(unit_feet_slots[i], uv).a);
+	}
+	return a;
+}
+
 void fragment() {
 	vec2 map_local = floor(UV * map_size_px);
 
 	float static_a = sample_channel_alpha(
 		map_oblique_tex, map_local, map_oblique_origin, map_oblique_size, has_map_oblique
 	);
-	float feet_a = sample_channel_alpha(
-		unit_feet_tex, map_local, unit_feet_origin, unit_feet_size, has_unit_feet
-	);
+	float feet_a = sample_unit_feet_at(map_local);
 
 	float static_shade = static_a * shadow_strength;
 	float feet_shade = feet_a * shadow_strength;
