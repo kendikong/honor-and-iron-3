@@ -144,6 +144,7 @@ func _display_scale() -> float:
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
 	if _director != null and _director.peek_movement_only_refresh():
+		_refresh_player_exhaustion()
 		queue_redraw()
 		return
 	_sync_actors()
@@ -169,6 +170,7 @@ func _on_selection_changed(unit_id: int) -> void:
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
 		_sync_planning_actor_positions()
+		_refresh_player_exhaustion()
 
 
 func _refresh_planning_visuals() -> void:
@@ -176,11 +178,16 @@ func _refresh_planning_visuals() -> void:
 		var actor: CharacterActor = _actors[unit_id] as CharacterActor
 		if actor != null:
 			actor.modulate = Color.WHITE
-	if _board != null:
-		for unit: UnitState in _board.units:
-			if unit.is_alive() and not unit.is_enemy():
-				_apply_exhaustion_state(unit)
+	_refresh_player_exhaustion()
 	_refresh_selection_glow()
+
+
+func _refresh_player_exhaustion() -> void:
+	if _board == null:
+		return
+	for unit: UnitState in _board.units:
+		if unit.is_alive() and not unit.is_enemy():
+			_apply_exhaustion_state(unit)
 
 
 func _refresh_selection_glow() -> void:
@@ -615,7 +622,7 @@ func _sync_planning_unit_position(unit: UnitState) -> void:
 	var target: Vector2i = unit.position
 	var current_cell: Vector2i = _actor_grid_cell(unit.id)
 	if current_cell == target:
-		_apply_facing(unit.id, unit.facing)
+		_sync_planning_final_facing(unit.id)
 		_update_depth(unit.id)
 		return
 	if _should_rubberband_planning_move(unit.id, current_cell, target):
@@ -695,9 +702,7 @@ func _snap_actor_rubberband(unit_id: int, grid_cell: Vector2i) -> void:
 
 func _finish_snap_at_cell(unit_id: int, grid_cell: Vector2i) -> void:
 	_position_actor(unit_id, grid_cell)
-	var unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
-	if unit != null:
-		_apply_facing(unit_id, unit.facing)
+	_sync_planning_final_facing(unit_id)
 	_update_depth(unit_id)
 	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
 	if actor != null:
@@ -759,13 +764,10 @@ func _animate_planning_path(
 	var cells: Array[Vector2i] = _resolve_planning_path_cells(from_cell, to_cell, unit)
 	if cells.is_empty():
 		_position_actor(unit_id, to_cell)
-		_apply_facing(unit_id, unit.facing)
+		_sync_planning_final_facing(unit_id)
 		_update_depth(unit_id)
 		return
 	unit.position = to_cell
-	if cells.size() >= 1:
-		var prev: Vector2i = from_cell if cells.size() == 1 else cells[cells.size() - 2]
-		unit.facing = _facing_toward(prev, cells[cells.size() - 1])
 	_play_cell_path_tween(unit_id, from_cell, cells, CombatDirector.MOVE_STEP_TIME, use_run)
 
 
@@ -803,16 +805,33 @@ func _play_cell_path_tween(
 		actor.set_walking(false)
 		var live := _board.get_unit_by_id(unit_id) if _board != null else null
 		actor.set_running(live != null and live.has_status(GameEnums.StatusType.RUNNING))
-		if live != null:
-			_apply_facing(unit_id, live.facing)
+		_sync_planning_final_facing(unit_id)
 		_update_depth(unit_id)
 	)
 
 
-func _apply_path_step_facing(unit_id: int, facing: int) -> void:
+func _resolve_planning_facing(unit_id: int) -> int:
+	var projected := _proj_unit(unit_id)
+	if projected != null:
+		return projected.facing
+	if _board != null:
+		var unit := _board.get_unit_by_id(unit_id)
+		if unit != null:
+			return unit.facing
+	return GameEnums.Facing.SOUTH
+
+
+func _sync_planning_final_facing(unit_id: int) -> void:
+	var facing: int = _resolve_planning_facing(unit_id)
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if unit != null:
 		unit.facing = facing
+	_apply_facing(unit_id, facing)
+	if unit != null:
+		_apply_exhaustion_state(unit)
+
+
+func _apply_path_step_facing(unit_id: int, facing: int) -> void:
 	_apply_facing(unit_id, facing, true)
 
 
