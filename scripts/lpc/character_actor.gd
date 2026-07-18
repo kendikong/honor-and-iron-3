@@ -9,8 +9,9 @@ const HURT_ANIM: StringName = &"hurt_down"
 const HURT_SPEED_SCALE: float = 1.6
 const DEATH_GROUND_LINGER_SEC: float = 1.75
 const DEATH_FADE_SEC: float = 0.4
-const NUDGE_PULLBACK_PX: float = 11.0
+const NUDGE_PULLBACK_PX: float = 7.0
 const NUDGE_THRUST_PX: float = 20.0
+const NUDGE_PULLBACK_HOLD_SEC: float = 0.16
 const NUDGE_KNOCKBACK_PX: float = 13.0
 
 const META_ITEM_ID: StringName = &"lpc_item_id"
@@ -139,18 +140,19 @@ func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:
 		self,
 		"position",
 		_anchor_position - dir * NUDGE_PULLBACK_PX,
-		0.09,
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		0.14,
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_callback(func() -> void:
 		set_facing(attack_anim)
 		set_walking(true)
 	)
+	tw.tween_interval(NUDGE_PULLBACK_HOLD_SEC)
 	tw.tween_property(
 		self,
 		"position",
 		_anchor_position + dir * NUDGE_THRUST_PX,
-		0.07,
-	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+		0.06,
+	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
 	tw.tween_property(self, "position", _anchor_position, 0.14).set_trans(Tween.TRANS_SINE)
 	tw.tween_callback(func() -> void:
 		set_walking(false)

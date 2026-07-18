@@ -4,8 +4,8 @@ extends Label
 ## Pixel-art friendly combat floater — snaps to whole pixels, minimal bounce.
 
 const ACCUMULATION_DURATION: float = 0.45
-const BASE_FONT_SIZE: int = 8
-const BASE_OUTLINE: int = 2
+const BASE_FONT_SIZE: int = 14
+const BASE_OUTLINE: int = 3
 
 var _accumulated_damage: int = 0
 var _current_tween: Tween
@@ -23,13 +23,13 @@ func _ready() -> void:
 
 
 func setup(pos: Vector2, text_val: String, color: Color, ui_scale: float = 1.0) -> void:
-	_ui_scale = maxf(ui_scale, 0.5)
+	_ui_scale = maxf(ui_scale, 1.25)
 	_base_pos = Vector2(roundf(pos.x), roundf(pos.y))
 	position = _base_pos
 	text = text_val
-	var font_size: int = maxi(6, roundi(float(BASE_FONT_SIZE) * _ui_scale))
+	var font_size: int = maxi(10, roundi(float(BASE_FONT_SIZE) * _ui_scale))
 	add_theme_font_size_override("font_size", font_size)
-	add_theme_constant_override("outline_size", maxi(1, roundi(float(BASE_OUTLINE) * _ui_scale)))
+	add_theme_constant_override("outline_size", maxi(2, roundi(float(BASE_OUTLINE) * _ui_scale)))
 	add_theme_color_override("font_color", color)
 	_accumulated_damage = text_val.to_int()
 	_animate()
@@ -38,13 +38,13 @@ func setup(pos: Vector2, text_val: String, color: Color, ui_scale: float = 1.0) 
 func _animate() -> void:
 	if _current_tween != null and _current_tween.is_valid():
 		_current_tween.kill()
-	scale = Vector2(0.75, 0.75)
+	scale = Vector2.ONE
 	modulate.a = 1.0
 	position = _base_pos
-	var rise: float = 14.0 * _ui_scale
+	var rise: float = 18.0 * _ui_scale
 	_current_tween = create_tween()
 	_current_tween.set_parallel(true)
-	_current_tween.tween_property(self, "scale", Vector2(1.05, 1.05), 0.08).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_LINEAR)
+	_current_tween.tween_property(self, "scale", Vector2(1.12, 1.12), 0.08).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_LINEAR)
 	_current_tween.tween_property(
 		self,
 		"position",

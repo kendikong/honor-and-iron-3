@@ -147,15 +147,36 @@ func _on_selection_changed(unit_id: int) -> void:
 func set_drag_attack_target(unit_id: int) -> void:
 	if _drag_target_id == unit_id:
 		return
+	_reset_drag_target_modulate()
 	_drag_target_id = unit_id
+	_apply_drag_target_modulate()
 	queue_redraw()
 
 
 func clear_drag_attack_target() -> void:
 	if _drag_target_id < 0:
 		return
+	_reset_drag_target_modulate()
 	_drag_target_id = -1
 	queue_redraw()
+
+
+func _reset_drag_target_modulate() -> void:
+	if _drag_target_id < 0:
+		return
+	var actor: CharacterActor = _actors.get(_drag_target_id)
+	if actor != null:
+		actor.modulate = Color.WHITE
+
+
+func _apply_drag_target_modulate() -> void:
+	if _drag_target_id < 0:
+		return
+	var actor: CharacterActor = _actors.get(_drag_target_id)
+	if actor == null:
+		return
+	var pulse: float = 0.5 + 0.5 * sin(Time.get_ticks_msec() / 95.0)
+	actor.modulate = Color(1.0 + 0.62 * pulse, 1.0 + 0.28 * pulse, 0.66 + 0.2 * pulse, 1.0)
 
 
 func apply_sim_event(event: SimEvent) -> void:
@@ -337,11 +358,7 @@ func spawn_floating_damage(unit_id: int, amount: int, dmg_type: StringName) -> v
 
 
 func _floating_text_scale() -> float:
-	var char_scale: float = _display_scale()
-	var map_scale: float = 1.0
-	if _map_view != null:
-		map_scale = _map_view.get_map_root_scale()
-	return clampf(char_scale / maxf(map_scale, 0.5), 0.75, 1.35)
+	return maxf(1.5, _display_scale() * 0.9)
 
 
 func _damage_number_color(dmg_type: StringName) -> Color:
@@ -985,6 +1002,7 @@ func _process(delta: float) -> void:
 		_tick_hit_bursts(delta)
 		need_redraw = true
 	if _drag_target_id >= 0:
+		_apply_drag_target_modulate()
 		need_redraw = true
 	if _any_predicted_change():
 		need_redraw = true

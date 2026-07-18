@@ -1143,6 +1143,30 @@ func _sync_threat_origin_from_cell(cell: Vector2i) -> void:
 		_planning.clear_threat_origin()
 
 
+func _set_drag_attack_target(target_id: int, preview: Dictionary) -> void:
+	if target_id < 0:
+		target_id = _preview_attack_target_id(preview, _drag_unit_id)
+	if target_id >= 0:
+		_planning.set_drag_attack_target(target_id)
+	else:
+		_planning.set_drag_attack_target(-1)
+
+
+func _preview_attack_target_id(preview: Dictionary, actor_id: int) -> int:
+	for event: Variant in preview.get("events", []):
+		if not event is SimEvent:
+			continue
+		var sim: SimEvent = event as SimEvent
+		if sim.type != GameEnums.SimEventType.ABILITY_USED:
+			continue
+		if int(sim.data.get("actor", -1)) != actor_id:
+			continue
+		var target_unit_id: int = int(sim.data.get("target_unit", -1))
+		if target_unit_id >= 0:
+			return target_unit_id
+	return -1
+
+
 func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) -> void:
 	if _planning == null:
 		return
@@ -1185,7 +1209,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.SPELL, atk_face, preview_cell, drag_preview_failed)
 			else:
 				_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.ATTACK, atk_face, preview_cell, drag_preview_failed)
-			_planning.set_drag_attack_target(drag_target_id)
+			_set_drag_attack_target(drag_target_id, preview)
 			return
 		if _can_move_to(actor, occ.position):
 			var walk_face: int = _facing_toward(actor.position, occ.position)
@@ -1218,7 +1242,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			if dash_target != null and dash_target.is_enemy():
 				drag_target_id = dash_target.id
 			_planning.update_drag_sprite(local, mode, dash_face, preview_cell, drag_preview_failed)
-			_planning.set_drag_attack_target(drag_target_id)
+			_set_drag_attack_target(drag_target_id, preview)
 			return
 	if _drag_route.size() > 1 or _drag_last_free != unit.position:
 		var move_face: int = _facing_from_drop(local, _drag_last_free)
@@ -1227,7 +1251,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 		elif _drag_last_free != unit.position:
 			move_face = _facing_toward(unit.position, _drag_last_free)
 		_planning.update_drag_sprite(local, TacticalUnitLayer.DragPreviewAnim.WALK, move_face, preview_cell, drag_preview_failed)
-		_planning.set_drag_attack_target(-1)
+		_set_drag_attack_target(-1, preview)
 		return
 	var idle_face: int = _facing_from_drop(local, cell)
 	if idle_face < 0:
