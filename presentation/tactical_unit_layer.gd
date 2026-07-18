@@ -143,12 +143,29 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
-	_sync_actors()
-	var affected: Array[int] = []
-	if _director != null:
-		affected = _director.plan_affected_unit_ids
-	_refresh_planning_visuals(affected)
+	if _is_planning_phase():
+		_lightweight_planning_board_refresh()
+	else:
+		_sync_actors()
+		_refresh_planning_visuals()
 	queue_redraw()
+
+
+func _lightweight_planning_board_refresh() -> void:
+	if _board == null:
+		return
+	for unit: UnitState in _board.units:
+		if not unit.is_alive():
+			continue
+		_ensure_actor(unit)
+		if unit.is_enemy():
+			if not _move_tweens.has(unit.id):
+				_position_actor(unit.id, unit.position)
+				_apply_facing(unit.id, unit.facing)
+		else:
+			_apply_exhaustion_state(unit)
+		_update_depth(unit.id)
+	_refresh_selection_glow()
 
 
 func _on_preview_updated(result: SimResult) -> void:
@@ -313,9 +330,7 @@ func _sync_actors() -> void:
 		elif _move_tweens.has(unit.id):
 			pass
 		elif _is_planning_phase() and not unit.is_enemy():
-			if not _move_tweens.has(unit.id) and _actor_grid_cell(unit.id) != unit.position:
-				_position_actor(unit.id, unit.position)
-				_apply_facing(unit.id, unit.facing)
+			pass
 		else:
 			_position_actor(unit.id, unit.position)
 		if not (_drag_preview_active and unit.id == _drag_preview_id):

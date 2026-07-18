@@ -53,8 +53,6 @@ var turn_start_board: BoardState
 var plan_revision: int = 0
 ## Units touched by the latest plan add/remove (lightweight view refresh).
 var plan_affected_unit_ids: Array[int] = []
-var _queued_preview: SimResult = null
-var _pending_preview_build: Dictionary = {}
 ## Populated by _try_add_multiple to skip a second simulate_player_turn in _refresh_plan.
 var _pending_refresh_sim: Dictionary = {}
 
@@ -1311,7 +1309,6 @@ func _refresh_plan() -> void:
 
 	if any_cancelled:
 		_pending_refresh_sim.clear()
-		_pending_preview_build.clear()
 		_refresh_plan()
 		return
 
@@ -1337,48 +1334,32 @@ func _refresh_plan() -> void:
 	projected_state.intents = new_intents
 
 	if not anim_events.is_empty():
-		EventBus.planning_commit_events.emit(anim_events)
+		var commit_anims: Array[SimEvent] = []
+		for e: SimEvent in anim_events:
+			if e.type == GameEnums.SimEventType.UNIT_MOVED:
+				continue
+			commit_anims.append(e)
+		if not commit_anims.is_empty():
+			EventBus.planning_commit_events.emit(commit_anims)
 	plan_revision += 1
 	EventBus.board_changed.emit(board)
 	EventBus.timeline_changed.emit(plan_to_run, statuses)
 	
-	_pending_preview_build = {
-		"projected": projected_state.clone(),
-		"player_events": player_events.duplicate(),
-		"intents": new_intents.duplicate(),
-	}
-	_queue_preview_updated()
-
-func _queue_preview_updated() -> void:
-	call_deferred("_emit_queued_preview")
-
-
-func _emit_queued_preview() -> void:
-	if _pending_preview_build.is_empty():
-		if _queued_preview != null:
-			var res: SimResult = _queued_preview
-			_queued_preview = null
-			EventBus.preview_updated.emit(res)
-		return
-	var projected: BoardState = _pending_preview_build["projected"] as BoardState
-	var player_events: Array = _pending_preview_build["player_events"]
-	var new_intents: Array = _pending_preview_build["intents"]
-	_pending_preview_build.clear()
-	var preview_board: BoardState = projected.clone()
+	var preview_board: BoardState = projected_state.clone()
 	var evs: Array[SimEvent] = []
-	for e: Variant in player_events:
-		if e is SimEvent:
-			evs.append(e)
+	for e: SimEvent in player_events:
+		evs.append(e)
 	evs.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
-	for intent: Variant in new_intents:
-		if not intent is Intent:
-			continue
-		for action: TimelineAction in (intent as Intent).actions:
+	for intent: Intent in new_intents:
+		for action: TimelineAction in intent.actions:
 			ResolutionPipeline.apply_action(preview_board, action, evs)
 	ResolutionPipeline.resolve_pending_pushes(preview_board, evs)
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = evs
-	EventBus.preview_updated.emit(sim_res)
+	call_deferred("_emit_preview_updated", sim_res)
+
+func _emit_preview_updated(result: SimResult) -> void:
+	EventBus.preview_updated.emit(result)
 
 func _capture_turn_start() -> void:
 	turn_start_board = base_board.clone()
