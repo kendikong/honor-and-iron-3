@@ -33,6 +33,7 @@ var _ground_wired: bool = false
 var _weather_wired: bool = false
 var _last_grid: PlayerGrid
 var _character_contact_shadow_sync: Callable = Callable()
+var _foot_compositor: ActorFootShadowCompositor
 var _last_foot_shadow_map_epoch: int = -1
 
 
@@ -172,7 +173,7 @@ func process_frame(delta: float) -> void:
 			_apply_oblique_contact_shadows(_last_grid)
 		else:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
-	if _character_contact_shadow_sync.is_valid() and ShadowPlacer.is_foot_atlas_dirty():
+	if _character_contact_shadow_sync.is_valid():
 		_character_contact_shadow_sync.call(settings)
 
 
@@ -304,6 +305,22 @@ func _ensure_shadow_draw_order() -> void:
 	var tree_idx: int = _trees.get_index()
 	if tree_idx >= 0 and _shadow_sprites.get_parent() == _map_root:
 		_map_root.move_child(_shadow_sprites, tree_idx)
+	_ensure_foot_compositor()
+
+
+func _ensure_foot_compositor() -> void:
+	if _map_root == null:
+		return
+	if _foot_compositor != null and is_instance_valid(_foot_compositor):
+		return
+	for child: Node in _map_root.get_children():
+		if child is ActorFootShadowCompositor:
+			_foot_compositor = child as ActorFootShadowCompositor
+			ShadowPlacer.set_foot_cluster_root(_foot_compositor)
+			return
+	_foot_compositor = ActorFootShadowCompositor.new()
+	_map_root.add_child(_foot_compositor)
+	ShadowPlacer.set_foot_cluster_root(_foot_compositor)
 
 
 func _apply_water_vfx(grid: PlayerGrid) -> void:

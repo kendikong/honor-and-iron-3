@@ -1,29 +1,41 @@
 class_name CharacterContactShadow
 extends Node2D
 
-## Oblique contact shadow bake for LPC actors — ground display is unified in GroundShadows only.
+## Oblique multiply contact shadow for LPC actor — delegates to ShadowPlacer.sync_actor_contact_shadow.
 
 const _LPC = preload("res://scripts/lpc/lpc_constants.gd")
 const FOOT_LOCAL_Y: float = 0.0
 
+var _sprite: Sprite2D
 var _caster: Image
 var _foot_center_tex: Vector2 = Vector2.ZERO
 var _silhouette_version: int = 0
 
 
 func _ready() -> void:
-	visible = false
-	show_behind_parent = true
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	z_as_relative = true
 	z_index = -1
-	_purge_legacy_shadow_sprite()
+	_sprite = Sprite2D.new()
+	_sprite.name = "ShadowSprite"
+	_sprite.centered = false
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite.z_as_relative = true
+	_sprite.z_index = 0
+	_sprite.visible = false
+	_sprite.material = ShadowPlacer.duplicate_shadow_material()
+	var mat: ShaderMaterial = _sprite.material as ShaderMaterial
+	if mat != null:
+		mat.set_shader_parameter("has_map_oblique", 0.0)
+	add_child(_sprite)
 
 
 func rebuild_silhouette(layers: Array[AnimatedSprite2D], anim: StringName) -> void:
 	_caster = _composite_layers(layers, anim)
 	if _caster == null:
 		_foot_center_tex = Vector2.ZERO
+		_sprite.visible = false
+		_sprite.texture = null
 		return
 	_foot_center_tex = ShadowPlacer.foot_center_from_image(_caster)
 	_silhouette_version += 1
@@ -31,34 +43,25 @@ func rebuild_silhouette(layers: Array[AnimatedSprite2D], anim: StringName) -> vo
 
 
 func sync(settings: EffectsSettings = null) -> void:
-	var actor: Node2D = get_parent() as Node2D
-	if actor == null:
+	if _sprite == null:
 		return
 	if settings == null or not settings.oblique_contact_shadows or _caster == null:
-		ShadowPlacer.clear_actor_foot_bake(actor)
+		_sprite.visible = false
+		_sprite.texture = null
 		return
 	ShadowPlacer.sync_actor_contact_shadow(
-		actor,
+		_sprite,
 		_caster,
 		_foot_center_tex,
 		Vector2(0.0, FOOT_LOCAL_Y),
 		_silhouette_version,
 		settings,
+		get_parent() as Node2D,
 	)
 
 
 func get_shadow_sprite() -> Sprite2D:
-	return null
-
-
-func _purge_legacy_shadow_sprite() -> void:
-	for child: Node in get_children():
-		if child is Sprite2D and str(child.name) == "ShadowSprite":
-			var spr: Sprite2D = child as Sprite2D
-			spr.visible = false
-			spr.material = null
-			spr.texture = null
-			spr.queue_free()
+	return _sprite
 
 
 func _composite_layers(layers: Array[AnimatedSprite2D], anim: StringName) -> Image:

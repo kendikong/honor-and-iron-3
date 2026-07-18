@@ -525,6 +525,7 @@ func _kill_combat_tween() -> void:
 
 func set_display_scale(scale_factor: float) -> void:
 	scale = Vector2(scale_factor, scale_factor)
+	ShadowPlacer.invalidate_foot_cluster_layout()
 
 
 func update_tree_depth_sort(
