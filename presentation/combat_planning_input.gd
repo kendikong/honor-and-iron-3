@@ -15,7 +15,6 @@ var _sfx: SfxPlayer
 
 var dragging: bool = false
 var aiming: bool = false
-var _click_preview_active: bool = false
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -305,7 +304,6 @@ func _sync_intent_live_board() -> void:
 
 
 func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
-	_end_click_sprite_preview()
 	_stash_committed_preview()
 	_clear_hover_preview()
 	_sync_intent_skill_mode()
@@ -493,13 +491,7 @@ func is_live_preview_active() -> bool:
 		return false
 	if selected_phase_action_exhausted():
 		return false
-	if dragging or aiming:
-		return preview_state.preview_board != null
-	if _click_preview_active:
-		return preview_state.preview_board != null
-	if _skill_interaction_active() or _run_mode_selected():
-		return preview_state.preview_board != null
-	return false
+	return preview_state.preview_board != null
 
 
 func selected_phase_action_exhausted(unit_id: int = -1) -> bool:
@@ -560,48 +552,42 @@ func _refresh_selected_interaction_preview() -> void:
 		return
 	if _run_mode_selected(p_unit) and _can_move_to(p_unit, cell):
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
-		_refresh_click_sprite_preview(cell)
+		_refresh_click_target_highlight()
 		return
 	if _basic_move_allowed() and _can_move_to(p_unit, cell):
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
-		_refresh_click_sprite_preview(cell)
+		_refresh_click_target_highlight()
 		return
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
 		var target_id := _hover_attack_target_id()
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
-		_refresh_click_sprite_preview(cell)
+		_refresh_click_target_highlight()
 		return
 	if force_basic_movement and _can_move_to(p_unit, cell):
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
-		_refresh_click_sprite_preview(cell)
+		_refresh_click_target_highlight()
 		return
 	_restore_hover_preview()
-	_end_click_sprite_preview()
 
 
-func _refresh_click_sprite_preview(cell: Vector2i) -> void:
-	if _planning == null or _director == null or _director.selected_unit_id < 0:
+func _refresh_click_target_highlight() -> void:
+	if _planning == null or _director == null:
 		return
-	if not _click_preview_active:
-		_planning.begin_click_preview(_director.selected_unit_id)
-		_click_preview_active = true
-	var local: Vector2 = _map_view.grid_to_local(cell) if _map_view != null else Vector2.ZERO
-	var preview: Dictionary = {}
-	if preview_state.preview_board != null:
-		preview = {"events": [], "temp_board": preview_state.preview_board}
-	_update_drag_sprite(local, cell, preview)
-
-
-func _end_click_sprite_preview() -> void:
-	if not _click_preview_active:
-		return
-	_click_preview_active = false
-	if _planning != null:
-		_planning.end_click_preview()
+	var target_id: int = _hover_attack_target_id()
+	if target_id < 0 and _director.board != null and _intent_state != null:
+		var cell: Vector2i = _intent_state.hover_coord
+		var occ := _director.board.get_unit_at(cell)
+		if occ != null and occ.is_enemy():
+			target_id = occ.id
+	if target_id >= 0:
+		_planning.set_drag_attack_target(target_id)
+	else:
+		_planning.set_drag_attack_target(-1)
 
 
 func _restore_hover_preview() -> void:
-	_end_click_sprite_preview()
+	if _planning != null:
+		_planning.set_drag_attack_target(-1)
 	preview_state.clear_interaction()
 	preview_state.preview_board = null
 	preview_state.preview_paths.clear()
@@ -1341,9 +1327,9 @@ func _drag_move_preview_mode(unit: UnitState) -> int:
 
 
 func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) -> void:
-	if _planning == null:
+	if _planning == null or not dragging:
 		return
-	var active_unit_id: int = _drag_unit_id if dragging else _director.selected_unit_id
+	var active_unit_id: int = _drag_unit_id
 	if active_unit_id < 0:
 		_planning.set_drag_attack_target(-1)
 		return
@@ -1352,7 +1338,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 	if unit == null:
 		_planning.set_drag_attack_target(-1)
 		return
-	var preview_cell: Vector2i = _drag_last_free if dragging else cell
+	var preview_cell: Vector2i = _drag_last_free
 	if preview_state.preview_board != null:
 		var pv := preview_state.preview_board.get_unit_by_id(active_unit_id)
 		if pv != null:
@@ -1395,7 +1381,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			)
 			_planning.set_drag_attack_target(-1)
 			return
-	if cell == actor.position and (dragging and _drag_unit_was_selected or _click_preview_active) and _director.selected_ability_index >= 0:
+	if cell == actor.position and _drag_unit_was_selected and _director.selected_ability_index >= 0:
 		var self_ability := _selected_ability_data(actor)
 		if AbilitySystem.can_target_self(actor, self_ability):
 			var self_face: int = _facing_from_drop(local, cell)
@@ -1423,7 +1409,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			_planning.update_drag_sprite(local, mode, dash_face, preview_cell, drag_preview_failed)
 			_set_drag_attack_target(drag_target_id, preview)
 			return
-	if _drag_route.size() > 1 or (dragging and _drag_last_free != unit.position) or (not dragging and cell != unit.position):
+	if _drag_route.size() > 1 or _drag_last_free != unit.position:
 		if not force_basic_movement and _director.selected_ability_index >= 0:
 			var move_self_ability := _selected_ability_data(actor)
 			if (

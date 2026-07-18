@@ -250,14 +250,6 @@ func set_hover_coord(coord: Vector2i) -> void:
 	queue_redraw()
 
 
-func begin_click_preview(unit_id: int) -> void:
-	begin_drag_sprite(unit_id)
-
-
-func end_click_preview() -> void:
-	end_drag_sprite()
-
-
 func begin_drag_sprite(unit_id: int) -> void:
 	if _unit_layer != null:
 		_unit_layer.begin_drag_preview(unit_id)
