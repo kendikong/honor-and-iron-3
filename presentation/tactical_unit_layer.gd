@@ -160,7 +160,7 @@ func _on_selection_changed(unit_id: int) -> void:
 
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	_refresh_planning_visuals()
-	if CombatDirector.is_planning_phase(_phase):
+	if _director != null and CombatDirector.is_planning_phase(_director.phase):
 		_sync_planning_actor_positions()
 
 
@@ -289,12 +289,13 @@ func _sync_actors() -> void:
 			pass
 		elif _move_tweens.has(unit.id):
 			pass
-		elif CombatDirector.is_planning_phase(_phase) and not unit.is_enemy():
+		elif _is_planning_phase() and not unit.is_enemy():
 			_sync_planning_unit_position(unit)
 		else:
 			_position_actor(unit.id, unit.position)
 		if not (_drag_preview_active and unit.id == _drag_preview_id):
-			_apply_facing(unit.id, unit.facing)
+			if not _move_tweens.has(unit.id):
+				_apply_facing(unit.id, unit.facing)
 			_apply_exhaustion_state(unit)
 		_update_depth(unit.id)
 	for id: Variant in _actors.keys():
@@ -564,8 +565,14 @@ func _snap_move(event: SimEvent) -> void:
 	_update_depth(unit_id)
 
 
+func _is_planning_phase() -> bool:
+	if _director != null:
+		return CombatDirector.is_planning_phase(_director.phase)
+	return CombatDirector.is_planning_phase(_phase)
+
+
 func _sync_planning_actor_positions() -> void:
-	if _board == null or _map_view == null or not CombatDirector.is_planning_phase(_phase):
+	if _board == null or _map_view == null or not _is_planning_phase():
 		return
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or unit.is_enemy():
@@ -602,15 +609,22 @@ func _unit_uses_run_anim(unit_id: int) -> bool:
 
 
 func _find_display_path(from_cell: Vector2i, to_cell: Vector2i, unit: UnitState) -> Array[Vector2i]:
-	if from_cell == to_cell or _board == null:
+	if from_cell == to_cell or _board == null or unit == null:
 		return []
+	var path_board: BoardState = _board.clone()
+	var path_unit: UnitState = path_board.get_unit_by_id(unit.id)
+	if path_unit == null:
+		return []
+	GridSystem.set_occupant(path_board, path_unit.position, -1)
+	path_unit.position = from_cell
+	GridSystem.set_occupant(path_board, from_cell, path_unit.id)
 	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
 	var mt: int = (
 		unit.definition.movement_type
 		if unit.definition != null
 		else GameEnums.MovementType.WALK
 	)
-	return MovementSystem.find_path(_board, from_cell, to_cell, 999, mt, move_cost)
+	return MovementSystem.find_path(path_board, from_cell, to_cell, 999, mt, move_cost)
 
 
 func _animate_planning_path(
