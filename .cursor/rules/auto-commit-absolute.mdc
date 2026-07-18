@@ -31,6 +31,7 @@ If the turn makes **zero** file changes (read-only Q&A), skip commits.
 - **Do not defer** commits to phase end only — **every prompt with edits** gets a commit.
 - **Do not** treat "user didn't say commit" as a reason to skip.
 - Commit message: one short sentence on **why** / snapshot label (phase: `Complete Phase N: …`).
+- **After every commit:** run `git rev-parse HEAD` and report the **full 40-char hash** in the turn **Changelog** under `**Commit:** \`<hash>\`` so the user can reference it for reverts. Example: `**Commit:** \`31b6fc469c...\``.
 
 ## Failure mode
 

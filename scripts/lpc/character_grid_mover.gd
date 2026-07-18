@@ -8,8 +8,6 @@ const STEP_SEC: float = 0.16
 ## Diagonal cell centers are sqrt(2)× farther — match cardinal world speed.
 const DIAGONAL_STEP_SEC: float = STEP_SEC * sqrt(2.0)
 
-signal step_finished(cell: Vector2i)
-
 const ANIM_UP: StringName = &"walk_up"
 const ANIM_LEFT: StringName = &"walk_left"
 const ANIM_DOWN: StringName = &"walk_down"
@@ -174,7 +172,6 @@ func _on_step_finished() -> void:
 	if _actor != null:
 		_actor.position = _cell_foot_px(grid_cell)
 	refresh_depth_sort()
-	step_finished.emit(grid_cell)
 	var held: Vector2i = _held_move_dir()
 	if held == Vector2i.ZERO:
 		if _actor != null:

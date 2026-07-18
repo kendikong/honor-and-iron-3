@@ -60,7 +60,6 @@ static var _async_pending: Dictionary = {}
 static var _map_oblique_overlay: Dictionary = {}
 static var _overlay_sample_image: Image
 static var _overlay_sample_epoch: int = -1
-static var _actor_drift_cache: Dictionary = {}
 
 const ACTOR_SHADOW_BAND_COUNT: int = 3
 const ACTOR_SHADOW_MAJORITY_RATIO: float = 0.5
@@ -293,9 +292,6 @@ static func sync_actor_contact_shadow(
 		_last_actor_bake_key = -1
 		_last_actor_applied_epoch = -1
 		_last_actor_synced_silhouette = -1
-		if actor != null:
-			var aid: int = actor.get_instance_id()
-			_actor_drift_cache.erase(aid)
 		_clear_actor_sprite(sprite)
 		return
 	var want_actor_rebake: bool = not geometry_blocked and (map_applied or silhouette_stale)
@@ -347,64 +343,6 @@ static func sync_actor_contact_shadow(
 			has_clouds = 1.0
 		mat.set_shader_parameter("has_cloud_shadow", has_clouds)
 		mat.set_shader_parameter("cloud_drift_offset", atmo["cloud_drift_offset"])
-
-
-static func sync_actor_cloud_drift_only(
-	sprite: Sprite2D,
-	settings: EffectsSettings,
-	actor_id: int,
-) -> void:
-	if settings == null or not settings.cloud_shadows or sprite == null or not sprite.visible:
-		return
-	var drift_key: int = _cloud_drift_key()
-	if _actor_drift_cache.get(actor_id, -1) == drift_key:
-		return
-	var mat: ShaderMaterial = sprite.material as ShaderMaterial
-	if mat == null:
-		return
-	var atmo: Dictionary = WeatherBus.atmosphere_uniforms()
-	var has_clouds: float = 0.0
-	if float(atmo.get("cloud_shadow_strength", 1.0)) >= 0.01:
-		has_clouds = 1.0
-	mat.set_shader_parameter("has_cloud_shadow", has_clouds)
-	mat.set_shader_parameter("cloud_drift_offset", atmo["cloud_drift_offset"])
-	_actor_drift_cache[actor_id] = drift_key
-
-
-static func _cloud_drift_key() -> int:
-	var d: Vector2 = WeatherBus.cloud_drift_offset
-	return hash(Vector2i(int(floor(d.x * 64.0)), int(floor(d.y * 64.0))))
-
-
-## One foot shadow per grid cell — higher instance_id yields so multiply layers do not stack.
-static func apply_actor_foot_shadow_cell_occlusion(actors: Array) -> void:
-	var cell_winners: Dictionary = {}
-	for actor_var: Variant in actors:
-		var actor: Node2D = actor_var as Node2D
-		if actor == null or not is_instance_valid(actor):
-			continue
-		var cell: Vector2i = Vector2i(
-			int(floor(actor.position.x / float(TILE_PX))),
-			int(floor(actor.position.y / float(TILE_PX))),
-		)
-		var winner_id: int = int(cell_winners.get(cell, -1))
-		var actor_id: int = actor.get_instance_id()
-		if winner_id < 0 or actor_id < winner_id:
-			cell_winners[cell] = actor_id
-	for actor_var: Variant in actors:
-		var actor: Node2D = actor_var as Node2D
-		if actor == null or not actor.has_method("get_contact_shadow_sprite"):
-			continue
-		var sprite: Sprite2D = actor.call("get_contact_shadow_sprite") as Sprite2D
-		if sprite == null or not sprite.visible:
-			continue
-		var cell: Vector2i = Vector2i(
-			int(floor(actor.position.x / float(TILE_PX))),
-			int(floor(actor.position.y / float(TILE_PX))),
-		)
-		var winner_id: int = int(cell_winners.get(cell, actor.get_instance_id()))
-		if actor.get_instance_id() != winner_id:
-			sprite.visible = false
 
 
 static func _sync_actor_map_oblique(sprite: Sprite2D, actor: Node2D) -> void:
