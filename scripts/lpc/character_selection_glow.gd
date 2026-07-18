@@ -36,7 +36,11 @@ func set_active(active: bool, color: Color = glow_color) -> void:
 	enabled = active
 	glow_color = color
 	if active:
-		rebuild_from_layers()
+		if _outline_sprites.is_empty():
+			call_deferred("rebuild_from_layers")
+		else:
+			_update_outline_alpha()
+			sync_all_layers()
 	else:
 		_clear_outlines()
 	set_process(false)

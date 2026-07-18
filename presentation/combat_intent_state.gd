@@ -52,6 +52,8 @@ func set_phase(phase: int) -> void:
 
 
 func set_selection(unit_id: int) -> void:
+	if unit_id == _selected_id:
+		return
 	_selected_id = unit_id
 	recompute()
 
@@ -122,8 +124,19 @@ func recompute() -> void:
 			hovered = _board.get_unit_at(hover_coord)
 		if hovered != null and hovered.is_enemy():
 			next[hovered.id] = true
+	if _intent_dict_equal(next, intent_units):
+		return
 	intent_units = next
 	intents_changed.emit(intent_units)
+
+
+func _intent_dict_equal(a: Dictionary, b: Dictionary) -> bool:
+	if a.size() != b.size():
+		return false
+	for key: Variant in a:
+		if not b.has(key) or b[key] != a[key]:
+			return false
+	return true
 
 
 func intent_visible(unit: UnitState) -> bool:

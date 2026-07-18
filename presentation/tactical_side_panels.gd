@@ -340,11 +340,23 @@ func _on_preview_updated(result: SimResult) -> void:
 
 func _on_selection_changed(unit_id: int) -> void:
 	_selected_id = unit_id
-	_last_skill_rebuild_key = ""
 	if _intent_state != null:
 		_intent_state.set_selection(unit_id)
 	_refresh_info()
+	if unit_id < 0:
+		_clear_skill_buttons()
+		return
+	_last_skill_rebuild_key = ""
 	call_deferred("_rebuild_ability_buttons")
+
+
+func _clear_skill_buttons() -> void:
+	if _skill_list == null:
+		return
+	for c: Node in _skill_list.get_children():
+		_skill_list.remove_child(c)
+		c.queue_free()
+	_last_skill_rebuild_key = ""
 
 
 func _on_ability_selected(index: int) -> void:

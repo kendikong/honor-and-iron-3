@@ -431,19 +431,30 @@ func _on_selection_changed(unit_id: int) -> void:
 	if _director == null:
 		return
 	_invalidate_planning_hover_cache()
-	if unit_id >= 0:
-		_play_sfx("select")
+	if unit_id < 0:
+		_restore_hover_preview()
+		_sync_intent_skill_mode()
+		if _intent_state != null:
+			_intent_state.set_selection(unit_id)
+		if _planning != null:
+			_planning._recompute_hover_ranges_from_inputs()
+		return
+	_play_sfx("select")
 	if _drag_saved_preview == null and _planning != null:
 		_planning.stash_committed_preview()
 	if unit_selected_abilities.has(unit_id):
 		_director.select_ability(int(unit_selected_abilities[unit_id]))
-	elif unit_id < 0:
-		pass
+	call_deferred("_finish_select_planning")
+
+
+func _finish_select_planning() -> void:
 	if _planning != null and _director != null:
 		if _intent_state != null:
 			_sync_threat_origin_from_cell(_intent_state.hover_coord)
 		_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_skill_mode()
+	if _intent_state != null:
+		_intent_state.set_selection(_director.selected_unit_id if _director != null else -1)
 	call_deferred("_refresh_hover_if_planning")
 
 
