@@ -44,7 +44,7 @@ var _drag_preview_active: bool = false
 var _drag_preview_failed: bool = false
 var _planning_input: CombatPlanningInput
 
-enum DragPreviewAnim { IDLE, WALK, ATTACK, SPELL }
+enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
 
 signal push_tweens_idle
 
@@ -687,6 +687,7 @@ func end_drag_preview() -> void:
 	var actor: CharacterActor = _actors.get(unit_id)
 	if actor != null:
 		actor.modulate = Color.WHITE
+		actor.set_running(false)
 		actor.set_walking(false)
 	if unit != null:
 		_apply_exhaustion_state(unit)
@@ -714,15 +715,23 @@ func update_drag_preview(
 		actor.modulate = Color(1.0, 1.0, 1.0, 0.58)
 	match anim_mode:
 		DragPreviewAnim.WALK:
+			actor.set_running(false)
 			actor.set_facing(_facing_anim(facing))
 			actor.set_walking(true)
+		DragPreviewAnim.RUN:
+			actor.set_facing(_facing_anim(facing))
+			actor.set_running(true)
+			actor.set_walking(true)
 		DragPreviewAnim.ATTACK:
+			actor.set_running(false)
 			actor.set_facing(_attack_anim(facing))
 			actor.set_walking(true)
 		DragPreviewAnim.SPELL:
+			actor.set_running(false)
 			actor.set_facing(_spell_anim(facing))
 			actor.set_walking(true)
 		_:
+			actor.set_running(false)
 			if facing >= 0:
 				actor.set_facing(_facing_anim(facing))
 			actor.set_walking(false)
