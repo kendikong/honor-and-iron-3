@@ -2255,6 +2255,8 @@ static func actor_oblique_band_modulates(
 		if typeof(y_rows) != TYPE_ARRAY:
 			continue
 		var mod_map: Color = Color.WHITE
+		var peak_map_alpha: float = 0.0
+		var map_majority: bool = false
 		if want_oblique:
 			var hit_count: int = 0
 			var sample_count: int = 0
@@ -2271,10 +2273,12 @@ static func actor_oblique_band_modulates(
 						hit_count += 1
 						alpha_sum += alpha
 			if sample_count > 0 and float(hit_count) / float(sample_count) >= ACTOR_SHADOW_MAJORITY_RATIO:
-				mod_map = _modulate_from_shadow_coverage(alpha_sum / float(hit_count), settings)
+				map_majority = true
+				peak_map_alpha = alpha_sum / float(hit_count)
+				mod_map = _modulate_from_shadow_coverage(peak_map_alpha, settings)
 		var mod_cloud: Color = Color.WHITE
+		var peak_cloud: float = 0.0
 		if want_cloud:
-			var peak_cloud: float = 0.0
 			for y_off: Variant in y_rows:
 				var y_px: float = float(y_off) * scale_y
 				for x_off: Variant in ACTOR_CLOUD_BAND_X:
@@ -2285,8 +2289,11 @@ static func actor_oblique_band_modulates(
 							WeatherBus.cloud_drift_offset,
 						),
 					)
-			mod_cloud = _modulate_from_cloud_coverage(peak_cloud, 0.125, settings)
-		bands[band_i] = _combine_environment_modulates(mod_map, mod_cloud)
+			if peak_cloud >= 0.125:
+				mod_cloud = _modulate_from_cloud_coverage(peak_cloud, 0.125, settings)
+		bands[band_i] = _resolve_environment_modulate(
+			mod_map, mod_cloud, peak_map_alpha, peak_cloud, map_majority,
+		)
 	return bands
 
 
@@ -2340,18 +2347,26 @@ static func _modulate_from_environment_coverage(
 	if map_alpha >= 0.04:
 		mod_map = _modulate_from_shadow_coverage(map_alpha, settings)
 	var mod_cloud: Color = Color.WHITE
-	if cloud_alpha >= 0.04:
-		mod_cloud = _modulate_from_cloud_coverage(cloud_alpha, 0.04, settings)
-	return _combine_environment_modulates(mod_map, mod_cloud)
-
-
-static func _combine_environment_modulates(mod_map: Color, mod_cloud: Color) -> Color:
-	return Color(
-		minf(mod_map.r, mod_cloud.r),
-		minf(mod_map.g, mod_cloud.g),
-		minf(mod_map.b, mod_cloud.b),
-		1.0,
+	if cloud_alpha >= 0.125:
+		mod_cloud = _modulate_from_cloud_coverage(cloud_alpha, 0.125, settings)
+	return _resolve_environment_modulate(
+		mod_map, mod_cloud, map_alpha, cloud_alpha, map_alpha >= 0.04,
 	)
+
+
+## Max-resolve body tint — mirrors ground_shadow_composite (dominant mask wins, no stack).
+static func _resolve_environment_modulate(
+	mod_map: Color,
+	mod_cloud: Color,
+	map_alpha: float,
+	cloud_alpha: float,
+	map_majority: bool,
+) -> Color:
+	if cloud_alpha >= map_alpha and cloud_alpha >= 0.125:
+		return mod_cloud
+	if map_majority and map_alpha >= 0.04:
+		return mod_map
+	return Color.WHITE
 
 
 static func _shadow_overlay_image() -> Image:

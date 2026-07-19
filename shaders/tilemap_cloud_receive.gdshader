@@ -44,7 +44,7 @@ void fragment() {
 		float mask = cloud_shadow_mask(field, cloud_mask_low, cloud_mask_high, cloud_mask_steps);
 		float shade = mask * cloud_shadow_strength;
 		if (shade >= 0.01) {
-			COLOR.rgb = mix(COLOR.rgb, cloud_shadow_tint.rgb, shade);
+			COLOR.rgb *= mix(vec3(1.0), cloud_shadow_tint.rgb, shade);
 		}
 	}
 }
