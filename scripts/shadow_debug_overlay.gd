@@ -1,21 +1,16 @@
 class_name ShadowDebugOverlay
 extends CanvasLayer
 
-## Dev overlay — per-tile foot-pixel shadow sampling (sprite path). Toggle **J**.
+## Dev overlay — per-tile CPU cloud mask (same path as ground GPU + sprites). Toggle **J**.
 
 const TILE_PX: int = 16
 const REFRESH_INTERVAL_SEC: float = 0.4
 
 const COLOR_CLOUD: Color = Color(1.0, 0.12, 0.12, 0.58)
-const COLOR_OBLIQUE: Color = Color(0.22, 0.42, 1.0, 0.52)
-const COLOR_UNIFIED: Color = Color(0.12, 0.92, 0.28, 0.48)
-const COLOR_BOTH: Color = Color(0.92, 0.18, 0.92, 0.62)
 const COLOR_ACTOR_FOOT: Color = Color(1.0, 0.92, 0.12, 0.95)
 const COLOR_ACTOR_MISMATCH: Color = Color(1.0, 0.45, 0.0, 0.95)
 
 const CLOUD_MASK_GATE: float = 0.125
-const OBLIQUE_ALPHA_GATE: float = 0.04
-const UNIFIED_ALPHA_GATE: float = 0.04
 
 var _grid: PlayerGrid
 var _map_root: Node2D
@@ -88,66 +83,38 @@ func process_refresh(delta: float) -> void:
 	var zoom: float = _map_root.scale.x
 	if stamp == _last_stamp and is_equal_approx(zoom, _last_zoom):
 		return
-	_rebuild(false)
+	_rebuild()
 
 
-func _rebuild(_force: bool = false) -> void:
+func _rebuild() -> void:
 	if _grid == null or _map_root == null:
 		return
 	_ensure_tile_overlay()
 	var zoom: float = _map_root.scale.x
-	var origin_px: Vector2 = MapPixelSpace.origin_px(_ground)
-	var size_px: Vector2 = MapPixelSpace.size_px(_ground, _grid)
-	_tile_overlay.position = _map_root.to_global(origin_px)
+	var size_px: Vector2 = MapPixelSpace.size_px_from_grid(_grid)
+	_tile_overlay.position = _map_root.to_global(Vector2.ZERO)
 	_tile_overlay.size = size_px * zoom
 	_last_zoom = zoom
 
 	var cloud_count: int = 0
-	var oblique_count: int = 0
-	var unified_count: int = 0
-	var both_count: int = 0
 	var want_cloud: bool = _settings != null and _settings.cloud_shadows
-	var want_oblique: bool = _settings != null and _settings.oblique_contact_shadows
 	var drift: Vector2 = WeatherBus.cloud_drift_offset
 
 	for y: int in range(_grid.height):
 		for x: int in range(_grid.width):
 			var cell: Vector2i = Vector2i(x, y)
 			var map_px: Vector2 = ShadowPlacer.foot_map_px_from_cell(cell)
-			var cloud_hit: bool = false
-			var oblique_hit: bool = false
-			var unified_hit: bool = false
-			if want_cloud:
-				cloud_hit = CloudShadowField.shadow_mask_at(map_px, drift) >= CLOUD_MASK_GATE
-			if want_oblique:
-				oblique_hit = (
-					ShadowPlacer.sample_map_oblique_alpha_at(map_px, _settings) >= OBLIQUE_ALPHA_GATE
-				)
-			if not cloud_hit and not oblique_hit:
-				unified_hit = (
-					ShadowPlacer.sample_unified_shadow_alpha_at(map_px, _settings) >= UNIFIED_ALPHA_GATE
-				)
-			if cloud_hit:
-				cloud_count += 1
-			if oblique_hit:
-				oblique_count += 1
-			if unified_hit:
-				unified_count += 1
 			var color: Color = Color(0.0, 0.0, 0.0, 0.0)
-			if cloud_hit and oblique_hit:
-				both_count += 1
-				color = COLOR_BOTH
-			elif cloud_hit:
-				color = COLOR_CLOUD
-			elif oblique_hit:
-				color = COLOR_OBLIQUE
-			elif unified_hit:
-				color = COLOR_UNIFIED
+			if want_cloud:
+				var mask: float = CloudShadowField.shadow_mask_at(map_px, drift)
+				if mask >= CLOUD_MASK_GATE:
+					cloud_count += 1
+					color = COLOR_CLOUD
 			_tile_img.set_pixel(x, y, color)
 
 	_tile_tex.update(_tile_img)
 	_paint_actor_feet(zoom)
-	_update_legend(cloud_count, oblique_count, unified_count, both_count)
+	_update_legend(cloud_count)
 	_last_stamp = ShadowPlacer.cloud_drift_stamp(_settings)
 
 
@@ -236,15 +203,11 @@ func _build_legend_shell() -> void:
 	_container.add_child(_legend)
 
 
-func _update_legend(cloud_count: int, oblique_count: int, unified_count: int, both_count: int) -> void:
-	var origin: Vector2i = MapPixelSpace.origin_cells(_ground)
+func _update_legend(cloud_count: int) -> void:
 	var lines: PackedStringArray = PackedStringArray([
-		"Shadow hit debug (J) — one sample per tile (foot pixel)",
-		"Updates ~%.1fs · red=cloud blue=oblique green=unified magenta=both" % REFRESH_INTERVAL_SEC,
-		"Red tiles: %d · Blue: %d · Green: %d · Magenta: %d"
-		% [cloud_count - both_count, oblique_count - both_count, unified_count, both_count],
-		"Yellow foot = actor; orange = sprite/tile cloud mismatch",
-		"Map origin cells: (%d, %d)" % [origin.x, origin.y],
+		"Cloud shadow debug (J) — CPU foot pixel per tile",
+		"Red = cloud mask >= %.2f (%d tiles) · should match ground GPU" % [CLOUD_MASK_GATE, cloud_count],
+		"Updates ~%.1fs · yellow foot = actor · orange = sprite/tile mismatch" % REFRESH_INTERVAL_SEC,
 	])
 	_legend_body.text = "\n".join(lines)
 

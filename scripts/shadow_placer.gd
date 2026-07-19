@@ -74,7 +74,7 @@ static var _unit_feet_placeholder: ImageTexture
 const MAX_UNIT_FEET_GPU: int = 16
 static var _foot_bake_dirty: bool = true
 static var _map_size_px: Vector2 = Vector2.ZERO
-static var _map_origin_px: Vector2 = Vector2.ZERO
+static var _map_root: Node2D
 static var _ground_layer: TileMapLayer
 static var _ground_shadow_material: ShaderMaterial
 static var _map_oblique_tex: ImageTexture
@@ -139,8 +139,8 @@ static func apply(
 	if grid == null or shadow_root == null:
 		return
 	_ground_layer = ground
-	_map_origin_px = MapPixelSpace.origin_px(ground)
-	_map_size_px = MapPixelSpace.size_px(ground, grid)
+	_map_root = shadow_root.get_parent() as Node2D
+	_map_size_px = MapPixelSpace.size_px_from_grid(grid)
 	var layers: Array[Dictionary] = []
 	for y: int in range(grid.height):
 		for x: int in range(grid.width):
@@ -683,7 +683,7 @@ static func _ensure_ground_shadow_rect(shadow_root: Node2D, settings: EffectsSet
 		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		shadow_root.add_child(rect)
-	rect.position = _map_origin_px
+	rect.position = Vector2.ZERO
 	rect.size = _map_size_px
 	rect.visible = true
 	rect.material = _ground_material()
@@ -704,7 +704,7 @@ static func _sync_ground_shadow_uniforms(
 		return
 	var params: Dictionary = ShadowPalette.multiply_shader_params(settings)
 	mat.set_shader_parameter("map_size_px", _map_size_px)
-	mat.set_shader_parameter("map_origin_px", _map_origin_px)
+	_push_map_transform_uniforms(mat)
 	mat.set_shader_parameter("tile_px", float(TILE_PX))
 	mat.set_shader_parameter("shadow_tint", params["shadow_tint"])
 	mat.set_shader_parameter("shadow_strength", params["shadow_strength"])
@@ -744,8 +744,15 @@ static func _ground_static_uniform_signature(settings: EffectsSettings = null) -
 		params.get("shadow_tint", Color.WHITE),
 		params.get("shadow_strength", 0.0),
 		_map_size_px,
-		_map_origin_px,
+		MapPixelSpace.map_world_origin(_map_root),
 	])
+
+
+static func _push_map_transform_uniforms(mat: ShaderMaterial) -> void:
+	if mat == null or _map_root == null:
+		return
+	mat.set_shader_parameter("map_origin_px", MapPixelSpace.map_world_origin(_map_root))
+	mat.set_shader_parameter("map_scale", MapPixelSpace.map_scale(_map_root))
 
 
 static func _push_ground_shadow_drift_only(
@@ -761,6 +768,7 @@ static func _push_ground_shadow_drift_only(
 	if mat == null:
 		return
 	mat.set_shader_parameter("cloud_drift_offset", WeatherBus.cloud_drift_offset)
+	_push_map_transform_uniforms(mat)
 	var enable_cloud: float = 0.0
 	if settings != null and settings.cloud_shadows:
 		enable_cloud = 1.0
@@ -2171,8 +2179,7 @@ static func foot_map_px_from_cell(cell: Vector2i) -> Vector2:
 
 static func cell_from_foot_px(foot_px: Vector2) -> Vector2i:
 	if _ground_layer != null:
-		var layer_local: Vector2 = foot_px - _ground_layer.position
-		return _ground_layer.local_to_map(layer_local)
+		return MapPixelSpace.cell_from_foot_px(_ground_layer, foot_px)
 	return Vector2i(
 		int(floor((foot_px.x - float(TILE_PX) * 0.5) / float(TILE_PX))),
 		int(floor((foot_px.y - float(TILE_PX)) / float(TILE_PX))),
@@ -2292,38 +2299,16 @@ static func actor_oblique_band_modulates(
 	var cloud_tint: Color = env["cloud_tint"] as Color
 	var foot: Vector2 = actor.position
 	var foot_map_px: Vector2 = MapPixelSpace.foot_map_px(foot)
-	var scale_y: float = actor.scale.y
-	var scale_x: float = actor.scale.x
 	var foot_cloud: float = 0.0
 	if want_cloud:
 		foot_cloud = _CLOUD_FIELD.shadow_mask_at(foot_map_px, WeatherBus.cloud_drift_offset)
+	var foot_oblique: float = 0.0
+	if want_oblique:
+		foot_oblique = sample_map_oblique_alpha_at(foot_map_px, settings)
 	for band_i: int in ACTOR_SHADOW_BAND_COUNT:
-		var y_rows: Variant = ACTOR_SHADOW_BAND_Y[band_i]
-		if typeof(y_rows) != TYPE_ARRAY:
-			continue
-		var peak_map_alpha: float = 0.0
-		var map_majority: bool = false
-		if want_oblique:
-			var hit_count: int = 0
-			var sample_count: int = 0
-			var alpha_sum: float = 0.0
-			for y_off: Variant in y_rows:
-				var y_px: float = float(y_off) * scale_y
-				for x_off: Variant in ACTOR_SHADOW_BAND_X:
-					sample_count += 1
-					var alpha: float = sample_map_oblique_alpha_at(
-						foot + Vector2(float(x_off) * scale_x, y_px),
-						settings,
-					)
-					if alpha >= 0.04:
-						hit_count += 1
-						alpha_sum += alpha
-			if sample_count > 0 and float(hit_count) / float(sample_count) >= ACTOR_SHADOW_MAJORITY_RATIO:
-				map_majority = true
-				peak_map_alpha = alpha_sum / float(hit_count)
 		var map_shade: float = 0.0
-		if map_majority:
-			map_shade = peak_map_alpha * shadow_strength
+		if foot_oblique >= 0.04:
+			map_shade = foot_oblique * shadow_strength
 		var cloud_shade: float = 0.0
 		if foot_cloud >= 0.125:
 			cloud_shade = foot_cloud * cloud_strength

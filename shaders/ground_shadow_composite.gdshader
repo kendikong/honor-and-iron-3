@@ -8,7 +8,9 @@ render_mode blend_mul, unshaded;
 const int MAX_UNIT_FEET = 16;
 
 uniform vec2 map_size_px = vec2(256.0);
+// World-space origin of map pixel (0,0) — same convention as tilemap_cloud_receive.
 uniform vec2 map_origin_px = vec2(0.0);
+uniform float map_scale = 1.0;
 uniform float tile_px = 16.0;
 
 uniform sampler2D map_oblique_tex : filter_nearest, repeat_disable;
@@ -35,6 +37,13 @@ uniform float cloud_shape_mix = 0.62;
 uniform float cloud_shape_scale = 1.73;
 
 const float ALPHA_CUTOFF = 0.04;
+
+varying vec2 v_map_local;
+
+void vertex() {
+	vec2 world_px = (MODEL_MATRIX * vec4(VERTEX, 0.0, 1.0)).xy;
+	v_map_local = (world_px - map_origin_px) / max(map_scale, 0.001);
+}
 
 float sample_channel_alpha(
 	sampler2D tex,
@@ -72,7 +81,7 @@ float sample_unit_feet_at(vec2 map_local) {
 }
 
 void fragment() {
-	vec2 map_local = map_origin_px + floor(UV * map_size_px);
+	vec2 map_local = floor(v_map_local);
 
 	float static_a = sample_channel_alpha(
 		map_oblique_tex, map_local, map_oblique_origin, map_oblique_size, has_map_oblique

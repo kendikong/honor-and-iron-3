@@ -72,9 +72,9 @@ func _ensure_material() -> void:
 func _set_map_uniforms() -> void:
 	if _cloud_material == null or _map_root == null:
 		return
-	var origin_global: Vector2 = MapPixelSpace.map_origin_global(_ground, _map_root)
+	var origin_global: Vector2 = MapPixelSpace.map_world_origin(_map_root)
 	_cloud_material.set_shader_parameter("map_origin_px", origin_global)
-	_cloud_material.set_shader_parameter("map_scale", _map_root.scale.x)
+	_cloud_material.set_shader_parameter("map_scale", MapPixelSpace.map_scale(_map_root))
 	_cloud_material.set_shader_parameter("tile_px", TILE_PX)
 
 
