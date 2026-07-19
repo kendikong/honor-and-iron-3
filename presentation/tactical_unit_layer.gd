@@ -20,6 +20,9 @@ const _COLOR_SELECT_PLAYER := Color(0.28, 0.58, 1.0, 1.0)
 const _COLOR_SELECT_ENEMY := Color(1.0, 0.20, 0.16, 1.0)
 const DRAG_SNAPBACK_SEC: float = 0.24
 const _COLOR_HIT_BURST := Color(1.0, 0.2, 0.15, 0.9)
+const _STATUS_BADGE_BASE: float = 8.0
+const _STATUS_BADGE_GAP: float = 1.0
+const _STATUS_FONT_BASE: int = 7
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -1269,7 +1272,7 @@ func _draw() -> void:
 		if drag_unit != null:
 			var actor: CharacterActor = _actors.get(_drag_preview_id)
 			if actor != null:
-				_draw_centered_icon(actor.position + Vector2(0.0, -18.0), "🚫", Color.WHITE, 14)
+				_draw_prohibition_badge(actor.position + Vector2(0.0, -18.0))
 
 
 func _draw_hit_bursts() -> void:
@@ -1314,74 +1317,93 @@ func _proj_unit(unit_id: int) -> UnitState:
 	return null
 
 
-func _status_icon(status_type: int) -> String:
+func _status_badge(status_type: int) -> Dictionary:
+	## Sharp 2-letter badges — no emoji (emoji at tiny sizes blurs unreadably).
 	match status_type:
 		GameEnums.StatusType.STAT_BUFF_STR:
-			return "💪"
+			return {"abbr": "S+", "bg": Color(0.22, 0.55, 0.28), "fg": Color(0.92, 1.0, 0.92)}
 		GameEnums.StatusType.STAT_BUFF_MAG:
-			return "🔮"
+			return {"abbr": "M+", "bg": Color(0.35, 0.28, 0.62), "fg": Color(0.92, 0.88, 1.0)}
+		GameEnums.StatusType.STAT_BUFF_DEF:
+			return {"abbr": "D+", "bg": Color(0.28, 0.42, 0.62), "fg": Color(0.9, 0.95, 1.0)}
+		GameEnums.StatusType.STAT_BUFF_MOV:
+			return {"abbr": "V+", "bg": Color(0.22, 0.48, 0.55), "fg": Color(0.9, 1.0, 1.0)}
 		GameEnums.StatusType.STAT_BUFF_MP:
-			return "👟"
+			return {"abbr": "V+", "bg": Color(0.22, 0.48, 0.55), "fg": Color(0.9, 1.0, 1.0)}
 		GameEnums.StatusType.STAT_BUFF_ACC:
-			return "🎯"
+			return {"abbr": "A+", "bg": Color(0.45, 0.38, 0.18), "fg": Color(1.0, 0.96, 0.82)}
 		GameEnums.StatusType.STAT_DEBUFF_DEF:
-			return "💔"
+			return {"abbr": "D-", "bg": Color(0.52, 0.22, 0.22), "fg": Color(1.0, 0.9, 0.9)}
 		GameEnums.StatusType.STAT_DEBUFF_ACC:
-			return "👁️‍🗨️"
+			return {"abbr": "A-", "bg": Color(0.48, 0.32, 0.18), "fg": Color(1.0, 0.92, 0.82)}
+		GameEnums.StatusType.STAT_DEBUFF_MOV:
+			return {"abbr": "V-", "bg": Color(0.38, 0.28, 0.48), "fg": Color(0.95, 0.9, 1.0)}
 		GameEnums.StatusType.ELECTRIFIED:
-			return "⚡"
+			return {"abbr": "EL", "bg": Color(0.75, 0.72, 0.18), "fg": Color(0.12, 0.1, 0.05)}
 		GameEnums.StatusType.WEAK_TRAP:
-			return "🪤"
+			return {"abbr": "TP", "bg": Color(0.42, 0.32, 0.22), "fg": Color(1.0, 0.92, 0.82)}
 		GameEnums.StatusType.BURN:
-			return "🔥"
+			return {"abbr": "BR", "bg": Color(0.78, 0.32, 0.08), "fg": Color(1.0, 0.95, 0.88)}
 		GameEnums.StatusType.BLEED:
-			return "🩸"
+			return {"abbr": "BL", "bg": Color(0.62, 0.12, 0.12), "fg": Color(1.0, 0.9, 0.9)}
 		GameEnums.StatusType.POISON:
-			return "🧪"
+			return {"abbr": "PS", "bg": Color(0.22, 0.55, 0.22), "fg": Color(0.9, 1.0, 0.9)}
 		GameEnums.StatusType.WEAKEN:
-			return "📉"
+			return {"abbr": "WK", "bg": Color(0.45, 0.35, 0.22), "fg": Color(1.0, 0.92, 0.82)}
 		GameEnums.StatusType.VULNERABLE:
-			return "🎯"
+			return {"abbr": "VU", "bg": Color(0.58, 0.22, 0.48), "fg": Color(1.0, 0.9, 0.96)}
 		GameEnums.StatusType.STUN:
-			return "💫"
+			return {"abbr": "ST", "bg": Color(0.72, 0.62, 0.12), "fg": Color(0.12, 0.1, 0.05)}
 		GameEnums.StatusType.ROOT:
-			return "🪢"
+			return {"abbr": "RT", "bg": Color(0.32, 0.48, 0.22), "fg": Color(0.92, 1.0, 0.88)}
 		GameEnums.StatusType.SILENCE:
-			return "🤐"
+			return {"abbr": "SI", "bg": Color(0.35, 0.35, 0.42), "fg": Color(0.92, 0.92, 0.98)}
 		GameEnums.StatusType.TAUNT:
-			return "🤬"
+			return {"abbr": "TN", "bg": Color(0.55, 0.22, 0.18), "fg": Color(1.0, 0.9, 0.88)}
 		GameEnums.StatusType.BLIND:
-			return "🕶️"
+			return {"abbr": "BD", "bg": Color(0.28, 0.28, 0.32), "fg": Color(0.92, 0.92, 0.96)}
 		GameEnums.StatusType.PACIFY:
-			return "🕊️"
+			return {"abbr": "PC", "bg": Color(0.38, 0.48, 0.58), "fg": Color(0.92, 0.96, 1.0)}
 		GameEnums.StatusType.FEAR:
-			return "😱"
+			return {"abbr": "FR", "bg": Color(0.42, 0.28, 0.52), "fg": Color(0.96, 0.9, 1.0)}
 		GameEnums.StatusType.CONFUSION:
-			return "😵"
+			return {"abbr": "CF", "bg": Color(0.48, 0.32, 0.58), "fg": Color(0.98, 0.92, 1.0)}
 		GameEnums.StatusType.PIERCE:
-			return "🗡️"
+			return {"abbr": "PI", "bg": Color(0.48, 0.38, 0.22), "fg": Color(1.0, 0.95, 0.85)}
 		GameEnums.StatusType.GHOST:
-			return "👻"
+			return {"abbr": "GH", "bg": Color(0.42, 0.52, 0.62), "fg": Color(0.95, 0.98, 1.0)}
 		GameEnums.StatusType.TRAMPLE:
-			return "🦏"
+			return {"abbr": "TR", "bg": Color(0.42, 0.32, 0.28), "fg": Color(1.0, 0.92, 0.88)}
 		GameEnums.StatusType.STEALTH:
-			return "🥷"
+			return {"abbr": "SL", "bg": Color(0.22, 0.28, 0.32), "fg": Color(0.88, 0.92, 0.96)}
 		GameEnums.StatusType.INTERCEPT:
-			return "🛡️"
+			return {"abbr": "IN", "bg": Color(0.28, 0.42, 0.58), "fg": Color(0.9, 0.95, 1.0)}
 		GameEnums.StatusType.MARK:
-			return "👁️"
+			return {"abbr": "MK", "bg": Color(0.58, 0.22, 0.22), "fg": Color(1.0, 0.9, 0.9)}
 		GameEnums.StatusType.STURDY:
-			return "🧱"
+			return {"abbr": "SD", "bg": Color(0.38, 0.38, 0.42), "fg": Color(0.95, 0.95, 0.98)}
 		GameEnums.StatusType.INVULNERABLE:
-			return "⭐"
+			return {"abbr": "IV", "bg": Color(0.72, 0.62, 0.18), "fg": Color(0.12, 0.1, 0.05)}
 		GameEnums.StatusType.AIRBORNE:
-			return "🦅"
+			return {"abbr": "AR", "bg": Color(0.32, 0.48, 0.68), "fg": Color(0.92, 0.96, 1.0)}
 		GameEnums.StatusType.CANTO:
-			return "🐎"
+			return {"abbr": "CA", "bg": Color(0.32, 0.42, 0.28), "fg": Color(0.92, 1.0, 0.9)}
+		GameEnums.StatusType.RUNNING:
+			return {"abbr": "RN", "bg": Color(0.28, 0.48, 0.42), "fg": Color(0.9, 1.0, 0.96)}
+		GameEnums.StatusType.RETALIATION_PROTOCOL:
+			return {"abbr": "RT", "bg": Color(0.55, 0.28, 0.18), "fg": Color(1.0, 0.92, 0.88)}
+		GameEnums.StatusType.RETALIATION_INFINITE_RANGE:
+			return {"abbr": "R+", "bg": Color(0.62, 0.32, 0.18), "fg": Color(1.0, 0.94, 0.88)}
+		GameEnums.StatusType.INDOMITABLE_WILL:
+			return {"abbr": "IW", "bg": Color(0.42, 0.35, 0.58), "fg": Color(0.96, 0.92, 1.0)}
+		GameEnums.StatusType.THORNS:
+			return {"abbr": "TH", "bg": Color(0.32, 0.52, 0.28), "fg": Color(0.92, 1.0, 0.9)}
+		GameEnums.StatusType.IRON_GRIP_DEBUFF:
+			return {"abbr": "IG", "bg": Color(0.48, 0.35, 0.22), "fg": Color(1.0, 0.92, 0.85)}
 		GameEnums.StatusType.POLYMORPH:
-			return "🐸"
+			return {"abbr": "PM", "bg": Color(0.38, 0.52, 0.32), "fg": Color(0.92, 1.0, 0.9)}
 		_:
-			return "✨"
+			return {"abbr": "??", "bg": Color(0.32, 0.32, 0.38), "fg": Color(0.95, 0.95, 0.98)}
 
 
 func _draw_hp_bar(unit: UnitState) -> void:
@@ -1452,12 +1474,21 @@ func _draw_hp_bar(unit: UnitState) -> void:
 		var fort_w: float = maxf(2.0, BAR_W * 0.12)
 		draw_rect(Rect2(origin + Vector2(BAR_W - fort_w, 0.0), Vector2(fort_w, BAR_H)), Color(0.35, 0.65, 0.35, 0.9), true)
 	if not unit.active_statuses.is_empty():
-		var start_x: float = origin.x + 4.0
-		var start_y: float = origin.y + BAR_H + 1.0
+		var scale: float = maxf(1.0, _display_scale())
+		var badge_sz: float = roundf(_STATUS_BADGE_BASE * scale)
+		var step: float = badge_sz + roundf(_STATUS_BADGE_GAP * scale)
+		var start_x: float = roundf(origin.x)
+		var start_y: float = roundf(origin.y + BAR_H + 1.0)
 		var count := 0
+		var cols: int = 4
 		for status: StatusData in unit.active_statuses:
-			var pos := Vector2(start_x + float(count % 4) * 7.0, start_y + float(count / 4) * 7.0)
-			_draw_status_icon(pos, _status_icon(status.type))
+			var col: int = count % cols
+			var row: int = count / cols
+			var pos := Vector2(
+				roundf(start_x + float(col) * step),
+				roundf(start_y + float(row) * step),
+			)
+			_draw_status_badge(pos, status.type, badge_sz)
 			count += 1
 
 
@@ -1480,21 +1511,47 @@ func _living_unit_at_cell(coord: Vector2i, exclude_id: int = -1) -> UnitState:
 	return occupant
 
 
-func _draw_status_icon(pos: Vector2, text: String) -> void:
+func _draw_status_badge(top_left: Vector2, status_type: int, badge_sz: float) -> void:
+	var badge: Dictionary = _status_badge(status_type)
+	var abbr: String = String(badge.get("abbr", "??"))
+	var bg: Color = badge.get("bg", Color(0.3, 0.3, 0.35))
+	var fg: Color = badge.get("fg", Color.WHITE)
+	var origin: Vector2 = Vector2(roundf(top_left.x), roundf(top_left.y))
+	var rect := Rect2(origin, Vector2(badge_sz, badge_sz))
+	draw_rect(rect, bg, true)
+	draw_rect(rect, bg.lightened(0.35), false, 1.0)
 	var font: Font = ThemeDB.fallback_font
 	if font == null:
 		return
-	var size_px := 5
-	var sz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px)
-	draw_string(font, pos - Vector2(0.0, sz.y * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, Color.WHITE)
+	var font_px: int = maxi(6, int(roundf(float(_STATUS_FONT_BASE) * maxf(1.0, _display_scale()))))
+	var sz: Vector2 = font.get_string_size(abbr, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px)
+	var text_pos := Vector2(
+		roundf(origin.x + (badge_sz - sz.x) * 0.5),
+		roundf(origin.y + (badge_sz + sz.y) * 0.5 - 1.0),
+	)
+	draw_string(font, text_pos, abbr, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px, fg)
+
+
+func _draw_prohibition_badge(center: Vector2) -> void:
+	var scale: float = maxf(1.0, _display_scale())
+	var half: float = roundf(5.0 * scale)
+	var c: Vector2 = Vector2(roundf(center.x), roundf(center.y))
+	var bg := Rect2(c - Vector2(half, half), Vector2(half * 2.0, half * 2.0))
+	draw_rect(bg, Color(0.55, 0.08, 0.08, 0.92), true)
+	draw_rect(bg, Color(1.0, 0.35, 0.35), false, 1.0)
+	var pad: float = roundf(2.0 * scale)
+	draw_line(c + Vector2(-half + pad, -half + pad), c + Vector2(half - pad, half - pad), Color.WHITE, 1.5)
+	draw_line(c + Vector2(-half + pad, half - pad), c + Vector2(half - pad, -half + pad), Color.WHITE, 1.5)
 
 
 func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int) -> void:
 	var font: Font = ThemeDB.fallback_font
 	if font == null:
 		return
-	var sz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px)
-	draw_string(font, pos - sz * 0.5, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, color)
+	var px: int = maxi(8, size_px)
+	var snapped: Vector2 = Vector2(roundf(pos.x), roundf(pos.y))
+	var sz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px)
+	draw_string(font, snapped - Vector2(roundf(sz.x * 0.5), roundf(sz.y * 0.5)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, color)
 
 
 func _any_predicted_change() -> bool:
