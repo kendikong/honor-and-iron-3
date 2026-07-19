@@ -1027,7 +1027,7 @@ func _draw_danger_area() -> void:
 
 
 func _draw_preview_arrows() -> void:
-	var prev: CombatPlanningPreview = _active_preview()
+	var prev: CombatPlanningPreview = _committed_preview
 	if _board == null or prev.preview_board == null:
 		return
 	var dragging: bool = _planning_input != null and _planning_input.dragging
@@ -1115,22 +1115,65 @@ func _committed_route_legs(
 	return legs
 
 
+func _interaction_move_hover_active(unit_id: int) -> bool:
+	if _director == null or unit_id < 0 or not _board.is_in_bounds(_hover_coord):
+		return false
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	if move_timing == -1:
+		return false
+	if _director.unit_has_move_planned_at_timing(unit_id, move_timing):
+		return false
+	return is_hover_move_tile(_hover_coord)
+
+
+func _pending_move_route_leg(unit_id: int, prev: CombatPlanningPreview) -> Array:
+	var route: Array = prev.preview_paths.get(unit_id, [])
+	if route.size() < 2 or _director == null:
+		return []
+	var split: int = int(prev.preview_splits.get(unit_id, route.size()))
+	var post_split: int = int(prev.preview_post_splits.get(unit_id, split))
+	var end_idx: int = mini(split, route.size())
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	if move_timing == GameEnums.MoveTiming.POST_ACTION:
+		if post_split < end_idx:
+			return route.slice(maxi(post_split - 1, 0), end_idx)
+		var projected: BoardState = _director.projected_state
+		if projected == null:
+			return []
+		var unit: UnitState = projected.get_unit_by_id(unit_id)
+		if unit == null:
+			return []
+		var start_idx: int = route.find(unit.position)
+		if start_idx < 0:
+			start_idx = maxi(0, end_idx - 1)
+		return route.slice(start_idx, end_idx)
+	return route.slice(0, end_idx)
+
+
 func _draw_interaction_overlay() -> void:
 	if _director == null or _director.selected_unit_id < 0:
 		return
-	var prev: CombatPlanningPreview = _active_preview()
-	if prev.preview_board == null:
+	if _planning_input == null or _live_preview.preview_board == null:
 		return
-	var actor := prev.preview_board.get_unit_by_id(_director.selected_unit_id)
+	var actor := _live_preview.preview_board.get_unit_by_id(_director.selected_unit_id)
 	if actor == null:
 		actor = _board.get_unit_by_id(_director.selected_unit_id)
 	if actor == null:
 		return
-	var route: Array = prev.preview_paths.get(actor.id, [])
 	var p_col: Color = _player_color_for_unit(actor)
-	if route.size() >= 2 and _unit_can_still_move(actor.id):
-		_draw_route_line(route, p_col, true, true)
+	if _planning_input.dragging:
+		var drag_route: Array = _live_preview.preview_paths.get(actor.id, [])
+		if drag_route.size() >= 2:
+			_draw_route_line(drag_route, p_col, true, true)
+	elif (
+		_planning_input.is_live_preview_active()
+		and _interaction_move_hover_active(actor.id)
+	):
+		var leg: Array = _pending_move_route_leg(actor.id, _live_preview)
+		if leg.size() >= 2:
+			_draw_route_line(leg, p_col, true, true)
 	if _attack_target_id >= 0:
+		var prev: CombatPlanningPreview = _live_preview
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord
 		var target_unit := prev.preview_board.get_unit_by_id(_attack_target_id)
