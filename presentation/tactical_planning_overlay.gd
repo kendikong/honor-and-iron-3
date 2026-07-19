@@ -1123,10 +1123,11 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 		var d0: Vector2 = pts[1] - pts[0]
 		if d0.length() > 0.0:
 			pts[0] += d0.normalized() * _token_radius()
-	var smooth: PackedVector2Array = _rounded_route_polyline(pts, _ROUTE_CORNER_R)
+	var terminal_dir: Vector2 = _route_terminal_direction_tiles(route)
+	var smooth: PackedVector2Array = _rounded_route_polyline(pts, _ROUTE_CORNER_R, true)
 	if smooth.size() < 2:
 		return
-	var end_dir: Vector2 = _route_end_direction(smooth)
+	var end_dir: Vector2 = terminal_dir if terminal_dir.length_squared() > 0.001 else _route_end_direction(smooth)
 	var outline_col := Color(color.r * 0.28, color.g * 0.32, color.b * 0.42, color.a)
 	var glow_col := Color(color.r, color.g, color.b, color.a * 0.16)
 	var highlight_col := Color(
@@ -1141,7 +1142,7 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 			travel_dir = Vector2.RIGHT
 		else:
 			travel_dir = travel_dir.normalized()
-		var shaft_path: PackedVector2Array = _clip_route_for_arrowhead(
+		var shaft_path: PackedVector2Array = _straighten_arrow_shaft(
 			smooth, dest_center, travel_dir, _ROUTE_HEAD_LEN,
 		)
 		var glow_poly: PackedVector2Array = _build_route_body_polygon(
@@ -1189,16 +1190,13 @@ func _build_route_body_polygon(
 	if with_head:
 		var base: Vector2 = tip - travel_dir * _ROUTE_HEAD_LEN
 		var head_half_w: float = half_w + _ROUTE_HEAD_FLARE
-		var cap_left: Vector2 = base + perp * half_w
-		var cap_right: Vector2 = base - perp * half_w
 		var wing_left: Vector2 = base + perp * head_half_w
 		var wing_right: Vector2 = base - perp * head_half_w
-		if left.size() > 0:
-			left[left.size() - 1] = cap_left
-		if right.size() > 0:
-			right[right.size() - 1] = cap_right
+		_trim_offset_side_for_head(left, base, travel_dir, half_w)
+		_trim_offset_side_for_head(right, base, travel_dir, half_w)
 		poly.append_array(left)
-		poly.append(wing_left)
+		if poly.is_empty() or poly[poly.size() - 1].distance_squared_to(wing_left) > 0.25:
+			poly.append(wing_left)
 		poly.append(tip)
 		poly.append(wing_right)
 	else:
@@ -1229,12 +1227,20 @@ func _offset_polyline(path: PackedVector2Array, offset: float) -> PackedVector2A
 	return out
 
 
-func _rounded_route_polyline(pts: PackedVector2Array, corner_r: float) -> PackedVector2Array:
+func _rounded_route_polyline(
+	pts: PackedVector2Array,
+	corner_r: float,
+	skip_final_corner: bool = false,
+) -> PackedVector2Array:
 	if pts.size() < 3:
 		return pts
 	var out := PackedVector2Array()
 	out.append(pts[0])
+	var last_corner_idx: int = pts.size() - 2
 	for i: int in range(1, pts.size() - 1):
+		if skip_final_corner and i == last_corner_idx:
+			out.append(pts[i])
+			continue
 		var prev: Vector2 = pts[i - 1]
 		var corner: Vector2 = pts[i]
 		var next: Vector2 = pts[i + 1]
@@ -1272,6 +1278,66 @@ func _append_quadratic_corner(
 		out.append(u * u * a + 2.0 * u * t * b + t * t * c)
 
 
+func _route_terminal_direction_tiles(route: Array) -> Vector2:
+	if route.size() < 2:
+		return Vector2.ZERO
+	var from_tile: Variant = route[route.size() - 2]
+	var to_tile: Variant = route[route.size() - 1]
+	if not (from_tile is Vector2i) or not (to_tile is Vector2i):
+		return Vector2.ZERO
+	if _map_view == null:
+		return Vector2.ZERO
+	var delta: Vector2 = _map_view.grid_to_local(to_tile as Vector2i) - _map_view.grid_to_local(from_tile as Vector2i)
+	if delta.length_squared() < 0.001:
+		return Vector2.ZERO
+	return delta.normalized()
+
+
+func _straighten_arrow_shaft(
+	smooth: PackedVector2Array,
+	tip: Vector2,
+	travel_dir: Vector2,
+	head_len: float,
+) -> PackedVector2Array:
+	if smooth.size() < 2:
+		return smooth
+	var dir: Vector2 = travel_dir
+	if dir.length_squared() < 0.0001:
+		dir = Vector2.RIGHT
+	else:
+		dir = dir.normalized()
+	var straight_depth: float = head_len + _ROUTE_CORNER_R * 1.5
+	var keep_along: float = -straight_depth
+	var out := PackedVector2Array()
+	for p: Vector2 in smooth:
+		var along: float = (p - tip).dot(dir)
+		if along < keep_along - 0.5:
+			out.append(p)
+	if out.is_empty():
+		out.append(smooth[0])
+	var run_start: Vector2 = tip + dir * keep_along
+	var base: Vector2 = tip - dir * head_len
+	if out[out.size() - 1].distance_squared_to(run_start) > 0.25:
+		out.append(run_start)
+	if out[out.size() - 1].distance_squared_to(base) > 0.25:
+		out.append(base)
+	return out
+
+
+func _trim_offset_side_for_head(
+	side: PackedVector2Array,
+	base: Vector2,
+	travel_dir: Vector2,
+	half_w: float,
+) -> void:
+	var cutoff: float = -half_w * 0.5
+	while side.size() > 1:
+		var along: float = (side[side.size() - 1] - base).dot(travel_dir)
+		if along < cutoff:
+			break
+		side.remove_at(side.size() - 1)
+
+
 func _route_end_direction(path: PackedVector2Array) -> Vector2:
 	if path.size() < 2:
 		return Vector2.RIGHT
@@ -1280,30 +1346,6 @@ func _route_end_direction(path: PackedVector2Array) -> Vector2:
 	if delta.length_squared() < 0.001:
 		return Vector2.RIGHT
 	return delta.normalized()
-
-
-func _clip_route_for_arrowhead(
-	path: PackedVector2Array,
-	tip: Vector2,
-	dir: Vector2,
-	inset: float,
-) -> PackedVector2Array:
-	if path.is_empty():
-		return path
-	var travel_dir: Vector2 = dir
-	if travel_dir.length_squared() < 0.0001:
-		travel_dir = Vector2.RIGHT
-	else:
-		travel_dir = travel_dir.normalized()
-	var base_pt: Vector2 = tip - travel_dir * inset
-	var out := PackedVector2Array()
-	for p: Vector2 in path:
-		if p.distance_to(tip) > inset * 0.95:
-			out.append(p)
-	if out.is_empty():
-		out.append(path[0])
-	out.append(base_pt)
-	return out
 
 
 func _draw_death_marker(cell: Vector2i) -> void:
