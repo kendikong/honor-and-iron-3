@@ -22,7 +22,6 @@ var _sfx: SfxPlayer
 
 var dragging: bool = false
 var aiming: bool = false
-var dash_targeting: bool = false
 var _drag_armed: bool = false
 var _drag_press_local: Vector2 = Vector2.ZERO
 
@@ -51,7 +50,6 @@ var drag_preview_failed: bool = false
 var _last_planning_hover_cell: Vector2i = Vector2i(-9999, -9999)
 var _hover_preview_cache_key: String = ""
 var _selection_refresh_pending: bool = false
-var _last_ability_selected_index: int = -99
 var _plan_refresh_followup_pending: bool = false
 var _hover_preview_refresh_pending: bool = false
 var _drag_move_commit_instant: bool = false
@@ -546,21 +544,13 @@ func _run_planning_selection_refresh() -> void:
 func _finish_selection_changed() -> void:
 	if _drag_saved_preview == null and _planning != null:
 		_planning.stash_committed_preview()
-	if _director != null and _director.selected_unit_id >= 0:
-		dash_targeting = _director.find_awaiting_dash_action(_director.selected_unit_id) != null
 	_request_planning_selection_refresh()
 
 
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
-	if index != _last_ability_selected_index:
-		if (
-			_director.selected_unit_id < 0
-			or _director.find_awaiting_dash_action(_director.selected_unit_id) == null
-		):
-			clear_dash_targeting()
-	_last_ability_selected_index = index
+	clear_dash_targeting()
 	if _director.selected_unit_id >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
 	_request_planning_selection_refresh()
@@ -1031,14 +1021,9 @@ func _commit_at_cell(
 		unit_id,
 	)
 	if bool(slots.get("invalid", false)):
-		if actor != null and cell == _proj_origin(actor):
-			var self_ability := _selected_ability_data(actor)
-			if AbilitySystem.ability_arms_dash_on_self_click(actor, self_ability):
-				_play_sfx("invalid")
-				return dash_targeting_active()
-			if _try_plan_wait(unit_id):
-				_play_sfx("ability")
-				return true
+		if actor != null and cell == _proj_origin(actor) and _try_plan_wait(unit_id):
+			_play_sfx("ability")
+			return true
 		_play_sfx("invalid")
 		return false
 	_apply_facing_to_slots(slots, local, cell)
@@ -1071,12 +1056,10 @@ func _try_arm_dash_or_self_skill(unit_id: int) -> bool:
 	if _director.find_awaiting_dash_action(unit_id) != null:
 		_play_sfx("ability")
 		return true
-	if not arm_dash_targeting():
-		return false
-	if _director.find_awaiting_dash_action(unit_id) != null:
+	var armed: bool = arm_dash_targeting()
+	if armed:
 		_play_sfx("ability")
-		return true
-	return false
+	return armed
 
 
 func _apply_facing_to_slots(slots: Dictionary, local: Vector2, cell: Vector2i) -> void:
@@ -1298,23 +1281,20 @@ func arm_dash_targeting() -> bool:
 		return true
 	_director.set_awaiting_dash_action(actor.id, ability)
 	_director.flush_plan_refresh_signals_if_pending()
-	dash_targeting = _director.find_awaiting_dash_action(actor.id) != null
 	if _planning != null:
 		_planning.clear_threat_origin()
 		_planning._invalidate_hover_cache()
 		_planning._recompute_hover_ranges_from_inputs()
 	_invalidate_planning_hover_cache()
 	_request_planning_selection_refresh()
-	return dash_targeting
+	return dash_targeting_active()
 
 
 func clear_dash_targeting() -> void:
 	if _director == null or _director.selected_unit_id < 0:
-		dash_targeting = false
 		return
-	if _director.find_awaiting_dash_action(_director.selected_unit_id) == null and not dash_targeting:
+	if _director.find_awaiting_dash_action(_director.selected_unit_id) == null:
 		return
-	dash_targeting = false
 	_director.clear_awaiting_dash_action(_director.selected_unit_id)
 	if _planning != null:
 		_planning._invalidate_hover_cache()

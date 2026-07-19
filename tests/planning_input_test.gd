@@ -16,9 +16,47 @@ static func run_all(failures: Array[String]) -> void:
 	_test_auto_skill_after_move_arms_dash(failures)
 	_test_awaiting_dash_plan_refresh(failures)
 	_test_dash_arm_survives_plan_refresh(failures)
-	_test_dash_arm_survives_board_changed_cancel_aim(failures)
 	_test_dash_self_click_blocks_false_wait(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
+
+
+static func _bowling_charge_arm_fixture() -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var dash := AbilityData.new()
+	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	dash.display_name = "Bowling Charge"
+	dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+	dash.targeting_flags = AbilityData._targeting_mode_to_flags(dash.targeting_mode)
+	var dash_eff := EffectData.new()
+	dash_eff.type = GameEnums.EffectType.DASH
+	dash_eff.amount = 3
+	dash.effects = [dash_eff]
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(2, 2)
+	unit.movement.points_left = 4
+	unit.ability.points_left = 3
+	unit.active_abilities = [dash]
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	input._director = director
+	return {"input": input, "director": director, "board": board, "unit": unit, "dash": dash}
 
 
 static func _test_force_basic_flag(failures: Array[String]) -> void:
@@ -296,11 +334,10 @@ static func _test_audit_regression_fixes(failures: Array[String]) -> void:
 	if action_steps.is_empty():
 		failures.append("PlanningInputTest: self-target skill should populate action slot on own tile")
 	director.selected_ability_index = 1
-	input.dash_targeting = false
 	if not input._try_arm_dash_or_self_skill(1):
 		failures.append("PlanningInputTest: dash skill self click should arm dash targeting")
-	if not input.dash_targeting:
-		failures.append("PlanningInputTest: try_arm_dash should set dash_targeting")
+	if not input.dash_targeting_active():
+		failures.append("PlanningInputTest: try_arm_dash should queue awaiting dash in plan")
 	director.selected_ability_index = -1
 	if not input._would_show_wait_on_self_click(unit):
 		failures.append("PlanningInputTest: empty skill bar should allow wait cursor on self tile")
@@ -346,7 +383,6 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	director.selected_ability_index = 0
 	input._director = director
 	input.auto_use_skill_after_move = true
-	input.dash_targeting = false
 	var move_slots: Dictionary = input._finalize_commit_slots(
 		{
 			"pre": [
@@ -361,7 +397,7 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 		1,
 	)
 	input._on_commit_slots_applied(1, move_slots)
-	if not input.dash_targeting:
+	if not input.dash_targeting_active():
 		failures.append(
 			"PlanningInputTest: auto skill after move should arm dash after move-only commit",
 		)
@@ -376,7 +412,6 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 			"PlanningInputTest: awaiting dash label should include Awaiting Input, got %s"
 			% awaiting_label,
 		)
-	input.dash_targeting = false
 	input.auto_use_skill_after_move = false
 	var move_slots_off: Dictionary = input._finalize_commit_slots(
 		{
@@ -392,7 +427,7 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 		1,
 	)
 	input._on_commit_slots_applied(1, move_slots_off)
-	if input.dash_targeting:
+	if input.dash_targeting_active():
 		failures.append(
 			"PlanningInputTest: dash must not auto-arm when auto skill after move is off",
 		)
@@ -484,40 +519,9 @@ static func _test_awaiting_dash_plan_refresh(failures: Array[String]) -> void:
 
 
 static func _test_dash_arm_survives_plan_refresh(failures: Array[String]) -> void:
-	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
-	var board := BoardState.new()
-	board.grid_size = Vector2i(8, 8)
-	var plain := TerrainData.new()
-	plain.blocks_movement = false
-	for y: int in range(board.grid_size.y):
-		for x: int in range(board.grid_size.x):
-			var coord := Vector2i(x, y)
-			board.tiles[coord] = TileState.create(coord, plain)
-	var unit := UnitState.new()
-	unit.id = 1
-	unit.team = GameEnums.Team.PLAYER
-	unit.position = Vector2i(2, 2)
-	unit.movement.points_left = 4
-	unit.ability.points_left = 3
-	var dash := AbilityData.new()
-	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
-	dash.display_name = "Bowling Charge"
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
-	dash_eff.amount = 3
-	dash.effects = [dash_eff]
-	unit.active_abilities = [dash]
-	board.units = [unit]
-	GridSystem.set_occupant(board, unit.position, unit.id)
-	director.board = board
-	director.base_board = board
-	director.projected_state = board.clone()
-	director.phase = CombatDirector.Phase.PLANNING
-	director.selected_unit_id = 1
-	director.selected_ability_index = 0
-	input._director = director
-	input._last_ability_selected_index = 0
+	var fixture: Dictionary = _bowling_charge_arm_fixture()
+	var input: CombatPlanningInput = fixture["input"] as CombatPlanningInput
+	var director: CombatDirector = fixture["director"] as CombatDirector
 	if not input._try_arm_dash_or_self_skill(1):
 		failures.append("PlanningInputTest: dash self click should arm through plan refresh")
 	if director.find_awaiting_dash_action(1) == null:
@@ -528,50 +532,11 @@ static func _test_dash_arm_survives_plan_refresh(failures: Array[String]) -> voi
 		failures.append(
 			"PlanningInputTest: dash_targeting_active should read awaiting plan entry",
 		)
-
-
-static func _test_dash_arm_survives_board_changed_cancel_aim(failures: Array[String]) -> void:
-	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
-	var board := BoardState.new()
-	board.grid_size = Vector2i(8, 8)
-	var plain := TerrainData.new()
-	plain.blocks_movement = false
-	for y: int in range(board.grid_size.y):
-		for x: int in range(board.grid_size.x):
-			var coord := Vector2i(x, y)
-			board.tiles[coord] = TileState.create(coord, plain)
-	var unit := UnitState.new()
-	unit.id = 1
-	unit.team = GameEnums.Team.PLAYER
-	unit.position = Vector2i(2, 2)
-	unit.movement.points_left = 4
-	unit.ability.points_left = 3
-	var dash := AbilityData.new()
-	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
-	dash.display_name = "Bowling Charge"
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
-	dash_eff.amount = 3
-	dash.effects = [dash_eff]
-	unit.active_abilities = [dash]
-	board.units = [unit]
-	GridSystem.set_occupant(board, unit.position, unit.id)
-	director.board = board
-	director.base_board = board
-	director.projected_state = board.clone()
-	director.phase = CombatDirector.Phase.PLANNING
-	director.selected_unit_id = 1
-	director.selected_ability_index = 0
-	input._director = director
-	input._last_ability_selected_index = 0
-	if not input._try_arm_dash_or_self_skill(1):
-		failures.append("PlanningInputTest: dash arm should succeed before board_changed")
 	director.flush_plan_refresh_signals_if_pending()
 	input.cancel_aim()
 	if director.find_awaiting_dash_action(1) == null:
 		failures.append(
-			"PlanningInputTest: awaiting dash must survive plan board_changed + cancel_aim",
+			"PlanningInputTest: awaiting dash must survive board_changed + cancel_aim",
 		)
 	if not input.dash_targeting_active():
 		failures.append(
@@ -580,41 +545,11 @@ static func _test_dash_arm_survives_board_changed_cancel_aim(failures: Array[Str
 
 
 static func _test_dash_self_click_blocks_false_wait(failures: Array[String]) -> void:
-	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
-	var board := BoardState.new()
-	board.grid_size = Vector2i(8, 8)
-	var plain := TerrainData.new()
-	plain.blocks_movement = false
-	for y: int in range(board.grid_size.y):
-		for x: int in range(board.grid_size.x):
-			var coord := Vector2i(x, y)
-			board.tiles[coord] = TileState.create(coord, plain)
-	var unit := UnitState.new()
-	unit.id = 1
-	unit.team = GameEnums.Team.PLAYER
-	unit.position = Vector2i(2, 2)
-	unit.movement.points_left = 4
-	unit.ability.points_left = 3
-	var dash := AbilityData.new()
-	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
-	dash.display_name = "Bowling Charge"
-	dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
-	dash.targeting_flags = AbilityData._targeting_mode_to_flags(dash.targeting_mode)
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
-	dash_eff.amount = 3
-	dash.effects = [dash_eff]
-	unit.active_abilities = [dash]
-	board.units = [unit]
-	GridSystem.set_occupant(board, unit.position, unit.id)
-	director.board = board
-	director.base_board = board
-	director.projected_state = board.clone()
-	director.phase = CombatDirector.Phase.PLANNING
-	director.selected_unit_id = 1
-	director.selected_ability_index = 0
-	input._director = director
+	var fixture: Dictionary = _bowling_charge_arm_fixture()
+	var input: CombatPlanningInput = fixture["input"] as CombatPlanningInput
+	var director: CombatDirector = fixture["director"] as CombatDirector
+	var unit: UnitState = fixture["unit"] as UnitState
+	var dash: AbilityData = fixture["dash"] as AbilityData
 	if not AbilitySystem.ability_arms_dash_on_self_click(unit, dash):
 		failures.append("PlanningInputTest: bowling charge should arm dash on self click")
 	if input._try_plan_wait(1):
