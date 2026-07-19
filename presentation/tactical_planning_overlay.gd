@@ -1165,7 +1165,7 @@ func _rounded_route_polyline(pts: PackedVector2Array, corner_r: float) -> Packed
 		if absf(in_dir.dot(out_dir)) > 0.995:
 			out.append(corner)
 			continue
-		var r: float = minf(corner_r, in_len * 0.48, out_len * 0.48)
+		var r: float = minf(corner_r, minf(in_len * 0.48, out_len * 0.48))
 		var p_before: Vector2 = corner - in_dir * r
 		var p_after: Vector2 = corner + out_dir * r
 		out.append(p_before)
