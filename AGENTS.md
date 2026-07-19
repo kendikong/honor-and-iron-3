@@ -13,6 +13,7 @@ The core constitution is managed through Antigravity's Customizations. The core 
 - `roadmap` — Phase 5: milestones & build order.
 
 ## Quick Rules of Thumb
+- **Global systems first (absolute):** Every edit uses shared global systems; minimal heuristics; **warn before any exception** — see `.cursor/rules/global-systems-first.mdc` (always on). Owner must not re-explain this.
 - One pure `Simulator.simulate(state, timeline)`; preview == execution.
 - Simulation = plain RefCounted state, headless, never references Nodes.
 - Static typing, enums over strings, composition over inheritance, data over hardcoding.
@@ -21,7 +22,9 @@ The core constitution is managed through Antigravity's Customizations. The core 
 
 ## Code Quality (All Agents — every model)
 
-**See also:** `.cursor/rules/no-bandaid-fixes.mdc` (**always on, absolute**). No bandaid may ship — fix the owning system or stop and ask.
+**See also (always on, highest priority):**
+- `.cursor/rules/global-systems-first.mdc` — every edit respects global systems; **mandatory exception warning** before bypassing any global rule
+- `.cursor/rules/no-bandaid-fixes.mdc` — no bandaids; one truth path; delete obsolete hacks
 
 The project owner is not a coder. **All agents and models** must write code that would pass a normal professional review — clean, correct, and maintainable, not a rushed patch.
 

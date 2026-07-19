@@ -1,0 +1,79 @@
+---
+description: ABSOLUTE — every edit uses global systems first; warn before any exception; always on
+alwaysApply: true
+---
+
+# Global Systems First (ABSOLUTE — ALWAYS ON)
+
+**Highest-priority engineering rule for this repo.** Applies to **every** file change, fix proposal, and refactor — not only skills, not only when the user repeats it.
+
+The project owner must **not** have to re-explain this. Agents enforce it on **every turn** without being asked.
+
+## Priority order (when rules conflict)
+
+1. **This rule** + `.cursor/rules/no-bandaid-fixes.mdc` + `.cursor/rules/skill-global-rules.mdc`
+2. Roadmap / phase gates / architecture skills (`Simulator`, layers, timeline, `AbilitySystem`)
+3. Convenience, speed, “small local fix,” model-default shortcuts
+
+If a proposed edit violates (1) to satisfy (3) → **do not implement** until redesigned or the owner approves a documented exception.
+
+## Every edit must
+
+1. **Use the existing global system** that owns the behavior (sim, director, `AbilitySystem`, commit slots, data definitions, overlay derived from slots — not parallel logic).
+2. **Minimize heuristics** — no second state machines, no UI-only flags that commit path ignores, no cursor/preview/click paths that disagree.
+3. **Extend the canonical path** — one truth pipeline; preview == execution where applicable.
+4. **Prefer data** over `if ability.id == …` / per-unit branches.
+5. **Remove** the obsolete path in the same change when replacing behavior.
+
+## Heuristic (forbidden unless owner-approved exception)
+
+A **heuristic** here means: behavior driven by a local shortcut that is **not** the same rule the rest of the feature uses — e.g. a flag only presentation reads, a special case only one skill uses, a fix that makes hover/click disagree with `commit_from_slots`.
+
+**Default: zero new heuristics.** Fix the owner system instead.
+
+## Mandatory: exception warning (no silent bypass)
+
+If the **correct** fix requires **breaking, bypassing, or adding an exception to** a global system, you **must stop** and post this block **before any edit**:
+
+```
+## ⚠ Global system exception (approval required)
+
+**Global rule / system affected:** (name the system + file/API, e.g. commit slots, AbilitySystem.can_use, timeline column rule)
+
+**Why the global path is insufficient:** (one paragraph — root cause, not symptom)
+
+**Proposed exception:** (exact behavior change — what would diverge from the global rule)
+
+**Alternatives considered:** (at least one way to stay on the global system, even if harder)
+
+**Is this acceptable?** (yes / no / suggest alternative)
+```
+
+- Do **not** implement the exception until the owner replies **yes** to that specific exception.
+- Do **not** hide exceptions in changelog prose — use the block above.
+- “User said fix it fast” is **not** approval.
+
+## Every proposal / fix must state (brief)
+
+In gate messages, plans, and changelogs for non-trivial edits:
+
+- **Global system used:** (e.g. `_build_commit_slots_at_cell` → `commit_from_slots`)
+- **Heuristics added:** `none` or list each (must be `none` unless exception approved)
+
+## Canonical global systems (Honor & Iron — non-exhaustive)
+
+| Domain | Global owner |
+|--------|----------------|
+| Planning commit / cursor / preview | `combat_planning_input.gd` slots → `CombatDirector.commit_from_slots` / `preview_commit_valid` |
+| Ability legality / range / targeting | `AbilitySystem` + ability data |
+| Turn resolution | `Simulator.simulate` — headless, no Nodes |
+| Skills / economy | Timeline columns, AP/MP, `EffectData` — see `skill-global-rules.mdc` |
+| Living sandbox / map VFX | `sandbox_map_system.md`, `EffectsSettings`, GPU shaders — see `living-sandbox-architect.mdc` |
+
+When unsure which system owns a behavior → **read and extend that system**; do not add a presentation-only workaround.
+
+## Related rules
+
+- `.cursor/rules/no-bandaid-fixes.mdc` — what counts as a bandaid; self-check table
+- `.cursor/rules/skill-global-rules.mdc` — skill-specific global mandate
+- `.cursor/rules/interpret-plan-permission.mdc` — plans still required; exception block is **in addition**

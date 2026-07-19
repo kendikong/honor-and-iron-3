@@ -5,6 +5,8 @@ alwaysApply: true
 
 # Skill Global Rules Mandate
 
+**Parent rule:** `.cursor/rules/global-systems-first.mdc` (always on). If a skill change needs a global exception, use the mandatory **⚠ Global system exception** block there — do not implement silently.
+
 When implementing or changing **any skill, passive, universal action, or ability economy behavior**:
 
 ## Default
@@ -21,10 +23,11 @@ When implementing or changing **any skill, passive, universal action, or ability
 
 ## Required when a new rule is unavoidable
 
-**Stop and warn the project owner before implementing:**
+**Stop and warn the project owner before implementing** (use the **⚠ Global system exception** format in `global-systems-first.mdc`):
 
 1. What global rule the skill would break or bypass.
 2. The **proposed new rule** or exception (exact behavior).
-3. Ask explicitly: **"Is this acceptable?"**
+3. At least one alternative that stays on the global system.
+4. Ask explicitly: **"Is this acceptable?"**
 
 Do not ship silent exceptions. Authoritative text: `class_abilities.txt` § **Global Rules First (Skill Implementation Mandate)**.

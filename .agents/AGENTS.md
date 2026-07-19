@@ -24,7 +24,8 @@ board states to solve spatial puzzles. **Positioning over damage. No RNG in comb
 - **Composition over Inheritance**: Assemble units/entities from independent components.
 - **Data-Driven**: Abilities are data (Ability Resources / tres files), not engine code modifications.
 - **Fail Loudly**: Assert on resource/state validation; do not silently ignore errors.
-- **No bandaid fixes (absolute)**: See `.cursor/rules/no-bandaid-fixes.mdc` — always on. Fix root cause via shared systems; one commit/preview path; delete obsolete hacks in the same change.
+- **Global systems first (absolute)**: `.cursor/rules/global-systems-first.mdc` — every edit; minimal heuristics; **mandatory exception warning** before bypassing any global rule. Owner must not re-explain.
+- **No bandaid fixes (absolute)**: `.cursor/rules/no-bandaid-fixes.mdc` — one commit/preview path; delete obsolete hacks in the same change.
 
 ## Model Policy & API Efficiency
 - **Frontier Models (Gemini 1.5 Pro / Claude 3.5 Sonnet)** must be used for medium/big edits (30+ lines, architectural changes, multi-file edits), unless the user explicitly instructs otherwise.

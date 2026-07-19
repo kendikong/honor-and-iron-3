@@ -17,9 +17,12 @@ Use exactly these three sections (in order):
 - What is **in scope** vs **out of scope** for this turn
 
 ### 2. Planned approach
+- **Global system used:** (canonical owner — e.g. commit slots, `AbilitySystem`, `Simulator`; see `global-systems-first.mdc`)
+- **Heuristics added:** `none` or list each (must be `none` unless owner already approved an exception)
 - Concrete steps you will take (files, systems, tests)
 - What you will **not** do (important when past mistakes are relevant)
 - Risks or assumptions, if any
+- If this plan **breaks or bypasses** a global system → include the **⚠ Global system exception** block from `global-systems-first.mdc` and wait for approval on the exception (not just the plan)
 
 ### 3. Permission
 End with a direct question, e.g. **"Proceed with this plan? (yes / no / adjust)"**
@@ -43,6 +46,7 @@ Wait for the user's reply before making changes or running implementation work.
 ## Anti-patterns (do not do these)
 
 - Jumping straight to code because the fix "looks simple"
+- Proposing a heuristic or bandaid without the **⚠ Global system exception** block when it bypasses a global system
 - Solving a different problem than the user described (e.g. placement vs draw order)
 - Assuming post-process vs pre-process without stating it and getting buy-in
 - Bundling surprise scope (extra refactors, commits, new files) without listing them in the plan

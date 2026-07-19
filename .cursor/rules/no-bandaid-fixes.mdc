@@ -49,6 +49,7 @@ If any answer is wrong → **redesign**, do not ship the bandaid.
 
 ## Relationship to other rules
 
+- **Parent:** `.cursor/rules/global-systems-first.mdc` — highest priority; exception warning required before any global bypass.
 - **Wins over** “quick fix” impulses and model-default shortcuts.
 - **Complements** `skill-global-rules.mdc` (no per-skill globals) and `phase-audit.mdc` (Correct coding = no bandaids).
 - Code quality in `AGENTS.md` / `.agents/AGENTS.md` restates this for all agents.
