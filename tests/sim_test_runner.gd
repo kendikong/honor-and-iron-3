@@ -631,5 +631,20 @@ func _test_run_global_economy_rules() -> bool:
 	if AbilitySystem.is_planning_fully_exhausted(runner, true):
 		printerr("  runner must not be fully exhausted while action slot remains")
 		return false
+	var skill := AbilityData.new()
+	skill.kind = GameEnums.AbilityKind.CLASS_SKILL
+	skill.action_point_cost = 1
+	if AbilitySystem.can_afford_run_for_commit(runner, skill):
+		printerr("  runner with 0 AP after run should not afford run+class skill")
+		return false
+	var runner2 := _place(board, 2, runner_def, GameEnums.Team.PLAYER, Vector2i(2, 1))
+	runner2.ability.points_left = 2
+	if not AbilitySystem.can_afford_run_for_commit(runner2, skill):
+		printerr("  runner with 2 AP should afford run+1 AP class skill")
+		return false
+	runner2.ability.points_left = 1
+	if AbilitySystem.can_afford_run_for_commit(runner2, skill):
+		printerr("  runner with 1 AP should not afford run+1 AP class skill")
+		return false
 	return true
 

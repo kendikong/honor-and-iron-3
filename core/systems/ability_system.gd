@@ -139,6 +139,28 @@ static func can_afford_run(actor: UnitState) -> bool:
 	return actor.ability.points_left >= run_ability.action_point_cost
 
 
+## Auto-run / run-move commit: Run AP plus any paired action ability must fit the AP budget.
+static func can_afford_run_for_commit(actor: UnitState, paired_ability: AbilityData = null) -> bool:
+	if not can_afford_run(actor):
+		return false
+	if paired_ability == null or is_run_ability(paired_ability):
+		return true
+	if is_wait_ability(paired_ability):
+		return actor.can_use_action_slot()
+	match paired_ability.kind:
+		GameEnums.AbilityKind.MOVEMENT_SKILL:
+			return true
+		GameEnums.AbilityKind.CLASS_SKILL:
+			var run_ability: AbilityData = DataLibrary.get_universal_run()
+			if run_ability == null:
+				return false
+			var ap_after_run: int = actor.ability.points_left - run_ability.action_point_cost
+			if ap_after_run < paired_ability.action_point_cost:
+				return false
+			return actor.can_use_action_slot()
+	return true
+
+
 ## Master Bible § Universal Action Economy: Pre-Move column (walk, Run, movement skills).
 static func can_plan_pre_move(unit: UnitState, move_slot_open: bool) -> bool:
 	if unit == null or not move_slot_open:

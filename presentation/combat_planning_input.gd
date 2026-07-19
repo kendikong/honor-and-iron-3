@@ -1283,7 +1283,14 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	var actor := unit if unit != null else _proj_unit(_director.selected_unit_id)
 	if actor == null and _director.board != null:
 		actor = _director.board.get_unit_by_id(_director.selected_unit_id)
-	return actor != null and AbilitySystem.can_afford_run(actor)
+	if actor == null:
+		return false
+	var ability := _selected_ability_data(actor)
+	if AbilitySystem.is_run_ability(ability):
+		return false
+	if ability == null:
+		return AbilitySystem.can_afford_run(actor)
+	return AbilitySystem.can_afford_run_for_commit(actor, ability)
 
 
 func extended_move_budget_active(unit: UnitState = null) -> bool:
@@ -1521,6 +1528,9 @@ func _append_move_to_commit_slots(
 	if AbilitySystem.movement_requires_run(_proj(), actor, cell, waypoints):
 		if _run_mode_selected(actor) or auto_run_movement_active(actor):
 			move = TimelineAction.make_run_move(unit_id, cell, -1, waypoints, timing)
+		else:
+			slots["invalid"] = true
+			return
 	var col: String = "post" if timing == GameEnums.MoveTiming.POST_ACTION else "pre"
 	slots[col].append(move)
 
@@ -1679,6 +1689,7 @@ func _build_enemy_commit_slots(
 					actor,
 					path,
 					GameEnums.MoveTiming.PRE_ACTION,
+					ability,
 				),
 			)
 		slots["action"].append(
