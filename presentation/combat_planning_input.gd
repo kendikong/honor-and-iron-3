@@ -40,6 +40,7 @@ var _hover_preview_cache_key: String = ""
 var _selection_refresh_pending: bool = false
 var _plan_refresh_followup_pending: bool = false
 var _hover_preview_refresh_pending: bool = false
+var _drag_move_commit_instant: bool = false
 
 
 func setup(
@@ -207,6 +208,7 @@ func on_left_release(local: Vector2) -> void:
 
 
 func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
+	_drag_move_commit_instant = had_movement
 	var released_unit_id: int = _drag_unit_id
 	var legal_move_tiles: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
 	var committed: bool = false
@@ -263,6 +265,7 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 				committed = true
 		if not committed and _try_plan_skill_at_coord(actor, cell, local):
 			committed = true
+	_drag_move_commit_instant = false
 	return committed
 
 
@@ -1015,6 +1018,7 @@ func _plan_approach_or_trample_on_enemy(
 				_facing_from_drop(local, preferred_tile),
 				waypoints,
 			)
+			_notify_drag_plan_move_committed(unit_id)
 			_play_sfx("move")
 			return true
 		_director.rpc_plan_attack(unit_id, _director.selected_ability_index, actor.id)
@@ -1029,6 +1033,7 @@ func _plan_approach_or_trample_on_enemy(
 			enemy.id,
 			preferred_tile,
 		)
+		_notify_drag_plan_move_committed(unit_id)
 		_play_sfx("ability")
 		return true
 	if _drop_allows_move_tile(enemy.position, legal_move_tiles, actor):
@@ -1038,6 +1043,7 @@ func _plan_approach_or_trample_on_enemy(
 			_facing_from_drop(local, enemy.position),
 			waypoints,
 		)
+		_notify_drag_plan_move_committed(unit_id)
 		_play_sfx("move")
 		return true
 	if not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
@@ -1048,6 +1054,7 @@ func _plan_approach_or_trample_on_enemy(
 		enemy.id,
 		preferred_tile,
 	)
+	_notify_drag_plan_move_committed(unit_id)
 	_play_sfx("ability")
 	return true
 
@@ -1089,9 +1096,11 @@ func _try_commit_move_with_self_skill(
 			_director.rpc_plan_run_and_move(
 				unit_id, coord, face_dir, waypoints, _director.selected_ability_index,
 			)
+			_notify_drag_plan_move_committed(unit_id)
 			_play_sfx("ability")
 		else:
 			_director.rpc_plan_move(unit_id, coord, face_dir, waypoints)
+			_notify_drag_plan_move_committed(unit_id)
 			_play_sfx("move")
 		return true
 	if coord == actor.position:
@@ -1107,6 +1116,7 @@ func _try_commit_move_with_self_skill(
 		waypoints,
 		_director.selected_ability_index,
 	)
+	_notify_drag_plan_move_committed(unit_id)
 	_play_sfx("ability")
 	return true
 
@@ -1142,6 +1152,11 @@ func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) 
 	return false
 
 
+func _notify_drag_plan_move_committed(unit_id: int) -> void:
+	if _drag_move_commit_instant and _director != null:
+		_director.mark_planning_move_instant(unit_id)
+
+
 func _try_plan_basic_move(
 	unit_id: int,
 	coord: Vector2i,
@@ -1163,6 +1178,7 @@ func _try_plan_basic_move(
 	if actor == null or not _drop_allows_move_tile(coord, legal_move_tiles, actor):
 		return false
 	_director.rpc_plan_move(unit_id, coord, _facing_from_drop(local, coord), waypoints)
+	_notify_drag_plan_move_committed(unit_id)
 	_play_sfx("move")
 	return true
 

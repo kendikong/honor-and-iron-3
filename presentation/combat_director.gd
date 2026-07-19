@@ -54,6 +54,8 @@ var turn_start_board: BoardState
 var plan_revision: int = 0
 ## Units whose plan was removed this refresh — forces visual resync (e.g. undo during walk).
 var plan_affected_unit_ids: Array[int] = []
+## Drag-drop move commits snap instantly; selection/hover commits walk/run on plan.
+var _instant_planning_move_units: Dictionary = {}
 ## Hidden exhaustion slot (Master Bible § Universal Wait) — not in plan_action.
 var _wait_unit_ids: Dictionary = {}
 var _plan_refresh_emit_pending: bool = false
@@ -576,6 +578,15 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 
 func get_player_plan() -> Timeline:
 	return _get_combined_plan()
+
+
+func mark_planning_move_instant(unit_id: int) -> void:
+	if unit_id >= 0:
+		_instant_planning_move_units[unit_id] = true
+
+
+func take_planning_move_instant(unit_id: int) -> bool:
+	return _instant_planning_move_units.erase(unit_id)
 
 
 func get_planned_move_waypoints(unit_id: int) -> Array[Vector2i]:

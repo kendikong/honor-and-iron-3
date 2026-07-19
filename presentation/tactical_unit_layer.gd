@@ -785,6 +785,11 @@ func _sync_planning_unit_position(unit: UnitState) -> void:
 		_sync_planning_final_facing(unit.id)
 		_update_depth(unit.id)
 		return
+	if _director != null and _director.take_planning_move_instant(unit.id):
+		_position_actor(unit.id, target)
+		_sync_planning_final_facing(unit.id)
+		_update_depth(unit.id)
+		return
 	if _should_rubberband_planning_move(unit.id, current_cell, target):
 		_snap_actor_rubberband(unit.id, target)
 		return
@@ -1293,7 +1298,12 @@ func end_drag_preview(snap_back: bool = false) -> void:
 	if snap_back and actor.position.distance_to(home) > 1.5:
 		_snap_actor_rubberband(unit_id, unit.position)
 		return
-	_finish_drag_preview_at_home(unit_id, unit)
+	if snap_back:
+		_finish_drag_preview_at_home(unit_id, unit)
+		return
+	var drop_cell: Vector2i = _actor_grid_cell(unit_id)
+	_finish_snap_at_cell(unit_id, drop_cell)
+	_apply_exhaustion_state(unit)
 
 
 func _finish_drag_preview_at_home(unit_id: int, unit: UnitState) -> void:
