@@ -37,6 +37,13 @@ var irreversible: bool = false
 ## MOVE only: apply universal Run boost immediately before this step resolves.
 var uses_run: bool = false
 
+## ABILITY only: armed for targeting (dash etc.) — shown in plan UI, not simulated until finalized.
+var awaiting_target: bool = false
+
+
+func is_simulatable() -> bool:
+	return not awaiting_target
+
 
 func is_run_boosted_pre_move() -> bool:
 	return (
@@ -86,6 +93,16 @@ static func make_face(
 	action.face_dir = p_face_dir
 	return action
 
+static func make_ability_awaiting(
+	p_actor_id: int,
+	p_ability: AbilityData,
+	p_origin: Vector2i,
+) -> TimelineAction:
+	var action := make_ability(p_actor_id, p_ability, p_origin, p_actor_id)
+	action.awaiting_target = true
+	return action
+
+
 static func make_ability(
 	p_actor_id: int,
 	p_ability: AbilityData,
@@ -114,4 +131,5 @@ func clone() -> TimelineAction:
 	copy.waypoints = waypoints.duplicate()
 	copy.irreversible = irreversible
 	copy.uses_run = uses_run
+	copy.awaiting_target = awaiting_target
 	return copy

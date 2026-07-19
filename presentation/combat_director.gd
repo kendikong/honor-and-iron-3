@@ -323,6 +323,76 @@ func _clear_unit_class_actions_from_plan(unit_id: int) -> void:
 	plan_action.entries = kept
 
 
+func find_awaiting_dash_action(unit_id: int) -> TimelineAction:
+	if unit_id < 0:
+		return null
+	for action: TimelineAction in plan_action.entries:
+		if action.actor_id != unit_id or not action.awaiting_target:
+			continue
+		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+			continue
+		if AbilitySystem.ability_has_dash(action.ability):
+			return action
+	return null
+
+
+func set_awaiting_dash_action(unit_id: int, ability: AbilityData) -> void:
+	if unit_id < 0 or ability == null:
+		return
+	var actor: UnitState = (
+		projected_state.get_unit_by_id(unit_id)
+		if projected_state != null
+		else board.get_unit_by_id(unit_id)
+	)
+	if actor == null:
+		actor = board.get_unit_by_id(unit_id)
+	if actor == null:
+		return
+	_clear_unit_class_actions_from_plan(unit_id)
+	var action: TimelineAction = TimelineAction.make_ability_awaiting(
+		unit_id, ability, actor.position,
+	)
+	plan_action.entries.append(action)
+	plan_affected_unit_ids = [unit_id]
+	_refresh_plan()
+
+
+func clear_awaiting_dash_action(unit_id: int) -> void:
+	if unit_id < 0:
+		return
+	var kept: Array[TimelineAction] = []
+	var removed: bool = false
+	for action: TimelineAction in plan_action.entries:
+		if action.actor_id == unit_id and action.awaiting_target:
+			removed = true
+			continue
+		kept.append(action)
+	if not removed:
+		return
+	plan_action.entries = kept
+	plan_affected_unit_ids = [unit_id]
+	_refresh_plan()
+
+
+func _try_finalize_awaiting_dash_from_slots(unit_id: int, slots: Dictionary) -> bool:
+	var awaiting: TimelineAction = find_awaiting_dash_action(unit_id)
+	if awaiting == null:
+		return false
+	for raw: Variant in slots.get("action", []):
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+			continue
+		if not AbilitySystem.ability_has_dash(action.ability):
+			return false
+		awaiting.target_coord = action.target_coord
+		awaiting.target_unit_id = action.target_unit_id
+		awaiting.awaiting_target = false
+		return true
+	return false
+
+
 func _plan_for_ability(ability: AbilityData) -> Timeline:
 	if ability != null and ability.is_movement_kind():
 		return plan_pre_move
@@ -654,6 +724,17 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			return false
 		_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 	if has_action:
+		if _try_finalize_awaiting_dash_from_slots(unit_id, slots):
+			if has_pre_move:
+				if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
+					return false
+				_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+				for raw: Variant in slots.get("pre", []):
+					if raw is TimelineAction:
+						_try_add(raw as TimelineAction, plan_pre_move)
+			plan_affected_unit_ids = [unit_id]
+			_refresh_plan()
+			return true
 		_clear_unit_wait(unit_id)
 		_clear_unit_class_actions_from_plan(unit_id)
 		_clear_unit_post_moves_from_plan(unit_id)

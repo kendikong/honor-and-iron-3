@@ -544,6 +544,8 @@ func _run_planning_selection_refresh() -> void:
 func _finish_selection_changed() -> void:
 	if _drag_saved_preview == null and _planning != null:
 		_planning.stash_committed_preview()
+	if _director != null and _director.selected_unit_id >= 0:
+		dash_targeting = _director.find_awaiting_dash_action(_director.selected_unit_id) != null
 	_request_planning_selection_refresh()
 
 
@@ -1267,7 +1269,11 @@ func arm_dash_targeting() -> void:
 		return
 	if selected_phase_action_exhausted(actor.id):
 		return
+	var ability := _selected_ability_data(actor)
+	if ability == null:
+		return
 	dash_targeting = true
+	_director.set_awaiting_dash_action(actor.id, ability)
 	if _planning != null:
 		_planning.clear_threat_origin()
 		_planning._invalidate_hover_cache()
@@ -1276,9 +1282,13 @@ func arm_dash_targeting() -> void:
 
 
 func clear_dash_targeting() -> void:
-	if not dash_targeting:
+	if not dash_targeting and (
+		_director == null or _director.find_awaiting_dash_action(_director.selected_unit_id) == null
+	):
 		return
 	dash_targeting = false
+	if _director != null and _director.selected_unit_id >= 0:
+		_director.clear_awaiting_dash_action(_director.selected_unit_id)
 	if _planning != null:
 		_planning._invalidate_hover_cache()
 	_invalidate_planning_hover_cache()

@@ -328,6 +328,7 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	dash_eff.type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
 	dash.effects = [dash_eff]
+	dash.display_name = "Bowling Charge"
 	dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	dash.targeting_flags = AbilityData._targeting_mode_to_flags(dash.targeting_mode)
 	unit.active_abilities = [dash]
@@ -359,6 +360,17 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	if not input.dash_targeting:
 		failures.append(
 			"PlanningInputTest: auto skill after move should arm dash after move-only commit",
+		)
+	var awaiting: TimelineAction = director.find_awaiting_dash_action(1)
+	if awaiting == null or not awaiting.awaiting_target:
+		failures.append(
+			"PlanningInputTest: armed dash should queue awaiting action in plan_action",
+		)
+	var awaiting_label: String = CombatUiFormatters.action_symbol_text(board, awaiting, unit)
+	if awaiting_label.find("Awaiting Input") < 0:
+		failures.append(
+			"PlanningInputTest: awaiting dash label should include Awaiting Input, got %s"
+			% awaiting_label,
 		)
 	input.dash_targeting = false
 	input.auto_use_skill_after_move = false

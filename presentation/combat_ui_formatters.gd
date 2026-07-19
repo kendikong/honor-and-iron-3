@@ -235,6 +235,8 @@ static func describe_action(board: BoardState, action: TimelineAction) -> String
 			return "%s move -> %s" % [actor_name, action.target_coord]
 		GameEnums.ActionType.ABILITY:
 			var ability_name: String = action.ability.display_name if action.ability != null else "ability"
+			if action.awaiting_target:
+				return "%s — awaiting dash endpoint" % ability_name
 			var target_name: String = actor_name
 			if board != null and action.target_unit_id >= 0:
 				var tgt := board.get_unit_by_id(action.target_unit_id)
@@ -283,6 +285,9 @@ static func action_symbol_text(
 	if action.type == GameEnums.ActionType.ABILITY:
 		if action.ability != null and DataLibrary.is_universal_wait(action.ability.id):
 			return ""
+		if action.awaiting_target:
+			var pending_name: String = action.ability.display_name if action.ability != null else "Skill"
+			return "%s — Awaiting Input" % pending_name
 		var symbol: String = "✨"
 		if action.ability != null:
 			if action.ability.id == &"universal_run":

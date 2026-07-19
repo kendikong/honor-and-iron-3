@@ -56,6 +56,8 @@ static func _apply_bucket(
 	events: Array[SimEvent],
 ) -> void:
 	for action in plan.entries:
+		if not action.is_simulatable():
+			continue
 		if not _action_in_bucket(action, bucket):
 			continue
 		ResolutionPipeline.apply_action(board, action, events)
