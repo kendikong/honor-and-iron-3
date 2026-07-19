@@ -1395,7 +1395,7 @@ func _in_ability_range(actor: UnitState, target: UnitState) -> bool:
 func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	if unit == null or coord == unit.position:
 		return false
-	if p_unit.movement.points_left <= 0 and not extended_move_budget_active(unit):
+	if unit.movement.points_left <= 0 and not extended_move_budget_active(unit):
 		return false
 	var board := _proj()
 	if not MovementSystem.can_end_movement_on(board, coord, unit):
