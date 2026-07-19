@@ -10,6 +10,9 @@ var _session: TestBattleSession
 var _director: CombatDirector
 
 var _root: PanelContainer
+var _body_scroll: ScrollContainer
+var _collapse_btn: Button
+var _collapsed: bool = false
 var _class_option: OptionButton
 var _passive_box: VBoxContainer
 var _passive_checks: Dictionary = {}
@@ -50,15 +53,36 @@ func _build_ui() -> void:
 	margin.add_theme_constant_override("margin_bottom", 10)
 	_root.add_child(margin)
 
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(PANEL_WIDTH - 20, 620.0)
-	margin.add_child(scroll)
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 6)
+	margin.add_child(outer)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 6)
+	outer.add_child(header)
+
+	var title := Label.new()
+	title.text = "Skill Test Arena"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_font_size_override("font_size", 14)
+	header.add_child(title)
+
+	_collapse_btn = Button.new()
+	_collapse_btn.text = "▼"
+	_collapse_btn.tooltip_text = "Collapse debug panel"
+	_collapse_btn.custom_minimum_size = Vector2(28.0, 24.0)
+	_collapse_btn.pressed.connect(_toggle_collapsed)
+	header.add_child(_collapse_btn)
+
+	_body_scroll = ScrollContainer.new()
+	_body_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_body_scroll.custom_minimum_size = Vector2(PANEL_WIDTH - 20, 600.0)
+	outer.add_child(_body_scroll)
 
 	var body := VBoxContainer.new()
 	body.add_theme_constant_override("separation", 8)
-	scroll.add_child(body)
+	_body_scroll.add_child(body)
 
-	_add_heading(body, "Skill Test Arena")
 	_add_label(body, "10×10 grass — real combat pipeline")
 
 	_status_label = Label.new()
@@ -202,6 +226,17 @@ func _on_full_reset_pressed() -> void:
 func _set_status(text: String) -> void:
 	if _status_label != null:
 		_status_label.text = text
+
+
+func _toggle_collapsed() -> void:
+	_collapsed = not _collapsed
+	_body_scroll.visible = not _collapsed
+	_collapse_btn.text = "▶" if _collapsed else "▼"
+	_collapse_btn.tooltip_text = "Expand debug panel" if _collapsed else "Collapse debug panel"
+	if _collapsed:
+		_root.custom_minimum_size = Vector2(PANEL_WIDTH, 48.0)
+	else:
+		_root.custom_minimum_size = Vector2(PANEL_WIDTH, 640.0)
 
 
 static func _add_heading(parent: Control, text: String) -> void:

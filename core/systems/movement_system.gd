@@ -217,6 +217,9 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 			}))
 			return
 
+	if action.uses_run:
+		AbilitySystem.apply_run_boost(unit, events)
+
 	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
 
 	# Teleporters warp directly — no path walking, no MP cost.

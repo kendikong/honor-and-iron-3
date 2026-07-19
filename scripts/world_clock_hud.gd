@@ -7,6 +7,8 @@ var _panel: PanelContainer
 var _label: Label
 var _skip_night_button: Button
 var _skip_dusk_button: Button
+var _freeze_check: CheckBox
+var _settings: EffectsSettings
 var _map_rect: Rect2 = Rect2()
 
 
@@ -23,6 +25,12 @@ func _ready() -> void:
 func configure_map_rect(map_rect: Rect2) -> void:
 	_map_rect = map_rect
 	_reposition()
+
+
+func bind_effects_settings(settings: EffectsSettings) -> void:
+	_settings = settings
+	if _freeze_check != null and settings != null:
+		_freeze_check.button_pressed = settings.shadow_freeze_time
 
 
 func _build_ui() -> void:
@@ -87,6 +95,12 @@ func _build_ui() -> void:
 	fast_night_box.toggled.connect(func(toggled: bool): WeatherBus.set_fast_night(toggled))
 	skip_row.add_child(fast_night_box)
 
+	_freeze_check = CheckBox.new()
+	_freeze_check.text = "Freeze time"
+	_freeze_check.add_theme_font_size_override("font_size", 13)
+	_freeze_check.toggled.connect(_on_freeze_toggled)
+	vbox.add_child(_freeze_check)
+
 
 func _on_skip_night_pressed() -> void:
 	WeatherBus.skip_night_to_dawn()
@@ -94,6 +108,14 @@ func _on_skip_night_pressed() -> void:
 
 func _on_skip_dusk_pressed() -> void:
 	WeatherBus.skip_to_dusk()
+
+
+func _on_freeze_toggled(pressed: bool) -> void:
+	if _settings == null:
+		return
+	_settings.shadow_freeze_time = pressed
+	_settings.save_to_disk()
+	ShadowDebug.sync_weather_bus(_settings)
 
 
 func _on_weather_changed() -> void:

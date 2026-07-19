@@ -98,6 +98,24 @@ static func is_wait_ability(ability: AbilityData) -> bool:
 	return ability != null and DataLibrary.is_universal_wait(ability.id)
 
 
+## Self-only buffs and Run do not consume the action slot (Wait still does when used).
+static func consumes_action_slot(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	if is_wait_ability(ability) or is_run_ability(ability):
+		return false
+	if ability.effects.is_empty():
+		return true
+	for eff: EffectData in ability.effects:
+		if eff.type != GameEnums.EffectType.ADD_STATUS_SELF:
+			return true
+	return false
+
+
+static func apply_run_boost(actor: UnitState, events: Array[SimEvent]) -> void:
+	_apply_running_boost(actor, events)
+
+
 static func running_move_bonus(max_move: int) -> int:
 	return int(floor(float(max_move) * 0.5))
 
@@ -191,7 +209,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var actor := board.get_unit_by_id(action.actor_id)
 	var ability := action.ability
 	actor.ability.points_left -= action.ability.action_point_cost
-	if not actor.has_unlimited_training_actions():
+	if not actor.has_unlimited_training_actions() and consumes_action_slot(ability):
 		actor.turn_action_used = true
 
 	# Wait is an exhaustion state — consumes the action slot silently (no VFX / log event).

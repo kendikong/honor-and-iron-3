@@ -25,6 +25,7 @@ var _info_label: RichTextLabel
 var _tile_info_label: RichTextLabel
 var _intent_label: RichTextLabel
 var _skill_list: VBoxContainer
+var _skill_scroll: ScrollContainer
 var _log_label: RichTextLabel
 var _warn_label: RichTextLabel
 var _force_basic_check: CheckBox
@@ -258,6 +259,8 @@ func _add_weighted_skill_panel(parent: VBoxContainer, weight: float) -> VBoxCont
 	var list := VBoxContainer.new()
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	skill_scroll.add_child(list)
+	_skill_scroll = skill_scroll
+	_skill_list = list
 	return list
 
 
@@ -366,6 +369,27 @@ func _on_ability_selected(index: int) -> void:
 	if _director != null and _director.selected_unit_id >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
 	_refresh_ability_buttons_if_dirty()
+	_scroll_selected_skill_into_view()
+
+
+func _scroll_selected_skill_into_view() -> void:
+	if _skill_scroll == null or _skill_list == null:
+		return
+	var child_index: int = _selected_ability
+	if _director != null and CombatDirector.is_wait_ability_index(_selected_ability):
+		child_index = _skill_list.get_child_count() - 1
+	if child_index < 0 or child_index >= _skill_list.get_child_count():
+		return
+	var btn: Control = _skill_list.get_child(child_index) as Control
+	if btn == null:
+		return
+	call_deferred("_ensure_skill_visible", btn)
+
+
+func _ensure_skill_visible(btn: Control) -> void:
+	if _skill_scroll == null or btn == null or not is_instance_valid(btn):
+		return
+	_skill_scroll.ensure_control_visible(btn)
 
 
 func get_log_label() -> RichTextLabel:
@@ -548,6 +572,7 @@ func _rebuild_ability_buttons() -> void:
 		_skill_list.add_child(row_btn)
 
 	_add_wait_skill_button(unit)
+	_scroll_selected_skill_into_view()
 
 
 func _add_wait_skill_button(unit: UnitState) -> void:

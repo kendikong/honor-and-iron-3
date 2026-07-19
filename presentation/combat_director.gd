@@ -543,12 +543,7 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 			if self_after_move and AbilitySystem.is_run_ability(ability):
 				if plan_actor != null and AbilitySystem.movement_requires_run(plan_board, plan_actor, coord, waypoints):
 					new_actions.append(
-						TimelineAction.make_ability(
-							unit_id, ability, actor.position, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
-						),
-					)
-					new_actions.append(
-						TimelineAction.make_move(unit_id, coord, -1, waypoints, GameEnums.MoveTiming.POST_ACTION),
+						TimelineAction.make_run_move(unit_id, coord, -1, waypoints, GameEnums.MoveTiming.PRE_ACTION),
 					)
 				else:
 					new_actions.append(
@@ -591,15 +586,12 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 			if AbilitySystem.is_run_ability(ability) and coord != actor.position:
 				if plan_actor != null and AbilitySystem.movement_requires_run(plan_board, plan_actor, coord, waypoints):
 					new_actions.append(
-						TimelineAction.make_ability(
-							unit_id, ability, actor.position, unit_id, GameEnums.MoveTiming.PRE_ACTION,
-						),
-					)
-					new_actions.append(
-						TimelineAction.make_move(unit_id, coord, -1, waypoints, GameEnums.MoveTiming.POST_ACTION),
+						TimelineAction.make_run_move(unit_id, coord, -1, waypoints, GameEnums.MoveTiming.PRE_ACTION),
 					)
 				else:
-					new_actions.append(TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing))
+					new_actions.append(
+						TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing),
+					)
 			else:
 				new_actions.append(TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing))
 		else:
@@ -746,13 +738,11 @@ func rpc_plan_run_and_move(
 		rpc_plan_move(unit_id, move_coord, face_dir, waypoints)
 		return
 	_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
-	var ability_action := TimelineAction.make_ability(
-		unit_id, ability, attacker.position, unit_id, GameEnums.MoveTiming.PRE_ACTION,
+	_clear_unit_post_moves_from_plan(unit_id)
+	var move_action := TimelineAction.make_run_move(
+		unit_id, move_coord, face_dir, waypoints, GameEnums.MoveTiming.PRE_ACTION,
 	)
-	var move_action := TimelineAction.make_move(
-		unit_id, move_coord, face_dir, waypoints, GameEnums.MoveTiming.POST_ACTION,
-	)
-	_try_add_multiple([ability_action, move_action], [plan_pre_move, plan_post_move])
+	_try_add(move_action, plan_pre_move)
 
 
 @rpc("any_peer", "call_local", "reliable")

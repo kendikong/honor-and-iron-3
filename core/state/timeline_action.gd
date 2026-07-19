@@ -34,6 +34,9 @@ var waypoints: Array[Vector2i] = []
 ## (e.g. trample push) and cannot be undone.
 var irreversible: bool = false
 
+## MOVE only: apply universal Run boost immediately before this step resolves.
+var uses_run: bool = false
+
 static func make_move(
 	p_actor_id: int,
 	p_target_coord: Vector2i,
@@ -48,6 +51,18 @@ static func make_move(
 	action.target_coord = p_target_coord
 	action.face_dir = p_face_dir
 	action.waypoints = p_waypoints
+	return action
+
+
+static func make_run_move(
+	p_actor_id: int,
+	p_target_coord: Vector2i,
+	p_face_dir: int = -1,
+	p_waypoints: Array[Vector2i] = [],
+	p_move_timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION,
+) -> TimelineAction:
+	var action := make_move(p_actor_id, p_target_coord, p_face_dir, p_waypoints, p_move_timing)
+	action.uses_run = true
 	return action
 
 ## Turn in place without moving (the destination is the unit's own tile).
@@ -90,4 +105,5 @@ func clone() -> TimelineAction:
 	copy.face_dir = face_dir
 	copy.waypoints = waypoints.duplicate()
 	copy.irreversible = irreversible
+	copy.uses_run = uses_run
 	return copy

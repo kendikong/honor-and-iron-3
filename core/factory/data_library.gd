@@ -60,10 +60,10 @@ static func build_player_active_abilities(def: UnitData, level: int) -> Array[Ab
 			class_abilities.append(ab)
 	if basic_attack == null:
 		basic_attack = _make_class_basic_attack(def.id)
-	out.append(basic_attack)
 	if movement_skill != null:
 		out.append(movement_skill)
 	out.append(get_universal_run())
+	out.append(basic_attack)
 	if level == 1:
 		if not class_abilities.is_empty():
 			out.append(class_abilities[randi() % class_abilities.size()])

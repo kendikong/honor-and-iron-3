@@ -99,26 +99,10 @@ static func _apply_training_modifiers(board: BoardState, session: TestBattleSess
 static func maintain_training_dummies(board: BoardState, session: TestBattleSession) -> void:
 	if board == null or not session.unkillable_dummies:
 		return
-	var dummy_def: UnitData = DataLibrary.get_training_dummy()
-	var covered: Dictionary = {}
 	for unit: UnitState in board.units:
 		if unit.definition == null or unit.definition.id != &"training_dummy":
 			continue
-		covered[unit.position] = true
 		unit.health.current_hp = unit.health.max_hp
-	var next_id: int = _max_unit_id(board) + 1
-	for coord: Vector2i in session.dummy_coords:
-		if covered.has(coord):
-			continue
-		BoardFactory.place_configured_unit(
-			board,
-			next_id,
-			dummy_def,
-			GameEnums.Team.ENEMY,
-			coord,
-			{},
-		)
-		next_id += 1
 
 
 static func _max_unit_id(board: BoardState) -> int:

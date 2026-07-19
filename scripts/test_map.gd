@@ -127,6 +127,7 @@ func _ready() -> void:
 	_clock_hud = _WorldClockHud.new()
 	_clock_hud.name = "WorldClockHud"
 	add_child(_clock_hud)
+	_clock_hud.bind_effects_settings(_effects.settings)
 	_fps_hud = _FpsHud.new()
 	_fps_hud.name = "FpsHud"
 	add_child(_fps_hud)

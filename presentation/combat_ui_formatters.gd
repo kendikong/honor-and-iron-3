@@ -226,6 +226,8 @@ static func describe_action(board: BoardState, action: TimelineAction) -> String
 		GameEnums.ActionType.FACE:
 			return "%s face %s" % [actor_name, facing_name(action.face_dir)]
 		GameEnums.ActionType.MOVE:
+			if action.uses_run:
+				return "%s run -> %s" % [actor_name, action.target_coord]
 			return "%s move -> %s" % [actor_name, action.target_coord]
 		GameEnums.ActionType.ABILITY:
 			var ability_name: String = action.ability.display_name if action.ability != null else "ability"
@@ -269,6 +271,8 @@ static func action_symbol_text(
 	if action == null:
 		return "-"
 	if action.type == GameEnums.ActionType.MOVE:
+		if action.uses_run:
+			return "Run (%d,%d)" % [action.target_coord.x, action.target_coord.y]
 		return "🏃 (%d,%d)" % [action.target_coord.x, action.target_coord.y]
 	if action.type == GameEnums.ActionType.FACE:
 		return "👀 %s" % facing_name(action.face_dir)
