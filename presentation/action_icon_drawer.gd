@@ -38,6 +38,9 @@ static func draw(canvas: CanvasItem, center: Vector2, icon_key: String, color: C
 		"wait":
 			canvas.draw_line(c + Vector2(-4, 0) * s, c + Vector2(4, 0) * s, color, 2.0 * s)
 			canvas.draw_line(c + Vector2(0, -4) * s, c + Vector2(0, 2) * s, color, 2.0 * s)
+		"null":
+			canvas.draw_arc(c, 5.5 * s, 0.0, TAU, 20, color, 2.2 * s)
+			canvas.draw_line(c + Vector2(-4, 4) * s, c + Vector2(4, -4) * s, color, 2.2 * s)
 		_:
 			canvas.draw_circle(c, 3.0 * s, color)
 
@@ -50,6 +53,8 @@ static func key_from_emoji(emoji: String) -> String:
 			return "attack"
 		"✨", "🔮":
 			return "dash"
+		"∅":
+			return "null"
 		"💚":
 			return "heal"
 		"🛡️":
