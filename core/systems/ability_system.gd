@@ -59,6 +59,10 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			var steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
 			if steps < 1 or steps > effect.amount:
 				return false
+			if effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0:
+				var end_unit := board.get_unit_at(action.target_coord)
+				if end_unit != null and end_unit.id != actor.id:
+					return false
 
 	return true
 
@@ -125,6 +129,15 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 		if eff.type == GameEnums.EffectType.DASH:
 			return true
 	return false
+
+
+static func effect_amount(ability: AbilityData, effect_type: GameEnums.EffectType) -> int:
+	if ability == null:
+		return 0
+	for eff in ability.effects:
+		if eff.type == effect_type:
+			return eff.amount
+	return 0
 
 
 static func is_run_ability(ability: AbilityData) -> bool:
@@ -810,9 +823,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					"actor_id": actor.id,
 					"ability_id": action.ability.id
 				}
-				if action.ability.id == &"knight_bowling_charge":
-					pending["trample_collision"] = true
-					pending["pass_through_push"] = 1
+				var trample_atk := effect_amount(action.ability, GameEnums.EffectType.TRAMPLE)
+				var bulldoze := effect_amount(action.ability, GameEnums.EffectType.BULLDOZE)
+				if trample_atk > 0:
+					pending["trample_atk"] = trample_atk
+				if bulldoze > 0:
+					pending["bulldoze"] = bulldoze
 					pending["caster_collision_immune"] = true
 				if action.ability.id == &"knight_bowling_charge" and actor.is_ability_upgraded(&"knight_bowling_charge"):
 					pending["bowling_upgrade"] = true
@@ -923,10 +939,9 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 		if push_type == "dash":
 			PhysicsSystem.dash(
 				board, target, push.dir, push.amount, events, actor, ability_id,
-				int(push.get("pass_through_atk", 0)),
-				int(push.get("pass_through_push", 0)),
+				int(push.get("trample_atk", 0)),
 				String(push.get("source_label", "")),
-				push.get("trample_collision", false),
+				int(push.get("bulldoze", 0)),
 				push.get("caster_collision_immune", false),
 			)
 		else:

@@ -10,7 +10,7 @@ static var _ABILITY_CODE_BRANCHES: Dictionary = {
 	&"knight_defensive_formation": "Phalanx: ability_system applies DEF buff to self and adjacent allies (ID branch).",
 	&"knight_shield_bash": "Shield Bash: upgrade adds PUSH 1 on hit (ID branch in ability_system).",
 	&"knight_chain_hook": "Chain Hook: upgrade extends PULL range / behavior (ID branch in ability_system).",
-	&"knight_bowling_charge": "Bowling Charge: dash + trample + collision; custom BBCode in CombatUiFormatters; dash resolution in ability_system (ID branches).",
+	&"knight_bowling_charge": "Bowling Charge upgrade: enemy-enemy chain collision in ability_system (ID branch).",
 	&"knight_trampling_advance": "Trampling Advance: movement skill trample/push rules in ability_system (ID branch).",
 }
 
@@ -43,8 +43,12 @@ static func manual_keywords() -> Dictionary:
 		"SWAP": "Caster and target exchange tile positions.",
 		"TELEPORT": "Move instantly, ignoring pathing constraints.",
 		"TRAMPLE": (
-			"Unit can move through enemy tiles. Per skill text, passing through an enemy triggers the effect "
-			+ "as a hit on that enemy."
+			"Dash pass-through: deal ATK X to each enemy moved through without displacing them. "
+			+ "Caster must end on an open tile."
+		),
+		"BULLDOZE": (
+			"Dash pass-through: collision damage with base X and PUSH X on enemies moved through "
+			+ "(caster immune to collision). Sideways push while passing; axial PUSH when landing on the victim."
 		),
 		# Economy
 		"AP": "Action Points — spent on class Active Skills and Run.",
@@ -188,7 +192,7 @@ static func bible_ability_effect_line(ability: AbilityData) -> String:
 		&"knight_fortify":
 			return "DEF +X (X = caster DEF)"
 		&"knight_bowling_charge":
-			return "DASH 3 | On collision: ATK 3 | PUSH 2"
+			return "DASH 3 | BULLDOZE 1"
 		&"knight_iron_grip":
 			return "Apply ROOT | DEF halved next turn"
 		&"knight_redirect_strike":
@@ -410,8 +414,6 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 		parts.append(_effect_impl_note(eff))
 	if ability.id in _ABILITY_CODE_BRANCHES:
 		parts.append("⚠ CODE BRANCH: %s" % _ABILITY_CODE_BRANCHES[ability.id])
-	if ability.id == &"knight_bowling_charge":
-		parts.append("⚠ UI: CombatUiFormatters.ability_effect_bbcode uses hardcoded lines for this id.")
 	return "\n".join(parts)
 
 
@@ -553,7 +555,11 @@ static func _effect_impl_note(eff: EffectData) -> String:
 				s += " Applies DEF debuff %d before damage (data-driven)." % eff.def_debuff_before_damage
 			return s
 		GameEnums.EffectType.DASH:
-			return "DASH: straight-line path; collision damage; may combine with trample ID logic."
+			return "DASH: straight-line path; may combine with TRAMPLE or BULLDOZE on the same ability."
+		GameEnums.EffectType.TRAMPLE:
+			return "TRAMPLE: PhysicsSystem.dash flat ATK on pass-through; no push; end tile must be open."
+		GameEnums.EffectType.BULLDOZE:
+			return "BULLDOZE: PhysicsSystem.dash collision base + sideways/axial PUSH; caster collision immune."
 		GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF:
 			return "ADD_STATUS: StatusSystem applies %s for %d turn(s)." % [
 				GameEnums.StatusType.keys()[eff.status_type],
@@ -654,7 +660,7 @@ static func _effect_type_system(k: String) -> String:
 		"SWAP":
 			return "Swaps actor and target tile occupancy."
 		"DASH":
-			return "Moves actor along line; may apply contact effects."
+			return "Moves actor along line; may apply TRAMPLE or BULLDOZE contact effects."
 		"ADD_STATUS", "ADD_STATUS_SELF":
 			return "StatusSystem.add_status on target or self."
 		"ARMOR_UP":

@@ -687,11 +687,11 @@ static func _effect_tooltip_line(effect: EffectData) -> String:
 				_glossary_def("SPAWN"),
 			)
 		GameEnums.EffectType.DASH:
-			return _kw_tooltip_line(
-				"DASH %s" % amount,
-				"Move up to the listed distance in a straight line, passing through units. "
-				+ "Stops at walls or immovable targets.",
-			)
+			return _kw_tooltip_line("DASH %s" % amount, _glossary_def("DASH"))
+		GameEnums.EffectType.TRAMPLE:
+			return _kw_tooltip_line("TRAMPLE %s" % amount, _glossary_def("TRAMPLE"))
+		GameEnums.EffectType.BULLDOZE:
+			return _kw_tooltip_line("BULLDOZE %s" % amount, _glossary_def("BULLDOZE"))
 		GameEnums.EffectType.TELEPORT_CASTER:
 			return _kw_tooltip_line("TELEPORT", _glossary_def("TELEPORT"))
 		GameEnums.EffectType.DESTROY_OBSTACLE:
@@ -783,6 +783,10 @@ static func _bible_segment_hint(segment: String) -> String:
 		return _glossary_def("PULL")
 	if segment.begins_with("DASH "):
 		return _glossary_def("DASH")
+	if segment.begins_with("TRAMPLE "):
+		return _glossary_def("TRAMPLE")
+	if segment.begins_with("BULLDOZE "):
+		return _glossary_def("BULLDOZE")
 	if segment.begins_with("DEF +"):
 		return ClassLibrarySchema.status_player_tooltip(GameEnums.StatusType.STAT_BUFF_DEF)
 	if segment.begins_with("Apply "):
@@ -917,6 +921,10 @@ static func ability_effect_string(ability: AbilityData, _unit: UnitState = null)
 				_append_status_effect_part(parts, effect, true, false)
 			GameEnums.EffectType.DASH:
 				parts.append("DASH %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.TRAMPLE:
+				parts.append("TRAMPLE %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.BULLDOZE:
+				parts.append("BULLDOZE %s" % _effect_amount_string(effect))
 			GameEnums.EffectType.PURGE:
 				parts.append("PURGE")
 			GameEnums.EffectType.CLEANSE:
@@ -948,7 +956,17 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 			GameEnums.EffectType.DASH:
 				parts.append(_kw_hint(
 					"DASH %s" % _effect_amount_string(effect),
-					"Move up to the listed distance in a straight line, passing through units.",
+					"Move up to the listed distance in a straight line.",
+				))
+			GameEnums.EffectType.TRAMPLE:
+				parts.append(_kw_hint(
+					"TRAMPLE %s" % _effect_amount_string(effect),
+					_glossary_def("TRAMPLE"),
+				))
+			GameEnums.EffectType.BULLDOZE:
+				parts.append(_kw_hint(
+					"BULLDOZE %s" % _effect_amount_string(effect),
+					_glossary_def("BULLDOZE"),
 				))
 			GameEnums.EffectType.ARMOR_UP:
 				parts.append(_kw_hint("SHIELD %s" % _effect_amount_string(effect), _glossary_def("SHIELD")))

@@ -103,7 +103,7 @@ static func _cannot_be_displaced(unit: UnitState) -> bool:
 		)
 	)
 
-## Bowling Charge trample contact: collision damage on the victim, then PUSH.
+## Bulldoze contact: collision damage (optional base bonus) on the victim, then PUSH.
 static func apply_trample_contact(
 	board: BoardState,
 	mover: UnitState,
@@ -113,17 +113,20 @@ static func apply_trample_contact(
 	push_distance: int,
 	events: Array[SimEvent],
 	ability_id: StringName = &"",
+	collision_base_bonus: int = 0,
 ) -> void:
 	if mover == null or victim == null or not victim.is_alive() or push_distance <= 0:
 		return
 	var immune_id := mover.id
-	_emit_collision(board, victim, mover, coord, push_distance, 0, events, mover, ability_id, immune_id)
+	_emit_collision(
+		board, victim, mover, coord, push_distance, 0, events, mover, ability_id, immune_id, collision_base_bonus
+	)
 	if push_dir != Vector2i.ZERO:
 		push(board, victim, push_dir, push_distance, events, mover, ability_id, immune_id)
 
-## Straight-line movement. With trample_collision: pass through enemy tiles, PUSH on
-## each hit (collision from push), caster may be immune. With pass_through_atk > 0:
-## legacy flat-damage pass-through. Otherwise stops on first blocker.
+## Straight-line movement. TRAMPLE X: pass through enemies, flat ATK X, no push, restore
+## enemies after the dasher leaves their tile. BULLDOZE X: pass through with collision
+## base X + PUSH X (sideways while passing, axial when stopping on the victim).
 static func dash(
 	board: BoardState,
 	unit: UnitState,
@@ -132,10 +135,9 @@ static func dash(
 	events: Array[SimEvent],
 	pusher: UnitState = null,
 	ability_id: StringName = &"",
-	pass_through_atk: int = 0,
-	pass_through_push: int = 0,
+	trample_atk: int = 0,
 	source_label: String = "",
-	trample_collision: bool = false,
+	bulldoze: int = 0,
 	caster_collision_immune: bool = false,
 ) -> void:
 	if unit == null or not unit.is_alive() or direction == Vector2i.ZERO or distance <= 0:
@@ -144,34 +146,36 @@ static func dash(
 	var from := unit.position
 	var traveled := 0
 	var knight_on_board := true
-	var use_trample := trample_collision
-	var use_pass_through := pass_through_atk > 0 and not use_trample
+	var use_bulldoze := bulldoze > 0
+	var use_trample_atk := trample_atk > 0 and not use_bulldoze
 	var immune_id := unit.id if caster_collision_immune else -1
 	var path: Array[Vector2i] = []
 	var trample_hit_ids: Dictionary = {}
-	
+	var trampled_restore: Dictionary = {}
+
 	for step_i in range(distance):
 		var next := unit.position + direction
-		
+
 		if GridSystem.stops_displacement(board, next) or not GridSystem.is_in_bounds(board, next):
-			if not use_pass_through and not use_trample:
+			if not use_trample_atk and not use_bulldoze:
 				_emit_collision(board, unit, null, next, distance, traveled, events, pusher, ability_id)
 			break
-		
+
 		var occupant := board.get_unit_at(next)
 		if occupant != null and _cannot_be_displaced(occupant):
-			if not use_pass_through and not use_trample:
+			if not use_trample_atk and not use_bulldoze:
 				_emit_collision(board, unit, occupant, next, distance, traveled, events, pusher, ability_id)
 			break
-		
-		if use_trample:
+
+		if use_bulldoze:
 			if occupant != null and occupant.team != unit.team and not trample_hit_ids.has(occupant.id):
 				trample_hit_ids[occupant.id] = true
 				var hit_ev_start := events.size()
 				var is_final_step := step_i == distance - 1
 				var push_dir := direction if is_final_step else left_of_direction(direction)
-				var trample_push := pass_through_push if pass_through_push > 0 else 1
-				apply_trample_contact(board, unit, occupant, next, push_dir, trample_push, events, ability_id)
+				apply_trample_contact(
+					board, unit, occupant, next, push_dir, bulldoze, events, ability_id, bulldoze
+				)
 				for ev_i in range(hit_ev_start, events.size()):
 					var hit_ev: SimEvent = events[ev_i]
 					if hit_ev.type in [
@@ -183,35 +187,41 @@ static func dash(
 				occupant = board.get_unit_at(next)
 				if occupant != null and occupant.id != unit.id:
 					break
-		elif use_pass_through:
-			if occupant != null and occupant.team != unit.team:
-				var label := source_label if source_label != "" else "Dash"
+		elif use_trample_atk:
+			if occupant != null and occupant.team != unit.team and not trample_hit_ids.has(occupant.id):
+				trample_hit_ids[occupant.id] = true
+				var label := source_label if source_label != "" else "Trample"
 				var ev_before := events.size()
 				var scaled_atk := CombatSystem.calculate_scaled_damage(
-					unit, pass_through_atk, GameEnums.StatType.PHYSICAL, board
+					unit, trample_atk, GameEnums.StatType.PHYSICAL, board
 				)
 				CombatSystem.deal_damage_raw(
-					board, unit, occupant, scaled_atk, GameEnums.StatType.PHYSICAL, events, label, pass_through_atk
+					board, unit, occupant, scaled_atk, GameEnums.StatType.PHYSICAL, events, label, trample_atk
 				)
 				for ev_i in range(ev_before, events.size()):
 					if events[ev_i].type == GameEnums.SimEventType.UNIT_DAMAGED:
 						events[ev_i].data["dash_hit_step"] = traveled
 						break
-				if pass_through_push > 0:
-					var ends_on_enemy := _dash_ends_on_tile(board, next, direction, step_i, distance)
-					var push_dir := direction if ends_on_enemy else left_of_direction(direction)
-					push(board, occupant, push_dir, pass_through_push, events, unit, ability_id)
+				trampled_restore[next] = occupant.id
+				GridSystem.set_occupant(board, next, -1)
+			elif occupant != null and occupant.id != unit.id:
+				break
 		elif occupant != null:
 			_emit_collision(board, unit, occupant, next, distance, traveled, events, pusher, ability_id)
 			break
-		
+
+		if trampled_restore.has(unit.position):
+			var restore_id: int = int(trampled_restore[unit.position])
+			trampled_restore.erase(unit.position)
+			GridSystem.set_occupant(board, unit.position, restore_id)
+
 		var prev := unit.position
 		if knight_on_board:
 			GridSystem.set_occupant(board, prev, -1)
 		unit.position = next
 		traveled += 1
 		path.append(next)
-		
+
 		var at_next := board.get_unit_at(next)
 		if at_next == null:
 			GridSystem.set_occupant(board, next, unit.id)
@@ -223,9 +233,14 @@ static func dash(
 			knight_on_board = true
 		else:
 			knight_on_board = false
-		
+
 		if GridSystem.is_hazard(board, next):
 			break
+
+	for restore_coord: Vector2i in trampled_restore.keys():
+		var restore_unit_id: int = int(trampled_restore[restore_coord])
+		if board.get_unit_at(restore_coord) == null:
+			GridSystem.set_occupant(board, restore_coord, restore_unit_id)
 	
 	if traveled == 0:
 		if knight_on_board:
@@ -235,7 +250,7 @@ static func dash(
 	
 	if not knight_on_board and board.get_unit_at(unit.position) == null:
 		GridSystem.set_occupant(board, unit.position, unit.id)
-	elif not use_pass_through and not use_trample:
+	elif not use_trample_atk and not use_bulldoze:
 		var tile_occupant := board.get_unit_at(unit.position)
 		if tile_occupant != null and tile_occupant.id != unit.id:
 			if tile_occupant.team != unit.team:
@@ -331,6 +346,7 @@ static func _emit_collision(
 	pusher: UnitState,
 	ability_id: StringName,
 	collision_immune_id: int = -1,
+	collision_base_bonus: int = 0,
 ) -> void:
 	assert(pusher != null, "Collision requires an instigating pusher")
 	var excess := maxi(0, push_distance - tiles_moved)
@@ -371,12 +387,18 @@ static func _emit_collision(
 				push(board, target, push_dir, 1, events, blocker, ability_id, collision_immune_id)
 		else:
 			if target.id != collision_immune_id:
-				CombatSystem.deal_collision_damage(board, pusher, target, push_distance, tiles_moved, events)
+				CombatSystem.deal_collision_damage(
+					board, pusher, target, push_distance, tiles_moved, events, collision_base_bonus
+				)
 			if blocker.id != collision_immune_id:
-				CombatSystem.deal_collision_damage(board, pusher, blocker, tiles_moved, tiles_moved, events)
+				CombatSystem.deal_collision_damage(
+					board, pusher, blocker, tiles_moved, tiles_moved, events, collision_base_bonus
+				)
 	else:
 		if target.id != collision_immune_id:
-			CombatSystem.deal_collision_damage(board, pusher, target, push_distance, tiles_moved, events)
+			CombatSystem.deal_collision_damage(
+				board, pusher, target, push_distance, tiles_moved, events, collision_base_bonus
+			)
 
 ## Swap two units' positions. Used by the SWAP effect; deals no collision damage.
 ## Both ends trigger terrain landings (you can swap a unit onto a hazard).

@@ -3558,7 +3558,8 @@ func _parse_keywords(text: String) -> String:
 		"PURGE": "Removes positive buffs and shields.",
 		"DASH": "Moves in a straight line; may apply effects on each tile entered.",
 		"TELEPORT": "Moves instantly, ignoring pathing.",
-		"TRAMPLE": "Pass through enemy tiles; PUSH 1 (left when passing through, forward when stopping on them).",
+		"TRAMPLE": "Pass through enemies for ATK X; no displacement; end on an open tile.",
+		"BULLDOZE": "Pass through enemies with collision base X and PUSH X; caster immune to collision.",
 		"COLLISION": "Collision damage from displacement into walls or units.",
 		"AOE": "Area effect — hits multiple tiles.",
 		"RANGE": "Maximum targeting or effect distance in tiles.",
@@ -3618,15 +3619,6 @@ func _ability_upgrade_suffix(ability: AbilityData, unit: UnitState, bbcode: bool
 	return " (Upgrade: %s)" % ability.upgrade_description
 
 func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> String:
-	if ability.id == &"knight_bowling_charge":
-		var body := "%s | %s | %s | %s. This unit does not suffer collision." % [
-			_kw_hint("DASH 3", "Move up to 3 tiles in a straight cardinal line."),
-			_kw_hint("TRAMPLE", "Pass through enemy tiles; PUSH 1 (left when passing through, forward when stopping on them)."),
-			_kw_hint("PUSH 1", "Pushes trampled enemies left when passing through, forward when you stop on them."),
-			_kw_hint("COLLISION", "Trample collision on contact; push into walls or units can add another collision."),
-		]
-		body += _ability_upgrade_suffix(ability, unit, true)
-		return body
 	var parts: Array[String] = []
 	for effect in ability.effects:
 		match effect.type:
@@ -3675,7 +3667,9 @@ func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> Str
 			GameEnums.EffectType.DAMAGE_SELF: parts.append("Self %s" % _kw_hint("ATK %s" % _get_amount_string(effect), "Ignores Armor and deals direct damage to caster."))
 			GameEnums.EffectType.CLEANSE: parts.append(_kw_hint("CLEANSE", "Removes all negative status effects from target."))
 			GameEnums.EffectType.PURGE: parts.append(_kw_hint("PURGE", "Removes all positive buffs and shields from target."))
-			GameEnums.EffectType.DASH: parts.append(_kw_hint("DASH %s" % _get_amount_string(effect), "Move up to the listed distance in a straight line, passing through units. Stops at walls or immovable targets; may end on a movable enemy when followed by PUSH."))
+			GameEnums.EffectType.DASH: parts.append(_kw_hint("DASH %s" % _get_amount_string(effect), "Move up to the listed distance in a straight line."))
+			GameEnums.EffectType.TRAMPLE: parts.append(_kw_hint("TRAMPLE %s" % _get_amount_string(effect), _glossary_def("TRAMPLE")))
+			GameEnums.EffectType.BULLDOZE: parts.append(_kw_hint("BULLDOZE %s" % _get_amount_string(effect), _glossary_def("BULLDOZE")))
 			GameEnums.EffectType.DESTROY_OBSTACLE: parts.append(_kw_hint("DESTROY OBSTACLE", "Instantly removes a wall, trap, or destructible terrain."))
 			GameEnums.EffectType.TELEPORT_CASTER: parts.append(_kw_hint("TELEPORT", "Instantly moves caster to the target tile, ignoring pathing constraints."))
 			
@@ -3693,8 +3687,6 @@ func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> Str
 	return "%s%s%s" % [shape_str, body, _ability_upgrade_suffix(ability, unit, true)]
 
 func _ability_effect_string(ability: AbilityData, unit: UnitState = null) -> String:
-	if ability.id == &"knight_bowling_charge":
-		return "DASH 3 | TRAMPLE | PUSH 1 | COLLISION. This unit does not suffer collision."
 	var parts: Array[String] = []
 	for effect in ability.effects:
 		match effect.type:
@@ -3720,6 +3712,8 @@ func _ability_effect_string(ability: AbilityData, unit: UnitState = null) -> Str
 			GameEnums.EffectType.CLEANSE: parts.append("CLEANSE")
 			GameEnums.EffectType.PURGE: parts.append("PURGE")
 			GameEnums.EffectType.DASH: parts.append("DASH %s" % _get_amount_string(effect))
+			GameEnums.EffectType.TRAMPLE: parts.append("TRAMPLE %s" % _get_amount_string(effect))
+			GameEnums.EffectType.BULLDOZE: parts.append("BULLDOZE %s" % _get_amount_string(effect))
 			GameEnums.EffectType.DESTROY_OBSTACLE: parts.append("DESTROY OBSTACLE")
 			GameEnums.EffectType.TELEPORT_CASTER: parts.append("TELEPORT")
 			
