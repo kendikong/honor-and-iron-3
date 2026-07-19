@@ -487,11 +487,6 @@ func _reverse_tail_step(
 	)
 
 
-func _play_reverse_tail(_action_anim: StringName, _frames_back: int, _speed_scale: float) -> float:
-	## Deprecated — use _start_reverse_tail (manual frame steps; negative speed_scale replays forward).
-	return 0.05
-
-
 func _finish_one_shot_action(generation: int, on_finished: Callable) -> void:
 	if generation != _one_shot_generation:
 		return
