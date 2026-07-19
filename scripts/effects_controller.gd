@@ -79,7 +79,7 @@ func setup(
 	_wire_weather_bus()
 	_ensure_shadow_draw_order()
 	ShadowPlacer.set_active_shadow_root(_shadow_sprites)
-	_tile_cloud.setup(_trees, _overlay, _map_root)
+	_tile_cloud.setup(_trees, _overlay, _map_root, _ground)
 	apply_all(null, 0.0)
 
 
@@ -390,7 +390,7 @@ func _on_weather_changed() -> void:
 
 
 func _apply_tile_cloud_receive(grid: PlayerGrid) -> void:
-	_tile_cloud.apply(settings, grid)
+	_tile_cloud.apply(settings, grid, _ground)
 
 
 func _apply_tile_cloud_drift() -> void:

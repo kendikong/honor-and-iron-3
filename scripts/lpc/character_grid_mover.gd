@@ -20,6 +20,7 @@ var _grid: PlayerGrid
 var _trees: TileMapLayer
 var _overlay: TileMapLayer
 var _scatter: TileMapLayer
+var _ground: TileMapLayer
 var _walk_settings: EffectsSettings
 var _busy: bool = false
 var _tween: Tween
@@ -33,12 +34,14 @@ func setup(
 	overlay: TileMapLayer = null,
 	walk_settings: EffectsSettings = null,
 	scatter: TileMapLayer = null,
+	ground: TileMapLayer = null,
 ) -> void:
 	_actor = actor
 	_grid = grid
 	_trees = trees
 	_overlay = overlay
 	_scatter = scatter
+	_ground = ground
 	_walk_settings = walk_settings
 	grid_cell = start_cell
 	set_process(true)
@@ -50,10 +53,13 @@ func set_map_layers(
 	overlay: TileMapLayer,
 	walk_settings: EffectsSettings = null,
 	scatter: TileMapLayer = null,
+	ground: TileMapLayer = null,
 ) -> void:
 	_scatter = scatter
 	_trees = trees
 	_overlay = overlay
+	if ground != null:
+		_ground = ground
 	if walk_settings != null:
 		_walk_settings = walk_settings
 
@@ -91,6 +97,7 @@ func sync_grid(
 	overlay: TileMapLayer = null,
 	walk_settings: EffectsSettings = null,
 	scatter: TileMapLayer = null,
+	ground: TileMapLayer = null,
 ) -> void:
 	_grid = grid
 	if trees != null:
@@ -99,6 +106,8 @@ func sync_grid(
 		_overlay = overlay
 	if scatter != null:
 		_scatter = scatter
+	if ground != null:
+		_ground = ground
 	if walk_settings != null:
 		_walk_settings = walk_settings
 	if _grid == null or _actor == null:
@@ -260,7 +269,7 @@ func _is_walkable(cell: Vector2i) -> bool:
 
 
 func _cell_foot_px(cell: Vector2i) -> Vector2:
-	return Vector2(cell) * float(TILE_PX) + Vector2(float(TILE_PX) * 0.5, float(TILE_PX))
+	return MapPixelSpace.cell_foot_px(_ground, cell)
 
 
 func _sync_position_instant() -> void:

@@ -45,7 +45,8 @@ float cloud_field_at_pixel(
 	float shape_mix,
 	float shape_scale
 ) {
-	vec2 p = map_local / (tile_px * max(scale_tiles, 1.0));
+	vec2 px = floor(map_local);
+	vec2 p = px / (tile_px * max(scale_tiles, 1.0));
 	vec2 uv = vec2(0.86 * p.x - 0.51 * p.y, 0.51 * p.x + 0.86 * p.y) + drift_time;
 	return cloud_blob_field(uv, shape_mix, shape_scale);
 }

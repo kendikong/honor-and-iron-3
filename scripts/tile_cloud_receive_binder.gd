@@ -8,27 +8,33 @@ const _CLOUD_SHADER: Shader = preload("res://shaders/tilemap_cloud_receive.gdsha
 
 var _trees: TileMapLayer
 var _overlay: TileMapLayer
+var _ground: TileMapLayer
 var _map_root: Node2D
 var _cloud_material: ShaderMaterial
 var _active: bool = false
 
 
-func setup(trees: TileMapLayer, overlay: TileMapLayer, map_root: Node2D) -> void:
+func setup(
+	trees: TileMapLayer,
+	overlay: TileMapLayer,
+	map_root: Node2D,
+	ground: TileMapLayer = null,
+) -> void:
 	_trees = trees
 	_overlay = overlay
 	_map_root = map_root
+	_ground = ground
 
 
-func apply(settings: EffectsSettings, grid: PlayerGrid) -> void:
+func apply(settings: EffectsSettings, grid: PlayerGrid, ground: TileMapLayer = null) -> void:
 	if settings == null or not settings.cloud_shadows:
 		_teardown()
 		return
+	if ground != null:
+		_ground = ground
 	_ensure_material()
 	if grid != null and _map_root != null:
-		_set_map_uniforms(
-			_map_root.global_position,
-			_map_root.scale.x,
-		)
+		_set_map_uniforms()
 	if _trees != null:
 		_trees.material = _cloud_material
 		_trees.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -43,7 +49,7 @@ func sync_drift(settings: EffectsSettings) -> void:
 	if settings == null or not settings.cloud_shadows or not _active:
 		return
 	if _map_root != null:
-		_set_map_uniforms(_map_root.global_position, _map_root.scale.x)
+		_set_map_uniforms()
 	_push_drift_only()
 	CloudTuning.push_shader_uniforms(_cloud_material, settings)
 
@@ -63,11 +69,12 @@ func _ensure_material() -> void:
 	_cloud_material.shader = _CLOUD_SHADER
 
 
-func _set_map_uniforms(origin: Vector2, scale: float) -> void:
-	if _cloud_material == null:
+func _set_map_uniforms() -> void:
+	if _cloud_material == null or _map_root == null:
 		return
-	_cloud_material.set_shader_parameter("map_origin_px", origin)
-	_cloud_material.set_shader_parameter("map_scale", scale)
+	var origin_global: Vector2 = MapPixelSpace.map_origin_global(_ground, _map_root)
+	_cloud_material.set_shader_parameter("map_origin_px", origin_global)
+	_cloud_material.set_shader_parameter("map_scale", _map_root.scale.x)
 	_cloud_material.set_shader_parameter("tile_px", TILE_PX)
 
 

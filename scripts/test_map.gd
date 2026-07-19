@@ -458,12 +458,13 @@ func _sync_shadow_debug_overlay() -> void:
 		_map_root,
 		_effects.settings,
 		_test_unit_actors(),
+		_ground,
 	)
 
 
 func _refresh_walk_gameplay() -> void:
 	if _char_mover != null and _player_grid != null:
-		_char_mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter)
+		_char_mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter, _ground)
 	_sync_extra_unit_grids()
 	if _walkability_overlay.visible:
 		_walkability_overlay.sync(
@@ -538,7 +539,7 @@ func _regenerate() -> void:
 	_sync_debug_views()
 	_inspector.invalidate_display_cache()
 	if _char_mover != null and _player_grid != null:
-		_char_mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter)
+		_char_mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter, _ground)
 	_sync_extra_unit_grids()
 	_sync_all_test_unit_shadows()
 
@@ -675,6 +676,7 @@ func _spawn_extra_units() -> void:
 			_overlay,
 			_effects.settings,
 			_scatter,
+			_ground,
 		)
 		mover.refresh_depth_sort()
 		_extra_actors.append(actor)
@@ -735,7 +737,7 @@ func _sync_extra_unit_grids() -> void:
 	for mover: CharacterGridMover in _extra_movers:
 		if mover == null or not is_instance_valid(mover):
 			continue
-		mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter)
+		mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter, _ground)
 		mover.refresh_depth_sort()
 
 
@@ -747,7 +749,7 @@ func _place_player_actor() -> void:
 	if spawn_cells.is_empty():
 		return
 	_char_mover.setup(
-		_char_actor, _player_grid, spawn_cells[0], _trees, _overlay, _effects.settings, _scatter,
+		_char_actor, _player_grid, spawn_cells[0], _trees, _overlay, _effects.settings, _scatter, _ground,
 	)
 
 

@@ -8,6 +8,7 @@ render_mode blend_mul, unshaded;
 const int MAX_UNIT_FEET = 16;
 
 uniform vec2 map_size_px = vec2(256.0);
+uniform vec2 map_origin_px = vec2(0.0);
 uniform float tile_px = 16.0;
 
 uniform sampler2D map_oblique_tex : filter_nearest, repeat_disable;
@@ -71,7 +72,7 @@ float sample_unit_feet_at(vec2 map_local) {
 }
 
 void fragment() {
-	vec2 map_local = floor(UV * map_size_px);
+	vec2 map_local = map_origin_px + floor(UV * map_size_px);
 
 	float static_a = sample_channel_alpha(
 		map_oblique_tex, map_local, map_oblique_origin, map_oblique_size, has_map_oblique

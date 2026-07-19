@@ -74,6 +74,8 @@ static var _unit_feet_placeholder: ImageTexture
 const MAX_UNIT_FEET_GPU: int = 16
 static var _foot_bake_dirty: bool = true
 static var _map_size_px: Vector2 = Vector2.ZERO
+static var _map_origin_px: Vector2 = Vector2.ZERO
+static var _ground_layer: TileMapLayer
 static var _ground_shadow_material: ShaderMaterial
 static var _map_oblique_tex: ImageTexture
 static var _map_oblique_base_image: Image
@@ -136,7 +138,9 @@ static func apply(
 	clear_immediate(shadow_root)
 	if grid == null or shadow_root == null:
 		return
-	_map_size_px = Vector2(grid.width, grid.height) * float(TILE_PX)
+	_ground_layer = ground
+	_map_origin_px = MapPixelSpace.origin_px(ground)
+	_map_size_px = MapPixelSpace.size_px(ground, grid)
 	var layers: Array[Dictionary] = []
 	for y: int in range(grid.height):
 		for x: int in range(grid.width):
@@ -679,7 +683,7 @@ static func _ensure_ground_shadow_rect(shadow_root: Node2D, settings: EffectsSet
 		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		shadow_root.add_child(rect)
-	rect.position = Vector2.ZERO
+	rect.position = _map_origin_px
 	rect.size = _map_size_px
 	rect.visible = true
 	rect.material = _ground_material()
@@ -700,6 +704,7 @@ static func _sync_ground_shadow_uniforms(
 		return
 	var params: Dictionary = ShadowPalette.multiply_shader_params(settings)
 	mat.set_shader_parameter("map_size_px", _map_size_px)
+	mat.set_shader_parameter("map_origin_px", _map_origin_px)
 	mat.set_shader_parameter("tile_px", float(TILE_PX))
 	mat.set_shader_parameter("shadow_tint", params["shadow_tint"])
 	mat.set_shader_parameter("shadow_strength", params["shadow_strength"])
@@ -739,6 +744,7 @@ static func _ground_static_uniform_signature(settings: EffectsSettings = null) -
 		params.get("shadow_tint", Color.WHITE),
 		params.get("shadow_strength", 0.0),
 		_map_size_px,
+		_map_origin_px,
 	])
 
 
@@ -2156,15 +2162,17 @@ static func map_composite_apply_epoch() -> int:
 
 
 static func foot_px_from_cell(cell: Vector2i) -> Vector2:
-	return Vector2(cell) * float(TILE_PX) + Vector2(float(TILE_PX) * 0.5, float(TILE_PX))
+	return MapPixelSpace.cell_foot_px(_ground_layer, cell)
 
 
 static func foot_map_px_from_cell(cell: Vector2i) -> Vector2:
-	var foot: Vector2 = foot_px_from_cell(cell)
-	return Vector2(floor(foot.x), floor(foot.y))
+	return MapPixelSpace.foot_map_px(foot_px_from_cell(cell))
 
 
 static func cell_from_foot_px(foot_px: Vector2) -> Vector2i:
+	if _ground_layer != null:
+		var layer_local: Vector2 = foot_px - _ground_layer.position
+		return _ground_layer.local_to_map(layer_local)
 	return Vector2i(
 		int(floor((foot_px.x - float(TILE_PX) * 0.5) / float(TILE_PX))),
 		int(floor((foot_px.y - float(TILE_PX)) / float(TILE_PX))),
@@ -2180,7 +2188,7 @@ static func tile_cloud_mask_at_cell(cell: Vector2i) -> float:
 
 static func tile_cloud_mask_at_foot(foot_px: Vector2) -> float:
 	return _CLOUD_FIELD.shadow_mask_at(
-		Vector2(floor(foot_px.x), floor(foot_px.y)),
+		MapPixelSpace.foot_map_px(foot_px),
 		WeatherBus.cloud_drift_offset,
 	)
 
@@ -2283,7 +2291,7 @@ static func actor_oblique_band_modulates(
 	var cloud_strength: float = float(env["cloud_strength"])
 	var cloud_tint: Color = env["cloud_tint"] as Color
 	var foot: Vector2 = actor.position
-	var foot_map_px: Vector2 = Vector2(floor(foot.x), floor(foot.y))
+	var foot_map_px: Vector2 = MapPixelSpace.foot_map_px(foot)
 	var scale_y: float = actor.scale.y
 	var scale_x: float = actor.scale.x
 	var foot_cloud: float = 0.0
