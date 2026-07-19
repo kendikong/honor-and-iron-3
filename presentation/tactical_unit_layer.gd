@@ -1329,6 +1329,7 @@ func _facing_toward_queued_action(unit_id: int) -> int:
 			if target_coord != origin:
 				return _facing_toward(origin, target_coord)
 			return unit.facing
+	return -1
 
 
 func begin_drag_preview(unit_id: int) -> void:
