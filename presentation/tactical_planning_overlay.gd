@@ -425,7 +425,7 @@ func _can_show_threat_tiles(unit: UnitState, selected_ability: int, force_basic:
 	var p_unit := _proj_unit(unit.id)
 	if p_unit == null:
 		return false
-	if p_unit.turn_action_used or p_unit.ability.points_left <= 0:
+	if not p_unit.can_use_action_slot():
 		return false
 	if p_unit.has_status(GameEnums.StatusType.STUN) or p_unit.has_status(GameEnums.StatusType.SILENCE):
 		return false

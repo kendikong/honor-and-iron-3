@@ -59,6 +59,8 @@ var _pending_refresh_plan: Timeline
 var _pending_refresh_statuses: PackedStringArray
 var _pending_refresh_preview: SimResult
 var _last_refresh_movement_only: bool = false
+## When this returns true, default victory/defeat checks are skipped (battle continues).
+var suppress_end_state: Callable = Callable()
 
 
 static func is_planning_phase(p: Phase) -> bool:
@@ -174,7 +176,7 @@ func rpc_plan_wait(unit_id: int) -> void:
 		EventBus.action_rejected.emit("no_actions_left")
 		return
 	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else board.get_unit_by_id(unit_id)
-	if p_unit == null or p_unit.turn_action_used:
+	if p_unit == null or not p_unit.can_use_action_slot():
 		EventBus.action_rejected.emit("no_actions_left")
 		return
 	_clear_unit_abilities_from_plan(unit_id, GameEnums.MoveTiming.PRE_ACTION)
@@ -234,7 +236,7 @@ func _get_move_timing(unit_id: int) -> int:
 	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else board.get_unit_by_id(unit_id)
 	if p_unit == null:
 		return -1
-	if p_unit.turn_action_used:
+	if p_unit.has_used_turn_action():
 		return GameEnums.MoveTiming.POST_ACTION if _unit_can_post_move(unit_id, p_unit) else -1
 	return GameEnums.MoveTiming.PRE_ACTION
 
@@ -281,7 +283,7 @@ func _unit_can_post_move(unit_id: int, p_unit: UnitState) -> bool:
 		return false
 	if _unit_has_post_move_queued(unit_id):
 		return false
-	if not p_unit.turn_action_used:
+	if not p_unit.has_used_turn_action():
 		return false
 	if _unit_has_pre_move_queued(unit_id):
 		return p_unit.has_passive(&"canto") or p_unit.has_status(GameEnums.StatusType.CANTO)
@@ -1510,6 +1512,8 @@ func _lock_enemy_intents() -> void:
 	base_board.intents = EnemyPlanner.plan(base_board)
 
 func _check_end_state() -> bool:
+	if suppress_end_state.is_valid() and bool(suppress_end_state.call(base_board)):
+		return false
 	if not base_board.has_living_team(GameEnums.Team.ENEMY):
 		_set_phase(Phase.VICTORY)
 		return true

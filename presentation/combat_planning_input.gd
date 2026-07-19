@@ -650,7 +650,7 @@ func selected_phase_action_exhausted(unit_id: int = -1) -> bool:
 	var p_unit := _proj_unit(id)
 	if p_unit == null or p_unit.is_enemy():
 		return false
-	var can_act: bool = p_unit.ability.points_left > 0 and not p_unit.turn_action_used
+	var can_act: bool = p_unit.can_use_action_slot()
 	var can_move: bool = (
 		p_unit.movement.points_left > 0
 		and _director.get_planning_move_timing(id) >= 0

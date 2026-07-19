@@ -191,7 +191,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var actor := board.get_unit_by_id(action.actor_id)
 	var ability := action.ability
 	actor.ability.points_left -= action.ability.action_point_cost
-	actor.turn_action_used = true
+	if not actor.has_unlimited_training_actions():
+		actor.turn_action_used = true
 
 	# Wait is an exhaustion state — consumes the action slot silently (no VFX / log event).
 	if DataLibrary.is_universal_wait(ability.id):

@@ -15,6 +15,7 @@ var _passive_box: VBoxContainer
 var _passive_checks: Dictionary = {}
 var _unkillable_check: CheckBox
 var _infinite_ap_check: CheckBox
+var _status_label: Label
 
 
 func setup(
@@ -34,9 +35,10 @@ func setup(
 func _build_ui() -> void:
 	_root = PanelContainer.new()
 	_root.name = "Panel"
-	_root.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_root.offset_left = 8.0
+	_root.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	_root.offset_top = 8.0
+	_root.offset_right = -8.0
+	_root.offset_left = -float(PANEL_WIDTH + 8)
 	_root.custom_minimum_size = Vector2(PANEL_WIDTH, 640.0)
 	add_child(_root)
 
@@ -58,6 +60,11 @@ func _build_ui() -> void:
 	_add_heading(body, "Skill Test Arena")
 	_add_label(body, "6×6 grass — real combat pipeline")
 
+	_status_label = Label.new()
+	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_status_label.add_theme_color_override("font_color", Color(0.75, 0.9, 1.0))
+	body.add_child(_status_label)
+
 	_add_heading(body, "Player Class")
 	_class_option = OptionButton.new()
 	_class_option.item_selected.connect(_on_class_selected)
@@ -77,7 +84,7 @@ func _build_ui() -> void:
 	body.add_child(_unkillable_check)
 
 	_infinite_ap_check = CheckBox.new()
-	_infinite_ap_check.text = "Infinite player move + action points"
+	_infinite_ap_check.text = "Unlimited actions per turn (+ high AP)"
 	_infinite_ap_check.button_pressed = _session.infinite_player_ap
 	_infinite_ap_check.toggled.connect(func(on: bool) -> void:
 		_session.infinite_player_ap = on
@@ -85,7 +92,6 @@ func _build_ui() -> void:
 	)
 	body.add_child(_infinite_ap_check)
 
-	_add_button(body, "Apply Class + Passives", _on_apply_class_pressed)
 	_add_button(body, "Respawn Training Dummies", _on_respawn_dummies_pressed)
 	_add_button(body, "Add Dummy (east of player)", _on_add_dummy_pressed)
 	_add_button(body, "Add Ally (west slot)", _on_add_player_pressed)
@@ -128,39 +134,54 @@ func _on_class_selected(index: int) -> void:
 		_session.player_class_id = class_id
 		_session.set_all_passives_enabled(_session.player_class_id, true)
 		_rebuild_passive_list()
+		_apply_class_and_passives()
 
 
 func _on_passive_toggled(on: bool, passive_id: StringName) -> void:
 	_session.passive_enabled[passive_id] = on
+	_apply_class_and_passives()
 
 
-func _on_apply_class_pressed() -> void:
+func _apply_class_and_passives() -> void:
 	_map_view.apply_training_board()
+	_set_status("Applied %s loadout." % String(_session.player_class_id))
 
 
 func _on_respawn_dummies_pressed() -> void:
 	_map_view.apply_training_board()
+	_set_status("Training dummies respawned.")
 
 
 func _on_add_dummy_pressed() -> void:
-	var next: Vector2i = TestBattleSession.DEFAULT_DUMMY_CELL + Vector2i(_session.dummy_coords.size(), 0)
-	if next.x >= TestBattleSession.MAP_SIZE.x:
-		next = Vector2i(TestBattleSession.MAP_SIZE.x - 1, 2)
-	_session.add_dummy_at(next)
+	var preferred: Vector2i = (
+		TestBattleSession.DEFAULT_DUMMY_CELL
+		+ Vector2i(_session.dummy_coords.size(), 0)
+	)
+	var result: Dictionary = _session.try_add_dummy_at(_map_view.get_live_board(), preferred)
+	if not bool(result.get("ok", false)):
+		_set_status(String(result.get("reason", "Could not add dummy")))
+		return
 	_map_view.apply_training_board()
+	_set_status("Added dummy at %s." % result["coord"])
 
 
 func _on_add_player_pressed() -> void:
-	var next: Vector2i = TestBattleSession.DEFAULT_PLAYER_CELL + Vector2i(-_session.extra_player_coords.size() - 1, 0)
-	if next.x < 0:
-		next = Vector2i(0, 2)
-	_session.add_player_at(next)
+	var preferred: Vector2i = (
+		TestBattleSession.DEFAULT_PLAYER_CELL
+		+ Vector2i(-_session.extra_player_coords.size() - 1, 0)
+	)
+	var result: Dictionary = _session.try_add_player_at(_map_view.get_live_board(), preferred)
+	if not bool(result.get("ok", false)):
+		_set_status(String(result.get("reason", "Could not add ally")))
+		return
 	_map_view.apply_training_board()
+	_set_status("Added ally at %s." % result["coord"])
 
 
 func _on_reset_turn_pressed() -> void:
 	if _director != null:
 		_director.restart_turn()
+	_set_status("Turn plan cleared.")
 
 
 func _on_full_reset_pressed() -> void:
@@ -170,6 +191,12 @@ func _on_full_reset_pressed() -> void:
 	_unkillable_check.button_pressed = _session.unkillable_dummies
 	_infinite_ap_check.button_pressed = _session.infinite_player_ap
 	_map_view.apply_training_board()
+	_set_status("Arena reset to defaults.")
+
+
+func _set_status(text: String) -> void:
+	if _status_label != null:
+		_status_label.text = text
 
 
 static func _add_heading(parent: Control, text: String) -> void:

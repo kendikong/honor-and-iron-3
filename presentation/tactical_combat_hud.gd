@@ -20,6 +20,8 @@ var _panel_width: int = 280
 var _ui_scale: float = 1.0
 var _banner: PanelContainer
 var _banner_label: Label
+var _victory_restart_button: Button
+var _victory_restart_callback: Callable = Callable()
 var _is_ready: bool = false
 var _sfx: SfxPlayer
 var _compendium_overlay: CompendiumScreen
@@ -310,10 +312,23 @@ func _build_banner() -> void:
 	_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_banner_label.add_theme_font_size_override("font_size", 32)
 	vbox.add_child(_banner_label)
-	var restart := Button.new()
-	restart.text = "Back to Battle Setup"
-	restart.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/BattleSetup.tscn"))
-	vbox.add_child(restart)
+	_victory_restart_button = Button.new()
+	_victory_restart_button.text = "Back to Battle Setup"
+	_victory_restart_button.pressed.connect(_on_victory_restart_pressed)
+	vbox.add_child(_victory_restart_button)
+
+
+func configure_victory_restart(button_text: String, callback: Callable) -> void:
+	if _victory_restart_button != null:
+		_victory_restart_button.text = button_text
+	_victory_restart_callback = callback
+
+
+func _on_victory_restart_pressed() -> void:
+	if _victory_restart_callback.is_valid():
+		_victory_restart_callback.call()
+		return
+	get_tree().change_scene_to_file("res://scenes/BattleSetup.tscn")
 
 
 func _on_phase_changed(phase: int) -> void:

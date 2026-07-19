@@ -78,7 +78,7 @@ func _apply_ui_settings() -> void:
 		_combat_hud.apply_settings(_settings)
 
 
-func start_combat(encounter: EncounterData) -> void:
+func start_combat(encounter: EncounterData, initial_board: BoardState = null) -> void:
 	_unit_layer.setup(_map_view, _director, _char_profile)
 	_unit_overlay.setup(_map_view, _director, _unit_layer)
 	_planning_overlay.setup(_map_view, _director, intent_state)
@@ -95,7 +95,10 @@ func start_combat(encounter: EncounterData) -> void:
 	_map_view.set_planning_input(planning_input)
 	_side_panels.setup(_director, _map_view, intent_state, planning_input, _planning_overlay)
 	_pause_menu.setup(_director, _map_view, _options)
-	_director.start_from_encounter(encounter)
+	if initial_board != null:
+		_director.start_from_custom(initial_board)
+	else:
+		_director.start_from_encounter(encounter)
 	_combat_hud.setup(_director, _map_view, _sfx, _side_panels, intent_state)
 	_sim_presenter.setup(_director, _unit_overlay, _unit_layer, _map_view)
 	_input_controller.setup(

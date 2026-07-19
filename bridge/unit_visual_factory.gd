@@ -7,8 +7,25 @@ static func recipe_seed_for_unit(unit_id: int, team: int) -> int:
 	return unit_id * 1009 + team * 9176
 
 
+static func recipe_seed_for_unit_state(unit: UnitState) -> int:
+	if unit == null:
+		return 0
+	if unit.definition != null:
+		var class_key: int = hash(String(unit.definition.id))
+		return class_key ^ (unit.id * 1009) ^ (int(unit.team) * 9176)
+	return recipe_seed_for_unit(unit.id, int(unit.team))
+
+
 static func roll_recipe(catalog: LpcCatalog, profile: CharacterGenProfile, unit_id: int, team: int) -> CharacterRecipe:
 	return CharacterRoller.roll(catalog, profile, recipe_seed_for_unit(unit_id, team))
+
+
+static func roll_recipe_for_unit(
+	catalog: LpcCatalog,
+	profile: CharacterGenProfile,
+	unit: UnitState,
+) -> CharacterRecipe:
+	return CharacterRoller.roll(catalog, profile, recipe_seed_for_unit_state(unit))
 
 
 static func display_scale_for_profile(profile: CharacterGenProfile) -> float:

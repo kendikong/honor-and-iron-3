@@ -302,6 +302,15 @@ func apply_sim_event(event: SimEvent) -> void:
 	queue_redraw()
 
 
+func rebuild_all_actor_visuals() -> void:
+	if _board == null:
+		return
+	var ids: Array = _actors.keys()
+	for id: Variant in ids:
+		_remove_actor(int(id))
+	_sync_actors()
+
+
 func _sync_actors() -> void:
 	if _board == null:
 		return
@@ -413,8 +422,8 @@ func _ensure_actor(unit: UnitState) -> void:
 	actor.name = "Unit_%d" % unit.id
 	actor.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(actor)
-	var recipe: CharacterRecipe = UnitVisualFactory.roll_recipe(
-		_catalog, _profile, unit.id, int(unit.team),
+	var recipe: CharacterRecipe = UnitVisualFactory.roll_recipe_for_unit(
+		_catalog, _profile, unit,
 	)
 	actor.apply_recipe(recipe)
 	actor.set_display_scale(_display_scale())
@@ -522,7 +531,7 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 		actor.set_planning_exhausted(true)
 		actor.set_running(current.has_status(GameEnums.StatusType.RUNNING))
 		return
-	var can_act: bool = current.ability.points_left > 0 and not current.turn_action_used
+	var can_act: bool = current.can_use_action_slot()
 	var can_move: bool = (
 		current.movement.points_left > 0
 		and not current.has_status(GameEnums.StatusType.ROOT)

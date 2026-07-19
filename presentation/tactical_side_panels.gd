@@ -600,7 +600,7 @@ func _is_unit_action_exhausted() -> bool:
 		unit = _board.get_unit_by_id(_selected_id)
 	if unit == null:
 		return true
-	return unit.turn_action_used or unit.ability.points_left <= 0
+	return not unit.can_use_action_slot()
 
 
 func _make_skill_icon(emoji: String, val: String, tip: String) -> Control:

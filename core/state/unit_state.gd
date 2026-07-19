@@ -215,6 +215,21 @@ func is_alive() -> bool:
 func is_enemy() -> bool:
 	return team == GameEnums.Team.ENEMY
 
+
+func has_unlimited_training_actions() -> bool:
+	return bool(passive_flags.get("training_unlimited_actions", false))
+
+
+func has_used_turn_action() -> bool:
+	return turn_action_used and not has_unlimited_training_actions()
+
+
+func can_use_action_slot() -> bool:
+	if has_unlimited_training_actions():
+		return ability.points_left > 0
+	return not turn_action_used and ability.points_left > 0
+
+
 func is_boss() -> bool:
 	return definition != null and definition.is_boss
 

@@ -18,6 +18,7 @@ static func run_all() -> Dictionary:
 	_test_combat_intent_state(failures)
 	_test_combat_planning_preview(failures)
 	_test_combat_ui_formatters(failures)
+	_test_battle_arena(failures)
 	PlanningInputTest.run_all(failures)
 	return {"passed": failures.is_empty(), "failures": failures}
 
@@ -332,3 +333,9 @@ static func _hash_events(events: Array[SimEvent]) -> String:
 	for event in events:
 		lines.append(event.describe())
 	return "\n".join(lines)
+
+
+static func _test_battle_arena(failures: Array[String]) -> void:
+	var result: Dictionary = TestBattleTestRunner.run_all()
+	for failure: String in result.get("failures", []):
+		failures.append(failure)

@@ -36,26 +36,103 @@ func _refine_spawn_positions() -> void:
 
 
 func _start_combat() -> void:
-	super._start_combat()
-	apply_training_board()
+	_encounter = TestBattleEncounterBuilder.build_encounter(_session)
+	var board: BoardState = TestBattleEncounterBuilder.build_board(_session)
+	_combat_shell.start_combat(_encounter, board)
+	_combat_shell.bind_settings(_settings)
+	_sim_presenter.set_game_settings(_settings)
+	_wire_training_director()
+	_configure_arena_hud()
+	_director.select_unit(_first_player_unit_id())
 
 
 func apply_training_board() -> void:
 	if _director == null:
 		return
 	_encounter = TestBattleEncounterBuilder.build_encounter(_session)
-	_director.start_from_custom(TestBattleEncounterBuilder.build_board(_session))
+	var board: BoardState = TestBattleEncounterBuilder.build_board(_session)
+	_director.start_from_custom(board)
+	if _unit_layer != null:
+		_unit_layer.rebuild_all_actor_visuals()
+	_director.select_unit(_first_player_unit_id())
+
+
+func get_session() -> TestBattleSession:
+	return _session
+
+
+func get_live_board() -> BoardState:
+	if _director != null and _director.board != null:
+		return _director.board
+	return null
+
+
+func _wire_training_director() -> void:
+	if _director == null:
+		return
+	_director.suppress_end_state = Callable(self, "_suppress_training_victory")
+
+
+func _suppress_training_victory(board: BoardState) -> bool:
+	if not _session.unkillable_dummies:
+		return false
+	if board.has_living_team(GameEnums.Team.ENEMY):
+		return false
+	TestBattleEncounterBuilder.maintain_training_dummies(board, _session)
+	return board.has_living_team(GameEnums.Team.ENEMY)
+
+
+func _configure_arena_hud() -> void:
+	if _combat_hud == null:
+		return
+	_combat_hud.configure_victory_restart(
+		"Continue Training",
+		func() -> void:
+			apply_training_board(),
+	)
 
 
 func _on_training_turn_phase(phase: int) -> void:
-	if phase != CombatDirector.Phase.PLANNING or not _session.unkillable_dummies:
-		return
 	if _director == null or _director.board == null:
 		return
+	if phase == CombatDirector.Phase.PLANNING:
+		if _session.infinite_player_ap:
+			for unit: UnitState in _director.board.units:
+				if unit.team != GameEnums.Team.PLAYER:
+					continue
+				unit.ability.points_left = unit.ability.max_points
+				unit.movement.points_left = unit.movement.max_points
+				unit.turn_action_used = false
+		if _session.unkillable_dummies:
+			TestBattleEncounterBuilder.maintain_training_dummies(_director.board, _session)
+
+
+func _first_player_unit_id() -> int:
+	if _director == null or _director.board == null:
+		return 1
 	for unit: UnitState in _director.board.units:
-		if unit.definition == null or unit.definition.id != &"training_dummy":
-			continue
-		if not unit.is_alive():
-			apply_training_board()
-			return
-		unit.health.current_hp = unit.health.max_hp
+		if unit.is_alive() and not unit.is_enemy():
+			return unit.id
+	return 1
+
+
+func _center_map() -> void:
+	var used: Rect2i = _ground.get_used_rect()
+	if used.size == Vector2i.ZERO:
+		return
+	var map_pixels: Vector2 = Vector2(used.size) * float(TILE_PX)
+	var viewport: Vector2 = get_viewport_rect().size
+	var right_inset: float = float(TestBattleDebugPanel.PANEL_WIDTH + 16)
+	var layout: Dictionary = _camera.compute_layout(
+		_settings, map_pixels, viewport, 0.0, right_inset, used.position,
+	)
+	_map_root.scale = layout["map_root_scale"]
+	position = layout["scene_position"]
+	_effects.sync_map_transform()
+	_sync_overlay_huds(layout["origin"], layout["scaled_size"])
+	if _unit_overlay != null:
+		_unit_overlay.queue_redraw()
+	if _unit_layer != null:
+		_unit_layer.queue_redraw()
+	if _planning_overlay != null:
+		_planning_overlay.queue_redraw()
