@@ -81,7 +81,7 @@ static func enum_definitions() -> Array[Dictionary]:
 		out.append({
 			"category": "StatusType",
 			"name": k,
-			"tooltip": CombatUiFormatters._status_name(st),
+			"tooltip": CombatUiFormatters._status_desc(st),
 			"system": _status_system(st),
 		})
 	for k: String in GameEnums.PresentationAnim.keys():
@@ -101,6 +101,17 @@ static func enum_definitions() -> Array[Dictionary]:
 			"system": _stat_type_system(k),
 		})
 	return out
+
+
+static func passive_preview_bbcode(passive: PassiveData) -> String:
+	if passive == null:
+		return ""
+	var parts: Array[String] = []
+	if not passive.description.is_empty():
+		parts.append("[b]Base[/b]\n%s" % passive_bbcode(passive.description))
+	if not passive.upgraded_description.is_empty():
+		parts.append("[b]Upgraded[/b]\n%s" % passive_bbcode(passive.upgraded_description))
+	return "\n\n".join(parts)
 
 
 static func passive_bbcode(text: String) -> String:

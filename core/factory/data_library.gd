@@ -12,6 +12,17 @@ static var _maps: Array[MapData] = []
 static var _universal_run: AbilityData
 static var _universal_wait: AbilityData
 
+
+## Clears cached registry so the next access re-runs factory init (editor reset).
+static func reset_cache() -> void:
+	_player_units.clear()
+	_enemy_units.clear()
+	_all_units_dict.clear()
+	_maps.clear()
+	_universal_run = null
+	_universal_wait = null
+
+
 static func get_all_player_units() -> Array[UnitData]:
 	_ensure_init()
 	return _player_units
