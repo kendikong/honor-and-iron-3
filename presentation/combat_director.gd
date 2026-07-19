@@ -637,9 +637,10 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 				plans.append(_slot_plan_for_action(action))
 	if actions.is_empty():
 		return false
-	if not preview_commit_valid(unit_id, actions):
-		EventBus.action_rejected.emit("cannot_use_ability")
-		return false
+	if not bool(slots.get("_preview_validated", false)):
+		if not preview_commit_valid(unit_id, actions):
+			EventBus.action_rejected.emit("cannot_use_ability")
+			return false
 	var has_pre_move: bool = not (slots.get("pre", []) as Array).is_empty()
 	var has_action: bool = not (slots.get("action", []) as Array).is_empty()
 	if has_pre_move:

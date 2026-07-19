@@ -12,6 +12,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_composite_cursor_gate(failures)
 	_test_cursor_matches_commit_slots(failures)
 	_test_preview_from_commit_slots(failures)
+	_test_audit_regression_fixes(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
 
 
@@ -249,6 +250,58 @@ static func _test_preview_from_commit_slots(failures: Array[String]) -> void:
 		var pv := temp_board.get_unit_by_id(1)
 		if pv == null or pv.position != Vector2i(2, 1):
 			failures.append("PlanningInputTest: move preview should place unit on target tile")
+
+
+static func _test_audit_regression_fixes(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(6, 6)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(2, 2)
+	unit.movement.points_left = 4
+	unit.ability.points_left = 2
+	var heal := AbilityData.new()
+	heal.targeting_mode = GameEnums.TargetingMode.SELF
+	heal.targeting_flags = AbilityData._targeting_mode_to_flags(heal.targeting_mode)
+	var dash := AbilityData.new()
+	dash.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	var dash_eff := EffectData.new()
+	dash_eff.type = GameEnums.EffectType.DASH
+	dash.effects = [dash_eff]
+	unit.active_abilities = [heal, dash]
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	input._director = director
+	director.selected_ability_index = 0
+	var self_slots: Dictionary = input._build_commit_slots_at_cell(1, unit.position)
+	var action_steps: Array = self_slots.get("action", [])
+	if action_steps.is_empty():
+		failures.append("PlanningInputTest: self-target skill should populate action slot on own tile")
+	director.selected_ability_index = 1
+	input.dash_targeting = false
+	if not input._try_arm_dash_or_self_skill(1):
+		failures.append("PlanningInputTest: dash skill self click should arm dash targeting")
+	if not input.dash_targeting:
+		failures.append("PlanningInputTest: try_arm_dash should set dash_targeting")
+	director.selected_ability_index = -1
+	if not input._would_show_wait_on_self_click(unit):
+		failures.append("PlanningInputTest: empty skill bar should allow wait cursor on self tile")
+	director.selected_ability_index = 0
+	if input._would_show_wait_on_self_click(unit):
+		failures.append("PlanningInputTest: wait cursor hidden when self-target skill selected")
 
 
 static func _plain_board_with_unit(

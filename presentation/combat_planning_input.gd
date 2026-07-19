@@ -161,7 +161,6 @@ func on_left_press(local: Vector2) -> void:
 		if sel_unit != null and not sel_unit.is_enemy():
 			if selected_phase_action_exhausted(sel_unit.id):
 				return
-			var proj_unit := _proj_unit(sel_unit.id)
 			_commit_at_cell(_director.selected_unit_id, cell, local)
 
 
@@ -218,10 +217,7 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 			if not had_movement:
 				committed = _commit_at_cell(released_unit_id, cell, local)
 			elif not _commit_at_cell(released_unit_id, cell, local):
-				var face: int = _facing_from_drop(local, cell)
-				if face >= 0:
-					_director.rpc_plan_face(released_unit_id, face)
-					_play_sfx("move")
+				if _commit_face_only(released_unit_id, local, cell):
 					committed = true
 			else:
 				committed = true
@@ -338,6 +334,10 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		return
 	if bool(preview.get("invalid", false)):
 		drag_preview_failed = true
+		preview_state.clear_interaction()
+		if _planning != null:
+			_planning.restore_committed_display()
+		_sync_intent_live_board()
 		return
 	preview_state.apply_result(preview, _director)
 	drag_preview_failed = false
@@ -761,6 +761,20 @@ func _refresh_selected_interaction_preview() -> void:
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 		_refresh_click_target_highlight()
 		return
+	if (
+		_director.selected_ability_index >= 0
+		and dash_targeting
+		and _director.board.is_in_bounds(cell)
+	):
+		var dash_ab := _selected_ability_data(p_unit)
+		if (
+			dash_ab != null
+			and _ability_has_dash(dash_ab)
+			and _is_valid_dash_target(_proj_origin(p_unit), cell, _dash_steps(dash_ab))
+		):
+			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
+			_refresh_click_target_highlight()
+			return
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
 		var target_id := _hover_attack_target_id()
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
@@ -1041,12 +1055,6 @@ func _try_arm_dash_or_self_skill(unit_id: int) -> bool:
 		arm_dash_targeting()
 		_play_sfx("ability")
 		return true
-	if (
-		self_ability != null
-		and AbilitySystem.can_target_self(actor, self_ability)
-		and not AbilitySystem.is_run_ability(self_ability)
-	):
-		return _commit_at_cell(unit_id, actor.position, Vector2.ZERO, [], [], _NO_PREFERRED_APPROACH)
 	return false
 
 
@@ -1304,6 +1312,21 @@ func _drag_preview_cache_key_for(
 		key = key * 1000 + wp.x
 		key = key * 1000 + wp.y
 	return key
+
+
+func _commit_face_only(unit_id: int, local: Vector2, cell: Vector2i) -> bool:
+	var face_dir: int = _facing_from_drop(local, cell)
+	if face_dir < 0 or _director == null:
+		return false
+	var slots: Dictionary = _empty_commit_slots()
+	slots["action"].append(TimelineAction.make_face(unit_id, face_dir))
+	slots = _finalize_commit_slots(slots, unit_id)
+	if bool(slots.get("invalid", false)):
+		return false
+	if not _director.commit_from_slots(unit_id, slots):
+		return false
+	_play_sfx("move")
+	return true
 
 
 func _try_plan_wait(unit_id: int) -> bool:
@@ -1845,6 +1868,8 @@ func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 		return slots
 	if _director != null and not _director.preview_commit_valid(unit_id, actions):
 		slots["invalid"] = true
+		return slots
+	slots["_preview_validated"] = true
 	return slots
 
 
@@ -1882,15 +1907,24 @@ func _would_arm_dash_on_self_click(unit: UnitState) -> bool:
 
 
 func _would_show_wait_on_self_click(unit: UnitState) -> bool:
-	if selected_phase_action_exhausted(unit.id) or not _is_planning():
+	if _director == null or not _is_planning():
+		return false
+	if selected_phase_action_exhausted(unit.id):
 		return false
 	if _director.selected_ability_index >= 0:
 		if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 			return true
-		var ability := _selected_ability_data(unit)
-		if ability != null:
-			return false
+		return false
 	return true
+
+
+func _would_commit_face_on_self(unit: UnitState, cell: Vector2i) -> bool:
+	if unit == null or cell != unit.position or not dragging or _map_view == null:
+		return false
+	if _drag_unit_id >= 0 and unit.id != _drag_unit_id:
+		return false
+	var local: Vector2 = _map_view.get_local_mouse_position()
+	return _facing_from_drop(local, cell) >= 0
 
 
 func _hover_icon_for_cell(
@@ -1911,6 +1945,8 @@ func _hover_icon_for_cell(
 		return icon
 	if cell == unit.position and _would_show_wait_on_self_click(unit):
 		return ICON_WAIT
+	if _would_commit_face_on_self(unit, cell):
+		return "👀"
 	return ICON_NULL if cell != unit.position else ""
 
 

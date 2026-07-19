@@ -181,7 +181,10 @@ func _planning_action_range_tiles_for_unit(
 	var actor: UnitState = _proj_unit(unit.id)
 	if actor == null:
 		actor = unit
-	return AbilitySystem.planning_action_range_tiles(_board, actor, ability, origin, [])
+	var plan_board: BoardState = _board
+	if _director != null and _director.projected_state != null:
+		plan_board = _director.projected_state
+	return AbilitySystem.planning_action_range_tiles(plan_board, actor, ability, origin, [])
 
 
 func _recompute_hover_ranges_from_inputs() -> void:
@@ -500,6 +503,9 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if AbilitySystem.is_run_ability(ability):
 		return false
+	if ability != null and AbilitySystem.ability_has_dash(ability):
+		if _planning_input == null or not _planning_input.dash_targeting_active():
+			return false
 	var premove_cell: Vector2i = _proj_origin(unit)
 	if _action_range_origin.x > -900:
 		premove_cell = _action_range_origin
