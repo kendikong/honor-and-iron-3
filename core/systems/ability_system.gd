@@ -275,6 +275,29 @@ static func can_afford_run(actor: UnitState) -> bool:
 	return actor.ability.points_left >= run_ability.action_point_cost
 
 
+## Planning overlay: red tiles only when selected skill stays legal after implicit auto-run premove.
+static func can_show_planning_action_range_after_premove(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	premove_cell: Vector2i,
+	auto_run_active: bool,
+) -> bool:
+	if board == null or actor == null or ability == null:
+		return false
+	if is_run_ability(ability) or is_wait_ability(ability):
+		return false
+	if not can_plan(actor, ability):
+		return false
+	if premove_cell == actor.position or not board.is_in_bounds(premove_cell):
+		return true
+	if not movement_requires_run(board, actor, premove_cell, []):
+		return true
+	if not auto_run_active:
+		return false
+	return can_afford_run_for_commit(actor, ability)
+
+
 ## Auto-run / run-move commit: Run AP plus any paired action ability must fit the AP budget.
 static func can_afford_run_for_commit(actor: UnitState, paired_ability: AbilityData = null) -> bool:
 	if not can_afford_run(actor):

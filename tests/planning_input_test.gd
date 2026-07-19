@@ -8,6 +8,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_undoable_action_director(failures)
 	_test_planning_action_range_tiles(failures)
 	_test_offensive_dash_heuristic(failures)
+	_test_action_range_auto_run_ap_gate(failures)
 
 
 static func _test_force_basic_flag(failures: Array[String]) -> void:
@@ -97,3 +98,43 @@ static func _test_offensive_dash_heuristic(failures: Array[String]) -> void:
 	mobility_dash.can_target_self = true
 	if AbilitySystem.ability_is_offensive_dash(mobility_dash):
 		failures.append("PlanningInputTest: pure self dash should not be offensive dash")
+
+
+static func _test_action_range_auto_run_ap_gate(failures: Array[String]) -> void:
+	var board := BoardState.new()
+	board.grid_size = Vector2i(10, 6)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.position = Vector2i(0, 2)
+	unit.movement.points_left = 2
+	unit.movement.max_points = 4
+	unit.ability.points_left = 3
+	board.units = [unit]
+	var skill := AbilityData.new()
+	skill.kind = GameEnums.AbilityKind.CLASS_SKILL
+	skill.action_point_cost = 3
+	var dmg := EffectData.new()
+	dmg.type = GameEnums.EffectType.DAMAGE
+	dmg.amount = 2
+	skill.effects = [dmg]
+	var run_tile := Vector2i(5, 2)
+	if not AbilitySystem.movement_requires_run(board, unit, run_tile, []):
+		failures.append("PlanningInputTest: auto-run AP gate setup tile should require run")
+	if AbilitySystem.can_show_planning_action_range_after_premove(
+		board, unit, skill, run_tile, true,
+	):
+		failures.append(
+			"PlanningInputTest: action range should hide when auto-run consumes last affordable AP",
+		)
+	unit.ability.points_left = 4
+	if not AbilitySystem.can_show_planning_action_range_after_premove(
+		board, unit, skill, run_tile, true,
+	):
+		failures.append(
+			"PlanningInputTest: action range should show when run plus skill fit AP budget",
+		)
+	var walk_tile := Vector2i(1, 2)
+	if not AbilitySystem.can_show_planning_action_range_after_premove(
+		board, unit, skill, walk_tile, true,
+	):
+		failures.append("PlanningInputTest: walk premove should not consume run AP")

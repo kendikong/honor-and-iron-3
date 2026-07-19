@@ -430,6 +430,7 @@ func _hover_proj_cache_key(unit: UnitState) -> int:
 	var key: int = p_unit.position.x
 	key = key * 1000 + p_unit.position.y
 	key = key * 100 + p_unit.movement.points_left
+	key = key * 10 + p_unit.ability.points_left
 	key = key * 10 + (1 if p_unit.turn_action_used else 0)
 	if _director.unit_has_wait_planned(unit.id):
 		key += 10000000
@@ -484,13 +485,29 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if p_unit.has_status(GameEnums.StatusType.STUN) or p_unit.has_status(GameEnums.StatusType.SILENCE):
 		return false
-	if force_basic:
-		return true
-	if selected_ability < 0:
+	if selected_ability < 0 and not force_basic:
 		return false
 	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
+	if force_basic and (ability == null or AbilitySystem.is_wait_ability(ability)):
+		if not p_unit.active_abilities.is_empty():
+			ability = p_unit.active_abilities[0]
 	if ability == null or AbilitySystem.is_wait_ability(ability):
 		return false
+	if AbilitySystem.is_run_ability(ability):
+		return false
+	var premove_cell: Vector2i = _proj_origin(unit)
+	if _action_range_origin.x > -900 and is_hover_move_tile(_action_range_origin):
+		premove_cell = _action_range_origin
+	var plan_board: BoardState = _director.projected_state if _director.projected_state != null else _board
+	var auto_run_active: bool = (
+		_planning_input != null and _planning_input.auto_run_movement_active(p_unit)
+	)
+	if not AbilitySystem.can_show_planning_action_range_after_premove(
+		plan_board, p_unit, ability, premove_cell, auto_run_active,
+	):
+		return false
+	if force_basic:
+		return true
 	return p_unit.ability.points_left >= ability.action_point_cost
 
 
