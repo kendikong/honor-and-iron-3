@@ -65,6 +65,7 @@ var _stashed_committed: CombatPlanningPreview = CombatPlanningPreview.new()
 var _has_stashed_committed: bool = false
 var _unit_layer: TacticalUnitLayer
 var _planning_input: CombatPlanningInput
+var _planning_cursor: TacticalPlanningCursor
 var _attack_target_id: int = -1
 var _show_danger_area: bool = false
 var _danger_tiles_cache: Dictionary = {}
@@ -346,8 +347,16 @@ func clear_threat_origin() -> void:
 	_invalidate_hover_cache()
 
 
+func bind_planning_cursor(cursor: TacticalPlanningCursor) -> void:
+	_planning_cursor = cursor
+	if _planning_cursor != null:
+		_planning_cursor.set_icon(_hover_action_icon)
+
+
 func set_hover_action_icon(icon: String) -> void:
 	_hover_action_icon = icon
+	if _planning_cursor != null:
+		_planning_cursor.set_icon(icon)
 	queue_redraw()
 
 
@@ -703,9 +712,6 @@ func _draw() -> void:
 	if _aiming:
 		var aim_scale: float = 0.55 / _ui_scale()
 		ClassIconDrawer.draw_icon(self, _aim_local, _aim_class_id, _COLOR_AIM, aim_scale)
-	if _hover_action_icon != "":
-		var icon_pos: Vector2 = get_local_mouse_position() + Vector2(10.0, 10.0) / _ui_scale()
-		_draw_centered_icon(icon_pos, _hover_action_icon, Color.WHITE, int(28.0 / _ui_scale()))
 	for entry: Array in _hit_markers:
 		if entry.size() >= 2 and entry[0] is Vector2i:
 			_draw_death_marker(entry[0] as Vector2i)
@@ -1566,24 +1572,6 @@ func _populate_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_a
 
 func _add_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
 	_populate_attack_threat_tiles(unit, origin, selected_ability)
-
-
-func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int) -> void:
-	var font: Font = ThemeDB.fallback_font
-	if font == null:
-		return
-	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, size_px).x
-	var draw_pos: Vector2 = pos - Vector2(width * 0.5, -size_px * 0.35)
-	draw_string(
-		font,
-		draw_pos + Vector2(1.0, 1.0),
-		text,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		-1,
-		size_px,
-		Color(0.0, 0.0, 0.0, 0.75),
-	)
-	draw_string(font, draw_pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, color)
 
 
 func _update_hover_action_icon() -> void:

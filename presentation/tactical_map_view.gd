@@ -35,6 +35,7 @@ const TILE_PX: int = TacticalConstants.TILE_PX
 
 var _side_panels: TacticalSidePanels
 var _pause_menu: TacticalPauseMenu
+var _planning_cursor: TacticalPlanningCursor
 var _asset_preloader: LpcAssetPreloader
 
 var _tile_set: TileSet
@@ -105,6 +106,12 @@ func _ready() -> void:
 	_pause_menu = TacticalPauseMenu.new()
 	_pause_menu.name = "PauseMenu"
 	add_child(_pause_menu)
+
+	_planning_cursor = TacticalPlanningCursor.new()
+	_planning_cursor.name = "PlanningCursor"
+	add_child(_planning_cursor)
+	_planning_cursor.apply_text_scale(_settings.combat_text_scale)
+	_planning_overlay.bind_planning_cursor(_planning_cursor)
 
 	_combat_shell.setup(
 		self,
@@ -310,6 +317,8 @@ func _on_character_gen_changed() -> void:
 func _on_display_settings_applied() -> void:
 	_sim_presenter.set_game_settings(_settings)
 	_combat_shell.bind_settings(_settings)
+	if _planning_cursor != null:
+		_planning_cursor.apply_text_scale(_settings.combat_text_scale)
 	_settings.apply_audio_buses()
 	_apply_overlay_hud_visibility()
 	_center_map()
