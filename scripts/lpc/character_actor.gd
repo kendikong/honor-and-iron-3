@@ -43,6 +43,8 @@ var _anchor_position: Vector2 = Vector2.ZERO
 var _is_dying: bool = false
 var _running: bool = false
 var _planning_exhausted: bool = false
+var _spell_flash_active: bool = false
+var _spell_flash_generation: int = 0
 var _oblique_band_modulates: Array[Color] = [Color.WHITE, Color.WHITE, Color.WHITE]
 var _oblique_modulate_stamp: int = -1
 var _oblique_cloud_stamp: int = -1
@@ -50,6 +52,7 @@ var _oblique_modulate_pos_px: Vector2i = Vector2i(999999, 999999)
 ## Per-layer self_modulate — parent modulate does not reach LPC recolor shader output reliably.
 const _EXHAUSTED_LAYER_MODULATE := Color(0.28, 0.28, 0.32, 1.0)
 const _EXHAUSTED_SHADOW_TINT := Color(0.40, 0.40, 0.44, 1.0)
+const _SPELL_FLASH_COLOR := Color(3.2, 3.2, 3.2, 1.0)
 const _LOWER_SHADOW_SLOTS: Dictionary = {
 	"legs": true,
 	"shoes": true,
@@ -280,7 +283,10 @@ func _apply_modulate_stack() -> void:
 	modulate = Color.WHITE
 	for spr: AnimatedSprite2D in _layers:
 		spr.modulate = Color.WHITE
-		spr.self_modulate = _layer_self_modulate(spr)
+		if _spell_flash_active:
+			spr.self_modulate = _SPELL_FLASH_COLOR
+		else:
+			spr.self_modulate = _layer_self_modulate(spr)
 
 
 func _rebuild_contact_shadow_silhouette() -> void:
@@ -404,16 +410,34 @@ func play_spellcast(cast_anim: StringName, on_release: Callable = Callable()) ->
 	)
 
 
-func flash_spell_hit(hold_sec: float = 0.45) -> void:
+func flash_spell_hit(hold_sec: float) -> void:
 	if _is_dying:
 		return
+	_spell_flash_generation += 1
+	var generation: int = _spell_flash_generation
 	if _hurt_tween != null and _hurt_tween.is_valid():
 		_hurt_tween.kill()
-	_hurt_tween = create_tween().set_parallel(true)
-	var fade_sec: float = _C.SPELLCAST_FLASH_FADE_SEC
+	_spell_flash_active = true
 	for spr: AnimatedSprite2D in _layers:
-		spr.self_modulate = Color(2.8, 2.8, 2.8, 1.0)
-		_hurt_tween.tween_property(spr, "self_modulate", Color.WHITE, fade_sec).set_delay(hold_sec)
+		spr.self_modulate = _SPELL_FLASH_COLOR
+	get_tree().create_timer(maxf(hold_sec, 0.01)).timeout.connect(
+		func() -> void:
+			_end_spell_flash(generation),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func is_spell_flash_active() -> bool:
+	return _spell_flash_active
+
+
+func _end_spell_flash(generation: int) -> void:
+	if generation != _spell_flash_generation:
+		return
+	_spell_flash_active = false
+	for spr: AnimatedSprite2D in _layers:
+		spr.self_modulate = Color.WHITE
+	_apply_modulate_stack()
 
 
 func _begin_one_shot_layers(action_anim: StringName) -> float:
@@ -528,7 +552,7 @@ func _finish_one_shot_action(generation: int, on_finished: Callable) -> void:
 
 
 func play_hurt(facing_anim: StringName, knockback_dir: Vector2 = Vector2.ZERO) -> void:
-	if _is_dying:
+	if _is_dying or _spell_flash_active:
 		return
 	_begin_hurt(facing_anim, knockback_dir, false, Callable())
 
