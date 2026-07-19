@@ -1077,7 +1077,7 @@ func _draw_interaction_overlay() -> void:
 	var route: Array = prev.preview_paths.get(actor.id, [])
 	var p_col: Color = _player_color_for_unit(actor)
 	if route.size() >= 2 and _unit_can_still_move(actor.id):
-		_draw_route_line(route, Color(p_col.r, p_col.g, p_col.b, 0.95), true, true)
+		_draw_route_line(route, p_col, true, true)
 	if _attack_target_id >= 0:
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord
@@ -1125,12 +1125,16 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 	if smooth.size() < 2:
 		return
 	var end_dir: Vector2 = _route_end_direction(smooth)
+	var flat_col := Color(color.r, color.g, color.b, 1.0)
 	var shaft: PackedVector2Array = smooth
 	if with_head:
-		shaft = _clip_route_for_arrowhead(smooth, dest_center, end_dir, _ROUTE_HEAD_LEN * 0.55)
-	draw_polyline(shaft, color, _ROUTE_LINE_W, true)
+		shaft = _clip_route_for_arrowhead(
+			smooth, dest_center, end_dir, _ROUTE_HEAD_LEN + _ROUTE_LINE_W * 0.5,
+		)
+	shaft = _snap_polyline_px(shaft)
+	draw_polyline(shaft, flat_col, _ROUTE_LINE_W, false)
 	if with_head:
-		_draw_route_arrowhead(dest_center, end_dir, color)
+		_draw_route_arrowhead(dest_center, end_dir, flat_col)
 
 
 func _rounded_route_polyline(pts: PackedVector2Array, corner_r: float) -> PackedVector2Array:
@@ -1210,8 +1214,19 @@ func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color) -> void:
 	var base: Vector2 = tip - travel_dir * _ROUTE_HEAD_LEN
 	var left: Vector2 = base + perp * _ROUTE_HEAD_HALF_W
 	var right: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
-	var head := PackedVector2Array([tip, left, right])
+	var head := PackedVector2Array([
+		Vector2(roundf(tip.x), roundf(tip.y)),
+		Vector2(roundf(left.x), roundf(left.y)),
+		Vector2(roundf(right.x), roundf(right.y)),
+	])
 	draw_colored_polygon(head, fill)
+
+
+func _snap_polyline_px(path: PackedVector2Array) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for p: Vector2 in path:
+		out.append(Vector2(roundf(p.x), roundf(p.y)))
+	return out
 
 
 func _route_end_direction(path: PackedVector2Array) -> Vector2:
