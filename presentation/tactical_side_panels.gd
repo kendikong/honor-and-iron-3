@@ -469,8 +469,9 @@ func _refresh_info() -> void:
 			hov = ui_hov
 	_tile_info_label.text = CombatUiFormatters.tile_info(_board, hov)
 	if _selected_id >= 0:
-		var base_board: BoardState = _director.base_board if _director != null and _director.base_board != null else _board
-		var u := base_board.get_unit_by_id(_selected_id)
+		var u := _proj_unit(_selected_id)
+		if u == null and _director != null and _director.base_board != null:
+			u = _director.base_board.get_unit_by_id(_selected_id)
 		if u != null:
 			_info_label.text = CombatUiFormatters.unit_info(_board, u)
 			_append_hover_action_hint()

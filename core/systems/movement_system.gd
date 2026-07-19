@@ -218,6 +218,13 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 			return
 
 	if action.uses_run:
+		var run_ability: AbilityData = DataLibrary.get_universal_run()
+		if run_ability == null or unit.ability.points_left < run_ability.action_point_cost:
+			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+				"actor": action.actor_id, "reason": "cannot_use_ability",
+			}))
+			return
+		unit.ability.points_left -= run_ability.action_point_cost
 		AbilitySystem.apply_run_boost(unit, events)
 
 	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK

@@ -102,6 +102,9 @@ func on_left_press(local: Vector2) -> void:
 		if aiming:
 			cancel_aim()
 		var was_selected: bool = unit.id == _director.selected_unit_id
+		if was_selected and _director.selected_ability_index >= 0:
+			if _try_plan_self_target_attack(unit.id):
+				return
 		if not was_selected:
 			_director.select_unit(unit.id)
 		_arm_drag(unit, local, was_selected)
@@ -152,6 +155,14 @@ func on_left_press(local: Vector2) -> void:
 		var sel_unit := board.get_unit_by_id(_director.selected_unit_id) if _director.selected_unit_id >= 0 else null
 		if sel_unit != null and not sel_unit.is_enemy():
 			if selected_phase_action_exhausted(sel_unit.id):
+				return
+			var proj_unit := _proj_unit(sel_unit.id)
+			if (
+				proj_unit != null
+				and cell == proj_unit.position
+				and _director.selected_ability_index >= 0
+				and _try_plan_self_target_attack(sel_unit.id)
+			):
 				return
 			if _try_commit_move_with_self_skill(_director.selected_unit_id, cell, local, []):
 				pass
@@ -1225,7 +1236,9 @@ func _try_plan_self_target_attack(unit_id: int) -> bool:
 	if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 		return false
 	var board: BoardState = _director.board
-	var actor := board.get_unit_by_id(unit_id) if board != null else null
+	var actor := _proj_unit(unit_id)
+	if actor == null:
+		actor = board.get_unit_by_id(unit_id) if board != null else null
 	if actor == null:
 		return false
 	var self_ability := _selected_ability_data(actor)

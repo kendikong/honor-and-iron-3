@@ -167,16 +167,12 @@ func _on_board_changed(board: BoardState) -> void:
 		queue_redraw()
 		return
 	_sync_actors()
-	if _director != null and CombatDirector.is_planning_phase(_director.phase):
-		_sync_enemy_projected_positions()
 	_refresh_planning_visuals()
 	queue_redraw()
 
 
 func _on_preview_updated(result: SimResult) -> void:
 	_preview_board = result.final_state
-	if _is_planning_phase():
-		_sync_enemy_projected_positions()
 	queue_redraw()
 
 
@@ -193,7 +189,6 @@ func _on_selection_changed(unit_id: int) -> void:
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
 		_sync_planning_actor_positions()
-		_sync_enemy_projected_positions()
 		_refresh_player_exhaustion()
 
 
@@ -669,26 +664,6 @@ func _sync_planning_actor_positions() -> void:
 		elif _move_tweens.has(unit.id):
 			continue
 		_sync_planning_unit_position(unit)
-
-
-func _sync_enemy_projected_positions() -> void:
-	if _board == null or not _is_planning_phase():
-		return
-	if _director == null or _director.projected_state == null:
-		return
-	for unit: UnitState in _board.units:
-		if not unit.is_alive() or not unit.is_enemy():
-			continue
-		if _move_tweens.has(unit.id):
-			continue
-		if _drag_preview_active and unit.id == _drag_preview_id:
-			continue
-		var projected := _director.projected_state.get_unit_by_id(unit.id)
-		if projected == null or projected.position == unit.position:
-			continue
-		_position_actor(unit.id, projected.position)
-		_apply_facing(unit.id, projected.facing)
-		_update_depth(unit.id)
 
 
 func _sync_planning_unit_position(unit: UnitState) -> void:
@@ -1409,33 +1384,19 @@ func _status_icon(status_type: int) -> String:
 			return "✨"
 
 
-func _display_unit_for_bar(unit: UnitState) -> UnitState:
-	if (
-		_is_planning_phase()
-		and unit.is_enemy()
-		and _director != null
-		and _director.projected_state != null
-	):
-		var projected := _director.projected_state.get_unit_by_id(unit.id)
-		if projected != null:
-			return projected
-	return unit
-
-
 func _draw_hp_bar(unit: UnitState) -> void:
-	var display_unit := _display_unit_for_bar(unit)
-	var foot: Vector2 = _map_view.grid_to_foot_local(display_unit.position)
-	var origin := foot + Vector2(-BAR_W * 0.5, _hp_bar_vertical_offset(display_unit))
-	var current_hp: int = display_unit.health.current_hp
+	var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
+	var origin := foot + Vector2(-BAR_W * 0.5, _hp_bar_vertical_offset(unit))
+	var current_hp: int = unit.health.current_hp
 	var predicted: int = int(_predicted_hp.get(unit.id, current_hp))
-	var max_hp: int = display_unit.health.max_hp
+	var max_hp: int = unit.health.max_hp
 	if max_hp <= 0:
 		return
-	var armor: int = maxi(0, display_unit.armor)
+	var armor: int = maxi(0, unit.armor)
 	var predicted_armor: int = int(_predicted_armor.get(unit.id, armor))
 	var fortitude: int = 0
-	if _board != null and _board.is_in_bounds(display_unit.position):
-		var tile := _board.get_tile(display_unit.position)
+	if _board != null and _board.is_in_bounds(unit.position):
+		var tile := _board.get_tile(unit.position)
 		if tile != null and tile.definition != null:
 			fortitude = maxi(0, tile.definition.fortitude)
 	var flash: float = float(_damage_flash.get(unit.id, 0.0))
@@ -1490,11 +1451,11 @@ func _draw_hp_bar(unit: UnitState) -> void:
 	if fortitude > 0:
 		var fort_w: float = maxf(2.0, BAR_W * 0.12)
 		draw_rect(Rect2(origin + Vector2(BAR_W - fort_w, 0.0), Vector2(fort_w, BAR_H)), Color(0.35, 0.65, 0.35, 0.9), true)
-	if not display_unit.active_statuses.is_empty():
+	if not unit.active_statuses.is_empty():
 		var start_x: float = origin.x + 4.0
 		var start_y: float = origin.y + BAR_H + 1.0
 		var count := 0
-		for status: StatusData in display_unit.active_statuses:
+		for status: StatusData in unit.active_statuses:
 			var pos := Vector2(start_x + float(count % 4) * 7.0, start_y + float(count / 4) * 7.0)
 			_draw_status_icon(pos, _status_icon(status.type))
 			count += 1
