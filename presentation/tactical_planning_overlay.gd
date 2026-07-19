@@ -1093,13 +1093,18 @@ func _draw_interaction_overlay() -> void:
 func _unit_can_still_move(unit_id: int) -> bool:
 	if unit_id < 0 or _director == null:
 		return false
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	if move_timing == -1:
+		return false
+	if _director.unit_has_move_planned_at_timing(unit_id, move_timing):
+		return false
 	var projected := _director.projected_state
 	if projected == null:
 		return false
 	var unit: UnitState = projected.get_unit_by_id(unit_id)
 	if unit == null or unit.is_enemy() or unit.movement.points_left <= 0:
 		return false
-	return _director.get_planning_move_timing(unit_id) >= 0
+	return true
 
 
 func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: bool) -> void:

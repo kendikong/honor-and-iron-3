@@ -722,11 +722,11 @@ func _refresh_selected_interaction_preview() -> void:
 	if selected_phase_action_exhausted():
 		_restore_hover_preview()
 		return
-	if _run_mode_selected(p_unit) and _can_move_to(p_unit, cell):
+	if _run_mode_selected(p_unit) and _unit_move_slot_open(p_unit.id) and _can_move_to(p_unit, cell):
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 		_refresh_click_target_highlight()
 		return
-	if _basic_move_allowed() and _can_move_to(p_unit, cell):
+	if _basic_move_allowed() and _unit_move_slot_open(p_unit.id) and _can_move_to(p_unit, cell):
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 		_refresh_click_target_highlight()
 		return
@@ -735,7 +735,7 @@ func _refresh_selected_interaction_preview() -> void:
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
 		_refresh_click_target_highlight()
 		return
-	if force_basic_movement and _can_move_to(p_unit, cell):
+	if force_basic_movement and _unit_move_slot_open(p_unit.id) and _can_move_to(p_unit, cell):
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 		_refresh_click_target_highlight()
 		return
@@ -1113,6 +1113,15 @@ func _try_plan_basic_move(
 	_director.rpc_plan_move(unit_id, coord, _facing_from_drop(local, coord), waypoints)
 	_play_sfx("move")
 	return true
+
+
+func _unit_move_slot_open(unit_id: int) -> bool:
+	if _director == null or unit_id < 0:
+		return false
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	if move_timing == -1:
+		return false
+	return not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
 
 
 func _basic_move_allowed() -> bool:
