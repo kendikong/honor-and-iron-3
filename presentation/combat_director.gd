@@ -205,10 +205,14 @@ func select_ability(index: int) -> void:
 	if not is_planning_phase(phase):
 		return
 	if is_wait_ability_index(index):
+		if selected_ability_index == index:
+			return
 		selected_ability_index = index
 		EventBus.ability_selected.emit(selected_ability_index)
 		return
 	if index < 0:
+		if selected_ability_index == -1:
+			return
 		selected_ability_index = -1
 		EventBus.ability_selected.emit(selected_ability_index)
 		return
@@ -220,6 +224,8 @@ func select_ability(index: int) -> void:
 		if picked != null and picked.is_universal_run():
 			sync_selected_ability_if_invalid()
 			return
+	if selected_ability_index == index:
+		return
 	selected_ability_index = index
 	EventBus.ability_selected.emit(selected_ability_index)
 

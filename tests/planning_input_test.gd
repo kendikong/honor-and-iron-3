@@ -342,16 +342,23 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	input._director = director
 	input.auto_use_skill_after_move = true
 	input.dash_targeting = false
-	var move_slots: Dictionary = {
-		"pre": [
-			TimelineAction.make_move(
-				1, Vector2i(3, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION,
-			),
-		],
-		"action": [],
-		"post": [],
-		"invalid": false,
-	}
+	var move_slots: Dictionary = input._finalize_commit_slots(
+		{
+			"pre": [
+				TimelineAction.make_move(
+					1, Vector2i(3, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+				),
+			],
+			"action": [],
+			"post": [],
+			"invalid": false,
+		},
+		1,
+	)
+	if not bool(move_slots.get("post_commit_dash_arm", false)):
+		failures.append(
+			"PlanningInputTest: move-only dash slots should set post_commit_dash_arm metadata",
+		)
 	input._on_commit_slots_applied(1, move_slots)
 	if not input.dash_targeting:
 		failures.append(
@@ -359,24 +366,31 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 		)
 	input.dash_targeting = false
 	input.auto_use_skill_after_move = false
-	input._on_commit_slots_applied(1, move_slots)
+	var move_slots_off: Dictionary = input._finalize_commit_slots(
+		{
+			"pre": [
+				TimelineAction.make_move(
+					1, Vector2i(3, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+				),
+			],
+			"action": [],
+			"post": [],
+			"invalid": false,
+		},
+		1,
+	)
+	input._on_commit_slots_applied(1, move_slots_off)
 	if input.dash_targeting:
 		failures.append(
 			"PlanningInputTest: dash must not auto-arm when auto skill after move is off",
 		)
-	var move_only_slots: Dictionary = {
-		"pre": [
-			TimelineAction.make_move(
-				1, Vector2i(3, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION,
-			),
-		],
-		"action": [],
-		"post": [],
-		"invalid": false,
-	}
 	director.selected_ability_index = 0
 	input.auto_use_skill_after_move = true
-	var move_dash_icon: String = input._cursor_icon_from_commit_slots(move_only_slots, unit)
+	var move_dash_slots: Dictionary = input._finalize_commit_slots(
+		input._build_commit_slots_at_cell(1, Vector2i(3, 2)),
+		1,
+	)
+	var move_dash_icon: String = input._cursor_icon_from_commit_slots(move_dash_slots, unit)
 	var expected_move_dash: String = (
 		"%s%s%s"
 		% [CombatPlanningInput.ICON_MOVE, CombatPlanningInput.ICON_COMPOSITE_SEP, CombatPlanningInput.ICON_DASH]

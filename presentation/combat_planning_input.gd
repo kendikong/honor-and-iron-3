@@ -23,7 +23,6 @@ var _sfx: SfxPlayer
 var dragging: bool = false
 var aiming: bool = false
 var dash_targeting: bool = false
-var _tracked_ability_selected_index: int = -99
 var _drag_armed: bool = false
 var _drag_press_local: Vector2 = Vector2.ZERO
 
@@ -511,7 +510,6 @@ func _on_selection_changed(unit_id: int) -> void:
 	if _director == null:
 		return
 	if unit_id < 0:
-		_tracked_ability_selected_index = -99
 		clear_dash_targeting()
 		_invalidate_planning_hover_cache()
 		_restore_hover_preview()
@@ -552,9 +550,7 @@ func _finish_selection_changed() -> void:
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
-	if index != _tracked_ability_selected_index:
-		clear_dash_targeting()
-	_tracked_ability_selected_index = index
+	clear_dash_targeting()
 	if _director.selected_unit_id >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
 	_request_planning_selection_refresh()
@@ -1098,7 +1094,8 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 			):
 				_director.select_ability(-1)
 			return
-	_apply_auto_skill_after_move(unit_id, slots)
+	if bool(slots.get("post_commit_dash_arm", false)):
+		arm_dash_targeting()
 
 
 func _preview_from_commit_slots_at_cell(
@@ -1278,50 +1275,6 @@ func _slots_include_move(slots: Dictionary) -> bool:
 			if raw is TimelineAction and (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
 				return true
 	return false
-
-
-## Auto Skill After Move: one post-commit hook (move-only slots + dash still selected → arm dash).
-func _would_auto_arm_dash_after_move(unit_id: int, slots: Dictionary) -> bool:
-	if not _composite_cursors_enabled() or _director == null:
-		return false
-	if unit_id != _director.selected_unit_id or not _slots_include_move(slots):
-		return false
-	if not (slots.get("action", []) as Array).is_empty():
-		return false
-	if selected_phase_action_exhausted(unit_id):
-		return false
-	if _director.selected_ability_index < 0 or dash_targeting:
-		return false
-	var actor := _proj_unit(unit_id)
-	if actor == null and _director.board != null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor == null:
-		return false
-	var ability := _selected_ability_data(actor)
-	return ability != null and _ability_has_dash(ability)
-
-
-func _apply_auto_skill_after_move(unit_id: int, slots: Dictionary) -> void:
-	if not _would_auto_arm_dash_after_move(unit_id, slots):
-		return
-	call_deferred("_finish_auto_arm_dash_after_move", unit_id)
-
-
-func _finish_auto_arm_dash_after_move(unit_id: int) -> void:
-	if _director == null or unit_id != _director.selected_unit_id:
-		return
-	if dash_targeting or selected_phase_action_exhausted(unit_id):
-		return
-	if _director.selected_ability_index < 0:
-		return
-	var actor := _proj_unit(unit_id)
-	if actor == null and _director.board != null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor == null:
-		return
-	var ability := _selected_ability_data(actor)
-	if ability != null and _ability_has_dash(ability):
-		arm_dash_targeting()
 
 
 func _ability_has_dash(ability: AbilityData) -> bool:
@@ -1917,7 +1870,30 @@ func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 		slots["invalid"] = true
 		return slots
 	slots["_preview_validated"] = true
+	_annotate_post_commit_dash_arm(slots, unit_id)
 	return slots
+
+
+## Move-only commit slots + dash selected + auto skill after move → arm dash after move (metadata only).
+func _annotate_post_commit_dash_arm(slots: Dictionary, unit_id: int) -> void:
+	if not _composite_cursors_enabled() or _director == null:
+		return
+	if unit_id != _director.selected_unit_id or not _slots_include_move(slots):
+		return
+	if not (slots.get("action", []) as Array).is_empty():
+		return
+	if selected_phase_action_exhausted(unit_id) or dash_targeting:
+		return
+	if _director.selected_ability_index < 0:
+		return
+	var actor := _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return
+	var ability := _selected_ability_data(actor)
+	if ability != null and _ability_has_dash(ability):
+		slots["post_commit_dash_arm"] = true
 
 
 func _composite_cursors_enabled() -> bool:
@@ -2011,9 +1987,8 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -
 		var glyph: String = _step_cursor_glyph(step, unit)
 		if glyph != "":
 			glyphs.append(glyph)
-	if unit != null and _would_auto_arm_dash_after_move(unit.id, slots):
-		if not glyphs.has(ICON_DASH):
-			glyphs.append(ICON_DASH)
+	if bool(slots.get("post_commit_dash_arm", false)) and not glyphs.has(ICON_DASH):
+		glyphs.append(ICON_DASH)
 	if glyphs.is_empty():
 		return ""
 	if not _composite_cursors_enabled() or glyphs.size() == 1:
