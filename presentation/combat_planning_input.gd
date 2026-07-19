@@ -894,6 +894,15 @@ func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> i
 		if hover_unit.id == p_unit.id:
 			var ability := _selected_ability_data(p_unit)
 			return p_unit.id if AbilitySystem.can_target_self(p_unit, ability) else -1
+		if hover_unit.is_enemy():
+			var ability := _selected_ability_data(p_unit)
+			if ability == null or _ability_has_dash(ability):
+				return -1
+			if AbilitySystem.ability_uses_attack_animation(ability):
+				return hover_unit.id
+			if _in_ability_range(p_unit, hover_unit):
+				return hover_unit.id
+			return -1
 		if _in_ability_range(p_unit, hover_unit):
 			return hover_unit.id
 		return -1
@@ -1048,14 +1057,8 @@ func _try_commit_move_with_self_skill(
 		return true
 	if not _drop_allows_move_tile(coord, legal_move_tiles, actor):
 		return false
-	_director.rpc_plan_move_with_self_ability(
-		unit_id,
-		coord,
-		_facing_from_drop(local, coord),
-		waypoints,
-		_director.selected_ability_index,
-	)
-	_play_sfx("ability")
+	_director.rpc_plan_move(unit_id, coord, _facing_from_drop(local, coord), waypoints)
+	_play_sfx("move")
 	return true
 
 
@@ -1590,17 +1593,6 @@ func _sync_threat_origin_from_cell(cell: Vector2i) -> void:
 func _drag_preview_target_id(drag_unit: UnitState, occ: UnitState) -> int:
 	if occ != null and drag_unit != null and occ.id != drag_unit.id:
 		return occ.id
-	if (
-		drag_unit != null
-		and not drag_unit.is_enemy()
-		and _director.selected_ability_index >= 0
-		and not force_basic_movement
-		and not _run_mode_selected(drag_unit)
-		and _drag_last_free != drag_unit.position
-	):
-		var self_ability := _selected_ability_data(drag_unit)
-		if AbilitySystem.can_target_self(drag_unit, self_ability):
-			return drag_unit.id
 	return -1
 
 

@@ -536,12 +536,29 @@ func _refresh_ability_buttons_if_dirty() -> void:
 		unit = _board.get_unit_by_id(_selected_id) if _board != null else null
 	if unit == null or unit.is_enemy():
 		return
-	var key: String = "%d:%d:%d" % [_selected_id, _selected_ability, unit.ability.points_left]
+	var key: String = _skill_rebuild_cache_key(unit)
 	if key == _last_skill_rebuild_key:
 		return
 	_last_skill_rebuild_key = key
 	_rebuild_ability_buttons()
 	_refresh_wait_button()
+
+
+func _skill_rebuild_cache_key(unit: UnitState) -> String:
+	var status_bits: int = 0
+	if unit.has_status(GameEnums.StatusType.STUN):
+		status_bits |= 1
+	if unit.has_status(GameEnums.StatusType.SILENCE):
+		status_bits |= 2
+	if unit.has_status(GameEnums.StatusType.PACIFY):
+		status_bits |= 4
+	return "%d:%d:%d:%d:%d" % [
+		_selected_id,
+		_selected_ability,
+		unit.ability.points_left,
+		1 if unit.turn_action_used else 0,
+		status_bits,
+	]
 
 
 func _rebuild_ability_buttons() -> void:
@@ -560,17 +577,25 @@ func _rebuild_ability_buttons() -> void:
 	if unit == null or unit.is_enemy():
 		return
 	var abilities: Array = unit.active_abilities
+	var selected_usable: bool = true
+	if _selected_ability >= 0 and _selected_ability < abilities.size():
+		selected_usable = AbilitySystem.ability_planning_selectable(
+			unit, abilities[_selected_ability] as AbilityData,
+		)
+	if not selected_usable and _director != null:
+		_director.select_ability(-1)
+		_selected_ability = -1
 	for i: int in abilities.size():
 		var ability: AbilityData = abilities[i]
 		var index: int = i
 		var row_btn := Button.new()
-		var can_afford: bool = unit.ability.points_left >= ability.action_point_cost
-		row_btn.disabled = not can_afford
+		var usable: bool = AbilitySystem.ability_planning_selectable(unit, ability)
+		row_btn.disabled = not usable
 		row_btn.modulate = COLOR_SELECT if index == _selected_ability else (
-			Color.WHITE if can_afford else COLOR_SKILL_DISABLED
+			Color.WHITE if usable else COLOR_SKILL_DISABLED
 		)
 		row_btn.pressed.connect(func() -> void:
-			if _director != null:
+			if _director != null and usable:
 				_director.select_ability(index)
 		)
 		row_btn.tooltip_text = CombatUiFormatters.ability_desc(ability, unit)

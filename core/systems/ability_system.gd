@@ -98,6 +98,21 @@ static func is_wait_ability(ability: AbilityData) -> bool:
 	return ability != null and DataLibrary.is_universal_wait(ability.id)
 
 
+## Planning UI: skill button enabled when the unit could commit this ability now (ignores range).
+static func ability_planning_selectable(actor: UnitState, ability: AbilityData) -> bool:
+	if actor == null or ability == null:
+		return false
+	if actor.ability.points_left < ability.action_point_cost:
+		return false
+	if actor.has_status(GameEnums.StatusType.STUN) or actor.has_status(GameEnums.StatusType.SILENCE):
+		return false
+	if actor.has_status(GameEnums.StatusType.PACIFY) and ability_uses_attack_animation(ability):
+		return false
+	if consumes_action_slot(ability) and not actor.can_use_action_slot():
+		return false
+	return true
+
+
 ## Self-only buffs and Run do not consume the action slot (Wait still does when used).
 static func consumes_action_slot(ability: AbilityData) -> bool:
 	if ability == null:
