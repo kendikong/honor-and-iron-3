@@ -215,6 +215,11 @@ func select_ability(index: int) -> void:
 	var unit := board.get_unit_by_id(selected_unit_id)
 	if unit == null or index >= unit.active_abilities.size():
 		return
+	if auto_run:
+		var picked: AbilityData = unit.active_abilities[index] as AbilityData
+		if picked != null and picked.is_universal_run():
+			sync_selected_ability_if_invalid()
+			return
 	selected_ability_index = index
 	EventBus.ability_selected.emit(selected_ability_index)
 

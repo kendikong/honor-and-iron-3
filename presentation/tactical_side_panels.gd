@@ -477,15 +477,37 @@ func _on_ability_selected(index: int) -> void:
 	_scroll_selected_skill_into_view()
 
 
+func _skill_list_row_for_ability_index(ability_index: int) -> int:
+	if ability_index < 0 or _board == null or _selected_id < 0:
+		return -1
+	var unit := _proj_unit(_selected_id)
+	if unit == null:
+		unit = _board.get_unit_by_id(_selected_id)
+	if unit == null:
+		return -1
+	var row: int = 0
+	for i: int in range(unit.active_abilities.size()):
+		var ability: AbilityData = unit.active_abilities[i] as AbilityData
+		if _planning_input != null and _planning_input.auto_run and ability.is_universal_run():
+			if i == ability_index:
+				return -1
+			continue
+		if i == ability_index:
+			return row
+		row += 1
+	return -1
+
+
 func _scroll_selected_skill_into_view() -> void:
 	if _skill_scroll == null or _skill_list == null:
 		return
-	if _selected_ability < 0 or _selected_ability >= _skill_list.get_child_count():
+	var row: int = _skill_list_row_for_ability_index(_selected_ability)
+	if row < 0:
 		return
-	call_deferred("_ensure_skill_visible_by_index", _selected_ability)
+	call_deferred("_ensure_skill_visible_by_index", row)
 
 
-func _ensure_skill_visible_by_index(index: int) -> void:
+func _ensure_skill_visible_by_index(row: int) -> void:
 	_skill_scroll_generation += 1
 	var generation: int = _skill_scroll_generation
 	await get_tree().process_frame
@@ -493,19 +515,19 @@ func _ensure_skill_visible_by_index(index: int) -> void:
 		return
 	if _skill_scroll == null or _skill_list == null:
 		return
-	if index != _selected_ability:
+	if row != _skill_list_row_for_ability_index(_selected_ability):
 		return
 	var count: int = _skill_list.get_child_count()
-	if index < 0 or index >= count:
+	if row < 0 or row >= count:
 		return
-	var btn: Control = _skill_list.get_child(index) as Control
+	var btn: Control = _skill_list.get_child(row) as Control
 	if btn == null or not is_instance_valid(btn):
 		return
 	var bar: VScrollBar = _skill_scroll.get_v_scroll_bar()
-	if index == 0:
+	if row == 0:
 		_skill_scroll.scroll_vertical = 0
 		return
-	if index == count - 1 and bar != null:
+	if row == count - 1 and bar != null:
 		_skill_scroll.scroll_vertical = int(bar.max_value)
 		return
 	_skill_scroll.ensure_control_visible(btn)
@@ -674,9 +696,11 @@ func _rebuild_ability_buttons() -> void:
 	var abilities: Array = unit.active_abilities
 	var selected_usable: bool = true
 	if _selected_ability >= 0 and _selected_ability < abilities.size():
-		selected_usable = AbilitySystem.ability_planning_selectable(
-			unit, abilities[_selected_ability] as AbilityData,
-		)
+		var sel_ability: AbilityData = abilities[_selected_ability] as AbilityData
+		if _planning_input != null and _planning_input.auto_run and sel_ability.is_universal_run():
+			selected_usable = false
+		else:
+			selected_usable = AbilitySystem.ability_planning_selectable(unit, sel_ability)
 	if not selected_usable and _director != null:
 		_director.sync_selected_ability_if_invalid()
 		_selected_ability = _director.selected_ability_index
