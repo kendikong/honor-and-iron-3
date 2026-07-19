@@ -1517,7 +1517,8 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 				var self_ability := _selected_ability_data(p_unit)
 				valid_aim = AbilitySystem.can_target_self(p_unit, self_ability)
 			else:
-				valid_aim = _in_ability_range(p_unit, hover_unit)
+				valid_aim = _in_ability_range(p_unit, hover_unit) \
+					and AbilitySystem.target_passes_mode(p_unit, _selected_ability_data(p_unit), hover_unit)
 		elif CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 			valid_aim = cell == p_unit.position
 		elif _director.selected_ability_index >= 0 and _director.selected_ability_index < p_unit.active_abilities.size():

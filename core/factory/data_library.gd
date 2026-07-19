@@ -422,9 +422,59 @@ static func _make_ability(p_id: StringName, p_name: String, p_range: int, effect
 	ability.scaling_stat = stat
 	ability.target_shape = shape
 	ability.target_shape_size = shape_size
+	_configure_ability_targeting(ability)
 	if is_basic_ability(p_id):
 		ability.action_point_cost = 0
 	return ability
+
+
+static func _configure_ability_targeting(ability: AbilityData) -> void:
+	if ability == null or ability.is_movement_kind():
+		return
+	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+		ability.targeting_mode = GameEnums.TargetingMode.SELF
+		ability.can_target_self = true
+		return
+	var effects: Array[EffectData] = ability.effects
+	if effects.is_empty():
+		return
+	var only_self_buffs := true
+	var has_offense := false
+	var has_heal := false
+	for eff: EffectData in effects:
+		match eff.type:
+			GameEnums.EffectType.ADD_STATUS_SELF, GameEnums.EffectType.DAMAGE_SELF:
+				continue
+			GameEnums.EffectType.HEAL, GameEnums.EffectType.CLEANSE, GameEnums.EffectType.ARMOR_UP:
+				has_heal = true
+				only_self_buffs = false
+			GameEnums.EffectType.ADD_STATUS:
+				if GameEnums.is_debuff(eff.status_type):
+					has_offense = true
+					only_self_buffs = false
+				else:
+					only_self_buffs = false
+			GameEnums.EffectType.DAMAGE, GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL, \
+			GameEnums.EffectType.PURGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE, \
+			GameEnums.EffectType.DASH, GameEnums.EffectType.DESTROY_OBSTACLE:
+				has_offense = true
+				only_self_buffs = false
+			GameEnums.EffectType.SWAP:
+				only_self_buffs = false
+			_:
+				only_self_buffs = false
+	if only_self_buffs and ability.range_tiles == 0:
+		ability.targeting_mode = GameEnums.TargetingMode.SELF
+		ability.can_target_self = true
+	elif ability.range_tiles == 0 and ability.target_shape != GameEnums.TargetShape.SINGLE:
+		ability.targeting_mode = GameEnums.TargetingMode.SELF
+		ability.can_target_self = true
+	elif has_heal and not has_offense:
+		ability.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	elif has_offense:
+		ability.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+	elif not has_offense:
+		ability.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 
 static func _make_movement_ability(
 	p_id: StringName,

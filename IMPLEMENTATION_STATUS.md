@@ -1030,3 +1030,28 @@ Migrated `class_abilities.txt` simultaneous turn model: **one planning phase** �
 - **Large blobs:** Actor bakes used full silhouette height × dawn cot (tree-length casts); cluster overlap max-merge looked like one huge patch.
 - **Lag:** Sub-tile foot origin drift during walk tweens rebuilt atlas every frame; contact-shadow sync ran all actors every `process_frame`.
 - **Fix:** `_ACTOR_SHADOW_HEIGHT_MULT` (0.32) + 72px max-axis cap (~1.5× sprite); tile-foot anchor (no sub-tile drift); foot sync gated on `_foot_atlas_dirty` when standing still.
+
+---
+
+## Universal Ability Economy Unification (2026-07-18)
+
+Phases 1–5: data model, sim economy, `plan_action` timeline, planning validation, dependency cancel, tests.
+
+### Ability Economy Audit (iteration 1 — 2026-07-18)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | `AbilityKind`, MP/AP split, `plan_action`, Wait exhaust, movement→Pre-Move column, Bible § appended |
+| Correct coding | PASS | Shield Slam/Phalanx data-driven; `can_plan`; sim tests for MP + column order |
+| Inconsistencies | PASS | `plan_action` cleared on turn end/restart; reorder uses bucket not `move_timing` |
+| Issues | PASS | See table (≤2 deferred) |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | `board_view.gd` still parallel planning stack (legacy scene) | Med | Deferred — tactical stack is canonical; board_view not main scene |
+| 2 | Godot F5 playtest not run this session (swap MP, Wait exhaust, timeline columns) | Med | Deferred — user F5 |
+
+**Final issue count:** 2  
+**Audit result:** **PASS** (conditional on user F5)
+
+**Commit:** (pending this turn)

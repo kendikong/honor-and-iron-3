@@ -502,6 +502,8 @@ static func _status_name(t: GameEnums.StatusType) -> String:
 			return "Iron Grip"
 		GameEnums.StatusType.RETALIATION_PROTOCOL:
 			return "Retaliation Protocol"
+		GameEnums.StatusType.RETALIATION_INFINITE_RANGE:
+			return "Retaliation (Infinite Range)"
 		GameEnums.StatusType.INDOMITABLE_WILL:
 			return "Indomitable Will"
 		GameEnums.StatusType.THORNS:

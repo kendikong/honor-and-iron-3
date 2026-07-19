@@ -102,6 +102,13 @@ static func can_target_self(_actor: UnitState, ability: AbilityData) -> bool:
 	return ability != null and ability.can_target_self
 
 
+static func target_passes_mode(actor: UnitState, ability: AbilityData, target: UnitState) -> bool:
+	if actor == null or ability == null:
+		return false
+	var coord: Vector2i = target.position if target != null else Vector2i.ZERO
+	return _target_allowed(actor, ability, target, coord)
+
+
 static func ability_has_dash(ability: AbilityData) -> bool:
 	if ability == null:
 		return false

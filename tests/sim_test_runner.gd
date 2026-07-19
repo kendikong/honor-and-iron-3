@@ -20,6 +20,8 @@ func run_all() -> int:
 	failures += _check("summoner spawns minion and respects cap", _test_summoner_spawns())
 	failures += _check("teleporter warps behind farthest player", _test_teleporter_warps())
 	failures += _check("engineer grenade damages target and adjacent without self-damage", _test_engineer_grenade())
+	failures += _check("movement skill spends MP not AP", _test_movement_skill_spends_mp())
+	failures += _check("movement skill resolves in pre-move bucket", _test_movement_skill_pre_move_bucket())
 
 	print_demo_battle()
 
@@ -465,4 +467,51 @@ func _test_engineer_grenade() -> bool:
 		ok = false
 		printerr("  adjacent unit did not take correct grenade damage, hp: %s" % (adj_after.health.current_hp if adj_after != null else "null"))
 	return ok
+
+
+func _test_movement_skill_spends_mp() -> bool:
+	var board := _empty_board(Vector2i(6, 6), [])
+	var swap := AbilityData.new()
+	swap.id = &"test_swap"
+	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.is_movement_skill = true
+	swap.movement_point_cost = 2
+	swap.range_tiles = 1
+	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	var swap_fx := EffectData.new()
+	swap_fx.type = GameEnums.EffectType.SWAP
+	swap.effects = [swap_fx]
+	var actor_def := _make_unit_data(&"actor", 10, 4, 1, null)
+	var ally_def := _make_unit_data(&"ally", 10, 3, 1, null)
+	var actor := _place(board, 1, actor_def, GameEnums.Team.PLAYER, Vector2i(2, 2))
+	var ally := _place(board, 2, ally_def, GameEnums.Team.PLAYER, Vector2i(2, 3))
+	actor.movement.points_left = 4
+	actor.ability.points_left = 1
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, swap, ally.position, 2, GameEnums.MoveTiming.PRE_ACTION))
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	var ok := actor.movement.points_left == 2 and actor.ability.points_left == 1
+	if not ok:
+		printerr("  expected MP 2 and AP 1 after swap, got MP %d AP %d" % [
+			actor.movement.points_left, actor.ability.points_left,
+		])
+	return ok
+
+
+func _test_movement_skill_pre_move_bucket() -> bool:
+	var swap := AbilityData.new()
+	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.is_movement_skill = true
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_move(1, Vector2i(3, 2)))
+	plan.add(TimelineAction.make_ability(1, swap, Vector2i(2, 2), 2, GameEnums.MoveTiming.PRE_ACTION))
+	var steps: Array[TimelineAction] = UnitPlanOrder.ordered_steps_for_unit(plan, 1)
+	if steps.size() != 2:
+		printerr("  expected 2 pre-move steps, got %d" % steps.size())
+		return false
+	if not steps[1].ability.is_movement_kind():
+		printerr("  movement skill must sort into pre-move column order")
+		return false
+	return true
 

@@ -4851,9 +4851,6 @@ func _play_attack_lunge(unit_id: int, anim_dir: Vector2) -> void:
 	, thrust, start_pos, 0.15).set_trans(Tween.TRANS_SINE)
 
 func _ability_attack_anim_dir(unit_id: int, event_data: Dictionary) -> Vector2:
-	var ability_id: StringName = event_data.get("ability", &"")
-	if ability_id == &"knight_seismic_stomp":
-		return Vector2(PhysicsSystem.facing_to_vector(GameEnums.Facing.SOUTH))
 	if not _visual.has(unit_id):
 		return Vector2(PhysicsSystem.facing_to_vector(GameEnums.Facing.SOUTH))
 	var target_coord: Vector2i = event_data.get("target_coord", Vector2i.ZERO)
