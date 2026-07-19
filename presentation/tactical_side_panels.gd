@@ -30,6 +30,7 @@ var _log_label: RichTextLabel
 var _warn_label: RichTextLabel
 var _force_basic_check: CheckBox
 var _danger_area_check: CheckBox
+var _wait_btn: Button
 
 var _board: BoardState
 var _preview_board: BoardState
@@ -63,6 +64,8 @@ func apply_settings(settings: GameSettings) -> void:
 		_force_basic_check.add_theme_font_size_override("font_size", hint_sz)
 	if _danger_area_check != null:
 		_danger_area_check.add_theme_font_size_override("font_size", hint_sz)
+	if _wait_btn != null:
+		_wait_btn.add_theme_font_size_override("font_size", hint_sz)
 	_on_viewport_resized()
 	_last_skill_rebuild_key = ""
 	_rebuild_ability_buttons()
@@ -157,23 +160,42 @@ func _make_panel_column(left_side: bool) -> Control:
 	col.add_theme_constant_override("separation", 8)
 	anchor.add_child(col)
 	if left_side:
-		_force_basic_check = CheckBox.new()
-		_force_basic_check.text = "Force Basic Movement"
-		_force_basic_check.toggled.connect(_on_force_basic_toggled)
-		col.add_child(_force_basic_check)
-		_danger_area_check = CheckBox.new()
-		_danger_area_check.text = "Danger Area"
-		_danger_area_check.toggled.connect(_on_danger_area_toggled)
-		col.add_child(_danger_area_check)
 		_tile_info_label = _add_weighted_rich_panel(col, "Tile", 0.2)
 		_warn_label = _add_weighted_rich_panel(col, "Warning", 0.08)
 		_warn_label.visible = false
 		_log_label = _add_weighted_log_panel(col, 0.52)
 		_intent_label = _add_weighted_rich_panel(col, "Enemy Intent", 0.2)
 	else:
-		_info_label = _add_weighted_rich_panel(col, "Unit Info", 0.5)
-		_skill_list = _add_weighted_skill_panel(col, 0.5)
+		_info_label = _add_weighted_rich_panel(col, "Unit Info", 0.45)
+		_skill_list = _add_weighted_skill_panel(col, 0.45)
+		_add_planning_controls(col)
 	return anchor
+
+
+func _add_planning_controls(parent: VBoxContainer) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	parent.add_child(row)
+
+	_wait_btn = Button.new()
+	_wait_btn.text = "Wait"
+	_wait_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_wait_btn.tooltip_text = "End this unit's action phase without using a skill."
+	_wait_btn.pressed.connect(_on_wait_pressed)
+	row.add_child(_wait_btn)
+
+	_force_basic_check = CheckBox.new()
+	_force_basic_check.text = "Force Basic Movement"
+	_force_basic_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_force_basic_check.toggled.connect(_on_force_basic_toggled)
+	row.add_child(_force_basic_check)
+
+	_danger_area_check = CheckBox.new()
+	_danger_area_check.text = "Danger Area"
+	_danger_area_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_danger_area_check.toggled.connect(_on_danger_area_toggled)
+	row.add_child(_danger_area_check)
+	_refresh_wait_button()
 
 
 func _add_weighted_rich_panel(parent: VBoxContainer, title: String, weight: float) -> RichTextLabel:
@@ -278,6 +300,18 @@ func _on_viewport_resized() -> void:
 func _on_force_basic_toggled(pressed: bool) -> void:
 	if _planning_input != null:
 		_planning_input.force_basic_movement = pressed
+
+
+func _on_wait_pressed() -> void:
+	if _director == null or _selected_id < 0:
+		return
+	_director.rpc_plan_wait(_selected_id)
+
+
+func _refresh_wait_button() -> void:
+	if _wait_btn == null:
+		return
+	_wait_btn.disabled = _is_unit_action_exhausted()
 	if _planning_overlay != null and _director != null:
 		_planning_overlay.recompute_hover_ranges(
 			pressed,
@@ -342,6 +376,7 @@ func _on_preview_updated(result: SimResult) -> void:
 		_intent_state.set_preview_board(result.final_state)
 	_refresh_info()
 	_refresh_ability_buttons_if_dirty()
+	_refresh_wait_button()
 
 
 func _on_selection_changed(unit_id: int) -> void:
@@ -353,6 +388,7 @@ func _on_selection_changed(unit_id: int) -> void:
 		_clear_skill_buttons()
 		return
 	call_deferred("_refresh_ability_buttons_if_dirty")
+	_refresh_wait_button()
 
 
 func _clear_skill_buttons() -> void:
@@ -375,12 +411,9 @@ func _on_ability_selected(index: int) -> void:
 func _scroll_selected_skill_into_view() -> void:
 	if _skill_scroll == null or _skill_list == null:
 		return
-	var child_index: int = _selected_ability
-	if _director != null and CombatDirector.is_wait_ability_index(_selected_ability):
-		child_index = _skill_list.get_child_count() - 1
-	if child_index < 0 or child_index >= _skill_list.get_child_count():
+	if _selected_ability < 0 or _selected_ability >= _skill_list.get_child_count():
 		return
-	var btn: Control = _skill_list.get_child(child_index) as Control
+	var btn: Control = _skill_list.get_child(_selected_ability) as Control
 	if btn == null:
 		return
 	call_deferred("_ensure_skill_visible", btn)
@@ -508,6 +541,7 @@ func _refresh_ability_buttons_if_dirty() -> void:
 		return
 	_last_skill_rebuild_key = key
 	_rebuild_ability_buttons()
+	_refresh_wait_button()
 
 
 func _rebuild_ability_buttons() -> void:
@@ -571,46 +605,8 @@ func _rebuild_ability_buttons() -> void:
 		row_btn.custom_minimum_size.y = base_h + float(text_lines * effect_px)
 		_skill_list.add_child(row_btn)
 
-	_add_wait_skill_button(unit)
+	_refresh_wait_button()
 	_scroll_selected_skill_into_view()
-
-
-func _add_wait_skill_button(unit: UnitState) -> void:
-	var wait_index: int = CombatDirector.WAIT_ABILITY_INDEX
-	var row_btn := Button.new()
-	row_btn.disabled = _is_unit_action_exhausted()
-	row_btn.modulate = COLOR_SELECT if _selected_ability == wait_index else Color.WHITE
-	row_btn.pressed.connect(func() -> void:
-		if _director != null:
-			_director.select_ability(wait_index)
-	)
-	row_btn.tooltip_text = "End this unit's action phase without using a skill."
-	var btn_vbox := VBoxContainer.new()
-	btn_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	btn_vbox.add_theme_constant_override("separation", 2)
-	row_btn.add_child(btn_vbox)
-	var name_lbl := Label.new()
-	name_lbl.text = "Wait"
-	name_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(10))
-	btn_vbox.add_child(name_lbl)
-	var values_hbox := HBoxContainer.new()
-	values_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	values_hbox.add_theme_constant_override("separation", 16)
-	btn_vbox.add_child(values_hbox)
-	values_hbox.add_child(_make_skill_icon("🔵", "0", "AP (Action Points required)"))
-	values_hbox.add_child(_make_skill_icon("🏹", "0", "Range (self only)"))
-	var effect_lbl := RichTextLabel.new()
-	effect_lbl.bbcode_enabled = true
-	effect_lbl.fit_content = true
-	effect_lbl.scroll_active = false
-	effect_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	effect_lbl.custom_minimum_size.x = float(maxi(120, _panel_width - 48))
-	var effect_px: int = CombatUiFormatters.scaled_font_size(9)
-	effect_lbl.add_theme_font_size_override("normal_font_size", effect_px)
-	effect_lbl.text = "[font_size=%d]Skip action — unit is exhausted for this phase.[/font_size]" % effect_px
-	btn_vbox.add_child(effect_lbl)
-	row_btn.custom_minimum_size.y = float(CombatUiFormatters.scaled_font_size(10)) * 5.5
-	_skill_list.add_child(row_btn)
 
 
 func _is_unit_action_exhausted() -> bool:

@@ -876,6 +876,9 @@ func _play_cell_path_tween(
 
 
 func _resolve_planning_facing(unit_id: int) -> int:
+	var queued: int = _facing_toward_queued_action(unit_id)
+	if queued >= 0:
+		return queued
 	var projected := _proj_unit(unit_id)
 	if projected != null:
 		return projected.facing
@@ -1097,6 +1100,37 @@ func _facing_toward(from: Vector2i, to: Vector2i) -> int:
 	if to.y < from.y:
 		return GameEnums.Facing.NORTH
 	return GameEnums.Facing.EAST
+
+
+func _facing_toward_queued_action(unit_id: int) -> int:
+	if _director == null or _board == null:
+		return -1
+	var unit := _proj_unit(unit_id)
+	if unit == null:
+		unit = _board.get_unit_by_id(unit_id)
+	if unit == null:
+		return -1
+	var origin: Vector2i = unit.position
+	for plan: Timeline in [_director.plan_pre_move, _director.plan_post_move]:
+		for action: TimelineAction in plan.entries:
+			if action.actor_id != unit_id or action.type != GameEnums.ActionType.ABILITY:
+				continue
+			if action.ability == null:
+				continue
+			if DataLibrary.is_universal_wait(action.ability.id) or DataLibrary.is_universal_run(action.ability.id):
+				continue
+			var target_coord: Vector2i = action.target_coord
+			if action.target_unit_id >= 0:
+				var tgt := _board.get_unit_by_id(action.target_unit_id)
+				if tgt != null:
+					target_coord = tgt.position
+				elif _director.projected_state != null:
+					var proj_tgt := _director.projected_state.get_unit_by_id(action.target_unit_id)
+					if proj_tgt != null:
+						target_coord = proj_tgt.position
+			if target_coord != origin:
+				return _facing_toward(origin, target_coord)
+	return -1
 
 
 func begin_drag_preview(unit_id: int) -> void:

@@ -339,6 +339,7 @@ func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:
 	_kill_combat_tween()
 	_anchor_position = position
 	var dir: Vector2 = world_dir.normalized() if world_dir.length_squared() > 0.01 else Vector2(0.0, 1.0)
+	play_one_shot_action(attack_anim, ACTION_HOLD_COMBAT_SEC)
 	var tw: Tween = create_tween()
 	_combat_tween = tw
 	tw.tween_property(
@@ -347,9 +348,6 @@ func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:
 		_anchor_position - dir * NUDGE_PULLBACK_PX,
 		0.14,
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tw.tween_callback(func() -> void:
-		play_one_shot_action(attack_anim, ACTION_HOLD_COMBAT_SEC)
-	)
 	tw.tween_interval(NUDGE_PULLBACK_HOLD_SEC)
 	tw.tween_property(
 		self,

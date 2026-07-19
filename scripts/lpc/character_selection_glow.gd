@@ -83,9 +83,9 @@ func set_muted(muted: bool) -> void:
 func _process(_delta: float) -> void:
 	if not enabled or _muted:
 		return
-	var speed_ms: float = 160.0 if _strength == GlowStrength.SELECTED else 200.0
-	var amp: float = 0.38 if _strength == GlowStrength.SELECTED else 0.30
-	var base: float = 0.62 if _strength == GlowStrength.SELECTED else 0.42
+	var speed_ms: float = 150.0 if _strength == GlowStrength.SELECTED else 190.0
+	var amp: float = 0.88 if _strength == GlowStrength.SELECTED else 0.78
+	var base: float = 0.12 if _strength == GlowStrength.SELECTED else 0.08
 	var pulse: float = base + amp * (0.5 + 0.5 * sin(Time.get_ticks_msec() / speed_ms))
 	_apply_strength_params(pulse)
 
@@ -165,8 +165,6 @@ func _ensure_material() -> void:
 
 
 func _draw_color() -> Color:
-	if _muted:
-		return Color(0.55, 0.55, 0.60, 1.0)
 	return glow_color
 
 
@@ -254,13 +252,13 @@ func _apply_strength_params(pulse_scale: float = 1.0) -> void:
 		GlowStrength.HOVER:
 			inner_px = 2
 			outer_px = 4
-			inner_a = (0.85 if not _muted else 0.70) * pulse_scale
-			outer_a = (0.45 if not _muted else 0.32) * pulse_scale
+			inner_a = (0.90 if not _muted else 0.72) * pulse_scale
+			outer_a = (0.50 if not _muted else 0.38) * pulse_scale
 		GlowStrength.SELECTED:
 			inner_px = 2
 			outer_px = 6
-			inner_a = (1.0 if not _muted else 0.85) * pulse_scale
-			outer_a = (0.72 if not _muted else 0.55) * pulse_scale
+			inner_a = (1.0 if not _muted else 0.82) * pulse_scale
+			outer_a = (0.78 if not _muted else 0.58) * pulse_scale
 	_outline_material.set_shader_parameter("inner_px", inner_px)
 	_outline_material.set_shader_parameter("outer_px", outer_px)
 	var draw_color: Color = _draw_color()

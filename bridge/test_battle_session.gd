@@ -22,6 +22,7 @@ var infinite_player_ap: bool = false
 func reset_defaults() -> void:
 	player_class_id = DEFAULT_PLAYER_CLASS
 	passive_enabled.clear()
+	set_all_passives_enabled(player_class_id, false)
 	dummy_coords = [DEFAULT_DUMMY_CELL]
 	extra_player_coords.clear()
 	unkillable_dummies = true
@@ -42,7 +43,7 @@ func enabled_passives_for(class_id: StringName) -> Array[PassiveData]:
 	if def == null:
 		return out
 	for passive: PassiveData in def.passives:
-		if passive_enabled.get(passive.id, true):
+		if passive_enabled.get(passive.id, false):
 			out.append(passive)
 	return out
 

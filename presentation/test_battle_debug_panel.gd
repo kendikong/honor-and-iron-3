@@ -149,7 +149,7 @@ func _rebuild_passive_list() -> void:
 	for passive: PassiveData in def.passives:
 		var check := CheckBox.new()
 		check.text = passive.display_name
-		check.button_pressed = bool(_session.passive_enabled.get(passive.id, true))
+		check.button_pressed = bool(_session.passive_enabled.get(passive.id, false))
 		check.toggled.connect(_on_passive_toggled.bind(passive.id))
 		_passive_box.add_child(check)
 		_passive_checks[passive.id] = check
@@ -161,7 +161,7 @@ func _on_class_selected(index: int) -> void:
 	var class_id: Variant = _class_option.get_item_metadata(index)
 	if class_id is StringName:
 		_session.player_class_id = class_id
-		_session.set_all_passives_enabled(_session.player_class_id, true)
+		_session.set_all_passives_enabled(_session.player_class_id, false)
 		_rebuild_passive_list()
 		_apply_class_and_passives()
 
