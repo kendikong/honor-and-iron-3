@@ -41,6 +41,7 @@ var _move_tweens: Dictionary = {}
 var _active_push_tweens: int = 0
 var _damage_flash: Dictionary = {}
 var _hit_bursts: Array = []
+var _sfx: SfxPlayer
 var _last_attacker_pos: Dictionary = {}
 var _pending_death: Dictionary = {}
 var _drag_preview_id: int = -1
@@ -71,6 +72,10 @@ func sync_all_contact_shadows(settings: EffectsSettings) -> void:
 	if _map_view != null:
 		shadow_root = _map_view.get_shadow_sprites()
 	EffectsController.sync_contact_shadow_on_actors(_actors, settings, shadow_root)
+
+
+func bind_sfx(sfx: SfxPlayer) -> void:
+	_sfx = sfx
 
 
 func setup(map_view: TacticalMapView, director: CombatDirector, profile: CharacterGenProfile = null) -> void:
@@ -1175,13 +1180,56 @@ func _play_attack_anim(event: SimEvent) -> void:
 				thrust_dir = Vector2(delta2).normalized()
 	var ability_id: StringName = event.data.get("ability", &"")
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
-	if ability_data != null and ability_data.is_pre_move_kind():
-		actor.play_spellcast(_spell_anim(facing))
-		return
-	if ability_data != null and not AbilitySystem.ability_uses_attack_animation(ability_data):
-		actor.play_spellcast(_spell_anim(facing))
+	if ability_data != null and AbilitySystem.ability_uses_spellcast_animation(ability_data):
+		var target_ids: Array[int] = _ability_affected_unit_ids_from_event(event, ability_data)
+		actor.play_spellcast(_spell_anim(facing), func() -> void:
+			_on_spellcast_release(target_ids)
+		)
 		return
 	actor.play_attack_thrust(thrust_dir, anim)
+
+
+func _ability_affected_unit_ids_from_event(event: SimEvent, ability: AbilityData) -> Array[int]:
+	var out: Array[int] = []
+	if _board == null or ability == null:
+		return out
+	var actor_id: int = int(event.data.get("actor", -1))
+	var actor := _board.get_unit_by_id(actor_id)
+	if actor == null:
+		return out
+	var target_coord: Vector2i = event.data.get("target_coord", actor.position)
+	if target_coord == Vector2i.ZERO:
+		target_coord = actor.position
+	var shape: int = ability.target_shape
+	var shape_size: int = ability.target_shape_size
+	if actor.is_ability_upgraded(ability.id):
+		if ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE:
+			shape = ability.upgraded_target_shape
+		if ability.upgraded_target_shape_size >= 0:
+			shape_size = ability.upgraded_target_shape_size
+	var affected: Array[Vector2i] = GridSystem.get_affected_tiles(
+		_board, actor.position, target_coord, shape, shape_size,
+	)
+	var seen: Dictionary = {}
+	for cell: Vector2i in affected:
+		var occ := _board.get_unit_at(cell)
+		if occ != null and occ.is_alive():
+			_append_target_id(out, seen, occ.id)
+	var target_unit_id: int = int(event.data.get("target_unit", -1))
+	if target_unit_id >= 0:
+		var target_unit := _board.get_unit_by_id(target_unit_id)
+		if target_unit != null and target_unit.is_alive():
+			_append_target_id(out, seen, target_unit.id)
+	return out
+
+
+func _on_spellcast_release(target_ids: Array[int]) -> void:
+	if _sfx != null:
+		_sfx.play("spellcast")
+	for target_id: int in target_ids:
+		var target_actor: CharacterActor = _actors.get(target_id)
+		if target_actor != null:
+			target_actor.flash_spell_hit()
 
 
 func _ability_for_event(unit_id: int, ability_id: StringName) -> AbilityData:

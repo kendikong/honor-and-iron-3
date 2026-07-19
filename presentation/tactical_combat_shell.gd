@@ -80,6 +80,7 @@ func _apply_ui_settings() -> void:
 
 func start_combat(encounter: EncounterData, initial_board: BoardState = null) -> void:
 	_unit_layer.setup(_map_view, _director, _char_profile)
+	_unit_layer.bind_sfx(_sfx)
 	_unit_overlay.setup(_map_view, _director, _unit_layer)
 	_planning_overlay.setup(_map_view, _director, intent_state)
 	_planning_overlay.bind_unit_layer(_unit_layer)

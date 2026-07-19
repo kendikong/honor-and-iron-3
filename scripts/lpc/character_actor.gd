@@ -389,8 +389,30 @@ func play_one_shot_action(
 	)
 
 
-func play_spellcast(cast_anim: StringName) -> void:
+func play_spellcast(cast_anim: StringName, on_release: Callable = Callable()) -> void:
 	play_one_shot_action(cast_anim, ACTION_HOLD_COMBAT_SEC)
+	if not on_release.is_valid():
+		return
+	var generation: int = _one_shot_generation
+	var delay_sec: float = _C.spellcast_release_delay_sec(cast_anim)
+	get_tree().create_timer(delay_sec).timeout.connect(
+		func() -> void:
+			if generation != _one_shot_generation:
+				return
+			on_release.call(),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func flash_spell_hit() -> void:
+	if _is_dying:
+		return
+	if _hurt_tween != null and _hurt_tween.is_valid():
+		_hurt_tween.kill()
+	_hurt_tween = create_tween().set_parallel(true)
+	for spr: AnimatedSprite2D in _layers:
+		spr.self_modulate = Color(2.8, 2.8, 2.8, 1.0)
+		_hurt_tween.tween_property(spr, "self_modulate", Color.WHITE, 0.22).set_delay(0.06)
 
 
 func _begin_one_shot_layers(action_anim: StringName) -> float:

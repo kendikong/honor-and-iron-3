@@ -16,6 +16,7 @@ const DEFS := {
 	"select":  {"kind": &"chime",    "freq": 784.0,  "freq2": 988.0,  "dur": 0.07, "vol": 0.16},
 	"move":    {"kind": &"tick",     "freq": 320.0,  "freq2": 0.0,    "dur": 0.05, "vol": 0.12},
 	"ability": {"kind": &"chime",    "freq": 523.0,  "freq2": 740.0,  "dur": 0.10, "vol": 0.18},
+	"spellcast": {"kind": &"chime",  "freq": 660.0,  "freq2": 1046.0, "dur": 0.14, "vol": 0.24},
 	"invalid": {"kind": &"buzz",     "freq": 180.0,  "freq2": 140.0,  "dur": 0.12, "vol": 0.14},
 	"cancel":  {"kind": &"tick",     "freq": 280.0,  "freq2": 220.0,  "dur": 0.08, "vol": 0.11},
 	"execute": {"kind": &"chime",    "freq": 392.0,  "freq2": 587.0,  "dur": 0.16, "vol": 0.20},
@@ -77,7 +78,8 @@ func _on_sim_event(event: SimEvent) -> void:
 		GameEnums.SimEventType.UNIT_PUSHED:
 			play("push")
 		GameEnums.SimEventType.ABILITY_USED:
-			play("ability")
+			if not _event_uses_spellcast_animation(event):
+				play("ability")
 		GameEnums.SimEventType.COUNTER_ATTACK:
 			play("ability")
 		GameEnums.SimEventType.UNIT_FACED:
@@ -184,3 +186,19 @@ func _envelope(kind: StringName, t: float) -> float:
 func _noise(seed: int) -> float:
 	var n := sin(float(seed) * 12.9898) * 43758.5453
 	return fmod(n, 1.0) * 2.0 - 1.0
+
+
+func _event_uses_spellcast_animation(event: SimEvent) -> bool:
+	if _director == null or _director.board == null:
+		return false
+	var actor_id: int = int(event.data.get("actor", -1))
+	var ability_id: StringName = event.data.get("ability", &"")
+	if actor_id < 0 or ability_id == &"":
+		return false
+	var actor := _director.board.get_unit_by_id(actor_id)
+	if actor == null:
+		return false
+	for ability: AbilityData in actor.active_abilities:
+		if ability.id == ability_id:
+			return AbilitySystem.ability_uses_spellcast_animation(ability)
+	return false

@@ -47,6 +47,17 @@ const ACTIONS: Dictionary = {
 	"halfslash": [[0, 1, 2, 3, 4, 5], 12.0, DIRS],
 }
 
+## Spellcast timing (frames [0..6] @ 8 fps — see ACTIONS["spellcast"]).
+## Frame 3 = arms extended / release pose (SFX + target flash sync here).
+const SPELLCAST_FPS: float = 8.0
+const SPELLCAST_FRAME_COUNT: int = 7
+const SPELLCAST_RELEASE_FRAME: int = 3
+const SPELLCAST_RELEASE_SEC: float = float(SPELLCAST_RELEASE_FRAME) / SPELLCAST_FPS
+const SPELLCAST_ANIM_SEC: float = float(SPELLCAST_FRAME_COUNT) / SPELLCAST_FPS
+
+static func spellcast_release_delay_sec(_cast_anim: StringName = &"") -> float:
+	return SPELLCAST_RELEASE_SEC
+
 static func get_base_action(anim_name: StringName) -> StringName:
 	var s = str(anim_name)
 	if s.begins_with("combat_idle_"):

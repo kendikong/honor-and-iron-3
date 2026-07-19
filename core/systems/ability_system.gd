@@ -264,6 +264,18 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 	return false
 
 
+static func ability_uses_spellcast_animation(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	if ability.presentation_anim == GameEnums.PresentationAnim.SPELL:
+		return true
+	if ability.presentation_anim == GameEnums.PresentationAnim.ATTACK:
+		return false
+	if ability.is_pre_move_kind():
+		return true
+	return not ability_uses_attack_animation(ability)
+
+
 ## Kept for API compatibility; offensive dash heuristic removed.
 static func ability_is_offensive_dash(_ability: AbilityData) -> bool:
 	return false
