@@ -446,6 +446,42 @@ static func duplicate_effect(src: EffectData) -> EffectData:
 	return e
 
 
+static func duplicate_ability(src: AbilityData) -> AbilityData:
+	var dst := AbilityData.new()
+	copy_ability_into(dst, src)
+	return dst
+
+
+static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
+	if dst == null or src == null:
+		return
+	dst.id = src.id
+	dst.display_name = src.display_name
+	dst.kind = src.kind
+	dst.action_point_cost = src.action_point_cost
+	dst.movement_point_cost = src.movement_point_cost
+	dst.range_tiles = src.range_tiles
+	dst.targeting_mode = src.targeting_mode
+	dst.can_target_self = src.can_target_self
+	dst.target_shape = src.target_shape
+	dst.target_shape_size = src.target_shape_size
+	dst.upgraded_range_tiles = src.upgraded_range_tiles
+	dst.upgraded_target_shape = src.upgraded_target_shape
+	dst.upgraded_target_shape_size = src.upgraded_target_shape_size
+	dst.upgrade_description = src.upgrade_description
+	dst.uses_per_combat = src.uses_per_combat
+	dst.presentation_key = src.presentation_key
+	dst.presentation_anim = src.presentation_anim
+	dst.scaling_stat = src.scaling_stat
+	dst.is_movement_skill = src.is_movement_skill
+	dst.effects.clear()
+	for eff: EffectData in src.effects:
+		dst.effects.append(duplicate_effect(eff))
+	dst.upgraded_effects.clear()
+	for eff: EffectData in src.upgraded_effects:
+		dst.upgraded_effects.append(duplicate_effect(eff))
+
+
 static func _effect_dump_line(index: int, eff: EffectData) -> String:
 	var base: String = "[%d] %s amount=%d" % [
 		index,

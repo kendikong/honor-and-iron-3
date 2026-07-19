@@ -21,6 +21,7 @@ var _glossary_overrides: Dictionary = {}
 var _class_buttons: Dictionary = {}
 var _nav_buttons: Array[Button] = []
 var _active_sidebar_btn: Button = null
+var _ability_defaults: Dictionary = {}
 
 
 func _ready() -> void:
@@ -35,6 +36,7 @@ func _ready() -> void:
 		MenuNavigation.register(self, _on_back_pressed)
 	_load_overrides()
 	_build_layout()
+	_snapshot_ability_defaults()
 	var units: Array[UnitData] = DataLibrary.get_all_player_units()
 	var pick: UnitData = null
 	if _restore_unit_id != &"":
@@ -601,6 +603,12 @@ func _build_ability_row(parent: VBoxContainer, ability: AbilityData) -> void:
 	id_badge.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
 	id_badge.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
 	name_inner.add_child(id_badge)
+	var reset_btn := Button.new()
+	reset_btn.text = "Reset"
+	reset_btn.tooltip_text = "Restore this skill to factory defaults"
+	_style_toolbar_button(reset_btn)
+	reset_btn.pressed.connect(func() -> void: _reset_ability_to_default(ability))
+	name_inner.add_child(reset_btn)
 
 	var cols := HBoxContainer.new()
 	cols.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
@@ -834,6 +842,29 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 	refs["preview"].text = ClassLibrarySchema.in_game_ability_bbcode(ability)
 	refs["impl"].text = ClassLibrarySchema.ability_implementation_notes(ability)
 	refs["dump"].text = ClassLibrarySchema.ability_data_dump(ability)
+
+
+func _snapshot_ability_defaults() -> void:
+	_ability_defaults.clear()
+	for unit: UnitData in DataLibrary.get_all_player_units():
+		for ability: AbilityData in unit.abilities:
+			if ability == null or ability.id == &"":
+				continue
+			if not _ability_defaults.has(ability.id):
+				_ability_defaults[ability.id] = ClassLibrarySchema.duplicate_ability(ability)
+
+
+func _reset_ability_to_default(ability: AbilityData) -> void:
+	if ability == null or not _ability_defaults.has(ability.id) or _selected_unit == null:
+		return
+	ClassLibrarySchema.copy_ability_into(
+		ability,
+		_ability_defaults[ability.id] as AbilityData,
+	)
+	_select_unit(_selected_unit)
+	if _save_status != null:
+		_save_status.text = "Reset %s" % String(ability.display_name)
+		_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_SUCCESS)
 
 
 # --- Reference pages ---
