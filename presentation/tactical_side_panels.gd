@@ -755,7 +755,11 @@ func _rebuild_ability_buttons() -> void:
 			selected_usable = false
 		else:
 			selected_usable = AbilitySystem.ability_planning_selectable(unit, sel_ability)
-	if not selected_usable and _director != null:
+	if (
+		not selected_usable
+		and _director != null
+		and _director.find_awaiting_dash_action(_selected_id) == null
+	):
 		_director.sync_selected_ability_if_invalid()
 		_selected_ability = _director.selected_ability_index
 	for i: int in abilities.size():

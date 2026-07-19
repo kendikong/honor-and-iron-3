@@ -15,6 +15,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_audit_regression_fixes(failures)
 	_test_auto_skill_after_move_arms_dash(failures)
 	_test_awaiting_dash_plan_refresh(failures)
+	_test_dash_arm_survives_plan_refresh(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
 
 
@@ -477,6 +478,53 @@ static func _test_awaiting_dash_plan_refresh(failures: Array[String]) -> void:
 	if not director._plan_is_movement_only(awaiting_plan):
 		failures.append(
 			"PlanningInputTest: premove + awaiting dash should still use movement-only refresh",
+		)
+
+
+static func _test_dash_arm_survives_plan_refresh(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(2, 2)
+	unit.movement.points_left = 4
+	unit.ability.points_left = 3
+	var dash := AbilityData.new()
+	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	dash.display_name = "Bowling Charge"
+	var dash_eff := EffectData.new()
+	dash_eff.type = GameEnums.EffectType.DASH
+	dash_eff.amount = 3
+	dash.effects = [dash_eff]
+	unit.active_abilities = [dash]
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	input._director = director
+	input._last_ability_selected_index = 0
+	if not input._try_arm_dash_or_self_skill(1):
+		failures.append("PlanningInputTest: dash self click should arm through plan refresh")
+	if director.find_awaiting_dash_action(1) == null:
+		failures.append(
+			"PlanningInputTest: awaiting dash must survive sync during _refresh_plan",
+		)
+	if not input.dash_targeting_active():
+		failures.append(
+			"PlanningInputTest: dash_targeting_active should read awaiting plan entry",
 		)
 
 

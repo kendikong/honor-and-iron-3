@@ -233,6 +233,8 @@ func select_ability(index: int) -> void:
 func sync_selected_ability_if_invalid() -> void:
 	if not is_planning_phase(phase) or selected_unit_id < 0:
 		return
+	if find_awaiting_dash_action(selected_unit_id) != null:
+		return
 	if is_wait_ability_index(selected_ability_index):
 		return
 	var p_unit: UnitState = (
