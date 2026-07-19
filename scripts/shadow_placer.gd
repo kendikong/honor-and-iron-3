@@ -2247,6 +2247,11 @@ static func actor_oblique_band_modulates(
 	var want_cloud: bool = settings.cloud_shadows
 	if not want_oblique and not want_cloud:
 		return bands
+	var env: Dictionary = _environment_shader_strengths(settings)
+	var shadow_strength: float = float(env["shadow_strength"])
+	var shadow_tint: Color = env["shadow_tint"] as Color
+	var cloud_strength: float = float(env["cloud_strength"])
+	var cloud_tint: Color = env["cloud_tint"] as Color
 	var foot: Vector2 = actor.position
 	var scale_y: float = actor.scale.y
 	var scale_x: float = actor.scale.x
@@ -2254,7 +2259,6 @@ static func actor_oblique_band_modulates(
 		var y_rows: Variant = ACTOR_SHADOW_BAND_Y[band_i]
 		if typeof(y_rows) != TYPE_ARRAY:
 			continue
-		var mod_map: Color = Color.WHITE
 		var peak_map_alpha: float = 0.0
 		var map_majority: bool = false
 		if want_oblique:
@@ -2275,8 +2279,6 @@ static func actor_oblique_band_modulates(
 			if sample_count > 0 and float(hit_count) / float(sample_count) >= ACTOR_SHADOW_MAJORITY_RATIO:
 				map_majority = true
 				peak_map_alpha = alpha_sum / float(hit_count)
-				mod_map = _modulate_from_shadow_coverage(peak_map_alpha, settings)
-		var mod_cloud: Color = Color.WHITE
 		var peak_cloud: float = 0.0
 		if want_cloud:
 			for y_off: Variant in y_rows:
@@ -2289,11 +2291,18 @@ static func actor_oblique_band_modulates(
 							WeatherBus.cloud_drift_offset,
 						),
 					)
-			if peak_cloud >= 0.125:
-				mod_cloud = _modulate_from_cloud_coverage(peak_cloud, 0.125, settings)
-		bands[band_i] = _resolve_environment_modulate(
-			mod_map, mod_cloud, peak_map_alpha, peak_cloud, map_majority,
-		)
+		var map_shade: float = 0.0
+		if map_majority:
+			map_shade = peak_map_alpha * shadow_strength
+		var cloud_shade: float = 0.0
+		if peak_cloud >= 0.125:
+			cloud_shade = peak_cloud * cloud_strength
+		var shade: float = maxf(map_shade, cloud_shade)
+		if shade < 0.01:
+			bands[band_i] = Color.WHITE
+			continue
+		var tint: Color = cloud_tint if cloud_shade >= map_shade else shadow_tint
+		bands[band_i] = _shade_to_modulate(shade, tint)
 	return bands
 
 
@@ -2312,13 +2321,8 @@ static func _modulate_from_shadow_coverage(coverage: float, settings: EffectsSet
 		return Color.WHITE
 	var params: Dictionary = ShadowPalette.multiply_shader_params(settings)
 	var tint: Color = params.get("shadow_tint", Color(0.74, 0.72, 0.80, 1.0))
-	var strength: float = float(params.get("shadow_strength", 1.0)) * coverage
-	return Color(
-		lerpf(1.0, tint.r, strength),
-		lerpf(1.0, tint.g, strength),
-		lerpf(1.0, tint.b, strength),
-		1.0,
-	)
+	var strength: float = clampf(float(params.get("shadow_strength", 1.0)), 0.0, 1.0) * coverage
+	return _shade_to_modulate(strength, tint)
 
 
 static func _modulate_from_cloud_coverage(
@@ -2330,12 +2334,27 @@ static func _modulate_from_cloud_coverage(
 		return Color.WHITE
 	var tint: Color = AtmosphereBinder.CLOUD_SHADOW_TINT
 	var strength: float = coverage * CloudTuning.strength(settings)
+	return _shade_to_modulate(strength, tint)
+
+
+static func _shade_to_modulate(shade: float, tint: Color) -> Color:
+	var s: float = clampf(shade, 0.0, 1.0)
 	return Color(
-		lerpf(1.0, tint.r, strength),
-		lerpf(1.0, tint.g, strength),
-		lerpf(1.0, tint.b, strength),
+		lerpf(1.0, tint.r, s),
+		lerpf(1.0, tint.g, s),
+		lerpf(1.0, tint.b, s),
 		1.0,
 	)
+
+
+static func _environment_shader_strengths(settings: EffectsSettings) -> Dictionary:
+	var params: Dictionary = ShadowPalette.multiply_shader_params(settings)
+	return {
+		"shadow_strength": clampf(float(params.get("shadow_strength", 1.0)), 0.0, 1.0),
+		"shadow_tint": params.get("shadow_tint", Color(0.74, 0.72, 0.80, 1.0)),
+		"cloud_strength": CloudTuning.strength(settings),
+		"cloud_tint": AtmosphereBinder.CLOUD_SHADOW_TINT,
+	}
 
 
 static func _modulate_from_environment_coverage(
@@ -2343,30 +2362,22 @@ static func _modulate_from_environment_coverage(
 	cloud_alpha: float,
 	settings: EffectsSettings,
 ) -> Color:
-	var mod_map: Color = Color.WHITE
+	var env: Dictionary = _environment_shader_strengths(settings)
+	var shadow_strength: float = float(env["shadow_strength"])
+	var shadow_tint: Color = env["shadow_tint"] as Color
+	var cloud_strength: float = float(env["cloud_strength"])
+	var cloud_tint: Color = env["cloud_tint"] as Color
+	var map_shade: float = 0.0
 	if map_alpha >= 0.04:
-		mod_map = _modulate_from_shadow_coverage(map_alpha, settings)
-	var mod_cloud: Color = Color.WHITE
+		map_shade = map_alpha * shadow_strength
+	var cloud_shade: float = 0.0
 	if cloud_alpha >= 0.125:
-		mod_cloud = _modulate_from_cloud_coverage(cloud_alpha, 0.125, settings)
-	return _resolve_environment_modulate(
-		mod_map, mod_cloud, map_alpha, cloud_alpha, map_alpha >= 0.04,
-	)
-
-
-## Max-resolve body tint — mirrors ground_shadow_composite (dominant mask wins, no stack).
-static func _resolve_environment_modulate(
-	mod_map: Color,
-	mod_cloud: Color,
-	map_alpha: float,
-	cloud_alpha: float,
-	map_majority: bool,
-) -> Color:
-	if cloud_alpha >= map_alpha and cloud_alpha >= 0.125:
-		return mod_cloud
-	if map_majority and map_alpha >= 0.04:
-		return mod_map
-	return Color.WHITE
+		cloud_shade = cloud_alpha * cloud_strength
+	var shade: float = maxf(map_shade, cloud_shade)
+	if shade < 0.01:
+		return Color.WHITE
+	var tint: Color = cloud_tint if cloud_shade >= map_shade else shadow_tint
+	return _shade_to_modulate(shade, tint)
 
 
 static func _shadow_overlay_image() -> Image:
