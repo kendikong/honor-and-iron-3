@@ -1283,14 +1283,7 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	var actor := unit if unit != null else _proj_unit(_director.selected_unit_id)
 	if actor == null and _director.board != null:
 		actor = _director.board.get_unit_by_id(_director.selected_unit_id)
-	if actor == null:
-		return false
-	var ability := _selected_ability_data(actor)
-	if AbilitySystem.is_run_ability(ability):
-		return false
-	if ability == null:
-		return AbilitySystem.can_afford_run(actor)
-	return AbilitySystem.can_afford_run_for_commit(actor, ability)
+	return actor != null and AbilitySystem.can_afford_run(actor)
 
 
 func extended_move_budget_active(unit: UnitState = null) -> bool:
@@ -1512,6 +1505,19 @@ func _empty_commit_slots() -> Dictionary:
 	return {"pre": [], "action": [], "post": [], "invalid": false}
 
 
+func _can_pair_run_move_with_ability(
+	actor: UnitState,
+	cell: Vector2i,
+	waypoints: Array[Vector2i],
+	ability: AbilityData,
+) -> bool:
+	if ability == null:
+		return false
+	if not AbilitySystem.movement_requires_run(_proj(), actor, cell, waypoints):
+		return true
+	return AbilitySystem.can_afford_run_for_commit(actor, ability)
+
+
 func _append_move_to_commit_slots(
 	slots: Dictionary,
 	unit_id: int,
@@ -1597,9 +1603,10 @@ func _build_commit_slots_at_cell(
 			if _drop_allows_move_tile(cell, legal_move_tiles, actor):
 				if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
 					_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
-				slots["action"].append(
-					TimelineAction.make_ability(unit_id, ability, cell, unit_id),
-				)
+				if _can_pair_run_move_with_ability(actor, cell, waypoints, ability):
+					slots["action"].append(
+						TimelineAction.make_ability(unit_id, ability, cell, unit_id),
+					)
 				return slots
 		if hover_unit != null and _in_ability_range(actor, hover_unit):
 			slots["action"].append(
@@ -1689,9 +1696,14 @@ func _build_enemy_commit_slots(
 					actor,
 					path,
 					GameEnums.MoveTiming.PRE_ACTION,
-					ability,
 				),
 			)
+			if AbilitySystem.movement_requires_run(board, actor, approach, path):
+				if AbilitySystem.can_afford_run_for_commit(actor, ability):
+					slots["action"].append(
+						TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
+					)
+				return slots
 		slots["action"].append(
 			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
 		)

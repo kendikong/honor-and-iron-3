@@ -527,7 +527,7 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 		var mov_type := actor.definition.movement_type if actor.definition != null else GameEnums.MovementType.WALK
 		var waypoints := MovementSystem.find_path(proj, actor.position, approach, max_steps, mov_type)
 		move_action = make_planning_move_action(
-			unit_id, approach, proj, actor, waypoints, GameEnums.MoveTiming.PRE_ACTION, ability,
+			unit_id, approach, proj, actor, waypoints, GameEnums.MoveTiming.PRE_ACTION,
 		)
 
 	var trial := proj.clone()
@@ -585,7 +585,7 @@ func planning_move_budget(actor: UnitState, board: BoardState = null) -> int:
 	var plan_actor: UnitState = plan_board.get_unit_by_id(actor.id) if plan_board != null else null
 	if plan_actor != null:
 		actor = plan_actor
-	if auto_run and AbilitySystem.can_afford_run_for_commit(actor, _paired_ability_for_run_commit(actor)):
+	if auto_run and AbilitySystem.can_afford_run(actor):
 		return AbilitySystem.preview_move_budget_with_run(actor)
 	return actor.movement.points_left
 
@@ -597,28 +597,15 @@ func make_planning_move_action(
 	actor: UnitState,
 	waypoints: Array[Vector2i],
 	timing: int,
-	paired_ability: AbilityData = null,
 ) -> TimelineAction:
-	var paired: AbilityData = paired_ability
-	if paired == null:
-		paired = _paired_ability_for_run_commit(actor)
 	if (
 		auto_run
 		and actor != null
-		and AbilitySystem.can_afford_run_for_commit(actor, paired)
+		and AbilitySystem.can_afford_run(actor)
 		and AbilitySystem.movement_requires_run(board, actor, dest, waypoints)
 	):
 		return TimelineAction.make_run_move(unit_id, dest, -1, waypoints, timing)
 	return TimelineAction.make_move(unit_id, dest, -1, waypoints, timing)
-
-
-func _paired_ability_for_run_commit(actor: UnitState) -> AbilityData:
-	if actor == null or selected_ability_index < 0:
-		return null
-	var ability: AbilityData = resolve_selected_ability(actor, selected_ability_index)
-	if AbilitySystem.is_run_ability(ability):
-		return null
-	return ability
 
 
 func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> bool:
@@ -908,7 +895,7 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 					)
 					new_actions.append(
 						make_planning_move_action(
-							unit_id, approach, start_board, actor, path, move_timing, ability,
+							unit_id, approach, start_board, actor, path, move_timing,
 						),
 					)
 				new_actions.append(
@@ -1050,13 +1037,20 @@ func rpc_plan_move_with_self_ability(
 		return
 	_clear_unit_from_plans(unit_id, target_timing)
 	var plan_board: BoardState = projected_state if projected_state != null else board
-	var move_action := TimelineAction.make_move(unit_id, move_coord, face_dir, waypoints, target_timing)
-	if (
+	var needs_run: bool = (
 		auto_run
-		and AbilitySystem.can_afford_run_for_commit(p_unit, ability)
+		and AbilitySystem.can_afford_run(p_unit)
 		and AbilitySystem.movement_requires_run(plan_board, p_unit, move_coord, waypoints)
-	):
+	)
+	var move_action := TimelineAction.make_move(unit_id, move_coord, face_dir, waypoints, target_timing)
+	if needs_run:
 		move_action = TimelineAction.make_run_move(unit_id, move_coord, face_dir, waypoints, target_timing)
+	if needs_run and not AbilitySystem.can_afford_run_for_commit(p_unit, ability):
+		_clear_unit_wait(unit_id)
+		_clear_unit_class_actions_from_plan(unit_id)
+		_clear_unit_post_moves_from_plan(unit_id)
+		_try_add(move_action, plan_to_use)
+		return
 	var ability_action := TimelineAction.make_ability(
 		unit_id, ability, move_coord, unit_id, GameEnums.MoveTiming.PRE_ACTION,
 	)
