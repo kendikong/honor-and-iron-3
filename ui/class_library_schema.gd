@@ -358,7 +358,6 @@ static func ability_data_dump(ability: AbilityData) -> String:
 	lines.append("id: %s" % String(ability.id))
 	lines.append("display_name: %s" % ability.display_name)
 	lines.append("kind: %s" % GameEnums.AbilityKind.keys()[ability.kind])
-	lines.append("is_movement_skill: %s" % str(ability.is_movement_skill))
 	lines.append("action_point_cost: %d" % ability.action_point_cost)
 	lines.append("movement_point_cost: %d" % ability.movement_point_cost)
 	lines.append("range_tiles: %d" % ability.range_tiles)
@@ -473,7 +472,7 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.presentation_key = src.presentation_key
 	dst.presentation_anim = src.presentation_anim
 	dst.scaling_stat = src.scaling_stat
-	dst.is_movement_skill = src.is_movement_skill
+	dst.is_movement_skill = src.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
 	dst.effects.clear()
 	for eff: EffectData in src.effects:
 		dst.effects.append(duplicate_effect(eff))

@@ -65,7 +65,7 @@ static func build_player_active_abilities(def: UnitData, level: int) -> Array[Ab
 	for ab: AbilityData in def.abilities:
 		if is_basic_ability(ab.id):
 			basic_attack = ab
-		elif ab.is_movement_skill:
+		elif ab.is_movement_kind():
 			movement_skill = ab
 		else:
 			class_abilities.append(ab)

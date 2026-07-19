@@ -665,6 +665,7 @@ func _build_ability_row(parent: VBoxContainer, ability: AbilityData) -> void:
 
 
 func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) -> void:
+	ability.is_movement_skill = ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
@@ -673,14 +674,6 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	_bind_enum(grid, "kind", GameEnums.AbilityKind, ability.kind, func(v: int) -> void:
 		ability.kind = v
 		ability.is_movement_skill = v == GameEnums.AbilityKind.MOVEMENT_SKILL
-		_refresh_ability_ui(ability)
-	)
-	_bind_bool(grid, "movement_skill", ability.is_movement_skill, func(v: bool) -> void:
-		ability.is_movement_skill = v
-		if v:
-			ability.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
-		elif ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL:
-			ability.kind = GameEnums.AbilityKind.CLASS_SKILL
 		_refresh_ability_ui(ability)
 	)
 	_bind_int(grid, "AP", ability.action_point_cost, func(v: int) -> void:

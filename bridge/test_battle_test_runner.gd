@@ -97,7 +97,7 @@ static func _test_player_loadout_matches_normal_rules(failures: Array[String]) -
 	for ability: AbilityData in abilities:
 		if DataLibrary.is_universal_run(ability.id):
 			has_run = true
-		if ability.is_movement_skill:
+		if ability.is_movement_kind():
 			has_movement_skill = true
 	if not has_run:
 		failures.append("Training loadout should include universal Run")

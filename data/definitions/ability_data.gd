@@ -62,12 +62,12 @@ extends Resource
 ## Determines which stat (STR/MAG/NONE) scales the damage of this ability.
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
 
-## Legacy mirror of kind == MOVEMENT_SKILL (kept for existing checks).
+## Legacy mirror of kind == MOVEMENT_SKILL (synced from kind in factories/editor; not authored separately).
 @export var is_movement_skill: bool = false
 
 
 func is_movement_kind() -> bool:
-	return kind == GameEnums.AbilityKind.MOVEMENT_SKILL or is_movement_skill
+	return kind == GameEnums.AbilityKind.MOVEMENT_SKILL
 
 
 func is_pre_move_kind() -> bool:
