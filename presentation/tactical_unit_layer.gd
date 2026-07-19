@@ -9,6 +9,7 @@ const _FloatingTextScene = preload("res://presentation/floating_text.tscn")
 const BAR_W: float = 14.0
 const BAR_H: float = 3.0
 const BAR_OFFSET_Y: float = 6.0
+const BAR_OFFSET_ABOVE_Y: float = -22.0
 
 const _COLOR_HP_BG := Color(0.08, 0.08, 0.10, 0.92)
 const _COLOR_HP_FILL := Color(0.38, 0.78, 0.46)
@@ -1372,7 +1373,7 @@ func _status_icon(status_type: int) -> String:
 
 func _draw_hp_bar(unit: UnitState) -> void:
 	var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
-	var origin := foot + Vector2(-BAR_W * 0.5, BAR_OFFSET_Y)
+	var origin := foot + Vector2(-BAR_W * 0.5, _hp_bar_vertical_offset(unit))
 	var current_hp: int = unit.health.current_hp
 	var predicted: int = int(_predicted_hp.get(unit.id, current_hp))
 	var max_hp: int = unit.health.max_hp
@@ -1445,6 +1446,25 @@ func _draw_hp_bar(unit: UnitState) -> void:
 			var pos := Vector2(start_x + float(count % 4) * 7.0, start_y + float(count / 4) * 7.0)
 			_draw_status_icon(pos, _status_icon(status.type))
 			count += 1
+
+
+func _hp_bar_vertical_offset(unit: UnitState) -> float:
+	if _board == null:
+		return BAR_OFFSET_Y
+	var below: Vector2i = unit.position + Vector2i(0, 1)
+	var above: Vector2i = unit.position + Vector2i(0, -1)
+	if _living_unit_at_cell(below, unit.id) != null and _living_unit_at_cell(above, unit.id) == null:
+		return BAR_OFFSET_ABOVE_Y
+	return BAR_OFFSET_Y
+
+
+func _living_unit_at_cell(coord: Vector2i, exclude_id: int = -1) -> UnitState:
+	if _board == null or not _board.is_in_bounds(coord):
+		return null
+	var occupant: UnitState = _board.get_unit_at(coord)
+	if occupant == null or not occupant.is_alive() or occupant.id == exclude_id:
+		return null
+	return occupant
 
 
 func _draw_status_icon(pos: Vector2, text: String) -> void:
