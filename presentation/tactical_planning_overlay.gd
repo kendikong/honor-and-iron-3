@@ -25,6 +25,7 @@ const _ROUTE_CORNER_R: float = 5.0
 const _ROUTE_GLOW_W: float = 8.0
 const _ROUTE_OUTLINE_W: float = 5.0
 const _ROUTE_LINE_W: float = 3.0
+const _ROUTE_AA: bool = true
 const _ROUTE_CORE_W: float = 1.25
 const _ROUTE_HEAD_LEN: float = 10.0
 const _ROUTE_HEAD_HALF_W: float = 5.5
@@ -1128,11 +1129,8 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 	var flat_col := Color(color.r, color.g, color.b, 1.0)
 	var shaft: PackedVector2Array = smooth
 	if with_head:
-		shaft = _clip_route_for_arrowhead(
-			smooth, dest_center, end_dir, _ROUTE_HEAD_LEN + _ROUTE_LINE_W * 0.5,
-		)
-	shaft = _snap_polyline_px(shaft)
-	draw_polyline(shaft, flat_col, _ROUTE_LINE_W, false)
+		shaft = _clip_route_for_arrowhead(smooth, dest_center, end_dir, _ROUTE_HEAD_LEN * 0.55)
+	draw_polyline(shaft, flat_col, _ROUTE_LINE_W, _ROUTE_AA)
 	if with_head:
 		_draw_route_arrowhead(dest_center, end_dir, flat_col)
 
@@ -1214,19 +1212,8 @@ func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color) -> void:
 	var base: Vector2 = tip - travel_dir * _ROUTE_HEAD_LEN
 	var left: Vector2 = base + perp * _ROUTE_HEAD_HALF_W
 	var right: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
-	var head := PackedVector2Array([
-		Vector2(roundf(tip.x), roundf(tip.y)),
-		Vector2(roundf(left.x), roundf(left.y)),
-		Vector2(roundf(right.x), roundf(right.y)),
-	])
+	var head := PackedVector2Array([tip, left, right])
 	draw_colored_polygon(head, fill)
-
-
-func _snap_polyline_px(path: PackedVector2Array) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for p: Vector2 in path:
-		out.append(Vector2(roundf(p.x), roundf(p.y)))
-	return out
 
 
 func _route_end_direction(path: PackedVector2Array) -> Vector2:
