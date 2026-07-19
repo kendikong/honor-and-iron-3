@@ -379,7 +379,7 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	var move_dash_icon: String = input._cursor_icon_from_commit_slots(move_only_slots, unit)
 	var expected_move_dash: String = (
 		"%s%s%s"
-		% [CombatPlanningInput.ICON_MOVE, CombatPlanningInput.ICON_COMPOSITE_SEP, CombatPlanningInput.ICON_ATTACK]
+		% [CombatPlanningInput.ICON_MOVE, CombatPlanningInput.ICON_COMPOSITE_SEP, CombatPlanningInput.ICON_DASH]
 	)
 	if move_dash_icon != expected_move_dash:
 		failures.append(

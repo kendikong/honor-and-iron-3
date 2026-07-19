@@ -23,6 +23,7 @@ var _sfx: SfxPlayer
 var dragging: bool = false
 var aiming: bool = false
 var dash_targeting: bool = false
+var _tracked_ability_selected_index: int = -99
 var _drag_armed: bool = false
 var _drag_press_local: Vector2 = Vector2.ZERO
 
@@ -510,6 +511,7 @@ func _on_selection_changed(unit_id: int) -> void:
 	if _director == null:
 		return
 	if unit_id < 0:
+		_tracked_ability_selected_index = -99
 		clear_dash_targeting()
 		_invalidate_planning_hover_cache()
 		_restore_hover_preview()
@@ -550,7 +552,9 @@ func _finish_selection_changed() -> void:
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
-	dash_targeting = false
+	if index != _tracked_ability_selected_index:
+		clear_dash_targeting()
+	_tracked_ability_selected_index = index
 	if _director.selected_unit_id >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
 	_request_planning_selection_refresh()
@@ -1249,6 +1253,7 @@ func arm_dash_targeting() -> void:
 	dash_targeting = true
 	if _planning != null:
 		_planning.clear_threat_origin()
+		_planning._invalidate_hover_cache()
 	_invalidate_planning_hover_cache()
 	_request_planning_selection_refresh()
 
@@ -1257,6 +1262,8 @@ func clear_dash_targeting() -> void:
 	if not dash_targeting:
 		return
 	dash_targeting = false
+	if _planning != null:
+		_planning._invalidate_hover_cache()
 	_invalidate_planning_hover_cache()
 	_request_planning_selection_refresh()
 
@@ -1295,7 +1302,25 @@ func _would_auto_arm_dash_after_move(unit_id: int, slots: Dictionary) -> bool:
 
 
 func _apply_auto_skill_after_move(unit_id: int, slots: Dictionary) -> void:
-	if _would_auto_arm_dash_after_move(unit_id, slots):
+	if not _would_auto_arm_dash_after_move(unit_id, slots):
+		return
+	call_deferred("_finish_auto_arm_dash_after_move", unit_id)
+
+
+func _finish_auto_arm_dash_after_move(unit_id: int) -> void:
+	if _director == null or unit_id != _director.selected_unit_id:
+		return
+	if dash_targeting or selected_phase_action_exhausted(unit_id):
+		return
+	if _director.selected_ability_index < 0:
+		return
+	var actor := _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return
+	var ability := _selected_ability_data(actor)
+	if ability != null and _ability_has_dash(ability):
 		arm_dash_targeting()
 
 
@@ -1987,9 +2012,8 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -
 		if glyph != "":
 			glyphs.append(glyph)
 	if unit != null and _would_auto_arm_dash_after_move(unit.id, slots):
-		var dash_glyph: String = _ability_action_icon(_selected_ability_data(unit))
-		if dash_glyph != "" and not glyphs.has(dash_glyph):
-			glyphs.append(dash_glyph)
+		if not glyphs.has(ICON_DASH):
+			glyphs.append(ICON_DASH)
 	if glyphs.is_empty():
 		return ""
 	if not _composite_cursors_enabled() or glyphs.size() == 1:
