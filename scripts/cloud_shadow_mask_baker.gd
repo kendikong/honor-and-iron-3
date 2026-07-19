@@ -28,7 +28,7 @@ var _bake_stamp_target: int = -1
 static func ensure(map_root: Node2D) -> CloudShadowMaskBaker:
 	if map_root == null:
 		return null
-	var existing: Node = map_root.get_node_or_null(&"CloudShadowMaskBaker")
+	var existing: Node = map_root.get_node_or_null("CloudShadowMaskBaker")
 	if existing is CloudShadowMaskBaker:
 		return existing as CloudShadowMaskBaker
 	var baker: CloudShadowMaskBaker = CloudShadowMaskBaker.new()
