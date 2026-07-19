@@ -179,8 +179,9 @@ func _add_planning_controls(parent: VBoxContainer) -> void:
 
 	_wait_btn = Button.new()
 	_wait_btn.text = "Wait"
+	_wait_btn.toggle_mode = true
 	_wait_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_wait_btn.tooltip_text = "End this unit's action phase without using a skill."
+	_wait_btn.tooltip_text = "Turn modifier: skip Action and Post-Move for this unit. Click again to cancel."
 	_wait_btn.pressed.connect(_on_wait_pressed)
 	row.add_child(_wait_btn)
 
@@ -321,7 +322,17 @@ func _on_wait_pressed() -> void:
 func _refresh_wait_button() -> void:
 	if _wait_btn == null:
 		return
-	_wait_btn.disabled = _is_unit_action_exhausted()
+	var waiting: bool = (
+		_director != null and _selected_id >= 0 and _director.unit_has_wait_planned(_selected_id)
+	)
+	_wait_btn.button_pressed = waiting
+	_wait_btn.text = "Waiting" if waiting else "Wait"
+	if waiting:
+		_wait_btn.disabled = false
+		_wait_btn.tooltip_text = "Cancel wait — restore action planning for this unit."
+		return
+	_wait_btn.tooltip_text = "Turn modifier: skip Action and Post-Move for this unit."
+	_wait_btn.disabled = not _can_enable_wait()
 
 
 func _on_danger_area_toggled(pressed: bool) -> void:
@@ -640,6 +651,17 @@ func _rebuild_ability_buttons() -> void:
 
 	_refresh_wait_button()
 	_scroll_selected_skill_into_view()
+
+
+func _can_enable_wait() -> bool:
+	if _director == null or _selected_id < 0:
+		return false
+	if _director.get_planning_move_timing(_selected_id) != GameEnums.MoveTiming.PRE_ACTION:
+		return false
+	var unit := _proj_unit(_selected_id)
+	if unit == null and _board != null:
+		unit = _board.get_unit_by_id(_selected_id)
+	return unit != null and unit.can_use_action_slot()
 
 
 func _is_unit_action_exhausted() -> bool:

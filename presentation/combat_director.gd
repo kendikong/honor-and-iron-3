@@ -54,6 +54,8 @@ var turn_start_board: BoardState
 var plan_revision: int = 0
 ## Units whose plan was removed this refresh — forces visual resync (e.g. undo during walk).
 var plan_affected_unit_ids: Array[int] = []
+## Hidden exhaustion slot (Master Bible § Universal Wait) — not in plan_action.
+var _wait_unit_ids: Dictionary = {}
 var _plan_refresh_emit_pending: bool = false
 var _pending_refresh_board: BoardState
 var _pending_refresh_plan: Timeline
@@ -106,6 +108,7 @@ func _init_combat() -> void:
 	plan_pre_move = Timeline.new()
 	plan_action = Timeline.new()
 	plan_post_move = Timeline.new()
+	_wait_unit_ids.clear()
 	_lock_enemy_intents()
 	
 	# Start with no unit selected
@@ -173,6 +176,11 @@ func rpc_plan_wait(unit_id: int) -> void:
 			return
 	if (not is_planning_phase(phase)) or unit_id < 0:
 		return
+	if unit_has_wait_planned(unit_id):
+		_clear_unit_wait(unit_id)
+		plan_affected_unit_ids = [unit_id]
+		_refresh_plan()
+		return
 	var target_timing: int = _get_move_timing(unit_id)
 	if target_timing != GameEnums.MoveTiming.PRE_ACTION:
 		EventBus.action_rejected.emit("no_actions_left")
@@ -183,22 +191,38 @@ func rpc_plan_wait(unit_id: int) -> void:
 		return
 	_clear_unit_class_actions_from_plan(unit_id)
 	_clear_unit_post_moves_from_plan(unit_id)
-	var wait_ability: AbilityData = DataLibrary.get_universal_wait()
-	_try_add(
-		TimelineAction.make_ability(unit_id, wait_ability, p_unit.position, unit_id, GameEnums.MoveTiming.PRE_ACTION),
-		plan_action,
-	)
+	_set_unit_waiting(unit_id, true)
 	selected_ability_index = -1
 	EventBus.ability_selected.emit(selected_ability_index)
+	plan_affected_unit_ids = [unit_id]
+	_refresh_plan()
 
 
 func unit_has_wait_planned(unit_id: int) -> bool:
-	for action: TimelineAction in plan_action.entries:
-		if action.actor_id != unit_id or action.type != GameEnums.ActionType.ABILITY:
-			continue
-		if action.ability != null and action.ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
-			return true
-	return false
+	return _wait_unit_ids.has(unit_id)
+
+
+func _set_unit_waiting(unit_id: int, waiting: bool) -> void:
+	if waiting:
+		_wait_unit_ids[unit_id] = true
+	else:
+		_wait_unit_ids.erase(unit_id)
+
+
+func _clear_unit_wait(unit_id: int) -> void:
+	_wait_unit_ids.erase(unit_id)
+
+
+func _make_wait_action(unit_id: int) -> TimelineAction:
+	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else board.get_unit_by_id(unit_id)
+	var pos: Vector2i = p_unit.position if p_unit != null else Vector2i.ZERO
+	return TimelineAction.make_ability(
+		unit_id,
+		DataLibrary.get_universal_wait(),
+		pos,
+		unit_id,
+		GameEnums.MoveTiming.PRE_ACTION,
+	)
 
 
 func _clear_unit_class_actions_from_plan(unit_id: int) -> void:
@@ -541,6 +565,10 @@ func _get_combined_plan() -> Timeline:
 		combined.add(a)
 	for a in plan_action.entries:
 		combined.add(a)
+	var wait_ids: Array = _wait_unit_ids.keys()
+	wait_ids.sort()
+	for uid_var: Variant in wait_ids:
+		combined.add(_make_wait_action(int(uid_var)))
 	for a in plan_post_move.entries:
 		combined.add(a)
 	return combined
@@ -836,6 +864,7 @@ func rpc_plan_attack(unit_id: int, ability_index: int, target_unit_id: int) -> v
 	if ability.is_movement_kind():
 		_try_add(action, plan_pre_move)
 	else:
+		_clear_unit_wait(unit_id)
 		_clear_unit_class_actions_from_plan(unit_id)
 		_clear_unit_post_moves_from_plan(unit_id)
 		_try_add(action, plan_action)
@@ -865,6 +894,7 @@ func rpc_plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i
 			plan_pre_move,
 		)
 	else:
+		_clear_unit_wait(unit_id)
 		_clear_unit_class_actions_from_plan(unit_id)
 		_clear_unit_post_moves_from_plan(unit_id)
 		_try_add(
@@ -985,6 +1015,7 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 			if a.actor_id != unit_id:
 				kept_2.append(a)
 		plan_post_move.entries = kept_2
+		_clear_unit_wait(unit_id)
 		plan_affected_unit_ids = [unit_id]
 	_refresh_plan()
 
@@ -993,6 +1024,7 @@ func clear_plan() -> void:
 		plan_pre_move.clear()
 		plan_action.clear()
 		plan_post_move.clear()
+		_wait_unit_ids.clear()
 	_refresh_plan()
 
 func restart_turn() -> void:
@@ -1004,6 +1036,7 @@ func restart_turn() -> void:
 	plan_pre_move.clear()
 	plan_action.clear()
 	plan_post_move.clear()
+	_wait_unit_ids.clear()
 	selected_unit_id = -1
 	selected_ability_index = 0
 	_set_phase(Phase.PLANNING)
@@ -1031,6 +1064,7 @@ func execute_turn() -> void:
 	plan_pre_move.clear()
 	plan_action.clear()
 	plan_post_move.clear()
+	_wait_unit_ids.clear()
 	if _check_end_state():
 		return
 	_refresh_plan()
