@@ -96,6 +96,17 @@ func on_left_press(local: Vector2) -> void:
 		if NetworkManager != null and NetworkManager.is_multiplayer:
 			if unit.controlling_player_id != NetworkManager.local_player_id:
 				return
+		if _director.selected_unit_id >= 0 and unit.id != _director.selected_unit_id:
+			var caster := _proj_unit(_director.selected_unit_id)
+			if caster != null and _can_target_unit_with_selected_ability(caster, unit):
+				if selected_phase_action_exhausted(_director.selected_unit_id):
+					_play_sfx("invalid")
+				else:
+					_director.rpc_plan_attack(
+						_director.selected_unit_id, _director.selected_ability_index, unit.id,
+					)
+					_play_sfx("ability")
+				return
 		if aiming and unit.id == _director.selected_unit_id:
 			var actor := _proj_unit(_director.selected_unit_id)
 			var self_ability := _selected_ability_data(actor)
@@ -224,6 +235,15 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 	var dropped_on := _unit_at_input_cell(cell)
 	if dropped_on != null and dropped_on.id != actor.id:
 		if _is_selectable_player_unit(dropped_on):
+			if _can_target_unit_with_selected_ability(actor, dropped_on):
+				if selected_phase_action_exhausted(released_unit_id):
+					_play_sfx("invalid")
+				else:
+					_director.rpc_plan_attack(
+						released_unit_id, _director.selected_ability_index, dropped_on.id,
+					)
+					_play_sfx("ability")
+				return true
 			_director.select_unit(dropped_on.id)
 			return false
 		if selected_phase_action_exhausted(released_unit_id):
@@ -958,10 +978,10 @@ func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> i
 				return -1
 			if AbilitySystem.ability_uses_attack_animation(ability):
 				return hover_unit.id
-			if _in_ability_range(p_unit, hover_unit):
+			if _can_target_unit_with_selected_ability(p_unit, hover_unit):
 				return hover_unit.id
 			return -1
-		if _in_ability_range(p_unit, hover_unit):
+		if _can_target_unit_with_selected_ability(p_unit, hover_unit):
 			return hover_unit.id
 		return -1
 	if hover_unit.is_enemy():
@@ -1099,12 +1119,7 @@ func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) 
 		return true
 	var target := _proj().get_unit_at(coord)
 	if target != null:
-		if target.id == actor.id:
-			if AbilitySystem.can_target_self(actor, ability) and not AbilitySystem.is_run_ability(ability):
-				_director.rpc_plan_attack(unit.id, _director.selected_ability_index, target.id)
-				_play_sfx("ability")
-				return true
-		elif _in_ability_range(actor, target):
+		if _can_target_unit_with_selected_ability(actor, target):
 			_director.rpc_plan_attack(unit.id, _director.selected_ability_index, target.id)
 			_play_sfx("ability")
 			return true
@@ -1339,6 +1354,21 @@ func _in_ability_range(actor: UnitState, target: UnitState) -> bool:
 	if aiming and target.is_enemy():
 		target_pos = _aim_enemy_pos(target.id)
 	return GridSystem.manhattan(actor_pos, target_pos) <= rng
+
+
+func _can_target_unit_with_selected_ability(actor: UnitState, target: UnitState) -> bool:
+	if actor == null or target == null or not target.is_alive():
+		return false
+	if force_basic_movement or _director == null or _director.selected_ability_index < 0:
+		return false
+	var ability := _selected_ability_data(actor)
+	if ability == null or AbilitySystem.is_run_ability(ability):
+		return false
+	if target.id == actor.id:
+		return AbilitySystem.can_target_self(actor, ability)
+	if not AbilitySystem.target_passes_mode(actor, ability, target):
+		return false
+	return _in_ability_range(actor, target)
 
 
 func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
@@ -1588,6 +1618,18 @@ func _build_commit_slots_at_cell(
 		)
 
 	if hover_unit != null and hover_unit.is_alive() and not hover_unit.is_enemy():
+		if (
+			ability_index >= 0
+			and ability != null
+			and not force_basic_movement
+			and _can_target_unit_with_selected_ability(actor, hover_unit)
+		):
+			slots["action"].append(
+				TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id),
+			)
+			return slots
+		if _skill_interaction_active() and hover_unit.id != actor.id:
+			slots["invalid"] = true
 		return slots
 
 	if ability_index >= 0 and ability != null and not force_basic_movement:
@@ -1949,6 +1991,8 @@ func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitSt
 		return false
 	if hover_unit != null and hover_unit.id == p_unit.id:
 		return not AbilitySystem.can_target_self(p_unit, ability) and not AbilitySystem.is_run_ability(ability)
+	if hover_unit != null and not hover_unit.is_enemy() and hover_unit.id != p_unit.id:
+		return not _can_target_unit_with_selected_ability(p_unit, hover_unit)
 	if _ability_has_dash(ability) and _planning != null:
 		if (
 			_planning.is_hover_threat_tile(cell)
