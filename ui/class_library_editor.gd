@@ -680,20 +680,22 @@ func _add_selectable_preview_card(
 		head.add_child(sub_lbl)
 	var preview_wrap := PanelContainer.new()
 	preview_wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	preview_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	preview_wrap.add_theme_stylebox_override("panel", ClassLibraryTheme.column_style(ClassLibraryTheme.Column.INGAME))
 	box.add_child(preview_wrap)
-	var preview_scroll := ScrollContainer.new()
-	preview_scroll.custom_minimum_size = Vector2(0, ClassLibraryTheme.px(88))
-	preview_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	preview_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	preview_wrap.add_child(preview_scroll)
 	var preview := RichTextLabel.new()
 	preview.bbcode_enabled = true
-	preview.fit_content = true
 	preview.scroll_active = true
+	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	preview.custom_minimum_size.y = ClassLibraryTheme.px(88)
+	preview.add_theme_color_override("default_color", ClassLibraryTheme.TEXT_PRIMARY)
 	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	preview_scroll.add_child(preview)
-	return {"preview": preview, "title": name_lbl}
+	preview_wrap.add_child(preview)
+	var sync_preview_width := func() -> void:
+		_sync_list_preview_width(preview, preview_wrap)
+	preview_wrap.resized.connect(sync_preview_width)
+	preview.tree_entered.connect(sync_preview_width)
+	return {"preview": preview, "title": name_lbl, "wrap": preview_wrap}
 
 
 # --- Sidebar ---
@@ -1007,6 +1009,9 @@ func _refresh_passive_ui(passive: PassiveData) -> void:
 	var preview: RichTextLabel = refs.get("preview")
 	if preview != null:
 		_refresh_passive_preview(passive, preview)
+		var wrap: PanelContainer = refs.get("wrap")
+		if wrap != null:
+			_sync_list_preview_width(preview, wrap)
 	var title: Label = refs.get("title")
 	if title != null:
 		title.text = passive.display_name
@@ -1125,6 +1130,17 @@ func _build_weapon_section(unit: UnitData, parent: VBoxContainer) -> void:
 	_bind_int(grid, "DEF +", wpn.bonus_defense, func(v: int) -> void: wpn.bonus_defense = v)
 	_bind_int(grid, "HP +", wpn.bonus_max_hp, func(v: int) -> void: wpn.bonus_max_hp = v)
 	_bind_int(grid, "MOV +", wpn.bonus_move, func(v: int) -> void: wpn.bonus_move = v)
+
+
+func _sync_list_preview_width(preview: RichTextLabel, host: PanelContainer) -> void:
+	if preview == null or host == null:
+		return
+	var margin: float = ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD) * 2.0
+	var panel_style: StyleBox = host.get_theme_stylebox("panel")
+	if panel_style is StyleBoxFlat:
+		var flat: StyleBoxFlat = panel_style as StyleBoxFlat
+		margin = flat.content_margin_left + flat.content_margin_right
+	preview.custom_minimum_size.x = maxf(host.size.x - margin, 1.0)
 
 
 func _refresh_passive_preview(passive: PassiveData, preview: RichTextLabel) -> void:
@@ -1296,6 +1312,9 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 	var preview: RichTextLabel = refs.get("preview")
 	if preview != null:
 		preview.text = ClassLibrarySchema.in_game_ability_bbcode(ability)
+		var wrap: PanelContainer = refs.get("wrap")
+		if wrap != null:
+			_sync_list_preview_width(preview, wrap)
 	var title: Label = refs.get("title")
 	if title != null:
 		title.text = ability.display_name
