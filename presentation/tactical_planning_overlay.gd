@@ -28,6 +28,8 @@ const _ROUTE_LINE_W: float = 3.0
 const _ROUTE_CORE_W: float = 1.25
 const _ROUTE_HEAD_LEN: float = 10.0
 const _ROUTE_HEAD_HALF_W: float = 5.5
+const _ROUTE_FILL_HALF_W: float = _ROUTE_LINE_W * 0.5
+const _ROUTE_HEAD_FLARE: float = _ROUTE_HEAD_HALF_W - _ROUTE_FILL_HALF_W
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
 const _INTENT_ROUTE_ALPHA: float = 0.40
@@ -1149,7 +1151,7 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 			shaft_path, dest_center, travel_dir, _ROUTE_OUTLINE_W * 0.5, true,
 		)
 		var fill_poly: PackedVector2Array = _build_route_body_polygon(
-			shaft_path, dest_center, travel_dir, _ROUTE_LINE_W * 0.5, true,
+			shaft_path, dest_center, travel_dir, _ROUTE_FILL_HALF_W, true,
 		)
 		if glow_poly.size() >= 3:
 			draw_colored_polygon(glow_poly, glow_col)
@@ -1157,8 +1159,6 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 			draw_colored_polygon(outline_poly, outline_col)
 		if fill_poly.size() >= 3:
 			draw_colored_polygon(fill_poly, color)
-		if shaft_path.size() >= 2:
-			draw_polyline(shaft_path, highlight_col, _ROUTE_CORE_W, true)
 		return
 	draw_polyline(smooth, glow_col, _ROUTE_GLOW_W, true)
 	draw_polyline(smooth, outline_col, _ROUTE_OUTLINE_W, true)
@@ -1186,12 +1186,23 @@ func _build_route_body_polygon(
 	if left.is_empty() or right.is_empty():
 		return PackedVector2Array()
 	var poly := PackedVector2Array()
-	poly.append_array(left)
 	if with_head:
 		var base: Vector2 = tip - travel_dir * _ROUTE_HEAD_LEN
-		poly.append(base + perp * _ROUTE_HEAD_HALF_W)
+		var head_half_w: float = half_w + _ROUTE_HEAD_FLARE
+		var cap_left: Vector2 = base + perp * half_w
+		var cap_right: Vector2 = base - perp * half_w
+		var wing_left: Vector2 = base + perp * head_half_w
+		var wing_right: Vector2 = base - perp * head_half_w
+		if left.size() > 0:
+			left[left.size() - 1] = cap_left
+		if right.size() > 0:
+			right[right.size() - 1] = cap_right
+		poly.append_array(left)
+		poly.append(wing_left)
 		poly.append(tip)
-		poly.append(base - perp * _ROUTE_HEAD_HALF_W)
+		poly.append(wing_right)
+	else:
+		poly.append_array(left)
 	for i: int in range(right.size() - 1, -1, -1):
 		poly.append(right[i])
 	return poly
