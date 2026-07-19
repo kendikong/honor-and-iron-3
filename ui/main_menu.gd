@@ -22,6 +22,11 @@ func _ready() -> void:
 	test_battle_btn.pressed.connect(_on_test_battle_pressed)
 	$VBoxContainer.add_child(test_battle_btn)
 
+	var library_btn := Button.new()
+	library_btn.text = "Class Library Editor"
+	library_btn.pressed.connect(_on_class_library_pressed)
+	$VBoxContainer.add_child(library_btn)
+
 func _on_mass_sim_pressed() -> void:
 	get_tree().change_scene_to_file("res://ui/analysis/analysis_dashboard.tscn")
 
@@ -46,6 +51,10 @@ func _on_online_coop_pressed() -> void:
 
 func _on_compendium_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/Compendium.tscn")
+
+
+func _on_class_library_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/ClassLibraryEditor.tscn")
 
 func _on_options_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/Options.tscn")
