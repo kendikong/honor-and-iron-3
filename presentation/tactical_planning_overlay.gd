@@ -1281,6 +1281,8 @@ func _draw_target_rings() -> void:
 	if rng < 0:
 		return
 	var preview_board: BoardState = _display_preview_board()
+	if preview_board == null:
+		return
 	for other: UnitState in preview_board.units:
 		if not other.is_alive() or other.id == unit.id:
 			continue

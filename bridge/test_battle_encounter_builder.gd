@@ -11,6 +11,10 @@ static func build_grass_grid(size: Vector2i = TestBattleSession.MAP_SIZE) -> Pla
 static func _collect_placements(session: TestBattleSession) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var player_def: UnitData = DataLibrary.get_unit(session.player_class_id)
+	if player_def == null:
+		player_def = DataLibrary.get_unit(TestBattleSession.DEFAULT_PLAYER_CLASS)
+	if player_def == null:
+		return out
 	var player_config: Dictionary = session.player_unit_config()
 	out.append({
 		"unit": player_def,
@@ -26,6 +30,8 @@ static func _collect_placements(session: TestBattleSession) -> Array[Dictionary]
 			"config": player_config,
 		})
 	var dummy_def: UnitData = DataLibrary.get_training_dummy()
+	if dummy_def == null:
+		return out
 	for coord: Vector2i in session.dummy_coords:
 		out.append({
 			"unit": dummy_def,

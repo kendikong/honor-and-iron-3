@@ -38,12 +38,20 @@ func _refine_spawn_positions() -> void:
 func _start_combat() -> void:
 	_encounter = TestBattleEncounterBuilder.build_encounter(_session)
 	var board: BoardState = TestBattleEncounterBuilder.build_board(_session)
+	_wire_training_director()
 	_combat_shell.start_combat(_encounter, board)
 	_combat_shell.bind_settings(_settings)
 	_sim_presenter.set_game_settings(_settings)
-	_wire_training_director()
 	_configure_arena_hud()
 	_director.select_unit(_first_player_unit_id())
+
+
+func _active_board() -> BoardState:
+	if _director == null:
+		return null
+	if _director.base_board != null:
+		return _director.base_board
+	return _director.board
 
 
 func apply_training_board() -> void:
@@ -62,9 +70,7 @@ func get_session() -> TestBattleSession:
 
 
 func get_live_board() -> BoardState:
-	if _director != null and _director.board != null:
-		return _director.board
-	return null
+	return _active_board()
 
 
 func _wire_training_director() -> void:
@@ -74,7 +80,7 @@ func _wire_training_director() -> void:
 
 
 func _suppress_training_victory(board: BoardState) -> bool:
-	if not _session.unkillable_dummies:
+	if board == null or not _session.unkillable_dummies:
 		return false
 	if board.has_living_team(GameEnums.Team.ENEMY):
 		return false
@@ -93,24 +99,26 @@ func _configure_arena_hud() -> void:
 
 
 func _on_training_turn_phase(phase: int) -> void:
-	if _director == null or _director.board == null:
+	var board: BoardState = _active_board()
+	if board == null:
 		return
 	if phase == CombatDirector.Phase.PLANNING:
 		if _session.infinite_player_ap:
-			for unit: UnitState in _director.board.units:
+			for unit: UnitState in board.units:
 				if unit.team != GameEnums.Team.PLAYER:
 					continue
 				unit.ability.points_left = unit.ability.max_points
 				unit.movement.points_left = unit.movement.max_points
 				unit.turn_action_used = false
 		if _session.unkillable_dummies:
-			TestBattleEncounterBuilder.maintain_training_dummies(_director.board, _session)
+			TestBattleEncounterBuilder.maintain_training_dummies(board, _session)
 
 
 func _first_player_unit_id() -> int:
-	if _director == null or _director.board == null:
+	var board: BoardState = _active_board()
+	if board == null:
 		return 1
-	for unit: UnitState in _director.board.units:
+	for unit: UnitState in board.units:
 		if unit.is_alive() and not unit.is_enemy():
 			return unit.id
 	return 1

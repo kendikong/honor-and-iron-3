@@ -16,6 +16,7 @@ var _passive_checks: Dictionary = {}
 var _unkillable_check: CheckBox
 var _infinite_ap_check: CheckBox
 var _status_label: Label
+var _populating_class_options: bool = false
 
 
 func setup(
@@ -100,6 +101,7 @@ func _build_ui() -> void:
 
 
 func _refresh_class_options() -> void:
+	_populating_class_options = true
 	_class_option.clear()
 	var ids: Array[StringName] = DataLibrary.get_player_class_ids()
 	for i: int in range(ids.size()):
@@ -110,6 +112,7 @@ func _refresh_class_options() -> void:
 		_class_option.set_item_metadata(i, class_id)
 		if class_id == _session.player_class_id:
 			_class_option.select(i)
+	_populating_class_options = false
 
 
 func _rebuild_passive_list() -> void:
@@ -129,6 +132,8 @@ func _rebuild_passive_list() -> void:
 
 
 func _on_class_selected(index: int) -> void:
+	if _populating_class_options:
+		return
 	var class_id: Variant = _class_option.get_item_metadata(index)
 	if class_id is StringName:
 		_session.player_class_id = class_id

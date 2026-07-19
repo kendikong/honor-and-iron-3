@@ -1512,6 +1512,8 @@ func _lock_enemy_intents() -> void:
 	base_board.intents = EnemyPlanner.plan(base_board)
 
 func _check_end_state() -> bool:
+	if base_board == null:
+		return false
 	if suppress_end_state.is_valid() and bool(suppress_end_state.call(base_board)):
 		return false
 	if not base_board.has_living_team(GameEnums.Team.ENEMY):
