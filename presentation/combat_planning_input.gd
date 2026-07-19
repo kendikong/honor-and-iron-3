@@ -23,6 +23,7 @@ const ICON_ATTACK: String = "⚔️"
 const ICON_SKILL: String = "🔮"
 const ICON_MOVE_ATTACK: String = "👟⚔️"
 const ICON_NULL: String = "∅"
+const ICON_WAIT: String = "⏸"
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -1515,9 +1516,9 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 		if _drag_unit_was_selected and _drag_unit_id >= 0:
 			var drag_unit := _director.board.get_unit_by_id(_drag_unit_id)
 			if drag_unit != null and not drag_unit.is_enemy() and cell == _proj_origin(drag_unit):
-				var ability := _selected_ability_data(drag_unit)
-				if ability != null and ability.range_tiles == 0:
-					return _ability_action_icon(ability)
+				var tile_icon: String = _self_tile_hover_icon(drag_unit, cell)
+				if tile_icon != "":
+					return tile_icon
 		return ""
 	var sel_id: int = _director.selected_unit_id
 	if sel_id < 0:
@@ -1528,6 +1529,9 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var p_unit := _proj_unit(sel_id)
 	if p_unit == null:
 		return ""
+	var self_tile_icon: String = _self_tile_hover_icon(p_unit, cell)
+	if self_tile_icon != "":
+		return self_tile_icon
 	if _run_mode_selected(p_unit):
 		if cell != p_unit.position and _can_move_to(p_unit, cell):
 			return ICON_MOVE
@@ -1558,7 +1562,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 			var aim_ability := CombatDirector.resolve_selected_ability(p_unit, _director.selected_ability_index)
 			if aim_ability != null:
 				if AbilitySystem.is_wait_ability(aim_ability):
-					return "⏸"
+					return ICON_WAIT
 				return _ability_action_icon(aim_ability)
 		var move_icon: String = _move_hover_icon(p_unit, cell)
 		if move_icon != "":
@@ -1584,17 +1588,6 @@ func _cursor_selection_hints(p_unit: UnitState, cell: Vector2i, hover_unit: Unit
 		if _invalid_hover_target(p_unit, cell, hover_unit):
 			return ICON_NULL
 		return ""
-	if hover_unit != null and hover_unit.id == p_unit.id:
-		var self_ability := _selected_ability_data(p_unit)
-		if (
-			self_ability != null
-			and AbilitySystem.can_target_self(p_unit, self_ability)
-			and not AbilitySystem.is_run_ability(self_ability)
-		):
-			return _ability_action_icon(self_ability)
-		if _invalid_hover_target(p_unit, cell, hover_unit):
-			return ICON_NULL
-		return ""
 	if hover_unit != null and hover_unit.is_alive():
 		return ""
 	var move_icon: String = _move_hover_icon(p_unit, cell)
@@ -1614,6 +1607,32 @@ func _cursor_selection_hints(p_unit: UnitState, cell: Vector2i, hover_unit: Unit
 	if _invalid_hover_target(p_unit, cell, hover_unit):
 		return ICON_NULL
 	return ""
+
+
+func _self_tile_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
+	if cell != p_unit.position:
+		return ""
+	if selected_phase_action_exhausted(p_unit.id):
+		return ""
+	if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+		return ICON_WAIT
+	var self_ability := _selected_ability_data(p_unit)
+	if (
+		_director.selected_ability_index >= 0
+		and self_ability != null
+		and AbilitySystem.can_target_self(p_unit, self_ability)
+		and not AbilitySystem.is_run_ability(self_ability)
+	):
+		return _ability_action_icon(self_ability)
+	if _hover_would_commit_wait(p_unit):
+		return ICON_WAIT
+	return ""
+
+
+func _hover_would_commit_wait(p_unit: UnitState) -> bool:
+	if selected_phase_action_exhausted(p_unit.id):
+		return false
+	return true
 
 
 func _move_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
@@ -1648,6 +1667,8 @@ func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitSt
 func _ability_action_icon(ability: AbilityData) -> String:
 	if ability == null:
 		return ""
+	if AbilitySystem.is_wait_ability(ability):
+		return ICON_WAIT
 	if AbilitySystem.ability_is_offensive_dash(ability):
 		return ICON_ATTACK
 	if AbilitySystem.ability_has_dash(ability):
