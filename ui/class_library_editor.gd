@@ -6,17 +6,44 @@ const SAVE_PATH: String = "user://class_library_editor_overrides.json"
 static var _restore_unit_id: StringName = &""
 
 enum ViewMode { UNIT, GLOSSARY, DEFINITIONS }
+enum EntryKind { PASSIVE, ABILITY }
 
 var _selected_unit: UnitData
 var _view_mode: ViewMode = ViewMode.UNIT
 var _view_unit_id: StringName = &""
 var _detail_vbox: VBoxContainer
 var _detail_scroll: ScrollContainer
+var _unit_workspace: Control
+var _skills_workspace: Control
+var _class_workspace: Control
+var _unit_tab: int = 0
+var _tab_btn_skills: Button
+var _tab_btn_class: Button
+var _unit_split: HSplitContainer
+var _list_scroll: ScrollContainer
+var _list_vbox: VBoxContainer
+var _data_scroll: ScrollContainer
+var _data_vbox: VBoxContainer
+var _impl_scroll: ScrollContainer
+var _impl_vbox: VBoxContainer
+var _class_list_scroll: ScrollContainer
+var _class_list_vbox: VBoxContainer
+var _class_detail_scroll: ScrollContainer
+var _class_detail_vbox: VBoxContainer
+var _class_passive_detail: VBoxContainer
+var _selected_entry_kind: EntryKind = EntryKind.ABILITY
+var _selected_passive: PassiveData
+var _selected_ability: AbilityData
+var _active_list_key: String = ""
+var _active_class_list_key: String = ""
+var _list_item_cards: Dictionary = {}
+var _class_list_item_cards: Dictionary = {}
 var _save_status: Label
 var _scale_label: Label
 var _sidebar_panel: PanelContainer
 var _toolbar_panel: PanelContainer
 var _ability_ui: Dictionary = {}
+var _passive_ui: Dictionary = {}
 var _glossary_overrides: Dictionary = {}
 var _class_buttons: Dictionary = {}
 var _nav_buttons: Array[Button] = []
@@ -139,7 +166,10 @@ func _build_layout() -> void:
 	detail_pad.add_theme_constant_override("margin_top", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
 	detail_pad.add_theme_constant_override("margin_bottom", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
 	detail_panel.add_child(detail_pad)
+
 	_detail_scroll = ScrollContainer.new()
+	_detail_scroll.name = "ReferenceScroll"
+	_detail_scroll.visible = false
 	_detail_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detail_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detail_pad.add_child(_detail_scroll)
@@ -149,6 +179,71 @@ func _build_layout() -> void:
 	_detail_vbox.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_LG))
 	_detail_scroll.add_child(_detail_vbox)
 	_detail_scroll.resized.connect(_sync_detail_width)
+
+	_unit_workspace = VBoxContainer.new()
+	_unit_workspace.name = "UnitWorkspace"
+	_unit_workspace.visible = true
+	_unit_workspace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_unit_workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	detail_pad.add_child(_unit_workspace)
+
+	var tab_row := HBoxContainer.new()
+	tab_row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	_unit_workspace.add_child(tab_row)
+	_tab_btn_skills = _make_tab_button("Skills", ClassLibraryTheme.ACCENT_DATA)
+	_tab_btn_class = _make_tab_button("Class", ClassLibraryTheme.ACCENT_STATS)
+	tab_row.add_child(_tab_btn_skills)
+	tab_row.add_child(_tab_btn_class)
+	_tab_btn_skills.pressed.connect(func() -> void: _set_unit_tab(0))
+	_tab_btn_class.pressed.connect(func() -> void: _set_unit_tab(1))
+
+	_skills_workspace = VBoxContainer.new()
+	_skills_workspace.name = "SkillsWorkspace"
+	_skills_workspace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_skills_workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_unit_workspace.add_child(_skills_workspace)
+
+	_unit_split = HSplitContainer.new()
+	_unit_split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_unit_split.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_skills_workspace.add_child(_unit_split)
+
+	var list_shell := _build_editor_column_shell("Skills", ClassLibraryTheme.Column.INGAME, ClassLibraryTheme.dim(300.0))
+	_unit_split.add_child(list_shell.panel)
+	_list_scroll = list_shell.scroll
+	_list_vbox = list_shell.content
+
+	var data_shell := _build_editor_column_shell("Ability Data", ClassLibraryTheme.Column.DATA, ClassLibraryTheme.dim(420.0))
+	_unit_split.add_child(data_shell.panel)
+	_data_scroll = data_shell.scroll
+	_data_vbox = data_shell.content
+
+	var impl_shell := _build_editor_column_shell("How It Works", ClassLibraryTheme.Column.IMPL, ClassLibraryTheme.dim(360.0))
+	_unit_split.add_child(impl_shell.panel)
+	_impl_scroll = impl_shell.scroll
+	_impl_vbox = impl_shell.content
+
+	_class_workspace = VBoxContainer.new()
+	_class_workspace.name = "ClassWorkspace"
+	_class_workspace.visible = false
+	_class_workspace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_class_workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_unit_workspace.add_child(_class_workspace)
+	var class_split := HSplitContainer.new()
+	class_split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	class_split.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_class_workspace.add_child(class_split)
+	var class_list_shell := _build_editor_column_shell("Passives", ClassLibraryTheme.Column.PASSIVE, ClassLibraryTheme.dim(280.0))
+	class_split.add_child(class_list_shell.panel)
+	_class_list_scroll = class_list_shell.scroll
+	_class_list_vbox = class_list_shell.content
+	var class_detail_shell := _build_editor_column_shell("Stats & Equipment", ClassLibraryTheme.Column.STATS, ClassLibraryTheme.dim(520.0))
+	class_split.add_child(class_detail_shell.panel)
+	_class_detail_scroll = class_detail_shell.scroll
+	_class_detail_vbox = class_detail_shell.content
+
+	_set_unit_tab(0)
+
 	_sync_detail_width()
 	_update_scale_label()
 
@@ -324,11 +419,17 @@ func _field_label(text: String) -> Label:
 	return l
 
 
-func _section_card(title: String, accent: Color, col: ClassLibraryTheme.Column = ClassLibraryTheme.Column.NEUTRAL) -> VBoxContainer:
+func _section_card(
+	title: String,
+	accent: Color,
+	col: ClassLibraryTheme.Column = ClassLibraryTheme.Column.NEUTRAL,
+	parent: VBoxContainer = null,
+) -> VBoxContainer:
 	var wrap := PanelContainer.new()
 	wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	wrap.add_theme_stylebox_override("panel", ClassLibraryTheme.column_style(col))
-	_detail_vbox.add_child(wrap)
+	var target: VBoxContainer = parent if parent != null else _detail_vbox
+	target.add_child(wrap)
 	var inner := VBoxContainer.new()
 	inner.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
 	wrap.add_child(inner)
@@ -359,6 +460,180 @@ func _column_shell(title: String, col: ClassLibraryTheme.Column, stretch: float)
 	box.add_child(hdr)
 	box.set_meta("column_root", outer)
 	return box
+
+
+func _build_editor_column_shell(
+	title: String,
+	col: ClassLibraryTheme.Column,
+	min_width: float,
+) -> Dictionary:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel.custom_minimum_size.x = min_width
+	panel.add_theme_stylebox_override("panel", ClassLibraryTheme.column_style(col))
+	var outer := VBoxContainer.new()
+	outer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	outer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	panel.add_child(outer)
+	var hdr := Label.new()
+	hdr.text = title.to_upper()
+	hdr.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SUBSECTION))
+	hdr.add_theme_color_override("font_color", ClassLibraryTheme.accent_for_column(col))
+	outer.add_child(hdr)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer.add_child(scroll)
+	var content := VBoxContainer.new()
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	scroll.add_child(content)
+	return {"panel": panel, "scroll": scroll, "content": content}
+
+
+func _show_unit_workspace(show_unit: bool) -> void:
+	if _unit_workspace != null:
+		_unit_workspace.visible = show_unit
+	if _detail_scroll != null:
+		_detail_scroll.visible = not show_unit
+
+
+func _make_tab_button(text: String, accent: Color) -> Button:
+	var btn := Button.new()
+	btn.text = text
+	btn.toggle_mode = true
+	btn.custom_minimum_size = Vector2(ClassLibraryTheme.px(120), ClassLibraryTheme.px(32))
+	_style_tab_button(btn, false, accent)
+	return btn
+
+
+func _style_tab_button(btn: Button, active: bool, accent: Color) -> void:
+	if active:
+		btn.add_theme_stylebox_override("normal", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_INSET, accent, 1, 4))
+		btn.add_theme_stylebox_override("hover", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_INSET, accent, 1, 4))
+		btn.add_theme_stylebox_override("pressed", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_INSET, accent, 1, 4))
+		btn.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
+	else:
+		btn.add_theme_stylebox_override("normal", ClassLibraryTheme.toolbar_button_style())
+		btn.add_theme_stylebox_override("hover", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_INSET, ClassLibraryTheme.BORDER_SUBTLE))
+		btn.add_theme_stylebox_override("pressed", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_INSET))
+		btn.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+	btn.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	btn.button_pressed = active
+
+
+func _set_unit_tab(tab: int) -> void:
+	_unit_tab = tab
+	if _tab_btn_skills != null:
+		_style_tab_button(_tab_btn_skills, tab == 0, ClassLibraryTheme.ACCENT_DATA)
+	if _tab_btn_class != null:
+		_style_tab_button(_tab_btn_class, tab == 1, ClassLibraryTheme.ACCENT_STATS)
+	if _skills_workspace != null:
+		_skills_workspace.visible = tab == 0
+	if _class_workspace != null:
+		_class_workspace.visible = tab == 1
+	if _selected_unit == null:
+		return
+	if tab == 0 and _selected_ability == null:
+		_select_default_ability(_selected_unit)
+	elif tab == 1 and _selected_passive == null:
+		_select_default_passive(_selected_unit)
+
+
+func _clear_pane(vbox: VBoxContainer) -> void:
+	if vbox == null:
+		return
+	for child: Node in vbox.get_children():
+		child.queue_free()
+
+
+func _entry_key_passive(passive: PassiveData) -> String:
+	return "passive:%s" % String(passive.id)
+
+
+func _entry_key_ability(ability: AbilityData) -> String:
+	return "ability:%s" % String(ability.id)
+
+
+func _style_list_item_card(card: PanelContainer, active: bool, accent: Color) -> void:
+	var border: Color = accent if active else ClassLibraryTheme.BORDER_SUBTLE
+	var bg: Color = ClassLibraryTheme.BG_INSET if active else ClassLibraryTheme.BG_CARD
+	card.add_theme_stylebox_override(
+		"panel",
+		ClassLibraryTheme.panel_style(bg, border, 1 if active else 1, 4, ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM)),
+	)
+
+
+func _set_active_list_item(key: String, accent: Color) -> void:
+	_active_list_key = key
+	for entry_key: String in _list_item_cards.keys():
+		var card: PanelContainer = _list_item_cards[entry_key]
+		if not is_instance_valid(card):
+			continue
+		var item_accent: Color = card.get_meta("list_accent", ClassLibraryTheme.ACCENT_NEUTRAL)
+		_style_list_item_card(card, entry_key == key, item_accent if entry_key == key else ClassLibraryTheme.BORDER_SUBTLE)
+
+
+func _set_active_class_list_item(key: String, accent: Color) -> void:
+	_active_class_list_key = key
+	for entry_key: String in _class_list_item_cards.keys():
+		var card: PanelContainer = _class_list_item_cards[entry_key]
+		if not is_instance_valid(card):
+			continue
+		var item_accent: Color = card.get_meta("list_accent", ClassLibraryTheme.ACCENT_NEUTRAL)
+		_style_list_item_card(card, entry_key == key, item_accent if entry_key == key else ClassLibraryTheme.BORDER_SUBTLE)
+
+
+func _add_selectable_preview_card(
+	parent: VBoxContainer,
+	key: String,
+	title_text: String,
+	subtitle_text: String,
+	accent: Color,
+	on_select: Callable,
+	card_registry: Dictionary,
+	active_key: String,
+) -> RichTextLabel:
+	var card := PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	card.set_meta("list_accent", accent)
+	_style_list_item_card(card, active_key == key, accent if active_key == key else ClassLibraryTheme.BORDER_SUBTLE)
+	card.gui_input.connect(func(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			on_select.call()
+	)
+	parent.add_child(card)
+	card_registry[key] = card
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
+	card.add_child(box)
+	var head := HBoxContainer.new()
+	box.add_child(head)
+	var name_lbl := Label.new()
+	name_lbl.text = title_text
+	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_TITLE))
+	name_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
+	head.add_child(name_lbl)
+	if not subtitle_text.is_empty():
+		var sub_lbl := Label.new()
+		sub_lbl.text = subtitle_text
+		sub_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
+		sub_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
+		head.add_child(sub_lbl)
+	var preview_wrap := PanelContainer.new()
+	preview_wrap.add_theme_stylebox_override("panel", ClassLibraryTheme.column_style(ClassLibraryTheme.Column.INGAME))
+	box.add_child(preview_wrap)
+	var preview := RichTextLabel.new()
+	preview.bbcode_enabled = true
+	preview.fit_content = true
+	preview.scroll_active = false
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	preview_wrap.add_child(preview)
+	return preview
 
 
 # --- Sidebar ---
@@ -402,10 +677,22 @@ func _add_unit_button(parent: Control, unit: UnitData) -> void:
 
 func _clear_detail() -> void:
 	_ability_ui.clear()
-	if _detail_vbox == null:
-		return
-	for c: Node in _detail_vbox.get_children():
-		c.queue_free()
+	_passive_ui.clear()
+	_list_item_cards.clear()
+	_class_list_item_cards.clear()
+	_active_list_key = ""
+	_active_class_list_key = ""
+	_selected_passive = null
+	_selected_ability = null
+	_class_passive_detail = null
+	if _detail_vbox != null:
+		for child: Node in _detail_vbox.get_children():
+			child.queue_free()
+	_clear_pane(_list_vbox)
+	_clear_pane(_data_vbox)
+	_clear_pane(_impl_vbox)
+	_clear_pane(_class_list_vbox)
+	_clear_pane(_class_detail_vbox)
 
 
 func _select_unit(unit: UnitData) -> void:
@@ -415,17 +702,235 @@ func _select_unit(unit: UnitData) -> void:
 	if _class_buttons.has(unit.id):
 		_set_active_sidebar(_class_buttons[unit.id], ClassLibraryTheme.ACCENT_STATS)
 	_clear_detail()
-	_add_page_header(unit.display_name, "ID: %s" % String(unit.id), ClassLibraryTheme.ACCENT_STATS)
-	_build_stats_section(unit)
-	_build_weapon_section(unit)
-	_build_passives_section(unit)
-	_build_abilities_section(unit)
+	_show_unit_workspace(true)
+	_set_unit_tab(_unit_tab)
+	_build_skills_tab(unit)
+	_build_class_tab(unit)
+	if _unit_tab == 0:
+		_select_default_ability(unit)
+	else:
+		_select_default_passive(unit)
+
+
+func _build_skills_tab(unit: UnitData) -> void:
+	if _list_vbox == null:
+		return
+	var header := Label.new()
+	header.text = "%s — Skills" % unit.display_name
+	header.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_TITLE))
+	header.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
+	_list_vbox.add_child(header)
+	if unit.abilities.is_empty():
+		var none := Label.new()
+		none.text = "No skills."
+		none.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+		_list_vbox.add_child(none)
+		return
+	for ability: AbilityData in unit.abilities:
+		var key := _entry_key_ability(ability)
+		var preview := _add_selectable_preview_card(
+			_list_vbox,
+			key,
+			ability.display_name,
+			String(ability.id),
+			ClassLibraryTheme.ACCENT_DATA,
+			func() -> void: _select_ability_entry(ability),
+			_list_item_cards,
+			_active_list_key,
+		)
+		_ability_ui[ability] = {"preview": preview}
+		_refresh_ability_ui(ability)
+
+
+func _build_class_tab(unit: UnitData) -> void:
+	if _class_detail_vbox == null:
+		return
+	_add_page_header_to(_class_detail_vbox, unit.display_name, "ID: %s" % String(unit.id), ClassLibraryTheme.ACCENT_STATS)
+	_build_stats_section(unit, _class_detail_vbox)
+	_build_weapon_section(unit, _class_detail_vbox)
+	var passive_hdr := Label.new()
+	passive_hdr.text = "SELECTED PASSIVE"
+	passive_hdr.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SUBSECTION))
+	passive_hdr.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_PASSIVE)
+	_class_detail_vbox.add_child(passive_hdr)
+	_class_passive_detail = VBoxContainer.new()
+	_class_passive_detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_class_passive_detail.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	_class_detail_vbox.add_child(_class_passive_detail)
+	if _class_list_vbox == null:
+		return
+	if unit.passives.is_empty():
+		var none := Label.new()
+		none.text = "No passives."
+		none.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+		_class_list_vbox.add_child(none)
+		return
+	for passive: PassiveData in unit.passives:
+		var key := _entry_key_passive(passive)
+		var preview := _add_selectable_preview_card(
+			_class_list_vbox,
+			key,
+			passive.display_name,
+			String(passive.id),
+			ClassLibraryTheme.ACCENT_PASSIVE,
+			func() -> void: _select_passive_entry(passive),
+			_class_list_item_cards,
+			_active_class_list_key,
+		)
+		_passive_ui[passive] = {"preview": preview}
+		_refresh_passive_preview(passive, preview)
+
+
+func _select_default_ability(unit: UnitData) -> void:
+	if unit.abilities.is_empty():
+		_show_ability_placeholder()
+		return
+	_select_ability_entry(unit.abilities[0])
+
+
+func _select_default_passive(unit: UnitData) -> void:
+	if unit.passives.is_empty():
+		_show_passive_placeholder()
+		return
+	_select_passive_entry(unit.passives[0])
+
+
+func _select_ability_entry(ability: AbilityData) -> void:
+	_selected_entry_kind = EntryKind.ABILITY
+	_selected_ability = ability
+	_selected_passive = null
+	_set_active_list_item(_entry_key_ability(ability), ClassLibraryTheme.ACCENT_DATA)
+	_rebuild_ability_detail_panes(ability)
+
+
+func _select_passive_entry(passive: PassiveData) -> void:
+	_selected_entry_kind = EntryKind.PASSIVE
+	_selected_passive = passive
+	_selected_ability = null
+	_set_active_class_list_item(_entry_key_passive(passive), ClassLibraryTheme.ACCENT_PASSIVE)
+	_rebuild_passive_detail_pane(passive)
+
+
+func _show_ability_placeholder() -> void:
+	_clear_pane(_data_vbox)
+	_clear_pane(_impl_vbox)
+	var hint := Label.new()
+	hint.text = "Select a skill from the list."
+	hint.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+	_data_vbox.add_child(hint)
+
+
+func _show_passive_placeholder() -> void:
+	if _class_passive_detail == null:
+		return
+	_clear_pane(_class_passive_detail)
+	var hint := Label.new()
+	hint.text = "Select a passive from the list."
+	hint.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+	_class_passive_detail.add_child(hint)
+
+
+func _rebuild_ability_detail_panes(ability: AbilityData) -> void:
+	_clear_pane(_data_vbox)
+	_clear_pane(_impl_vbox)
+	if ability == null:
+		_show_ability_placeholder()
+		return
+	var header := PanelContainer.new()
+	header.add_theme_stylebox_override("panel", ClassLibraryTheme.section_header_bar(ClassLibraryTheme.ACCENT_DATA))
+	_data_vbox.add_child(header)
+	var name_inner := HBoxContainer.new()
+	name_inner.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	header.add_child(name_inner)
+	var name_edit := LineEdit.new()
+	name_edit.text = ability.display_name
+	name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_edit.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_TITLE))
+	name_edit.text_changed.connect(func(t: String) -> void:
+		ability.display_name = t
+		_refresh_ability_ui(ability)
+	)
+	name_inner.add_child(name_edit)
+	var id_badge := Label.new()
+	id_badge.text = String(ability.id)
+	id_badge.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
+	id_badge.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
+	name_inner.add_child(id_badge)
+	var reset_btn := Button.new()
+	reset_btn.text = "Reset"
+	reset_btn.tooltip_text = "Restore this skill to factory defaults"
+	_style_toolbar_button(reset_btn)
+	reset_btn.pressed.connect(func() -> void: _reset_ability_to_default(ability))
+	name_inner.add_child(reset_btn)
+	_populate_ability_data_editor(_data_vbox, ability)
+	var impl_lbl := Label.new()
+	impl_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	impl_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	impl_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	impl_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_SECONDARY)
+	_impl_vbox.add_child(impl_lbl)
+	var dump_hdr := Label.new()
+	dump_hdr.text = "RAW DATA"
+	dump_hdr.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
+	dump_hdr.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
+	_impl_vbox.add_child(dump_hdr)
+	var dump_lbl := Label.new()
+	dump_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	dump_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dump_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_MONO))
+	dump_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
+	_impl_vbox.add_child(dump_lbl)
+	if not _ability_ui.has(ability):
+		_ability_ui[ability] = {}
+	_ability_ui[ability]["impl"] = impl_lbl
+	_ability_ui[ability]["dump"] = dump_lbl
+	_refresh_ability_ui(ability)
+
+
+func _rebuild_passive_detail_pane(passive: PassiveData) -> void:
+	if _class_passive_detail == null:
+		return
+	_clear_pane(_class_passive_detail)
+	if passive == null:
+		_show_passive_placeholder()
+		return
+	var name_row := GridContainer.new()
+	name_row.columns = 2
+	_class_passive_detail.add_child(name_row)
+	_bind_string(name_row, "Name", passive.display_name, func(v: String) -> void:
+		passive.display_name = v
+		_refresh_passive_ui(passive)
+	)
+	var desc_edit := _bind_multiline(_class_passive_detail, "Description", passive.description, func(v: String) -> void:
+		passive.description = v
+		_refresh_passive_ui(passive)
+	)
+	desc_edit.custom_minimum_size = Vector2(0, ClassLibraryTheme.px(96))
+	_bind_multiline(_class_passive_detail, "Upgraded", passive.upgraded_description, func(v: String) -> void:
+		passive.upgraded_description = v
+		_refresh_passive_ui(passive)
+	)
+	_refresh_passive_ui(passive)
+
+
+func _refresh_passive_ui(passive: PassiveData) -> void:
+	if not _passive_ui.has(passive):
+		return
+	var preview: RichTextLabel = _passive_ui[passive].get("preview")
+	if preview != null:
+		_refresh_passive_preview(passive, preview)
 
 
 func _add_page_header(title: String, subtitle: String, accent: Color) -> void:
+	_add_page_header_to(_detail_vbox, title, subtitle, accent)
+
+
+func _add_page_header_to(parent: VBoxContainer, title: String, subtitle: String, accent: Color) -> void:
+	if parent == null:
+		return
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
-	_detail_vbox.add_child(row)
+	parent.add_child(row)
 	var accent_bar := ColorRect.new()
 	accent_bar.custom_minimum_size = Vector2(ClassLibraryTheme.px(4), ClassLibraryTheme.px(56))
 	accent_bar.color = accent
@@ -447,8 +952,8 @@ func _add_page_header(title: String, subtitle: String, accent: Color) -> void:
 
 # --- Class sections ---
 
-func _build_stats_section(unit: UnitData) -> void:
-	var section := _section_card("Stats", ClassLibraryTheme.ACCENT_STATS, ClassLibraryTheme.Column.STATS)
+func _build_stats_section(unit: UnitData, parent: VBoxContainer) -> void:
+	var section := _section_card("Stats", ClassLibraryTheme.ACCENT_STATS, ClassLibraryTheme.Column.STATS, parent)
 	var hp_lbl := Label.new()
 	hp_lbl.text = "Max HP: %d" % (unit.base_constitution * 5)
 	hp_lbl.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_STATS)
@@ -482,8 +987,8 @@ func _stat_row(parent: VBoxContainer, title: String, accent: Color) -> GridConta
 	return grid
 
 
-func _build_weapon_section(unit: UnitData) -> void:
-	var section := _section_card("Equipment", ClassLibraryTheme.ACCENT_NEUTRAL)
+func _build_weapon_section(unit: UnitData, parent: VBoxContainer) -> void:
+	var section := _section_card("Equipment", ClassLibraryTheme.ACCENT_NEUTRAL, ClassLibraryTheme.Column.NEUTRAL, parent)
 	if unit.equipped_weapon == null:
 		var none := Label.new()
 		none.text = "No weapon equipped."
@@ -504,164 +1009,8 @@ func _build_weapon_section(unit: UnitData) -> void:
 	_bind_int(grid, "MOV +", wpn.bonus_move, func(v: int) -> void: wpn.bonus_move = v)
 
 
-func _build_passives_section(unit: UnitData) -> void:
-	var section := _section_card("Passives", ClassLibraryTheme.ACCENT_PASSIVE, ClassLibraryTheme.Column.PASSIVE)
-	if unit.passives.is_empty():
-		var none := Label.new()
-		none.text = "None"
-		none.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
-		section.add_child(none)
-		return
-	for passive: PassiveData in unit.passives:
-		var card := PanelContainer.new()
-		card.add_theme_stylebox_override("panel", ClassLibraryTheme.panel_style(
-			ClassLibraryTheme.BG_INSET, ClassLibraryTheme.ACCENT_PASSIVE, 1, 4, ClassLibraryTheme.SPACE_SM
-		))
-		section.add_child(card)
-		var box := VBoxContainer.new()
-		box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
-		card.add_child(box)
-		var head := HBoxContainer.new()
-		box.add_child(head)
-		var name_lbl := Label.new()
-		name_lbl.text = passive.display_name
-		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_TITLE))
-		name_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
-		head.add_child(name_lbl)
-		var id_lbl := Label.new()
-		id_lbl.text = String(passive.id)
-		id_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
-		id_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
-		head.add_child(id_lbl)
-		var preview_wrap := PanelContainer.new()
-		preview_wrap.add_theme_stylebox_override("panel", ClassLibraryTheme.column_style(ClassLibraryTheme.Column.INGAME))
-		box.add_child(preview_wrap)
-		var preview := RichTextLabel.new()
-		preview.bbcode_enabled = true
-		preview.fit_content = true
-		preview.scroll_active = true
-		preview.custom_minimum_size = Vector2(0, ClassLibraryTheme.px(72))
-		preview_wrap.add_child(preview)
-		var edits := VBoxContainer.new()
-		edits.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
-		box.add_child(edits)
-		var name_row := GridContainer.new()
-		name_row.columns = 2
-		edits.add_child(name_row)
-		_bind_string(name_row, "Name", passive.display_name, func(v: String) -> void:
-			passive.display_name = v
-			name_lbl.text = v
-		)
-		var desc_edit := _bind_multiline(edits, "Description", passive.description, func(v: String) -> void:
-			passive.description = v
-			_refresh_passive_preview(passive, preview)
-		)
-		desc_edit.custom_minimum_size = Vector2(0, ClassLibraryTheme.px(64))
-		_bind_multiline(edits, "Upgraded", passive.upgraded_description, func(v: String) -> void:
-			passive.upgraded_description = v
-			_refresh_passive_preview(passive, preview)
-		)
-		desc_edit.text_changed.connect(func(_t: String) -> void: _refresh_passive_preview(passive, preview))
-		_refresh_passive_preview(passive, preview)
-
-
 func _refresh_passive_preview(passive: PassiveData, preview: RichTextLabel) -> void:
 	preview.text = ClassLibrarySchema.passive_preview_bbcode(passive)
-
-
-func _build_abilities_section(unit: UnitData) -> void:
-	var section := _section_card("Skills & Abilities", ClassLibraryTheme.ACCENT_DATA)
-	for ability: AbilityData in unit.abilities:
-		_build_ability_row(section, ability)
-
-
-func _build_ability_row(parent: VBoxContainer, ability: AbilityData) -> void:
-	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_INSET, ClassLibraryTheme.BORDER_SUBTLE, 1, 6, ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM)))
-	parent.add_child(card)
-	var outer := VBoxContainer.new()
-	outer.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
-	card.add_child(outer)
-	var name_row := PanelContainer.new()
-	name_row.add_theme_stylebox_override("panel", ClassLibraryTheme.section_header_bar(ClassLibraryTheme.ACCENT_DATA))
-	outer.add_child(name_row)
-	var name_inner := HBoxContainer.new()
-	name_inner.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
-	name_row.add_child(name_inner)
-	var name_edit := LineEdit.new()
-	name_edit.text = ability.display_name
-	name_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_edit.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_TITLE))
-	name_edit.text_changed.connect(func(t: String) -> void:
-		ability.display_name = t
-		_refresh_ability_ui(ability)
-	)
-	name_inner.add_child(name_edit)
-	var id_badge := Label.new()
-	id_badge.text = String(ability.id)
-	id_badge.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
-	id_badge.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
-	name_inner.add_child(id_badge)
-	var reset_btn := Button.new()
-	reset_btn.text = "Reset"
-	reset_btn.tooltip_text = "Restore this skill to factory defaults"
-	_style_toolbar_button(reset_btn)
-	reset_btn.pressed.connect(func() -> void: _reset_ability_to_default(ability))
-	name_inner.add_child(reset_btn)
-
-	var cols := HBoxContainer.new()
-	cols.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
-	outer.add_child(cols)
-
-	var col_game := _column_shell("In-Game Preview", ClassLibraryTheme.Column.INGAME, 0.30)
-	cols.add_child(col_game.get_meta("column_root"))
-	var preview := RichTextLabel.new()
-	preview.bbcode_enabled = true
-	preview.fit_content = true
-	preview.scroll_active = true
-	preview.custom_minimum_size = Vector2(0, ClassLibraryTheme.px(100))
-	col_game.add_child(preview)
-
-	var col_data := _column_shell("Ability Data", ClassLibraryTheme.Column.DATA, 0.38)
-	cols.add_child(col_data.get_meta("column_root"))
-	var data_scroll := ScrollContainer.new()
-	data_scroll.custom_minimum_size = Vector2(0, ClassLibraryTheme.px(240))
-	data_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	col_data.add_child(data_scroll)
-	var data_vbox := VBoxContainer.new()
-	data_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	data_scroll.add_child(data_vbox)
-	_populate_ability_data_editor(data_vbox, ability)
-
-	var col_impl := _column_shell("How It Works", ClassLibraryTheme.Column.IMPL, 0.32)
-	cols.add_child(col_impl.get_meta("column_root"))
-	var impl_scroll := ScrollContainer.new()
-	impl_scroll.custom_minimum_size = Vector2(0, ClassLibraryTheme.px(240))
-	col_impl.add_child(impl_scroll)
-	var impl_vbox := VBoxContainer.new()
-	impl_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	impl_scroll.add_child(impl_vbox)
-	var impl_lbl := Label.new()
-	impl_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	impl_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	impl_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
-	impl_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_SECONDARY)
-	impl_vbox.add_child(impl_lbl)
-	var dump_hdr := Label.new()
-	dump_hdr.text = "RAW DATA"
-	dump_hdr.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
-	dump_hdr.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
-	impl_vbox.add_child(dump_hdr)
-	var dump_lbl := Label.new()
-	dump_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	dump_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	dump_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_MONO))
-	dump_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
-	impl_vbox.add_child(dump_lbl)
-
-	_ability_ui[ability] = {"preview": preview, "impl": impl_lbl, "dump": dump_lbl}
-	_refresh_ability_ui(ability)
 
 
 func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) -> void:
@@ -826,9 +1175,12 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 	if not _ability_ui.has(ability):
 		return
 	var refs: Dictionary = _ability_ui[ability]
-	refs["preview"].text = ClassLibrarySchema.in_game_ability_bbcode(ability)
-	refs["impl"].text = ClassLibrarySchema.ability_implementation_notes(ability)
-	refs["dump"].text = ClassLibrarySchema.ability_data_dump(ability)
+	if refs.has("preview") and refs["preview"] != null:
+		refs["preview"].text = ClassLibrarySchema.in_game_ability_bbcode(ability)
+	if refs.has("impl") and refs["impl"] != null:
+		refs["impl"].text = ClassLibrarySchema.ability_implementation_notes(ability)
+	if refs.has("dump") and refs["dump"] != null:
+		refs["dump"].text = ClassLibrarySchema.ability_data_dump(ability)
 
 
 func _snapshot_ability_defaults() -> void:
@@ -848,7 +1200,12 @@ func _reset_ability_to_default(ability: AbilityData) -> void:
 		ability,
 		_ability_defaults[ability.id] as AbilityData,
 	)
+	var keep_id: StringName = ability.id
 	_select_unit(_selected_unit)
+	for ab: AbilityData in _selected_unit.abilities:
+		if ab.id == keep_id:
+			_select_ability_entry(ab)
+			break
 	if _save_status != null:
 		_save_status.text = "Reset %s" % String(ability.display_name)
 		_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_SUCCESS)
@@ -859,6 +1216,7 @@ func _reset_ability_to_default(ability: AbilityData) -> void:
 func _select_glossary() -> void:
 	_selected_unit = null
 	_view_mode = ViewMode.GLOSSARY
+	_show_unit_workspace(false)
 	_clear_detail()
 	_add_page_header("Glossary", "Player-facing tooltips vs how the sim implements each keyword", ClassLibraryTheme.ACCENT_INGAME)
 	_add_glossary_table_header()
@@ -973,6 +1331,7 @@ func _add_glossary_row(keyword: String, tooltip_default: String, system_default:
 func _select_definitions() -> void:
 	_selected_unit = null
 	_view_mode = ViewMode.DEFINITIONS
+	_show_unit_workspace(false)
 	_clear_detail()
 	_add_page_header("Definitions", "Enums and keywords used by the ability system", ClassLibraryTheme.ACCENT_IMPL)
 	var grouped: Dictionary = {}
