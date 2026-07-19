@@ -91,7 +91,7 @@ func process_refresh(delta: float) -> void:
 	_rebuild(false)
 
 
-func _rebuild(_force: bool) -> void:
+func _rebuild(_force: bool = false) -> void:
 	if _grid == null or _map_root == null:
 		return
 	_ensure_tile_overlay()
