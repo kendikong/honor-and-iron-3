@@ -36,6 +36,7 @@ const TILE_PX: int = TacticalConstants.TILE_PX
 var _side_panels: TacticalSidePanels
 var _pause_menu: TacticalPauseMenu
 var _planning_cursor: TacticalPlanningCursor
+var _status_badges: TacticalStatusBadges
 var _asset_preloader: LpcAssetPreloader
 
 var _tile_set: TileSet
@@ -113,6 +114,12 @@ func _ready() -> void:
 	_planning_cursor.apply_text_scale(_settings.combat_text_scale)
 	_planning_overlay.bind_planning_cursor(_planning_cursor)
 
+	_status_badges = TacticalStatusBadges.new()
+	_status_badges.name = "StatusBadges"
+	add_child(_status_badges)
+	_status_badges.bind(_unit_layer, self)
+	_status_badges.apply_text_scale(_settings.combat_text_scale)
+
 	_combat_shell.setup(
 		self,
 		_director,
@@ -169,6 +176,12 @@ func get_map_root_scale() -> float:
 	if _map_root == null:
 		return 1.0
 	return maxf(_map_root.scale.x, 0.001)
+
+
+func map_local_to_screen(local_pos: Vector2) -> Vector2:
+	if _map_root == null:
+		return local_pos
+	return _map_root.get_canvas_transform() * local_pos
 
 
 func grid_to_local(cell: Vector2i) -> Vector2:
@@ -319,6 +332,8 @@ func _on_display_settings_applied() -> void:
 	_combat_shell.bind_settings(_settings)
 	if _planning_cursor != null:
 		_planning_cursor.apply_text_scale(_settings.combat_text_scale)
+	if _status_badges != null:
+		_status_badges.apply_text_scale(_settings.combat_text_scale)
 	_settings.apply_audio_buses()
 	_apply_overlay_hud_visibility()
 	_center_map()

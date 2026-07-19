@@ -21,9 +21,6 @@ const _COLOR_SELECT_ENEMY := Color(1.0, 0.20, 0.16, 1.0)
 const _COLOR_PLAN_TARGET := Color(0.98, 0.72, 0.38, 1.0)
 const DRAG_SNAPBACK_SEC: float = 0.24
 const _COLOR_HIT_BURST := Color(1.0, 0.2, 0.15, 0.9)
-const _STATUS_BADGE_BASE: float = 8.0
-const _STATUS_BADGE_GAP: float = 1.0
-const _STATUS_FONT_BASE: int = 7
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -1597,23 +1594,30 @@ func _draw_hp_bar(unit: UnitState) -> void:
 	if fortitude > 0:
 		var fort_w: float = maxf(2.0, BAR_W * 0.12)
 		draw_rect(Rect2(origin + Vector2(BAR_W - fort_w, 0.0), Vector2(fort_w, BAR_H)), Color(0.35, 0.65, 0.35, 0.9), true)
-	if not unit.active_statuses.is_empty():
-		var scale: float = maxf(1.0, _display_scale())
-		var badge_sz: float = roundf(_STATUS_BADGE_BASE * scale)
-		var step: float = badge_sz + roundf(_STATUS_BADGE_GAP * scale)
-		var start_x: float = roundf(origin.x)
-		var start_y: float = roundf(origin.y + BAR_H + 1.0)
-		var count := 0
-		var cols: int = 4
-		for status: StatusData in unit.active_statuses:
-			var col: int = count % cols
-			var row: int = count / cols
-			var pos := Vector2(
-				roundf(start_x + float(col) * step),
-				roundf(start_y + float(row) * step),
-			)
-			_draw_status_badge(pos, status.type, badge_sz)
-			count += 1
+
+
+func get_units_for_status_display() -> Array[UnitState]:
+	var units: Array[UnitState] = []
+	if _board == null:
+		return units
+	for unit: UnitState in _board.units:
+		if not unit.is_alive() or _pending_death.has(unit.id):
+			continue
+		if _drag_preview_active and unit.id == _drag_preview_id:
+			continue
+		if unit.active_statuses.is_empty():
+			continue
+		units.append(unit)
+	return units
+
+
+func status_badge_anchor_map_local(unit: UnitState) -> Vector2:
+	var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
+	return foot + Vector2(-BAR_W * 0.5, _hp_bar_vertical_offset(unit) + BAR_H + 1.0)
+
+
+func status_badge_style(status_type: int) -> Dictionary:
+	return _status_badge(status_type)
 
 
 func _hp_bar_vertical_offset(unit: UnitState) -> float:
@@ -1633,27 +1637,6 @@ func _living_unit_at_cell(coord: Vector2i, exclude_id: int = -1) -> UnitState:
 	if occupant == null or not occupant.is_alive() or occupant.id == exclude_id:
 		return null
 	return occupant
-
-
-func _draw_status_badge(top_left: Vector2, status_type: int, badge_sz: float) -> void:
-	var badge: Dictionary = _status_badge(status_type)
-	var abbr: String = String(badge.get("abbr", "??"))
-	var bg: Color = badge.get("bg", Color(0.3, 0.3, 0.35))
-	var fg: Color = badge.get("fg", Color.WHITE)
-	var origin: Vector2 = Vector2(roundf(top_left.x), roundf(top_left.y))
-	var rect := Rect2(origin, Vector2(badge_sz, badge_sz))
-	draw_rect(rect, bg, true)
-	draw_rect(rect, bg.lightened(0.35), false, 1.0)
-	var font: Font = ThemeDB.fallback_font
-	if font == null:
-		return
-	var font_px: int = maxi(6, int(roundf(float(_STATUS_FONT_BASE) * maxf(1.0, _display_scale()))))
-	var sz: Vector2 = font.get_string_size(abbr, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px)
-	var text_pos := Vector2(
-		roundf(origin.x + (badge_sz - sz.x) * 0.5),
-		roundf(origin.y + (badge_sz + sz.y) * 0.5 - 1.0),
-	)
-	draw_string(font, text_pos, abbr, HORIZONTAL_ALIGNMENT_LEFT, -1, font_px, fg)
 
 
 func _draw_prohibition_badge(center: Vector2) -> void:
