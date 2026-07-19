@@ -159,8 +159,18 @@ static func dash_steps(ability: AbilityData) -> int:
 	return effect_amount(ability, GameEnums.EffectType.DASH)
 
 
-## Single planning-preview entry point: threat tiles from `origin` (cursor-shifted during pre-move).
+## Single planning-preview entry point: action range tiles from `origin` (cursor-shifted during pre/post-move).
 ## Presentation calls this instead of per-keyword branches in the overlay.
+static func planning_action_range_tiles(
+	board: BoardState,
+	unit: UnitState,
+	ability: AbilityData,
+	origin: Vector2i,
+	alternate_origins: Array[Vector2i] = [],
+) -> Array[Vector2i]:
+	return planning_threat_tiles(board, unit, ability, origin, alternate_origins)
+
+
 static func planning_threat_tiles(
 	board: BoardState,
 	unit: UnitState,

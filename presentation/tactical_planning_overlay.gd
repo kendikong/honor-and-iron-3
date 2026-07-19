@@ -2,13 +2,17 @@ class_name TacticalPlanningOverlay
 extends Node2D
 
 ## Range tints, move route, aim icon, intent arrows, hover tile.
+##
+## Planning tint contract:
+## - BLUE (_hover_move_tiles): legal pre-move OR post-move destinations (MP budget only).
+## - RED (_hover_action_range_tiles): selected action's range from current or predicted stand tile.
 
 const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
-const _COLOR_THREAT := Color(0.92, 0.38, 0.32, 0.20)
+const _COLOR_ACTION_RANGE := Color(0.92, 0.38, 0.32, 0.20)
 const _COLOR_MOVE_FILL_ALPHA: float = 0.22
 const _COLOR_MOVE_PERIMETER_ALPHA: float = 0.72
-const _COLOR_THREAT_FILL_ALPHA: float = 0.24
-const _COLOR_THREAT_PERIMETER_ALPHA: float = 0.72
+const _COLOR_ACTION_RANGE_FILL_ALPHA: float = 0.24
+const _COLOR_ACTION_RANGE_PERIMETER_ALPHA: float = 0.72
 const _COLOR_TILE_BORDER_ALPHA: float = 0.32
 const _COLOR_ROUTE := Color(0.98, 0.88, 0.38, 0.95)
 const _COLOR_GHOST := Color(0.98, 0.88, 0.38, 0.45)
@@ -48,15 +52,15 @@ var _aim_class_id: StringName = &"knight"
 var _hover_coord: Vector2i = Vector2i(-999, -999)
 var _phase: int = CombatDirector.Phase.PLANNING
 var _hover_move_tiles: Array[Vector2i] = []
-var _hover_threat_tiles: Array[Vector2i] = []
+var _hover_action_range_tiles: Array[Vector2i] = []
 var _cached_hover_unit_id: int = -1
 var _cached_hover_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_ability: int = -1
 var _cached_hover_force: bool = false
 var _fixed_range_origin: Vector2i = Vector2i(-999, -999)
 ## Separate from move range: follows cursor during drag / aim. Invalid = use move origin.
-var _threat_range_origin: Vector2i = Vector2i(-999, -999)
-var _cached_hover_threat_origin: Vector2i = Vector2i(-999, -999)
+var _action_range_origin: Vector2i = Vector2i(-999, -999)
+var _cached_hover_action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_proj_key: int = -1
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -115,7 +119,7 @@ func setup(
 			_recompute_hover_ranges_from_inputs()
 		else:
 			_hover_move_tiles.clear()
-			_hover_threat_tiles.clear()
+			_hover_action_range_tiles.clear()
 		mark_danger_dirty()
 		queue_redraw(),
 	)
@@ -158,12 +162,12 @@ func bind_planning_input(input: CombatPlanningInput) -> void:
 func _invalidate_hover_cache() -> void:
 	_cached_hover_unit_id = -1
 	_cached_hover_origin = Vector2i(-999, -999)
-	_cached_hover_threat_origin = Vector2i(-999, -999)
+	_cached_hover_action_range_origin = Vector2i(-999, -999)
 	_cached_hover_ability = -1
 	_cached_hover_proj_key = -1
 
 
-func _planning_threat_tiles_for_unit(
+func _planning_action_range_tiles_for_unit(
 	unit: UnitState,
 	origin: Vector2i,
 	selected_ability: int,
@@ -172,7 +176,7 @@ func _planning_threat_tiles_for_unit(
 	var actor: UnitState = _proj_unit(unit.id)
 	if actor == null:
 		actor = unit
-	return AbilitySystem.planning_threat_tiles(_board, actor, ability, origin, [])
+	return AbilitySystem.planning_action_range_tiles(_board, actor, ability, origin, [])
 
 
 func _recompute_hover_ranges_from_inputs() -> void:
@@ -206,8 +210,12 @@ func is_hover_move_tile(cell: Vector2i) -> bool:
 	return _hover_move_tiles.has(cell)
 
 
+func is_hover_action_range_tile(cell: Vector2i) -> bool:
+	return _hover_action_range_tiles.has(cell)
+
+
 func is_hover_threat_tile(cell: Vector2i) -> bool:
-	return _hover_threat_tiles.has(cell)
+	return is_hover_action_range_tile(cell)
 
 
 func clear_live_preview() -> void:
@@ -351,18 +359,26 @@ func clear_fixed_range_origin() -> void:
 	_fixed_range_origin = Vector2i(-999, -999)
 
 
-func set_threat_origin(coord: Vector2i) -> void:
-	if coord == _threat_range_origin:
+func set_action_range_origin(coord: Vector2i) -> void:
+	if coord == _action_range_origin:
 		return
-	_threat_range_origin = coord
+	_action_range_origin = coord
+	_invalidate_hover_cache()
+
+
+func set_threat_origin(coord: Vector2i) -> void:
+	set_action_range_origin(coord)
+
+
+func clear_action_range_origin() -> void:
+	if _action_range_origin.x <= -900:
+		return
+	_action_range_origin = Vector2i(-999, -999)
 	_invalidate_hover_cache()
 
 
 func clear_threat_origin() -> void:
-	if _threat_range_origin.x <= -900:
-		return
-	_threat_range_origin = Vector2i(-999, -999)
-	_invalidate_hover_cache()
+	clear_action_range_origin()
 
 
 func bind_planning_cursor(cursor: TacticalPlanningCursor) -> void:
@@ -454,7 +470,7 @@ func _can_show_move_tiles(unit: UnitState, selected_ability: int) -> bool:
 	return unit.movement.points_left > 0 and not _movement_status_blocked(unit)
 
 
-func _can_show_threat_tiles(unit: UnitState, selected_ability: int, force_basic: bool) -> bool:
+func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_basic: bool) -> bool:
 	if unit == null:
 		return false
 	if _intent_tiles_blocked(unit, selected_ability):
@@ -496,22 +512,22 @@ func recompute_hover_ranges(
 	if unit == null or not unit.is_alive():
 		_invalidate_hover_cache()
 		_hover_move_tiles.clear()
-		_hover_threat_tiles.clear()
+		_hover_action_range_tiles.clear()
 		queue_redraw()
 		return
 	var move_origin: Vector2i = _proj_origin(unit)
 	if dragging and _fixed_range_origin.x >= 0:
 		move_origin = _fixed_range_origin
-	var threat_origin: Vector2i = move_origin
-	if _threat_range_origin.x > -900:
-		threat_origin = _threat_range_origin
+	var action_range_origin: Vector2i = move_origin
+	if _action_range_origin.x > -900:
+		action_range_origin = _action_range_origin
 	var cache_ability: int = selected_ability if unit.id == _director.selected_unit_id else -1
 	var cache_force: bool = force_basic if unit.id == _director.selected_unit_id else false
 	var proj_key: int = _hover_proj_cache_key(unit) if _is_selected_player_unit(unit) else 0
 	if (
 		_cached_hover_unit_id == unit.id
 		and _cached_hover_origin == move_origin
-		and _cached_hover_threat_origin == threat_origin
+		and _cached_hover_action_range_origin == action_range_origin
 		and _cached_hover_ability == cache_ability
 		and _cached_hover_force == cache_force
 		and _cached_hover_proj_key == proj_key
@@ -519,12 +535,12 @@ func recompute_hover_ranges(
 		return
 	_cached_hover_unit_id = unit.id
 	_cached_hover_origin = move_origin
-	_cached_hover_threat_origin = threat_origin
+	_cached_hover_action_range_origin = action_range_origin
 	_cached_hover_ability = cache_ability
 	_cached_hover_force = cache_force
 	_cached_hover_proj_key = proj_key
 	_hover_move_tiles.clear()
-	_hover_threat_tiles.clear()
+	_hover_action_range_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):
 		queue_redraw()
 		return
@@ -560,7 +576,7 @@ func recompute_hover_ranges(
 				mt,
 				move_cost,
 			)
-	if not _can_show_threat_tiles(unit, selected_ability, cache_force):
+	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
 		queue_redraw()
 		return
 	var ability_index: int = selected_ability if is_selected_player else -1
@@ -577,9 +593,11 @@ func recompute_hover_ranges(
 		):
 			queue_redraw()
 			return
-		_hover_threat_tiles = _planning_threat_tiles_for_unit(unit, threat_origin, ability_index)
+		_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
+			unit, action_range_origin, ability_index,
+		)
 	else:
-		_populate_attack_threat_tiles(unit, threat_origin, ability_index)
+		_populate_action_range_tiles(unit, action_range_origin, ability_index)
 	queue_redraw()
 
 
@@ -731,13 +749,12 @@ func _draw() -> void:
 
 
 func _draw_hover_tiles() -> void:
-	# Move under threat so attack-range cells stay visible on overlap (H&I readability).
 	for cell: Vector2i in _hover_move_tiles:
 		_draw_tile_tint(cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA, false)
-	for cell: Vector2i in _hover_threat_tiles:
-		_draw_tile_tint(cell, _COLOR_THREAT, _COLOR_THREAT_FILL_ALPHA, false)
+	for cell: Vector2i in _hover_action_range_tiles:
+		_draw_tile_tint(cell, _COLOR_ACTION_RANGE, _COLOR_ACTION_RANGE_FILL_ALPHA, false)
 	_draw_tile_perimeter(_hover_move_tiles, _COLOR_MOVE, _COLOR_MOVE_PERIMETER_ALPHA)
-	_draw_tile_perimeter(_hover_threat_tiles, _COLOR_THREAT, _COLOR_THREAT_PERIMETER_ALPHA)
+	_draw_tile_perimeter(_hover_action_range_tiles, _COLOR_ACTION_RANGE, _COLOR_ACTION_RANGE_PERIMETER_ALPHA)
 
 
 func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float, draw_border: bool = false) -> void:
@@ -1401,7 +1418,7 @@ func _draw_move_ghosts() -> void:
 	if unit == null or not unit.is_alive():
 		return
 	var force_basic: bool = _planning_input.force_basic_movement
-	if not _can_show_threat_tiles(unit, _director.selected_ability_index, force_basic):
+	if not _can_show_action_range_tiles(unit, _director.selected_ability_index, force_basic):
 		return
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null or not AbilitySystem.ability_has_dash(ability):
@@ -1582,13 +1599,13 @@ func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:
 	return best
 
 
-func _populate_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
+func _populate_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
 	var rng: int = _unit_attack_range(unit, selected_ability)
 	if rng <= 0:
 		if unit.id == _director.selected_unit_id and selected_ability >= 0:
 			var sel_ability: AbilityData = _selected_ability_data(unit, selected_ability)
 			if sel_ability != null and unit.get_ability_range(sel_ability) == 0:
-				_hover_threat_tiles = [origin]
+				_hover_action_range_tiles = [origin]
 		return
 	var threat_sources: Array[Vector2i] = [origin]
 	if unit.is_enemy():
@@ -1598,16 +1615,16 @@ func _populate_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_a
 	for y: int in range(_board.grid_size.y):
 		for x: int in range(_board.grid_size.x):
 			var coord := Vector2i(x, y)
-			if _hover_threat_tiles.has(coord):
+			if _hover_action_range_tiles.has(coord):
 				continue
 			for src: Vector2i in threat_sources:
 				if GridSystem.manhattan(coord, src) <= rng:
-					_hover_threat_tiles.append(coord)
+					_hover_action_range_tiles.append(coord)
 					break
 
 
-func _add_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
-	_populate_attack_threat_tiles(unit, origin, selected_ability)
+func _add_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
+	_populate_action_range_tiles(unit, origin, selected_ability)
 
 
 func _update_hover_action_icon() -> void:

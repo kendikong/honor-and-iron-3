@@ -1823,9 +1823,15 @@ func _build_enemy_commit_slots(
 	if use_skill and not AbilitySystem.target_passes_mode(actor, ability, enemy):
 		slots["invalid"] = true
 		return slots
-	if use_skill and _ability_has_dash(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
-		slots["invalid"] = true
-		return slots
+	if use_skill and _ability_has_dash(ability):
+		if dash_targeting and _is_valid_dash_target(_proj_origin(actor), enemy.position, _dash_steps(ability)):
+			slots["action"].append(
+				TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
+			)
+			return slots
+		if dash_targeting:
+			slots["invalid"] = true
+			return slots
 	if use_skill and _in_ability_range(actor, enemy):
 		slots["action"].append(
 			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
@@ -1891,12 +1897,15 @@ func _build_enemy_commit_slots(
 	return slots
 
 
-func _step_cursor_glyph(action: TimelineAction) -> String:
+func _step_cursor_glyph(action: TimelineAction, unit: UnitState = null) -> String:
 	if action == null:
 		return ""
 	match action.type:
 		GameEnums.ActionType.MOVE:
-			return ICON_RUN if action.uses_run else ICON_MOVE
+			var move_icon: String = ICON_RUN if action.uses_run else ICON_MOVE
+			if unit != null and _dash_skill_armed_not_targeting(unit):
+				return ICON_RUN_DASH if move_icon == ICON_RUN else ICON_MOVE_DASH
+			return move_icon
 		GameEnums.ActionType.ABILITY:
 			if action.ability == null:
 				return ICON_SKILL
@@ -1940,7 +1949,7 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, _unit: UnitState = null) 
 		var step: TimelineAction = steps[0] as TimelineAction
 		if step == null:
 			continue
-		var glyph: String = _step_cursor_glyph(step)
+		var glyph: String = _step_cursor_glyph(step, _unit)
 		if glyph != "":
 			glyphs.append(glyph)
 	if glyphs.is_empty():
@@ -1960,6 +1969,16 @@ func refresh_mouse_cursor(cell: Vector2i) -> void:
 
 func compute_hover_action_icon(cell: Vector2i) -> String:
 	return _compute_hover_action_icon(cell)
+
+
+func _premove_move_cursor_icon(unit: UnitState, cell: Vector2i) -> String:
+	if unit == null or cell == unit.position:
+		return ""
+	if _planning != null and _planning.is_hover_move_tile(cell):
+		return _movement_icon_for_dash_context(unit, cell)
+	if _can_move_to(unit, cell):
+		return _movement_icon_for_dash_context(unit, cell)
+	return ICON_MOVE
 
 
 func _compute_hover_action_icon(cell: Vector2i) -> String:
@@ -1990,6 +2009,17 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 		if cell != p_unit.position and _is_hover_move_cell(p_unit, cell):
 			return _movement_icon_for(p_unit, cell)
 		return ""
+	# Blue move tile invariant: highlighted pre/post-move destinations always show a move icon.
+	if _planning != null and _planning.is_hover_move_tile(cell) and cell != p_unit.position:
+		return _premove_move_cursor_icon(p_unit, cell)
+	if dash_targeting and _planning != null:
+		var dash_ability := _selected_ability_data(p_unit)
+		if dash_ability != null and _ability_has_dash(dash_ability):
+			if (
+				_planning.is_hover_action_range_tile(cell)
+				and _is_valid_dash_target(_proj_origin(p_unit), cell, _dash_steps(dash_ability))
+			):
+				return ICON_MOVE_DASH
 	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
 	var slots: Dictionary = _finalize_commit_slots(
 		_build_commit_slots_at_cell(sel_id, cell, [], legal_moves),
@@ -1999,6 +2029,8 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	if icon_from_plan != "":
 		return icon_from_plan
 	if bool(slots.get("invalid", false)):
+		if _planning != null and _planning.is_hover_move_tile(cell) and cell != p_unit.position:
+			return _premove_move_cursor_icon(p_unit, cell)
 		return ICON_NULL
 	return ""
 
@@ -2123,6 +2155,8 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if icon != "":
 		return icon
 	if bool(slots.get("invalid", false)):
+		if _planning != null and _planning.is_hover_move_tile(cell):
+			return _premove_move_cursor_icon(actor, cell)
 		return ICON_NULL
 	return ""
 
@@ -2139,7 +2173,7 @@ func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitSt
 		return not _can_target_unit_with_selected_ability(p_unit, hover_unit)
 	if _ability_has_dash(ability) and _planning != null:
 		if dash_targeting and (
-			_planning.is_hover_threat_tile(cell)
+			_planning.is_hover_action_range_tile(cell)
 			and not _is_valid_dash_target(_proj_origin(p_unit), cell, _dash_steps(ability))
 		):
 			return true
@@ -2193,7 +2227,7 @@ func _threat_follows_cursor() -> bool:
 			var hover_unit: UnitState = _director.board.get_unit_at(cell)
 			if hover_unit != null and hover_unit.is_enemy():
 				return false
-	# After pre-move, threat range is from the unit — not hypothetical move destinations.
+	# After pre-move, action range is from the unit — not hypothetical move destinations.
 	if not _unit_move_slot_open(_director.selected_unit_id):
 		return false
 	return true
