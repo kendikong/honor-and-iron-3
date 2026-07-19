@@ -21,10 +21,13 @@ const _COLOR_DRAGPATH := Color(0.98, 0.88, 0.38, 0.95)
 const _COLOR_DANGER := Color(0.9, 0.2, 0.2, 0.2)
 const _COLOR_SELECT_TILE := Color(0.36, 0.62, 0.92, 0.35)
 ## Route widths in map-local px (MapRoot scale applies on screen — do not divide by ui_scale).
-const _ROUTE_GLOW_W: float = 5.0
+const _ROUTE_CORNER_R: float = 5.0
+const _ROUTE_GLOW_W: float = 8.0
+const _ROUTE_OUTLINE_W: float = 5.0
 const _ROUTE_LINE_W: float = 3.0
+const _ROUTE_CORE_W: float = 1.25
 const _ROUTE_HEAD_LEN: float = 10.0
-const _ROUTE_HEAD_PERP: float = 5.0
+const _ROUTE_HEAD_HALF_W: float = 5.5
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
 const _INTENT_ROUTE_ALPHA: float = 0.40
@@ -1108,23 +1111,126 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 			pts.append(_map_view.grid_to_local(tile))
 	if pts.size() < 2:
 		return
-	var last: int = pts.size() - 1
-	var token_r: float = _token_radius()
+	var dest_center: Vector2 = pts[pts.size() - 1]
 	if trim_start:
 		var d0: Vector2 = pts[1] - pts[0]
 		if d0.length() > 0.0:
-			pts[0] += d0.normalized() * token_r
-	var end_dir: Vector2 = (pts[last] - pts[last - 1]).normalized()
+			pts[0] += d0.normalized() * _token_radius()
+	var smooth: PackedVector2Array = _rounded_route_polyline(pts, _ROUTE_CORNER_R)
+	if smooth.size() < 2:
+		return
+	var end_dir: Vector2 = _route_end_direction(smooth)
+	var outline_col := Color(color.r * 0.28, color.g * 0.32, color.b * 0.42, color.a)
+	var glow_col := Color(color.r, color.g, color.b, color.a * 0.16)
+	var highlight_col := Color(
+		minf(color.r + 0.22, 1.0),
+		minf(color.g + 0.22, 1.0),
+		minf(color.b + 0.22, 1.0),
+		color.a * 0.9,
+	)
+	var shaft: PackedVector2Array = smooth
 	if with_head:
-		pts[last] -= end_dir * token_r
-	var glow := Color(color.r, color.g, color.b, color.a * 0.22)
-	draw_polyline(pts, glow, _ROUTE_GLOW_W)
-	draw_polyline(pts, color, _ROUTE_LINE_W)
+		shaft = _clip_route_for_arrowhead(smooth, dest_center, end_dir, _ROUTE_HEAD_LEN * 0.55)
+	draw_polyline(shaft, glow_col, _ROUTE_GLOW_W, true)
+	draw_polyline(shaft, outline_col, _ROUTE_OUTLINE_W, true)
+	draw_polyline(shaft, color, _ROUTE_LINE_W, true)
+	draw_polyline(shaft, highlight_col, _ROUTE_CORE_W, true)
 	if with_head:
-		var tip: Vector2 = pts[last]
-		var perp: Vector2 = Vector2(-end_dir.y, end_dir.x) * _ROUTE_HEAD_PERP
-		draw_line(tip, tip - end_dir * _ROUTE_HEAD_LEN + perp, color, _ROUTE_LINE_W)
-		draw_line(tip, tip - end_dir * _ROUTE_HEAD_LEN - perp, color, _ROUTE_LINE_W)
+		_draw_route_arrowhead(dest_center, end_dir, color, outline_col)
+
+
+func _rounded_route_polyline(pts: PackedVector2Array, corner_r: float) -> PackedVector2Array:
+	if pts.size() < 3:
+		return pts
+	var out := PackedVector2Array()
+	out.append(pts[0])
+	for i: int in range(1, pts.size() - 1):
+		var prev: Vector2 = pts[i - 1]
+		var corner: Vector2 = pts[i]
+		var next: Vector2 = pts[i + 1]
+		var in_vec: Vector2 = corner - prev
+		var out_vec: Vector2 = next - corner
+		var in_len: float = in_vec.length()
+		var out_len: float = out_vec.length()
+		if in_len < 0.001 or out_len < 0.001:
+			out.append(corner)
+			continue
+		var in_dir: Vector2 = in_vec / in_len
+		var out_dir: Vector2 = out_vec / out_len
+		if absf(in_dir.dot(out_dir)) > 0.995:
+			out.append(corner)
+			continue
+		var r: float = minf(corner_r, in_len * 0.48, out_len * 0.48)
+		var p_before: Vector2 = corner - in_dir * r
+		var p_after: Vector2 = corner + out_dir * r
+		out.append(p_before)
+		_append_quadratic_corner(out, p_before, corner, p_after, 7)
+	out.append(pts[pts.size() - 1])
+	return out
+
+
+func _append_quadratic_corner(
+	out: PackedVector2Array,
+	a: Vector2,
+	b: Vector2,
+	c: Vector2,
+	steps: int,
+) -> void:
+	for step: int in range(1, steps + 1):
+		var t: float = float(step) / float(steps)
+		var u: float = 1.0 - t
+		out.append(u * u * a + 2.0 * u * t * b + t * t * c)
+
+
+func _route_end_direction(path: PackedVector2Array) -> Vector2:
+	if path.size() < 2:
+		return Vector2.RIGHT
+	var lookback: int = mini(3, path.size() - 1)
+	var delta: Vector2 = path[path.size() - 1] - path[path.size() - 1 - lookback]
+	if delta.length_squared() < 0.001:
+		return Vector2.RIGHT
+	return delta.normalized()
+
+
+func _clip_route_for_arrowhead(
+	path: PackedVector2Array,
+	tip: Vector2,
+	dir: Vector2,
+	inset: float,
+) -> PackedVector2Array:
+	if path.is_empty():
+		return path
+	var travel_dir: Vector2 = dir
+	if travel_dir.length_squared() < 0.0001:
+		travel_dir = Vector2.RIGHT
+	else:
+		travel_dir = travel_dir.normalized()
+	var base_pt: Vector2 = tip - travel_dir * inset
+	var out := PackedVector2Array()
+	for p: Vector2 in path:
+		if p.distance_to(tip) > inset * 0.95:
+			out.append(p)
+	if out.is_empty():
+		out.append(path[0])
+	out.append(base_pt)
+	return out
+
+
+func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color, outline: Color) -> void:
+	var travel_dir: Vector2 = dir
+	if travel_dir.length_squared() < 0.0001:
+		travel_dir = Vector2.RIGHT
+	else:
+		travel_dir = travel_dir.normalized()
+	var perp: Vector2 = Vector2(-travel_dir.y, travel_dir.x)
+	var base: Vector2 = tip - travel_dir * _ROUTE_HEAD_LEN
+	var left: Vector2 = base + perp * _ROUTE_HEAD_HALF_W
+	var right: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
+	var head := PackedVector2Array([tip, left, right])
+	draw_colored_polygon(head, fill)
+	var stroke := PackedVector2Array([tip, left, right, tip])
+	draw_polyline(stroke, outline, 1.5, true)
+	draw_circle(tip, 1.5, Color(fill.r, fill.g, fill.b, fill.a * 0.85))
 
 
 func _draw_death_marker(cell: Vector2i) -> void:
