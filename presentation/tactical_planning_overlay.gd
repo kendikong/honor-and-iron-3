@@ -582,6 +582,8 @@ func _process(delta: float) -> void:
 		need_redraw = true
 	if need_redraw:
 		queue_redraw()
+	elif CombatDirector.is_planning_phase(_phase) and _hover_action_icon != "":
+		queue_redraw()
 	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
 		queue_redraw()
 	elif not _hit_markers.is_empty():

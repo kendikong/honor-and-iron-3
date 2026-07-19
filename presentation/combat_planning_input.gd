@@ -544,6 +544,8 @@ func _run_planning_selection_refresh() -> void:
 	_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_skill_mode()
 	call_deferred("_refresh_hover_if_planning")
+	if _intent_state != null:
+		refresh_mouse_cursor(_intent_state.hover_coord)
 
 
 func _finish_selection_changed() -> void:
@@ -633,9 +635,9 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_sync_threat_origin_from_cell(cell)
 	if not _is_planning() or dragging:
 		return
-	if cell == _last_planning_hover_cell:
-		return
-	_last_planning_hover_cell = cell
+	var planning_cell_changed: bool = cell != _last_planning_hover_cell
+	if planning_cell_changed:
+		_last_planning_hover_cell = cell
 	if not _director.board.is_in_bounds(cell):
 		if _director.selected_unit_id >= 0:
 			_restore_hover_preview()
@@ -644,13 +646,16 @@ func on_hover_moved(cell: Vector2i) -> void:
 			if _planning != null:
 				_planning._invalidate_hover_cache()
 				_planning._recompute_hover_ranges_from_inputs()
+		refresh_mouse_cursor(cell)
 		return
-	if _planning != null:
+	if _planning != null and planning_cell_changed:
 		_planning._recompute_hover_ranges_from_inputs()
 	if _director.selected_unit_id >= 0:
-		_refresh_selected_interaction_preview()
+		if planning_cell_changed:
+			_refresh_selected_interaction_preview()
 	else:
-		_update_hover_attack_preview()
+		if planning_cell_changed:
+			_update_hover_attack_preview()
 	refresh_mouse_cursor(cell)
 
 
@@ -1504,7 +1509,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	if dragging:
 		if _drag_unit_was_selected and _drag_unit_id >= 0:
 			var drag_unit := _director.board.get_unit_by_id(_drag_unit_id)
-			if drag_unit != null and not drag_unit.is_enemy() and cell == drag_unit.position:
+			if drag_unit != null and not drag_unit.is_enemy() and cell == _proj_origin(drag_unit):
 				var ability := _selected_ability_data(drag_unit)
 				if ability != null and ability.range_tiles == 0:
 					return _ability_action_icon(ability)
@@ -1524,7 +1529,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var hover_unit: UnitState = (
 		_aim_enemy_board().get_unit_at(cell)
 		if _skill_interaction_active()
-		else _proj().get_unit_at(cell)
+		else _unit_at_input_cell(cell)
 	)
 	if _skill_interaction_active():
 		if force_basic_movement and hover_unit == null and cell != p_unit.position and _can_move_to(p_unit, cell):
@@ -1542,38 +1547,50 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 		elif _director.selected_ability_index >= 0 and _director.selected_ability_index < p_unit.active_abilities.size():
 			var aim_ability: AbilityData = p_unit.active_abilities[_director.selected_ability_index]
 			if _ability_has_dash(aim_ability):
-				valid_aim = _is_valid_dash_target(p_unit.position, cell, aim_ability.range_tiles)
+				valid_aim = _is_valid_dash_target(_proj_origin(p_unit), cell, aim_ability.range_tiles)
 		if valid_aim:
 			var aim_ability := CombatDirector.resolve_selected_ability(p_unit, _director.selected_ability_index)
 			if aim_ability != null:
 				if AbilitySystem.is_wait_ability(aim_ability):
 					return "⏸"
 				return _ability_action_icon(aim_ability)
-	else:
-		if hover_unit != null and hover_unit.is_enemy():
-			if _prefer_approach_over_trample_move(p_unit, hover_unit):
-				return "⚔️"
-			if _can_move_to(p_unit, cell):
-				return "🏃"
+	return _cursor_selection_hints(p_unit, cell, hover_unit)
+
+
+func _cursor_selection_hints(p_unit: UnitState, cell: Vector2i, hover_unit: UnitState) -> String:
+	if hover_unit != null and hover_unit.is_enemy():
+		if _prefer_approach_over_trample_move(p_unit, hover_unit):
 			return "⚔️"
-		if hover_unit == null and cell != p_unit.position:
-			var hover_ability := _selected_ability_data(p_unit)
-			if (
-				_skill_takes_priority_over_basic_move()
-				and hover_ability != null
-				and _ability_has_dash(hover_ability)
-				and _is_valid_dash_target(_proj_origin(p_unit), cell, hover_ability.range_tiles)
-			):
-				if AbilitySystem.ability_is_offensive_dash(hover_ability):
-					return "⚔️"
-				return "✨"
-			if (
-				_basic_move_allowed()
-				and not MovementSystem.find_path(
-					_proj(), p_unit.position, cell, _move_budget(p_unit),
-				).is_empty()
-			):
-				return "🏃"
+		if _can_move_to(p_unit, cell):
+			return "🏃"
+		return "⚔️"
+	if hover_unit != null and hover_unit.id == p_unit.id:
+		var self_ability := _selected_ability_data(p_unit)
+		if (
+			self_ability != null
+			and AbilitySystem.can_target_self(p_unit, self_ability)
+			and not AbilitySystem.is_run_ability(self_ability)
+		):
+			return _ability_action_icon(self_ability)
+	if hover_unit == null and cell != p_unit.position:
+		var hover_ability := _selected_ability_data(p_unit)
+		if (
+			_skill_takes_priority_over_basic_move()
+			and hover_ability != null
+			and _ability_has_dash(hover_ability)
+			and _is_valid_dash_target(_proj_origin(p_unit), cell, hover_ability.range_tiles)
+		):
+			if AbilitySystem.ability_is_offensive_dash(hover_ability):
+				return "⚔️"
+			return "✨"
+		if (
+			_basic_move_allowed()
+			and _unit_move_slot_open(p_unit.id)
+			and not MovementSystem.find_path(
+				_proj(), p_unit.position, cell, _move_budget(p_unit),
+			).is_empty()
+		):
+			return "🏃"
 	return ""
 
 

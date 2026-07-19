@@ -47,24 +47,16 @@ func handle_input(event: InputEvent) -> bool:
 		var local: Vector2 = _screen_to_map_local(event.position)
 		if _planning_input.dragging:
 			_planning_input.update_drag(local)
-		elif _planning_input.is_drag_armed():
-			_planning_input.try_activate_drag(local)
-		elif _planning_input.skill_interaction_active():
-			var cell: Vector2i = _map_view.screen_to_grid(event.position)
-			if _intent_state != null:
-				_intent_state.set_hover_coord(cell)
-			_planning.set_hover_coord(cell)
-			_planning_input._sync_threat_origin_from_cell(cell)
-			_planning.recompute_hover_ranges(
-				_planning_input.force_basic_movement,
-				_director.selected_ability_index,
-				false,
-				-1,
-			)
+		else:
+			if _planning_input.is_drag_armed():
+				_planning_input.try_activate_drag(local)
+			if not _planning_input.dragging:
+				var cell: Vector2i = _map_view.screen_to_grid(event.position)
+				_planning_input.on_hover_moved(cell)
 		return (
 			_planning_input.dragging
 			or _planning_input.is_drag_armed()
-			or _planning_input.skill_interaction_active()
+			or _director.selected_unit_id >= 0
 		)
 	if event is InputEventMouseButton:
 		return _handle_mouse_button(event as InputEventMouseButton)
