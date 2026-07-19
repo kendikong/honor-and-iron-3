@@ -7,6 +7,7 @@ const _FpsHud = preload("res://scripts/fps_hud.gd")
 const _C = preload("res://scripts/mana_seed_constants.gd")
 const _CharacterActor = preload("res://scripts/lpc/character_actor.gd")
 const _CharacterGridMover = preload("res://scripts/lpc/character_grid_mover.gd")
+const _TreeCanopyFader = preload("res://presentation/tree_canopy_fader.gd")
 
 const TILE_PX: int = TacticalConstants.TILE_PX
 const TEST_UNIT_COUNT: int = 10
@@ -54,6 +55,7 @@ var _char_recipe: CharacterRecipe
 var _asset_preloader: LpcAssetPreloader
 var _extra_actors: Array[CharacterActor] = []
 var _extra_movers: Array[CharacterGridMover] = []
+var _tree_fader: TreeCanopyFader
 
 
 func _ready() -> void:
@@ -281,6 +283,7 @@ func _try_character_step(event: InputEventKey) -> bool:
 func _process(delta: float) -> void:
 	_effects.process_frame(delta)
 	_shadow_debug_overlay.process_refresh(delta)
+	_sync_tree_canopy_fade()
 
 
 func _sync_test_char_contact_shadow(settings: EffectsSettings) -> void:
@@ -528,10 +531,17 @@ func _restore_default_generator() -> void:
 
 func _regenerate() -> void:
 	_sync_tree_variant_setting()
+	if _tree_fader != null:
+		_tree_fader.clear_all()
 	_decorator.regenerate(_player_grid)
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = _decorator.map_seed
 	_effects.rebuild_water_vfx_cache(_player_grid, rng)
+	if _tree_fader == null:
+		_tree_fader = _TreeCanopyFader.new()
+		_tree_fader.name = "TreeCanopyFader"
+		_map_root.add_child(_tree_fader)
+	_tree_fader.setup(_trees, _player_grid, _effects.settings)
 	TileInspectorReport.invalidate_cache()
 	_center_map()
 	_apply_effects()
@@ -542,6 +552,17 @@ func _regenerate() -> void:
 		_char_mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter, _ground)
 	_sync_extra_unit_grids()
 	_sync_all_test_unit_shadows()
+
+
+func _sync_tree_canopy_fade() -> void:
+	if _tree_fader == null or _player_grid == null:
+		return
+	var actor_map: Dictionary = {}
+	var id: int = 0
+	for actor: CharacterActor in _test_unit_actors():
+		actor_map[id] = actor
+		id += 1
+	_tree_fader.sync_actors(actor_map)
 
 
 func _sync_debug_views() -> void:
