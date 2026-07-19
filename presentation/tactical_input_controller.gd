@@ -100,18 +100,21 @@ func cancel_aim() -> void:
 
 
 func _cycle_ability(delta: int) -> void:
-	if _director.selected_unit_id <= 0:
+	if _director.selected_unit_id < 0:
 		return
-	var unit := _director.board.get_unit_by_id(_director.selected_unit_id)
-	if unit == null or unit.active_abilities.is_empty():
+	var p_unit: UnitState = null
+	if _director.projected_state != null:
+		p_unit = _director.projected_state.get_unit_by_id(_director.selected_unit_id)
+	if p_unit == null and _director.board != null:
+		p_unit = _director.board.get_unit_by_id(_director.selected_unit_id)
+	if p_unit == null or p_unit.active_abilities.is_empty():
 		return
-	var count: int = unit.active_abilities.size()
-	var cur: int = _director.selected_ability_index
-	if CombatDirector.is_wait_ability_index(cur) or cur < 0 or cur >= count:
-		cur = 0 if delta > 0 else count - 1
-	else:
-		cur = (cur + delta + count) % count
-	_director.select_ability(cur)
+	var next: int = CombatDirector.next_selectable_ability_index(
+		p_unit, _director.selected_ability_index, delta,
+	)
+	if next < 0:
+		return
+	_director.select_ability(next)
 	_play_sfx("select")
 	if _planning_input != null and _planning_input.dragging:
 		_planning_input.refresh_live_preview()

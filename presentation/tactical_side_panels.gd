@@ -636,8 +636,8 @@ func _rebuild_ability_buttons() -> void:
 			unit, abilities[_selected_ability] as AbilityData,
 		)
 	if not selected_usable and _director != null:
-		_director.select_ability(-1)
-		_selected_ability = -1
+		_director.sync_selected_ability_if_invalid()
+		_selected_ability = _director.selected_ability_index
 	for i: int in abilities.size():
 		var ability: AbilityData = abilities[i]
 		var index: int = i

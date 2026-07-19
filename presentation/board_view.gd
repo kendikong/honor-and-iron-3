@@ -391,25 +391,27 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 			get_viewport().set_input_as_handled()
 			if _selected_id >= 0 and _board != null:
-				var unit = _board.get_unit_by_id(_selected_id)
-				if unit != null:
-					var abilities = unit.active_abilities
-					if abilities.size() > 0:
-						var new_idx = (_selected_ability - 1 + abilities.size()) % abilities.size()
-						if _director != null:
-							_director.select_ability(new_idx)
-						if _dragging: _update_drag(get_local_mouse_position())
+				var unit := _proj_unit(_selected_id)
+				if unit != null and not unit.active_abilities.is_empty():
+					var new_idx: int = CombatDirector.next_selectable_ability_index(
+						unit, _selected_ability, -1,
+					)
+					if new_idx >= 0 and _director != null:
+						_director.select_ability(new_idx)
+					if _dragging:
+						_update_drag(get_local_mouse_position())
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 			get_viewport().set_input_as_handled()
 			if _selected_id >= 0 and _board != null:
-				var unit = _board.get_unit_by_id(_selected_id)
-				if unit != null:
-					var abilities = unit.active_abilities
-					if abilities.size() > 0:
-						var new_idx = (_selected_ability + 1) % abilities.size()
-						if _director != null:
-							_director.select_ability(new_idx)
-						if _dragging: _update_drag(get_local_mouse_position())
+				var unit := _proj_unit(_selected_id)
+				if unit != null and not unit.active_abilities.is_empty():
+					var new_idx: int = CombatDirector.next_selectable_ability_index(
+						unit, _selected_ability, 1,
+					)
+					if new_idx >= 0 and _director != null:
+						_director.select_ability(new_idx)
+					if _dragging:
+						_update_drag(get_local_mouse_position())
 		elif event.button_index == MOUSE_BUTTON_LEFT:
 			get_viewport().set_input_as_handled()
 			if event.pressed:
