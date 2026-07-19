@@ -1017,7 +1017,7 @@ func _commit_at_cell(
 	var actor := _proj_unit(unit_id)
 	if actor == null and _director != null and _director.board != null:
 		actor = _director.board.get_unit_by_id(unit_id)
-	if actor != null and cell == actor.position and _try_arm_dash_or_self_skill(unit_id):
+	if actor != null and cell == _proj_origin(actor) and _try_arm_dash_or_self_skill(unit_id):
 		return true
 	var slots: Dictionary = _finalize_commit_slots(
 		_build_commit_slots_at_cell(
@@ -1026,9 +1026,14 @@ func _commit_at_cell(
 		unit_id,
 	)
 	if bool(slots.get("invalid", false)):
-		if actor != null and cell == actor.position and _try_plan_wait(unit_id):
-			_play_sfx("ability")
-			return true
+		if actor != null and cell == _proj_origin(actor):
+			var self_ability := _selected_ability_data(actor)
+			if AbilitySystem.ability_arms_dash_on_self_click(actor, self_ability):
+				_play_sfx("invalid")
+				return dash_targeting_active()
+			if _try_plan_wait(unit_id):
+				_play_sfx("ability")
+				return true
 		_play_sfx("invalid")
 		return false
 	_apply_facing_to_slots(slots, local, cell)
@@ -1055,12 +1060,15 @@ func _try_arm_dash_or_self_skill(unit_id: int) -> bool:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return false
+	var self_ability := _selected_ability_data(actor)
+	if not AbilitySystem.ability_arms_dash_on_self_click(actor, self_ability):
+		return false
 	if _director.find_awaiting_dash_action(unit_id) != null:
 		_play_sfx("ability")
 		return true
-	var self_ability := _selected_ability_data(actor)
-	if self_ability != null and _ability_has_dash(self_ability) and not dash_targeting_active():
-		arm_dash_targeting()
+	if not arm_dash_targeting():
+		return false
+	if _director.find_awaiting_dash_action(unit_id) != null:
 		_play_sfx("ability")
 		return true
 	return false
@@ -1123,7 +1131,7 @@ func _should_auto_arm_dash_after_move_commit(unit_id: int, slots: Dictionary) ->
 	if actor == null:
 		return false
 	var ability := _selected_ability_data(actor)
-	return ability != null and _ability_has_dash(ability)
+	return ability != null and AbilitySystem.ability_arms_dash_on_self_click(actor, ability)
 
 
 func _preview_from_commit_slots_at_cell(
@@ -1267,29 +1275,31 @@ func dash_targeting_active() -> bool:
 	return _director.find_awaiting_dash_action(_director.selected_unit_id) != null
 
 
-func arm_dash_targeting() -> void:
+func arm_dash_targeting() -> bool:
 	if _director == null or _director.selected_ability_index < 0:
-		return
+		return false
 	var actor := _proj_unit(_director.selected_unit_id)
 	if actor == null and _director.board != null:
 		actor = _director.board.get_unit_by_id(_director.selected_unit_id)
 	if actor == null or not _ability_has_dash(_selected_ability_data(actor)):
-		return
+		return false
 	if selected_phase_action_exhausted(actor.id):
-		return
+		return false
 	var ability := _selected_ability_data(actor)
-	if ability == null:
-		return
+	if not AbilitySystem.ability_arms_dash_on_self_click(actor, ability):
+		return false
 	if _director.find_awaiting_dash_action(actor.id) != null:
 		_request_planning_selection_refresh()
-		return
+		return true
 	_director.set_awaiting_dash_action(actor.id, ability)
 	dash_targeting = _director.find_awaiting_dash_action(actor.id) != null
 	if _planning != null:
 		_planning.clear_threat_origin()
 		_planning._invalidate_hover_cache()
+		_planning._recompute_hover_ranges_from_inputs()
 	_invalidate_planning_hover_cache()
 	_request_planning_selection_refresh()
+	return dash_targeting
 
 
 func clear_dash_targeting() -> void:
@@ -1373,11 +1383,17 @@ func _try_plan_wait(unit_id: int) -> bool:
 	if selected_phase_action_exhausted(unit_id):
 		_play_sfx("invalid")
 		return false
+	var actor := _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null or not _would_show_wait_on_self_click(actor):
+		return false
+	var had_wait: bool = _director.unit_has_wait_planned(unit_id)
 	_director.rpc_plan_wait(unit_id)
 	if _planning != null:
 		_planning.clear_threat_origin()
 	_director.select_ability(-1)
-	return true
+	return _director.unit_has_wait_planned(unit_id) != had_wait
 
 
 func _selected_ability_data(unit: UnitState) -> AbilityData:
@@ -1944,7 +1960,7 @@ func _would_arm_dash_on_self_click(unit: UnitState) -> bool:
 	if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 		return false
 	var ability := _selected_ability_data(unit)
-	return ability != null and _ability_has_dash(ability) and not dash_targeting_active()
+	return ability != null and AbilitySystem.ability_arms_dash_on_self_click(unit, ability) and not dash_targeting_active()
 
 
 func _would_show_wait_on_self_click(unit: UnitState) -> bool:

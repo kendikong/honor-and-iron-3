@@ -100,6 +100,7 @@ func setup(
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
 		_invalidate_hover_cache()
+		_schedule_hover_recompute()
 	)
 	EventBus.selection_changed.connect(func(_id: int) -> void:
 		if _director == null:

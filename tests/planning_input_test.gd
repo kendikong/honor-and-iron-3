@@ -16,6 +16,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_auto_skill_after_move_arms_dash(failures)
 	_test_awaiting_dash_plan_refresh(failures)
 	_test_dash_arm_survives_plan_refresh(failures)
+	_test_dash_self_click_blocks_false_wait(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
 
 
@@ -526,6 +527,54 @@ static func _test_dash_arm_survives_plan_refresh(failures: Array[String]) -> voi
 		failures.append(
 			"PlanningInputTest: dash_targeting_active should read awaiting plan entry",
 		)
+
+
+static func _test_dash_self_click_blocks_false_wait(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(2, 2)
+	unit.movement.points_left = 4
+	unit.ability.points_left = 3
+	var dash := AbilityData.new()
+	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	dash.display_name = "Bowling Charge"
+	dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+	dash.targeting_flags = AbilityData._targeting_mode_to_flags(dash.targeting_mode)
+	var dash_eff := EffectData.new()
+	dash_eff.type = GameEnums.EffectType.DASH
+	dash_eff.amount = 3
+	dash.effects = [dash_eff]
+	unit.active_abilities = [dash]
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	input._director = director
+	if not AbilitySystem.ability_arms_dash_on_self_click(unit, dash):
+		failures.append("PlanningInputTest: bowling charge should arm dash on self click")
+	if input._try_plan_wait(1):
+		failures.append(
+			"PlanningInputTest: wait must not trigger when a dash skill is selected",
+		)
+	if not input._try_arm_dash_or_self_skill(1):
+		failures.append("PlanningInputTest: dash self click must arm awaiting action")
+	if director.unit_has_wait_planned(1):
+		failures.append("PlanningInputTest: dash self click must not plan wait")
 
 
 static func _plain_board_with_unit(

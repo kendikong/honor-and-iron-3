@@ -141,6 +141,15 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 	return false
 
 
+## Two-phase dash (Bowling Charge, etc.): self-click arms endpoint targeting — not a direct commit.
+static func ability_arms_dash_on_self_click(actor: UnitState, ability: AbilityData) -> bool:
+	if actor == null or ability == null or not ability_has_dash(ability):
+		return false
+	if can_target_self(actor, ability):
+		return false
+	return can_plan(actor, ability)
+
+
 static func effect_amount(ability: AbilityData, effect_type: GameEnums.EffectType) -> int:
 	if ability == null:
 		return 0
