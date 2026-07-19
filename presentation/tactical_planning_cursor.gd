@@ -44,6 +44,11 @@ func _on_draw() -> void:
 	if _icon == "":
 		return
 	var center: Vector2 = get_viewport().get_mouse_position() + ICON_OFFSET
+	if _icon == "👟⚔️":
+		var half: int = maxi(22, int(round(float(_font_size) * 0.72)))
+		_draw_centered(_drawer, center + Vector2(-10.0, 0.0), "👟", Color.WHITE, half)
+		_draw_centered(_drawer, center + Vector2(10.0, 0.0), "⚔️", Color.WHITE, half)
+		return
 	var color: Color = Color(1.0, 0.52, 0.52, 1.0) if _icon == "∅" else Color(1.0, 1.0, 1.0, 1.0)
 	_draw_centered(_drawer, center, _icon, color, _font_size)
 

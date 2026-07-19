@@ -1515,10 +1515,11 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	if dragging:
 		if _drag_unit_was_selected and _drag_unit_id >= 0:
 			var drag_unit := _director.board.get_unit_by_id(_drag_unit_id)
-			if drag_unit != null and not drag_unit.is_enemy() and cell == _proj_origin(drag_unit):
-				var tile_icon: String = _self_tile_hover_icon(drag_unit, cell)
-				if tile_icon != "":
-					return tile_icon
+			if drag_unit != null and not drag_unit.is_enemy():
+				var actor := _proj_unit(drag_unit.id)
+				if actor == null:
+					actor = drag_unit
+				return _drag_hover_icon(actor, cell)
 		return ""
 	var sel_id: int = _director.selected_unit_id
 	if sel_id < 0:
@@ -1564,6 +1565,9 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 				if AbilitySystem.is_wait_ability(aim_ability):
 					return ICON_WAIT
 				return _ability_action_icon(aim_ability)
+		var move_attack: String = _move_attack_hover_icon(p_unit, cell)
+		if move_attack != "":
+			return move_attack
 		var move_icon: String = _move_hover_icon(p_unit, cell)
 		if move_icon != "":
 			return move_icon
@@ -1594,6 +1598,9 @@ func _cursor_selection_hints(p_unit: UnitState, cell: Vector2i, hover_unit: Unit
 	if move_icon != "":
 		return move_icon
 	if hover_unit == null and cell != p_unit.position:
+		var move_attack: String = _move_attack_hover_icon(p_unit, cell)
+		if move_attack != "":
+			return move_attack
 		var hover_ability := _selected_ability_data(p_unit)
 		if (
 			_skill_takes_priority_over_basic_move()
@@ -1643,6 +1650,85 @@ func _move_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
 	if _planning != null and _planning.is_hover_move_tile(cell):
 		return ICON_MOVE
 	if _can_move_to(p_unit, cell):
+		return ICON_MOVE
+	return ""
+
+
+func _attack_range_for(actor: UnitState) -> int:
+	var ability: AbilityData = _selected_ability_data(actor)
+	if ability != null:
+		return actor.get_ability_range(ability)
+	if _director != null and _director.selected_ability_index >= 0:
+		return -1
+	return 1
+
+
+func _in_attack_range_from(origin: Vector2i, enemy: UnitState, actor: UnitState) -> bool:
+	var rng: int = _attack_range_for(actor)
+	if rng < 0:
+		return false
+	return GridSystem.manhattan(origin, enemy.position) <= rng
+
+
+func _move_attack_hover_icon(
+	p_unit: UnitState,
+	cell: Vector2i,
+	origin: Vector2i = Vector2i(-9999, -9999),
+) -> String:
+	if p_unit == null or cell == p_unit.position:
+		return ""
+	var from_pos: Vector2i = origin if origin.x > -9000 else _proj_origin(p_unit)
+	if _move_hover_icon(p_unit, cell) == "" and not (dragging and cell == _drag_last_free):
+		return ""
+	for unit: UnitState in _proj().units:
+		if not unit.is_enemy() or not unit.is_alive():
+			continue
+		if _in_attack_range_from(cell, unit, p_unit) and not _in_attack_range_from(from_pos, unit, p_unit):
+			return ICON_MOVE_ATTACK
+	return ""
+
+
+func _drag_preview_includes_attack(actor_id: int) -> bool:
+	if preview_state.preview_board == null or actor_id < 0:
+		return false
+	if int(preview_state.preview_splits.get(actor_id, 1)) <= 1:
+		return false
+	var pv: UnitState = preview_state.preview_board.get_unit_by_id(actor_id)
+	if pv == null:
+		return false
+	for unit: UnitState in preview_state.preview_board.units:
+		if unit.is_enemy() and unit.is_alive():
+			if _in_attack_range_from(pv.position, unit, pv):
+				return true
+	return false
+
+
+func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
+	if actor == null:
+		return ""
+	if cell == _proj_origin(actor):
+		return _self_tile_hover_icon(actor, cell)
+	if drag_preview_failed:
+		return ICON_NULL
+	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
+	var occ: UnitState = _director.board.get_unit_at(cell) if _director.board != null else null
+	if occ != null and occ.is_enemy() and occ.id != actor.id:
+		if _in_attack_range_from(_drag_last_free, occ, actor):
+			return ICON_ATTACK
+		if _enemy_attackable_from_legal_tiles(actor, occ, [cell]) \
+				or _enemy_attackable_from_legal_tiles(actor, occ, legal_moves):
+			return ICON_MOVE_ATTACK
+		return ""
+	var move_attack: String = _move_attack_hover_icon(actor, cell, actor.position)
+	if move_attack != "":
+		return move_attack
+	if _drag_preview_includes_attack(actor.id) and (
+		cell == _drag_last_free or legal_moves.has(cell)
+	):
+		return ICON_MOVE_ATTACK
+	if _drop_allows_move_tile(cell, legal_moves, actor) or (
+		cell == _drag_last_free and legal_moves.has(cell)
+	):
 		return ICON_MOVE
 	return ""
 
