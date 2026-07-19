@@ -445,10 +445,21 @@ func _ensure_skill_visible_by_index(index: int) -> void:
 		return
 	if index != _selected_ability:
 		return
-	if index < 0 or index >= _skill_list.get_child_count():
+	var count: int = _skill_list.get_child_count()
+	if index < 0 or index >= count:
 		return
 	var btn: Control = _skill_list.get_child(index) as Control
 	if btn == null or not is_instance_valid(btn):
+		return
+	if index == 0:
+		_skill_scroll.scroll_vertical = 0
+		return
+	if index == count - 1:
+		_skill_scroll.ensure_control_visible(btn)
+		await get_tree().process_frame
+		var bar: VScrollBar = _skill_scroll.get_v_scroll_bar()
+		if bar != null:
+			_skill_scroll.scroll_vertical = int(bar.max_value)
 		return
 	_skill_scroll.ensure_control_visible(btn)
 

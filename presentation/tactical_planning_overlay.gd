@@ -703,7 +703,6 @@ func _draw() -> void:
 		_draw_danger_area()
 		_draw_move_ghosts()
 	_draw_hover_tiles()
-	_draw_target_rings()
 	if show_planning:
 		_draw_ghosts()
 		_draw_preview_arrows()
@@ -1023,10 +1022,9 @@ func _draw_preview_arrows() -> void:
 			continue
 		var split: int = int(prev.preview_splits.get(unit.id, route.size()))
 		var post_split: int = int(prev.preview_post_splits.get(unit.id, split))
-		var pre_action_leg: Array = route.slice(0, mini(post_split, split))
-		var post_action_leg: Array = []
-		if post_split < split:
-			post_action_leg = route.slice(maxi(post_split - 1, 0), split)
+		var legs: Dictionary = _committed_route_legs(unit, route, split, post_split)
+		var pre_action_leg: Array = legs.get("pre", [])
+		var post_action_leg: Array = legs.get("post", [])
 		var enemy_leg: Array = []
 		if split < route.size():
 			enemy_leg = route.slice(maxi(split - 1, 0))
@@ -1037,7 +1035,7 @@ func _draw_preview_arrows() -> void:
 					skip_live_route = true
 				elif skill_priority and not dragging:
 					skip_live_route = true
-			if not skip_live_route and _unit_can_still_move(unit.id):
+			if not skip_live_route:
 				var p_col: Color = _player_color_for_unit(unit)
 				var dim_col := Color(p_col.r, p_col.g, p_col.b, 0.35)
 				_draw_route_line(pre_action_leg, dim_col, true, true)
@@ -1048,10 +1046,10 @@ func _draw_preview_arrows() -> void:
 					skip_post = true
 				elif skill_priority and not dragging:
 					skip_post = true
-			if not skip_post and _unit_can_still_move(unit.id):
+			if not skip_post:
 				var p_col: Color = _player_color_for_unit(unit)
 				var post_col := Color(p_col.r, p_col.g, p_col.b, 0.78)
-				_draw_route_line(post_action_leg, post_col, post_split <= 1, true)
+				_draw_route_line(post_action_leg, post_col, post_action_leg.size() <= 2, true)
 		if enemy_leg.size() >= 2:
 			var dim_enemy := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, 0.35)
 			_draw_route_line(enemy_leg, dim_enemy, split <= 1, true)
@@ -1069,6 +1067,32 @@ func _draw_preview_arrows() -> void:
 			elif route.size() > 0:
 				end_tile = route[route.size() - 1]
 			_draw_death_marker(end_tile)
+
+
+func _committed_route_legs(
+	unit: UnitState,
+	route: Array,
+	split: int,
+	post_split: int,
+) -> Dictionary:
+	var legs: Dictionary = {"pre": [], "post": []}
+	if unit == null or route.size() < 2 or _director == null:
+		return legs
+	var has_pre: bool = _director.unit_has_move_planned_at_timing(
+		unit.id, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	var has_post: bool = _director.unit_has_move_planned_at_timing(
+		unit.id, GameEnums.MoveTiming.POST_ACTION,
+	)
+	var end_idx: int = mini(split, route.size())
+	if has_pre and has_post:
+		legs["pre"] = route.slice(0, mini(post_split, end_idx))
+		legs["post"] = route.slice(maxi(post_split - 1, 0), end_idx)
+	elif has_pre:
+		legs["pre"] = route.slice(0, end_idx)
+	elif has_post:
+		legs["post"] = route.slice(0, end_idx)
+	return legs
 
 
 func _draw_interaction_overlay() -> void:
@@ -1384,29 +1408,6 @@ func _draw_drag_path() -> void:
 			_draw_dashed_route([_planning_input.drag_sim_actor_pos, _hover_coord], route_col)
 		else:
 			_draw_route_line(_route, _COLOR_DRAGPATH, true, true)
-
-
-func _draw_target_rings() -> void:
-	if _director == null or _director.selected_unit_id < 0 or _board == null:
-		return
-	var unit := _proj_unit(_director.selected_unit_id)
-	if unit == null or not unit.is_alive() or unit.is_enemy():
-		return
-	var force_basic: bool = _planning_input.force_basic_movement if _planning_input != null else false
-	if not _can_show_threat_tiles(unit, _director.selected_ability_index, force_basic):
-		return
-	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
-	if ability == null:
-		return
-	var origin: Vector2i = _proj_origin(unit)
-	if AbilitySystem.ability_has_dash(ability):
-		for cell: Vector2i in _dash_threat_tiles(origin, _dash_amount(ability)):
-			_draw_tile_tint(cell, _COLOR_TARGET, 0.35)
-		return
-	var self_aoe: Array[Vector2i] = _self_aoe_threat_tiles(unit, ability, origin)
-	if not self_aoe.is_empty():
-		for cell: Vector2i in self_aoe:
-			_draw_tile_tint(cell, _COLOR_TARGET, 0.35)
 
 
 func _is_valid_dash_hover(origin: Vector2i, coord: Vector2i, max_range: int) -> bool:
