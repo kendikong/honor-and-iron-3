@@ -14,6 +14,7 @@ const HEX_TURN: String = "7fd4ff"
 const HEX_STAT_UP: String = "82E0AA"
 const HEX_STAT_DOWN: String = "E74C3C"
 const LOG_FONT_SIZE: int = 10
+const LOG_FORMULA_FONT_SIZE: int = 7
 
 const PLAYER_COLORS: Array[Color] = [
 	Color(0.36, 0.62, 0.92),
