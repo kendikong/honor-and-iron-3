@@ -323,7 +323,7 @@ func update_drag(local: Vector2) -> void:
 		_drag_unit_id,
 		_drag_last_free,
 		drag_target_id,
-		[],
+		_route_waypoints(),
 	)
 	_apply_live_preview(preview)
 	if _planning != null:
@@ -356,7 +356,7 @@ func refresh_live_preview() -> void:
 		_drag_unit_id,
 		_drag_last_free,
 		drag_target_id,
-		[],
+		_route_waypoints(),
 	)
 	_apply_live_preview(preview)
 

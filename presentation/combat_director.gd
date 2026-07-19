@@ -879,30 +879,43 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 						TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing),
 					)
 			elif self_after_move:
+				var move_actor: UnitState = plan_actor if plan_actor != null else actor
 				new_actions.append(
-					TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing),
-				)
-				new_actions.append(
-					TimelineAction.make_ability(
-						unit_id, ability, coord, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
+					make_planning_move_action(
+						unit_id, coord, plan_board, move_actor, waypoints, move_timing,
 					),
 				)
+				if (
+					not AbilitySystem.movement_requires_run(plan_board, move_actor, coord, waypoints)
+					or AbilitySystem.can_afford_run_for_commit(move_actor, ability)
+				):
+					new_actions.append(
+						TimelineAction.make_ability(
+							unit_id, ability, coord, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
+						),
+					)
 			elif GridSystem.manhattan(actor.position, target.position) > rng:
 				var approach := _find_approach_tile(start_board, actor, target.position, rng, coord)
+				var approach_path: Array[Vector2i] = []
 				if approach != actor.position:
-					var path: Array[Vector2i] = MovementSystem.find_path(
+					approach_path = MovementSystem.find_path(
 						start_board, actor.position, approach, planning_move_budget(actor, start_board),
 					)
 					new_actions.append(
 						make_planning_move_action(
-							unit_id, approach, start_board, actor, path, move_timing,
+							unit_id, approach, start_board, actor, approach_path, move_timing,
 						),
 					)
-				new_actions.append(
-					TimelineAction.make_ability(
-						unit_id, ability, target.position, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
-					),
-				)
+				if (
+					approach == actor.position
+					or not AbilitySystem.movement_requires_run(start_board, actor, approach, approach_path)
+					or AbilitySystem.can_afford_run_for_commit(actor, ability)
+				):
+					new_actions.append(
+						TimelineAction.make_ability(
+							unit_id, ability, target.position, attack_target_id, GameEnums.MoveTiming.PRE_ACTION,
+						),
+					)
 			else:
 				new_actions.append(
 					TimelineAction.make_ability(
@@ -927,9 +940,19 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 						TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing),
 					)
 			else:
-				new_actions.append(TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing))
+				var move_actor: UnitState = plan_actor if plan_actor != null else actor
+				new_actions.append(
+					make_planning_move_action(
+						unit_id, coord, plan_board, move_actor, waypoints, move_timing,
+					),
+				)
 		else:
-			new_actions.append(TimelineAction.make_move(unit_id, coord, -1, waypoints, move_timing))
+			var move_actor: UnitState = plan_actor if plan_actor != null else actor
+			new_actions.append(
+				make_planning_move_action(
+					unit_id, coord, plan_board, move_actor, waypoints, move_timing,
+				),
+			)
 	return _preview_from_plan(_build_preview_plan(unit_id, new_actions))
 
 

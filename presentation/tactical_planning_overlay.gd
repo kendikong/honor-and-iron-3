@@ -1173,8 +1173,11 @@ func _unit_can_still_move(unit_id: int) -> bool:
 	if projected == null:
 		return false
 	var unit: UnitState = projected.get_unit_by_id(unit_id)
-	if unit == null or unit.is_enemy() or unit.movement.points_left <= 0:
+	if unit == null or unit.is_enemy():
 		return false
+	if unit.movement.points_left <= 0:
+		if _planning_input == null or not AbilitySystem.can_afford_run(unit):
+			return false
 	return true
 
 
