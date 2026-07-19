@@ -49,6 +49,9 @@ var _drag_preview_id: int = -1
 var _drag_preview_active: bool = false
 var _drag_preview_failed: bool = false
 var _drag_attack_target_id: int = -1
+var _drag_preview_last_anim: int = -1
+var _drag_preview_last_facing: int = -1
+var _drag_preview_last_failed: bool = false
 var _planning_input: CombatPlanningInput
 
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
@@ -1335,6 +1338,9 @@ func _facing_toward_queued_action(unit_id: int) -> int:
 func begin_drag_preview(unit_id: int) -> void:
 	_drag_preview_id = unit_id
 	_drag_preview_active = true
+	_drag_preview_last_anim = -1
+	_drag_preview_last_facing = -1
+	_drag_preview_last_failed = false
 	_kill_move_tween(unit_id)
 
 
@@ -1345,6 +1351,9 @@ func end_drag_preview(snap_back: bool = false) -> void:
 	_drag_preview_active = false
 	_drag_preview_id = -1
 	_drag_preview_failed = false
+	_drag_preview_last_anim = -1
+	_drag_preview_last_facing = -1
+	_drag_preview_last_failed = false
 	clear_drag_attack_target()
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	var actor: CharacterActor = _actors.get(unit_id)
@@ -1392,6 +1401,16 @@ func update_drag_preview(
 	else:
 		var tile_px: float = float(TacticalConstants.TILE_PX)
 		actor.position = map_local + Vector2(0.0, tile_px * 0.5)
+	if (
+		anim_mode == _drag_preview_last_anim
+		and facing == _drag_preview_last_facing
+		and failed == _drag_preview_last_failed
+	):
+		_update_depth(_drag_preview_id)
+		return
+	_drag_preview_last_anim = anim_mode
+	_drag_preview_last_facing = facing
+	_drag_preview_last_failed = failed
 	actor.modulate = Color.WHITE
 	if failed:
 		actor.modulate = Color(1.0, 0.45, 0.45, 1.0)

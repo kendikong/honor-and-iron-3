@@ -43,6 +43,9 @@ var _selection_refresh_pending: bool = false
 var _plan_refresh_followup_pending: bool = false
 var _hover_preview_refresh_pending: bool = false
 var _drag_move_commit_instant: bool = false
+var _drag_preview_cache_key: int = 0
+var _drag_preview_cache: Dictionary = {}
+var _drag_last_cursor_cell: Vector2i = Vector2i(-999999, -999999)
 
 
 func setup(
@@ -317,16 +320,14 @@ func update_drag(local: Vector2) -> void:
 		_intent_state.set_hover_coord(cell)
 	if board == null or not board.is_in_bounds(cell):
 		_update_drag_sprite(local, cell, {})
-		if _planning != null:
-			_planning.queue_redraw()
+		if cell != _drag_last_cursor_cell:
+			_drag_last_cursor_cell = cell
+			refresh_mouse_cursor(cell)
 		return
 	var occ := board.get_unit_at(cell)
 	var drag_unit := board.get_unit_by_id(_drag_unit_id)
-	var legal_move_tiles: Array[Vector2i] = (
-		_planning.get_hover_move_tiles() if _planning != null else []
-	)
 	if drag_unit != null and (occ == null or occ.id == _drag_unit_id):
-		if cell == drag_unit.position or legal_move_tiles.has(cell):
+		if cell == drag_unit.position or (_planning != null and _planning.is_hover_move_tile(cell)):
 			_drag_last_free = cell
 	elif (
 		drag_unit != null
@@ -335,27 +336,28 @@ func update_drag(local: Vector2) -> void:
 		and occ.is_enemy()
 		and MovementSystem.has_trample(drag_unit)
 		and force_basic_movement
-		and legal_move_tiles.has(occ.position)
+		and _planning != null
+		and _planning.is_hover_move_tile(occ.position)
 	):
 		_drag_last_free = occ.position
 	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
-	var preview: Dictionary = _director.preview_drag(
-		_drag_unit_id,
-		_drag_last_free,
-		drag_target_id,
-		_route_waypoints(),
-	)
-	_apply_live_preview(preview)
-	if _planning != null:
-		_planning.set_threat_origin(_drag_last_free)
-		_planning._recompute_hover_ranges_from_inputs()
-	_update_drag_sprite(local, cell, preview)
-	_sync_intent_live_board()
-	if _intent_state != null:
-		_intent_state.recompute()
-	refresh_mouse_cursor(cell)
-	if _planning != null:
-		_planning.queue_redraw()
+	var waypoints: Array[Vector2i] = _route_waypoints()
+	var cache_key: int = _drag_preview_cache_key_for(cell, drag_target_id, waypoints)
+	if cache_key != _drag_preview_cache_key:
+		_drag_preview_cache_key = cache_key
+		_drag_preview_cache = _director.preview_drag(
+			_drag_unit_id,
+			_drag_last_free,
+			drag_target_id,
+			waypoints,
+		)
+		_apply_live_preview(_drag_preview_cache)
+		if _planning != null:
+			_planning.queue_redraw()
+	_update_drag_sprite(local, cell, _drag_preview_cache)
+	if cell != _drag_last_cursor_cell:
+		_drag_last_cursor_cell = cell
+		refresh_mouse_cursor(cell)
 
 
 func get_drag_unit_id() -> int:
@@ -459,6 +461,7 @@ func _cancel_drag_armed() -> void:
 
 func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
 	_invalidate_planning_hover_cache()
+	_clear_drag_preview_cache()
 	_stash_committed_preview()
 	_clear_hover_preview()
 	_sync_intent_skill_mode()
@@ -475,6 +478,7 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 
 func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> void:
 	_invalidate_planning_hover_cache()
+	_clear_drag_preview_cache()
 	_drag_route.clear()
 	drag_preview_failed = false
 	preview_state.clear_interaction()
@@ -1239,6 +1243,30 @@ func _drag_had_movement() -> bool:
 	if _drag_route.is_empty():
 		return false
 	return _drag_last_free != _drag_route[0]
+
+
+func _clear_drag_preview_cache() -> void:
+	_drag_preview_cache_key = 0
+	_drag_preview_cache = {}
+	_drag_last_cursor_cell = Vector2i(-999999, -999999)
+
+
+func _drag_preview_cache_key_for(
+	cell: Vector2i,
+	attack_target_id: int,
+	waypoints: Array[Vector2i],
+) -> int:
+	var key: int = cell.x
+	key = key * 1000 + cell.y
+	key = key * 1000 + _drag_last_free.x
+	key = key * 1000 + _drag_last_free.y
+	key = key * 10000 + (attack_target_id + 1)
+	key = key * 10 + (1 if force_basic_movement else 0)
+	key = key * 100 + _director.selected_ability_index if _director != null else key
+	for wp: Vector2i in waypoints:
+		key = key * 1000 + wp.x
+		key = key * 1000 + wp.y
+	return key
 
 
 func _try_plan_wait(unit_id: int) -> bool:

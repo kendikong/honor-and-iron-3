@@ -36,6 +36,8 @@ func set_preview_board(board: BoardState) -> void:
 
 
 func set_live_preview_board(board: BoardState) -> void:
+	if _live_preview_board == board:
+		return
 	_live_preview_board = board
 	recompute()
 
