@@ -159,6 +159,65 @@ static func dash_steps(ability: AbilityData) -> int:
 	return effect_amount(ability, GameEnums.EffectType.DASH)
 
 
+## Single planning-preview entry point: threat tiles from `origin` (cursor-shifted during pre-move).
+## Presentation calls this instead of per-keyword branches in the overlay.
+static func planning_threat_tiles(
+	board: BoardState,
+	unit: UnitState,
+	ability: AbilityData,
+	origin: Vector2i,
+	alternate_origins: Array[Vector2i] = [],
+) -> Array[Vector2i]:
+	if board == null or unit == null or ability == null:
+		return []
+	if ability_has_dash(ability):
+		return dash_line_threat_tiles(board, origin, dash_steps(ability))
+	var eff_range: int = unit.get_ability_range(ability)
+	if eff_range <= 0:
+		if ability.target_shape == GameEnums.TargetShape.SINGLE:
+			return [origin]
+		var shape: GameEnums.TargetShape = ability.target_shape
+		var shape_size: int = ability.target_shape_size
+		if unit.is_ability_upgraded(ability.id):
+			if ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE:
+				shape = ability.upgraded_target_shape
+			if ability.upgraded_target_shape_size >= 0:
+				shape_size = ability.upgraded_target_shape_size
+		return GridSystem.get_affected_tiles(board, origin, origin, shape, shape_size)
+	var sources: Array[Vector2i] = alternate_origins if not alternate_origins.is_empty() else [origin]
+	return manhattan_threat_tiles(board, sources, eff_range)
+
+
+static func dash_line_threat_tiles(board: BoardState, origin: Vector2i, steps: int) -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	if board == null or steps <= 0:
+		return tiles
+	for dir: Vector2i in GridSystem.DIRECTIONS:
+		for i: int in range(1, steps + 1):
+			var coord: Vector2i = origin + dir * i
+			if board.is_in_bounds(coord):
+				tiles.append(coord)
+	return tiles
+
+
+static func manhattan_threat_tiles(
+	board: BoardState,
+	origins: Array[Vector2i],
+	range_tiles: int,
+) -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	if board == null or range_tiles <= 0 or origins.is_empty():
+		return tiles
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			for src: Vector2i in origins:
+				if GridSystem.manhattan(coord, src) <= range_tiles:
+					tiles.append(coord)
+					break
+	return tiles
+
+
 static func pass_through_modifiers(ability: AbilityData, actor: UnitState = null) -> Dictionary:
 	var effects: Array = ability.effects if ability != null else []
 	if ability != null and actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:

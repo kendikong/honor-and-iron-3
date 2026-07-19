@@ -58,7 +58,6 @@ var _fixed_range_origin: Vector2i = Vector2i(-999, -999)
 var _threat_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_threat_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_proj_key: int = -1
-var _cached_dash_targeting: bool = false
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -162,7 +161,18 @@ func _invalidate_hover_cache() -> void:
 	_cached_hover_threat_origin = Vector2i(-999, -999)
 	_cached_hover_ability = -1
 	_cached_hover_proj_key = -1
-	_cached_dash_targeting = false
+
+
+func _planning_threat_tiles_for_unit(
+	unit: UnitState,
+	origin: Vector2i,
+	selected_ability: int,
+) -> Array[Vector2i]:
+	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
+	var actor: UnitState = _proj_unit(unit.id)
+	if actor == null:
+		actor = unit
+	return AbilitySystem.planning_threat_tiles(_board, actor, ability, origin, [])
 
 
 func _recompute_hover_ranges_from_inputs() -> void:
@@ -497,11 +507,6 @@ func recompute_hover_ranges(
 		threat_origin = _threat_range_origin
 	var cache_ability: int = selected_ability if unit.id == _director.selected_unit_id else -1
 	var cache_force: bool = force_basic if unit.id == _director.selected_unit_id else false
-	var dash_targeting: bool = (
-		_planning_input.dash_targeting_active()
-		if _planning_input != null and unit.id == _director.selected_unit_id
-		else false
-	)
 	var proj_key: int = _hover_proj_cache_key(unit) if _is_selected_player_unit(unit) else 0
 	if (
 		_cached_hover_unit_id == unit.id
@@ -510,7 +515,6 @@ func recompute_hover_ranges(
 		and _cached_hover_ability == cache_ability
 		and _cached_hover_force == cache_force
 		and _cached_hover_proj_key == proj_key
-		and _cached_dash_targeting == dash_targeting
 	):
 		return
 	_cached_hover_unit_id = unit.id
@@ -519,7 +523,6 @@ func recompute_hover_ranges(
 	_cached_hover_ability = cache_ability
 	_cached_hover_force = cache_force
 	_cached_hover_proj_key = proj_key
-	_cached_dash_targeting = dash_targeting
 	_hover_move_tiles.clear()
 	_hover_threat_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):
@@ -560,34 +563,23 @@ func recompute_hover_ranges(
 	if not _can_show_threat_tiles(unit, selected_ability, cache_force):
 		queue_redraw()
 		return
+	var ability_index: int = selected_ability if is_selected_player else -1
 	if cache_force and is_selected_player:
-		_populate_attack_threat_tiles(unit, threat_origin, selected_ability)
-		queue_redraw()
-		return
-	if is_selected_player and not cache_force and selected_ability >= 0:
-		var ability: AbilityData = _selected_ability_data(unit, selected_ability)
-		if ability != null and AbilitySystem.is_run_ability(ability):
-			var budget_unit: UnitState = p_unit if p_unit != null else unit
-			if budget_unit.ability.points_left >= ability.action_point_cost:
-				queue_redraw()
-				return
-		if ability != null and AbilitySystem.ability_has_dash(ability):
-			if dash_targeting:
-				_hover_threat_tiles = _dash_threat_tiles(
-					threat_origin, AbilitySystem.dash_steps(ability)
-				)
+		ability_index = selected_ability
+	if ability_index >= 0 and is_selected_player:
+		var ability: AbilityData = _selected_ability_data(unit, ability_index)
+		var budget_unit: UnitState = p_unit if p_unit != null else unit
+		if (
+			ability != null
+			and AbilitySystem.is_run_ability(ability)
+			and budget_unit != null
+			and budget_unit.ability.points_left >= ability.action_point_cost
+		):
 			queue_redraw()
 			return
-		var self_aoe: Array[Vector2i] = _self_aoe_threat_tiles(unit, ability, threat_origin)
-		if not self_aoe.is_empty():
-			_hover_threat_tiles = self_aoe
-			queue_redraw()
-			return
-	_populate_attack_threat_tiles(
-		unit,
-		threat_origin,
-		selected_ability if is_selected_player else -1,
-	)
+		_hover_threat_tiles = _planning_threat_tiles_for_unit(unit, threat_origin, ability_index)
+	else:
+		_populate_attack_threat_tiles(unit, threat_origin, ability_index)
 	queue_redraw()
 
 
@@ -1543,13 +1535,7 @@ func _dash_amount(ability: AbilityData) -> int:
 
 
 func _dash_threat_tiles(origin: Vector2i, steps: int) -> Array[Vector2i]:
-	var tiles: Array[Vector2i] = []
-	for dir: Vector2i in GridSystem.DIRECTIONS:
-		for i: int in range(1, steps + 1):
-			var coord: Vector2i = origin + dir * i
-			if _board.is_in_bounds(coord):
-				tiles.append(coord)
-	return tiles
+	return AbilitySystem.dash_line_threat_tiles(_board, origin, steps)
 
 
 func _movement_blocked_by_dash(unit: UnitState, selected_ability: int) -> bool:
@@ -1572,24 +1558,6 @@ func _move_budget_for_hover(unit: UnitState, selected_ability: int) -> int:
 	):
 		return AbilitySystem.preview_move_budget_with_run(budget_unit)
 	return budget_unit.movement.points_left
-
-
-func _self_aoe_threat_tiles(unit: UnitState, ability: AbilityData, origin: Vector2i) -> Array[Vector2i]:
-	if ability == null:
-		return []
-	var eff_range: int = unit.get_ability_range(ability) if unit != null else ability.range_tiles
-	if eff_range != 0:
-		return []
-	if ability.target_shape == GameEnums.TargetShape.SINGLE:
-		return [origin]
-	var shape: GameEnums.TargetShape = ability.target_shape
-	var shape_size: int = ability.target_shape_size
-	if unit.is_ability_upgraded(ability.id):
-		if ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE:
-			shape = ability.upgraded_target_shape
-		if ability.upgraded_target_shape_size >= 0:
-			shape_size = ability.upgraded_target_shape_size
-	return GridSystem.get_affected_tiles(_board, origin, origin, shape, shape_size)
 
 
 func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:
@@ -1627,12 +1595,6 @@ func _populate_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_a
 		threat_sources = _hover_move_tiles.duplicate()
 		if threat_sources.is_empty():
 			threat_sources = [origin]
-	if unit.id == _director.selected_unit_id:
-		var sel_ability: AbilityData = _selected_ability_data(unit, selected_ability)
-		if sel_ability != null and AbilitySystem.ability_has_dash(sel_ability):
-			if _planning_input != null and _planning_input.dash_targeting_active():
-				_hover_threat_tiles = _dash_threat_tiles(origin, AbilitySystem.dash_steps(sel_ability))
-			return
 	for y: int in range(_board.grid_size.y):
 		for x: int in range(_board.grid_size.x):
 			var coord := Vector2i(x, y)
