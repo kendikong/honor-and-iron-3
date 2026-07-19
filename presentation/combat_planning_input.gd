@@ -90,8 +90,11 @@ func on_left_press(local: Vector2) -> void:
 			var self_ability := _selected_ability_data(actor)
 			if actor != null and AbilitySystem.can_target_self(actor, self_ability):
 				if not AbilitySystem.is_run_ability(self_ability):
-					_director.rpc_plan_attack(_director.selected_unit_id, _director.selected_ability_index, unit.id)
-					_play_sfx("ability")
+					if not selected_phase_action_exhausted(_director.selected_unit_id):
+						_director.rpc_plan_attack(_director.selected_unit_id, _director.selected_ability_index, unit.id)
+						_play_sfx("ability")
+					else:
+						_play_sfx("invalid")
 				cancel_aim()
 				return
 			_play_sfx("invalid")
@@ -105,6 +108,9 @@ func on_left_press(local: Vector2) -> void:
 		return
 	if aiming:
 		var actor := _proj_unit(_director.selected_unit_id)
+		if selected_phase_action_exhausted(_director.selected_unit_id):
+			cancel_aim()
+			return
 		if actor != null and _try_plan_basic_move(_director.selected_unit_id, cell, local):
 			cancel_aim()
 			return
@@ -136,12 +142,17 @@ func on_left_press(local: Vector2) -> void:
 	if unit != null and unit.is_enemy():
 		var sel := board.get_unit_by_id(_director.selected_unit_id) if _director.selected_unit_id >= 0 else null
 		if sel != null and not sel.is_enemy():
+			if selected_phase_action_exhausted(sel.id):
+				_play_sfx("invalid")
+				return
 			_plan_approach_or_trample_on_enemy(_director.selected_unit_id, unit, local, Vector2i(-1, -1))
 		else:
 			_director.select_unit(unit.id)
 	else:
 		var sel_unit := board.get_unit_by_id(_director.selected_unit_id) if _director.selected_unit_id >= 0 else null
 		if sel_unit != null and not sel_unit.is_enemy():
+			if selected_phase_action_exhausted(sel_unit.id):
+				return
 			if _try_commit_move_with_self_skill(_director.selected_unit_id, cell, local, []):
 				pass
 			elif not _try_plan_skill_at_coord(sel_unit, cell, local) and _basic_move_allowed():
@@ -187,6 +198,12 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 		return false
 	var dropped_on := board.get_unit_at(cell)
 	if dropped_on != null and dropped_on.id != actor.id:
+		if _is_selectable_player_unit(dropped_on):
+			_director.select_unit(dropped_on.id)
+			return false
+		if selected_phase_action_exhausted(released_unit_id):
+			_play_sfx("invalid")
+			return false
 		return _plan_approach_or_trample_on_enemy(
 			released_unit_id, dropped_on, local, cell, [], legal_move_tiles,
 		)
@@ -658,6 +675,14 @@ func selected_phase_action_exhausted(unit_id: int = -1) -> bool:
 	return not can_act and not can_move
 
 
+func _is_selectable_player_unit(unit: UnitState) -> bool:
+	if unit == null or not unit.is_alive() or unit.is_enemy():
+		return false
+	if NetworkManager != null and NetworkManager.is_multiplayer:
+		return unit.controlling_player_id == NetworkManager.local_player_id
+	return true
+
+
 func skill_interaction_active() -> bool:
 	return _skill_interaction_active()
 
@@ -906,6 +931,9 @@ func _plan_approach_or_trample_on_enemy(
 	waypoints: Array[Vector2i] = [],
 	legal_move_tiles: Array[Vector2i] = [],
 ) -> bool:
+	if selected_phase_action_exhausted(unit_id):
+		_play_sfx("invalid")
+		return false
 	var actor := _proj_unit(unit_id)
 	if actor == null:
 		actor = _director.board.get_unit_by_id(unit_id) if _director.board != null else null
@@ -1032,6 +1060,8 @@ func _try_commit_move_with_self_skill(
 
 
 func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) -> bool:
+	if selected_phase_action_exhausted(unit.id):
+		return false
 	if force_basic_movement or _director.selected_ability_index < 0:
 		return false
 	var ability := _selected_ability_data(unit)
@@ -1175,6 +1205,8 @@ func _try_plan_wait(unit_id: int) -> bool:
 
 func _try_plan_self_target_attack(unit_id: int) -> bool:
 	if _director == null or not _is_planning():
+		return false
+	if selected_phase_action_exhausted(unit_id):
 		return false
 	if _director.selected_ability_index < 0:
 		return false
