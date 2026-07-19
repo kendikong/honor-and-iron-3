@@ -260,7 +260,7 @@ func _add_color_key(parent: VBoxContainer) -> void:
 	for spec: Array in [
 		[ClassLibraryTheme.ACCENT_INGAME, "Gold — in-game"],
 		[ClassLibraryTheme.ACCENT_DATA, "Blue — data"],
-		[ClassLibraryTheme.ACCENT_IMPL, "Teal — system"],
+		[ClassLibraryTheme.ACCENT_IMPL, "Teal — implementation"],
 	]:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
@@ -860,13 +860,18 @@ func _select_glossary() -> void:
 	_selected_unit = null
 	_view_mode = ViewMode.GLOSSARY
 	_clear_detail()
-	_add_page_header("Glossary", "Player-facing tooltips vs system definitions", ClassLibraryTheme.ACCENT_INGAME)
+	_add_page_header("Glossary", "Player-facing tooltips vs how the sim implements each keyword", ClassLibraryTheme.ACCENT_INGAME)
 	_add_glossary_table_header()
 	var manual: Dictionary = ClassLibrarySchema.manual_keywords()
 	var keys: Array = manual.keys()
 	keys.sort()
 	for kw: String in keys:
-		_add_glossary_row(kw, _glossary_tooltip(kw, manual[kw]), _glossary_system(kw, manual[kw]), false)
+		_add_glossary_row(
+			kw,
+			_glossary_tooltip(kw, manual[kw]),
+			_glossary_system(kw),
+			false,
+		)
 	_add_subsection_label(_detail_vbox, "Status Effects", ClassLibraryTheme.ACCENT_IMPL)
 	var status_defs: Dictionary = {}
 	for def_entry: Dictionary in ClassLibrarySchema.enum_definitions():
@@ -889,7 +894,7 @@ func _add_glossary_table_header() -> void:
 	for spec: Array in [
 		["Keyword", 140, ClassLibraryTheme.TEXT_MUTED],
 		["Game Tooltip", 1.0, ClassLibraryTheme.ACCENT_INGAME],
-		["System Definition", 1.0, ClassLibraryTheme.ACCENT_IMPL],
+		["Implementation", 1.0, ClassLibraryTheme.ACCENT_IMPL],
 	]:
 		var hdr := Label.new()
 		hdr.text = spec[0]
@@ -909,10 +914,10 @@ func _glossary_tooltip(kw: String, default_val: String) -> String:
 	return default_val
 
 
-func _glossary_system(kw: String, default_val: String) -> String:
+func _glossary_system(kw: String) -> String:
 	if _glossary_overrides.has(kw) and _glossary_overrides[kw].has("system"):
 		return _glossary_overrides[kw]["system"]
-	return default_val
+	return ClassLibrarySchema.manual_keyword_system(kw)
 
 
 func _add_glossary_row(keyword: String, tooltip_default: String, system_default: String, is_status: bool) -> void:
@@ -998,7 +1003,7 @@ func _add_definitions_table_header() -> void:
 	for spec: Array in [
 		["Name", 0.28, ClassLibraryTheme.ACCENT_DATA],
 		["Game Tooltip", 0.36, ClassLibraryTheme.ACCENT_INGAME],
-		["System", 0.36, ClassLibraryTheme.TEXT_SECONDARY],
+		["Implementation", 0.36, ClassLibraryTheme.TEXT_SECONDARY],
 	]:
 		var h := Label.new()
 		h.text = spec[0]

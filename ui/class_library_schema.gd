@@ -71,6 +71,99 @@ static func manual_keywords() -> Dictionary:
 	}
 
 
+static func manual_keyword_system(kw: String) -> String:
+	## Brief sim/code logic for the Class Library glossary "Implementation" column.
+	match kw:
+		"ATK":
+			return (
+				"EffectType.DAMAGE → CombatSystem.calculate_scaled_damage(base, scaling_stat) "
+				+ "then deal_damage with DEF/MAG mitigation unless PIERCE."
+			)
+		"MAG ATK":
+			return "EffectType.DAMAGE with scaling_stat MAGICAL → MAG scaling path in CombatSystem."
+		"AOE ATK":
+			return "EffectType.RANGED_EXPLODE or shape-gathered DAMAGE hits each unit in target_shape tiles."
+		"HEAL":
+			return "EffectType.HEAL → CombatSystem.heal using scaling_stat and EffectData.amount as base power."
+		"MAG HEAL":
+			return "EffectType.HEAL with MAGICAL scaling_stat; POISON halves final heal amount."
+		"SHIELD":
+			return "EffectType.ARMOR_UP → CombatSystem.add_armor; blocked when target has VULNERABLE."
+		"CLEANSE":
+			return "EffectType.CLEANSE strips debuffs (GameEnums.is_debuff) from target.active_statuses."
+		"PURGE":
+			return "EffectType.PURGE removes buffs and sets target.armor = 0."
+		"PIERCE":
+			return "StatusType.PIERCE on attacker: deal_damage zeroes DEF/MAG mitigation and fortitude."
+		"PUSH":
+			return "EffectType.PUSH → pending_pushes → PhysicsSystem.push; wall/unit block triggers collision damage."
+		"PULL":
+			return "EffectType.PULL → PhysicsSystem.push toward caster; same collision rules as PUSH."
+		"COLLISION":
+			return (
+				"PhysicsSystem._emit_collision → CombatSystem.deal_collision_damage: "
+				+ "base = 1 + floor(excess_push/3) + bonus; scaled by 0.75×(base+WPN)×(1+STR/5)."
+			)
+		"COUNTER ATTACK":
+			return "CombatSystem.counter_attack after qualifying hits; uses calculate_scaled_damage with listed base."
+		"DASH":
+			return (
+				"EffectType.DASH queues PhysicsSystem.dash along straight_line_dir; "
+				+ "steps = straight_line_distance to target_coord."
+			)
+		"DESTROY OBSTACLE":
+			return "EffectType.DESTROY_OBSTACLE: deal_damage equal to construct HP if target.definition.is_construct."
+		"EXPLODE":
+			return "EffectType.EXPLODE damages all units on 4 cardinal neighbors plus caster tile."
+		"SPAWN":
+			return "EffectType.SPAWN creates unit from EffectData.spawn_unit_id on target tile."
+		"SWAP":
+			return "EffectType.SWAP → PhysicsSystem.swap: exchanges positions, no collision."
+		"TELEPORT":
+			return "EffectType.TELEPORT_CASTER moves actor if tile unoccupied and not a wall."
+		"TRAMPLE":
+			return (
+				"EffectType.TRAMPLE on DASH abilities: PhysicsSystem.dash deals flat ATK X per enemy passed, "
+				+ "temporarily clears their tile, restores after; AbilitySystem.can_use requires open end tile. "
+				+ "(Status TRAMPLE / trample_move passive is MovementSystem.has_trample — see status glossary.)"
+			)
+		"BULLDOZE":
+			return (
+				"EffectType.BULLDOZE on DASH: PhysicsSystem.apply_trample_contact with collision_base_bonus X "
+				+ "and PUSH X sideways while passing, axial on final step; caster collision-immune."
+			)
+		"AP":
+			return "UnitState.ability.points_left; AbilitySystem._has_resource_for_ability spends on CLASS_SKILL / Run."
+		"MOV", "MOVE":
+			return "UnitState.movement.points_left; MovementSystem.execute_move deducts per tile; MOVEMENT_SKILL uses MP cost."
+		"RANGE":
+			return "AbilityData.range_tiles vs GridSystem.manhattan in AbilitySystem.can_use; LOS checks in planning input."
+		"RANGE 0":
+			return "TargetingFlags.SELF or target_coord == actor.position; no distance required."
+		"AOE":
+			return "TargetShape.AOE_CROSS + target_shape_size; AbilitySystem gathers cross tiles from center."
+		"AOE SQUARE":
+			return "TargetShape.AOE_SQUARE; square footprint from target_coord."
+		"ARC":
+			return "TargetShape.ARC; 3-tile perpendicular sweep from facing."
+		"CONE":
+			return "TargetShape.CONE; expanding arc tiles from caster toward target."
+		"SKEWER":
+			return "TargetShape.LINE; straight line of target_shape_size tiles."
+		"GLOBAL":
+			return "No range cap in can_use when ability marks global targeting (bypasses manhattan check)."
+		"DEF":
+			return "UnitState.current_defense from base + weapon + stat_def; reduces physical damage in deal_damage."
+		"STR":
+			return "UnitState.stat_str; scales physical calculate_scaled_damage and collision force."
+		"MAG":
+			return "UnitState.stat_mag; scales magical damage and magical mitigation."
+		"WPN":
+			return "equipped_weapon.might added inside calculate_scaled_damage and collision_base formulas."
+		_:
+			return "No implementation note mapped for this keyword."
+
+
 static func status_player_tooltip(st: GameEnums.StatusType) -> String:
 	## Master Bible status/mechanic definitions for player-facing glossary & hints.
 	match st:
@@ -654,19 +747,39 @@ static func _effect_type_tooltip(k: String) -> String:
 static func _effect_type_system(k: String) -> String:
 	match k:
 		"DAMAGE":
-			return "CombatSystem damage pipeline; respects DEF/MAG/armor."
+			return "AbilitySystem → CombatSystem.calculate_scaled_damage + deal_damage (DEF/MAG, armor, fortitude)."
 		"PUSH", "PULL":
-			return "DisplacementSystem with collision damage."
+			return "AbilitySystem queues pending_pushes → PhysicsSystem.push/pull with collision on blocked tiles."
 		"SWAP":
-			return "Swaps actor and target tile occupancy."
+			return "AbilitySystem → PhysicsSystem.swap: swap grid occupancy, terrain landing on both."
 		"DASH":
-			return "Moves actor along line; may apply TRAMPLE or BULLDOZE contact effects."
-		"ADD_STATUS", "ADD_STATUS_SELF":
-			return "StatusSystem.add_status on target or self."
+			return "AbilitySystem queues dash pending_pushes → PhysicsSystem.dash along straight line."
+		"TRAMPLE":
+			return "Paired with DASH: AbilitySystem reads amount → PhysicsSystem.dash trample_atk path; open end tile required."
+		"BULLDOZE":
+			return "Paired with DASH: AbilitySystem reads amount → dash bulldoze path; collision base + push; caster immune."
+		"HEAL":
+			return "AbilitySystem → CombatSystem.heal with ability scaling_stat."
 		"ARMOR_UP":
-			return "Adds temporary armor (shield)."
+			return "AbilitySystem → CombatSystem.add_armor (temporary HP layer)."
+		"ADD_STATUS", "ADD_STATUS_SELF":
+			return "AbilitySystem appends StatusData to target/actor; UnitState._recalculate_stats on apply."
+		"EXPLODE", "RANGED_EXPLODE":
+			return "AbilitySystem gathers AoE tiles then DAMAGE each occupant."
+		"TELEPORT_CASTER":
+			return "AbilitySystem clears/set occupant if destination passable."
+		"CLEANSE", "PURGE":
+			return "AbilitySystem filters active_statuses by is_debuff / is_buff."
+		"DESTROY_OBSTACLE":
+			return "AbilitySystem deal_damage full HP when target is_construct."
+		"SPAWN":
+			return "AbilitySystem spawns unit from EffectData.spawn_unit_id."
+		"DAMAGE_SELF":
+			return "AbilitySystem → deal_damage on actor with pierce=true damage type."
+		"REFUND_AP_ON_CC":
+			return "AbilitySystem refunds 1 AP if target has ROOT or STUN at resolve time."
 		_:
-			return "Handled in AbilitySystem._apply_effect."
+			return "Resolved in AbilitySystem._apply_effect match branch."
 
 
 static func _status_system(st: GameEnums.StatusType) -> String:
