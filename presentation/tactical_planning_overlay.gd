@@ -27,9 +27,9 @@ const _ROUTE_OUTLINE_W: float = 5.0
 const _ROUTE_LINE_W: float = 3.75
 const _ROUTE_AA: bool = true
 const _ROUTE_CORE_W: float = 1.25
-const _ROUTE_HEAD_LEN: float = 6.5
-const _ROUTE_HEAD_HALF_W: float = 3.6
-const _ROUTE_HEAD_TIP_INSET: float = 4.0
+const _ROUTE_HEAD_LEN: float = 8.5
+const _ROUTE_HEAD_HALF_W: float = 4.7
+const _ROUTE_SHAFT_HEAD_OVERLAP: float = 0.55
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
 const _INTENT_ROUTE_ALPHA: float = 0.40
@@ -1134,8 +1134,12 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 	var flat_col := Color(color.r, color.g, color.b, 1.0)
 	var shaft: PackedVector2Array = smooth
 	if with_head:
-		var head_tip: Vector2 = _route_head_tip(dest_center, end_dir)
-		shaft = _clip_route_for_arrowhead(smooth, head_tip, end_dir, _ROUTE_HEAD_LEN * 0.55)
+		shaft = _clip_route_for_arrowhead(
+			smooth,
+			dest_center,
+			end_dir,
+			_ROUTE_HEAD_LEN * _ROUTE_SHAFT_HEAD_OVERLAP,
+		)
 	draw_polyline(shaft, flat_col, _ROUTE_LINE_W, _ROUTE_AA)
 	if with_head:
 		_draw_route_arrowhead(dest_center, end_dir, flat_col)
@@ -1224,28 +1228,22 @@ func _route_terminal_direction_tiles(route: Array) -> Vector2:
 	return delta.normalized()
 
 
-func _route_head_tip(dest_center: Vector2, travel_dir: Vector2) -> Vector2:
-	var dir: Vector2 = travel_dir
-	if dir.length_squared() < 0.0001:
-		dir = Vector2.RIGHT
-	else:
-		dir = dir.normalized()
-	return dest_center - dir * _ROUTE_HEAD_TIP_INSET
-
-
 func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color) -> void:
 	var travel_dir: Vector2 = dir
 	if travel_dir.length_squared() < 0.0001:
 		travel_dir = Vector2.RIGHT
 	else:
 		travel_dir = travel_dir.normalized()
-	var head_tip: Vector2 = _route_head_tip(tip, travel_dir)
 	var perp: Vector2 = Vector2(-travel_dir.y, travel_dir.x)
-	var base: Vector2 = head_tip - travel_dir * _ROUTE_HEAD_LEN
+	var base: Vector2 = tip - travel_dir * _ROUTE_HEAD_LEN
 	var wing_l: Vector2 = base + perp * _ROUTE_HEAD_HALF_W
 	var wing_r: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
-	var head := PackedVector2Array([head_tip, wing_l, wing_r])
-	draw_colored_polygon(head, fill)
+	var span: float = wing_l.distance_to(wing_r)
+	var steps: int = maxi(1, int(ceil(span / 2.0)))
+	for i: int in range(steps + 1):
+		var t: float = float(i) / float(steps)
+		var base_pt: Vector2 = wing_l.lerp(wing_r, t)
+		draw_line(base_pt, tip, fill, _ROUTE_LINE_W, _ROUTE_AA)
 
 
 func _route_end_direction(path: PackedVector2Array) -> Vector2:
