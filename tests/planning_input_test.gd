@@ -10,6 +10,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_offensive_dash_heuristic(failures)
 	_test_action_range_auto_run_ap_gate(failures)
 	_test_composite_cursor_gate(failures)
+	_test_cursor_matches_commit_slots(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
 
 
@@ -152,6 +153,60 @@ static func _test_composite_cursor_gate(failures: Array[String]) -> void:
 	icon = input._cursor_icon_from_commit_slots(slots, null)
 	if icon.find("/") < 0:
 		failures.append("PlanningInputTest: composite cursor should join move and action when enabled")
+
+
+static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	input.auto_use_skill_after_move = true
+	var dash := AbilityData.new()
+	dash.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	var dash_eff := EffectData.new()
+	dash_eff.type = GameEnums.EffectType.DASH
+	dash.effects = [dash_eff]
+	var unit := UnitState.new()
+	unit.id = 1
+	var run_only_slots: Dictionary = {
+		"pre": [
+			TimelineAction.make_run_move(
+				1, Vector2i(2, 4), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+			),
+		],
+		"action": [],
+		"post": [],
+		"invalid": false,
+	}
+	var icon: String = input._cursor_icon_from_commit_slots(run_only_slots, unit)
+	if icon != CombatPlanningInput.ICON_RUN:
+		failures.append(
+			"PlanningInputTest: run-only premove cursor must be run icon, got %s" % icon,
+		)
+	var paired_slots: Dictionary = {
+		"pre": [
+			TimelineAction.make_run_move(
+				1, Vector2i(2, 4), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+			),
+		],
+		"action": [TimelineAction.make_ability(1, dash, Vector2i(2, 4), 1)],
+		"post": [],
+		"invalid": false,
+	}
+	icon = input._cursor_icon_from_commit_slots(paired_slots, unit)
+	var expected_paired: String = (
+		"%s%s%s"
+		% [CombatPlanningInput.ICON_RUN, CombatPlanningInput.ICON_COMPOSITE_SEP, CombatPlanningInput.ICON_DASH]
+	)
+	if icon != expected_paired:
+		failures.append(
+			"PlanningInputTest: paired run+dash cursor should composite, got %s" % icon,
+		)
+	var move_glyph: String = input._step_cursor_glyph(
+		TimelineAction.make_run_move(
+			1, Vector2i(2, 4), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+		unit,
+	)
+	if move_glyph.find(CombatPlanningInput.ICON_DASH) >= 0:
+		failures.append("PlanningInputTest: move glyph must not infer dash from armed skill")
 
 
 static func _plain_board_with_unit(
