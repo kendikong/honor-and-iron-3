@@ -70,7 +70,9 @@ static func _has_resource_for_ability(actor: UnitState, ability: AbilityData) ->
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
 			return actor.movement.points_left >= ability.movement_point_cost
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
-			return can_afford_run(actor)
+			if actor.has_run_boost():
+				return false
+			return actor.ability.points_left >= ability.action_point_cost
 		GameEnums.AbilityKind.CLASS_SKILL:
 			return actor.ability.points_left >= ability.action_point_cost
 		GameEnums.AbilityKind.UNIVERSAL_WAIT:
@@ -134,7 +136,7 @@ static func can_afford_run(actor: UnitState) -> bool:
 	var run_ability: AbilityData = DataLibrary.get_universal_run()
 	if run_ability == null:
 		return false
-	return _has_resource_for_ability(actor, run_ability)
+	return actor.ability.points_left >= run_ability.action_point_cost
 
 
 ## Master Bible § Universal Action Economy: Pre-Move column (walk, Run, movement skills).
