@@ -496,7 +496,7 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 	if AbilitySystem.is_run_ability(ability):
 		return false
 	var premove_cell: Vector2i = _proj_origin(unit)
-	if _action_range_origin.x > -900 and is_hover_move_tile(_action_range_origin):
+	if _action_range_origin.x > -900:
 		premove_cell = _action_range_origin
 	var plan_board: BoardState = _director.projected_state if _director.projected_state != null else _board
 	var auto_run_active: bool = (

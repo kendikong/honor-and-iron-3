@@ -700,16 +700,15 @@ func on_hover_moved(cell: Vector2i) -> void:
 				_planning._recompute_hover_ranges_from_inputs()
 		refresh_mouse_cursor(cell)
 		return
+	if _director.selected_unit_id >= 0:
+		if planning_cell_changed:
+			_refresh_selected_interaction_preview()
+	elif planning_cell_changed:
+		_update_hover_attack_preview()
 	if _planning != null and planning_cell_changed:
 		_planning._recompute_hover_ranges_from_inputs()
 		_sync_threat_origin_from_cell(cell)
 		_planning._recompute_hover_ranges_from_inputs()
-	if _director.selected_unit_id >= 0:
-		if planning_cell_changed:
-			_refresh_selected_interaction_preview()
-	else:
-		if planning_cell_changed:
-			_update_hover_attack_preview()
 	refresh_mouse_cursor(cell)
 
 
@@ -740,7 +739,18 @@ func interaction_move_hover_active(unit_id: int, cell: Vector2i) -> bool:
 	var p_unit := _proj_unit(unit_id)
 	if p_unit == null:
 		return false
-	return _is_hover_move_cell(p_unit, cell)
+	if _is_hover_move_cell(p_unit, cell):
+		return true
+	var hover_unit: UnitState = _director.board.get_unit_at(cell)
+	if hover_unit != null and hover_unit.is_enemy():
+		var stand: Vector2i = _predicted_stand_tile_for_enemy_hover(cell, hover_unit)
+		if stand != _proj_origin(p_unit) and _director.board.is_in_bounds(stand):
+			return true
+		if is_live_preview_active():
+			var route: Array = preview_state.preview_paths.get(unit_id, [])
+			if route.size() >= 2:
+				return true
+	return false
 
 
 func selected_phase_action_exhausted(unit_id: int = -1) -> bool:
@@ -2266,13 +2276,43 @@ func _threat_follows_cursor() -> bool:
 	return true
 
 
+func _predicted_stand_tile_for_enemy_hover(cell: Vector2i, enemy: UnitState) -> Vector2i:
+	if _director == null or enemy == null:
+		return Vector2i(-999, -999)
+	var unit_id: int = _director.selected_unit_id
+	if unit_id < 0:
+		return Vector2i(-999, -999)
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		return Vector2i(-999, -999)
+	var origin: Vector2i = _proj_origin(actor)
+	if is_live_preview_active() and preview_state.preview_board != null:
+		var pv: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
+		if pv != null:
+			return pv.position
+	var ability_index: int = _director.selected_ability_index
+	if ability_index >= 0:
+		if _in_ability_range(actor, enemy):
+			return origin
+		return _director.preview_approach_tile(unit_id, enemy.id, ability_index, cell)
+	if _in_attack_range_from(origin, enemy, actor):
+		return origin
+	if actor.active_abilities.is_empty():
+		return origin
+	return _director.preview_approach_tile(unit_id, enemy.id, 0, cell)
+
+
 func _sync_threat_origin_from_cell(cell: Vector2i) -> void:
 	if _planning == null or _director == null or _director.board == null or dragging:
 		return
 	if _director.board.is_in_bounds(cell):
 		var hover_unit: UnitState = _director.board.get_unit_at(cell)
 		if hover_unit != null and hover_unit.is_enemy():
-			_planning.clear_threat_origin()
+			var stand: Vector2i = _predicted_stand_tile_for_enemy_hover(cell, hover_unit)
+			if stand.x > -900:
+				_planning.set_threat_origin(stand)
+			else:
+				_planning.clear_threat_origin()
 			return
 	if not _threat_follows_cursor():
 		_planning.clear_threat_origin()
