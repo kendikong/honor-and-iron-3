@@ -1537,11 +1537,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 		if cell != p_unit.position and _can_move_to(p_unit, cell):
 			return ICON_MOVE
 		return ""
-	var hover_unit: UnitState = (
-		_aim_enemy_board().get_unit_at(cell)
-		if _skill_interaction_active()
-		else _unit_at_input_cell(cell)
-	)
+	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
 	if _skill_interaction_active():
 		if force_basic_movement and hover_unit == null and cell != p_unit.position and _can_move_to(p_unit, cell):
 			return ICON_MOVE
@@ -1565,6 +1561,10 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 				if AbilitySystem.is_wait_ability(aim_ability):
 					return ICON_WAIT
 				return _ability_action_icon(aim_ability)
+		if hover_unit != null and hover_unit.is_enemy():
+			var enemy_icon: String = _enemy_hover_icon(p_unit, cell, hover_unit)
+			if enemy_icon != "":
+				return enemy_icon
 		var move_attack: String = _move_attack_hover_icon(p_unit, cell)
 		if move_attack != "":
 			return move_attack
@@ -1578,20 +1578,8 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 
 
 func _cursor_selection_hints(p_unit: UnitState, cell: Vector2i, hover_unit: UnitState) -> String:
-	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
 	if hover_unit != null and hover_unit.is_enemy():
-		if _in_ability_range(p_unit, hover_unit):
-			return ICON_ATTACK
-		if _prefer_approach_over_trample_move(p_unit, hover_unit):
-			if _enemy_attackable_from_legal_tiles(p_unit, hover_unit, legal_moves):
-				return ICON_MOVE_ATTACK
-		elif _can_move_to(p_unit, cell):
-			return ICON_MOVE
-		elif _enemy_attackable_from_legal_tiles(p_unit, hover_unit, legal_moves):
-			return ICON_MOVE_ATTACK
-		if _invalid_hover_target(p_unit, cell, hover_unit):
-			return ICON_NULL
-		return ""
+		return _enemy_hover_icon(p_unit, cell, hover_unit)
 	if hover_unit != null and hover_unit.is_alive():
 		return ""
 	var move_icon: String = _move_hover_icon(p_unit, cell)
@@ -1614,6 +1602,30 @@ func _cursor_selection_hints(p_unit: UnitState, cell: Vector2i, hover_unit: Unit
 	if _invalid_hover_target(p_unit, cell, hover_unit):
 		return ICON_NULL
 	return ""
+
+
+func _resolve_hover_unit_at(cell: Vector2i) -> UnitState:
+	if _director == null or _director.board == null or not _director.board.is_in_bounds(cell):
+		return null
+	var live: UnitState = _director.board.get_unit_at(cell)
+	if live == null:
+		return null
+	var projected: UnitState = _proj().get_unit_by_id(live.id)
+	return projected if projected != null else live
+
+
+func _enemy_hover_icon(p_unit: UnitState, cell: Vector2i, hover_unit: UnitState) -> String:
+	if hover_unit == null or not hover_unit.is_enemy():
+		return ""
+	if selected_phase_action_exhausted(p_unit.id):
+		return ICON_NULL
+	if _in_ability_range(p_unit, hover_unit):
+		return ICON_ATTACK
+	if _prefer_approach_over_trample_move(p_unit, hover_unit):
+		return ICON_ATTACK
+	if _can_move_to(p_unit, cell):
+		return ICON_MOVE
+	return ICON_ATTACK
 
 
 func _self_tile_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
@@ -1713,12 +1725,10 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
 	var occ: UnitState = _director.board.get_unit_at(cell) if _director.board != null else null
 	if occ != null and occ.is_enemy() and occ.id != actor.id:
-		if _in_attack_range_from(_drag_last_free, occ, actor):
-			return ICON_ATTACK
-		if _enemy_attackable_from_legal_tiles(actor, occ, [cell]) \
-				or _enemy_attackable_from_legal_tiles(actor, occ, legal_moves):
-			return ICON_MOVE_ATTACK
-		return ""
+		var proj_occ: UnitState = _proj().get_unit_by_id(occ.id)
+		if proj_occ != null:
+			occ = proj_occ
+		return _enemy_hover_icon(actor, cell, occ)
 	var move_attack: String = _move_attack_hover_icon(actor, cell, actor.position)
 	if move_attack != "":
 		return move_attack
