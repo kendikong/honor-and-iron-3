@@ -44,6 +44,7 @@ var _hit_bursts: Array = []
 var _sfx: SfxPlayer
 var _spellcast_target_ids: Dictionary = {}
 var _last_attacker_pos: Dictionary = {}
+var _suppress_hurt_knockback: bool = false
 var _pending_death: Dictionary = {}
 var _drag_preview_id: int = -1
 var _drag_preview_active: bool = false
@@ -410,6 +411,7 @@ func apply_sim_event(event: SimEvent) -> void:
 				_snap_move(event)
 		GameEnums.SimEventType.UNIT_PUSHED, GameEnums.SimEventType.COLLISION:
 			_animate_push(event)
+			_suppress_hurt_knockback = false
 		GameEnums.SimEventType.ABILITY_USED:
 			if not DataLibrary.is_universal_wait(event.data.get("ability", &"")):
 				_record_attack_source(event)
@@ -437,7 +439,9 @@ func apply_sim_event(event: SimEvent) -> void:
 					and not actor.is_dying()
 					and not _spellcast_target_ids.has(target_id)
 				):
-					var kb: Vector2 = _knockback_dir_for(target_id)
+					var kb: Vector2 = Vector2.ZERO
+					if not _suppress_hurt_knockback:
+						kb = _knockback_dir_for(target_id)
 					actor.play_hurt(_facing_anim(target.facing), kb)
 		GameEnums.SimEventType.UNIT_DIED:
 			_begin_death(int(event.data.get("unit", -1)))
@@ -495,6 +499,7 @@ func _record_attack_source(event: SimEvent) -> void:
 	var attacker := _board.get_unit_by_id(actor_id) if _board != null else null
 	if target_id >= 0 and attacker != null:
 		_last_attacker_pos[target_id] = attacker.position
+	_suppress_hurt_knockback = _event_ability_has_pull(event)
 
 
 func _record_counter_source(event: SimEvent) -> void:
@@ -503,6 +508,28 @@ func _record_counter_source(event: SimEvent) -> void:
 	var attacker := _board.get_unit_by_id(actor_id) if _board != null else null
 	if target_id >= 0 and attacker != null:
 		_last_attacker_pos[target_id] = attacker.position
+	_suppress_hurt_knockback = false
+
+
+func _event_ability_has_pull(event: SimEvent) -> bool:
+	var ability_id: StringName = event.data.get("ability", &"")
+	if ability_id == &"" or _board == null:
+		return false
+	var actor_id: int = int(event.data.get("actor", -1))
+	var actor: UnitState = _board.get_unit_by_id(actor_id)
+	if actor == null:
+		return false
+	for ability: AbilityData in actor.active_abilities:
+		if ability.id != ability_id:
+			continue
+		var effects: Array[EffectData] = ability.effects
+		if actor.is_ability_upgraded(ability_id) and ability.upgraded_effects.size() > 0:
+			effects = ability.upgraded_effects
+		for effect: EffectData in effects:
+			if effect.type == GameEnums.EffectType.PULL:
+				return true
+		return false
+	return false
 
 
 func _knockback_dir_for(unit_id: int) -> Vector2:
@@ -547,7 +574,9 @@ func _begin_death(dead_id: int) -> void:
 	if dead != null:
 		dead.health.current_hp = 0
 	_pending_death[dead_id] = true
-	var kb: Vector2 = _knockback_dir_for(dead_id)
+	var kb: Vector2 = Vector2.ZERO
+	if not _suppress_hurt_knockback:
+		kb = _knockback_dir_for(dead_id)
 	_last_attacker_pos.erase(dead_id)
 	var actor: CharacterActor = _actors.get(dead_id)
 	if actor == null:
