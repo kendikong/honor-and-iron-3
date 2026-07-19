@@ -1510,9 +1510,7 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 	for e in attack_events:
 		if run_id != _run_id: return
 		EventBus.sim_event.emit(e)
-		# ABILITY_USED drives the visible attack animation; give it a full beat.
-		# Other events (UNIT_DAMAGED, status, etc.) get a shorter pause.
-		var delay := ATTACK_ANIM_TIME if e.type in [GameEnums.SimEventType.ABILITY_USED, GameEnums.SimEventType.COUNTER_ATTACK] else 0.15
+		var delay: float = _playback_delay_for_event(e)
 		await get_tree().create_timer(delay).timeout
 	if run_id != _run_id: return
 	
@@ -1532,6 +1530,27 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 	for e in meta_events:
 		if run_id != _run_id: return
 		EventBus.sim_event.emit(e)
+
+
+func _playback_delay_for_event(event: SimEvent) -> float:
+	if event.type == GameEnums.SimEventType.COUNTER_ATTACK:
+		return ATTACK_ANIM_TIME
+	if event.type != GameEnums.SimEventType.ABILITY_USED:
+		return 0.15
+	var actor_id: int = int(event.data.get("actor", -1))
+	var ability_id: StringName = event.data.get("ability", &"")
+	if board == null or actor_id < 0 or ability_id == &"":
+		return ATTACK_ANIM_TIME
+	var actor := board.get_unit_by_id(actor_id)
+	if actor == null:
+		return ATTACK_ANIM_TIME
+	for ability: AbilityData in actor.active_abilities:
+		if ability.id != ability_id:
+			continue
+		if AbilitySystem.ability_uses_spellcast_animation(ability):
+			return LpcConstants.SPELLCAST_ANIM_SEC + LpcConstants.SPELLCAST_HOLD_SEC
+		break
+	return ATTACK_ANIM_TIME
 
 
 func _play_move_batch(move_events: Array[SimEvent], run_id: int) -> void:

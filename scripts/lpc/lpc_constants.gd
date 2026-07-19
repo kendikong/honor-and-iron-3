@@ -64,7 +64,10 @@ static func spellcast_release_delay_sec(_cast_anim: StringName = &"") -> float:
 
 
 static func spellcast_flash_hold_sec() -> float:
-	return maxf(0.0, SPELLCAST_ANIM_SEC - SPELLCAST_RELEASE_SEC)
+	return maxf(
+		0.0,
+		SPELLCAST_ANIM_SEC + SPELLCAST_HOLD_SEC - SPELLCAST_RELEASE_SEC,
+	)
 
 static func get_base_action(anim_name: StringName) -> StringName:
 	var s = str(anim_name)

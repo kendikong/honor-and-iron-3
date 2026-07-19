@@ -42,6 +42,7 @@ var _active_push_tweens: int = 0
 var _damage_flash: Dictionary = {}
 var _hit_bursts: Array = []
 var _sfx: SfxPlayer
+var _spellcast_target_ids: Dictionary = {}
 var _last_attacker_pos: Dictionary = {}
 var _pending_death: Dictionary = {}
 var _drag_preview_id: int = -1
@@ -429,7 +430,12 @@ func apply_sim_event(event: SimEvent) -> void:
 				_damage_flash[target_id] = 0.85
 				_spawn_hit_burst(target_id)
 				var actor: CharacterActor = _actors.get(target_id)
-				if actor != null and target != null and not actor.is_dying():
+				if (
+					actor != null
+					and target != null
+					and not actor.is_dying()
+					and not _spellcast_target_ids.has(target_id)
+				):
 					var kb: Vector2 = _knockback_dir_for(target_id)
 					actor.play_hurt(_facing_anim(target.facing), kb)
 		GameEnums.SimEventType.UNIT_DIED:
@@ -1182,6 +1188,9 @@ func _play_attack_anim(event: SimEvent) -> void:
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
 	if ability_data != null and AbilitySystem.ability_uses_spellcast_animation(ability_data):
 		var target_ids: Array[int] = _ability_affected_unit_ids_from_event(event, ability_data)
+		_spellcast_target_ids.clear()
+		for target_id: int in target_ids:
+			_spellcast_target_ids[target_id] = true
 		actor.play_spellcast(_spell_anim(facing), func() -> void:
 			_on_spellcast_release(target_ids)
 		)
@@ -1226,10 +1235,17 @@ func _ability_affected_unit_ids_from_event(event: SimEvent, ability: AbilityData
 func _on_spellcast_release(target_ids: Array[int]) -> void:
 	if _sfx != null:
 		_sfx.play("spellcast")
+	var hold_sec: float = LpcConstants.spellcast_flash_hold_sec()
 	for target_id: int in target_ids:
 		var target_actor: CharacterActor = _actors.get(target_id)
 		if target_actor != null:
-			target_actor.flash_spell_hit(LpcConstants.spellcast_flash_hold_sec())
+			target_actor.flash_spell_hit(hold_sec)
+	get_tree().create_timer(hold_sec).timeout.connect(
+		func() -> void:
+			for target_id: int in target_ids:
+				_spellcast_target_ids.erase(target_id),
+		CONNECT_ONE_SHOT,
+	)
 
 
 func _ability_for_event(unit_id: int, ability_id: StringName) -> AbilityData:
