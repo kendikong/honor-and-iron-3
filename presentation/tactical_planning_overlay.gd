@@ -516,10 +516,14 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 	var auto_run_active: bool = (
 		_planning_input != null and _planning_input.auto_run_movement_active(p_unit)
 	)
-	if not AbilitySystem.can_show_planning_action_range_after_premove(
-		plan_board, p_unit, ability, premove_cell, auto_run_active,
+	if not (
+		_planning_input != null
+		and _planning_input.dash_targeting_active()
 	):
-		return false
+		if not AbilitySystem.can_show_planning_action_range_after_premove(
+			plan_board, p_unit, ability, premove_cell, auto_run_active,
+		):
+			return false
 	if force_basic:
 		return true
 	return p_unit.ability.points_left >= ability.action_point_cost

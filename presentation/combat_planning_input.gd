@@ -90,8 +90,9 @@ func cancel_drag() -> void:
 
 
 func cancel_aim() -> void:
+	if not aiming:
+		return
 	aiming = false
-	clear_dash_targeting()
 	if _planning != null:
 		_planning.set_aim_mode(false)
 		_planning.clear_threat_origin()
@@ -554,7 +555,11 @@ func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
 	if index != _last_ability_selected_index:
-		clear_dash_targeting()
+		if (
+			_director.selected_unit_id < 0
+			or _director.find_awaiting_dash_action(_director.selected_unit_id) == null
+		):
+			clear_dash_targeting()
 	_last_ability_selected_index = index
 	if _director.selected_unit_id >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
@@ -1292,6 +1297,7 @@ func arm_dash_targeting() -> bool:
 		_request_planning_selection_refresh()
 		return true
 	_director.set_awaiting_dash_action(actor.id, ability)
+	_director.flush_plan_refresh_signals_if_pending()
 	dash_targeting = _director.find_awaiting_dash_action(actor.id) != null
 	if _planning != null:
 		_planning.clear_threat_origin()

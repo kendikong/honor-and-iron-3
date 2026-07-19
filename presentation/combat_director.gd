@@ -2092,6 +2092,11 @@ func _defer_plan_refresh_signals(
 	call_deferred("_flush_plan_refresh_signals")
 
 
+func flush_plan_refresh_signals_if_pending() -> void:
+	if _plan_refresh_emit_pending:
+		_flush_plan_refresh_signals()
+
+
 func _flush_plan_refresh_signals() -> void:
 	_plan_refresh_emit_pending = false
 	if _pending_refresh_board == null:
