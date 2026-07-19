@@ -146,9 +146,9 @@ func on_left_press(local: Vector2) -> void:
 		var sel := board.get_unit_by_id(_director.selected_unit_id) if _director.selected_unit_id >= 0 else null
 		if sel != null and not sel.is_enemy():
 			if selected_phase_action_exhausted(sel.id):
-				_play_sfx("invalid")
-				return
-			_plan_approach_or_trample_on_enemy(_director.selected_unit_id, unit, local, Vector2i(-1, -1))
+				_director.select_unit(unit.id)
+			else:
+				_plan_approach_or_trample_on_enemy(_director.selected_unit_id, unit, local, Vector2i(-1, -1))
 		else:
 			_director.select_unit(unit.id)
 	else:
