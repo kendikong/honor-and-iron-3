@@ -161,6 +161,8 @@ func process_water_burst(delta: float) -> void:
 
 func process_frame(delta: float) -> void:
 	process_water_burst(delta)
+	if settings.cloud_shadows:
+		CloudTuning.sync_runtime(settings)
 	if settings.cloud_shadows and _atmosphere != null:
 		_atmosphere.refresh_cloud_drift()
 	var want_env_receive: bool = (

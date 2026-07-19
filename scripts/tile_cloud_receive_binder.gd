@@ -42,6 +42,8 @@ func apply(settings: EffectsSettings, grid: PlayerGrid) -> void:
 func sync_drift(settings: EffectsSettings) -> void:
 	if settings == null or not settings.cloud_shadows or not _active:
 		return
+	if _map_root != null:
+		_set_map_uniforms(_map_root.global_position, _map_root.scale.x)
 	_push_drift_only()
 	CloudTuning.push_shader_uniforms(_cloud_material, settings)
 
