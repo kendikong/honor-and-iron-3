@@ -1632,11 +1632,25 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 			return
 	
 	# --- Attack batch: sequential, one action at a time ---
-	for e in attack_events:
-		if run_id != _run_id: return
+	var attack_i: int = 0
+	while attack_i < attack_events.size():
+		if run_id != _run_id:
+			return
+		var e: SimEvent = attack_events[attack_i]
 		EventBus.sim_event.emit(e)
+		if e.type == GameEnums.SimEventType.ABILITY_USED and _event_uses_spellcast_animation(e):
+			await get_tree().create_timer(LpcConstants.spellcast_release_delay_sec()).timeout
+			if run_id != _run_id:
+				return
+			attack_i += 1
+			while attack_i < attack_events.size() and _is_spellcast_impact_event(attack_events[attack_i]):
+				EventBus.sim_event.emit(attack_events[attack_i])
+				attack_i += 1
+			await get_tree().create_timer(LpcConstants.spellcast_flash_hold_sec()).timeout
+			continue
 		var delay: float = _playback_delay_for_event(e)
 		await get_tree().create_timer(delay).timeout
+		attack_i += 1
 	if run_id != _run_id: return
 	
 	if not post_move_events.is_empty():
@@ -1662,6 +1676,8 @@ func _playback_delay_for_event(event: SimEvent) -> float:
 		return ATTACK_ANIM_TIME
 	if event.type != GameEnums.SimEventType.ABILITY_USED:
 		return 0.15
+	if _event_uses_spellcast_animation(event):
+		return LpcConstants.spellcast_playback_delay_sec()
 	var actor_id: int = int(event.data.get("actor", -1))
 	var ability_id: StringName = event.data.get("ability", &"")
 	if board == null or actor_id < 0 or ability_id == &"":
@@ -1669,13 +1685,36 @@ func _playback_delay_for_event(event: SimEvent) -> float:
 	var actor := board.get_unit_by_id(actor_id)
 	if actor == null:
 		return ATTACK_ANIM_TIME
-	for ability: AbilityData in actor.active_abilities:
-		if ability.id != ability_id:
-			continue
-		if AbilitySystem.ability_uses_spellcast_animation(ability):
-			return LpcConstants.spellcast_playback_delay_sec()
-		break
 	return ATTACK_ANIM_TIME
+
+
+func _event_uses_spellcast_animation(event: SimEvent) -> bool:
+	if event.type != GameEnums.SimEventType.ABILITY_USED:
+		return false
+	var actor_id: int = int(event.data.get("actor", -1))
+	var ability_id: StringName = event.data.get("ability", &"")
+	if board == null or actor_id < 0 or ability_id == &"":
+		return false
+	var actor := board.get_unit_by_id(actor_id)
+	if actor == null:
+		return false
+	for ability: AbilityData in actor.active_abilities:
+		if ability.id == ability_id:
+			return AbilitySystem.ability_uses_spellcast_animation(ability)
+	return false
+
+
+func _is_spellcast_impact_event(event: SimEvent) -> bool:
+	return event.type in [
+		GameEnums.SimEventType.MATH_TELEMETRY,
+		GameEnums.SimEventType.UNIT_DAMAGED,
+		GameEnums.SimEventType.UNIT_ARMORED,
+		GameEnums.SimEventType.UNIT_HEALED,
+		GameEnums.SimEventType.UNIT_DIED,
+		GameEnums.SimEventType.STATUS_APPLIED,
+		GameEnums.SimEventType.STATUS_REMOVED,
+		GameEnums.SimEventType.UNIT_EXPLODED,
+	]
 
 
 func _play_move_batch(move_events: Array[SimEvent], run_id: int) -> void:

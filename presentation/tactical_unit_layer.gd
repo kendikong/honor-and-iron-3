@@ -43,6 +43,9 @@ var _damage_flash: Dictionary = {}
 var _hit_bursts: Array = []
 var _sfx: SfxPlayer
 var _spellcast_target_ids: Dictionary = {}
+var _pending_spellcast_damage: Dictionary = {}
+var _pending_spellcast_deaths: Dictionary = {}
+var _spellcast_released: bool = false
 var _last_attacker_pos: Dictionary = {}
 var _suppress_hurt_knockback: bool = false
 var _pending_death: Dictionary = {}
@@ -58,6 +61,10 @@ var _planning_input: CombatPlanningInput
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
 
 signal push_tweens_idle
+
+
+func is_spellcast_damage_deferred(unit_id: int) -> bool:
+	return _spellcast_target_ids.has(unit_id)
 
 
 func get_active_push_tweens() -> int:
@@ -430,21 +437,28 @@ func apply_sim_event(event: SimEvent) -> void:
 				+ int(event.data.get("armor_damaged", 0))
 			)
 			if damage_taken > 0:
-				_damage_flash[target_id] = 0.85
-				_spawn_hit_burst(target_id)
-				var actor: CharacterActor = _actors.get(target_id)
-				if (
-					actor != null
-					and target != null
-					and not actor.is_dying()
-					and not _spellcast_target_ids.has(target_id)
-				):
-					var kb: Vector2 = Vector2.ZERO
-					if not _suppress_hurt_knockback:
-						kb = _knockback_dir_for(target_id)
-					actor.play_hurt(_facing_anim(target.facing), kb)
+				if _spellcast_target_ids.has(target_id):
+					_pending_spellcast_damage[target_id] = {
+						"hp_damaged": int(event.data.get("hp_damaged", 0)),
+						"armor_damaged": int(event.data.get("armor_damaged", 0)),
+						"amount": int(event.data.get("amount", 0)),
+						"damage_type": event.data.get("damage_type", &"physical"),
+					}
+					if _spellcast_released:
+						_apply_spellcast_hit_presentation(target_id)
+				else:
+					_apply_unit_damaged_vfx(target_id, target, damage_taken)
 		GameEnums.SimEventType.UNIT_DIED:
-			_begin_death(int(event.data.get("unit", -1)))
+			var dead_id: int = int(event.data.get("unit", -1))
+			var dead := _board.get_unit_by_id(dead_id) if _board != null else null
+			if dead != null:
+				dead.health.current_hp = 0
+			if _spellcast_target_ids.has(dead_id):
+				_pending_spellcast_deaths[dead_id] = true
+				if _spellcast_released:
+					_apply_spellcast_death_presentation(dead_id)
+			else:
+				_begin_death(dead_id)
 		GameEnums.SimEventType.UNIT_FACED:
 			var face_id: int = int(event.data.get("unit", -1))
 			var faced := _board.get_unit_by_id(face_id)
@@ -1222,6 +1236,9 @@ func _play_attack_anim(event: SimEvent) -> void:
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
 	if ability_data != null and AbilitySystem.ability_uses_spellcast_animation(ability_data):
 		var target_ids: Array[int] = _ability_affected_unit_ids_from_event(event, ability_data)
+		_spellcast_released = false
+		_pending_spellcast_damage.clear()
+		_pending_spellcast_deaths.clear()
 		_spellcast_target_ids.clear()
 		for target_id: int in target_ids:
 			_spellcast_target_ids[target_id] = true
@@ -1270,17 +1287,62 @@ func _on_spellcast_release(target_ids: Array[int]) -> void:
 	if _sfx != null:
 		_sfx.play("spellcast")
 	var hold_sec: float = LpcConstants.spellcast_flash_hold_sec()
+	_spellcast_released = true
 	for target_id: int in target_ids:
 		var target_actor: CharacterActor = _actors.get(target_id)
 		if target_actor != null:
 			target_actor.flash_spell_hit(hold_sec)
+		_apply_spellcast_hit_presentation(target_id)
+		_apply_spellcast_death_presentation(target_id)
 	get_tree().create_timer(hold_sec).timeout.connect(
 		func() -> void:
 			for target_id: int in target_ids:
-				_spellcast_target_ids.erase(target_id),
+				_spellcast_target_ids.erase(target_id)
+			_spellcast_released = false,
 		CONNECT_ONE_SHOT,
 	)
 
+
+func _apply_unit_damaged_vfx(target_id: int, target: UnitState, damage_taken: int) -> void:
+	if damage_taken <= 0:
+		return
+	_damage_flash[target_id] = 0.85
+	_spawn_hit_burst(target_id)
+	var actor: CharacterActor = _actors.get(target_id)
+	if actor == null or target == null or actor.is_dying():
+		return
+	var kb: Vector2 = Vector2.ZERO
+	if not _suppress_hurt_knockback:
+		kb = _knockback_dir_for(target_id)
+	actor.play_hurt(_facing_anim(target.facing), kb)
+
+
+func _apply_spellcast_hit_presentation(target_id: int) -> void:
+	if not _pending_spellcast_damage.has(target_id):
+		return
+	var pending: Dictionary = _pending_spellcast_damage[target_id]
+	_pending_spellcast_damage.erase(target_id)
+	var target := _board.get_unit_by_id(target_id) if _board != null else null
+	var hp_dmg: int = int(pending.get("hp_damaged", 0))
+	var armor_dmg: int = int(pending.get("armor_damaged", 0))
+	var damage_taken: int = hp_dmg + armor_dmg
+	_apply_unit_damaged_vfx(target_id, target, damage_taken)
+	var shown: int = int(pending.get("amount", 0))
+	if shown <= 0:
+		shown = damage_taken
+	if shown > 0:
+		spawn_floating_damage(
+			target_id,
+			shown,
+			pending.get("damage_type", &"physical"),
+		)
+
+
+func _apply_spellcast_death_presentation(dead_id: int) -> void:
+	if not _pending_spellcast_deaths.has(dead_id):
+		return
+	_pending_spellcast_deaths.erase(dead_id)
+	_begin_death(dead_id)
 
 func _ability_for_event(unit_id: int, ability_id: StringName) -> AbilityData:
 	if _board == null or ability_id == &"":

@@ -63,6 +63,9 @@ func _spawn_damage_text(event: SimEvent) -> void:
 		return
 	if _unit_layer == null:
 		return
+	var unit_id: int = int(event.data.get("unit", -1))
+	if _unit_layer.is_spellcast_damage_deferred(unit_id):
+		return
 	var hp_dmg: int = int(event.data.get("hp_damaged", 0))
 	var armor_dmg: int = int(event.data.get("armor_damaged", 0))
 	var amount: int = int(event.data.get("amount", 0))
