@@ -780,6 +780,26 @@ func _draw_hover_tile() -> void:
 	draw_rect(rect, Color(_COLOR_HOVER.r, _COLOR_HOVER.g, _COLOR_HOVER.b, 0.45), false, 1.0)
 
 
+func _origin_at_plan_action(
+	plan: Timeline,
+	actor_id: int,
+	stop_before: TimelineAction,
+	base_pos: Vector2i,
+) -> Vector2i:
+	var origin: Vector2i = base_pos
+	for act: TimelineAction in plan.entries:
+		if act == stop_before:
+			return origin
+		if act.actor_id != actor_id:
+			continue
+		if (
+			act.type == GameEnums.ActionType.MOVE
+			and act.move_timing == GameEnums.MoveTiming.PRE_ACTION
+		):
+			origin = act.target_coord
+	return origin
+
+
 func _draw_ability_intents() -> void:
 	if _director == null or _board == null:
 		return
@@ -791,11 +811,11 @@ func _draw_ability_intents() -> void:
 			var actor := _board.get_unit_by_id(action.actor_id)
 			if actor == null:
 				continue
-			var start_pos: Vector2i = actor.position
-			for act: TimelineAction in plan_to_use.entries:
-				if act.actor_id == action.actor_id and act.type == GameEnums.ActionType.MOVE:
-					start_pos = act.target_coord
-					break
+			var start_pos: Vector2i = _origin_at_plan_action(
+				plan_to_use, action.actor_id, action, actor.position,
+			)
+			if start_pos == action.target_coord:
+				continue
 			var p_col: Color = _player_color_for_unit(actor)
 			_draw_dashed_route(
 				[start_pos, action.target_coord],
@@ -1013,7 +1033,6 @@ func _draw_preview_arrows() -> void:
 	var dragging: bool = _planning_input != null and _planning_input.dragging
 	var drag_unit_id: int = _planning_input.get_drag_unit_id() if _planning_input != null else -1
 	var selected_id: int = _director.selected_unit_id if _director != null else -1
-	var skill_priority: bool = _planning_input.skill_interaction_active() if _planning_input != null else false
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or not _intent_visible(unit):
 			continue
@@ -1029,23 +1048,23 @@ func _draw_preview_arrows() -> void:
 		if split < route.size():
 			enemy_leg = route.slice(maxi(split - 1, 0))
 		if pre_action_leg.size() >= 2:
-			var skip_live_route := false
-			if not unit.is_enemy() and unit.id == selected_id:
-				if dragging and unit.id == drag_unit_id:
-					skip_live_route = true
-				elif skill_priority and not dragging:
-					skip_live_route = true
+			var skip_live_route := (
+				not unit.is_enemy()
+				and unit.id == selected_id
+				and dragging
+				and unit.id == drag_unit_id
+			)
 			if not skip_live_route:
 				var p_col: Color = _player_color_for_unit(unit)
 				var dim_col := Color(p_col.r, p_col.g, p_col.b, 0.35)
 				_draw_route_line(pre_action_leg, dim_col, true, true)
 		if post_action_leg.size() >= 2:
-			var skip_post := false
-			if not unit.is_enemy() and unit.id == selected_id:
-				if dragging and unit.id == drag_unit_id:
-					skip_post = true
-				elif skill_priority and not dragging:
-					skip_post = true
+			var skip_post := (
+				not unit.is_enemy()
+				and unit.id == selected_id
+				and dragging
+				and unit.id == drag_unit_id
+			)
 			if not skip_post:
 				var p_col: Color = _player_color_for_unit(unit)
 				var post_col := Color(p_col.r, p_col.g, p_col.b, 0.78)
@@ -1108,7 +1127,8 @@ func _draw_interaction_overlay() -> void:
 		return
 	var route: Array = prev.preview_paths.get(actor.id, [])
 	var p_col: Color = _player_color_for_unit(actor)
-	if route.size() >= 2 and _unit_can_still_move(actor.id):
+	var dragging: bool = _planning_input != null and _planning_input.dragging
+	if route.size() >= 2 and dragging and _unit_can_still_move(actor.id):
 		_draw_route_line(route, p_col, true, true)
 	if _attack_target_id >= 0:
 		var origin: Vector2i = actor.position

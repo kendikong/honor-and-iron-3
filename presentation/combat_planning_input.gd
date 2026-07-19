@@ -19,9 +19,11 @@ var _drag_press_local: Vector2 = Vector2.ZERO
 
 const _DRAG_THRESHOLD_PX: float = 6.0
 const ICON_MOVE: String = "👟"
+const ICON_RUN: String = "🏃"
 const ICON_ATTACK: String = "⚔️"
 const ICON_SKILL: String = "🔮"
 const ICON_MOVE_ATTACK: String = "👟⚔️"
+const ICON_RUN_ATTACK: String = "🏃⚔️"
 const ICON_NULL: String = "∅"
 const ICON_WAIT: String = "⏸"
 
@@ -747,24 +749,40 @@ func _refresh_selected_interaction_preview() -> void:
 	if selected_phase_action_exhausted():
 		_restore_hover_preview()
 		return
-	if _run_mode_selected(p_unit) and _unit_move_slot_open(p_unit.id) and _can_move_to(p_unit, cell):
-		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
-		_refresh_click_target_highlight()
-		return
-	if _basic_move_allowed() and _unit_move_slot_open(p_unit.id) and _can_move_to(p_unit, cell):
-		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
-		_refresh_click_target_highlight()
-		return
+	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
+		if _run_mode_selected(p_unit) or _basic_move_allowed() or force_basic_movement:
+			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
+			_refresh_click_target_highlight()
+			return
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
 		var target_id := _hover_attack_target_id()
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
 		_refresh_click_target_highlight()
 		return
-	if force_basic_movement and _unit_move_slot_open(p_unit.id) and _can_move_to(p_unit, cell):
-		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
-		_refresh_click_target_highlight()
-		return
 	_restore_hover_preview()
+
+
+func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
+	if p_unit == null or cell == p_unit.position:
+		return false
+	if _planning != null and _planning.is_hover_move_tile(cell):
+		return true
+	return _can_move_to(p_unit, cell)
+
+
+func _movement_icon_for(p_unit: UnitState, cell: Vector2i) -> String:
+	if _run_mode_selected(p_unit):
+		return ICON_RUN
+	if AbilitySystem.movement_requires_run(_proj(), p_unit, cell, []):
+		return ICON_RUN
+	return ICON_MOVE
+
+
+func _move_attack_icon_for(p_unit: UnitState, cell: Vector2i) -> String:
+	var move_icon: String = _movement_icon_for(p_unit, cell)
+	if move_icon == ICON_RUN:
+		return ICON_RUN_ATTACK
+	return ICON_MOVE_ATTACK
 
 
 func _refresh_click_target_highlight() -> void:
@@ -1534,8 +1552,8 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	if self_tile_icon != "":
 		return self_tile_icon
 	if _run_mode_selected(p_unit):
-		if cell != p_unit.position and _can_move_to(p_unit, cell):
-			return ICON_MOVE
+		if cell != p_unit.position and _is_hover_move_cell(p_unit, cell):
+			return _movement_icon_for(p_unit, cell)
 		return ""
 	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
 	if _skill_interaction_active():
@@ -1544,9 +1562,9 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 			and hover_unit == null
 			and cell != p_unit.position
 			and _unit_move_slot_open(p_unit.id)
-			and _can_move_to(p_unit, cell)
+			and _is_hover_move_cell(p_unit, cell)
 		):
-			return ICON_MOVE
+			return _movement_icon_for(p_unit, cell)
 		var valid_aim := false
 		if hover_unit != null:
 			if hover_unit.id == p_unit.id:
@@ -1643,10 +1661,10 @@ func _enemy_hover_icon(p_unit: UnitState, cell: Vector2i, hover_unit: UnitState)
 		if use_skill:
 			return _ability_action_icon(ability)
 		return ICON_ATTACK
-	if _can_move_to(p_unit, cell):
-		return ICON_MOVE
+	if _can_move_to(p_unit, cell) or _is_hover_move_cell(p_unit, cell):
+		return _movement_icon_for(p_unit, cell)
 	if _enemy_attackable_from_legal_tiles(p_unit, hover_unit, legal_moves):
-		return ICON_MOVE_ATTACK
+		return _move_attack_icon_for(p_unit, cell)
 	return ICON_NULL
 
 
@@ -1682,9 +1700,9 @@ func _move_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
 	if not _basic_move_allowed() or not _unit_move_slot_open(p_unit.id):
 		return ""
 	if _planning != null and _planning.is_hover_move_tile(cell):
-		return ICON_MOVE
+		return _movement_icon_for(p_unit, cell)
 	if _can_move_to(p_unit, cell):
-		return ICON_MOVE
+		return _movement_icon_for(p_unit, cell)
 	return ""
 
 
@@ -1716,7 +1734,7 @@ func _move_attack_hover_icon(
 	# Clicking a move tile only queues movement. Move+attack comes from enemy click or drag preview.
 	if not dragging or not _drag_preview_includes_attack(p_unit.id):
 		return ""
-	return ICON_MOVE_ATTACK
+	return _move_attack_icon_for(p_unit, cell)
 
 
 func _drag_preview_includes_attack(actor_id: int) -> bool:
@@ -1754,7 +1772,7 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if _drop_allows_move_tile(cell, legal_moves, actor) or (
 		cell == _drag_last_free and legal_moves.has(cell)
 	):
-		return ICON_MOVE
+		return _movement_icon_for(actor, cell)
 	return ""
 
 
