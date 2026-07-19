@@ -15,6 +15,7 @@ var _sfx: SfxPlayer
 
 var dragging: bool = false
 var aiming: bool = false
+var dash_targeting: bool = false
 var _drag_armed: bool = false
 var _drag_press_local: Vector2 = Vector2.ZERO
 
@@ -26,6 +27,9 @@ const ICON_SKILL: String = "🔮"
 const ICON_COMPOSITE_SEP: String = "/"
 const ICON_MOVE_ATTACK: String = "👟/⚔️"
 const ICON_RUN_ATTACK: String = "🏃/⚔️"
+const ICON_DASH: String = "💨"
+const ICON_MOVE_DASH: String = "👟/💨"
+const ICON_RUN_DASH: String = "🏃/💨"
 const ICON_NULL: String = "∅"
 const ICON_WAIT: String = "⏸"
 
@@ -79,6 +83,7 @@ func cancel_drag() -> void:
 
 func cancel_aim() -> void:
 	aiming = false
+	clear_dash_targeting()
 	if _planning != null:
 		_planning.set_aim_mode(false)
 		_planning.clear_threat_origin()
@@ -158,9 +163,10 @@ func on_left_press(local: Vector2) -> void:
 			else:
 				_play_sfx("invalid")
 		elif actor != null and _ability_has_dash(_selected_ability_data(actor)):
-			if _is_valid_dash_target(_proj_origin(actor), cell, _ability_range(actor)):
-				_director.rpc_plan_ability_at_coord(_director.selected_unit_id, _director.selected_ability_index, cell)
-				_play_sfx("ability")
+			if dash_targeting and _is_valid_dash_target(
+				_proj_origin(actor), cell, _dash_steps(_selected_ability_data(actor))
+			):
+				_commit_dash_ability(_director.selected_unit_id, cell)
 			else:
 				_play_sfx("invalid")
 		else:
@@ -200,6 +206,7 @@ func on_left_press(local: Vector2) -> void:
 					_facing_from_drop(local, cell),
 					[],
 				)
+				_notify_drag_plan_move_committed(_director.selected_unit_id)
 				_play_sfx("move")
 
 
@@ -299,6 +306,10 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 func on_right_click() -> void:
 	if aiming:
 		cancel_aim()
+		_play_sfx("cancel")
+		return
+	if dash_targeting:
+		clear_dash_targeting()
 		_play_sfx("cancel")
 		return
 	if _is_planning() and _director.selected_unit_id >= 0:
@@ -557,6 +568,7 @@ func _on_selection_changed(unit_id: int) -> void:
 	if _director == null:
 		return
 	if unit_id < 0:
+		clear_dash_targeting()
 		_invalidate_planning_hover_cache()
 		_restore_hover_preview()
 		_sync_intent_skill_mode()
@@ -596,6 +608,7 @@ func _finish_selection_changed() -> void:
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
+	dash_targeting = false
 	if _director.selected_unit_id >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
 	_request_planning_selection_refresh()
@@ -874,7 +887,11 @@ func _update_hover_attack_preview() -> void:
 		return
 	if _unit_movement_blocked_by_dash(p_unit) and not force_basic_movement:
 		var dash_ability := _selected_ability_data(p_unit)
-		if dash_ability != null and _is_valid_dash_target(p_unit.position, cell, dash_ability.range_tiles):
+		if (
+			dash_targeting
+			and dash_ability != null
+			and _is_valid_dash_target(p_unit.position, cell, _dash_steps(dash_ability))
+		):
 			var dash_res: Dictionary = _director.preview_dash(
 				_director.selected_unit_id, cell, _director.selected_ability_index,
 			)
@@ -883,9 +900,10 @@ func _update_hover_attack_preview() -> void:
 	if _skill_takes_priority_over_basic_move():
 		var skill_ability := _selected_ability_data(p_unit)
 		if (
-			skill_ability != null
+			dash_targeting
+			and skill_ability != null
 			and _ability_has_dash(skill_ability)
-			and _is_valid_dash_target(_proj_origin(p_unit), cell, skill_ability.range_tiles)
+			and _is_valid_dash_target(_proj_origin(p_unit), cell, _dash_steps(skill_ability))
 		):
 			var dash_res: Dictionary = _director.preview_dash(
 				_director.selected_unit_id, cell, _director.selected_ability_index,
@@ -937,7 +955,7 @@ func _refresh_live_interaction_preview(
 	var dash_preview := false
 	var dash_ab := _selected_ability_data(unit)
 	if _director.board.is_in_bounds(cell) and _should_use_dash_on_input(dash_ab):
-		dash_preview = _is_valid_dash_target(_proj_origin(unit), cell, dash_ab.range_tiles)
+		dash_preview = _is_valid_dash_target(_proj_origin(unit), cell, _dash_steps(dash_ab))
 	var cache_key: String = "%d|%d|%s|%d|%d|%s" % [
 		_director.plan_revision if _director != null else 0,
 		unit_id,
@@ -994,6 +1012,8 @@ func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> i
 
 
 func _should_use_dash_on_input(ability: AbilityData) -> bool:
+	if not dash_targeting:
+		return false
 	if ability == null or not _ability_has_dash(ability) or _director.selected_ability_index < 0:
 		return false
 	if _skill_interaction_active() or aiming:
@@ -1116,11 +1136,11 @@ func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) 
 	if actor == null:
 		actor = unit
 	if _ability_has_dash(ability):
-		if not _is_valid_dash_target(_proj_origin(actor), coord, ability.range_tiles):
+		if not dash_targeting:
 			return false
-		_director.rpc_plan_ability_at_coord(unit.id, _director.selected_ability_index, coord)
-		_play_sfx("ability")
-		return true
+		if not _is_valid_dash_target(_proj_origin(actor), coord, _dash_steps(ability)):
+			return false
+		return _commit_dash_ability(unit.id, coord)
 	var target := _proj().get_unit_at(coord)
 	if target != null:
 		if _can_target_unit_with_selected_ability(actor, target):
@@ -1133,6 +1153,7 @@ func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) 
 func _notify_drag_plan_move_committed(unit_id: int) -> void:
 	if _drag_move_commit_instant and _director != null:
 		_director.mark_planning_move_instant(unit_id)
+	_maybe_arm_dash_after_move(unit_id)
 
 
 func _try_plan_basic_move(
@@ -1235,6 +1256,83 @@ func _route_waypoints() -> Array[Vector2i]:
 	return waypoints
 
 
+func dash_targeting_active() -> bool:
+	return dash_targeting
+
+
+func arm_dash_targeting() -> void:
+	if _director == null or _director.selected_ability_index < 0:
+		return
+	var actor := _proj_unit(_director.selected_unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(_director.selected_unit_id)
+	if actor == null or not _ability_has_dash(_selected_ability_data(actor)):
+		return
+	if selected_phase_action_exhausted(actor.id):
+		return
+	dash_targeting = true
+	_invalidate_planning_hover_cache()
+	_request_planning_selection_refresh()
+
+
+func clear_dash_targeting() -> void:
+	if not dash_targeting:
+		return
+	dash_targeting = false
+	_invalidate_planning_hover_cache()
+	_request_planning_selection_refresh()
+
+
+func _dash_skill_armed_not_targeting(unit: UnitState) -> bool:
+	if force_basic_movement or _director == null or _director.selected_ability_index < 0:
+		return false
+	if unit == null:
+		return false
+	var ability := _selected_ability_data(unit)
+	return ability != null and _ability_has_dash(ability) and not dash_targeting
+
+
+func _dash_steps(ability: AbilityData) -> int:
+	return AbilitySystem.dash_steps(ability)
+
+
+func _commit_dash_ability(unit_id: int, coord: Vector2i) -> bool:
+	if _director == null or _director.selected_ability_index < 0:
+		return false
+	var actor := _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return false
+	var ability := _selected_ability_data(actor)
+	if ability == null or not _ability_has_dash(ability):
+		return false
+	if not dash_targeting:
+		return false
+	if not _is_valid_dash_target(_proj_origin(actor), coord, _dash_steps(ability)):
+		return false
+	_director.rpc_plan_ability_at_coord(unit_id, _director.selected_ability_index, coord)
+	clear_dash_targeting()
+	_director.select_ability(-1)
+	_play_sfx("ability")
+	return true
+
+
+func _maybe_arm_dash_after_move(unit_id: int) -> void:
+	if _director == null or unit_id != _director.selected_unit_id:
+		return
+	if _director.selected_ability_index < 0 or dash_targeting:
+		return
+	var actor := _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return
+	var ability := _selected_ability_data(actor)
+	if ability != null and _ability_has_dash(ability) and not selected_phase_action_exhausted(unit_id):
+		arm_dash_targeting()
+
+
 func _ability_has_dash(ability: AbilityData) -> bool:
 	return AbilitySystem.ability_has_dash(ability)
 
@@ -1298,6 +1396,10 @@ func _try_plan_self_target_attack(unit_id: int) -> bool:
 	if actor == null:
 		return false
 	var self_ability := _selected_ability_data(actor)
+	if self_ability != null and _ability_has_dash(self_ability):
+		arm_dash_targeting()
+		_play_sfx("ability")
+		return true
 	if (
 		self_ability == null
 		or not AbilitySystem.can_target_self(actor, self_ability)
@@ -1661,9 +1763,13 @@ func _build_commit_slots_at_cell(
 		return slots
 
 	if ability_index >= 0 and ability != null and not force_basic_movement:
-		if _ability_has_dash(ability) and _is_valid_dash_target(_proj_origin(actor), cell, ability.range_tiles):
-			slots["action"].append(TimelineAction.make_ability(unit_id, ability, cell, -1))
-			return slots
+		if _ability_has_dash(ability):
+			if dash_targeting and _is_valid_dash_target(_proj_origin(actor), cell, _dash_steps(ability)):
+				slots["action"].append(TimelineAction.make_ability(unit_id, ability, cell, -1))
+				return slots
+			if dash_targeting:
+				slots["invalid"] = true
+				return slots
 		if AbilitySystem.can_target_self(actor, ability):
 			if AbilitySystem.is_run_ability(ability):
 				if _drop_allows_move_tile(cell, legal_move_tiles, actor):
@@ -1915,13 +2021,14 @@ func _self_tile_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
 	if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 		return ICON_WAIT
 	var self_ability := _selected_ability_data(p_unit)
-	if (
-		_director.selected_ability_index >= 0
-		and self_ability != null
-		and AbilitySystem.can_target_self(p_unit, self_ability)
-		and not AbilitySystem.is_run_ability(self_ability)
-	):
-		return _ability_action_icon(self_ability)
+	if _director.selected_ability_index >= 0 and self_ability != null:
+		if _ability_has_dash(self_ability) and not dash_targeting:
+			return ICON_DASH
+		if (
+			AbilitySystem.can_target_self(p_unit, self_ability)
+			and not AbilitySystem.is_run_ability(self_ability)
+		):
+			return _ability_action_icon(self_ability)
 	if _hover_would_commit_wait(p_unit):
 		return ICON_WAIT
 	return ""
@@ -1939,10 +2046,19 @@ func _move_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
 	if not _basic_move_allowed() or not _unit_move_slot_open(p_unit.id):
 		return ""
 	if _planning != null and _planning.is_hover_move_tile(cell):
-		return _movement_icon_for(p_unit, cell)
+		return _movement_icon_for_dash_context(p_unit, cell)
 	if _can_move_to(p_unit, cell):
-		return _movement_icon_for(p_unit, cell)
+		return _movement_icon_for_dash_context(p_unit, cell)
 	return ""
+
+
+func _movement_icon_for_dash_context(unit: UnitState, cell: Vector2i) -> String:
+	var move_icon: String = _movement_icon_for(unit, cell)
+	if not _dash_skill_armed_not_targeting(unit):
+		return move_icon
+	if move_icon == ICON_RUN:
+		return ICON_RUN_DASH
+	return ICON_MOVE_DASH
 
 
 func _attack_range_for(actor: UnitState) -> int:
@@ -2022,9 +2138,9 @@ func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitSt
 	if hover_unit != null and not hover_unit.is_enemy() and hover_unit.id != p_unit.id:
 		return not _can_target_unit_with_selected_ability(p_unit, hover_unit)
 	if _ability_has_dash(ability) and _planning != null:
-		if (
+		if dash_targeting and (
 			_planning.is_hover_threat_tile(cell)
-			and not _is_valid_dash_target(_proj_origin(p_unit), cell, ability.range_tiles)
+			and not _is_valid_dash_target(_proj_origin(p_unit), cell, _dash_steps(ability))
 		):
 			return true
 	return false
@@ -2038,7 +2154,7 @@ func _ability_action_icon(ability: AbilityData) -> String:
 	if AbilitySystem.ability_is_offensive_dash(ability):
 		return ICON_ATTACK
 	if AbilitySystem.ability_has_dash(ability):
-		return ICON_SKILL
+		return ICON_DASH
 	for eff: EffectData in ability.effects:
 		match eff.type:
 			GameEnums.EffectType.DAMAGE:
@@ -2213,7 +2329,8 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 		if (
 			dash_ability != null
 			and _ability_has_dash(dash_ability)
-			and _is_valid_dash_target(_proj_origin(actor), cell, dash_ability.range_tiles)
+			and dash_targeting
+			and _is_valid_dash_target(_proj_origin(actor), cell, _dash_steps(dash_ability))
 		):
 			var dash_face: int = _facing_toward(_proj_origin(actor), cell)
 			var mode: int = (

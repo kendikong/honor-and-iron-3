@@ -155,6 +155,10 @@ static func has_pass_through_effects(ability: AbilityData) -> bool:
 		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
 
 
+static func dash_steps(ability: AbilityData) -> int:
+	return effect_amount(ability, GameEnums.EffectType.DASH)
+
+
 static func pass_through_modifiers(ability: AbilityData, actor: UnitState = null) -> Dictionary:
 	var effects: Array = ability.effects if ability != null else []
 	if ability != null and actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
