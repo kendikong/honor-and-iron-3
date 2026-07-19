@@ -658,6 +658,11 @@ func _overlay_needs_flow_animation() -> bool:
 		return true
 	if _planning_input != null and _planning_input.is_live_preview_active():
 		return true
+	var prev: CombatPlanningPreview = _active_preview()
+	if prev != null:
+		for push_list: Variant in prev.preview_pushes.values():
+			if push_list is Array and not push_list.is_empty():
+				return true
 	if _director != null:
 		var plan: Timeline = _director.get_player_plan()
 		if plan != null:
@@ -1008,6 +1013,21 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 			var draw_end: float = minf(d + dash, end_d)
 			draw_line(p1 + dir * d, p1 + dir * draw_end, color, _DASH_LINE_W)
 			d += dash + gap
+	_draw_flowing_arrowheads_for_route(
+		cells, color, _ROUTE_LINE_W, _DASH_WING_LEN, 30.0, offset,
+	)
+
+
+func _draw_flowing_arrowheads_for_route(
+	cells: Array,
+	color: Color,
+	line_w: float,
+	wing_len: float,
+	wing_angle_deg: float,
+	end_offset: float,
+) -> void:
+	if cells.size() < 2 or _map_view == null:
+		return
 	var t: float = Time.get_ticks_msec() / 1000.0
 	var flow_speed := 45.0
 	var wave_spacing := 90.0
@@ -1026,8 +1046,8 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 		total_len += dist
 	var path_offset: float = fmod(t * flow_speed, wave_spacing)
 	var arrow_pos: float = path_offset
-	while arrow_pos < total_len - offset:
-		if arrow_pos > offset:
+	while arrow_pos < total_len - end_offset:
+		if arrow_pos > end_offset:
 			var current_d: float = arrow_pos
 			var seg_idx := 0
 			while seg_idx < segment_lengths.size() and current_d > segment_lengths[seg_idx]:
@@ -1037,11 +1057,10 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 				var p1: Vector2 = segment_starts[seg_idx]
 				var dir: Vector2 = segment_dirs[seg_idx]
 				var tip: Vector2 = p1 + dir * current_d
-				var wing_len := _DASH_WING_LEN
-				var wing1: Vector2 = tip - dir.rotated(deg_to_rad(30.0)) * wing_len
-				var wing2: Vector2 = tip - dir.rotated(deg_to_rad(-30.0)) * wing_len
-				draw_line(tip, wing1, color, _ROUTE_LINE_W)
-				draw_line(tip, wing2, color, _ROUTE_LINE_W)
+				var wing1: Vector2 = tip - dir.rotated(deg_to_rad(wing_angle_deg)) * wing_len
+				var wing2: Vector2 = tip - dir.rotated(deg_to_rad(-wing_angle_deg)) * wing_len
+				draw_line(tip, wing1, color, line_w)
+				draw_line(tip, wing2, color, line_w)
 		arrow_pos += wave_spacing
 
 
@@ -1215,7 +1234,7 @@ func _draw_interaction_overlay() -> void:
 			target_unit = _board.get_unit_by_id(_attack_target_id)
 		if target_unit != null:
 			target_coord = target_unit.position
-		if origin != target_coord:
+		if origin != target_coord and not _unit_has_push_preview(prev, _attack_target_id):
 			_draw_dashed_route([origin, target_coord], Color(p_col.r, p_col.g, p_col.b, 0.95))
 
 
@@ -1425,6 +1444,13 @@ func _is_push_preview_segment(
 	return false
 
 
+func _unit_has_push_preview(prev: CombatPlanningPreview, unit_id: int) -> bool:
+	if prev == null or unit_id < 0:
+		return false
+	var pushes: Array = prev.preview_pushes.get(unit_id, [])
+	return not pushes.is_empty()
+
+
 func _draw_dotted_intent_route(route: Array, color: Color, trim_start: bool) -> void:
 	if route.size() < 2 or _map_view == null:
 		return
@@ -1447,6 +1473,7 @@ func _draw_dotted_intent_segment(
 	color: Color,
 	trim_start: bool,
 	with_head: bool,
+	flowing_head: bool = false,
 ) -> void:
 	if _map_view == null:
 		return
@@ -1465,6 +1492,41 @@ func _draw_dotted_intent_segment(
 		shaft_end = dest_center - travel_dir * inset
 	if start_pt.distance_to(shaft_end) < 1.0:
 		if with_head:
+			if flowing_head:
+				_draw_flowing_arrowheads_for_route(
+					[from, to],
+					color,
+					_FORCED_MOVE_LINE_W,
+					_INTENT_ARROW_HEAD_LEN,
+					_INTENT_ARROW_HEAD_ANGLE_DEG,
+					_token_radius() + 4.0,
+				)
+			else:
+				_draw_line_arrowhead(
+					dest_center,
+					travel_dir,
+					color,
+					_FORCED_MOVE_LINE_W,
+					_INTENT_ARROW_HEAD_LEN,
+					_INTENT_ARROW_HEAD_ANGLE_DEG,
+				)
+		return
+	var dist: float = start_pt.distance_to(shaft_end)
+	var d: float = 0.0
+	while d < dist:
+		draw_circle(start_pt + travel_dir * d, _INTENT_DOT_RADIUS, color)
+		d += _INTENT_DOT_SPACING
+	if with_head:
+		if flowing_head:
+			_draw_flowing_arrowheads_for_route(
+				[from, to],
+				color,
+				_FORCED_MOVE_LINE_W,
+				_INTENT_ARROW_HEAD_LEN,
+				_INTENT_ARROW_HEAD_ANGLE_DEG,
+				_token_radius() + 4.0,
+			)
+		else:
 			_draw_line_arrowhead(
 				dest_center,
 				travel_dir,
@@ -1473,25 +1535,10 @@ func _draw_dotted_intent_segment(
 				_INTENT_ARROW_HEAD_LEN,
 				_INTENT_ARROW_HEAD_ANGLE_DEG,
 			)
-		return
-	var dist: float = start_pt.distance_to(shaft_end)
-	var d: float = 0.0
-	while d < dist:
-		draw_circle(start_pt + travel_dir * d, _INTENT_DOT_RADIUS, color)
-		d += _INTENT_DOT_SPACING
-	if with_head:
-		_draw_line_arrowhead(
-			dest_center,
-			travel_dir,
-			color,
-			_FORCED_MOVE_LINE_W,
-			_INTENT_ARROW_HEAD_LEN,
-			_INTENT_ARROW_HEAD_ANGLE_DEG,
-		)
 
 
 func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
-	_draw_dotted_intent_segment(from, to, color, true, true)
+	_draw_dotted_intent_segment(from, to, color, true, true, true)
 
 
 func _draw_push_arrow(from: Vector2i, to: Vector2i, pushed_unit: UnitState = null) -> void:
