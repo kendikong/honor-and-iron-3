@@ -7,7 +7,7 @@ const MAX_PARTY_SLOTS: int = 4
 const W_PLAYER: int = 32
 const W_NAME: int = 76
 const W_CLASS: int = 32
-const W_STATS_MIN: int = 200
+const W_STATS_MIN: int = 228
 const ROW_HEIGHT: int = 40
 const ROW_INSET: int = 8
 const COL_SEPARATION: int = 14
@@ -395,20 +395,43 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	var stats_shell: Dictionary = _make_stats_column_shell()
 	row.add_child(stats_shell["root"])
 	var chips: HBoxContainer = stats_shell["chips"] as HBoxContainer
-	var entries: Array = [
-		["⭐%d" % unit.level, "Level — unit experience tier"],
-		[
-			"♥%d/%d" % [unit.health.current_hp, unit.health.max_hp],
-			"Health — current / maximum hit points",
-		],
-		["💪%d" % unit.current_strength, "Strength — physical attack power"],
-		["🛡️%d" % unit.armor, "Armor — absorbs damage before HP"],
-		["🔮%d" % unit.current_magic, "Magic — spell and ability power"],
-		["👟%d" % unit.movement.max_points, "Movement — tiles you can move per turn"],
-	]
-	for entry: Variant in entries:
-		var pair: Array = entry as Array
-		_add_stat_chip(chips, str(pair[0]), str(pair[1]), col)
+	var board: BoardState = _board
+	_add_stat_chip(
+		chips,
+		"⭐%d" % unit.level,
+		"Level — unit experience tier",
+		col,
+	)
+	_add_stat_chip(
+		chips,
+		"♥%d/%d" % [unit.health.current_hp, unit.health.max_hp],
+		"Health — current / maximum hit points",
+		col,
+	)
+	for chip_def: Array in [
+		[GameEnums.StatType.PHYSICAL, "💪"],
+		[GameEnums.StatType.MAGICAL, "🔮"],
+		[GameEnums.StatType.DEFENSE, "🏰"],
+	]:
+		var chip: Dictionary = CombatUiFormatters.timeline_stat_chip(
+			unit, chip_def[0] as GameEnums.StatType, str(chip_def[1]), board,
+		)
+		var chip_col: Color = chip.get("color", col) as Color
+		if chip_col == Color.WHITE:
+			chip_col = col
+		_add_stat_chip(chips, str(chip.get("text", "")), str(chip.get("tooltip", "")), chip_col)
+	_add_stat_chip(
+		chips,
+		"🛡️%d" % unit.armor,
+		"Armor — absorbs damage before HP",
+		col,
+	)
+	_add_stat_chip(
+		chips,
+		"👟%d" % unit.movement.max_points,
+		"Movement — tiles you can move per turn",
+		col,
+	)
 
 
 func _add_stat_chip(row: HBoxContainer, text: String, tooltip: String, col: Color) -> void:

@@ -11,7 +11,8 @@ const HEX_MOVE: String = "9fb6d4"
 const HEX_DMG: String = "f5b15a"
 const HEX_ATTACK: String = "e2b7f0"
 const HEX_TURN: String = "7fd4ff"
-const LOG_FORMULA_FONT_SIZE: int = 7
+const HEX_STAT_UP: String = "82E0AA"
+const HEX_STAT_DOWN: String = "E74C3C"
 const LOG_FONT_SIZE: int = 10
 
 const PLAYER_COLORS: Array[Color] = [
@@ -135,9 +136,9 @@ static func unit_info(board: BoardState, unit: UnitState) -> String:
 			"[font_size=%d]💪 STR: %s  ✨ MAG: %s  🛡️ DEF: %s"
 			% [
 				scaled_font_size(10),
-				_format_stat_with_tooltip(unit, GameEnums.StatType.PHYSICAL),
-				_format_stat_with_tooltip(unit, GameEnums.StatType.MAGICAL),
-				_format_stat_with_tooltip(unit, GameEnums.StatType.DEFENSE),
+				format_stat_bbcode(unit, GameEnums.StatType.PHYSICAL, board),
+				format_stat_bbcode(unit, GameEnums.StatType.MAGICAL, board),
+				format_stat_bbcode(unit, GameEnums.StatType.DEFENSE, board),
 			]
 			+ ("  [hint=Armor]🪖 ARM:[/hint] %d" % unit.armor if unit.armor > 0 else "")
 			+ "[/font_size]"
@@ -1054,7 +1055,48 @@ static func _kw_hint(word: String, hint: String) -> String:
 	return "[hint=\"%s\"][color=#FBBF24]%s[/color][/hint]" % [hint, word]
 
 
-static func _format_stat_with_tooltip(unit: UnitState, stat_type: GameEnums.StatType) -> String:
+static func format_stat_bbcode(
+	unit: UnitState,
+	stat_type: GameEnums.StatType,
+	board: BoardState = null,
+) -> String:
+	var bd: Dictionary = stat_breakdown(unit, stat_type, board)
+	var breakdown: String = str(bd.get("tooltip", ""))
+	var final_val: int = int(bd.get("final_val", 0))
+	var diff: int = int(bd.get("diff", 0))
+	if diff > 0:
+		return "[color=#%s][hint=\"%s\"]%d[/hint][/color]" % [HEX_STAT_UP, breakdown, final_val]
+	if diff < 0:
+		return "[color=#%s][hint=\"%s\"]%d[/hint][/color]" % [HEX_STAT_DOWN, breakdown, final_val]
+	return "[hint=\"%s\"]%d[/hint]" % [breakdown, final_val]
+
+
+## Plain Label chip for the planning timeline (value + tooltip + tint when buffed/debuffed).
+static func timeline_stat_chip(
+	unit: UnitState,
+	stat_type: GameEnums.StatType,
+	emoji: String,
+	board: BoardState = null,
+) -> Dictionary:
+	var bd: Dictionary = stat_breakdown(unit, stat_type, board)
+	var diff: int = int(bd.get("diff", 0))
+	var col: Color = Color.WHITE
+	if diff > 0:
+		col = Color.html("#" + HEX_STAT_UP)
+	elif diff < 0:
+		col = Color.html("#" + HEX_STAT_DOWN)
+	return {
+		"text": "%s%d" % [emoji, int(bd.get("final_val", 0))],
+		"tooltip": str(bd.get("tooltip", "")),
+		"color": col,
+	}
+
+
+static func stat_breakdown(
+	unit: UnitState,
+	stat_type: GameEnums.StatType,
+	board: BoardState = null,
+) -> Dictionary:
 	var base_val: int = 0
 	var w_bonus: int = 0
 	var final_val: int = 0
@@ -1079,14 +1121,94 @@ static func _format_stat_with_tooltip(unit: UnitState, stat_type: GameEnums.Stat
 				level_bonus = (unit.level - 1) * 2
 			final_val = unit.current_defense
 			if unit.has_status(GameEnums.StatusType.IRON_GRIP_DEBUFF):
-				final_val = int(ceil(float(final_val) * 0.5))
-	var tooltip := "Base %d" % base_val
-	if w_bonus != 0:
-		tooltip += " + WPN %d" % w_bonus
-	if level_bonus != 0:
-		tooltip += " + Lv %d" % level_bonus
-	tooltip += " = %d" % final_val
-	return "[hint=\"%s\"]%d[/hint]" % [tooltip, final_val]
+				if board != null:
+					final_val = CombatSystem.get_dynamic_defense(board, unit)
+				else:
+					final_val = int(ceil(float(unit.current_defense) * 0.5))
+	var natural_total: int = base_val + level_bonus + w_bonus
+	var diff: int = final_val - natural_total
+	var tooltip_lines: Array[String] = ["%d (Base)" % base_val]
+	if level_bonus > 0:
+		tooltip_lines.append("+%d (Level %d)" % [level_bonus, unit.level])
+	if w_bonus > 0:
+		tooltip_lines.append("+%d (Weapon)" % w_bonus)
+	if diff != 0:
+		for status: StatusData in unit.active_statuses:
+			var amount: int = _status_stat_delta(status, stat_type)
+			if amount == 0:
+				continue
+			var sign_str: String = "+" if amount > 0 else ""
+			tooltip_lines.append("%s%d (%s)" % [sign_str, amount, _status_source_name(status.type)])
+		if stat_type == GameEnums.StatType.DEFENSE and unit.has_status(GameEnums.StatusType.IRON_GRIP_DEBUFF):
+			tooltip_lines.append("Halved (Iron Grip)")
+		if unit.has_status(GameEnums.StatusType.POLYMORPH) and stat_type in [
+			GameEnums.StatType.PHYSICAL, GameEnums.StatType.MAGICAL,
+		]:
+			tooltip_lines.append("Set to 0 (Polymorph)")
+	return {
+		"base_val": base_val,
+		"level_bonus": level_bonus,
+		"w_bonus": w_bonus,
+		"final_val": final_val,
+		"natural_total": natural_total,
+		"diff": diff,
+		"tooltip": "\n".join(tooltip_lines),
+	}
+
+
+static func _status_stat_delta(status: StatusData, stat_type: GameEnums.StatType) -> int:
+	if status == null:
+		return 0
+	match stat_type:
+		GameEnums.StatType.PHYSICAL:
+			if status.type == GameEnums.StatusType.STAT_BUFF_STR:
+				return status.value
+			if status.type == GameEnums.StatusType.WEAKEN:
+				return -2
+		GameEnums.StatType.MAGICAL:
+			if status.type == GameEnums.StatusType.STAT_BUFF_MAG:
+				return status.value
+			if status.type == GameEnums.StatusType.WEAKEN:
+				return -2
+		GameEnums.StatType.DEFENSE:
+			if status.type == GameEnums.StatusType.STAT_BUFF_DEF:
+				return status.value
+			if status.type == GameEnums.StatusType.STAT_DEBUFF_DEF:
+				return -status.value
+	return 0
+
+
+static func _status_source_name(status_type: int) -> String:
+	match status_type:
+		GameEnums.StatusType.IRON_GRIP_DEBUFF:
+			return "Iron Grip"
+		GameEnums.StatusType.RETALIATION_PROTOCOL:
+			return "Retaliation Protocol"
+		GameEnums.StatusType.INDOMITABLE_WILL:
+			return "Indomitable Will"
+		GameEnums.StatusType.THORNS:
+			return "Thorns"
+		GameEnums.StatusType.STAT_BUFF_STR:
+			return "STR UP"
+		GameEnums.StatusType.STAT_BUFF_MAG:
+			return "MAG UP"
+		GameEnums.StatusType.STAT_BUFF_DEF:
+			return "DEF UP"
+		GameEnums.StatusType.STAT_BUFF_MOV:
+			return "MOV UP"
+		GameEnums.StatusType.STAT_BUFF_ACC:
+			return "ACC UP"
+		GameEnums.StatusType.STAT_DEBUFF_DEF:
+			return "DEF DOWN"
+		GameEnums.StatusType.STAT_DEBUFF_ACC:
+			return "ACC DOWN"
+		GameEnums.StatusType.STAT_DEBUFF_MOV:
+			return "MOV DOWN"
+		GameEnums.StatusType.WEAKEN:
+			return "Weaken"
+		GameEnums.StatusType.POLYMORPH:
+			return "Polymorph"
+	return GameEnums.StatusType.keys()[status_type].capitalize()
 
 
 static func _equipment_info(unit: UnitState) -> String:

@@ -510,7 +510,10 @@ func _refresh_info() -> void:
 		if u == null and _director != null and _director.base_board != null:
 			u = _director.base_board.get_unit_by_id(_selected_id)
 		if u != null:
-			_info_label.text = CombatUiFormatters.unit_info(_board, u)
+			var info_board: BoardState = _board
+			if _director != null and _director.projected_state != null:
+				info_board = _director.projected_state
+			_info_label.text = CombatUiFormatters.unit_info(info_board, u)
 			_append_hover_action_hint()
 			return
 	if not _board.is_in_bounds(hov):
