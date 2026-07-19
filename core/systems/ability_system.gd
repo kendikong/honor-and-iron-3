@@ -64,6 +64,16 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 				if end_unit != null and end_unit.id != actor.id:
 					return false
 
+	if has_pass_through_effects(ability) and not ability_has_dash(ability):
+		if effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0:
+			var end_occupant := board.get_unit_at(action.target_coord)
+			if end_occupant != null and end_occupant.id != actor.id:
+				return false
+		if action.target_coord != actor.position:
+			var walk_steps: int = ability.range_tiles
+			if GridSystem.manhattan(actor.position, action.target_coord) > walk_steps:
+				return false
+
 	return true
 
 
@@ -138,6 +148,34 @@ static func effect_amount(ability: AbilityData, effect_type: GameEnums.EffectTyp
 		if eff.type == effect_type:
 			return eff.amount
 	return 0
+
+
+static func has_pass_through_effects(ability: AbilityData) -> bool:
+	return effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0 \
+		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
+
+
+static func pass_through_modifiers(ability: AbilityData, actor: UnitState = null) -> Dictionary:
+	var effects: Array = ability.effects if ability != null else []
+	if ability != null and actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
+		effects = ability.upgraded_effects
+	return pass_through_modifiers_from(effects)
+
+
+static func pass_through_modifiers_from(effects: Array) -> Dictionary:
+	var trample_atk := 0
+	var bulldoze := 0
+	for eff: EffectData in effects:
+		if eff.type == GameEnums.EffectType.TRAMPLE:
+			trample_atk = eff.amount
+		elif eff.type == GameEnums.EffectType.BULLDOZE:
+			bulldoze = eff.amount
+	return {"trample_atk": trample_atk, "bulldoze": bulldoze}
+
+
+static func has_pass_through_effects_from(effects: Array) -> bool:
+	var mods := pass_through_modifiers_from(effects)
+	return int(mods.get("trample_atk", 0)) > 0 or int(mods.get("bulldoze", 0)) > 0
 
 
 static func is_run_ability(ability: AbilityData) -> bool:
@@ -374,6 +412,11 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var effects_to_apply = action.ability.effects
 	if actor.is_ability_upgraded(action.ability.id) and action.ability.upgraded_effects.size() > 0:
 		effects_to_apply = action.ability.upgraded_effects
+
+	if has_pass_through_effects(ability) and not ability_has_dash(ability) and target_coord != actor.position:
+		MovementSystem.execute_pass_through_walk(
+			board, actor, target_coord, action.waypoints, ability, events, effects_to_apply
+		)
 
 	for effect in effects_to_apply:
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER]:
@@ -823,8 +866,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					"actor_id": actor.id,
 					"ability_id": action.ability.id
 				}
-				var trample_atk := effect_amount(action.ability, GameEnums.EffectType.TRAMPLE)
-				var bulldoze := effect_amount(action.ability, GameEnums.EffectType.BULLDOZE)
+				var mods := pass_through_modifiers(action.ability, actor)
+				var trample_atk: int = int(mods.get("trample_atk", 0))
+				var bulldoze: int = int(mods.get("bulldoze", 0))
 				if trample_atk > 0:
 					pending["trample_atk"] = trample_atk
 				if bulldoze > 0:
@@ -835,7 +879,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if action.ability.id == &"knight_trampling_advance" and actor.is_ability_upgraded(&"knight_trampling_advance"):
 					pending["trampling_upgrade"] = true
 				board.pending_pushes.append(pending)
-			# Dash collision logic moved to resolve_pending_pushes
+		GameEnums.EffectType.TRAMPLE, GameEnums.EffectType.BULLDOZE:
+			# Movement modifiers — applied during dash or execute_pass_through_walk, not per-tile.
 			pass
 		GameEnums.EffectType.DESTROY_OBSTACLE:
 			if target != null and target.definition.is_construct:

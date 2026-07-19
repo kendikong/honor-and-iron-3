@@ -72,8 +72,8 @@ enum EffectType {
 	TELEPORT_CASTER, ## Move caster to the target tile
 	CHANGE_TERRAIN, ## Change the terrain of the target tile
 	REFUND_AP_ON_CC, ## Refund AP if target already has ROOT or STUN
-	TRAMPLE, ## Dash pass-through: ATK X on enemies moved through; no displacement; end on open tile.
-	BULLDOZE, ## Dash pass-through: collision base X + PUSH X sideways; axial push when landing on target.
+	TRAMPLE, ## Pass-through move: ATK X on enemies moved through; no displacement; end on open tile.
+	BULLDOZE, ## Pass-through move: collision base X + PUSH X sideways; axial push when landing on target.
 }
 
 ## Types of temporary statuses that can be applied to units.

@@ -43,11 +43,11 @@ static func manual_keywords() -> Dictionary:
 		"SWAP": "Caster and target exchange tile positions.",
 		"TELEPORT": "Move instantly, ignoring pathing constraints.",
 		"TRAMPLE": (
-			"Dash pass-through: deal ATK X to each enemy moved through without displacing them. "
+			"Pass-through movement: deal ATK X to each enemy moved through without displacing them. "
 			+ "Caster must end on an open tile."
 		),
 		"BULLDOZE": (
-			"Dash pass-through: collision damage with base X and PUSH X on enemies moved through "
+			"Pass-through movement: collision damage with base X and PUSH X on enemies moved through "
 			+ "(caster immune to collision). Sideways push while passing; axial PUSH when landing on the victim."
 		),
 		# Economy
@@ -123,14 +123,13 @@ static func manual_keyword_system(kw: String) -> String:
 			return "EffectType.TELEPORT_CASTER moves actor if tile unoccupied and not a wall."
 		"TRAMPLE":
 			return (
-				"EffectType.TRAMPLE on DASH abilities: PhysicsSystem.dash deals flat ATK X per enemy passed, "
-				+ "temporarily clears their tile, restores after; AbilitySystem.can_use requires open end tile. "
-				+ "(Status TRAMPLE / trample_move passive is MovementSystem.has_trample — see status glossary.)"
+				"EffectType.TRAMPLE: PhysicsSystem.resolve_pass_through_tile on each entered enemy tile "
+				+ "(dash or MovementSystem.execute_pass_through_walk). Flat ATK X, tile restore, open end tile."
 			)
 		"BULLDOZE":
 			return (
-				"EffectType.BULLDOZE on DASH: PhysicsSystem.apply_trample_contact with collision_base_bonus X "
-				+ "and PUSH X sideways while passing, axial on final step; caster collision-immune."
+				"EffectType.BULLDOZE: resolve_pass_through_tile → apply_trample_contact "
+				+ "(collision base X + PUSH X). Works on DASH or path walk without DASH."
 			)
 		"AP":
 			return "UnitState.ability.points_left; AbilitySystem._has_resource_for_ability spends on CLASS_SKILL / Run."
@@ -650,9 +649,9 @@ static func _effect_impl_note(eff: EffectData) -> String:
 		GameEnums.EffectType.DASH:
 			return "DASH: straight-line path; may combine with TRAMPLE or BULLDOZE on the same ability."
 		GameEnums.EffectType.TRAMPLE:
-			return "TRAMPLE: PhysicsSystem.dash flat ATK on pass-through; no push; end tile must be open."
+			return "TRAMPLE: resolve_pass_through_tile during dash or execute_pass_through_walk; open end tile."
 		GameEnums.EffectType.BULLDOZE:
-			return "BULLDOZE: PhysicsSystem.dash collision base + sideways/axial PUSH; caster collision immune."
+			return "BULLDOZE: resolve_pass_through_tile → collision + push; dash or path walk (no DASH required)."
 		GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF:
 			return "ADD_STATUS: StatusSystem applies %s for %d turn(s)." % [
 				GameEnums.StatusType.keys()[eff.status_type],
@@ -755,9 +754,9 @@ static func _effect_type_system(k: String) -> String:
 		"DASH":
 			return "AbilitySystem queues dash pending_pushes → PhysicsSystem.dash along straight line."
 		"TRAMPLE":
-			return "Paired with DASH: AbilitySystem reads amount → PhysicsSystem.dash trample_atk path; open end tile required."
+			return "Paired with movement: AbilitySystem reads amount → dash or execute_pass_through_walk."
 		"BULLDOZE":
-			return "Paired with DASH: AbilitySystem reads amount → dash bulldoze path; collision base + push; caster immune."
+			return "Paired with movement: dash pending_pushes or execute_pass_through_walk; caster collision immune."
 		"HEAL":
 			return "AbilitySystem → CombatSystem.heal with ability scaling_stat."
 		"ARMOR_UP":

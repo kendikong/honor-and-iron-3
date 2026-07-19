@@ -10,7 +10,14 @@ extends RefCounted
 
 ## Find all tiles reachable within `max_steps` movement cost using Breadth-First-Search.
 ## O(N) performance, vastly faster than calling find_path for every tile.
-static func get_reachable_tiles(board: BoardState, start: Vector2i, max_steps: int, movement_type: GameEnums.MovementType = GameEnums.MovementType.WALK, move_cost: int = 1) -> Array[Vector2i]:
+static func get_reachable_tiles(
+	board: BoardState,
+	start: Vector2i,
+	max_steps: int,
+	movement_type: GameEnums.MovementType = GameEnums.MovementType.WALK,
+	move_cost: int = 1,
+	ability: AbilityData = null,
+) -> Array[Vector2i]:
 	var reachable: Array[Vector2i] = [start]
 	
 	if movement_type == GameEnums.MovementType.TELEPORT:
@@ -42,7 +49,7 @@ static func get_reachable_tiles(board: BoardState, start: Vector2i, max_steps: i
 			if cost_so_far.has(next) and cost_so_far[next] <= new_cost:
 				continue
 				
-			if not _is_walkable_for(board, next, unit):
+			if not _is_walkable_for(board, next, unit, ability):
 				continue
 				
 			cost_so_far[next] = new_cost
@@ -53,7 +60,15 @@ static func get_reachable_tiles(board: BoardState, start: Vector2i, max_steps: i
 ## Deterministic breadth-first shortest path from start to goal.
 ## Returns the list of tiles to ENTER (excluding start). Empty if unreachable or
 ## already there. Result is truncated to max_steps tiles.
-static func find_path(board: BoardState, start: Vector2i, goal: Vector2i, max_steps: int, movement_type: GameEnums.MovementType = GameEnums.MovementType.WALK, move_cost: int = 1) -> Array[Vector2i]:
+static func find_path(
+	board: BoardState,
+	start: Vector2i,
+	goal: Vector2i,
+	max_steps: int,
+	movement_type: GameEnums.MovementType = GameEnums.MovementType.WALK,
+	move_cost: int = 1,
+	ability: AbilityData = null,
+) -> Array[Vector2i]:
 	var empty: Array[Vector2i] = []
 	if start == goal:
 		return empty
@@ -83,7 +98,7 @@ static func find_path(board: BoardState, start: Vector2i, goal: Vector2i, max_st
 			var next: Vector2i = current + dir
 			if visited.has(next):
 				continue
-			if not _is_walkable_for(board, next, unit):
+			if not _is_walkable_for(board, next, unit, ability):
 				continue
 			visited[next] = true
 			came_from[next] = current
@@ -120,6 +135,7 @@ static func resolve_move_path(
 	target_coord: Vector2i,
 	waypoints: Array[Vector2i],
 	max_steps: int,
+	ability: AbilityData = null,
 ) -> Array[Vector2i]:
 	if unit == null:
 		return []
@@ -129,9 +145,9 @@ static func resolve_move_path(
 		if unit.definition != null
 		else GameEnums.MovementType.WALK
 	)
-	if _is_legal_walk(board, unit.position, waypoints, max_steps, move_cost):
+	if _is_legal_walk(board, unit.position, waypoints, max_steps, move_cost, ability):
 		return waypoints.duplicate()
-	return find_path(board, unit.position, target_coord, max_steps, mt, move_cost)
+	return find_path(board, unit.position, target_coord, max_steps, mt, move_cost, ability)
 
 
 static func can_reach_coord(
@@ -145,11 +161,20 @@ static func can_reach_coord(
 	return not path.is_empty() and path[path.size() - 1] == target_coord
 
 
-static func is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState) -> bool:
-	return _is_walkable_for(board, coord, unit)
+static func is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState, ability: AbilityData = null) -> bool:
+	return _is_walkable_for(board, coord, unit, ability)
 
 
-static func _is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState) -> bool:
+## True when the unit may path through an enemy-occupied tile.
+static func can_pass_through_enemy(unit: UnitState, ability: AbilityData = null) -> bool:
+	if has_trample(unit):
+		return true
+	if ability != null and AbilitySystem.has_pass_through_effects(ability):
+		return true
+	return false
+
+
+static func _is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState, ability: AbilityData = null) -> bool:
 	if not GridSystem.is_in_bounds(board, coord) or GridSystem.is_wall(board, coord):
 		return false
 	var tile := board.get_tile(coord)
@@ -158,8 +183,8 @@ static func _is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState
 		if occ != null:
 			var team = unit.team if unit != null else GameEnums.Team.PLAYER
 			if occ.team != team:
-				if unit != null and (unit.has_status(GameEnums.StatusType.GHOST) or has_trample(unit)):
-					return true # Ghost/Trample can walk through enemies
+				if unit != null and (unit.has_status(GameEnums.StatusType.GHOST) or can_pass_through_enemy(unit, ability)):
+					return true # Ghost/Trample/BULLDOZE can walk through enemies
 				return false # Cannot walk through enemies
 	return true
 
@@ -185,6 +210,81 @@ static func can_end_movement_on(board: BoardState, coord: Vector2i, unit: UnitSt
 	if occ.team != unit.team and has_trample(unit):
 		return true
 	return false
+
+## Walk the caster along a path when the ability has TRAMPLE/BULLDOZE but no DASH.
+static func execute_pass_through_walk(
+	board: BoardState,
+	unit: UnitState,
+	goal: Vector2i,
+	waypoints: Array[Vector2i],
+	ability: AbilityData,
+	events: Array[SimEvent],
+	effects: Array,
+) -> void:
+	if unit == null or not unit.is_alive() or ability == null:
+		return
+	var mods: Dictionary = AbilitySystem.pass_through_modifiers_from(effects)
+	var trample_atk: int = int(mods.get("trample_atk", 0))
+	var bulldoze: int = int(mods.get("bulldoze", 0))
+	if trample_atk <= 0 and bulldoze <= 0:
+		return
+	var move_cost: int = move_cost_for(unit)
+	var mt: GameEnums.MovementType = (
+		unit.definition.movement_type
+		if unit.definition != null
+		else GameEnums.MovementType.WALK
+	)
+	var path: Array[Vector2i] = resolve_move_path(
+		board, unit, goal, waypoints, ability.range_tiles, ability
+	)
+	if path.is_empty() or path[path.size() - 1] != goal:
+		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+			"actor": unit.id, "reason": "no_path",
+		}))
+		return
+	var from := unit.position
+	GridSystem.set_occupant(board, unit.position, -1)
+	var trample_hit_ids: Dictionary = {}
+	var trampled_restore: Dictionary = {}
+	var ability_id: StringName = ability.id
+	for step_index in range(path.size()):
+		var step: Vector2i = path[step_index]
+		var prev_pos: Vector2i = from if step_index == 0 else path[step_index - 1]
+		var move_dir: Vector2i = PhysicsSystem.cardinal_from_to(prev_pos, step)
+		var is_final_step: bool = step_index == path.size() - 1
+		if not PhysicsSystem.resolve_pass_through_tile(
+			board, unit, step, move_dir, is_final_step,
+			trample_atk, bulldoze, events, ability_id,
+			trample_hit_ids, trampled_restore, ability.display_name
+		):
+			unit.position = from if step_index == 0 else path[step_index - 1]
+			GridSystem.set_occupant(board, unit.position, unit.id)
+			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+				"actor": unit.id, "reason": "pass_through_blocked",
+			}))
+			return
+		if trampled_restore.has(unit.position):
+			var restore_id: int = int(trampled_restore[unit.position])
+			trampled_restore.erase(unit.position)
+			GridSystem.set_occupant(board, unit.position, restore_id)
+		unit.position = step
+		TerrainSystem.apply_entry_at(board, unit, step, events)
+	for restore_coord: Vector2i in trampled_restore.keys():
+		var restore_unit_id: int = int(trampled_restore[restore_coord])
+		if board.get_unit_at(restore_coord) == null:
+			GridSystem.set_occupant(board, restore_coord, restore_unit_id)
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+		"actor": unit.id,
+		"from": from,
+		"to": unit.position,
+		"steps": path.size(),
+		"path": path,
+		"is_pass_through_walk": true,
+		"ability_id": ability_id,
+	}))
+	TerrainSystem.apply_landing(board, unit, events)
+
 
 static func execute_move(board: BoardState, action: TimelineAction, events: Array[SimEvent]) -> void:
 	var unit := board.get_unit_by_id(action.actor_id)
@@ -345,7 +445,14 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 
 ## True when `route` is a contiguous, in-budget walk of cardinal steps onto passable
 ## tiles starting from `start`. Empty routes are not legal walks (use pathfinding).
-static func _is_legal_walk(board: BoardState, start: Vector2i, route: Array[Vector2i], budget: int, move_cost: int = 1) -> bool:
+static func _is_legal_walk(
+	board: BoardState,
+	start: Vector2i,
+	route: Array[Vector2i],
+	budget: int,
+	move_cost: int = 1,
+	ability: AbilityData = null,
+) -> bool:
 	if route.is_empty() or route.size() * move_cost > budget:
 		return false
 		
@@ -353,12 +460,18 @@ static func _is_legal_walk(board: BoardState, start: Vector2i, route: Array[Vect
 		
 	var prev := start
 	for step in route:
-		if GridSystem.manhattan(prev, step) != 1 or not _is_walkable_for(board, step, unit):
+		if GridSystem.manhattan(prev, step) != 1 or not _is_walkable_for(board, step, unit, ability):
 			return false
 		prev = step
 		
-	if GridSystem.is_occupied(board, route[route.size() - 1]):
-		return false
+	var end_tile: Vector2i = route[route.size() - 1]
+	if GridSystem.is_occupied(board, end_tile):
+		if ability != null and AbilitySystem.effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0:
+			var end_occ := board.get_unit_at(end_tile)
+			if end_occ != null and end_occ.id != unit.id:
+				return false
+		elif not can_pass_through_enemy(unit, ability):
+			return false
 		
 	return true
 

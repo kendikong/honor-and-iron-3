@@ -124,6 +124,51 @@ static func apply_trample_contact(
 	if push_dir != Vector2i.ZERO:
 		push(board, victim, push_dir, push_distance, events, mover, ability_id, immune_id)
 
+## Shared pass-through contact for dash steps and path walks.
+## Returns false when the mover must stop before entering `tile`.
+static func resolve_pass_through_tile(
+	board: BoardState,
+	mover: UnitState,
+	tile: Vector2i,
+	move_dir: Vector2i,
+	is_final_step: bool,
+	trample_atk: int,
+	bulldoze: int,
+	events: Array[SimEvent],
+	ability_id: StringName,
+	trample_hit_ids: Dictionary,
+	trampled_restore: Dictionary,
+	source_label: String = "",
+) -> bool:
+	var occupant := board.get_unit_at(tile)
+	if occupant == null:
+		return true
+	if occupant.id == mover.id:
+		return true
+	if occupant.team == mover.team:
+		return false
+	if trample_hit_ids.has(occupant.id):
+		return true
+	if bulldoze > 0:
+		trample_hit_ids[occupant.id] = true
+		var push_dir := move_dir if is_final_step else left_of_direction(move_dir)
+		apply_trample_contact(board, mover, occupant, tile, push_dir, bulldoze, events, ability_id, bulldoze)
+		occupant = board.get_unit_at(tile)
+		return occupant == null or occupant.id == mover.id
+	if trample_atk > 0:
+		trample_hit_ids[occupant.id] = true
+		var label := source_label if source_label != "" else "Trample"
+		var scaled_atk := CombatSystem.calculate_scaled_damage(
+			mover, trample_atk, GameEnums.StatType.PHYSICAL, board
+		)
+		CombatSystem.deal_damage_raw(
+			board, mover, occupant, scaled_atk, GameEnums.StatType.PHYSICAL, events, label, trample_atk
+		)
+		trampled_restore[tile] = occupant.id
+		GridSystem.set_occupant(board, tile, -1)
+		return true
+	return false
+
 ## Straight-line movement. TRAMPLE X: pass through enemies, flat ATK X, no push, restore
 ## enemies after the dasher leaves their tile. BULLDOZE X: pass through with collision
 ## base X + PUSH X (sideways while passing, axial when stopping on the victim).
@@ -167,45 +212,19 @@ static func dash(
 				_emit_collision(board, unit, occupant, next, distance, traveled, events, pusher, ability_id)
 			break
 
-		if use_bulldoze:
-			if occupant != null and occupant.team != unit.team and not trample_hit_ids.has(occupant.id):
-				trample_hit_ids[occupant.id] = true
-				var hit_ev_start := events.size()
+		if use_bulldoze or use_trample_atk:
+			if occupant != null and occupant.team != unit.team:
 				var is_final_step := step_i == distance - 1
-				var push_dir := direction if is_final_step else left_of_direction(direction)
-				apply_trample_contact(
-					board, unit, occupant, next, push_dir, bulldoze, events, ability_id, bulldoze
-				)
-				for ev_i in range(hit_ev_start, events.size()):
-					var hit_ev: SimEvent = events[ev_i]
-					if hit_ev.type in [
-						GameEnums.SimEventType.COLLISION,
-						GameEnums.SimEventType.MATH_TELEMETRY,
-						GameEnums.SimEventType.UNIT_DAMAGED,
-					]:
-						hit_ev.data["dash_hit_step"] = traveled
+				if not resolve_pass_through_tile(
+					board, unit, next, direction, is_final_step,
+					trample_atk if use_trample_atk else 0,
+					bulldoze if use_bulldoze else 0,
+					events, ability_id, trample_hit_ids, trampled_restore, source_label
+				):
+					break
 				occupant = board.get_unit_at(next)
 				if occupant != null and occupant.id != unit.id:
 					break
-		elif use_trample_atk:
-			if occupant != null and occupant.team != unit.team and not trample_hit_ids.has(occupant.id):
-				trample_hit_ids[occupant.id] = true
-				var label := source_label if source_label != "" else "Trample"
-				var ev_before := events.size()
-				var scaled_atk := CombatSystem.calculate_scaled_damage(
-					unit, trample_atk, GameEnums.StatType.PHYSICAL, board
-				)
-				CombatSystem.deal_damage_raw(
-					board, unit, occupant, scaled_atk, GameEnums.StatType.PHYSICAL, events, label, trample_atk
-				)
-				for ev_i in range(ev_before, events.size()):
-					if events[ev_i].type == GameEnums.SimEventType.UNIT_DAMAGED:
-						events[ev_i].data["dash_hit_step"] = traveled
-						break
-				trampled_restore[next] = occupant.id
-				GridSystem.set_occupant(board, next, -1)
-			elif occupant != null and occupant.id != unit.id:
-				break
 		elif occupant != null:
 			_emit_collision(board, unit, occupant, next, distance, traveled, events, pusher, ability_id)
 			break
