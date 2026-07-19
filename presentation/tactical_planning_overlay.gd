@@ -25,7 +25,7 @@ const _ROUTE_CORNER_R: float = 5.0
 const _ROUTE_GLOW_W: float = 8.0
 const _ROUTE_OUTLINE_W: float = 5.0
 const _ROUTE_LINE_W: float = 3.75
-const _ROUTE_AA: bool = true
+const _ROUTE_AA: bool = false
 const _ROUTE_CORE_W: float = 1.25
 const _ROUTE_HEAD_LEN: float = 8.5
 const _ROUTE_HEAD_HALF_W: float = 4.7
@@ -1238,12 +1238,8 @@ func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color) -> void:
 	var base: Vector2 = tip - travel_dir * _ROUTE_HEAD_LEN
 	var wing_l: Vector2 = base + perp * _ROUTE_HEAD_HALF_W
 	var wing_r: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
-	var span: float = wing_l.distance_to(wing_r)
-	var steps: int = maxi(1, int(ceil(span / 2.0)))
-	for i: int in range(steps + 1):
-		var t: float = float(i) / float(steps)
-		var base_pt: Vector2 = wing_l.lerp(wing_r, t)
-		draw_line(base_pt, tip, fill, _ROUTE_LINE_W, _ROUTE_AA)
+	var head := PackedVector2Array([tip, wing_l, wing_r])
+	draw_colored_polygon(head, fill)
 
 
 func _route_end_direction(path: PackedVector2Array) -> Vector2:
