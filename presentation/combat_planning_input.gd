@@ -80,7 +80,7 @@ func on_left_press(local: Vector2) -> void:
 	if board == null or not board.is_in_bounds(cell):
 		cancel_aim()
 		return
-	var unit := board.get_unit_at(cell)
+	var unit := _unit_at_input_cell(cell)
 	if unit != null and not unit.is_enemy() and unit.is_alive():
 		if NetworkManager != null and NetworkManager.is_multiplayer:
 			if unit.controlling_player_id != NetworkManager.local_player_id:
@@ -207,7 +207,7 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
 	if actor == null or board == null or not board.is_in_bounds(cell):
 		return false
-	var dropped_on := board.get_unit_at(cell)
+	var dropped_on := _unit_at_input_cell(cell)
 	if dropped_on != null and dropped_on.id != actor.id:
 		if _is_selectable_player_unit(dropped_on):
 			_director.select_unit(dropped_on.id)
@@ -218,7 +218,7 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 		return _plan_approach_or_trample_on_enemy(
 			released_unit_id, dropped_on, local, cell, [], legal_move_tiles,
 		)
-	if cell == actor.position:
+	if cell == _proj_origin(actor):
 		if _drag_unit_was_selected:
 			if not had_movement:
 				if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
@@ -1071,8 +1071,14 @@ func _try_commit_move_with_self_skill(
 		return true
 	if not _drop_allows_move_tile(coord, legal_move_tiles, actor):
 		return false
-	_director.rpc_plan_move(unit_id, coord, _facing_from_drop(local, coord), waypoints)
-	_play_sfx("move")
+	_director.rpc_plan_move_with_self_ability(
+		unit_id,
+		coord,
+		_facing_from_drop(local, coord),
+		waypoints,
+		_director.selected_ability_index,
+	)
+	_play_sfx("ability")
 	return true
 
 
@@ -1371,6 +1377,15 @@ func _enemy_attackable_from_legal_tiles(
 		if GridSystem.manhattan(tile, enemy.position) <= rng:
 			return true
 	return false
+
+
+func _unit_at_input_cell(cell: Vector2i) -> UnitState:
+	if _director == null or _director.board == null:
+		return null
+	var occ := _proj().get_unit_at(cell)
+	if occ == null:
+		return null
+	return _director.board.get_unit_by_id(occ.id)
 
 
 func _proj() -> BoardState:
