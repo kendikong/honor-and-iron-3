@@ -1165,12 +1165,16 @@ func _play_attack_anim(event: SimEvent) -> void:
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if event.data.has("target_coord"):
 		var target_coord: Vector2i = event.data["target_coord"]
-		if unit != null:
+		if unit != null and target_coord != unit.position:
 			facing = _facing_toward(unit.position, target_coord)
+		elif unit != null:
+			facing = unit.facing
 	elif event.data.has("target_unit"):
 		var target := _board.get_unit_by_id(int(event.data["target_unit"])) if _board != null else null
-		if target != null and unit != null:
+		if target != null and unit != null and target.position != unit.position:
 			facing = _facing_toward(unit.position, target.position)
+		elif unit != null:
+			facing = unit.facing
 	var anim: StringName = _attack_anim(facing)
 	var thrust_dir: Vector2 = _facing_vector(facing)
 	if unit != null and event.data.has("target_coord"):
@@ -1324,7 +1328,7 @@ func _facing_toward_queued_action(unit_id: int) -> int:
 					target_coord = tgt.position
 			if target_coord != origin:
 				return _facing_toward(origin, target_coord)
-	return -1
+			return unit.facing
 
 
 func begin_drag_preview(unit_id: int) -> void:

@@ -324,10 +324,13 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var target_coord := _resolve_target_coord(board, action)
 
-	var new_facing := PhysicsSystem.facing_from_vector(PhysicsSystem.cardinal_from_to(actor.position, target_coord))
-	if actor.facing != new_facing:
-		actor.facing = new_facing
-		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_FACED, {"unit": actor.id, "facing": actor.facing}))
+	if target_coord != actor.position:
+		var new_facing := PhysicsSystem.facing_from_vector(
+			PhysicsSystem.cardinal_from_to(actor.position, target_coord),
+		)
+		if actor.facing != new_facing:
+			actor.facing = new_facing
+			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_FACED, {"unit": actor.id, "facing": actor.facing}))
 	var shape = action.ability.target_shape
 	var shape_size = action.ability.target_shape_size
 	if actor != null and actor.is_ability_upgraded(action.ability.id):
