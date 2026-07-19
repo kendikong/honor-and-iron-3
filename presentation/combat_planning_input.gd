@@ -22,8 +22,9 @@ const ICON_MOVE: String = "👟"
 const ICON_RUN: String = "🏃"
 const ICON_ATTACK: String = "⚔️"
 const ICON_SKILL: String = "🔮"
-const ICON_MOVE_ATTACK: String = "👟⚔️"
-const ICON_RUN_ATTACK: String = "🏃⚔️"
+const ICON_COMPOSITE_SEP: String = "/"
+const ICON_MOVE_ATTACK: String = "👟/⚔️"
+const ICON_RUN_ATTACK: String = "🏃/⚔️"
 const ICON_NULL: String = "∅"
 const ICON_WAIT: String = "⏸"
 
@@ -1747,7 +1748,7 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, _unit: UnitState = null) 
 			glyphs.append(glyph)
 	if glyphs.is_empty():
 		return ""
-	return "+".join(glyphs)
+	return ICON_COMPOSITE_SEP.join(glyphs)
 
 
 func refresh_mouse_cursor(cell: Vector2i) -> void:
