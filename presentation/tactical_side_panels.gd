@@ -30,6 +30,7 @@ var _log_label: RichTextLabel
 var _warn_label: RichTextLabel
 var _force_basic_check: CheckBox
 var _auto_run_check: CheckBox
+var _auto_use_skill_check: CheckBox
 var _danger_area_check: CheckBox
 var _wait_btn: Button
 var _wait_btn_syncing: bool = false
@@ -66,10 +67,13 @@ func apply_settings(settings: GameSettings) -> void:
 		_force_basic_check.add_theme_font_size_override("font_size", hint_sz)
 	if _auto_run_check != null:
 		_auto_run_check.add_theme_font_size_override("font_size", hint_sz)
+	if _auto_use_skill_check != null:
+		_auto_use_skill_check.add_theme_font_size_override("font_size", hint_sz)
 	if _danger_area_check != null:
 		_danger_area_check.add_theme_font_size_override("font_size", hint_sz)
 	if _wait_btn != null:
 		_wait_btn.add_theme_font_size_override("font_size", hint_sz)
+	_apply_planning_prefs()
 	_on_viewport_resized()
 	_last_skill_rebuild_key = ""
 	_rebuild_ability_buttons()
@@ -209,6 +213,16 @@ func _add_planning_controls(parent: VBoxContainer) -> void:
 	_auto_run_check.toggled.connect(_on_auto_run_toggled)
 	auto_row.add_child(_auto_run_check)
 
+	_auto_use_skill_check = CheckBox.new()
+	_auto_use_skill_check.text = "Auto Skill After Move"
+	_auto_use_skill_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_auto_use_skill_check.tooltip_text = (
+		"When enabled, hovering a move tile with a self-target skill shows move/skill composite cursors. "
+		+ "When disabled, only movement icons are shown on move tiles."
+	)
+	_auto_use_skill_check.toggled.connect(_on_auto_use_skill_toggled)
+	auto_row.add_child(_auto_use_skill_check)
+
 	_danger_area_check = CheckBox.new()
 	_danger_area_check.text = "Danger Area"
 	_danger_area_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -316,6 +330,42 @@ func _on_viewport_resized() -> void:
 		_right_anchor.offset_right = -8
 
 
+func _apply_planning_prefs() -> void:
+	if _settings == null:
+		return
+	if _force_basic_check != null:
+		_force_basic_check.set_pressed_no_signal(_settings.planning_force_basic)
+	if _auto_run_check != null:
+		_auto_run_check.set_pressed_no_signal(_settings.planning_auto_run)
+	if _auto_use_skill_check != null:
+		_auto_use_skill_check.set_pressed_no_signal(_settings.planning_auto_use_skill_after_move)
+	if _danger_area_check != null:
+		_danger_area_check.set_pressed_no_signal(_settings.planning_danger_area)
+	if _planning_input != null:
+		_planning_input.force_basic_movement = _settings.planning_force_basic
+		_planning_input.auto_run = _settings.planning_auto_run
+		_planning_input.auto_use_skill_after_move = _settings.planning_auto_use_skill_after_move
+	if _director != null:
+		_director.auto_run = _settings.planning_auto_run
+	if _planning_overlay != null:
+		_planning_overlay.set_show_danger_area(_settings.planning_danger_area)
+	_refresh_planning_move_overlay()
+
+
+func _save_planning_prefs() -> void:
+	if _settings == null:
+		return
+	if _force_basic_check != null:
+		_settings.planning_force_basic = _force_basic_check.button_pressed
+	if _auto_run_check != null:
+		_settings.planning_auto_run = _auto_run_check.button_pressed
+	if _auto_use_skill_check != null:
+		_settings.planning_auto_use_skill_after_move = _auto_use_skill_check.button_pressed
+	if _danger_area_check != null:
+		_settings.planning_danger_area = _danger_area_check.button_pressed
+	_settings.save_to_disk()
+
+
 func _on_force_basic_toggled(pressed: bool) -> void:
 	if pressed and _auto_run_check != null and _auto_run_check.button_pressed:
 		_auto_run_check.set_pressed_no_signal(false)
@@ -325,6 +375,7 @@ func _on_force_basic_toggled(pressed: bool) -> void:
 			_director.auto_run = false
 	if _planning_input != null:
 		_planning_input.force_basic_movement = pressed
+	_save_planning_prefs()
 	_refresh_planning_move_overlay()
 
 
@@ -341,6 +392,14 @@ func _on_auto_run_toggled(pressed: bool) -> void:
 		_selected_ability = _director.selected_ability_index
 	_last_skill_rebuild_key = ""
 	_rebuild_ability_buttons()
+	_save_planning_prefs()
+	_refresh_planning_move_overlay()
+
+
+func _on_auto_use_skill_toggled(pressed: bool) -> void:
+	if _planning_input != null:
+		_planning_input.auto_use_skill_after_move = pressed
+	_save_planning_prefs()
 	_refresh_planning_move_overlay()
 
 
@@ -384,6 +443,7 @@ func _refresh_wait_button() -> void:
 func _on_danger_area_toggled(pressed: bool) -> void:
 	if _planning_overlay != null:
 		_planning_overlay.set_show_danger_area(pressed)
+	_save_planning_prefs()
 
 
 func _add_rich_panel(parent: VBoxContainer, title: String, min_h: int = 120) -> RichTextLabel:

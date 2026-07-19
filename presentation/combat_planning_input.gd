@@ -6,6 +6,7 @@ extends RefCounted
 
 var force_basic_movement: bool = false
 var auto_run: bool = false
+var auto_use_skill_after_move: bool = true
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -1941,7 +1942,28 @@ func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 	return slots
 
 
-func _cursor_icon_from_commit_slots(slots: Dictionary, _unit: UnitState = null) -> String:
+func _composite_cursors_enabled() -> bool:
+	return auto_use_skill_after_move and not force_basic_movement
+
+
+func _blue_tile_cursor_is_move_only(unit: UnitState, cell: Vector2i) -> bool:
+	if _planning == null or not _planning.is_hover_move_tile(cell) or cell == unit.position:
+		return false
+	if not _composite_cursors_enabled():
+		return true
+	if _director == null or _director.selected_ability_index < 0:
+		return true
+	var ability: AbilityData = _selected_ability_data(unit)
+	if ability == null:
+		return true
+	if AbilitySystem.is_run_ability(ability) or AbilitySystem.is_wait_ability(ability):
+		return true
+	if _ability_has_dash(ability) and not dash_targeting:
+		return true
+	return not AbilitySystem.can_target_self(unit, ability)
+
+
+func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -> String:
 	if bool(slots.get("invalid", false)):
 		return ICON_NULL
 	var glyphs: PackedStringArray = []
@@ -1952,11 +1974,13 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, _unit: UnitState = null) 
 		var step: TimelineAction = steps[0] as TimelineAction
 		if step == null:
 			continue
-		var glyph: String = _step_cursor_glyph(step, _unit)
+		var glyph: String = _step_cursor_glyph(step, unit)
 		if glyph != "":
 			glyphs.append(glyph)
 	if glyphs.is_empty():
 		return ""
+	if not _composite_cursors_enabled() or glyphs.size() == 1:
+		return glyphs[0]
 	return ICON_COMPOSITE_SEP.join(glyphs)
 
 
@@ -2012,8 +2036,8 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 		if cell != p_unit.position and _is_hover_move_cell(p_unit, cell):
 			return _movement_icon_for(p_unit, cell)
 		return ""
-	# Blue move tile invariant: highlighted pre/post-move destinations always show a move icon.
-	if _planning != null and _planning.is_hover_move_tile(cell) and cell != p_unit.position:
+	# Blue move tile: move-only cursor unless self-target skill pairs move + action.
+	if _blue_tile_cursor_is_move_only(p_unit, cell):
 		return _premove_move_cursor_icon(p_unit, cell)
 	if dash_targeting and _planning != null:
 		var dash_ability := _selected_ability_data(p_unit)
@@ -2117,6 +2141,8 @@ func _move_attack_hover_icon(
 	cell: Vector2i,
 	_origin: Vector2i = Vector2i(-9999, -9999),
 ) -> String:
+	if not _composite_cursors_enabled():
+		return ""
 	if p_unit == null or cell == p_unit.position:
 		return ""
 	if _move_hover_icon(p_unit, cell) == "" and not (dragging and cell == _drag_last_free):
@@ -2147,6 +2173,8 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 		return ""
 	if cell == _proj_origin(actor):
 		return _self_tile_hover_icon(actor, cell)
+	if _blue_tile_cursor_is_move_only(actor, cell):
+		return _premove_move_cursor_icon(actor, cell)
 	if drag_preview_failed:
 		return ICON_NULL
 	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()

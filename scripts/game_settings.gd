@@ -56,6 +56,10 @@ var show_damage_numbers: bool = true
 var dev_tile_labels: bool = false
 var dev_boredom_atmosphere: bool = false
 var dev_boredom_water: bool = false
+var planning_force_basic: bool = false
+var planning_auto_run: bool = false
+var planning_danger_area: bool = false
+var planning_auto_use_skill_after_move: bool = true
 var screen_index: int = 0
 var window_position: Vector2i = Vector2i.ZERO
 var _has_saved_window_placement: bool = false
@@ -91,6 +95,12 @@ func load_from_disk() -> void:
 	dev_tile_labels = bool(cfg.get_value("developer", "tile_labels", dev_tile_labels))
 	dev_boredom_atmosphere = bool(cfg.get_value("developer", "boredom_atmosphere", dev_boredom_atmosphere))
 	dev_boredom_water = bool(cfg.get_value("developer", "boredom_water", dev_boredom_water))
+	planning_force_basic = bool(cfg.get_value("planning", "force_basic_movement", planning_force_basic))
+	planning_auto_run = bool(cfg.get_value("planning", "auto_run", planning_auto_run))
+	planning_danger_area = bool(cfg.get_value("planning", "danger_area", planning_danger_area))
+	planning_auto_use_skill_after_move = bool(
+		cfg.get_value("planning", "auto_use_skill_after_move", planning_auto_use_skill_after_move),
+	)
 	if cfg.has_section_key("display", "screen_index"):
 		screen_index = int(cfg.get_value("display", "screen_index", screen_index))
 		window_position = Vector2i(
@@ -136,6 +146,10 @@ func save_to_disk() -> void:
 	cfg.set_value("developer", "tile_labels", dev_tile_labels)
 	cfg.set_value("developer", "boredom_atmosphere", dev_boredom_atmosphere)
 	cfg.set_value("developer", "boredom_water", dev_boredom_water)
+	cfg.set_value("planning", "force_basic_movement", planning_force_basic)
+	cfg.set_value("planning", "auto_run", planning_auto_run)
+	cfg.set_value("planning", "danger_area", planning_danger_area)
+	cfg.set_value("planning", "auto_use_skill_after_move", planning_auto_use_skill_after_move)
 	cfg.set_value("display", "screen_index", screen_index)
 	cfg.set_value("display", "window_position_x", window_position.x)
 	cfg.set_value("display", "window_position_y", window_position.y)

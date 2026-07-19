@@ -9,6 +9,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_planning_action_range_tiles(failures)
 	_test_offensive_dash_heuristic(failures)
 	_test_action_range_auto_run_ap_gate(failures)
+	_test_composite_cursor_gate(failures)
 
 
 static func _test_force_basic_flag(failures: Array[String]) -> void:
@@ -138,3 +139,21 @@ static func _test_action_range_auto_run_ap_gate(failures: Array[String]) -> void
 		board, unit, skill, walk_tile, true,
 	):
 		failures.append("PlanningInputTest: walk premove should not consume run AP")
+
+
+static func _test_composite_cursor_gate(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	input.auto_use_skill_after_move = false
+	var slots: Dictionary = {
+		"pre": [TimelineAction.make_move(1, Vector2i(2, 2))],
+		"action": [TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 2), 1)],
+		"post": [],
+		"invalid": false,
+	}
+	var icon: String = input._cursor_icon_from_commit_slots(slots, null)
+	if icon.find("/") >= 0:
+		failures.append("PlanningInputTest: composite cursor should be disabled when auto_use_skill_after_move is off")
+	input.auto_use_skill_after_move = true
+	icon = input._cursor_icon_from_commit_slots(slots, null)
+	if icon.find("/") < 0:
+		failures.append("PlanningInputTest: composite cursor should join move and action when enabled")
