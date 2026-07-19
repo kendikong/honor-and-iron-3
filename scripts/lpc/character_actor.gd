@@ -488,6 +488,11 @@ func play_death(
 	_begin_hurt(facing_anim, knockback_dir, true, on_finished)
 
 
+func cancel_combat_reaction() -> void:
+	_kill_combat_tween()
+	_one_shot_generation += 1
+
+
 func snap_to_anchor(anchor: Vector2) -> void:
 	_anchor_position = anchor
 	if _combat_tween == null or not _combat_tween.is_valid():
