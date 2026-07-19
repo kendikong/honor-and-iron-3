@@ -24,6 +24,7 @@ func run_all() -> int:
 	failures += _check("movement skill resolves in pre-move bucket", _test_movement_skill_pre_move_bucket())
 	failures += _check("run clears next turn and can be used again", _test_run_available_next_turn())
 	failures += _check("run leaves action slot for 0 AP basic attack", _test_run_leaves_action_slot())
+	failures += _check("run uses global AbilityKind economy paths", _test_run_global_economy_rules())
 
 	print_demo_battle()
 
@@ -596,6 +597,39 @@ func _test_run_leaves_action_slot() -> bool:
 		return false
 	if not AbilitySystem.can_plan(runner, basic):
 		printerr("  0 AP basic attack must be planable after run")
+		return false
+	return true
+
+
+func _test_run_global_economy_rules() -> bool:
+	var run := DataLibrary.get_universal_run()
+	if run == null or not run.is_universal_run():
+		printerr("  universal run must be AbilityKind.UNIVERSAL_RUN")
+		return false
+	if run.consumes_action_slot():
+		printerr("  run must not consume action slot")
+		return false
+	var board := _empty_board(Vector2i(6, 3), [])
+	var runner_def := _make_unit_data(&"runner", 10, 4, 1, null)
+	var runner := _place(board, 1, runner_def, GameEnums.Team.PLAYER, Vector2i(0, 1))
+	if not AbilitySystem.can_afford_run(runner):
+		printerr("  runner should afford run at turn start")
+		return false
+	if not AbilitySystem.can_plan_pre_move(runner, true):
+		printerr("  runner should have pre-move options at turn start")
+		return false
+	var events: Array[SimEvent] = []
+	if not AbilitySystem.spend_run_for_move(runner, events):
+		printerr("  spend_run_for_move should succeed")
+		return false
+	if runner.ability.points_left != 0:
+		printerr("  run should spend 1 AP via global cost path")
+		return false
+	if not runner.has_run_boost():
+		printerr("  run should apply movement boost")
+		return false
+	if AbilitySystem.is_planning_fully_exhausted(runner, true):
+		printerr("  runner must not be fully exhausted while action slot remains")
 		return false
 	return true
 

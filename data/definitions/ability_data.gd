@@ -74,6 +74,14 @@ func is_pre_move_kind() -> bool:
 	return is_movement_kind() or kind == GameEnums.AbilityKind.UNIVERSAL_RUN
 
 
+func is_universal_run() -> bool:
+	return kind == GameEnums.AbilityKind.UNIVERSAL_RUN
+
+
+func is_universal_wait() -> bool:
+	return kind == GameEnums.AbilityKind.UNIVERSAL_WAIT
+
+
 func is_class_kind() -> bool:
 	return kind == GameEnums.AbilityKind.CLASS_SKILL
 

@@ -711,15 +711,9 @@ func selected_phase_action_exhausted(unit_id: int = -1) -> bool:
 	var p_unit := _proj_unit(id)
 	if p_unit == null or p_unit.is_enemy():
 		return false
-	var can_act: bool = p_unit.can_use_action_slot()
-	var can_move: bool = (
-		_director.get_planning_move_timing(id) >= 0
-		and (
-			p_unit.movement.points_left > 0
-			or AbilitySystem.can_afford_run(p_unit)
-		)
+	return AbilitySystem.is_planning_fully_exhausted(
+		p_unit, _director.get_planning_move_timing(id) >= 0,
 	)
-	return not can_act and not can_move
 
 
 func _is_selectable_player_unit(unit: UnitState) -> bool:
@@ -1350,7 +1344,7 @@ func _move_budget(unit: UnitState) -> int:
 	if unit == null:
 		return 0
 	if _run_mode_selected(unit):
-		return AbilitySystem.preview_move_budget_with_run(unit)
+		return AbilitySystem.planning_move_budget(unit, true)
 	return unit.movement.points_left
 
 

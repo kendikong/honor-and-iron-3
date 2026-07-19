@@ -37,6 +37,14 @@ var irreversible: bool = false
 ## MOVE only: apply universal Run boost immediately before this step resolves.
 var uses_run: bool = false
 
+
+func is_run_boosted_pre_move() -> bool:
+	return (
+		type == GameEnums.ActionType.MOVE
+		and uses_run
+		and move_timing == GameEnums.MoveTiming.PRE_ACTION
+	)
+
 static func make_move(
 	p_actor_id: int,
 	p_target_coord: Vector2i,

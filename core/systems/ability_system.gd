@@ -121,7 +121,11 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 
 
 static func is_run_ability(ability: AbilityData) -> bool:
-	return ability != null and DataLibrary.is_universal_run(ability.id)
+	return ability != null and ability.is_universal_run()
+
+
+static func is_wait_ability(ability: AbilityData) -> bool:
+	return ability != null and ability.is_universal_wait()
 
 
 static func can_afford_run(actor: UnitState) -> bool:
@@ -130,11 +134,42 @@ static func can_afford_run(actor: UnitState) -> bool:
 	var run_ability: AbilityData = DataLibrary.get_universal_run()
 	if run_ability == null:
 		return false
-	return actor.ability.points_left >= run_ability.action_point_cost
+	return _has_resource_for_ability(actor, run_ability)
 
 
-static func is_wait_ability(ability: AbilityData) -> bool:
-	return ability != null and DataLibrary.is_universal_wait(ability.id)
+## Master Bible § Universal Action Economy: Pre-Move column (walk, Run, movement skills).
+static func can_plan_pre_move(unit: UnitState, move_slot_open: bool) -> bool:
+	if unit == null or not move_slot_open:
+		return false
+	if unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STUN):
+		return false
+	return unit.movement.points_left > 0 or can_afford_run(unit)
+
+
+static func is_planning_fully_exhausted(unit: UnitState, move_slot_open: bool) -> bool:
+	if unit == null:
+		return true
+	return not unit.can_use_action_slot() and not can_plan_pre_move(unit, move_slot_open)
+
+
+## Spend Run AP and apply movement extension when a PRE_MOVE walk resolves (uses_run).
+static func spend_run_for_move(actor: UnitState, events: Array[SimEvent]) -> bool:
+	if not can_afford_run(actor):
+		return false
+	var run_ability: AbilityData = DataLibrary.get_universal_run()
+	if run_ability == null:
+		return false
+	_spend_ability_cost(actor, run_ability)
+	apply_run_boost(actor, events)
+	return true
+
+
+static func planning_move_budget(unit: UnitState, run_mode: bool) -> int:
+	if unit == null:
+		return 0
+	if run_mode:
+		return preview_move_budget_with_run(unit)
+	return unit.movement.points_left
 
 
 ## Planning UI: skill button enabled when the unit could commit this ability now (ignores range).
@@ -327,6 +362,8 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData) -> void:
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
 			actor.movement.points_left -= ability.movement_point_cost
+		GameEnums.AbilityKind.UNIVERSAL_RUN:
+			actor.ability.points_left -= ability.action_point_cost
 		GameEnums.AbilityKind.CLASS_SKILL:
 			actor.ability.points_left -= ability.action_point_cost
 		_:

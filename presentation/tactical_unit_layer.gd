@@ -328,7 +328,7 @@ func _planned_enemy_target_ids(caster_id: int) -> Array[int]:
 		if action.ability.is_movement_kind():
 			origin = action.target_coord
 			continue
-		if DataLibrary.is_universal_wait(action.ability.id) or DataLibrary.is_universal_run(action.ability.id):
+		if action.ability.is_movement_kind() or action.ability.is_universal_run() or action.ability.is_universal_wait():
 			continue
 		_collect_planned_ability_enemy_targets(action, origin, board, out, seen)
 	return out
@@ -672,16 +672,9 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 		actor.set_planning_exhausted(not _defer_exhaustion_grey(unit.id))
 		actor.set_running(current.has_run_boost())
 		return
-	var can_act: bool = current.can_use_action_slot()
-	var can_move: bool = (
-		current.movement.points_left > 0
-		or AbilitySystem.can_afford_run(current)
-	) and (
-		not current.has_status(GameEnums.StatusType.ROOT)
-		and not current.has_status(GameEnums.StatusType.STUN)
-		and _director.get_planning_move_timing(current.id) >= 0
+	var exhausted: bool = AbilitySystem.is_planning_fully_exhausted(
+		current, _director.get_planning_move_timing(current.id) >= 0,
 	)
-	var exhausted: bool = not can_act and not can_move
 	actor.set_planning_exhausted(exhausted and not _defer_exhaustion_grey(unit.id))
 	actor.set_running(current.has_run_boost())
 
@@ -888,18 +881,10 @@ func _actor_grid_cell(unit_id: int) -> Vector2i:
 func _unit_uses_run_anim(unit_id: int) -> bool:
 	if _director != null:
 		for action: TimelineAction in _director.plan_pre_move.entries:
-			if (
-				action.actor_id == unit_id
-				and action.type == GameEnums.ActionType.MOVE
-				and action.uses_run
-			):
+			if action.actor_id == unit_id and action.is_run_boosted_pre_move():
 				return true
 		for action: TimelineAction in _director.plan_post_move.entries:
-			if (
-				action.actor_id == unit_id
-				and action.type == GameEnums.ActionType.MOVE
-				and action.uses_run
-			):
+			if action.actor_id == unit_id and action.is_run_boosted_pre_move():
 				return true
 	var projected := _proj_unit(unit_id)
 	if projected != null and projected.has_run_boost():
@@ -1190,7 +1175,7 @@ func _play_attack_anim(event: SimEvent) -> void:
 				thrust_dir = Vector2(delta2).normalized()
 	var ability_id: StringName = event.data.get("ability", &"")
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
-	if ability_data != null and (ability_data.is_movement_skill or DataLibrary.is_universal_run(ability_data.id)):
+	if ability_data != null and ability_data.is_pre_move_kind():
 		actor.play_spellcast(_spell_anim(facing))
 		return
 	if ability_data != null and not AbilitySystem.ability_uses_attack_animation(ability_data):
@@ -1266,7 +1251,7 @@ func _facing_toward_queued_action(unit_id: int) -> int:
 				continue
 			if action.ability == null:
 				continue
-			if DataLibrary.is_universal_wait(action.ability.id) or DataLibrary.is_universal_run(action.ability.id):
+			if action.ability.is_movement_kind() or action.ability.is_universal_run() or action.ability.is_universal_wait():
 				continue
 			var target_coord: Vector2i = action.target_coord
 			if action.target_unit_id >= 0:
