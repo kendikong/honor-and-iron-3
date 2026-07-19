@@ -892,14 +892,11 @@ func _unit_uses_run_anim(unit_id: int) -> bool:
 				and action.uses_run
 			):
 				return true
-		if _director.selected_ability_index >= 0:
-			var unit: UnitState = _proj_unit(unit_id)
-			if unit == null and _board != null:
-				unit = _board.get_unit_by_id(unit_id)
+		for action: TimelineAction in _director.plan_post_move.entries:
 			if (
-				unit != null
-				and _director.selected_ability_index < unit.active_abilities.size()
-				and AbilitySystem.is_run_ability(unit.active_abilities[_director.selected_ability_index])
+				action.actor_id == unit_id
+				and action.type == GameEnums.ActionType.MOVE
+				and action.uses_run
 			):
 				return true
 	var projected := _proj_unit(unit_id)

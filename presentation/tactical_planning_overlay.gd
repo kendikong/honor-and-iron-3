@@ -1060,6 +1060,8 @@ func _draw_preview_arrows() -> void:
 
 
 func _interaction_move_hover_active(unit_id: int) -> bool:
+	if _planning_input != null:
+		return _planning_input.interaction_move_hover_active(unit_id, _hover_coord)
 	if _director == null or unit_id < 0 or not _board.is_in_bounds(_hover_coord):
 		return false
 	var move_timing: int = _director.get_planning_move_timing(unit_id)
@@ -1115,9 +1117,11 @@ func _draw_interaction_overlay() -> void:
 		and _planning_input.is_live_preview_active()
 		and _interaction_move_hover_active(actor.id)
 	):
-		var leg: Array = _pending_move_route_leg(actor.id, prev)
-		if leg.size() >= 2:
-			_draw_route_line(leg, p_col, true, true)
+		var draw_route: Array = route
+		if draw_route.size() < 2:
+			draw_route = _pending_move_route_leg(actor.id, prev)
+		if draw_route.size() >= 2:
+			_draw_route_line(draw_route, p_col, true, true)
 	if _attack_target_id >= 0:
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord

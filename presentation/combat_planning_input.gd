@@ -686,6 +686,20 @@ func is_live_preview_active() -> bool:
 	return preview_state.preview_board != null
 
 
+func interaction_move_hover_active(unit_id: int, cell: Vector2i) -> bool:
+	if _director == null or unit_id < 0 or not _director.board.is_in_bounds(cell):
+		return false
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	if move_timing == -1:
+		return false
+	if _director.unit_has_move_planned_at_timing(unit_id, move_timing):
+		return false
+	var p_unit := _proj_unit(unit_id)
+	if p_unit == null:
+		return false
+	return _is_hover_move_cell(p_unit, cell)
+
+
 func selected_phase_action_exhausted(unit_id: int = -1) -> bool:
 	if _director == null:
 		return false
@@ -753,10 +767,9 @@ func _refresh_selected_interaction_preview() -> void:
 		_restore_hover_preview()
 		return
 	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
-		if _run_mode_selected(p_unit) or _basic_move_allowed() or force_basic_movement:
-			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
-			_refresh_click_target_highlight()
-			return
+		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
+		_refresh_click_target_highlight()
+		return
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
 		var target_id := _hover_attack_target_id()
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
@@ -774,8 +787,6 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 
 
 func _movement_icon_for(p_unit: UnitState, cell: Vector2i) -> String:
-	if _run_mode_selected(p_unit):
-		return ICON_RUN
 	if AbilitySystem.movement_requires_run(_proj(), p_unit, cell, []):
 		return ICON_RUN
 	return ICON_MOVE
@@ -1895,9 +1906,14 @@ func _preview_attack_target_id(preview: Dictionary, actor_id: int) -> int:
 	return -1
 
 
-func _drag_move_preview_mode(unit: UnitState) -> int:
-	if _run_mode_selected(unit):
-		return TacticalUnitLayer.DragPreviewAnim.RUN
+func _drag_move_preview_mode(unit: UnitState, dest: Vector2i) -> int:
+	if unit != null and dest != unit.position:
+		var waypoints: Array[Vector2i] = []
+		if _drag_route.size() >= 2:
+			for i: int in range(1, _drag_route.size()):
+				waypoints.append(_drag_route[i])
+		if AbilitySystem.movement_requires_run(_proj(), unit, dest, waypoints):
+			return TacticalUnitLayer.DragPreviewAnim.RUN
 	if preview_state.preview_board != null and unit != null:
 		var pv := preview_state.preview_board.get_unit_by_id(unit.id)
 		if pv != null and pv.has_status(GameEnums.StatusType.RUNNING):
@@ -1958,7 +1974,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			return
 		if _can_move_to(actor, occ.position):
 			var walk_face: int = _facing_toward(actor.position, occ.position)
-			emit_drag_sprite.call(_drag_move_preview_mode(actor), walk_face, preview_cell, drag_preview_failed)
+			emit_drag_sprite.call(_drag_move_preview_mode(actor, occ.position), walk_face, preview_cell, drag_preview_failed)
 			_planning.set_drag_attack_target(-1)
 			return
 	if cell == actor.position and _drag_unit_was_selected:
@@ -2002,7 +2018,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 				_set_drag_attack_target(-1, preview)
 				return
 		var move_face: int = _facing_toward(unit.position, _drag_last_free)
-		emit_drag_sprite.call(_drag_move_preview_mode(actor), move_face, preview_cell, drag_preview_failed)
+		emit_drag_sprite.call(_drag_move_preview_mode(actor, _drag_last_free), move_face, preview_cell, drag_preview_failed)
 		_set_drag_attack_target(-1, preview)
 		return
 	var idle_face: int = _facing_from_drop(local, cell)

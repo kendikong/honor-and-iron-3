@@ -620,17 +620,36 @@ func _get_combined_plan() -> Timeline:
 	return combined
 
 func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
+	var strip_pre: bool = false
+	var strip_act: bool = false
+	var strip_post: bool = false
+	for a: Variant in new_actions:
+		if not a is TimelineAction:
+			continue
+		var action: TimelineAction = a as TimelineAction
+		match action.type:
+			GameEnums.ActionType.MOVE:
+				if action.move_timing == GameEnums.MoveTiming.POST_ACTION:
+					strip_post = true
+				else:
+					strip_pre = true
+			_:
+				strip_act = true
 	var combined := Timeline.new()
 	for a: TimelineAction in plan_pre_move.entries:
-		if a.actor_id == unit_id:
+		if a.actor_id == unit_id and strip_pre:
 			continue
 		combined.add(a)
 	for a: TimelineAction in plan_action.entries:
-		if a.actor_id == unit_id:
+		if a.actor_id == unit_id and strip_act:
 			continue
 		combined.add(a)
+	var wait_ids: Array = _wait_unit_ids.keys()
+	wait_ids.sort()
+	for uid_var: Variant in wait_ids:
+		combined.add(_make_wait_action(int(uid_var)))
 	for a: TimelineAction in plan_post_move.entries:
-		if a.actor_id == unit_id:
+		if a.actor_id == unit_id and strip_post:
 			continue
 		combined.add(a)
 	for a: Variant in new_actions:
