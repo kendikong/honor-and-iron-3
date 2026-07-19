@@ -684,7 +684,6 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_intent_state.set_hover_coord(cell)
 		if _planning != null:
 			_planning.set_hover_coord(cell)
-			_sync_threat_origin_from_cell(cell)
 	if not _is_planning() or dragging:
 		return
 	var planning_cell_changed: bool = cell != _last_planning_hover_cell
@@ -701,6 +700,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 		refresh_mouse_cursor(cell)
 		return
 	if _planning != null and planning_cell_changed:
+		_planning._recompute_hover_ranges_from_inputs()
+		_sync_threat_origin_from_cell(cell)
 		_planning._recompute_hover_ranges_from_inputs()
 	if _director.selected_unit_id >= 0:
 		if planning_cell_changed:
@@ -1271,6 +1272,8 @@ func arm_dash_targeting() -> void:
 	if selected_phase_action_exhausted(actor.id):
 		return
 	dash_targeting = true
+	if _planning != null:
+		_planning.clear_threat_origin()
 	_invalidate_planning_hover_cache()
 	_request_planning_selection_refresh()
 
@@ -2217,6 +2220,8 @@ func _skill_interaction_active() -> bool:
 func _threat_follows_cursor() -> bool:
 	if aiming:
 		return true
+	if dash_targeting:
+		return false
 	if not _skill_interaction_active():
 		return false
 	if _director == null or _director.selected_unit_id < 0:
@@ -2241,7 +2246,10 @@ func _sync_threat_origin_from_cell(cell: Vector2i) -> void:
 		if hover_unit != null and hover_unit.is_enemy():
 			_planning.clear_threat_origin()
 			return
-	if _threat_follows_cursor() and _director.board.is_in_bounds(cell):
+	if not _threat_follows_cursor():
+		_planning.clear_threat_origin()
+		return
+	if _planning.is_hover_move_tile(cell):
 		_planning.set_threat_origin(cell)
 	else:
 		_planning.clear_threat_origin()
