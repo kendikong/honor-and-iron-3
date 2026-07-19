@@ -1229,7 +1229,7 @@ func _on_spellcast_release(target_ids: Array[int]) -> void:
 	for target_id: int in target_ids:
 		var target_actor: CharacterActor = _actors.get(target_id)
 		if target_actor != null:
-			target_actor.flash_spell_hit()
+			target_actor.flash_spell_hit(LpcConstants.spellcast_flash_hold_sec())
 
 
 func _ability_for_event(unit_id: int, ability_id: StringName) -> AbilityData:

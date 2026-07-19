@@ -19,7 +19,7 @@ const NUDGE_KNOCKBACK_PX: float = 13.0
 const ACTION_HOLD_SANDBOX_SEC: float = 1.0
 const ACTION_HOLD_COMBAT_SEC: float = 0.1
 const ACTION_RECOVER_FRAMES: int = 3
-const ACTION_RECOVER_SPEED_SCALE: float = 6.0
+const ACTION_RECOVER_SPEED_SCALE: float = 12.0
 
 const _ONE_SHOT_MELEE: Array[StringName] = [
 	&"slash", &"thrust", &"halfslash", &"backslash",
@@ -404,15 +404,16 @@ func play_spellcast(cast_anim: StringName, on_release: Callable = Callable()) ->
 	)
 
 
-func flash_spell_hit() -> void:
+func flash_spell_hit(hold_sec: float = 0.45) -> void:
 	if _is_dying:
 		return
 	if _hurt_tween != null and _hurt_tween.is_valid():
 		_hurt_tween.kill()
 	_hurt_tween = create_tween().set_parallel(true)
+	var fade_sec: float = _C.SPELLCAST_FLASH_FADE_SEC
 	for spr: AnimatedSprite2D in _layers:
 		spr.self_modulate = Color(2.8, 2.8, 2.8, 1.0)
-		_hurt_tween.tween_property(spr, "self_modulate", Color.WHITE, 0.11).set_delay(0.03)
+		_hurt_tween.tween_property(spr, "self_modulate", Color.WHITE, fade_sec).set_delay(hold_sec)
 
 
 func _begin_one_shot_layers(action_anim: StringName) -> float:

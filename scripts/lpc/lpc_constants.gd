@@ -56,10 +56,16 @@ const SPELLCAST_RELEASE_SEC: float = float(SPELLCAST_RELEASE_FRAME) / SPELLCAST_
 const SPELLCAST_ANIM_SEC: float = float(SPELLCAST_FRAME_COUNT) / SPELLCAST_FPS
 ## Post-release hold on last spellcast frame (see CharacterActor.ACTION_HOLD_COMBAT_SEC).
 const SPELLCAST_HOLD_SEC: float = 0.1
+## Target white flash: hold bright from release until anim nearly ends, then fade.
+const SPELLCAST_FLASH_FADE_SEC: float = 0.1
 ## Melee reverse-tail uses ACTION_RECOVER_FRAMES @ ACTION_RECOVER_SPEED_SCALE in CharacterActor.
 
 static func spellcast_release_delay_sec(_cast_anim: StringName = &"") -> float:
 	return SPELLCAST_RELEASE_SEC
+
+
+static func spellcast_flash_hold_sec() -> float:
+	return maxf(0.0, SPELLCAST_ANIM_SEC - SPELLCAST_RELEASE_SEC - SPELLCAST_FLASH_FADE_SEC)
 
 static func get_base_action(anim_name: StringName) -> StringName:
 	var s = str(anim_name)
