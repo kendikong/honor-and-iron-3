@@ -19,7 +19,6 @@ const _COLOR_GHOST := Color(0.98, 0.88, 0.38, 0.45)
 const _COLOR_AIM := Color(0.95, 0.95, 1.0, 0.95)
 const _COLOR_HOVER := Color(0.45, 0.75, 1.0)
 const _COLOR_ENEMY_ARROW := Color(0.95, 0.35, 0.35, 0.95)
-const _COLOR_FORCED_MOVE := Color(0.95, 0.42, 0.38, 0.95)
 const _COLOR_PLAYER_ARROW := Color(0.45, 0.85, 0.55, 0.98)
 const _COLOR_TARGET := Color(0.98, 0.72, 0.38, 0.85)
 const _COLOR_DRAGPATH := Color(0.98, 0.88, 0.38, 0.95)
@@ -759,9 +758,10 @@ func _draw() -> void:
 		_draw_preview_arrows()
 		if _should_draw_interaction_overlay():
 			_draw_interaction_overlay()
+		_draw_ability_intents()
+		_draw_forced_movement_arrows()
 	elif _route.size() >= 2:
 		_draw_route_line(_route, _COLOR_ROUTE, true, true)
-	_draw_ability_intents()
 	_draw_hover_tile()
 	if _aiming:
 		var aim_scale: float = 0.55 / _ui_scale()
@@ -899,6 +899,11 @@ func _draw_ability_intents() -> void:
 					)
 				GameEnums.ActionType.MOVE:
 					if action.target_coord != enemy_pos:
+						var preview_for_push: CombatPlanningPreview = _active_preview()
+						if _is_push_preview_segment(
+							preview_for_push, enemy_pos, action.target_coord
+						):
+							continue
 						_draw_route_line([enemy_pos, action.target_coord], _COLOR_ENEMY_ARROW, true, true)
 
 
@@ -1109,16 +1114,13 @@ func _draw_preview_arrows() -> void:
 							var p_col: Color = _player_color_for_unit(unit)
 							var dim_col := Color(p_col.r, p_col.g, p_col.b, 0.35)
 							_draw_dotted_intent_route(post_leg, dim_col, post_split <= 1)
+		var pushes: Array = prev.preview_pushes.get(unit.id, [])
 		var enemy_leg: Array = []
-		if split < route.size():
+		if split < route.size() and pushes.is_empty():
 			enemy_leg = route.slice(maxi(split - 1, 0))
 		if enemy_leg.size() >= 2:
 			var dim_enemy := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, 0.35)
 			_draw_route_line(enemy_leg, dim_enemy, split <= 1, true)
-		var pushes: Array = prev.preview_pushes.get(unit.id, [])
-		for push: Variant in pushes:
-			if push is Array and push.size() >= 2:
-				_draw_push_arrow(push[0], push[1], unit)
 		var pv := prev.preview_board.get_unit_by_id(unit.id)
 		if pv == null or not pv.is_alive():
 			var end_tile: Vector2i = unit.position
@@ -1129,6 +1131,19 @@ func _draw_preview_arrows() -> void:
 			elif route.size() > 0:
 				end_tile = route[route.size() - 1]
 			_draw_death_marker(end_tile)
+
+
+func _draw_forced_movement_arrows() -> void:
+	var prev: CombatPlanningPreview = _active_preview()
+	if _board == null or prev.preview_board == null:
+		return
+	for unit: UnitState in _board.units:
+		if not unit.is_alive() or not _intent_visible(unit):
+			continue
+		var pushes: Array = prev.preview_pushes.get(unit.id, [])
+		for push: Variant in pushes:
+			if push is Array and push.size() >= 2:
+				_draw_push_arrow(push[0], push[1], unit)
 
 
 func _interaction_move_hover_active(unit_id: int) -> bool:
@@ -1189,9 +1204,7 @@ func _draw_interaction_overlay() -> void:
 		and _planning_input.is_live_preview_active()
 		and _interaction_move_hover_active(actor.id)
 	):
-		var draw_route: Array = route
-		if draw_route.size() < 2:
-			draw_route = _pending_move_route_leg(actor.id, prev)
+		var draw_route: Array = _pending_move_route_leg(actor.id, prev)
 		if draw_route.size() >= 2:
 			_draw_route_line(draw_route, p_col, true, true)
 	if _attack_target_id >= 0:
@@ -1392,7 +1405,24 @@ func _draw_line_arrowhead(tip: Vector2, dir: Vector2, color: Color, line_w: floa
 
 
 func _forced_movement_intent_color(_pushed_unit: UnitState = null) -> Color:
-	return _COLOR_FORCED_MOVE
+	return Color(_COLOR_TARGET.r, _COLOR_TARGET.g, _COLOR_TARGET.b, 0.95)
+
+
+func _is_push_preview_segment(
+	prev: CombatPlanningPreview,
+	from: Vector2i,
+	to: Vector2i,
+) -> bool:
+	if prev == null:
+		return false
+	for push_list: Variant in prev.preview_pushes.values():
+		if not push_list is Array:
+			continue
+		for seg: Variant in push_list:
+			if seg is Array and seg.size() >= 2:
+				if seg[0] == from and seg[1] == to:
+					return true
+	return false
 
 
 func _draw_dotted_intent_route(route: Array, color: Color, trim_start: bool) -> void:
