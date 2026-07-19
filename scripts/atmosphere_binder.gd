@@ -5,7 +5,7 @@ extends RefCounted
 
 const TILE_PX: float = 16.0
 const CLOUD_SHADOW_TINT: Color = Color(0.75, 0.73, 0.82, 1.0)
-const CLOUD_SHADOW_STRENGTH: float = 0.72
+const CLOUD_SHADOW_STRENGTH: float = 0.90
 
 var _world_modulate: CanvasModulate
 var _cloud_rect: ColorRect

@@ -5,31 +5,31 @@ extends RefCounted
 
 const STRENGTH_MIN: float = 0.15
 const STRENGTH_MAX: float = 1.0
-const STRENGTH_DEFAULT: float = 0.72
+const STRENGTH_DEFAULT: float = 0.90
 
 const SCALE_TILES_MIN: float = 8.0
 const SCALE_TILES_MAX: float = 96.0
-const SCALE_TILES_DEFAULT: float = 32.0
+const SCALE_TILES_DEFAULT: float = 10.0
 
 const COVERAGE_MIN: float = 0.0
 const COVERAGE_MAX: float = 1.0
-const COVERAGE_DEFAULT: float = 0.42
+const COVERAGE_DEFAULT: float = 0.50
 
 const EDGE_SOFTNESS_MIN: float = 0.01
 const EDGE_SOFTNESS_MAX: float = 0.18
-const EDGE_SOFTNESS_DEFAULT: float = 0.06
+const EDGE_SOFTNESS_DEFAULT: float = 0.05
 
 const MASK_STEPS_MIN: float = 2.0
 const MASK_STEPS_MAX: float = 16.0
-const MASK_STEPS_DEFAULT: float = 8.0
+const MASK_STEPS_DEFAULT: float = 10.0
 
 const SHAPE_MIX_MIN: float = 0.0
 const SHAPE_MIX_MAX: float = 1.0
-const SHAPE_MIX_DEFAULT: float = 0.62
+const SHAPE_MIX_DEFAULT: float = 0.50
 
 const SHAPE_SCALE_MIN: float = 1.0
 const SHAPE_SCALE_MAX: float = 3.0
-const SHAPE_SCALE_DEFAULT: float = 1.73
+const SHAPE_SCALE_DEFAULT: float = 1.20
 
 const PERSIST_KEYS: PackedStringArray = [
 	"cloud_shadow_strength",
@@ -136,11 +136,11 @@ static func strength(settings: EffectsSettings = null) -> float:
 
 
 static func mask_low() -> float:
-	return float(_runtime.get("cloud_mask_low", 0.49))
+	return float(_runtime.get("cloud_mask_low", 0.505))
 
 
 static func mask_high() -> float:
-	return float(_runtime.get("cloud_mask_high", 0.55))
+	return float(_runtime.get("cloud_mask_high", 0.555))
 
 
 static func mask_steps() -> float:

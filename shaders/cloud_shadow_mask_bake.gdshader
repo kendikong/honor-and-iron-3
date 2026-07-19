@@ -8,13 +8,13 @@ render_mode unshaded;
 uniform vec2 map_size_px = vec2(512.0, 256.0);
 uniform float tile_px = 16.0;
 uniform vec2 cloud_drift_offset = vec2(0.0);
-uniform float cloud_shadow_strength : hint_range(0.0, 1.0) = 0.72;
-uniform float cloud_scale_tiles = 32.0;
-uniform float cloud_mask_low = 0.49;
-uniform float cloud_mask_high = 0.55;
-uniform float cloud_mask_steps = 8.0;
-uniform float cloud_shape_mix = 0.62;
-uniform float cloud_shape_scale = 1.73;
+uniform float cloud_shadow_strength : hint_range(0.0, 1.0) = 0.90;
+uniform float cloud_scale_tiles = 10.0;
+uniform float cloud_mask_low = 0.505;
+uniform float cloud_mask_high = 0.555;
+uniform float cloud_mask_steps = 10.0;
+uniform float cloud_shape_mix = 0.50;
+uniform float cloud_shape_scale = 1.20;
 
 void fragment() {
 	vec2 map_local = floor(UV * map_size_px);

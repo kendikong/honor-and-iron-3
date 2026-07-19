@@ -31,16 +31,16 @@ static func _field_at_pixel(
 	params: Dictionary,
 ) -> float:
 	var px: Vector2 = Vector2(floor(map_local.x), floor(map_local.y))
-	var scale_tiles: float = maxf(float(params.get("cloud_scale_tiles", 32.0)), 1.0)
+	var scale_tiles: float = maxf(float(params.get("cloud_scale_tiles", 10.0)), 1.0)
 	var p: Vector2 = px / (TILE_PX * scale_tiles)
 	var uv: Vector2 = Vector2(0.86 * p.x - 0.51 * p.y, 0.51 * p.x + 0.86 * p.y) + drift_time
 	return _blob_field(uv, params)
 
 
 static func _blob_field(p: Vector2, params: Dictionary) -> float:
-	var mix_a: float = float(params.get("cloud_shape_mix", 0.62))
+	var mix_a: float = float(params.get("cloud_shape_mix", 0.50))
 	var mix_b: float = 1.0 - mix_a
-	var shape_scale: float = float(params.get("cloud_shape_scale", 1.73))
+	var shape_scale: float = float(params.get("cloud_shape_scale", 1.20))
 	var a: float = _fbm(p)
 	var b: float = _fbm(p * shape_scale + Vector2(4.7, 2.1))
 	return a * mix_a + b * mix_b
@@ -48,12 +48,12 @@ static func _blob_field(p: Vector2, params: Dictionary) -> float:
 
 static func _shadow_mask_from_field(field: float, params: Dictionary) -> float:
 	var lo: float = minf(
-		float(params.get("cloud_mask_low", 0.49)),
-		float(params.get("cloud_mask_high", 0.55)) - 0.001,
+		float(params.get("cloud_mask_low", 0.505)),
+		float(params.get("cloud_mask_high", 0.555)) - 0.001,
 	)
-	var hi: float = maxf(float(params.get("cloud_mask_high", 0.55)), lo + 0.001)
+	var hi: float = maxf(float(params.get("cloud_mask_high", 0.555)), lo + 0.001)
 	var s: float = smoothstep(lo, hi, field)
-	var steps: float = maxf(float(params.get("cloud_mask_steps", 8.0)), 1.0)
+	var steps: float = maxf(float(params.get("cloud_mask_steps", 10.0)), 1.0)
 	return round(s * steps) / steps
 
 
