@@ -1513,10 +1513,13 @@ func _move_budget_for_hover(unit: UnitState, selected_ability: int) -> int:
 
 
 func _self_aoe_threat_tiles(unit: UnitState, ability: AbilityData, origin: Vector2i) -> Array[Vector2i]:
-	if ability == null or ability.target_shape == GameEnums.TargetShape.SINGLE:
+	if ability == null:
 		return []
-	if ability.range_tiles != 0:
+	var eff_range: int = unit.get_ability_range(ability) if unit != null else ability.range_tiles
+	if eff_range != 0:
 		return []
+	if ability.target_shape == GameEnums.TargetShape.SINGLE:
+		return [origin]
 	var shape: GameEnums.TargetShape = ability.target_shape
 	var shape_size: int = ability.target_shape_size
 	if unit.is_ability_upgraded(ability.id):
@@ -1552,6 +1555,10 @@ func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:
 func _populate_attack_threat_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
 	var rng: int = _unit_attack_range(unit, selected_ability)
 	if rng <= 0:
+		if unit.id == _director.selected_unit_id and selected_ability >= 0:
+			var sel_ability: AbilityData = _selected_ability_data(unit, selected_ability)
+			if sel_ability != null and unit.get_ability_range(sel_ability) == 0:
+				_hover_threat_tiles = [origin]
 		return
 	var threat_sources: Array[Vector2i] = [origin]
 	if unit.is_enemy():
