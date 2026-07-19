@@ -362,7 +362,6 @@ static func ability_data_dump(ability: AbilityData) -> String:
 	lines.append("movement_point_cost: %d" % ability.movement_point_cost)
 	lines.append("range_tiles: %d" % ability.range_tiles)
 	lines.append("targeting_mode: %s" % GameEnums.TargetingMode.keys()[ability.targeting_mode])
-	lines.append("can_target_self: %s" % str(ability.can_target_self))
 	lines.append("target_shape: %s" % GameEnums.TargetShape.keys()[ability.target_shape])
 	lines.append("target_shape_size: %d" % ability.target_shape_size)
 	lines.append("scaling_stat: %s" % GameEnums.StatType.keys()[ability.scaling_stat])
@@ -393,7 +392,7 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 		return ""
 	var parts: Array[String] = []
 	parts.append("Planning: %s" % _planning_note(ability))
-	parts.append("Targeting: AbilitySystem.target_passes_mode + can_target_self gate hover/plan.")
+	parts.append("Targeting: AbilitySystem.target_passes_mode (SELF / ALLY_UNIT / ALLY_OR_SELF / …).")
 	if ability.is_movement_kind():
 		parts.append("Economy: spends movement_point_cost (MP); PRE_MOVE timeline bucket; no action slot.")
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
@@ -479,6 +478,7 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.upgraded_effects.clear()
 	for eff: EffectData in src.upgraded_effects:
 		dst.upgraded_effects.append(duplicate_effect(eff))
+	dst.sync_targeting_flags()
 
 
 static func _effect_dump_line(index: int, eff: EffectData) -> String:
@@ -568,7 +568,9 @@ static func _ability_kind_system(k: String) -> String:
 static func _targeting_mode_tooltip(k: String) -> String:
 	match k:
 		"ALLY_UNIT":
-			return "Ally only"
+			return "Ally only (not self)"
+		"ALLY_OR_SELF":
+			return "Ally or self"
 		"ENEMY_UNIT":
 			return "Enemy only"
 		"SELF":

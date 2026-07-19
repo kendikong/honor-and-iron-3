@@ -24,7 +24,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		dist = PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
 	if dist > actor.get_ability_range(ability):
 		return false
-	if dist == 0 and actor.get_ability_range(ability) > 0 and not ability.can_target_self:
+	if dist == 0 and actor.get_ability_range(ability) > 0 and not can_target_self(actor, ability):
 		return false
 	var target_unit: UnitState = null
 	if action.target_unit_id >= 0:
@@ -91,6 +91,8 @@ static func _target_allowed(
 	match ability.targeting_mode:
 		GameEnums.TargetingMode.SELF:
 			return target == actor or (target == null and target_coord == actor.position)
+		GameEnums.TargetingMode.ALLY_OR_SELF:
+			return target != null and target.team == actor.team
 		GameEnums.TargetingMode.ALLY_UNIT:
 			return target != null and target.team == actor.team and target.id != actor.id
 		GameEnums.TargetingMode.ENEMY_UNIT:
@@ -103,7 +105,14 @@ static func _target_allowed(
 
 
 static func can_target_self(_actor: UnitState, ability: AbilityData) -> bool:
-	return ability != null and ability.can_target_self
+	if ability == null:
+		return false
+	match ability.targeting_mode:
+		GameEnums.TargetingMode.SELF, GameEnums.TargetingMode.ALLY_OR_SELF:
+			return true
+		GameEnums.TargetingMode.ALLY_UNIT:
+			return ability.can_target_self
+	return false
 
 
 static func target_passes_mode(actor: UnitState, ability: AbilityData, target: UnitState) -> bool:

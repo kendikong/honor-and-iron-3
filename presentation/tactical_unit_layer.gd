@@ -364,6 +364,7 @@ func _collect_planned_ability_enemy_targets(
 	if ability.targeting_mode in [
 		GameEnums.TargetingMode.SELF,
 		GameEnums.TargetingMode.ALLY_UNIT,
+		GameEnums.TargetingMode.ALLY_OR_SELF,
 	]:
 		return
 	if action.target_unit_id >= 0:

@@ -162,6 +162,7 @@ enum TargetingMode {
 	ANY_UNIT,
 	TILE,
 	DASH_LINE,
+	ALLY_OR_SELF, ## Friendly units including the caster (replaces ALLY_UNIT + can_target_self).
 }
 
 ## Default presentation anim when presentation_key is empty.

@@ -26,8 +26,22 @@ extends Resource
 ## Who may be targeted. Movement skills that select a unit default to ALLY_UNIT.
 @export var targeting_mode: GameEnums.TargetingMode = GameEnums.TargetingMode.ANY_UNIT
 
-## True when the ability may target the caster's own tile (self-buffs, Wait, etc.).
+## Legacy mirror; synced from targeting_mode (SELF / ALLY_OR_SELF). Do not author separately.
 @export var can_target_self: bool = false
+
+
+func sync_targeting_flags() -> void:
+	match targeting_mode:
+		GameEnums.TargetingMode.SELF, GameEnums.TargetingMode.ALLY_OR_SELF:
+			can_target_self = true
+		_:
+			can_target_self = false
+
+
+func normalize_targeting_mode() -> void:
+	if targeting_mode == GameEnums.TargetingMode.ALLY_UNIT and can_target_self:
+		targeting_mode = GameEnums.TargetingMode.ALLY_OR_SELF
+	sync_targeting_flags()
 
 ## The geometric shape of the affected area.
 @export var target_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE

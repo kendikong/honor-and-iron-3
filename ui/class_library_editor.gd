@@ -665,6 +665,7 @@ func _build_ability_row(parent: VBoxContainer, ability: AbilityData) -> void:
 
 
 func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) -> void:
+	ability.normalize_targeting_mode()
 	ability.is_movement_skill = ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -690,10 +691,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	)
 	_bind_enum(grid, "Targeting", GameEnums.TargetingMode, ability.targeting_mode, func(v: int) -> void:
 		ability.targeting_mode = v
-		_refresh_ability_ui(ability)
-	)
-	_bind_bool(grid, "Target Self", ability.can_target_self, func(v: bool) -> void:
-		ability.can_target_self = v
+		ability.sync_targeting_flags()
 		_refresh_ability_ui(ability)
 	)
 	_bind_enum(grid, "Shape", GameEnums.TargetShape, ability.target_shape, func(v: int) -> void:

@@ -492,6 +492,8 @@ static func ability_desc(ability: AbilityData, unit: UnitState = null) -> String
 	match ability.targeting_mode:
 		GameEnums.TargetingMode.ALLY_UNIT:
 			target_hint = " | Ally only"
+		GameEnums.TargetingMode.ALLY_OR_SELF:
+			target_hint = " | Ally or self"
 		GameEnums.TargetingMode.SELF:
 			target_hint = " | Self"
 		GameEnums.TargetingMode.ENEMY_UNIT:
@@ -602,6 +604,8 @@ static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -
 	match ability.targeting_mode:
 		GameEnums.TargetingMode.ALLY_UNIT:
 			lines.append("Target — Allied unit only.")
+		GameEnums.TargetingMode.ALLY_OR_SELF:
+			lines.append("Target — Allied unit or self.")
 		GameEnums.TargetingMode.SELF:
 			lines.append("Target — Self only.")
 		GameEnums.TargetingMode.ENEMY_UNIT:
