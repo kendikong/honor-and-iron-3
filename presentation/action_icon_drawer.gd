@@ -44,11 +44,11 @@ static func draw(canvas: CanvasItem, center: Vector2, icon_key: String, color: C
 
 static func key_from_emoji(emoji: String) -> String:
 	match emoji:
-		"🏃":
+		"🏃", "👟":
 			return "move"
-		"⚔️":
+		"⚔️", "👟⚔️":
 			return "attack"
-		"✨":
+		"✨", "🔮":
 			return "dash"
 		"💚":
 			return "heal"

@@ -705,13 +705,7 @@ func _draw() -> void:
 		ClassIconDrawer.draw_icon(self, _aim_local, _aim_class_id, _COLOR_AIM, aim_scale)
 	if _hover_action_icon != "":
 		var icon_pos: Vector2 = get_local_mouse_position() + Vector2(10.0, 10.0) / _ui_scale()
-		ActionIconDrawer.draw(
-			self,
-			icon_pos,
-			ActionIconDrawer.key_from_emoji(_hover_action_icon),
-			Color.WHITE,
-			1.15 / _ui_scale(),
-		)
+		_draw_centered_icon(icon_pos, _hover_action_icon, Color.WHITE, int(28.0 / _ui_scale()))
 	for entry: Array in _hit_markers:
 		if entry.size() >= 2 and entry[0] is Vector2i:
 			_draw_death_marker(entry[0] as Vector2i)
@@ -1578,8 +1572,18 @@ func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int)
 	var font: Font = ThemeDB.fallback_font
 	if font == null:
 		return
-	var sz: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px)
-	draw_string(font, pos - Vector2(sz.x * 0.5, sz.y * 0.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, color)
+	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, size_px).x
+	var draw_pos: Vector2 = pos - Vector2(width * 0.5, -size_px * 0.35)
+	draw_string(
+		font,
+		draw_pos + Vector2(1.0, 1.0),
+		text,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		size_px,
+		Color(0.0, 0.0, 0.0, 0.75),
+	)
+	draw_string(font, draw_pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, color)
 
 
 func _update_hover_action_icon() -> void:
@@ -1595,7 +1599,7 @@ func _ability_action_icon(ability: AbilityData) -> String:
 	if AbilitySystem.ability_is_offensive_dash(ability):
 		return "⚔️"
 	if AbilitySystem.ability_has_dash(ability):
-		return "✨"
+		return "🔮"
 	for eff: EffectData in ability.effects:
 		match eff.type:
 			GameEnums.EffectType.DAMAGE:
@@ -1606,4 +1610,4 @@ func _ability_action_icon(ability: AbilityData) -> String:
 				return "🛡️"
 			GameEnums.EffectType.SWAP:
 				return "🔄"
-	return "✨"
+	return "🔮"

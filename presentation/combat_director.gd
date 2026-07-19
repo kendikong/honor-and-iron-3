@@ -544,6 +544,9 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null \
 				and actions[i].ability.is_movement_kind():
 			_cancel_ally_plans_after_movement_step(actions[i])
+	for actor_id: int in new_actors:
+		if actor_id not in plan_affected_unit_ids:
+			plan_affected_unit_ids.append(actor_id)
 	_refresh_plan()
 
 func get_player_plan() -> Timeline:

@@ -18,6 +18,10 @@ var _drag_armed: bool = false
 var _drag_press_local: Vector2 = Vector2.ZERO
 
 const _DRAG_THRESHOLD_PX: float = 6.0
+const ICON_MOVE: String = "👟"
+const ICON_ATTACK: String = "⚔️"
+const ICON_SKILL: String = "🔮"
+const ICON_MOVE_ATTACK: String = "👟⚔️"
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -1525,7 +1529,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 		return ""
 	if _run_mode_selected(p_unit):
 		if cell != p_unit.position and _can_move_to(p_unit, cell):
-			return "🏃"
+			return ICON_MOVE
 	var hover_unit: UnitState = (
 		_aim_enemy_board().get_unit_at(cell)
 		if _skill_interaction_active()
@@ -1533,7 +1537,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	)
 	if _skill_interaction_active():
 		if force_basic_movement and hover_unit == null and cell != p_unit.position and _can_move_to(p_unit, cell):
-			return "🏃"
+			return ICON_MOVE
 		var valid_aim := false
 		if hover_unit != null:
 			if hover_unit.id == p_unit.id:
@@ -1560,10 +1564,10 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 func _cursor_selection_hints(p_unit: UnitState, cell: Vector2i, hover_unit: UnitState) -> String:
 	if hover_unit != null and hover_unit.is_enemy():
 		if _prefer_approach_over_trample_move(p_unit, hover_unit):
-			return "⚔️"
+			return ICON_MOVE_ATTACK
 		if _can_move_to(p_unit, cell):
-			return "🏃"
-		return "⚔️"
+			return ICON_MOVE
+		return ICON_ATTACK
 	if hover_unit != null and hover_unit.id == p_unit.id:
 		var self_ability := _selected_ability_data(p_unit)
 		if (
@@ -1581,8 +1585,8 @@ func _cursor_selection_hints(p_unit: UnitState, cell: Vector2i, hover_unit: Unit
 			and _is_valid_dash_target(_proj_origin(p_unit), cell, hover_ability.range_tiles)
 		):
 			if AbilitySystem.ability_is_offensive_dash(hover_ability):
-				return "⚔️"
-			return "✨"
+				return ICON_ATTACK
+			return ICON_SKILL
 		if (
 			_basic_move_allowed()
 			and _unit_move_slot_open(p_unit.id)
@@ -1590,7 +1594,7 @@ func _cursor_selection_hints(p_unit: UnitState, cell: Vector2i, hover_unit: Unit
 				_proj(), p_unit.position, cell, _move_budget(p_unit),
 			).is_empty()
 		):
-			return "🏃"
+			return ICON_MOVE
 	return ""
 
 
@@ -1598,20 +1602,20 @@ func _ability_action_icon(ability: AbilityData) -> String:
 	if ability == null:
 		return ""
 	if AbilitySystem.ability_is_offensive_dash(ability):
-		return "⚔️"
+		return ICON_ATTACK
 	if AbilitySystem.ability_has_dash(ability):
-		return "✨"
+		return ICON_SKILL
 	for eff: EffectData in ability.effects:
 		match eff.type:
 			GameEnums.EffectType.DAMAGE:
-				return "⚔️"
+				return ICON_ATTACK
 			GameEnums.EffectType.HEAL:
 				return "💚"
 			GameEnums.EffectType.ARMOR_UP:
 				return "🛡️"
 			GameEnums.EffectType.SWAP:
 				return "🔄"
-	return "✨"
+	return ICON_SKILL
 
 
 func _skill_takes_priority_over_basic_move() -> bool:

@@ -194,6 +194,7 @@ func _on_selection_changed(unit_id: int) -> void:
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
 		_sync_planning_actor_positions()
+		_sync_planning_facings_for_queued_actions()
 		_refresh_player_exhaustion()
 		_refresh_unit_glows()
 
@@ -770,6 +771,8 @@ func _sync_planning_actor_positions() -> void:
 		var target: Vector2i = unit.position
 		var current_cell: Vector2i = _actor_grid_cell(unit.id)
 		if current_cell == target and not force_sync.has(unit.id):
+			if _facing_toward_queued_action(unit.id) >= 0 and not _move_tweens.has(unit.id):
+				_sync_planning_final_facing(unit.id)
 			continue
 		if force_sync.has(unit.id):
 			_kill_move_tween(unit.id)
@@ -1228,6 +1231,18 @@ func _facing_toward(from: Vector2i, to: Vector2i) -> int:
 	return GameEnums.Facing.EAST
 
 
+func _sync_planning_facings_for_queued_actions() -> void:
+	if _board == null or _director == null:
+		return
+	for unit: UnitState in _board.units:
+		if not unit.is_alive() or unit.is_enemy():
+			continue
+		if _move_tweens.has(unit.id):
+			continue
+		if _facing_toward_queued_action(unit.id) >= 0:
+			_sync_planning_final_facing(unit.id)
+
+
 func _facing_toward_queued_action(unit_id: int) -> int:
 	if _director == null or _board == null:
 		return -1
@@ -1237,7 +1252,11 @@ func _facing_toward_queued_action(unit_id: int) -> int:
 	if unit == null:
 		return -1
 	var origin: Vector2i = unit.position
-	for plan: Timeline in [_director.plan_pre_move, _director.plan_action, _director.plan_post_move]:
+	var lookup_board: BoardState = (
+		_director.projected_state if _director.projected_state != null else _board
+	)
+	# Action bucket first so pre-move movement skills do not steal attack facing.
+	for plan: Timeline in [_director.plan_action, _director.plan_post_move, _director.plan_pre_move]:
 		for action: TimelineAction in plan.entries:
 			if action.actor_id != unit_id or action.type != GameEnums.ActionType.ABILITY:
 				continue
@@ -1247,13 +1266,9 @@ func _facing_toward_queued_action(unit_id: int) -> int:
 				continue
 			var target_coord: Vector2i = action.target_coord
 			if action.target_unit_id >= 0:
-				var tgt := _board.get_unit_by_id(action.target_unit_id)
+				var tgt := lookup_board.get_unit_by_id(action.target_unit_id)
 				if tgt != null:
 					target_coord = tgt.position
-				elif _director.projected_state != null:
-					var proj_tgt := _director.projected_state.get_unit_by_id(action.target_unit_id)
-					if proj_tgt != null:
-						target_coord = proj_tgt.position
 			if target_coord != origin:
 				return _facing_toward(origin, target_coord)
 	return -1
