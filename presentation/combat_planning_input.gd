@@ -1730,12 +1730,10 @@ func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 	return slots
 
 
-func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -> String:
+func _cursor_icon_from_commit_slots(slots: Dictionary, _unit: UnitState = null) -> String:
 	if bool(slots.get("invalid", false)):
 		return ICON_NULL
 	var glyphs: PackedStringArray = []
-	var suppress_implicit_run: bool = auto_run_movement_active(unit)
-	var has_action_glyph: bool = false
 	for col: String in ["pre", "action", "post"]:
 		var steps: Array = slots.get(col, [])
 		if steps.is_empty():
@@ -1744,26 +1742,8 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -
 		if step == null:
 			continue
 		var glyph: String = _step_cursor_glyph(step)
-		if glyph == "":
-			continue
-		if col == "action":
-			has_action_glyph = true
-		glyphs.append(glyph)
-	if suppress_implicit_run and has_action_glyph and glyphs.size() > 1:
-		var filtered: PackedStringArray = []
-		for col: String in ["pre", "action", "post"]:
-			var steps: Array = slots.get(col, [])
-			if steps.is_empty():
-				continue
-			var step: TimelineAction = steps[0] as TimelineAction
-			if step == null:
-				continue
-			if col == "pre" and step.type == GameEnums.ActionType.MOVE and step.uses_run:
-				continue
-			var glyph: String = _step_cursor_glyph(step)
-			if glyph != "":
-				filtered.append(glyph)
-		glyphs = filtered
+		if glyph != "":
+			glyphs.append(glyph)
 	if glyphs.is_empty():
 		return ""
 	return ICON_COMPOSITE_SEP.join(glyphs)
