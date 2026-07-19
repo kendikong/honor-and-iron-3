@@ -1537,6 +1537,219 @@ func _play_sfx(key: String) -> void:
 		_sfx.play(key)
 
 
+func _empty_commit_slots() -> Dictionary:
+	return {"pre": [], "action": [], "post": [], "invalid": false}
+
+
+func _append_move_to_commit_slots(
+	slots: Dictionary,
+	unit_id: int,
+	cell: Vector2i,
+	waypoints: Array[Vector2i],
+	actor: UnitState,
+) -> void:
+	if _director == null or actor == null:
+		return
+	var timing: int = _director.get_planning_move_timing(unit_id)
+	if timing < 0:
+		return
+	var move: TimelineAction = TimelineAction.make_move(unit_id, cell, -1, waypoints, timing)
+	if AbilitySystem.movement_requires_run(_proj(), actor, cell, waypoints):
+		move.uses_run = true
+	var col: String = "post" if timing == GameEnums.MoveTiming.POST_ACTION else "pre"
+	slots[col].append(move)
+
+
+func _build_commit_slots_at_cell(
+	unit_id: int,
+	cell: Vector2i,
+	waypoints: Array[Vector2i] = [],
+	legal_move_tiles: Array[Vector2i] = [],
+) -> Dictionary:
+	var slots: Dictionary = _empty_commit_slots()
+	if _director == null or unit_id < 0 or _director.board == null:
+		return slots
+	if not _director.board.is_in_bounds(cell):
+		slots["invalid"] = true
+		return slots
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null or actor.is_enemy() or not actor.is_alive():
+		return slots
+	if selected_phase_action_exhausted(unit_id):
+		slots["invalid"] = true
+		return slots
+	var timing: int = _director.get_planning_move_timing(unit_id)
+	var ability_index: int = _director.selected_ability_index
+	var ability: AbilityData = _selected_ability_data(actor)
+	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
+
+	if cell == actor.position:
+		if CombatDirector.is_wait_ability_index(ability_index):
+			if ability != null:
+				slots["action"].append(
+					TimelineAction.make_ability(unit_id, ability, cell, unit_id),
+				)
+		elif (
+			ability != null
+			and AbilitySystem.can_target_self(actor, ability)
+			and not AbilitySystem.is_run_ability(ability)
+		):
+			slots["action"].append(
+				TimelineAction.make_ability(unit_id, ability, cell, unit_id),
+			)
+		return slots
+
+	if hover_unit != null and hover_unit.is_enemy():
+		return _build_enemy_commit_slots(
+			slots, actor, unit_id, cell, hover_unit, ability, ability_index, legal_move_tiles, waypoints,
+		)
+
+	if hover_unit != null and hover_unit.is_alive() and not hover_unit.is_enemy():
+		return slots
+
+	if ability_index >= 0 and ability != null and not force_basic_movement:
+		if _ability_has_dash(ability) and _is_valid_dash_target(_proj_origin(actor), cell, ability.range_tiles):
+			slots["action"].append(TimelineAction.make_ability(unit_id, ability, cell, -1))
+			return slots
+		if AbilitySystem.can_target_self(actor, ability):
+			if AbilitySystem.is_run_ability(ability):
+				if _drop_allows_move_tile(cell, legal_move_tiles, actor):
+					if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
+						_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
+				return slots
+			if _drop_allows_move_tile(cell, legal_move_tiles, actor):
+				if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
+					_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
+				slots["action"].append(
+					TimelineAction.make_ability(unit_id, ability, cell, unit_id),
+				)
+				return slots
+		if hover_unit != null and _in_ability_range(actor, hover_unit):
+			slots["action"].append(
+				TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id),
+			)
+			return slots
+
+	if (
+		_basic_move_allowed()
+		and _unit_move_slot_open(unit_id)
+		and _drop_allows_move_tile(cell, legal_move_tiles, actor)
+	):
+		if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
+			_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
+		return slots
+
+	if _skill_interaction_active() and _invalid_hover_target(actor, cell, hover_unit):
+		slots["invalid"] = true
+	return slots
+
+
+func _build_enemy_commit_slots(
+	slots: Dictionary,
+	actor: UnitState,
+	unit_id: int,
+	cell: Vector2i,
+	enemy: UnitState,
+	ability: AbilityData,
+	ability_index: int,
+	legal_move_tiles: Array[Vector2i],
+	waypoints: Array[Vector2i],
+) -> Dictionary:
+	var use_skill: bool = (
+		not force_basic_movement
+		and ability_index >= 0
+		and ability != null
+	)
+	if use_skill and not AbilitySystem.target_passes_mode(actor, ability, enemy):
+		slots["invalid"] = true
+		return slots
+	if use_skill and _ability_has_dash(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
+		slots["invalid"] = true
+		return slots
+	if use_skill and _in_ability_range(actor, enemy):
+		slots["action"].append(
+			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
+		)
+		return slots
+	if not use_skill and _in_attack_range_from(_proj_origin(actor), enemy, actor):
+		var basic: AbilityData = actor.active_abilities[0] if not actor.active_abilities.is_empty() else null
+		if basic != null:
+			slots["action"].append(
+				TimelineAction.make_ability(unit_id, basic, enemy.position, enemy.id),
+			)
+		return slots
+	if use_skill and _prefer_approach_over_trample_move(actor, enemy):
+		if not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
+			slots["invalid"] = true
+			return slots
+	elif _drop_allows_move_tile(enemy.position, legal_move_tiles, actor):
+		_append_move_to_commit_slots(slots, unit_id, enemy.position, waypoints, actor)
+		return slots
+	elif not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
+		slots["invalid"] = true
+		return slots
+	if use_skill:
+		var approach: Vector2i = _director.preview_approach_tile(
+			unit_id, enemy.id, ability_index, cell,
+		)
+		if approach == actor.position:
+			slots["invalid"] = true
+			return slots
+		if approach != actor.position:
+			var path: Array[Vector2i] = MovementSystem.find_path(
+				_proj(), actor.position, approach, actor.movement.points_left,
+			)
+			slots["pre"].append(
+				TimelineAction.make_move(
+					unit_id, approach, -1, path, GameEnums.MoveTiming.PRE_ACTION,
+				),
+			)
+		slots["action"].append(
+			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
+		)
+		return slots
+	if _can_move_to(actor, cell) or _is_hover_move_cell(actor, cell):
+		_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
+		return slots
+	slots["invalid"] = true
+	return slots
+
+
+func _step_cursor_glyph(action: TimelineAction) -> String:
+	if action == null:
+		return ""
+	match action.type:
+		GameEnums.ActionType.MOVE:
+			return ICON_RUN if action.uses_run else ICON_MOVE
+		GameEnums.ActionType.ABILITY:
+			if action.ability == null:
+				return ICON_SKILL
+			if DataLibrary.is_universal_wait(action.ability.id):
+				return ICON_WAIT
+			return _ability_action_icon(action.ability)
+		GameEnums.ActionType.FACE:
+			return "👀"
+	return ""
+
+
+func _cursor_icon_from_commit_slots(slots: Dictionary, _unit: UnitState = null) -> String:
+	if bool(slots.get("invalid", false)):
+		return ICON_NULL
+	var glyphs: PackedStringArray = []
+	for col: String in ["pre", "action", "post"]:
+		var steps: Array = slots.get(col, [])
+		if steps.is_empty():
+			continue
+		var glyph: String = _step_cursor_glyph(steps[0] as TimelineAction)
+		if glyph != "":
+			glyphs.append(glyph)
+	if glyphs.is_empty():
+		return ""
+	return "+".join(glyphs)
+
+
 func refresh_mouse_cursor(cell: Vector2i) -> void:
 	var icon: String = compute_hover_action_icon(cell)
 	if _planning != null:
@@ -1579,75 +1792,12 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 		if cell != p_unit.position and _is_hover_move_cell(p_unit, cell):
 			return _movement_icon_for(p_unit, cell)
 		return ""
-	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
-	if _skill_interaction_active():
-		if (
-			force_basic_movement
-			and hover_unit == null
-			and cell != p_unit.position
-			and _unit_move_slot_open(p_unit.id)
-			and _is_hover_move_cell(p_unit, cell)
-		):
-			return _movement_icon_for(p_unit, cell)
-		var valid_aim := false
-		if hover_unit != null:
-			if hover_unit.id == p_unit.id:
-				var self_ability := _selected_ability_data(p_unit)
-				valid_aim = AbilitySystem.can_target_self(p_unit, self_ability)
-			else:
-				valid_aim = _in_ability_range(p_unit, hover_unit) \
-					and AbilitySystem.target_passes_mode(p_unit, _selected_ability_data(p_unit), hover_unit)
-		elif CombatDirector.is_wait_ability_index(_director.selected_ability_index):
-			valid_aim = cell == p_unit.position
-		elif _director.selected_ability_index >= 0 and _director.selected_ability_index < p_unit.active_abilities.size():
-			var aim_ability: AbilityData = p_unit.active_abilities[_director.selected_ability_index]
-			if _ability_has_dash(aim_ability):
-				valid_aim = _is_valid_dash_target(_proj_origin(p_unit), cell, aim_ability.range_tiles)
-		if valid_aim:
-			var aim_ability := CombatDirector.resolve_selected_ability(p_unit, _director.selected_ability_index)
-			if aim_ability != null:
-				if AbilitySystem.is_wait_ability(aim_ability):
-					return ICON_WAIT
-				return _ability_action_icon(aim_ability)
-		if hover_unit != null and hover_unit.is_enemy():
-			var enemy_icon: String = _enemy_hover_icon(p_unit, cell, hover_unit)
-			if enemy_icon != "":
-				return enemy_icon
-		var move_attack: String = _move_attack_hover_icon(p_unit, cell)
-		if move_attack != "":
-			return move_attack
-		var move_icon: String = _move_hover_icon(p_unit, cell)
-		if move_icon != "":
-			return move_icon
-		if _invalid_hover_target(p_unit, cell, hover_unit):
-			return ICON_NULL
-		return ""
-	return _cursor_selection_hints(p_unit, cell, hover_unit)
-
-
-func _cursor_selection_hints(p_unit: UnitState, cell: Vector2i, hover_unit: UnitState) -> String:
-	if hover_unit != null and hover_unit.is_enemy():
-		return _enemy_hover_icon(p_unit, cell, hover_unit)
-	if hover_unit != null and hover_unit.is_alive():
-		return ""
-	var move_icon: String = _move_hover_icon(p_unit, cell)
-	if move_icon != "":
-		return move_icon
-	if hover_unit == null and cell != p_unit.position:
-		var move_attack: String = _move_attack_hover_icon(p_unit, cell)
-		if move_attack != "":
-			return move_attack
-		var hover_ability := _selected_ability_data(p_unit)
-		if (
-			_skill_takes_priority_over_basic_move()
-			and hover_ability != null
-			and _ability_has_dash(hover_ability)
-			and _is_valid_dash_target(_proj_origin(p_unit), cell, hover_ability.range_tiles)
-		):
-			if AbilitySystem.ability_is_offensive_dash(hover_ability):
-				return ICON_ATTACK
-			return ICON_SKILL
-	if _invalid_hover_target(p_unit, cell, hover_unit):
+	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
+	var slots: Dictionary = _build_commit_slots_at_cell(sel_id, cell, [], legal_moves)
+	var icon_from_plan: String = _cursor_icon_from_commit_slots(slots, p_unit)
+	if icon_from_plan != "":
+		return icon_from_plan
+	if bool(slots.get("invalid", false)):
 		return ICON_NULL
 	return ""
 
@@ -1660,36 +1810,6 @@ func _resolve_hover_unit_at(cell: Vector2i) -> UnitState:
 		return null
 	var projected: UnitState = _proj().get_unit_by_id(live.id)
 	return projected if projected != null else live
-
-
-func _enemy_hover_icon(p_unit: UnitState, cell: Vector2i, hover_unit: UnitState) -> String:
-	if hover_unit == null or not hover_unit.is_enemy():
-		return ""
-	if selected_phase_action_exhausted(p_unit.id):
-		return ICON_NULL
-	var ability: AbilityData = _selected_ability_data(p_unit)
-	var use_skill: bool = (
-		not force_basic_movement
-		and _director != null
-		and _director.selected_ability_index >= 0
-		and ability != null
-	)
-	if use_skill:
-		if not AbilitySystem.target_passes_mode(p_unit, ability, hover_unit):
-			return ICON_NULL
-		if _ability_has_dash(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
-			return ICON_NULL
-	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
-	var in_range: bool = _in_ability_range(p_unit, hover_unit)
-	if in_range:
-		if use_skill:
-			return _ability_action_icon(ability)
-		return ICON_ATTACK
-	if _can_move_to(p_unit, cell) or _is_hover_move_cell(p_unit, cell):
-		return _movement_icon_for(p_unit, cell)
-	if _enemy_attackable_from_legal_tiles(p_unit, hover_unit, legal_moves):
-		return _move_attack_icon_for(p_unit, cell)
-	return ICON_NULL
 
 
 func _self_tile_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
@@ -1784,19 +1904,12 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if drag_preview_failed:
 		return ICON_NULL
 	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
-	var occ: UnitState = _director.board.get_unit_at(cell) if _director.board != null else null
-	if occ != null and occ.is_enemy() and occ.id != actor.id:
-		var proj_occ: UnitState = _proj().get_unit_by_id(occ.id)
-		if proj_occ != null:
-			occ = proj_occ
-		return _enemy_hover_icon(actor, cell, occ)
-	var move_attack: String = _move_attack_hover_icon(actor, cell, actor.position)
-	if move_attack != "":
-		return move_attack
-	if _drop_allows_move_tile(cell, legal_moves, actor) or (
-		cell == _drag_last_free and legal_moves.has(cell)
-	):
-		return ICON_MOVE
+	var slots: Dictionary = _build_commit_slots_at_cell(actor.id, cell, _drag_route, legal_moves)
+	var icon: String = _cursor_icon_from_commit_slots(slots, actor)
+	if icon != "":
+		return icon
+	if bool(slots.get("invalid", false)):
+		return ICON_NULL
 	return ""
 
 

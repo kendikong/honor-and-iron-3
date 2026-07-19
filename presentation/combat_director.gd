@@ -490,6 +490,28 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 		_try_add(attack_action, plan_action)
 
 
+## Approach tile for attack-with-approach preview (cursor / UI only).
+func preview_approach_tile(
+	unit_id: int,
+	target_unit_id: int,
+	ability_index: int,
+	preferred_tile: Vector2i,
+) -> Vector2i:
+	var proj: BoardState = _get_planning_state()
+	var actor: UnitState = proj.get_unit_by_id(unit_id)
+	var target: UnitState = proj.get_unit_by_id(target_unit_id)
+	if actor == null:
+		return preferred_tile
+	if target == null or actor.active_abilities.is_empty():
+		return actor.position
+	var index: int = clampi(ability_index, 0, actor.active_abilities.size() - 1)
+	var ability: AbilityData = actor.active_abilities[index]
+	var rng: int = actor.get_ability_range(ability)
+	if GridSystem.manhattan(actor.position, target.position) <= rng:
+		return actor.position
+	return _find_approach_tile(proj, actor, target.position, rng, preferred_tile)
+
+
 func _find_approach_tile(state: BoardState, actor: UnitState, target_pos: Vector2i, rng: int, preferred_tile: Vector2i) -> Vector2i:
 	if _is_attack_tile(state, actor, preferred_tile, target_pos, rng):
 		return preferred_tile

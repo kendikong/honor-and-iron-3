@@ -44,14 +44,37 @@ func _on_draw() -> void:
 	if _icon == "":
 		return
 	var center: Vector2 = get_viewport().get_mouse_position() + ICON_OFFSET
-	if _icon == "👟⚔️" or _icon == "🏃⚔️":
-		var move_glyph: String = "👟" if _icon == "👟⚔️" else "🏃"
+	var composite: PackedStringArray = _composite_icon_parts(_icon)
+	if composite.size() > 1:
 		var half: int = maxi(22, int(round(float(_font_size) * 0.72)))
-		_draw_centered(_drawer, center + Vector2(-10.0, 0.0), move_glyph, Color.WHITE, half)
-		_draw_centered(_drawer, center + Vector2(10.0, 0.0), "⚔️", Color.WHITE, half)
+		var spread: float = 10.0
+		var start_x: float = -spread * float(composite.size() - 1) * 0.5
+		for i: int in composite.size():
+			_draw_centered(
+				_drawer,
+				center + Vector2(start_x + spread * float(i), 0.0),
+				composite[i],
+				Color.WHITE,
+				half,
+			)
 		return
 	var color: Color = Color(1.0, 0.52, 0.52, 1.0) if _icon == "∅" else Color(1.0, 1.0, 1.0, 1.0)
 	_draw_centered(_drawer, center, _icon, color, _font_size)
+
+
+static func _composite_icon_parts(icon: String) -> PackedStringArray:
+	if icon.contains("+"):
+		var parts: PackedStringArray = []
+		for segment: String in icon.split("+", false):
+			var trimmed: String = segment.strip_edges()
+			if not trimmed.is_empty():
+				parts.append(trimmed)
+		return parts
+	if icon == "👟⚔️":
+		return PackedStringArray(["👟", "⚔️"])
+	if icon == "🏃⚔️":
+		return PackedStringArray(["🏃", "⚔️"])
+	return PackedStringArray()
 
 
 static func _draw_centered(
