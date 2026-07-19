@@ -361,11 +361,8 @@ func _collect_planned_ability_enemy_targets(
 	var ability: AbilityData = action.ability
 	if ability == null:
 		return
-	if ability.targeting_mode in [
-		GameEnums.TargetingMode.SELF,
-		GameEnums.TargetingMode.ALLY_UNIT,
-		GameEnums.TargetingMode.ALLY_OR_SELF,
-	]:
+	ability.ensure_targeting_flags_from_mode()
+	if not ability.has_targeting(GameEnums.TargetingFlags.ENEMY):
 		return
 	if action.target_unit_id >= 0:
 		var tgt := board.get_unit_by_id(action.target_unit_id)

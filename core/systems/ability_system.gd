@@ -88,31 +88,27 @@ static func _target_allowed(
 ) -> bool:
 	if ability == null or actor == null:
 		return false
-	match ability.targeting_mode:
-		GameEnums.TargetingMode.SELF:
-			return target == actor or (target == null and target_coord == actor.position)
-		GameEnums.TargetingMode.ALLY_OR_SELF:
-			return target != null and target.team == actor.team
-		GameEnums.TargetingMode.ALLY_UNIT:
-			return target != null and target.team == actor.team and target.id != actor.id
-		GameEnums.TargetingMode.ENEMY_UNIT:
-			return target != null and target.team != actor.team
-		GameEnums.TargetingMode.ANY_UNIT:
-			return target != null
-		GameEnums.TargetingMode.TILE, GameEnums.TargetingMode.DASH_LINE:
-			return true
-	return true
+	ability.ensure_targeting_flags_from_mode()
+	if target != null:
+		if target.id == actor.id:
+			return ability.has_targeting(GameEnums.TargetingFlags.SELF)
+		if target.team == actor.team:
+			return ability.has_targeting(GameEnums.TargetingFlags.ALLY)
+		return ability.has_targeting(GameEnums.TargetingFlags.ENEMY)
+	if target_coord == actor.position:
+		return ability.has_targeting(GameEnums.TargetingFlags.SELF)
+	if ability.has_targeting(GameEnums.TargetingFlags.TILE):
+		return true
+	if ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
+		return true
+	return false
 
 
 static func can_target_self(_actor: UnitState, ability: AbilityData) -> bool:
 	if ability == null:
 		return false
-	match ability.targeting_mode:
-		GameEnums.TargetingMode.SELF, GameEnums.TargetingMode.ALLY_OR_SELF:
-			return true
-		GameEnums.TargetingMode.ALLY_UNIT:
-			return ability.can_target_self
-	return false
+	ability.ensure_targeting_flags_from_mode()
+	return ability.has_targeting(GameEnums.TargetingFlags.SELF)
 
 
 static func target_passes_mode(actor: UnitState, ability: AbilityData, target: UnitState) -> bool:
@@ -277,7 +273,11 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 		return false
 	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
 		return false
-	if ability.targeting_mode == GameEnums.TargetingMode.SELF:
+	ability.ensure_targeting_flags_from_mode()
+	if (
+		ability.has_targeting(GameEnums.TargetingFlags.SELF)
+		and not ability.has_targeting(GameEnums.TargetingFlags.ENEMY)
+	):
 		return false
 	var offensive_effects: Array[GameEnums.EffectType] = [
 		GameEnums.EffectType.DAMAGE,

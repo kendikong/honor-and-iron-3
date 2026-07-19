@@ -665,7 +665,7 @@ func _build_ability_row(parent: VBoxContainer, ability: AbilityData) -> void:
 
 
 func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) -> void:
-	ability.normalize_targeting_mode()
+	ability.ensure_targeting_flags_from_mode()
 	ability.is_movement_skill = ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -689,11 +689,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		ability.range_tiles = v
 		_refresh_ability_ui(ability)
 	)
-	_bind_enum(grid, "Targeting", GameEnums.TargetingMode, ability.targeting_mode, func(v: int) -> void:
-		ability.targeting_mode = v
-		ability.sync_targeting_flags()
-		_refresh_ability_ui(ability)
-	)
+	_bind_targeting_flags(parent, ability)
 	_bind_enum(grid, "Shape", GameEnums.TargetShape, ability.target_shape, func(v: int) -> void:
 		ability.target_shape = v
 		_refresh_ability_ui(ability)
@@ -1082,6 +1078,32 @@ func _bind_bool(parent: GridContainer, label: String, value: bool, setter: Calla
 	chk.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	chk.toggled.connect(func(v: bool) -> void: setter.call(v))
 	parent.add_child(chk)
+
+
+func _bind_targeting_flags(parent: VBoxContainer, ability: AbilityData) -> void:
+	_add_subsection_label(parent, "Targeting", ClassLibraryTheme.ACCENT_DATA)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
+	parent.add_child(row)
+	var specs: Array = [
+		[GameEnums.TargetingFlags.SELF, "Self"],
+		[GameEnums.TargetingFlags.ALLY, "Ally"],
+		[GameEnums.TargetingFlags.ENEMY, "Enemy"],
+		[GameEnums.TargetingFlags.TILE, "Tile"],
+		[GameEnums.TargetingFlags.DASH_LINE, "Dash line"],
+	]
+	for spec: Array in specs:
+		var flag: int = int(spec[0])
+		var label: String = String(spec[1])
+		var chk := CheckBox.new()
+		chk.text = label
+		chk.button_pressed = ability.has_targeting(flag)
+		chk.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+		chk.toggled.connect(func(enabled: bool) -> void:
+			ability.set_targeting_flag(flag, enabled)
+			_refresh_ability_ui(ability)
+		)
+		row.add_child(chk)
 
 
 func _bind_string(parent: GridContainer, label: String, value: String, setter: Callable) -> void:

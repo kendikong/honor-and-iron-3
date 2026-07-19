@@ -488,16 +488,7 @@ static func ability_desc(ability: AbilityData, unit: UnitState = null) -> String
 		cost_label = "AP %d (extends movement)" % ability.action_point_cost
 	else:
 		cost_label = "AP %d" % ability.action_point_cost
-	var target_hint: String = ""
-	match ability.targeting_mode:
-		GameEnums.TargetingMode.ALLY_UNIT:
-			target_hint = " | Ally only"
-		GameEnums.TargetingMode.ALLY_OR_SELF:
-			target_hint = " | Ally or self"
-		GameEnums.TargetingMode.SELF:
-			target_hint = " | Self"
-		GameEnums.TargetingMode.ENEMY_UNIT:
-			target_hint = " | Enemy"
+	var target_hint: String = ClassLibrarySchema.targeting_flags_hint(ability)
 	var range_label: String = _ability_targeting_range_label(ability, unit)
 	var aoe_label: String = ClassLibrarySchema.bible_ability_aoe_label(ability)
 	if aoe_label != "" and range_label == "RANGE 0":
@@ -601,17 +592,9 @@ static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -
 		)
 	else:
 		lines.append("AP %d — %s" % [ability.action_point_cost, _glossary_def("AP")])
-	match ability.targeting_mode:
-		GameEnums.TargetingMode.ALLY_UNIT:
-			lines.append("Target — Allied unit only.")
-		GameEnums.TargetingMode.ALLY_OR_SELF:
-			lines.append("Target — Allied unit or self.")
-		GameEnums.TargetingMode.SELF:
-			lines.append("Target — Self only.")
-		GameEnums.TargetingMode.ENEMY_UNIT:
-			lines.append("Target — Enemy unit.")
-		_:
-			pass
+	var dump := ClassLibrarySchema.targeting_flags_dump(ability)
+	if dump != "none":
+		lines.append("Target — %s." % dump)
 	var keyword_lines: PackedStringArray = _ability_keyword_tooltip_lines(ability, unit)
 	if not keyword_lines.is_empty():
 		lines.append("")

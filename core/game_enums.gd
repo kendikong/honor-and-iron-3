@@ -154,7 +154,7 @@ enum AbilityKind {
 	UNIVERSAL_WAIT,   ## Exhaust marker (not shown in skill list).
 }
 
-## Who may be selected when using an ability.
+## Who may be selected when using an ability (legacy single-choice; synced from targeting_flags).
 enum TargetingMode {
 	SELF,
 	ALLY_UNIT,
@@ -162,7 +162,16 @@ enum TargetingMode {
 	ANY_UNIT,
 	TILE,
 	DASH_LINE,
-	ALLY_OR_SELF, ## Friendly units including the caster (replaces ALLY_UNIT + can_target_self).
+	ALLY_OR_SELF,
+}
+
+## Bitmask for ability targeting — editor checkboxes; combine freely.
+enum TargetingFlags {
+	SELF = 1,
+	ALLY = 2,
+	ENEMY = 4,
+	TILE = 8,
+	DASH_LINE = 16,
 }
 
 ## Default presentation anim when presentation_key is empty.

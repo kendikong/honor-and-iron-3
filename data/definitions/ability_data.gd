@@ -23,25 +23,86 @@ extends Resource
 ## Maximum Manhattan distance from actor to target tile.
 @export var range_tiles: int = 1
 
-## Who may be targeted. Movement skills that select a unit default to ALLY_UNIT.
+## Who may be targeted. Author with targeting_flags; targeting_mode is synced legacy.
 @export var targeting_mode: GameEnums.TargetingMode = GameEnums.TargetingMode.ANY_UNIT
 
-## Legacy mirror; synced from targeting_mode (SELF / ALLY_OR_SELF). Do not author separately.
+## Targeting bitmask (TargetingFlags). Source of truth for the class library editor.
+@export var targeting_flags: int = 0
+
+## Legacy mirror; synced from targeting_flags SELF bit.
 @export var can_target_self: bool = false
 
 
-func sync_targeting_flags() -> void:
-	match targeting_mode:
-		GameEnums.TargetingMode.SELF, GameEnums.TargetingMode.ALLY_OR_SELF:
-			can_target_self = true
-		_:
-			can_target_self = false
+func has_targeting(flag: int) -> bool:
+	return (targeting_flags & flag) != 0
 
 
-func normalize_targeting_mode() -> void:
-	if targeting_mode == GameEnums.TargetingMode.ALLY_UNIT and can_target_self:
-		targeting_mode = GameEnums.TargetingMode.ALLY_OR_SELF
-	sync_targeting_flags()
+func set_targeting_flag(flag: int, enabled: bool) -> void:
+	if enabled:
+		targeting_flags |= flag
+	else:
+		targeting_flags &= ~flag
+	sync_legacy_targeting()
+
+
+func ensure_targeting_flags_from_mode() -> void:
+	if targeting_flags != 0:
+		sync_legacy_targeting()
+		return
+	targeting_flags = _targeting_mode_to_flags(targeting_mode)
+	sync_legacy_targeting()
+
+
+func sync_legacy_targeting() -> void:
+	can_target_self = has_targeting(GameEnums.TargetingFlags.SELF)
+	targeting_mode = _targeting_flags_to_mode()
+
+
+static func _targeting_mode_to_flags(mode: int) -> int:
+	match mode:
+		GameEnums.TargetingMode.SELF:
+			return GameEnums.TargetingFlags.SELF
+		GameEnums.TargetingMode.ALLY_UNIT:
+			return GameEnums.TargetingFlags.ALLY
+		GameEnums.TargetingMode.ALLY_OR_SELF:
+			return GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.ALLY
+		GameEnums.TargetingMode.ENEMY_UNIT:
+			return GameEnums.TargetingFlags.ENEMY
+		GameEnums.TargetingMode.ANY_UNIT:
+			return (
+				GameEnums.TargetingFlags.SELF
+				| GameEnums.TargetingFlags.ALLY
+				| GameEnums.TargetingFlags.ENEMY
+			)
+		GameEnums.TargetingMode.TILE:
+			return GameEnums.TargetingFlags.TILE
+		GameEnums.TargetingMode.DASH_LINE:
+			return GameEnums.TargetingFlags.DASH_LINE
+	return GameEnums.TargetingFlags.ENEMY
+
+
+static func _targeting_flags_to_mode() -> int:
+	var f: int = targeting_flags
+	var unit_mask: int = (
+		GameEnums.TargetingFlags.SELF
+		| GameEnums.TargetingFlags.ALLY
+		| GameEnums.TargetingFlags.ENEMY
+	)
+	if f == GameEnums.TargetingFlags.SELF:
+		return GameEnums.TargetingMode.SELF
+	if f == GameEnums.TargetingFlags.ALLY:
+		return GameEnums.TargetingMode.ALLY_UNIT
+	if f == (GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.ALLY):
+		return GameEnums.TargetingMode.ALLY_OR_SELF
+	if f == GameEnums.TargetingFlags.ENEMY:
+		return GameEnums.TargetingMode.ENEMY_UNIT
+	if (f & unit_mask) == unit_mask:
+		return GameEnums.TargetingMode.ANY_UNIT
+	if has_targeting(GameEnums.TargetingFlags.DASH_LINE):
+		return GameEnums.TargetingMode.DASH_LINE
+	if has_targeting(GameEnums.TargetingFlags.TILE):
+		return GameEnums.TargetingMode.TILE
+	return GameEnums.TargetingMode.ENEMY_UNIT
 
 ## The geometric shape of the affected area.
 @export var target_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE

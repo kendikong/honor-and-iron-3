@@ -361,7 +361,7 @@ static func ability_data_dump(ability: AbilityData) -> String:
 	lines.append("action_point_cost: %d" % ability.action_point_cost)
 	lines.append("movement_point_cost: %d" % ability.movement_point_cost)
 	lines.append("range_tiles: %d" % ability.range_tiles)
-	lines.append("targeting_mode: %s" % GameEnums.TargetingMode.keys()[ability.targeting_mode])
+	lines.append("targeting_flags: %s" % targeting_flags_dump(ability))
 	lines.append("target_shape: %s" % GameEnums.TargetShape.keys()[ability.target_shape])
 	lines.append("target_shape_size: %d" % ability.target_shape_size)
 	lines.append("scaling_stat: %s" % GameEnums.StatType.keys()[ability.scaling_stat])
@@ -392,7 +392,7 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 		return ""
 	var parts: Array[String] = []
 	parts.append("Planning: %s" % _planning_note(ability))
-	parts.append("Targeting: AbilitySystem.target_passes_mode (SELF / ALLY_UNIT / ALLY_OR_SELF / …).")
+	parts.append("Targeting: AbilitySystem.target_passes_mode via targeting_flags bitmask.")
 	if ability.is_movement_kind():
 		parts.append("Economy: spends movement_point_cost (MP); PRE_MOVE timeline bucket; no action slot.")
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
@@ -431,6 +431,33 @@ static func in_game_ability_bbcode(ability: AbilityData) -> String:
 	) % [title_px, ability.display_name, body_px, body, meta_px, header]
 
 
+static func targeting_flags_dump(ability: AbilityData) -> String:
+	if ability == null:
+		return "none"
+	ability.ensure_targeting_flags_from_mode()
+	var labels: PackedStringArray = []
+	if ability.has_targeting(GameEnums.TargetingFlags.SELF):
+		labels.append("Self")
+	if ability.has_targeting(GameEnums.TargetingFlags.ALLY):
+		labels.append("Ally")
+	if ability.has_targeting(GameEnums.TargetingFlags.ENEMY):
+		labels.append("Enemy")
+	if ability.has_targeting(GameEnums.TargetingFlags.TILE):
+		labels.append("Tile")
+	if ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
+		labels.append("Dash line")
+	if labels.is_empty():
+		return "none"
+	return ", ".join(labels)
+
+
+static func targeting_flags_hint(ability: AbilityData) -> String:
+	var dump := targeting_flags_dump(ability)
+	if dump == "none":
+		return ""
+	return " | %s" % dump
+
+
 static func duplicate_effect(src: EffectData) -> EffectData:
 	var e := EffectData.new()
 	e.type = src.type
@@ -460,6 +487,7 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.movement_point_cost = src.movement_point_cost
 	dst.range_tiles = src.range_tiles
 	dst.targeting_mode = src.targeting_mode
+	dst.targeting_flags = src.targeting_flags
 	dst.can_target_self = src.can_target_self
 	dst.target_shape = src.target_shape
 	dst.target_shape_size = src.target_shape_size
@@ -478,7 +506,7 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.upgraded_effects.clear()
 	for eff: EffectData in src.upgraded_effects:
 		dst.upgraded_effects.append(duplicate_effect(eff))
-	dst.sync_targeting_flags()
+	dst.sync_legacy_targeting()
 
 
 static func _effect_dump_line(index: int, eff: EffectData) -> String:

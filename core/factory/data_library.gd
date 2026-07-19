@@ -100,12 +100,14 @@ static func _ensure_init() -> void:
 	)
 	_universal_run.kind = GameEnums.AbilityKind.UNIVERSAL_RUN
 	_universal_run.targeting_mode = GameEnums.TargetingMode.SELF
-	_universal_run.can_target_self = true
+	_universal_run.targeting_flags = GameEnums.TargetingFlags.SELF
+	_universal_run.sync_legacy_targeting()
 	_universal_run.presentation_anim = GameEnums.PresentationAnim.MOVE
 	_universal_wait = _make_ability(&"universal_wait", "Wait", 0, [], 0)
 	_universal_wait.kind = GameEnums.AbilityKind.UNIVERSAL_WAIT
 	_universal_wait.targeting_mode = GameEnums.TargetingMode.SELF
-	_universal_wait.can_target_self = true
+	_universal_wait.targeting_flags = GameEnums.TargetingFlags.SELF
+	_universal_wait.sync_legacy_targeting()
 		
 	var _trade := _make_ability(&"swap", "Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
 	
@@ -444,7 +446,8 @@ static func _configure_ability_targeting(ability: AbilityData) -> void:
 		return
 	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
 		ability.targeting_mode = GameEnums.TargetingMode.SELF
-		ability.can_target_self = true
+		ability.targeting_flags = GameEnums.TargetingFlags.SELF
+		ability.sync_legacy_targeting()
 		return
 	var effects: Array[EffectData] = ability.effects
 	if effects.is_empty():
@@ -476,16 +479,16 @@ static func _configure_ability_targeting(ability: AbilityData) -> void:
 				only_self_buffs = false
 	if only_self_buffs and ability.range_tiles == 0:
 		ability.targeting_mode = GameEnums.TargetingMode.SELF
-		ability.can_target_self = true
 	elif ability.range_tiles == 0 and ability.target_shape != GameEnums.TargetShape.SINGLE:
 		ability.targeting_mode = GameEnums.TargetingMode.SELF
-		ability.can_target_self = true
 	elif has_heal and not has_offense:
 		ability.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	elif has_offense:
 		ability.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	elif not has_offense:
 		ability.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	ability.targeting_flags = AbilityData._targeting_mode_to_flags(ability.targeting_mode)
+	ability.sync_legacy_targeting()
 
 static func _make_movement_ability(
 	p_id: StringName,
@@ -504,6 +507,8 @@ static func _make_movement_ability(
 	ability.targeting_mode = targeting
 	ability.is_movement_skill = true
 	ability.presentation_anim = GameEnums.PresentationAnim.MOVE
+	ability.targeting_flags = AbilityData._targeting_mode_to_flags(ability.targeting_mode)
+	ability.sync_legacy_targeting()
 	return ability
 
 
