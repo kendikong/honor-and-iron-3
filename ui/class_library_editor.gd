@@ -671,6 +671,8 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		ability.is_movement_skill = v
 		if v:
 			ability.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+		elif ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL:
+			ability.kind = GameEnums.AbilityKind.CLASS_SKILL
 		_refresh_ability_ui(ability)
 	)
 	_bind_int(grid, "AP", ability.action_point_cost, func(v: int) -> void:
