@@ -2,15 +2,13 @@ shader_type canvas_item;
 render_mode blend_mul, unshaded;
 
 // Unified ground shadow resolve: max(static map oblique, unit feet slots, cloud FBM) → one multiply.
+// Sprite2D quad — VERTEX is map-root local pixel (0..map_size_px), same space as CPU sampling.
 
 #include "res://shaders/cloud_shadow_field.gdshaderinc"
 
 const int MAX_UNIT_FEET = 16;
 
 uniform vec2 map_size_px = vec2(256.0);
-// World-space origin of map pixel (0,0) — same convention as tilemap_cloud_receive.
-uniform vec2 map_origin_px = vec2(0.0);
-uniform float map_scale = 1.0;
 uniform float tile_px = 16.0;
 
 uniform sampler2D map_oblique_tex : filter_nearest, repeat_disable;
@@ -35,8 +33,8 @@ uniform float cloud_mask_high = 0.55;
 uniform float cloud_mask_steps = 8.0;
 uniform float cloud_shape_mix = 0.62;
 uniform float cloud_shape_scale = 1.73;
-
-const float ALPHA_CUTOFF = 0.04;
+uniform vec2 map_origin_px = vec2(0.0);
+uniform float map_scale = 1.0;
 
 varying vec2 v_map_local;
 

@@ -77,6 +77,8 @@ static var _map_size_px: Vector2 = Vector2.ZERO
 static var _map_root: Node2D
 static var _ground_layer: TileMapLayer
 static var _ground_shadow_material: ShaderMaterial
+static var _ground_shadow_quad_tex: ImageTexture
+static var _ground_shadow_quad_size: Vector2i = Vector2i.ZERO
 static var _map_oblique_tex: ImageTexture
 static var _map_oblique_base_image: Image
 static var _map_oblique_overlay_base: Dictionary = {}
@@ -673,20 +675,40 @@ static func _ground_material() -> ShaderMaterial:
 	return _ground_shadow_material
 
 
+static func _ground_map_pixel_origin() -> Vector2:
+	if _ground_layer != null:
+		return MapPixelSpace.cell_top_left_px(_ground_layer, Vector2i.ZERO)
+	return Vector2.ZERO
+
+
+static func _ground_shadow_quad_texture(size_px: Vector2) -> ImageTexture:
+	var size_i: Vector2i = Vector2i(maxi(1, int(size_px.x)), maxi(1, int(size_px.y)))
+	if _ground_shadow_quad_tex != null and _ground_shadow_quad_size == size_i:
+		return _ground_shadow_quad_tex
+	var img: Image = Image.create(size_i.x, size_i.y, false, Image.FORMAT_RGBA8)
+	img.fill(Color.WHITE)
+	_ground_shadow_quad_tex = ImageTexture.create_from_image(img)
+	_ground_shadow_quad_size = size_i
+	return _ground_shadow_quad_tex
+
+
 static func _ensure_ground_shadow_rect(shadow_root: Node2D, settings: EffectsSettings = null) -> void:
 	if shadow_root == null or _map_size_px.x < 1.0 or _map_size_px.y < 1.0:
 		return
-	var rect: ColorRect = shadow_root.get_node_or_null(_GROUND_SHADOW_NODE) as ColorRect
-	if rect == null:
-		rect = ColorRect.new()
-		rect.name = StringName(_GROUND_SHADOW_NODE)
-		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		shadow_root.add_child(rect)
-	rect.position = Vector2.ZERO
-	rect.size = _map_size_px
-	rect.visible = true
-	rect.material = _ground_material()
+	var sprite: Sprite2D = shadow_root.get_node_or_null(_GROUND_SHADOW_NODE) as Sprite2D
+	if sprite == null:
+		var legacy: Node = shadow_root.get_node_or_null(_GROUND_SHADOW_NODE)
+		if legacy != null:
+			legacy.queue_free()
+		sprite = Sprite2D.new()
+		sprite.name = StringName(_GROUND_SHADOW_NODE)
+		sprite.centered = false
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		shadow_root.add_child(sprite)
+	sprite.texture = _ground_shadow_quad_texture(_map_size_px)
+	sprite.position = _ground_map_pixel_origin()
+	sprite.visible = true
+	sprite.material = _ground_material()
 	_sync_ground_shadow_uniforms(settings, shadow_root)
 
 
@@ -696,16 +718,18 @@ static func _sync_ground_shadow_uniforms(
 ) -> void:
 	if shadow_root == null:
 		return
-	var rect: ColorRect = shadow_root.get_node_or_null(_GROUND_SHADOW_NODE) as ColorRect
-	if rect == null:
+	var sprite: Sprite2D = shadow_root.get_node_or_null(_GROUND_SHADOW_NODE) as Sprite2D
+	if sprite == null:
 		return
-	var mat: ShaderMaterial = rect.material as ShaderMaterial
+	var mat: ShaderMaterial = sprite.material as ShaderMaterial
 	if mat == null:
 		return
 	var params: Dictionary = ShadowPalette.multiply_shader_params(settings)
 	mat.set_shader_parameter("map_size_px", _map_size_px)
-	_push_map_transform_uniforms(mat)
 	mat.set_shader_parameter("tile_px", float(TILE_PX))
+	if _map_root != null:
+		mat.set_shader_parameter("map_origin_px", MapPixelSpace.map_world_origin(_map_root))
+		mat.set_shader_parameter("map_scale", MapPixelSpace.map_scale(_map_root))
 	mat.set_shader_parameter("shadow_tint", params["shadow_tint"])
 	mat.set_shader_parameter("shadow_strength", params["shadow_strength"])
 	mat.set_shader_parameter("cloud_shadow_tint", AtmosphereBinder.CLOUD_SHADOW_TINT)
@@ -744,15 +768,7 @@ static func _ground_static_uniform_signature(settings: EffectsSettings = null) -
 		params.get("shadow_tint", Color.WHITE),
 		params.get("shadow_strength", 0.0),
 		_map_size_px,
-		MapPixelSpace.map_world_origin(_map_root),
 	])
-
-
-static func _push_map_transform_uniforms(mat: ShaderMaterial) -> void:
-	if mat == null or _map_root == null:
-		return
-	mat.set_shader_parameter("map_origin_px", MapPixelSpace.map_world_origin(_map_root))
-	mat.set_shader_parameter("map_scale", MapPixelSpace.map_scale(_map_root))
 
 
 static func _push_ground_shadow_drift_only(
@@ -761,19 +777,29 @@ static func _push_ground_shadow_drift_only(
 ) -> void:
 	if shadow_root == null:
 		return
-	var rect: ColorRect = shadow_root.get_node_or_null(_GROUND_SHADOW_NODE) as ColorRect
-	if rect == null:
+	var sprite: Sprite2D = shadow_root.get_node_or_null(_GROUND_SHADOW_NODE) as Sprite2D
+	if sprite == null:
 		return
-	var mat: ShaderMaterial = rect.material as ShaderMaterial
+	var mat: ShaderMaterial = sprite.material as ShaderMaterial
 	if mat == null:
 		return
 	mat.set_shader_parameter("cloud_drift_offset", WeatherBus.cloud_drift_offset)
-	_push_map_transform_uniforms(mat)
+	if _map_root != null:
+		mat.set_shader_parameter("map_origin_px", MapPixelSpace.map_world_origin(_map_root))
+		mat.set_shader_parameter("map_scale", MapPixelSpace.map_scale(_map_root))
 	var enable_cloud: float = 0.0
 	if settings != null and settings.cloud_shadows:
 		enable_cloud = 1.0
 	mat.set_shader_parameter("enable_cloud_shadows", enable_cloud)
 	_push_unit_feet_gpu_uniforms(mat)
+
+
+static func tile_cloud_visible_at_cell(cell: Vector2i, settings: EffectsSettings) -> bool:
+	return cloud_visible_at(
+		foot_map_px_from_cell(cell),
+		WeatherBus.cloud_drift_offset,
+		settings,
+	)
 
 
 static func _push_unit_feet_gpu_uniforms(mat: ShaderMaterial) -> void:
@@ -2186,11 +2212,15 @@ static func cell_from_foot_px(foot_px: Vector2) -> Vector2i:
 	)
 
 
-static func tile_cloud_mask_at_cell(cell: Vector2i) -> float:
-	return _CLOUD_FIELD.shadow_mask_at(
-		foot_map_px_from_cell(cell),
-		WeatherBus.cloud_drift_offset,
-	)
+static func cloud_shade_at(map_local: Vector2, drift: Vector2, settings: EffectsSettings) -> float:
+	if settings == null or not settings.cloud_shadows:
+		return 0.0
+	var mask: float = _CLOUD_FIELD.shadow_mask_at(map_local, drift, settings)
+	return mask * CloudTuning.strength(settings)
+
+
+static func cloud_visible_at(map_local: Vector2, drift: Vector2, settings: EffectsSettings) -> bool:
+	return cloud_shade_at(map_local, drift, settings) >= 0.01
 
 
 static func tile_cloud_mask_at_foot(foot_px: Vector2) -> float:
@@ -2228,7 +2258,7 @@ static func sample_environment_shadow_alpha_at(
 	var static_a: float = _sample_map_oblique_channel_alpha_at(map_px)
 	var cloud_a: float = 0.0
 	if settings != null and settings.cloud_shadows:
-		cloud_a = _CLOUD_FIELD.shadow_mask_at(map_px, WeatherBus.cloud_drift_offset)
+		cloud_a = _CLOUD_FIELD.shadow_mask_at(map_px, WeatherBus.cloud_drift_offset, settings)
 	return maxf(static_a, cloud_a)
 
 
@@ -2240,7 +2270,7 @@ static func sample_unified_shadow_alpha_at(
 	var feet_a: float = _sample_unit_feet_channel_alpha_at(map_px)
 	var cloud_a: float = 0.0
 	if settings != null and settings.cloud_shadows:
-		cloud_a = _CLOUD_FIELD.shadow_mask_at(map_px, WeatherBus.cloud_drift_offset)
+		cloud_a = _CLOUD_FIELD.shadow_mask_at(map_px, WeatherBus.cloud_drift_offset, settings)
 	return maxf(maxf(static_a, feet_a), cloud_a)
 
 
@@ -2301,7 +2331,8 @@ static func actor_oblique_band_modulates(
 	var foot_map_px: Vector2 = MapPixelSpace.foot_map_px(foot)
 	var foot_cloud: float = 0.0
 	if want_cloud:
-		foot_cloud = _CLOUD_FIELD.shadow_mask_at(foot_map_px, WeatherBus.cloud_drift_offset)
+		foot_cloud = _CLOUD_FIELD.shadow_mask_at(foot_map_px, WeatherBus.cloud_drift_offset, settings)
+	var foot_cloud_shade: float = foot_cloud * cloud_strength if want_cloud else 0.0
 	var foot_oblique: float = 0.0
 	if want_oblique:
 		foot_oblique = sample_map_oblique_alpha_at(foot_map_px, settings)
@@ -2310,8 +2341,8 @@ static func actor_oblique_band_modulates(
 		if foot_oblique >= 0.04:
 			map_shade = foot_oblique * shadow_strength
 		var cloud_shade: float = 0.0
-		if foot_cloud >= 0.125:
-			cloud_shade = foot_cloud * cloud_strength
+		if foot_cloud_shade >= 0.01:
+			cloud_shade = foot_cloud_shade
 		var shade: float = maxf(map_shade, cloud_shade)
 		if shade < 0.01:
 			bands[band_i] = Color.WHITE

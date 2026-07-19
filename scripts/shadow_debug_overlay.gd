@@ -10,7 +10,7 @@ const COLOR_CLOUD: Color = Color(1.0, 0.12, 0.12, 0.58)
 const COLOR_ACTOR_FOOT: Color = Color(1.0, 0.92, 0.12, 0.95)
 const COLOR_ACTOR_MISMATCH: Color = Color(1.0, 0.45, 0.0, 0.95)
 
-const CLOUD_MASK_GATE: float = 0.125
+const CLOUD_SHADE_GATE: float = 0.01
 
 var _grid: PlayerGrid
 var _map_root: Node2D
@@ -92,7 +92,10 @@ func _rebuild() -> void:
 	_ensure_tile_overlay()
 	var zoom: float = _map_root.scale.x
 	var size_px: Vector2 = MapPixelSpace.size_px_from_grid(_grid)
-	_tile_overlay.position = _map_root.to_global(Vector2.ZERO)
+	var map_origin: Vector2 = Vector2.ZERO
+	if _ground != null:
+		map_origin = MapPixelSpace.cell_top_left_px(_ground, Vector2i.ZERO)
+	_tile_overlay.position = _map_root.to_global(map_origin)
 	_tile_overlay.size = size_px * zoom
 	_last_zoom = zoom
 
@@ -106,8 +109,10 @@ func _rebuild() -> void:
 			var map_px: Vector2 = ShadowPlacer.foot_map_px_from_cell(cell)
 			var color: Color = Color(0.0, 0.0, 0.0, 0.0)
 			if want_cloud:
-				var mask: float = CloudShadowField.shadow_mask_at(map_px, drift)
-				if mask >= CLOUD_MASK_GATE:
+				var shade: float = ShadowPlacer.cloud_shade_at(
+					map_px, drift, _settings,
+				)
+				if shade >= CLOUD_SHADE_GATE:
 					cloud_count += 1
 					color = COLOR_CLOUD
 			_tile_img.set_pixel(x, y, color)
@@ -162,20 +167,17 @@ func _paint_actor_feet(zoom: float) -> void:
 		marker.visible = true
 		var foot: Vector2 = actor.position
 		var cell: Vector2i = ShadowPlacer.cell_from_foot_px(foot)
-		var cloud_mask: float = ShadowPlacer.tile_cloud_mask_at_foot(foot)
+		var cloud_shade: float = ShadowPlacer.cloud_shade_at(
+			MapPixelSpace.foot_map_px(foot), WeatherBus.cloud_drift_offset, _settings,
+		)
 		var sprite_shaded: bool = (
 			_settings != null
 			and _settings.cloud_shadows
-			and cloud_mask >= CLOUD_MASK_GATE
+			and cloud_shade >= CLOUD_SHADE_GATE
 		)
 		var tile_hit: bool = (
 			_cell_in_grid(cell)
-			and _settings != null
-			and _settings.cloud_shadows
-			and CloudShadowField.shadow_mask_at(
-				ShadowPlacer.foot_map_px_from_cell(cell),
-				WeatherBus.cloud_drift_offset,
-			) >= CLOUD_MASK_GATE
+			and ShadowPlacer.tile_cloud_visible_at_cell(cell, _settings)
 		)
 		marker.color = COLOR_ACTOR_MISMATCH if sprite_shaded != tile_hit else COLOR_ACTOR_FOOT
 		var global_foot: Vector2 = _map_root.to_global(foot)
@@ -206,7 +208,7 @@ func _build_legend_shell() -> void:
 func _update_legend(cloud_count: int) -> void:
 	var lines: PackedStringArray = PackedStringArray([
 		"Cloud shadow debug (J) — CPU foot pixel per tile",
-		"Red = cloud mask >= %.2f (%d tiles) · should match ground GPU" % [CLOUD_MASK_GATE, cloud_count],
+		"Red = cloud shade >= %.2f (%d tiles) · should match ground GPU" % [CLOUD_SHADE_GATE, cloud_count],
 		"Updates ~%.1fs · yellow foot = actor · orange = sprite/tile mismatch" % REFRESH_INTERVAL_SEC,
 	])
 	_legend_body.text = "\n".join(lines)
