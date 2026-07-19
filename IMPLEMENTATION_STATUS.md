@@ -1054,4 +1054,4 @@ Phases 1–5: data model, sim economy, `plan_action` timeline, planning validati
 **Final issue count:** 2  
 **Audit result:** **PASS** (conditional on user F5)
 
-**Commit:** (pending this turn)
+**Commit:** `245262342` (phases 3–5); `8c4a06250` (phases 1–2)
