@@ -19,6 +19,7 @@ const _COLOR_GHOST := Color(0.98, 0.88, 0.38, 0.45)
 const _COLOR_AIM := Color(0.95, 0.95, 1.0, 0.95)
 const _COLOR_HOVER := Color(0.45, 0.75, 1.0)
 const _COLOR_ENEMY_ARROW := Color(0.95, 0.35, 0.35, 0.95)
+const _COLOR_FORCED_MOVE := Color(0.95, 0.42, 0.38, 0.95)
 const _COLOR_PLAYER_ARROW := Color(0.45, 0.85, 0.55, 0.98)
 const _COLOR_TARGET := Color(0.98, 0.72, 0.38, 0.85)
 const _COLOR_DRAGPATH := Color(0.98, 0.88, 0.38, 0.95)
@@ -35,10 +36,10 @@ const _ROUTE_HEAD_LEN: float = 8.5
 const _ROUTE_HEAD_HALF_W: float = 4.7
 const _ROUTE_SHAFT_HEAD_OVERLAP: float = 0.55
 const _FORCED_MOVE_LINE_W: float = 1.875
-const _FORCED_MOVE_DOT_RADIUS: float = 1.25
-const _FORCED_MOVE_DOT_SPACING: float = 7.0
-const _FORCED_MOVE_HEAD_LEN: float = 7.0
-const _FORCED_MOVE_HEAD_ANGLE_DEG: float = 28.0
+const _INTENT_DOT_RADIUS: float = 1.25
+const _INTENT_DOT_SPACING: float = 7.0
+const _INTENT_ARROW_HEAD_LEN: float = 7.0
+const _INTENT_ARROW_HEAD_ANGLE_DEG: float = 28.0
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
 const _INTENT_ROUTE_ALPHA: float = 0.40
@@ -1107,7 +1108,7 @@ func _draw_preview_arrows() -> void:
 						if not skip_committed_post:
 							var p_col: Color = _player_color_for_unit(unit)
 							var dim_col := Color(p_col.r, p_col.g, p_col.b, 0.35)
-							_draw_route_line(post_leg, dim_col, post_split <= 1, true)
+							_draw_dotted_intent_route(post_leg, dim_col, post_split <= 1)
 		var enemy_leg: Array = []
 		if split < route.size():
 			enemy_leg = route.slice(maxi(split - 1, 0))
@@ -1390,18 +1391,33 @@ func _draw_line_arrowhead(tip: Vector2, dir: Vector2, color: Color, line_w: floa
 	draw_line(tip, wing2, color, line_w)
 
 
-func _forced_movement_intent_color(pushed_unit: UnitState) -> Color:
-	if _director != null and _director.selected_unit_id >= 0 and _board != null:
-		var actor: UnitState = _board.get_unit_by_id(_director.selected_unit_id)
-		if actor != null and not actor.is_enemy():
-			var p_col: Color = _player_color_for_unit(actor)
-			return Color(p_col.r, p_col.g, p_col.b, 0.88)
-	if pushed_unit != null and not pushed_unit.is_enemy():
-		return Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.88)
-	return Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, 0.88)
+func _forced_movement_intent_color(_pushed_unit: UnitState = null) -> Color:
+	return _COLOR_FORCED_MOVE
 
 
-func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
+func _draw_dotted_intent_route(route: Array, color: Color, trim_start: bool) -> void:
+	if route.size() < 2 or _map_view == null:
+		return
+	for i: int in range(route.size() - 1):
+		if not (route[i] is Vector2i) or not (route[i + 1] is Vector2i):
+			continue
+		var is_last: bool = i == route.size() - 2
+		_draw_dotted_intent_segment(
+			route[i] as Vector2i,
+			route[i + 1] as Vector2i,
+			color,
+			trim_start and i == 0,
+			is_last,
+		)
+
+
+func _draw_dotted_intent_segment(
+	from: Vector2i,
+	to: Vector2i,
+	color: Color,
+	trim_start: bool,
+	with_head: bool,
+) -> void:
 	if _map_view == null:
 		return
 	var start_center: Vector2 = _map_view.grid_to_local(from)
@@ -1410,32 +1426,42 @@ func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color)
 	if delta.length_squared() < 0.001:
 		return
 	var travel_dir: Vector2 = delta.normalized()
-	var start_pt: Vector2 = start_center + travel_dir * _token_radius()
-	var inset: float = _FORCED_MOVE_HEAD_LEN * _ROUTE_SHAFT_HEAD_OVERLAP
-	var shaft_end: Vector2 = dest_center - travel_dir * inset
+	var start_pt: Vector2 = start_center
+	if trim_start:
+		start_pt = start_center + travel_dir * _token_radius()
+	var shaft_end: Vector2 = dest_center
+	if with_head:
+		var inset: float = _INTENT_ARROW_HEAD_LEN * _ROUTE_SHAFT_HEAD_OVERLAP
+		shaft_end = dest_center - travel_dir * inset
 	if start_pt.distance_to(shaft_end) < 1.0:
+		if with_head:
+			_draw_line_arrowhead(
+				dest_center,
+				travel_dir,
+				color,
+				_FORCED_MOVE_LINE_W,
+				_INTENT_ARROW_HEAD_LEN,
+				_INTENT_ARROW_HEAD_ANGLE_DEG,
+			)
+		return
+	var dist: float = start_pt.distance_to(shaft_end)
+	var d: float = 0.0
+	while d < dist:
+		draw_circle(start_pt + travel_dir * d, _INTENT_DOT_RADIUS, color)
+		d += _INTENT_DOT_SPACING
+	if with_head:
 		_draw_line_arrowhead(
 			dest_center,
 			travel_dir,
 			color,
 			_FORCED_MOVE_LINE_W,
-			_FORCED_MOVE_HEAD_LEN,
-			_FORCED_MOVE_HEAD_ANGLE_DEG,
+			_INTENT_ARROW_HEAD_LEN,
+			_INTENT_ARROW_HEAD_ANGLE_DEG,
 		)
-		return
-	var dist: float = start_pt.distance_to(shaft_end)
-	var d: float = 0.0
-	while d < dist:
-		draw_circle(start_pt + travel_dir * d, _FORCED_MOVE_DOT_RADIUS, color)
-		d += _FORCED_MOVE_DOT_SPACING
-	_draw_line_arrowhead(
-		dest_center,
-		travel_dir,
-		color,
-		_FORCED_MOVE_LINE_W,
-		_FORCED_MOVE_HEAD_LEN,
-		_FORCED_MOVE_HEAD_ANGLE_DEG,
-	)
+
+
+func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
+	_draw_dotted_intent_segment(from, to, color, true, true)
 
 
 func _draw_push_arrow(from: Vector2i, to: Vector2i, pushed_unit: UnitState = null) -> void:
