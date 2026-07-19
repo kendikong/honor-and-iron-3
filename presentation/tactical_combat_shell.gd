@@ -151,9 +151,16 @@ func _wire_pause_visibility() -> void:
 func _wire_unit_feedback() -> void:
 	if _unit_layer == null or intent_state == null:
 		return
+	if not intent_state.hover_coord_changed.is_connected(_on_unit_hover_coord_changed):
+		intent_state.hover_coord_changed.connect(_on_unit_hover_coord_changed)
 	intent_state.intents_changed.connect(func(units: Dictionary) -> void:
 		_unit_layer.set_intent_units(units),
 	)
 	intent_state.timeline_hover_changed.connect(func(unit_id: int) -> void:
 		_unit_layer.set_timeline_hover(unit_id),
 	)
+
+
+func _on_unit_hover_coord_changed(coord: Vector2i) -> void:
+	if _unit_layer != null:
+		_unit_layer.set_hover_cell(coord)

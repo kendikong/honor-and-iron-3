@@ -7,8 +7,14 @@ extends Node
 const _OUTLINE_SHADER: Shader = preload("res://shaders/pixel_sprite_outline.gdshader")
 const _OUTLINE_OUTER_ALPHA: float = 0.42
 
+enum GlowStrength {
+	HOVER,
+	SELECTED,
+}
+
 var enabled: bool = false
 var glow_color: Color = Color(0.36, 0.62, 0.92, 1.0)
+var _strength: GlowStrength = GlowStrength.SELECTED
 var _muted: bool = false
 var _actor: CharacterActor
 var _outline_sprites: Array[AnimatedSprite2D] = []
@@ -21,6 +27,7 @@ var _outline_material: ShaderMaterial
 func bind_actor(actor: CharacterActor) -> void:
 	_actor = actor
 	_ensure_material()
+	set_process(false)
 
 
 func is_active() -> bool:
@@ -31,11 +38,18 @@ func is_outline_empty() -> bool:
 	return _outline_sprites.is_empty()
 
 
-func set_active(active: bool, color: Color = glow_color) -> void:
+func set_glow(
+	active: bool,
+	color: Color = glow_color,
+	strength: GlowStrength = GlowStrength.SELECTED,
+) -> void:
 	var color_changed: bool = glow_color != color
+	var strength_changed: bool = _strength != strength
 	glow_color = color
+	_strength = strength
 	if active:
 		enabled = true
+		_apply_strength_params()
 		if _outline_sprites.is_empty() or not _outlines_match_layers():
 			rebuild_from_layers()
 		else:
@@ -43,14 +57,20 @@ func set_active(active: bool, color: Color = glow_color) -> void:
 			for spr: AnimatedSprite2D in _actor.get_sprite_layers():
 				_sync_outline_for_layer(spr)
 			_set_outlines_visible(true)
-			if color_changed:
+			if color_changed or strength_changed:
 				_update_outline_alpha()
+		set_process(_strength == GlowStrength.SELECTED)
 	else:
 		if not enabled:
 			return
 		enabled = false
+		set_process(false)
 		_disconnect_layer_signals()
 		_set_outlines_visible(false)
+
+
+func set_active(active: bool, color: Color = glow_color) -> void:
+	set_glow(active, color, GlowStrength.SELECTED)
 
 
 func set_muted(muted: bool) -> void:
@@ -58,6 +78,13 @@ func set_muted(muted: bool) -> void:
 		return
 	_muted = muted
 	_update_outline_alpha()
+
+
+func _process(_delta: float) -> void:
+	if not enabled or _strength != GlowStrength.SELECTED or _muted:
+		return
+	var pulse: float = 0.82 + 0.18 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 220.0))
+	_apply_strength_params(pulse)
 
 
 func rebuild_from_layers() -> void:
@@ -210,9 +237,30 @@ func _sync_outline_for_layer(layer: AnimatedSprite2D) -> void:
 func _update_outline_alpha() -> void:
 	if _outline_material == null:
 		return
+	_apply_strength_params(1.0)
+
+
+func _apply_strength_params(pulse_scale: float = 1.0) -> void:
+	if _outline_material == null:
+		return
+	var inner_px: int = 2
+	var outer_px: int = 3
+	var inner_a: float = 0.72
+	var outer_a: float = 0.28
+	match _strength:
+		GlowStrength.HOVER:
+			inner_px = 2
+			outer_px = 3
+			inner_a = 0.72 if not _muted else 0.62
+			outer_a = 0.28 if not _muted else 0.20
+		GlowStrength.SELECTED:
+			inner_px = 2
+			outer_px = 5
+			inner_a = 1.0 if not _muted else 0.85
+			outer_a = 0.62 if not _muted else 0.48
+	_outline_material.set_shader_parameter("inner_px", inner_px)
+	_outline_material.set_shader_parameter("outer_px", outer_px)
 	var draw_color: Color = _draw_color()
-	var inner_a: float = 1.0 if not _muted else 0.85
-	var outer_a: float = _OUTLINE_OUTER_ALPHA if not _muted else _OUTLINE_OUTER_ALPHA * 0.75
 	_outline_material.set_shader_parameter("outline_color", draw_color)
 	_outline_material.set_shader_parameter("inner_alpha", inner_a)
-	_outline_material.set_shader_parameter("outer_alpha", outer_a)
+	_outline_material.set_shader_parameter("outer_alpha", outer_a * pulse_scale)

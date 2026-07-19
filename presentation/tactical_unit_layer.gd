@@ -28,7 +28,8 @@ var _catalog: LpcCatalog
 var _profile: CharacterGenProfile = CharacterGenProfile.new()
 var _actors: Dictionary = {}
 var _selected_id: int = -1
-var _glow_selected_id: int = -1
+var _hover_unit_id: int = -1
+var _glow_applied: Dictionary = {}
 var _timeline_hover_id: int = -1
 var _intent_units: Dictionary = {}
 var _predicted_hp: Dictionary = {}
@@ -40,7 +41,6 @@ var _damage_flash: Dictionary = {}
 var _hit_bursts: Array = []
 var _last_attacker_pos: Dictionary = {}
 var _pending_death: Dictionary = {}
-var _drag_target_id: int = -1
 var _drag_preview_id: int = -1
 var _drag_preview_active: bool = false
 var _drag_preview_failed: bool = false
@@ -94,7 +94,7 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 				(actor as CharacterActor).set_planning_exhausted(false)
 				if not CombatDirector.is_planning_phase(phase):
 					(actor as CharacterActor).set_running(false)
-		_refresh_selection_glow()
+		_refresh_unit_glows()
 		queue_redraw(),
 	)
 	set_process(true)
@@ -102,8 +102,20 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 
 
 func set_timeline_hover(unit_id: int) -> void:
+	if _timeline_hover_id == unit_id:
+		return
 	_timeline_hover_id = unit_id
+	_refresh_unit_glows()
 	queue_redraw()
+
+
+func set_hover_cell(coord: Vector2i) -> void:
+	var unit := _unit_at_cell(coord)
+	var new_hover_id: int = unit.id if unit != null else -1
+	if new_hover_id == _hover_unit_id:
+		return
+	_hover_unit_id = new_hover_id
+	_refresh_unit_glows()
 
 
 func set_intent_units(units: Dictionary) -> void:
@@ -165,7 +177,7 @@ func _on_preview_updated(result: SimResult) -> void:
 
 func _on_selection_changed(unit_id: int) -> void:
 	_selected_id = unit_id
-	_refresh_selection_glow()
+	_refresh_unit_glows()
 	if _board != null and unit_id >= 0:
 		var unit: UnitState = _board.get_unit_by_id(unit_id)
 		if unit != null and unit.is_alive() and not unit.is_enemy():
@@ -185,7 +197,7 @@ func _refresh_planning_visuals() -> void:
 		if actor != null:
 			actor.modulate = Color.WHITE
 	_refresh_player_exhaustion()
-	_refresh_selection_glow()
+	_refresh_unit_glows()
 
 
 func _refresh_player_exhaustion() -> void:
@@ -196,57 +208,82 @@ func _refresh_player_exhaustion() -> void:
 			_apply_exhaustion_state(unit)
 
 
-func _refresh_selection_glow() -> void:
-	var planning: bool = CombatDirector.is_planning_phase(_phase)
-	var new_glow_id: int = _selected_id if planning else -1
-	if new_glow_id == _glow_selected_id:
-		return
-	if _glow_selected_id >= 0 and _glow_selected_id != _drag_target_id:
-		_set_unit_selection_glow(_glow_selected_id, false)
-	_glow_selected_id = -1
-	if new_glow_id < 0:
-		return
-	var unit := _board.get_unit_by_id(new_glow_id) if _board != null else null
-	var color: Color = _COLOR_SELECT_ENEMY if unit != null and unit.is_enemy() else _COLOR_SELECT_PLAYER
-	_set_unit_selection_glow(new_glow_id, true, color)
-	_glow_selected_id = new_glow_id
+func _unit_at_cell(coord: Vector2i) -> UnitState:
+	if _board == null or not _board.is_in_bounds(coord):
+		return null
+	if _director != null and _director.projected_state != null:
+		var projected := _director.projected_state.get_unit_at(coord)
+		if projected != null:
+			return projected
+	return _board.get_unit_at(coord)
 
 
-func _set_unit_selection_glow(unit_id: int, active: bool, color: Color = _COLOR_SELECT_PLAYER) -> void:
+func _effective_hover_id() -> int:
+	if _hover_unit_id >= 0:
+		return _hover_unit_id
+	return _timeline_hover_id
+
+
+func _outline_color_for(unit: UnitState) -> Color:
+	return _COLOR_SELECT_ENEMY if unit.is_enemy() else _COLOR_SELECT_PLAYER
+
+
+func _refresh_unit_glows() -> void:
+	if not CombatDirector.is_planning_phase(_phase):
+		_clear_all_unit_glows()
+		return
+	var want: Dictionary = {}
+	var selected_id: int = _selected_id
+	var hover_id: int = _effective_hover_id()
+	if hover_id >= 0 and hover_id != selected_id:
+		want[hover_id] = CharacterSelectionGlow.GlowStrength.HOVER
+	if selected_id >= 0:
+		want[selected_id] = CharacterSelectionGlow.GlowStrength.SELECTED
+	var stale: Array[int] = []
+	for unit_id: Variant in _glow_applied.keys():
+		stale.append(int(unit_id))
+	for unit_id: int in stale:
+		if not want.has(unit_id):
+			_apply_unit_glow(unit_id, false)
+			_glow_applied.erase(unit_id)
+	for unit_id: Variant in want.keys():
+		var id: int = int(unit_id)
+		var unit := _board.get_unit_by_id(id) if _board != null else null
+		if unit == null or not unit.is_alive():
+			_apply_unit_glow(id, false)
+			_glow_applied.erase(id)
+			continue
+		var strength: CharacterSelectionGlow.GlowStrength = want[id]
+		if _glow_applied.get(id) == strength:
+			continue
+		_apply_unit_glow(id, true, _outline_color_for(unit), strength)
+		_glow_applied[id] = strength
+
+
+func _clear_all_unit_glows() -> void:
+	for unit_id: Variant in _glow_applied.keys():
+		_apply_unit_glow(int(unit_id), false)
+	_glow_applied.clear()
+
+
+func _apply_unit_glow(
+	unit_id: int,
+	active: bool,
+	color: Color = _COLOR_SELECT_PLAYER,
+	strength: CharacterSelectionGlow.GlowStrength = CharacterSelectionGlow.GlowStrength.HOVER,
+) -> void:
 	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
 	if actor == null:
 		return
-	actor.set_selection_glow(active, color)
+	actor.set_selection_glow(active, color, strength)
 
 
-func set_drag_attack_target(unit_id: int) -> void:
-	if _drag_target_id == unit_id:
-		return
-	_clear_drag_attack_target_glow()
-	_drag_target_id = unit_id
-	if _drag_target_id >= 0:
-		_set_unit_selection_glow(_drag_target_id, true, _COLOR_SELECT_ENEMY)
+func set_drag_attack_target(_unit_id: int) -> void:
+	pass
 
 
 func clear_drag_attack_target() -> void:
-	if _drag_target_id < 0:
-		return
-	_clear_drag_attack_target_glow()
-	_drag_target_id = -1
-
-
-func _clear_drag_attack_target_glow() -> void:
-	if _drag_target_id < 0:
-		return
-	if _drag_target_id == _glow_selected_id:
-		var unit := _board.get_unit_by_id(_drag_target_id) if _board != null else null
-		var color: Color = _COLOR_SELECT_ENEMY if unit != null and unit.is_enemy() else _COLOR_SELECT_PLAYER
-		_set_unit_selection_glow(_drag_target_id, true, color)
-	else:
-		_set_unit_selection_glow(_drag_target_id, false)
-		var unit := _board.get_unit_by_id(_drag_target_id) if _board != null else null
-		if unit != null:
-			_apply_exhaustion_state(unit)
+	pass
 
 
 func apply_sim_event(event: SimEvent) -> void:
@@ -331,7 +368,7 @@ func _sync_actors() -> void:
 	for id: Variant in _actors.keys():
 		if not live.has(id) and not _pending_death.has(id):
 			_remove_actor(int(id))
-	_refresh_selection_glow()
+	_refresh_unit_glows()
 
 
 func _record_attack_source(event: SimEvent) -> void:

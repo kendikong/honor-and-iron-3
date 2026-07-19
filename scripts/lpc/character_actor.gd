@@ -92,10 +92,14 @@ func get_sprite_layers() -> Array[AnimatedSprite2D]:
 	return _layers
 
 
-func set_selection_glow(active: bool, color: Color = Color(0.36, 0.62, 0.92, 0.95)) -> void:
+func set_selection_glow(
+	active: bool,
+	color: Color = Color(0.36, 0.62, 0.92, 0.95),
+	strength: CharacterSelectionGlow.GlowStrength = CharacterSelectionGlow.GlowStrength.SELECTED,
+) -> void:
 	if _selection_glow == null:
 		return
-	_selection_glow.set_active(active, color)
+	_selection_glow.set_glow(active, color, strength)
 
 
 func get_selection_glow() -> CharacterSelectionGlow:
