@@ -81,7 +81,7 @@ static func _targeting_mode_to_flags(mode: int) -> int:
 	return GameEnums.TargetingFlags.ENEMY
 
 
-static func _targeting_flags_to_mode() -> int:
+func _targeting_flags_to_mode() -> int:
 	var f: int = targeting_flags
 	var unit_mask: int = (
 		GameEnums.TargetingFlags.SELF
