@@ -648,6 +648,10 @@ func _apply_facing(unit_id: int, facing: int, keep_walking: bool = false) -> voi
 		actor.set_walking(false)
 
 
+func _defer_exhaustion_grey(unit_id: int) -> bool:
+	return _move_tweens.has(unit_id)
+
+
 func _apply_exhaustion_state(unit: UnitState) -> void:
 	var actor: CharacterActor = _actors.get(unit.id)
 	if actor == null:
@@ -667,7 +671,7 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 		actor.set_running(false)
 		return
 	if _director.unit_has_wait_planned(current.id):
-		actor.set_planning_exhausted(true)
+		actor.set_planning_exhausted(not _defer_exhaustion_grey(unit.id))
 		actor.set_running(current.has_status(GameEnums.StatusType.RUNNING))
 		return
 	var can_act: bool = current.can_use_action_slot()
@@ -677,7 +681,8 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 		and not current.has_status(GameEnums.StatusType.STUN)
 		and _director.get_planning_move_timing(current.id) >= 0
 	)
-	actor.set_planning_exhausted(not can_act and not can_move)
+	var exhausted: bool = not can_act and not can_move
+	actor.set_planning_exhausted(exhausted and not _defer_exhaustion_grey(unit.id))
 	actor.set_running(current.has_status(GameEnums.StatusType.RUNNING))
 
 

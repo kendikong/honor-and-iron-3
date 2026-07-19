@@ -1401,19 +1401,6 @@ func _draw_target_rings() -> void:
 	if not self_aoe.is_empty():
 		for cell: Vector2i in self_aoe:
 			_draw_tile_tint(cell, _COLOR_TARGET, 0.35)
-		return
-	var rng: int = ability.range_tiles
-	if rng < 0:
-		return
-	var preview_board: BoardState = _display_preview_board()
-	if preview_board == null:
-		return
-	for other: UnitState in preview_board.units:
-		if not other.is_alive() or other.id == unit.id:
-			continue
-		if GridSystem.manhattan(origin, other.position) <= rng:
-			var center: Vector2 = _map_view.grid_to_local(other.position)
-			draw_arc(center, _token_radius() + 4.0, 0.0, TAU, 24, _COLOR_TARGET, 2.0)
 
 
 func _is_valid_dash_hover(origin: Vector2i, coord: Vector2i, max_range: int) -> bool:
