@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/effects_panel.gd" id="6_effects"]
 
 [ext_resource type="Script" path="res://scripts/walkability_debug_overlay.gd" id="7_walk"]
+[ext_resource type="Script" path="res://scripts/shadow_debug_overlay.gd" id="8_shadow_dbg"]
 
 [node name="TestMap" type="Node2D"]
 script = ExtResource("1_test_map")
@@ -65,6 +66,10 @@ script = ExtResource("2_debug")
 [node name="WalkabilityDebugOverlay" type="CanvasLayer" parent="."]
 visible = false
 script = ExtResource("7_walk")
+
+[node name="ShadowDebugOverlay" type="CanvasLayer" parent="."]
+visible = false
+script = ExtResource("8_shadow_dbg")
 
 [node name="TilePickOverlay" type="CanvasLayer" parent="."]
 script = ExtResource("4_pick")

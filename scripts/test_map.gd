@@ -26,6 +26,7 @@ const TEST_UNIT_COUNT: int = 10
 @onready var _effects_panel: EffectsPanel = $EffectsPanel
 @onready var _debug_overlay: TileDebugOverlay = $TileDebugOverlay
 @onready var _walkability_overlay: WalkabilityDebugOverlay = $WalkabilityDebugOverlay
+@onready var _shadow_debug_overlay: ShadowDebugOverlay = $ShadowDebugOverlay
 @onready var _inspector: TileInspectorPanel = $TileInspectorPanel
 @onready var _pick_overlay: TilePickOverlay = $TilePickOverlay
 @onready var _options: OptionsMenu = $OptionsMenu
@@ -248,6 +249,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_set_tile_labels(not _debug_overlay.visible)
 			KEY_K:
 				_set_walkability_overlay(not _walkability_overlay.visible)
+			KEY_J:
+				_set_shadow_debug_overlay(not _shadow_debug_overlay.visible)
 			KEY_B:
 				_set_boredom_atmosphere_mode(not _boredom_atmosphere_mode)
 			KEY_P:
@@ -277,6 +280,7 @@ func _try_character_step(event: InputEventKey) -> bool:
 
 func _process(delta: float) -> void:
 	_effects.process_frame(delta)
+	_shadow_debug_overlay.process_refresh()
 
 
 func _sync_test_char_contact_shadow(settings: EffectsSettings) -> void:
@@ -433,6 +437,30 @@ func _set_walkability_overlay(enabled: bool) -> void:
 	)
 
 
+func _set_shadow_debug_overlay(enabled: bool) -> void:
+	if _shadow_debug_overlay.visible == enabled:
+		return
+	_shadow_debug_overlay.visible = enabled
+	if enabled:
+		print(
+			"Shadow hit debug ON — J toggles · red=cloud blue=oblique magenta=both · yellow foot dot",
+		)
+	else:
+		print("Shadow hit debug OFF")
+	_sync_shadow_debug_overlay()
+
+
+func _sync_shadow_debug_overlay() -> void:
+	if not _shadow_debug_overlay.visible:
+		return
+	_shadow_debug_overlay.sync(
+		_player_grid,
+		_map_root,
+		_effects.settings,
+		_test_unit_actors(),
+	)
+
+
 func _refresh_walk_gameplay() -> void:
 	if _char_mover != null and _player_grid != null:
 		_char_mover.sync_grid(_player_grid, _trees, _overlay, _effects.settings, _scatter)
@@ -441,6 +469,7 @@ func _refresh_walk_gameplay() -> void:
 		_walkability_overlay.sync(
 			_player_grid, _map_root, _trees, _overlay, _effects.settings,
 		)
+	_sync_shadow_debug_overlay()
 
 
 func _set_boredom_atmosphere_mode(enabled: bool) -> void:
@@ -527,6 +556,7 @@ func _sync_debug_views() -> void:
 		_walkability_overlay.sync(
 			_player_grid, _map_root, _trees, _overlay, _effects.settings,
 		)
+	_sync_shadow_debug_overlay()
 
 
 func _sync_phantom_visibility() -> void:

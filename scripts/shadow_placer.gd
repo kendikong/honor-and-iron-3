@@ -2155,6 +2155,36 @@ static func map_composite_apply_epoch() -> int:
 	return _map_composite_apply_epoch
 
 
+static func foot_px_from_cell(cell: Vector2i) -> Vector2:
+	return Vector2(cell) * float(TILE_PX) + Vector2(float(TILE_PX) * 0.5, float(TILE_PX))
+
+
+static func foot_map_px_from_cell(cell: Vector2i) -> Vector2:
+	var foot: Vector2 = foot_px_from_cell(cell)
+	return Vector2(floor(foot.x), floor(foot.y))
+
+
+static func cell_from_foot_px(foot_px: Vector2) -> Vector2i:
+	return Vector2i(
+		int(floor((foot_px.x - float(TILE_PX) * 0.5) / float(TILE_PX))),
+		int(floor((foot_px.y - float(TILE_PX)) / float(TILE_PX))),
+	)
+
+
+static func tile_cloud_mask_at_cell(cell: Vector2i) -> float:
+	return _CLOUD_FIELD.shadow_mask_at(
+		foot_map_px_from_cell(cell),
+		WeatherBus.cloud_drift_offset,
+	)
+
+
+static func tile_cloud_mask_at_foot(foot_px: Vector2) -> float:
+	return _CLOUD_FIELD.shadow_mask_at(
+		Vector2(floor(foot_px.x), floor(foot_px.y)),
+		WeatherBus.cloud_drift_offset,
+	)
+
+
 static func cloud_drift_stamp(settings: EffectsSettings = null) -> int:
 	var drift: Vector2 = WeatherBus.cloud_drift_offset
 	return hash([

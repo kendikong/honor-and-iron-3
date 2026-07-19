@@ -223,7 +223,7 @@ func _add_hotkeys_hint(parent: VBoxContainer) -> void:
 	var label: Label = Label.new()
 	label.text = (
 		"Keys: WASD move · G regen · R seed · T center · [ ] size · P biome · E export grid · "
-		+ "C character · L labels · B boredom atmo · water test in panel · O options"
+		+ "C character · L labels · K walkability · J shadow hit · B boredom atmo · water test in panel · O options"
 	)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", 13)
