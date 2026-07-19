@@ -280,7 +280,7 @@ func _try_character_step(event: InputEventKey) -> bool:
 
 func _process(delta: float) -> void:
 	_effects.process_frame(delta)
-	_shadow_debug_overlay.process_refresh()
+	_shadow_debug_overlay.process_refresh(delta)
 
 
 func _sync_test_char_contact_shadow(settings: EffectsSettings) -> void:

@@ -1,14 +1,15 @@
 class_name ShadowDebugOverlay
 extends CanvasLayer
 
-## Dev overlay — foot-pixel shadow sampling (same path as LPC body receive). Toggle **J**.
+## Dev overlay — per-tile foot-pixel shadow sampling (sprite path). Toggle **J**.
 
 const TILE_PX: int = 16
+const REFRESH_INTERVAL_SEC: float = 0.4
 
-const COLOR_CLOUD: Color = Color(1.0, 0.12, 0.12, 0.52)
-const COLOR_OBLIQUE: Color = Color(0.22, 0.42, 1.0, 0.48)
-const COLOR_UNIFIED: Color = Color(0.12, 0.92, 0.28, 0.42)
-const COLOR_BOTH: Color = Color(0.92, 0.18, 0.92, 0.58)
+const COLOR_CLOUD: Color = Color(1.0, 0.12, 0.12, 0.58)
+const COLOR_OBLIQUE: Color = Color(0.22, 0.42, 1.0, 0.52)
+const COLOR_UNIFIED: Color = Color(0.12, 0.92, 0.28, 0.48)
+const COLOR_BOTH: Color = Color(0.92, 0.18, 0.92, 0.62)
 const COLOR_ACTOR_FOOT: Color = Color(1.0, 0.92, 0.12, 0.95)
 const COLOR_ACTOR_MISMATCH: Color = Color(1.0, 0.45, 0.0, 0.95)
 
@@ -24,8 +25,14 @@ var _actors: Array[CharacterActor] = []
 var _container: Control
 var _legend: PanelContainer
 var _legend_body: Label
-var _heatmap: TextureRect
-var _rebuild_stamp: int = -1
+var _tile_overlay: TextureRect
+var _tile_img: Image
+var _tile_tex: ImageTexture
+var _foot_layer: Control
+var _foot_markers: Array[ColorRect] = []
+var _refresh_accum: float = 0.0
+var _last_stamp: int = -1
+var _last_zoom: float = -1.0
 
 
 func _ready() -> void:
@@ -35,6 +42,10 @@ func _ready() -> void:
 	_container.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_container)
+	_foot_layer = Control.new()
+	_foot_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_foot_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_container.add_child(_foot_layer)
 	_build_legend_shell()
 
 
@@ -50,125 +61,138 @@ func sync(
 	_ground = ground
 	_settings = settings
 	_actors = actors
-	_rebuild_stamp = -1
+	_last_stamp = -1
+	_last_zoom = -1.0
 	if visible:
 		_rebuild()
 
 
 func toggle() -> bool:
 	visible = not visible
-	_rebuild_stamp = -1
+	_last_stamp = -1
 	if visible:
 		_rebuild()
 	else:
-		_clear()
+		_teardown()
 	return visible
 
 
-func process_refresh() -> void:
+func process_refresh(delta: float) -> void:
 	if not visible or _grid == null or _map_root == null:
 		return
-	if _settings != null:
-		CloudTuning.sync_runtime(_settings)
-	var stamp: int = ShadowPlacer.cloud_drift_stamp(_settings)
-	if stamp == _rebuild_stamp:
+	_refresh_accum += delta
+	if _refresh_accum < REFRESH_INTERVAL_SEC:
 		return
-	_rebuild_stamp = stamp
-	_rebuild()
+	_refresh_accum = 0.0
+	var stamp: int = ShadowPlacer.cloud_drift_stamp(_settings)
+	var zoom: float = _map_root.scale.x
+	if stamp == _last_stamp and is_equal_approx(zoom, _last_zoom):
+		return
+	_rebuild(false)
 
 
-func _rebuild() -> void:
-	_clear()
+func _rebuild(_force: bool) -> void:
 	if _grid == null or _map_root == null:
 		return
-	_build_cpu_cloud_heatmap()
+	_ensure_tile_overlay()
 	var zoom: float = _map_root.scale.x
-	var tile_px: float = float(TILE_PX) * zoom
+	var origin_px: Vector2 = MapPixelSpace.origin_px(_ground)
+	var size_px: Vector2 = MapPixelSpace.size_px(_ground, _grid)
+	_tile_overlay.position = _map_root.to_global(origin_px)
+	_tile_overlay.size = size_px * zoom
+	_last_zoom = zoom
+
 	var cloud_count: int = 0
 	var oblique_count: int = 0
 	var unified_count: int = 0
 	var both_count: int = 0
+	var want_cloud: bool = _settings != null and _settings.cloud_shadows
+	var want_oblique: bool = _settings != null and _settings.oblique_contact_shadows
+	var drift: Vector2 = WeatherBus.cloud_drift_offset
+
 	for y: int in range(_grid.height):
 		for x: int in range(_grid.width):
 			var cell: Vector2i = Vector2i(x, y)
-			var cloud_hit: bool = _cell_cloud_hit(cell)
-			var oblique_hit: bool = _cell_oblique_hit(cell)
-			var unified_hit: bool = _cell_unified_hit(cell)
+			var map_px: Vector2 = ShadowPlacer.foot_map_px_from_cell(cell)
+			var cloud_hit: bool = false
+			var oblique_hit: bool = false
+			var unified_hit: bool = false
+			if want_cloud:
+				cloud_hit = CloudShadowField.shadow_mask_at(map_px, drift) >= CLOUD_MASK_GATE
+			if want_oblique:
+				oblique_hit = (
+					ShadowPlacer.sample_map_oblique_alpha_at(map_px, _settings) >= OBLIQUE_ALPHA_GATE
+				)
+			if not cloud_hit and not oblique_hit:
+				unified_hit = (
+					ShadowPlacer.sample_unified_shadow_alpha_at(map_px, _settings) >= UNIFIED_ALPHA_GATE
+				)
 			if cloud_hit:
 				cloud_count += 1
 			if oblique_hit:
 				oblique_count += 1
 			if unified_hit:
 				unified_count += 1
+			var color: Color = Color(0.0, 0.0, 0.0, 0.0)
 			if cloud_hit and oblique_hit:
 				both_count += 1
-				_add_cell_rect(cell, tile_px, COLOR_BOTH)
+				color = COLOR_BOTH
 			elif cloud_hit:
-				_add_cell_rect(cell, tile_px, COLOR_CLOUD)
+				color = COLOR_CLOUD
 			elif oblique_hit:
-				_add_cell_rect(cell, tile_px, COLOR_OBLIQUE)
+				color = COLOR_OBLIQUE
 			elif unified_hit:
-				_add_cell_rect(cell, tile_px, COLOR_UNIFIED)
-	_paint_actor_feet(tile_px)
+				color = COLOR_UNIFIED
+			_tile_img.set_pixel(x, y, color)
+
+	_tile_tex.update(_tile_img)
+	_paint_actor_feet(zoom)
 	_update_legend(cloud_count, oblique_count, unified_count, both_count)
+	_last_stamp = ShadowPlacer.cloud_drift_stamp(_settings)
 
 
-func _build_cpu_cloud_heatmap() -> void:
-	if _ground == null or _map_root == null:
-		return
-	var origin_px: Vector2 = MapPixelSpace.origin_px(_ground)
-	var size_px: Vector2 = MapPixelSpace.size_px(_ground, _grid)
-	var width_px: int = maxi(1, int(size_px.x))
-	var height_px: int = maxi(1, int(size_px.y))
-	var img: Image = Image.create(width_px, height_px, false, Image.FORMAT_RGBA8)
-	var drift: Vector2 = WeatherBus.cloud_drift_offset
-	for py: int in height_px:
-		for px: int in width_px:
-			var map_px: Vector2 = origin_px + Vector2(px, py)
-			var mask: float = CloudShadowField.shadow_mask_at(map_px, drift)
-			if mask < CLOUD_MASK_GATE:
-				continue
-			var alpha: float = clampf(mask, 0.0, 1.0) * 0.45
-			img.set_pixel(px, py, Color(1.0, 0.1, 0.1, alpha))
-	var tex: ImageTexture = ImageTexture.create_from_image(img)
-	_heatmap = TextureRect.new()
-	_heatmap.texture = tex
-	_heatmap.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_heatmap.stretch_mode = TextureRect.STRETCH_SCALE
-	_heatmap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var top_left: Vector2 = _map_root.to_global(origin_px)
-	_heatmap.position = top_left
-	_heatmap.size = size_px * _map_root.scale.x
-	_container.add_child(_heatmap)
-	_container.move_child(_heatmap, 0)
+func _ensure_tile_overlay() -> void:
+	var need_new: bool = (
+		_tile_overlay == null
+		or not is_instance_valid(_tile_overlay)
+		or _tile_img == null
+		or _tile_img.get_width() != _grid.width
+		or _tile_img.get_height() != _grid.height
+	)
+	if need_new:
+		_tile_img = Image.create(_grid.width, _grid.height, false, Image.FORMAT_RGBA8)
+		_tile_tex = ImageTexture.create_from_image(_tile_img)
+		if _tile_overlay != null and is_instance_valid(_tile_overlay):
+			_tile_overlay.queue_free()
+		_tile_overlay = TextureRect.new()
+		_tile_overlay.texture = _tile_tex
+		_tile_overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_tile_overlay.stretch_mode = TextureRect.STRETCH_SCALE
+		_tile_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_tile_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_container.add_child(_tile_overlay)
+		_container.move_child(_tile_overlay, 0)
 
 
-func _cell_cloud_hit(cell: Vector2i) -> bool:
-	if _settings == null or not _settings.cloud_shadows:
-		return false
-	return ShadowPlacer.tile_cloud_mask_at_cell(cell) >= CLOUD_MASK_GATE
+func _paint_actor_feet(zoom: float) -> void:
+	var needed: int = _actors.size()
+	while _foot_markers.size() < needed:
+		var marker: ColorRect = ColorRect.new()
+		marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_foot_layer.add_child(marker)
+		_foot_markers.append(marker)
+	while _foot_markers.size() > needed:
+		var extra: ColorRect = _foot_markers.pop_back()
+		extra.queue_free()
 
-
-func _cell_oblique_hit(cell: Vector2i) -> bool:
-	if _settings == null or not _settings.oblique_contact_shadows:
-		return false
-	var map_px: Vector2 = ShadowPlacer.foot_map_px_from_cell(cell)
-	return ShadowPlacer.sample_map_oblique_alpha_at(map_px, _settings) >= OBLIQUE_ALPHA_GATE
-
-
-func _cell_unified_hit(cell: Vector2i) -> bool:
-	if _settings == null:
-		return false
-	var map_px: Vector2 = ShadowPlacer.foot_map_px_from_cell(cell)
-	return ShadowPlacer.sample_unified_shadow_alpha_at(map_px, _settings) >= UNIFIED_ALPHA_GATE
-
-
-func _paint_actor_feet(tile_px: float) -> void:
-	if _actors.is_empty():
-		return
-	for actor: CharacterActor in _actors:
+	var half: float = maxf(2.0, float(TILE_PX) * zoom * 0.12)
+	for i: int in range(needed):
+		var actor: CharacterActor = _actors[i]
+		var marker: ColorRect = _foot_markers[i]
 		if actor == null or not is_instance_valid(actor):
+			marker.visible = false
 			continue
+		marker.visible = true
 		var foot: Vector2 = actor.position
 		var cell: Vector2i = ShadowPlacer.cell_from_foot_px(foot)
 		var cloud_mask: float = ShadowPlacer.tile_cloud_mask_at_foot(foot)
@@ -177,28 +201,19 @@ func _paint_actor_feet(tile_px: float) -> void:
 			and _settings.cloud_shadows
 			and cloud_mask >= CLOUD_MASK_GATE
 		)
-		var tile_hit: bool = _cell_in_grid(cell) and _cell_cloud_hit(cell)
-		var color: Color = COLOR_ACTOR_FOOT
-		if sprite_shaded != tile_hit:
-			color = COLOR_ACTOR_MISMATCH
-		var marker: ColorRect = ColorRect.new()
-		var half: float = maxf(2.0, tile_px * 0.12)
+		var tile_hit: bool = (
+			_cell_in_grid(cell)
+			and _settings != null
+			and _settings.cloud_shadows
+			and CloudShadowField.shadow_mask_at(
+				ShadowPlacer.foot_map_px_from_cell(cell),
+				WeatherBus.cloud_drift_offset,
+			) >= CLOUD_MASK_GATE
+		)
+		marker.color = COLOR_ACTOR_MISMATCH if sprite_shaded != tile_hit else COLOR_ACTOR_FOOT
 		var global_foot: Vector2 = _map_root.to_global(foot)
 		marker.position = global_foot - Vector2(half, half)
 		marker.size = Vector2(half * 2.0, half * 2.0)
-		marker.color = color
-		marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_container.add_child(marker)
-
-
-func _add_cell_rect(cell: Vector2i, tile_px: float, color: Color) -> void:
-	var rect: ColorRect = ColorRect.new()
-	var top_left: Vector2 = _map_root.to_global(MapPixelSpace.cell_top_left_px(_ground, cell))
-	rect.position = top_left
-	rect.size = Vector2(tile_px, tile_px)
-	rect.color = color
-	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_container.add_child(rect)
 
 
 func _cell_in_grid(cell: Vector2i) -> bool:
@@ -224,21 +239,23 @@ func _build_legend_shell() -> void:
 func _update_legend(cloud_count: int, oblique_count: int, unified_count: int, both_count: int) -> void:
 	var origin: Vector2i = MapPixelSpace.origin_cells(_ground)
 	var lines: PackedStringArray = PackedStringArray([
-		"Shadow hit debug (J) — CPU foot-pixel sampling",
-		"Dark red wash — full CPU cloud field (should match ground GPU)",
-		"Red tile — cloud mask >= %.2f (%d cells)" % [CLOUD_MASK_GATE, cloud_count - both_count],
-		"Blue tile — oblique alpha >= %.2f (%d cells)" % [OBLIQUE_ALPHA_GATE, oblique_count - both_count],
-		"Green tile — unified ground CPU >= %.2f (%d cells)" % [UNIFIED_ALPHA_GATE, unified_count],
-		"Magenta — cloud + oblique (%d cells)" % both_count,
-		"Yellow foot — actor; orange — sprite/tile cloud mismatch",
+		"Shadow hit debug (J) — one sample per tile (foot pixel)",
+		"Updates ~%.1fs · red=cloud blue=oblique green=unified magenta=both" % REFRESH_INTERVAL_SEC,
+		"Red tiles: %d · Blue: %d · Green: %d · Magenta: %d"
+		% [cloud_count - both_count, oblique_count - both_count, unified_count, both_count],
+		"Yellow foot = actor; orange = sprite/tile cloud mismatch",
 		"Map origin cells: (%d, %d)" % [origin.x, origin.y],
 	])
 	_legend_body.text = "\n".join(lines)
 
 
-func _clear() -> void:
-	for child: Node in _container.get_children():
-		if child == _legend:
-			continue
-		child.queue_free()
-	_heatmap = null
+func _teardown() -> void:
+	if _tile_overlay != null and is_instance_valid(_tile_overlay):
+		_tile_overlay.queue_free()
+	_tile_overlay = null
+	_tile_img = null
+	_tile_tex = null
+	for marker: ColorRect in _foot_markers:
+		if is_instance_valid(marker):
+			marker.queue_free()
+	_foot_markers.clear()
