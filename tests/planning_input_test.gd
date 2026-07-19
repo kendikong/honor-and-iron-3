@@ -14,6 +14,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_preview_from_commit_slots(failures)
 	_test_audit_regression_fixes(failures)
 	_test_auto_skill_after_move_arms_dash(failures)
+	_test_awaiting_dash_plan_refresh(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
 
 
@@ -429,6 +430,53 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	if (paired_slots.get("action", []) as Array).is_empty():
 		failures.append(
 			"PlanningInputTest: self skill should pair on move tile when auto skill after move is on",
+		)
+
+
+static func _test_awaiting_dash_plan_refresh(failures: Array[String]) -> void:
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(2, 2)
+	unit.movement.points_left = 4
+	unit.ability.points_left = 2
+	var dash := AbilityData.new()
+	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	dash.display_name = "Bowling Charge"
+	var dash_eff := EffectData.new()
+	dash_eff.type = GameEnums.EffectType.DASH
+	dash_eff.amount = 3
+	dash.effects = [dash_eff]
+	unit.active_abilities = [dash]
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_run_move(1, Vector2i(3, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION),
+	)
+	var combined: Timeline = director.get_player_plan()
+	if not director._plan_is_movement_only(combined):
+		failures.append(
+			"PlanningInputTest: premove-only plan should use movement-only refresh",
+		)
+	var awaiting_plan := Timeline.new()
+	awaiting_plan.add(director.plan_pre_move.entries[0])
+	awaiting_plan.add(TimelineAction.make_ability_awaiting(1, dash, Vector2i(2, 2)))
+	if not director._plan_is_movement_only(awaiting_plan):
+		failures.append(
+			"PlanningInputTest: premove + awaiting dash should still use movement-only refresh",
 		)
 
 

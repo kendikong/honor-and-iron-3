@@ -1926,6 +1926,9 @@ func _refresh_plan() -> void:
 	var any_cancelled := false
 	
 	for action in plan_to_run.entries:
+		if action.awaiting_target:
+			statuses.append("")
+			continue
 		var events: Array[SimEvent] = []
 		ResolutionPipeline.apply_action(full_proj, action, events)
 		
@@ -2040,6 +2043,8 @@ func _plan_is_movement_only(plan: Timeline) -> bool:
 		return true
 	for action: TimelineAction in plan.entries:
 		if action.type == GameEnums.ActionType.ABILITY:
+			if action.awaiting_target:
+				continue
 			return false
 	return true
 
