@@ -695,26 +695,84 @@ static func _status_name(t: GameEnums.StatusType) -> String:
 
 static func _status_desc(t: GameEnums.StatusType) -> String:
 	match t:
+		GameEnums.StatusType.STAT_BUFF_STR:
+			return "+STR equal to the applying skill's amount, for that skill's duration (stacks)."
+		GameEnums.StatusType.STAT_BUFF_MAG:
+			return "+MAG equal to the applying skill's amount, for that skill's duration (stacks)."
+		GameEnums.StatusType.STAT_BUFF_DEF:
+			return "+DEF equal to the applying skill's amount, for that skill's duration (stacks). Examples: Phalanx Stance +5 / 1 turn; Defensive Formation +2 / 1 turn; Fortify adds caster's current DEF."
+		GameEnums.StatusType.STAT_BUFF_MOV, GameEnums.StatusType.STAT_BUFF_MP:
+			return "+MOV equal to the applying skill's amount, for that skill's duration (stacks). Rallying Presence grants +1 or +2 MOV for 1 turn at turn start."
+		GameEnums.StatusType.STAT_BUFF_ACC:
+			return "Reserved for +ACC buffs. Amount/duration come from the skill — ACC is not applied in UnitState._recalculate_stats yet."
+		GameEnums.StatusType.STAT_DEBUFF_DEF:
+			return "−DEF equal to the applying skill's amount, for that skill's duration (stacks)."
+		GameEnums.StatusType.STAT_DEBUFF_MOV:
+			return "−MOV equal to the applying skill's amount, for that skill's duration (stacks)."
+		GameEnums.StatusType.STAT_DEBUFF_ACC:
+			return "Reserved for −ACC debuffs. Amount/duration come from the skill — ACC is not applied in simulation yet."
 		GameEnums.StatusType.STURDY:
-			return "Ignores the next displacement effect (push/pull)."
+			return "Blocks the next PUSH/PULL unless the target is VULNERABLE. Consumed when it blocks."
 		GameEnums.StatusType.MARK:
-			return "Next attack against this unit will Backstab."
+			return "Intended: next hit counts as Backstab (+2 raw ATK). MARK is not checked in AbilitySystem._is_backstab yet."
 		GameEnums.StatusType.INTERCEPT:
-			return "Takes damage in place of adjacent allies."
+			return "Adjacent ally takes 50% of melee damage aimed at this unit instead; upgraded Intercept also grants +2 DEF for 1 turn."
 		GameEnums.StatusType.STEALTH:
-			return "Cannot be targeted by direct attacks."
+			return "Cannot be targeted by enemy abilities (AbilitySystem target validation)."
 		GameEnums.StatusType.TAUNT:
-			return "Forces enemies to target this unit."
+			return "Debuff flag only in sim today; with Intercept Tactics passive, using TAUNT/INTERCEPT also grants +2 or +3 DEF for 1 turn."
 		GameEnums.StatusType.ROOT:
-			return "Cannot move."
+			return "MOV set to 0. Removed immediately if the unit takes HP or armor damage."
 		GameEnums.StatusType.STUN:
-			return "Cannot act or move."
+			return "Cannot act (ResolutionPipeline) or use abilities (AbilitySystem). MOV still allowed unless also ROOTed."
+		GameEnums.StatusType.SILENCE:
+			return "Cannot use abilities with AP cost > 0 (AbilitySystem blocks class skills)."
+		GameEnums.StatusType.PACIFY:
+			return "Cannot use attack-animation abilities. Removed on HP/armor damage (same as ROOT)."
+		GameEnums.StatusType.BLIND:
+			return "Ability range forced to 1 tile (UnitState.get_ability_range)."
+		GameEnums.StatusType.POLYMORPH:
+			return "STR and MAG become 0; MOV capped at 1 for the status duration."
 		GameEnums.StatusType.VULNERABLE:
-			return "Takes additional damage."
+			return "Loses push/pull immunity from STURDY, ROOT, and Stand Ground; cannot gain SHIELD/armor. Does not add bonus damage in CombatSystem.deal_damage."
+		GameEnums.StatusType.INVULNERABLE:
+			return "Ignores all incoming damage and cannot receive debuffs (AbilitySystem ADD_STATUS)."
 		GameEnums.StatusType.THORNS:
-			return "Reflects damage back to attackers."
+			return "After a melee hit (range 1), reflects status.amount% of damage dealt (rounded down, min 1) back to the attacker."
 		GameEnums.StatusType.IRON_GRIP_DEBUFF:
-			return "Target Defense (DEF) is halved on their next turn (rounded up)."
+			return "DEF is halved (rounded up) while active (CombatSystem.get_dynamic_defense)."
+		GameEnums.StatusType.BURN:
+			return "Start of owner's turn: unmitigated damage equal to status.value (Simulator._tick_start_of_turn)."
+		GameEnums.StatusType.BLEED:
+			return "Each tile moved costs 2 MP instead of 1; end of turn: unmitigated damage equal to status.value."
+		GameEnums.StatusType.POISON:
+			return "Start of turn: 10% max HP unmitigated damage; healing received is halved (rounded down)."
+		GameEnums.StatusType.WEAKEN:
+			return "Hardcoded −2 STR and −2 MAG while active (UnitState._recalculate_stats)."
+		GameEnums.StatusType.ELECTRIFIED:
+			return "All incoming damage gains +1 raw before mitigation (CombatSystem.deal_damage)."
+		GameEnums.StatusType.WEAK_TRAP:
+			return "Status exists in data/UI only — no trap trigger logic wired in simulation yet."
+		GameEnums.StatusType.FEAR, GameEnums.StatusType.CONFUSION:
+			return "CC debuff; bosses are immune. Full AI targeting behavior is not implemented in AbilitySystem yet."
+		GameEnums.StatusType.PIERCE:
+			return "Attacker's damage ignores DEF and fortitude mitigation (CombatSystem.deal_damage)."
+		GameEnums.StatusType.GHOST:
+			return "Movement ignores unit occupancy (MovementSystem); also ignores terrain move-cost rules with AIRBORNE (TerrainSystem)."
+		GameEnums.StatusType.TRAMPLE:
+			return "Movement passes through enemy tiles (MovementSystem.has_trample)."
+		GameEnums.StatusType.AIRBORNE:
+			return "Ignores terrain movement costs/hazards like FLY (TerrainSystem)."
+		GameEnums.StatusType.CANTO:
+			return "After a class skill, movement points refill to max for the rest of the turn (AbilitySystem.apply_canto_move_refund)."
+		GameEnums.StatusType.RUNNING:
+			return "Run mode active: +50% of base MOV (floored) for 1 turn; removed at end of turn with MP reverted (AbilitySystem._apply_running_boost)."
+		GameEnums.StatusType.RETALIATION_PROTOCOL:
+			return "When hit, counter-attacks for ATK 2 (scaled) at range 1; upgraded also PUSH 1. Phalanx [+] adds infinite-range flag."
+		GameEnums.StatusType.RETALIATION_INFINITE_RANGE:
+			return "Retaliation Protocol counters ignore the range-1 check for this turn."
+		GameEnums.StatusType.INDOMITABLE_WILL:
+			return "While active, when SHIELD/armor is broken to 0 by damage, status ends and upgraded Indomitable Will grants +2 STR for 99 turns."
 		_:
 			return _status_name(t)
 

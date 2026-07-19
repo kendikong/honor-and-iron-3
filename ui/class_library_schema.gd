@@ -384,19 +384,95 @@ static func _effect_type_system(k: String) -> String:
 
 
 static func _status_system(st: GameEnums.StatusType) -> String:
+	const DUR: String = (
+		"Duration: StatusData.duration turns; ticks_remaining starts at duration×2+1; "
+		+ "Simulator._tick_statuses decrements twice per full round (after player plan, after enemy turn)."
+	)
 	match st:
-		GameEnums.StatusType.RETALIATION_PROTOCOL:
-			return "On taking damage, counter-attacks attacker (passive hook + status)."
-		GameEnums.StatusType.RETALIATION_INFINITE_RANGE:
-			return "Phalanx [+] upgrade: retaliation ignores range."
+		GameEnums.StatusType.STAT_BUFF_STR:
+			return "UnitState._recalculate_stats: stat_str += status.value (summed). value from EffectData.amount via ADD_STATUS. %s" % DUR
+		GameEnums.StatusType.STAT_BUFF_MAG:
+			return "UnitState._recalculate_stats: stat_mag += status.value. %s" % DUR
+		GameEnums.StatusType.STAT_BUFF_DEF:
+			return (
+				"UnitState._recalculate_stats: stat_def += status.value → current_defense = max(0, base+wpn+stat_def). "
+				+ "No global amount: EffectData.amount per skill (e.g. Phalanx=5, Defensive Formation=2); Fortify uses scaling_stat DEFENSE → amount+caster DEF. %s"
+				% DUR
+			)
+		GameEnums.StatusType.STAT_BUFF_MOV, GameEnums.StatusType.STAT_BUFF_MP:
+			return "UnitState._recalculate_stats: stat_mov += status.value → movement.max_points. Rallying Presence appends STAT_BUFF_MP(1, +1|+2) at turn start. %s" % DUR
+		GameEnums.StatusType.STAT_BUFF_ACC:
+			return "Enum + UI only. Not read in UnitState._recalculate_stats or combat math yet."
+		GameEnums.StatusType.STAT_DEBUFF_DEF:
+			return "UnitState._recalculate_stats: stat_def -= status.value. Also used as temp pre-hit debuff (def_debuff_before_damage) then erased. %s" % DUR
+		GameEnums.StatusType.STAT_DEBUFF_MOV:
+			return "UnitState._recalculate_stats: stat_mov -= status.value. %s" % DUR
+		GameEnums.StatusType.STAT_DEBUFF_ACC:
+			return "Enum + UI only. Not applied in UnitState._recalculate_stats yet."
+		GameEnums.StatusType.STURDY:
+			return "PhysicsSystem/AbilitySystem PUSH-PULL: blocks displacement unless target has VULNERABLE. One STURDY consumed per block."
+		GameEnums.StatusType.MARK:
+			return "No simulation hook. AbilitySystem._is_backstab only checks tile behind facing (+2 raw ATK); does not read MARK."
+		GameEnums.StatusType.INTERCEPT:
+			return "CombatSystem.deal_damage: adjacent ally with INTERCEPT takes floor(50% damage); upgraded INTERCEPT (status.value==1) grants ally STAT_BUFF_DEF(1,2)."
+		GameEnums.StatusType.STEALTH:
+			return "AbilitySystem target validation: enemy STEALTH cannot be targeted."
+		GameEnums.StatusType.TAUNT:
+			return "Boss CC immunity list only. Intercept Tactics passive: casting TAUNT/INTERCEPT appends STAT_BUFF_DEF(1, 2|3) on actor."
+		GameEnums.StatusType.ROOT:
+			return "UnitState._recalculate_stats: movement.max_points=0. CombatSystem.deal_damage removes ROOT on HP/armor damage."
+		GameEnums.StatusType.STUN:
+			return "ResolutionPipeline blocks actions; AbilitySystem blocks abilities. Does not zero MOV by itself."
+		GameEnums.StatusType.SILENCE:
+			return "AbilitySystem: blocks ability use when action_point_cost > 0."
+		GameEnums.StatusType.PACIFY:
+			return "AbilitySystem: blocks abilities where ability_uses_attack_animation. Removed on damage with ROOT."
+		GameEnums.StatusType.BLIND:
+			return "UnitState.get_ability_range returns 1."
+		GameEnums.StatusType.POLYMORPH:
+			return "UnitState._recalculate_stats: STR/MAG=0; MOV max 1."
+		GameEnums.StatusType.VULNERABLE:
+			return "Bypasses STURDY/ROOT/Stand Ground push immunity; CombatSystem.add_armor blocked. No extra damage in deal_damage."
+		GameEnums.StatusType.INVULNERABLE:
+			return "CombatSystem.deal_damage early return; AbilitySystem blocks debuff ADD_STATUS."
+		GameEnums.StatusType.THORNS:
+			return "CombatSystem.deal_damage after hit: if attacker adjacent, reflect floor((hp+armor dmg)×status.amount/100), min 1."
+		GameEnums.StatusType.IRON_GRIP_DEBUFF:
+			return "CombatSystem.get_dynamic_defense: def = ceili(def/2) while active."
 		GameEnums.StatusType.BURN:
-			return "Start of turn: unmitigated damage equal to status value."
-		GameEnums.StatusType.POISON:
-			return "Start of turn: 10% max HP; blocks healing."
+			return "Simulator._tick_start_of_turn: deal_damage(..., pierce=true) for status.value."
 		GameEnums.StatusType.BLEED:
-			return "On move: unmitigated damage equal to status value."
+			return "Movement cost 2/tile in overlays; Simulator._tick_end_of_turn: deal_damage status.value (pierce)."
+		GameEnums.StatusType.POISON:
+			return "Turn start: ceili(max_hp×0.10) pierce damage; CombatSystem.heal: final_amount = floori(amount×0.5)."
+		GameEnums.StatusType.WEAKEN:
+			return "UnitState._recalculate_stats: stat_str -= 2; stat_mag -= 2 (fixed, not status.value)."
+		GameEnums.StatusType.ELECTRIFIED:
+			return "CombatSystem.deal_damage: amount += 1 before mitigation."
+		GameEnums.StatusType.WEAK_TRAP:
+			return "Not referenced in core systems — placeholder status."
+		GameEnums.StatusType.FEAR, GameEnums.StatusType.CONFUSION:
+			return "Boss immune (AbilitySystem ADD_STATUS). No enemy AI / player targeting override implemented."
+		GameEnums.StatusType.PIERCE:
+			return "CombatSystem.deal_damage/deal_damage_raw: mitigation and fortitude set to 0 for attacker with PIERCE."
+		GameEnums.StatusType.GHOST:
+			return "MovementSystem pathing through units; TerrainSystem ignores terrain costs with AIRBORNE."
+		GameEnums.StatusType.TRAMPLE:
+			return "MovementSystem.has_trample: pass through enemy-occupied tiles."
+		GameEnums.StatusType.AIRBORNE:
+			return "TerrainSystem: treated like FLY for hazard/cost bypass."
+		GameEnums.StatusType.CANTO:
+			return "AbilitySystem.apply_canto_move_refund after class skill: movement.points_left = max_points; append CANTO(1)."
+		GameEnums.StatusType.RUNNING:
+			return "AbilitySystem._apply_running_boost: bonus=floor(max_mov×0.5); RUNNING(1, bonus); reverted in Simulator._revert_running_boost."
+		GameEnums.StatusType.RETALIATION_PROTOCOL:
+			return "CombatSystem.deal_damage on HP dmg: counter ATK 2 scaled; upgraded PUSH 1; range 1 unless RETALIATION_INFINITE_RANGE."
+		GameEnums.StatusType.RETALIATION_INFINITE_RANGE:
+			return "CombatSystem retaliation range check skipped when present."
+		GameEnums.StatusType.INDOMITABLE_WILL:
+			return "Knight Indomitable Will: ARMOR_UP shield = caster DEF; on shield break to 0, remove status; upgraded grants STAT_BUFF_STR(99,2)."
 		_:
-			return "StatusSystem tick/apply; stat buffs modify derived stats."
+			return "Unhandled StatusType in ClassLibrarySchema._status_system."
 
 
 static func _stat_type_system(k: String) -> String:
