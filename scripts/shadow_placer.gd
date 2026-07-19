@@ -82,9 +82,9 @@ static var _active_shadow_root: Node2D
 
 const ACTOR_SHADOW_BAND_COUNT: int = 3
 const ACTOR_SHADOW_MAJORITY_RATIO: float = 0.5
-const ACTOR_SHADOW_BAND_X: Array = [-16.0, -8.0, 0.0, 8.0, 16.0]
-## Narrow column for cloud-on-body — large-scale field; avoid lateral ground-shadow bleed.
-const ACTOR_CLOUD_BAND_X: Array = [0.0]
+## Foot column only — ground multiply samples one pixel under the actor; lateral offsets
+## pulled tree/cloud mask from neighboring tiles (several-tile false darkening).
+const ACTOR_SHADOW_BAND_X: Array = [0.0]
 ## Vertical bands from actor foot (y=0): lower legs, torso, head/hair.
 const ACTOR_SHADOW_BAND_Y: Array = [
 	[-8.0, -16.0],
@@ -2253,8 +2253,12 @@ static func actor_oblique_band_modulates(
 	var cloud_strength: float = float(env["cloud_strength"])
 	var cloud_tint: Color = env["cloud_tint"] as Color
 	var foot: Vector2 = actor.position
+	var foot_map_px: Vector2 = Vector2(floor(foot.x), floor(foot.y))
 	var scale_y: float = actor.scale.y
 	var scale_x: float = actor.scale.x
+	var foot_cloud: float = 0.0
+	if want_cloud:
+		foot_cloud = _CLOUD_FIELD.shadow_mask_at(foot_map_px, WeatherBus.cloud_drift_offset)
 	for band_i: int in ACTOR_SHADOW_BAND_COUNT:
 		var y_rows: Variant = ACTOR_SHADOW_BAND_Y[band_i]
 		if typeof(y_rows) != TYPE_ARRAY:
@@ -2279,24 +2283,12 @@ static func actor_oblique_band_modulates(
 			if sample_count > 0 and float(hit_count) / float(sample_count) >= ACTOR_SHADOW_MAJORITY_RATIO:
 				map_majority = true
 				peak_map_alpha = alpha_sum / float(hit_count)
-		var peak_cloud: float = 0.0
-		if want_cloud:
-			for y_off: Variant in y_rows:
-				var y_px: float = float(y_off) * scale_y
-				for x_off: Variant in ACTOR_CLOUD_BAND_X:
-					peak_cloud = maxf(
-						peak_cloud,
-						_CLOUD_FIELD.shadow_mask_at(
-							foot + Vector2(float(x_off) * scale_x, y_px),
-							WeatherBus.cloud_drift_offset,
-						),
-					)
 		var map_shade: float = 0.0
 		if map_majority:
 			map_shade = peak_map_alpha * shadow_strength
 		var cloud_shade: float = 0.0
-		if peak_cloud >= 0.125:
-			cloud_shade = peak_cloud * cloud_strength
+		if foot_cloud >= 0.125:
+			cloud_shade = foot_cloud * cloud_strength
 		var shade: float = maxf(map_shade, cloud_shade)
 		if shade < 0.01:
 			bands[band_i] = Color.WHITE
