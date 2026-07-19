@@ -429,34 +429,67 @@ func _recover_one_shot_layers(
 ) -> void:
 	var base_action: StringName = LpcConstants.get_base_action(action_anim)
 	if base_action in _ONE_SHOT_MELEE:
-		var recover_sec: float = _play_reverse_tail(
-			action_anim, ACTION_RECOVER_FRAMES, ACTION_RECOVER_SPEED_SCALE,
-		)
-		get_tree().create_timer(recover_sec).timeout.connect(
-			func() -> void: _finish_one_shot_action(generation, on_finished),
-			CONNECT_ONE_SHOT,
-		)
+		_start_reverse_tail(action_anim, ACTION_RECOVER_FRAMES, ACTION_RECOVER_SPEED_SCALE, generation, on_finished)
 	else:
 		_finish_one_shot_action(generation, on_finished)
 
 
-func _play_reverse_tail(action_anim: StringName, frames_back: int, speed_scale: float) -> float:
-	var max_dur: float = 0.05
+func _start_reverse_tail(
+	action_anim: StringName,
+	frames_back: int,
+	speed_scale: float,
+	generation: int,
+	on_finished: Callable,
+) -> void:
+	if frames_back <= 0:
+		_finish_one_shot_action(generation, on_finished)
+		return
+	var step_sec: float = _reverse_tail_step_sec(action_anim, speed_scale)
+	if step_sec <= 0.0:
+		_finish_one_shot_action(generation, on_finished)
+		return
+	_reverse_tail_step(action_anim, frames_back, step_sec, generation, on_finished)
+
+
+func _reverse_tail_step_sec(action_anim: StringName, speed_scale: float) -> float:
+	var fps: float = 12.0
 	for spr: AnimatedSprite2D in _layers:
 		if spr.sprite_frames == null or not spr.sprite_frames.has_animation(action_anim):
 			continue
-		var fps: float = spr.sprite_frames.get_animation_speed(action_anim)
-		var frame_count: int = spr.sprite_frames.get_frame_count(action_anim)
-		var last_frame: int = frame_count - 1
-		spr.frame = last_frame
-		spr.speed_scale = -absf(speed_scale)
-		spr.play()
-		var dur: float = (
-			float(mini(frames_back, frame_count))
-			/ maxf(fps * absf(speed_scale), 0.001)
-		)
-		max_dur = maxf(max_dur, dur)
-	return max_dur
+		fps = spr.sprite_frames.get_animation_speed(action_anim)
+		break
+	return 1.0 / maxf(fps * absf(speed_scale), 0.001)
+
+
+func _reverse_tail_step(
+	action_anim: StringName,
+	remaining_steps: int,
+	step_sec: float,
+	generation: int,
+	on_finished: Callable,
+) -> void:
+	if generation != _one_shot_generation:
+		return
+	for spr: AnimatedSprite2D in _layers:
+		if spr.sprite_frames == null or not spr.sprite_frames.has_animation(action_anim):
+			continue
+		spr.stop()
+		spr.speed_scale = 1.0
+		spr.animation = action_anim
+		spr.frame = maxi(0, spr.frame - 1)
+	if remaining_steps <= 1:
+		_finish_one_shot_action(generation, on_finished)
+		return
+	get_tree().create_timer(step_sec).timeout.connect(
+		func() -> void:
+			_reverse_tail_step(action_anim, remaining_steps - 1, step_sec, generation, on_finished),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func _play_reverse_tail(_action_anim: StringName, _frames_back: int, _speed_scale: float) -> float:
+	## Deprecated — use _start_reverse_tail (manual frame steps; negative speed_scale replays forward).
+	return 0.05
 
 
 func _finish_one_shot_action(generation: int, on_finished: Callable) -> void:
@@ -466,7 +499,10 @@ func _finish_one_shot_action(generation: int, on_finished: Callable) -> void:
 	for spr: AnimatedSprite2D in _layers:
 		if spr.sprite_frames != null:
 			spr.speed_scale = 1.0
-	set_walking(false)
+	_walking = false
+	_facing = _idle_for(_facing)
+	for spr: AnimatedSprite2D in _layers:
+		_apply_motion_state(spr)
 	_rebuild_contact_shadow_silhouette()
 	if on_finished.is_valid():
 		on_finished.call()
