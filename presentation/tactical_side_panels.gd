@@ -300,6 +300,16 @@ func _on_viewport_resized() -> void:
 func _on_force_basic_toggled(pressed: bool) -> void:
 	if _planning_input != null:
 		_planning_input.force_basic_movement = pressed
+	if _planning_overlay != null and _director != null:
+		_planning_overlay.recompute_hover_ranges(
+			pressed,
+			_director.selected_ability_index,
+			_planning_input.dragging if _planning_input != null else false,
+			_planning_input.get_drag_unit_id() if _planning_input != null else -1,
+		)
+	if _planning_input != null:
+		var cell: Vector2i = _planning_input.get_hover_tile_for_ui()
+		_planning_input.on_hover_moved(cell)
 
 
 func _on_wait_pressed() -> void:
@@ -312,16 +322,6 @@ func _refresh_wait_button() -> void:
 	if _wait_btn == null:
 		return
 	_wait_btn.disabled = _is_unit_action_exhausted()
-	if _planning_overlay != null and _director != null:
-		_planning_overlay.recompute_hover_ranges(
-			pressed,
-			_director.selected_ability_index,
-			_planning_input.dragging if _planning_input != null else false,
-			_planning_input.get_drag_unit_id() if _planning_input != null else -1,
-		)
-	if _planning_input != null:
-		var cell: Vector2i = _planning_input.get_hover_tile_for_ui()
-		_planning_input.on_hover_moved(cell)
 
 
 func _on_danger_area_toggled(pressed: bool) -> void:
