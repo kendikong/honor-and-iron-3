@@ -98,6 +98,7 @@ func setup(
 	EventBus.selection_changed.connect(_on_selection_changed)
 	EventBus.ability_selected.connect(_on_ability_selected)
 	EventBus.turn_phase_changed.connect(_on_phase_changed)
+	EventBus.timeline_changed.connect(_on_timeline_changed)
 	EventBus.sim_event.connect(_on_sim_event)
 	EventBus.action_rejected.connect(_on_action_rejected)
 	if _intent_state != null:
@@ -389,6 +390,12 @@ func _on_preview_updated(result: SimResult) -> void:
 	if _intent_state != null:
 		_intent_state.set_preview_board(result.final_state)
 	_refresh_info()
+	_refresh_ability_buttons_if_dirty()
+	_refresh_wait_button()
+
+
+func _on_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void:
+	_last_skill_rebuild_key = ""
 	_refresh_ability_buttons_if_dirty()
 	_refresh_wait_button()
 

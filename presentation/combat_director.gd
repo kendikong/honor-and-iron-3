@@ -162,11 +162,36 @@ func select_ability(index: int) -> void:
 		selected_ability_index = index
 		EventBus.ability_selected.emit(selected_ability_index)
 		return
+	if index < 0:
+		selected_ability_index = -1
+		EventBus.ability_selected.emit(selected_ability_index)
+		return
 	var unit := board.get_unit_by_id(selected_unit_id)
-	if unit == null or index < 0 or index >= unit.active_abilities.size():
+	if unit == null or index >= unit.active_abilities.size():
 		return
 	selected_ability_index = index
 	EventBus.ability_selected.emit(selected_ability_index)
+
+
+func _sync_selected_ability_if_invalid() -> void:
+	if not is_planning_phase(phase) or selected_unit_id < 0 or selected_ability_index < 0:
+		return
+	if is_wait_ability_index(selected_ability_index):
+		return
+	var p_unit: UnitState = (
+		projected_state.get_unit_by_id(selected_unit_id)
+		if projected_state != null
+		else board.get_unit_by_id(selected_unit_id)
+	)
+	if p_unit == null:
+		select_ability(-1)
+		return
+	if selected_ability_index >= p_unit.active_abilities.size():
+		select_ability(-1)
+		return
+	var ability: AbilityData = p_unit.active_abilities[selected_ability_index]
+	if not AbilitySystem.ability_planning_selectable(p_unit, ability):
+		select_ability(-1)
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_plan_wait(unit_id: int) -> void:
@@ -1542,6 +1567,7 @@ func _refresh_plan() -> void:
 	if not anim_events.is_empty():
 		EventBus.planning_commit_events.emit(anim_events)
 	plan_revision += 1
+	_sync_selected_ability_if_invalid()
 
 	var preview_board := base_board.clone()
 	var evs := _build_ghost_events(preview_board, plan_to_run, new_intents)
@@ -1586,6 +1612,7 @@ func _refresh_plan_movement_only(plan: Timeline) -> void:
 	if not anim_events.is_empty():
 		EventBus.planning_commit_events.emit(anim_events)
 	plan_revision += 1
+	_sync_selected_ability_if_invalid()
 
 	var preview_board: BoardState = projected_state.clone()
 	var evs: Array[SimEvent] = _build_movement_only_preview_events(plan, new_intents, preview_board)

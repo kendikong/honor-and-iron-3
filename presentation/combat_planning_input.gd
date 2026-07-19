@@ -1539,7 +1539,13 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 		return ""
 	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
 	if _skill_interaction_active():
-		if force_basic_movement and hover_unit == null and cell != p_unit.position and _can_move_to(p_unit, cell):
+		if (
+			force_basic_movement
+			and hover_unit == null
+			and cell != p_unit.position
+			and _unit_move_slot_open(p_unit.id)
+			and _can_move_to(p_unit, cell)
+		):
 			return ICON_MOVE
 		var valid_aim := false
 		if hover_unit != null:
@@ -1804,7 +1810,16 @@ func _skill_interaction_active() -> bool:
 
 
 func _threat_follows_cursor() -> bool:
-	return aiming or _skill_interaction_active()
+	if aiming:
+		return true
+	if not _skill_interaction_active():
+		return false
+	if _director == null or _director.selected_unit_id < 0:
+		return false
+	# After pre-move, threat range is from the unit — not hypothetical move destinations.
+	if not _unit_move_slot_open(_director.selected_unit_id):
+		return false
+	return true
 
 
 func _sync_threat_origin_from_cell(cell: Vector2i) -> void:
