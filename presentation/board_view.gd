@@ -423,7 +423,10 @@ func _on_right_click() -> void:
 		_sfx.play("cancel")
 		return
 	if (CombatDirector.is_planning_phase(_phase)) and _selected_id >= 0:
-		if _unit_has_undoable_actions(_selected_id):
+		if _director.unit_has_wait_planned(_selected_id):
+			_director.rpc_plan_wait(_selected_id)
+			_sfx.play("cancel")
+		elif _unit_has_undoable_actions(_selected_id):
 			_remove_last_for_unit(_selected_id)
 			_sfx.play("cancel")
 		else:

@@ -264,7 +264,10 @@ func on_right_click() -> void:
 		_play_sfx("cancel")
 		return
 	if _is_planning() and _director.selected_unit_id >= 0:
-		if _director.unit_has_undoable_action(_director.selected_unit_id):
+		if _director.unit_has_wait_planned(_director.selected_unit_id):
+			_director.rpc_plan_wait(_director.selected_unit_id)
+			_play_sfx("cancel")
+		elif _director.unit_has_undoable_action(_director.selected_unit_id):
 			_director.rpc_remove_last_for_unit(_director.selected_unit_id)
 			_play_sfx("cancel")
 		else:
