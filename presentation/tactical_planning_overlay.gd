@@ -34,6 +34,9 @@ const _ROUTE_CORE_W: float = 1.25
 const _ROUTE_HEAD_LEN: float = 8.5
 const _ROUTE_HEAD_HALF_W: float = 4.7
 const _ROUTE_SHAFT_HEAD_OVERLAP: float = 0.55
+const _FORCED_MOVE_LINE_W: float = 3.75
+const _FORCED_MOVE_HEAD_LEN: float = 7.0
+const _FORCED_MOVE_HEAD_ANGLE_DEG: float = 28.0
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
 const _INTENT_ROUTE_ALPHA: float = 0.40
@@ -1071,7 +1074,7 @@ func _draw_danger_area() -> void:
 
 
 func _draw_preview_arrows() -> void:
-	var prev: CombatPlanningPreview = _committed_preview
+	var prev: CombatPlanningPreview = _active_preview()
 	if _board == null or prev.preview_board == null:
 		return
 	for unit: UnitState in _board.units:
@@ -1112,7 +1115,7 @@ func _draw_preview_arrows() -> void:
 		var pushes: Array = prev.preview_pushes.get(unit.id, [])
 		for push: Variant in pushes:
 			if push is Array and push.size() >= 2:
-				_draw_push_arrow(push[0], push[1])
+				_draw_push_arrow(push[0], push[1], unit)
 		var pv := prev.preview_board.get_unit_by_id(unit.id)
 		if pv == null or not pv.is_alive():
 			var end_tile: Vector2i = unit.position
@@ -1373,20 +1376,64 @@ func _draw_death_marker(cell: Vector2i) -> void:
 	draw_line(center + Vector2(-r, r), center + Vector2(r, -r), death_col, 2.5 / _ui_scale())
 
 
-func _draw_push_arrow(from: Vector2i, to: Vector2i) -> void:
-	var p1: Vector2 = _map_view.grid_to_local(from)
-	var p2: Vector2 = _map_view.grid_to_local(to)
-	var dir: Vector2 = (p2 - p1).normalized()
-	var dist: float = p1.distance_to(p2)
-	var start_d: float = 8.0
-	var end_d: float = dist - 8.0
-	if start_d >= end_d:
+func _draw_line_arrowhead(tip: Vector2, dir: Vector2, color: Color, line_w: float, head_len: float, angle_deg: float) -> void:
+	var travel_dir: Vector2 = dir
+	if travel_dir.length_squared() < 0.0001:
+		travel_dir = Vector2.RIGHT
+	else:
+		travel_dir = travel_dir.normalized()
+	var wing1: Vector2 = tip - travel_dir.rotated(deg_to_rad(angle_deg)) * head_len
+	var wing2: Vector2 = tip - travel_dir.rotated(deg_to_rad(-angle_deg)) * head_len
+	draw_line(tip, wing1, color, line_w)
+	draw_line(tip, wing2, color, line_w)
+
+
+func _forced_movement_intent_color(pushed_unit: UnitState) -> Color:
+	if _director != null and _director.selected_unit_id >= 0 and _board != null:
+		var actor: UnitState = _board.get_unit_by_id(_director.selected_unit_id)
+		if actor != null and not actor.is_enemy():
+			var p_col: Color = _player_color_for_unit(actor)
+			return Color(p_col.r, p_col.g, p_col.b, 0.88)
+	if pushed_unit != null and not pushed_unit.is_enemy():
+		return Color(_COLOR_PLAYER_ARROW.r, _COLOR_PLAYER_ARROW.g, _COLOR_PLAYER_ARROW.b, 0.88)
+	return Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, 0.88)
+
+
+func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
+	if _map_view == null:
 		return
-	var color := Color(1.0, 0.65, 0.2, 0.95)
-	var d: float = start_d
-	while d < end_d:
-		draw_circle(p1 + dir * d, 4.0, color)
-		d += 7.0
+	var start_center: Vector2 = _map_view.grid_to_local(from)
+	var dest_center: Vector2 = _map_view.grid_to_local(to)
+	var delta: Vector2 = dest_center - start_center
+	if delta.length_squared() < 0.001:
+		return
+	var travel_dir: Vector2 = delta.normalized()
+	var start_pt: Vector2 = start_center + travel_dir * _token_radius()
+	var inset: float = _FORCED_MOVE_HEAD_LEN * _ROUTE_SHAFT_HEAD_OVERLAP
+	var shaft_end: Vector2 = dest_center - travel_dir * inset
+	if start_pt.distance_to(shaft_end) < 1.0:
+		_draw_line_arrowhead(
+			dest_center,
+			travel_dir,
+			color,
+			_FORCED_MOVE_LINE_W,
+			_FORCED_MOVE_HEAD_LEN,
+			_FORCED_MOVE_HEAD_ANGLE_DEG,
+		)
+		return
+	draw_line(start_pt, shaft_end, color, _FORCED_MOVE_LINE_W)
+	_draw_line_arrowhead(
+		dest_center,
+		travel_dir,
+		color,
+		_FORCED_MOVE_LINE_W,
+		_FORCED_MOVE_HEAD_LEN,
+		_FORCED_MOVE_HEAD_ANGLE_DEG,
+	)
+
+
+func _draw_push_arrow(from: Vector2i, to: Vector2i, pushed_unit: UnitState = null) -> void:
+	_draw_displacement_intent_arrow(from, to, _forced_movement_intent_color(pushed_unit))
 
 
 func _draw_ghosts() -> void:
