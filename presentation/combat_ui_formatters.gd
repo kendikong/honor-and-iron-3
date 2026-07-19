@@ -151,7 +151,9 @@ static func unit_info(board: BoardState, unit: UnitState) -> String:
 	else:
 		var names: Array[String] = []
 		for ability: AbilityData in unit.active_abilities:
-			names.append("[hint=\"%s\"]%s[/hint]" % [ability_desc(ability, unit), ability.display_name])
+			names.append(
+				"[hint=\"%s\"]%s[/hint]" % [ability_tooltip_text(ability, unit), ability.display_name],
+			)
 		lines.append(
 			"[font_size=%d]Abilities: %s[/font_size]"
 			% [scaled_font_size(8), ", ".join(names) if not names.is_empty() else "None"],
@@ -496,6 +498,169 @@ static func ability_desc(ability: AbilityData, unit: UnitState = null) -> String
 	]
 
 
+static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -> String:
+	if ability == null:
+		return ""
+	var lines: PackedStringArray = []
+	lines.append(ability.display_name)
+	lines.append("")
+	lines.append("RANGE %d — %s" % [ability.range_tiles, _glossary_def("RANGE")])
+	if ability.is_movement_kind():
+		lines.append(
+			"MOV %d — %s" % [ability.movement_point_cost, _glossary_def("MOV")],
+		)
+	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
+		lines.append(
+			"AP %d — Uses your action slot and extends how far you can move this turn."
+			% ability.action_point_cost,
+		)
+	else:
+		lines.append("AP %d — %s" % [ability.action_point_cost, _glossary_def("AP")])
+	match ability.targeting_mode:
+		GameEnums.TargetingMode.ALLY_UNIT:
+			lines.append("Target — Allied unit only.")
+		GameEnums.TargetingMode.SELF:
+			lines.append("Target — Self only.")
+		GameEnums.TargetingMode.ENEMY_UNIT:
+			lines.append("Target — Enemy unit.")
+		_:
+			pass
+	var keyword_lines: PackedStringArray = _ability_keyword_tooltip_lines(ability, unit)
+	if not keyword_lines.is_empty():
+		lines.append("")
+		for kw_line: String in keyword_lines:
+			lines.append(kw_line)
+	if (
+		unit != null
+		and unit.is_ability_upgraded(ability.id)
+		and not ability.upgrade_description.is_empty()
+	):
+		lines.append("")
+		lines.append("Upgrade — %s" % ability.upgrade_description)
+	return "\n".join(lines)
+
+
+static func _glossary_def(key: String) -> String:
+	return String(ClassLibrarySchema.manual_keywords().get(key, ""))
+
+
+static func _kw_tooltip_line(label: String, definition: String) -> String:
+	if definition.is_empty():
+		return label
+	return "%s — %s" % [label, definition]
+
+
+static func _ability_keyword_tooltip_lines(
+	ability: AbilityData,
+	_unit: UnitState = null,
+) -> PackedStringArray:
+	var lines: PackedStringArray = []
+	if ability.id == &"knight_bowling_charge":
+		lines.append(_kw_tooltip_line(
+			"DASH 3",
+			"Move up to 3 tiles in a straight cardinal line.",
+		))
+		lines.append(_kw_tooltip_line("TRAMPLE", _glossary_def("TRAMPLE")))
+		lines.append(_kw_tooltip_line(
+			"PUSH 1",
+			"Pushes trampled enemies left when passing through, forward when you stop on them.",
+		))
+		lines.append(_kw_tooltip_line(
+			"COLLISION",
+			"Trample collision on contact; pushing into walls or units can deal collision damage.",
+		))
+		lines.append("This unit does not suffer collision damage from its own trample.")
+		return lines
+	for effect: EffectData in ability.effects:
+		var line: String = _effect_tooltip_line(effect)
+		if not line.is_empty():
+			lines.append(line)
+	if ability.target_shape != GameEnums.TargetShape.SINGLE:
+		var shape_name: String = GameEnums.TargetShape.keys()[ability.target_shape].capitalize().replace(
+			"Aoe ", "",
+		)
+		lines.append(_kw_tooltip_line(
+			"AOE %s %d" % [shape_name, ability.target_shape_size],
+			_glossary_def("AOE"),
+		))
+	return lines
+
+
+static func _effect_tooltip_line(effect: EffectData) -> String:
+	if effect == null:
+		return ""
+	var amount: String = _effect_amount_string(effect)
+	match effect.type:
+		GameEnums.EffectType.DAMAGE:
+			return _kw_tooltip_line("ATK %s" % amount, _glossary_def("ATK"))
+		GameEnums.EffectType.HEAL:
+			return _kw_tooltip_line("HEAL %s" % amount, _glossary_def("HEAL"))
+		GameEnums.EffectType.PUSH:
+			return _kw_tooltip_line("PUSH %s" % amount, _glossary_def("PUSH"))
+		GameEnums.EffectType.PULL:
+			return _kw_tooltip_line("PULL %s" % amount, _glossary_def("PULL"))
+		GameEnums.EffectType.SWAP:
+			return _kw_tooltip_line("SWAP", _glossary_def("SWAP"))
+		GameEnums.EffectType.ARMOR_UP:
+			return _kw_tooltip_line("SHIELD %s" % amount, _glossary_def("SHIELD"))
+		GameEnums.EffectType.EXPLODE:
+			return _kw_tooltip_line("EXPLODE %s" % amount, _glossary_def("EXPLODE"))
+		GameEnums.EffectType.RANGED_EXPLODE:
+			return _kw_tooltip_line("AOE ATK %s" % amount, _glossary_def("AOE ATK"))
+		GameEnums.EffectType.SPAWN:
+			return _kw_tooltip_line(
+				"SPAWN %s" % str(effect.spawn_unit_id).capitalize(),
+				_glossary_def("SPAWN"),
+			)
+		GameEnums.EffectType.DASH:
+			return _kw_tooltip_line(
+				"DASH %s" % amount,
+				"Move up to the listed distance in a straight line, passing through units. "
+				+ "Stops at walls or immovable targets.",
+			)
+		GameEnums.EffectType.TELEPORT_CASTER:
+			return _kw_tooltip_line("TELEPORT", _glossary_def("TELEPORT"))
+		GameEnums.EffectType.DESTROY_OBSTACLE:
+			return _kw_tooltip_line("DESTROY OBSTACLE", _glossary_def("DESTROY OBSTACLE"))
+		GameEnums.EffectType.CLEANSE:
+			return _kw_tooltip_line("CLEANSE", _glossary_def("CLEANSE"))
+		GameEnums.EffectType.PURGE:
+			return _kw_tooltip_line("PURGE", _glossary_def("PURGE"))
+		GameEnums.EffectType.DAMAGE_SELF:
+			return _kw_tooltip_line(
+				"Self ATK %s" % amount,
+				"Ignores Armor and deals direct damage to the caster.",
+			)
+		GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF:
+			var self_target: bool = effect.type == GameEnums.EffectType.ADD_STATUS_SELF
+			var dur: String = "" if effect.status_duration == 1 else " (%d turns)" % effect.status_duration
+			var label: String = _status_name(effect.status_type)
+			var hint: String = _status_desc(effect.status_type)
+			var amount_str: String = _effect_amount_string(effect)
+			if amount_str != "0" and amount_str != "":
+				match effect.status_type:
+					GameEnums.StatusType.STAT_BUFF_STR:
+						hint = "Increases Strength (STR) by %s." % amount_str
+					GameEnums.StatusType.STAT_BUFF_MAG:
+						hint = "Increases Magic (MAG) by %s." % amount_str
+					GameEnums.StatusType.STAT_BUFF_DEF:
+						hint = "Increases Defense (DEF) by %s." % amount_str
+					GameEnums.StatusType.STAT_BUFF_MOV:
+						hint = "Increases Movement Points (MP) by %s." % amount_str
+					GameEnums.StatusType.STAT_BUFF_ACC:
+						hint = "Increases Accuracy (ACC) by %s." % amount_str
+					GameEnums.StatusType.STAT_DEBUFF_DEF:
+						hint = "Decreases Defense (DEF) by %s." % amount_str
+					GameEnums.StatusType.STAT_DEBUFF_MOV:
+						hint = "Decreases Movement Points (MP) by %s." % amount_str
+					GameEnums.StatusType.STAT_DEBUFF_ACC:
+						hint = "Decreases Accuracy (ACC) by %s." % amount_str
+			var prefix: String = "Self " if self_target else "Apply "
+			return _kw_tooltip_line("%s%s%s" % [prefix, label, dur], hint)
+		_:
+			return ""
+
+
 static func _status_name(t: GameEnums.StatusType) -> String:
 	match t:
 		GameEnums.StatusType.IRON_GRIP_DEBUFF:
@@ -637,49 +802,70 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 		return ""
 	if ability.id == &"knight_bowling_charge":
 		return "%s | %s | %s | %s" % [
-			_kw_hint("DASH 3", "Move up to 3 tiles in a straight line."),
-			_kw_hint("TRAMPLE", "Pass through enemy tiles."),
-			_kw_hint("PUSH 1", "Push enemies on contact."),
-			_kw_hint("COLLISION", "Collision damage on contact."),
+			_kw_hint("DASH 3", "Move up to 3 tiles in a straight cardinal line."),
+			_kw_hint("TRAMPLE", _glossary_def("TRAMPLE")),
+			_kw_hint(
+				"PUSH 1",
+				"Pushes trampled enemies left when passing through, forward when you stop on them.",
+			),
+			_kw_hint(
+				"COLLISION",
+				"Trample collision on contact; push into walls or units can add collision damage.",
+			),
 		]
 	var parts: Array[String] = []
 	for effect: EffectData in ability.effects:
 		match effect.type:
 			GameEnums.EffectType.DAMAGE:
-				parts.append(_kw_hint("ATK %s" % _effect_amount_string(effect), "Reduces target HP."))
+				parts.append(_kw_hint("ATK %s" % _effect_amount_string(effect), _glossary_def("ATK")))
 			GameEnums.EffectType.HEAL:
-				parts.append(_kw_hint("HEAL %s" % _effect_amount_string(effect), "Restores target HP."))
+				parts.append(_kw_hint("HEAL %s" % _effect_amount_string(effect), _glossary_def("HEAL")))
 			GameEnums.EffectType.PUSH:
-				parts.append(_kw_hint("PUSH %s" % _effect_amount_string(effect), "Displaces target away."))
+				parts.append(_kw_hint("PUSH %s" % _effect_amount_string(effect), _glossary_def("PUSH")))
 			GameEnums.EffectType.PULL:
-				parts.append(_kw_hint("PULL %s" % _effect_amount_string(effect), "Displaces target toward caster."))
+				parts.append(_kw_hint("PULL %s" % _effect_amount_string(effect), _glossary_def("PULL")))
 			GameEnums.EffectType.SWAP:
-				parts.append(_kw_hint("SWAP", "Caster and target exchange positions."))
+				parts.append(_kw_hint("SWAP", _glossary_def("SWAP")))
 			GameEnums.EffectType.DASH:
-				parts.append(_kw_hint("DASH %s" % _effect_amount_string(effect), "Straight-line movement."))
+				parts.append(_kw_hint(
+					"DASH %s" % _effect_amount_string(effect),
+					"Move up to the listed distance in a straight line, passing through units.",
+				))
 			GameEnums.EffectType.ARMOR_UP:
-				parts.append(_kw_hint("SHIELD %s" % _effect_amount_string(effect), "Temporary armor."))
+				parts.append(_kw_hint("SHIELD %s" % _effect_amount_string(effect), _glossary_def("SHIELD")))
 			GameEnums.EffectType.EXPLODE:
-				parts.append(_kw_hint("EXPLODE %s" % _effect_amount_string(effect), "Damages adjacent units."))
+				parts.append(_kw_hint("EXPLODE %s" % _effect_amount_string(effect), _glossary_def("EXPLODE")))
 			GameEnums.EffectType.RANGED_EXPLODE:
-				parts.append(_kw_hint("AOE ATK %s" % _effect_amount_string(effect), "Damages units in target shape."))
+				parts.append(_kw_hint("AOE ATK %s" % _effect_amount_string(effect), _glossary_def("AOE ATK")))
 			GameEnums.EffectType.SPAWN:
-				parts.append(_kw_hint("SPAWN %s" % str(effect.spawn_unit_id).capitalize(), "Summons a unit."))
+				parts.append(_kw_hint(
+					"SPAWN %s" % str(effect.spawn_unit_id).capitalize(),
+					_glossary_def("SPAWN"),
+				))
 			GameEnums.EffectType.ADD_STATUS:
 				_append_status_effect_part(parts, effect, false, true)
 			GameEnums.EffectType.ADD_STATUS_SELF:
 				_append_status_effect_part(parts, effect, true, true)
 			GameEnums.EffectType.PURGE:
-				parts.append(_kw_hint("PURGE", "Removes positive buffs and shields."))
+				parts.append(_kw_hint("PURGE", _glossary_def("PURGE")))
 			GameEnums.EffectType.CLEANSE:
-				parts.append(_kw_hint("CLEANSE", "Removes negative status effects."))
+				parts.append(_kw_hint("CLEANSE", _glossary_def("CLEANSE")))
+			GameEnums.EffectType.TELEPORT_CASTER:
+				parts.append(_kw_hint("TELEPORT", _glossary_def("TELEPORT")))
+			GameEnums.EffectType.DESTROY_OBSTACLE:
+				parts.append(_kw_hint("DESTROY OBSTACLE", _glossary_def("DESTROY OBSTACLE")))
+			GameEnums.EffectType.DAMAGE_SELF:
+				parts.append(_kw_hint(
+					"Self ATK %s" % _effect_amount_string(effect),
+					"Ignores Armor and deals direct damage to the caster.",
+				))
 			_:
 				parts.append(_effect_amount_string(effect))
 	var body: String = " | ".join(parts) if not parts.is_empty() else "No effect"
 	if ability.target_shape != GameEnums.TargetShape.SINGLE:
 		var shape_name: String = GameEnums.TargetShape.keys()[ability.target_shape].capitalize().replace("Aoe ", "")
 		var shape: String = "%s: %s %d | " % [
-			_kw_hint("AOE", "Area effect — hits multiple tiles."),
+			_kw_hint("AOE", _glossary_def("AOE")),
 			shape_name,
 			ability.target_shape_size,
 		]

@@ -648,7 +648,7 @@ func _rebuild_ability_buttons() -> void:
 			if _director != null and usable:
 				_director.select_ability(index)
 		)
-		row_btn.tooltip_text = CombatUiFormatters.ability_desc(ability, unit)
+		row_btn.tooltip_text = CombatUiFormatters.ability_tooltip_text(ability, unit)
 		var btn_vbox := VBoxContainer.new()
 		btn_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn_vbox.add_theme_constant_override("separation", 2)
