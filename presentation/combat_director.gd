@@ -849,6 +849,13 @@ func _preview_from_plan(combined: Timeline) -> Dictionary:
 	return {"intents": intents, "events": ev, "temp_board": temp}
 
 
+func preview_actions(unit_id: int, actions: Array[TimelineAction]) -> Dictionary:
+	var empty: BoardState = base_board.clone() if base_board != null else BoardState.new()
+	if unit_id < 0 or actions.is_empty():
+		return {"intents": [], "events": [], "temp_board": empty}
+	return _preview_from_plan(_build_preview_plan(unit_id, actions))
+
+
 func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, waypoints: Array[Vector2i] = []) -> Dictionary:
 	var move_timing: int = _get_move_timing(unit_id)
 	if move_timing < 0:

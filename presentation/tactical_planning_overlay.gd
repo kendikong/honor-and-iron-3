@@ -1803,6 +1803,19 @@ func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:
 
 
 func _populate_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
+	if unit.is_enemy():
+		var origins: Array[Vector2i] = _hover_move_tiles.duplicate()
+		if origins.is_empty():
+			origins.append(origin)
+		for ability: AbilityData in unit.active_abilities:
+			for src: Vector2i in origins:
+				var tiles: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+					_board, unit, ability, src, [],
+				)
+				for tile: Vector2i in tiles:
+					if not _hover_action_range_tiles.has(tile):
+						_hover_action_range_tiles.append(tile)
+		return
 	var rng: int = _unit_attack_range(unit, selected_ability)
 	if rng <= 0:
 		if unit.id == _director.selected_unit_id and selected_ability >= 0:
@@ -1814,10 +1827,6 @@ func _populate_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ab
 		return
 	var threat_sources: Array[Vector2i] = []
 	threat_sources.append(origin)
-	if unit.is_enemy():
-		threat_sources = _hover_move_tiles.duplicate()
-		if threat_sources.is_empty():
-			threat_sources.append(origin)
 	for y: int in range(_board.grid_size.y):
 		for x: int in range(_board.grid_size.x):
 			var coord := Vector2i(x, y)

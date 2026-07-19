@@ -11,6 +11,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_action_range_auto_run_ap_gate(failures)
 	_test_composite_cursor_gate(failures)
 	_test_cursor_matches_commit_slots(failures)
+	_test_preview_from_commit_slots(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
 
 
@@ -207,6 +208,47 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 	)
 	if move_glyph.find(CombatPlanningInput.ICON_DASH) >= 0:
 		failures.append("PlanningInputTest: move glyph must not infer dash from armed skill")
+
+
+static func _test_preview_from_commit_slots(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(6, 6)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(1, 1)
+	unit.movement.points_left = 4
+	unit.movement.max_points = 4
+	unit.ability.points_left = 2
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = -1
+	input._director = director
+	var invalid: Dictionary = input._preview_from_commit_slots_at_cell(1, Vector2i(20, 20))
+	if not bool(invalid.get("invalid", false)):
+		failures.append("PlanningInputTest: out-of-range commit preview should be invalid")
+	var move_preview: Dictionary = input._preview_from_commit_slots_at_cell(1, Vector2i(2, 1))
+	if bool(move_preview.get("invalid", false)):
+		failures.append("PlanningInputTest: adjacent move preview should be valid")
+	var temp_board: BoardState = move_preview.get("temp_board") as BoardState
+	if temp_board == null:
+		failures.append("PlanningInputTest: move preview missing temp_board")
+	else:
+		var pv := temp_board.get_unit_by_id(1)
+		if pv == null or pv.position != Vector2i(2, 1):
+			failures.append("PlanningInputTest: move preview should place unit on target tile")
 
 
 static func _plain_board_with_unit(

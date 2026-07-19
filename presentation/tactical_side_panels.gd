@@ -345,8 +345,6 @@ func _apply_planning_prefs() -> void:
 		_planning_input.force_basic_movement = _settings.planning_force_basic
 		_planning_input.auto_run = _settings.planning_auto_run
 		_planning_input.auto_use_skill_after_move = _settings.planning_auto_use_skill_after_move
-	if _director != null:
-		_director.auto_run = _settings.planning_auto_run
 	if _planning_overlay != null:
 		_planning_overlay.set_show_danger_area(_settings.planning_danger_area)
 	_refresh_planning_move_overlay()
@@ -371,8 +369,6 @@ func _on_force_basic_toggled(pressed: bool) -> void:
 		_auto_run_check.set_pressed_no_signal(false)
 		if _planning_input != null:
 			_planning_input.auto_run = false
-		if _director != null:
-			_director.auto_run = false
 	if _planning_input != null:
 		_planning_input.force_basic_movement = pressed
 	_save_planning_prefs()
@@ -386,8 +382,6 @@ func _on_auto_run_toggled(pressed: bool) -> void:
 			_planning_input.force_basic_movement = false
 	if _planning_input != null:
 		_planning_input.auto_run = pressed
-	if _director != null:
-		_director.auto_run = pressed
 		_director.sync_selected_ability_if_invalid()
 		_selected_ability = _director.selected_ability_index
 	_last_skill_rebuild_key = ""
