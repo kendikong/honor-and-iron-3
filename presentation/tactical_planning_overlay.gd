@@ -1210,10 +1210,15 @@ func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color) -> void:
 		travel_dir = travel_dir.normalized()
 	var perp: Vector2 = Vector2(-travel_dir.y, travel_dir.x)
 	var base: Vector2 = tip - travel_dir * _ROUTE_HEAD_LEN
-	var left: Vector2 = base + perp * _ROUTE_HEAD_HALF_W
-	var right: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
-	var head := PackedVector2Array([tip, left, right])
-	draw_colored_polygon(head, fill)
+	var wing_l: Vector2 = base + perp * _ROUTE_HEAD_HALF_W
+	var wing_r: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
+	# draw_colored_polygon has no AA in Godot — fan antialiased lines to match the shaft.
+	var span: float = wing_l.distance_to(wing_r)
+	var steps: int = maxi(1, int(ceil(span / 2.0)))
+	for i: int in range(steps + 1):
+		var t: float = float(i) / float(steps)
+		var base_pt: Vector2 = wing_l.lerp(wing_r, t)
+		draw_line(base_pt, tip, fill, _ROUTE_LINE_W, _ROUTE_AA)
 
 
 func _route_end_direction(path: PackedVector2Array) -> Vector2:
