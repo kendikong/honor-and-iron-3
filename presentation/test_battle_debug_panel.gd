@@ -59,7 +59,7 @@ func _build_ui() -> void:
 	scroll.add_child(body)
 
 	_add_heading(body, "Skill Test Arena")
-	_add_label(body, "6×6 grass — real combat pipeline")
+	_add_label(body, "10×10 grass — real combat pipeline")
 
 	_status_label = Label.new()
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

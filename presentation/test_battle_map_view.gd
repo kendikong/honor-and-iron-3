@@ -1,7 +1,7 @@
 class_name TestBattleMapView
 extends TacticalMapView
 
-## 6×6 grass training arena — full tactical combat + debug tooling.
+## 10×10 grass training arena — full tactical combat + debug tooling.
 
 var _session: TestBattleSession = TestBattleSession.new()
 var _debug_panel: TestBattleDebugPanel

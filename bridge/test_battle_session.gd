@@ -3,11 +3,12 @@ extends RefCounted
 
 ## Runtime config for the skill-testing arena.
 
-const MAP_SIZE: Vector2i = Vector2i(6, 6)
+const MAP_SIZE: Vector2i = Vector2i(10, 10)
 const MAP_SEED: int = 9001
+const TRAINING_LEVEL: int = 99
 const DEFAULT_PLAYER_CLASS: StringName = &"knight"
-const DEFAULT_PLAYER_CELL: Vector2i = Vector2i(2, 2)
-const DEFAULT_DUMMY_CELL: Vector2i = Vector2i(4, 2)
+const DEFAULT_PLAYER_CELL: Vector2i = Vector2i(4, 5)
+const DEFAULT_DUMMY_CELL: Vector2i = Vector2i(7, 5)
 
 var player_class_id: StringName = DEFAULT_PLAYER_CLASS
 ## passive_id -> enabled
@@ -49,8 +50,8 @@ func enabled_passives_for(class_id: StringName) -> Array[PassiveData]:
 func player_unit_config() -> Dictionary:
 	var def: UnitData = DataLibrary.get_unit(player_class_id)
 	return {
-		"level": 99,
-		"active_abilities": DataLibrary.build_training_abilities(def),
+		"level": TRAINING_LEVEL,
+		"active_abilities": DataLibrary.build_player_active_abilities(def, TRAINING_LEVEL),
 		"active_passives": enabled_passives_for(player_class_id),
 	}
 

@@ -12,6 +12,7 @@ static func run_all() -> Dictionary:
 	_test_spawn_validation(failures)
 	_test_class_visual_seed_differs(failures)
 	_test_unlimited_actions_flag(failures)
+	_test_player_loadout_matches_normal_rules(failures)
 	return {"passed": failures.is_empty(), "failures": failures}
 
 
@@ -84,3 +85,21 @@ static func _test_unlimited_actions_flag(failures: Array[String]) -> void:
 	player.turn_action_used = true
 	if not player.can_use_action_slot():
 		failures.append("Unlimited training actions should bypass turn_action_used gate")
+
+
+static func _test_player_loadout_matches_normal_rules(failures: Array[String]) -> void:
+	var def: UnitData = DataLibrary.get_unit(&"knight")
+	var abilities: Array[AbilityData] = DataLibrary.build_player_active_abilities(def, TestBattleSession.TRAINING_LEVEL)
+	if abilities.is_empty():
+		failures.append("Training loadout should include abilities")
+	var has_run: bool = false
+	var has_movement_skill: bool = false
+	for ability: AbilityData in abilities:
+		if DataLibrary.is_universal_run(ability.id):
+			has_run = true
+		if ability.is_movement_skill:
+			has_movement_skill = true
+	if not has_run:
+		failures.append("Training loadout should include universal Run")
+	if not has_movement_skill:
+		failures.append("Knight training loadout should include a movement skill")

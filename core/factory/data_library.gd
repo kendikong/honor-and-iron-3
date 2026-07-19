@@ -42,10 +42,12 @@ static func get_player_class_ids() -> Array[StringName]:
 	return ids
 
 
-static func build_training_abilities(def: UnitData) -> Array[AbilityData]:
-	var out: Array[AbilityData] = []
+static func build_player_active_abilities(def: UnitData, level: int) -> Array[AbilityData]:
 	if def == null:
-		return out
+		return []
+	if def.is_construct:
+		return def.abilities.duplicate()
+	var out: Array[AbilityData] = []
 	var basic_attack: AbilityData = null
 	var movement_skill: AbilityData = null
 	var class_abilities: Array[AbilityData] = []
@@ -62,8 +64,17 @@ static func build_training_abilities(def: UnitData) -> Array[AbilityData]:
 	if movement_skill != null:
 		out.append(movement_skill)
 	out.append(get_universal_run())
-	out.append_array(class_abilities)
+	if level == 1:
+		if not class_abilities.is_empty():
+			out.append(class_abilities[randi() % class_abilities.size()])
+	else:
+		out.append_array(class_abilities)
 	return out
+
+
+static func build_training_abilities(def: UnitData) -> Array[AbilityData]:
+	return build_player_active_abilities(def, 99)
+
 
 static func _ensure_init() -> void:
 	if not _player_units.is_empty():

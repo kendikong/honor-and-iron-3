@@ -1,7 +1,7 @@
 class_name TestBattleEncounterBuilder
 extends RefCounted
 
-## Builds the 6×6 grass-only training arena and configured BoardState.
+## Builds the 10×10 grass-only training arena and configured BoardState.
 
 
 static func build_grass_grid(size: Vector2i = TestBattleSession.MAP_SIZE) -> PlayerGrid:
