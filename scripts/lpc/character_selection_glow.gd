@@ -10,6 +10,7 @@ const _OUTLINE_OUTER_ALPHA: float = 0.42
 enum GlowStrength {
 	HOVER,
 	SELECTED,
+	TARGET,
 }
 
 var enabled: bool = false
@@ -59,7 +60,7 @@ func set_glow(
 			_set_outlines_visible(true)
 			if color_changed or strength_changed:
 				_update_outline_alpha()
-		set_process(_strength == GlowStrength.SELECTED and not _muted)
+		set_process(_strength in [GlowStrength.SELECTED, GlowStrength.TARGET] and not _muted)
 		if _strength == GlowStrength.HOVER:
 			_apply_strength_params(1.0)
 	else:
@@ -80,11 +81,11 @@ func set_muted(muted: bool) -> void:
 		return
 	_muted = muted
 	_update_outline_alpha()
-	set_process(enabled and _strength == GlowStrength.SELECTED and not _muted)
+	set_process(enabled and _strength in [GlowStrength.SELECTED, GlowStrength.TARGET] and not _muted)
 
 
 func _process(_delta: float) -> void:
-	if not enabled or _muted or _strength != GlowStrength.SELECTED:
+	if not enabled or _muted or _strength not in [GlowStrength.SELECTED, GlowStrength.TARGET]:
 		return
 	var speed_ms: float = 150.0
 	var amp: float = 0.88
@@ -262,6 +263,11 @@ func _apply_strength_params(pulse_scale: float = 1.0) -> void:
 			outer_px = 3
 			inner_a = (0.92 if not _muted else 0.78) * pulse_scale
 			outer_a = (0.62 if not _muted else 0.48) * pulse_scale
+		GlowStrength.TARGET:
+			inner_px = 1
+			outer_px = 3
+			inner_a = (0.96 if not _muted else 0.82) * pulse_scale
+			outer_a = (0.70 if not _muted else 0.55) * pulse_scale
 	_outline_material.set_shader_parameter("inner_px", inner_px)
 	_outline_material.set_shader_parameter("outer_px", outer_px)
 	var draw_color: Color = _draw_color()

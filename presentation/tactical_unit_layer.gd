@@ -18,6 +18,7 @@ const _COLOR_HP_LOSS := Color(0.95, 0.25, 0.22)
 const _COLOR_ARMOR := Color(0.9, 0.8, 0.2)
 const _COLOR_SELECT_PLAYER := Color(0.28, 0.58, 1.0, 1.0)
 const _COLOR_SELECT_ENEMY := Color(1.0, 0.20, 0.16, 1.0)
+const _COLOR_PLAN_TARGET := Color(0.98, 0.72, 0.38, 1.0)
 const DRAG_SNAPBACK_SEC: float = 0.24
 const _COLOR_HIT_BURST := Color(1.0, 0.2, 0.15, 0.9)
 const _STATUS_BADGE_BASE: float = 8.0
@@ -48,6 +49,7 @@ var _pending_death: Dictionary = {}
 var _drag_preview_id: int = -1
 var _drag_preview_active: bool = false
 var _drag_preview_failed: bool = false
+var _drag_attack_target_id: int = -1
 var _planning_input: CombatPlanningInput
 
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
@@ -193,6 +195,7 @@ func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> 
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
 		_sync_planning_actor_positions()
 		_refresh_player_exhaustion()
+		_refresh_unit_glows()
 
 
 func _refresh_planning_visuals() -> void:
@@ -228,7 +231,9 @@ func _effective_hover_id() -> int:
 	return _timeline_hover_id
 
 
-func _outline_color_for(unit: UnitState) -> Color:
+func _outline_color_for(unit: UnitState, strength: CharacterSelectionGlow.GlowStrength) -> Color:
+	if strength == CharacterSelectionGlow.GlowStrength.TARGET:
+		return _COLOR_PLAN_TARGET
 	return _COLOR_SELECT_ENEMY if unit.is_enemy() else _COLOR_SELECT_PLAYER
 
 
@@ -239,7 +244,15 @@ func _refresh_unit_glows() -> void:
 	var want: Dictionary = {}
 	var selected_id: int = _selected_id
 	var hover_id: int = _effective_hover_id()
-	if hover_id >= 0 and hover_id != selected_id:
+	if selected_id >= 0:
+		var selected_unit := _board.get_unit_by_id(selected_id) if _board != null else null
+		if selected_unit != null and not selected_unit.is_enemy():
+			for target_id: int in _planned_enemy_target_ids(selected_id):
+				if target_id >= 0 and target_id != selected_id:
+					want[target_id] = CharacterSelectionGlow.GlowStrength.TARGET
+			if _drag_attack_target_id >= 0 and _drag_attack_target_id != selected_id:
+				want[_drag_attack_target_id] = CharacterSelectionGlow.GlowStrength.TARGET
+	if hover_id >= 0 and hover_id != selected_id and not want.has(hover_id):
 		want[hover_id] = CharacterSelectionGlow.GlowStrength.HOVER
 	if selected_id >= 0:
 		want[selected_id] = CharacterSelectionGlow.GlowStrength.SELECTED
@@ -260,7 +273,7 @@ func _refresh_unit_glows() -> void:
 		var strength: CharacterSelectionGlow.GlowStrength = want[id]
 		if _glow_applied.get(id) == strength:
 			continue
-		_apply_unit_glow(id, true, _outline_color_for(unit), strength)
+		_apply_unit_glow(id, true, _outline_color_for(unit, strength), strength)
 		_glow_applied[id] = strength
 
 
@@ -282,12 +295,103 @@ func _apply_unit_glow(
 	actor.set_selection_glow(active, color, strength)
 
 
-func set_drag_attack_target(_unit_id: int) -> void:
-	pass
+func set_drag_attack_target(unit_id: int) -> void:
+	if _drag_attack_target_id == unit_id:
+		return
+	_drag_attack_target_id = unit_id
+	_refresh_unit_glows()
 
 
 func clear_drag_attack_target() -> void:
-	pass
+	if _drag_attack_target_id < 0:
+		return
+	_drag_attack_target_id = -1
+	_refresh_unit_glows()
+
+
+func _planned_enemy_target_ids(caster_id: int) -> Array[int]:
+	var out: Array[int] = []
+	if _director == null or caster_id < 0 or _board == null:
+		return out
+	var caster := _proj_unit(caster_id)
+	if caster == null:
+		caster = _board.get_unit_by_id(caster_id)
+	if caster == null or caster.is_enemy():
+		return out
+	var board: BoardState = _director.projected_state if _director.projected_state != null else _board
+	var origin: Vector2i = caster.position
+	var seen: Dictionary = {}
+	for action: TimelineAction in _director.get_unit_plan_steps(caster_id):
+		if action.type == GameEnums.ActionType.MOVE:
+			origin = _move_action_destination(action, origin)
+			continue
+		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+			continue
+		if action.ability.is_movement_kind():
+			origin = action.target_coord
+			continue
+		if DataLibrary.is_universal_wait(action.ability.id) or DataLibrary.is_universal_run(action.ability.id):
+			continue
+		_collect_planned_ability_enemy_targets(action, origin, board, out, seen)
+	return out
+
+
+func _move_action_destination(action: TimelineAction, fallback: Vector2i) -> Vector2i:
+	if not action.waypoints.is_empty():
+		var last: Variant = action.waypoints[action.waypoints.size() - 1]
+		if last is Vector2i:
+			return last
+	return action.target_coord if action.target_coord != Vector2i.ZERO else fallback
+
+
+func _collect_planned_ability_enemy_targets(
+	action: TimelineAction,
+	origin: Vector2i,
+	board: BoardState,
+	out: Array[int],
+	seen: Dictionary,
+) -> void:
+	var ability: AbilityData = action.ability
+	if ability == null:
+		return
+	if ability.targeting_mode in [
+		GameEnums.TargetingMode.SELF,
+		GameEnums.TargetingMode.ALLY_UNIT,
+	]:
+		return
+	if action.target_unit_id >= 0:
+		var tgt := board.get_unit_by_id(action.target_unit_id)
+		if tgt == null:
+			tgt = _board.get_unit_by_id(action.target_unit_id) if _board != null else null
+		if tgt != null and tgt.is_enemy() and tgt.is_alive():
+			_append_target_id(out, seen, tgt.id)
+		return
+	var target_coord: Vector2i = action.target_coord
+	var shape: int = ability.target_shape
+	var shape_size: int = ability.target_shape_size
+	var affected: Array[Vector2i] = GridSystem.get_affected_tiles(
+		board, origin, target_coord, shape, shape_size,
+	)
+	if affected.is_empty():
+		var occ := board.get_unit_at(target_coord)
+		if occ == null and _board != null:
+			occ = _board.get_unit_at(target_coord)
+		if occ != null and occ.is_enemy() and occ.is_alive():
+			_append_target_id(out, seen, occ.id)
+		return
+	for cell: Vector2i in affected:
+		var occ := board.get_unit_at(cell)
+		if occ == null and _board != null:
+			occ = _board.get_unit_at(cell)
+		if occ != null and occ.is_enemy() and occ.is_alive():
+			_append_target_id(out, seen, occ.id)
+
+
+func _append_target_id(out: Array[int], seen: Dictionary, unit_id: int) -> void:
+	if seen.has(unit_id):
+		return
+	seen[unit_id] = true
+	out.append(unit_id)
 
 
 func apply_sim_event(event: SimEvent) -> void:
