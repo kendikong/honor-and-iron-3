@@ -1037,6 +1037,28 @@ func _draw_preview_arrows() -> void:
 		if route.is_empty():
 			continue
 		var split: int = int(prev.preview_splits.get(unit.id, route.size()))
+		if not unit.is_enemy() and _director != null:
+			if _director.unit_has_move_planned_at_timing(
+				unit.id, GameEnums.MoveTiming.POST_ACTION,
+			):
+				var post_split: int = int(prev.preview_post_splits.get(unit.id, split))
+				var post_end: int = mini(split, route.size())
+				if post_split < post_end:
+					var post_leg: Array = route.slice(maxi(post_split - 1, 0), post_end)
+					if post_leg.size() >= 2:
+						var skip_committed_post: bool = false
+						if unit.id == _director.selected_unit_id and _planning_input != null:
+							if _planning_input.dragging:
+								skip_committed_post = true
+							elif (
+								_planning_input.is_live_preview_active()
+								and _interaction_move_hover_active(unit.id)
+							):
+								skip_committed_post = true
+						if not skip_committed_post:
+							var p_col: Color = _player_color_for_unit(unit)
+							var dim_col := Color(p_col.r, p_col.g, p_col.b, 0.35)
+							_draw_route_line(post_leg, dim_col, post_split <= 1, true)
 		var enemy_leg: Array = []
 		if split < route.size():
 			enemy_leg = route.slice(maxi(split - 1, 0))

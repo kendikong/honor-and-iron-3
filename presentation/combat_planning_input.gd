@@ -1861,6 +1861,12 @@ func _threat_follows_cursor() -> bool:
 		return false
 	if _director == null or _director.selected_unit_id < 0:
 		return false
+	if _intent_state != null and _director.board != null:
+		var cell: Vector2i = _intent_state.hover_coord
+		if _director.board.is_in_bounds(cell):
+			var hover_unit: UnitState = _director.board.get_unit_at(cell)
+			if hover_unit != null and hover_unit.is_enemy():
+				return false
 	# After pre-move, threat range is from the unit — not hypothetical move destinations.
 	if not _unit_move_slot_open(_director.selected_unit_id):
 		return false
@@ -1870,6 +1876,11 @@ func _threat_follows_cursor() -> bool:
 func _sync_threat_origin_from_cell(cell: Vector2i) -> void:
 	if _planning == null or _director == null or _director.board == null or dragging:
 		return
+	if _director.board.is_in_bounds(cell):
+		var hover_unit: UnitState = _director.board.get_unit_at(cell)
+		if hover_unit != null and hover_unit.is_enemy():
+			_planning.clear_threat_origin()
+			return
 	if _threat_follows_cursor() and _director.board.is_in_bounds(cell):
 		_planning.set_threat_origin(cell)
 	else:
