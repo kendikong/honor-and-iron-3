@@ -49,7 +49,12 @@ static func trunk_foot_cell(
 	_settings: EffectsSettings = null,
 ) -> Vector2i:
 	var foot: Vector2i = anchor + Vector2i(0, 2)
-	if grid != null and _in_bounds(grid, foot):
+	if grid == null:
+		return foot
+	if _in_bounds(grid, foot):
+		return foot
+	# South-edge trees: trunk sits on phantom grass below the logical grid.
+	if PlayerGrid.bottom_phantom_owner(grid, foot).x >= 0:
 		return foot
 	return Vector2i(-1, -1)
 
