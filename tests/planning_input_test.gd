@@ -10,6 +10,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_offensive_dash_heuristic(failures)
 	_test_action_range_auto_run_ap_gate(failures)
 	_test_composite_cursor_gate(failures)
+	_test_action_range_hidden_after_premove_mp(failures)
 
 
 static func _test_force_basic_flag(failures: Array[String]) -> void:
@@ -102,15 +103,9 @@ static func _test_offensive_dash_heuristic(failures: Array[String]) -> void:
 
 
 static func _test_action_range_auto_run_ap_gate(failures: Array[String]) -> void:
-	var board := BoardState.new()
-	board.grid_size = Vector2i(10, 6)
-	var unit := UnitState.new()
-	unit.id = 1
-	unit.position = Vector2i(0, 2)
-	unit.movement.points_left = 2
-	unit.movement.max_points = 4
-	unit.ability.points_left = 3
-	board.units = [unit]
+	var setup: Dictionary = _plain_board_with_unit(Vector2i(0, 2), 2, 3)
+	var board: BoardState = setup["board"] as BoardState
+	var unit: UnitState = setup["unit"] as UnitState
 	var skill := AbilityData.new()
 	skill.kind = GameEnums.AbilityKind.CLASS_SKILL
 	skill.action_point_cost = 3
@@ -157,3 +152,51 @@ static func _test_composite_cursor_gate(failures: Array[String]) -> void:
 	icon = input._cursor_icon_from_commit_slots(slots, null)
 	if icon.find("/") < 0:
 		failures.append("PlanningInputTest: composite cursor should join move and action when enabled")
+
+
+static func _plain_board_with_unit(
+	unit_pos: Vector2i,
+	movement_points: int,
+	ability_points: int = 3,
+) -> Dictionary:
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	var board := BoardState.new()
+	board.grid_size = Vector2i(10, 6)
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = unit_pos
+	unit.movement.points_left = movement_points
+	unit.movement.max_points = maxi(movement_points, 4)
+	unit.ability.points_left = ability_points
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit_pos, unit.id)
+	return {"board": board, "unit": unit}
+
+
+static func _test_action_range_hidden_after_premove_mp(failures: Array[String]) -> void:
+	var setup: Dictionary = _plain_board_with_unit(Vector2i(0, 2), 3)
+	var board: BoardState = setup["board"] as BoardState
+	var unit: UnitState = setup["unit"] as UnitState
+	var swap := AbilityData.new()
+	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.movement_point_cost = 1
+	swap.action_point_cost = 0
+	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
+	var swap_eff := EffectData.new()
+	swap_eff.type = GameEnums.EffectType.SWAP
+	swap.effects = [swap_eff]
+	if not AbilitySystem.can_show_planning_action_range_after_premove(
+		board, unit, swap, Vector2i(1, 2), false,
+	):
+		failures.append("PlanningInputTest: near premove should leave enough MP for Swap")
+	if AbilitySystem.can_show_planning_action_range_after_premove(
+		board, unit, swap, Vector2i(3, 2), false,
+	):
+		failures.append("PlanningInputTest: far premove should hide Swap when MP exhausted")

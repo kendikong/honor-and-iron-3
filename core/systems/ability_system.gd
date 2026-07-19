@@ -275,7 +275,7 @@ static func can_afford_run(actor: UnitState) -> bool:
 	return actor.ability.points_left >= run_ability.action_point_cost
 
 
-## Planning overlay: red tiles only when selected skill stays legal after implicit auto-run premove.
+## Planning overlay: red tiles only when selected skill stays legal after implicit premove.
 static func can_show_planning_action_range_after_premove(
 	board: BoardState,
 	actor: UnitState,
@@ -291,11 +291,59 @@ static func can_show_planning_action_range_after_premove(
 		return false
 	if premove_cell == actor.position or not board.is_in_bounds(premove_cell):
 		return true
-	if not movement_requires_run(board, actor, premove_cell, []):
-		return true
-	if not auto_run_active:
+	var projected: UnitState = project_actor_after_premove(
+		board, actor, premove_cell, auto_run_active,
+	)
+	if projected == null:
 		return false
-	return can_afford_run_for_commit(actor, ability)
+	return can_plan(projected, ability)
+
+
+## Simulate a single PRE_ACTION walk/run to `premove_cell` and return the post-move unit snapshot.
+static func project_actor_after_premove(
+	board: BoardState,
+	actor: UnitState,
+	premove_cell: Vector2i,
+	auto_run_active: bool,
+) -> UnitState:
+	if board == null or actor == null:
+		return null
+	if premove_cell == actor.position:
+		return actor.clone()
+	if not board.is_in_bounds(premove_cell):
+		return null
+	var needs_run: bool = movement_requires_run(board, actor, premove_cell, [])
+	if needs_run and not auto_run_active:
+		return null
+	var trial: BoardState = board.clone()
+	var trial_actor: UnitState = trial.get_unit_by_id(actor.id)
+	if trial_actor == null:
+		return null
+	var move_action: TimelineAction
+	if needs_run:
+		if not can_afford_run(trial_actor):
+			return null
+		move_action = TimelineAction.make_run_move(
+			actor.id, premove_cell, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		)
+	else:
+		var budget: int = trial_actor.movement.points_left
+		if not MovementSystem.can_reach_coord(board, trial_actor, premove_cell, [], budget):
+			return null
+		move_action = TimelineAction.make_move(
+			actor.id, premove_cell, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		)
+	var plan: Timeline = Timeline.new()
+	plan.entries.append(move_action)
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(trial, plan, events)
+	for event: SimEvent in events:
+		if event.type != GameEnums.SimEventType.ACTION_FAILED:
+			continue
+		if int(event.data.get("actor", -1)) == actor.id:
+			return null
+	var projected: UnitState = trial.get_unit_by_id(actor.id)
+	return projected.clone() if projected != null else null
 
 
 ## Auto-run / run-move commit: Run AP plus any paired action ability must fit the AP budget.
