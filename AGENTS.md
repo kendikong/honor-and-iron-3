@@ -105,6 +105,10 @@ Every entry must show **what changed to what**. Use **exact before → after** f
 ```
 ## Changelog
 
+### Global systems
+- **Global system used:** (canonical owner — required every edit/plan/review turn with changes)
+- **Heuristics added:** `none` OR each heuristic named (required; see `global-systems-first.mdc`)
+
 ### Added
 - `path/to/file.gd` — (what was added and why)
 
@@ -122,6 +126,7 @@ Every entry must show **what changed to what**. Use **exact before → after** f
 ```
 
 **Rules:**
+- **### Global systems** is mandatory — never omit **Heuristics added:** (`none` or list).
 - Use empty sections as `- (none)`.
 - **Never** write vague or over-paraphrased entries ("updated file", "fixed bug", "tweaked rules") — always state the concrete delta with enough length to understand without opening the diff.
 - **Minimum detail:** each **Changed** entry needs enough prose that the user knows the old state, the new state, and the affected location (file, function, line range, or key name).

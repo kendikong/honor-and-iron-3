@@ -40,6 +40,7 @@ Answer in the changelog or plan:
 
 | Question | Must be |
 |----------|---------|
+| **Heuristics added:** stated? (`none` or list) | **Yes** — every edit/fix turn |
 | Does this add a second way to do the same thing? | **No** |
 | Does preview == commit for this behavior? | **Yes** |
 | Could another skill reuse this without new `if` branches? | **Yes** |

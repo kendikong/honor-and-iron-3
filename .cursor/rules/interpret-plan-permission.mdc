@@ -29,6 +29,15 @@ End with a direct question, e.g. **"Proceed with this plan? (yes / no / adjust)"
 
 Wait for the user's reply before making changes or running implementation work.
 
+## After implementation (mandatory)
+
+Responses that **completed** file changes must **repeat** the same two lines (not only in the gate):
+
+- **Global system used:** …
+- **Heuristics added:** `none` or list each
+
+Place them in **## Changelog → ### Global systems** (see `global-systems-first.mdc`). Do not end an edit turn without stating **Heuristics added**.
+
 ## When the gate is required
 
 - Bug fixes, features, refactors, config/rule changes
@@ -46,6 +55,7 @@ Wait for the user's reply before making changes or running implementation work.
 ## Anti-patterns (do not do these)
 
 - Jumping straight to code because the fix "looks simple"
+- **Ending an edit or fix turn without `Heuristics added:`** (must be `none` or a named list)
 - Proposing a heuristic or bandaid without the **⚠ Global system exception** block when it bypasses a global system
 - Solving a different problem than the user described (e.g. placement vs draw order)
 - Assuming post-process vs pre-process without stating it and getting buy-in

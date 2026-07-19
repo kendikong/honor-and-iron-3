@@ -53,12 +53,21 @@ If the **correct** fix requires **breaking, bypassing, or adding an exception to
 - Do **not** hide exceptions in changelog prose — use the block above.
 - “User said fix it fast” is **not** approval.
 
-## Every proposal / fix must state (brief)
+## Mandatory disclosure (every agent turn — no exceptions)
 
-In gate messages, plans, and changelogs for non-trivial edits:
+Any response that **proposes, implements, or summarizes** a code or rule change MUST include **both** lines below, visibly (not buried in prose):
 
-- **Global system used:** (e.g. `_build_commit_slots_at_cell` → `commit_from_slots`)
-- **Heuristics added:** `none` or list each (must be `none` unless exception approved)
+- **Global system used:** (canonical owner — file/API; e.g. `_build_commit_slots_at_cell` → `commit_from_slots`)
+- **Heuristics added:** `none` OR each heuristic named (must be `none` unless owner approved the ⚠ exception block)
+
+**Required in:**
+- Permission gate / plans (`interpret-plan-permission.mdc`)
+- Post-implementation summaries and fix explanations (including bug-fix replies)
+- **## Changelog** on every edit turn (`living-sandbox-architect.mdc`, `AGENTS.md`) — dedicated `### Global systems` subsection
+
+**Omit only** on pure read-only Q&A with **no** proposed or completed changes.
+
+**Omitting either line = rule violation** — same severity as skipping the permission gate or auto-commit.
 
 ## Canonical global systems (Honor & Iron — non-exhaustive)
 

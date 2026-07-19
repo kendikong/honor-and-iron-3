@@ -26,6 +26,10 @@ Any response that makes file changes **must** end with a **## Changelog** sectio
 ```
 ## Changelog
 
+### Global systems
+- **Global system used:** (canonical owner — required every edit turn)
+- **Heuristics added:** `none` OR each heuristic named (required every edit turn; see `global-systems-first.mdc`)
+
 ### Changed
 - `path/to/file.gd` (function `_foo` or lines N–M)
   - **Before:** `old code, value, or behavior`
@@ -37,6 +41,7 @@ Any response that makes file changes **must** end with a **## Changelog** sectio
 ```
 
 **Rules:**
+- **### Global systems** is mandatory on every edit turn — never omit **Heuristics added:** (`none` or list).
 - Each **Changed** entry must state old state, new state, and location (file, function, line range, or key name).
 - Multi-line logic: quote the longest useful fragment, then paraphrase the rest — do not replace the whole entry with one vague sentence.
 - Config / enum / `.tres` literals: show old value → new value.
