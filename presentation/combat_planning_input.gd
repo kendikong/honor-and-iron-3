@@ -1619,13 +1619,29 @@ func _enemy_hover_icon(p_unit: UnitState, cell: Vector2i, hover_unit: UnitState)
 		return ""
 	if selected_phase_action_exhausted(p_unit.id):
 		return ICON_NULL
-	if _in_ability_range(p_unit, hover_unit):
-		return ICON_ATTACK
-	if _prefer_approach_over_trample_move(p_unit, hover_unit):
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	var use_skill: bool = (
+		not force_basic_movement
+		and _director != null
+		and _director.selected_ability_index >= 0
+		and ability != null
+	)
+	if use_skill:
+		if not AbilitySystem.target_passes_mode(p_unit, ability, hover_unit):
+			return ICON_NULL
+		if _ability_has_dash(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
+			return ICON_NULL
+	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
+	var in_range: bool = _in_ability_range(p_unit, hover_unit)
+	if in_range:
+		if use_skill:
+			return _ability_action_icon(ability)
 		return ICON_ATTACK
 	if _can_move_to(p_unit, cell):
 		return ICON_MOVE
-	return ICON_ATTACK
+	if _enemy_attackable_from_legal_tiles(p_unit, hover_unit, legal_moves):
+		return ICON_MOVE_ATTACK
+	return ICON_NULL
 
 
 func _self_tile_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
