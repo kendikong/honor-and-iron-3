@@ -172,6 +172,95 @@ static func status_player_tooltip(st: GameEnums.StatusType) -> String:
 			return GameEnums.StatusType.keys()[st].capitalize().replace("_", " ")
 
 
+## Master Bible skill lines (class_abilities.txt) — overrides generated effect text when present.
+static func bible_ability_effect_line(ability: AbilityData) -> String:
+	if ability == null:
+		return ""
+	match ability.id:
+		&"knight_shield_bash":
+			return "ATK 1 | PUSH 2"
+		&"knight_phalanx_stance":
+			return "DEF +5 | STURDY"
+		&"knight_taunting_strike":
+			return "ATK 1 | PULL 1 | Apply TAUNT"
+		&"knight_seismic_stomp":
+			return "ATK 2 | PURGE"
+		&"knight_fortify":
+			return "DEF +X (X = caster DEF)"
+		&"knight_bowling_charge":
+			return "DASH 3 | On collision: ATK 3 | PUSH 2"
+		&"knight_iron_grip":
+			return "Apply ROOT | DEF halved next turn"
+		&"knight_redirect_strike":
+			return "Apply INTERCEPT 50%"
+		&"knight_indomitable_will":
+			return "SHIELD = missing HP (2 turns)"
+		&"knight_retaliation_protocol":
+			return "Counter ATK 2 on melee hit"
+		&"knight_shield_slam":
+			return "ATK 2 | PUSH 2 | If adjacent at cast: ATK +2"
+		&"knight_defensive_formation":
+			return "DEF +2 | STURDY (immune PUSH/PULL)"
+		&"knight_chain_hook":
+			return "ATK 1 | PULL 2"
+		&"knight_trampling_advance":
+			return "MOVE 2 | ATK 2 | PUSH 1"
+		&"knight_swap":
+			return "SWAP"
+		_:
+			return ""
+
+
+static func bible_ability_targeting_label(ability: AbilityData) -> String:
+	if ability == null:
+		return ""
+	for eff: EffectData in ability.effects:
+		if eff.type == GameEnums.EffectType.DASH:
+			return "DASH %d" % eff.amount
+	match ability.id:
+		&"knight_redirect_strike":
+			return "RANGE 2"
+		&"knight_trampling_advance":
+			return "MOVE 2"
+		_:
+			pass
+	if ability.is_movement_kind():
+		if ability.range_tiles > 0:
+			return "MOVE %d" % ability.range_tiles
+		return "MOVE"
+	if ability.targeting_mode == GameEnums.TargetingMode.SELF and ability.range_tiles == 0:
+		if ability.target_shape != GameEnums.TargetShape.SINGLE:
+			return "RANGE 0"
+		return "SELF"
+	if ability.range_tiles == 0 and ability.target_shape != GameEnums.TargetShape.SINGLE:
+		return "RANGE 0"
+	if ability.range_tiles >= 0:
+		return "RANGE %d" % ability.range_tiles
+	return ""
+
+
+static func bible_ability_aoe_label(ability: AbilityData) -> String:
+	if ability == null or ability.target_shape == GameEnums.TargetShape.SINGLE:
+		return ""
+	match ability.id:
+		&"knight_seismic_stomp":
+			return "AOE 1"
+		&"knight_defensive_formation":
+			return "AOE 3"
+		_:
+			pass
+	match ability.target_shape:
+		GameEnums.TargetShape.AOE_SQUARE:
+			var n: int = ability.target_shape_size
+			return "AOE %dx%d" % [n * 2 + 1, n * 2 + 1]
+		GameEnums.TargetShape.AOE_DIAMOND:
+			return "AOE %d" % ability.target_shape_size
+		GameEnums.TargetShape.LINE:
+			return "SKEWER %d" % ability.target_shape_size
+		_:
+			return "AOE"
+
+
 static func enum_definitions() -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for k: String in GameEnums.AbilityKind.keys():

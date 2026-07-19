@@ -489,13 +489,84 @@ static func ability_desc(ability: AbilityData, unit: UnitState = null) -> String
 			target_hint = " | Self"
 		GameEnums.TargetingMode.ENEMY_UNIT:
 			target_hint = " | Enemy"
-	return "%s (RANGE %d | %s%s | %s)" % [
+	var range_label: String = _ability_targeting_range_label(ability, unit)
+	var aoe_label: String = ClassLibrarySchema.bible_ability_aoe_label(ability)
+	if aoe_label != "" and range_label == "RANGE 0":
+		range_label = "%s | %s" % [range_label, aoe_label]
+	return "%s (%s | %s%s | %s)" % [
 		ability.display_name,
-		ability.range_tiles,
+		range_label,
 		cost_label,
 		target_hint,
 		ability_effect_string(ability, unit),
 	]
+
+
+static func ability_cost_chip(ability: AbilityData) -> Dictionary:
+	if ability == null:
+		return {"emoji": "🔵", "text": "0", "tooltip": _glossary_def("AP")}
+	if ability.is_movement_kind():
+		return {
+			"emoji": "👟",
+			"text": str(ability.movement_point_cost),
+			"tooltip": "MOV %d — %s" % [ability.movement_point_cost, _glossary_def("MOV")],
+		}
+	return {
+		"emoji": "🔵",
+		"text": str(ability.action_point_cost),
+		"tooltip": "AP %d — %s" % [ability.action_point_cost, _glossary_def("AP")],
+	}
+
+
+static func ability_range_chip(ability: AbilityData, unit: UnitState = null) -> Dictionary:
+	var label: String = _ability_targeting_range_label(ability, unit)
+	var tooltip: String = ""
+	if label.begins_with("DASH"):
+		tooltip = _glossary_def("DASH")
+	elif label.begins_with("MOVE"):
+		tooltip = _glossary_def("MOVE")
+	elif label == "SELF":
+		tooltip = String(ClassLibrarySchema.manual_keywords().get("RANGE 0", "Self only."))
+	elif label.begins_with("RANGE"):
+		tooltip = _glossary_def("RANGE")
+	else:
+		tooltip = label
+	var display_val: String = label
+	if label.begins_with("DASH "):
+		display_val = label.substr(5)
+	elif label.begins_with("MOVE "):
+		display_val = label.substr(5)
+	elif label.begins_with("RANGE "):
+		display_val = label.substr(6)
+	var emoji: String = "🏹"
+	if label.begins_with("DASH"):
+		emoji = "💨"
+	elif label.begins_with("MOVE"):
+		emoji = "👟"
+	elif label == "SELF" or label == "RANGE 0":
+		emoji = "🎯"
+	return {"emoji": emoji, "text": display_val, "tooltip": "%s — %s" % [label, tooltip]}
+
+
+static func _ability_targeting_range_label(ability: AbilityData, unit: UnitState = null) -> String:
+	if ability == null:
+		return "RANGE 0"
+	var bible_label: String = ClassLibrarySchema.bible_ability_targeting_label(ability)
+	if bible_label != "":
+		return bible_label
+	var rng: int = ability.range_tiles
+	if unit != null:
+		rng = unit.get_ability_range(ability)
+	return "RANGE %d" % rng
+
+
+static func _dash_effect_amount(ability: AbilityData) -> int:
+	if ability == null:
+		return 0
+	for eff: EffectData in ability.effects:
+		if eff.type == GameEnums.EffectType.DASH:
+			return eff.amount
+	return 0
 
 
 static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -> String:
@@ -504,7 +575,12 @@ static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -
 	var lines: PackedStringArray = []
 	lines.append(ability.display_name)
 	lines.append("")
-	lines.append("RANGE %d — %s" % [ability.range_tiles, _glossary_def("RANGE")])
+	var range_label: String = _ability_targeting_range_label(ability, unit)
+	var aoe_label: String = ClassLibrarySchema.bible_ability_aoe_label(ability)
+	if aoe_label != "" and range_label == "RANGE 0":
+		lines.append("%s | %s" % [range_label, aoe_label])
+	else:
+		lines.append("%s — %s" % [range_label, _targeting_glossary_hint(range_label)])
 	if ability.is_movement_kind():
 		lines.append(
 			"MOV %d — %s" % [ability.movement_point_cost, _glossary_def("MOV")],
@@ -550,26 +626,30 @@ static func _kw_tooltip_line(label: String, definition: String) -> String:
 	return "%s — %s" % [label, definition]
 
 
+static func _targeting_glossary_hint(range_label: String) -> String:
+	if range_label.begins_with("DASH"):
+		return _glossary_def("DASH")
+	if range_label.begins_with("MOVE"):
+		return _glossary_def("MOVE")
+	if range_label == "SELF" or range_label == "RANGE 0":
+		return String(ClassLibrarySchema.manual_keywords().get("RANGE 0", "Self only."))
+	if range_label.begins_with("RANGE"):
+		return _glossary_def("RANGE")
+	return range_label
+
+
 static func _ability_keyword_tooltip_lines(
 	ability: AbilityData,
 	_unit: UnitState = null,
 ) -> PackedStringArray:
 	var lines: PackedStringArray = []
-	if ability.id == &"knight_bowling_charge":
-		lines.append(_kw_tooltip_line(
-			"DASH 3",
-			"Move up to 3 tiles in a straight cardinal line.",
-		))
-		lines.append(_kw_tooltip_line("TRAMPLE", _glossary_def("TRAMPLE")))
-		lines.append(_kw_tooltip_line(
-			"PUSH 1",
-			"Pushes trampled enemies left when passing through, forward when you stop on them.",
-		))
-		lines.append(_kw_tooltip_line(
-			"COLLISION",
-			"Trample collision on contact; pushing into walls or units can deal collision damage.",
-		))
-		lines.append("This unit does not suffer collision damage from its own trample.")
+	var bible_line: String = ClassLibrarySchema.bible_ability_effect_line(ability)
+	if bible_line != "":
+		for segment: String in bible_line.split("|", false):
+			var kw: String = segment.strip_edges()
+			if kw.is_empty():
+				continue
+			lines.append(_kw_tooltip_line(kw, _bible_segment_hint(kw)))
 		return lines
 	for effect: EffectData in ability.effects:
 		var line: String = _effect_tooltip_line(effect)
@@ -697,6 +777,66 @@ static func _status_desc(t: GameEnums.StatusType) -> String:
 	return ClassLibrarySchema.status_player_tooltip(t)
 
 
+static func _bible_segment_hint(segment: String) -> String:
+	var manual: Dictionary = ClassLibrarySchema.manual_keywords()
+	if manual.has(segment):
+		return String(manual[segment])
+	if segment.begins_with("ATK "):
+		return _glossary_def("ATK")
+	if segment.begins_with("PUSH "):
+		return _glossary_def("PUSH")
+	if segment.begins_with("PULL "):
+		return _glossary_def("PULL")
+	if segment.begins_with("DASH "):
+		return _glossary_def("DASH")
+	if segment.begins_with("DEF +"):
+		return ClassLibrarySchema.status_player_tooltip(GameEnums.StatusType.STAT_BUFF_DEF)
+	if segment.begins_with("Apply "):
+		var status_name: String = segment.substr(6).strip_edges()
+		return "Apply %s." % status_name
+	if segment == "STURDY":
+		return ClassLibrarySchema.status_player_tooltip(GameEnums.StatusType.STURDY)
+	if segment.contains("INTERCEPT"):
+		return ClassLibrarySchema.status_player_tooltip(GameEnums.StatusType.INTERCEPT)
+	return segment
+
+
+static func _status_bible_label(effect: EffectData, self_target: bool) -> String:
+	if effect == null:
+		return ""
+	var amount_str: String = _effect_amount_string(effect)
+	match effect.status_type:
+		GameEnums.StatusType.STAT_BUFF_STR:
+			return "STR +%s" % amount_str if amount_str not in ["0", ""] else "STR UP"
+		GameEnums.StatusType.STAT_BUFF_MAG:
+			return "MAG +%s" % amount_str if amount_str not in ["0", ""] else "MAG UP"
+		GameEnums.StatusType.STAT_BUFF_DEF:
+			if effect.scaling_stat == GameEnums.StatType.DEFENSE:
+				return "DEF +X (X = caster DEF)"
+			return "DEF +%s" % amount_str if amount_str not in ["0", ""] else "DEF UP"
+		GameEnums.StatusType.STAT_BUFF_MOV, GameEnums.StatusType.STAT_BUFF_MP:
+			return "MOVEMENT +%s" % amount_str if amount_str not in ["0", ""] else "MOV UP"
+		GameEnums.StatusType.STAT_BUFF_ACC:
+			return "ACC +%s" % amount_str if amount_str not in ["0", ""] else "ACC UP"
+		GameEnums.StatusType.STAT_DEBUFF_DEF:
+			return "DEF −%s" % amount_str if amount_str not in ["0", ""] else "DEF DOWN"
+		GameEnums.StatusType.STAT_DEBUFF_MOV:
+			return "MAX MOVEMENT −%s" % amount_str if amount_str not in ["0", ""] else "MOV DOWN"
+		GameEnums.StatusType.STAT_DEBUFF_ACC:
+			return "ACC −%s" % amount_str if amount_str not in ["0", ""] else "ACC DOWN"
+		GameEnums.StatusType.IRON_GRIP_DEBUFF:
+			return "DEF halved next turn"
+		GameEnums.StatusType.INTERCEPT:
+			return "INTERCEPT 50%"
+		GameEnums.StatusType.RETALIATION_PROTOCOL:
+			return "Counter ATK 2 on melee hit"
+		GameEnums.StatusType.THORNS:
+			return "THORNS %s%%" % amount_str if amount_str not in ["0", ""] else "THORNS"
+		_:
+			var prefix: String = "Self " if self_target else "Apply "
+			return "%s%s" % [prefix, _status_name(effect.status_type)]
+
+
 static func _append_status_effect_part(
 	parts: Array[String],
 	effect: EffectData,
@@ -706,7 +846,7 @@ static func _append_status_effect_part(
 	if effect == null:
 		return
 	var dur: String = "" if effect.status_duration == 1 else " (%d turns)" % effect.status_duration
-	var label: String = _status_name(effect.status_type)
+	var label: String = _status_bible_label(effect, self_target)
 	var hint: String = _status_desc(effect.status_type)
 	var amount_str: String = _effect_amount_string(effect)
 	if amount_str != "0" and amount_str != "":
@@ -727,7 +867,18 @@ static func _append_status_effect_part(
 				hint = "Decreases Movement Points (MP) by %s." % amount_str
 			GameEnums.StatusType.STAT_DEBUFF_ACC:
 				hint = "Decreases Accuracy (ACC) by %s." % amount_str
-	var prefix: String = "Self " if self_target else "Apply "
+	var prefix: String = ""
+	if not (
+		label.begins_with("Apply ")
+		or label.begins_with("Self ")
+		or label.contains("+")
+		or label.contains("−")
+		or label.contains("halved")
+		or label.contains("INTERCEPT")
+		or label.contains("Counter ")
+		or label.contains("THORNS")
+	):
+		prefix = "Self " if self_target else "Apply "
 	if bbcode:
 		parts.append("%s%s%s" % [prefix, _kw_hint(label, hint), dur])
 	else:
@@ -737,8 +888,14 @@ static func _append_status_effect_part(
 static func ability_effect_string(ability: AbilityData, _unit: UnitState = null) -> String:
 	if ability == null:
 		return ""
-	if ability.id == &"knight_bowling_charge":
-		return "DASH 3 | TRAMPLE | PUSH 1 | COLLISION"
+	var bible_line: String = ClassLibrarySchema.bible_ability_effect_line(ability)
+	if bible_line != "":
+		var header: Array[String] = []
+		var aoe_label: String = ClassLibrarySchema.bible_ability_aoe_label(ability)
+		if aoe_label != "":
+			header.append(aoe_label)
+		header.append(bible_line)
+		return " | ".join(header)
 	var parts: Array[String] = []
 	for effect: EffectData in ability.effects:
 		match effect.type:
@@ -778,19 +935,9 @@ static func ability_effect_string(ability: AbilityData, _unit: UnitState = null)
 static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> String:
 	if ability == null:
 		return ""
-	if ability.id == &"knight_bowling_charge":
-		return "%s | %s | %s | %s" % [
-			_kw_hint("DASH 3", "Move up to 3 tiles in a straight cardinal line."),
-			_kw_hint("TRAMPLE", _glossary_def("TRAMPLE")),
-			_kw_hint(
-				"PUSH 1",
-				"Pushes trampled enemies left when passing through, forward when you stop on them.",
-			),
-			_kw_hint(
-				"COLLISION",
-				"Trample collision on contact; push into walls or units can add collision damage.",
-			),
-		]
+	var plain: String = ability_effect_string(ability, unit)
+	if ClassLibrarySchema.bible_ability_effect_line(ability) != "":
+		return _bbcode_from_bible_effect_line(plain)
 	var parts: Array[String] = []
 	for effect: EffectData in ability.effects:
 		match effect.type:
@@ -891,6 +1038,16 @@ static func _fmt_calc_num(value: float) -> String:
 	if not is_equal_approx(value, snappedf(value, 0.1)):
 		return "%.2f" % value
 	return "%.1f" % value
+
+
+static func _bbcode_from_bible_effect_line(line: String) -> String:
+	var parts: Array[String] = []
+	for segment: String in line.split("|", false):
+		var kw: String = segment.strip_edges()
+		if kw.is_empty():
+			continue
+		parts.append(_kw_hint(kw, _bible_segment_hint(kw)))
+	return " | ".join(parts)
 
 
 static func _kw_hint(word: String, hint: String) -> String:

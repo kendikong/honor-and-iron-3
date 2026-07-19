@@ -660,8 +660,10 @@ func _rebuild_ability_buttons() -> void:
 		values_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		values_hbox.add_theme_constant_override("separation", 16)
 		btn_vbox.add_child(values_hbox)
-		values_hbox.add_child(_make_skill_icon("🔵", str(ability.action_point_cost), "AP (Action Points required)"))
-		values_hbox.add_child(_make_skill_icon("🏹", str(ability.range_tiles), "Range (Max target distance)"))
+		var cost_chip: Dictionary = CombatUiFormatters.ability_cost_chip(ability)
+		values_hbox.add_child(_make_skill_icon(cost_chip.emoji, cost_chip.text, cost_chip.tooltip))
+		var range_chip: Dictionary = CombatUiFormatters.ability_range_chip(ability, unit)
+		values_hbox.add_child(_make_skill_icon(range_chip.emoji, range_chip.text, range_chip.tooltip))
 		var effect_lbl := RichTextLabel.new()
 		effect_lbl.bbcode_enabled = true
 		effect_lbl.fit_content = true

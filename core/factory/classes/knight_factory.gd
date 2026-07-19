@@ -105,7 +105,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var bowling_charge = DataLibrary._make_ability(&"knight_bowling_charge", "Bowling Charge", 3, [
 		DataLibrary._effect(GameEnums.EffectType.DASH, 3)
 	], 1)
-	bowling_charge.upgrade_description = "Enemy-enemy collision from this skill: ATK 2 to both."
+	bowling_charge.upgrade_description = "Enemy-enemy collision: ATK 3 to both units."
 	bowling_charge.upgraded_effects = DataLibrary._duplicate_effects(bowling_charge.effects)
 	def.abilities.append(bowling_charge)
 
