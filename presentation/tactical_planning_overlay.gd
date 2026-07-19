@@ -35,6 +35,8 @@ const _ROUTE_HEAD_LEN: float = 8.5
 const _ROUTE_HEAD_HALF_W: float = 4.7
 const _ROUTE_SHAFT_HEAD_OVERLAP: float = 0.55
 const _FORCED_MOVE_LINE_W: float = 1.875
+const _FORCED_MOVE_DOT_RADIUS: float = 1.25
+const _FORCED_MOVE_DOT_SPACING: float = 7.0
 const _FORCED_MOVE_HEAD_LEN: float = 7.0
 const _FORCED_MOVE_HEAD_ANGLE_DEG: float = 28.0
 const _DASH_LINE_W: float = 2.0
@@ -1421,7 +1423,11 @@ func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color)
 			_FORCED_MOVE_HEAD_ANGLE_DEG,
 		)
 		return
-	draw_line(start_pt, shaft_end, color, _FORCED_MOVE_LINE_W)
+	var dist: float = start_pt.distance_to(shaft_end)
+	var d: float = 0.0
+	while d < dist:
+		draw_circle(start_pt + travel_dir * d, _FORCED_MOVE_DOT_RADIUS, color)
+		d += _FORCED_MOVE_DOT_SPACING
 	_draw_line_arrowhead(
 		dest_center,
 		travel_dir,
