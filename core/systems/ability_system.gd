@@ -161,7 +161,7 @@ static func running_move_bonus(max_move: int) -> int:
 static func preview_move_budget_with_run(unit: UnitState) -> int:
 	if unit == null:
 		return 0
-	if unit.has_status(GameEnums.StatusType.RUNNING):
+	if unit.has_run_boost():
 		return unit.movement.points_left
 	return unit.movement.points_left + running_move_bonus(unit.movement.max_points)
 
@@ -172,7 +172,7 @@ static func movement_requires_run(
 	target_coord: Vector2i,
 	waypoints: Array[Vector2i] = [],
 ) -> bool:
-	if unit == null or unit.has_status(GameEnums.StatusType.RUNNING):
+	if unit == null or unit.has_run_boost():
 		return false
 	var base_mp: int = unit.movement.points_left
 	if MovementSystem.can_reach_coord(board, unit, target_coord, waypoints, base_mp):
@@ -780,20 +780,16 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			)
 
 static func _apply_running_boost(actor: UnitState, events: Array[SimEvent]) -> void:
-	if actor.has_status(GameEnums.StatusType.RUNNING):
+	if actor.has_run_boost():
 		return
 	var bonus: int = running_move_bonus(actor.movement.max_points)
 	if bonus <= 0:
 		return
-	actor.movement.max_points += bonus
-	actor.movement.points_left += bonus
-	actor.active_statuses.append(StatusData.new(GameEnums.StatusType.RUNNING, 1, bonus))
-	actor._recalculate_stats()
-	events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
-		"unit": actor.id,
-		"status_type": GameEnums.StatusType.RUNNING,
-		"duration": 1,
-		"amount": bonus,
+	actor.apply_run_boost(bonus)
+	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+		"actor": actor.id,
+		"run_boost": true,
+		"bonus": bonus,
 	}))
 
 

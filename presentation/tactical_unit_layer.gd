@@ -670,7 +670,7 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 		return
 	if _director.unit_has_wait_planned(current.id):
 		actor.set_planning_exhausted(not _defer_exhaustion_grey(unit.id))
-		actor.set_running(current.has_status(GameEnums.StatusType.RUNNING))
+		actor.set_running(current.has_run_boost())
 		return
 	var can_act: bool = current.can_use_action_slot()
 	var can_move: bool = (
@@ -681,7 +681,7 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 	)
 	var exhausted: bool = not can_act and not can_move
 	actor.set_planning_exhausted(exhausted and not _defer_exhaustion_grey(unit.id))
-	actor.set_running(current.has_status(GameEnums.StatusType.RUNNING))
+	actor.set_running(current.has_run_boost())
 
 
 func _update_depth(unit_id: int) -> void:
@@ -900,7 +900,7 @@ func _unit_uses_run_anim(unit_id: int) -> bool:
 			):
 				return true
 	var projected := _proj_unit(unit_id)
-	if projected != null and projected.has_status(GameEnums.StatusType.RUNNING):
+	if projected != null and projected.has_run_boost():
 		return true
 	return false
 
@@ -985,7 +985,7 @@ func _play_cell_path_tween(
 		_move_tweens.erase(unit_id)
 		actor.set_walking(false)
 		var live := _board.get_unit_by_id(unit_id) if _board != null else null
-		actor.set_running(live != null and live.has_status(GameEnums.StatusType.RUNNING))
+		actor.set_running(live != null and live.has_run_boost())
 		_sync_planning_final_facing(unit_id)
 		_update_depth(unit_id)
 	)
@@ -1059,7 +1059,7 @@ func _animate_move(event: SimEvent) -> void:
 		_update_depth(unit_id)
 		return
 	var use_run: bool = (
-		unit.has_status(GameEnums.StatusType.RUNNING)
+		unit.has_run_boost()
 		or _unit_uses_run_anim(unit_id)
 	)
 	if use_run and not event.data.get("is_dash", false):

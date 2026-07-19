@@ -22,6 +22,7 @@ func run_all() -> int:
 	failures += _check("engineer grenade damages target and adjacent without self-damage", _test_engineer_grenade())
 	failures += _check("movement skill spends MP not AP", _test_movement_skill_spends_mp())
 	failures += _check("movement skill resolves in pre-move bucket", _test_movement_skill_pre_move_bucket())
+	failures += _check("run clears next turn and can be used again", _test_run_available_next_turn())
 
 	print_demo_battle()
 
@@ -512,6 +513,51 @@ func _test_movement_skill_pre_move_bucket() -> bool:
 		return false
 	if not steps[1].ability.is_movement_kind():
 		printerr("  movement skill must sort into pre-move column order")
+		return false
+	return true
+
+
+func _test_run_available_next_turn() -> bool:
+	var board := _empty_board(Vector2i(12, 3), [])
+	var runner_def := _make_unit_data(&"runner", 10, 4, 1, null)
+	_place(board, 1, runner_def, GameEnums.Team.PLAYER, Vector2i(0, 1))
+	board.intents = []
+
+	var plan_turn1 := Timeline.new()
+	plan_turn1.add(TimelineAction.make_run_move(1, Vector2i(5, 1)))
+	var after_turn1 := Simulator.simulate(board, plan_turn1)
+	var runner_turn1 := after_turn1.final_state.get_unit_by_id(1)
+	if runner_turn1 == null:
+		printerr("  runner missing after turn 1")
+		return false
+	if runner_turn1.position != Vector2i(5, 1):
+		printerr("  turn 1 run move failed, at %s" % runner_turn1.position)
+		return false
+	if runner_turn1.has_status(GameEnums.StatusType.RUNNING):
+		printerr("  RUNNING must not be stored as a status")
+		return false
+	if runner_turn1.has_run_boost():
+		printerr("  run boost must clear at turn boundary")
+		return false
+	if runner_turn1.ability.points_left != 1:
+		printerr("  AP should refill for turn 2, got %d" % runner_turn1.ability.points_left)
+		return false
+
+	var plan_turn2 := Timeline.new()
+	plan_turn2.add(TimelineAction.make_run_move(1, Vector2i(10, 1)))
+	var after_turn2 := Simulator.simulate(after_turn1.final_state, plan_turn2)
+	var runner_turn2 := after_turn2.final_state.get_unit_by_id(1)
+	if runner_turn2 == null:
+		printerr("  runner missing after turn 2")
+		return false
+	if runner_turn2.position != Vector2i(10, 1):
+		printerr("  turn 2 run move failed, at %s" % runner_turn2.position)
+		return false
+	if runner_turn2.has_status(GameEnums.StatusType.RUNNING):
+		printerr("  RUNNING must not persist after second turn")
+		return false
+	if runner_turn2.ability.points_left != 0:
+		printerr("  second run should spend AP, left %d" % runner_turn2.ability.points_left)
 		return false
 	return true
 

@@ -95,7 +95,7 @@ static func _ensure_init() -> void:
 		&"universal_run",
 		"Run",
 		0,
-		[_status_effect_self(GameEnums.StatusType.RUNNING, 1)],
+		[],
 		1,
 	)
 	_universal_run.kind = GameEnums.AbilityKind.UNIVERSAL_RUN

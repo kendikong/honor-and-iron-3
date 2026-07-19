@@ -24,6 +24,8 @@ var ability: AbilityComponent
 var turn_action_used: bool = false
 ## Set when a phase-1 (pre-action) move resolves; blocks post-action move unless CANTO.
 var pre_move_used_this_turn: bool = false
+## Extra MP granted by universal Run this turn only (not a status effect).
+var run_boost_amount: int = 0
 
 var armor: int = 0
 
@@ -181,6 +183,33 @@ func _recalculate_stats() -> void:
 		movement.points_left = mini(movement.points_left, 1)
 	else:
 		movement.max_points = definition.move_points + w_mov + stat_mov
+		if run_boost_amount > 0:
+			movement.max_points += run_boost_amount
+
+func has_run_boost() -> bool:
+	return run_boost_amount > 0
+
+
+func apply_run_boost(bonus: int) -> void:
+	if bonus <= 0 or run_boost_amount > 0:
+		return
+	run_boost_amount = bonus
+	movement.max_points += bonus
+	movement.points_left += bonus
+
+
+func clear_run_boost() -> void:
+	if run_boost_amount <= 0:
+		return
+	movement.max_points = maxi(0, movement.max_points - run_boost_amount)
+	movement.points_left = mini(movement.points_left, movement.max_points)
+	run_boost_amount = 0
+
+
+func _strip_legacy_running_status() -> void:
+	for i: int in range(active_statuses.size() - 1, -1, -1):
+		if active_statuses[i].type == GameEnums.StatusType.RUNNING:
+			active_statuses.remove_at(i)
 
 func has_status(type: int) -> bool:
 	for s in active_statuses:
@@ -213,6 +242,8 @@ func is_boss() -> bool:
 	return definition != null and definition.is_boss
 
 func reset_for_turn() -> void:
+	_strip_legacy_running_status()
+	clear_run_boost()
 	movement.reset()
 	ability.reset()
 	turn_action_used = false
@@ -232,6 +263,7 @@ func clone() -> UnitState:
 	copy.ability = ability.clone()
 	copy.turn_action_used = turn_action_used
 	copy.pre_move_used_this_turn = pre_move_used_this_turn
+	copy.run_boost_amount = run_boost_amount
 	copy.armor = armor
 	copy.level = level
 	copy.scrap = scrap

@@ -97,8 +97,6 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 					if status.ticks_remaining <= 0:
 						if status.type == GameEnums.StatusType.INDOMITABLE_WILL:
 							indomitable_will_expired = true
-						if status.type == GameEnums.StatusType.RUNNING:
-							_revert_running_boost(unit, status.value)
 						to_remove.append(status)
 						unit.active_statuses.remove_at(i)
 						events.append(SimEvent.make(GameEnums.SimEventType.STATUS_REMOVED, {
@@ -113,11 +111,6 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 					)
 			if to_remove.size() > 0 or indomitable_will_expired:
 				unit._recalculate_stats()
-
-
-static func _revert_running_boost(unit: UnitState, bonus: int) -> void:
-	unit.movement.max_points = maxi(0, unit.movement.max_points - bonus)
-	unit.movement.points_left = mini(unit.movement.points_left, unit.movement.max_points)
 
 
 static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team: GameEnums.Team) -> void:

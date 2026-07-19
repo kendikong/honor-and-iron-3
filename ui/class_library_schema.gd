@@ -679,7 +679,7 @@ static func _status_system(st: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.CANTO:
 			return "AbilitySystem.apply_canto_move_refund after class skill: movement.points_left = max_points; append CANTO(1)."
 		GameEnums.StatusType.RUNNING:
-			return "AbilitySystem._apply_running_boost: bonus=floor(max_mov×0.5); RUNNING(1, bonus); reverted in Simulator._revert_running_boost."
+			return "Turn-local movement boost via UnitState.run_boost_amount; cleared in reset_for_turn(). Not a combat status."
 		GameEnums.StatusType.RETALIATION_PROTOCOL:
 			return "CombatSystem.deal_damage on HP dmg: counter ATK 2 scaled; upgraded PUSH 1; range 1 unless RETALIATION_INFINITE_RANGE."
 		GameEnums.StatusType.RETALIATION_INFINITE_RANGE:

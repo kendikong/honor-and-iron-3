@@ -1927,7 +1927,7 @@ func _drag_move_preview_mode(unit: UnitState, dest: Vector2i) -> int:
 			return TacticalUnitLayer.DragPreviewAnim.RUN
 	if preview_state.preview_board != null and unit != null:
 		var pv := preview_state.preview_board.get_unit_by_id(unit.id)
-		if pv != null and pv.has_status(GameEnums.StatusType.RUNNING):
+		if pv != null and pv.has_run_boost():
 			return TacticalUnitLayer.DragPreviewAnim.RUN
 	return TacticalUnitLayer.DragPreviewAnim.WALK
 
