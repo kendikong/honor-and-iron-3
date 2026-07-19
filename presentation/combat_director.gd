@@ -523,10 +523,12 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 			EventBus.action_rejected.emit("no_actions_left")
 			return
 			
-		var max_steps := actor.movement.max_points if actor.movement != null else 0
+		var max_steps: int = planning_move_budget(actor, proj)
 		var mov_type := actor.definition.movement_type if actor.definition != null else GameEnums.MovementType.WALK
 		var waypoints := MovementSystem.find_path(proj, actor.position, approach, max_steps, mov_type)
-		move_action = TimelineAction.make_move(unit_id, approach, -1, waypoints, GameEnums.MoveTiming.PRE_ACTION)
+		move_action = make_planning_move_action(
+			unit_id, approach, proj, actor, waypoints, GameEnums.MoveTiming.PRE_ACTION,
+		)
 
 	var trial := proj.clone()
 	
@@ -576,6 +578,90 @@ func preview_approach_tile(
 	return _find_approach_tile(proj, actor, target.position, rng, preferred_tile)
 
 
+func planning_move_budget(actor: UnitState, board: BoardState = null) -> int:
+	if actor == null:
+		return 0
+	var plan_board: BoardState = board if board != null else _get_planning_state()
+	var plan_actor: UnitState = plan_board.get_unit_by_id(actor.id) if plan_board != null else null
+	if plan_actor != null:
+		actor = plan_actor
+	if auto_run and AbilitySystem.can_afford_run(actor):
+		return AbilitySystem.preview_move_budget_with_run(actor)
+	return actor.movement.points_left
+
+
+func make_planning_move_action(
+	unit_id: int,
+	dest: Vector2i,
+	board: BoardState,
+	actor: UnitState,
+	waypoints: Array[Vector2i],
+	timing: int,
+) -> TimelineAction:
+	if (
+		auto_run
+		and actor != null
+		and AbilitySystem.can_afford_run(actor)
+		and AbilitySystem.movement_requires_run(board, actor, dest, waypoints)
+	):
+		return TimelineAction.make_run_move(unit_id, dest, -1, waypoints, timing)
+	return TimelineAction.make_move(unit_id, dest, -1, waypoints, timing)
+
+
+func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> bool:
+	if unit_id < 0 or actions.is_empty():
+		return false
+	var combined: Timeline = _build_preview_plan(unit_id, actions)
+	var trial: BoardState = base_board.clone()
+	var ev: Array[SimEvent] = []
+	Simulator.simulate_player_turn(trial, combined, ev)
+	for e: SimEvent in ev:
+		if e.type != GameEnums.SimEventType.ACTION_FAILED:
+			continue
+		if int(e.data.get("actor", -1)) == unit_id:
+			return false
+	return true
+
+
+func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
+	if bool(slots.get("invalid", false)):
+		EventBus.action_rejected.emit("cannot_use_ability")
+		return false
+	var actions: Array[TimelineAction] = []
+	var plans: Array[Timeline] = []
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction:
+				var action: TimelineAction = raw as TimelineAction
+				actions.append(action)
+				plans.append(_slot_plan_for_action(action))
+	if actions.is_empty():
+		return false
+	if not preview_commit_valid(unit_id, actions):
+		EventBus.action_rejected.emit("cannot_use_ability")
+		return false
+	var has_pre_move: bool = not (slots.get("pre", []) as Array).is_empty()
+	var has_action: bool = not (slots.get("action", []) as Array).is_empty()
+	if has_pre_move:
+		if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
+			return false
+		_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+	if has_action:
+		_clear_unit_wait(unit_id)
+		_clear_unit_class_actions_from_plan(unit_id)
+		_clear_unit_post_moves_from_plan(unit_id)
+	_try_add_multiple(actions, plans)
+	return true
+
+
+func _slot_plan_for_action(action: TimelineAction) -> Timeline:
+	if action.type == GameEnums.ActionType.MOVE:
+		if action.move_timing == GameEnums.MoveTiming.POST_ACTION:
+			return plan_post_move
+		return plan_pre_move
+	return plan_action
+
+
 func _find_approach_tile(state: BoardState, actor: UnitState, target_pos: Vector2i, rng: int, preferred_tile: Vector2i) -> Vector2i:
 	if _is_attack_tile(state, actor, preferred_tile, target_pos, rng):
 		return preferred_tile
@@ -586,7 +672,9 @@ func _find_approach_tile(state: BoardState, actor: UnitState, target_pos: Vector
 			var coord := Vector2i(x, y)
 			if not _is_attack_tile(state, actor, coord, target_pos, rng):
 				continue
-			var path := MovementSystem.find_path(state, actor.position, coord, actor.movement.points_left)
+			var path := MovementSystem.find_path(
+				state, actor.position, coord, planning_move_budget(actor, state),
+			)
 			if path.size() < best_len:
 				best_len = path.size()
 				best = coord
@@ -597,7 +685,9 @@ func _is_attack_tile(state: BoardState, actor: UnitState, coord: Vector2i, targe
 		return false
 	if GridSystem.manhattan(coord, target_pos) > rng or not GridSystem.is_passable(state, coord):
 		return false
-	var path := MovementSystem.find_path(state, actor.position, coord, actor.movement.points_left)
+	var path := MovementSystem.find_path(
+		state, actor.position, coord, planning_move_budget(actor, state),
+	)
 	return not path.is_empty() and path[path.size() - 1] == coord
 
 func _clear_unit_from_plans(unit_id: int, from_timing: int) -> void:
@@ -800,8 +890,13 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 			elif GridSystem.manhattan(actor.position, target.position) > rng:
 				var approach := _find_approach_tile(start_board, actor, target.position, rng, coord)
 				if approach != actor.position:
+					var path: Array[Vector2i] = MovementSystem.find_path(
+						start_board, actor.position, approach, planning_move_budget(actor, start_board),
+					)
 					new_actions.append(
-						TimelineAction.make_move(unit_id, approach, -1, [], move_timing),
+						make_planning_move_action(
+							unit_id, approach, start_board, actor, path, move_timing,
+						),
 					)
 				new_actions.append(
 					TimelineAction.make_ability(

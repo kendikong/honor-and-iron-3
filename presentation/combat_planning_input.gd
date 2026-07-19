@@ -159,7 +159,9 @@ func on_left_press(local: Vector2) -> void:
 			if selected_phase_action_exhausted(sel.id):
 				_director.select_unit(unit.id)
 			else:
-				_plan_approach_or_trample_on_enemy(_director.selected_unit_id, unit, local, Vector2i(-1, -1))
+				_plan_approach_or_trample_on_enemy(
+					_director.selected_unit_id, unit, local, unit.position,
+				)
 		else:
 			_director.select_unit(unit.id)
 	else:
@@ -999,73 +1001,20 @@ func _plan_approach_or_trample_on_enemy(
 	if selected_phase_action_exhausted(unit_id):
 		_play_sfx("invalid")
 		return false
-	var actor := _proj_unit(unit_id)
-	if actor == null:
-		actor = _director.board.get_unit_by_id(unit_id) if _director.board != null else null
-	if actor == null:
-		return false
-	if _in_ability_range(actor, enemy):
-		_director.rpc_plan_attack(unit_id, _director.selected_ability_index, enemy.id)
-		_play_sfx("ability")
-		return true
-	var ability := _selected_ability_data(actor)
-	if (
-		ability != null
-		and AbilitySystem.can_target_self(actor, ability)
-		and _director.selected_ability_index >= 0
-	):
-		if _try_commit_move_with_self_skill(
-			unit_id, preferred_tile, local, waypoints, legal_move_tiles,
-		):
-			return true
-		if (
-			preferred_tile != actor.position
-			and _drop_allows_move_tile(preferred_tile, legal_move_tiles, actor)
-		):
-			_director.rpc_plan_move(
-				unit_id,
-				preferred_tile,
-				_facing_from_drop(local, preferred_tile),
-				waypoints,
-			)
-			_notify_drag_plan_move_committed(unit_id)
-			_play_sfx("move")
-			return true
-		_director.rpc_plan_attack(unit_id, _director.selected_ability_index, actor.id)
-		_play_sfx("ability")
-		return true
-	if _prefer_approach_over_trample_move(actor, enemy):
-		if not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
-			return false
-		_director.rpc_plan_attack_with_approach(
-			unit_id,
-			_director.selected_ability_index,
-			enemy.id,
-			preferred_tile,
-		)
-		_notify_drag_plan_move_committed(unit_id)
-		_play_sfx("ability")
-		return true
-	if _drop_allows_move_tile(enemy.position, legal_move_tiles, actor):
-		_director.rpc_plan_move(
-			unit_id,
-			enemy.position,
-			_facing_from_drop(local, enemy.position),
-			waypoints,
-		)
-		_notify_drag_plan_move_committed(unit_id)
-		_play_sfx("move")
-		return true
-	if not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
-		return false
-	_director.rpc_plan_attack_with_approach(
+	var target_cell: Vector2i = enemy.position if enemy != null else preferred_tile
+	var slots: Dictionary = _finalize_commit_slots(
+		_build_commit_slots_at_cell(unit_id, target_cell, waypoints, legal_move_tiles),
 		unit_id,
-		_director.selected_ability_index,
-		enemy.id,
-		preferred_tile,
 	)
+	if _director == null or not _director.commit_from_slots(unit_id, slots):
+		if not bool(slots.get("invalid", false)):
+			_play_sfx("invalid")
+		return false
+	if not (slots.get("action", []) as Array).is_empty():
+		_play_sfx("ability")
+	elif not (slots.get("pre", []) as Array).is_empty() or not (slots.get("post", []) as Array).is_empty():
+		_play_sfx("move")
 	_notify_drag_plan_move_committed(unit_id)
-	_play_sfx("ability")
 	return true
 
 
@@ -1710,16 +1659,26 @@ func _build_enemy_commit_slots(
 		var approach: Vector2i = _director.preview_approach_tile(
 			unit_id, enemy.id, ability_index, cell,
 		)
-		if approach == actor.position:
+		if approach == actor.position and not _in_ability_range(actor, enemy):
 			slots["invalid"] = true
 			return slots
 		if approach != actor.position:
+			var board: BoardState = _proj()
+			var budget: int = _director.planning_move_budget(actor, board)
 			var path: Array[Vector2i] = MovementSystem.find_path(
-				_proj(), actor.position, approach, actor.movement.points_left,
+				board, actor.position, approach, budget,
 			)
+			if path.is_empty():
+				slots["invalid"] = true
+				return slots
 			slots["pre"].append(
-				TimelineAction.make_move(
-					unit_id, approach, -1, path, GameEnums.MoveTiming.PRE_ACTION,
+				_director.make_planning_move_action(
+					unit_id,
+					approach,
+					board,
+					actor,
+					path,
+					GameEnums.MoveTiming.PRE_ACTION,
 				),
 			)
 		slots["action"].append(
@@ -1750,17 +1709,61 @@ func _step_cursor_glyph(action: TimelineAction) -> String:
 	return ""
 
 
-func _cursor_icon_from_commit_slots(slots: Dictionary, _unit: UnitState = null) -> String:
+func _actions_from_slots(slots: Dictionary) -> Array[TimelineAction]:
+	var out: Array[TimelineAction] = []
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction:
+				out.append(raw as TimelineAction)
+	return out
+
+
+func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
+	if bool(slots.get("invalid", false)):
+		return slots
+	var actions: Array[TimelineAction] = _actions_from_slots(slots)
+	if actions.is_empty():
+		slots["invalid"] = true
+		return slots
+	if _director != null and not _director.preview_commit_valid(unit_id, actions):
+		slots["invalid"] = true
+	return slots
+
+
+func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -> String:
 	if bool(slots.get("invalid", false)):
 		return ICON_NULL
 	var glyphs: PackedStringArray = []
+	var suppress_implicit_run: bool = auto_run_movement_active(unit)
+	var has_action_glyph: bool = false
 	for col: String in ["pre", "action", "post"]:
 		var steps: Array = slots.get(col, [])
 		if steps.is_empty():
 			continue
-		var glyph: String = _step_cursor_glyph(steps[0] as TimelineAction)
-		if glyph != "":
-			glyphs.append(glyph)
+		var step: TimelineAction = steps[0] as TimelineAction
+		if step == null:
+			continue
+		var glyph: String = _step_cursor_glyph(step)
+		if glyph == "":
+			continue
+		if col == "action":
+			has_action_glyph = true
+		glyphs.append(glyph)
+	if suppress_implicit_run and has_action_glyph and glyphs.size() > 1:
+		var filtered: PackedStringArray = []
+		for col: String in ["pre", "action", "post"]:
+			var steps: Array = slots.get(col, [])
+			if steps.is_empty():
+				continue
+			var step: TimelineAction = steps[0] as TimelineAction
+			if step == null:
+				continue
+			if col == "pre" and step.type == GameEnums.ActionType.MOVE and step.uses_run:
+				continue
+			var glyph: String = _step_cursor_glyph(step)
+			if glyph != "":
+				filtered.append(glyph)
+		glyphs = filtered
 	if glyphs.is_empty():
 		return ""
 	return ICON_COMPOSITE_SEP.join(glyphs)
@@ -1809,7 +1812,10 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 			return _movement_icon_for(p_unit, cell)
 		return ""
 	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
-	var slots: Dictionary = _build_commit_slots_at_cell(sel_id, cell, [], legal_moves)
+	var slots: Dictionary = _finalize_commit_slots(
+		_build_commit_slots_at_cell(sel_id, cell, [], legal_moves),
+		sel_id,
+	)
 	var icon_from_plan: String = _cursor_icon_from_commit_slots(slots, p_unit)
 	if icon_from_plan != "":
 		return icon_from_plan
@@ -1920,7 +1926,10 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if drag_preview_failed:
 		return ICON_NULL
 	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
-	var slots: Dictionary = _build_commit_slots_at_cell(actor.id, cell, _drag_route, legal_moves)
+	var slots: Dictionary = _finalize_commit_slots(
+		_build_commit_slots_at_cell(actor.id, cell, _drag_route, legal_moves),
+		actor.id,
+	)
 	var icon: String = _cursor_icon_from_commit_slots(slots, actor)
 	if icon != "":
 		return icon
