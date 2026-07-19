@@ -387,7 +387,9 @@ func _on_selection_changed(unit_id: int) -> void:
 	if unit_id < 0:
 		_clear_skill_buttons()
 		return
-	call_deferred("_refresh_ability_buttons_if_dirty")
+	_last_skill_rebuild_key = ""
+	_refresh_ability_buttons_if_dirty()
+	_scroll_selected_skill_into_view()
 	_refresh_wait_button()
 
 
@@ -413,14 +415,19 @@ func _scroll_selected_skill_into_view() -> void:
 		return
 	if _selected_ability < 0 or _selected_ability >= _skill_list.get_child_count():
 		return
-	var btn: Control = _skill_list.get_child(_selected_ability) as Control
-	if btn == null:
+	call_deferred("_ensure_skill_visible_by_index", _selected_ability)
+
+
+func _ensure_skill_visible_by_index(index: int) -> void:
+	await get_tree().process_frame
+	if _skill_scroll == null or _skill_list == null:
 		return
-	call_deferred("_ensure_skill_visible", btn)
-
-
-func _ensure_skill_visible(btn: Control) -> void:
-	if _skill_scroll == null or btn == null or not is_instance_valid(btn):
+	if index != _selected_ability:
+		return
+	if index < 0 or index >= _skill_list.get_child_count():
+		return
+	var btn: Control = _skill_list.get_child(index) as Control
+	if btn == null or not is_instance_valid(btn):
 		return
 	_skill_scroll.ensure_control_visible(btn)
 
