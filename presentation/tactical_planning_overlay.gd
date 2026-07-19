@@ -1018,6 +1018,36 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 	)
 
 
+func _draw_flowing_arrowheads_on_line(
+	start_pt: Vector2,
+	end_pt: Vector2,
+	color: Color,
+	line_w: float,
+	wing_len: float,
+	wing_angle_deg: float,
+	start_offset: float = 0.0,
+	end_offset: float = 0.0,
+) -> void:
+	var delta: Vector2 = end_pt - start_pt
+	var total_len: float = delta.length()
+	if total_len < 0.001:
+		return
+	var dir: Vector2 = delta / total_len
+	var t: float = Time.get_ticks_msec() / 1000.0
+	var flow_speed := 45.0
+	var wave_spacing := 90.0
+	var path_offset: float = fmod(t * flow_speed, wave_spacing)
+	var arrow_pos: float = path_offset
+	while arrow_pos < total_len - end_offset:
+		if arrow_pos > start_offset:
+			var tip: Vector2 = start_pt + dir * arrow_pos
+			var wing1: Vector2 = tip - dir.rotated(deg_to_rad(wing_angle_deg)) * wing_len
+			var wing2: Vector2 = tip - dir.rotated(deg_to_rad(-wing_angle_deg)) * wing_len
+			draw_line(tip, wing1, color, line_w)
+			draw_line(tip, wing2, color, line_w)
+		arrow_pos += wave_spacing
+
+
 func _draw_flowing_arrowheads_for_route(
 	cells: Array,
 	color: Color,
@@ -1493,13 +1523,13 @@ func _draw_dotted_intent_segment(
 	if start_pt.distance_to(shaft_end) < 1.0:
 		if with_head:
 			if flowing_head:
-				_draw_flowing_arrowheads_for_route(
-					[from, to],
+				_draw_flowing_arrowheads_on_line(
+					start_pt,
+					dest_center,
 					color,
 					_FORCED_MOVE_LINE_W,
 					_INTENT_ARROW_HEAD_LEN,
 					_INTENT_ARROW_HEAD_ANGLE_DEG,
-					_token_radius() + 4.0,
 				)
 			else:
 				_draw_line_arrowhead(
@@ -1518,13 +1548,13 @@ func _draw_dotted_intent_segment(
 		d += _INTENT_DOT_SPACING
 	if with_head:
 		if flowing_head:
-			_draw_flowing_arrowheads_for_route(
-				[from, to],
+			_draw_flowing_arrowheads_on_line(
+				start_pt,
+				dest_center,
 				color,
 				_FORCED_MOVE_LINE_W,
 				_INTENT_ARROW_HEAD_LEN,
 				_INTENT_ARROW_HEAD_ANGLE_DEG,
-				_token_radius() + 4.0,
 			)
 		else:
 			_draw_line_arrowhead(
