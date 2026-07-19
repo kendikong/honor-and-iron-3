@@ -1125,23 +1125,12 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 	if smooth.size() < 2:
 		return
 	var end_dir: Vector2 = _route_end_direction(smooth)
-	var outline_col := Color(color.r * 0.28, color.g * 0.32, color.b * 0.42, color.a)
-	var glow_col := Color(color.r, color.g, color.b, color.a * 0.16)
-	var highlight_col := Color(
-		minf(color.r + 0.22, 1.0),
-		minf(color.g + 0.22, 1.0),
-		minf(color.b + 0.22, 1.0),
-		color.a * 0.9,
-	)
 	var shaft: PackedVector2Array = smooth
 	if with_head:
 		shaft = _clip_route_for_arrowhead(smooth, dest_center, end_dir, _ROUTE_HEAD_LEN * 0.55)
-	draw_polyline(shaft, glow_col, _ROUTE_GLOW_W, true)
-	draw_polyline(shaft, outline_col, _ROUTE_OUTLINE_W, true)
 	draw_polyline(shaft, color, _ROUTE_LINE_W, true)
-	draw_polyline(shaft, highlight_col, _ROUTE_CORE_W, true)
 	if with_head:
-		_draw_route_arrowhead(dest_center, end_dir, color, outline_col)
+		_draw_route_arrowhead(dest_center, end_dir, color)
 
 
 func _rounded_route_polyline(pts: PackedVector2Array, corner_r: float) -> PackedVector2Array:
@@ -1211,7 +1200,7 @@ func _clip_route_for_arrowhead(
 	return out
 
 
-func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color, outline: Color) -> void:
+func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color) -> void:
 	var travel_dir: Vector2 = dir
 	if travel_dir.length_squared() < 0.0001:
 		travel_dir = Vector2.RIGHT
@@ -1223,9 +1212,6 @@ func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color, outline: Col
 	var right: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
 	var head := PackedVector2Array([tip, left, right])
 	draw_colored_polygon(head, fill)
-	var stroke := PackedVector2Array([tip, left, right, tip])
-	draw_polyline(stroke, outline, 1.5, true)
-	draw_circle(tip, 1.5, Color(fill.r, fill.g, fill.b, fill.a * 0.85))
 
 
 func _route_end_direction(path: PackedVector2Array) -> Vector2:
