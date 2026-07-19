@@ -713,8 +713,11 @@ func selected_phase_action_exhausted(unit_id: int = -1) -> bool:
 		return false
 	var can_act: bool = p_unit.can_use_action_slot()
 	var can_move: bool = (
-		p_unit.movement.points_left > 0
-		and _director.get_planning_move_timing(id) >= 0
+		_director.get_planning_move_timing(id) >= 0
+		and (
+			p_unit.movement.points_left > 0
+			or AbilitySystem.can_afford_run(p_unit)
+		)
 	)
 	return not can_act and not can_move
 
@@ -1340,7 +1343,7 @@ func _run_mode_selected(unit: UnitState = null) -> bool:
 	var ability := _selected_ability_data(actor)
 	if not AbilitySystem.is_run_ability(ability):
 		return false
-	return actor.ability.points_left >= ability.action_point_cost
+	return AbilitySystem.can_afford_run(actor)
 
 
 func _move_budget(unit: UnitState) -> int:

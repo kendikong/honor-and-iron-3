@@ -14,7 +14,7 @@ extends Resource
 ## Economy / timeline classification (see Master Bible § Universal Action Economy).
 @export var kind: GameEnums.AbilityKind = GameEnums.AbilityKind.CLASS_SKILL
 
-## Action points consumed when used (CLASS_SKILL and UNIVERSAL_RUN only).
+## Action points consumed when used (CLASS_SKILL only; Run AP is spent on MOVE via uses_run).
 @export var action_point_cost: int = 1
 
 ## Movement points consumed when used (MOVEMENT_SKILL only).
@@ -68,6 +68,10 @@ extends Resource
 
 func is_movement_kind() -> bool:
 	return kind == GameEnums.AbilityKind.MOVEMENT_SKILL or is_movement_skill
+
+
+func is_pre_move_kind() -> bool:
+	return is_movement_kind() or kind == GameEnums.AbilityKind.UNIVERSAL_RUN
 
 
 func is_class_kind() -> bool:

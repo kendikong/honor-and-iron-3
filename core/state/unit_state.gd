@@ -232,6 +232,8 @@ func has_used_turn_action() -> bool:
 	return turn_action_used and not has_unlimited_training_actions()
 
 
+## True when this unit may still commit a class skill, basic attack, or Wait (Action column).
+## Run is PRE_MOVE only — it spends AP but never consumes this slot.
 func can_use_action_slot() -> bool:
 	if has_unlimited_training_actions():
 		return ability.points_left > 0

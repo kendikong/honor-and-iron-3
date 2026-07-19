@@ -398,9 +398,9 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 	if ability.is_movement_kind():
 		parts.append("Economy: spends movement_point_cost (MP); PRE_MOVE timeline bucket; no action slot.")
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
-		parts.append("Economy: spends action_point_cost (AP) + extends movement; PRE_MOVE bucket.")
+		parts.append("Economy: PRE_MOVE only — spends 1 AP on move (uses_run); does not consume the Action slot.")
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
-		parts.append("Economy: costs 1 AP; does not consume the Action slot (0 AP basic attack still available).")
+		parts.append("Economy: consumes the Action slot; ends planning for this unit.")
 	else:
 		parts.append("Economy: spends action_point_cost (AP); ACTION timeline bucket; consumes action slot.")
 	if ability.target_shape != GameEnums.TargetShape.SINGLE:
@@ -523,7 +523,7 @@ static func _ability_kind_system(k: String) -> String:
 		"MOVEMENT_SKILL":
 			return "AbilityData.is_movement_kind(); plan_pre_move; AbilitySystem deducts MP."
 		"UNIVERSAL_RUN":
-			return "DataLibrary.get_universal_run(); not listed per-class."
+			return "plan_pre_move (Run); AP spent on MOVE.uses_run — not Action column."
 		"UNIVERSAL_WAIT":
 			return "DataLibrary.get_universal_wait(); hidden from skill lists."
 		_:

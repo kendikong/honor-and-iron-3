@@ -69,7 +69,9 @@ static func _has_resource_for_ability(actor: UnitState, ability: AbilityData) ->
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
 			return actor.movement.points_left >= ability.movement_point_cost
-		GameEnums.AbilityKind.UNIVERSAL_RUN, GameEnums.AbilityKind.CLASS_SKILL:
+		GameEnums.AbilityKind.UNIVERSAL_RUN:
+			return can_afford_run(actor)
+		GameEnums.AbilityKind.CLASS_SKILL:
 			return actor.ability.points_left >= ability.action_point_cost
 		GameEnums.AbilityKind.UNIVERSAL_WAIT:
 			return actor.can_use_action_slot()
@@ -120,6 +122,15 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 
 static func is_run_ability(ability: AbilityData) -> bool:
 	return ability != null and DataLibrary.is_universal_run(ability.id)
+
+
+static func can_afford_run(actor: UnitState) -> bool:
+	if actor == null or actor.has_run_boost():
+		return false
+	var run_ability: AbilityData = DataLibrary.get_universal_run()
+	if run_ability == null:
+		return false
+	return actor.ability.points_left >= run_ability.action_point_cost
 
 
 static func is_wait_ability(ability: AbilityData) -> bool:
@@ -194,7 +205,7 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 		return true
 	if ability.presentation_anim in [GameEnums.PresentationAnim.SPELL, GameEnums.PresentationAnim.MOVE, GameEnums.PresentationAnim.NONE]:
 		return false
-	if ability.is_movement_kind() or ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
+	if ability.is_movement_kind() or ability.is_pre_move_kind():
 		return false
 	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
 		return false
@@ -316,7 +327,7 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData) -> void:
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
 			actor.movement.points_left -= ability.movement_point_cost
-		GameEnums.AbilityKind.UNIVERSAL_RUN, GameEnums.AbilityKind.CLASS_SKILL:
+		GameEnums.AbilityKind.CLASS_SKILL:
 			actor.ability.points_left -= ability.action_point_cost
 		_:
 			pass

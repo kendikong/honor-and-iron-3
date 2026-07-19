@@ -591,6 +591,9 @@ func _test_run_leaves_action_slot() -> bool:
 	if not runner.can_use_action_slot():
 		printerr("  action slot must stay open after run for 0 AP basic attack")
 		return false
+	if runner.turn_action_used:
+		printerr("  run must not set turn_action_used")
+		return false
 	if not AbilitySystem.can_plan(runner, basic):
 		printerr("  0 AP basic attack must be planable after run")
 		return false

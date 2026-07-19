@@ -675,7 +675,9 @@ func _apply_exhaustion_state(unit: UnitState) -> void:
 	var can_act: bool = current.can_use_action_slot()
 	var can_move: bool = (
 		current.movement.points_left > 0
-		and not current.has_status(GameEnums.StatusType.ROOT)
+		or AbilitySystem.can_afford_run(current)
+	) and (
+		not current.has_status(GameEnums.StatusType.ROOT)
 		and not current.has_status(GameEnums.StatusType.STUN)
 		and _director.get_planning_move_timing(current.id) >= 0
 	)
