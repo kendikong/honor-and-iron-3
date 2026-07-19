@@ -1701,19 +1701,16 @@ func _in_attack_range_from(origin: Vector2i, enemy: UnitState, actor: UnitState)
 func _move_attack_hover_icon(
 	p_unit: UnitState,
 	cell: Vector2i,
-	origin: Vector2i = Vector2i(-9999, -9999),
+	_origin: Vector2i = Vector2i(-9999, -9999),
 ) -> String:
 	if p_unit == null or cell == p_unit.position:
 		return ""
-	var from_pos: Vector2i = origin if origin.x > -9000 else _proj_origin(p_unit)
 	if _move_hover_icon(p_unit, cell) == "" and not (dragging and cell == _drag_last_free):
 		return ""
-	for unit: UnitState in _proj().units:
-		if not unit.is_enemy() or not unit.is_alive():
-			continue
-		if _in_attack_range_from(cell, unit, p_unit) and not _in_attack_range_from(from_pos, unit, p_unit):
-			return ICON_MOVE_ATTACK
-	return ""
+	# Clicking a move tile only queues movement. Move+attack comes from enemy click or drag preview.
+	if not dragging or not _drag_preview_includes_attack(p_unit.id):
+		return ""
+	return ICON_MOVE_ATTACK
 
 
 func _drag_preview_includes_attack(actor_id: int) -> bool:
@@ -1748,10 +1745,6 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	var move_attack: String = _move_attack_hover_icon(actor, cell, actor.position)
 	if move_attack != "":
 		return move_attack
-	if _drag_preview_includes_attack(actor.id) and (
-		cell == _drag_last_free or legal_moves.has(cell)
-	):
-		return ICON_MOVE_ATTACK
 	if _drop_allows_move_tile(cell, legal_moves, actor) or (
 		cell == _drag_last_free and legal_moves.has(cell)
 	):
