@@ -1153,27 +1153,28 @@ func _pending_move_route_leg(unit_id: int, prev: CombatPlanningPreview) -> Array
 func _draw_interaction_overlay() -> void:
 	if _director == null or _director.selected_unit_id < 0:
 		return
-	if _planning_input == null or _live_preview.preview_board == null:
+	var prev: CombatPlanningPreview = _active_preview()
+	if prev.preview_board == null:
 		return
-	var actor := _live_preview.preview_board.get_unit_by_id(_director.selected_unit_id)
+	var actor := prev.preview_board.get_unit_by_id(_director.selected_unit_id)
 	if actor == null:
 		actor = _board.get_unit_by_id(_director.selected_unit_id)
 	if actor == null:
 		return
 	var p_col: Color = _player_color_for_unit(actor)
-	if _planning_input.dragging:
-		var drag_route: Array = _live_preview.preview_paths.get(actor.id, [])
-		if drag_route.size() >= 2:
-			_draw_route_line(drag_route, p_col, true, true)
+	var route: Array = prev.preview_paths.get(actor.id, [])
+	if _planning_input != null and _planning_input.dragging:
+		if route.size() >= 2 and _unit_can_still_move(actor.id):
+			_draw_route_line(route, p_col, true, true)
 	elif (
-		_planning_input.is_live_preview_active()
+		_planning_input != null
+		and _planning_input.is_live_preview_active()
 		and _interaction_move_hover_active(actor.id)
 	):
-		var leg: Array = _pending_move_route_leg(actor.id, _live_preview)
+		var leg: Array = _pending_move_route_leg(actor.id, prev)
 		if leg.size() >= 2:
 			_draw_route_line(leg, p_col, true, true)
 	if _attack_target_id >= 0:
-		var prev: CombatPlanningPreview = _live_preview
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord
 		var target_unit := prev.preview_board.get_unit_by_id(_attack_target_id)

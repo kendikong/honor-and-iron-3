@@ -1734,7 +1734,7 @@ func _move_attack_hover_icon(
 	# Clicking a move tile only queues movement. Move+attack comes from enemy click or drag preview.
 	if not dragging or not _drag_preview_includes_attack(p_unit.id):
 		return ""
-	return _move_attack_icon_for(p_unit, cell)
+	return ICON_MOVE_ATTACK
 
 
 func _drag_preview_includes_attack(actor_id: int) -> bool:
@@ -1772,7 +1772,7 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if _drop_allows_move_tile(cell, legal_moves, actor) or (
 		cell == _drag_last_free and legal_moves.has(cell)
 	):
-		return _movement_icon_for(actor, cell)
+		return ICON_MOVE
 	return ""
 
 
