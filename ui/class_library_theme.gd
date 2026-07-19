@@ -2,6 +2,7 @@ class_name ClassLibraryTheme
 extends RefCounted
 
 ## Visual design tokens for the Class Library Editor.
+## Call `set_user_scale()` for toolbar +/- ; use `font()` / `px()` for all sizes.
 
 enum Column {
 	NEUTRAL,
@@ -37,6 +38,7 @@ const ACCENT_SUCCESS := Color("6bcf8a")
 
 const BORDER_SUBTLE := Color("3a424f")
 
+## Base font tiers (multiply by user scale).
 const FONT_HERO := 34
 const FONT_TITLE := 26
 const FONT_SECTION := 20
@@ -51,8 +53,42 @@ const SPACE_MD := 12
 const SPACE_LG := 16
 const SPACE_XL := 24
 
-const SIDEBAR_WIDTH := 260
-const LABEL_COL_WIDTH := 148
+const SIDEBAR_WIDTH_BASE := 260
+const LABEL_COL_WIDTH_BASE := 132
+
+const MIN_USER_SCALE := 0.75
+const MAX_USER_SCALE := 2.0
+const USER_SCALE_STEP := 0.1
+
+static var _user_scale: float = 1.0
+
+
+static func set_user_scale(value: float) -> void:
+	_user_scale = clampf(snappedf(value, USER_SCALE_STEP), MIN_USER_SCALE, MAX_USER_SCALE)
+
+
+static func user_scale() -> float:
+	return _user_scale
+
+
+static func px(base: int) -> int:
+	return maxi(1, int(round(float(base) * _user_scale)))
+
+
+static func dim(base: float) -> float:
+	return maxf(1.0, base * _user_scale)
+
+
+static func font(base: int) -> int:
+	return maxi(8, int(round(float(base) * _user_scale)))
+
+
+static func sidebar_width() -> int:
+	return px(SIDEBAR_WIDTH_BASE)
+
+
+static func label_col_width() -> int:
+	return px(LABEL_COL_WIDTH_BASE)
 
 
 static func panel_style(
@@ -60,17 +96,18 @@ static func panel_style(
 	border: Color = BORDER_SUBTLE,
 	border_width: int = 1,
 	radius: int = 6,
-	margin: int = SPACE_MD,
+	margin: int = -1,
 ) -> StyleBoxFlat:
+	var m: int = px(margin) if margin >= 0 else px(SPACE_MD)
 	var s := StyleBoxFlat.new()
 	s.bg_color = bg
 	s.border_color = border
-	s.set_border_width_all(border_width)
-	s.set_corner_radius_all(radius)
-	s.content_margin_left = margin
-	s.content_margin_right = margin
-	s.content_margin_top = margin
-	s.content_margin_bottom = margin
+	s.set_border_width_all(maxi(1, int(round(float(border_width) * _user_scale))))
+	s.set_corner_radius_all(px(radius))
+	s.content_margin_left = m
+	s.content_margin_right = m
+	s.content_margin_top = m
+	s.content_margin_bottom = m
 	return s
 
 
@@ -113,10 +150,10 @@ static func accent_for_column(col: Column) -> Color:
 static func sidebar_button_normal() -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = Color(0, 0, 0, 0)
-	s.content_margin_left = SPACE_MD
-	s.content_margin_right = SPACE_SM
-	s.content_margin_top = SPACE_SM
-	s.content_margin_bottom = SPACE_SM
+	s.content_margin_left = px(SPACE_MD)
+	s.content_margin_right = px(SPACE_SM)
+	s.content_margin_top = px(SPACE_SM)
+	s.content_margin_bottom = px(SPACE_SM)
 	return s
 
 
@@ -124,7 +161,7 @@ static func sidebar_button_active(accent: Color) -> StyleBoxFlat:
 	var s := sidebar_button_normal()
 	s.bg_color = BG_INSET
 	s.border_color = accent
-	s.border_width_left = 3
+	s.border_width_left = maxi(2, px(3))
 	return s
 
 
@@ -132,12 +169,12 @@ static func section_header_bar(accent: Color) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = BG_INSET
 	s.border_color = accent
-	s.border_width_left = 4
-	s.set_corner_radius_all(4)
-	s.content_margin_left = SPACE_MD
-	s.content_margin_right = SPACE_SM
-	s.content_margin_top = SPACE_SM
-	s.content_margin_bottom = SPACE_SM
+	s.border_width_left = maxi(2, px(4))
+	s.set_corner_radius_all(px(4))
+	s.content_margin_left = px(SPACE_MD)
+	s.content_margin_right = px(SPACE_SM)
+	s.content_margin_top = px(SPACE_SM)
+	s.content_margin_bottom = px(SPACE_SM)
 	return s
 
 
@@ -149,10 +186,10 @@ static func category_chip_style(accent: Color) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = accent.darkened(0.65)
 	s.border_color = accent
-	s.set_border_width_all(1)
-	s.set_corner_radius_all(10)
-	s.content_margin_left = 8
-	s.content_margin_right = 8
-	s.content_margin_top = 2
-	s.content_margin_bottom = 2
+	s.set_border_width_all(maxi(1, px(1)))
+	s.set_corner_radius_all(px(10))
+	s.content_margin_left = px(8)
+	s.content_margin_right = px(8)
+	s.content_margin_top = px(2)
+	s.content_margin_bottom = px(2)
 	return s

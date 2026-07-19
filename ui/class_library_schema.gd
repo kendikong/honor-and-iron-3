@@ -111,7 +111,14 @@ static func passive_preview_bbcode(passive: PassiveData) -> String:
 		parts.append("[b]Base[/b]\n%s" % passive_bbcode(passive.description))
 	if not passive.upgraded_description.is_empty():
 		parts.append("[b]Upgraded[/b]\n%s" % passive_bbcode(passive.upgraded_description))
-	return "\n\n".join(parts)
+	return scale_bbcode("\n\n".join(parts))
+
+
+static func scale_bbcode(body: String) -> String:
+	if body.is_empty():
+		return ""
+	var body_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY)
+	return "[font_size=%d]%s[/font_size]" % [body_px, body]
 
 
 static func passive_bbcode(text: String) -> String:
@@ -198,13 +205,17 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 static func in_game_ability_bbcode(ability: AbilityData) -> String:
 	if ability == null:
 		return ""
+	CombatUiFormatters.configure_body_font(ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	var header: String = CombatUiFormatters.ability_desc(ability)
 	var body: String = CombatUiFormatters.ability_effect_bbcode(ability)
-	return "[b]%s[/b]\n%s\n[color=#888888]%s[/color]" % [
-		ability.display_name,
-		body,
-		header,
-	]
+	var title_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_TITLE)
+	var body_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY)
+	var meta_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL)
+	return (
+		"[font_size=%d][b]%s[/b][/font_size]\n"
+		+ "[font_size=%d]%s[/font_size]\n"
+		+ "[font_size=%d][color=#888888]%s[/color][/font_size]"
+	) % [title_px, ability.display_name, body_px, body, meta_px, header]
 
 
 static func duplicate_effect(src: EffectData) -> EffectData:
