@@ -1,8 +1,6 @@
 class_name ClassLibraryEditorScreen
 extends Control
 
-const SAVE_PATH: String = "user://class_library_editor_overrides.json"
-
 static var _restore_unit_id: StringName = &""
 
 enum ViewMode { UNIT, GLOSSARY, DEFINITIONS }
@@ -66,7 +64,9 @@ func _ready() -> void:
 		MenuNavigation.register(self, _on_back_pressed)
 	_load_overrides()
 	_build_layout()
+	DataLibrary.get_all_player_units()
 	_snapshot_ability_defaults()
+	ClassLibrarySchema.apply_saved_unit_overrides()
 	var units: Array[UnitData] = DataLibrary.get_all_player_units()
 	var pick: UnitData = null
 	if _restore_unit_id != &"":
@@ -111,7 +111,7 @@ func _build_layout() -> void:
 	_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_SUCCESS)
 	top_bar.add_child(_save_status)
 	var hint := Label.new()
-	hint.text = "Live edits · Save = glossary only · Reset = factory defaults"
+	hint.text = "Live edits · Save persists skills & glossary · Reset Factories = code defaults"
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hint.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
@@ -365,16 +365,11 @@ func _bump_ui_scale(delta: float) -> void:
 
 
 func _persist_ui_scale() -> void:
-	var data: Dictionary = {"glossary": _glossary_overrides, "units": {}, "ui_scale": ClassLibraryTheme.user_scale()}
-	if FileAccess.file_exists(SAVE_PATH):
-		var existing: Variant = JSON.parse_string(FileAccess.get_file_as_string(SAVE_PATH))
-		if typeof(existing) == TYPE_DICTIONARY:
-			data = existing
-			data["ui_scale"] = ClassLibraryTheme.user_scale()
-	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(data, "\t"))
-		f.close()
+	var data: Dictionary = ClassLibrarySchema.read_editor_save()
+	if data.is_empty():
+		data = {"glossary": _glossary_overrides, "units": {}, "ui_scale": ClassLibraryTheme.user_scale()}
+	data["ui_scale"] = ClassLibraryTheme.user_scale()
+	ClassLibrarySchema.write_editor_save(data)
 
 
 func _update_scale_label() -> void:
@@ -1774,17 +1769,15 @@ func _bind_multiline(parent: Control, label: String, value: String, setter: Call
 
 
 func _save_overrides() -> void:
-	var data: Dictionary = {
-		"glossary": _glossary_overrides,
-		"units": {},
-		"ui_scale": ClassLibraryTheme.user_scale(),
-	}
+	var data: Dictionary = ClassLibrarySchema.read_editor_save()
+	if data.is_empty():
+		data = {}
+	data["glossary"] = _glossary_overrides
+	data["units"] = ClassLibrarySchema.collect_player_unit_overrides()
+	data["ui_scale"] = ClassLibraryTheme.user_scale()
 	if _selected_unit != null:
 		data["last_unit"] = String(_selected_unit.id)
-	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if f:
-		f.store_string(JSON.stringify(data, "\t"))
-		f.close()
+	if ClassLibrarySchema.write_editor_save(data):
 		if _save_status != null:
 			_save_status.text = "Saved"
 			_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_SUCCESS)
@@ -1795,21 +1788,22 @@ func _save_overrides() -> void:
 
 
 func _load_overrides() -> void:
-	if not FileAccess.file_exists(SAVE_PATH):
-		return
-	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if f == null:
-		return
-	var parsed: Variant = JSON.parse_string(f.get_as_text())
-	f.close()
-	if typeof(parsed) != TYPE_DICTIONARY:
+	var parsed: Dictionary = ClassLibrarySchema.read_editor_save()
+	if parsed.is_empty():
 		return
 	_glossary_overrides = parsed.get("glossary", {})
 	ClassLibraryTheme.set_user_scale(float(parsed.get("ui_scale", 1.0)))
+	if parsed.has("last_unit"):
+		_restore_unit_id = StringName(String(parsed["last_unit"]))
 
 
 func _reload_factories() -> void:
 	if _selected_unit != null:
 		_restore_unit_id = _selected_unit.id
+	var data: Dictionary = ClassLibrarySchema.read_editor_save()
+	if data.is_empty():
+		data = {}
+	data["units"] = {}
+	ClassLibrarySchema.write_editor_save(data)
 	DataLibrary.reset_cache()
 	get_tree().reload_current_scene()

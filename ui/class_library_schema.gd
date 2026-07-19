@@ -905,3 +905,255 @@ static func _stat_type_system(k: String) -> String:
 			return "Scales with HP pool."
 		_:
 			return ""
+
+
+const EDITOR_OVERRIDES_PATH: String = "user://class_library_editor_overrides.json"
+
+
+static func read_editor_save() -> Dictionary:
+	if not FileAccess.file_exists(EDITOR_OVERRIDES_PATH):
+		return {}
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(EDITOR_OVERRIDES_PATH))
+	if typeof(parsed) == TYPE_DICTIONARY:
+		return parsed
+	return {}
+
+
+static func write_editor_save(data: Dictionary) -> bool:
+	var file := FileAccess.open(EDITOR_OVERRIDES_PATH, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_string(JSON.stringify(data, "\t"))
+	file.close()
+	return true
+
+
+static func collect_player_unit_overrides() -> Dictionary:
+	var units: Dictionary = {}
+	for unit: UnitData in DataLibrary.get_all_player_units():
+		units[String(unit.id)] = unit_to_dict(unit)
+	return units
+
+
+static func apply_unit_overrides(units_data: Dictionary) -> void:
+	if units_data.is_empty():
+		return
+	for unit_key: Variant in units_data.keys():
+		var unit: UnitData = DataLibrary.get_unit(StringName(String(unit_key)))
+		if unit == null:
+			continue
+		var payload: Variant = units_data[unit_key]
+		if typeof(payload) == TYPE_DICTIONARY:
+			apply_unit_dict(unit, payload as Dictionary)
+
+
+static func apply_saved_unit_overrides() -> void:
+	apply_unit_overrides(read_editor_save().get("units", {}))
+
+
+static func effect_to_dict(src: EffectData) -> Dictionary:
+	return {
+		"type": src.type,
+		"amount": src.amount,
+		"status_type": src.status_type,
+		"status_duration": src.status_duration,
+		"scaling_stat": src.scaling_stat,
+		"bonus_if_adjacent_at_cast": src.bonus_if_adjacent_at_cast,
+		"def_debuff_before_damage": src.def_debuff_before_damage,
+		"spawn_unit_id": String(src.spawn_unit_id),
+	}
+
+
+static func apply_effect_dict(dst: EffectData, data: Dictionary) -> void:
+	if dst == null or data.is_empty():
+		return
+	dst.type = int(data.get("type", dst.type))
+	dst.amount = int(data.get("amount", dst.amount))
+	dst.status_type = int(data.get("status_type", dst.status_type))
+	dst.status_duration = int(data.get("status_duration", dst.status_duration))
+	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
+	dst.bonus_if_adjacent_at_cast = int(data.get("bonus_if_adjacent_at_cast", dst.bonus_if_adjacent_at_cast))
+	dst.def_debuff_before_damage = int(data.get("def_debuff_before_damage", dst.def_debuff_before_damage))
+	dst.spawn_unit_id = StringName(String(data.get("spawn_unit_id", String(dst.spawn_unit_id))))
+
+
+static func effects_to_dict_array(effects: Array[EffectData]) -> Array:
+	var out: Array = []
+	for eff: EffectData in effects:
+		out.append(effect_to_dict(eff))
+	return out
+
+
+static func effects_from_dict_array(data: Array) -> Array[EffectData]:
+	var out: Array[EffectData] = []
+	for entry: Variant in data:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var eff := EffectData.new()
+		apply_effect_dict(eff, entry as Dictionary)
+		out.append(eff)
+	return out
+
+
+static func ability_to_dict(src: AbilityData) -> Dictionary:
+	return {
+		"display_name": src.display_name,
+		"kind": src.kind,
+		"action_point_cost": src.action_point_cost,
+		"movement_point_cost": src.movement_point_cost,
+		"range_tiles": src.range_tiles,
+		"targeting_mode": src.targeting_mode,
+		"targeting_flags": src.targeting_flags,
+		"can_target_self": src.can_target_self,
+		"target_shape": src.target_shape,
+		"target_shape_size": src.target_shape_size,
+		"upgraded_range_tiles": src.upgraded_range_tiles,
+		"upgraded_target_shape": src.upgraded_target_shape,
+		"upgraded_target_shape_size": src.upgraded_target_shape_size,
+		"upgrade_description": src.upgrade_description,
+		"uses_per_combat": src.uses_per_combat,
+		"presentation_key": String(src.presentation_key),
+		"presentation_anim": src.presentation_anim,
+		"scaling_stat": src.scaling_stat,
+		"is_movement_skill": src.is_movement_skill,
+		"effects": effects_to_dict_array(src.effects),
+		"upgraded_effects": effects_to_dict_array(src.upgraded_effects),
+	}
+
+
+static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
+	if dst == null or data.is_empty():
+		return
+	dst.display_name = String(data.get("display_name", dst.display_name))
+	dst.kind = int(data.get("kind", dst.kind))
+	dst.action_point_cost = int(data.get("action_point_cost", dst.action_point_cost))
+	dst.movement_point_cost = int(data.get("movement_point_cost", dst.movement_point_cost))
+	dst.range_tiles = int(data.get("range_tiles", dst.range_tiles))
+	dst.targeting_mode = int(data.get("targeting_mode", dst.targeting_mode))
+	dst.targeting_flags = int(data.get("targeting_flags", dst.targeting_flags))
+	dst.can_target_self = bool(data.get("can_target_self", dst.can_target_self))
+	dst.target_shape = int(data.get("target_shape", dst.target_shape))
+	dst.target_shape_size = int(data.get("target_shape_size", dst.target_shape_size))
+	dst.upgraded_range_tiles = int(data.get("upgraded_range_tiles", dst.upgraded_range_tiles))
+	dst.upgraded_target_shape = int(data.get("upgraded_target_shape", dst.upgraded_target_shape))
+	dst.upgraded_target_shape_size = int(data.get("upgraded_target_shape_size", dst.upgraded_target_shape_size))
+	dst.upgrade_description = String(data.get("upgrade_description", dst.upgrade_description))
+	dst.uses_per_combat = int(data.get("uses_per_combat", dst.uses_per_combat))
+	dst.presentation_key = StringName(String(data.get("presentation_key", String(dst.presentation_key))))
+	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
+	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
+	dst.is_movement_skill = bool(data.get("is_movement_skill", dst.kind == GameEnums.AbilityKind.MOVEMENT_SKILL))
+	if data.has("effects"):
+		dst.effects = effects_from_dict_array(data.get("effects", []))
+	if data.has("upgraded_effects"):
+		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
+	dst.sync_legacy_targeting()
+
+
+static func passive_to_dict(src: PassiveData) -> Dictionary:
+	return {
+		"display_name": src.display_name,
+		"description": src.description,
+		"upgraded_description": src.upgraded_description,
+	}
+
+
+static func apply_passive_dict(dst: PassiveData, data: Dictionary) -> void:
+	if dst == null or data.is_empty():
+		return
+	dst.display_name = String(data.get("display_name", dst.display_name))
+	dst.description = String(data.get("description", dst.description))
+	dst.upgraded_description = String(data.get("upgraded_description", dst.upgraded_description))
+
+
+static func weapon_to_dict(src: WeaponData) -> Dictionary:
+	if src == null:
+		return {}
+	return {
+		"display_name": src.display_name,
+		"might": src.might,
+		"bonus_strength": src.bonus_strength,
+		"bonus_magic": src.bonus_magic,
+		"bonus_defense": src.bonus_defense,
+		"bonus_max_hp": src.bonus_max_hp,
+		"bonus_move": src.bonus_move,
+	}
+
+
+static func apply_weapon_dict(dst: WeaponData, data: Dictionary) -> void:
+	if dst == null or data.is_empty():
+		return
+	dst.display_name = String(data.get("display_name", dst.display_name))
+	dst.might = int(data.get("might", dst.might))
+	dst.bonus_strength = int(data.get("bonus_strength", dst.bonus_strength))
+	dst.bonus_magic = int(data.get("bonus_magic", dst.bonus_magic))
+	dst.bonus_defense = int(data.get("bonus_defense", dst.bonus_defense))
+	dst.bonus_max_hp = int(data.get("bonus_max_hp", dst.bonus_max_hp))
+	dst.bonus_move = int(data.get("bonus_move", dst.bonus_move))
+
+
+static func unit_to_dict(src: UnitData) -> Dictionary:
+	var abilities: Dictionary = {}
+	for ability: AbilityData in src.abilities:
+		if ability == null or ability.id == &"":
+			continue
+		abilities[String(ability.id)] = ability_to_dict(ability)
+	var passives: Dictionary = {}
+	for passive: PassiveData in src.passives:
+		if passive == null or passive.id == &"":
+			continue
+		passives[String(passive.id)] = passive_to_dict(passive)
+	return {
+		"display_name": src.display_name,
+		"base_constitution": src.base_constitution,
+		"move_points": src.move_points,
+		"action_points": src.action_points,
+		"movement_type": src.movement_type,
+		"level": src.level,
+		"base_strength": src.base_strength,
+		"base_magic": src.base_magic,
+		"base_defense": src.base_defense,
+		"preferred_stat": src.preferred_stat,
+		"weapon": weapon_to_dict(src.equipped_weapon),
+		"abilities": abilities,
+		"passives": passives,
+	}
+
+
+static func apply_unit_dict(dst: UnitData, data: Dictionary) -> void:
+	if dst == null or data.is_empty():
+		return
+	dst.display_name = String(data.get("display_name", dst.display_name))
+	dst.base_constitution = int(data.get("base_constitution", dst.base_constitution))
+	dst.move_points = int(data.get("move_points", dst.move_points))
+	dst.action_points = int(data.get("action_points", dst.action_points))
+	dst.movement_type = int(data.get("movement_type", dst.movement_type))
+	dst.level = int(data.get("level", dst.level))
+	dst.base_strength = int(data.get("base_strength", dst.base_strength))
+	dst.base_magic = int(data.get("base_magic", dst.base_magic))
+	dst.base_defense = int(data.get("base_defense", dst.base_defense))
+	dst.preferred_stat = int(data.get("preferred_stat", dst.preferred_stat))
+	if data.has("weapon") and dst.equipped_weapon != null:
+		var weapon_data: Variant = data.get("weapon")
+		if typeof(weapon_data) == TYPE_DICTIONARY:
+			apply_weapon_dict(dst.equipped_weapon, weapon_data as Dictionary)
+	var abilities_data: Variant = data.get("abilities", {})
+	if typeof(abilities_data) == TYPE_DICTIONARY:
+		for ability: AbilityData in dst.abilities:
+			if ability == null:
+				continue
+			var ability_key := String(ability.id)
+			if (abilities_data as Dictionary).has(ability_key):
+				var ability_payload: Variant = (abilities_data as Dictionary)[ability_key]
+				if typeof(ability_payload) == TYPE_DICTIONARY:
+					apply_ability_dict(ability, ability_payload as Dictionary)
+	var passives_data: Variant = data.get("passives", {})
+	if typeof(passives_data) == TYPE_DICTIONARY:
+		for passive: PassiveData in dst.passives:
+			if passive == null:
+				continue
+			var passive_key := String(passive.id)
+			if (passives_data as Dictionary).has(passive_key):
+				var passive_payload: Variant = (passives_data as Dictionary)[passive_key]
+				if typeof(passive_payload) == TYPE_DICTIONARY:
+					apply_passive_dict(passive, passive_payload as Dictionary)

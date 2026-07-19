@@ -245,6 +245,8 @@ static func _ensure_init() -> void:
 	for u in _enemy_units:
 		_all_units_dict[u.id] = u
 
+	ClassLibrarySchema.apply_saved_unit_overrides()
+
 	var training_dummy := _make_unit_data(
 		&"training_dummy",
 		"Training Dummy",
