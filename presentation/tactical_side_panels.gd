@@ -29,6 +29,7 @@ var _skill_scroll: ScrollContainer
 var _log_label: RichTextLabel
 var _warn_label: RichTextLabel
 var _force_basic_check: CheckBox
+var _auto_run_check: CheckBox
 var _danger_area_check: CheckBox
 var _wait_btn: Button
 var _wait_btn_syncing: bool = false
@@ -63,6 +64,8 @@ func apply_settings(settings: GameSettings) -> void:
 		_log_label.add_theme_font_size_override("normal_font_size", CombatUiFormatters.scaled_font_size(LOG_FONT_SIZE))
 	if _force_basic_check != null:
 		_force_basic_check.add_theme_font_size_override("font_size", hint_sz)
+	if _auto_run_check != null:
+		_auto_run_check.add_theme_font_size_override("font_size", hint_sz)
 	if _danger_area_check != null:
 		_danger_area_check.add_theme_font_size_override("font_size", hint_sz)
 	if _wait_btn != null:
@@ -193,6 +196,19 @@ func _add_planning_controls(parent: VBoxContainer) -> void:
 	_force_basic_check.toggled.connect(_on_force_basic_toggled)
 	row.add_child(_force_basic_check)
 
+	var auto_row := HBoxContainer.new()
+	auto_row.add_theme_constant_override("separation", 8)
+	parent.add_child(auto_row)
+	_auto_run_check = CheckBox.new()
+	_auto_run_check.text = "Auto Run"
+	_auto_run_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_auto_run_check.tooltip_text = (
+		"Hide Run from the skill list. Extended move tiles always show when affordable; "
+		+ "Run AP is spent only when the destination requires it."
+	)
+	_auto_run_check.toggled.connect(_on_auto_run_toggled)
+	auto_row.add_child(_auto_run_check)
+
 	_danger_area_check = CheckBox.new()
 	_danger_area_check.text = "Danger Area"
 	_danger_area_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -301,11 +317,37 @@ func _on_viewport_resized() -> void:
 
 
 func _on_force_basic_toggled(pressed: bool) -> void:
+	if pressed and _auto_run_check != null and _auto_run_check.button_pressed:
+		_auto_run_check.set_pressed_no_signal(false)
+		if _planning_input != null:
+			_planning_input.auto_run = false
+		if _director != null:
+			_director.auto_run = false
 	if _planning_input != null:
 		_planning_input.force_basic_movement = pressed
+	_refresh_planning_move_overlay()
+
+
+func _on_auto_run_toggled(pressed: bool) -> void:
+	if pressed and _force_basic_check != null and _force_basic_check.button_pressed:
+		_force_basic_check.set_pressed_no_signal(false)
+		if _planning_input != null:
+			_planning_input.force_basic_movement = false
+	if _planning_input != null:
+		_planning_input.auto_run = pressed
+	if _director != null:
+		_director.auto_run = pressed
+		_director.sync_selected_ability_if_invalid()
+		_selected_ability = _director.selected_ability_index
+	_last_skill_rebuild_key = ""
+	_rebuild_ability_buttons()
+	_refresh_planning_move_overlay()
+
+
+func _refresh_planning_move_overlay() -> void:
 	if _planning_overlay != null and _director != null:
 		_planning_overlay.recompute_hover_ranges(
-			pressed,
+			_planning_input.force_basic_movement if _planning_input != null else false,
 			_director.selected_ability_index,
 			_planning_input.dragging if _planning_input != null else false,
 			_planning_input.get_drag_unit_id() if _planning_input != null else -1,
@@ -640,6 +682,8 @@ func _rebuild_ability_buttons() -> void:
 		_selected_ability = _director.selected_ability_index
 	for i: int in abilities.size():
 		var ability: AbilityData = abilities[i]
+		if _planning_input != null and _planning_input.auto_run and ability.is_universal_run():
+			continue
 		var index: int = i
 		var row_btn := Button.new()
 		var usable: bool = AbilitySystem.ability_planning_selectable(unit, ability)

@@ -109,8 +109,9 @@ func _cycle_ability(delta: int) -> void:
 		p_unit = _director.board.get_unit_by_id(_director.selected_unit_id)
 	if p_unit == null or p_unit.active_abilities.is_empty():
 		return
+	var skip_run: bool = _planning_input.auto_run if _planning_input != null else false
 	var next: int = CombatDirector.next_selectable_ability_index(
-		p_unit, _director.selected_ability_index, delta,
+		p_unit, _director.selected_ability_index, delta, skip_run,
 	)
 	if next < 0:
 		return

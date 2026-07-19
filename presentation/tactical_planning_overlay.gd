@@ -411,6 +411,11 @@ func _compute_move_budget(unit: UnitState, p_unit: UnitState, selected_ability: 
 		return 0
 	if _director.get_planning_move_timing(unit.id) < 0:
 		return 0
+	if (
+		_planning_input != null
+		and _planning_input.auto_run_movement_active(p_unit)
+	):
+		return _move_budget_for_hover(p_unit, selected_ability)
 	if p_unit.movement.points_left <= 0:
 		return 0
 	return _move_budget_for_hover(p_unit, selected_ability)
@@ -1535,6 +1540,8 @@ func _movement_blocked_by_dash(unit: UnitState, selected_ability: int) -> bool:
 func _move_budget_for_hover(unit: UnitState, selected_ability: int) -> int:
 	var p_unit := _proj_unit(unit.id)
 	var budget_unit: UnitState = p_unit if p_unit != null else unit
+	if _planning_input != null and _planning_input.extended_move_budget_active(budget_unit):
+		return AbilitySystem.preview_move_budget_with_run(budget_unit)
 	if selected_ability < 0:
 		return budget_unit.movement.points_left
 	var ability: AbilityData = _selected_ability_data(unit, selected_ability)

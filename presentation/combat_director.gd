@@ -55,6 +55,8 @@ var turn_start_board: BoardState
 var plan_revision: int = 0
 ## Units whose plan was removed this refresh — forces visual resync (e.g. undo during walk).
 var plan_affected_unit_ids: Array[int] = []
+## When true, Run is hidden from the skill list and applied automatically for out-of-range moves.
+var auto_run: bool = false
 ## Drag-drop move commits snap instantly; selection/hover commits walk/run on plan.
 var _instant_planning_move_units: Dictionary = {}
 ## Hidden exhaustion slot (Master Bible § Universal Wait) — not in plan_action.
@@ -90,23 +92,32 @@ static func resolve_selected_ability(unit: UnitState, index: int) -> AbilityData
 
 
 ## First active_abilities index the unit can commit right now (projected state).
-static func first_selectable_ability_index(unit: UnitState) -> int:
+static func first_selectable_ability_index(unit: UnitState, skip_run: bool = false) -> int:
 	if unit == null:
 		return -1
 	for i: int in range(unit.active_abilities.size()):
 		var ability: AbilityData = unit.active_abilities[i] as AbilityData
+		if skip_run and ability.is_universal_run():
+			continue
 		if AbilitySystem.ability_planning_selectable(unit, ability):
 			return i
 	return -1
 
 
 ## Scroll-wheel helper: step only among abilities that are planning-selectable.
-static func next_selectable_ability_index(unit: UnitState, current: int, delta: int) -> int:
+static func next_selectable_ability_index(
+	unit: UnitState,
+	current: int,
+	delta: int,
+	skip_run: bool = false,
+) -> int:
 	if unit == null or unit.active_abilities.is_empty():
 		return -1
 	var selectable: Array[int] = []
 	for i: int in range(unit.active_abilities.size()):
 		var ability: AbilityData = unit.active_abilities[i] as AbilityData
+		if skip_run and ability.is_universal_run():
+			continue
 		if AbilitySystem.ability_planning_selectable(unit, ability):
 			selectable.append(i)
 	if selectable.is_empty():
@@ -227,9 +238,11 @@ func sync_selected_ability_if_invalid() -> void:
 		and selected_ability_index < p_unit.active_abilities.size()
 	):
 		var current: AbilityData = p_unit.active_abilities[selected_ability_index] as AbilityData
-		if AbilitySystem.ability_planning_selectable(p_unit, current):
+		if auto_run and current.is_universal_run():
+			pass
+		elif AbilitySystem.ability_planning_selectable(p_unit, current):
 			return
-	var next: int = first_selectable_ability_index(p_unit)
+	var next: int = first_selectable_ability_index(p_unit, auto_run)
 	if next != selected_ability_index:
 		select_ability(next)
 
@@ -439,7 +452,16 @@ func rpc_plan_move(unit_id: int, coord: Vector2i, face_dir: int, waypoints: Arra
 		return
 
 	_clear_unit_from_plans(unit_id, target_timing)
-	var action := TimelineAction.make_move(unit_id, coord, face_dir, waypoints, target_timing)
+	var plan_board: BoardState = projected_state if projected_state != null else board
+	var actor: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else null
+	var uses_run: bool = false
+	if auto_run and actor != null and AbilitySystem.can_afford_run(actor):
+		uses_run = AbilitySystem.movement_requires_run(plan_board, actor, coord, waypoints)
+	var action: TimelineAction
+	if uses_run:
+		action = TimelineAction.make_run_move(unit_id, coord, face_dir, waypoints, target_timing)
+	else:
+		action = TimelineAction.make_move(unit_id, coord, face_dir, waypoints, target_timing)
 	var plan_to_use = _plan_for_timing(target_timing)
 	_try_add(action, plan_to_use)
 
@@ -914,7 +936,14 @@ func rpc_plan_move_with_self_ability(
 	if _reject_if_move_slot_filled(unit_id, target_timing):
 		return
 	_clear_unit_from_plans(unit_id, target_timing)
+	var plan_board: BoardState = projected_state if projected_state != null else board
 	var move_action := TimelineAction.make_move(unit_id, move_coord, face_dir, waypoints, target_timing)
+	if (
+		auto_run
+		and AbilitySystem.can_afford_run(p_unit)
+		and AbilitySystem.movement_requires_run(plan_board, p_unit, move_coord, waypoints)
+	):
+		move_action = TimelineAction.make_run_move(unit_id, move_coord, face_dir, waypoints, target_timing)
 	var ability_action := TimelineAction.make_ability(
 		unit_id, ability, move_coord, unit_id, GameEnums.MoveTiming.PRE_ACTION,
 	)

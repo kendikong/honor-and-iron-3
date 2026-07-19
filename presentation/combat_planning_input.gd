@@ -5,6 +5,7 @@ extends RefCounted
 
 
 var force_basic_movement: bool = false
+var auto_run: bool = false
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -1327,6 +1328,19 @@ func run_mode_selected(unit: UnitState = null) -> bool:
 	return _run_mode_selected(unit)
 
 
+func auto_run_movement_active(unit: UnitState = null) -> bool:
+	if force_basic_movement or not auto_run or _director == null:
+		return false
+	var actor := unit if unit != null else _proj_unit(_director.selected_unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(_director.selected_unit_id)
+	return actor != null and AbilitySystem.can_afford_run(actor)
+
+
+func extended_move_budget_active(unit: UnitState = null) -> bool:
+	return _run_mode_selected(unit) or auto_run_movement_active(unit)
+
+
 func _run_mode_selected(unit: UnitState = null) -> bool:
 	if _director == null or _director.selected_unit_id < 0:
 		return false
@@ -1344,7 +1358,7 @@ func _run_mode_selected(unit: UnitState = null) -> bool:
 func _move_budget(unit: UnitState) -> int:
 	if unit == null:
 		return 0
-	if _run_mode_selected(unit):
+	if extended_move_budget_active(unit):
 		return AbilitySystem.planning_move_budget(unit, true)
 	return unit.movement.points_left
 
@@ -1381,7 +1395,7 @@ func _in_ability_range(actor: UnitState, target: UnitState) -> bool:
 func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	if unit == null or coord == unit.position:
 		return false
-	if unit.movement.points_left <= 0 and not _run_mode_selected(unit):
+	if p_unit.movement.points_left <= 0 and not extended_move_budget_active(unit):
 		return false
 	var board := _proj()
 	if not MovementSystem.can_end_movement_on(board, coord, unit):
@@ -1556,7 +1570,8 @@ func _append_move_to_commit_slots(
 		return
 	var move: TimelineAction = TimelineAction.make_move(unit_id, cell, -1, waypoints, timing)
 	if AbilitySystem.movement_requires_run(_proj(), actor, cell, waypoints):
-		move.uses_run = true
+		if _run_mode_selected(actor) or auto_run_movement_active(actor):
+			move = TimelineAction.make_run_move(unit_id, cell, -1, waypoints, timing)
 	var col: String = "post" if timing == GameEnums.MoveTiming.POST_ACTION else "pre"
 	slots[col].append(move)
 
