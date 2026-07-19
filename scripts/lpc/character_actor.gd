@@ -8,6 +8,7 @@ const _ContactShadow = preload("res://scripts/lpc/character_contact_shadow.gd")
 const _SelectionGlow = preload("res://scripts/lpc/character_selection_glow.gd")
 const HURT_ANIM: StringName = &"hurt_down"
 const HURT_SPEED_SCALE: float = 1.6
+const RUN_ANIM_SPEED_SCALE: float = 1.65
 const DEATH_GROUND_LINGER_SEC: float = 1.75
 const DEATH_FADE_SEC: float = 0.4
 const NUDGE_PULLBACK_PX: float = 7.0
@@ -741,6 +742,10 @@ func _apply_motion_state(spr: AnimatedSprite2D) -> void:
 		spr.visible = true
 
 	spr.animation = anim
+	if _running and _walking:
+		spr.speed_scale = RUN_ANIM_SPEED_SCALE
+	else:
+		spr.speed_scale = 1.0
 	if _walking or anim.begins_with("idle_"):
 		spr.play()
 	else:

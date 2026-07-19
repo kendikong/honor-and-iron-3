@@ -967,11 +967,12 @@ func _play_cell_path_tween(
 	actor.set_running(use_run)
 	actor.set_walking(true)
 	_apply_path_step_facing(unit_id, _facing_toward(start_cell, cells[0]))
+	var tile_time: float = CombatDirector.RUN_STEP_TIME if use_run else step_time
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
 	for step_index: int in range(cells.size()):
 		var cell: Vector2i = cells[step_index]
-		tween.tween_property(actor, "position", _map_view.grid_to_foot_local(cell), step_time)
+		tween.tween_property(actor, "position", _map_view.grid_to_foot_local(cell), tile_time)
 		if per_step is Callable and (per_step as Callable).is_valid():
 			tween.tween_callback((per_step as Callable).bind(step_index))
 		if step_index + 1 < cells.size():
@@ -1061,6 +1062,8 @@ func _animate_move(event: SimEvent) -> void:
 		unit.has_status(GameEnums.StatusType.RUNNING)
 		or _unit_uses_run_anim(unit_id)
 	)
+	if use_run and not event.data.get("is_dash", false):
+		step_time = CombatDirector.RUN_STEP_TIME
 	var step_cb := func(step_index: int) -> void:
 		var remaining: int = maxi(
 			movement_points_left,
@@ -1534,8 +1537,26 @@ func _status_badge(status_type: int) -> Dictionary:
 			return {"abbr": "??", "bg": Color(0.32, 0.32, 0.38), "fg": Color(0.95, 0.95, 0.98)}
 
 
+func _unit_foot_map_local(unit_id: int, fallback_cell: Vector2i) -> Vector2:
+	var actor: CharacterActor = _actors.get(unit_id)
+	if actor != null:
+		return actor.position
+	if _map_view != null:
+		return _map_view.grid_to_foot_local(fallback_cell)
+	return Vector2.ZERO
+
+
+func _unit_visual_cell(unit_id: int, fallback_cell: Vector2i) -> Vector2i:
+	if _map_view == null:
+		return fallback_cell
+	var actor: CharacterActor = _actors.get(unit_id)
+	if actor != null:
+		return _map_view.foot_local_to_grid(actor.position)
+	return fallback_cell
+
+
 func _draw_hp_bar(unit: UnitState) -> void:
-	var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
+	var foot: Vector2 = _unit_foot_map_local(unit.id, unit.position)
 	var origin := foot + Vector2(-BAR_W * 0.5, _hp_bar_vertical_offset(unit))
 	var current_hp: int = unit.health.current_hp
 	var predicted: int = int(_predicted_hp.get(unit.id, current_hp))
@@ -1545,8 +1566,9 @@ func _draw_hp_bar(unit: UnitState) -> void:
 	var armor: int = maxi(0, unit.armor)
 	var predicted_armor: int = int(_predicted_armor.get(unit.id, armor))
 	var fortitude: int = 0
-	if _board != null and _board.is_in_bounds(unit.position):
-		var tile := _board.get_tile(unit.position)
+	var visual_cell: Vector2i = _unit_visual_cell(unit.id, unit.position)
+	if _board != null and _board.is_in_bounds(visual_cell):
+		var tile := _board.get_tile(visual_cell)
 		if tile != null and tile.definition != null:
 			fortitude = maxi(0, tile.definition.fortitude)
 	var flash: float = float(_damage_flash.get(unit.id, 0.0))
@@ -1619,7 +1641,7 @@ func get_units_for_status_display() -> Array[UnitState]:
 
 
 func status_badge_anchor_map_local(unit: UnitState) -> Vector2:
-	var foot: Vector2 = _map_view.grid_to_foot_local(unit.position)
+	var foot: Vector2 = _unit_foot_map_local(unit.id, unit.position)
 	return foot + Vector2(-BAR_W * 0.5, _hp_bar_vertical_offset(unit) + BAR_H + 1.0)
 
 
@@ -1630,8 +1652,9 @@ func status_badge_style(status_type: int) -> Dictionary:
 func _hp_bar_vertical_offset(unit: UnitState) -> float:
 	if _board == null:
 		return BAR_OFFSET_Y
-	var below: Vector2i = unit.position + Vector2i(0, 1)
-	var above: Vector2i = unit.position + Vector2i(0, -1)
+	var visual_cell: Vector2i = _unit_visual_cell(unit.id, unit.position)
+	var below: Vector2i = visual_cell + Vector2i(0, 1)
+	var above: Vector2i = visual_cell + Vector2i(0, -1)
 	if _living_unit_at_cell(below, unit.id) != null and _living_unit_at_cell(above, unit.id) == null:
 		return BAR_OFFSET_ABOVE_Y
 	return BAR_OFFSET_Y
@@ -1692,6 +1715,8 @@ func _process(delta: float) -> void:
 		_tick_hit_bursts(delta)
 		need_redraw = true
 	if _any_predicted_change():
+		need_redraw = true
+	if not _move_tweens.is_empty():
 		need_redraw = true
 	if need_redraw:
 		queue_redraw()

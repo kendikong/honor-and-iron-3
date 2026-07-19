@@ -373,6 +373,8 @@ func _add_rich_panel(parent: VBoxContainer, title: String, min_h: int = 120) -> 
 
 
 var _last_skill_rebuild_key: String = ""
+var _skill_ui_lock: bool = false
+var _skill_scroll_generation: int = 0
 
 
 func _on_board_changed(board: BoardState) -> void:
@@ -427,6 +429,8 @@ func _on_ability_selected(index: int) -> void:
 	_selected_ability = index
 	if _director != null and _director.selected_unit_id >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
+	if _skill_ui_lock:
+		return
 	_refresh_ability_buttons_if_dirty()
 	_scroll_selected_skill_into_view()
 
@@ -440,7 +444,11 @@ func _scroll_selected_skill_into_view() -> void:
 
 
 func _ensure_skill_visible_by_index(index: int) -> void:
+	_skill_scroll_generation += 1
+	var generation: int = _skill_scroll_generation
 	await get_tree().process_frame
+	if generation != _skill_scroll_generation:
+		return
 	if _skill_scroll == null or _skill_list == null:
 		return
 	if index != _selected_ability:
@@ -451,15 +459,12 @@ func _ensure_skill_visible_by_index(index: int) -> void:
 	var btn: Control = _skill_list.get_child(index) as Control
 	if btn == null or not is_instance_valid(btn):
 		return
+	var bar: VScrollBar = _skill_scroll.get_v_scroll_bar()
 	if index == 0:
 		_skill_scroll.scroll_vertical = 0
 		return
-	if index == count - 1:
-		_skill_scroll.ensure_control_visible(btn)
-		await get_tree().process_frame
-		var bar: VScrollBar = _skill_scroll.get_v_scroll_bar()
-		if bar != null:
-			_skill_scroll.scroll_vertical = int(bar.max_value)
+	if index == count - 1 and bar != null:
+		_skill_scroll.scroll_vertical = int(bar.max_value)
 		return
 	_skill_scroll.ensure_control_visible(btn)
 
@@ -569,6 +574,8 @@ func _refresh_intent_label() -> void:
 
 
 func _refresh_ability_buttons_if_dirty() -> void:
+	if _skill_ui_lock:
+		return
 	if _selected_id < 0:
 		return
 	var unit := _proj_unit(_selected_id)
@@ -604,17 +611,20 @@ func _skill_rebuild_cache_key(unit: UnitState) -> String:
 func _rebuild_ability_buttons() -> void:
 	if _skill_list == null:
 		return
+	_skill_ui_lock = true
 	if _settings != null:
 		CombatUiFormatters.configure_body_font(_settings.scaled_body_font())
 	for c: Node in _skill_list.get_children():
 		_skill_list.remove_child(c)
 		c.queue_free()
 	if _board == null or _selected_id < 0:
+		_skill_ui_lock = false
 		return
 	var unit := _proj_unit(_selected_id)
 	if unit == null:
 		unit = _board.get_unit_by_id(_selected_id)
 	if unit == null or unit.is_enemy():
+		_skill_ui_lock = false
 		return
 	var abilities: Array = unit.active_abilities
 	var selected_usable: bool = true
@@ -670,6 +680,7 @@ func _rebuild_ability_buttons() -> void:
 		row_btn.custom_minimum_size.y = base_h + float(text_lines * effect_px)
 		_skill_list.add_child(row_btn)
 
+	_skill_ui_lock = false
 	_refresh_wait_button()
 	_scroll_selected_skill_into_view()
 

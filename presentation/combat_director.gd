@@ -27,6 +27,7 @@ const WAIT_ABILITY_INDEX: int = -2
 
 ## How long each kind of event lingers during animated playback, in seconds.
 const MOVE_STEP_TIME: float = 0.24   ## seconds per tile of movement
+const RUN_STEP_TIME: float = 0.14    ## seconds per tile when running (faster than walk)
 const DASH_STEP_TIME: float = 0.08   ## seconds per tile during dash abilities
 const ATTACK_ANIM_TIME: float = 0.35 ## how long attack animations take
 const PUSH_ANIM_FALLBACK: float = 1.0 ## Safety timeout if push signal never arrives
