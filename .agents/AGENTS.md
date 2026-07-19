@@ -45,4 +45,6 @@ board states to solve spatial puzzles. **Positioning over damage. No RNG in comb
 
 ## Implementation Plan Mandate (Master Bible Strict Adherence)
 Whenever tasked with writing or executing an Implementation Plan based on a "Master Bible" or source design document (e.g., `class_abilities.txt`), you are strictly forbidden from summarizing, skipping, or paraphrasing mechanics. You must read the relevant section in full and reflect its contents with 100% exhaustive accuracy and detail. Every single passive, active skill, keyword, and upgrade must be explicitly listed and accounted for in your plan before you begin execution.
+
+**Global rules first:** Skills must follow shared economy, timeline, targeting, and effect systems unless the Bible explicitly requires otherwise. If a new global rule or per-skill exception is needed, warn the project owner and get acceptance before implementing (see `class_abilities.txt` § Global Rules First).
 - **Never Overwrite the Plan**: When updating the implementation plan, always append new phases or fixes to the existing structure. Never overwrite, truncate, or delete future phases from the document unless that entire phase has been 100% completed.

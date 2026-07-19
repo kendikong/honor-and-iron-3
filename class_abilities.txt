@@ -18,6 +18,8 @@ Universal Utility & Balance: Abilities must remain useful and mathematically via
 
 Thematic Consistency: Passives and active skills MUST perfectly fit the narrative fantasy and physical reality of the build/class. Gritty, physical classes should never cast magic or cleanse debuffs. Heavy, armored classes should not dodge or leap. Every mechanic must make logical, in-world sense.
 
+Global Rules First (Skill Implementation Mandate): Every skill MUST follow the game's global rules and shared systems as much as possible — economy columns, targeting modes, effect types, timeline behavior, preview/simulation path, and data-driven authoring. Do NOT invent per-skill engine branches, hidden timeline slots, or one-off validation unless the Master Bible explicitly requires it. If a skill truly cannot be expressed without a NEW global rule or system exception, STOP and warn the project owner BEFORE implementing: state what breaks, what new rule you propose, and ask whether it is acceptable. Do not ship silent exceptions.
+
 Scaling, Constitution & HP Design Philosophy:
 
 Constitution Stat (CON) & HP Calculation: Base HP is strictly derived from the Constitution (CON) stat, where 1 CON = 5 HP. Direct static HP values are deprecated. This tightly couples survivability to a core stat and enforces predictable scaling logic.

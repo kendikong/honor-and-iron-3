@@ -13,6 +13,7 @@ description: GDScript standards, naming conventions, scene/node references, comp
   3. Can this mechanic be previewed by the simulator? (If not, redesign it).
   4. Can multiplayer remain deterministic?
   5. Can another ability/unit reuse this logic? (If yes, generalize it).
+  6. **Global rules first (skills)**: Does this skill fit existing economy, targeting, effects, and timeline rules? If not, **warn the project owner and get acceptance** before adding a new global rule or per-skill exception (see `class_abilities.txt` § Global Rules First).
 
 ## GDScript Standards
 - **Static Typing**: Always use static typing and explicit return types (e.g. `func deal_damage(target: Unit, amount: int) -> void:`). Avoid dynamic typing.

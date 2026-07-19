@@ -40,3 +40,8 @@ The timeline is the central hub of actions.
 ## Progression & Build Philosophy
 - **Progression**: Encounters reward new abilities, passives, relics, or class upgrades.
 - **Build Archetypes**: Support distinct build strategies like displacement, reactions, terrain manipulation, support, summons, and timeline manipulation.
+
+## Skill Implementation (Global Rules First)
+- **Default**: Every skill uses shared global rules — `AbilityKind`, AP/MP costs, timeline columns, `EffectData` types, targeting modes, `AbilitySystem` / `Simulator` paths, and preview parity. No per-skill `if ability.id == …` branches unless the Master Bible explicitly requires it.
+- **New rule required?** If a skill cannot be implemented without a new global rule, timeline exception, or one-off code path, **stop and warn the project owner first**: describe what conflicts, what rule you propose, and ask if it is acceptable. Do not implement silent exceptions.
+- **Authoritative source**: `class_abilities.txt` § Skill & Passive Design Criteria — "Global Rules First (Skill Implementation Mandate)".

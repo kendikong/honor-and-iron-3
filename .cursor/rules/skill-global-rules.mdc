@@ -1,0 +1,30 @@
+---
+description: Skills must use global rules; warn before any new rule or exception
+alwaysApply: true
+---
+
+# Skill Global Rules Mandate
+
+When implementing or changing **any skill, passive, universal action, or ability economy behavior**:
+
+## Default
+
+- Use **shared global systems** — `AbilityKind`, AP/MP, timeline columns, `EffectData`, targeting modes, `AbilitySystem`, `Simulator`, preview parity.
+- Prefer **data** (`.tres` / factory definitions) over per-skill code branches.
+- Match **Master Bible** rules in `class_abilities.txt` (economy, keywords, timeline, Wait/Run as turn modifiers where specified).
+
+## Forbidden without approval
+
+- New per-skill `if ability.id == …` branches when data/effects can express the behavior.
+- Hidden timeline slots, economy bypasses, or validation one-offs that only one skill uses.
+- Any **new global rule** invented to accommodate a single skill.
+
+## Required when a new rule is unavoidable
+
+**Stop and warn the project owner before implementing:**
+
+1. What global rule the skill would break or bypass.
+2. The **proposed new rule** or exception (exact behavior).
+3. Ask explicitly: **"Is this acceptable?"**
+
+Do not ship silent exceptions. Authoritative text: `class_abilities.txt` § **Global Rules First (Skill Implementation Mandate)**.
