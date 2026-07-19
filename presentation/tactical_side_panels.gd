@@ -648,7 +648,6 @@ func _rebuild_ability_buttons() -> void:
 			if _director != null and usable:
 				_director.select_ability(index)
 		)
-		row_btn.tooltip_text = CombatUiFormatters.ability_tooltip_text(ability, unit)
 		var btn_vbox := VBoxContainer.new()
 		btn_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn_vbox.add_theme_constant_override("separation", 2)
@@ -667,7 +666,7 @@ func _rebuild_ability_buttons() -> void:
 		effect_lbl.bbcode_enabled = true
 		effect_lbl.fit_content = true
 		effect_lbl.scroll_active = false
-		effect_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		effect_lbl.mouse_filter = Control.MOUSE_FILTER_PASS
 		effect_lbl.custom_minimum_size.x = float(maxi(120, _panel_width - 48))
 		var effect_px: int = CombatUiFormatters.scaled_font_size(9)
 		effect_lbl.add_theme_font_size_override("normal_font_size", effect_px)
