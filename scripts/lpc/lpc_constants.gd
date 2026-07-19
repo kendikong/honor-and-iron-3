@@ -54,6 +54,9 @@ const SPELLCAST_FRAME_COUNT: int = 7
 const SPELLCAST_RELEASE_FRAME: int = 3
 const SPELLCAST_RELEASE_SEC: float = float(SPELLCAST_RELEASE_FRAME) / SPELLCAST_FPS
 const SPELLCAST_ANIM_SEC: float = float(SPELLCAST_FRAME_COUNT) / SPELLCAST_FPS
+## Post-release hold on last spellcast frame (see CharacterActor.ACTION_HOLD_COMBAT_SEC).
+const SPELLCAST_HOLD_SEC: float = 0.1
+## Melee reverse-tail uses ACTION_RECOVER_FRAMES @ ACTION_RECOVER_SPEED_SCALE in CharacterActor.
 
 static func spellcast_release_delay_sec(_cast_anim: StringName = &"") -> float:
 	return SPELLCAST_RELEASE_SEC
