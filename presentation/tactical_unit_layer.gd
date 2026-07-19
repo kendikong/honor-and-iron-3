@@ -17,7 +17,6 @@ const _COLOR_HP_LOSS := Color(0.95, 0.25, 0.22)
 const _COLOR_ARMOR := Color(0.9, 0.8, 0.2)
 const _COLOR_SELECT_PLAYER := Color(0.28, 0.58, 1.0, 1.0)
 const _COLOR_SELECT_ENEMY := Color(1.0, 0.20, 0.16, 1.0)
-const _COLOR_DRAG_TARGET := Color(1.0, 0.38, 0.22, 0.92)
 const DRAG_SNAPBACK_SEC: float = 0.24
 const _COLOR_HIT_BURST := Color(1.0, 0.2, 0.15, 0.9)
 
@@ -202,7 +201,7 @@ func _refresh_selection_glow() -> void:
 	var new_glow_id: int = _selected_id if planning else -1
 	if new_glow_id == _glow_selected_id:
 		return
-	if _glow_selected_id >= 0:
+	if _glow_selected_id >= 0 and _glow_selected_id != _drag_target_id:
 		_set_unit_selection_glow(_glow_selected_id, false)
 	_glow_selected_id = -1
 	if new_glow_id < 0:
@@ -223,36 +222,31 @@ func _set_unit_selection_glow(unit_id: int, active: bool, color: Color = _COLOR_
 func set_drag_attack_target(unit_id: int) -> void:
 	if _drag_target_id == unit_id:
 		return
-	_reset_drag_target_modulate()
+	_clear_drag_attack_target_glow()
 	_drag_target_id = unit_id
-	_apply_drag_target_modulate()
-	queue_redraw()
+	if _drag_target_id >= 0:
+		_set_unit_selection_glow(_drag_target_id, true, _COLOR_SELECT_ENEMY)
 
 
 func clear_drag_attack_target() -> void:
 	if _drag_target_id < 0:
 		return
-	_reset_drag_target_modulate()
+	_clear_drag_attack_target_glow()
 	_drag_target_id = -1
-	queue_redraw()
 
 
-func _reset_drag_target_modulate() -> void:
+func _clear_drag_attack_target_glow() -> void:
 	if _drag_target_id < 0:
 		return
-	var unit := _board.get_unit_by_id(_drag_target_id) if _board != null else null
-	if unit != null:
-		_apply_exhaustion_state(unit)
-
-
-func _apply_drag_target_modulate() -> void:
-	if _drag_target_id < 0:
-		return
-	var actor: CharacterActor = _actors.get(_drag_target_id)
-	if actor == null:
-		return
-	var pulse: float = 0.65 + 0.35 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 85.0))
-	actor.modulate = Color(1.0 + 1.1 * pulse, 1.0 + 0.65 * pulse, 0.35 + 0.45 * pulse, 1.0)
+	if _drag_target_id == _glow_selected_id:
+		var unit := _board.get_unit_by_id(_drag_target_id) if _board != null else null
+		var color: Color = _COLOR_SELECT_ENEMY if unit != null and unit.is_enemy() else _COLOR_SELECT_PLAYER
+		_set_unit_selection_glow(_drag_target_id, true, color)
+	else:
+		_set_unit_selection_glow(_drag_target_id, false)
+		var unit := _board.get_unit_by_id(_drag_target_id) if _board != null else null
+		if unit != null:
+			_apply_exhaustion_state(unit)
 
 
 func apply_sim_event(event: SimEvent) -> void:
@@ -1166,8 +1160,6 @@ func _draw() -> void:
 		if _drag_preview_active and unit.id == _drag_preview_id:
 			continue
 		_draw_hp_bar(unit)
-	if _drag_target_id >= 0:
-		_draw_drag_target_glow(_drag_target_id)
 	_draw_hit_bursts()
 	if _drag_preview_active and _drag_preview_id >= 0 and _drag_preview_failed:
 		var drag_unit := _board.get_unit_by_id(_drag_preview_id) if _board != null else null
@@ -1175,30 +1167,6 @@ func _draw() -> void:
 			var actor: CharacterActor = _actors.get(_drag_preview_id)
 			if actor != null:
 				_draw_centered_icon(actor.position + Vector2(0.0, -18.0), "🚫", Color.WHITE, 14)
-
-
-func _draw_drag_target_glow(unit_id: int) -> void:
-	if _map_view == null or _board == null:
-		return
-	var unit := _board.get_unit_by_id(unit_id)
-	if unit == null:
-		return
-	var actor: CharacterActor = _actors.get(unit_id)
-	var center: Vector2 = actor.position if actor != null else _map_view.grid_to_foot_local(unit.position)
-	var pulse: float = 0.65 + 0.35 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 85.0))
-	var tile_px: float = float(TacticalConstants.TILE_PX)
-	var ring_w: float = tile_px * 0.95
-	var ring_h: float = tile_px * 1.02
-	var foot_y: float = 2.0
-	var rect := Rect2(
-		center - Vector2(ring_w * 0.5, ring_h * 0.5 + foot_y),
-		Vector2(ring_w, ring_h),
-	)
-	var glow := Color(_COLOR_DRAG_TARGET.r, _COLOR_DRAG_TARGET.g, _COLOR_DRAG_TARGET.b, pulse * 0.62)
-	draw_rect(rect.grow(8.0), glow, true)
-	draw_rect(rect.grow(5.0), Color(_COLOR_DRAG_TARGET.r, _COLOR_DRAG_TARGET.g, _COLOR_DRAG_TARGET.b, pulse * 0.38), true)
-	draw_rect(rect.grow(2.5), Color(_COLOR_DRAG_TARGET.r, _COLOR_DRAG_TARGET.g, _COLOR_DRAG_TARGET.b, pulse * 0.9), false, 4.0)
-	draw_rect(rect, Color.WHITE, false, 1.5)
 
 
 func _draw_hit_bursts() -> void:
@@ -1429,9 +1397,6 @@ func _process(delta: float) -> void:
 		need_redraw = true
 	if not _hit_bursts.is_empty():
 		_tick_hit_bursts(delta)
-		need_redraw = true
-	if _drag_target_id >= 0:
-		_apply_drag_target_modulate()
 		need_redraw = true
 	if _any_predicted_change():
 		need_redraw = true
