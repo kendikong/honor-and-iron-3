@@ -112,6 +112,7 @@ func apply_all(grid: PlayerGrid, water_ratio: float, ecology_hints: Dictionary =
 	_water_burst.sync_grid(grid)
 	_apply_ecology(grid, ecology_hints)
 	_sync_ambient_director(grid)
+	_sync_cloud_mask_bake()
 
 
 func _apply_ecology(grid: PlayerGrid, ecology_hints: Dictionary) -> void:
@@ -163,6 +164,7 @@ func process_frame(delta: float) -> void:
 	process_water_burst(delta)
 	if settings.cloud_shadows:
 		CloudTuning.sync_runtime(settings)
+		_sync_cloud_mask_bake()
 	if settings.cloud_shadows and _atmosphere != null:
 		_atmosphere.refresh_cloud_drift()
 	var want_env_receive: bool = (
@@ -395,3 +397,12 @@ func _apply_tile_cloud_receive(grid: PlayerGrid) -> void:
 
 func _apply_tile_cloud_drift() -> void:
 	_tile_cloud.sync_drift(settings)
+
+
+func _sync_cloud_mask_bake() -> void:
+	if not settings.cloud_shadows or _map_root == null or _last_grid == null:
+		return
+	var baker: CloudShadowMaskBaker = CloudShadowMaskBaker.ensure(_map_root)
+	if baker == null:
+		return
+	baker.request_sync(MapPixelSpace.size_px_from_grid(_last_grid), settings)

@@ -1,16 +1,15 @@
 class_name ShadowDebugOverlay
 extends CanvasLayer
 
-## Dev overlay — per-tile CPU cloud mask (same path as ground GPU + sprites). Toggle **J**.
+## Dev overlay — GPU per-pixel cloud shade bake (same shader as ground). Toggle **J**.
 
 const TILE_PX: int = 16
 const REFRESH_INTERVAL_SEC: float = 0.4
 
-const COLOR_CLOUD: Color = Color(1.0, 0.12, 0.12, 0.58)
 const COLOR_ACTOR_FOOT: Color = Color(1.0, 0.92, 0.12, 0.95)
 const COLOR_ACTOR_MISMATCH: Color = Color(1.0, 0.45, 0.0, 0.95)
 
-const CLOUD_SHADE_GATE: float = 0.01
+const CLOUD_SHADE_GATE: float = CloudShadowMaskBaker.SHADE_GATE
 
 var _grid: PlayerGrid
 var _map_root: Node2D
@@ -20,9 +19,8 @@ var _actors: Array[CharacterActor] = []
 var _container: Control
 var _legend: PanelContainer
 var _legend_body: Label
-var _tile_overlay: TextureRect
-var _tile_img: Image
-var _tile_tex: ImageTexture
+var _tile_overlay: ColorRect
+var _debug_material: ShaderMaterial
 var _foot_layer: Control
 var _foot_markers: Array[ColorRect] = []
 var _refresh_accum: float = 0.0
@@ -89,61 +87,54 @@ func process_refresh(delta: float) -> void:
 func _rebuild() -> void:
 	if _grid == null or _map_root == null:
 		return
-	_ensure_tile_overlay()
-	var zoom: float = _map_root.scale.x
+	var baker: CloudShadowMaskBaker = CloudShadowMaskBaker.ensure(_map_root)
+	if baker == null:
+		return
 	var size_px: Vector2 = MapPixelSpace.size_px_from_grid(_grid)
+	if _settings != null and _settings.cloud_shadows:
+		baker.request_sync(size_px, _settings)
+		_connect_baker(baker)
+	_ensure_tile_overlay(baker)
+	var zoom: float = _map_root.scale.x
 	var map_origin: Vector2 = Vector2.ZERO
 	if _ground != null:
 		map_origin = MapPixelSpace.cell_top_left_px(_ground, Vector2i.ZERO)
 	_tile_overlay.position = _map_root.to_global(map_origin)
 	_tile_overlay.size = size_px * zoom
 	_last_zoom = zoom
-
-	var cloud_count: int = 0
-	var want_cloud: bool = _settings != null and _settings.cloud_shadows
-	var drift: Vector2 = WeatherBus.cloud_drift_offset
-
-	for y: int in range(_grid.height):
-		for x: int in range(_grid.width):
-			var cell: Vector2i = Vector2i(x, y)
-			var map_px: Vector2 = ShadowPlacer.foot_map_px_from_cell(cell)
-			var color: Color = Color(0.0, 0.0, 0.0, 0.0)
-			if want_cloud:
-				var shade: float = ShadowPlacer.cloud_shade_at(
-					map_px, drift, _settings,
-				)
-				if shade >= CLOUD_SHADE_GATE:
-					cloud_count += 1
-					color = COLOR_CLOUD
-			_tile_img.set_pixel(x, y, color)
-
-	_tile_tex.update(_tile_img)
+	if baker.is_ready():
+		var bake_tex: Texture2D = baker.get_bake_texture()
+		if bake_tex != null:
+			_debug_material.set_shader_parameter("shade_tex", bake_tex)
+	_tile_overlay.visible = baker.is_ready()
 	_paint_actor_feet(zoom)
-	_update_legend(cloud_count)
+	var cloud_count: int = CloudShadowMaskBaker.count_shaded_pixels()
+	_update_legend(cloud_count, baker.is_ready())
 	_last_stamp = ShadowPlacer.cloud_drift_stamp(_settings)
 
 
-func _ensure_tile_overlay() -> void:
-	var need_new: bool = (
-		_tile_overlay == null
-		or not is_instance_valid(_tile_overlay)
-		or _tile_img == null
-		or _tile_img.get_width() != _grid.width
-		or _tile_img.get_height() != _grid.height
-	)
-	if need_new:
-		_tile_img = Image.create(_grid.width, _grid.height, false, Image.FORMAT_RGBA8)
-		_tile_tex = ImageTexture.create_from_image(_tile_img)
-		if _tile_overlay != null and is_instance_valid(_tile_overlay):
-			_tile_overlay.queue_free()
-		_tile_overlay = TextureRect.new()
-		_tile_overlay.texture = _tile_tex
-		_tile_overlay.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		_tile_overlay.stretch_mode = TextureRect.STRETCH_SCALE
-		_tile_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_tile_overlay.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		_container.add_child(_tile_overlay)
-		_container.move_child(_tile_overlay, 0)
+func _connect_baker(baker: CloudShadowMaskBaker) -> void:
+	if baker.bake_completed.is_connected(_on_cloud_bake_completed):
+		return
+	baker.bake_completed.connect(_on_cloud_bake_completed)
+
+
+func _on_cloud_bake_completed() -> void:
+	if visible:
+		_last_stamp = -1
+		_rebuild()
+
+
+func _ensure_tile_overlay(baker: CloudShadowMaskBaker) -> void:
+	if _tile_overlay != null and is_instance_valid(_tile_overlay):
+		return
+	_tile_overlay = ColorRect.new()
+	_tile_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_debug_material = baker.make_debug_material()
+	_debug_material.set_shader_parameter("shade_gate", CLOUD_SHADE_GATE)
+	_tile_overlay.material = _debug_material
+	_container.add_child(_tile_overlay)
+	_container.move_child(_tile_overlay, 0)
 
 
 func _paint_actor_feet(zoom: float) -> void:
@@ -205,10 +196,11 @@ func _build_legend_shell() -> void:
 	_container.add_child(_legend)
 
 
-func _update_legend(cloud_count: int) -> void:
+func _update_legend(cloud_count: int, bake_ready: bool) -> void:
+	var ready_line: String = "GPU bake ready" if bake_ready else "GPU bake pending…"
 	var lines: PackedStringArray = PackedStringArray([
-		"Cloud shadow debug (J) — CPU foot pixel per tile",
-		"Red = cloud shade >= %.2f (%d tiles) · should match ground GPU" % [CLOUD_SHADE_GATE, cloud_count],
+		"Cloud shadow debug (J) — GPU per-pixel bake",
+		"Red = shade >= %.2f (%d px) · %s" % [CLOUD_SHADE_GATE, cloud_count, ready_line],
 		"Updates ~%.1fs · yellow foot = actor · orange = sprite/tile mismatch" % REFRESH_INTERVAL_SEC,
 	])
 	_legend_body.text = "\n".join(lines)
@@ -218,8 +210,7 @@ func _teardown() -> void:
 	if _tile_overlay != null and is_instance_valid(_tile_overlay):
 		_tile_overlay.queue_free()
 	_tile_overlay = null
-	_tile_img = null
-	_tile_tex = null
+	_debug_material = null
 	for marker: ColorRect in _foot_markers:
 		if is_instance_valid(marker):
 			marker.queue_free()

@@ -1,7 +1,7 @@
 class_name CloudShadowField
 extends RefCounted
 
-## CPU mirror of cloud_shadow_field.gdshaderinc — body receive samples the same mask.
+## Fallback CPU mirror when GPU bake is not ready — prefer CloudShadowMaskBaker.
 
 const TILE_PX: float = 16.0
 const ALPHA_CUTOFF: float = 0.04

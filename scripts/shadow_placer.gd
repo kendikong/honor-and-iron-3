@@ -795,6 +795,11 @@ static func _push_ground_shadow_drift_only(
 
 
 static func tile_cloud_visible_at_cell(cell: Vector2i, settings: EffectsSettings) -> bool:
+	if settings == null or not settings.cloud_shadows:
+		return false
+	var baker: CloudShadowMaskBaker = CloudShadowMaskBaker.active()
+	if baker != null and baker.is_ready():
+		return CloudShadowMaskBaker.tile_cloud_visible_at_cell(cell)
 	return cloud_visible_at(
 		foot_map_px_from_cell(cell),
 		WeatherBus.cloud_drift_offset,
@@ -2212,10 +2217,13 @@ static func cell_from_foot_px(foot_px: Vector2) -> Vector2i:
 	)
 
 
-static func cloud_shade_at(map_local: Vector2, drift: Vector2, settings: EffectsSettings) -> float:
+static func cloud_shade_at(map_local: Vector2, _drift: Vector2, settings: EffectsSettings) -> float:
 	if settings == null or not settings.cloud_shadows:
 		return 0.0
-	var mask: float = _CLOUD_FIELD.shadow_mask_at(map_local, drift, settings)
+	var baked: float = CloudShadowMaskBaker.shade_at(map_local)
+	if baked >= 0.0:
+		return baked
+	var mask: float = _CLOUD_FIELD.shadow_mask_at(map_local, _drift, settings)
 	return mask * CloudTuning.strength(settings)
 
 
@@ -2325,14 +2333,13 @@ static func actor_oblique_band_modulates(
 	var env: Dictionary = _environment_shader_strengths(settings)
 	var shadow_strength: float = float(env["shadow_strength"])
 	var shadow_tint: Color = env["shadow_tint"] as Color
-	var cloud_strength: float = float(env["cloud_strength"])
 	var cloud_tint: Color = env["cloud_tint"] as Color
 	var foot: Vector2 = actor.position
 	var foot_map_px: Vector2 = MapPixelSpace.foot_map_px(foot)
-	var foot_cloud: float = 0.0
-	if want_cloud:
-		foot_cloud = _CLOUD_FIELD.shadow_mask_at(foot_map_px, WeatherBus.cloud_drift_offset, settings)
-	var foot_cloud_shade: float = foot_cloud * cloud_strength if want_cloud else 0.0
+	var foot_cloud_shade: float = (
+		cloud_shade_at(foot_map_px, WeatherBus.cloud_drift_offset, settings)
+		if want_cloud else 0.0
+	)
 	var foot_oblique: float = 0.0
 	if want_oblique:
 		foot_oblique = sample_map_oblique_alpha_at(foot_map_px, settings)
