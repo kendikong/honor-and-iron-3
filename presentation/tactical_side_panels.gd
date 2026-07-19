@@ -31,6 +31,7 @@ var _warn_label: RichTextLabel
 var _force_basic_check: CheckBox
 var _danger_area_check: CheckBox
 var _wait_btn: Button
+var _wait_btn_syncing: bool = false
 
 var _board: BoardState
 var _preview_board: BoardState
@@ -314,7 +315,7 @@ func _on_force_basic_toggled(pressed: bool) -> void:
 
 
 func _on_wait_pressed() -> void:
-	if _director == null or _selected_id < 0:
+	if _wait_btn_syncing or _director == null or _selected_id < 0:
 		return
 	_director.rpc_plan_wait(_selected_id)
 
@@ -325,7 +326,9 @@ func _refresh_wait_button() -> void:
 	var waiting: bool = (
 		_director != null and _selected_id >= 0 and _director.unit_has_wait_planned(_selected_id)
 	)
-	_wait_btn.button_pressed = waiting
+	_wait_btn_syncing = true
+	_wait_btn.set_pressed_no_signal(waiting)
+	_wait_btn_syncing = false
 	_wait_btn.text = "Waiting" if waiting else "Wait"
 	if waiting:
 		_wait_btn.disabled = false
