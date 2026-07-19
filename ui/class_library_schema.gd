@@ -16,34 +16,160 @@ static var _ABILITY_CODE_BRANCHES: Dictionary = {
 
 
 static func manual_keywords() -> Dictionary:
+	## Master Bible — Keyword Terminology Glossary (class_abilities.txt §127–217).
+	## Player-facing tooltips must match this wording (Keyword Parity Mandate).
 	return {
-		"AOE ATK": "Deals damage to all units within the target shape.",
-		"AOE": "Area effect — hits multiple tiles.",
-		"AP": "Action Points consumed to use an ability.",
-		"ATK": "Reduces target HP. Armor absorbs damage before HP.",
-		"CLEANSE": "Removes all negative status effects from the target.",
-		"COLLISION": "Damage dealt when displacement hits a wall or another unit.",
-		"COUNTER ATTACK": "Retaliates against the attacker for listed ATK power, scaled by STR and weapon.",
-		"DASH": "Moves in a straight line; may apply effects on each tile entered.",
+		# Action & utility
+		"ATK": "Deal physical damage scaling off the skill's base power, weapon might, and your strength. X = Skill Base Power.",
+		"MAG ATK": "Deal magical damage scaling off the skill's base power, weapon might, and your magic. X = Skill Base Power.",
+		"AOE ATK": "MAG/physical area attack — damage hits all units in the listed target shape.",
+		"HEAL": "Restore health equal to Round Down(X * 10% of the target's Max HP).",
+		"MAG HEAL": "Round Down( (X + WPN) * (1 + MAG / 5) * 0.20 + 20% of Target's Max HP ).",
+		"SHIELD": "Gain temporary over-HP equal to Round Down(X * 10% of the target's Max HP). Takes priority over normal HP.",
+		"CLEANSE": "Instantly remove all negative debuffs and status effects.",
+		"PURGE": "Instantly remove all positive buffs and shields.",
+		"PIERCE": "This attack ignores the target's DEF and MAG entirely.",
+		"PUSH": "Displace target X tiles away from caster.",
+		"PULL": "Displace target X tiles toward caster.",
+		"COLLISION": (
+			"If pushed into an obstacle or unit, the pushed unit deals collision damage but bounces back "
+			+ "to its original tile. Simultaneous collisions: both suffer damage, bounce back, stop one tile early."
+		),
+		"COUNTER ATTACK": "Counter-attack for listed ATK power (scaled by STR and weapon).",
+		"DASH": "Move X tiles in one cardinal direction.",
 		"DESTROY OBSTACLE": "Instantly removes a wall, trap, or destructible terrain.",
 		"EXPLODE": "Deals damage to all units in adjacent cardinal tiles.",
-		"HEAL": "Restores target HP, capped at Max HP.",
-		"MOV": "Movement Points available per turn.",
-		"MOVE": "Movement Points available per turn.",
-		"PULL": "Displaces target towards caster. Collisions deal damage.",
-		"PUSH": "Displaces target away from caster. Collisions deal damage.",
-		"PURGE": "Removes all positive buffs and shields from the target.",
-		"RANGE": "Maximum targeting or effect distance in tiles.",
-		"SHIELD": "Grants temporary armor that absorbs damage before HP.",
-		"SPAWN": "Creates a new unit on the target tile.",
+		"SPAWN": "Summons a unit or construct on the target tile.",
 		"SWAP": "Caster and target exchange tile positions.",
-		"TELEPORT": "Moves instantly, ignoring pathing constraints.",
-		"TRAMPLE": "Pass through enemy tiles; PUSH 1 when passing through or stopping on them.",
+		"TELEPORT": "Move instantly, ignoring pathing constraints.",
+		"TRAMPLE": (
+			"Unit can move through enemy tiles. Per skill text, passing through an enemy triggers the effect "
+			+ "as a hit on that enemy."
+		),
+		# Economy
+		"AP": "Action Points — spent on class Active Skills and Run.",
+		"MOV": "Movement Points — spent on basic walks and class Movement Skills.",
+		"MOVE": "Move up to X tiles.",
+		# Targeting (Manhattan)
+		"RANGE": "Maximum target distance in tiles. Line of sight required unless otherwise specified.",
+		"RANGE 0": "Anchored to the caster's current tile (Self).",
+		"AOE": "Cross-shaped area — expands X tiles from the center.",
+		"AOE SQUARE": "Square array of tiles (e.g., 2x2, 3x3).",
+		"ARC": "3-tile sweep attack (1x3 or 3x1 perpendicular line).",
+		"CONE": "Directional arc expanding outward from the caster for X tiles.",
+		"SKEWER": "X tiles in one cardinal direction.",
+		"GLOBAL": "Ignores range limits and line of sight.",
+		# Stats (skill-line notation)
+		"DEF": "Defense — reduces incoming physical damage after SHIELD.",
+		"STR": "Strength — scales physical ATK.",
+		"MAG": "Magic — scales MAG ATK and mitigates magical damage.",
 		"WPN": "Weapon Might — added to ability base power in the damage formula.",
-		"DEF": "Defense — reduces incoming physical damage.",
-		"STR": "Strength — increases physical attack power.",
-		"MAG": "Magic — increases magical attack power and mitigates magical damage.",
 	}
+
+
+static func status_player_tooltip(st: GameEnums.StatusType) -> String:
+	## Master Bible status/mechanic definitions for player-facing glossary & hints.
+	match st:
+		GameEnums.StatusType.STAT_BUFF_STR:
+			return "STR +X for the listed duration. X is set by the applying skill."
+		GameEnums.StatusType.STAT_BUFF_MAG:
+			return "MAG +X for the listed duration. X is set by the applying skill."
+		GameEnums.StatusType.STAT_BUFF_DEF:
+			return "DEF +X for the listed duration. X is set by the skill (e.g. DEF +5, or X = your current DEF on Fortify)."
+		GameEnums.StatusType.STAT_BUFF_MOV, GameEnums.StatusType.STAT_BUFF_MP:
+			return "MOVEMENT +X for the listed duration. X is set by the applying skill."
+		GameEnums.StatusType.STAT_BUFF_ACC:
+			return "ACC +X for the listed duration. X is set by the applying skill."
+		GameEnums.StatusType.STAT_DEBUFF_DEF:
+			return "DEF −X for the listed duration. X is set by the applying skill."
+		GameEnums.StatusType.STAT_DEBUFF_MOV:
+			return "Target MAX MOVEMENT reduced by X for the listed duration."
+		GameEnums.StatusType.STAT_DEBUFF_ACC:
+			return "ACC −X for the listed duration. X is set by the applying skill."
+		GameEnums.StatusType.BURN:
+			return "Take exactly X unmitigated damage at the start of the turn. Leaves FIRE terrain if moving."
+		GameEnums.StatusType.BLEED:
+			return "Take exactly X unmitigated damage at the end of the turn. Moving costs +1 MOV per tile."
+		GameEnums.StatusType.POISON:
+			return (
+				"Take unmitigated damage equal to 10% of Max HP (rounded up) at the start of the turn. "
+				+ "Healing received is reduced by 50% (rounded down)."
+			)
+		GameEnums.StatusType.WEAKEN:
+			return "Target suffers −2 STR and −2 MAG for the duration."
+		GameEnums.StatusType.VULNERABLE:
+			return (
+				"Target loses all Push Mitigation (pushed maximum distance by collisions) "
+				+ "and cannot gain SHIELD."
+			)
+		GameEnums.StatusType.STUN:
+			return "Target loses their Phase Action for the current/next round."
+		GameEnums.StatusType.ROOT:
+			return (
+				"Target's MOVEMENT becomes 0. Breaks instantly if the target takes any damage. "
+				+ "They can still attack if in range."
+			)
+		GameEnums.StatusType.SILENCE:
+			return "Cannot cast Active Skills. Can only use standard Movement and basic physical attacks."
+		GameEnums.StatusType.TAUNT:
+			return "Target is forced to target the Taunter with their next offensive action."
+		GameEnums.StatusType.BLIND:
+			return "Target's maximum RANGE is reduced to 1."
+		GameEnums.StatusType.PACIFY:
+			return "Cannot use offensive skills or basic attacks for the duration. Breaks instantly on damage."
+		GameEnums.StatusType.FEAR:
+			return "Target must spend their entire MOVEMENT running directly away from the source on their next turn."
+		GameEnums.StatusType.CONFUSION:
+			return "Target is forced to target the nearest unit (friend or foe) other than the caster."
+		GameEnums.StatusType.PIERCE:
+			return "This attack ignores the target's DEF and MAG entirely."
+		GameEnums.StatusType.GHOST:
+			return "Unit can move through enemy-occupied tiles and traps/hazards without penalty (intangible)."
+		GameEnums.StatusType.TRAMPLE:
+			return (
+				"Unit can move through enemy tiles. Per skill text, passing through an enemy triggers "
+				+ "the effect as a hit."
+			)
+		GameEnums.StatusType.STEALTH:
+			return "Unit cannot be targeted by ranged attacks or skills (Range > 1)."
+		GameEnums.StatusType.INTERCEPT:
+			return "Redirect a percentage of incoming damage from an adjacent ally to this unit."
+		GameEnums.StatusType.MARK:
+			return "Target takes extra damage from specific sources or grants bonuses to attackers hitting them."
+		GameEnums.StatusType.STURDY:
+			return "Immune to PUSH and PULL effects."
+		GameEnums.StatusType.INVULNERABLE:
+			return "Immune to all damage, debuffs, and positional manipulation."
+		GameEnums.StatusType.AIRBORNE:
+			return "Standard movement ignores all ground hazards, traps, difficult terrain, and Chasms."
+		GameEnums.StatusType.CANTO:
+			return (
+				"After executing a Skill or basic attack, your Max MOV is fully refunded, "
+				+ "allowing you to move again this turn."
+			)
+		GameEnums.StatusType.POLYMORPH:
+			return (
+				"Target is transformed into a harmless creature (0 Base ATK, 1 MOV) for the duration. "
+				+ "Cannot use Active Skills. Bosses are immune."
+			)
+		GameEnums.StatusType.THORNS:
+			return "Reflects X% of damage dealt back to melee attackers (rounded down)."
+		GameEnums.StatusType.IRON_GRIP_DEBUFF:
+			return "Target DEF halved next turn (rounded up)."
+		GameEnums.StatusType.RETALIATION_PROTOCOL:
+			return "Until next turn, when hit in melee, counter-attack for ATK 2. [+] Counter-attacks apply PUSH 1."
+		GameEnums.StatusType.RETALIATION_INFINITE_RANGE:
+			return "Retaliation Protocol counters ignore range limits this turn (Phalanx [+] upgrade)."
+		GameEnums.StatusType.INDOMITABLE_WILL:
+			return "Convert missing HP into SHIELD for 2 turns. [+] When SHIELD expires, gain +2 STR."
+		GameEnums.StatusType.RUNNING:
+			return "Run — costs 1 AP, extends movement for this turn's walk without consuming the Action slot."
+		GameEnums.StatusType.ELECTRIFIED:
+			return "Incoming damage gains +1 raw before mitigation."
+		GameEnums.StatusType.WEAK_TRAP:
+			return "Trap marker — triggers when stepped on (skill-defined effect)."
+		_:
+			return GameEnums.StatusType.keys()[st].capitalize().replace("_", " ")
 
 
 static func enum_definitions() -> Array[Dictionary]:
@@ -81,7 +207,7 @@ static func enum_definitions() -> Array[Dictionary]:
 		out.append({
 			"category": "StatusType",
 			"name": k,
-			"tooltip": CombatUiFormatters._status_desc(st),
+			"tooltip": status_player_tooltip(st),
 			"system": _status_system(st),
 		})
 	for k: String in GameEnums.PresentationAnim.keys():
