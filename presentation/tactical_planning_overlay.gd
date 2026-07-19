@@ -1605,13 +1605,16 @@ func _populate_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ab
 		if unit.id == _director.selected_unit_id and selected_ability >= 0:
 			var sel_ability: AbilityData = _selected_ability_data(unit, selected_ability)
 			if sel_ability != null and unit.get_ability_range(sel_ability) == 0:
-				_hover_action_range_tiles = [origin]
+				var self_tile: Array[Vector2i] = []
+				self_tile.append(origin)
+				_hover_action_range_tiles = self_tile
 		return
-	var threat_sources: Array[Vector2i] = [origin]
+	var threat_sources: Array[Vector2i] = []
+	threat_sources.append(origin)
 	if unit.is_enemy():
 		threat_sources = _hover_move_tiles.duplicate()
 		if threat_sources.is_empty():
-			threat_sources = [origin]
+			threat_sources.append(origin)
 	for y: int in range(_board.grid_size.y):
 		for x: int in range(_board.grid_size.x):
 			var coord := Vector2i(x, y)

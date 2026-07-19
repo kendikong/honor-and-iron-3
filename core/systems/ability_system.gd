@@ -179,13 +179,14 @@ static func planning_threat_tiles(
 	alternate_origins: Array[Vector2i] = [],
 ) -> Array[Vector2i]:
 	if board == null or unit == null or ability == null:
-		return []
+		var empty: Array[Vector2i] = []
+		return empty
 	if ability_has_dash(ability):
 		return dash_line_threat_tiles(board, origin, dash_steps(ability))
 	var eff_range: int = unit.get_ability_range(ability)
 	if eff_range <= 0:
 		if ability.target_shape == GameEnums.TargetShape.SINGLE:
-			return [origin]
+			return _single_coord(origin)
 		var shape: GameEnums.TargetShape = ability.target_shape
 		var shape_size: int = ability.target_shape_size
 		if unit.is_ability_upgraded(ability.id):
@@ -194,8 +195,14 @@ static func planning_threat_tiles(
 			if ability.upgraded_target_shape_size >= 0:
 				shape_size = ability.upgraded_target_shape_size
 		return GridSystem.get_affected_tiles(board, origin, origin, shape, shape_size)
-	var sources: Array[Vector2i] = alternate_origins if not alternate_origins.is_empty() else [origin]
+	var sources: Array[Vector2i] = alternate_origins if not alternate_origins.is_empty() else _single_coord(origin)
 	return manhattan_threat_tiles(board, sources, eff_range)
+
+
+static func _single_coord(cell: Vector2i) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	out.append(cell)
+	return out
 
 
 static func dash_line_threat_tiles(board: BoardState, origin: Vector2i, steps: int) -> Array[Vector2i]:
@@ -431,9 +438,17 @@ static func ability_uses_spellcast_animation(ability: AbilityData) -> bool:
 	return not ability_uses_attack_animation(ability)
 
 
-## Kept for API compatibility; offensive dash heuristic removed.
-static func ability_is_offensive_dash(_ability: AbilityData) -> bool:
-	return false
+## Dash skill that reads as an attack (damage, bulldoze/trample, or enemy targeting).
+static func ability_is_offensive_dash(ability: AbilityData) -> bool:
+	if ability == null or not ability_has_dash(ability):
+		return false
+	if ability_uses_attack_animation(ability):
+		return true
+	var mods: Dictionary = pass_through_modifiers(ability)
+	if int(mods.get("trample_atk", 0)) > 0 or int(mods.get("bulldoze", 0)) > 0:
+		return true
+	ability.ensure_targeting_flags_from_mode()
+	return ability.has_targeting(GameEnums.TargetingFlags.ENEMY)
 
 ## Extra damage when striking a target from the tile behind its facing.
 const BACKSTAB_BONUS: int = 2

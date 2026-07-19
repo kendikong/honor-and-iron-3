@@ -2931,35 +2931,28 @@ func _recompute_hover_ranges() -> void:
 	
 	if _force_basic_movement and unit.id == _selected_id and not unit.is_enemy():
 		return
-	
+
 	if unit.id == _selected_id and not _force_basic_movement and _selected_ability >= 0:
-		var dash_ab := _selected_ability_data(unit)
-		if dash_ab != null and _ability_has_dash(dash_ab):
-			_hover_threat_tiles = _dash_threat_tiles(origin, _dash_effect_amount(dash_ab))
-			if AbilitySystem.ability_blocks_basic_movement(dash_ab):
-				_hover_move_tiles.clear()
+		var sel_ability: AbilityData = _selected_ability_data(unit)
+		var p_actor: UnitState = _proj_unit(unit.id)
+		if sel_ability != null and p_actor != null:
+			_hover_threat_tiles = AbilitySystem.planning_action_range_tiles(
+				_board, p_actor, sel_ability, origin, [],
+			)
 			return
 
-	if unit.id == _selected_id and _movement_blocked_by_dash() and not _force_basic_movement:
-		_hover_move_tiles.clear()
-		var dash_ab := _selected_ability_data(unit)
-		_hover_threat_tiles = _dash_threat_tiles(origin, _dash_effect_amount(dash_ab))
-		return
-	
-	if unit.id == _selected_id:
-		var sel_ability := _selected_ability_data(unit)
-		var self_aoe := _self_aoe_threat_tiles(unit, sel_ability, origin)
-		if not self_aoe.is_empty():
-			_hover_threat_tiles = self_aoe
-			return
-	
 	var rng := _unit_attack_range(unit)
 	if rng <= 0:
 		return
 		
-	var threat_sources = reach if unit.is_enemy() else [origin]
+	var threat_sources: Array[Vector2i] = reach.duplicate() if unit.is_enemy() else _single_hover_origin(origin)
 	if unit.id == _selected_id and _ability_has_dash(_selected_ability_data(unit)):
-		_hover_threat_tiles = _dash_threat_tiles(origin, _dash_effect_amount(_selected_ability_data(unit)))
+		var dash_actor: UnitState = _proj_unit(unit.id)
+		var dash_ability: AbilityData = _selected_ability_data(unit)
+		if dash_actor != null and dash_ability != null:
+			_hover_threat_tiles = AbilitySystem.planning_action_range_tiles(
+				_board, dash_actor, dash_ability, origin, [],
+			)
 		return
 	for y in range(_board.grid_size.y):
 		for x in range(_board.grid_size.x):
@@ -3050,6 +3043,12 @@ func _dash_threat_tiles(origin: Vector2i, dash_distance: int) -> Array[Vector2i]
 			if _board.is_in_bounds(coord):
 				tiles.append(coord)
 	return tiles
+
+
+func _single_hover_origin(origin: Vector2i) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	out.append(origin)
+	return out
 
 func _is_valid_dash_target(actor_pos: Vector2i, coord: Vector2i, max_range: int) -> bool:
 	if coord == actor_pos or max_range <= 0:

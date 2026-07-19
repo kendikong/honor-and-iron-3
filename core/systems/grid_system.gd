@@ -70,7 +70,9 @@ static func set_occupant(board: BoardState, coord: Vector2i, unit_id: int) -> vo
 static func get_affected_tiles(board: BoardState, origin: Vector2i, target: Vector2i, shape: GameEnums.TargetShape, size: int) -> Array[Vector2i]:
 	match shape:
 		GameEnums.TargetShape.SINGLE:
-			return [target]
+			var single: Array[Vector2i] = []
+			single.append(target)
+			return single
 		GameEnums.TargetShape.AOE_SQUARE:
 			var tiles: Array[Vector2i] = []
 			var radius = size
@@ -86,14 +88,16 @@ static func get_affected_tiles(board: BoardState, origin: Vector2i, target: Vect
 						tiles.append(target + Vector2i(x, y))
 			return tiles
 		GameEnums.TargetShape.AOE_CROSS:
-			var tiles: Array[Vector2i] = [target]
+			var tiles: Array[Vector2i] = []
+			tiles.append(target)
 			for dir in DIRECTIONS:
 				for i in range(1, size + 1):
 					tiles.append(target + dir * i)
 			return tiles
 		GameEnums.TargetShape.ARC:
 			# 3-tile sweep perpendicular to attack direction, centered on target
-			var tiles: Array[Vector2i] = [target]
+			var tiles: Array[Vector2i] = []
+			tiles.append(target)
 			var dir = PhysicsSystem.cardinal_from_to(origin, target)
 			if dir != Vector2i.ZERO:
 				var perp1 = Vector2i(-dir.y, dir.x)
@@ -123,4 +127,6 @@ static func get_affected_tiles(board: BoardState, origin: Vector2i, target: Vect
 					tiles.append(origin + dir * i)
 			return tiles
 	
-	return [target]
+	var fallback: Array[Vector2i] = []
+	fallback.append(target)
+	return fallback

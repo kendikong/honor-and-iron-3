@@ -6,6 +6,8 @@ extends RefCounted
 static func run_all(failures: Array[String]) -> void:
 	_test_force_basic_flag(failures)
 	_test_undoable_action_director(failures)
+	_test_planning_action_range_tiles(failures)
+	_test_offensive_dash_heuristic(failures)
 
 
 static func _test_force_basic_flag(failures: Array[String]) -> void:
@@ -47,3 +49,51 @@ static func _test_undoable_action_director(failures: Array[String]) -> void:
 	director.rpc_plan_wait(1)
 	if director.unit_has_wait_planned(1):
 		failures.append("PlanningInputTest: second wait call should cancel wait modifier")
+
+
+static func _test_planning_action_range_tiles(failures: Array[String]) -> void:
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 6)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.position = Vector2i(3, 3)
+	board.units = [unit]
+	var dash := AbilityData.new()
+	var dash_eff := EffectData.new()
+	dash_eff.type = GameEnums.EffectType.DASH
+	dash_eff.amount = 2
+	dash.effects = [dash_eff]
+	var tiles: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		board, unit, dash, unit.position, [],
+	)
+	if tiles.size() != 8:
+		failures.append(
+			"PlanningInputTest: dash range expected 8 cardinal tiles, got %d" % tiles.size(),
+		)
+	if not tiles.has(Vector2i(5, 3)):
+		failures.append("PlanningInputTest: dash range missing east endpoint")
+	var shifted: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		board, unit, dash, Vector2i(2, 3), [],
+	)
+	if not shifted.has(Vector2i(4, 3)):
+		failures.append("PlanningInputTest: shifted dash origin should move east line")
+
+
+static func _test_offensive_dash_heuristic(failures: Array[String]) -> void:
+	var bulldoze_dash := AbilityData.new()
+	var dash_eff := EffectData.new()
+	dash_eff.type = GameEnums.EffectType.DASH
+	dash_eff.amount = 3
+	var bulldoze_eff := EffectData.new()
+	bulldoze_eff.type = GameEnums.EffectType.BULLDOZE
+	bulldoze_eff.amount = 1
+	bulldoze_dash.effects = [dash_eff, bulldoze_eff]
+	bulldoze_dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+	if not AbilitySystem.ability_is_offensive_dash(bulldoze_dash):
+		failures.append("PlanningInputTest: dash+bulldoze enemy skill should be offensive dash")
+	var mobility_dash := AbilityData.new()
+	mobility_dash.effects = [dash_eff]
+	mobility_dash.targeting_mode = GameEnums.TargetingMode.SELF
+	mobility_dash.can_target_self = true
+	if AbilitySystem.ability_is_offensive_dash(mobility_dash):
+		failures.append("PlanningInputTest: pure self dash should not be offensive dash")
