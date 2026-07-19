@@ -364,6 +364,28 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 		failures.append(
 			"PlanningInputTest: dash must not auto-arm when auto skill after move is off",
 		)
+	var move_only_slots: Dictionary = {
+		"pre": [
+			TimelineAction.make_move(
+				1, Vector2i(3, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+			),
+		],
+		"action": [],
+		"post": [],
+		"invalid": false,
+	}
+	director.selected_ability_index = 0
+	input.auto_use_skill_after_move = true
+	var move_dash_icon: String = input._cursor_icon_from_commit_slots(move_only_slots, unit)
+	var expected_move_dash: String = (
+		"%s%s%s"
+		% [CombatPlanningInput.ICON_MOVE, CombatPlanningInput.ICON_COMPOSITE_SEP, CombatPlanningInput.ICON_ATTACK]
+	)
+	if move_dash_icon != expected_move_dash:
+		failures.append(
+			"PlanningInputTest: offensive dash move tile should composite move+dash cursor, got %s"
+			% move_dash_icon,
+		)
 	var heal := AbilityData.new()
 	heal.targeting_mode = GameEnums.TargetingMode.SELF
 	heal.targeting_flags = AbilityData._targeting_mode_to_flags(heal.targeting_mode)

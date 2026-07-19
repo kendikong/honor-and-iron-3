@@ -1274,22 +1274,28 @@ func _slots_include_move(slots: Dictionary) -> bool:
 
 
 ## Auto Skill After Move: one post-commit hook (move-only slots + dash still selected → arm dash).
-func _apply_auto_skill_after_move(unit_id: int, slots: Dictionary) -> void:
+func _would_auto_arm_dash_after_move(unit_id: int, slots: Dictionary) -> bool:
 	if not _composite_cursors_enabled() or _director == null:
-		return
+		return false
 	if unit_id != _director.selected_unit_id or not _slots_include_move(slots):
-		return
+		return false
+	if not (slots.get("action", []) as Array).is_empty():
+		return false
 	if selected_phase_action_exhausted(unit_id):
-		return
+		return false
 	if _director.selected_ability_index < 0 or dash_targeting:
-		return
+		return false
 	var actor := _proj_unit(unit_id)
 	if actor == null and _director.board != null:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
-		return
+		return false
 	var ability := _selected_ability_data(actor)
-	if ability != null and _ability_has_dash(ability):
+	return ability != null and _ability_has_dash(ability)
+
+
+func _apply_auto_skill_after_move(unit_id: int, slots: Dictionary) -> void:
+	if _would_auto_arm_dash_after_move(unit_id, slots):
 		arm_dash_targeting()
 
 
@@ -1980,6 +1986,10 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -
 		var glyph: String = _step_cursor_glyph(step, unit)
 		if glyph != "":
 			glyphs.append(glyph)
+	if unit != null and _would_auto_arm_dash_after_move(unit.id, slots):
+		var dash_glyph: String = _ability_action_icon(_selected_ability_data(unit))
+		if dash_glyph != "" and not glyphs.has(dash_glyph):
+			glyphs.append(dash_glyph)
 	if glyphs.is_empty():
 		return ""
 	if not _composite_cursors_enabled() or glyphs.size() == 1:
