@@ -82,7 +82,11 @@ static func ensure_animation(frames: SpriteFrames, action: StringName) -> void:
 		for frame_col in cycle_frames:
 			frames.add_frame(anim_name, _atlas_frame(tex, frame_col, y0), 1.0)
 		frames.set_animation_speed(anim_name, fps)
-		frames.set_animation_loop(anim_name, true)
+		frames.set_animation_loop(anim_name, _action_loops(String(base_action)))
+
+
+static func _action_loops(base_action: String) -> bool:
+	return base_action in ["walk", "idle", "run", "combat_idle"]
 
 static func _ensure_idle(
 	frames: SpriteFrames,

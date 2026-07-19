@@ -197,12 +197,11 @@ var is_running: bool = false
 var _action_timer: SceneTreeTimer = null
 
 func request_action(action: StringName) -> bool:
-	if _busy:
+	if _busy or _actor == null:
 		return false
 	_busy = true
-	
 	var suffix: String = ""
-	if action == "hurt":
+	if action == &"hurt":
 		suffix = "down"
 	else:
 		var facing_str := str(_actor._facing)
@@ -211,12 +210,17 @@ func request_action(action: StringName) -> bool:
 			suffix = parts[-1]
 		else:
 			suffix = "down"
-			
-	_actor.set_facing(StringName(str(action) + "_" + suffix))
-	_actor.set_walking(true) # Force action animation instead of idle
-	
-	_action_timer = _actor.get_tree().create_timer(0.6)
-	_action_timer.timeout.connect(_on_action_finished)
+	var anim: StringName = StringName(str(action) + "_" + suffix)
+	if action == &"hurt":
+		_actor.play_hurt(StringName("hurt_" + suffix))
+		_action_timer = _actor.get_tree().create_timer(0.8)
+		_action_timer.timeout.connect(_on_action_finished)
+		return true
+	_actor.play_one_shot_action(
+		anim,
+		CharacterActor.ACTION_HOLD_SANDBOX_SEC,
+		Callable(self, "_on_action_finished"),
+	)
 	return true
 
 

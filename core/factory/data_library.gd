@@ -28,6 +28,43 @@ static func get_unit(id: StringName) -> UnitData:
 	_ensure_init()
 	return _all_units_dict.get(id)
 
+
+static func get_training_dummy() -> UnitData:
+	_ensure_init()
+	return _all_units_dict.get(&"training_dummy")
+
+
+static func get_player_class_ids() -> Array[StringName]:
+	_ensure_init()
+	var ids: Array[StringName] = []
+	for unit: UnitData in _player_units:
+		ids.append(unit.id)
+	return ids
+
+
+static func build_training_abilities(def: UnitData) -> Array[AbilityData]:
+	var out: Array[AbilityData] = []
+	if def == null:
+		return out
+	var basic_attack: AbilityData = null
+	var movement_skill: AbilityData = null
+	var class_abilities: Array[AbilityData] = []
+	for ab: AbilityData in def.abilities:
+		if is_basic_ability(ab.id):
+			basic_attack = ab
+		elif ab.is_movement_skill:
+			movement_skill = ab
+		else:
+			class_abilities.append(ab)
+	if basic_attack == null:
+		basic_attack = _make_class_basic_attack(def.id)
+	out.append(basic_attack)
+	if movement_skill != null:
+		out.append(movement_skill)
+	out.append(get_universal_run())
+	out.append_array(class_abilities)
+	return out
+
 static func _ensure_init() -> void:
 	if not _player_units.is_empty():
 		return
@@ -176,6 +213,21 @@ static func _ensure_init() -> void:
 		_all_units_dict[u.id] = u
 	for u in _enemy_units:
 		_all_units_dict[u.id] = u
+
+	var training_dummy := _make_unit_data(
+		&"training_dummy",
+		"Training Dummy",
+		20,
+		0,
+		0,
+		[],
+		null,
+		GameEnums.MovementType.WALK,
+		0,
+		0,
+		2,
+	)
+	_all_units_dict[&"training_dummy"] = training_dummy
 
 	# Setup Maps
 	_maps.append(_build_proving_grounds(charger, artillery))

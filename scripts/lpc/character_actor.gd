@@ -15,6 +15,18 @@ const NUDGE_THRUST_PX: float = 20.0
 const NUDGE_PULLBACK_HOLD_SEC: float = 0.16
 const NUDGE_KNOCKBACK_PX: float = 13.0
 
+const ACTION_HOLD_SANDBOX_SEC: float = 1.0
+const ACTION_HOLD_COMBAT_SEC: float = 0.2
+const ACTION_RECOVER_FRAMES: int = 3
+const ACTION_RECOVER_SPEED_SCALE: float = 3.0
+
+const _ONE_SHOT_MELEE: Array[StringName] = [
+	&"slash", &"thrust", &"halfslash", &"backslash",
+]
+const _ONE_SHOT_RANGED: Array[StringName] = [
+	&"shoot", &"spellcast",
+]
+
 const META_ITEM_ID: StringName = &"lpc_item_id"
 
 var _layers: Array[AnimatedSprite2D] = []
@@ -332,8 +344,7 @@ func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:
 		0.14,
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_callback(func() -> void:
-		set_facing(attack_anim)
-		set_walking(true)
+		play_one_shot_action(attack_anim, ACTION_HOLD_COMBAT_SEC)
 	)
 	tw.tween_interval(NUDGE_PULLBACK_HOLD_SEC)
 	tw.tween_property(
@@ -344,45 +355,119 @@ func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:
 	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
 	tw.tween_property(self, "position", _anchor_position, 0.14).set_trans(Tween.TRANS_SINE)
 	tw.tween_callback(func() -> void:
-		set_walking(false)
 		_combat_tween = null
 	)
 
 
-func play_spellcast(cast_anim: StringName) -> void:
+func play_one_shot_action(
+	action_anim: StringName,
+	hold_sec: float = ACTION_HOLD_SANDBOX_SEC,
+	on_finished: Callable = Callable(),
+) -> void:
 	_kill_combat_tween()
-	_walking = true
-	_facing = cast_anim
+	_walking = false
+	_facing = action_anim
 	_one_shot_generation += 1
 	var generation: int = _one_shot_generation
-	var duration: float = 0.45
-	for spr: AnimatedSprite2D in _layers:
-		if spr.sprite_frames == null:
-			continue
-		LpcSheetFrames.ensure_animation(spr.sprite_frames, cast_anim)
-		if not spr.sprite_frames.has_animation(cast_anim):
-			continue
-		spr.sprite_frames.set_animation_loop(cast_anim, false)
-		spr.animation = cast_anim
-		spr.speed_scale = 1.0
-		spr.frame = 0
-		spr.play()
-		var fps: float = spr.sprite_frames.get_animation_speed(cast_anim)
-		var frame_count: int = spr.sprite_frames.get_frame_count(cast_anim)
-		if fps > 0.0:
-			duration = maxf(duration, float(frame_count) / fps)
-	_rebuild_contact_shadow_silhouette()
-	get_tree().create_timer(duration).timeout.connect(
-		_finish_spellcast.bind(generation),
+	var strike_sec: float = _begin_one_shot_layers(action_anim)
+	get_tree().create_timer(strike_sec).timeout.connect(
+		func() -> void:
+			if generation != _one_shot_generation:
+				return
+			_hold_one_shot_layers(action_anim)
+			get_tree().create_timer(hold_sec).timeout.connect(
+				func() -> void:
+					if generation != _one_shot_generation:
+						return
+					_recover_one_shot_layers(action_anim, generation, on_finished),
+				CONNECT_ONE_SHOT,
+			),
 		CONNECT_ONE_SHOT,
 	)
 
 
-func _finish_spellcast(generation: int) -> void:
+func play_spellcast(cast_anim: StringName) -> void:
+	play_one_shot_action(cast_anim, ACTION_HOLD_COMBAT_SEC)
+
+
+func _begin_one_shot_layers(action_anim: StringName) -> float:
+	var duration: float = 0.15
+	for spr: AnimatedSprite2D in _layers:
+		if spr.sprite_frames == null:
+			continue
+		LpcSheetFrames.ensure_animation(spr.sprite_frames, action_anim)
+		if not spr.sprite_frames.has_animation(action_anim):
+			continue
+		spr.sprite_frames.set_animation_loop(action_anim, false)
+		spr.speed_scale = 1.0
+		spr.animation = action_anim
+		spr.frame = 0
+		spr.play()
+		var fps: float = spr.sprite_frames.get_animation_speed(action_anim)
+		var frame_count: int = spr.sprite_frames.get_frame_count(action_anim)
+		if fps > 0.0:
+			duration = maxf(duration, float(frame_count) / fps)
+	_rebuild_contact_shadow_silhouette()
+	return duration
+
+
+func _hold_one_shot_layers(action_anim: StringName) -> void:
+	for spr: AnimatedSprite2D in _layers:
+		if spr.sprite_frames == null or not spr.sprite_frames.has_animation(action_anim):
+			continue
+		var last_frame: int = spr.sprite_frames.get_frame_count(action_anim) - 1
+		spr.stop()
+		spr.frame = last_frame
+
+
+func _recover_one_shot_layers(
+	action_anim: StringName,
+	generation: int,
+	on_finished: Callable,
+) -> void:
+	var base_action: StringName = LpcConstants.get_base_action(action_anim)
+	if base_action in _ONE_SHOT_MELEE:
+		var recover_sec: float = _play_reverse_tail(
+			action_anim, ACTION_RECOVER_FRAMES, ACTION_RECOVER_SPEED_SCALE,
+		)
+		get_tree().create_timer(recover_sec).timeout.connect(
+			func() -> void: _finish_one_shot_action(generation, on_finished),
+			CONNECT_ONE_SHOT,
+		)
+	else:
+		_finish_one_shot_action(generation, on_finished)
+
+
+func _play_reverse_tail(action_anim: StringName, frames_back: int, speed_scale: float) -> float:
+	var max_dur: float = 0.05
+	for spr: AnimatedSprite2D in _layers:
+		if spr.sprite_frames == null or not spr.sprite_frames.has_animation(action_anim):
+			continue
+		var fps: float = spr.sprite_frames.get_animation_speed(action_anim)
+		var frame_count: int = spr.sprite_frames.get_frame_count(action_anim)
+		var last_frame: int = frame_count - 1
+		spr.frame = last_frame
+		spr.speed_scale = -absf(speed_scale)
+		spr.play()
+		var dur: float = (
+			float(mini(frames_back, frame_count))
+			/ maxf(fps * absf(speed_scale), 0.001)
+		)
+		max_dur = maxf(max_dur, dur)
+	return max_dur
+
+
+func _finish_one_shot_action(generation: int, on_finished: Callable) -> void:
 	if generation != _one_shot_generation:
 		return
 	_one_shot_generation = 0
+	for spr: AnimatedSprite2D in _layers:
+		if spr.sprite_frames != null:
+			spr.speed_scale = 1.0
 	set_walking(false)
+	_rebuild_contact_shadow_silhouette()
+	if on_finished.is_valid():
+		on_finished.call()
 
 
 func play_hurt(facing_anim: StringName, knockback_dir: Vector2 = Vector2.ZERO) -> void:

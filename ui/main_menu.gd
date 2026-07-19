@@ -17,12 +17,21 @@ func _ready() -> void:
 	dev_btn.pressed.connect(_on_dev_sandbox_pressed)
 	$VBoxContainer.add_child(dev_btn)
 
+	var test_battle_btn := Button.new()
+	test_battle_btn.text = "Skill Test Arena"
+	test_battle_btn.pressed.connect(_on_test_battle_pressed)
+	$VBoxContainer.add_child(test_battle_btn)
+
 func _on_mass_sim_pressed() -> void:
 	get_tree().change_scene_to_file("res://ui/analysis/analysis_dashboard.tscn")
 
 
 func _on_dev_sandbox_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/test_map.tscn")
+
+
+func _on_test_battle_pressed() -> void:
+	get_tree().change_scene_to_file("res://scenes/TestBattle.tscn")
 
 func _on_local_coop_pressed() -> void:
 	if NetworkManager:

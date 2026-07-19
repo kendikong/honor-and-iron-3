@@ -1,0 +1,101 @@
+[gd_scene load_steps=12 format=3 uid="uid://ctestbattle01"]
+
+[ext_resource type="Script" path="res://presentation/test_battle_map_view.gd" id="1_test_battle"]
+[ext_resource type="Script" path="res://scripts/options_menu.gd" id="2_options"]
+[ext_resource type="Script" path="res://presentation/combat_director.gd" id="3_director"]
+[ext_resource type="Script" path="res://presentation/tactical_combat_hud.gd" id="4_hud"]
+[ext_resource type="Script" path="res://presentation/tactical_sim_presenter.gd" id="5_presenter"]
+[ext_resource type="Script" path="res://presentation/tactical_unit_overlay.gd" id="6_overlay"]
+[ext_resource type="Script" path="res://presentation/tactical_unit_layer.gd" id="7_unit_layer"]
+[ext_resource type="Script" path="res://presentation/tactical_planning_overlay.gd" id="8_planning"]
+[ext_resource type="Script" path="res://presentation/tactical_input_controller.gd" id="9_input"]
+[ext_resource type="Script" path="res://presentation/sfx_player.gd" id="10_sfx"]
+[ext_resource type="Script" path="res://presentation/tactical_combat_shell.gd" id="11_shell"]
+
+[node name="TestBattle" type="Node2D"]
+script = ExtResource("1_test_battle")
+
+[node name="WorldModulate" type="CanvasModulate" parent="."]
+
+[node name="MapRoot" type="Node2D" parent="WorldModulate"]
+
+[node name="GroundLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+texture_filter = 0
+z_index = 0
+
+[node name="ScatterLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+texture_filter = 0
+z_index = 0
+
+[node name="PhantomLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+visible = false
+modulate = Color(1, 1, 1, 0.22)
+texture_filter = 0
+z_index = 0
+
+[node name="OverlayLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+texture_filter = 0
+y_sort_enabled = true
+z_as_relative = false
+z_index = 2
+
+[node name="VFXLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+texture_filter = 0
+z_index = 4
+
+[node name="ShadowSprites" type="Node2D" parent="WorldModulate/MapRoot"]
+z_as_relative = false
+z_index = 1
+
+[node name="TreeLayer" type="TileMapLayer" parent="WorldModulate/MapRoot"]
+texture_filter = 0
+y_sort_enabled = true
+z_as_relative = false
+z_index = 5
+
+[node name="PlanningOverlay" type="Node2D" parent="WorldModulate/MapRoot"]
+script = ExtResource("8_planning")
+z_as_relative = false
+z_index = 8
+
+[node name="UnitLayer" type="Node2D" parent="WorldModulate/MapRoot"]
+script = ExtResource("7_unit_layer")
+z_as_relative = false
+z_index = 10
+
+[node name="UnitOverlay" type="Node2D" parent="WorldModulate/MapRoot"]
+script = ExtResource("6_overlay")
+z_as_relative = false
+z_index = 7
+
+[node name="SkyOverlay" type="Node2D" parent="WorldModulate"]
+z_index = 11
+
+[node name="CloudShadows" type="ColorRect" parent="WorldModulate/SkyOverlay"]
+mouse_filter = 2
+color = Color(1, 1, 1, 1)
+
+[node name="MistOverlay" type="ColorRect" parent="WorldModulate/SkyOverlay"]
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="OptionsMenu" type="CanvasLayer" parent="."]
+script = ExtResource("2_options")
+
+[node name="CombatDirector" type="Node" parent="."]
+script = ExtResource("3_director")
+
+[node name="CombatHud" type="CanvasLayer" parent="."]
+script = ExtResource("4_hud")
+
+[node name="SimPresenter" type="Node" parent="."]
+script = ExtResource("5_presenter")
+
+[node name="InputController" type="Node" parent="."]
+script = ExtResource("9_input")
+
+[node name="SfxPlayer" type="Node" parent="."]
+script = ExtResource("10_sfx")
+
+[node name="CombatShell" type="Node" parent="."]
+script = ExtResource("11_shell")
