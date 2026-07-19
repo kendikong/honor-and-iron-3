@@ -1399,6 +1399,9 @@ func unit_has_undoable_action(unit_id: int) -> bool:
 	for i in range(plan_post_move.size() - 1, -1, -1):
 		if plan_post_move.entries[i].actor_id == unit_id:
 			return not plan_post_move.entries[i].irreversible
+	for i in range(plan_action.size() - 1, -1, -1):
+		if plan_action.entries[i].actor_id == unit_id:
+			return not plan_action.entries[i].irreversible
 	for i in range(plan_pre_move.size() - 1, -1, -1):
 		if plan_pre_move.entries[i].actor_id == unit_id:
 			return not plan_pre_move.entries[i].irreversible
