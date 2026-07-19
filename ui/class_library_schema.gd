@@ -425,6 +425,31 @@ static func passive_preview_bbcode(passive: PassiveData) -> String:
 	return scale_bbcode("\n\n".join(parts))
 
 
+static func passive_data_dump(passive: PassiveData) -> String:
+	if passive == null:
+		return ""
+	return "id: %s\ndisplay_name: %s\ndescription: %s\nupgraded_description: %s" % [
+		String(passive.id),
+		passive.display_name,
+		passive.description,
+		passive.upgraded_description,
+	]
+
+
+static func passive_implementation_notes(passive: PassiveData) -> String:
+	if passive == null:
+		return ""
+	var parts: Array[String] = []
+	parts.append(
+		"Passives are data-only: description / upgraded_description drive player tooltips via passive_preview_bbcode()."
+	)
+	parts.append(
+		"Combat systems may branch on passive.id for bespoke behavior; keyword text in descriptions is not auto-executed."
+	)
+	parts.append("Upgraded text replaces base in UI when the unit has the class promotion upgrade.")
+	return "\n".join(parts)
+
+
 static func scale_bbcode(body: String) -> String:
 	if body.is_empty():
 		return ""
