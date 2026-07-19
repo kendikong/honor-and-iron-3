@@ -115,6 +115,7 @@ enum StatusType {
 	RUNNING,
 	POLYMORPH,
 	RETALIATION_PROTOCOL,
+	RETALIATION_INFINITE_RANGE, ## Phalanx [+]: Retaliation Protocol counters at any range this turn.
 	INDOMITABLE_WILL,
 	THORNS,
 	IRON_GRIP_DEBUFF,
@@ -122,7 +123,7 @@ enum StatusType {
 
 static func is_buff(status: StatusType) -> bool:
 	match status:
-		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RUNNING, StatusType.RETALIATION_PROTOCOL, StatusType.INDOMITABLE_WILL, StatusType.THORNS:
+		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RUNNING, StatusType.RETALIATION_PROTOCOL, StatusType.RETALIATION_INFINITE_RANGE, StatusType.INDOMITABLE_WILL, StatusType.THORNS:
 			return true
 	return false
 
@@ -143,6 +144,33 @@ enum ActionType {
 	MOVE,
 	ABILITY,
 	FACE,
+}
+
+## How an ability is classified for economy, timeline column, and validation.
+enum AbilityKind {
+	CLASS_SKILL,      ## AP cost; consumes action slot; Action column.
+	MOVEMENT_SKILL,   ## MP cost; pre-move only; does not consume action slot.
+	UNIVERSAL_RUN,    ## AP + extended movement (Run); pre-move column.
+	UNIVERSAL_WAIT,   ## Exhaust marker (not shown in skill list).
+}
+
+## Who may be selected when using an ability.
+enum TargetingMode {
+	SELF,
+	ALLY_UNIT,
+	ENEMY_UNIT,
+	ANY_UNIT,
+	TILE,
+	DASH_LINE,
+}
+
+## Default presentation anim when presentation_key is empty.
+enum PresentationAnim {
+	AUTO,
+	ATTACK,
+	SPELL,
+	MOVE,
+	NONE,
 }
 
 ## Deterministic, ordered record of something that happened during simulation.

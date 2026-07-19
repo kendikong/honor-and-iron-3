@@ -17,7 +17,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var push_through := DataLibrary._make_movement_ability(&"bruiser_push_through", "Push Through", 2, [
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
 		DataLibrary._effect(GameEnums.EffectType.SWAP, 0)
-	], 0, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
+	], 2, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
 	push_through.upgrade_description = "Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack."
 	push_through.upgraded_effects = DataLibrary._duplicate_effects(push_through.effects)
 	# Implementing the MOV cost reduction requires logic in the AbilitySystem, but the data is here.

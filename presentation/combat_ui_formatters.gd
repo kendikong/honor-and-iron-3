@@ -472,10 +472,26 @@ static func _terrain_desc(def: TerrainData) -> String:
 static func ability_desc(ability: AbilityData, unit: UnitState = null) -> String:
 	if ability == null:
 		return ""
-	return "%s (RANGE %d | AP %d | %s)" % [
+	var cost_label: String = ""
+	if ability.is_movement_kind():
+		cost_label = "MOV %d" % ability.movement_point_cost
+	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
+		cost_label = "AP %d (extends movement)" % ability.action_point_cost
+	else:
+		cost_label = "AP %d" % ability.action_point_cost
+	var target_hint: String = ""
+	match ability.targeting_mode:
+		GameEnums.TargetingMode.ALLY_UNIT:
+			target_hint = " | Ally only"
+		GameEnums.TargetingMode.SELF:
+			target_hint = " | Self"
+		GameEnums.TargetingMode.ENEMY_UNIT:
+			target_hint = " | Enemy"
+	return "%s (RANGE %d | %s%s | %s)" % [
 		ability.display_name,
 		ability.range_tiles,
-		ability.action_point_cost,
+		cost_label,
+		target_hint,
 		ability_effect_string(ability, unit),
 	]
 

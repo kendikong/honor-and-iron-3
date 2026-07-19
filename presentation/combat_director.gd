@@ -34,6 +34,7 @@ const PUSH_ANIM_FALLBACK: float = 1.0 ## Safety timeout if push signal never arr
 var base_board: BoardState
 var board: BoardState
 var plan_pre_move: Timeline
+var plan_action: Timeline
 var plan_post_move: Timeline
 var phase: Phase = Phase.PLANNING
 var selected_unit_id: int = -1
@@ -103,6 +104,7 @@ func _init_combat() -> void:
 	_run_id += 1
 	board = base_board.clone()
 	plan_pre_move = Timeline.new()
+	plan_action = Timeline.new()
 	plan_post_move = Timeline.new()
 	_lock_enemy_intents()
 	
@@ -179,36 +181,50 @@ func rpc_plan_wait(unit_id: int) -> void:
 	if p_unit == null or not p_unit.can_use_action_slot():
 		EventBus.action_rejected.emit("no_actions_left")
 		return
-	_clear_unit_abilities_from_plan(unit_id, GameEnums.MoveTiming.PRE_ACTION)
-	_clear_unit_abilities_from_plan(unit_id, GameEnums.MoveTiming.POST_ACTION)
+	_clear_unit_class_actions_from_plan(unit_id)
 	_clear_unit_post_moves_from_plan(unit_id)
 	var wait_ability: AbilityData = DataLibrary.get_universal_wait()
 	_try_add(
-		TimelineAction.make_ability(unit_id, wait_ability, p_unit.position, unit_id, target_timing),
-		plan_pre_move,
+		TimelineAction.make_ability(unit_id, wait_ability, p_unit.position, unit_id, GameEnums.MoveTiming.PRE_ACTION),
+		plan_action,
 	)
 	selected_ability_index = -1
 	EventBus.ability_selected.emit(selected_ability_index)
 
 
 func unit_has_wait_planned(unit_id: int) -> bool:
-	for plan: Timeline in [plan_pre_move, plan_post_move]:
-		for action: TimelineAction in plan.entries:
-			if action.actor_id != unit_id or action.type != GameEnums.ActionType.ABILITY:
-				continue
-			if action.ability != null and DataLibrary.is_universal_wait(action.ability.id):
-				return true
+	for action: TimelineAction in plan_action.entries:
+		if action.actor_id != unit_id or action.type != GameEnums.ActionType.ABILITY:
+			continue
+		if action.ability != null and action.ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+			return true
 	return false
 
 
-func _clear_unit_abilities_from_plan(unit_id: int, timing: int) -> void:
-	var plan: Timeline = plan_pre_move if timing == GameEnums.MoveTiming.PRE_ACTION else plan_post_move
+func _clear_unit_class_actions_from_plan(unit_id: int) -> void:
 	var kept: Array[TimelineAction] = []
-	for action: TimelineAction in plan.entries:
-		if action.actor_id == unit_id and action.type == GameEnums.ActionType.ABILITY:
+	for action: TimelineAction in plan_action.entries:
+		if action.actor_id == unit_id:
 			continue
 		kept.append(action)
-	plan.entries = kept
+	plan_action.entries = kept
+
+
+func _plan_for_ability(ability: AbilityData) -> Timeline:
+	if ability != null and ability.is_movement_kind():
+		return plan_pre_move
+	return plan_action
+
+
+func _clear_unit_abilities_from_plan(unit_id: int, timing: int) -> void:
+	_clear_unit_class_actions_from_plan(unit_id)
+	if timing == GameEnums.MoveTiming.PRE_ACTION:
+		var kept: Array[TimelineAction] = []
+		for action: TimelineAction in plan_pre_move.entries:
+			if action.actor_id == unit_id and action.type == GameEnums.ActionType.ABILITY:
+				continue
+			kept.append(action)
+		plan_pre_move.entries = kept
 
 
 func _clear_unit_post_moves_from_plan(unit_id: int) -> void:
@@ -233,6 +249,8 @@ func get_planning_move_timing(unit_id: int) -> int:
 
 
 func _get_move_timing(unit_id: int) -> int:
+	if unit_has_wait_planned(unit_id):
+		return -1
 	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else board.get_unit_by_id(unit_id)
 	if p_unit == null:
 		return -1
@@ -429,9 +447,12 @@ func _try_add(action: TimelineAction, target_plan: Timeline) -> void:
 
 func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timeline]) -> void:
 	var temp_p1 := Timeline.new()
+	var temp_act := Timeline.new()
 	var temp_p2 := Timeline.new()
 	for a: TimelineAction in plan_pre_move.entries:
 		temp_p1.add(a)
+	for a: TimelineAction in plan_action.entries:
+		temp_act.add(a)
 	for a: TimelineAction in plan_post_move.entries:
 		temp_p2.add(a)
 	var new_actors: Array[int] = []
@@ -440,10 +461,14 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 		new_actors.append(a.actor_id)
 		if target_plans[i] == plan_post_move:
 			temp_p2.add(a)
+		elif target_plans[i] == plan_action:
+			temp_act.add(a)
 		else:
 			temp_p1.add(a)
 	var combined := Timeline.new()
 	for a: TimelineAction in temp_p1.entries:
+		combined.add(a)
+	for a: TimelineAction in temp_act.entries:
 		combined.add(a)
 	for a: TimelineAction in temp_p2.entries:
 		combined.add(a)
@@ -486,13 +511,21 @@ func get_unit_plan_steps(unit_id: int) -> Array[TimelineAction]:
 
 func _get_combined_plan() -> Timeline:
 	var combined = Timeline.new()
-	for a in plan_pre_move.entries: combined.add(a)
-	for a in plan_post_move.entries: combined.add(a)
+	for a in plan_pre_move.entries:
+		combined.add(a)
+	for a in plan_action.entries:
+		combined.add(a)
+	for a in plan_post_move.entries:
+		combined.add(a)
 	return combined
 
 func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 	var combined := Timeline.new()
 	for a: TimelineAction in plan_pre_move.entries:
+		if a.actor_id == unit_id:
+			continue
+		combined.add(a)
+	for a: TimelineAction in plan_action.entries:
 		if a.actor_id == unit_id:
 			continue
 		combined.add(a)
@@ -766,11 +799,16 @@ func rpc_plan_attack(unit_id: int, ability_index: int, target_unit_id: int) -> v
 	if target == null: return
 	var index := clampi(ability_index, 0, attacker.active_abilities.size() - 1)
 	var ability: AbilityData = attacker.active_abilities[index]
-	
+
 	var proj := _get_planning_state(target_timing)
 	var projected_target := proj.get_unit_by_id(target_unit_id)
 	var coord: Vector2i = projected_target.position if projected_target != null else target.position
-	_try_add(TimelineAction.make_ability(unit_id, ability, coord, target_unit_id, target_timing), plan_to_use)
+	var action := TimelineAction.make_ability(unit_id, ability, coord, target_unit_id, GameEnums.MoveTiming.PRE_ACTION)
+	if ability.is_movement_kind():
+		_try_add(action, plan_pre_move)
+	else:
+		_clear_unit_class_actions_from_plan(unit_id)
+		_try_add(action, plan_action)
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i) -> void:
@@ -791,8 +829,17 @@ func rpc_plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i
 		return
 	var index := clampi(ability_index, 0, attacker.active_abilities.size() - 1)
 	var ability: AbilityData = attacker.active_abilities[index]
-	_clear_unit_from_plans(unit_id, target_timing)
-	_try_add(TimelineAction.make_ability(unit_id, ability, coord, -1, target_timing), plan_to_use)
+	if ability.is_movement_kind():
+		_try_add(
+			TimelineAction.make_ability(unit_id, ability, coord, -1, GameEnums.MoveTiming.PRE_ACTION),
+			plan_pre_move,
+		)
+	else:
+		_clear_unit_class_actions_from_plan(unit_id)
+		_try_add(
+			TimelineAction.make_ability(unit_id, ability, coord, -1, GameEnums.MoveTiming.PRE_ACTION),
+			plan_action,
+		)
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_remove_last_for_unit(unit_id: int) -> void:
@@ -808,6 +855,16 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
 					plan_post_move.remove_at(i)
+					plan_affected_unit_ids = [unit_id]
+					_refresh_plan()
+					return
+		if plan_action.size() > 0:
+			for i in range(plan_action.size() - 1, -1, -1):
+				if plan_action.entries[i].actor_id == unit_id:
+					if plan_action.entries[i].irreversible:
+						EventBus.action_rejected.emit("cannot_undo_trample")
+						return
+					plan_action.remove_at(i)
 					plan_affected_unit_ids = [unit_id]
 					_refresh_plan()
 					return
@@ -836,11 +893,18 @@ func rpc_remove_action(index: int) -> void:
 			EventBus.action_rejected.emit("cannot_undo_trample")
 			return
 		plan_pre_move.remove_at(index)
-	elif index - plan_pre_move.size() < plan_post_move.size():
-		if plan_post_move.entries[index - plan_pre_move.size()].irreversible:
+	elif index < plan_pre_move.size() + plan_action.size():
+		var act_idx: int = index - plan_pre_move.size()
+		if plan_action.entries[act_idx].irreversible:
 			EventBus.action_rejected.emit("cannot_undo_trample")
 			return
-		plan_post_move.remove_at(index - plan_pre_move.size())
+		plan_action.remove_at(act_idx)
+	elif index - plan_pre_move.size() - plan_action.size() < plan_post_move.size():
+		var post_idx: int = index - plan_pre_move.size() - plan_action.size()
+		if plan_post_move.entries[post_idx].irreversible:
+			EventBus.action_rejected.emit("cannot_undo_trample")
+			return
+		plan_post_move.remove_at(post_idx)
 	plan_affected_unit_ids = [action.actor_id]
 	_refresh_plan()
 
@@ -864,7 +928,7 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 			EventBus.action_rejected.emit("Undo not possible: initial square occupied")
 			return
 
-	for plan in [plan_pre_move, plan_post_move]:
+	for plan in [plan_pre_move, plan_action, plan_post_move]:
 		for a in plan.entries:
 			if a.actor_id == unit_id and a.irreversible:
 				EventBus.action_rejected.emit("cannot_undo_trample")
@@ -876,6 +940,11 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 			if a.actor_id != unit_id:
 				kept_1.append(a)
 		plan_pre_move.entries = kept_1
+		var kept_act: Array[TimelineAction] = []
+		for a in plan_action.entries:
+			if a.actor_id != unit_id:
+				kept_act.append(a)
+		plan_action.entries = kept_act
 		var kept_2: Array[TimelineAction] = []
 		for a in plan_post_move.entries:
 			if a.actor_id != unit_id:
@@ -1246,7 +1315,7 @@ func _cancel_plans_for_displacement(mover_id: int, pre_board: BoardState, events
 	if displaced.is_empty():
 		return false
 	var cancelled := false
-	for plan in [plan_pre_move, plan_post_move]:
+	for plan in [plan_pre_move, plan_action, plan_post_move]:
 		var kept: Array[TimelineAction] = []
 		for a in plan.entries:
 			if a.type != GameEnums.ActionType.ABILITY or a.actor_id == mover_id:

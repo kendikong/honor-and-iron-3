@@ -18,6 +18,12 @@ extends Resource
 
 ## Optional: scale the effect amount based on a caster's stat (e.g. DEF, MISSING_HP).
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
-	
+
+## DAMAGE only: flat bonus if target was already adjacent when cast (Shield Slam).
+@export var bonus_if_adjacent_at_cast: int = 0
+
+## DAMAGE only: apply temporary DEF debuff before resolving damage (Shield Slam [+]).
+@export var def_debuff_before_damage: int = 0
+
 ## Used only for SPAWN effects. Refers to a UnitData ID in DataLibrary.
 @export var spawn_unit_id: StringName

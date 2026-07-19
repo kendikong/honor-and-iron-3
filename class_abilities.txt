@@ -48,7 +48,7 @@ The 1-Phase Simultaneous Turn System:
 
 Combat uses a single, streamlined planning phase for the player, followed by an execution phase, and then the Enemy Turn.
 
-Action Economy: 1 AP is gained at the start of the turn (varies for advanced classes). Executing a standard basic attack costs 0 AP. Active Skills cost 1 AP unless explicitly stated otherwise.
+Action Economy: 1 AP is gained at the start of the turn (varies for advanced classes). Executing a standard basic attack costs 0 AP. Active Skills cost 1 AP unless explicitly stated otherwise. Class Movement Skills cost MOV (see each class's Movement Skill line) — never AP. Run costs 1 AP and does not consume the Action slot by itself; pairing Run with a walk is a Pre-Move action.
 
 The 1-Input Turn: During the planning phase, a player may plot a sequence to move up to their Max MOV and perform exactly 1 Skill (or basic attack).
 
@@ -67,6 +67,34 @@ Forced movement (PUSH/PULL) vectors are added together and resolved last.
 Death cleanup (0 HP entities removed).
 
 Dynamic Intents: All queued actions are fully cancelable until execution. Enemy intents dynamically update in real-time on the UI in response to every player's plotted action.
+
+Universal Action Economy & Planning Timeline (Authoritative Rules)
+
+Resource Types:
+- Movement Points (MOV / MP): Spent only on movement — basic tile walks, class Movement Skills, and any ability whose cost is listed as MOV.
+- Action Points (AP): Spent only on class Active Skills and Run. Basic Attack costs 0 AP.
+
+Ability Classification (every ability in the game belongs to exactly one category):
+1. Class Active Skill — Costs AP (unless explicitly 0 AP). Consumes the unit's one Action for the turn. Appears in the Action timeline column. Includes Basic Attack (0 AP).
+2. Class Movement Skill — Costs MOV (not AP). Does NOT consume the Action slot. Appears in the Pre-Move timeline column. Always granted per class; never part of the rolled skill pool. When a Movement Skill targets a unit, it may only target an ally (never an enemy).
+3. Universal Run — Not a class skill. Costs 1 AP and extends movement for that turn's walk (see Run). Treated as a movement-category action in planning (Pre-Move column), not an Action-slot skill.
+4. Universal Wait — Not a skill and not shown in the skill list. Invoked via the Wait control / double-click unit row. Forcibly exhausts the unit for the turn (no Action, no Post-Move / CANTO) even if movement remains. Stored in a hidden exhaustion slot (not displayed as a fourth timeline column).
+
+Planning Timeline Columns (displayed):
+- Pre-Move: Basic walks (drag path), Run-boosted walks, and class Movement Skills — in committed order (e.g. Move(3,1) → Swap(ally)).
+- Action: Class Active Skills and Basic Attack (0 AP).
+- Post-Move: Remaining movement after the Action (including CANTO refunds).
+
+Pre-Move Commit & Cancel:
+- Pre-Move steps apply immediately during planning (live board + ghost preview) and are individually cancelable.
+- Canceling a Movement Skill that moved/swapped an ally also cancels any of that ally's planned actions that depended on the new positions after that step.
+
+Targeting Data (skill list must show):
+- Each ability declares targeting mode (Self, Ally, Enemy, Tile, etc.), MOV or AP cost, range, and effect keywords — players must not infer behavior from effect-type heuristics.
+
+Conditional Damage (data-driven, not per-skill code):
+- Shield Slam: ATK 2 | PUSH 2 | If target was already adjacent at cast, gain ATK +2. [+] Target DEF is reduced by 1 before damage is calculated.
+- Phalanx Stance [+]: Grants RETALIATION_INFINITE_RANGE for Retaliation Protocol this turn (counter range becomes map-wide while both effects apply).
 
 Combat Math, Enemy Scaling & TTK Philosophy
 

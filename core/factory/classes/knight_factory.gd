@@ -17,7 +17,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	# Movement Skill (Swap) — Master Bible; always granted, not part of roll pool.
 	var swap := DataLibrary._make_movement_ability(&"knight_swap", "Swap", 1, [
 		DataLibrary._effect(GameEnums.EffectType.SWAP, 0)
-	], 0)
+	], 1)
 	swap.upgrade_description = "Gain +2 DEF and SHIELD 2 for the rest of the turn."
 	var swap_upgraded = swap.effects.duplicate()
 	var def_buff = DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1)
@@ -60,8 +60,13 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1)
 	], 1)
 	phalanx_stance.effects[1].amount = 5
+	phalanx_stance.can_target_self = true
+	phalanx_stance.targeting_mode = GameEnums.TargetingMode.SELF
 	phalanx_stance.upgrade_description = "Infinite RANGE for Retaliation Protocol."
 	phalanx_stance.upgraded_effects = DataLibrary._duplicate_effects(phalanx_stance.effects)
+	phalanx_stance.upgraded_effects.append(
+		DataLibrary._status_effect_self(GameEnums.StatusType.RETALIATION_INFINITE_RANGE, 1)
+	)
 	def.abilities.append(phalanx_stance)
 
 	var taunting_strike = DataLibrary._make_ability(&"knight_taunting_strike", "Taunting Strike", 2, [
@@ -119,6 +124,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	redirect_strike.upgrade_description = "Gain DEF +2 per redirected hit."
 	redirect_strike.upgraded_effects = DataLibrary._duplicate_effects(redirect_strike.effects)
 	redirect_strike.upgraded_effects[0].amount = 1
+	redirect_strike.can_target_self = true
+	redirect_strike.targeting_mode = GameEnums.TargetingMode.SELF
 	def.abilities.append(redirect_strike)
 	
 	var indomitable_will = DataLibrary._make_ability(&"knight_indomitable_will", "Indomitable Will", 0, [
@@ -128,6 +135,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	indomitable_will.effects[0].scaling_stat = GameEnums.StatType.MISSING_HP
 	indomitable_will.upgrade_description = "When expires, gain +2 STR."
 	indomitable_will.upgraded_effects = DataLibrary._duplicate_effects(indomitable_will.effects)
+	indomitable_will.can_target_self = true
+	indomitable_will.targeting_mode = GameEnums.TargetingMode.SELF
 	def.abilities.append(indomitable_will)
 
 	var retaliation_protocol = DataLibrary._make_ability(&"knight_retaliation_protocol", "Retaliation Protocol", 0, [
@@ -136,14 +145,18 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	retaliation_protocol.upgrade_description = "Counter-attacks apply PUSH 1."
 	retaliation_protocol.upgraded_effects = DataLibrary._duplicate_effects(retaliation_protocol.effects)
 	retaliation_protocol.upgraded_effects[0].amount = 1
+	retaliation_protocol.can_target_self = true
+	retaliation_protocol.targeting_mode = GameEnums.TargetingMode.SELF
 	def.abilities.append(retaliation_protocol)
 
 	var shield_slam = DataLibrary._make_ability(&"knight_shield_slam", "Shield Slam", 1, [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 2)
 	], 1, GameEnums.StatType.PHYSICAL)
+	shield_slam.effects[0].bonus_if_adjacent_at_cast = 2
 	shield_slam.upgrade_description = "Target DEF -1 before damage."
 	shield_slam.upgraded_effects = DataLibrary._duplicate_effects(shield_slam.effects)
+	shield_slam.upgraded_effects[0].def_debuff_before_damage = 1
 	def.abilities.append(shield_slam)
 
 	var defensive_formation = DataLibrary._make_ability(&"knight_defensive_formation", "Defensive Formation", 0, [

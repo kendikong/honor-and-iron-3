@@ -11,11 +11,23 @@ extends Resource
 @export var id: StringName = &""
 @export var display_name: String = ""
 
-## Action points consumed when used.
+## Economy / timeline classification (see Master Bible § Universal Action Economy).
+@export var kind: GameEnums.AbilityKind = GameEnums.AbilityKind.CLASS_SKILL
+
+## Action points consumed when used (CLASS_SKILL and UNIVERSAL_RUN only).
 @export var action_point_cost: int = 1
+
+## Movement points consumed when used (MOVEMENT_SKILL only).
+@export var movement_point_cost: int = 0
 
 ## Maximum Manhattan distance from actor to target tile.
 @export var range_tiles: int = 1
+
+## Who may be targeted. Movement skills that select a unit default to ALLY_UNIT.
+@export var targeting_mode: GameEnums.TargetingMode = GameEnums.TargetingMode.ANY_UNIT
+
+## True when the ability may target the caster's own tile (self-buffs, Wait, etc.).
+@export var can_target_self: bool = false
 
 ## The geometric shape of the affected area.
 @export var target_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
@@ -44,9 +56,23 @@ extends Resource
 ## The simulation never loads or plays anything; it only forwards this string.
 @export var presentation_key: StringName = &""
 
+## Presentation anim override; AUTO uses kind + targeting rules.
+@export var presentation_anim: GameEnums.PresentationAnim = GameEnums.PresentationAnim.AUTO
+
 ## Determines which stat (STR/MAG/NONE) scales the damage of this ability.
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
 
-## Class movement skill from the Master Bible (Swap, Push Through, Leap, etc.).
-## Always granted separately — never part of the rolled active-skill pool.
+## Legacy mirror of kind == MOVEMENT_SKILL (kept for existing checks).
 @export var is_movement_skill: bool = false
+
+
+func is_movement_kind() -> bool:
+	return kind == GameEnums.AbilityKind.MOVEMENT_SKILL or is_movement_skill
+
+
+func is_class_kind() -> bool:
+	return kind == GameEnums.AbilityKind.CLASS_SKILL
+
+
+func consumes_action_slot() -> bool:
+	return kind == GameEnums.AbilityKind.CLASS_SKILL

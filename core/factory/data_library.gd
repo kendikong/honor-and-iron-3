@@ -87,7 +87,14 @@ static func _ensure_init() -> void:
 		[_status_effect_self(GameEnums.StatusType.RUNNING, 1)],
 		1,
 	)
+	_universal_run.kind = GameEnums.AbilityKind.UNIVERSAL_RUN
+	_universal_run.targeting_mode = GameEnums.TargetingMode.SELF
+	_universal_run.can_target_self = true
+	_universal_run.presentation_anim = GameEnums.PresentationAnim.MOVE
 	_universal_wait = _make_ability(&"universal_wait", "Wait", 0, [], 0)
+	_universal_wait.kind = GameEnums.AbilityKind.UNIVERSAL_WAIT
+	_universal_wait.targeting_mode = GameEnums.TargetingMode.SELF
+	_universal_wait.can_target_self = true
 		
 	var _trade := _make_ability(&"swap", "Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
 	
@@ -113,7 +120,7 @@ static func _ensure_init() -> void:
 	# 2. PALADIN (SWORD)
 	var p_paladin = _make_passive(&"holy_shield", "Holy Shield", "Resists magic.")
 	var paladin_heal := _make_ability(&"paladin_heal", "Lay on Hands", 1, [_effect(GameEnums.EffectType.HEAL, 2)], 1, GameEnums.StatType.MAGICAL)
-	var paladin_swap := _make_movement_ability(&"paladin_swap", "Holy Swap", 2, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
+	var paladin_swap := _make_movement_ability(&"paladin_swap", "Holy Swap", 2, [_effect(GameEnums.EffectType.SWAP, 0)], 1)
 	var paladin := _make_unit_data(&"paladin", "Paladin", 5, 3, 1, [paladin_heal, paladin_swap], null, GameEnums.MovementType.WALK, 3, 2, 4, basic_sword, [p_paladin])
 
 	# 3. BRUISER (AXE)
@@ -131,37 +138,37 @@ static func _ensure_init() -> void:
 	# 6. MAGE (MAGIC)
 	var p_mage = _make_passive(&"focus", "Focus", "More magic damage.")
 	var mage_fireball := _make_ability(&"mage_fireball", "Fireball", 3, [_effect(GameEnums.EffectType.DAMAGE, 3)], 1, GameEnums.StatType.MAGICAL)
-	var mage_swap := _make_movement_ability(&"mage_swap", "Phase Swap", 2, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
+	var mage_swap := _make_movement_ability(&"mage_swap", "Phase Swap", 2, [_effect(GameEnums.EffectType.SWAP, 0)], 2)
 	var mage := _make_unit_data(&"mage", "Mage", 2, 3, 1, [mage_fireball, mage_swap], null, GameEnums.MovementType.WALK, 0, 5, 1, basic_staff, [p_mage])
 
 	# 7. CLERIC (STAFF)
 	var p_cleric = _make_passive(&"blessing", "Blessing", "Heals adjacent allies.")
 	var cleric_blessing := _make_ability(&"cleric_blessing", "Divine Shield", 2, [_effect(GameEnums.EffectType.ARMOR_UP, 2)], 1)
-	var cleric_pull := _make_movement_ability(&"cleric_pull", "Rescue Pull", 2, [_effect(GameEnums.EffectType.PULL, 1)], 0)
+	var cleric_pull := _make_movement_ability(&"cleric_pull", "Rescue Pull", 2, [_effect(GameEnums.EffectType.PULL, 1)], 2)
 	var cleric := _make_unit_data(&"cleric", "Cleric", 3, 3, 1, [cleric_blessing, cleric_pull], null, GameEnums.MovementType.WALK, 0, 3, 2, basic_staff, [p_cleric])
 
 	# 8. ASSASSIN
 	var p_assassin = _make_passive(&"lethal", "Lethal", "Backstabs do extra damage.")
 	var assassin_execute := _make_ability(&"assassin_execute", "Assassinate", 1, [_effect(GameEnums.EffectType.DAMAGE, 3)], 1, GameEnums.StatType.PHYSICAL)
-	var assassin_swap := _make_movement_ability(&"assassin_swap", "Shadow Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
+	var assassin_swap := _make_movement_ability(&"assassin_swap", "Shadow Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 1)
 	var assassin := _make_unit_data(&"assassin", "Assassin", 3, 4, 1, [assassin_execute, assassin_swap], null, GameEnums.MovementType.WALK, 4, 0, 1, basic_sword, [p_assassin])
 
 	# 9. MERCENARY (SWORD)
 	var p_merc = _make_passive(&"veteran", "Veteran", "Reliable criticals.")
 	var merc_rend := _make_ability(&"merc_rend", "Rend", 1, [_effect(GameEnums.EffectType.DAMAGE, 2)], 1, GameEnums.StatType.PHYSICAL)
-	var merc_kick := _make_movement_ability(&"merc_kick", "Boot Kick", 1, [_effect(GameEnums.EffectType.PUSH, 1)], 0)
+	var merc_kick := _make_movement_ability(&"merc_kick", "Boot Kick", 1, [_effect(GameEnums.EffectType.PUSH, 1)], 1)
 	var mercenary := _make_unit_data(&"mercenary", "Mercenary", 4, 4, 1, [merc_rend, merc_kick], null, GameEnums.MovementType.WALK, 4, 0, 3, basic_sword, [p_merc])
 
 	# 10. GRYPHON RIDER (LANCE)
 	var p_gryphon = _make_passive(&"air_superiority", "Air Superiority", "Evades ground attacks.")
 	var gryphon_swoop := _make_ability(&"gryphon_swoop", "Swoop Attack", 2, [_effect(GameEnums.EffectType.DAMAGE, 2)], 1, GameEnums.StatType.PHYSICAL)
-	var gryphon_shove := _make_movement_ability(&"gryphon_shove", "Wing Buffet", 2, [_effect(GameEnums.EffectType.PUSH, 1)], 0)
+	var gryphon_shove := _make_movement_ability(&"gryphon_shove", "Wing Buffet", 2, [_effect(GameEnums.EffectType.PUSH, 1)], 2)
 	var gryphon := _make_unit_data(&"gryphon", "Gryphon Rider", 4, 5, 1, [gryphon_swoop, gryphon_shove], null, GameEnums.MovementType.FLY, 3, 0, 2, basic_lance, [p_gryphon])
 
 	# 11. MONK (FIST)
 	var p_monk = _make_passive(&"flurry", "Flurry", "Multiple quick attacks.")
 	var monk_palm := _make_ability(&"monk_palm", "Palm Strike", 1, [_effect(GameEnums.EffectType.DAMAGE, 2), _effect(GameEnums.EffectType.PUSH, 1)], 1, GameEnums.StatType.PHYSICAL)
-	var monk_swap := _make_movement_ability(&"monk_swap", "Vault Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
+	var monk_swap := _make_movement_ability(&"monk_swap", "Vault Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 1)
 	var monk := _make_unit_data(&"monk", "Monk", 4, 4, 1, [monk_palm, monk_swap], null, GameEnums.MovementType.WALK, 3, 1, 3, basic_fist, [p_monk])
 
 	# 12. ENGINEER (GUN/EXPLOSIVES)
@@ -407,6 +414,7 @@ static func _make_ability(p_id: StringName, p_name: String, p_range: int, effect
 	var ability := AbilityData.new()
 	ability.id = p_id
 	ability.display_name = p_name
+	ability.kind = GameEnums.AbilityKind.CLASS_SKILL
 	ability.action_point_cost = ap_cost
 	ability.range_tiles = p_range
 	ability.presentation_key = p_id
@@ -414,6 +422,8 @@ static func _make_ability(p_id: StringName, p_name: String, p_range: int, effect
 	ability.scaling_stat = stat
 	ability.target_shape = shape
 	ability.target_shape_size = shape_size
+	if is_basic_ability(p_id):
+		ability.action_point_cost = 0
 	return ability
 
 static func _make_movement_ability(
@@ -421,13 +431,18 @@ static func _make_movement_ability(
 	p_name: String,
 	p_range: int,
 	effects: Array[EffectData],
-	ap_cost: int = 0,
+	mp_cost: int = 1,
 	stat: GameEnums.StatType = GameEnums.StatType.NONE,
 	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
-	shape_size: int = 1
+	shape_size: int = 1,
+	targeting: GameEnums.TargetingMode = GameEnums.TargetingMode.ALLY_UNIT,
 ) -> AbilityData:
-	var ability := _make_ability(p_id, p_name, p_range, effects, ap_cost, stat, shape, shape_size)
+	var ability := _make_ability(p_id, p_name, p_range, effects, 0, stat, shape, shape_size)
+	ability.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	ability.movement_point_cost = mp_cost
+	ability.targeting_mode = targeting
 	ability.is_movement_skill = true
+	ability.presentation_anim = GameEnums.PresentationAnim.MOVE
 	return ability
 
 
@@ -515,7 +530,12 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 			display_name = "Spirit Nudge"
 			rng = 2
 			stat = GameEnums.StatType.MAGICAL
-	return _make_ability(id, display_name, rng, effects, 0, stat)
+	var ab: AbilityData = _make_ability(id, display_name, rng, effects, 0, stat)
+	if effects[0].type == GameEnums.EffectType.HEAL:
+		ab.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	else:
+		ab.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+	return ab
 
 static func _ensure_player_basic_attack(unit: UnitData) -> void:
 	if unit == null or unit.is_construct:

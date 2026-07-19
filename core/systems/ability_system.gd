@@ -15,7 +15,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	var ability := action.ability
 	if ability == null:
 		return false
-	if actor.ability.points_left < ability.action_point_cost:
+	if not _has_resource_for_ability(actor, ability):
 		return false
 	var dist := GridSystem.manhattan(actor.position, action.target_coord)
 	if ability_has_dash(ability):
@@ -24,25 +24,34 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		dist = PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
 	if dist > actor.get_ability_range(ability):
 		return false
-	if dist == 0 and actor.get_ability_range(ability) > 0 and not can_target_self(actor, ability):
+	if dist == 0 and actor.get_ability_range(ability) > 0 and not ability.can_target_self:
 		return false
-		
+	var target_unit: UnitState = null
+	if action.target_unit_id >= 0:
+		target_unit = board.get_unit_by_id(action.target_unit_id)
+	else:
+		target_unit = board.get_unit_at(action.target_coord)
+	if not _target_allowed(actor, ability, target_unit, action.target_coord):
+		return false
+
 	if dist > 1:
 		var tile = board.get_tile(action.target_coord)
 		if tile != null and not tile.is_empty():
 			var target = board.get_unit_by_id(tile.occupant_id)
 			if target != null and target.has_status(GameEnums.StatusType.STEALTH):
 				return false
-		
+
 	if actor.has_status(GameEnums.StatusType.STUN) or actor.has_status(GameEnums.StatusType.SILENCE):
 		return false
-		
-	# PACIFY prevents using abilities that deal DAMAGE
-	if actor.has_status(GameEnums.StatusType.PACIFY):
+
+	if actor.has_status(GameEnums.StatusType.PACIFY) and ability_uses_attack_animation(ability):
 		for effect in ability.effects:
 			if effect.type == GameEnums.EffectType.DAMAGE or effect.type == GameEnums.EffectType.EXPLODE or effect.type == GameEnums.EffectType.RANGED_EXPLODE:
 				return false
-	
+
+	if ability.consumes_action_slot() and not actor.can_use_action_slot():
+		return false
+
 	for effect in ability.effects:
 		if effect.type == GameEnums.EffectType.DASH:
 			if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
@@ -50,35 +59,47 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			var steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
 			if steps < 1 or steps > effect.amount:
 				return false
-				
+
 	return true
 
 
-static func can_target_self(actor: UnitState, ability: AbilityData) -> bool:
-	if actor == null or ability == null:
+static func _has_resource_for_ability(actor: UnitState, ability: AbilityData) -> bool:
+	if ability == null or actor == null:
 		return false
-	if DataLibrary.is_universal_wait(ability.id):
-		return true
-	if actor.get_ability_range(ability) == 0:
-		return true
-	var effects: Array[EffectData] = ability.effects
-	if actor.is_ability_upgraded(ability.id) and not ability.upgraded_effects.is_empty():
-		effects = ability.upgraded_effects
-	if effects.is_empty():
-		return false
-	for effect: EffectData in effects:
-		match effect.type:
-			GameEnums.EffectType.ADD_STATUS_SELF, GameEnums.EffectType.DAMAGE_SELF:
-				continue
-			GameEnums.EffectType.HEAL, GameEnums.EffectType.ARMOR_UP, GameEnums.EffectType.CLEANSE:
-				continue
-			GameEnums.EffectType.ADD_STATUS:
-				if GameEnums.is_buff(effect.status_type):
-					continue
-				return false
-			_:
-				return false
+	match ability.kind:
+		GameEnums.AbilityKind.MOVEMENT_SKILL:
+			return actor.movement.points_left >= ability.movement_point_cost
+		GameEnums.AbilityKind.UNIVERSAL_RUN, GameEnums.AbilityKind.CLASS_SKILL:
+			return actor.ability.points_left >= ability.action_point_cost
+		GameEnums.AbilityKind.UNIVERSAL_WAIT:
+			return actor.can_use_action_slot()
 	return true
+
+
+static func _target_allowed(
+	actor: UnitState,
+	ability: AbilityData,
+	target: UnitState,
+	target_coord: Vector2i,
+) -> bool:
+	if ability == null or actor == null:
+		return false
+	match ability.targeting_mode:
+		GameEnums.TargetingMode.SELF:
+			return target == actor or (target == null and target_coord == actor.position)
+		GameEnums.TargetingMode.ALLY_UNIT:
+			return target != null and target.team == actor.team and target.id != actor.id
+		GameEnums.TargetingMode.ENEMY_UNIT:
+			return target != null and target.team != actor.team
+		GameEnums.TargetingMode.ANY_UNIT:
+			return target != null
+		GameEnums.TargetingMode.TILE, GameEnums.TargetingMode.DASH_LINE:
+			return true
+	return true
+
+
+static func can_target_self(_actor: UnitState, ability: AbilityData) -> bool:
+	return ability != null and ability.can_target_self
 
 
 static func ability_has_dash(ability: AbilityData) -> bool:
@@ -100,31 +121,26 @@ static func is_wait_ability(ability: AbilityData) -> bool:
 
 ## Planning UI: skill button enabled when the unit could commit this ability now (ignores range).
 static func ability_planning_selectable(actor: UnitState, ability: AbilityData) -> bool:
+	return can_plan(actor, ability)
+
+
+static func can_plan(actor: UnitState, ability: AbilityData) -> bool:
 	if actor == null or ability == null:
 		return false
-	if actor.ability.points_left < ability.action_point_cost:
+	if not _has_resource_for_ability(actor, ability):
 		return false
 	if actor.has_status(GameEnums.StatusType.STUN) or actor.has_status(GameEnums.StatusType.SILENCE):
 		return false
 	if actor.has_status(GameEnums.StatusType.PACIFY) and ability_uses_attack_animation(ability):
 		return false
-	if consumes_action_slot(ability) and not actor.can_use_action_slot():
+	if ability.consumes_action_slot() and not actor.can_use_action_slot():
 		return false
 	return true
 
 
-## Self-only buffs and Run do not consume the action slot (Wait still does when used).
+## Deprecated: use ability.consumes_action_slot() on AbilityData.
 static func consumes_action_slot(ability: AbilityData) -> bool:
-	if ability == null:
-		return false
-	if is_wait_ability(ability) or is_run_ability(ability):
-		return false
-	if ability.effects.is_empty():
-		return true
-	for eff: EffectData in ability.effects:
-		if eff.type != GameEnums.EffectType.ADD_STATUS_SELF:
-			return true
-	return false
+	return ability != null and ability.consumes_action_slot()
 
 
 static func apply_run_boost(actor: UnitState, events: Array[SimEvent]) -> void:
@@ -159,22 +175,24 @@ static func movement_requires_run(
 	)
 
 
-## True when selecting this ability should suppress basic walk (drag route, move highlights).
-## Trample dashes like Bowling Charge are optional skills — basic movement stays available.
-static func ability_blocks_basic_movement(ability: AbilityData) -> bool:
-	if not ability_has_dash(ability):
-		return false
-	if ability.id in [&"knight_bowling_charge"]:
-		return false
-	return true
+## Kept for API compatibility; dash skills no longer suppress basic movement.
+static func ability_blocks_basic_movement(_ability: AbilityData) -> bool:
+	return false
+
 
 static func ability_uses_attack_animation(ability: AbilityData) -> bool:
-	if ability == null or ability.is_movement_skill or DataLibrary.is_universal_run(ability.id):
+	if ability == null:
 		return false
-	if DataLibrary.is_universal_wait(ability.id):
-		return false
-	if ability_is_offensive_dash(ability):
+	if ability.presentation_anim == GameEnums.PresentationAnim.ATTACK:
 		return true
+	if ability.presentation_anim in [GameEnums.PresentationAnim.SPELL, GameEnums.PresentationAnim.MOVE, GameEnums.PresentationAnim.NONE]:
+		return false
+	if ability.is_movement_kind() or ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
+		return false
+	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+		return false
+	if ability.targeting_mode == GameEnums.TargetingMode.SELF:
+		return false
 	var offensive_effects: Array[GameEnums.EffectType] = [
 		GameEnums.EffectType.DAMAGE,
 		GameEnums.EffectType.PUSH,
@@ -191,24 +209,8 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 	return false
 
 
-static func ability_is_offensive_dash(ability: AbilityData) -> bool:
-	if not ability_has_dash(ability):
-		return false
-	var offensive_effects: Array[GameEnums.EffectType] = [
-		GameEnums.EffectType.DAMAGE,
-		GameEnums.EffectType.PUSH,
-		GameEnums.EffectType.PULL,
-		GameEnums.EffectType.EXPLODE,
-		GameEnums.EffectType.RANGED_EXPLODE,
-	]
-	for eff in ability.effects:
-		if eff.type in offensive_effects:
-			return true
-	for eff in ability.upgraded_effects:
-		if eff.type in offensive_effects:
-			return true
-	if ability.id in [&"knight_bowling_charge", &"knight_trampling_advance", &"bruiser_violent_collision"]:
-		return true
+## Kept for API compatibility; offensive dash heuristic removed.
+static func ability_is_offensive_dash(_ability: AbilityData) -> bool:
 	return false
 
 ## Extra damage when striking a target from the tile behind its facing.
@@ -223,21 +225,17 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var actor := board.get_unit_by_id(action.actor_id)
 	var ability := action.ability
-	actor.ability.points_left -= action.ability.action_point_cost
-	if not actor.has_unlimited_training_actions() and consumes_action_slot(ability):
+	_spend_ability_cost(actor, ability)
+	if not actor.has_unlimited_training_actions() and ability.consumes_action_slot():
 		actor.turn_action_used = true
 
-	# Wait is an exhaustion state — consumes the action slot silently (no VFX / log event).
 	if DataLibrary.is_universal_wait(ability.id):
-		apply_canto_move_refund(actor)
+		actor.turn_action_used = true
 		return
 
 	var target_coord := _resolve_target_coord(board, action)
-	
-	# Turn to face the target before resolving (positioning matters next exchange).
+
 	var new_facing := PhysicsSystem.facing_from_vector(PhysicsSystem.cardinal_from_to(actor.position, target_coord))
-	if action.ability.id == &"knight_seismic_stomp":
-		new_facing = GameEnums.Facing.SOUTH
 	if actor.facing != new_facing:
 		actor.facing = new_facing
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_FACED, {"unit": actor.id, "facing": actor.facing}))
@@ -262,10 +260,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var effects_to_apply = action.ability.effects
 	if actor.is_ability_upgraded(action.ability.id) and action.ability.upgraded_effects.size() > 0:
 		effects_to_apply = action.ability.upgraded_effects
-		
-	if action.ability.id == &"knight_phalanx_stance" and actor.is_ability_upgraded(&"knight_phalanx_stance"):
-		actor.passive_flags["phalanx_infinite_range"] = true
-	
+
 	for effect in effects_to_apply:
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER]:
 			_apply_effect_to_tile(board, actor, action, effect, events, target_coord, board.get_unit_at(target_coord))
@@ -304,7 +299,20 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 					actor.active_statuses.erase(status)
 				actor._recalculate_stats()
 
-	apply_canto_move_refund(actor)
+	if ability.is_class_kind():
+		apply_canto_move_refund(actor)
+
+
+static func _spend_ability_cost(actor: UnitState, ability: AbilityData) -> void:
+	if actor == null or ability == null:
+		return
+	match ability.kind:
+		GameEnums.AbilityKind.MOVEMENT_SKILL:
+			actor.movement.points_left -= ability.movement_point_cost
+		GameEnums.AbilityKind.UNIVERSAL_RUN, GameEnums.AbilityKind.CLASS_SKILL:
+			actor.ability.points_left -= ability.action_point_cost
+		_:
+			pass
 
 
 static func apply_canto_move_refund(actor: UnitState) -> void:
@@ -400,13 +408,15 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			var fort = 0
 			
 			var temp_def_debuff = null
-			if target != null and action.ability.id == &"knight_shield_slam":
+			if target != null and effect.bonus_if_adjacent_at_cast > 0:
 				if GridSystem.manhattan(actor.position, target.position) == 1:
-					base_amt += 2
-				if actor.is_ability_upgraded(&"knight_shield_slam"):
-					temp_def_debuff = DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1)
-					target.active_statuses.append(temp_def_debuff)
-					target._recalculate_stats()
+					base_amt += effect.bonus_if_adjacent_at_cast
+			if target != null and effect.def_debuff_before_damage > 0:
+				temp_def_debuff = DataLibrary.make_status(
+					GameEnums.StatusType.STAT_DEBUFF_DEF, 1, effect.def_debuff_before_damage,
+				)
+				target.active_statuses.append(temp_def_debuff)
+				target._recalculate_stats()
 			
 			if target != null:
 				if _is_backstab(actor, target):

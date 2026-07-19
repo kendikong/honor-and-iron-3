@@ -62,6 +62,13 @@ static func _apply_bucket(
 
 
 static func _action_in_bucket(action: TimelineAction, bucket: ActionBucket) -> bool:
+	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
+		if action.ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+			return bucket == ActionBucket.ACTION
+		if action.ability.is_movement_kind():
+			return bucket == ActionBucket.PRE_MOVE
+		if action.ability.is_class_kind():
+			return bucket == ActionBucket.ACTION
 	match bucket:
 		ActionBucket.PRE_MOVE:
 			return action.type in [

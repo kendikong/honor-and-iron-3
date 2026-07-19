@@ -1125,7 +1125,7 @@ func _facing_toward_queued_action(unit_id: int) -> int:
 	if unit == null:
 		return -1
 	var origin: Vector2i = unit.position
-	for plan: Timeline in [_director.plan_pre_move, _director.plan_post_move]:
+	for plan: Timeline in [_director.plan_pre_move, _director.plan_action, _director.plan_post_move]:
 		for action: TimelineAction in plan.entries:
 			if action.actor_id != unit_id or action.type != GameEnums.ActionType.ABILITY:
 				continue

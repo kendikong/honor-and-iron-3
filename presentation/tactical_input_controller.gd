@@ -49,14 +49,12 @@ func handle_input(event: InputEvent) -> bool:
 			_planning_input.update_drag(local)
 		elif _planning_input.is_drag_armed():
 			_planning_input.try_activate_drag(local)
-		elif _planning_input.aiming or _planning_input.skill_interaction_active():
+		elif _planning_input.skill_interaction_active():
 			var cell: Vector2i = _map_view.screen_to_grid(event.position)
 			if _intent_state != null:
 				_intent_state.set_hover_coord(cell)
 			_planning.set_hover_coord(cell)
 			_planning_input._sync_threat_origin_from_cell(cell)
-			if _planning_input.aiming:
-				_planning.set_aim_mode(true, local, _selected_class_id())
 			_planning.recompute_hover_ranges(
 				_planning_input.force_basic_movement,
 				_director.selected_ability_index,
@@ -66,7 +64,6 @@ func handle_input(event: InputEvent) -> bool:
 		return (
 			_planning_input.dragging
 			or _planning_input.is_drag_armed()
-			or _planning_input.aiming
 			or _planning_input.skill_interaction_active()
 		)
 	if event is InputEventMouseButton:
@@ -96,32 +93,7 @@ func _handle_mouse_button(event: InputEventMouseButton) -> bool:
 	return true
 
 
-func _handle_key(event: InputEventKey) -> bool:
-	if event.keycode == KEY_A and _director.selected_unit_id > 0:
-		_planning_input.aiming = not _planning_input.aiming
-		if _planning_input.aiming:
-			cancel_drag()
-			if _intent_state != null:
-				_intent_state.set_skill_interaction_active(true)
-			var aim_local: Vector2 = _screen_to_map_local(get_viewport().get_mouse_position())
-			_planning.set_aim_mode(
-				true,
-				aim_local,
-				_selected_class_id(),
-			)
-			var cell: Vector2i = _map_view.screen_to_grid(get_viewport().get_mouse_position())
-			if _director.board != null and _director.board.is_in_bounds(cell):
-				_planning.set_threat_origin(cell)
-			_planning.recompute_hover_ranges(
-				_planning_input.force_basic_movement,
-				_director.selected_ability_index,
-				false,
-				-1,
-			)
-			_play_sfx("select")
-		else:
-			cancel_aim()
-		return true
+func _handle_key(_event: InputEventKey) -> bool:
 	return false
 
 

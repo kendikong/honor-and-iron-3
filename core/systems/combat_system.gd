@@ -453,7 +453,7 @@ static func deal_damage(
 				deal_damage_raw(board, target, attacker, reflect, GameEnums.StatType.PHYSICAL, events, "Thorns")
 				
 		if target.has_status(GameEnums.StatusType.RETALIATION_PROTOCOL) and attacker != null:
-			var has_infinite_range = target.passive_flags.get("phalanx_infinite_range", false)
+			var has_infinite_range := target.has_status(GameEnums.StatusType.RETALIATION_INFINITE_RANGE)
 			if has_infinite_range or GridSystem.manhattan(target.position, attacker.position) == 1:
 				var retal_dmg := calculate_scaled_damage(target, 2, GameEnums.StatType.PHYSICAL, board)
 				deal_damage_raw(board, target, attacker, retal_dmg, GameEnums.StatType.PHYSICAL, events, "Retaliation Protocol", 2)

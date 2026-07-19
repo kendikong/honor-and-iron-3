@@ -266,9 +266,10 @@ func _plan_slots_for_unit(plan: Timeline, unit_id: int) -> Dictionary:
 			continue
 		match action.type:
 			GameEnums.ActionType.ABILITY:
-				if action.ability != null and DataLibrary.is_universal_wait(action.ability.id):
-					continue
-				abilities.append(action)
+				if action.ability != null and action.ability.is_movement_kind():
+					pre_moves.append(action)
+				elif action.ability == null or action.ability.kind != GameEnums.AbilityKind.UNIVERSAL_WAIT:
+					abilities.append(action)
 			GameEnums.ActionType.MOVE, GameEnums.ActionType.FACE:
 				if action.move_timing == GameEnums.MoveTiming.POST_ACTION:
 					post_moves.append(action)
