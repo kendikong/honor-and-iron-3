@@ -1673,7 +1673,7 @@ func _playback_delay_for_event(event: SimEvent) -> float:
 		if ability.id != ability_id:
 			continue
 		if AbilitySystem.ability_uses_spellcast_animation(ability):
-			return LpcConstants.SPELLCAST_ANIM_SEC + LpcConstants.SPELLCAST_HOLD_SEC
+			return LpcConstants.spellcast_playback_delay_sec()
 		break
 	return ATTACK_ANIM_TIME
 

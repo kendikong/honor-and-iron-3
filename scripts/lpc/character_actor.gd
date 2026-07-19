@@ -396,18 +396,44 @@ func play_one_shot_action(
 
 
 func play_spellcast(cast_anim: StringName, on_release: Callable = Callable()) -> void:
-	play_one_shot_action(cast_anim, ACTION_HOLD_COMBAT_SEC)
-	if not on_release.is_valid():
-		return
+	_kill_combat_tween()
+	_walking = false
+	_facing = cast_anim
+	_one_shot_generation += 1
 	var generation: int = _one_shot_generation
-	var delay_sec: float = _C.spellcast_release_delay_sec(cast_anim)
-	get_tree().create_timer(delay_sec).timeout.connect(
+	_begin_one_shot_layers(cast_anim)
+	var release_sec: float = _C.spellcast_release_delay_sec(cast_anim)
+	var tail_start_sec: float = _C.spellcast_tail_start_sec()
+	var finish_sec: float = _C.spellcast_playback_delay_sec()
+	if on_release.is_valid():
+		get_tree().create_timer(release_sec).timeout.connect(
+			func() -> void:
+				if generation != _one_shot_generation:
+					return
+				on_release.call(),
+			CONNECT_ONE_SHOT,
+		)
+	get_tree().create_timer(tail_start_sec).timeout.connect(
 		func() -> void:
 			if generation != _one_shot_generation:
 				return
-			on_release.call(),
+			_set_one_shot_speed_scale(cast_anim, _C.SPELLCAST_TAIL_SPEED_SCALE),
 		CONNECT_ONE_SHOT,
 	)
+	get_tree().create_timer(finish_sec).timeout.connect(
+		func() -> void:
+			if generation != _one_shot_generation:
+				return
+			_finish_one_shot_action(generation, Callable()),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func _set_one_shot_speed_scale(action_anim: StringName, speed_scale: float) -> void:
+	for spr: AnimatedSprite2D in _layers:
+		if spr.sprite_frames == null or not spr.sprite_frames.has_animation(action_anim):
+			continue
+		spr.speed_scale = speed_scale
 
 
 func flash_spell_hit(hold_sec: float) -> void:

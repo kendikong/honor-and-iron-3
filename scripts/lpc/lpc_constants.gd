@@ -49,25 +49,35 @@ const ACTIONS: Dictionary = {
 
 ## Spellcast timing (frames [0..6] @ 8 fps — see ACTIONS["spellcast"]).
 ## Frame 3 = arms extended / release pose (SFX + target flash sync here).
+## Frames 4–6 = arms down @ SPELLCAST_TAIL_SPEED_SCALE (half duration vs base fps).
 const SPELLCAST_FPS: float = 8.0
 const SPELLCAST_FRAME_COUNT: int = 7
 const SPELLCAST_RELEASE_FRAME: int = 3
 const SPELLCAST_RELEASE_SEC: float = float(SPELLCAST_RELEASE_FRAME) / SPELLCAST_FPS
-const SPELLCAST_ANIM_SEC: float = float(SPELLCAST_FRAME_COUNT) / SPELLCAST_FPS
-## Post-release hold on last spellcast frame (see CharacterActor.ACTION_HOLD_COMBAT_SEC).
-const SPELLCAST_HOLD_SEC: float = 0.1
+const SPELLCAST_TAIL_FRAME_COUNT: int = SPELLCAST_FRAME_COUNT - SPELLCAST_RELEASE_FRAME - 1
+const SPELLCAST_TAIL_SPEED_SCALE: float = 2.0
+const SPELLCAST_TAIL_START_SEC: float = float(SPELLCAST_RELEASE_FRAME + 1) / SPELLCAST_FPS
+const SPELLCAST_TAIL_SEC: float = (
+	float(SPELLCAST_TAIL_FRAME_COUNT) / (SPELLCAST_FPS * SPELLCAST_TAIL_SPEED_SCALE)
+)
+const SPELLCAST_ANIM_SEC: float = SPELLCAST_TAIL_START_SEC + SPELLCAST_TAIL_SEC
+const SPELLCAST_HOLD_SEC: float = 0.0
 ## Target white flash: bright hold from release until caster spellcast anim ends.
-## Melee reverse-tail uses ACTION_RECOVER_FRAMES @ ACTION_RECOVER_SPEED_SCALE in CharacterActor.
 
 static func spellcast_release_delay_sec(_cast_anim: StringName = &"") -> float:
 	return SPELLCAST_RELEASE_SEC
 
 
+static func spellcast_tail_start_sec() -> float:
+	return SPELLCAST_TAIL_START_SEC
+
+
 static func spellcast_flash_hold_sec() -> float:
-	return maxf(
-		0.0,
-		SPELLCAST_ANIM_SEC + SPELLCAST_HOLD_SEC - SPELLCAST_RELEASE_SEC,
-	)
+	return maxf(0.0, SPELLCAST_ANIM_SEC - SPELLCAST_RELEASE_SEC)
+
+
+static func spellcast_playback_delay_sec() -> float:
+	return SPELLCAST_ANIM_SEC + SPELLCAST_HOLD_SEC
 
 static func get_base_action(anim_name: StringName) -> StringName:
 	var s = str(anim_name)
