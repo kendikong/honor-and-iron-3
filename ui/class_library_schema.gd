@@ -400,7 +400,7 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
 		parts.append("Economy: spends action_point_cost (AP) + extends movement; PRE_MOVE bucket.")
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
-		parts.append("Economy: turn modifier — exhausts unit (turn_action_used); hidden slot, not Action column.")
+		parts.append("Economy: costs 1 AP; does not consume the Action slot (0 AP basic attack still available).")
 	else:
 		parts.append("Economy: spends action_point_cost (AP); ACTION timeline bucket; consumes action slot.")
 	if ability.target_shape != GameEnums.TargetShape.SINGLE:

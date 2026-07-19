@@ -235,7 +235,7 @@ func has_used_turn_action() -> bool:
 func can_use_action_slot() -> bool:
 	if has_unlimited_training_actions():
 		return ability.points_left > 0
-	return not turn_action_used and ability.points_left > 0
+	return not turn_action_used
 
 
 func is_boss() -> bool:

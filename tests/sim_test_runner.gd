@@ -23,6 +23,7 @@ func run_all() -> int:
 	failures += _check("movement skill spends MP not AP", _test_movement_skill_spends_mp())
 	failures += _check("movement skill resolves in pre-move bucket", _test_movement_skill_pre_move_bucket())
 	failures += _check("run clears next turn and can be used again", _test_run_available_next_turn())
+	failures += _check("run leaves action slot for 0 AP basic attack", _test_run_leaves_action_slot())
 
 	print_demo_battle()
 
@@ -558,6 +559,40 @@ func _test_run_available_next_turn() -> bool:
 		return false
 	if runner_turn2.ability.points_left != 0:
 		printerr("  second run should spend AP, left %d" % runner_turn2.ability.points_left)
+		return false
+	return true
+
+
+func _test_run_leaves_action_slot() -> bool:
+	var board := _empty_board(Vector2i(8, 3), [])
+	var runner_def := _make_unit_data(&"runner", 10, 4, 1, null)
+	var runner := _place(board, 1, runner_def, GameEnums.Team.PLAYER, Vector2i(0, 1))
+	var basic := AbilityData.new()
+	basic.id = &"basic_attack"
+	basic.kind = GameEnums.AbilityKind.CLASS_SKILL
+	basic.action_point_cost = 0
+	basic.range_tiles = 1
+	var dmg := EffectData.new()
+	dmg.type = GameEnums.EffectType.DAMAGE
+	dmg.amount = 1
+	basic.effects = [dmg]
+
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_run_move(1, Vector2i(2, 1)))
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+
+	if runner.turn_action_used:
+		printerr("  run must not consume the action slot")
+		return false
+	if runner.ability.points_left != 0:
+		printerr("  run should spend 1 AP, left %d" % runner.ability.points_left)
+		return false
+	if not runner.can_use_action_slot():
+		printerr("  action slot must stay open after run for 0 AP basic attack")
+		return false
+	if not AbilitySystem.can_plan(runner, basic):
+		printerr("  0 AP basic attack must be planable after run")
 		return false
 	return true
 
