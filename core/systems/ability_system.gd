@@ -159,6 +159,21 @@ static func dash_steps(ability: AbilityData) -> int:
 	return effect_amount(ability, GameEnums.EffectType.DASH)
 
 
+## Hover ghost / cursor uses threat styling when the dash destination can harm units.
+static func dash_destination_is_threat(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	if has_pass_through_effects(ability):
+		return true
+	for eff: EffectData in ability.effects:
+		match eff.type:
+			GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, \
+			GameEnums.EffectType.RANGED_EXPLODE, GameEnums.EffectType.PUSH, \
+			GameEnums.EffectType.PULL:
+				return true
+	return false
+
+
 static func pass_through_modifiers(ability: AbilityData, actor: UnitState = null) -> Dictionary:
 	var effects: Array = ability.effects if ability != null else []
 	if ability != null and actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:

@@ -791,11 +791,27 @@ func _draw_hover_tile() -> void:
 			return
 		if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 			return
+	var hover_col: Color = _COLOR_HOVER
+	if _planning_input != null and _director != null and _director.selected_unit_id >= 0:
+		var unit := _proj_unit(_director.selected_unit_id)
+		var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
+		if (
+			unit != null
+			and ability != null
+			and _planning_input.dash_targeting_active()
+			and AbilitySystem.dash_destination_is_threat(ability)
+			and _is_valid_dash_hover(
+				_proj_origin(unit),
+				_hover_coord,
+				AbilitySystem.dash_steps(ability),
+			)
+		):
+			hover_col = Color(_COLOR_THREAT.r, _COLOR_THREAT.g, _COLOR_THREAT.b, 0.85)
 	var tile_px: float = float(TacticalConstants.TILE_PX)
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var rect := Rect2(center - Vector2(tile_px * 0.5, tile_px * 0.5), Vector2(tile_px, tile_px)).grow(-2.0)
-	draw_rect(rect, Color(_COLOR_HOVER, 0.10), true)
-	draw_rect(rect, Color(_COLOR_HOVER.r, _COLOR_HOVER.g, _COLOR_HOVER.b, 0.45), false, 1.0)
+	draw_rect(rect, Color(hover_col, 0.10), true)
+	draw_rect(rect, Color(hover_col.r, hover_col.g, hover_col.b, 0.45), false, 1.0)
 
 
 func _origin_at_plan_action(
@@ -1414,17 +1430,35 @@ func _draw_move_ghosts() -> void:
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null or not AbilitySystem.ability_has_dash(ability):
 		return
-	if _planning_input != null and not _planning_input.dash_targeting_active():
+	if not _planning_input.dash_move_ghost_active():
 		return
 	var origin: Vector2i = _proj_origin(unit)
-	if not _is_valid_dash_hover(origin, _hover_coord, AbilitySystem.dash_steps(ability)):
+	var dash_steps: int = AbilitySystem.dash_steps(ability)
+	var hover_valid: bool = false
+	if _planning_input.dash_targeting_active():
+		hover_valid = _is_valid_dash_hover(origin, _hover_coord, dash_steps)
+	elif _planning_input.dash_skill_armed_not_targeting():
+		hover_valid = is_hover_move_tile(_hover_coord) and _hover_coord != origin
+	if not hover_valid:
 		return
+	var use_threat: bool = (
+		_planning_input.dash_targeting_active()
+		and AbilitySystem.dash_destination_is_threat(ability)
+	)
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
-	var p_col: Color = _player_color_for_unit(unit)
-	draw_circle(center, _token_radius() + 1.0, Color(p_col.r, p_col.g, p_col.b, 0.45))
+	var ghost_col: Color
+	var route_col: Color
+	if use_threat:
+		ghost_col = Color(_COLOR_THREAT.r, _COLOR_THREAT.g, _COLOR_THREAT.b, 0.55)
+		route_col = Color(_COLOR_THREAT.r, _COLOR_THREAT.g, _COLOR_THREAT.b, 0.9)
+	else:
+		var p_col: Color = _player_color_for_unit(unit)
+		ghost_col = Color(p_col.r, p_col.g, p_col.b, 0.45)
+		route_col = Color(p_col.r, p_col.g, p_col.b, 0.85)
+	draw_circle(center, _token_radius() + 1.0, ghost_col)
 	var dash_face: int = _facing_toward(origin, _hover_coord)
-	_draw_facing_wedge(center, dash_face, Color(p_col.r, p_col.g, p_col.b, 0.85))
-	_draw_dashed_route([origin, _hover_coord], Color(p_col.r, p_col.g, p_col.b, 0.85))
+	_draw_facing_wedge(center, dash_face, Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.85))
+	_draw_dashed_route([origin, _hover_coord], route_col)
 
 
 func _facing_toward(from: Vector2i, to: Vector2i) -> int:

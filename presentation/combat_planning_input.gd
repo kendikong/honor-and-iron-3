@@ -1260,6 +1260,27 @@ func dash_targeting_active() -> bool:
 	return dash_targeting
 
 
+func dash_move_ghost_active() -> bool:
+	if force_basic_movement or _director == null or _director.selected_unit_id < 0:
+		return false
+	var unit := _proj_unit(_director.selected_unit_id)
+	if unit == null or selected_phase_action_exhausted(unit.id):
+		return false
+	var ability := _selected_ability_data(unit)
+	if ability == null or not _ability_has_dash(ability):
+		return false
+	return dash_targeting or _dash_skill_armed_not_targeting(unit)
+
+
+func dash_skill_armed_not_targeting() -> bool:
+	if _director == null or _director.selected_unit_id < 0:
+		return false
+	var unit := _proj_unit(_director.selected_unit_id)
+	if unit == null:
+		return false
+	return _dash_skill_armed_not_targeting(unit)
+
+
 func arm_dash_targeting() -> void:
 	if _director == null or _director.selected_ability_index < 0:
 		return
@@ -1823,7 +1844,12 @@ func _build_enemy_commit_slots(
 	if use_skill and not AbilitySystem.target_passes_mode(actor, ability, enemy):
 		slots["invalid"] = true
 		return slots
-	if use_skill and _ability_has_dash(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
+	if use_skill and _ability_has_dash(ability) and dash_targeting:
+		if _is_valid_dash_target(_proj_origin(actor), enemy.position, _dash_steps(ability)):
+			slots["action"].append(
+				TimelineAction.make_ability(unit_id, ability, enemy.position, -1),
+			)
+			return slots
 		slots["invalid"] = true
 		return slots
 	if use_skill and _in_ability_range(actor, enemy):
@@ -1891,12 +1917,15 @@ func _build_enemy_commit_slots(
 	return slots
 
 
-func _step_cursor_glyph(action: TimelineAction) -> String:
+func _step_cursor_glyph(action: TimelineAction, unit: UnitState = null) -> String:
 	if action == null:
 		return ""
 	match action.type:
 		GameEnums.ActionType.MOVE:
-			return ICON_RUN if action.uses_run else ICON_MOVE
+			var move_icon: String = ICON_RUN if action.uses_run else ICON_MOVE
+			if unit != null and _dash_skill_armed_not_targeting(unit):
+				return ICON_RUN_DASH if move_icon == ICON_RUN else ICON_MOVE_DASH
+			return move_icon
 		GameEnums.ActionType.ABILITY:
 			if action.ability == null:
 				return ICON_SKILL
@@ -1940,7 +1969,7 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, _unit: UnitState = null) 
 		var step: TimelineAction = steps[0] as TimelineAction
 		if step == null:
 			continue
-		var glyph: String = _step_cursor_glyph(step)
+		var glyph: String = _step_cursor_glyph(step, _unit)
 		if glyph != "":
 			glyphs.append(glyph)
 	if glyphs.is_empty():
@@ -2023,7 +2052,7 @@ func _self_tile_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
 	var self_ability := _selected_ability_data(p_unit)
 	if _director.selected_ability_index >= 0 and self_ability != null:
 		if _ability_has_dash(self_ability) and not dash_targeting:
-			return ICON_DASH
+			return ICON_MOVE_DASH
 		if (
 			AbilitySystem.can_target_self(p_unit, self_ability)
 			and not AbilitySystem.is_run_ability(self_ability)
@@ -2154,7 +2183,7 @@ func _ability_action_icon(ability: AbilityData) -> String:
 	if AbilitySystem.ability_is_offensive_dash(ability):
 		return ICON_ATTACK
 	if AbilitySystem.ability_has_dash(ability):
-		return ICON_DASH
+		return ICON_MOVE_DASH if dash_targeting else ICON_DASH
 	for eff: EffectData in ability.effects:
 		match eff.type:
 			GameEnums.EffectType.DAMAGE:
