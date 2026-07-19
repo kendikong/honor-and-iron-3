@@ -27,8 +27,8 @@ const _ROUTE_OUTLINE_W: float = 5.0
 const _ROUTE_LINE_W: float = 3.0
 const _ROUTE_AA: bool = true
 const _ROUTE_CORE_W: float = 1.25
-const _ROUTE_HEAD_LEN: float = 10.0
-const _ROUTE_HEAD_HALF_W: float = 5.5
+const _ROUTE_HEAD_LEN: float = 7.5
+const _ROUTE_HEAD_HALF_W: float = 4.125
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
 const _INTENT_ROUTE_ALPHA: float = 0.40
@@ -1212,13 +1212,16 @@ func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color) -> void:
 	var base: Vector2 = tip - travel_dir * _ROUTE_HEAD_LEN
 	var wing_l: Vector2 = base + perp * _ROUTE_HEAD_HALF_W
 	var wing_r: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
-	# draw_colored_polygon has no AA in Godot — fan antialiased lines to match the shaft.
+	# Extend past tile center so round line caps meet in a point, not a flat chop.
+	var tip_draw: Vector2 = tip + travel_dir * (_ROUTE_LINE_W * 0.5)
 	var span: float = wing_l.distance_to(wing_r)
-	var steps: int = maxi(1, int(ceil(span / 2.0)))
+	var steps: int = maxi(1, int(ceil(span)))
 	for i: int in range(steps + 1):
 		var t: float = float(i) / float(steps)
 		var base_pt: Vector2 = wing_l.lerp(wing_r, t)
-		draw_line(base_pt, tip, fill, _ROUTE_LINE_W, _ROUTE_AA)
+		draw_line(base_pt, tip_draw, fill, _ROUTE_LINE_W, _ROUTE_AA)
+	var outline := PackedVector2Array([wing_l, tip_draw, wing_r])
+	draw_polyline(outline, fill, _ROUTE_LINE_W, _ROUTE_AA)
 
 
 func _route_end_direction(path: PackedVector2Array) -> Vector2:
