@@ -124,6 +124,7 @@ static func build_preview_paths(
 	if start_board == null:
 		return
 	var current_positions: Dictionary = {}
+	var post_move_marked: Dictionary = {}
 	for unit: UnitState in start_board.units:
 		paths[unit.id] = [unit.position]
 		splits[unit.id] = 1
@@ -149,9 +150,10 @@ static func build_preview_paths(
 						if (
 							not enemy_phase
 							and move_timing == GameEnums.MoveTiming.POST_ACTION
-							and int(post_splits[id]) == int(splits[id])
+							and not post_move_marked.get(id, false)
 						):
 							post_splits[id] = (paths[id] as Array).size()
+							post_move_marked[id] = true
 						(paths[id] as Array).append(c)
 						if not enemy_phase:
 							splits[id] = int(splits[id]) + 1

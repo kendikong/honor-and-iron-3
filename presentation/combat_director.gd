@@ -1118,8 +1118,8 @@ func _play_events(events: Array[SimEvent]) -> void:
 		EventBus.sim_event.emit(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
 		await _play_batched_segment(enemy_events, run_id)
 
-## Plays a list of events in 3 ordered phases: moves (simultaneous) → attacks
-## (sequential, one-by-one) → forced movement (simultaneous at the end).
+## Plays a list of events in ordered phases: pre-moves (simultaneous) → attacks
+## (sequential) → post-moves (simultaneous) → forced movement (simultaneous).
 ## Dash ability blocks are peeled out and played with move → pass-through hits → pushes.
 func _play_batched_segment(events: Array[SimEvent], run_id: int) -> void:
 	if events.is_empty() or run_id != _run_id:
@@ -1293,7 +1293,8 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 	if events.is_empty() or run_id != _run_id:
 		return
 	
-	var move_events:   Array[SimEvent] = []
+	var pre_move_events: Array[SimEvent] = []
+	var post_move_events: Array[SimEvent] = []
 	var attack_events: Array[SimEvent] = []
 	var push_events:   Array[SimEvent] = []
 	var meta_events:   Array[SimEvent] = []
@@ -1301,7 +1302,13 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 	for event in events:
 		match event.type:
 			GameEnums.SimEventType.UNIT_MOVED:
-				move_events.append(event)
+				var timing: int = int(
+					event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION)
+				)
+				if timing == GameEnums.MoveTiming.POST_ACTION:
+					post_move_events.append(event)
+				else:
+					pre_move_events.append(event)
 			GameEnums.SimEventType.ABILITY_USED, \
 			GameEnums.SimEventType.COUNTER_ATTACK, \
 			GameEnums.SimEventType.MATH_TELEMETRY, \
@@ -1320,15 +1327,10 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 			_: # TURN_ENDED, ACTION_FAILED, UNIT_SPAWNED, etc.
 				meta_events.append(event)
 	
-	# --- Movement batch: all units move at the same time ---
-	if not move_events.is_empty():
-		var max_path_len := 0
-		for e in move_events:
-			if run_id != _run_id: return
-			EventBus.sim_event.emit(e)
-			max_path_len = max(max_path_len, (e.data.get("path", []) as Array).size())
-		await get_tree().create_timer(max(1, max_path_len) * MOVE_STEP_TIME + 0.05).timeout
-		if run_id != _run_id: return
+	if not pre_move_events.is_empty():
+		await _play_move_batch(pre_move_events, run_id)
+		if run_id != _run_id:
+			return
 	
 	# --- Attack batch: sequential, one action at a time ---
 	for e in attack_events:
@@ -1340,7 +1342,12 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 		await get_tree().create_timer(delay).timeout
 	if run_id != _run_id: return
 	
-	# --- Phase 3: Forced movement — all pushes/collisions at the same time ---
+	if not post_move_events.is_empty():
+		await _play_move_batch(post_move_events, run_id)
+		if run_id != _run_id:
+			return
+	
+	# --- Forced movement — all pushes/collisions at the same time ---
 	if not push_events.is_empty():
 		for e in push_events:
 			if run_id != _run_id: return
@@ -1351,6 +1358,18 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 	for e in meta_events:
 		if run_id != _run_id: return
 		EventBus.sim_event.emit(e)
+
+
+func _play_move_batch(move_events: Array[SimEvent], run_id: int) -> void:
+	if move_events.is_empty() or run_id != _run_id:
+		return
+	var max_path_len := 0
+	for e in move_events:
+		if run_id != _run_id:
+			return
+		EventBus.sim_event.emit(e)
+		max_path_len = max(max_path_len, (e.data.get("path", []) as Array).size())
+	await get_tree().create_timer(max(1, max_path_len) * MOVE_STEP_TIME + 0.05).timeout
 
 
 func _move_has_commit_side_effects(events: Array[SimEvent]) -> bool:
