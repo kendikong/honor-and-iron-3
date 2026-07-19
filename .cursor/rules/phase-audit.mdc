@@ -50,7 +50,7 @@ Before closing a phase, run **all four pillars** and record pass/fail in `IMPLEM
 | Pillar | What to verify |
 |--------|----------------|
 | **Completeness** | Every deliverable and exit criterion from `IMPLEMENTATION_PLAN.md` exists on disk and works as specified |
-| **Correct coding** | Static types, project patterns, no bandaids, fail-loud; automated tests in `tests/` run (or documented user CLI) |
+| **Correct coding** | Static types, project patterns, **no bandaids** (`.cursor/rules/no-bandaid-fixes.mdc` — absolute), fail-loud; automated tests in `tests/` run (or documented user CLI) |
 | **Inconsistencies** | Cross-layer drift: constants, walkability vs terrain mapping, naming, duplicate `class_name`, sim→Node leaks |
 | **Issues** | Numbered list with severity; **fix if 3+** found, then re-audit whole phase; **≤2** may defer with target phase |
 

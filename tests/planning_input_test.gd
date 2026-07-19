@@ -13,6 +13,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_cursor_matches_commit_slots(failures)
 	_test_preview_from_commit_slots(failures)
 	_test_audit_regression_fixes(failures)
+	_test_auto_skill_after_move_arms_dash(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
 
 
@@ -302,6 +303,84 @@ static func _test_audit_regression_fixes(failures: Array[String]) -> void:
 	director.selected_ability_index = 0
 	if input._would_show_wait_on_self_click(unit):
 		failures.append("PlanningInputTest: wait cursor hidden when self-target skill selected")
+
+
+static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(2, 2)
+	unit.movement.points_left = 4
+	unit.ability.points_left = 2
+	var dash := AbilityData.new()
+	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	var dash_eff := EffectData.new()
+	dash_eff.type = GameEnums.EffectType.DASH
+	dash_eff.amount = 3
+	dash.effects = [dash_eff]
+	dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+	dash.targeting_flags = AbilityData._targeting_mode_to_flags(dash.targeting_mode)
+	unit.active_abilities = [dash]
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	input._director = director
+	input.auto_use_skill_after_move = true
+	input.dash_targeting = false
+	var move_slots: Dictionary = {
+		"pre": [
+			TimelineAction.make_move(
+				1, Vector2i(3, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+			),
+		],
+		"action": [],
+		"post": [],
+		"invalid": false,
+	}
+	input._on_commit_slots_applied(1, move_slots)
+	if not input.dash_targeting:
+		failures.append(
+			"PlanningInputTest: auto skill after move should arm dash after move-only commit",
+		)
+	input.dash_targeting = false
+	input.auto_use_skill_after_move = false
+	input._on_commit_slots_applied(1, move_slots)
+	if input.dash_targeting:
+		failures.append(
+			"PlanningInputTest: dash must not auto-arm when auto skill after move is off",
+		)
+	var heal := AbilityData.new()
+	heal.targeting_mode = GameEnums.TargetingMode.SELF
+	heal.targeting_flags = AbilityData._targeting_mode_to_flags(heal.targeting_mode)
+	unit.active_abilities = [heal]
+	director.selected_ability_index = 0
+	input.auto_use_skill_after_move = false
+	var move_only_slots: Dictionary = input._build_commit_slots_at_cell(1, Vector2i(3, 2))
+	if not (move_only_slots.get("action", []) as Array).is_empty():
+		failures.append(
+			"PlanningInputTest: self skill should not pair on move tile when auto skill after move is off",
+		)
+	input.auto_use_skill_after_move = true
+	var paired_slots: Dictionary = input._build_commit_slots_at_cell(1, Vector2i(3, 2))
+	if (paired_slots.get("action", []) as Array).is_empty():
+		failures.append(
+			"PlanningInputTest: self skill should pair on move tile when auto skill after move is on",
+		)
 
 
 static func _plain_board_with_unit(

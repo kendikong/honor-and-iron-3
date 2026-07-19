@@ -1031,8 +1031,8 @@ func _commit_at_cell(
 		_play_sfx("invalid")
 		return false
 	_play_commit_sfx(slots)
+	_on_commit_slots_applied(unit_id, slots)
 	_notify_drag_plan_move_committed(unit_id)
-	_on_commit_slots_applied(slots)
 	return true
 
 
@@ -1077,7 +1077,7 @@ func _play_commit_sfx(slots: Dictionary) -> void:
 		_play_sfx("move")
 
 
-func _on_commit_slots_applied(slots: Dictionary) -> void:
+func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 	if _director == null:
 		return
 	for raw: Variant in slots.get("action", []):
@@ -1094,6 +1094,7 @@ func _on_commit_slots_applied(slots: Dictionary) -> void:
 			):
 				_director.select_ability(-1)
 			return
+	_apply_auto_skill_after_move(unit_id, slots)
 
 
 func _preview_from_commit_slots_at_cell(
@@ -1155,7 +1156,6 @@ func _prefer_approach_over_trample_move(actor: UnitState, enemy: UnitState) -> b
 func _notify_drag_plan_move_committed(unit_id: int) -> void:
 	if _drag_move_commit_instant and _director != null:
 		_director.mark_planning_move_instant(unit_id)
-	_maybe_arm_dash_after_move(unit_id)
 
 
 func _unit_move_slot_open(unit_id: int) -> bool:
@@ -1265,8 +1265,21 @@ func _dash_steps(ability: AbilityData) -> int:
 	return AbilitySystem.dash_steps(ability)
 
 
-func _maybe_arm_dash_after_move(unit_id: int) -> void:
-	if _director == null or unit_id != _director.selected_unit_id:
+func _slots_include_move(slots: Dictionary) -> bool:
+	for col: String in ["pre", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction and (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
+				return true
+	return false
+
+
+## Auto Skill After Move: one post-commit hook (move-only slots + dash still selected → arm dash).
+func _apply_auto_skill_after_move(unit_id: int, slots: Dictionary) -> void:
+	if not _composite_cursors_enabled() or _director == null:
+		return
+	if unit_id != _director.selected_unit_id or not _slots_include_move(slots):
+		return
+	if selected_phase_action_exhausted(unit_id):
 		return
 	if _director.selected_ability_index < 0 or dash_targeting:
 		return
@@ -1276,7 +1289,7 @@ func _maybe_arm_dash_after_move(unit_id: int) -> void:
 	if actor == null:
 		return
 	var ability := _selected_ability_data(actor)
-	if ability != null and _ability_has_dash(ability) and not selected_phase_action_exhausted(unit_id):
+	if ability != null and _ability_has_dash(ability):
 		arm_dash_targeting()
 
 
@@ -1711,7 +1724,10 @@ func _build_commit_slots_at_cell(
 			if _drop_allows_move_tile(cell, legal_move_tiles, actor):
 				if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
 					_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
-				if _can_pair_run_move_with_ability(actor, cell, waypoints, ability):
+				if (
+					_composite_cursors_enabled()
+					and _can_pair_run_move_with_ability(actor, cell, waypoints, ability)
+				):
 					slots["action"].append(
 						TimelineAction.make_ability(unit_id, ability, cell, unit_id),
 					)

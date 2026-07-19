@@ -1,0 +1,54 @@
+---
+description: ABSOLUTE — no bandaid fixes; fix root cause via shared systems; always on
+alwaysApply: true
+---
+
+# No Bandaid Fixes (ABSOLUTE — ALWAYS ON)
+
+**This rule is always active.** It overrides convenience, speed, and “just make it work for this case.”
+If a fix adds a parallel code path, UI flag, or special-case branch instead of fixing the owning system, **stop and redesign**.
+
+## Definition: bandaid
+
+A change is a **bandaid** if it:
+
+- Papers over a bug with an extra `if`, flag, or early `return` without fixing **why** the main path failed
+- Duplicates logic that already exists (or should exist) in a manager, `AbilitySystem`, `commit_from_slots`, or sim preview
+- Adds per-skill / per-unit / per-scene branches when data, targeting, or the shared pipeline can express it
+- Introduces a second source of truth (e.g. cursor heuristics that disagree with commit slots)
+- Disables validation, asserts, or tests “for now”
+- Leaves dead or overlapping paths (old + new) instead of deleting the wrong one
+
+## Required approach
+
+1. **One truth path** — planning: `_build_commit_slots_at_cell` → `_finalize_commit_slots` → `preview_commit_valid` / `commit_from_slots`. Preview, cursor, and tiles must derive from slots — not parallel rules.
+2. **Fix the owner** — movement → `MovementSystem` / move timing; skills → `AbilitySystem` + timeline; UI → reflect sim/director state.
+3. **Delete the wrong path** — when replacing a hack, remove it in the same change; do not stack fixes.
+4. **Fail loud** — assert or reject; never silently swallow invalid state.
+5. **Data over branches** — effects, targeting flags, AP/MP costs in definitions; not `if ability.id == …` in presentation.
+
+## Forbidden without explicit user approval
+
+- New global bools that only one feature uses (unless user approves the exception in chat)
+- “Temporary” TODO patches committed as final behavior
+- Copy-paste of the same 5+ lines into a second file instead of a shared helper at the correct layer
+- Restoring legacy files (`board_view.gd`) as the live fix while tactical path stays broken
+
+## Before every implementation turn (self-check)
+
+Answer in the changelog or plan:
+
+| Question | Must be |
+|----------|---------|
+| Does this add a second way to do the same thing? | **No** |
+| Does preview == commit for this behavior? | **Yes** |
+| Could another skill reuse this without new `if` branches? | **Yes** |
+| Did I remove the obsolete path? | **Yes** |
+
+If any answer is wrong → **redesign**, do not ship the bandaid.
+
+## Relationship to other rules
+
+- **Wins over** “quick fix” impulses and model-default shortcuts.
+- **Complements** `skill-global-rules.mdc` (no per-skill globals) and `phase-audit.mdc` (Correct coding = no bandaids).
+- Code quality in `AGENTS.md` / `.agents/AGENTS.md` restates this for all agents.
