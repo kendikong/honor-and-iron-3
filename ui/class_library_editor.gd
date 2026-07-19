@@ -51,6 +51,7 @@ var _class_buttons: Dictionary = {}
 var _nav_buttons: Array[Button] = []
 var _active_sidebar_btn: Button = null
 var _ability_defaults: Dictionary = {}
+var _preview_unit_state: UnitState
 
 
 func _ready() -> void:
@@ -631,6 +632,37 @@ func _set_active_class_list_item(key: String, accent: Color) -> void:
 		_style_list_item_card(card, entry_key == key, item_accent if entry_key == key else ClassLibraryTheme.BORDER_SUBTLE)
 
 
+func _preview_unit() -> UnitState:
+	return _preview_unit_state
+
+
+func _make_list_preview_chip(emoji: String, val: String, tip: String) -> Dictionary:
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.tooltip_text = tip
+	row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
+	var emoji_lbl := Label.new()
+	emoji_lbl.text = emoji
+	emoji_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	emoji_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	var val_lbl := Label.new()
+	val_lbl.text = val
+	val_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	val_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	row.add_child(emoji_lbl)
+	row.add_child(val_lbl)
+	return {"row": row, "val_lbl": val_lbl}
+
+
+func _ability_effect_preview_bbcode(ability: AbilityData) -> String:
+	if ability == null:
+		return ""
+	CombatUiFormatters.configure_body_font(ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	var body_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY)
+	var body: String = CombatUiFormatters.ability_effect_bbcode(ability, _preview_unit())
+	return "[font_size=%d]%s[/font_size]" % [body_px, body]
+
+
 func _add_selectable_preview_card(
 	parent: VBoxContainer,
 	key: String,
@@ -640,6 +672,8 @@ func _add_selectable_preview_card(
 	on_select: Callable,
 	card_registry: Dictionary,
 	active_key: String,
+	ability: AbilityData = null,
+	passive: PassiveData = null,
 ) -> Dictionary:
 	var card := PanelContainer.new()
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -669,7 +703,11 @@ func _add_selectable_preview_card(
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_TITLE))
 	name_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
-	name_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_lbl.mouse_filter = Control.MOUSE_FILTER_PASS
+	if ability != null:
+		name_lbl.tooltip_text = CombatUiFormatters.ability_tooltip_text(ability, _preview_unit())
+	elif passive != null and not passive.description.is_empty():
+		name_lbl.tooltip_text = passive.description
 	head.add_child(name_lbl)
 	if not subtitle_text.is_empty():
 		var sub_lbl := Label.new()
@@ -683,19 +721,60 @@ func _add_selectable_preview_card(
 	preview_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	preview_wrap.add_theme_stylebox_override("panel", ClassLibraryTheme.column_style(ClassLibraryTheme.Column.INGAME))
 	box.add_child(preview_wrap)
+	var preview_inner := VBoxContainer.new()
+	preview_inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	preview_inner.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
+	preview_inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	preview_wrap.add_child(preview_inner)
+	var cost_val_lbl: Label = null
+	var range_val_lbl: Label = null
+	var cost_row: HBoxContainer = null
+	var range_row: HBoxContainer = null
+	if ability != null:
+		var chips := HBoxContainer.new()
+		chips.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		chips.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
+		preview_inner.add_child(chips)
+		var cost_chip: Dictionary = CombatUiFormatters.ability_cost_chip(ability)
+		var cost_refs: Dictionary = _make_list_preview_chip(
+			String(cost_chip.get("emoji", "")),
+			String(cost_chip.get("text", "")),
+			String(cost_chip.get("tooltip", "")),
+		)
+		cost_row = cost_refs["row"] as HBoxContainer
+		cost_val_lbl = cost_refs["val_lbl"] as Label
+		chips.add_child(cost_row)
+		var range_chip: Dictionary = CombatUiFormatters.ability_range_chip(ability, _preview_unit())
+		var range_refs: Dictionary = _make_list_preview_chip(
+			String(range_chip.get("emoji", "")),
+			String(range_chip.get("text", "")),
+			String(range_chip.get("tooltip", "")),
+		)
+		range_row = range_refs["row"] as HBoxContainer
+		range_val_lbl = range_refs["val_lbl"] as Label
+		chips.add_child(range_row)
 	var preview := RichTextLabel.new()
 	preview.bbcode_enabled = true
 	preview.scroll_active = true
 	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	preview.custom_minimum_size.y = ClassLibraryTheme.px(88)
+	preview.custom_minimum_size.y = ClassLibraryTheme.px(72 if ability != null else 88)
 	preview.add_theme_color_override("default_color", ClassLibraryTheme.TEXT_PRIMARY)
-	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	preview_wrap.add_child(preview)
+	preview.add_theme_font_size_override("normal_font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	preview.mouse_filter = Control.MOUSE_FILTER_PASS
+	preview_inner.add_child(preview)
 	var sync_preview_width := func() -> void:
 		_sync_list_preview_width(preview, preview_wrap)
 	preview_wrap.resized.connect(sync_preview_width)
 	preview.tree_entered.connect(sync_preview_width)
-	return {"preview": preview, "title": name_lbl, "wrap": preview_wrap}
+	return {
+		"preview": preview,
+		"title": name_lbl,
+		"wrap": preview_wrap,
+		"cost_val": cost_val_lbl,
+		"range_val": range_val_lbl,
+		"cost_row": cost_row,
+		"range_row": range_row,
+	}
 
 
 # --- Sidebar ---
@@ -746,6 +825,7 @@ func _clear_detail() -> void:
 	_active_class_list_key = ""
 	_selected_passive = null
 	_selected_ability = null
+	_preview_unit_state = null
 	if _detail_vbox != null:
 		for child: Node in _detail_vbox.get_children():
 			child.queue_free()
@@ -765,6 +845,17 @@ func _select_unit(unit: UnitData) -> void:
 	if _class_buttons.has(unit.id):
 		_set_active_sidebar(_class_buttons[unit.id], ClassLibraryTheme.ACCENT_STATS)
 	_clear_detail()
+	_preview_unit_state = UnitState.create(
+		0,
+		unit,
+		GameEnums.Team.PLAYER,
+		Vector2i.ZERO,
+		{
+			"active_abilities": unit.abilities,
+			"active_passives": unit.passives,
+			"level": unit.level,
+		},
+	)
 	_show_unit_workspace(true)
 	_set_unit_tab(_unit_tab)
 	_build_skills_tab(unit)
@@ -795,6 +886,7 @@ func _build_skills_tab(unit: UnitData) -> void:
 			func() -> void: _select_ability_entry(ability),
 			_list_item_cards,
 			_active_list_key,
+			ability,
 		)
 		_ability_ui[ability] = card_refs
 		_refresh_ability_ui(ability)
@@ -825,6 +917,8 @@ func _build_class_tab(unit: UnitData) -> void:
 			func() -> void: _select_passive_entry(passive),
 			_class_list_item_cards,
 			_active_class_list_key,
+			null,
+			passive,
 		)
 		_passive_ui[passive] = card_refs
 		_refresh_passive_ui(passive)
@@ -1015,6 +1109,10 @@ func _refresh_passive_ui(passive: PassiveData) -> void:
 	var title: Label = refs.get("title")
 	if title != null:
 		title.text = passive.display_name
+		if not passive.description.is_empty():
+			title.tooltip_text = passive.description
+		else:
+			title.tooltip_text = ""
 	if refs.has("impl") and refs["impl"] != null:
 		refs["impl"].text = ClassLibrarySchema.passive_implementation_notes(passive)
 	if refs.has("dump") and refs["dump"] != null:
@@ -1144,6 +1242,7 @@ func _sync_list_preview_width(preview: RichTextLabel, host: PanelContainer) -> v
 
 
 func _refresh_passive_preview(passive: PassiveData, preview: RichTextLabel) -> void:
+	CombatUiFormatters.configure_body_font(ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	preview.text = ClassLibrarySchema.passive_preview_bbcode(passive)
 
 
@@ -1311,13 +1410,30 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 	var refs: Dictionary = _ability_ui[ability]
 	var preview: RichTextLabel = refs.get("preview")
 	if preview != null:
-		preview.text = ClassLibrarySchema.in_game_ability_bbcode(ability)
+		preview.text = _ability_effect_preview_bbcode(ability)
 		var wrap: PanelContainer = refs.get("wrap")
 		if wrap != null:
 			_sync_list_preview_width(preview, wrap)
+	var cost_val: Label = refs.get("cost_val")
+	if cost_val != null:
+		var cost_chip: Dictionary = CombatUiFormatters.ability_cost_chip(ability)
+		cost_val.text = String(cost_chip.get("text", ""))
+	var cost_row: HBoxContainer = refs.get("cost_row")
+	if cost_row != null:
+		var cost_chip_row: Dictionary = CombatUiFormatters.ability_cost_chip(ability)
+		cost_row.tooltip_text = String(cost_chip_row.get("tooltip", ""))
+	var range_val: Label = refs.get("range_val")
+	if range_val != null:
+		var range_chip: Dictionary = CombatUiFormatters.ability_range_chip(ability, _preview_unit())
+		range_val.text = String(range_chip.get("text", ""))
+	var range_row: HBoxContainer = refs.get("range_row")
+	if range_row != null:
+		var range_chip_row: Dictionary = CombatUiFormatters.ability_range_chip(ability, _preview_unit())
+		range_row.tooltip_text = String(range_chip_row.get("tooltip", ""))
 	var title: Label = refs.get("title")
 	if title != null:
 		title.text = ability.display_name
+		title.tooltip_text = CombatUiFormatters.ability_tooltip_text(ability, _preview_unit())
 	if refs.has("impl") and refs["impl"] != null:
 		refs["impl"].text = ClassLibrarySchema.ability_implementation_notes(ability)
 	if refs.has("dump") and refs["dump"] != null:

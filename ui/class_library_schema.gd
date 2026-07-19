@@ -534,20 +534,13 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 	return "\n".join(parts)
 
 
-static func in_game_ability_bbcode(ability: AbilityData) -> String:
+static func in_game_ability_bbcode(ability: AbilityData, unit: UnitState = null) -> String:
 	if ability == null:
 		return ""
 	CombatUiFormatters.configure_body_font(ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
-	var header: String = CombatUiFormatters.ability_desc(ability)
-	var body: String = CombatUiFormatters.ability_effect_bbcode(ability)
-	var title_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_TITLE)
 	var body_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY)
-	var meta_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL)
-	return (
-		"[font_size=%d][b]%s[/b][/font_size]\n"
-		+ "[font_size=%d]%s[/font_size]\n"
-		+ "[font_size=%d][color=#888888]%s[/color][/font_size]"
-	) % [title_px, ability.display_name, body_px, body, meta_px, header]
+	var body: String = CombatUiFormatters.ability_effect_bbcode(ability, unit)
+	return "[font_size=%d]%s[/font_size]" % [body_px, body]
 
 
 static func targeting_flags_dump(ability: AbilityData) -> String:
