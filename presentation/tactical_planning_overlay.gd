@@ -1030,10 +1030,6 @@ func _draw_preview_arrows() -> void:
 	var prev: CombatPlanningPreview = _committed_preview
 	if _board == null or prev.preview_board == null:
 		return
-	var dragging: bool = _planning_input != null and _planning_input.dragging
-	var drag_unit_id: int = _planning_input.get_drag_unit_id() if _planning_input != null else -1
-	var selected_id: int = _director.selected_unit_id if _director != null else -1
-	var skill_priority: bool = _planning_input.skill_interaction_active() if _planning_input != null else false
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or not _intent_visible(unit):
 			continue
@@ -1041,35 +1037,9 @@ func _draw_preview_arrows() -> void:
 		if route.is_empty():
 			continue
 		var split: int = int(prev.preview_splits.get(unit.id, route.size()))
-		var post_split: int = int(prev.preview_post_splits.get(unit.id, split))
-		var legs: Dictionary = _committed_route_legs(unit, route, split, post_split)
-		var pre_action_leg: Array = legs.get("pre", [])
-		var post_action_leg: Array = legs.get("post", [])
 		var enemy_leg: Array = []
 		if split < route.size():
 			enemy_leg = route.slice(maxi(split - 1, 0))
-		if pre_action_leg.size() >= 2:
-			var skip_live_route := false
-			if not unit.is_enemy() and unit.id == selected_id:
-				if dragging and unit.id == drag_unit_id:
-					skip_live_route = true
-				elif skill_priority and not dragging:
-					skip_live_route = true
-			if not skip_live_route:
-				var p_col: Color = _player_color_for_unit(unit)
-				var dim_col := Color(p_col.r, p_col.g, p_col.b, 0.35)
-				_draw_route_line(pre_action_leg, dim_col, true, true)
-		if post_action_leg.size() >= 2:
-			var skip_post := false
-			if not unit.is_enemy() and unit.id == selected_id:
-				if dragging and unit.id == drag_unit_id:
-					skip_post = true
-				elif skill_priority and not dragging:
-					skip_post = true
-			if not skip_post:
-				var p_col: Color = _player_color_for_unit(unit)
-				var post_col := Color(p_col.r, p_col.g, p_col.b, 0.78)
-				_draw_route_line(post_action_leg, post_col, post_action_leg.size() <= 2, true)
 		if enemy_leg.size() >= 2:
 			var dim_enemy := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, 0.35)
 			_draw_route_line(enemy_leg, dim_enemy, split <= 1, true)
@@ -1087,32 +1057,6 @@ func _draw_preview_arrows() -> void:
 			elif route.size() > 0:
 				end_tile = route[route.size() - 1]
 			_draw_death_marker(end_tile)
-
-
-func _committed_route_legs(
-	unit: UnitState,
-	route: Array,
-	split: int,
-	post_split: int,
-) -> Dictionary:
-	var legs: Dictionary = {"pre": [], "post": []}
-	if unit == null or route.size() < 2 or _director == null:
-		return legs
-	var has_pre: bool = _director.unit_has_move_planned_at_timing(
-		unit.id, GameEnums.MoveTiming.PRE_ACTION,
-	)
-	var has_post: bool = _director.unit_has_move_planned_at_timing(
-		unit.id, GameEnums.MoveTiming.POST_ACTION,
-	)
-	var end_idx: int = mini(split, route.size())
-	if has_pre and has_post:
-		legs["pre"] = route.slice(0, mini(post_split, end_idx))
-		legs["post"] = route.slice(maxi(post_split - 1, 0), end_idx)
-	elif has_pre:
-		legs["pre"] = route.slice(0, end_idx)
-	elif has_post:
-		legs["post"] = route.slice(0, end_idx)
-	return legs
 
 
 func _interaction_move_hover_active(unit_id: int) -> bool:
