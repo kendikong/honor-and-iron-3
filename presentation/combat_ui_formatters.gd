@@ -415,19 +415,24 @@ static func log_line(board: BoardState, event: SimEvent, last_telemetry: Diction
 		GameEnums.SimEventType.UNIT_DAMAGED:
 			var incoming: int = int(d.get("amount", 0))
 			var hp_dmg: int = int(d.get("hp_damaged", incoming))
+			var armor_dmg: int = int(d.get("armor_damaged", 0))
 			var after_hp: int = int(d.get("hp", 0))
 			var before_hp: int = after_hp + hp_dmg
 			var hp_note := " (%d HP -> %d HP)" % [before_hp, after_hp]
-			line = _color(HEX_DMG, "%s takes %d damage%s" % [
-				_unit_name(board, d.get("unit", -1)), incoming, hp_note,
+			if armor_dmg > 0:
+				hp_note += ", %d armor" % armor_dmg
+			var dmg_type: StringName = d.get("damage_type", &"physical")
+			var source_tag: String = format_damage_source_tag(dmg_type, str(d.get("source_label", "")))
+			line = _color(HEX_DMG, "%s takes %d damage%s%s" % [
+				_unit_name(board, d.get("unit", -1)), incoming, source_tag, hp_note,
 			])
 			if incoming <= 0:
-				line = _color(HEX_DMG, "%s takes 0 damage (fully mitigated)" % [
-					_unit_name(board, d.get("unit", -1)),
+				line = _color(HEX_DMG, "%s takes 0 damage (fully mitigated)%s" % [
+					_unit_name(board, d.get("unit", -1)), source_tag,
 				])
 			elif not telemetry.is_empty():
-				var formula: String = format_damage_telemetry(telemetry, incoming, hp_dmg, int(d.get("armor_damaged", 0)))
-				line += "\n[color=#aaaaaa][font_size=%d]   %s[/font_size][/color]" % [scaled_font_size(LOG_FORMULA_FONT_SIZE), formula]
+				var formula: String = format_damage_telemetry(telemetry, incoming, hp_dmg, armor_dmg)
+				line += "\n[font_size=%d]   %s[/font_size]" % [scaled_font_size(LOG_FORMULA_FONT_SIZE), formula]
 				telemetry.clear()
 		GameEnums.SimEventType.UNIT_DIED:
 			telemetry.clear()
@@ -999,22 +1004,141 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 	return body
 
 
+static func format_damage_source_tag(dmg_type: StringName, source_label: String) -> String:
+	var label: String = source_label.strip_edges()
+	if label.is_empty():
+		match String(dmg_type):
+			"collision":
+				label = "collision"
+			"hazard":
+				label = "terrain"
+			"bleed":
+				label = "bleed"
+			"burn":
+				label = "burn"
+			"poison":
+				label = "poison"
+			"true":
+				label = "true damage"
+			"magical":
+				label = "magical attack"
+			"physical":
+				label = "attack"
+			_:
+				label = String(dmg_type)
+	return " from %s" % label
+
+
 static func format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, armor_dmg: int) -> String:
+	var c_base := "F39C12"
+	var c_wpn := "E74C3C"
+	var c_stat := "9B59B6"
+	var c_def := "3498DB"
+	var c_fort := "1ABC9C"
+	var c_status := "F1C40F"
+	var c_final := "2ECC71"
+	var c_mult := "95A5A6"
+	var dmg_type: StringName = m.get("type", &"damage")
+	if dmg_type == &"collision":
+		var base: int = int(m.get("base", 1))
+		var wpn: int = int(m.get("wpn", 0))
+		var stat_val: int = int(m.get("stat_val", 0))
+		var excess: int = int(m.get("excess_push", 0))
+		var base_bonus: int = int(m.get("base_bonus", 0))
+		var t_def: int = int(m.get("target_def", 0))
+		var fort: int = int(m.get("fortitude", m.get("fort", 0)))
+		var mult_raw: float = float(m.get("multiplier_raw", m.get("floored", m.get("final_raw", 0))))
+		var stat_mult: float = 1.0 + float(stat_val) / 5.0
+		var raw_base: float = 1.0 + float(excess) / 3.0 + float(base_bonus)
+		var base_parts := "1 + %s/3" % _fmt_calc_num(float(excess))
+		if base_bonus > 0:
+			base_parts += " + %d Retaliator" % base_bonus
+		var formula := "%s × (%s + %s) × %s" % [
+			_damage_formula_color(c_mult, "0.75"),
+			_damage_formula_color(c_base, "BASE"),
+			_damage_formula_color(c_wpn, "WPN"),
+			_damage_formula_color(c_stat, "STR mult"),
+		]
+		formula += " - %s" % _damage_formula_color(c_def, "DEF")
+		if fort != 0:
+			formula += " - %s" % _damage_formula_color(c_fort, "FORT")
+		formula += "\n   BASE %s = %s" % [
+			_damage_formula_color(c_base, base_parts),
+			_damage_formula_color(c_base, _fmt_calc_num(raw_base)),
+		]
+		if int(floorf(raw_base)) != base:
+			formula += " → %s" % _damage_formula_color(c_base, _fmt_calc_num(float(base)))
+		formula += "\n   %s × (%s + %s) × %s = %s" % [
+			_damage_formula_color(c_mult, "0.75"),
+			_damage_formula_color(c_base, _fmt_calc_num(float(base))),
+			_damage_formula_color(c_wpn, _fmt_calc_num(float(wpn))),
+			_damage_formula_color(c_stat, _fmt_calc_num(stat_mult)),
+			_damage_formula_color(c_final, _fmt_calc_num(mult_raw)),
+		]
+		formula += "\n   %s - %s" % [
+			_damage_formula_color(c_final, _fmt_calc_num(mult_raw)),
+			_damage_formula_color(c_def, _fmt_calc_num(float(t_def))),
+		]
+		if fort != 0:
+			formula += " - %s" % _damage_formula_color(c_fort, _fmt_calc_num(float(fort)))
+		formula += " = %s incoming" % _damage_formula_color(c_final, _fmt_calc_num(float(incoming)))
+		if armor_dmg > 0:
+			formula += "\n   - %s armor → %s HP" % [
+				_damage_formula_color(c_def, _fmt_calc_num(float(armor_dmg))),
+				_damage_formula_color(c_final, _fmt_calc_num(float(hp_dmg))),
+			]
+		return formula
+	var stat_name: String = str(m.get("stat_name", "STR"))
 	var base: int = int(m.get("base", 0))
 	var wpn: int = int(m.get("wpn", 0))
 	var stat_val: int = int(m.get("stat_val", 0))
+	var mult_raw: float = float(m.get("multiplier_raw", m.get("final_raw", m.get("floored", 0))))
 	var stat_mult: float = 1.0 + float(stat_val) / 5.0
-	var mult_raw: float = float(m.get("multiplier_raw", m.get("floored", m.get("final_raw", 0))))
 	var t_def: int = int(m.get("target_def", 0))
 	var fort: int = int(m.get("fortitude", m.get("fort", 0)))
-	var formula := "(%s + %s) × %s = %s" % [base, wpn, _fmt_calc_num(stat_mult), _fmt_calc_num(mult_raw)]
-	formula += " - %s" % t_def
+	var vuln: bool = bool(m.get("vulnerable", m.get("vuln", false)))
+	var elec: bool = bool(m.get("electrified", m.get("elec", false)))
+	var formula := "(%s + %s) × %s" % [
+		_damage_formula_color(c_base, "Base"),
+		_damage_formula_color(c_wpn, "WPN"),
+		_damage_formula_color(c_stat, "%s mult" % stat_name),
+	]
+	if vuln or elec:
+		formula += " + %s" % _damage_formula_color(c_status, "Status")
+	formula += " - %s" % _damage_formula_color(c_def, "DEF")
 	if fort != 0:
-		formula += " - %s" % fort
-	formula += " → %d incoming" % incoming
-	if armor_dmg > 0:
-		formula += " (-%d armor → %d HP)" % [armor_dmg, hp_dmg]
+		formula += " - %s" % _damage_formula_color(c_fort, "FORT")
+	formula += "\n   (%s + %s) × %s = %s" % [
+		_damage_formula_color(c_base, _fmt_calc_num(float(base))),
+		_damage_formula_color(c_wpn, _fmt_calc_num(float(wpn))),
+		_damage_formula_color(c_stat, _fmt_calc_num(stat_mult)),
+		_damage_formula_color(c_final, _fmt_calc_num(mult_raw)),
+	]
+	if vuln:
+		formula += " + %s" % _damage_formula_color(c_status, "2.0 (Vuln)")
+	if elec:
+		formula += " + %s" % _damage_formula_color(c_status, "1.0 (Elec)")
+	formula += " - %s" % _damage_formula_color(c_def, _fmt_calc_num(float(t_def)))
+	if fort != 0:
+		formula += " - %s" % _damage_formula_color(c_fort, _fmt_calc_num(float(fort)))
+	var calc_val: float = mult_raw
+	if vuln:
+		calc_val += 2.0
+	if elec:
+		calc_val += 1.0
+	calc_val -= float(t_def)
+	calc_val -= float(fort)
+	formula += " = %s" % _damage_formula_color(c_final, _fmt_calc_num(maxf(0.0, calc_val)))
+	if bool(m.get("backstab", false)):
+		formula += "\n   + %s (%s)" % [
+			_damage_formula_color(c_status, "Backstab"),
+			_fmt_calc_num(float(m.get("backstab_bonus", 0))),
+		]
 	return formula
+
+
+static func _damage_formula_color(hex: String, text: String) -> String:
+	return "[color=#%s]%s[/color]" % [hex, text]
 
 
 static func append_victory_log(log_label: RichTextLabel, victory: bool) -> void:

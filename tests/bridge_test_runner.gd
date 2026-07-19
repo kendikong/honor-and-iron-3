@@ -304,11 +304,13 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:
 	var formula: String = CombatUiFormatters.format_damage_telemetry(
-		{"base": 3, "wpn": 2, "stat_val": 5, "multiplier_raw": 7.0, "target_def": 1, "fortitude": 0},
+		{"base": 3, "wpn": 2, "stat_val": 5, "stat_name": "STR", "multiplier_raw": 7.0, "target_def": 1, "fortitude": 0},
 		6, 4, 2,
 	)
-	if formula.find("incoming") < 0:
-		failures.append("CombatUiFormatters: format_damage_telemetry missing incoming")
+	if formula.find("[color=#F39C12]Base[/color]") < 0:
+		failures.append("CombatUiFormatters: format_damage_telemetry missing color-coded formula labels")
+	if formula.find("(3.0 + 2.0)") < 0:
+		failures.append("CombatUiFormatters: format_damage_telemetry missing numeric calculation line")
 	var desc: String = CombatUiFormatters.reason_text("no_path")
 	if desc != "can't reach":
 		failures.append("CombatUiFormatters: reason_text no_path mismatch")
