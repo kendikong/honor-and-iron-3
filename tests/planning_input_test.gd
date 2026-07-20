@@ -11,6 +11,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_action_range_auto_run_ap_gate(failures)
 	_test_composite_cursor_gate(failures)
 	_test_cursor_matches_commit_slots(failures)
+	_test_drag_cursor_matches_commit_slots(failures)
 	_test_preview_from_commit_slots(failures)
 	_test_audit_regression_fixes(failures)
 	_test_auto_skill_after_move_arms_dash(failures)
@@ -252,6 +253,48 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 	)
 	if move_glyph.find(PlanningIcons.GLYPH_DASH) >= 0:
 		failures.append("PlanningInputTest: move glyph must not infer dash from armed skill")
+
+
+static func _test_drag_cursor_matches_commit_slots(failures: Array[String]) -> void:
+	var fix: Dictionary = _bowling_charge_arm_fixture()
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	input.auto_use_skill_after_move = true
+	input.dragging = true
+	input._drag_unit_id = 1
+	input._drag_unit_was_selected = true
+	var dest := Vector2i(1, 4)
+	input._drag_route = [unit.position, Vector2i(2, 3), Vector2i(1, 3), dest]
+	input._drag_last_free = Vector2i(1, 3)
+	director.projected_state = director.board.clone()
+	var params: Dictionary = input._commit_interaction_params(dest, -1)
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		1,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+	)
+	var expected_icon: String = input._cursor_icon_from_commit_slots(slots, unit)
+	var drag_icon: String = input._drag_hover_icon(unit, dest)
+	if drag_icon != expected_icon:
+		failures.append(
+			(
+				"PlanningInputTest: drag cursor '%s' must match commit slots '%s'"
+				% [drag_icon, expected_icon]
+			),
+		)
+	if (slots.get("action", []) as Array).is_empty():
+		failures.append(
+			"PlanningInputTest: drag commit slots should include awaiting action for Bowling Charge",
+		)
+	if not director.commit_from_slots(1, slots):
+		failures.append("PlanningInputTest: drag commit slots should commit")
+	if director.find_awaiting_action(1) == null:
+		failures.append(
+			"PlanningInputTest: drag drop commit must leave awaiting action in plan_action",
+		)
 
 
 static func _test_preview_from_commit_slots(failures: Array[String]) -> void:

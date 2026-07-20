@@ -211,12 +211,14 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 				committed = true
 		return committed
 	if dropped_on == null:
+		var params: Dictionary = _commit_interaction_params(cell, -1)
 		committed = _commit_at_cell(
 			released_unit_id,
-			cell,
+			params.cell,
 			local,
-			_route_waypoints(),
-			legal_move_tiles,
+			params.waypoints,
+			params.legal_move_tiles,
+			params.preferred,
 		)
 	_drag_move_commit_instant = false
 	return committed
@@ -280,7 +282,7 @@ func update_drag(local: Vector2) -> void:
 			cell,
 			_drag_last_free,
 			drag_target_id,
-			waypoints,
+			[],
 			_snapshot_drag_legal_move_tiles(),
 		)
 		_apply_live_preview(_drag_preview_cache)
@@ -991,6 +993,47 @@ func _plan_approach_or_trample_on_enemy(
 const _NO_PREFERRED_APPROACH: Vector2i = Vector2i(-999999, -999999)
 
 
+## Single source for commit cell, waypoints, and approach hint — cursor, preview, and drop must match.
+func _commit_interaction_params(
+	hover_cell: Vector2i,
+	attack_target_id: int = -1,
+) -> Dictionary:
+	var waypoints: Array[Vector2i] = []
+	var legal_moves: Array[Vector2i] = []
+	if dragging:
+		waypoints = _route_waypoints()
+		legal_moves = _snapshot_drag_legal_move_tiles()
+	var commit_cell: Vector2i = hover_cell
+	var preferred: Vector2i = _NO_PREFERRED_APPROACH
+	if attack_target_id >= 0 and _director != null and _director.board != null:
+		var target: UnitState = _director.board.get_unit_by_id(attack_target_id)
+		if target != null:
+			commit_cell = target.position
+			if dragging and _drag_last_free != commit_cell:
+				preferred = _drag_last_free
+	return {
+		"cell": commit_cell,
+		"waypoints": waypoints,
+		"legal_move_tiles": legal_moves,
+		"preferred": preferred,
+	}
+
+
+func _final_commit_slots_for_interaction(
+	unit_id: int,
+	cell: Vector2i,
+	waypoints: Array[Vector2i] = [],
+	legal_move_tiles: Array[Vector2i] = [],
+	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
+) -> Dictionary:
+	return _finalize_commit_slots(
+		_build_commit_slots_at_cell(
+			unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
+		),
+		unit_id,
+	)
+
+
 func _commit_at_cell(
 	unit_id: int,
 	cell: Vector2i,
@@ -1007,11 +1050,8 @@ func _commit_at_cell(
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor != null and cell == _proj_origin(actor) and _try_arm_awaiting_or_self_skill(unit_id):
 		return true
-	var slots: Dictionary = _finalize_commit_slots(
-		_build_commit_slots_at_cell(
-			unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
-		),
-		unit_id,
+	var slots: Dictionary = _final_commit_slots_for_interaction(
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
 	)
 	if bool(slots.get("invalid", false)):
 		if actor != null and cell == _proj_origin(actor) and _try_plan_wait(unit_id):
@@ -1115,11 +1155,8 @@ func _preview_from_commit_slots_at_cell(
 	)
 	if _director == null or unit_id < 0:
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
-	var slots: Dictionary = _finalize_commit_slots(
-		_build_commit_slots_at_cell(
-			unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
-		),
-		unit_id,
+	var slots: Dictionary = _final_commit_slots_for_interaction(
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
 	)
 	if bool(slots.get("invalid", false)):
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
@@ -1129,23 +1166,21 @@ func _preview_from_commit_slots_at_cell(
 func _preview_at_interaction_cell(
 	unit_id: int,
 	hover_cell: Vector2i,
-	move_coord: Vector2i,
+	_move_coord: Vector2i,
 	attack_target_id: int = -1,
-	waypoints: Array[Vector2i] = [],
+	_waypoints: Array[Vector2i] = [],
 	legal_move_tiles: Array[Vector2i] = [],
 ) -> Dictionary:
-	var preview_cell: Vector2i = hover_cell
-	var preferred: Vector2i = _NO_PREFERRED_APPROACH
-	if attack_target_id >= 0 and _director != null and _director.board != null:
-		var target: UnitState = _director.board.get_unit_by_id(attack_target_id)
-		if target != null:
-			preview_cell = target.position
-			if move_coord != preview_cell:
-				preferred = move_coord
-	elif move_coord != hover_cell:
-		preview_cell = move_coord
+	var params: Dictionary = _commit_interaction_params(hover_cell, attack_target_id)
+	var tiles: Array[Vector2i] = legal_move_tiles
+	if tiles.is_empty():
+		tiles = params.legal_move_tiles
 	return _preview_from_commit_slots_at_cell(
-		unit_id, preview_cell, waypoints, legal_move_tiles, preferred,
+		unit_id,
+		params.cell,
+		params.waypoints,
+		tiles,
+		params.preferred,
 	)
 
 
@@ -1911,11 +1946,8 @@ func _cursor_icon_for_commit_at_cell(
 ) -> String:
 	if unit == null:
 		return ""
-	var slots: Dictionary = _finalize_commit_slots(
-		_build_commit_slots_at_cell(
-			unit.id, cell, waypoints, legal_move_tiles, preferred_approach,
-		),
-		unit.id,
+	var slots: Dictionary = _final_commit_slots_for_interaction(
+		unit.id, cell, waypoints, legal_move_tiles, preferred_approach,
 	)
 	return _cursor_icon_from_commit_slots(slots, unit)
 
@@ -2110,22 +2142,18 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 		return ""
 	if drag_preview_failed:
 		return PlanningIcons.GLYPH_NULL
-	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
 	var drag_target_id: int = -1
 	if _director != null and _director.board != null:
 		var occ := _director.board.get_unit_at(cell)
 		drag_target_id = _drag_preview_target_id(actor, occ)
-	var preferred: Vector2i = _NO_PREFERRED_APPROACH
-	var preview_cell: Vector2i = cell
-	if drag_target_id >= 0 and _director.board != null:
-		var target := _director.board.get_unit_by_id(drag_target_id)
-		if target != null:
-			preview_cell = target.position
-			if _drag_last_free != preview_cell:
-				preferred = _drag_last_free
-	elif _drag_last_free != cell:
-		preview_cell = _drag_last_free
-	return _hover_icon_for_cell(actor, preview_cell, _drag_route, legal_moves, preferred)
+	var params: Dictionary = _commit_interaction_params(cell, drag_target_id)
+	return _hover_icon_for_cell(
+		actor,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+	)
 
 
 func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitState) -> bool:
