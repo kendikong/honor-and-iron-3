@@ -204,27 +204,15 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 	if cell == _proj_origin(actor):
 		if _drag_unit_was_selected:
 			var origin_params: Dictionary = _commit_interaction_params(cell, -1)
-			if not had_movement:
-				committed = _commit_at_cell(
-					released_unit_id,
-					origin_params.cell,
-					local,
-					origin_params.waypoints,
-					origin_params.legal_move_tiles,
-					origin_params.preferred,
-				)
-			elif not _commit_at_cell(
+			committed = _commit_at_cell(
 				released_unit_id,
 				origin_params.cell,
 				local,
 				origin_params.waypoints,
 				origin_params.legal_move_tiles,
 				origin_params.preferred,
-			):
-				if _commit_face_only(released_unit_id, local, cell):
-					committed = true
-			else:
-				committed = true
+				int(origin_params.get("face_dir", -1)),
+			)
 		return committed
 	if dropped_on == null:
 		var params: Dictionary = _commit_interaction_params(cell, -1)
@@ -235,6 +223,7 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 			params.waypoints,
 			params.legal_move_tiles,
 			params.preferred,
+			int(params.get("face_dir", -1)),
 		)
 	_drag_move_commit_instant = false
 	return committed
@@ -1031,11 +1020,24 @@ func _commit_interaction_params(
 			commit_cell = target.position
 			if _drag_route_commits_active() and _drag_last_free != commit_cell:
 				preferred = _drag_last_free
+	var face_dir: int = -1
+	if _map_view != null and _drag_route_commits_active():
+		var active_unit_id: int = (
+			_drag_unit_id if _drag_unit_id >= 0
+			else (_director.selected_unit_id if _director != null else -1)
+		)
+		if active_unit_id >= 0:
+			var route_actor := _proj_unit(active_unit_id)
+			if route_actor == null and _director != null and _director.board != null:
+				route_actor = _director.board.get_unit_by_id(active_unit_id)
+			if route_actor != null and hover_cell == route_actor.position:
+				face_dir = _facing_from_drop(_map_view.get_local_mouse_position(), hover_cell)
 	return {
 		"cell": commit_cell,
 		"waypoints": waypoints,
 		"legal_move_tiles": legal_moves,
 		"preferred": preferred,
+		"face_dir": face_dir,
 	}
 
 
@@ -1045,9 +1047,10 @@ func _final_commit_slots_for_interaction(
 	waypoints: Array[Vector2i] = [],
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
+	face_dir: int = -1,
 ) -> Dictionary:
 	var slots: Dictionary = _build_commit_slots_at_cell(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
 	)
 	_strip_unaffordable_premove_pairs(slots, unit_id, cell, waypoints)
 	return _finalize_commit_slots(slots, unit_id)
@@ -1097,6 +1100,7 @@ func _commit_at_interaction_cell(
 		params.waypoints,
 		params.legal_move_tiles,
 		params.preferred,
+		int(params.get("face_dir", -1)),
 	)
 
 
@@ -1107,22 +1111,18 @@ func _commit_at_cell(
 	waypoints: Array[Vector2i] = [],
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
+	face_dir: int = -1,
 ) -> bool:
 	if selected_phase_action_exhausted(unit_id):
 		_play_sfx("invalid")
 		return false
-	var actor := _proj_unit(unit_id)
-	if actor == null and _director != null and _director.board != null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor != null and cell == _proj_origin(actor) and _try_arm_awaiting_or_self_skill(unit_id):
-		return true
 	var slots: Dictionary = _final_commit_slots_for_interaction(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
 	)
+	if bool(slots.get("_noop", false)):
+		_play_sfx("ability")
+		return true
 	if bool(slots.get("invalid", false)):
-		if actor != null and cell == _proj_origin(actor) and _try_plan_wait(unit_id):
-			_play_sfx("ability")
-			return true
 		_play_sfx("invalid")
 		return false
 	_apply_facing_to_slots(slots, local, cell)
@@ -1133,32 +1133,6 @@ func _commit_at_cell(
 	_on_commit_slots_applied(unit_id, slots)
 	_notify_drag_plan_move_committed(unit_id)
 	return true
-
-
-func _try_arm_awaiting_or_self_skill(unit_id: int) -> bool:
-	if _director == null or not _is_planning():
-		return false
-	if selected_phase_action_exhausted(unit_id):
-		return false
-	if _director.selected_ability_index < 0:
-		return false
-	if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
-		return false
-	var actor := _proj_unit(unit_id)
-	if actor == null and _director.board != null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor == null:
-		return false
-	var self_ability := _selected_ability_data(actor)
-	if not AbilitySystem.planning_arms_on_self_tile(actor, self_ability):
-		return false
-	if _director.find_awaiting_action(unit_id) != null:
-		_play_sfx("ability")
-		return true
-	var armed: bool = arm_awaiting_targeting()
-	if armed:
-		_play_sfx("ability")
-	return armed
 
 
 func _apply_facing_to_slots(slots: Dictionary, local: Vector2, cell: Vector2i) -> void:
@@ -1188,8 +1162,16 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 			var action: TimelineAction = raw as TimelineAction
 			if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
 				continue
+			if action.ability.is_universal_wait():
+				if _planning != null:
+					_planning.clear_threat_origin()
+				_director.select_ability(-1)
+				return
 			if action.awaiting_target:
 				_preserve_ability_selection_for_action(unit_id, action)
+				if _planning != null:
+					_planning.clear_threat_origin()
+				_request_planning_selection_refresh()
 				return
 			var actor := _proj_unit(unit_id)
 			if actor == null and _director.board != null:
@@ -1360,33 +1342,6 @@ func awaiting_targeting_active() -> bool:
 	return _director.find_awaiting_action(_director.selected_unit_id) != null
 
 
-func arm_awaiting_targeting() -> bool:
-	if _director == null or _director.selected_ability_index < 0:
-		return false
-	var actor := _proj_unit(_director.selected_unit_id)
-	if actor == null and _director.board != null:
-		actor = _director.board.get_unit_by_id(_director.selected_unit_id)
-	if actor == null or _selected_ability_data(actor) == null:
-		return false
-	if selected_phase_action_exhausted(actor.id):
-		return false
-	var ability := _selected_ability_data(actor)
-	if not AbilitySystem.planning_arms_on_self_tile(actor, ability):
-		return false
-	if _director.find_awaiting_action(actor.id) != null:
-		_request_planning_selection_refresh()
-		return true
-	_director.set_awaiting_action(actor.id, ability)
-	_director.flush_plan_refresh_signals_if_pending()
-	if _planning != null:
-		_planning.clear_threat_origin()
-		_planning._invalidate_hover_cache()
-		_planning._recompute_hover_ranges_from_inputs()
-	_invalidate_planning_hover_cache()
-	_request_planning_selection_refresh()
-	return awaiting_targeting_active()
-
-
 func clear_awaiting_targeting() -> void:
 	if _director == null or _director.selected_unit_id < 0:
 		return
@@ -1438,38 +1393,66 @@ func _drag_preview_cache_key_for(
 	return key
 
 
-func _commit_face_only(unit_id: int, local: Vector2, cell: Vector2i) -> bool:
-	var face_dir: int = _facing_from_drop(local, cell)
-	if face_dir < 0 or _director == null:
+func _self_tile_allows_wait(actor: UnitState, ability_index: int) -> bool:
+	if _director == null or not _is_planning() or actor == null:
 		return false
-	var slots: Dictionary = _empty_commit_slots()
-	slots["action"].append(TimelineAction.make_face(unit_id, face_dir))
-	slots = _finalize_commit_slots(slots, unit_id)
-	if bool(slots.get("invalid", false)):
+	if selected_phase_action_exhausted(actor.id):
 		return false
-	if not _director.commit_from_slots(unit_id, slots):
+	if CombatDirector.is_wait_ability_index(ability_index):
+		return true
+	if ability_index >= 0:
 		return false
-	_play_sfx("move")
 	return true
 
 
-func _try_plan_wait(unit_id: int) -> bool:
-	if _director == null or not _is_planning():
-		return false
-	if selected_phase_action_exhausted(unit_id):
-		_play_sfx("invalid")
-		return false
-	var actor := _proj_unit(unit_id)
-	if actor == null and _director.board != null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor == null or not _would_show_wait_on_self_click(actor):
-		return false
-	var had_wait: bool = _director.unit_has_wait_planned(unit_id)
-	_director.rpc_plan_wait(unit_id)
-	if _planning != null:
-		_planning.clear_threat_origin()
-	_director.select_ability(-1)
-	return _director.unit_has_wait_planned(unit_id) != had_wait
+func _append_wait_action_slot(slots: Dictionary, unit_id: int, actor: UnitState) -> void:
+	var wait_ability: AbilityData = DataLibrary.get_universal_wait()
+	if wait_ability == null:
+		slots["invalid"] = true
+		return
+	slots["action"].append(
+		TimelineAction.make_ability(unit_id, wait_ability, actor.position, unit_id),
+	)
+
+
+func _build_self_tile_commit_slots(
+	slots: Dictionary,
+	actor: UnitState,
+	unit_id: int,
+	ability_index: int,
+	ability: AbilityData,
+	face_dir: int,
+) -> Dictionary:
+	if CombatDirector.is_wait_ability_index(ability_index) and ability != null:
+		slots["action"].append(
+			TimelineAction.make_ability(unit_id, ability, actor.position, unit_id),
+		)
+		return slots
+	if ability != null and AbilitySystem.planning_arms_on_self_tile(actor, ability):
+		if _director.find_awaiting_action(unit_id) != null:
+			slots["_noop"] = true
+			return slots
+		slots["action"].append(
+			TimelineAction.make_ability_awaiting(unit_id, ability, actor.position),
+		)
+		return slots
+	if (
+		ability != null
+		and AbilitySystem.can_target_self(actor, ability)
+		and not AbilitySystem.is_run_ability(ability)
+	):
+		slots["action"].append(
+			TimelineAction.make_ability(unit_id, ability, actor.position, unit_id),
+		)
+		return slots
+	if face_dir >= 0 and _drag_route_commits_active():
+		slots["action"].append(TimelineAction.make_face(unit_id, face_dir))
+		return slots
+	if _self_tile_allows_wait(actor, ability_index):
+		_append_wait_action_slot(slots, unit_id, actor)
+		return slots
+	slots["invalid"] = true
+	return slots
 
 
 func _selected_ability_data(unit: UnitState) -> AbilityData:
@@ -1787,6 +1770,7 @@ func _build_commit_slots_at_cell(
 	waypoints: Array[Vector2i] = [],
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
+	face_dir: int = -1,
 ) -> Dictionary:
 	var slots: Dictionary = _empty_commit_slots()
 	if _director == null or unit_id < 0 or _director.board == null:
@@ -1808,20 +1792,9 @@ func _build_commit_slots_at_cell(
 	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
 
 	if cell == actor.position:
-		if CombatDirector.is_wait_ability_index(ability_index):
-			if ability != null:
-				slots["action"].append(
-					TimelineAction.make_ability(unit_id, ability, cell, unit_id),
-				)
-		elif (
-			ability != null
-			and AbilitySystem.can_target_self(actor, ability)
-			and not AbilitySystem.is_run_ability(ability)
-		):
-			slots["action"].append(
-				TimelineAction.make_ability(unit_id, ability, cell, unit_id),
-			)
-		return slots
+		return _build_self_tile_commit_slots(
+			slots, actor, unit_id, ability_index, ability, face_dir,
+		)
 
 	if hover_unit != null and hover_unit.is_enemy():
 		return _build_enemy_commit_slots(
@@ -2005,15 +1978,32 @@ func _actions_from_slots(slots: Dictionary) -> Array[TimelineAction]:
 func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 	if bool(slots.get("invalid", false)):
 		return slots
+	if bool(slots.get("_noop", false)):
+		slots["_preview_validated"] = true
+		return slots
 	var actions: Array[TimelineAction] = _actions_from_slots(slots)
 	if actions.is_empty():
 		slots["invalid"] = true
+		return slots
+	if _slots_are_wait_only(actions):
+		slots["_preview_validated"] = true
 		return slots
 	if _director != null and not _director.preview_commit_valid(unit_id, actions):
 		slots["invalid"] = true
 		return slots
 	slots["_preview_validated"] = true
 	return slots
+
+
+func _slots_are_wait_only(actions: Array[TimelineAction]) -> bool:
+	if actions.size() != 1:
+		return false
+	var action: TimelineAction = actions[0]
+	return (
+		action.type == GameEnums.ActionType.ABILITY
+		and action.ability != null
+		and action.ability.is_universal_wait()
+	)
 
 
 func _composite_cursors_enabled() -> bool:
@@ -2026,45 +2016,14 @@ func _cursor_icon_for_commit_at_cell(
 	waypoints: Array[Vector2i] = [],
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
+	face_dir: int = -1,
 ) -> String:
 	if unit == null:
 		return ""
 	var slots: Dictionary = _final_commit_slots_for_interaction(
-		unit.id, cell, waypoints, legal_move_tiles, preferred_approach,
+		unit.id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
 	)
 	return _cursor_icon_from_commit_slots(slots, unit)
-
-
-func _would_arm_awaiting_on_self_click(unit: UnitState) -> bool:
-	if _director == null or selected_phase_action_exhausted(unit.id):
-		return false
-	if _director.selected_ability_index < 0:
-		return false
-	if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
-		return false
-	var ability := _selected_ability_data(unit)
-	return ability != null and AbilitySystem.planning_arms_on_self_tile(unit, ability) and not awaiting_targeting_active()
-
-
-func _would_show_wait_on_self_click(unit: UnitState) -> bool:
-	if _director == null or not _is_planning():
-		return false
-	if selected_phase_action_exhausted(unit.id):
-		return false
-	if _director.selected_ability_index >= 0:
-		if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
-			return true
-		return false
-	return true
-
-
-func _would_commit_face_on_self(unit: UnitState, cell: Vector2i) -> bool:
-	if unit == null or cell != unit.position or not dragging or _map_view == null:
-		return false
-	if _drag_unit_id >= 0 and unit.id != _drag_unit_id:
-		return false
-	var local: Vector2 = _map_view.get_local_mouse_position()
-	return _facing_from_drop(local, cell) >= 0
 
 
 func _hover_icon_for_cell(
@@ -2073,21 +2032,13 @@ func _hover_icon_for_cell(
 	waypoints: Array[Vector2i] = [],
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
+	face_dir: int = -1,
 ) -> String:
 	if unit == null:
 		return ""
-	if cell == unit.position and _would_arm_awaiting_on_self_click(unit):
-		return PlanningIcons.awaiting_phase_glyph(_selected_ability_data(unit))
-	var icon: String = _cursor_icon_for_commit_at_cell(
-		unit, cell, waypoints, legal_move_tiles, preferred_approach,
+	return _cursor_icon_for_commit_at_cell(
+		unit, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
 	)
-	if icon != "" and icon != PlanningIcons.GLYPH_NULL:
-		return icon
-	if cell == unit.position and _would_show_wait_on_self_click(unit):
-		return PlanningIcons.GLYPH_WAIT
-	if _would_commit_face_on_self(unit, cell):
-		return PlanningIcons.GLYPH_FACE
-	return PlanningIcons.GLYPH_NULL if cell != unit.position else ""
 
 
 func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -> String:
@@ -2153,6 +2104,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 		params.waypoints,
 		params.legal_move_tiles,
 		params.preferred,
+		int(params.get("face_dir", -1)),
 	)
 
 
@@ -2164,15 +2116,6 @@ func _resolve_hover_unit_at(cell: Vector2i) -> UnitState:
 		return null
 	var projected: UnitState = _proj().get_unit_by_id(live.id)
 	return projected if projected != null else live
-
-
-func _move_hover_icon(p_unit: UnitState, cell: Vector2i) -> String:
-	if cell == p_unit.position:
-		return ""
-	if not _basic_move_allowed() or not _unit_move_slot_open(p_unit.id):
-		return ""
-	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
-	return _hover_icon_for_cell(p_unit, cell, [], legal_moves)
 
 
 func _attack_range_for(actor: UnitState) -> int:
@@ -2189,26 +2132,6 @@ func _in_attack_range_from(origin: Vector2i, enemy: UnitState, actor: UnitState)
 	if rng < 0:
 		return false
 	return GridSystem.manhattan(origin, enemy.position) <= rng
-
-
-func _move_attack_hover_icon(
-	p_unit: UnitState,
-	cell: Vector2i,
-	_origin: Vector2i = Vector2i(-9999, -9999),
-) -> String:
-	if not _composite_cursors_enabled():
-		return ""
-	if p_unit == null or cell == p_unit.position:
-		return ""
-	if _move_hover_icon(p_unit, cell) == "" and not (dragging and cell == _drag_last_free):
-		return ""
-	# Clicking a move tile only queues movement. Move+attack comes from enemy click or drag preview.
-	if not dragging or not _drag_preview_includes_attack(p_unit.id):
-		return ""
-	return PlanningIcons.join_glyphs([
-		_movement_icon_for(p_unit, cell),
-		PlanningIcons.GLYPH_ATTACK,
-	])
 
 
 func _drag_preview_includes_attack(actor_id: int) -> bool:
@@ -2242,6 +2165,7 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 		params.waypoints,
 		params.legal_move_tiles,
 		params.preferred,
+		int(params.get("face_dir", -1)),
 	)
 
 

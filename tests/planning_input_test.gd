@@ -14,6 +14,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_drag_cursor_matches_commit_slots(failures)
 	_test_drop_commit_preserves_drag_route(failures)
 	_test_cursor_omits_unaffordable_run_skill_pair(failures)
+	_test_slots_only_cursor_matches_commit(failures)
 	_test_preview_from_commit_slots(failures)
 	_test_audit_regression_fixes(failures)
 	_test_auto_skill_after_move_arms_dash(failures)
@@ -411,6 +412,72 @@ static func _test_cursor_omits_unaffordable_run_skill_pair(failures: Array[Strin
 		)
 
 
+static func _test_slots_only_cursor_matches_commit(failures: Array[String]) -> void:
+	var fixture: Dictionary = _bowling_charge_arm_fixture()
+	var input: CombatPlanningInput = fixture.input
+	var director: CombatDirector = fixture.director
+	var unit: UnitState = fixture.unit
+	input.auto_use_skill_after_move = true
+	director.projected_state = director.board.clone()
+	var dest := Vector2i(1, 4)
+	input.dragging = true
+	input._drag_unit_id = 1
+	input._drag_route = [unit.position, Vector2i(2, 3), dest]
+	input._drag_last_free = Vector2i(2, 3)
+	_assert_cursor_matches_slots(input, unit, dest, failures, "drag move+dash")
+	input.dragging = false
+	input._drag_unit_id = -1
+	input._drag_route.clear()
+	_assert_cursor_matches_slots(input, unit, unit.position, failures, "self arm")
+	if not director.commit_from_slots(
+		1, input._final_commit_slots_for_interaction(1, unit.position),
+	):
+		failures.append("PlanningInputTest: slots-only self arm commit should succeed")
+	if director.find_awaiting_action(1) == null:
+		failures.append("PlanningInputTest: slots-only self arm must write awaiting to plan")
+	director.clear_awaiting_action(1)
+	director.selected_ability_index = -1
+	_assert_cursor_matches_slots(input, unit, unit.position, failures, "self wait")
+	var wait_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	if not director.commit_from_slots(1, wait_slots):
+		failures.append("PlanningInputTest: slots-only wait commit should succeed")
+	if not director.unit_has_wait_planned(1):
+		failures.append("PlanningInputTest: slots-only wait commit must toggle wait")
+
+
+static func _assert_cursor_matches_slots(
+	input: CombatPlanningInput,
+	unit: UnitState,
+	cell: Vector2i,
+	failures: Array[String],
+	label: String,
+) -> void:
+	var params: Dictionary = input._commit_interaction_params(cell, -1)
+	var face_dir: int = int(params.get("face_dir", -1))
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		unit.id,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+		face_dir,
+	)
+	var from_slots: String = input._cursor_icon_from_commit_slots(slots, unit)
+	var from_hover: String = input._hover_icon_for_cell(
+		unit,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+		face_dir,
+	)
+	if from_slots != from_hover:
+		failures.append(
+			"PlanningInputTest: %s cursor must equal commit slots (hover=%s slots=%s)"
+			% [label, from_hover, from_slots],
+		)
+
+
 static func _test_preview_from_commit_slots(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
 	var director := CombatDirector.new()
@@ -491,15 +558,20 @@ static func _test_audit_regression_fixes(failures: Array[String]) -> void:
 	if action_steps.is_empty():
 		failures.append("PlanningInputTest: self-target skill should populate action slot on own tile")
 	director.selected_ability_index = 1
-	if not input._try_arm_awaiting_or_self_skill(1):
+	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	if (arm_slots.get("action", []) as Array).is_empty():
+		failures.append("PlanningInputTest: dash skill self click should build awaiting action slot")
+	if not director.commit_from_slots(1, arm_slots):
 		failures.append("PlanningInputTest: dash skill self click should arm dash targeting")
 	if not input.awaiting_targeting_active():
 		failures.append("PlanningInputTest: try_arm should queue awaiting action in plan")
 	director.selected_ability_index = -1
-	if not input._would_show_wait_on_self_click(unit):
-		failures.append("PlanningInputTest: empty skill bar should allow wait cursor on self tile")
+	var wait_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	if input._cursor_icon_from_commit_slots(wait_slots, unit) != PlanningIcons.GLYPH_WAIT:
+		failures.append("PlanningInputTest: empty skill bar should show wait cursor from commit slots")
 	director.selected_ability_index = 0
-	if input._would_show_wait_on_self_click(unit):
+	var heal_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	if input._cursor_icon_from_commit_slots(heal_slots, unit) == PlanningIcons.GLYPH_WAIT:
 		failures.append("PlanningInputTest: wait cursor hidden when self-target skill selected")
 
 
@@ -681,7 +753,9 @@ static func _test_dash_arm_survives_plan_refresh(failures: Array[String]) -> voi
 	var fixture: Dictionary = _bowling_charge_arm_fixture()
 	var input: CombatPlanningInput = fixture["input"] as CombatPlanningInput
 	var director: CombatDirector = fixture["director"] as CombatDirector
-	if not input._try_arm_awaiting_or_self_skill(1):
+	var unit: UnitState = fixture["unit"] as UnitState
+	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	if not director.commit_from_slots(1, arm_slots):
 		failures.append("PlanningInputTest: dash self click should arm through plan refresh")
 	if director.find_awaiting_action(1) == null:
 		failures.append(
@@ -711,11 +785,11 @@ static func _test_dash_self_click_blocks_false_wait(failures: Array[String]) -> 
 	var dash: AbilityData = fixture["dash"] as AbilityData
 	if not AbilitySystem.planning_arms_on_self_tile(unit, dash):
 		failures.append("PlanningInputTest: bowling charge should arm awaiting flow on self click")
-	if input._try_plan_wait(1):
-		failures.append(
-			"PlanningInputTest: wait must not trigger when a dash skill is selected",
-		)
-	if not input._try_arm_awaiting_or_self_skill(1):
+	var dash_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	var dash_action: TimelineAction = (dash_slots.get("action", []) as Array)[0] as TimelineAction
+	if dash_action == null or not dash_action.awaiting_target:
+		failures.append("PlanningInputTest: dash self click must build awaiting slot, not wait")
+	if not director.commit_from_slots(1, dash_slots):
 		failures.append("PlanningInputTest: dash self click must arm awaiting action")
 	if director.unit_has_wait_planned(1):
 		failures.append("PlanningInputTest: dash self click must not plan wait")

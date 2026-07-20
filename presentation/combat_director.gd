@@ -714,6 +714,9 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 				plans.append(_slot_plan_for_action(action))
 	if actions.is_empty():
 		return false
+	if _actions_are_wait_only(actions):
+		rpc_plan_wait(unit_id)
+		return true
 	if not bool(slots.get("_preview_validated", false)):
 		if not preview_commit_valid(unit_id, actions):
 			EventBus.action_rejected.emit("cannot_use_ability")
@@ -741,6 +744,17 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 		_clear_unit_post_moves_from_plan(unit_id)
 	_try_add_multiple(actions, plans)
 	return true
+
+
+func _actions_are_wait_only(actions: Array[TimelineAction]) -> bool:
+	if actions.size() != 1:
+		return false
+	var action: TimelineAction = actions[0]
+	return (
+		action.type == GameEnums.ActionType.ABILITY
+		and action.ability != null
+		and action.ability.is_universal_wait()
+	)
 
 
 func _slot_plan_for_action(action: TimelineAction) -> Timeline:
