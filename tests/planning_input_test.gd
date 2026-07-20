@@ -412,6 +412,11 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 			"PlanningInputTest: awaiting dash label should include Awaiting Input, got %s"
 			% awaiting_label,
 		)
+	if not awaiting_label.begins_with(PlanningIcons.GLYPH_DASH):
+		failures.append(
+			"PlanningInputTest: awaiting dash label should start with dash glyph, got %s"
+			% awaiting_label,
+		)
 	input.auto_use_skill_after_move = false
 	var move_slots_off: Dictionary = input._finalize_commit_slots(
 		{

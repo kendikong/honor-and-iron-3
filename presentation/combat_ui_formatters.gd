@@ -241,7 +241,9 @@ static func describe_action(board: BoardState, action: TimelineAction) -> String
 		GameEnums.ActionType.ABILITY:
 			var ability_name: String = action.ability.display_name if action.ability != null else "ability"
 			if action.awaiting_target:
-				return "%s — awaiting dash endpoint" % ability_name
+				return "%s %s — awaiting dash endpoint" % [
+					PlanningIcons.ability_glyph(action.ability), ability_name,
+				]
 			var target_name: String = actor_name
 			if board != null and action.target_unit_id >= 0:
 				var tgt := board.get_unit_by_id(action.target_unit_id)
@@ -294,7 +296,9 @@ static func action_symbol_text(
 			return ""
 		if action.awaiting_target:
 			var pending_name: String = action.ability.display_name if action.ability != null else "Skill"
-			return "%s — Awaiting Input" % pending_name
+			return "%s %s — Awaiting Input" % [
+				PlanningIcons.ability_glyph(action.ability), pending_name,
+			]
 		var symbol: String = PlanningIcons.ability_glyph(action.ability)
 		if action.ability != null and AbilitySystem.is_run_ability(action.ability):
 			return "%s Run" % symbol
