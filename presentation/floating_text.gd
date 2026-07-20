@@ -1,11 +1,12 @@
 class_name FloatingText
 extends Label
 
-## Pixel-art friendly combat floater — snaps to whole pixels, minimal bounce.
+## Combat floater — light snap, readable at map scale.
 
 const ACCUMULATION_DURATION: float = 0.45
-const BASE_FONT_SIZE: int = 14
-const BASE_OUTLINE: int = 3
+const BASE_FONT_SIZE: int = 11
+const BASE_OUTLINE: int = 2
+const POP_SCALE: float = 1.06
 
 var _accumulated_damage: int = 0
 var _current_tween: Tween
@@ -14,7 +15,7 @@ var _ui_scale: float = 1.0
 
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	set("theme_override_colors/font_outline_color", Color(0.05, 0.02, 0.08, 1.0))
@@ -44,7 +45,7 @@ func _animate() -> void:
 	var rise: float = 18.0 * _ui_scale
 	_current_tween = create_tween()
 	_current_tween.set_parallel(true)
-	_current_tween.tween_property(self, "scale", Vector2(1.12, 1.12), 0.08).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_LINEAR)
+	_current_tween.tween_property(self, "scale", Vector2(POP_SCALE, POP_SCALE), 0.08).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_LINEAR)
 	_current_tween.tween_property(
 		self,
 		"position",
