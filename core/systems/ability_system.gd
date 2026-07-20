@@ -565,6 +565,8 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 static func ability_uses_spellcast_animation(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
+	if ability_has_dash(ability):
+		return false
 	if ability.presentation_anim == GameEnums.PresentationAnim.SPELL:
 		return true
 	if ability.presentation_anim == GameEnums.PresentationAnim.ATTACK:

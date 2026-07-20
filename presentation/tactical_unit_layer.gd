@@ -1103,6 +1103,7 @@ func _animate_move(event: SimEvent) -> void:
 	var use_run: bool = (
 		unit.has_run_boost()
 		or _unit_uses_run_anim(unit_id)
+		or event.data.get("is_dash", false)
 	)
 	if use_run and not event.data.get("is_dash", false):
 		step_time = CombatDirector.RUN_STEP_TIME
@@ -1234,6 +1235,8 @@ func _play_attack_anim(event: SimEvent) -> void:
 				thrust_dir = Vector2(delta2).normalized()
 	var ability_id: StringName = event.data.get("ability", &"")
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
+	if ability_data != null and AbilitySystem.ability_has_dash(ability_data):
+		return
 	if ability_data != null and AbilitySystem.ability_uses_spellcast_animation(ability_data):
 		var target_ids: Array[int] = _ability_affected_unit_ids_from_event(event, ability_data)
 		_spellcast_released = false
