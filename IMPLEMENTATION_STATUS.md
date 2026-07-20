@@ -2,7 +2,7 @@
 
 **Current phase:** 10 next (Tactical Combat Parity) — Phase 8 complete (legacy path); Phase 9 **FAIL**  
 **Active plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md`  
-**Last updated:** 2026-07-16  
+**Last updated:** 2026-07-19  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
 ---
@@ -764,6 +764,26 @@ BattleSetup → SkirmishLaunch.set_pending()
 | 2 | M8 Combat vs Tactical identical plan headless compare | LOW | Deferred — manual spot-check |
 
 **Final issue count:** 2 LOW — **PASS**
+
+### Phase 11 audit (iteration 3 — slot-only cursor/commit, 2026-07-19)
+
+**Scope:** `CombatPlanningInput` cursor icon must equal `commit_from_slots` payload (TestBattle / `tactical_combat_shell` path). Commits: `3789d3dcd` (slot-only self-arm/wait/face), `885da35c0` (run+skill afford), `3783fe222` / `1ce3f53aa` (drag route unify).
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | **PASS** | TestBattle uses `CombatPlanningInput`; hover/click/drag/drop share `_commit_interaction_params` → `_final_commit_slots_for_interaction`; self-arm/wait/face in `_build_self_tile_commit_slots`; `_would_*` / `_try_arm_*` / `_try_plan_wait` removed |
+| Correct coding | **PARTIAL** | Headless tests in `planning_input_test.gd` (`_test_slots_only_cursor_matches_commit`, drag route, run afford); Godot CLI not on agent PATH — not executed here |
+| Inconsistencies | **FAIL** | Drag tile cursor still short-circuits on `drag_preview_failed` (sim preview flag) before reading commit slots; `_update_drag_sprite` uses separate attack/run heuristics for drag ghost (not slot glyphs) |
+| Issues | **FAIL** | 3 found — see table |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | `_drag_hover_icon` returns `∅` when `drag_preview_failed` even if `_final_commit_slots_for_interaction` is valid — cursor can disagree with commit | **High** | Open |
+| 2 | `_update_drag_sprite` picks SPELL/ATTACK/RUN anim from preview heuristics, not commit slots (drag ghost ≠ tile cursor, still a prediction path) | Med | Deferred — visual anim slice; tile cursor is slot-based |
+| 3 | `board_view.gd` (`Combat.tscn`) retains legacy emoji cursor heuristics; not used by TestBattle/TacticalCombat | Med | Deferred — Phase 11 K-path / legacy scene |
+
+**Final issue count:** 3 (1 High open)  
+**Audit result:** **FAIL** — fix #1 to close slot-only cursor gate; #2–#3 may stay deferred
 
 ---
 
