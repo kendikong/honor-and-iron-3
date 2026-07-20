@@ -704,8 +704,9 @@ func _add_selectable_preview_card(
 	elif passive != null and not passive.description.is_empty():
 		name_lbl.tooltip_text = passive.description
 	head.add_child(name_lbl)
+	var sub_lbl: Label = null
 	if not subtitle_text.is_empty():
-		var sub_lbl := Label.new()
+		sub_lbl = Label.new()
 		sub_lbl.text = subtitle_text
 		sub_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
 		sub_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
@@ -764,6 +765,7 @@ func _add_selectable_preview_card(
 	return {
 		"preview": preview,
 		"title": name_lbl,
+		"sub_lbl": sub_lbl if not subtitle_text.is_empty() else null,
 		"wrap": preview_wrap,
 		"cost_val": cost_val_lbl,
 		"range_val": range_val_lbl,
@@ -1409,6 +1411,18 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 		var wrap: PanelContainer = refs.get("wrap")
 		if wrap != null:
 			_sync_list_preview_width(preview, wrap)
+	var sub_lbl: Label = refs.get("sub_lbl")
+	if sub_lbl != null:
+		var type_str := "Action Skill"
+		if AbilitySystem.is_movement_skill(ability):
+			if ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL:
+				type_str = "Pre-move Movement Skill"
+			else:
+				type_str = "Action Movement Skill"
+		else:
+			if ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL:
+				type_str = "Pre-move Skill"
+		sub_lbl.text = String(ability.id) + " | " + type_str
 	var cost_val: Label = refs.get("cost_val")
 	if cost_val != null:
 		var cost_chip: Dictionary = CombatUiFormatters.ability_cost_chip(ability)
