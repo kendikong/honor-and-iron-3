@@ -1166,6 +1166,7 @@ func _tween_push(unit_id: int, cell: Vector2i, from_cell: Vector2i) -> void:
 		_move_tweens.erase(unit_id)
 		actor.snap_to_anchor(dest_foot)
 		_update_depth(unit_id)
+		actor.finish_combat_reaction()
 		_finish_push_tween()
 	)
 

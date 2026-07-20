@@ -598,6 +598,10 @@ func cancel_combat_reaction() -> void:
 	_one_shot_generation += 1
 
 
+func finish_combat_reaction() -> void:
+	_finish_hurt(_one_shot_generation)
+
+
 func snap_to_anchor(anchor: Vector2) -> void:
 	_anchor_position = anchor
 	if _combat_tween == null or not _combat_tween.is_valid():
