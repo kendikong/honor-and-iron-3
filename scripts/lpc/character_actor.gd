@@ -397,6 +397,9 @@ func play_dash_windup(world_dir: Vector2, attack_anim: StringName) -> void:
 	)
 
 
+func cancel_dash_windup() -> void:
+	_kill_combat_tween()
+
 func play_one_shot_action(
 	action_anim: StringName,
 	hold_sec: float = ACTION_HOLD_SANDBOX_SEC,
