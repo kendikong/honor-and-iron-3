@@ -2247,7 +2247,7 @@ func _predicted_stand_tile_for_enemy_hover(cell: Vector2i, enemy: UnitState) -> 
 	var ability_index: int = _director.selected_ability_index
 	if ability_index >= 0:
 		var ability: AbilityData = _selected_ability_data(actor)
-		if ability != null and AbilitySystem.ability_displaces_caster(ability):
+		if ability != null and AbilitySystem.is_movement_skill(ability):
 			return origin
 		if _in_ability_range(actor, enemy):
 			return origin
@@ -2257,7 +2257,7 @@ func _predicted_stand_tile_for_enemy_hover(cell: Vector2i, enemy: UnitState) -> 
 	if actor.active_abilities.is_empty():
 		return origin
 	var basic_ability: AbilityData = CombatDirector.resolve_selected_ability(actor, 0)
-	if basic_ability != null and AbilitySystem.ability_displaces_caster(basic_ability):
+	if basic_ability != null and AbilitySystem.is_movement_skill(basic_ability):
 		return origin
 	return _director.preview_approach_tile(unit_id, enemy.id, 0, cell)
 

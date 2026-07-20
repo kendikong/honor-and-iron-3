@@ -141,7 +141,7 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 	return false
 
 
-static func ability_displaces_caster(ability: AbilityData) -> bool:
+static func is_movement_skill(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
 	for eff in ability.effects:
