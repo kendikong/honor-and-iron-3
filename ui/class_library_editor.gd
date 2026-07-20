@@ -1774,14 +1774,16 @@ func _bind_targeting_flags(parent: VBoxContainer, ability: AbilityData) -> void:
 		row.add_child(chk)
 
 
-func _bind_string(parent: GridContainer, label: String, value: String, setter: Callable) -> void:
-	parent.add_child(_field_label(label))
+func _bind_string(parent: GridContainer, label: String, value: String, setter: Callable) -> Array[Control]:
+	var lbl: Label = _field_label(label)
+	parent.add_child(lbl)
 	var edit := LineEdit.new()
 	edit.text = value
 	edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	edit.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	edit.text_changed.connect(func(t: String) -> void: setter.call(t))
 	parent.add_child(edit)
+	return [lbl, edit]
 
 
 func _bind_string_stacked(parent: VBoxContainer, label: String, value: String, setter: Callable) -> void:
