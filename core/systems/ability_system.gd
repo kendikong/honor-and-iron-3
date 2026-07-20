@@ -141,13 +141,46 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 	return false
 
 
-## Two-phase dash (Bowling Charge, etc.): self-click arms endpoint targeting — not a direct commit.
+## Planning: one-click commit vs two-phase awaiting-target flow (keyword rules live here only).
+static func planning_commit_flow(actor: UnitState, ability: AbilityData) -> int:
+	if actor == null or ability == null:
+		return GameEnums.PlanningCommitFlow.IMMEDIATE
+	if not ability_has_dash(ability) or can_target_self(actor, ability):
+		return GameEnums.PlanningCommitFlow.IMMEDIATE
+	if not can_plan(actor, ability):
+		return GameEnums.PlanningCommitFlow.IMMEDIATE
+	return GameEnums.PlanningCommitFlow.AWAITING_TARGET
+
+
+static func planning_arms_on_self_tile(actor: UnitState, ability: AbilityData) -> bool:
+	return planning_commit_flow(actor, ability) == GameEnums.PlanningCommitFlow.AWAITING_TARGET
+
+
+static func planning_pairs_with_premove(actor: UnitState, ability: AbilityData) -> bool:
+	if actor == null or ability == null:
+		return false
+	if is_run_ability(ability) or is_wait_ability(ability):
+		return false
+	if planning_commit_flow(actor, ability) != GameEnums.PlanningCommitFlow.IMMEDIATE:
+		return false
+	return can_target_self(actor, ability)
+
+
+static func planning_auto_arms_after_premove(actor: UnitState, ability: AbilityData) -> bool:
+	return planning_commit_flow(actor, ability) == GameEnums.PlanningCommitFlow.AWAITING_TARGET
+
+
+static func planning_awaiting_phase(ability: AbilityData) -> int:
+	if ability == null:
+		return GameEnums.PlanningAwaitingPhase.GENERIC
+	if ability_has_dash(ability):
+		return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	return GameEnums.PlanningAwaitingPhase.GENERIC
+
+
+## Deprecated alias: use planning_arms_on_self_tile / planning_auto_arms_after_premove.
 static func ability_arms_dash_on_self_click(actor: UnitState, ability: AbilityData) -> bool:
-	if actor == null or ability == null or not ability_has_dash(ability):
-		return false
-	if can_target_self(actor, ability):
-		return false
-	return can_plan(actor, ability)
+	return planning_arms_on_self_tile(actor, ability)
 
 
 static func effect_amount(ability: AbilityData, effect_type: GameEnums.EffectType) -> int:

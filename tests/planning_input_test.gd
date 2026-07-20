@@ -383,39 +383,47 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	director.selected_ability_index = 0
 	input._director = director
 	input.auto_use_skill_after_move = true
-	var move_slots: Dictionary = input._finalize_commit_slots(
-		{
-			"pre": [
-				TimelineAction.make_move(
-					1, Vector2i(3, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION,
-				),
-			],
-			"action": [],
-			"post": [],
-			"invalid": false,
-		},
+	var paired_slots: Dictionary = input._finalize_commit_slots(
+		input._build_commit_slots_at_cell(1, Vector2i(3, 2)),
 		1,
 	)
-	input._on_commit_slots_applied(1, move_slots)
+	if (paired_slots.get("action", []) as Array).is_empty():
+		failures.append(
+			"PlanningInputTest: awaiting-target skill should pair awaiting action on move hover",
+		)
+	if not director.commit_from_slots(1, paired_slots):
+		failures.append(
+			"PlanningInputTest: move+awaiting commit slots should commit to plan",
+		)
 	if not input.dash_targeting_active():
 		failures.append(
-			"PlanningInputTest: auto skill after move should arm dash after move-only commit",
+			"PlanningInputTest: move+awaiting commit should leave awaiting action in plan",
 		)
-	var awaiting: TimelineAction = director.find_awaiting_dash_action(1)
+	var awaiting: TimelineAction = director.find_awaiting_action(1)
 	if awaiting == null or not awaiting.awaiting_target:
 		failures.append(
-			"PlanningInputTest: armed dash should queue awaiting action in plan_action",
+			"PlanningInputTest: committed awaiting action should be in plan_action",
 		)
 	var awaiting_label: String = CombatUiFormatters.action_symbol_text(board, awaiting, unit)
 	if awaiting_label.find("Awaiting Input") < 0:
 		failures.append(
-			"PlanningInputTest: awaiting dash label should include Awaiting Input, got %s"
+			"PlanningInputTest: awaiting label should include Awaiting Input, got %s"
 			% awaiting_label,
 		)
 	if not awaiting_label.begins_with(PlanningIcons.GLYPH_DASH):
 		failures.append(
-			"PlanningInputTest: awaiting dash label should start with dash glyph, got %s"
+			"PlanningInputTest: awaiting phase label should start with movement glyph, got %s"
 			% awaiting_label,
+		)
+	var paired_icon: String = input._cursor_icon_from_commit_slots(paired_slots, unit)
+	var expected_paired: String = PlanningIcons.join_glyphs([
+		PlanningIcons.GLYPH_WALK,
+		PlanningIcons.GLYPH_DASH,
+	])
+	if paired_icon != expected_paired:
+		failures.append(
+			"PlanningInputTest: move+awaiting hover cursor should composite, got %s expected %s"
+			% [paired_icon, expected_paired],
 		)
 	input.auto_use_skill_after_move = false
 	var move_slots_off: Dictionary = input._finalize_commit_slots(
@@ -434,29 +442,18 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	input._on_commit_slots_applied(1, move_slots_off)
 	if input.dash_targeting_active():
 		failures.append(
-			"PlanningInputTest: dash must not auto-arm when auto skill after move is off",
+			"PlanningInputTest: awaiting must not auto-arm when auto skill after move is off",
 		)
 	director.selected_ability_index = 0
-	input.auto_use_skill_after_move = true
-	var move_only_slots: Dictionary = input._finalize_commit_slots(
+	input.auto_use_skill_after_move = false
+	var move_only_slots_off: Dictionary = input._finalize_commit_slots(
 		input._build_commit_slots_at_cell(1, Vector2i(3, 2)),
 		1,
 	)
-	var move_only_icon: String = input._cursor_icon_from_commit_slots(move_only_slots, unit)
-	if move_only_icon.find(PlanningIcons.GLYPH_DASH) >= 0:
+	if not (move_only_slots_off.get("action", []) as Array).is_empty():
 		failures.append(
-			"PlanningInputTest: move-only dash hover cursor must not show dash — only what commits",
+			"PlanningInputTest: awaiting skill should not pair when auto skill after move is off",
 		)
-	var pre_steps: Array = move_only_slots.get("pre", [])
-	if pre_steps.is_empty():
-		failures.append("PlanningInputTest: dash move hover should build premove slots")
-	else:
-		var expected_move_icon: String = input._step_cursor_glyph(pre_steps[0] as TimelineAction, unit)
-		if move_only_icon != expected_move_icon:
-			failures.append(
-				"PlanningInputTest: move-only dash cursor should match premove glyph only, got %s expected %s"
-				% [move_only_icon, expected_move_icon],
-			)
 	var heal := AbilityData.new()
 	heal.targeting_mode = GameEnums.TargetingMode.SELF
 	heal.targeting_flags = AbilityData._targeting_mode_to_flags(heal.targeting_mode)
@@ -555,8 +552,8 @@ static func _test_dash_self_click_blocks_false_wait(failures: Array[String]) -> 
 	var director: CombatDirector = fixture["director"] as CombatDirector
 	var unit: UnitState = fixture["unit"] as UnitState
 	var dash: AbilityData = fixture["dash"] as AbilityData
-	if not AbilitySystem.ability_arms_dash_on_self_click(unit, dash):
-		failures.append("PlanningInputTest: bowling charge should arm dash on self click")
+	if not AbilitySystem.planning_arms_on_self_tile(unit, dash):
+		failures.append("PlanningInputTest: bowling charge should arm awaiting flow on self click")
 	if input._try_plan_wait(1):
 		failures.append(
 			"PlanningInputTest: wait must not trigger when a dash skill is selected",

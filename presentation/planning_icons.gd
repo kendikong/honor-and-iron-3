@@ -74,6 +74,16 @@ static func ability_glyph(ability: AbilityData) -> String:
 	return GLYPH_SKILL
 
 
+static func awaiting_phase_glyph(ability: AbilityData) -> String:
+	match AbilitySystem.planning_awaiting_phase(ability):
+		GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
+			return GLYPH_DASH
+		GameEnums.PlanningAwaitingPhase.TARGET_PICK:
+			return GLYPH_TARGET_SELF
+		_:
+			return GLYPH_SKILL
+
+
 static func action_glyph(action: TimelineAction) -> String:
 	if action == null:
 		return ""
@@ -86,7 +96,7 @@ static func action_glyph(action: TimelineAction) -> String:
 			if action.ability != null and DataLibrary.is_universal_wait(action.ability.id):
 				return GLYPH_WAIT
 			if action.awaiting_target and action.ability != null:
-				return ability_glyph(action.ability)
+				return awaiting_phase_glyph(action.ability)
 			return ability_glyph(action.ability)
 	return ""
 

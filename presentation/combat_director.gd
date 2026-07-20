@@ -325,7 +325,7 @@ func _clear_unit_class_actions_from_plan(unit_id: int) -> void:
 	plan_action.entries = kept
 
 
-func find_awaiting_dash_action(unit_id: int) -> TimelineAction:
+func find_awaiting_action(unit_id: int) -> TimelineAction:
 	if unit_id < 0:
 		return null
 	for action: TimelineAction in plan_action.entries:
@@ -333,9 +333,12 @@ func find_awaiting_dash_action(unit_id: int) -> TimelineAction:
 			continue
 		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
 			continue
-		if AbilitySystem.ability_has_dash(action.ability):
-			return action
+		return action
 	return null
+
+
+func find_awaiting_dash_action(unit_id: int) -> TimelineAction:
+	return find_awaiting_action(unit_id)
 
 
 func set_awaiting_dash_action(unit_id: int, ability: AbilityData) -> void:
@@ -386,7 +389,7 @@ func _try_finalize_awaiting_dash_from_slots(unit_id: int, slots: Dictionary) -> 
 		var action: TimelineAction = raw as TimelineAction
 		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
 			continue
-		if not AbilitySystem.ability_has_dash(action.ability):
+		if awaiting.ability != action.ability:
 			return false
 		awaiting.target_coord = action.target_coord
 		awaiting.target_unit_id = action.target_unit_id

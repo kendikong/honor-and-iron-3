@@ -242,7 +242,7 @@ static func describe_action(board: BoardState, action: TimelineAction) -> String
 			var ability_name: String = action.ability.display_name if action.ability != null else "ability"
 			if action.awaiting_target:
 				return "%s %s — awaiting dash endpoint" % [
-					PlanningIcons.ability_glyph(action.ability), ability_name,
+					PlanningIcons.awaiting_phase_glyph(action.ability), ability_name,
 				]
 			var target_name: String = actor_name
 			if board != null and action.target_unit_id >= 0:
@@ -297,7 +297,7 @@ static func action_symbol_text(
 		if action.awaiting_target:
 			var pending_name: String = action.ability.display_name if action.ability != null else "Skill"
 			return "%s %s — Awaiting Input" % [
-				PlanningIcons.ability_glyph(action.ability), pending_name,
+				PlanningIcons.awaiting_phase_glyph(action.ability), pending_name,
 			]
 		var symbol: String = PlanningIcons.ability_glyph(action.ability)
 		if action.ability != null and AbilitySystem.is_run_ability(action.ability):

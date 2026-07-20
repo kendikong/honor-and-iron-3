@@ -1039,7 +1039,7 @@ func _try_arm_dash_or_self_skill(unit_id: int) -> bool:
 	if actor == null:
 		return false
 	var self_ability := _selected_ability_data(actor)
-	if not AbilitySystem.ability_arms_dash_on_self_click(actor, self_ability):
+	if not AbilitySystem.planning_arms_on_self_tile(actor, self_ability):
 		return false
 	if _director.find_awaiting_dash_action(unit_id) != null:
 		_play_sfx("ability")
@@ -1077,7 +1077,17 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 			var action: TimelineAction = raw as TimelineAction
 			if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
 				continue
-			if _ability_has_dash(action.ability):
+			if action.awaiting_target:
+				_director.select_ability(-1)
+				return
+			var actor := _proj_unit(unit_id)
+			if actor == null and _director.board != null:
+				actor = _director.board.get_unit_by_id(unit_id)
+			if (
+				actor != null
+				and AbilitySystem.planning_commit_flow(actor, action.ability)
+				== GameEnums.PlanningCommitFlow.AWAITING_TARGET
+			):
 				clear_dash_targeting()
 				_director.select_ability(-1)
 			elif (
@@ -1086,28 +1096,6 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 			):
 				_director.select_ability(-1)
 			return
-	if _should_auto_arm_dash_after_move_commit(unit_id, slots):
-		arm_dash_targeting()
-
-
-func _should_auto_arm_dash_after_move_commit(unit_id: int, slots: Dictionary) -> bool:
-	if not _composite_cursors_enabled() or _director == null:
-		return false
-	if unit_id != _director.selected_unit_id or not _slots_include_move(slots):
-		return false
-	if not (slots.get("action", []) as Array).is_empty():
-		return false
-	if selected_phase_action_exhausted(unit_id) or dash_targeting_active():
-		return false
-	if _director.selected_ability_index < 0:
-		return false
-	var actor := _proj_unit(unit_id)
-	if actor == null and _director.board != null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor == null:
-		return false
-	var ability := _selected_ability_data(actor)
-	return ability != null and AbilitySystem.ability_arms_dash_on_self_click(actor, ability)
 
 
 func _preview_from_commit_slots_at_cell(
@@ -1257,12 +1245,12 @@ func arm_dash_targeting() -> bool:
 	var actor := _proj_unit(_director.selected_unit_id)
 	if actor == null and _director.board != null:
 		actor = _director.board.get_unit_by_id(_director.selected_unit_id)
-	if actor == null or not _ability_has_dash(_selected_ability_data(actor)):
+	if actor == null or _selected_ability_data(actor) == null:
 		return false
 	if selected_phase_action_exhausted(actor.id):
 		return false
 	var ability := _selected_ability_data(actor)
-	if not AbilitySystem.ability_arms_dash_on_self_click(actor, ability):
+	if not AbilitySystem.planning_arms_on_self_tile(actor, ability):
 		return false
 	if _director.find_awaiting_dash_action(actor.id) != null:
 		_request_planning_selection_refresh()
@@ -1292,14 +1280,6 @@ func clear_dash_targeting() -> void:
 
 func _dash_steps(ability: AbilityData) -> int:
 	return AbilitySystem.dash_steps(ability)
-
-
-func _slots_include_move(slots: Dictionary) -> bool:
-	for col: String in ["pre", "post"]:
-		for raw: Variant in slots.get(col, []):
-			if raw is TimelineAction and (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
-				return true
-	return false
 
 
 func _ability_has_dash(ability: AbilityData) -> bool:
@@ -1659,6 +1639,34 @@ func _append_move_to_commit_slots(
 	slots[col].append(move)
 
 
+func _maybe_append_premove_action_pair(
+	slots: Dictionary,
+	unit_id: int,
+	actor: UnitState,
+	cell: Vector2i,
+	ability: AbilityData,
+	waypoints: Array[Vector2i],
+) -> void:
+	if not _composite_cursors_enabled() or ability == null or actor == null:
+		return
+	if (slots.get("pre", []) as Array).is_empty() and (slots.get("post", []) as Array).is_empty():
+		return
+	if not (slots.get("action", []) as Array).is_empty():
+		return
+	if selected_phase_action_exhausted(unit_id) or dash_targeting_active():
+		return
+	if AbilitySystem.planning_pairs_with_premove(actor, ability):
+		if not _can_pair_run_move_with_ability(actor, cell, waypoints, ability):
+			return
+		slots["action"].append(
+			TimelineAction.make_ability(unit_id, ability, cell, unit_id),
+		)
+	elif AbilitySystem.planning_auto_arms_after_premove(actor, ability):
+		slots["action"].append(
+			TimelineAction.make_ability_awaiting(unit_id, ability, cell),
+		)
+
+
 func _build_commit_slots_at_cell(
 	unit_id: int,
 	cell: Vector2i,
@@ -1739,13 +1747,9 @@ func _build_commit_slots_at_cell(
 			if _drop_allows_move_tile(cell, legal_move_tiles, actor):
 				if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
 					_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
-				if (
-					_composite_cursors_enabled()
-					and _can_pair_run_move_with_ability(actor, cell, waypoints, ability)
-				):
-					slots["action"].append(
-						TimelineAction.make_ability(unit_id, ability, cell, unit_id),
-					)
+				_maybe_append_premove_action_pair(
+					slots, unit_id, actor, cell, ability, waypoints,
+				)
 				return slots
 		if hover_unit != null and _in_ability_range(actor, hover_unit):
 			slots["action"].append(
@@ -1760,8 +1764,11 @@ func _build_commit_slots_at_cell(
 	):
 		if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
 			_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
+		if ability_index >= 0 and ability != null and not force_basic_movement:
+			_maybe_append_premove_action_pair(
+				slots, unit_id, actor, cell, ability, waypoints,
+			)
 		return slots
-
 	if _skill_interaction_active() and _invalid_hover_target(actor, cell, hover_unit):
 		slots["invalid"] = true
 	return slots
@@ -1921,7 +1928,7 @@ func _would_arm_dash_on_self_click(unit: UnitState) -> bool:
 	if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 		return false
 	var ability := _selected_ability_data(unit)
-	return ability != null and AbilitySystem.ability_arms_dash_on_self_click(unit, ability) and not dash_targeting_active()
+	return ability != null and AbilitySystem.planning_arms_on_self_tile(unit, ability) and not dash_targeting_active()
 
 
 func _would_show_wait_on_self_click(unit: UnitState) -> bool:
@@ -1955,7 +1962,7 @@ func _hover_icon_for_cell(
 	if unit == null:
 		return ""
 	if cell == unit.position and _would_arm_dash_on_self_click(unit):
-		return PlanningIcons.GLYPH_DASH
+		return PlanningIcons.awaiting_phase_glyph(_selected_ability_data(unit))
 	var icon: String = _cursor_icon_for_commit_at_cell(
 		unit, cell, waypoints, legal_move_tiles, preferred_approach,
 	)

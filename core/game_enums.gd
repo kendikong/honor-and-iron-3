@@ -176,6 +176,19 @@ enum TargetingFlags {
 	DASH_LINE = 16,
 }
 
+## How planning UI commits an ability (cursor, timeline, commit slots share this).
+enum PlanningCommitFlow {
+	IMMEDIATE,       ## One click commits the full action.
+	AWAITING_TARGET, ## Two-phase: first click arms awaiting_target; second finalizes.
+}
+
+## Awaiting-target phase label category (maps to icons in PlanningIcons).
+enum PlanningAwaitingPhase {
+	GENERIC,
+	MOVEMENT_ENDPOINT,
+	TARGET_PICK,
+}
+
 ## Default presentation anim when presentation_key is empty.
 enum PresentationAnim {
 	AUTO,
