@@ -47,20 +47,22 @@ static func draw(canvas: CanvasItem, center: Vector2, icon_key: String, color: C
 
 static func key_from_emoji(emoji: String) -> String:
 	match emoji:
-		"🏃", "👟":
+		PlanningIcons.GLYPH_WALK, PlanningIcons.GLYPH_RUN:
 			return "move"
-		"⚔️", "👟⚔️":
+		PlanningIcons.GLYPH_ATTACK:
 			return "attack"
-		"✨", "🔮":
+		PlanningIcons.GLYPH_DASH:
 			return "dash"
-		"∅":
+		PlanningIcons.GLYPH_NULL:
 			return "null"
-		"💚":
+		PlanningIcons.GLYPH_HEAL:
 			return "heal"
-		"🛡️":
+		PlanningIcons.GLYPH_ARMOR_UP, PlanningIcons.STAT_DEF, PlanningIcons.STAT_ARMOR:
 			return "armor"
-		"🔄":
+		PlanningIcons.GLYPH_SWAP:
 			return "swap"
-		"⏸":
+		PlanningIcons.GLYPH_WAIT:
 			return "wait"
-	return "dash"
+		PlanningIcons.GLYPH_SKILL, PlanningIcons.STAT_MAG:
+			return "skill"
+	return "skill"

@@ -2976,19 +2976,7 @@ func _selected_ability_data(unit: UnitState) -> AbilityData:
 	return unit.active_abilities[_selected_ability]
 
 func _ability_action_icon(ability: AbilityData) -> String:
-	if ability == null:
-		return ""
-	if _ability_is_offensive_dash(ability):
-		return "⚔️"
-	if _ability_has_dash(ability):
-		return "✨"
-	for eff in ability.effects:
-		match eff.type:
-			GameEnums.EffectType.DAMAGE: return "⚔️"
-			GameEnums.EffectType.HEAL: return "💚"
-			GameEnums.EffectType.ARMOR_UP: return "🛡️"
-			GameEnums.EffectType.SWAP: return "🔄"
-	return "✨"
+	return PlanningIcons.ability_glyph(ability)
 
 func _drag_self_skill_intent(release_local: Vector2) -> bool:
 	if _drag_route.size() > 1:
@@ -5128,47 +5116,8 @@ func _class_symbol(unit: UnitState) -> String:
 	return "👤"
 
 func _action_symbol_text(action: TimelineAction, unit: UnitState) -> String:
-	if action == null:
-		return "-"
-		
-	if action.type == GameEnums.ActionType.MOVE:
-		return "🏃 (%d,%d)" % [action.target_coord.x, action.target_coord.y]
-		
-	if action.type == GameEnums.ActionType.FACE:
-		return "👀 %s" % _facing_name(action.face_dir)
-		
-	if action.type == GameEnums.ActionType.ABILITY:
-		var symbol := "✨"
-		if action.ability != null:
-			var has_damage := false
-			var has_heal := false
-			for eff in action.ability.effects:
-				if eff.type == GameEnums.EffectType.DAMAGE or eff.type == GameEnums.EffectType.EXPLODE or eff.type == GameEnums.EffectType.RANGED_EXPLODE:
-					has_damage = true
-				if eff.type == GameEnums.EffectType.HEAL:
-					has_heal = true
-			if has_damage:
-				symbol = "⚔️"
-			elif has_heal:
-				symbol = "💚"
-				
-		var ability_name := ""
-		if action.ability != null and action.ability.display_name != "":
-			ability_name = action.ability.display_name
-		var target_name := ""
-		if action.target_unit_id >= 0 and _board != null:
-			var tgt := _board.get_unit_by_id(action.target_unit_id)
-			if tgt != null:
-				target_name = tgt.definition.display_name
-		if target_name == "":
-			target_name = "(%d,%d)" % [action.target_coord.x, action.target_coord.y]
-			
-		# Show: [icon] Ability Name > Target (or just [icon] Target if no ability name)
-		if ability_name != "":
-			return "%s %s > %s" % [symbol, ability_name, target_name]
-		return "%s %s" % [symbol, target_name]
-		
-	return "❓"
+	return CombatUiFormatters.action_symbol_text(_board, action, unit)
+
 
 func _make_table_cell(parent: Control, text: String, tooltip: String = "", col: Color = Color.WHITE, is_header: bool = false, bg_color: Color = Color.TRANSPARENT) -> Label:
 	var lbl := _make_label(parent, text)

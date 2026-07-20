@@ -221,7 +221,7 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 		"invalid": false,
 	}
 	var icon: String = input._cursor_icon_from_commit_slots(run_only_slots, unit)
-	if icon != CombatPlanningInput.ICON_RUN:
+	if icon != PlanningIcons.GLYPH_RUN:
 		failures.append(
 			"PlanningInputTest: run-only premove cursor must be run icon, got %s" % icon,
 		)
@@ -236,10 +236,10 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 		"invalid": false,
 	}
 	icon = input._cursor_icon_from_commit_slots(paired_slots, unit)
-	var expected_paired: String = (
-		"%s%s%s"
-		% [CombatPlanningInput.ICON_RUN, CombatPlanningInput.ICON_COMPOSITE_SEP, CombatPlanningInput.ICON_DASH]
-	)
+	var expected_paired: String = PlanningIcons.join_glyphs([
+		PlanningIcons.GLYPH_RUN,
+		PlanningIcons.GLYPH_DASH,
+	])
 	if icon != expected_paired:
 		failures.append(
 			"PlanningInputTest: paired run+dash cursor should composite, got %s" % icon,
@@ -250,7 +250,7 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 		),
 		unit,
 	)
-	if move_glyph.find(CombatPlanningInput.ICON_DASH) >= 0:
+	if move_glyph.find(PlanningIcons.GLYPH_DASH) >= 0:
 		failures.append("PlanningInputTest: move glyph must not infer dash from armed skill")
 
 
@@ -438,7 +438,7 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 		1,
 	)
 	var move_only_icon: String = input._cursor_icon_from_commit_slots(move_only_slots, unit)
-	if move_only_icon.find(CombatPlanningInput.ICON_DASH) >= 0:
+	if move_only_icon.find(PlanningIcons.GLYPH_DASH) >= 0:
 		failures.append(
 			"PlanningInputTest: move-only dash hover cursor must not show dash — only what commits",
 		)

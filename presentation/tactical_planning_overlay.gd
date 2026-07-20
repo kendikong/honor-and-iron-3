@@ -1865,23 +1865,3 @@ func _update_hover_action_icon() -> void:
 		_hover_action_icon = _planning_input.compute_hover_action_icon(_hover_coord)
 		return
 	_hover_action_icon = ""
-
-
-func _ability_action_icon(ability: AbilityData) -> String:
-	if ability == null:
-		return ""
-	if AbilitySystem.ability_is_offensive_dash(ability):
-		return "⚔️"
-	if AbilitySystem.ability_has_dash(ability):
-		return "💨"
-	for eff: EffectData in ability.effects:
-		match eff.type:
-			GameEnums.EffectType.DAMAGE:
-				return "⚔️"
-			GameEnums.EffectType.HEAL:
-				return "💚"
-			GameEnums.EffectType.ARMOR_UP:
-				return "🛡️"
-			GameEnums.EffectType.SWAP:
-				return "🔄"
-	return "🔮"

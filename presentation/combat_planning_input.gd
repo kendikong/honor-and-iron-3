@@ -26,18 +26,6 @@ var _drag_armed: bool = false
 var _drag_press_local: Vector2 = Vector2.ZERO
 
 const _DRAG_THRESHOLD_PX: float = 6.0
-const ICON_MOVE: String = "👟"
-const ICON_RUN: String = "🏃"
-const ICON_ATTACK: String = "⚔️"
-const ICON_SKILL: String = "🔮"
-const ICON_COMPOSITE_SEP: String = "/"
-const ICON_MOVE_ATTACK: String = "👟/⚔️"
-const ICON_RUN_ATTACK: String = "🏃/⚔️"
-const ICON_DASH: String = "💨"
-const ICON_MOVE_DASH: String = "👟/💨"
-const ICON_RUN_DASH: String = "🏃/💨"
-const ICON_NULL: String = "∅"
-const ICON_WAIT: String = "⏸"
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -793,15 +781,15 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 
 func _movement_icon_for(p_unit: UnitState, cell: Vector2i) -> String:
 	if AbilitySystem.movement_requires_run(_proj(), p_unit, cell, []):
-		return ICON_RUN
-	return ICON_MOVE
+		return PlanningIcons.GLYPH_RUN
+	return PlanningIcons.GLYPH_WALK
 
 
 func _move_attack_icon_for(p_unit: UnitState, cell: Vector2i) -> String:
-	var move_icon: String = _movement_icon_for(p_unit, cell)
-	if move_icon == ICON_RUN:
-		return ICON_RUN_ATTACK
-	return ICON_MOVE_ATTACK
+	return PlanningIcons.join_glyphs([
+		_movement_icon_for(p_unit, cell),
+		PlanningIcons.GLYPH_ATTACK,
+	])
 
 
 func _refresh_click_target_highlight() -> void:
@@ -1877,20 +1865,7 @@ func _build_enemy_commit_slots(
 
 
 func _step_cursor_glyph(action: TimelineAction, _unit: UnitState = null) -> String:
-	if action == null:
-		return ""
-	match action.type:
-		GameEnums.ActionType.MOVE:
-			return ICON_RUN if action.uses_run else ICON_MOVE
-		GameEnums.ActionType.ABILITY:
-			if action.ability == null:
-				return ICON_SKILL
-			if DataLibrary.is_universal_wait(action.ability.id):
-				return ICON_WAIT
-			return _ability_action_icon(action.ability)
-		GameEnums.ActionType.FACE:
-			return "👀"
-	return ""
+	return PlanningIcons.action_glyph(action)
 
 
 func _actions_from_slots(slots: Dictionary) -> Array[TimelineAction]:
@@ -1980,22 +1955,22 @@ func _hover_icon_for_cell(
 	if unit == null:
 		return ""
 	if cell == unit.position and _would_arm_dash_on_self_click(unit):
-		return ICON_DASH
+		return PlanningIcons.GLYPH_DASH
 	var icon: String = _cursor_icon_for_commit_at_cell(
 		unit, cell, waypoints, legal_move_tiles, preferred_approach,
 	)
-	if icon != "" and icon != ICON_NULL:
+	if icon != "" and icon != PlanningIcons.GLYPH_NULL:
 		return icon
 	if cell == unit.position and _would_show_wait_on_self_click(unit):
-		return ICON_WAIT
+		return PlanningIcons.GLYPH_WAIT
 	if _would_commit_face_on_self(unit, cell):
-		return "👀"
-	return ICON_NULL if cell != unit.position else ""
+		return PlanningIcons.GLYPH_FACE
+	return PlanningIcons.GLYPH_NULL if cell != unit.position else ""
 
 
 func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -> String:
 	if bool(slots.get("invalid", false)):
-		return ICON_NULL
+		return PlanningIcons.GLYPH_NULL
 	var glyphs: PackedStringArray = []
 	for col: String in ["pre", "action", "post"]:
 		var steps: Array = slots.get(col, [])
@@ -2011,7 +1986,7 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -
 		return ""
 	if not _composite_cursors_enabled() or glyphs.size() == 1:
 		return glyphs[0]
-	return ICON_COMPOSITE_SEP.join(glyphs)
+	return PlanningIcons.join_glyphs(glyphs)
 
 
 func refresh_mouse_cursor(cell: Vector2i) -> void:
@@ -2102,7 +2077,10 @@ func _move_attack_hover_icon(
 	# Clicking a move tile only queues movement. Move+attack comes from enemy click or drag preview.
 	if not dragging or not _drag_preview_includes_attack(p_unit.id):
 		return ""
-	return ICON_MOVE_ATTACK
+	return PlanningIcons.join_glyphs([
+		_movement_icon_for(p_unit, cell),
+		PlanningIcons.GLYPH_ATTACK,
+	])
 
 
 func _drag_preview_includes_attack(actor_id: int) -> bool:
@@ -2124,7 +2102,7 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if actor == null:
 		return ""
 	if drag_preview_failed:
-		return ICON_NULL
+		return PlanningIcons.GLYPH_NULL
 	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
 	var drag_target_id: int = -1
 	if _director != null and _director.board != null:
@@ -2160,28 +2138,6 @@ func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitSt
 		):
 			return true
 	return false
-
-
-func _ability_action_icon(ability: AbilityData) -> String:
-	if ability == null:
-		return ""
-	if AbilitySystem.is_wait_ability(ability):
-		return ICON_WAIT
-	if AbilitySystem.ability_is_offensive_dash(ability):
-		return ICON_ATTACK
-	if AbilitySystem.ability_has_dash(ability):
-		return ICON_DASH
-	for eff: EffectData in ability.effects:
-		match eff.type:
-			GameEnums.EffectType.DAMAGE:
-				return ICON_ATTACK
-			GameEnums.EffectType.HEAL:
-				return "💚"
-			GameEnums.EffectType.ARMOR_UP:
-				return "🛡️"
-			GameEnums.EffectType.SWAP:
-				return "🔄"
-	return ICON_SKILL
 
 
 func _skill_takes_priority_over_basic_move() -> bool:

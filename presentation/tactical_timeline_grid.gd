@@ -398,37 +398,35 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	var board: BoardState = _board
 	_add_stat_chip(
 		chips,
-		"⭐%d" % unit.level,
+		"%s%d" % [PlanningIcons.STAT_LEVEL, unit.level],
 		"Level — unit experience tier",
 		col,
 	)
 	_add_stat_chip(
 		chips,
-		"♥%d/%d" % [unit.health.current_hp, unit.health.max_hp],
+		"%s%d/%d" % [PlanningIcons.STAT_HP, unit.health.current_hp, unit.health.max_hp],
 		"Health — current / maximum hit points",
 		col,
 	)
-	for chip_def: Array in [
-		[GameEnums.StatType.PHYSICAL, "💪"],
-		[GameEnums.StatType.MAGICAL, "🔮"],
-		[GameEnums.StatType.DEFENSE, "🏰"],
+	for stat_type: GameEnums.StatType in [
+		GameEnums.StatType.PHYSICAL,
+		GameEnums.StatType.MAGICAL,
+		GameEnums.StatType.DEFENSE,
 	]:
-		var chip: Dictionary = CombatUiFormatters.timeline_stat_chip(
-			unit, chip_def[0] as GameEnums.StatType, str(chip_def[1]), board,
-		)
+		var chip: Dictionary = CombatUiFormatters.timeline_stat_chip(unit, stat_type, board)
 		var chip_col: Color = chip.get("color", col) as Color
 		if chip_col == Color.WHITE:
 			chip_col = col
 		_add_stat_chip(chips, str(chip.get("text", "")), str(chip.get("tooltip", "")), chip_col)
 	_add_stat_chip(
 		chips,
-		"🛡️%d" % unit.armor,
+		"%s%d" % [PlanningIcons.STAT_ARMOR, unit.armor],
 		"Armor — absorbs damage before HP",
 		col,
 	)
 	_add_stat_chip(
 		chips,
-		"👟%d" % unit.movement.max_points,
+		"%s%d" % [PlanningIcons.STAT_MOV, unit.movement.max_points],
 		"Movement — tiles you can move per turn",
 		col,
 	)

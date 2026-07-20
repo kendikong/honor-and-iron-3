@@ -118,30 +118,35 @@ static func unit_info(board: BoardState, unit: UnitState) -> String:
 		% [scaled_font_size(10), unit.level, String(unit.definition.id).capitalize(), move_type],
 	)
 	lines.append(
-		"[font_size=%d][color=#4ADE80][b][hint=Hit Points]❤️ HP:[/hint] %d/%d[/b][/color]    Facing %s[/font_size]"
-		% [scaled_font_size(9), unit.health.current_hp, unit.health.max_hp, facing_name(unit.facing)],
+		"[font_size=%d][color=#4ADE80][b][hint=Hit Points]%s HP:[/hint] %d/%d[/b][/color]    Facing %s[/font_size]"
+		% [scaled_font_size(9), PlanningIcons.STAT_HP, unit.health.current_hp, unit.health.max_hp, facing_name(unit.facing)],
 	)
 	lines.append(
 		(
-			"[font_size=%d][color=#F1C40F][b][hint=Movement Points]👢 MP:[/hint] %d/%d[/b][/color]"
-			+ "    [color=#E74C3C][b][hint=Action Points]⚔️ AP:[/hint] %d/%d[/b][/color][/font_size]"
+			"[font_size=%d][color=#F1C40F][b][hint=Movement Points]%s MP:[/hint] %d/%d[/b][/color]"
+			+ "    [color=#E74C3C][b][hint=Action Points]%s AP:[/hint] %d/%d[/b][/color][/font_size]"
 		)
 		% [
 			scaled_font_size(9),
+			PlanningIcons.STAT_MOV,
 			unit.movement.points_left, unit.movement.max_points,
+			PlanningIcons.STAT_AP,
 			unit.ability.points_left, unit.ability.max_points,
 		],
 	)
 	lines.append(
 		(
-			"[font_size=%d]💪 STR: %s  ✨ MAG: %s  🛡️ DEF: %s"
+			"[font_size=%d]%s STR: %s  %s MAG: %s  %s DEF: %s"
 			% [
 				scaled_font_size(10),
+				PlanningIcons.STAT_STR,
 				format_stat_bbcode(unit, GameEnums.StatType.PHYSICAL, board),
+				PlanningIcons.STAT_MAG,
 				format_stat_bbcode(unit, GameEnums.StatType.MAGICAL, board),
+				PlanningIcons.STAT_DEF,
 				format_stat_bbcode(unit, GameEnums.StatType.DEFENSE, board),
 			]
-			+ ("  [hint=Armor]🪖 ARM:[/hint] %d" % unit.armor if unit.armor > 0 else "")
+			+ ("  [hint=Armor]%s ARM:[/hint] %d" % [PlanningIcons.STAT_ARMOR, unit.armor] if unit.armor > 0 else "")
 			+ "[/font_size]"
 		),
 	)
@@ -277,38 +282,24 @@ static func action_symbol_text(
 	if action == null:
 		return "-"
 	if action.type == GameEnums.ActionType.MOVE:
-		if action.uses_run:
-			return "Run (%d,%d)" % [action.target_coord.x, action.target_coord.y]
-		return "🏃 (%d,%d)" % [action.target_coord.x, action.target_coord.y]
+		return "%s (%d,%d)" % [
+			PlanningIcons.move_glyph(action.uses_run),
+			action.target_coord.x,
+			action.target_coord.y,
+		]
 	if action.type == GameEnums.ActionType.FACE:
-		return "👀 %s" % facing_name(action.face_dir)
+		return "%s %s" % [PlanningIcons.GLYPH_FACE, facing_name(action.face_dir)]
 	if action.type == GameEnums.ActionType.ABILITY:
 		if action.ability != null and DataLibrary.is_universal_wait(action.ability.id):
 			return ""
 		if action.awaiting_target:
 			var pending_name: String = action.ability.display_name if action.ability != null else "Skill"
 			return "%s — Awaiting Input" % pending_name
-		var symbol: String = "✨"
-		if action.ability != null:
-			if action.ability.id == &"universal_run":
-				return "🏃 Run"
-			if action.ability.is_movement_kind():
-				return "↔️ %s" % action.ability.display_name
-			var has_damage: bool = false
-			var has_heal: bool = false
-			for eff: EffectData in action.ability.effects:
-				if eff.type in [
-					GameEnums.EffectType.DAMAGE,
-					GameEnums.EffectType.EXPLODE,
-					GameEnums.EffectType.RANGED_EXPLODE,
-				]:
-					has_damage = true
-				if eff.type == GameEnums.EffectType.HEAL:
-					has_heal = true
-			if has_damage:
-				symbol = "⚔️"
-			elif has_heal:
-				symbol = "💚"
+		var symbol: String = PlanningIcons.ability_glyph(action.ability)
+		if action.ability != null and AbilitySystem.is_run_ability(action.ability):
+			return "%s Run" % symbol
+		if action.ability != null and action.ability.is_movement_kind():
+			return "%s %s" % [symbol, action.ability.display_name]
 		var ability_name: String = action.ability.display_name if action.ability != null else ""
 		var target_name: String = ""
 		if action.target_unit_id >= 0 and board != null:
@@ -509,15 +500,15 @@ static func ability_desc(ability: AbilityData, unit: UnitState = null) -> String
 
 static func ability_cost_chip(ability: AbilityData) -> Dictionary:
 	if ability == null:
-		return {"emoji": "🔵", "text": "0", "tooltip": _glossary_def("AP")}
+		return {"emoji": PlanningIcons.STAT_AP, "text": "0", "tooltip": _glossary_def("AP")}
 	if ability.is_movement_kind():
 		return {
-			"emoji": "👟",
+			"emoji": PlanningIcons.STAT_MOV,
 			"text": str(ability.movement_point_cost),
 			"tooltip": "MOV %d — %s" % [ability.movement_point_cost, _glossary_def("MOV")],
 		}
 	return {
-		"emoji": "🔵",
+		"emoji": PlanningIcons.STAT_AP,
 		"text": str(ability.action_point_cost),
 		"tooltip": "AP %d — %s" % [ability.action_point_cost, _glossary_def("AP")],
 	}
@@ -543,13 +534,7 @@ static func ability_range_chip(ability: AbilityData, unit: UnitState = null) -> 
 		display_val = label.substr(5)
 	elif label.begins_with("RANGE "):
 		display_val = label.substr(6)
-	var emoji: String = "🏹"
-	if label.begins_with("DASH"):
-		emoji = "💨"
-	elif label.begins_with("MOVE"):
-		emoji = "👟"
-	elif label == "SELF" or label == "RANGE 0":
-		emoji = "🎯"
+	var emoji: String = PlanningIcons.range_chip_glyph(label)
 	return {"emoji": emoji, "text": display_val, "tooltip": "%s — %s" % [label, tooltip]}
 
 
@@ -1210,7 +1195,6 @@ static func format_stat_bbcode(
 static func timeline_stat_chip(
 	unit: UnitState,
 	stat_type: GameEnums.StatType,
-	emoji: String,
 	board: BoardState = null,
 ) -> Dictionary:
 	var bd: Dictionary = stat_breakdown(unit, stat_type, board)
@@ -1221,7 +1205,7 @@ static func timeline_stat_chip(
 	elif diff < 0:
 		col = Color.html("#" + HEX_STAT_DOWN)
 	return {
-		"text": "%s%d" % [emoji, int(bd.get("final_val", 0))],
+		"text": "%s%d" % [PlanningIcons.stat_icon(stat_type), int(bd.get("final_val", 0))],
 		"tooltip": str(bd.get("tooltip", "")),
 		"color": col,
 	}
