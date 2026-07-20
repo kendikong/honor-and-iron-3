@@ -1256,11 +1256,11 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		ability.is_movement_skill = v == GameEnums.AbilityKind.MOVEMENT_SKILL
 		_refresh_ability_ui(ability)
 	)
-	_bind_int(grid, "AP", ability.action_point_cost, func(v: int) -> void:
+	var ap_row := _bind_int(grid, "AP", ability.action_point_cost, func(v: int) -> void:
 		ability.action_point_cost = v
 		_refresh_ability_ui(ability)
 	)
-	_bind_int(grid, "MP", ability.movement_point_cost, func(v: int) -> void:
+	var mp_row := _bind_int(grid, "MP", ability.movement_point_cost, func(v: int) -> void:
 		ability.movement_point_cost = v
 		_refresh_ability_ui(ability)
 	)
@@ -1269,15 +1269,15 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		_refresh_ability_ui(ability)
 	)
 	_bind_targeting_flags(parent, ability)
-	_bind_enum(grid, "Shape", GameEnums.TargetShape, ability.target_shape, func(v: int) -> void:
+	var shape_row := _bind_enum(grid, "Shape", GameEnums.TargetShape, ability.target_shape, func(v: int) -> void:
 		ability.target_shape = v
 		_refresh_ability_ui(ability)
 	)
-	_bind_int(grid, "Shape Size", ability.target_shape_size, func(v: int) -> void:
+	var shape_size_row := _bind_int(grid, "Shape Size", ability.target_shape_size, func(v: int) -> void:
 		ability.target_shape_size = v
 		_refresh_ability_ui(ability)
 	)
-	_bind_enum(grid, "Scaling", GameEnums.StatType, ability.scaling_stat, func(v: int) -> void:
+	var scaling_row := _bind_enum(grid, "Scaling", GameEnums.StatType, ability.scaling_stat, func(v: int) -> void:
 		ability.scaling_stat = v
 		_refresh_ability_ui(ability)
 	)
@@ -1288,21 +1288,40 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	_bind_enum(grid, "Present Anim", GameEnums.PresentationAnim, ability.presentation_anim, func(v: int) -> void:
 		ability.presentation_anim = v
 	)
-	_bind_int(grid, "Upg Range", ability.upgraded_range_tiles, func(v: int) -> void:
+	var upg_range_row := _bind_int(grid, "Upg Range", ability.upgraded_range_tiles, func(v: int) -> void:
 		ability.upgraded_range_tiles = v
 		_refresh_ability_ui(ability)
 	)
-	_bind_enum(grid, "Upg Shape", GameEnums.TargetShape, ability.upgraded_target_shape, func(v: int) -> void:
+	var upg_shape_row := _bind_enum(grid, "Upg Shape", GameEnums.TargetShape, ability.upgraded_target_shape, func(v: int) -> void:
 		ability.upgraded_target_shape = v
 		_refresh_ability_ui(ability)
 	)
-	_bind_int(grid, "Upg Size", ability.upgraded_target_shape_size, func(v: int) -> void:
+	var upg_size_row := _bind_int(grid, "Upg Size", ability.upgraded_target_shape_size, func(v: int) -> void:
 		ability.upgraded_target_shape_size = v
 		_refresh_ability_ui(ability)
 	)
 	_bind_multiline(parent, "Upgrade Text", ability.upgrade_description, func(v: String) -> void:
 		ability.upgrade_description = v
 	)
+	# Grey out fields that don't apply to this ability configuration.
+	var is_class_skill: bool = ability.kind == GameEnums.AbilityKind.CLASS_SKILL
+	var is_move_skill: bool = ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
+	var has_pass_through: bool = AbilitySystem.has_pass_through_effects(ability)
+	var has_dash: bool = AbilitySystem.ability_has_dash(ability)
+	var is_displacement: bool = has_pass_through or has_dash
+	var has_dmg_or_heal: bool = (
+		AbilitySystem.effect_amount(ability, GameEnums.EffectType.DAMAGE) != 0
+		or AbilitySystem.effect_amount(ability, GameEnums.EffectType.HEAL) != 0
+	)
+	var has_upg_range: bool = ability.upgraded_range_tiles != -1
+	_grey_row(ap_row, not is_class_skill)
+	_grey_row(mp_row, not is_move_skill)
+	_grey_row(shape_row, is_displacement)
+	_grey_row(shape_size_row, is_displacement)
+	_grey_row(scaling_row, not has_dmg_or_heal)
+	_grey_row(upg_range_row, not has_upg_range)
+	_grey_row(upg_shape_row, is_displacement or not has_upg_range)
+	_grey_row(upg_size_row, is_displacement or not has_upg_range)
 	_add_subsection_label(parent, "Effects", ClassLibraryTheme.ACCENT_DATA)
 	var eff_box := VBoxContainer.new()
 	eff_box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
@@ -1376,29 +1395,46 @@ func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effect
 			eff.amount = v
 			_refresh_ability_ui(ability)
 		)
-		_bind_enum(g, "Scale Stat", GameEnums.StatType, eff.scaling_stat, func(v: int) -> void:
+		var eff_scale_row := _bind_enum(g, "Scale Stat", GameEnums.StatType, eff.scaling_stat, func(v: int) -> void:
 			eff.scaling_stat = v
 			_refresh_ability_ui(ability)
 		)
-		_bind_enum(g, "Status", GameEnums.StatusType, eff.status_type, func(v: int) -> void:
+		var eff_status_row := _bind_enum(g, "Status", GameEnums.StatusType, eff.status_type, func(v: int) -> void:
 			eff.status_type = v
 			_refresh_ability_ui(ability)
 		)
-		_bind_int(g, "Duration", eff.status_duration, func(v: int) -> void:
+		var eff_dur_row := _bind_int(g, "Duration", eff.status_duration, func(v: int) -> void:
 			eff.status_duration = v
 			_refresh_ability_ui(ability)
 		)
-		_bind_int(g, "Adj Bonus", eff.bonus_if_adjacent_at_cast, func(v: int) -> void:
+		var eff_adj_row := _bind_int(g, "Adj Bonus", eff.bonus_if_adjacent_at_cast, func(v: int) -> void:
 			eff.bonus_if_adjacent_at_cast = v
 			_refresh_ability_ui(ability)
 		)
-		_bind_int(g, "DEF Debuff", eff.def_debuff_before_damage, func(v: int) -> void:
+		var eff_def_row := _bind_int(g, "DEF Debuff", eff.def_debuff_before_damage, func(v: int) -> void:
 			eff.def_debuff_before_damage = v
 			_refresh_ability_ui(ability)
 		)
-		_bind_string(g, "Spawn ID", String(eff.spawn_unit_id), func(v: String) -> void:
+		var eff_spawn_row := _bind_string(g, "Spawn ID", String(eff.spawn_unit_id), func(v: String) -> void:
 			eff.spawn_unit_id = StringName(v)
 		)
+		# Grey out effect fields that don't apply to this effect type.
+		var is_status_eff: bool = eff.type in [
+			GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF,
+			GameEnums.EffectType.REMOVE_STATUS,
+		]
+		var is_dmg_eff: bool = eff.type == GameEnums.EffectType.DAMAGE
+		var has_scale: bool = eff.type in [
+			GameEnums.EffectType.DAMAGE, GameEnums.EffectType.HEAL,
+			GameEnums.EffectType.ARMOR_UP, GameEnums.EffectType.TRAMPLE,
+		]
+		var is_spawn_eff: bool = eff.type == GameEnums.EffectType.SPAWN
+		_grey_row(eff_scale_row, not has_scale)
+		_grey_row(eff_status_row, not is_status_eff)
+		_grey_row(eff_dur_row, not is_status_eff)
+		_grey_row(eff_adj_row, not is_dmg_eff)
+		_grey_row(eff_def_row, not is_dmg_eff)
+		_grey_row(eff_spawn_row, not is_spawn_eff)
 
 
 func _refresh_ability_ui(ability: AbilityData) -> void:
@@ -1689,8 +1725,9 @@ func _add_subsection_label(parent: Control, text: String, accent: Color) -> void
 
 # --- Widget bindings ---
 
-func _bind_int(parent: GridContainer, label: String, value: int, setter: Callable) -> void:
-	parent.add_child(_field_label(label))
+func _bind_int(parent: GridContainer, label: String, value: int, setter: Callable) -> Array[Control]:
+	var lbl := _field_label(label)
+	parent.add_child(lbl)
 	var spin := SpinBox.new()
 	spin.min_value = -999
 	spin.max_value = 9999
@@ -1699,6 +1736,7 @@ func _bind_int(parent: GridContainer, label: String, value: int, setter: Callabl
 	spin.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	spin.value_changed.connect(func(v: float) -> void: setter.call(int(v)))
 	parent.add_child(spin)
+	return [lbl, spin]
 
 
 func _bind_bool(parent: GridContainer, label: String, value: bool, setter: Callable) -> void:
@@ -1755,8 +1793,9 @@ func _bind_string_stacked(parent: VBoxContainer, label: String, value: String, s
 	parent.add_child(edit)
 
 
-func _bind_enum(parent: GridContainer, label: String, enum_obj: Variant, current: int, setter: Callable) -> void:
-	parent.add_child(_field_label(label))
+func _bind_enum(parent: GridContainer, label: String, enum_obj: Variant, current: int, setter: Callable) -> Array[Control]:
+	var lbl := _field_label(label)
+	parent.add_child(lbl)
 	var opt := OptionButton.new()
 	var keys: PackedStringArray = enum_obj.keys()
 	for i: int in keys.size():
@@ -1765,6 +1804,7 @@ func _bind_enum(parent: GridContainer, label: String, enum_obj: Variant, current
 	opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	opt.item_selected.connect(func(idx: int) -> void: setter.call(idx))
 	parent.add_child(opt)
+	return [lbl, opt]
 
 
 func _bind_multiline(parent: Control, label: String, value: String, setter: Callable) -> TextEdit:
@@ -1780,6 +1820,14 @@ func _bind_multiline(parent: Control, label: String, value: String, setter: Call
 	edit.text_changed.connect(func() -> void: setter.call(edit.text))
 	wrap.add_child(edit)
 	return edit
+
+
+func _grey_row(row: Array[Control], greyed: bool) -> void:
+	var alpha: float = 0.35 if greyed else 1.0
+	for ctrl: Control in row:
+		ctrl.modulate.a = alpha
+		if ctrl is BaseButton or ctrl is SpinBox or ctrl is OptionButton or ctrl is LineEdit:
+			ctrl.mouse_filter = Control.MOUSE_FILTER_IGNORE if greyed else Control.MOUSE_FILTER_STOP
 
 
 func _save_overrides() -> void:
