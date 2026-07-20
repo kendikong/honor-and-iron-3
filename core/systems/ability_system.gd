@@ -141,6 +141,19 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 	return false
 
 
+static func ability_displaces_caster(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	for eff in ability.effects:
+		if eff.type in [
+			GameEnums.EffectType.DASH,
+			GameEnums.EffectType.TELEPORT_CASTER,
+			GameEnums.EffectType.SWAP,
+		]:
+			return true
+	return false
+
+
 ## Planning: one-click commit vs two-phase awaiting-target flow (keyword rules live here only).
 static func planning_commit_flow(actor: UnitState, ability: AbilityData) -> int:
 	if actor == null or ability == null:
