@@ -233,7 +233,7 @@ func select_ability(index: int) -> void:
 func sync_selected_ability_if_invalid() -> void:
 	if not is_planning_phase(phase) or selected_unit_id < 0:
 		return
-	if find_awaiting_dash_action(selected_unit_id) != null:
+	if find_awaiting_action(selected_unit_id) != null:
 		return
 	if is_wait_ability_index(selected_ability_index):
 		return
@@ -337,11 +337,7 @@ func find_awaiting_action(unit_id: int) -> TimelineAction:
 	return null
 
 
-func find_awaiting_dash_action(unit_id: int) -> TimelineAction:
-	return find_awaiting_action(unit_id)
-
-
-func set_awaiting_dash_action(unit_id: int, ability: AbilityData) -> void:
+func set_awaiting_action(unit_id: int, ability: AbilityData) -> void:
 	if unit_id < 0 or ability == null:
 		return
 	var actor: UnitState = (
@@ -362,7 +358,7 @@ func set_awaiting_dash_action(unit_id: int, ability: AbilityData) -> void:
 	_refresh_plan()
 
 
-func clear_awaiting_dash_action(unit_id: int) -> void:
+func clear_awaiting_action(unit_id: int) -> void:
 	if unit_id < 0:
 		return
 	var kept: Array[TimelineAction] = []
@@ -379,8 +375,8 @@ func clear_awaiting_dash_action(unit_id: int) -> void:
 	_refresh_plan()
 
 
-func _try_finalize_awaiting_dash_from_slots(unit_id: int, slots: Dictionary) -> bool:
-	var awaiting: TimelineAction = find_awaiting_dash_action(unit_id)
+func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
+	var awaiting: TimelineAction = find_awaiting_action(unit_id)
 	if awaiting == null:
 		return false
 	for raw: Variant in slots.get("action", []):
@@ -729,7 +725,7 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			return false
 		_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 	if has_action:
-		if _try_finalize_awaiting_dash_from_slots(unit_id, slots):
+		if _try_finalize_awaiting_from_slots(unit_id, slots):
 			if has_pre_move:
 				if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 					return false

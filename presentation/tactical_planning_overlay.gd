@@ -67,7 +67,7 @@ var _fixed_range_origin: Vector2i = Vector2i(-999, -999)
 var _action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_proj_key: int = -1
-var _cached_hover_dash_targeting: bool = false
+var _cached_hover_awaiting_targeting: bool = false
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -172,7 +172,7 @@ func _invalidate_hover_cache() -> void:
 	_cached_hover_action_range_origin = Vector2i(-999, -999)
 	_cached_hover_ability = -1
 	_cached_hover_proj_key = -1
-	_cached_hover_dash_targeting = false
+	_cached_hover_awaiting_targeting = false
 
 
 func _planning_action_range_tiles_for_unit(
@@ -466,7 +466,7 @@ func _compute_move_budget(unit: UnitState, p_unit: UnitState, selected_ability: 
 func _can_show_move_tiles(unit: UnitState, selected_ability: int) -> bool:
 	if unit == null:
 		return false
-	if _planning_input != null and _planning_input.dash_targeting_active():
+	if _planning_input != null and _planning_input.awaiting_targeting_active():
 		return false
 	if _director != null:
 		var move_timing: int = _director.get_planning_move_timing(unit.id)
@@ -506,8 +506,8 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if AbilitySystem.is_run_ability(ability):
 		return false
-	if ability != null and AbilitySystem.ability_has_dash(ability):
-		if _planning_input == null or not _planning_input.dash_targeting_active():
+	if AbilitySystem.planning_commit_flow(p_unit, ability) == GameEnums.PlanningCommitFlow.AWAITING_TARGET:
+		if _planning_input == null or not _planning_input.awaiting_targeting_active():
 			return false
 	var premove_cell: Vector2i = _proj_origin(unit)
 	if _action_range_origin.x > -900:
@@ -518,7 +518,7 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 	)
 	if not (
 		_planning_input != null
-		and _planning_input.dash_targeting_active()
+		and _planning_input.awaiting_targeting_active()
 	):
 		if not AbilitySystem.can_show_planning_action_range_after_premove(
 			plan_board, p_unit, ability, premove_cell, auto_run_active,
@@ -559,8 +559,8 @@ func recompute_hover_ranges(
 	var cache_ability: int = selected_ability if unit.id == _director.selected_unit_id else -1
 	var cache_force: bool = force_basic if unit.id == _director.selected_unit_id else false
 	var proj_key: int = _hover_proj_cache_key(unit) if _is_selected_player_unit(unit) else 0
-	var cache_dash_targeting: bool = (
-		_planning_input != null and _planning_input.dash_targeting_active()
+	var cache_awaiting_targeting: bool = (
+		_planning_input != null and _planning_input.awaiting_targeting_active()
 	)
 	if (
 		_cached_hover_unit_id == unit.id
@@ -569,7 +569,7 @@ func recompute_hover_ranges(
 		and _cached_hover_ability == cache_ability
 		and _cached_hover_force == cache_force
 		and _cached_hover_proj_key == proj_key
-		and _cached_hover_dash_targeting == cache_dash_targeting
+		and _cached_hover_awaiting_targeting == cache_awaiting_targeting
 	):
 		return
 	_cached_hover_unit_id = unit.id
@@ -578,7 +578,7 @@ func recompute_hover_ranges(
 	_cached_hover_ability = cache_ability
 	_cached_hover_force = cache_force
 	_cached_hover_proj_key = proj_key
-	_cached_hover_dash_targeting = cache_dash_targeting
+	_cached_hover_awaiting_targeting = cache_awaiting_targeting
 	_hover_move_tiles.clear()
 	_hover_action_range_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):
@@ -1607,7 +1607,8 @@ func _draw_ghosts() -> void:
 					action.actor_id == unit.id
 					and action.type == GameEnums.ActionType.ABILITY
 					and action.ability != null
-					and AbilitySystem.ability_has_dash(action.ability)
+					and AbilitySystem.planning_awaiting_endpoint_range(action.ability) > 0
+					and not action.awaiting_target
 				):
 					var start_pos: Vector2i = _proj_origin(unit)
 					if action.target_coord != start_pos:
@@ -1642,12 +1643,12 @@ func _draw_move_ghosts() -> void:
 	if not _can_show_action_range_tiles(unit, _director.selected_ability_index, force_basic):
 		return
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
-	if ability == null or not AbilitySystem.ability_has_dash(ability):
+	if ability == null or AbilitySystem.planning_commit_flow(unit, ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:
 		return
-	if _planning_input != null and not _planning_input.dash_targeting_active():
+	if _planning_input != null and not _planning_input.awaiting_targeting_active():
 		return
 	var origin: Vector2i = _proj_origin(unit)
-	if not _is_valid_dash_hover(origin, _hover_coord, AbilitySystem.dash_steps(ability)):
+	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, _hover_coord, ability):
 		return
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var p_col: Color = _player_color_for_unit(unit)
@@ -1680,10 +1681,12 @@ func _draw_drag_path() -> void:
 	var route_col: Color = Color(p_col.r, p_col.g, p_col.b, 0.95)
 	if (
 		ability != null
-		and AbilitySystem.ability_has_dash(ability)
+		and AbilitySystem.planning_commit_flow(drag_unit, ability) == GameEnums.PlanningCommitFlow.AWAITING_TARGET
 		and _planning_input != null
-		and _planning_input.dash_targeting_active()
-		and _is_valid_dash_hover(_proj_origin(drag_unit), _hover_coord, AbilitySystem.dash_steps(ability))
+		and _planning_input.awaiting_targeting_active()
+		and AbilitySystem.planning_is_valid_awaiting_endpoint(
+			_proj_origin(drag_unit), _hover_coord, ability,
+		)
 	):
 		_draw_dashed_route([_proj_origin(drag_unit), _hover_coord], route_col)
 		return
@@ -1697,16 +1700,6 @@ func _draw_drag_path() -> void:
 			_draw_dashed_route([_planning_input.drag_sim_actor_pos, _hover_coord], route_col)
 		else:
 			_draw_route_line(_route, _COLOR_DRAGPATH, true, true)
-
-
-func _is_valid_dash_hover(origin: Vector2i, coord: Vector2i, max_range: int) -> bool:
-	if coord == origin or max_range <= 0:
-		return false
-	var delta: Vector2i = coord - origin
-	if delta.x != 0 and delta.y != 0:
-		return false
-	var dist: int = GridSystem.manhattan(origin, coord)
-	return dist >= 1 and dist <= max_range
 
 
 func _proj_unit(unit_id: int) -> UnitState:

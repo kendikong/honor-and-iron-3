@@ -178,6 +178,29 @@ static func planning_awaiting_phase(ability: AbilityData) -> int:
 	return GameEnums.PlanningAwaitingPhase.GENERIC
 
 
+static func planning_awaiting_endpoint_range(ability: AbilityData) -> int:
+	if planning_awaiting_phase(ability) == GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
+		return dash_steps(ability)
+	return 0
+
+
+static func planning_is_valid_awaiting_endpoint(
+	origin: Vector2i,
+	coord: Vector2i,
+	ability: AbilityData,
+) -> bool:
+	var max_range: int = planning_awaiting_endpoint_range(ability)
+	if max_range <= 0:
+		return false
+	if coord == origin:
+		return false
+	var delta: Vector2i = coord - origin
+	if delta.x != 0 and delta.y != 0:
+		return false
+	var dist: int = GridSystem.manhattan(origin, coord)
+	return dist >= 1 and dist <= max_range
+
+
 ## Deprecated alias: use planning_arms_on_self_tile / planning_auto_arms_after_premove.
 static func ability_arms_dash_on_self_click(actor: UnitState, ability: AbilityData) -> bool:
 	return planning_arms_on_self_tile(actor, ability)

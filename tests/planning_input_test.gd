@@ -14,7 +14,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_preview_from_commit_slots(failures)
 	_test_audit_regression_fixes(failures)
 	_test_auto_skill_after_move_arms_dash(failures)
-	_test_awaiting_dash_plan_refresh(failures)
+	_test_awaiting_plan_refresh(failures)
 	_test_dash_arm_survives_plan_refresh(failures)
 	_test_dash_self_click_blocks_false_wait(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
@@ -334,10 +334,10 @@ static func _test_audit_regression_fixes(failures: Array[String]) -> void:
 	if action_steps.is_empty():
 		failures.append("PlanningInputTest: self-target skill should populate action slot on own tile")
 	director.selected_ability_index = 1
-	if not input._try_arm_dash_or_self_skill(1):
+	if not input._try_arm_awaiting_or_self_skill(1):
 		failures.append("PlanningInputTest: dash skill self click should arm dash targeting")
-	if not input.dash_targeting_active():
-		failures.append("PlanningInputTest: try_arm_dash should queue awaiting dash in plan")
+	if not input.awaiting_targeting_active():
+		failures.append("PlanningInputTest: try_arm should queue awaiting action in plan")
 	director.selected_ability_index = -1
 	if not input._would_show_wait_on_self_click(unit):
 		failures.append("PlanningInputTest: empty skill bar should allow wait cursor on self tile")
@@ -395,7 +395,7 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 		failures.append(
 			"PlanningInputTest: move+awaiting commit slots should commit to plan",
 		)
-	if not input.dash_targeting_active():
+	if not input.awaiting_targeting_active():
 		failures.append(
 			"PlanningInputTest: move+awaiting commit should leave awaiting action in plan",
 		)
@@ -440,7 +440,7 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 		1,
 	)
 	input._on_commit_slots_applied(1, move_slots_off)
-	if input.dash_targeting_active():
+	if input.awaiting_targeting_active():
 		failures.append(
 			"PlanningInputTest: awaiting must not auto-arm when auto skill after move is off",
 		)
@@ -473,7 +473,7 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 		)
 
 
-static func _test_awaiting_dash_plan_refresh(failures: Array[String]) -> void:
+static func _test_awaiting_plan_refresh(failures: Array[String]) -> void:
 	var director := CombatDirector.new()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(8, 8)
@@ -524,25 +524,25 @@ static func _test_dash_arm_survives_plan_refresh(failures: Array[String]) -> voi
 	var fixture: Dictionary = _bowling_charge_arm_fixture()
 	var input: CombatPlanningInput = fixture["input"] as CombatPlanningInput
 	var director: CombatDirector = fixture["director"] as CombatDirector
-	if not input._try_arm_dash_or_self_skill(1):
+	if not input._try_arm_awaiting_or_self_skill(1):
 		failures.append("PlanningInputTest: dash self click should arm through plan refresh")
-	if director.find_awaiting_dash_action(1) == null:
+	if director.find_awaiting_action(1) == null:
 		failures.append(
 			"PlanningInputTest: awaiting dash must survive sync during _refresh_plan",
 		)
-	if not input.dash_targeting_active():
+	if not input.awaiting_targeting_active():
 		failures.append(
-			"PlanningInputTest: dash_targeting_active should read awaiting plan entry",
+			"PlanningInputTest: awaiting_targeting_active should read awaiting plan entry",
 		)
 	director.flush_plan_refresh_signals_if_pending()
 	input.cancel_aim()
-	if director.find_awaiting_dash_action(1) == null:
+	if director.find_awaiting_action(1) == null:
 		failures.append(
 			"PlanningInputTest: awaiting dash must survive board_changed + cancel_aim",
 		)
-	if not input.dash_targeting_active():
+	if not input.awaiting_targeting_active():
 		failures.append(
-			"PlanningInputTest: dash_targeting_active must survive board_changed refresh",
+			"PlanningInputTest: awaiting_targeting_active must survive board_changed refresh",
 		)
 
 
@@ -558,7 +558,7 @@ static func _test_dash_self_click_blocks_false_wait(failures: Array[String]) -> 
 		failures.append(
 			"PlanningInputTest: wait must not trigger when a dash skill is selected",
 		)
-	if not input._try_arm_dash_or_self_skill(1):
+	if not input._try_arm_awaiting_or_self_skill(1):
 		failures.append("PlanningInputTest: dash self click must arm awaiting action")
 	if director.unit_has_wait_planned(1):
 		failures.append("PlanningInputTest: dash self click must not plan wait")

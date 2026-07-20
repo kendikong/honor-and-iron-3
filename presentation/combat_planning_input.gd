@@ -227,8 +227,8 @@ func on_right_click() -> void:
 		cancel_aim()
 		_play_sfx("cancel")
 		return
-	if dash_targeting_active():
-		clear_dash_targeting()
+	if awaiting_targeting_active():
+		clear_awaiting_targeting()
 		_play_sfx("cancel")
 		return
 	if _is_planning() and _director.selected_unit_id >= 0:
@@ -498,7 +498,7 @@ func _on_selection_changed(unit_id: int) -> void:
 	if _director == null:
 		return
 	if unit_id < 0:
-		clear_dash_targeting()
+		clear_awaiting_targeting()
 		_invalidate_planning_hover_cache()
 		_restore_hover_preview()
 		_sync_intent_skill_mode()
@@ -538,7 +538,7 @@ func _finish_selection_changed() -> void:
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
-	clear_dash_targeting()
+	clear_awaiting_targeting()
 	if _director.selected_unit_id >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
 	_request_planning_selection_refresh()
@@ -751,14 +751,16 @@ func _refresh_selected_interaction_preview() -> void:
 		return
 	if (
 		_director.selected_ability_index >= 0
-		and dash_targeting_active()
+		and awaiting_targeting_active()
 		and _director.board.is_in_bounds(cell)
 	):
 		var dash_ab := _selected_ability_data(p_unit)
 		if (
 			dash_ab != null
-			and _ability_has_dash(dash_ab)
-			and _is_valid_dash_target(_proj_origin(p_unit), cell, _dash_steps(dash_ab))
+			and _awaiting_flow_selected(p_unit, dash_ab)
+			and AbilitySystem.planning_is_valid_awaiting_endpoint(
+				_proj_origin(p_unit), cell, dash_ab,
+			)
 		):
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 			_refresh_click_target_highlight()
@@ -840,9 +842,9 @@ func _update_hover_attack_preview() -> void:
 		return
 	if p_unit.active_abilities.is_empty() or _director.selected_ability_index < 0:
 		return
-	var dash_ab := _selected_ability_data(p_unit)
-	if _should_use_dash_on_input(dash_ab) and _is_valid_dash_target(
-		_proj_origin(p_unit), cell, _dash_steps(dash_ab),
+	var endpoint_ability := _selected_ability_data(p_unit)
+	if _should_use_awaiting_endpoint_on_input(endpoint_ability) and AbilitySystem.planning_is_valid_awaiting_endpoint(
+		_proj_origin(p_unit), cell, endpoint_ability,
 	):
 		var dash_res: Dictionary = _preview_from_commit_slots_at_cell(_director.selected_unit_id, cell)
 		_apply_hover_preview_dict(dash_res)
@@ -900,7 +902,7 @@ func _refresh_live_interaction_preview(
 		str(cell),
 		attack_target_id,
 		cur_ability,
-		1 if dash_targeting_active() else 0,
+		1 if awaiting_targeting_active() else 0,
 	]
 	if cache_key == _hover_preview_cache_key:
 		return
@@ -931,7 +933,7 @@ func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> i
 			return p_unit.id if AbilitySystem.can_target_self(p_unit, ability) else -1
 		if hover_unit.is_enemy():
 			var ability := _selected_ability_data(p_unit)
-			if ability == null or _ability_has_dash(ability):
+			if ability == null or _awaiting_flow_selected(p_unit, ability):
 				return -1
 			if AbilitySystem.ability_uses_attack_animation(ability):
 				return hover_unit.id
@@ -946,10 +948,13 @@ func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> i
 	return -1
 
 
-func _should_use_dash_on_input(ability: AbilityData) -> bool:
-	if not dash_targeting_active():
+func _should_use_awaiting_endpoint_on_input(ability: AbilityData) -> bool:
+	if not awaiting_targeting_active():
 		return false
-	if ability == null or not _ability_has_dash(ability) or _director.selected_ability_index < 0:
+	if ability == null or _director == null or _director.selected_ability_index < 0:
+		return false
+	var actor := _proj_unit(_director.selected_unit_id)
+	if actor == null or not _awaiting_flow_selected(actor, ability):
 		return false
 	if _skill_interaction_active() or aiming:
 		return true
@@ -1000,7 +1005,7 @@ func _commit_at_cell(
 	var actor := _proj_unit(unit_id)
 	if actor == null and _director != null and _director.board != null:
 		actor = _director.board.get_unit_by_id(unit_id)
-	if actor != null and cell == _proj_origin(actor) and _try_arm_dash_or_self_skill(unit_id):
+	if actor != null and cell == _proj_origin(actor) and _try_arm_awaiting_or_self_skill(unit_id):
 		return true
 	var slots: Dictionary = _finalize_commit_slots(
 		_build_commit_slots_at_cell(
@@ -1024,7 +1029,7 @@ func _commit_at_cell(
 	return true
 
 
-func _try_arm_dash_or_self_skill(unit_id: int) -> bool:
+func _try_arm_awaiting_or_self_skill(unit_id: int) -> bool:
 	if _director == null or not _is_planning():
 		return false
 	if selected_phase_action_exhausted(unit_id):
@@ -1041,10 +1046,10 @@ func _try_arm_dash_or_self_skill(unit_id: int) -> bool:
 	var self_ability := _selected_ability_data(actor)
 	if not AbilitySystem.planning_arms_on_self_tile(actor, self_ability):
 		return false
-	if _director.find_awaiting_dash_action(unit_id) != null:
+	if _director.find_awaiting_action(unit_id) != null:
 		_play_sfx("ability")
 		return true
-	var armed: bool = arm_dash_targeting()
+	var armed: bool = arm_awaiting_targeting()
 	if armed:
 		_play_sfx("ability")
 	return armed
@@ -1088,7 +1093,7 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 				and AbilitySystem.planning_commit_flow(actor, action.ability)
 				== GameEnums.PlanningCommitFlow.AWAITING_TARGET
 			):
-				clear_dash_targeting()
+				clear_awaiting_targeting()
 				_director.select_ability(-1)
 			elif (
 				not AbilitySystem.is_run_ability(action.ability)
@@ -1233,13 +1238,13 @@ func _route_waypoints() -> Array[Vector2i]:
 	return waypoints
 
 
-func dash_targeting_active() -> bool:
+func awaiting_targeting_active() -> bool:
 	if _director == null or _director.selected_unit_id < 0:
 		return false
-	return _director.find_awaiting_dash_action(_director.selected_unit_id) != null
+	return _director.find_awaiting_action(_director.selected_unit_id) != null
 
 
-func arm_dash_targeting() -> bool:
+func arm_awaiting_targeting() -> bool:
 	if _director == null or _director.selected_ability_index < 0:
 		return false
 	var actor := _proj_unit(_director.selected_unit_id)
@@ -1252,10 +1257,10 @@ func arm_dash_targeting() -> bool:
 	var ability := _selected_ability_data(actor)
 	if not AbilitySystem.planning_arms_on_self_tile(actor, ability):
 		return false
-	if _director.find_awaiting_dash_action(actor.id) != null:
+	if _director.find_awaiting_action(actor.id) != null:
 		_request_planning_selection_refresh()
 		return true
-	_director.set_awaiting_dash_action(actor.id, ability)
+	_director.set_awaiting_action(actor.id, ability)
 	_director.flush_plan_refresh_signals_if_pending()
 	if _planning != null:
 		_planning.clear_threat_origin()
@@ -1263,27 +1268,28 @@ func arm_dash_targeting() -> bool:
 		_planning._recompute_hover_ranges_from_inputs()
 	_invalidate_planning_hover_cache()
 	_request_planning_selection_refresh()
-	return dash_targeting_active()
+	return awaiting_targeting_active()
 
 
-func clear_dash_targeting() -> void:
+func clear_awaiting_targeting() -> void:
 	if _director == null or _director.selected_unit_id < 0:
 		return
-	if _director.find_awaiting_dash_action(_director.selected_unit_id) == null:
+	if _director.find_awaiting_action(_director.selected_unit_id) == null:
 		return
-	_director.clear_awaiting_dash_action(_director.selected_unit_id)
+	_director.clear_awaiting_action(_director.selected_unit_id)
 	if _planning != null:
 		_planning._invalidate_hover_cache()
 	_invalidate_planning_hover_cache()
 	_request_planning_selection_refresh()
 
 
-func _dash_steps(ability: AbilityData) -> int:
-	return AbilitySystem.dash_steps(ability)
-
-
-func _ability_has_dash(ability: AbilityData) -> bool:
-	return AbilitySystem.ability_has_dash(ability)
+func _awaiting_flow_selected(actor: UnitState, ability: AbilityData) -> bool:
+	return (
+		ability != null
+		and actor != null
+		and AbilitySystem.planning_commit_flow(actor, ability)
+		== GameEnums.PlanningCommitFlow.AWAITING_TARGET
+	)
 
 
 func _drag_had_movement() -> bool:
@@ -1401,16 +1407,6 @@ func _ability_range(actor: UnitState) -> int:
 	if idx < 0 or idx >= abilities.size():
 		return -1
 	return abilities[idx].range_tiles
-
-
-func _is_valid_dash_target(actor_pos: Vector2i, coord: Vector2i, max_range: int) -> bool:
-	if coord == actor_pos or max_range <= 0:
-		return false
-	var delta := coord - actor_pos
-	if delta.x != 0 and delta.y != 0:
-		return false
-	var dist := GridSystem.manhattan(actor_pos, coord)
-	return dist >= 1 and dist <= max_range
 
 
 func _in_ability_range(actor: UnitState, target: UnitState) -> bool:
@@ -1653,7 +1649,7 @@ func _maybe_append_premove_action_pair(
 		return
 	if not (slots.get("action", []) as Array).is_empty():
 		return
-	if selected_phase_action_exhausted(unit_id) or dash_targeting_active():
+	if selected_phase_action_exhausted(unit_id) or awaiting_targeting_active():
 		return
 	if AbilitySystem.planning_pairs_with_premove(actor, ability):
 		if not _can_pair_run_move_with_ability(actor, cell, waypoints, ability):
@@ -1731,11 +1727,13 @@ func _build_commit_slots_at_cell(
 		return slots
 
 	if ability_index >= 0 and ability != null and not force_basic_movement:
-		if _ability_has_dash(ability):
-			if dash_targeting_active() and _is_valid_dash_target(_proj_origin(actor), cell, _dash_steps(ability)):
+		if _awaiting_flow_selected(actor, ability):
+			if awaiting_targeting_active() and AbilitySystem.planning_is_valid_awaiting_endpoint(
+				_proj_origin(actor), cell, ability,
+			):
 				slots["action"].append(TimelineAction.make_ability(unit_id, ability, cell, -1))
 				return slots
-			if dash_targeting_active():
+			if awaiting_targeting_active():
 				slots["invalid"] = true
 				return slots
 		if AbilitySystem.can_target_self(actor, ability):
@@ -1794,13 +1792,15 @@ func _build_enemy_commit_slots(
 	if use_skill and not AbilitySystem.target_passes_mode(actor, ability, enemy):
 		slots["invalid"] = true
 		return slots
-	if use_skill and _ability_has_dash(ability):
-		if dash_targeting_active() and _is_valid_dash_target(_proj_origin(actor), enemy.position, _dash_steps(ability)):
+	if use_skill and _awaiting_flow_selected(actor, ability):
+		if awaiting_targeting_active() and AbilitySystem.planning_is_valid_awaiting_endpoint(
+			_proj_origin(actor), enemy.position, ability,
+		):
 			slots["action"].append(
 				TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
 			)
 			return slots
-		if dash_targeting_active():
+		if awaiting_targeting_active():
 			slots["invalid"] = true
 			return slots
 	if use_skill and _in_ability_range(actor, enemy):
@@ -1920,7 +1920,7 @@ func _cursor_icon_for_commit_at_cell(
 	return _cursor_icon_from_commit_slots(slots, unit)
 
 
-func _would_arm_dash_on_self_click(unit: UnitState) -> bool:
+func _would_arm_awaiting_on_self_click(unit: UnitState) -> bool:
 	if _director == null or selected_phase_action_exhausted(unit.id):
 		return false
 	if _director.selected_ability_index < 0:
@@ -1928,7 +1928,7 @@ func _would_arm_dash_on_self_click(unit: UnitState) -> bool:
 	if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 		return false
 	var ability := _selected_ability_data(unit)
-	return ability != null and AbilitySystem.planning_arms_on_self_tile(unit, ability) and not dash_targeting_active()
+	return ability != null and AbilitySystem.planning_arms_on_self_tile(unit, ability) and not awaiting_targeting_active()
 
 
 func _would_show_wait_on_self_click(unit: UnitState) -> bool:
@@ -1961,7 +1961,7 @@ func _hover_icon_for_cell(
 ) -> String:
 	if unit == null:
 		return ""
-	if cell == unit.position and _would_arm_dash_on_self_click(unit):
+	if cell == unit.position and _would_arm_awaiting_on_self_click(unit):
 		return PlanningIcons.awaiting_phase_glyph(_selected_ability_data(unit))
 	var icon: String = _cursor_icon_for_commit_at_cell(
 		unit, cell, waypoints, legal_move_tiles, preferred_approach,
@@ -2138,10 +2138,12 @@ func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitSt
 		return not AbilitySystem.can_target_self(p_unit, ability) and not AbilitySystem.is_run_ability(ability)
 	if hover_unit != null and not hover_unit.is_enemy() and hover_unit.id != p_unit.id:
 		return not _can_target_unit_with_selected_ability(p_unit, hover_unit)
-	if _ability_has_dash(ability) and _planning != null:
-		if dash_targeting_active() and (
+	if _awaiting_flow_selected(p_unit, ability) and _planning != null:
+		if awaiting_targeting_active() and (
 			_planning.is_hover_action_range_tile(cell)
-			and not _is_valid_dash_target(_proj_origin(p_unit), cell, _dash_steps(ability))
+			and not AbilitySystem.planning_is_valid_awaiting_endpoint(
+				_proj_origin(p_unit), cell, ability,
+			)
 		):
 			return true
 	return false
@@ -2162,7 +2164,7 @@ func _skill_interaction_active() -> bool:
 func _threat_follows_cursor() -> bool:
 	if aiming:
 		return true
-	if dash_targeting_active():
+	if awaiting_targeting_active():
 		return false
 	if not _skill_interaction_active():
 		return false
@@ -2339,17 +2341,19 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 				_planning.set_drag_attack_target(-1)
 				return
 	if not force_basic_movement and _director.selected_ability_index >= 0:
-		var dash_ability := _selected_ability_data(actor)
+		var endpoint_ability := _selected_ability_data(actor)
 		if (
-			dash_ability != null
-			and _ability_has_dash(dash_ability)
-			and dash_targeting_active()
-			and _is_valid_dash_target(_proj_origin(actor), cell, _dash_steps(dash_ability))
+			endpoint_ability != null
+			and _awaiting_flow_selected(actor, endpoint_ability)
+			and awaiting_targeting_active()
+			and AbilitySystem.planning_is_valid_awaiting_endpoint(
+				_proj_origin(actor), cell, endpoint_ability,
+			)
 		):
 			var dash_face: int = _facing_toward(_proj_origin(actor), cell)
 			var mode: int = (
 				TacticalUnitLayer.DragPreviewAnim.ATTACK
-				if AbilitySystem.ability_is_offensive_dash(dash_ability)
+				if AbilitySystem.ability_is_offensive_dash(endpoint_ability)
 				else TacticalUnitLayer.DragPreviewAnim.SPELL
 			)
 			var dash_target := _director.board.get_unit_at(cell)
