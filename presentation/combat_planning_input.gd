@@ -1528,6 +1528,14 @@ func _in_ability_range(actor: UnitState, target: UnitState) -> bool:
 	return GridSystem.manhattan(actor_pos, target_pos) <= rng
 
 
+func _in_ability_range_of_coord(actor: UnitState, coord: Vector2i) -> bool:
+	var rng := _ability_range(actor)
+	if rng < 0:
+		return false
+	var actor_pos: Vector2i = _proj_origin(actor) if aiming else actor.position
+	return GridSystem.manhattan(actor_pos, coord) <= rng
+
+
 func _can_target_unit_with_selected_ability(actor: UnitState, target: UnitState) -> bool:
 	if actor == null or target == null or not target.is_alive():
 		return false
@@ -1854,6 +1862,18 @@ func _build_commit_slots_at_cell(
 				TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id),
 			)
 			return slots
+		if hover_unit == null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
+			if _in_ability_range_of_coord(actor, cell):
+				var board: BoardState = _proj()
+				if AbilitySystem.has_pass_through_effects(ability) and not AbilitySystem.ability_has_dash(ability):
+					var path: Array[Vector2i] = MovementSystem.find_path(board, actor.position, cell, ability.range_tiles)
+					if path.is_empty():
+						slots["invalid"] = true
+						return slots
+				slots["action"].append(
+					TimelineAction.make_ability(unit_id, ability, cell, -1),
+				)
+				return slots
 
 	if (
 		_basic_move_allowed()
