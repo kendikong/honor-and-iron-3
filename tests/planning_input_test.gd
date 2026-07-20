@@ -13,6 +13,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_cursor_matches_commit_slots(failures)
 	_test_drag_cursor_matches_commit_slots(failures)
 	_test_drop_commit_preserves_drag_route(failures)
+	_test_cursor_omits_unaffordable_run_skill_pair(failures)
 	_test_preview_from_commit_slots(failures)
 	_test_audit_regression_fixes(failures)
 	_test_auto_skill_after_move_arms_dash(failures)
@@ -339,6 +340,74 @@ static func _test_drop_commit_preserves_drag_route(failures: Array[String]) -> v
 	if director.selected_ability_index < 0:
 		failures.append(
 			"PlanningInputTest: awaiting commit should keep bowling charge selected",
+		)
+
+
+static func _test_cursor_omits_unaffordable_run_skill_pair(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.auto_run = true
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var dash := AbilityData.new()
+	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	dash.display_name = "Bowling Charge"
+	dash.action_point_cost = 3
+	var dash_eff := EffectData.new()
+	dash_eff.type = GameEnums.EffectType.DASH
+	dash_eff.amount = 3
+	dash.effects = [dash_eff]
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(2, 2)
+	unit.movement.points_left = 2
+	unit.movement.max_points = 4
+	unit.ability.points_left = 1
+	unit.ability.max_points = 3
+	unit.active_abilities = [dash]
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var dest := Vector2i(2, 5)
+	var slots: Dictionary = input._final_commit_slots_for_interaction(1, dest)
+	var icon: String = input._cursor_icon_from_commit_slots(slots, unit)
+	if icon.find(PlanningIcons.GLYPH_DASH) >= 0:
+		failures.append(
+			"PlanningInputTest: cursor must not show dash when run+skill AP pair is unaffordable (got %s)"
+			% icon,
+		)
+	if (slots.get("action", []) as Array).size() > 0:
+		failures.append(
+			"PlanningInputTest: unaffordable run+skill pair must not include action in commit slots",
+		)
+	var pre_moves: Array = slots.get("pre", [])
+	if pre_moves.is_empty():
+		failures.append(
+			"PlanningInputTest: unaffordable pair should still allow run-only premove cursor",
+		)
+	elif not (pre_moves[0] as TimelineAction).uses_run:
+		failures.append(
+			"PlanningInputTest: distant tile with auto-run should still preview as run move",
+		)
+	if not director.commit_from_slots(1, slots):
+		failures.append("PlanningInputTest: run-only fallback commit should succeed")
+	if director.find_awaiting_action(1) != null:
+		failures.append(
+			"PlanningInputTest: unaffordable pair commit must not add awaiting action",
 		)
 
 

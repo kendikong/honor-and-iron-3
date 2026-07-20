@@ -105,10 +105,10 @@ func on_left_press(local: Vector2) -> void:
 				if selected_phase_action_exhausted(_director.selected_unit_id):
 					_play_sfx("invalid")
 				else:
-					_commit_at_cell(_director.selected_unit_id, cell, local)
+					_commit_at_interaction_cell(_director.selected_unit_id, cell, local, unit.id)
 				return
 		if aiming and unit.id == _director.selected_unit_id:
-			if not _commit_at_cell(_director.selected_unit_id, cell, local):
+			if not _commit_at_interaction_cell(_director.selected_unit_id, cell, local):
 				_play_sfx("invalid")
 			cancel_aim()
 			return
@@ -116,7 +116,7 @@ func on_left_press(local: Vector2) -> void:
 			cancel_aim()
 		var was_selected: bool = unit.id == _director.selected_unit_id
 		if was_selected and _director.selected_ability_index >= 0:
-			if _commit_at_cell(unit.id, cell, local):
+			if _commit_at_interaction_cell(unit.id, cell, local):
 				return
 		if not was_selected:
 			_director.select_unit(unit.id)
@@ -127,7 +127,7 @@ func on_left_press(local: Vector2) -> void:
 		if selected_phase_action_exhausted(_director.selected_unit_id):
 			cancel_aim()
 			return
-		if actor != null and _commit_at_cell(_director.selected_unit_id, cell, local):
+		if actor != null and _commit_at_interaction_cell(_director.selected_unit_id, cell, local):
 			cancel_aim()
 			return
 		_play_sfx("invalid")
@@ -149,7 +149,7 @@ func on_left_press(local: Vector2) -> void:
 		if sel_unit != null and not sel_unit.is_enemy():
 			if selected_phase_action_exhausted(sel_unit.id):
 				return
-			_commit_at_cell(_director.selected_unit_id, cell, local)
+			_commit_at_interaction_cell(_director.selected_unit_id, cell, local)
 
 
 func on_left_release(local: Vector2) -> void:
@@ -192,7 +192,7 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 				if selected_phase_action_exhausted(released_unit_id):
 					_play_sfx("invalid")
 				else:
-					return _commit_at_cell(released_unit_id, cell, local)
+					return _commit_at_interaction_cell(released_unit_id, cell, local, dropped_on.id)
 			_director.select_unit(dropped_on.id)
 			return false
 		if selected_phase_action_exhausted(released_unit_id):
@@ -203,9 +203,24 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 		)
 	if cell == _proj_origin(actor):
 		if _drag_unit_was_selected:
+			var origin_params: Dictionary = _commit_interaction_params(cell, -1)
 			if not had_movement:
-				committed = _commit_at_cell(released_unit_id, cell, local)
-			elif not _commit_at_cell(released_unit_id, cell, local):
+				committed = _commit_at_cell(
+					released_unit_id,
+					origin_params.cell,
+					local,
+					origin_params.waypoints,
+					origin_params.legal_move_tiles,
+					origin_params.preferred,
+				)
+			elif not _commit_at_cell(
+				released_unit_id,
+				origin_params.cell,
+				local,
+				origin_params.waypoints,
+				origin_params.legal_move_tiles,
+				origin_params.preferred,
+			):
 				if _commit_face_only(released_unit_id, local, cell):
 					committed = true
 			else:
@@ -1031,11 +1046,57 @@ func _final_commit_slots_for_interaction(
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
 ) -> Dictionary:
-	return _finalize_commit_slots(
-		_build_commit_slots_at_cell(
-			unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
-		),
+	var slots: Dictionary = _build_commit_slots_at_cell(
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
+	)
+	_strip_unaffordable_premove_pairs(slots, unit_id, cell, waypoints)
+	return _finalize_commit_slots(slots, unit_id)
+
+
+func _strip_unaffordable_premove_pairs(
+	slots: Dictionary,
+	unit_id: int,
+	cell: Vector2i,
+	waypoints: Array[Vector2i],
+) -> void:
+	var actions: Array = slots.get("action", [])
+	if actions.is_empty():
+		return
+	if (slots.get("pre", []) as Array).is_empty() and (slots.get("post", []) as Array).is_empty():
+		return
+	var actor := _proj_unit(unit_id)
+	if actor == null and _director != null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return
+	var kept: Array = []
+	for raw: Variant in actions:
+		if raw is TimelineAction:
+			var action: TimelineAction = raw as TimelineAction
+			if (
+				action.type == GameEnums.ActionType.ABILITY
+				and action.ability != null
+				and not _can_pair_run_move_with_ability(actor, cell, waypoints, action.ability)
+			):
+				continue
+		kept.append(raw)
+	slots["action"] = kept
+
+
+func _commit_at_interaction_cell(
+	unit_id: int,
+	cell: Vector2i,
+	local: Vector2,
+	attack_target_id: int = -1,
+) -> bool:
+	var params: Dictionary = _commit_interaction_params(cell, attack_target_id)
+	return _commit_at_cell(
 		unit_id,
+		params.cell,
+		local,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
 	)
 
 
@@ -1713,6 +1774,8 @@ func _maybe_append_premove_action_pair(
 			TimelineAction.make_ability(unit_id, ability, cell, unit_id),
 		)
 	elif AbilitySystem.planning_auto_arms_after_premove(actor, ability):
+		if not _can_pair_run_move_with_ability(actor, cell, waypoints, ability):
+			return
 		slots["action"].append(
 			TimelineAction.make_ability_awaiting(unit_id, ability, cell),
 		)
@@ -2083,8 +2146,14 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var p_unit := _proj_unit(sel_id)
 	if p_unit == null:
 		return ""
-	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
-	return _hover_icon_for_cell(p_unit, cell, [], legal_moves)
+	var params: Dictionary = _commit_interaction_params(cell, -1)
+	return _hover_icon_for_cell(
+		p_unit,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+	)
 
 
 func _resolve_hover_unit_at(cell: Vector2i) -> UnitState:
