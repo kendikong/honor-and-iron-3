@@ -1004,13 +1004,19 @@ func _play_cell_path_tween(
 	step_time: float,
 	use_run: bool,
 	per_step: Variant = null,
+	is_dash: bool = false,
 ) -> void:
 	var actor: CharacterActor = _actors.get(unit_id)
 	if actor == null or _map_view == null or cells.is_empty():
 		return
 	_kill_move_tween(unit_id)
+	if is_dash:
+		actor.cancel_combat_reaction()
 	actor.position = _map_view.grid_to_foot_local(start_cell)
-	actor.set_running(use_run)
+	if is_dash:
+		actor.set_dash_running(true)
+	else:
+		actor.set_running(use_run)
 	actor.set_walking(true)
 	_apply_path_step_facing(unit_id, _facing_toward(start_cell, cells[0]))
 	var tile_time: float = CombatDirector.RUN_STEP_TIME if use_run else step_time
@@ -1117,7 +1123,8 @@ func _animate_move(event: SimEvent) -> void:
 			movement_points_before - ((step_index + 1) * movement_cost_per_tile),
 		)
 		_set_movement_points(unit_id, remaining)
-	_play_cell_path_tween(unit_id, start_cell, cells, step_time, use_run, step_cb)
+	var is_dash: bool = event.data.get("is_dash", false)
+	_play_cell_path_tween(unit_id, start_cell, cells, step_time, use_run, step_cb, is_dash)
 
 
 func _set_movement_points(unit_id: int, points_left: int) -> void:
@@ -1241,6 +1248,7 @@ func _play_attack_anim(event: SimEvent) -> void:
 	var ability_id: StringName = event.data.get("ability", &"")
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
 	if ability_data != null and AbilitySystem.ability_has_dash(ability_data):
+		actor.play_dash_windup(thrust_dir, anim)
 		return
 	if ability_data != null and AbilitySystem.ability_uses_spellcast_animation(ability_data):
 		var target_ids: Array[int] = _ability_affected_unit_ids_from_event(event, ability_data)

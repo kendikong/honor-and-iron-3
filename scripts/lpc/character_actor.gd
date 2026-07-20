@@ -8,7 +8,8 @@ const _ContactShadow = preload("res://scripts/lpc/character_contact_shadow.gd")
 const _SelectionGlow = preload("res://scripts/lpc/character_selection_glow.gd")
 const HURT_ANIM: StringName = &"hurt_down"
 const HURT_SPEED_SCALE: float = 1.6
-const RUN_ANIM_SPEED_SCALE: float = 1.65
+const RUN_ANIM_SPEED_SCALE: float = 1.3
+const DASH_RUN_ANIM_SPEED_SCALE: float = 2.2
 const DEATH_GROUND_LINGER_SEC: float = 1.75
 const DEATH_FADE_SEC: float = 0.4
 const NUDGE_PULLBACK_PX: float = 7.0
@@ -42,6 +43,7 @@ var _combat_tween: Tween
 var _anchor_position: Vector2 = Vector2.ZERO
 var _is_dying: bool = false
 var _running: bool = false
+var _dash_running: bool = false
 var _planning_exhausted: bool = false
 var _spell_flash_active: bool = false
 var _spell_flash_generation: int = 0
@@ -317,9 +319,20 @@ func set_walking(moving: bool) -> void:
 
 
 func set_running(running: bool) -> void:
-	if _running == running:
+	if _running == running and not _dash_running:
 		return
 	_running = running
+	_dash_running = false
+	if _one_shot_generation > 0:
+		return
+	for spr: AnimatedSprite2D in _layers:
+		_apply_motion_state(spr)
+	_rebuild_contact_shadow_silhouette()
+
+
+func set_dash_running(enabled: bool) -> void:
+	_running = enabled
+	_dash_running = enabled
 	if _one_shot_generation > 0:
 		return
 	for spr: AnimatedSprite2D in _layers:
@@ -363,6 +376,22 @@ func play_attack_thrust(world_dir: Vector2, attack_anim: StringName) -> void:
 		0.06,
 	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
 	tw.tween_property(self, "position", _anchor_position, 0.14).set_trans(Tween.TRANS_SINE)
+	tw.tween_callback(func() -> void:
+		_combat_tween = null
+	)
+func play_dash_windup(world_dir: Vector2, attack_anim: StringName) -> void:
+	_kill_combat_tween()
+	_anchor_position = position
+	var dir: Vector2 = world_dir.normalized() if world_dir.length_squared() > 0.01 else Vector2(0.0, 1.0)
+	set_facing(attack_anim)
+	var tw: Tween = create_tween()
+	_combat_tween = tw
+	tw.tween_property(
+		self,
+		"position",
+		_anchor_position - dir * NUDGE_PULLBACK_PX,
+		0.12,
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tw.tween_callback(func() -> void:
 		_combat_tween = null
 	)
@@ -820,7 +849,7 @@ func _apply_motion_state(spr: AnimatedSprite2D) -> void:
 
 	spr.animation = anim
 	if _running and _walking:
-		spr.speed_scale = RUN_ANIM_SPEED_SCALE
+		spr.speed_scale = DASH_RUN_ANIM_SPEED_SCALE if _dash_running else RUN_ANIM_SPEED_SCALE
 	else:
 		spr.speed_scale = 1.0
 	if _walking or anim.begins_with("idle_"):
