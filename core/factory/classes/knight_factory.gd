@@ -179,9 +179,13 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(chain_hook)
 	
 	var trampling_advance = DataLibrary._make_ability(&"knight_trampling_advance", "Trampling Advance", 2, [
-		DataLibrary._effect(GameEnums.EffectType.DASH, 2)
-	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.LINE, 2)
-	trampling_advance.upgrade_description = "Gain SHIELD 1 per tile moved."
+		DataLibrary._effect(GameEnums.EffectType.TRAMPLE, 2),
+		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
+	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
+	trampling_advance.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	trampling_advance.movement_point_cost = 2
+	trampling_advance.targeting_flags = GameEnums.TargetingFlags.TILE
+	trampling_advance.upgrade_description = ""
 	trampling_advance.upgraded_effects = DataLibrary._duplicate_effects(trampling_advance.effects)
 	def.abilities.append(trampling_advance)
 

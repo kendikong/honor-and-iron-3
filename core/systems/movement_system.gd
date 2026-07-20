@@ -226,6 +226,7 @@ static func execute_pass_through_walk(
 	var mods: Dictionary = AbilitySystem.pass_through_modifiers_from(effects)
 	var trample_atk: int = int(mods.get("trample_atk", 0))
 	var bulldoze: int = int(mods.get("bulldoze", 0))
+	var trample_push: int = int(mods.get("push", 0))
 	if trample_atk <= 0 and bulldoze <= 0:
 		return
 	var move_cost: int = move_cost_for(unit)
@@ -254,7 +255,7 @@ static func execute_pass_through_walk(
 		var is_final_step: bool = step_index == path.size() - 1
 		if not PhysicsSystem.resolve_pass_through_tile(
 			board, unit, step, move_dir, is_final_step,
-			trample_atk, bulldoze, events, ability_id,
+			trample_atk, bulldoze, trample_push, events, ability_id,
 			trample_hit_ids, trampled_restore, ability.display_name
 		):
 			unit.position = from if step_index == 0 else path[step_index - 1]

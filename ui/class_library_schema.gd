@@ -11,7 +11,6 @@ static var _ABILITY_CODE_BRANCHES: Dictionary = {
 	&"knight_shield_bash": "Shield Bash: upgrade adds PUSH 1 on hit (ID branch in ability_system).",
 	&"knight_chain_hook": "Chain Hook: upgrade extends PULL range / behavior (ID branch in ability_system).",
 	&"knight_bowling_charge": "Bowling Charge upgrade: enemy-enemy chain collision in ability_system (ID branch).",
-	&"knight_trampling_advance": "Trampling Advance: movement skill trample/push rules in ability_system (ID branch).",
 }
 
 
@@ -299,8 +298,6 @@ static func bible_ability_effect_line(ability: AbilityData) -> String:
 			return "DEF +2 | STURDY (immune PUSH/PULL)"
 		&"knight_chain_hook":
 			return "ATK 1 | PULL 2"
-		&"knight_trampling_advance":
-			return "MOVE 2 | ATK 2 | PUSH 1"
 		&"knight_swap":
 			return "SWAP"
 		_:
@@ -316,8 +313,6 @@ static func bible_ability_targeting_label(ability: AbilityData) -> String:
 	match ability.id:
 		&"knight_redirect_strike":
 			return "RANGE 2"
-		&"knight_trampling_advance":
-			return "MOVE 2"
 		_:
 			pass
 	if ability.is_movement_kind():

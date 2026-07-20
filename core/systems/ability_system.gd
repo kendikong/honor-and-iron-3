@@ -323,12 +323,15 @@ static func pass_through_modifiers(ability: AbilityData, actor: UnitState = null
 static func pass_through_modifiers_from(effects: Array) -> Dictionary:
 	var trample_atk := 0
 	var bulldoze := 0
+	var push := 0
 	for eff: EffectData in effects:
 		if eff.type == GameEnums.EffectType.TRAMPLE:
 			trample_atk = eff.amount
 		elif eff.type == GameEnums.EffectType.BULLDOZE:
 			bulldoze = eff.amount
-	return {"trample_atk": trample_atk, "bulldoze": bulldoze}
+		elif eff.type == GameEnums.EffectType.PUSH:
+			push = eff.amount
+	return {"trample_atk": trample_atk, "bulldoze": bulldoze, "push": push}
 
 
 static func has_pass_through_effects_from(effects: Array) -> bool:
@@ -1108,15 +1111,16 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				var mods := pass_through_modifiers(action.ability, actor)
 				var trample_atk: int = int(mods.get("trample_atk", 0))
 				var bulldoze: int = int(mods.get("bulldoze", 0))
+				var push_amt: int = int(mods.get("push", 0))
 				if trample_atk > 0:
 					pending["trample_atk"] = trample_atk
+				if push_amt > 0:
+					pending["trample_push"] = push_amt
 				if bulldoze > 0:
 					pending["bulldoze"] = bulldoze
 					pending["caster_collision_immune"] = true
 				if action.ability.id == &"knight_bowling_charge" and actor.is_ability_upgraded(&"knight_bowling_charge"):
 					pending["bowling_upgrade"] = true
-				if action.ability.id == &"knight_trampling_advance" and actor.is_ability_upgraded(&"knight_trampling_advance"):
-					pending["trampling_upgrade"] = true
 				board.pending_pushes.append(pending)
 		GameEnums.EffectType.TRAMPLE, GameEnums.EffectType.BULLDOZE:
 			# Movement modifiers — applied during dash or execute_pass_through_walk, not per-tile.
@@ -1266,37 +1270,3 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 						CombatSystem.deal_damage_raw(
 							board, target, chain_hit, chain_dmg, GameEnums.StatType.PHYSICAL, events, "Bowling Charge", 2
 						)
-			elif ability_id == &"knight_trampling_advance":
-				var traveled := 0
-				var hit_unit_id := -1
-				for i in range(push_ev_start, events.size()):
-					var ev = events[i]
-					if ev.type == GameEnums.SimEventType.UNIT_MOVED and ev.data.get("actor", ev.data.get("unit", -1)) == target.id:
-						traveled = ev.data.get("steps", ev.data.get("distance", 0))
-					elif ev.type == GameEnums.SimEventType.UNIT_PUSHED and ev.data.get("unit") == target.id:
-						traveled = ev.data.get("distance", 0)
-				for i in range(push_ev_start, events.size()):
-					var ev = events[i]
-					if ev.type == GameEnums.SimEventType.COLLISION and ev.data.get("unit") == target.id:
-						if ev.data.has("against_unit"):
-							hit_unit_id = ev.data.get("against_unit")
-							break
-				if hit_unit_id != -1:
-					var target_hit = board.get_unit_by_id(hit_unit_id)
-					if target_hit != null:
-						var trample_dmg := CombatSystem.calculate_scaled_damage(
-							target, 2, GameEnums.StatType.PHYSICAL, board
-						)
-						CombatSystem.deal_damage_raw(
-							board, target, target_hit, trample_dmg, GameEnums.StatType.PHYSICAL, events, "Trampling Advance", 2
-						)
-						PhysicsSystem.push(board, target_hit, push.dir, 1, events, target)
-						GridSystem.set_occupant(board, target.position, target.id)
-				
-				if push.get("trampling_upgrade", false) and traveled > 0:
-					target.armor += traveled
-					events.append(SimEvent.make(GameEnums.SimEventType.UNIT_ARMORED, {
-						"unit": target.id,
-						"amount": traveled,
-						"armor": target.armor,
-					}))

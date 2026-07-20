@@ -134,6 +134,7 @@ static func resolve_pass_through_tile(
 	is_final_step: bool,
 	trample_atk: int,
 	bulldoze: int,
+	trample_push: int,
 	events: Array[SimEvent],
 	ability_id: StringName,
 	trample_hit_ids: Dictionary,
@@ -164,8 +165,16 @@ static func resolve_pass_through_tile(
 		CombatSystem.deal_damage_raw(
 			board, mover, occupant, scaled_atk, GameEnums.StatType.PHYSICAL, events, label, trample_atk
 		)
-		trampled_restore[tile] = occupant.id
-		GridSystem.set_occupant(board, tile, -1)
+		if trample_push > 0:
+			var push_dir := move_dir if is_final_step else left_of_direction(move_dir)
+			push(board, occupant, push_dir, trample_push, events, mover, ability_id, mover.id)
+			occupant = board.get_unit_at(tile)
+			if occupant != null and occupant.id != mover.id:
+				trampled_restore[tile] = occupant.id
+				GridSystem.set_occupant(board, tile, -1)
+		else:
+			trampled_restore[tile] = occupant.id
+			GridSystem.set_occupant(board, tile, -1)
 		return true
 	return false
 
@@ -184,6 +193,7 @@ static func dash(
 	source_label: String = "",
 	bulldoze: int = 0,
 	caster_collision_immune: bool = false,
+	trample_push: int = 0,
 ) -> void:
 	if unit == null or not unit.is_alive() or direction == Vector2i.ZERO or distance <= 0:
 		return
@@ -219,6 +229,7 @@ static func dash(
 					board, unit, next, direction, is_final_step,
 					trample_atk if use_trample_atk else 0,
 					bulldoze if use_bulldoze else 0,
+					trample_push if use_trample_atk else 0,
 					events, ability_id, trample_hit_ids, trampled_restore, source_label
 				):
 					break
