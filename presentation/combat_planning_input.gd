@@ -1007,11 +1007,8 @@ func _commit_at_cell(
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor != null and cell == _proj_origin(actor) and _try_arm_awaiting_or_self_skill(unit_id):
 		return true
-	var slots: Dictionary = _finalize_commit_slots(
-		_build_commit_slots_at_cell(
-			unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
-		),
-		unit_id,
+	var slots: Dictionary = _final_commit_slots_for_interaction(
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
 	)
 	if bool(slots.get("invalid", false)):
 		if actor != null and cell == _proj_origin(actor) and _try_plan_wait(unit_id):
@@ -1115,11 +1112,8 @@ func _preview_from_commit_slots_at_cell(
 	)
 	if _director == null or unit_id < 0:
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
-	var slots: Dictionary = _finalize_commit_slots(
-		_build_commit_slots_at_cell(
-			unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
-		),
-		unit_id,
+	var slots: Dictionary = _final_commit_slots_for_interaction(
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
 	)
 	if bool(slots.get("invalid", false)):
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
@@ -1902,6 +1896,21 @@ func _composite_cursors_enabled() -> bool:
 	return auto_use_skill_after_move and not force_basic_movement
 
 
+func _final_commit_slots_for_interaction(
+	unit_id: int,
+	cell: Vector2i,
+	waypoints: Array[Vector2i] = [],
+	legal_move_tiles: Array[Vector2i] = [],
+	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
+) -> Dictionary:
+	return _finalize_commit_slots(
+		_build_commit_slots_at_cell(
+			unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
+		),
+		unit_id,
+	)
+
+
 func _cursor_icon_for_commit_at_cell(
 	unit: UnitState,
 	cell: Vector2i,
@@ -1911,11 +1920,8 @@ func _cursor_icon_for_commit_at_cell(
 ) -> String:
 	if unit == null:
 		return ""
-	var slots: Dictionary = _finalize_commit_slots(
-		_build_commit_slots_at_cell(
-			unit.id, cell, waypoints, legal_move_tiles, preferred_approach,
-		),
-		unit.id,
+	var slots: Dictionary = _final_commit_slots_for_interaction(
+		unit.id, cell, waypoints, legal_move_tiles, preferred_approach,
 	)
 	return _cursor_icon_from_commit_slots(slots, unit)
 
@@ -2111,21 +2117,21 @@ func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if drag_preview_failed:
 		return PlanningIcons.GLYPH_NULL
 	var legal_moves: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
+	var waypoints: Array[Vector2i] = _route_waypoints()
 	var drag_target_id: int = -1
 	if _director != null and _director.board != null:
 		var occ := _director.board.get_unit_at(cell)
 		drag_target_id = _drag_preview_target_id(actor, occ)
 	var preferred: Vector2i = _NO_PREFERRED_APPROACH
-	var preview_cell: Vector2i = cell
+	var commit_cell: Vector2i = cell
 	if drag_target_id >= 0 and _director.board != null:
 		var target := _director.board.get_unit_by_id(drag_target_id)
 		if target != null:
-			preview_cell = target.position
-			if _drag_last_free != preview_cell:
+			commit_cell = target.position
+			if _drag_last_free != commit_cell:
 				preferred = _drag_last_free
-	elif _drag_last_free != cell:
-		preview_cell = _drag_last_free
-	return _hover_icon_for_cell(actor, preview_cell, _drag_route, legal_moves, preferred)
+	# Match _process_unit_drop → _commit_at_cell: mouse cell + route waypoints (not full _drag_route).
+	return _hover_icon_for_cell(actor, commit_cell, waypoints, legal_moves, preferred)
 
 
 func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitState) -> bool:
