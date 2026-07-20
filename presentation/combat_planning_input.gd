@@ -2152,8 +2152,6 @@ func _drag_preview_includes_attack(actor_id: int) -> bool:
 func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if actor == null:
 		return ""
-	if drag_preview_failed:
-		return PlanningIcons.GLYPH_NULL
 	var drag_target_id: int = -1
 	if _director != null and _director.board != null:
 		var occ := _director.board.get_unit_at(cell)

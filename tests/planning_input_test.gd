@@ -12,6 +12,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_composite_cursor_gate(failures)
 	_test_cursor_matches_commit_slots(failures)
 	_test_drag_cursor_matches_commit_slots(failures)
+	_test_drag_cursor_ignores_preview_failed_flag(failures)
 	_test_drop_commit_preserves_drag_route(failures)
 	_test_cursor_omits_unaffordable_run_skill_pair(failures)
 	_test_slots_only_cursor_matches_commit(failures)
@@ -297,6 +298,44 @@ static func _test_drag_cursor_matches_commit_slots(failures: Array[String]) -> v
 	if director.find_awaiting_action(1) == null:
 		failures.append(
 			"PlanningInputTest: drag drop commit must leave awaiting action in plan_action",
+		)
+
+
+static func _test_drag_cursor_ignores_preview_failed_flag(failures: Array[String]) -> void:
+	var fix: Dictionary = _bowling_charge_arm_fixture()
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	input.auto_use_skill_after_move = true
+	input.dragging = true
+	input._drag_unit_id = 1
+	input._drag_unit_was_selected = true
+	var dest := Vector2i(1, 4)
+	input._drag_route = [unit.position, Vector2i(2, 3), Vector2i(1, 3), dest]
+	input._drag_last_free = Vector2i(1, 3)
+	input.drag_preview_failed = true
+	director.projected_state = director.board.clone()
+	var params: Dictionary = input._commit_interaction_params(dest, -1)
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		1,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+	)
+	if bool(slots.get("invalid", false)):
+		failures.append(
+			"PlanningInputTest: drag_preview_failed regression needs valid commit slots",
+		)
+		return
+	var expected_icon: String = input._cursor_icon_from_commit_slots(slots, unit)
+	var drag_icon: String = input._drag_hover_icon(unit, dest)
+	if drag_icon != expected_icon:
+		failures.append(
+			(
+				"PlanningInputTest: drag cursor must ignore drag_preview_failed (got '%s', expected '%s')"
+				% [drag_icon, expected_icon]
+			),
 		)
 
 
