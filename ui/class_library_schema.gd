@@ -338,6 +338,8 @@ static func bible_ability_targeting_label(ability: AbilityData) -> String:
 static func bible_ability_aoe_label(ability: AbilityData) -> String:
 	if ability == null or ability.target_shape == GameEnums.TargetShape.SINGLE:
 		return ""
+	if AbilitySystem.has_pass_through_effects(ability) or AbilitySystem.ability_has_dash(ability):
+		return ""
 	match ability.id:
 		&"knight_seismic_stomp":
 			return "AOE 1"
