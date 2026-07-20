@@ -12,6 +12,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_composite_cursor_gate(failures)
 	_test_cursor_matches_commit_slots(failures)
 	_test_drag_cursor_matches_commit_slots(failures)
+	_test_drop_commit_preserves_drag_route(failures)
 	_test_preview_from_commit_slots(failures)
 	_test_audit_regression_fixes(failures)
 	_test_auto_skill_after_move_arms_dash(failures)
@@ -294,6 +295,50 @@ static func _test_drag_cursor_matches_commit_slots(failures: Array[String]) -> v
 	if director.find_awaiting_action(1) == null:
 		failures.append(
 			"PlanningInputTest: drag drop commit must leave awaiting action in plan_action",
+		)
+
+
+static func _test_drop_commit_preserves_drag_route(failures: Array[String]) -> void:
+	var fix: Dictionary = _bowling_charge_arm_fixture()
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	input.auto_use_skill_after_move = true
+	input._drag_unit_id = 1
+	input._drag_unit_was_selected = true
+	var dest := Vector2i(1, 4)
+	input._drag_route = [unit.position, Vector2i(2, 3), Vector2i(1, 3), dest]
+	input._drag_last_free = Vector2i(1, 3)
+	director.projected_state = director.board.clone()
+	input.dragging = true
+	var drag_params: Dictionary = input._commit_interaction_params(dest, -1)
+	input.dragging = false
+	var drop_params: Dictionary = input._commit_interaction_params(dest, -1)
+	if drop_params.waypoints != drag_params.waypoints:
+		failures.append(
+			"PlanningInputTest: drop commit must keep drag route waypoints (got %s vs %s)"
+			% [str(drop_params.waypoints), str(drag_params.waypoints)],
+		)
+	var drop_slots: Dictionary = input._final_commit_slots_for_interaction(
+		1,
+		drop_params.cell,
+		drop_params.waypoints,
+		drop_params.legal_move_tiles,
+		drop_params.preferred,
+	)
+	if (drop_slots.get("action", []) as Array).is_empty():
+		failures.append(
+			"PlanningInputTest: drop commit slots must pair awaiting action with premove",
+		)
+	if not director.commit_from_slots(1, drop_slots):
+		failures.append("PlanningInputTest: drop route commit should succeed")
+	if director.find_awaiting_action(1) == null:
+		failures.append(
+			"PlanningInputTest: drop route commit must leave awaiting in plan_action",
+		)
+	if director.selected_ability_index < 0:
+		failures.append(
+			"PlanningInputTest: awaiting commit should keep bowling charge selected",
 		)
 
 

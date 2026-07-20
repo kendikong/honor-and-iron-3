@@ -160,15 +160,16 @@ func on_left_release(local: Vector2) -> void:
 	if not dragging:
 		return
 	var had_movement: bool = _drag_had_movement()
-	dragging = false
 	var board: BoardState = _director.board
 	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
 	var actor := board.get_unit_by_id(_drag_unit_id) if board != null else null
 	if actor == null or board == null or not board.is_in_bounds(cell):
+		dragging = false
 		_drag_unit_id = -1
 		_end_drag_interaction(true, had_movement)
 		return
 	var committed: bool = _process_unit_drop(local, had_movement)
+	dragging = false
 	var snap_back: bool = had_movement and not committed
 	_drag_unit_id = -1
 	_end_drag_interaction(false, snap_back)
@@ -994,13 +995,17 @@ const _NO_PREFERRED_APPROACH: Vector2i = Vector2i(-999999, -999999)
 
 
 ## Single source for commit cell, waypoints, and approach hint — cursor, preview, and drop must match.
+func _drag_route_commits_active() -> bool:
+	return dragging or _drag_unit_id >= 0
+
+
 func _commit_interaction_params(
 	hover_cell: Vector2i,
 	attack_target_id: int = -1,
 ) -> Dictionary:
 	var waypoints: Array[Vector2i] = []
 	var legal_moves: Array[Vector2i] = []
-	if dragging:
+	if _drag_route_commits_active():
 		waypoints = _route_waypoints()
 		legal_moves = _snapshot_drag_legal_move_tiles()
 	var commit_cell: Vector2i = hover_cell
@@ -1009,7 +1014,7 @@ func _commit_interaction_params(
 		var target: UnitState = _director.board.get_unit_by_id(attack_target_id)
 		if target != null:
 			commit_cell = target.position
-			if dragging and _drag_last_free != commit_cell:
+			if _drag_route_commits_active() and _drag_last_free != commit_cell:
 				preferred = _drag_last_free
 	return {
 		"cell": commit_cell,
@@ -1123,7 +1128,7 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 			if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
 				continue
 			if action.awaiting_target:
-				_director.select_ability(-1)
+				_preserve_ability_selection_for_action(unit_id, action)
 				return
 			var actor := _proj_unit(unit_id)
 			if actor == null and _director.board != null:
@@ -1134,12 +1139,27 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 				== GameEnums.PlanningCommitFlow.AWAITING_TARGET
 			):
 				clear_awaiting_targeting()
-				_director.select_ability(-1)
+				_preserve_ability_selection_for_action(unit_id, action)
 			elif (
 				not AbilitySystem.is_run_ability(action.ability)
 				and not AbilitySystem.is_wait_ability(action.ability)
 			):
 				_director.select_ability(-1)
+			return
+
+
+func _preserve_ability_selection_for_action(unit_id: int, action: TimelineAction) -> void:
+	if _director == null or action == null or action.ability == null:
+		return
+	var actor := _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return
+	for i: int in range(actor.active_abilities.size()):
+		var ability: AbilityData = actor.active_abilities[i] as AbilityData
+		if ability == action.ability:
+			_director.select_ability(i)
 			return
 
 
