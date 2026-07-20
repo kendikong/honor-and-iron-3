@@ -1479,17 +1479,7 @@ func update_drag_preview(
 	var actor: CharacterActor = _actors.get(_drag_preview_id)
 	if actor == null:
 		return
-	if _board != null and _board.is_in_bounds(cursor_cell):
-		var cell_center: Vector2 = _map_view.grid_to_local(cursor_cell)
-		var foot: Vector2 = _map_view.grid_to_foot_local(cursor_cell)
-		actor.position = foot + (map_local - cell_center)
-	elif _board != null and _board.is_in_bounds(preview_cell):
-		var cell_center: Vector2 = _map_view.grid_to_local(preview_cell)
-		var foot: Vector2 = _map_view.grid_to_foot_local(preview_cell)
-		actor.position = foot + (map_local - cell_center)
-	else:
-		var tile_px: float = float(TacticalConstants.TILE_PX)
-		actor.position = map_local + Vector2(0.0, tile_px * 0.5)
+	_set_drag_preview_actor_position(actor, map_local, preview_cell, cursor_cell)
 	if (
 		anim_mode == _drag_preview_last_anim
 		and facing == _drag_preview_last_facing
@@ -1526,6 +1516,39 @@ func update_drag_preview(
 				actor.set_facing(_facing_anim(facing))
 			actor.set_walking(false)
 	_update_depth(_drag_preview_id)
+
+
+func update_drag_preview_position(
+	map_local: Vector2,
+	preview_cell: Vector2i,
+	cursor_cell: Vector2i = Vector2i(-999999, -999999),
+) -> void:
+	if not _drag_preview_active or _drag_preview_id < 0 or _map_view == null:
+		return
+	var actor: CharacterActor = _actors.get(_drag_preview_id)
+	if actor == null:
+		return
+	_set_drag_preview_actor_position(actor, map_local, preview_cell, cursor_cell)
+	_update_depth(_drag_preview_id)
+
+
+func _set_drag_preview_actor_position(
+	actor: CharacterActor,
+	map_local: Vector2,
+	preview_cell: Vector2i,
+	cursor_cell: Vector2i,
+) -> void:
+	if _board != null and _board.is_in_bounds(cursor_cell):
+		var cell_center: Vector2 = _map_view.grid_to_local(cursor_cell)
+		var foot: Vector2 = _map_view.grid_to_foot_local(cursor_cell)
+		actor.position = foot + (map_local - cell_center)
+	elif _board != null and _board.is_in_bounds(preview_cell):
+		var cell_center: Vector2 = _map_view.grid_to_local(preview_cell)
+		var foot: Vector2 = _map_view.grid_to_foot_local(preview_cell)
+		actor.position = foot + (map_local - cell_center)
+	else:
+		var tile_px: float = float(TacticalConstants.TILE_PX)
+		actor.position = map_local + Vector2(0.0, tile_px * 0.5)
 
 
 func _spell_anim(facing: int) -> StringName:

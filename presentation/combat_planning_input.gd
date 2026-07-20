@@ -44,6 +44,7 @@ var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
 var _drag_last_cursor_cell: Vector2i = Vector2i(-999999, -999999)
+var _drag_last_sprite_cell: Vector2i = Vector2i(-999999, -999999)
 
 
 func setup(
@@ -256,7 +257,11 @@ func update_drag(local: Vector2) -> void:
 	if _intent_state != null:
 		_intent_state.set_hover_coord(cell)
 	if board == null or not board.is_in_bounds(cell):
-		_update_drag_sprite(local, cell, {})
+		if cell != _drag_last_sprite_cell:
+			_update_drag_sprite(local, cell, {})
+			_drag_last_sprite_cell = cell
+		else:
+			_update_drag_sprite_position(local, cell)
 		if cell != _drag_last_cursor_cell:
 			_drag_last_cursor_cell = cell
 			refresh_mouse_cursor(cell)
@@ -280,7 +285,8 @@ func update_drag(local: Vector2) -> void:
 	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
 	var waypoints: Array[Vector2i] = _route_waypoints()
 	var cache_key: int = _drag_preview_cache_key_for(cell, drag_target_id, waypoints)
-	if cache_key != _drag_preview_cache_key:
+	var cache_miss: bool = cache_key != _drag_preview_cache_key
+	if cache_miss:
 		_drag_preview_cache_key = cache_key
 		_drag_preview_cache = _preview_at_interaction_cell(
 			_drag_unit_id,
@@ -291,9 +297,11 @@ func update_drag(local: Vector2) -> void:
 			_snapshot_drag_legal_move_tiles(),
 		)
 		_apply_live_preview(_drag_preview_cache)
-		if _planning != null:
-			_planning.queue_redraw()
-	_update_drag_sprite(local, cell, _drag_preview_cache)
+	if cache_miss or cell != _drag_last_sprite_cell:
+		_update_drag_sprite(local, cell, _drag_preview_cache)
+		_drag_last_sprite_cell = cell
+	else:
+		_update_drag_sprite_position(local, cell)
 	if cell != _drag_last_cursor_cell:
 		_drag_last_cursor_cell = cell
 		refresh_mouse_cursor(cell)
@@ -1373,6 +1381,7 @@ func _clear_drag_preview_cache() -> void:
 	_drag_preview_cache_key = 0
 	_drag_preview_cache = {}
 	_drag_last_cursor_cell = Vector2i(-999999, -999999)
+	_drag_last_sprite_cell = Vector2i(-999999, -999999)
 
 
 func _drag_preview_cache_key_for(
@@ -2421,6 +2430,17 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 		idle_face = actor.facing
 	emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.IDLE, idle_face, preview_cell, drag_preview_failed)
 	_planning.set_drag_attack_target(-1)
+
+
+func _update_drag_sprite_position(local: Vector2, cell: Vector2i) -> void:
+	if _planning == null or not dragging or _drag_unit_id < 0:
+		return
+	var preview_cell: Vector2i = _drag_last_free
+	if preview_state.preview_board != null:
+		var pv := preview_state.preview_board.get_unit_by_id(_drag_unit_id)
+		if pv != null:
+			preview_cell = pv.position
+	_planning.update_drag_sprite_position(local, preview_cell, cell)
 
 
 func _facing_toward(from: Vector2i, to: Vector2i) -> int:
