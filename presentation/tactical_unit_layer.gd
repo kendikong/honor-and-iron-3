@@ -39,6 +39,7 @@ var _predicted_armor: Dictionary = {}
 var _phase: int = CombatDirector.Phase.PLANNING
 var _move_tweens: Dictionary = {}
 var _active_push_tweens: int = 0
+var _downed_actors: Array[CharacterActor] = []
 var _damage_flash: Dictionary = {}
 var _hit_bursts: Array = []
 var _sfx: SfxPlayer
@@ -1162,11 +1163,11 @@ func _tween_push(unit_id: int, cell: Vector2i, from_cell: Vector2i) -> void:
 		dest_foot,
 		0.22,
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_downed_actors.append(actor)
 	tween.finished.connect(func() -> void:
 		_move_tweens.erase(unit_id)
 		actor.snap_to_anchor(dest_foot)
 		_update_depth(unit_id)
-		actor.finish_combat_reaction()
 		_finish_push_tween()
 	)
 
@@ -1174,6 +1175,9 @@ func _tween_push(unit_id: int, cell: Vector2i, from_cell: Vector2i) -> void:
 func _finish_push_tween() -> void:
 	_active_push_tweens = maxi(0, _active_push_tweens - 1)
 	if _active_push_tweens == 0:
+		for downed: CharacterActor in _downed_actors:
+			downed.finish_combat_reaction()
+		_downed_actors.clear()
 		push_tweens_idle.emit()
 
 
