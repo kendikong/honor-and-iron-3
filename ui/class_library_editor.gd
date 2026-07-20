@@ -1303,25 +1303,30 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	_bind_multiline(parent, "Upgrade Text", ability.upgrade_description, func(v: String) -> void:
 		ability.upgrade_description = v
 	)
-	# Grey out fields that don't apply to this ability configuration.
-	var is_class_skill: bool = ability.kind == GameEnums.AbilityKind.CLASS_SKILL
-	var is_move_skill: bool = ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
-	var has_pass_through: bool = AbilitySystem.has_pass_through_effects(ability)
-	var has_dash: bool = AbilitySystem.ability_has_dash(ability)
-	var is_displacement: bool = has_pass_through or has_dash
-	var has_dmg_or_heal: bool = (
-		AbilitySystem.effect_amount(ability, GameEnums.EffectType.DAMAGE) != 0
-		or AbilitySystem.effect_amount(ability, GameEnums.EffectType.HEAL) != 0
-	)
-	var has_upg_range: bool = ability.upgraded_range_tiles != -1
-	_grey_row(ap_row, not is_class_skill)
-	_grey_row(mp_row, not is_move_skill)
-	_grey_row(shape_row, is_displacement)
-	_grey_row(shape_size_row, is_displacement)
-	_grey_row(scaling_row, not has_dmg_or_heal)
-	_grey_row(upg_range_row, not has_upg_range)
-	_grey_row(upg_shape_row, is_displacement or not has_upg_range)
-	_grey_row(upg_size_row, is_displacement or not has_upg_range)
+	# Grey out fields that don't apply to this ability configuration dynamically.
+	var grey_cb := func() -> void:
+		var is_class_skill: bool = ability.kind == GameEnums.AbilityKind.CLASS_SKILL
+		var is_move_skill: bool = ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
+		var has_pass_through: bool = AbilitySystem.has_pass_through_effects(ability)
+		var has_dash: bool = AbilitySystem.ability_has_dash(ability)
+		var is_displacement: bool = has_pass_through or has_dash
+		var has_dmg_or_heal: bool = (
+			AbilitySystem.effect_amount(ability, GameEnums.EffectType.DAMAGE) != 0
+			or AbilitySystem.effect_amount(ability, GameEnums.EffectType.HEAL) != 0
+		)
+		var has_upg_range: bool = ability.upgraded_range_tiles != -1
+		_grey_row(ap_row, not is_class_skill)
+		_grey_row(mp_row, not is_move_skill)
+		_grey_row(shape_row, is_displacement)
+		_grey_row(shape_size_row, is_displacement)
+		_grey_row(scaling_row, not has_dmg_or_heal)
+		_grey_row(upg_range_row, not has_upg_range)
+		_grey_row(upg_shape_row, is_displacement or not has_upg_range)
+		_grey_row(upg_size_row, is_displacement or not has_upg_range)
+	
+	if _ability_ui.has(ability):
+		_ability_ui[ability]["greying_cb"] = grey_cb
+	grey_cb.call()
 	_add_subsection_label(parent, "Effects", ClassLibraryTheme.ACCENT_DATA)
 	var eff_box := VBoxContainer.new()
 	eff_box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
@@ -1355,6 +1360,8 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 
 
 func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effects: Array[EffectData], upgraded: bool) -> void:
+	if _ability_ui.has(ability):
+		_ability_ui[ability]["effect_greying_cbs"] = []
 	for c: Node in parent.get_children():
 		c.queue_free()
 	var accent: Color = ClassLibraryTheme.ACCENT_INGAME if upgraded else ClassLibraryTheme.ACCENT_DATA
@@ -1418,29 +1425,46 @@ func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effect
 		var eff_spawn_row := _bind_string(g, "Spawn ID", String(eff.spawn_unit_id), func(v: String) -> void:
 			eff.spawn_unit_id = StringName(v)
 		)
-		# Grey out effect fields that don't apply to this effect type.
-		var is_status_eff: bool = eff.type in [
-			GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF,
-			GameEnums.EffectType.REMOVE_STATUS,
-		]
-		var is_dmg_eff: bool = eff.type == GameEnums.EffectType.DAMAGE
-		var has_scale: bool = eff.type in [
-			GameEnums.EffectType.DAMAGE, GameEnums.EffectType.HEAL,
-			GameEnums.EffectType.ARMOR_UP, GameEnums.EffectType.TRAMPLE,
-		]
-		var is_spawn_eff: bool = eff.type == GameEnums.EffectType.SPAWN
-		_grey_row(eff_scale_row, not has_scale)
-		_grey_row(eff_status_row, not is_status_eff)
-		_grey_row(eff_dur_row, not is_status_eff)
-		_grey_row(eff_adj_row, not is_dmg_eff)
-		_grey_row(eff_def_row, not is_dmg_eff)
-		_grey_row(eff_spawn_row, not is_spawn_eff)
+		# Grey out effect fields that don't apply to this effect type dynamically.
+		var eff_grey_cb := func() -> void:
+			var is_status_eff: bool = eff.type in [
+				GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF,
+				GameEnums.EffectType.REMOVE_STATUS,
+			]
+			var is_dmg_eff: bool = eff.type == GameEnums.EffectType.DAMAGE
+			var has_scale: bool = eff.type in [
+				GameEnums.EffectType.DAMAGE, GameEnums.EffectType.HEAL,
+				GameEnums.EffectType.ARMOR_UP, GameEnums.EffectType.TRAMPLE,
+			]
+			var is_spawn_eff: bool = eff.type == GameEnums.EffectType.SPAWN
+			_grey_row(eff_scale_row, not has_scale)
+			_grey_row(eff_status_row, not is_status_eff)
+			_grey_row(eff_dur_row, not is_status_eff)
+			_grey_row(eff_adj_row, not is_dmg_eff)
+			_grey_row(eff_def_row, not is_dmg_eff)
+			_grey_row(eff_spawn_row, not is_spawn_eff)
+		
+		if _ability_ui.has(ability):
+			var cbs: Array = _ability_ui[ability].get("effect_greying_cbs", [])
+			cbs.append(eff_grey_cb)
+			_ability_ui[ability]["effect_greying_cbs"] = cbs
+		eff_grey_cb.call()
 
 
 func _refresh_ability_ui(ability: AbilityData) -> void:
 	if not _ability_ui.has(ability):
 		return
 	var refs: Dictionary = _ability_ui[ability]
+	
+	if refs.has("greying_cb"):
+		var cb: Callable = refs["greying_cb"]
+		if cb.is_valid():
+			cb.call()
+	if refs.has("effect_greying_cbs"):
+		for cb: Callable in refs.get("effect_greying_cbs", []):
+			if cb.is_valid():
+				cb.call()
+				
 	var preview: RichTextLabel = refs.get("preview")
 	if preview != null:
 		preview.text = _ability_effect_preview_bbcode(ability)
