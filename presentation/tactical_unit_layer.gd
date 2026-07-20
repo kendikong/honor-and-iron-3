@@ -110,6 +110,9 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 		if not CombatDirector.is_planning_phase(phase):
 			for unit_id: Variant in _move_tweens.keys():
 				_kill_move_tween(int(unit_id))
+		for downed: CharacterActor in _downed_actors:
+			downed.finish_combat_reaction()
+		_downed_actors.clear()
 		for actor: Variant in _actors.values():
 			if actor is CharacterActor:
 				(actor as CharacterActor).set_planning_exhausted(false)
@@ -1175,9 +1178,6 @@ func _tween_push(unit_id: int, cell: Vector2i, from_cell: Vector2i) -> void:
 func _finish_push_tween() -> void:
 	_active_push_tweens = maxi(0, _active_push_tweens - 1)
 	if _active_push_tweens == 0:
-		for downed: CharacterActor in _downed_actors:
-			downed.finish_combat_reaction()
-		_downed_actors.clear()
 		push_tweens_idle.emit()
 
 
