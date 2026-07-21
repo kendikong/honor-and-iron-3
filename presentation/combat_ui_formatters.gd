@@ -913,6 +913,8 @@ static func ability_effect_string(ability: AbilityData, _unit: UnitState = null)
 				_append_status_effect_part(parts, effect, false, false)
 			GameEnums.EffectType.ADD_STATUS_SELF:
 				_append_status_effect_part(parts, effect, true, false)
+			GameEnums.EffectType.MOVE:
+				parts.append("MOVE %s" % _effect_amount_string(effect))
 			GameEnums.EffectType.DASH:
 				parts.append("DASH %s" % _effect_amount_string(effect))
 			GameEnums.EffectType.TRAMPLE:
@@ -947,6 +949,8 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 				parts.append(_kw_hint("PULL %s" % _effect_amount_string(effect), _glossary_def("PULL")))
 			GameEnums.EffectType.SWAP:
 				parts.append(_kw_hint("SWAP", _glossary_def("SWAP")))
+			GameEnums.EffectType.MOVE:
+				parts.append(_kw_hint("MOVE %s" % _effect_amount_string(effect), "Move up to the listed distance."))
 			GameEnums.EffectType.DASH:
 				parts.append(_kw_hint(
 					"DASH %s" % _effect_amount_string(effect),

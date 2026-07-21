@@ -82,7 +82,13 @@ static func find_path(
 	var unit := board.get_unit_at(start)
 	var team := unit.team if unit != null else GameEnums.Team.PLAYER
 
-	if not GridSystem.is_passable(board, goal):
+	# Allow pathing to an enemy-occupied goal when the unit has pass-through (TRAMPLE/BULLDOZE).
+	var goal_tile_ok: bool = GridSystem.is_passable(board, goal)
+	if not goal_tile_ok and can_pass_through_enemy(unit, ability):
+		var goal_occ := board.get_unit_at(goal)
+		if goal_occ != null and goal_occ.team != team:
+			goal_tile_ok = true
+	if not goal_tile_ok:
 		return empty
 
 	var came_from: Dictionary = {}   # Vector2i -> Vector2i
@@ -117,8 +123,12 @@ static func find_path(
 		path = path.slice(0, floori(max_steps / float(move_cost)))
 		
 	# A unit cannot end its movement on an occupied tile (e.g. an ally).
-	# Backtrack until we find an empty tile.
+	# Backtrack until we find an empty tile — but allow ending on an enemy tile
+	# if the ability grants pass-through movement (TRAMPLE/BULLDOZE pushes them aside).
 	while path.size() > 0 and GridSystem.is_occupied(board, path[path.size() - 1]):
+		var end_occ := board.get_unit_at(path[path.size() - 1])
+		if end_occ != null and end_occ.team != team and can_pass_through_enemy(unit, ability):
+			break  # TRAMPLE/BULLDOZE can land on an enemy tile; execution handles displacement
 		path.pop_back()
 		
 	return path
