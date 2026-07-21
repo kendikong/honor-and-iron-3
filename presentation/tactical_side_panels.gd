@@ -165,7 +165,7 @@ func _make_panel_column(left_side: bool) -> Control:
 	var col := VBoxContainer.new()
 	col.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	col.offset_top = int(round(72.0 * _ui_scale))
-	col.offset_bottom = -int(round(280.0 * _ui_scale))
+	col.offset_bottom = -int(round(8.0 * _ui_scale))
 	col.add_theme_constant_override("separation", 8)
 	anchor.add_child(col)
 	if left_side:
