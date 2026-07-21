@@ -73,8 +73,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			if GridSystem.manhattan(actor.position, action.target_coord) > walk_steps:
 				return false
 				
-	if has_pass_through_effects(ability) or is_move or is_dash:
-		if not has_displacement:
+	if is_move or is_dash:
+		if not has_displacement and not has_pass_through_effects(ability):
 			var end_unit := board.get_unit_at(action.target_coord)
 			if end_unit != null and end_unit.id != actor.id:
 				return false

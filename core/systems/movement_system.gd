@@ -267,17 +267,28 @@ static func execute_skill_walk(
 			trample_hit_ids, trampled_restore, ability.display_name
 		):
 			unit.position = from if step_index == 0 else path[step_index - 1]
-			GridSystem.set_occupant(board, unit.position, unit.id)
-			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-				"actor": unit.id, "reason": "pass_through_blocked",
-			}))
-			return
+			if not is_final_step:
+				GridSystem.set_occupant(board, unit.position, unit.id)
+				events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+					"actor": unit.id, "reason": "pass_through_blocked",
+				}))
+				return
+			path = path.slice(0, step_index)
+			break
 		if trampled_restore.has(unit.position):
 			var restore_id: int = int(trampled_restore[unit.position])
 			trampled_restore.erase(unit.position)
 			GridSystem.set_occupant(board, unit.position, restore_id)
 		unit.position = step
 		TerrainSystem.apply_entry_at(board, unit, step, events)
+
+	# Rubber-band backwards if we halted on a trampled tile.
+	while trampled_restore.has(unit.position):
+		if path.size() > 0:
+			path.pop_back()
+			unit.position = from if path.is_empty() else path[path.size() - 1]
+		else:
+			break
 	for restore_coord: Vector2i in trampled_restore.keys():
 		var restore_unit_id: int = int(trampled_restore[restore_coord])
 		if board.get_unit_at(restore_coord) == null:

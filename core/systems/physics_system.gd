@@ -170,9 +170,13 @@ static func resolve_pass_through_tile(
 			push(board, occupant, push_dir, trample_push, events, mover, ability_id, mover.id)
 			occupant = board.get_unit_at(tile)
 			if occupant != null and occupant.id != mover.id:
+				if is_final_step:
+					return false
 				trampled_restore[tile] = occupant.id
 				GridSystem.set_occupant(board, tile, -1)
 		else:
+			if is_final_step:
+				return false
 			trampled_restore[tile] = occupant.id
 			GridSystem.set_occupant(board, tile, -1)
 		return true
@@ -266,6 +270,12 @@ static func dash(
 
 		if GridSystem.is_hazard(board, next):
 			break
+
+	# Rubber-band backwards if we halted on a trampled tile.
+	while trampled_restore.has(unit.position):
+		var back_step := unit.position - direction
+		path.append(back_step)
+		unit.position = back_step
 
 	for restore_coord: Vector2i in trampled_restore.keys():
 		var restore_unit_id: int = int(trampled_restore[restore_coord])
