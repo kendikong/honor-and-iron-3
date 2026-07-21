@@ -1,3 +1,16 @@
+# ==============================================================================
+# 🛑 WARNING TO AI AGENTS (HONOR & IRON ARCHITECTURE STRICT RULES) 🛑
+# ==============================================================================
+# DO NOT BRANCH ON `ability.id` IN THIS FILE. EVER.
+# 
+# Abilities are DATA, not engine code modifications. You are strictly forbidden
+# from writing things like `if ability_id == "knight_shield_bash"` to
+# inject mechanics. If an ability needs custom behavior (Stun on collision, 
+# chain pushes, etc), you MUST add a new generic flag to `GameEnums.EffectType`
+# or `GameEnums.StatusType`, assign it in the factory, and check for THAT flag.
+# 
+# VIOLATING THIS RULE WILL CAUSE THE AUTOMATED ARCHITECTURE TEST TO FAIL.
+# ==============================================================================
 class_name PhysicsSystem
 extends RefCounted
 

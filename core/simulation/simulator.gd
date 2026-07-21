@@ -1,3 +1,16 @@
+# ==============================================================================
+# 🛑 WARNING TO AI AGENTS (HONOR & IRON ARCHITECTURE STRICT RULES) 🛑
+# ==============================================================================
+# DO NOT BRANCH ON `ability.id` IN THIS FILE. EVER.
+# 
+# Abilities are DATA, not engine code modifications. You are strictly forbidden
+# from writing things like `if unit.is_ability_upgraded("knight_indomitable_will")`
+# to inject mechanics. If an ability needs custom behavior, you MUST add a new 
+# generic flag to `GameEnums.EffectType` or `GameEnums.StatusType`, assign it 
+# in the factory, and check for THAT flag here.
+# 
+# VIOLATING THIS RULE WILL CAUSE THE AUTOMATED ARCHITECTURE TEST TO FAIL.
+# ==============================================================================
 class_name Simulator
 extends RefCounted
 
