@@ -50,6 +50,13 @@ var _nav_buttons: Array[Button] = []
 var _active_sidebar_btn: Button = null
 var _ability_defaults: Dictionary = {}
 var _preview_unit_state: UnitState
+var _preview_panel: PanelContainer
+var _preview_viewport: SubViewport
+var _preview_scene: Node2D
+var _preview_refresh_btn: Button
+var _preview_restart_btn: Button
+var _preview_toggle_btn: Button
+var _preview_visible: bool = true
 
 
 func _ready() -> void:
@@ -76,6 +83,8 @@ func _ready() -> void:
 		pick = units[0]
 	if pick != null:
 		_select_unit(pick)
+		await get_tree().process_frame
+		_refresh_preview()
 
 
 func _on_back_pressed() -> void:
@@ -117,24 +126,41 @@ func _build_layout() -> void:
 	hint.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
 	hint.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
 	top_bar.add_child(hint)
+	var sep := VSeparator.new()
+	top_bar.add_child(sep)
+	_preview_toggle_btn = Button.new()
+	_preview_toggle_btn.text = "Hide Preview"
+	_style_toolbar_button(_preview_toggle_btn)
+	_preview_toggle_btn.pressed.connect(_toggle_preview)
+	top_bar.add_child(_preview_toggle_btn)
+	_preview_refresh_btn = Button.new()
+	_preview_refresh_btn.text = "Refresh"
+	_style_toolbar_button(_preview_refresh_btn)
+	_preview_refresh_btn.pressed.connect(_refresh_preview)
+	top_bar.add_child(_preview_refresh_btn)
+	_preview_restart_btn = Button.new()
+	_preview_restart_btn.text = "Restart Battle"
+	_style_toolbar_button(_preview_restart_btn)
+	_preview_restart_btn.pressed.connect(_restart_preview)
+	top_bar.add_child(_preview_restart_btn)
 
-	var split := HSplitContainer.new()
-	split.anchor_right = 1.0
-	split.anchor_bottom = 1.0
-	split.offset_top = 148.0
-	split.offset_bottom = -16.0
-	split.offset_left = 24.0
-	split.offset_right = -24.0
-	split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	split.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	add_child(split)
+	var main_split := HSplitContainer.new()
+	main_split.anchor_right = 1.0
+	main_split.anchor_bottom = 1.0
+	main_split.offset_top = 148.0
+	main_split.offset_bottom = -16.0
+	main_split.offset_left = 24.0
+	main_split.offset_right = -24.0
+	main_split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_split.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	add_child(main_split)
 
 	var sidebar := PanelContainer.new()
 	_sidebar_panel = sidebar
 	sidebar.custom_minimum_size = Vector2(ClassLibraryTheme.sidebar_width(), 0)
 	sidebar.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	sidebar.add_theme_stylebox_override("panel", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_SIDEBAR))
-	split.add_child(sidebar)
+	main_split.add_child(sidebar)
 	var sidebar_pad := MarginContainer.new()
 	sidebar_pad.add_theme_constant_override("margin_left", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
 	sidebar_pad.add_theme_constant_override("margin_right", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
@@ -157,12 +183,18 @@ func _build_layout() -> void:
 		_add_unit_button(list, unit)
 	_add_color_key(list)
 
+	var editor_split := HSplitContainer.new()
+	editor_split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	editor_split.size_flags_stretch_ratio = 0.55
+	editor_split.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_split.add_child(editor_split)
+
 	var detail_panel := PanelContainer.new()
 	detail_panel.name = "DetailPanel"
 	detail_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detail_panel.add_theme_stylebox_override("panel", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_CARD))
-	split.add_child(detail_panel)
+	editor_split.add_child(detail_panel)
 	var detail_pad := MarginContainer.new()
 	detail_pad.add_theme_constant_override("margin_left", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
 	detail_pad.add_theme_constant_override("margin_right", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
@@ -302,6 +334,8 @@ func _build_layout() -> void:
 	_class_passive_impl_scroll = class_impl_shell.scroll
 	_class_passive_impl_vbox = class_impl_shell.content
 
+	_build_preview_panel(editor_split)
+
 	_set_unit_tab(0)
 
 	_sync_detail_width()
@@ -311,6 +345,78 @@ func _build_layout() -> void:
 func _sync_detail_width() -> void:
 	if _detail_scroll != null and _detail_vbox != null:
 		_detail_vbox.custom_minimum_size.x = maxf(ClassLibraryTheme.dim(720.0), _detail_scroll.size.x - ClassLibraryTheme.dim(8.0))
+
+
+func _build_preview_panel(parent: HSplitContainer) -> void:
+	_preview_panel = PanelContainer.new()
+	_preview_panel.name = "PreviewPanel"
+	_preview_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_preview_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_preview_panel.size_flags_stretch_ratio = 0.45
+	_preview_panel.add_theme_stylebox_override("panel", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_CARD))
+	parent.add_child(_preview_panel)
+	
+	var preview_pad := MarginContainer.new()
+	preview_pad.add_theme_constant_override("margin_left", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	preview_pad.add_theme_constant_override("margin_right", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	preview_pad.add_theme_constant_override("margin_top", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	preview_pad.add_theme_constant_override("margin_bottom", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	_preview_panel.add_child(preview_pad)
+	
+	var preview_vbox := VBoxContainer.new()
+	preview_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	preview_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	preview_vbox.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	preview_pad.add_child(preview_vbox)
+	
+	var preview_hdr := Label.new()
+	preview_hdr.text = "TACTICAL PREVIEW"
+	preview_hdr.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SUBSECTION))
+	preview_hdr.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_INGAME)
+	preview_vbox.add_child(preview_hdr)
+	
+	var viewport_container := SubViewportContainer.new()
+	viewport_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	viewport_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	viewport_container.stretch = true
+	preview_vbox.add_child(viewport_container)
+	
+	_preview_viewport = SubViewport.new()
+	_preview_viewport.size = Vector2i(1280, 720)
+	_preview_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+	viewport_container.add_child(_preview_viewport)
+	
+	_preview_scene = preload("res://scenes/TacticalCombat.tscn").instantiate()
+	_preview_viewport.add_child(_preview_scene)
+
+
+func _toggle_preview() -> void:
+	_preview_visible = not _preview_visible
+	if _preview_toggle_btn != null:
+		_preview_toggle_btn.text = "Hide Preview" if _preview_visible else "Show Preview"
+	if _preview_panel != null:
+		_preview_panel.visible = _preview_visible
+
+
+func _refresh_preview() -> void:
+	if _preview_scene == null or _selected_unit == null:
+		return
+	var config := SkirmishGenerator.SkirmishConfig.new()
+	config.size_preset = 3  # 24x12 for preview
+	config.map_seed = randi()
+	SkirmishLaunch.set_pending(config)
+	if _preview_scene.has_method("_load_skirmish"):
+		_preview_scene._load_skirmish()
+
+
+func _restart_preview() -> void:
+	if _preview_scene == null:
+		return
+	_preview_viewport.remove_child(_preview_scene)
+	_preview_scene.queue_free()
+	_preview_scene = preload("res://scenes/TacticalCombat.tscn").instantiate()
+	_preview_viewport.add_child(_preview_scene)
+	_refresh_preview()
 
 
 func _add_scale_controls(parent: HBoxContainer) -> void:
@@ -861,6 +967,7 @@ func _select_unit(unit: UnitData) -> void:
 		_select_default_ability(unit)
 	else:
 		_select_default_passive(unit)
+	_refresh_preview()
 
 
 func _build_skills_tab(unit: UnitData) -> void:
@@ -1869,6 +1976,7 @@ func _save_overrides() -> void:
 		if _save_status != null:
 			_save_status.text = "Saved"
 			_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_SUCCESS)
+		_refresh_preview()
 	else:
 		if _save_status != null:
 			_save_status.text = "Save failed"
