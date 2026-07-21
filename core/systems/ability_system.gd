@@ -691,7 +691,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		MovementSystem.execute_skill_walk(
 			board, actor, target_coord, action.waypoints, ability, events, effects_to_apply, walk_steps
 		)
-		_resolve_pass_through_events(board, actor, ability)
+
 		return
 
 	for effect in effects_to_apply:
