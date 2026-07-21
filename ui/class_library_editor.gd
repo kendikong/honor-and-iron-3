@@ -1593,12 +1593,16 @@ func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effect
 			var amt_lbl: Label = eff_amount_row[0]
 			if is_movement:
 				amt_lbl.text = "Distance (Tiles)"
+				idx_lbl.text = "Effect %d - 🏃 Movement" % i
 			elif is_status_eff:
 				amt_lbl.text = "Stacks / Lvl"
+				idx_lbl.text = "Effect %d" % i
 			elif eff.type == GameEnums.EffectType.DAMAGE or eff.type == GameEnums.EffectType.TRAMPLE:
 				amt_lbl.text = "Base Damage"
+				idx_lbl.text = "Effect %d" % i
 			else:
 				amt_lbl.text = "Amount"
+				idx_lbl.text = "Effect %d" % i
 				
 			_grey_row(eff_scale_row, not has_scale)
 			_grey_row(eff_status_row, not is_status_eff)
