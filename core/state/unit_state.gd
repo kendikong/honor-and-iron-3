@@ -290,3 +290,13 @@ func get_ability_range(ability_data: AbilityData) -> int:
 	if is_ability_upgraded(ability_data.id) and ability_data.upgraded_range_tiles != -1:
 		return ability_data.upgraded_range_tiles
 	return ability_data.range_tiles
+
+func get_ability_by_id(ability_id: StringName) -> AbilityData:
+	if DataLibrary.is_universal_run(ability_id):
+		return DataLibrary.get_universal_run()
+	if DataLibrary.is_universal_wait(ability_id):
+		return DataLibrary.get_universal_wait()
+	for ab in active_abilities:
+		if ab.id == ability_id:
+			return ab
+	return null

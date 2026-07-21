@@ -1305,7 +1305,7 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 					target._recalculate_stats()
 					
 		elif push_type == "dash":
-			var ability := DataLibrary.get_ability(ability_id) if ability_id != &"" else null
+			var ability := actor.get_ability_by_id(ability_id) if actor != null and ability_id != &"" else null
 			if ability != null and AbilitySystem.effect_amount(ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0 and push.get("bowling_upgrade", false):
 				for i in range(push_ev_start, events.size()):
 					var ev = events[i]

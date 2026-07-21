@@ -320,7 +320,8 @@ static func dash(
 	
 	var anim: int = GameEnums.PresentationAnim.SUPER_RUN
 	if ability_id != &"":
-		var ability: AbilityData = DataLibrary.get_ability(ability_id)
+		var source_unit := pusher if pusher != null else unit
+		var ability: AbilityData = source_unit.get_ability_by_id(ability_id) if source_unit != null else null
 		if ability != null:
 			anim = ability.presentation_anim
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
