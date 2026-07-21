@@ -271,11 +271,15 @@ static func execute_skill_walk(
 		var prev_pos: Vector2i = from if step_index == 0 else path[step_index - 1]
 		var move_dir: Vector2i = PhysicsSystem.cardinal_from_to(prev_pos, step)
 		var is_final_step: bool = step_index == path.size() - 1
+		var pre_trample_ev_count: int = events.size()
 		if not PhysicsSystem.resolve_pass_through_tile(
 			board, unit, step, move_dir, is_final_step,
 			trample_atk, bulldoze, trample_push, events, ability_id,
 			trample_hit_ids, trampled_restore, ability.display_name
 		):
+			# Tag any partial events that were emitted before the block
+			for tag_i in range(pre_trample_ev_count, events.size()):
+				events[tag_i].data["trample_step"] = step_index
 			unit.position = from if step_index == 0 else path[step_index - 1]
 			if not is_final_step:
 				GridSystem.set_occupant(board, unit.position, unit.id)
@@ -285,6 +289,9 @@ static func execute_skill_walk(
 				return
 			path = path.slice(0, step_index)
 			break
+		# Tag any trample side-effect events with the step they occurred on
+		for tag_i in range(pre_trample_ev_count, events.size()):
+			events[tag_i].data["trample_step"] = step_index
 		if trampled_restore.has(unit.position):
 			var restore_id: int = int(trampled_restore[unit.position])
 			trampled_restore.erase(unit.position)
@@ -435,12 +442,17 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 				var move_dir := PhysicsSystem.cardinal_from_to(prev_pos, step)
 				var is_final_step := step_index == path.size() - 1
 				var push_dir := move_dir if is_final_step else PhysicsSystem.left_of_direction(move_dir)
+				var pre_trample_ev_count: int = events.size()
 				PhysicsSystem.push(board, occ, push_dir, 1, events, unit)
 				events.append(SimEvent.make(GameEnums.SimEventType.TRAMPLE_HIT, {
 					"actor": unit.id,
 					"target": occ.id,
 					"coord": step,
+					"trample_step": step_index,
 				}))
+				# Tag push/damage events emitted by the push with this step index
+				for tag_i in range(pre_trample_ev_count, events.size() - 1):
+					events[tag_i].data["trample_step"] = step_index
 				if unit.has_passive(&"trample_move") and unit.is_passive_upgraded(&"trample_move"):
 					occ.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, -1))
 

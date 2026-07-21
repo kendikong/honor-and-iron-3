@@ -1855,13 +1855,44 @@ func _is_spellcast_impact_event(event: SimEvent) -> bool:
 func _play_move_batch(move_events: Array[SimEvent], run_id: int) -> void:
 	if move_events.is_empty() or run_id != _run_id:
 		return
+
+	# Collect any trample-step-tagged side-effect events that need per-step interleaving.
+	# Key = step_index (int), value = Array of SimEvent to fire after that step's timer.
+	var trample_step_events: Dictionary = {}
+	var clean_move_events: Array[SimEvent] = []
+	for e: SimEvent in move_events:
+		if e.data.has("trample_step"):
+			var step_i: int = int(e.data["trample_step"])
+			if not trample_step_events.has(step_i):
+				trample_step_events[step_i] = []
+			(trample_step_events[step_i] as Array).append(e)
+		else:
+			clean_move_events.append(e)
+
+	# Fire the UNIT_MOVED (and any other non-trample-tagged) events immediately so
+	# the walk tween starts. Then wait per-step, firing trample events at contact time.
 	var max_path_len := 0
-	for e in move_events:
+	for e: SimEvent in clean_move_events:
 		if run_id != _run_id:
 			return
 		EventBus.sim_event.emit(e)
 		max_path_len = max(max_path_len, (e.data.get("path", []) as Array).size())
-	await get_tree().create_timer(max(1, max_path_len) * MOVE_STEP_TIME + 0.05).timeout
+
+	if trample_step_events.is_empty():
+		# No trample hits — just wait for the whole walk to finish.
+		await get_tree().create_timer(max(1, max_path_len) * MOVE_STEP_TIME + 0.05).timeout
+		return
+
+	# Step through the path, firing trample events when the sprite reaches each tile.
+	for step_i in range(max(1, max_path_len)):
+		await get_tree().create_timer(MOVE_STEP_TIME).timeout
+		if run_id != _run_id:
+			return
+		if trample_step_events.has(step_i):
+			for e: SimEvent in (trample_step_events[step_i] as Array):
+				EventBus.sim_event.emit(e)
+	# Small tail buffer so the last hit animation settles before we move on.
+	await get_tree().create_timer(0.05).timeout
 
 
 func _move_has_commit_side_effects(events: Array[SimEvent]) -> bool:
