@@ -475,31 +475,31 @@ func _on_left_press(local: Vector2) -> void:
 		if actor != null and _try_plan_basic_move(_selected_id, coord, local):
 			_cancel_aim()
 			return
-		var target := _aim_enemy_board().get_unit_at(coord)
-		if target != null and actor != null:
-			if target.id == actor.id:
-				var self_ability := _selected_ability_data(actor)
-				if AbilitySystem.can_target_self(actor, self_ability):
-					_plan_attack(_selected_id, _selected_ability, target.id)
+		
+		if actor != null:
+			var ability := _selected_ability_data(actor)
+			var origin := _proj_origin(actor)
+			var valid_tiles := AbilitySystem.planning_action_range_tiles(_board, actor, ability, origin)
+			
+			if coord in valid_tiles:
+				var target := _aim_enemy_board().get_unit_at(coord)
+				var valid_target := false
+				if target != null:
+					valid_target = AbilitySystem.target_passes_mode(actor, ability, target)
+				else:
+					valid_target = ability.has_targeting(GameEnums.TargetingFlags.TILE) or AbilitySystem.ability_has_movement_effect(ability)
+
+				if valid_target:
+					if target != null:
+						_plan_attack(_selected_id, _selected_ability, target.id)
+					else:
+						_plan_ability_at_coord(_selected_id, _selected_ability, coord)
 					_sfx.play("ability")
 					Input.set_default_cursor_shape(Input.CURSOR_ARROW)
-				else:
-					_sfx.play("invalid")
-			elif _in_ability_range(actor, target):
-				_plan_attack(_selected_id, _selected_ability, target.id)
-				_sfx.play("ability")
-				Input.set_default_cursor_shape(Input.CURSOR_ARROW)
-			else:
-				_sfx.play("invalid")
-		elif actor != null and _ability_has_dash(_selected_ability_data(actor)):
-			if _is_valid_dash_target(actor.position, coord, _ability_range(actor)):
-				_plan_ability_at_coord(_selected_id, _selected_ability, coord)
-				_sfx.play("ability")
-				Input.set_default_cursor_shape(Input.CURSOR_ARROW)
-			else:
-				_sfx.play("invalid")
-		else:
-			_sfx.play("invalid")
+					_cancel_aim()
+					return
+
+		_sfx.play("invalid")
 		_cancel_aim()
 		return
 
@@ -1660,12 +1660,13 @@ func _draw_move_ghosts() -> void:
 	if unit == null or not unit.is_alive():
 		return
 	var ability := _selected_ability_data(unit)
-	if not _ability_has_dash(ability):
+	if not AbilitySystem.ability_has_movement_effect(ability):
 		return
 	if not _board.is_in_bounds(_hover_coord):
 		return
 	var origin: Vector2i = _proj_origin(unit)
-	if not _is_valid_dash_target(origin, _hover_coord, ability.range_tiles):
+	var valid_tiles := AbilitySystem.planning_action_range_tiles(_board, unit, ability, origin)
+	if not _hover_coord in valid_tiles:
 		return
 	var center := _coord_center(_hover_coord)
 	var ghost_body: Color = _color_from_unit(unit)
@@ -1862,11 +1863,11 @@ func _draw_ability_intents() -> void:
 				_draw_dashed_route([enemy_pos, action.target_coord], COLOR_ENEMY_ARROW)
 
 func _draw_drag_path() -> void:
-	var drag_unit := _board.get_unit_by_id(_drag_unit_id) if _drag_unit_id >= 0 else null
 	if drag_unit != null and _should_use_dash_on_input(_selected_ability_data(drag_unit)):
 		var origin := _proj_origin(drag_unit)
 		var dash_ability := _selected_ability_data(drag_unit)
-		if _ability_has_dash(dash_ability) and _is_valid_dash_target(origin, _hover_coord, dash_ability.range_tiles):
+		var valid_tiles := AbilitySystem.planning_action_range_tiles(_board, drag_unit, dash_ability, origin)
+		if _hover_coord in valid_tiles:
 			var p_col := _get_player_color(drag_unit.controlling_player_id)
 			_draw_dashed_route([origin, _hover_coord], Color(p_col.r, p_col.g, p_col.b, 0.95))
 		return
@@ -2662,25 +2663,28 @@ func _update_hover_attack_preview() -> void:
 		return
 	if _movement_blocked_by_dash() and not _force_basic_movement:
 		var dash_ability := _selected_ability_data(p_unit)
-		if dash_ability != null and _is_valid_dash_target(p_unit.position, _hover_coord, dash_ability.range_tiles):
-			var dash_res := _director.preview_dash(_selected_id, _hover_coord, _selected_ability)
-			var dash_board: BoardState = dash_res.get("temp_board")
-			if dash_board != null:
-				for temp_u in dash_board.units:
-					_hover_predicted_hp[temp_u.id] = temp_u.health.current_hp
-					_hover_predicted_armor[temp_u.id] = temp_u.armor
+		if dash_ability != null:
+			var valid_tiles := AbilitySystem.planning_action_range_tiles(_board, p_unit, dash_ability, p_unit.position)
+			if _hover_coord in valid_tiles:
+				var dash_res := _director.preview_dash(_selected_id, _hover_coord, _selected_ability)
+				var dash_board: BoardState = dash_res.get("temp_board")
+				if dash_board != null:
+					for temp_u in dash_board.units:
+						_hover_predicted_hp[temp_u.id] = temp_u.health.current_hp
+						_hover_predicted_armor[temp_u.id] = temp_u.armor
 		return
 	if _skill_takes_priority_over_basic_move():
 		var skill_ability := _selected_ability_data(p_unit)
-		if skill_ability != null and _ability_has_dash(skill_ability) \
-		and _is_valid_dash_target(p_unit.position, _hover_coord, skill_ability.range_tiles):
-			var dash_res := _director.preview_dash(_selected_id, _hover_coord, _selected_ability)
-			var dash_board: BoardState = dash_res.get("temp_board")
-			if dash_board != null:
-				for temp_u in dash_board.units:
-					_hover_predicted_hp[temp_u.id] = temp_u.health.current_hp
-					_hover_predicted_armor[temp_u.id] = temp_u.armor
-			return
+		if skill_ability != null and AbilitySystem.ability_has_movement_effect(skill_ability):
+			var valid_tiles := AbilitySystem.planning_action_range_tiles(_board, p_unit, skill_ability, p_unit.position)
+			if _hover_coord in valid_tiles:
+				var dash_res := _director.preview_dash(_selected_id, _hover_coord, _selected_ability)
+				var dash_board: BoardState = dash_res.get("temp_board")
+				if dash_board != null:
+					for temp_u in dash_board.units:
+						_hover_predicted_hp[temp_u.id] = temp_u.health.current_hp
+						_hover_predicted_armor[temp_u.id] = temp_u.armor
+				return
 	var hover_unit := _proj().get_unit_at(_hover_coord)
 	if hover_unit == null:
 		return
@@ -2721,7 +2725,8 @@ func _refresh_live_interaction_preview(
 	if _board.is_in_bounds(_hover_coord):
 		var dash_ab := _selected_ability_data(unit)
 		if _should_use_dash_on_input(dash_ab) and dash_ab != null:
-			dash_preview = _is_valid_dash_target(_proj_origin(unit), _hover_coord, dash_ab.range_tiles)
+			var valid_tiles := AbilitySystem.planning_action_range_tiles(_board, unit, dash_ab, _proj_origin(unit))
+			dash_preview = _hover_coord in valid_tiles
 	var cache_key: String
 	if dash_preview:
 		cache_key = "dash_%s_%s_%s" % [_hover_coord, cur_ability, unit_id]
@@ -2859,11 +2864,11 @@ func _update_mouse_cursor() -> void:
 								var self_ability := _selected_ability_data(p_unit)
 								valid_aim = AbilitySystem.can_target_self(p_unit, self_ability)
 							else:
-								valid_aim = _in_ability_range(p_unit, hover_unit)
+								valid_aim = AbilitySystem.target_passes_mode(p_unit, _selected_ability_data(p_unit), hover_unit)
 						elif _selected_ability >= 0 and _selected_ability < p_unit.active_abilities.size():
 							var aim_ability: AbilityData = p_unit.active_abilities[_selected_ability]
-							if _ability_has_dash(aim_ability):
-								valid_aim = _is_valid_dash_target(p_unit.position, _hover_coord, aim_ability.range_tiles)
+							if aim_ability.has_targeting(GameEnums.TargetingFlags.TILE) or AbilitySystem.ability_has_movement_effect(aim_ability):
+								valid_aim = _hover_coord in _hover_threat_tiles
 								
 						if valid_aim:
 							var abilities = p_unit.active_abilities
@@ -2879,9 +2884,10 @@ func _update_mouse_cursor() -> void:
 							_hover_action_icon = "⚔️"
 					elif hover_unit == null and _hover_coord != p_unit.position:
 						var hover_ability := _selected_ability_data(p_unit)
+						var valid_tiles := AbilitySystem.planning_action_range_tiles(_board, p_unit, hover_ability, p_unit.position)
 						if _skill_takes_priority_over_basic_move() and hover_ability != null \
-						and _ability_has_dash(hover_ability) \
-						and _is_valid_dash_target(p_unit.position, _hover_coord, hover_ability.range_tiles):
+						and AbilitySystem.ability_has_movement_effect(hover_ability) \
+						and _hover_coord in valid_tiles:
 							if _ability_is_offensive_dash(hover_ability):
 								_hover_action_icon = "⚔️"
 							else:
@@ -2961,14 +2967,7 @@ func _recompute_hover_ranges() -> void:
 		return
 		
 	var threat_sources: Array[Vector2i] = reach.duplicate() if unit.is_enemy() else _single_hover_origin(origin)
-	if unit.id == _selected_id and _ability_has_dash(_selected_ability_data(unit)):
-		var dash_actor: UnitState = _proj_unit(unit.id)
-		var dash_ability: AbilityData = _selected_ability_data(unit)
-		if dash_actor != null and dash_ability != null:
-			_hover_threat_tiles = AbilitySystem.planning_action_range_tiles(
-				_board, dash_actor, dash_ability, origin, [],
-			)
-		return
+
 	for y in range(_board.grid_size.y):
 		for x in range(_board.grid_size.x):
 			var coord := Vector2i(x, y)
@@ -2999,9 +2998,6 @@ func _drag_self_skill_intent(release_local: Vector2) -> bool:
 	if release_local.distance_to(_drag_press_local) >= DRAG_CLICK_MOVE_THRESHOLD:
 		return true
 	return Time.get_ticks_msec() - _drag_press_time_ms >= DRAG_SELF_SKILL_DELAY_MS
-
-func _ability_has_dash(ability: AbilityData) -> bool:
-	return AbilitySystem.ability_has_movement_effect(ability)
 
 func _ability_is_offensive_dash(ability: AbilityData) -> bool:
 	return AbilitySystem.ability_is_offensive_dash(ability)
@@ -3129,7 +3125,7 @@ func _try_plan_basic_move(unit_id: int, coord: Vector2i, local: Vector2, waypoin
 	return true
 
 func _should_use_dash_on_input(ability: AbilityData) -> bool:
-	if ability == null or not _ability_has_dash(ability) or _selected_ability < 0:
+	if ability == null or not AbilitySystem.ability_has_movement_effect(ability) or _selected_ability < 0:
 		return false
 	if _skill_interaction_active():
 		return true
@@ -3235,10 +3231,11 @@ func _refresh_info() -> void:
 					var abilities := actor.active_abilities
 					if ability_index >= 0 and ability_index < abilities.size():
 						var ability := abilities[ability_index]
-						if _ability_has_dash(ability):
+						if AbilitySystem.ability_has_movement_effect(ability):
 							var p_actor := _proj_unit(actor.id)
 							var dash_origin := p_actor.position if p_actor != null else actor.position
-							if _is_valid_dash_target(dash_origin, _hover_coord, ability.range_tiles):
+							var valid_tiles := AbilitySystem.planning_action_range_tiles(start_board, p_actor if p_actor != null else actor, ability, dash_origin)
+							if _hover_coord in valid_tiles:
 								action = TimelineAction.make_ability(actor.id, ability, _hover_coord, -1, _move_timing_bucket())
 						elif GridSystem.manhattan(actor.position, _hover_coord) <= ability.range_tiles:
 							var target_unit := start_board.get_unit_at(_hover_coord)
