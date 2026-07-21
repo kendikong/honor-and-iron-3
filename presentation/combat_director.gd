@@ -1585,11 +1585,11 @@ func _find_dash_blocks(events: Array[SimEvent]) -> Array:
 			i += 1
 			if i >= events.size():
 				break
-		if events[i].type == GameEnums.SimEventType.ABILITY_USED and events[i].data.get("is_dash", false):
+		if events[i].type == GameEnums.SimEventType.ABILITY_USED and events[i].data.get("presentation_anim", GameEnums.PresentationAnim.WALK) == GameEnums.PresentationAnim.SUPER_RUN:
 			i += 1
 			while i < events.size():
 				var t := events[i].type
-				if t == GameEnums.SimEventType.UNIT_MOVED and events[i].data.get("is_dash", false):
+				if t == GameEnums.SimEventType.UNIT_MOVED and events[i].data.get("presentation_anim", GameEnums.PresentationAnim.WALK) == GameEnums.PresentationAnim.SUPER_RUN:
 					i += 1
 					break
 				if t in [
@@ -1638,7 +1638,7 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 			GameEnums.SimEventType.ABILITY_USED:
 				ability_event = event
 			GameEnums.SimEventType.UNIT_MOVED:
-				if event.data.get("is_dash", false):
+				if event.data.get("presentation_anim", GameEnums.PresentationAnim.WALK) == GameEnums.PresentationAnim.SUPER_RUN:
 					move_event = event
 				else:
 					pre_ability_events.append(event)
@@ -1680,7 +1680,7 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 		return
 	
 	var path: Array = move_event.data.get("path", [])
-	move_event.data["is_dash"] = true
+	move_event.data["presentation_anim"] = GameEnums.PresentationAnim.SUPER_RUN
 	move_event.data["dash_step_time"] = DASH_STEP_TIME
 	EventBus.sim_event.emit(move_event)
 	

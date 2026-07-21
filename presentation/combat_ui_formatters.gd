@@ -370,7 +370,7 @@ static func log_line(board: BoardState, event: SimEvent, last_telemetry: Diction
 	var line: String = ""
 	match event.type:
 		GameEnums.SimEventType.UNIT_MOVED:
-			if not d.get("is_dash", false):
+			if d.get("presentation_anim", GameEnums.PresentationAnim.WALK) != GameEnums.PresentationAnim.SUPER_RUN:
 				telemetry.clear()
 			line = _color(HEX_MOVE, "%s moves to %s" % [
 				_unit_name(board, d.get("actor", -1)),
@@ -392,7 +392,7 @@ static func log_line(board: BoardState, event: SimEvent, last_telemetry: Diction
 			if d.get("ability") == &"universal_wait":
 				line = ""
 				return {"line": line, "telemetry": telemetry}
-			if not d.get("is_dash", false):
+			if d.get("presentation_anim", GameEnums.PresentationAnim.WALK) != GameEnums.PresentationAnim.SUPER_RUN:
 				telemetry.clear()
 			var ability_name: String = d.get("ability_name", "an ability")
 			var actor_name: String = _unit_name(board, d.get("actor", -1))

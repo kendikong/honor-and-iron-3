@@ -305,13 +305,18 @@ static func dash(
 		if status.type == GameEnums.StatusType.BLEED:
 			CombatSystem.deal_damage(board, unit, 3 * traveled, events, &"bleed", false, false, null, "Bleed (dash)", 3 * traveled)
 	
+	var anim: int = GameEnums.PresentationAnim.SUPER_RUN
+	if ability_id != &"":
+		var ability: AbilityData = DataLibrary.get_ability(ability_id)
+		if ability != null:
+			anim = ability.presentation_anim
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 		"actor": unit.id,
 		"from": from,
 		"to": unit.position,
 		"steps": traveled,
 		"path": path,
-		"is_dash": true,
+		"presentation_anim": anim,
 	}))
 	TerrainSystem.apply_landing(board, unit, events)
 
@@ -406,12 +411,14 @@ static func _emit_collision(
 		"pusher_id": pusher.id,
 	}))
 	if pusher != null and pusher != target:
-		var stun_on_hit := pusher.has_passive(&"spiked_barricade")
-		if blocker == null:
-			stun_on_hit = stun_on_hit or (ability_id == &"knight_shield_bash" and pusher.is_ability_upgraded(&"knight_shield_bash"))
-		elif ability_id == &"knight_shield_bash" and pusher.is_ability_upgraded(&"knight_shield_bash"):
-			stun_on_hit = true
-		if stun_on_hit:
+		var stun_on_hit = false
+		if events.size() > 0:
+			for e in events:
+				if e.type == GameEnums.SimEventType.UNIT_PUSHED and e.data.get("unit", -1) == target.id:
+					if e.data.has("stun_on_collision"):
+						stun_on_hit = e.data["stun_on_collision"]
+					break
+		if pusher.has_passive(&"spiked_barricade") or stun_on_hit:
 			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STUN, 1))
 		if pusher.has_passive(&"spiked_barricade") and pusher.is_passive_upgraded(&"spiked_barricade"):
 			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, -1))

@@ -92,13 +92,16 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 		if unit.is_alive():
 			var to_remove = []
 			var indomitable_will_expired = false
+			var indomitable_will_upgraded_expired = false
 			for i in range(unit.active_statuses.size() - 1, -1, -1):
 				var status = unit.active_statuses[i]
 				if status.duration > 0:
 					status.ticks_remaining -= 1
 					if status.ticks_remaining <= 0:
-						if status.type == GameEnums.StatusType.INDOMITABLE_WILL:
+						if status.type == GameEnums.StatusType.INDOMITABLE_WILL or status.type == GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED:
 							indomitable_will_expired = true
+						if status.type == GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED:
+							indomitable_will_upgraded_expired = true
 						to_remove.append(status)
 						unit.active_statuses.remove_at(i)
 						events.append(SimEvent.make(GameEnums.SimEventType.STATUS_REMOVED, {
@@ -107,10 +110,10 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 						}))
 			if indomitable_will_expired:
 				unit.armor = 0
-				if unit.is_ability_upgraded(&"knight_indomitable_will"):
-					unit.active_statuses.append(
-						DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 99, 2),
-					)
+			if indomitable_will_upgraded_expired:
+				unit.active_statuses.append(
+					DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 99, 2),
+				)
 			if to_remove.size() > 0 or indomitable_will_expired:
 				unit._recalculate_stats()
 

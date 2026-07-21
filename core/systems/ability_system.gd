@@ -691,7 +691,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		"ability_name": action.ability.display_name,
 		"target_coord": target_coord,
 		"target_unit": action.target_unit_id,
-		"is_dash": ability_has_dash(action.ability),
+		"presentation_anim": action.ability.presentation_anim,
 	}))
 	
 	var effects_to_apply = action.ability.effects
@@ -910,13 +910,6 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						var stand_amt := 2 if target.is_passive_upgraded(&"stand_ground") else 1
 						CombatSystem.counter_attack(board, target, actor, stand_amt, events, "Stand Ground")
 				
-				if action.ability.id == &"knight_defensive_formation":
-					for status in target.active_statuses:
-						if status.type == GameEnums.StatusType.STURDY:
-							if status.duration == 1:
-								is_immune = true
-								break
-				
 				if not is_immune:
 					var dir := PhysicsSystem.cardinal_from_to(actor.position, target.position)
 					
@@ -929,11 +922,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"ability_id": action.ability.id
 					}
 					
-					if action.ability.id == &"knight_shield_bash" and actor.is_ability_upgraded(&"knight_shield_bash"):
+					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_STUN_ON_COLLISION) > 0:
 						pending["stun_on_collision"] = true
 						
-					if action.ability.id == &"knight_chain_hook" and actor.is_ability_upgraded(&"knight_chain_hook"):
-						pending["vulnerable_on_adjacent"] = true
+					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0:
+						pending["bowling_upgrade"] = true
 					
 					board.pending_pushes.append(pending)
 		GameEnums.EffectType.PULL:
@@ -971,7 +964,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"ability_id": action.ability.id
 					}
 					
-					if action.ability.id == &"knight_chain_hook" and actor.is_ability_upgraded(&"knight_chain_hook"):
+					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT) > 0:
 						pending["vulnerable_on_adjacent"] = true
 						
 					board.pending_pushes.append(pending)
@@ -1168,7 +1161,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if bulldoze > 0:
 					pending["bulldoze"] = bulldoze
 					pending["caster_collision_immune"] = true
-				if action.ability.id == &"knight_bowling_charge" and actor.is_ability_upgraded(&"knight_bowling_charge"):
+				if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0:
 					pending["bowling_upgrade"] = true
 				board.pending_pushes.append(pending)
 		GameEnums.EffectType.TRAMPLE, GameEnums.EffectType.BULLDOZE:
@@ -1299,7 +1292,7 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 					target._recalculate_stats()
 					
 		elif push_type == "dash":
-			if ability_id == &"knight_bowling_charge" and push.get("bowling_upgrade", false):
+			if AbilitySystem.effect_amount(ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0 and push.get("bowling_upgrade", false):
 				for i in range(push_ev_start, events.size()):
 					var ev = events[i]
 					if ev.type != GameEnums.SimEventType.COLLISION:

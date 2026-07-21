@@ -380,12 +380,12 @@ static func deal_damage(
 	target.armor -= armor_dmg
 	var hp_dmg := incoming - armor_dmg
 	
-	if old_armor > 0 and target.armor <= 0 and target.has_status(GameEnums.StatusType.INDOMITABLE_WILL):
-		if target.is_ability_upgraded(&"knight_indomitable_will"):
+	if old_armor > 0 and target.armor <= 0 and (target.has_status(GameEnums.StatusType.INDOMITABLE_WILL) or target.has_status(GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED)):
+		if target.has_status(GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED):
 			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 99, 2))
 		var to_remove = []
 		for status in target.active_statuses:
-			if status.type == GameEnums.StatusType.INDOMITABLE_WILL:
+			if status.type == GameEnums.StatusType.INDOMITABLE_WILL or status.type == GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED:
 				to_remove.append(status)
 		for status in to_remove:
 			target.active_statuses.erase(status)

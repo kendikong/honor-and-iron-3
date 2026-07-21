@@ -53,6 +53,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	], 1, GameEnums.StatType.PHYSICAL)
 	shield_bash.upgrade_description = "Apply STUN if collides with wall/enemy."
 	shield_bash.upgraded_effects = DataLibrary._duplicate_effects(shield_bash.effects)
+	shield_bash.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH_STUN_ON_COLLISION, 1))
 	def.abilities.append(shield_bash)
 
 	var phalanx_stance = DataLibrary._make_ability(&"knight_phalanx_stance", "Phalanx Stance", 0, [
@@ -106,8 +107,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.DASH, 3),
 		DataLibrary._effect(GameEnums.EffectType.BULLDOZE, 1),
 	], 1)
-	bowling_charge.upgrade_description = "Enemy-enemy collision: ATK 3 to both units."
+	bowling_charge.effects[0].scaling_stat = GameEnums.StatType.PHYSICAL
+	bowling_charge.upgrade_description = "Pushed target chain-pushes enemies behind them."
 	bowling_charge.upgraded_effects = DataLibrary._duplicate_effects(bowling_charge.effects)
+	bowling_charge.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH_CHAIN_COLLISION, 1))
 	def.abilities.append(bowling_charge)
 
 	var iron_grip = DataLibrary._make_ability(&"knight_iron_grip", "Iron Grip", 1, [
@@ -135,7 +138,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	], 1)
 	indomitable_will.effects[0].scaling_stat = GameEnums.StatType.MISSING_HP
 	indomitable_will.upgrade_description = "When expires, gain +2 STR."
-	indomitable_will.upgraded_effects = DataLibrary._duplicate_effects(indomitable_will.effects)
+	indomitable_will.upgraded_effects = [
+		DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 0),
+		DataLibrary._status_effect_self(GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED, 2)
+	]
+	indomitable_will.upgraded_effects[0].scaling_stat = GameEnums.StatType.MISSING_HP
 	indomitable_will.can_target_self = true
 	indomitable_will.targeting_mode = GameEnums.TargetingMode.SELF
 	def.abilities.append(indomitable_will)
@@ -176,6 +183,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	], 1, GameEnums.StatType.PHYSICAL)
 	chain_hook.upgrade_description = "Target suffers VULNERABLE if pulled adjacent."
 	chain_hook.upgraded_effects = DataLibrary._duplicate_effects(chain_hook.effects)
+	chain_hook.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, 1))
 	def.abilities.append(chain_hook)
 	
 	var trampling_advance = DataLibrary._make_ability(&"knight_trampling_advance", "Trampling Advance", 2, [

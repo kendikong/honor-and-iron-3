@@ -1127,7 +1127,7 @@ func _on_sim_event(event: SimEvent) -> void:
 						elif AbilitySystem.effect_amount(ability, GameEnums.EffectType.MOVE) > 0:
 							pres_anim = GameEnums.PresentationAnim.WALK
 
-				if d.get("is_dash", false) or pres_anim == GameEnums.PresentationAnim.SUPER_RUN:
+				if pres_anim == GameEnums.PresentationAnim.SUPER_RUN:
 					var dash_step: float = float(d.get("dash_step_time", 0.08))
 					if _visual.has(actor_id):
 						_visual[actor_id]["move_speed"] = CELL / dash_step
@@ -1148,7 +1148,8 @@ func _on_sim_event(event: SimEvent) -> void:
 				_visual.erase(u_id)
 			queue_redraw()
 		GameEnums.SimEventType.ABILITY_USED:
-			if not d.get("is_dash", false):
+			var pres_anim: int = d.get("presentation_anim", GameEnums.PresentationAnim.WALK)
+			if pres_anim != GameEnums.PresentationAnim.SUPER_RUN:
 				_play_attack_lunge(d.get("actor", -1), _ability_attack_anim_dir(d.get("actor", -1), d))
 		GameEnums.SimEventType.COUNTER_ATTACK:
 			_play_attack_lunge(d.get("actor", -1), _counter_attack_anim_dir(d.get("actor", -1), d))
@@ -1188,7 +1189,7 @@ func _on_sim_event(event: SimEvent) -> void:
 func _should_animate_move(unit_id: int, event_data: Dictionary = {}) -> bool:
 	if _planning_anim_units.has(unit_id):
 		return true
-	if event_data.get("is_dash", false):
+	if event_data.get("presentation_anim", GameEnums.PresentationAnim.WALK) == GameEnums.PresentationAnim.SUPER_RUN:
 		return true
 	if _phase == CombatDirector.Phase.ENEMY_TURN:
 		return true
@@ -3900,7 +3901,8 @@ func _log_line(event: SimEvent) -> String:
 	var d := event.data
 	match event.type:
 		GameEnums.SimEventType.UNIT_MOVED:
-			if not d.get("is_dash", false):
+			var pres_anim: int = d.get("presentation_anim", GameEnums.PresentationAnim.WALK)
+			if pres_anim != GameEnums.PresentationAnim.SUPER_RUN:
 				_last_math_telemetry.clear()
 			return _color(HEX_MOVE, "%s moves to %s" % [_unit_name(d.get("actor", -1)), d.get("to", Vector2i.ZERO)])
 		GameEnums.SimEventType.UNIT_PUSHED:
@@ -3917,7 +3919,8 @@ func _log_line(event: SimEvent) -> String:
 			_last_math_telemetry = d.duplicate(true)
 			return ""
 		GameEnums.SimEventType.ABILITY_USED:
-			if not d.get("is_dash", false):
+			var pres_anim: int = d.get("presentation_anim", GameEnums.PresentationAnim.WALK)
+			if pres_anim != GameEnums.PresentationAnim.SUPER_RUN:
 				_last_math_telemetry.clear()
 			var ability_name: String = d.get("ability_name", "an ability")
 			var actor_name = _unit_name(d.get("actor", -1))

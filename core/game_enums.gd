@@ -75,6 +75,9 @@ enum EffectType {
 	TRAMPLE, ## Pass-through move: ATK X on enemies moved through; no displacement; end on open tile.
 	BULLDOZE, ## Pass-through move: collision base X + PUSH X sideways; axial push when landing on target.
 	MOVE, ## Skill-driven non-instant movement. Walk physics; respects collision unless combined with TRAMPLE/BULLDOZE.
+	PUSH_STUN_ON_COLLISION, ## Modifier: PUSH applies STUN if the target collides.
+	PULL_VULNERABLE_ON_ADJACENT, ## Modifier: PULL applies VULNERABLE if the target lands adjacent to caster.
+	PUSH_CHAIN_COLLISION, ## Modifier: PUSH causes chain collisions (Bowling Charge).
 }
 
 ## Types of temporary statuses that can be applied to units.
@@ -120,13 +123,14 @@ enum StatusType {
 	RETALIATION_PROTOCOL,
 	RETALIATION_INFINITE_RANGE, ## Phalanx [+]: Retaliation Protocol counters at any range this turn.
 	INDOMITABLE_WILL,
+	INDOMITABLE_WILL_UPGRADED, ## Same as INDOMITABLE_WILL, but grants +2 STR on expiration or shield break.
 	THORNS,
 	IRON_GRIP_DEBUFF,
 }
 
 static func is_buff(status: StatusType) -> bool:
 	match status:
-		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RUNNING, StatusType.RETALIATION_PROTOCOL, StatusType.RETALIATION_INFINITE_RANGE, StatusType.INDOMITABLE_WILL, StatusType.THORNS:
+		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RUNNING, StatusType.RETALIATION_PROTOCOL, StatusType.RETALIATION_INFINITE_RANGE, StatusType.INDOMITABLE_WILL, StatusType.INDOMITABLE_WILL_UPGRADED, StatusType.THORNS:
 			return true
 	return false
 

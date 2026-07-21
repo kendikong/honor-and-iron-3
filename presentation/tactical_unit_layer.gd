@@ -760,7 +760,7 @@ func _should_animate_move(event: SimEvent) -> bool:
 		return unit != null and not unit.is_enemy()
 	if unit != null and unit.is_enemy():
 		return true
-	if event.data.get("is_dash", false):
+	if event.data.get("presentation_anim", GameEnums.PresentationAnim.WALK) == GameEnums.PresentationAnim.SUPER_RUN:
 		return true
 	var pres_anim: int = int(event.data.get("presentation_anim", GameEnums.PresentationAnim.AUTO))
 	if pres_anim != GameEnums.PresentationAnim.AUTO and pres_anim != GameEnums.PresentationAnim.NONE:
@@ -1083,7 +1083,7 @@ func _animate_move(event: SimEvent) -> void:
 	if path.is_empty() and event.data.has("to"):
 		path = [event.data["to"]]
 	var step_time: float = CombatDirector.MOVE_STEP_TIME
-	if event.data.get("is_dash", false):
+	if event.data.get("presentation_anim", GameEnums.PresentationAnim.WALK) == GameEnums.PresentationAnim.SUPER_RUN:
 		step_time = float(event.data.get("dash_step_time", CombatDirector.DASH_STEP_TIME))
 	var from_coord: Vector2i = event.data.get("from", unit.position)
 	var movement_points_before: int = int(
@@ -1114,7 +1114,7 @@ func _animate_move(event: SimEvent) -> void:
 		_update_depth(unit_id)
 		return
 	var pres_anim: int = int(event.data.get("presentation_anim", GameEnums.PresentationAnim.AUTO))
-	var is_dash: bool = event.data.get("is_dash", false) or pres_anim == GameEnums.PresentationAnim.SUPER_RUN
+	var is_dash: bool = pres_anim == GameEnums.PresentationAnim.SUPER_RUN
 	var use_run: bool = (
 		unit.has_run_boost()
 		or _unit_uses_run_anim(unit_id)
