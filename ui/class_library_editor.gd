@@ -403,7 +403,7 @@ func _refresh_preview() -> void:
 	if _preview_scene == null or _selected_unit == null:
 		return
 	var config := SkirmishGenerator.SkirmishConfig.new()
-	config.size_preset = 3  # 24x12 for preview
+	config.size_preset = Vector2i(24, 12)  # 24x12 for preview
 	config.map_seed = randi()
 	var encounter: EncounterData = SkirmishGenerator.generate_encounter_with_player_unit(config, _selected_unit)
 	if _preview_scene.has_method("start_from_encounter"):
