@@ -1914,6 +1914,12 @@ func _bind_targeting_flags(parent: VBoxContainer, ability: AbilityData) -> void:
 			_refresh_ability_ui(ability)
 		)
 		row.add_child(chk)
+	if AbilitySystem.ability_has_movement_effect(ability):
+		var lbl := Label.new()
+		lbl.text = "🏃 Movement Effect"
+		lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+		lbl.add_theme_color_override("font_color", ClassLibraryTheme.color(ClassLibraryTheme.ACCENT_WARN))
+		row.add_child(lbl)
 
 
 func _bind_string(parent: GridContainer, label: String, value: String, setter: Callable) -> Array[Control]:
