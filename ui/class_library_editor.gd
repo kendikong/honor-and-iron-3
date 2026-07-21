@@ -1181,6 +1181,8 @@ func _rebuild_ability_detail_panes(ability: AbilityData) -> void:
 		_ability_ui[ability] = {}
 	_ability_ui[ability]["impl"] = impl_lbl
 	_ability_ui[ability]["dump"] = dump_lbl
+	_ability_ui[ability]["reset_btn"] = reset_btn
+	_ability_ui[ability]["name_edit"] = name_edit
 	_refresh_ability_ui(ability)
 
 
@@ -1670,10 +1672,34 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 	if range_row != null:
 		var range_chip_row: Dictionary = CombatUiFormatters.ability_range_chip(ability, _preview_unit())
 		range_row.tooltip_text = String(range_chip_row.get("tooltip", ""))
+	var is_dirty: bool = false
+	if _ability_defaults.has(ability.id):
+		var orig = _ability_defaults[ability.id]
+		is_dirty = ClassLibrarySchema.ability_data_dump(ability) != ClassLibrarySchema.ability_data_dump(orig)
+
 	var title: Label = refs.get("title")
 	if title != null:
 		title.text = ability.display_name
 		title.tooltip_text = CombatUiFormatters.ability_tooltip_text(ability, _preview_unit())
+		if is_dirty:
+			title.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_WARN)
+		else:
+			title.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
+			
+	var reset_btn: Button = refs.get("reset_btn")
+	if reset_btn != null:
+		if is_dirty:
+			reset_btn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_WARN)
+		else:
+			reset_btn.remove_theme_color_override("font_color")
+			
+	var name_edit: LineEdit = refs.get("name_edit")
+	if name_edit != null:
+		if is_dirty:
+			name_edit.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_WARN)
+		else:
+			name_edit.remove_theme_color_override("font_color")
+
 	if refs.has("impl") and refs["impl"] != null:
 		refs["impl"].text = ClassLibrarySchema.ability_implementation_notes(ability)
 	if refs.has("dump") and refs["dump"] != null:
