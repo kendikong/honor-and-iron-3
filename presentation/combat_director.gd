@@ -1324,9 +1324,11 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 					if plan_post_move.entries[i].irreversible:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
+					var removed: TimelineAction = plan_post_move.entries[i]
 					plan_post_move.remove_at(i)
 					plan_affected_unit_ids = [unit_id]
 					_refresh_plan()
+					_reselect_ability_from_action(removed)
 					return
 		if plan_action.size() > 0:
 			for i in range(plan_action.size() - 1, -1, -1):
@@ -1334,9 +1336,11 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 					if plan_action.entries[i].irreversible:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
+					var removed: TimelineAction = plan_action.entries[i]
 					plan_action.remove_at(i)
 					plan_affected_unit_ids = [unit_id]
 					_refresh_plan()
+					_reselect_ability_from_action(removed)
 					return
 		if plan_pre_move.size() > 0:
 			for i in range(plan_pre_move.size() - 1, -1, -1):
@@ -1349,7 +1353,21 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 					plan_pre_move.remove_at(i)
 					plan_affected_unit_ids = [unit_id]
 					_refresh_plan()
+					_reselect_ability_from_action(removed)
 					return
+
+func _reselect_ability_from_action(action: TimelineAction) -> void:
+	if action == null or action.actor_id != selected_unit_id:
+		return
+	if action.ability_id.is_empty():
+		return
+	var u := base_board.get_unit_by_id(selected_unit_id)
+	if u == null:
+		return
+	for i in u.active_abilities.size():
+		if u.active_abilities[i].id == action.ability_id:
+			select_ability(i)
+			return
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_remove_action(index: int) -> void:
@@ -1381,6 +1399,7 @@ func rpc_remove_action(index: int) -> void:
 		plan_post_move.remove_at(post_idx)
 	plan_affected_unit_ids = [action.actor_id]
 	_refresh_plan()
+	_reselect_ability_from_action(action)
 
 func move_action(index: int, delta: int) -> void:
 	if multiplayer.has_multiplayer_peer():
