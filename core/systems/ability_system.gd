@@ -180,7 +180,8 @@ static func is_movement_skill(ability: AbilityData) -> bool:
 static func planning_commit_flow(actor: UnitState, ability: AbilityData) -> int:
 	if actor == null or ability == null:
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
-	if not ability_has_movement_effect(ability) or can_target_self(actor, ability):
+	var requires_aiming := ability_has_movement_effect(ability) or ability.has_targeting(GameEnums.TargetingFlags.TILE)
+	if not requires_aiming or can_target_self(actor, ability):
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
 	if not can_plan(actor, ability):
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
@@ -208,7 +209,7 @@ static func planning_auto_arms_after_premove(actor: UnitState, ability: AbilityD
 static func planning_awaiting_phase(ability: AbilityData) -> int:
 	if ability == null:
 		return GameEnums.PlanningAwaitingPhase.GENERIC
-	if ability_has_movement_effect(ability):
+	if ability_has_movement_effect(ability) or ability.has_targeting(GameEnums.TargetingFlags.TILE):
 		return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
 	return GameEnums.PlanningAwaitingPhase.GENERIC
 
