@@ -1359,13 +1359,13 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 func _reselect_ability_from_action(action: TimelineAction) -> void:
 	if action == null or action.actor_id != selected_unit_id:
 		return
-	if action.ability_id.is_empty():
+	if action.ability == null or action.ability.id.is_empty():
 		return
 	var u := base_board.get_unit_by_id(selected_unit_id)
 	if u == null:
 		return
 	for i in u.active_abilities.size():
-		if u.active_abilities[i].id == action.ability_id:
+		if u.active_abilities[i].id == action.ability.id:
 			select_ability(i)
 			return
 
