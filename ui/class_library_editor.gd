@@ -1682,21 +1682,21 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 		title.text = ability.display_name
 		title.tooltip_text = CombatUiFormatters.ability_tooltip_text(ability, _preview_unit())
 		if is_dirty:
-			title.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_WARN)
+			title.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_DANGER)
 		else:
 			title.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
 			
 	var reset_btn: Button = refs.get("reset_btn")
 	if reset_btn != null:
 		if is_dirty:
-			reset_btn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_WARN)
+			reset_btn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_DANGER)
 		else:
 			reset_btn.remove_theme_color_override("font_color")
 			
 	var name_edit: LineEdit = refs.get("name_edit")
 	if name_edit != null:
 		if is_dirty:
-			name_edit.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_WARN)
+			name_edit.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_DANGER)
 		else:
 			name_edit.remove_theme_color_override("font_color")
 
