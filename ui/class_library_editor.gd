@@ -1614,10 +1614,10 @@ func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effect
 		
 		
 		if _ability_ui.has(ability):
-			var cb_key := "upgraded_effect_greying_cbs" if upgraded else "base_effect_greying_cbs"
-			var cbs: Array = _ability_ui[ability].get(cb_key, [])
+			var inner_cb_key := "upgraded_effect_greying_cbs" if upgraded else "base_effect_greying_cbs"
+			var cbs: Array = _ability_ui[ability].get(inner_cb_key, [])
 			cbs.append(eff_grey_cb)
-			_ability_ui[ability][cb_key] = cbs
+			_ability_ui[ability][inner_cb_key] = cbs
 		eff_grey_cb.call()
 
 
