@@ -1734,6 +1734,11 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 	var meta_events:   Array[SimEvent] = []
 	
 	for event in events:
+		# Trample side-effect events (damage, push, collision) tagged with a step index
+		# must travel with the UNIT_MOVED so _play_move_batch fires them mid-walk.
+		if event.data.has("trample_step"):
+			pre_move_events.append(event)
+			continue
 		match event.type:
 			GameEnums.SimEventType.UNIT_MOVED:
 				var timing: int = int(
@@ -1743,7 +1748,14 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 					post_move_events.append(event)
 				else:
 					pre_move_events.append(event)
-			GameEnums.SimEventType.ABILITY_USED, \
+			GameEnums.SimEventType.ABILITY_USED:
+				# A movement-skill ABILITY_USED (WALK/RUN anim) should play before the
+				# walk tween, not after it. ATTACK/SUPER_RUN/SPELLCAST go to attack_events.
+				var pres: int = int(event.data.get("presentation_anim", GameEnums.PresentationAnim.WALK))
+				if pres in [GameEnums.PresentationAnim.WALK, GameEnums.PresentationAnim.RUN]:
+					pre_move_events.append(event)
+				else:
+					attack_events.append(event)
 			GameEnums.SimEventType.COUNTER_ATTACK, \
 			GameEnums.SimEventType.MATH_TELEMETRY, \
 			GameEnums.SimEventType.UNIT_DAMAGED, \
