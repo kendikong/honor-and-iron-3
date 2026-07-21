@@ -762,6 +762,9 @@ func _should_animate_move(event: SimEvent) -> bool:
 		return true
 	if event.data.get("is_dash", false):
 		return true
+	var pres_anim: int = int(event.data.get("presentation_anim", GameEnums.PresentationAnim.AUTO))
+	if pres_anim != GameEnums.PresentationAnim.AUTO and pres_anim != GameEnums.PresentationAnim.NONE:
+		return true
 	if CombatDirector.is_executing_phase(_phase):
 		var timing: int = int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION))
 		return timing == GameEnums.MoveTiming.POST_ACTION
@@ -1110,12 +1113,15 @@ func _animate_move(event: SimEvent) -> void:
 		_position_actor(unit_id, unit.position)
 		_update_depth(unit_id)
 		return
+	var pres_anim: int = int(event.data.get("presentation_anim", GameEnums.PresentationAnim.AUTO))
+	var is_dash: bool = event.data.get("is_dash", false) or pres_anim == GameEnums.PresentationAnim.SUPER_RUN
 	var use_run: bool = (
 		unit.has_run_boost()
 		or _unit_uses_run_anim(unit_id)
-		or event.data.get("is_dash", false)
+		or is_dash
+		or pres_anim == GameEnums.PresentationAnim.RUN
 	)
-	if use_run and not event.data.get("is_dash", false):
+	if use_run and not is_dash:
 		step_time = CombatDirector.RUN_STEP_TIME
 	var step_cb := func(step_index: int) -> void:
 		var remaining: int = maxi(
@@ -1123,7 +1129,6 @@ func _animate_move(event: SimEvent) -> void:
 			movement_points_before - ((step_index + 1) * movement_cost_per_tile),
 		)
 		_set_movement_points(unit_id, remaining)
-	var is_dash: bool = event.data.get("is_dash", false)
 	_play_cell_path_tween(unit_id, start_cell, cells, step_time, use_run, step_cb, is_dash)
 
 

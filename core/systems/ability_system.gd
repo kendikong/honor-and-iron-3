@@ -112,11 +112,12 @@ static func _target_allowed(
 		return false
 	ability.ensure_targeting_flags_from_mode()
 	if target != null:
-		if target.id == actor.id:
-			return ability.has_targeting(GameEnums.TargetingFlags.SELF)
-		if target.team == actor.team:
-			return ability.has_targeting(GameEnums.TargetingFlags.ALLY)
-		return ability.has_targeting(GameEnums.TargetingFlags.ENEMY)
+		if target.id == actor.id and ability.has_targeting(GameEnums.TargetingFlags.SELF):
+			return true
+		if target.id != actor.id and target.team == actor.team and ability.has_targeting(GameEnums.TargetingFlags.ALLY):
+			return true
+		if target.team != actor.team and ability.has_targeting(GameEnums.TargetingFlags.ENEMY):
+			return true
 	if target_coord == actor.position:
 		return ability.has_targeting(GameEnums.TargetingFlags.SELF)
 	if ability.has_targeting(GameEnums.TargetingFlags.TILE):
