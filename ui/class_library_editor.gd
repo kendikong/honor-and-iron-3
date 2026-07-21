@@ -1508,8 +1508,9 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 
 
 func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effects: Array[EffectData], upgraded: bool) -> void:
+	var cb_key := "upgraded_effect_greying_cbs" if upgraded else "base_effect_greying_cbs"
 	if _ability_ui.has(ability):
-		_ability_ui[ability]["effect_greying_cbs"] = []
+		_ability_ui[ability][cb_key] = []
 	for c: Node in parent.get_children():
 		c.queue_free()
 	var accent: Color = ClassLibraryTheme.ACCENT_INGAME if upgraded else ClassLibraryTheme.ACCENT_DATA
@@ -1611,10 +1612,12 @@ func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effect
 			_grey_row(eff_def_row, not is_dmg_eff)
 			_grey_row(eff_spawn_row, not is_spawn_eff)
 		
+		
 		if _ability_ui.has(ability):
-			var cbs: Array = _ability_ui[ability].get("effect_greying_cbs", [])
+			var cb_key := "upgraded_effect_greying_cbs" if upgraded else "base_effect_greying_cbs"
+			var cbs: Array = _ability_ui[ability].get(cb_key, [])
 			cbs.append(eff_grey_cb)
-			_ability_ui[ability]["effect_greying_cbs"] = cbs
+			_ability_ui[ability][cb_key] = cbs
 		eff_grey_cb.call()
 
 
@@ -1627,10 +1630,11 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 		var cb: Callable = refs["greying_cb"]
 		if cb.is_valid():
 			cb.call()
-	if refs.has("effect_greying_cbs"):
-		for cb: Callable in refs.get("effect_greying_cbs", []):
-			if cb.is_valid():
-				cb.call()
+	for cb_key in ["base_effect_greying_cbs", "upgraded_effect_greying_cbs"]:
+		if refs.has(cb_key):
+			for cb: Callable in refs.get(cb_key, []):
+				if cb.is_valid():
+					cb.call()
 				
 	var preview: RichTextLabel = refs.get("preview")
 	if preview != null:
