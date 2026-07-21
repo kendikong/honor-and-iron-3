@@ -335,7 +335,7 @@ func refresh_live_preview() -> void:
 func _apply_live_preview(preview: Dictionary) -> void:
 	if preview.is_empty():
 		return
-	if bool(preview.get("invalid", false)):
+	if _is_invalid_dict(preview):
 		drag_preview_failed = true
 		preview_state.clear_interaction()
 		if _planning != null:
@@ -925,7 +925,7 @@ func _refresh_live_interaction_preview(
 	var res: Dictionary = _preview_at_interaction_cell(
 		unit_id, cell, move_coord, attack_target_id, waypoints, _snapshot_drag_legal_move_tiles(),
 	)
-	drag_preview_failed = bool(res.get("invalid", false))
+	drag_preview_failed = _is_invalid_dict(res)
 	for event: Variant in res.get("events", []):
 		if event is SimEvent:
 			var sim: SimEvent = event as SimEvent
@@ -1130,7 +1130,7 @@ func _commit_at_cell(
 	if bool(slots.get("_noop", false)):
 		_play_sfx("ability")
 		return true
-	if bool(slots.get("invalid", false)):
+	if _is_invalid_dict(slots):
 		_play_sfx("invalid")
 		return false
 	_apply_facing_to_slots(slots, local, cell)
@@ -1229,7 +1229,7 @@ func _preview_from_commit_slots_at_cell(
 	var slots: Dictionary = _final_commit_slots_for_interaction(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
 	)
-	if bool(slots.get("invalid", false)):
+	if _is_invalid_dict(slots):
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
 	return _director.preview_actions(unit_id, _actions_from_slots(slots))
 
@@ -2008,7 +2008,7 @@ func _actions_from_slots(slots: Dictionary) -> Array[TimelineAction]:
 
 
 func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
-	if bool(slots.get("invalid", false)):
+	if _is_invalid_dict(slots):
 		return slots
 	if bool(slots.get("_noop", false)):
 		slots["_preview_validated"] = true
@@ -2075,7 +2075,7 @@ func _hover_icon_for_cell(
 
 
 func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -> String:
-	if bool(slots.get("invalid", false)):
+	if _is_invalid_dict(slots):
 		return PlanningIcons.GLYPH_NULL
 	var glyphs: PackedStringArray = []
 	for col: String in ["pre", "action", "post"]:
