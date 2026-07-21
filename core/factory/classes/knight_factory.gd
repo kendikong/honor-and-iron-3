@@ -138,10 +138,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	], 1)
 	indomitable_will.effects[0].scaling_stat = GameEnums.StatType.MISSING_HP
 	indomitable_will.upgrade_description = "When expires, gain +2 STR."
-	indomitable_will.upgraded_effects = [
+	var indo_up: Array[EffectData] = [
 		DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 0),
 		DataLibrary._status_effect_self(GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED, 2)
 	]
+	indomitable_will.upgraded_effects = indo_up
 	indomitable_will.upgraded_effects[0].scaling_stat = GameEnums.StatType.MISSING_HP
 	indomitable_will.can_target_self = true
 	indomitable_will.targeting_mode = GameEnums.TargetingMode.SELF
