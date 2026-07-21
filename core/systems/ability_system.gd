@@ -281,7 +281,7 @@ static func planning_threat_tiles(
 	if board == null or unit == null or ability == null:
 		var empty: Array[Vector2i] = []
 		return empty
-	if ability_has_movement_effect(ability):
+	if ability_has_dash(ability):
 		return dash_line_threat_tiles(board, origin, dash_steps(ability))
 	var eff_range: int = unit.get_ability_range(ability)
 	if eff_range <= 0:
