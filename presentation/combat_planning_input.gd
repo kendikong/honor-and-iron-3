@@ -1460,7 +1460,7 @@ func _build_self_tile_commit_slots(
 	if _self_tile_allows_wait(actor, ability_index):
 		_append_wait_action_slot(slots, unit_id, actor)
 		return slots
-	slots["invalid"] = true
+	slots["invalid"] = "Invalid self-targeting action."
 	return slots
 
 
@@ -1745,7 +1745,7 @@ func _append_move_to_commit_slots(
 		if _run_mode_selected(actor) or auto_run_movement_active(actor):
 			move = TimelineAction.make_run_move(unit_id, cell, -1, waypoints, timing)
 		else:
-			slots["invalid"] = true
+			slots["invalid"] = "Cannot run without selecting run mode."
 			return
 	var col: String = "post" if timing == GameEnums.MoveTiming.POST_ACTION else "pre"
 	slots[col].append(move)
@@ -1793,7 +1793,7 @@ func _build_commit_slots_at_cell(
 	if _director == null or unit_id < 0 or _director.board == null:
 		return slots
 	if not _director.board.is_in_bounds(cell):
-		slots["invalid"] = true
+		slots["invalid"] = "Out of bounds."
 		return slots
 	var actor: UnitState = _proj_unit(unit_id)
 	if actor == null:
@@ -1801,7 +1801,7 @@ func _build_commit_slots_at_cell(
 	if actor == null or actor.is_enemy() or not actor.is_alive():
 		return slots
 	if selected_phase_action_exhausted(unit_id):
-		slots["invalid"] = true
+		slots["invalid"] = "Action already exhausted this phase."
 		return slots
 	var timing: int = _director.get_planning_move_timing(unit_id)
 	var ability_index: int = _director.selected_ability_index
@@ -1831,49 +1831,50 @@ func _build_commit_slots_at_cell(
 			)
 			return slots
 		if _skill_interaction_active() and hover_unit.id != actor.id:
-			slots["invalid"] = true
+			slots["invalid"] = "Cannot target this unit with selected skill."
 		return slots
 
 	if ability_index >= 0 and ability != null and not force_basic_movement:
 		if _awaiting_flow_selected(actor, ability):
-			if awaiting_targeting_active() and AbilitySystem.planning_is_valid_awaiting_endpoint(
-				_proj_origin(actor), cell, ability,
-			):
-				slots["action"].append(TimelineAction.make_ability(unit_id, ability, cell, -1))
-				return slots
 			if awaiting_targeting_active():
-				slots["invalid"] = true
+				if AbilitySystem.planning_is_valid_awaiting_endpoint(
+					_proj_origin(actor), cell, ability,
+				):
+					slots["action"].append(TimelineAction.make_ability(unit_id, ability, cell, -1))
+					return slots
+				slots["invalid"] = "Invalid target or distance for this ability."
 				return slots
-		if AbilitySystem.can_target_self(actor, ability):
-			if AbilitySystem.is_run_ability(ability):
+		else:
+			if AbilitySystem.can_target_self(actor, ability):
+				if AbilitySystem.is_run_ability(ability):
+					if _drop_allows_move_tile(cell, legal_move_tiles, actor):
+						if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
+							_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
+					return slots
 				if _drop_allows_move_tile(cell, legal_move_tiles, actor):
 					if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
 						_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
-				return slots
-			if _drop_allows_move_tile(cell, legal_move_tiles, actor):
-				if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
-					_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
-				_maybe_append_premove_action_pair(
-					slots, unit_id, actor, cell, ability, waypoints,
-				)
-				return slots
-		if hover_unit != null and _in_ability_range(actor, hover_unit):
-			slots["action"].append(
-				TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id),
-			)
-			return slots
-		if hover_unit == null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
-			if _in_ability_range_of_coord(actor, cell):
-				var board: BoardState = _proj()
-				if AbilitySystem.has_pass_through_effects(ability) and not AbilitySystem.ability_has_movement_effect(ability):
-					var path: Array[Vector2i] = MovementSystem.find_path(board, actor.position, cell, ability.range_tiles)
-					if path.is_empty():
-						slots["invalid"] = true
-						return slots
+					_maybe_append_premove_action_pair(
+						slots, unit_id, actor, cell, ability, waypoints,
+					)
+					return slots
+			if hover_unit != null and _in_ability_range(actor, hover_unit):
 				slots["action"].append(
-					TimelineAction.make_ability(unit_id, ability, cell, -1),
+					TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id),
 				)
 				return slots
+			if hover_unit == null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
+				if _in_ability_range_of_coord(actor, cell):
+					var board: BoardState = _proj()
+					if AbilitySystem.has_pass_through_effects(ability) and not AbilitySystem.ability_has_movement_effect(ability):
+						var path: Array[Vector2i] = MovementSystem.find_path(board, actor.position, cell, ability.range_tiles)
+						if path.is_empty():
+							slots["invalid"] = "No valid path to target tile."
+							return slots
+					slots["action"].append(
+						TimelineAction.make_ability(unit_id, ability, cell, -1),
+					)
+					return slots
 
 	if (
 		_basic_move_allowed()
@@ -1888,7 +1889,7 @@ func _build_commit_slots_at_cell(
 			)
 		return slots
 	if _skill_interaction_active() and _invalid_hover_target(actor, cell, hover_unit):
-		slots["invalid"] = true
+		slots["invalid"] = "Invalid target."
 	return slots
 
 
@@ -1910,7 +1911,7 @@ func _build_enemy_commit_slots(
 		and ability != null
 	)
 	if use_skill and not AbilitySystem.target_passes_mode(actor, ability, enemy):
-		slots["invalid"] = true
+		slots["invalid"] = "Invalid target for this skill."
 		return slots
 	if use_skill and _awaiting_flow_selected(actor, ability):
 		if awaiting_targeting_active() and AbilitySystem.planning_is_valid_awaiting_endpoint(
@@ -1921,7 +1922,7 @@ func _build_enemy_commit_slots(
 			)
 			return slots
 		if awaiting_targeting_active():
-			slots["invalid"] = true
+			slots["invalid"] = "Invalid endpoint for this skill."
 			return slots
 	if use_skill and _in_ability_range(actor, enemy):
 		slots["action"].append(
@@ -1937,17 +1938,17 @@ func _build_enemy_commit_slots(
 		return slots
 	if use_skill and _prefer_approach_over_trample_move(actor, enemy):
 		if not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
-			slots["invalid"] = true
+			slots["invalid"] = "Enemy is not attackable from legal move tiles."
 			return slots
 	elif _drop_allows_move_tile(enemy.position, legal_move_tiles, actor):
 		_append_move_to_commit_slots(slots, unit_id, enemy.position, waypoints, actor)
 		return slots
 	elif not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
-		slots["invalid"] = true
+		slots["invalid"] = "Enemy is not attackable from legal move tiles."
 		return slots
 	if use_skill:
 		if AbilitySystem.is_movement_skill(ability):
-			slots["invalid"] = true
+			slots["invalid"] = "Cannot pair this action with a pre-move."
 			return slots
 		var approach_hint: Vector2i = cell
 		if preferred_approach != _NO_PREFERRED_APPROACH:
@@ -1956,7 +1957,7 @@ func _build_enemy_commit_slots(
 			unit_id, enemy.id, ability_index, approach_hint,
 		)
 		if approach == actor.position and not _in_ability_range(actor, enemy):
-			slots["invalid"] = true
+			slots["invalid"] = "Target is out of range."
 			return slots
 		if approach != actor.position:
 			var board: BoardState = _proj()
@@ -1965,7 +1966,7 @@ func _build_enemy_commit_slots(
 				board, actor.position, approach, budget,
 			)
 			if path.is_empty():
-				slots["invalid"] = true
+				slots["invalid"] = "No valid path to approach target."
 				return slots
 			slots["pre"].append(
 				_director.make_planning_move_action(
@@ -1990,7 +1991,7 @@ func _build_enemy_commit_slots(
 	if _can_move_to(actor, cell) or _is_hover_move_cell(actor, cell):
 		_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
 		return slots
-	slots["invalid"] = true
+	slots["invalid"] = "Tile is not reachable."
 	return slots
 
 
@@ -2015,7 +2016,7 @@ func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 		return slots
 	var actions: Array[TimelineAction] = _actions_from_slots(slots)
 	if actions.is_empty():
-		slots["invalid"] = true
+		slots["invalid"] = "No valid actions generated."
 		return slots
 	if _slots_are_wait_only(actions):
 		slots["_preview_validated"] = true

@@ -58,6 +58,9 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
 	
 	if is_dash:
+		var delta := action.target_coord - actor.position
+		if delta.x != 0 and delta.y != 0:
+			return false
 		if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
 			return false
 		var steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
