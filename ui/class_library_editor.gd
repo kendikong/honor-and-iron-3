@@ -1516,7 +1516,7 @@ func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effect
 			eff.type = v
 			_refresh_ability_ui(ability)
 		)
-		_bind_int(g, "Amount", eff.amount, func(v: int) -> void:
+		var eff_amount_row := _bind_int(g, "Amount", eff.amount, func(v: int) -> void:
 			eff.amount = v
 			_refresh_ability_ui(ability)
 		)
@@ -1555,6 +1555,21 @@ func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effect
 				GameEnums.EffectType.ARMOR_UP, GameEnums.EffectType.TRAMPLE,
 			]
 			var is_spawn_eff: bool = eff.type == GameEnums.EffectType.SPAWN
+			var is_movement: bool = eff.type in [
+				GameEnums.EffectType.DASH, GameEnums.EffectType.MOVE,
+				GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.SWAP,
+			]
+			
+			var amt_lbl: Label = eff_amount_row[0]
+			if is_movement:
+				amt_lbl.text = "Distance (Tiles)"
+			elif is_status_eff:
+				amt_lbl.text = "Stacks / Lvl"
+			elif eff.type == GameEnums.EffectType.DAMAGE or eff.type == GameEnums.EffectType.TRAMPLE:
+				amt_lbl.text = "Base Damage"
+			else:
+				amt_lbl.text = "Amount"
+				
 			_grey_row(eff_scale_row, not has_scale)
 			_grey_row(eff_status_row, not is_status_eff)
 			_grey_row(eff_dur_row, not is_status_eff)
