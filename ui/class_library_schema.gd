@@ -560,8 +560,6 @@ static func targeting_flags_dump(ability: AbilityData) -> String:
 		labels.append("Tile")
 	if ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
 		labels.append("Dash line")
-	if AbilitySystem.ability_has_movement_effect(ability):
-		labels.append("Movement Effect")
 	if labels.is_empty():
 		return "none"
 	return ", ".join(labels)
