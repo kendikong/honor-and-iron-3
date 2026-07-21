@@ -52,10 +52,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	if ability.consumes_action_slot() and not actor.can_use_action_slot():
 		return false
 
-	var has_displacement := effect_amount(ability, GameEnums.EffectType.PUSH) > 0 \
-		or effect_amount(ability, GameEnums.EffectType.PULL) > 0 \
-		or effect_amount(ability, GameEnums.EffectType.SWAP) > 0 \
-		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
+	var has_displacement := has_displacement_effects(ability)
 		
 	var is_dash := ability_has_dash(ability)
 	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
@@ -252,6 +249,13 @@ static func effect_amount(ability: AbilityData, effect_type: GameEnums.EffectTyp
 
 static func has_pass_through_effects(ability: AbilityData) -> bool:
 	return effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0 \
+		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
+
+
+static func has_displacement_effects(ability: AbilityData) -> bool:
+	return effect_amount(ability, GameEnums.EffectType.PUSH) > 0 \
+		or effect_amount(ability, GameEnums.EffectType.PULL) > 0 \
+		or effect_amount(ability, GameEnums.EffectType.SWAP) > 0 \
 		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
 
 
