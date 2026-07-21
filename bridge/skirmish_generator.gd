@@ -56,3 +56,35 @@ static func generate_encounter(config: SkirmishConfig) -> EncounterData:
 		skirmish.player_spawns,
 		skirmish.enemy_spawns,
 	)
+
+
+static func generate_encounter_with_player_unit(
+	config: SkirmishConfig,
+	player_unit: UnitData,
+) -> EncounterData:
+	var generator := MapGenerator.new()
+	generator.width = config.size_preset.x
+	generator.height = config.size_preset.y
+	generator.map_seed = config.map_seed
+	generator.force_custom_size = true
+	generator.water_ratio = 0.22
+
+	var result := SkirmishResult.new()
+	result.grid = generator.generate()
+	result.map_seed = config.map_seed
+	result.biome_variant = config.biome_variant
+	result.blocked_cells = WalkabilityBaker.bake(result.grid, null, null, null, null)
+	var roster: Dictionary = SpawnPlacer.place_custom_player_roster(
+		result.grid,
+		result.blocked_cells,
+		config.map_seed,
+		player_unit,
+	)
+	result.player_spawns = roster["player_spawns"]
+	result.enemy_spawns = roster["enemy_spawns"]
+	return EncounterBuilder.build_from_player_grid(
+		result.grid,
+		result.blocked_cells,
+		result.player_spawns,
+		result.enemy_spawns,
+	)

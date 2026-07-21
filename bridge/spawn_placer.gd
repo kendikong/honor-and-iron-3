@@ -129,6 +129,67 @@ static func place_mvp_roster(
 	}
 
 
+static func place_custom_player_roster(
+	grid: PlayerGrid,
+	_blocked_cells: Dictionary,
+	map_seed: int,
+	player_unit: UnitData,
+	trees: TileMapLayer = null,
+	overlay: TileMapLayer = null,
+	settings: EffectsSettings = null,
+	scatter: TileMapLayer = null,
+) -> Dictionary:
+	var player_cells: Array[Vector2i] = _pick_band_spawns(
+		grid,
+		player_band_x_min(grid.width),
+		player_band_x_max(grid.width) + 1,
+		1,  # Single player unit for preview
+		map_seed,
+		9109,
+		prefer_player_anchor(grid),
+		trees,
+		overlay,
+		settings,
+		scatter,
+	)
+	var enemy_cells: Array[Vector2i] = _pick_band_spawns(
+		grid,
+		enemy_band_x_min(grid.width),
+		enemy_band_x_max_exclusive(grid.width),
+		MVP_ENEMY_COUNT,
+		map_seed,
+		9203,
+		prefer_enemy_anchor(grid),
+		trees,
+		overlay,
+		settings,
+		scatter,
+	)
+
+	var player_spawns: Array[UnitPlacement] = []
+	if player_unit != null and not player_cells.is_empty():
+		var placement := UnitPlacement.new()
+		placement.unit = player_unit
+		placement.coord = player_cells[0]
+		player_spawns.append(placement)
+
+	var enemy_spawns: Array[UnitPlacement] = []
+	for i: int in range(enemy_cells.size()):
+		var enemy_id: StringName = MVP_ENEMY_IDS[i % MVP_ENEMY_IDS.size()]
+		var enemy_def: UnitData = DataLibrary.get_unit(enemy_id)
+		if enemy_def == null:
+			continue
+		var placement := UnitPlacement.new()
+		placement.unit = enemy_def
+		placement.coord = enemy_cells[i]
+		enemy_spawns.append(placement)
+
+	return {
+		"player_spawns": player_spawns,
+		"enemy_spawns": enemy_spawns,
+	}
+
+
 static func refine_encounter_spawns(
 	grid: PlayerGrid,
 	player_spawns: Array[UnitPlacement],

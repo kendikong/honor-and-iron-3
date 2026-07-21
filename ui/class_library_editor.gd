@@ -1,6 +1,8 @@
 class_name ClassLibraryEditorScreen
 extends Control
 
+const PREVIEW_VIEWPORT_SIZE: Vector2i = Vector2i(1280, 720)
+
 static var _restore_unit_id: StringName = &""
 
 enum ViewMode { UNIT, GLOSSARY, DEFINITIONS }
@@ -83,8 +85,7 @@ func _ready() -> void:
 		pick = units[0]
 	if pick != null:
 		_select_unit(pick)
-		await get_tree().process_frame
-		_refresh_preview()
+		call_deferred("_refresh_preview")
 
 
 func _on_back_pressed() -> void:
@@ -382,7 +383,7 @@ func _build_preview_panel(parent: HSplitContainer) -> void:
 	preview_vbox.add_child(viewport_container)
 	
 	_preview_viewport = SubViewport.new()
-	_preview_viewport.size = Vector2i(1280, 720)
+	_preview_viewport.size = PREVIEW_VIEWPORT_SIZE
 	_preview_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	viewport_container.add_child(_preview_viewport)
 	
@@ -404,13 +405,13 @@ func _refresh_preview() -> void:
 	var config := SkirmishGenerator.SkirmishConfig.new()
 	config.size_preset = 3  # 24x12 for preview
 	config.map_seed = randi()
-	SkirmishLaunch.set_pending(config)
-	if _preview_scene.has_method("_load_skirmish"):
-		_preview_scene._load_skirmish()
+	var encounter: EncounterData = SkirmishGenerator.generate_encounter_with_player_unit(config, _selected_unit)
+	if _preview_scene.has_method("start_from_encounter"):
+		_preview_scene.start_from_encounter(encounter)
 
 
 func _restart_preview() -> void:
-	if _preview_scene == null:
+	if _preview_scene == null or _preview_viewport == null:
 		return
 	_preview_viewport.remove_child(_preview_scene)
 	_preview_scene.queue_free()
