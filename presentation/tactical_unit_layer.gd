@@ -1015,7 +1015,8 @@ func _play_cell_path_tween(
 	_kill_move_tween(unit_id)
 	if is_dash:
 		actor.cancel_dash_windup()
-	actor.position = _map_view.grid_to_foot_local(start_cell)
+	else:
+		actor.position = _map_view.grid_to_foot_local(start_cell)
 	if is_dash:
 		actor.set_dash_running(true)
 	else:
