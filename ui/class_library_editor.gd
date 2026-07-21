@@ -387,7 +387,7 @@ func _build_preview_panel(parent: HSplitContainer) -> void:
 	_preview_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 	viewport_container.add_child(_preview_viewport)
 	
-	_preview_scene = preload("res://scenes/TacticalCombat.tscn").instantiate()
+	_preview_scene = preload("res://scenes/TestBattle.tscn").instantiate()
 	_preview_viewport.add_child(_preview_scene)
 
 
@@ -402,12 +402,13 @@ func _toggle_preview() -> void:
 func _refresh_preview() -> void:
 	if _preview_scene == null or _selected_unit == null:
 		return
-	var config := SkirmishGenerator.SkirmishConfig.new()
-	config.size_preset = Vector2i(24, 12)  # 24x12 for preview
-	config.map_seed = randi()
-	var encounter: EncounterData = SkirmishGenerator.generate_encounter_with_player_unit(config, _selected_unit)
-	if _preview_scene.has_method("start_from_encounter"):
-		_preview_scene.start_from_encounter(encounter)
+	var session := TestBattleSession.new()
+	session.player_class_id = _selected_unit.id
+	session.set_all_passives_enabled(_selected_unit.id, true)
+	session.unkillable_dummies = true
+	session.infinite_player_ap = true
+	if _preview_scene.has_method("apply_training_board"):
+		_preview_scene.apply_training_board()
 
 
 func _restart_preview() -> void:
@@ -415,7 +416,7 @@ func _restart_preview() -> void:
 		return
 	_preview_viewport.remove_child(_preview_scene)
 	_preview_scene.queue_free()
-	_preview_scene = preload("res://scenes/TacticalCombat.tscn").instantiate()
+	_preview_scene = preload("res://scenes/TestBattle.tscn").instantiate()
 	_preview_viewport.add_child(_preview_scene)
 	_refresh_preview()
 
