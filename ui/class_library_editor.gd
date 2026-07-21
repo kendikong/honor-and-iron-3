@@ -1933,7 +1933,7 @@ func _bind_targeting_flags(parent: VBoxContainer, ability: AbilityData) -> void:
 		var lbl := Label.new()
 		lbl.text = "🏃 Movement Effect"
 		lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
-		lbl.add_theme_color_override("font_color", ClassLibraryTheme.color(ClassLibraryTheme.ACCENT_WARN))
+		lbl.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_INGAME)
 		row.add_child(lbl)
 
 
