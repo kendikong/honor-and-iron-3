@@ -701,7 +701,7 @@ func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> Strin
 
 
 func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
-	if slots.has("invalid") and slots["invalid"]:
+	if slots.has("invalid") and (typeof(slots["invalid"]) == TYPE_BOOL and slots["invalid"] or typeof(slots["invalid"]) == TYPE_STRING and slots["invalid"] != ""):
 		var reason: String = slots["invalid"] if typeof(slots["invalid"]) == TYPE_STRING else "cannot_use_ability"
 		EventBus.action_rejected.emit(reason)
 		return false
@@ -718,7 +718,7 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 	if _actions_are_wait_only(actions):
 		rpc_plan_wait(unit_id)
 		return true
-	if not bool(slots.get("_preview_validated", false)):
+	if slots.get("_preview_validated", false) != true:
 		var reason := preview_commit_valid(unit_id, actions)
 		if reason != "":
 			EventBus.action_rejected.emit(reason)

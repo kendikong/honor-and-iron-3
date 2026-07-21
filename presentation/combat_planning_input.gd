@@ -1127,7 +1127,7 @@ func _commit_at_cell(
 	var slots: Dictionary = _final_commit_slots_for_interaction(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
 	)
-	if bool(slots.get("_noop", false)):
+	if slots.get("_noop", false) == true:
 		_play_sfx("ability")
 		return true
 	if _is_invalid_dict(slots):
@@ -2010,7 +2010,7 @@ func _actions_from_slots(slots: Dictionary) -> Array[TimelineAction]:
 func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 	if _is_invalid_dict(slots):
 		return slots
-	if bool(slots.get("_noop", false)):
+	if slots.get("_noop", false) == true:
 		slots["_preview_validated"] = true
 		return slots
 	var actions: Array[TimelineAction] = _actions_from_slots(slots)
