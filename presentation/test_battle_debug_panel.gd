@@ -6,6 +6,7 @@ extends CanvasLayer
 const PANEL_WIDTH: int = 340
 const PANEL_HEIGHT_EXPANDED: float = 440.0
 const PANEL_HEIGHT_COLLAPSED: float = 48.0
+const PREFS_PATH: String = "user://test_battle_debug_prefs.cfg"
 
 var _map_view: TestBattleMapView
 var _session: TestBattleSession
@@ -36,21 +37,43 @@ func setup(
 	_session = session
 	_director = director
 	layer = 25
+	_load_settings()
 	_build_ui()
+	_set_collapsed(_collapsed)
 	_refresh_class_options()
 	_rebuild_passive_list()
 	_rebuild_skill_list()
+	
+func _load_settings() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(PREFS_PATH) == OK:
+		_collapsed = cfg.get_value("debug", "collapsed", false)
+		_session.player_class_id = StringName(cfg.get_value("debug", "class_id", "knight"))
+		_session.player_level = cfg.get_value("debug", "player_level", 99)
+		_session.unkillable_dummies = cfg.get_value("debug", "unkillable", false)
+		_session.infinite_player_ap = cfg.get_value("debug", "infinite_ap", false)
+		_session.passive_enabled = cfg.get_value("debug", "passive_enabled", {})
+		_session.skill_enabled = cfg.get_value("debug", "skill_enabled", {})
 
+func _save_settings() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("debug", "collapsed", _collapsed)
+	cfg.set_value("debug", "class_id", _session.player_class_id)
+	cfg.set_value("debug", "player_level", _session.player_level)
+	cfg.set_value("debug", "unkillable", _session.unkillable_dummies)
+	cfg.set_value("debug", "infinite_ap", _session.infinite_player_ap)
+	cfg.set_value("debug", "passive_enabled", _session.passive_enabled)
+	cfg.set_value("debug", "skill_enabled", _session.skill_enabled)
+	cfg.save(PREFS_PATH)
 
 func _build_ui() -> void:
 	_root = PanelContainer.new()
 	_root.name = "Panel"
-	# Anchor to bottom-right so the panel sits below the CombatHud Unit Info block,
-	# which occupies the top-right corner of the viewport.
-	_root.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	# Anchor to bottom-left so the panel sits above the bottom left corner.
+	_root.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	_root.offset_bottom = -8.0
-	_root.offset_right = -8.0
-	_root.offset_left = -float(PANEL_WIDTH + 8)
+	_root.offset_left = 8.0
+	_root.offset_right = float(PANEL_WIDTH + 8)
 	_root.offset_top = -PANEL_HEIGHT_EXPANDED
 	add_child(_root)
 
@@ -80,7 +103,7 @@ func _build_ui() -> void:
 	_collapse_btn.text = "▲"
 	_collapse_btn.tooltip_text = "Collapse debug panel"
 	_collapse_btn.custom_minimum_size = Vector2(28.0, 24.0)
-	_collapse_btn.pressed.connect(_toggle_collapsed)
+	_collapse_btn.pressed.connect(_on_collapse_pressed)
 	header.add_child(_collapse_btn)
 
 	# --- Scrollable body ---
@@ -118,6 +141,7 @@ func _build_ui() -> void:
 	_level_spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_level_spin.value_changed.connect(func(v: float) -> void:
 		_session.player_level = int(v)
+		_save_settings()
 		_apply_class_and_passives()
 	)
 	body.add_child(_level_spin)
@@ -140,6 +164,7 @@ func _build_ui() -> void:
 	_unkillable_check.button_pressed = _session.unkillable_dummies
 	_unkillable_check.toggled.connect(func(on: bool) -> void:
 		_session.unkillable_dummies = on
+		_save_settings()
 	)
 	body.add_child(_unkillable_check)
 
@@ -148,6 +173,7 @@ func _build_ui() -> void:
 	_infinite_ap_check.button_pressed = _session.infinite_player_ap
 	_infinite_ap_check.toggled.connect(func(on: bool) -> void:
 		_session.infinite_player_ap = on
+		_save_settings()
 		_map_view.apply_training_board()
 	)
 	body.add_child(_infinite_ap_check)
@@ -216,6 +242,7 @@ func _on_class_selected(index: int) -> void:
 		_session.player_class_id = class_id
 		_session.set_all_passives_enabled(_session.player_class_id, false)
 		_session.set_all_skills_enabled(_session.player_class_id, true)
+		_save_settings()
 		_rebuild_passive_list()
 		_rebuild_skill_list()
 		_apply_class_and_passives()
@@ -223,11 +250,13 @@ func _on_class_selected(index: int) -> void:
 
 func _on_passive_toggled(on: bool, passive_id: StringName) -> void:
 	_session.passive_enabled[passive_id] = on
+	_save_settings()
 	_apply_class_and_passives()
 
 
 func _on_skill_toggled(on: bool, skill_id: StringName) -> void:
 	_session.skill_enabled[skill_id] = on
+	_save_settings()
 	_apply_class_and_passives()
 
 
@@ -290,12 +319,19 @@ func _set_status(text: String) -> void:
 		_status_label.text = text
 
 
-func _toggle_collapsed() -> void:
-	_collapsed = not _collapsed
-	_body_scroll.visible = not _collapsed
-	_collapse_btn.text = "▼" if _collapsed else "▲"
-	_collapse_btn.tooltip_text = "Expand debug panel" if _collapsed else "Collapse debug panel"
-	_root.offset_top = -PANEL_HEIGHT_COLLAPSED if _collapsed else -PANEL_HEIGHT_EXPANDED
+func _on_collapse_pressed() -> void:
+	_set_collapsed(not _collapsed)
+	_save_settings()
+	
+func _set_collapsed(collapsed: bool) -> void:
+	_collapsed = collapsed
+	if _body_scroll != null:
+		_body_scroll.visible = not _collapsed
+	if _collapse_btn != null:
+		_collapse_btn.text = "▼" if _collapsed else "▲"
+		_collapse_btn.tooltip_text = "Expand debug panel" if _collapsed else "Collapse debug panel"
+	if _root != null:
+		_root.offset_top = -PANEL_HEIGHT_COLLAPSED if _collapsed else -PANEL_HEIGHT_EXPANDED
 
 
 static func _add_heading(parent: Control, text: String) -> void:
