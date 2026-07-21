@@ -70,7 +70,7 @@ func _ready() -> void:
 		_style_toolbar_button($BackButton)
 	$BackButton.pressed.connect(_on_back_pressed)
 	if MenuNavigation:
-		MenuNavigation.register(self, _on_back_pressed)
+		MenuNavigation.register(self, _on_back_pressed, _preview_allows_back)
 	_load_overrides()
 	_build_layout()
 	DataLibrary.get_all_player_units()
@@ -90,6 +90,15 @@ func _ready() -> void:
 
 func _on_back_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+
+
+## Guard for MenuNavigation: allow back only when the mouse is outside the preview panel.
+## Returns false when hovering the preview so the right-click propagates to the
+## SubViewport's _unhandled_input, where TacticalInputController cancels the action.
+func _preview_allows_back() -> bool:
+	if _preview_panel == null or not _preview_panel.visible:
+		return true
+	return not _preview_panel.get_global_rect().has_point(get_viewport().get_mouse_position())
 
 
 func _build_layout() -> void:

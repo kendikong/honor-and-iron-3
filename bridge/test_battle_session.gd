@@ -11,8 +11,11 @@ const DEFAULT_PLAYER_CELL: Vector2i = Vector2i(4, 5)
 const DEFAULT_DUMMY_CELL: Vector2i = Vector2i(7, 5)
 
 var player_class_id: StringName = DEFAULT_PLAYER_CLASS
+var player_level: int = TRAINING_LEVEL
 ## passive_id -> enabled
 var passive_enabled: Dictionary = {}
+## ability_id -> enabled (defaults to true — all skills on unless explicitly disabled)
+var skill_enabled: Dictionary = {}
 var dummy_coords: Array[Vector2i] = [DEFAULT_DUMMY_CELL]
 var extra_player_coords: Array[Vector2i] = []
 var unkillable_dummies: bool = true
@@ -21,8 +24,11 @@ var infinite_player_ap: bool = false
 
 func reset_defaults() -> void:
 	player_class_id = DEFAULT_PLAYER_CLASS
+	player_level = TRAINING_LEVEL
 	passive_enabled.clear()
+	skill_enabled.clear()
 	set_all_passives_enabled(player_class_id, false)
+	set_all_skills_enabled(player_class_id, true)
 	dummy_coords = [DEFAULT_DUMMY_CELL]
 	extra_player_coords.clear()
 	unkillable_dummies = true
@@ -37,6 +43,14 @@ func set_all_passives_enabled(class_id: StringName, enabled: bool) -> void:
 		passive_enabled[passive.id] = enabled
 
 
+func set_all_skills_enabled(class_id: StringName, enabled: bool) -> void:
+	var def: UnitData = DataLibrary.get_unit(class_id)
+	if def == null:
+		return
+	for ability: AbilityData in def.abilities:
+		skill_enabled[ability.id] = enabled
+
+
 func enabled_passives_for(class_id: StringName) -> Array[PassiveData]:
 	var def: UnitData = DataLibrary.get_unit(class_id)
 	var out: Array[PassiveData] = []
@@ -48,11 +62,27 @@ func enabled_passives_for(class_id: StringName) -> Array[PassiveData]:
 	return out
 
 
+func enabled_skills_for(class_id: StringName) -> Array[AbilityData]:
+	var def: UnitData = DataLibrary.get_unit(class_id)
+	var out: Array[AbilityData] = []
+	if def == null:
+		return out
+	for ability: AbilityData in def.abilities:
+		if skill_enabled.get(ability.id, true):
+			out.append(ability)
+	return out
+
+
 func player_unit_config() -> Dictionary:
 	var def: UnitData = DataLibrary.get_unit(player_class_id)
+	var all_abilities: Array[AbilityData] = DataLibrary.build_player_active_abilities(def, player_level)
+	var active_abilities: Array[AbilityData] = []
+	for ability: AbilityData in all_abilities:
+		if skill_enabled.get(ability.id, true):
+			active_abilities.append(ability)
 	return {
-		"level": TRAINING_LEVEL,
-		"active_abilities": DataLibrary.build_player_active_abilities(def, TRAINING_LEVEL),
+		"level": player_level,
+		"active_abilities": active_abilities,
 		"active_passives": enabled_passives_for(player_class_id),
 	}
 
