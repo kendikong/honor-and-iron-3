@@ -19,6 +19,9 @@ var _unit_tab: int = 0
 var _tab_btn_skills: Button
 var _tab_btn_class: Button
 var _unit_split: HSplitContainer
+var _main_split: HSplitContainer
+var _editor_split: HSplitContainer
+var _class_split: HSplitContainer
 var _list_scroll: ScrollContainer
 var _list_vbox: VBoxContainer
 var _data_scroll: ScrollContainer
@@ -155,6 +158,7 @@ func _build_layout() -> void:
 	top_bar.add_child(_preview_restart_btn)
 
 	var main_split := HSplitContainer.new()
+	_main_split = main_split
 	main_split.anchor_right = 1.0
 	main_split.anchor_bottom = 1.0
 	main_split.offset_top = 148.0
@@ -194,6 +198,7 @@ func _build_layout() -> void:
 	_add_color_key(list)
 
 	var editor_split := HSplitContainer.new()
+	_editor_split = editor_split
 	editor_split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	editor_split.size_flags_stretch_ratio = 0.55
 	editor_split.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -322,6 +327,7 @@ func _build_layout() -> void:
 	class_stats_scroll.add_child(_class_stats_vbox)
 
 	var class_split := HSplitContainer.new()
+	_class_split = class_split
 	class_split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	class_split.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_class_workspace.add_child(class_split)
@@ -346,6 +352,12 @@ func _build_layout() -> void:
 
 	_build_preview_panel(editor_split)
 
+	_load_layout_config()
+	_main_split.dragged.connect(func(_o: int) -> void: _save_layout_config())
+	_editor_split.dragged.connect(func(_o: int) -> void: _save_layout_config())
+	_unit_split.dragged.connect(func(_o: int) -> void: _save_layout_config())
+	_class_split.dragged.connect(func(_o: int) -> void: _save_layout_config())
+
 	_set_unit_tab(0)
 
 	_sync_detail_width()
@@ -355,6 +367,24 @@ func _build_layout() -> void:
 func _sync_detail_width() -> void:
 	if _detail_scroll != null and _detail_vbox != null:
 		_detail_vbox.custom_minimum_size.x = maxf(ClassLibraryTheme.dim(720.0), _detail_scroll.size.x - ClassLibraryTheme.dim(8.0))
+
+
+func _save_layout_config() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("layout", "main", _main_split.split_offset)
+	cfg.set_value("layout", "editor", _editor_split.split_offset)
+	cfg.set_value("layout", "unit", _unit_split.split_offset)
+	cfg.set_value("layout", "class", _class_split.split_offset)
+	cfg.save("user://class_editor_layout.cfg")
+
+
+func _load_layout_config() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load("user://class_editor_layout.cfg") == OK:
+		_main_split.split_offset = int(cfg.get_value("layout", "main", 0))
+		_editor_split.split_offset = int(cfg.get_value("layout", "editor", 0))
+		_unit_split.split_offset = int(cfg.get_value("layout", "unit", 0))
+		_class_split.split_offset = int(cfg.get_value("layout", "class", 0))
 
 
 func _build_preview_panel(parent: HSplitContainer) -> void:
