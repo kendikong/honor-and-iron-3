@@ -322,7 +322,7 @@ static func dash(
 	if ability_id != &"":
 		var source_unit := pusher if pusher != null else unit
 		var ability: AbilityData = source_unit.get_ability_by_id(ability_id) if source_unit != null else null
-		if ability != null:
+		if ability != null and ability.presentation_anim != GameEnums.PresentationAnim.AUTO:
 			anim = ability.presentation_anim
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 		"actor": unit.id,
