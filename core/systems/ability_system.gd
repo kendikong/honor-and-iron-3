@@ -156,7 +156,6 @@ static func ability_has_movement_effect(ability: AbilityData) -> bool:
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.MOVE,
 			GameEnums.EffectType.TELEPORT_CASTER,
-			GameEnums.EffectType.SWAP,
 		]:
 			return true
 	return false
@@ -170,7 +169,6 @@ static func is_movement_skill(ability: AbilityData) -> bool:
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.MOVE,
 			GameEnums.EffectType.TELEPORT_CASTER,
-			GameEnums.EffectType.SWAP,
 		]:
 			return true
 	return false

@@ -1587,7 +1587,7 @@ func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effect
 			var is_spawn_eff: bool = eff.type == GameEnums.EffectType.SPAWN
 			var is_movement: bool = eff.type in [
 				GameEnums.EffectType.DASH, GameEnums.EffectType.MOVE,
-				GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.SWAP,
+				GameEnums.EffectType.TELEPORT_CASTER,
 			]
 			
 			var amt_lbl: Label = eff_amount_row[0]
