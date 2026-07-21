@@ -1247,9 +1247,21 @@ func _play_attack_anim(event: SimEvent) -> void:
 				thrust_dir = Vector2(delta2).normalized()
 	var ability_id: StringName = event.data.get("ability", &"")
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
-	if ability_data != null and AbilitySystem.ability_has_dash(ability_data):
-		actor.play_dash_windup(thrust_dir, anim)
-		return
+	if ability_data != null and AbilitySystem.ability_has_movement_effect(ability_data):
+		var pres_anim: int = ability_data.presentation_anim
+		if pres_anim == GameEnums.PresentationAnim.AUTO:
+			if AbilitySystem.effect_amount(ability_data, GameEnums.EffectType.DASH) > 0:
+				pres_anim = GameEnums.PresentationAnim.SUPER_RUN
+			elif AbilitySystem.effect_amount(ability_data, GameEnums.EffectType.BULLDOZE) > 0:
+				pres_anim = GameEnums.PresentationAnim.RUN
+			elif AbilitySystem.effect_amount(ability_data, GameEnums.EffectType.MOVE) > 0:
+				pres_anim = GameEnums.PresentationAnim.WALK
+				
+		if pres_anim == GameEnums.PresentationAnim.SUPER_RUN:
+			actor.play_dash_windup(thrust_dir, anim)
+			return
+		if pres_anim in [GameEnums.PresentationAnim.WALK, GameEnums.PresentationAnim.RUN, GameEnums.PresentationAnim.NONE]:
+			return
 	if ability_data != null and AbilitySystem.ability_uses_spellcast_animation(ability_data):
 		var target_ids: Array[int] = _ability_affected_unit_ids_from_event(event, ability_data)
 		_spellcast_released = false

@@ -211,8 +211,8 @@ static func can_end_movement_on(board: BoardState, coord: Vector2i, unit: UnitSt
 		return true
 	return false
 
-## Walk the caster along a path when the ability has TRAMPLE/BULLDOZE but no DASH.
-static func execute_pass_through_walk(
+## Walk the caster along a path when the ability has TRAMPLE/BULLDOZE or MOVE.
+static func execute_skill_walk(
 	board: BoardState,
 	unit: UnitState,
 	goal: Vector2i,
@@ -220,6 +220,7 @@ static func execute_pass_through_walk(
 	ability: AbilityData,
 	events: Array[SimEvent],
 	effects: Array,
+	walk_steps: int = -1,
 ) -> void:
 	if unit == null or not unit.is_alive() or ability == null:
 		return
@@ -227,7 +228,12 @@ static func execute_pass_through_walk(
 	var trample_atk: int = int(mods.get("trample_atk", 0))
 	var bulldoze: int = int(mods.get("bulldoze", 0))
 	var trample_push: int = int(mods.get("push", 0))
-	if trample_atk <= 0 and bulldoze <= 0:
+	var has_move := false
+	for eff in effects:
+		if eff.type == GameEnums.EffectType.MOVE:
+			has_move = true
+			break
+	if trample_atk <= 0 and bulldoze <= 0 and not has_move:
 		return
 	var move_cost: int = move_cost_for(unit)
 	var mt: GameEnums.MovementType = (
@@ -235,8 +241,10 @@ static func execute_pass_through_walk(
 		if unit.definition != null
 		else GameEnums.MovementType.WALK
 	)
+	if walk_steps < 0:
+		walk_steps = ability.range_tiles
 	var path: Array[Vector2i] = resolve_move_path(
-		board, unit, goal, waypoints, ability.range_tiles, ability
+		board, unit, goal, waypoints, walk_steps, ability
 	)
 	if path.is_empty() or path[path.size() - 1] != goal:
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
@@ -283,6 +291,7 @@ static func execute_pass_through_walk(
 		"path": path,
 		"is_pass_through_walk": true,
 		"ability_id": ability_id,
+		"presentation_anim": ability.presentation_anim,
 	}))
 	TerrainSystem.apply_landing(board, unit, events)
 

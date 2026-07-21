@@ -74,6 +74,7 @@ enum EffectType {
 	REFUND_AP_ON_CC, ## Refund AP if target already has ROOT or STUN
 	TRAMPLE, ## Pass-through move: ATK X on enemies moved through; no displacement; end on open tile.
 	BULLDOZE, ## Pass-through move: collision base X + PUSH X sideways; axial push when landing on target.
+	MOVE, ## Skill-driven non-instant movement. Walk physics; respects collision unless combined with TRAMPLE/BULLDOZE.
 }
 
 ## Types of temporary statuses that can be applied to units.
@@ -194,7 +195,9 @@ enum PresentationAnim {
 	AUTO,
 	ATTACK,
 	SPELL,
-	MOVE,
+	WALK,
+	RUN,
+	SUPER_RUN,
 	NONE,
 }
 

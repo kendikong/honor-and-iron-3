@@ -54,7 +54,7 @@ static func ability_glyph(ability: AbilityData) -> String:
 		return GLYPH_RUN
 	if AbilitySystem.ability_is_offensive_dash(ability):
 		return GLYPH_ATTACK
-	if AbilitySystem.ability_has_dash(ability):
+	if AbilitySystem.ability_has_movement_effect(ability):
 		return GLYPH_DASH
 	if ability.is_movement_kind():
 		for eff: EffectData in ability.effects:

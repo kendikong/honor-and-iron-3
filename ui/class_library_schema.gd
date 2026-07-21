@@ -27,6 +27,7 @@ static func manual_keywords() -> Dictionary:
 		"SHIELD": "Gain temporary over-HP equal to Round Down(X * 10% of the target's Max HP). Takes priority over normal HP.",
 		"CLEANSE": "Instantly remove all negative debuffs and status effects.",
 		"PURGE": "Instantly remove all positive buffs and shields.",
+		"MOVE": "Move up to X tiles.",
 		"PIERCE": "This attack ignores the target's DEF and MAG entirely.",
 		"PUSH": "Displace target X tiles away from caster.",
 		"PULL": "Displace target X tiles toward caster.",
@@ -52,7 +53,6 @@ static func manual_keywords() -> Dictionary:
 		# Economy
 		"AP": "Action Points — spent on class Active Skills and Run.",
 		"MOV": "Movement Points — spent on basic walks and class Movement Skills.",
-		"MOVE": "Move up to X tiles.",
 		# Targeting (Manhattan)
 		"RANGE": "Maximum target distance in tiles. Line of sight required unless otherwise specified.",
 		"RANGE 0": "Anchored to the caster's current tile (Self).",
@@ -92,6 +92,8 @@ static func manual_keyword_system(kw: String) -> String:
 			return "EffectType.CLEANSE strips debuffs (GameEnums.is_debuff) from target.active_statuses."
 		"PURGE":
 			return "EffectType.PURGE removes buffs and sets target.armor = 0."
+		"MOVE":
+			return "EffectType.MOVE → MovementSystem.execute_move or execute_skill_walk."
 		"PIERCE":
 			return "StatusType.PIERCE on attacker: deal_damage zeroes DEF/MAG mitigation and fortitude."
 		"PUSH":
@@ -132,7 +134,7 @@ static func manual_keyword_system(kw: String) -> String:
 			)
 		"AP":
 			return "UnitState.ability.points_left; AbilitySystem._has_resource_for_ability spends on CLASS_SKILL / Run."
-		"MOV", "MOVE":
+		"MOV":
 			return "UnitState.movement.points_left; MovementSystem.execute_move deducts per tile; MOVEMENT_SKILL uses MP cost."
 		"RANGE":
 			return "AbilityData.range_tiles vs GridSystem.manhattan in AbilitySystem.can_use; LOS checks in planning input."
@@ -315,8 +317,11 @@ static func bible_ability_targeting_label(ability: AbilityData) -> String:
 			return "RANGE 2"
 		_:
 			pass
-	if ability.is_movement_kind():
-		if ability.range_tiles > 0:
+	if ability.range_tiles > 0:
+		if AbilitySystem.ability_has_movement_effect(ability):
+			var move_amount := AbilitySystem.effect_amount(ability, GameEnums.EffectType.MOVE)
+			if move_amount > 0:
+				return "MOVE %d" % move_amount
 			return "MOVE %d" % ability.range_tiles
 		return "MOVE"
 	if ability.targeting_mode == GameEnums.TargetingMode.SELF and ability.range_tiles == 0:
@@ -333,7 +338,7 @@ static func bible_ability_targeting_label(ability: AbilityData) -> String:
 static func bible_ability_aoe_label(ability: AbilityData) -> String:
 	if ability == null or ability.target_shape == GameEnums.TargetShape.SINGLE:
 		return ""
-	if AbilitySystem.has_pass_through_effects(ability) or AbilitySystem.ability_has_dash(ability):
+	if AbilitySystem.has_pass_through_effects(ability) or AbilitySystem.ability_has_movement_effect(ability):
 		return ""
 	match ability.id:
 		&"knight_seismic_stomp":
@@ -768,10 +773,12 @@ static func _effect_type_system(k: String) -> String:
 			return "AbilitySystem → PhysicsSystem.swap: swap grid occupancy, terrain landing on both."
 		"DASH":
 			return "AbilitySystem queues dash pending_pushes → PhysicsSystem.dash along straight line."
+		"MOVE":
+			return "AbilitySystem executes a non-instant skill walk via MovementSystem.execute_skill_walk()."
 		"TRAMPLE":
-			return "Paired with movement: AbilitySystem reads amount → dash or execute_pass_through_walk."
+			return "Paired with movement: pass-through walk via MovementSystem.execute_skill_walk()."
 		"BULLDOZE":
-			return "Paired with movement: dash pending_pushes or execute_pass_through_walk; caster collision immune."
+			return "Paired with movement: dash pending_pushes or execute_skill_walk(); caster collision immune."
 		"HEAL":
 			return "AbilitySystem → CombatSystem.heal with ability scaling_stat."
 		"ARMOR_UP":

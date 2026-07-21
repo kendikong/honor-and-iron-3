@@ -1115,10 +1115,25 @@ func _on_sim_event(event: SimEvent) -> void:
 					path = [d["to"]]
 				_set_waypoints(actor_id, path)
 				_set_facing_from_path(actor_id, d.get("from", Vector2i.ZERO), path)
-				if d.get("is_dash", false):
+				var pres_anim: int = d.get("presentation_anim", GameEnums.PresentationAnim.AUTO)
+				if pres_anim == GameEnums.PresentationAnim.AUTO:
+					var ability_id: StringName = d.get("ability_id", d.get("ability", &""))
+					var ability = _board.get_ability(actor_id, ability_id) if _board != null else null
+					if ability != null:
+						if AbilitySystem.effect_amount(ability, GameEnums.EffectType.DASH) > 0:
+							pres_anim = GameEnums.PresentationAnim.SUPER_RUN
+						elif AbilitySystem.effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0:
+							pres_anim = GameEnums.PresentationAnim.RUN
+						elif AbilitySystem.effect_amount(ability, GameEnums.EffectType.MOVE) > 0:
+							pres_anim = GameEnums.PresentationAnim.WALK
+
+				if d.get("is_dash", false) or pres_anim == GameEnums.PresentationAnim.SUPER_RUN:
 					var dash_step: float = float(d.get("dash_step_time", 0.08))
 					if _visual.has(actor_id):
 						_visual[actor_id]["move_speed"] = CELL / dash_step
+				elif pres_anim == GameEnums.PresentationAnim.RUN:
+					if _visual.has(actor_id):
+						_visual[actor_id]["move_speed"] = CELL / 0.12
 				elif _visual.has(actor_id):
 					_visual[actor_id].erase("move_speed")
 		GameEnums.SimEventType.UNIT_PUSHED:
@@ -2986,7 +3001,7 @@ func _drag_self_skill_intent(release_local: Vector2) -> bool:
 	return Time.get_ticks_msec() - _drag_press_time_ms >= DRAG_SELF_SKILL_DELAY_MS
 
 func _ability_has_dash(ability: AbilityData) -> bool:
-	return AbilitySystem.ability_has_dash(ability)
+	return AbilitySystem.ability_has_movement_effect(ability)
 
 func _ability_is_offensive_dash(ability: AbilityData) -> bool:
 	return AbilitySystem.ability_is_offensive_dash(ability)
@@ -3654,6 +3669,7 @@ func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> Str
 			GameEnums.EffectType.DAMAGE_SELF: parts.append("Self %s" % _kw_hint("ATK %s" % _get_amount_string(effect), "Ignores Armor and deals direct damage to caster."))
 			GameEnums.EffectType.CLEANSE: parts.append(_kw_hint("CLEANSE", "Removes all negative status effects from target."))
 			GameEnums.EffectType.PURGE: parts.append(_kw_hint("PURGE", "Removes all positive buffs and shields from target."))
+			GameEnums.EffectType.MOVE: parts.append(_kw_hint("MOVE %s" % _get_amount_string(effect), "Standard skill movement. Walks along a path."))
 			GameEnums.EffectType.DASH: parts.append(_kw_hint("DASH %s" % _get_amount_string(effect), "Move up to the listed distance in a straight line."))
 			GameEnums.EffectType.TRAMPLE: parts.append(_kw_hint("TRAMPLE %s" % _get_amount_string(effect), _glossary_def("TRAMPLE")))
 			GameEnums.EffectType.BULLDOZE: parts.append(_kw_hint("BULLDOZE %s" % _get_amount_string(effect), _glossary_def("BULLDOZE")))
@@ -3698,6 +3714,7 @@ func _ability_effect_string(ability: AbilityData, unit: UnitState = null) -> Str
 			GameEnums.EffectType.DAMAGE_SELF: parts.append("Self ATK %s" % _get_amount_string(effect))
 			GameEnums.EffectType.CLEANSE: parts.append("CLEANSE")
 			GameEnums.EffectType.PURGE: parts.append("PURGE")
+			GameEnums.EffectType.MOVE: parts.append("MOVE %s" % _get_amount_string(effect))
 			GameEnums.EffectType.DASH: parts.append("DASH %s" % _get_amount_string(effect))
 			GameEnums.EffectType.TRAMPLE: parts.append("TRAMPLE %s" % _get_amount_string(effect))
 			GameEnums.EffectType.BULLDOZE: parts.append("BULLDOZE %s" % _get_amount_string(effect))

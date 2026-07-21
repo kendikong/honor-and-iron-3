@@ -1865,7 +1865,7 @@ func _build_commit_slots_at_cell(
 		if hover_unit == null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
 			if _in_ability_range_of_coord(actor, cell):
 				var board: BoardState = _proj()
-				if AbilitySystem.has_pass_through_effects(ability) and not AbilitySystem.ability_has_dash(ability):
+				if AbilitySystem.has_pass_through_effects(ability) and not AbilitySystem.ability_has_movement_effect(ability):
 					var path: Array[Vector2i] = MovementSystem.find_path(board, actor.position, cell, ability.range_tiles)
 					if path.is_empty():
 						slots["invalid"] = true
@@ -2402,7 +2402,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 		if _prefer_approach_over_trample_move(actor, occ) or not _can_move_to(actor, occ.position):
 			drag_target_id = occ.id
 			var ability := _selected_ability_data(actor)
-			if ability != null and AbilitySystem.ability_has_dash(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
+			if ability != null and AbilitySystem.ability_has_movement_effect(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
 				emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.SPELL, atk_face, preview_cell, drag_preview_failed)
 			else:
 				emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.ATTACK, atk_face, preview_cell, drag_preview_failed)

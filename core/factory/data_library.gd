@@ -102,7 +102,7 @@ static func _ensure_init() -> void:
 	_universal_run.targeting_mode = GameEnums.TargetingMode.SELF
 	_universal_run.targeting_flags = GameEnums.TargetingFlags.SELF
 	_universal_run.sync_legacy_targeting()
-	_universal_run.presentation_anim = GameEnums.PresentationAnim.MOVE
+	_universal_run.presentation_anim = GameEnums.PresentationAnim.WALK
 	_universal_wait = _make_ability(&"universal_wait", "Wait", 0, [], 0)
 	_universal_wait.kind = GameEnums.AbilityKind.UNIVERSAL_WAIT
 	_universal_wait.targeting_mode = GameEnums.TargetingMode.SELF
@@ -508,7 +508,7 @@ static func _make_movement_ability(
 	ability.movement_point_cost = mp_cost
 	ability.targeting_mode = targeting
 	ability.is_movement_skill = true
-	ability.presentation_anim = GameEnums.PresentationAnim.MOVE
+	ability.presentation_anim = GameEnums.PresentationAnim.WALK
 	ability.targeting_flags = AbilityData._targeting_mode_to_flags(ability.targeting_mode)
 	ability.sync_legacy_targeting()
 	return ability

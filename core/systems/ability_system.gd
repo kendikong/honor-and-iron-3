@@ -52,26 +52,33 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	if ability.consumes_action_slot() and not actor.can_use_action_slot():
 		return false
 
-	for effect in ability.effects:
-		if effect.type == GameEnums.EffectType.DASH:
-			if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
-				return false
-			var steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
-			if steps < 1 or steps > effect.amount:
-				return false
-			if effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0:
-				var end_unit := board.get_unit_at(action.target_coord)
-				if end_unit != null and end_unit.id != actor.id:
-					return false
+	var has_displacement := effect_amount(ability, GameEnums.EffectType.PUSH) > 0 \
+		or effect_amount(ability, GameEnums.EffectType.PULL) > 0 \
+		or effect_amount(ability, GameEnums.EffectType.SWAP) > 0
+		
+	var is_dash := ability_has_dash(ability)
+	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
+	
+	if is_dash:
+		if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
+			return false
+		var steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
+		var dash_amount := effect_amount(ability, GameEnums.EffectType.DASH)
+		if steps < 1 or steps > dash_amount:
+			return false
 
-	if has_pass_through_effects(ability) and not ability_has_dash(ability):
-		if effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0:
-			var end_occupant := board.get_unit_at(action.target_coord)
-			if end_occupant != null and end_occupant.id != actor.id:
-				return false
+	if is_move or (has_pass_through_effects(ability) and not is_dash):
 		if action.target_coord != actor.position:
-			var walk_steps: int = ability.range_tiles
+			var walk_steps: int = effect_amount(ability, GameEnums.EffectType.MOVE)
+			if walk_steps <= 0:
+				walk_steps = ability.range_tiles
 			if GridSystem.manhattan(actor.position, action.target_coord) > walk_steps:
+				return false
+				
+	if has_pass_through_effects(ability) or is_move or is_dash:
+		if not has_displacement:
+			var end_unit := board.get_unit_at(action.target_coord)
+			if end_unit != null and end_unit.id != actor.id:
 				return false
 
 	return true
@@ -141,12 +148,27 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 	return false
 
 
+static func ability_has_movement_effect(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	for eff in ability.effects:
+		if eff.type in [
+			GameEnums.EffectType.DASH,
+			GameEnums.EffectType.MOVE,
+			GameEnums.EffectType.TELEPORT_CASTER,
+			GameEnums.EffectType.SWAP,
+		]:
+			return true
+	return false
+
+
 static func is_movement_skill(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
 	for eff in ability.effects:
 		if eff.type in [
 			GameEnums.EffectType.DASH,
+			GameEnums.EffectType.MOVE,
 			GameEnums.EffectType.TELEPORT_CASTER,
 			GameEnums.EffectType.SWAP,
 		]:
@@ -158,7 +180,7 @@ static func is_movement_skill(ability: AbilityData) -> bool:
 static func planning_commit_flow(actor: UnitState, ability: AbilityData) -> int:
 	if actor == null or ability == null:
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
-	if not ability_has_dash(ability) or can_target_self(actor, ability):
+	if not ability_has_movement_effect(ability) or can_target_self(actor, ability):
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
 	if not can_plan(actor, ability):
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
@@ -186,7 +208,7 @@ static func planning_auto_arms_after_premove(actor: UnitState, ability: AbilityD
 static func planning_awaiting_phase(ability: AbilityData) -> int:
 	if ability == null:
 		return GameEnums.PlanningAwaitingPhase.GENERIC
-	if ability_has_dash(ability):
+	if ability_has_movement_effect(ability):
 		return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
 	return GameEnums.PlanningAwaitingPhase.GENERIC
 
@@ -259,7 +281,7 @@ static func planning_threat_tiles(
 	if board == null or unit == null or ability == null:
 		var empty: Array[Vector2i] = []
 		return empty
-	if ability_has_dash(ability):
+	if ability_has_movement_effect(ability):
 		return dash_line_threat_tiles(board, origin, dash_steps(ability))
 	var eff_range: int = unit.get_ability_range(ability)
 	if eff_range <= 0:
@@ -550,7 +572,13 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 		return false
 	if ability.presentation_anim == GameEnums.PresentationAnim.ATTACK:
 		return true
-	if ability.presentation_anim in [GameEnums.PresentationAnim.SPELL, GameEnums.PresentationAnim.MOVE, GameEnums.PresentationAnim.NONE]:
+	if ability.presentation_anim in [
+		GameEnums.PresentationAnim.SPELL,
+		GameEnums.PresentationAnim.WALK,
+		GameEnums.PresentationAnim.RUN,
+		GameEnums.PresentationAnim.SUPER_RUN,
+		GameEnums.PresentationAnim.NONE
+	]:
 		return false
 	if ability.is_movement_kind() or ability.is_pre_move_kind():
 		return false
@@ -581,7 +609,7 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 static func ability_uses_spellcast_animation(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
-	if ability_has_dash(ability):
+	if ability_has_movement_effect(ability):
 		return false
 	if ability.presentation_anim == GameEnums.PresentationAnim.SPELL:
 		return true
@@ -594,7 +622,7 @@ static func ability_uses_spellcast_animation(ability: AbilityData) -> bool:
 
 ## Dash skill that reads as an attack (damage, bulldoze/trample, or enemy targeting).
 static func ability_is_offensive_dash(ability: AbilityData) -> bool:
-	if ability == null or not ability_has_dash(ability):
+	if ability == null or not ability_has_movement_effect(ability):
 		return false
 	if ability_uses_attack_animation(ability):
 		return true
@@ -655,10 +683,16 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if actor.is_ability_upgraded(action.ability.id) and action.ability.upgraded_effects.size() > 0:
 		effects_to_apply = action.ability.upgraded_effects
 
-	if has_pass_through_effects(ability) and not ability_has_dash(ability) and target_coord != actor.position:
-		MovementSystem.execute_pass_through_walk(
-			board, actor, target_coord, action.waypoints, ability, events, effects_to_apply
+	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
+	if (has_pass_through_effects(ability) or is_move) and not ability_has_dash(ability) and target_coord != actor.position:
+		var walk_steps: int = effect_amount(ability, GameEnums.EffectType.MOVE)
+		if walk_steps <= 0:
+			walk_steps = ability.range_tiles
+		MovementSystem.execute_skill_walk(
+			board, actor, target_coord, action.waypoints, ability, events, effects_to_apply, walk_steps
 		)
+		_resolve_pass_through_events(board, actor, ability)
+		return
 
 	for effect in effects_to_apply:
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER]:
