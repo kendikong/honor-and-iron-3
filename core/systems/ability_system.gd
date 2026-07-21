@@ -698,13 +698,22 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			
 	var affected_tiles := GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
 	
+	var pres_anim: int = action.ability.presentation_anim
+	if pres_anim == GameEnums.PresentationAnim.AUTO:
+		if effect_amount(action.ability, GameEnums.EffectType.DASH) > 0:
+			pres_anim = GameEnums.PresentationAnim.SUPER_RUN
+		elif effect_amount(action.ability, GameEnums.EffectType.BULLDOZE) > 0:
+			pres_anim = GameEnums.PresentationAnim.RUN
+		elif effect_amount(action.ability, GameEnums.EffectType.MOVE) > 0:
+			pres_anim = GameEnums.PresentationAnim.WALK
+			
 	events.append(SimEvent.make(GameEnums.SimEventType.ABILITY_USED, {
 		"actor": action.actor_id,
 		"ability": action.ability.id,
 		"ability_name": action.ability.display_name,
 		"target_coord": target_coord,
 		"target_unit": action.target_unit_id,
-		"presentation_anim": action.ability.presentation_anim,
+		"presentation_anim": pres_anim,
 	}))
 	
 	var effects_to_apply = action.ability.effects

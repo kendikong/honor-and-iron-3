@@ -1665,6 +1665,10 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 	
 	if ability_event != null:
 		EventBus.sim_event.emit(ability_event)
+		var delay: float = _playback_delay_for_event(ability_event)
+		await get_tree().create_timer(delay).timeout
+		if run_id != _run_id:
+			return
 	
 	if move_event == null:
 		for e in post_dash_events:
