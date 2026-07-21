@@ -2489,3 +2489,14 @@ func _facing_toward(from: Vector2i, to: Vector2i) -> int:
 	if to.y < from.y:
 		return GameEnums.Facing.NORTH
 	return GameEnums.Facing.EAST
+
+
+func _is_invalid_dict(d: Dictionary) -> bool:
+	if not d.has('invalid'):
+		return false
+	var v: Variant = d['invalid']
+	if typeof(v) == TYPE_BOOL:
+		return v
+	if typeof(v) == TYPE_STRING:
+		return v != ''
+	return false
