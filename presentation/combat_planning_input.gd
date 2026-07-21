@@ -2020,8 +2020,9 @@ func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 	if _slots_are_wait_only(actions):
 		slots["_preview_validated"] = true
 		return slots
-	if _director != null and not _director.preview_commit_valid(unit_id, actions):
-		slots["invalid"] = true
+	var error_reason: String = _director.preview_commit_valid(unit_id, actions) if _director != null else ""
+	if error_reason != "":
+		slots["invalid"] = error_reason
 		return slots
 	slots["_preview_validated"] = true
 	return slots
