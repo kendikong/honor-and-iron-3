@@ -28,6 +28,7 @@ var _skill_list: VBoxContainer
 var _skill_scroll: ScrollContainer
 var _log_label: RichTextLabel
 var _warn_label: RichTextLabel
+var _warn_panel: PanelContainer
 var _force_basic_check: CheckBox
 var _auto_run_check: CheckBox
 var _auto_use_skill_check: CheckBox
@@ -137,9 +138,9 @@ func set_warning(text: String) -> void:
 		return
 	if text.is_empty():
 		_warn_label.text = ""
-		_warn_label.visible = false
+		_warn_panel.visible = false
 		return
-	_warn_label.visible = true
+	_warn_panel.visible = true
 	_warn_label.text = "[color=#%s]! %s[/color]" % [CombatUiFormatters.HEX_DEATH, text]
 
 
@@ -171,7 +172,8 @@ func _make_panel_column(left_side: bool) -> Control:
 	if left_side:
 		_tile_info_label = _add_weighted_rich_panel(col, "Tile", 0.2)
 		_warn_label = _add_weighted_rich_panel(col, "Warning", 0.08)
-		_warn_label.visible = false
+		_warn_panel = _warn_label.get_parent().get_parent().get_parent() as PanelContainer
+		_warn_panel.visible = false
 		_log_label = _add_weighted_log_panel(col, 0.52)
 		_intent_label = _add_weighted_rich_panel(col, "Enemy Intent", 0.2)
 	else:

@@ -212,7 +212,13 @@ static func planning_awaiting_phase(ability: AbilityData) -> int:
 
 static func planning_awaiting_endpoint_range(ability: AbilityData) -> int:
 	if planning_awaiting_phase(ability) == GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
-		return dash_steps(ability)
+		var ds := dash_steps(ability)
+		if ds > 0:
+			return ds
+		var ws := effect_amount(ability, GameEnums.EffectType.MOVE)
+		if ws > 0:
+			return ws
+		return ability.range_tiles
 	return 0
 
 
@@ -226,9 +232,10 @@ static func planning_is_valid_awaiting_endpoint(
 		return false
 	if coord == origin:
 		return false
-	var delta: Vector2i = coord - origin
-	if delta.x != 0 and delta.y != 0:
-		return false
+	if ability_has_dash(ability):
+		var delta: Vector2i = coord - origin
+		if delta.x != 0 and delta.y != 0:
+			return false
 	var dist: int = GridSystem.manhattan(origin, coord)
 	return dist >= 1 and dist <= max_range
 

@@ -685,9 +685,9 @@ func make_planning_move_action(
 	return TimelineAction.make_move(unit_id, dest, -1, waypoints, timing)
 
 
-func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> bool:
+func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> String:
 	if unit_id < 0 or actions.is_empty():
-		return false
+		return "invalid"
 	var combined: Timeline = _build_preview_plan(unit_id, actions)
 	var trial: BoardState = base_board.clone()
 	var ev: Array[SimEvent] = []
@@ -696,13 +696,14 @@ func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> bool:
 		if e.type != GameEnums.SimEventType.ACTION_FAILED:
 			continue
 		if int(e.data.get("actor", -1)) == unit_id:
-			return false
-	return true
+			return e.data.get("reason", "cannot_use_ability") as String
+	return ""
 
 
 func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
-	if bool(slots.get("invalid", false)):
-		EventBus.action_rejected.emit("cannot_use_ability")
+	if slots.has("invalid") and slots["invalid"]:
+		var reason: String = slots["invalid"] if typeof(slots["invalid"]) == TYPE_STRING else "cannot_use_ability"
+		EventBus.action_rejected.emit(reason)
 		return false
 	var actions: Array[TimelineAction] = []
 	var plans: Array[Timeline] = []
@@ -718,8 +719,9 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 		rpc_plan_wait(unit_id)
 		return true
 	if not bool(slots.get("_preview_validated", false)):
-		if not preview_commit_valid(unit_id, actions):
-			EventBus.action_rejected.emit("cannot_use_ability")
+		var reason := preview_commit_valid(unit_id, actions)
+		if reason != "":
+			EventBus.action_rejected.emit(reason)
 			return false
 	var has_pre_move: bool = not (slots.get("pre", []) as Array).is_empty()
 	var has_action: bool = not (slots.get("action", []) as Array).is_empty()
