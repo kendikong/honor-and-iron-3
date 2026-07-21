@@ -54,7 +54,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 
 	var has_displacement := effect_amount(ability, GameEnums.EffectType.PUSH) > 0 \
 		or effect_amount(ability, GameEnums.EffectType.PULL) > 0 \
-		or effect_amount(ability, GameEnums.EffectType.SWAP) > 0
+		or effect_amount(ability, GameEnums.EffectType.SWAP) > 0 \
+		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
 		
 	var is_dash := ability_has_dash(ability)
 	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
