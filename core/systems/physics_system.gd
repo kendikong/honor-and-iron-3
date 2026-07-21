@@ -204,7 +204,7 @@ static func dash(
 	
 	var from := unit.position
 	var traveled := 0
-	var knight_on_board := true
+	var unit_on_board := true
 	var use_bulldoze := bulldoze > 0
 	var use_trample_atk := trample_atk > 0 and not use_bulldoze
 	var immune_id := unit.id if caster_collision_immune else -1
@@ -250,7 +250,7 @@ static func dash(
 			GridSystem.set_occupant(board, unit.position, restore_id)
 
 		var prev := unit.position
-		if knight_on_board:
+		if unit_on_board:
 			GridSystem.set_occupant(board, prev, -1)
 		unit.position = next
 		traveled += 1
@@ -259,14 +259,14 @@ static func dash(
 		var at_next := board.get_unit_at(next)
 		if at_next == null:
 			GridSystem.set_occupant(board, next, unit.id)
-			knight_on_board = true
+			unit_on_board = true
 		elif at_next.team == unit.team:
-			knight_on_board = false
+			unit_on_board = false
 		elif board.get_unit_at(next) == null:
 			GridSystem.set_occupant(board, next, unit.id)
-			knight_on_board = true
+			unit_on_board = true
 		else:
-			knight_on_board = false
+			unit_on_board = false
 
 		if GridSystem.is_hazard(board, next):
 			break
@@ -283,12 +283,12 @@ static func dash(
 			GridSystem.set_occupant(board, restore_coord, restore_unit_id)
 	
 	if traveled == 0:
-		if knight_on_board:
+		if unit_on_board:
 			GridSystem.set_occupant(board, from, unit.id)
 		unit.position = from
 		return
 	
-	if not knight_on_board and board.get_unit_at(unit.position) == null:
+	if not unit_on_board and board.get_unit_at(unit.position) == null:
 		GridSystem.set_occupant(board, unit.position, unit.id)
 	elif not use_trample_atk and not use_bulldoze:
 		var tile_occupant := board.get_unit_at(unit.position)
