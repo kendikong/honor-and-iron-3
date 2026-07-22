@@ -1744,6 +1744,7 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 	var post_move_events: Array[SimEvent] = []
 	var attack_events: Array[SimEvent] = []
 	var push_events:   Array[SimEvent] = []
+	var post_push_events: Array[SimEvent] = []
 	var meta_events:   Array[SimEvent] = []
 	
 	for event in events:
@@ -1780,7 +1781,10 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 			GameEnums.SimEventType.STATUS_APPLIED, \
 			GameEnums.SimEventType.STATUS_REMOVED, \
 			GameEnums.SimEventType.UNIT_EXPLODED:
-				attack_events.append(event)
+				if event.data.get("is_collision_side_effect", false):
+					post_push_events.append(event)
+				else:
+					attack_events.append(event)
 			GameEnums.SimEventType.UNIT_PUSHED, \
 			GameEnums.SimEventType.COLLISION:
 				push_events.append(event)
@@ -1825,6 +1829,18 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 			if run_id != _run_id: return
 			EventBus.sim_event.emit(e)
 		await _await_push_animations(run_id)
+	
+	# --- Collision side effects (damage, death, statuses) ---
+	var post_push_i: int = 0
+	while post_push_i < post_push_events.size():
+		if run_id != _run_id:
+			return
+		var e: SimEvent = post_push_events[post_push_i]
+		EventBus.sim_event.emit(e)
+		var delay: float = _playback_delay_for_event(e)
+		await get_tree().create_timer(delay).timeout
+		post_push_i += 1
+	if run_id != _run_id: return
 	
 	# --- Meta events (TURN_ENDED, ACTION_FAILED, etc.) ---
 	for e in meta_events:

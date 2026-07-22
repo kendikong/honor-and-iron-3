@@ -413,6 +413,7 @@ static func _emit_collision(
 	collision_base_bonus: int = 0,
 ) -> void:
 	assert(pusher != null, "Collision requires an instigating pusher")
+	var start_idx := events.size()
 	var excess := maxi(0, push_distance - tiles_moved)
 	var against: Variant = "wall"
 	var against_unit := -1
@@ -465,6 +466,10 @@ static func _emit_collision(
 			CombatSystem.deal_collision_damage(
 				board, pusher, target, push_distance, tiles_moved, events, collision_base_bonus
 			)
+			
+	for i: int in range(start_idx, events.size()):
+		events[i].data["is_collision_side_effect"] = true
+
 
 ## Swap two units' positions. Used by the SWAP effect; deals no collision damage.
 ## Both ends trigger terrain landings (you can swap a unit onto a hazard).
