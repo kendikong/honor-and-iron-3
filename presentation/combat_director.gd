@@ -257,7 +257,7 @@ func sync_selected_ability_if_invalid() -> void:
 		var current: AbilityData = p_unit.active_abilities[selected_ability_index] as AbilityData
 		if auto_run and current.is_universal_run():
 			pass
-		elif AbilitySystem.ability_planning_selectable(p_unit, current):
+		else:
 			return
 	var next: int = first_selectable_ability_index(p_unit, auto_run)
 	if next != selected_ability_index:
