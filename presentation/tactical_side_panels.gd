@@ -566,7 +566,8 @@ func _scroll_selected_skill_into_view() -> void:
 func _ensure_skill_visible_by_index(row: int) -> void:
 	_skill_scroll_generation += 1
 	var generation: int = _skill_scroll_generation
-	await get_tree().process_frame
+	if is_inside_tree():
+		await get_tree().process_frame
 	if generation != _skill_scroll_generation:
 		return
 	if _skill_scroll == null or _skill_list == null:

@@ -1751,7 +1751,8 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 			GameEnums.SimEventType.ABILITY_USED:
 				# A movement-skill ABILITY_USED (WALK/RUN anim) should play before the
 				# walk tween, not after it. ATTACK/SUPER_RUN/SPELLCAST go to attack_events.
-				var pres: int = int(event.data.get("presentation_anim", GameEnums.PresentationAnim.WALK))
+				var pres_int: int = int(event.data.get("presentation_anim", GameEnums.PresentationAnim.WALK))
+				var pres: GameEnums.PresentationAnim = pres_int as GameEnums.PresentationAnim
 				if pres in [GameEnums.PresentationAnim.WALK, GameEnums.PresentationAnim.RUN]:
 					pre_move_events.append(event)
 				else:
