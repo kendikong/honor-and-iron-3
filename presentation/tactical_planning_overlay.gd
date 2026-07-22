@@ -956,10 +956,12 @@ func _draw_ability_intents() -> void:
 				if not path.is_empty() and path.back() == action.target_coord:
 					route_cells = ([start_pos] as Array)
 					route_cells.append_array(path)
-			_draw_dashed_route(
-				route_cells,
-				Color(p_col.r, p_col.g, p_col.b, _INTENT_ROUTE_ALPHA),
-			)
+				_draw_route_line(route_cells, p_col, true, true)
+			else:
+				_draw_dashed_route(
+					route_cells,
+					Color(p_col.r, p_col.g, p_col.b, _INTENT_ROUTE_ALPHA),
+				)
 	var preview_board: BoardState = _display_preview_board()
 
 	for intent: Variant in _display_intent_list():
