@@ -1330,6 +1330,10 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	if GridSystem.manhattan(last, cell) != 1:
 		for c: Vector2i in MovementSystem.find_path(board, last, cell, 999):
 			_append_route_tile(c)
+		if not _drag_route.is_empty() and _drag_route.back() != cell:
+			_drag_route = [unit.position]
+			for c: Vector2i in MovementSystem.find_path(board, unit.position, cell, 999):
+				_append_route_tile(c)
 		return
 	_append_route_tile(cell)
 
