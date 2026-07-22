@@ -1307,7 +1307,10 @@ func _drag_max_steps(unit: UnitState) -> int:
 	if not force_basic_movement and _director.selected_ability_index >= 0:
 		var ability := _selected_ability_data(unit)
 		if ability != null and AbilitySystem.ability_has_movement_effect(ability):
-			max_steps = ability.range_tiles
+			if _awaiting_flow_selected(unit, ability) and not awaiting_targeting_active():
+				pass
+			else:
+				max_steps = ability.range_tiles
 	return max_steps
 
 
