@@ -30,9 +30,19 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	# Passives
 	def.passives.append(DataLibrary._make_passive(&"collision_retaliator", "Collision Retaliator", "Enemy collision suffers ATK 2. Knight takes 0 collision damage.", "[+] PUSH 1."))
 	def.passives.append(DataLibrary._make_passive(&"thorny_carapace", "Thorny Carapace", "Melee hit reflects 50% damage (rounded down) & PUSH 1.", "[+] Reflects 100% damage instead."))
-	def.passives.append(DataLibrary._make_passive(&"trample_move", "Trample Move", "Normal movement gains TRAMPLE.", "[+] Enemies trampled suffer -1 DEF."))
+	
+	def.passives.append(DataLibrary._make_passive(&"concussive_shatter", "Concussive Shatter", "Enemy collision suffers extra damage equal to 50% of your DEF, and target loses -1 DEF.", "[+] Target also suffers VULNERABLE.", {
+		"collision_add_def_pct": 0.5,
+		"collision_apply_target_status": GameEnums.StatusType.STAT_DEBUFF_DEF,
+		"collision_apply_target_status_upgraded": GameEnums.StatusType.VULNERABLE
+	}))
+	
+	def.passives.append(DataLibrary._make_passive(&"kinetic_momentum", "Kinetic Momentum", "Causing an enemy to suffer collision damage grants SHIELD equal to your STR + DEF for 1 turn.", "[+] Also refunds 1 MOV point on your first collision each turn.", {
+		"collision_grant_shield_str_def": true,
+		"collision_refund_mov_if_upgraded": true
+	}))
+	
 	def.passives.append(DataLibrary._make_passive(&"stand_ground", "Stand Ground", "Immune to PUSH/PULL. Enemy attempts trigger COUNTER ATTACK 1.", "[+] COUNTER ATTACK 2 instead."))
-	def.passives.append(DataLibrary._make_passive(&"spiked_barricade", "Spiked Barricade", "PUSH into walls/obstacles applies STUN.", "[+] Target also suffers -1 DEF."))
 	
 	def.passives.append(DataLibrary._make_passive(&"indestructible_bastion", "Indestructible Bastion", "Lethal damage -> 1 HP + SHIELD = DEF (Once).", "[+] Gain +2 STR for combat."))
 	def.passives.append(DataLibrary._make_passive(&"shield_mastery", "Shield Mastery", "Damage from front -> gain SHIELD 2.", "[+] Gain SHIELD 3."))

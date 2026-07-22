@@ -55,6 +55,13 @@ static func deal_collision_damage(
 		wpn = pusher.definition.equipped_weapon.might
 	var str_val := get_dynamic_strength(board, pusher)
 	var mult_raw := COLLISION_FORCE_MULT * (base + wpn) * (1.0 + str_val / 5.0)
+	
+	# Apply generic collision damage modifiers from passives
+	for passive: PassiveData in pusher.active_passives:
+		if passive.modifiers.has("collision_add_def_pct"):
+			var def_pct: float = passive.modifiers["collision_add_def_pct"]
+			mult_raw += get_dynamic_defense(board, pusher) * def_pct
+			
 	var scaled := floori(mult_raw)
 	var target_def := get_dynamic_defense(board, victim)
 	var fort := 0
@@ -79,6 +86,32 @@ static func deal_collision_damage(
 		"pusher_id": pusher.id,
 	}))
 	deal_damage(board, victim, scaled, events, &"collision", false, false, pusher, _collision_source_label(pusher))
+	
+	# Apply generic collision side-effect modifiers from passives
+	for passive: PassiveData in pusher.active_passives:
+		var is_upgraded := pusher.is_passive_upgraded(passive.id)
+		
+		# Target status debuffs
+		var apply_status = -1
+		if is_upgraded and passive.modifiers.has("collision_apply_target_status_upgraded"):
+			apply_status = passive.modifiers["collision_apply_target_status_upgraded"]
+		elif passive.modifiers.has("collision_apply_target_status"):
+			apply_status = passive.modifiers["collision_apply_target_status"]
+			
+		if apply_status >= 0:
+			victim.active_statuses.append(DataLibrary.make_status(apply_status, 1))
+			
+		# Shield granting
+		if passive.modifiers.has("collision_grant_shield_str_def"):
+			var shield_amt := str_val + get_dynamic_defense(board, pusher)
+			add_armor(board, pusher, shield_amt, events)
+			
+		# Movement refund
+		if is_upgraded and passive.modifiers.has("collision_refund_mov_if_upgraded"):
+			var has_refunded: bool = pusher.passive_flags.get("collision_refunded_this_turn", false)
+			if not has_refunded:
+				pusher.passive_flags["collision_refunded_this_turn"] = true
+				pusher.movement.points_left += 1
 
 static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 	if unit == null: return 0

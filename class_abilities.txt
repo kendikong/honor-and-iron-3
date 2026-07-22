@@ -256,11 +256,11 @@ Passives
 
 (The Juggernaut) Thorny Carapace: When an enemy hits you in melee, they reflect 50% damage back (rounded down) and are PUSHED 1 tile. [+] Reflects 100% damage instead.
 
-(The Juggernaut) Trample Move: Your normal movement now gains TRAMPLE. [+] Enemies trampled also suffer -1 DEF for the turn.
+(The Juggernaut) Concussive Shatter: Enemy collision suffers extra damage equal to 50% of your DEF, and target loses -1 DEF. [+] Target also suffers VULNERABLE.
 
 (The Juggernaut) Stand Ground: Cannot be PUSHED or PULLED. Enemies attempting to do so suffer ATK 1. [+] Enemies attempting to push/pull you suffer ATK 2 instead.
 
-(The Juggernaut) Spiked Barricade: Enemies you PUSH into walls or obstacles suffer STUN. [+] Target also suffers -1 DEF.
+(The Juggernaut) Kinetic Momentum: Causing an enemy to suffer collision damage grants SHIELD equal to your STR + DEF for 1 turn. [+] Also refunds 1 MOV point on your first collision each turn.
 
 (The Sentinel) Indestructible Bastion: If taking lethal damage, survive at 1 HP and gain SHIELD equal to your DEF (Once per combat). [+] Gain +2 STR for the rest of combat when this trigger.
 

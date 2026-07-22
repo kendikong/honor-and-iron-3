@@ -662,12 +662,13 @@ static func _make_weapon(id: StringName, name: String, might: int = 4) -> Weapon
 	w.might = might
 	return w
 	
-static func _make_passive(id: StringName, name: String, desc: String, upgrade_desc: String = "") -> PassiveData:
+static func _make_passive(id: StringName, name: String, desc: String, upgrade_desc: String = "", modifiers: Dictionary = {}) -> PassiveData:
 	var p = PassiveData.new()
 	p.id = id
 	p.display_name = name
 	p.description = desc
 	p.upgraded_description = upgrade_desc
+	p.modifiers = modifiers
 	return p
 
 static func _plain() -> TerrainData:

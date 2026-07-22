@@ -438,10 +438,8 @@ static func _emit_collision(
 					if e.data.has("stun_on_collision"):
 						stun_on_hit = e.data["stun_on_collision"]
 					break
-		if pusher.has_passive(&"spiked_barricade") or stun_on_hit:
+		if stun_on_hit:
 			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STUN, 1))
-		if pusher.has_passive(&"spiked_barricade") and pusher.is_passive_upgraded(&"spiked_barricade"):
-			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, -1))
 	if blocker != null:
 		if blocker.has_passive(&"collision_retaliator") and blocker.team != target.team:
 			if target.id != collision_immune_id:

@@ -203,7 +203,7 @@ static func _is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState
 static func has_trample(unit: UnitState) -> bool:
 	if unit == null:
 		return false
-	return unit.has_status(GameEnums.StatusType.TRAMPLE) or unit.has_passive(&"trample_move")
+	return unit.has_status(GameEnums.StatusType.TRAMPLE)
 
 ## Whether a unit may end a basic move on this tile (ally-occupied tiles block).
 static func can_end_movement_on(board: BoardState, coord: Vector2i, unit: UnitState) -> bool:
@@ -457,8 +457,6 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 				# Tag push/damage events emitted by the push with this step index
 				for tag_i in range(pre_trample_ev_count, events.size() - 1):
 					events[tag_i].data["trample_step"] = step_index
-				if unit.has_passive(&"trample_move") and unit.is_passive_upgraded(&"trample_move"):
-					occ.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, -1))
 
 		TerrainSystem.apply_entry_at(board, unit, step, events)
 
