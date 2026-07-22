@@ -1699,8 +1699,13 @@ func _draw_drag_path() -> void:
 	):
 		var route_cells: Array = [_proj_origin(drag_unit), _hover_coord]
 		if AbilitySystem.ability_has_movement_effect(ability):
+			var waypoints: Array[Vector2i] = []
+			if _planning_input != null:
+				var drag_route := _planning_input.get_drag_route()
+				if drag_route.size() >= 2:
+					waypoints = drag_route.slice(1)
 			var path := MovementSystem.resolve_move_path(
-				_board, drag_unit, _hover_coord, [], ability.range_tiles, ability
+				_board, drag_unit, _hover_coord, waypoints, ability.range_tiles, ability
 			)
 			if not path.is_empty() and path.back() == _hover_coord:
 				var full_route: Array = [_proj_origin(drag_unit)]

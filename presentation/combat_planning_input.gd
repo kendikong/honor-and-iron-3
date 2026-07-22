@@ -644,6 +644,15 @@ func on_hover_moved(cell: Vector2i) -> void:
 		return
 	if _director.selected_unit_id >= 0:
 		if planning_cell_changed:
+			if awaiting_targeting_active():
+				var p_unit := _proj_unit(_director.selected_unit_id)
+				if p_unit != null:
+					var ability := _selected_ability_data(p_unit)
+					if ability != null and AbilitySystem.ability_has_movement_effect(ability):
+						if _drag_route.is_empty():
+							_drag_unit_id = _director.selected_unit_id
+							_drag_route = [p_unit.position]
+						_extend_drag_route(cell)
 			_refresh_selected_interaction_preview()
 	elif planning_cell_changed:
 		_update_hover_attack_preview()
@@ -1354,6 +1363,7 @@ func clear_awaiting_targeting() -> void:
 	if _director.find_awaiting_action(_director.selected_unit_id) == null:
 		return
 	_director.clear_awaiting_action(_director.selected_unit_id)
+	_drag_route.clear()
 	if _planning != null:
 		_planning._invalidate_hover_cache()
 	_invalidate_planning_hover_cache()
