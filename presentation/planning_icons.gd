@@ -41,6 +41,28 @@ static func stat_icon(stat_type: GameEnums.StatType) -> String:
 	return ""
 
 
+static func keyword_icon(keyword: String) -> String:
+	var kw := keyword.to_upper()
+	if kw.begins_with("ATK") or kw.ends_with("ATK") or kw == "EXPLODE":
+		return GLYPH_ATTACK
+	match kw:
+		"HEAL": return GLYPH_HEAL
+		"SHIELD": return GLYPH_ARMOR_UP
+		"SWAP": return GLYPH_SWAP
+		"DASH", "PUSH", "PULL": return GLYPH_DASH
+		"MOV", "MOVE": return STAT_MOV
+		"AP": return STAT_AP
+		"HP": return STAT_HP
+		"STR": return STAT_STR
+		"MAG": return STAT_MAG
+		"DEF": return STAT_DEF
+		"ARMOR": return STAT_ARMOR
+		"LEVEL": return STAT_LEVEL
+		"RANGE", "AOE": return GLYPH_RANGE
+		"CLEANSE": return GLYPH_SKILL
+		"COLLISION": return "💥"
+	return ""
+
 static func move_glyph(uses_run: bool) -> String:
 	return GLYPH_RUN if uses_run else GLYPH_WALK
 

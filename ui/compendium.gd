@@ -466,6 +466,9 @@ func _get_amount_string(eff: EffectData) -> String:
 		return str(eff.amount)
 
 func _kw(word: String) -> String:
+	var icon := PlanningIcons.keyword_icon(word)
+	if icon != "":
+		return "[color=#FBBF24]%s %s[/color]" % [icon, word]
 	return "[color=#FBBF24]%s[/color]" % word
 
 func _effect_to_string(eff: EffectData) -> String:

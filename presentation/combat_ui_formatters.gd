@@ -609,9 +609,17 @@ static func _glossary_def(key: String) -> String:
 
 
 static func _kw_tooltip_line(label: String, definition: String) -> String:
+	var first_word = label.split(" ")[0]
+	if label.begins_with("AOE ATK"):
+		first_word = "AOE ATK"
+	var icon = PlanningIcons.keyword_icon(first_word)
+	var final_label = label
+	if icon != "":
+		final_label = "%s %s" % [icon, label]
+		
 	if definition.is_empty():
-		return label
-	return "%s — %s" % [label, definition]
+		return final_label
+	return "%s — %s" % [final_label, definition]
 
 
 static func _targeting_glossary_hint(range_label: String) -> String:
@@ -1180,6 +1188,9 @@ static func _bbcode_from_bible_effect_line(line: String) -> String:
 
 
 static func _kw_hint(word: String, hint: String) -> String:
+	var icon := PlanningIcons.keyword_icon(word)
+	if icon != "":
+		return "[hint=\"%s\"][color=#FBBF24]%s %s[/color][/hint]" % [hint, icon, word]
 	return "[hint=\"%s\"][color=#FBBF24]%s[/color][/hint]" % [hint, word]
 
 
