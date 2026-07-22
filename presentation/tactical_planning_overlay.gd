@@ -882,6 +882,45 @@ func _origin_at_plan_action(
 	return origin
 
 
+## Returns the waypoints from the last PRE_ACTION MOVE for actor_id that appears
+## before stop_before in the plan. Used to reconstruct the real drag path for
+## committed movement-effect ability arrows.
+func _pre_move_waypoints_at(
+	plan: Timeline,
+	actor_id: int,
+	stop_before: TimelineAction,
+) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for act: TimelineAction in plan.entries:
+		if act == stop_before:
+			return result
+		if act.actor_id != actor_id:
+			continue
+		if (
+			act.type == GameEnums.ActionType.MOVE
+			and act.move_timing == GameEnums.MoveTiming.PRE_ACTION
+		):
+			result = act.waypoints.duplicate()
+	return result
+
+
+## Returns true if actor has a committed (not awaiting) ability with a movement
+## effect in the player plan — used to suppress the duplicate solid pre-move arrow.
+func _actor_has_committed_movement_ability(actor_id: int, plan: Timeline) -> bool:
+	if plan == null:
+		return false
+	for act: TimelineAction in plan.entries:
+		if act.actor_id != actor_id:
+			continue
+		if act.type != GameEnums.ActionType.ABILITY:
+			continue
+		if act.awaiting_target:
+			continue
+		if act.ability != null and AbilitySystem.ability_has_movement_effect(act.ability):
+			return true
+	return false
+
+
 func _draw_ability_intents() -> void:
 	if _director == null or _board == null:
 		return
@@ -899,11 +938,30 @@ func _draw_ability_intents() -> void:
 			if start_pos == action.target_coord:
 				continue
 			var p_col: Color = _player_color_for_unit(actor)
+			# For movement-effect abilities, resolve the real grid path so the dashed
+			# arrow follows the waypoints the player drew, not a straight diagonal.
+			var route_cells: Array = [start_pos, action.target_coord]
+			if (
+				action.ability != null
+				and AbilitySystem.ability_has_movement_effect(action.ability)
+				and not action.awaiting_target
+			):
+				var wp: Array[Vector2i] = _pre_move_waypoints_at(
+					plan_to_use, action.actor_id, action,
+				)
+				var path: Array[Vector2i] = MovementSystem.resolve_move_path(
+					_board, actor, action.target_coord, wp,
+					action.ability.range_tiles, action.ability,
+				)
+				if not path.is_empty() and path.back() == action.target_coord:
+					route_cells = ([start_pos] as Array)
+					route_cells.append_array(path)
 			_draw_dashed_route(
-				[start_pos, action.target_coord],
+				route_cells,
 				Color(p_col.r, p_col.g, p_col.b, _INTENT_ROUTE_ALPHA),
 			)
 	var preview_board: BoardState = _display_preview_board()
+
 	for intent: Variant in _display_intent_list():
 		if not intent is Intent:
 			continue
