@@ -93,13 +93,18 @@ static func deal_collision_damage(
 		
 		# Target status debuffs
 		var apply_status = -1
+		var status_amount = 1
 		if is_upgraded and passive.modifiers.has("collision_apply_target_status_upgraded"):
 			apply_status = passive.modifiers["collision_apply_target_status_upgraded"]
+			if passive.modifiers.has("collision_apply_target_status_upgraded_amount"):
+				status_amount = passive.modifiers["collision_apply_target_status_upgraded_amount"]
 		elif passive.modifiers.has("collision_apply_target_status"):
 			apply_status = passive.modifiers["collision_apply_target_status"]
+			if passive.modifiers.has("collision_apply_target_status_amount"):
+				status_amount = passive.modifiers["collision_apply_target_status_amount"]
 			
 		if apply_status >= 0:
-			victim.active_statuses.append(DataLibrary.make_status(apply_status, 1))
+			victim.active_statuses.append(DataLibrary.make_status(apply_status, 1, status_amount))
 			
 		# Shield granting
 		if passive.modifiers.has("collision_grant_shield_str_def"):

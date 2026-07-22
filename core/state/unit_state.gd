@@ -251,6 +251,7 @@ func reset_for_turn() -> void:
 	turn_action_used = false
 	pre_move_used_this_turn = false
 	armor = 0
+	passive_flags.erase("collision_refunded_this_turn")
 
 func clone() -> UnitState:
 	var copy := UnitState.new()
