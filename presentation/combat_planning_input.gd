@@ -1305,6 +1305,15 @@ func _movement_blocked_by_dash() -> bool:
 	return unit != null and AbilitySystem.ability_blocks_basic_movement(_selected_ability_data(unit))
 
 
+func _drag_max_steps(unit: UnitState) -> int:
+	var max_steps: int = _move_budget(unit)
+	if not force_basic_movement and _director.selected_ability_index >= 0:
+		var ability := _selected_ability_data(unit)
+		if ability != null and AbilitySystem.ability_has_movement_effect(ability):
+			max_steps = ability.range_tiles
+	return max_steps
+
+
 func _extend_drag_route(cell: Vector2i) -> void:
 	if _drag_route.is_empty():
 		return
@@ -1334,6 +1343,8 @@ func _append_route_tile(coord: Vector2i) -> void:
 	if idx >= 0:
 		if idx < _drag_route.size() - 1:
 			_drag_route = _drag_route.slice(0, idx + 1)
+		return
+	if _drag_route.size() > _drag_max_steps(unit):
 		return
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
 	if GridSystem.manhattan(last, coord) != 1 or not MovementSystem.is_walkable_for(board, coord, unit):
