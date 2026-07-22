@@ -116,9 +116,6 @@ func on_left_press(local: Vector2) -> void:
 		if aiming:
 			cancel_aim()
 		var was_selected: bool = unit.id == _director.selected_unit_id
-		if was_selected and _director.selected_ability_index >= 0:
-			if _commit_at_interaction_cell(unit.id, cell, local):
-				return
 		if not was_selected:
 			_director.select_unit(unit.id)
 		_arm_drag(unit, local, was_selected)
