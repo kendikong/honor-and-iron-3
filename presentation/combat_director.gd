@@ -208,6 +208,7 @@ func select_ability(index: int) -> void:
 		if selected_ability_index == index:
 			return
 		selected_ability_index = index
+		remember_unit_ability(selected_unit_id, selected_ability_index)
 		EventBus.ability_selected.emit(selected_ability_index)
 		return
 	if index < 0:
@@ -227,6 +228,7 @@ func select_ability(index: int) -> void:
 	if selected_ability_index == index:
 		return
 	selected_ability_index = index
+	remember_unit_ability(selected_unit_id, selected_ability_index)
 	EventBus.ability_selected.emit(selected_ability_index)
 
 
