@@ -1697,7 +1697,16 @@ func _draw_drag_path() -> void:
 			_proj_origin(drag_unit), _hover_coord, ability,
 		)
 	):
-		_draw_dashed_route([_proj_origin(drag_unit), _hover_coord], route_col)
+		var route_cells: Array = [_proj_origin(drag_unit), _hover_coord]
+		if AbilitySystem.ability_has_movement_effect(ability):
+			var path := MovementSystem.resolve_move_path(
+				_board, drag_unit, _hover_coord, [], ability.range_tiles, ability
+			)
+			if not path.is_empty() and path.back() == _hover_coord:
+				var full_route: Array = [_proj_origin(drag_unit)]
+				full_route.append_array(path)
+				route_cells = full_route
+		_draw_dashed_route(route_cells, route_col)
 		return
 	if _route.size() >= 2:
 		var hovered_unit := _board.get_unit_at(_hover_coord) if _board.is_in_bounds(_hover_coord) else null
