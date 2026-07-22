@@ -166,7 +166,9 @@ static func resolve_pass_through_tile(
 		return true
 	if bulldoze > 0:
 		trample_hit_ids[occupant.id] = true
-		var push_dir := move_dir if is_final_step else left_of_direction(exit_dir)
+		var push_dir := move_dir
+		if not is_final_step and move_dir == exit_dir:
+			push_dir = left_of_direction(move_dir)
 		apply_trample_contact(board, mover, occupant, tile, push_dir, bulldoze, events, ability_id, bulldoze)
 		occupant = board.get_unit_at(tile)
 		return occupant == null or occupant.id == mover.id
@@ -180,7 +182,9 @@ static func resolve_pass_through_tile(
 			board, mover, occupant, scaled_atk, GameEnums.StatType.PHYSICAL, events, label, trample_atk
 		)
 		if trample_push > 0:
-			var push_dir := move_dir if is_final_step else left_of_direction(exit_dir)
+			var push_dir := move_dir
+			if not is_final_step and move_dir == exit_dir:
+				push_dir = left_of_direction(move_dir)
 			push(board, occupant, push_dir, trample_push, events, mover, ability_id, mover.id)
 			occupant = board.get_unit_at(tile)
 			if occupant != null and occupant.id != mover.id:
