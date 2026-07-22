@@ -156,7 +156,8 @@ static func resolve_move_path(
 		else GameEnums.MovementType.WALK
 	)
 	if _is_legal_walk(board, unit.position, waypoints, max_steps, move_cost, ability):
-		return waypoints.duplicate()
+		if not waypoints.is_empty() and waypoints.back() == target_coord:
+			return waypoints.duplicate()
 	return find_path(board, unit.position, target_coord, max_steps, mt, move_cost, ability)
 
 

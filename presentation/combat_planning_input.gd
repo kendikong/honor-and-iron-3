@@ -1353,8 +1353,6 @@ func _append_route_tile(coord: Vector2i) -> void:
 		var occ := board.get_unit_at(coord)
 		if occ != null and occ.is_enemy() and MovementSystem.has_trample(unit):
 			return
-	if _drag_route.size() - 1 >= _move_budget(unit):
-		return
 	_drag_route.append(coord)
 
 
