@@ -1034,14 +1034,14 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 		var dir: Vector2 = (p2 - p1).normalized()
 		var dist: float = p1.distance_to(p2)
 		var start_d: float = offset if i == 0 else 0.0
-		var end_d: float = dist - offset if i == cells.size() - 2 else dist
+		var end_d: float = dist
 		var d: float = start_d
 		while d < end_d:
 			var draw_end: float = minf(d + dash, end_d)
 			draw_line(p1 + dir * d, p1 + dir * draw_end, color, _DASH_LINE_W)
 			d += dash + gap
 	_draw_flowing_arrowheads_for_route(
-		cells, color, _ROUTE_LINE_W, _DASH_WING_LEN, 30.0, offset,
+		cells, color, _ROUTE_LINE_W, _DASH_WING_LEN, 30.0, 0.0,
 	)
 
 
