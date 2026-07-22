@@ -201,14 +201,15 @@ func _emit_planning_selection() -> void:
 	EventBus.ability_selected.emit(selected_ability_index)
 
 ## Choose which of the selected unit's abilities a queued attack will use.
-func select_ability(index: int) -> void:
+func select_ability(index: int, remember_choice: bool = true) -> void:
 	if not is_planning_phase(phase):
 		return
 	if is_wait_ability_index(index):
 		if selected_ability_index == index:
 			return
 		selected_ability_index = index
-		remember_unit_ability(selected_unit_id, selected_ability_index)
+		if remember_choice:
+			remember_unit_ability(selected_unit_id, selected_ability_index)
 		EventBus.ability_selected.emit(selected_ability_index)
 		return
 	if index < 0:
@@ -228,7 +229,8 @@ func select_ability(index: int) -> void:
 	if selected_ability_index == index:
 		return
 	selected_ability_index = index
-	remember_unit_ability(selected_unit_id, selected_ability_index)
+	if remember_choice:
+		remember_unit_ability(selected_unit_id, selected_ability_index)
 	EventBus.ability_selected.emit(selected_ability_index)
 
 
@@ -259,7 +261,7 @@ func sync_selected_ability_if_invalid() -> void:
 			return
 	var next: int = first_selectable_ability_index(p_unit, auto_run)
 	if next != selected_ability_index:
-		select_ability(next)
+		select_ability(next, false)
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_plan_wait(unit_id: int) -> void:
