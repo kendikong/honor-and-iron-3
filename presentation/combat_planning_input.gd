@@ -268,6 +268,10 @@ func update_drag(local: Vector2) -> void:
 		return
 	var occ := board.get_unit_at(cell)
 	var drag_unit := board.get_unit_by_id(_drag_unit_id)
+	
+	if _basic_move_allowed():
+		_extend_drag_route(cell)
+		
 	if drag_unit != null and (occ == null or occ.id == _drag_unit_id):
 		if cell == drag_unit.position or (_planning != null and _planning.is_hover_move_tile(cell)):
 			_drag_last_free = cell
