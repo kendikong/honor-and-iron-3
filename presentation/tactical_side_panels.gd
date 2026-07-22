@@ -525,7 +525,7 @@ func _clear_skill_buttons() -> void:
 
 func _on_ability_selected(index: int) -> void:
 	_selected_ability = index
-	if _director != null and _director.selected_unit_id >= 0:
+	if _director != null and _director.selected_unit_id >= 0 and index >= 0:
 		_director.remember_unit_ability(_director.selected_unit_id, index)
 	if _skill_ui_lock:
 		return
