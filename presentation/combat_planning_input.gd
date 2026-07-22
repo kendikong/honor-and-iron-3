@@ -1308,12 +1308,12 @@ func _movement_blocked_by_dash() -> bool:
 func _extend_drag_route(cell: Vector2i) -> void:
 	if _drag_route.is_empty():
 		return
+	var idx := _drag_route.find(cell)
+	if idx >= 0:
+		if idx < _drag_route.size() - 1:
+			_drag_route = _drag_route.slice(0, idx + 1)
+		return
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
-	if cell == last:
-		return
-	if _drag_route.size() >= 2 and cell == _drag_route[_drag_route.size() - 2]:
-		_drag_route.remove_at(_drag_route.size() - 1)
-		return
 	var board: BoardState = _director.board
 	var unit := board.get_unit_by_id(_drag_unit_id)
 	if unit == null:
@@ -1330,12 +1330,12 @@ func _append_route_tile(coord: Vector2i) -> void:
 	var unit := board.get_unit_by_id(_drag_unit_id)
 	if unit == null or _drag_route.is_empty():
 		return
+	var idx := _drag_route.find(coord)
+	if idx >= 0:
+		if idx < _drag_route.size() - 1:
+			_drag_route = _drag_route.slice(0, idx + 1)
+		return
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
-	if coord == last:
-		return
-	if _drag_route.size() >= 2 and coord == _drag_route[_drag_route.size() - 2]:
-		_drag_route.remove_at(_drag_route.size() - 1)
-		return
 	if GridSystem.manhattan(last, coord) != 1 or not MovementSystem.is_walkable_for(board, coord, unit):
 		return
 	if not force_basic_movement and _director.selected_ability_index >= 0:
