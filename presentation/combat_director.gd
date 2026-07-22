@@ -1499,6 +1499,8 @@ func execute_turn() -> void:
 	_wait_unit_ids.clear()
 	if _check_end_state():
 		return
+	selected_unit_id = -1
+	selected_ability_index = 0
 	_refresh_plan()
 	_set_phase(Phase.PLANNING)
 	_capture_turn_start()
