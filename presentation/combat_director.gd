@@ -1601,6 +1601,7 @@ func _find_dash_blocks(events: Array[SimEvent]) -> Array:
 					GameEnums.SimEventType.UNIT_ARMORED,
 					GameEnums.SimEventType.STATUS_APPLIED,
 					GameEnums.SimEventType.STATUS_REMOVED,
+					GameEnums.SimEventType.TRAMPLE_HIT,
 				]:
 					i += 1
 				else:
@@ -1629,6 +1630,7 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 		GameEnums.SimEventType.UNIT_DIED,
 		GameEnums.SimEventType.STATUS_APPLIED,
 		GameEnums.SimEventType.STATUS_REMOVED,
+		GameEnums.SimEventType.TRAMPLE_HIT,
 	]
 	
 	for event: SimEvent in block:
@@ -1645,8 +1647,12 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 			GameEnums.SimEventType.UNIT_PUSHED:
 				push_events.append(event)
 			_:
-				if event.type in step_event_types and event.data.has("dash_hit_step"):
-					var step := int(event.data.get("dash_hit_step", -1))
+				if event.type in step_event_types:
+					var step: int = -1
+					if event.data.has("dash_hit_step"):
+						step = int(event.data.get("dash_hit_step", -1))
+					elif event.data.has("trample_step"):
+						step = int(event.data.get("trample_step", -1))
 					if step >= 0:
 						if not step_events.has(step):
 							step_events[step] = []
