@@ -271,9 +271,12 @@ static func execute_skill_walk(
 		var prev_pos: Vector2i = from if step_index == 0 else path[step_index - 1]
 		var move_dir: Vector2i = PhysicsSystem.cardinal_from_to(prev_pos, step)
 		var is_final_step: bool = step_index == path.size() - 1
+		var exit_dir: Vector2i = move_dir
+		if not is_final_step:
+			exit_dir = PhysicsSystem.cardinal_from_to(step, path[step_index + 1])
 		var pre_trample_ev_count: int = events.size()
 		if not PhysicsSystem.resolve_pass_through_tile(
-			board, unit, step, move_dir, is_final_step,
+			board, unit, step, move_dir, exit_dir, is_final_step,
 			trample_atk, bulldoze, trample_push, events, ability_id,
 			trample_hit_ids, trampled_restore, ability.display_name
 		):
