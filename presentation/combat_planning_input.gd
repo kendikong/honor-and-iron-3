@@ -550,12 +550,10 @@ func _finish_selection_changed() -> void:
 	_request_planning_selection_refresh()
 
 
-func _on_ability_selected(index: int) -> void:
+func _on_ability_selected(_index: int) -> void:
 	if _director == null:
 		return
 	clear_awaiting_targeting()
-	if _director.selected_unit_id >= 0:
-		_director.remember_unit_ability(_director.selected_unit_id, index)
 	_request_planning_selection_refresh()
 
 

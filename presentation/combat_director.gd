@@ -1503,6 +1503,7 @@ func execute_turn() -> void:
 		return
 	selected_unit_id = -1
 	selected_ability_index = 0
+	_emit_planning_selection()
 	_refresh_plan()
 	_set_phase(Phase.PLANNING)
 	_capture_turn_start()
