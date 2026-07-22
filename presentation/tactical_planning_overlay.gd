@@ -944,7 +944,6 @@ func _draw_ability_intents() -> void:
 			if (
 				action.ability != null
 				and AbilitySystem.ability_has_movement_effect(action.ability)
-				and not action.awaiting_target
 			):
 				var wp: Array[Vector2i] = _pre_move_waypoints_at(
 					plan_to_use, action.actor_id, action,
