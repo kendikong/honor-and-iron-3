@@ -440,6 +440,7 @@ static func _emit_collision(
 					break
 		if stun_on_hit:
 			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STUN, 1))
+			target._recalculate_stats()
 	if blocker != null:
 		if blocker.has_passive(&"collision_retaliator") and blocker.team != target.team:
 			if target.id != collision_immune_id:

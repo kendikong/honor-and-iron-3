@@ -105,6 +105,7 @@ static func deal_collision_damage(
 			
 		if apply_status >= 0:
 			victim.active_statuses.append(DataLibrary.make_status(apply_status, 1, status_amount))
+			victim._recalculate_stats()
 			
 		# Shield granting
 		if passive.modifiers.has("collision_grant_shield_str_def"):
