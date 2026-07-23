@@ -336,7 +336,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		}))
 		return
 		
-	if unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STUN):
+	if unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STAGGER):
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 			"actor": action.actor_id, "reason": "movement_prevented_by_status",
 		}))

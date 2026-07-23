@@ -715,7 +715,7 @@ func _refresh_ability_buttons_if_dirty() -> void:
 
 func _skill_rebuild_cache_key(unit: UnitState) -> String:
 	var status_bits: int = 0
-	if unit.has_status(GameEnums.StatusType.STUN):
+	if unit.has_status(GameEnums.StatusType.STAGGER):
 		status_bits |= 1
 	if unit.has_status(GameEnums.StatusType.SILENCE):
 		status_bits |= 2

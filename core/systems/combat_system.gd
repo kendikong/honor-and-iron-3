@@ -62,6 +62,10 @@ static func deal_collision_damage(
 			var def_pct: float = passive.modifiers["collision_add_def_pct"]
 			mult_raw += get_dynamic_defense(board, pusher) * def_pct
 			
+	if pusher.has_passive(&"momentum_of_titan"):
+		var pct = 0.20 if pusher.is_passive_upgraded(&"momentum_of_titan") else 0.10
+		mult_raw += floori(pusher.health.max_hp * pct)
+			
 	var scaled := floori(mult_raw)
 	var target_def := get_dynamic_defense(board, victim)
 	var fort := 0
@@ -86,6 +90,13 @@ static func deal_collision_damage(
 		"pusher_id": pusher.id,
 	}))
 	deal_damage(board, victim, scaled, events, &"collision", false, false, pusher, _collision_source_label(pusher))
+	
+	if pusher.has_passive(&"momentum_transfer"):
+		var heal_amt = 1
+		heal(board, pusher, heal_amt, events)
+		if pusher.is_passive_upgraded(&"momentum_transfer"):
+			pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+			pusher._recalculate_stats()
 	
 	# Apply generic collision side-effect modifiers from passives
 	for passive: PassiveData in pusher.active_passives:
@@ -155,11 +166,17 @@ static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 			var front_tile = unit.position + dir
 			var knight = board.get_unit_at(front_tile)
 			if knight != null and knight.team == unit.team and knight.has_passive(&"living_barricade") and knight.is_passive_upgraded(&"living_barricade"):
-				# If we are directly behind the knight relative to some direction, wait, the rule says "Allies directly behind you". This usually applies if the enemy is attacking, but a flat +1 DEF aura behind them is easier to calculate if we assume the knight's facing determines "behind".
 				if PhysicsSystem.facing_to_vector(knight.facing) == dir:
 					def += 1
 					break
 	
+		if unit.has_passive(&"last_stand") and unit.health.current_hp < unit.health.max_hp * 0.25:
+			def += 3 if unit.is_passive_upgraded(&"last_stand") else 2
+			
+		if unit.has_passive(&"adrenaline_junkie") and unit.is_passive_upgraded(&"adrenaline_junkie"):
+			var missing_pct = (unit.health.max_hp - unit.health.current_hp) / float(unit.health.max_hp)
+			def += floori(missing_pct / 0.20)
+		
 	if unit.has_passive(&"bulwark"):
 		var bonus = adjacent_units
 		def += bonus
@@ -177,6 +194,38 @@ static func get_dynamic_strength(board: BoardState, unit: UnitState) -> int:
 	var str_val = unit.current_strength
 	
 	if board != null and unit.has_passive(&"bulwark") and unit.is_passive_upgraded(&"bulwark"):
+		var adj_enemies = 0
+		for dir in GridSystem.DIRECTIONS:
+			var adj = unit.position + dir
+			var tile = board.get_tile(adj)
+			if tile != null and not tile.is_empty():
+				var occ = board.get_unit_by_id(tile.occupant_id)
+				if occ != null and occ.is_alive() and occ.team != unit.team:
+					adj_enemies += 1
+		str_val += adj_enemies
+		
+	if unit.has_passive(&"adrenaline_junkie"):
+		var missing_pct = (unit.health.max_hp - unit.health.current_hp) / float(unit.health.max_hp)
+		str_val += floori(missing_pct / 0.10)
+		
+	if unit.has_passive(&"enraged"):
+		var debuffs = 0
+		for st in unit.active_statuses:
+			if GameEnums.is_debuff(st.type): debuffs += 1
+		if board != null:
+			var tile = board.get_tile(unit.position)
+			if tile != null and tile.definition != null and tile.definition.id == &"trap":
+				debuffs += 1
+		str_val += debuffs
+		
+	if unit.has_passive(&"last_stand") and unit.health.current_hp < unit.health.max_hp * 0.25:
+		str_val += 3 if unit.is_passive_upgraded(&"last_stand") else 2
+		
+	if unit.has_passive(&"colossal_mass"):
+		var div = 10 if unit.is_passive_upgraded(&"colossal_mass") else 15
+		str_val += floori(unit.health.max_hp / float(div))
+		
+	if board != null and unit.has_passive(&"crowd_breaker"):
 		var adj_enemies = 0
 		for dir in GridSystem.DIRECTIONS:
 			var adj = unit.position + dir
@@ -312,12 +361,44 @@ static func deal_damage_raw(
 	source_label: String = "",
 	base_power: int = -1,
 ) -> void:
+	if attacker != null and attacker.has_passive(&"thrill_of_pain") and attacker.passive_flags.get("thrill_active", false):
+		attacker.passive_flags["thrill_active"] = false
+		var bonus = 3 if attacker.is_passive_upgraded(&"thrill_of_pain") else 2
+		if base_power >= 0:
+			base_power += bonus
+			raw_amount = calculate_scaled_damage(attacker, base_power, stat_type, board)
+		if target != null:
+			var dir := PhysicsSystem.cardinal_from_to(attacker.position, target.position)
+			board.pending_pushes.append({
+				"type": "push",
+				"target_id": target.id,
+				"dir": dir,
+				"amount": 1,
+				"actor_id": attacker.id,
+				"ability_id": &"thrill_of_pain"
+			})
+
 	if attacker != null and target != null and base_power >= 0:
 		append_damage_telemetry(board, attacker, target, base_power, stat_type, events, raw_amount)
 	var dmg_type = &"physical"
 	if stat_type == GameEnums.StatType.MAGICAL:
 		dmg_type = &"magical"
 	var pierce = attacker.has_status(GameEnums.StatusType.PIERCE) if attacker != null else false
+	
+	if attacker != null and target != null and attacker.has_passive(&"overwhelming_bulk"):
+		if attacker.health.current_hp > target.health.max_hp:
+			pierce = true
+			if attacker.is_passive_upgraded(&"overwhelming_bulk"):
+				var dir := PhysicsSystem.cardinal_from_to(attacker.position, target.position)
+				board.pending_pushes.append({
+					"type": "push",
+					"target_id": target.id,
+					"dir": dir,
+					"amount": 1,
+					"actor_id": attacker.id,
+					"ability_id": &"overwhelming_bulk"
+				})
+				
 	deal_damage(board, target, raw_amount, events, dmg_type, pierce, false, attacker, source_label)
 
 static func deal_damage(
@@ -389,6 +470,13 @@ static func deal_damage(
 		fort = tile.definition.fortitude
 		
 	var mitigation: int = CombatSystem.get_dynamic_defense(board, target)
+	if target.has_passive(&"scar_tissue"):
+		var missing_hp = target.health.max_hp - target.health.current_hp
+		var reduction = maxi(floori(target.health.max_hp / 20.0), floori(missing_hp / 20.0))
+		if target.is_passive_upgraded(&"scar_tissue"):
+			reduction += 1
+		mitigation += reduction
+		
 	if source_type == &"magical":
 		mitigation = target.current_magic
 		
@@ -471,6 +559,30 @@ static func deal_damage(
 		"damage_type": source_type,
 		"source_label": source_label,
 	}))
+
+	if target.has_passive(&"thrill_of_pain"):
+		target.passive_flags["thrill_active"] = true
+		
+	if attacker != null and (source_type == &"physical" or source_type == &"magical"):
+		if attacker.has_passive(&"blood_for_blood") and attacker.passive_flags.get("damaged_last_turn", false):
+			var wpn = 0
+			if attacker.definition != null and attacker.definition.equipped_weapon != null:
+				wpn = attacker.definition.equipped_weapon.might
+			if wpn > 0:
+				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1, wpn))
+				if attacker.is_passive_upgraded(&"blood_for_blood"):
+					attacker.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+					attacker._recalculate_stats()
+					
+		if attacker.has_passive(&"crowd_breaker"):
+			var splash = 2 if attacker.is_passive_upgraded(&"crowd_breaker") else 1
+			for dir in GridSystem.DIRECTIONS:
+				var adj = target.position + dir
+				var tile = board.get_tile(adj)
+				if tile != null and not tile.is_empty() and tile.occupant_id != target.id:
+					var adj_unit = board.get_unit_by_id(tile.occupant_id)
+					if adj_unit != null and adj_unit.is_alive():
+						deal_damage(board, adj_unit, splash, events, &"true", true, true, attacker, "Splash Damage")
 	
 	if hp_dmg + armor_dmg > 0:
 		if mitigated_amount > 0 and target.has_passive(&"kinetic_redirection"):

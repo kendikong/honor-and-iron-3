@@ -2412,7 +2412,7 @@ func _draw_health_bar(top_center: Vector2, current: int, predicted: int, max_hp:
 				GameEnums.StatusType.POISON: icon = "🧪"
 				GameEnums.StatusType.WEAKEN: icon = "📉"
 				GameEnums.StatusType.VULNERABLE: icon = "🎯"
-				GameEnums.StatusType.STUN: icon = "💫"
+				GameEnums.StatusType.STAGGER: icon = "💫"
 				GameEnums.StatusType.ROOT: icon = "🪢"
 				GameEnums.StatusType.SILENCE: icon = "🤐"
 				GameEnums.StatusType.TAUNT: icon = "🤬"
@@ -3433,7 +3433,7 @@ func _unit_info(unit: UnitState) -> String:
 				GameEnums.StatusType.ELECTRIFIED: desc = "Spreads damage to adjacent units."
 				GameEnums.StatusType.POISON: desc = "Takes damage at end of turn. Cannot heal."
 				GameEnums.StatusType.BLEED: desc = "Takes 1 damage whenever moving."
-				GameEnums.StatusType.STUN: desc = "Cannot act or move."
+				GameEnums.StatusType.STAGGER: desc = "Cannot act or move."
 				GameEnums.StatusType.INVULNERABLE: desc = "Cannot take damage."
 				GameEnums.StatusType.WEAK_TRAP: desc = "Triggers a trap when stepped on."
 				GameEnums.StatusType.WEAKEN: desc = "Deals less damage with physical attacks."
@@ -3566,7 +3566,7 @@ func _parse_keywords(text: String) -> String:
 		"PIERCE": "Attacks ignore armor.",
 		"THORNS": "Reflects damage back to attackers.",
 		"ROOT": "Cannot move.",
-		"STUN": "Cannot act or move.",
+		"STAGGER": "Cannot act or move.",
 		"VULNERABLE": "Takes additional damage.",
 		"MOV": "Movement Points available per turn.",
 		"MOVE": "Movement Points available per turn.",
@@ -3598,7 +3598,7 @@ func _get_status_desc(t: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.ELECTRIFIED: return "Spreads damage to adjacent units."
 		GameEnums.StatusType.POISON: return "Takes damage at end of turn. Cannot heal."
 		GameEnums.StatusType.BLEED: return "Takes 1 damage whenever moving."
-		GameEnums.StatusType.STUN: return "Cannot act or move."
+		GameEnums.StatusType.STAGGER: return "Cannot act or move."
 		GameEnums.StatusType.INVULNERABLE: return "Cannot take damage."
 		GameEnums.StatusType.WEAK_TRAP: return "Triggers a trap when stepped on."
 		GameEnums.StatusType.WEAKEN: return "Deals less damage with physical attacks."

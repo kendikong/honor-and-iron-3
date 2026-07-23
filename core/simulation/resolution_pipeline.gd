@@ -16,7 +16,7 @@ static func apply_action(board: BoardState, action: TimelineAction, events: Arra
 	
 	var unit := board.get_unit_by_id(action.actor_id)
 	if unit != null:
-		if unit.has_status(GameEnums.StatusType.STUN):
+		if unit.has_status(GameEnums.StatusType.STAGGER):
 			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 				"actor": action.actor_id, "reason": "stunned",
 			}))

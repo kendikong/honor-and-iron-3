@@ -1387,6 +1387,6 @@ static func _status_hint(t: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.STURDY: return "Ignores the next displacement effect."
 		GameEnums.StatusType.BURN: return "Takes 1 damage per turn."
 		GameEnums.StatusType.BLEED: return "Takes 1 damage whenever moving."
-		GameEnums.StatusType.STUN: return "Cannot act or move."
+		GameEnums.StatusType.STAGGER: return "Cannot act or move."
 		GameEnums.StatusType.IRON_GRIP_DEBUFF: return "Defense is halved."
 		_: return ""

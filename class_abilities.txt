@@ -42,7 +42,7 @@ Utility & Defenses MUST use Percentages. SHIELD X and the health pools of Summon
 
 Heals Are Underpowered: Healing should never trivialize tactical errors. Passive heals are strictly capped at 10% (HEAL 1) or 20% (HEAL 2), pushing players to rely on proactive mitigation (SHIELD, positioning) over infinite sustain.
 
-Boss CC Immunity: Bosses are inherently immune to Hard Crowd Control (STUN, PACIFY, FEAR, CONFUSION, POLYMORPH, ROOT, and SILENCE). Bosses also cannot be instantly killed by Chasms; instead, they snap to the nearest valid tile and suffer 5 unmitigated damage.
+Boss CC Immunity: Bosses are inherently immune to Hard Crowd Control (STAGGER, PACIFY, FEAR, CONFUSION, POLYMORPH, ROOT, and SILENCE). Bosses also cannot be instantly killed by Chasms; instead, they snap to the nearest valid tile and suffer 5 unmitigated damage.
 
 Max HP Buff Expiration: Reductions in Max HP from expiring temporary buffs reduce Current HP to 1 instead of causing death. Intentionally harmful effects kill normally.
 
@@ -284,7 +284,7 @@ Passives
 
 Active Skills & Upgrades
 
-(The Juggernaut) Shield Bash: RANGE 1 | ATK 1 | PUSH 2 [+] Apply STUN if target collides with a wall or enemy.
+(The Juggernaut) Shield Bash: RANGE 1 | ATK 1 | PUSH 2 [+] Apply STAGGER if target collides with a wall or enemy.
 
 (The Sentinel) Phalanx Stance: SELF | DEF +5 | Gain STURDY until next turn. [+] Gain infinite RANGE for "Retaliation Protocol" this turn.
 
@@ -296,7 +296,7 @@ Active Skills & Upgrades
 
 (The Juggernaut) Bowling Charge: DASH 3 | On collision: ATK 3, PUSH 2. [+] Target collision with another enemy: ATK 3 to both units.
 
-(The Sentinel / The Juggernaut) Iron Grip: RANGE 1 | Apply ROOT. Target DEF halved next turn (rounded up). [+] Refund 1 AP if target already has ROOT or STUN.
+(The Sentinel / The Juggernaut) Iron Grip: RANGE 1 | Apply ROOT. Target DEF halved next turn (rounded up). [+] Refund 1 AP if target already has ROOT or STAGGER.
 
 (The Cataphract / The Sentinel) Redirect Strike: RANGE 2 | Apply INTERCEPT (Take 50% damage dealt to adjacent ally this turn, rounded down). [+] Gain DEF +2 for every redirected hit.
 
@@ -356,15 +356,15 @@ Passives
 
 (The Siegebreaker) Juggernaut: Moving over traps destroys them instantly for 0 damage. [+] Destroying a trap grants SHIELD 1.
 
-(The Siegebreaker) Battering Ram: Any skill that applies PUSH pushes the target 1 additional tile. [+] Pushed enemies colliding with walls suffer STUN.
+(The Siegebreaker) Battering Ram: Any skill that applies PUSH pushes the target 1 additional tile. [+] Pushed enemies colliding with walls suffer STAGGER.
 
-(The Siegebreaker) Unstoppable Force: Immune to STUN and ROOT. Resisting these grants SHIELD 1. [+] Resisting these grants SHIELD 2 instead.
+(The Siegebreaker) Unstoppable Force: Immune to STAGGER and ROOT. Resisting these grants SHIELD 1. [+] Resisting these grants SHIELD 2 instead.
 
 Active Skills & Upgrades
 
 (The Siegebreaker) Charge Strike: MOVE 2 | ATK 3 | PUSH 1 [+] Gain GHOST during MOVE. Gain ATK +2 if passing through terrain.
 
-(The Siegebreaker) Concussion Blow: RANGE 1 | ATK 2 | PUSH 1 | Object collision applies STUN. [+] Enemy collision applies STUN to both units.
+(The Siegebreaker) Concussion Blow: RANGE 1 | ATK 2 | PUSH 1 | Object collision applies STAGGER. [+] Enemy collision applies STAGGER to both units.
 
 (The Bloodrager) Cleave: RANGE 1 | ARC | ATK 2 [+] Apply BLEED X (where X = your WPN) to all targets.
 
@@ -380,11 +380,11 @@ Active Skills & Upgrades
 
 (The Behemoth / The Siegebreaker) Guttural Roar: RANGE 0 | AOE 2 | PUSH 1 | Target DEF -2. [+] PUSH 1 all items/coins/scrap. Item collision: ATK 1.
 
-(The Behemoth) Headbutt: RANGE 1 | ATK 3 | SELF and Target suffer 1 Damage and STUN. [+] Deal bonus damage equal to Round Down(10% of your Max HP).
+(The Behemoth) Headbutt: RANGE 1 | ATK 3 | SELF and Target suffer 1 Damage and STAGGER. [+] Deal bonus damage equal to Round Down(10% of your Max HP).
 
 (The Bloodrager) Blood Boil: SELF | Spend 5 HP to gain STR +3 for 1 turn. [+] Spend 10 HP to gain STR +5 instead.
 
-(The Siegebreaker) Violent Collision: MOVE 3 | If you collide with an enemy, perform a second MOVE 2. [+] Collisions apply STUN (1 turn).
+(The Siegebreaker) Violent Collision: MOVE 3 | If you collide with an enemy, perform a second MOVE 2. [+] Collisions apply STAGGER (1 turn).
 
 (The Bloodrager) Crimson Whirlwind: RANGE 0 | AOE 3x3 | ATK 1. [+] HEAL 1 for every target successfully hit.
 
@@ -430,7 +430,7 @@ Passives
 
 (The Blade Dancer) Flanking Maneuver: Gain +1 STR and PIERCE if no allies are adjacent to you when you attack. [+] Gain +2 STR instead.
 
-(The Headhunter) Dirty Fighting: Attacks deal +2 Damage vs targets with STUN, ROOT, or POISON. [+] Deal +3 Damage instead.
+(The Headhunter) Dirty Fighting: Attacks deal +2 Damage vs targets with STAGGER, ROOT, or POISON. [+] Deal +3 Damage instead.
 
 (The Headhunter) Executioner: Attacks against targets below 50% HP gain ATK +2 and ignore DEF. [+] Threshold increased to targets below 75% HP.
 
@@ -452,7 +452,7 @@ Active Skills & Upgrades
 
 (The Headhunter / The Swordmaster) Feint: SELF | Next attack gains PIERCE. [+] Target DEF -1 permanently.
 
-(The Swordmaster) Riposte Strike: RANGE 1 | ATK 2 | If target attacked you last turn, gain ATK +2 and apply STUN. [+] Target DEF -2.
+(The Swordmaster) Riposte Strike: RANGE 1 | ATK 2 | If target attacked you last turn, gain ATK +2 and apply STAGGER. [+] Target DEF -2.
 
 (The Headhunter) Sever: RANGE 1 | ATK 2 | On Kill: All Allies HEAL 1. [+] On Kill: All Allies HEAL 1 and gain SHIELD 1.
 
@@ -534,7 +534,7 @@ Active Skills & Upgrades
 
 (The Saboteur / The Assassin) Switcheroo: RANGE 3 | Swap position with target enemy. [+] Target inherits all attacks aimed at you this turn.
 
-(The Assassin) Blindside: RANGE 1 | ATK 2 | If target has not acted yet, apply STUN. [+] If target is STUNNED, gain ATK +2.
+(The Assassin) Blindside: RANGE 1 | ATK 2 | If target has not acted yet, apply STAGGER. [+] If target is STAGGERNED, gain ATK +2.
 
 (The Ninja / The Assassin) Throat Slit: RANGE 1 | ATK 3 | Apply SILENCE. [+] On Kill: Spread SILENCE to adjacent enemy.
 
@@ -546,7 +546,7 @@ Active Skills & Upgrades
 
 (The Ninja / The Saboteur) Shadow Swap: RANGE 3 | Swap position with an ally. [+] Gain +1 DEF for 1 turn after swap.
 
-(The Saboteur / The Ninja) Kidnap: RANGE 1 | Swap position with target | PUSH target 2 tiles. [+] If target collides with another enemy, both are stunned.
+(The Saboteur / The Ninja) Kidnap: RANGE 1 | Swap position with target | PUSH target 2 tiles. [+] If target collides with another enemy, both are STAGGERned.
 
 (The Ninja) Shuriken Volley: CONE 3 | ATK 1 | Applies BLEED X (X = your WPN) to all targets. [+] Gains PIERCE vs targets with BLIND.
 
@@ -604,7 +604,7 @@ Active Skills & Upgrades
 
 (The Avatar) Scorching Kick: RANGE 1 | ATK 2 | Target tile becomes FIRE terrain. (If target is on OIL, instantly ignites). [+] If target already has BURN, deal MAG ATK 2 splash damage.
 
-(The Avatar / The Mystic) Thunder Palm: RANGE 1 | MAG ATK 3 | If target is on WATER or FROZEN, chain 50% damage to all other enemies on the same surface (rounded down). [+] If target is standing on WATER or FROZEN terrain, apply STUN.
+(The Avatar / The Mystic) Thunder Palm: RANGE 1 | MAG ATK 3 | If target is on WATER or FROZEN, chain 50% damage to all other enemies on the same surface (rounded down). [+] If target is standing on WATER or FROZEN terrain, apply STAGGER.
 
 (The Mystic / The Windwalker) Yin-Yang Flurry: RANGE 1 | Deal ATK 1, then immediately deal MAG ATK 1. [+] If the first hit deals 0 damage, the second hit gains PIERCE.
 
@@ -652,7 +652,7 @@ Passives
 
 (The Griffin Rider) Isolation Tactics: Attacks against enemies with no adjacent allies gain +2 STR. [+] Gain ATK +1 per 1 tile moved this turn.
 
-(The Griffin Rider) Terminal Velocity: Whenever an enemy suffers collision damage from being Dropped, PUSHED, or PULLED into an obstacle or unit, they suffer an additional unmitigated damage equal to your WPN and gain VULNERABLE. [+] Dropping an enemy also applies STUN.
+(The Griffin Rider) Terminal Velocity: Whenever an enemy suffers collision damage from being Dropped, PUSHED, or PULLED into an obstacle or unit, they suffer an additional unmitigated damage equal to your WPN and gain VULNERABLE. [+] Dropping an enemy also applies STAGGER.
 
 (The Griffin Rider) Snatch & Grab: You can now initiate grappling/dragging skills from RANGE 2. [+] Range increased to 3 tiles.
 
@@ -694,7 +694,7 @@ Active Skills & Upgrades
 
 (The Wyvern Lord) Rest & Recover: SELF | Consume all MOVEMENT | HEAL 1, DEF +5 for 1 turn. [+] CLEANSE all debuffs on use.
 
-(The Wyvern Lord / The Griffin Rider) Intimidate: RANGE 0 | AOE 2 | Apply STUN to enemies with lower HP than you. [+] PURGE buffs from enemies.
+(The Wyvern Lord / The Griffin Rider) Intimidate: RANGE 0 | AOE 2 | Apply STAGGER to enemies with lower HP than you. [+] PURGE buffs from enemies.
 
 (The Griffin Rider) Fetch: RANGE 4 (Item/Corpse) | Move target item/corpse to a tile adjacent to you. [+] Can pull light allies 2 tiles towards you.
 
@@ -708,7 +708,7 @@ Active Skills & Upgrades
 
 (The Griffin Rider) Airlift: RANGE 1 | Pick up an adjacent ally. Drop them in any empty tile adjacent to you at the end of the Player Execution Phase. [+] Ally gains +1 STR on their next attack.
 
-(The Wyvern Lord) Tail Swipe: RANGE 0 | AOE 3x3 | ATK 1 | PUSH 2. [+] If target collides with a wall, apply STUN.
+(The Wyvern Lord) Tail Swipe: RANGE 0 | AOE 3x3 | ATK 1 | PUSH 2. [+] If target collides with a wall, apply STAGGER.
 
 (The Apex Predator) Meteor Drop: RANGE 2 | Jump to target empty tile | Deal ATK 2 to all adjacent units upon landing. [+] Targets hit suffer VULNERABLE.
 
@@ -940,7 +940,7 @@ Active Skills & Upgrades
 
 (The Zealot / The Seraph) Consecrate Ground: RANGE 0 | AOE 2 | Create HOLY GROUND (Allies MAG HEAL 1, Enemies MAG ATK 1 on move). [+] Enemies standing on HOLY GROUND also suffer -1 DEF.
 
-(The Zealot / The Paladin) Holy Wrath: RANGE 3 | MAG ATK 3 | If target has a debuff, apply STUN. [+] Also applies PUSH 2.
+(The Zealot / The Paladin) Holy Wrath: RANGE 3 | MAG ATK 3 | If target has a debuff, apply STAGGER. [+] Also applies PUSH 2.
 
 (The Zealot / The Seraph) Divine Guidance: RANGE 3 | Target Ally gains 1 AP. | SELF MOVEMENT = 0 next turn. [+] SELF is no longer rooted next turn.
 
@@ -1059,7 +1059,7 @@ Passives
 
 (The Skystriker) Plunging Attack: If you use an active skill that costs AP to jump or teleport, your next basic attack this turn gains +3 ATK. [+] The attack also gains PIERCE.
 
-(The Skystriker) Crashing Impact: Landing from a jump creates a physical shockwave, applying PUSH 1 to all adjacent enemies. [+] Enemies pushed into walls, obstacles, or other units suffer STUN.
+(The Skystriker) Crashing Impact: Landing from a jump creates a physical shockwave, applying PUSH 1 to all adjacent enemies. [+] Enemies pushed into walls, obstacles, or other units suffer STAGGER.
 
 (The Skystriker) Pole-Plant: Your 0-AP Push can now be used on destructible obstacles and traps (not just units). Pushing a trap destroys it and grants you SHIELD 2. [+] The trap's destruction also deals 2 unmitigated damage to adjacent enemies.
 
@@ -1081,7 +1081,7 @@ Active Skills & Upgrades
 
 (The Cavalier / The Skystriker) Piercing Charge: DASH 3 | ATK 2 (RANGE 2) | PUSH 2 [+] Create TRAMPLED terrain behind you (MOVE cost x2).
 
-(The Halberdier / The Skystriker) Sweeping Halberd: RANGE 2 | ARC | ATK 2 | PULL 1 [+] Enemy collision on PULL applies STUN.
+(The Halberdier / The Skystriker) Sweeping Halberd: RANGE 2 | ARC | ATK 2 | PULL 1 [+] Enemy collision on PULL applies STAGGER.
 
 (The Skystriker / The Cavalier) Vaulting Leap: RANGE 2 | ATK 2 | Target DEF = 0 (1 turn). [+] Armor explodes: ATK 1 (AOE 1 around target).
 
@@ -1091,7 +1091,7 @@ Active Skills & Upgrades
 
 (The Skystriker / The Cavalier) Flanking Maneuver: MOVE (L-Shape) | Side attack: Damage x2. [+] Gain GHOST during MOVE.
 
-(The Halberdier / The Skystriker) Brace: SELF | MOVEMENT = 0 this turn. Next incoming melee attack is negated, attacker suffers ATK 2. [+] Attacker suffers STUN.
+(The Halberdier / The Skystriker) Brace: SELF | MOVEMENT = 0 this turn. Next incoming melee attack is negated, attacker suffers ATK 2. [+] Attacker suffers STAGGER.
 
 (The Skystriker / The Halberdier) Harpoon Toss: RANGE 4 | ATK 1 | PULL target adjacent. [+] If SELF has ROOT, or target is heavier, PULL SELF to target.
 
@@ -1165,7 +1165,7 @@ Active Skills & Upgrades
 
 (The Demolitionist / The Siegecrafter) Magnetic Mine: RANGE 3 | Place Mine: PULL 2 then ATK 2 (Explode). [+] PULL includes Scrap/Coins. ATK +1 per item absorbed.
 
-(The Siegecrafter / The Mechanist) Tesla Barricade: RANGE 1 | Build Wall. [+] Can be targeted by Manual Detonation. Detonating it applies STUN to adjacent enemies.
+(The Siegecrafter / The Mechanist) Tesla Barricade: RANGE 1 | Build Wall. [+] Can be targeted by Manual Detonation. Detonating it applies STAGGER to adjacent enemies.
 
 (The Mechanist / The Demolitionist) Flak Cannon: RANGE 1 | ARC | ATK 2 | PUSH 1. [+] Consume 1 Scrap to gain ATK +2 and apply BLEED X (X = your WPN).
 

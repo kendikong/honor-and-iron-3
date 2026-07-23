@@ -5,7 +5,7 @@
 # 
 # Abilities are DATA, not engine code modifications. You are strictly forbidden
 # from writing things like `if action.ability.id == "knight_shield_bash"` to
-# inject mechanics. If an ability needs custom behavior (Stun on collision, 
+# inject mechanics. If an ability needs custom behavior (STAGGER on collision, 
 # chain pushes, etc), you MUST add a new generic flag to `GameEnums.EffectType`
 # or `GameEnums.StatusType`, assign it in the factory, and check for THAT flag.
 # 
@@ -54,7 +54,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			if target != null and target.has_status(GameEnums.StatusType.STEALTH):
 				return false
 
-	if actor.has_status(GameEnums.StatusType.STUN) or actor.has_status(GameEnums.StatusType.SILENCE):
+	if actor.has_status(GameEnums.StatusType.STAGGER) or actor.has_status(GameEnums.StatusType.SILENCE):
 		return false
 
 	if actor.has_status(GameEnums.StatusType.PACIFY) and ability_uses_attack_animation(ability):
@@ -171,6 +171,7 @@ static func ability_has_movement_effect(ability: AbilityData) -> bool:
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.MOVE,
 			GameEnums.EffectType.TELEPORT_CASTER,
+			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 		]:
 			return true
 	return false
@@ -184,6 +185,7 @@ static func is_movement_skill(ability: AbilityData) -> bool:
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.MOVE,
 			GameEnums.EffectType.TELEPORT_CASTER,
+			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 		]:
 			return true
 	return false
@@ -503,7 +505,7 @@ static func can_afford_run_for_commit(actor: UnitState, paired_ability: AbilityD
 static func can_plan_pre_move(unit: UnitState, move_slot_open: bool) -> bool:
 	if unit == null or not move_slot_open:
 		return false
-	if unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STUN):
+	if unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STAGGER):
 		return false
 	return unit.movement.points_left > 0 or can_afford_run(unit)
 
@@ -544,7 +546,7 @@ static func can_plan(actor: UnitState, ability: AbilityData) -> bool:
 		return false
 	if not _has_resource_for_ability(actor, ability):
 		return false
-	if actor.has_status(GameEnums.StatusType.STUN) or actor.has_status(GameEnums.StatusType.SILENCE):
+	if actor.has_status(GameEnums.StatusType.STAGGER) or actor.has_status(GameEnums.StatusType.SILENCE):
 		return false
 	if actor.has_status(GameEnums.StatusType.PACIFY) and ability_uses_attack_animation(ability):
 		return false
@@ -732,7 +734,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		return
 
 	for effect in effects_to_apply:
-		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER]:
+		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
 			_apply_effect_to_tile(board, actor, action, effect, events, target_coord, board.get_unit_at(target_coord))
 			continue
 		for tile_coord in affected_tiles:
@@ -834,7 +836,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				hostile = true
 				
 		if target == actor:
-			if not friendly and not effect.type in [GameEnums.EffectType.ADD_STATUS_SELF, GameEnums.EffectType.DAMAGE_SELF, GameEnums.EffectType.TELEPORT_CASTER]:
+			if not friendly and not effect.type in [GameEnums.EffectType.ADD_STATUS_SELF, GameEnums.EffectType.DAMAGE_SELF, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
 				return
 		elif actor != null:
 			if hostile and target.team == actor.team:
@@ -993,6 +995,34 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		GameEnums.EffectType.SWAP:
 			if target != null:
 				PhysicsSystem.swap(board, actor, target, events)
+		GameEnums.EffectType.MOVE_INTO_AND_PUSH:
+			if target != null:
+				var is_immune := false
+				if target.has_passive(&"stand_ground") and not target.has_status(GameEnums.StatusType.VULNERABLE):
+					is_immune = true
+				if not is_immune:
+					var dir := PhysicsSystem.cardinal_from_to(actor.position, target.position)
+					var pending := {
+						"type": "push",
+						"target_id": target.id,
+						"dir": dir,
+						"amount": effect.amount,
+						"actor_id": actor.id,
+						"ability_id": action.ability.id,
+						"follow_up_move_actor": true
+					}
+					board.pending_pushes.append(pending)
+		GameEnums.EffectType.THROW_BEHIND:
+			if target != null:
+				var dir := PhysicsSystem.cardinal_from_to(target.position, actor.position)
+				var behind_coord = actor.position + dir
+				if not GridSystem.is_occupied(board, behind_coord) and not GridSystem.is_wall(board, behind_coord):
+					GridSystem.set_occupant(board, target.position, -1)
+					target.position = behind_coord
+					GridSystem.set_occupant(board, target.position, target.id)
+					events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+						"unit": target.id, "to": target.position
+					}))
 		GameEnums.EffectType.HEAL:
 			if target != null:
 				var heal_amount := effect.amount
@@ -1121,7 +1151,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 					return
 					
-				if target.is_boss() and GameEnums.is_debuff(effect.status_type) and effect.status_type in [GameEnums.StatusType.STUN, GameEnums.StatusType.ROOT, GameEnums.StatusType.SILENCE, GameEnums.StatusType.PACIFY, GameEnums.StatusType.FEAR, GameEnums.StatusType.CONFUSION, GameEnums.StatusType.POLYMORPH, GameEnums.StatusType.TAUNT]:
+				if target.is_boss() and GameEnums.is_debuff(effect.status_type) and effect.status_type in [GameEnums.StatusType.STAGGER, GameEnums.StatusType.ROOT, GameEnums.StatusType.SILENCE, GameEnums.StatusType.PACIFY, GameEnums.StatusType.FEAR, GameEnums.StatusType.CONFUSION, GameEnums.StatusType.POLYMORPH, GameEnums.StatusType.TAUNT]:
 					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 						"actor": target.id, "reason": "boss_immune_to_cc",
 					}))
@@ -1216,7 +1246,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 		GameEnums.EffectType.REFUND_AP_ON_CC:
 			if target != null:
-				if target.has_status(GameEnums.StatusType.ROOT) or target.has_status(GameEnums.StatusType.STUN):
+				if target.has_status(GameEnums.StatusType.ROOT) or target.has_status(GameEnums.StatusType.STAGGER):
 					actor.ability.points_left = mini(actor.definition.action_points, actor.ability.points_left + 1)
 
 		GameEnums.EffectType.ADD_STATUS_SELF:
@@ -1288,6 +1318,7 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 			continue
 			
 		var push_ev_start = events.size()
+		var old_pos = target.position
 		if push_type == "dash":
 			PhysicsSystem.dash(
 				board, target, push.dir, push.amount, events, actor, ability_id,
@@ -1299,12 +1330,21 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 		else:
 			PhysicsSystem.push(board, target, push.dir, push.amount, events, actor, ability_id)
 		
+		if push.get("follow_up_move_actor", false) and actor != null and actor.is_alive():
+			if target.position != old_pos:
+				GridSystem.set_occupant(board, actor.position, -1)
+				actor.position = old_pos
+				GridSystem.set_occupant(board, actor.position, actor.id)
+				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+					"unit": actor.id, "to": actor.position
+				}))
+		
 		if push_type == "push" or push_type == "pull":
 			if push.get("stun_on_collision", false):
 				for i in range(push_ev_start, events.size()):
 					var ev = events[i]
 					if ev.type == GameEnums.SimEventType.COLLISION and ev.data.get("unit") == target.id:
-						target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STUN, 1))
+						target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
 						target._recalculate_stats()
 						break
 			

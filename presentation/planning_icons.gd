@@ -74,7 +74,7 @@ static func keyword_icon(keyword: String) -> String:
 		"POISON": return "🧪"
 		"WEAKEN": return "📉"
 		"VULNERABLE": return "💔"
-		"STUN": return "💫"
+		"STAGGER": return "💫"
 		"ROOT": return "🌱"
 		"SILENCE": return "🔇"
 		"TAUNT": return "🗯️"

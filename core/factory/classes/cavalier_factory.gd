@@ -29,7 +29,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	def.passives.append(DataLibrary._make_passive(&"flanking_strike", "Flanking Strike", "Side attacks ignore 2 DEF.", "[+] Ignores 4 DEF instead."))
 	
 	def.passives.append(DataLibrary._make_passive(&"plunging_attack", "Plunging Attack", "Using an AP jump/teleport before your action adds +3 ATK to that action.", "[+] Attack gains PIERCE."))
-	def.passives.append(DataLibrary._make_passive(&"crashing_impact", "Crashing Impact", "Landing creates shockwave (PUSH 1 adjacent).", "[+] Pushed enemies hitting obstacles suffer STUN."))
+	def.passives.append(DataLibrary._make_passive(&"crashing_impact", "Crashing Impact", "Landing creates shockwave (PUSH 1 adjacent).", "[+] Pushed enemies hitting obstacles suffer STAGGER."))
 	def.passives.append(DataLibrary._make_passive(&"pole_plant", "Pole-Plant", "0-AP Push works on traps. Destroying trap = SHIELD 2.", "[+] Destroying trap deals 2 unmitigated damage to adjacent."))
 	def.passives.append(DataLibrary._make_passive(&"spear_drop", "Spear Drop", "Attacking an enemy you vaulted over ignores 2 DEF and applies BLEED X.", "[+] Ignores 4 DEF."))
 	def.passives.append(DataLibrary._make_passive(&"springboard", "Springboard", "On Kill: Free vault to defeated enemy space for 0 AP, gain +1 MOV on landing.", "[+] Gain 1 AP on landing (Once per turn)."))
@@ -54,7 +54,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
 		DataLibrary._effect(GameEnums.EffectType.PULL, 1)
 	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.ARC, 2)
-	sweeping_halberd.upgrade_description = "Enemy collision on PULL applies STUN."
+	sweeping_halberd.upgrade_description = "Enemy collision on PULL applies STAGGER."
 	sweeping_halberd.upgraded_effects = DataLibrary._duplicate_effects(sweeping_halberd.effects)
 	def.abilities.append(sweeping_halberd)
 
@@ -90,7 +90,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	var brace = DataLibrary._make_ability(&"cavalier_brace", "Brace", 0, [
 		DataLibrary._status_effect_self(GameEnums.StatusType.STURDY, 1) # Negate next melee
 	], 1)
-	brace.upgrade_description = "Attacker suffers STUN."
+	brace.upgrade_description = "Attacker suffers STAGGER."
 	brace.upgraded_effects = DataLibrary._duplicate_effects(brace.effects)
 	def.abilities.append(brace)
 

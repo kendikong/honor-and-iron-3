@@ -19,7 +19,7 @@ func host_webrtc_game(username: String) -> Error:
 	
 	rtc_peer = WebRTCPeerConnection.new()
 	rtc_peer.initialize({
-		"iceServers": [ { "urls": ["stun:stun.l.google.com:19302"] } ]
+		"iceServers": [ { "urls": ["STAGGER:STAGGER.l.google.com:19302"] } ]
 	})
 	
 	rtc_peer.session_description_created.connect(_on_session)
@@ -40,7 +40,7 @@ func join_webrtc_game(username: String) -> Error:
 	
 	rtc_peer = WebRTCPeerConnection.new()
 	rtc_peer.initialize({
-		"iceServers": [ { "urls": ["stun:stun.l.google.com:19302"] } ]
+		"iceServers": [ { "urls": ["STAGGER:STAGGER.l.google.com:19302"] } ]
 	})
 	
 	rtc_peer.session_description_created.connect(_on_session)

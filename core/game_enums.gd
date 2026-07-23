@@ -75,9 +75,11 @@ enum EffectType {
 	TRAMPLE, ## Pass-through move: ATK X on enemies moved through; no displacement; end on open tile.
 	BULLDOZE, ## Pass-through move: collision base X + PUSH X sideways; axial push when landing on target.
 	MOVE, ## Skill-driven non-instant movement. Walk physics; respects collision unless combined with TRAMPLE/BULLDOZE.
-	PUSH_STUN_ON_COLLISION, ## Modifier: PUSH applies STUN if the target collides.
+	PUSH_STAGGER_ON_COLLISION, ## Modifier: PUSH applies STAGGER if the target collides.
 	PULL_VULNERABLE_ON_ADJACENT, ## Modifier: PULL applies VULNERABLE if the target lands adjacent to caster.
 	PUSH_CHAIN_COLLISION, ## Modifier: PUSH causes chain collisions (Bowling Charge).
+	MOVE_INTO_AND_PUSH, ## Caster moves to target tile; target is pushed away in the same direction.
+	THROW_BEHIND, ## Target is picked up and placed in the empty tile directly behind the caster.
 }
 
 ## Types of temporary statuses that can be applied to units.
@@ -99,7 +101,7 @@ enum StatusType {
 	POISON,
 	WEAKEN,
 	VULNERABLE,
-	STUN,
+
 	STAGGER,
 	ROOT,
 	SILENCE,
@@ -137,7 +139,7 @@ static func is_buff(status: StatusType) -> bool:
 
 static func is_debuff(status: StatusType) -> bool:
 	match status:
-		StatusType.STAT_DEBUFF_DEF, StatusType.STAT_DEBUFF_ACC, StatusType.STAT_DEBUFF_MOV, StatusType.ELECTRIFIED, StatusType.WEAK_TRAP, StatusType.BURN, StatusType.BLEED, StatusType.POISON, StatusType.WEAKEN, StatusType.VULNERABLE, StatusType.STUN, StatusType.STAGGER, StatusType.ROOT, StatusType.SILENCE, StatusType.TAUNT, StatusType.BLIND, StatusType.PACIFY, StatusType.FEAR, StatusType.CONFUSION, StatusType.POLYMORPH, StatusType.MARK, StatusType.IRON_GRIP_DEBUFF:
+		StatusType.STAT_DEBUFF_DEF, StatusType.STAT_DEBUFF_ACC, StatusType.STAT_DEBUFF_MOV, StatusType.ELECTRIFIED, StatusType.WEAK_TRAP, StatusType.BURN, StatusType.BLEED, StatusType.POISON, StatusType.WEAKEN, StatusType.VULNERABLE, StatusType.STAGGER, StatusType.ROOT, StatusType.SILENCE, StatusType.TAUNT, StatusType.BLIND, StatusType.PACIFY, StatusType.FEAR, StatusType.CONFUSION, StatusType.POLYMORPH, StatusType.MARK, StatusType.IRON_GRIP_DEBUFF:
 			return true
 	return false
 

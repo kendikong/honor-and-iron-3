@@ -438,7 +438,7 @@ func _intent_tiles_blocked(unit: UnitState, selected_ability: int) -> bool:
 func _movement_status_blocked(unit: UnitState) -> bool:
 	if unit == null:
 		return true
-	return unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STUN)
+	return unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STAGGER)
 
 
 func _hover_proj_cache_key(unit: UnitState) -> int:
@@ -503,7 +503,7 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if not p_unit.can_use_action_slot():
 		return false
-	if p_unit.has_status(GameEnums.StatusType.STUN) or p_unit.has_status(GameEnums.StatusType.SILENCE):
+	if p_unit.has_status(GameEnums.StatusType.STAGGER) or p_unit.has_status(GameEnums.StatusType.SILENCE):
 		return false
 	if selected_ability < 0 and not force_basic:
 		return false

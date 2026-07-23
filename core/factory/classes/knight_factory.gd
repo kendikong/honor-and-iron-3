@@ -61,7 +61,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 2)
 	], 1, GameEnums.StatType.PHYSICAL)
-	shield_bash.upgrade_description = "Apply STUN if collides with wall/enemy."
+	shield_bash.upgrade_description = "Apply STAGGER if collides with wall/enemy."
 	shield_bash.upgraded_effects = DataLibrary._duplicate_effects(shield_bash.effects)
 	shield_bash.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH_STUN_ON_COLLISION, 1))
 	def.abilities.append(shield_bash)
@@ -127,7 +127,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._status_effect(GameEnums.StatusType.ROOT, 1),
 		DataLibrary._status_effect(GameEnums.StatusType.IRON_GRIP_DEBUFF, 1)
 	], 1)
-	iron_grip.upgrade_description = "Refund 1 AP if already ROOT/STUN."
+	iron_grip.upgrade_description = "Refund 1 AP if already ROOT/STAGGER."
 	iron_grip.upgraded_effects = DataLibrary._duplicate_effects(iron_grip.effects)
 	iron_grip.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.REFUND_AP_ON_CC, 0))
 	def.abilities.append(iron_grip)

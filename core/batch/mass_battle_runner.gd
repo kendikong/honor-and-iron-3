@@ -78,36 +78,27 @@ func _run_single_battle_thread(index: int) -> void:
 		telemetry.enemy_classes.append(unit.id)
 	
 	var p1_ai = AutobattlerAI.new(null, 0.5)
-	var p2_ai = AutobattlerAI.new(null, 0.8)
 	
 	var turns = 0
 	var max_turns = 100
 	var winner = GameEnums.Team.NEUTRAL
 	
 	while turns < max_turns:
-		# Player Turn (Phase 1)
+		# 1. Lock Enemy Intents (Perfect Information Phase)
+		board.intents = EnemyPlanner.plan(board)
+		
+		# 2. Player generates a plan knowing the enemy intents
 		var p1_vector = p1_ai.decide_team_vector(board)
+		
+		var timeline = Timeline.new()
 		if p1_vector != null and not p1_vector.actions.is_empty():
-			var timeline = Timeline.new()
 			for act in p1_vector.actions:
-				timeline.add_event(act)
-			var sim_result = Simulator.simulate(board, timeline)
-			board = sim_result.final_state
-			_accumulate_telemetry(telemetry, sim_result.events)
-			
-		winner = _check_win_condition(board)
-		if winner != GameEnums.Team.NEUTRAL:
-			break
-			
-		# Enemy Turn (Phase 2)
-		var p2_vector = p2_ai.decide_team_vector(board)
-		if p2_vector != null and not p2_vector.actions.is_empty():
-			var timeline = Timeline.new()
-			for act in p2_vector.actions:
-				timeline.add_event(act)
-			var sim_result = Simulator.simulate(board, timeline)
-			board = sim_result.final_state
-			_accumulate_telemetry(telemetry, sim_result.events)
+				timeline.add(act)
+				
+		# 3. Simulate entire turn (Player actions -> Enemy intents -> Status ticks)
+		var sim_result = Simulator.simulate(board, timeline)
+		board = sim_result.final_state
+		_accumulate_telemetry(telemetry, sim_result.events)
 			
 		winner = _check_win_condition(board)
 		if winner != GameEnums.Team.NEUTRAL:
@@ -127,11 +118,12 @@ func _run_single_battle_thread(index: int) -> void:
 
 func _accumulate_telemetry(telemetry: SimulationTelemetry, events: Array) -> void:
 	for e in events:
-		if e.type == GameEnums.EventType.UNIT_MOVED and e.get("collision_target") != null:
-			telemetry.wall_collisions += 1
-		elif e.type == GameEnums.EventType.DAMAGE_TAKEN:
-			var amt = e.get("amount", 0)
-			telemetry.assisted_damage += amt
+		if e is SimEvent:
+			if e.type == GameEnums.SimEventType.COLLISION:
+				telemetry.wall_collisions += 1
+			elif e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+				var amt = e.data.get("amount", 0)
+				telemetry.assisted_damage += amt
 
 func _check_win_condition(board: BoardState) -> int:
 	var p_alive = false

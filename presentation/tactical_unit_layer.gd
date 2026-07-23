@@ -1704,7 +1704,7 @@ func _status_badge(status_type: int) -> Dictionary:
 			return {"abbr": "WK", "bg": Color(0.45, 0.35, 0.22), "fg": Color(1.0, 0.92, 0.82)}
 		GameEnums.StatusType.VULNERABLE:
 			return {"abbr": "VU", "bg": Color(0.58, 0.22, 0.48), "fg": Color(1.0, 0.9, 0.96)}
-		GameEnums.StatusType.STUN:
+		GameEnums.StatusType.STAGGER:
 			return {"abbr": "ST", "bg": Color(0.72, 0.62, 0.12), "fg": Color(0.12, 0.1, 0.05)}
 		GameEnums.StatusType.ROOT:
 			return {"abbr": "RT", "bg": Color(0.32, 0.48, 0.22), "fg": Color(0.92, 1.0, 0.88)}

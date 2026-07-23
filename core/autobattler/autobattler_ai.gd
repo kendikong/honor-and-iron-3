@@ -1,4 +1,4 @@
-﻿class_name AutobattlerAI
+class_name AutobattlerAI
 extends RefCounted
 
 ## Purpose: Commander AI Pipeline for the Autobattler.
@@ -24,7 +24,7 @@ func decide_team_vector(board: BoardState) -> TeamVector:
 	if player_units.is_empty():
 		return null
 		
-	# ── 1. Fast-Pass (Candidate Generation) ──────────────────────────────
+	# -- 1. Fast-Pass (Candidate Generation) ------------------------------
 	var unit_candidates := {}
 	var K := 2
 	if current_profile != null:
@@ -69,7 +69,7 @@ func decide_team_vector(board: BoardState) -> TeamVector:
 			
 		unit_candidates[u.id] = final_candidates
 
-	# ── 2. Vector Bundling (Combinatorial) ────────────────────────────────
+	# -- 2. Vector Bundling (Combinatorial) --------------------------------
 	var projected_hp = {}
 	for u in board.units:
 		if u.is_alive() and u.is_enemy():
@@ -95,7 +95,7 @@ func decide_team_vector(board: BoardState) -> TeamVector:
 	
 	var hash_cache = {}
 	
-	# ── 3. Simulation & Final Grading ─────────────────────────────────────
+	# -- 3. Simulation & Final Grading -------------------------------------
 	for v in all_vectors:
 		var sim_board = board.clone()
 		var timeline = Timeline.new()

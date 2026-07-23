@@ -199,7 +199,7 @@ static func status_player_tooltip(st: GameEnums.StatusType) -> String:
 				"Target loses all Push Mitigation (pushed maximum distance by collisions) "
 				+ "and cannot gain SHIELD."
 			)
-		GameEnums.StatusType.STUN:
+		GameEnums.StatusType.STAGGER:
 			return "Target loses their Phase Action for the current/next round."
 		GameEnums.StatusType.STAGGER:
 			return "Target's Action Points (AP) are reduced by 1 for their next turn."
@@ -800,7 +800,7 @@ static func _effect_type_system(k: String) -> String:
 		"DAMAGE_SELF":
 			return "AbilitySystem → deal_damage on actor with pierce=true damage type."
 		"REFUND_AP_ON_CC":
-			return "AbilitySystem refunds 1 AP if target has ROOT or STUN at resolve time."
+			return "AbilitySystem refunds 1 AP if target has ROOT or STAGGER at resolve time."
 		_:
 			return "Resolved in AbilitySystem._apply_effect match branch."
 
@@ -843,7 +843,7 @@ static func _status_system(st: GameEnums.StatusType) -> String:
 			return "Boss CC immunity list only. Intercept Tactics passive: casting TAUNT/INTERCEPT appends STAT_BUFF_DEF(1, 2|3) on actor."
 		GameEnums.StatusType.ROOT:
 			return "UnitState._recalculate_stats: movement.max_points=0. CombatSystem.deal_damage removes ROOT on HP/armor damage."
-		GameEnums.StatusType.STUN:
+		GameEnums.StatusType.STAGGER:
 			return "ResolutionPipeline blocks actions; AbilitySystem blocks abilities. Does not zero MOV by itself."
 		GameEnums.StatusType.SILENCE:
 			return "AbilitySystem: blocks ability use when action_point_cost > 0."

@@ -1,4 +1,4 @@
-﻿class_name SimTestRunner
+class_name SimTestRunner
 extends RefCounted
 
 ## Purpose: The actual Milestone 1 checks for the pure simulation, in one place so
