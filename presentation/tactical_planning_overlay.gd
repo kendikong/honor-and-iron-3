@@ -1352,17 +1352,7 @@ func _draw_interaction_overlay() -> void:
 			target_coord = target_unit.position
 		if origin != target_coord and not _unit_has_push_preview(prev, _attack_target_id):
 			var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
-			if sel_ability != null and AbilitySystem.ability_has_movement_effect(sel_ability):
-				var path := MovementSystem.resolve_move_path(
-					_board, actor, target_coord, [], sel_ability.range_tiles, sel_ability
-				)
-				var route_cells: Array = [origin]
-				if not path.is_empty() and path.back() == target_coord:
-					route_cells.append_array(path)
-				else:
-					route_cells.append(target_coord)
-				_draw_route_line(route_cells, Color(p_col.r, p_col.g, p_col.b, 0.95), true, true)
-			else:
+			if sel_ability == null or not AbilitySystem.ability_has_movement_effect(sel_ability):
 				_draw_dashed_route([origin, target_coord], Color(p_col.r, p_col.g, p_col.b, 0.95))
 
 
@@ -1785,22 +1775,7 @@ func _draw_drag_path() -> void:
 		)
 	):
 		var route_cells: Array = [_proj_origin(drag_unit), _hover_coord]
-		if AbilitySystem.ability_has_movement_effect(ability):
-			var waypoints: Array[Vector2i] = []
-			if _planning_input != null:
-				var drag_route := _planning_input.get_drag_route()
-				if drag_route.size() >= 2:
-					waypoints = drag_route.slice(1)
-			var path := MovementSystem.resolve_move_path(
-				_board, drag_unit, _hover_coord, waypoints, ability.range_tiles, ability
-			)
-			if not path.is_empty() and path.back() == _hover_coord:
-				var full_route: Array = [_proj_origin(drag_unit)]
-				full_route.append_array(path)
-				route_cells = full_route
-		if AbilitySystem.ability_has_movement_effect(ability):
-			_draw_route_line(route_cells, route_col, true, true)
-		else:
+		if not AbilitySystem.ability_has_movement_effect(ability):
 			_draw_dashed_route(route_cells, route_col)
 		return
 	if _route.size() >= 2:
