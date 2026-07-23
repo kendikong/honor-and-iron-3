@@ -1330,11 +1330,15 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	if unit == null:
 		return
 	if GridSystem.manhattan(last, cell) != 1:
-		for c: Vector2i in MovementSystem.find_path(board, last, cell, 999):
+		var ability: AbilityData = null
+		if not force_basic_movement and _director.selected_ability_index >= 0:
+			ability = _selected_ability_data(unit)
+		var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
+		for c: Vector2i in MovementSystem.find_path(board, last, cell, 999, mt, 1, ability):
 			_append_route_tile(c)
 		if not _drag_route.is_empty() and _drag_route.back() != cell:
 			_drag_route = [unit.position]
-			for c: Vector2i in MovementSystem.find_path(board, unit.position, cell, 999):
+			for c: Vector2i in MovementSystem.find_path(board, unit.position, cell, 999, mt, 1, ability):
 				_append_route_tile(c)
 		return
 	_append_route_tile(cell)
@@ -1353,12 +1357,12 @@ func _append_route_tile(coord: Vector2i) -> void:
 	if _drag_route.size() > _drag_max_steps(unit):
 		return
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
-	if GridSystem.manhattan(last, coord) != 1 or not MovementSystem.is_walkable_for(board, coord, unit):
-		return
+	var ability: AbilityData = null
 	if not force_basic_movement and _director.selected_ability_index >= 0:
-		var occ := board.get_unit_at(coord)
-		if occ != null and occ.is_enemy() and MovementSystem.has_trample(unit):
-			return
+		ability = _selected_ability_data(unit)
+		
+	if GridSystem.manhattan(last, coord) != 1 or not MovementSystem.is_walkable_for(board, coord, unit, ability):
+		return
 	_drag_route.append(coord)
 
 
@@ -1586,7 +1590,11 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	var board := _proj()
 	if not MovementSystem.can_end_movement_on(board, coord, unit):
 		return false
-	return not MovementSystem.find_path(board, unit.position, coord, _move_budget(unit)).is_empty()
+	var ability: AbilityData = null
+	if not force_basic_movement and _director.selected_ability_index >= 0:
+		ability = _selected_ability_data(unit)
+	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
+	return not MovementSystem.find_path(board, unit.position, coord, _move_budget(unit), mt, 1, ability).is_empty()
 
 
 func _snapshot_drag_legal_move_tiles() -> Array[Vector2i]:
