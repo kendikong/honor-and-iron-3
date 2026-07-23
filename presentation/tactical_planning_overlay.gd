@@ -1342,6 +1342,9 @@ func _draw_interaction_overlay() -> void:
 		var draw_route: Array = _pending_move_route_leg(actor.id, prev)
 		if draw_route.size() >= 2:
 			_draw_route_line(draw_route, p_col, true, true)
+	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
+	var route_col := Color(p_col.r, p_col.g, p_col.b, 0.95)
+	
 	if _attack_target_id >= 0:
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord
@@ -1351,9 +1354,17 @@ func _draw_interaction_overlay() -> void:
 		if target_unit != null:
 			target_coord = target_unit.position
 		if origin != target_coord and not _unit_has_push_preview(prev, _attack_target_id):
-			var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
 			if sel_ability == null or not AbilitySystem.ability_has_movement_effect(sel_ability):
-				_draw_dashed_route([origin, target_coord], Color(p_col.r, p_col.g, p_col.b, 0.95))
+				_draw_dashed_route([origin, target_coord], route_col)
+	elif (
+		sel_ability != null
+		and _planning_input != null
+		and _planning_input.awaiting_targeting_active()
+		and not AbilitySystem.ability_has_movement_effect(sel_ability)
+		and AbilitySystem.planning_commit_flow(actor, sel_ability) == GameEnums.PlanningCommitFlow.AWAITING_TARGET
+		and AbilitySystem.planning_is_valid_awaiting_endpoint(_proj_origin(actor), _hover_coord, sel_ability)
+	):
+		_draw_dashed_route([actor.position, _hover_coord], route_col)
 
 
 func _unit_can_still_move(unit_id: int) -> bool:
@@ -1755,39 +1766,6 @@ func _facing_toward(from: Vector2i, to: Vector2i) -> int:
 		return GameEnums.Facing.NORTH
 	return GameEnums.Facing.SOUTH
 
-
-func _draw_drag_path() -> void:
-	if _planning_input == null or _board == null or not _planning_input.dragging:
-		return
-	var drag_unit := _board.get_unit_by_id(_planning_input.get_drag_unit_id())
-	if drag_unit == null:
-		return
-	var ability: AbilityData = _selected_ability_data(drag_unit, _director.selected_ability_index)
-	var p_col: Color = _player_color_for_unit(drag_unit)
-	var route_col: Color = Color(p_col.r, p_col.g, p_col.b, 0.95)
-	if (
-		ability != null
-		and AbilitySystem.planning_commit_flow(drag_unit, ability) == GameEnums.PlanningCommitFlow.AWAITING_TARGET
-		and _planning_input != null
-		and _planning_input.awaiting_targeting_active()
-		and AbilitySystem.planning_is_valid_awaiting_endpoint(
-			_proj_origin(drag_unit), _hover_coord, ability,
-		)
-	):
-		var route_cells: Array = [_proj_origin(drag_unit), _hover_coord]
-		if not AbilitySystem.ability_has_movement_effect(ability):
-			_draw_dashed_route(route_cells, route_col)
-		return
-	if _route.size() >= 2:
-		var hovered_unit := _board.get_unit_at(_hover_coord) if _board.is_in_bounds(_hover_coord) else null
-		if hovered_unit != null and hovered_unit.id != _planning_input.get_drag_unit_id():
-			var idx: int = _route.find(_planning_input.drag_sim_actor_pos)
-			var move_route: Array = _route.slice(0, idx + 1) if idx >= 0 else _route.slice(0, _route.size() - 1)
-			if move_route.size() >= 2:
-				_draw_route_line(move_route, _COLOR_DRAGPATH, true, true)
-			_draw_dashed_route([_planning_input.drag_sim_actor_pos, _hover_coord], route_col)
-		else:
-			_draw_route_line(_route, _COLOR_DRAGPATH, true, true)
 
 
 func _proj_unit(unit_id: int) -> UnitState:
