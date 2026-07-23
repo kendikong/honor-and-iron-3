@@ -77,25 +77,33 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 func _build_tabs() -> void:
-	# Stubs for the 7 levels. To be expanded in later phases.
-	var levels = [
-		"L1: Executive Summary",
-		"L2: Balance & Synergy",
-		"L3: Economy & Math",
-		"L4: Physics Heatmaps",
-		"L5: AI Diagnostics",
-		"L6: Map Bias",
-		"L7: Integrity"
-	]
+	var l1 = Level1SummaryPanel.new()
+	l1.name = "L1: Executive Summary"
+	tab_container.add_child(l1)
 	
-	for lvl_name in levels:
-		var panel = Panel.new()
-		panel.name = lvl_name
-		var lbl = Label.new()
-		lbl.text = "Content for %s" % lvl_name
-		lbl.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-		panel.add_child(lbl)
-		tab_container.add_child(panel)
+	var l2 = Level2BalancePanel.new()
+	l2.name = "L2: Balance & Synergy"
+	tab_container.add_child(l2)
+	
+	var l3 = Level3EconomyPanel.new()
+	l3.name = "L3: Economy & Math"
+	tab_container.add_child(l3)
+	
+	var l4 = Level4PhysicsPanel.new()
+	l4.name = "L4: Physics Heatmaps"
+	tab_container.add_child(l4)
+	
+	var l5 = Level5AIPanel.new()
+	l5.name = "L5: AI Diagnostics"
+	tab_container.add_child(l5)
+	
+	var l6 = Level6MapPanel.new()
+	l6.name = "L6: Map Bias"
+	tab_container.add_child(l6)
+	
+	var l7 = Level7IntegrityPanel.new()
+	l7.name = "L7: Integrity"
+	tab_container.add_child(l7)
 
 func _on_run_pressed() -> void:
 	progress_bar.visible = true
@@ -121,3 +129,13 @@ func _on_batch_completed(path: String, stats: Dictionary) -> void:
 	msg += "[b]Most Chaotic ID:[/b] %d\n" % stats.get("most_chaotic_id", -1)
 	
 	inspector.update_context("Batch Complete", msg)
+	
+	var engine = TriageEngine.new()
+	var warnings = engine.evaluate_batch(stats, stats.get("total_battles", 100))
+	
+	var l1 = tab_container.get_node("L1: Executive Summary") as Level1SummaryPanel
+	if l1 != null:
+		# Use dummy win rates for now, normally computed from full telemetry
+		var p_wins = 55
+		var e_wins = 45
+		l1.update_summary(engine, warnings, {"player_win_rate": p_wins, "enemy_win_rate": e_wins})
