@@ -521,6 +521,8 @@ func _on_selection_changed(unit_id: int) -> void:
 		if _planning != null:
 			_planning._recompute_hover_ranges_from_inputs()
 		return
+	_drag_route.clear()
+	_drag_unit_id = unit_id
 	_play_sfx("select")
 	call_deferred("_finish_selection_changed")
 
@@ -645,15 +647,15 @@ func on_hover_moved(cell: Vector2i) -> void:
 		return
 	if _director.selected_unit_id >= 0:
 		if planning_cell_changed:
-			if awaiting_targeting_active():
-				var p_unit := _proj_unit(_director.selected_unit_id)
-				if p_unit != null:
-					var ability := _selected_ability_data(p_unit)
-					if ability != null and AbilitySystem.ability_has_movement_effect(ability):
-						if _drag_route.is_empty():
-							_drag_unit_id = _director.selected_unit_id
-							_drag_route = [p_unit.position]
-						_extend_drag_route(cell)
+			var p_unit := _proj_unit(_director.selected_unit_id)
+			if p_unit != null:
+				var ability := _selected_ability_data(p_unit)
+				var is_awaiting_move = awaiting_targeting_active() and ability != null and AbilitySystem.ability_has_movement_effect(ability)
+				if _basic_move_allowed() or is_awaiting_move:
+					if _drag_route.is_empty():
+						_drag_unit_id = _director.selected_unit_id
+						_drag_route = [p_unit.position]
+					_extend_drag_route(cell)
 			_refresh_selected_interaction_preview()
 	elif planning_cell_changed:
 		_update_hover_attack_preview()
@@ -1987,8 +1989,8 @@ func _build_enemy_commit_slots(
 		if approach != actor.position:
 			var board: BoardState = _proj()
 			var budget: int = _director.planning_move_budget(actor, board)
-			var path: Array[Vector2i] = MovementSystem.find_path(
-				board, actor.position, approach, budget,
+			var path: Array[Vector2i] = MovementSystem.resolve_move_path(
+				board, actor, approach, waypoints, budget,
 			)
 			if path.is_empty():
 				slots["invalid"] = "No valid path to approach target."
