@@ -570,9 +570,6 @@ static func deal_damage(
 				wpn = attacker.definition.equipped_weapon.might
 			if wpn > 0:
 				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1, wpn))
-				if attacker.is_passive_upgraded(&"blood_for_blood"):
-					attacker.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
-					attacker._recalculate_stats()
 					
 		if attacker.has_passive(&"crowd_breaker"):
 			var splash = 2 if attacker.is_passive_upgraded(&"crowd_breaker") else 1
@@ -585,6 +582,7 @@ static func deal_damage(
 						deal_damage(board, adj_unit, splash, events, &"true", true, true, attacker, "Splash Damage")
 	
 	if hp_dmg + armor_dmg > 0:
+		target.passive_flags["damaged_this_turn"] = true
 		if mitigated_amount > 0 and target.has_passive(&"kinetic_redirection"):
 			var stacks = target.passive_flags.get("kinetic_redirection_stacks", 0)
 			if stacks < 3:

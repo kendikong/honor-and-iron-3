@@ -158,6 +158,7 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 					has_rallying_knight = true
 					if adj_unit.is_passive_upgraded(&"rallying_presence"):
 						rally_upgraded = true
+						rally_upgraded = true
 						break
 			if has_rallying_knight:
 				var mov_bonus: int = 2 if rally_upgraded else 1
@@ -165,13 +166,30 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 					DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_MP, 1, mov_bonus),
 				)
 				unit._recalculate_stats()
+				
+			if unit.has_passive(&"cellular_regeneration"):
+				var adj_enemies = 0
+				for dir in GridSystem.DIRECTIONS:
+					var adj_unit = board.get_unit_at(unit.position + dir)
+					if adj_unit != null and adj_unit.team != unit.team:
+						adj_enemies += 1
+				if adj_enemies >= 1:
+					CombatSystem.heal(board, unit, 1, events)
+				if adj_enemies >= 2 and unit.is_passive_upgraded(&"cellular_regeneration"):
+					unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+					unit._recalculate_stats()
 
 
 static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> void:
 	for unit in board.units:
 		if unit.is_alive():
+			var took_dmg: bool = unit.passive_flags.get("damaged_this_turn", false)
+			unit.passive_flags["damaged_last_turn"] = took_dmg
+			unit.passive_flags["damaged_this_turn"] = false
+			
 			for status in unit.active_statuses:
 				if status.type == GameEnums.StatusType.BLEED:
 					CombatSystem.deal_damage(
 						board, unit, status.value, events, &"bleed", true, false, null, "Bleed", status.value,
 					)
+

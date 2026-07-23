@@ -111,7 +111,7 @@ func _cycle_ability(delta: int) -> void:
 		return
 	var skip_run: bool = _planning_input.auto_run if _planning_input != null else false
 	var next: int = CombatDirector.next_selectable_ability_index(
-		p_unit, _director.selected_ability_index, delta, skip_run,
+		p_unit, _director.projected_state, _director.selected_ability_index, delta, skip_run,
 	)
 	if next < 0:
 		return

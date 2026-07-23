@@ -48,6 +48,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.SINGLE, 2)
 	charge_strike.upgrade_description = "Gain GHOST during MOVE. Gain ATK +2 if passing through terrain."
 	charge_strike.upgraded_effects = DataLibrary._duplicate_effects(charge_strike.effects)
+	charge_strike.upgraded_effects[0].modifiers["ghost_move"] = 1
+	charge_strike.upgraded_effects[1].modifiers["bonus_dmg_from_terrain"] = 2
 	def.abilities.append(charge_strike)
 
 	var concussion_blow = DataLibrary._make_ability(&"bruiser_concussion_blow", "Concussion Blow", 1, [
@@ -71,6 +73,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	], 1, GameEnums.StatType.PHYSICAL)
 	suplex.upgrade_description = "Gain ATK +1 for every 10 Current HP you possess."
 	suplex.upgraded_effects = DataLibrary._duplicate_effects(suplex.effects)
+	suplex.upgraded_effects[0].modifiers["bonus_dmg_per_10_hp"] = 1
 	def.abilities.append(suplex)
 
 	var adrenaline_surge = DataLibrary._make_ability(&"bruiser_adrenaline_surge", "Adrenaline Surge", 1, [
@@ -126,6 +129,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	], 1, GameEnums.StatType.PHYSICAL)
 	headbutt.upgrade_description = "Deal bonus damage equal to 10% of your Max HP."
 	headbutt.upgraded_effects = DataLibrary._duplicate_effects(headbutt.effects)
+	headbutt.upgraded_effects[0].modifiers["bonus_dmg_pct_max_hp"] = 0.1
 	def.abilities.append(headbutt)
 
 	var blood_boil = DataLibrary._make_ability(&"bruiser_blood_boil", "Blood Boil", 1, [

@@ -92,34 +92,44 @@ static func resolve_selected_ability(unit: UnitState, index: int) -> AbilityData
 
 
 ## First active_abilities index the unit can commit right now (projected state).
-static func first_selectable_ability_index(unit: UnitState, skip_run: bool = false) -> int:
+static func first_selectable_ability_index(unit: UnitState, projected_state: BoardState, skip_run: bool = false) -> int:
 	if unit == null:
 		return -1
-	for i: int in range(unit.active_abilities.size()):
-		var ability: AbilityData = unit.active_abilities[i] as AbilityData
+	var abilities: Array = unit.active_abilities
+	for i: int in range(abilities.size()):
+		var ability: AbilityData = abilities[i]
 		if skip_run and ability.is_universal_run():
 			continue
-		if AbilitySystem.ability_planning_selectable(unit, ability):
+		if AbilitySystem.ability_planning_selectable(unit, ability, projected_state):
 			return i
 	return -1
+
+
+static func _get_all_selectable_abilities(unit: UnitState, projected_state: BoardState, skip_run: bool = false) -> Array[int]:
+	if unit == null or not unit.is_alive():
+		return []
+	var abilities: Array = unit.active_abilities
+	var selectable: Array[int] = []
+	for i: int in range(abilities.size()):
+		var ability: AbilityData = abilities[i]
+		if skip_run and ability.is_universal_run():
+			continue
+		if AbilitySystem.ability_planning_selectable(unit, ability, projected_state):
+			selectable.append(i)
+	return selectable
 
 
 ## Scroll-wheel helper: step only among abilities that are planning-selectable.
 static func next_selectable_ability_index(
 	unit: UnitState,
+	projected_state: BoardState,
 	current: int,
 	delta: int,
 	skip_run: bool = false,
 ) -> int:
 	if unit == null or unit.active_abilities.is_empty():
 		return -1
-	var selectable: Array[int] = []
-	for i: int in range(unit.active_abilities.size()):
-		var ability: AbilityData = unit.active_abilities[i] as AbilityData
-		if skip_run and ability.is_universal_run():
-			continue
-		if AbilitySystem.ability_planning_selectable(unit, ability):
-			selectable.append(i)
+	var selectable: Array[int] = _get_all_selectable_abilities(unit, projected_state, skip_run)
 	if selectable.is_empty():
 		return -1
 	if selectable.size() == 1:
@@ -259,7 +269,7 @@ func sync_selected_ability_if_invalid() -> void:
 			pass
 		else:
 			return
-	var next: int = first_selectable_ability_index(p_unit, auto_run)
+	var next: int = first_selectable_ability_index(p_unit, projected_state, auto_run)
 	if next != selected_ability_index:
 		select_ability(next, false)
 

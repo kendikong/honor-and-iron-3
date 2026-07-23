@@ -755,7 +755,7 @@ func _rebuild_ability_buttons() -> void:
 		if _planning_input != null and _planning_input.auto_run and sel_ability.is_universal_run():
 			selected_usable = false
 		else:
-			selected_usable = AbilitySystem.ability_planning_selectable(unit, sel_ability)
+			selected_usable = AbilitySystem.ability_planning_selectable(unit, sel_ability, _board)
 	if (
 		not selected_usable
 		and _director != null
@@ -769,7 +769,7 @@ func _rebuild_ability_buttons() -> void:
 			continue
 		var index: int = i
 		var row_btn := Button.new()
-		var usable: bool = AbilitySystem.ability_planning_selectable(unit, ability)
+		var usable: bool = AbilitySystem.ability_planning_selectable(unit, ability, _board)
 		row_btn.disabled = not usable
 		row_btn.modulate = COLOR_SELECT if index == _selected_ability else (
 			Color.WHITE if usable else COLOR_SKILL_DISABLED

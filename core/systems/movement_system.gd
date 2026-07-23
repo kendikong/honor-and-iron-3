@@ -301,8 +301,12 @@ static func execute_skill_walk(
 			trampled_restore.erase(unit.position)
 			GridSystem.set_occupant(board, unit.position, restore_id)
 		unit.position = step
+		
+		var tile = board.get_tile(step)
+		if tile != null and tile.terrain_id != &"":
+			unit.passive_flags["passed_through_terrain"] = true
+			
 		TerrainSystem.apply_entry_at(board, unit, step, events)
-
 	# Rubber-band backwards if we halted on a trampled tile.
 	while trampled_restore.has(unit.position):
 		if path.size() > 0:

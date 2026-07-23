@@ -166,11 +166,27 @@ func _recalculate_stats() -> void:
 			GameEnums.StatusType.WEAKEN:
 				stat_str -= 2
 				stat_mag -= 2
+				
+	health.max_hp = (definition.base_constitution * 5) + w_hp
 	
+	if has_passive(&"adrenaline_junkie"):
+		var missing_pct = (health.max_hp - health.current_hp) / float(health.max_hp)
+		stat_mov += floori(missing_pct / 0.10)
+		
+	if is_passive_upgraded(&"enraged"):
+		var debuff_count := 0
+		var counted_types := {}
+		for status in active_statuses:
+			if GameEnums.is_debuff(status.type) and not counted_types.has(status.type):
+				debuff_count += 1
+				counted_types[status.type] = true
+		stat_mov += debuff_count
+		# Hazard tile not easily checked here, but debuffs are. If tile logic is needed, 
+		# we would pass board state, but UnitState._recalculate_stats does not have board state.
+
 	current_strength = maxi(0, base_str + w_str + stat_str)
 	current_magic = maxi(0, base_mag + w_mag + stat_mag)
 	current_defense = maxi(0, base_def + w_def + stat_def)
-	health.max_hp = (definition.base_constitution * 5) + w_hp
 	
 	
 	if has_status(GameEnums.StatusType.ROOT):

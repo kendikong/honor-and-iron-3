@@ -98,18 +98,36 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	return true
 
 
-static func _has_resource_for_ability(actor: UnitState, ability: AbilityData) -> bool:
+static func get_action_point_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> int:
+	if ability == null:
+		return 0
+	var ap_cost = ability.action_point_cost
+	if board != null and actor != null and ability.id == &"bruiser_adrenaline_surge":
+		var adj_enemies = 0
+		for dir in GridSystem.DIRECTIONS:
+			var occ = board.get_unit_at(actor.position + dir)
+			if occ != null and occ.team != actor.team:
+				adj_enemies += 1
+		if adj_enemies >= 2:
+			ap_cost = 0
+	return ap_cost
+
+
+static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
 	if ability == null or actor == null:
 		return false
+		
+	var ap_cost = get_action_point_cost(actor, ability, board)
+			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
 			return actor.movement.points_left >= ability.movement_point_cost
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			if actor.has_run_boost():
 				return false
-			return actor.ability.points_left >= ability.action_point_cost
+			return actor.ability.points_left >= ap_cost
 		GameEnums.AbilityKind.CLASS_SKILL:
-			return actor.ability.points_left >= ability.action_point_cost
+			return actor.ability.points_left >= ap_cost
 		GameEnums.AbilityKind.UNIVERSAL_WAIT:
 			return actor.can_use_action_slot()
 	return true
@@ -537,11 +555,11 @@ static func planning_move_budget(unit: UnitState, run_mode: bool) -> int:
 
 
 ## Planning UI: skill button enabled when the unit could commit this ability now (ignores range).
-static func ability_planning_selectable(actor: UnitState, ability: AbilityData) -> bool:
-	return can_plan(actor, ability)
+static func ability_planning_selectable(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
+	return can_plan(actor, ability, board)
 
 
-static func can_plan(actor: UnitState, ability: AbilityData) -> bool:
+static func can_plan(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
 	if actor == null or ability == null:
 		return false
 	if not _has_resource_for_ability(actor, ability):
@@ -674,7 +692,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var actor := board.get_unit_by_id(action.actor_id)
 	var ability := action.ability
-	_spend_ability_cost(actor, ability)
+	_spend_ability_cost(actor, ability, board)
 	if not actor.has_unlimited_training_actions() and ability.consumes_action_slot():
 		actor.turn_action_used = true
 
@@ -727,11 +745,29 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		var walk_steps: int = effect_amount(ability, GameEnums.EffectType.MOVE)
 		if walk_steps <= 0:
 			walk_steps = ability.range_tiles
+			
+		var has_ghost = false
+		for eff in effects_to_apply:
+			if eff.type == GameEnums.EffectType.MOVE and eff.modifiers.has("ghost_move"):
+				has_ghost = true
+				break
+				
+		var ghost_status = null
+		if has_ghost:
+			ghost_status = DataLibrary.make_status(GameEnums.StatusType.GHOST, 1, 1)
+			actor.active_statuses.append(ghost_status)
+			actor._recalculate_stats()
+			
 		MovementSystem.execute_skill_walk(
 			board, actor, target_coord, action.waypoints, ability, events, effects_to_apply, walk_steps
 		)
-
-		return
+		
+		if ghost_status != null:
+			actor.active_statuses.erase(ghost_status)
+			actor._recalculate_stats()
+			
+		# Recompute affected tiles after movement since actor position and facing may have changed
+		affected_tiles = GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
 
 	for effect in effects_to_apply:
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
@@ -775,16 +811,19 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		apply_canto_move_refund(actor)
 
 
-static func _spend_ability_cost(actor: UnitState, ability: AbilityData) -> void:
+static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> void:
 	if actor == null or ability == null:
 		return
+		
+	var ap_cost = get_action_point_cost(actor, ability, board)
+			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
 			actor.movement.points_left -= ability.movement_point_cost
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
-			actor.ability.points_left -= ability.action_point_cost
+			actor.ability.points_left -= ap_cost
 		GameEnums.AbilityKind.CLASS_SKILL:
-			actor.ability.points_left -= ability.action_point_cost
+			actor.ability.points_left -= ap_cost
 		_:
 			pass
 
@@ -852,6 +891,17 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					pierce = true
 					
 			var base_amt := effect.amount
+			
+			if effect.modifiers.has("bonus_dmg_per_10_hp"):
+				base_amt += floori(actor.health.current_hp / 10.0) * effect.modifiers["bonus_dmg_per_10_hp"]
+			if effect.modifiers.has("bonus_dmg_pct_max_hp"):
+				base_amt += floori(actor.health.max_hp * float(effect.modifiers["bonus_dmg_pct_max_hp"]))
+			if effect.modifiers.has("bonus_dmg_from_terrain") and actor.passive_flags.get("passed_through_terrain", false):
+				base_amt += effect.modifiers["bonus_dmg_from_terrain"]
+				
+			if actor.has_passive(&"blood_for_blood") and actor.is_passive_upgraded(&"blood_for_blood") and actor.passive_flags.get("damaged_last_turn", false):
+				base_amt += 1
+				
 			var amount := base_amt
 			
 			var wpn := 0
@@ -1338,6 +1388,9 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 					"unit": actor.id, "to": actor.position
 				}))
+				if actor.has_passive(&"push_through") and actor.is_passive_upgraded(&"push_through"):
+					actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+					actor._recalculate_stats()
 		
 		if push_type == "push" or push_type == "pull":
 			if push.get("stun_on_collision", false):

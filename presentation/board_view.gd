@@ -394,7 +394,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				var unit := _proj_unit(_selected_id)
 				if unit != null and not unit.active_abilities.is_empty():
 					var new_idx: int = CombatDirector.next_selectable_ability_index(
-						unit, _selected_ability, -1,
+						unit, _director.projected_state, _selected_ability, -1,
 					)
 					if new_idx >= 0 and _director != null:
 						_director.select_ability(new_idx)
@@ -406,7 +406,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				var unit := _proj_unit(_selected_id)
 				if unit != null and not unit.active_abilities.is_empty():
 					var new_idx: int = CombatDirector.next_selectable_ability_index(
-						unit, _selected_ability, 1,
+						unit, _director.projected_state, _selected_ability, 1,
 					)
 					if new_idx >= 0 and _director != null:
 						_director.select_ability(new_idx)
