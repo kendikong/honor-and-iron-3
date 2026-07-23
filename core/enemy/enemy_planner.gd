@@ -1,4 +1,4 @@
-﻿class_name EnemyPlanner
+class_name EnemyPlanner
 extends RefCounted
 
 ## Purpose: Turns the current board into locked, public enemy intents. Enemy AI
@@ -48,6 +48,17 @@ static func _plan_for(board: BoardState, enemy: UnitState) -> Intent:
 		_:
 			return _plan_melee_chase(board, enemy)
 
+static func _get_enemy_attack(enemy: UnitState) -> AbilityData:
+	if enemy == null or enemy.definition == null or enemy.definition.behavior == null:
+		return null
+	var preferred: AbilityData = enemy.definition.behavior.attack
+	if preferred != null and enemy.ability.points_left >= preferred.action_point_cost:
+		return preferred
+	for ab in enemy.active_abilities:
+		if ab.action_point_cost <= enemy.ability.points_left:
+			return ab
+	return null
+
 static func _plan_melee_chase(board: BoardState, enemy: UnitState) -> Intent:
 	var intent := Intent.new()
 	intent.enemy_id = enemy.id
@@ -57,7 +68,7 @@ static func _plan_melee_chase(board: BoardState, enemy: UnitState) -> Intent:
 		intent.summary = "%s waits" % enemy.definition.display_name
 		return intent
 
-	var attack := enemy.definition.behavior.attack
+	var attack := _get_enemy_attack(enemy)
 	var dest := _best_destination_toward(board, enemy, target)
 	if dest != enemy.position:
 		intent.actions.append(TimelineAction.make_move(enemy.id, dest))
@@ -106,7 +117,7 @@ static func _plan_charger(board: BoardState, enemy: UnitState) -> Intent:
 	if dest != enemy.position:
 		intent.actions.append(TimelineAction.make_move(enemy.id, dest))
 
-	var attack := enemy.definition.behavior.attack
+	var attack := _get_enemy_attack(enemy)
 	if attack != null and GridSystem.manhattan(dest, target.position) <= attack.range_tiles:
 		intent.actions.append(TimelineAction.make_ability(enemy.id, attack, target.position, target.id))
 		intent.summary = "%s charges %s, attacks %s" % [
@@ -128,7 +139,7 @@ static func _plan_artillery(board: BoardState, enemy: UnitState) -> Intent:
 	var intent := Intent.new()
 	intent.enemy_id = enemy.id
 	var target := _nearest_player(board, enemy)
-	var attack := enemy.definition.behavior.attack
+	var attack := _get_enemy_attack(enemy)
 	if target == null or attack == null:
 		intent.summary = "%s waits" % enemy.definition.display_name
 		return intent
@@ -166,7 +177,7 @@ static func _plan_shover(board: BoardState, enemy: UnitState) -> Intent:
 	if dest != enemy.position:
 		intent.actions.append(TimelineAction.make_move(enemy.id, dest))
 
-	var attack := enemy.definition.behavior.attack
+	var attack := _get_enemy_attack(enemy)
 	if attack != null and GridSystem.manhattan(dest, target.position) <= attack.range_tiles:
 		intent.actions.append(TimelineAction.make_ability(enemy.id, attack, target.position, target.id))
 		intent.summary = "%s shoves %s" % [enemy.definition.display_name, target.definition.display_name]
@@ -182,7 +193,7 @@ static func _plan_healer(board: BoardState, enemy: UnitState) -> Intent:
 	
 	var best_target: UnitState = null
 	var lowest_hp_pct := 1.0
-	var heal_ability := enemy.definition.behavior.attack
+	var heal_ability := _get_enemy_attack(enemy)
 	
 	# 1. Find the most injured ally (excluding self for simplicity, or include self if desired)
 	for unit in board.units:
@@ -293,7 +304,7 @@ static func _plan_protector(board: BoardState, enemy: UnitState) -> Intent:
 	if dest != enemy.position:
 		intent.actions.append(TimelineAction.make_move(enemy.id, dest))
 		
-	var ability := enemy.definition.behavior.attack
+	var ability := _get_enemy_attack(enemy)
 	if ability != null and GridSystem.manhattan(dest, best_target.position) <= ability.range_tiles:
 		intent.actions.append(TimelineAction.make_ability(enemy.id, ability, best_target.position, best_target.id))
 		intent.summary = "%s shields %s" % [enemy.definition.display_name, best_target.definition.display_name]
@@ -315,7 +326,7 @@ static func _plan_commander(board: BoardState, enemy: UnitState) -> Intent:
 			min_dist = dist
 			best_ally = unit
 			
-	var ability := enemy.definition.behavior.attack
+	var ability := _get_enemy_attack(enemy)
 	var dest := enemy.position
 	
 	if best_ally != null:
@@ -374,7 +385,7 @@ static func _plan_bomber(board: BoardState, enemy: UnitState) -> Intent:
 	if best_dest != enemy.position:
 		intent.actions.append(TimelineAction.make_move(enemy.id, best_dest))
 		
-	var attack := enemy.definition.behavior.attack
+	var attack := _get_enemy_attack(enemy)
 	if attack != null and _count_adjacent_players(board, best_dest) > 0:
 		intent.actions.append(TimelineAction.make_ability(enemy.id, attack, best_dest, enemy.id))
 		intent.summary = "%s moves to %s and self-destructs!" % [enemy.definition.display_name, best_dest]
@@ -405,7 +416,7 @@ static func _plan_teleporter(board: BoardState, enemy: UnitState) -> Intent:
 	if can_teleport:
 		if dest != enemy.position:
 			intent.actions.append(TimelineAction.make_move(enemy.id, dest))
-		var attack := enemy.definition.behavior.attack
+		var attack := _get_enemy_attack(enemy)
 		if attack != null:
 			intent.actions.append(TimelineAction.make_ability(enemy.id, attack, target.position, target.id))
 			intent.summary = "%s teleports behind %s and attacks!" % [enemy.definition.display_name, target.definition.display_name]
@@ -451,7 +462,7 @@ static func _plan_summoner(board: BoardState, enemy: UnitState) -> Intent:
 					break
 					
 	if spawn_coord != Vector2i(-1, -1):
-		var spawn_ability := behavior.attack
+		var spawn_ability := _get_enemy_attack(enemy)
 		if spawn_ability != null:
 			intent.actions.append(TimelineAction.make_ability(enemy.id, spawn_ability, spawn_coord, -1))
 			intent.summary = "%s summons a Hatchling at %s" % [enemy.definition.display_name, spawn_coord]
@@ -468,7 +479,7 @@ static func _plan_sentinel(board: BoardState, enemy: UnitState) -> Intent:
 	var intent := Intent.new()
 	intent.enemy_id = enemy.id
 	
-	var attack := enemy.definition.behavior.attack
+	var attack := _get_enemy_attack(enemy)
 	if attack == null:
 		intent.summary = "%s active" % enemy.definition.display_name
 		return intent
@@ -517,7 +528,7 @@ static func _plan_flanker(board: BoardState, enemy: UnitState) -> Intent:
 	if dest != enemy.position:
 		intent.actions.append(TimelineAction.make_move(enemy.id, dest))
 		
-	var attack := enemy.definition.behavior.attack
+	var attack := _get_enemy_attack(enemy)
 	if attack != null and GridSystem.manhattan(dest, target.position) <= attack.range_tiles:
 		intent.actions.append(TimelineAction.make_ability(enemy.id, attack, target.position, target.id))
 		if dest == backstab_coord:
