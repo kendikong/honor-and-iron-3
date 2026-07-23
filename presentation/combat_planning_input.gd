@@ -1487,7 +1487,7 @@ func _build_self_tile_commit_slots(
 			TimelineAction.make_ability(unit_id, ability, actor.position, unit_id),
 		)
 		return slots
-	if face_dir >= 0 and _drag_route_commits_active():
+	if face_dir >= 0 and dragging:
 		slots["action"].append(TimelineAction.make_face(unit_id, face_dir))
 		return slots
 	if _self_tile_allows_wait(actor, ability_index):
