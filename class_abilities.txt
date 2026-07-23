@@ -172,7 +172,7 @@ WEAKEN: Target suffers -2 STR and -2 MAG for the duration.
 
 VULNERABLE: Target loses all Push Mitigation (they are pushed the maximum distance by all collisions next turn) and cannot gain SHIELD.
 
-STUN: Target loses their Phase Action for the current/next round.
+STAGGER: Target's Action Points (AP) are reduced by 1 for their next turn.
 
 ROOT: Target's MOVEMENT becomes 0. Effect breaks instantly if the target takes any damage. They can still attack if in range.
 
