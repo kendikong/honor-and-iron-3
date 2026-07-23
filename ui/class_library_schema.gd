@@ -201,6 +201,8 @@ static func status_player_tooltip(st: GameEnums.StatusType) -> String:
 			)
 		GameEnums.StatusType.STUN:
 			return "Target loses their Phase Action for the current/next round."
+		GameEnums.StatusType.STAGGER:
+			return "Target's Action Points (AP) are reduced by 1 for their next turn."
 		GameEnums.StatusType.ROOT:
 			return (
 				"Target's MOVEMENT becomes 0. Breaks instantly if the target takes any damage. "

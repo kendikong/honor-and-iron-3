@@ -204,41 +204,44 @@ static func _ensure_init() -> void:
 		_ensure_player_basic_attack(u)
 
 	var charger := _make_unit_data(&"charger", "Charger", 3, 4, 1, [],
-		_behavior(&"charger", _make_ability(&"gore", "Gore", 1, [_effect(GameEnums.EffectType.DAMAGE, 1)], 0, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 4, 0, 1)
+		_behavior(&"charger", _make_ability(&"gore", "Gore", 1, [_effect(GameEnums.EffectType.DAMAGE, 1)], 1, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 4, 0, 1)
 	var artillery := _make_unit_data(&"artillery", "Artillery", 2, 2, 1, [],
-		_behavior(&"artillery", _make_ability(&"bolt", "Bolt", 3, [_effect(GameEnums.EffectType.DAMAGE, 1)], 0, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 5, 0, 0)
+		_behavior(&"artillery", _make_ability(&"bolt", "Bolt", 3, [_effect(GameEnums.EffectType.DAMAGE, 1)], 1, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 5, 0, 0)
 	var shover := _make_unit_data(&"shover", "Shover", 3, 3, 1, [],
-		_behavior(&"shover", _make_ability(&"bash", "Bash", 1, [_effect(GameEnums.EffectType.PUSH, 2)], 0)), GameEnums.MovementType.WALK, 3, 0, 2)
+		_behavior(&"shover", _make_ability(&"bash", "Bash", 1, [_effect(GameEnums.EffectType.PUSH, 2)], 1)), GameEnums.MovementType.WALK, 3, 0, 2)
 	
 	var trapper := _make_unit_data(&"trapper", "Trapper", 2, 3, 1, [],
-		_behavior(&"artillery", _make_ability(&"hook", "Hook", 3, [_effect(GameEnums.EffectType.PULL, 2)], 0)), GameEnums.MovementType.WALK, 3, 0, 1)
+		_behavior(&"artillery", _make_ability(&"hook", "Hook", 3, [_effect(GameEnums.EffectType.PULL, 2)], 1)), GameEnums.MovementType.WALK, 3, 0, 1)
 	var brute := _make_unit_data(&"brute", "Brute", 4, 2, 1, [],
-		_behavior(&"melee_chase", _make_ability(&"slam", "Slam", 1, [_effect(GameEnums.EffectType.DAMAGE, 2), _effect(GameEnums.EffectType.PUSH, 1)], 0, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 5, 0, 3)
+		_behavior(&"melee_chase", _make_ability(&"slam", "Slam", 1, [_effect(GameEnums.EffectType.DAMAGE, 2), _effect(GameEnums.EffectType.PUSH, 1)], 1, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 5, 0, 3)
 	var priest := _make_unit_data(&"priest", "Priest", 2, 3, 1, [],
-		_behavior(&"healer", _make_ability(&"mend", "Mend", 2, [_effect(GameEnums.EffectType.HEAL, 3)], 0, GameEnums.StatType.MAGICAL)), GameEnums.MovementType.WALK, 0, 3, 1)
+		_behavior(&"healer", _make_ability(&"mend", "Mend", 2, [_effect(GameEnums.EffectType.HEAL, 3)], 1, GameEnums.StatType.MAGICAL)), GameEnums.MovementType.WALK, 0, 3, 1)
 
 	var hatchling := _make_unit_data(&"hatchling", "Hatchling", 1, 3, 1, [],
-		_behavior(&"melee_chase", _make_ability(&"bite", "Bite", 1, [_effect(GameEnums.EffectType.DAMAGE, 1)], 0, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 2, 0, 0)
+		_behavior(&"melee_chase", _make_ability(&"bite", "Bite", 1, [_effect(GameEnums.EffectType.DAMAGE, 1)], 1, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 2, 0, 0)
 	var protector := _make_unit_data(&"protector", "Protector", 4, 3, 1, [],
-		_behavior(&"protector", _make_ability(&"shield_ally", "Shield Ally", 1, [_effect(GameEnums.EffectType.ARMOR_UP, 1)], 0)), GameEnums.MovementType.WALK, 2, 0, 3)
+		_behavior(&"protector", _make_ability(&"shield_ally", "Shield Ally", 1, [_effect(GameEnums.EffectType.ARMOR_UP, 1)], 1)), GameEnums.MovementType.WALK, 2, 0, 3)
 	var commander := _make_unit_data(&"commander", "Commander", 3, 3, 1, [],
-		_behavior(&"commander", _make_ability(&"command_buff", "Command Buff", 3, [_effect(GameEnums.EffectType.ARMOR_UP, 1)], 0)), GameEnums.MovementType.WALK, 0, 3, 2)
+		_behavior(&"commander", _make_ability(&"command_buff", "Command Buff", 3, [_effect(GameEnums.EffectType.ARMOR_UP, 1)], 1)), GameEnums.MovementType.WALK, 0, 3, 2)
 	var bomber := _make_unit_data(&"bomber", "Bomber", 2, 4, 1, [],
-		_behavior(&"bomber", _make_ability(&"detonate", "Detonate", 0, [_effect(GameEnums.EffectType.EXPLODE, 5)], 0)), GameEnums.MovementType.WALK, 0, 0, 0)
+		_behavior(&"bomber", _make_ability(&"detonate", "Detonate", 0, [_effect(GameEnums.EffectType.EXPLODE, 5)], 1)), GameEnums.MovementType.WALK, 0, 0, 0)
 	var teleporter := _make_unit_data(&"teleporter", "Teleporter", 2, 4, 1, [],
-		_behavior(&"teleporter", _make_ability(&"warp_strike", "Warp Strike", 1, [_effect(GameEnums.EffectType.DAMAGE, 1)], 0, GameEnums.StatType.PHYSICAL)),
+		_behavior(&"teleporter", _make_ability(&"warp_strike", "Warp Strike", 1, [_effect(GameEnums.EffectType.DAMAGE, 1)], 1, GameEnums.StatType.PHYSICAL)),
 		GameEnums.MovementType.TELEPORT, 4, 0, 1)
 	var summoner := _make_unit_data(&"summoner", "Summoner", 2, 2, 1, [],
-		_behavior(&"summoner", _make_ability(&"spawn_hatchling", "Spawn Hatchling", 1, [_effect(GameEnums.EffectType.SPAWN, 0)], 0), hatchling, 3), GameEnums.MovementType.WALK, 0, 4, 1)
+		_behavior(&"summoner", _make_ability(&"spawn_hatchling", "Spawn Hatchling", 1, [_effect(GameEnums.EffectType.SPAWN, 0)], 1), hatchling, 3), GameEnums.MovementType.WALK, 0, 4, 1)
 	var sentinel := _make_unit_data(&"sentinel", "Sentinel", 4, 0, 1, [],
-		_behavior(&"sentinel", _make_ability(&"turret_shot", "Turret Shot", 2, [_effect(GameEnums.EffectType.DAMAGE, 1)], 0, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 5, 0, 2)
+		_behavior(&"sentinel", _make_ability(&"turret_shot", "Turret Shot", 2, [_effect(GameEnums.EffectType.DAMAGE, 1)], 1, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 5, 0, 2)
 	var flanker := _make_unit_data(&"flanker", "Flanker", 2, 4, 1, [],
-		_behavior(&"flanker", _make_ability(&"backstab", "Backstab", 1, [_effect(GameEnums.EffectType.DAMAGE, 1)], 0, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 4, 0, 1)
+		_behavior(&"flanker", _make_ability(&"backstab", "Backstab", 1, [_effect(GameEnums.EffectType.DAMAGE, 1)], 1, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 4, 0, 1)
 
 	_enemy_units = [charger, artillery, shover, trapper, brute, priest, hatchling, protector, commander, bomber, teleporter, summoner, sentinel, flanker]
 	for u in _enemy_units:
 		if u.equipped_weapon == null:
 			u.equipped_weapon = basic_sword
+		# All enemies except hatchlings get a basic attack for when they are staggered
+		if u.id != &"hatchling":
+			_ensure_player_basic_attack(u)
 
 	for u in _player_units:
 		_all_units_dict[u.id] = u

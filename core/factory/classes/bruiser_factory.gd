@@ -121,8 +121,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var headbutt = DataLibrary._make_ability(&"bruiser_headbutt", "Headbutt", 1, [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3),
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 1),
-		DataLibrary._status_effect(GameEnums.StatusType.STUN, 1),
-		DataLibrary._status_effect_self(GameEnums.StatusType.STUN, 1)
+		DataLibrary._status_effect(GameEnums.StatusType.STAGGER, 1),
+		DataLibrary._status_effect_self(GameEnums.StatusType.STAGGER, 1)
 	], 1, GameEnums.StatType.PHYSICAL)
 	headbutt.upgrade_description = "Deal bonus damage equal to 10% of your Max HP."
 	headbutt.upgraded_effects = DataLibrary._duplicate_effects(headbutt.effects)

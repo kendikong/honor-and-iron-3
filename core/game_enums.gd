@@ -100,6 +100,7 @@ enum StatusType {
 	WEAKEN,
 	VULNERABLE,
 	STUN,
+	STAGGER,
 	ROOT,
 	SILENCE,
 	TAUNT,
@@ -136,7 +137,7 @@ static func is_buff(status: StatusType) -> bool:
 
 static func is_debuff(status: StatusType) -> bool:
 	match status:
-		StatusType.STAT_DEBUFF_DEF, StatusType.STAT_DEBUFF_ACC, StatusType.STAT_DEBUFF_MOV, StatusType.ELECTRIFIED, StatusType.WEAK_TRAP, StatusType.BURN, StatusType.BLEED, StatusType.POISON, StatusType.WEAKEN, StatusType.VULNERABLE, StatusType.STUN, StatusType.ROOT, StatusType.SILENCE, StatusType.TAUNT, StatusType.BLIND, StatusType.PACIFY, StatusType.FEAR, StatusType.CONFUSION, StatusType.POLYMORPH, StatusType.MARK, StatusType.IRON_GRIP_DEBUFF:
+		StatusType.STAT_DEBUFF_DEF, StatusType.STAT_DEBUFF_ACC, StatusType.STAT_DEBUFF_MOV, StatusType.ELECTRIFIED, StatusType.WEAK_TRAP, StatusType.BURN, StatusType.BLEED, StatusType.POISON, StatusType.WEAKEN, StatusType.VULNERABLE, StatusType.STUN, StatusType.STAGGER, StatusType.ROOT, StatusType.SILENCE, StatusType.TAUNT, StatusType.BLIND, StatusType.PACIFY, StatusType.FEAR, StatusType.CONFUSION, StatusType.POLYMORPH, StatusType.MARK, StatusType.IRON_GRIP_DEBUFF:
 			return true
 	return false
 

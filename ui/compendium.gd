@@ -410,6 +410,7 @@ func _get_status_desc(t: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.POISON: return "Takes damage at end of turn. Cannot heal."
 		GameEnums.StatusType.BLEED: return "Takes 1 damage whenever moving."
 		GameEnums.StatusType.STUN: return "Cannot act or move."
+		GameEnums.StatusType.STAGGER: return "Action Points (AP) reduced by 1 next turn."
 		GameEnums.StatusType.INVULNERABLE: return "Cannot take damage."
 		GameEnums.StatusType.WEAK_TRAP: return "Triggers a trap when stepped on."
 		GameEnums.StatusType.WEAKEN: return "Deals less damage with physical attacks."

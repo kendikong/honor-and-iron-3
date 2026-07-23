@@ -134,6 +134,8 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team: GameEnums.Team) -> void:
 	for unit in board.units:
 		if unit.is_alive() and unit.team == team:
+			if unit.has_status(GameEnums.StatusType.STAGGER):
+				unit.ability.points_left = maxi(0, unit.ability.points_left - 1)
 			for status in unit.active_statuses:
 				if status.type == GameEnums.StatusType.BURN:
 					CombatSystem.deal_damage(
