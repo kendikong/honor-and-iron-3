@@ -28,7 +28,7 @@ func _ready() -> void:
 	$VBoxContainer.add_child(library_btn)
 
 func _on_mass_sim_pressed() -> void:
-	get_tree().change_scene_to_file("res://ui/analysis/analysis_dashboard.tscn")
+	get_tree().change_scene_to_file("res://scenes/MassSimDashboard.tscn")
 
 
 func _on_dev_sandbox_pressed() -> void:
