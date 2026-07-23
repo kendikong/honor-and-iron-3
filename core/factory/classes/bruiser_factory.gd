@@ -6,7 +6,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.id = &"bruiser"
 	def.display_name = "Bruiser"
 	def.base_constitution = 7
-	def.move_points = 4
+	def.move_points = 3
 	def.action_points = 1
 	def.base_strength = 4
 	def.base_defense = 2
@@ -156,7 +156,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var belly_flop = DataLibrary._make_ability(&"bruiser_belly_flop", "Belly Flop", 2, [
 		DataLibrary._effect(GameEnums.EffectType.TELEPORT_CASTER, 2),
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
-	], 1, GameEnums.StatType.PHYSICAL)
+	], 2, GameEnums.StatType.PHYSICAL)
 	belly_flop.upgrade_description = "Landing applies PUSH 1 to all adjacent enemies."
 	belly_flop.upgraded_effects = DataLibrary._duplicate_effects(belly_flop.effects)
 	def.abilities.append(belly_flop)
