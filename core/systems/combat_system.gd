@@ -56,6 +56,10 @@ static func deal_collision_damage(
 	var str_val := get_dynamic_strength(board, pusher)
 	var mult_raw := COLLISION_FORCE_MULT * (base + wpn) * (1.0 + str_val / 5.0)
 	
+	if pusher.has_passive(&"momentum_of_the_titan"):
+		var pct := 0.20 if pusher.is_passive_upgraded(&"momentum_of_the_titan") else 0.10
+		mult_raw += pusher.health.max_hp * pct
+	
 	# Apply generic collision damage modifiers from passives
 	for passive: PassiveData in pusher.active_passives:
 		if passive.modifiers.has("collision_add_def_pct"):
@@ -115,8 +119,15 @@ static func deal_collision_damage(
 				status_amount = passive.modifiers["collision_apply_target_status_amount"]
 			
 		if apply_status >= 0:
-			victim.active_statuses.append(DataLibrary.make_status(apply_status, 1, status_amount))
-			victim._recalculate_stats()
+			if victim.has_passive(&"unstoppable_force") and apply_status in [GameEnums.StatusType.STAGGER, GameEnums.StatusType.ROOT]:
+				var shield = 2 if victim.is_passive_upgraded(&"unstoppable_force") else 1
+				victim.armor += shield
+				events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+					"actor": victim.id, "reason": "status_prevented_by_unstoppable_force",
+				}))
+			else:
+				victim.active_statuses.append(DataLibrary.make_status(apply_status, 1, status_amount))
+				victim._recalculate_stats()
 			
 		# Shield granting
 		if passive.modifiers.has("collision_grant_shield_str_def"):

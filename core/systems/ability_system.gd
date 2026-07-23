@@ -967,9 +967,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				"target_def": target_def, "fortitude": fort,
 				"vulnerable": vuln, "electrified": elec,
 				"pierce": pierce
-			}))
-			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, null, action.ability.display_name)
-			
+			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
 			if temp_def_debuff != null and target != null:
 				target.active_statuses.erase(temp_def_debuff)
 				target._recalculate_stats()
@@ -1115,12 +1113,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if adj_unit != null and adj_unit.is_alive():
 					var dmg_type = &"physical" if action.ability.scaling_stat == GameEnums.StatType.PHYSICAL else &"magical"
 					CombatSystem.deal_damage(
-						board, adj_unit, effect.amount, events, dmg_type, false, false, null,
+						board, adj_unit, effect.amount, events, dmg_type, false, false, actor,
 						action.ability.display_name, effect.amount
 					)
 			# Self-destruct: kill the bomber.
 			CombatSystem.deal_damage(
-				board, actor, actor.health.current_hp, events, &"physical", false, false, null,
+				board, actor, actor.health.current_hp, events, &"physical", false, false, actor,
 				action.ability.display_name, actor.health.current_hp
 			)
 		GameEnums.EffectType.RANGED_EXPLODE:
@@ -1133,7 +1131,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			var dmg_type = &"physical" if action.ability.scaling_stat == GameEnums.StatType.PHYSICAL else &"magical"
 			if target_unit != null and target_unit.is_alive():
 				CombatSystem.deal_damage(
-					board, target_unit, effect.amount, events, dmg_type, false, false, null,
+					board, target_unit, effect.amount, events, dmg_type, false, false, actor,
 					action.ability.display_name, effect.amount
 				)
 			for dir in GridSystem.DIRECTIONS:
@@ -1141,7 +1139,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				var adj_unit := board.get_unit_at(adj)
 				if adj_unit != null and adj_unit.is_alive():
 					CombatSystem.deal_damage(
-						board, adj_unit, effect.amount, events, dmg_type, false, false, null,
+						board, adj_unit, effect.amount, events, dmg_type, false, false, actor,
 						action.ability.display_name, effect.amount
 					)
 		GameEnums.EffectType.SPAWN:
@@ -1204,6 +1202,14 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if target.is_boss() and GameEnums.is_debuff(effect.status_type) and effect.status_type in [GameEnums.StatusType.STAGGER, GameEnums.StatusType.ROOT, GameEnums.StatusType.SILENCE, GameEnums.StatusType.PACIFY, GameEnums.StatusType.FEAR, GameEnums.StatusType.CONFUSION, GameEnums.StatusType.POLYMORPH, GameEnums.StatusType.TAUNT]:
 					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 						"actor": target.id, "reason": "boss_immune_to_cc",
+					}))
+					return
+					
+				if target.has_passive(&"unstoppable_force") and effect.status_type in [GameEnums.StatusType.STAGGER, GameEnums.StatusType.ROOT]:
+					var shield = 2 if target.is_passive_upgraded(&"unstoppable_force") else 1
+					target.armor += shield
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": target.id, "reason": "status_prevented_by_unstoppable_force",
 					}))
 					return
 					
@@ -1272,7 +1278,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		GameEnums.EffectType.DESTROY_OBSTACLE:
 			if target != null and target.definition.is_construct:
 				CombatSystem.deal_damage(
-					board, target, target.health.current_hp, events, &"physical", false, false, null,
+					board, target, target.health.current_hp, events, &"physical", false, false, actor,
 					action.ability.display_name, target.health.current_hp
 				)
 		GameEnums.EffectType.TELEPORT_CASTER:
@@ -1319,7 +1325,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			}))
 		GameEnums.EffectType.DAMAGE_SELF:
 			CombatSystem.deal_damage(
-				board, actor, effect.amount, events, &"true", true, false, null,
+				board, actor, effect.amount, events, &"true", true, false, actor,
 				"%s (self)" % action.ability.display_name, effect.amount
 			)
 
