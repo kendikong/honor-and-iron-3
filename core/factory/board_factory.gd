@@ -46,6 +46,10 @@ static func _place(target_board: BoardState, unit_id: int, def: UnitData, team: 
 	if def == null: return null
 	var unit := UnitState.create(unit_id, def, team, coord)
 	unit.controlling_player_id = controlling_player_id
+	if team == GameEnums.Team.PLAYER:
+		unit.facing = GameEnums.Facing.EAST
+	elif team == GameEnums.Team.ENEMY:
+		unit.facing = GameEnums.Facing.WEST
 	target_board.units.append(unit)
 	
 	var tile := target_board.get_tile(coord)
@@ -69,6 +73,10 @@ static func place_configured_unit(board: BoardState, unit_id: int, def: UnitData
 	if def == null: return
 	var unit := UnitState.create(unit_id, def, team, coord, config)
 	unit.controlling_player_id = controlling_player_id
+	if team == GameEnums.Team.PLAYER:
+		unit.facing = GameEnums.Facing.EAST
+	elif team == GameEnums.Team.ENEMY:
+		unit.facing = GameEnums.Facing.WEST
 	board.units.append(unit)
 	
 	var tile := board.get_tile(coord)

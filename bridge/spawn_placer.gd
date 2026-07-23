@@ -5,10 +5,10 @@ extends RefCounted
 ## Players: center-left band. Enemies: center-right band. Y: middle rows only.
 
 const MVP_PLAYER_COUNT: int = 4
-const MVP_ENEMY_COUNT: int = 3
+const MVP_ENEMY_COUNT: int = 6
 const MIN_SPAWN_GAP: int = 2
 
-const MVP_ENEMY_IDS: Array[StringName] = [&"hatchling", &"hatchling", &"charger"]
+const MVP_ENEMY_IDS: Array[StringName] = [&"hatchling", &"charger", &"shover", &"brute", &"artillery", &"flanker"]
 
 
 static func spawn_edge_margin(grid_height: int) -> int:
@@ -104,24 +104,22 @@ static func place_mvp_roster(
 	)
 
 	var player_spawns: Array[UnitPlacement] = []
-	var knight: UnitData = DataLibrary.get_unit(&"knight")
-	if knight != null:
-		for player_cell: Vector2i in player_cells:
+	var player_defs := _pick_random_player_roster(player_cells.size(), map_seed)
+	for i in range(player_cells.size()):
+		if i < player_defs.size():
 			var placement := UnitPlacement.new()
-			placement.unit = knight
-			placement.coord = player_cell
+			placement.unit = player_defs[i]
+			placement.coord = player_cells[i]
 			player_spawns.append(placement)
 
 	var enemy_spawns: Array[UnitPlacement] = []
-	for i: int in range(enemy_cells.size()):
-		var enemy_id: StringName = MVP_ENEMY_IDS[i % MVP_ENEMY_IDS.size()]
-		var enemy_def: UnitData = DataLibrary.get_unit(enemy_id)
-		if enemy_def == null:
-			continue
-		var placement := UnitPlacement.new()
-		placement.unit = enemy_def
-		placement.coord = enemy_cells[i]
-		enemy_spawns.append(placement)
+	var enemy_defs := _pick_enemy_roster(enemy_cells.size(), map_seed)
+	for i in range(enemy_cells.size()):
+		if i < enemy_defs.size():
+			var placement := UnitPlacement.new()
+			placement.unit = enemy_defs[i]
+			placement.coord = enemy_cells[i]
+			enemy_spawns.append(placement)
 
 	return {
 		"player_spawns": player_spawns,
@@ -174,20 +172,63 @@ static func place_custom_player_roster(
 		player_spawns.append(placement)
 
 	var enemy_spawns: Array[UnitPlacement] = []
-	for i: int in range(enemy_cells.size()):
-		var enemy_id: StringName = MVP_ENEMY_IDS[i % MVP_ENEMY_IDS.size()]
-		var enemy_def: UnitData = DataLibrary.get_unit(enemy_id)
-		if enemy_def == null:
-			continue
-		var placement := UnitPlacement.new()
-		placement.unit = enemy_def
-		placement.coord = enemy_cells[i]
-		enemy_spawns.append(placement)
+	var enemy_defs := _pick_enemy_roster(enemy_cells.size(), map_seed)
+	for i in range(enemy_cells.size()):
+		if i < enemy_defs.size():
+			var placement := UnitPlacement.new()
+			placement.unit = enemy_defs[i]
+			placement.coord = enemy_cells[i]
+			enemy_spawns.append(placement)
 
 	return {
 		"player_spawns": player_spawns,
 		"enemy_spawns": enemy_spawns,
 	}
+
+static func _pick_random_player_roster(count: int, map_seed: int) -> Array[UnitData]:
+	var all_defs := DataLibrary.get_all_player_units().duplicate()
+	if all_defs.is_empty():
+		return []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _mix_seed(map_seed, 9110)
+	var pool := all_defs.duplicate()
+	var selected: Array[UnitData] = []
+	for _i in range(mini(count, pool.size())):
+		var idx: int = rng.randi() % pool.size()
+		selected.append(pool[idx])
+		pool.remove_at(idx)
+	return selected
+
+static func _pick_enemy_roster(count: int, map_seed: int) -> Array[UnitData]:
+	var hatchling: UnitData = DataLibrary.get_unit(&"hatchling")
+	var non_hatchlings: Array[UnitData] = []
+	for def in DataLibrary.get_all_enemy_units():
+		if def.id != &"hatchling":
+			non_hatchlings.append(def)
+	
+	if non_hatchlings.is_empty() or hatchling == null:
+		return []
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = _mix_seed(map_seed, 9204)
+	
+	var selected: Array[UnitData] = [hatchling]
+	var pool := non_hatchlings.duplicate()
+	
+	for _i in range(maxi(0, count - 1)):
+		if pool.is_empty():
+			pool = non_hatchlings.duplicate()
+		var idx: int = rng.randi() % pool.size()
+		selected.append(pool[idx])
+		pool.remove_at(idx)
+		
+	for i in range(selected.size() - 1, 0, -1):
+		var j: int = rng.randi() % (i + 1)
+		var tmp := selected[i]
+		selected[i] = selected[j]
+		selected[j] = tmp
+		
+	return selected
 
 
 static func refine_encounter_spawns(
