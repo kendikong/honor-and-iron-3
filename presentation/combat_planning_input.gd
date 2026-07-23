@@ -1441,7 +1441,9 @@ func _self_tile_allows_wait(actor: UnitState, ability_index: int) -> bool:
 	if CombatDirector.is_wait_ability_index(ability_index):
 		return true
 	if ability_index >= 0:
-		return false
+		var ability: AbilityData = _selected_ability_data(actor)
+		if ability != null and AbilitySystem.can_target_self(actor, ability):
+			return false
 	return true
 
 
