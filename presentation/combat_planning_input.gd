@@ -1802,7 +1802,7 @@ func _maybe_append_premove_action_pair(
 		if not _can_pair_run_move_with_ability(actor, cell, waypoints, ability):
 			return
 		slots["action"].append(
-			TimelineAction.make_ability_awaiting(unit_id, ability, cell),
+			TimelineAction.make_ability_awaiting(unit_id, ability, cell, waypoints),
 		)
 
 
@@ -1852,7 +1852,7 @@ func _build_commit_slots_at_cell(
 			and _can_target_unit_with_selected_ability(actor, hover_unit)
 		):
 			slots["action"].append(
-				TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id),
+				TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 			)
 			return slots
 		if _skill_interaction_active() and hover_unit.id != actor.id:
@@ -1865,7 +1865,7 @@ func _build_commit_slots_at_cell(
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
 					_proj_origin(actor), cell, ability,
 				):
-					slots["action"].append(TimelineAction.make_ability(unit_id, ability, cell, -1))
+					slots["action"].append(TimelineAction.make_ability(unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION, waypoints))
 					return slots
 				slots["invalid"] = "Invalid target or distance for this ability."
 				return slots
@@ -1885,7 +1885,7 @@ func _build_commit_slots_at_cell(
 					return slots
 			if hover_unit != null and _in_ability_range(actor, hover_unit):
 				slots["action"].append(
-					TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id),
+					TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 				)
 				return slots
 			if hover_unit == null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
@@ -1897,7 +1897,7 @@ func _build_commit_slots_at_cell(
 							slots["invalid"] = "No valid path to target tile."
 							return slots
 					slots["action"].append(
-						TimelineAction.make_ability(unit_id, ability, cell, -1),
+						TimelineAction.make_ability(unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 					)
 					return slots
 
@@ -1943,7 +1943,7 @@ func _build_enemy_commit_slots(
 			_proj_origin(actor), enemy.position, ability,
 		):
 			slots["action"].append(
-				TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
+				TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 			)
 			return slots
 		if awaiting_targeting_active():
@@ -1951,14 +1951,14 @@ func _build_enemy_commit_slots(
 			return slots
 	if use_skill and _in_ability_range(actor, enemy):
 		slots["action"].append(
-			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
+			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 		)
 		return slots
 	if not use_skill and _in_attack_range_from(_proj_origin(actor), enemy, actor):
 		var basic: AbilityData = actor.active_abilities[0] if not actor.active_abilities.is_empty() else null
 		if basic != null:
 			slots["action"].append(
-				TimelineAction.make_ability(unit_id, basic, enemy.position, enemy.id),
+				TimelineAction.make_ability(unit_id, basic, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 			)
 		return slots
 	if use_skill and _prefer_approach_over_trample_move(actor, enemy):
@@ -2006,11 +2006,11 @@ func _build_enemy_commit_slots(
 			if AbilitySystem.movement_requires_run(board, actor, approach, path):
 				if AbilitySystem.can_afford_run_for_commit(actor, ability):
 					slots["action"].append(
-						TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
+						TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 					)
 				return slots
 		slots["action"].append(
-			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id),
+			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 		)
 		return slots
 	if _can_move_to(actor, cell) or _is_hover_move_cell(actor, cell):

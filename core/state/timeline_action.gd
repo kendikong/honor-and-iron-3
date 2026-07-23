@@ -97,8 +97,9 @@ static func make_ability_awaiting(
 	p_actor_id: int,
 	p_ability: AbilityData,
 	p_origin: Vector2i,
+	p_waypoints: Array[Vector2i] = [],
 ) -> TimelineAction:
-	var action := make_ability(p_actor_id, p_ability, p_origin, p_actor_id)
+	var action := make_ability(p_actor_id, p_ability, p_origin, -1, GameEnums.MoveTiming.PRE_ACTION, p_waypoints)
 	action.awaiting_target = true
 	return action
 
@@ -109,6 +110,7 @@ static func make_ability(
 	p_target_coord: Vector2i,
 	p_target_unit_id: int = -1,
 	p_move_timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION,
+	p_waypoints: Array[Vector2i] = [],
 ) -> TimelineAction:
 	var action := TimelineAction.new()
 	action.actor_id = p_actor_id
@@ -117,6 +119,7 @@ static func make_ability(
 	action.ability = p_ability
 	action.target_coord = p_target_coord
 	action.target_unit_id = p_target_unit_id
+	action.waypoints = p_waypoints
 	return action
 
 func clone() -> TimelineAction:
