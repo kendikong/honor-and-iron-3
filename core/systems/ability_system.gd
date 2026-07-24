@@ -967,6 +967,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				"target_def": target_def, "fortitude": fort,
 				"vulnerable": vuln, "electrified": elec,
 				"pierce": pierce
+			}))
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
 			if temp_def_debuff != null and target != null:
 				target.active_statuses.erase(temp_def_debuff)
