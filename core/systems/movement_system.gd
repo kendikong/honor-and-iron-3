@@ -407,7 +407,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 	var move_cost = 1
 	if has_bleed: move_cost = 2
 
-	var path: Array[Vector2i] = action.waypoints if _is_legal_walk(board, unit.position, action.waypoints, unit.movement.points_left, move_cost, unit, action.ability) else find_path(board, unit.position, action.target_coord, unit.movement.points_left, mt, move_cost, action.ability)
+	var path: Array[Vector2i] = action.waypoints.duplicate() if not action.waypoints.is_empty() else find_path(board, unit.position, action.target_coord, unit.movement.points_left, mt, move_cost, action.ability)
 	if path.is_empty():
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 			"actor": unit.id, "reason": "no_path",

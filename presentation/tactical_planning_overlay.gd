@@ -934,24 +934,10 @@ func _draw_ability_intents() -> void:
 				var leg_route: Array = _pending_move_route_leg(action.actor_id, prev) if prev != null else []
 				if leg_route.size() >= 2:
 					_draw_route_line(leg_route, p_col, true, true)
-				else:
-					var plan_board: BoardState = _board
-					if _director != null and _director.projected_state != null:
-						plan_board = _director.projected_state
-					var walk_steps: int = AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.MOVE)
-					if walk_steps <= 0:
-						walk_steps = action.ability.range_tiles
-					var wp: Array[Vector2i] = action.waypoints
-					var path: Array[Vector2i] = MovementSystem.resolve_move_path(
-						plan_board, actor, action.target_coord, wp,
-						walk_steps, action.ability, start_pos
-					)
-					route_cells = [start_pos]
-					if not path.is_empty():
-						route_cells.append_array(path)
-					else:
-						route_cells.append(action.target_coord)
-					_draw_route_line(route_cells, p_col, true, true)
+				elif not action.waypoints.is_empty():
+					var direct_cells: Array = [start_pos]
+					direct_cells.append_array(action.waypoints)
+					_draw_route_line(direct_cells, p_col, true, true)
 			else:
 				_draw_dashed_route(
 					route_cells,
