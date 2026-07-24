@@ -773,13 +773,44 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		# Recompute affected tiles after movement since actor position and facing may have changed
 		affected_tiles = GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
 
+	var heal_per_target_hit = false
+	var buff_per_object = false
+	var targets_hit_count = 0
+	var objects_destroyed_count = 0
+	
+	for eff in effects_to_apply:
+		if eff.modifiers.has("heal_per_target_hit"): heal_per_target_hit = true
+		if eff.modifiers.has("buff_per_destroyed_object"): buff_per_object = true
+		if eff.modifiers.has("next_attack_pierce"):
+			actor.passive_flags["breaching_dash_pierce"] = true
+
 	for effect in effects_to_apply:
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
 			_apply_effect_to_tile(board, actor, action, effect, events, target_coord, board.get_unit_at(target_coord))
 			continue
+			
+		if effect.modifiers.has("belly_flop_push"):
+			for dir in GridSystem.DIRECTIONS:
+				var adj_coord = actor.position + dir
+				var adj_unit = board.get_unit_at(adj_coord)
+				_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
+			continue
+			
 		for tile_coord in affected_tiles:
 			var target_unit := board.get_unit_at(tile_coord)
+			
+			if effect.type == GameEnums.EffectType.DAMAGE and target_unit != null and target_unit != actor and target_unit.is_alive() and heal_per_target_hit:
+				targets_hit_count += 1
+			if effect.type == GameEnums.EffectType.DESTROY_OBSTACLE and target_unit != null and target_unit.definition.is_construct and buff_per_object:
+				objects_destroyed_count += 1
+				
 			_apply_effect_to_tile(board, actor, action, effect, events, tile_coord, target_unit)
+			
+	if heal_per_target_hit and targets_hit_count > 0:
+		CombatSystem.heal(board, actor, targets_hit_count, events)
+	if buff_per_object and objects_destroyed_count > 0:
+		actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 999, objects_destroyed_count))
+		actor._recalculate_stats()
 
 	if actor != null and actor.is_alive() and actor.has_passive(&"intercept_tactics"):
 		var is_redirect = false
@@ -1219,6 +1250,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					return
 					
 				var stat_val = effect.amount
+				if effect.modifiers.has("weapon_scaled"):
+					if actor.definition != null and actor.definition.equipped_weapon != null:
+						stat_val = actor.definition.equipped_weapon.might
 				if effect.scaling_stat == GameEnums.StatType.DEFENSE:
 					stat_val = effect.amount + actor.current_defense
 				var status := StatusData.new(effect.status_type, effect.status_duration, stat_val)

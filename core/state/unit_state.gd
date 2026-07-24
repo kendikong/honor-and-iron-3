@@ -268,6 +268,8 @@ func reset_for_turn() -> void:
 	pre_move_used_this_turn = false
 	armor = 0
 	passive_flags.erase("collision_refunded_this_turn")
+	passive_flags.erase("adrenaline_surge_active")
+	passive_flags.erase("violent_collision_recast_used")
 
 func clone() -> UnitState:
 	var copy := UnitState.new()

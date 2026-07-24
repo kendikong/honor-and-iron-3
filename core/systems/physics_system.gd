@@ -430,9 +430,37 @@ static func _emit_collision(
 		"excess_push": excess,
 		"pusher_id": pusher.id,
 	}))
+	
+	var object_collision_stagger = false
+	var enemy_collision_stagger_both = false
+	var buff_on_push = false
+	var stagger_on_collision = false
+	var violent_collision_recast = false
+	
+	if ability_id != &"" and pusher != null:
+		var ability: AbilityData = pusher.get_ability_by_id(ability_id)
+		if ability != null:
+			var effects = ability.effects
+			if pusher.is_ability_upgraded(ability_id):
+				effects = ability.upgraded_effects
+			for eff in effects:
+				if eff.modifiers.has("object_collision_stagger"): object_collision_stagger = true
+				if eff.modifiers.has("enemy_collision_stagger_both"): enemy_collision_stagger_both = true
+				if eff.modifiers.has("buff_on_push"): buff_on_push = true
+				if eff.modifiers.has("stagger_on_collision"): stagger_on_collision = true
+				if eff.modifiers.has("violent_collision_recast"): violent_collision_recast = true
+
 	if pusher != null and pusher != target:
-		var stun_on_hit = false
-		if events.size() > 0:
+		if buff_on_push:
+			pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+			pusher._recalculate_stats()
+		if violent_collision_recast and not pusher.passive_flags.get("violent_collision_recast_used", false):
+			pusher.passive_flags["violent_collision_recast_used"] = true
+			pusher.ability.points_left += 1
+			pusher.turn_action_used = false
+			
+		var stun_on_hit = stagger_on_collision
+		if events.size() > 0 and not stun_on_hit:
 			for e in events:
 				if e.type == GameEnums.SimEventType.UNIT_PUSHED and e.data.get("unit", -1) == target.id:
 					if e.data.has("stagger_on_collision"):
@@ -441,7 +469,14 @@ static func _emit_collision(
 		if stun_on_hit:
 			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
 			target._recalculate_stats()
+			
 	if blocker != null:
+		if enemy_collision_stagger_both:
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+			target._recalculate_stats()
+			blocker.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+			blocker._recalculate_stats()
+			
 		if blocker.has_passive(&"collision_retaliator") and blocker.team != target.team:
 			if target.id != collision_immune_id:
 				CombatSystem.deal_collision_damage(
@@ -461,6 +496,10 @@ static func _emit_collision(
 					board, pusher, blocker, tiles_moved, tiles_moved, events, collision_base_bonus
 				)
 	else:
+		if object_collision_stagger:
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+			target._recalculate_stats()
+			
 		if target.id != collision_immune_id:
 			CombatSystem.deal_collision_damage(
 				board, pusher, target, push_distance, tiles_moved, events, collision_base_bonus

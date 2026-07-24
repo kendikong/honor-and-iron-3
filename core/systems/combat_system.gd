@@ -396,6 +396,10 @@ static func deal_damage_raw(
 		dmg_type = &"magical"
 	var pierce = attacker.has_status(GameEnums.StatusType.PIERCE) if attacker != null else false
 	
+	if attacker != null and attacker.passive_flags.has("breaching_dash_pierce"):
+		pierce = true
+		attacker.passive_flags.erase("breaching_dash_pierce")
+	
 	if attacker != null and target != null and attacker.has_passive(&"overwhelming_bulk"):
 		if attacker.health.current_hp > target.health.max_hp:
 			pierce = true
@@ -469,6 +473,9 @@ static func deal_damage(
 							amount -= intercept_amount
 							if is_upgraded:
 								ally.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2))
+								ally._recalculate_stats()
+							if ally.is_ability_upgraded(&"bruiser_meat_shield"):
+								ally.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 2))
 								ally._recalculate_stats()
 							CombatSystem.deal_damage(
 								board, ally, intercept_amount, events, source_type, pierce, true, attacker, source_label, intercept_amount
@@ -651,6 +658,13 @@ static func deal_damage(
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DIED, {
 			"unit": target.id,
 		}))
+		
+		if attacker != null and attacker.is_alive():
+			if attacker.passive_flags.has("adrenaline_surge_active"):
+				heal(board, attacker, 1, events)
+				add_armor(board, attacker, 2, events)
+			if attacker.is_ability_upgraded(&"bruiser_frenzy") and source_label == "Frenzy":
+				attacker.ability.points_left += 1
 
 static func heal(board: BoardState, target: UnitState, amount: int, events: Array[SimEvent]) -> void:
 	if target == null or not target.is_alive() or amount <= 0:
