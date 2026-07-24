@@ -2014,6 +2014,14 @@ func _build_enemy_commit_slots(
 		and ability_index >= 0
 		and ability != null
 	)
+	var effective_waypoints: Array[Vector2i] = waypoints
+	if effective_waypoints.is_empty() and use_skill and AbilitySystem.ability_has_movement_effect(ability):
+		var board := _proj()
+		var walk_steps := AbilitySystem.effect_amount(ability, GameEnums.EffectType.MOVE)
+		if walk_steps <= 0:
+			walk_steps = ability.range_tiles
+		effective_waypoints = MovementSystem.resolve_move_path(board, actor, enemy.position, [], walk_steps, ability)
+
 	if use_skill and not AbilitySystem.target_passes_mode(actor, ability, enemy):
 		slots["invalid"] = "Invalid target for this skill."
 		return slots
@@ -2022,7 +2030,7 @@ func _build_enemy_commit_slots(
 			_proj_origin(actor), enemy.position, ability,
 		):
 			slots["action"].append(
-				TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
+				TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints),
 			)
 			return slots
 		if awaiting_targeting_active():
@@ -2030,14 +2038,14 @@ func _build_enemy_commit_slots(
 			return slots
 	if use_skill and _in_ability_range(actor, enemy):
 		slots["action"].append(
-			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
+			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints),
 		)
 		return slots
 	if not use_skill and _in_attack_range_from(_proj_origin(actor), enemy, actor):
 		var basic: AbilityData = actor.active_abilities[0] if not actor.active_abilities.is_empty() else null
 		if basic != null:
 			slots["action"].append(
-				TimelineAction.make_ability(unit_id, basic, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
+				TimelineAction.make_ability(unit_id, basic, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints),
 			)
 		return slots
 	if use_skill and _prefer_approach_over_trample_move(actor, enemy):
