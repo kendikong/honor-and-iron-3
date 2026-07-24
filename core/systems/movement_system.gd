@@ -157,7 +157,7 @@ static func resolve_move_path(
 		if unit.definition != null
 		else GameEnums.MovementType.WALK
 	)
-	if _is_legal_walk(board, start, waypoints, max_steps, move_cost, ability):
+	if _is_legal_walk(board, start, waypoints, max_steps, move_cost, unit, ability):
 		if not waypoints.is_empty() and waypoints.back() == target_coord:
 			return waypoints.duplicate()
 	return find_path(board, start, target_coord, max_steps, mt, move_cost, ability)
@@ -426,7 +426,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 	var move_cost = 1
 	if has_bleed: move_cost = 2
 
-	var path: Array[Vector2i] = action.waypoints if _is_legal_walk(board, unit.position, action.waypoints, unit.movement.points_left, move_cost) else find_path(board, unit.position, action.target_coord, unit.movement.points_left, mt, move_cost)
+	var path: Array[Vector2i] = action.waypoints if _is_legal_walk(board, unit.position, action.waypoints, unit.movement.points_left, move_cost, unit, action.ability) else find_path(board, unit.position, action.target_coord, unit.movement.points_left, mt, move_cost, action.ability)
 	if path.is_empty():
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 			"actor": unit.id, "reason": "no_path",
@@ -516,12 +516,14 @@ static func _is_legal_walk(
 	route: Array[Vector2i],
 	budget: int,
 	move_cost: int = 1,
+	unit: UnitState = null,
 	ability: AbilityData = null,
 ) -> bool:
 	if route.is_empty() or route.size() * move_cost > budget:
 		return false
 		
-	var unit := board.get_unit_at(start)
+	if unit == null:
+		unit = board.get_unit_at(start)
 		
 	var prev := start
 	for step in route:

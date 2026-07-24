@@ -1746,9 +1746,19 @@ func _draw_move_ghosts() -> void:
 			var drag_route := _planning_input.get_drag_route()
 			if drag_route.size() >= 2:
 				waypoints = drag_route.slice(1)
-		var path := MovementSystem.resolve_move_path(
-			_board, unit, _hover_coord, waypoints, ability.range_tiles, ability, origin
-		)
+				
+		var path: Array = []
+		var hover_preview := _planning_input.get_hover_preview() if _planning_input != null else null
+		if hover_preview != null and hover_preview.preview_board != null:
+			var sim_path: Array = hover_preview.preview_paths.get(unit.id, [])
+			if not sim_path.is_empty() and sim_path.back() == _hover_coord:
+				path = sim_path
+				
+		if path.is_empty():
+			path = MovementSystem.resolve_move_path(
+				_board, unit, _hover_coord, waypoints, ability.range_tiles, ability, origin
+			)
+			
 		var route_cells: Array = [origin]
 		if not path.is_empty() and path.back() == _hover_coord:
 			route_cells.append_array(path)
