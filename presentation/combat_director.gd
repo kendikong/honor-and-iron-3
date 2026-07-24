@@ -2084,7 +2084,8 @@ func _refresh_plan() -> void:
 	ResolutionPipeline.resolve_pending_pushes(full_proj, dummy_ev)
 
 	projected_state = base_board.clone()
-	Simulator.simulate_player_turn(projected_state, plan_to_run, [])
+	var evs: Array[SimEvent] = []
+	Simulator.simulate_player_turn(projected_state, plan_to_run, evs)
 		
 	board = move_only
 	var new_intents := EnemyPlanner.plan(projected_state)
@@ -2098,10 +2099,10 @@ func _refresh_plan() -> void:
 	sync_selected_ability_if_invalid()
 
 	var preview_board := base_board.clone()
-	var evs := _build_ghost_events(preview_board, plan_to_run, new_intents)
+	var ghost_evs := _build_ghost_events(preview_board, plan_to_run, new_intents)
 
 	var sim_res := SimResult.new(preview_board)
-	sim_res.events = evs
+	sim_res.events = ghost_evs
 	_defer_plan_refresh_signals(board, plan_to_run, statuses, sim_res)
 
 
@@ -2129,7 +2130,8 @@ func _refresh_plan_movement_only(plan: Timeline) -> void:
 		return
 
 	projected_state = base_board.clone()
-	Simulator.simulate_player_turn(projected_state, plan, [])
+	var evs: Array[SimEvent] = []
+	Simulator.simulate_player_turn(projected_state, plan, evs)
 	board = projected_state
 
 	var new_intents := EnemyPlanner.plan(projected_state)
@@ -2143,9 +2145,12 @@ func _refresh_plan_movement_only(plan: Timeline) -> void:
 	sync_selected_ability_if_invalid()
 
 	var preview_board: BoardState = projected_state.clone()
-	var evs: Array[SimEvent] = _build_movement_only_preview_events(plan, new_intents, preview_board)
 	var sim_res := SimResult.new(preview_board)
-	sim_res.events = evs
+	# For movement only refresh, we can just use the events we just simulated!
+	# But wait, we need the enemy intent ghost events too for the preview!
+	var ghost_evs := _build_ghost_events(preview_board, plan, new_intents)
+	sim_res.events = ghost_evs
+	
 	var statuses := PackedStringArray()
 	statuses.resize(maxi(plan.size(), 1))
 	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
@@ -2172,29 +2177,6 @@ func _plan_is_movement_only(plan: Timeline) -> bool:
 	return true
 
 
-func _build_movement_only_preview_events(
-	plan: Timeline,
-	intents: Array[Intent],
-	enemy_sim: BoardState,
-) -> Array[SimEvent]:
-	var evs: Array[SimEvent] = []
-	for action: TimelineAction in plan.entries:
-		if action.type != GameEnums.ActionType.MOVE:
-			continue
-		var path: Array = action.waypoints.duplicate()
-		if path.is_empty():
-			path = [action.target_coord]
-		evs.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
-			"actor": action.actor_id,
-			"path": path,
-			"move_timing": action.move_timing,
-		}))
-	evs.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
-	for intent: Intent in intents:
-		for action: TimelineAction in intent.actions:
-			ResolutionPipeline.apply_action(enemy_sim, action, evs)
-	ResolutionPipeline.resolve_pending_pushes(enemy_sim, evs)
-	return evs
 
 
 func _defer_plan_refresh_signals(

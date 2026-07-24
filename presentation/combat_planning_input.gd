@@ -1323,6 +1323,7 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	if idx >= 0:
 		if idx < _drag_route.size() - 1:
 			_drag_route = _drag_route.slice(0, idx + 1)
+			_sanitize_drag_route_context()
 		return
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
 	var board: BoardState = _director.board
@@ -1340,8 +1341,10 @@ func _extend_drag_route(cell: Vector2i) -> void:
 			_drag_route = [unit.position]
 			for c: Vector2i in MovementSystem.find_path(board, unit.position, cell, 999, mt, 1, ability):
 				_append_route_tile(c)
+		_sanitize_drag_route_context()
 		return
 	_append_route_tile(cell)
+	_sanitize_drag_route_context()
 
 
 func _append_route_tile(coord: Vector2i) -> void:
@@ -1364,6 +1367,40 @@ func _append_route_tile(coord: Vector2i) -> void:
 	if GridSystem.manhattan(last, coord) != 1 or not MovementSystem.is_walkable_for(board, coord, unit, ability):
 		return
 	_drag_route.append(coord)
+
+
+func _sanitize_drag_route_context() -> void:
+	if _drag_route.size() <= 1:
+		return
+	var board: BoardState = _director.board
+	var unit := board.get_unit_by_id(_drag_unit_id)
+	if unit == null:
+		return
+	var ability: AbilityData = null
+	if not force_basic_movement and _director.selected_ability_index >= 0:
+		ability = _selected_ability_data(unit)
+		
+	var final_cell: Vector2i = _drag_route.back()
+	var basic_fallback: bool = false
+	if ability != null:
+		var origin := _proj_origin(unit)
+		if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, final_cell, ability):
+			basic_fallback = true
+	else:
+		basic_fallback = true
+
+	if not basic_fallback:
+		return
+
+	var waypoints: Array[Vector2i] = _route_waypoints()
+	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
+	if not MovementSystem._is_legal_walk(board, _drag_route[0], waypoints, 999, 1, unit, null):
+		var safe_path = MovementSystem.find_path(board, _drag_route[0], final_cell, 999, mt, 1, null)
+		if not safe_path.is_empty() and safe_path.back() == final_cell:
+			_drag_route = [_drag_route[0]]
+			_drag_route.append_array(safe_path)
+		else:
+			_drag_route = [_drag_route[0]]
 
 
 func _route_waypoints() -> Array[Vector2i]:

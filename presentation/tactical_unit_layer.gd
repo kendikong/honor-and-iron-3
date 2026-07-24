@@ -957,8 +957,10 @@ func _unit_uses_run_anim(unit_id: int) -> bool:
 func _resolve_planning_path_cells(from_cell: Vector2i, to_cell: Vector2i, unit: UnitState) -> Array[Vector2i]:
 	if _director != null and unit != null:
 		var waypoints: Array[Vector2i] = _director.get_planned_move_waypoints(unit.id)
-		if not waypoints.is_empty() and waypoints[waypoints.size() - 1] == to_cell:
-			return waypoints
+		if not waypoints.is_empty() and waypoints.back() == to_cell:
+			var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
+			if MovementSystem._is_legal_walk(_board, from_cell, waypoints, 999, move_cost, unit, null):
+				return waypoints
 	return _find_display_path(from_cell, to_cell, unit)
 
 
