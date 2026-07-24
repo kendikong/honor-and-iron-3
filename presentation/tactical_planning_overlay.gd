@@ -930,10 +930,16 @@ func _draw_ability_intents() -> void:
 				action.ability != null
 				and AbilitySystem.ability_has_movement_effect(action.ability)
 			):
+				var plan_board: BoardState = _board
+				if _director != null and _director.projected_state != null:
+					plan_board = _director.projected_state
+				var walk_steps: int = AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.MOVE)
+				if walk_steps <= 0:
+					walk_steps = action.ability.range_tiles
 				var wp: Array[Vector2i] = action.waypoints
 				var path: Array[Vector2i] = MovementSystem.resolve_move_path(
-					_board, actor, action.target_coord, wp,
-					action.ability.range_tiles, action.ability, start_pos
+					plan_board, actor, action.target_coord, wp,
+					walk_steps, action.ability, start_pos
 				)
 				if not path.is_empty():
 					route_cells = ([start_pos] as Array)
