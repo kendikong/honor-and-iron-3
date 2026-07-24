@@ -1778,12 +1778,18 @@ func _append_move_to_commit_slots(
 	if timing < 0:
 		return
 		
-	# Sanitize the waypoints by re-evaluating the path strictly with basic movement rules.
-	# This strips out any pathing effects (like pass-through) that might have been
-	# generated if the drag route was constructed with an ability selected.
-	var safe_waypoints: Array[Vector2i] = MovementSystem.resolve_move_path(
-		_proj(), actor, cell, waypoints, _move_budget(actor), null, actor.position
-	)
+	# Sanitize waypoints to strip leaked ability effects (like pass-through).
+	# This ensures the UI animation exactly matches the Simulator's fallback logic.
+	var is_valid_basic_path := true
+	for step in waypoints:
+		if not MovementSystem._is_walkable_for(_proj(), step, actor, null):
+			is_valid_basic_path = false
+			break
+			
+	var safe_waypoints: Array[Vector2i] = waypoints
+	if not is_valid_basic_path:
+		var mt: int = actor.definition.movement_type if actor.definition != null else GameEnums.MovementType.WALK
+		safe_waypoints = MovementSystem.find_path(_proj(), actor.position, cell, 999, mt, 1, null)
 		
 	# If the original waypoints were valid (likely due to an ability pass-through leak), 
 	# but we couldn't find ANY valid path to the cell using basic movement rules 
