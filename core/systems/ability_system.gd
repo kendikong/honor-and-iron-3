@@ -692,6 +692,10 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var actor := board.get_unit_by_id(action.actor_id)
 	var ability := action.ability
+	
+	if actor != null:
+		actor.passive_flags.erase("passed_through_terrain")
+		
 	_spend_ability_cost(actor, ability, board)
 	if not actor.has_unlimited_training_actions() and ability.consumes_action_slot():
 		actor.turn_action_used = true
