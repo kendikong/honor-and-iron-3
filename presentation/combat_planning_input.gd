@@ -1925,7 +1925,7 @@ func _build_commit_slots_at_cell(
 			and not force_basic_movement
 			and _can_target_unit_with_selected_ability(actor, hover_unit)
 		):
-			slots["action"].append(
+			slots["action"].append(TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id, GameEnums.MoveTiming.PRE_ACTION, []))
 		if _skill_interaction_active() and hover_unit.id != actor.id:
 			slots["invalid"] = "Cannot target this unit with selected skill."
 		return slots
@@ -1934,7 +1934,11 @@ func _build_commit_slots_at_cell(
 		var effective_waypoints: Array[Vector2i] = waypoints
 		if effective_waypoints.is_empty() and AbilitySystem.ability_has_movement_effect(ability):
 			var live_path: Array = preview_state.preview_paths.get(unit_id, [])
-			if live_path.size() >= 2:
+			var start_pos: Vector2i = _proj_origin(actor)
+			var start_idx: int = live_path.find(start_pos)
+			if start_idx >= 0 and start_idx < live_path.size() - 1:
+				effective_waypoints.assign(live_path.slice(start_idx + 1))
+			elif live_path.size() >= 2:
 				effective_waypoints.assign(live_path.slice(1))
 
 		if _awaiting_flow_selected(actor, ability):
@@ -2015,7 +2019,11 @@ func _build_enemy_commit_slots(
 	var effective_waypoints: Array[Vector2i] = waypoints
 	if effective_waypoints.is_empty() and use_skill and AbilitySystem.ability_has_movement_effect(ability):
 		var live_path: Array = preview_state.preview_paths.get(unit_id, [])
-		if live_path.size() >= 2:
+		var start_pos: Vector2i = _proj_origin(actor)
+		var start_idx: int = live_path.find(start_pos)
+		if start_idx >= 0 and start_idx < live_path.size() - 1:
+			effective_waypoints.assign(live_path.slice(start_idx + 1))
+		elif live_path.size() >= 2:
 			effective_waypoints.assign(live_path.slice(1))
 
 	if use_skill and not AbilitySystem.target_passes_mode(actor, ability, enemy):
