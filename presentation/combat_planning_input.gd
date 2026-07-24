@@ -1777,10 +1777,18 @@ func _append_move_to_commit_slots(
 	var timing: int = _director.get_planning_move_timing(unit_id)
 	if timing < 0:
 		return
-	var move: TimelineAction = TimelineAction.make_move(unit_id, cell, -1, waypoints, timing)
-	if AbilitySystem.movement_requires_run(_proj(), actor, cell, waypoints):
+		
+	# Sanitize the waypoints by re-evaluating the path strictly with basic movement rules.
+	# This strips out any pathing effects (like pass-through) that might have been
+	# generated if the drag route was constructed with an ability selected.
+	var safe_waypoints: Array[Vector2i] = MovementSystem.resolve_move_path(
+		_proj(), actor, cell, waypoints, _move_budget(actor), null, actor.position
+	)
+		
+	var move: TimelineAction = TimelineAction.make_move(unit_id, cell, -1, safe_waypoints, timing)
+	if AbilitySystem.movement_requires_run(_proj(), actor, cell, safe_waypoints):
 		if _run_mode_selected(actor) or auto_run_movement_active(actor):
-			move = TimelineAction.make_run_move(unit_id, cell, -1, waypoints, timing)
+			move = TimelineAction.make_run_move(unit_id, cell, -1, safe_waypoints, timing)
 		else:
 			slots["invalid"] = "Cannot run without selecting run mode."
 			return
