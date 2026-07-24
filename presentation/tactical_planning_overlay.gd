@@ -930,21 +930,22 @@ func _draw_ability_intents() -> void:
 				action.ability != null
 				and AbilitySystem.ability_has_movement_effect(action.ability)
 			):
-				var plan_board: BoardState = _board
-				if _director != null and _director.projected_state != null:
-					plan_board = _director.projected_state
-				var walk_steps: int = AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.MOVE)
-				if walk_steps <= 0:
-					walk_steps = action.ability.range_tiles
-				var wp: Array[Vector2i] = action.waypoints
-				var path: Array[Vector2i] = MovementSystem.resolve_move_path(
-					plan_board, actor, action.target_coord, wp,
-					walk_steps, action.ability, start_pos
-				)
-				if not path.is_empty():
-					route_cells = ([start_pos] as Array)
-					route_cells.append_array(path)
-				_draw_route_line(route_cells, p_col, true, true)
+				var prev: CombatPlanningPreview = _active_preview()
+				var sim_path: Array = prev.preview_paths.get(action.actor_id, []) if prev != null else []
+				if sim_path.size() >= 2:
+					_draw_route_line(sim_path, p_col, true, true)
+				else:
+					var wp: Array[Vector2i] = action.waypoints
+					var path: Array[Vector2i] = MovementSystem.resolve_move_path(
+						_board, actor, action.target_coord, wp,
+						action.ability.range_tiles, action.ability, start_pos
+					)
+					var route_cells: Array = [start_pos]
+					if not path.is_empty():
+						route_cells.append_array(path)
+					else:
+						route_cells.append(action.target_coord)
+					_draw_route_line(route_cells, p_col, true, true)
 			else:
 				_draw_dashed_route(
 					route_cells,
