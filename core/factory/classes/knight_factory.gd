@@ -63,7 +63,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	], 1, GameEnums.StatType.PHYSICAL)
 	shield_bash.upgrade_description = "Apply STAGGER if collides with wall/enemy."
 	shield_bash.upgraded_effects = DataLibrary._duplicate_effects(shield_bash.effects)
-	shield_bash.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH_STUN_ON_COLLISION, 1))
+	shield_bash.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, 1))
 	def.abilities.append(shield_bash)
 
 	var phalanx_stance = DataLibrary._make_ability(&"knight_phalanx_stance", "Phalanx Stance", 0, [

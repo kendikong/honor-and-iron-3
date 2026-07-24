@@ -994,8 +994,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"ability_id": action.ability.id
 					}
 					
-					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_STUN_ON_COLLISION) > 0:
-						pending["stun_on_collision"] = true
+					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION) > 0:
+						pending["stagger_on_collision"] = true
 						
 					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0:
 						pending["bowling_upgrade"] = true
@@ -1399,7 +1399,7 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 					actor._recalculate_stats()
 		
 		if push_type == "push" or push_type == "pull":
-			if push.get("stun_on_collision", false):
+			if push.get("stagger_on_collision", false):
 				for i in range(push_ev_start, events.size()):
 					var ev = events[i]
 					if ev.type == GameEnums.SimEventType.COLLISION and ev.data.get("unit") == target.id:

@@ -435,8 +435,8 @@ static func _emit_collision(
 		if events.size() > 0:
 			for e in events:
 				if e.type == GameEnums.SimEventType.UNIT_PUSHED and e.data.get("unit", -1) == target.id:
-					if e.data.has("stun_on_collision"):
-						stun_on_hit = e.data["stun_on_collision"]
+					if e.data.has("stagger_on_collision"):
+						stun_on_hit = e.data["stagger_on_collision"]
 					break
 		if stun_on_hit:
 			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
