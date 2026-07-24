@@ -954,7 +954,7 @@ func _draw_ability_intents() -> void:
 				)
 				var path: Array[Vector2i] = MovementSystem.resolve_move_path(
 					_board, actor, action.target_coord, wp,
-					action.ability.range_tiles, action.ability,
+					action.ability.range_tiles, action.ability, start_pos
 				)
 				if not path.is_empty() and path.back() == action.target_coord:
 					route_cells = ([start_pos] as Array)
@@ -1747,7 +1747,7 @@ func _draw_move_ghosts() -> void:
 			if drag_route.size() >= 2:
 				waypoints = drag_route.slice(1)
 		var path := MovementSystem.resolve_move_path(
-			_board, unit, _hover_coord, waypoints, ability.range_tiles, ability
+			_board, unit, _hover_coord, waypoints, ability.range_tiles, ability, origin
 		)
 		var route_cells: Array = [origin]
 		if not path.is_empty() and path.back() == _hover_coord:

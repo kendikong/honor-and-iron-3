@@ -146,19 +146,21 @@ static func resolve_move_path(
 	waypoints: Array[Vector2i],
 	max_steps: int,
 	ability: AbilityData = null,
+	start_coord: Vector2i = Vector2i(-1, -1),
 ) -> Array[Vector2i]:
 	if unit == null:
 		return []
+	var start: Vector2i = start_coord if start_coord.x != -1 else unit.position
 	var move_cost: int = move_cost_for(unit)
 	var mt: GameEnums.MovementType = (
 		unit.definition.movement_type
 		if unit.definition != null
 		else GameEnums.MovementType.WALK
 	)
-	if _is_legal_walk(board, unit.position, waypoints, max_steps, move_cost, ability):
+	if _is_legal_walk(board, start, waypoints, max_steps, move_cost, ability):
 		if not waypoints.is_empty() and waypoints.back() == target_coord:
 			return waypoints.duplicate()
-	return find_path(board, unit.position, target_coord, max_steps, mt, move_cost, ability)
+	return find_path(board, start, target_coord, max_steps, mt, move_cost, ability)
 
 
 static func can_reach_coord(
