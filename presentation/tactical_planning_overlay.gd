@@ -932,13 +932,14 @@ func _draw_ability_intents() -> void:
 			):
 				var prev: CombatPlanningPreview = _active_preview()
 				var sim_path: Array = prev.preview_paths.get(action.actor_id, []) if prev != null else []
-				if sim_path.size() >= 2:
-					var start_idx: int = sim_path.find(actor.position)
+				var start_idx: int = prev.action_splits.get(action.actor_id, -1) if prev != null else -1
+				if start_idx < 0:
+					start_idx = sim_path.find(start_pos)
 					if start_idx < 0:
 						start_idx = 0
-					var active_path: Array = sim_path.slice(start_idx)
-					if active_path.size() >= 2:
-						_draw_route_line(active_path, p_col, true, true)
+				var active_path: Array = sim_path.slice(start_idx)
+				if active_path.size() >= 2:
+					_draw_route_line(active_path, p_col, true, true)
 				else:
 					var wp: Array[Vector2i] = action.waypoints
 					var path: Array[Vector2i] = MovementSystem.resolve_move_path(
