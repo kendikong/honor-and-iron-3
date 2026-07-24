@@ -933,7 +933,12 @@ func _draw_ability_intents() -> void:
 				var prev: CombatPlanningPreview = _active_preview()
 				var sim_path: Array = prev.preview_paths.get(action.actor_id, []) if prev != null else []
 				if sim_path.size() >= 2:
-					_draw_route_line(sim_path, p_col, true, true)
+					var start_idx: int = sim_path.find(actor.position)
+					if start_idx < 0:
+						start_idx = 0
+					var active_path: Array = sim_path.slice(start_idx)
+					if active_path.size() >= 2:
+						_draw_route_line(active_path, p_col, true, true)
 				else:
 					var wp: Array[Vector2i] = action.waypoints
 					var path: Array[Vector2i] = MovementSystem.resolve_move_path(
@@ -1305,7 +1310,13 @@ func _pending_move_route_leg(unit_id: int, prev: CombatPlanningPreview) -> Array
 		if start_idx < 0:
 			start_idx = maxi(0, end_idx - 1)
 		return route.slice(start_idx, end_idx)
-	return route.slice(0, end_idx)
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	var start_idx: int = 0
+	if unit != null:
+		var found: int = route.find(unit.position)
+		if found >= 0:
+			start_idx = found
+	return route.slice(start_idx, end_idx)
 
 
 func _draw_interaction_overlay() -> void:
