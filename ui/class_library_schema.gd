@@ -913,7 +913,7 @@ static func _stat_type_system(k: String) -> String:
 			return ""
 
 
-const EDITOR_OVERRIDES_PATH: String = "user://class_library_editor_overrides.json"
+const EDITOR_OVERRIDES_PATH: String = "res://data/class_library_data.json"
 
 
 static func read_editor_save() -> Dictionary:
@@ -967,6 +967,7 @@ static func effect_to_dict(src: EffectData) -> Dictionary:
 		"bonus_if_adjacent_at_cast": src.bonus_if_adjacent_at_cast,
 		"def_debuff_before_damage": src.def_debuff_before_damage,
 		"spawn_unit_id": String(src.spawn_unit_id),
+		"modifiers": src.modifiers.duplicate(),
 	}
 
 
@@ -981,6 +982,7 @@ static func apply_effect_dict(dst: EffectData, data: Dictionary) -> void:
 	dst.bonus_if_adjacent_at_cast = int(data.get("bonus_if_adjacent_at_cast", dst.bonus_if_adjacent_at_cast))
 	dst.def_debuff_before_damage = int(data.get("def_debuff_before_damage", dst.def_debuff_before_damage))
 	dst.spawn_unit_id = StringName(String(data.get("spawn_unit_id", String(dst.spawn_unit_id))))
+	dst.modifiers = data.get("modifiers", {}).duplicate()
 
 
 static func effects_to_dict_array(effects: Array[EffectData]) -> Array:

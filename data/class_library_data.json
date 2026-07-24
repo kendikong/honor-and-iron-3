@@ -1,0 +1,4604 @@
+{
+	"glossary": {},
+	"last_unit": "knight",
+	"ui_scale": 1.2,
+	"units": {
+		"archer": {
+			"abilities": {
+				"archer_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Snap Shot",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "archer_basic",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"archer_shove": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Repelling Shot",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "archer_shove",
+					"range_tiles": 2,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"archer_snipe": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Snipe",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "archer_snipe",
+					"range_tiles": 5,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 3,
+			"base_defense": 2,
+			"base_magic": 0,
+			"base_strength": 3,
+			"display_name": "Archer",
+			"level": 1,
+			"move_points": 3,
+			"movement_type": 0,
+			"passives": {
+				"eagle_eye": {
+					"description": "Increased range/accuracy.",
+					"display_name": "Eagle Eye",
+					"upgraded_description": ""
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Iron Bow",
+				"might": 4
+			}
+		},
+		"assassin": {
+			"abilities": {
+				"assassin_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Knife Slash",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "assassin_basic",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"assassin_execute": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Assassinate",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "assassin_execute",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"assassin_swap": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Shadow Swap",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						}
+					],
+					"is_movement_skill": true,
+					"kind": 1,
+					"movement_point_cost": 1,
+					"presentation_anim": 3,
+					"presentation_key": "assassin_swap",
+					"range_tiles": 1,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 3,
+			"base_defense": 1,
+			"base_magic": 0,
+			"base_strength": 4,
+			"display_name": "Assassin",
+			"level": 1,
+			"move_points": 4,
+			"movement_type": 0,
+			"passives": {
+				"lethal": {
+					"description": "Backstabs do extra damage.",
+					"display_name": "Lethal",
+					"upgraded_description": ""
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Iron Sword",
+				"might": 4
+			}
+		},
+		"bruiser": {
+			"abilities": {
+				"bruiser_adrenaline_surge": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Adrenaline Surge",
+					"effects": [
+						{
+							"amount": 5,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 11
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 9
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 5,
+							"type": 9
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_adrenaline_surge",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "On Kill: HEAL 1 and gain SHIELD 2.",
+					"upgraded_effects": [
+						{
+							"amount": 5,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 11
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 9
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 5,
+							"type": 9
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Wild Swing",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_basic",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_belly_flop": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Belly Flop",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 17
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_belly_flop",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Landing applies PUSH 1 to all adjacent enemies.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 17
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_blood_boil": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Blood Boil",
+					"effects": [
+						{
+							"amount": 5,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 11
+						},
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 9
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_blood_boil",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "Spend 10 HP to gain STR +5 instead.",
+					"upgraded_effects": [
+						{
+							"amount": 10,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 11
+						},
+						{
+							"amount": 5,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 9
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_breaching_dash": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Breaching Dash",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 16
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_breaching_dash",
+					"range_tiles": 3,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Your next attack this turn gains PIERCE.",
+					"upgraded_effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 16
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_charge_strike": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Charge Strike",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_charge_strike",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Gain GHOST during MOVE. Gain ATK +2 if passing through terrain.",
+					"upgraded_effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_cleave": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Cleave",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_cleave",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 3,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Apply BLEED X (where X = your WPN) to all targets.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_concussion_blow": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Concussion Blow",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_concussion_blow",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Enemy collision applies STUN to both units.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_crimson_whirlwind": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Crimson Whirlwind",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_crimson_whirlwind",
+					"range_tiles": 0,
+					"scaling_stat": 1,
+					"target_shape": 1,
+					"target_shape_size": 1,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "HEAL 1 for every target successfully hit.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_earthshatter": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Earthshatter",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 16
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_earthshatter",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 3,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Gain ATK +1 per destroyed object.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 16
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_frenzy": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Frenzy",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_frenzy",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "On Kill: Gain 1 AP.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_guttural_roar": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Guttural Roar",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						},
+						{
+							"amount": -2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 8
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_guttural_roar",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 1,
+					"target_shape_size": 2,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "PUSH 1 all items/coins/scrap. Item collision: ATK 1.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						},
+						{
+							"amount": -2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 8
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_headbutt": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Headbutt",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 11
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 16,
+							"type": 8
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 16,
+							"type": 9
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_headbutt",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Deal bonus damage equal to 10% of your Max HP.",
+					"upgraded_effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 11
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 16,
+							"type": 8
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 16,
+							"type": 9
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_meat_shield": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Meat Shield",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 28,
+							"type": 9
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_meat_shield",
+					"range_tiles": 1,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "RANGE 3. Gain STR +2 per interception.",
+					"upgraded_effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 28,
+							"type": 9
+						}
+					],
+					"upgraded_range_tiles": 3,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_push_through": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Push Through",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						}
+					],
+					"is_movement_skill": true,
+					"kind": 1,
+					"movement_point_cost": 2,
+					"presentation_anim": 3,
+					"presentation_key": "bruiser_push_through",
+					"range_tiles": 2,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_suplex": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Suplex",
+					"effects": [
+						{
+							"amount": 4,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_suplex",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Gain ATK +1 for every 10 Current HP you possess.",
+					"upgraded_effects": [
+						{
+							"amount": 4,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"bruiser_violent_collision": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Violent Collision",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "bruiser_violent_collision",
+					"range_tiles": 3,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Collisions apply STUN (1 turn).",
+					"upgraded_effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 7,
+			"base_defense": 2,
+			"base_magic": 1,
+			"base_strength": 4,
+			"display_name": "Bruiser",
+			"level": 1,
+			"move_points": 4,
+			"movement_type": 0,
+			"passives": {
+				"adrenaline_junkie": {
+					"description": "Gain MOVE +1 and STR +1 per 10% missing HP.",
+					"display_name": "Adrenaline Junkie",
+					"upgraded_description": "[+] Also gain +1 DEF for every 20% missing HP."
+				},
+				"battering_ram": {
+					"description": "PUSH pushes 1 additional tile.",
+					"display_name": "Battering Ram",
+					"upgraded_description": "[+] Pushed enemies hitting walls suffer STUN."
+				},
+				"blood_for_blood": {
+					"description": "If damaged last turn, attacks apply BLEED X.",
+					"display_name": "Blood for Blood",
+					"upgraded_description": "[+] Attacks also gain ATK +1."
+				},
+				"cellular_regeneration": {
+					"description": "HEAL 1 if adjacent to 1+ enemies at turn start.",
+					"display_name": "Cellular Regeneration",
+					"upgraded_description": "[+] Also gain +1 STR if adjacent to 2+ enemies."
+				},
+				"colossal_mass": {
+					"description": "Gain +1 STR for every 15 Max HP.",
+					"display_name": "Colossal Mass",
+					"upgraded_description": "[+] Gain +1 STR for every 10 Max HP instead."
+				},
+				"crowd_breaker": {
+					"description": "+1 STR per adjacent enemy. Splash damage ATK 1.",
+					"display_name": "Crowd Breaker",
+					"upgraded_description": "[+] Splash damage ATK 2."
+				},
+				"enraged": {
+					"description": "Gain +1 STR per unique debuff/hazard.",
+					"display_name": "Enraged",
+					"upgraded_description": "[+] Also gain +1 MOV per debuff/hazard."
+				},
+				"juggernaut": {
+					"description": "Moving over traps destroys them for 0 damage.",
+					"display_name": "Juggernaut",
+					"upgraded_description": "[+] Destroying trap grants SHIELD 1."
+				},
+				"last_stand": {
+					"description": "When HP < 25%, gain +2 STR and +2 DEF.",
+					"display_name": "Last Stand",
+					"upgraded_description": "[+] Gain +3 STR and +3 DEF instead."
+				},
+				"momentum_of_titan": {
+					"description": "PUSH collision adds damage = 10% Max HP.",
+					"display_name": "Momentum of the Titan",
+					"upgraded_description": "[+] Damage increases to 20% Max HP."
+				},
+				"momentum_transfer": {
+					"description": "Applying PUSH collision HEALS 1.",
+					"display_name": "Momentum Transfer",
+					"upgraded_description": "[+] HEAL 1 and gain +1 STR."
+				},
+				"overwhelming_bulk": {
+					"description": "If Current HP > target Max HP, attacks gain PIERCE.",
+					"display_name": "Overwhelming Bulk",
+					"upgraded_description": "[+] Attacks also apply PUSH 1."
+				},
+				"scar_tissue": {
+					"description": "Reduce physical damage by 1 per 20 Max HP or missing HP.",
+					"display_name": "Scar Tissue",
+					"upgraded_description": "[+] Reduce damage by additional 1."
+				},
+				"thrill_of_pain": {
+					"description": "Damage taken before your action adds ATK +2 and PUSH 1 to your next attack.",
+					"display_name": "Thrill of Pain",
+					"upgraded_description": "[+] Next attack gains ATK +3 instead."
+				},
+				"unstoppable_force": {
+					"description": "Immune to STUN/ROOT. Resisting grants SHIELD 1.",
+					"display_name": "Unstoppable Force",
+					"upgraded_description": "[+] Resisting grants SHIELD 2."
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Iron Axe",
+				"might": 4
+			}
+		},
+		"cavalier": {
+			"abilities": {
+				"cavalier_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Lance Thrust",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_basic",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_brace": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Brace",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 30,
+							"type": 9
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_brace",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "Attacker suffers STUN.",
+					"upgraded_effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 30,
+							"type": 9
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_flanking_maneuver": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Flanking Maneuver",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_flanking_maneuver",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Gain GHOST during MOVE.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_glorious_charge": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Glorious Charge",
+					"effects": [
+						{
+							"amount": 4,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_glorious_charge",
+					"range_tiles": 4,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "On Kill: Both gain +1 AP.",
+					"upgraded_effects": [
+						{
+							"amount": 4,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_harpoon_toss": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Harpoon Toss",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 2
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_harpoon_toss",
+					"range_tiles": 4,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "If SELF ROOT or target heavier, PULL SELF to target.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 2
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_line_breaker": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Line Breaker",
+					"effects": [
+						{
+							"amount": 4,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_line_breaker",
+					"range_tiles": 4,
+					"scaling_stat": 1,
+					"target_shape": 5,
+					"target_shape_size": 4,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "ATK +1 for each enemy passed through this turn.",
+					"upgraded_effects": [
+						{
+							"amount": 4,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_meteor_drop": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Meteor Drop",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 17
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_meteor_drop",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 1,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Targets hit suffer VULNERABLE.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 17
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_piercing_charge": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Piercing Charge",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_piercing_charge",
+					"range_tiles": 3,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 2,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Create TRAMPLED terrain behind you (MOVE cost x2).",
+					"upgraded_effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_pole_vault": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Pole Vault",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 17
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_pole_vault",
+					"range_tiles": 3,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "Landing applies PUSH 1 to adjacent enemies.",
+					"upgraded_effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 17
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_push": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Push",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": true,
+					"kind": 1,
+					"movement_point_cost": 0,
+					"presentation_anim": 3,
+					"presentation_key": "cavalier_push",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "Limit once per turn. Pushing unit grants +1 STR for next attack.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_rallying_cry": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Rallying Cry",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 5,
+							"type": 8
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_rallying_cry",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 1,
+					"target_shape_size": 2,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "Allies gain TRAMPLE (1 turn).",
+					"upgraded_effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 5,
+							"type": 8
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_run_down": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Run Down",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_run_down",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "On Kill: Gain MAX MOVEMENT +2.",
+					"upgraded_effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_spear_wall": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Spear Wall",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 17,
+							"type": 8
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_spear_wall",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 3,
+					"target_shape_size": 2,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Hazard lasts 2 turns.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 17,
+							"type": 8
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_sweeping_halberd": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Sweeping Halberd",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 2
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_sweeping_halberd",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 3,
+					"target_shape_size": 2,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Enemy collision on PULL applies STUN.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 2
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cavalier_vaulting_leap": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Vaulting Leap",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 8
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cavalier_vaulting_leap",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Armor explodes: ATK 1 (AOE 1 around target).",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 8
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 5,
+			"base_defense": 3,
+			"base_magic": 1,
+			"base_strength": 4,
+			"display_name": "Cavalier",
+			"level": 1,
+			"move_points": 4,
+			"movement_type": 0,
+			"passives": {
+				"canto": {
+					"description": "Standard movement gains CANTO.",
+					"display_name": "Canto",
+					"upgraded_description": ""
+				},
+				"crashing_impact": {
+					"description": "Landing creates shockwave (PUSH 1 adjacent).",
+					"display_name": "Crashing Impact",
+					"upgraded_description": "[+] Pushed enemies hitting obstacles suffer STUN."
+				},
+				"disengage": {
+					"description": "Attacking at RANGE 1 applies PUSH 1 to yourself before damage.",
+					"display_name": "Disengage",
+					"upgraded_description": "[+] Also applies PUSH 1 to enemy."
+				},
+				"flanking_strike": {
+					"description": "Side attacks ignore 2 DEF.",
+					"display_name": "Flanking Strike",
+					"upgraded_description": "[+] Ignores 4 DEF instead."
+				},
+				"frontline_defense": {
+					"description": "Gain +1 DEF and Ranged immunity if moved 3+ tiles.",
+					"display_name": "Frontline Defense",
+					"upgraded_description": "[+] Also gain SHIELD 1."
+				},
+				"kinetic_charge": {
+					"description": "Gain +1 STR per tile moved in continuous straight line before attacking.",
+					"display_name": "Kinetic Charge",
+					"upgraded_description": ""
+				},
+				"leverage": {
+					"description": "Using 0-AP Push grants next attack PIERCE and +1 MOV.",
+					"display_name": "Leverage",
+					"upgraded_description": "[+] Also gain SHIELD 1."
+				},
+				"plunging_attack": {
+					"description": "Using an AP jump/teleport before your action adds +3 ATK to that action.",
+					"display_name": "Plunging Attack",
+					"upgraded_description": "[+] Attack gains PIERCE."
+				},
+				"pole_plant": {
+					"description": "0-AP Push works on traps. Destroying trap = SHIELD 2.",
+					"display_name": "Pole-Plant",
+					"upgraded_description": "[+] Destroying trap deals 2 unmitigated damage to adjacent."
+				},
+				"reach_advantage": {
+					"description": "Attacking melee unit from exactly RANGE 2 prevents counter-attacks.",
+					"display_name": "Reach Advantage",
+					"upgraded_description": "[+] Target suffers -1 DEF."
+				},
+				"spear_drop": {
+					"description": "Attacking an enemy you vaulted over ignores 2 DEF and applies BLEED X.",
+					"display_name": "Spear Drop",
+					"upgraded_description": "[+] Ignores 4 DEF."
+				},
+				"springboard": {
+					"description": "On Kill: Free vault to defeated enemy space for 0 AP, gain +1 MOV on landing.",
+					"display_name": "Springboard",
+					"upgraded_description": "[+] Gain 1 AP on landing (Once per turn)."
+				},
+				"sweet_spot": {
+					"description": "Attacks from exactly RANGE 2 gain +2 ATK and ignore 2 DEF.",
+					"display_name": "Sweet Spot",
+					"upgraded_description": "[+] Ignore 4 DEF instead."
+				},
+				"unstoppable_mass": {
+					"description": "If you move max MOVEMENT before attacking, attack gains PIERCE and ROOT immunity.",
+					"display_name": "Unstoppable Mass",
+					"upgraded_description": ""
+				},
+				"zone_of_control": {
+					"description": "Enemy ending turn exactly 2 tiles away suffers basic attack (Once per round).",
+					"display_name": "Zone of Control",
+					"upgraded_description": "[+] Attack gains PIERCE."
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Iron Lance",
+				"might": 4
+			}
+		},
+		"cleric": {
+			"abilities": {
+				"cleric_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Mending Touch",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 4
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cleric_basic",
+					"range_tiles": 1,
+					"scaling_stat": 2,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cleric_blessing": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Divine Shield",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 5
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "cleric_blessing",
+					"range_tiles": 2,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"cleric_pull": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Rescue Pull",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 2
+						}
+					],
+					"is_movement_skill": true,
+					"kind": 1,
+					"movement_point_cost": 2,
+					"presentation_anim": 3,
+					"presentation_key": "cleric_pull",
+					"range_tiles": 2,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 3,
+			"base_defense": 2,
+			"base_magic": 3,
+			"base_strength": 0,
+			"display_name": "Cleric",
+			"level": 1,
+			"move_points": 3,
+			"movement_type": 0,
+			"passives": {
+				"blessing": {
+					"description": "Heals adjacent allies.",
+					"display_name": "Blessing",
+					"upgraded_description": ""
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Wooden Staff",
+				"might": 4
+			}
+		},
+		"engineer": {
+			"abilities": {
+				"eng_grenade": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Grenade",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 12
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "eng_grenade",
+					"range_tiles": 3,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"eng_pull": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Grappling Hook",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 2
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "eng_pull",
+					"range_tiles": 3,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"engineer_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Pistol Tap",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "engineer_basic",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 3,
+			"base_defense": 3,
+			"base_magic": 0,
+			"base_strength": 2,
+			"display_name": "Engineer",
+			"level": 1,
+			"move_points": 3,
+			"movement_type": 0,
+			"passives": {
+				"shrapnel": {
+					"description": "Explosions deal more damage.",
+					"display_name": "Shrapnel",
+					"upgraded_description": ""
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Flintlock",
+				"might": 4
+			}
+		},
+		"gryphon": {
+			"abilities": {
+				"gryphon_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Lance Jab",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "gryphon_basic",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"gryphon_shove": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Wing Buffet",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": true,
+					"kind": 1,
+					"movement_point_cost": 2,
+					"presentation_anim": 3,
+					"presentation_key": "gryphon_shove",
+					"range_tiles": 2,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"gryphon_swoop": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Swoop Attack",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "gryphon_swoop",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 4,
+			"base_defense": 2,
+			"base_magic": 0,
+			"base_strength": 3,
+			"display_name": "Gryphon Rider",
+			"level": 1,
+			"move_points": 5,
+			"movement_type": 1,
+			"passives": {
+				"air_superiority": {
+					"description": "Evades ground attacks.",
+					"display_name": "Air Superiority",
+					"upgraded_description": ""
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Iron Lance",
+				"might": 4
+			}
+		},
+		"knight": {
+			"abilities": {
+				"knight_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Shield Strike",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_basic",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_bowling_charge": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Bowling Charge",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 21
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_bowling_charge",
+					"range_tiles": 3,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 12,
+					"targeting_mode": 4,
+					"upgrade_description": "Enemy-enemy collision: ATK 3 to both units.",
+					"upgraded_effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 15
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 21
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_chain_hook": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Chain Hook",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 2
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_chain_hook",
+					"range_tiles": 3,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Target suffers VULNERABLE if pulled adjacent.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 2
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_defensive_formation": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Defensive Formation",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 8
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 30,
+							"type": 8
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_defensive_formation",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 6,
+					"target_shape_size": 3,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "Allies gain SHIELD 2.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 8
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 30,
+							"type": 8
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 5
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_fortify": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Fortify",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 3,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 8
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_fortify",
+					"range_tiles": 3,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "Ally gains THORNS 50%.",
+					"upgraded_effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 3,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 8
+						},
+						{
+							"amount": 50,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 39,
+							"type": 8
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_indomitable_will": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Indomitable Will",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 5,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 5
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 2,
+							"status_type": 38,
+							"type": 9
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_indomitable_will",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "When expires, gain +2 STR.",
+					"upgraded_effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 5,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 5
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 2,
+							"status_type": 38,
+							"type": 9
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_iron_grip": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Iron Grip",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 17,
+							"type": 8
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 40,
+							"type": 8
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_iron_grip",
+					"range_tiles": 1,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Refund 1 AP if already ROOT/STUN.",
+					"upgraded_effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 17,
+							"type": 8
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 40,
+							"type": 8
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 19
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_phalanx_stance": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Phalanx Stance",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 30,
+							"type": 9
+						},
+						{
+							"amount": 5,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 9
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_phalanx_stance",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "Infinite RANGE for Retaliation Protocol.",
+					"upgraded_effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 30,
+							"type": 9
+						},
+						{
+							"amount": 5,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 9
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 37,
+							"type": 9
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_redirect_strike": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Redirect Strike",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 28,
+							"type": 9
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_redirect_strike",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "Gain DEF +2 per redirected hit.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 28,
+							"type": 9
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_retaliation_protocol": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Retaliation Protocol",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 36,
+							"type": 9
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_retaliation_protocol",
+					"range_tiles": 0,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "Counter-attacks apply PUSH 1.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 36,
+							"type": 9
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_seismic_stomp": {
+					"action_point_cost": 1,
+					"can_target_self": true,
+					"display_name": "Seismic Stomp",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 14
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_seismic_stomp",
+					"range_tiles": 0,
+					"scaling_stat": 1,
+					"target_shape": 1,
+					"target_shape_size": 1,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
+					"upgrade_description": "Create CRACKED terrain.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 14
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 18
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_shield_bash": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Shield Bash",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_shield_bash",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Apply STUN if collides with wall/enemy.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_shield_slam": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Shield Slam",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 2,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_shield_slam",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "Target DEF -1 before damage.",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 2,
+							"def_debuff_before_damage": 1,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_swap": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Swap",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						}
+					],
+					"is_movement_skill": true,
+					"kind": 1,
+					"movement_point_cost": 1,
+					"presentation_anim": 3,
+					"presentation_key": "knight_swap",
+					"range_tiles": 1,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "Gain +2 DEF and SHIELD 2 for the rest of the turn.",
+					"upgraded_effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 4,
+							"type": 9
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 5
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"knight_taunting_strike": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Taunting Strike",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 2
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 19,
+							"type": 8
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "knight_taunting_strike",
+					"range_tiles": 2,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "RANGE 3 | AOE 3x3 | PULL 2 all.",
+					"upgraded_effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 2
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 19,
+							"type": 8
+						}
+					],
+					"upgraded_range_tiles": 3,
+					"upgraded_target_shape": 1,
+					"upgraded_target_shape_size": 1,
+					"uses_per_combat": -1
+				},
+				"knight_trampling_advance": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Trampling Advance",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 22
+						},
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 20
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 2,
+					"presentation_anim": 4,
+					"presentation_key": "knight_trampling_advance",
+					"range_tiles": 2,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 12,
+					"targeting_mode": 4,
+					"upgrade_description": "",
+					"upgraded_effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 20
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 6,
+			"base_defense": 5,
+			"base_magic": 2,
+			"base_strength": 4,
+			"display_name": "Knight",
+			"level": 1,
+			"move_points": 3,
+			"movement_type": 0,
+			"passives": {
+				"bulwark": {
+					"description": "Gain +1 DEF per adjacent unit.",
+					"display_name": "Bulwark",
+					"upgraded_description": "[+] Also +1 STR per adjacent enemy."
+				},
+				"collision_retaliator": {
+					"description": "Enemy collision suffers ATK 2. Knight takes 0 collision damage.",
+					"display_name": "Collision Retaliator",
+					"upgraded_description": "[+] PUSH 1."
+				},
+				"indestructible_bastion": {
+					"description": "Lethal damage -> 1 HP + SHIELD = DEF (Once).",
+					"display_name": "Indestructible Bastion",
+					"upgraded_description": "[+] Gain +2 STR for combat."
+				},
+				"intercept_tactics": {
+					"description": "Using a redirect skill grants +2 DEF.",
+					"display_name": "Intercept Tactics",
+					"upgraded_description": "[+] +3 DEF."
+				},
+				"kinetic_armor": {
+					"description": "Incoming damage reduced by flat 1 if SHIELD active.",
+					"display_name": "Kinetic Armor",
+					"upgraded_description": "[+] Reduced by 2."
+				},
+				"kinetic_converter": {
+					"description": "When hit, gain STR +1 and MOVE +1 for next turn.",
+					"display_name": "Kinetic Converter",
+					"upgraded_description": "[+] Gain STR +2."
+				},
+				"kinetic_redirection": {
+					"description": "Mitigating damage adds +1 STR to next attack (Stacks to +3).",
+					"display_name": "Kinetic Redirection",
+					"upgraded_description": "[+] Next attack gains PIERCE."
+				},
+				"living_barricade": {
+					"description": "Allies behind are immune to ranged attacks.",
+					"display_name": "Living Barricade",
+					"upgraded_description": "[+] Allies behind gain +1 DEF."
+				},
+				"rallying_presence": {
+					"description": "Allies starting turn adjacent gain +1 MOV.",
+					"display_name": "Rallying Presence",
+					"upgraded_description": "[+] +2 MOV."
+				},
+				"shield_mastery": {
+					"description": "Damage from front -> gain SHIELD 2.",
+					"display_name": "Shield Mastery",
+					"upgraded_description": "[+] Gain SHIELD 3."
+				},
+				"shield_wall": {
+					"description": "Adjacent allies gain +1 DEF and PULL immunity.",
+					"display_name": "Shield Wall",
+					"upgraded_description": "[+] Range of aura = 2 tiles."
+				},
+				"spiked_barricade": {
+					"description": "PUSH into walls/obstacles applies STUN.",
+					"display_name": "Spiked Barricade",
+					"upgraded_description": "[+] Target also suffers -1 DEF."
+				},
+				"stand_ground": {
+					"description": "Immune to PUSH/PULL. Enemy attempts trigger COUNTER ATTACK 1.",
+					"display_name": "Stand Ground",
+					"upgraded_description": "[+] COUNTER ATTACK 2 instead."
+				},
+				"thorny_carapace": {
+					"description": "Melee hit reflects 50% damage (rounded down) & PUSH 1.",
+					"display_name": "Thorny Carapace",
+					"upgraded_description": "[+] Reflects 100% damage instead."
+				},
+				"trample_move": {
+					"description": "Normal movement gains TRAMPLE.",
+					"display_name": "Trample Move",
+					"upgraded_description": "[+] Enemies trampled suffer -1 DEF."
+				}
+			},
+			"preferred_stat": 3,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Iron Axe",
+				"might": 4
+			}
+		},
+		"mage": {
+			"abilities": {
+				"mage_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Arcane Flick",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "mage_basic",
+					"range_tiles": 2,
+					"scaling_stat": 2,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"mage_fireball": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Fireball",
+					"effects": [
+						{
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "mage_fireball",
+					"range_tiles": 3,
+					"scaling_stat": 2,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"mage_swap": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Phase Swap",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						}
+					],
+					"is_movement_skill": true,
+					"kind": 1,
+					"movement_point_cost": 2,
+					"presentation_anim": 3,
+					"presentation_key": "mage_swap",
+					"range_tiles": 2,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 2,
+			"base_defense": 1,
+			"base_magic": 5,
+			"base_strength": 0,
+			"display_name": "Mage",
+			"level": 1,
+			"move_points": 3,
+			"movement_type": 0,
+			"passives": {
+				"focus": {
+					"description": "More magic damage.",
+					"display_name": "Focus",
+					"upgraded_description": ""
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Wooden Staff",
+				"might": 4
+			}
+		},
+		"mercenary": {
+			"abilities": {
+				"merc_kick": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Boot Kick",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": true,
+					"kind": 1,
+					"movement_point_cost": 1,
+					"presentation_anim": 3,
+					"presentation_key": "merc_kick",
+					"range_tiles": 1,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"merc_rend": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Rend",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "merc_rend",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"mercenary_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Quick Cut",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "mercenary_basic",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 4,
+			"base_defense": 3,
+			"base_magic": 0,
+			"base_strength": 4,
+			"display_name": "Mercenary",
+			"level": 1,
+			"move_points": 4,
+			"movement_type": 0,
+			"passives": {
+				"veteran": {
+					"description": "Reliable criticals.",
+					"display_name": "Veteran",
+					"upgraded_description": ""
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Iron Sword",
+				"might": 4
+			}
+		},
+		"monk": {
+			"abilities": {
+				"monk_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Finger Jab",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "monk_basic",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"monk_palm": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Palm Strike",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "monk_palm",
+					"range_tiles": 1,
+					"scaling_stat": 1,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"monk_swap": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Vault Swap",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						}
+					],
+					"is_movement_skill": true,
+					"kind": 1,
+					"movement_point_cost": 1,
+					"presentation_anim": 3,
+					"presentation_key": "monk_swap",
+					"range_tiles": 1,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 4,
+			"base_defense": 3,
+			"base_magic": 1,
+			"base_strength": 3,
+			"display_name": "Monk",
+			"level": 1,
+			"move_points": 4,
+			"movement_type": 0,
+			"passives": {
+				"flurry": {
+					"description": "Multiple quick attacks.",
+					"display_name": "Flurry",
+					"upgraded_description": ""
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Hand Wraps",
+				"might": 4
+			}
+		},
+		"paladin": {
+			"abilities": {
+				"paladin_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Holy Mending",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 4
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "paladin_basic",
+					"range_tiles": 1,
+					"scaling_stat": 2,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"paladin_heal": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Lay on Hands",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 4
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "paladin_heal",
+					"range_tiles": 1,
+					"scaling_stat": 2,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"paladin_swap": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Holy Swap",
+					"effects": [
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 3
+						}
+					],
+					"is_movement_skill": true,
+					"kind": 1,
+					"movement_point_cost": 1,
+					"presentation_anim": 3,
+					"presentation_key": "paladin_swap",
+					"range_tiles": 2,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 5,
+			"base_defense": 4,
+			"base_magic": 2,
+			"base_strength": 3,
+			"display_name": "Paladin",
+			"level": 1,
+			"move_points": 3,
+			"movement_type": 0,
+			"passives": {
+				"holy_shield": {
+					"description": "Resists magic.",
+					"display_name": "Holy Shield",
+					"upgraded_description": ""
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Iron Sword",
+				"might": 4
+			}
+		},
+		"shaman": {
+			"abilities": {
+				"shaman_basic": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Spirit Nudge",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 0
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "shaman_basic",
+					"range_tiles": 2,
+					"scaling_stat": 2,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"shaman_shove": {
+					"action_point_cost": 0,
+					"can_target_self": false,
+					"display_name": "Gale Force",
+					"effects": [
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "shaman_shove",
+					"range_tiles": 2,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				},
+				"shaman_ward": {
+					"action_point_cost": 1,
+					"can_target_self": false,
+					"display_name": "Earth Ward",
+					"effects": [
+						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 5
+						}
+					],
+					"is_movement_skill": false,
+					"kind": 0,
+					"movement_point_cost": 0,
+					"presentation_anim": 0,
+					"presentation_key": "shaman_ward",
+					"range_tiles": 3,
+					"scaling_stat": 0,
+					"target_shape": 0,
+					"target_shape_size": 1,
+					"targeting_flags": 2,
+					"targeting_mode": 1,
+					"upgrade_description": "",
+					"upgraded_effects": [],
+					"upgraded_range_tiles": -1,
+					"upgraded_target_shape": 0,
+					"upgraded_target_shape_size": -1,
+					"uses_per_combat": -1
+				}
+			},
+			"action_points": 1,
+			"base_constitution": 3,
+			"base_defense": 2,
+			"base_magic": 4,
+			"base_strength": 0,
+			"display_name": "Shaman",
+			"level": 1,
+			"move_points": 3,
+			"movement_type": 0,
+			"passives": {
+				"curse": {
+					"description": "Enemies take more damage.",
+					"display_name": "Curse",
+					"upgraded_description": ""
+				}
+			},
+			"preferred_stat": 1,
+			"weapon": {
+				"bonus_defense": 0,
+				"bonus_magic": 0,
+				"bonus_max_hp": 0,
+				"bonus_move": 0,
+				"bonus_strength": 0,
+				"display_name": "Wooden Staff",
+				"might": 4
+			}
+		}
+	}
+}

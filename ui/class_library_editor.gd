@@ -1576,6 +1576,69 @@ func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effect
 		var eff_spawn_row := _bind_string(g, "Spawn ID", String(eff.spawn_unit_id), func(v: String) -> void:
 			eff.spawn_unit_id = StringName(v)
 		)
+		
+		var mods_header := Label.new()
+		mods_header.text = "Modifiers (Data Flags)"
+		mods_header.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+		mods_header.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
+		ev.add_child(mods_header)
+		
+		var mods_container := VBoxContainer.new()
+		mods_container.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
+		ev.add_child(mods_container)
+		
+		for mod_key: String in eff.modifiers.keys():
+			var mod_row := HBoxContainer.new()
+			mods_container.add_child(mod_row)
+			var key_edit := LineEdit.new()
+			key_edit.text = mod_key
+			key_edit.expand_to_text_length = true
+			key_edit.custom_minimum_size.x = ClassLibraryTheme.px(140)
+			key_edit.tooltip_text = "Modifier Key (e.g. ghost_move)"
+			mod_row.add_child(key_edit)
+			var val_spin := SpinBox.new()
+			val_spin.min_value = -9999
+			val_spin.max_value = 9999
+			val_spin.step = 0.1
+			val_spin.value = float(eff.modifiers[mod_key])
+			val_spin.tooltip_text = "Modifier Value"
+			mod_row.add_child(val_spin)
+			var apply_btn := Button.new()
+			apply_btn.text = "Set"
+			apply_btn.tooltip_text = "Apply key/value change"
+			_style_toolbar_button(apply_btn)
+			mod_row.add_child(apply_btn)
+			var del_btn := Button.new()
+			del_btn.text = "×"
+			del_btn.tooltip_text = "Delete modifier"
+			_style_toolbar_button(del_btn)
+			mod_row.add_child(del_btn)
+			
+			apply_btn.pressed.connect(func() -> void:
+				var new_key: String = key_edit.text.strip_edges()
+				if new_key != mod_key:
+					eff.modifiers.erase(mod_key)
+				eff.modifiers[new_key] = val_spin.value
+				_rebuild_effects_editor(parent, ability, effects, upgraded)
+				_refresh_ability_ui(ability)
+			)
+			del_btn.pressed.connect(func() -> void:
+				eff.modifiers.erase(mod_key)
+				_rebuild_effects_editor(parent, ability, effects, upgraded)
+				_refresh_ability_ui(ability)
+			)
+			
+		var add_mod_btn := Button.new()
+		add_mod_btn.text = "+ Add Modifier"
+		add_mod_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		_style_toolbar_button(add_mod_btn)
+		add_mod_btn.pressed.connect(func() -> void:
+			eff.modifiers["new_modifier"] = 0.0
+			_rebuild_effects_editor(parent, ability, effects, upgraded)
+			_refresh_ability_ui(ability)
+		)
+		mods_container.add_child(add_mod_btn)
+
 		# Grey out effect fields that don't apply to this effect type dynamically.
 		var eff_grey_cb := func() -> void:
 			var is_status_eff: bool = eff.type in [
