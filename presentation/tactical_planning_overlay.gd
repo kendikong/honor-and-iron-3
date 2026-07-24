@@ -940,7 +940,7 @@ func _draw_ability_intents() -> void:
 						_board, actor, action.target_coord, wp,
 						action.ability.range_tiles, action.ability, start_pos
 					)
-					var route_cells: Array = [start_pos]
+					route_cells = [start_pos]
 					if not path.is_empty():
 						route_cells.append_array(path)
 					else:
