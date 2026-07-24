@@ -700,10 +700,10 @@ func interaction_move_hover_active(unit_id: int, cell: Vector2i) -> bool:
 		var stand: Vector2i = _predicted_stand_tile_for_enemy_hover(cell, hover_unit)
 		if stand != _proj_origin(p_unit) and _director.board.is_in_bounds(stand):
 			return true
-		if is_live_preview_active():
-			var route: Array = preview_state.preview_paths.get(unit_id, [])
-			if route.size() >= 2:
-				return true
+	if is_live_preview_active():
+		var route: Array = preview_state.preview_paths.get(unit_id, [])
+		if route.size() >= 2:
+			return true
 	return false
 
 

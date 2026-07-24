@@ -259,25 +259,6 @@ static func execute_skill_walk(
 	var path: Array[Vector2i] = resolve_move_path(
 		board, unit, goal, waypoints, walk_steps, ability
 	)
-	var final_coord = path[path.size() - 1] if not path.is_empty() else unit.position
-	var is_valid_end = (final_coord == goal)
-	
-	if not is_valid_end:
-		var target_occ = board.get_unit_at(goal)
-		if target_occ != null and target_occ.team != unit.team:
-			var is_offensive = false
-			for eff in effects:
-				if eff.type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL]:
-					is_offensive = true
-					break
-			if is_offensive and GridSystem.manhattan(final_coord, goal) == 1:
-				is_valid_end = true
-				
-	if not is_valid_end:
-		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-			"actor": unit.id, "reason": "no_path",
-		}))
-		return
 	var from := unit.position
 	GridSystem.set_occupant(board, unit.position, -1)
 	var trample_hit_ids: Dictionary = {}
