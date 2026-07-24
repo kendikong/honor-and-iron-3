@@ -935,7 +935,7 @@ func _draw_ability_intents() -> void:
 					_board, actor, action.target_coord, wp,
 					action.ability.range_tiles, action.ability, start_pos
 				)
-				if not path.is_empty() and path.back() == action.target_coord:
+				if not path.is_empty():
 					route_cells = ([start_pos] as Array)
 					route_cells.append_array(path)
 				_draw_route_line(route_cells, p_col, true, true)
@@ -1730,7 +1730,7 @@ func _draw_move_ghosts() -> void:
 		var hover_preview: CombatPlanningPreview = _planning_input.preview_state if _planning_input != null else null
 		if hover_preview != null and hover_preview.preview_board != null:
 			var sim_path: Array = hover_preview.preview_paths.get(unit.id, [])
-			if not sim_path.is_empty() and sim_path.back() == _hover_coord:
+			if not sim_path.is_empty():
 				var start_idx: int = hover_preview.action_splits.get(unit.id, -1)
 				if start_idx < 0:
 					start_idx = sim_path.find(origin)
@@ -1747,7 +1747,7 @@ func _draw_move_ghosts() -> void:
 			)
 			
 		var route_cells: Array = [origin]
-		if not path.is_empty() and path.back() == _hover_coord:
+		if not path.is_empty():
 			route_cells.append_array(path)
 		else:
 			route_cells.append(_hover_coord)
