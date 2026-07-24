@@ -190,7 +190,11 @@ static func unit_info(board: BoardState, unit: UnitState) -> String:
 	if unit.active_statuses.size() > 0:
 		var status_strs: Array[String] = []
 		for status in unit.active_statuses:
-			var s_name: String = _status_name(status.type)
+			var raw_name: String = _status_name(status.type)
+			var s_name: String = raw_name
+			var icon: String = PlanningIcons.keyword_icon(raw_name)
+			if icon != "":
+				s_name = "%s %s" % [icon, raw_name]
 			if status.duration > 1:
 				s_name += " (%d)" % status.duration
 			var hint: String = _status_hint(status.type)

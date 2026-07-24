@@ -317,7 +317,7 @@ static func execute_skill_walk(
 		unit.position = step
 		
 		var tile = board.get_tile(step)
-		if tile != null and tile.terrain_id != &"":
+		if tile != null and tile.definition != null and tile.definition.id != &"plain":
 			unit.passive_flags["passed_through_terrain"] = true
 			
 		TerrainSystem.apply_entry_at(board, unit, step, events)
