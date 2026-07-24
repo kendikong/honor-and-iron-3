@@ -615,8 +615,7 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 			return
 			
 		var max_steps: int = planning_move_budget(actor, proj)
-		var mov_type := actor.definition.movement_type if actor.definition != null else GameEnums.MovementType.WALK
-		var waypoints := MovementSystem.find_path(proj, actor.position, approach, max_steps, mov_type)
+		var waypoints: Array[Vector2i] = []
 		move_action = make_planning_move_action(
 			unit_id, approach, proj, actor, waypoints, GameEnums.MoveTiming.PRE_ACTION,
 		)
@@ -791,11 +790,9 @@ func _find_approach_tile(state: BoardState, actor: UnitState, target_pos: Vector
 			var coord := Vector2i(x, y)
 			if not _is_attack_tile(state, actor, coord, target_pos, rng):
 				continue
-			var path := MovementSystem.find_path(
-				state, actor.position, coord, planning_move_budget(actor, state),
-			)
-			if path.size() < best_len:
-				best_len = path.size()
+			var dist: int = GridSystem.manhattan(actor.position, coord)
+			if dist < best_len:
+				best_len = dist
 				best = coord
 	return best
 
@@ -804,10 +801,8 @@ func _is_attack_tile(state: BoardState, actor: UnitState, coord: Vector2i, targe
 		return false
 	if GridSystem.manhattan(coord, target_pos) > rng or not GridSystem.is_passable(state, coord):
 		return false
-	var path := MovementSystem.find_path(
-		state, actor.position, coord, planning_move_budget(actor, state),
-	)
-	return not path.is_empty() and path[path.size() - 1] == coord
+	var dist: int = GridSystem.manhattan(actor.position, coord)
+	return dist <= planning_move_budget(actor, state)
 
 func _clear_unit_from_plans(unit_id: int, from_timing: int) -> void:
 	if from_timing <= GameEnums.MoveTiming.PRE_ACTION:
@@ -1024,9 +1019,7 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 				var approach := _find_approach_tile(start_board, actor, target.position, rng, coord)
 				var approach_path: Array[Vector2i] = []
 				if approach != actor.position:
-					approach_path = MovementSystem.find_path(
-						start_board, actor.position, approach, planning_move_budget(actor, start_board),
-					)
+					approach_path = []
 					new_actions.append(
 						make_planning_move_action(
 							unit_id, approach, start_board, actor, approach_path, move_timing,
