@@ -930,27 +930,17 @@ func _draw_ability_intents() -> void:
 				action.ability != null
 				and AbilitySystem.ability_has_movement_effect(action.ability)
 			):
-				var plan_board: BoardState = _board
-				if _director != null and _director.projected_state != null:
-					plan_board = _director.projected_state
-				var walk_steps: int = AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.MOVE)
-				if walk_steps <= 0:
-					walk_steps = action.ability.range_tiles
-
 				var prev: CombatPlanningPreview = _active_preview()
-				var sim_path: Array = prev.preview_paths.get(action.actor_id, []) if prev != null else []
-				var drawn_sim_path: bool = false
-				if sim_path.size() >= 2:
-					var start_idx: int = sim_path.find(start_pos)
-					if start_idx < 0:
-						start_idx = sim_path.find(actor.position)
-					if start_idx >= 0:
-						var active_path: Array = sim_path.slice(start_idx)
-						if active_path.size() >= 2:
-							_draw_route_line(active_path, p_col, true, true)
-							drawn_sim_path = true
-
-				if not drawn_sim_path:
+				var leg_route: Array = _pending_move_route_leg(action.actor_id, prev) if prev != null else []
+				if leg_route.size() >= 2:
+					_draw_route_line(leg_route, p_col, true, true)
+				else:
+					var plan_board: BoardState = _board
+					if _director != null and _director.projected_state != null:
+						plan_board = _director.projected_state
+					var walk_steps: int = AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.MOVE)
+					if walk_steps <= 0:
+						walk_steps = action.ability.range_tiles
 					var wp: Array[Vector2i] = action.waypoints
 					var path: Array[Vector2i] = MovementSystem.resolve_move_path(
 						plan_board, actor, action.target_coord, wp,
