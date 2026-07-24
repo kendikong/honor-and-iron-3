@@ -886,26 +886,7 @@ func _origin_at_plan_action(
 	return origin
 
 
-## Returns the waypoints from the last PRE_ACTION MOVE for actor_id that appears
-## before stop_before in the plan. Used to reconstruct the real drag path for
-## committed movement-effect ability arrows.
-func _pre_move_waypoints_at(
-	plan: Timeline,
-	actor_id: int,
-	stop_before: TimelineAction,
-) -> Array[Vector2i]:
-	var result: Array[Vector2i] = []
-	for act: TimelineAction in plan.entries:
-		if act == stop_before:
-			return result
-		if act.actor_id != actor_id:
-			continue
-		if (
-			act.type == GameEnums.ActionType.MOVE
-			and act.move_timing == GameEnums.MoveTiming.PRE_ACTION
-		):
-			result = act.waypoints.duplicate()
-	return result
+
 
 
 ## Returns true if actor has a committed (not awaiting) ability with a movement
@@ -949,9 +930,7 @@ func _draw_ability_intents() -> void:
 				action.ability != null
 				and AbilitySystem.ability_has_movement_effect(action.ability)
 			):
-				var wp: Array[Vector2i] = _pre_move_waypoints_at(
-					plan_to_use, action.actor_id, action,
-				)
+				var wp: Array[Vector2i] = action.waypoints
 				var path: Array[Vector2i] = MovementSystem.resolve_move_path(
 					_board, actor, action.target_coord, wp,
 					action.ability.range_tiles, action.ability, start_pos
@@ -1752,13 +1731,13 @@ func _draw_move_ghosts() -> void:
 		if hover_preview != null and hover_preview.preview_board != null:
 			var sim_path: Array = hover_preview.preview_paths.get(unit.id, [])
 			if not sim_path.is_empty() and sim_path.back() == _hover_coord:
-				var start_idx: int = sim_path.rfind(origin)
-				var post_split: int = int(hover_preview.preview_post_splits.get(unit.id, sim_path.size()))
-				var end_idx: int = mini(post_split, sim_path.size())
+				var start_idx: int = hover_preview.action_splits.get(unit.id, -1)
 				if start_idx < 0:
-					start_idx = maxi(0, end_idx - 1)
-				if start_idx < end_idx:
-					path = sim_path.slice(start_idx, end_idx)
+					start_idx = sim_path.find(origin)
+					if start_idx < 0:
+						start_idx = maxi(0, sim_path.size() - 1)
+				if start_idx < sim_path.size():
+					path = sim_path.slice(start_idx, sim_path.size())
 				else:
 					path = sim_path
 				

@@ -1295,7 +1295,7 @@ func rpc_plan_attack(unit_id: int, ability_index: int, target_unit_id: int) -> v
 		_try_add(action, plan_action)
 
 @rpc("any_peer", "call_local", "reliable")
-func rpc_plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i) -> void:
+func rpc_plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i, waypoints: Array[Vector2i] = []) -> void:
 	if NetworkManager != null and NetworkManager.is_multiplayer:
 		var u := base_board.get_unit_by_id(unit_id)
 		if u == null or u.controlling_player_id != multiplayer.get_remote_sender_id():
@@ -1315,7 +1315,7 @@ func rpc_plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i
 	var ability: AbilityData = attacker.active_abilities[index]
 	if ability.is_movement_kind():
 		_try_add(
-			TimelineAction.make_ability(unit_id, ability, coord, -1, GameEnums.MoveTiming.PRE_ACTION),
+			TimelineAction.make_ability(unit_id, ability, coord, -1, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 			plan_pre_move,
 		)
 	else:
@@ -1323,7 +1323,7 @@ func rpc_plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i
 		_clear_unit_class_actions_from_plan(unit_id)
 		_clear_unit_post_moves_from_plan(unit_id)
 		_try_add(
-			TimelineAction.make_ability(unit_id, ability, coord, -1, GameEnums.MoveTiming.PRE_ACTION),
+			TimelineAction.make_ability(unit_id, ability, coord, -1, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 			plan_action,
 		)
 

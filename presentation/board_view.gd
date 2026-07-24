@@ -493,7 +493,12 @@ func _on_left_press(local: Vector2) -> void:
 					if target != null:
 						_plan_attack(_selected_id, _selected_ability, target.id)
 					else:
-						_plan_ability_at_coord(_selected_id, _selected_ability, coord)
+						var wp: Array[Vector2i] = []
+						if _planning_input != null:
+							var params := _planning_input._commit_interaction_params(coord, -1)
+							if params.has("waypoints"):
+								wp = params.waypoints
+						_plan_ability_at_coord(_selected_id, _selected_ability, coord, wp)
 					_sfx.play("ability")
 					Input.set_default_cursor_shape(Input.CURSOR_ARROW)
 					_cancel_aim()
@@ -3084,7 +3089,12 @@ func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) 
 	if _ability_has_dash(ability):
 		if not _is_valid_dash_target(_proj_origin(actor), coord, ability.range_tiles):
 			return false
-		_plan_ability_at_coord(unit.id, _selected_ability, coord)
+		var wp: Array[Vector2i] = []
+		if _planning_input != null:
+			var params := _planning_input._commit_interaction_params(coord, -1)
+			if params.has("waypoints"):
+				wp = params.waypoints
+		_plan_ability_at_coord(unit.id, _selected_ability, coord, wp)
 		_sfx.play("ability")
 		return true
 	var target := _proj().get_unit_at(coord)
@@ -5020,11 +5030,11 @@ func _plan_attack_with_approach(unit_id: int, ability_index: int, target_unit_id
 	else:
 		_director.rpc_plan_attack_with_approach(unit_id, ability_index, target_unit_id, preferred_tile)
 
-func _plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i) -> void:
+func _plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i, waypoints: Array[Vector2i] = []) -> void:
 	if multiplayer.has_multiplayer_peer():
-		_director.rpc_plan_ability_at_coord.rpc(unit_id, ability_index, coord)
+		_director.rpc_plan_ability_at_coord.rpc(unit_id, ability_index, coord, waypoints)
 	else:
-		_director.rpc_plan_ability_at_coord(unit_id, ability_index, coord)
+		_director.rpc_plan_ability_at_coord(unit_id, ability_index, coord, waypoints)
 
 func _clear_unit_actions(unit_id: int) -> void:
 	if multiplayer.has_multiplayer_peer():

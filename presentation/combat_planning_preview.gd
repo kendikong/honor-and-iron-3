@@ -8,6 +8,7 @@ var predicted_armor: Dictionary = {}
 var preview_paths: Dictionary = {}
 var preview_splits: Dictionary = {}
 var preview_post_splits: Dictionary = {}
+var action_splits: Dictionary = {}
 var preview_pushes: Dictionary = {}
 var preview_board: BoardState = null
 var live_intents: Array = []
@@ -24,6 +25,7 @@ func clear_all() -> void:
 	preview_paths.clear()
 	preview_splits.clear()
 	preview_post_splits.clear()
+	action_splits.clear()
 	preview_pushes.clear()
 	preview_board = null
 	live_intents.clear()
@@ -139,6 +141,10 @@ static func build_preview_paths(
 		match (event as SimEvent).type:
 			GameEnums.SimEventType.ENEMY_PHASE_BEGAN:
 				enemy_phase = true
+			GameEnums.SimEventType.ABILITY_USED:
+				var id: int = int(d.get("actor", -1))
+				if paths.has(id):
+					action_splits[id] = maxi(0, (paths[id] as Array).size() - 1)
 			GameEnums.SimEventType.UNIT_MOVED:
 				var id: int = int(d.get("actor", -1))
 				if paths.has(id):
