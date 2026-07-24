@@ -164,9 +164,9 @@ static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 				for y in range(-2, 3):
 					if abs(x) + abs(y) == 2:
 						var adj = unit.position + Vector2i(x, y)
-						var tile = board.get_tile(adj)
-						if tile != null and not tile.is_empty():
-							var occ = board.get_unit_by_id(tile.occupant_id)
+						var adj_tile = board.get_tile(adj)
+						if adj_tile != null and not adj_tile.is_empty():
+							var occ = board.get_unit_by_id(adj_tile.occupant_id)
 							if occ != null and occ.is_alive() and occ.team == unit.team and occ.has_passive(&"shield_wall") and occ.is_passive_upgraded(&"shield_wall"):
 								has_shield_wall_ally = true
 								break
@@ -224,8 +224,8 @@ static func get_dynamic_strength(board: BoardState, unit: UnitState) -> int:
 		for st in unit.active_statuses:
 			if GameEnums.is_debuff(st.type): debuffs += 1
 		if board != null:
-			var tile = board.get_tile(unit.position)
-			if tile != null and tile.definition != null and tile.definition.id == &"trap":
+			var unit_tile = board.get_tile(unit.position)
+			if unit_tile != null and unit_tile.definition != null and unit_tile.definition.id == &"trap":
 				debuffs += 1
 		str_val += debuffs
 		
@@ -240,9 +240,9 @@ static func get_dynamic_strength(board: BoardState, unit: UnitState) -> int:
 		var adj_enemies = 0
 		for dir in GridSystem.DIRECTIONS:
 			var adj = unit.position + dir
-			var tile = board.get_tile(adj)
-			if tile != null and not tile.is_empty():
-				var occ = board.get_unit_by_id(tile.occupant_id)
+			var adj_tile = board.get_tile(adj)
+			if adj_tile != null and not adj_tile.is_empty():
+				var occ = board.get_unit_by_id(adj_tile.occupant_id)
 				if occ != null and occ.is_alive() and occ.team != unit.team:
 					adj_enemies += 1
 		str_val += adj_enemies
@@ -586,9 +586,9 @@ static func deal_damage(
 			var splash = 2 if attacker.is_passive_upgraded(&"crowd_breaker") else 1
 			for dir in GridSystem.DIRECTIONS:
 				var adj = target.position + dir
-				var tile = board.get_tile(adj)
-				if tile != null and not tile.is_empty() and tile.occupant_id != target.id:
-					var adj_unit = board.get_unit_by_id(tile.occupant_id)
+				var adj_tile = board.get_tile(adj)
+				if adj_tile != null and not adj_tile.is_empty() and adj_tile.occupant_id != target.id:
+					var adj_unit = board.get_unit_by_id(adj_tile.occupant_id)
 					if adj_unit != null and adj_unit.is_alive():
 						deal_damage(board, adj_unit, splash, events, &"true", true, true, attacker, "Splash Damage")
 	
