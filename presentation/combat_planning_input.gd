@@ -1785,6 +1785,14 @@ func _append_move_to_commit_slots(
 		_proj(), actor, cell, waypoints, _move_budget(actor), null, actor.position
 	)
 		
+	# If the original waypoints were valid (likely due to an ability pass-through leak), 
+	# but we couldn't find ANY valid path to the cell using basic movement rules 
+	# (e.g., going around the enemy costs more movement points than the unit has),
+	# we must reject the drop entirely rather than committing an empty move.
+	if safe_waypoints.is_empty() and not waypoints.is_empty() and cell != actor.position:
+		slots["invalid"] = "Cannot reach this tile with basic movement."
+		return
+		
 	var move: TimelineAction = TimelineAction.make_move(unit_id, cell, -1, safe_waypoints, timing)
 	if AbilitySystem.movement_requires_run(_proj(), actor, cell, safe_waypoints):
 		if _run_mode_selected(actor) or auto_run_movement_active(actor):
