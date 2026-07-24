@@ -1752,10 +1752,11 @@ func _draw_move_ghosts() -> void:
 		if hover_preview != null and hover_preview.preview_board != null:
 			var sim_path: Array = hover_preview.preview_paths.get(unit.id, [])
 			if not sim_path.is_empty() and sim_path.back() == _hover_coord:
-				var split: int = int(hover_preview.preview_splits.get(unit.id, sim_path.size()))
-				var post_split: int = int(hover_preview.preview_post_splits.get(unit.id, split))
-				var start_idx: int = maxi(split - 1, 0)
+				var start_idx: int = sim_path.rfind(origin)
+				var post_split: int = int(hover_preview.preview_post_splits.get(unit.id, sim_path.size()))
 				var end_idx: int = mini(post_split, sim_path.size())
+				if start_idx < 0:
+					start_idx = maxi(0, end_idx - 1)
 				if start_idx < end_idx:
 					path = sim_path.slice(start_idx, end_idx)
 				else:
