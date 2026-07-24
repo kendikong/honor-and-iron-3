@@ -50,7 +50,7 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 				predicted_armor[unit.id] = 0
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
-	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes, preview_post_splits)
+	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes, preview_post_splits, action_splits)
 
 
 static func apply_movement_result(
@@ -69,6 +69,7 @@ static func apply_movement_result(
 		preview.preview_splits,
 		preview.preview_pushes,
 		preview.preview_post_splits,
+		preview.action_splits,
 	)
 	if base_board != null:
 		for unit: UnitState in base_board.units:
@@ -97,6 +98,7 @@ static func from_sim_result(
 		preview.preview_splits,
 		preview.preview_pushes,
 		preview.preview_post_splits,
+		preview.action_splits,
 	)
 	if base_board != null:
 		for unit: UnitState in base_board.units:
@@ -117,11 +119,13 @@ static func build_preview_paths(
 	splits: Dictionary,
 	pushes: Dictionary,
 	post_splits: Dictionary = {},
+	action_splits: Dictionary = {},
 ) -> void:
 	paths.clear()
 	splits.clear()
 	pushes.clear()
 	post_splits.clear()
+	action_splits.clear()
 	var start_board: BoardState = director.base_board if director.base_board != null else director.board
 	if start_board == null:
 		return
