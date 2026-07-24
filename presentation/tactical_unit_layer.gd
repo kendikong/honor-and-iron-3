@@ -38,6 +38,7 @@ var _predicted_hp: Dictionary = {}
 var _predicted_armor: Dictionary = {}
 var _phase: int = CombatDirector.Phase.PLANNING
 var _move_tweens: Dictionary = {}
+var _move_tween_destinations: Dictionary = {}
 var _active_push_tweens: int = 0
 var _downed_actors: Array[CharacterActor] = []
 var _damage_flash: Dictionary = {}
@@ -829,6 +830,8 @@ func _sync_planning_actor_positions() -> void:
 				_sync_planning_final_facing(unit.id)
 			continue
 		if force_sync.has(unit.id):
+			if _move_tweens.has(unit.id) and _move_tween_destinations.get(unit.id, Vector2i(-999, -999)) == target:
+				continue
 			_kill_move_tween(unit.id)
 		elif _move_tweens.has(unit.id):
 			continue
@@ -913,11 +916,13 @@ func _snap_actor_rubberband(unit_id: int, grid_cell: Vector2i) -> void:
 	actor.modulate = Color.WHITE
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
+	_move_tween_destinations[unit_id] = grid_cell
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_BACK)
 	tween.tween_property(actor, "position", home, DRAG_SNAPBACK_SEC)
 	tween.finished.connect(func() -> void:
 		_move_tweens.erase(unit_id)
+		_move_tween_destinations.erase(unit_id)
 		_finish_snap_at_cell(unit_id, grid_cell)
 	)
 
@@ -1028,6 +1033,8 @@ func _play_cell_path_tween(
 	var tile_time: float = CombatDirector.RUN_STEP_TIME if use_run else step_time
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
+	if not cells.is_empty():
+		_move_tween_destinations[unit_id] = cells.back()
 	for step_index: int in range(cells.size()):
 		var cell: Vector2i = cells[step_index]
 		tween.tween_property(actor, "position", _map_view.grid_to_foot_local(cell), tile_time)
@@ -1041,6 +1048,7 @@ func _play_cell_path_tween(
 			)
 	tween.finished.connect(func() -> void:
 		_move_tweens.erase(unit_id)
+		_move_tween_destinations.erase(unit_id)
 		actor.set_walking(false)
 		var live := _board.get_unit_by_id(unit_id) if _board != null else null
 		actor.set_running(live != null and live.has_run_boost())
@@ -1175,6 +1183,7 @@ func _tween_push(unit_id: int, cell: Vector2i, from_cell: Vector2i) -> void:
 	actor.snap_to_anchor(start_foot)
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
+	_move_tween_destinations[unit_id] = cell
 	tween.tween_property(
 		actor,
 		"position",
@@ -1184,6 +1193,7 @@ func _tween_push(unit_id: int, cell: Vector2i, from_cell: Vector2i) -> void:
 	_downed_actors.append(actor)
 	tween.finished.connect(func() -> void:
 		_move_tweens.erase(unit_id)
+		_move_tween_destinations.erase(unit_id)
 		actor.snap_to_anchor(dest_foot)
 		_update_depth(unit_id)
 		_finish_push_tween()
@@ -1205,9 +1215,11 @@ func _tween_to_cell(unit_id: int, cell: Vector2i, step_time: float) -> void:
 	actor.set_walking(true)
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
+	_move_tween_destinations[unit_id] = cell
 	tween.tween_property(actor, "position", _map_view.grid_to_foot_local(cell), step_time)
 	tween.finished.connect(func() -> void:
 		_move_tweens.erase(unit_id)
+		_move_tween_destinations.erase(unit_id)
 		actor.set_walking(false)
 		_update_depth(unit_id)
 	)
@@ -1218,6 +1230,7 @@ func _kill_move_tween(unit_id: int) -> void:
 	if existing is Tween:
 		(existing as Tween).kill()
 	_move_tweens.erase(unit_id)
+	_move_tween_destinations.erase(unit_id)
 
 
 func _play_attack_anim(event: SimEvent) -> void:
