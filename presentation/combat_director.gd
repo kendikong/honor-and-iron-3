@@ -2064,8 +2064,8 @@ func _refresh_plan() -> void:
 				action.irreversible = true
 				if _cancel_plans_for_displacement(action.actor_id, pre_board, move_ev):
 					any_cancelled = true
-				if action in _commit_animate_actions:
-					anim_events.append_array(_extract_commit_anim_events(move_ev))
+			if action in _commit_animate_actions:
+				anim_events.append_array(_extract_commit_anim_events(move_ev))
 			
 		var reason := ""
 		for e in events:
@@ -2122,8 +2122,8 @@ func _refresh_plan_movement_only(plan: Timeline) -> void:
 			action.irreversible = true
 			if _cancel_plans_for_displacement(action.actor_id, pre_board, move_ev):
 				any_cancelled = true
-			if action in _commit_animate_actions:
-				anim_events.append_array(_extract_commit_anim_events(move_ev))
+		if action in _commit_animate_actions:
+			anim_events.append_array(_extract_commit_anim_events(move_ev))
 	_commit_animate_actions.clear()
 	if any_cancelled:
 		_refresh_plan()
