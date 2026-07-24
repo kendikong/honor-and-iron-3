@@ -27,3 +27,6 @@ extends Resource
 
 ## Used only for SPAWN effects. Refers to a UnitData ID in DataLibrary.
 @export var spawn_unit_id: StringName
+
+## Flexible dictionary for storing effect-specific modifiers and flags (e.g. "ghost_move", "bonus_dmg_from_terrain").
+@export var modifiers: Dictionary = {}

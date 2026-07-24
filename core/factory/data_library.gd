@@ -655,7 +655,8 @@ static func _make_construct(p_id: StringName, p_name: String, scaling_pct: float
 static func _duplicate_effects(effects: Array[EffectData]) -> Array[EffectData]:
 	var result: Array[EffectData] = []
 	for e in effects:
-		result.append(e.duplicate())
+		var dup = e.duplicate(true)
+		result.append(dup)
 	return result
 
 static func _make_weapon(id: StringName, name: String, might: int = 4) -> WeaponData:
