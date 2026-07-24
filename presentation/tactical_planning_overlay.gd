@@ -1748,7 +1748,7 @@ func _draw_move_ghosts() -> void:
 				waypoints = drag_route.slice(1)
 				
 		var path: Array = []
-		var hover_preview := _planning_input.get_hover_preview() if _planning_input != null else null
+		var hover_preview: CombatPlanningPreview = _planning_input.get_hover_preview() if _planning_input != null else null
 		if hover_preview != null and hover_preview.preview_board != null:
 			var sim_path: Array = hover_preview.preview_paths.get(unit.id, [])
 			if not sim_path.is_empty() and sim_path.back() == _hover_coord:
