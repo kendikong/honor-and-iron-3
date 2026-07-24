@@ -2078,9 +2078,15 @@ func _build_enemy_commit_slots(
 		if approach != actor.position:
 			var board: BoardState = _proj()
 			var budget: int = _director.planning_move_budget(actor, board)
-			var path: Array[Vector2i] = MovementSystem.resolve_move_path(
-				board, actor, approach, waypoints, budget,
-			)
+			var path: Array[Vector2i] = waypoints
+			if path.is_empty():
+				var live_path: Array = preview_state.preview_paths.get(unit_id, [])
+				var start_pos: Vector2i = _proj_origin(actor)
+				var start_idx: int = live_path.find(start_pos)
+				if start_idx >= 0 and start_idx < live_path.size() - 1:
+					path.assign(live_path.slice(start_idx + 1))
+				elif live_path.size() >= 2:
+					path.assign(live_path.slice(1))
 			if path.is_empty():
 				slots["invalid"] = "No valid path to approach target."
 				return slots

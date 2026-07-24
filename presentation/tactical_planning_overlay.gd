@@ -1746,10 +1746,8 @@ func _draw_move_ghosts() -> void:
 				else:
 					path = sim_path
 				
-		if path.is_empty():
-			path = MovementSystem.resolve_move_path(
-				_board, unit, _hover_coord, waypoints, ability.range_tiles, ability, origin
-			)
+		if path.is_empty() and not waypoints.is_empty():
+			path = waypoints
 			
 		var route_cells: Array = [origin]
 		if not path.is_empty():
