@@ -50,3 +50,62 @@ static func cancel_ally_plans_after_step(
 				plan.entries.remove_at(local_idx)
 				cancelled = true
 	return cancelled
+
+
+## Preview-only: strip ally steps after `step` on a single combined timeline (no live plan mutate).
+static func strip_ally_entries_after_step(
+	combined: Timeline,
+	step: TimelineAction,
+	ally_ids: Array[int],
+) -> bool:
+	if combined == null or step == null or ally_ids.is_empty():
+		return false
+	var cut_idx: int = combined.entries.find(step)
+	if cut_idx < 0:
+		return false
+	var ally_set: Dictionary = {}
+	for id: int in ally_ids:
+		ally_set[id] = true
+	var kept: Array[TimelineAction] = []
+	var cancelled := false
+	for i: int in range(combined.entries.size()):
+		var entry: TimelineAction = combined.entries[i]
+		if i > cut_idx and ally_set.has(entry.actor_id):
+			cancelled = true
+			continue
+		kept.append(entry)
+	if cancelled:
+		combined.entries = kept
+	return cancelled
+
+
+## Preview-only: remove abilities that target displaced enemies (matches director commit cancel).
+static func strip_actions_targeting_displaced(
+	combined: Timeline,
+	mover_id: int,
+	displaced_unit_ids: Dictionary,
+	displaced_old_positions: Array,
+) -> bool:
+	if combined == null or displaced_unit_ids.is_empty():
+		return false
+	var kept: Array[TimelineAction] = []
+	var cancelled := false
+	for a: TimelineAction in combined.entries:
+		if a.type != GameEnums.ActionType.ABILITY or a.actor_id == mover_id:
+			kept.append(a)
+			continue
+		var remove := false
+		if a.target_unit_id >= 0 and displaced_unit_ids.has(a.target_unit_id):
+			remove = true
+		else:
+			for old_pos: Variant in displaced_old_positions:
+				if old_pos is Vector2i and a.target_coord == old_pos:
+					remove = true
+					break
+		if remove:
+			cancelled = true
+		else:
+			kept.append(a)
+	if cancelled:
+		combined.entries = kept
+	return cancelled

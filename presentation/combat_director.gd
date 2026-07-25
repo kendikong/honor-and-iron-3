@@ -946,13 +946,38 @@ func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 	for a: Variant in new_actions:
 		if a is TimelineAction:
 			combined.add(a)
+	## Intent truth: preview must already omit ally plans that commit would cancel.
+	_preview_strip_ally_cancels_for_new_actions(combined, new_actions)
 	return combined
+
+
+func _preview_strip_ally_cancels_for_new_actions(combined: Timeline, new_actions: Array) -> void:
+	if combined == null or board == null:
+		return
+	for raw: Variant in new_actions:
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if (
+			action.type != GameEnums.ActionType.ABILITY
+			or action.ability == null
+			or not action.ability.is_movement_kind()
+		):
+			continue
+		var allies: Array[int] = PlanDependency.ally_ids_affected_by_action(board, action)
+		PlanDependency.strip_ally_entries_after_step(combined, action, allies)
 
 
 func _preview_from_plan(combined: Timeline) -> Dictionary:
 	var ev: Array[SimEvent] = []
 	var temp: BoardState = base_board.clone()
 	Simulator.simulate_player_turn(temp, combined, ev)
+	## Intent truth: if moves displace targets, strip dependent abilities and re-sim once
+	## so ghosts match what commit's displacement cancel would leave.
+	if _preview_apply_displacement_strips(combined, base_board, ev):
+		ev.clear()
+		temp = base_board.clone()
+		Simulator.simulate_player_turn(temp, combined, ev)
 	var intents: Array = EnemyPlanner.plan(temp)
 	for intent: Variant in intents:
 		if not intent is Intent:
@@ -961,6 +986,36 @@ func _preview_from_plan(combined: Timeline) -> Dictionary:
 			ResolutionPipeline.apply_action(temp, action, ev)
 	ResolutionPipeline.resolve_pending_pushes(temp, ev)
 	return {"intents": intents, "events": ev, "temp_board": temp}
+
+
+func _preview_apply_displacement_strips(
+	combined: Timeline,
+	pre_board: BoardState,
+	events: Array[SimEvent],
+) -> bool:
+	if combined == null or pre_board == null:
+		return false
+	var displaced := _collect_displaced_enemies(pre_board, events)
+	if displaced.is_empty():
+		return false
+	## Skip the displacing unit's own abilities (same as commit cancel).
+	var mover_ids: Dictionary = {}
+	for e: SimEvent in events:
+		if e.type == GameEnums.SimEventType.TRAMPLE_HIT:
+			var actor_id: int = int(e.data.get("actor", -1))
+			if actor_id >= 0:
+				mover_ids[actor_id] = true
+		elif e.type in [GameEnums.SimEventType.UNIT_PUSHED, GameEnums.SimEventType.COLLISION]:
+			var actor_id2: int = int(e.data.get("actor", -1))
+			if actor_id2 >= 0:
+				mover_ids[actor_id2] = true
+	var mover_id: int = -1
+	if not mover_ids.is_empty():
+		mover_id = int(mover_ids.keys()[0])
+	var old_positions: Array = displaced.values()
+	return PlanDependency.strip_actions_targeting_displaced(
+		combined, mover_id, displaced, old_positions,
+	)
 
 
 func preview_actions(unit_id: int, actions: Array[TimelineAction]) -> Dictionary:
