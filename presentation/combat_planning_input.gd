@@ -2143,10 +2143,17 @@ func _build_commit_slots_at_cell(
 			and not force_basic_movement
 			and _can_target_unit_with_selected_ability(actor, hover_unit)
 		):
-			slots["action"].append(TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id, GameEnums.MoveTiming.PRE_ACTION, []))
+			slots["action"].append(TimelineAction.make_ability(
+				unit_id,
+				ability,
+				hover_unit.position,
+				AbilitySystem.planning_commit_target_unit_id(ability, hover_unit.id),
+				GameEnums.MoveTiming.PRE_ACTION,
+				[],
+			))
 		if _skill_interaction_active() and hover_unit.id != actor.id:
 			slots["invalid"] = "Cannot target this unit with selected skill."
-		return slots
+			return slots
 
 	if ability_index >= 0 and ability != null and not force_basic_movement:
 		var effective_waypoints: Array[Vector2i] = waypoints
@@ -2164,7 +2171,14 @@ func _build_commit_slots_at_cell(
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
 					_proj_origin(actor), cell, ability,
 				):
-					slots["action"].append(TimelineAction.make_ability(unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints))
+					slots["action"].append(TimelineAction.make_ability(
+						unit_id,
+						ability,
+						cell,
+						AbilitySystem.planning_commit_target_unit_id(ability, -1),
+						GameEnums.MoveTiming.PRE_ACTION,
+						effective_waypoints,
+					))
 					return slots
 				slots["invalid"] = "Invalid target or distance for this ability."
 				return slots
@@ -2184,7 +2198,14 @@ func _build_commit_slots_at_cell(
 					return slots
 			if hover_unit != null and _in_ability_range(actor, hover_unit):
 				slots["action"].append(
-					TimelineAction.make_ability(unit_id, ability, hover_unit.position, hover_unit.id, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints),
+					TimelineAction.make_ability(
+						unit_id,
+						ability,
+						hover_unit.position,
+						AbilitySystem.planning_commit_target_unit_id(ability, hover_unit.id),
+						GameEnums.MoveTiming.PRE_ACTION,
+						effective_waypoints,
+					),
 				)
 				return slots
 			if hover_unit == null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
@@ -2248,14 +2269,19 @@ func _build_enemy_commit_slots(
 		slots["invalid"] = "Invalid target for this skill."
 		return slots
 	## Safety: movement-endpoint awaiting should be handled as a TILE above; if we still
-	## land here, commit the cell with no unit id (occupant is incidental).
+	## land here, commit via planning_commit_target_unit_id (TILE → -1).
 	if use_skill and _is_awaiting_movement_endpoint(actor, ability):
 		if AbilitySystem.planning_is_valid_awaiting_endpoint(
 			_proj_origin(actor), enemy.position, ability,
 		):
 			slots["action"].append(
 				TimelineAction.make_ability(
-					unit_id, ability, enemy.position, -1, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints,
+					unit_id,
+					ability,
+					enemy.position,
+					AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
+					GameEnums.MoveTiming.PRE_ACTION,
+					effective_waypoints,
 				),
 			)
 			return slots
@@ -2267,14 +2293,28 @@ func _build_enemy_commit_slots(
 			return slots
 	if use_skill and _in_ability_range(actor, enemy):
 		slots["action"].append(
-			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints),
+			TimelineAction.make_ability(
+				unit_id,
+				ability,
+				enemy.position,
+				AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
+				GameEnums.MoveTiming.PRE_ACTION,
+				effective_waypoints,
+			),
 		)
 		return slots
 	if not use_skill and _in_attack_range_from(_proj_origin(actor), enemy, actor):
 		var basic: AbilityData = actor.active_abilities[0] if not actor.active_abilities.is_empty() else null
 		if basic != null:
 			slots["action"].append(
-				TimelineAction.make_ability(unit_id, basic, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints),
+				TimelineAction.make_ability(
+					unit_id,
+					basic,
+					enemy.position,
+					AbilitySystem.planning_commit_target_unit_id(basic, enemy.id),
+					GameEnums.MoveTiming.PRE_ACTION,
+					effective_waypoints,
+				),
 			)
 		return slots
 	if use_skill and _prefer_approach_over_trample_move(actor, enemy):
@@ -2328,11 +2368,25 @@ func _build_enemy_commit_slots(
 			if AbilitySystem.movement_requires_run(board, actor, approach, path):
 				if AbilitySystem.can_afford_run_for_commit(actor, ability):
 					slots["action"].append(
-						TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
+						TimelineAction.make_ability(
+							unit_id,
+							ability,
+							enemy.position,
+							AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
+							GameEnums.MoveTiming.PRE_ACTION,
+							waypoints,
+						),
 					)
 				return slots
 		slots["action"].append(
-			TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, waypoints),
+			TimelineAction.make_ability(
+				unit_id,
+				ability,
+				enemy.position,
+				AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
+				GameEnums.MoveTiming.PRE_ACTION,
+				waypoints,
+			),
 		)
 		return slots
 	if _can_move_to(actor, cell) or _is_hover_move_cell(actor, cell):

@@ -277,6 +277,13 @@ static func planning_is_valid_awaiting_endpoint(
 	return dist >= 1 and dist <= max_range
 
 
+## TILE-aim abilities commit a cell; occupant id is incidental (sim resolves via target_coord).
+static func planning_commit_target_unit_id(ability: AbilityData, occupant_unit_id: int) -> int:
+	if ability != null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
+		return -1
+	return occupant_unit_id
+
+
 ## Deprecated alias: use planning_arms_on_self_tile / planning_auto_arms_after_premove.
 static func ability_arms_dash_on_self_click(actor: UnitState, ability: AbilityData) -> bool:
 	return planning_arms_on_self_tile(actor, ability)

@@ -3801,7 +3801,7 @@
 					"scaling_stat": 0,
 					"target_shape": 0,
 					"target_shape_size": 1,
-					"targeting_flags": 12,
+					"targeting_flags": 8,
 					"targeting_mode": 4,
 					"upgrade_description": "",
 					"upgraded_effects": [
