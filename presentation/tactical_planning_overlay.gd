@@ -932,6 +932,8 @@ func _draw_ability_intents() -> void:
 		for action: TimelineAction in plan_to_use.entries:
 			if action.type != GameEnums.ActionType.ABILITY:
 				continue
+			if action.awaiting_target:
+				continue
 			var actor := _board.get_unit_by_id(action.actor_id)
 			if actor == null:
 				continue
@@ -941,24 +943,25 @@ func _draw_ability_intents() -> void:
 			if start_pos == action.target_coord:
 				continue
 			var p_col: Color = _player_color_for_unit(actor)
-			# For movement-effect abilities, resolve the real grid path so the dashed
-			# arrow follows the waypoints the player drew, not a straight diagonal.
-			var route_cells: Array = [start_pos, action.target_coord]
+			## Movement intent = commit-slot geometry (origin → waypoints → target).
+			## Sim preview_paths may enrich the line only when they reach the same target.
+			var intent_cells: Array = CombatPlanningPreview.movement_intent_cells(start_pos, action)
 			if (
 				action.ability != null
 				and AbilitySystem.ability_has_movement_effect(action.ability)
 			):
 				var prev: CombatPlanningPreview = _active_preview()
 				var leg_route: Array = _pending_move_route_leg(action.actor_id, prev) if prev != null else []
-				if leg_route.size() >= 2:
+				if (
+					leg_route.size() >= 2
+					and leg_route[leg_route.size() - 1] == action.target_coord
+				):
 					_draw_route_line(leg_route, p_col, true, true)
-				elif not action.waypoints.is_empty():
-					var direct_cells: Array = [start_pos]
-					direct_cells.append_array(action.waypoints)
-					_draw_route_line(direct_cells, p_col, true, true)
+				elif intent_cells.size() >= 2:
+					_draw_route_line(intent_cells, p_col, true, true)
 			else:
 				_draw_dashed_route(
-					route_cells,
+					intent_cells,
 					Color(p_col.r, p_col.g, p_col.b, _INTENT_ROUTE_ALPHA),
 				)
 	var preview_board: BoardState = _display_preview_board()

@@ -51,6 +51,68 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
 	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes, preview_post_splits, action_splits)
+	## Intent geometry comes from planned actions (valid TILE/move selection), not only sim paths.
+	var actions_v: Variant = res.get("actions", [])
+	if actions_v is Array:
+		ensure_movement_intent_from_actions(actions_v as Array, base_board)
+
+
+## Grid cells for a movement-skill intent: origin → waypoints → target_coord (commit-slot truth).
+static func movement_intent_cells(origin: Vector2i, action: TimelineAction) -> Array:
+	var cells: Array = [origin]
+	if action == null:
+		return cells
+	for wp: Vector2i in action.waypoints:
+		if cells.is_empty() or wp != cells[cells.size() - 1]:
+			cells.append(wp)
+	if action.target_coord != cells[cells.size() - 1]:
+		cells.append(action.target_coord)
+	return cells
+
+
+## Keep preview_paths aligned with movement abilities in `actions` when sim path is missing/short.
+func ensure_movement_intent_from_actions(actions: Array, start_board: BoardState) -> void:
+	if start_board == null or actions.is_empty():
+		return
+	var origins: Dictionary = {}
+	for unit: UnitState in start_board.units:
+		origins[unit.id] = unit.position
+	for raw: Variant in actions:
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if action.type == GameEnums.ActionType.MOVE:
+			origins[action.actor_id] = action.target_coord
+			continue
+		if action.type != GameEnums.ActionType.ABILITY or action.awaiting_target:
+			continue
+		if action.ability == null or not AbilitySystem.ability_has_movement_effect(action.ability):
+			continue
+		var origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+		var intent: Array = movement_intent_cells(origin, action)
+		if intent.size() < 2:
+			continue
+		var existing: Array = preview_paths.get(action.actor_id, [])
+		if (
+			existing.size() >= 2
+			and existing[existing.size() - 1] == action.target_coord
+		):
+			origins[action.actor_id] = action.target_coord
+			continue
+		preview_paths[action.actor_id] = intent
+		preview_splits[action.actor_id] = intent.size()
+		if not action_splits.has(action.actor_id):
+			action_splits[action.actor_id] = 0
+		origins[action.actor_id] = action.target_coord
+
+
+func ensure_movement_intent_from_plan(plan: Timeline, start_board: BoardState) -> void:
+	if plan == null:
+		return
+	var actions: Array = []
+	for entry: TimelineAction in plan.entries:
+		actions.append(entry)
+	ensure_movement_intent_from_actions(actions, start_board)
 
 
 static func apply_movement_result(
@@ -80,6 +142,8 @@ static func apply_movement_result(
 			else:
 				preview.predicted_hp[unit.id] = 0
 				preview.predicted_armor[unit.id] = 0
+	if director != null:
+		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
 
 
 static func from_sim_result(
@@ -109,6 +173,8 @@ static func from_sim_result(
 			else:
 				preview.predicted_hp[unit.id] = 0
 				preview.predicted_armor[unit.id] = 0
+	if director != null:
+		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
 	return preview
 
 

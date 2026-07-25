@@ -342,6 +342,10 @@ func _apply_live_preview(preview: Dictionary) -> void:
 	if preview.is_empty():
 		return
 	if _is_invalid_dict(preview):
+		## Do not erase movement intent when the hover cell is still a valid TILE endpoint —
+		## slot legality is the source of truth, not sim path / failure flags.
+		if _paint_valid_movement_endpoint_intent():
+			return
 		drag_preview_failed = true
 		preview_state.clear_interaction()
 		if _planning != null:
@@ -360,6 +364,8 @@ func _apply_live_preview(preview: Dictionary) -> void:
 			):
 				drag_preview_failed = true
 				break
+	## Valid movement-skill selection must keep intent geometry even if sim path is short.
+	_ensure_live_movement_intent_from_preview_actions(preview)
 	var temp_board: BoardState = preview.get("temp_board")
 	var pv_actor: UnitState = temp_board.get_unit_by_id(actor_id) if temp_board != null else null
 	if pv_actor != null:
@@ -372,6 +378,61 @@ func _apply_live_preview(preview: Dictionary) -> void:
 			_planning.set_threat_origin(pv_actor.position)
 			_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_live_board()
+
+
+## When live preview is invalid but awaiting TILE endpoint is legal, paint that intent route.
+func _paint_valid_movement_endpoint_intent() -> bool:
+	if _director == null or _director.board == null:
+		return false
+	var unit_id: int = _drag_unit_id if dragging else _director.selected_unit_id
+	if unit_id < 0:
+		return false
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return false
+	var ability: AbilityData = _selected_ability_data(actor)
+	if not _is_awaiting_movement_endpoint(actor, ability):
+		return false
+	var cell: Vector2i = (
+		_intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
+	)
+	if not _director.board.is_in_bounds(cell):
+		return false
+	var origin: Vector2i = _proj_origin(actor)
+	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability):
+		return false
+	var action: TimelineAction = TimelineAction.make_ability(
+		unit_id, ability, cell, AbilitySystem.planning_commit_target_unit_id(ability, -1),
+		GameEnums.MoveTiming.PRE_ACTION, [],
+	)
+	var base: BoardState = (
+		_director.base_board.clone() if _director.base_board != null else _director.board.clone()
+	)
+	preview_state.preview_board = base
+	preview_state.preview_paths.clear()
+	preview_state.preview_splits.clear()
+	preview_state.preview_post_splits.clear()
+	preview_state.action_splits.clear()
+	preview_state.preview_pushes.clear()
+	preview_state.ensure_movement_intent_from_actions([action], base)
+	drag_preview_failed = false
+	drag_sim_actor_pos = cell
+	if _planning != null:
+		_planning.apply_preview_state(preview_state, unit_id, -1)
+	_sync_intent_live_board()
+	return true
+
+
+func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> void:
+	var actions_v: Variant = preview.get("actions", [])
+	if not actions_v is Array or (actions_v as Array).is_empty():
+		return
+	var start_board: BoardState = (
+		_director.base_board if _director != null and _director.base_board != null else _director.board
+	)
+	preview_state.ensure_movement_intent_from_actions(actions_v as Array, start_board)
 
 
 func _sync_intent_live_board() -> void:
@@ -914,7 +975,12 @@ func _update_hover_attack_preview() -> void:
 func _apply_hover_preview_dict(res: Dictionary) -> void:
 	if res.is_empty():
 		return
+	if _is_invalid_dict(res):
+		if _paint_valid_movement_endpoint_intent():
+			return
+		return
 	preview_state.apply_result(res, _director)
+	_ensure_live_movement_intent_from_preview_actions(res)
 	if _planning != null:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
 	_sync_intent_live_board()

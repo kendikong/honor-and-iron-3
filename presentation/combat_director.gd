@@ -1021,8 +1021,11 @@ func _preview_apply_displacement_strips(
 func preview_actions(unit_id: int, actions: Array[TimelineAction]) -> Dictionary:
 	var empty: BoardState = base_board.clone() if base_board != null else BoardState.new()
 	if unit_id < 0 or actions.is_empty():
-		return {"intents": [], "events": [], "temp_board": empty}
-	return _preview_from_plan(_build_preview_plan(unit_id, actions))
+		return {"intents": [], "events": [], "temp_board": empty, "actions": []}
+	var res: Dictionary = _preview_from_plan(_build_preview_plan(unit_id, actions))
+	## Carry commit-slot actions so preview can ratify movement intent geometry.
+	res["actions"] = actions
+	return res
 
 
 func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, waypoints: Array[Vector2i] = []) -> Dictionary:
