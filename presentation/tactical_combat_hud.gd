@@ -12,6 +12,8 @@ var _timeline_grid: TacticalTimelineGrid
 var _warn_label: Label
 var _side_panels: TacticalSidePanels
 var _intent_state: CombatIntentState
+var _planning_overlay: TacticalPlanningOverlay
+var _planning_input: CombatPlanningInput
 var _execute_btn: Button
 var _undo_btn: Button
 var _clear_btn: Button
@@ -27,6 +29,7 @@ var _sfx: SfxPlayer
 var _compendium_overlay: CompendiumScreen
 var _settings: GameSettings
 var _hint_label: Label
+var _last_timeline_mp_key: String = ""
 
 
 func setup(
@@ -35,12 +38,16 @@ func setup(
 	sfx: SfxPlayer = null,
 	side_panels: TacticalSidePanels = null,
 	intent_state: CombatIntentState = null,
+	planning_overlay: TacticalPlanningOverlay = null,
+	planning_input: CombatPlanningInput = null,
 ) -> void:
 	_director = director
 	_map_view = map_view
 	_sfx = sfx
 	_side_panels = side_panels
 	_intent_state = intent_state
+	_planning_overlay = planning_overlay
+	_planning_input = planning_input
 	layer = 22
 	_build_ui()
 	_build_banner()
@@ -48,6 +55,7 @@ func setup(
 	EventBus.timeline_changed.connect(_on_timeline_changed)
 	EventBus.action_rejected.connect(_on_action_rejected)
 	EventBus.board_changed.connect(_on_board_changed)
+	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.selection_changed.connect(func(id: int) -> void:
 		if _timeline_grid != null:
 			_timeline_grid.set_selected(id)
@@ -66,6 +74,8 @@ func setup(
 				_intent_state.clear_timeline_hover(),
 		)
 		_timeline_grid.warning_changed.connect(_on_timeline_warning)
+	if _planning_overlay != null and not _planning_overlay.live_preview_changed.is_connected(_on_live_preview_changed):
+		_planning_overlay.live_preview_changed.connect(_on_live_preview_changed)
 	_on_phase_changed(_director.phase)
 	_refresh_timeline()
 
@@ -382,6 +392,41 @@ func _on_board_changed(board: BoardState) -> void:
 	if _timeline_grid != null:
 		_timeline_grid.set_board(board)
 	_refresh_timeline()
+
+
+func _on_preview_updated(result: SimResult) -> void:
+	if result != null and result.final_state != null and _timeline_grid != null:
+		_timeline_grid.set_display_board(result.final_state)
+		_refresh_timeline()
+
+
+func _on_live_preview_changed() -> void:
+	if _timeline_grid == null:
+		return
+	var live_board: BoardState = null
+	if _planning_overlay != null:
+		var live: CombatPlanningPreview = _planning_overlay.get_live_preview()
+		if live != null:
+			live_board = live.preview_board
+	if live_board == null and _planning_input != null and _planning_input.preview_state != null:
+		live_board = _planning_input.preview_state.preview_board
+	_timeline_grid.set_display_board(live_board)
+	var mp_key: String = _timeline_mp_key(live_board)
+	if mp_key == _last_timeline_mp_key:
+		return
+	_last_timeline_mp_key = mp_key
+	_refresh_timeline()
+
+
+func _timeline_mp_key(board: BoardState) -> String:
+	if board == null:
+		return ""
+	var parts: PackedStringArray = []
+	for unit: UnitState in board.units:
+		if unit == null or unit.is_enemy() or not unit.is_alive():
+			continue
+		parts.append("%d:%d/%d" % [unit.id, unit.movement.points_left, unit.ability.points_left])
+	return ",".join(parts)
 
 
 func _refresh_timeline(statuses: PackedStringArray = PackedStringArray()) -> void:

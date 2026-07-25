@@ -629,9 +629,13 @@ func _refresh_info() -> void:
 		if u == null and _director != null and _director.base_board != null:
 			u = _director.base_board.get_unit_by_id(_selected_id)
 		if u != null:
-			var info_board: BoardState = _board
-			if _director != null and _director.projected_state != null:
+			var info_board: BoardState = _live_preview_board()
+			if info_board == null:
+				info_board = _preview_board
+			if info_board == null and _director != null and _director.projected_state != null:
 				info_board = _director.projected_state
+			if info_board == null:
+				info_board = _board
 			_info_label.text = CombatUiFormatters.unit_info(info_board, u)
 			_append_hover_action_hint()
 			return
@@ -874,9 +878,27 @@ func _bbcode_plain_length(bbcode: String) -> int:
 func _proj_unit(unit_id: int) -> UnitState:
 	if _director == null or unit_id < 0:
 		return null
-	var proj: BoardState = _preview_board
+	var proj: BoardState = _live_preview_board()
+	if proj == null:
+		proj = _preview_board
 	if proj == null and _director.projected_state != null:
 		proj = _director.projected_state
 	if proj == null:
 		return _board.get_unit_by_id(unit_id) if _board != null else null
 	return proj.get_unit_by_id(unit_id)
+
+
+func _live_preview_board() -> BoardState:
+	if _planning_overlay != null:
+		var live: CombatPlanningPreview = _planning_overlay.get_live_preview()
+		if live != null and live.preview_board != null:
+			return live.preview_board
+	if _planning_input != null and _planning_input.preview_state != null:
+		if (
+			_planning_input.dragging
+			or _planning_input.skill_interaction_active()
+			or _planning_input.aiming
+			or _planning_input.is_live_preview_active()
+		):
+			return _planning_input.preview_state.preview_board
+	return null

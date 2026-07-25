@@ -816,7 +816,10 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 
 
 func _movement_icon_for(p_unit: UnitState, cell: Vector2i) -> String:
-	if AbilitySystem.movement_requires_run(_proj(), p_unit, cell, []):
+	var waypoints: Array[Vector2i] = []
+	if dragging and _drag_unit_id == p_unit.id:
+		waypoints = _route_waypoints()
+	if AbilitySystem.movement_requires_run(_proj(), p_unit, cell, waypoints):
 		return PlanningIcons.GLYPH_RUN
 	return PlanningIcons.GLYPH_WALK
 
@@ -1473,21 +1476,42 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	var unit := board.get_unit_by_id(_drag_unit_id)
 	if unit == null:
 		return
+	var ability: AbilityData = null
+	if not force_basic_movement and _director.selected_ability_index >= 0:
+		ability = _selected_ability_data(unit)
+	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
+	var budget: int = _drag_max_steps(unit)
+	var move_cost: int = MovementSystem.move_cost_for(unit)
 	if GridSystem.manhattan(last, cell) != 1:
-		var ability: AbilityData = null
-		if not force_basic_movement and _director.selected_ability_index >= 0:
-			ability = _selected_ability_data(unit)
-		var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
-		for c: Vector2i in MovementSystem.find_path(board, last, cell, 999, mt, 1, ability):
+		for c: Vector2i in MovementSystem.find_path(board, last, cell, budget, mt, move_cost, ability):
 			_append_route_tile(c)
 		if not _drag_route.is_empty() and _drag_route.back() != cell:
-			_drag_route = [unit.position]
-			for c: Vector2i in MovementSystem.find_path(board, unit.position, cell, 999, mt, 1, ability):
-				_append_route_tile(c)
+			_repath_drag_route_to(cell, unit, board, mt, budget, move_cost, ability)
 		_sanitize_drag_route_context()
 		return
 	_append_route_tile(cell)
+	if _drag_route.back() != cell:
+		## Adjacent past budget: repath within budget instead of silently ignoring.
+		_repath_drag_route_to(cell, unit, board, mt, budget, move_cost, ability)
 	_sanitize_drag_route_context()
+
+
+func _repath_drag_route_to(
+	cell: Vector2i,
+	unit: UnitState,
+	board: BoardState,
+	mt: GameEnums.MovementType,
+	budget: int,
+	move_cost: int,
+	ability: AbilityData,
+) -> void:
+	var path: Array[Vector2i] = MovementSystem.find_path(
+		board, unit.position, cell, budget, mt, move_cost, ability,
+	)
+	if path.is_empty() or path.back() != cell:
+		return
+	_drag_route = [unit.position]
+	_drag_route.append_array(path)
 
 
 func _append_route_tile(coord: Vector2i) -> void:
@@ -1500,7 +1524,8 @@ func _append_route_tile(coord: Vector2i) -> void:
 		if idx < _drag_route.size() - 1:
 			_drag_route = _drag_route.slice(0, idx + 1)
 		return
-	if _drag_route.size() > _drag_max_steps(unit):
+	## size includes start; waypoints = size - 1. Cap at budget steps.
+	if _drag_route.size() - 1 >= _drag_max_steps(unit):
 		return
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
 	var ability: AbilityData = null
@@ -1537,8 +1562,12 @@ func _sanitize_drag_route_context() -> void:
 
 	var waypoints: Array[Vector2i] = _route_waypoints()
 	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
-	if not MovementSystem._is_legal_walk(board, _drag_route[0], waypoints, 999, 1, unit, null):
-		var safe_path = MovementSystem.find_path(board, _drag_route[0], final_cell, 999, mt, 1, null)
+	var budget: int = _drag_max_steps(unit)
+	var move_cost: int = MovementSystem.move_cost_for(unit)
+	if not MovementSystem._is_legal_walk(board, _drag_route[0], waypoints, budget, move_cost, unit, null):
+		var safe_path: Array[Vector2i] = MovementSystem.find_path(
+			board, _drag_route[0], final_cell, budget, mt, move_cost, null,
+		)
 		if not safe_path.is_empty() and safe_path.back() == final_cell:
 			_drag_route = [_drag_route[0]]
 			_drag_route.append_array(safe_path)
@@ -1969,7 +1998,11 @@ func _append_move_to_commit_slots(
 	var safe_waypoints: Array[Vector2i] = waypoints
 	if not is_valid_basic_path:
 		var mt: int = actor.definition.movement_type if actor.definition != null else GameEnums.MovementType.WALK
-		safe_waypoints = MovementSystem.find_path(_proj(), actor.position, cell, 999, mt, 1, null)
+		var budget: int = _move_budget(actor)
+		var move_cost: int = MovementSystem.move_cost_for(actor)
+		safe_waypoints = MovementSystem.find_path(
+			_proj(), actor.position, cell, budget, mt, move_cost, null,
+		)
 		
 	# If the original waypoints were valid (likely due to an ability pass-through leak), 
 	# but we couldn't find ANY valid path to the cell using basic movement rules 

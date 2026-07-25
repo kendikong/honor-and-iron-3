@@ -100,7 +100,15 @@ func start_combat(encounter: EncounterData, initial_board: BoardState = null) ->
 		_director.start_from_custom(initial_board)
 	else:
 		_director.start_from_encounter(encounter)
-	_combat_hud.setup(_director, _map_view, _sfx, _side_panels, intent_state)
+	_combat_hud.setup(
+		_director,
+		_map_view,
+		_sfx,
+		_side_panels,
+		intent_state,
+		_planning_overlay,
+		planning_input,
+	)
 	_sim_presenter.setup(_director, _unit_overlay, _unit_layer, _map_view)
 	_input_controller.setup(
 		_map_view,

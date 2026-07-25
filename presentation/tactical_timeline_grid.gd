@@ -36,6 +36,7 @@ const COLOR_ACCENT_POST: Color = Color(0.45, 0.75, 0.45, 0.18)
 
 var _director: CombatDirector
 var _board: BoardState
+var _display_board: BoardState
 var _phase: int = CombatDirector.Phase.PLANNING
 var _selected_id: int = -1
 var _timeline_hover_id: int = -1
@@ -59,6 +60,10 @@ func setup(director: CombatDirector) -> void:
 
 func set_board(board: BoardState) -> void:
 	_board = board
+
+
+func set_display_board(board: BoardState) -> void:
+	_display_board = board
 
 
 func set_phase(phase: int) -> void:
@@ -102,9 +107,10 @@ func get_hover_unit_id() -> int:
 
 func _units_by_player_id() -> Dictionary:
 	var out: Dictionary = {}
-	if _board == null:
+	var source: BoardState = _display_board if _display_board != null else _board
+	if source == null:
 		return out
-	for unit: UnitState in _board.units:
+	for unit: UnitState in source.units:
 		if unit.is_enemy() or not unit.is_alive():
 			continue
 		var pid: int = maxi(1, unit.controlling_player_id)
@@ -395,7 +401,7 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	var stats_shell: Dictionary = _make_stats_column_shell()
 	row.add_child(stats_shell["root"])
 	var chips: HBoxContainer = stats_shell["chips"] as HBoxContainer
-	var board: BoardState = _board
+	var board: BoardState = _display_board if _display_board != null else _board
 	_add_stat_chip(
 		chips,
 		"%s%d" % [PlanningIcons.STAT_LEVEL, unit.level],
@@ -426,8 +432,8 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	)
 	_add_stat_chip(
 		chips,
-		"%s%d" % [PlanningIcons.STAT_MOV, unit.movement.max_points],
-		"Movement — tiles you can move per turn",
+		"%s%d/%d" % [PlanningIcons.STAT_MOV, unit.movement.points_left, unit.movement.max_points],
+		"Movement — remaining / maximum tiles this turn",
 		col,
 	)
 

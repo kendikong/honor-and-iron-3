@@ -603,11 +603,18 @@ static func movement_requires_run(
 	if unit == null or unit.has_run_boost():
 		return false
 	var base_mp: int = unit.movement.points_left
+	var run_mp: int = preview_move_budget_with_run(unit)
+	var move_cost: int = MovementSystem.move_cost_for(unit)
+	## Drawn path is intent: if waypoints fit walk budget, no run; if only run budget, run.
+	## Do not use can_reach_coord first — it pathfinds a shorter alternate and can hide run need.
+	if not waypoints.is_empty():
+		if MovementSystem._is_legal_walk(board, unit.position, waypoints, base_mp, move_cost, unit, null):
+			return false
+		if MovementSystem._is_legal_walk(board, unit.position, waypoints, run_mp, move_cost, unit, null):
+			return true
 	if MovementSystem.can_reach_coord(board, unit, target_coord, waypoints, base_mp):
 		return false
-	return MovementSystem.can_reach_coord(
-		board, unit, target_coord, waypoints, preview_move_budget_with_run(unit),
-	)
+	return MovementSystem.can_reach_coord(board, unit, target_coord, waypoints, run_mp)
 
 
 ## Kept for API compatibility; dash skills no longer suppress basic movement.
