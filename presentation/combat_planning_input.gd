@@ -45,6 +45,11 @@ var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
 var _drag_last_cursor_cell: Vector2i = Vector2i(-999999, -999999)
 var _drag_last_sprite_cell: Vector2i = Vector2i(-999999, -999999)
+## Last painted intent (move-preview truth) — commit ratifies these slots, does not rebuild.
+var _intent_snapshot_slots: Dictionary = {}
+var _intent_snapshot_key: String = ""
+var _intent_snapshot_valid: bool = false
+var _suppress_post_commit_hover_refresh: bool = false
 
 
 func setup(
@@ -565,6 +570,9 @@ func _on_preview_updated(_result: SimResult) -> void:
 	if dragging:
 		return
 	_schedule_plan_refresh_followup()
+	if _suppress_post_commit_hover_refresh:
+		_suppress_post_commit_hover_refresh = false
+		return
 	if _director == null or not _director.peek_movement_only_refresh():
 		_schedule_hover_preview_refresh()
 
@@ -747,6 +755,7 @@ func _clear_hover_preview() -> void:
 	preview_state.preview_post_splits.clear()
 	preview_state.preview_pushes.clear()
 	drag_preview_failed = false
+	_clear_intent_snapshot()
 	if _planning != null:
 		_planning.restore_committed_display()
 	_sync_intent_live_board()
@@ -845,6 +854,7 @@ func _restore_hover_preview() -> void:
 	preview_state.preview_post_splits.clear()
 	preview_state.preview_pushes.clear()
 	drag_preview_failed = false
+	_clear_intent_snapshot()
 	if _planning != null:
 		_planning.restore_committed_display()
 	_sync_intent_live_board()
@@ -1039,17 +1049,8 @@ func _commit_interaction_params(
 			if _drag_route_commits_active() and _drag_last_free != commit_cell:
 				preferred = _drag_last_free
 	var face_dir: int = -1
-	if _map_view != null and _drag_route_commits_active():
-		var active_unit_id: int = (
-			_drag_unit_id if _drag_unit_id >= 0
-			else (_director.selected_unit_id if _director != null else -1)
-		)
-		if active_unit_id >= 0:
-			var route_actor := _proj_unit(active_unit_id)
-			if route_actor == null and _director != null and _director.board != null:
-				route_actor = _director.board.get_unit_by_id(active_unit_id)
-			if route_actor != null and hover_cell == route_actor.position:
-				face_dir = _facing_from_drop(_map_view.get_local_mouse_position(), hover_cell)
+	if _map_view != null:
+		face_dir = _facing_from_drop(_map_view.get_local_mouse_position(), hover_cell)
 	return {
 		"cell": commit_cell,
 		"waypoints": waypoints,
@@ -1134,23 +1135,123 @@ func _commit_at_cell(
 	if selected_phase_action_exhausted(unit_id):
 		_play_sfx("invalid")
 		return false
-	var slots: Dictionary = _final_commit_slots_for_interaction(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
+	var effective_face: int = face_dir
+	if effective_face < 0:
+		effective_face = _facing_from_drop(local, cell)
+	var snapshot_key: String = _intent_snapshot_key_for(
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
+	var slots: Dictionary
+	if (
+		_intent_snapshot_valid
+		and _intent_snapshot_key == snapshot_key
+		and not _intent_snapshot_slots.is_empty()
+	):
+		slots = _duplicate_commit_slots(_intent_snapshot_slots)
+	else:
+		slots = _final_commit_slots_for_interaction(
+			unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
+		)
+		_apply_facing_to_slots(slots, local, cell)
+		if not _is_invalid_dict(slots) and slots.get("_noop", false) != true:
+			_store_intent_snapshot(snapshot_key, slots)
 	if slots.get("_noop", false) == true:
 		_play_sfx("ability")
 		return true
 	if _is_invalid_dict(slots):
 		_play_sfx("invalid")
+		_clear_intent_snapshot()
 		return false
-	_apply_facing_to_slots(slots, local, cell)
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
 		_play_sfx("invalid")
 		return false
 	_play_commit_sfx(slots)
+	_promote_intent_preview_after_commit()
 	_on_commit_slots_applied(unit_id, slots)
 	_notify_drag_plan_move_committed(unit_id)
+	_clear_intent_snapshot()
 	return true
+
+
+func _promote_intent_preview_after_commit() -> void:
+	_suppress_post_commit_hover_refresh = true
+	if _planning == null:
+		return
+	if is_live_preview_active():
+		_planning.promote_live_preview_to_committed()
+		return
+	if preview_state.preview_board != null:
+		_planning.apply_preview_state(
+			preview_state,
+			_director.selected_unit_id if _director != null else -1,
+			_hover_attack_target_id(),
+		)
+		_planning.promote_live_preview_to_committed()
+
+
+func _intent_snapshot_key_for(
+	unit_id: int,
+	cell: Vector2i,
+	waypoints: Array[Vector2i],
+	legal_move_tiles: Array[Vector2i],
+	preferred_approach: Vector2i,
+	face_dir: int,
+) -> String:
+	var ability_index: int = _director.selected_ability_index if _director != null else -1
+	var plan_rev: int = _director.plan_revision if _director != null else 0
+	var wp_parts: PackedStringArray = PackedStringArray()
+	for wp: Vector2i in waypoints:
+		wp_parts.append("%d,%d" % [wp.x, wp.y])
+	var legal_n: int = legal_move_tiles.size()
+	return "%d|%d|%s|%s|%d|%d|%d|%d|%s|%d" % [
+		plan_rev,
+		unit_id,
+		str(cell),
+		str(preferred_approach),
+		ability_index,
+		face_dir,
+		1 if awaiting_targeting_active() else 0,
+		legal_n,
+		",".join(wp_parts),
+		1 if force_basic_movement else 0,
+	]
+
+
+func _duplicate_commit_slots(slots: Dictionary) -> Dictionary:
+	var out: Dictionary = _empty_commit_slots()
+	for col: String in ["pre", "action", "post"]:
+		var steps: Array = []
+		for raw: Variant in slots.get(col, []):
+			steps.append(raw)
+		out[col] = steps
+	if slots.has("invalid"):
+		out["invalid"] = slots["invalid"]
+	if slots.has("_noop"):
+		out["_noop"] = slots["_noop"]
+	if slots.has("_preview_validated"):
+		out["_preview_validated"] = slots["_preview_validated"]
+	return out
+
+
+func _store_intent_snapshot(key: String, slots: Dictionary) -> void:
+	if _is_invalid_dict(slots) or slots.get("_noop", false) == true:
+		_clear_intent_snapshot()
+		return
+	_intent_snapshot_key = key
+	_intent_snapshot_slots = _duplicate_commit_slots(slots)
+	_intent_snapshot_valid = true
+
+
+func _clear_intent_snapshot() -> void:
+	_intent_snapshot_valid = false
+	_intent_snapshot_key = ""
+	_intent_snapshot_slots = {}
+
+
+func _mouse_local_for_facing() -> Vector2:
+	if _map_view != null:
+		return _map_view.get_local_mouse_position()
+	return Vector2.ZERO
 
 
 func _apply_facing_to_slots(slots: Dictionary, local: Vector2, cell: Vector2i) -> void:
@@ -1233,17 +1334,28 @@ func _preview_from_commit_slots_at_cell(
 	waypoints: Array[Vector2i] = [],
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
+	face_dir: int = -1,
 ) -> Dictionary:
 	var empty_board: BoardState = (
 		_director.base_board.clone() if _director != null and _director.base_board != null else BoardState.new()
 	)
 	if _director == null or unit_id < 0:
+		_clear_intent_snapshot()
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
+	var effective_face: int = face_dir
+	if effective_face < 0 and _map_view != null:
+		effective_face = _facing_from_drop(_mouse_local_for_facing(), cell)
 	var slots: Dictionary = _final_commit_slots_for_interaction(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach,
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
+	_apply_facing_to_slots(slots, _mouse_local_for_facing(), cell)
 	if _is_invalid_dict(slots):
+		_clear_intent_snapshot()
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
+	var snapshot_key: String = _intent_snapshot_key_for(
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
+	)
+	_store_intent_snapshot(snapshot_key, slots)
 	return _director.preview_actions(unit_id, _actions_from_slots(slots))
 
 
@@ -1265,6 +1377,7 @@ func _preview_at_interaction_cell(
 		params.waypoints,
 		tiles,
 		params.preferred,
+		int(params.get("face_dir", -1)),
 	)
 
 

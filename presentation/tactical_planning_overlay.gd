@@ -73,6 +73,7 @@ var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _stashed_committed: CombatPlanningPreview = CombatPlanningPreview.new()
 var _has_stashed_committed: bool = false
+var _lock_committed_from_intent: bool = false
 var _unit_layer: TacticalUnitLayer
 var _planning_input: CombatPlanningInput
 var _planning_cursor: TacticalPlanningCursor
@@ -262,6 +263,16 @@ func restore_committed_display() -> void:
 		)
 	live_preview_changed.emit()
 	queue_redraw()
+
+
+## Promote the painted live intent to committed display (move-preview intent truth).
+## Locks the next preview_updated so director refresh cannot replace that picture.
+func promote_live_preview_to_committed() -> void:
+	_committed_preview.copy_from(_live_preview)
+	_preview_board = _committed_preview.preview_board
+	_has_stashed_committed = false
+	_lock_committed_from_intent = true
+	restore_committed_display()
 
 
 func apply_preview_state(
@@ -743,6 +754,15 @@ func _flush_hover_recompute() -> void:
 
 
 func _on_preview_updated(result: SimResult) -> void:
+	## Intent truth: after promote_live_preview_to_committed, do not rebuild ghosts from a
+	## second sim — keep the ratified picture. Still accept final_state for board pointer.
+	if _lock_committed_from_intent:
+		_lock_committed_from_intent = false
+		if result != null and result.final_state != null:
+			set_preview_board(result.final_state)
+		_has_stashed_committed = false
+		queue_redraw()
+		return
 	set_preview_board(result.final_state)
 	var movement_only: bool = (
 		_director != null and _director.consume_movement_only_refresh()

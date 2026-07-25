@@ -198,4 +198,5 @@ func copy_from(other: CombatPlanningPreview) -> void:
 	preview_paths = other.preview_paths.duplicate(true)
 	preview_splits = other.preview_splits.duplicate()
 	preview_post_splits = other.preview_post_splits.duplicate()
+	action_splits = other.action_splits.duplicate()
 	preview_pushes = other.preview_pushes.duplicate(true)
