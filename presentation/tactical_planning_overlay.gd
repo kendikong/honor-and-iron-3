@@ -526,9 +526,8 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if AbilitySystem.is_run_ability(ability):
 		return false
-	if AbilitySystem.planning_commit_flow(p_unit, ability) == GameEnums.PlanningCommitFlow.AWAITING_TARGET:
-		if _planning_input == null or not _planning_input.awaiting_targeting_active():
-			return false
+	## Phase 1 (selected AWAITING_TARGET, not yet armed) and phase 2 (awaiting armed)
+	## both show red action-range tiles — range is planning truth for the selected skill.
 	var premove_cell: Vector2i = _proj_origin(unit)
 	if _action_range_origin.x > -900:
 		premove_cell = _action_range_origin
