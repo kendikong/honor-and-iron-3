@@ -51,6 +51,8 @@ func setup(
 	layer = 22
 	_build_ui()
 	_build_banner()
+	if _timeline_grid != null and _planning_input != null:
+		_timeline_grid.bind_planning_input(_planning_input)
 	EventBus.turn_phase_changed.connect(_on_phase_changed)
 	EventBus.timeline_changed.connect(_on_timeline_changed)
 	EventBus.action_rejected.connect(_on_action_rejected)
@@ -433,7 +435,12 @@ func _timeline_mp_key(board: BoardState) -> String:
 	for unit: UnitState in board.units:
 		if unit == null or unit.is_enemy() or not unit.is_alive():
 			continue
-		parts.append("%d:%d/%d" % [unit.id, unit.movement.points_left, unit.ability.points_left])
+		var run_bit: int = 0
+		if _planning_input != null and _planning_input.unit_move_requires_run(unit.id):
+			run_bit = 1
+		parts.append(
+			"%d:%d/%d:%d" % [unit.id, unit.movement.points_left, unit.ability.points_left, run_bit],
+		)
 	return ",".join(parts)
 
 

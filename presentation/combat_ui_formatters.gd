@@ -103,7 +103,7 @@ static func tile_info(board: BoardState, coord: Vector2i) -> String:
 	) % [scaled_font_size(9), HEX_TILE, tile.definition.display_name, coord.x, coord.y, scaled_font_size(10), desc]
 
 
-static func unit_info(board: BoardState, unit: UnitState) -> String:
+static func unit_info(board: BoardState, unit: UnitState, move_uses_run: bool = false) -> String:
 	var lines: Array[String] = []
 	lines.append(
 		(
@@ -121,14 +121,17 @@ static func unit_info(board: BoardState, unit: UnitState) -> String:
 		"[font_size=%d][color=#4ADE80][b][hint=Hit Points]%s HP:[/hint] %d/%d[/b][/color]    Facing %s[/font_size]"
 		% [scaled_font_size(9), PlanningIcons.STAT_HP, unit.health.current_hp, unit.health.max_hp, facing_name(unit.facing)],
 	)
+	var mov_glyph: String = PlanningIcons.move_glyph(move_uses_run)
+	var mov_hint: String = "Run — Movement Points" if move_uses_run else "Movement Points"
 	lines.append(
 		(
-			"[font_size=%d][color=#F1C40F][b][hint=Movement Points]%s MP:[/hint] %d/%d[/b][/color]"
+			"[font_size=%d][color=#F1C40F][b][hint=%s]%s MP:[/hint] %d/%d[/b][/color]"
 			+ "    [color=#E74C3C][b][hint=Action Points]%s AP:[/hint] %d/%d[/b][/color][/font_size]"
 		)
 		% [
 			scaled_font_size(9),
-			PlanningIcons.STAT_MOV,
+			mov_hint,
+			mov_glyph,
 			unit.movement.points_left, unit.movement.max_points,
 			PlanningIcons.STAT_AP,
 			unit.ability.points_left, unit.ability.max_points,

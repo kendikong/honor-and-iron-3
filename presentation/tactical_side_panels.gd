@@ -636,7 +636,10 @@ func _refresh_info() -> void:
 				info_board = _director.projected_state
 			if info_board == null:
 				info_board = _board
-			_info_label.text = CombatUiFormatters.unit_info(info_board, u)
+			var uses_run: bool = (
+				_planning_input != null and _planning_input.unit_move_requires_run(u.id)
+			)
+			_info_label.text = CombatUiFormatters.unit_info(info_board, u, uses_run)
 			_append_hover_action_hint()
 			return
 	if not _board.is_in_bounds(hov):
@@ -644,7 +647,10 @@ func _refresh_info() -> void:
 		return
 	var unit := _board.get_unit_at(hov)
 	if unit != null:
-		_info_label.text = CombatUiFormatters.unit_info(_board, unit)
+		var hover_run: bool = (
+			_planning_input != null and _planning_input.unit_move_requires_run(unit.id)
+		)
+		_info_label.text = CombatUiFormatters.unit_info(_board, unit, hover_run)
 	else:
 		_info_label.text = "[font_size=%d][color=#%s]Hover a unit or tile for details.[/color][/font_size]" % [
 			CombatUiFormatters.scaled_font_size(10),

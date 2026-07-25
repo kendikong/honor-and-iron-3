@@ -21,8 +21,8 @@ static func tile_info(board: BoardState, coord: Vector2i) -> String:
 	return CombatUiFormatters.tile_info(board, coord)
 
 
-static func unit_info(board: BoardState, unit: UnitState) -> String:
-	return CombatUiFormatters.unit_info(board, unit)
+static func unit_info(board: BoardState, unit: UnitState, move_uses_run: bool = false) -> String:
+	return CombatUiFormatters.unit_info(board, unit, move_uses_run)
 
 
 static func summarize_intents(board: BoardState, phase: int, intent_units: Dictionary) -> String:

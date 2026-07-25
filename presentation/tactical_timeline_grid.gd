@@ -37,6 +37,7 @@ const COLOR_ACCENT_POST: Color = Color(0.45, 0.75, 0.45, 0.18)
 var _director: CombatDirector
 var _board: BoardState
 var _display_board: BoardState
+var _planning_input: CombatPlanningInput
 var _phase: int = CombatDirector.Phase.PLANNING
 var _selected_id: int = -1
 var _timeline_hover_id: int = -1
@@ -56,6 +57,10 @@ func setup(director: CombatDirector) -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	add_theme_constant_override("separation", 2)
+
+
+func bind_planning_input(input: CombatPlanningInput) -> void:
+	_planning_input = input
 
 
 func set_board(board: BoardState) -> void:
@@ -430,10 +435,21 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 		"Armor — absorbs damage before HP",
 		col,
 	)
+	var uses_run: bool = (
+		_planning_input != null and _planning_input.unit_move_requires_run(unit.id)
+	)
 	_add_stat_chip(
 		chips,
-		"%s%d/%d" % [PlanningIcons.STAT_MOV, unit.movement.points_left, unit.movement.max_points],
-		"Movement — remaining / maximum tiles this turn",
+		"%s%d/%d" % [
+			PlanningIcons.move_glyph(uses_run),
+			unit.movement.points_left,
+			unit.movement.max_points,
+		],
+		(
+			"Run — remaining / maximum tiles this turn"
+			if uses_run
+			else "Movement — remaining / maximum tiles this turn"
+		),
 		col,
 	)
 

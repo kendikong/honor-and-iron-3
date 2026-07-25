@@ -1725,6 +1725,35 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	return actor != null and AbilitySystem.can_afford_run(actor)
 
 
+## True when this unit's current planning intent (drag / live path / committed move) needs Run.
+func unit_move_requires_run(unit_id: int) -> bool:
+	if _director == null or unit_id < 0:
+		return false
+	var board: BoardState = _proj()
+	var actor: UnitState = board.get_unit_by_id(unit_id) if board != null else null
+	if actor == null:
+		return false
+	if dragging and _drag_unit_id == unit_id and not _drag_route.is_empty():
+		var dest: Vector2i = _drag_route[_drag_route.size() - 1]
+		return AbilitySystem.movement_requires_run(board, actor, dest, _route_waypoints())
+	if unit_id == _director.selected_unit_id:
+		var live_path: Array = preview_state.preview_paths.get(unit_id, [])
+		if live_path.size() >= 2:
+			var live_waypoints: Array[Vector2i] = []
+			for i: int in range(1, live_path.size()):
+				live_waypoints.append(live_path[i] as Vector2i)
+			return AbilitySystem.movement_requires_run(
+				board, actor, live_path[live_path.size() - 1] as Vector2i, live_waypoints,
+			)
+		var hover: Vector2i = get_hover_tile_for_ui()
+		if board.is_in_bounds(hover) and hover != actor.position and _is_hover_move_cell(actor, hover):
+			return AbilitySystem.movement_requires_run(board, actor, hover, [])
+	for step: TimelineAction in _director.get_unit_plan_steps(unit_id):
+		if step != null and step.type == GameEnums.ActionType.MOVE and step.uses_run:
+			return true
+	return false
+
+
 func extended_move_budget_active(unit: UnitState = null) -> bool:
 	return _run_mode_selected(unit) or auto_run_movement_active(unit)
 
