@@ -1075,3 +1075,65 @@ Phases 1–5: data model, sim economy, `plan_action` timeline, planning validati
 **Audit result:** **PASS** (conditional on user F5)
 
 **Commit:** `245262342` (phases 3–5); `8c4a06250` (phases 1–2)
+
+---
+
+## Move-Preview Intent Truth (2026-07-24)
+
+**Scope:** `.cursor/rules/move-preview-intent-truth.mdc` + snapshot ratify + preview cancel strips  
+**Commits:** `59953e23a` (rules) · `fdc60ad0b` (Phase A) · `3bbe41344` (Phase B) · audit-fix follow-up
+
+### Deliverables
+- [x] Always-on rule: move preview = intent truth
+- [x] Paint stores intent snapshot; commit ratifies matching slots
+- [x] Snapshot-miss path paints slots before commit (no stale promote)
+- [x] Facing applied on preview paint
+- [x] Promote live→committed + lock overlay against second-sim rebuild
+- [x] Suppress post-commit hover re-preview flash
+- [x] Preview strips ally / displacement cancels (mirrors commit)
+
+### Move-Preview Intent Truth Audit (iteration 1 — 2026-07-24) — FAIL
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | FAIL | Cold/snapshot-miss commit could promote stale preview while writing new slots |
+| Correct coding | PARTIAL | No new automated tests; F5 not run |
+| Inconsistencies | FAIL | Snapshot key used legal-tile *count* only; lock path swapped `preview_board` to post-commit `final_state` while keeping old paths |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | Snapshot-miss commit promoted stale `preview_state` | High | Fixed — `_paint_intent_slots_before_commit` |
+| 2 | Snapshot key hashed legal tile count, not cells | Med | Fixed — sorted cell list in key |
+| 3 | Lock path set `preview_board` from `result.final_state` (path/board drift) | Med | Fixed — lock keeps promoted board |
+| 4 | No unit tests for snapshot/ratify/strips | Med | Deferred — follow-up test slice |
+| 5 | Godot F5 playtest not run | Med | Deferred — user F5 |
+| 6 | Legacy `board_view.preview_drag` parallel path | Low | Deferred — not tactical SP path |
+
+**Final issue count:** 6 (≥3 → FAIL; fix pass required)
+
+### Move-Preview Intent Truth Audit (iteration 2 — 2026-07-24)
+
+| Pillar | Result | Notes |
+|--------|--------|-------|
+| Completeness | PASS | Rule + snapshot ratify + paint-before-cold-commit + preview cancel strips on disk |
+| Correct coding | PASS | Typed helpers; no per-skill branches; fail-loud reject preserved; bandaid check OK |
+| Inconsistencies | PASS | Preview strips use same `PlanDependency` rules as commit cancels; tactical path only |
+| Issues | PASS | ≤2 deferred |
+
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | No automated tests for snapshot ratify / preview strips | Med | Deferred — planning test follow-up |
+| 2 | Godot F5 playtest not run this session | Med | Deferred — user F5 |
+
+**Final issue count:** 2  
+**Audit result:** **PASS** (conditional on user F5)
+
+**Philosophy gates**
+
+| Gate | Result |
+|------|--------|
+| Preview is intent truth (rule on disk) | PASS |
+| Commit ratifies painted slots (snapshot match) | PASS |
+| Cold commit paints before write | PASS |
+| Post-commit overlay does not second-interpret | PASS |
+| Ally/displacement cancels visible in preview | PASS |

@@ -755,11 +755,9 @@ func _flush_hover_recompute() -> void:
 
 func _on_preview_updated(result: SimResult) -> void:
 	## Intent truth: after promote_live_preview_to_committed, do not rebuild ghosts from a
-	## second sim — keep the ratified picture. Still accept final_state for board pointer.
+	## second sim — keep the ratified picture (including preview_board pointer).
 	if _lock_committed_from_intent:
 		_lock_committed_from_intent = false
-		if result != null and result.final_state != null:
-			set_preview_board(result.final_state)
 		_has_stashed_committed = false
 		queue_redraw()
 		return

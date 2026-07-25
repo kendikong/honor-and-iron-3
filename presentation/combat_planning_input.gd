@@ -1154,6 +1154,8 @@ func _commit_at_cell(
 		)
 		_apply_facing_to_slots(slots, local, cell)
 		if not _is_invalid_dict(slots) and slots.get("_noop", false) != true:
+			## Intent truth: never commit slots the player has not painted.
+			_paint_intent_slots_before_commit(unit_id, slots)
 			_store_intent_snapshot(snapshot_key, slots)
 	if slots.get("_noop", false) == true:
 		_play_sfx("ability")
@@ -1171,6 +1173,25 @@ func _commit_at_cell(
 	_notify_drag_plan_move_committed(unit_id)
 	_clear_intent_snapshot()
 	return true
+
+
+func _paint_intent_slots_before_commit(unit_id: int, slots: Dictionary) -> void:
+	if _director == null:
+		return
+	var actions: Array[TimelineAction] = _actions_from_slots(slots)
+	if actions.is_empty():
+		return
+	var res: Dictionary = _director.preview_actions(unit_id, actions)
+	if _is_invalid_dict(res):
+		return
+	preview_state.apply_result(res, _director)
+	if _planning != null:
+		_planning.apply_preview_state(
+			preview_state,
+			unit_id,
+			_hover_attack_target_id(),
+		)
+	_sync_intent_live_board()
 
 
 func _promote_intent_preview_after_commit() -> void:
@@ -1202,8 +1223,14 @@ func _intent_snapshot_key_for(
 	var wp_parts: PackedStringArray = PackedStringArray()
 	for wp: Vector2i in waypoints:
 		wp_parts.append("%d,%d" % [wp.x, wp.y])
-	var legal_n: int = legal_move_tiles.size()
-	return "%d|%d|%s|%s|%d|%d|%d|%d|%s|%d" % [
+	var legal_parts: PackedStringArray = PackedStringArray()
+	var legal_sorted: Array[Vector2i] = legal_move_tiles.duplicate()
+	legal_sorted.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return a.x < b.x or (a.x == b.x and a.y < b.y)
+	)
+	for cell_l: Vector2i in legal_sorted:
+		legal_parts.append("%d,%d" % [cell_l.x, cell_l.y])
+	return "%d|%d|%s|%s|%d|%d|%d|%s|%s|%d" % [
 		plan_rev,
 		unit_id,
 		str(cell),
@@ -1211,8 +1238,8 @@ func _intent_snapshot_key_for(
 		ability_index,
 		face_dir,
 		1 if awaiting_targeting_active() else 0,
-		legal_n,
 		",".join(wp_parts),
+		",".join(legal_parts),
 		1 if force_basic_movement else 0,
 	]
 
