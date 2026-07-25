@@ -527,6 +527,7 @@ func _on_ability_selected(index: int) -> void:
 	_selected_ability = index
 	if _skill_ui_lock:
 		return
+	_refresh_info()
 	_refresh_ability_buttons_if_dirty()
 	_scroll_selected_skill_into_view()
 
@@ -534,7 +535,7 @@ func _on_ability_selected(index: int) -> void:
 func _skill_list_row_for_ability_index(ability_index: int) -> int:
 	if ability_index < 0 or _board == null or _selected_id < 0:
 		return -1
-	var unit := _proj_unit(_selected_id)
+	var unit := _committed_plan_unit(_selected_id)
 	if unit == null:
 		unit = _board.get_unit_by_id(_selected_id)
 	if unit == null:
@@ -625,21 +626,34 @@ func _refresh_info() -> void:
 			hov = ui_hov
 	_tile_info_label.text = CombatUiFormatters.tile_info(_board, hov)
 	if _selected_id >= 0:
-		var u := _proj_unit(_selected_id)
-		if u == null and _director != null and _director.base_board != null:
-			u = _director.base_board.get_unit_by_id(_selected_id)
-		if u != null:
-			var info_board: BoardState = _live_preview_board()
-			if info_board == null:
-				info_board = _preview_board
+		var committed: UnitState = _committed_plan_unit(_selected_id)
+		var live_board: BoardState = _live_preview_board()
+		var use_live: bool = (
+			live_board != null
+			and _planning_input != null
+			and not _planning_input.drag_preview_failed
+		)
+		var u: UnitState = null
+		var info_board: BoardState = null
+		var ap_override: int = -1
+		if use_live:
+			u = live_board.get_unit_by_id(_selected_id)
+			info_board = live_board
+		if u == null:
+			u = committed
+			info_board = _preview_board
 			if info_board == null and _director != null and _director.projected_state != null:
 				info_board = _director.projected_state
 			if info_board == null:
 				info_board = _board
+			ap_override = _selection_preview_ap_left(committed)
+		if u == null and _director != null and _director.base_board != null:
+			u = _director.base_board.get_unit_by_id(_selected_id)
+		if u != null:
 			var uses_run: bool = (
 				_planning_input != null and _planning_input.unit_move_requires_run(u.id)
 			)
-			_info_label.text = CombatUiFormatters.unit_info(info_board, u, uses_run)
+			_info_label.text = CombatUiFormatters.unit_info(info_board, u, uses_run, ap_override)
 			_append_hover_action_hint()
 			return
 	if not _board.is_in_bounds(hov):
@@ -656,6 +670,23 @@ func _refresh_info() -> void:
 			CombatUiFormatters.scaled_font_size(10),
 			CombatUiFormatters.HEX_DIM,
 		]
+
+
+## Committed-plan AP minus selected skill cost (selection preview — not a live hover spend).
+func _selection_preview_ap_left(unit: UnitState) -> int:
+	if unit == null:
+		return -1
+	var ap_left: int = unit.ability.points_left
+	if _selected_ability < 0 or _selected_ability >= unit.active_abilities.size():
+		return ap_left
+	var ability: AbilityData = unit.active_abilities[_selected_ability] as AbilityData
+	if ability == null:
+		return ap_left
+	if _planning_input != null and _planning_input.auto_run and ability.is_universal_run():
+		return ap_left
+	if not AbilitySystem.ability_planning_selectable(unit, ability, _board):
+		return ap_left
+	return maxi(0, ap_left - ability.action_point_cost)
 
 
 func _append_hover_action_hint() -> void:
@@ -710,7 +741,7 @@ func _refresh_ability_buttons_if_dirty() -> void:
 		return
 	if _selected_id < 0:
 		return
-	var unit := _proj_unit(_selected_id)
+	var unit := _committed_plan_unit(_selected_id)
 	if unit == null:
 		unit = _board.get_unit_by_id(_selected_id) if _board != null else null
 	if unit == null or unit.is_enemy():
@@ -752,7 +783,8 @@ func _rebuild_ability_buttons() -> void:
 	if _board == null or _selected_id < 0:
 		_skill_ui_lock = false
 		return
-	var unit := _proj_unit(_selected_id)
+	## Affordability uses committed plan only — live hover must not grey sibling skills.
+	var unit := _committed_plan_unit(_selected_id)
 	if unit == null:
 		unit = _board.get_unit_by_id(_selected_id)
 	if unit == null or unit.is_enemy():
@@ -831,7 +863,7 @@ func _can_enable_wait() -> bool:
 		return false
 	if _director.get_planning_move_timing(_selected_id) != GameEnums.MoveTiming.PRE_ACTION:
 		return false
-	var unit := _proj_unit(_selected_id)
+	var unit := _committed_plan_unit(_selected_id)
 	if unit == null and _board != null:
 		unit = _board.get_unit_by_id(_selected_id)
 	return unit != null and unit.can_use_action_slot()
@@ -844,7 +876,7 @@ func _is_unit_action_exhausted() -> bool:
 		return _planning_input.selected_phase_action_exhausted(_selected_id)
 	if _selected_id < 0 or _board == null:
 		return true
-	var unit := _proj_unit(_selected_id)
+	var unit := _committed_plan_unit(_selected_id)
 	if unit == null:
 		unit = _board.get_unit_by_id(_selected_id)
 	if unit == null:
@@ -879,6 +911,21 @@ func _bbcode_plain_length(bbcode: String) -> int:
 		elif not in_tag:
 			plain += c
 	return plain.length()
+
+
+## Unit after committed plan only — never live hover (avoids greying skills on preview spend).
+func _committed_plan_unit(unit_id: int) -> UnitState:
+	if _director == null or unit_id < 0:
+		return null
+	if _director.projected_state != null:
+		var proj_u: UnitState = _director.projected_state.get_unit_by_id(unit_id)
+		if proj_u != null:
+			return proj_u
+	if _preview_board != null:
+		var preview_u: UnitState = _preview_board.get_unit_by_id(unit_id)
+		if preview_u != null:
+			return preview_u
+	return _board.get_unit_by_id(unit_id) if _board != null else null
 
 
 func _proj_unit(unit_id: int) -> UnitState:

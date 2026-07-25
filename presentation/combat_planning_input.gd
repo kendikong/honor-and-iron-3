@@ -348,6 +348,12 @@ func _apply_live_preview(preview: Dictionary) -> void:
 			return
 		drag_preview_failed = true
 		preview_state.clear_interaction()
+		## Drop stale spent-AP boards so UI does not keep a previous skill's preview.
+		preview_state.preview_board = null
+		preview_state.preview_paths.clear()
+		preview_state.preview_splits.clear()
+		preview_state.preview_post_splits.clear()
+		preview_state.preview_pushes.clear()
 		if _planning != null:
 			_planning.restore_committed_display()
 		_sync_intent_live_board()

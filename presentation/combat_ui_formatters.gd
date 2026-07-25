@@ -103,7 +103,12 @@ static func tile_info(board: BoardState, coord: Vector2i) -> String:
 	) % [scaled_font_size(9), HEX_TILE, tile.definition.display_name, coord.x, coord.y, scaled_font_size(10), desc]
 
 
-static func unit_info(board: BoardState, unit: UnitState, move_uses_run: bool = false) -> String:
+static func unit_info(
+	board: BoardState,
+	unit: UnitState,
+	move_uses_run: bool = false,
+	ap_left_override: int = -1,
+) -> String:
 	var lines: Array[String] = []
 	lines.append(
 		(
@@ -134,7 +139,8 @@ static func unit_info(board: BoardState, unit: UnitState, move_uses_run: bool = 
 			mov_glyph,
 			unit.movement.points_left, unit.movement.max_points,
 			PlanningIcons.STAT_AP,
-			unit.ability.points_left, unit.ability.max_points,
+			unit.ability.points_left if ap_left_override < 0 else ap_left_override,
+			unit.ability.max_points,
 		],
 	)
 	lines.append(
