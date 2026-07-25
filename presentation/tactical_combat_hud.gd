@@ -409,7 +409,15 @@ func _on_live_preview_changed() -> void:
 		if live != null:
 			live_board = live.preview_board
 	if live_board == null and _planning_input != null and _planning_input.preview_state != null:
-		live_board = _planning_input.preview_state.preview_board
+		if (
+			_planning_input.dragging
+			or _planning_input.skill_interaction_active()
+			or _planning_input.aiming
+			or _planning_input.is_live_preview_active()
+		):
+			live_board = _planning_input.preview_state.preview_board
+	if live_board == null and _director != null:
+		live_board = _director.projected_state
 	_timeline_grid.set_display_board(live_board)
 	var mp_key: String = _timeline_mp_key(live_board)
 	if mp_key == _last_timeline_mp_key:
