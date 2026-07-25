@@ -2872,9 +2872,8 @@
 					"scaling_stat": 0,
 					"target_shape": 0,
 					"target_shape_size": 1,
-					"targeting_flags": 12,
+					"targeting_flags": 8,
 					"targeting_mode": 4,
-					"upgrade_description": "Enemy-enemy collision: ATK 3 to both units.",
 					"upgraded_effects": [
 						{
 							"amount": 3,

@@ -1611,6 +1611,18 @@ func _awaiting_flow_selected(actor: UnitState, ability: AbilityData) -> bool:
 	)
 
 
+## True while an armed awaiting skill is choosing a movement/dash tile endpoint.
+func _is_awaiting_movement_endpoint(actor: UnitState, ability: AbilityData) -> bool:
+	if not awaiting_targeting_active():
+		return false
+	if not _awaiting_flow_selected(actor, ability):
+		return false
+	return (
+		AbilitySystem.planning_awaiting_phase(ability)
+		== GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	)
+
+
 func _drag_had_movement() -> bool:
 	if _drag_route.is_empty():
 		return false
@@ -2114,13 +2126,17 @@ func _build_commit_slots_at_cell(
 			slots, actor, unit_id, ability_index, ability, face_dir,
 		)
 
-	if hover_unit != null and hover_unit.is_enemy():
+	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental —
+	## do not divert into enemy/ally unit-target commit slots.
+	var awaiting_tile_endpoint: bool = _is_awaiting_movement_endpoint(actor, ability)
+
+	if hover_unit != null and hover_unit.is_enemy() and not awaiting_tile_endpoint:
 		return _build_enemy_commit_slots(
 			slots, actor, unit_id, cell, hover_unit, ability, ability_index,
 			legal_move_tiles, waypoints, preferred_approach,
 		)
 
-	if hover_unit != null and hover_unit.is_alive() and not hover_unit.is_enemy():
+	if hover_unit != null and hover_unit.is_alive() and not hover_unit.is_enemy() and not awaiting_tile_endpoint:
 		if (
 			ability_index >= 0
 			and ability != null
@@ -2231,14 +2247,21 @@ func _build_enemy_commit_slots(
 	if use_skill and not AbilitySystem.target_passes_mode(actor, ability, enemy):
 		slots["invalid"] = "Invalid target for this skill."
 		return slots
-	if use_skill and _awaiting_flow_selected(actor, ability):
-		if awaiting_targeting_active() and AbilitySystem.planning_is_valid_awaiting_endpoint(
+	## Safety: movement-endpoint awaiting should be handled as a TILE above; if we still
+	## land here, commit the cell with no unit id (occupant is incidental).
+	if use_skill and _is_awaiting_movement_endpoint(actor, ability):
+		if AbilitySystem.planning_is_valid_awaiting_endpoint(
 			_proj_origin(actor), enemy.position, ability,
 		):
 			slots["action"].append(
-				TimelineAction.make_ability(unit_id, ability, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints),
+				TimelineAction.make_ability(
+					unit_id, ability, enemy.position, -1, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints,
+				),
 			)
 			return slots
+		slots["invalid"] = "Invalid endpoint for this skill."
+		return slots
+	if use_skill and _awaiting_flow_selected(actor, ability):
 		if awaiting_targeting_active():
 			slots["invalid"] = "Invalid endpoint for this skill."
 			return slots
