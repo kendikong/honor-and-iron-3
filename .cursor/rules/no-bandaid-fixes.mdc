@@ -21,7 +21,7 @@ A change is a **bandaid** if it:
 
 ## Required approach
 
-1. **One truth path** — planning: `_build_commit_slots_at_cell` → `_finalize_commit_slots` → `preview_commit_valid` / `commit_from_slots`. Preview, cursor, and tiles must derive from slots — not parallel rules.
+1. **One truth path** — planning: `_build_commit_slots_at_cell` → `_finalize_commit_slots` → `preview_commit_valid` / `commit_from_slots`. Preview, cursor, and tiles must derive from slots — not parallel rules. **Move preview is the intent system** (`.cursor/rules/move-preview-intent-truth.mdc`): commit must ratify what preview showed, never recalculate or re-render a different outcome.
 2. **Fix the owner** — movement → `MovementSystem` / move timing; skills → `AbilitySystem` + timeline; UI → reflect sim/director state.
 3. **Delete the wrong path** — when replacing a hack, remove it in the same change; do not stack fixes.
 4. **Fail loud** — assert or reject; never silently swallow invalid state.

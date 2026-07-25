@@ -11,7 +11,7 @@ The project owner must **not** have to re-explain this. Agents enforce it on **e
 
 ## Priority order (when rules conflict)
 
-1. **This rule** + `.cursor/rules/no-bandaid-fixes.mdc` + `.cursor/rules/skill-global-rules.mdc`
+1. **This rule** + `.cursor/rules/no-bandaid-fixes.mdc` + `.cursor/rules/skill-global-rules.mdc` + `.cursor/rules/move-preview-intent-truth.mdc`
 2. Roadmap / phase gates / architecture skills (`Simulator`, layers, timeline, `AbilitySystem`)
 3. Convenience, speed, “small local fix,” model-default shortcuts
 
@@ -73,7 +73,7 @@ Any response that **proposes, implements, or summarizes** a code or rule change 
 
 | Domain | Global owner |
 |--------|----------------|
-| Planning commit / cursor / preview | `combat_planning_input.gd` slots → `CombatDirector.commit_from_slots` / `preview_commit_valid` |
+| Planning commit / cursor / preview | **Move preview is intent truth** (`.cursor/rules/move-preview-intent-truth.mdc`) — same slots path: `_build_commit_slots_at_cell` → `_finalize_commit_slots` → `CombatDirector.commit_from_slots` / `preview_commit_valid`; commit ratifies preview, never rewrites it |
 | Ability legality / range / targeting | `AbilitySystem` + ability data |
 | Turn resolution | `Simulator.simulate` — headless, no Nodes |
 | Skills / economy | Timeline columns, AP/MP, `EffectData` — see `skill-global-rules.mdc` |
@@ -83,6 +83,7 @@ When unsure which system owns a behavior → **read and extend that system**; do
 
 ## Related rules
 
+- `.cursor/rules/move-preview-intent-truth.mdc` — move preview = intent system; commit must not change what preview showed
 - `.cursor/rules/no-bandaid-fixes.mdc` — what counts as a bandaid; self-check table
 - `.cursor/rules/skill-global-rules.mdc` — skill-specific global mandate
 - `.cursor/rules/interpret-plan-permission.mdc` — plans still required; exception block is **in addition**

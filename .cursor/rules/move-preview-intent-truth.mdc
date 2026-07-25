@@ -1,0 +1,44 @@
+---
+description: ABSOLUTE — move preview is the intent system and single source of truth; commit must not change it
+alwaysApply: true
+---
+
+# Move Preview = Intent Truth (ABSOLUTE — ALWAYS ON)
+
+**Owner philosophy (do not make the project owner re-explain this).**
+
+The on-screen **move preview** (hover / drag / aim ghosts, path, facing, approach, paired skill markers — everything the intent UI renders before confirm) is the **single source of truth** for planning intent.
+
+It is not a hint. It is the intent system.
+
+## Mandate
+
+1. **What move preview shows is 100% the truth** of what will be committed.
+2. **Commit = ratify that picture** — click tile or release drag accepts *exactly* what the preview already displayed.
+3. The player must **never** see the outcome jump, correct, or re-interpret after commit relative to the last valid preview.
+
+## Forbidden
+
+On commit (or in code that runs because of commit), do **not**:
+
+- Recalculate a *different* move / approach / target / facing / paired skill than the preview showed
+- Re-render or replace the preview so ghosts, path, board positions, or overlays visibly change into a new interpretation
+- Add a second “commit-time fixup” path that disagrees with the preview slot builder
+- Treat hover/drag preview and `_build_commit_slots_at_cell` / finalize / `commit_from_slots` as separate truths
+
+## Required
+
+- **One pipeline:** the same slot / intent construction that drives move preview must be what commit locks in (`_build_commit_slots_at_cell` → `_finalize_commit_slots` → `commit_from_slots`).
+- Preview and commit may share validation, but validation must **reject** invalid intent — not silently rewrite what was shown.
+- If commit needs data the preview did not show, **the preview is incomplete** — fix the preview owner, do not patch at commit.
+- Presentation after commit may animate or lock the *already shown* intent; it must not invent a new one.
+
+## Relationship to other rules
+
+- **Parent:** `.cursor/rules/global-systems-first.mdc` — planning domain owner is move-preview / commit slots.
+- **Complements:** `.cursor/rules/no-bandaid-fixes.mdc` — commit-time “correction” of preview is a bandaid / second source of truth.
+- **Sim note:** `Simulator` / `preview_commit_valid` may still run to fail-loud reject; they must not be used as an excuse to mutate the displayed intent into something else on accept.
+
+## Exception
+
+Any intentional divergence between last preview and post-commit presentation requires the **⚠ Global system exception** block in `global-systems-first.mdc` and explicit owner **yes**.

@@ -25,6 +25,7 @@ board states to solve spatial puzzles. **Positioning over damage. No RNG in comb
 - **Data-Driven**: Abilities are data (Ability Resources / tres files), not engine code modifications.
 - **Fail Loudly**: Assert on resource/state validation; do not silently ignore errors.
 - **Global systems first (absolute)**: `.cursor/rules/global-systems-first.mdc` — every edit; minimal heuristics; **mandatory exception warning** before bypassing any global rule. Owner must not re-explain.
+- **Move preview = intent truth (absolute)**: `.cursor/rules/move-preview-intent-truth.mdc` — move preview is the intent system; commit must not rewrite or re-render a different outcome than the last valid preview.
 - **No bandaid fixes (absolute)**: `.cursor/rules/no-bandaid-fixes.mdc` — one commit/preview path; delete obsolete hacks in the same change.
 
 ## Model Policy & API Efficiency
