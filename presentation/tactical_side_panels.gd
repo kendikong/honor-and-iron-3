@@ -635,7 +635,8 @@ func _refresh_info() -> void:
 		)
 		var u: UnitState = null
 		var info_board: BoardState = null
-		var ap_override: int = -1
+		## Always selection-preview AP from committed plan — live hover must not flip 1/1↔0/1.
+		var ap_override: int = _selection_preview_ap_left(committed)
 		if use_live:
 			u = live_board.get_unit_by_id(_selected_id)
 			info_board = live_board
@@ -646,7 +647,6 @@ func _refresh_info() -> void:
 				info_board = _director.projected_state
 			if info_board == null:
 				info_board = _board
-			ap_override = _selection_preview_ap_left(committed)
 		if u == null and _director != null and _director.base_board != null:
 			u = _director.base_board.get_unit_by_id(_selected_id)
 		if u != null:
@@ -684,8 +684,7 @@ func _selection_preview_ap_left(unit: UnitState) -> int:
 		return ap_left
 	if _planning_input != null and _planning_input.auto_run and ability.is_universal_run():
 		return ap_left
-	if not AbilitySystem.ability_planning_selectable(unit, ability, _board):
-		return ap_left
+	## Show cost of the scrolled skill even if greyed / not currently selectable.
 	return maxi(0, ap_left - ability.action_point_cost)
 
 
