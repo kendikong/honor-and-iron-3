@@ -31,7 +31,7 @@ func start_batch(num_battles: int, log_filename: String = "user://batch_results.
 	
 	print("Starting Mass Battle Batch: %d runs on background threads..." % _battles_to_run)
 	
-	_group_task_id = WorkerThreadPool.add_group_task(_run_single_battle_thread, _battles_to_run, "MassSimulationBatch")
+	_group_task_id = WorkerThreadPool.add_group_task(_run_single_battle_thread, _battles_to_run, -1, false, "MassSimulationBatch")
 	set_process(true)
 
 func _process(_delta: float) -> void:
