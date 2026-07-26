@@ -2280,16 +2280,15 @@ func _build_ghost_events(sim: BoardState, timeline: Timeline, intents: Array[Int
 
 
 ## Player-turn sim events (incl. UNIT_PUSHED) + enemy ghost tail for overlay path building.
-func _preview_events_for_overlay(player_turn_events: Array, ghost_events: Array) -> Array:
-	var out: Array = []
-	for raw: Variant in player_turn_events:
-		if raw is SimEvent:
-			out.append(raw)
+func _preview_events_for_overlay(
+	player_turn_events: Array[SimEvent],
+	ghost_events: Array[SimEvent],
+) -> Array[SimEvent]:
+	var out: Array[SimEvent] = []
+	for event: SimEvent in player_turn_events:
+		out.append(event)
 	var include_enemy: bool = false
-	for raw: Variant in ghost_events:
-		if not raw is SimEvent:
-			continue
-		var event: SimEvent = raw as SimEvent
+	for event: SimEvent in ghost_events:
 		if event.type == GameEnums.SimEventType.ENEMY_PHASE_BEGAN:
 			include_enemy = true
 		if include_enemy:
