@@ -103,10 +103,12 @@ func load_from_disk() -> void:
 	)
 	if cfg.has_section_key("display", "screen_index"):
 		screen_index = int(cfg.get_value("display", "screen_index", screen_index))
+	if cfg.has_section_key("display", "window_position_x"):
 		window_position = Vector2i(
 			int(cfg.get_value("display", "window_position_x", window_position.x)),
 			int(cfg.get_value("display", "window_position_y", window_position.y)),
 		)
+	if cfg.has_section_key("display", "screen_index") and cfg.has_section_key("display", "window_position_x"):
 		_has_saved_window_placement = true
 
 

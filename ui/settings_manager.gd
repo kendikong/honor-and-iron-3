@@ -5,6 +5,13 @@ extends Node
 
 func _ready() -> void:
 	load_settings()
+	var tree := get_tree()
+	if not tree.current_scene_changed.is_connected(_on_current_scene_changed):
+		tree.current_scene_changed.connect(_on_current_scene_changed)
+
+
+func _on_current_scene_changed() -> void:
+	_persist_window_placement()
 
 
 func load_settings() -> void:
@@ -16,15 +23,19 @@ func load_settings() -> void:
 
 func save_settings(_w: int, _h: int, _fs: bool) -> void:
 	# Legacy API — display prefs live in GameSettings only.
+	_persist_window_placement()
+
+
+func _persist_window_placement() -> void:
+	var window: Window = get_window()
+	if window == null:
+		return
 	var settings := GameSettings.new()
 	settings.load_from_disk()
-	settings.capture_from_window(get_window())
+	settings.capture_from_window(window)
 	settings.save_to_disk()
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
-		var settings := GameSettings.new()
-		settings.load_from_disk()
-		settings.capture_from_window(get_window())
-		settings.save_to_disk()
+		_persist_window_placement()

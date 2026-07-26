@@ -61,7 +61,6 @@ var _tree_fader: TreeCanopyFader
 func _ready() -> void:
 	_settings.load_from_disk()
 	_load_character_profile()
-	_settings.apply_to_window(get_window())
 	_settings.apply_audio_buses()
 
 	_lpc_catalog = LpcCatalog.load_from_disk()
