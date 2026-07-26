@@ -2414,30 +2414,20 @@ func _build_enemy_commit_slots(
 			return slots
 		if approach != actor.position:
 			var board: BoardState = _proj()
-			var budget: int = _director.planning_move_budget(actor, board)
-			var path: Array[Vector2i] = waypoints
-			if path.is_empty():
-				var live_path: Array = preview_state.preview_paths.get(unit_id, [])
-				var start_pos: Vector2i = _proj_origin(actor)
-				var start_idx: int = live_path.find(start_pos)
-				if start_idx >= 0 and start_idx < live_path.size() - 1:
-					path.assign(live_path.slice(start_idx + 1))
-				elif live_path.size() >= 2:
-					path.assign(live_path.slice(1))
-			if path.is_empty():
-				slots["invalid"] = "No valid path to approach target."
-				return slots
+			## Match commit_from_slots: empty waypoints — MovementSystem pathfinds origin→approach
+			## at preview/sim. Do not reuse hover pseudo-drag waypoints or stale live_path.
+			var approach_path: Array[Vector2i] = []
 			slots["pre"].append(
 				_director.make_planning_move_action(
 					unit_id,
 					approach,
 					board,
 					actor,
-					path,
+					approach_path,
 					GameEnums.MoveTiming.PRE_ACTION,
 				),
 			)
-			if AbilitySystem.movement_requires_run(board, actor, approach, path):
+			if AbilitySystem.movement_requires_run(board, actor, approach, approach_path):
 				if AbilitySystem.can_afford_run_for_commit(actor, ability):
 					slots["action"].append(
 						TimelineAction.make_ability(
@@ -2446,7 +2436,7 @@ func _build_enemy_commit_slots(
 							enemy.position,
 							AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
 							GameEnums.MoveTiming.PRE_ACTION,
-							waypoints,
+							approach_path,
 						),
 					)
 				return slots
@@ -2457,7 +2447,7 @@ func _build_enemy_commit_slots(
 				enemy.position,
 				AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
 				GameEnums.MoveTiming.PRE_ACTION,
-				waypoints,
+				[],
 			),
 		)
 		return slots
