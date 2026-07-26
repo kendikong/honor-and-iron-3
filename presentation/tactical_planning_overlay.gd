@@ -530,7 +530,7 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	## Phase 1 (selected AWAITING_TARGET, not yet armed) and phase 2 (awaiting armed)
 	## both show action-range tiles from projected stand — dash/move tiles in phase 2.
-	var premove_cell: Vector2i = _proj_origin(unit)
+	var premove_cell: Vector2i = _intent_stand_origin(unit)
 	var plan_board: BoardState = _director.projected_state if _director.projected_state != null else _board
 	var auto_run_active: bool = (
 		_planning_input != null and _planning_input.auto_run_movement_active(p_unit)
@@ -572,8 +572,8 @@ func recompute_hover_ranges(
 	var move_origin: Vector2i = _proj_origin(unit)
 	if dragging and _fixed_range_origin.x >= 0:
 		move_origin = _fixed_range_origin
-	# Default: projected stand tile. Drag live-preview may override via set_threat_origin.
-	var action_range_origin: Vector2i = move_origin
+	# Intent stand (projection + live move preview). Drag may override via set_threat_origin.
+	var action_range_origin: Vector2i = _intent_stand_origin(unit)
 	if _action_range_origin.x > -900:
 		action_range_origin = _action_range_origin
 	var cache_ability: int = selected_ability if unit.id == _director.selected_unit_id else -1
@@ -1865,6 +1865,26 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	if pv != null:
 		return pv.position
 	return unit.position
+
+
+## Action-range anchor: committed projection plus live move-preview stand (intent truth).
+## Phase-2 armed movement skills keep projected stand — dash endpoints come from there.
+func _intent_stand_origin(unit: UnitState) -> Vector2i:
+	var projected: Vector2i = _proj_origin(unit)
+	if unit == null:
+		return projected
+	if _planning_input != null and _planning_input.awaiting_targeting_active():
+		var sel_idx: int = _director.selected_ability_index if _director != null else -1
+		var ability: AbilityData = _selected_ability_data(unit, sel_idx)
+		if ability != null and AbilitySystem.is_movement_skill(ability):
+			return projected
+	if _planning_input != null and _planning_input.is_live_preview_active():
+		var live_board: BoardState = _live_preview.preview_board
+		if live_board != null:
+			var live_unit: UnitState = live_board.get_unit_by_id(unit.id)
+			if live_unit != null:
+				return live_unit.position
+	return projected
 
 
 func _selected_ability_data(unit: UnitState, ability_index: int) -> AbilityData:

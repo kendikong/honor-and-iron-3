@@ -2872,9 +2872,7 @@ func _predicted_stand_tile_for_enemy_hover(cell: Vector2i, enemy: UnitState) -> 
 func _sync_threat_origin_from_cell(_cell: Vector2i) -> void:
 	if _planning == null or dragging:
 		return
-	# Action-range tiles stay on projected unit position (overlay _proj_origin).
-	# Phase-2 movement endpoints use dash/move threat tiles from that origin — not
-	# cursor-shifted stand cells. Drag preview still sets threat origin explicitly.
+	# Hover: overlay _intent_stand_origin reads live preview stand. Clear stale drag override.
 	_planning.clear_threat_origin()
 
 
