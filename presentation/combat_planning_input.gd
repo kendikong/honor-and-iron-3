@@ -1166,14 +1166,6 @@ func _strip_unaffordable_premove_pairs(
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return
-	var pair_cell: Vector2i = cell
-	var pair_waypoints: Array[Vector2i] = waypoints
-	var pre_moves: Array = slots.get("pre", [])
-	if not pre_moves.is_empty() and pre_moves[0] is TimelineAction:
-		var pre_action: TimelineAction = pre_moves[0] as TimelineAction
-		if pre_action.type == GameEnums.ActionType.MOVE:
-			pair_cell = pre_action.target_coord
-			pair_waypoints = pre_action.waypoints
 	var kept: Array = []
 	for raw: Variant in actions:
 		if raw is TimelineAction:
@@ -1181,7 +1173,7 @@ func _strip_unaffordable_premove_pairs(
 			if (
 				action.type == GameEnums.ActionType.ABILITY
 				and action.ability != null
-				and not _can_pair_run_move_with_ability(actor, pair_cell, pair_waypoints, action.ability)
+				and not _can_pair_run_move_with_ability(actor, cell, waypoints, action.ability)
 			):
 				continue
 		kept.append(raw)
@@ -2525,112 +2517,6 @@ func _composite_cursors_enabled() -> bool:
 	return auto_use_skill_after_move and not force_basic_movement
 
 
-func _slots_with_facing_for_commit(
-	unit_id: int,
-	cell: Vector2i,
-	local: Vector2,
-	waypoints: Array[Vector2i],
-	legal_move_tiles: Array[Vector2i],
-	preferred_approach: Vector2i,
-	face_dir: int = -1,
-) -> Dictionary:
-	var effective_face: int = face_dir
-	if effective_face < 0:
-		effective_face = _facing_from_drop(local, cell)
-	var slots: Dictionary = _final_commit_slots_for_interaction(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
-	)
-	_apply_facing_to_slots(slots, local, cell)
-	return slots
-
-
-## Tile cursor: same commit slots as on_left_press would commit.
-func _final_commit_slots_for_click_at_cell(
-	unit_id: int,
-	cell: Vector2i,
-	local: Vector2,
-) -> Dictionary:
-	if _director == null or _director.board == null or unit_id < 0:
-		return _empty_commit_slots()
-	if not _director.board.is_in_bounds(cell):
-		return {"invalid": "Out of bounds."}
-	if selected_phase_action_exhausted(unit_id):
-		return _empty_commit_slots()
-	var unit_at: UnitState = _unit_at_input_cell(cell)
-	if unit_at != null and not unit_at.is_enemy() and unit_at.is_alive():
-		if unit_at.id != unit_id:
-			var caster: UnitState = _proj_unit(unit_id)
-			if caster != null and _can_target_unit_with_selected_ability(caster, unit_at):
-				var params: Dictionary = _commit_interaction_params(cell, unit_at.id)
-				return _slots_with_facing_for_commit(
-					unit_id,
-					params.cell,
-					local,
-					params.waypoints,
-					params.legal_move_tiles,
-					params.preferred,
-					int(params.get("face_dir", -1)),
-				)
-	if unit_at != null and unit_at.is_enemy():
-		return _slots_with_facing_for_commit(
-			unit_id, unit_at.position, local, [], [], unit_at.position,
-		)
-	var params: Dictionary = _commit_interaction_params(cell, -1)
-	return _slots_with_facing_for_commit(
-		unit_id,
-		params.cell,
-		local,
-		params.waypoints,
-		params.legal_move_tiles,
-		params.preferred,
-		int(params.get("face_dir", -1)),
-	)
-
-
-## Tile cursor while dragging: same commit slots as drop would commit.
-func _final_commit_slots_for_drop_at_cell(
-	unit_id: int,
-	cell: Vector2i,
-	local: Vector2,
-	legal_move_tiles: Array[Vector2i],
-) -> Dictionary:
-	if _director == null or _director.board == null or unit_id < 0:
-		return _empty_commit_slots()
-	if not _director.board.is_in_bounds(cell):
-		return _empty_commit_slots()
-	if selected_phase_action_exhausted(unit_id):
-		return _empty_commit_slots()
-	var dropped_on: UnitState = _unit_at_input_cell(cell)
-	if dropped_on != null and dropped_on.id != unit_id:
-		if _is_selectable_player_unit(dropped_on):
-			var actor: UnitState = _proj_unit(unit_id)
-			if actor != null and _can_target_unit_with_selected_ability(actor, dropped_on):
-				var params: Dictionary = _commit_interaction_params(cell, dropped_on.id)
-				return _slots_with_facing_for_commit(
-					unit_id,
-					params.cell,
-					local,
-					params.waypoints,
-					params.legal_move_tiles,
-					params.preferred,
-					int(params.get("face_dir", -1)),
-				)
-			return _empty_commit_slots()
-		return _slots_with_facing_for_commit(
-			unit_id, dropped_on.position, local, [], legal_move_tiles, cell,
-		)
-	var params: Dictionary = _commit_interaction_params(cell, -1)
-	return _slots_with_facing_for_commit(
-		unit_id,
-		params.cell,
-		local,
-		params.waypoints,
-		params.legal_move_tiles,
-		params.preferred,
-		int(params.get("face_dir", -1)),
-	)
-
-
 func _cursor_icon_for_commit_at_cell(
 	unit: UnitState,
 	cell: Vector2i,
@@ -2718,9 +2604,14 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var p_unit := _proj_unit(sel_id)
 	if p_unit == null:
 		return ""
-	return _cursor_icon_from_commit_slots(
-		_final_commit_slots_for_click_at_cell(sel_id, cell, _mouse_local_for_facing()),
+	var params: Dictionary = _commit_interaction_params(cell, -1)
+	return _hover_icon_for_cell(
 		p_unit,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+		int(params.get("face_dir", -1)),
 	)
 
 
@@ -2768,11 +2659,18 @@ func _drag_preview_includes_attack(actor_id: int) -> bool:
 func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if actor == null:
 		return ""
-	return _cursor_icon_from_commit_slots(
-		_final_commit_slots_for_drop_at_cell(
-			actor.id, cell, _mouse_local_for_facing(), _snapshot_drag_legal_move_tiles(),
-		),
+	var drag_target_id: int = -1
+	if _director != null and _director.board != null:
+		var occ := _director.board.get_unit_at(cell)
+		drag_target_id = _drag_preview_target_id(actor, occ)
+	var params: Dictionary = _commit_interaction_params(cell, drag_target_id)
+	return _hover_icon_for_cell(
 		actor,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+		int(params.get("face_dir", -1)),
 	)
 
 
