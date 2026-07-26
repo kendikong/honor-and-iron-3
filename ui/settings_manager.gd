@@ -6,11 +6,11 @@ extends Node
 func _ready() -> void:
 	load_settings()
 	var tree := get_tree()
-	if not tree.current_scene_changed.is_connected(_on_current_scene_changed):
-		tree.current_scene_changed.connect(_on_current_scene_changed)
+	if not tree.scene_changed.is_connected(_on_scene_changed):
+		tree.scene_changed.connect(_on_scene_changed)
 
 
-func _on_current_scene_changed() -> void:
+func _on_scene_changed() -> void:
 	_persist_window_placement()
 
 
