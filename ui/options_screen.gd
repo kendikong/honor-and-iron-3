@@ -246,11 +246,8 @@ func _build_interface_tab(parent: TabContainer) -> void:
 	_ui_scale_slider.value = _game_settings.combat_ui_scale
 	_ui_scale_slider.value_changed.connect(_on_ui_scale_changed)
 	_ui_scale_label = Label.new()
-	var ui_row := HBoxContainer.new()
-	ui_row.add_child(_ui_scale_slider)
-	ui_row.add_child(_ui_scale_label)
 	vbox.add_child(_label("UI layout scale (panels & buttons)"))
-	vbox.add_child(ui_row)
+	vbox.add_child(_slider_value_row(_ui_scale_slider, _ui_scale_label))
 	_on_ui_scale_changed(_game_settings.combat_ui_scale)
 
 	_text_scale_slider = HSlider.new()
@@ -260,21 +257,18 @@ func _build_interface_tab(parent: TabContainer) -> void:
 	_text_scale_slider.value = _game_settings.combat_text_scale
 	_text_scale_slider.value_changed.connect(_on_text_scale_changed)
 	_text_scale_label = Label.new()
-	_text_scale_label.custom_minimum_size.x = 48
-	var text_row := HBoxContainer.new()
-	text_row.add_child(_text_scale_slider)
-	text_row.add_child(_text_scale_label)
 	vbox.add_child(_label("Text scale"))
-	vbox.add_child(text_row)
+	vbox.add_child(_slider_value_row(_text_scale_slider, _text_scale_label))
 	_on_text_scale_changed(_game_settings.combat_text_scale)
 
 	_text_size_option = OptionButton.new()
+	_text_size_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for label: String in GameSettings.TEXT_SIZE_LABELS:
 		_text_size_option.add_item(label)
 	_text_size_option.select(_game_settings.inspector_text_size_index)
 	_text_size_option.item_selected.connect(func(_i: int) -> void:
 		_game_settings.inspector_text_size_index = _text_size_option.selected
-		_save_game_settings(),
+		_apply_interface_live(),
 	)
 	vbox.add_child(_label("Inspector text size"))
 	vbox.add_child(_text_size_option)
@@ -286,12 +280,8 @@ func _build_interface_tab(parent: TabContainer) -> void:
 	_panel_width_slider.value = float(_game_settings.inspector_panel_width)
 	_panel_width_slider.value_changed.connect(_on_panel_width_changed)
 	_panel_width_label = Label.new()
-	_panel_width_label.custom_minimum_size.x = 48
-	var width_row := HBoxContainer.new()
-	width_row.add_child(_panel_width_slider)
-	width_row.add_child(_panel_width_label)
 	vbox.add_child(_label("Inspector panel width"))
-	vbox.add_child(width_row)
+	vbox.add_child(_slider_value_row(_panel_width_slider, _panel_width_label))
 	_on_panel_width_changed(float(_game_settings.inspector_panel_width))
 
 
@@ -372,19 +362,24 @@ func _on_map_scale_changed(value: float) -> void:
 func _on_ui_scale_changed(value: float) -> void:
 	_ui_scale_label.text = "%.2f×" % value
 	_game_settings.combat_ui_scale = value
-	_save_game_settings()
+	_apply_interface_live()
 
 
 func _on_text_scale_changed(value: float) -> void:
 	_text_scale_label.text = "%.2f×" % value
 	_game_settings.combat_text_scale = value
-	_save_game_settings()
+	_apply_interface_live()
 
 
 func _on_panel_width_changed(value: float) -> void:
 	_panel_width_label.text = "%d" % int(value)
 	_game_settings.inspector_panel_width = int(value)
-	_save_game_settings()
+	_apply_interface_live()
+
+
+func _apply_interface_live() -> void:
+	_game_settings.save_to_disk()
+	_game_settings.changed.emit()
 
 
 func _on_effect_toggled(key: String, pressed: bool) -> void:
@@ -447,6 +442,16 @@ func _add_volume_row(parent: VBoxContainer, title: String, initial: float) -> HS
 func _save_game_settings() -> void:
 	_game_settings.save_to_disk()
 	_game_settings.changed.emit()
+
+
+func _slider_value_row(slider: HSlider, value_label: Label) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	value_label.custom_minimum_size.x = 56
+	row.add_child(slider)
+	row.add_child(value_label)
+	return row
 
 
 func _scroll_tab(parent: TabContainer, tab_name: String) -> ScrollContainer:

@@ -325,7 +325,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	_text_size_option = _add_labeled_option(vbox, "Inspector text", GameSettings.TEXT_SIZE_LABELS)
 	_text_size_option.item_selected.connect(func(_idx: int) -> void:
 		if not _sync_blocked:
-			_apply_display_live(),
+			_apply_interface_live(),
 	)
 
 	var ui_scale_row: HBoxContainer = HBoxContainer.new()
@@ -701,7 +701,7 @@ func _on_map_scale_slider_changed(value: float) -> void:
 func _on_text_scale_slider_changed(value: float) -> void:
 	_text_scale_value.text = "%.2f×" % value
 	if not _sync_blocked:
-		_apply_display_live()
+		_apply_interface_live()
 
 
 func _on_dim_gui_input(event: InputEvent) -> void:
@@ -731,13 +731,26 @@ func _on_display_char_scale_changed(value: float) -> void:
 func _on_panel_width_slider_changed(value: float) -> void:
 	_panel_width_value.text = "%d" % int(value)
 	if not _sync_blocked:
-		_apply_display_live()
+		_apply_interface_live()
 
 
 func _on_ui_scale_slider_changed(value: float) -> void:
 	_ui_scale_value.text = "%.2f×" % value
 	if not _sync_blocked:
-		_apply_display_live()
+		_apply_interface_live()
+
+
+func _apply_interface_live() -> void:
+	if _settings == null or _sync_blocked:
+		return
+	_settings.inspector_text_size_index = _text_size_option.selected
+	_settings.inspector_panel_width = int(_panel_width_slider.value)
+	_settings.combat_ui_scale = _ui_scale_slider.value
+	_settings.combat_text_scale = _text_scale_slider.value
+	_settings.save_to_disk()
+	_settings.changed.emit()
+	if _on_applied.is_valid():
+		_on_applied.call()
 
 
 func _margin(panel: PanelContainer) -> MarginContainer:
