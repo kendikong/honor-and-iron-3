@@ -2323,4 +2323,3 @@ func _set_phase(new_phase: Phase) -> void:
 func _build_demo_encounter() -> BoardState:
 	var map = DataLibrary.get_all_maps()[0]
 	return BoardFactory.build_from_encounter(map.encounter)
-

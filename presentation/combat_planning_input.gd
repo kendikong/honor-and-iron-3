@@ -2831,27 +2831,6 @@ func _skill_interaction_active() -> bool:
 	return _skill_takes_priority_over_basic_move() and _director.selected_unit_id >= 0 and not dragging
 
 
-func _threat_follows_cursor() -> bool:
-	if aiming:
-		return true
-	if awaiting_targeting_active():
-		return false
-	if not _skill_interaction_active():
-		return false
-	if _director == null or _director.selected_unit_id < 0:
-		return false
-	if _intent_state != null and _director.board != null:
-		var cell: Vector2i = _intent_state.hover_coord
-		if _director.board.is_in_bounds(cell):
-			var hover_unit: UnitState = _director.board.get_unit_at(cell)
-			if hover_unit != null and hover_unit.is_enemy():
-				return false
-	# After pre-move, action range is from the unit — not hypothetical move destinations.
-	if not _unit_move_slot_open(_director.selected_unit_id):
-		return false
-	return true
-
-
 func _predicted_stand_tile_for_enemy_hover(cell: Vector2i, enemy: UnitState) -> Vector2i:
 	if _director == null or enemy == null:
 		return Vector2i(-999, -999)
@@ -2890,25 +2869,13 @@ func _predicted_stand_tile_for_enemy_hover(cell: Vector2i, enemy: UnitState) -> 
 	return _director.preview_approach_tile(unit_id, enemy.id, 0, cell)
 
 
-func _sync_threat_origin_from_cell(cell: Vector2i) -> void:
-	if _planning == null or _director == null or _director.board == null or dragging:
+func _sync_threat_origin_from_cell(_cell: Vector2i) -> void:
+	if _planning == null or dragging:
 		return
-	if _director.board.is_in_bounds(cell):
-		var hover_unit: UnitState = _director.board.get_unit_at(cell)
-		if hover_unit != null and hover_unit.is_enemy():
-			var stand: Vector2i = _predicted_stand_tile_for_enemy_hover(cell, hover_unit)
-			if stand.x > -900:
-				_planning.set_threat_origin(stand)
-			else:
-				_planning.clear_threat_origin()
-			return
-	if not _threat_follows_cursor():
-		_planning.clear_threat_origin()
-		return
-	if _planning.is_hover_move_tile(cell):
-		_planning.set_threat_origin(cell)
-	else:
-		_planning.clear_threat_origin()
+	# Action-range tiles stay on projected unit position (overlay _proj_origin).
+	# Phase-2 movement endpoints use dash/move threat tiles from that origin — not
+	# cursor-shifted stand cells. Drag preview still sets threat origin explicitly.
+	_planning.clear_threat_origin()
 
 
 func _drag_preview_target_id(drag_unit: UnitState, occ: UnitState) -> int:

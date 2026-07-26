@@ -5,7 +5,9 @@ extends Node2D
 ##
 ## Planning tint contract:
 ## - BLUE (_hover_move_tiles): legal pre-move OR post-move destinations (MP budget only).
-## - RED (_hover_action_range_tiles): selected action's range from current or predicted stand tile.
+## - RED (_hover_action_range_tiles): selected skill range from projected unit position
+##   (timeline projection). Phase-2 movement endpoints use dash/move tiles from that
+##   same origin — not cursor-shifted hypothetical stand cells.
 
 const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
 const _COLOR_ACTION_RANGE := Color(0.92, 0.38, 0.32, 0.20)
@@ -527,10 +529,8 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 	if AbilitySystem.is_run_ability(ability):
 		return false
 	## Phase 1 (selected AWAITING_TARGET, not yet armed) and phase 2 (awaiting armed)
-	## both show red action-range tiles — range is planning truth for the selected skill.
+	## both show action-range tiles from projected stand — dash/move tiles in phase 2.
 	var premove_cell: Vector2i = _proj_origin(unit)
-	if _action_range_origin.x > -900:
-		premove_cell = _action_range_origin
 	var plan_board: BoardState = _director.projected_state if _director.projected_state != null else _board
 	var auto_run_active: bool = (
 		_planning_input != null and _planning_input.auto_run_movement_active(p_unit)
@@ -572,6 +572,7 @@ func recompute_hover_ranges(
 	var move_origin: Vector2i = _proj_origin(unit)
 	if dragging and _fixed_range_origin.x >= 0:
 		move_origin = _fixed_range_origin
+	# Default: projected stand tile. Drag live-preview may override via set_threat_origin.
 	var action_range_origin: Vector2i = move_origin
 	if _action_range_origin.x > -900:
 		action_range_origin = _action_range_origin
