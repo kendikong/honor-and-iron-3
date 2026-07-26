@@ -23,6 +23,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_dash_arm_survives_plan_refresh(failures)
 	_test_dash_self_click_blocks_false_wait(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
+	_test_strip_pairs_using_premove_dest(failures)
 	_test_hover_cursor_matches_click_commit_slots(failures)
 
 
@@ -881,6 +882,55 @@ static func _test_action_range_hidden_after_premove_mp(failures: Array[String]) 
 		board, unit, swap, Vector2i(3, 2), false,
 	):
 		failures.append("PlanningInputTest: far premove should hide Swap when MP exhausted")
+
+
+static func _test_strip_pairs_using_premove_dest(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			board.set_tile_terrain(Vector2i(x, y), plain)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(0, 2)
+	unit.movement.points_left = 4
+	unit.movement.max_points = 4
+	unit.ability.points_left = 1
+	unit.ability.max_points = 1
+	var bash := AbilityData.new()
+	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	bash.action_point_cost = 1
+	unit.active_abilities = [bash]
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.auto_run = true
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var enemy_cell := Vector2i(4, 2)
+	var approach := Vector2i(3, 2)
+	var polluted_waypoints: Array[Vector2i] = [Vector2i(1, 2), Vector2i(2, 2), approach]
+	var slots: Dictionary = {
+		"pre": [
+			TimelineAction.make_move(
+				1, approach, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+			),
+		],
+		"action": [TimelineAction.make_ability(1, bash, enemy_cell, 2)],
+		"post": [],
+	}
+	input._strip_unaffordable_premove_pairs(slots, 1, enemy_cell, polluted_waypoints)
+	if (slots.get("action", []) as Array).is_empty():
+		failures.append(
+			"PlanningInputTest: strip must pair run+skill using premove dest, not enemy hover cell",
+		)
 
 
 static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String]) -> void:

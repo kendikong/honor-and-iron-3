@@ -1166,6 +1166,14 @@ func _strip_unaffordable_premove_pairs(
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return
+	var pair_cell: Vector2i = cell
+	var pair_waypoints: Array[Vector2i] = waypoints
+	var pre_moves: Array = slots.get("pre", [])
+	if not pre_moves.is_empty() and pre_moves[0] is TimelineAction:
+		var pre_action: TimelineAction = pre_moves[0] as TimelineAction
+		if pre_action.type == GameEnums.ActionType.MOVE:
+			pair_cell = pre_action.target_coord
+			pair_waypoints = pre_action.waypoints
 	var kept: Array = []
 	for raw: Variant in actions:
 		if raw is TimelineAction:
@@ -1173,7 +1181,7 @@ func _strip_unaffordable_premove_pairs(
 			if (
 				action.type == GameEnums.ActionType.ABILITY
 				and action.ability != null
-				and not _can_pair_run_move_with_ability(actor, cell, waypoints, action.ability)
+				and not _can_pair_run_move_with_ability(actor, pair_cell, pair_waypoints, action.ability)
 			):
 				continue
 		kept.append(raw)
