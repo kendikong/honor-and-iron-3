@@ -2594,7 +2594,12 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var p_unit := _proj_unit(sel_id)
 	if p_unit == null:
 		return ""
-	var params: Dictionary = _commit_interaction_params(cell, -1)
+	var target_id: int = _hover_attack_target_id()
+	if target_id < 0 and _director.board.is_in_bounds(cell):
+		var occ: UnitState = _director.board.get_unit_at(cell)
+		if occ != null:
+			target_id = _resolve_hover_attack_target(p_unit, occ)
+	var params: Dictionary = _commit_interaction_params(cell, target_id)
 	return _hover_icon_for_cell(
 		p_unit,
 		params.cell,
