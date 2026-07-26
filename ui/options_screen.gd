@@ -67,6 +67,7 @@ var _dev_shadow_checks: Dictionary = {}
 var _dev_tile_labels_check: CheckButton
 var _dev_boredom_atmo_check: CheckButton
 var _dev_boredom_water_check: CheckButton
+var _interface_tab_root: VBoxContainer
 
 
 func _ready() -> void:
@@ -283,6 +284,40 @@ func _build_interface_tab(parent: TabContainer) -> void:
 	vbox.add_child(_label("Inspector panel width"))
 	vbox.add_child(_slider_value_row(_panel_width_slider, _panel_width_label))
 	_on_panel_width_changed(float(_game_settings.inspector_panel_width))
+	_interface_tab_root = vbox
+	_sync_interface_tab_preview()
+
+
+func _sync_interface_tab_preview() -> void:
+	if _interface_tab_root == null:
+		return
+	var body_sz: int = _game_settings.scaled_body_font()
+	var title_sz: int = _game_settings.scaled_title_font()
+	var hint_sz: int = _game_settings.scaled_hint_font()
+	var ui_scale: float = _game_settings.combat_ui_scale
+	_interface_tab_root.add_theme_constant_override("separation", int(round(10.0 * ui_scale)))
+	_apply_interface_preview_recursive(_interface_tab_root, body_sz, title_sz, hint_sz)
+	if _ui_scale_slider != null:
+		_ui_scale_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
+	if _text_scale_slider != null:
+		_text_scale_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
+	if _panel_width_slider != null:
+		_panel_width_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
+
+
+func _apply_interface_preview_recursive(node: Node, body_sz: int, title_sz: int, hint_sz: int) -> void:
+	if node is Label:
+		var lbl: Label = node as Label
+		if lbl == _ui_scale_label or lbl == _text_scale_label or lbl == _panel_width_label:
+			lbl.add_theme_font_size_override("font_size", body_sz)
+		elif lbl.autowrap_mode != TextServer.AUTOWRAP_OFF:
+			lbl.add_theme_font_size_override("font_size", hint_sz)
+		else:
+			lbl.add_theme_font_size_override("font_size", title_sz)
+	elif node is OptionButton:
+		(node as OptionButton).add_theme_font_size_override("font_size", body_sz)
+	for child: Node in node.get_children():
+		_apply_interface_preview_recursive(child, body_sz, title_sz, hint_sz)
 
 
 func _build_developer_tab(parent: TabContainer) -> void:
@@ -378,8 +413,14 @@ func _on_panel_width_changed(value: float) -> void:
 
 
 func _apply_interface_live() -> void:
+	if _text_size_option != null:
+		_game_settings.inspector_text_size_index = _text_size_option.selected
+	if _panel_width_slider != null:
+		_game_settings.inspector_panel_width = int(_panel_width_slider.value)
 	_game_settings.save_to_disk()
 	_game_settings.changed.emit()
+	_sync_interface_tab_preview()
+	EventBus.interface_settings_changed.emit()
 
 
 func _on_effect_toggled(key: String, pressed: bool) -> void:

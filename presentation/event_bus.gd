@@ -51,4 +51,7 @@ signal planning_commit_events(events: Array)
 ## Emitted by BoardView once all push/displacement tweens from a batch have finished.
 signal push_animations_complete
 
+## Interface sliders (UI/text scale, panel width) saved live — combat hosts reload + apply.
+signal interface_settings_changed()
+
 @warning_ignore_restore("unused_signal")

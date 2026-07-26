@@ -62,6 +62,7 @@ var _sound_panel: PanelContainer
 var _master_slider: HSlider
 var _sfx_slider: HSlider
 var _music_slider: HSlider
+var _display_vbox: VBoxContainer
 
 
 func _ready() -> void:
@@ -278,6 +279,7 @@ func _build_main_menu(panel: PanelContainer) -> void:
 func _build_display_menu(panel: PanelContainer) -> void:
 	var margin: MarginContainer = _margin(panel)
 	var vbox: VBoxContainer = _vbox(margin)
+	_display_vbox = vbox
 	_add_title(vbox, "Display")
 	_add_hint(vbox, "UI layout scale affects panels/buttons only. Text scale affects fonts. Map scale applies live.")
 
@@ -429,6 +431,45 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	vbox.add_child(actions)
 	_add_button_to(actions, "Apply", _apply_display)
 	_add_button_to(actions, "Back", _show_main)
+	_sync_display_interface_preview()
+
+
+func _sync_display_interface_preview() -> void:
+	if _display_vbox == null or _settings == null:
+		return
+	var body_sz: int = _settings.scaled_body_font()
+	var title_sz: int = _settings.scaled_title_font()
+	var hint_sz: int = _settings.scaled_hint_font()
+	var ui_scale: float = _settings.combat_ui_scale
+	_display_vbox.add_theme_constant_override("separation", int(round(10.0 * ui_scale)))
+	_apply_display_preview_recursive(_display_vbox, body_sz, title_sz, hint_sz)
+	if _ui_scale_slider != null:
+		_ui_scale_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
+	if _text_scale_slider != null:
+		_text_scale_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
+	if _panel_width_slider != null:
+		_panel_width_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
+
+
+func _apply_display_preview_recursive(node: Node, body_sz: int, title_sz: int, hint_sz: int) -> void:
+	if node is Label:
+		var lbl: Label = node as Label
+		if lbl == _ui_scale_value or lbl == _text_scale_value or lbl == _panel_width_value:
+			lbl.add_theme_font_size_override("font_size", body_sz)
+		elif lbl == _resolution_status_label:
+			lbl.add_theme_font_size_override("font_size", hint_sz)
+		elif lbl.autowrap_mode != TextServer.AUTOWRAP_OFF:
+			lbl.add_theme_font_size_override("font_size", hint_sz)
+		else:
+			lbl.add_theme_font_size_override("font_size", title_sz)
+	elif node is OptionButton:
+		(node as OptionButton).add_theme_font_size_override("font_size", body_sz)
+	elif node is CheckButton:
+		(node as CheckButton).add_theme_font_size_override("font_size", body_sz)
+	elif node is Button:
+		(node as Button).add_theme_font_size_override("font_size", body_sz)
+	for child: Node in node.get_children():
+		_apply_display_preview_recursive(child, body_sz, title_sz, hint_sz)
 
 
 func _build_map_menu(panel: PanelContainer) -> void:
@@ -749,6 +790,8 @@ func _apply_interface_live() -> void:
 	_settings.combat_text_scale = _text_scale_slider.value
 	_settings.save_to_disk()
 	_settings.changed.emit()
+	_sync_display_interface_preview()
+	EventBus.interface_settings_changed.emit()
 	if _on_applied.is_valid():
 		_on_applied.call()
 

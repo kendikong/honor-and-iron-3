@@ -93,6 +93,8 @@ func _ready() -> void:
 	_options.character_gen_changed.connect(_on_character_gen_changed)
 	_options.opened.connect(_on_options_opened)
 	_options.closed.connect(_on_options_closed)
+	if not EventBus.interface_settings_changed.is_connected(_on_interface_settings_changed):
+		EventBus.interface_settings_changed.connect(_on_interface_settings_changed)
 
 	_asset_preloader = LpcAssetPreloader.new()
 	_asset_preloader.name = "LpcAssetPreloader"
@@ -324,6 +326,11 @@ func _load_char_profile() -> void:
 func _on_character_gen_changed() -> void:
 	if _unit_layer != null:
 		_unit_layer.refresh_display_scale()
+
+
+func _on_interface_settings_changed() -> void:
+	_settings.load_from_disk()
+	_on_display_settings_applied()
 
 
 func _on_display_settings_applied() -> void:

@@ -121,6 +121,8 @@ func _ready() -> void:
 	_options.setup_character_gen(_char_profile)
 	_options.opened.connect(_on_options_opened)
 	_options.closed.connect(_on_options_closed)
+	if not EventBus.interface_settings_changed.is_connected(_on_interface_settings_changed):
+		EventBus.interface_settings_changed.connect(_on_interface_settings_changed)
 
 	_pick_overlay.setup(_map_root, null, _inspector, _phantom, _ground)
 	_clock_hud = _WorldClockHud.new()
@@ -359,6 +361,11 @@ func _on_options_opened() -> void:
 func _on_options_closed() -> void:
 	_pick_overlay.set_process(true)
 	_pick_overlay.mark_transform_dirty()
+
+
+func _on_interface_settings_changed() -> void:
+	_settings.load_from_disk()
+	_on_display_settings_applied()
 
 
 func _on_display_settings_applied() -> void:
