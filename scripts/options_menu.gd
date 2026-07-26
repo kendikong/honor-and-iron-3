@@ -22,6 +22,7 @@ var _root: Control
 var _main_panel: PanelContainer
 var _display_panel: PanelContainer
 var _resolution_option: OptionButton
+var _resolution_status_label: Label
 var _window_mode_option: OptionButton
 var _map_zoom_option: OptionButton
 var _map_scale_slider: HSlider
@@ -284,8 +285,16 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	_resolution_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for res: Vector2i in GameSettings.RESOLUTION_PRESETS:
 		_resolution_option.add_item("%d × %d" % [res.x, res.y])
+	_resolution_option.item_selected.connect(func(_idx: int) -> void:
+		if not _sync_blocked:
+			_sync_resolution_controls(),
+	)
 	vbox.add_child(_label("Resolution"))
 	vbox.add_child(_resolution_option)
+	_resolution_status_label = Label.new()
+	_resolution_status_label.add_theme_font_size_override("font_size", 13)
+	_resolution_status_label.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88))
+	vbox.add_child(_resolution_status_label)
 
 	_window_mode_option = _add_labeled_option(vbox, "Window mode", GameSettings.WINDOW_MODE_LABELS)
 	_window_mode_option.item_selected.connect(func(_idx: int) -> void:
@@ -505,8 +514,9 @@ func _apply_window_mode_live() -> void:
 	if _settings == null:
 		return
 	_settings.set_window_mode_index(_window_mode_option.selected)
-	_sync_resolution_dropdown_enabled()
+	_sync_resolution_controls()
 	_settings.apply_to_window(get_window(), true)
+	_sync_resolution_controls()
 	_settings.apply_audio_buses()
 	_settings.save_to_disk()
 	if _on_applied.is_valid():
@@ -567,14 +577,20 @@ func _sync_controls_from_settings() -> void:
 		_display_char_scale_slider.value = _char_profile.display_scale
 		_display_char_scale_slider.set_block_signals(false)
 		_on_display_char_scale_changed(_char_profile.display_scale)
-	_sync_resolution_dropdown_enabled()
+	_sync_resolution_controls()
 	_set_sync_blocked(false)
 
 
-func _sync_resolution_dropdown_enabled() -> void:
-	if _resolution_option == null or _window_mode_option == null:
+func _sync_resolution_controls() -> void:
+	if _resolution_option == null or _window_mode_option == null or _settings == null:
 		return
-	_resolution_option.disabled = _window_mode_option.selected != 0
+	var windowed: bool = _window_mode_option.selected == 0
+	_resolution_option.disabled = not windowed
+	if _resolution_status_label != null:
+		_resolution_status_label.text = _settings.format_resolution_status(
+			get_window(),
+			_resolution_option.selected,
+		)
 
 
 var _sync_blocked: bool = false

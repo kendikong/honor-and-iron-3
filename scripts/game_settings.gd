@@ -252,6 +252,19 @@ func set_window_mode_index(index: int) -> void:
 			window_mode = DisplayServer.WINDOW_MODE_WINDOWED
 
 
+func format_resolution_status(window: Window, preset_index: int) -> String:
+	if window_mode == DisplayServer.WINDOW_MODE_WINDOWED:
+		var idx: int = clampi(preset_index, 0, RESOLUTION_PRESETS.size() - 1)
+		var res: Vector2i = RESOLUTION_PRESETS[idx]
+		return "Window size: %d × %d" % [res.x, res.y]
+	var screen_id: int = screen_index
+	if window != null:
+		screen_id = window.current_screen
+	screen_id = _validated_screen_index(screen_id)
+	var monitor_size: Vector2i = DisplayServer.screen_get_size(screen_id)
+	return "Using monitor: %d × %d" % [monitor_size.x, monitor_size.y]
+
+
 func inspector_body_font() -> int:
 	return TEXT_SIZE_BODY[clampi(inspector_text_size_index, 0, TEXT_SIZE_BODY.size() - 1)]
 

@@ -44,6 +44,7 @@ var _game_settings: GameSettings
 var _effects_settings: EffectsSettings
 
 var _resolution_option: OptionButton
+var _resolution_status_label: Label
 var _window_mode_option: OptionButton
 var _map_zoom_option: OptionButton
 var _map_scale_slider: HSlider
@@ -109,8 +110,13 @@ func _build_display_tab(parent: TabContainer) -> void:
 	for res: Vector2i in GameSettings.RESOLUTION_PRESETS:
 		_resolution_option.add_item("%d × %d" % [res.x, res.y])
 	_resolution_option.select(_game_settings.resolution_index())
+	_resolution_option.item_selected.connect(func(_i: int) -> void: _sync_resolution_controls())
 	vbox.add_child(_label("Resolution"))
 	vbox.add_child(_resolution_option)
+	_resolution_status_label = Label.new()
+	_resolution_status_label.add_theme_font_size_override("font_size", 13)
+	_resolution_status_label.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88))
+	vbox.add_child(_resolution_status_label)
 
 	_window_mode_option = OptionButton.new()
 	for label: String in GameSettings.WINDOW_MODE_LABELS:
@@ -119,7 +125,7 @@ func _build_display_tab(parent: TabContainer) -> void:
 	_window_mode_option.item_selected.connect(func(_i: int) -> void: _apply_window_mode())
 	vbox.add_child(_label("Window mode"))
 	vbox.add_child(_window_mode_option)
-	_sync_resolution_dropdown_enabled()
+	_sync_resolution_controls()
 
 	_map_zoom_option = OptionButton.new()
 	for label: String in GameSettings.MAP_ZOOM_LABELS:
@@ -329,19 +335,27 @@ func _apply_display_video() -> void:
 	_game_settings.set_resolution_index(_resolution_option.selected)
 	_game_settings.set_window_mode_index(_window_mode_option.selected)
 	_game_settings.apply_and_save(get_window(), true)
+	_sync_resolution_controls()
 
 
 func _apply_window_mode() -> void:
 	_game_settings.set_window_mode_index(_window_mode_option.selected)
-	_sync_resolution_dropdown_enabled()
+	_sync_resolution_controls()
 	_game_settings.apply_to_window(get_window(), true)
+	_sync_resolution_controls()
 	_save_game_settings()
 
 
-func _sync_resolution_dropdown_enabled() -> void:
+func _sync_resolution_controls() -> void:
 	if _resolution_option == null or _window_mode_option == null:
 		return
-	_resolution_option.disabled = _window_mode_option.selected != 0
+	var windowed: bool = _window_mode_option.selected == 0
+	_resolution_option.disabled = not windowed
+	if _resolution_status_label != null:
+		_resolution_status_label.text = _game_settings.format_resolution_status(
+			get_window(),
+			_resolution_option.selected,
+		)
 
 
 func _apply_map_zoom_live() -> void:
