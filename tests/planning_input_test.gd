@@ -926,8 +926,7 @@ static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String
 	input._drag_unit_id = 1
 	input._drag_route = [knight.position, Vector2i(1, 2), Vector2i(2, 2), Vector2i(3, 2)]
 	var enemy_cell := enemy.position
-	var local := Vector2.ZERO
-	var click_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, enemy_cell, local)
+	var click_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, enemy_cell, Vector2.ZERO)
 	var expected_icon: String = input._cursor_icon_from_commit_slots(click_slots, knight)
 	var hover_icon: String = input.compute_hover_action_icon(enemy_cell)
 	if hover_icon != expected_icon:

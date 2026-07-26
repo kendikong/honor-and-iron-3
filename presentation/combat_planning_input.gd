@@ -2536,7 +2536,7 @@ func _slots_with_facing_for_commit(
 	return slots
 
 
-## Mirror on_left_press slot resolution — tile cursor must match click commit slots.
+## Tile cursor: same commit slots as on_left_press would commit.
 func _final_commit_slots_for_click_at_cell(
 	unit_id: int,
 	cell: Vector2i,
@@ -2579,7 +2579,7 @@ func _final_commit_slots_for_click_at_cell(
 	)
 
 
-## Mirror drag-drop slot resolution — drag tile cursor must match drop commit slots.
+## Tile cursor while dragging: same commit slots as drop would commit.
 func _final_commit_slots_for_drop_at_cell(
 	unit_id: int,
 	cell: Vector2i,
@@ -2710,9 +2710,8 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var p_unit := _proj_unit(sel_id)
 	if p_unit == null:
 		return ""
-	var local: Vector2 = _mouse_local_for_facing()
 	return _cursor_icon_from_commit_slots(
-		_final_commit_slots_for_click_at_cell(sel_id, cell, local),
+		_final_commit_slots_for_click_at_cell(sel_id, cell, _mouse_local_for_facing()),
 		p_unit,
 	)
 
