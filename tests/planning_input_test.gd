@@ -939,3 +939,11 @@ static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String
 			"PlanningInputTest: enemy click slots should include attack glyph (got %s)"
 			% expected_icon,
 		)
+	if (
+		expected_icon.find(PlanningIcons.GLYPH_RUN) >= 0
+		and expected_icon.find(PlanningIcons.GLYPH_ATTACK) < 0
+	):
+		failures.append(
+			"PlanningInputTest: enemy approach must be walk+skill, not run-only (got %s)"
+			% expected_icon,
+		)
