@@ -109,7 +109,8 @@ Every entry must show **what changed to what**. Use **exact before → after** f
 
 ### Global systems
 - **Global system used:** (canonical owner — required every edit/plan/review turn with changes)
-- **Heuristics added:** `none` OR each heuristic named (required; see `global-systems-first.mdc`)
+- **Heuristics audit:** one line — `rows 1–6 pass: …` or `row N fail: …` (walk table in `global-systems-first.mdc`)
+- **Heuristics added:** `none` OR each heuristic named (only after audit passes)
 
 ### Added
 - `path/to/file.gd` — (what was added and why)
@@ -128,7 +129,8 @@ Every entry must show **what changed to what**. Use **exact before → after** f
 ```
 
 **Rules:**
-- **### Global systems** is mandatory — never omit **Heuristics added:** (`none` or list).
+- **### Global systems** is mandatory — never omit **Heuristics audit** or **Heuristics added**.
+- **`Heuristics added: none` without `Heuristics audit:` is invalid** — treat as undisclosed heuristic.
 - Use empty sections as `- (none)`.
 - **Never** write vague or over-paraphrased entries ("updated file", "fixed bug", "tweaked rules") — always state the concrete delta with enough length to understand without opening the diff.
 - **Minimum detail:** each **Changed** entry needs enough prose that the user knows the old state, the new state, and the affected location (file, function, line range, or key name).
@@ -177,6 +179,9 @@ Use this structure every time file changes are requested — **once per user mes
 - **Assumptions / open questions:** (anything unclear, or "(none)")
 
 ## Proposed solution
+- **Global system used:** (canonical owner)
+- **Heuristics audit:** walk 6 rows in `global-systems-first.mdc` — `rows 1–6 pass: …` or `row N fail: …`
+- **Heuristics added:** `none` or list (**only** after audit; never a default checkbox)
 - **Root cause:** (if known from investigation, or "will confirm with grep/read before edit")
 - **What I plan to do:** (numbered steps — each names file(s), function(s), and the concrete change)
   1. ...

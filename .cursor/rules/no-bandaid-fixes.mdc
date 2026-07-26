@@ -36,17 +36,18 @@ A change is a **bandaid** if it:
 
 ## Before every implementation turn (self-check)
 
-Answer in the changelog or plan:
+Complete the **Heuristics audit** table in `global-systems-first.mdc` (all 6 rows). Answer in the changelog or plan:
 
 | Question | Must be |
 |----------|---------|
-| **Heuristics added:** stated? (`none` or list) | **Yes** — every edit/fix turn |
+| **Heuristics audit:** one-line summary included? | **Yes** — proves table was walked, not checkbox `none` |
+| **Heuristics added:** stated? (`none` or list) | **Yes** — only after audit passes |
 | Does this add a second way to do the same thing? | **No** |
-| Does preview == commit for this behavior? | **Yes** |
-| Could another skill reuse this without new `if` branches? | **Yes** |
+| Does preview == commit for this behavior? | **Yes** (when planning domain applies) |
+| Could another skill/screen reuse this without new `if` branches? | **Yes** |
 | Did I remove the obsolete path? | **Yes** |
 
-If any answer is wrong → **redesign**, do not ship the bandaid.
+If any answer is wrong → **redesign**, do not ship the bandaid. **Do not write `Heuristics added: none` to satisfy the table without reading the code.**
 
 ## Relationship to other rules
 

@@ -31,6 +31,46 @@ A **heuristic** here means: behavior driven by a local shortcut that is **not** 
 
 **Default: zero new heuristics.** Fix the owner system instead.
 
+### Examples that **are** heuristics (must be named — never report as `none`)
+
+| Pattern | Example (this repo) |
+|---------|---------------------|
+| Tab- or screen-only apply | UI scale preview only on Interface tab; Display tab unchanged |
+| Node/widget identity at apply time | `if lbl == _ui_scale_label` instead of shared applier / data tier |
+| Parallel apply paths | `save_to_disk` + `changed` but combat never reloads; separate preview function |
+| Presentation-only state | Slider moves a local var UI reads; `GameSettings` / commit path unchanged |
+| Per-id / per-scene branch | `if ability.id == …` when `.tres` / `EffectData` could express it |
+
+### Examples that are **not** heuristics (still name the canonical owner)
+
+| Pattern | Example (this repo) |
+|---------|---------------------|
+| Single shared applier | `GameSettings` → `MenuInterfaceApplier.apply(root, settings)` on whole tree |
+| Data/meta at **build**, type rules at **apply** | `menu_font_tier` meta + walk by `Control` type — not `if node == _foo` |
+| One reload+apply bus | `EventBus.interface_settings_changed` → owner `_on_display_settings_applied` |
+
+## Heuristics audit (mandatory — before declaring `none`)
+
+**Forbidden:** Writing `Heuristics added: none` as a default footer, ritual checkbox, or without completing the audit below. **Claiming `none` without walking the table is a rule violation** — same severity as inventing a heuristic silently.
+
+**Process (every plan, edit, or fix turn with code changes):**
+
+1. Name **Global system used** (canonical owner file/API).
+2. Walk **every row** of the audit table below.
+3. If **any row fails** → list each failure under **Heuristics added** (short name + one line), or **redesign** before merge.
+4. If **all rows pass** → you may write `none`, but you **must** include a one-line **Heuristics audit** summary proving you walked the table (not just the word `none`).
+
+Owner may ask **“Walk the table”** — you must answer each row in plain language. Inability to do so means the `none` claim was invalid.
+
+| # | Audit question | Pass requires |
+|---|----------------|---------------|
+| 1 | **Single owner** | The listed global system owns this behavior end-to-end — no parallel owner |
+| 2 | **One apply path** | No second preview / save / commit / combat path that can diverge |
+| 3 | **No identity branches** | No `if node == …`, `if tab == …`, `if scene == …` for this behavior (unless owner approved ⚠ exception) |
+| 4 | **No UI-only state** | No flag/meta only presentation reads that sim/commit/`GameSettings` ignore |
+| 5 | **Reusable** | Another screen/feature could use the same path without a new special-case branch |
+| 6 | **Obsolete path removed** | Replacing a hack deletes the old path in the **same** change |
+
 ## Mandatory: exception warning (no silent bypass)
 
 If the **correct** fix requires **breaking, bypassing, or adding an exception to** a global system, you **must stop** and post this block **before any edit**:
@@ -58,7 +98,10 @@ If the **correct** fix requires **breaking, bypassing, or adding an exception to
 Any response that **proposes, implements, or summarizes** a code or rule change MUST include **both** lines below, visibly (not buried in prose):
 
 - **Global system used:** (canonical owner — file/API; e.g. `_build_commit_slots_at_cell` → `commit_from_slots`)
-- **Heuristics added:** `none` OR each heuristic named (must be `none` unless owner approved the ⚠ exception block)
+- **Heuristics audit:** one line — either `rows 1–6 pass: …` (how you know) **or** `row N fail: …`
+- **Heuristics added:** `none` OR each heuristic named (only after audit; see **Heuristics audit** above)
+
+**`Heuristics added: none` without `Heuristics audit:` = invalid** — treat as if heuristics were undisclosed.
 
 **Required in:**
 - Permission gate / plans (`interpret-plan-permission.mdc`)
@@ -67,7 +110,7 @@ Any response that **proposes, implements, or summarizes** a code or rule change 
 
 **Omit only** on pure read-only Q&A with **no** proposed or completed changes.
 
-**Omitting either line = rule violation** — same severity as skipping the permission gate or auto-commit.
+**Omitting any of the three lines = rule violation** — same severity as skipping the permission gate or auto-commit.
 
 ## Canonical global systems (Honor & Iron — non-exhaustive)
 

@@ -18,7 +18,8 @@ Use exactly these three sections (in order):
 
 ### 2. Planned approach
 - **Global system used:** (canonical owner — e.g. commit slots, `AbilitySystem`, `Simulator`; see `global-systems-first.mdc`)
-- **Heuristics added:** `none` or list each (must be `none` unless owner already approved an exception)
+- **Heuristics audit:** one line — walk all 6 rows in `global-systems-first.mdc`; `rows 1–6 pass: …` or `row N fail: …`
+- **Heuristics added:** `none` or list each (**only** if audit passed; never a default checkbox)
 - Concrete steps you will take (files, systems, tests)
 - What you will **not** do (important when past mistakes are relevant)
 - Risks or assumptions, if any
@@ -31,12 +32,13 @@ Wait for the user's reply before making changes or running implementation work.
 
 ## After implementation (mandatory)
 
-Responses that **completed** file changes must **repeat** the same two lines (not only in the gate):
+Responses that **completed** file changes must **repeat** all three lines (not only in the gate):
 
 - **Global system used:** …
+- **Heuristics audit:** …
 - **Heuristics added:** `none` or list each
 
-Place them in **## Changelog → ### Global systems** (see `global-systems-first.mdc`). Do not end an edit turn without stating **Heuristics added**.
+Place them in **## Changelog → ### Global systems** (see `global-systems-first.mdc`). **`Heuristics added: none` without `Heuristics audit:` is invalid.**
 
 ## When the gate is required
 
@@ -55,7 +57,8 @@ Place them in **## Changelog → ### Global systems** (see `global-systems-first
 ## Anti-patterns (do not do these)
 
 - Jumping straight to code because the fix "looks simple"
-- **Ending an edit or fix turn without `Heuristics added:`** (must be `none` or a named list)
+- **Ending an edit or fix turn without `Heuristics audit:` and `Heuristics added:`** (audit proves table was walked; `none` is not a default checkbox)
+- **Writing `Heuristics added: none` without completing the 6-row audit** in `global-systems-first.mdc`
 - Proposing a heuristic or bandaid without the **⚠ Global system exception** block when it bypasses a global system
 - Solving a different problem than the user described (e.g. placement vs draw order)
 - Assuming post-process vs pre-process without stating it and getting buy-in
