@@ -24,6 +24,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_dash_self_click_blocks_false_wait(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
 	_test_hover_cursor_matches_click_commit_slots(failures)
+	_test_enemy_target_params_ignore_pseudo_drag(failures)
 
 
 static func _bowling_charge_arm_fixture() -> Dictionary:
@@ -946,4 +947,42 @@ static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String
 		failures.append(
 			"PlanningInputTest: enemy approach must be walk+skill, not run-only (got %s)"
 			% expected_icon,
+		)
+
+
+static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			board.set_tile_terrain(Vector2i(x, y), plain)
+	var knight := UnitState.new()
+	knight.id = 1
+	knight.team = GameEnums.Team.PLAYER
+	knight.position = Vector2i(0, 2)
+	var enemy := UnitState.new()
+	enemy.id = 2
+	enemy.team = GameEnums.Team.ENEMY
+	enemy.position = Vector2i(4, 2)
+	board.units = [knight, enemy]
+	GridSystem.set_occupant(board, knight.position, knight.id)
+	GridSystem.set_occupant(board, enemy.position, enemy.id)
+	director.board = board
+	input._director = director
+	input._drag_unit_id = 1
+	input._drag_route = [knight.position, Vector2i(1, 2), Vector2i(2, 2), Vector2i(3, 2)]
+	input._drag_last_free = Vector2i(3, 2)
+	var params: Dictionary = input._commit_interaction_params(enemy.position, enemy.id)
+	if not (params.waypoints as Array).is_empty():
+		failures.append(
+			"PlanningInputTest: enemy target params must not include pseudo-drag waypoints",
+		)
+	if params.preferred != enemy.position:
+		failures.append(
+			"PlanningInputTest: enemy target preferred must be enemy tile, not hover route (got %s)"
+			% str(params.preferred),
 		)

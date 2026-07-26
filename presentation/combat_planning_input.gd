@@ -1116,17 +1116,17 @@ func _commit_interaction_params(
 ) -> Dictionary:
 	var waypoints: Array[Vector2i] = []
 	var legal_moves: Array[Vector2i] = []
-	if _drag_route_commits_active():
-		waypoints = _route_waypoints()
-		legal_moves = _snapshot_drag_legal_move_tiles()
 	var commit_cell: Vector2i = hover_cell
 	var preferred: Vector2i = _NO_PREFERRED_APPROACH
 	if attack_target_id >= 0 and _director != null and _director.board != null:
 		var target: UnitState = _director.board.get_unit_by_id(attack_target_id)
 		if target != null:
 			commit_cell = target.position
-			if _drag_route_commits_active() and _drag_last_free != commit_cell:
-				preferred = _drag_last_free
+			## Enemy unit targeting: minimal approach — never pseudo-drag waypoints or hover route.
+			preferred = target.position
+	elif _drag_route_commits_active():
+		waypoints = _route_waypoints()
+		legal_moves = _snapshot_drag_legal_move_tiles()
 	var face_dir: int = -1
 	if _map_view != null:
 		face_dir = _facing_from_drop(_map_view.get_local_mouse_position(), hover_cell)
@@ -2331,16 +2331,7 @@ func _build_enemy_commit_slots(
 		and ability_index >= 0
 		and ability != null
 	)
-	var effective_waypoints: Array[Vector2i] = waypoints
-	if effective_waypoints.is_empty() and use_skill and AbilitySystem.ability_has_movement_effect(ability):
-		var live_path: Array = preview_state.preview_paths.get(unit_id, [])
-		var start_pos: Vector2i = _proj_origin(actor)
-		var start_idx: int = live_path.find(start_pos)
-		if start_idx >= 0 and start_idx < live_path.size() - 1:
-			effective_waypoints.assign(live_path.slice(start_idx + 1))
-		elif live_path.size() >= 2:
-			effective_waypoints.assign(live_path.slice(1))
-
+	var effective_waypoints: Array[Vector2i] = waypoints.duplicate()
 	if use_skill and not AbilitySystem.target_passes_mode(actor, ability, enemy):
 		slots["invalid"] = "Invalid target for this skill."
 		return slots
