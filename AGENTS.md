@@ -78,10 +78,11 @@ Composer 2.5 draws from Cursor's **Auto + Composer pool**, not the frontier API 
    - Read-only investigation (grep/read) to draft the proposal is allowed before approval; **implementing** is not.
 3. **Commit before writing (local only).** After approval only: before the first edit, run `git status`. If the repo is dirty, stage only relevant source files and **local-commit the current state** so recovery is one revert away. Only then apply edits. Pre-edit commits do **not** require an immediate remote push unless the spread-push rules below already apply.
 4. **Targeted edits only — never full rewrites.** Use surgical replacements (`StrReplace` / partial edits) on the minimum lines needed. Do not rewrite entire files, functions, or classes when a localized diff suffices. If a task would require replacing >50% of a file, stop and defer or ask the user to rescope.
-5. **Edit size limits:**
+5. **Edit size limits** (see also `.cursor/rules/model-selection-usage.mdc` — bias Composer to preserve monthly quota):
    - **Small (default):** ≤5 lines changed, single file, no new functions or logic flows — proceed only after user approval.
    - **Small-medium (requires explicit approval):** one file, ~6–30 lines, or a small localized addition (one helper, one signal hook) — include scope in the proposal; user must approve small-medium explicitly in their reply.
-   - **Medium+:** defer to a frontier model or Antigravity with Gemini Pro.
+   - **Medium (requires explicit approval):** one file ~31–60 lines, **or** two related files with ≤60 lines total (e.g. `.gd` + `.tres`) — numbered plan required; user must approve medium scope explicitly.
+   - **Large / frontier-tier:** >60 lines, 3+ files, new subsystem/manager, sim resolution-order change, full class/phase — defer to GPT 5.6 Terra or frontier model; do not default to frontier when Terra suffices.
 6. **Changelog summary always (Composer 2.5).** Every Composer 2.5 response that includes edits, a plan, or a review must end with a **detailed Changelog** section in the format below. Read-only Q&A with no proposed changes may omit it. **Proposal-only turns** (before approval) use Changelog **Notes** to list proposed changes instead of claiming edits were made.
 7. **Remote sync after local commits (Composer 2.5).** Follow `.agents/AGENTS.md` § Git Hygiene — Remote push / account sync. Local commit frequency is unchanged; always ensure unpushed commits reach `origin` on the spread schedule (every 3rd local commit, end-of-turn if 3+ ahead, always at session end). Note push result in Changelog **Notes** when a push was attempted.
 
@@ -143,14 +144,17 @@ Every entry must show **what changed to what**. Use **exact before → after** f
 - Implementing a **user-approved** proposal with named files and acceptance criteria.
 - Small data tweaks (`.tres` value changes, one new constant, one new enum member) with no new logic flows.
 - Updating skills/rules/docs when the user provides the exact text or a narrow, explicit diff.
+- **Medium one-file edits (~31–60 lines)** with an approved numbered plan.
+- **Two related files, ≤60 lines total** (e.g. ability `.tres` + one hook in `.gd`) with an approved plan.
+- **Single Master Bible skill/passive** when data + one small hook, no new global rule, within medium limits.
+- **Scoped combat/preview/commit bugs** in ≤2 files when the plan is clear — try Composer before Terra.
 
 ### When Composer 2.5 MUST defer (tell user to switch model)
-- Any task sourced from `class_abilities.txt` (Master Bible): passives, actives, keywords, class promotions, scaling rules.
+- **Full class** or **full phase milestone** from Master Bible (whole promotion tree, “implement Phase N” end-to-end).
+- **3+ files** or **>60 lines** in one approved turn.
 - New subsystems, new managers, or changes to simulation resolution order.
-- Multi-file refactors (2+ files) unless user explicitly approves a scoped small-medium plan covering all files.
-- Co-op networking, timeline sync, or determinism-sensitive simulation logic.
-- "Implement the whole class / phase / milestone" requests without a scoped, approved sub-phase.
-- Any edit beyond small-medium scope even if the user has not yet approved expansion.
+- Co-op networking or broad determinism refactors (high blast radius).
+- Same scoped task failed twice on Composer — escalate to GPT 5.6 Terra, not frontier by default.
 
 ### Composer 2.5 execution discipline (quota + quality)
 - **Targeted edits only.** Never use `Write` to replace a whole file when `StrReplace` can patch the change. Never reformat or refactor code outside the approved plan scope.
@@ -159,7 +163,7 @@ Every entry must show **what changed to what**. Use **exact before → after** f
 - **No subagents** unless the user explicitly asks.
 - **No exploratory agent loops.** If blocked after one read pass, ask a focused question — do not brute-force with 10+ tool calls.
 - **Do not re-paste** long rule/skill text into responses; the rules are already in context.
-- **Master Bible check:** If the task touches gameplay mechanics, keywords, or class data, stop and recommend frontier-model execution before planning edits.
+- **Master Bible check:** Full class/phase Bible work → defer to Terra. Single skill/passive within medium limits (≤2 files, ≤60 lines, no new global rule) → Composer with approved plan.
 - **Code quality:** Follow global **Code Quality (All Agents)** rules — no bandaid fixes or messy shortcuts.
 
 ### Proposal format (Composer 2.5 — required before any code edit)

@@ -5,44 +5,50 @@ alwaysApply: true
 
 # Model Selection (Usage Savings Priority)
 
-**Default:** Composer 2.5. **Escalate:** GPT 5.6 Terra when Composer would defer, loop, or need multiple turns.
+**Default:** Composer 2.5. **Escalate:** GPT 5.6 Terra only when scope clearly exceeds Composer limits or needs frontier depth.
 
-Owner priority is **quota efficiency**, not “always use the bigger model.” Pick the model that finishes the job in the **fewest correct turns**.
+Owner priority is **month-long quota survival** — stretch Composer 2.5 first; Terra is a **scarce reserve**, not the default for “anything non-trivial.”
 
 ## Decision rule (apply first)
 
 ```
-Can Composer 2.5 finish in ONE approved turn — one file, ≤30 lines, no Master Bible?
+Can Composer 2.5 finish in ONE approved turn with a tight plan?
+  • ≤2 related files (e.g. `.gd` + `.tres`, or two touched functions in one file)
+  • ≤60 lines changed total
+  • No new subsystem / manager / sim resolution-order change
+  • Not a full class, full phase, or whole Master Bible rollout
   → Composer 2.5
 
 Otherwise
   → GPT 5.6 Terra (first message must include a tight numbered plan)
 ```
 
-Composer 2.5 workflow limits live in `AGENTS.md` § Composer 2.5. This rule only governs **which model to open the chat with**.
+Composer 2.5 workflow limits live in `AGENTS.md` § Composer 2.5. This rule governs **which model to open the chat with**.
 
-## Use Composer 2.5
+## Use Composer 2.5 (expanded — prefer this)
 
 | Task | Why it saves usage |
 |------|-------------------|
-| Read-only Q&A, grep, “how does X work?” | One cheap turn, no edit risk |
-| Code review, audit, diff explanation | No implementation churn |
-| Tiny fix (≤5 lines, one file, no new logic) | Designed scope |
-| Small-medium fix (~6–30 lines, one file) with clear approved plan | Surgical edit, no rewrite |
-| `.tres` / enum / constant tweak | Data-only |
+| Read-only Q&A, grep, audits, reviews | No edit risk, cheapest turns |
+| Micro fix (≤5 lines, one file) | Default Composer scope |
+| Small-medium fix (~6–30 lines, one file) | Surgical edit |
+| **Medium one-file fix (~31–60 lines)** with approved plan | Still cheaper than Terra if scoped |
+| **Two related files** (e.g. ability `.tres` + factory hook, rule + `AGENTS.md` pointer) with approved plan | Avoid Terra for routine pairs |
+| `.tres` / enum / constant / data-only skill defs | Data path, no new global rules |
+| **Single Master Bible skill/passive** when data + one small hook, ≤2 files, ≤60 lines | Not a full class rollout |
+| Scoped bug fix in combat/preview/commit (≤2 files, plan in first message) | Try Composer before Terra |
 | Apply exact doc/rule diff owner already wrote | No exploration |
 
-## Use GPT 5.6 Terra
+## Use GPT 5.6 Terra (reserve — don’t default here)
 
-| Situation | Why Terra can cost less overall |
-|-----------|----------------------------------|
-| `class_abilities.txt` / Master Bible (skills, passives, keywords, promotions) | Composer 2.5 defers — bouncing models wastes turns |
-| Multi-file change (2+ files) | One Terra turn vs many Composer propose/approve cycles |
-| Medium edit (~30–100 lines) or whole function/system | Composer caps at small-medium |
-| Architecture, new subsystem, sim resolution order | Partial Composer attempts cost more than one correct pass |
-| Determinism / timeline / co-op / preview==commit bugs | Needs depth; failed micro-patches are expensive |
-| Owner already knows the fix but scope spans files | Terra + numbered plan avoids exploratory loops |
-| Phase milestone or “implement Phase N” | Beyond Composer scope |
+| Situation | Why Terra |
+|-----------|-----------|
+| **3+ files** or **>60 lines** in one turn | Beyond relaxed Composer ceiling |
+| **Full class** or **full phase milestone** (“implement Phase N”, whole promotion tree) | Bible + architecture depth |
+| **New subsystem, manager, or sim resolution-order change** | Wrong layer for Composer |
+| **Co-op networking** or broad determinism refactor | High blast radius |
+| Composer already failed or looped twice on same scoped task | Escalate, don’t keep burning Composer turns |
+| Owner explicitly requests Terra or frontier model | Owner override |
 
 **Terra first message must include:** numbered steps, files/functions, acceptance criteria. No wandering.
 
@@ -50,23 +56,27 @@ Composer 2.5 workflow limits live in `AGENTS.md` § Composer 2.5. This rule only
 
 | Work | Model |
 |------|--------|
-| Explain existing code | Composer 2.5 |
-| Null check, signal, typo, one-file micro-fix | Composer 2.5 |
-| Read-only phase audit | Composer 2.5 |
-| Class / skill from Master Bible | GPT 5.6 Terra |
-| Multi-file combat, preview, or commit pipeline | GPT 5.6 Terra |
-| Living sandbox slice (shader + scene + toggle) | GPT 5.6 Terra |
+| Explain existing code, read-only audit | Composer 2.5 |
+| Micro fix through medium one-file fix (≤60 lines) | Composer 2.5 |
+| Two-file scoped fix (`.gd` + `.tres`, rule + doc) | Composer 2.5 |
+| Single skill/passive (data + small hook, ≤2 files) | Composer 2.5 |
+| Scoped preview/commit bug (≤2 files, clear plan) | Composer 2.5 first |
+| Full class from Master Bible | GPT 5.6 Terra |
+| 3+ files (e.g. shader + scene + toggle + controller) | GPT 5.6 Terra |
+| New manager / subsystem / resolution order | GPT 5.6 Terra |
+| “Implement Phase N” end-to-end | GPT 5.6 Terra |
 
 ## Usage traps (both models)
 
-1. **Composer proposal loops** — each follow-up “also fix…” is a new gate. Bundle scope or switch to Terra once past small-medium.
-2. **Subagents** — burn quota twice (`AGENTS.md`); avoid unless owner explicitly requests.
-3. **Terra without a plan** — one expensive wandering turn costs more than Composer read-only + Terra implement.
-4. **Wrong model for Bible work** — Composer defers; owner pays defer message + Terra anyway.
+1. **Premature Terra** — opening Terra for a 15-line two-file fix burns monthly reserve; try Composer first.
+2. **Composer proposal loops** — bundle scope in one approved plan; after **two** failed Composer attempts on same task → Terra.
+3. **Subagents** — burn quota twice; avoid unless owner explicitly requests.
+4. **Terra without a plan** — one expensive wandering turn costs more than Composer read-only + Terra implement.
 5. **Fast mode** — never for Composer 2.5 (`AGENTS.md`).
 
 ## Agent behavior
 
-- At chat start or when scope grows mid-chat, **state which model fits** and why (one sentence).
-- If Composer 2.5 and task is Terra-tier → **stop and recommend Terra** with the decision rule; do not attempt medium+ work.
-- If Terra-tier work is assigned to Composer 2.5 → recommend switching before editing.
+- **Default recommendation:** Composer 2.5 unless the decision rule clearly points to Terra.
+- At chat start, state model fit in one sentence; **bias toward Composer** when within relaxed limits.
+- If Terra-tier work lands on Composer → **attempt only if owner approves scoped plan** within limits; otherwise recommend Terra once, don’t loop defer messages.
+- Do not recommend frontier models (Gemini Pro / Sonnet) when Composer or Terra within scope suffices — frontier is **last resort** for month-long quota.
