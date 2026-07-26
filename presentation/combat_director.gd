@@ -2153,7 +2153,7 @@ func _refresh_plan() -> void:
 	var ghost_evs := _build_ghost_events(preview_board, plan_to_run, new_intents)
 
 	var sim_res := SimResult.new(preview_board)
-	sim_res.events = ghost_evs
+	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
 	_defer_plan_refresh_signals(board, plan_to_run, statuses, sim_res)
 
 
@@ -2200,7 +2200,7 @@ func _refresh_plan_movement_only(plan: Timeline) -> void:
 	# For movement only refresh, we can just use the events we just simulated!
 	# But wait, we need the enemy intent ghost events too for the preview!
 	var ghost_evs := _build_ghost_events(preview_board, plan, new_intents)
-	sim_res.events = ghost_evs
+	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
 	
 	var statuses := PackedStringArray()
 	statuses.resize(maxi(plan.size(), 1))
@@ -2277,6 +2277,24 @@ func _build_ghost_events(sim: BoardState, timeline: Timeline, intents: Array[Int
 	ResolutionPipeline.resolve_pending_pushes(sim, evs)
 	
 	return evs
+
+
+## Player-turn sim events (incl. UNIT_PUSHED) + enemy ghost tail for overlay path building.
+func _preview_events_for_overlay(player_turn_events: Array, ghost_events: Array) -> Array:
+	var out: Array = []
+	for raw: Variant in player_turn_events:
+		if raw is SimEvent:
+			out.append(raw)
+	var include_enemy: bool = false
+	for raw: Variant in ghost_events:
+		if not raw is SimEvent:
+			continue
+		var event: SimEvent = raw as SimEvent
+		if event.type == GameEnums.SimEventType.ENEMY_PHASE_BEGAN:
+			include_enemy = true
+		if include_enemy:
+			out.append(event)
+	return out
 
 func _capture_turn_start() -> void:
 	turn_start_board = base_board.clone()

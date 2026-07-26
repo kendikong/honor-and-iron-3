@@ -25,6 +25,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_action_range_hidden_after_premove_mp(failures)
 	_test_hover_cursor_matches_click_commit_slots(failures)
 	_test_enemy_target_params_ignore_pseudo_drag(failures)
+	_test_shield_bash_preview_pushes(failures)
 
 
 static func _bowling_charge_arm_fixture() -> Dictionary:
@@ -1009,3 +1010,55 @@ static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]
 		failures.append(
 			"PlanningInputTest: affordable run+skill should keep painted route on enemy hover",
 		)
+
+
+static func _test_shield_bash_preview_pushes(failures: Array[String]) -> void:
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			board.set_tile_terrain(Vector2i(x, y), plain)
+	var bash := AbilityData.new()
+	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	bash.action_point_cost = 1
+	bash.range_tiles = 1
+	bash.effects = [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
+		DataLibrary._effect(GameEnums.EffectType.PUSH, 2),
+	]
+	var knight := UnitState.new()
+	knight.id = 1
+	knight.team = GameEnums.Team.PLAYER
+	knight.position = Vector2i(1, 2)
+	knight.movement.points_left = 4
+	knight.movement.max_points = 4
+	knight.ability.points_left = 1
+	knight.ability.max_points = 1
+	knight.active_abilities = [bash]
+	var enemy := UnitState.new()
+	enemy.id = 2
+	enemy.team = GameEnums.Team.ENEMY
+	enemy.position = Vector2i(3, 2)
+	board.units = [knight, enemy]
+	GridSystem.set_occupant(board, knight.position, knight.id)
+	GridSystem.set_occupant(board, enemy.position, enemy.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	var actions: Array[TimelineAction] = [
+		TimelineAction.make_ability(
+			1, bash, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION,
+		),
+	]
+	var res: Dictionary = director.preview_actions(1, actions)
+	var preview := CombatPlanningPreview.new()
+	preview.apply_result(res, director)
+	var pushes: Array = preview.preview_pushes.get(enemy.id, [])
+	if pushes.is_empty():
+		failures.append("PlanningInputTest: Shield Bash preview must populate preview_pushes for target")

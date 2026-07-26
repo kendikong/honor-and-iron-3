@@ -1271,16 +1271,40 @@ func _draw_preview_arrows() -> void:
 
 
 func _draw_forced_movement_arrows() -> void:
-	var prev: CombatPlanningPreview = _active_preview()
-	if _board == null or prev.preview_board == null:
+	if _board == null:
 		return
-	for unit: UnitState in _board.units:
-		if not unit.is_alive() or not _intent_visible(unit):
+	var sources: Array[CombatPlanningPreview] = []
+	if _live_preview.preview_board != null:
+		sources.append(_live_preview)
+	if (
+		_committed_preview.preview_board != null
+		and _committed_preview != _live_preview
+		and (
+			_planning_input == null
+			or not _planning_input.is_live_preview_active()
+		)
+	):
+		sources.append(_committed_preview)
+	if sources.is_empty() and _committed_preview.preview_board != null:
+		sources.append(_committed_preview)
+	var drawn: Dictionary = {}
+	for prev: CombatPlanningPreview in sources:
+		if prev.preview_board == null:
 			continue
-		var pushes: Array = prev.preview_pushes.get(unit.id, [])
-		for push: Variant in pushes:
-			if push is Array and push.size() >= 2:
-				_draw_push_arrow(push[0], push[1], unit)
+		for unit_id: Variant in prev.preview_pushes.keys():
+			var pushes: Array = prev.preview_pushes.get(unit_id, [])
+			for push: Variant in pushes:
+				if not push is Array or push.size() < 2:
+					continue
+				var from_cell: Vector2i = push[0] as Vector2i
+				var to_cell: Vector2i = push[1] as Vector2i
+				var key: String = "%d|%s|%s" % [int(unit_id), str(from_cell), str(to_cell)]
+				if drawn.has(key):
+					continue
+				drawn[key] = true
+				var unit: UnitState = _board.get_unit_by_id(int(unit_id))
+				if unit != null and unit.is_alive():
+					_draw_push_arrow(from_cell, to_cell, unit)
 
 
 func _interaction_move_hover_active(unit_id: int) -> bool:
