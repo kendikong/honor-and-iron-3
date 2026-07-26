@@ -1122,8 +1122,16 @@ func _commit_interaction_params(
 		var target: UnitState = _director.board.get_unit_by_id(attack_target_id)
 		if target != null:
 			commit_cell = target.position
-			## Enemy unit targeting: minimal approach — never pseudo-drag waypoints or hover route.
 			preferred = target.position
+			if _drag_route_commits_active():
+				var actor: UnitState = _proj_unit(_director.selected_unit_id)
+				var ability: AbilityData = _selected_ability_data(actor)
+				var route_waypoints: Array[Vector2i] = _route_waypoints()
+				if _enemy_hover_respects_painted_route(actor, target, ability, route_waypoints):
+					waypoints = route_waypoints
+					legal_moves = _snapshot_drag_legal_move_tiles()
+					if _drag_last_free != commit_cell:
+						preferred = _drag_last_free
 	elif _drag_route_commits_active():
 		waypoints = _route_waypoints()
 		legal_moves = _snapshot_drag_legal_move_tiles()
@@ -1151,6 +1159,23 @@ func _final_commit_slots_for_interaction(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
 	)
 	_strip_unaffordable_premove_pairs(slots, unit_id, cell, waypoints)
+	var hover_enemy: UnitState = _resolve_hover_unit_at(cell)
+	if (
+		hover_enemy != null
+		and hover_enemy.is_enemy()
+		and not waypoints.is_empty()
+		and (slots.get("action", []) as Array).is_empty()
+		and not (slots.get("pre", []) as Array).is_empty()
+	):
+		var actor := _proj_unit(unit_id)
+		var ability := _selected_ability_data(actor)
+		if actor != null and not _enemy_hover_respects_painted_route(
+			actor, hover_enemy, ability, waypoints,
+		):
+			slots = _build_commit_slots_at_cell(
+				unit_id, cell, [], legal_move_tiles, hover_enemy.position, face_dir,
+			)
+			_strip_unaffordable_premove_pairs(slots, unit_id, cell, [])
 	return _finalize_commit_slots(slots, unit_id)
 
 
@@ -2091,6 +2116,17 @@ func _can_pair_run_move_with_ability(
 	return AbilitySystem.can_afford_run_for_commit(actor, ability)
 
 
+func _enemy_hover_respects_painted_route(
+	actor: UnitState,
+	enemy: UnitState,
+	ability: AbilityData,
+	route_waypoints: Array[Vector2i],
+) -> bool:
+	if actor == null or enemy == null or route_waypoints.is_empty():
+		return false
+	return _can_pair_run_move_with_ability(actor, enemy.position, route_waypoints, ability)
+
+
 func _append_move_to_commit_slots(
 	slots: Dictionary,
 	unit_id: int,
@@ -2409,9 +2445,9 @@ func _build_enemy_commit_slots(
 			return slots
 		if approach != actor.position:
 			var board: BoardState = _proj()
-			## Match commit_from_slots: empty waypoints — pathfind minimal origin→approach at sim.
-			## Do not reuse hover pseudo-drag waypoints or stale live_path.
 			var approach_path: Array[Vector2i] = []
+			if _enemy_hover_respects_painted_route(actor, enemy, ability, waypoints):
+				approach_path = waypoints.duplicate()
 			slots["pre"].append(
 				_director.make_planning_move_action(
 					unit_id,
@@ -2551,8 +2587,15 @@ func _final_commit_slots_for_click_at_cell(
 					int(params.get("face_dir", -1)),
 				)
 	if unit_at != null and unit_at.is_enemy():
+		var params: Dictionary = _commit_interaction_params(cell, unit_at.id)
 		return _slots_with_facing_for_commit(
-			unit_id, unit_at.position, local, [], [], unit_at.position,
+			unit_id,
+			params.cell,
+			local,
+			params.waypoints,
+			params.legal_move_tiles,
+			params.preferred,
+			int(params.get("face_dir", -1)),
 		)
 	var params: Dictionary = _commit_interaction_params(cell, -1)
 	return _slots_with_facing_for_commit(

@@ -960,10 +960,20 @@ static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]
 	for y: int in range(board.grid_size.y):
 		for x: int in range(board.grid_size.x):
 			board.set_tile_terrain(Vector2i(x, y), plain)
+	var bash := AbilityData.new()
+	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	bash.action_point_cost = 1
+	bash.range_tiles = 1
+	bash.effects = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
 	knight.position = Vector2i(0, 2)
+	knight.movement.points_left = 4
+	knight.movement.max_points = 4
+	knight.ability.points_left = 1
+	knight.ability.max_points = 1
+	knight.active_abilities = [bash]
 	var enemy := UnitState.new()
 	enemy.id = 2
 	enemy.team = GameEnums.Team.ENEMY
@@ -972,6 +982,12 @@ static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]
 	GridSystem.set_occupant(board, knight.position, knight.id)
 	GridSystem.set_occupant(board, enemy.position, enemy.id)
 	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	director.auto_run = true
 	input._director = director
 	input._drag_unit_id = 1
 	input._drag_route = [knight.position, Vector2i(1, 2), Vector2i(2, 2), Vector2i(3, 2)]
@@ -979,10 +995,17 @@ static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]
 	var params: Dictionary = input._commit_interaction_params(enemy.position, enemy.id)
 	if not (params.waypoints as Array).is_empty():
 		failures.append(
-			"PlanningInputTest: enemy target params must not include pseudo-drag waypoints",
+			"PlanningInputTest: unaffordable run+skill must correct enemy params (drop painted route)",
 		)
 	if params.preferred != enemy.position:
 		failures.append(
-			"PlanningInputTest: enemy target preferred must be enemy tile, not hover route (got %s)"
+			"PlanningInputTest: corrected enemy target preferred must be enemy tile (got %s)"
 			% str(params.preferred),
+		)
+	knight.ability.points_left = 2
+	knight.ability.max_points = 2
+	params = input._commit_interaction_params(enemy.position, enemy.id)
+	if (params.waypoints as Array).is_empty():
+		failures.append(
+			"PlanningInputTest: affordable run+skill should keep painted route on enemy hover",
 		)
