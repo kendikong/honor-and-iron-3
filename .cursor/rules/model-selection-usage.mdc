@@ -1,0 +1,72 @@
+---
+description: Usage-first model choice — Composer 2.5 default, GPT 5.6 Terra escalation
+alwaysApply: true
+---
+
+# Model Selection (Usage Savings Priority)
+
+**Default:** Composer 2.5. **Escalate:** GPT 5.6 Terra when Composer would defer, loop, or need multiple turns.
+
+Owner priority is **quota efficiency**, not “always use the bigger model.” Pick the model that finishes the job in the **fewest correct turns**.
+
+## Decision rule (apply first)
+
+```
+Can Composer 2.5 finish in ONE approved turn — one file, ≤30 lines, no Master Bible?
+  → Composer 2.5
+
+Otherwise
+  → GPT 5.6 Terra (first message must include a tight numbered plan)
+```
+
+Composer 2.5 workflow limits live in `AGENTS.md` § Composer 2.5. This rule only governs **which model to open the chat with**.
+
+## Use Composer 2.5
+
+| Task | Why it saves usage |
+|------|-------------------|
+| Read-only Q&A, grep, “how does X work?” | One cheap turn, no edit risk |
+| Code review, audit, diff explanation | No implementation churn |
+| Tiny fix (≤5 lines, one file, no new logic) | Designed scope |
+| Small-medium fix (~6–30 lines, one file) with clear approved plan | Surgical edit, no rewrite |
+| `.tres` / enum / constant tweak | Data-only |
+| Apply exact doc/rule diff owner already wrote | No exploration |
+
+## Use GPT 5.6 Terra
+
+| Situation | Why Terra can cost less overall |
+|-----------|----------------------------------|
+| `class_abilities.txt` / Master Bible (skills, passives, keywords, promotions) | Composer 2.5 defers — bouncing models wastes turns |
+| Multi-file change (2+ files) | One Terra turn vs many Composer propose/approve cycles |
+| Medium edit (~30–100 lines) or whole function/system | Composer caps at small-medium |
+| Architecture, new subsystem, sim resolution order | Partial Composer attempts cost more than one correct pass |
+| Determinism / timeline / co-op / preview==commit bugs | Needs depth; failed micro-patches are expensive |
+| Owner already knows the fix but scope spans files | Terra + numbered plan avoids exploratory loops |
+| Phase milestone or “implement Phase N” | Beyond Composer scope |
+
+**Terra first message must include:** numbered steps, files/functions, acceptance criteria. No wandering.
+
+## Honor & Iron quick map
+
+| Work | Model |
+|------|--------|
+| Explain existing code | Composer 2.5 |
+| Null check, signal, typo, one-file micro-fix | Composer 2.5 |
+| Read-only phase audit | Composer 2.5 |
+| Class / skill from Master Bible | GPT 5.6 Terra |
+| Multi-file combat, preview, or commit pipeline | GPT 5.6 Terra |
+| Living sandbox slice (shader + scene + toggle) | GPT 5.6 Terra |
+
+## Usage traps (both models)
+
+1. **Composer proposal loops** — each follow-up “also fix…” is a new gate. Bundle scope or switch to Terra once past small-medium.
+2. **Subagents** — burn quota twice (`AGENTS.md`); avoid unless owner explicitly requests.
+3. **Terra without a plan** — one expensive wandering turn costs more than Composer read-only + Terra implement.
+4. **Wrong model for Bible work** — Composer defers; owner pays defer message + Terra anyway.
+5. **Fast mode** — never for Composer 2.5 (`AGENTS.md`).
+
+## Agent behavior
+
+- At chat start or when scope grows mid-chat, **state which model fits** and why (one sentence).
+- If Composer 2.5 and task is Terra-tier → **stop and recommend Terra** with the decision rule; do not attempt medium+ work.
+- If Terra-tier work is assigned to Composer 2.5 → recommend switching before editing.
