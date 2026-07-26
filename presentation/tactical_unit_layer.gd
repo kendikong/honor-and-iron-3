@@ -510,6 +510,12 @@ func _sync_actors() -> void:
 		if not live.has(id) and not _pending_death.has(id):
 			_remove_actor(int(id))
 	_refresh_unit_glows()
+	if _map_view != null:
+		var shadow_settings: EffectsSettings = _map_view.get_effects_settings()
+		if shadow_settings != null and (
+			shadow_settings.oblique_contact_shadows or shadow_settings.cloud_shadows
+		):
+			sync_all_contact_shadows(shadow_settings)
 
 
 func _record_attack_source(event: SimEvent) -> void:
@@ -624,10 +630,10 @@ func _ensure_actor(unit: UnitState) -> void:
 	)
 	actor.apply_recipe(recipe)
 	actor.set_display_scale(_display_scale())
-	actor.rebuild_contact_shadow(_map_view.get_effects_settings())
 	_actors[unit.id] = actor
 	_position_actor(unit.id, unit.position)
 	_apply_facing(unit.id, unit.facing)
+	actor.rebuild_contact_shadow(_map_view.get_effects_settings())
 	_update_depth(unit.id)
 
 

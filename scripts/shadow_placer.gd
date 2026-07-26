@@ -135,9 +135,6 @@ static func apply(
 	settings: EffectsSettings = null,
 	scatter: TileMapLayer = null,
 ) -> void:
-	_shadow_layer_cache.clear()
-	clear_bake_cache()
-	clear_immediate(shadow_root)
 	if grid == null or shadow_root == null:
 		return
 	_ground_layer = ground
@@ -164,15 +161,14 @@ static func apply(
 					)
 	_collect_props_shadow_layers(layers, overlay, provenance, settings)
 	_collect_scatter_pebble_shadow_layers(layers, scatter, provenance, settings)
+	if layers.is_empty():
+		_apply_empty_caster_map_shadow(shadow_root, settings)
+		return
+	_shadow_layer_cache.clear()
+	clear_bake_cache()
+	clear_immediate(shadow_root)
 	_cache_shadow_layers(layers)
 	_ensure_ground_shadow_rect(shadow_root, settings)
-	if _shadow_layer_cache.is_empty():
-		_refresh_map_oblique_overlay(shadow_root)
-		_sync_ground_shadow_uniforms(settings, shadow_root)
-		if shadow_root != null:
-			shadow_root.visible = true
-			shadow_root.process_mode = Node.PROCESS_MODE_INHERIT
-		return
 	var apply_presence: float = WeatherBus.shadow_presence_factor()
 	var apply_contrast: float = WeatherBus.shadow_contrast_factor()
 	if not _geometry_blocked(apply_presence, apply_contrast, settings):
@@ -184,6 +180,18 @@ static func apply(
 			_cycle_bake_signature(settings, apply_contrast),
 		)
 	sync_cycle(shadow_root, settings)
+
+
+## Grass-only / prop-free maps — ground multiply + unit feet, no static caster layers.
+## Must not clear_immediate: process_frame may call apply every frame when layer cache is empty.
+static func _apply_empty_caster_map_shadow(shadow_root: Node2D, settings: EffectsSettings = null) -> void:
+	_shadow_layer_cache.clear()
+	_ensure_ground_shadow_rect(shadow_root, settings)
+	_refresh_map_oblique_overlay(shadow_root)
+	_sync_ground_shadow_uniforms(settings, shadow_root)
+	if shadow_root != null:
+		shadow_root.visible = true
+		shadow_root.process_mode = Node.PROCESS_MODE_INHERIT
 
 
 static func sync_cycle(shadow_root: Node2D, settings: EffectsSettings = null) -> void:

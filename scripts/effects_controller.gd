@@ -170,8 +170,6 @@ func process_frame(delta: float) -> void:
 	var want_env_receive: bool = (
 		settings.oblique_contact_shadows or settings.cloud_shadows
 	)
-	if want_env_receive and _character_contact_shadow_sync.is_valid():
-		_character_contact_shadow_sync.call(settings)
 	var want_ground_shadows: bool = want_env_receive
 	if want_ground_shadows and _shadow_sprites != null:
 		ShadowPlacer.sync_ground_shadow_drift(settings, _shadow_sprites)
@@ -185,6 +183,8 @@ func process_frame(delta: float) -> void:
 			_apply_oblique_contact_shadows(_last_grid)
 		else:
 			ShadowPlacer.sync_cycle(_shadow_sprites, settings)
+	if want_env_receive and _character_contact_shadow_sync.is_valid():
+		_character_contact_shadow_sync.call(settings)
 
 
 func set_character_contact_shadow_sync(callback: Callable) -> void:
