@@ -726,6 +726,10 @@ func on_hover_moved(cell: Vector2i) -> void:
 			if p_unit != null:
 				var ability := _selected_ability_data(p_unit)
 				var is_awaiting_move = awaiting_targeting_active() and ability != null and AbilitySystem.ability_has_movement_effect(ability)
+				var occ := _director.board.get_unit_at(cell)
+				if occ == null or occ.id == p_unit.id:
+					if cell == p_unit.position or (_planning != null and _planning.is_hover_move_tile(cell)):
+						_drag_last_free = cell
 				if _basic_move_allowed() or is_awaiting_move:
 					if _drag_route.is_empty():
 						_drag_unit_id = _director.selected_unit_id
@@ -1166,6 +1170,14 @@ func _strip_unaffordable_premove_pairs(
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return
+	var pair_cell: Vector2i = cell
+	var pair_waypoints: Array[Vector2i] = waypoints
+	var pre_moves: Array = slots.get("pre", [])
+	if not pre_moves.is_empty() and pre_moves[0] is TimelineAction:
+		var pre_action: TimelineAction = pre_moves[0] as TimelineAction
+		if pre_action.type == GameEnums.ActionType.MOVE:
+			pair_cell = pre_action.target_coord
+			pair_waypoints = pre_action.waypoints
 	var kept: Array = []
 	for raw: Variant in actions:
 		if raw is TimelineAction:
@@ -1173,7 +1185,7 @@ func _strip_unaffordable_premove_pairs(
 			if (
 				action.type == GameEnums.ActionType.ABILITY
 				and action.ability != null
-				and not _can_pair_run_move_with_ability(actor, cell, waypoints, action.ability)
+				and not _can_pair_run_move_with_ability(actor, pair_cell, pair_waypoints, action.ability)
 			):
 				continue
 		kept.append(raw)
@@ -2507,6 +2519,47 @@ func _composite_cursors_enabled() -> bool:
 	return auto_use_skill_after_move and not force_basic_movement
 
 
+func _resolved_attack_target_id_for_hover(cell: Vector2i, actor: UnitState) -> int:
+	if actor == null:
+		return -1
+	if _intent_state != null and _intent_state.hover_coord == cell:
+		var from_intent: int = _hover_attack_target_id()
+		if from_intent >= 0:
+			return from_intent
+	if _director != null and _director.board != null and _director.board.is_in_bounds(cell):
+		var occ: UnitState = _director.board.get_unit_at(cell)
+		if occ != null:
+			return _resolve_hover_attack_target(actor, occ)
+	return -1
+
+
+func _cursor_icon_for_hover_interaction(cell: Vector2i, unit: UnitState) -> String:
+	if unit == null:
+		return ""
+	var target_id: int = _resolved_attack_target_id_for_hover(cell, unit)
+	var params: Dictionary = _commit_interaction_params(cell, target_id)
+	var face_dir: int = int(params.get("face_dir", -1))
+	if _intent_snapshot_valid:
+		var snapshot_key: String = _intent_snapshot_key_for(
+			unit.id,
+			params.cell,
+			params.waypoints,
+			params.legal_move_tiles,
+			params.preferred,
+			face_dir,
+		)
+		if _intent_snapshot_key == snapshot_key:
+			return _cursor_icon_from_commit_slots(_intent_snapshot_slots, unit)
+	return _hover_icon_for_cell(
+		unit,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+		face_dir,
+	)
+
+
 func _cursor_icon_for_commit_at_cell(
 	unit: UnitState,
 	cell: Vector2i,
@@ -2594,20 +2647,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var p_unit := _proj_unit(sel_id)
 	if p_unit == null:
 		return ""
-	var target_id: int = _hover_attack_target_id()
-	if target_id < 0 and _director.board.is_in_bounds(cell):
-		var occ: UnitState = _director.board.get_unit_at(cell)
-		if occ != null:
-			target_id = _resolve_hover_attack_target(p_unit, occ)
-	var params: Dictionary = _commit_interaction_params(cell, target_id)
-	return _hover_icon_for_cell(
-		p_unit,
-		params.cell,
-		params.waypoints,
-		params.legal_move_tiles,
-		params.preferred,
-		int(params.get("face_dir", -1)),
-	)
+	return _cursor_icon_for_hover_interaction(cell, p_unit)
 
 
 func _resolve_hover_unit_at(cell: Vector2i) -> UnitState:
