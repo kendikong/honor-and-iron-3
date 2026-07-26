@@ -635,8 +635,10 @@ func _refresh_info() -> void:
 		)
 		var u: UnitState = null
 		var info_board: BoardState = null
-		## Always selection-preview AP from committed plan — live hover must not flip 1/1↔0/1.
-		var ap_override: int = _selection_preview_ap_left(committed)
+		## Planning AP from canonical intent economy (live sim, run premove, skill scroll).
+		var ap_override: int = -1
+		if _planning_input != null and _selected_id >= 0:
+			ap_override = _planning_input.planning_display_ap_left(_selected_id)
 		if use_live:
 			u = live_board.get_unit_by_id(_selected_id)
 			info_board = live_board
@@ -672,7 +674,7 @@ func _refresh_info() -> void:
 		]
 
 
-## Committed-plan AP minus selected skill cost (selection preview — not a live hover spend).
+## Committed-plan AP minus selected skill cost (skill button affordability only).
 func _selection_preview_ap_left(unit: UnitState) -> int:
 	if unit == null:
 		return -1

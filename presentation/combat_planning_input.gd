@@ -1867,6 +1867,61 @@ func unit_move_requires_run(unit_id: int) -> bool:
 	return false
 
 
+## End tile for the current move intent (live path, drag route, or hover).
+func move_intent_destination(unit_id: int) -> Vector2i:
+	if _director == null or unit_id < 0:
+		return Vector2i(-999, -999)
+	var live_path: Array = preview_state.preview_paths.get(unit_id, [])
+	if live_path.size() >= 2:
+		return live_path[live_path.size() - 1] as Vector2i
+	if dragging and _drag_unit_id == unit_id and not _drag_route.is_empty():
+		return _drag_route[_drag_route.size() - 1]
+	if unit_id == _director.selected_unit_id:
+		var hover: Vector2i = get_hover_tile_for_ui()
+		if _director.board != null and _director.board.is_in_bounds(hover):
+			return hover
+	return Vector2i(-999, -999)
+
+
+## Single AP read for planning UI — delegates to AbilitySystem.planning_display_ap_left.
+func planning_display_ap_left(unit_id: int) -> int:
+	if _director == null or unit_id < 0:
+		return -1
+	var committed: UnitState = _proj_unit(unit_id)
+	if committed == null and _director.board != null:
+		committed = _director.board.get_unit_by_id(unit_id)
+	if committed == null:
+		return -1
+	var selected_ability: AbilityData = null
+	if unit_id == _director.selected_unit_id and _director.selected_ability_index >= 0:
+		selected_ability = _selected_ability_data(committed)
+	var live_actor: UnitState = null
+	var live_valid: bool = false
+	if is_live_preview_active() and not drag_preview_failed and preview_state.preview_board != null:
+		live_actor = preview_state.preview_board.get_unit_by_id(unit_id)
+		if live_actor != null:
+			live_valid = true
+	var auto_run_scroll: bool = (
+		auto_run
+		and selected_ability != null
+		and selected_ability.is_universal_run()
+	)
+	var auto_run_move: bool = false
+	if unit_id == _director.selected_unit_id:
+		auto_run_move = extended_move_budget_active(committed)
+	return AbilitySystem.planning_display_ap_left(
+		_proj(),
+		committed,
+		selected_ability,
+		live_actor,
+		live_valid,
+		unit_move_requires_run(unit_id),
+		auto_run_scroll,
+		auto_run_move,
+		move_intent_destination(unit_id),
+	)
+
+
 func extended_move_budget_active(unit: UnitState = null) -> bool:
 	return _run_mode_selected(unit) or auto_run_movement_active(unit)
 

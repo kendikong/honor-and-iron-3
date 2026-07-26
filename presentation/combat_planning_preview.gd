@@ -5,6 +5,7 @@ extends RefCounted
 
 var predicted_hp: Dictionary = {}
 var predicted_armor: Dictionary = {}
+var predicted_ap: Dictionary = {}
 var preview_paths: Dictionary = {}
 var preview_splits: Dictionary = {}
 var preview_post_splits: Dictionary = {}
@@ -17,6 +18,7 @@ var live_intents: Array = []
 func clear_interaction() -> void:
 	predicted_hp.clear()
 	predicted_armor.clear()
+	predicted_ap.clear()
 	live_intents.clear()
 
 
@@ -39,15 +41,18 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	var base_board: BoardState = director.base_board if director.base_board != null else director.board
 	predicted_hp.clear()
 	predicted_armor.clear()
+	predicted_ap.clear()
 	if base_board != null:
 		for unit: UnitState in base_board.units:
 			var pv := temp_board.get_unit_by_id(unit.id)
 			if pv != null and pv.is_alive():
 				predicted_hp[unit.id] = pv.health.current_hp
 				predicted_armor[unit.id] = pv.armor
+				predicted_ap[unit.id] = pv.ability.points_left
 			else:
 				predicted_hp[unit.id] = 0
 				predicted_armor[unit.id] = 0
+				predicted_ap[unit.id] = 0
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
 	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes, preview_post_splits, action_splits)
@@ -139,9 +144,11 @@ static func apply_movement_result(
 			if pv != null and pv.is_alive():
 				preview.predicted_hp[unit.id] = pv.health.current_hp
 				preview.predicted_armor[unit.id] = pv.armor
+				preview.predicted_ap[unit.id] = pv.ability.points_left
 			else:
 				preview.predicted_hp[unit.id] = 0
 				preview.predicted_armor[unit.id] = 0
+				preview.predicted_ap[unit.id] = 0
 	if director != null:
 		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
 
@@ -170,9 +177,11 @@ static func from_sim_result(
 			if pv != null and pv.is_alive():
 				preview.predicted_hp[unit.id] = pv.health.current_hp
 				preview.predicted_armor[unit.id] = pv.armor
+				preview.predicted_ap[unit.id] = pv.ability.points_left
 			else:
 				preview.predicted_hp[unit.id] = 0
 				preview.predicted_armor[unit.id] = 0
+				preview.predicted_ap[unit.id] = 0
 	if director != null:
 		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
 	return preview
@@ -256,9 +265,14 @@ func get_predicted_armor(unit_id: int, current: int) -> int:
 	return int(predicted_armor.get(unit_id, current))
 
 
+func get_predicted_ap(unit_id: int, current: int) -> int:
+	return int(predicted_ap.get(unit_id, current))
+
+
 func copy_from(other: CombatPlanningPreview) -> void:
 	predicted_hp = other.predicted_hp.duplicate()
 	predicted_armor = other.predicted_armor.duplicate()
+	predicted_ap = other.predicted_ap.duplicate()
 	live_intents = other.live_intents.duplicate()
 	preview_board = other.preview_board
 	preview_paths = other.preview_paths.duplicate(true)

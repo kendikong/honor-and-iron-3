@@ -452,6 +452,17 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 		),
 		col,
 	)
+	var ap_left: int = unit.ability.points_left
+	if _planning_input != null:
+		var display_ap: int = _planning_input.planning_display_ap_left(unit.id)
+		if display_ap >= 0:
+			ap_left = display_ap
+	_add_stat_chip(
+		chips,
+		"%s%d/%d" % [PlanningIcons.STAT_AP, ap_left, unit.ability.max_points],
+		"Action Points — remaining / maximum per turn",
+		col,
+	)
 
 
 func _add_stat_chip(row: HBoxContainer, text: String, tooltip: String, col: Color) -> void:

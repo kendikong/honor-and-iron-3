@@ -26,6 +26,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_hover_cursor_matches_click_commit_slots(failures)
 	_test_enemy_target_params_ignore_pseudo_drag(failures)
 	_test_shield_bash_preview_pushes(failures)
+	_test_planning_display_ap_run_intent(failures)
 
 
 static func _bowling_charge_arm_fixture() -> Dictionary:
@@ -1062,3 +1063,54 @@ static func _test_shield_bash_preview_pushes(failures: Array[String]) -> void:
 	var pushes: Array = preview.preview_pushes.get(enemy.id, [])
 	if pushes.is_empty():
 		failures.append("PlanningInputTest: Shield Bash preview must populate preview_pushes for target")
+
+
+static func _test_planning_display_ap_run_intent(failures: Array[String]) -> void:
+	var setup: Dictionary = _plain_board_with_unit(Vector2i(0, 2), 0, 2)
+	var board: BoardState = setup["board"] as BoardState
+	var unit: UnitState = setup["unit"] as UnitState
+	var run_tile := Vector2i(5, 2)
+	if not AbilitySystem.movement_requires_run(board, unit, run_tile, []):
+		failures.append("PlanningInputTest: run-intent AP setup should require run")
+	var implicit_ap: int = AbilitySystem.planning_display_ap_left(
+		board,
+		unit,
+		null,
+		null,
+		false,
+		true,
+		false,
+		true,
+		run_tile,
+	)
+	if implicit_ap != 1:
+		failures.append(
+			"PlanningInputTest: run intent should show 1 AP left (2 - run), got %d" % implicit_ap,
+		)
+	var skill := AbilityData.new()
+	skill.kind = GameEnums.AbilityKind.CLASS_SKILL
+	skill.action_point_cost = 1
+	var paired_ap: int = AbilitySystem.planning_display_ap_left(
+		board,
+		unit,
+		skill,
+		null,
+		false,
+		true,
+		false,
+		true,
+		run_tile,
+	)
+	if paired_ap != 0:
+		failures.append(
+			"PlanningInputTest: run + skill scroll should show 0 AP left, got %d" % paired_ap,
+		)
+	var live_unit: UnitState = unit.clone()
+	live_unit.ability.points_left = 1
+	var live_ap: int = AbilitySystem.planning_display_ap_left(
+		board, unit, null, live_unit, true, false, false, false, run_tile,
+	)
+	if live_ap != 1:
+		failures.append(
+			"PlanningInputTest: live preview AP should mirror sim board, got %d" % live_ap,
+		)

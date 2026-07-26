@@ -504,6 +504,45 @@ static func project_actor_after_premove(
 	return projected.clone() if projected != null else null
 
 
+## Canonical planning UI AP — live sim intent, implicit premove/run, then skill scroll preview.
+static func planning_display_ap_left(
+	board: BoardState,
+	committed_actor: UnitState,
+	selected_ability: AbilityData = null,
+	live_actor: UnitState = null,
+	live_preview_valid: bool = false,
+	move_intent_requires_run: bool = false,
+	auto_run_skill_scroll: bool = false,
+	auto_run_move_active: bool = false,
+	intent_premove_cell: Vector2i = Vector2i(-999, -999),
+) -> int:
+	if committed_actor == null:
+		return -1
+	if live_preview_valid and live_actor != null:
+		return live_actor.ability.points_left
+	var ap_left: int = committed_actor.ability.points_left
+	var economy_actor: UnitState = committed_actor
+	if (
+		move_intent_requires_run
+		and auto_run_move_active
+		and board != null
+		and board.is_in_bounds(intent_premove_cell)
+		and intent_premove_cell != committed_actor.position
+	):
+		var after_premove: UnitState = project_actor_after_premove(
+			board, committed_actor, intent_premove_cell, true,
+		)
+		if after_premove != null:
+			ap_left = after_premove.ability.points_left
+			economy_actor = after_premove
+	if selected_ability != null and not auto_run_skill_scroll:
+		ap_left = maxi(
+			0,
+			ap_left - get_action_point_cost(economy_actor, selected_ability, board),
+		)
+	return ap_left
+
+
 ## Auto-run / run-move commit: Run AP plus any paired action ability must fit the AP budget.
 static func can_afford_run_for_commit(actor: UnitState, paired_ability: AbilityData = null) -> bool:
 	if not can_afford_run(actor):
