@@ -1,8 +1,22 @@
+class_name OptionsScreen
 extends Control
 
-## Main-menu options — all tabs wired to GameSettings + EffectsSettings (no placeholders).
+## Unified settings — main menu scene and in-game overlay share this UI.
 
 signal close_requested
+signal map_regenerate_requested
+signal map_reseed_requested
+signal map_toggle_center_requested
+signal map_resize_requested(delta: int)
+signal map_cycle_biome_requested
+signal map_tile_labels_toggled(pressed: bool)
+signal map_boredom_atmosphere_toggled(pressed: bool)
+signal map_boredom_water_toggled(pressed: bool)
+signal character_gen_changed
+
+var overlay_mode: bool = false
+var hide_developer_tab: bool = false
+var show_sandbox_tools: bool = false
 
 const _EFFECT_TOGGLES: Array[Dictionary] = [
 	{"key": "wind_field", "label": "Wind field"},
@@ -67,20 +81,83 @@ var _dev_shadow_checks: Dictionary = {}
 var _dev_tile_labels_check: CheckButton
 var _dev_boredom_atmo_check: CheckButton
 var _dev_boredom_water_check: CheckButton
+var _developer_tab_root: MarginContainer
+var _sandbox_tools_box: VBoxContainer
+var _sandbox_tile_labels_check: CheckButton
+var _sandbox_boredom_atmo_check: CheckButton
+var _sandbox_boredom_water_check: CheckButton
+var _char_profile: CharacterGenProfile
+var _char_scale_slider: HSlider
+var _char_scale_label: Label
+var _on_applied: Callable
+var _on_effects_changed: Callable
+var _pending_settings: GameSettings
+var _pending_effects: EffectsSettings
+
+
+func setup(
+	settings: GameSettings,
+	on_applied: Callable = Callable(),
+	effects: EffectsSettings = null,
+	on_effects_changed: Callable = Callable(),
+) -> void:
+	_pending_settings = settings
+	_on_applied = on_applied
+	_pending_effects = effects
+	_on_effects_changed = on_effects_changed
+	if is_node_ready() and _game_settings != settings:
+		_game_settings = settings
+		if effects != null:
+			_effects_settings = effects
+
+
+func setup_character_gen(profile: CharacterGenProfile) -> void:
+	_char_profile = profile
+	if _char_scale_slider != null and profile != null:
+		_char_scale_slider.set_block_signals(true)
+		_char_scale_slider.value = profile.display_scale
+		_on_char_scale_changed(profile.display_scale)
+		_char_scale_slider.set_block_signals(false)
+
+
+func set_map_tool_state(tile_labels: bool, boredom_atmosphere: bool, boredom_water: bool) -> void:
+	if _sandbox_tile_labels_check != null:
+		_sandbox_tile_labels_check.set_block_signals(true)
+		_sandbox_tile_labels_check.button_pressed = tile_labels
+		_sandbox_tile_labels_check.set_block_signals(false)
+	if _sandbox_boredom_atmo_check != null:
+		_sandbox_boredom_atmo_check.set_block_signals(true)
+		_sandbox_boredom_atmo_check.button_pressed = boredom_atmosphere
+		_sandbox_boredom_atmo_check.set_block_signals(false)
+	if _sandbox_boredom_water_check != null:
+		_sandbox_boredom_water_check.set_block_signals(true)
+		_sandbox_boredom_water_check.button_pressed = boredom_water
+		_sandbox_boredom_water_check.set_block_signals(false)
 
 
 func _ready() -> void:
+	if overlay_mode:
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	$ColorRect.color = MenuTheme.BG
+	MenuTheme.style_title($Title)
+	$Title.text = "Settings"
+	$Title.add_theme_color_override("font_color", MenuTheme.TEXT)
+	$BackButton.text = "Close" if overlay_mode else "Back"
+	MenuTheme.style_menu_button($BackButton)
 	$BackButton.pressed.connect(_on_back_pressed)
 	MenuNavigation.register(self, _on_back_pressed)
 
-	_game_settings = GameSettings.new()
-	_game_settings.load_from_disk()
+	if _pending_settings != null:
+		_game_settings = _pending_settings
+	else:
+		_game_settings = GameSettings.new()
+		_game_settings.load_from_disk()
 
-	_effects_settings = EffectsSettings.new()
-	_effects_settings.load_from_disk()
-
-	MenuInterfaceApplier.stamp_font_tier($Title, MenuInterfaceApplier.TIER_MENU_TITLE)
-	MenuInterfaceApplier.stamp_font_tier($BackButton, MenuInterfaceApplier.TIER_MENU_BACK)
+	if _pending_effects != null:
+		_effects_settings = _pending_effects
+	else:
+		_effects_settings = EffectsSettings.new()
+		_effects_settings.load_from_disk()
 
 	var margin := MarginContainer.new()
 	MenuInterfaceApplier.stamp_content_margin(margin)
@@ -99,18 +176,23 @@ func _ready() -> void:
 	_build_display_tab(tab_container)
 	_build_graphics_tab(tab_container)
 	_build_sound_tab(tab_container)
+	_build_interface_tab(tab_container)
 	_build_gameplay_tab(tab_container)
 	_build_controls_tab(tab_container)
-	_build_interface_tab(tab_container)
 	_build_developer_tab(tab_container)
+	if hide_developer_tab and _developer_tab_root != null:
+		_developer_tab_root.visible = false
+	if _sandbox_tools_box != null:
+		_sandbox_tools_box.visible = show_sandbox_tools
 	_apply_interface_to_ui()
 
 
 func _build_display_tab(parent: TabContainer) -> void:
 	var scroll := _scroll_tab(parent, "Display")
 	var vbox := _vbox(scroll)
-	_add_hint(vbox, "Resolution and window mode use Apply. Map zoom applies immediately.")
+	_add_hint(vbox, "Video changes need Apply. Map camera settings apply immediately.")
 
+	_add_section(vbox, "Video")
 	_resolution_option = OptionButton.new()
 	for res: Vector2i in GameSettings.RESOLUTION_PRESETS:
 		_resolution_option.add_item("%d × %d" % [res.x, res.y])
@@ -132,6 +214,7 @@ func _build_display_tab(parent: TabContainer) -> void:
 	vbox.add_child(_window_mode_option)
 	_sync_resolution_controls()
 
+	_add_section(vbox, "Map camera")
 	_map_zoom_option = OptionButton.new()
 	for label: String in GameSettings.MAP_ZOOM_LABELS:
 		_map_zoom_option.add_item(label)
@@ -157,6 +240,7 @@ func _build_display_tab(parent: TabContainer) -> void:
 	vbox.add_child(scale_row)
 	_on_map_scale_changed(_game_settings.map_zoom_multiplier)
 
+	_add_section(vbox, "On-screen HUD")
 	_show_fps_check = CheckButton.new()
 	_show_fps_check.text = "Show FPS counter"
 	_show_fps_check.button_pressed = _game_settings.show_fps_hud
@@ -195,7 +279,7 @@ func _build_graphics_tab(parent: TabContainer) -> void:
 
 
 func _build_sound_tab(parent: TabContainer) -> void:
-	var scroll := _scroll_tab(parent, "Sound")
+	var scroll := _scroll_tab(parent, "Audio")
 	var vbox := _vbox(scroll)
 	_add_hint(vbox, "Volume changes apply immediately.")
 
@@ -207,16 +291,7 @@ func _build_sound_tab(parent: TabContainer) -> void:
 func _build_gameplay_tab(parent: TabContainer) -> void:
 	var scroll := _scroll_tab(parent, "Gameplay")
 	var vbox := _vbox(scroll)
-	_add_hint(vbox, "Combat presentation preferences.")
-
-	_damage_numbers_check = CheckButton.new()
-	_damage_numbers_check.text = "Show floating damage numbers"
-	_damage_numbers_check.button_pressed = _game_settings.show_damage_numbers
-	_damage_numbers_check.toggled.connect(func(pressed: bool) -> void:
-		_game_settings.show_damage_numbers = pressed
-		_save_game_settings(),
-	)
-	vbox.add_child(_damage_numbers_check)
+	_add_hint(vbox, "Core combat rules — not configurable.")
 
 	var info := Label.new()
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -224,6 +299,8 @@ func _build_gameplay_tab(parent: TabContainer) -> void:
 		"Honor & Iron uses perfect information: enemy intent is always visible "
 		+ "during planning. Timeline programming is always available in combat."
 	)
+	MenuInterfaceApplier.stamp_font_tier(info, MenuInterfaceApplier.TIER_BODY)
+	info.add_theme_color_override("font_color", MenuTheme.TEXT)
 	vbox.add_child(info)
 
 
@@ -293,9 +370,42 @@ func _build_interface_tab(parent: TabContainer) -> void:
 	vbox.add_child(_slider_value_row(_panel_width_slider, _panel_width_label))
 	_on_panel_width_changed(float(_game_settings.inspector_panel_width))
 
+	_damage_numbers_check = CheckButton.new()
+	_damage_numbers_check.text = "Show floating damage numbers"
+	_damage_numbers_check.button_pressed = _game_settings.show_damage_numbers
+	_damage_numbers_check.toggled.connect(func(pressed: bool) -> void:
+		_game_settings.show_damage_numbers = pressed
+		_save_game_settings(),
+	)
+	vbox.add_child(_damage_numbers_check)
+
+	if _char_profile != null:
+		_add_section(vbox, "Units on map")
+		_char_scale_slider = HSlider.new()
+		_char_scale_slider.min_value = 0.25
+		_char_scale_slider.max_value = 4.0
+		_char_scale_slider.step = 0.05
+		_char_scale_slider.value = _char_profile.display_scale
+		_char_scale_slider.value_changed.connect(_on_char_scale_changed)
+		_char_scale_label = Label.new()
+		MenuInterfaceApplier.stamp_font_tier(_char_scale_label, MenuInterfaceApplier.TIER_VALUE)
+		vbox.add_child(_label("Character display scale"))
+		vbox.add_child(_slider_value_row(_char_scale_slider, _char_scale_label))
+		_on_char_scale_changed(_char_profile.display_scale)
+
+
+func _on_char_scale_changed(value: float) -> void:
+	if _char_scale_label != null:
+		_char_scale_label.text = "%.2f×" % value
+	if _char_profile != null:
+		_char_profile.display_scale = value
+		_char_profile.save_to_user_disk()
+		character_gen_changed.emit()
+
 
 func _build_developer_tab(parent: TabContainer) -> void:
 	var scroll := _scroll_tab(parent, "Developer")
+	_developer_tab_root = scroll.get_parent() as MarginContainer
 	var vbox := _vbox(scroll)
 	_add_hint(vbox, "Sandbox / debug tools — apply in test map and tactical scenes.")
 
@@ -329,12 +439,45 @@ func _build_developer_tab(parent: TabContainer) -> void:
 		vbox.add_child(check)
 		_dev_shadow_checks[key] = check
 
+	_sandbox_tools_box = VBoxContainer.new()
+	vbox.add_child(_sandbox_tools_box)
+	_add_section(_sandbox_tools_box, "Map sandbox tools")
+	_add_hint(_sandbox_tools_box, "Only used in the map dev sandbox scene.")
+	_add_button(_sandbox_tools_box, "Regenerate map", func() -> void: map_regenerate_requested.emit())
+	_add_button(_sandbox_tools_box, "New seed", func() -> void: map_reseed_requested.emit())
+	_add_button(_sandbox_tools_box, "Next biome", func() -> void: map_cycle_biome_requested.emit())
+	var size_row := HBoxContainer.new()
+	size_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_sandbox_tools_box.add_child(size_row)
+	var minus_btn := Button.new()
+	minus_btn.text = "Map −"
+	minus_btn.pressed.connect(func() -> void: map_resize_requested.emit(-2))
+	size_row.add_child(minus_btn)
+	var plus_btn := Button.new()
+	plus_btn.text = "Map +"
+	plus_btn.pressed.connect(func() -> void: map_resize_requested.emit(2))
+	size_row.add_child(plus_btn)
+	_add_button(_sandbox_tools_box, "Toggle center cell", func() -> void: map_toggle_center_requested.emit())
+	_sandbox_tile_labels_check = CheckButton.new()
+	_sandbox_tile_labels_check.text = "Tile ID labels"
+	_sandbox_tile_labels_check.toggled.connect(func(pressed: bool) -> void: map_tile_labels_toggled.emit(pressed))
+	_sandbox_tools_box.add_child(_sandbox_tile_labels_check)
+	_sandbox_boredom_atmo_check = CheckButton.new()
+	_sandbox_boredom_atmo_check.text = "Boredom test — atmosphere only"
+	_sandbox_boredom_atmo_check.toggled.connect(func(pressed: bool) -> void: map_boredom_atmosphere_toggled.emit(pressed))
+	_sandbox_tools_box.add_child(_sandbox_boredom_atmo_check)
+	_sandbox_boredom_water_check = CheckButton.new()
+	_sandbox_boredom_water_check.text = "Boredom test — water only"
+	_sandbox_boredom_water_check.toggled.connect(func(pressed: bool) -> void: map_boredom_water_toggled.emit(pressed))
+	_sandbox_tools_box.add_child(_sandbox_boredom_water_check)
+
 
 func _apply_display_video() -> void:
 	_game_settings.set_resolution_index(_resolution_option.selected)
 	_game_settings.set_window_mode_index(_window_mode_option.selected)
 	_game_settings.apply_and_save(get_window(), true)
 	_sync_resolution_controls()
+	_notify_settings_applied()
 
 
 func _apply_window_mode() -> void:
@@ -395,6 +538,12 @@ func _apply_interface_live() -> void:
 	_game_settings.changed.emit()
 	_apply_interface_to_ui()
 	EventBus.interface_settings_changed.emit()
+	_notify_settings_applied()
+
+
+func _notify_settings_applied() -> void:
+	if _on_applied.is_valid():
+		_on_applied.call()
 
 
 func _apply_interface_to_ui() -> void:
@@ -404,6 +553,8 @@ func _apply_interface_to_ui() -> void:
 func _on_effect_toggled(key: String, pressed: bool) -> void:
 	_effects_settings.set(key, pressed)
 	_effects_settings.save_to_disk()
+	if _on_effects_changed.is_valid():
+		_on_effects_changed.call()
 
 
 func _on_shadow_debug_toggled(key: String, pressed: bool) -> void:
@@ -462,6 +613,7 @@ func _add_volume_row(parent: VBoxContainer, title: String, initial: float) -> HS
 func _save_game_settings() -> void:
 	_game_settings.save_to_disk()
 	_game_settings.changed.emit()
+	_notify_settings_applied()
 
 
 func _slider_value_row(slider: HSlider, value_label: Label) -> HBoxContainer:
@@ -509,15 +661,14 @@ func _add_hint(parent: VBoxContainer, text: String) -> void:
 	var hint := Label.new()
 	hint.text = text
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.add_theme_color_override("font_color", Color(0.7, 0.72, 0.8))
-	MenuInterfaceApplier.stamp_font_tier(hint, MenuInterfaceApplier.TIER_HINT)
+	MenuTheme.style_muted_label(hint)
 	parent.add_child(hint)
 
 
 func _add_section(parent: VBoxContainer, text: String) -> void:
 	var lbl := Label.new()
 	lbl.text = text
-	MenuInterfaceApplier.stamp_font_tier(lbl, MenuInterfaceApplier.TIER_SECTION)
+	MenuTheme.style_section_label(lbl)
 	parent.add_child(lbl)
 
 
@@ -529,7 +680,7 @@ func _add_button(parent: VBoxContainer, text: String, callback: Callable) -> voi
 
 
 func _on_back_pressed() -> void:
-	if close_requested.get_connections().size() > 0:
+	if overlay_mode or close_requested.get_connections().size() > 0:
 		close_requested.emit()
 	else:
 		get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
