@@ -505,6 +505,7 @@ func _apply_window_mode_live() -> void:
 	if _settings == null:
 		return
 	_settings.set_window_mode_index(_window_mode_option.selected)
+	_sync_resolution_dropdown_enabled()
 	_settings.apply_to_window(get_window(), true)
 	_settings.apply_audio_buses()
 	_settings.save_to_disk()
@@ -566,7 +567,14 @@ func _sync_controls_from_settings() -> void:
 		_display_char_scale_slider.value = _char_profile.display_scale
 		_display_char_scale_slider.set_block_signals(false)
 		_on_display_char_scale_changed(_char_profile.display_scale)
+	_sync_resolution_dropdown_enabled()
 	_set_sync_blocked(false)
+
+
+func _sync_resolution_dropdown_enabled() -> void:
+	if _resolution_option == null or _window_mode_option == null:
+		return
+	_resolution_option.disabled = _window_mode_option.selected != 0
 
 
 var _sync_blocked: bool = false

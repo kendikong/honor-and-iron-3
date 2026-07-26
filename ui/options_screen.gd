@@ -119,6 +119,7 @@ func _build_display_tab(parent: TabContainer) -> void:
 	_window_mode_option.item_selected.connect(func(_i: int) -> void: _apply_window_mode())
 	vbox.add_child(_label("Window mode"))
 	vbox.add_child(_window_mode_option)
+	_sync_resolution_dropdown_enabled()
 
 	_map_zoom_option = OptionButton.new()
 	for label: String in GameSettings.MAP_ZOOM_LABELS:
@@ -332,8 +333,15 @@ func _apply_display_video() -> void:
 
 func _apply_window_mode() -> void:
 	_game_settings.set_window_mode_index(_window_mode_option.selected)
+	_sync_resolution_dropdown_enabled()
 	_game_settings.apply_to_window(get_window(), true)
 	_save_game_settings()
+
+
+func _sync_resolution_dropdown_enabled() -> void:
+	if _resolution_option == null or _window_mode_option == null:
+		return
+	_resolution_option.disabled = _window_mode_option.selected != 0
 
 
 func _apply_map_zoom_live() -> void:
