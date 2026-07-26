@@ -58,9 +58,10 @@ A **heuristic** here means: behavior driven by a local shortcut that is **not** 
 1. Name **Global system used** (canonical owner file/API).
 2. Walk **every row** of the audit table below.
 3. If **any row fails** → list each failure under **Heuristics added** (short name + one line), or **redesign** before merge.
-4. If **all rows pass** → you may write `none`, but you **must** include a one-line **Heuristics audit** summary proving you walked the table (not just the word `none`).
+4. If **all rows pass** → write `none` under **Heuristics added**, then **Why (not) heuristic:** — one brief sentence stating why the change is not heuristic (single owner, one path, what you avoided).
+5. If **any row fails** → name each under **Heuristics added**, then **Why (not) heuristic:** — one brief sentence per item explaining why it counts as heuristic.
 
-Owner may ask **“Walk the table”** — you must answer each row in plain language. Inability to do so means the `none` claim was invalid.
+Owner may ask **“Walk the table”** — you must answer each row in plain language. Inability to do so means the assessment was invalid.
 
 | # | Audit question | Pass requires |
 |---|----------------|---------------|
@@ -95,13 +96,15 @@ If the **correct** fix requires **breaking, bypassing, or adding an exception to
 
 ## Mandatory disclosure (every agent turn — no exceptions)
 
-Any response that **proposes, implements, or summarizes** a code or rule change MUST include **both** lines below, visibly (not buried in prose):
+Any response that **proposes, implements, or summarizes** a code or rule change MUST include **all** lines below, visibly (not buried in prose):
 
 - **Global system used:** (canonical owner — file/API; e.g. `_build_commit_slots_at_cell` → `commit_from_slots`)
-- **Heuristics audit:** one line — either `rows 1–6 pass: …` (how you know) **or** `row N fail: …`
-- **Heuristics added:** `none` OR each heuristic named (only after audit; see **Heuristics audit** above)
+- **Heuristics added:** `none` OR each heuristic named (only after walking the audit table)
+- **Why (not) heuristic:** **one brief sentence** (mandatory — this is what the owner reads)
+  - If `none`: why you believe the change is **not** heuristic — cite the single owner/path and what you did **not** do (e.g. no tab-only apply, no `node ==`, no parallel preview path).
+  - If named: why each listed item **is** heuristic under the definition above.
 
-**`Heuristics added: none` without `Heuristics audit:` = invalid** — treat as if heuristics were undisclosed.
+**Forbidden:** `Heuristics added: none` with no **Why (not) heuristic:** line, or a vacuous why (e.g. “no heuristics”, “follows global systems”, “audit passed”). **Both are rule violations.**
 
 **Required in:**
 - Permission gate / plans (`interpret-plan-permission.mdc`)
@@ -110,7 +113,7 @@ Any response that **proposes, implements, or summarizes** a code or rule change 
 
 **Omit only** on pure read-only Q&A with **no** proposed or completed changes.
 
-**Omitting any of the three lines = rule violation** — same severity as skipping the permission gate or auto-commit.
+**Omitting any line = rule violation** — same severity as skipping the permission gate or auto-commit.
 
 ## Canonical global systems (Honor & Iron — non-exhaustive)
 
