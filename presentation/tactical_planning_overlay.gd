@@ -310,7 +310,9 @@ func set_hover_coord(coord: Vector2i) -> void:
 	if _director != null and _director.selected_unit_id < 0:
 		_invalidate_hover_cache()
 		_recompute_hover_ranges_from_inputs()
-	if _planning_input == null:
+	if _planning_input != null:
+		_planning_input.refresh_mouse_cursor(coord)
+	else:
 		_update_hover_action_icon()
 	queue_redraw()
 

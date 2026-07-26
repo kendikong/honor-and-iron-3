@@ -23,8 +23,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_dash_arm_survives_plan_refresh(failures)
 	_test_dash_self_click_blocks_false_wait(failures)
 	_test_action_range_hidden_after_premove_mp(failures)
-	_test_strip_pairs_using_premove_dest(failures)
-	_test_enemy_hover_cursor_matches_preview_slots(failures)
+	_test_hover_cursor_matches_click_commit_slots(failures)
 
 
 static func _bowling_charge_arm_fixture() -> Dictionary:
@@ -884,56 +883,7 @@ static func _test_action_range_hidden_after_premove_mp(failures: Array[String]) 
 		failures.append("PlanningInputTest: far premove should hide Swap when MP exhausted")
 
 
-static func _test_strip_pairs_using_premove_dest(failures: Array[String]) -> void:
-	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
-	var board := BoardState.new()
-	board.grid_size = Vector2i(8, 8)
-	var plain := TerrainData.new()
-	plain.blocks_movement = false
-	for y: int in range(board.grid_size.y):
-		for x: int in range(board.grid_size.x):
-			board.set_tile_terrain(Vector2i(x, y), plain)
-	var unit := UnitState.new()
-	unit.id = 1
-	unit.team = GameEnums.Team.PLAYER
-	unit.position = Vector2i(0, 2)
-	unit.movement.points_left = 4
-	unit.movement.max_points = 4
-	unit.ability.points_left = 1
-	unit.ability.max_points = 1
-	var bash := AbilityData.new()
-	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
-	bash.action_point_cost = 1
-	unit.active_abilities = [bash]
-	board.units = [unit]
-	GridSystem.set_occupant(board, unit.position, unit.id)
-	director.board = board
-	director.base_board = board
-	director.projected_state = board.clone()
-	director.auto_run = true
-	input._director = director
-	input.auto_use_skill_after_move = true
-	var enemy_cell := Vector2i(4, 2)
-	var approach := Vector2i(3, 2)
-	var polluted_waypoints: Array[Vector2i] = [Vector2i(1, 2), Vector2i(2, 2), approach]
-	var slots: Dictionary = {
-		"pre": [
-			TimelineAction.make_move(
-				1, approach, -1, [], GameEnums.MoveTiming.PRE_ACTION,
-			),
-		],
-		"action": [TimelineAction.make_ability(1, bash, enemy_cell, 2)],
-		"post": [],
-	}
-	input._strip_unaffordable_premove_pairs(slots, 1, enemy_cell, polluted_waypoints)
-	if (slots.get("action", []) as Array).is_empty():
-		failures.append(
-			"PlanningInputTest: strip must pair skill using premove dest, not enemy hover cell",
-		)
-
-
-static func _test_enemy_hover_cursor_matches_preview_slots(failures: Array[String]) -> void:
+static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
 	var director := CombatDirector.new()
 	var board := BoardState.new()
@@ -973,31 +923,20 @@ static func _test_enemy_hover_cursor_matches_preview_slots(failures: Array[Strin
 	director.auto_run = true
 	input._director = director
 	input.auto_use_skill_after_move = true
-	var run_tile := Vector2i(3, 2)
 	input._drag_unit_id = 1
-	input._drag_route = [knight.position, Vector2i(1, 2), Vector2i(2, 2), run_tile]
-	input._drag_last_free = run_tile
+	input._drag_route = [knight.position, Vector2i(1, 2), Vector2i(2, 2), Vector2i(3, 2)]
 	var enemy_cell := enemy.position
-	input._preview_at_interaction_cell(1, enemy_cell, Vector2i.ZERO, enemy.id, [], [])
-	if not input._intent_snapshot_valid:
-		failures.append("PlanningInputTest: enemy hover preview must store intent snapshot")
-		return
-	var from_snapshot: String = input._cursor_icon_from_commit_slots(
-		input._intent_snapshot_slots, knight,
-	)
-	var from_hover: String = input._cursor_icon_for_hover_interaction(enemy_cell, knight)
-	if from_hover != from_snapshot:
+	var local := Vector2.ZERO
+	var click_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, enemy_cell, local)
+	var expected_icon: String = input._cursor_icon_from_commit_slots(click_slots, knight)
+	var hover_icon: String = input.compute_hover_action_icon(enemy_cell)
+	if hover_icon != expected_icon:
 		failures.append(
-			"PlanningInputTest: enemy hover cursor must match preview snapshot (hover=%s snapshot=%s)"
-			% [from_hover, from_snapshot],
+			"PlanningInputTest: hover cursor must match click commit slots (hover=%s click=%s)"
+			% [hover_icon, expected_icon],
 		)
-	if from_hover.find(PlanningIcons.GLYPH_ATTACK) < 0:
+	if expected_icon.find(PlanningIcons.GLYPH_ATTACK) < 0:
 		failures.append(
-			"PlanningInputTest: enemy hover cursor must include attack after run-tile hover (got %s)"
-			% from_hover,
-		)
-	if input.auto_use_skill_after_move and from_hover.find("/") < 0:
-		failures.append(
-			"PlanningInputTest: enemy hover cursor should composite move+attack (got %s)"
-			% from_hover,
+			"PlanningInputTest: enemy click slots should include attack glyph (got %s)"
+			% expected_icon,
 		)
