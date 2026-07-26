@@ -74,7 +74,6 @@ func _ready() -> void:
 
 	_game_settings = GameSettings.new()
 	_game_settings.load_from_disk()
-	_game_settings.capture_from_window(get_window())
 
 	_effects_settings = EffectsSettings.new()
 	_effects_settings.load_from_disk()

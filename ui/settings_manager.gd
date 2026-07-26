@@ -32,7 +32,7 @@ func _persist_window_placement() -> void:
 		return
 	var settings := GameSettings.new()
 	settings.load_from_disk()
-	settings.capture_from_window(window)
+	settings.capture_placement_from_window(window)
 	settings.save_to_disk()
 
 

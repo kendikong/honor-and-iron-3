@@ -111,7 +111,6 @@ func is_open() -> bool:
 func open() -> void:
 	if _settings == null:
 		return
-	_settings.capture_from_window(get_window())
 	layer = 40
 	_sync_controls_from_settings()
 	_show_main()

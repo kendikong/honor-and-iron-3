@@ -112,16 +112,23 @@ func load_from_disk() -> void:
 		_has_saved_window_placement = true
 
 
-func capture_from_window(window: Window) -> void:
+func capture_placement_from_window(window: Window) -> void:
 	window_mode = DisplayServer.window_get_mode()
 	if window != null:
 		screen_index = window.current_screen
 	else:
 		screen_index = DisplayServer.window_get_current_screen()
 	if window_mode == DisplayServer.WINDOW_MODE_WINDOWED and window != null:
-		resolution = window.size
 		window_position = window.position
 		_has_saved_window_placement = true
+
+
+func capture_from_window(window: Window) -> void:
+	capture_placement_from_window(window)
+	if Engine.is_editor_hint():
+		return
+	if window_mode == DisplayServer.WINDOW_MODE_WINDOWED and window != null:
+		resolution = window.size
 
 
 func save_to_disk() -> void:
@@ -159,43 +166,39 @@ func save_to_disk() -> void:
 
 
 func apply_to_window(window: Window, preserve_center_on_resize: bool = false) -> void:
-	var screen_id: int = _validated_screen_index(screen_index)
+	if window == null:
+		return
+	var screen_id: int = _screen_for_apply(window, preserve_center_on_resize)
 
 	match window_mode:
 		DisplayServer.WINDOW_MODE_WINDOWED:
-			if preserve_center_on_resize:
-				DisplayWindowHelper.apply_resolution(
-					window,
-					resolution,
-					false,
-					screen_id,
-					true,
-				)
-			elif _has_saved_window_placement:
-				window.mode = Window.MODE_WINDOWED
-				window.current_screen = screen_id
-				window.size = resolution
+			DisplayWindowHelper.apply_resolution(
+				window,
+				resolution,
+				false,
+				screen_id,
+				preserve_center_on_resize or not _has_saved_window_placement,
+			)
+			if not preserve_center_on_resize and _has_saved_window_placement:
 				window.position = DisplayWindowHelper.clamp_to_usable_rect(
 					window_position,
 					resolution,
 					screen_id,
 				)
-			else:
-				DisplayWindowHelper.apply_resolution(
-					window,
-					resolution,
-					false,
-					screen_id,
-					false,
-				)
 		DisplayServer.WINDOW_MODE_FULLSCREEN:
-			if screen_id >= 0:
-				window.current_screen = screen_id
+			window.current_screen = screen_id
 			window.mode = Window.MODE_FULLSCREEN
 		DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
-			if screen_id >= 0:
-				window.current_screen = screen_id
+			window.current_screen = screen_id
 			window.mode = Window.MODE_EXCLUSIVE_FULLSCREEN
+
+
+func _screen_for_apply(window: Window, preserve_center_on_resize: bool) -> int:
+	if preserve_center_on_resize:
+		screen_index = window.current_screen
+	elif not _has_saved_window_placement:
+		screen_index = window.current_screen
+	return _validated_screen_index(screen_index)
 
 
 func _validated_screen_index(preferred: int) -> int:

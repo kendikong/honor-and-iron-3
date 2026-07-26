@@ -292,7 +292,7 @@ func _exit_tree() -> void:
 
 
 func _persist_settings() -> void:
-	_settings.capture_from_window(get_window())
+	_settings.capture_placement_from_window(get_window())
 	_settings.save_to_disk()
 	_effects.settings.save_to_disk()
 
