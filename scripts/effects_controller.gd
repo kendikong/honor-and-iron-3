@@ -405,4 +405,10 @@ func _sync_cloud_mask_bake() -> void:
 	var baker: CloudShadowMaskBaker = CloudShadowMaskBaker.ensure(_map_root)
 	if baker == null:
 		return
-	baker.request_sync(MapPixelSpace.size_px_from_grid(_last_grid), settings)
+	var bake_size: Vector2 = (
+		MapPixelSpace.size_px_from_ground(_ground)
+		if _ground != null
+		else MapPixelSpace.size_px_from_grid(_last_grid)
+	)
+	var content_origin: Vector2i = MapPixelSpace.used_origin_cell(_ground)
+	baker.request_sync(bake_size, settings, content_origin)

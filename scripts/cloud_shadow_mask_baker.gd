@@ -20,6 +20,7 @@ var _bake_material: ShaderMaterial
 var _image: Image
 var _stamp: int = -1
 var _map_size: Vector2i = Vector2i.ZERO
+var _content_origin_cell: Vector2i = Vector2i.ZERO
 var _baking: bool = false
 var _queued_sync: Dictionary = {}
 var _bake_stamp_target: int = -1
@@ -55,8 +56,9 @@ static func cloud_visible_at(map_px: Vector2) -> bool:
 static func tile_cloud_visible_at_cell(cell: Vector2i) -> bool:
 	if _active == null or _active._image == null:
 		return false
-	var x0: int = cell.x * int(TILE_PX)
-	var y0: int = cell.y * int(TILE_PX)
+	var local_cell: Vector2i = cell - _active._content_origin_cell
+	var x0: int = local_cell.x * int(TILE_PX)
+	var y0: int = local_cell.y * int(TILE_PX)
 	for dy: int in range(int(TILE_PX)):
 		for dx: int in range(int(TILE_PX)):
 			if _active._sample_shade(Vector2(float(x0 + dx), float(y0 + dy))) >= SHADE_GATE:
@@ -96,12 +98,16 @@ func _ready() -> void:
 	_viewport.add_child(_rect)
 
 
-func request_sync(map_size: Vector2, settings: EffectsSettings) -> void:
+func request_sync(
+	map_size: Vector2,
+	settings: EffectsSettings,
+	content_origin_cell: Vector2i = Vector2i.ZERO,
+) -> void:
 	if settings == null or not settings.cloud_shadows:
 		_clear_bake()
 		return
 	var size_i: Vector2i = Vector2i(maxi(1, int(map_size.x)), maxi(1, int(map_size.y)))
-	var stamp: int = _bake_stamp(map_size, settings)
+	var stamp: int = _bake_stamp(map_size, settings, content_origin_cell)
 	if stamp == _stamp and _image != null and size_i == _map_size:
 		return
 	if _baking:
@@ -109,9 +115,10 @@ func request_sync(map_size: Vector2, settings: EffectsSettings) -> void:
 			"map_size": map_size,
 			"settings": settings,
 			"stamp": stamp,
+			"content_origin_cell": content_origin_cell,
 		}
 		return
-	_start_bake(map_size, settings, stamp)
+	_start_bake(map_size, settings, stamp, content_origin_cell)
 
 
 func is_ready() -> bool:
@@ -134,17 +141,29 @@ func make_debug_material() -> ShaderMaterial:
 	return mat
 
 
-func _bake_stamp(map_size: Vector2, settings: EffectsSettings) -> int:
+func _bake_stamp(
+	map_size: Vector2,
+	settings: EffectsSettings,
+	content_origin_cell: Vector2i,
+) -> int:
 	return hash([
 		int(floor(map_size.x)),
 		int(floor(map_size.y)),
+		content_origin_cell.x,
+		content_origin_cell.y,
 		ShadowPlacer.cloud_drift_stamp(settings),
 	])
 
 
-func _start_bake(map_size: Vector2, settings: EffectsSettings, stamp: int) -> void:
+func _start_bake(
+	map_size: Vector2,
+	settings: EffectsSettings,
+	stamp: int,
+	content_origin_cell: Vector2i = Vector2i.ZERO,
+) -> void:
 	_baking = true
 	_bake_stamp_target = stamp
+	_content_origin_cell = content_origin_cell
 	var size_i: Vector2i = Vector2i(maxi(1, int(map_size.x)), maxi(1, int(map_size.y)))
 	if size_i != _map_size:
 		_viewport.size = size_i
@@ -181,6 +200,7 @@ func _finish_bake_async() -> void:
 			queued["map_size"] as Vector2,
 			queued["settings"] as EffectsSettings,
 			int(queued["stamp"]),
+			queued.get("content_origin_cell", Vector2i.ZERO) as Vector2i,
 		)
 
 
@@ -190,6 +210,7 @@ func _clear_bake() -> void:
 	_queued_sync = {}
 	_baking = false
 	_bake_stamp_target = -1
+	_content_origin_cell = Vector2i.ZERO
 
 
 func _sample_shade(map_px: Vector2) -> float:

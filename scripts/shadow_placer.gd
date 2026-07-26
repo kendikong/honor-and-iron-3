@@ -142,7 +142,10 @@ static func apply(
 		return
 	_ground_layer = ground
 	_map_root = shadow_root.get_parent() as Node2D
-	_map_size_px = MapPixelSpace.size_px_from_grid(grid)
+	if ground != null:
+		_map_size_px = MapPixelSpace.size_px_from_ground(ground)
+	else:
+		_map_size_px = MapPixelSpace.size_px_from_grid(grid)
 	var layers: Array[Dictionary] = []
 	for y: int in range(grid.height):
 		for x: int in range(grid.width):
@@ -677,7 +680,7 @@ static func _ground_material() -> ShaderMaterial:
 
 static func _ground_map_pixel_origin() -> Vector2:
 	if _ground_layer != null:
-		return MapPixelSpace.cell_top_left_px(_ground_layer, Vector2i.ZERO)
+		return MapPixelSpace.content_top_left_px(_ground_layer)
 	return Vector2.ZERO
 
 
@@ -2220,10 +2223,13 @@ static func cell_from_foot_px(foot_px: Vector2) -> Vector2i:
 static func cloud_shade_at(map_local: Vector2, _drift: Vector2, settings: EffectsSettings) -> float:
 	if settings == null or not settings.cloud_shadows:
 		return 0.0
-	var baked: float = CloudShadowMaskBaker.shade_at(map_local)
+	var sample_px: Vector2 = map_local
+	if _ground_layer != null:
+		sample_px = MapPixelSpace.content_map_px(_ground_layer, map_local)
+	var baked: float = CloudShadowMaskBaker.shade_at(sample_px)
 	if baked >= 0.0:
 		return baked
-	var mask: float = _CLOUD_FIELD.shadow_mask_at(map_local, _drift, settings)
+	var mask: float = _CLOUD_FIELD.shadow_mask_at(sample_px, _drift, settings)
 	return mask * CloudTuning.strength(settings)
 
 

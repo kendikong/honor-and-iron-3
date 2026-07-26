@@ -90,15 +90,22 @@ func _rebuild() -> void:
 	var baker: CloudShadowMaskBaker = CloudShadowMaskBaker.ensure(_map_root)
 	if baker == null:
 		return
-	var size_px: Vector2 = MapPixelSpace.size_px_from_grid(_grid)
+	var size_px: Vector2 = (
+		MapPixelSpace.size_px_from_ground(_ground)
+		if _ground != null
+		else MapPixelSpace.size_px_from_grid(_grid)
+	)
 	if _settings != null and _settings.cloud_shadows:
-		baker.request_sync(size_px, _settings)
+		var content_origin: Vector2i = MapPixelSpace.used_origin_cell(_ground)
+		baker.request_sync(size_px, _settings, content_origin)
 		_connect_baker(baker)
 	_ensure_tile_overlay(baker)
 	var zoom: float = _map_root.scale.x
-	var map_origin: Vector2 = Vector2.ZERO
-	if _ground != null:
-		map_origin = MapPixelSpace.cell_top_left_px(_ground, Vector2i.ZERO)
+	var map_origin: Vector2 = (
+		MapPixelSpace.content_top_left_px(_ground)
+		if _ground != null
+		else Vector2.ZERO
+	)
 	_tile_overlay.position = _map_root.to_global(map_origin)
 	_tile_overlay.size = size_px * zoom
 	_last_zoom = zoom
