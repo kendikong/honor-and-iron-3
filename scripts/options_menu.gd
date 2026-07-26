@@ -1,7 +1,7 @@
 class_name OptionsMenu
 extends CanvasLayer
 
-## In-game settings host — opens the unified `OptionsScreen` overlay (same UI as main menu).
+## In-game options overlay — **O** to toggle. Display settings with apply + persist.
 
 signal opened
 signal closed
@@ -15,21 +15,60 @@ signal map_boredom_atmosphere_toggled(pressed: bool)
 signal map_boredom_water_toggled(pressed: bool)
 signal character_gen_changed
 
-const _OPTIONS_SCENE: PackedScene = preload("res://scenes/Options.tscn")
-
 var _settings: GameSettings
 var _on_applied: Callable
+
+var _root: Control
+var _main_panel: PanelContainer
+var _display_panel: PanelContainer
+var _resolution_option: OptionButton
+var _resolution_status_label: Label
+var _window_mode_option: OptionButton
+var _map_zoom_option: OptionButton
+var _map_scale_slider: HSlider
+var _map_scale_value: Label
+var _text_size_option: OptionButton
+var _panel_width_slider: HSlider
+var _panel_width_value: Label
+var _ui_scale_slider: HSlider
+var _ui_scale_value: Label
+var _text_scale_slider: HSlider
+var _text_scale_value: Label
+var _combat_char_section: VBoxContainer
+var _display_char_scale_slider: HSlider
+var _display_char_scale_value: Label
+
+var _map_panel: PanelContainer
+var _char_scale_slider: HSlider
+var _char_scale_value: Label
+var _tile_labels_check: CheckButton
+var _boredom_atmo_check: CheckButton
+var _boredom_water_check: CheckButton
+
 var _char_profile: CharacterGenProfile
-var _effects_settings: EffectsSettings
-var _on_effects_changed: Callable
-var _combat_mode: bool = false
-var _overlay: Control = null
 var _is_open: bool = false
+var _combat_mode: bool = false
+var _combat_director: CombatDirector
+var _combat_actions: VBoxContainer
+var _effects_panel: PanelContainer
+var _effects_settings: EffectsSettings
+var _effects_checks: Dictionary = {}
+var _on_effects_changed: Callable
+var _map_settings_btn: Button
+var _damage_numbers_check: CheckButton
+var _show_fps_check: CheckButton
+var _show_tod_check: CheckButton
+var _sound_panel: PanelContainer
+var _master_slider: HSlider
+var _sfx_slider: HSlider
+var _music_slider: HSlider
 
 
 func _ready() -> void:
 	layer = 30
 	visible = true
+	_build_ui()
+	_root.visible = false
 
 
 func setup(settings: GameSettings, on_applied: Callable) -> void:
@@ -44,23 +83,26 @@ func setup_character_gen(profile: CharacterGenProfile) -> void:
 func setup_combat_effects(settings: EffectsSettings, on_changed: Callable) -> void:
 	_effects_settings = settings
 	_on_effects_changed = on_changed
+	_build_combat_effects_panel()
 
 
-func setup_combat_director(_director: CombatDirector) -> void:
-	# Battle actions live on the pause menu — settings UI is unified only.
-	pass
+func setup_combat_director(director: CombatDirector) -> void:
+	_combat_director = director
 
 
 func set_combat_mode(enabled: bool) -> void:
 	_combat_mode = enabled
-
-
-func set_map_tool_state(tile_labels: bool, boredom_atmosphere: bool, boredom_water: bool) -> void:
-	if _overlay == null:
-		return
-	var screen: OptionsScreen = _overlay as OptionsScreen
-	if screen != null:
-		screen.set_map_tool_state(tile_labels, boredom_atmosphere, boredom_water)
+	if _map_settings_btn != null:
+		_map_settings_btn.visible = not enabled
+	if _combat_actions != null:
+		_combat_actions.visible = enabled
+	if _combat_char_section != null:
+		_combat_char_section.visible = enabled
+		if enabled and _char_profile != null and _display_char_scale_slider != null:
+			_display_char_scale_slider.set_block_signals(true)
+			_display_char_scale_slider.value = _char_profile.display_scale
+			_on_display_char_scale_changed(_char_profile.display_scale)
+			_display_char_scale_slider.set_block_signals(false)
 
 
 func is_open() -> bool:
@@ -68,19 +110,48 @@ func is_open() -> bool:
 
 
 func open() -> void:
-	_open_overlay()
+	if _settings == null:
+		return
+	layer = 40
+	_sync_controls_from_settings()
+	_apply_interface_to_ui()
+	_show_main()
+	_root.visible = true
+	_is_open = true
+	opened.emit()
 
 
 func open_display() -> void:
-	_open_overlay()
+	open()
+	_show_display()
 
 
 func close_menu() -> void:
-	_close_overlay()
+	if not _is_open:
+		return
+	_root.visible = false
+	_is_open = false
+	layer = 30
+	closed.emit()
 
 
 func go_back() -> void:
-	close_menu()
+	_navigate_back()
+
+
+func set_map_tool_state(tile_labels: bool, boredom_atmosphere: bool, boredom_water: bool) -> void:
+	if _tile_labels_check != null:
+		_tile_labels_check.set_block_signals(true)
+		_tile_labels_check.button_pressed = tile_labels
+		_tile_labels_check.set_block_signals(false)
+	if _boredom_atmo_check != null:
+		_boredom_atmo_check.set_block_signals(true)
+		_boredom_atmo_check.button_pressed = boredom_atmosphere
+		_boredom_atmo_check.set_block_signals(false)
+	if _boredom_water_check != null:
+		_boredom_water_check.set_block_signals(true)
+		_boredom_water_check.button_pressed = boredom_water
+		_boredom_water_check.set_block_signals(false)
 
 
 func toggle() -> void:
@@ -90,49 +161,812 @@ func toggle() -> void:
 		open()
 
 
-func _open_overlay() -> void:
-	if _settings == null or _is_open:
-		return
-	_overlay = _OPTIONS_SCENE.instantiate() as Control
-	var screen: OptionsScreen = _overlay as OptionsScreen
-	if screen == null:
-		_overlay.queue_free()
-		_overlay = null
-		return
-	screen.overlay_mode = true
-	screen.hide_developer_tab = _combat_mode
-	screen.show_sandbox_tools = not _combat_mode
-	screen.setup(_settings, _on_applied, _effects_settings, _on_effects_changed)
-	if _char_profile != null:
-		screen.setup_character_gen(_char_profile)
-	screen.map_regenerate_requested.connect(func() -> void: map_regenerate_requested.emit())
-	screen.map_reseed_requested.connect(func() -> void: map_reseed_requested.emit())
-	screen.map_toggle_center_requested.connect(func() -> void: map_toggle_center_requested.emit())
-	screen.map_resize_requested.connect(func(delta: int) -> void: map_resize_requested.emit(delta))
-	screen.map_cycle_biome_requested.connect(func() -> void: map_cycle_biome_requested.emit())
-	screen.map_tile_labels_toggled.connect(func(pressed: bool) -> void: map_tile_labels_toggled.emit(pressed))
-	screen.map_boredom_atmosphere_toggled.connect(func(pressed: bool) -> void: map_boredom_atmosphere_toggled.emit(pressed))
-	screen.map_boredom_water_toggled.connect(func(pressed: bool) -> void: map_boredom_water_toggled.emit(pressed))
-	screen.character_gen_changed.connect(func() -> void: character_gen_changed.emit())
-	screen.close_requested.connect(_close_overlay)
-	add_child(_overlay)
-	layer = 40
-	_is_open = true
-	opened.emit()
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_O:
+			toggle()
+			get_viewport().set_input_as_handled()
+		elif _is_open and event.keycode == KEY_ESCAPE:
+			_navigate_back()
+			get_viewport().set_input_as_handled()
+	elif _is_open and event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			_navigate_back()
+			get_viewport().set_input_as_handled()
 
 
-func _close_overlay() -> void:
+func _unhandled_input(event: InputEvent) -> void:
 	if not _is_open:
 		return
-	if _overlay != null:
-		_overlay.queue_free()
-		_overlay = null
-	_is_open = false
-	layer = 30
-	closed.emit()
-
-
-func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_O:
-		toggle()
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		_navigate_back()
 		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		_navigate_back()
+		get_viewport().set_input_as_handled()
+
+
+func _navigate_back() -> void:
+	if not _is_open:
+		return
+	if _display_panel.visible or _map_panel.visible:
+		_show_main()
+		return
+	if _sound_panel != null and _sound_panel.visible:
+		_show_main()
+		return
+	if _effects_panel != null and _effects_panel.visible:
+		_show_main()
+		return
+	close_menu()
+
+
+func _build_ui() -> void:
+	_root = Control.new()
+	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_root)
+
+	var dim: ColorRect = ColorRect.new()
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.0, 0.0, 0.0, 0.55)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	dim.gui_input.connect(_on_dim_gui_input)
+	_root.add_child(dim)
+
+	var center: CenterContainer = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(center)
+
+	_main_panel = _make_panel()
+	center.add_child(_main_panel)
+	_build_main_menu(_main_panel)
+
+	_display_panel = _make_panel()
+	_display_panel.visible = false
+	center.add_child(_display_panel)
+	_build_display_menu(_display_panel)
+
+	_map_panel = _make_panel()
+	_map_panel.visible = false
+	center.add_child(_map_panel)
+	_build_map_menu(_map_panel)
+
+	_effects_panel = _make_panel()
+	_effects_panel.visible = false
+	center.add_child(_effects_panel)
+
+	_sound_panel = _make_panel()
+	_sound_panel.visible = false
+	center.add_child(_sound_panel)
+	_build_sound_menu(_sound_panel)
+
+
+func _make_panel() -> PanelContainer:
+	var panel: PanelContainer = PanelContainer.new()
+	panel.custom_minimum_size = Vector2(420, 0)
+	panel.add_theme_stylebox_override("panel", _panel_style())
+	MenuInterfaceApplier.stamp_panel_width(panel)
+	return panel
+
+
+func _build_main_menu(panel: PanelContainer) -> void:
+	var margin: MarginContainer = _margin(panel)
+	var vbox: VBoxContainer = _vbox(margin)
+	_add_title(vbox, "Options")
+	_add_hint(vbox, "Press O or Esc to close")
+	vbox.add_child(HSeparator.new())
+	_add_button(vbox, "Display…", _show_display)
+	_add_button(vbox, "Sound…", _show_sound)
+	_map_settings_btn = _add_button(vbox, "Map Settings…", _show_map_settings)
+	_combat_actions = VBoxContainer.new()
+	_combat_actions.visible = false
+	vbox.add_child(_combat_actions)
+	_add_section(_combat_actions, "Battle")
+	_add_button(_combat_actions, "Restart Turn", func() -> void:
+		if _combat_director != null:
+			_combat_director.restart_turn()
+	)
+	_add_button(_combat_actions, "Restart Battle", func() -> void:
+		if _combat_director != null:
+			_combat_director.restart()
+	)
+	_add_button(vbox, "Ambient Effects…", _show_effects)
+	vbox.add_child(HSeparator.new())
+	_add_button(vbox, "Close", close_menu)
+
+
+func _build_display_menu(panel: PanelContainer) -> void:
+	var margin: MarginContainer = _margin(panel)
+	var vbox: VBoxContainer = _vbox(margin)
+	_add_title(vbox, "Display")
+	_add_hint(vbox, "UI layout scale affects panels/buttons only. Text scale affects fonts. Map scale applies live.")
+
+	_resolution_option = OptionButton.new()
+	_resolution_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for res: Vector2i in GameSettings.RESOLUTION_PRESETS:
+		_resolution_option.add_item("%d × %d" % [res.x, res.y])
+	_resolution_option.item_selected.connect(func(_idx: int) -> void:
+		if not _sync_blocked:
+			_sync_resolution_controls(),
+	)
+	vbox.add_child(_label("Resolution"))
+	vbox.add_child(_resolution_option)
+	_resolution_status_label = Label.new()
+	MenuInterfaceApplier.stamp_font_tier(_resolution_status_label, MenuInterfaceApplier.TIER_HINT)
+	_resolution_status_label.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88))
+	vbox.add_child(_resolution_status_label)
+
+	_window_mode_option = _add_labeled_option(vbox, "Window mode", GameSettings.WINDOW_MODE_LABELS)
+	_window_mode_option.item_selected.connect(func(_idx: int) -> void:
+		if not _sync_blocked:
+			_apply_window_mode_live(),
+	)
+	_map_zoom_option = _add_labeled_option(vbox, "Map tile zoom", GameSettings.MAP_ZOOM_LABELS)
+	_map_zoom_option.item_selected.connect(func(_idx: int) -> void:
+		if not _sync_blocked:
+			_apply_display_live(),
+	)
+
+	var scale_row: HBoxContainer = HBoxContainer.new()
+	scale_row.add_theme_constant_override("separation", 10)
+	vbox.add_child(_label("Map scale multiplier"))
+	vbox.add_child(scale_row)
+	_map_scale_slider = HSlider.new()
+	_map_scale_slider.min_value = 0.5
+	_map_scale_slider.max_value = 3.0
+	_map_scale_slider.step = 0.25
+	_map_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_map_scale_slider.value_changed.connect(_on_map_scale_slider_changed)
+	scale_row.add_child(_map_scale_slider)
+	_map_scale_value = Label.new()
+	_map_scale_value.custom_minimum_size = Vector2(40, 0)
+	MenuInterfaceApplier.stamp_font_tier(_map_scale_value, MenuInterfaceApplier.TIER_VALUE)
+	scale_row.add_child(_map_scale_value)
+
+	_text_size_option = _add_labeled_option(vbox, "Inspector text", GameSettings.TEXT_SIZE_LABELS)
+	_text_size_option.item_selected.connect(func(_idx: int) -> void:
+		if not _sync_blocked:
+			_apply_interface_live(),
+	)
+
+	var ui_scale_row: HBoxContainer = HBoxContainer.new()
+	ui_scale_row.add_theme_constant_override("separation", 10)
+	vbox.add_child(_label("UI layout scale (panels & buttons)"))
+	vbox.add_child(ui_scale_row)
+	_ui_scale_slider = HSlider.new()
+	_ui_scale_slider.min_value = 0.75
+	_ui_scale_slider.max_value = 2.5
+	_ui_scale_slider.step = 0.05
+	_ui_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_ui_scale_slider.value_changed.connect(_on_ui_scale_slider_changed)
+	ui_scale_row.add_child(_ui_scale_slider)
+	_ui_scale_value = Label.new()
+	_ui_scale_value.custom_minimum_size = Vector2(48, 0)
+	MenuInterfaceApplier.stamp_font_tier(_ui_scale_value, MenuInterfaceApplier.TIER_VALUE)
+	ui_scale_row.add_child(_ui_scale_value)
+
+	var text_scale_row: HBoxContainer = HBoxContainer.new()
+	text_scale_row.add_theme_constant_override("separation", 10)
+	vbox.add_child(_label("Text scale"))
+	vbox.add_child(text_scale_row)
+	_text_scale_slider = HSlider.new()
+	_text_scale_slider.min_value = 0.75
+	_text_scale_slider.max_value = 2.5
+	_text_scale_slider.step = 0.05
+	_text_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_text_scale_slider.value_changed.connect(_on_text_scale_slider_changed)
+	text_scale_row.add_child(_text_scale_slider)
+	_text_scale_value = Label.new()
+	_text_scale_value.custom_minimum_size = Vector2(48, 0)
+	MenuInterfaceApplier.stamp_font_tier(_text_scale_value, MenuInterfaceApplier.TIER_VALUE)
+	text_scale_row.add_child(_text_scale_value)
+
+	var width_row: HBoxContainer = HBoxContainer.new()
+	width_row.add_theme_constant_override("separation", 10)
+	vbox.add_child(_label("Inspector panel width"))
+	vbox.add_child(width_row)
+	_panel_width_slider = HSlider.new()
+	_panel_width_slider.min_value = 320.0
+	_panel_width_slider.max_value = 960.0
+	_panel_width_slider.step = 20.0
+	_panel_width_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panel_width_slider.value_changed.connect(_on_panel_width_slider_changed)
+	width_row.add_child(_panel_width_slider)
+	_panel_width_value = Label.new()
+	_panel_width_value.custom_minimum_size = Vector2(48, 0)
+	MenuInterfaceApplier.stamp_font_tier(_panel_width_value, MenuInterfaceApplier.TIER_VALUE)
+	width_row.add_child(_panel_width_value)
+
+	_damage_numbers_check = CheckButton.new()
+	_damage_numbers_check.text = "Show floating damage numbers"
+	_damage_numbers_check.toggled.connect(func(pressed: bool) -> void:
+		if _settings != null:
+			_settings.show_damage_numbers = pressed
+			if not _sync_blocked:
+				_apply_display_live(),
+	)
+	vbox.add_child(_damage_numbers_check)
+
+	_show_fps_check = CheckButton.new()
+	_show_fps_check.text = "Show FPS counter"
+	_show_fps_check.toggled.connect(func(pressed: bool) -> void:
+		if _settings != null:
+			_settings.show_fps_hud = pressed
+			if not _sync_blocked:
+				_apply_display_live(),
+	)
+	vbox.add_child(_show_fps_check)
+
+	_show_tod_check = CheckButton.new()
+	_show_tod_check.text = "Show time-of-day clock"
+	_show_tod_check.toggled.connect(func(pressed: bool) -> void:
+		if _settings != null:
+			_settings.show_time_of_day_hud = pressed
+			if not _sync_blocked:
+				_apply_display_live(),
+	)
+	vbox.add_child(_show_tod_check)
+
+	_combat_char_section = VBoxContainer.new()
+	_combat_char_section.visible = false
+	vbox.add_child(_combat_char_section)
+	_add_section(_combat_char_section, "Units")
+	var char_scale_row: HBoxContainer = HBoxContainer.new()
+	char_scale_row.add_theme_constant_override("separation", 10)
+	_combat_char_section.add_child(_label("Character display scale"))
+	_combat_char_section.add_child(char_scale_row)
+	_display_char_scale_slider = HSlider.new()
+	_display_char_scale_slider.min_value = 0.25
+	_display_char_scale_slider.max_value = 4.0
+	_display_char_scale_slider.step = 0.05
+	_display_char_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_display_char_scale_slider.value_changed.connect(_on_display_char_scale_changed)
+	char_scale_row.add_child(_display_char_scale_slider)
+	_display_char_scale_value = Label.new()
+	_display_char_scale_value.custom_minimum_size = Vector2(40, 0)
+	MenuInterfaceApplier.stamp_font_tier(_display_char_scale_value, MenuInterfaceApplier.TIER_VALUE)
+	char_scale_row.add_child(_display_char_scale_value)
+
+	vbox.add_child(HSeparator.new())
+	var actions: HBoxContainer = HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 8)
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(actions)
+	_add_button_to(actions, "Apply", _apply_display)
+	_add_button_to(actions, "Back", _show_main)
+
+
+func _build_map_menu(panel: PanelContainer) -> void:
+	var margin: MarginContainer = _margin(panel)
+	var vbox: VBoxContainer = _vbox(margin)
+	_add_title(vbox, "Map Settings")
+	_add_hint(vbox, "Map overrides and character settings")
+
+	_add_section(vbox, "Character")
+	var scale_row: HBoxContainer = HBoxContainer.new()
+	scale_row.add_theme_constant_override("separation", 10)
+	vbox.add_child(_label("Display scale"))
+	vbox.add_child(scale_row)
+	_char_scale_slider = HSlider.new()
+	_char_scale_slider.min_value = 0.25
+	_char_scale_slider.max_value = 4.0
+	_char_scale_slider.step = 0.05
+	_char_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_char_scale_slider.value_changed.connect(_on_char_scale_changed)
+	scale_row.add_child(_char_scale_slider)
+	_char_scale_value = Label.new()
+	_char_scale_value.custom_minimum_size = Vector2(40, 0)
+	MenuInterfaceApplier.stamp_font_tier(_char_scale_value, MenuInterfaceApplier.TIER_VALUE)
+	scale_row.add_child(_char_scale_value)
+
+	vbox.add_child(HSeparator.new())
+	_add_section(vbox, "Generation")
+	_add_button(vbox, "Regenerate Map", func(): map_regenerate_requested.emit())
+	_add_button(vbox, "New Seed", func(): map_reseed_requested.emit())
+	_add_button(vbox, "Next Biome", func(): map_cycle_biome_requested.emit())
+	var size_row: HBoxContainer = HBoxContainer.new()
+	size_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(size_row)
+	_add_button_to(size_row, "Map −", func(): map_resize_requested.emit(-2))
+	_add_button_to(size_row, "Map +", func(): map_resize_requested.emit(2))
+
+	vbox.add_child(HSeparator.new())
+	_add_section(vbox, "Debug / Overlays")
+	_add_button(vbox, "Toggle Center Cell", func(): map_toggle_center_requested.emit())
+	_tile_labels_check = _add_tool_check(vbox, "Tile ID labels", func(b): map_tile_labels_toggled.emit(b))
+
+	vbox.add_child(HSeparator.new())
+	_add_section(vbox, "Boredom Tests")
+	_boredom_atmo_check = _add_tool_check(vbox, "Boredom map (atmosphere)", func(b): map_boredom_atmosphere_toggled.emit(b))
+	_boredom_water_check = _add_tool_check(vbox, "Boredom map (water)", func(b): map_boredom_water_toggled.emit(b))
+
+	vbox.add_child(HSeparator.new())
+	var actions: HBoxContainer = HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(actions)
+	_add_button_to(actions, "Back", _show_main)
+
+
+func _add_tool_check(parent: VBoxContainer, label_text: String, on_toggled: Callable) -> CheckButton:
+	var check: CheckButton = CheckButton.new()
+	check.text = label_text
+	check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	check.toggled.connect(on_toggled)
+	parent.add_child(check)
+	return check
+
+
+func _add_section(parent: VBoxContainer, text: String) -> void:
+	var label: Label = Label.new()
+	label.text = text
+	label.add_theme_color_override("font_color", Color(0.82, 0.86, 0.95))
+	MenuInterfaceApplier.stamp_font_tier(label, MenuInterfaceApplier.TIER_SECTION)
+	parent.add_child(label)
+
+
+func _apply_display() -> void:
+	if _settings == null:
+		return
+	_read_controls_to_settings()
+	_settings.apply_and_save(get_window(), true)
+	_settings.apply_audio_buses()
+	if _on_applied.is_valid():
+		_on_applied.call()
+	close_menu()
+
+
+func _apply_window_mode_live() -> void:
+	if _settings == null:
+		return
+	_settings.set_window_mode_index(_window_mode_option.selected)
+	_sync_resolution_controls()
+	_settings.apply_to_window(get_window(), true)
+	_sync_resolution_controls()
+	_settings.apply_audio_buses()
+	_settings.save_to_disk()
+	if _on_applied.is_valid():
+		_on_applied.call()
+
+
+func _apply_display_live() -> void:
+	if _settings == null:
+		return
+	_read_live_controls_to_settings()
+	_settings.save_to_disk()
+	_settings.apply_audio_buses()
+	if _on_applied.is_valid():
+		_on_applied.call()
+
+
+func _sync_controls_from_settings() -> void:
+	_set_sync_blocked(true)
+	_resolution_option.select(_settings.resolution_index())
+	_window_mode_option.select(_settings.window_mode_index())
+	_map_zoom_option.select(_settings.map_zoom_mode)
+	_map_scale_slider.set_block_signals(true)
+	_map_scale_slider.value = _settings.map_zoom_multiplier
+	_map_scale_slider.set_block_signals(false)
+	_on_map_scale_slider_changed(_settings.map_zoom_multiplier)
+	_text_size_option.select(_settings.inspector_text_size_index)
+	_panel_width_slider.set_block_signals(true)
+	_panel_width_slider.value = float(_settings.inspector_panel_width)
+	_panel_width_slider.set_block_signals(false)
+	_on_panel_width_slider_changed(float(_settings.inspector_panel_width))
+	_ui_scale_slider.set_block_signals(true)
+	_ui_scale_slider.value = _settings.combat_ui_scale
+	_ui_scale_slider.set_block_signals(false)
+	_on_ui_scale_slider_changed(_settings.combat_ui_scale)
+	_text_scale_slider.set_block_signals(true)
+	_text_scale_slider.value = _settings.combat_text_scale
+	_text_scale_slider.set_block_signals(false)
+	_on_text_scale_slider_changed(_settings.combat_text_scale)
+	if _damage_numbers_check != null:
+		_damage_numbers_check.set_block_signals(true)
+		_damage_numbers_check.button_pressed = _settings.show_damage_numbers
+		_damage_numbers_check.set_block_signals(false)
+	if _show_fps_check != null:
+		_show_fps_check.set_block_signals(true)
+		_show_fps_check.button_pressed = _settings.show_fps_hud
+		_show_fps_check.set_block_signals(false)
+	if _show_tod_check != null:
+		_show_tod_check.set_block_signals(true)
+		_show_tod_check.button_pressed = _settings.show_time_of_day_hud
+		_show_tod_check.set_block_signals(false)
+	if _char_profile != null:
+		_char_scale_slider.set_block_signals(true)
+		_char_scale_slider.value = _char_profile.display_scale
+		_char_scale_slider.set_block_signals(false)
+		_on_char_scale_changed(_char_profile.display_scale)
+	if _display_char_scale_slider != null and _char_profile != null:
+		_display_char_scale_slider.set_block_signals(true)
+		_display_char_scale_slider.value = _char_profile.display_scale
+		_display_char_scale_slider.set_block_signals(false)
+		_on_display_char_scale_changed(_char_profile.display_scale)
+	_sync_resolution_controls()
+	_set_sync_blocked(false)
+
+
+func _sync_resolution_controls() -> void:
+	if _resolution_option == null or _window_mode_option == null or _settings == null:
+		return
+	var windowed: bool = _window_mode_option.selected == 0
+	_resolution_option.disabled = not windowed
+	if _resolution_status_label != null:
+		_resolution_status_label.text = _settings.format_resolution_status(
+			get_window(),
+			_resolution_option.selected,
+		)
+
+
+var _sync_blocked: bool = false
+
+
+func _set_sync_blocked(blocked: bool) -> void:
+	_sync_blocked = blocked
+
+
+func _read_live_controls_to_settings() -> void:
+	_settings.map_zoom_mode = _map_zoom_option.selected as GameSettings.MapZoomMode
+	_settings.map_zoom_multiplier = _map_scale_slider.value
+	_settings.inspector_text_size_index = _text_size_option.selected
+	_settings.inspector_panel_width = int(_panel_width_slider.value)
+	_settings.combat_ui_scale = _ui_scale_slider.value
+	_settings.combat_text_scale = _text_scale_slider.value if _text_scale_slider != null else _settings.combat_text_scale
+	_settings.show_damage_numbers = (
+		_damage_numbers_check.button_pressed if _damage_numbers_check != null else _settings.show_damage_numbers
+	)
+	_settings.show_fps_hud = (
+		_show_fps_check.button_pressed if _show_fps_check != null else _settings.show_fps_hud
+	)
+	_settings.show_time_of_day_hud = (
+		_show_tod_check.button_pressed if _show_tod_check != null else _settings.show_time_of_day_hud
+	)
+
+
+func _read_controls_to_settings() -> void:
+	_settings.set_resolution_index(_resolution_option.selected)
+	_settings.set_window_mode_index(_window_mode_option.selected)
+	_settings.map_zoom_mode = _map_zoom_option.selected as GameSettings.MapZoomMode
+	_settings.map_zoom_multiplier = _map_scale_slider.value
+	_settings.inspector_text_size_index = _text_size_option.selected
+	_settings.inspector_panel_width = int(_panel_width_slider.value)
+	_settings.combat_ui_scale = _ui_scale_slider.value
+	_settings.combat_text_scale = _text_scale_slider.value if _text_scale_slider != null else _settings.combat_text_scale
+	_settings.show_damage_numbers = (
+		_damage_numbers_check.button_pressed if _damage_numbers_check != null else _settings.show_damage_numbers
+	)
+	_settings.show_fps_hud = (
+		_show_fps_check.button_pressed if _show_fps_check != null else _settings.show_fps_hud
+	)
+	_settings.show_time_of_day_hud = (
+		_show_tod_check.button_pressed if _show_tod_check != null else _settings.show_time_of_day_hud
+	)
+
+
+func _show_main() -> void:
+	_main_panel.visible = true
+	_display_panel.visible = false
+	_map_panel.visible = false
+	if _sound_panel != null:
+		_sound_panel.visible = false
+	if _effects_panel != null:
+		_effects_panel.visible = false
+
+
+func _show_effects() -> void:
+	_sync_effects_checks()
+	_main_panel.visible = false
+	_display_panel.visible = false
+	_map_panel.visible = false
+	if _sound_panel != null:
+		_sound_panel.visible = false
+	if _effects_panel != null:
+		_effects_panel.visible = true
+
+
+func _show_display() -> void:
+	_sync_controls_from_settings()
+	_main_panel.visible = false
+	_display_panel.visible = true
+	_map_panel.visible = false
+	if _sound_panel != null:
+		_sound_panel.visible = false
+	if _effects_panel != null:
+		_effects_panel.visible = false
+
+
+func _show_sound() -> void:
+	_sync_sound_sliders()
+	_main_panel.visible = false
+	_display_panel.visible = false
+	_map_panel.visible = false
+	if _effects_panel != null:
+		_effects_panel.visible = false
+	if _sound_panel != null:
+		_sound_panel.visible = true
+
+
+func _show_map_settings() -> void:
+	_sync_controls_from_settings()
+	_main_panel.visible = false
+	_display_panel.visible = false
+	_map_panel.visible = true
+	if _sound_panel != null:
+		_sound_panel.visible = false
+	if _effects_panel != null:
+		_effects_panel.visible = false
+
+
+func _on_map_scale_slider_changed(value: float) -> void:
+	_map_scale_value.text = "%.2f×" % value
+	if not _sync_blocked:
+		_apply_display_live()
+
+
+func _on_text_scale_slider_changed(value: float) -> void:
+	_text_scale_value.text = "%.2f×" % value
+	if not _sync_blocked:
+		_apply_interface_live()
+
+
+func _on_dim_gui_input(event: InputEvent) -> void:
+	if not _is_open:
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		_navigate_back()
+		get_viewport().set_input_as_handled()
+
+
+func _on_char_scale_changed(value: float) -> void:
+	_char_scale_value.text = "%.2f×" % value
+	if _char_profile != null:
+		_char_profile.display_scale = value
+	character_gen_changed.emit()
+
+
+func _on_display_char_scale_changed(value: float) -> void:
+	if _display_char_scale_value != null:
+		_display_char_scale_value.text = "%.2f×" % value
+	if _char_profile != null:
+		_char_profile.display_scale = value
+		_char_profile.save_to_user_disk()
+	character_gen_changed.emit()
+
+
+func _on_panel_width_slider_changed(value: float) -> void:
+	_panel_width_value.text = "%d" % int(value)
+	if not _sync_blocked:
+		_apply_interface_live()
+
+
+func _on_ui_scale_slider_changed(value: float) -> void:
+	_ui_scale_value.text = "%.2f×" % value
+	if not _sync_blocked:
+		_apply_interface_live()
+
+
+func _apply_interface_live() -> void:
+	if _settings == null or _sync_blocked:
+		return
+	_settings.inspector_text_size_index = _text_size_option.selected
+	_settings.inspector_panel_width = int(_panel_width_slider.value)
+	_settings.combat_ui_scale = _ui_scale_slider.value
+	_settings.combat_text_scale = _text_scale_slider.value
+	_settings.save_to_disk()
+	_settings.changed.emit()
+	_apply_interface_to_ui()
+	EventBus.interface_settings_changed.emit()
+	if _on_applied.is_valid():
+		_on_applied.call()
+
+
+func _apply_interface_to_ui() -> void:
+	if _settings == null or _root == null:
+		return
+	MenuInterfaceApplier.apply(_root, _settings)
+
+
+func _margin(panel: PanelContainer) -> MarginContainer:
+	var margin: MarginContainer = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margin)
+	return margin
+
+
+func _vbox(parent: MarginContainer) -> VBoxContainer:
+	var vbox: VBoxContainer = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	parent.add_child(vbox)
+	return vbox
+
+
+func _add_title(vbox: VBoxContainer, text: String) -> void:
+	var title: Label = Label.new()
+	title.text = text
+	title.add_theme_color_override("font_color", Color(0.95, 0.96, 1.0))
+	MenuInterfaceApplier.stamp_font_tier(title, MenuInterfaceApplier.TIER_PANEL_TITLE)
+	vbox.add_child(title)
+
+
+func _add_hint(vbox: VBoxContainer, text: String) -> void:
+	var hint: Label = Label.new()
+	hint.text = text
+	hint.add_theme_color_override("font_color", Color(0.7, 0.72, 0.8))
+	MenuInterfaceApplier.stamp_font_tier(hint, MenuInterfaceApplier.TIER_HINT)
+	vbox.add_child(hint)
+
+
+func _add_button(vbox: VBoxContainer, text: String, callback: Callable) -> Button:
+	var row: HBoxContainer = HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(row)
+	return _add_button_to(row, text, callback)
+
+
+func _add_button_to(parent: BoxContainer, text: String, callback: Callable) -> Button:
+	var button: Button = Button.new()
+	button.text = text
+	button.pressed.connect(callback)
+	parent.add_child(button)
+	return button
+
+
+func _label(text: String) -> Label:
+	var label: Label = Label.new()
+	label.text = text
+	MenuInterfaceApplier.stamp_font_tier(label, MenuInterfaceApplier.TIER_BODY)
+	return label
+
+
+func _add_labeled_option(vbox: VBoxContainer, label_text: String, items: PackedStringArray) -> OptionButton:
+	vbox.add_child(_label(label_text))
+	var option: OptionButton = OptionButton.new()
+	option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for item: String in items:
+		option.add_item(item)
+	vbox.add_child(option)
+	return option
+
+
+func _build_sound_menu(panel: PanelContainer) -> void:
+	var margin: MarginContainer = _margin(panel)
+	var vbox: VBoxContainer = _vbox(margin)
+	_add_title(vbox, "Sound")
+	_add_hint(vbox, "Volume changes apply immediately.")
+	_master_slider = _add_sound_volume_row(vbox, "Master volume", &"master")
+	_sfx_slider = _add_sound_volume_row(vbox, "Sound effects", &"sfx")
+	_music_slider = _add_sound_volume_row(vbox, "Music", &"music")
+	vbox.add_child(HSeparator.new())
+	var actions: HBoxContainer = HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(actions)
+	_add_button_to(actions, "Back", _show_main)
+
+
+func _add_sound_volume_row(parent: VBoxContainer, title: String, bus_key: StringName) -> HSlider:
+	parent.add_child(_label(title))
+	var row: HBoxContainer = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var slider: HSlider = HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 100.0
+	slider.step = 1.0
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var value_lbl: Label = Label.new()
+	value_lbl.custom_minimum_size = Vector2(40, 0)
+	MenuInterfaceApplier.stamp_font_tier(value_lbl, MenuInterfaceApplier.TIER_VALUE)
+	slider.value_changed.connect(func(v: float) -> void:
+		value_lbl.text = "%d%%" % int(v)
+		if _settings == null:
+			return
+		match bus_key:
+			&"master":
+				_settings.master_volume = v / 100.0
+			&"sfx":
+				_settings.sfx_volume = v / 100.0
+			&"music":
+				_settings.music_volume = v / 100.0
+		_settings.save_to_disk()
+		_settings.apply_audio_buses(),
+	)
+	row.add_child(slider)
+	row.add_child(value_lbl)
+	parent.add_child(row)
+	return slider
+
+
+func _sync_sound_sliders() -> void:
+	if _settings == null:
+		return
+	_set_slider_value(_master_slider, _settings.master_volume)
+	_set_slider_value(_sfx_slider, _settings.sfx_volume)
+	_set_slider_value(_music_slider, _settings.music_volume)
+
+
+func _set_slider_value(slider: HSlider, volume: float) -> void:
+	if slider == null:
+		return
+	slider.set_block_signals(true)
+	slider.value = volume * 100.0
+	slider.set_block_signals(false)
+	var row: HBoxContainer = slider.get_parent() as HBoxContainer
+	if row != null and row.get_child_count() > 1:
+		var value_lbl: Label = row.get_child(1) as Label
+		if value_lbl != null:
+			value_lbl.text = "%d%%" % int(slider.value)
+
+
+func _build_combat_effects_panel() -> void:
+	if _effects_panel == null or _effects_settings == null:
+		return
+	if _effects_panel.get_child_count() > 0:
+		return
+	var margin: MarginContainer = _margin(_effects_panel)
+	var vbox: VBoxContainer = _vbox(margin)
+	_add_title(vbox, "Ambient Effects")
+	_add_hint(vbox, "Combat map living systems · saved automatically")
+	vbox.add_child(HSeparator.new())
+	var toggles: Array[Dictionary] = [
+		{"key": "wind_field", "label": "Wind field"},
+		{"key": "time_light", "label": "Day / night cycle"},
+		{"key": "cloud_shadows", "label": "Cloud shadows"},
+		{"key": "mist", "label": "Mist overlay"},
+		{"key": "water_ripples", "label": "Water ripples"},
+		{"key": "shoreline_foam", "label": "Shoreline foam"},
+		{"key": "water_sparkles", "label": "Water sparkles"},
+		{"key": "fish_splash", "label": "Fish splash"},
+		{"key": "ambient_particles", "label": "Ambient particles"},
+		{"key": "ecology_actors", "label": "Ecology actors"},
+		{"key": "rare_events", "label": "Rare ambient events"},
+		{"key": "oblique_contact_shadows", "label": "Contact shadows"},
+	]
+	for entry: Dictionary in toggles:
+		var key: String = entry["key"]
+		var check: CheckButton = CheckButton.new()
+		check.text = entry["label"]
+		check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		check.toggled.connect(func(pressed: bool) -> void: _on_effect_toggled(key, pressed))
+		vbox.add_child(check)
+		_effects_checks[key] = check
+	vbox.add_child(HSeparator.new())
+	var actions: HBoxContainer = HBoxContainer.new()
+	actions.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.add_child(actions)
+	_add_button_to(actions, "Back", _show_main)
+
+
+func _sync_effects_checks() -> void:
+	if _effects_settings == null:
+		return
+	for key: Variant in _effects_checks.keys():
+		var check: CheckButton = _effects_checks[key] as CheckButton
+		if check == null:
+			continue
+		check.set_block_signals(true)
+		check.button_pressed = bool(_effects_settings.get(key))
+		check.set_block_signals(false)
+
+
+func _on_effect_toggled(key: String, pressed: bool) -> void:
+	if _effects_settings == null:
+		return
+	_effects_settings.set(key, pressed)
+	_effects_settings.save_to_disk()
+	_effects_settings.changed.emit()
+	if _on_effects_changed.is_valid():
+		_on_effects_changed.call()
+
+
+func _panel_style() -> StyleBoxFlat:
+	var bg: StyleBoxFlat = StyleBoxFlat.new()
+	bg.bg_color = Color(0.08, 0.09, 0.14, 0.98)
+	bg.set_corner_radius_all(8)
+	bg.set_border_width_all(1)
+	bg.border_color = Color(0.35, 0.4, 0.52)
+	bg.set_content_margin_all(4)
+	return bg

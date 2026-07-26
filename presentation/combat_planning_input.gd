@@ -727,11 +727,10 @@ func on_hover_moved(cell: Vector2i) -> void:
 				var ability := _selected_ability_data(p_unit)
 				var is_awaiting_move = awaiting_targeting_active() and ability != null and AbilitySystem.ability_has_movement_effect(ability)
 				if _basic_move_allowed() or is_awaiting_move:
-					_drag_unit_id = _director.selected_unit_id
-					if _drag_route.is_empty() or not _hover_should_extend_drag_route(cell, p_unit):
+					if _drag_route.is_empty():
+						_drag_unit_id = _director.selected_unit_id
 						_drag_route = [p_unit.position]
-					if _hover_should_extend_drag_route(cell, p_unit):
-						_extend_drag_route(cell)
+					_extend_drag_route(cell)
 			_refresh_selected_interaction_preview()
 	elif planning_cell_changed:
 		_update_hover_attack_preview()
@@ -1104,19 +1103,7 @@ const _NO_PREFERRED_APPROACH: Vector2i = Vector2i(-999999, -999999)
 
 ## Single source for commit cell, waypoints, and approach hint — cursor, preview, and drop must match.
 func _drag_route_commits_active() -> bool:
-	return dragging
-
-
-func _hover_should_extend_drag_route(cell: Vector2i, actor: UnitState) -> bool:
-	if actor == null or _director == null or _director.board == null:
-		return false
-	if not _director.board.is_in_bounds(cell):
-		return false
-	if _skill_interaction_active():
-		var hover_unit: UnitState = _director.board.get_unit_at(cell)
-		if hover_unit != null and hover_unit.is_enemy():
-			return false
-	return true
+	return dragging or _drag_unit_id >= 0
 
 
 func _commit_interaction_params(
@@ -2406,7 +2393,7 @@ func _build_enemy_commit_slots(
 		if not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
 			slots["invalid"] = "Enemy is not attackable from legal move tiles."
 			return slots
-	elif _can_move_to(actor, enemy.position) and _drop_allows_move_tile(enemy.position, legal_move_tiles, actor):
+	elif _drop_allows_move_tile(enemy.position, legal_move_tiles, actor):
 		_append_move_to_commit_slots(slots, unit_id, enemy.position, waypoints, actor)
 		return slots
 	elif not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
