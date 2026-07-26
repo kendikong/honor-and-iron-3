@@ -67,7 +67,6 @@ var _dev_shadow_checks: Dictionary = {}
 var _dev_tile_labels_check: CheckButton
 var _dev_boredom_atmo_check: CheckButton
 var _dev_boredom_water_check: CheckButton
-var _interface_tab_root: VBoxContainer
 
 
 func _ready() -> void:
@@ -80,7 +79,11 @@ func _ready() -> void:
 	_effects_settings = EffectsSettings.new()
 	_effects_settings.load_from_disk()
 
+	MenuInterfaceApplier.stamp_font_tier($Title, MenuInterfaceApplier.TIER_MENU_TITLE)
+	MenuInterfaceApplier.stamp_font_tier($BackButton, MenuInterfaceApplier.TIER_MENU_BACK)
+
 	var margin := MarginContainer.new()
+	MenuInterfaceApplier.stamp_content_margin(margin)
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 48)
 	margin.add_theme_constant_override("margin_right", 48)
@@ -100,6 +103,7 @@ func _ready() -> void:
 	_build_controls_tab(tab_container)
 	_build_interface_tab(tab_container)
 	_build_developer_tab(tab_container)
+	_apply_interface_to_ui()
 
 
 func _build_display_tab(parent: TabContainer) -> void:
@@ -115,7 +119,7 @@ func _build_display_tab(parent: TabContainer) -> void:
 	vbox.add_child(_label("Resolution"))
 	vbox.add_child(_resolution_option)
 	_resolution_status_label = Label.new()
-	_resolution_status_label.add_theme_font_size_override("font_size", 13)
+	MenuInterfaceApplier.stamp_font_tier(_resolution_status_label, MenuInterfaceApplier.TIER_HINT)
 	_resolution_status_label.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88))
 	vbox.add_child(_resolution_status_label)
 
@@ -145,6 +149,7 @@ func _build_display_tab(parent: TabContainer) -> void:
 	_map_scale_slider.value = _game_settings.map_zoom_multiplier
 	_map_scale_slider.value_changed.connect(_on_map_scale_changed)
 	_map_scale_label = Label.new()
+	MenuInterfaceApplier.stamp_font_tier(_map_scale_label, MenuInterfaceApplier.TIER_VALUE)
 	_map_scale_label.custom_minimum_size.x = 48
 	scale_row.add_child(_map_scale_slider)
 	scale_row.add_child(_map_scale_label)
@@ -247,6 +252,7 @@ func _build_interface_tab(parent: TabContainer) -> void:
 	_ui_scale_slider.value = _game_settings.combat_ui_scale
 	_ui_scale_slider.value_changed.connect(_on_ui_scale_changed)
 	_ui_scale_label = Label.new()
+	MenuInterfaceApplier.stamp_font_tier(_ui_scale_label, MenuInterfaceApplier.TIER_VALUE)
 	vbox.add_child(_label("UI layout scale (panels & buttons)"))
 	vbox.add_child(_slider_value_row(_ui_scale_slider, _ui_scale_label))
 	_on_ui_scale_changed(_game_settings.combat_ui_scale)
@@ -258,6 +264,7 @@ func _build_interface_tab(parent: TabContainer) -> void:
 	_text_scale_slider.value = _game_settings.combat_text_scale
 	_text_scale_slider.value_changed.connect(_on_text_scale_changed)
 	_text_scale_label = Label.new()
+	MenuInterfaceApplier.stamp_font_tier(_text_scale_label, MenuInterfaceApplier.TIER_VALUE)
 	vbox.add_child(_label("Text scale"))
 	vbox.add_child(_slider_value_row(_text_scale_slider, _text_scale_label))
 	_on_text_scale_changed(_game_settings.combat_text_scale)
@@ -281,43 +288,10 @@ func _build_interface_tab(parent: TabContainer) -> void:
 	_panel_width_slider.value = float(_game_settings.inspector_panel_width)
 	_panel_width_slider.value_changed.connect(_on_panel_width_changed)
 	_panel_width_label = Label.new()
+	MenuInterfaceApplier.stamp_font_tier(_panel_width_label, MenuInterfaceApplier.TIER_VALUE)
 	vbox.add_child(_label("Inspector panel width"))
 	vbox.add_child(_slider_value_row(_panel_width_slider, _panel_width_label))
 	_on_panel_width_changed(float(_game_settings.inspector_panel_width))
-	_interface_tab_root = vbox
-	_sync_interface_tab_preview()
-
-
-func _sync_interface_tab_preview() -> void:
-	if _interface_tab_root == null:
-		return
-	var body_sz: int = _game_settings.scaled_body_font()
-	var title_sz: int = _game_settings.scaled_title_font()
-	var hint_sz: int = _game_settings.scaled_hint_font()
-	var ui_scale: float = _game_settings.combat_ui_scale
-	_interface_tab_root.add_theme_constant_override("separation", int(round(10.0 * ui_scale)))
-	_apply_interface_preview_recursive(_interface_tab_root, body_sz, title_sz, hint_sz)
-	if _ui_scale_slider != null:
-		_ui_scale_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
-	if _text_scale_slider != null:
-		_text_scale_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
-	if _panel_width_slider != null:
-		_panel_width_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
-
-
-func _apply_interface_preview_recursive(node: Node, body_sz: int, title_sz: int, hint_sz: int) -> void:
-	if node is Label:
-		var lbl: Label = node as Label
-		if lbl == _ui_scale_label or lbl == _text_scale_label or lbl == _panel_width_label:
-			lbl.add_theme_font_size_override("font_size", body_sz)
-		elif lbl.autowrap_mode != TextServer.AUTOWRAP_OFF:
-			lbl.add_theme_font_size_override("font_size", hint_sz)
-		else:
-			lbl.add_theme_font_size_override("font_size", title_sz)
-	elif node is OptionButton:
-		(node as OptionButton).add_theme_font_size_override("font_size", body_sz)
-	for child: Node in node.get_children():
-		_apply_interface_preview_recursive(child, body_sz, title_sz, hint_sz)
 
 
 func _build_developer_tab(parent: TabContainer) -> void:
@@ -419,8 +393,12 @@ func _apply_interface_live() -> void:
 		_game_settings.inspector_panel_width = int(_panel_width_slider.value)
 	_game_settings.save_to_disk()
 	_game_settings.changed.emit()
-	_sync_interface_tab_preview()
+	_apply_interface_to_ui()
 	EventBus.interface_settings_changed.emit()
+
+
+func _apply_interface_to_ui() -> void:
+	MenuInterfaceApplier.apply(self, _game_settings)
 
 
 func _on_effect_toggled(key: String, pressed: bool) -> void:
@@ -461,6 +439,7 @@ func _add_volume_row(parent: VBoxContainer, title: String, initial: float) -> HS
 	slider.value = initial * 100.0
 	var value_lbl := Label.new()
 	value_lbl.custom_minimum_size.x = 40
+	MenuInterfaceApplier.stamp_font_tier(value_lbl, MenuInterfaceApplier.TIER_VALUE)
 	value_lbl.text = "%d%%" % int(slider.value)
 	slider.value_changed.connect(func(v: float) -> void:
 		value_lbl.text = "%d%%" % int(v)
@@ -490,6 +469,7 @@ func _slider_value_row(slider: HSlider, value_label: Label) -> HBoxContainer:
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	value_label.custom_minimum_size.x = 56
+	MenuInterfaceApplier.stamp_font_tier(value_label, MenuInterfaceApplier.TIER_VALUE)
 	row.add_child(slider)
 	row.add_child(value_label)
 	return row
@@ -521,6 +501,7 @@ func _vbox(parent: Control) -> VBoxContainer:
 func _label(text: String) -> Label:
 	var lbl := Label.new()
 	lbl.text = text
+	MenuInterfaceApplier.stamp_font_tier(lbl, MenuInterfaceApplier.TIER_BODY)
 	return lbl
 
 
@@ -529,13 +510,14 @@ func _add_hint(parent: VBoxContainer, text: String) -> void:
 	hint.text = text
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_color_override("font_color", Color(0.7, 0.72, 0.8))
+	MenuInterfaceApplier.stamp_font_tier(hint, MenuInterfaceApplier.TIER_HINT)
 	parent.add_child(hint)
 
 
 func _add_section(parent: VBoxContainer, text: String) -> void:
 	var lbl := Label.new()
 	lbl.text = text
-	lbl.add_theme_font_size_override("font_size", 16)
+	MenuInterfaceApplier.stamp_font_tier(lbl, MenuInterfaceApplier.TIER_SECTION)
 	parent.add_child(lbl)
 
 

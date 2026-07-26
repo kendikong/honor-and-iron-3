@@ -62,7 +62,6 @@ var _sound_panel: PanelContainer
 var _master_slider: HSlider
 var _sfx_slider: HSlider
 var _music_slider: HSlider
-var _display_vbox: VBoxContainer
 
 
 func _ready() -> void:
@@ -115,6 +114,7 @@ func open() -> void:
 		return
 	layer = 40
 	_sync_controls_from_settings()
+	_apply_interface_to_ui()
 	_show_main()
 	_root.visible = true
 	_is_open = true
@@ -247,6 +247,7 @@ func _make_panel() -> PanelContainer:
 	var panel: PanelContainer = PanelContainer.new()
 	panel.custom_minimum_size = Vector2(420, 0)
 	panel.add_theme_stylebox_override("panel", _panel_style())
+	MenuInterfaceApplier.stamp_panel_width(panel)
 	return panel
 
 
@@ -279,7 +280,6 @@ func _build_main_menu(panel: PanelContainer) -> void:
 func _build_display_menu(panel: PanelContainer) -> void:
 	var margin: MarginContainer = _margin(panel)
 	var vbox: VBoxContainer = _vbox(margin)
-	_display_vbox = vbox
 	_add_title(vbox, "Display")
 	_add_hint(vbox, "UI layout scale affects panels/buttons only. Text scale affects fonts. Map scale applies live.")
 
@@ -294,7 +294,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	vbox.add_child(_label("Resolution"))
 	vbox.add_child(_resolution_option)
 	_resolution_status_label = Label.new()
-	_resolution_status_label.add_theme_font_size_override("font_size", 13)
+	MenuInterfaceApplier.stamp_font_tier(_resolution_status_label, MenuInterfaceApplier.TIER_HINT)
 	_resolution_status_label.add_theme_color_override("font_color", Color(0.72, 0.78, 0.88))
 	vbox.add_child(_resolution_status_label)
 
@@ -322,6 +322,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	scale_row.add_child(_map_scale_slider)
 	_map_scale_value = Label.new()
 	_map_scale_value.custom_minimum_size = Vector2(40, 0)
+	MenuInterfaceApplier.stamp_font_tier(_map_scale_value, MenuInterfaceApplier.TIER_VALUE)
 	scale_row.add_child(_map_scale_value)
 
 	_text_size_option = _add_labeled_option(vbox, "Inspector text", GameSettings.TEXT_SIZE_LABELS)
@@ -343,6 +344,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	ui_scale_row.add_child(_ui_scale_slider)
 	_ui_scale_value = Label.new()
 	_ui_scale_value.custom_minimum_size = Vector2(48, 0)
+	MenuInterfaceApplier.stamp_font_tier(_ui_scale_value, MenuInterfaceApplier.TIER_VALUE)
 	ui_scale_row.add_child(_ui_scale_value)
 
 	var text_scale_row: HBoxContainer = HBoxContainer.new()
@@ -358,6 +360,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	text_scale_row.add_child(_text_scale_slider)
 	_text_scale_value = Label.new()
 	_text_scale_value.custom_minimum_size = Vector2(48, 0)
+	MenuInterfaceApplier.stamp_font_tier(_text_scale_value, MenuInterfaceApplier.TIER_VALUE)
 	text_scale_row.add_child(_text_scale_value)
 
 	var width_row: HBoxContainer = HBoxContainer.new()
@@ -373,6 +376,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	width_row.add_child(_panel_width_slider)
 	_panel_width_value = Label.new()
 	_panel_width_value.custom_minimum_size = Vector2(48, 0)
+	MenuInterfaceApplier.stamp_font_tier(_panel_width_value, MenuInterfaceApplier.TIER_VALUE)
 	width_row.add_child(_panel_width_value)
 
 	_damage_numbers_check = CheckButton.new()
@@ -422,6 +426,7 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	char_scale_row.add_child(_display_char_scale_slider)
 	_display_char_scale_value = Label.new()
 	_display_char_scale_value.custom_minimum_size = Vector2(40, 0)
+	MenuInterfaceApplier.stamp_font_tier(_display_char_scale_value, MenuInterfaceApplier.TIER_VALUE)
 	char_scale_row.add_child(_display_char_scale_value)
 
 	vbox.add_child(HSeparator.new())
@@ -431,45 +436,6 @@ func _build_display_menu(panel: PanelContainer) -> void:
 	vbox.add_child(actions)
 	_add_button_to(actions, "Apply", _apply_display)
 	_add_button_to(actions, "Back", _show_main)
-	_sync_display_interface_preview()
-
-
-func _sync_display_interface_preview() -> void:
-	if _display_vbox == null or _settings == null:
-		return
-	var body_sz: int = _settings.scaled_body_font()
-	var title_sz: int = _settings.scaled_title_font()
-	var hint_sz: int = _settings.scaled_hint_font()
-	var ui_scale: float = _settings.combat_ui_scale
-	_display_vbox.add_theme_constant_override("separation", int(round(10.0 * ui_scale)))
-	_apply_display_preview_recursive(_display_vbox, body_sz, title_sz, hint_sz)
-	if _ui_scale_slider != null:
-		_ui_scale_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
-	if _text_scale_slider != null:
-		_text_scale_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
-	if _panel_width_slider != null:
-		_panel_width_slider.custom_minimum_size.y = int(round(22.0 * ui_scale))
-
-
-func _apply_display_preview_recursive(node: Node, body_sz: int, title_sz: int, hint_sz: int) -> void:
-	if node is Label:
-		var lbl: Label = node as Label
-		if lbl == _ui_scale_value or lbl == _text_scale_value or lbl == _panel_width_value:
-			lbl.add_theme_font_size_override("font_size", body_sz)
-		elif lbl == _resolution_status_label:
-			lbl.add_theme_font_size_override("font_size", hint_sz)
-		elif lbl.autowrap_mode != TextServer.AUTOWRAP_OFF:
-			lbl.add_theme_font_size_override("font_size", hint_sz)
-		else:
-			lbl.add_theme_font_size_override("font_size", title_sz)
-	elif node is OptionButton:
-		(node as OptionButton).add_theme_font_size_override("font_size", body_sz)
-	elif node is CheckButton:
-		(node as CheckButton).add_theme_font_size_override("font_size", body_sz)
-	elif node is Button:
-		(node as Button).add_theme_font_size_override("font_size", body_sz)
-	for child: Node in node.get_children():
-		_apply_display_preview_recursive(child, body_sz, title_sz, hint_sz)
 
 
 func _build_map_menu(panel: PanelContainer) -> void:
@@ -492,6 +458,7 @@ func _build_map_menu(panel: PanelContainer) -> void:
 	scale_row.add_child(_char_scale_slider)
 	_char_scale_value = Label.new()
 	_char_scale_value.custom_minimum_size = Vector2(40, 0)
+	MenuInterfaceApplier.stamp_font_tier(_char_scale_value, MenuInterfaceApplier.TIER_VALUE)
 	scale_row.add_child(_char_scale_value)
 
 	vbox.add_child(HSeparator.new())
@@ -526,7 +493,6 @@ func _add_tool_check(parent: VBoxContainer, label_text: String, on_toggled: Call
 	var check: CheckButton = CheckButton.new()
 	check.text = label_text
 	check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	check.add_theme_font_size_override("font_size", 15)
 	check.toggled.connect(on_toggled)
 	parent.add_child(check)
 	return check
@@ -535,8 +501,8 @@ func _add_tool_check(parent: VBoxContainer, label_text: String, on_toggled: Call
 func _add_section(parent: VBoxContainer, text: String) -> void:
 	var label: Label = Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", 18)
 	label.add_theme_color_override("font_color", Color(0.82, 0.86, 0.95))
+	MenuInterfaceApplier.stamp_font_tier(label, MenuInterfaceApplier.TIER_SECTION)
 	parent.add_child(label)
 
 
@@ -790,10 +756,16 @@ func _apply_interface_live() -> void:
 	_settings.combat_text_scale = _text_scale_slider.value
 	_settings.save_to_disk()
 	_settings.changed.emit()
-	_sync_display_interface_preview()
+	_apply_interface_to_ui()
 	EventBus.interface_settings_changed.emit()
 	if _on_applied.is_valid():
 		_on_applied.call()
+
+
+func _apply_interface_to_ui() -> void:
+	if _settings == null or _root == null:
+		return
+	MenuInterfaceApplier.apply(_root, _settings)
 
 
 func _margin(panel: PanelContainer) -> MarginContainer:
@@ -816,16 +788,16 @@ func _vbox(parent: MarginContainer) -> VBoxContainer:
 func _add_title(vbox: VBoxContainer, text: String) -> void:
 	var title: Label = Label.new()
 	title.text = text
-	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color(0.95, 0.96, 1.0))
+	MenuInterfaceApplier.stamp_font_tier(title, MenuInterfaceApplier.TIER_PANEL_TITLE)
 	vbox.add_child(title)
 
 
 func _add_hint(vbox: VBoxContainer, text: String) -> void:
 	var hint: Label = Label.new()
 	hint.text = text
-	hint.add_theme_font_size_override("font_size", 12)
 	hint.add_theme_color_override("font_color", Color(0.7, 0.72, 0.8))
+	MenuInterfaceApplier.stamp_font_tier(hint, MenuInterfaceApplier.TIER_HINT)
 	vbox.add_child(hint)
 
 
@@ -839,7 +811,6 @@ func _add_button(vbox: VBoxContainer, text: String, callback: Callable) -> Butto
 func _add_button_to(parent: BoxContainer, text: String, callback: Callable) -> Button:
 	var button: Button = Button.new()
 	button.text = text
-	button.custom_minimum_size = Vector2(120, 32)
 	button.pressed.connect(callback)
 	parent.add_child(button)
 	return button
@@ -848,7 +819,7 @@ func _add_button_to(parent: BoxContainer, text: String, callback: Callable) -> B
 func _label(text: String) -> Label:
 	var label: Label = Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", 13)
+	MenuInterfaceApplier.stamp_font_tier(label, MenuInterfaceApplier.TIER_BODY)
 	return label
 
 
@@ -888,6 +859,7 @@ func _add_sound_volume_row(parent: VBoxContainer, title: String, bus_key: String
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var value_lbl: Label = Label.new()
 	value_lbl.custom_minimum_size = Vector2(40, 0)
+	MenuInterfaceApplier.stamp_font_tier(value_lbl, MenuInterfaceApplier.TIER_VALUE)
 	slider.value_changed.connect(func(v: float) -> void:
 		value_lbl.text = "%d%%" % int(v)
 		if _settings == null:
