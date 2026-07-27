@@ -27,6 +27,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_enemy_target_params_ignore_pseudo_drag(failures)
 	_test_shield_bash_preview_pushes(failures)
 	_test_planning_display_ap_run_intent(failures)
+	_test_timeline_ghost_slots(failures)
 
 
 static func _bowling_charge_arm_fixture() -> Dictionary:
@@ -1114,3 +1115,40 @@ static func _test_planning_display_ap_run_intent(failures: Array[String]) -> voi
 		failures.append(
 			"PlanningInputTest: live preview AP should mirror sim board, got %d" % live_ap,
 		)
+
+
+static func _test_timeline_ghost_slots(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	var setup: Dictionary = _plain_board_with_unit(Vector2i(2, 2), 4, 2)
+	var board: BoardState = setup["board"] as BoardState
+	var unit: UnitState = setup["unit"] as UnitState
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	input._director = director
+	var move := TimelineAction.make_move(
+		1, Vector2i(4, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+	)
+	input._intent_snapshot_valid = true
+	input._intent_snapshot_key = "test"
+	input._intent_snapshot_slots = {
+		"pre": [move],
+		"action": [],
+		"post": [],
+		"invalid": false,
+	}
+	input.preview_state.preview_board = board.clone()
+	var ghost: Dictionary = input.timeline_ghost_slots(1)
+	var pre: Array = ghost.get("pre", []) as Array
+	if pre.is_empty():
+		failures.append("PlanningInputTest: empty plan should show ghost premove")
+	if pre.size() != 1 or (pre[0] as TimelineAction).target_coord != Vector2i(4, 2):
+		failures.append("PlanningInputTest: ghost premove target mismatch")
+	director.get_player_plan().entries.append(move)
+	input._intent_snapshot_valid = true
+	ghost = input.timeline_ghost_slots(1)
+	if not (ghost.get("pre", []) as Array).is_empty():
+		failures.append("PlanningInputTest: ghost should clear when intent matches committed plan")

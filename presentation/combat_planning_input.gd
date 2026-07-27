@@ -1922,6 +1922,93 @@ func planning_display_ap_left(unit_id: int) -> int:
 	)
 
 
+## Cache key for timeline ghost refresh (intent snapshot identity).
+func timeline_refresh_key(unit_id: int) -> String:
+	if not _hover_intent_ghost_active(unit_id):
+		return ""
+	return _intent_snapshot_key
+
+
+## Pending plan columns that differ from committed — for timeline ghost text.
+func timeline_ghost_slots(unit_id: int) -> Dictionary:
+	var empty: Dictionary = {"pre": [], "action": [], "post": []}
+	if not _hover_intent_ghost_active(unit_id):
+		return empty
+	var intent: Dictionary = _duplicate_commit_slots(_intent_snapshot_slots)
+	var committed: Dictionary = _committed_plan_slots(unit_id)
+	for col: String in ["pre", "action", "post"]:
+		var intent_steps: Array = intent.get(col, []) as Array
+		var committed_steps: Array = committed.get(col, []) as Array
+		if not _plan_column_equal(intent_steps, committed_steps):
+			empty[col] = intent_steps.duplicate(true)
+	return empty
+
+
+func _hover_intent_ghost_active(unit_id: int) -> bool:
+	if _director == null or unit_id < 0 or unit_id != _director.selected_unit_id:
+		return false
+	if not CombatDirector.is_planning_phase(_director.phase):
+		return false
+	if selected_phase_action_exhausted(unit_id):
+		return false
+	if not _intent_snapshot_valid or _is_invalid_dict(_intent_snapshot_slots):
+		return false
+	if drag_preview_failed:
+		return false
+	return is_live_preview_active() or dragging or skill_interaction_active() or aiming
+
+
+func _committed_plan_slots(unit_id: int) -> Dictionary:
+	var pre_moves: Array = []
+	var abilities: Array = []
+	var post_moves: Array = []
+	if _director == null or unit_id < 0:
+		return {"pre": pre_moves, "action": abilities, "post": post_moves}
+	var plan: Timeline = _director.get_player_plan()
+	if plan == null:
+		return {"pre": pre_moves, "action": abilities, "post": post_moves}
+	for action: TimelineAction in plan.entries:
+		if action.actor_id != unit_id:
+			continue
+		match action.type:
+			GameEnums.ActionType.ABILITY:
+				if action.ability != null and action.ability.is_movement_kind():
+					pre_moves.append(action)
+				elif action.ability == null or action.ability.kind != GameEnums.AbilityKind.UNIVERSAL_WAIT:
+					abilities.append(action)
+			GameEnums.ActionType.MOVE, GameEnums.ActionType.FACE:
+				if action.move_timing == GameEnums.MoveTiming.POST_ACTION:
+					post_moves.append(action)
+				else:
+					pre_moves.append(action)
+	return {"pre": pre_moves, "action": abilities, "post": post_moves}
+
+
+func _plan_column_equal(left: Array, right: Array) -> bool:
+	if left.size() != right.size():
+		return false
+	for i: int in range(left.size()):
+		if not _plan_action_equal(left[i] as TimelineAction, right[i] as TimelineAction):
+			return false
+	return true
+
+
+func _plan_action_equal(a: TimelineAction, b: TimelineAction) -> bool:
+	if a == null or b == null:
+		return a == b
+	if a.type != b.type or a.actor_id != b.actor_id:
+		return false
+	if a.target_coord != b.target_coord or a.target_unit_id != b.target_unit_id:
+		return false
+	if a.uses_run != b.uses_run or a.awaiting_target != b.awaiting_target:
+		return false
+	if a.move_timing != b.move_timing:
+		return false
+	var a_ab: StringName = a.ability.id if a.ability != null else &""
+	var b_ab: StringName = b.ability.id if b.ability != null else &""
+	return a_ab == b_ab
+
+
 func extended_move_budget_active(unit: UnitState = null) -> bool:
 	return _run_mode_selected(unit) or auto_run_movement_active(unit)
 

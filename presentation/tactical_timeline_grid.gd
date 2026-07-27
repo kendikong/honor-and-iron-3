@@ -30,6 +30,7 @@ const COLOR_ROW_HOVER: Color = Color(0.16, 0.20, 0.28, 0.92)
 const COLOR_ROW_EXHAUSTED: Color = Color(0.09, 0.10, 0.12, 0.82)
 const COLOR_PLAN_EXHAUSTED: Color = Color(0.48, 0.50, 0.54, 1.0)
 const COLOR_SLOT_EMPTY: Color = Color(0.10, 0.11, 0.14, 0.55)
+const COLOR_PENDING_PLAN: Color = Color(0.72, 0.86, 1.0, 0.62)
 const COLOR_ACCENT_PRE: Color = Color(0.35, 0.55, 0.85, 0.18)
 const COLOR_ACCENT_ACT: Color = Color(0.85, 0.55, 0.25, 0.18)
 const COLOR_ACCENT_POST: Color = Color(0.45, 0.75, 0.45, 0.18)
@@ -46,6 +47,8 @@ var _cell_font_px: int = 12
 var _rows_root: VBoxContainer
 var _last_row_click_unit: int = -1
 var _last_row_click_ms: int = 0
+var _pending_plan_labels: Array[Label] = []
+var _ghost_pulse_phase: float = 0.0
 
 signal row_hovered(unit_id: int)
 signal row_unhovered(unit_id: int)
@@ -57,6 +60,17 @@ func setup(director: CombatDirector) -> void:
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 	add_theme_constant_override("separation", 2)
+	set_process(true)
+
+
+func _process(delta: float) -> void:
+	if _pending_plan_labels.is_empty():
+		return
+	_ghost_pulse_phase += delta * 2.4
+	var pulse: float = 0.46 + 0.14 * sin(_ghost_pulse_phase)
+	for lbl: Label in _pending_plan_labels:
+		if lbl != null and is_instance_valid(lbl):
+			lbl.modulate = Color(1.0, 1.0, 1.0, pulse)
 
 
 func bind_planning_input(input: CombatPlanningInput) -> void:
@@ -85,6 +99,7 @@ func apply_font_sizes(header_px: int, cell_px: int) -> void:
 
 
 func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
+	_pending_plan_labels.clear()
 	for child: Node in get_children():
 		remove_child(child)
 		child.queue_free()
@@ -210,23 +225,26 @@ func _add_party_row(
 	var stats_col: Color = Color(0.72, 0.76, 0.82) if is_selected else COLOR_MUTED
 	_add_stats_cells(info, unit, stats_col)
 	var slots: Dictionary = _plan_slots_for_unit(timeline, unit.id)
+	var ghost_slots: Dictionary = {}
+	if _planning_input != null:
+		ghost_slots = _planning_input.timeline_ghost_slots(unit.id)
 	var warn: String = ""
 	var exhausted_tooltip: String = "Waiting — no further actions this phase" if is_exhausted else ""
 	var cell_warn: String = _append_plan_cell(
 		plan, slots.get("pre", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_PRE, STRETCH_PRE,
-		is_exhausted, exhausted_tooltip,
+		is_exhausted, exhausted_tooltip, ghost_slots.get("pre", []) as Array,
 	)
 	if not cell_warn.is_empty():
 		warn = cell_warn
 	cell_warn = _append_plan_cell(
 		plan, slots.get("action", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_ACT, STRETCH_ACTION,
-		is_exhausted, exhausted_tooltip,
+		is_exhausted, exhausted_tooltip, ghost_slots.get("action", []) as Array,
 	)
 	if not cell_warn.is_empty() and warn.is_empty():
 		warn = cell_warn
 	cell_warn = _append_plan_cell(
 		plan, slots.get("post", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_POST, STRETCH_POST,
-		is_exhausted, exhausted_tooltip,
+		is_exhausted, exhausted_tooltip, ghost_slots.get("post", []) as Array,
 	)
 	if not cell_warn.is_empty() and warn.is_empty():
 		warn = cell_warn
@@ -300,6 +318,7 @@ func _append_plan_cell(
 	stretch: float,
 	exhausted: bool = false,
 	exhausted_tooltip: String = "",
+	ghost_steps: Array = [],
 ) -> String:
 	var text: String = "—"
 	var tooltip: String = exhausted_tooltip if exhausted else "No action queued"
@@ -327,13 +346,110 @@ func _append_plan_cell(
 			tooltip = "\n".join(tips)
 		elif exhausted:
 			tooltip = exhausted_tooltip
-	var lbl := _add_plan_cell(row, text, tooltip, failed, accent, plan_active, stretch)
-	if text == "—":
-		var empty_alpha: float = 0.35 if plan_active else 0.22
-		if exhausted:
-			empty_alpha = 0.28
-		lbl.modulate = Color(1, 1, 1, empty_alpha)
+	var ghost_text: String = ""
+	var ghost_tooltip: String = ""
+	if not ghost_steps.is_empty():
+		var ghost_parts: PackedStringArray = []
+		var ghost_tips: PackedStringArray = []
+		for step: Variant in ghost_steps:
+			if not step is TimelineAction:
+				continue
+			var ghost_action: TimelineAction = step as TimelineAction
+			var symbol: String = CombatUiFormatters.action_symbol_text(_board, ghost_action, unit)
+			if symbol == "":
+				continue
+			ghost_parts.append(symbol)
+			ghost_tips.append(CombatUiFormatters.describe_action(_board, ghost_action))
+		if not ghost_parts.is_empty():
+			ghost_text = " → ".join(ghost_parts)
+			ghost_tooltip = "Pending — click to commit\n" + "\n".join(ghost_tips)
+	if ghost_text != "" and text == "—":
+		_add_pending_plan_cell(
+			row, ghost_text, ghost_tooltip, accent, plan_active, stretch,
+		)
+		return first_warn
+	if ghost_text == "":
+		var lbl := _add_plan_cell(row, text, tooltip, failed, accent, plan_active, stretch)
+		if text == "—":
+			var empty_alpha: float = 0.35 if plan_active else 0.22
+			if exhausted:
+				empty_alpha = 0.28
+			lbl.modulate = Color(1, 1, 1, empty_alpha)
+		return first_warn
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_stretch_ratio = stretch
+	var bg: Color = accent if plan_active else Color(0.12, 0.13, 0.17, 0.4)
+	panel.add_theme_stylebox_override("panel", _cell_style(bg))
+	var inner := HBoxContainer.new()
+	inner.add_theme_constant_override("separation", 6)
+	panel.add_child(inner)
+	row.add_child(panel)
+	var committed_lbl := _make_plan_text_label(text, tooltip, failed, plan_active)
+	inner.add_child(committed_lbl)
+	var arrow := Label.new()
+	arrow.text = "→"
+	arrow.add_theme_font_size_override("font_size", _cell_font_px)
+	arrow.add_theme_color_override("font_color", Color(0.55, 0.62, 0.72, 0.55))
+	arrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inner.add_child(arrow)
+	var ghost_lbl := _make_plan_text_label(ghost_text, ghost_tooltip, false, plan_active, true)
+	inner.add_child(ghost_lbl)
+	_pending_plan_labels.append(ghost_lbl)
 	return first_warn
+
+
+func _add_pending_plan_cell(
+	row: HBoxContainer,
+	text: String,
+	tooltip: String,
+	accent: Color,
+	plan_active: bool,
+	stretch: float,
+) -> Label:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel.size_flags_stretch_ratio = stretch
+	var glow_bg: Color = accent
+	if plan_active:
+		glow_bg = Color(accent.r, accent.g, accent.b, minf(accent.a + 0.12, 0.38))
+	else:
+		glow_bg = Color(0.14, 0.18, 0.26, 0.42)
+	panel.add_theme_stylebox_override("panel", _cell_style(glow_bg))
+	var lbl := _make_plan_text_label(text, tooltip, false, plan_active, true)
+	panel.add_child(lbl)
+	row.add_child(panel)
+	_pending_plan_labels.append(lbl)
+	return lbl
+
+
+func _make_plan_text_label(
+	text: String,
+	tooltip: String,
+	failed: bool,
+	plan_active: bool,
+	pending: bool = false,
+) -> Label:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", _cell_font_px)
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
+	lbl.clip_text = true
+	lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if tooltip != "":
+		lbl.tooltip_text = tooltip
+	if pending:
+		lbl.add_theme_color_override("font_color", COLOR_PENDING_PLAN)
+	elif failed:
+		lbl.add_theme_color_override("font_color", COLOR_FAIL)
+	elif plan_active:
+		lbl.add_theme_color_override("font_color", Color(0.92, 0.94, 0.98))
+	else:
+		lbl.add_theme_color_override("font_color", COLOR_MUTED)
+	return lbl
 
 
 func _make_row_container(min_height: int) -> HBoxContainer:

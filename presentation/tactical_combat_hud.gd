@@ -30,6 +30,7 @@ var _compendium_overlay: CompendiumScreen
 var _settings: GameSettings
 var _hint_label: Label
 var _last_timeline_mp_key: String = ""
+var _last_timeline_intent_key: String = ""
 
 
 func setup(
@@ -422,9 +423,13 @@ func _on_live_preview_changed() -> void:
 		live_board = _director.projected_state
 	_timeline_grid.set_display_board(live_board)
 	var mp_key: String = _timeline_mp_key(live_board)
-	if mp_key == _last_timeline_mp_key:
+	var intent_key: String = ""
+	if _planning_input != null and _director != null:
+		intent_key = _planning_input.timeline_refresh_key(_director.selected_unit_id)
+	if mp_key == _last_timeline_mp_key and intent_key == _last_timeline_intent_key:
 		return
 	_last_timeline_mp_key = mp_key
+	_last_timeline_intent_key = intent_key
 	_refresh_timeline()
 
 
