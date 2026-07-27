@@ -275,6 +275,11 @@ func restore_committed_display() -> void:
 ## Locks the next preview_updated so director refresh cannot replace that picture.
 func promote_live_preview_to_committed() -> void:
 	_committed_preview.copy_from(_live_preview)
+	if _director != null and _director.base_board != null:
+		_committed_preview.ensure_movement_intent_from_plan(
+			_director.get_player_plan(),
+			_director.base_board,
+		)
 	_preview_board = _committed_preview.preview_board
 	_has_stashed_committed = false
 	_lock_committed_from_intent = true
@@ -1233,7 +1238,7 @@ func _draw_preview_arrows() -> void:
 			if _director.unit_has_move_planned_at_timing(
 				unit.id, GameEnums.MoveTiming.POST_ACTION,
 			):
-				var post_leg: Array = CombatPlanningPreview.post_move_route_leg(
+				var post_leg: Array = CombatPlanningPreview.committed_post_move_route_leg(
 					unit.id, _committed_preview, _director, _board,
 				)
 				if post_leg.size() >= 2:

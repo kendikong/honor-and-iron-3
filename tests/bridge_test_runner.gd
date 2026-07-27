@@ -407,6 +407,20 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: post-move origin must use projection, not move-only board",
 		)
+	preview.preview_paths[1] = [Vector2i(0, 0), Vector2i(2, 0)]
+	var post_action := TimelineAction.make_move(
+		1, Vector2i(7, 2), -1, [Vector2i(3, 2), Vector2i(4, 2), Vector2i(5, 2), Vector2i(6, 2), Vector2i(7, 2)],
+		GameEnums.MoveTiming.POST_ACTION,
+	)
+	director_stub.plan_post_move = Timeline.new()
+	director_stub.plan_post_move.entries.append(post_action)
+	var committed_post: Array = CombatPlanningPreview.committed_post_move_route_leg(
+		1, preview, director_stub, board_stub,
+	)
+	if committed_post.size() < 2 or committed_post[0] != Vector2i(2, 0) or committed_post.back() != Vector2i(7, 2):
+		failures.append(
+			"CombatPlanningPreview: committed_post_move_route_leg should fall back to plan geometry",
+		)
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:

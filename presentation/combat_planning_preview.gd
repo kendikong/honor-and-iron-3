@@ -76,7 +76,11 @@ static func movement_intent_cells(origin: Vector2i, action: TimelineAction) -> A
 
 
 ## Keep preview_paths aligned with movement abilities in `actions` when sim path is missing/short.
-func ensure_movement_intent_from_actions(actions: Array, start_board: BoardState) -> void:
+func ensure_movement_intent_from_actions(
+	actions: Array,
+	start_board: BoardState,
+	actors_with_post_move: Dictionary = {},
+) -> void:
 	if start_board == null or actions.is_empty():
 		return
 	var origins: Dictionary = {}
@@ -103,6 +107,11 @@ func ensure_movement_intent_from_actions(actions: Array, start_board: BoardState
 			if last_cell is Vector2i and (last_cell as Vector2i) == action.target_coord:
 				origins[action.actor_id] = action.target_coord
 				continue
+			## Committed post-move extends past action end — never truncate sim path for ability intent.
+			if actors_with_post_move.get(action.actor_id, false):
+				if last_cell is Vector2i and (last_cell as Vector2i) != action.target_coord:
+					origins[action.actor_id] = action.target_coord
+					continue
 			## Sim path (e.g. L-shaped trample + post-move tail) beats straight intent geometry.
 			if existing.size() > intent.size():
 				continue
@@ -116,10 +125,17 @@ func ensure_movement_intent_from_actions(actions: Array, start_board: BoardState
 func ensure_movement_intent_from_plan(plan: Timeline, start_board: BoardState) -> void:
 	if plan == null:
 		return
+	var actors_with_post_move: Dictionary = {}
+	for act: TimelineAction in plan.entries:
+		if (
+			act.type == GameEnums.ActionType.MOVE
+			and act.move_timing == GameEnums.MoveTiming.POST_ACTION
+		):
+			actors_with_post_move[act.actor_id] = true
 	var actions: Array = []
 	for entry: TimelineAction in plan.entries:
 		actions.append(entry)
-	ensure_movement_intent_from_actions(actions, start_board)
+	ensure_movement_intent_from_actions(actions, start_board, actors_with_post_move)
 
 
 static func apply_movement_result(
@@ -407,6 +423,37 @@ static func post_move_route_leg(
 	if start_idx >= end_idx:
 		return []
 	return route.slice(start_idx, end_idx + 1)
+
+
+## Frozen committed post-move leg — preview path slice, then plan waypoints fallback.
+static func committed_post_move_route_leg(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	director: CombatDirector,
+	board: BoardState,
+) -> Array:
+	var leg: Array = post_move_route_leg(unit_id, preview, director, board)
+	if leg.size() >= 2:
+		return leg
+	if director == null:
+		return []
+	var post_action: TimelineAction = null
+	var plan: Timeline = director.get_player_plan()
+	if plan != null:
+		for act: TimelineAction in plan.entries:
+			if (
+				act.actor_id == unit_id
+				and act.type == GameEnums.ActionType.MOVE
+				and act.move_timing == GameEnums.MoveTiming.POST_ACTION
+			):
+				post_action = act
+	if post_action == null:
+		return []
+	var plan_board: BoardState = planning_projection_board(director, board)
+	var origin: Vector2i = committed_plan_action_end_cell(director, plan_board, unit_id)
+	if plan_board == null or not plan_board.is_in_bounds(origin):
+		return []
+	return movement_intent_cells(origin, post_action)
 
 
 ## Committed action movement leg — frozen to action.target_coord, not current move-timing slot.
