@@ -450,25 +450,32 @@ static func move_route_leg_from_preview(
 	return route.slice(start_idx, end_idx)
 
 
-## True when projected stand already matches a committed MOVE target (leg is visually done).
+## True when a simple committed MOVE is done — unit stands on target with no path left to show.
+## Loop / same-tile-end moves (waypoints or multi-cell leg) still draw their route.
 static func committed_move_already_realized(
 	director: CombatDirector,
 	board: BoardState,
 	unit_id: int,
 	timing: int,
+	move_action: TimelineAction,
+	route_leg: Array,
 ) -> bool:
-	if director == null:
-		return false
-	var move_action: TimelineAction = committed_move_action(
-		director.get_player_plan(), unit_id, timing,
-	)
-	if move_action == null:
+	if director == null or move_action == null:
 		return false
 	var plan_board: BoardState = planning_projection_board(director, board)
 	var unit: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else null
-	if unit == null:
+	if unit == null or unit.position != move_action.target_coord:
 		return false
-	return unit.position == move_action.target_coord
+	if not move_action.waypoints.is_empty():
+		return false
+	if route_leg.size() > 2:
+		return false
+	var origin: Vector2i = move_leg_origin_cell(
+		director, board, unit_id, timing, move_action,
+	)
+	if origin == move_action.target_coord:
+		return false
+	return true
 
 
 ## Frozen committed move leg — preview slice, then plan geometry fallback.
@@ -486,19 +493,25 @@ static func committed_move_route_leg(
 	)
 	if move_action == null:
 		return []
-	if committed_move_already_realized(director, board, unit_id, timing):
-		return []
 	var leg: Array = move_route_leg_from_preview(
 		unit_id, preview, director, board, timing, false,
 	)
 	if leg.size() >= 2:
+		if committed_move_already_realized(director, board, unit_id, timing, move_action, leg):
+			return []
 		return leg
 	var origin: Vector2i = move_leg_origin_cell(
 		director, board, unit_id, timing, move_action,
 	)
 	if origin.x == -999999:
 		return []
-	return movement_intent_cells(origin, move_action)
+	var fallback: Array = movement_intent_cells(origin, move_action)
+	if (
+		fallback.size() >= 2
+		and committed_move_already_realized(director, board, unit_id, timing, move_action, fallback)
+	):
+		return []
+	return fallback
 
 
 ## Grid cell where the committed class action leaves the unit (post-move starts here).

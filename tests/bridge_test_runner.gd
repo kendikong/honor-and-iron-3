@@ -468,6 +468,21 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: committed pre leg must hide when unit already at move target",
 		)
+	preview.preview_paths[1] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 0)]
+	plan_unit.position = Vector2i(0, 0)
+	board_stub.units = [plan_unit]
+	director_stub.projected_state = board_stub
+	var loop_move := TimelineAction.make_move(
+		1, Vector2i(0, 0), -1, [Vector2i(1, 0)], GameEnums.MoveTiming.PRE_ACTION,
+	)
+	director_stub.plan_pre_move.entries[0] = loop_move
+	var loop_leg: Array = CombatPlanningPreview.committed_move_route_leg(
+		1, preview, director_stub, board_stub, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	if loop_leg.size() < 3:
+		failures.append(
+			"CombatPlanningPreview: same-tile-end loop move must still show multi-cell route",
+		)
 	var action_origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(
 		board_stub, director_stub.get_player_plan(), trample_after_pre, plan_unit,
 	)
