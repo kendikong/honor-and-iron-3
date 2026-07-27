@@ -838,7 +838,7 @@ func _sync_planning_actor_positions() -> void:
 		var target: Vector2i = unit.position
 		var current_cell: Vector2i = _actor_grid_cell(unit.id)
 		if current_cell == target and not force_sync.has(unit.id):
-			if _facing_toward_queued_action(unit.id) >= 0 and not _move_tweens.has(unit.id):
+			if not _move_tweens.has(unit.id):
 				_sync_planning_final_facing(unit.id)
 			continue
 		if force_sync.has(unit.id):
@@ -1059,6 +1059,9 @@ func _resolve_planning_facing(unit_id: int) -> int:
 	var queued: int = _facing_toward_queued_action(unit_id)
 	if queued >= 0:
 		return queued
+	var from_plan: int = _facing_from_last_planned_movement(unit_id)
+	if from_plan >= 0:
+		return from_plan
 	var projected := _proj_unit(unit_id)
 	if projected != null:
 		return projected.facing
@@ -1435,8 +1438,52 @@ func _sync_planning_facings_for_queued_actions() -> void:
 			continue
 		if _move_tweens.has(unit.id):
 			continue
-		if _facing_toward_queued_action(unit.id) >= 0:
-			_sync_planning_final_facing(unit.id)
+		_sync_planning_final_facing(unit.id)
+
+
+## Last cardinal step along committed pre / action / post moves (dash + walk legs).
+func _facing_from_last_planned_movement(unit_id: int) -> int:
+	if _director == null:
+		return -1
+	var plan_board: BoardState = (
+		_director.base_board if _director.base_board != null else _board
+	)
+	if plan_board == null:
+		return -1
+	var last_facing: int = -1
+	var combined: Timeline = Timeline.new()
+	for plan: Timeline in [_director.plan_pre_move, _director.plan_action, _director.plan_post_move]:
+		if plan == null:
+			continue
+		for action: TimelineAction in plan.entries:
+			if action.actor_id == unit_id:
+				combined.entries.append(action)
+	for action: TimelineAction in combined.entries:
+		var origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(
+			plan_board, combined, action,
+		)
+		if action.type == GameEnums.ActionType.MOVE:
+			var cells: Array = CombatPlanningPreview.movement_intent_cells(origin, action)
+			if cells.size() >= 2:
+				var prev: Vector2i = cells[cells.size() - 2] as Vector2i
+				var dest: Vector2i = cells[cells.size() - 1] as Vector2i
+				if prev != dest:
+					last_facing = _facing_toward(prev, dest)
+			elif action.face_dir >= 0:
+				last_facing = action.face_dir
+		elif (
+			action.type == GameEnums.ActionType.ABILITY
+			and action.ability != null
+			and AbilitySystem.ability_has_movement_effect(action.ability)
+			and not action.awaiting_target
+		):
+			var cells: Array = CombatPlanningPreview.movement_intent_cells(origin, action)
+			if cells.size() >= 2:
+				var prev: Vector2i = cells[cells.size() - 2] as Vector2i
+				var dest: Vector2i = cells[cells.size() - 1] as Vector2i
+				if prev != dest:
+					last_facing = _facing_toward(prev, dest)
+	return last_facing
 
 
 func _facing_toward_queued_action(unit_id: int) -> int:
