@@ -117,6 +117,8 @@ func _cycle_ability(delta: int) -> void:
 		return
 	_director.select_ability(next)
 	_play_sfx("select")
+	if _planning_input != null:
+		_planning_input.invalidate_hover_preview_cache()
 	if _planning_input != null and _planning_input.dragging:
 		_planning_input.refresh_live_preview()
 	if _planning_input != null and not _planning_input.dragging:

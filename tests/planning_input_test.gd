@@ -28,6 +28,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_shield_bash_preview_pushes(failures)
 	_test_planning_display_ap_run_intent(failures)
 	_test_timeline_ghost_slots(failures)
+	_test_ability_scroll_clears_hover_preview_cache(failures)
 
 
 static func _bowling_charge_arm_fixture() -> Dictionary:
@@ -1152,3 +1153,16 @@ static func _test_timeline_ghost_slots(failures: Array[String]) -> void:
 	ghost = input.timeline_ghost_slots(1)
 	if not (ghost.get("pre", []) as Array).is_empty():
 		failures.append("PlanningInputTest: ghost should clear when intent matches committed plan")
+
+
+static func _test_ability_scroll_clears_hover_preview_cache(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.phase = CombatDirector.Phase.PLANNING
+	input._director = director
+	input._hover_preview_cache_key = "stale|1|ability|0"
+	input._on_ability_selected(0)
+	if input._hover_preview_cache_key != "":
+		failures.append(
+			"PlanningInputTest: ability change must invalidate hover preview cache",
+		)

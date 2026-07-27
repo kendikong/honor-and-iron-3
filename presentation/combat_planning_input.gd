@@ -629,6 +629,8 @@ func _on_ability_selected(_index: int) -> void:
 	if _director == null:
 		return
 	clear_awaiting_targeting()
+	## Same hover cell + new skill must rebuild preview — cache key can match a prior skill visit.
+	_invalidate_planning_hover_cache()
 	_request_planning_selection_refresh()
 
 
@@ -694,6 +696,11 @@ func _sync_intent_skill_mode() -> void:
 func _invalidate_planning_hover_cache() -> void:
 	_last_planning_hover_cell = Vector2i(-9999, -9999)
 	_hover_preview_cache_key = ""
+
+
+## Public alias for input controller / UI when ability changes outside EventBus order.
+func invalidate_hover_preview_cache() -> void:
+	_invalidate_planning_hover_cache()
 
 
 func on_hover_moved(cell: Vector2i) -> void:
