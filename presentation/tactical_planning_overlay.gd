@@ -629,6 +629,12 @@ func recompute_hover_ranges(
 			)
 			move_board = _director.projected_state if _director.projected_state != null else _board
 			move_from = p_unit.position
+			if _director.get_planning_move_timing(unit.id) == GameEnums.MoveTiming.POST_ACTION:
+				var action_end: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
+					_director, move_board, unit.id,
+				)
+				if move_board.is_in_bounds(action_end):
+					move_from = action_end
 			move_budget = _compute_move_budget(unit, p_unit, selected_ability)
 		else:
 			move_budget = unit.movement.points_left
@@ -1340,13 +1346,17 @@ func _draw_interaction_overlay() -> void:
 			_draw_route_line(route, p_col, true, true)
 	elif (
 		_planning_input != null
+		and not _planning_input.drag_preview_failed
 		and _planning_input.is_live_preview_active()
 		and _interaction_move_hover_active(actor.id)
 	):
-		var draw_route: Array = CombatPlanningPreview.post_move_route_leg(
-			actor.id, prev, _director, _board,
-		)
-		if draw_route.size() < 2:
+		var move_timing: int = _director.get_planning_move_timing(actor.id)
+		var draw_route: Array = []
+		if move_timing == GameEnums.MoveTiming.POST_ACTION:
+			draw_route = CombatPlanningPreview.post_move_route_leg(
+				actor.id, prev, _director, _board,
+			)
+		else:
 			draw_route = _pending_move_route_leg(actor.id, prev)
 		if draw_route.size() >= 2:
 			_draw_route_line(draw_route, p_col, true, true)

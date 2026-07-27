@@ -1543,6 +1543,16 @@ func _unit_move_slot_open(unit_id: int) -> bool:
 	return not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
 
 
+## Post-move hover/commit — action column already spent; never re-pair selected skill.
+func _planning_post_move_only(actor: UnitState, unit_id: int) -> bool:
+	if _director == null or actor == null or unit_id < 0:
+		return false
+	return (
+		_director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION
+		and actor.has_used_turn_action()
+	)
+
+
 func _basic_move_allowed() -> bool:
 	if force_basic_movement:
 		return true
@@ -2335,6 +2345,10 @@ func _maybe_append_premove_action_pair(
 ) -> void:
 	if not _composite_cursors_enabled() or ability == null or actor == null:
 		return
+	if _director != null and _director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION:
+		return
+	if actor.has_used_turn_action():
+		return
 	if (slots.get("pre", []) as Array).is_empty() and (slots.get("post", []) as Array).is_empty():
 		return
 	if not (slots.get("action", []) as Array).is_empty():
@@ -2386,6 +2400,18 @@ func _build_commit_slots_at_cell(
 		return _build_self_tile_commit_slots(
 			slots, actor, unit_id, ability_index, ability, face_dir,
 		)
+
+	if _planning_post_move_only(actor, unit_id):
+		if (
+			_basic_move_allowed()
+			and _unit_move_slot_open(unit_id)
+			and _drop_allows_move_tile(cell, legal_move_tiles, actor)
+		):
+			if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
+				_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
+		elif _skill_interaction_active() and _invalid_hover_target(actor, cell, hover_unit):
+			slots["invalid"] = "Invalid target."
+		return slots
 
 	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental —
 	## do not divert into enemy/ally unit-target commit slots.

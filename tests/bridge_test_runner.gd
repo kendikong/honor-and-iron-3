@@ -340,6 +340,21 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var post_leg: Array = CombatPlanningPreview.post_move_route_leg(1, preview, director_stub, board_stub)
 	if post_leg.size() != 2 or post_leg[0] != Vector2i(2, 0) or post_leg[1] != Vector2i(3, 0):
 		failures.append("CombatPlanningPreview: post_move_route_leg should start at action end")
+	var l_path: Array = [
+		Vector2i(0, 0), Vector2i(0, 1), Vector2i(2, 0), Vector2i(3, 0),
+	]
+	preview.preview_paths[1] = l_path
+	preview.preview_post_splits[1] = 2
+	var stale_post: Array = CombatPlanningPreview.post_move_route_leg(1, preview, director_stub, board_stub)
+	if stale_post.size() != 2 or stale_post[0] != Vector2i(2, 0) or stale_post[1] != Vector2i(3, 0):
+		failures.append("CombatPlanningPreview: post_move_route_leg must ignore stale post_split vs action end")
+	var intent_preview := CombatPlanningPreview.new()
+	intent_preview.preview_paths[1] = l_path.duplicate()
+	var trample_action := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1)
+	intent_preview.ensure_movement_intent_from_actions([trample_action], board_stub)
+	var kept: Array = intent_preview.preview_paths.get(1, [])
+	if kept.size() != 4:
+		failures.append("CombatPlanningPreview: ensure_movement_intent must not shorten sim L-path")
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:

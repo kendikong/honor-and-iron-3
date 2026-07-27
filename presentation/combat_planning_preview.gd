@@ -98,12 +98,14 @@ func ensure_movement_intent_from_actions(actions: Array, start_board: BoardState
 		if intent.size() < 2:
 			continue
 		var existing: Array = preview_paths.get(action.actor_id, [])
-		if (
-			existing.size() >= 2
-			and existing[existing.size() - 1] == action.target_coord
-		):
-			origins[action.actor_id] = action.target_coord
-			continue
+		if existing.size() >= 2:
+			var last_cell: Variant = existing[existing.size() - 1]
+			if last_cell is Vector2i and (last_cell as Vector2i) == action.target_coord:
+				origins[action.actor_id] = action.target_coord
+				continue
+			## Sim path (e.g. L-shaped trample + post-move tail) beats straight intent geometry.
+			if existing.size() > intent.size():
+				continue
 		preview_paths[action.actor_id] = intent
 		preview_splits[action.actor_id] = intent.size()
 		if not action_splits.has(action.actor_id):
@@ -344,6 +346,15 @@ static func committed_plan_action_end_cell(
 	return origin
 
 
+## Last index of `cell` in a preview route (handles revisits / stale post_split).
+static func _last_route_index(route: Array, cell: Vector2i) -> int:
+	var found: int = -1
+	for i: int in range(route.size()):
+		if route[i] is Vector2i and (route[i] as Vector2i) == cell:
+			found = i
+	return found
+
+
 ## Post-move leg: action destination → post-move target along preview_paths.
 static func post_move_route_leg(
 	unit_id: int,
@@ -359,12 +370,8 @@ static func post_move_route_leg(
 	var action_end: Vector2i = committed_plan_action_end_cell(director, board, unit_id)
 	if board != null and not board.is_in_bounds(action_end):
 		return []
-	var post_split: int = int(preview.preview_post_splits.get(unit_id, -1))
-	var start_idx: int = -1
-	if post_split > 1 and post_split <= route.size():
-		start_idx = post_split - 1
-	if start_idx < 0:
-		start_idx = route.find(action_end)
+	## Anchor at committed action end — never stale preview_post_splits or route.find first hit.
+	var start_idx: int = _last_route_index(route, action_end)
 	if start_idx < 0:
 		return []
 	var end_idx: int = route.size() - 1
