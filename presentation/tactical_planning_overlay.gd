@@ -964,10 +964,7 @@ func _draw_ability_intents() -> void:
 				elif intent_cells.size() >= 2:
 					_draw_route_line(intent_cells, p_col, true, true)
 			else:
-				_draw_dashed_route(
-					intent_cells,
-					Color(p_col.r, p_col.g, p_col.b, _INTENT_ROUTE_ALPHA),
-				)
+				_draw_route_line(intent_cells, p_col, true, true)
 	var preview_board: BoardState = _display_preview_board()
 
 	for intent: Variant in _display_intent_list():
@@ -1254,8 +1251,7 @@ func _draw_preview_arrows() -> void:
 								skip_committed_post = true
 						if not skip_committed_post:
 							var p_col: Color = _player_color_for_unit(unit)
-							var dim_col := Color(p_col.r, p_col.g, p_col.b, 0.35)
-							_draw_dotted_intent_route(post_leg, dim_col, post_split <= 1)
+							_draw_route_line(post_leg, p_col, post_split <= 1, true)
 		var pushes: Array = prev.preview_pushes.get(unit.id, [])
 		var enemy_leg: Array = []
 		if split < route.size() and pushes.is_empty():
@@ -1365,8 +1361,7 @@ func _draw_interaction_overlay() -> void:
 		if target_unit != null:
 			target_coord = target_unit.position
 		if origin != target_coord and not _unit_has_push_preview(prev, _attack_target_id):
-			if sel_ability == null or not AbilitySystem.ability_has_movement_effect(sel_ability):
-				_draw_dashed_route([origin, target_coord], route_col)
+			_draw_route_line([origin, target_coord], route_col, true, true)
 	elif (
 		sel_ability != null
 		and _planning_input != null
@@ -1779,7 +1774,7 @@ func _draw_move_ghosts() -> void:
 			route_cells.append(_hover_coord)
 		_draw_route_line(route_cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
 	else:
-		_draw_dashed_route([origin, _hover_coord], Color(p_col.r, p_col.g, p_col.b, 0.85))
+		_draw_route_line([origin, _hover_coord], Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
 
 
 func _facing_toward(from: Vector2i, to: Vector2i) -> int:
