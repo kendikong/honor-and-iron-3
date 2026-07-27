@@ -17,6 +17,7 @@ static func run_all() -> Dictionary:
 	_test_generate_encounter_board(failures)
 	_test_combat_intent_state(failures)
 	_test_combat_planning_preview(failures)
+	_test_move_facing_from_path(failures)
 	_test_combat_ui_formatters(failures)
 	_test_battle_arena(failures)
 	PlanningInputTest.run_all(failures)
@@ -540,6 +541,48 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: ensure_movement_intent must keep full path when pre-move is committed",
 		)
+
+
+static func _test_move_facing_from_path(failures: Array[String]) -> void:
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(3, 4)
+	unit.facing = GameEnums.Facing.WEST
+	unit.movement.points_max = 5
+	unit.movement.points_left = 5
+	unit.turn_action_used = true
+	board.units = [unit]
+	var route: Array[Vector2i] = [Vector2i(3, 5), Vector2i(3, 6), Vector2i(4, 6)]
+	var path_move := TimelineAction.make_move(
+		1, Vector2i(4, 6), -1, route, GameEnums.MoveTiming.POST_ACTION,
+	)
+	var events: Array[SimEvent] = []
+	MovementSystem.execute(board, path_move, events)
+	if unit.facing != GameEnums.Facing.EAST:
+		failures.append(
+			"MovementSystem: face_dir=-1 must face last path step (east), got %d" % unit.facing,
+		)
+	unit.position = Vector2i(3, 4)
+	unit.facing = GameEnums.Facing.WEST
+	unit.movement.points_left = 5
+	var forced := TimelineAction.make_move(
+		1, Vector2i(4, 6), GameEnums.Facing.WEST, route, GameEnums.MoveTiming.POST_ACTION,
+	)
+	MovementSystem.execute(board, forced, events)
+	if unit.facing != GameEnums.Facing.WEST:
+		failures.append(
+			"MovementSystem: explicit face_dir must override path-based facing",
+		)
+	var intent_cells: Array = CombatPlanningPreview.movement_intent_cells(
+		Vector2i(3, 4), path_move,
+	)
+	if intent_cells.size() < 2:
+		failures.append("CombatPlanningPreview: L-shaped post-move intent must displace")
+	elif (intent_cells[0] as Vector2i) == (intent_cells[intent_cells.size() - 1] as Vector2i):
+		failures.append("CombatPlanningPreview: displacement move must not be same-tile")
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:

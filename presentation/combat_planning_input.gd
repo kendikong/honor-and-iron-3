@@ -1265,7 +1265,7 @@ func _commit_at_cell(
 		slots = _final_commit_slots_for_interaction(
 			unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 		)
-		_apply_facing_to_slots(slots, local, cell)
+		_apply_facing_to_slots(slots, local, cell, unit_id)
 		if not _is_invalid_dict(slots) and slots.get("_noop", false) != true:
 			## Intent truth: never commit slots the player has not painted.
 			_paint_intent_slots_before_commit(unit_id, slots)
@@ -1394,16 +1394,50 @@ func _mouse_local_for_facing() -> Vector2:
 	return Vector2.ZERO
 
 
-func _apply_facing_to_slots(slots: Dictionary, local: Vector2, cell: Vector2i) -> void:
-	var face_dir: int = _facing_from_drop(local, cell)
-	if face_dir < 0:
+func _move_origin_for_commit_facing(unit_id: int, move_action: TimelineAction) -> Vector2i:
+	if move_action.move_timing == GameEnums.MoveTiming.POST_ACTION:
+		return CombatPlanningPreview.committed_plan_action_end_cell(
+			_director,
+			_proj(),
+			unit_id,
+		)
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor != null:
+		return _proj_move_origin(actor)
+	var board: BoardState = _director.base_board if _director.base_board != null else _director.board
+	var unit: UnitState = board.get_unit_by_id(unit_id) if board != null else null
+	return unit.position if unit != null else Vector2i.ZERO
+
+
+func _apply_facing_to_slots(
+	slots: Dictionary,
+	local: Vector2,
+	cell: Vector2i,
+	unit_id: int,
+) -> void:
+	if unit_id < 0 or _director == null:
 		return
 	for col: String in ["pre", "post"]:
 		for raw: Variant in slots.get(col, []):
-			if raw is TimelineAction:
-				var move_action: TimelineAction = raw as TimelineAction
-				if move_action.type == GameEnums.ActionType.MOVE:
-					move_action.face_dir = face_dir
+			if not raw is TimelineAction:
+				continue
+			var move_action: TimelineAction = raw as TimelineAction
+			if move_action.type != GameEnums.ActionType.MOVE:
+				continue
+			var origin: Vector2i = _move_origin_for_commit_facing(unit_id, move_action)
+			var cells: Array = CombatPlanningPreview.movement_intent_cells(origin, move_action)
+			var displaces: bool = (
+				cells.size() >= 2
+				and cells[0] is Vector2i
+				and cells[cells.size() - 1] is Vector2i
+				and (cells[0] as Vector2i) != (cells[cells.size() - 1] as Vector2i)
+			)
+			if displaces:
+				## Path-based facing in MovementSystem — mouse quadrant must not override travel.
+				move_action.face_dir = -1
+				continue
+			var drop_face: int = _facing_from_drop(local, cell)
+			move_action.face_dir = drop_face if drop_face >= 0 else -1
 
 
 func _play_commit_sfx(slots: Dictionary) -> void:
@@ -1488,7 +1522,7 @@ func _preview_from_commit_slots_at_cell(
 	var slots: Dictionary = _final_commit_slots_for_interaction(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
-	_apply_facing_to_slots(slots, _mouse_local_for_facing(), cell)
+	_apply_facing_to_slots(slots, _mouse_local_for_facing(), cell, unit_id)
 	if _is_invalid_dict(slots):
 		_clear_intent_snapshot()
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
@@ -2775,7 +2809,7 @@ func _slots_with_facing_for_commit(
 	var slots: Dictionary = _final_commit_slots_for_interaction(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
-	_apply_facing_to_slots(slots, local, cell)
+	_apply_facing_to_slots(slots, local, cell, unit_id)
 	return slots
 
 
