@@ -316,6 +316,18 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	)
 	if leg.size() != 4 or anim.size() != 3 or anim[0] != Vector2i(1, 0):
 		failures.append("CombatPlanningPreview: pending_move_route_leg / planning_animation_cells mismatch")
+	var action := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(3, 0), -1)
+	var committed_leg: Array = CombatPlanningPreview.committed_action_route_leg(
+		1, preview, action, Vector2i(0, 0),
+	)
+	if committed_leg.size() != 4 or committed_leg[2] != Vector2i(2, 0):
+		failures.append("CombatPlanningPreview: committed_action_route_leg should slice to action target")
+	preview.preview_post_splits[1] = 3
+	var capped_leg: Array = CombatPlanningPreview.committed_action_route_leg(
+		1, preview, action, Vector2i(0, 0),
+	)
+	if capped_leg.size() != 3 or capped_leg[2] != Vector2i(2, 0):
+		failures.append("CombatPlanningPreview: committed_action_route_leg should cap before post-move split")
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:

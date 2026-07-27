@@ -947,24 +947,22 @@ func _draw_ability_intents() -> void:
 			if start_pos == action.target_coord:
 				continue
 			var p_col: Color = _player_color_for_unit(actor)
-			## Movement intent = commit-slot geometry (origin → waypoints → target).
-			## Sim preview_paths may enrich the line only when they reach the same target.
 			var intent_cells: Array = CombatPlanningPreview.movement_intent_cells(start_pos, action)
+			var draw_route: Array = intent_cells
 			if (
 				action.ability != null
 				and AbilitySystem.ability_has_movement_effect(action.ability)
 			):
-				var prev: CombatPlanningPreview = _active_preview()
-				var leg_route: Array = _pending_move_route_leg(action.actor_id, prev) if prev != null else []
-				if (
-					leg_route.size() >= 2
-					and leg_route[leg_route.size() - 1] == action.target_coord
-				):
-					_draw_route_line(leg_route, p_col, true, true)
-				elif intent_cells.size() >= 2:
-					_draw_route_line(intent_cells, p_col, true, true)
-			else:
-				_draw_route_line(intent_cells, p_col, true, true)
+				## Committed action path must not use _pending_move_route_leg — that follows the
+				## active move-timing slot (post-move) and falls back to a straight diagonal.
+				if intent_cells.size() <= 2 and action.waypoints.is_empty():
+					var path_leg: Array = CombatPlanningPreview.committed_action_route_leg(
+						action.actor_id, _committed_preview, action, start_pos,
+					)
+					if path_leg.size() >= 2:
+						draw_route = path_leg
+			if draw_route.size() >= 2:
+				_draw_route_line(draw_route, p_col, true, true)
 	var preview_board: BoardState = _display_preview_board()
 
 	for intent: Variant in _display_intent_list():

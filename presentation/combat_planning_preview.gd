@@ -320,6 +320,35 @@ static func pending_move_route_leg(
 	return route.slice(start_idx, end_idx)
 
 
+## Committed action movement leg — frozen to action.target_coord, not current move-timing slot.
+static func committed_action_route_leg(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	action: TimelineAction,
+	origin: Vector2i,
+) -> Array:
+	if preview == null or action == null:
+		return []
+	var route: Array = preview.preview_paths.get(unit_id, [])
+	if route.size() < 2:
+		return []
+	var end_idx: int = -1
+	for i: int in range(route.size()):
+		if route[i] is Vector2i and (route[i] as Vector2i) == action.target_coord:
+			end_idx = i
+	if end_idx < 1:
+		return []
+	var post_split: int = int(preview.preview_post_splits.get(unit_id, -1))
+	if post_split > 1 and post_split - 1 < end_idx:
+		end_idx = post_split - 1
+	var start_idx: int = route.find(origin)
+	if start_idx < 0:
+		start_idx = 0
+	if start_idx >= end_idx:
+		return []
+	return route.slice(start_idx, end_idx + 1)
+
+
 ## Tween destination cells along a preview route (exclusive start, inclusive end).
 static func destination_cells_from_route(
 	route: Array,
