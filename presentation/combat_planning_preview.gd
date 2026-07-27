@@ -75,6 +75,66 @@ static func movement_intent_cells(origin: Vector2i, action: TimelineAction) -> A
 	return cells
 
 
+## Cardinal facing along the last step of a cell route (intent or sim leg).
+static func facing_from_intent_cells(cells: Array) -> int:
+	if cells.size() < 2:
+		return -1
+	var prev_v: Variant = cells[cells.size() - 2]
+	var dest_v: Variant = cells[cells.size() - 1]
+	if not prev_v is Vector2i or not dest_v is Vector2i:
+		return -1
+	var prev: Vector2i = prev_v as Vector2i
+	var dest: Vector2i = dest_v as Vector2i
+	if prev == dest:
+		return -1
+	return PhysicsSystem.facing_from_vector(dest - prev)
+
+
+static func facing_from_route_leg(leg: Array) -> int:
+	return facing_from_intent_cells(leg)
+
+
+## Facing for a committed plan step — matches arrow leg direction, not end-state unit.facing.
+static func facing_along_planned_action(
+	base_board: BoardState,
+	plan: Timeline,
+	action: TimelineAction,
+	preview: CombatPlanningPreview = null,
+) -> int:
+	if action == null or base_board == null or plan == null or action.awaiting_target:
+		return -1
+	var origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(base_board, plan, action)
+	if action.type == GameEnums.ActionType.MOVE:
+		return facing_from_intent_cells(movement_intent_cells(origin, action))
+	if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+		return -1
+	if AbilitySystem.ability_has_movement_effect(action.ability) and preview != null:
+		var leg: Array = committed_action_route_leg(action.actor_id, preview, action, origin)
+		var route_face: int = facing_from_route_leg(leg)
+		if route_face >= 0:
+			return route_face
+	return facing_from_intent_cells(movement_intent_cells(origin, action))
+
+
+## Last displacement facing across a unit's ordered plan steps (pre → action → post).
+static func facing_along_last_planned_step(
+	base_board: BoardState,
+	plan: Timeline,
+	unit_id: int,
+	preview: CombatPlanningPreview = null,
+) -> int:
+	if base_board == null or plan == null or unit_id < 0:
+		return -1
+	var last_facing: int = -1
+	for action: TimelineAction in plan.entries:
+		if action.actor_id != unit_id:
+			continue
+		var step_face: int = facing_along_planned_action(base_board, plan, action, preview)
+		if step_face >= 0:
+			last_facing = step_face
+	return last_facing
+
+
 ## Keep preview_paths aligned with movement abilities in `actions` when sim path is missing/short.
 func ensure_movement_intent_from_actions(
 	actions: Array,

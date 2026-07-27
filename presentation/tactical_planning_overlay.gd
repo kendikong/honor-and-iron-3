@@ -1683,6 +1683,9 @@ func _draw_ghosts() -> void:
 		if not unit.is_alive() or not _intent_visible(unit):
 			continue
 		if not unit.is_enemy() and plan_to_use != null:
+			var base_board: BoardState = (
+				_director.base_board if _director.base_board != null else _board
+			)
 			for action: TimelineAction in plan_to_use.entries:
 				if (
 					action.actor_id == unit.id
@@ -1691,12 +1694,30 @@ func _draw_ghosts() -> void:
 					and AbilitySystem.planning_awaiting_endpoint_range(action.ability) > 0
 					and not action.awaiting_target
 				):
-					var start_pos: Vector2i = _proj_origin(unit)
-					if action.target_coord != start_pos:
-						var center: Vector2 = _map_view.grid_to_local(action.target_coord)
-						var ghost_col: Color = _player_color_for_unit(unit)
-						draw_circle(center, _token_radius(), Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.35))
-						_draw_facing_wedge(center, unit.facing, Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.8))
+					var leg_origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(
+						base_board, plan_to_use, action, unit,
+					)
+					if action.target_coord == leg_origin:
+						break
+					var stand: Vector2i = unit.position
+					var pv_unit: UnitState = (
+						prev.preview_board.get_unit_by_id(unit.id)
+						if prev.preview_board != null
+						else null
+					)
+					if pv_unit != null:
+						stand = pv_unit.position
+					if action.target_coord == stand:
+						break
+					var center: Vector2 = _map_view.grid_to_local(action.target_coord)
+					var ghost_col: Color = _player_color_for_unit(unit)
+					var leg_face: int = CombatPlanningPreview.facing_along_planned_action(
+						base_board, plan_to_use, action, prev,
+					)
+					if leg_face < 0:
+						leg_face = unit.facing
+					draw_circle(center, _token_radius(), Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.35))
+					_draw_facing_wedge(center, leg_face, Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.8))
 					break
 		if unit.is_enemy():
 			var route: Array = prev.preview_paths.get(unit.id, [])
@@ -1707,8 +1728,11 @@ func _draw_ghosts() -> void:
 				var ghost_col := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, alpha)
 				draw_circle(ghost_center, _token_radius(), Color(ghost_col.r, ghost_col.g, ghost_col.b, alpha * 0.55))
 				draw_arc(ghost_center, _token_radius(), 0.0, TAU, 24, ghost_col, 2.0)
-				var pv_enemy := prev.preview_board.get_unit_by_id(unit.id) if prev.preview_board != null else null
-				var face: int = pv_enemy.facing if pv_enemy != null else unit.facing
+				var enemy_leg: Array = route.slice(maxi(route.size() - 2, 0))
+				var face: int = CombatPlanningPreview.facing_from_route_leg(enemy_leg)
+				if face < 0:
+					var pv_enemy := prev.preview_board.get_unit_by_id(unit.id) if prev.preview_board != null else null
+					face = pv_enemy.facing if pv_enemy != null else unit.facing
 				_draw_facing_wedge(ghost_center, face, Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, alpha + 0.15))
 
 

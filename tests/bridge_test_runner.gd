@@ -583,6 +583,35 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 		failures.append("CombatPlanningPreview: L-shaped post-move intent must displace")
 	elif (intent_cells[0] as Vector2i) == (intent_cells[intent_cells.size() - 1] as Vector2i):
 		failures.append("CombatPlanningPreview: displacement move must not be same-tile")
+	var plan_board := BoardState.new()
+	plan_board.grid_size = Vector2i(8, 8)
+	var knight := UnitState.new()
+	knight.id = 1
+	knight.team = GameEnums.Team.PLAYER
+	knight.position = Vector2i(5, 4)
+	plan_board.units = [knight]
+	var plan := Timeline.new()
+	plan.entries.append(
+		TimelineAction.make_move(
+			1, Vector2i(4, 4), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	var trample := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(3, 4), -1)
+	plan.entries.append(trample)
+	var trample_face: int = CombatPlanningPreview.facing_along_planned_action(
+		plan_board, plan, trample,
+	)
+	if trample_face != GameEnums.Facing.WEST:
+		failures.append(
+			"CombatPlanningPreview: trample leg wedge must face west, got %d" % trample_face,
+		)
+	var last_face: int = CombatPlanningPreview.facing_along_last_planned_step(
+		plan_board, plan, 1,
+	)
+	if last_face != GameEnums.Facing.WEST:
+		failures.append(
+			"CombatPlanningPreview: last planned step should be trample west after pre-move",
+		)
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:
