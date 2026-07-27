@@ -1116,7 +1116,7 @@ const _NO_PREFERRED_APPROACH: Vector2i = Vector2i(-999999, -999999)
 
 ## Single source for commit cell, waypoints, and approach hint — cursor, preview, and drop must match.
 func _drag_route_commits_active() -> bool:
-	return dragging or _drag_unit_id >= 0
+	return dragging or _drag_route.size() >= 2
 
 
 func _commit_interaction_params(
@@ -2526,11 +2526,9 @@ func _build_commit_slots_at_cell(
 		if effective_waypoints.is_empty() and AbilitySystem.ability_has_movement_effect(ability):
 			var live_path: Array = preview_state.preview_paths.get(unit_id, [])
 			var start_pos: Vector2i = _proj_origin(actor)
-			var start_idx: int = live_path.find(start_pos)
-			if start_idx >= 0 and start_idx < live_path.size() - 1:
-				effective_waypoints.assign(live_path.slice(start_idx + 1))
-			elif live_path.size() >= 2:
-				effective_waypoints.assign(live_path.slice(1))
+			effective_waypoints = CombatPlanningPreview.destination_cells_from_route(
+				live_path, start_pos, cell,
+			)
 
 		if _awaiting_flow_selected(actor, ability):
 			if awaiting_targeting_active():

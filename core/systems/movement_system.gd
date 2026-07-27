@@ -157,9 +157,17 @@ static func resolve_move_path(
 		if unit.definition != null
 		else GameEnums.MovementType.WALK
 	)
-	if _is_legal_walk(board, start, waypoints, max_steps, move_cost, unit, ability):
-		if not waypoints.is_empty():
+	if not waypoints.is_empty():
+		if _is_legal_walk(board, start, waypoints, max_steps, move_cost, unit, ability):
 			return waypoints.duplicate()
+		## Committed waypoints are intent truth — never silently re-pathfind.
+		if (
+			_is_contiguous_cardinal_route(start, waypoints)
+			and waypoints[waypoints.size() - 1] == target_coord
+			and waypoints.size() * move_cost <= max_steps
+		):
+			return waypoints.duplicate()
+		return []
 	return find_path(board, start, target_coord, max_steps, mt, move_cost, ability)
 
 
@@ -491,6 +499,17 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 	}))
 	if action.move_timing == GameEnums.MoveTiming.PRE_ACTION:
 		unit.pre_move_used_this_turn = true
+
+static func _is_contiguous_cardinal_route(start: Vector2i, route: Array[Vector2i]) -> bool:
+	if route.is_empty():
+		return false
+	var prev: Vector2i = start
+	for step: Vector2i in route:
+		if GridSystem.manhattan(prev, step) != 1:
+			return false
+		prev = step
+	return true
+
 
 ## True when `route` is a contiguous, in-budget walk of cardinal steps onto passable
 ## tiles starting from `start`. Empty routes are not legal walks (use pathfinding).

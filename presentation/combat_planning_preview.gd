@@ -640,9 +640,6 @@ static func committed_action_route_leg(
 			end_idx = i
 	if end_idx < 1:
 		return []
-	var post_split: int = int(preview.preview_post_splits.get(unit_id, -1))
-	if post_split > 1 and post_split - 1 < end_idx:
-		end_idx = post_split - 1
 	var start_idx: int = route.find(origin)
 	if start_idx < 0:
 		start_idx = 0

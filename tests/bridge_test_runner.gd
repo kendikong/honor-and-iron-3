@@ -327,8 +327,10 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var capped_leg: Array = CombatPlanningPreview.committed_action_route_leg(
 		1, preview, action, Vector2i(0, 0),
 	)
-	if capped_leg.size() != 3 or capped_leg[2] != Vector2i(2, 0):
-		failures.append("CombatPlanningPreview: committed_action_route_leg should cap before post-move split")
+	if capped_leg.size() != 4 or capped_leg[3] != Vector2i(3, 0):
+		failures.append(
+			"CombatPlanningPreview: committed_action_route_leg must stay frozen to action target when post-move exists",
+		)
 	var director_stub := CombatDirector.new()
 	var board_stub := BoardState.new()
 	board_stub.grid_size = Vector2i(8, 8)
@@ -624,9 +626,28 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: planning_animation_cells must use full route for catch-up",
 		)
-
-
-static func _test_combat_ui_formatters(failures: Array[String]) -> void:
+	var path_board := BoardState.new()
+	path_board.grid_size = Vector2i(12, 12)
+	var walker := UnitState.new()
+	walker.id = 1
+	walker.team = GameEnums.Team.PLAYER
+	walker.position = Vector2i(6, 3)
+	path_board.units = [walker]
+	var east_then_north: Array[Vector2i] = [Vector2i(7, 3), Vector2i(7, 2)]
+	var resolved: Array[Vector2i] = MovementSystem.resolve_move_path(
+		path_board, walker, Vector2i(7, 2), east_then_north, 2,
+	)
+	if resolved.size() != 2 or resolved[0] != Vector2i(7, 3) or resolved[1] != Vector2i(7, 2):
+		failures.append(
+			"MovementSystem: committed waypoints must preserve E-then-N order, got %s" % str(resolved),
+		)
+	var auto_path: Array[Vector2i] = MovementSystem.resolve_move_path(
+		path_board, walker, Vector2i(7, 2), [], 2,
+	)
+	if auto_path.size() < 2 or auto_path[0] != Vector2i(6, 2):
+		failures.append(
+			"MovementSystem: empty waypoints should still pathfind N-then-E, got %s" % str(auto_path),
+		)
 	var formula: String = CombatUiFormatters.format_damage_telemetry(
 		{"base": 3, "wpn": 2, "stat_val": 5, "stat_name": "STR", "multiplier_raw": 7.0, "target_def": 1, "fortitude": 0},
 		6, 4, 2,

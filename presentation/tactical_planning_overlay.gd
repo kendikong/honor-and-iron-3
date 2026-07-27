@@ -918,10 +918,11 @@ func _draw_ability_intents() -> void:
 			if (
 				action.ability != null
 				and AbilitySystem.ability_has_movement_effect(action.ability)
+				and action.waypoints.is_empty()
 			):
 				## Committed action path must not use _pending_move_route_leg — that follows the
 				## active move-timing slot (post-move) and falls back to a straight diagonal.
-				if intent_cells.size() <= 2 and action.waypoints.is_empty():
+				if intent_cells.size() <= 2:
 					var path_leg: Array = CombatPlanningPreview.committed_action_route_leg(
 						action.actor_id, _committed_preview, action, start_pos,
 					)
