@@ -1193,45 +1193,18 @@ func _draw_preview_arrows() -> void:
 			continue
 		if not unit.is_enemy():
 			var p_col: Color = _player_color_for_unit(unit)
-			var pre_leg: Array = CombatPlanningPreview.committed_pre_move_route_leg(
-				unit.id, _committed_preview, _director, _board,
-			)
-			if pre_leg.size() >= 2:
-				var skip_committed_pre: bool = false
-				if unit.id == _director.selected_unit_id and _planning_input != null:
-					if (
-						_planning_input.dragging
-						and _director.get_planning_move_timing(unit.id)
-						== GameEnums.MoveTiming.PRE_ACTION
-					):
-						skip_committed_pre = true
-					elif (
-						_planning_input.is_live_preview_active()
-						and _interaction_move_hover_active(unit.id)
-						and _director.get_planning_move_timing(unit.id)
-						== GameEnums.MoveTiming.PRE_ACTION
-					):
-						skip_committed_pre = true
-				if not skip_committed_pre:
-					_draw_route_line(pre_leg, p_col, true, true)
-			if _director.unit_has_move_planned_at_timing(
-				unit.id, GameEnums.MoveTiming.POST_ACTION,
-			):
-				var post_leg: Array = CombatPlanningPreview.committed_post_move_route_leg(
-					unit.id, _committed_preview, _director, _board,
+			for move_timing: int in [
+				GameEnums.MoveTiming.PRE_ACTION,
+				GameEnums.MoveTiming.POST_ACTION,
+			]:
+				var leg: Array = CombatPlanningPreview.committed_move_route_leg(
+					unit.id, _committed_preview, _director, _board, move_timing,
 				)
-				if post_leg.size() >= 2:
-					var skip_committed_post: bool = false
-					if unit.id == _director.selected_unit_id and _planning_input != null:
-						if _planning_input.dragging:
-							skip_committed_post = true
-						elif (
-							_planning_input.is_live_preview_active()
-							and _interaction_move_hover_active(unit.id)
-						):
-							skip_committed_post = true
-					if not skip_committed_post:
-						_draw_route_line(post_leg, p_col, true, true)
+				if leg.size() < 2:
+					continue
+				if _skip_committed_move_leg_draw(unit.id, move_timing):
+					continue
+				_draw_route_line(leg, p_col, true, true)
 		if prev.preview_board == null:
 			continue
 		var route: Array = prev.preview_paths.get(unit.id, [])
@@ -1307,24 +1280,28 @@ func _interaction_move_hover_active(unit_id: int) -> bool:
 	return is_hover_move_tile(_hover_coord)
 
 
+func _skip_committed_move_leg_draw(unit_id: int, move_timing: int) -> bool:
+	if _director == null or _planning_input == null or unit_id != _director.selected_unit_id:
+		return false
+	if _director.get_planning_move_timing(unit_id) != move_timing:
+		return false
+	if _planning_input.dragging:
+		return true
+	return (
+		_planning_input.is_live_preview_active()
+		and _interaction_move_hover_active(unit_id)
+	)
+
+
 func _pending_move_route_leg(unit_id: int, prev: CombatPlanningPreview) -> Array:
 	return CombatPlanningPreview.pending_move_route_leg(unit_id, prev, _director, _board)
 
 
-## Live/drag move arrow — same leg slice as commit preview (post-move starts at action end).
+## Live/drag move arrow — same leg slice as commit preview.
 func _interaction_move_route(unit_id: int, prev: CombatPlanningPreview, route: Array) -> Array:
-	if _director == null or prev == null:
-		return route
-	var move_timing: int = _director.get_planning_move_timing(unit_id)
-	if move_timing == GameEnums.MoveTiming.POST_ACTION:
-		var post_leg: Array = CombatPlanningPreview.post_move_route_leg(
-			unit_id, prev, _director, _board,
-		)
-		if post_leg.size() >= 2:
-			return post_leg
-	var pre_leg: Array = _pending_move_route_leg(unit_id, prev)
-	if pre_leg.size() >= 2:
-		return pre_leg
+	var leg: Array = _pending_move_route_leg(unit_id, prev)
+	if leg.size() >= 2:
+		return leg
 	return route
 
 

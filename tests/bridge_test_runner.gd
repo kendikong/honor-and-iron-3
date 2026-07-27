@@ -337,17 +337,21 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var trample := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1)
 	director_stub.plan_action.entries.append(trample)
 	preview.preview_post_splits[1] = 3
-	var post_leg: Array = CombatPlanningPreview.post_move_route_leg(1, preview, director_stub, board_stub)
+	var post_leg: Array = CombatPlanningPreview.move_route_leg_from_preview(
+		1, preview, director_stub, board_stub, GameEnums.MoveTiming.POST_ACTION, true,
+	)
 	if post_leg.size() != 2 or post_leg[0] != Vector2i(2, 0) or post_leg[1] != Vector2i(3, 0):
-		failures.append("CombatPlanningPreview: post_move_route_leg should start at action end")
+		failures.append("CombatPlanningPreview: post move leg should start at action end")
 	var l_path: Array = [
 		Vector2i(0, 0), Vector2i(0, 1), Vector2i(2, 0), Vector2i(3, 0),
 	]
 	preview.preview_paths[1] = l_path
 	preview.preview_post_splits[1] = 2
-	var stale_post: Array = CombatPlanningPreview.post_move_route_leg(1, preview, director_stub, board_stub)
+	var stale_post: Array = CombatPlanningPreview.move_route_leg_from_preview(
+		1, preview, director_stub, board_stub, GameEnums.MoveTiming.POST_ACTION, true,
+	)
 	if stale_post.size() != 2 or stale_post[0] != Vector2i(2, 0) or stale_post[1] != Vector2i(3, 0):
-		failures.append("CombatPlanningPreview: post_move_route_leg must ignore stale post_split vs action end")
+		failures.append("CombatPlanningPreview: post move leg must ignore stale post_split vs action end")
 	var intent_preview := CombatPlanningPreview.new()
 	intent_preview.preview_paths[1] = l_path.duplicate()
 	var trample_action := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1)
@@ -414,12 +418,12 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	)
 	director_stub.plan_post_move = Timeline.new()
 	director_stub.plan_post_move.entries.append(post_action)
-	var committed_post: Array = CombatPlanningPreview.committed_post_move_route_leg(
-		1, preview, director_stub, board_stub,
+	var committed_post: Array = CombatPlanningPreview.committed_move_route_leg(
+		1, preview, director_stub, board_stub, GameEnums.MoveTiming.POST_ACTION,
 	)
 	if committed_post.size() < 2 or committed_post[0] != Vector2i(2, 0) or committed_post.back() != Vector2i(7, 2):
 		failures.append(
-			"CombatPlanningPreview: committed_post_move_route_leg should fall back to plan geometry",
+			"CombatPlanningPreview: committed_move_route_leg post should fall back to plan geometry",
 		)
 	plan_unit.position = Vector2i(0, 0)
 	board_stub.units = [plan_unit]
@@ -431,12 +435,12 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var trample_after_pre := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1)
 	director_stub.plan_action.entries.append(trample_after_pre)
 	preview.preview_paths[1] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)]
-	var committed_pre: Array = CombatPlanningPreview.committed_pre_move_route_leg(
-		1, preview, director_stub, board_stub,
+	var committed_pre: Array = CombatPlanningPreview.committed_move_route_leg(
+		1, preview, director_stub, board_stub, GameEnums.MoveTiming.PRE_ACTION,
 	)
 	if committed_pre.size() != 2 or committed_pre[0] != Vector2i(0, 0) or committed_pre[1] != Vector2i(1, 0):
 		failures.append(
-			"CombatPlanningPreview: committed_pre_move_route_leg should slice turn-start to pre target",
+			"CombatPlanningPreview: committed_move_route_leg pre should slice turn-start to pre target",
 		)
 	var action_origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(
 		board_stub, director_stub.get_player_plan(), trample_after_pre, plan_unit,
