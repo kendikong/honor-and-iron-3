@@ -640,11 +640,11 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: last planned step should be trample west after pre-move",
 		)
-	var route: Array = [
+	var anim_route: Array = [
 		Vector2i(0, 0), Vector2i(0, 1), Vector2i(0, 2), Vector2i(0, 3), Vector2i(0, 5),
 	]
 	var anim_preview := CombatPlanningPreview.new()
-	anim_preview.preview_paths[1] = route
+	anim_preview.preview_paths[1] = anim_route
 	var anim_cells: Array[Vector2i] = CombatPlanningPreview.planning_animation_cells(
 		1, anim_preview, Vector2i(0, 0), Vector2i(0, 5), null, null,
 	)
@@ -674,6 +674,9 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 		failures.append(
 			"MovementSystem: empty waypoints should still pathfind N-then-E, got %s" % str(auto_path),
 		)
+
+
+static func _test_combat_ui_formatters(failures: Array[String]) -> void:
 	var formula: String = CombatUiFormatters.format_damage_telemetry(
 		{"base": 3, "wpn": 2, "stat_val": 5, "stat_name": "STR", "multiplier_raw": 7.0, "target_def": 1, "fortitude": 0},
 		6, 4, 2,
