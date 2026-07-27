@@ -375,9 +375,19 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var post_origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(board_stub, plan, post_move)
 	if post_origin != Vector2i(1, 0):
 		failures.append("CombatUiFormatters: post-move origin should follow prior plan steps")
-	var move_label: String = CombatUiFormatters.action_symbol_text(board_stub, post_move, null, plan)
+	var move_label: String = CombatUiFormatters.action_symbol_text(board_stub, post_move, plan_unit, plan)
 	if move_label.find("(1,0)→(5,0)") < 0:
 		failures.append("CombatUiFormatters: move label should show origin and destination")
+	var ghost_move := TimelineAction.make_move(
+		1, Vector2i(5, 6), -1, [], GameEnums.MoveTiming.POST_ACTION,
+	)
+	var ghost_unit: UnitState = plan_unit.clone()
+	ghost_unit.position = Vector2i(1, 0)
+	var ghost_label: String = CombatUiFormatters.action_symbol_text(
+		board_stub, ghost_move, ghost_unit, plan,
+	)
+	if ghost_label.find("(1,0)→(5,6)") < 0:
+		failures.append("CombatUiFormatters: ghost post-move label should show origin and destination")
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:

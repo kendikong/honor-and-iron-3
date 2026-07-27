@@ -252,7 +252,7 @@ static func describe_action(
 		GameEnums.ActionType.FACE:
 			return "%s face %s" % [actor_name, facing_name(action.face_dir)]
 		GameEnums.ActionType.MOVE:
-			var origin: Vector2i = plan_action_origin_cell(board, plan, action)
+			var origin: Vector2i = plan_action_origin_cell(board, plan, action, actor)
 			var dest: Vector2i = action.target_coord
 			if origin.x > -900:
 				if action.uses_run:
@@ -283,7 +283,7 @@ static func describe_action(
 					or AbilitySystem.ability_has_movement_effect(action.ability)
 				)
 			):
-				var move_origin: Vector2i = plan_action_origin_cell(board, plan, action)
+				var move_origin: Vector2i = plan_action_origin_cell(board, plan, action, actor)
 				var move_dest: Vector2i = action.target_coord
 				if move_origin.x > -900:
 					return "%s %s (%d,%d) → (%d,%d)" % [
@@ -327,7 +327,7 @@ static func action_symbol_text(
 		return "-"
 	if action.type == GameEnums.ActionType.MOVE:
 		var dest: Vector2i = action.target_coord
-		var origin: Vector2i = plan_action_origin_cell(board, plan, action)
+		var origin: Vector2i = plan_action_origin_cell(board, plan, action, unit)
 		if origin.x > -900:
 			return "%s (%d,%d)→(%d,%d)" % [
 				PlanningIcons.move_glyph(action.uses_run),
@@ -355,7 +355,7 @@ static func action_symbol_text(
 			action.ability.is_movement_kind()
 			or AbilitySystem.ability_has_movement_effect(action.ability)
 		):
-			var move_origin: Vector2i = plan_action_origin_cell(board, plan, action)
+			var move_origin: Vector2i = plan_action_origin_cell(board, plan, action, unit)
 			var move_dest: Vector2i = action.target_coord
 			if move_origin.x > -900:
 				return "%s %s (%d,%d)→(%d,%d)" % [
@@ -382,10 +382,13 @@ static func plan_action_origin_cell(
 	board: BoardState,
 	plan: Timeline,
 	action: TimelineAction,
+	fallback_unit: UnitState = null,
 ) -> Vector2i:
 	if action == null:
 		return Vector2i(-999999, -999999)
 	var unit: UnitState = board.get_unit_by_id(action.actor_id) if board != null else null
+	if unit == null and fallback_unit != null and fallback_unit.id == action.actor_id:
+		unit = fallback_unit
 	if unit == null:
 		return Vector2i(-999999, -999999)
 	var origin: Vector2i = unit.position

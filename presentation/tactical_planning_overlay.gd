@@ -1328,6 +1328,23 @@ func _pending_move_route_leg(unit_id: int, prev: CombatPlanningPreview) -> Array
 	return CombatPlanningPreview.pending_move_route_leg(unit_id, prev, _director, _board)
 
 
+## Live/drag move arrow — same leg slice as commit preview (post-move starts at action end).
+func _interaction_move_route(unit_id: int, prev: CombatPlanningPreview, route: Array) -> Array:
+	if _director == null or prev == null:
+		return route
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	if move_timing == GameEnums.MoveTiming.POST_ACTION:
+		var post_leg: Array = CombatPlanningPreview.post_move_route_leg(
+			unit_id, prev, _director, _board,
+		)
+		if post_leg.size() >= 2:
+			return post_leg
+	var pre_leg: Array = _pending_move_route_leg(unit_id, prev)
+	if pre_leg.size() >= 2:
+		return pre_leg
+	return route
+
+
 func _draw_interaction_overlay() -> void:
 	if _director == null or _director.selected_unit_id < 0:
 		return
@@ -1343,21 +1360,16 @@ func _draw_interaction_overlay() -> void:
 	var route: Array = prev.preview_paths.get(actor.id, [])
 	if _planning_input != null and _planning_input.dragging:
 		if route.size() >= 2 and _unit_can_still_move(actor.id):
-			_draw_route_line(route, p_col, true, true)
+			var drag_route: Array = _interaction_move_route(actor.id, prev, route)
+			if drag_route.size() >= 2:
+				_draw_route_line(drag_route, p_col, true, true)
 	elif (
 		_planning_input != null
 		and not _planning_input.drag_preview_failed
 		and _planning_input.is_live_preview_active()
 		and _interaction_move_hover_active(actor.id)
 	):
-		var move_timing: int = _director.get_planning_move_timing(actor.id)
-		var draw_route: Array = []
-		if move_timing == GameEnums.MoveTiming.POST_ACTION:
-			draw_route = CombatPlanningPreview.post_move_route_leg(
-				actor.id, prev, _director, _board,
-			)
-		else:
-			draw_route = _pending_move_route_leg(actor.id, prev)
+		var draw_route: Array = _interaction_move_route(actor.id, prev, route)
 		if draw_route.size() >= 2:
 			_draw_route_line(draw_route, p_col, true, true)
 	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)

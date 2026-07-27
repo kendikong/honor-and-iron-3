@@ -543,6 +543,23 @@ static func planning_display_ap_left(
 	return ap_left
 
 
+## Canonical planning UI MP — projected economy; live sim only when non-negative.
+static func planning_display_mp_left(
+	committed_actor: UnitState,
+	live_actor: UnitState = null,
+	live_preview_valid: bool = false,
+) -> int:
+	if committed_actor == null:
+		return -1
+	var committed_mp: int = committed_actor.movement.points_left
+	if not live_preview_valid or live_actor == null:
+		return committed_mp
+	var live_mp: int = live_actor.movement.points_left
+	if live_mp >= 0:
+		return live_mp
+	return committed_mp
+
+
 ## Auto-run / run-move commit: Run AP plus any paired action ability must fit the AP budget.
 static func can_afford_run_for_commit(actor: UnitState, paired_ability: AbilityData = null) -> bool:
 	if not can_afford_run(actor):

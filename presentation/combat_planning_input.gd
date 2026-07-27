@@ -376,6 +376,8 @@ func _apply_live_preview(preview: Dictionary) -> void:
 	var pv_actor: UnitState = temp_board.get_unit_by_id(actor_id) if temp_board != null else null
 	if pv_actor != null:
 		drag_sim_actor_pos = pv_actor.position
+		if pv_actor.movement.points_left < 0:
+			drag_preview_failed = true
 	elif dragging:
 		drag_sim_actor_pos = _drag_last_free
 	if preview.has("temp_board") and _planning != null:
@@ -1939,6 +1941,24 @@ func planning_display_ap_left(unit_id: int) -> int:
 	)
 
 
+## Single MP read for planning UI — projected economy; reject overspend display from live sim.
+func planning_display_mp_left(unit_id: int) -> int:
+	if _director == null or unit_id < 0:
+		return -1
+	var committed: UnitState = _proj_unit(unit_id)
+	if committed == null and _director.board != null:
+		committed = _director.board.get_unit_by_id(unit_id)
+	if committed == null:
+		return -1
+	var live_actor: UnitState = null
+	var live_valid: bool = false
+	if is_live_preview_active() and not drag_preview_failed and preview_state.preview_board != null:
+		live_actor = preview_state.preview_board.get_unit_by_id(unit_id)
+		if live_actor != null:
+			live_valid = true
+	return AbilitySystem.planning_display_mp_left(committed, live_actor, live_valid)
+
+
 ## Cache key for timeline ghost refresh (intent snapshot identity).
 func timeline_refresh_key(unit_id: int) -> String:
 	if not _hover_intent_ghost_active(unit_id):
@@ -2095,7 +2115,10 @@ func _can_target_unit_with_selected_ability(actor: UnitState, target: UnitState)
 
 
 func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
-	if unit == null or coord == unit.position:
+	if unit == null:
+		return false
+	var move_origin: Vector2i = _proj_move_origin(unit)
+	if coord == move_origin:
 		return false
 	if unit.movement.points_left <= 0 and not extended_move_budget_active(unit):
 		return false
@@ -2106,7 +2129,9 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	if not force_basic_movement and _director.selected_ability_index >= 0:
 		ability = _selected_ability_data(unit)
 	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
-	return not MovementSystem.find_path(board, unit.position, coord, _move_budget(unit), mt, 1, ability).is_empty()
+	return not MovementSystem.find_path(
+		board, move_origin, coord, _move_budget(unit), mt, 1, ability,
+	).is_empty()
 
 
 func _snapshot_drag_legal_move_tiles() -> Array[Vector2i]:
@@ -2121,6 +2146,9 @@ func _drop_allows_move_tile(
 	actor: UnitState,
 ) -> bool:
 	if actor == null or cell == actor.position:
+		return false
+	var move_origin: Vector2i = _proj_move_origin(actor)
+	if cell == move_origin:
 		return false
 	if not legal_move_tiles.is_empty():
 		return legal_move_tiles.has(cell)
@@ -2179,6 +2207,20 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	if pv != null:
 		return pv.position
 	return unit.position
+
+
+## Pathfinding / drop origin — post-move starts at committed action end, not turn start.
+func _proj_move_origin(unit: UnitState) -> Vector2i:
+	if _director == null or unit == null:
+		return _proj_origin(unit)
+	if _director.get_planning_move_timing(unit.id) == GameEnums.MoveTiming.POST_ACTION:
+		var board: BoardState = _proj()
+		var action_end: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
+			_director, board, unit.id,
+		)
+		if board != null and board.is_in_bounds(action_end):
+			return action_end
+	return _proj_origin(unit)
 
 
 func _aim_enemy_pos(unit_id: int) -> Vector2i:
@@ -2298,7 +2340,8 @@ func _append_move_to_commit_slots(
 	var timing: int = _director.get_planning_move_timing(unit_id)
 	if timing < 0:
 		return
-		
+	var move_origin: Vector2i = _proj_move_origin(actor)
+
 	# Sanitize waypoints to strip leaked ability effects (like pass-through).
 	# This ensures the UI animation exactly matches the Simulator's fallback logic.
 	var is_valid_basic_path := true
@@ -2313,14 +2356,14 @@ func _append_move_to_commit_slots(
 		var budget: int = _move_budget(actor)
 		var move_cost: int = MovementSystem.move_cost_for(actor)
 		safe_waypoints = MovementSystem.find_path(
-			_proj(), actor.position, cell, budget, mt, move_cost, null,
+			_proj(), move_origin, cell, budget, mt, move_cost, null,
 		)
 		
 	# If the original waypoints were valid (likely due to an ability pass-through leak), 
 	# but we couldn't find ANY valid path to the cell using basic movement rules 
 	# (e.g., going around the enemy costs more movement points than the unit has),
 	# we must reject the drop entirely rather than committing an empty move.
-	if safe_waypoints.is_empty() and not waypoints.is_empty() and cell != actor.position:
+	if safe_waypoints.is_empty() and not waypoints.is_empty() and cell != move_origin:
 		slots["invalid"] = "Cannot reach this tile with basic movement."
 		return
 		

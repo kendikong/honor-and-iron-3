@@ -562,11 +562,16 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	var uses_run: bool = (
 		_planning_input != null and _planning_input.unit_move_requires_run(unit.id)
 	)
+	var mp_left: int = unit.movement.points_left
+	if _planning_input != null:
+		var display_mp: int = _planning_input.planning_display_mp_left(unit.id)
+		if display_mp >= 0:
+			mp_left = display_mp
 	_add_stat_chip(
 		chips,
 		"%s%d/%d" % [
 			PlanningIcons.move_glyph(uses_run),
-			unit.movement.points_left,
+			mp_left,
 			unit.movement.max_points,
 		],
 		(

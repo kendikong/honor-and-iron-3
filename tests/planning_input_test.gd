@@ -27,6 +27,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_enemy_target_params_ignore_pseudo_drag(failures)
 	_test_shield_bash_preview_pushes(failures)
 	_test_planning_display_ap_run_intent(failures)
+	_test_planning_display_mp_left(failures)
 	_test_timeline_ghost_slots(failures)
 	_test_ability_scroll_clears_hover_preview_cache(failures)
 
@@ -1139,6 +1140,24 @@ static func _test_planning_display_ap_run_intent(failures: Array[String]) -> voi
 	if live_ap != 1:
 		failures.append(
 			"PlanningInputTest: live preview AP should mirror sim board, got %d" % live_ap,
+		)
+
+
+static func _test_planning_display_mp_left(failures: Array[String]) -> void:
+	var unit: UnitState = UnitState.new()
+	unit.movement.points_left = 1
+	unit.movement.max_points = 3
+	var live_unit: UnitState = unit.clone()
+	live_unit.movement.points_left = -1
+	var display_mp: int = AbilitySystem.planning_display_mp_left(unit, live_unit, true)
+	if display_mp != 1:
+		failures.append(
+			"PlanningInputTest: live MP overspend should show committed budget, got %d" % display_mp,
+		)
+	var committed_only: int = AbilitySystem.planning_display_mp_left(unit, null, false)
+	if committed_only != 1:
+		failures.append(
+			"PlanningInputTest: committed MP display mismatch, got %d" % committed_only,
 		)
 
 

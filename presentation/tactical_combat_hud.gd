@@ -448,8 +448,13 @@ func _timeline_mp_key(board: BoardState) -> String:
 			var display_ap: int = _planning_input.planning_display_ap_left(unit.id)
 			if display_ap >= 0:
 				ap_left = display_ap
+		var mp_left: int = unit.movement.points_left
+		if _planning_input != null:
+			var display_mp: int = _planning_input.planning_display_mp_left(unit.id)
+			if display_mp >= 0:
+				mp_left = display_mp
 		parts.append(
-			"%d:%d/%d:%d" % [unit.id, unit.movement.points_left, ap_left, run_bit],
+			"%d:%d/%d:%d" % [unit.id, mp_left, ap_left, run_bit],
 		)
 	return ",".join(parts)
 
