@@ -233,21 +233,24 @@ func _add_party_row(
 		ghost_slots = _planning_input.timeline_ghost_slots(unit.id)
 	var warn: String = ""
 	var exhausted_tooltip: String = "Waiting — no further actions this phase" if is_exhausted else ""
+	var plan_board: BoardState = _board
+	if _director != null and _director.base_board != null:
+		plan_board = _director.base_board
 	var cell_warn: String = _append_plan_cell(
 		plan, slots.get("pre", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_PRE, STRETCH_PRE,
-		is_exhausted, exhausted_tooltip, ghost_slots.get("pre", []) as Array,
+		is_exhausted, exhausted_tooltip, ghost_slots.get("pre", []) as Array, plan_board,
 	)
 	if not cell_warn.is_empty():
 		warn = cell_warn
 	cell_warn = _append_plan_cell(
 		plan, slots.get("action", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_ACT, STRETCH_ACTION,
-		is_exhausted, exhausted_tooltip, ghost_slots.get("action", []) as Array,
+		is_exhausted, exhausted_tooltip, ghost_slots.get("action", []) as Array, plan_board,
 	)
 	if not cell_warn.is_empty() and warn.is_empty():
 		warn = cell_warn
 	cell_warn = _append_plan_cell(
 		plan, slots.get("post", []), unit, timeline, statuses, plan_active, COLOR_ACCENT_POST, STRETCH_POST,
-		is_exhausted, exhausted_tooltip, ghost_slots.get("post", []) as Array,
+		is_exhausted, exhausted_tooltip, ghost_slots.get("post", []) as Array, plan_board,
 	)
 	if not cell_warn.is_empty() and warn.is_empty():
 		warn = cell_warn
@@ -322,7 +325,9 @@ func _append_plan_cell(
 	exhausted: bool = false,
 	exhausted_tooltip: String = "",
 	ghost_steps: Array = [],
+	plan_board: BoardState = null,
 ) -> String:
+	var board: BoardState = plan_board if plan_board != null else _board
 	var text: String = "—"
 	var tooltip: String = exhausted_tooltip if exhausted else "No action queued"
 	var failed: bool = false
@@ -331,11 +336,11 @@ func _append_plan_cell(
 		var parts: PackedStringArray = []
 		var tips: PackedStringArray = []
 		for step: TimelineAction in steps:
-			var symbol: String = CombatUiFormatters.action_symbol_text(_board, step, unit)
+			var symbol: String = CombatUiFormatters.action_symbol_text(board, step, unit, timeline)
 			if symbol == "":
 				continue
 			parts.append(symbol)
-			tips.append(CombatUiFormatters.describe_action(_board, step))
+			tips.append(CombatUiFormatters.describe_action(board, step, timeline))
 			var reason: String = UnitPlanOrder.status_for_action(timeline, statuses, step)
 			if reason != "":
 				failed = true
@@ -358,11 +363,11 @@ func _append_plan_cell(
 			if not step is TimelineAction:
 				continue
 			var ghost_action: TimelineAction = step as TimelineAction
-			var symbol: String = CombatUiFormatters.action_symbol_text(_board, ghost_action, unit)
+			var symbol: String = CombatUiFormatters.action_symbol_text(board, ghost_action, unit, timeline)
 			if symbol == "":
 				continue
 			ghost_parts.append(symbol)
-			ghost_tips.append(CombatUiFormatters.describe_action(_board, ghost_action))
+			ghost_tips.append(CombatUiFormatters.describe_action(board, ghost_action, timeline))
 		if not ghost_parts.is_empty():
 			ghost_text = " → ".join(ghost_parts)
 			ghost_tooltip = "Pending — click to commit\n" + "\n".join(ghost_tips)

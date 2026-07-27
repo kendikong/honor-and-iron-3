@@ -355,6 +355,29 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var kept: Array = intent_preview.preview_paths.get(1, [])
 	if kept.size() != 4:
 		failures.append("CombatPlanningPreview: ensure_movement_intent must not shorten sim L-path")
+	var plan_unit := UnitState.new()
+	plan_unit.id = 1
+	plan_unit.team = GameEnums.Team.PLAYER
+	plan_unit.position = Vector2i(0, 0)
+	board_stub.units = [plan_unit]
+	var plan := Timeline.new()
+	var pre_move := TimelineAction.make_move(
+		1, Vector2i(1, 0), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+	)
+	plan.entries.append(pre_move)
+	var origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(board_stub, plan, pre_move)
+	if origin != Vector2i(0, 0):
+		failures.append("CombatUiFormatters: pre-move origin should be turn-start cell")
+	var post_move := TimelineAction.make_move(
+		1, Vector2i(5, 0), -1, [], GameEnums.MoveTiming.POST_ACTION,
+	)
+	plan.entries.append(post_move)
+	var post_origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(board_stub, plan, post_move)
+	if post_origin != Vector2i(1, 0):
+		failures.append("CombatUiFormatters: post-move origin should follow prior plan steps")
+	var move_label: String = CombatUiFormatters.action_symbol_text(board_stub, post_move, null, plan)
+	if move_label.find("(1,0)→(5,0)") < 0:
+		failures.append("CombatUiFormatters: move label should show origin and destination")
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:

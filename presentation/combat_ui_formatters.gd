@@ -239,7 +239,11 @@ static func summarize_intents(
 	return "\n".join(lines)
 
 
-static func describe_action(board: BoardState, action: TimelineAction) -> String:
+static func describe_action(
+	board: BoardState,
+	action: TimelineAction,
+	plan: Timeline = null,
+) -> String:
 	if action == null:
 		return "—"
 	var actor: UnitState = board.get_unit_by_id(action.actor_id) if board != null else null
@@ -248,6 +252,16 @@ static func describe_action(board: BoardState, action: TimelineAction) -> String
 		GameEnums.ActionType.FACE:
 			return "%s face %s" % [actor_name, facing_name(action.face_dir)]
 		GameEnums.ActionType.MOVE:
+			var origin: Vector2i = plan_action_origin_cell(board, plan, action)
+			var dest: Vector2i = action.target_coord
+			if origin.x > -900:
+				if action.uses_run:
+					return "%s run (%d,%d) → (%d,%d)" % [
+						actor_name, origin.x, origin.y, dest.x, dest.y,
+					]
+				return "%s move (%d,%d) → (%d,%d)" % [
+					actor_name, origin.x, origin.y, dest.x, dest.y,
+				]
 			if action.uses_run:
 				return "%s run -> %s" % [actor_name, action.target_coord]
 			return "%s move -> %s" % [actor_name, action.target_coord]
@@ -262,6 +276,20 @@ static func describe_action(board: BoardState, action: TimelineAction) -> String
 				var tgt := board.get_unit_by_id(action.target_unit_id)
 				if tgt != null:
 					target_name = tgt.definition.display_name
+			if (
+				action.ability != null
+				and (
+					action.ability.is_movement_kind()
+					or AbilitySystem.ability_has_movement_effect(action.ability)
+				)
+			):
+				var move_origin: Vector2i = plan_action_origin_cell(board, plan, action)
+				var move_dest: Vector2i = action.target_coord
+				if move_origin.x > -900:
+					return "%s %s (%d,%d) → (%d,%d)" % [
+						actor_name, ability_name,
+						move_origin.x, move_origin.y, move_dest.x, move_dest.y,
+					]
 			return "%s %s -> %s" % [actor_name, ability_name, target_name]
 	return "?"
 
@@ -293,14 +321,22 @@ static func action_symbol_text(
 	board: BoardState,
 	action: TimelineAction,
 	unit: UnitState,
+	plan: Timeline = null,
 ) -> String:
 	if action == null:
 		return "-"
 	if action.type == GameEnums.ActionType.MOVE:
+		var dest: Vector2i = action.target_coord
+		var origin: Vector2i = plan_action_origin_cell(board, plan, action)
+		if origin.x > -900:
+			return "%s (%d,%d)→(%d,%d)" % [
+				PlanningIcons.move_glyph(action.uses_run),
+				origin.x, origin.y, dest.x, dest.y,
+			]
 		return "%s (%d,%d)" % [
 			PlanningIcons.move_glyph(action.uses_run),
-			action.target_coord.x,
-			action.target_coord.y,
+			dest.x,
+			dest.y,
 		]
 	if action.type == GameEnums.ActionType.FACE:
 		return "%s %s" % [PlanningIcons.GLYPH_FACE, facing_name(action.face_dir)]
@@ -315,7 +351,17 @@ static func action_symbol_text(
 		var symbol: String = PlanningIcons.ability_glyph(action.ability)
 		if action.ability != null and AbilitySystem.is_run_ability(action.ability):
 			return "%s Run" % symbol
-		if action.ability != null and action.ability.is_movement_kind():
+		if action.ability != null and (
+			action.ability.is_movement_kind()
+			or AbilitySystem.ability_has_movement_effect(action.ability)
+		):
+			var move_origin: Vector2i = plan_action_origin_cell(board, plan, action)
+			var move_dest: Vector2i = action.target_coord
+			if move_origin.x > -900:
+				return "%s %s (%d,%d)→(%d,%d)" % [
+					symbol, action.ability.display_name,
+					move_origin.x, move_origin.y, move_dest.x, move_dest.y,
+				]
 			return "%s %s" % [symbol, action.ability.display_name]
 		var ability_name: String = action.ability.display_name if action.ability != null else ""
 		var target_name: String = ""
@@ -329,6 +375,44 @@ static func action_symbol_text(
 			return "%s %s > %s" % [symbol, ability_name, target_name]
 		return "%s %s" % [symbol, target_name]
 	return "❓"
+
+
+## Grid cell where `action` begins — walk prior plan steps for the same actor.
+static func plan_action_origin_cell(
+	board: BoardState,
+	plan: Timeline,
+	action: TimelineAction,
+) -> Vector2i:
+	if action == null:
+		return Vector2i(-999999, -999999)
+	var unit: UnitState = board.get_unit_by_id(action.actor_id) if board != null else null
+	if unit == null:
+		return Vector2i(-999999, -999999)
+	var origin: Vector2i = unit.position
+	if plan == null:
+		return origin
+	for act: TimelineAction in plan.entries:
+		if act == action:
+			break
+		if act.actor_id != action.actor_id:
+			continue
+		origin = _plan_step_end_cell(origin, act)
+	return origin
+
+
+static func _plan_step_end_cell(origin: Vector2i, act: TimelineAction) -> Vector2i:
+	match act.type:
+		GameEnums.ActionType.MOVE:
+			return act.target_coord
+		GameEnums.ActionType.ABILITY:
+			if act.awaiting_target:
+				return origin
+			if act.ability != null and (
+				act.ability.is_movement_kind()
+				or AbilitySystem.ability_has_movement_effect(act.ability)
+			):
+				return act.target_coord
+	return origin
 
 
 static func format_unit_plan_timeline(
@@ -349,7 +433,7 @@ static func format_unit_plan_timeline(
 	var failed: bool = false
 	for i: int in range(steps.size()):
 		var step: TimelineAction = steps[i]
-		var symbol: String = action_symbol_text(board, step, unit)
+		var symbol: String = action_symbol_text(board, step, unit, plan)
 		if symbol == "":
 			continue
 		parts.append("%d. %s" % [parts.size() + 1, symbol])
