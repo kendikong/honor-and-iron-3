@@ -64,6 +64,31 @@ func setup(
 	_planning = planning
 	_intent_state = intent_state
 	_sfx = sfx
+	_bind_event_bus()
+
+
+func teardown() -> void:
+	_disconnect_event_bus()
+	_map_view = null
+	_director = null
+	_planning = null
+	_intent_state = null
+	_sfx = null
+
+
+func _disconnect_event_bus() -> void:
+	if EventBus.selection_changed.is_connected(_on_selection_changed):
+		EventBus.selection_changed.disconnect(_on_selection_changed)
+	if EventBus.ability_selected.is_connected(_on_ability_selected):
+		EventBus.ability_selected.disconnect(_on_ability_selected)
+	if EventBus.preview_updated.is_connected(_on_preview_updated):
+		EventBus.preview_updated.disconnect(_on_preview_updated)
+	if EventBus.board_changed.is_connected(_on_board_changed):
+		EventBus.board_changed.disconnect(_on_board_changed)
+
+
+func _bind_event_bus() -> void:
+	_disconnect_event_bus()
 	EventBus.selection_changed.connect(_on_selection_changed)
 	EventBus.ability_selected.connect(_on_ability_selected)
 	EventBus.preview_updated.connect(_on_preview_updated)
@@ -2333,7 +2358,7 @@ func _is_planning() -> bool:
 
 
 func _play_sfx(key: String) -> void:
-	if _sfx != null:
+	if _sfx != null and is_instance_valid(_sfx) and _sfx.is_inside_tree():
 		_sfx.play(key)
 
 

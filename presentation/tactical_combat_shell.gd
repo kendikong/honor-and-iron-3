@@ -126,6 +126,11 @@ func start_combat(encounter: EncounterData, initial_board: BoardState = null) ->
 	_apply_ui_settings()
 
 
+func _exit_tree() -> void:
+	if planning_input != null:
+		planning_input.teardown()
+
+
 func _wire_intent_state() -> void:
 	EventBus.board_changed.connect(func(board: BoardState) -> void:
 		intent_state.set_board(board),

@@ -54,10 +54,12 @@ func _ready() -> void:
 	EventBus.sim_event.connect(_on_sim_event)
 
 func play(key: String) -> void:
-	if not _streams.has(key):
+	if not is_inside_tree() or _voices.is_empty() or not _streams.has(key):
 		return
 	var voice := _voices[_next]
 	_next = (_next + 1) % VOICES
+	if not voice.is_inside_tree():
+		return
 	voice.stream = _streams[key]
 	voice.volume_db = _rng.randf_range(-1.5, 0.5)
 	voice.pitch_scale = _rng.randf_range(0.97, 1.03)
