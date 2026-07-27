@@ -62,6 +62,32 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 		ensure_movement_intent_from_actions(actions_v as Array, base_board)
 
 
+## Replace the action leg inside a longer preview route with waypoint intent geometry.
+static func _splice_waypoint_action_leg(
+	route: Array,
+	origin: Vector2i,
+	action: TimelineAction,
+) -> Array:
+	var intent: Array = movement_intent_cells(origin, action)
+	if intent.size() < 2:
+		return route
+	var start_idx: int = _last_route_index(route, origin)
+	if start_idx < 0:
+		start_idx = 0
+	var end_idx: int = -1
+	for i: int in range(start_idx + 1, route.size()):
+		if route[i] is Vector2i and (route[i] as Vector2i) == action.target_coord:
+			end_idx = i
+	if end_idx < 0:
+		return intent
+	var out: Array = route.slice(0, start_idx + 1)
+	for i: int in range(1, intent.size()):
+		out.append(intent[i])
+	if end_idx + 1 < route.size():
+		out.append_array(route.slice(end_idx + 1, route.size()))
+	return out
+
+
 ## Grid cells for a movement-skill intent: origin → waypoints → target_coord (commit-slot truth).
 static func movement_intent_cells(origin: Vector2i, action: TimelineAction) -> Array:
 	var cells: Array = [origin]
@@ -162,6 +188,18 @@ func ensure_movement_intent_from_actions(
 		if intent.size() < 2:
 			continue
 		var existing: Array = preview_paths.get(action.actor_id, [])
+		## Committed waypoints are intent truth — never keep a same-endpoint sim path with different steps.
+		if not action.waypoints.is_empty():
+			if existing.size() > intent.size():
+				preview_paths[action.actor_id] = _splice_waypoint_action_leg(existing, origin, action)
+				preview_splits[action.actor_id] = (preview_paths[action.actor_id] as Array).size()
+			else:
+				preview_paths[action.actor_id] = intent
+				preview_splits[action.actor_id] = intent.size()
+			if not action_splits.has(action.actor_id):
+				action_splits[action.actor_id] = 0
+			origins[action.actor_id] = action.target_coord
+			continue
 		if existing.size() >= 2:
 			var last_cell: Variant = existing[existing.size() - 1]
 			if last_cell is Vector2i and (last_cell as Vector2i) == action.target_coord:

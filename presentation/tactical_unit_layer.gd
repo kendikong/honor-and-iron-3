@@ -974,6 +974,13 @@ func _unit_uses_run_anim(unit_id: int) -> bool:
 func _resolve_planning_path_cells(from_cell: Vector2i, to_cell: Vector2i, unit: UnitState) -> Array[Vector2i]:
 	if unit == null:
 		return []
+	if _director != null:
+		var skill_wps: Array[Vector2i] = _director.get_planned_skill_walk_waypoints(unit.id, to_cell)
+		if not skill_wps.is_empty():
+			return skill_wps.duplicate()
+		var move_wps: Array[Vector2i] = _director.get_planned_move_waypoints(unit.id)
+		if not move_wps.is_empty() and move_wps.back() == to_cell:
+			return move_wps.duplicate()
 	var preview: CombatPlanningPreview = _committed_planning_preview()
 	return CombatPlanningPreview.planning_animation_cells(
 		unit.id, preview, from_cell, to_cell, _director, _board,

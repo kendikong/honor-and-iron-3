@@ -892,6 +892,20 @@ func get_planned_move_waypoints(unit_id: int) -> Array[Vector2i]:
 	return []
 
 
+## Waypoints for a committed movement-skill leg (trample, dash tile walk, etc.).
+func get_planned_skill_walk_waypoints(unit_id: int, to_cell: Vector2i) -> Array[Vector2i]:
+	for action: TimelineAction in get_unit_plan_steps(unit_id):
+		if action.type != GameEnums.ActionType.ABILITY or action.awaiting_target:
+			continue
+		if action.ability == null or not AbilitySystem.ability_has_movement_effect(action.ability):
+			continue
+		if action.target_coord != to_cell:
+			continue
+		if not action.waypoints.is_empty():
+			return action.waypoints.duplicate()
+	return []
+
+
 func get_unit_plan_steps(unit_id: int) -> Array[TimelineAction]:
 	return UnitPlanOrder.ordered_steps_for_unit(get_player_plan(), unit_id)
 

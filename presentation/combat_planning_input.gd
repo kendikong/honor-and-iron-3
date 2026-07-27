@@ -411,9 +411,10 @@ func _paint_valid_movement_endpoint_intent() -> bool:
 	var origin: Vector2i = _proj_origin(actor)
 	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability):
 		return false
+	var route_wps: Array[Vector2i] = _route_waypoints()
 	var action: TimelineAction = TimelineAction.make_ability(
 		unit_id, ability, cell, AbilitySystem.planning_commit_target_unit_id(ability, -1),
-		GameEnums.MoveTiming.PRE_ACTION, [],
+		GameEnums.MoveTiming.PRE_ACTION, route_wps,
 	)
 	var base: BoardState = (
 		_director.base_board.clone() if _director.base_board != null else _director.board.clone()
@@ -2523,6 +2524,10 @@ func _build_commit_slots_at_cell(
 
 	if ability_index >= 0 and ability != null and not force_basic_movement:
 		var effective_waypoints: Array[Vector2i] = waypoints
+		if effective_waypoints.is_empty():
+			var painted: Array[Vector2i] = _route_waypoints()
+			if not painted.is_empty() and painted.back() == cell:
+				effective_waypoints = painted
 		if effective_waypoints.is_empty() and AbilitySystem.ability_has_movement_effect(ability):
 			var live_path: Array = preview_state.preview_paths.get(unit_id, [])
 			var start_pos: Vector2i = _proj_origin(actor)

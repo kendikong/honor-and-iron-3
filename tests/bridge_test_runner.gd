@@ -362,6 +362,32 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var kept: Array = intent_preview.preview_paths.get(1, [])
 	if kept.size() != 4:
 		failures.append("CombatPlanningPreview: ensure_movement_intent must not shorten sim L-path")
+	var east_north_preview := CombatPlanningPreview.new()
+	east_north_preview.preview_paths[1] = [
+		Vector2i(6, 3), Vector2i(6, 2), Vector2i(7, 2),
+	]
+	var en_board := BoardState.new()
+	en_board.grid_size = Vector2i(12, 12)
+	var en_unit := UnitState.new()
+	en_unit.id = 1
+	en_unit.team = GameEnums.Team.PLAYER
+	en_unit.position = Vector2i(6, 3)
+	en_board.units = [en_unit]
+	var trample_ab := AbilityData.new()
+	var move_eff := EffectData.new()
+	move_eff.type = GameEnums.EffectType.MOVE
+	move_eff.amount = 2
+	trample_ab.effects = [move_eff]
+	var en_action := TimelineAction.make_ability(
+		1, trample_ab, Vector2i(7, 2), -1, GameEnums.MoveTiming.PRE_ACTION,
+		[Vector2i(7, 3), Vector2i(7, 2)],
+	)
+	east_north_preview.ensure_movement_intent_from_actions([en_action], en_board)
+	var en_path: Array = east_north_preview.preview_paths.get(1, [])
+	if en_path.size() != 3 or en_path[1] != Vector2i(7, 3) or en_path[2] != Vector2i(7, 2):
+		failures.append(
+			"CombatPlanningPreview: waypoint intent must replace same-endpoint sim path order",
+		)
 	var plan_unit := UnitState.new()
 	plan_unit.id = 1
 	plan_unit.team = GameEnums.Team.PLAYER
