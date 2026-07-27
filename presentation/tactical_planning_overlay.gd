@@ -1280,10 +1280,21 @@ func _interaction_move_hover_active(unit_id: int) -> bool:
 	return is_hover_move_tile(_hover_coord)
 
 
-func _skip_committed_move_leg_draw(unit_id: int, move_timing: int) -> bool:
+func _skip_committed_move_leg_draw(unit_id: int, leg_timing: int) -> bool:
 	if _director == null or _planning_input == null or unit_id != _director.selected_unit_id:
 		return false
-	if _director.get_planning_move_timing(unit_id) != move_timing:
+	## Post committed leg hides during any move drag/hover (legacy overlay behavior).
+	if leg_timing == GameEnums.MoveTiming.POST_ACTION:
+		if _planning_input.dragging:
+			return true
+		if (
+			_planning_input.is_live_preview_active()
+			and _interaction_move_hover_active(unit_id)
+		):
+			return true
+		return false
+	var active_timing: int = _director.get_planning_move_timing(unit_id)
+	if active_timing != leg_timing:
 		return false
 	if _planning_input.dragging:
 		return true

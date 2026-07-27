@@ -411,6 +411,22 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: post-move origin must use projection, not move-only board",
 		)
+	director_stub.plan_post_move = Timeline.new()
+	director_stub.plan_pre_move = Timeline.new()
+	director_stub.plan_pre_move.entries.append(
+		TimelineAction.make_move(1, Vector2i(1, 0), -1, [], GameEnums.MoveTiming.PRE_ACTION),
+	)
+	director_stub.plan_action = Timeline.new()
+	director_stub.plan_action.entries.append(
+		TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1),
+	)
+	var idle_origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(
+		director_stub, move_only, 1,
+	)
+	if idle_origin != Vector2i(2, 0):
+		failures.append(
+			"CombatPlanningPreview: idle move origin should fall back to projected stand",
+		)
 	preview.preview_paths[1] = [Vector2i(0, 0), Vector2i(2, 0)]
 	var post_action := TimelineAction.make_move(
 		1, Vector2i(7, 2), -1, [Vector2i(3, 2), Vector2i(4, 2), Vector2i(5, 2), Vector2i(6, 2), Vector2i(7, 2)],
