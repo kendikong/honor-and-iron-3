@@ -3,6 +3,8 @@ extends RefCounted
 
 ## Headless smoke tests for bridge layer (Phase 1 expands coverage).
 
+const PLANNING_PATH_REGRESSION_TEST := preload("res://tests/planning_path_regression_test.gd")
+
 static func run_all() -> Dictionary:
 	var failures: Array[String] = []
 	_test_skirmish_preset(failures)
@@ -21,6 +23,7 @@ static func run_all() -> Dictionary:
 	_test_combat_ui_formatters(failures)
 	_test_battle_arena(failures)
 	PlanningInputTest.run_all(failures)
+	PLANNING_PATH_REGRESSION_TEST.run_all(failures)
 	return {"passed": failures.is_empty(), "failures": failures}
 
 
@@ -588,7 +591,7 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 		1, Vector2i(4, 6), -1, route, GameEnums.MoveTiming.POST_ACTION,
 	)
 	var events: Array[SimEvent] = []
-	MovementSystem.execute(board, path_move, events)
+	MovementSystem.execute_move(board, path_move, events)
 	if unit.facing != GameEnums.Facing.EAST:
 		failures.append(
 			"MovementSystem: face_dir=-1 must face last path step (east), got %d" % unit.facing,
@@ -599,7 +602,7 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 	var forced := TimelineAction.make_move(
 		1, Vector2i(4, 6), GameEnums.Facing.WEST, route, GameEnums.MoveTiming.POST_ACTION,
 	)
-	MovementSystem.execute(board, forced, events)
+	MovementSystem.execute_move(board, forced, events)
 	if unit.facing != GameEnums.Facing.WEST:
 		failures.append(
 			"MovementSystem: explicit face_dir must override path-based facing",

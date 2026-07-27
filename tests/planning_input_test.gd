@@ -741,8 +741,8 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 			"PlanningInputTest: self skill should not pair on move tile when auto skill after move is off",
 		)
 	input.auto_use_skill_after_move = true
-	var paired_slots: Dictionary = input._build_commit_slots_at_cell(1, Vector2i(3, 2))
-	if (paired_slots.get("action", []) as Array).is_empty():
+	var self_paired_slots: Dictionary = input._build_commit_slots_at_cell(1, Vector2i(3, 2))
+	if (self_paired_slots.get("action", []) as Array).is_empty():
 		failures.append(
 			"PlanningInputTest: self skill should pair on move tile when auto skill after move is on",
 		)

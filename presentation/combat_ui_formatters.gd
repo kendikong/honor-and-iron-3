@@ -50,9 +50,14 @@ static func scaled_font_size(legacy_tier: int) -> int:
 
 
 static func player_color(player_id: int) -> Color:
-	if NetworkManager == null or not NetworkManager.is_multiplayer:
+	var main_loop: MainLoop = Engine.get_main_loop()
+	if not main_loop is SceneTree:
 		return PLAYER_COLORS[0]
-	var keys: Array = NetworkManager.player_usernames.keys()
+	var network_manager: Node = (main_loop as SceneTree).root.get_node_or_null("NetworkManager")
+	if network_manager == null or not bool(network_manager.get("is_multiplayer")):
+		return PLAYER_COLORS[0]
+	var usernames: Dictionary = network_manager.get("player_usernames") as Dictionary
+	var keys: Array = usernames.keys()
 	keys.sort()
 	var idx: int = keys.find(player_id)
 	if idx >= 0 and idx < PLAYER_COLORS.size():
