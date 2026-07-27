@@ -202,6 +202,8 @@ func _on_board_changed(board: BoardState) -> void:
 
 func _on_preview_updated(result: SimResult) -> void:
 	_preview_board = result.final_state
+	if _director != null and CombatDirector.is_planning_phase(_director.phase):
+		_sync_planning_actor_positions()
 	queue_redraw()
 
 
@@ -217,7 +219,6 @@ func _on_selection_changed(unit_id: int) -> void:
 
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
-		_sync_planning_actor_positions()
 		_sync_planning_facings_for_queued_actions()
 		_refresh_player_exhaustion()
 		_refresh_unit_glows()
@@ -502,7 +503,7 @@ func _sync_actors() -> void:
 		elif _move_tweens.has(unit.id):
 			pass
 		elif _is_planning_phase() and not unit.is_enemy():
-			# Planning walk/snap is driven by timeline_changed (and commit anim events).
+			# Planning walk/snap: committed preview_updated (+ planning_commit_events).
 			pass
 		else:
 			_position_actor(unit.id, unit.position)
@@ -973,13 +974,9 @@ func _unit_uses_run_anim(unit_id: int) -> bool:
 func _resolve_planning_path_cells(from_cell: Vector2i, to_cell: Vector2i, unit: UnitState) -> Array[Vector2i]:
 	if unit == null:
 		return []
-	if _director != null:
-		var waypoints: Array[Vector2i] = _director.get_planned_move_waypoints(unit.id)
-		if not waypoints.is_empty() and waypoints.back() == to_cell:
-			return waypoints.duplicate()
 	var preview: CombatPlanningPreview = _committed_planning_preview()
 	return CombatPlanningPreview.planning_animation_cells(
-		unit.id, preview, from_cell, to_cell,
+		unit.id, preview, from_cell, to_cell, _director, _board,
 	)
 
 

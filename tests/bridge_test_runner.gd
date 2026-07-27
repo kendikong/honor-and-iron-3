@@ -306,6 +306,16 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	)
 	if cells.size() != 3 or cells[2] != Vector2i(3, 0):
 		failures.append("CombatPlanningPreview: destination_cells_from_route full leg mismatch")
+	preview.preview_paths[1] = route
+	preview.preview_splits[1] = route.size()
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	var leg: Array = CombatPlanningPreview.pending_move_route_leg(1, preview, director, board)
+	var anim: Array[Vector2i] = CombatPlanningPreview.planning_animation_cells(
+		1, preview, Vector2i(0, 0), Vector2i(3, 0), director, board,
+	)
+	if leg.size() != 4 or anim.size() != 3 or anim[0] != Vector2i(1, 0):
+		failures.append("CombatPlanningPreview: pending_move_route_leg / planning_animation_cells mismatch")
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:

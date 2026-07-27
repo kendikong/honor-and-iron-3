@@ -282,6 +282,44 @@ func copy_from(other: CombatPlanningPreview) -> void:
 	preview_pushes = other.preview_pushes.duplicate(true)
 
 
+## Route leg for the current planning move — same slice as overlay arrow drawing.
+static func pending_move_route_leg(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	director: CombatDirector,
+	board: BoardState,
+) -> Array:
+	if preview == null:
+		return []
+	var route: Array = preview.preview_paths.get(unit_id, [])
+	if route.size() < 2 or director == null:
+		return []
+	var split: int = int(preview.preview_splits.get(unit_id, route.size()))
+	var post_split: int = int(preview.preview_post_splits.get(unit_id, split))
+	var end_idx: int = mini(split, route.size())
+	var move_timing: int = director.get_planning_move_timing(unit_id)
+	if move_timing == GameEnums.MoveTiming.POST_ACTION:
+		if post_split < end_idx:
+			return route.slice(maxi(post_split - 1, 0), end_idx)
+		var projected: BoardState = director.projected_state
+		if projected == null:
+			return []
+		var projected_unit: UnitState = projected.get_unit_by_id(unit_id)
+		if projected_unit == null:
+			return []
+		var start_idx: int = route.find(projected_unit.position)
+		if start_idx < 0:
+			start_idx = maxi(0, end_idx - 1)
+		return route.slice(start_idx, end_idx)
+	var unit: UnitState = board.get_unit_by_id(unit_id) if board != null else null
+	var start_idx: int = 0
+	if unit != null:
+		var found: int = route.find(unit.position)
+		if found >= 0:
+			start_idx = found
+	return route.slice(start_idx, end_idx)
+
+
 ## Tween destination cells along a preview route (exclusive start, inclusive end).
 static func destination_cells_from_route(
 	route: Array,
@@ -321,10 +359,16 @@ static func planning_animation_cells(
 	preview: CombatPlanningPreview,
 	from_cell: Vector2i,
 	to_cell: Vector2i,
+	director: CombatDirector = null,
+	board: BoardState = null,
 ) -> Array[Vector2i]:
 	if preview == null or from_cell == to_cell:
 		return []
 	var route: Array = preview.preview_paths.get(unit_id, [])
+	if route.size() < 2:
+		return []
+	if director != null:
+		route = pending_move_route_leg(unit_id, preview, director, board)
 	if route.size() < 2:
 		return []
 	return destination_cells_from_route(route, from_cell, to_cell)

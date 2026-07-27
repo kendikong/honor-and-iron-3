@@ -1326,33 +1326,7 @@ func _interaction_move_hover_active(unit_id: int) -> bool:
 
 
 func _pending_move_route_leg(unit_id: int, prev: CombatPlanningPreview) -> Array:
-	var route: Array = prev.preview_paths.get(unit_id, [])
-	if route.size() < 2 or _director == null:
-		return []
-	var split: int = int(prev.preview_splits.get(unit_id, route.size()))
-	var post_split: int = int(prev.preview_post_splits.get(unit_id, split))
-	var end_idx: int = mini(split, route.size())
-	var move_timing: int = _director.get_planning_move_timing(unit_id)
-	if move_timing == GameEnums.MoveTiming.POST_ACTION:
-		if post_split < end_idx:
-			return route.slice(maxi(post_split - 1, 0), end_idx)
-		var projected: BoardState = _director.projected_state
-		if projected == null:
-			return []
-		var unit: UnitState = projected.get_unit_by_id(unit_id)
-		if unit == null:
-			return []
-		var start_idx: int = route.find(unit.position)
-		if start_idx < 0:
-			start_idx = maxi(0, end_idx - 1)
-		return route.slice(start_idx, end_idx)
-	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
-	var start_idx: int = 0
-	if unit != null:
-		var found: int = route.find(unit.position)
-		if found >= 0:
-			start_idx = found
-	return route.slice(start_idx, end_idx)
+	return CombatPlanningPreview.pending_move_route_leg(unit_id, prev, _director, _board)
 
 
 func _draw_interaction_overlay() -> void:
