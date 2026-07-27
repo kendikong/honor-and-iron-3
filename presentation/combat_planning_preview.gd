@@ -450,7 +450,8 @@ static func move_route_leg_from_preview(
 	return route.slice(start_idx, end_idx)
 
 
-## True when a displacement MOVE is done — unit stands on target. Same-tile-end loops still draw.
+## True when a committed PRE-MOVE displacement is done — unit stands on target.
+## Post-move legs always draw: they document action-end → post-dest even after full projection.
 static func committed_move_already_realized(
 	director: CombatDirector,
 	board: BoardState,
@@ -459,6 +460,8 @@ static func committed_move_already_realized(
 	move_action: TimelineAction,
 	_route_leg: Array,
 ) -> bool:
+	if timing != GameEnums.MoveTiming.PRE_ACTION:
+		return false
 	if director == null or move_action == null:
 		return false
 	var plan_board: BoardState = planning_projection_board(director, board)

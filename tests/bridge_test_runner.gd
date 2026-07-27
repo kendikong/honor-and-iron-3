@@ -498,6 +498,28 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: same-tile-end loop move must still show multi-cell route",
 		)
+	plan_unit.position = Vector2i(7, 2)
+	board_stub.units = [plan_unit]
+	director_stub.projected_state = board_stub
+	director_stub.plan_pre_move = Timeline.new()
+	director_stub.plan_action = Timeline.new()
+	director_stub.plan_action.entries.append(
+		TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1),
+	)
+	director_stub.plan_post_move = Timeline.new()
+	director_stub.plan_post_move.entries.append(
+		TimelineAction.make_move(
+			1, Vector2i(7, 2), -1, [], GameEnums.MoveTiming.POST_ACTION,
+		),
+	)
+	preview.preview_paths[1] = [Vector2i(0, 0), Vector2i(2, 0), Vector2i(7, 2)]
+	var realized_post: Array = CombatPlanningPreview.committed_move_route_leg(
+		1, preview, director_stub, board_stub, GameEnums.MoveTiming.POST_ACTION,
+	)
+	if realized_post.size() < 2 or realized_post[0] != Vector2i(2, 0) or realized_post.back() != Vector2i(7, 2):
+		failures.append(
+			"CombatPlanningPreview: committed post leg must show when unit already at post target",
+		)
 	var action_origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(
 		board_stub, director_stub.get_player_plan(), trample_after_pre, plan_unit,
 	)
