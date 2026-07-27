@@ -403,6 +403,8 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			return false
 		awaiting.target_coord = action.target_coord
 		awaiting.target_unit_id = action.target_unit_id
+		awaiting.waypoints = action.waypoints.duplicate()
+		awaiting.face_dir = action.face_dir
 		awaiting.awaiting_target = false
 		return true
 	return false

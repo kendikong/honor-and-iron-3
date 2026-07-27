@@ -13,6 +13,7 @@ const NORTH_THEN_EAST: Array[Vector2i] = [Vector2i(5, 3), Vector2i(6, 3)]
 
 
 static func run_all(failures: Array[String]) -> void:
+	_test_arm_and_commit_smoke(failures)
 	_test_tile_by_tile_drag_route_preserves_paint_order(failures)
 	_test_jump_drag_repath_must_not_replace_valid_painted_route(failures)
 	_test_mouse_jump_drag_exposes_pathfinder_reorder(failures)
@@ -23,6 +24,8 @@ static func run_all(failures: Array[String]) -> void:
 	_test_committed_overlay_route_leg_matches_paint(failures)
 	_test_sim_move_events_follow_painted_order(failures)
 	_test_post_move_leg_keeps_painted_route_after_trample(failures)
+	_test_post_move_sim_preview_keeps_trample_paint_order(failures)
+	_test_planning_animation_cells_after_post_move(failures)
 
 
 static func _plain_board(size: Vector2i) -> BoardState:
@@ -49,11 +52,16 @@ static func _trample_ability_index(unit: UnitState) -> int:
 static func _knight_fixture(start: Vector2i) -> Dictionary:
 	var input := CombatPlanningInput.new()
 	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
 	var board := _plain_board(Vector2i(12, 12))
 	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
 	var unit: UnitState = UnitState.create(1, knight_def, GameEnums.Team.PLAYER, start)
-	unit.movement.points_left = unit.movement.points_max
-	unit.ability.points_left = unit.ability.points_max
+	unit.active_abilities = DataLibrary.build_training_abilities(knight_def)
+	unit.movement.points_left = unit.movement.max_points
+	unit.ability.points_left = 3
+	unit.ability.max_points = 3
 	board.units = [unit]
 	GridSystem.set_occupant(board, unit.position, unit.id)
 	director.board = board
@@ -74,12 +82,93 @@ static func _knight_fixture(start: Vector2i) -> Dictionary:
 	}
 
 
-static func _arm_trample_awaiting(input: CombatPlanningInput, director: CombatDirector, unit: UnitState) -> void:
+static func _test_arm_and_commit_smoke(failures: Array[String]) -> void:
+	var fix: Dictionary = _knight_fixture(START_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	if fix.trample_idx < 0:
+		failures.append("TramplingAdvanceE2E smoke: knight missing Trampling Advance (idx=%d)" % fix.trample_idx)
+		return
 	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	if _commit_slots_invalid(arm_slots):
+		failures.append("TramplingAdvanceE2E smoke: arm slots marked invalid")
+		return
+	if (arm_slots.get("action", []) as Array).is_empty():
+		failures.append("TramplingAdvanceE2E smoke: arm slots missing action (noop=%s)" % str(arm_slots.get("_noop", false)))
+		return
 	if not director.commit_from_slots(1, arm_slots):
-		push_error("TramplingAdvanceE2ETest: failed to arm awaiting trample")
+		failures.append("TramplingAdvanceE2E smoke: arm commit_from_slots returned false")
+		return
+	director.flush_plan_refresh_signals_if_pending()
+	if director.find_awaiting_action(1) == null:
+		failures.append(
+			"TramplingAdvanceE2E smoke: awaiting missing after arm; plan_action=%d combined=%d"
+			% [director.plan_action.entries.size(), director.get_player_plan().entries.size()],
+		)
+		return
 	if not input.awaiting_targeting_active():
-		push_error("TramplingAdvanceE2ETest: trample awaiting not active after self-arm")
+		failures.append("TramplingAdvanceE2E smoke: awaiting_targeting_active false after arm")
+		return
+	var route: Array[Vector2i] = [START_CELL, EAST_THEN_NORTH[0], EAST_THEN_NORTH[1]]
+	_paint_drag_route(input, unit, route, END_CELL)
+	var params: Dictionary = input._commit_interaction_params(END_CELL, -1)
+	if params.is_empty():
+		failures.append("TramplingAdvanceE2E smoke: empty commit params")
+		return
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		1,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+		params.face_dir,
+	)
+	if _commit_slots_invalid(slots):
+		failures.append(
+			"TramplingAdvanceE2E smoke: invalid slots %s" % str(slots.get("invalid", "")),
+		)
+		return
+	if (slots.get("action", []) as Array).is_empty():
+		failures.append("TramplingAdvanceE2E smoke: no action in commit slots")
+		return
+	var slots_committed: Dictionary = _commit_drag_route(input, director, END_CELL)
+	if slots_committed.is_empty():
+		failures.append("TramplingAdvanceE2E smoke: commit_from_slots failed")
+		return
+	var action: TimelineAction = _committed_trample_action(director)
+	if action == null:
+		failures.append(
+			"TramplingAdvanceE2E smoke: no trample action in plan entries=%d"
+			% director.get_player_plan().entries.size(),
+		)
+		return
+	if action.waypoints != EAST_THEN_NORTH:
+		failures.append(
+			"TramplingAdvanceE2E smoke: waypoints %s expected %s"
+			% [str(action.waypoints), str(EAST_THEN_NORTH)],
+		)
+
+
+static func _commit_slots_invalid(slots: Dictionary) -> bool:
+	if not slots.has("invalid"):
+		return false
+	var invalid_v: Variant = slots["invalid"]
+	if typeof(invalid_v) == TYPE_BOOL:
+		return invalid_v
+	if typeof(invalid_v) == TYPE_STRING:
+		return invalid_v != ""
+	return true
+
+
+static func _arm_trample_awaiting(input: CombatPlanningInput, director: CombatDirector, unit: UnitState) -> bool:
+	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	if _commit_slots_invalid(arm_slots):
+		return false
+	if not director.commit_from_slots(1, arm_slots):
+		return false
+	director.flush_plan_refresh_signals_if_pending()
+	return input.awaiting_targeting_active()
 
 
 static func _paint_drag_route(
@@ -120,6 +209,7 @@ static func _commit_drag_route(
 	input.dragging = false
 	if not director.commit_from_slots(1, slots):
 		return {}
+	director.flush_plan_refresh_signals_if_pending()
 	return slots
 
 
@@ -261,12 +351,12 @@ static func _assert_route_cells(
 		)
 
 
+## Runtime path: sim events -> build_preview_paths -> ensure_movement_intent_from_plan.
 static func _rebuild_committed_preview(director: CombatDirector) -> CombatPlanningPreview:
-	var preview := CombatPlanningPreview.new()
 	var base: BoardState = director.base_board.clone() if director.base_board != null else director.board.clone()
-	preview.preview_board = base
-	preview.ensure_movement_intent_from_plan(director.get_player_plan(), base)
-	return preview
+	base.intents = []
+	var result: SimResult = Simulator.simulate(base, director.get_player_plan())
+	return CombatPlanningPreview.from_sim_result(result, director, base)
 
 
 static func _test_overlay_partial_paint_completes_to_hover(failures: Array[String]) -> void:
@@ -379,7 +469,16 @@ static func _test_sim_move_events_follow_painted_order(failures: Array[String]) 
 	_arm_trample_awaiting(input, director, unit)
 	var route: Array[Vector2i] = [START_CELL, EAST_THEN_NORTH[0], EAST_THEN_NORTH[1]]
 	_paint_drag_route(input, unit, route, END_CELL)
-	_commit_drag_route(input, director, END_CELL)
+	if _commit_drag_route(input, director, END_CELL).is_empty():
+		failures.append("TramplingAdvanceE2E sim: trample commit failed")
+		return
+	var action: TimelineAction = _committed_trample_action(director)
+	if action == null or action.waypoints != EAST_THEN_NORTH:
+		failures.append(
+			"TramplingAdvanceE2E sim: trample waypoints %s"
+			% str(action.waypoints if action != null else null),
+		)
+		return
 	var start_board: BoardState = director.base_board.clone()
 	start_board.intents = []
 	var result: SimResult = Simulator.simulate(start_board, director.get_player_plan())
@@ -388,6 +487,12 @@ static func _test_sim_move_events_follow_painted_order(failures: Array[String]) 
 		if event.type != GameEnums.SimEventType.UNIT_MOVED:
 			continue
 		if int(event.data.get("actor", -1)) != 1:
+			continue
+		var path_v: Variant = event.data.get("path", [])
+		if path_v is Array and not (path_v as Array).is_empty():
+			for step: Variant in path_v:
+				if step is Vector2i:
+					visited.append(step)
 			continue
 		var to_cell: Variant = event.data.get("to")
 		if to_cell is Vector2i:
@@ -413,32 +518,17 @@ static func _test_post_move_leg_keeps_painted_route_after_trample(failures: Arra
 	if fix.trample_idx < 0:
 		failures.append("TramplingAdvanceE2E post-move: knight missing Trampling Advance ability")
 		return
-	_arm_trample_awaiting(input, director, unit)
-	var trample_route: Array[Vector2i] = [START_CELL, EAST_THEN_NORTH[0], EAST_THEN_NORTH[1]]
-	_paint_drag_route(input, unit, trample_route, END_CELL)
-	_commit_drag_route(input, director, END_CELL)
-	director.selected_ability_index = -1
-	input.force_basic_movement = true
-	director.projected_state = director.board.clone()
-	var post_dest := Vector2i(8, 2)
-	var post_route: Array[Vector2i] = [END_CELL, Vector2i(7, 3), Vector2i(8, 3), post_dest]
-	input._drag_route = post_route.duplicate()
-	input._drag_last_free = post_dest
-	input.dragging = true
-	director_set_hover(input, post_dest)
-	var post_params: Dictionary = input._commit_interaction_params(post_dest, -1)
-	var post_slots: Dictionary = input._final_commit_slots_for_interaction(
-		1,
-		post_params.cell,
-		post_params.waypoints,
-		post_params.legal_move_tiles,
-		post_params.preferred,
-		post_params.face_dir,
-	)
-	input.dragging = false
-	if not director.commit_from_slots(1, post_slots):
+	var commit: Dictionary = _commit_trample_then_post_move(input, director, unit)
+	if not commit.get("ok", false):
 		failures.append("TramplingAdvanceE2E post-move: commit failed")
 		return
+	var trample_action: TimelineAction = _committed_trample_action(director)
+	_assert_waypoints(
+		failures,
+		trample_action,
+		EAST_THEN_NORTH,
+		"TramplingAdvanceE2E post-move trample waypoints",
+	)
 	var post_move: TimelineAction = null
 	for action: TimelineAction in director.get_player_plan().entries:
 		if (
@@ -450,7 +540,7 @@ static func _test_post_move_leg_keeps_painted_route_after_trample(failures: Arra
 	if post_move == null:
 		failures.append("TramplingAdvanceE2E post-move: missing committed post-move action")
 		return
-	var expected_post_wps: Array[Vector2i] = [Vector2i(7, 3), Vector2i(8, 3), post_dest]
+	var expected_post_wps: Array[Vector2i] = commit.post_waypoints
 	if post_move.waypoints != expected_post_wps:
 		failures.append(
 			"TramplingAdvanceE2E post-move: expected waypoints %s, got %s"
@@ -471,4 +561,145 @@ static func _test_post_move_leg_keeps_painted_route_after_trample(failures: Arra
 		full_path,
 		expected_full,
 		"TramplingAdvanceE2E post-move full preview path",
+	)
+
+
+static func _commit_trample_then_post_move(
+	input: CombatPlanningInput,
+	director: CombatDirector,
+	unit: UnitState,
+) -> Dictionary:
+	_arm_trample_awaiting(input, director, unit)
+	var trample_route: Array[Vector2i] = [START_CELL, EAST_THEN_NORTH[0], EAST_THEN_NORTH[1]]
+	_paint_drag_route(input, unit, trample_route, END_CELL)
+	_commit_drag_route(input, director, END_CELL)
+	director.selected_ability_index = -1
+	input.force_basic_movement = true
+	var post_dest := Vector2i(8, 2)
+	var post_route: Array[Vector2i] = [END_CELL, Vector2i(7, 3), Vector2i(8, 3), post_dest]
+	input._drag_route = post_route.duplicate()
+	input._drag_last_free = post_dest
+	input.dragging = true
+	director_set_hover(input, post_dest)
+	var post_params: Dictionary = input._commit_interaction_params(post_dest, -1)
+	var post_slots: Dictionary = input._final_commit_slots_for_interaction(
+		1,
+		post_params.cell,
+		post_params.waypoints,
+		post_params.legal_move_tiles,
+		post_params.preferred,
+		post_params.face_dir,
+	)
+	input.dragging = false
+	if not director.commit_from_slots(1, post_slots):
+		return {"ok": false}
+	director.flush_plan_refresh_signals_if_pending()
+	return {
+		"ok": true,
+		"post_dest": post_dest,
+		"post_waypoints": [Vector2i(7, 3), Vector2i(8, 3), post_dest],
+	}
+
+
+static func _test_post_move_sim_preview_keeps_trample_paint_order(failures: Array[String]) -> void:
+	var fix: Dictionary = _knight_fixture(START_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	if fix.trample_idx < 0:
+		failures.append("TramplingAdvanceE2E sim preview: knight missing Trampling Advance ability")
+		return
+	var commit: Dictionary = _commit_trample_then_post_move(input, director, unit)
+	if not commit.get("ok", false):
+		failures.append("TramplingAdvanceE2E sim preview: post-move commit failed")
+		return
+	var trample_action: TimelineAction = _committed_trample_action(director)
+	_assert_waypoints(
+		failures,
+		trample_action,
+		EAST_THEN_NORTH,
+		"TramplingAdvanceE2E sim preview trample waypoints",
+	)
+	var preview: CombatPlanningPreview = _rebuild_committed_preview(director)
+	var trample_leg: Array = CombatPlanningPreview.committed_action_route_leg(
+		1, preview, trample_action, START_CELL,
+	)
+	_assert_route_cells(
+		failures,
+		trample_leg,
+		[START_CELL, EAST_THEN_NORTH[0], EAST_THEN_NORTH[1]],
+		"TramplingAdvanceE2E sim preview trample leg",
+	)
+	var director_wps: Array[Vector2i] = director.get_planned_skill_walk_waypoints(1, END_CELL)
+	if director_wps != EAST_THEN_NORTH:
+		failures.append(
+			"TramplingAdvanceE2E sim preview director walk: expected %s, got %s"
+			% [str(EAST_THEN_NORTH), str(director_wps)],
+		)
+	var start_board: BoardState = director.base_board.clone()
+	start_board.intents = []
+	var result: SimResult = Simulator.simulate(start_board, director.get_player_plan())
+	var visited: Array[Vector2i] = [START_CELL]
+	for event: SimEvent in result.events:
+		if event.type != GameEnums.SimEventType.UNIT_MOVED:
+			continue
+		if int(event.data.get("actor", -1)) != 1:
+			continue
+		var path_v: Variant = event.data.get("path", [])
+		if path_v is Array and not (path_v as Array).is_empty():
+			for step: Variant in path_v:
+				if step is Vector2i:
+					visited.append(step)
+			continue
+		var to_cell: Variant = event.data.get("to")
+		if to_cell is Vector2i:
+			visited.append(to_cell)
+	var expected_post_wps: Array[Vector2i] = [Vector2i(7, 3), Vector2i(8, 3), commit.post_dest]
+	var expected_full: Array[Vector2i] = [
+		START_CELL,
+		EAST_THEN_NORTH[0],
+		EAST_THEN_NORTH[1],
+		expected_post_wps[0],
+		expected_post_wps[1],
+		expected_post_wps[2],
+	]
+	if visited != expected_full:
+		failures.append(
+			"TramplingAdvanceE2E sim preview: move events visited %s, expected %s"
+			% [str(visited), str(expected_full)],
+		)
+
+
+static func _test_planning_animation_cells_after_post_move(failures: Array[String]) -> void:
+	var fix: Dictionary = _knight_fixture(START_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	if fix.trample_idx < 0:
+		failures.append("TramplingAdvanceE2E animation: knight missing Trampling Advance ability")
+		return
+	var commit: Dictionary = _commit_trample_then_post_move(input, director, unit)
+	if not commit.get("ok", false):
+		failures.append("TramplingAdvanceE2E animation: post-move commit failed")
+		return
+	var preview: CombatPlanningPreview = _rebuild_committed_preview(director)
+	var trample_anim: Array[Vector2i] = CombatPlanningPreview.planning_animation_cells(
+		1, preview, START_CELL, END_CELL, director, fix.board,
+	)
+	_assert_route_cells(
+		failures,
+		trample_anim,
+		EAST_THEN_NORTH,
+		"TramplingAdvanceE2E animation trample leg",
+	)
+	var post_dest: Vector2i = commit.post_dest
+	var post_anim: Array[Vector2i] = CombatPlanningPreview.planning_animation_cells(
+		1, preview, END_CELL, post_dest, director, fix.board,
+	)
+	var expected_post_wps: Array[Vector2i] = [Vector2i(7, 3), Vector2i(8, 3), post_dest]
+	_assert_route_cells(
+		failures,
+		post_anim,
+		expected_post_wps,
+		"TramplingAdvanceE2E animation post-move leg",
 	)
