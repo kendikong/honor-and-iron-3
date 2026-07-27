@@ -30,7 +30,9 @@ const COLOR_ROW_HOVER: Color = Color(0.16, 0.20, 0.28, 0.92)
 const COLOR_ROW_EXHAUSTED: Color = Color(0.09, 0.10, 0.12, 0.82)
 const COLOR_PLAN_EXHAUSTED: Color = Color(0.48, 0.50, 0.54, 1.0)
 const COLOR_SLOT_EMPTY: Color = Color(0.10, 0.11, 0.14, 0.55)
-const COLOR_PENDING_PLAN: Color = Color(0.72, 0.86, 1.0, 0.62)
+const COLOR_PENDING_PLAN: Color = Color(0.92, 0.94, 0.98)
+const PENDING_PLAN_PULSE_LOW: float = 0.72
+const PENDING_PLAN_PULSE_HIGH: float = 0.90
 const COLOR_ACCENT_PRE: Color = Color(0.35, 0.55, 0.85, 0.18)
 const COLOR_ACCENT_ACT: Color = Color(0.85, 0.55, 0.25, 0.18)
 const COLOR_ACCENT_POST: Color = Color(0.45, 0.75, 0.45, 0.18)
@@ -67,7 +69,8 @@ func _process(delta: float) -> void:
 	if _pending_plan_labels.is_empty():
 		return
 	_ghost_pulse_phase += delta * 2.4
-	var pulse: float = 0.46 + 0.14 * sin(_ghost_pulse_phase)
+	var half_span: float = (PENDING_PLAN_PULSE_HIGH - PENDING_PLAN_PULSE_LOW) * 0.5
+	var pulse: float = PENDING_PLAN_PULSE_LOW + half_span + half_span * sin(_ghost_pulse_phase)
 	for lbl: Label in _pending_plan_labels:
 		if lbl != null and is_instance_valid(lbl):
 			lbl.modulate = Color(1.0, 1.0, 1.0, pulse)
@@ -413,9 +416,9 @@ func _add_pending_plan_cell(
 	panel.size_flags_stretch_ratio = stretch
 	var glow_bg: Color = accent
 	if plan_active:
-		glow_bg = Color(accent.r, accent.g, accent.b, minf(accent.a + 0.12, 0.38))
+		glow_bg = Color(accent.r, accent.g, accent.b, minf(accent.a + 0.06, 0.28))
 	else:
-		glow_bg = Color(0.14, 0.18, 0.26, 0.42)
+		glow_bg = Color(0.12, 0.13, 0.17, 0.4)
 	panel.add_theme_stylebox_override("panel", _cell_style(glow_bg))
 	var lbl := _make_plan_text_label(text, tooltip, false, plan_active, true)
 	panel.add_child(lbl)
