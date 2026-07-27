@@ -284,6 +284,32 @@ func copy_from(other: CombatPlanningPreview) -> void:
 	preview_pushes = other.preview_pushes.duplicate(true)
 
 
+## Committed projection board — never use move-only `director.board` for planning geometry.
+static func planning_projection_board(director: CombatDirector, fallback: BoardState) -> BoardState:
+	if director != null and director.projected_state != null:
+		return director.projected_state
+	return fallback
+
+
+## Where the active planning move starts (projected stand, or action end for post-move).
+static func planning_move_origin_cell(
+	director: CombatDirector,
+	fallback_board: BoardState,
+	unit_id: int,
+) -> Vector2i:
+	if director == null or unit_id < 0:
+		return Vector2i(-999999, -999999)
+	var board: BoardState = planning_projection_board(director, fallback_board)
+	if director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION:
+		var action_end: Vector2i = committed_plan_action_end_cell(director, board, unit_id)
+		if board != null and board.is_in_bounds(action_end):
+			return action_end
+	var unit: UnitState = board.get_unit_by_id(unit_id) if board != null else null
+	if unit != null:
+		return unit.position
+	return Vector2i(-999999, -999999)
+
+
 ## Route leg for the current planning move — same slice as overlay arrow drawing.
 static func pending_move_route_leg(
 	unit_id: int,
@@ -301,12 +327,10 @@ static func pending_move_route_leg(
 	var move_timing: int = director.get_planning_move_timing(unit_id)
 	if move_timing == GameEnums.MoveTiming.POST_ACTION:
 		return post_move_route_leg(unit_id, preview, director, board)
-	var unit: UnitState = board.get_unit_by_id(unit_id) if board != null else null
-	var start_idx: int = 0
-	if unit != null:
-		var found: int = route.find(unit.position)
-		if found >= 0:
-			start_idx = found
+	var move_origin: Vector2i = planning_move_origin_cell(director, board, unit_id)
+	var start_idx: int = _last_route_index(route, move_origin)
+	if start_idx < 0:
+		start_idx = 0
 	return route.slice(start_idx, end_idx)
 
 
@@ -318,9 +342,10 @@ static func committed_plan_action_end_cell(
 ) -> Vector2i:
 	if director == null:
 		return Vector2i(-999999, -999999)
+	var plan_board: BoardState = planning_projection_board(director, board)
 	var origin: Vector2i = Vector2i(-999999, -999999)
-	if board != null:
-		var live: UnitState = board.get_unit_by_id(unit_id)
+	if plan_board != null:
+		var live: UnitState = plan_board.get_unit_by_id(unit_id)
 		if live != null:
 			origin = live.position
 	var plan: Timeline = director.get_player_plan()
@@ -336,11 +361,14 @@ static func committed_plan_action_end_cell(
 			elif act.type == GameEnums.ActionType.ABILITY and not act.awaiting_target:
 				if (
 					act.ability != null
-					and AbilitySystem.ability_has_movement_effect(act.ability)
+					and (
+						act.ability.is_movement_kind()
+						or AbilitySystem.ability_has_movement_effect(act.ability)
+					)
 				):
 					return act.target_coord
-	if director.projected_state != null:
-		var projected: UnitState = director.projected_state.get_unit_by_id(unit_id)
+	if plan_board != null:
+		var projected: UnitState = plan_board.get_unit_by_id(unit_id)
 		if projected != null:
 			return projected.position
 	return origin
@@ -367,8 +395,9 @@ static func post_move_route_leg(
 	var route: Array = preview.preview_paths.get(unit_id, [])
 	if route.size() < 2:
 		return []
-	var action_end: Vector2i = committed_plan_action_end_cell(director, board, unit_id)
-	if board != null and not board.is_in_bounds(action_end):
+	var plan_board: BoardState = planning_projection_board(director, board)
+	var action_end: Vector2i = planning_move_origin_cell(director, board, unit_id)
+	if plan_board != null and not plan_board.is_in_bounds(action_end):
 		return []
 	## Anchor at committed action end — never stale preview_post_splits or route.find first hit.
 	var start_idx: int = _last_route_index(route, action_end)

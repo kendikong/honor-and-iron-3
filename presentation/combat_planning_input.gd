@@ -477,8 +477,8 @@ func _arm_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> v
 	_drag_press_local = local
 	_drag_unit_id = unit.id
 	_drag_unit_was_selected = was_already_selected
-	_drag_route = [unit.position]
-	_drag_last_free = unit.position
+	_drag_route = [_planning_drag_origin(unit.id)]
+	_drag_last_free = _drag_route[0]
 
 
 func _cancel_drag_armed() -> void:
@@ -499,10 +499,10 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	dragging = true
 	_drag_unit_id = unit.id
 	_drag_unit_was_selected = was_already_selected
-	_drag_route = [unit.position]
-	_drag_last_free = unit.position
-	_planning.set_fixed_range_origin(unit.position)
-	_planning.set_threat_origin(unit.position)
+	_drag_route = [_planning_drag_origin(unit.id)]
+	_drag_last_free = _drag_route[0]
+	_planning.set_fixed_range_origin(_drag_route[0])
+	_planning.set_threat_origin(_drag_route[0])
 	_planning._recompute_hover_ranges_from_inputs()
 	_planning.begin_drag_sprite(unit.id)
 
@@ -738,7 +738,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 				if _basic_move_allowed() or is_awaiting_move:
 					if _drag_route.is_empty():
 						_drag_unit_id = _director.selected_unit_id
-						_drag_route = [p_unit.position]
+						_drag_route = [_proj_move_origin(p_unit)]
 					_extend_drag_route(cell)
 			_refresh_selected_interaction_preview()
 	elif planning_cell_changed:
@@ -1592,10 +1592,11 @@ func _extend_drag_route(cell: Vector2i) -> void:
 			_sanitize_drag_route_context()
 		return
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
-	var board: BoardState = _director.board
-	var unit := board.get_unit_by_id(_drag_unit_id)
+	var board: BoardState = _proj()
+	var unit := _proj_unit(_drag_unit_id)
 	if unit == null:
 		return
+	var move_origin: Vector2i = _proj_move_origin(unit)
 	var ability: AbilityData = null
 	if not force_basic_movement and _director.selected_ability_index >= 0:
 		ability = _selected_ability_data(unit)
@@ -1625,18 +1626,19 @@ func _repath_drag_route_to(
 	move_cost: int,
 	ability: AbilityData,
 ) -> void:
+	var move_origin: Vector2i = _proj_move_origin(unit)
 	var path: Array[Vector2i] = MovementSystem.find_path(
-		board, unit.position, cell, budget, mt, move_cost, ability,
+		board, move_origin, cell, budget, mt, move_cost, ability,
 	)
 	if path.is_empty() or path.back() != cell:
 		return
-	_drag_route = [unit.position]
+	_drag_route = [move_origin]
 	_drag_route.append_array(path)
 
 
 func _append_route_tile(coord: Vector2i) -> void:
-	var board: BoardState = _director.board
-	var unit := board.get_unit_by_id(_drag_unit_id)
+	var board: BoardState = _proj()
+	var unit := _proj_unit(_drag_unit_id)
 	if unit == null or _drag_route.is_empty():
 		return
 	var idx := _drag_route.find(coord)
@@ -1660,8 +1662,8 @@ func _append_route_tile(coord: Vector2i) -> void:
 func _sanitize_drag_route_context() -> void:
 	if _drag_route.size() <= 1:
 		return
-	var board: BoardState = _director.board
-	var unit := board.get_unit_by_id(_drag_unit_id)
+	var board: BoardState = _proj()
+	var unit := _proj_unit(_drag_unit_id)
 	if unit == null:
 		return
 	var ability: AbilityData = null
@@ -2209,18 +2211,18 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	return unit.position
 
 
-## Pathfinding / drop origin — post-move starts at committed action end, not turn start.
+## Pathfinding / drop origin — projected stand, or action end during post-move.
 func _proj_move_origin(unit: UnitState) -> Vector2i:
 	if _director == null or unit == null:
 		return _proj_origin(unit)
-	if _director.get_planning_move_timing(unit.id) == GameEnums.MoveTiming.POST_ACTION:
-		var board: BoardState = _proj()
-		var action_end: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
-			_director, board, unit.id,
-		)
-		if board != null and board.is_in_bounds(action_end):
-			return action_end
-	return _proj_origin(unit)
+	return CombatPlanningPreview.planning_move_origin_cell(_director, _proj(), unit.id)
+
+
+func _planning_drag_origin(unit_id: int) -> Vector2i:
+	var unit: UnitState = _proj_unit(unit_id)
+	if unit == null:
+		return Vector2i(-999999, -999999)
+	return _proj_move_origin(unit)
 
 
 func _aim_enemy_pos(unit_id: int) -> Vector2i:

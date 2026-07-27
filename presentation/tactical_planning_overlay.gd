@@ -627,14 +627,8 @@ func recompute_hover_ranges(
 				if p_unit.definition != null
 				else GameEnums.MovementType.WALK
 			)
-			move_board = _director.projected_state if _director.projected_state != null else _board
-			move_from = p_unit.position
-			if _director.get_planning_move_timing(unit.id) == GameEnums.MoveTiming.POST_ACTION:
-				var action_end: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
-					_director, move_board, unit.id,
-				)
-				if move_board.is_in_bounds(action_end):
-					move_from = action_end
+			move_board = CombatPlanningPreview.planning_projection_board(_director, _board)
+			move_from = move_origin
 			move_budget = _compute_move_budget(unit, p_unit, selected_ability)
 		else:
 			move_budget = unit.movement.points_left
@@ -1857,10 +1851,9 @@ func _draw_facing_wedge(center: Vector2, facing: int, color: Color) -> void:
 
 
 func _proj_origin(unit: UnitState) -> Vector2i:
-	var pv := _proj_unit(unit.id)
-	if pv != null:
-		return pv.position
-	return unit.position
+	if unit == null or _director == null:
+		return Vector2i(-999999, -999999)
+	return CombatPlanningPreview.planning_move_origin_cell(_director, _board, unit.id)
 
 
 ## Action-range anchor: committed projection plus live move-preview stand (intent truth).

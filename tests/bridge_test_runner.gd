@@ -388,6 +388,25 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	)
 	if ghost_label.find("(1,0)→(5,6)") < 0:
 		failures.append("CombatUiFormatters: ghost post-move label should show origin and destination")
+	var move_only := BoardState.new()
+	move_only.grid_size = Vector2i(8, 8)
+	var turn_start := UnitState.new()
+	turn_start.id = 1
+	turn_start.team = GameEnums.Team.PLAYER
+	turn_start.position = Vector2i(0, 0)
+	move_only.units = [turn_start]
+	plan_unit.position = Vector2i(2, 0)
+	plan_unit.turn_action_used = true
+	board_stub.units = [plan_unit]
+	director_stub.projected_state = board_stub
+	director_stub.plan_post_move = Timeline.new()
+	var post_timing_origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(
+		director_stub, move_only, 1,
+	)
+	if post_timing_origin != Vector2i(2, 0):
+		failures.append(
+			"CombatPlanningPreview: post-move origin must use projection, not move-only board",
+		)
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:
