@@ -1061,21 +1061,7 @@ func _play_cell_path_tween(
 
 
 func _resolve_planning_facing(unit_id: int) -> int:
-	if _move_tweens.has(unit_id):
-		return -1
 	var board_unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
-	var actor_cell: Vector2i = _actor_grid_cell(unit_id)
-	var preview: CombatPlanningPreview = _committed_planning_preview()
-	if (
-		board_unit != null
-		and preview != null
-		and actor_cell != board_unit.position
-	):
-		var on_route: int = CombatPlanningPreview.facing_at_actor_on_route(
-			unit_id, preview, actor_cell,
-		)
-		if on_route >= 0:
-			return on_route
 	var queued: int = _facing_toward_queued_action(unit_id)
 	if queued >= 0:
 		return queued
@@ -1097,8 +1083,6 @@ func _sync_planning_final_facing(unit_id: int) -> void:
 	if board_unit != null and _actor_grid_cell(unit_id) != board_unit.position:
 		return
 	var facing: int = _resolve_planning_facing(unit_id)
-	if facing < 0:
-		return
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if unit != null:
 		unit.facing = facing
@@ -1507,6 +1491,7 @@ func _facing_toward_queued_action(unit_id: int) -> int:
 				continue
 			if action.ability.is_movement_kind() or action.ability.is_universal_run() or action.ability.is_universal_wait():
 				continue
+			# CLASS_SKILL movement (e.g. Trampling Advance) — path facing, not attack aim.
 			if AbilitySystem.ability_has_movement_effect(action.ability):
 				continue
 			var target_coord: Vector2i = action.target_coord
