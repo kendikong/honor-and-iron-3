@@ -80,6 +80,7 @@ func ensure_movement_intent_from_actions(
 	actions: Array,
 	start_board: BoardState,
 	actors_with_post_move: Dictionary = {},
+	actors_with_pre_move: Dictionary = {},
 ) -> void:
 	if start_board == null or actions.is_empty():
 		return
@@ -112,6 +113,10 @@ func ensure_movement_intent_from_actions(
 				if last_cell is Vector2i and (last_cell as Vector2i) != action.target_coord:
 					origins[action.actor_id] = action.target_coord
 					continue
+			## Committed pre-move precedes action — keep full sim path for separate leg slices.
+			if actors_with_pre_move.get(action.actor_id, false) and existing.size() >= 2:
+				origins[action.actor_id] = action.target_coord
+				continue
 			## Sim path (e.g. L-shaped trample + post-move tail) beats straight intent geometry.
 			if existing.size() > intent.size():
 				continue
@@ -126,16 +131,22 @@ func ensure_movement_intent_from_plan(plan: Timeline, start_board: BoardState) -
 	if plan == null:
 		return
 	var actors_with_post_move: Dictionary = {}
+	var actors_with_pre_move: Dictionary = {}
 	for act: TimelineAction in plan.entries:
 		if (
 			act.type == GameEnums.ActionType.MOVE
 			and act.move_timing == GameEnums.MoveTiming.POST_ACTION
 		):
 			actors_with_post_move[act.actor_id] = true
+		if (
+			act.type == GameEnums.ActionType.MOVE
+			and act.move_timing == GameEnums.MoveTiming.PRE_ACTION
+		):
+			actors_with_pre_move[act.actor_id] = true
 	var actions: Array = []
 	for entry: TimelineAction in plan.entries:
 		actions.append(entry)
-	ensure_movement_intent_from_actions(actions, start_board, actors_with_post_move)
+	ensure_movement_intent_from_actions(actions, start_board, actors_with_post_move, actors_with_pre_move)
 
 
 static func apply_movement_result(
@@ -412,7 +423,7 @@ static func post_move_route_leg(
 	if route.size() < 2:
 		return []
 	var plan_board: BoardState = planning_projection_board(director, board)
-	var action_end: Vector2i = planning_move_origin_cell(director, board, unit_id)
+	var action_end: Vector2i = committed_plan_action_end_cell(director, plan_board, unit_id)
 	if plan_board != null and not plan_board.is_in_bounds(action_end):
 		return []
 	## Anchor at committed action end — never stale preview_post_splits or route.find first hit.
@@ -423,6 +434,44 @@ static func post_move_route_leg(
 	if start_idx >= end_idx:
 		return []
 	return route.slice(start_idx, end_idx + 1)
+
+
+## Frozen committed pre-move leg — preview path slice from turn start, then plan geometry.
+static func committed_pre_move_route_leg(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	director: CombatDirector,
+	board: BoardState,
+) -> Array:
+	if director == null:
+		return []
+	var plan: Timeline = director.get_player_plan()
+	var pre_action: TimelineAction = null
+	if plan != null:
+		for act: TimelineAction in plan.entries:
+			if (
+				act.actor_id == unit_id
+				and act.type == GameEnums.ActionType.MOVE
+				and act.move_timing == GameEnums.MoveTiming.PRE_ACTION
+			):
+				pre_action = act
+	if pre_action == null:
+		return []
+	if preview != null:
+		var route: Array = preview.preview_paths.get(unit_id, [])
+		if route.size() >= 2:
+			var end_idx: int = _last_route_index(route, pre_action.target_coord)
+			if end_idx > 0:
+				var leg: Array = route.slice(0, end_idx + 1)
+				if leg.size() >= 2:
+					return leg
+	var start_board: BoardState = board
+	if director.base_board != null:
+		start_board = director.base_board
+	var unit: UnitState = start_board.get_unit_by_id(unit_id) if start_board != null else null
+	if unit == null:
+		return []
+	return movement_intent_cells(unit.position, pre_action)
 
 
 ## Frozen committed post-move leg — preview path slice, then plan waypoints fallback.

@@ -893,46 +893,6 @@ func _draw_hover_tile() -> void:
 	draw_rect(rect, Color(_COLOR_HOVER.r, _COLOR_HOVER.g, _COLOR_HOVER.b, 0.45), false, 1.0)
 
 
-func _origin_at_plan_action(
-	plan: Timeline,
-	actor_id: int,
-	stop_before: TimelineAction,
-	base_pos: Vector2i,
-) -> Vector2i:
-	var origin: Vector2i = base_pos
-	for act: TimelineAction in plan.entries:
-		if act == stop_before:
-			return origin
-		if act.actor_id != actor_id:
-			continue
-		if (
-			act.type == GameEnums.ActionType.MOVE
-			and act.move_timing == GameEnums.MoveTiming.PRE_ACTION
-		):
-			origin = act.target_coord
-	return origin
-
-
-
-
-
-## Returns true if actor has a committed (not awaiting) ability with a movement
-## effect in the player plan — used to suppress the duplicate solid pre-move arrow.
-func _actor_has_committed_movement_ability(actor_id: int, plan: Timeline) -> bool:
-	if plan == null:
-		return false
-	for act: TimelineAction in plan.entries:
-		if act.actor_id != actor_id:
-			continue
-		if act.type != GameEnums.ActionType.ABILITY:
-			continue
-		if act.awaiting_target:
-			continue
-		if act.ability != null and AbilitySystem.ability_has_movement_effect(act.ability):
-			return true
-	return false
-
-
 func _draw_ability_intents() -> void:
 	if _director == null or _board == null:
 		return
@@ -943,11 +903,12 @@ func _draw_ability_intents() -> void:
 				continue
 			if action.awaiting_target:
 				continue
-			var actor := _board.get_unit_by_id(action.actor_id)
+			var base_board: BoardState = _director.base_board if _director.base_board != null else _board
+			var actor := base_board.get_unit_by_id(action.actor_id)
 			if actor == null:
 				continue
-			var start_pos: Vector2i = _origin_at_plan_action(
-				plan_to_use, action.actor_id, action, actor.position,
+			var start_pos: Vector2i = CombatUiFormatters.plan_action_origin_cell(
+				base_board, plan_to_use, action, actor,
 			)
 			if start_pos == action.target_coord:
 				continue
@@ -1224,17 +1185,35 @@ func _draw_danger_area() -> void:
 
 
 func _draw_preview_arrows() -> void:
-	var prev: CombatPlanningPreview = _active_preview()
-	if _board == null or prev.preview_board == null:
+	if _board == null or _director == null:
 		return
+	var prev: CombatPlanningPreview = _active_preview()
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or not _intent_visible(unit):
 			continue
-		var route: Array = prev.preview_paths.get(unit.id, [])
-		if route.is_empty():
-			continue
-		var split: int = int(prev.preview_splits.get(unit.id, route.size()))
-		if not unit.is_enemy() and _director != null:
+		if not unit.is_enemy():
+			var p_col: Color = _player_color_for_unit(unit)
+			var pre_leg: Array = CombatPlanningPreview.committed_pre_move_route_leg(
+				unit.id, _committed_preview, _director, _board,
+			)
+			if pre_leg.size() >= 2:
+				var skip_committed_pre: bool = false
+				if unit.id == _director.selected_unit_id and _planning_input != null:
+					if (
+						_planning_input.dragging
+						and _director.get_planning_move_timing(unit.id)
+						== GameEnums.MoveTiming.PRE_ACTION
+					):
+						skip_committed_pre = true
+					elif (
+						_planning_input.is_live_preview_active()
+						and _interaction_move_hover_active(unit.id)
+						and _director.get_planning_move_timing(unit.id)
+						== GameEnums.MoveTiming.PRE_ACTION
+					):
+						skip_committed_pre = true
+				if not skip_committed_pre:
+					_draw_route_line(pre_leg, p_col, true, true)
 			if _director.unit_has_move_planned_at_timing(
 				unit.id, GameEnums.MoveTiming.POST_ACTION,
 			):
@@ -1252,8 +1231,13 @@ func _draw_preview_arrows() -> void:
 						):
 							skip_committed_post = true
 					if not skip_committed_post:
-						var p_col: Color = _player_color_for_unit(unit)
 						_draw_route_line(post_leg, p_col, true, true)
+		if prev.preview_board == null:
+			continue
+		var route: Array = prev.preview_paths.get(unit.id, [])
+		if route.is_empty():
+			continue
+		var split: int = int(prev.preview_splits.get(unit.id, route.size()))
 		var pushes: Array = prev.preview_pushes.get(unit.id, [])
 		var enemy_leg: Array = []
 		if unit.is_enemy() and split < route.size() and pushes.is_empty():

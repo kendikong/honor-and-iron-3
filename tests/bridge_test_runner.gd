@@ -421,6 +421,43 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: committed_post_move_route_leg should fall back to plan geometry",
 		)
+	plan_unit.position = Vector2i(0, 0)
+	board_stub.units = [plan_unit]
+	director_stub.plan_pre_move = Timeline.new()
+	director_stub.plan_pre_move.entries.append(
+		TimelineAction.make_move(1, Vector2i(1, 0), -1, [], GameEnums.MoveTiming.PRE_ACTION),
+	)
+	director_stub.plan_action = Timeline.new()
+	var trample_after_pre := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1)
+	director_stub.plan_action.entries.append(trample_after_pre)
+	preview.preview_paths[1] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)]
+	var committed_pre: Array = CombatPlanningPreview.committed_pre_move_route_leg(
+		1, preview, director_stub, board_stub,
+	)
+	if committed_pre.size() != 2 or committed_pre[0] != Vector2i(0, 0) or committed_pre[1] != Vector2i(1, 0):
+		failures.append(
+			"CombatPlanningPreview: committed_pre_move_route_leg should slice turn-start to pre target",
+		)
+	var action_origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(
+		board_stub, director_stub.get_player_plan(), trample_after_pre, plan_unit,
+	)
+	if action_origin != Vector2i(1, 0):
+		failures.append(
+			"CombatUiFormatters: action origin should follow committed pre-move",
+		)
+	var pre_plus_action_plan := Timeline.new()
+	pre_plus_action_plan.entries.append(
+		TimelineAction.make_move(1, Vector2i(1, 0), -1, [], GameEnums.MoveTiming.PRE_ACTION),
+	)
+	pre_plus_action_plan.entries.append(trample_after_pre)
+	var intent_with_pre := CombatPlanningPreview.new()
+	intent_with_pre.preview_paths[1] = l_path.duplicate()
+	intent_with_pre.ensure_movement_intent_from_plan(pre_plus_action_plan, board_stub)
+	var kept_with_pre: Array = intent_with_pre.preview_paths.get(1, [])
+	if kept_with_pre.size() != 4:
+		failures.append(
+			"CombatPlanningPreview: ensure_movement_intent must keep full path when pre-move is committed",
+		)
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:
