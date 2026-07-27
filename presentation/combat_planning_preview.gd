@@ -280,3 +280,51 @@ func copy_from(other: CombatPlanningPreview) -> void:
 	preview_post_splits = other.preview_post_splits.duplicate()
 	action_splits = other.action_splits.duplicate()
 	preview_pushes = other.preview_pushes.duplicate(true)
+
+
+## Tween destination cells along a preview route (exclusive start, inclusive end).
+static func destination_cells_from_route(
+	route: Array,
+	from_cell: Vector2i,
+	to_cell: Vector2i,
+) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if route.size() < 2 or from_cell == to_cell:
+		return out
+	var start_idx: int = -1
+	for i: int in range(route.size()):
+		if route[i] is Vector2i and (route[i] as Vector2i) == from_cell:
+			start_idx = i
+			break
+	var end_idx: int = -1
+	for i: int in range(route.size()):
+		if route[i] is Vector2i and (route[i] as Vector2i) == to_cell:
+			end_idx = i
+	if end_idx < 0:
+		return out
+	if start_idx < 0:
+		if route[0] is Vector2i and (route[0] as Vector2i) == from_cell:
+			start_idx = 0
+		else:
+			return out
+	if start_idx >= end_idx:
+		return out
+	for i: int in range(start_idx + 1, end_idx + 1):
+		if route[i] is Vector2i:
+			out.append(route[i] as Vector2i)
+	return out
+
+
+## Walk cells from move-preview paths only — never re-pathfind.
+static func planning_animation_cells(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	from_cell: Vector2i,
+	to_cell: Vector2i,
+) -> Array[Vector2i]:
+	if preview == null or from_cell == to_cell:
+		return []
+	var route: Array = preview.preview_paths.get(unit_id, [])
+	if route.size() < 2:
+		return []
+	return destination_cells_from_route(route, from_cell, to_cell)

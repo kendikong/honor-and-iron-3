@@ -59,6 +59,7 @@ var _drag_preview_last_anim: int = -1
 var _drag_preview_last_facing: int = -1
 var _drag_preview_last_failed: bool = false
 var _planning_input: CombatPlanningInput
+var _planning_overlay: TacticalPlanningOverlay
 
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
 
@@ -150,6 +151,10 @@ func set_intent_units(units: Dictionary) -> void:
 
 func bind_planning_input(input: CombatPlanningInput) -> void:
 	_planning_input = input
+
+
+func bind_planning_overlay(overlay: TacticalPlanningOverlay) -> void:
+	_planning_overlay = overlay
 
 
 func set_predicted_stats(hp: Dictionary, armor: Dictionary) -> void:
@@ -966,32 +971,22 @@ func _unit_uses_run_anim(unit_id: int) -> bool:
 
 
 func _resolve_planning_path_cells(from_cell: Vector2i, to_cell: Vector2i, unit: UnitState) -> Array[Vector2i]:
-	if _director != null and unit != null:
+	if unit == null:
+		return []
+	if _director != null:
 		var waypoints: Array[Vector2i] = _director.get_planned_move_waypoints(unit.id)
 		if not waypoints.is_empty() and waypoints.back() == to_cell:
-			var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
-			if MovementSystem._is_legal_walk(_board, from_cell, waypoints, 999, move_cost, unit, null):
-				return waypoints
-	return _find_display_path(from_cell, to_cell, unit)
-
-
-func _find_display_path(from_cell: Vector2i, to_cell: Vector2i, unit: UnitState) -> Array[Vector2i]:
-	if from_cell == to_cell or _board == null or unit == null:
-		return []
-	var path_board: BoardState = _board.clone()
-	var path_unit: UnitState = path_board.get_unit_by_id(unit.id)
-	if path_unit == null:
-		return []
-	GridSystem.set_occupant(path_board, path_unit.position, -1)
-	path_unit.position = from_cell
-	GridSystem.set_occupant(path_board, from_cell, path_unit.id)
-	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
-	var mt: int = (
-		unit.definition.movement_type
-		if unit.definition != null
-		else GameEnums.MovementType.WALK
+			return waypoints.duplicate()
+	var preview: CombatPlanningPreview = _committed_planning_preview()
+	return CombatPlanningPreview.planning_animation_cells(
+		unit.id, preview, from_cell, to_cell,
 	)
-	return MovementSystem.find_path(path_board, from_cell, to_cell, 999, mt, move_cost)
+
+
+func _committed_planning_preview() -> CombatPlanningPreview:
+	if _planning_overlay != null:
+		return _planning_overlay.get_committed_preview()
+	return null
 
 
 func _animate_planning_path(

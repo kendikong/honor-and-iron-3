@@ -300,6 +300,12 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	CombatPlanningPreview.build_preview_paths([move, push], null, paths, splits, pushes)
 	if paths.is_empty():
 		failures.append("CombatPlanningPreview: paths empty without director (expected no crash)")
+	var route: Array = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Vector2i(3, 0)]
+	var cells: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
+		route, Vector2i(0, 0), Vector2i(3, 0),
+	)
+	if cells.size() != 3 or cells[2] != Vector2i(3, 0):
+		failures.append("CombatPlanningPreview: destination_cells_from_route full leg mismatch")
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:

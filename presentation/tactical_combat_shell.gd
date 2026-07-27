@@ -85,6 +85,7 @@ func start_combat(encounter: EncounterData, initial_board: BoardState = null) ->
 	_planning_overlay.setup(_map_view, _director, intent_state)
 	_planning_overlay.bind_unit_layer(_unit_layer)
 	_unit_layer.bind_planning_input(planning_input)
+	_unit_layer.bind_planning_overlay(_planning_overlay)
 	planning_input.setup(
 		_map_view,
 		_director,

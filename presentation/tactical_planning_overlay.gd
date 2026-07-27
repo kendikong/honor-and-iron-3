@@ -216,6 +216,10 @@ func get_live_preview() -> CombatPlanningPreview:
 	return _live_preview
 
 
+func get_committed_preview() -> CombatPlanningPreview:
+	return _committed_preview
+
+
 func get_hover_move_tiles() -> Array[Vector2i]:
 	return _hover_move_tiles.duplicate()
 
