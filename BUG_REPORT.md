@@ -24,3 +24,14 @@ For every confirmed mechanical bug, the fix must add or extend a deterministic
 test under `tests/`. The test runs the production planning, movement, or
 simulation API and asserts the exact result. Visual feel and pixel-art
 authorship still require a user runtime check.
+
+## Run the regression suite
+
+```powershell
+.\scripts\run_regression_tests.ps1 `
+  -GodotPath "C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64.exe"
+```
+
+The command prints the complete result and returns a nonzero exit code when any
+assertion fails. The raw report is saved outside the repository at
+`user://regression_test_result.txt`.
