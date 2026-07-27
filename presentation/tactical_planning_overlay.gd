@@ -1313,7 +1313,7 @@ func _interaction_move_route(unit_id: int, prev: CombatPlanningPreview, route: A
 	var leg: Array = _pending_move_route_leg(unit_id, prev)
 	if leg.size() >= 2:
 		return leg
-	return route
+	return []
 
 
 func _draw_interaction_overlay() -> void:

@@ -450,6 +450,27 @@ static func move_route_leg_from_preview(
 	return route.slice(start_idx, end_idx)
 
 
+## True when projected stand already matches a committed MOVE target (leg is visually done).
+static func committed_move_already_realized(
+	director: CombatDirector,
+	board: BoardState,
+	unit_id: int,
+	timing: int,
+) -> bool:
+	if director == null:
+		return false
+	var move_action: TimelineAction = committed_move_action(
+		director.get_player_plan(), unit_id, timing,
+	)
+	if move_action == null:
+		return false
+	var plan_board: BoardState = planning_projection_board(director, board)
+	var unit: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else null
+	if unit == null:
+		return false
+	return unit.position == move_action.target_coord
+
+
 ## Frozen committed move leg — preview slice, then plan geometry fallback.
 static func committed_move_route_leg(
 	unit_id: int,
@@ -464,6 +485,8 @@ static func committed_move_route_leg(
 		director.get_player_plan(), unit_id, timing,
 	)
 	if move_action == null:
+		return []
+	if committed_move_already_realized(director, board, unit_id, timing):
 		return []
 	var leg: Array = move_route_leg_from_preview(
 		unit_id, preview, director, board, timing, false,

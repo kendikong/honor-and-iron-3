@@ -458,6 +458,16 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: committed_move_route_leg pre should slice turn-start to pre target",
 		)
+	director_stub.projected_state = board_stub
+	plan_unit.position = Vector2i(1, 0)
+	board_stub.units = [plan_unit]
+	var realized_pre: Array = CombatPlanningPreview.committed_move_route_leg(
+		1, preview, director_stub, board_stub, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	if not realized_pre.is_empty():
+		failures.append(
+			"CombatPlanningPreview: committed pre leg must hide when unit already at move target",
+		)
 	var action_origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(
 		board_stub, director_stub.get_player_plan(), trample_after_pre, plan_unit,
 	)
