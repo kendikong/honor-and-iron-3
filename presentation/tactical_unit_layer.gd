@@ -1507,6 +1507,8 @@ func _facing_toward_queued_action(unit_id: int) -> int:
 				continue
 			if action.ability.is_movement_kind() or action.ability.is_universal_run() or action.ability.is_universal_wait():
 				continue
+			if AbilitySystem.ability_has_movement_effect(action.ability):
+				continue
 			var target_coord: Vector2i = action.target_coord
 			if action.target_unit_id >= 0:
 				var tgt := lookup_board.get_unit_by_id(action.target_unit_id)
