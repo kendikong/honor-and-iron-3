@@ -94,6 +94,27 @@ static func facing_from_route_leg(leg: Array) -> int:
 	return facing_from_intent_cells(leg)
 
 
+## Facing along the next (or last) step where the actor stands on a preview route.
+static func facing_at_actor_on_route(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	actor_cell: Vector2i,
+) -> int:
+	if preview == null or unit_id < 0:
+		return -1
+	var route: Array = preview.preview_paths.get(unit_id, [])
+	if route.size() < 2:
+		return -1
+	var idx: int = _last_route_index(route, actor_cell)
+	if idx < 0:
+		return -1
+	if idx < route.size() - 1:
+		return facing_from_intent_cells([route[idx], route[idx + 1]])
+	if idx > 0:
+		return facing_from_intent_cells([route[idx - 1], route[idx]])
+	return -1
+
+
 ## Facing for a committed plan step — matches arrow leg direction, not end-state unit.facing.
 static func facing_along_planned_action(
 	base_board: BoardState,
@@ -698,8 +719,11 @@ static func planning_animation_cells(
 	var route: Array = preview.preview_paths.get(unit_id, [])
 	if route.size() < 2:
 		return []
+	var full_cells: Array[Vector2i] = destination_cells_from_route(route, from_cell, to_cell)
+	if not full_cells.is_empty():
+		return full_cells
 	if director != null:
 		route = pending_move_route_leg(unit_id, preview, director, board)
-	if route.size() < 2:
-		return []
-	return destination_cells_from_route(route, from_cell, to_cell)
+		if route.size() >= 2:
+			return destination_cells_from_route(route, from_cell, to_cell)
+	return []

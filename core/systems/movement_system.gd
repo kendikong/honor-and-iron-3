@@ -316,6 +316,9 @@ static func execute_skill_walk(
 		if board.get_unit_at(restore_coord) == null:
 			GridSystem.set_occupant(board, restore_coord, restore_unit_id)
 	GridSystem.set_occupant(board, unit.position, unit.id)
+	if path.size() >= 1:
+		var prev_pos: Vector2i = from if path.size() == 1 else path[path.size() - 2]
+		unit.facing = PhysicsSystem.facing_from_vector(unit.position - prev_pos)
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 		"actor": unit.id,
 		"from": from,

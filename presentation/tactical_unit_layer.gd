@@ -998,7 +998,8 @@ func _animate_planning_path(
 	var cells: Array[Vector2i] = _resolve_planning_path_cells(from_cell, to_cell, unit)
 	if cells.is_empty():
 		_position_actor(unit_id, to_cell)
-		_sync_planning_final_facing(unit_id)
+		if _actor_grid_cell(unit_id) == to_cell:
+			_sync_planning_final_facing(unit_id)
 		_update_depth(unit_id)
 		return
 	unit.position = to_cell
@@ -1050,12 +1051,31 @@ func _play_cell_path_tween(
 		actor.set_walking(false)
 		var live := _board.get_unit_by_id(unit_id) if _board != null else null
 		actor.set_running(live != null and live.has_run_boost())
-		_sync_planning_final_facing(unit_id)
+		if live != null:
+			if _actor_grid_cell(unit_id) == live.position:
+				_sync_planning_final_facing(unit_id)
+			else:
+				_sync_planning_unit_position(live)
 		_update_depth(unit_id)
 	)
 
 
 func _resolve_planning_facing(unit_id: int) -> int:
+	if _move_tweens.has(unit_id):
+		return -1
+	var board_unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
+	var actor_cell: Vector2i = _actor_grid_cell(unit_id)
+	var preview: CombatPlanningPreview = _committed_planning_preview()
+	if (
+		board_unit != null
+		and preview != null
+		and actor_cell != board_unit.position
+	):
+		var on_route: int = CombatPlanningPreview.facing_at_actor_on_route(
+			unit_id, preview, actor_cell,
+		)
+		if on_route >= 0:
+			return on_route
 	var queued: int = _facing_toward_queued_action(unit_id)
 	if queued >= 0:
 		return queued
@@ -1065,15 +1085,20 @@ func _resolve_planning_facing(unit_id: int) -> int:
 	var projected := _proj_unit(unit_id)
 	if projected != null:
 		return projected.facing
-	if _board != null:
-		var unit := _board.get_unit_by_id(unit_id)
-		if unit != null:
-			return unit.facing
+	if board_unit != null:
+		return board_unit.facing
 	return GameEnums.Facing.SOUTH
 
 
 func _sync_planning_final_facing(unit_id: int) -> void:
+	if _move_tweens.has(unit_id):
+		return
+	var board_unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
+	if board_unit != null and _actor_grid_cell(unit_id) != board_unit.position:
+		return
 	var facing: int = _resolve_planning_facing(unit_id)
+	if facing < 0:
+		return
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if unit != null:
 		unit.facing = facing
@@ -1437,6 +1462,8 @@ func _sync_planning_facings_for_queued_actions() -> void:
 		if not unit.is_alive() or unit.is_enemy():
 			continue
 		if _move_tweens.has(unit.id):
+			continue
+		if _actor_grid_cell(unit.id) != unit.position:
 			continue
 		_sync_planning_final_facing(unit.id)
 

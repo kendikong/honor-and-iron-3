@@ -612,6 +612,25 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: last planned step should be trample west after pre-move",
 		)
+	var route: Array = [
+		Vector2i(0, 0), Vector2i(0, 1), Vector2i(0, 2), Vector2i(0, 3), Vector2i(0, 5),
+	]
+	var anim_preview := CombatPlanningPreview.new()
+	anim_preview.preview_paths[1] = route
+	var mid_face: int = CombatPlanningPreview.facing_at_actor_on_route(
+		1, anim_preview, Vector2i(0, 2),
+	)
+	if mid_face != GameEnums.Facing.SOUTH:
+		failures.append(
+			"CombatPlanningPreview: mid-route actor should face along next path step",
+		)
+	var anim_cells: Array[Vector2i] = CombatPlanningPreview.planning_animation_cells(
+		1, anim_preview, Vector2i(0, 0), Vector2i(0, 5), null, null,
+	)
+	if anim_cells.size() != 5 or anim_cells[0] != Vector2i(0, 1):
+		failures.append(
+			"CombatPlanningPreview: planning_animation_cells must use full route for catch-up",
+		)
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:

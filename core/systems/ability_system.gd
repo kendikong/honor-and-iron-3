@@ -776,7 +776,15 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var target_coord := _resolve_target_coord(board, action)
 
+	var will_skill_walk := false
 	if target_coord != actor.position:
+		var is_move_check := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
+		will_skill_walk = (
+			(has_pass_through_effects(ability) or is_move_check)
+			and not ability_has_dash(ability)
+		)
+
+	if target_coord != actor.position and not will_skill_walk:
 		var new_facing := PhysicsSystem.facing_from_vector(
 			PhysicsSystem.cardinal_from_to(actor.position, target_coord),
 		)
