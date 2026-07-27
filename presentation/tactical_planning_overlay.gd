@@ -1762,34 +1762,18 @@ func _draw_move_ghosts() -> void:
 	var dash_face: int = _facing_toward(origin, _hover_coord)
 	_draw_facing_wedge(center, dash_face, Color(p_col.r, p_col.g, p_col.b, 0.85))
 	if ability != null and AbilitySystem.ability_has_movement_effect(ability):
-		var waypoints: Array[Vector2i] = []
+		var drag_route: Array = []
+		var sim_path: Array = []
+		var action_split: int = -1
 		if _planning_input != null:
-			var drag_route := _planning_input.get_drag_route()
-			if drag_route.size() >= 2:
-				waypoints = drag_route.slice(1)
-		var path: Array = []
-		if not waypoints.is_empty() and waypoints.back() == _hover_coord:
-			path = waypoints
-		else:
-			var hover_preview: CombatPlanningPreview = (
-				_planning_input.preview_state if _planning_input != null else null
-			)
-			if hover_preview != null and hover_preview.preview_board != null:
-				var sim_path: Array = hover_preview.preview_paths.get(unit.id, [])
-				if sim_path.size() >= 2:
-					var start_idx: int = int(hover_preview.action_splits.get(unit.id, -1))
-					if start_idx < 0:
-						start_idx = CombatPlanningPreview._last_route_index(sim_path, origin)
-					if start_idx < 0:
-						start_idx = 0
-					if start_idx < sim_path.size() - 1:
-						path = sim_path.slice(start_idx + 1, sim_path.size())
-			
-		var route_cells: Array = [origin]
-		if not path.is_empty():
-			route_cells.append_array(path)
-		else:
-			route_cells.append(_hover_coord)
+			drag_route = _planning_input.get_drag_route()
+			var hover_preview: CombatPlanningPreview = _planning_input.preview_state
+			if hover_preview != null:
+				sim_path = hover_preview.preview_paths.get(unit.id, [])
+				action_split = int(hover_preview.action_splits.get(unit.id, -1))
+		var route_cells: Array[Vector2i] = CombatPlanningPreview.awaiting_movement_route_cells(
+			origin, _hover_coord, drag_route, sim_path, action_split,
+		)
 		_draw_route_line(route_cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
 	else:
 		_draw_route_line([origin, _hover_coord], Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)

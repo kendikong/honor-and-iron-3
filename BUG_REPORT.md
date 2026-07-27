@@ -32,6 +32,26 @@ authorship still require a user runtime check.
   -GodotPath "C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64.exe"
 ```
 
+Trampling-only (fast):
+
+```powershell
+& "<godot.exe>" --headless --path . --script res://tests/run_trampling_only.gd
+```
+
 The command prints the complete result and returns a nonzero exit code when any
 assertion fails. The raw report is saved outside the repository at
 `user://regression_test_result.txt`.
+
+## Trampling Advance path regression
+
+`tests/trampling_advance_e2e_test.gd` mirrors TestBattle:
+
+1. Select real `knight_trampling_advance` from `DataLibrary`
+2. Arm awaiting on the Knight tile
+3. Drag `(5,4) -> (6,4) -> (6,3)` (east then north)
+4. Commit, then assert waypoints, painted preview path, overlay route leg,
+   director skill-walk waypoints, simulator `UNIT_MOVED` order, and optional
+   post-move continuation
+
+If this file passes but the game still looks wrong, the bug is in presentation
+animation or overlay draw timing — not in commit-slot data.
