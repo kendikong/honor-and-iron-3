@@ -328,6 +328,18 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	)
 	if capped_leg.size() != 3 or capped_leg[2] != Vector2i(2, 0):
 		failures.append("CombatPlanningPreview: committed_action_route_leg should cap before post-move split")
+	var director_stub := CombatDirector.new()
+	var board_stub := BoardState.new()
+	board_stub.grid_size = Vector2i(8, 8)
+	director_stub.board = board_stub
+	director_stub.base_board = board_stub
+	director_stub.plan_action = Timeline.new()
+	var trample := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1)
+	director_stub.plan_action.entries.append(trample)
+	preview.preview_post_splits[1] = 3
+	var post_leg: Array = CombatPlanningPreview.post_move_route_leg(1, preview, director_stub, board_stub)
+	if post_leg.size() != 2 or post_leg[0] != Vector2i(2, 0) or post_leg[1] != Vector2i(3, 0):
+		failures.append("CombatPlanningPreview: post_move_route_leg should start at action end")
 
 
 static func _test_combat_ui_formatters(failures: Array[String]) -> void:

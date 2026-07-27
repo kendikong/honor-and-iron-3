@@ -295,22 +295,10 @@ static func pending_move_route_leg(
 	if route.size() < 2 or director == null:
 		return []
 	var split: int = int(preview.preview_splits.get(unit_id, route.size()))
-	var post_split: int = int(preview.preview_post_splits.get(unit_id, split))
 	var end_idx: int = mini(split, route.size())
 	var move_timing: int = director.get_planning_move_timing(unit_id)
 	if move_timing == GameEnums.MoveTiming.POST_ACTION:
-		if post_split < end_idx:
-			return route.slice(maxi(post_split - 1, 0), end_idx)
-		var projected: BoardState = director.projected_state
-		if projected == null:
-			return []
-		var projected_unit: UnitState = projected.get_unit_by_id(unit_id)
-		if projected_unit == null:
-			return []
-		var start_idx: int = route.find(projected_unit.position)
-		if start_idx < 0:
-			start_idx = maxi(0, end_idx - 1)
-		return route.slice(start_idx, end_idx)
+		return post_move_route_leg(unit_id, preview, director, board)
 	var unit: UnitState = board.get_unit_by_id(unit_id) if board != null else null
 	var start_idx: int = 0
 	if unit != null:
@@ -318,6 +306,71 @@ static func pending_move_route_leg(
 		if found >= 0:
 			start_idx = found
 	return route.slice(start_idx, end_idx)
+
+
+## Grid cell where the committed class action leaves the unit (post-move starts here).
+static func committed_plan_action_end_cell(
+	director: CombatDirector,
+	board: BoardState,
+	unit_id: int,
+) -> Vector2i:
+	if director == null:
+		return Vector2i(-999999, -999999)
+	var origin: Vector2i = Vector2i(-999999, -999999)
+	if board != null:
+		var live: UnitState = board.get_unit_by_id(unit_id)
+		if live != null:
+			origin = live.position
+	var plan: Timeline = director.get_player_plan()
+	if plan != null:
+		for act: TimelineAction in plan.entries:
+			if act.actor_id != unit_id:
+				continue
+			if (
+				act.type == GameEnums.ActionType.MOVE
+				and act.move_timing == GameEnums.MoveTiming.PRE_ACTION
+			):
+				origin = act.target_coord
+			elif act.type == GameEnums.ActionType.ABILITY and not act.awaiting_target:
+				if (
+					act.ability != null
+					and AbilitySystem.ability_has_movement_effect(act.ability)
+				):
+					return act.target_coord
+	if director.projected_state != null:
+		var projected: UnitState = director.projected_state.get_unit_by_id(unit_id)
+		if projected != null:
+			return projected.position
+	return origin
+
+
+## Post-move leg: action destination → post-move target along preview_paths.
+static func post_move_route_leg(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	director: CombatDirector,
+	board: BoardState,
+) -> Array:
+	if preview == null or director == null:
+		return []
+	var route: Array = preview.preview_paths.get(unit_id, [])
+	if route.size() < 2:
+		return []
+	var action_end: Vector2i = committed_plan_action_end_cell(director, board, unit_id)
+	if board != null and not board.is_in_bounds(action_end):
+		return []
+	var post_split: int = int(preview.preview_post_splits.get(unit_id, -1))
+	var start_idx: int = -1
+	if post_split > 1 and post_split <= route.size():
+		start_idx = post_split - 1
+	if start_idx < 0:
+		start_idx = route.find(action_end)
+	if start_idx < 0:
+		return []
+	var end_idx: int = route.size() - 1
+	if start_idx >= end_idx:
+		return []
+	return route.slice(start_idx, end_idx + 1)
 
 
 ## Committed action movement leg — frozen to action.target_coord, not current move-timing slot.

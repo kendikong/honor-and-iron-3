@@ -1233,26 +1233,25 @@ func _draw_preview_arrows() -> void:
 			if _director.unit_has_move_planned_at_timing(
 				unit.id, GameEnums.MoveTiming.POST_ACTION,
 			):
-				var post_split: int = int(prev.preview_post_splits.get(unit.id, split))
-				var post_end: int = mini(split, route.size())
-				if post_split < post_end:
-					var post_leg: Array = route.slice(maxi(post_split - 1, 0), post_end)
-					if post_leg.size() >= 2:
-						var skip_committed_post: bool = false
-						if unit.id == _director.selected_unit_id and _planning_input != null:
-							if _planning_input.dragging:
-								skip_committed_post = true
-							elif (
-								_planning_input.is_live_preview_active()
-								and _interaction_move_hover_active(unit.id)
-							):
-								skip_committed_post = true
-						if not skip_committed_post:
-							var p_col: Color = _player_color_for_unit(unit)
-							_draw_route_line(post_leg, p_col, post_split <= 1, true)
+				var post_leg: Array = CombatPlanningPreview.post_move_route_leg(
+					unit.id, _committed_preview, _director, _board,
+				)
+				if post_leg.size() >= 2:
+					var skip_committed_post: bool = false
+					if unit.id == _director.selected_unit_id and _planning_input != null:
+						if _planning_input.dragging:
+							skip_committed_post = true
+						elif (
+							_planning_input.is_live_preview_active()
+							and _interaction_move_hover_active(unit.id)
+						):
+							skip_committed_post = true
+					if not skip_committed_post:
+						var p_col: Color = _player_color_for_unit(unit)
+						_draw_route_line(post_leg, p_col, true, true)
 		var pushes: Array = prev.preview_pushes.get(unit.id, [])
 		var enemy_leg: Array = []
-		if split < route.size() and pushes.is_empty():
+		if unit.is_enemy() and split < route.size() and pushes.is_empty():
 			enemy_leg = route.slice(maxi(split - 1, 0))
 		if enemy_leg.size() >= 2:
 			var dim_enemy := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, 0.35)
@@ -1344,7 +1343,11 @@ func _draw_interaction_overlay() -> void:
 		and _planning_input.is_live_preview_active()
 		and _interaction_move_hover_active(actor.id)
 	):
-		var draw_route: Array = _pending_move_route_leg(actor.id, prev)
+		var draw_route: Array = CombatPlanningPreview.post_move_route_leg(
+			actor.id, prev, _director, _board,
+		)
+		if draw_route.size() < 2:
+			draw_route = _pending_move_route_leg(actor.id, prev)
 		if draw_route.size() >= 2:
 			_draw_route_line(draw_route, p_col, true, true)
 	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
