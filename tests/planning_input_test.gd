@@ -1065,6 +1065,30 @@ static func _test_shield_bash_preview_pushes(failures: Array[String]) -> void:
 	var pushes: Array = preview.preview_pushes.get(enemy.id, [])
 	if pushes.is_empty():
 		failures.append("PlanningInputTest: Shield Bash preview must populate preview_pushes for target")
+	# Approach move + bash: displacement strip must not erase the bash (and its push).
+	knight.position = Vector2i(0, 2)
+	GridSystem.set_occupant(board, Vector2i(0, 2), knight.id)
+	GridSystem.set_occupant(board, Vector2i(3, 2), enemy.id)
+	var approach_actions: Array[TimelineAction] = [
+		TimelineAction.make_move(
+			1,
+			Vector2i(2, 2),
+			-1,
+			[Vector2i(1, 2)],
+			GameEnums.MoveTiming.PRE_ACTION,
+		),
+		TimelineAction.make_ability(
+			1, bash, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION,
+		),
+	]
+	var approach_res: Dictionary = director.preview_actions(1, approach_actions)
+	var approach_preview := CombatPlanningPreview.new()
+	approach_preview.apply_result(approach_res, director)
+	var approach_pushes: Array = approach_preview.preview_pushes.get(enemy.id, [])
+	if approach_pushes.is_empty():
+		failures.append(
+			"PlanningInputTest: approach + Shield Bash preview must keep push arrows (displacement strip)",
+		)
 
 
 static func _test_planning_display_ap_run_intent(failures: Array[String]) -> void:

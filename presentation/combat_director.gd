@@ -1005,10 +1005,14 @@ func _preview_apply_displacement_strips(
 			var actor_id: int = int(e.data.get("actor", -1))
 			if actor_id >= 0:
 				mover_ids[actor_id] = true
-		elif e.type in [GameEnums.SimEventType.UNIT_PUSHED, GameEnums.SimEventType.COLLISION]:
-			var actor_id2: int = int(e.data.get("actor", -1))
-			if actor_id2 >= 0:
-				mover_ids[actor_id2] = true
+		elif e.type == GameEnums.SimEventType.COLLISION:
+			var collision_pusher: int = int(e.data.get("pusher_id", -1))
+			if collision_pusher >= 0:
+				mover_ids[collision_pusher] = true
+		elif e.type == GameEnums.SimEventType.UNIT_PUSHED:
+			var push_pusher: int = int(e.data.get("pusher", -1))
+			if push_pusher >= 0:
+				mover_ids[push_pusher] = true
 	var mover_id: int = -1
 	if not mover_ids.is_empty():
 		mover_id = int(mover_ids.keys()[0])

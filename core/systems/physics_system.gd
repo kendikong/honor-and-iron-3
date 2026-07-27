@@ -390,12 +390,15 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 			if status.type == GameEnums.StatusType.BLEED:
 				CombatSystem.deal_damage(board, target, 3 * traveled, events, &"bleed", false, false, null, "Bleed (push)", 3 * traveled)
 				
-		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
+		var pushed_data: Dictionary = {
 			"unit": target.id,
 			"from": from,
 			"to": target.position,
 			"distance": traveled,
-		}))
+		}
+		if pusher != null:
+			pushed_data["pusher"] = pusher.id
+		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, pushed_data))
 		# Terrain stage: resolve any hazard on the tile we ended up on.
 		TerrainSystem.apply_landing(board, target, events)
 

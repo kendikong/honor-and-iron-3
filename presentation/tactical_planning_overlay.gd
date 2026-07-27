@@ -98,7 +98,7 @@ func setup(
 	_director = director
 	_intent_state = intent_state
 	z_as_relative = false
-	z_index = 8
+	z_index = 11
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
