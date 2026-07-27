@@ -1747,16 +1747,14 @@ func _draw_move_ghosts() -> void:
 		var hover_preview: CombatPlanningPreview = _planning_input.preview_state if _planning_input != null else null
 		if hover_preview != null and hover_preview.preview_board != null:
 			var sim_path: Array = hover_preview.preview_paths.get(unit.id, [])
-			if not sim_path.is_empty():
-				var start_idx: int = hover_preview.action_splits.get(unit.id, -1)
+			if sim_path.size() >= 2:
+				var start_idx: int = int(hover_preview.action_splits.get(unit.id, -1))
 				if start_idx < 0:
-					start_idx = sim_path.find(origin)
-					if start_idx < 0:
-						start_idx = maxi(0, sim_path.size() - 1)
-				if start_idx < sim_path.size():
-					path = sim_path.slice(start_idx, sim_path.size())
-				else:
-					path = sim_path
+					start_idx = CombatPlanningPreview._last_route_index(sim_path, origin)
+				if start_idx < 0:
+					start_idx = 0
+				if start_idx < sim_path.size() - 1:
+					path = sim_path.slice(start_idx + 1, sim_path.size())
 				
 		if path.is_empty() and not waypoints.is_empty():
 			path = waypoints

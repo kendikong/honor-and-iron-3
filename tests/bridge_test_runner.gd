@@ -468,6 +468,21 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: committed pre leg must hide when unit already at move target",
 		)
+	preview.preview_paths[1] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)]
+	plan_unit.position = Vector2i(2, 0)
+	board_stub.units = [plan_unit]
+	director_stub.projected_state = board_stub
+	var l_pre := TimelineAction.make_move(
+		1, Vector2i(2, 0), -1, [Vector2i(1, 0)], GameEnums.MoveTiming.PRE_ACTION,
+	)
+	director_stub.plan_pre_move.entries[0] = l_pre
+	var realized_l_pre: Array = CombatPlanningPreview.committed_move_route_leg(
+		1, preview, director_stub, board_stub, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	if not realized_l_pre.is_empty():
+		failures.append(
+			"CombatPlanningPreview: L-shaped pre leg must hide when unit already at target",
+		)
 	preview.preview_paths[1] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 0)]
 	plan_unit.position = Vector2i(0, 0)
 	board_stub.units = [plan_unit]

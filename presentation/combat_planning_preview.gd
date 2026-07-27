@@ -450,15 +450,14 @@ static func move_route_leg_from_preview(
 	return route.slice(start_idx, end_idx)
 
 
-## True when a simple committed MOVE is done — unit stands on target with no path left to show.
-## Loop / same-tile-end moves (waypoints or multi-cell leg) still draw their route.
+## True when a displacement MOVE is done — unit stands on target. Same-tile-end loops still draw.
 static func committed_move_already_realized(
 	director: CombatDirector,
 	board: BoardState,
 	unit_id: int,
 	timing: int,
 	move_action: TimelineAction,
-	route_leg: Array,
+	_route_leg: Array,
 ) -> bool:
 	if director == null or move_action == null:
 		return false
@@ -466,13 +465,10 @@ static func committed_move_already_realized(
 	var unit: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else null
 	if unit == null or unit.position != move_action.target_coord:
 		return false
-	if not move_action.waypoints.is_empty():
-		return false
-	if route_leg.size() > 2:
-		return false
 	var origin: Vector2i = move_leg_origin_cell(
 		director, board, unit_id, timing, move_action,
 	)
+	## Intentional loop / same-tile-end — origin equals target, path still matters.
 	if origin == move_action.target_coord:
 		return false
 	return true
