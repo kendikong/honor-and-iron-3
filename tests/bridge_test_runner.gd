@@ -518,6 +518,12 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 			"CombatPlanningPreview: L-shaped pre leg must hide when unit already at target",
 		)
 	## Live board at pre target while projected sim is already past it (action planned).
+	var base_for_pre := BoardState.new()
+	base_for_pre.grid_size = board_stub.grid_size
+	var base_unit := plan_unit.clone()
+	base_unit.position = Vector2i(5, 3)
+	base_for_pre.units = [base_unit]
+	director_stub.base_board = base_for_pre
 	plan_unit.position = Vector2i(6, 2)
 	board_stub.units = [plan_unit]
 	var proj_board := BoardState.new()
