@@ -562,17 +562,34 @@ static func committed_move_already_realized(
 		return false
 	if director == null or move_action == null:
 		return false
-	var plan_board: BoardState = planning_projection_board(director, board)
-	var unit: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else null
-	if unit == null or unit.position != move_action.target_coord:
-		return false
 	var origin: Vector2i = move_leg_origin_cell(
 		director, board, unit_id, timing, move_action,
 	)
 	## Intentional loop / same-tile-end — origin equals target, path still matters.
 	if origin == move_action.target_coord:
 		return false
-	return true
+	var target: Vector2i = move_action.target_coord
+	if board != null:
+		var live_unit: UnitState = board.get_unit_by_id(unit_id)
+		if live_unit != null and _committed_pre_move_satisfied(origin, live_unit.position, target):
+			return true
+	var plan_board: BoardState = planning_projection_board(director, board)
+	var proj_unit: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else null
+	if proj_unit != null and _committed_pre_move_satisfied(origin, proj_unit.position, target):
+		return true
+	return false
+
+
+static func _committed_pre_move_satisfied(
+	origin: Vector2i,
+	current: Vector2i,
+	target: Vector2i,
+) -> bool:
+	if current == target:
+		return true
+	if current == origin:
+		return false
+	return GridSystem.manhattan(origin, current) >= GridSystem.manhattan(origin, target)
 
 
 ## Frozen committed move leg — preview slice, then plan geometry fallback.

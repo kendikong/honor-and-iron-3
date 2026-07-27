@@ -517,6 +517,27 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: L-shaped pre leg must hide when unit already at target",
 		)
+	## Live board at pre target while projected sim is already past it (action planned).
+	plan_unit.position = Vector2i(6, 2)
+	board_stub.units = [plan_unit]
+	var proj_board := BoardState.new()
+	proj_board.grid_size = board_stub.grid_size
+	proj_board.tiles = board_stub.tiles
+	var proj_unit := plan_unit.clone()
+	proj_unit.position = Vector2i(7, 1)
+	proj_board.units = [proj_unit]
+	director_stub.projected_state = proj_board
+	director_stub.plan_pre_move.entries[0] = TimelineAction.make_move(
+		1, Vector2i(6, 2), -1, [Vector2i(6, 3), Vector2i(6, 2)], GameEnums.MoveTiming.PRE_ACTION,
+	)
+	preview.preview_paths[1] = [Vector2i(5, 3), Vector2i(6, 3), Vector2i(6, 2), Vector2i(7, 1)]
+	var stale_pre_after_action: Array = CombatPlanningPreview.committed_move_route_leg(
+		1, preview, director_stub, board_stub, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	if not stale_pre_after_action.is_empty():
+		failures.append(
+			"CombatPlanningPreview: committed pre leg must hide when live board reached pre target even if projection advanced",
+		)
 	preview.preview_paths[1] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 0)]
 	plan_unit.position = Vector2i(0, 0)
 	board_stub.units = [plan_unit]
