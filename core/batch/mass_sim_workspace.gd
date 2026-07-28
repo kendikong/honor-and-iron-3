@@ -10,6 +10,9 @@ var pinned_run_ids: Array[int] = []
 var triage_states: Dictionary = {}
 var triage_notes: Dictionary = {}
 
+var active_epoch_id: String = ""
+var epochs: Array[Dictionary] = []
+
 
 static func load() -> MassSimWorkspace:
 	var ws := MassSimWorkspace.new()
@@ -30,6 +33,13 @@ static func load() -> MassSimWorkspace:
 	ws.pinned_run_ids.assign(d.get("pinned_run_ids", []))
 	ws.triage_states = d.get("triage_states", {})
 	ws.triage_notes = d.get("triage_notes", {})
+	ws.active_epoch_id = String(d.get("active_epoch_id", ""))
+	var raw_epochs: Array = d.get("epochs", [])
+	ws.epochs.clear()
+	for ep: Variant in raw_epochs:
+		if ep is Dictionary:
+			ws.epochs.append(ep as Dictionary)
+	MassSimRulesEpoch.ensure_default_epoch(ws)
 	return ws
 
 
@@ -44,5 +54,7 @@ func save() -> void:
 		"pinned_run_ids": pinned_run_ids,
 		"triage_states": triage_states,
 		"triage_notes": triage_notes,
+		"active_epoch_id": active_epoch_id,
+		"epochs": epochs,
 	}))
 	file.close()

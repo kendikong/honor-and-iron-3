@@ -51,6 +51,25 @@ func _test_triage(triage, agg, failures: Array[String]) -> void:
 	_test_filter_and_heatmap(agg, failures)
 	_test_wilson(load("res://core/batch/mass_sim_batch_report.gd"), failures)
 	_test_interpretation_export(agg, triage, failures)
+	_test_epoch_filter(failures)
+
+
+func _test_epoch_filter(failures: Array[String]) -> void:
+	var epoch_script = load("res://core/batch/mass_sim_rules_epoch.gd")
+	var rows: Array = [
+		{"run_id": 0, "rules_epoch_id": "epoch_a"},
+		{"run_id": 1},
+		{"run_id": 2, "rules_epoch_id": "epoch_b"},
+	]
+	var only_a: Array = epoch_script.filter_epoch_rows(rows, "epoch_a")
+	if only_a.size() != 1:
+		failures.append("epoch filter should keep one tagged row")
+	var legacy: Array = epoch_script.filter_epoch_rows(rows, epoch_script.LEGACY_EPOCH_ID)
+	if legacy.size() != 1:
+		failures.append("legacy epoch filter should keep untagged row")
+	var mix: Dictionary = epoch_script.analyze_mix(rows)
+	if not bool(mix.get("is_mixed", false)):
+		failures.append("analyze_mix should detect mixed epochs")
 
 
 func _test_interpretation_export(agg, triage, failures: Array[String]) -> void:

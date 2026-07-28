@@ -13,6 +13,10 @@ var status_label: Label
 var queue_list: ItemList
 var _file_dialog: FileDialog
 var _tag_filter: OptionButton
+var _epoch_filter: OptionButton
+var _epoch_banner: Label
+var _new_epoch_dialog: ConfirmationDialog
+var _epoch_label_edit: LineEdit
 
 var _report: MassSimBatchReport
 var _workspace: MassSimWorkspace
@@ -26,7 +30,8 @@ var _all_rows: Array[Dictionary] = []
 func _ready() -> void:
 	instance = self
 	_workspace = MassSimWorkspace.load()
-	_log_path = _workspace.log_path
+	MassSimRulesEpoch.ensure_default_epoch(_workspace)
+	_sync_log_path_from_epoch()
 	_report = MassSimBatchReport.new()
 	_build_chrome()
 	_build_tabs()
@@ -78,6 +83,7 @@ func _build_chrome() -> void:
 	header.add_child(title)
 	_add_header_btn(header, "Open JSONL", _open_file_dialog)
 	_add_header_btn(header, "Reload", _load_saved_results)
+	_add_header_btn(header, "New Epoch", _open_new_epoch_dialog)
 	_add_header_btn(header, "Export CSV", _export_csv)
 	_add_header_btn(header, "AI Report", _open_interpretation_folder)
 	_add_header_btn(header, "Run Queue", _start_queue)
@@ -102,6 +108,17 @@ func _build_chrome() -> void:
 	_tag_filter.add_item("All tags", 0)
 	_tag_filter.item_selected.connect(_on_tag_filter_changed)
 	filter_row.add_child(_tag_filter)
+	var epoch_lbl := Label.new()
+	epoch_lbl.text = "Balance epoch:"
+	MassSimTheme.style_muted(epoch_lbl)
+	filter_row.add_child(epoch_lbl)
+	_epoch_filter = OptionButton.new()
+	_epoch_filter.item_selected.connect(_on_epoch_filter_changed)
+	filter_row.add_child(_epoch_filter)
+	_epoch_banner = Label.new()
+	_epoch_banner.autowrap_mode = TextServer.AUTOWRAP_WORD
+	MassSimTheme.style_muted(_epoch_banner)
+	left.add_child(_epoch_banner)
 	var queue_panel := PanelContainer.new()
 	MassSimTheme.apply_panel(queue_panel)
 	left.add_child(queue_panel)
@@ -134,6 +151,7 @@ func _build_chrome() -> void:
 	_file_dialog.filters = PackedStringArray(["*.jsonl ; JSONL logs"])
 	_file_dialog.file_selected.connect(_on_file_selected)
 	add_child(_file_dialog)
+	_build_new_epoch_dialog()
 	if _job_queue.is_empty():
 		_enqueue_job("Baseline Batch", 100)
 
@@ -203,7 +221,20 @@ func _run_next_job() -> void:
 	progress_bar.visible = true
 	progress_bar.value = 0
 	progress_bar.max_value = count
-	batch_runner.start_batch(count, _log_path, label, true)
+	batch_runner.start_batch(count, _log_path, label, true, _batch_epoch_id(), _batch_epoch_fingerprint())
+
+
+func _batch_epoch_id() -> String:
+	if _workspace.active_epoch_id.is_empty() or _workspace.active_epoch_id == MassSimRulesEpoch.LEGACY_EPOCH_ID:
+		return ""
+	return _workspace.active_epoch_id
+
+
+func _batch_epoch_fingerprint() -> String:
+	if _batch_epoch_id().is_empty():
+		return ""
+	var ep: Dictionary = MassSimRulesEpoch.active_epoch(_workspace)
+	return String(ep.get("fingerprint", MassSimRulesEpoch.fingerprint()))
 
 
 func _on_batch_progress(completed: int, total: int) -> void:
@@ -223,9 +254,14 @@ func _on_batch_completed(path: String, stats: Dictionary) -> void:
 
 
 func _load_saved_results() -> void:
+	_sync_log_path_from_epoch()
 	_all_rows = MassSimAggregator.load_jsonl(_log_path)
+	_rebuild_epoch_filter()
 	_rebuild_tag_filter()
-	var filtered: Array = MassSimAggregator.filter_rows(_all_rows, _workspace.map_tag_filter)
+	var epoch_rows: Array = MassSimRulesEpoch.filter_epoch_rows(_all_rows, _workspace.active_epoch_id)
+	var mix: Dictionary = MassSimRulesEpoch.analyze_mix(_all_rows)
+	_update_epoch_banner(mix, epoch_rows.size())
+	var filtered: Array = MassSimAggregator.filter_rows(epoch_rows, _workspace.map_tag_filter)
 	var curator: Dictionary = {}
 	if not filtered.is_empty():
 		var curator_obj := SmartReplayCurator.new()
@@ -234,11 +270,108 @@ func _load_saved_results() -> void:
 	_report = MassSimAggregator.build_report(filtered, _log_path, curator)
 	_apply_report()
 	status_label.text = (
-		"%d battles (%d in file) · %s"
+		"%d battles in epoch (%d in file) · %s"
 		% [_report.total_battles, _all_rows.size(), _log_path]
 		if not _report.is_empty()
 		else "No results — queue a batch or Open JSONL"
 	)
+
+
+func _sync_log_path_from_epoch() -> void:
+	MassSimRulesEpoch.ensure_default_epoch(_workspace)
+	var ep: Dictionary = MassSimRulesEpoch.active_epoch(_workspace)
+	if ep.is_empty():
+		_log_path = _workspace.log_path
+		return
+	var lp: String = String(ep.get("log_path", ""))
+	if not lp.is_empty():
+		_log_path = lp
+		_workspace.log_path = lp
+
+
+func _rebuild_epoch_filter() -> void:
+	_epoch_filter.clear()
+	var select: int = 0
+	for i: int in range(_workspace.epochs.size()):
+		var ep: Dictionary = _workspace.epochs[i] as Dictionary
+		var eid: String = String(ep.get("id", ""))
+		var label: String = String(ep.get("label", eid))
+		var battles_hint: String = ""
+		if eid == _workspace.active_epoch_id:
+			battles_hint = " (active)"
+		_epoch_filter.add_item("%s%s" % [label, battles_hint])
+		if eid == _workspace.active_epoch_id:
+			select = i
+	_epoch_filter.select(select)
+
+
+func _update_epoch_banner(mix: Dictionary, epoch_battle_count: int) -> void:
+	var ep: Dictionary = MassSimRulesEpoch.active_epoch(_workspace)
+	var fp: String = String(ep.get("fingerprint", ""))
+	if fp.is_empty() and _workspace.active_epoch_id != MassSimRulesEpoch.LEGACY_EPOCH_ID:
+		fp = MassSimRulesEpoch.fingerprint()
+	var lines: PackedStringArray = PackedStringArray()
+	if _workspace.active_epoch_id == MassSimRulesEpoch.LEGACY_EPOCH_ID:
+		lines.append("Legacy epoch — old battles have no rules tag. Click New Epoch before your next balance change.")
+	elif not fp.is_empty():
+		lines.append("Active rules: %s" % MassSimRulesEpoch.fingerprint_label())
+	if bool(mix.get("is_mixed", false)):
+		lines.append("Warning: this log mixes multiple rule sets — stats are not apples-to-apples.")
+	if bool(mix.get("fingerprint_mismatch", false)):
+		lines.append("Warning: multiple rule fingerprints in file — start a New Epoch after each change.")
+	if epoch_battle_count < MassSimConstants.MIN_SAMPLE_BASIC:
+		lines.append("Need %d+ battles in this epoch for basic stats (500 for full confidence)." % MassSimConstants.MIN_SAMPLE_BASIC)
+	_epoch_banner.text = "\n".join(lines)
+
+
+func _on_epoch_filter_changed(index: int) -> void:
+	if index < 0 or index >= _workspace.epochs.size():
+		return
+	var ep: Dictionary = _workspace.epochs[index] as Dictionary
+	_workspace.active_epoch_id = String(ep.get("id", ""))
+	_sync_log_path_from_epoch()
+	_save_workspace()
+	_load_saved_results()
+
+
+func _build_new_epoch_dialog() -> void:
+	_new_epoch_dialog = ConfirmationDialog.new()
+	_new_epoch_dialog.title = "New Balance Epoch"
+	_new_epoch_dialog.dialog_text = (
+		"Use this when you change balance, AI, or skirmish size.\n"
+		+ "Your current log is archived; new battles start in a clean file."
+	)
+	_new_epoch_dialog.ok_button_text = "Start Fresh Epoch"
+	var box := VBoxContainer.new()
+	var hint := Label.new()
+	hint.text = "What changed? (e.g. knight buff, 5v6 test)"
+	MassSimTheme.style_muted(hint)
+	box.add_child(hint)
+	_epoch_label_edit = LineEdit.new()
+	_epoch_label_edit.placeholder_text = "Knight damage +2"
+	box.add_child(_epoch_label_edit)
+	var rules := Label.new()
+	rules.text = "Current rules: %s" % MassSimRulesEpoch.fingerprint_label()
+	MassSimTheme.style_muted(rules)
+	box.add_child(rules)
+	_new_epoch_dialog.add_child(box)
+	_new_epoch_dialog.confirmed.connect(_on_new_epoch_confirmed)
+	add_child(_new_epoch_dialog)
+
+
+func _open_new_epoch_dialog() -> void:
+	if _epoch_label_edit != null:
+		_epoch_label_edit.text = ""
+	_new_epoch_dialog.popup_centered(Vector2i(480, 220))
+
+
+func _on_new_epoch_confirmed() -> void:
+	var label: String = _epoch_label_edit.text.strip_edges() if _epoch_label_edit != null else ""
+	var entry: Dictionary = MassSimRulesEpoch.start_new_epoch(_workspace, label)
+	_sync_log_path_from_epoch()
+	_save_workspace()
+	_load_saved_results()
+	status_label.text = "New epoch: %s → %s" % [String(entry.get("label", "")), _log_path]
 
 
 func _rebuild_tag_filter() -> void:
@@ -284,6 +417,9 @@ func _write_interpretation_bundle(warnings: Array) -> void:
 		"log_path": _log_path,
 		"rows_in_file": _all_rows.size(),
 		"map_tag_filter": _workspace.map_tag_filter,
+		"active_epoch_id": _workspace.active_epoch_id,
+		"active_epoch_label": String(MassSimRulesEpoch.active_epoch(_workspace).get("label", "")),
+		"rules_fingerprint": _batch_epoch_fingerprint(),
 		"queue_size": _job_queue.size(),
 		"running_job": _running_job,
 	})

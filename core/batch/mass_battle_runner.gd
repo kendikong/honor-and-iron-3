@@ -9,6 +9,8 @@ var _battles_completed: int = 0
 var _log_path: String = ""
 var _job_label: String = "Baseline"
 var _run_id_offset: int = 0
+var _rules_epoch_id: String = ""
+var _rules_fingerprint: String = ""
 
 var _telemetry_results: Array[Dictionary] = []
 var _group_task_id: int = -1
@@ -24,11 +26,15 @@ func start_batch(
 	log_filename: String = "user://batch_results.jsonl",
 	job_label: String = "Baseline",
 	append: bool = true,
+	rules_epoch_id: String = "",
+	rules_fingerprint: String = "",
 ) -> void:
 	_battles_to_run = num_battles
 	_battles_completed = 0
 	_log_path = log_filename
 	_job_label = job_label
+	_rules_epoch_id = rules_epoch_id
+	_rules_fingerprint = rules_fingerprint
 	_run_id_offset = _next_run_id_offset() if append else 0
 	_telemetry_results.clear()
 	_telemetry_results.resize(num_battles)
@@ -64,14 +70,14 @@ func _run_single_battle_thread(index: int) -> void:
 	var skirmish: Dictionary = MassSimBoardBuilder.build_skirmish(map_seed)
 	var board: BoardState = skirmish["board"] as BoardState
 	var grid_size: Vector2i = board.grid_size
-	var player_roster: Array[UnitData] = SpawnPlacer._pick_random_player_roster(4, map_seed)
+	var player_roster: Array[UnitData] = SpawnPlacer._pick_random_player_roster(MassSimConstants.SKIRMISH_PLAYER_COUNT, map_seed)
 	var player_spawn: Vector2i = skirmish["player_spawn"] as Vector2i
 	for i: int in range(player_roster.size()):
 		BoardFactory.place_unit(
 			board, 10 + i, player_roster[i], GameEnums.Team.PLAYER,
 			Vector2i(player_spawn.x + i * 2, player_spawn.y),
 		)
-	var enemy_roster: Array[UnitData] = SpawnPlacer._pick_enemy_roster(6, map_seed)
+	var enemy_roster: Array[UnitData] = SpawnPlacer._pick_enemy_roster(MassSimConstants.SKIRMISH_ENEMY_COUNT, map_seed)
 	var enemy_spawn: Vector2i = skirmish["enemy_spawn"] as Vector2i
 	for i: int in range(enemy_roster.size()):
 		BoardFactory.place_unit(
@@ -86,6 +92,10 @@ func _run_single_battle_thread(index: int) -> void:
 	telemetry.player_spawn_quadrant = String(skirmish["player_quadrant"])
 	telemetry.enemy_spawn_quadrant = String(skirmish["enemy_quadrant"])
 	telemetry.job_label = _job_label
+	telemetry.rules_epoch_id = _rules_epoch_id
+	telemetry.rules_fingerprint = _rules_fingerprint
+	telemetry.skirmish_player_count = MassSimConstants.SKIRMISH_PLAYER_COUNT
+	telemetry.skirmish_enemy_count = MassSimConstants.SKIRMISH_ENEMY_COUNT
 	for unit: UnitData in player_roster:
 		telemetry.player_classes.append(unit.id)
 	for unit: UnitData in enemy_roster:

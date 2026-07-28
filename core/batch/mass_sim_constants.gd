@@ -10,6 +10,10 @@ const TIMELINE_PATH := "user://mass_sim_timeline.jsonl"
 const CAPTURE_DIR := "res://tests/captures"
 const INTERPRETATION_USER_PATH := "user://mass_sim_interpretation.json"
 
+const RULES_REVISION := "1"
+const SKIRMISH_PLAYER_COUNT := 4
+const SKIRMISH_ENEMY_COUNT := 6
+
 const MIN_SAMPLE_FULL_CONFIDENCE := 500
 const MIN_SAMPLE_BASIC := 30
 const MIN_CLASS_APPEARANCES := 8

@@ -39,6 +39,11 @@ var player_spawn_quadrant: String = ""
 var enemy_spawn_quadrant: String = ""
 var job_label: String = ""
 
+var rules_epoch_id: String = ""
+var rules_fingerprint: String = ""
+var skirmish_player_count: int = 4
+var skirmish_enemy_count: int = 6
+
 var combat_meta: Dictionary = {}
 
 func to_dict() -> Dictionary:
@@ -70,6 +75,10 @@ func to_dict() -> Dictionary:
 		"player_spawn_quadrant": player_spawn_quadrant,
 		"enemy_spawn_quadrant": enemy_spawn_quadrant,
 		"job_label": job_label,
+		"rules_epoch_id": rules_epoch_id,
+		"rules_fingerprint": rules_fingerprint,
+		"skirmish_player_count": skirmish_player_count,
+		"skirmish_enemy_count": skirmish_enemy_count,
 		"combat_meta": combat_meta,
 	}
 
@@ -102,5 +111,9 @@ static func from_dict(data: Dictionary) -> SimulationTelemetry:
 	t.player_spawn_quadrant = String(data.get("player_spawn_quadrant", ""))
 	t.enemy_spawn_quadrant = String(data.get("enemy_spawn_quadrant", ""))
 	t.job_label = String(data.get("job_label", ""))
+	t.rules_epoch_id = String(data.get("rules_epoch_id", ""))
+	t.rules_fingerprint = String(data.get("rules_fingerprint", ""))
+	t.skirmish_player_count = int(data.get("skirmish_player_count", 4))
+	t.skirmish_enemy_count = int(data.get("skirmish_enemy_count", 6))
 	t.combat_meta = data.get("combat_meta", {})
 	return t
