@@ -82,7 +82,7 @@ static func _effect_summary(eff: EffectData) -> String:
 			return "Spawn unit"
 		GameEnums.EffectType.MOVE_INTO_AND_PUSH:
 			return "Move through and push"
+		GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF:
+			return "Apply %s" % GameEnums.StatusType.keys()[eff.status_type]
 		_:
-			if eff.status_type != GameEnums.StatusType.NONE:
-				return "Apply %s" % GameEnums.StatusType.keys()[eff.status_type]
 			return ""

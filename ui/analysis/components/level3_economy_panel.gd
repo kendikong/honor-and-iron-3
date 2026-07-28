@@ -79,18 +79,26 @@ func _add_commander_section(report: MassSimBatchReport) -> void:
 		empty.set_text(0, "No AI meta — run a new batch after this update.")
 		return
 	var ai: Dictionary = report.ai_commander_meta
+	var sample_turns: int = int(ai.get("sample_turns", 0))
+	var sim_turns: int = maxi(report.total_sim_turns, 1)
 	var row := _tree.create_item(hdr)
 	row.set_text(0, "Utility / turn")
 	row.set_text(1, "%.2f" % float(ai.get("avg_utility_per_turn", 0.0)))
-	row.set_tooltip_text(1, "Average Commander utility score per planning turn.")
+	row.set_tooltip_text(1, "%.1f total utility over %d Commander planning turns.\n%s" % [
+		float(ai.get("utility_sum", 0.0)), sample_turns, "Average Commander utility score per planning turn.",
+	])
 	var row2 := _tree.create_item(hdr)
 	row2.set_text(0, "Holds / turn")
 	row2.set_text(1, "%.2f" % float(ai.get("holds_per_turn", 0.0)))
-	row2.set_tooltip_text(1, "Times AI skipped a legal skill per sim turn.")
+	row2.set_tooltip_text(1, "%d holds over %d sim turns.\nTimes AI skipped a legal skill per sim turn." % [
+		int(ai.get("total_holds", 0)), sim_turns,
+	])
 	var row3 := _tree.create_item(hdr)
 	row3.set_text(0, "Skill commits / turn")
 	row3.set_text(1, "%.2f" % float(ai.get("skill_commits_per_turn", 0.0)))
-	row3.set_tooltip_text(1, "Ability actions committed per sim turn.")
+	row3.set_tooltip_text(1, "%d skill commits over %d sim turns.\nAbility actions committed per sim turn." % [
+		int(ai.get("total_skill_commits", 0)), sim_turns,
+	])
 
 
 func _add_skill_sections(report: MassSimBatchReport) -> void:
@@ -154,30 +162,52 @@ func _add_skill_row(report: MassSimBatchReport, parent: TreeItem, row: Dictionar
 	var item := _tree.create_item(parent)
 	var name: String = String(row.get("display_name", row.get("ability_id", "?")))
 	var ability_id: String = String(row.get("ability_id", ""))
+	var uses: int = int(row.get("uses", 0))
+	var legal: int = int(row.get("turns_legal", 0))
+	var unit_turns: int = int(row.get("class_unit_turns", 0))
+	var has_roster: bool = bool(row.get("has_roster_sample", unit_turns > 0 or uses > 0 or legal > 0))
+	var has_pick: bool = bool(row.get("has_pick_sample", team == GameEnums.Team.PLAYER and legal > 0))
+	var dmg: int = int(row.get("damage_dealt", 0))
+	var heal: int = int(row.get("healing_done", 0))
+	var kills: int = int(row.get("kills", 0))
 	item.set_text(0, name)
 	var ability_tip: String = MassSimAbilityText.tooltip_for_ability_id(ability_id)
 	if not ability_tip.is_empty():
 		item.set_tooltip_text(0, ability_tip)
-	item.set_text(1, "%.3f" % float(row.get("uses_per_turn", 0.0)))
-	item.set_tooltip_text(1, _TIP_USES)
-	var pick: float = float(row.get("pick_rate_when_legal_pct", -1.0))
-	if team == GameEnums.Team.PLAYER and pick >= 0.0:
+	if has_roster:
+		item.set_text(1, "%.3f" % float(row.get("uses_per_turn", 0.0)))
+		item.set_tooltip_text(1, "%d uses over %d class unit-turns.\n%s" % [uses, unit_turns, _TIP_USES])
+	else:
+		item.set_text(1, "—")
+		item.set_tooltip_text(1, "No sample — skill never appeared on a roster in this batch.")
+	if has_pick:
+		var pick: float = float(row.get("pick_rate_when_legal_pct", 0.0))
 		item.set_text(2, "%.0f%%" % pick)
-		item.set_tooltip_text(2, _TIP_PICK)
+		item.set_tooltip_text(2, "%d uses when legal ÷ %d turns legal (%.0f%%).\n%s" % [uses, legal, pick, _TIP_PICK])
 	else:
 		item.set_text(2, "—")
-		item.set_tooltip_text(2, "Pick% only tracked for player Commander AI skills.")
-	item.set_text(3, "%.2f" % float(row.get("damage_per_turn", 0.0)))
-	item.set_tooltip_text(3, _TIP_DMG)
-	item.set_text(4, "%.2f" % float(row.get("heal_per_turn", 0.0)))
-	item.set_tooltip_text(4, _TIP_HEAL)
-	item.set_text(5, "%.3f" % float(row.get("kills_per_turn", 0.0)))
-	item.set_tooltip_text(5, _TIP_KILL)
+		if team != GameEnums.Team.PLAYER:
+			item.set_tooltip_text(2, "Pick% only tracked for player Commander AI skills.")
+		elif not has_roster:
+			item.set_tooltip_text(2, "No sample — skill was not on any roster in this batch.")
+		else:
+			item.set_tooltip_text(2, "No sample — skill was never a legal Commander option in this batch.")
+	if has_roster:
+		item.set_text(3, "%.2f" % float(row.get("damage_per_turn", 0.0)))
+		item.set_tooltip_text(3, "%d total damage over %d class unit-turns.\n%s" % [dmg, unit_turns, _TIP_DMG])
+		item.set_text(4, "%.2f" % float(row.get("heal_per_turn", 0.0)))
+		item.set_tooltip_text(4, "%d total healing over %d class unit-turns.\n%s" % [heal, unit_turns, _TIP_HEAL])
+		item.set_text(5, "%.3f" % float(row.get("kills_per_turn", 0.0)))
+		item.set_tooltip_text(5, "%d total kills over %d class unit-turns.\n%s" % [kills, unit_turns, _TIP_KILL])
+	else:
+		for col: int in [3, 4, 5]:
+			item.set_text(col, "—")
+			item.set_tooltip_text(col, "No sample — skill never appeared on a roster in this batch.")
 	var notes: PackedStringArray = PackedStringArray()
 	if int(row.get("action_failed", 0)) > 0:
 		notes.append("fails %d" % int(row.get("action_failed", 0)))
-	if int(row.get("turns_legal", 0)) > 0 and team == GameEnums.Team.PLAYER:
-		notes.append("legal %d turns" % int(row.get("turns_legal", 0)))
+	if legal > 0 and team == GameEnums.Team.PLAYER:
+		notes.append("legal %d turns" % legal)
 	item.set_text(6, ", ".join(notes))
 
 
@@ -193,13 +223,24 @@ func _add_passive_section(report: MassSimBatchReport) -> void:
 	for row: Dictionary in report.passive_meta_rows:
 		var item := _tree.create_item(hdr)
 		var pid: String = String(row.get("passive_id", ""))
+		var appearances: int = int(row.get("unit_appearances", 0))
+		var wins: int = int(row.get("player_wins", 0))
 		item.set_text(0, _format_passive_name(pid))
 		var passive_tip: String = MassSimAbilityText.tooltip_for_passive_id(pid)
 		if not passive_tip.is_empty():
 			item.set_tooltip_text(0, passive_tip)
-		item.set_text(1, "%d units" % int(row.get("unit_appearances", 0)))
-		item.set_text(2, "%.1f%% WR" % float(row.get("player_win_pct", 0.0)))
-		item.set_tooltip_text(2, _TIP_PASSIVE_WR)
+		if appearances > 0:
+			item.set_text(1, "%d units" % appearances)
+			item.set_tooltip_text(1, "Appeared on %d player roster slots in this batch." % appearances)
+			item.set_text(2, "%.1f%% WR" % float(row.get("player_win_pct", 0.0)))
+			item.set_tooltip_text(2, "%d wins with this passive ÷ %d appearances (%.1f%%).\n%s" % [
+				wins, appearances, float(row.get("player_win_pct", 0.0)), _TIP_PASSIVE_WR,
+			])
+		else:
+			item.set_text(1, "—")
+			item.set_tooltip_text(1, "No sample — passive never rolled onto a roster in this batch.")
+			item.set_text(2, "—")
+			item.set_tooltip_text(2, "No sample — passive never rolled onto a roster in this batch.")
 		var classes: Dictionary = row.get("classes", {}) as Dictionary
 		var class_bits: PackedStringArray = PackedStringArray()
 		for cid: Variant in classes.keys():
@@ -215,12 +256,36 @@ func _add_economy_section(report: MassSimBatchReport) -> void:
 	var hdr := _tree.create_item(root)
 	hdr.set_text(0, "ECONOMY WASTE (per sim turn)")
 	hdr.set_custom_color(0, _COLOR_MUTED)
+	var turns: int = int(eco.get("total_sim_turns", maxi(report.total_sim_turns, 1)))
+	var battles: int = int(eco.get("total_battles", maxi(report.total_battles, 1)))
 	var rows: Array[Dictionary] = [
-		{"label": "Assisted damage / turn", "value": "%.2f" % float(eco.get("assisted_damage_per_turn", 0.0)), "tip": "Total assisted damage divided by sim turns."},
-		{"label": "Shields / turn", "value": "%.2f" % float(eco.get("assisted_shields_per_turn", 0.0)), "tip": "Shields granted per sim turn."},
-		{"label": "Overkill / turn", "value": "%.2f" % float(eco.get("overkill_per_turn", 0.0)), "tip": "Wasted overkill damage per sim turn."},
-		{"label": "Floated AP / turn", "value": "%.2f" % float(eco.get("floated_ap_per_turn", 0.0)), "tip": "Unused AP banked per sim turn."},
-		{"label": "Whiff battles", "value": "%.1f%%" % float(eco.get("whiff_battle_pct", 0.0)), "tip": "% of battles with at least one execution whiff."},
+		{
+			"label": "Assisted damage / turn",
+			"value": "%.2f" % float(eco.get("assisted_damage_per_turn", 0.0)),
+			"tip": "%d total assisted damage ÷ %d sim turns." % [int(eco.get("total_assisted_damage", 0)), turns],
+		},
+		{
+			"label": "Shields / turn",
+			"value": "%.2f" % float(eco.get("assisted_shields_per_turn", 0.0)),
+			"tip": "%d total shields granted ÷ %d sim turns." % [int(eco.get("total_assisted_shields", 0)), turns],
+		},
+		{
+			"label": "Overkill / turn",
+			"value": "%.2f" % float(eco.get("overkill_per_turn", 0.0)),
+			"tip": "%d total overkill damage ÷ %d sim turns." % [int(eco.get("total_overkill", 0)), turns],
+		},
+		{
+			"label": "Floated AP / turn",
+			"value": "%.2f" % float(eco.get("floated_ap_per_turn", 0.0)),
+			"tip": "%d total unused AP banked ÷ %d sim turns." % [int(eco.get("total_floated_ap", 0)), turns],
+		},
+		{
+			"label": "Whiff battles",
+			"value": "%.1f%%" % float(eco.get("whiff_battle_pct", 0.0)),
+			"tip": "%d battles with whiffs ÷ %d battles (%.1f%%)." % [
+				int(eco.get("battles_with_whiffs", 0)), battles, float(eco.get("whiff_battle_pct", 0.0)),
+			],
+		},
 	]
 	for spec: Dictionary in rows:
 		var item := _tree.create_item(hdr)

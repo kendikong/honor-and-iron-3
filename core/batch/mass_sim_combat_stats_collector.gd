@@ -179,6 +179,8 @@ func to_dict() -> Dictionary:
 		)
 		if int(row.get("team", GameEnums.Team.PLAYER)) != GameEnums.Team.PLAYER:
 			row["pick_rate_when_legal"] = -1.0
+		elif int(row.get("turns_legal", 0)) <= 0:
+			row["pick_rate_when_legal"] = -1.0
 		row["kills_per_turn"] = float(row.get("kills", 0)) / float(maxi(unit_turns, 1))
 		skill_rows.append(row)
 	skill_rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:

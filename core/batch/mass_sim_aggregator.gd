@@ -505,22 +505,23 @@ static func _finalize_skill_meta(skill_store: Dictionary, class_store: Dictionar
 		var class_id: String = String(rec.get("class_id", ""))
 		var team: int = int(rec.get("team", GameEnums.Team.PLAYER))
 		var class_key: String = "%d:%s" % [team, class_id]
-		var unit_turns: int = int(rec.get("class_unit_turns", 0))
-		if unit_turns <= 0 and class_store.has(class_key):
-			unit_turns = int((class_store[class_key] as Dictionary).get("unit_turns", 0))
-		unit_turns = maxi(unit_turns, 1)
-		rec["uses_per_turn"] = float(rec.get("uses", 0)) / float(unit_turns)
-		rec["damage_per_turn"] = float(rec.get("damage_dealt", 0)) / float(unit_turns)
-		rec["heal_per_turn"] = float(rec.get("healing_done", 0)) / float(unit_turns)
-		rec["kills_per_turn"] = float(rec.get("kills", 0)) / float(unit_turns)
+		var raw_unit_turns: int = int(rec.get("class_unit_turns", 0))
+		if raw_unit_turns <= 0 and class_store.has(class_key):
+			raw_unit_turns = int((class_store[class_key] as Dictionary).get("unit_turns", 0))
+		var eff_unit_turns: int = maxi(raw_unit_turns, 1)
+		rec["uses_per_turn"] = float(rec.get("uses", 0)) / float(eff_unit_turns)
+		rec["damage_per_turn"] = float(rec.get("damage_dealt", 0)) / float(eff_unit_turns)
+		rec["heal_per_turn"] = float(rec.get("healing_done", 0)) / float(eff_unit_turns)
+		rec["kills_per_turn"] = float(rec.get("kills", 0)) / float(eff_unit_turns)
 		var legal: int = int(rec.get("turns_legal", 0))
+		var uses: int = int(rec.get("uses", 0))
+		rec["has_roster_sample"] = raw_unit_turns > 0 or uses > 0 or legal > 0
 		if team == GameEnums.Team.PLAYER and legal > 0:
-			rec["pick_rate_when_legal_pct"] = minf(
-				float(rec.get("uses", 0)) / float(legal) * 100.0,
-				100.0,
-			)
+			rec["pick_rate_when_legal_pct"] = minf(float(uses) / float(legal) * 100.0, 100.0)
+			rec["has_pick_sample"] = true
 		else:
 			rec["pick_rate_when_legal_pct"] = -1.0
+			rec["has_pick_sample"] = false
 		rows.append(rec)
 	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return float(a.get("uses_per_turn", 0)) > float(b.get("uses_per_turn", 0))
@@ -618,6 +619,12 @@ static func _finalize_economy_per_turn(report: RefCounted) -> Dictionary:
 		"overkill_per_turn": float(report.total_overkill) / float(turns),
 		"floated_ap_per_turn": float(report.total_floated_ap) / float(turns),
 		"whiff_battle_pct": float(report.battles_with_whiffs) / float(battles) * 100.0,
+		"total_assisted_damage": int(report.total_assisted_damage),
+		"total_assisted_shields": int(report.total_assisted_shields),
+		"total_overkill": int(report.total_overkill),
+		"total_floated_ap": int(report.total_floated_ap),
+		"battles_with_whiffs": int(report.battles_with_whiffs),
+		"total_battles": battles,
 		"total_sim_turns": turns,
 	}
 
@@ -628,6 +635,7 @@ static func _finalize_ai_commander(ai_store: Dictionary, total_sim_turns: int) -
 		return {}
 	return {
 		"avg_utility_per_turn": float(ai_store.get("utility_sum", 0.0)) / float(sample_turns),
+		"utility_sum": float(ai_store.get("utility_sum", 0.0)),
 		"holds_per_turn": float(ai_store.get("total_holds", 0)) / float(maxi(total_sim_turns, 1)),
 		"skill_commits_per_turn": float(ai_store.get("total_skill_commits", 0)) / float(maxi(total_sim_turns, 1)),
 		"total_holds": int(ai_store.get("total_holds", 0)),
