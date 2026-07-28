@@ -280,16 +280,11 @@ static func _enrich_class_records(report: MassSimBatchReport) -> Dictionary:
 
 
 static func _l3_economy(report: MassSimBatchReport) -> Dictionary:
-	var n: int = maxi(report.total_battles, 1)
+	var eco: Dictionary = report.economy_per_turn
 	return {
-		"assisted_damage": report.total_assisted_damage,
-		"assisted_shields": report.total_assisted_shields,
-		"overkill": report.total_overkill,
-		"floated_ap": report.total_floated_ap,
-		"execution_whiffs": report.total_execution_whiffs,
-		"battles_with_whiffs": report.battles_with_whiffs,
-		"whiff_battles_pct": float(report.battles_with_whiffs) / float(n) * 100.0,
-		"avg_assisted_damage_per_match": float(report.total_assisted_damage) / float(n),
+		"per_turn": eco,
+		"passive_meta_rows": report.passive_meta_rows,
+		"rules_label": MassSimRulesEpoch.detailed_rules_label(),
 	}
 
 

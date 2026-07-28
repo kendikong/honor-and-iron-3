@@ -167,7 +167,7 @@ func _add_header_btn(parent: HBoxContainer, text: String, cb: Callable) -> void:
 func _build_tabs() -> void:
 	_add_panel("L1: Executive Summary", Level1SummaryPanel.new())
 	_add_panel("L2: Balance & Synergy", Level2BalancePanel.new())
-	_add_panel("L3: Economy & Math", Level3EconomyPanel.new())
+	_add_panel("L3: Skill Meta & Math", Level3EconomyPanel.new())
 	_add_panel("L4: Physics Heatmaps", Level4PhysicsPanel.new())
 	_add_panel("L5: AI Diagnostics", Level5AIPanel.new())
 	_add_panel("L6: Map Bias", Level6MapPanel.new())
@@ -470,7 +470,7 @@ func _write_interpretation_bundle(warnings: Array) -> void:
 func _refresh_command_palette() -> void:
 	var entries: Array[Dictionary] = []
 	var tabs: PackedStringArray = PackedStringArray([
-		"L1: Executive Summary", "L2: Balance & Synergy", "L3: Economy & Math",
+		"L1: Executive Summary", "L2: Balance & Synergy", "L3: Skill Meta & Math",
 		"L4: Physics Heatmaps", "L5: AI Diagnostics", "L6: Map Bias", "L7: Integrity",
 	])
 	for i: int in range(tabs.size()):

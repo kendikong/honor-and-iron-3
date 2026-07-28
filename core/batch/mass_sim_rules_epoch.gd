@@ -17,11 +17,22 @@ static func fingerprint() -> String:
 
 
 static func fingerprint_label() -> String:
-	return "%d players vs %d enemies · rules %s" % [
-		_C.SKIRMISH_PLAYER_COUNT,
-		_C.SKIRMISH_ENEMY_COUNT,
-		_C.RULES_REVISION,
-	]
+	return detailed_rules_label()
+
+
+static func detailed_rules_label() -> String:
+	return (
+		"%d players vs %d enemies · player L%d (%d random passives, full skill kit)"
+		+ " · enemy L%d · rules rev %s"
+		% [
+			_C.SKIRMISH_PLAYER_COUNT,
+			_C.SKIRMISH_ENEMY_COUNT,
+			_C.SKIRMISH_PLAYER_LEVEL,
+			_C.SKIRMISH_PLAYER_PASSIVE_COUNT,
+			_C.SKIRMISH_ENEMY_LEVEL,
+			_C.RULES_REVISION,
+		]
+	)
 
 
 static func slugify(label: String) -> String:

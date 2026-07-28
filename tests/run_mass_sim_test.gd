@@ -100,8 +100,8 @@ func _test_filter_and_heatmap(agg, failures: Array[String]) -> void:
 			"map_tags": ["open"], "player_spawn_quadrant": "northwest", "collision_cells": ["5,5"],
 			"combat_meta": {
 				"total_turns": 10,
-				"skill_rows": [{"class_id": "knight", "ability_id": "knight_shield_bash", "display_name": "Shield Bash", "uses": 2, "turns_legal": 4, "class_unit_turns": 10, "damage_dealt": 5}],
-				"class_combat_rows": [{"class_id": "knight", "unit_turns": 10, "damage_dealt": 5, "ai_holds": 1, "ai_skill_opportunity_turns": 3}],
+				"skill_rows": [{"class_id": "knight", "ability_id": "knight_shield_bash", "display_name": "Shield Bash", "team": GameEnums.Team.PLAYER, "uses": 2, "turns_legal": 4, "class_unit_turns": 10, "damage_dealt": 5, "kills": 1}],
+				"class_combat_rows": [{"class_id": "knight", "team": GameEnums.Team.PLAYER, "unit_turns": 10, "damage_dealt": 5, "ai_holds": 1, "ai_skill_opportunity_turns": 3}],
 				"ai_commander": {"avg_utility_per_turn": 3.0, "sample_turns": 10, "total_holds": 1, "total_skill_commits": 2},
 			},
 		},

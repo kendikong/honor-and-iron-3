@@ -35,13 +35,13 @@ func register_board(board: BoardState) -> void:
 			if ab == null:
 				continue
 			ability_ids.append(str(ab.id))
-			_ensure_skill(class_id, str(ab.id), ab.display_name)
+			_ensure_skill(class_id, str(ab.id), ab.display_name, unit.team)
 		_unit_meta[unit.id] = {
 			"class_id": class_id,
 			"team": unit.team,
 			"ability_ids": ability_ids,
 		}
-		_ensure_class(class_id)
+		_ensure_class(class_id, unit.team)
 
 
 func begin_turn(turn_index: int) -> void:
@@ -62,10 +62,10 @@ func record_ai_decision(board: BoardState, team_vector: TeamVector, ai: Autobatt
 		return
 	var skill_commits: int = 0
 	var move_only_units: int = 0
-	var legal_skill_keys: Dictionary = {}
 	for unit: UnitState in board.units:
 		if not unit.is_alive() or unit.is_enemy():
 			continue
+		var legal_skills_this_unit: Dictionary = {}
 		for action: Variant in ai.get_legal_actions(board, unit):
 			if not action is Dictionary:
 				continue
@@ -81,8 +81,9 @@ func record_ai_decision(board: BoardState, team_vector: TeamVector, ai: Autobatt
 			var ab: AbilityData = ab_list[idx] as AbilityData
 			if ab == null:
 				continue
-			var sk_key: String = "%s/%s" % [class_id, str(ab.id)]
-			legal_skill_keys[sk_key] = true
+			var sk_key: String = _skill_key(int(meta.get("team", GameEnums.Team.PLAYER)), class_id, str(ab.id))
+			legal_skills_this_unit[sk_key] = true
+		for sk_key: Variant in legal_skills_this_unit.keys():
 			if _skill.has(sk_key):
 				(_skill[sk_key] as Dictionary)["turns_legal"] = int((_skill[sk_key] as Dictionary).get("turns_legal", 0)) + 1
 	for act: TimelineAction in team_vector.actions:
@@ -97,15 +98,15 @@ func record_ai_decision(board: BoardState, team_vector: TeamVector, ai: Autobatt
 			_turn_holds_player += 1
 			var meta: Dictionary = _unit_meta.get(unit.id, {})
 			var class_id: String = String(meta.get("class_id", ""))
-			if _class.has(class_id):
-				var cr: Dictionary = _class[class_id] as Dictionary
+			if _class.has(_class_key(class_id, GameEnums.Team.PLAYER)):
+				var cr: Dictionary = _class[_class_key(class_id, GameEnums.Team.PLAYER)] as Dictionary
 				cr["ai_holds"] = int(cr.get("ai_holds", 0)) + 1
 				cr["ai_skill_opportunity_turns"] = int(cr.get("ai_skill_opportunity_turns", 0)) + 1
 		elif legal_skills > 0:
 			var meta2: Dictionary = _unit_meta.get(unit.id, {})
 			var class_id2: String = String(meta2.get("class_id", ""))
-			if _class.has(class_id2):
-				(_class[class_id2] as Dictionary)["ai_skill_opportunity_turns"] = int((_class[class_id2] as Dictionary).get("ai_skill_opportunity_turns", 0)) + 1
+			if _class.has(_class_key(class_id2, GameEnums.Team.PLAYER)):
+				(_class[_class_key(class_id2, GameEnums.Team.PLAYER)] as Dictionary)["ai_skill_opportunity_turns"] = int((_class[_class_key(class_id2, GameEnums.Team.PLAYER)] as Dictionary).get("ai_skill_opportunity_turns", 0)) + 1
 		var had_move: bool = false
 		for act2: TimelineAction in team_vector.actions:
 			if act2.actor_id == unit.id and act2.type == GameEnums.ActionType.MOVE:
@@ -114,8 +115,8 @@ func record_ai_decision(board: BoardState, team_vector: TeamVector, ai: Autobatt
 		if had_move and not used:
 			var meta3: Dictionary = _unit_meta.get(unit.id, {})
 			var class_id3: String = String(meta3.get("class_id", ""))
-			if _class.has(class_id3):
-				(_class[class_id3] as Dictionary)["movement_only_turns"] = int((_class[class_id3] as Dictionary).get("movement_only_turns", 0)) + 1
+			if _class.has(_class_key(class_id3, GameEnums.Team.PLAYER)):
+				(_class[_class_key(class_id3, GameEnums.Team.PLAYER)] as Dictionary)["movement_only_turns"] = int((_class[_class_key(class_id3, GameEnums.Team.PLAYER)] as Dictionary).get("movement_only_turns", 0)) + 1
 			move_only_units += 1
 	_ai_samples.append({
 		"turn": _turn,
@@ -176,15 +177,19 @@ func to_dict() -> Dictionary:
 		row["pick_rate_when_legal"] = (
 			float(row.get("uses", 0)) / float(maxi(int(row.get("turns_legal", 0)), 1)) * 100.0
 		)
+		if int(row.get("team", GameEnums.Team.PLAYER)) != GameEnums.Team.PLAYER:
+			row["pick_rate_when_legal"] = -1.0
+		row["kills_per_turn"] = float(row.get("kills", 0)) / float(maxi(unit_turns, 1))
 		skill_rows.append(row)
 	skill_rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return float(a.get("uses_per_turn", 0)) > float(b.get("uses_per_turn", 0))
 	)
 	var class_rows: Array[Dictionary] = []
-	for class_id: Variant in _class.keys():
-		var cr: Dictionary = (_class[class_id] as Dictionary).duplicate(true)
+	for ck: Variant in _class.keys():
+		var cr: Dictionary = (_class[ck] as Dictionary).duplicate(true)
 		var ut: int = int(cr.get("unit_turns", 1))
-		cr["class_id"] = str(class_id)
+		cr["class_id"] = str(cr.get("class_id", ""))
+		cr["team"] = int(cr.get("team", GameEnums.Team.NEUTRAL))
 		cr["damage_dealt_per_turn"] = float(cr.get("damage_dealt", 0)) / float(maxi(ut, 1))
 		cr["damage_taken_per_turn"] = float(cr.get("damage_taken", 0)) / float(maxi(ut, 1))
 		cr["healing_per_turn"] = float(cr.get("healing_done", 0)) / float(maxi(ut, 1))
@@ -242,7 +247,7 @@ func _on_ability_used(event: SimEvent, board: BoardState) -> void:
 	var team: int = int(meta.get("team", GameEnums.Team.NEUTRAL))
 	if class_id.is_empty():
 		return
-	var sk: Dictionary = _ensure_skill(class_id, ability_id, String(event.data.get("ability_name", ability_id)))
+	var sk: Dictionary = _ensure_skill(class_id, ability_id, String(event.data.get("ability_name", ability_id)), team)
 	sk["uses"] = int(sk.get("uses", 0)) + 1
 	if team == GameEnums.Team.PLAYER:
 		_turn_skill_uses_player += 1
@@ -258,8 +263,8 @@ func _on_damaged(event: SimEvent, _board: BoardState) -> void:
 	var victim_meta: Dictionary = _unit_meta.get(unit_id, {})
 	var victim_class: String = String(victim_meta.get("class_id", ""))
 	var victim_team: int = int(victim_meta.get("team", GameEnums.Team.NEUTRAL))
-	if not victim_class.is_empty() and _class.has(victim_class):
-		(_class[victim_class] as Dictionary)["damage_taken"] = int((_class[victim_class] as Dictionary).get("damage_taken", 0)) + amount
+	if not victim_class.is_empty() and _class.has(_class_key(victim_class, victim_team)):
+		(_class[_class_key(victim_class, victim_team)] as Dictionary)["damage_taken"] = int((_class[_class_key(victim_class, victim_team)] as Dictionary).get("damage_taken", 0)) + amount
 	if victim_team == GameEnums.Team.PLAYER:
 		_turn_damage_player += amount
 	else:
@@ -269,10 +274,11 @@ func _on_damaged(event: SimEvent, _board: BoardState) -> void:
 	var attacker_meta: Dictionary = _unit_meta.get(_last_ability_actor, {})
 	var attacker_class: String = String(attacker_meta.get("class_id", ""))
 	var ability_id: String = str(_pending_ability.get(_last_ability_actor, ""))
-	if not attacker_class.is_empty() and _class.has(attacker_class):
-		(_class[attacker_class] as Dictionary)["damage_dealt"] = int((_class[attacker_class] as Dictionary).get("damage_dealt", 0)) + amount
+	var attacker_team: int = int(attacker_meta.get("team", GameEnums.Team.NEUTRAL))
+	if not attacker_class.is_empty() and _class.has(_class_key(attacker_class, attacker_team)):
+		(_class[_class_key(attacker_class, attacker_team)] as Dictionary)["damage_dealt"] = int((_class[_class_key(attacker_class, attacker_team)] as Dictionary).get("damage_dealt", 0)) + amount
 	if not ability_id.is_empty():
-		var sk_key: String = "%s/%s" % [attacker_class, ability_id]
+		var sk_key: String = _skill_key(attacker_team, attacker_class, ability_id)
 		if _skill.has(sk_key):
 			(_skill[sk_key] as Dictionary)["damage_dealt"] = int((_skill[sk_key] as Dictionary).get("damage_dealt", 0)) + amount
 
@@ -285,8 +291,8 @@ func _on_healed(event: SimEvent, board: BoardState) -> void:
 	var team: int = int(meta.get("team", GameEnums.Team.NEUTRAL))
 	if class_id.is_empty():
 		return
-	if _class.has(class_id):
-		(_class[class_id] as Dictionary)["healing_done"] = int((_class[class_id] as Dictionary).get("healing_done", 0)) + amount
+	if _class.has(_class_key(class_id, team)):
+		(_class[_class_key(class_id, team)] as Dictionary)["healing_done"] = int((_class[_class_key(class_id, team)] as Dictionary).get("healing_done", 0)) + amount
 	if team == GameEnums.Team.PLAYER:
 		_turn_heal_player += amount
 	else:
@@ -294,7 +300,8 @@ func _on_healed(event: SimEvent, board: BoardState) -> void:
 	for pid: Variant in _pending_ability.keys():
 		var ability_id: String = str(_pending_ability[pid])
 		var attacker_class: String = String((_unit_meta.get(int(pid), {}) as Dictionary).get("class_id", ""))
-		var sk_key: String = "%s/%s" % [attacker_class, ability_id]
+		var attacker_team: int = int((_unit_meta.get(int(pid), {}) as Dictionary).get("team", GameEnums.Team.NEUTRAL))
+		var sk_key: String = _skill_key(attacker_team, attacker_class, ability_id)
 		if _skill.has(sk_key):
 			(_skill[sk_key] as Dictionary)["healing_done"] = int((_skill[sk_key] as Dictionary).get("healing_done", 0)) + amount
 		break
@@ -306,7 +313,8 @@ func _on_armored(event: SimEvent, board: BoardState) -> void:
 	for pid: Variant in _pending_ability.keys():
 		var ability_id: String = str(_pending_ability[pid])
 		var attacker_class: String = String((_unit_meta.get(int(pid), {}) as Dictionary).get("class_id", ""))
-		var sk_key: String = "%s/%s" % [attacker_class, ability_id]
+		var attacker_team: int = int((_unit_meta.get(int(pid), {}) as Dictionary).get("team", GameEnums.Team.NEUTRAL))
+		var sk_key: String = _skill_key(attacker_team, attacker_class, ability_id)
 		if _skill.has(sk_key):
 			(_skill[sk_key] as Dictionary)["armor_given"] = int((_skill[sk_key] as Dictionary).get("armor_given", 0)) + amount
 		break
@@ -316,16 +324,19 @@ func _on_died(event: SimEvent, _board: BoardState) -> void:
 	var unit_id: int = int(event.data.get("unit", -1))
 	var meta: Dictionary = _unit_meta.get(unit_id, {})
 	var class_id: String = String(meta.get("class_id", ""))
-	if not class_id.is_empty() and _class.has(class_id):
-		(_class[class_id] as Dictionary)["deaths"] = int((_class[class_id] as Dictionary).get("deaths", 0)) + 1
+	var victim_team: int = int(meta.get("team", GameEnums.Team.NEUTRAL))
+	if not class_id.is_empty() and _class.has(_class_key(class_id, victim_team)):
+		(_class[_class_key(class_id, victim_team)] as Dictionary)["deaths"] = int((_class[_class_key(class_id, victim_team)] as Dictionary).get("deaths", 0)) + 1
 	if _last_ability_actor < 0:
 		return
-	var attacker_class: String = String((_unit_meta.get(_last_ability_actor, {}) as Dictionary).get("class_id", ""))
+	var attacker_meta: Dictionary = _unit_meta.get(_last_ability_actor, {})
+	var attacker_class: String = String(attacker_meta.get("class_id", ""))
+	var attacker_team: int = int(attacker_meta.get("team", GameEnums.Team.NEUTRAL))
 	var ability_id: String = str(_pending_ability.get(_last_ability_actor, ""))
-	if _class.has(attacker_class):
-		(_class[attacker_class] as Dictionary)["kills"] = int((_class[attacker_class] as Dictionary).get("kills", 0)) + 1
+	if _class.has(_class_key(attacker_class, attacker_team)):
+		(_class[_class_key(attacker_class, attacker_team)] as Dictionary)["kills"] = int((_class[_class_key(attacker_class, attacker_team)] as Dictionary).get("kills", 0)) + 1
 	if not ability_id.is_empty():
-		var sk_key: String = "%s/%s" % [attacker_class, ability_id]
+		var sk_key: String = _skill_key(attacker_team, attacker_class, ability_id)
 		if _skill.has(sk_key):
 			(_skill[sk_key] as Dictionary)["kills"] = int((_skill[sk_key] as Dictionary).get("kills", 0)) + 1
 
@@ -336,8 +347,9 @@ func _on_action_failed(event: SimEvent) -> void:
 	if reason.find("cannot_use") >= 0 or reason.find("whiff") >= 0:
 		var ability_id: String = str(_pending_ability.get(actor_id, ""))
 		var class_id: String = String((_unit_meta.get(actor_id, {}) as Dictionary).get("class_id", ""))
+		var fail_team: int = int((_unit_meta.get(actor_id, {}) as Dictionary).get("team", GameEnums.Team.NEUTRAL))
 		if not ability_id.is_empty():
-			var sk_key: String = "%s/%s" % [class_id, ability_id]
+			var sk_key: String = _skill_key(fail_team, class_id, ability_id)
 			if _skill.has(sk_key):
 				(_skill[sk_key] as Dictionary)["action_failed"] = int((_skill[sk_key] as Dictionary).get("action_failed", 0)) + 1
 
@@ -350,12 +362,13 @@ func _on_turn_ended(_event: SimEvent, board: BoardState) -> void:
 			continue
 		var meta: Dictionary = _unit_meta.get(unit.id, {})
 		var class_id: String = String(meta.get("class_id", ""))
-		if class_id.is_empty() or not _class.has(class_id):
+		var unit_team: int = int(meta.get("team", GameEnums.Team.NEUTRAL))
+		if class_id.is_empty() or not _class.has(_class_key(class_id, unit_team)):
 			continue
-		var cr: Dictionary = _class[class_id] as Dictionary
+		var cr: Dictionary = _class[_class_key(class_id, unit_team)] as Dictionary
 		cr["unit_turns"] = int(cr.get("unit_turns", 0)) + 1
 		for ab_id: Variant in meta.get("ability_ids", []):
-			var sk_key: String = "%s/%s" % [class_id, str(ab_id)]
+			var sk_key: String = _skill_key(unit_team, class_id, str(ab_id))
 			if _skill.has(sk_key):
 				(_skill[sk_key] as Dictionary)["class_unit_turns"] = int(cr.get("unit_turns", 0))
 		var floated_ap: int = unit.ability.points_left if unit.ability != null else 0
@@ -363,13 +376,14 @@ func _on_turn_ended(_event: SimEvent, board: BoardState) -> void:
 			cr["floated_ap_turns"] = int(cr.get("floated_ap_turns", 0)) + 1
 
 
-func _ensure_skill(class_id: String, ability_id: String, display_name: String) -> Dictionary:
-	var key: String = "%s/%s" % [class_id, ability_id]
+func _ensure_skill(class_id: String, ability_id: String, display_name: String, team: int) -> Dictionary:
+	var key: String = _skill_key(team, class_id, ability_id)
 	if not _skill.has(key):
 		_skill[key] = {
 			"class_id": class_id,
 			"ability_id": ability_id,
 			"display_name": display_name,
+			"team": team,
 			"uses": 0,
 			"turns_legal": 0,
 			"damage_dealt": 0,
@@ -382,9 +396,12 @@ func _ensure_skill(class_id: String, ability_id: String, display_name: String) -
 	return _skill[key] as Dictionary
 
 
-func _ensure_class(class_id: String) -> Dictionary:
-	if not _class.has(class_id):
-		_class[class_id] = {
+func _ensure_class(class_id: String, team: int) -> Dictionary:
+	var key: String = _class_key(class_id, team)
+	if not _class.has(key):
+		_class[key] = {
+			"class_id": class_id,
+			"team": team,
 			"unit_turns": 0,
 			"damage_dealt": 0,
 			"damage_taken": 0,
@@ -396,7 +413,15 @@ func _ensure_class(class_id: String) -> Dictionary:
 			"movement_only_turns": 0,
 			"floated_ap_turns": 0,
 		}
-	return _class[class_id] as Dictionary
+	return _class[key] as Dictionary
+
+
+func _class_key(class_id: String, team: int) -> String:
+	return "%d:%s" % [team, class_id]
+
+
+func _skill_key(team: int, class_id: String, ability_id: String) -> String:
+	return "%d:%s/%s" % [team, class_id, ability_id]
 
 
 func _timeline_has_skill_for_unit(actions: Array, unit_id: int) -> bool:

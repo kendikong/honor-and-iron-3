@@ -73,16 +73,18 @@ func _run_single_battle_thread(index: int) -> void:
 	var player_roster: Array[UnitData] = SpawnPlacer._pick_random_player_roster(MassSimConstants.SKIRMISH_PLAYER_COUNT, map_seed)
 	var player_spawn: Vector2i = skirmish["player_spawn"] as Vector2i
 	for i: int in range(player_roster.size()):
-		BoardFactory.place_unit(
+		var cfg: Dictionary = MassSimUnitConfig.build(player_roster[i], GameEnums.Team.PLAYER, map_seed, i)
+		BoardFactory.place_configured_unit(
 			board, 10 + i, player_roster[i], GameEnums.Team.PLAYER,
-			Vector2i(player_spawn.x + i * 2, player_spawn.y),
+			Vector2i(player_spawn.x + i * 2, player_spawn.y), cfg,
 		)
 	var enemy_roster: Array[UnitData] = SpawnPlacer._pick_enemy_roster(MassSimConstants.SKIRMISH_ENEMY_COUNT, map_seed)
 	var enemy_spawn: Vector2i = skirmish["enemy_spawn"] as Vector2i
 	for i: int in range(enemy_roster.size()):
-		BoardFactory.place_unit(
+		var ecfg: Dictionary = MassSimUnitConfig.build(enemy_roster[i], GameEnums.Team.ENEMY, map_seed, i)
+		BoardFactory.place_configured_unit(
 			board, 20 + i, enemy_roster[i], GameEnums.Team.ENEMY,
-			Vector2i(grid_size.x - 3 - i * 2, enemy_spawn.y),
+			Vector2i(grid_size.x - 3 - i * 2, enemy_spawn.y), ecfg,
 		)
 	var telemetry := SimulationTelemetry.new()
 	telemetry.run_id = index + _run_id_offset
@@ -96,6 +98,9 @@ func _run_single_battle_thread(index: int) -> void:
 	telemetry.rules_fingerprint = _rules_fingerprint
 	telemetry.skirmish_player_count = MassSimConstants.SKIRMISH_PLAYER_COUNT
 	telemetry.skirmish_enemy_count = MassSimConstants.SKIRMISH_ENEMY_COUNT
+	telemetry.skirmish_player_level = MassSimConstants.SKIRMISH_PLAYER_LEVEL
+	telemetry.skirmish_enemy_level = MassSimConstants.SKIRMISH_ENEMY_LEVEL
+	telemetry.skirmish_player_passive_count = MassSimConstants.SKIRMISH_PLAYER_PASSIVE_COUNT
 	for unit: UnitData in player_roster:
 		telemetry.player_classes.append(unit.id)
 	for unit: UnitData in enemy_roster:
@@ -136,7 +141,32 @@ func _run_single_battle_thread(index: int) -> void:
 		if u.is_alive():
 			telemetry.surviving_units.append(u.id)
 	telemetry.combat_meta = combat_stats.to_dict()
+	telemetry.roster_meta = _build_roster_meta(board, winner)
 	_telemetry_results[index] = telemetry.to_dict()
+
+
+func _build_roster_meta(board: BoardState, winner: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for unit: UnitState in board.units:
+		if unit.definition == null:
+			continue
+		var passive_ids: PackedStringArray = PackedStringArray()
+		for p: PassiveData in unit.active_passives:
+			if p != null:
+				passive_ids.append(str(p.id))
+		var team_won: bool = (
+			(unit.team == GameEnums.Team.PLAYER and winner == GameEnums.Team.PLAYER)
+			or (unit.team == GameEnums.Team.ENEMY and winner == GameEnums.Team.ENEMY)
+		)
+		out.append({
+			"class_id": str(unit.definition.id),
+			"team": unit.team,
+			"level": unit.level,
+			"passive_ids": passive_ids,
+			"ability_count": unit.active_abilities.size(),
+			"team_won": team_won,
+		})
+	return out
 
 
 func _check_win_condition(board: BoardState) -> int:

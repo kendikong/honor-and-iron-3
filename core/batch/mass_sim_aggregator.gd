@@ -59,6 +59,7 @@ static func build_report(
 	var class_ids_seen: Dictionary = {}
 	var skill_store: Dictionary = {}
 	var class_store: Dictionary = {}
+	var passive_store: Dictionary = {}
 	var ai_store: Dictionary = {
 		"utility_sum": 0.0,
 		"sample_turns": 0,
@@ -153,6 +154,7 @@ static func build_report(
 		report.turn_histogram[t_bucket] = int(report.turn_histogram.get(t_bucket, 0)) + 1
 
 		_merge_combat_meta(skill_store, class_store, ai_store, report, row.get("combat_meta", {}) as Dictionary)
+		_merge_passive_meta(passive_store, row, player_won)
 
 	turn_buf.sort()
 	report.turn_values = turn_buf
@@ -181,8 +183,10 @@ static func build_report(
 	_finalize_class_rates(report)
 	report.tier_rows = _build_tier_rows(report)
 	report.matchup_snippets = _build_matchup_snippets(report)
-	report.skill_meta_rows = _finalize_skill_meta(skill_store)
+	report.skill_meta_rows = _finalize_skill_meta(skill_store, class_store)
 	report.class_combat_rows = _finalize_class_combat(class_store)
+	report.passive_meta_rows = _finalize_passive_meta(passive_store)
+	report.economy_per_turn = _finalize_economy_per_turn(report)
 	report.ai_commander_meta = _finalize_ai_commander(ai_store, report.total_sim_turns)
 	report.integrity_score = _compute_integrity(report, class_ids_seen, chaos_scores)
 	_load_previous_snapshot(report)
@@ -437,11 +441,14 @@ static func _merge_combat_meta(
 			continue
 		var sd: Dictionary = sk as Dictionary
 		var key: String = "%s/%s" % [str(sd.get("class_id", "")), str(sd.get("ability_id", ""))]
-		if not skill_store.has(key):
-			skill_store[key] = {
+		var team: int = int(sd.get("team", GameEnums.Team.PLAYER))
+		var store_key: String = "%d:%s" % [team, key]
+		if not skill_store.has(store_key):
+			skill_store[store_key] = {
 				"class_id": sd.get("class_id", ""),
 				"ability_id": sd.get("ability_id", ""),
 				"display_name": sd.get("display_name", key),
+				"team": team,
 				"uses": 0,
 				"turns_legal": 0,
 				"damage_dealt": 0,
@@ -451,7 +458,7 @@ static func _merge_combat_meta(
 				"action_failed": 0,
 				"class_unit_turns": 0,
 			}
-		var rec: Dictionary = skill_store[key] as Dictionary
+		var rec: Dictionary = skill_store[store_key] as Dictionary
 		for field: String in ["uses", "turns_legal", "damage_dealt", "healing_done", "armor_given", "kills", "action_failed", "class_unit_turns"]:
 			rec[field] = int(rec.get(field, 0)) + int(sd.get(field, 0))
 	for cr: Variant in combat_meta.get("class_combat_rows", []):
@@ -459,11 +466,14 @@ static func _merge_combat_meta(
 			continue
 		var cd: Dictionary = cr as Dictionary
 		var class_id: String = str(cd.get("class_id", ""))
+		var team: int = int(cd.get("team", GameEnums.Team.PLAYER))
 		if class_id.is_empty():
 			continue
-		if not class_store.has(class_id):
-			class_store[class_id] = {
+		var class_key: String = "%d:%s" % [team, class_id]
+		if not class_store.has(class_key):
+			class_store[class_key] = {
 				"class_id": class_id,
+				"team": team,
 				"unit_turns": 0,
 				"damage_dealt": 0,
 				"damage_taken": 0,
@@ -475,7 +485,7 @@ static func _merge_combat_meta(
 				"movement_only_turns": 0,
 				"floated_ap_turns": 0,
 			}
-		var crec: Dictionary = class_store[class_id] as Dictionary
+		var crec: Dictionary = class_store[class_key] as Dictionary
 		for field: String in ["unit_turns", "damage_dealt", "damage_taken", "healing_done", "kills", "deaths", "ai_holds", "ai_skill_opportunity_turns", "movement_only_turns", "floated_ap_turns"]:
 			crec[field] = int(crec.get(field, 0)) + int(cd.get(field, 0))
 	var ai: Dictionary = combat_meta.get("ai_commander", {}) as Dictionary
@@ -487,15 +497,29 @@ static func _merge_combat_meta(
 		ai_store["pruned_turns"] = int(ai_store.get("pruned_turns", 0)) + int(ai.get("pruned_turns", 0))
 
 
-static func _finalize_skill_meta(skill_store: Dictionary) -> Array[Dictionary]:
+static func _finalize_skill_meta(skill_store: Dictionary, class_store: Dictionary) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	for key: Variant in skill_store.keys():
 		var rec: Dictionary = (skill_store[key] as Dictionary).duplicate(true)
+		var class_id: String = String(rec.get("class_id", ""))
+		var team: int = int(rec.get("team", GameEnums.Team.PLAYER))
+		var class_key: String = "%d:%s" % [team, class_id]
 		var unit_turns: int = int(rec.get("class_unit_turns", 0))
-		rec["uses_per_turn"] = float(rec.get("uses", 0)) / float(maxi(unit_turns, 1))
-		rec["damage_per_turn"] = float(rec.get("damage_dealt", 0)) / float(maxi(unit_turns, 1))
-		rec["heal_per_turn"] = float(rec.get("healing_done", 0)) / float(maxi(unit_turns, 1))
-		rec["pick_rate_when_legal_pct"] = float(rec.get("uses", 0)) / float(maxi(int(rec.get("turns_legal", 0)), 1)) * 100.0
+		if unit_turns <= 0 and class_store.has(class_key):
+			unit_turns = int((class_store[class_key] as Dictionary).get("unit_turns", 0))
+		unit_turns = maxi(unit_turns, 1)
+		rec["uses_per_turn"] = float(rec.get("uses", 0)) / float(unit_turns)
+		rec["damage_per_turn"] = float(rec.get("damage_dealt", 0)) / float(unit_turns)
+		rec["heal_per_turn"] = float(rec.get("healing_done", 0)) / float(unit_turns)
+		rec["kills_per_turn"] = float(rec.get("kills", 0)) / float(unit_turns)
+		var legal: int = int(rec.get("turns_legal", 0))
+		if team == GameEnums.Team.PLAYER and legal > 0:
+			rec["pick_rate_when_legal_pct"] = minf(
+				float(rec.get("uses", 0)) / float(legal) * 100.0,
+				100.0,
+			)
+		else:
+			rec["pick_rate_when_legal_pct"] = -1.0
 		rows.append(rec)
 	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return float(a.get("uses_per_turn", 0)) > float(b.get("uses_per_turn", 0))
@@ -505,8 +529,8 @@ static func _finalize_skill_meta(skill_store: Dictionary) -> Array[Dictionary]:
 
 static func _finalize_class_combat(class_store: Dictionary) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
-	for class_id: Variant in class_store.keys():
-		var rec: Dictionary = (class_store[class_id] as Dictionary).duplicate(true)
+	for class_key: Variant in class_store.keys():
+		var rec: Dictionary = (class_store[class_key] as Dictionary).duplicate(true)
 		var ut: int = int(rec.get("unit_turns", 1))
 		rec["damage_dealt_per_turn"] = float(rec.get("damage_dealt", 0)) / float(maxi(ut, 1))
 		rec["damage_taken_per_turn"] = float(rec.get("damage_taken", 0)) / float(maxi(ut, 1))
@@ -520,6 +544,60 @@ static func _finalize_class_combat(class_store: Dictionary) -> Array[Dictionary]
 		return float(a.get("damage_dealt_per_turn", 0)) > float(b.get("damage_dealt_per_turn", 0))
 	)
 	return rows
+
+
+static func _merge_passive_meta(passive_store: Dictionary, row: Dictionary, player_won: bool) -> void:
+	for entry: Variant in row.get("roster_meta", []):
+		if not entry is Dictionary:
+			continue
+		var ed: Dictionary = entry as Dictionary
+		if int(ed.get("team", -1)) != GameEnums.Team.PLAYER:
+			continue
+		var class_id: String = String(ed.get("class_id", ""))
+		for pid: Variant in ed.get("passive_ids", []):
+			var passive_id: String = str(pid)
+			if passive_id.is_empty():
+				continue
+			if not passive_store.has(passive_id):
+				passive_store[passive_id] = {
+					"passive_id": passive_id,
+					"unit_appearances": 0,
+					"player_wins": 0,
+					"classes": {},
+				}
+			var pr: Dictionary = passive_store[passive_id] as Dictionary
+			pr["unit_appearances"] = int(pr.get("unit_appearances", 0)) + 1
+			if player_won:
+				pr["player_wins"] = int(pr.get("player_wins", 0)) + 1
+			var classes: Dictionary = pr.get("classes", {}) as Dictionary
+			classes[class_id] = int(classes.get(class_id, 0)) + 1
+			pr["classes"] = classes
+
+
+static func _finalize_passive_meta(passive_store: Dictionary) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for pid: Variant in passive_store.keys():
+		var rec: Dictionary = (passive_store[pid] as Dictionary).duplicate(true)
+		var apps: int = int(rec.get("unit_appearances", 0))
+		rec["player_win_pct"] = float(rec.get("player_wins", 0)) / float(maxi(apps, 1)) * 100.0
+		rows.append(rec)
+	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a.get("unit_appearances", 0)) > int(b.get("unit_appearances", 0))
+	)
+	return rows
+
+
+static func _finalize_economy_per_turn(report: RefCounted) -> Dictionary:
+	var turns: int = maxi(int(report.total_sim_turns), 1)
+	var battles: int = maxi(int(report.total_battles), 1)
+	return {
+		"assisted_damage_per_turn": float(report.total_assisted_damage) / float(turns),
+		"assisted_shields_per_turn": float(report.total_assisted_shields) / float(turns),
+		"overkill_per_turn": float(report.total_overkill) / float(turns),
+		"floated_ap_per_turn": float(report.total_floated_ap) / float(turns),
+		"whiff_battle_pct": float(report.battles_with_whiffs) / float(battles) * 100.0,
+		"total_sim_turns": turns,
+	}
 
 
 static func _finalize_ai_commander(ai_store: Dictionary, total_sim_turns: int) -> Dictionary:

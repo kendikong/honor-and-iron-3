@@ -43,6 +43,11 @@ var rules_epoch_id: String = ""
 var rules_fingerprint: String = ""
 var skirmish_player_count: int = 4
 var skirmish_enemy_count: int = 6
+var skirmish_player_level: int = 99
+var skirmish_enemy_level: int = 1
+var skirmish_player_passive_count: int = 2
+
+var roster_meta: Array = []
 
 var combat_meta: Dictionary = {}
 
@@ -79,6 +84,10 @@ func to_dict() -> Dictionary:
 		"rules_fingerprint": rules_fingerprint,
 		"skirmish_player_count": skirmish_player_count,
 		"skirmish_enemy_count": skirmish_enemy_count,
+		"skirmish_player_level": skirmish_player_level,
+		"skirmish_enemy_level": skirmish_enemy_level,
+		"skirmish_player_passive_count": skirmish_player_passive_count,
+		"roster_meta": roster_meta,
 		"combat_meta": combat_meta,
 	}
 
@@ -115,5 +124,9 @@ static func from_dict(data: Dictionary) -> SimulationTelemetry:
 	t.rules_fingerprint = String(data.get("rules_fingerprint", ""))
 	t.skirmish_player_count = int(data.get("skirmish_player_count", 4))
 	t.skirmish_enemy_count = int(data.get("skirmish_enemy_count", 6))
+	t.skirmish_player_level = int(data.get("skirmish_player_level", 99))
+	t.skirmish_enemy_level = int(data.get("skirmish_enemy_level", 1))
+	t.skirmish_player_passive_count = int(data.get("skirmish_player_passive_count", 2))
+	t.roster_meta = data.get("roster_meta", [])
 	t.combat_meta = data.get("combat_meta", {})
 	return t

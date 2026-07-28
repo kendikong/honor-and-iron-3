@@ -59,6 +59,8 @@ var skill_meta_rows: Array[Dictionary] = []
 var class_combat_rows: Array[Dictionary] = []
 var ai_commander_meta: Dictionary = {}
 var total_sim_turns: int = 0
+var passive_meta_rows: Array[Dictionary] = []
+var economy_per_turn: Dictionary = {}
 
 var previous_player_win_pct: float = -1.0
 var previous_avg_turns: float = -1.0
