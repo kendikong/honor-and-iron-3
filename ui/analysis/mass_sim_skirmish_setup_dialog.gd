@@ -9,10 +9,10 @@ var _epoch_note: Label
 
 func _init() -> void:
 	title = "Skirmish Setup"
-	unresizable = true
+	unresizable = false
 	transient = true
 	exclusive = true
-	min_size = Vector2i(520, 440)
+	min_size = Vector2i(520, 520)
 	close_requested.connect(func() -> void: hide())
 	var panel := PanelContainer.new()
 	MassSimTheme.apply_panel(panel)
@@ -26,18 +26,28 @@ func _init() -> void:
 	margin.add_theme_constant_override("margin_bottom", 12)
 	panel.add_child(margin)
 	var root := VBoxContainer.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_theme_constant_override("separation", 10)
 	margin.add_child(root)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	root.add_child(scroll)
+	var scroll_body := VBoxContainer.new()
+	scroll_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_body.add_theme_constant_override("separation", 10)
+	scroll.add_child(scroll_body)
 	var intro := Label.new()
 	intro.text = "Configure roster size, levels, and player loadout. Saved to workspace; New Epoch locks these rules."
 	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	root.add_child(intro)
+	scroll_body.add_child(intro)
 	_epoch_note = Label.new()
 	_epoch_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	MassSimTheme.style_muted(_epoch_note)
-	root.add_child(_epoch_note)
+	scroll_body.add_child(_epoch_note)
 	_fields = SkirmishSetupFields.new()
-	root.add_child(_fields)
+	scroll_body.add_child(_fields)
 	var btn_row := HBoxContainer.new()
 	btn_row.add_theme_constant_override("separation", 8)
 	btn_row.alignment = BoxContainer.ALIGNMENT_END
@@ -62,7 +72,7 @@ func open_with(setup: MassSimSkirmishSetup, epoch_locked: MassSimSkirmishSetup =
 		_epoch_note.text = "Active epoch locked: %s — change setup then click New Epoch." % epoch_locked.summary_label()
 	else:
 		_epoch_note.text = "Edits apply to the next batch. Click New Epoch to start a comparable log."
-	popup_centered(Vector2i(520, 440))
+	popup_centered(Vector2i(520, 520))
 
 
 func _on_apply() -> void:
