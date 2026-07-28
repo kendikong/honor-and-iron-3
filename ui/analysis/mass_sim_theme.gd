@@ -50,6 +50,33 @@ static func make_kpi_card(title: String, body: String, accent: Color) -> PanelCo
 	return panel
 
 
+static func make_kpi_card_rich(title: String, body_bbcode: String) -> PanelContainer:
+	var panel := PanelContainer.new()
+	apply_panel(panel)
+	panel.custom_minimum_size = Vector2(160, 90)
+	var vbox := VBoxContainer.new()
+	panel.add_child(vbox)
+	var title_lbl := Label.new()
+	title_lbl.text = title
+	style_muted(title_lbl)
+	vbox.add_child(title_lbl)
+	var body_lbl := RichTextLabel.new()
+	body_lbl.bbcode_enabled = true
+	body_lbl.fit_content = true
+	body_lbl.scroll_active = false
+	body_lbl.text = body_bbcode
+	vbox.add_child(body_lbl)
+	return panel
+
+
+static func color_hex(color: Color) -> String:
+	return color.to_html(false)
+
+
+static func dev_color_vs_average(value: float, average: float, tolerance: float) -> Color:
+	return dev_color(value, average, tolerance)
+
+
 static func dev_color(current: float, target: float, tolerance: float) -> Color:
 	var dev: float = absf(current - target)
 	if dev <= tolerance:

@@ -60,4 +60,4 @@ func _build_heatmap_ascii(report: MassSimBatchReport) -> String:
 		var hits: int = int(report.collision_heatmap[key])
 		var bars: int = clampi(int(float(hits) / float(max_hits) * 14.0), 1, 14)
 		lines.append("%s | %s (%d)" % [str(key), "█".repeat(bars), hits])
-	return "[font=monospace]%s[/font]" % "\n".join(lines)
+	return "\n".join(lines)

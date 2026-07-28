@@ -218,10 +218,14 @@ static func active_epoch(workspace: MassSimWorkspace) -> Dictionary:
 
 
 static func active_skirmish_setup(workspace: MassSimWorkspace) -> MassSimSkirmishSetup:
+	return MassSimSkirmishSetup.from_dict(workspace.skirmish_setup)
+
+
+static func locked_skirmish_setup(workspace: MassSimWorkspace) -> MassSimSkirmishSetup:
 	var ep: Dictionary = active_epoch(workspace)
 	if not ep.is_empty() and ep.has("skirmish_setup"):
 		return MassSimSkirmishSetup.from_dict(ep.get("skirmish_setup", {}))
-	return MassSimSkirmishSetup.from_dict(workspace.skirmish_setup)
+	return active_skirmish_setup(workspace)
 
 
 static func row_epoch_id(row: Dictionary) -> String:

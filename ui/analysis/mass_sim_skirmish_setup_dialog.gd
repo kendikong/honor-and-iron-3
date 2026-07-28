@@ -11,7 +11,7 @@ func _init() -> void:
 	title = "Skirmish Setup"
 	unresizable = false
 	transient = true
-	exclusive = true
+	exclusive = false
 	min_size = Vector2i(520, 520)
 	close_requested.connect(func() -> void: hide())
 	var panel := PanelContainer.new()

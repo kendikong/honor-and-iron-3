@@ -153,7 +153,11 @@ func _add_team_block(
 func _add_skill_row(report: MassSimBatchReport, parent: TreeItem, row: Dictionary, team: int) -> void:
 	var item := _tree.create_item(parent)
 	var name: String = String(row.get("display_name", row.get("ability_id", "?")))
+	var ability_id: String = String(row.get("ability_id", ""))
 	item.set_text(0, name)
+	var ability_tip: String = MassSimAbilityText.tooltip_for_ability_id(ability_id)
+	if not ability_tip.is_empty():
+		item.set_tooltip_text(0, ability_tip)
 	item.set_text(1, "%.3f" % float(row.get("uses_per_turn", 0.0)))
 	item.set_tooltip_text(1, _TIP_USES)
 	var pick: float = float(row.get("pick_rate_when_legal_pct", -1.0))
@@ -190,6 +194,9 @@ func _add_passive_section(report: MassSimBatchReport) -> void:
 		var item := _tree.create_item(hdr)
 		var pid: String = String(row.get("passive_id", ""))
 		item.set_text(0, _format_passive_name(pid))
+		var passive_tip: String = MassSimAbilityText.tooltip_for_passive_id(pid)
+		if not passive_tip.is_empty():
+			item.set_tooltip_text(0, passive_tip)
 		item.set_text(1, "%d units" % int(row.get("unit_appearances", 0)))
 		item.set_text(2, "%.1f%% WR" % float(row.get("player_win_pct", 0.0)))
 		item.set_tooltip_text(2, _TIP_PASSIVE_WR)

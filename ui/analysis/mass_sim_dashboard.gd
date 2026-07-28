@@ -18,7 +18,6 @@ var _epoch_banner: Label
 var _new_epoch_dialog: Window
 var _epoch_label_edit: LineEdit
 var _skirmish_setup_dialog: MassSimSkirmishSetupDialog
-var _skirmish_summary: Label
 
 var _report: MassSimBatchReport
 var _workspace: MassSimWorkspace
@@ -123,10 +122,6 @@ func _build_chrome() -> void:
 	_epoch_banner.autowrap_mode = TextServer.AUTOWRAP_WORD
 	MassSimTheme.style_muted(_epoch_banner)
 	left.add_child(_epoch_banner)
-	_skirmish_summary = Label.new()
-	_skirmish_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	MassSimTheme.style_muted(_skirmish_summary)
-	left.add_child(_skirmish_summary)
 	var queue_panel := PanelContainer.new()
 	MassSimTheme.apply_panel(queue_panel)
 	left.add_child(queue_panel)
@@ -163,7 +158,6 @@ func _build_chrome() -> void:
 	_skirmish_setup_dialog = MassSimSkirmishSetupDialog.new()
 	_skirmish_setup_dialog.setup_applied.connect(_on_skirmish_setup_applied)
 	add_child(_skirmish_setup_dialog)
-	_refresh_skirmish_summary()
 	if _job_queue.is_empty():
 		_enqueue_job("Baseline Batch", 100)
 
@@ -250,12 +244,7 @@ func _batch_epoch_id() -> String:
 
 
 func _batch_epoch_fingerprint() -> String:
-	if _batch_epoch_id().is_empty():
-		return ""
-	var ep: Dictionary = MassSimRulesEpoch.active_epoch(_workspace)
-	if ep.is_empty():
-		return MassSimRulesEpoch.fingerprint(_active_skirmish_setup())
-	return String(ep.get("fingerprint", MassSimRulesEpoch.fingerprint(_active_skirmish_setup())))
+	return MassSimRulesEpoch.fingerprint(_active_skirmish_setup())
 
 
 func _on_batch_progress(completed: int, total: int) -> void:
@@ -325,9 +314,6 @@ func _rebuild_epoch_filter() -> void:
 
 func _update_epoch_banner(mix: Dictionary, epoch_battle_count: int) -> void:
 	var ep: Dictionary = MassSimRulesEpoch.active_epoch(_workspace)
-	var fp: String = String(ep.get("fingerprint", ""))
-	if fp.is_empty() and _workspace.active_epoch_id != MassSimRulesEpoch.LEGACY_EPOCH_ID:
-		fp = MassSimRulesEpoch.fingerprint()
 	var lines: PackedStringArray = PackedStringArray()
 	if not ep.is_empty():
 		lines.append(
@@ -335,8 +321,23 @@ func _update_epoch_banner(mix: Dictionary, epoch_battle_count: int) -> void:
 		)
 	if _workspace.active_epoch_id == MassSimRulesEpoch.LEGACY_EPOCH_ID:
 		lines.append("Legacy epoch — old battles have no rules tag. Click New Epoch before your next balance change.")
-	elif not fp.is_empty():
-		lines.append("Active rules: %s" % MassSimRulesEpoch.detailed_rules_label(_active_skirmish_setup()))
+	else:
+		lines.append(
+			"Next batch: %s" % MassSimRulesEpoch.detailed_rules_label(_active_skirmish_setup()),
+		)
+		if not _report.is_empty() and not _report.skirmish_setup.is_empty():
+			lines.append(
+				"Loaded data: %s"
+				% MassSimSkirmishSetup.from_dict(_report.skirmish_setup).summary_label(),
+			)
+		var locked: MassSimSkirmishSetup = MassSimRulesEpoch.locked_skirmish_setup(_workspace)
+		if (
+			MassSimRulesEpoch.fingerprint(_active_skirmish_setup())
+			!= MassSimRulesEpoch.fingerprint(locked)
+		):
+			lines.append(
+				"Draft differs from locked epoch — click New Epoch before comparing logs.",
+			)
 	if bool(mix.get("is_mixed", false)):
 		lines.append("Warning: this log mixes multiple rule sets — stats are not apples-to-apples.")
 	if bool(mix.get("fingerprint_mismatch", false)):
@@ -344,14 +345,6 @@ func _update_epoch_banner(mix: Dictionary, epoch_battle_count: int) -> void:
 	if epoch_battle_count < MassSimConstants.MIN_SAMPLE_BASIC:
 		lines.append("Need %d+ battles in this epoch for basic stats (500 for full confidence)." % MassSimConstants.MIN_SAMPLE_BASIC)
 	_epoch_banner.text = "\n".join(lines)
-	_refresh_skirmish_summary()
-
-
-func _refresh_skirmish_summary() -> void:
-	if _skirmish_summary == null:
-		return
-	var setup: MassSimSkirmishSetup = _active_skirmish_setup()
-	_skirmish_summary.text = "Skirmish: %s" % setup.summary_label()
 
 
 func _on_epoch_filter_changed(index: int) -> void:
@@ -369,7 +362,7 @@ func _build_new_epoch_dialog() -> void:
 	_new_epoch_dialog.title = "New Balance Epoch"
 	_new_epoch_dialog.unresizable = true
 	_new_epoch_dialog.transient = true
-	_new_epoch_dialog.exclusive = true
+	_new_epoch_dialog.exclusive = false
 	_new_epoch_dialog.min_size = Vector2i(480, 300)
 	_new_epoch_dialog.close_requested.connect(func() -> void: _new_epoch_dialog.hide())
 	var panel := PanelContainer.new()
@@ -450,7 +443,7 @@ func _on_new_epoch_confirmed() -> void:
 		String(entry.get("label", "")),
 		_log_path,
 	]
-	_refresh_skirmish_summary()
+	_update_epoch_banner(MassSimRulesEpoch.analyze_mix(_all_rows), _report.total_battles)
 
 
 func _open_skirmish_setup() -> void:
@@ -468,7 +461,7 @@ func _on_skirmish_setup_applied(setup: MassSimSkirmishSetup) -> void:
 	_workspace.skirmish_setup = setup.to_dict()
 	MassSimSkirmishSetup.save_play(setup)
 	_save_workspace()
-	_refresh_skirmish_summary()
+	_update_epoch_banner(MassSimRulesEpoch.analyze_mix(_all_rows), _report.total_battles if _report != null else 0)
 	status_label.text = "Skirmish setup saved — %s (New Epoch to lock)" % setup.summary_label()
 
 
