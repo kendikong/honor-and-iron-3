@@ -38,6 +38,15 @@ Trampling-only (fast):
 & "<godot.exe>" --headless --path . --script res://tests/run_trampling_only.gd
 ```
 
+Mass Simulation Analytics UI capture (agent sees same screen as F5):
+
+```powershell
+.\scripts\capture_mass_sim_dashboard.ps1 `
+  -GodotPath "C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64.exe"
+```
+
+Writes `tests/captures/mass_sim_dashboard.png` and `mass_sim_snapshot.json`.
+
 The command prints the complete result and returns a nonzero exit code when any
 assertion fails. The raw report is saved outside the repository at
 `user://regression_test_result.txt`.

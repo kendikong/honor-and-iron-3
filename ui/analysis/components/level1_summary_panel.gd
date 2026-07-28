@@ -64,8 +64,7 @@ func bind_report(report: MassSimBatchReport, warnings: Array, workspace: MassSim
 
 	health_summary.text = "[b]Algorithmic Health Summary[/b]\n" + TriageEngine.generate_health_summary(report, warnings)
 	version_row.text = (
-		"[b]Version Comparison[/b]  |  Player WR: %s  |  Avg Turns: %s  |  Integrity: %s\n"
-		+ "%s"
+		"[b]Version Comparison[/b]  |  Player WR: %s  |  Avg Turns: %s  |  Integrity: %s\n%s"
 		% [
 			report.format_pct_delta(report.player_win_pct, report.previous_player_win_pct),
 			report.format_pct_delta(report.avg_turns, report.previous_avg_turns, ""),

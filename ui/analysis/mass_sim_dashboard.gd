@@ -386,3 +386,96 @@ func _flat_style(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color
 	return style
+
+
+## Agent/capture harness: same facts a human sees on open (status, tabs, report, triage).
+func export_visual_snapshot() -> Dictionary:
+	var warnings: Array = TriageEngine.evaluate_report(_report)
+	var queue_items: PackedStringArray = PackedStringArray()
+	for i: int in range(queue_list.item_count):
+		queue_items.append(queue_list.get_item_text(i))
+	var snap: Dictionary = {
+		"scene": "MassSimDashboard",
+		"captured_at_unix": Time.get_unix_time_from_system(),
+		"viewport_size": [size.x, size.y],
+		"status_text": status_label.text if status_label != null else "",
+		"current_tab_index": tab_container.current_tab if tab_container != null else 0,
+		"current_tab_title": tab_container.get_tab_title(tab_container.current_tab) if tab_container != null else "",
+		"tag_filter": _tag_filter.get_item_text(_tag_filter.selected) if _tag_filter != null else "",
+		"log_path": _log_path,
+		"rows_in_file": _all_rows.size(),
+		"queue_items": queue_items,
+		"jobs_running": _running_job,
+		"progress": {
+			"visible": progress_bar.visible if progress_bar != null else false,
+			"value": progress_bar.value if progress_bar != null else 0.0,
+			"max": progress_bar.max_value if progress_bar != null else 0.0,
+		},
+		"inspector_title": inspector.title_label.text if inspector != null else "",
+		"inspector_preview": _truncate(inspector.details_rich_text.text if inspector != null else "", 1200),
+		"triage_warning_titles": _warning_titles(warnings),
+		"report_empty": _report == null or _report.is_empty(),
+	}
+	if _report != null and not _report.is_empty():
+		snap["report"] = {
+			"total_battles": _report.total_battles,
+			"player_win_pct": _report.player_win_pct,
+			"enemy_win_pct": _report.enemy_win_pct,
+			"avg_turns": _report.avg_turns,
+			"integrity_score": _report.integrity_score,
+			"meta_diversity_pct": _report.meta_diversity_pct,
+			"unique_classes": _report.unique_classes_seen,
+			"tier_top": _report.tier_rows[0] if not _report.tier_rows.is_empty() else {},
+		}
+	snap["tab_labels"] = _tab_labels()
+	snap["visible_ui_text"] = _collect_visible_ui_text(self, 6000)
+	return snap
+
+
+func _warning_titles(warnings: Array) -> PackedStringArray:
+	var titles: PackedStringArray = PackedStringArray()
+	for w: Variant in warnings:
+		if w is Dictionary:
+			titles.append(String((w as Dictionary).get("title", "")))
+	return titles
+
+
+func _tab_labels() -> PackedStringArray:
+	var labels: PackedStringArray = PackedStringArray()
+	if tab_container == null:
+		return labels
+	for i: int in range(tab_container.get_tab_count()):
+		labels.append(tab_container.get_tab_title(i))
+	return labels
+
+
+func _truncate(text: String, max_len: int) -> String:
+	if text.length() <= max_len:
+		return text
+	return text.substr(0, max_len) + "…"
+
+
+func _collect_visible_ui_text(node: Node, budget: int) -> PackedStringArray:
+	var lines: PackedStringArray = PackedStringArray()
+	_collect_visible_ui_text_recursive(node, lines, {"remaining": budget})
+	return lines
+
+
+func _collect_visible_ui_text_recursive(node: Node, lines: PackedStringArray, state: Dictionary) -> void:
+	if int(state["remaining"]) <= 0:
+		return
+	if node is CanvasItem and not (node as CanvasItem).visible:
+		return
+	var line: String = ""
+	if node is Label:
+		line = (node as Label).text.strip_edges()
+	elif node is RichTextLabel:
+		line = (node as RichTextLabel).text.strip_edges()
+	elif node is Button:
+		line = (node as Button).text.strip_edges()
+	if not line.is_empty():
+		var entry: String = "%s: %s" % [str(node.get_path()).replace(str(get_path()), "."), line]
+		lines.append(entry)
+		state["remaining"] = int(state["remaining"]) - entry.length()
+	for child: Node in node.get_children():
+		_collect_visible_ui_text_recursive(child, lines, state)
