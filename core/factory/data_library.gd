@@ -54,6 +54,20 @@ static func get_player_class_ids() -> Array[StringName]:
 
 
 static func build_player_active_abilities(def: UnitData, level: int) -> Array[AbilityData]:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(str(def.id) if def != null else "")
+	if level >= 99:
+		return build_player_active_abilities_seeded(def, -1, rng)
+	if level == 1:
+		return build_player_active_abilities_seeded(def, 1, rng)
+	return build_player_active_abilities_seeded(def, -1, rng)
+
+
+static func build_player_active_abilities_seeded(
+	def: UnitData,
+	class_skill_count: int,
+	rng: RandomNumberGenerator,
+) -> Array[AbilityData]:
 	if def == null:
 		return []
 	if def.is_construct:
@@ -74,11 +88,17 @@ static func build_player_active_abilities(def: UnitData, level: int) -> Array[Ab
 	out.append(get_universal_run())
 	if movement_skill != null:
 		out.append(movement_skill)
-	if level == 1:
-		if not class_abilities.is_empty():
-			out.append(class_abilities[randi() % class_abilities.size()])
-	else:
+	var pick_count: int = class_skill_count
+	if pick_count < 0 or pick_count >= class_abilities.size():
 		out.append_array(class_abilities)
+	elif pick_count == 0:
+		pass
+	else:
+		var pool: Array[AbilityData] = class_abilities.duplicate()
+		for _i: int in range(mini(pick_count, pool.size())):
+			var idx: int = rng.randi() % pool.size()
+			out.append(pool[idx])
+			pool.remove_at(idx)
 	out.append(basic_attack)
 	return out
 

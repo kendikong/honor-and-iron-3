@@ -46,6 +46,9 @@ var skirmish_enemy_count: int = 6
 var skirmish_player_level: int = 99
 var skirmish_enemy_level: int = 1
 var skirmish_player_passive_count: int = 2
+var skirmish_player_class_skill_count: int = -1
+
+var skirmish_setup: Dictionary = {}
 
 var roster_meta: Array = []
 
@@ -87,6 +90,8 @@ func to_dict() -> Dictionary:
 		"skirmish_player_level": skirmish_player_level,
 		"skirmish_enemy_level": skirmish_enemy_level,
 		"skirmish_player_passive_count": skirmish_player_passive_count,
+		"skirmish_player_class_skill_count": skirmish_player_class_skill_count,
+		"skirmish_setup": skirmish_setup,
 		"roster_meta": roster_meta,
 		"combat_meta": combat_meta,
 	}
@@ -127,6 +132,8 @@ static func from_dict(data: Dictionary) -> SimulationTelemetry:
 	t.skirmish_player_level = int(data.get("skirmish_player_level", 99))
 	t.skirmish_enemy_level = int(data.get("skirmish_enemy_level", 1))
 	t.skirmish_player_passive_count = int(data.get("skirmish_player_passive_count", 2))
+	t.skirmish_player_class_skill_count = int(data.get("skirmish_player_class_skill_count", -1))
+	t.skirmish_setup = data.get("skirmish_setup", {})
 	t.roster_meta = data.get("roster_meta", [])
 	t.combat_meta = data.get("combat_meta", {})
 	return t

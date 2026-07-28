@@ -12,6 +12,16 @@ const INTERPRETATION_USER_PATH := "user://mass_sim_interpretation.json"
 
 const SKIRMISH_PLAYER_COUNT := 4
 const SKIRMISH_ENEMY_COUNT := 6
+const SKIRMISH_MIN_PLAYER_COUNT := 1
+const SKIRMISH_MAX_PLAYER_COUNT := 8
+const SKIRMISH_MIN_ENEMY_COUNT := 1
+const SKIRMISH_MAX_ENEMY_COUNT := 12
+const SKIRMISH_MIN_LEVEL := 1
+const SKIRMISH_MAX_LEVEL := 99
+const SKIRMISH_MAX_PASSIVE_COUNT := 6
+## UI value 99 means "all class skills"; stored as -1 in MassSimSkirmishSetup.
+const SKIRMISH_MAX_CLASS_SKILL_COUNT := 99
+const SKIRMISH_ALL_CLASS_SKILLS_UI := 99
 ## Player units spawn with full promotion kit for balance meta (all class skills).
 const SKIRMISH_PLAYER_LEVEL := 99
 const SKIRMISH_ENEMY_LEVEL := 1

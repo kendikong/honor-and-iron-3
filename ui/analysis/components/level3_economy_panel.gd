@@ -60,7 +60,9 @@ func bind_report(report: MassSimBatchReport) -> void:
 	if report == null or report.is_empty():
 		_rules_label.text = "Run a batch (New Epoch recommended) to populate skill meta."
 		return
-	_rules_label.text = MassSimRulesEpoch.detailed_rules_label()
+	_rules_label.text = MassSimRulesEpoch.detailed_rules_label(
+		MassSimSkirmishSetup.from_dict(report.skirmish_setup),
+	)
 	_add_commander_section(report)
 	_add_skill_sections(report)
 	_add_passive_section(report)

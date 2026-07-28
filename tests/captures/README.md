@@ -4,20 +4,14 @@ You are **not** expected to read JSON or code. Use the dashboard + one sentence 
 
 ## The 3-step loop (balance changes)
 
-1. **Before you change game rules** (knight buff, enemy count, AI tweak)  
-   Open **Main Menu → Mass Simulation Analytics** → click **New Epoch**.  
-   Type what changed (e.g. `Knight damage +2`).  
-   Old battles are **archived**; the dashboard starts a **clean log** for the new rules.
+1. **Configure skirmish** — click **Skirmish Setup** (player/enemy count, levels, passives, class skills).
+2. **Before you change game rules** — click **New Epoch** (locks setup + archives old log).
+3. **Run battles** — **+500** → **Run Queue**.
+4. **Get interpretation** — tell the agent: **"interpret my mass sim"**
 
-2. **Run battles**  
-   Click **+500** (or **+100** for a quick check) → **Run Queue**.  
-   Wait until the status bar says the batch is done.
+**Skirmish Setup limits:** 1–8 players · 1–12 enemies · levels 1–99 · up to 6 passives · class skills 0–98 or **99 = full kit**.
 
-3. **Get interpretation**  
-   Tell the agent: **"interpret my mass sim"**  
-   It reads `tests/captures/mass_sim_interpretation.json` (full stats, skill meta, AI holds).
-
-**Rule of thumb:** Only compare stats **inside one epoch**. Do not mix old 700-battle files with a new knight buff — use **New Epoch** first.
+**Rule of thumb:** Only compare stats **inside one epoch**. Changing setup without **New Epoch** mixes incomparable data.
 
 ---
 

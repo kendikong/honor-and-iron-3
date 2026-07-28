@@ -284,7 +284,10 @@ static func _l3_economy(report: MassSimBatchReport) -> Dictionary:
 	return {
 		"per_turn": eco,
 		"passive_meta_rows": report.passive_meta_rows,
-		"rules_label": MassSimRulesEpoch.detailed_rules_label(),
+		"skirmish_setup": report.skirmish_setup,
+		"rules_label": MassSimRulesEpoch.detailed_rules_label(
+			MassSimSkirmishSetup.from_dict(report.skirmish_setup),
+		),
 	}
 
 

@@ -7,32 +7,43 @@ const LEGACY_EPOCH_ID := "legacy"
 const ARCHIVE_DIR := "user://mass_sim_epochs/"
 
 
-## Skirmish fingerprint — bump RULES_REVISION when you change stats/skills (not just roster size).
-static func fingerprint() -> String:
-	return "p%d_e%d_rev%s" % [
-		_C.SKIRMISH_PLAYER_COUNT,
-		_C.SKIRMISH_ENEMY_COUNT,
+static func fingerprint(setup: MassSimSkirmishSetup = null) -> String:
+	var s: MassSimSkirmishSetup = setup if setup != null else MassSimSkirmishSetup.defaults()
+	var skill_token: String = "all" if s.player_class_skill_count < 0 else str(s.player_class_skill_count)
+	return "p%d_e%d_pl%d_el%d_pp%d_ps%s_rev%s" % [
+		s.player_count,
+		s.enemy_count,
+		s.player_level,
+		s.enemy_level,
+		s.player_passive_count,
+		skill_token,
 		_C.RULES_REVISION,
 	]
 
 
-static func fingerprint_label() -> String:
-	return detailed_rules_label()
+static func fingerprint_label(setup: MassSimSkirmishSetup = null) -> String:
+	return detailed_rules_label(setup)
 
 
-static func detailed_rules_label() -> String:
-	return (
-		"%d players vs %d enemies · player L%d (%d random passives, full skill kit)"
-		+ " · enemy L%d · rules rev %s"
-		% [
-			_C.SKIRMISH_PLAYER_COUNT,
-			_C.SKIRMISH_ENEMY_COUNT,
-			_C.SKIRMISH_PLAYER_LEVEL,
-			_C.SKIRMISH_PLAYER_PASSIVE_COUNT,
-			_C.SKIRMISH_ENEMY_LEVEL,
-			_C.RULES_REVISION,
-		]
-	)
+static func detailed_rules_label(setup: MassSimSkirmishSetup = null) -> String:
+	var s: MassSimSkirmishSetup = setup if setup != null else MassSimSkirmishSetup.defaults()
+	return "%s · rules rev %s" % [s.summary_label(), _C.RULES_REVISION]
+
+
+static func setup_from_epoch(ep: Dictionary) -> MassSimSkirmishSetup:
+	if ep.is_empty():
+		return MassSimSkirmishSetup.defaults()
+	if ep.has("skirmish_setup"):
+		return MassSimSkirmishSetup.from_dict(ep.get("skirmish_setup", {}))
+	return _legacy_setup_from_row_fields(ep)
+
+
+static func _legacy_setup_from_row_fields(ep: Dictionary) -> MassSimSkirmishSetup:
+	var s := MassSimSkirmishSetup.defaults()
+	var note: String = String(ep.get("note", ""))
+	if note.is_empty():
+		return s
+	return s
 
 
 static func slugify(label: String) -> String:
@@ -101,8 +112,10 @@ static func start_new_epoch(workspace: MassSimWorkspace, change_label: String) -
 	var label: String = change_label.strip_edges()
 	if label.is_empty():
 		label = "Balance change"
+	var setup: MassSimSkirmishSetup = MassSimSkirmishSetup.from_dict(workspace.skirmish_setup)
+	setup.clamp()
 	var epoch_id: String = make_epoch_id(label)
-	var fp: String = fingerprint()
+	var fp: String = fingerprint(setup)
 	var archived_path: String = ""
 	if FileAccess.file_exists(workspace.log_path):
 		archived_path = archive_log(workspace.log_path, label)
@@ -121,10 +134,11 @@ static func start_new_epoch(workspace: MassSimWorkspace, change_label: String) -
 		"label": label,
 		"log_path": new_log,
 		"fingerprint": fp,
+		"skirmish_setup": setup.to_dict(),
 		"created_at": Time.get_unix_time_from_system(),
 		"archived": false,
 		"archived_from": archived_path,
-		"note": fingerprint_label(),
+		"note": detailed_rules_label(setup),
 	}
 	for i: int in range(workspace.epochs.size()):
 		var old: Dictionary = workspace.epochs[i] as Dictionary
@@ -142,6 +156,13 @@ static func active_epoch(workspace: MassSimWorkspace) -> Dictionary:
 		if ep is Dictionary and String((ep as Dictionary).get("id", "")) == workspace.active_epoch_id:
 			return ep as Dictionary
 	return {}
+
+
+static func active_skirmish_setup(workspace: MassSimWorkspace) -> MassSimSkirmishSetup:
+	var ep: Dictionary = active_epoch(workspace)
+	if not ep.is_empty() and ep.has("skirmish_setup"):
+		return MassSimSkirmishSetup.from_dict(ep.get("skirmish_setup", {}))
+	return MassSimSkirmishSetup.from_dict(workspace.skirmish_setup)
 
 
 static func row_epoch_id(row: Dictionary) -> String:

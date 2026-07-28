@@ -11,6 +11,7 @@ var _job_label: String = "Baseline"
 var _run_id_offset: int = 0
 var _rules_epoch_id: String = ""
 var _rules_fingerprint: String = ""
+var _skirmish_setup: Dictionary = MassSimSkirmishSetup.defaults().to_dict()
 
 var _telemetry_results: Array[Dictionary] = []
 var _group_task_id: int = -1
@@ -28,6 +29,7 @@ func start_batch(
 	append: bool = true,
 	rules_epoch_id: String = "",
 	rules_fingerprint: String = "",
+	skirmish_setup: MassSimSkirmishSetup = null,
 ) -> void:
 	_battles_to_run = num_battles
 	_battles_completed = 0
@@ -35,6 +37,7 @@ func start_batch(
 	_job_label = job_label
 	_rules_epoch_id = rules_epoch_id
 	_rules_fingerprint = rules_fingerprint
+	_skirmish_setup = (skirmish_setup if skirmish_setup != null else MassSimSkirmishSetup.defaults()).to_dict()
 	_run_id_offset = _next_run_id_offset() if append else 0
 	_telemetry_results.clear()
 	_telemetry_results.resize(num_battles)
@@ -66,22 +69,23 @@ func _process(_delta: float) -> void:
 
 
 func _run_single_battle_thread(index: int) -> void:
+	var setup: MassSimSkirmishSetup = MassSimSkirmishSetup.from_dict(_skirmish_setup)
 	var map_seed: int = hash(Time.get_ticks_usec() + (index + _run_id_offset) * 31)
 	var skirmish: Dictionary = MassSimBoardBuilder.build_skirmish(map_seed)
 	var board: BoardState = skirmish["board"] as BoardState
 	var grid_size: Vector2i = board.grid_size
-	var player_roster: Array[UnitData] = SpawnPlacer._pick_random_player_roster(MassSimConstants.SKIRMISH_PLAYER_COUNT, map_seed)
+	var player_roster: Array[UnitData] = SpawnPlacer._pick_random_player_roster(setup.player_count, map_seed)
 	var player_spawn: Vector2i = skirmish["player_spawn"] as Vector2i
 	for i: int in range(player_roster.size()):
-		var cfg: Dictionary = MassSimUnitConfig.build(player_roster[i], GameEnums.Team.PLAYER, map_seed, i)
+		var cfg: Dictionary = MassSimUnitConfig.build(player_roster[i], GameEnums.Team.PLAYER, map_seed, i, setup)
 		BoardFactory.place_configured_unit(
 			board, 10 + i, player_roster[i], GameEnums.Team.PLAYER,
 			Vector2i(player_spawn.x + i * 2, player_spawn.y), cfg,
 		)
-	var enemy_roster: Array[UnitData] = SpawnPlacer._pick_enemy_roster(MassSimConstants.SKIRMISH_ENEMY_COUNT, map_seed)
+	var enemy_roster: Array[UnitData] = SpawnPlacer._pick_enemy_roster(setup.enemy_count, map_seed)
 	var enemy_spawn: Vector2i = skirmish["enemy_spawn"] as Vector2i
 	for i: int in range(enemy_roster.size()):
-		var ecfg: Dictionary = MassSimUnitConfig.build(enemy_roster[i], GameEnums.Team.ENEMY, map_seed, i)
+		var ecfg: Dictionary = MassSimUnitConfig.build(enemy_roster[i], GameEnums.Team.ENEMY, map_seed, i, setup)
 		BoardFactory.place_configured_unit(
 			board, 20 + i, enemy_roster[i], GameEnums.Team.ENEMY,
 			Vector2i(grid_size.x - 3 - i * 2, enemy_spawn.y), ecfg,
@@ -96,11 +100,13 @@ func _run_single_battle_thread(index: int) -> void:
 	telemetry.job_label = _job_label
 	telemetry.rules_epoch_id = _rules_epoch_id
 	telemetry.rules_fingerprint = _rules_fingerprint
-	telemetry.skirmish_player_count = MassSimConstants.SKIRMISH_PLAYER_COUNT
-	telemetry.skirmish_enemy_count = MassSimConstants.SKIRMISH_ENEMY_COUNT
-	telemetry.skirmish_player_level = MassSimConstants.SKIRMISH_PLAYER_LEVEL
-	telemetry.skirmish_enemy_level = MassSimConstants.SKIRMISH_ENEMY_LEVEL
-	telemetry.skirmish_player_passive_count = MassSimConstants.SKIRMISH_PLAYER_PASSIVE_COUNT
+	telemetry.skirmish_setup = setup.to_dict()
+	telemetry.skirmish_player_count = setup.player_count
+	telemetry.skirmish_enemy_count = setup.enemy_count
+	telemetry.skirmish_player_level = setup.player_level
+	telemetry.skirmish_enemy_level = setup.enemy_level
+	telemetry.skirmish_player_passive_count = setup.player_passive_count
+	telemetry.skirmish_player_class_skill_count = setup.player_class_skill_count
 	for unit: UnitData in player_roster:
 		telemetry.player_classes.append(unit.id)
 	for unit: UnitData in enemy_roster:

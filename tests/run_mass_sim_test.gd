@@ -52,6 +52,21 @@ func _test_triage(triage, agg, failures: Array[String]) -> void:
 	_test_wilson(load("res://core/batch/mass_sim_batch_report.gd"), failures)
 	_test_interpretation_export(agg, triage, failures)
 	_test_epoch_filter(failures)
+	_test_skirmish_setup(failures)
+
+
+func _test_skirmish_setup(failures: Array[String]) -> void:
+	var setup_script = load("res://core/batch/mass_sim_skirmish_setup.gd")
+	var epoch_script = load("res://core/batch/mass_sim_rules_epoch.gd")
+	var s = setup_script.defaults()
+	s.player_count = 99
+	s.clamp()
+	if s.player_count > 8:
+		failures.append("skirmish setup should clamp player count")
+	s.player_class_skill_count = -1
+	var fp: String = epoch_script.fingerprint(s)
+	if not fp.contains("p8"):
+		failures.append("fingerprint should encode player count")
 
 
 func _test_epoch_filter(failures: Array[String]) -> void:

@@ -12,6 +12,7 @@ var triage_notes: Dictionary = {}
 
 var active_epoch_id: String = ""
 var epochs: Array[Dictionary] = []
+var skirmish_setup: Dictionary = MassSimSkirmishSetup.defaults().to_dict()
 
 
 static func load() -> MassSimWorkspace:
@@ -34,6 +35,7 @@ static func load() -> MassSimWorkspace:
 	ws.triage_states = d.get("triage_states", {})
 	ws.triage_notes = d.get("triage_notes", {})
 	ws.active_epoch_id = String(d.get("active_epoch_id", ""))
+	ws.skirmish_setup = d.get("skirmish_setup", MassSimSkirmishSetup.defaults().to_dict())
 	var raw_epochs: Array = d.get("epochs", [])
 	ws.epochs.clear()
 	for ep: Variant in raw_epochs:
@@ -56,5 +58,6 @@ func save() -> void:
 		"triage_notes": triage_notes,
 		"active_epoch_id": active_epoch_id,
 		"epochs": epochs,
+		"skirmish_setup": skirmish_setup,
 	}))
 	file.close()

@@ -187,6 +187,7 @@ static func build_report(
 	report.class_combat_rows = _finalize_class_combat(class_store)
 	report.passive_meta_rows = _finalize_passive_meta(passive_store)
 	report.economy_per_turn = _finalize_economy_per_turn(report)
+	report.skirmish_setup = _derive_skirmish_setup(rows)
 	report.ai_commander_meta = _finalize_ai_commander(ai_store, report.total_sim_turns)
 	report.integrity_score = _compute_integrity(report, class_ids_seen, chaos_scores)
 	_load_previous_snapshot(report)
@@ -585,6 +586,27 @@ static func _finalize_passive_meta(passive_store: Dictionary) -> Array[Dictionar
 		return int(a.get("unit_appearances", 0)) > int(b.get("unit_appearances", 0))
 	)
 	return rows
+
+
+static func _derive_skirmish_setup(rows: Array) -> Dictionary:
+	for row: Variant in rows:
+		if not row is Dictionary:
+			continue
+		var rd: Dictionary = row as Dictionary
+		if rd.has("skirmish_setup") and rd.get("skirmish_setup") is Dictionary:
+			var sd: Dictionary = rd.get("skirmish_setup", {}) as Dictionary
+			if not sd.is_empty():
+				return sd
+		if rd.has("skirmish_player_count"):
+			return {
+				"player_count": int(rd.get("skirmish_player_count", 4)),
+				"enemy_count": int(rd.get("skirmish_enemy_count", 6)),
+				"player_level": int(rd.get("skirmish_player_level", 99)),
+				"enemy_level": int(rd.get("skirmish_enemy_level", 1)),
+				"player_passive_count": int(rd.get("skirmish_player_passive_count", 2)),
+				"player_class_skill_count": int(rd.get("skirmish_player_class_skill_count", -1)),
+			}
+	return MassSimSkirmishSetup.defaults().to_dict()
 
 
 static func _finalize_economy_per_turn(report: RefCounted) -> Dictionary:
