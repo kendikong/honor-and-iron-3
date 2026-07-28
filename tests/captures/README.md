@@ -6,7 +6,7 @@ Every time a batch finishes **or** you click **Reload**, the dashboard writes a 
 
 | File | Contents |
 |------|----------|
-| `mass_sim_interpretation.json` | **Every L1–L7 stat**, triage warnings, tier table, heatmap, spawn bias, Wilson CIs, curated replays |
+| `mass_sim_interpretation.json` | **All L1–L7 stats** + **skill meta** + **Commander AI holds/commits** + class combat per turn |
 | `mass_sim_interpretation.md` | Same data in readable markdown |
 
 Also copied to `user://mass_sim_interpretation.json` (Godot userdata).

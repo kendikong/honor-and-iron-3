@@ -76,7 +76,16 @@ func _test_interpretation_export(agg, triage, failures: Array[String]) -> void:
 
 func _test_filter_and_heatmap(agg, failures: Array[String]) -> void:
 	var rows: Array[Dictionary] = [
-		{"run_id": 0, "winner": GameEnums.Team.PLAYER, "turns_taken": 10, "map_tags": ["open"], "player_spawn_quadrant": "northwest", "collision_cells": ["5,5"]},
+		{
+			"run_id": 0, "winner": GameEnums.Team.PLAYER, "turns_taken": 10,
+			"map_tags": ["open"], "player_spawn_quadrant": "northwest", "collision_cells": ["5,5"],
+			"combat_meta": {
+				"total_turns": 10,
+				"skill_rows": [{"class_id": "knight", "ability_id": "knight_shield_bash", "display_name": "Shield Bash", "uses": 2, "turns_legal": 4, "class_unit_turns": 10, "damage_dealt": 5}],
+				"class_combat_rows": [{"class_id": "knight", "unit_turns": 10, "damage_dealt": 5, "ai_holds": 1, "ai_skill_opportunity_turns": 3}],
+				"ai_commander": {"avg_utility_per_turn": 3.0, "sample_turns": 10, "total_holds": 1, "total_skill_commits": 2},
+			},
+		},
 		{"run_id": 1, "winner": GameEnums.Team.ENEMY, "turns_taken": 12, "map_tags": ["narrow"], "player_spawn_quadrant": "southeast", "collision_cells": ["5,5", "6,6"]},
 	]
 	var filtered: Array = agg.filter_rows(rows, "open")
@@ -85,6 +94,8 @@ func _test_filter_and_heatmap(agg, failures: Array[String]) -> void:
 	var report = agg.build_report(rows)
 	if int(report.collision_heatmap.get("5,5", 0)) != 2:
 		failures.append("heatmap should aggregate collision cells")
+	if report.skill_meta_rows.is_empty():
+		failures.append("skill meta should aggregate from combat_meta")
 	if int(report.spawn_quadrant_records.get("northwest", {}).get("battles", 0)) != 1:
 		failures.append("spawn quadrant aggregation failed")
 

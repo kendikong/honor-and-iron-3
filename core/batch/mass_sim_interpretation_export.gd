@@ -64,6 +64,12 @@ static func build(
 	bundle["l1_executive"] = _l1_executive(report)
 	bundle["l2_balance"] = _l2_balance(report)
 	bundle["l3_economy"] = _l3_economy(report)
+	bundle["skill_meta"] = {
+		"ai_commander": report.ai_commander_meta,
+		"class_combat_rows": report.class_combat_rows,
+		"skill_rows": report.skill_meta_rows,
+		"total_sim_turns": report.total_sim_turns,
+	}
 	bundle["l4_physics"] = _l4_physics(report)
 	bundle["l5_ai"] = _l5_ai(report)
 	bundle["l6_environment"] = _l6_environment(report)
@@ -150,6 +156,38 @@ static func to_markdown(bundle: Dictionary) -> String:
 		int(econ.get("floated_ap", 0)),
 	])
 	lines.append("- Battles with whiffs: %.1f%%" % float(econ.get("whiff_battles_pct", 0)))
+
+	var skill: Dictionary = bundle.get("skill_meta", {}) as Dictionary
+	lines.append("")
+	lines.append("## Commander AI & Skill Meta (L3)")
+	var ai: Dictionary = skill.get("ai_commander", {}) as Dictionary
+	if ai.is_empty():
+		lines.append("_Run a new batch to populate Commander AI skill meta._")
+	else:
+		lines.append("- Avg utility/turn: %.2f · Holds/turn: %.2f · Skill commits/turn: %.2f" % [
+			float(ai.get("avg_utility_per_turn", 0)),
+			float(ai.get("holds_per_turn", 0)),
+			float(ai.get("skill_commits_per_turn", 0)),
+		])
+	for row: Variant in (skill.get("class_combat_rows", []) as Array).slice(0, 10):
+		if row is Dictionary:
+			var r: Dictionary = row as Dictionary
+			lines.append("- Class %s: dmg/turn %.2f · taken/turn %.2f · AI hold %.0f%%" % [
+				String(r.get("class_id", "?")),
+				float(r.get("damage_dealt_per_turn", 0)),
+				float(r.get("damage_taken_per_turn", 0)),
+				float(r.get("ai_hold_rate_pct", 0)),
+			])
+	for row: Variant in (skill.get("skill_rows", []) as Array).slice(0, 15):
+		if row is Dictionary:
+			var s: Dictionary = row as Dictionary
+			lines.append("- %s/%s: uses/turn %.3f · pick %.0f%% · dmg/turn %.2f" % [
+				String(s.get("class_id", "")),
+				String(s.get("display_name", s.get("ability_id", ""))),
+				float(s.get("uses_per_turn", 0)),
+				float(s.get("pick_rate_when_legal_pct", 0)),
+				float(s.get("damage_per_turn", 0)),
+			])
 
 	var phys: Dictionary = bundle.get("l4_physics", {}) as Dictionary
 	lines.append("")

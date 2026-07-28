@@ -57,6 +57,16 @@ static func build_report(
 	var turn_buf: Array[int] = []
 	var chaos_scores: Array[float] = []
 	var class_ids_seen: Dictionary = {}
+	var skill_store: Dictionary = {}
+	var class_store: Dictionary = {}
+	var ai_store: Dictionary = {
+		"utility_sum": 0.0,
+		"sample_turns": 0,
+		"total_holds": 0,
+		"total_skill_commits": 0,
+		"pruned_turns": 0,
+		"battles_with_meta": 0,
+	}
 
 	for row: Dictionary in rows:
 		var winner: int = int(row.get("winner", GameEnums.Team.NEUTRAL))
@@ -142,6 +152,8 @@ static func build_report(
 		var t_bucket: String = str(turns)
 		report.turn_histogram[t_bucket] = int(report.turn_histogram.get(t_bucket, 0)) + 1
 
+		_merge_combat_meta(skill_store, class_store, ai_store, report, row.get("combat_meta", {}) as Dictionary)
+
 	turn_buf.sort()
 	report.turn_values = turn_buf
 	report.avg_turns = _average_int(turn_buf)
@@ -169,6 +181,9 @@ static func build_report(
 	_finalize_class_rates(report)
 	report.tier_rows = _build_tier_rows(report)
 	report.matchup_snippets = _build_matchup_snippets(report)
+	report.skill_meta_rows = _finalize_skill_meta(skill_store)
+	report.class_combat_rows = _finalize_class_combat(class_store)
+	report.ai_commander_meta = _finalize_ai_commander(ai_store, report.total_sim_turns)
 	report.integrity_score = _compute_integrity(report, class_ids_seen, chaos_scores)
 	_load_previous_snapshot(report)
 	report.timeline_entries = load_timeline()
@@ -404,3 +419,120 @@ static func _average_float(values: Array[float]) -> float:
 	for v: float in values:
 		sum += v
 	return sum / float(values.size())
+
+
+static func _merge_combat_meta(
+	skill_store: Dictionary,
+	class_store: Dictionary,
+	ai_store: Dictionary,
+	report: RefCounted,
+	combat_meta: Dictionary,
+) -> void:
+	if combat_meta.is_empty():
+		return
+	ai_store["battles_with_meta"] = int(ai_store.get("battles_with_meta", 0)) + 1
+	report.total_sim_turns += int(combat_meta.get("total_turns", 0))
+	for sk: Variant in combat_meta.get("skill_rows", []):
+		if not sk is Dictionary:
+			continue
+		var sd: Dictionary = sk as Dictionary
+		var key: String = "%s/%s" % [str(sd.get("class_id", "")), str(sd.get("ability_id", ""))]
+		if not skill_store.has(key):
+			skill_store[key] = {
+				"class_id": sd.get("class_id", ""),
+				"ability_id": sd.get("ability_id", ""),
+				"display_name": sd.get("display_name", key),
+				"uses": 0,
+				"turns_legal": 0,
+				"damage_dealt": 0,
+				"healing_done": 0,
+				"armor_given": 0,
+				"kills": 0,
+				"action_failed": 0,
+				"class_unit_turns": 0,
+			}
+		var rec: Dictionary = skill_store[key] as Dictionary
+		for field: String in ["uses", "turns_legal", "damage_dealt", "healing_done", "armor_given", "kills", "action_failed", "class_unit_turns"]:
+			rec[field] = int(rec.get(field, 0)) + int(sd.get(field, 0))
+	for cr: Variant in combat_meta.get("class_combat_rows", []):
+		if not cr is Dictionary:
+			continue
+		var cd: Dictionary = cr as Dictionary
+		var class_id: String = str(cd.get("class_id", ""))
+		if class_id.is_empty():
+			continue
+		if not class_store.has(class_id):
+			class_store[class_id] = {
+				"class_id": class_id,
+				"unit_turns": 0,
+				"damage_dealt": 0,
+				"damage_taken": 0,
+				"healing_done": 0,
+				"kills": 0,
+				"deaths": 0,
+				"ai_holds": 0,
+				"ai_skill_opportunity_turns": 0,
+				"movement_only_turns": 0,
+				"floated_ap_turns": 0,
+			}
+		var crec: Dictionary = class_store[class_id] as Dictionary
+		for field: String in ["unit_turns", "damage_dealt", "damage_taken", "healing_done", "kills", "deaths", "ai_holds", "ai_skill_opportunity_turns", "movement_only_turns", "floated_ap_turns"]:
+			crec[field] = int(crec.get(field, 0)) + int(cd.get(field, 0))
+	var ai: Dictionary = combat_meta.get("ai_commander", {}) as Dictionary
+	if not ai.is_empty():
+		ai_store["utility_sum"] = float(ai_store.get("utility_sum", 0.0)) + float(ai.get("avg_utility_per_turn", 0.0)) * float(ai.get("sample_turns", 0))
+		ai_store["sample_turns"] = int(ai_store.get("sample_turns", 0)) + int(ai.get("sample_turns", 0))
+		ai_store["total_holds"] = int(ai_store.get("total_holds", 0)) + int(ai.get("total_holds", 0))
+		ai_store["total_skill_commits"] = int(ai_store.get("total_skill_commits", 0)) + int(ai.get("total_skill_commits", 0))
+		ai_store["pruned_turns"] = int(ai_store.get("pruned_turns", 0)) + int(ai.get("pruned_turns", 0))
+
+
+static func _finalize_skill_meta(skill_store: Dictionary) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for key: Variant in skill_store.keys():
+		var rec: Dictionary = (skill_store[key] as Dictionary).duplicate(true)
+		var unit_turns: int = int(rec.get("class_unit_turns", 0))
+		rec["uses_per_turn"] = float(rec.get("uses", 0)) / float(maxi(unit_turns, 1))
+		rec["damage_per_turn"] = float(rec.get("damage_dealt", 0)) / float(maxi(unit_turns, 1))
+		rec["heal_per_turn"] = float(rec.get("healing_done", 0)) / float(maxi(unit_turns, 1))
+		rec["pick_rate_when_legal_pct"] = float(rec.get("uses", 0)) / float(maxi(int(rec.get("turns_legal", 0)), 1)) * 100.0
+		rows.append(rec)
+	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("uses_per_turn", 0)) > float(b.get("uses_per_turn", 0))
+	)
+	return rows
+
+
+static func _finalize_class_combat(class_store: Dictionary) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	for class_id: Variant in class_store.keys():
+		var rec: Dictionary = (class_store[class_id] as Dictionary).duplicate(true)
+		var ut: int = int(rec.get("unit_turns", 1))
+		rec["damage_dealt_per_turn"] = float(rec.get("damage_dealt", 0)) / float(maxi(ut, 1))
+		rec["damage_taken_per_turn"] = float(rec.get("damage_taken", 0)) / float(maxi(ut, 1))
+		rec["healing_per_turn"] = float(rec.get("healing_done", 0)) / float(maxi(ut, 1))
+		rec["kills_per_turn"] = float(rec.get("kills", 0)) / float(maxi(ut, 1))
+		rec["deaths_per_turn"] = float(rec.get("deaths", 0)) / float(maxi(ut, 1))
+		var opp: int = int(rec.get("ai_skill_opportunity_turns", 0))
+		rec["ai_hold_rate_pct"] = float(rec.get("ai_holds", 0)) / float(maxi(opp, 1)) * 100.0
+		rows.append(rec)
+	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return float(a.get("damage_dealt_per_turn", 0)) > float(b.get("damage_dealt_per_turn", 0))
+	)
+	return rows
+
+
+static func _finalize_ai_commander(ai_store: Dictionary, total_sim_turns: int) -> Dictionary:
+	var sample_turns: int = int(ai_store.get("sample_turns", 0))
+	if sample_turns <= 0:
+		return {}
+	return {
+		"avg_utility_per_turn": float(ai_store.get("utility_sum", 0.0)) / float(sample_turns),
+		"holds_per_turn": float(ai_store.get("total_holds", 0)) / float(maxi(total_sim_turns, 1)),
+		"skill_commits_per_turn": float(ai_store.get("total_skill_commits", 0)) / float(maxi(total_sim_turns, 1)),
+		"total_holds": int(ai_store.get("total_holds", 0)),
+		"total_skill_commits": int(ai_store.get("total_skill_commits", 0)),
+		"pruned_turns": int(ai_store.get("pruned_turns", 0)),
+		"battles_with_meta": int(ai_store.get("battles_with_meta", 0)),
+		"sample_turns": sample_turns,
+	}

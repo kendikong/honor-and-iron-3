@@ -177,6 +177,18 @@ func _build_vectors(board: BoardState, units: Array[UnitState], unit_candidates:
 		res.append_array(_build_vectors(board, units, unit_candidates, index + 1, n_actions, current_fast_score + c.score, next_hp))
 	return res
 
+func get_legal_actions(board: BoardState, unit: UnitState) -> Array:
+	return _generate_legal_actions(board, unit)
+
+
+func count_legal_skill_options(board: BoardState, unit: UnitState) -> int:
+	var count: int = 0
+	for action: Variant in get_legal_actions(board, unit):
+		if action is Dictionary and action.get("ability_index") != null:
+			count += 1
+	return count
+
+
 func _hash_action(action: Dictionary) -> String:
 	return "%s_%s_%s" % [action.dest, action.ability_index, action.target_id]
 	

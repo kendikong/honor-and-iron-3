@@ -90,13 +90,17 @@ func _run_single_battle_thread(index: int) -> void:
 		telemetry.player_classes.append(unit.id)
 	for unit: UnitData in enemy_roster:
 		telemetry.enemy_classes.append(unit.id)
+	var combat_stats := MassSimCombatStatsCollector.new()
+	combat_stats.register_board(board)
 	var p1_ai := AutobattlerAI.new(null, 0.5)
 	var turns: int = 0
 	var max_turns: int = 100
 	var winner: int = GameEnums.Team.NEUTRAL
 	while turns < max_turns:
 		board.intents = EnemyPlanner.plan(board)
+		combat_stats.begin_turn(turns)
 		var p1_vector: TeamVector = p1_ai.decide_team_vector(board)
+		combat_stats.record_ai_decision(board, p1_vector, p1_ai)
 		var timeline := Timeline.new()
 		if p1_vector != null and not p1_vector.actions.is_empty():
 			for act: TimelineAction in p1_vector.actions:
@@ -109,6 +113,8 @@ func _run_single_battle_thread(index: int) -> void:
 		var sim_result: SimResult = Simulator.simulate(board, timeline)
 		board = sim_result.final_state
 		MassSimTelemetryAccumulator.apply_events(telemetry, sim_result.events)
+		combat_stats.apply_events(sim_result.events, board)
+		combat_stats.end_turn()
 		winner = _check_win_condition(board)
 		if winner != GameEnums.Team.NEUTRAL:
 			break
@@ -119,6 +125,7 @@ func _run_single_battle_thread(index: int) -> void:
 	for u: UnitState in board.units:
 		if u.is_alive():
 			telemetry.surviving_units.append(u.id)
+	telemetry.combat_meta = combat_stats.to_dict()
 	_telemetry_results[index] = telemetry.to_dict()
 
 

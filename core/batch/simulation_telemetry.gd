@@ -39,6 +39,8 @@ var player_spawn_quadrant: String = ""
 var enemy_spawn_quadrant: String = ""
 var job_label: String = ""
 
+var combat_meta: Dictionary = {}
+
 func to_dict() -> Dictionary:
 	return {
 		"run_id": run_id,
@@ -68,6 +70,7 @@ func to_dict() -> Dictionary:
 		"player_spawn_quadrant": player_spawn_quadrant,
 		"enemy_spawn_quadrant": enemy_spawn_quadrant,
 		"job_label": job_label,
+		"combat_meta": combat_meta,
 	}
 
 static func from_dict(data: Dictionary) -> SimulationTelemetry:
@@ -99,4 +102,5 @@ static func from_dict(data: Dictionary) -> SimulationTelemetry:
 	t.player_spawn_quadrant = String(data.get("player_spawn_quadrant", ""))
 	t.enemy_spawn_quadrant = String(data.get("enemy_spawn_quadrant", ""))
 	t.job_label = String(data.get("job_label", ""))
+	t.combat_meta = data.get("combat_meta", {})
 	return t
