@@ -1,21 +1,43 @@
 class_name Level6MapPanel
 extends VBoxContainer
 
+signal inspect_requested(title: String, body: String, meta: Dictionary)
+
+var _body: RichTextLabel
+
+
 func _init() -> void:
-	var title = Label.new()
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var title := Label.new()
 	title.text = "Level 6: Environment & Map Bias"
-	title.add_theme_font_size_override("font_size", 18)
+	MassSimTheme.style_section(title)
 	add_child(title)
-	
-	var r = RichTextLabel.new()
-	r.bbcode_enabled = true
-	r.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	var text = "[b]Map Tag Filtering[/b]\n"
-	text += "- [Open] Win Rate: 48%\n"
-	text += "- [Narrow] Win Rate: 65%\n"
-	text += "- [Hazard] Win Rate: 30%\n\n"
-	text += "[b]Spawn Bias Validator[/b]\n"
-	text += "- North Spawn: 52%\n"
-	text += "- South Spawn: 48%\n"
-	r.text = text
-	add_child(r)
+	_body = RichTextLabel.new()
+	_body.bbcode_enabled = true
+	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	add_child(_body)
+
+
+func bind_report(report: MassSimBatchReport) -> void:
+	if report == null or report.is_empty():
+		_body.text = "[i]Run a batch to evaluate map-tag bias.[/i]"
+		return
+	if report.map_tag_records.is_empty():
+		_body.text = "[i]No map tags recorded in telemetry. Runner tags open grass boards as [open].[/i]"
+		return
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("[b]Map Tag Filtering[/b]")
+	for tag_id: Variant in report.map_tag_records.keys():
+		var rec: Dictionary = report.map_tag_records[tag_id] as Dictionary
+		var wr: float = float(rec.get("player_win_pct", 0.0))
+		var dev: float = absf(wr - MassSimConstants.TARGET_PLAYER_WIN_PCT)
+		var color: String = "#7dcea0" if dev < 6.0 else ("#ffb347" if dev < 12.0 else "#ff6b6b")
+		lines.append(
+			"• [%s] Win Rate: [color=%s]%.1f%%[/color] (%d matches)"
+			% [str(tag_id), color, wr, int(rec.get("battles", 0))]
+		)
+	lines.append("")
+	lines.append("[b]Spawn Bias Validator[/b]")
+	lines.append("[i]Spawn quadrant telemetry not yet emitted — coming with encounter spawn metadata.[/i]")
+	_body.text = "\n".join(lines)

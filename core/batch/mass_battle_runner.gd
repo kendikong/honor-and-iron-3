@@ -94,6 +94,11 @@ func _run_single_battle_thread(index: int) -> void:
 		if p1_vector != null and not p1_vector.actions.is_empty():
 			for act in p1_vector.actions:
 				timeline.add(act)
+			if not p1_vector.telemetry.is_empty():
+				telemetry.ai_telemetry.append({
+					"turn": turns,
+					"telemetry": p1_vector.telemetry.duplicate(),
+				})
 				
 		# 3. Simulate entire turn (Player actions -> Enemy intents -> Status ticks)
 		var sim_result = Simulator.simulate(board, timeline)

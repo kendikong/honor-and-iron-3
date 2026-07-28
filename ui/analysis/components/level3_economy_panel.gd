@@ -1,22 +1,44 @@
 class_name Level3EconomyPanel
 extends VBoxContainer
 
+signal inspect_requested(title: String, body: String, meta: Dictionary)
+
+var _body: RichTextLabel
+
+
 func _init() -> void:
-	var title = Label.new()
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var title := Label.new()
 	title.text = "Level 3: Economy & Combat Math"
-	title.add_theme_font_size_override("font_size", 18)
+	MassSimTheme.style_section(title)
 	add_child(title)
-	
-	var r = RichTextLabel.new()
-	r.bbcode_enabled = true
-	r.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	var text = "[b]Assisted Value (Support Tracker)[/b]\n"
-	text += "- Damage Enabled: 1500\n"
-	text += "- Shield Prevented: 300\n"
-	text += "- Movement Enabled: 40 tiles\n\n"
-	text += "[b]Waste Analytics[/b]\n"
-	text += "- Execution Phase Whiffs: 12\n"
-	text += "- Overkill Damage: 450\n"
-	text += "- Floated AP (Unused): 35 turns\n"
-	r.text = text
-	add_child(r)
+	_body = RichTextLabel.new()
+	_body.bbcode_enabled = true
+	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	add_child(_body)
+
+
+func bind_report(report: MassSimBatchReport) -> void:
+	if report == null or report.is_empty():
+		_body.text = "[i]Run a batch to populate economy telemetry.[/i]"
+		return
+	var whiff_pct: float = float(report.battles_with_whiffs) / float(maxi(report.total_battles, 1)) * 100.0
+	_body.text = (
+		"[b]Assisted Value (Support Tracker)[/b]\n"
+		+ "• Damage Enabled: [color=#7dcea0]%d[/color]\n"
+		+ "• Shield Prevented: %d\n"
+		+ "• Movement/AP Float tracked: %d floated turns\n\n"
+		+ "[b]Waste Analytics[/b]\n"
+		+ "• Execution Whiffs (battles): %.1f%% (%d total events)\n"
+		+ "• Overkill Damage: %d\n"
+		+ "• Target whiff rate: < %.0f%%"
+	) % [
+		report.total_assisted_damage,
+		report.total_assisted_shields,
+		report.total_floated_ap,
+		whiff_pct,
+		report.total_execution_whiffs,
+		report.total_overkill,
+		MassSimConstants.TARGET_WHIFF_BATTLES_PCT,
+	]
