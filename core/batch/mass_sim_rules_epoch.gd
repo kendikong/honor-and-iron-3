@@ -5,6 +5,10 @@ const _C = preload("res://core/batch/mass_sim_constants.gd")
 
 const LEGACY_EPOCH_ID := "legacy"
 const ARCHIVE_DIR := "user://mass_sim_epochs/"
+const _MONTH_NAMES: Array[String] = [
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+]
 
 
 static func fingerprint(setup: MassSimSkirmishSetup = null) -> String:
@@ -177,12 +181,8 @@ static func format_created_at_date(ep: Dictionary) -> String:
 			return "Before tracking"
 		return "Date unknown"
 	var dt: Dictionary = Time.get_datetime_dict_from_unix_time(created)
-	const MONTHS: PackedStringArray = PackedStringArray([
-		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-	])
 	var month_idx: int = clampi(int(dt.month) - 1, 0, 11)
-	return "%s %d, %d" % [MONTHS[month_idx], int(dt.day), int(dt.year)]
+	return "%s %d, %d" % [_MONTH_NAMES[month_idx], int(dt.day), int(dt.year)]
 
 
 static func display_label(ep: Dictionary, active: bool = false) -> String:
