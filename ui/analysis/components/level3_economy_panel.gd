@@ -54,11 +54,11 @@ func bind_report(report: MassSimBatchReport) -> void:
 		lines.append("[i]No class combat rows yet.[/i]")
 	else:
 		for row: Dictionary in report.class_combat_rows.slice(0, 14):
-			var class_name: String = report.class_display_name(row.get("class_id", ""))
+			var cls_label: String = report.class_display_name(row.get("class_id", ""))
 			lines.append(
 				"• %s — dmg %.2f · taken %.2f · heal %.2f · kills %.3f · AI hold %.0f%%"
 				% [
-					class_name,
+					cls_label,
 					float(row.get("damage_dealt_per_turn", 0.0)),
 					float(row.get("damage_taken_per_turn", 0.0)),
 					float(row.get("healing_per_turn", 0.0)),
