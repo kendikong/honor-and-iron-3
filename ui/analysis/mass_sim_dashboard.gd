@@ -15,7 +15,7 @@ var _file_dialog: FileDialog
 var _tag_filter: OptionButton
 var _epoch_filter: OptionButton
 var _epoch_banner: Label
-var _new_epoch_dialog: ConfirmationDialog
+var _new_epoch_dialog: Window
 var _epoch_label_edit: LineEdit
 
 var _report: MassSimBatchReport
@@ -335,38 +335,74 @@ func _on_epoch_filter_changed(index: int) -> void:
 
 
 func _build_new_epoch_dialog() -> void:
-	_new_epoch_dialog = ConfirmationDialog.new()
+	_new_epoch_dialog = Window.new()
 	_new_epoch_dialog.title = "New Balance Epoch"
-	_new_epoch_dialog.dialog_text = (
+	_new_epoch_dialog.unresizable = true
+	_new_epoch_dialog.transient = true
+	_new_epoch_dialog.exclusive = true
+	_new_epoch_dialog.min_size = Vector2i(440, 248)
+	_new_epoch_dialog.size = Vector2i(440, 248)
+	_new_epoch_dialog.close_requested.connect(func() -> void: _new_epoch_dialog.hide())
+	var panel := PanelContainer.new()
+	MassSimTheme.apply_panel(panel)
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_new_epoch_dialog.add_child(panel)
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	panel.add_child(margin)
+	var root := VBoxContainer.new()
+	root.add_theme_constant_override("separation", 10)
+	margin.add_child(root)
+	var intro := Label.new()
+	intro.text = (
 		"Use this when you change balance, AI, or skirmish size.\n"
 		+ "Your current log is archived; new battles start in a clean file."
 	)
-	_new_epoch_dialog.ok_button_text = "Start Fresh Epoch"
-	var box := VBoxContainer.new()
+	intro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	root.add_child(intro)
 	var hint := Label.new()
-	hint.text = "What changed? (e.g. knight buff, 5v6 test)"
+	hint.text = "What changed?"
 	MassSimTheme.style_muted(hint)
-	box.add_child(hint)
+	root.add_child(hint)
 	_epoch_label_edit = LineEdit.new()
-	_epoch_label_edit.placeholder_text = "Knight damage +2"
-	box.add_child(_epoch_label_edit)
+	_epoch_label_edit.placeholder_text = "e.g. Knight damage +2"
+	_epoch_label_edit.custom_minimum_size.y = 32
+	root.add_child(_epoch_label_edit)
 	var rules := Label.new()
 	rules.text = "Current rules: %s" % MassSimRulesEpoch.fingerprint_label()
+	rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	MassSimTheme.style_muted(rules)
-	box.add_child(rules)
-	_new_epoch_dialog.add_child(box)
-	_new_epoch_dialog.confirmed.connect(_on_new_epoch_confirmed)
+	root.add_child(rules)
+	var btn_row := HBoxContainer.new()
+	btn_row.add_theme_constant_override("separation", 8)
+	btn_row.alignment = BoxContainer.ALIGNMENT_END
+	root.add_child(btn_row)
+	var cancel_btn := Button.new()
+	cancel_btn.text = "Cancel"
+	MassSimTheme.style_button(cancel_btn)
+	cancel_btn.pressed.connect(func() -> void: _new_epoch_dialog.hide())
+	btn_row.add_child(cancel_btn)
+	var ok_btn := Button.new()
+	ok_btn.text = "Start Fresh Epoch"
+	MassSimTheme.style_button(ok_btn)
+	ok_btn.pressed.connect(_on_new_epoch_confirmed)
+	btn_row.add_child(ok_btn)
 	add_child(_new_epoch_dialog)
 
 
 func _open_new_epoch_dialog() -> void:
 	if _epoch_label_edit != null:
 		_epoch_label_edit.text = ""
-	_new_epoch_dialog.popup_centered(Vector2i(480, 220))
+	_new_epoch_dialog.popup_centered(Vector2i(440, 248))
 
 
 func _on_new_epoch_confirmed() -> void:
 	var label: String = _epoch_label_edit.text.strip_edges() if _epoch_label_edit != null else ""
+	_new_epoch_dialog.hide()
 	var entry: Dictionary = MassSimRulesEpoch.start_new_epoch(_workspace, label)
 	_sync_log_path_from_epoch()
 	_save_workspace()
