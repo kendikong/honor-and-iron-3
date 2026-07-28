@@ -184,7 +184,7 @@ func _start_bake(
 
 
 func _finish_bake_async() -> void:
-	if not _await_bake_frames():
+	if not await _await_bake_frames():
 		_abort_bake()
 		return
 	var tex: Texture2D = _viewport.get_texture()
