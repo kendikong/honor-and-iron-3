@@ -12,6 +12,10 @@ static func apply_panel(panel: PanelContainer) -> void:
 	MenuTheme.apply_panel(panel)
 
 
+static func apply_popup(popup: PopupPanel) -> void:
+	MenuTheme.apply_popup(popup)
+
+
 static func style_title(label: Label) -> void:
 	MenuTheme.style_title(label)
 

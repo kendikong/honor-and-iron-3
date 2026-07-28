@@ -15,6 +15,14 @@ const DANGER := Color(0.88, 0.42, 0.42, 1.0)
 
 
 static func apply_panel(panel: PanelContainer) -> void:
+	panel.add_theme_stylebox_override("panel", _panel_style())
+
+
+static func apply_popup(popup: PopupPanel) -> void:
+	popup.add_theme_stylebox_override("panel", _panel_style())
+
+
+static func _panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = PANEL
 	style.border_color = PANEL_BORDER
@@ -24,7 +32,7 @@ static func apply_panel(panel: PanelContainer) -> void:
 	style.content_margin_right = 4
 	style.content_margin_top = 4
 	style.content_margin_bottom = 4
-	panel.add_theme_stylebox_override("panel", style)
+	return style
 
 
 static func style_title(label: Label) -> void:

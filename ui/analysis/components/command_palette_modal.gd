@@ -10,7 +10,7 @@ var _entries: Array[Dictionary] = []
 
 func _init() -> void:
 	size = Vector2(640, 420)
-	MassSimTheme.apply_panel(self)
+	MassSimTheme.apply_popup(self)
 	var vbox := VBoxContainer.new()
 	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	vbox.offset_left = 8
