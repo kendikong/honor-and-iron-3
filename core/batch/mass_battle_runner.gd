@@ -12,6 +12,7 @@ var _run_id_offset: int = 0
 var _rules_epoch_id: String = ""
 var _rules_fingerprint: String = ""
 var _skirmish_setup: Dictionary = MassSimSkirmishSetup.defaults().to_dict()
+var _batch_seed: int = 0
 
 var _telemetry_results: Array[Dictionary] = []
 var _group_task_id: int = -1
@@ -38,6 +39,7 @@ func start_batch(
 	_rules_epoch_id = rules_epoch_id
 	_rules_fingerprint = rules_fingerprint
 	_skirmish_setup = (skirmish_setup if skirmish_setup != null else MassSimSkirmishSetup.defaults()).to_dict()
+	_batch_seed = MassSimSeed.batch_seed(_rules_fingerprint)
 	_run_id_offset = _next_run_id_offset() if append else 0
 	_telemetry_results.clear()
 	_telemetry_results.resize(num_battles)
@@ -70,14 +72,17 @@ func _process(_delta: float) -> void:
 
 func _run_single_battle_thread(index: int) -> void:
 	var setup: MassSimSkirmishSetup = MassSimSkirmishSetup.from_dict(_skirmish_setup)
-	var map_seed: int = hash(Time.get_ticks_usec() + (index + _run_id_offset) * 31)
+	var run_id: int = index + _run_id_offset
+	var map_seed: int = MassSimSeed.battle_seed(_batch_seed, run_id)
 	var skirmish: Dictionary = MassSimBoardBuilder.build_skirmish(map_seed)
 	var board: BoardState = skirmish["board"] as BoardState
 	var grid_size: Vector2i = board.grid_size
 	var player_roster: Array[UnitData] = SpawnPlacer._pick_random_player_roster(setup.player_count, map_seed)
 	var player_spawn: Vector2i = skirmish["player_spawn"] as Vector2i
 	for i: int in range(player_roster.size()):
-		var cfg: Dictionary = MassSimUnitConfig.build(player_roster[i], GameEnums.Team.PLAYER, map_seed, i, setup)
+		var cfg: Dictionary = MassSimUnitConfig.build(
+			player_roster[i], GameEnums.Team.PLAYER, map_seed, i, setup, run_id,
+		)
 		BoardFactory.place_configured_unit(
 			board, 10 + i, player_roster[i], GameEnums.Team.PLAYER,
 			Vector2i(player_spawn.x + i * 2, player_spawn.y), cfg,
@@ -85,13 +90,15 @@ func _run_single_battle_thread(index: int) -> void:
 	var enemy_roster: Array[UnitData] = SpawnPlacer._pick_enemy_roster(setup.enemy_count, map_seed)
 	var enemy_spawn: Vector2i = skirmish["enemy_spawn"] as Vector2i
 	for i: int in range(enemy_roster.size()):
-		var ecfg: Dictionary = MassSimUnitConfig.build(enemy_roster[i], GameEnums.Team.ENEMY, map_seed, i, setup)
+		var ecfg: Dictionary = MassSimUnitConfig.build(
+			enemy_roster[i], GameEnums.Team.ENEMY, map_seed, i, setup, run_id,
+		)
 		BoardFactory.place_configured_unit(
 			board, 20 + i, enemy_roster[i], GameEnums.Team.ENEMY,
 			Vector2i(grid_size.x - 3 - i * 2, enemy_spawn.y), ecfg,
 		)
 	var telemetry := SimulationTelemetry.new()
-	telemetry.run_id = index + _run_id_offset
+	telemetry.run_id = run_id
 	telemetry.map_seed = map_seed
 	telemetry.map_tags = skirmish["map_tags"]
 	telemetry.map_layout_id = String(skirmish["layout_id"])

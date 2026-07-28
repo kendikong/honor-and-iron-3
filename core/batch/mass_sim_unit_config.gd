@@ -5,19 +5,24 @@ extends RefCounted
 static func build(
 	def: UnitData,
 	team: int,
-	map_seed: int,
+	battle_seed: int,
 	slot: int,
 	setup: MassSimSkirmishSetup,
+	run_id: int = -1,
 ) -> Dictionary:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = int(hash(Vector3i(map_seed, slot, team + 17)))
+	var rid: int = run_id if run_id >= 0 else battle_seed
+	var class_id: StringName = def.id if def != null else &""
+	var passive_rng := RandomNumberGenerator.new()
+	passive_rng.seed = MassSimSeed.unit_roll_seed(battle_seed, rid, slot, class_id, team, 3)
+	var skill_rng := RandomNumberGenerator.new()
+	skill_rng.seed = MassSimSeed.unit_roll_seed(battle_seed, rid, slot, class_id, team, 91)
 	var level: int = setup.player_level if team == GameEnums.Team.PLAYER else setup.enemy_level
 	var config: Dictionary = {"level": level}
 	if team == GameEnums.Team.PLAYER:
 		if not def.is_construct:
-			config["active_passives"] = _pick_passives(def.passives, setup.player_passive_count, rng)
+			config["active_passives"] = _pick_passives(def.passives, setup.player_passive_count, passive_rng)
 		config["active_abilities"] = DataLibrary.build_player_active_abilities_seeded(
-			def, setup.player_class_skill_count, rng,
+			def, setup.player_class_skill_count, skill_rng,
 		)
 	else:
 		config["active_passives"] = def.passives.duplicate()

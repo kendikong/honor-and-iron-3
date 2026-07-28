@@ -73,8 +73,23 @@ static func color_hex(color: Color) -> String:
 	return color.to_html(false)
 
 
+static func directional_color(value: float, average: float, tolerance: float) -> Color:
+	var delta: float = value - average
+	var abs_dev: float = absf(delta)
+	if abs_dev <= tolerance:
+		return Color(0.62, 0.66, 0.72)
+	var intensity: float = clampf((abs_dev - tolerance) / maxf(tolerance, 0.001), 0.0, 1.0)
+	if delta > 0.0:
+		return Color(0.55, 0.88, 1.0).lerp(Color(0.15, 0.45, 1.0), intensity)
+	return Color(1.0, 0.78, 0.42).lerp(Color(0.95, 0.32, 0.32), intensity)
+
+
+static func directional_color_inverted(value: float, average: float, tolerance: float) -> Color:
+	return directional_color(average - (value - average), average, tolerance)
+
+
 static func dev_color_vs_average(value: float, average: float, tolerance: float) -> Color:
-	return dev_color(value, average, tolerance)
+	return directional_color(value, average, tolerance)
 
 
 static func dev_color(current: float, target: float, tolerance: float) -> Color:

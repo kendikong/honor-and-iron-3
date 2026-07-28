@@ -92,6 +92,18 @@ func _test_epoch_filter(failures: Array[String]) -> void:
 	}
 	if not epoch_script.display_label(dated, false).begins_with("Jul 27, 2026"):
 		failures.append("epoch display_label should include parsed date")
+	var setup_script = load("res://core/batch/mass_sim_skirmish_setup.gd")
+	var unit_cfg = load("res://core/batch/mass_sim_unit_config.gd")
+	var seed_script = load("res://core/batch/mass_sim_seed.gd")
+	var knight = DataLibrary.get_unit(&"knight")
+	var s = setup_script.defaults()
+	s.player_class_skill_count = 3
+	var a = unit_cfg.build(knight, GameEnums.Team.PLAYER, seed_script.battle_seed(1, 10), 0, s, 10)
+	var b = unit_cfg.build(knight, GameEnums.Team.PLAYER, seed_script.battle_seed(1, 11), 0, s, 11)
+	var ids_a: Array = (a.get("active_abilities", []) as Array).map(func(ab: AbilityData) -> String: return str(ab.id))
+	var ids_b: Array = (b.get("active_abilities", []) as Array).map(func(ab: AbilityData) -> String: return str(ab.id))
+	if ids_a == ids_b:
+		failures.append("unit skill rolls should vary per battle run_id")
 
 
 func _test_interpretation_export(agg, triage, failures: Array[String]) -> void:

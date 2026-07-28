@@ -82,7 +82,7 @@ func bind_report(report: MassSimBatchReport, warnings: Array, workspace: MassSim
 		"Win Rates",
 		"%s\n%s" % [
 			_tone_line("Player", "%.1f%%" % report.player_win_pct, report.player_win_pct, wr_target, 8.0),
-			_tone_line("Enemy", "%.1f%%" % report.enemy_win_pct, report.enemy_win_pct, wr_target, 8.0),
+			_tone_line("Enemy", "%.1f%%" % report.enemy_win_pct, report.enemy_win_pct, wr_target, 8.0, true),
 		],
 		"Win Rate Breakdown",
 		"Player %d / Enemy %d / Draw %d / Timeout %d"
@@ -148,7 +148,7 @@ func bind_report(report: MassSimBatchReport, warnings: Array, workspace: MassSim
 		"Integrity",
 		"%s\n%s" % [
 			_tone_line("Score", "%.0f / 100" % report.integrity_score, report.integrity_score, integrity_avg, 15.0),
-			_tone_line("Whiff battles", "%.1f%%" % whiff_pct, whiff_pct, MassSimConstants.TARGET_WHIFF_BATTLES_PCT, 5.0),
+			_tone_line("Whiff battles", "%.1f%%" % whiff_pct, whiff_pct, MassSimConstants.TARGET_WHIFF_BATTLES_PCT, 5.0, true),
 		],
 		"Simulation Integrity",
 		"\n".join(report.integrity_notes),
@@ -166,8 +166,19 @@ static func _average_class_win_rate(report: MassSimBatchReport) -> float:
 	return total / float(report.tier_rows.size())
 
 
-static func _tone_line(label: String, value_text: String, value: float, average: float, tolerance: float) -> String:
-	var color: Color = MassSimTheme.dev_color_vs_average(value, average, tolerance)
+static func _tone_line(
+	label: String,
+	value_text: String,
+	value: float,
+	average: float,
+	tolerance: float,
+	invert: bool = false,
+) -> String:
+	var color: Color = (
+		MassSimTheme.directional_color_inverted(value, average, tolerance)
+		if invert
+		else MassSimTheme.directional_color(value, average, tolerance)
+	)
 	return "%s: [color=#%s]%s[/color]" % [label, MassSimTheme.color_hex(color), value_text]
 
 
