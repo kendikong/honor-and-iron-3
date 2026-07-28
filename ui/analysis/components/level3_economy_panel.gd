@@ -14,6 +14,11 @@ const _COLOR_PLAYER := Color(0.45, 0.82, 1.0)
 const _COLOR_ENEMY := Color(1.0, 0.55, 0.45)
 const _COLOR_HEADER := Color(0.85, 0.88, 0.95)
 const _COLOR_MUTED := Color(0.65, 0.68, 0.72)
+const _TOL_USES := 0.05
+const _TOL_PICK := 10.0
+const _TOL_DMG := 1.5
+const _TOL_HEAL := 0.1
+const _TOL_KILL := 0.02
 
 var _scroll: ScrollContainer
 var _tree: Tree
@@ -155,10 +160,16 @@ func _add_team_block(
 		for sk: Variant in skills:
 			if not sk is Dictionary:
 				continue
-			_add_skill_row(report, class_hdr, sk as Dictionary, team)
+			_add_skill_row(report, class_hdr, sk as Dictionary, team, _class_skill_avgs(skills, team))
 
 
-func _add_skill_row(report: MassSimBatchReport, parent: TreeItem, row: Dictionary, team: int) -> void:
+func _add_skill_row(
+	report: MassSimBatchReport,
+	parent: TreeItem,
+	row: Dictionary,
+	team: int,
+	class_avgs: Dictionary,
+) -> void:
 	var item := _tree.create_item(parent)
 	var name: String = String(row.get("display_name", row.get("ability_id", "?")))
 	var ability_id: String = String(row.get("ability_id", ""))
@@ -175,15 +186,19 @@ func _add_skill_row(report: MassSimBatchReport, parent: TreeItem, row: Dictionar
 	if not ability_tip.is_empty():
 		item.set_tooltip_text(0, ability_tip)
 	if has_roster:
-		item.set_text(1, "%.3f" % float(row.get("uses_per_turn", 0.0)))
+		var uses_pt: float = float(row.get("uses_per_turn", 0.0))
+		item.set_text(1, "%.3f" % uses_pt)
 		item.set_tooltip_text(1, "%d uses over %d class unit-turns.\n%s" % [uses, unit_turns, _TIP_USES])
+		_color_metric(item, 1, uses_pt, float(class_avgs.get("uses_per_turn", 0.0)), _TOL_USES)
 	else:
 		item.set_text(1, "—")
 		item.set_tooltip_text(1, "No sample — skill never appeared on a roster in this batch.")
+		_color_no_sample(item, 1)
 	if has_pick:
 		var pick: float = float(row.get("pick_rate_when_legal_pct", 0.0))
 		item.set_text(2, "%.0f%%" % pick)
 		item.set_tooltip_text(2, "%d uses when legal ÷ %d turns legal (%.0f%%).\n%s" % [uses, legal, pick, _TIP_PICK])
+		_color_metric(item, 2, pick, float(class_avgs.get("pick_rate_when_legal_pct", 0.0)), _TOL_PICK)
 	else:
 		item.set_text(2, "—")
 		if team != GameEnums.Team.PLAYER:
@@ -192,17 +207,25 @@ func _add_skill_row(report: MassSimBatchReport, parent: TreeItem, row: Dictionar
 			item.set_tooltip_text(2, "No sample — skill was not on any roster in this batch.")
 		else:
 			item.set_tooltip_text(2, "No sample — skill was never a legal Commander option in this batch.")
+		_color_no_sample(item, 2)
 	if has_roster:
-		item.set_text(3, "%.2f" % float(row.get("damage_per_turn", 0.0)))
+		var dmg_pt: float = float(row.get("damage_per_turn", 0.0))
+		var heal_pt: float = float(row.get("heal_per_turn", 0.0))
+		var kill_pt: float = float(row.get("kills_per_turn", 0.0))
+		item.set_text(3, "%.2f" % dmg_pt)
 		item.set_tooltip_text(3, "%d total damage over %d class unit-turns.\n%s" % [dmg, unit_turns, _TIP_DMG])
-		item.set_text(4, "%.2f" % float(row.get("heal_per_turn", 0.0)))
+		_color_metric(item, 3, dmg_pt, float(class_avgs.get("damage_per_turn", 0.0)), _TOL_DMG)
+		item.set_text(4, "%.2f" % heal_pt)
 		item.set_tooltip_text(4, "%d total healing over %d class unit-turns.\n%s" % [heal, unit_turns, _TIP_HEAL])
-		item.set_text(5, "%.3f" % float(row.get("kills_per_turn", 0.0)))
+		_color_metric(item, 4, heal_pt, float(class_avgs.get("heal_per_turn", 0.0)), _TOL_HEAL)
+		item.set_text(5, "%.3f" % kill_pt)
 		item.set_tooltip_text(5, "%d total kills over %d class unit-turns.\n%s" % [kills, unit_turns, _TIP_KILL])
+		_color_metric(item, 5, kill_pt, float(class_avgs.get("kills_per_turn", 0.0)), _TOL_KILL)
 	else:
 		for col: int in [3, 4, 5]:
 			item.set_text(col, "—")
 			item.set_tooltip_text(col, "No sample — skill never appeared on a roster in this batch.")
+			_color_no_sample(item, col)
 	var notes: PackedStringArray = PackedStringArray()
 	if int(row.get("action_failed", 0)) > 0:
 		notes.append("fails %d" % int(row.get("action_failed", 0)))
@@ -230,17 +253,21 @@ func _add_passive_section(report: MassSimBatchReport) -> void:
 		if not passive_tip.is_empty():
 			item.set_tooltip_text(0, passive_tip)
 		if appearances > 0:
+			var wr: float = float(row.get("player_win_pct", 0.0))
 			item.set_text(1, "%d units" % appearances)
 			item.set_tooltip_text(1, "Appeared on %d player roster slots in this batch." % appearances)
-			item.set_text(2, "%.1f%% WR" % float(row.get("player_win_pct", 0.0)))
+			item.set_text(2, "%.1f%% WR" % wr)
 			item.set_tooltip_text(2, "%d wins with this passive ÷ %d appearances (%.1f%%).\n%s" % [
-				wins, appearances, float(row.get("player_win_pct", 0.0)), _TIP_PASSIVE_WR,
+				wins, appearances, wr, _TIP_PASSIVE_WR,
 			])
+			_color_metric(item, 2, wr, report.player_win_pct, 8.0)
 		else:
 			item.set_text(1, "—")
 			item.set_tooltip_text(1, "No sample — passive never rolled onto a roster in this batch.")
 			item.set_text(2, "—")
 			item.set_tooltip_text(2, "No sample — passive never rolled onto a roster in this batch.")
+			_color_no_sample(item, 1)
+			_color_no_sample(item, 2)
 		var classes: Dictionary = row.get("classes", {}) as Dictionary
 		var class_bits: PackedStringArray = PackedStringArray()
 		for cid: Variant in classes.keys():
@@ -263,21 +290,31 @@ func _add_economy_section(report: MassSimBatchReport) -> void:
 			"label": "Assisted damage / turn",
 			"value": "%.2f" % float(eco.get("assisted_damage_per_turn", 0.0)),
 			"tip": "%d total assisted damage ÷ %d sim turns." % [int(eco.get("total_assisted_damage", 0)), turns],
+			"skip_color": true,
 		},
 		{
 			"label": "Shields / turn",
 			"value": "%.2f" % float(eco.get("assisted_shields_per_turn", 0.0)),
 			"tip": "%d total shields granted ÷ %d sim turns." % [int(eco.get("total_assisted_shields", 0)), turns],
+			"skip_color": true,
 		},
 		{
 			"label": "Overkill / turn",
 			"value": "%.2f" % float(eco.get("overkill_per_turn", 0.0)),
 			"tip": "%d total overkill damage ÷ %d sim turns." % [int(eco.get("total_overkill", 0)), turns],
+			"metric": float(eco.get("overkill_per_turn", 0.0)),
+			"target": 0.0,
+			"tolerance": 0.5,
+			"invert": true,
 		},
 		{
 			"label": "Floated AP / turn",
 			"value": "%.2f" % float(eco.get("floated_ap_per_turn", 0.0)),
 			"tip": "%d total unused AP banked ÷ %d sim turns." % [int(eco.get("total_floated_ap", 0)), turns],
+			"metric": float(eco.get("floated_ap_per_turn", 0.0)),
+			"target": 0.0,
+			"tolerance": 0.15,
+			"invert": true,
 		},
 		{
 			"label": "Whiff battles",
@@ -285,6 +322,10 @@ func _add_economy_section(report: MassSimBatchReport) -> void:
 			"tip": "%d battles with whiffs ÷ %d battles (%.1f%%)." % [
 				int(eco.get("battles_with_whiffs", 0)), battles, float(eco.get("whiff_battle_pct", 0.0)),
 			],
+			"metric": float(eco.get("whiff_battle_pct", 0.0)),
+			"target": MassSimConstants.TARGET_WHIFF_BATTLES_PCT,
+			"tolerance": 5.0,
+			"invert": true,
 		},
 	]
 	for spec: Dictionary in rows:
@@ -292,7 +333,77 @@ func _add_economy_section(report: MassSimBatchReport) -> void:
 		item.set_text(0, String(spec.get("label", "")))
 		item.set_text(1, String(spec.get("value", "")))
 		item.set_tooltip_text(1, String(spec.get("tip", "")))
+		if bool(spec.get("skip_color", false)):
+			continue
+		var metric: float = float(spec.get("metric", 0.0))
+		var target: float = float(spec.get("target", metric))
+		var tol: float = float(spec.get("tolerance", 1.0))
+		var invert: bool = bool(spec.get("invert", false))
+		if invert:
+			_color_metric(item, 1, metric, target, tol, true)
+		else:
+			_color_metric(item, 1, metric, target, tol)
 
 
 func _format_passive_name(passive_id: String) -> String:
 	return passive_id.replace("_", " ").capitalize()
+
+
+func _class_skill_avgs(skills: Array, team: int) -> Dictionary:
+	var uses_vals: Array[float] = []
+	var pick_vals: Array[float] = []
+	var dmg_vals: Array[float] = []
+	var heal_vals: Array[float] = []
+	var kill_vals: Array[float] = []
+	for sk: Variant in skills:
+		if not sk is Dictionary:
+			continue
+		var row: Dictionary = sk as Dictionary
+		var legal: int = int(row.get("turns_legal", 0))
+		var uses: int = int(row.get("uses", 0))
+		var unit_turns: int = int(row.get("class_unit_turns", 0))
+		var has_roster: bool = bool(row.get("has_roster_sample", unit_turns > 0 or uses > 0 or legal > 0))
+		var has_pick: bool = bool(row.get("has_pick_sample", team == GameEnums.Team.PLAYER and legal > 0))
+		if has_roster:
+			uses_vals.append(float(row.get("uses_per_turn", 0.0)))
+			dmg_vals.append(float(row.get("damage_per_turn", 0.0)))
+			heal_vals.append(float(row.get("heal_per_turn", 0.0)))
+			kill_vals.append(float(row.get("kills_per_turn", 0.0)))
+		if has_pick:
+			pick_vals.append(float(row.get("pick_rate_when_legal_pct", 0.0)))
+	return {
+		"uses_per_turn": _avg_floats(uses_vals),
+		"pick_rate_when_legal_pct": _avg_floats(pick_vals),
+		"damage_per_turn": _avg_floats(dmg_vals),
+		"heal_per_turn": _avg_floats(heal_vals),
+		"kills_per_turn": _avg_floats(kill_vals),
+	}
+
+
+func _avg_floats(values: Array[float]) -> float:
+	if values.is_empty():
+		return 0.0
+	var total: float = 0.0
+	for v: float in values:
+		total += v
+	return total / float(values.size())
+
+
+func _color_metric(
+	item: TreeItem,
+	column: int,
+	value: float,
+	average: float,
+	tolerance: float,
+	invert: bool = false,
+) -> void:
+	var color: Color = (
+		MassSimTheme.directional_color_inverted(value, average, tolerance)
+		if invert
+		else MassSimTheme.directional_color(value, average, tolerance)
+	)
+	item.set_custom_color(column, color)
+
+
+func _color_no_sample(item: TreeItem, column: int) -> void:
+	item.set_custom_color(column, _COLOR_MUTED)
