@@ -35,7 +35,10 @@ static func load() -> MassSimWorkspace:
 	ws.triage_states = d.get("triage_states", {})
 	ws.triage_notes = d.get("triage_notes", {})
 	ws.active_epoch_id = String(d.get("active_epoch_id", ""))
-	ws.skirmish_setup = d.get("skirmish_setup", MassSimSkirmishSetup.defaults().to_dict())
+	if d.has("skirmish_setup") and d.get("skirmish_setup") is Dictionary:
+		ws.skirmish_setup = MassSimSkirmishSetup.from_dict(d.get("skirmish_setup", {})).to_dict()
+	else:
+		ws.skirmish_setup = MassSimSkirmishSetup.load_last_saved().to_dict()
 	var raw_epochs: Array = d.get("epochs", [])
 	ws.epochs.clear()
 	for ep: Variant in raw_epochs:

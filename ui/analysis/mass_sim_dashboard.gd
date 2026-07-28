@@ -31,6 +31,7 @@ var _all_rows: Array[Dictionary] = []
 func _ready() -> void:
 	instance = self
 	_workspace = MassSimWorkspace.load()
+	_reconcile_skirmish_setup_from_last_saved()
 	MassSimRulesEpoch.ensure_default_epoch(_workspace)
 	_sync_log_path_from_epoch()
 	_report = MassSimBatchReport.new()
@@ -224,6 +225,10 @@ func _run_next_job() -> void:
 	queue_list.remove_item(0)
 	var count: int = int(job.get("count", 100))
 	var label: String = String(job.get("label", "Job"))
+	var setup: MassSimSkirmishSetup = _active_skirmish_setup()
+	_workspace.skirmish_setup = setup.to_dict()
+	MassSimSkirmishSetup.save_last(setup)
+	_save_workspace()
 	status_label.text = "Running: %s (%d battles)" % [label, count]
 	progress_bar.visible = true
 	progress_bar.value = 0
@@ -460,7 +465,7 @@ func _open_skirmish_setup() -> void:
 
 func _on_skirmish_setup_applied(setup: MassSimSkirmishSetup) -> void:
 	_workspace.skirmish_setup = setup.to_dict()
-	MassSimSkirmishSetup.save_play(setup)
+	MassSimSkirmishSetup.save_last(setup)
 	_save_workspace()
 	_update_epoch_banner(MassSimRulesEpoch.analyze_mix(_all_rows), _report.total_battles if _report != null else 0)
 	status_label.text = "Skirmish setup saved — %s (New Epoch to lock)" % setup.summary_label()
@@ -630,6 +635,15 @@ func _save_workspace() -> void:
 	_workspace.last_tab = tab_container.current_tab
 	_workspace.log_path = _log_path
 	_workspace.save()
+
+
+func _reconcile_skirmish_setup_from_last_saved() -> void:
+	if not FileAccess.file_exists(MassSimSkirmishSetup.PLAY_SETUP_PATH):
+		return
+	var saved: MassSimSkirmishSetup = MassSimSkirmishSetup.load_last_saved()
+	if MassSimSkirmishSetup.is_default_dict(_workspace.skirmish_setup):
+		_workspace.skirmish_setup = saved.to_dict()
+		_workspace.save()
 
 
 func _flat_style(color: Color) -> StyleBoxFlat:

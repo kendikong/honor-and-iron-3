@@ -67,6 +67,13 @@ func _test_skirmish_setup(failures: Array[String]) -> void:
 	var fp: String = epoch_script.fingerprint(s)
 	if not fp.contains("p8"):
 		failures.append("fingerprint should encode player count")
+	var roundtrip := setup_script.load_last_saved()
+	roundtrip.player_count = 5
+	roundtrip.player_level = 12
+	setup_script.save_last(roundtrip)
+	var reloaded = setup_script.load_last_saved()
+	if reloaded.player_count != 5 or reloaded.player_level != 12:
+		failures.append("skirmish setup should persist via save_last/load_last_saved")
 
 
 func _test_epoch_filter(failures: Array[String]) -> void:

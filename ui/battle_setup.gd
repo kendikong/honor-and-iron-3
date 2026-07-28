@@ -135,7 +135,7 @@ func _show_skirmish_picker() -> void:
 	panel.add_child(title)
 
 	var setup_fields := SkirmishSetupFields.new()
-	setup_fields.load_setup(MassSimSkirmishSetup.load_play_saved())
+	setup_fields.load_setup(MassSimSkirmishSetup.load_last_saved())
 	panel.add_child(setup_fields)
 
 	var size_lbl := Label.new()
@@ -176,7 +176,7 @@ func _show_skirmish_picker() -> void:
 		if selected_size[0] == Vector2i.ZERO:
 			return
 		var setup: MassSimSkirmishSetup = setup_fields.read_setup()
-		MassSimSkirmishSetup.save_play(setup)
+		MassSimSkirmishSetup.save_last(setup)
 		_launch_skirmish(selected_size[0], setup)
 	)
 	btn_row.add_child(launch)

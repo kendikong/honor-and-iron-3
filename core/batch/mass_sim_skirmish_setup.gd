@@ -17,6 +17,18 @@ var player_class_skill_count: int = -1
 const PLAY_SETUP_PATH := "user://skirmish_play_setup.json"
 
 
+static func load_last_saved() -> MassSimSkirmishSetup:
+	return load_play_saved()
+
+
+static func save_last(setup: MassSimSkirmishSetup) -> void:
+	save_play(setup)
+
+
+static func is_default_dict(data: Dictionary) -> bool:
+	return from_dict(data).to_dict() == defaults().to_dict()
+
+
 static func load_play_saved() -> MassSimSkirmishSetup:
 	if not FileAccess.file_exists(PLAY_SETUP_PATH):
 		return defaults()
