@@ -27,26 +27,34 @@ func bind_report(report: MassSimBatchReport) -> void:
 		)
 		return
 
-	var margin: float = 100.0 / sqrt(float(maxi(report.total_battles, 1)))
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append("[b]Sample Size & Distribution[/b]")
 	lines.append("• Battles analyzed: %d / %d confidence gate" % [
 		report.total_battles, MassSimConstants.MIN_SAMPLE_FULL_CONFIDENCE,
 	])
-	lines.append("• Unique classes observed: %d" % report.unique_classes_seen)
+	lines.append("• Unique classes observed: %d / %d roster" % [
+		report.unique_classes_seen, report.total_player_classes,
+	])
+	if not report.missing_classes.is_empty():
+		lines.append("• Missing from batch: %s" % ", ".join(report.missing_classes))
+	lines.append("• Meta diversity: %.0f%%" % report.meta_diversity_pct)
 	lines.append("• Integrity score: [b]%.0f / 100[/b]" % report.integrity_score)
 	for note: String in report.integrity_notes:
 		lines.append("  – %s" % note)
 	lines.append("")
-	lines.append("[b]Matchup Confidence Intervals (approx.)[/b]")
-	for row: Dictionary in report.tier_rows.slice(0, 5):
+	lines.append("[b]Matchup Confidence Intervals (Wilson 95%%)[/b]")
+	for row: Dictionary in report.tier_rows.slice(0, 8):
+		var appearances: int = int(row.get("appearances", 0))
+		var wins: int = int(round(float(row.get("win_rate", 0.0)) / 100.0 * float(appearances)))
+		var wilson: float = report.wilson_margin(wins, appearances)
 		lines.append(
-			"• %s: %.1f%% ± %.1f%% (n=%d)"
+			"• %s: %.1f%% ± %.1f%% (n=%d, tier %s)"
 			% [
 				report.class_display_name(row["class_id"]),
 				float(row["win_rate"]),
-				margin,
-				int(row["appearances"]),
+				wilson,
+				appearances,
+				String(row.get("tier", "?")),
 			]
 		)
 	if report.tier_rows.is_empty():

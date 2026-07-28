@@ -32,6 +32,13 @@ var overkill_damage: int = 0
 
 var ai_telemetry: Array = []
 
+var collision_cells: Array = []
+var death_cells: Array = []
+var map_layout_id: String = "open"
+var player_spawn_quadrant: String = ""
+var enemy_spawn_quadrant: String = ""
+var job_label: String = ""
+
 func to_dict() -> Dictionary:
 	return {
 		"run_id": run_id,
@@ -54,7 +61,13 @@ func to_dict() -> Dictionary:
 		"assisted_shields": assisted_shields,
 		"execution_whiffs": execution_whiffs,
 		"overkill_damage": overkill_damage,
-		"ai_telemetry": ai_telemetry
+		"ai_telemetry": ai_telemetry,
+		"collision_cells": collision_cells,
+		"death_cells": death_cells,
+		"map_layout_id": map_layout_id,
+		"player_spawn_quadrant": player_spawn_quadrant,
+		"enemy_spawn_quadrant": enemy_spawn_quadrant,
+		"job_label": job_label,
 	}
 
 static func from_dict(data: Dictionary) -> SimulationTelemetry:
@@ -80,4 +93,10 @@ static func from_dict(data: Dictionary) -> SimulationTelemetry:
 	t.execution_whiffs = data.get("execution_whiffs", 0)
 	t.overkill_damage = data.get("overkill_damage", 0)
 	t.ai_telemetry = data.get("ai_telemetry", [])
+	t.collision_cells = data.get("collision_cells", [])
+	t.death_cells = data.get("death_cells", [])
+	t.map_layout_id = String(data.get("map_layout_id", "open"))
+	t.player_spawn_quadrant = String(data.get("player_spawn_quadrant", ""))
+	t.enemy_spawn_quadrant = String(data.get("enemy_spawn_quadrant", ""))
+	t.job_label = String(data.get("job_label", ""))
 	return t

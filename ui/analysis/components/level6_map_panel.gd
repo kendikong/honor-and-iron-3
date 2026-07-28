@@ -39,5 +39,16 @@ func bind_report(report: MassSimBatchReport) -> void:
 		)
 	lines.append("")
 	lines.append("[b]Spawn Bias Validator[/b]")
-	lines.append("[i]Spawn quadrant telemetry not yet emitted — coming with encounter spawn metadata.[/i]")
+	if report.spawn_quadrant_records.is_empty():
+		lines.append("[i]No spawn quadrant telemetry in this batch.[/i]")
+	else:
+		for quad_id: Variant in report.spawn_quadrant_records.keys():
+			var rec: Dictionary = report.spawn_quadrant_records[quad_id] as Dictionary
+			var wr: float = float(rec.get("player_win_pct", 0.0))
+			var dev: float = absf(wr - MassSimConstants.TARGET_PLAYER_WIN_PCT)
+			var color: String = "#7dcea0" if dev < 6.0 else ("#ffb347" if dev < 12.0 else "#ff6b6b")
+			lines.append(
+				"• Spawn %s: [color=%s]%.1f%%[/color] WR (%d matches)"
+				% [str(quad_id), color, wr, int(rec.get("battles", 0))]
+			)
 	_body.text = "\n".join(lines)

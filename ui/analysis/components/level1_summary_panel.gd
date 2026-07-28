@@ -52,7 +52,7 @@ func _init() -> void:
 	add_child(_triage)
 
 
-func bind_report(report: MassSimBatchReport, warnings: Array) -> void:
+func bind_report(report: MassSimBatchReport, warnings: Array, workspace: MassSimWorkspace = null) -> void:
 	var has_data: bool = report != null and not report.is_empty()
 	_empty_banner.visible = not has_data
 	health_summary.visible = has_data
@@ -64,11 +64,13 @@ func bind_report(report: MassSimBatchReport, warnings: Array) -> void:
 
 	health_summary.text = "[b]Algorithmic Health Summary[/b]\n" + TriageEngine.generate_health_summary(report, warnings)
 	version_row.text = (
-		"[b]Version Comparison[/b]  |  Player WR: %s  |  Avg Turns: %s  |  Integrity: %s"
+		"[b]Version Comparison[/b]  |  Player WR: %s  |  Avg Turns: %s  |  Integrity: %s\n"
+		+ "%s"
 		% [
 			report.format_pct_delta(report.player_win_pct, report.previous_player_win_pct),
 			report.format_pct_delta(report.avg_turns, report.previous_avg_turns, ""),
 			report.format_pct_delta(report.integrity_score, report.previous_integrity, " pts"),
+			_format_timeline_sparkline(report),
 		]
 	)
 
@@ -112,6 +114,24 @@ func bind_report(report: MassSimBatchReport, warnings: Array) -> void:
 		"%s leads the batch with %.1f%% win rate when fielded." % [mvp_name, mvp_wr],
 	))
 
+	kpi_cards.add_child(_make_clickable_kpi(
+		"Meta Diversity",
+		"%.0f%%\n%d classes" % [report.meta_diversity_pct, report.unique_classes_seen],
+		MassSimTheme.dev_color(report.meta_diversity_pct, 70.0, 15.0),
+		"Roster Diversity",
+		"Coverage of player class library. Missing: %s"
+		% (", ".join(report.missing_classes) if not report.missing_classes.is_empty() else "none"),
+	))
+
+	var hist: String = _turn_histogram_ascii(report)
+	kpi_cards.add_child(_make_clickable_kpi(
+		"Turn Histogram",
+		"See sparkline",
+		MenuTheme.TEXT_MUTED,
+		"Turn Length Distribution",
+		hist,
+	))
+
 	var whiff_pct: float = float(report.battles_with_whiffs) / float(maxi(report.total_battles, 1)) * 100.0
 	kpi_cards.add_child(_make_clickable_kpi(
 		"Integrity",
@@ -121,7 +141,33 @@ func bind_report(report: MassSimBatchReport, warnings: Array) -> void:
 		"\n".join(report.integrity_notes),
 	))
 
-	_triage.populate(warnings)
+	_triage.populate(warnings, workspace)
+
+
+func _format_timeline_sparkline(report: MassSimBatchReport) -> String:
+	if report.timeline_entries.is_empty():
+		return "[i]Timeline: run another batch to build trend history.[/i]"
+	var parts: PackedStringArray = PackedStringArray()
+	for entry: Dictionary in report.timeline_entries.slice(-6):
+		parts.append("%.0f%%" % float(entry.get("player_win_pct", 0)))
+	return "[b]WR trend:[/b] " + " → ".join(parts)
+
+
+func _turn_histogram_ascii(report: MassSimBatchReport) -> String:
+	if report.turn_histogram.is_empty():
+		return report.sample_gate_label("turn histogram")
+	var max_count: int = 1
+	for k: Variant in report.turn_histogram.keys():
+		max_count = maxi(max_count, int(report.turn_histogram[k]))
+	var lines: PackedStringArray = PackedStringArray()
+	for turns: int in range(4, 21):
+		var key: String = str(turns)
+		var count: int = int(report.turn_histogram.get(key, 0))
+		if count <= 0:
+			continue
+		var bars: int = clampi(int(float(count) / float(max_count) * 12.0), 1, 12)
+		lines.append("%2d | %s (%d)" % [turns, "█".repeat(bars), count])
+	return "\n".join(lines) if not lines.is_empty() else "No turn data"
 
 
 func _make_clickable_kpi(

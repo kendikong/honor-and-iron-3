@@ -1,8 +1,6 @@
 class_name MassSimDashboard
 extends Control
 
-## Mass Simulation Analytics — triage environment per dashboard bible.
-
 static var instance: MassSimDashboard
 
 var main_split: HSplitContainer
@@ -13,22 +11,34 @@ var batch_runner: MassBattleRunner
 var progress_bar: ProgressBar
 var status_label: Label
 var queue_list: ItemList
+var _file_dialog: FileDialog
+var _tag_filter: OptionButton
 
 var _report: MassSimBatchReport
+var _workspace: MassSimWorkspace
 var _log_path: String = MassSimConstants.DEFAULT_LOG_PATH
 var _job_queue: Array[Dictionary] = []
 var _running_job: bool = false
 var _panels: Dictionary = {}
+var _all_rows: Array[Dictionary] = []
 
 
 func _ready() -> void:
 	instance = self
+	_workspace = MassSimWorkspace.load()
+	_log_path = _workspace.log_path
 	_report = MassSimBatchReport.new()
 	_build_chrome()
 	_build_tabs()
 	_bind_runner()
 	_load_saved_results()
+	tab_container.current_tab = _workspace.last_tab
 	_refresh_command_palette()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
+		_save_workspace()
 
 
 func _input(event: InputEvent) -> void:
@@ -42,7 +52,6 @@ func _build_chrome() -> void:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.add_theme_stylebox_override("panel", _flat_style(MenuTheme.BG))
 	add_child(bg)
-
 	main_split = HSplitContainer.new()
 	main_split.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	main_split.offset_left = 12
@@ -52,58 +61,46 @@ func _build_chrome() -> void:
 	main_split.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	main_split.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	bg.add_child(main_split)
-
 	var left := VBoxContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	main_split.add_child(left)
-
 	var header := HBoxContainer.new()
 	left.add_child(header)
-
-	var back_btn := Button.new()
-	back_btn.text = "← Main Menu"
-	MassSimTheme.style_button(back_btn)
-	back_btn.pressed.connect(func() -> void:
+	_add_header_btn(header, "← Menu", func() -> void:
+		_save_workspace()
 		get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 	)
-	header.add_child(back_btn)
-
 	var title := Label.new()
 	title.text = "Mass Simulation Analytics"
 	MassSimTheme.style_title(title)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
-
-	var reload_btn := Button.new()
-	reload_btn.text = "Reload Results"
-	MassSimTheme.style_button(reload_btn)
-	reload_btn.pressed.connect(_load_saved_results)
-	header.add_child(reload_btn)
-
-	var run_btn := Button.new()
-	run_btn.text = "Run Queue"
-	MassSimTheme.style_button(run_btn)
-	run_btn.pressed.connect(_start_queue)
-	header.add_child(run_btn)
-
-	var add_job_btn := Button.new()
-	add_job_btn.text = "+ Job (100)"
-	MassSimTheme.style_button(add_job_btn)
-	add_job_btn.pressed.connect(func() -> void: _enqueue_job("Baseline", 100))
-	header.add_child(add_job_btn)
-
+	_add_header_btn(header, "Open JSONL", _open_file_dialog)
+	_add_header_btn(header, "Reload", _load_saved_results)
+	_add_header_btn(header, "Export CSV", _export_csv)
+	_add_header_btn(header, "Run Queue", _start_queue)
+	_add_header_btn(header, "+100", func() -> void: _enqueue_job("Baseline", 100))
+	_add_header_btn(header, "+500", func() -> void: _enqueue_job("Full Confidence", 500))
 	progress_bar = ProgressBar.new()
 	progress_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	progress_bar.custom_minimum_size.x = 120
+	progress_bar.custom_minimum_size.x = 100
 	progress_bar.visible = false
 	header.add_child(progress_bar)
-
 	status_label = Label.new()
 	MassSimTheme.style_muted(status_label)
-	status_label.text = "Ready"
+	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	left.add_child(status_label)
-
+	var filter_row := HBoxContainer.new()
+	left.add_child(filter_row)
+	var filter_lbl := Label.new()
+	filter_lbl.text = "Map tag filter:"
+	MassSimTheme.style_muted(filter_lbl)
+	filter_row.add_child(filter_lbl)
+	_tag_filter = OptionButton.new()
+	_tag_filter.add_item("All tags", 0)
+	_tag_filter.item_selected.connect(_on_tag_filter_changed)
+	filter_row.add_child(_tag_filter)
 	var queue_panel := PanelContainer.new()
 	MassSimTheme.apply_panel(queue_panel)
 	left.add_child(queue_panel)
@@ -114,22 +111,38 @@ func _build_chrome() -> void:
 	MassSimTheme.style_muted(queue_title)
 	queue_vbox.add_child(queue_title)
 	queue_list = ItemList.new()
-	queue_list.custom_minimum_size = Vector2(0, 72)
+	queue_list.custom_minimum_size = Vector2(0, 64)
 	queue_vbox.add_child(queue_list)
-
 	tab_container = TabContainer.new()
 	tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tab_container.tab_changed.connect(func(tab: int) -> void:
+		_workspace.last_tab = tab
+		_save_workspace()
+	)
 	left.add_child(tab_container)
-
 	inspector = UniversalInspectorPanel.new()
 	main_split.add_child(inspector)
-
+	inspector.replay_requested.connect(_open_replay)
+	inspector.pin_requested.connect(_pin_replay)
 	command_palette = CommandPaletteModal.new()
 	add_child(command_palette)
 	command_palette.item_selected.connect(_on_palette_item)
-
+	_file_dialog = FileDialog.new()
+	_file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
+	_file_dialog.access = FileDialog.ACCESS_USERDATA
+	_file_dialog.filters = PackedStringArray(["*.jsonl ; JSONL logs"])
+	_file_dialog.file_selected.connect(_on_file_selected)
+	add_child(_file_dialog)
 	if _job_queue.is_empty():
 		_enqueue_job("Baseline Batch", 100)
+
+
+func _add_header_btn(parent: HBoxContainer, text: String, cb: Callable) -> void:
+	var btn := Button.new()
+	btn.text = text
+	MassSimTheme.style_button(btn)
+	btn.pressed.connect(cb)
+	parent.add_child(btn)
 
 
 func _build_tabs() -> void:
@@ -148,6 +161,8 @@ func _add_panel(tab_name: String, panel: Control) -> void:
 	_panels[tab_name] = panel
 	if panel.has_signal("inspect_requested"):
 		panel.inspect_requested.connect(_on_inspect)
+	if panel.has_signal("replay_requested"):
+		panel.replay_requested.connect(_open_replay)
 
 
 func _bind_runner() -> void:
@@ -183,62 +198,77 @@ func _run_next_job() -> void:
 	queue_list.remove_item(0)
 	var count: int = int(job.get("count", 100))
 	var label: String = String(job.get("label", "Job"))
-	status_label.text = "Running: %s" % label
+	status_label.text = "Running: %s (%d battles)" % [label, count]
 	progress_bar.visible = true
 	progress_bar.value = 0
 	progress_bar.max_value = count
-	inspector.update_context(
-		"Running Batch",
-		"[b]%s[/b]\nSimulating %d battles on background threads…" % [label, count],
-	)
-	batch_runner.start_batch(count, _log_path)
+	batch_runner.start_batch(count, _log_path, label, true)
 
 
 func _on_batch_progress(completed: int, total: int) -> void:
 	progress_bar.value = completed
 	progress_bar.max_value = total
-	inspector.update_context("Batch Progress", "Completed: %d / %d" % [completed, total])
 
 
 func _on_batch_completed(path: String, stats: Dictionary) -> void:
 	_load_saved_results()
-	var msg := "[b]Batch saved[/b]\n%s\n\n" % path
-	for key: String in ["best_performance_id", "worst_performance_id", "median_match_id", "biggest_upset_id", "most_chaotic_id"]:
-		msg += "%s: [b]%s[/b]\n" % [key, str(stats.get(key, "—"))]
-	inspector.update_context("Batch Complete", msg)
+	inspector.show_replay(_report, int(stats.get("best_performance_id", -1)))
 	MassSimAggregator.save_snapshot(_report)
+	status_label.text = "Batch done — %d total battles in log" % _report.total_battles
 	_run_next_job()
 
 
 func _load_saved_results() -> void:
-	var rows: Array[Dictionary] = MassSimAggregator.load_jsonl(_log_path)
+	_all_rows = MassSimAggregator.load_jsonl(_log_path)
+	_rebuild_tag_filter()
+	var filtered: Array = MassSimAggregator.filter_rows(_all_rows, _workspace.map_tag_filter)
 	var curator: Dictionary = {}
-	if not rows.is_empty():
+	if not filtered.is_empty():
 		var curator_obj := SmartReplayCurator.new()
-		curator_obj.curate(rows)
+		curator_obj.curate(filtered)
 		curator = curator_obj.to_dict()
-	_report = MassSimAggregator.build_report(rows, _log_path, curator)
+	_report = MassSimAggregator.build_report(filtered, _log_path, curator)
 	_apply_report()
 	status_label.text = (
-		"%d battles loaded from %s" % [_report.total_battles, _log_path]
+		"%d battles (%d in file) · %s"
+		% [_report.total_battles, _all_rows.size(), _log_path]
 		if not _report.is_empty()
-		else "No results file — queue a batch to begin"
+		else "No results — queue a batch or Open JSONL"
 	)
+
+
+func _rebuild_tag_filter() -> void:
+	var tags: Dictionary = {}
+	for row: Dictionary in _all_rows:
+		for t: Variant in row.get("map_tags", []):
+			tags[str(t)] = true
+	_tag_filter.clear()
+	_tag_filter.add_item("All tags")
+	var idx: int = 0
+	var select: int = 0
+	for tag: Variant in tags.keys():
+		idx += 1
+		_tag_filter.add_item(str(tag))
+		if str(tag) == _workspace.map_tag_filter:
+			select = idx
+	_tag_filter.select(select)
+
+
+func _on_tag_filter_changed(index: int) -> void:
+	_workspace.map_tag_filter = "" if index <= 0 else _tag_filter.get_item_text(index)
+	_save_workspace()
+	_load_saved_results()
 
 
 func _apply_report() -> void:
 	var warnings: Array = TriageEngine.evaluate_report(_report)
 	var l1: Level1SummaryPanel = _panels.get("L1: Executive Summary") as Level1SummaryPanel
 	if l1 != null:
-		l1.bind_report(_report, warnings)
-	var l2: Level2BalancePanel = _panels.get("L2: Balance & Synergy") as Level2BalancePanel
-	if l2 != null:
-		l2.bind_report(_report)
-	for tab_name: String in [
-		"L3: Economy & Math", "L4: Physics Heatmaps", "L5: AI Diagnostics",
-		"L6: Map Bias", "L7: Integrity",
-	]:
-		var panel: Node = _panels.get(tab_name)
+		l1.bind_report(_report, warnings, _workspace)
+	for tab_name: String in _panels.keys():
+		if tab_name == "L1: Executive Summary":
+			continue
+		var panel: Node = _panels[tab_name]
 		if panel != null and panel.has_method("bind_report"):
 			panel.call("bind_report", _report)
 	_refresh_command_palette()
@@ -254,15 +284,16 @@ func _refresh_command_palette() -> void:
 		entries.append({
 			"label": "Tab: %s" % tabs[i],
 			"title": tabs[i],
-			"body": "Switch to analytics tab %d." % (i + 1),
+			"body": "Switch to tab %d." % (i + 1),
 			"meta": {"tab_index": i},
 		})
 	for key: String in ["best_performance_id", "worst_performance_id", "median_match_id", "biggest_upset_id", "most_chaotic_id"]:
+		var rid: int = int(_report.curator.get(key, -1))
 		entries.append({
-			"label": "Replay %s: %s" % [key, str(_report.curator.get(key, "—"))],
+			"label": "Replay %s #%d" % [key, rid],
 			"title": "Curated Replay",
-			"body": "Open match run_id %s in future replay viewer." % str(_report.curator.get(key, "—")),
-			"meta": {"replay_key": key, "run_id": _report.curator.get(key, -1)},
+			"body": MassSimReplayFormat.format_run(_report, rid) if rid >= 0 else "N/A",
+			"meta": {"run_id": rid, "replay_key": key},
 		})
 	for row: Dictionary in _report.tier_rows:
 		entries.append({
@@ -271,17 +302,84 @@ func _refresh_command_palette() -> void:
 			"body": "Tier %s · %.1f%% WR" % [row.get("tier", "?"), float(row.get("win_rate", 0.0))],
 			"meta": row,
 		})
+	for tag: Variant in _report.map_tag_records.keys():
+		var rec: Dictionary = _report.map_tag_records[tag] as Dictionary
+		entries.append({
+			"label": "Map tag: %s" % str(tag),
+			"title": "Map Bias",
+			"body": "Player WR %.1f%% (%d matches)" % [float(rec.get("player_win_pct", 0)), int(rec.get("battles", 0))],
+			"meta": {"map_tag": str(tag)},
+		})
 	command_palette.set_entries(entries)
 
 
 func _on_palette_item(title: String, body: String, meta: Dictionary) -> void:
 	if meta.has("tab_index"):
 		tab_container.current_tab = int(meta["tab_index"])
-	_on_inspect(title, body, meta)
+	if meta.has("run_id"):
+		_open_replay(int(meta["run_id"]))
+	else:
+		_on_inspect(title, body, meta)
 
 
 func _on_inspect(title: String, body: String, meta: Dictionary = {}) -> void:
 	inspector.update_context(title, body, meta)
+	if meta.has("run_id"):
+		inspector.show_replay(_report, int(meta["run_id"]))
+
+
+func _open_replay(run_id: int) -> void:
+	inspector.show_replay(_report, run_id)
+
+
+func _pin_replay(run_id: int) -> void:
+	if run_id < 0:
+		return
+	if not _workspace.pinned_run_ids.has(run_id):
+		_workspace.pinned_run_ids.append(run_id)
+	_save_workspace()
+	status_label.text = "Pinned replay #%d" % run_id
+
+
+func _open_file_dialog() -> void:
+	_file_dialog.popup_centered(Vector2i(700, 420))
+
+
+func _on_file_selected(path: String) -> void:
+	_log_path = path
+	_workspace.log_path = path
+	_save_workspace()
+	_load_saved_results()
+
+
+func _export_csv() -> void:
+	var export_path := "user://batch_results_export.csv"
+	var file: FileAccess = FileAccess.open(export_path, FileAccess.WRITE)
+	if file == null:
+		status_label.text = "CSV export failed."
+		return
+	file.store_line("run_id,winner,turns,layout,player_quadrant,wall_collisions,execution_whiffs")
+	for row: Dictionary in _all_rows:
+		file.store_line(
+			"%d,%d,%d,%s,%s,%d,%d"
+			% [
+				int(row.get("run_id", -1)),
+				int(row.get("winner", -1)),
+				int(row.get("turns_taken", 0)),
+				String(row.get("map_layout_id", "")),
+				String(row.get("player_spawn_quadrant", "")),
+				int(row.get("wall_collisions", 0)),
+				int(row.get("execution_whiffs", 0)),
+			]
+		)
+	file.close()
+	status_label.text = "Exported CSV → %s" % export_path
+
+
+func _save_workspace() -> void:
+	_workspace.last_tab = tab_container.current_tab
+	_workspace.log_path = _log_path
+	_workspace.save()
 
 
 func _flat_style(color: Color) -> StyleBoxFlat:

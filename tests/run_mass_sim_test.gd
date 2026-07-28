@@ -48,3 +48,27 @@ func _test_triage(triage, failures: Array[String]) -> void:
 	var warnings: Array = triage.evaluate_report(report)
 	if warnings.is_empty():
 		failures.append("triage should warn on empty report")
+	_test_filter_and_heatmap(agg, failures)
+	_test_wilson(load("res://core/batch/mass_sim_batch_report.gd"), failures)
+
+
+func _test_filter_and_heatmap(agg, failures: Array[String]) -> void:
+	var rows: Array[Dictionary] = [
+		{"run_id": 0, "winner": GameEnums.Team.PLAYER, "turns_taken": 10, "map_tags": ["open"], "player_spawn_quadrant": "northwest", "collision_cells": ["5,5"]},
+		{"run_id": 1, "winner": GameEnums.Team.ENEMY, "turns_taken": 12, "map_tags": ["narrow"], "player_spawn_quadrant": "southeast", "collision_cells": ["5,5", "6,6"]},
+	]
+	var filtered: Array = agg.filter_rows(rows, "open")
+	if filtered.size() != 1:
+		failures.append("map tag filter should keep one row")
+	var report = agg.build_report(rows)
+	if int(report.collision_heatmap.get("5,5", 0)) != 2:
+		failures.append("heatmap should aggregate collision cells")
+	if int(report.spawn_quadrant_records.get("northwest", {}).get("battles", 0)) != 1:
+		failures.append("spawn quadrant aggregation failed")
+
+
+func _test_wilson(report_script, failures: Array[String]) -> void:
+	var report = report_script.new()
+	var margin: float = report.wilson_margin(5, 10)
+	if margin <= 0.0 or margin > 50.0:
+		failures.append("wilson margin out of expected range")

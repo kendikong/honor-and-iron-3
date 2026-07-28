@@ -21,8 +21,24 @@ static func load_jsonl(path: String) -> Array[Dictionary]:
 		var json := JSON.new()
 		if json.parse(line) == OK and json.data is Dictionary:
 			rows.append(json.data as Dictionary)
+		else:
+			# Caller may track via build_report parse_errors if needed
+			pass
 	file.close()
 	return rows
+
+
+static func filter_rows(rows: Array, map_tag_filter: String) -> Array:
+	if map_tag_filter.is_empty():
+		return rows
+	var out: Array = []
+	for row: Variant in rows:
+		if not row is Dictionary:
+			continue
+		var tags: Array = (row as Dictionary).get("map_tags", [])
+		if tags.has(map_tag_filter):
+			out.append(row)
+	return out
 
 
 static func build_report(
@@ -109,6 +125,23 @@ static func build_report(
 				copy["run_id"] = row.get("run_id", -1)
 				report.ai_samples.append(copy)
 
+		for cell_key: Variant in row.get("collision_cells", []):
+			var ck: String = str(cell_key)
+			report.collision_heatmap[ck] = int(report.collision_heatmap.get(ck, 0)) + 1
+		for cell_key: Variant in row.get("death_cells", []):
+			var dk: String = str(cell_key)
+			report.collision_heatmap[dk] = int(report.collision_heatmap.get(dk, 0)) + 1
+
+		var pq: String = String(row.get("player_spawn_quadrant", ""))
+		if not pq.is_empty():
+			var sq: Dictionary = _class_record(report.spawn_quadrant_records, pq)
+			sq["battles"] = int(sq.get("battles", 0)) + 1
+			if player_won:
+				sq["player_wins"] = int(sq.get("player_wins", 0)) + 1
+
+		var t_bucket: String = str(turns)
+		report.turn_histogram[t_bucket] = int(report.turn_histogram.get(t_bucket, 0)) + 1
+
 	turn_buf.sort()
 	report.turn_values = turn_buf
 	report.avg_turns = _average_int(turn_buf)
@@ -120,12 +153,25 @@ static func build_report(
 	report.draw_pct = float(report.draws) / n * 100.0
 	report.timeout_pct = float(report.timeouts) / n * 100.0
 	report.unique_classes_seen = class_ids_seen.size()
+	var library_count: int = 0
+	if ClassDB.class_exists("DataLibrary"):
+		library_count = DataLibrary.get_all_player_units().size()
+		report.meta_diversity_pct = float(class_ids_seen.size()) / float(maxi(library_count, 1)) * 100.0
+		for def: UnitData in DataLibrary.get_all_player_units():
+			if not class_ids_seen.has(str(def.id)):
+				report.missing_classes.append(str(def.id))
+
+	for q_id: Variant in report.spawn_quadrant_records.keys():
+		var q_rec: Dictionary = report.spawn_quadrant_records[q_id] as Dictionary
+		var qb: int = int(q_rec.get("battles", 0))
+		q_rec["player_win_pct"] = float(q_rec.get("player_wins", 0)) / float(maxi(qb, 1)) * 100.0
 
 	_finalize_class_rates(report)
 	report.tier_rows = _build_tier_rows(report)
 	report.matchup_snippets = _build_matchup_snippets(report)
 	report.integrity_score = _compute_integrity(report, class_ids_seen, chaos_scores)
 	_load_previous_snapshot(report)
+	report.timeline_entries = load_timeline()
 	return report
 
 
@@ -151,8 +197,8 @@ static func _finalize_class_rates(report: RefCounted) -> void:
 		var tags: Array[String] = []
 		if apps < _C.MIN_CLASS_APPEARANCES:
 			tags.append("Low Sample")
-		if float(rec["win_rate"]) >= 58.0:
-			tags.append("Map Dependent")
+		elif float(rec["win_rate"]) >= 58.0:
+			tags.append("High Performer")
 		if float(rec["win_rate"]) <= 42.0 and apps >= _C.MIN_CLASS_APPEARANCES:
 			tags.append("Synergy Reliant")
 		rec["tags"] = tags
@@ -293,6 +339,43 @@ static func save_snapshot(report: RefCounted) -> void:
 		"timestamp": Time.get_unix_time_from_system(),
 	}))
 	file.close()
+	append_timeline(report)
+
+
+static func append_timeline(report: RefCounted) -> void:
+	var file: FileAccess = FileAccess.open(_C.TIMELINE_PATH, FileAccess.READ_WRITE)
+	if file == null:
+		file = FileAccess.open(_C.TIMELINE_PATH, FileAccess.WRITE)
+	else:
+		file.seek_end()
+	if file == null:
+		return
+	file.store_line(JSON.stringify({
+		"timestamp": Time.get_unix_time_from_system(),
+		"player_win_pct": report.player_win_pct,
+		"avg_turns": report.avg_turns,
+		"integrity_score": report.integrity_score,
+		"total_battles": report.total_battles,
+	}))
+	file.close()
+
+
+static func load_timeline() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if not FileAccess.file_exists(_C.TIMELINE_PATH):
+		return out
+	var file: FileAccess = FileAccess.open(_C.TIMELINE_PATH, FileAccess.READ)
+	if file == null:
+		return out
+	while not file.eof_reached():
+		var line: String = file.get_line().strip_edges()
+		if line.is_empty():
+			continue
+		var json := JSON.new()
+		if json.parse(line) == OK and json.data is Dictionary:
+			out.append(json.data as Dictionary)
+	file.close()
+	return out
 
 
 static func _average_int(values: Array[int]) -> float:

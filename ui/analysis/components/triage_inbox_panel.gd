@@ -24,7 +24,7 @@ func _init() -> void:
 	scroll.add_child(warnings_list)
 
 
-func populate(warnings: Array) -> void:
+func populate(warnings: Array, workspace: MassSimWorkspace = null) -> void:
 	for child: Node in warnings_list.get_children():
 		child.queue_free()
 	if warnings.is_empty():
@@ -61,11 +61,20 @@ func populate(warnings: Array) -> void:
 		desc.text = String(wd.get("description", ""))
 		desc.autowrap_mode = TextServer.AUTOWRAP_WORD
 		card_vbox.add_child(desc)
+		var title_key: String = String(wd.get("title", ""))
 		var state_btn := OptionButton.new()
 		state_btn.add_item("Investigating")
 		state_btn.add_item("Expected")
 		state_btn.add_item("Fixed")
 		state_btn.add_item("Ignore")
+		if workspace != null and workspace.triage_states.has(title_key):
+			var saved: int = int(workspace.triage_states[title_key])
+			state_btn.select(clampi(saved, 0, 3))
+		state_btn.item_selected.connect(func(idx: int) -> void:
+			if workspace != null:
+				workspace.triage_states[title_key] = idx
+				workspace.save()
+		)
 		card_vbox.add_child(state_btn)
 		var inspect_btn := Button.new()
 		inspect_btn.text = "Open in Inspector"

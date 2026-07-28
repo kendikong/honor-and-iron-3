@@ -47,6 +47,14 @@ var curator: Dictionary = {}
 var raw_rows: Array[Dictionary] = []
 var ai_samples: Array[Dictionary] = []
 
+var collision_heatmap: Dictionary = {}
+var spawn_quadrant_records: Dictionary = {}
+var turn_histogram: Dictionary = {}
+var meta_diversity_pct: float = 0.0
+var timeline_entries: Array[Dictionary] = []
+var missing_classes: PackedStringArray = PackedStringArray()
+var parse_errors: int = 0
+
 var previous_player_win_pct: float = -1.0
 var previous_avg_turns: float = -1.0
 var previous_integrity: float = -1.0
@@ -81,4 +89,25 @@ func class_display_name(class_id: Variant) -> String:
 	var key: String = str(class_id)
 	if key.is_empty():
 		return "Unknown"
+	var def: UnitData = DataLibrary.get_unit(StringName(key))
+	if def != null and def.display_name != "":
+		return def.display_name
 	return key.substr(0, 1).to_upper() + key.substr(1)
+
+
+func row_for_run_id(run_id: int) -> Dictionary:
+	for row: Dictionary in raw_rows:
+		if int(row.get("run_id", -1)) == run_id:
+			return row
+	return {}
+
+
+func wilson_margin(wins: int, total: int, z: float = 1.96) -> float:
+	if total <= 0:
+		return 100.0
+	var p: float = float(wins) / float(total)
+	var z2: float = z * z
+	var denom: float = 1.0 + z2 / float(total)
+	var center: float = p + z2 / (2.0 * float(total))
+	var spread: float = z * sqrt((p * (1.0 - p) + z2 / (4.0 * float(total))) / float(total))
+	return (spread / denom) * 100.0

@@ -46,8 +46,18 @@ func bind_report(report: MassSimBatchReport) -> void:
 
 
 func _build_heatmap_ascii(report: MassSimBatchReport) -> String:
-	var intensity: int = clampi(int(report.total_wall_collisions / maxi(report.total_battles, 1)), 0, 8)
-	var bar: String = ""
-	for i: int in range(16):
-		bar += "█" if i < intensity * 2 else "░"
-	return "[font=monospace]%s[/font]  (wall collision density)" % bar
+	if report.collision_heatmap.is_empty():
+		return "[i]%s[/i]" % report.sample_gate_label("spatial heatmap")
+	var max_hits: int = 1
+	for key: Variant in report.collision_heatmap.keys():
+		max_hits = maxi(max_hits, int(report.collision_heatmap[key]))
+	var lines: PackedStringArray = PackedStringArray()
+	var keys: Array = report.collision_heatmap.keys()
+	keys.sort_custom(func(a: Variant, b: Variant) -> bool:
+		return int(report.collision_heatmap[a]) > int(report.collision_heatmap[b])
+	)
+	for key: Variant in keys.slice(0, 12):
+		var hits: int = int(report.collision_heatmap[key])
+		var bars: int = clampi(int(float(hits) / float(max_hits) * 14.0), 1, 14)
+		lines.append("%s | %s (%d)" % [str(key), "█".repeat(bars), hits])
+	return "[font=monospace]%s[/font]" % "\n".join(lines)

@@ -103,6 +103,39 @@ static func evaluate_report(report: RefCounted) -> Array[Dictionary]:
 			% [report.integrity_score, " · ".join(report.integrity_notes)],
 		))
 
+	var chaos_values: Array[float] = []
+	for row: Dictionary in report.raw_rows:
+		var chaos: float = float(
+			int(row.get("wall_collisions", 0))
+			+ int(row.get("chain_collisions", 0))
+			+ int(row.get("hazard_landings", 0))
+		)
+		chaos_values.append(chaos)
+	if chaos_values.size() >= _C.MIN_CLASS_APPEARANCES:
+		var mean: float = 0.0
+		for v: float in chaos_values:
+			mean += v
+		mean /= float(chaos_values.size())
+		var variance: float = 0.0
+		for v: float in chaos_values:
+			variance += (v - mean) * (v - mean)
+		variance /= float(chaos_values.size())
+		var std: float = sqrt(variance)
+		if std > 0.01:
+			var outliers: int = 0
+			for v: float in chaos_values:
+				if absf(v - mean) / std > 2.5:
+					outliers += 1
+			if outliers > 0:
+				var pct: float = float(outliers) / float(chaos_values.size()) * 100.0
+				warnings.append(_warning(
+					"Chaos Z-Score Outliers",
+					Severity.MODERATE,
+					82,
+					"%d matches (%.1f%%) exceed 2.5σ collision chaos — review push chains or map hazards."
+					% [outliers, pct],
+				))
+
 	if warnings.is_empty() or not _has_major_or_critical(warnings):
 		warnings.insert(0, _warning(
 			"Health Check Passed",
@@ -112,7 +145,11 @@ static func evaluate_report(report: RefCounted) -> Array[Dictionary]:
 		))
 
 	warnings.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return int(a["severity"]) > int(b["severity"])
+		var sa: int = int(a["severity"])
+		var sb: int = int(b["severity"])
+		if sa != sb:
+			return sa > sb
+		return int(a.get("confidence", 0)) > int(b.get("confidence", 0))
 	)
 	return warnings
 

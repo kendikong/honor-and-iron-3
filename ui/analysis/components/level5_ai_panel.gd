@@ -2,8 +2,10 @@ class_name Level5AIPanel
 extends VBoxContainer
 
 signal inspect_requested(title: String, body: String, meta: Dictionary)
+signal replay_requested(run_id: int)
 
 var _body: RichTextLabel
+var _replay_row: HBoxContainer
 
 
 func _init() -> void:
@@ -17,9 +19,14 @@ func _init() -> void:
 	_body.bbcode_enabled = true
 	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	add_child(_body)
+	_replay_row = HBoxContainer.new()
+	_replay_row.add_theme_constant_override("separation", 8)
+	add_child(_replay_row)
 
 
 func bind_report(report: MassSimBatchReport) -> void:
+	for child: Node in _replay_row.get_children():
+		child.queue_free()
 	if report == null or report.is_empty():
 		_body.text = "[i]Run a batch to capture Commander AI telemetry.[/i]"
 		return
@@ -49,15 +56,30 @@ func bind_report(report: MassSimBatchReport) -> void:
 	_body.text = (
 		"[b]Match Victory Delta[/b]\n"
 		+ "• Winners generated [color=#7dcea0]%+.0f%%[/color] more collision pressure (heuristic)\n\n"
-		+ "[b]Live Utility Inspector Snapshot[/b]\n%s\n\n"
-		+ "[b]Curated Replays[/b]\n"
-		+ "Best #%s · Worst #%s · Median #%s · Upset #%s · Chaotic #%s"
+		+ "[b]Live Utility Inspector Snapshot[/b]\n%s"
 	) % [
 		delta_pct,
 		sample_text,
-		str(report.curator.get("best_performance_id", "—")),
-		str(report.curator.get("worst_performance_id", "—")),
-		str(report.curator.get("median_match_id", "—")),
-		str(report.curator.get("biggest_upset_id", "—")),
-		str(report.curator.get("most_chaotic_id", "—")),
 	]
+	_add_replay_btn("Best", int(report.curator.get("best_performance_id", -1)))
+	_add_replay_btn("Worst", int(report.curator.get("worst_performance_id", -1)))
+	_add_replay_btn("Median", int(report.curator.get("median_match_id", -1)))
+	_add_replay_btn("Upset", int(report.curator.get("biggest_upset_id", -1)))
+	_add_replay_btn("Chaotic", int(report.curator.get("most_chaotic_id", -1)))
+
+
+func _add_replay_btn(label: String, run_id: int) -> void:
+	if run_id < 0:
+		return
+	var btn := Button.new()
+	btn.text = "%s #%d" % [label, run_id]
+	MassSimTheme.style_button(btn)
+	btn.pressed.connect(func() -> void:
+		replay_requested.emit(run_id)
+		inspect_requested.emit(
+			"Curated Replay: %s" % label,
+			"Run #%d selected from batch curator." % run_id,
+			{"run_id": run_id},
+		)
+	)
+	_replay_row.add_child(btn)
