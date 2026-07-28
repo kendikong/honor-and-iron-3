@@ -52,9 +52,10 @@ func _init(team: int = GameEnums.Team.PLAYER) -> void:
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.custom_minimum_size = Vector2(0, 420)
 	add_child(_scroll)
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	var scroll_vbox := VBoxContainer.new()
 	scroll_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_vbox.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_scroll.add_child(scroll_vbox)
 	var class_hdr := Label.new()
 	class_hdr.text = "Class Survival & Damage"
@@ -62,7 +63,7 @@ func _init(team: int = GameEnums.Team.PLAYER) -> void:
 	scroll_vbox.add_child(class_hdr)
 	_class_tree = Tree.new()
 	_class_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_class_tree.custom_minimum_size = Vector2(0, 160)
+	_class_tree.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_class_tree.columns = 6
 	_class_tree.column_titles_visible = true
 	_class_tree.hide_root = true
@@ -82,7 +83,7 @@ func _init(team: int = GameEnums.Team.PLAYER) -> void:
 	scroll_vbox.add_child(skill_hdr)
 	_tree = Tree.new()
 	_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_tree.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_tree.columns = 7
 	_tree.column_titles_visible = true
 	_tree.hide_root = true
@@ -120,6 +121,7 @@ func bind_report(report: MassSimBatchReport) -> void:
 	if _team_filter == GameEnums.Team.PLAYER:
 		_add_passive_section(report)
 		_add_economy_section(report)
+	call_deferred("_sync_tree_heights")
 
 
 func _team_color() -> Color:
@@ -512,6 +514,13 @@ func _add_economy_section(report: MassSimBatchReport) -> void:
 
 func _format_passive_name(passive_id: String) -> String:
 	return passive_id.replace("_", " ").capitalize()
+
+
+func _sync_tree_heights() -> void:
+	var class_h: int = _class_tree.get_content_height()
+	_class_tree.custom_minimum_size.y = maxi(class_h + 4, 32)
+	var skill_h: int = _tree.get_content_height()
+	_tree.custom_minimum_size.y = maxi(skill_h + 4, 32)
 
 
 func _class_skill_avgs(skills: Array, team: int) -> Dictionary:
