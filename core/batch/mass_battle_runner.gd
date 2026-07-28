@@ -153,6 +153,7 @@ func _run_single_battle_thread(index: int) -> void:
 	for u: UnitState in board.units:
 		if u.is_alive():
 			telemetry.surviving_units.append(u.id)
+	combat_stats.finalize_battle(board)
 	telemetry.combat_meta = combat_stats.to_dict()
 	telemetry.roster_meta = _build_roster_meta(board, winner)
 	_telemetry_results[index] = telemetry.to_dict()

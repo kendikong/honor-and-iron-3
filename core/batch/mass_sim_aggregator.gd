@@ -478,17 +478,29 @@ static func _merge_combat_meta(
 				"unit_turns": 0,
 				"damage_dealt": 0,
 				"damage_taken": 0,
+				"hp_damage_taken": 0,
+				"damage_mitigated": 0,
 				"healing_done": 0,
 				"kills": 0,
 				"deaths": 0,
+				"lifespan_turns_sum": 0,
+				"lifespan_samples": 0,
+				"end_hp_pct_sum": 0.0,
+				"end_hp_pct_samples": 0,
 				"ai_holds": 0,
 				"ai_skill_opportunity_turns": 0,
 				"movement_only_turns": 0,
 				"floated_ap_turns": 0,
 			}
 		var crec: Dictionary = class_store[class_key] as Dictionary
-		for field: String in ["unit_turns", "damage_dealt", "damage_taken", "healing_done", "kills", "deaths", "ai_holds", "ai_skill_opportunity_turns", "movement_only_turns", "floated_ap_turns"]:
+		for field: String in [
+			"unit_turns", "damage_dealt", "damage_taken", "hp_damage_taken", "damage_mitigated",
+			"healing_done", "kills", "deaths", "lifespan_turns_sum", "lifespan_samples",
+			"end_hp_pct_samples", "ai_holds", "ai_skill_opportunity_turns", "movement_only_turns",
+			"floated_ap_turns",
+		]:
 			crec[field] = int(crec.get(field, 0)) + int(cd.get(field, 0))
+		crec["end_hp_pct_sum"] = float(crec.get("end_hp_pct_sum", 0.0)) + float(cd.get("end_hp_pct_sum", 0.0))
 	var ai: Dictionary = combat_meta.get("ai_commander", {}) as Dictionary
 	if not ai.is_empty():
 		ai_store["utility_sum"] = float(ai_store.get("utility_sum", 0.0)) + float(ai.get("avg_utility_per_turn", 0.0)) * float(ai.get("sample_turns", 0))
@@ -536,9 +548,16 @@ static func _finalize_class_combat(class_store: Dictionary) -> Array[Dictionary]
 		var ut: int = int(rec.get("unit_turns", 1))
 		rec["damage_dealt_per_turn"] = float(rec.get("damage_dealt", 0)) / float(maxi(ut, 1))
 		rec["damage_taken_per_turn"] = float(rec.get("damage_taken", 0)) / float(maxi(ut, 1))
+		rec["hp_damage_taken_per_turn"] = float(rec.get("hp_damage_taken", 0)) / float(maxi(ut, 1))
+		rec["damage_mitigated_per_turn"] = float(rec.get("damage_mitigated", 0)) / float(maxi(ut, 1))
 		rec["healing_per_turn"] = float(rec.get("healing_done", 0)) / float(maxi(ut, 1))
 		rec["kills_per_turn"] = float(rec.get("kills", 0)) / float(maxi(ut, 1))
 		rec["deaths_per_turn"] = float(rec.get("deaths", 0)) / float(maxi(ut, 1))
+		var lifespan_samples: int = int(rec.get("lifespan_samples", 0))
+		rec["avg_survival_turns"] = float(rec.get("lifespan_turns_sum", 0)) / float(maxi(lifespan_samples, 1))
+		var end_hp_samples: int = int(rec.get("end_hp_pct_samples", 0))
+		rec["avg_end_hp_pct"] = float(rec.get("end_hp_pct_sum", 0.0)) / float(maxi(end_hp_samples, 1))
+		rec["has_survival_sample"] = lifespan_samples > 0
 		var opp: int = int(rec.get("ai_skill_opportunity_turns", 0))
 		rec["ai_hold_rate_pct"] = float(rec.get("ai_holds", 0)) / float(maxi(opp, 1)) * 100.0
 		rows.append(rec)

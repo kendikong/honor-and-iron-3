@@ -135,7 +135,12 @@ func _test_filter_and_heatmap(agg, failures: Array[String]) -> void:
 			"combat_meta": {
 				"total_turns": 10,
 				"skill_rows": [{"class_id": "knight", "ability_id": "knight_shield_bash", "display_name": "Shield Bash", "team": GameEnums.Team.PLAYER, "uses": 2, "turns_legal": 4, "class_unit_turns": 10, "damage_dealt": 5, "kills": 1}],
-				"class_combat_rows": [{"class_id": "knight", "team": GameEnums.Team.PLAYER, "unit_turns": 10, "damage_dealt": 5, "ai_holds": 1, "ai_skill_opportunity_turns": 3}],
+				"class_combat_rows": [{
+					"class_id": "knight", "team": GameEnums.Team.PLAYER, "unit_turns": 10,
+					"damage_dealt": 5, "hp_damage_taken": 12, "damage_mitigated": 3,
+					"lifespan_turns_sum": 40, "lifespan_samples": 4, "end_hp_pct_sum": 220.0,
+					"end_hp_pct_samples": 4, "ai_holds": 1, "ai_skill_opportunity_turns": 3,
+				}],
 				"ai_commander": {"avg_utility_per_turn": 3.0, "sample_turns": 10, "total_holds": 1, "total_skill_commits": 2},
 			},
 		},
@@ -149,6 +154,11 @@ func _test_filter_and_heatmap(agg, failures: Array[String]) -> void:
 		failures.append("heatmap should aggregate collision cells")
 	if report.skill_meta_rows.is_empty():
 		failures.append("skill meta should aggregate from combat_meta")
+	if report.class_combat_rows.is_empty():
+		failures.append("class combat should aggregate from combat_meta")
+	var knight_row: Dictionary = report.class_combat_rows[0]
+	if float(knight_row.get("avg_survival_turns", 0.0)) < 9.9:
+		failures.append("class combat should finalize avg survival turns")
 	if int(report.spawn_quadrant_records.get("northwest", {}).get("battles", 0)) != 1:
 		failures.append("spawn quadrant aggregation failed")
 

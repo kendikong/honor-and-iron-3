@@ -4,6 +4,7 @@ extends RefCounted
 ## Per-battle combat + skill + Commander-AI telemetry for mass sim meta / balance / AI tuning.
 
 var _unit_meta: Dictionary = {}  # unit_id -> {class_id, team, ability_ids}
+var _unit_lifecycle: Dictionary = {}  # unit_id -> {class_id, team, turns_alive, max_hp, lifespan_recorded}
 var _skill: Dictionary = {}      # ability_key -> counters
 var _class: Dictionary = {}      # class_id -> combat counters
 var _turn: int = 0
@@ -24,6 +25,7 @@ var _turn_holds_player: int = 0
 
 func register_board(board: BoardState) -> void:
 	_unit_meta.clear()
+	_unit_lifecycle.clear()
 	_skill.clear()
 	_class.clear()
 	for unit: UnitState in board.units:
@@ -40,6 +42,13 @@ func register_board(board: BoardState) -> void:
 			"class_id": class_id,
 			"team": unit.team,
 			"ability_ids": ability_ids,
+		}
+		_unit_lifecycle[unit.id] = {
+			"class_id": class_id,
+			"team": unit.team,
+			"turns_alive": 0,
+			"max_hp": maxi(unit.health.max_hp, 1),
+			"lifespan_recorded": false,
 		}
 		_ensure_class(class_id, unit.team)
 
@@ -152,6 +161,23 @@ func apply_events(events: Array, board: BoardState) -> void:
 				_on_turn_ended(event, board)
 
 
+func finalize_battle(board: BoardState) -> void:
+	for unit: UnitState in board.units:
+		var life: Dictionary = _unit_lifecycle.get(unit.id, {}) as Dictionary
+		if life.is_empty() or bool(life.get("lifespan_recorded", false)):
+			continue
+		var class_id: String = String(life.get("class_id", ""))
+		var team: int = int(life.get("team", GameEnums.Team.NEUTRAL))
+		if class_id.is_empty() or not _class.has(_class_key(class_id, team)):
+			continue
+		_record_lifespan(class_id, team, int(life.get("turns_alive", 0)))
+		var end_hp_pct: float = 0.0
+		if unit.is_alive():
+			end_hp_pct = float(unit.health.current_hp) / float(maxi(unit.health.max_hp, 1)) * 100.0
+		_record_end_hp_pct(class_id, team, end_hp_pct)
+		life["lifespan_recorded"] = true
+
+
 func end_turn() -> void:
 	_total_turns += 1
 	_turn_rollups.append({
@@ -194,9 +220,16 @@ func to_dict() -> Dictionary:
 		cr["team"] = int(cr.get("team", GameEnums.Team.NEUTRAL))
 		cr["damage_dealt_per_turn"] = float(cr.get("damage_dealt", 0)) / float(maxi(ut, 1))
 		cr["damage_taken_per_turn"] = float(cr.get("damage_taken", 0)) / float(maxi(ut, 1))
+		cr["hp_damage_taken_per_turn"] = float(cr.get("hp_damage_taken", 0)) / float(maxi(ut, 1))
+		cr["damage_mitigated_per_turn"] = float(cr.get("damage_mitigated", 0)) / float(maxi(ut, 1))
 		cr["healing_per_turn"] = float(cr.get("healing_done", 0)) / float(maxi(ut, 1))
 		cr["kills_per_turn"] = float(cr.get("kills", 0)) / float(maxi(ut, 1))
 		cr["deaths_per_turn"] = float(cr.get("deaths", 0)) / float(maxi(ut, 1))
+		var lifespan_samples: int = int(cr.get("lifespan_samples", 0))
+		cr["avg_survival_turns"] = float(cr.get("lifespan_turns_sum", 0)) / float(maxi(lifespan_samples, 1))
+		var end_hp_samples: int = int(cr.get("end_hp_pct_samples", 0))
+		cr["avg_end_hp_pct"] = float(cr.get("end_hp_pct_sum", 0.0)) / float(maxi(end_hp_samples, 1))
+		cr["has_survival_sample"] = lifespan_samples > 0
 		var opp: int = int(cr.get("ai_skill_opportunity_turns", 0))
 		cr["ai_hold_rate_pct"] = float(cr.get("ai_holds", 0)) / float(maxi(opp, 1)) * 100.0
 		class_rows.append(cr)
@@ -259,14 +292,19 @@ func _on_ability_used(event: SimEvent, board: BoardState) -> void:
 
 func _on_damaged(event: SimEvent, _board: BoardState) -> void:
 	var unit_id: int = int(event.data.get("unit", -1))
-	var amount: int = int(event.data.get("hp_damaged", 0)) + int(event.data.get("armor_damaged", 0))
+	var hp_dmg: int = int(event.data.get("hp_damaged", 0))
+	var armor_dmg: int = int(event.data.get("armor_damaged", 0))
+	var amount: int = hp_dmg + armor_dmg
 	if amount <= 0:
 		return
 	var victim_meta: Dictionary = _unit_meta.get(unit_id, {})
 	var victim_class: String = String(victim_meta.get("class_id", ""))
 	var victim_team: int = int(victim_meta.get("team", GameEnums.Team.NEUTRAL))
 	if not victim_class.is_empty() and _class.has(_class_key(victim_class, victim_team)):
-		(_class[_class_key(victim_class, victim_team)] as Dictionary)["damage_taken"] = int((_class[_class_key(victim_class, victim_team)] as Dictionary).get("damage_taken", 0)) + amount
+		var vcr: Dictionary = _class[_class_key(victim_class, victim_team)] as Dictionary
+		vcr["damage_taken"] = int(vcr.get("damage_taken", 0)) + amount
+		vcr["hp_damage_taken"] = int(vcr.get("hp_damage_taken", 0)) + hp_dmg
+		vcr["damage_mitigated"] = int(vcr.get("damage_mitigated", 0)) + armor_dmg
 	if victim_team == GameEnums.Team.PLAYER:
 		_turn_damage_player += amount
 	else:
@@ -329,6 +367,11 @@ func _on_died(event: SimEvent, _board: BoardState) -> void:
 	var victim_team: int = int(meta.get("team", GameEnums.Team.NEUTRAL))
 	if not class_id.is_empty() and _class.has(_class_key(class_id, victim_team)):
 		(_class[_class_key(class_id, victim_team)] as Dictionary)["deaths"] = int((_class[_class_key(class_id, victim_team)] as Dictionary).get("deaths", 0)) + 1
+	var life: Dictionary = _unit_lifecycle.get(unit_id, {}) as Dictionary
+	if not life.is_empty() and not bool(life.get("lifespan_recorded", false)) and not class_id.is_empty():
+		_record_lifespan(class_id, victim_team, int(life.get("turns_alive", 0)) + 1)
+		_record_end_hp_pct(class_id, victim_team, 0.0)
+		life["lifespan_recorded"] = true
 	if _last_ability_actor < 0:
 		return
 	var attacker_meta: Dictionary = _unit_meta.get(_last_ability_actor, {})
@@ -376,6 +419,9 @@ func _on_turn_ended(_event: SimEvent, board: BoardState) -> void:
 		var floated_ap: int = unit.ability.points_left if unit.ability != null else 0
 		if floated_ap > 0:
 			cr["floated_ap_turns"] = int(cr.get("floated_ap_turns", 0)) + 1
+		var life: Dictionary = _unit_lifecycle.get(unit.id, {}) as Dictionary
+		if not life.is_empty():
+			life["turns_alive"] = int(life.get("turns_alive", 0)) + 1
 
 
 func _ensure_skill(class_id: String, ability_id: String, display_name: String, team: int) -> Dictionary:
@@ -407,9 +453,15 @@ func _ensure_class(class_id: String, team: int) -> Dictionary:
 			"unit_turns": 0,
 			"damage_dealt": 0,
 			"damage_taken": 0,
+			"hp_damage_taken": 0,
+			"damage_mitigated": 0,
 			"healing_done": 0,
 			"kills": 0,
 			"deaths": 0,
+			"lifespan_turns_sum": 0,
+			"lifespan_samples": 0,
+			"end_hp_pct_sum": 0.0,
+			"end_hp_pct_samples": 0,
 			"ai_holds": 0,
 			"ai_skill_opportunity_turns": 0,
 			"movement_only_turns": 0,
@@ -433,3 +485,19 @@ func _timeline_has_skill_for_unit(actions: Array, unit_id: int) -> bool:
 			if ta.actor_id == unit_id and ta.type == GameEnums.ActionType.ABILITY and ta.ability != null:
 				return true
 	return false
+
+
+func _record_lifespan(class_id: String, team: int, turns: int) -> void:
+	if not _class.has(_class_key(class_id, team)):
+		return
+	var cr: Dictionary = _class[_class_key(class_id, team)] as Dictionary
+	cr["lifespan_turns_sum"] = int(cr.get("lifespan_turns_sum", 0)) + maxi(turns, 0)
+	cr["lifespan_samples"] = int(cr.get("lifespan_samples", 0)) + 1
+
+
+func _record_end_hp_pct(class_id: String, team: int, hp_pct: float) -> void:
+	if not _class.has(_class_key(class_id, team)):
+		return
+	var cr: Dictionary = _class[_class_key(class_id, team)] as Dictionary
+	cr["end_hp_pct_sum"] = float(cr.get("end_hp_pct_sum", 0.0)) + clampf(hp_pct, 0.0, 100.0)
+	cr["end_hp_pct_samples"] = int(cr.get("end_hp_pct_samples", 0)) + 1

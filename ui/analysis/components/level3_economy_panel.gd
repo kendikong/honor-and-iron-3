@@ -20,7 +20,13 @@ const _TOL_DMG := 1.5
 const _TOL_HEAL := 0.1
 const _TOL_KILL := 0.02
 
+const _TOL_HP_TAKEN := 1.5
+const _TOL_MITIGATED := 0.5
+const _TOL_SURVIVAL := 1.5
+const _TOL_END_HP := 8.0
+
 var _scroll: ScrollContainer
+var _class_tree: Tree
 var _tree: Tree
 var _rules_label: Label
 
@@ -40,6 +46,33 @@ func _init() -> void:
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.custom_minimum_size = Vector2(0, 420)
 	add_child(_scroll)
+	var scroll_vbox := VBoxContainer.new()
+	scroll_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(scroll_vbox)
+	var class_hdr := Label.new()
+	class_hdr.text = "Class Survival & Damage"
+	MassSimTheme.style_muted(class_hdr)
+	scroll_vbox.add_child(class_hdr)
+	_class_tree = Tree.new()
+	_class_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_class_tree.custom_minimum_size = Vector2(0, 180)
+	_class_tree.columns = 5
+	_class_tree.column_titles_visible = true
+	_class_tree.hide_root = true
+	_class_tree.set_column_title(0, "Class")
+	_class_tree.set_column_title(1, "HP Dmg/T")
+	_class_tree.set_column_title(2, "Mitig/T")
+	_class_tree.set_column_title(3, "Survival")
+	_class_tree.set_column_title(4, "End HP%")
+	_class_tree.set_column_expand_ratio(0, 3)
+	for col: int in range(1, 5):
+		_class_tree.set_column_expand_ratio(col, 1)
+	scroll_vbox.add_child(_class_tree)
+	var skill_hdr := Label.new()
+	skill_hdr.text = "Skill Meta"
+	MassSimTheme.style_muted(skill_hdr)
+	scroll_vbox.add_child(skill_hdr)
 	_tree = Tree.new()
 	_tree.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -56,22 +89,132 @@ func _init() -> void:
 	_tree.set_column_expand_ratio(0, 3)
 	for col: int in range(1, 7):
 		_tree.set_column_expand_ratio(col, 1)
-	_scroll.add_child(_tree)
+	scroll_vbox.add_child(_tree)
 
 
 func bind_report(report: MassSimBatchReport) -> void:
+	_class_tree.clear()
+	_class_tree.create_item()
 	_tree.clear()
 	_tree.create_item()
 	if report == null or report.is_empty():
 		_rules_label.text = "Run a batch (New Epoch recommended) to populate skill meta."
+		var empty_root := _class_tree.get_root()
+		var class_empty := _class_tree.create_item(empty_root)
+		class_empty.set_text(0, "No class combat data yet.")
 		return
 	_rules_label.text = MassSimRulesEpoch.detailed_rules_label(
 		MassSimSkirmishSetup.from_dict(report.skirmish_setup),
 	)
+	_add_class_combat_sections(report)
 	_add_commander_section(report)
 	_add_skill_sections(report)
 	_add_passive_section(report)
 	_add_economy_section(report)
+
+
+func _add_class_combat_sections(report: MassSimBatchReport) -> void:
+	if report.class_combat_rows.is_empty():
+		var root := _class_tree.get_root()
+		var empty := _class_tree.create_item(root)
+		empty.set_text(0, "No class combat data — run a new batch after this update.")
+		return
+	_add_class_team_block(report, GameEnums.Team.PLAYER, "PLAYER CLASSES", _COLOR_PLAYER)
+	_add_class_team_block(report, GameEnums.Team.ENEMY, "ENEMY CLASSES", _COLOR_ENEMY)
+
+
+func _add_class_team_block(report: MassSimBatchReport, team: int, title: String, color: Color) -> void:
+	var rows: Array[Dictionary] = []
+	for row: Dictionary in report.class_combat_rows:
+		if int(row.get("team", -1)) != team:
+			continue
+		rows.append(row)
+	if rows.is_empty():
+		return
+	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return report.class_display_name(String(a.get("class_id", ""))) < report.class_display_name(String(b.get("class_id", "")))
+	)
+	var avgs: Dictionary = _class_combat_avgs(rows)
+	var root := _class_tree.get_root()
+	var team_hdr := _class_tree.create_item(root)
+	team_hdr.set_text(0, title)
+	team_hdr.set_custom_color(0, color)
+	for row: Dictionary in rows:
+		_add_class_combat_row(report, team_hdr, row, team, avgs, color)
+
+
+func _add_class_combat_row(
+	report: MassSimBatchReport,
+	parent: TreeItem,
+	row: Dictionary,
+	team: int,
+	team_avgs: Dictionary,
+	team_color: Color,
+) -> void:
+	var item := _class_tree.create_item(parent)
+	var class_id: String = String(row.get("class_id", ""))
+	var unit_turns: int = int(row.get("unit_turns", 0))
+	var has_sample: bool = unit_turns > 0 or bool(row.get("has_survival_sample", false))
+	var hp_taken: int = int(row.get("hp_damage_taken", 0))
+	var mitigated: int = int(row.get("damage_mitigated", 0))
+	var lifespan_samples: int = int(row.get("lifespan_samples", 0))
+	var lifespan_sum: int = int(row.get("lifespan_turns_sum", 0))
+	var end_hp_samples: int = int(row.get("end_hp_pct_samples", 0))
+	item.set_text(0, report.class_display_name(class_id))
+	item.set_custom_color(0, team_color.lightened(0.1))
+	if has_sample:
+		var hp_pt: float = float(row.get("hp_damage_taken_per_turn", 0.0))
+		item.set_text(1, "%.2f" % hp_pt)
+		item.set_tooltip_text(1, "%d HP damage taken over %d class unit-turns." % [hp_taken, unit_turns])
+		_color_metric(item, 1, hp_pt, float(team_avgs.get("hp_damage_taken_per_turn", 0.0)), _TOL_HP_TAKEN, true)
+		var mit_pt: float = float(row.get("damage_mitigated_per_turn", 0.0))
+		item.set_text(2, "%.2f" % mit_pt)
+		item.set_tooltip_text(2, "%d armor damage mitigated over %d class unit-turns." % [mitigated, unit_turns])
+		_color_metric(item, 2, mit_pt, float(team_avgs.get("damage_mitigated_per_turn", 0.0)), _TOL_MITIGATED)
+	else:
+		for col: int in [1, 2]:
+			item.set_text(col, "—")
+			item.set_tooltip_text(col, "No sample — class did not appear in this batch.")
+			_color_no_sample(item, col)
+	if lifespan_samples > 0:
+		var survival: float = float(row.get("avg_survival_turns", 0.0))
+		item.set_text(3, "%.1f" % survival)
+		item.set_tooltip_text(3, "%d total turns alive over %d unit instances." % [lifespan_sum, lifespan_samples])
+		_color_metric(item, 3, survival, float(team_avgs.get("avg_survival_turns", 0.0)), _TOL_SURVIVAL)
+	else:
+		item.set_text(3, "—")
+		item.set_tooltip_text(3, "No sample — run a new batch to collect survival telemetry.")
+		_color_no_sample(item, 3)
+	if end_hp_samples > 0:
+		var end_hp: float = float(row.get("avg_end_hp_pct", 0.0))
+		item.set_text(4, "%.0f%%" % end_hp)
+		item.set_tooltip_text(4, "%.1f%% average end HP across %d unit instances (0%% if dead)." % [end_hp, end_hp_samples])
+		_color_metric(item, 4, end_hp, float(team_avgs.get("avg_end_hp_pct", 0.0)), _TOL_END_HP)
+	else:
+		item.set_text(4, "—")
+		item.set_tooltip_text(4, "No sample — run a new batch to collect end-of-battle HP telemetry.")
+		_color_no_sample(item, 4)
+
+
+func _class_combat_avgs(rows: Array[Dictionary]) -> Dictionary:
+	var hp_vals: Array[float] = []
+	var mit_vals: Array[float] = []
+	var survival_vals: Array[float] = []
+	var end_hp_vals: Array[float] = []
+	for row: Dictionary in rows:
+		if int(row.get("unit_turns", 0)) > 0:
+			hp_vals.append(float(row.get("hp_damage_taken_per_turn", 0.0)))
+			mit_vals.append(float(row.get("damage_mitigated_per_turn", 0.0)))
+		if int(row.get("lifespan_samples", 0)) > 0:
+			survival_vals.append(float(row.get("avg_survival_turns", 0.0)))
+		if int(row.get("end_hp_pct_samples", 0)) > 0:
+			end_hp_vals.append(float(row.get("avg_end_hp_pct", 0.0)))
+	return {
+		"hp_damage_taken_per_turn": _avg_floats(hp_vals),
+		"damage_mitigated_per_turn": _avg_floats(mit_vals),
+		"avg_survival_turns": _avg_floats(survival_vals),
+		"avg_end_hp_pct": _avg_floats(end_hp_vals),
+	}
 
 
 func _add_commander_section(report: MassSimBatchReport) -> void:
