@@ -76,6 +76,8 @@ func _init(team: int = GameEnums.Team.PLAYER) -> void:
 	_class_tree.set_column_expand_ratio(0, 3)
 	for col: int in range(1, 6):
 		_class_tree.set_column_expand_ratio(col, 1)
+	_class_tree.scroll_vertical_enabled = false
+	_class_tree.scroll_horizontal_enabled = false
 	scroll_vbox.add_child(_class_tree)
 	var skill_hdr := Label.new()
 	skill_hdr.text = "Skill Meta"
@@ -97,6 +99,8 @@ func _init(team: int = GameEnums.Team.PLAYER) -> void:
 	_tree.set_column_expand_ratio(0, 3)
 	for col: int in range(1, 7):
 		_tree.set_column_expand_ratio(col, 1)
+	_tree.scroll_vertical_enabled = false
+	_tree.scroll_horizontal_enabled = false
 	scroll_vbox.add_child(_tree)
 
 
@@ -517,10 +521,50 @@ func _format_passive_name(passive_id: String) -> String:
 
 
 func _sync_tree_heights() -> void:
-	var class_h: int = _class_tree.get_content_height()
-	_class_tree.custom_minimum_size.y = maxi(class_h + 4, 32)
-	var skill_h: int = _tree.get_content_height()
-	_tree.custom_minimum_size.y = maxi(skill_h + 4, 32)
+	_apply_tree_height(_class_tree)
+	_apply_tree_height(_tree)
+
+
+func _apply_tree_height(tree: Tree) -> void:
+	var content_h: int = _measure_tree_height(tree)
+	tree.custom_minimum_size.y = maxi(content_h + 8, 32)
+	tree.update_minimum_size()
+
+
+func _measure_tree_height(tree: Tree) -> int:
+	var root: TreeItem = tree.get_root()
+	if root == null:
+		return 0
+	var bottom: int = 0
+	if tree.column_titles_visible:
+		bottom = 28
+	var stack: Array[TreeItem] = []
+	for child: TreeItem in root.get_children():
+		stack.append(child)
+	while not stack.is_empty():
+		var item: TreeItem = stack.pop_back()
+		var area: Rect2 = tree.get_item_area_rect(item)
+		if area.size.y > 0.0:
+			bottom = maxi(bottom, int(area.position.y + area.size.y))
+		for sub: TreeItem in item.get_children():
+			stack.append(sub)
+	if bottom <= 28:
+		var rows: int = _count_tree_items(root)
+		bottom = 28 + rows * 20
+	return bottom
+
+
+func _count_tree_items(root: TreeItem) -> int:
+	var total: int = 0
+	var stack: Array[TreeItem] = []
+	for child: TreeItem in root.get_children():
+		stack.append(child)
+	while not stack.is_empty():
+		total += 1
+		var item: TreeItem = stack.pop_back()
+		for sub: TreeItem in item.get_children():
+			stack.append(sub)
+	return total
 
 
 func _class_skill_avgs(skills: Array, team: int) -> Dictionary:
