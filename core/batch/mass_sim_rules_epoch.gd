@@ -176,7 +176,7 @@ static func format_created_at_date(ep: Dictionary) -> String:
 		if String(ep.get("id", "")) == LEGACY_EPOCH_ID:
 			return "Before tracking"
 		return "Date unknown"
-	var dt: Dictionary = Time.get_datetime_dict_from_unix_time(created, false)
+	var dt: Dictionary = Time.get_datetime_dict_from_unix_time(created)
 	const MONTHS: PackedStringArray = PackedStringArray([
 		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -207,7 +207,7 @@ static func _parse_created_at_from_epoch_id(epoch_id: String) -> int:
 		"minute": match.get_string(5).to_int(),
 		"second": match.get_string(6).to_int(),
 	}
-	return Time.get_unix_time_from_datetime_dict(dt, true)
+	return Time.get_unix_time_from_datetime_dict(dt)
 
 
 static func active_epoch(workspace: MassSimWorkspace) -> Dictionary:
