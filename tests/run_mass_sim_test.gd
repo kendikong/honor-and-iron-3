@@ -6,7 +6,7 @@ func _initialize() -> void:
 	var triage = load("res://core/batch/triage_engine.gd")
 	_test_empty(agg, failures)
 	_test_sample(agg, failures)
-	_test_triage(triage, failures)
+	_test_triage(triage, agg, failures)
 	if failures.is_empty():
 		print("[PASS] Mass sim analytics stack")
 		quit(0)
@@ -43,7 +43,7 @@ func _test_sample(agg, failures: Array[String]) -> void:
 		failures.append("expected 50%% player WR")
 
 
-func _test_triage(triage, failures: Array[String]) -> void:
+func _test_triage(triage, agg, failures: Array[String]) -> void:
 	var report = load("res://core/batch/mass_sim_batch_report.gd").new()
 	var warnings: Array = triage.evaluate_report(report)
 	if warnings.is_empty():

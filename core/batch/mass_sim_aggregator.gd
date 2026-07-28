@@ -114,7 +114,7 @@ static func build_report(
 			var tag: String = str(raw_tag)
 			if tag.is_empty():
 				continue
-			var tag_rec: Dictionary = _class_record(report.map_tag_records, tag)
+			var tag_rec: Dictionary = _bucket_record(report.map_tag_records, tag)
 			tag_rec["battles"] = int(tag_rec["battles"]) + 1
 			if player_won:
 				tag_rec["player_wins"] = int(tag_rec["player_wins"]) + 1
@@ -134,10 +134,10 @@ static func build_report(
 
 		var pq: String = String(row.get("player_spawn_quadrant", ""))
 		if not pq.is_empty():
-			var sq: Dictionary = _class_record(report.spawn_quadrant_records, pq)
-			sq["battles"] = int(sq.get("battles", 0)) + 1
+			var sq: Dictionary = _bucket_record(report.spawn_quadrant_records, pq)
+			sq["battles"] = int(sq["battles"]) + 1
 			if player_won:
-				sq["player_wins"] = int(sq.get("player_wins", 0)) + 1
+				sq["player_wins"] = int(sq["player_wins"]) + 1
 
 		var t_bucket: String = str(turns)
 		report.turn_histogram[t_bucket] = int(report.turn_histogram.get(t_bucket, 0)) + 1
@@ -173,6 +173,16 @@ static func build_report(
 	_load_previous_snapshot(report)
 	report.timeline_entries = load_timeline()
 	return report
+
+
+static func _bucket_record(store: Dictionary, key: String) -> Dictionary:
+	if not store.has(key):
+		store[key] = {
+			"battles": 0,
+			"player_wins": 0,
+			"player_win_pct": 0.0,
+		}
+	return store[key] as Dictionary
 
 
 static func _class_record(store: Dictionary, key: String) -> Dictionary:
