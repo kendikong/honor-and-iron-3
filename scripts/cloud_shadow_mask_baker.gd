@@ -79,6 +79,8 @@ func _enter_tree() -> void:
 func _exit_tree() -> void:
 	if _active == self:
 		_active = null
+	_baking = false
+	_queued_sync = {}
 
 
 func _ready() -> void:
@@ -182,8 +184,9 @@ func _start_bake(
 
 
 func _finish_bake_async() -> void:
-	await get_tree().process_frame
-	await get_tree().process_frame
+	if not _await_bake_frames():
+		_abort_bake()
+		return
 	var tex: Texture2D = _viewport.get_texture()
 	if tex != null:
 		var img: Image = tex.get_image()
@@ -202,6 +205,28 @@ func _finish_bake_async() -> void:
 			int(queued["stamp"]),
 			queued.get("content_origin_cell", Vector2i.ZERO) as Vector2i,
 		)
+
+
+func _await_bake_frames() -> bool:
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return false
+	await tree.process_frame
+	if not is_instance_valid(self) or not is_inside_tree():
+		return false
+	tree = get_tree()
+	if tree == null:
+		return false
+	await tree.process_frame
+	return is_instance_valid(self) and is_inside_tree()
+
+
+func _abort_bake() -> void:
+	_baking = false
+	_bake_stamp_target = -1
+	_queued_sync = {}
+	if _viewport != null:
+		_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 
 func _clear_bake() -> void:
