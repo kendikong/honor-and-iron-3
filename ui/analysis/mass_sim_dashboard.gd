@@ -340,8 +340,7 @@ func _build_new_epoch_dialog() -> void:
 	_new_epoch_dialog.unresizable = true
 	_new_epoch_dialog.transient = true
 	_new_epoch_dialog.exclusive = true
-	_new_epoch_dialog.min_size = Vector2i(440, 248)
-	_new_epoch_dialog.size = Vector2i(440, 248)
+	_new_epoch_dialog.min_size = Vector2i(480, 300)
 	_new_epoch_dialog.close_requested.connect(func() -> void: _new_epoch_dialog.hide())
 	var panel := PanelContainer.new()
 	MassSimTheme.apply_panel(panel)
@@ -352,10 +351,11 @@ func _build_new_epoch_dialog() -> void:
 	margin.add_theme_constant_override("margin_left", 16)
 	margin.add_theme_constant_override("margin_right", 16)
 	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_bottom", 12)
+	margin.add_theme_constant_override("margin_bottom", 16)
 	panel.add_child(margin)
 	var root := VBoxContainer.new()
-	root.add_theme_constant_override("separation", 10)
+	root.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_theme_constant_override("separation", 12)
 	margin.add_child(root)
 	var intro := Label.new()
 	intro.text = (
@@ -377,17 +377,22 @@ func _build_new_epoch_dialog() -> void:
 	rules.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	MassSimTheme.style_muted(rules)
 	root.add_child(rules)
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(0, 8)
+	root.add_child(spacer)
 	var btn_row := HBoxContainer.new()
-	btn_row.add_theme_constant_override("separation", 8)
+	btn_row.add_theme_constant_override("separation", 10)
 	btn_row.alignment = BoxContainer.ALIGNMENT_END
 	root.add_child(btn_row)
 	var cancel_btn := Button.new()
 	cancel_btn.text = "Cancel"
+	cancel_btn.custom_minimum_size = Vector2(96, 36)
 	MassSimTheme.style_button(cancel_btn)
 	cancel_btn.pressed.connect(func() -> void: _new_epoch_dialog.hide())
 	btn_row.add_child(cancel_btn)
 	var ok_btn := Button.new()
 	ok_btn.text = "Start Fresh Epoch"
+	ok_btn.custom_minimum_size = Vector2(148, 36)
 	MassSimTheme.style_button(ok_btn)
 	ok_btn.pressed.connect(_on_new_epoch_confirmed)
 	btn_row.add_child(ok_btn)
@@ -397,7 +402,8 @@ func _build_new_epoch_dialog() -> void:
 func _open_new_epoch_dialog() -> void:
 	if _epoch_label_edit != null:
 		_epoch_label_edit.text = ""
-	_new_epoch_dialog.popup_centered(Vector2i(440, 248))
+	_new_epoch_dialog.reset_size()
+	_new_epoch_dialog.popup_centered(Vector2i(480, 300))
 
 
 func _on_new_epoch_confirmed() -> void:
