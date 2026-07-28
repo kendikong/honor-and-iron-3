@@ -3,15 +3,7 @@ extends Window
 
 signal setup_applied(setup: MassSimSkirmishSetup)
 
-const _C = preload("res://core/batch/mass_sim_constants.gd")
-
-var _player_count: SpinBox
-var _enemy_count: SpinBox
-var _player_level: SpinBox
-var _enemy_level: SpinBox
-var _player_passives: SpinBox
-var _player_skills: SpinBox
-var _preview: Label
+var _fields: SkirmishSetupFields
 var _epoch_note: Label
 
 
@@ -44,92 +36,35 @@ func _init() -> void:
 	_epoch_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	MassSimTheme.style_muted(_epoch_note)
 	root.add_child(_epoch_note)
-	_player_count = _add_spin_row(root, "Player count", _C.SKIRMISH_MIN_PLAYER_COUNT, _C.SKIRMISH_MAX_PLAYER_COUNT)
-	_enemy_count = _add_spin_row(root, "Enemy count", _C.SKIRMISH_MIN_ENEMY_COUNT, _C.SKIRMISH_MAX_ENEMY_COUNT)
-	_player_level = _add_spin_row(root, "Player level", _C.SKIRMISH_MIN_LEVEL, _C.SKIRMISH_MAX_LEVEL)
-	_enemy_level = _add_spin_row(root, "Enemy level", _C.SKIRMISH_MIN_LEVEL, _C.SKIRMISH_MAX_LEVEL)
-	_player_passives = _add_spin_row(root, "Player passives (random)", 0, _C.SKIRMISH_MAX_PASSIVE_COUNT)
-	_player_skills = _add_spin_row(root, "Player class skills", 0, _C.SKIRMISH_ALL_CLASS_SKILLS_UI)
-	var skills_hint := Label.new()
-	skills_hint.text = "Class skills: 0 = run/move/basic only · 99 = full kit · 1–98 = random pick count"
-	MassSimTheme.style_muted(skills_hint)
-	skills_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	root.add_child(skills_hint)
-	_preview = Label.new()
-	_preview.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	root.add_child(_preview)
-	for sb: SpinBox in [_player_count, _enemy_count, _player_level, _enemy_level, _player_passives, _player_skills]:
-		sb.value_changed.connect(func(_v: float) -> void: _refresh_preview())
+	_fields = SkirmishSetupFields.new()
+	root.add_child(_fields)
 	var btn_row := HBoxContainer.new()
-	btn_row.alignment = BoxContainer.ALIGNMENT_END
 	btn_row.add_theme_constant_override("separation", 8)
+	btn_row.alignment = BoxContainer.ALIGNMENT_END
 	root.add_child(btn_row)
-	var cancel := Button.new()
-	cancel.text = "Cancel"
-	MassSimTheme.style_button(cancel)
-	cancel.pressed.connect(func() -> void: hide())
-	btn_row.add_child(cancel)
-	var apply := Button.new()
-	apply.text = "Save Setup"
-	MassSimTheme.style_button(apply)
-	apply.custom_minimum_size = Vector2(120, 36)
-	apply.pressed.connect(_on_apply)
-	btn_row.add_child(apply)
-
-
-func _add_spin_row(parent: VBoxContainer, label_text: String, min_v: int, max_v: int) -> SpinBox:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	var lbl := Label.new()
-	lbl.text = label_text
-	lbl.custom_minimum_size.x = 180
-	MassSimTheme.style_muted(lbl)
-	row.add_child(lbl)
-	var sb := SpinBox.new()
-	sb.min_value = min_v
-	sb.max_value = max_v
-	sb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(sb)
-	parent.add_child(row)
-	return sb
+	var cancel_btn := Button.new()
+	cancel_btn.text = "Cancel"
+	cancel_btn.custom_minimum_size = Vector2(96, 36)
+	MassSimTheme.style_button(cancel_btn)
+	cancel_btn.pressed.connect(func() -> void: hide())
+	btn_row.add_child(cancel_btn)
+	var ok_btn := Button.new()
+	ok_btn.text = "Save Setup"
+	ok_btn.custom_minimum_size = Vector2(120, 36)
+	MassSimTheme.style_button(ok_btn)
+	ok_btn.pressed.connect(_on_apply)
+	btn_row.add_child(ok_btn)
 
 
 func open_with(setup: MassSimSkirmishSetup, epoch_locked: MassSimSkirmishSetup = null) -> void:
-	_player_count.value = setup.player_count
-	_enemy_count.value = setup.enemy_count
-	_player_level.value = setup.player_level
-	_enemy_level.value = setup.enemy_level
-	_player_passives.value = setup.player_passive_count
-	_player_skills.value = (
-		_C.SKIRMISH_ALL_CLASS_SKILLS_UI
-		if setup.player_class_skill_count < 0
-		else setup.player_class_skill_count
-	)
+	_fields.load_setup(setup)
 	if epoch_locked != null:
 		_epoch_note.text = "Active epoch locked: %s — change setup then click New Epoch." % epoch_locked.summary_label()
 	else:
 		_epoch_note.text = "Edits apply to the next batch. Click New Epoch to start a comparable log."
-	_refresh_preview()
 	popup_centered(Vector2i(520, 440))
 
 
-func _read_setup() -> MassSimSkirmishSetup:
-	var s := MassSimSkirmishSetup.new()
-	s.player_count = int(_player_count.value)
-	s.enemy_count = int(_enemy_count.value)
-	s.player_level = int(_player_level.value)
-	s.enemy_level = int(_enemy_level.value)
-	s.player_passive_count = int(_player_passives.value)
-	var skill_ui: int = int(_player_skills.value)
-	s.player_class_skill_count = -1 if skill_ui >= _C.SKIRMISH_ALL_CLASS_SKILLS_UI else skill_ui
-	s.clamp()
-	return s
-
-
-func _refresh_preview() -> void:
-	_preview.text = "Preview: %s" % _read_setup().summary_label()
-
-
 func _on_apply() -> void:
-	setup_applied.emit(_read_setup())
+	setup_applied.emit(_fields.read_setup())
 	hide()

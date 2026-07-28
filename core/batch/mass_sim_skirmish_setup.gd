@@ -14,6 +14,31 @@ var player_passive_count: int = _C.SKIRMISH_PLAYER_PASSIVE_COUNT
 var player_class_skill_count: int = -1
 
 
+const PLAY_SETUP_PATH := "user://skirmish_play_setup.json"
+
+
+static func load_play_saved() -> MassSimSkirmishSetup:
+	if not FileAccess.file_exists(PLAY_SETUP_PATH):
+		return defaults()
+	var file: FileAccess = FileAccess.open(PLAY_SETUP_PATH, FileAccess.READ)
+	if file == null:
+		return defaults()
+	var json := JSON.new()
+	if json.parse(file.get_as_text()) != OK or not json.data is Dictionary:
+		file.close()
+		return defaults()
+	file.close()
+	return from_dict(json.data as Dictionary)
+
+
+static func save_play(setup: MassSimSkirmishSetup) -> void:
+	var file: FileAccess = FileAccess.open(PLAY_SETUP_PATH, FileAccess.WRITE)
+	if file == null:
+		return
+	file.store_string(JSON.stringify(setup.to_dict()))
+	file.close()
+
+
 static func defaults() -> MassSimSkirmishSetup:
 	return MassSimSkirmishSetup.new()
 

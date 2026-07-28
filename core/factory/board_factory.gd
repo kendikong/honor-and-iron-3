@@ -32,15 +32,33 @@ static func build_from_encounter(data: EncounterData, player_assignments: Dictio
 		var p: UnitPlacement = data.player_spawns[i]
 		var slot: int = i + 1
 		var pid: int = int(player_assignments.get(slot, slot))
-		_place(board, id_counter, p.unit, GameEnums.Team.PLAYER, p.coord, pid)
+		_place_placement(board, id_counter, p, GameEnums.Team.PLAYER, pid)
 		id_counter += 1
 		
 	# 5. Spawns (Enemy)
-	for e in data.enemy_spawns:
-		_place(board, id_counter, e.unit, GameEnums.Team.ENEMY, e.coord)
+	for e: UnitPlacement in data.enemy_spawns:
+		_place_placement(board, id_counter, e, GameEnums.Team.ENEMY)
 		id_counter += 1
 		
 	return board
+
+
+static func _place_placement(
+	target_board: BoardState,
+	unit_id: int,
+	placement: UnitPlacement,
+	team: GameEnums.Team,
+	controlling_player_id: int = 1,
+) -> UnitState:
+	if placement == null or placement.unit == null:
+		return null
+	if not placement.spawn_config.is_empty():
+		place_configured_unit(
+			target_board, unit_id, placement.unit, team, placement.coord,
+			placement.spawn_config, controlling_player_id,
+		)
+		return target_board.get_unit_by_id(unit_id)
+	return _place(target_board, unit_id, placement.unit, team, placement.coord, controlling_player_id)
 
 static func _place(target_board: BoardState, unit_id: int, def: UnitData, team: GameEnums.Team, coord: Vector2i, controlling_player_id: int = 1) -> UnitState:
 	if def == null: return null

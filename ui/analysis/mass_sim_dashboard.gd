@@ -460,6 +460,7 @@ func _open_skirmish_setup() -> void:
 
 func _on_skirmish_setup_applied(setup: MassSimSkirmishSetup) -> void:
 	_workspace.skirmish_setup = setup.to_dict()
+	MassSimSkirmishSetup.save_play(setup)
 	_save_workspace()
 	_refresh_skirmish_summary()
 	status_label.text = "Skirmish setup saved — %s (New Epoch to lock)" % setup.summary_label()

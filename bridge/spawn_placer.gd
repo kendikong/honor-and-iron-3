@@ -127,6 +127,74 @@ static func place_mvp_roster(
 	}
 
 
+static func place_skirmish_roster(
+	grid: PlayerGrid,
+	_blocked_cells: Dictionary,
+	map_seed: int,
+	setup: MassSimSkirmishSetup,
+	trees: TileMapLayer = null,
+	overlay: TileMapLayer = null,
+	settings: EffectsSettings = null,
+	scatter: TileMapLayer = null,
+) -> Dictionary:
+	var player_count: int = setup.player_count
+	var enemy_count: int = setup.enemy_count
+	var player_cells: Array[Vector2i] = _pick_band_spawns(
+		grid,
+		player_band_x_min(grid.width),
+		player_band_x_max(grid.width) + 1,
+		player_count,
+		map_seed,
+		9109,
+		prefer_player_anchor(grid),
+		trees,
+		overlay,
+		settings,
+		scatter,
+	)
+	var enemy_cells: Array[Vector2i] = _pick_band_spawns(
+		grid,
+		enemy_band_x_min(grid.width),
+		enemy_band_x_max_exclusive(grid.width),
+		enemy_count,
+		map_seed,
+		9203,
+		prefer_enemy_anchor(grid),
+		trees,
+		overlay,
+		settings,
+		scatter,
+	)
+	var player_spawns: Array[UnitPlacement] = []
+	var player_defs := _pick_random_player_roster(mini(player_count, player_cells.size()), map_seed)
+	for i: int in range(player_cells.size()):
+		if i >= player_defs.size():
+			break
+		var placement := UnitPlacement.new()
+		placement.unit = player_defs[i]
+		placement.coord = player_cells[i]
+		placement.spawn_config = MassSimUnitConfig.build(
+			player_defs[i], GameEnums.Team.PLAYER, map_seed, i, setup,
+		)
+		player_spawns.append(placement)
+	var enemy_spawns: Array[UnitPlacement] = []
+	var enemy_defs := _pick_enemy_roster(mini(enemy_count, enemy_cells.size()), map_seed)
+	for i: int in range(enemy_cells.size()):
+		if i >= enemy_defs.size():
+			break
+		var e_placement := UnitPlacement.new()
+		e_placement.unit = enemy_defs[i]
+		e_placement.coord = enemy_cells[i]
+		e_placement.spawn_config = MassSimUnitConfig.build(
+			enemy_defs[i], GameEnums.Team.ENEMY, map_seed, i, setup,
+		)
+		enemy_spawns.append(e_placement)
+	return {
+		"player_spawns": player_spawns,
+		"enemy_spawns": enemy_spawns,
+	}
+
+
 static func place_custom_player_roster(
 	grid: PlayerGrid,
 	_blocked_cells: Dictionary,

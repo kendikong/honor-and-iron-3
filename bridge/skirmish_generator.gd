@@ -7,6 +7,11 @@ class SkirmishConfig:
 	var size_preset: Vector2i = Vector2i(32, 16)
 	var map_seed: int = 42
 	var biome_variant: int = 1
+	var skirmish_setup: Dictionary = MassSimSkirmishSetup.defaults().to_dict()
+
+
+	func get_setup() -> MassSimSkirmishSetup:
+		return MassSimSkirmishSetup.from_dict(skirmish_setup)
 
 
 class SkirmishResult:
@@ -38,10 +43,12 @@ static func generate(config: SkirmishConfig) -> SkirmishResult:
 	result.map_seed = config.map_seed
 	result.biome_variant = config.biome_variant
 	result.blocked_cells = WalkabilityBaker.bake(result.grid, null, null, null, null)
-	var roster: Dictionary = SpawnPlacer.place_mvp_roster(
+	var setup: MassSimSkirmishSetup = config.get_setup()
+	var roster: Dictionary = SpawnPlacer.place_skirmish_roster(
 		result.grid,
 		result.blocked_cells,
 		config.map_seed,
+		setup,
 	)
 	result.player_spawns = roster["player_spawns"]
 	result.enemy_spawns = roster["enemy_spawns"]

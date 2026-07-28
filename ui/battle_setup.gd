@@ -95,7 +95,7 @@ func _build_skirmish_card() -> Control:
 	vbox.add_child(title)
 
 	var desc := Label.new()
-	desc.text = "Procedural mana-seed map. Pick a size preset — Knight vs enemy squad."
+	desc.text = "Procedural map — configure roster, levels, passives, and skills."
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
 	desc.add_theme_font_size_override("font_size", 16)
 	vbox.add_child(desc)
@@ -111,29 +111,37 @@ func _show_skirmish_picker() -> void:
 	overlay.color = Color(0, 0, 0, 0.88)
 	add_child(overlay)
 
+	var scroll := ScrollContainer.new()
+	scroll.anchor_left = 0.5
+	scroll.anchor_top = 0.5
+	scroll.anchor_right = 0.5
+	scroll.anchor_bottom = 0.5
+	scroll.offset_left = -280
+	scroll.offset_top = -300
+	scroll.offset_right = 280
+	scroll.offset_bottom = 300
+	overlay.add_child(scroll)
+
 	var panel := VBoxContainer.new()
-	panel.anchor_left = 0.5
-	panel.anchor_top = 0.5
-	panel.anchor_right = 0.5
-	panel.anchor_bottom = 0.5
-	panel.offset_left = -220
-	panel.offset_top = -240
-	panel.offset_right = 220
-	panel.offset_bottom = 240
+	panel.custom_minimum_size = Vector2(520, 0)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel.add_theme_constant_override("separation", 12)
-	overlay.add_child(panel)
+	scroll.add_child(panel)
 
 	var title := Label.new()
-	title.text = "Skirmish Size"
+	title.text = "Random Skirmish Setup"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 28)
 	panel.add_child(title)
 
-	var hint := Label.new()
-	hint.text = "Players spawn left · enemies right · seed random each launch"
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD
-	panel.add_child(hint)
+	var setup_fields := SkirmishSetupFields.new()
+	setup_fields.load_setup(MassSimSkirmishSetup.load_play_saved())
+	panel.add_child(setup_fields)
+
+	var size_lbl := Label.new()
+	size_lbl.text = "Map size (select one)"
+	size_lbl.add_theme_font_size_override("font_size", 20)
+	panel.add_child(size_lbl)
 
 	var preset_grid := GridContainer.new()
 	preset_grid.columns = 2
@@ -141,26 +149,53 @@ func _show_skirmish_picker() -> void:
 	preset_grid.add_theme_constant_override("v_separation", 10)
 	panel.add_child(preset_grid)
 
+	var selected_size: Array[Vector2i] = [Vector2i.ZERO]
+
 	for preset: Vector2i in TacticalConstants.SKIRMISH_PRESETS:
-		var launch := Button.new()
-		launch.text = "%d × %d" % [preset.x, preset.y]
-		launch.custom_minimum_size = Vector2(180, 44)
-		launch.pressed.connect(_launch_skirmish.bind(preset))
-		preset_grid.add_child(launch)
+		var pick := Button.new()
+		pick.text = "%d × %d" % [preset.x, preset.y]
+		pick.custom_minimum_size = Vector2(180, 44)
+		pick.pressed.connect(func() -> void:
+			selected_size[0] = preset
+			for child: Node in preset_grid.get_children():
+				if child is Button:
+					(child as Button).modulate = Color(0.65, 0.65, 0.65)
+			pick.modulate = Color.WHITE
+		)
+		preset_grid.add_child(pick)
+
+	var btn_row := HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 16)
+	panel.add_child(btn_row)
+
+	var launch := Button.new()
+	launch.text = "Launch Skirmish"
+	launch.custom_minimum_size = Vector2(180, 48)
+	launch.pressed.connect(func() -> void:
+		if selected_size[0] == Vector2i.ZERO:
+			return
+		var setup: MassSimSkirmishSetup = setup_fields.read_setup()
+		MassSimSkirmishSetup.save_play(setup)
+		_launch_skirmish(selected_size[0], setup)
+	)
+	btn_row.add_child(launch)
 
 	var cancel := Button.new()
 	cancel.text = "Cancel"
+	cancel.custom_minimum_size = Vector2(120, 48)
 	cancel.pressed.connect(func() -> void: overlay.queue_free())
-	panel.add_child(cancel)
+	btn_row.add_child(cancel)
 
 
-func _launch_skirmish(size_preset: Vector2i) -> void:
+func _launch_skirmish(size_preset: Vector2i, setup: MassSimSkirmishSetup) -> void:
 	var picker: Node = get_node_or_null("SkirmishPicker")
 	if picker != null:
 		picker.queue_free()
 	var config := SkirmishGenerator.SkirmishConfig.new()
 	config.size_preset = size_preset
 	config.map_seed = randi()
+	config.skirmish_setup = setup.to_dict()
 	SkirmishLaunch.set_pending(config)
 	get_tree().change_scene_to_file("res://scenes/TacticalCombat.tscn")
 

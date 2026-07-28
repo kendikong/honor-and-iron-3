@@ -8,3 +8,5 @@ extends Resource
 
 @export var unit: UnitData
 @export var coord: Vector2i = Vector2i.ZERO
+## When set, BoardFactory uses place_configured_unit (levels, passives, skills).
+var spawn_config: Dictionary = {}
