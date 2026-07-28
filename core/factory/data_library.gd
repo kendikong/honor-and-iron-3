@@ -255,6 +255,10 @@ static func _ensure_init() -> void:
 	var flanker := _make_unit_data(&"flanker", "Flanker", 2, 4, 1, [],
 		_behavior(&"flanker", _make_ability(&"backstab", "Backstab", 1, [_effect(GameEnums.EffectType.DAMAGE, 1)], 1, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 4, 0, 1)
 
+	brute.preferred_stat = GameEnums.StatType.MAX_HP
+	priest.preferred_stat = GameEnums.StatType.MAGICAL
+	protector.preferred_stat = GameEnums.StatType.DEFENSE
+
 	_enemy_units = [charger, artillery, shover, trapper, brute, priest, hatchling, protector, commander, bomber, teleporter, summoner, sentinel, flanker]
 	for u in _enemy_units:
 		if u.equipped_weapon == null:
@@ -283,6 +287,7 @@ static func _ensure_init() -> void:
 		0,
 		2,
 	)
+	training_dummy.preferred_stat = GameEnums.StatType.MAX_HP
 	_all_units_dict[&"training_dummy"] = training_dummy
 
 	# Setup Maps
