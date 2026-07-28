@@ -50,6 +50,28 @@ func _test_triage(triage, agg, failures: Array[String]) -> void:
 		failures.append("triage should warn on empty report")
 	_test_filter_and_heatmap(agg, failures)
 	_test_wilson(load("res://core/batch/mass_sim_batch_report.gd"), failures)
+	_test_interpretation_export(agg, triage, failures)
+
+
+func _test_interpretation_export(agg, triage, failures: Array[String]) -> void:
+	var rows: Array[Dictionary] = [{
+		"run_id": 0,
+		"winner": GameEnums.Team.PLAYER,
+		"turns_taken": 10,
+		"map_tags": ["open"],
+		"player_classes": ["knight"],
+		"wall_collisions": 2,
+		"collision_cells": ["1,1"],
+		"player_spawn_quadrant": "northwest",
+	}]
+	var report = agg.build_report(rows)
+	var warnings: Array = triage.evaluate_report(report)
+	var export_script = load("res://core/batch/mass_sim_interpretation_export.gd")
+	var bundle: Dictionary = export_script.build(report, warnings, {"test": true})
+	if not bundle.has("l1_executive"):
+		failures.append("interpretation bundle missing l1_executive")
+	if not bundle.has("l7_integrity"):
+		failures.append("interpretation bundle missing l7_integrity")
 
 
 func _test_filter_and_heatmap(agg, failures: Array[String]) -> void:

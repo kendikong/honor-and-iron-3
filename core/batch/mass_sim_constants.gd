@@ -7,6 +7,8 @@ const DEFAULT_LOG_PATH := "user://batch_results.jsonl"
 const SNAPSHOT_PATH := "user://mass_sim_snapshot.json"
 const WORKSPACE_PATH := "user://mass_sim_workspace.json"
 const TIMELINE_PATH := "user://mass_sim_timeline.jsonl"
+const CAPTURE_DIR := "res://tests/captures"
+const INTERPRETATION_USER_PATH := "user://mass_sim_interpretation.json"
 
 const MIN_SAMPLE_FULL_CONFIDENCE := 500
 const MIN_SAMPLE_BASIC := 30

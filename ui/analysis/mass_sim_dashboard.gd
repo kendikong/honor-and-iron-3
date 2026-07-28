@@ -79,6 +79,7 @@ func _build_chrome() -> void:
 	_add_header_btn(header, "Open JSONL", _open_file_dialog)
 	_add_header_btn(header, "Reload", _load_saved_results)
 	_add_header_btn(header, "Export CSV", _export_csv)
+	_add_header_btn(header, "AI Report", _open_interpretation_folder)
 	_add_header_btn(header, "Run Queue", _start_queue)
 	_add_header_btn(header, "+100", func() -> void: _enqueue_job("Baseline", 100))
 	_add_header_btn(header, "+500", func() -> void: _enqueue_job("Full Confidence", 500))
@@ -214,7 +215,10 @@ func _on_batch_completed(path: String, stats: Dictionary) -> void:
 	_load_saved_results()
 	inspector.show_replay(_report, int(stats.get("best_performance_id", -1)))
 	MassSimAggregator.save_snapshot(_report)
-	status_label.text = "Batch done — %d total battles in log" % _report.total_battles
+	status_label.text = (
+		"Batch done — %d battles · interpretation saved to tests/captures/"
+		% _report.total_battles
+	)
 	_run_next_job()
 
 
@@ -272,6 +276,17 @@ func _apply_report() -> void:
 		if panel != null and panel.has_method("bind_report"):
 			panel.call("bind_report", _report)
 	_refresh_command_palette()
+	_write_interpretation_bundle(warnings)
+
+
+func _write_interpretation_bundle(warnings: Array) -> void:
+	MassSimInterpretationExport.write_bundle(_report, warnings, {
+		"log_path": _log_path,
+		"rows_in_file": _all_rows.size(),
+		"map_tag_filter": _workspace.map_tag_filter,
+		"queue_size": _job_queue.size(),
+		"running_job": _running_job,
+	})
 
 
 func _refresh_command_palette() -> void:
@@ -350,6 +365,12 @@ func _on_file_selected(path: String) -> void:
 	_workspace.log_path = path
 	_save_workspace()
 	_load_saved_results()
+
+
+func _open_interpretation_folder() -> void:
+	var dir: String = ProjectSettings.globalize_path(MassSimConstants.CAPTURE_DIR)
+	DisplayServer.clipboard_set(dir)
+	status_label.text = "Report folder: %s (path copied)" % dir
 
 
 func _export_csv() -> void:

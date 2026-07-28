@@ -1,18 +1,29 @@
-# Mass Sim Dashboard captures (agent + owner parity)
+# Mass Sim captures & interpretation (agent + owner)
 
-Agents must run this before claiming the Mass Simulation Analytics UI works:
+## After you run a mass simulation
+
+Every time a batch finishes **or** you click **Reload**, the dashboard writes a **full statistics bundle** for AI interpretation:
+
+| File | Contents |
+|------|----------|
+| `mass_sim_interpretation.json` | **Every L1–L7 stat**, triage warnings, tier table, heatmap, spawn bias, Wilson CIs, curated replays |
+| `mass_sim_interpretation.md` | Same data in readable markdown |
+
+Also copied to `user://mass_sim_interpretation.json` (Godot userdata).
+
+**Tell the agent:** “interpret my mass sim” — it reads these files and gives analysis.
+
+## Optional visual snapshot (layout check)
 
 ```powershell
 .\scripts\capture_mass_sim_dashboard.ps1
 ```
 
-Outputs (regenerated each run):
-
 | File | Purpose |
 |------|---------|
-| `mass_sim_dashboard.png` | Pixel screenshot at 1280×720 — **open this image** to see what the user sees |
-| `mass_sim_snapshot.json` | Status line, active tab, queue, report stats, triage titles, visible UI text |
+| `mass_sim_dashboard.png` | Screenshot at 1280×720 |
+| `mass_sim_snapshot.json` | Visible UI text at capture time |
 
-Default Godot path matches `BUG_REPORT.md`. Override with `-GodotPath`.
+Use **interpretation JSON** for stats; use **PNG** only if layout looks wrong.
 
-These files are gitignored; they live only on disk after capture.
+These files are gitignored except this README.
