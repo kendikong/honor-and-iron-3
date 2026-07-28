@@ -116,6 +116,7 @@ func _build_chrome() -> void:
 	MassSimTheme.style_muted(epoch_lbl)
 	filter_row.add_child(epoch_lbl)
 	_epoch_filter = OptionButton.new()
+	_epoch_filter.custom_minimum_size.x = 340
 	_epoch_filter.item_selected.connect(_on_epoch_filter_changed)
 	filter_row.add_child(_epoch_filter)
 	_epoch_banner = Label.new()
@@ -315,12 +316,9 @@ func _rebuild_epoch_filter() -> void:
 	for i: int in range(_workspace.epochs.size()):
 		var ep: Dictionary = _workspace.epochs[i] as Dictionary
 		var eid: String = String(ep.get("id", ""))
-		var label: String = String(ep.get("label", eid))
-		var battles_hint: String = ""
-		if eid == _workspace.active_epoch_id:
-			battles_hint = " (active)"
-		_epoch_filter.add_item("%s%s" % [label, battles_hint])
-		if eid == _workspace.active_epoch_id:
+		var active: bool = eid == _workspace.active_epoch_id
+		_epoch_filter.add_item(MassSimRulesEpoch.display_label(ep, active))
+		if active:
 			select = i
 	_epoch_filter.select(select)
 
@@ -331,6 +329,10 @@ func _update_epoch_banner(mix: Dictionary, epoch_battle_count: int) -> void:
 	if fp.is_empty() and _workspace.active_epoch_id != MassSimRulesEpoch.LEGACY_EPOCH_ID:
 		fp = MassSimRulesEpoch.fingerprint()
 	var lines: PackedStringArray = PackedStringArray()
+	if not ep.is_empty():
+		lines.append(
+			"Epoch date: %s" % MassSimRulesEpoch.format_created_at_date(ep),
+		)
 	if _workspace.active_epoch_id == MassSimRulesEpoch.LEGACY_EPOCH_ID:
 		lines.append("Legacy epoch — old battles have no rules tag. Click New Epoch before your next balance change.")
 	elif not fp.is_empty():
@@ -443,7 +445,11 @@ func _on_new_epoch_confirmed() -> void:
 	_sync_log_path_from_epoch()
 	_save_workspace()
 	_load_saved_results()
-	status_label.text = "New epoch: %s → %s" % [String(entry.get("label", "")), _log_path]
+	status_label.text = "New epoch (%s): %s → %s" % [
+		MassSimRulesEpoch.format_created_at_date(entry),
+		String(entry.get("label", "")),
+		_log_path,
+	]
 	_refresh_skirmish_summary()
 
 

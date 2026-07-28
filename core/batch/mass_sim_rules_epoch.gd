@@ -92,6 +92,7 @@ static func fresh_log_path(epoch_id: String) -> String:
 
 
 static func ensure_default_epoch(workspace: MassSimWorkspace) -> void:
+	normalize_epochs(workspace)
 	if not workspace.epochs.is_empty():
 		return
 	var ep: Dictionary = {
@@ -149,6 +150,64 @@ static func start_new_epoch(workspace: MassSimWorkspace, change_label: String) -
 	workspace.active_epoch_id = epoch_id
 	workspace.log_path = new_log
 	return entry
+
+
+static func normalize_epochs(workspace: MassSimWorkspace) -> void:
+	for i: int in range(workspace.epochs.size()):
+		var ep: Dictionary = workspace.epochs[i] as Dictionary
+		if int(ep.get("created_at", 0)) > 0:
+			continue
+		var parsed: int = _parse_created_at_from_epoch_id(String(ep.get("id", "")))
+		if parsed > 0:
+			ep["created_at"] = parsed
+			workspace.epochs[i] = ep
+
+
+static func epoch_created_at(ep: Dictionary) -> int:
+	var created: int = int(ep.get("created_at", 0))
+	if created > 0:
+		return created
+	return _parse_created_at_from_epoch_id(String(ep.get("id", "")))
+
+
+static func format_created_at_date(ep: Dictionary) -> String:
+	var created: int = epoch_created_at(ep)
+	if created <= 0:
+		if String(ep.get("id", "")) == LEGACY_EPOCH_ID:
+			return "Before tracking"
+		return "Date unknown"
+	var dt: Dictionary = Time.get_datetime_dict_from_unix_time(created, false)
+	const MONTHS: PackedStringArray = PackedStringArray([
+		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+	])
+	var month_idx: int = clampi(int(dt.month) - 1, 0, 11)
+	return "%s %d, %d" % [MONTHS[month_idx], int(dt.day), int(dt.year)]
+
+
+static func display_label(ep: Dictionary, active: bool = false) -> String:
+	var label: String = String(ep.get("label", ep.get("id", "Epoch")))
+	var date_text: String = format_created_at_date(ep)
+	var suffix: String = " (active)" if active else ""
+	return "%s — %s%s" % [date_text, label, suffix]
+
+
+static func _parse_created_at_from_epoch_id(epoch_id: String) -> int:
+	var regex := RegEx.new()
+	if regex.compile("(\\d{4})-(\\d{2})-(\\d{2})_(\\d{2})(\\d{2})(\\d{2})$") != OK:
+		return 0
+	var match: RegExMatch = regex.search(epoch_id)
+	if match == null:
+		return 0
+	var dt: Dictionary = {
+		"year": match.get_string(1).to_int(),
+		"month": match.get_string(2).to_int(),
+		"day": match.get_string(3).to_int(),
+		"hour": match.get_string(4).to_int(),
+		"minute": match.get_string(5).to_int(),
+		"second": match.get_string(6).to_int(),
+	}
+	return Time.get_unix_time_from_datetime_dict(dt, true)
 
 
 static func active_epoch(workspace: MassSimWorkspace) -> Dictionary:

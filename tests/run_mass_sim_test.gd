@@ -85,6 +85,13 @@ func _test_epoch_filter(failures: Array[String]) -> void:
 	var mix: Dictionary = epoch_script.analyze_mix(rows)
 	if not bool(mix.get("is_mixed", false)):
 		failures.append("analyze_mix should detect mixed epochs")
+	var dated: Dictionary = {
+		"id": "knight_buff_2026-07-27_123456",
+		"label": "Knight buff",
+		"created_at": 0,
+	}
+	if not epoch_script.display_label(dated, false).begins_with("Jul 27, 2026"):
+		failures.append("epoch display_label should include parsed date")
 
 
 func _test_interpretation_export(agg, triage, failures: Array[String]) -> void:
