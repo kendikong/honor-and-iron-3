@@ -105,6 +105,7 @@ static func build_report(
 		chaos_scores.append(chaos)
 
 		var player_won: bool = winner == GameEnums.Team.PLAYER
+		var enemy_won: bool = winner == GameEnums.Team.ENEMY
 		for raw_class: Variant in row.get("player_classes", []):
 			var class_id: String = str(raw_class)
 			if class_id.is_empty():
@@ -119,7 +120,15 @@ static func build_report(
 			rec["turns_sum"] = int(rec["turns_sum"]) + turns
 
 		for raw_enemy: Variant in row.get("enemy_classes", []):
-			class_ids_seen[str(raw_enemy)] = true
+			var enemy_class_id: String = str(raw_enemy)
+			if enemy_class_id.is_empty():
+				continue
+			class_ids_seen[enemy_class_id] = true
+			var enemy_rec: Dictionary = _class_record(report.enemy_class_records, enemy_class_id)
+			enemy_rec["appearances"] = int(enemy_rec["appearances"]) + 1
+			if enemy_won:
+				enemy_rec["wins"] = int(enemy_rec["wins"]) + 1
+			enemy_rec["turns_sum"] = int(enemy_rec.get("turns_sum", 0)) + turns
 
 		for raw_tag: Variant in row.get("map_tags", []):
 			var tag: String = str(raw_tag)
@@ -181,10 +190,13 @@ static func build_report(
 		q_rec["player_win_pct"] = float(q_rec.get("player_wins", 0)) / float(maxi(qb, 1)) * 100.0
 
 	_finalize_class_rates(report)
+	_finalize_enemy_class_rates(report)
 	report.tier_rows = _build_tier_rows(report)
 	report.matchup_snippets = _build_matchup_snippets(report)
 	report.skill_meta_rows = _finalize_skill_meta(skill_store, class_store)
-	report.class_combat_rows = _finalize_class_combat(class_store)
+	report.class_combat_rows = _finalize_class_combat(
+		class_store, report.class_records, report.enemy_class_records,
+	)
 	report.passive_meta_rows = _finalize_passive_meta(passive_store)
 	report.economy_per_turn = _finalize_economy_per_turn(report)
 	report.skirmish_setup = _derive_skirmish_setup(rows)
@@ -233,6 +245,13 @@ static func _finalize_class_rates(report: RefCounted) -> void:
 			tags.append("Synergy Reliant")
 		rec["tags"] = tags
 
+
+static func _finalize_enemy_class_rates(report: RefCounted) -> void:
+	for class_id: Variant in report.enemy_class_records.keys():
+		var rec: Dictionary = report.enemy_class_records[class_id] as Dictionary
+		var apps: int = int(rec["appearances"])
+		rec["win_rate"] = float(rec["wins"]) / float(maxi(apps, 1)) * 100.0
+		rec["avg_turns"] = float(rec.get("turns_sum", 0)) / float(maxi(apps, 1))
 	for tag_id: Variant in report.map_tag_records.keys():
 		var tag_rec: Dictionary = report.map_tag_records[tag_id] as Dictionary
 		var battles: int = int(tag_rec["battles"])
@@ -541,7 +560,11 @@ static func _finalize_skill_meta(skill_store: Dictionary, class_store: Dictionar
 	return rows
 
 
-static func _finalize_class_combat(class_store: Dictionary) -> Array[Dictionary]:
+static func _finalize_class_combat(
+	class_store: Dictionary,
+	player_records: Dictionary,
+	enemy_records: Dictionary,
+) -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	for class_key: Variant in class_store.keys():
 		var rec: Dictionary = (class_store[class_key] as Dictionary).duplicate(true)
@@ -558,6 +581,23 @@ static func _finalize_class_combat(class_store: Dictionary) -> Array[Dictionary]
 		var end_hp_samples: int = int(rec.get("end_hp_pct_samples", 0))
 		rec["avg_end_hp_pct"] = float(rec.get("end_hp_pct_sum", 0.0)) / float(maxi(end_hp_samples, 1))
 		rec["has_survival_sample"] = lifespan_samples > 0
+		var team: int = int(rec.get("team", GameEnums.Team.PLAYER))
+		var class_id: String = String(rec.get("class_id", ""))
+		var roster_rec: Dictionary = (
+			player_records.get(class_id, {}) as Dictionary
+			if team == GameEnums.Team.PLAYER
+			else enemy_records.get(class_id, {}) as Dictionary
+		)
+		var roster_apps: int = int(roster_rec.get("appearances", 0))
+		var roster_wins: int = int(roster_rec.get("wins", 0))
+		rec["roster_appearances"] = roster_apps
+		rec["roster_wins"] = roster_wins
+		if roster_apps > 0:
+			rec["win_rate_pct"] = float(roster_rec.get("win_rate", 0.0))
+			rec["has_win_sample"] = true
+		else:
+			rec["win_rate_pct"] = -1.0
+			rec["has_win_sample"] = false
 		var opp: int = int(rec.get("ai_skill_opportunity_turns", 0))
 		rec["ai_hold_rate_pct"] = float(rec.get("ai_holds", 0)) / float(maxi(opp, 1)) * 100.0
 		rows.append(rec)

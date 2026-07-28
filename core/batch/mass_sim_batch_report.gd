@@ -39,6 +39,7 @@ var total_floated_ap: int = 0
 var battles_with_whiffs: int = 0
 
 var class_records: Dictionary = {}
+var enemy_class_records: Dictionary = {}
 var map_tag_records: Dictionary = {}
 var tier_rows: Array[Dictionary] = []
 var matchup_snippets: Array[Dictionary] = []

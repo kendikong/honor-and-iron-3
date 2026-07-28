@@ -159,6 +159,8 @@ func _test_filter_and_heatmap(agg, failures: Array[String]) -> void:
 	var knight_row: Dictionary = report.class_combat_rows[0]
 	if float(knight_row.get("avg_survival_turns", 0.0)) < 9.9:
 		failures.append("class combat should finalize avg survival turns")
+	if not bool(knight_row.get("has_win_sample", false)):
+		failures.append("class combat should join roster win rate sample")
 	if int(report.spawn_quadrant_records.get("northwest", {}).get("battles", 0)) != 1:
 		failures.append("spawn quadrant aggregation failed")
 
