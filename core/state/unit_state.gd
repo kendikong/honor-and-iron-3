@@ -91,6 +91,7 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 			unit.active_abilities = def.abilities.duplicate()
 		
 	unit._recalculate_stats()
+	unit.health.current_hp = unit.health.max_hp
 	return unit
 
 
@@ -131,18 +132,11 @@ func _recalculate_stats() -> void:
 		w_hp = definition.equipped_weapon.bonus_max_hp
 		w_mov = definition.equipped_weapon.bonus_move
 		
-	var level_bonus = (level - 1) * 2
-	
-	var base_str = definition.base_strength
-	var base_mag = definition.base_magic
-	var base_def = definition.base_defense
-	
-	if definition.preferred_stat == GameEnums.StatType.PHYSICAL:
-		base_str += level_bonus
-	elif definition.preferred_stat == GameEnums.StatType.MAGICAL:
-		base_mag += level_bonus
-	elif definition.preferred_stat == GameEnums.StatType.DEFENSE:
-		base_def += level_bonus
+	var growth: Dictionary = UnitLevelGrowth.compute(definition, level)
+	var base_str: int = definition.base_strength + int(growth.str)
+	var base_mag: int = definition.base_magic + int(growth.mag)
+	var base_def: int = definition.base_defense + int(growth.def)
+	var level_con: int = int(growth.con)
 
 	var stat_str := 0
 	var stat_mag := 0
@@ -167,7 +161,7 @@ func _recalculate_stats() -> void:
 				stat_str -= 2
 				stat_mag -= 2
 				
-	health.max_hp = (definition.base_constitution * 5) + w_hp
+	health.max_hp = (definition.base_constitution + level_con) * 5 + w_hp
 	
 	if has_passive(&"adrenaline_junkie"):
 		var missing_pct = (health.max_hp - health.current_hp) / float(health.max_hp)

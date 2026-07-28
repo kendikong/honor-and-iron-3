@@ -1343,25 +1343,19 @@ static func stat_breakdown(
 	var base_val: int = 0
 	var w_bonus: int = 0
 	var final_val: int = 0
-	var level_bonus: int = 0
+	var level_bonus: int = UnitLevelGrowth.bonus_for_stat(unit.definition, unit.level, stat_type)
 	match stat_type:
 		GameEnums.StatType.PHYSICAL:
 			base_val = unit.definition.base_strength
 			w_bonus = unit.definition.equipped_weapon.bonus_strength if unit.definition.equipped_weapon != null else 0
-			if unit.definition.preferred_stat == GameEnums.StatType.PHYSICAL:
-				level_bonus = (unit.level - 1) * 2
 			final_val = unit.current_strength
 		GameEnums.StatType.MAGICAL:
 			base_val = unit.definition.base_magic
 			w_bonus = unit.definition.equipped_weapon.bonus_magic if unit.definition.equipped_weapon != null else 0
-			if unit.definition.preferred_stat == GameEnums.StatType.MAGICAL:
-				level_bonus = (unit.level - 1) * 2
 			final_val = unit.current_magic
 		GameEnums.StatType.DEFENSE:
 			base_val = unit.definition.base_defense
 			w_bonus = unit.definition.equipped_weapon.bonus_defense if unit.definition.equipped_weapon != null else 0
-			if unit.definition.preferred_stat == GameEnums.StatType.DEFENSE:
-				level_bonus = (unit.level - 1) * 2
 			final_val = unit.current_defense
 			if unit.has_status(GameEnums.StatusType.IRON_GRIP_DEBUFF):
 				if board != null:
