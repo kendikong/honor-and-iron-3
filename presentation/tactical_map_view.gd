@@ -112,7 +112,7 @@ func _ready() -> void:
 	_autobattler_panel = AutobattlerControlPanel.new()
 	_autobattler_panel.name = "AutobattlerPanel"
 	add_child(_autobattler_panel)
-	_autobattler_panel.setup(_director)
+	_autobattler_panel.setup(_director, _unit_layer)
 
 	_planning_cursor = TacticalPlanningCursor.new()
 	_planning_cursor.name = "PlanningCursor"
