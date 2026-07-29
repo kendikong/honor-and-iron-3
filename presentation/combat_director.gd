@@ -307,6 +307,18 @@ func unit_has_wait_planned(unit_id: int) -> bool:
 	return _wait_unit_ids.has(unit_id)
 
 
+func unit_has_committed_class_action(unit_id: int) -> bool:
+	for action: TimelineAction in plan_action.entries:
+		if action.actor_id != unit_id:
+			continue
+		if action.type != GameEnums.ActionType.ABILITY:
+			continue
+		if action.ability != null and action.ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+			continue
+		return true
+	return false
+
+
 func _set_unit_waiting(unit_id: int, waiting: bool) -> void:
 	if waiting:
 		_wait_unit_ids[unit_id] = true

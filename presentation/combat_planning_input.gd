@@ -1606,13 +1606,30 @@ func _unit_move_slot_open(unit_id: int) -> bool:
 
 
 ## Post-move hover/commit — action column already spent; never re-pair selected skill.
-func _planning_post_move_only(actor: UnitState, unit_id: int) -> bool:
+## Exception: committed action with an open pre-move slot still uses enemy/tile approach
+## commit slots (pre + action), not post-move-only placement.
+func _planning_post_move_only(actor: UnitState, unit_id: int, cell: Vector2i) -> bool:
 	if _director == null or actor == null or unit_id < 0:
 		return false
-	return (
+	if not (
 		_director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION
 		and actor.has_used_turn_action()
-	)
+	):
+		return false
+	if _should_replan_premove_approach(unit_id, cell):
+		return false
+	return true
+
+
+func _should_replan_premove_approach(unit_id: int, cell: Vector2i) -> bool:
+	if _director == null or _director.board == null or unit_id < 0:
+		return false
+	if _director.unit_has_pre_move_queued(unit_id):
+		return false
+	if not _director.unit_has_committed_class_action(unit_id):
+		return false
+	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
+	return hover_unit != null and hover_unit.is_enemy()
 
 
 func _basic_move_allowed() -> bool:
@@ -2506,7 +2523,7 @@ func _build_commit_slots_at_cell(
 			slots, actor, unit_id, ability_index, ability, face_dir,
 		)
 
-	if _planning_post_move_only(actor, unit_id):
+	if _planning_post_move_only(actor, unit_id, cell):
 		if (
 			_basic_move_allowed()
 			and _unit_move_slot_open(unit_id)

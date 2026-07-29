@@ -29,6 +29,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_planning_display_ap_run_intent(failures)
 	_test_planning_display_mp_left(failures)
 	_test_timeline_ghost_slots(failures)
+	_test_committed_action_approach_uses_premove_slot(failures)
 	_test_ability_scroll_clears_hover_preview_cache(failures)
 
 
@@ -1196,6 +1197,72 @@ static func _test_timeline_ghost_slots(failures: Array[String]) -> void:
 	ghost = input.timeline_ghost_slots(1)
 	if not (ghost.get("pre", []) as Array).is_empty():
 		failures.append("PlanningInputTest: ghost should clear when intent matches committed plan")
+
+
+static func _test_committed_action_approach_uses_premove_slot(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(10, 6)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			board.set_tile_terrain(Vector2i(x, y), plain)
+	var hook := AbilityData.new()
+	hook.kind = GameEnums.AbilityKind.CLASS_SKILL
+	hook.action_point_cost = 1
+	hook.range_tiles = 3
+	hook.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+	hook.targeting_flags = AbilityData._targeting_mode_to_flags(hook.targeting_mode)
+	hook.effects = [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
+		DataLibrary._effect(GameEnums.EffectType.PULL, 2),
+	]
+	var knight := UnitState.new()
+	knight.id = 1
+	knight.team = GameEnums.Team.PLAYER
+	knight.position = Vector2i(1, 3)
+	knight.movement.points_left = 4
+	knight.movement.max_points = 4
+	knight.ability.points_left = 1
+	knight.ability.max_points = 1
+	knight.active_abilities = [hook]
+	var enemy := UnitState.new()
+	enemy.id = 2
+	enemy.team = GameEnums.Team.ENEMY
+	enemy.position = Vector2i(4, 3)
+	board.units = [knight, enemy]
+	GridSystem.set_occupant(board, knight.position, knight.id)
+	GridSystem.set_occupant(board, enemy.position, enemy.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	director.plan_action.entries.append(
+		TimelineAction.make_ability(
+			1, hook, enemy.position, enemy.id, GameEnums.MoveTiming.PRE_ACTION, [],
+		),
+	)
+	director.plan_affected_unit_ids = [1]
+	director._refresh_plan()
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		1, enemy.position, [], [], Vector2i(-999999, -999999),
+	)
+	var pre: Array = slots.get("pre", []) as Array
+	var post: Array = slots.get("post", []) as Array
+	if pre.is_empty():
+		failures.append(
+			"PlanningInputTest: committed action + enemy hover must build pre-move approach",
+		)
+	if not post.is_empty():
+		failures.append(
+			"PlanningInputTest: committed action approach must not land in post-move slot",
+		)
 
 
 static func _test_ability_scroll_clears_hover_preview_cache(failures: Array[String]) -> void:
