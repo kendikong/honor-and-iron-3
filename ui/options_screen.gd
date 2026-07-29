@@ -84,7 +84,7 @@ var _dev_shadow_checks: Dictionary = {}
 var _dev_tile_labels_check: CheckButton
 var _dev_boredom_atmo_check: CheckButton
 var _dev_boredom_water_check: CheckButton
-var _developer_tab_root: MarginContainer
+var _developer_tab_root: Control
 var _sandbox_tools_box: VBoxContainer
 var _sandbox_tile_labels_check: CheckButton
 var _sandbox_boredom_atmo_check: CheckButton
@@ -185,6 +185,19 @@ func _ready() -> void:
 	if _sandbox_tools_box != null:
 		_sandbox_tools_box.visible = show_sandbox_tools
 	_apply_interface_to_ui()
+	if live_preview:
+		call_deferred("_sync_live_preview_tabs", tab_container)
+
+
+func _sync_live_preview_tabs(tab_container: TabContainer) -> void:
+	for child: Node in tab_container.get_children():
+		if child is Control:
+			var tab_root := child as Control
+			tab_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			tab_root.offset_left = 0.0
+			tab_root.offset_top = 0.0
+			tab_root.offset_right = 0.0
+			tab_root.offset_bottom = 0.0
 
 
 func _build_tab_host() -> Control:
@@ -204,7 +217,7 @@ func _build_tab_host() -> Control:
 
 	var panel := PanelContainer.new()
 	panel.name = "LivePreviewPanel"
-	MenuTheme.apply_panel(panel)
+	_apply_translucent_panel_style(panel)
 	panel.anchor_left = 0.36
 	panel.anchor_top = 0.0
 	panel.anchor_right = 1.0
@@ -262,13 +275,25 @@ func _build_tab_host() -> Control:
 
 
 func _apply_live_preview_chrome() -> void:
-	$ColorRect.color = Color(0.02, 0.03, 0.06, 0.38)
+	$ColorRect.color = Color(0.02, 0.03, 0.06, 0.18)
 	$ColorRect.mouse_filter = Control.MOUSE_FILTER_STOP
 
 
+func _apply_translucent_panel_style(panel: PanelContainer) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.10, 0.12, 0.17, 0.55)
+	style.border_color = Color(0.42, 0.50, 0.62, 0.72)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(8)
+	style.content_margin_left = 6
+	style.content_margin_right = 6
+	style.content_margin_top = 6
+	style.content_margin_bottom = 6
+	panel.add_theme_stylebox_override("panel", style)
+
+
 func _build_display_tab(parent: TabContainer) -> void:
-	var scroll := _scroll_tab(parent, "Display")
-	var vbox := _vbox(scroll)
+	var vbox := _scroll_tab(parent, "Display")
 	_add_hint(vbox, "Video changes need Apply. Map camera settings apply immediately.")
 
 	_add_section(vbox, "Video")
@@ -343,8 +368,7 @@ func _build_display_tab(parent: TabContainer) -> void:
 
 
 func _build_graphics_tab(parent: TabContainer) -> void:
-	var scroll := _scroll_tab(parent, "Graphics")
-	var vbox := _vbox(scroll)
+	var vbox := _scroll_tab(parent, "Graphics")
 	var hint_text := (
 		"Ambient living-map effects — saved automatically. Toggle while the game is visible behind this panel."
 		if live_preview
@@ -363,8 +387,7 @@ func _build_graphics_tab(parent: TabContainer) -> void:
 
 
 func _build_sound_tab(parent: TabContainer) -> void:
-	var scroll := _scroll_tab(parent, "Audio")
-	var vbox := _vbox(scroll)
+	var vbox := _scroll_tab(parent, "Audio")
 	_add_hint(vbox, "Volume changes apply immediately.")
 
 	_master_slider = _add_volume_row(vbox, "Master volume", _game_settings.master_volume)
@@ -373,8 +396,7 @@ func _build_sound_tab(parent: TabContainer) -> void:
 
 
 func _build_gameplay_tab(parent: TabContainer) -> void:
-	var scroll := _scroll_tab(parent, "Gameplay")
-	var vbox := _vbox(scroll)
+	var vbox := _scroll_tab(parent, "Gameplay")
 	_add_hint(vbox, "Core combat rules — not configurable.")
 
 	var info := Label.new()
@@ -389,8 +411,7 @@ func _build_gameplay_tab(parent: TabContainer) -> void:
 
 
 func _build_controls_tab(parent: TabContainer) -> void:
-	var scroll := _scroll_tab(parent, "Controls")
-	var vbox := _vbox(scroll)
+	var vbox := _scroll_tab(parent, "Controls")
 	var rich := RichTextLabel.new()
 	rich.bbcode_enabled = true
 	rich.fit_content = true
@@ -402,8 +423,7 @@ func _build_controls_tab(parent: TabContainer) -> void:
 
 
 func _build_interface_tab(parent: TabContainer) -> void:
-	var scroll := _scroll_tab(parent, "Interface")
-	var vbox := _vbox(scroll)
+	var vbox := _scroll_tab(parent, "Interface")
 	_add_hint(vbox, "UI layout scale affects panels/buttons. Text scale affects fonts only.")
 
 	_ui_scale_slider = HSlider.new()
@@ -497,9 +517,8 @@ func _on_char_scale_changed(value: float) -> void:
 
 
 func _build_developer_tab(parent: TabContainer) -> void:
-	var scroll := _scroll_tab(parent, "Developer")
-	_developer_tab_root = scroll.get_parent() as MarginContainer
-	var vbox := _vbox(scroll)
+	var vbox := _scroll_tab(parent, "Developer")
+	_developer_tab_root = parent.get_node("Developer") as Control
 	_add_hint(vbox, "Sandbox / debug tools — apply in test map and tactical scenes.")
 
 	_dev_tile_labels_check = _add_dev_check(
@@ -724,28 +743,29 @@ func _slider_value_row(slider: HSlider, value_label: Label) -> HBoxContainer:
 	return row
 
 
-func _scroll_tab(parent: TabContainer, tab_name: String) -> ScrollContainer:
-	var margin := MarginContainer.new()
-	margin.name = tab_name
-	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	margin.add_theme_constant_override("margin_left", 16)
-	margin.add_theme_constant_override("margin_top", 12)
-	margin.add_theme_constant_override("margin_right", 16)
-	margin.add_theme_constant_override("margin_bottom", 12)
-	parent.add_child(margin)
+func _scroll_tab(parent: TabContainer, tab_name: String) -> VBoxContainer:
 	var scroll := ScrollContainer.new()
+	scroll.name = tab_name
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	margin.add_child(scroll)
-	return scroll
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	if live_preview:
+		scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	parent.add_child(scroll)
 
+	var pad := MarginContainer.new()
+	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	pad.add_theme_constant_override("margin_left", 16)
+	pad.add_theme_constant_override("margin_top", 12)
+	pad.add_theme_constant_override("margin_right", 16)
+	pad.add_theme_constant_override("margin_bottom", 12)
+	scroll.add_child(pad)
 
-func _vbox(parent: Control) -> VBoxContainer:
 	var vbox := VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 10)
-	parent.add_child(vbox)
+	pad.add_child(vbox)
 	return vbox
 
 
