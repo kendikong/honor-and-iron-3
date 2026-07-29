@@ -172,7 +172,6 @@ func _ready() -> void:
 	tab_host.add_child(tab_container)
 
 	_build_display_tab(tab_container)
-	_build_graphics_tab(tab_container)
 	_build_sound_tab(tab_container)
 	_build_interface_tab(tab_container)
 	_build_gameplay_tab(tab_container)
@@ -216,27 +215,27 @@ func _build_tab_host() -> Control:
 	var panel := PanelContainer.new()
 	panel.name = "LivePreviewPanel"
 	_apply_translucent_panel_style(panel)
-	panel.anchor_left = 0.36
+	panel.anchor_left = 0.28
 	panel.anchor_top = 0.0
 	panel.anchor_right = 1.0
 	panel.anchor_bottom = 1.0
 	panel.offset_left = 0.0
-	panel.offset_top = 16.0
-	panel.offset_right = -16.0
-	panel.offset_bottom = -16.0
-	panel.custom_minimum_size.x = 560.0
+	panel.offset_top = 10.0
+	panel.offset_right = -10.0
+	panel.offset_bottom = -10.0
+	panel.custom_minimum_size.x = 640.0
 	add_child(panel)
 
 	var outer_margin := MarginContainer.new()
 	outer_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	outer_margin.add_theme_constant_override("margin_left", 14)
-	outer_margin.add_theme_constant_override("margin_right", 14)
-	outer_margin.add_theme_constant_override("margin_top", 12)
-	outer_margin.add_theme_constant_override("margin_bottom", 12)
+	outer_margin.add_theme_constant_override("margin_left", 10)
+	outer_margin.add_theme_constant_override("margin_right", 10)
+	outer_margin.add_theme_constant_override("margin_top", 8)
+	outer_margin.add_theme_constant_override("margin_bottom", 8)
 	panel.add_child(outer_margin)
 
 	var shell := VBoxContainer.new()
-	shell.add_theme_constant_override("separation", 10)
+	shell.add_theme_constant_override("separation", 6)
 	shell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shell.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	outer_margin.add_child(shell)
@@ -254,22 +253,12 @@ func _build_tab_host() -> Control:
 	var close_btn := Button.new()
 	close_btn.text = "Close"
 	MenuTheme.style_menu_button(close_btn)
-	close_btn.custom_minimum_size = Vector2(96.0, 36.0)
+	close_btn.custom_minimum_size = Vector2(88.0, 32.0)
 	close_btn.pressed.connect(_on_back_pressed)
 	header.add_child(close_btn)
 	MenuNavigation.register(self, _on_back_pressed)
 
-	var hint := Label.new()
-	hint.text = "Game stays visible — graphics and display changes apply live."
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	MenuTheme.style_muted_label(hint)
-	shell.add_child(hint)
-
-	var tab_wrap := MarginContainer.new()
-	tab_wrap.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	tab_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	shell.add_child(tab_wrap)
-	return tab_wrap
+	return shell
 
 
 func _apply_live_preview_chrome() -> void:
@@ -292,7 +281,12 @@ func _apply_translucent_panel_style(panel: PanelContainer) -> void:
 
 func _build_display_tab(parent: TabContainer) -> void:
 	var vbox := _tab_page(parent, "Display")
-	_add_hint(vbox, "Video changes need Apply. Map camera settings apply immediately.")
+	_add_hint(
+		vbox,
+		"Video needs Apply. Map camera is live."
+		if live_preview
+		else "Video changes need Apply. Map camera settings apply immediately.",
+	)
 
 	_add_section(vbox, "Video")
 	_resolution_option = OptionButton.new()
@@ -350,7 +344,6 @@ func _build_display_tab(parent: TabContainer) -> void:
 		_game_settings.show_fps_hud = pressed
 		_save_game_settings(),
 	)
-	vbox.add_child(_show_fps_check)
 
 	_show_tod_check = CheckButton.new()
 	_show_tod_check.text = "Show time-of-day clock"
@@ -359,7 +352,18 @@ func _build_display_tab(parent: TabContainer) -> void:
 		_game_settings.show_time_of_day_hud = pressed
 		_save_game_settings(),
 	)
-	vbox.add_child(_show_tod_check)
+
+	if live_preview:
+		var hud_row := HBoxContainer.new()
+		hud_row.add_theme_constant_override("separation", 16)
+		_show_fps_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_show_tod_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hud_row.add_child(_show_fps_check)
+		hud_row.add_child(_show_tod_check)
+		vbox.add_child(hud_row)
+	else:
+		vbox.add_child(_show_fps_check)
+		vbox.add_child(_show_tod_check)
 
 	vbox.add_child(HSeparator.new())
 	_add_button(vbox, "Apply resolution & window mode", _apply_display_video)
@@ -367,12 +371,22 @@ func _build_display_tab(parent: TabContainer) -> void:
 
 func _build_graphics_tab(parent: TabContainer) -> void:
 	var vbox := _tab_page(parent, "Graphics")
-	var hint_text := (
-		"Ambient living-map effects — saved automatically. Toggle while the game is visible behind this panel."
+	_add_hint(
+		vbox,
+		"Living-map effects — saved automatically."
 		if live_preview
-		else "Ambient living-map effects — saved automatically."
+		else "Ambient living-map effects — saved automatically.",
 	)
-	_add_hint(vbox, hint_text)
+
+	var toggles_parent: Container = vbox
+	if live_preview:
+		var grid := GridContainer.new()
+		grid.columns = 2
+		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_theme_constant_override("h_separation", 12)
+		grid.add_theme_constant_override("v_separation", 2)
+		vbox.add_child(grid)
+		toggles_parent = grid
 
 	for entry: Dictionary in _EFFECT_TOGGLES:
 		var key: String = entry["key"]
@@ -380,7 +394,9 @@ func _build_graphics_tab(parent: TabContainer) -> void:
 		check.text = entry["label"]
 		check.button_pressed = bool(_effects_settings.get(key))
 		check.toggled.connect(func(pressed: bool) -> void: _on_effect_toggled(key, pressed))
-		vbox.add_child(check)
+		if live_preview:
+			check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		toggles_parent.add_child(check)
 		_effect_checks[key] = check
 
 
@@ -478,16 +494,30 @@ func _build_interface_tab(parent: TabContainer) -> void:
 		_game_settings.show_damage_numbers = pressed
 		_save_game_settings(),
 	)
-	vbox.add_child(_damage_numbers_check)
 
 	_team_outlines_check = CheckButton.new()
-	_team_outlines_check.text = "Always show team outlines (blue allies, red enemies)"
+	_team_outlines_check.text = (
+		"Team outlines (blue allies / red enemies)"
+		if live_preview
+		else "Always show team outlines (blue allies, red enemies)"
+	)
 	_team_outlines_check.button_pressed = _game_settings.show_team_outlines
 	_team_outlines_check.toggled.connect(func(pressed: bool) -> void:
 		_game_settings.show_team_outlines = pressed
 		_save_game_settings(),
 	)
-	vbox.add_child(_team_outlines_check)
+
+	if live_preview:
+		var combat_row := HBoxContainer.new()
+		combat_row.add_theme_constant_override("separation", 12)
+		_damage_numbers_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_team_outlines_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		combat_row.add_child(_damage_numbers_check)
+		combat_row.add_child(_team_outlines_check)
+		vbox.add_child(combat_row)
+	else:
+		vbox.add_child(_damage_numbers_check)
+		vbox.add_child(_team_outlines_check)
 
 	if _char_profile != null:
 		_add_section(vbox, "Units on map")
@@ -539,13 +569,24 @@ func _build_developer_tab(parent: TabContainer) -> void:
 
 	vbox.add_child(HSeparator.new())
 	_add_section(vbox, "Shadow debug")
+	var shadow_parent: Container = vbox
+	if live_preview:
+		var shadow_grid := GridContainer.new()
+		shadow_grid.columns = 2
+		shadow_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		shadow_grid.add_theme_constant_override("h_separation", 12)
+		shadow_grid.add_theme_constant_override("v_separation", 2)
+		vbox.add_child(shadow_grid)
+		shadow_parent = shadow_grid
 	for entry: Dictionary in _DEV_SHADOW_TOGGLES:
 		var key: String = entry["key"]
 		var check := CheckButton.new()
 		check.text = entry["label"]
 		check.button_pressed = bool(_effects_settings.get(key))
 		check.toggled.connect(func(pressed: bool) -> void: _on_shadow_debug_toggled(key, pressed))
-		vbox.add_child(check)
+		if live_preview:
+			check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		shadow_parent.add_child(check)
 		_dev_shadow_checks[key] = check
 
 	_sandbox_tools_box = VBoxContainer.new()
@@ -741,22 +782,29 @@ func _slider_value_row(slider: HSlider, value_label: Label) -> HBoxContainer:
 
 
 func _tab_page(parent: TabContainer, tab_name: String) -> VBoxContainer:
-	var page := MarginContainer.new()
-	page.name = tab_name
-	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	page.add_theme_constant_override("margin_left", 16)
-	page.add_theme_constant_override("margin_top", 12)
-	page.add_theme_constant_override("margin_right", 16)
-	page.add_theme_constant_override("margin_bottom", 12)
+	var scroll := ScrollContainer.new()
+	scroll.name = tab_name
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	if live_preview:
-		page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	parent.add_child(page)
+		scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	parent.add_child(scroll)
+
+	var pad := MarginContainer.new()
+	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var edge: int = 8 if live_preview else 16
+	pad.add_theme_constant_override("margin_left", edge)
+	pad.add_theme_constant_override("margin_top", 6 if live_preview else 12)
+	pad.add_theme_constant_override("margin_right", edge)
+	pad.add_theme_constant_override("margin_bottom", 6 if live_preview else 12)
+	scroll.add_child(pad)
 
 	var vbox := VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.add_theme_constant_override("separation", 10)
-	page.add_child(vbox)
+	vbox.add_theme_constant_override("separation", 6 if live_preview else 10)
+	pad.add_child(vbox)
 	return vbox
 
 
