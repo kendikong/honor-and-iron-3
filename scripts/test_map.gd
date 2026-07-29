@@ -118,6 +118,7 @@ func _ready() -> void:
 
 	_inspector.apply_display_settings(_settings)
 	_options.setup(_settings, _on_display_settings_applied)
+	_options.set_sandbox_tools_enabled(true)
 	_options.setup_character_gen(_char_profile)
 	_options.opened.connect(_on_options_opened)
 	_options.closed.connect(_on_options_closed)

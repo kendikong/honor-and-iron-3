@@ -4476,7 +4476,9 @@ func _build_pause_menu() -> void:
 		_close_pause_menu()
 	)
 	_make_button(vbox, "Settings", func() -> void:
-		var opt = _options_scene.instantiate()
+		var opt: OptionsScreen = _options_scene.instantiate() as OptionsScreen
+		opt.overlay_mode = true
+		opt.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_hud_layer.add_child(opt)
 		opt.close_requested.connect(func(): opt.queue_free())
 	)
