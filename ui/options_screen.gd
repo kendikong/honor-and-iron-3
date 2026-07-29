@@ -169,8 +169,6 @@ func _ready() -> void:
 	var tab_container := TabContainer.new()
 	tab_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	if live_preview:
-		tab_container.custom_minimum_size.y = 480.0
 	tab_host.add_child(tab_container)
 
 	_build_display_tab(tab_container)
@@ -293,7 +291,7 @@ func _apply_translucent_panel_style(panel: PanelContainer) -> void:
 
 
 func _build_display_tab(parent: TabContainer) -> void:
-	var vbox := _scroll_tab(parent, "Display")
+	var vbox := _tab_page(parent, "Display")
 	_add_hint(vbox, "Video changes need Apply. Map camera settings apply immediately.")
 
 	_add_section(vbox, "Video")
@@ -368,7 +366,7 @@ func _build_display_tab(parent: TabContainer) -> void:
 
 
 func _build_graphics_tab(parent: TabContainer) -> void:
-	var vbox := _scroll_tab(parent, "Graphics")
+	var vbox := _tab_page(parent, "Graphics")
 	var hint_text := (
 		"Ambient living-map effects — saved automatically. Toggle while the game is visible behind this panel."
 		if live_preview
@@ -387,7 +385,7 @@ func _build_graphics_tab(parent: TabContainer) -> void:
 
 
 func _build_sound_tab(parent: TabContainer) -> void:
-	var vbox := _scroll_tab(parent, "Audio")
+	var vbox := _tab_page(parent, "Audio")
 	_add_hint(vbox, "Volume changes apply immediately.")
 
 	_master_slider = _add_volume_row(vbox, "Master volume", _game_settings.master_volume)
@@ -396,7 +394,7 @@ func _build_sound_tab(parent: TabContainer) -> void:
 
 
 func _build_gameplay_tab(parent: TabContainer) -> void:
-	var vbox := _scroll_tab(parent, "Gameplay")
+	var vbox := _tab_page(parent, "Gameplay")
 	_add_hint(vbox, "Core combat rules — not configurable.")
 
 	var info := Label.new()
@@ -411,19 +409,18 @@ func _build_gameplay_tab(parent: TabContainer) -> void:
 
 
 func _build_controls_tab(parent: TabContainer) -> void:
-	var vbox := _scroll_tab(parent, "Controls")
+	var vbox := _tab_page(parent, "Controls")
 	var rich := RichTextLabel.new()
 	rich.bbcode_enabled = true
 	rich.fit_content = true
-	rich.scroll_active = true
-	rich.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rich.scroll_active = false
 	rich.text = _CONTROLS_TEXT
 	vbox.add_child(rich)
 	_add_hint(vbox, "Key rebinding is not available yet; bindings are fixed.")
 
 
 func _build_interface_tab(parent: TabContainer) -> void:
-	var vbox := _scroll_tab(parent, "Interface")
+	var vbox := _tab_page(parent, "Interface")
 	_add_hint(vbox, "UI layout scale affects panels/buttons. Text scale affects fonts only.")
 
 	_ui_scale_slider = HSlider.new()
@@ -517,7 +514,7 @@ func _on_char_scale_changed(value: float) -> void:
 
 
 func _build_developer_tab(parent: TabContainer) -> void:
-	var vbox := _scroll_tab(parent, "Developer")
+	var vbox := _tab_page(parent, "Developer")
 	_developer_tab_root = parent.get_node("Developer") as Control
 	_add_hint(vbox, "Sandbox / debug tools — apply in test map and tactical scenes.")
 
@@ -743,29 +740,23 @@ func _slider_value_row(slider: HSlider, value_label: Label) -> HBoxContainer:
 	return row
 
 
-func _scroll_tab(parent: TabContainer, tab_name: String) -> VBoxContainer:
-	var scroll := ScrollContainer.new()
-	scroll.name = tab_name
-	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+func _tab_page(parent: TabContainer, tab_name: String) -> VBoxContainer:
+	var page := MarginContainer.new()
+	page.name = tab_name
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_theme_constant_override("margin_left", 16)
+	page.add_theme_constant_override("margin_top", 12)
+	page.add_theme_constant_override("margin_right", 16)
+	page.add_theme_constant_override("margin_bottom", 12)
 	if live_preview:
-		scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	parent.add_child(scroll)
-
-	var pad := MarginContainer.new()
-	pad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	pad.add_theme_constant_override("margin_left", 16)
-	pad.add_theme_constant_override("margin_top", 12)
-	pad.add_theme_constant_override("margin_right", 16)
-	pad.add_theme_constant_override("margin_bottom", 12)
-	scroll.add_child(pad)
+		page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	parent.add_child(page)
 
 	var vbox := VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 10)
-	pad.add_child(vbox)
+	page.add_child(vbox)
 	return vbox
 
 
