@@ -1437,6 +1437,7 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						return
 					var removed: TimelineAction = plan_action.entries[i]
 					plan_action.remove_at(i)
+					_undo_paired_premove_for_movement_action(unit_id, removed)
 					plan_affected_unit_ids = [unit_id]
 					_refresh_plan()
 					_reselect_ability_from_action(removed)
@@ -1467,6 +1468,30 @@ func _reselect_ability_from_action(action: TimelineAction) -> void:
 		if u.active_abilities[i].id == action.ability.id:
 			select_ability(i)
 			return
+
+
+## Walk pre-move committed together with a movement skill — undo the skill, undo the approach.
+func _undo_paired_premove_for_movement_action(unit_id: int, removed_action: TimelineAction) -> void:
+	if unit_id < 0 or removed_action == null:
+		return
+	if removed_action.type != GameEnums.ActionType.ABILITY:
+		return
+	var ability: AbilityData = removed_action.ability
+	if ability == null:
+		return
+	if not (ability.is_movement_kind() or AbilitySystem.ability_has_movement_effect(ability)):
+		return
+	for i: int in range(plan_pre_move.size() - 1, -1, -1):
+		var pre: TimelineAction = plan_pre_move.entries[i]
+		if pre.actor_id != unit_id:
+			continue
+		if pre.type != GameEnums.ActionType.MOVE:
+			continue
+		if pre.irreversible:
+			continue
+		_cancel_ally_plans_after_movement_step(pre)
+		plan_pre_move.remove_at(i)
+		return
 
 @rpc("any_peer", "call_local", "reliable")
 func rpc_remove_action(index: int) -> void:

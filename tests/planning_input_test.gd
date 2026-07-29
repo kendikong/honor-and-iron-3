@@ -30,6 +30,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_planning_display_mp_left(failures)
 	_test_timeline_ghost_slots(failures)
 	_test_committed_action_approach_uses_premove_slot(failures)
+	_test_undo_movement_action_clears_paired_premove(failures)
 	_test_ability_scroll_clears_hover_preview_cache(failures)
 
 
@@ -1295,6 +1296,65 @@ static func _test_committed_action_approach_uses_premove_slot(failures: Array[St
 	if (fresh_slots.get("pre", []) as Array).is_empty():
 		failures.append(
 			"PlanningInputTest: uncommitted approach hover must populate pre-move",
+		)
+
+
+static func _test_undo_movement_action_clears_paired_premove(failures: Array[String]) -> void:
+	var director := CombatDirector.new()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(10, 6)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			board.set_tile_terrain(Vector2i(x, y), plain)
+	var trample := AbilityData.new()
+	trample.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	trample.id = &"knight_trampling_advance"
+	trample.action_point_cost = 2
+	trample.movement_point_cost = 2
+	trample.targeting_flags = GameEnums.TargetingFlags.TILE
+	var move_eff := EffectData.new()
+	move_eff.type = GameEnums.EffectType.MOVE
+	move_eff.amount = 2
+	trample.effects = [move_eff]
+	var knight := UnitState.new()
+	knight.id = 1
+	knight.team = GameEnums.Team.PLAYER
+	knight.position = Vector2i(3, 3)
+	knight.movement.points_left = 4
+	knight.movement.max_points = 4
+	knight.ability.points_left = 2
+	knight.ability.max_points = 2
+	knight.active_abilities = [trample]
+	board.units = [knight]
+	GridSystem.set_occupant(board, knight.position, knight.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_move(
+			1, Vector2i(4, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	director.plan_action.entries.append(
+		TimelineAction.make_ability(
+			1,
+			trample,
+			Vector2i(5, 1),
+			-1,
+			GameEnums.MoveTiming.PRE_ACTION,
+			[Vector2i(4, 2), Vector2i(5, 1)],
+		),
+	)
+	director.rpc_remove_last_for_unit(1)
+	if not director.plan_action.entries.is_empty():
+		failures.append("PlanningInputTest: undo should remove movement skill action")
+	if not director.plan_pre_move.entries.is_empty():
+		failures.append(
+			"PlanningInputTest: undo movement skill should also clear paired pre-move walk",
 		)
 
 

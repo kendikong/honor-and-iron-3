@@ -85,6 +85,8 @@ func _disconnect_event_bus() -> void:
 		EventBus.preview_updated.disconnect(_on_preview_updated)
 	if EventBus.board_changed.is_connected(_on_board_changed):
 		EventBus.board_changed.disconnect(_on_board_changed)
+	if EventBus.timeline_changed.is_connected(_on_timeline_changed):
+		EventBus.timeline_changed.disconnect(_on_timeline_changed)
 
 
 func _bind_event_bus() -> void:
@@ -93,6 +95,17 @@ func _bind_event_bus() -> void:
 	EventBus.ability_selected.connect(_on_ability_selected)
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.board_changed.connect(_on_board_changed)
+	EventBus.timeline_changed.connect(_on_timeline_changed)
+
+
+func _on_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void:
+	_clear_intent_snapshot()
+	_invalidate_planning_hover_cache()
+	_drag_route.clear()
+	_drag_last_free = Vector2i(-1, -1)
+	preview_state.clear_interaction()
+	if _planning != null:
+		_planning.restore_committed_display()
 
 
 func cancel_drag() -> void:
