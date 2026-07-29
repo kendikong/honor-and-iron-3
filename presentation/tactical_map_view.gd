@@ -59,6 +59,7 @@ var _fps_hud: FpsHud
 var _clock_hud: WorldClockHud
 var _tree_fader: TreeCanopyFader
 var _planning_input: CombatPlanningInput
+var _autobattler_panel: AutobattlerControlPanel
 
 
 func _ready() -> void:
@@ -107,6 +108,11 @@ func _ready() -> void:
 	_pause_menu = TacticalPauseMenu.new()
 	_pause_menu.name = "PauseMenu"
 	add_child(_pause_menu)
+
+	_autobattler_panel = AutobattlerControlPanel.new()
+	_autobattler_panel.name = "AutobattlerPanel"
+	add_child(_autobattler_panel)
+	_autobattler_panel.setup(_director)
 
 	_planning_cursor = TacticalPlanningCursor.new()
 	_planning_cursor.name = "PlanningCursor"
@@ -495,7 +501,7 @@ func _hover_blocked_by_ui(ctrl: Control) -> bool:
 			var layer: CanvasLayer = node as CanvasLayer
 			if layer.layer >= 21:
 				return true
-		if node.name in ["OptionsMenu", "PauseMenu", "OptionsScreen"]:
+		if node.name in ["OptionsMenu", "PauseMenu", "OptionsScreen", "AutobattlerPanel"]:
 			return true
 		node = node.get_parent()
 	return false
