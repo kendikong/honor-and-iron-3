@@ -15,6 +15,8 @@ signal map_boredom_water_toggled(pressed: bool)
 signal character_gen_changed
 
 var overlay_mode: bool = false
+## In-game overlay: dim backdrop + side panel so the scene stays visible for live tweaks.
+var live_preview: bool = false
 var hide_developer_tab: bool = false
 var show_sandbox_tools: bool = false
 
@@ -139,14 +141,17 @@ func set_map_tool_state(tile_labels: bool, boredom_atmosphere: bool, boredom_wat
 func _ready() -> void:
 	if overlay_mode:
 		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	$ColorRect.color = MenuTheme.BG
-	MenuTheme.style_title($Title)
-	$Title.text = "Settings"
-	$Title.add_theme_color_override("font_color", MenuTheme.TEXT)
-	$BackButton.text = "Close" if overlay_mode else "Back"
-	MenuTheme.style_menu_button($BackButton)
-	$BackButton.pressed.connect(_on_back_pressed)
-	MenuNavigation.register(self, _on_back_pressed)
+	if live_preview:
+		_apply_live_preview_chrome()
+	else:
+		$ColorRect.color = MenuTheme.BG
+		MenuTheme.style_title($Title)
+		$Title.text = "Settings"
+		$Title.add_theme_color_override("font_color", MenuTheme.TEXT)
+		$BackButton.text = "Close" if overlay_mode else "Back"
+		MenuTheme.style_menu_button($BackButton)
+		$BackButton.pressed.connect(_on_back_pressed)
+		MenuNavigation.register(self, _on_back_pressed)
 
 	if _pending_settings != null:
 		_game_settings = _pending_settings
@@ -160,19 +165,11 @@ func _ready() -> void:
 		_effects_settings = EffectsSettings.new()
 		_effects_settings.load_from_disk()
 
-	var margin := MarginContainer.new()
-	MenuInterfaceApplier.stamp_content_margin(margin)
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margin.add_theme_constant_override("margin_left", 48)
-	margin.add_theme_constant_override("margin_right", 48)
-	margin.add_theme_constant_override("margin_top", 120)
-	margin.add_theme_constant_override("margin_bottom", 48)
-	add_child(margin)
-
+	var tab_host: Control = _build_tab_host()
 	var tab_container := TabContainer.new()
 	tab_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	margin.add_child(tab_container)
+	tab_host.add_child(tab_container)
 
 	_build_display_tab(tab_container)
 	_build_graphics_tab(tab_container)
@@ -186,6 +183,81 @@ func _ready() -> void:
 	if _sandbox_tools_box != null:
 		_sandbox_tools_box.visible = show_sandbox_tools
 	_apply_interface_to_ui()
+
+
+func _build_tab_host() -> Control:
+	if not live_preview:
+		var margin := MarginContainer.new()
+		MenuInterfaceApplier.stamp_content_margin(margin)
+		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		margin.add_theme_constant_override("margin_left", 48)
+		margin.add_theme_constant_override("margin_right", 48)
+		margin.add_theme_constant_override("margin_top", 120)
+		margin.add_theme_constant_override("margin_bottom", 48)
+		add_child(margin)
+		return margin
+
+	$Title.visible = false
+	$BackButton.visible = false
+
+	var panel := PanelContainer.new()
+	panel.name = "LivePreviewPanel"
+	MenuTheme.apply_panel(panel)
+	panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	panel.offset_left = -508.0
+	panel.offset_top = 12.0
+	panel.offset_right = -12.0
+	panel.offset_bottom = -12.0
+	add_child(panel)
+
+	var outer_margin := MarginContainer.new()
+	outer_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	outer_margin.add_theme_constant_override("margin_left", 14)
+	outer_margin.add_theme_constant_override("margin_right", 14)
+	outer_margin.add_theme_constant_override("margin_top", 12)
+	outer_margin.add_theme_constant_override("margin_bottom", 12)
+	panel.add_child(outer_margin)
+
+	var shell := VBoxContainer.new()
+	shell.add_theme_constant_override("separation", 10)
+	shell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	shell.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer_margin.add_child(shell)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 8)
+	shell.add_child(header)
+
+	var title := Label.new()
+	title.text = "Settings"
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	MenuTheme.style_title(title)
+	header.add_child(title)
+
+	var close_btn := Button.new()
+	close_btn.text = "Close"
+	MenuTheme.style_menu_button(close_btn)
+	close_btn.custom_minimum_size = Vector2(96.0, 36.0)
+	close_btn.pressed.connect(_on_back_pressed)
+	header.add_child(close_btn)
+	MenuNavigation.register(self, _on_back_pressed)
+
+	var hint := Label.new()
+	hint.text = "Game stays visible — graphics and display changes apply live."
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	MenuTheme.style_muted_label(hint)
+	shell.add_child(hint)
+
+	var tab_wrap := MarginContainer.new()
+	tab_wrap.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tab_wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	shell.add_child(tab_wrap)
+	return tab_wrap
+
+
+func _apply_live_preview_chrome() -> void:
+	$ColorRect.color = Color(0.02, 0.03, 0.06, 0.38)
+	$ColorRect.mouse_filter = Control.MOUSE_FILTER_STOP
 
 
 func _build_display_tab(parent: TabContainer) -> void:
@@ -267,7 +339,12 @@ func _build_display_tab(parent: TabContainer) -> void:
 func _build_graphics_tab(parent: TabContainer) -> void:
 	var scroll := _scroll_tab(parent, "Graphics")
 	var vbox := _vbox(scroll)
-	_add_hint(vbox, "Ambient living-map effects — saved automatically.")
+	var hint_text := (
+		"Ambient living-map effects — saved automatically. Toggle while the game is visible behind this panel."
+		if live_preview
+		else "Ambient living-map effects — saved automatically."
+	)
+	_add_hint(vbox, hint_text)
 
 	for entry: Dictionary in _EFFECT_TOGGLES:
 		var key: String = entry["key"]
@@ -563,6 +640,7 @@ func _apply_interface_to_ui() -> void:
 func _on_effect_toggled(key: String, pressed: bool) -> void:
 	_effects_settings.set(key, pressed)
 	_effects_settings.save_to_disk()
+	_effects_settings.changed.emit()
 	if _on_effects_changed.is_valid():
 		_on_effects_changed.call()
 
@@ -570,6 +648,9 @@ func _on_effect_toggled(key: String, pressed: bool) -> void:
 func _on_shadow_debug_toggled(key: String, pressed: bool) -> void:
 	_effects_settings.set(key, pressed)
 	_effects_settings.save_to_disk()
+	_effects_settings.changed.emit()
+	if _on_effects_changed.is_valid():
+		_on_effects_changed.call()
 
 
 func _add_dev_check(

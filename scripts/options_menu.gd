@@ -72,6 +72,7 @@ func open() -> void:
 		return
 	_screen = _OPTIONS_SCENE.instantiate() as OptionsScreen
 	_screen.overlay_mode = true
+	_screen.live_preview = true
 	_screen.hide_developer_tab = _combat_mode
 	_screen.show_sandbox_tools = _sandbox_tools_enabled and not _combat_mode
 	_screen.setup(_settings, _on_applied, _effects_settings, _on_effects_changed)
