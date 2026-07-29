@@ -61,8 +61,6 @@ var _drag_preview_last_failed: bool = false
 var _planning_input: CombatPlanningInput
 var _planning_overlay: TacticalPlanningOverlay
 var _show_team_outlines: bool = false
-var _autobattler_hook: AutobattlerHookRegistry
-var _planning_anim_units: Dictionary = {}
 
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
 
@@ -75,21 +73,6 @@ func is_spellcast_damage_deferred(unit_id: int) -> bool:
 
 func get_active_push_tweens() -> int:
 	return _active_push_tweens
-
-
-func has_active_move_tweens() -> bool:
-	return not _move_tweens.is_empty()
-
-
-func await_move_tweens_idle() -> void:
-	while not _move_tweens.is_empty():
-		await get_tree().process_frame
-
-
-func set_autobattler_hook(hook: AutobattlerHookRegistry) -> void:
-	_autobattler_hook = hook
-	if not EventBus.planning_commit_events.is_connected(_on_planning_commit_events):
-		EventBus.planning_commit_events.connect(_on_planning_commit_events)
 
 
 func get_actor(unit_id: int) -> CharacterActor:
@@ -801,33 +784,11 @@ func _update_depth(unit_id: int) -> void:
 	)
 
 
-func _is_full_autobattle_active() -> bool:
-	return (
-		_autobattler_hook != null
-		and _autobattler_hook._active
-		and _autobattler_hook._auto_commit
-	)
-
-
-func _on_planning_commit_events(events: Array) -> void:
-	for raw: Variant in events:
-		if raw is SimEvent and (raw as SimEvent).type == GameEnums.SimEventType.UNIT_MOVED:
-			var actor_id: int = int((raw as SimEvent).data.get("actor", -1))
-			if actor_id >= 0:
-				_planning_anim_units[actor_id] = true
-
-
-func _clear_planning_anim_unit(unit_id: int) -> void:
-	_planning_anim_units.erase(unit_id)
-
-
 func _should_animate_move(event: SimEvent) -> bool:
 	if event.data.get("teleport", false):
 		return false
 	var unit_id: int = int(event.data.get("actor", -1))
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
-	if _is_full_autobattle_active():
-		return true
 	if CombatDirector.is_planning_phase(_phase):
 		return unit != null and not unit.is_enemy()
 	if unit != null and unit.is_enemy():
@@ -893,8 +854,6 @@ func _sync_planning_actor_positions() -> void:
 		if not unit.is_alive() or unit.is_enemy():
 			continue
 		if _drag_preview_active and unit.id == _drag_preview_id:
-			continue
-		if _planning_anim_units.has(unit.id) and _move_tweens.has(unit.id):
 			continue
 		var target: Vector2i = unit.position
 		var current_cell: Vector2i = _actor_grid_cell(unit.id)
@@ -1116,15 +1075,13 @@ func _play_cell_path_tween(
 	tween.finished.connect(func() -> void:
 		_move_tweens.erase(unit_id)
 		_move_tween_destinations.erase(unit_id)
-		_clear_planning_anim_unit(unit_id)
 		actor.set_walking(false)
 		var live := _board.get_unit_by_id(unit_id) if _board != null else null
 		actor.set_running(live != null and live.has_run_boost())
 		if live != null:
-			if _actor_grid_cell(unit_id) == live.position:
-				_sync_planning_final_facing(unit_id)
-			else:
-				_sync_planning_unit_position(live)
+			if _actor_grid_cell(unit_id) != live.position:
+				_position_actor(unit_id, live.position)
+			_sync_planning_final_facing(unit_id)
 		_update_depth(unit_id)
 	)
 

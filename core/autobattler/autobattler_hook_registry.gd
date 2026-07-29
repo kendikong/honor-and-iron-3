@@ -8,16 +8,10 @@ var _ai_instance: AutobattlerAI
 var _active: bool = false
 var _auto_commit: bool = true  ## True = Full Autobattle. False = planning assist (user presses Execute).
 var _combat_director = null
-var _unit_layer: TacticalUnitLayer
-
 
 func _init(director) -> void:
 	_combat_director = director
 	_ai_instance = AutobattlerAI.new()
-
-
-func set_unit_layer(layer: TacticalUnitLayer) -> void:
-	_unit_layer = layer
 
 func set_active(active: bool, auto_commit: bool = true) -> void:
 	_active = active
@@ -69,7 +63,6 @@ func _on_turn_phase_changed(phase: int) -> void:
 			var unit = board.get_unit_by_id(u_id)
 			if unit != null:
 				_commit_unit_actions(board, actions_by_unit[u_id], unit, vector.telemetry)
-				await _await_unit_planning_presentation()
 		
 		if EventBus.has_user_signal("ai_telemetry_generated") or true:
 			EventBus.ai_telemetry_generated.emit(vector.telemetry)
@@ -114,11 +107,3 @@ func _commit_unit_actions(board: BoardState, actions: Array, unit: UnitState, te
 			var mov_type := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
 			waypoints = MovementSystem.find_path(board, unit.position, dest, max_steps, mov_type)
 		_combat_director.rpc_plan_move(unit.id, dest, unit.facing, waypoints)
-
-
-func _await_unit_planning_presentation() -> void:
-	await Engine.get_main_loop().process_frame
-	if _combat_director != null:
-		_combat_director.flush_plan_refresh_signals_if_pending()
-	if _unit_layer != null:
-		await _unit_layer.await_move_tweens_idle()

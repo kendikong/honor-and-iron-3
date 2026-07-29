@@ -90,12 +90,18 @@ func _spawn_heal_text(event: SimEvent) -> void:
 
 
 func _on_planning_commit_events(events: Array) -> void:
+	var skip_move_presentation: bool = (
+		_director != null and CombatDirector.is_planning_phase(_director.phase)
+	)
 	var had_push: bool = false
 	for raw: Variant in events:
 		if raw is SimEvent:
-			if _is_push_event(raw):
+			var event: SimEvent = raw as SimEvent
+			if skip_move_presentation and event.type == GameEnums.SimEventType.UNIT_MOVED:
+				continue
+			if _is_push_event(event):
 				had_push = true
-			_on_sim_event(raw as SimEvent)
+			_on_sim_event(event)
 	if had_push:
 		_schedule_push_flush()
 
