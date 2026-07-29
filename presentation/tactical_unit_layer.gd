@@ -60,6 +60,7 @@ var _drag_preview_last_facing: int = -1
 var _drag_preview_last_failed: bool = false
 var _planning_input: CombatPlanningInput
 var _planning_overlay: TacticalPlanningOverlay
+var _show_team_outlines: bool = false
 
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
 
@@ -91,6 +92,13 @@ func sync_all_contact_shadows(settings: EffectsSettings) -> void:
 
 func bind_sfx(sfx: SfxPlayer) -> void:
 	_sfx = sfx
+
+
+func apply_settings(settings: GameSettings) -> void:
+	if settings == null:
+		return
+	_show_team_outlines = settings.show_team_outlines
+	_refresh_unit_glows()
 
 
 func setup(map_view: TacticalMapView, director: CombatDirector, profile: CharacterGenProfile = null) -> void:
@@ -264,10 +272,17 @@ func _outline_color_for(unit: UnitState, strength: CharacterSelectionGlow.GlowSt
 
 
 func _refresh_unit_glows() -> void:
-	if not CombatDirector.is_planning_phase(_phase):
-		_clear_all_unit_glows()
-		return
 	var want: Dictionary = {}
+	if _show_team_outlines and _board != null:
+		for unit: UnitState in _board.units:
+			if unit.is_alive():
+				want[unit.id] = CharacterSelectionGlow.GlowStrength.TEAM
+	if not CombatDirector.is_planning_phase(_phase):
+		if want.is_empty():
+			_clear_all_unit_glows()
+			return
+		_apply_glow_want(want)
+		return
 	var selected_id: int = _selected_id
 	var hover_id: int = _effective_hover_id()
 	if selected_id >= 0:
@@ -278,10 +293,15 @@ func _refresh_unit_glows() -> void:
 					want[target_id] = CharacterSelectionGlow.GlowStrength.TARGET
 			if _drag_attack_target_id >= 0 and _drag_attack_target_id != selected_id:
 				want[_drag_attack_target_id] = CharacterSelectionGlow.GlowStrength.TARGET
-	if hover_id >= 0 and hover_id != selected_id and not want.has(hover_id):
-		want[hover_id] = CharacterSelectionGlow.GlowStrength.HOVER
+	if hover_id >= 0 and hover_id != selected_id:
+		if not want.has(hover_id) or want[hover_id] != CharacterSelectionGlow.GlowStrength.TARGET:
+			want[hover_id] = CharacterSelectionGlow.GlowStrength.HOVER
 	if selected_id >= 0:
 		want[selected_id] = CharacterSelectionGlow.GlowStrength.SELECTED
+	_apply_glow_want(want)
+
+
+func _apply_glow_want(want: Dictionary) -> void:
 	var stale: Array[int] = []
 	for unit_id: Variant in _glow_applied.keys():
 		stale.append(int(unit_id))

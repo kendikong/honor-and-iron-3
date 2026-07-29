@@ -53,6 +53,7 @@ var master_volume: float = 1.0
 var sfx_volume: float = 1.0
 var music_volume: float = 1.0
 var show_damage_numbers: bool = true
+var show_team_outlines: bool = false
 var dev_tile_labels: bool = false
 var dev_boredom_atmosphere: bool = false
 var dev_boredom_water: bool = false
@@ -92,6 +93,7 @@ func load_from_disk() -> void:
 	sfx_volume = float(cfg.get_value("audio", "sfx_volume", sfx_volume))
 	music_volume = float(cfg.get_value("audio", "music_volume", music_volume))
 	show_damage_numbers = bool(cfg.get_value("interface", "show_damage_numbers", show_damage_numbers))
+	show_team_outlines = bool(cfg.get_value("interface", "show_team_outlines", show_team_outlines))
 	dev_tile_labels = bool(cfg.get_value("developer", "tile_labels", dev_tile_labels))
 	dev_boredom_atmosphere = bool(cfg.get_value("developer", "boredom_atmosphere", dev_boredom_atmosphere))
 	dev_boredom_water = bool(cfg.get_value("developer", "boredom_water", dev_boredom_water))
@@ -150,6 +152,7 @@ func save_to_disk() -> void:
 	cfg.set_value("audio", "sfx_volume", sfx_volume)
 	cfg.set_value("audio", "music_volume", music_volume)
 	cfg.set_value("interface", "show_damage_numbers", show_damage_numbers)
+	cfg.set_value("interface", "show_team_outlines", show_team_outlines)
 	cfg.set_value("interface", "show_fps_hud", show_fps_hud)
 	cfg.set_value("interface", "show_time_of_day_hud", show_time_of_day_hud)
 	cfg.set_value("developer", "tile_labels", dev_tile_labels)

@@ -8,6 +8,7 @@ const _OUTLINE_SHADER: Shader = preload("res://shaders/pixel_sprite_outline.gdsh
 const _OUTLINE_OUTER_ALPHA: float = 0.42
 
 enum GlowStrength {
+	TEAM,
 	HOVER,
 	SELECTED,
 	TARGET,
@@ -253,6 +254,11 @@ func _apply_strength_params(pulse_scale: float = 1.0) -> void:
 	var inner_a: float = 0.72
 	var outer_a: float = 0.32
 	match _strength:
+		GlowStrength.TEAM:
+			inner_px = 1
+			outer_px = 2
+			inner_a = 0.68 if not _muted else 0.55
+			outer_a = 0.34 if not _muted else 0.24
 		GlowStrength.HOVER:
 			inner_px = 1
 			outer_px = 2

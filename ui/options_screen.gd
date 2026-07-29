@@ -74,6 +74,7 @@ var _master_slider: HSlider
 var _sfx_slider: HSlider
 var _music_slider: HSlider
 var _damage_numbers_check: CheckButton
+var _team_outlines_check: CheckButton
 var _show_fps_check: CheckButton
 var _show_tod_check: CheckButton
 var _effect_checks: Dictionary = {}
@@ -378,6 +379,15 @@ func _build_interface_tab(parent: TabContainer) -> void:
 		_save_game_settings(),
 	)
 	vbox.add_child(_damage_numbers_check)
+
+	_team_outlines_check = CheckButton.new()
+	_team_outlines_check.text = "Always show team outlines (blue allies, red enemies)"
+	_team_outlines_check.button_pressed = _game_settings.show_team_outlines
+	_team_outlines_check.toggled.connect(func(pressed: bool) -> void:
+		_game_settings.show_team_outlines = pressed
+		_save_game_settings(),
+	)
+	vbox.add_child(_team_outlines_check)
 
 	if _char_profile != null:
 		_add_section(vbox, "Units on map")

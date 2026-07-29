@@ -76,6 +76,8 @@ func _apply_ui_settings() -> void:
 		_side_panels.apply_settings(_settings)
 	if _combat_hud != null:
 		_combat_hud.apply_settings(_settings)
+	if _unit_layer != null:
+		_unit_layer.apply_settings(_settings)
 
 
 func start_combat(encounter: EncounterData, initial_board: BoardState = null) -> void:
