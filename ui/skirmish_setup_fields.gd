@@ -13,7 +13,7 @@ var _preview: Label
 
 
 func _init() -> void:
-	add_theme_constant_override("separation", 8)
+	add_theme_constant_override("separation", 10)
 	_player_count = _add_spin_row("Player count", _C.SKIRMISH_MIN_PLAYER_COUNT, _C.SKIRMISH_MAX_PLAYER_COUNT)
 	_enemy_count = _add_spin_row("Enemy count", _C.SKIRMISH_MIN_ENEMY_COUNT, _C.SKIRMISH_MAX_ENEMY_COUNT)
 	_player_level = _add_spin_row("Player level", _C.SKIRMISH_MIN_LEVEL, _C.SKIRMISH_MAX_LEVEL)
@@ -26,9 +26,29 @@ func _init() -> void:
 	add_child(skills_hint)
 	_preview = Label.new()
 	_preview.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_preview.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_preview.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	add_child(_preview)
 	for sb: SpinBox in [_player_count, _enemy_count, _player_level, _enemy_level, _player_passives, _player_skills]:
 		sb.value_changed.connect(func(_v: float) -> void: _refresh_preview())
+
+
+func apply_roomy_layout() -> void:
+	add_theme_constant_override("separation", 14)
+	for row: Node in get_children():
+		if row is HBoxContainer:
+			for child: Node in (row as HBoxContainer).get_children():
+				if child is Label:
+					(child as Label).custom_minimum_size.x = 260.0
+					(child as Label).add_theme_font_size_override("font_size", 18)
+				elif child is SpinBox:
+					(child as SpinBox).custom_minimum_size.y = 40.0
+					(child as SpinBox).add_theme_font_size_override("font_size", 18)
+	for child: Node in get_children():
+		if child is Label and child != _preview:
+			(child as Label).add_theme_font_size_override("font_size", 14)
+	_preview.add_theme_font_size_override("font_size", 17)
+	_preview.add_theme_color_override("font_color", Color(0.78, 0.84, 0.94))
 
 
 func _add_spin_row(label_text: String, min_v: int, max_v: int) -> SpinBox:
