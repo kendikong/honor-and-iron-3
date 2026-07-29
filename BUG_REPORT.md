@@ -25,6 +25,9 @@ test under `tests/`. The test runs the production planning, movement, or
 simulation API and asserts the exact result. Visual feel and pixel-art
 authorship still require a user runtime check.
 
+**Planning QA gate (manual checklist automation):** `docs/PLANNING_QA_GATE.md`
+— run `.\scripts\run_planning_qa_gate.ps1` before/after planning perf work.
+
 ## Run the regression suite
 
 ```powershell

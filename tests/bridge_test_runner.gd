@@ -5,6 +5,7 @@ extends RefCounted
 
 const PLANNING_PATH_REGRESSION_TEST := preload("res://tests/planning_path_regression_test.gd")
 const TRAMPLING_ADVANCE_E2E_TEST := preload("res://tests/trampling_advance_e2e_test.gd")
+const PLANNING_QA_GATE_TEST := preload("res://tests/planning_qa_gate_test.gd")
 
 static func run_all() -> Dictionary:
 	var failures: Array[String] = []
@@ -26,6 +27,7 @@ static func run_all() -> Dictionary:
 	PlanningInputTest.run_all(failures)
 	PLANNING_PATH_REGRESSION_TEST.run_all(failures)
 	TRAMPLING_ADVANCE_E2E_TEST.run_all(failures)
+	PLANNING_QA_GATE_TEST.run_all(failures)
 	return {"passed": failures.is_empty(), "failures": failures}
 
 
