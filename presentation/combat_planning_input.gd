@@ -1624,7 +1624,7 @@ func _planning_post_move_only(actor: UnitState, unit_id: int, cell: Vector2i) ->
 func _should_replan_premove_approach(unit_id: int, cell: Vector2i) -> bool:
 	if _director == null or _director.board == null or unit_id < 0:
 		return false
-	if _director.unit_has_pre_move_queued(unit_id):
+	if _director.unit_has_move_planned_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 		return false
 	if not _director.unit_has_committed_class_action(unit_id):
 		return false
