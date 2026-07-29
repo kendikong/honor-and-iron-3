@@ -73,6 +73,22 @@ Full regression (includes this gate):
 | Sim walk order | same | `Simulator` visited cells |
 | *Immediate pre-move animation, armed UI* | — | **Manual** |
 
+### 3. Integrity extensions (headless-only)
+
+Beyond the manual checklist — game rules that must not regress during perf work.
+
+| Integrity rule | Automated test | API asserted |
+|----------------|----------------|--------------|
+| Hover is deterministic | `_test_hover_slots_are_deterministic` | same cell → identical slot signature twice |
+| Commit ratifies hover (preview = intent) | `_test_commit_plan_matches_hover_slots` | hover slots == post-commit plan slots |
+| Undo removes action only, keeps pre-move | `_test_undo_action_keeps_premove` | `rpc_remove_last_for_unit` preserves `plan_pre_move` |
+| Shield Bash full approach + push from start | `_test_shield_bash_full_approach_push_preview` | knight `(4,5)` → approach → push east |
+| Committed hook approach uses pre column | `_test_committed_hook_approach_uses_premove` | committed action + approach hover → `pre` not `post` |
+| Out-of-bounds hover rejected | `_test_out_of_range_hover_is_invalid` | `(-1,0)` → `invalid` |
+| Trample painted route == live preview | `_test_trample_paint_preview_matches_route` | `preview_paths` matches E-then-N corridor |
+| Trample commit keeps painted waypoints | `_test_trample_commit_preserves_east_then_north` | commit slots waypoints preserved |
+| Simulator walks painted trample order | `_test_trample_sim_follows_painted_order` | `UNIT_MOVED` cell order |
+
 ## What stays manual (Layer B — ~3 min)
 
 1. **FPS / hover stutter** — no headless FPS yet; watch top-right counter after perf changes.
