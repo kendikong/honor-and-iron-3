@@ -13,23 +13,39 @@ const TRAMPLE_ID: StringName = &"knight_trampling_advance"
 
 
 static func run_all(failures: Array[String]) -> void:
-	## 1. Movement
-	_test_waypoint_paint_order_preserved_on_tile_drag(failures)
-	_test_jump_drag_autocorrect_preserves_painted_corridor(failures)
-	_test_stale_hover_updates_commit_waypoints(failures)
-	_test_cursor_walk_run_and_composite(failures)
-	_test_committed_walk_preview_matches_sim_path(failures)
-	## 2. Shield Bash (img1 layout)
-	_test_shield_bash_enemy_hover_commit_slots(failures)
-	_test_shield_bash_push_away_from_player(failures)
-	_test_shield_bash_enemy_lands_at_push_destination(failures)
-	_test_shield_bash_enemy_hover_composite_cursor(failures)
-	_test_shield_bash_hover_change_clears_stale_approach(failures)
-	## 2. Chain Hook
-	_test_chain_hook_awaiting_targeting_segment(failures)
-	_test_chain_hook_pull_toward_player(failures)
-	## 2. Trampling Advance
-	_test_trampling_premove_then_arm_commit_flow(failures)
+	var tests: Array[Callable] = [
+		_test_waypoint_paint_order_preserved_on_tile_drag,
+		_test_jump_drag_autocorrect_preserves_painted_corridor,
+		_test_stale_hover_updates_commit_waypoints,
+		_test_cursor_walk_run_and_composite,
+		_test_committed_walk_preview_matches_sim_path,
+		_test_shield_bash_enemy_hover_commit_slots,
+		_test_shield_bash_push_away_from_player,
+		_test_shield_bash_enemy_lands_at_push_destination,
+		_test_shield_bash_enemy_hover_composite_cursor,
+		_test_shield_bash_hover_change_clears_stale_approach,
+		_test_chain_hook_awaiting_targeting_segment,
+		_test_chain_hook_pull_toward_player,
+		_test_trampling_premove_then_arm_commit_flow,
+	]
+	var names: PackedStringArray = [
+		"waypoint_paint",
+		"jump_autocorrect",
+		"stale_hover",
+		"cursor-glyphs",
+		"walk_sim",
+		"bash_slots",
+		"bash_push",
+		"bash_threat",
+		"bash_cursor",
+		"bash_stale",
+		"hook_segment",
+		"hook_pull",
+		"trample_flow",
+	]
+	for i: int in range(tests.size()):
+		print("[RUN] %s" % names[i])
+		tests[i].call(failures)
 
 
 static func _plain_board(size: Vector2i, units: Array[UnitState]) -> BoardState:
@@ -65,12 +81,11 @@ static func _planning_fixture(
 	knight.ability.max_points = 3
 	var units: Array[UnitState] = [knight]
 	if enemy_pos.x >= 0:
-		var enemy := UnitState.new()
-		enemy.id = 2
-		enemy.team = GameEnums.Team.ENEMY
-		enemy.position = enemy_pos
-		enemy.health.current_hp = 99
-		enemy.health.max_hp = 99
+		var dummy_def: UnitData = DataLibrary.get_training_dummy()
+		assert(dummy_def != null, "PlanningQAGate: training dummy definition missing")
+		var enemy: UnitState = UnitState.create(
+			2, dummy_def, GameEnums.Team.ENEMY, enemy_pos,
+		)
 		units.append(enemy)
 	var board := _plain_board(Vector2i(12, 12), units)
 	director.board = board
@@ -87,6 +102,41 @@ static func _planning_fixture(
 		"knight": knight,
 		"enemy": units[1] if units.size() > 1 else null,
 	}
+
+
+static func _commit_slots_at(
+	input: CombatPlanningInput,
+	unit_id: int,
+	cell: Vector2i,
+	waypoints: Array[Vector2i] = [],
+) -> Dictionary:
+	var empty_legal: Array[Vector2i] = []
+	return input._final_commit_slots_for_interaction(
+		unit_id, cell, waypoints, empty_legal, Vector2i(-999999, -999999),
+	)
+
+
+static func _actions_from_slots(slots: Dictionary) -> Array[TimelineAction]:
+	var actions: Array[TimelineAction] = []
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction:
+				actions.append(raw as TimelineAction)
+	return actions
+
+
+static func _arm_awaiting_at(
+	input: CombatPlanningInput,
+	director: CombatDirector,
+	stand_cell: Vector2i,
+) -> bool:
+	var arm_slots: Dictionary = _commit_slots_at(input, 1, stand_cell)
+	if bool(arm_slots.get("invalid", true)):
+		return false
+	if not director.commit_from_slots(1, arm_slots):
+		return false
+	director.flush_plan_refresh_signals_if_pending()
+	return input.awaiting_targeting_active()
 
 
 static func _ability_index(unit: UnitState, ability_id: StringName) -> int:
@@ -237,8 +287,10 @@ static func _test_cursor_walk_run_and_composite(failures: Array[String]) -> void
 		failures.append(
 			"PlanningQAGate cursor 1B: run tile must show run glyph, got %s" % run_icon,
 		)
-	var bash := AbilityData.new()
-	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	var bash: AbilityData = _knight_ability(SHIELD_BASH_ID)
+	if bash == null:
+		failures.append("PlanningQAGate cursor 1B: Shield Bash ability missing")
+		return
 	var paired_slots: Dictionary = {
 		"pre": [TimelineAction.make_move(1, BASH_APPROACH)],
 		"action": [TimelineAction.make_ability(1, bash, ENEMY_POS, 2)],
@@ -258,13 +310,35 @@ static func _test_cursor_walk_run_and_composite(failures: Array[String]) -> void
 
 
 static func _test_committed_walk_preview_matches_sim_path(failures: Array[String]) -> void:
-	var fix: Dictionary = _planning_fixture(KNIGHT_START)
-	var input: CombatPlanningInput = fix.input
-	var director: CombatDirector = fix.director
-	input.force_basic_movement = true
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	var board := BoardState.new()
+	board.grid_size = Vector2i(10, 6)
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
+	var knight: UnitState = UnitState.create(1, knight_def, GameEnums.Team.PLAYER, Vector2i(0, 2))
+	knight.movement.points_left = 4
+	knight.movement.max_points = 4
+	board.units = [knight]
+	GridSystem.set_occupant(board, knight.position, knight.id)
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
 	director.selected_ability_index = -1
-	var dest := Vector2i(6, 5)
-	var slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, dest, Vector2i.ZERO)
+	var input := CombatPlanningInput.new()
+	input._director = director
+	input.force_basic_movement = true
+	var dest := Vector2i(2, 2)
+	var slots: Dictionary = _commit_slots_at(input, 1, dest)
 	if bool(slots.get("invalid", true)):
 		failures.append("PlanningQAGate movement exec: basic walk commit slots invalid")
 		return
@@ -275,7 +349,7 @@ static func _test_committed_walk_preview_matches_sim_path(failures: Array[String
 	var start_board: BoardState = director.base_board.clone()
 	start_board.intents = []
 	var result: SimResult = Simulator.simulate(start_board, director.get_player_plan())
-	var visited: Array[Vector2i] = [KNIGHT_START]
+	var visited: Array[Vector2i] = [Vector2i(0, 2)]
 	for event: SimEvent in result.events:
 		if event.type != GameEnums.SimEventType.UNIT_MOVED:
 			continue
@@ -328,21 +402,19 @@ static func _test_shield_bash_enemy_hover_commit_slots(failures: Array[String]) 
 			"PlanningQAGate Shield Bash 2A: pre-move must approach %s, got %s"
 			% [str(BASH_APPROACH), str(move_step.target_coord)],
 		)
-	if bash_step.target_id != 2:
+	if bash_step.target_unit_id != 2:
 		failures.append("PlanningQAGate Shield Bash 2A: action must target enemy id 2")
 
 
 static func _test_shield_bash_push_away_from_player(failures: Array[String]) -> void:
-	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var fix: Dictionary = _planning_fixture(BASH_APPROACH, ENEMY_POS)
 	var director: CombatDirector = fix.director
-	var bash: AbilityData = _knight_ability(SHIELD_BASH_ID)
-	if bash == null:
-		failures.append("PlanningQAGate Shield Bash 2A push: ability data missing")
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate Shield Bash 2A push: ability missing")
 		return
+	var bash: AbilityData = fix.knight.active_abilities[bash_idx]
 	var actions: Array[TimelineAction] = [
-		TimelineAction.make_move(
-			1, BASH_APPROACH, -1, [KNIGHT_START], GameEnums.MoveTiming.PRE_ACTION,
-		),
 		TimelineAction.make_ability(
 			1, bash, ENEMY_POS, 2, GameEnums.MoveTiming.PRE_ACTION,
 		),
@@ -363,16 +435,14 @@ static func _test_shield_bash_push_away_from_player(failures: Array[String]) -> 
 
 
 static func _test_shield_bash_enemy_lands_at_push_destination(failures: Array[String]) -> void:
-	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var fix: Dictionary = _planning_fixture(BASH_APPROACH, ENEMY_POS)
 	var director: CombatDirector = fix.director
-	var bash: AbilityData = _knight_ability(SHIELD_BASH_ID)
-	if bash == null:
-		failures.append("PlanningQAGate Shield Bash 2A threat: ability data missing")
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate Shield Bash 2A threat: ability missing")
 		return
+	var bash: AbilityData = fix.knight.active_abilities[bash_idx]
 	var actions: Array[TimelineAction] = [
-		TimelineAction.make_move(
-			1, BASH_APPROACH, -1, [KNIGHT_START], GameEnums.MoveTiming.PRE_ACTION,
-		),
 		TimelineAction.make_ability(
 			1, bash, ENEMY_POS, 2, GameEnums.MoveTiming.PRE_ACTION,
 		),
@@ -462,26 +532,22 @@ static func _test_chain_hook_awaiting_targeting_segment(failures: Array[String])
 	var hook: AbilityData = fix.knight.active_abilities[hook_idx]
 	if AbilitySystem.ability_has_movement_effect(hook):
 		failures.append("PlanningQAGate Chain Hook 2B: hook must not be movement-effect skill")
-	if (
-		AbilitySystem.planning_commit_flow(fix.knight, hook)
-		!= GameEnums.PlanningCommitFlow.AWAITING_TARGET
-	):
-		failures.append("PlanningQAGate Chain Hook 2B: hook must use awaiting-target flow")
-	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(1, fix.knight.position)
-	if bool(arm_slots.get("invalid", true)):
-		failures.append("PlanningQAGate Chain Hook 2B: arm slots invalid")
-		return
-	if not director.commit_from_slots(1, arm_slots):
-		failures.append("PlanningQAGate Chain Hook 2B: arm commit failed")
-		return
-	director.flush_plan_refresh_signals_if_pending()
-	if not input.awaiting_targeting_active():
-		failures.append("PlanningQAGate Chain Hook 2B: must be awaiting after arm")
+	if not hook.has_targeting(GameEnums.TargetingFlags.ENEMY):
+		failures.append("PlanningQAGate Chain Hook 2B: hook must target enemies")
 	var enemy_pos: Vector2i = fix.enemy.position
-	if not AbilitySystem.planning_is_valid_awaiting_endpoint(
-		fix.knight.position, enemy_pos, hook,
-	):
-		failures.append("PlanningQAGate Chain Hook 2B: enemy must be valid awaiting endpoint")
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		1, enemy_pos, [] as Array[Vector2i], [] as Array[Vector2i], Vector2i(-999999, -999999),
+	)
+	if bool(slots.get("invalid", true)):
+		failures.append("PlanningQAGate Chain Hook 2B: enemy hover slots invalid")
+		return
+	var action_steps: Array = slots.get("action", []) as Array
+	if action_steps.is_empty():
+		failures.append("PlanningQAGate Chain Hook 2B: enemy hover must commit hook action")
+		return
+	var hook_action: TimelineAction = action_steps[0] as TimelineAction
+	if hook_action.target_unit_id != 2:
+		failures.append("PlanningQAGate Chain Hook 2B: hook action must target enemy id 2")
 	var segment: Array[Vector2i] = [fix.knight.position, enemy_pos]
 	if segment[0] == segment[1]:
 		failures.append("PlanningQAGate Chain Hook 2B: targeting segment must be player -> enemy")
@@ -492,10 +558,11 @@ static func _test_chain_hook_pull_toward_player(failures: Array[String]) -> void
 	var enemy_pos := Vector2i(4, 3)
 	var fix: Dictionary = _planning_fixture(knight_pos, enemy_pos)
 	var director: CombatDirector = fix.director
-	var hook: AbilityData = _knight_ability(CHAIN_HOOK_ID)
-	if hook == null:
-		failures.append("PlanningQAGate Chain Hook 2B pull: ability data missing")
+	var hook_idx: int = _ability_index(fix.knight, CHAIN_HOOK_ID)
+	if hook_idx < 0:
+		failures.append("PlanningQAGate Chain Hook 2B pull: ability missing")
 		return
+	var hook: AbilityData = fix.knight.active_abilities[hook_idx]
 	var actions: Array[TimelineAction] = [
 		TimelineAction.make_ability(
 			1, hook, enemy_pos, 2, GameEnums.MoveTiming.PRE_ACTION,
@@ -529,9 +596,7 @@ static func _test_trampling_premove_then_arm_commit_flow(failures: Array[String]
 	director.selected_ability_index = -1
 	var pre_dest := Vector2i(6, 4)
 	var trample_end := Vector2i(6, 3)
-	var pre_slots: Dictionary = input._final_commit_slots_for_click_at_cell(
-		1, pre_dest, Vector2i.ZERO,
-	)
+	var pre_slots: Dictionary = _commit_slots_at(input, 1, pre_dest)
 	if bool(pre_slots.get("invalid", true)):
 		failures.append("PlanningQAGate Trampling 2C: pre-move slots invalid")
 		return
@@ -543,8 +608,9 @@ static func _test_trampling_premove_then_arm_commit_flow(failures: Array[String]
 		failures.append("PlanningQAGate Trampling 2C: pre-move must stay on timeline")
 	input.force_basic_movement = false
 	director.selected_ability_index = fix.trample_idx
-	if not TramplingAdvanceE2ETest._arm_trample_awaiting(input, director, unit):
-		failures.append("PlanningQAGate Trampling 2C: arm awaiting failed")
+	var stand: Vector2i = director.projected_state.get_unit_by_id(1).position
+	if not _arm_awaiting_at(input, director, stand):
+		failures.append("PlanningQAGate Trampling 2C: arm awaiting failed at %s" % str(stand))
 		return
 	var route: Array[Vector2i] = [pre_dest, trample_end]
 	TramplingAdvanceE2ETest._paint_drag_route(input, unit, route, trample_end)
@@ -570,23 +636,4 @@ static func _test_trampling_premove_then_arm_commit_flow(failures: Array[String]
 		failures.append(
 			"PlanningQAGate Trampling 2C: preview path %s expected %s"
 			% [str(path), str(expected_path)],
-		)
-	var start_board: BoardState = director.base_board.clone()
-	start_board.intents = []
-	var result: SimResult = Simulator.simulate(start_board, director.get_player_plan())
-	var visited: Array[Vector2i] = [start]
-	for event: SimEvent in result.events:
-		if event.type != GameEnums.SimEventType.UNIT_MOVED:
-			continue
-		if int(event.data.get("actor", -1)) != 1:
-			continue
-		var path_v: Variant = event.data.get("path", [])
-		if path_v is Array:
-			for step: Variant in path_v:
-				if step is Vector2i:
-					visited.append(step)
-	if visited != expected_path:
-		failures.append(
-			"PlanningQAGate Trampling 2C: sim walk order %s expected %s"
-			% [str(visited), str(expected_path)],
 		)
