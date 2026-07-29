@@ -749,7 +749,7 @@ func _scroll_tab(parent: TabContainer, tab_name: String) -> VBoxContainer:
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	if live_preview:
 		scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	parent.add_child(scroll)
