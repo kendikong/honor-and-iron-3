@@ -52,6 +52,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_drag_cleared_restores_canonical_bash_intent,
 		_test_approach_bash_slots_preview_keeps_push,
 		_test_timeline_ghost_clears_when_committed,
+		_test_action_range_centered_on_live_stand,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -90,6 +91,7 @@ static func run_all(failures: Array[String]) -> void:
 		"drag_cleared_intent",
 		"approach_bash_push_preview",
 		"timeline_ghost_commit",
+		"action_range_live_stand",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -354,6 +356,17 @@ static func _bash_img1_ready(fix: Dictionary) -> int:
 		return -1
 	fix.director.selected_ability_index = bash_idx
 	return bash_idx
+
+
+static func _wire_overlay(fix: Dictionary) -> TacticalPlanningOverlay:
+	var intent := CombatIntentState.new()
+	var overlay := TacticalPlanningOverlay.new()
+	overlay.setup(null, fix.director, intent)
+	overlay.set_board(fix.board)
+	fix.input._planning = overlay
+	fix.input._intent_state = intent
+	overlay.bind_planning_input(fix.input)
+	return overlay
 
 
 static func _test_waypoint_paint_order_preserved_on_tile_drag(failures: Array[String]) -> void:
@@ -1528,3 +1541,46 @@ static func _test_timeline_ghost_clears_when_committed(failures: Array[String]) 
 		failures.append(
 			"PlanningQAGate ghost: ghost must clear when hover intent matches committed pre-move",
 		)
+
+
+static func _test_action_range_centered_on_live_stand(failures: Array[String]) -> void:
+	const MOVE_WEST := Vector2i(1, 5)
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate action_range_live_stand: Shield Bash missing")
+		return
+	input.on_hover_moved(MOVE_WEST)
+	if not input.is_live_preview_active():
+		failures.append(
+			"PlanningQAGate action_range_live_stand: hover move west must activate live preview",
+		)
+		return
+	var live_board: BoardState = overlay.get_live_preview().preview_board
+	if live_board == null:
+		failures.append("PlanningQAGate action_range_live_stand: live preview board missing")
+		return
+	var live_knight: UnitState = live_board.get_unit_by_id(1)
+	if live_knight == null:
+		failures.append("PlanningQAGate action_range_live_stand: live knight missing on preview board")
+		return
+	if live_knight.position != MOVE_WEST:
+		failures.append(
+			"PlanningQAGate action_range_live_stand: expected live stand %s got %s"
+			% [MOVE_WEST, live_knight.position],
+		)
+		return
+	var ability: AbilityData = _knight_ability(SHIELD_BASH_ID)
+	if ability == null:
+		failures.append("PlanningQAGate action_range_live_stand: Shield Bash ability missing")
+		return
+	var expected: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, fix.knight, ability, live_knight.position,
+	)
+	for tile: Vector2i in expected:
+		if not overlay.is_hover_action_range_tile(tile):
+			failures.append(
+				"PlanningQAGate action_range_live_stand: red tile %s missing (stand %s)"
+				% [tile, live_knight.position],
+			)

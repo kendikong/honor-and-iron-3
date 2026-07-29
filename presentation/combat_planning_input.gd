@@ -777,9 +777,6 @@ func on_hover_moved(cell: Vector2i) -> void:
 		if planning_cell_changed:
 			refresh_mouse_cursor(cell)
 		return
-	if _planning != null and planning_cell_changed:
-		_sync_threat_origin_from_cell(cell)
-		_planning._recompute_hover_ranges_from_inputs()
 	if _director.selected_unit_id >= 0:
 		if planning_cell_changed:
 			var p_unit := _proj_unit(_director.selected_unit_id)
@@ -791,9 +788,14 @@ func on_hover_moved(cell: Vector2i) -> void:
 						_drag_unit_id = _director.selected_unit_id
 						_drag_route = [_proj_move_origin(p_unit)]
 					_extend_drag_route(cell)
-			_refresh_selected_interaction_preview()
+		if planning_cell_changed:
+			_sync_threat_origin_from_cell(cell)
+		_refresh_selected_interaction_preview()
 	elif planning_cell_changed:
 		_update_hover_attack_preview()
+	# Red action-range tiles anchor on live preview stand — recompute only after preview refresh.
+	if _planning != null and planning_cell_changed:
+		_planning._recompute_hover_ranges_from_inputs()
 	if planning_cell_changed:
 		refresh_mouse_cursor(cell)
 
