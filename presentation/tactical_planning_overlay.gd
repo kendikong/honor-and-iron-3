@@ -60,8 +60,6 @@ var _hover_coord: Vector2i = Vector2i(-999, -999)
 var _phase: int = CombatDirector.Phase.PLANNING
 var _hover_move_tiles: Array[Vector2i] = []
 var _hover_action_range_tiles: Array[Vector2i] = []
-var _hover_move_tile_lookup: Dictionary = {}
-var _hover_action_range_tile_lookup: Dictionary = {}
 var _cached_hover_unit_id: int = -1
 var _cached_hover_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_ability: int = -1
@@ -72,7 +70,6 @@ var _action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_proj_key: int = -1
 var _cached_hover_awaiting_targeting: bool = false
-var _cached_hover_move_budget: int = -1
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -82,7 +79,6 @@ var _lock_committed_from_intent: bool = false
 var _unit_layer: TacticalUnitLayer
 var _planning_input: CombatPlanningInput
 var _planning_cursor: TacticalPlanningCursor
-var _game_settings: GameSettings
 var _attack_target_id: int = -1
 var _show_danger_area: bool = false
 var _danger_tiles_cache: Dictionary = {}
@@ -90,84 +86,8 @@ var _danger_tiles_dirty: bool = true
 var _hit_markers: Array = []
 var _hover_recompute_pending: bool = false
 var _drag_overlay_redraw_accum: float = 0.0
+var _game_settings: GameSettings
 const _DRAG_OVERLAY_REDRAW_SEC: float = 1.0 / 30.0
-var _draw_target: CanvasItem
-var _range_tint_layer: RangeTintLayer
-var _static_planning_layer: StaticPlanningLayer
-var _dynamic_planning_layer: DynamicPlanningLayer
-
-const REDRAW_RANGE: int = 1
-const REDRAW_STATIC: int = 2
-const REDRAW_DYNAMIC: int = 4
-const REDRAW_ALL: int = REDRAW_RANGE | REDRAW_STATIC | REDRAW_DYNAMIC
-var _range_redraw_queued: bool = false
-var _static_redraw_queued: bool = false
-var _dynamic_redraw_queued: bool = false
-
-
-func _as_canvas() -> CanvasItem:
-	return _draw_target if _draw_target != null else self
-
-
-func _planning_redraw(mask: int = REDRAW_ALL) -> void:
-	if mask & REDRAW_RANGE and _range_tint_layer != null:
-		if not _range_redraw_queued:
-			_range_redraw_queued = true
-			call_deferred("_flush_range_redraw")
-	if mask & REDRAW_STATIC and _static_planning_layer != null:
-		if not _static_redraw_queued:
-			_static_redraw_queued = true
-			call_deferred("_flush_static_redraw")
-	if mask & REDRAW_DYNAMIC:
-		if not _dynamic_redraw_queued:
-			_dynamic_redraw_queued = true
-			call_deferred("_flush_dynamic_redraw")
-
-
-func _flush_range_redraw() -> void:
-	_range_redraw_queued = false
-	if _range_tint_layer != null:
-		_range_tint_layer.queue_redraw()
-
-
-func _flush_static_redraw() -> void:
-	_static_redraw_queued = false
-	if _static_planning_layer != null:
-		_static_planning_layer.queue_redraw()
-
-
-func _flush_dynamic_redraw() -> void:
-	_dynamic_redraw_queued = false
-	if _dynamic_planning_layer != null:
-		_dynamic_planning_layer.queue_redraw()
-	elif is_inside_tree():
-		queue_redraw()
-
-
-func _draw_with_target(canvas: CanvasItem, draw_callable: Callable) -> void:
-	_draw_target = canvas
-	draw_callable.call()
-	_draw_target = null
-
-
-func _ensure_planning_layers() -> void:
-	if _range_tint_layer != null:
-		return
-	_range_tint_layer = RangeTintLayer.new()
-	_range_tint_layer.host = self
-	_range_tint_layer.name = "RangeTints"
-	_range_tint_layer.z_index = 0
-	add_child(_range_tint_layer)
-	_static_planning_layer = StaticPlanningLayer.new()
-	_static_planning_layer.host = self
-	_static_planning_layer.name = "StaticPlanning"
-	_static_planning_layer.z_index = 1
-	add_child(_static_planning_layer)
-	_dynamic_planning_layer = DynamicPlanningLayer.new()
-	_dynamic_planning_layer.host = self
-	_dynamic_planning_layer.name = "DynamicPlanning"
-	_dynamic_planning_layer.z_index = 2
-	add_child(_dynamic_planning_layer)
 
 
 func setup(
@@ -185,14 +105,12 @@ func setup(
 	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
 		_invalidate_hover_cache()
 		_schedule_hover_recompute()
-		_update_hover_action_icon()
-		_planning_redraw(REDRAW_STATIC | REDRAW_DYNAMIC)
 	)
 	EventBus.selection_changed.connect(func(_id: int) -> void:
 		if _director == null:
 			return
 		_update_hover_action_icon()
-		_planning_redraw(REDRAW_STATIC | REDRAW_DYNAMIC)
+		queue_redraw(),
 	)
 	EventBus.ability_selected.connect(func(_idx: int) -> void:
 		if _director == null:
@@ -200,7 +118,7 @@ func setup(
 		_invalidate_hover_cache()
 		_schedule_hover_recompute()
 		_update_hover_action_icon()
-		_planning_redraw(REDRAW_ALL)
+		queue_redraw(),
 	)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		_phase = phase
@@ -213,56 +131,27 @@ func setup(
 		else:
 			_hover_move_tiles.clear()
 			_hover_action_range_tiles.clear()
-			_rebuild_hover_tile_lookups()
 		mark_danger_dirty()
-		_planning_redraw(REDRAW_ALL)
+		queue_redraw(),
 	)
 	EventBus.sim_event.connect(_on_sim_event)
 	if _intent_state != null:
-		_intent_state.intents_changed.connect(
-			func(_units: Dictionary) -> void: _planning_redraw(REDRAW_DYNAMIC),
-		)
+		_intent_state.intents_changed.connect(func(_units: Dictionary) -> void: queue_redraw())
 		_intent_state.hover_coord_changed.connect(func(coord: Vector2i) -> void:
 			_hover_coord = coord
 			if _director != null and _director.selected_unit_id < 0:
 				_invalidate_hover_cache()
 				_recompute_hover_ranges_from_inputs()
-			_planning_redraw(REDRAW_DYNAMIC)
+			queue_redraw(),
 		)
-	_ensure_planning_layers()
-	_planning_redraw(REDRAW_ALL)
 	set_process(true)
-
-
-func set_show_danger_area(enabled: bool) -> void:
-	_show_danger_area = enabled
-	mark_danger_dirty()
-	_planning_redraw(REDRAW_STATIC)
-
-
-func mark_danger_dirty() -> void:
-	_danger_tiles_dirty = true
-
-
-func get_show_danger_area() -> bool:
-	return _show_danger_area
-
-
-func bind_unit_layer(layer: TacticalUnitLayer) -> void:
-	_unit_layer = layer
-
-
-func bind_planning_input(input: CombatPlanningInput) -> void:
-	_planning_input = input
-	_invalidate_hover_cache()
-	_recompute_hover_ranges_from_inputs()
 
 
 func apply_settings(settings: GameSettings) -> void:
 	_game_settings = settings
-	_planning_redraw(REDRAW_ALL)
 	if _planning_input != null:
-		_planning_input.apply_settings(settings)
+		_planning_input.refresh_mouse_cursor(_hover_coord)
+	queue_redraw()
 
 
 func _preview_range_overlays_enabled() -> bool:
@@ -285,10 +174,35 @@ func _preview_committed_intents_enabled() -> bool:
 	return _game_settings == null or _game_settings.preview_show_committed_intents
 
 
-func needs_dynamic_preview_redraw() -> bool:
-	if _game_settings == null:
-		return true
-	return _game_settings.preview_dynamic_overlay_enabled()
+func _preview_cursor_enabled() -> bool:
+	return _game_settings == null or _game_settings.preview_show_planning_cursor
+
+
+func planning_cursor_display_enabled() -> bool:
+	return _preview_cursor_enabled()
+
+
+func set_show_danger_area(enabled: bool) -> void:
+	_show_danger_area = enabled
+	queue_redraw()
+
+
+func mark_danger_dirty() -> void:
+	_danger_tiles_dirty = true
+
+
+func get_show_danger_area() -> bool:
+	return _show_danger_area
+
+
+func bind_unit_layer(layer: TacticalUnitLayer) -> void:
+	_unit_layer = layer
+
+
+func bind_planning_input(input: CombatPlanningInput) -> void:
+	_planning_input = input
+	_invalidate_hover_cache()
+	_recompute_hover_ranges_from_inputs()
 
 
 func _invalidate_hover_cache() -> void:
@@ -296,10 +210,8 @@ func _invalidate_hover_cache() -> void:
 	_cached_hover_origin = Vector2i(-999, -999)
 	_cached_hover_action_range_origin = Vector2i(-999, -999)
 	_cached_hover_ability = -1
-	_cached_hover_force = false
 	_cached_hover_proj_key = -1
 	_cached_hover_awaiting_targeting = false
-	_cached_hover_move_budget = -1
 
 
 func _planning_action_range_tiles_for_unit(
@@ -318,7 +230,7 @@ func _planning_action_range_tiles_for_unit(
 
 
 func _recompute_hover_ranges_from_inputs() -> void:
-	if _director == null or not _preview_range_overlays_enabled():
+	if _director == null:
 		return
 	var force_basic: bool = _planning_input.force_basic_movement if _planning_input != null else false
 	var dragging: bool = _planning_input.dragging if _planning_input != null else false
@@ -348,29 +260,12 @@ func get_hover_move_tiles() -> Array[Vector2i]:
 	return _hover_move_tiles.duplicate()
 
 
-func peek_hover_move_tiles() -> Array[Vector2i]:
-	return _hover_move_tiles
-
-
-## Compact signature for hover preview caches — matches recompute_hover_ranges cache inputs.
-func hover_move_legal_signature() -> String:
-	if _cached_hover_unit_id < 0:
-		return ""
-	return "%d|%s|%s|%d|%d" % [
-		_cached_hover_unit_id,
-		str(_cached_hover_origin),
-		str(_cached_hover_action_range_origin),
-		_cached_hover_move_budget,
-		_hover_move_tiles.size(),
-	]
-
-
 func is_hover_move_tile(cell: Vector2i) -> bool:
-	return _hover_move_tile_lookup.has(cell)
+	return _hover_move_tiles.has(cell)
 
 
 func is_hover_action_range_tile(cell: Vector2i) -> bool:
-	return _hover_action_range_tile_lookup.has(cell)
+	return _hover_action_range_tiles.has(cell)
 
 
 func is_hover_threat_tile(cell: Vector2i) -> bool:
@@ -409,7 +304,7 @@ func restore_committed_display() -> void:
 			_committed_preview.predicted_armor,
 		)
 	live_preview_changed.emit()
-	_planning_redraw(REDRAW_ALL)
+	queue_redraw()
 
 
 ## Promote the painted live intent to committed display (move-preview intent truth).
@@ -434,39 +329,39 @@ func apply_preview_state(
 ) -> void:
 	_live_preview.copy_from(state)
 	_attack_target_id = attack_target_id
-	if _unit_layer != null:
-		if _preview_live_ghosts_enabled():
-			_unit_layer.set_predicted_stats(state.predicted_hp, state.predicted_armor)
-		else:
-			_unit_layer.clear_predicted_stats()
+	if _preview_live_ghosts_enabled() and _unit_layer != null:
+		_unit_layer.set_predicted_stats(state.predicted_hp, state.predicted_armor)
 	live_preview_changed.emit()
-	_planning_redraw(REDRAW_DYNAMIC)
+	queue_redraw()
 
 
 func set_live_preview(state: CombatPlanningPreview) -> void:
 	_live_preview = state
-	_planning_redraw(REDRAW_DYNAMIC)
+	queue_redraw()
 
 
 func set_board(board: BoardState) -> void:
 	_board = board
-	_planning_redraw(REDRAW_ALL)
+	queue_redraw()
 
 
 func set_preview_board(board: BoardState) -> void:
 	_preview_board = board
-	_planning_redraw(REDRAW_DYNAMIC)
+	queue_redraw()
 
 
 func set_hover_coord(coord: Vector2i) -> void:
 	if coord == _hover_coord:
 		return
 	_hover_coord = coord
-	if _director != null and _director.selected_unit_id < 0 and _preview_range_overlays_enabled():
+	if _director != null and _director.selected_unit_id < 0:
 		_invalidate_hover_cache()
 		_recompute_hover_ranges_from_inputs()
-	if needs_dynamic_preview_redraw():
-		_planning_redraw(REDRAW_DYNAMIC)
+	if _planning_input != null:
+		_planning_input.refresh_mouse_cursor(coord)
+	else:
+		_update_hover_action_icon()
+	queue_redraw()
 
 
 func begin_drag_sprite(unit_id: int) -> void:
@@ -511,12 +406,12 @@ func set_drag_attack_target(unit_id: int) -> void:
 
 func set_drag_route(route: Array[Vector2i]) -> void:
 	_route = route
-	_planning_redraw(REDRAW_DYNAMIC)
+	queue_redraw()
 
 
 func clear_drag_route() -> void:
 	_route.clear()
-	_planning_redraw(REDRAW_DYNAMIC)
+	queue_redraw()
 
 
 func set_aim_mode(active: bool, local_pos: Vector2 = Vector2.ZERO, class_id: StringName = &"knight") -> void:
@@ -531,7 +426,7 @@ func set_aim_mode(active: bool, local_pos: Vector2 = Vector2.ZERO, class_id: Str
 		_planning_input.refresh_mouse_cursor(_hover_coord)
 	elif active:
 		_update_hover_action_icon()
-	_planning_redraw(REDRAW_DYNAMIC)
+	queue_redraw()
 
 
 func set_fixed_range_origin(coord: Vector2i) -> void:
@@ -570,20 +465,21 @@ func bind_planning_cursor(cursor: TacticalPlanningCursor) -> void:
 		_planning_cursor.set_icon(_hover_action_icon)
 
 
-func notify_planning_cursor_motion() -> void:
-	if _planning_cursor != null:
-		_planning_cursor.notify_mouse_moved()
-
-
 func set_hover_action_icon(icon: String) -> void:
-	var changed: bool = _hover_action_icon != icon
-	if changed:
-		_hover_action_icon = icon
+	_hover_action_icon = icon
 	if _planning_cursor != null:
-		_planning_cursor.set_icon(icon)
-		_planning_cursor.notify_mouse_moved()
-	if changed:
-		_planning_redraw(REDRAW_DYNAMIC)
+		if _preview_cursor_enabled():
+			_planning_cursor.set_icon(icon)
+		else:
+			_planning_cursor.set_icon("")
+	queue_redraw()
+
+
+func clear_planning_cursor_icon() -> void:
+	_hover_action_icon = ""
+	if _planning_cursor != null:
+		_planning_cursor.set_icon("")
+	queue_redraw()
 
 
 func _is_selected_player_unit(unit: UnitState) -> bool:
@@ -715,14 +611,6 @@ func recompute_hover_ranges(
 ) -> void:
 	if _board == null or _director == null:
 		return
-	if not _preview_range_overlays_enabled():
-		if not _hover_move_tiles.is_empty() or not _hover_action_range_tiles.is_empty():
-			_invalidate_hover_cache()
-			_hover_move_tiles.clear()
-			_hover_action_range_tiles.clear()
-			_rebuild_hover_tile_lookups()
-			_planning_redraw(REDRAW_RANGE)
-		return
 	var unit: UnitState = null
 	if dragging and drag_unit_id >= 0:
 		unit = _board.get_unit_by_id(drag_unit_id)
@@ -734,8 +622,7 @@ func recompute_hover_ranges(
 		_invalidate_hover_cache()
 		_hover_move_tiles.clear()
 		_hover_action_range_tiles.clear()
-		_rebuild_hover_tile_lookups()
-		_planning_redraw(REDRAW_RANGE)
+		queue_redraw()
 		return
 	var move_origin: Vector2i = _proj_origin(unit)
 	if dragging and _fixed_range_origin.x >= 0:
@@ -750,48 +637,27 @@ func recompute_hover_ranges(
 	var cache_awaiting_targeting: bool = (
 		_planning_input != null and _planning_input.awaiting_targeting_active()
 	)
-	var is_selected_player: bool = _is_selected_player_unit(unit)
-	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
-	var move_budget: int = 0
-	if is_selected_player and p_unit != null:
-		move_budget = _compute_move_budget(unit, p_unit, selected_ability)
-	elif unit != null:
-		move_budget = unit.movement.points_left
-	var move_cache_hit: bool = (
+	if (
 		_cached_hover_unit_id == unit.id
 		and _cached_hover_origin == move_origin
+		and _cached_hover_action_range_origin == action_range_origin
 		and _cached_hover_ability == cache_ability
 		and _cached_hover_force == cache_force
 		and _cached_hover_proj_key == proj_key
 		and _cached_hover_awaiting_targeting == cache_awaiting_targeting
-		and _cached_hover_move_budget == move_budget
-	)
-	if (
-		move_cache_hit
-		and _cached_hover_action_range_origin == action_range_origin
 	):
 		return
 	_cached_hover_unit_id = unit.id
 	_cached_hover_origin = move_origin
+	_cached_hover_action_range_origin = action_range_origin
 	_cached_hover_ability = cache_ability
 	_cached_hover_force = cache_force
 	_cached_hover_proj_key = proj_key
 	_cached_hover_awaiting_targeting = cache_awaiting_targeting
-	_cached_hover_move_budget = move_budget
-	var need_move: bool = not move_cache_hit
-	var need_action: bool = (
-		not move_cache_hit
-		or _cached_hover_action_range_origin != action_range_origin
-	)
-	if need_move:
-		_hover_move_tiles.clear()
-	if need_action:
-		_hover_action_range_tiles.clear()
-		_cached_hover_action_range_origin = action_range_origin
-	if need_move or need_action:
-		_rebuild_hover_tile_lookups()
+	_hover_move_tiles.clear()
+	_hover_action_range_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):
-		_planning_redraw(REDRAW_RANGE)
+		queue_redraw()
 		return
 	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
 	var mt: int = (
@@ -799,9 +665,12 @@ func recompute_hover_ranges(
 		if unit.definition != null
 		else GameEnums.MovementType.WALK
 	)
-	if need_move and _can_show_move_tiles(unit, selected_ability):
+	var is_selected_player: bool = _is_selected_player_unit(unit)
+	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
+	if _can_show_move_tiles(unit, selected_ability):
 		var move_board: BoardState = _board
 		var move_from: Vector2i = move_origin
+		var move_budget: int = 0
 		if is_selected_player and p_unit != null:
 			move_cost = 2 if p_unit.has_status(GameEnums.StatusType.BLEED) else 1
 			mt = (
@@ -811,6 +680,9 @@ func recompute_hover_ranges(
 			)
 			move_board = CombatPlanningPreview.planning_projection_board(_director, _board)
 			move_from = move_origin
+			move_budget = _compute_move_budget(unit, p_unit, selected_ability)
+		else:
+			move_budget = unit.movement.points_left
 		if move_budget > 0:
 			var move_ability: AbilityData = null
 			if is_selected_player and selected_ability >= 0:
@@ -824,12 +696,7 @@ func recompute_hover_ranges(
 				move_ability,
 			)
 	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
-		if need_move or need_action:
-			_rebuild_hover_tile_lookups()
-		_planning_redraw(REDRAW_RANGE)
-		return
-	if not need_action:
-		_planning_redraw(REDRAW_RANGE)
+		queue_redraw()
 		return
 	var ability_index: int = selected_ability if is_selected_player else -1
 	if cache_force and is_selected_player:
@@ -843,24 +710,14 @@ func recompute_hover_ranges(
 			and budget_unit != null
 			and budget_unit.ability.points_left >= ability.action_point_cost
 		):
-			_planning_redraw(REDRAW_RANGE)
+			queue_redraw()
 			return
 		_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
 			unit, action_range_origin, ability_index,
 		)
 	else:
 		_populate_action_range_tiles(unit, action_range_origin, ability_index)
-	_rebuild_hover_tile_lookups()
-	_planning_redraw(REDRAW_RANGE)
-
-
-func _rebuild_hover_tile_lookups() -> void:
-	_hover_move_tile_lookup.clear()
-	for tile: Vector2i in _hover_move_tiles:
-		_hover_move_tile_lookup[tile] = true
-	_hover_action_range_tile_lookup.clear()
-	for tile: Vector2i in _hover_action_range_tiles:
-		_hover_action_range_tile_lookup[tile] = true
+	queue_redraw()
 
 
 func _on_board_changed(board: BoardState) -> void:
@@ -878,20 +735,25 @@ func _process(delta: float) -> void:
 			_hit_markers.remove_at(i)
 		need_redraw = true
 	if need_redraw:
-		_planning_redraw(REDRAW_DYNAMIC)
+		queue_redraw()
+	elif CombatDirector.is_planning_phase(_phase) and _hover_action_icon != "":
+		queue_redraw()
 	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
-		_drag_overlay_redraw_accum += delta
-		if _drag_overlay_redraw_accum >= _DRAG_OVERLAY_REDRAW_SEC:
-			_drag_overlay_redraw_accum = 0.0
-			_planning_redraw(REDRAW_DYNAMIC)
+		if _planning_input != null and _planning_input.dragging:
+			_drag_overlay_redraw_accum += delta
+			if _drag_overlay_redraw_accum >= _DRAG_OVERLAY_REDRAW_SEC:
+				_drag_overlay_redraw_accum = 0.0
+				queue_redraw()
+		else:
+			queue_redraw()
 	elif not _hit_markers.is_empty():
-		_planning_redraw(REDRAW_DYNAMIC)
+		queue_redraw()
 
 
 func _overlay_needs_flow_animation() -> bool:
 	if _planning_input != null and _planning_input.dragging:
 		return true
-	if _planning_input != null and _planning_input.awaiting_targeting_active():
+	if _planning_input != null and _planning_input.is_live_preview_active():
 		return true
 	var prev: CombatPlanningPreview = _active_preview()
 	if prev != null:
@@ -952,108 +814,77 @@ func _on_preview_updated(result: SimResult) -> void:
 	if _lock_committed_from_intent:
 		_lock_committed_from_intent = false
 		_has_stashed_committed = false
-		_planning_redraw(REDRAW_DYNAMIC)
+		queue_redraw()
 		return
 	set_preview_board(result.final_state)
 	var movement_only: bool = (
 		_director != null and _director.consume_movement_only_refresh()
 	)
 	if movement_only and _board != null:
-		if _preview_committed_intents_enabled():
-			if _committed_preview.preview_board == null:
-				_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
-			else:
-				CombatPlanningPreview.apply_movement_result(
-					_committed_preview, result, _director, _board,
-				)
-			_preview_board = _committed_preview.preview_board
+		if _committed_preview.preview_board == null:
+			_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
+		else:
+			CombatPlanningPreview.apply_movement_result(
+				_committed_preview, result, _director, _board,
+			)
+		_preview_board = _committed_preview.preview_board
 		_has_stashed_committed = false
 		if _planning_input == null or not _planning_input.is_live_preview_active():
-			if _unit_layer != null and _preview_live_ghosts_enabled():
+			if _unit_layer != null:
 				_unit_layer.set_predicted_stats(
 					_committed_preview.predicted_hp,
 					_committed_preview.predicted_armor,
 				)
-			elif _unit_layer != null:
-				_unit_layer.clear_predicted_stats()
 			live_preview_changed.emit()
-		_update_hover_action_icon()
-		_planning_redraw(REDRAW_ALL)
+		queue_redraw()
 		return
 	_invalidate_hover_cache()
-	if _director != null and _board != null and _preview_committed_intents_enabled():
+	if _director != null and _board != null:
 		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
 		_preview_board = _committed_preview.preview_board
-	elif _director != null and _board != null:
-		_preview_board = result.final_state
 	_has_stashed_committed = false
 	_schedule_hover_recompute()
 	if _planning_input == null or not _planning_input.is_live_preview_active():
-		if _unit_layer != null and _preview_live_ghosts_enabled():
+		if _unit_layer != null:
 			_unit_layer.set_predicted_stats(
 				_committed_preview.predicted_hp,
 				_committed_preview.predicted_armor,
 			)
-		elif _unit_layer != null:
-			_unit_layer.clear_predicted_stats()
 		live_preview_changed.emit()
-	_update_hover_action_icon()
-	_planning_redraw(REDRAW_ALL)
+	queue_redraw()
 
 
-func clear_planning_cursor_icon() -> void:
-	_hover_action_icon = ""
-	if _planning_cursor != null:
-		_planning_cursor.set_icon("")
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	_planning_redraw(REDRAW_DYNAMIC)
-
-
-func _draw_dynamic_planning(canvas: CanvasItem) -> void:
+func _draw() -> void:
 	if _board == null or _map_view == null or _director == null:
 		return
-	_draw_with_target(canvas, func() -> void:
-		var show_planning: bool = CombatDirector.is_planning_phase(_phase)
-		if show_planning and _preview_live_ghosts_enabled():
-			_draw_move_ghosts()
-		if show_planning:
-			if _preview_live_ghosts_enabled():
-				_draw_ghosts()
-			if _preview_arrows_enabled():
-				_draw_preview_arrows()
-			if _preview_routes_enabled() and _should_draw_interaction_overlay():
-				_draw_interaction_overlay()
-			if _preview_arrows_enabled():
-				_draw_forced_movement_arrows()
-		elif _preview_routes_enabled() and _route.size() >= 2:
-			_draw_route_line(_route, _COLOR_ROUTE, true, true)
-		if _preview_routes_enabled():
-			_draw_hover_tile()
-		if _aiming:
-			var aim_scale: float = 0.55 / _ui_scale()
-			ClassIconDrawer.draw_icon(_as_canvas(), _aim_local, _aim_class_id, _COLOR_AIM, aim_scale)
-		for entry: Array in _hit_markers:
-			if entry.size() >= 2 and entry[0] is Vector2i:
-				_draw_death_marker(entry[0] as Vector2i)
-	)
-
-
-func _draw_range_tints(canvas: CanvasItem) -> void:
-	if _board == null or _map_view == null or not _preview_range_overlays_enabled():
-		return
-	_draw_with_target(canvas, _draw_hover_tiles)
-
-
-func _draw_static_planning(canvas: CanvasItem) -> void:
-	if _board == null or _map_view == null or _director == null:
-		return
-	if not CombatDirector.is_planning_phase(_phase):
-		return
-	_draw_with_target(canvas, func() -> void:
+	var show_planning: bool = CombatDirector.is_planning_phase(_phase)
+	if show_planning:
 		_draw_danger_area()
+		if _preview_live_ghosts_enabled():
+			_draw_move_ghosts()
+	if _preview_range_overlays_enabled():
+		_draw_hover_tiles()
+	if show_planning:
+		if _preview_live_ghosts_enabled():
+			_draw_ghosts()
+		if _preview_arrows_enabled():
+			_draw_preview_arrows()
+		if _preview_routes_enabled() and _should_draw_interaction_overlay():
+			_draw_interaction_overlay()
 		if _preview_committed_intents_enabled():
 			_draw_ability_intents()
-	)
+		if _preview_arrows_enabled():
+			_draw_forced_movement_arrows()
+	elif _preview_routes_enabled() and _route.size() >= 2:
+		_draw_route_line(_route, _COLOR_ROUTE, true, true)
+	if _preview_routes_enabled():
+		_draw_hover_tile()
+	if _aiming:
+		var aim_scale: float = 0.55 / _ui_scale()
+		ClassIconDrawer.draw_icon(self, _aim_local, _aim_class_id, _COLOR_AIM, aim_scale)
+	for entry: Array in _hit_markers:
+		if entry.size() >= 2 and entry[0] is Vector2i:
+			_draw_death_marker(entry[0] as Vector2i)
 
 
 func _draw_hover_tiles() -> void:
@@ -1071,9 +902,9 @@ func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float, draw_border
 		_map_view.grid_to_local(cell) - Vector2(tile_px * 0.5, tile_px * 0.5),
 		Vector2(tile_px, tile_px),
 	).grow(-2.0)
-	_as_canvas().draw_rect(rect, Color(tint.r, tint.g, tint.b, fill_alpha), true)
+	draw_rect(rect, Color(tint.r, tint.g, tint.b, fill_alpha), true)
 	if draw_border:
-		_as_canvas().draw_rect(rect, Color(tint.r, tint.g, tint.b, _COLOR_TILE_BORDER_ALPHA), false, 1.0)
+		draw_rect(rect, Color(tint.r, tint.g, tint.b, _COLOR_TILE_BORDER_ALPHA), false, 1.0)
 
 
 func _draw_tile_perimeter(cells: Array[Vector2i], tint: Color, perimeter_alpha: float) -> void:
@@ -1091,13 +922,13 @@ func _draw_tile_perimeter(cells: Array[Vector2i], tint: Color, perimeter_alpha: 
 		var bottom_right := center + Vector2(half_extent, half_extent)
 		var bottom_left := center + Vector2(-half_extent, half_extent)
 		if not occupied.has(cell + Vector2i.UP):
-			_as_canvas().draw_line(top_left, top_right, color, 1.0)
+			draw_line(top_left, top_right, color, 1.0)
 		if not occupied.has(cell + Vector2i.RIGHT):
-			_as_canvas().draw_line(top_right, bottom_right, color, 1.0)
+			draw_line(top_right, bottom_right, color, 1.0)
 		if not occupied.has(cell + Vector2i.DOWN):
-			_as_canvas().draw_line(bottom_right, bottom_left, color, 1.0)
+			draw_line(bottom_right, bottom_left, color, 1.0)
 		if not occupied.has(cell + Vector2i.LEFT):
-			_as_canvas().draw_line(bottom_left, top_left, color, 1.0)
+			draw_line(bottom_left, top_left, color, 1.0)
 
 
 func _draw_hover_tile() -> void:
@@ -1111,8 +942,8 @@ func _draw_hover_tile() -> void:
 	var tile_px: float = float(TacticalConstants.TILE_PX)
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var rect := Rect2(center - Vector2(tile_px * 0.5, tile_px * 0.5), Vector2(tile_px, tile_px)).grow(-2.0)
-	_as_canvas().draw_rect(rect, Color(_COLOR_HOVER, 0.10), true)
-	_as_canvas().draw_rect(rect, Color(_COLOR_HOVER.r, _COLOR_HOVER.g, _COLOR_HOVER.b, 0.45), false, 1.0)
+	draw_rect(rect, Color(_COLOR_HOVER, 0.10), true)
+	draw_rect(rect, Color(_COLOR_HOVER.r, _COLOR_HOVER.g, _COLOR_HOVER.b, 0.45), false, 1.0)
 
 
 func _draw_ability_intents() -> void:
@@ -1232,8 +1063,6 @@ func _active_preview() -> CombatPlanningPreview:
 func _should_draw_interaction_overlay() -> bool:
 	if _planning_input != null and _planning_input.selected_phase_action_exhausted():
 		return false
-	if _planning_input != null and _planning_input.get_drag_route().size() >= 2:
-		return true
 	if _planning_input == null:
 		return _live_preview.preview_board != null
 	if _planning_input.dragging:
@@ -1290,7 +1119,7 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 		var d: float = start_d
 		while d < end_d:
 			var draw_end: float = minf(d + dash, end_d)
-			_as_canvas().draw_line(p1 + dir * d, p1 + dir * draw_end, color, _DASH_LINE_W)
+			draw_line(p1 + dir * d, p1 + dir * draw_end, color, _DASH_LINE_W)
 			d += dash + gap
 	_draw_flowing_arrowheads_for_route(
 		cells, color, _ROUTE_LINE_W, _DASH_WING_LEN, 30.0, 0.0,
@@ -1322,8 +1151,8 @@ func _draw_flowing_arrowheads_on_line(
 			var tip: Vector2 = start_pt + dir * arrow_pos
 			var wing1: Vector2 = tip - dir.rotated(deg_to_rad(wing_angle_deg)) * wing_len
 			var wing2: Vector2 = tip - dir.rotated(deg_to_rad(-wing_angle_deg)) * wing_len
-			_as_canvas().draw_line(tip, wing1, color, line_w)
-			_as_canvas().draw_line(tip, wing2, color, line_w)
+			draw_line(tip, wing1, color, line_w)
+			draw_line(tip, wing2, color, line_w)
 		arrow_pos += wave_spacing
 
 
@@ -1368,8 +1197,8 @@ func _draw_flowing_arrowheads_for_route(
 				var tip: Vector2 = p1 + dir * current_d
 				var wing1: Vector2 = tip - dir.rotated(deg_to_rad(wing_angle_deg)) * wing_len
 				var wing2: Vector2 = tip - dir.rotated(deg_to_rad(-wing_angle_deg)) * wing_len
-				_as_canvas().draw_line(tip, wing1, color, line_w)
-				_as_canvas().draw_line(tip, wing2, color, line_w)
+				draw_line(tip, wing1, color, line_w)
+				draw_line(tip, wing2, color, line_w)
 		arrow_pos += wave_spacing
 
 
@@ -1541,26 +1370,11 @@ func _interaction_move_route(unit_id: int, prev: CombatPlanningPreview, route: A
 	return []
 
 
-## Live/drag move arrow — painted waypoint route is intent truth; fall back to preview leg.
-func _hover_painted_move_route(unit_id: int, prev: CombatPlanningPreview, route: Array) -> Array:
-	if _planning_input != null and _planning_input.get_drag_route().size() >= 2:
-		return _planning_input.get_drag_route()
-	return _interaction_move_route(unit_id, prev, route)
-
-
 func _draw_interaction_overlay() -> void:
 	if _director == null or _director.selected_unit_id < 0:
 		return
-	var painted_route: Array = []
-	if _planning_input != null and _planning_input.get_drag_route().size() >= 2:
-		painted_route = _planning_input.get_drag_route()
 	var prev: CombatPlanningPreview = _active_preview()
 	if prev.preview_board == null:
-		if painted_route.size() >= 2:
-			var stand_unit := _board.get_unit_by_id(_director.selected_unit_id)
-			if stand_unit != null:
-				var p_col: Color = _player_color_for_unit(stand_unit)
-				_draw_route_line(painted_route, p_col, true, true)
 		return
 	var actor := prev.preview_board.get_unit_by_id(_director.selected_unit_id)
 	if actor == null:
@@ -1570,8 +1384,8 @@ func _draw_interaction_overlay() -> void:
 	var p_col: Color = _player_color_for_unit(actor)
 	var route: Array = prev.preview_paths.get(actor.id, [])
 	if _planning_input != null and _planning_input.dragging:
-		if _unit_can_still_move(actor.id):
-			var drag_route: Array = painted_route if painted_route.size() >= 2 else _interaction_move_route(actor.id, prev, route)
+		if route.size() >= 2 and _unit_can_still_move(actor.id):
+			var drag_route: Array = _interaction_move_route(actor.id, prev, route)
 			if drag_route.size() >= 2:
 				_draw_route_line(drag_route, p_col, true, true)
 	elif (
@@ -1580,7 +1394,7 @@ func _draw_interaction_overlay() -> void:
 		and _planning_input.is_live_preview_active()
 		and _interaction_move_hover_active(actor.id)
 	):
-		var draw_route: Array = _hover_painted_move_route(actor.id, prev, route)
+		var draw_route: Array = _interaction_move_route(actor.id, prev, route)
 		if draw_route.size() >= 2:
 			_draw_route_line(draw_route, p_col, true, true)
 	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
@@ -1658,7 +1472,7 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 			end_dir,
 			_ROUTE_HEAD_LEN * _ROUTE_SHAFT_HEAD_OVERLAP,
 		)
-	_as_canvas().draw_polyline(shaft, flat_col, _ROUTE_LINE_W, _ROUTE_AA)
+	draw_polyline(shaft, flat_col, _ROUTE_LINE_W, _ROUTE_AA)
 	if with_head:
 		_draw_route_arrowhead(dest_center, end_dir, flat_col)
 
@@ -1757,7 +1571,7 @@ func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color) -> void:
 	var wing_l: Vector2 = base + perp * _ROUTE_HEAD_HALF_W
 	var wing_r: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
 	var head := PackedVector2Array([tip, wing_l, wing_r])
-	_as_canvas().draw_colored_polygon(head, fill)
+	draw_colored_polygon(head, fill)
 
 
 func _route_end_direction(path: PackedVector2Array) -> Vector2:
@@ -1774,10 +1588,10 @@ func _draw_death_marker(cell: Vector2i) -> void:
 	var center: Vector2 = _map_view.grid_to_local(cell)
 	var token_r: float = _token_radius()
 	var death_col := Color(0.95, 0.25, 0.25, 0.9)
-	_as_canvas().draw_arc(center, token_r + 2.0, 0.0, TAU, 24, Color(death_col, 0.25), 2.5 / _ui_scale())
+	draw_arc(center, token_r + 2.0, 0.0, TAU, 24, Color(death_col, 0.25), 2.5 / _ui_scale())
 	var r: float = token_r * 0.65
-	_as_canvas().draw_line(center + Vector2(-r, -r), center + Vector2(r, r), death_col, 2.5 / _ui_scale())
-	_as_canvas().draw_line(center + Vector2(-r, r), center + Vector2(r, -r), death_col, 2.5 / _ui_scale())
+	draw_line(center + Vector2(-r, -r), center + Vector2(r, r), death_col, 2.5 / _ui_scale())
+	draw_line(center + Vector2(-r, r), center + Vector2(r, -r), death_col, 2.5 / _ui_scale())
 
 
 func _draw_line_arrowhead(tip: Vector2, dir: Vector2, color: Color, line_w: float, head_len: float, angle_deg: float) -> void:
@@ -1788,8 +1602,8 @@ func _draw_line_arrowhead(tip: Vector2, dir: Vector2, color: Color, line_w: floa
 		travel_dir = travel_dir.normalized()
 	var wing1: Vector2 = tip - travel_dir.rotated(deg_to_rad(angle_deg)) * head_len
 	var wing2: Vector2 = tip - travel_dir.rotated(deg_to_rad(-angle_deg)) * head_len
-	_as_canvas().draw_line(tip, wing1, color, line_w)
-	_as_canvas().draw_line(tip, wing2, color, line_w)
+	draw_line(tip, wing1, color, line_w)
+	draw_line(tip, wing2, color, line_w)
 
 
 func _forced_movement_intent_color(_pushed_unit: UnitState = null) -> Color:
@@ -1883,7 +1697,7 @@ func _draw_dotted_intent_segment(
 	var dist: float = start_pt.distance_to(shaft_end)
 	var d: float = 0.0
 	while d < dist:
-		_as_canvas().draw_circle(start_pt + travel_dir * d, _INTENT_DOT_RADIUS, color)
+		draw_circle(start_pt + travel_dir * d, _INTENT_DOT_RADIUS, color)
 		d += _INTENT_DOT_SPACING
 	if with_head:
 		if flowing_head:
@@ -1956,7 +1770,7 @@ func _draw_ghosts() -> void:
 					)
 					if leg_face < 0:
 						leg_face = unit.facing
-					_as_canvas().draw_circle(center, _token_radius(), Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.35))
+					draw_circle(center, _token_radius(), Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.35))
 					_draw_facing_wedge(center, leg_face, Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.8))
 					break
 		if unit.is_enemy():
@@ -1966,8 +1780,8 @@ func _draw_ghosts() -> void:
 				var ghost_center: Vector2 = _map_view.grid_to_local(voluntary_dest)
 				var alpha: float = 0.25 if (_planning_input != null and _planning_input.skill_interaction_active()) else 0.1
 				var ghost_col := Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, alpha)
-				_as_canvas().draw_circle(ghost_center, _token_radius(), Color(ghost_col.r, ghost_col.g, ghost_col.b, alpha * 0.55))
-				_as_canvas().draw_arc(ghost_center, _token_radius(), 0.0, TAU, 24, ghost_col, 2.0)
+				draw_circle(ghost_center, _token_radius(), Color(ghost_col.r, ghost_col.g, ghost_col.b, alpha * 0.55))
+				draw_arc(ghost_center, _token_radius(), 0.0, TAU, 24, ghost_col, 2.0)
 				var enemy_leg: Array = route.slice(maxi(route.size() - 2, 0))
 				var face: int = CombatPlanningPreview.facing_from_route_leg(enemy_leg)
 				if face < 0:
@@ -1997,7 +1811,7 @@ func _draw_move_ghosts() -> void:
 		return
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var p_col: Color = _player_color_for_unit(unit)
-	_as_canvas().draw_circle(center, _token_radius() + 1.0, Color(p_col.r, p_col.g, p_col.b, 0.45))
+	draw_circle(center, _token_radius() + 1.0, Color(p_col.r, p_col.g, p_col.b, 0.45))
 	var dash_face: int = _facing_toward(origin, _hover_coord)
 	_draw_facing_wedge(center, dash_face, Color(p_col.r, p_col.g, p_col.b, 0.85))
 	if ability != null and AbilitySystem.ability_has_movement_effect(ability):
@@ -2071,7 +1885,7 @@ func _draw_facing_wedge(center: Vector2, facing: int, color: Color) -> void:
 	var tip: Vector2 = center + dir * (radius + 6.0)
 	var base: Vector2 = center + dir * (radius - 3.0)
 	var pts := PackedVector2Array([tip, base + perp * 6.0, base - perp * 6.0])
-	_as_canvas().draw_colored_polygon(pts, color)
+	draw_colored_polygon(pts, color)
 
 
 func _proj_origin(unit: UnitState) -> Vector2i:
@@ -2202,34 +2016,7 @@ func _add_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ability
 
 
 func _update_hover_action_icon() -> void:
-	if _game_settings != null and not _game_settings.preview_show_planning_cursor:
-		clear_planning_cursor_icon()
-		return
-	var icon: String = ""
 	if _planning_input != null:
-		icon = _planning_input.compute_hover_action_icon(_hover_coord)
-	set_hover_action_icon(icon)
-
-
-class RangeTintLayer extends Node2D:
-	var host: TacticalPlanningOverlay
-
-	func _draw() -> void:
-		if host != null:
-			host._draw_range_tints(self)
-
-
-class StaticPlanningLayer extends Node2D:
-	var host: TacticalPlanningOverlay
-
-	func _draw() -> void:
-		if host != null:
-			host._draw_static_planning(self)
-
-
-class DynamicPlanningLayer extends Node2D:
-	var host: TacticalPlanningOverlay
-
-	func _draw() -> void:
-		if host != null:
-			host._draw_dynamic_planning(self)
+		_hover_action_icon = _planning_input.compute_hover_action_icon(_hover_coord)
+		return
+	_hover_action_icon = ""

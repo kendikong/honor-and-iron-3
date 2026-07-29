@@ -12,18 +12,17 @@ const COMPOSITE_SLASH_COLOR: Color = Color(0.82, 0.86, 0.92, 0.95)
 var _icon: String = ""
 var _font_size: int = BASE_ICON_SIZE
 var _drawer: Control
-var _last_mouse_pos: Vector2 = Vector2(-1.0, -1.0)
 
 
 func _ready() -> void:
 	layer = 25
 	_drawer = Control.new()
 	_drawer.name = "Drawer"
+	_drawer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_drawer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_drawer.custom_minimum_size = Vector2(128.0, 128.0)
-	_drawer.size = Vector2(128.0, 128.0)
 	_drawer.draw.connect(_on_draw)
 	add_child(_drawer)
+	set_process(true)
 
 
 func apply_text_scale(scale: float) -> void:
@@ -36,29 +35,23 @@ func set_icon(icon: String) -> void:
 	_icon = icon
 	if _drawer != null:
 		_drawer.queue_redraw()
-	notify_mouse_moved()
 
 
-func notify_mouse_moved() -> void:
-	if _icon == "" or _drawer == null:
-		return
-	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
-	if mouse_pos == _last_mouse_pos:
-		return
-	_last_mouse_pos = mouse_pos
-	_drawer.position = mouse_pos + ICON_OFFSET
+func _process(_delta: float) -> void:
+	if _icon != "" and _drawer != null:
+		_drawer.queue_redraw()
 
 
 func _on_draw() -> void:
 	if _icon == "":
 		return
-	var local_center: Vector2 = Vector2.ZERO
+	var center: Vector2 = get_viewport().get_mouse_position() + ICON_OFFSET
 	var composite: PackedStringArray = _composite_icon_parts(_icon)
 	if composite.size() > 1:
-		_draw_composite_row(_drawer, local_center, composite)
+		_draw_composite_row(_drawer, center, composite)
 		return
 	var color: Color = Color(1.0, 0.52, 0.52, 1.0) if _icon == "∅" else Color(1.0, 1.0, 1.0, 1.0)
-	_draw_centered(_drawer, local_center, _icon, color, _font_size)
+	_draw_centered(_drawer, center, _icon, color, _font_size)
 
 
 func _draw_composite_row(canvas: CanvasItem, center: Vector2, parts: PackedStringArray) -> void:

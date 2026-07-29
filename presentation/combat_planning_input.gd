@@ -26,7 +26,6 @@ var _drag_armed: bool = false
 var _drag_press_local: Vector2 = Vector2.ZERO
 
 const _DRAG_THRESHOLD_PX: float = 6.0
-const _DRAG_PREVIEW_SIM_MS: int = 33
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -44,24 +43,13 @@ var _hover_preview_refresh_pending: bool = false
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
-var _drag_last_preview_sim_ms: int = 0
 var _drag_last_cursor_cell: Vector2i = Vector2i(-999999, -999999)
 var _drag_last_sprite_cell: Vector2i = Vector2i(-999999, -999999)
 ## Last painted intent (move-preview truth) — commit ratifies these slots, does not rebuild.
 var _intent_snapshot_slots: Dictionary = {}
 var _intent_snapshot_key: String = ""
 var _intent_snapshot_valid: bool = false
-var _intent_snapshot_cell: Vector2i = Vector2i(-999999, -999999)
-var _cursor_icon_cache_key: String = ""
-var _cursor_icon_cache_icon: String = ""
-var _hover_dispatch_frame: int = -1
-var _hover_dispatch_cell: Vector2i = Vector2i(-999999, -999999)
-var _hover_preview_result_cache_key: String = ""
-var _hover_preview_result_cache: Dictionary = {}
-var _last_cursor_refresh_key: String = ""
 var _suppress_post_commit_hover_refresh: bool = false
-var _last_live_preview_range_stand: Vector2i = Vector2i(-999999, -999999)
-var _game_settings: GameSettings
 
 
 func setup(
@@ -86,29 +74,6 @@ func teardown() -> void:
 	_planning = null
 	_intent_state = null
 	_sfx = null
-	_game_settings = null
-
-
-func apply_settings(settings: GameSettings) -> void:
-	_game_settings = settings
-	if not _preview_hover_sim_enabled():
-		_clear_live_hover_preview_only()
-	if _intent_state != null:
-		refresh_mouse_cursor(_intent_state.hover_coord)
-	elif _preview_cursor_enabled():
-		refresh_mouse_cursor(Vector2i(-999, -999))
-
-
-func _preview_cursor_enabled() -> bool:
-	return _game_settings == null or _game_settings.preview_show_planning_cursor
-
-
-func _preview_hover_sim_enabled() -> bool:
-	return _game_settings == null or _game_settings.preview_hover_sim_enabled()
-
-
-func _preview_range_calc_enabled() -> bool:
-	return _game_settings == null or _game_settings.preview_show_range_overlays
 
 
 func _disconnect_event_bus() -> void:
@@ -352,25 +317,17 @@ func update_drag(local: Vector2) -> void:
 	var waypoints: Array[Vector2i] = _route_waypoints()
 	var cache_key: int = _drag_preview_cache_key_for(cell, drag_target_id, waypoints)
 	var cache_miss: bool = cache_key != _drag_preview_cache_key
-	if _preview_hover_sim_enabled():
-		if cache_miss:
-			var now_ms: int = Time.get_ticks_msec()
-			if now_ms - _drag_last_preview_sim_ms >= _DRAG_PREVIEW_SIM_MS:
-				_drag_last_preview_sim_ms = now_ms
-				_drag_preview_cache_key = cache_key
-				_drag_preview_cache = _preview_at_interaction_cell(
-					_drag_unit_id,
-					cell,
-					_drag_last_free,
-					drag_target_id,
-					[],
-					_snapshot_drag_legal_move_tiles(),
-				)
-				_apply_live_preview(_drag_preview_cache)
-	elif cache_miss:
+	if cache_miss:
 		_drag_preview_cache_key = cache_key
-		_drag_preview_cache = {}
-		_clear_live_hover_preview_only()
+		_drag_preview_cache = _preview_at_interaction_cell(
+			_drag_unit_id,
+			cell,
+			_drag_last_free,
+			drag_target_id,
+			[],
+			_snapshot_drag_legal_move_tiles(),
+		)
+		_apply_live_preview(_drag_preview_cache)
 	if cache_miss or cell != _drag_last_sprite_cell:
 		_update_drag_sprite(local, cell, _drag_preview_cache)
 		_drag_last_sprite_cell = cell
@@ -378,8 +335,7 @@ func update_drag(local: Vector2) -> void:
 		_update_drag_sprite_position(local, cell)
 	if cell != _drag_last_cursor_cell:
 		_drag_last_cursor_cell = cell
-		if _preview_cursor_enabled():
-			refresh_mouse_cursor(cell)
+		refresh_mouse_cursor(cell)
 
 
 func get_drag_unit_id() -> int:
@@ -387,7 +343,7 @@ func get_drag_unit_id() -> int:
 
 
 func refresh_live_preview() -> void:
-	if not dragging or _drag_unit_id < 0 or not _preview_hover_sim_enabled():
+	if not dragging or _drag_unit_id < 0:
 		return
 	var board: BoardState = _director.board
 	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
@@ -408,8 +364,6 @@ func refresh_live_preview() -> void:
 
 
 func _apply_live_preview(preview: Dictionary) -> void:
-	if not _preview_hover_sim_enabled():
-		return
 	if preview.is_empty():
 		return
 	if _is_invalid_dict(preview):
@@ -455,11 +409,6 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
 		if dragging and pv_actor != null:
 			_planning.set_threat_origin(pv_actor.position)
-		var range_stand: Vector2i = (
-			pv_actor.position if pv_actor != null else Vector2i(-999999, -999999)
-		)
-		if dragging or range_stand != _last_live_preview_range_stand:
-			_last_live_preview_range_stand = range_stand
 			_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_live_board()
 
@@ -666,16 +615,11 @@ func _on_selection_changed(unit_id: int) -> void:
 		return
 	if unit_id < 0:
 		clear_awaiting_targeting()
-		_drag_route.clear()
-		_drag_unit_id = -1
 		_invalidate_planning_hover_cache()
 		_restore_hover_preview()
 		_sync_intent_skill_mode()
 		if _planning != null:
 			_planning._recompute_hover_ranges_from_inputs()
-			_planning.clear_planning_cursor_icon()
-		elif _intent_state != null:
-			refresh_mouse_cursor(_intent_state.hover_coord)
 		return
 	_drag_route.clear()
 	_drag_unit_id = unit_id
@@ -722,9 +666,6 @@ func _on_preview_updated(_result: SimResult) -> void:
 	_drag_saved_preview = null
 	if dragging:
 		return
-	_clear_intent_snapshot()
-	_hover_preview_cache_key = ""
-	_last_cursor_refresh_key = ""
 	_schedule_plan_refresh_followup()
 	if _suppress_post_commit_hover_refresh:
 		_suppress_post_commit_hover_refresh = false
@@ -746,10 +687,9 @@ func _finish_plan_refresh_followup() -> void:
 	_sync_intent_skill_mode()
 	if _intent_state != null:
 		_intent_state.recompute()
-	if _planning != null:
-		_planning._update_hover_action_icon()
-	elif _intent_state != null:
-		refresh_mouse_cursor(_intent_state.hover_coord)
+	refresh_mouse_cursor(
+		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999),
+	)
 
 
 func _schedule_hover_preview_refresh() -> void:
@@ -766,9 +706,6 @@ func _flush_hover_preview_refresh() -> void:
 
 func _refresh_hover_if_planning() -> void:
 	if dragging or not _is_planning() or _intent_state == null or _director == null:
-		return
-	if not _preview_hover_sim_enabled():
-		_clear_live_hover_preview_only()
 		return
 	var cell: Vector2i = _intent_state.hover_coord
 	if _director.board == null or not _director.board.is_in_bounds(cell):
@@ -787,15 +724,6 @@ func _sync_intent_skill_mode() -> void:
 func _invalidate_planning_hover_cache() -> void:
 	_last_planning_hover_cell = Vector2i(-9999, -9999)
 	_hover_preview_cache_key = ""
-	_hover_preview_result_cache_key = ""
-	_hover_preview_result_cache = {}
-	_last_live_preview_range_stand = Vector2i(-999999, -999999)
-	_cursor_icon_cache_key = ""
-	_cursor_icon_cache_icon = ""
-	_hover_dispatch_frame = -1
-	_hover_dispatch_cell = Vector2i(-999999, -999999)
-	_last_cursor_refresh_key = ""
-	_clear_intent_snapshot()
 
 
 ## Public alias for input controller / UI when ability changes outside EventBus order.
@@ -806,11 +734,6 @@ func invalidate_hover_preview_cache() -> void:
 func on_hover_moved(cell: Vector2i) -> void:
 	if _director == null or _director.board == null:
 		return
-	var frame: int = Engine.get_frames_drawn()
-	if frame == _hover_dispatch_frame and cell == _hover_dispatch_cell:
-		return
-	_hover_dispatch_frame = frame
-	_hover_dispatch_cell = cell
 	if not dragging:
 		_sync_intent_skill_mode()
 		if _intent_state != null:
@@ -827,51 +750,29 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_restore_hover_preview()
 		else:
 			_sync_intent_live_board()
-			if _planning != null and _preview_range_calc_enabled():
+			if _planning != null:
 				_planning._invalidate_hover_cache()
 				_planning._recompute_hover_ranges_from_inputs()
-		if _preview_cursor_enabled():
-			_refresh_mouse_cursor_if_needed(cell)
+		refresh_mouse_cursor(cell)
 		return
 	if _director.selected_unit_id >= 0:
 		if planning_cell_changed:
 			var p_unit := _proj_unit(_director.selected_unit_id)
 			if p_unit != null:
 				var ability := _selected_ability_data(p_unit)
-				var is_awaiting_move: bool = (
-					awaiting_targeting_active()
-					and ability != null
-					and AbilitySystem.ability_has_movement_effect(ability)
-				)
+				var is_awaiting_move = awaiting_targeting_active() and ability != null and AbilitySystem.ability_has_movement_effect(ability)
 				if _basic_move_allowed() or is_awaiting_move:
 					if _drag_route.is_empty():
 						_drag_unit_id = _director.selected_unit_id
 						_drag_route = [_proj_move_origin(p_unit)]
 					_extend_drag_route(cell)
-			if _preview_hover_sim_enabled():
-				_refresh_selected_interaction_preview()
-			else:
-				_clear_live_hover_preview_only()
-			if _planning != null and _planning.needs_dynamic_preview_redraw():
-				_planning._planning_redraw(TacticalPlanningOverlay.REDRAW_DYNAMIC)
+			_refresh_selected_interaction_preview()
 	elif planning_cell_changed:
-		if _preview_hover_sim_enabled():
-			_update_hover_attack_preview()
+		_update_hover_attack_preview()
 	if _planning != null and planning_cell_changed:
+		_planning._recompute_hover_ranges_from_inputs()
 		_sync_threat_origin_from_cell(cell)
-		if _director.selected_unit_id < 0 and _preview_range_calc_enabled():
-			_planning._recompute_hover_ranges_from_inputs()
-	if _preview_cursor_enabled():
-		_refresh_mouse_cursor_if_needed(cell)
-	if _planning != null:
-		_planning.notify_planning_cursor_motion()
-
-
-func _refresh_mouse_cursor_if_needed(cell: Vector2i) -> void:
-	var cache_key: String = _cursor_icon_cache_key_for(cell)
-	if cache_key != "" and cache_key == _last_cursor_refresh_key:
-		return
-	_last_cursor_refresh_key = cache_key
+		_planning._recompute_hover_ranges_from_inputs()
 	refresh_mouse_cursor(cell)
 
 
@@ -969,9 +870,6 @@ func clear_interaction_preview() -> void:
 func _refresh_selected_interaction_preview() -> void:
 	if dragging or _director == null or _director.board == null:
 		return
-	if not _preview_hover_sim_enabled():
-		_clear_live_hover_preview_only()
-		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	if _director.selected_unit_id < 0 or not _director.board.is_in_bounds(cell):
 		_restore_hover_preview()
@@ -1025,7 +923,7 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 
 func _movement_icon_for(p_unit: UnitState, cell: Vector2i) -> String:
 	var waypoints: Array[Vector2i] = []
-	if _drag_route_commits_active():
+	if dragging and _drag_unit_id == p_unit.id:
 		waypoints = _route_waypoints()
 	if AbilitySystem.movement_requires_run(_proj(), p_unit, cell, waypoints):
 		return PlanningIcons.GLYPH_RUN
@@ -1054,21 +952,6 @@ func _refresh_click_target_highlight() -> void:
 		_planning.set_drag_attack_target(-1)
 
 
-func _clear_live_hover_preview_only() -> void:
-	_hover_preview_cache_key = ""
-	preview_state.clear_interaction()
-	preview_state.preview_board = null
-	preview_state.preview_paths.clear()
-	preview_state.preview_splits.clear()
-	preview_state.preview_post_splits.clear()
-	preview_state.preview_pushes.clear()
-	drag_preview_failed = false
-	_clear_intent_snapshot()
-	if _planning != null:
-		_planning.clear_live_preview()
-	_sync_intent_live_board()
-
-
 func _restore_hover_preview() -> void:
 	_hover_preview_cache_key = ""
 	if _planning != null:
@@ -1087,9 +970,6 @@ func _restore_hover_preview() -> void:
 
 
 func _update_hover_attack_preview() -> void:
-	if not _preview_hover_sim_enabled():
-		_clear_live_hover_preview_only()
-		return
 	if aiming or dragging or _director == null or _director.board == null:
 		return
 	if _phase_not_planning():
@@ -1157,8 +1037,6 @@ func _refresh_live_interaction_preview(
 	attack_target_id: int = -1,
 	waypoints: Array[Vector2i] = [],
 ) -> void:
-	if not _preview_hover_sim_enabled():
-		return
 	if _director == null or _director.board == null or unit_id < 0:
 		return
 	var unit := _director.board.get_unit_by_id(unit_id)
@@ -1166,8 +1044,7 @@ func _refresh_live_interaction_preview(
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else move_coord
 	var cur_ability: int = _director.selected_ability_index
-	var route_key: String = str(_route_waypoints())
-	var cache_key: String = "%d|%d|%s|%s|%d|%d|%d|%s" % [
+	var cache_key: String = "%d|%d|%s|%s|%d|%d|%d" % [
 		_director.plan_revision if _director != null else 0,
 		unit_id,
 		str(move_coord),
@@ -1175,7 +1052,6 @@ func _refresh_live_interaction_preview(
 		attack_target_id,
 		cur_ability,
 		1 if awaiting_targeting_active() else 0,
-		route_key,
 	]
 	if cache_key == _hover_preview_cache_key:
 		return
@@ -1183,10 +1059,6 @@ func _refresh_live_interaction_preview(
 	var res: Dictionary = _preview_at_interaction_cell(
 		unit_id, cell, move_coord, attack_target_id, waypoints, _snapshot_drag_legal_move_tiles(),
 	)
-	_apply_hover_preview_result(unit_id, move_coord, res)
-
-
-func _apply_hover_preview_result(unit_id: int, move_coord: Vector2i, res: Dictionary) -> void:
 	drag_preview_failed = _is_invalid_dict(res)
 	for event: Variant in res.get("events", []):
 		if event is SimEvent:
@@ -1201,9 +1073,6 @@ func _apply_hover_preview_result(unit_id: int, move_coord: Vector2i, res: Dictio
 	var pv_actor: UnitState = temp_board.get_unit_by_id(unit_id) if temp_board != null else null
 	drag_sim_actor_pos = pv_actor.position if pv_actor != null else move_coord
 	_apply_live_preview(res)
-	if _intent_state != null:
-		_last_cursor_refresh_key = ""
-		_refresh_mouse_cursor_if_needed(_intent_state.hover_coord)
 
 
 func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> int:
@@ -1320,7 +1189,6 @@ func _final_commit_slots_for_interaction(
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
 	face_dir: int = -1,
-	skip_validation_sim: bool = false,
 ) -> Dictionary:
 	var slots: Dictionary = _build_commit_slots_at_cell(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
@@ -1343,7 +1211,7 @@ func _final_commit_slots_for_interaction(
 				unit_id, cell, [], legal_move_tiles, hover_enemy.position, face_dir,
 			)
 			_strip_unaffordable_premove_pairs(slots, unit_id, cell, [])
-	return _finalize_commit_slots(slots, unit_id, skip_validation_sim)
+	return _finalize_commit_slots(slots, unit_id)
 
 
 func _strip_unaffordable_premove_pairs(
@@ -1494,6 +1362,13 @@ func _intent_snapshot_key_for(
 	var wp_parts: PackedStringArray = PackedStringArray()
 	for wp: Vector2i in waypoints:
 		wp_parts.append("%d,%d" % [wp.x, wp.y])
+	var legal_parts: PackedStringArray = PackedStringArray()
+	var legal_sorted: Array[Vector2i] = legal_move_tiles.duplicate()
+	legal_sorted.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return a.x < b.x or (a.x == b.x and a.y < b.y)
+	)
+	for cell_l: Vector2i in legal_sorted:
+		legal_parts.append("%d,%d" % [cell_l.x, cell_l.y])
 	return "%d|%d|%s|%s|%d|%d|%d|%s|%s|%d" % [
 		plan_rev,
 		unit_id,
@@ -1503,17 +1378,9 @@ func _intent_snapshot_key_for(
 		face_dir,
 		1 if awaiting_targeting_active() else 0,
 		",".join(wp_parts),
-		_legal_move_cache_signature(legal_move_tiles),
+		",".join(legal_parts),
 		1 if force_basic_movement else 0,
 	]
-
-
-func _legal_move_cache_signature(legal_move_tiles: Array[Vector2i]) -> String:
-	if _planning != null:
-		var sig: String = _planning.hover_move_legal_signature()
-		if sig != "":
-			return sig
-	return "n:%d" % legal_move_tiles.size()
 
 
 func _duplicate_commit_slots(slots: Dictionary) -> Dictionary:
@@ -1539,21 +1406,12 @@ func _store_intent_snapshot(key: String, slots: Dictionary) -> void:
 	_intent_snapshot_key = key
 	_intent_snapshot_slots = _duplicate_commit_slots(slots)
 	_intent_snapshot_valid = true
-	if _intent_state != null:
-		_intent_snapshot_cell = _intent_state.hover_coord
-	else:
-		_intent_snapshot_cell = Vector2i(-999999, -999999)
 
 
 func _clear_intent_snapshot() -> void:
 	_intent_snapshot_valid = false
 	_intent_snapshot_key = ""
 	_intent_snapshot_slots = {}
-	_intent_snapshot_cell = Vector2i(-999999, -999999)
-	_cursor_icon_cache_key = ""
-	_cursor_icon_cache_icon = ""
-	_hover_preview_result_cache_key = ""
-	_hover_preview_result_cache = {}
 
 
 func _mouse_local_for_facing() -> Vector2:
@@ -1670,19 +1528,6 @@ func _preserve_ability_selection_for_action(unit_id: int, action: TimelineAction
 			return
 
 
-func _preview_failure_reason(res: Dictionary, unit_id: int) -> String:
-	for event: Variant in res.get("events", []):
-		if not event is SimEvent:
-			continue
-		var sim: SimEvent = event as SimEvent
-		if (
-			sim.type == GameEnums.SimEventType.ACTION_FAILED
-			and int(sim.data.get("actor", -1)) == unit_id
-		):
-			return str(sim.data.get("reason", "cannot_use_ability"))
-	return ""
-
-
 func _preview_from_commit_slots_at_cell(
 	unit_id: int,
 	cell: Vector2i,
@@ -1700,36 +1545,18 @@ func _preview_from_commit_slots_at_cell(
 	var effective_face: int = face_dir
 	if effective_face < 0 and _map_view != null:
 		effective_face = _facing_from_drop(_mouse_local_for_facing(), cell)
-	var snapshot_key: String = _intent_snapshot_key_for(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
-	)
-	if snapshot_key == _hover_preview_result_cache_key and not _hover_preview_result_cache.is_empty():
-		var cached_slots: Dictionary = _hover_preview_result_cache.get("slots", {})
-		if not cached_slots.is_empty():
-			_store_intent_snapshot(snapshot_key, cached_slots)
-		return _hover_preview_result_cache.get("result", {"invalid": true})
 	var slots: Dictionary = _final_commit_slots_for_interaction(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face, true,
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
 	_apply_facing_to_slots(slots, _mouse_local_for_facing(), cell, unit_id)
 	if _is_invalid_dict(slots):
 		_clear_intent_snapshot()
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
-	var res: Dictionary = _director.preview_actions(unit_id, _actions_from_slots(slots))
-	var failure_reason: String = _preview_failure_reason(res, unit_id)
-	if failure_reason != "":
-		slots["invalid"] = failure_reason
-		_clear_intent_snapshot()
-		res["invalid"] = true
-	else:
-		slots["_preview_validated"] = true
-		_store_intent_snapshot(snapshot_key, slots)
-	_hover_preview_result_cache_key = snapshot_key
-	_hover_preview_result_cache = {
-		"result": res,
-		"slots": _duplicate_commit_slots(slots),
-	}
-	return res
+	var snapshot_key: String = _intent_snapshot_key_for(
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
+	)
+	_store_intent_snapshot(snapshot_key, slots)
+	return _director.preview_actions(unit_id, _actions_from_slots(slots))
 
 
 func _preview_at_interaction_cell(
@@ -1829,14 +1656,11 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	var unit := _proj_unit(_drag_unit_id)
 	if unit == null:
 		return
+	var move_origin: Vector2i = _proj_move_origin(unit)
 	var ability: AbilityData = null
 	if not force_basic_movement and _director.selected_ability_index >= 0:
 		ability = _selected_ability_data(unit)
-	var mt: int = (
-		unit.definition.movement_type
-		if unit.definition != null
-		else GameEnums.MovementType.WALK
-	)
+	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
 	var budget: int = _drag_max_steps(unit)
 	var move_cost: int = MovementSystem.move_cost_for(unit)
 	if GridSystem.manhattan(last, cell) != 1:
@@ -2375,7 +2199,7 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 func _snapshot_drag_legal_move_tiles() -> Array[Vector2i]:
 	if _planning == null:
 		return []
-	return _planning.peek_hover_move_tiles()
+	return _planning.get_hover_move_tiles()
 
 
 func _drop_allows_move_tile(
@@ -2962,11 +2786,7 @@ func _actions_from_slots(slots: Dictionary) -> Array[TimelineAction]:
 	return out
 
 
-func _finalize_commit_slots(
-	slots: Dictionary,
-	unit_id: int,
-	skip_validation_sim: bool = false,
-) -> Dictionary:
+func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 	if _is_invalid_dict(slots):
 		return slots
 	if slots.get("_noop", false) == true:
@@ -2978,8 +2798,6 @@ func _finalize_commit_slots(
 		return slots
 	if _slots_are_wait_only(actions):
 		slots["_preview_validated"] = true
-		return slots
-	if skip_validation_sim:
 		return slots
 	var error_reason: String = _director.preview_commit_valid(unit_id, actions) if _director != null else ""
 	if error_reason != "":
@@ -3170,47 +2988,17 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -
 
 
 func refresh_mouse_cursor(cell: Vector2i) -> void:
-	if not _preview_cursor_enabled():
-		if _planning != null:
-			_planning.clear_planning_cursor_icon()
-		else:
-			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-		return
 	var icon: String = compute_hover_action_icon(cell)
 	if _planning != null:
 		_planning.set_hover_action_icon(icon)
-	if icon != "":
+	if icon != "" and (_planning == null or _planning.planning_cursor_display_enabled()):
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	else:
 		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 
 
 func compute_hover_action_icon(cell: Vector2i) -> String:
-	var cache_key: String = _cursor_icon_cache_key_for(cell)
-	if cache_key != "" and cache_key == _cursor_icon_cache_key:
-		return _cursor_icon_cache_icon
-	var icon: String = _compute_hover_action_icon(cell)
-	_cursor_icon_cache_key = cache_key
-	_cursor_icon_cache_icon = icon
-	return icon
-
-
-func _cursor_icon_cache_key_for(cell: Vector2i) -> String:
-	if _director == null or _director.board == null:
-		return ""
-	var plan_rev: int = _director.plan_revision
-	if dragging and _drag_unit_id >= 0:
-		return "drag|%d|%d|%s" % [plan_rev, _drag_preview_cache_key, str(cell)]
-	var sel_id: int = _director.selected_unit_id
-	if sel_id < 0:
-		return "none|%d|%s" % [plan_rev, str(cell)]
-	return "hover|%d|%d|%d|%s|%d" % [
-		plan_rev,
-		sel_id,
-		_director.selected_ability_index,
-		str(cell),
-		1 if awaiting_targeting_active() else 0,
-	]
+	return _compute_hover_action_icon(cell)
 
 
 func _compute_hover_action_icon(cell: Vector2i) -> String:
@@ -3234,9 +3022,10 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var p_unit := _proj_unit(sel_id)
 	if p_unit == null:
 		return ""
-	if _intent_snapshot_valid and cell == _intent_snapshot_cell:
-		return _cursor_icon_from_commit_slots(_intent_snapshot_slots, p_unit)
-	return ""
+	return _cursor_icon_from_commit_slots(
+		_final_commit_slots_for_click_at_cell(sel_id, cell, _mouse_local_for_facing()),
+		p_unit,
+	)
 
 
 func _resolve_hover_unit_at(cell: Vector2i) -> UnitState:
@@ -3283,17 +3072,9 @@ func _drag_preview_includes_attack(actor_id: int) -> bool:
 func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if actor == null:
 		return ""
-	if _intent_snapshot_valid and cell == _intent_snapshot_cell:
-		return _cursor_icon_from_commit_slots(_intent_snapshot_slots, actor)
-	var occ := _director.board.get_unit_at(cell) if _director.board != null else null
-	var drag_target_id: int = _drag_preview_target_id(actor, occ)
-	var params: Dictionary = _commit_interaction_params(cell, drag_target_id)
 	return _cursor_icon_from_commit_slots(
 		_final_commit_slots_for_drop_at_cell(
-			actor.id,
-			params.cell,
-			_mouse_local_for_facing(),
-			_snapshot_drag_legal_move_tiles(),
+			actor.id, cell, _mouse_local_for_facing(), _snapshot_drag_legal_move_tiles(),
 		),
 		actor,
 	)

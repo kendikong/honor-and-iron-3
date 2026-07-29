@@ -61,12 +61,6 @@ var _drag_preview_last_failed: bool = false
 var _planning_input: CombatPlanningInput
 var _planning_overlay: TacticalPlanningOverlay
 var _show_team_outlines: bool = false
-var _team_outline_revision: int = -1
-var _team_outline_unit_count: int = -1
-var _team_outline_want: Dictionary = {}
-var _glow_plan_cache_unit_id: int = -1
-var _glow_plan_cache_revision: int = -1
-var _glow_plan_cache_targets: Array[int] = []
 
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
 
@@ -103,8 +97,6 @@ func bind_sfx(sfx: SfxPlayer) -> void:
 func apply_settings(settings: GameSettings) -> void:
 	if settings == null:
 		return
-	if _show_team_outlines != settings.show_team_outlines:
-		_invalidate_team_outline_cache()
 	_show_team_outlines = settings.show_team_outlines
 	_refresh_unit_glows()
 
@@ -207,7 +199,6 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
-	_invalidate_team_outline_cache()
 	if _director != null and _director.peek_movement_only_refresh():
 		_refresh_player_exhaustion()
 		queue_redraw()
@@ -226,7 +217,6 @@ func _on_preview_updated(result: SimResult) -> void:
 
 func _on_selection_changed(unit_id: int) -> void:
 	_selected_id = unit_id
-	_invalidate_glow_plan_cache()
 	_refresh_unit_glows()
 	if _board != null and unit_id >= 0:
 		var unit: UnitState = _board.get_unit_by_id(unit_id)
@@ -237,7 +227,6 @@ func _on_selection_changed(unit_id: int) -> void:
 
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
-		_invalidate_glow_plan_cache()
 		_sync_planning_facings_for_queued_actions()
 		_refresh_player_exhaustion()
 		_refresh_unit_glows()
@@ -282,31 +271,12 @@ func _outline_color_for(unit: UnitState, strength: CharacterSelectionGlow.GlowSt
 	return _COLOR_SELECT_ENEMY if unit.is_enemy() else _COLOR_SELECT_PLAYER
 
 
-func _team_outline_base_want() -> Dictionary:
-	if not _show_team_outlines or _board == null:
-		return {}
-	var revision: int = _director.plan_revision if _director != null else 0
-	var unit_count: int = _board.units.size()
-	if revision == _team_outline_revision and unit_count == _team_outline_unit_count:
-		return _team_outline_want
-	var want: Dictionary = {}
-	for unit: UnitState in _board.units:
-		if unit.is_alive():
-			want[unit.id] = CharacterSelectionGlow.GlowStrength.TEAM
-	_team_outline_revision = revision
-	_team_outline_unit_count = unit_count
-	_team_outline_want = want
-	return want
-
-
-func _invalidate_team_outline_cache() -> void:
-	_team_outline_revision = -1
-	_team_outline_unit_count = -1
-	_team_outline_want.clear()
-
-
 func _refresh_unit_glows() -> void:
-	var want: Dictionary = _team_outline_base_want()
+	var want: Dictionary = {}
+	if _show_team_outlines and _board != null:
+		for unit: UnitState in _board.units:
+			if unit.is_alive():
+				want[unit.id] = CharacterSelectionGlow.GlowStrength.TEAM
 	if not CombatDirector.is_planning_phase(_phase):
 		if want.is_empty():
 			_clear_all_unit_glows()
@@ -318,7 +288,7 @@ func _refresh_unit_glows() -> void:
 	if selected_id >= 0:
 		var selected_unit := _board.get_unit_by_id(selected_id) if _board != null else null
 		if selected_unit != null and not selected_unit.is_enemy():
-			for target_id: int in _planned_enemy_target_ids_cached(selected_id):
+			for target_id: int in _planned_enemy_target_ids(selected_id):
 				if target_id >= 0 and target_id != selected_id:
 					want[target_id] = CharacterSelectionGlow.GlowStrength.TARGET
 			if _drag_attack_target_id >= 0 and _drag_attack_target_id != selected_id:
@@ -410,24 +380,6 @@ func _planned_enemy_target_ids(caster_id: int) -> Array[int]:
 			continue
 		_collect_planned_ability_enemy_targets(action, origin, board, out, seen)
 	return out
-
-
-func _invalidate_glow_plan_cache() -> void:
-	_glow_plan_cache_unit_id = -1
-	_glow_plan_cache_revision = -1
-	_glow_plan_cache_targets = []
-
-
-func _planned_enemy_target_ids_cached(caster_id: int) -> Array[int]:
-	if _director == null:
-		return _planned_enemy_target_ids(caster_id)
-	var revision: int = _director.plan_revision
-	if caster_id == _glow_plan_cache_unit_id and revision == _glow_plan_cache_revision:
-		return _glow_plan_cache_targets
-	_glow_plan_cache_unit_id = caster_id
-	_glow_plan_cache_revision = revision
-	_glow_plan_cache_targets = _planned_enemy_target_ids(caster_id)
-	return _glow_plan_cache_targets
 
 
 func _move_action_destination(action: TimelineAction, fallback: Vector2i) -> Vector2i:
