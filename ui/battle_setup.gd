@@ -106,55 +106,96 @@ func _build_skirmish_card() -> Control:
 func _show_skirmish_picker() -> void:
 	var overlay := ColorRect.new()
 	overlay.name = "SkirmishPicker"
-	overlay.anchor_right = 1.0
-	overlay.anchor_bottom = 1.0
-	overlay.color = Color(0, 0, 0, 0.88)
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0.02, 0.03, 0.06, 0.40)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(overlay)
 
-	var scroll := ScrollContainer.new()
-	scroll.anchor_left = 0.5
-	scroll.anchor_top = 0.5
-	scroll.anchor_right = 0.5
-	scroll.anchor_bottom = 0.5
-	scroll.offset_left = -280
-	scroll.offset_top = -300
-	scroll.offset_right = 280
-	scroll.offset_bottom = 300
-	overlay.add_child(scroll)
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.16
+	panel.anchor_top = 0.0
+	panel.anchor_right = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_top = 16.0
+	panel.offset_right = -16.0
+	panel.offset_bottom = -16.0
+	_apply_skirmish_panel_style(panel)
+	overlay.add_child(panel)
 
-	var panel := VBoxContainer.new()
-	panel.custom_minimum_size = Vector2(520, 0)
-	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel.add_theme_constant_override("separation", 12)
-	scroll.add_child(panel)
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_bottom", 16)
+	panel.add_child(margin)
+
+	var shell := VBoxContainer.new()
+	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shell.add_theme_constant_override("separation", 14)
+	margin.add_child(shell)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 12)
+	shell.add_child(header)
 
 	var title := Label.new()
 	title.text = "Random Skirmish Setup"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 28)
-	panel.add_child(title)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_font_size_override("font_size", 30)
+	header.add_child(title)
+
+	var cancel_top := Button.new()
+	cancel_top.text = "Cancel"
+	cancel_top.custom_minimum_size = Vector2(100.0, 40.0)
+	cancel_top.pressed.connect(func() -> void: overlay.queue_free())
+	header.add_child(cancel_top)
+
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 28)
+	shell.add_child(body)
+
+	var left_col := VBoxContainer.new()
+	left_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left_col.size_flags_stretch_ratio = 1.15
+	left_col.add_theme_constant_override("separation", 10)
+	body.add_child(left_col)
 
 	var setup_fields := SkirmishSetupFields.new()
 	setup_fields.load_setup(MassSimSkirmishSetup.load_last_saved())
-	panel.add_child(setup_fields)
+	left_col.add_child(setup_fields)
+
+	var right_col := VBoxContainer.new()
+	right_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_col.add_theme_constant_override("separation", 10)
+	body.add_child(right_col)
 
 	var size_lbl := Label.new()
-	size_lbl.text = "Map size (select one)"
-	size_lbl.add_theme_font_size_override("font_size", 20)
-	panel.add_child(size_lbl)
+	size_lbl.text = "Map size"
+	size_lbl.add_theme_font_size_override("font_size", 22)
+	right_col.add_child(size_lbl)
+
+	var size_hint := Label.new()
+	size_hint.text = "Select one preset — wider maps need more scroll on the tactical view."
+	size_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	size_hint.add_theme_color_override("font_color", Color(0.68, 0.72, 0.80))
+	right_col.add_child(size_hint)
 
 	var preset_grid := GridContainer.new()
-	preset_grid.columns = 2
-	preset_grid.add_theme_constant_override("h_separation", 12)
+	preset_grid.columns = 3
+	preset_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	preset_grid.add_theme_constant_override("h_separation", 10)
 	preset_grid.add_theme_constant_override("v_separation", 10)
-	panel.add_child(preset_grid)
+	right_col.add_child(preset_grid)
 
 	var selected_size: Array[Vector2i] = [Vector2i.ZERO]
 
 	for preset: Vector2i in TacticalConstants.SKIRMISH_PRESETS:
 		var pick := Button.new()
 		pick.text = "%d × %d" % [preset.x, preset.y]
-		pick.custom_minimum_size = Vector2(180, 44)
+		pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		pick.custom_minimum_size = Vector2(0.0, 44.0)
 		pick.pressed.connect(func() -> void:
 			selected_size[0] = preset
 			for child: Node in preset_grid.get_children():
@@ -164,14 +205,14 @@ func _show_skirmish_picker() -> void:
 		)
 		preset_grid.add_child(pick)
 
-	var btn_row := HBoxContainer.new()
-	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	btn_row.add_theme_constant_override("separation", 16)
-	panel.add_child(btn_row)
+	var footer := HBoxContainer.new()
+	footer.alignment = BoxContainer.ALIGNMENT_END
+	footer.add_theme_constant_override("separation", 12)
+	shell.add_child(footer)
 
 	var launch := Button.new()
 	launch.text = "Launch Skirmish"
-	launch.custom_minimum_size = Vector2(180, 48)
+	launch.custom_minimum_size = Vector2(200.0, 48.0)
 	launch.pressed.connect(func() -> void:
 		if selected_size[0] == Vector2i.ZERO:
 			return
@@ -179,13 +220,20 @@ func _show_skirmish_picker() -> void:
 		MassSimSkirmishSetup.save_last(setup)
 		_launch_skirmish(selected_size[0], setup)
 	)
-	btn_row.add_child(launch)
+	footer.add_child(launch)
 
-	var cancel := Button.new()
-	cancel.text = "Cancel"
-	cancel.custom_minimum_size = Vector2(120, 48)
-	cancel.pressed.connect(func() -> void: overlay.queue_free())
-	btn_row.add_child(cancel)
+
+func _apply_skirmish_panel_style(panel: PanelContainer) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.10, 0.12, 0.17, 0.88)
+	style.border_color = Color(0.42, 0.50, 0.62, 0.85)
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(8)
+	style.content_margin_left = 4
+	style.content_margin_right = 4
+	style.content_margin_top = 4
+	style.content_margin_bottom = 4
+	panel.add_theme_stylebox_override("panel", style)
 
 
 func _launch_skirmish(size_preset: Vector2i, setup: MassSimSkirmishSetup) -> void:
