@@ -37,6 +37,21 @@ static func run_all(failures: Array[String]) -> void:
 		_test_trample_paint_preview_matches_route,
 		_test_trample_commit_preserves_east_then_north,
 		_test_trample_sim_follows_painted_order,
+		# Intent-truth pipeline (preview = slots = commit = sim)
+		_test_bash_slots_preview_board_parity,
+		_test_hover_click_slot_parity,
+		_test_cursor_equals_slots_on_hover,
+		_test_bash_commit_sim_push,
+		_test_hook_commit_sim_pull,
+		_test_invalid_slots_block_commit,
+		_test_full_slot_signature_on_commit,
+		_test_ability_switch_clears_preview_cache,
+		_test_trample_paint_commit_sim_chain,
+		_test_bash_sim_determinism,
+		_test_hover_order_invariant,
+		_test_drag_cleared_restores_canonical_bash_intent,
+		_test_approach_bash_slots_preview_keeps_push,
+		_test_timeline_ghost_clears_when_committed,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -61,6 +76,20 @@ static func run_all(failures: Array[String]) -> void:
 		"trample_paint_preview",
 		"trample_commit_wps",
 		"trample_sim_order",
+		"bash_preview_board_parity",
+		"hover_click_parity",
+		"cursor_equals_slots",
+		"bash_commit_sim",
+		"hook_commit_sim",
+		"invalid_blocks_commit",
+		"full_slot_signature",
+		"ability_cache_clear",
+		"trample_full_chain",
+		"bash_sim_determinism",
+		"hover_order_invariant",
+		"drag_cleared_intent",
+		"approach_bash_push_preview",
+		"timeline_ghost_commit",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -263,6 +292,68 @@ static func _slot_signature(slots: Dictionary) -> String:
 		str(_action_target_unit(slots)),
 		str(bool(slots.get("invalid", true))),
 	]
+
+
+static func _intent_slot_signature(slots: Dictionary) -> String:
+	var pre_wps: String = "[]"
+	var pre: Array = slots.get("pre", []) as Array
+	if not pre.is_empty() and pre[0] is TimelineAction:
+		pre_wps = str((pre[0] as TimelineAction).waypoints)
+	var action_ability: String = ""
+	var action_steps: Array = slots.get("action", []) as Array
+	if not action_steps.is_empty() and action_steps[0] is TimelineAction:
+		var act: TimelineAction = action_steps[0] as TimelineAction
+		action_ability = str(act.ability.id) if act.ability != null else ""
+	var post_count: int = (slots.get("post", []) as Array).size()
+	return "%s|%s|%s|%s|%d|%s" % [
+		str(_pre_target(slots)),
+		pre_wps,
+		str(_action_target_unit(slots)),
+		action_ability,
+		post_count,
+		str(_slots_invalid(slots)),
+	]
+
+
+static func _preview_dict_from_cell(
+	input: CombatPlanningInput,
+	unit_id: int,
+	cell: Vector2i,
+) -> Dictionary:
+	return input._preview_from_commit_slots_at_cell(
+		unit_id, cell, [] as Array[Vector2i], [] as Array[Vector2i], Vector2i(-999999, -999999),
+	)
+
+
+static func _preview_from_dict(
+	director: CombatDirector,
+	preview_dict: Dictionary,
+) -> CombatPlanningPreview:
+	var preview := CombatPlanningPreview.new()
+	preview.apply_result(preview_dict, director)
+	return preview
+
+
+static func _enemy_push_destination(preview: CombatPlanningPreview, enemy_id: int) -> Vector2i:
+	var pushes: Array = preview.preview_pushes.get(enemy_id, [])
+	var seg: Array = _push_segment(pushes)
+	if seg.size() < 2:
+		return Vector2i(-999999, -999999)
+	return seg[1] as Vector2i
+
+
+static func _simulate_committed_plan(director: CombatDirector) -> SimResult:
+	var start_board: BoardState = director.base_board.clone()
+	start_board.intents = []
+	return Simulator.simulate(start_board, director.get_player_plan())
+
+
+static func _bash_img1_ready(fix: Dictionary) -> int:
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		return -1
+	fix.director.selected_ability_index = bash_idx
+	return bash_idx
 
 
 static func _test_waypoint_paint_order_preserved_on_tile_drag(failures: Array[String]) -> void:
@@ -1000,4 +1091,440 @@ static func _test_trample_sim_follows_painted_order(failures: Array[String]) -> 
 		failures.append(
 			"PlanningQAGate integrity: trample sim walk %s expected painted E-then-N %s"
 			% [str(visited), str(expected)],
+		)
+
+
+static func _test_bash_slots_preview_board_parity(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate preview parity: Shield Bash missing")
+		return
+	var slots: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
+	if _slots_invalid(slots):
+		failures.append("PlanningQAGate preview parity: bash enemy hover must be valid")
+		return
+	var preview_dict: Dictionary = _preview_dict_from_cell(input, 1, ENEMY_POS)
+	if bool(preview_dict.get("invalid", false)):
+		failures.append("PlanningQAGate preview parity: slots preview dict must not be invalid")
+		return
+	var preview: CombatPlanningPreview = _preview_from_dict(director, preview_dict)
+	var pushed_to: Vector2i = _enemy_push_destination(preview, 2)
+	if pushed_to.x < -900000:
+		failures.append("PlanningQAGate preview parity: slots preview must include push segment")
+		return
+	if preview.preview_board == null:
+		failures.append("PlanningQAGate preview parity: slots preview missing preview_board")
+		return
+	var pv_enemy: UnitState = preview.preview_board.get_unit_by_id(2)
+	if pv_enemy == null:
+		failures.append("PlanningQAGate preview parity: enemy missing on slots preview board")
+		return
+	if pv_enemy.position != pushed_to:
+		failures.append(
+			"PlanningQAGate preview parity: preview_board enemy %s must match push dest %s"
+			% [str(pv_enemy.position), str(pushed_to)],
+		)
+
+
+static func _test_hover_click_slot_parity(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate hover/click parity: Shield Bash missing")
+		return
+	var hover_slots: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
+	var click_slots: Dictionary = input._final_commit_slots_for_click_at_cell(
+		1, ENEMY_POS, Vector2.ZERO,
+	)
+	if _slots_invalid(hover_slots) or _slots_invalid(click_slots):
+		failures.append("PlanningQAGate hover/click parity: bash enemy hover must be valid")
+		return
+	if _intent_slot_signature(hover_slots) != _intent_slot_signature(click_slots):
+		failures.append(
+			"PlanningQAGate hover/click parity: interaction vs click slots differ %s vs %s"
+			% [_intent_slot_signature(hover_slots), _intent_slot_signature(click_slots)],
+		)
+
+
+static func _test_cursor_equals_slots_on_hover(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate cursor parity: Shield Bash missing")
+		return
+	var bash_slots: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
+	var bash_icon_slots: String = input._cursor_icon_from_commit_slots(bash_slots, fix.knight)
+	var bash_icon_hover: String = input.compute_hover_action_icon(ENEMY_POS)
+	if bash_icon_slots != bash_icon_hover:
+		failures.append(
+			"PlanningQAGate cursor parity: bash enemy hover icon %s != slots icon %s"
+			% [bash_icon_hover, bash_icon_slots],
+		)
+	director.selected_ability_index = -1
+	input.force_basic_movement = true
+	var walk_dest := Vector2i(5, 5)
+	var walk_slots: Dictionary = _commit_slots_at(input, 1, walk_dest)
+	if _slots_invalid(walk_slots):
+		failures.append("PlanningQAGate cursor parity: adjacent walk hover must be valid")
+		return
+	var walk_icon_slots: String = input._cursor_icon_from_commit_slots(walk_slots, fix.knight)
+	var walk_icon_hover: String = input.compute_hover_action_icon(walk_dest)
+	if walk_icon_slots != walk_icon_hover:
+		failures.append(
+			"PlanningQAGate cursor parity: walk hover icon %s != slots icon %s"
+			% [walk_icon_hover, walk_icon_slots],
+		)
+
+
+static func _test_bash_commit_sim_push(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate bash sim: Shield Bash missing")
+		return
+	var slots: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
+	if _slots_invalid(slots):
+		failures.append("PlanningQAGate bash sim: enemy hover must be committable")
+		return
+	var preview_dict: Dictionary = _preview_dict_from_cell(input, 1, ENEMY_POS)
+	var preview: CombatPlanningPreview = _preview_from_dict(director, preview_dict)
+	var expected_push: Vector2i = _enemy_push_destination(preview, 2)
+	if expected_push.x < -900000:
+		failures.append("PlanningQAGate bash sim: preview must define push destination before commit")
+		return
+	if not director.commit_from_slots(1, slots):
+		failures.append("PlanningQAGate bash sim: commit_from_slots failed on hover slots")
+		return
+	director.flush_plan_refresh_signals_if_pending()
+	var result: SimResult = _simulate_committed_plan(director)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	if enemy == null:
+		failures.append("PlanningQAGate bash sim: enemy missing after simulate")
+		return
+	if enemy.position != expected_push:
+		failures.append(
+			"PlanningQAGate bash sim: enemy at %s expected push destination %s from preview"
+			% [str(enemy.position), str(expected_push)],
+		)
+
+
+static func _test_hook_commit_sim_pull(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(Vector2i(1, 3), Vector2i(4, 3))
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var hook_idx: int = _ability_index(fix.knight, CHAIN_HOOK_ID)
+	if hook_idx < 0:
+		failures.append("PlanningQAGate hook sim: Chain Hook missing")
+		return
+	director.selected_ability_index = hook_idx
+	var start_enemy_x: int = fix.enemy.position.x
+	var slots: Dictionary = _commit_slots_at(input, 1, fix.enemy.position)
+	if _slots_invalid(slots):
+		failures.append("PlanningQAGate hook sim: enemy hover must be committable")
+		return
+	var preview_dict: Dictionary = _preview_dict_from_cell(input, 1, fix.enemy.position)
+	var preview: CombatPlanningPreview = _preview_from_dict(director, preview_dict)
+	var expected_pos: Vector2i = fix.enemy.position
+	if preview.preview_board != null:
+		var pv_enemy: UnitState = preview.preview_board.get_unit_by_id(2)
+		if pv_enemy != null:
+			expected_pos = pv_enemy.position
+	if expected_pos.x >= start_enemy_x:
+		failures.append(
+			"PlanningQAGate hook sim: preview must place enemy west of %d, got %s"
+			% [start_enemy_x, str(expected_pos)],
+		)
+		return
+	if not director.commit_from_slots(1, slots):
+		failures.append("PlanningQAGate hook sim: commit_from_slots failed")
+		return
+	director.flush_plan_refresh_signals_if_pending()
+	var result: SimResult = _simulate_committed_plan(director)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	if enemy == null:
+		failures.append("PlanningQAGate hook sim: enemy missing after simulate")
+		return
+	if enemy.position != expected_pos:
+		failures.append(
+			"PlanningQAGate hook sim: enemy at %s expected preview/sim position %s"
+			% [str(enemy.position), str(expected_pos)],
+		)
+
+
+static func _test_invalid_slots_block_commit(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate invalid commit: Shield Bash missing")
+		return
+	var oob_slots: Dictionary = _commit_slots_at(input, 1, Vector2i(-1, 0))
+	if not _slots_invalid(oob_slots):
+		failures.append("PlanningQAGate invalid commit: OOB slots must be invalid")
+		return
+	var actions: Array[TimelineAction] = _actions_from_slots(oob_slots)
+	if director.preview_commit_valid(1, actions) == "":
+		failures.append("PlanningQAGate invalid commit: preview_commit_valid must reject OOB/empty plan")
+	if director.commit_from_slots(1, oob_slots):
+		failures.append("PlanningQAGate invalid commit: commit_from_slots must reject invalid OOB slots")
+
+
+static func _test_full_slot_signature_on_commit(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate full signature: Shield Bash missing")
+		return
+	var slots: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
+	if _slots_invalid(slots):
+		failures.append("PlanningQAGate full signature: bash enemy hover must be valid")
+		return
+	var pre_steps: Array = slots.get("pre", []) as Array
+	var action_steps: Array = slots.get("action", []) as Array
+	if pre_steps.is_empty() or action_steps.is_empty():
+		failures.append("PlanningQAGate full signature: bash enemy hover must fill pre + action")
+		return
+	var slot_pre: TimelineAction = pre_steps[0] as TimelineAction
+	var slot_action: TimelineAction = action_steps[0] as TimelineAction
+	if slot_pre.move_timing != GameEnums.MoveTiming.PRE_ACTION:
+		failures.append("PlanningQAGate full signature: pre-move must use PRE_ACTION timing")
+	if slot_action.ability == null or slot_action.ability.id != SHIELD_BASH_ID:
+		failures.append("PlanningQAGate full signature: action must be Shield Bash")
+	if not (slots.get("post", []) as Array).is_empty():
+		failures.append("PlanningQAGate full signature: bash approach must not use post column")
+	if not director.commit_from_slots(1, slots):
+		failures.append("PlanningQAGate full signature: commit failed")
+		return
+	director.flush_plan_refresh_signals_if_pending()
+	if director.plan_pre_move.entries.is_empty() or director.plan_action.entries.is_empty():
+		failures.append("PlanningQAGate full signature: commit must write pre + action columns")
+		return
+	var committed_pre: TimelineAction = director.plan_pre_move.entries[0]
+	var committed_action: TimelineAction = director.plan_action.entries[0]
+	if committed_pre.target_coord != slot_pre.target_coord:
+		failures.append("PlanningQAGate full signature: committed pre target mismatch")
+	if committed_pre.waypoints != slot_pre.waypoints:
+		failures.append(
+			"PlanningQAGate full signature: committed pre waypoints %s != slots %s"
+			% [str(committed_pre.waypoints), str(slot_pre.waypoints)],
+		)
+	if committed_action.target_unit_id != slot_action.target_unit_id:
+		failures.append("PlanningQAGate full signature: committed action target mismatch")
+	if committed_action.ability == null or committed_action.ability.id != SHIELD_BASH_ID:
+		failures.append("PlanningQAGate full signature: committed action ability mismatch")
+
+
+static func _test_ability_switch_clears_preview_cache(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	input._hover_preview_cache_key = "stale|1|ability|0"
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate cache clear: Shield Bash missing")
+		return
+	input._on_ability_selected(bash_idx)
+	if input._hover_preview_cache_key != "":
+		failures.append(
+			"PlanningQAGate cache clear: ability select must invalidate hover preview cache",
+		)
+
+
+static func _test_trample_paint_commit_sim_chain(failures: Array[String]) -> void:
+	var fix: Dictionary = TramplingAdvanceE2ETest._knight_fixture(TramplingAdvanceE2ETest.START_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	if fix.trample_idx < 0:
+		failures.append("PlanningQAGate trample chain: Trampling Advance missing")
+		return
+	TramplingAdvanceE2ETest._arm_trample_awaiting(input, director, unit)
+	var route: Array[Vector2i] = [
+		TramplingAdvanceE2ETest.START_CELL,
+		TramplingAdvanceE2ETest.EAST_THEN_NORTH[0],
+		TramplingAdvanceE2ETest.EAST_THEN_NORTH[1],
+	]
+	var expected: Array[Vector2i] = route.duplicate()
+	TramplingAdvanceE2ETest._paint_drag_route(input, unit, route, TramplingAdvanceE2ETest.END_CELL)
+	if not input._paint_valid_movement_endpoint_intent():
+		failures.append("PlanningQAGate trample chain: painted endpoint must be valid")
+		return
+	var live_path: Array = input.preview_state.preview_paths.get(1, [])
+	if live_path != expected:
+		failures.append(
+			"PlanningQAGate trample chain: live preview %s != painted %s"
+			% [str(live_path), str(expected)],
+		)
+	if TramplingAdvanceE2ETest._commit_drag_route(
+		input, director, TramplingAdvanceE2ETest.END_CELL,
+	).is_empty():
+		failures.append("PlanningQAGate trample chain: commit failed")
+		return
+	var trample: TimelineAction = TramplingAdvanceE2ETest._committed_trample_action(director)
+	if trample == null or trample.waypoints != TramplingAdvanceE2ETest.EAST_THEN_NORTH:
+		failures.append("PlanningQAGate trample chain: committed waypoints must match paint")
+		return
+	var result: SimResult = _simulate_committed_plan(director)
+	var visited: Array[Vector2i] = [TramplingAdvanceE2ETest.START_CELL]
+	for event: SimEvent in result.events:
+		if event.type != GameEnums.SimEventType.UNIT_MOVED:
+			continue
+		if int(event.data.get("actor", -1)) != 1:
+			continue
+		var path_v: Variant = event.data.get("path", [])
+		if path_v is Array:
+			for step: Variant in path_v:
+				if step is Vector2i:
+					visited.append(step)
+	if visited != expected:
+		failures.append(
+			"PlanningQAGate trample chain: sim path %s != painted %s"
+			% [str(visited), str(expected)],
+		)
+
+
+static func _test_bash_sim_determinism(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate sim determinism: Shield Bash missing")
+		return
+	var slots: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
+	if not director.commit_from_slots(1, slots):
+		failures.append("PlanningQAGate sim determinism: bash commit failed")
+		return
+	director.flush_plan_refresh_signals_if_pending()
+	var plan: Timeline = director.get_player_plan()
+	var board_a: BoardState = director.base_board.clone()
+	board_a.intents = []
+	var board_b: BoardState = director.base_board.clone()
+	board_b.intents = []
+	var result_a: SimResult = Simulator.simulate(board_a, plan)
+	var result_b: SimResult = Simulator.simulate(board_b, plan)
+	var enemy_a: UnitState = result_a.final_state.get_unit_by_id(2)
+	var enemy_b: UnitState = result_b.final_state.get_unit_by_id(2)
+	if enemy_a == null or enemy_b == null:
+		failures.append("PlanningQAGate sim determinism: enemy missing after simulate")
+		return
+	if enemy_a.position != enemy_b.position:
+		failures.append(
+			"PlanningQAGate sim determinism: repeat sim enemy positions differ %s vs %s"
+			% [str(enemy_a.position), str(enemy_b.position)],
+		)
+
+
+static func _test_hover_order_invariant(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate hover order: Shield Bash missing")
+		return
+	var first_approach: Dictionary = _commit_slots_at(input, 1, BASH_APPROACH)
+	var enemy_hover: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
+	var second_approach: Dictionary = _commit_slots_at(input, 1, BASH_APPROACH)
+	if _slots_invalid(first_approach) or _slots_invalid(enemy_hover):
+		failures.append("PlanningQAGate hover order: approach and enemy hovers must be valid")
+		return
+	if _intent_slot_signature(first_approach) != _intent_slot_signature(second_approach):
+		failures.append(
+			"PlanningQAGate hover order: approach hover unstable %s vs %s"
+			% [_intent_slot_signature(first_approach), _intent_slot_signature(second_approach)],
+		)
+	if _pre_target(enemy_hover) != BASH_APPROACH:
+		failures.append(
+			"PlanningQAGate hover order: enemy hover pre-move must target canonical approach %s"
+			% str(BASH_APPROACH),
+		)
+
+
+static func _test_drag_cleared_restores_canonical_bash_intent(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate drag cleared: Shield Bash missing")
+		return
+	var baseline: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
+	input._drag_unit_id = 1
+	input._drag_route = [KNIGHT_START, Vector2i(5, 5)]
+	input._drag_last_free = Vector2i(5, 5)
+	input.dragging = true
+	var polluted: Dictionary = input._final_commit_slots_for_interaction(
+		1, ENEMY_POS, input._drag_route, [], Vector2i(-999999, -999999),
+	)
+	input.dragging = false
+	input._drag_route.clear()
+	input._drag_unit_id = -1
+	input._drag_last_free = Vector2i(-999999, -999999)
+	var restored: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
+	if _slots_invalid(baseline) or _slots_invalid(restored):
+		failures.append("PlanningQAGate drag cleared: bash enemy hover must stay valid")
+		return
+	if _intent_slot_signature(restored) != _intent_slot_signature(baseline):
+		failures.append(
+			"PlanningQAGate drag cleared: after drag cancel enemy intent must restore %s vs %s"
+			% [_intent_slot_signature(baseline), _intent_slot_signature(restored)],
+		)
+	var polluted_pre: Array = polluted.get("pre", []) as Array
+	if not polluted_pre.is_empty():
+		var polluted_move: TimelineAction = polluted_pre[0] as TimelineAction
+		if polluted_move != null and polluted_move.target_coord == Vector2i(5, 5):
+			failures.append(
+				"PlanningQAGate drag cleared: stale drag waypoint (5,5) must not persist on enemy hover",
+			)
+
+
+static func _test_approach_bash_slots_preview_keeps_push(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate approach bash push: Shield Bash missing")
+		return
+	var preview_dict: Dictionary = _preview_dict_from_cell(input, 1, ENEMY_POS)
+	if bool(preview_dict.get("invalid", false)):
+		failures.append("PlanningQAGate approach bash push: slots preview must be valid")
+		return
+	var preview: CombatPlanningPreview = _preview_from_dict(director, preview_dict)
+	if _enemy_push_destination(preview, 2).x < -900000:
+		failures.append(
+			"PlanningQAGate approach bash push: slots→preview must keep push arrows after approach move",
+		)
+
+
+static func _test_timeline_ghost_clears_when_committed(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	director.selected_ability_index = -1
+	input.force_basic_movement = true
+	var dest := Vector2i(5, 5)
+	var move: TimelineAction = TimelineAction.make_move(
+		1, dest, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+	)
+	input.preview_state.preview_board = director.board.clone()
+	input._intent_snapshot_valid = true
+	input._intent_snapshot_slots = {
+		"pre": [move],
+		"action": [],
+		"post": [],
+		"invalid": false,
+	}
+	var ghost_before: Dictionary = input.timeline_ghost_slots(1)
+	if (ghost_before.get("pre", []) as Array).is_empty():
+		failures.append("PlanningQAGate ghost: uncommitted hover intent must show ghost pre-move")
+		return
+	var ghost_move: TimelineAction = (ghost_before.get("pre", []) as Array)[0] as TimelineAction
+	if ghost_move == null or ghost_move.target_coord != dest:
+		failures.append("PlanningQAGate ghost: ghost pre-move must match hover intent target")
+	director.plan_pre_move.entries.append(move)
+	input._intent_snapshot_valid = true
+	var ghost_after: Dictionary = input.timeline_ghost_slots(1)
+	if not (ghost_after.get("pre", []) as Array).is_empty():
+		failures.append(
+			"PlanningQAGate ghost: ghost must clear when hover intent matches committed pre-move",
 		)

@@ -89,6 +89,25 @@ Beyond the manual checklist — game rules that must not regress during perf wor
 | Trample commit keeps painted waypoints | `_test_trample_commit_preserves_east_then_north` | commit slots waypoints preserved |
 | Simulator walks painted trample order | `_test_trample_sim_follows_painted_order` | `UNIT_MOVED` cell order |
 
+### 4. Intent-truth pipeline (preview = slots = commit = sim)
+
+| Integrity rule | Automated test | API asserted |
+|----------------|----------------|--------------|
+| Slots → preview board enemy at push dest | `_test_bash_slots_preview_board_parity` | `_preview_from_commit_slots_at_cell` |
+| Hover slots == click slots | `_test_hover_click_slot_parity` | interaction vs `_final_commit_slots_for_click_at_cell` |
+| Hover cursor == slots cursor | `_test_cursor_equals_slots_on_hover` | `compute_hover_action_icon` |
+| Bash commit → sim lands at preview push | `_test_bash_commit_sim_push` | `commit_from_slots` → `Simulator` |
+| Hook commit → sim matches preview pull | `_test_hook_commit_sim_pull` | preview_board then `Simulator` |
+| Invalid slots cannot commit | `_test_invalid_slots_block_commit` | OOB → `preview_commit_valid` + `commit_from_slots` |
+| Full slot signature ratified on commit | `_test_full_slot_signature_on_commit` | waypoints, timing, ability id |
+| Ability switch clears preview cache | `_test_ability_switch_clears_preview_cache` | `_on_ability_selected` |
+| Trample paint → preview → commit → sim | `_test_trample_paint_commit_sim_chain` | end-to-end chain |
+| Sim determinism (same plan twice) | `_test_bash_sim_determinism` | identical enemy final cell |
+| Hover order stable (approach ↔ enemy) | `_test_hover_order_invariant` | `_intent_slot_signature` |
+| Drag cancel restores bash enemy intent | `_test_drag_cleared_restores_canonical_bash_intent` | baseline vs restored slots |
+| Approach+bash slots preview keeps push | `_test_approach_bash_slots_preview_keeps_push` | slots→preview `preview_pushes` |
+| Timeline ghost clears when committed | `_test_timeline_ghost_clears_when_committed` | `timeline_ghost_slots` |
+
 ## What stays manual (Layer B — ~3 min)
 
 1. **FPS / hover stutter** — no headless FPS yet; watch top-right counter after perf changes.
