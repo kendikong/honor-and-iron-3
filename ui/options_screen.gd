@@ -169,6 +169,8 @@ func _ready() -> void:
 	var tab_container := TabContainer.new()
 	tab_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	if live_preview:
+		tab_container.custom_minimum_size.y = 480.0
 	tab_host.add_child(tab_container)
 
 	_build_display_tab(tab_container)
@@ -203,11 +205,15 @@ func _build_tab_host() -> Control:
 	var panel := PanelContainer.new()
 	panel.name = "LivePreviewPanel"
 	MenuTheme.apply_panel(panel)
-	panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	panel.offset_left = -508.0
-	panel.offset_top = 12.0
-	panel.offset_right = -12.0
-	panel.offset_bottom = -12.0
+	panel.anchor_left = 0.36
+	panel.anchor_top = 0.0
+	panel.anchor_right = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = 0.0
+	panel.offset_top = 16.0
+	panel.offset_right = -16.0
+	panel.offset_bottom = -16.0
+	panel.custom_minimum_size.x = 560.0
 	add_child(panel)
 
 	var outer_margin := MarginContainer.new()
@@ -721,6 +727,8 @@ func _slider_value_row(slider: HSlider, value_label: Label) -> HBoxContainer:
 func _scroll_tab(parent: TabContainer, tab_name: String) -> ScrollContainer:
 	var margin := MarginContainer.new()
 	margin.name = tab_name
+	margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margin.add_theme_constant_override("margin_left", 16)
 	margin.add_theme_constant_override("margin_top", 12)
 	margin.add_theme_constant_override("margin_right", 16)
