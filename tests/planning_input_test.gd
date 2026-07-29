@@ -1263,6 +1263,39 @@ static func _test_committed_action_approach_uses_premove_slot(failures: Array[St
 		failures.append(
 			"PlanningInputTest: committed action approach must not land in post-move slot",
 		)
+	var approach_cell: Vector2i = director.preview_approach_tile(
+		1, enemy.id, 0, Vector2i(3, 3),
+	)
+	if approach_cell == knight.position:
+		failures.append("PlanningInputTest: chain hook fixture should need an approach tile")
+	var approach_slots: Dictionary = input._final_commit_slots_for_interaction(
+		1, approach_cell, [], [], Vector2i(-999999, -999999),
+	)
+	var approach_pre: Array = approach_slots.get("pre", []) as Array
+	var approach_post: Array = approach_slots.get("post", []) as Array
+	if approach_pre.is_empty():
+		failures.append(
+			"PlanningInputTest: committed action + approach stand hover must build pre-move",
+		)
+	if not approach_post.is_empty():
+		failures.append(
+			"PlanningInputTest: approach stand hover must not use post-move slot",
+		)
+	# Uncommitted: approach stand must still bucket into pre, never post.
+	director.plan_action = Timeline.new()
+	director.plan_affected_unit_ids = [1]
+	director._refresh_plan()
+	var fresh_slots: Dictionary = input._final_commit_slots_for_interaction(
+		1, approach_cell, [], [], Vector2i(-999999, -999999),
+	)
+	if (fresh_slots.get("post", []) as Array).size() > 0:
+		failures.append(
+			"PlanningInputTest: uncommitted approach hover must not populate post-move",
+		)
+	if (fresh_slots.get("pre", []) as Array).is_empty():
+		failures.append(
+			"PlanningInputTest: uncommitted approach hover must populate pre-move",
+		)
 
 
 static func _test_ability_scroll_clears_hover_preview_cache(failures: Array[String]) -> void:

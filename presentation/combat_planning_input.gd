@@ -1596,10 +1596,16 @@ func _notify_drag_plan_move_committed(unit_id: int) -> void:
 		_director.mark_planning_move_instant(unit_id)
 
 
-func _unit_move_slot_open(unit_id: int) -> bool:
+func _unit_move_slot_open(unit_id: int, cell: Vector2i = Vector2i(-999999, -999999)) -> bool:
 	if _director == null or unit_id < 0:
 		return false
 	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	if cell.x > -900000 and _director.board != null and _director.board.is_in_bounds(cell):
+		var actor: UnitState = _proj_unit(unit_id)
+		if actor == null:
+			actor = _director.board.get_unit_by_id(unit_id)
+		if actor != null:
+			move_timing = _move_slot_timing_for_commit(unit_id, actor, cell)
 	if move_timing == -1:
 		return false
 	return not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
@@ -1629,7 +1635,58 @@ func _should_replan_premove_approach(unit_id: int, cell: Vector2i) -> bool:
 	if not _director.unit_has_committed_class_action(unit_id):
 		return false
 	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
-	return hover_unit != null and hover_unit.is_enemy()
+	if hover_unit != null and hover_unit.is_enemy():
+		return true
+	return _is_committed_action_approach_cell(unit_id, cell)
+
+
+func _committed_class_action(unit_id: int) -> TimelineAction:
+	if _director == null:
+		return null
+	for action: TimelineAction in _director.plan_action.entries:
+		if action.actor_id != unit_id:
+			continue
+		if action.type != GameEnums.ActionType.ABILITY:
+			continue
+		if action.ability != null and action.ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+			continue
+		return action
+	return null
+
+
+func _ability_index_on_unit(actor: UnitState, ability: AbilityData) -> int:
+	if actor == null or ability == null:
+		return -1
+	for i: int in range(actor.active_abilities.size()):
+		var entry: AbilityData = actor.active_abilities[i] as AbilityData
+		if entry != null and entry.id == ability.id:
+			return i
+	return -1
+
+
+func _is_committed_action_approach_cell(unit_id: int, cell: Vector2i) -> bool:
+	var committed: TimelineAction = _committed_class_action(unit_id)
+	if committed == null or committed.target_unit_id < 0:
+		return false
+	var enemy: UnitState = _director.board.get_unit_by_id(committed.target_unit_id)
+	if enemy == null or not enemy.is_alive() or not enemy.is_enemy():
+		return false
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null or committed.ability == null:
+		return false
+	var ability_index: int = _ability_index_on_unit(actor, committed.ability)
+	if ability_index < 0:
+		return false
+	var approach: Vector2i = _director.preview_approach_tile(
+		unit_id, committed.target_unit_id, ability_index, cell,
+	)
+	return approach == cell
+
+
+func _move_slot_timing_for_commit(unit_id: int, actor: UnitState, cell: Vector2i) -> int:
+	if _should_replan_premove_approach(unit_id, cell):
+		return GameEnums.MoveTiming.PRE_ACTION
+	return _director.get_planning_move_timing(unit_id)
 
 
 func _basic_move_allowed() -> bool:
@@ -2416,7 +2473,7 @@ func _append_move_to_commit_slots(
 ) -> void:
 	if _director == null or actor == null:
 		return
-	var timing: int = _director.get_planning_move_timing(unit_id)
+	var timing: int = _move_slot_timing_for_commit(unit_id, actor, cell)
 	if timing < 0:
 		return
 	var move_origin: Vector2i = _proj_move_origin(actor)
@@ -2513,7 +2570,7 @@ func _build_commit_slots_at_cell(
 	if selected_phase_action_exhausted(unit_id):
 		slots["invalid"] = "Action already exhausted this phase."
 		return slots
-	var timing: int = _director.get_planning_move_timing(unit_id)
+	var move_timing: int = _move_slot_timing_for_commit(unit_id, actor, cell)
 	var ability_index: int = _director.selected_ability_index
 	var ability: AbilityData = _selected_ability_data(actor)
 	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
@@ -2526,10 +2583,10 @@ func _build_commit_slots_at_cell(
 	if _planning_post_move_only(actor, unit_id, cell):
 		if (
 			_basic_move_allowed()
-			and _unit_move_slot_open(unit_id)
+			and _unit_move_slot_open(unit_id, cell)
 			and _drop_allows_move_tile(cell, legal_move_tiles, actor)
 		):
-			if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
+			if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
 				_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
 		elif _skill_interaction_active() and _invalid_hover_target(actor, cell, hover_unit):
 			slots["invalid"] = "Invalid target."
@@ -2597,11 +2654,11 @@ func _build_commit_slots_at_cell(
 			if AbilitySystem.can_target_self(actor, ability):
 				if AbilitySystem.is_run_ability(ability):
 					if _drop_allows_move_tile(cell, legal_move_tiles, actor):
-						if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
+						if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
 							_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
 					return slots
 				if _drop_allows_move_tile(cell, legal_move_tiles, actor):
-					if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
+					if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
 						_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
 					_maybe_append_premove_action_pair(
 						slots, unit_id, actor, cell, ability, effective_waypoints,
@@ -2634,10 +2691,10 @@ func _build_commit_slots_at_cell(
 
 	if (
 		_basic_move_allowed()
-		and _unit_move_slot_open(unit_id)
+		and _unit_move_slot_open(unit_id, cell)
 		and _drop_allows_move_tile(cell, legal_move_tiles, actor)
 	):
-		if timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, timing):
+		if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
 			_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
 		if ability_index >= 0 and ability != null and not force_basic_movement:
 			_maybe_append_premove_action_pair(
