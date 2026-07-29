@@ -33,12 +33,22 @@ const _EFFECT_TOGGLES: Array[Dictionary] = [
 	{"key": "ecology_actors", "label": "Ecology actors"},
 	{"key": "rare_events", "label": "Rare ambient events"},
 	{"key": "oblique_contact_shadows", "label": "Contact shadows"},
+	{"key": "tree_variant_b", "label": "Large tree B (procedural shadow)"},
 ]
 
 const _DEV_SHADOW_TOGGLES: Array[Dictionary] = [
 	{"key": "shadow_perf_mode", "label": "Shadow performance mode"},
 	{"key": "shadow_freeze_time", "label": "Freeze game time"},
 	{"key": "shadow_edge_soften", "label": "Soften shadow edges"},
+]
+
+const _PLANNING_PREVIEW_TOGGLES: Array[Dictionary] = [
+	{"field": "preview_show_planning_cursor", "label": "Planning cursor icons (walk / run / attack)"},
+	{"field": "preview_show_range_overlays", "label": "Move & skill range overlays"},
+	{"field": "preview_show_routes", "label": "Routes, paths & hover tile highlight"},
+	{"field": "preview_show_live_ghosts", "label": "Live preview unit ghosts"},
+	{"field": "preview_show_arrows", "label": "Push / displacement / flow arrows"},
+	{"field": "preview_show_committed_intents", "label": "Committed plan intent markers"},
 ]
 
 const _CONTROLS_TEXT: String = """[b]Tactical combat[/b]
@@ -81,6 +91,7 @@ var _show_fps_check: CheckButton
 var _show_tod_check: CheckButton
 var _effect_checks: Dictionary = {}
 var _dev_shadow_checks: Dictionary = {}
+var _planning_preview_checks: Dictionary = {}
 var _dev_tile_labels_check: CheckButton
 var _dev_boredom_atmo_check: CheckButton
 var _dev_boredom_water_check: CheckButton
@@ -167,11 +178,13 @@ func _ready() -> void:
 
 	var tab_host: Control = _build_tab_host()
 	var tab_container := TabContainer.new()
+	tab_container.name = "SettingsTabs"
 	tab_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	tab_host.add_child(tab_container)
 
 	_build_display_tab(tab_container)
+	_build_graphics_tab(tab_container)
 	_build_sound_tab(tab_container)
 	_build_interface_tab(tab_container)
 	_build_gameplay_tab(tab_container)
@@ -187,14 +200,12 @@ func _ready() -> void:
 
 
 func _sync_live_preview_tabs(tab_container: TabContainer) -> void:
+	tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for child: Node in tab_container.get_children():
 		if child is Control:
 			var tab_root := child as Control
-			tab_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			tab_root.offset_left = 0.0
-			tab_root.offset_top = 0.0
-			tab_root.offset_right = 0.0
-			tab_root.offset_bottom = 0.0
+			tab_root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			tab_root.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 
 func _build_tab_host() -> Control:
@@ -589,6 +600,32 @@ func _build_developer_tab(parent: TabContainer) -> void:
 		shadow_parent.add_child(check)
 		_dev_shadow_checks[key] = check
 
+	vbox.add_child(HSeparator.new())
+	_add_section(vbox, "Planning preview (experimental)")
+	_add_hint(
+		vbox,
+		"Skips preview-only hover work (sim, range recompute, cursor slots). Commit still validates on click.",
+	)
+	var preview_parent: Container = vbox
+	if live_preview:
+		var preview_grid := GridContainer.new()
+		preview_grid.columns = 2
+		preview_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		preview_grid.add_theme_constant_override("h_separation", 12)
+		preview_grid.add_theme_constant_override("v_separation", 2)
+		vbox.add_child(preview_grid)
+		preview_parent = preview_grid
+	for entry: Dictionary in _PLANNING_PREVIEW_TOGGLES:
+		var field: String = entry["field"]
+		var check := CheckButton.new()
+		check.text = entry["label"]
+		check.button_pressed = bool(_game_settings.get(field))
+		check.toggled.connect(func(pressed: bool) -> void: _on_planning_preview_toggled(field, pressed))
+		if live_preview:
+			check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		preview_parent.add_child(check)
+		_planning_preview_checks[field] = check
+
 	_sandbox_tools_box = VBoxContainer.new()
 	vbox.add_child(_sandbox_tools_box)
 	_add_section(_sandbox_tools_box, "Map sandbox tools")
@@ -716,6 +753,26 @@ func _on_shadow_debug_toggled(key: String, pressed: bool) -> void:
 		_on_effects_changed.call()
 
 
+func _on_planning_preview_toggled(field: String, pressed: bool) -> void:
+	match field:
+		"preview_show_planning_cursor":
+			_game_settings.preview_show_planning_cursor = pressed
+		"preview_show_range_overlays":
+			_game_settings.preview_show_range_overlays = pressed
+		"preview_show_routes":
+			_game_settings.preview_show_routes = pressed
+		"preview_show_live_ghosts":
+			_game_settings.preview_show_live_ghosts = pressed
+		"preview_show_arrows":
+			_game_settings.preview_show_arrows = pressed
+		"preview_show_committed_intents":
+			_game_settings.preview_show_committed_intents = pressed
+	_game_settings.save_to_disk()
+	_game_settings.changed.emit()
+	EventBus.interface_settings_changed.emit()
+	_notify_settings_applied()
+
+
 func _add_dev_check(
 	parent: VBoxContainer,
 	text: String,
@@ -787,9 +844,10 @@ func _tab_page(parent: TabContainer, tab_name: String) -> VBoxContainer:
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	if live_preview:
-		scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	else:
+		scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
 	parent.add_child(scroll)
 
 	var pad := MarginContainer.new()

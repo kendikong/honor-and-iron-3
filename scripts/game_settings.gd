@@ -61,6 +61,31 @@ var planning_force_basic: bool = false
 var planning_auto_run: bool = false
 var planning_danger_area: bool = false
 var planning_auto_use_skill_after_move: bool = true
+## Experimental — visual preview only (sim + commit unchanged).
+var preview_show_planning_cursor: bool = true
+var preview_show_range_overlays: bool = true
+var preview_show_routes: bool = true
+var preview_show_live_ghosts: bool = true
+var preview_show_arrows: bool = true
+var preview_show_committed_intents: bool = true
+
+
+func preview_hover_sim_enabled() -> bool:
+	return (
+		preview_show_live_ghosts
+		or preview_show_arrows
+		or preview_show_planning_cursor
+	)
+
+
+func preview_dynamic_overlay_enabled() -> bool:
+	return (
+		preview_show_routes
+		or preview_show_live_ghosts
+		or preview_show_arrows
+	)
+
+
 var screen_index: int = 0
 var window_position: Vector2i = Vector2i.ZERO
 var _has_saved_window_placement: bool = false
@@ -102,6 +127,24 @@ func load_from_disk() -> void:
 	planning_danger_area = bool(cfg.get_value("planning", "danger_area", planning_danger_area))
 	planning_auto_use_skill_after_move = bool(
 		cfg.get_value("planning", "auto_use_skill_after_move", planning_auto_use_skill_after_move),
+	)
+	preview_show_planning_cursor = bool(
+		cfg.get_value("planning_preview", "show_cursor", preview_show_planning_cursor),
+	)
+	preview_show_range_overlays = bool(
+		cfg.get_value("planning_preview", "show_range_overlays", preview_show_range_overlays),
+	)
+	preview_show_routes = bool(
+		cfg.get_value("planning_preview", "show_routes", preview_show_routes),
+	)
+	preview_show_live_ghosts = bool(
+		cfg.get_value("planning_preview", "show_live_ghosts", preview_show_live_ghosts),
+	)
+	preview_show_arrows = bool(
+		cfg.get_value("planning_preview", "show_arrows", preview_show_arrows),
+	)
+	preview_show_committed_intents = bool(
+		cfg.get_value("planning_preview", "show_committed_intents", preview_show_committed_intents),
 	)
 	if cfg.has_section_key("display", "screen_index"):
 		screen_index = int(cfg.get_value("display", "screen_index", screen_index))
@@ -162,6 +205,12 @@ func save_to_disk() -> void:
 	cfg.set_value("planning", "auto_run", planning_auto_run)
 	cfg.set_value("planning", "danger_area", planning_danger_area)
 	cfg.set_value("planning", "auto_use_skill_after_move", planning_auto_use_skill_after_move)
+	cfg.set_value("planning_preview", "show_cursor", preview_show_planning_cursor)
+	cfg.set_value("planning_preview", "show_range_overlays", preview_show_range_overlays)
+	cfg.set_value("planning_preview", "show_routes", preview_show_routes)
+	cfg.set_value("planning_preview", "show_live_ghosts", preview_show_live_ghosts)
+	cfg.set_value("planning_preview", "show_arrows", preview_show_arrows)
+	cfg.set_value("planning_preview", "show_committed_intents", preview_show_committed_intents)
 	cfg.set_value("display", "screen_index", screen_index)
 	cfg.set_value("display", "window_position_x", window_position.x)
 	cfg.set_value("display", "window_position_y", window_position.y)
