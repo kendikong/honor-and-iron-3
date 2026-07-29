@@ -37,6 +37,10 @@ var drag_sim_actor_pos: Vector2i = Vector2i.ZERO
 var drag_preview_failed: bool = false
 var _last_planning_hover_cell: Vector2i = Vector2i(-9999, -9999)
 var _hover_preview_cache_key: String = ""
+var _hover_cursor_cache_key: String = ""
+var _hover_cursor_cached_icon: String = ""
+var _overlay_cursor_icon: String = ""
+var _overlay_cursor_cell: Vector2i = Vector2i(-9999, -9999)
 var _selection_refresh_pending: bool = false
 var _plan_refresh_followup_pending: bool = false
 var _hover_preview_refresh_pending: bool = false
@@ -737,6 +741,10 @@ func _sync_intent_skill_mode() -> void:
 func _invalidate_planning_hover_cache() -> void:
 	_last_planning_hover_cell = Vector2i(-9999, -9999)
 	_hover_preview_cache_key = ""
+	_hover_cursor_cache_key = ""
+	_hover_cursor_cached_icon = ""
+	_overlay_cursor_icon = ""
+	_overlay_cursor_cell = Vector2i(-9999, -9999)
 
 
 ## Public alias for input controller / UI when ability changes outside EventBus order.
@@ -766,8 +774,12 @@ func on_hover_moved(cell: Vector2i) -> void:
 			if _planning != null:
 				_planning._invalidate_hover_cache()
 				_planning._recompute_hover_ranges_from_inputs()
-		refresh_mouse_cursor(cell)
+		if planning_cell_changed:
+			refresh_mouse_cursor(cell)
 		return
+	if _planning != null and planning_cell_changed:
+		_sync_threat_origin_from_cell(cell)
+		_planning._recompute_hover_ranges_from_inputs()
 	if _director.selected_unit_id >= 0:
 		if planning_cell_changed:
 			var p_unit := _proj_unit(_director.selected_unit_id)
@@ -782,11 +794,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_refresh_selected_interaction_preview()
 	elif planning_cell_changed:
 		_update_hover_attack_preview()
-	if _planning != null and planning_cell_changed:
-		_planning._recompute_hover_ranges_from_inputs()
-		_sync_threat_origin_from_cell(cell)
-		_planning._recompute_hover_ranges_from_inputs()
-	refresh_mouse_cursor(cell)
+	if planning_cell_changed:
+		refresh_mouse_cursor(cell)
 
 
 func get_hover_tile_for_ui() -> Vector2i:
@@ -1056,16 +1065,7 @@ func _refresh_live_interaction_preview(
 	if unit == null:
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else move_coord
-	var cur_ability: int = _director.selected_ability_index
-	var cache_key: String = "%d|%d|%s|%s|%d|%d|%d" % [
-		_director.plan_revision if _director != null else 0,
-		unit_id,
-		str(move_coord),
-		str(cell),
-		attack_target_id,
-		cur_ability,
-		1 if awaiting_targeting_active() else 0,
-	]
+	var cache_key: String = _hover_interaction_cache_key(unit_id, cell, attack_target_id)
 	if cache_key == _hover_preview_cache_key:
 		return
 	_hover_preview_cache_key = cache_key
@@ -1570,6 +1570,36 @@ func _preview_from_commit_slots_at_cell(
 	)
 	_store_intent_snapshot(snapshot_key, slots)
 	return _director.preview_actions(unit_id, _actions_from_slots(slots))
+
+
+func _hover_interaction_cache_key(
+	unit_id: int,
+	hover_cell: Vector2i,
+	attack_target_id: int = -1,
+) -> String:
+	if _director == null or unit_id < 0:
+		return ""
+	var resolved_target: int = attack_target_id
+	var hover_unit: UnitState = _resolve_hover_unit_at(hover_cell)
+	if hover_unit != null and hover_unit.is_enemy():
+		resolved_target = hover_unit.id
+	elif hover_unit != null and hover_unit.id == unit_id:
+		resolved_target = unit_id
+	var params: Dictionary = _commit_interaction_params(hover_cell, resolved_target)
+	var face_dir: int = -1
+	if _map_view != null:
+		face_dir = _facing_from_drop(_mouse_local_for_facing(), params.cell)
+	var legal_tiles: Array[Vector2i] = params.legal_move_tiles as Array[Vector2i]
+	if legal_tiles.is_empty():
+		legal_tiles = _snapshot_drag_legal_move_tiles()
+	return _intent_snapshot_key_for(
+		unit_id,
+		params.cell,
+		params.waypoints as Array[Vector2i],
+		legal_tiles,
+		params.preferred,
+		face_dir,
+	)
 
 
 func _preview_at_interaction_cell(
@@ -3075,7 +3105,11 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -
 
 
 func refresh_mouse_cursor(cell: Vector2i) -> void:
-	var icon: String = compute_hover_action_icon(cell)
+	var icon: String = _compute_hover_action_icon(cell)
+	if icon == _overlay_cursor_icon and cell == _overlay_cursor_cell:
+		return
+	_overlay_cursor_icon = icon
+	_overlay_cursor_cell = cell
 	if _planning != null:
 		_planning.set_hover_action_icon(icon)
 	if icon != "" and (_planning == null or _planning.planning_cursor_display_enabled()):
@@ -3109,10 +3143,22 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var p_unit := _proj_unit(sel_id)
 	if p_unit == null:
 		return ""
-	return _cursor_icon_from_commit_slots(
-		_final_commit_slots_for_click_at_cell(sel_id, cell, _mouse_local_for_facing()),
-		p_unit,
-	)
+	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
+	var attack_target_id: int = -1
+	if hover_unit != null:
+		attack_target_id = hover_unit.id
+	var cache_key: String = _hover_interaction_cache_key(sel_id, cell, attack_target_id)
+	if cache_key == _hover_cursor_cache_key:
+		return _hover_cursor_cached_icon
+	var slots: Dictionary
+	if _intent_snapshot_valid and _intent_snapshot_key == cache_key:
+		slots = _duplicate_commit_slots(_intent_snapshot_slots)
+	else:
+		slots = _final_commit_slots_for_click_at_cell(sel_id, cell, _mouse_local_for_facing())
+	var icon: String = _cursor_icon_from_commit_slots(slots, p_unit)
+	_hover_cursor_cache_key = cache_key
+	_hover_cursor_cached_icon = icon
+	return icon
 
 
 func _resolve_hover_unit_at(cell: Vector2i) -> UnitState:

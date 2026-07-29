@@ -50,9 +50,7 @@ func handle_input(event: InputEvent) -> bool:
 		else:
 			if _planning_input.is_drag_armed():
 				_planning_input.try_activate_drag(local)
-			if not _planning_input.dragging:
-				var cell: Vector2i = _map_view.screen_to_grid(event.position)
-				_planning_input.on_hover_moved(cell)
+			# Hover polling is owned by TacticalMapView._process → on_hover_moved (avoids double sim per motion).
 		return (
 			_planning_input.dragging
 			or _planning_input.is_drag_armed()

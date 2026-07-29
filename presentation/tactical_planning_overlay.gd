@@ -357,9 +357,7 @@ func set_hover_coord(coord: Vector2i) -> void:
 	if _director != null and _director.selected_unit_id < 0:
 		_invalidate_hover_cache()
 		_recompute_hover_ranges_from_inputs()
-	if _planning_input != null:
-		_planning_input.refresh_mouse_cursor(coord)
-	else:
+	if _planning_input == null:
 		_update_hover_action_icon()
 	queue_redraw()
 
@@ -736,8 +734,6 @@ func _process(delta: float) -> void:
 		need_redraw = true
 	if need_redraw:
 		queue_redraw()
-	elif CombatDirector.is_planning_phase(_phase) and _hover_action_icon != "":
-		queue_redraw()
 	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
 		if _planning_input != null and _planning_input.dragging:
 			_drag_overlay_redraw_accum += delta
@@ -752,8 +748,6 @@ func _process(delta: float) -> void:
 
 func _overlay_needs_flow_animation() -> bool:
 	if _planning_input != null and _planning_input.dragging:
-		return true
-	if _planning_input != null and _planning_input.is_live_preview_active():
 		return true
 	var prev: CombatPlanningPreview = _active_preview()
 	if prev != null:
