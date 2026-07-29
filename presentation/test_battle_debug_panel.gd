@@ -6,7 +6,6 @@ extends CanvasLayer
 const PANEL_WIDTH: int = 340
 const PANEL_HEIGHT_EXPANDED: float = 440.0
 const PANEL_HEIGHT_COLLAPSED: float = 48.0
-const PREFS_PATH: String = "user://test_battle_debug_prefs.cfg"
 
 var _map_view: TestBattleMapView
 var _session: TestBattleSession
@@ -46,25 +45,13 @@ func setup(
 	
 func _load_settings() -> void:
 	var cfg := ConfigFile.new()
-	if cfg.load(PREFS_PATH) == OK:
+	if cfg.load(TestBattleSession.PREFS_PATH) == OK:
 		_collapsed = cfg.get_value("debug", "collapsed", false)
-		_session.player_class_id = StringName(cfg.get_value("debug", "class_id", "knight"))
-		_session.player_level = cfg.get_value("debug", "player_level", 99)
-		_session.unkillable_dummies = cfg.get_value("debug", "unkillable", false)
-		_session.infinite_player_ap = cfg.get_value("debug", "infinite_ap", false)
-		_session.passive_enabled = cfg.get_value("debug", "passive_enabled", {})
-		_session.skill_enabled = cfg.get_value("debug", "skill_enabled", {})
+	_session.load_prefs()
+
 
 func _save_settings() -> void:
-	var cfg := ConfigFile.new()
-	cfg.set_value("debug", "collapsed", _collapsed)
-	cfg.set_value("debug", "class_id", _session.player_class_id)
-	cfg.set_value("debug", "player_level", _session.player_level)
-	cfg.set_value("debug", "unkillable", _session.unkillable_dummies)
-	cfg.set_value("debug", "infinite_ap", _session.infinite_player_ap)
-	cfg.set_value("debug", "passive_enabled", _session.passive_enabled)
-	cfg.set_value("debug", "skill_enabled", _session.skill_enabled)
-	cfg.save(PREFS_PATH)
+	_session.save_prefs(_collapsed)
 
 func _build_ui() -> void:
 	_root = PanelContainer.new()

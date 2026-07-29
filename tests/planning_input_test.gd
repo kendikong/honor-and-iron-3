@@ -30,7 +30,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_planning_display_mp_left(failures)
 	_test_timeline_ghost_slots(failures)
 	_test_committed_action_approach_uses_premove_slot(failures)
-	_test_undo_movement_action_clears_paired_premove(failures)
+	_test_undo_movement_action_preserves_premove(failures)
 	_test_ability_scroll_clears_hover_preview_cache(failures)
 
 
@@ -1299,7 +1299,7 @@ static func _test_committed_action_approach_uses_premove_slot(failures: Array[St
 		)
 
 
-static func _test_undo_movement_action_clears_paired_premove(failures: Array[String]) -> void:
+static func _test_undo_movement_action_preserves_premove(failures: Array[String]) -> void:
 	var director := CombatDirector.new()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(10, 6)
@@ -1352,9 +1352,9 @@ static func _test_undo_movement_action_clears_paired_premove(failures: Array[Str
 	director.rpc_remove_last_for_unit(1)
 	if not director.plan_action.entries.is_empty():
 		failures.append("PlanningInputTest: undo should remove movement skill action")
-	if not director.plan_pre_move.entries.is_empty():
+	if director.plan_pre_move.entries.is_empty():
 		failures.append(
-			"PlanningInputTest: undo movement skill should also clear paired pre-move walk",
+			"PlanningInputTest: undo movement skill must keep pre-move walk on timeline",
 		)
 
 

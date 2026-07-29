@@ -8,6 +8,7 @@ var _debug_panel: TestBattleDebugPanel
 
 
 func _ready() -> void:
+	_session.load_prefs()
 	super._ready()
 	_debug_panel = TestBattleDebugPanel.new()
 	_debug_panel.name = "TestBattleDebugPanel"

@@ -9,6 +9,7 @@ const TRAINING_LEVEL: int = 99
 const DEFAULT_PLAYER_CLASS: StringName = &"knight"
 const DEFAULT_PLAYER_CELL: Vector2i = Vector2i(4, 5)
 const DEFAULT_DUMMY_CELL: Vector2i = Vector2i(7, 5)
+const PREFS_PATH: String = "user://test_battle_debug_prefs.cfg"
 
 var player_class_id: StringName = DEFAULT_PLAYER_CLASS
 var player_level: int = TRAINING_LEVEL
@@ -19,7 +20,39 @@ var skill_enabled: Dictionary = {}
 var dummy_coords: Array[Vector2i] = [DEFAULT_DUMMY_CELL]
 var extra_player_coords: Array[Vector2i] = []
 var unkillable_dummies: bool = true
-var infinite_player_ap: bool = false
+var 	infinite_player_ap: bool = false
+
+
+func load_prefs() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(PREFS_PATH) != OK:
+		return
+	player_class_id = StringName(cfg.get_value("debug", "class_id", player_class_id))
+	player_level = int(cfg.get_value("debug", "player_level", player_level))
+	unkillable_dummies = bool(cfg.get_value("debug", "unkillable", unkillable_dummies))
+	infinite_player_ap = bool(cfg.get_value("debug", "infinite_ap", infinite_player_ap))
+	_import_bool_map(cfg.get_value("debug", "passive_enabled", {}), passive_enabled)
+	_import_bool_map(cfg.get_value("debug", "skill_enabled", {}), skill_enabled)
+
+
+func save_prefs(collapsed: bool = false) -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("debug", "collapsed", collapsed)
+	cfg.set_value("debug", "class_id", player_class_id)
+	cfg.set_value("debug", "player_level", player_level)
+	cfg.set_value("debug", "unkillable", unkillable_dummies)
+	cfg.set_value("debug", "infinite_ap", infinite_player_ap)
+	cfg.set_value("debug", "passive_enabled", passive_enabled)
+	cfg.set_value("debug", "skill_enabled", skill_enabled)
+	cfg.save(PREFS_PATH)
+
+
+static func _import_bool_map(raw: Variant, out: Dictionary) -> void:
+	out.clear()
+	if not raw is Dictionary:
+		return
+	for key: Variant in (raw as Dictionary).keys():
+		out[StringName(str(key))] = bool(raw[key])
 
 
 func reset_defaults() -> void:
