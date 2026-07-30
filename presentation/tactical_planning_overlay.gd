@@ -79,6 +79,7 @@ var _action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_proj_key: int = -1
 var _cached_hover_awaiting_targeting: bool = false
+var _cached_hover_coord: Vector2i = Vector2i(-999, -999)
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -213,6 +214,7 @@ func _invalidate_hover_cache() -> void:
 	_cached_hover_ability = -1
 	_cached_hover_proj_key = -1
 	_cached_hover_awaiting_targeting = false
+	_cached_hover_coord = Vector2i(-999, -999)
 
 
 func _planning_action_range_tiles_for_unit(
@@ -355,8 +357,8 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 	if coord == _hover_coord:
 		return
 	_hover_coord = coord
+	_invalidate_hover_cache()
 	if _director != null and _director.selected_unit_id < 0:
-		_invalidate_hover_cache()
 		_recompute_hover_ranges_from_inputs()
 	if _planning_input == null:
 		_update_hover_action_icon()
@@ -639,6 +641,7 @@ func recompute_hover_ranges(
 		and _cached_hover_force == cache_force
 		and _cached_hover_proj_key == proj_key
 		and _cached_hover_awaiting_targeting == cache_awaiting_targeting
+		and _cached_hover_coord == _hover_coord
 	):
 		return
 	_cached_hover_unit_id = unit.id
@@ -648,6 +651,7 @@ func recompute_hover_ranges(
 	_cached_hover_force = cache_force
 	_cached_hover_proj_key = proj_key
 	_cached_hover_awaiting_targeting = cache_awaiting_targeting
+	_cached_hover_coord = _hover_coord
 	_hover_move_tiles.clear()
 	_hover_action_range_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):

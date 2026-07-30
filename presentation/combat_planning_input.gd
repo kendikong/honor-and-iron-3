@@ -2271,7 +2271,7 @@ func action_range_premove_cell_for_gate() -> Vector2i:
 	var last_move: TimelineAction = pre_moves[pre_moves.size() - 1] as TimelineAction
 	if last_move == null:
 		return actor.position
-	return last_move.destination
+	return last_move.target_coord
 
 
 ## True when this unit's current planning intent (drag / live path / committed move) needs Run.

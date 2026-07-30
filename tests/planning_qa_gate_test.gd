@@ -2062,6 +2062,9 @@ static func _test_action_range_hides_when_auto_run_blocks_skill_ap(failures: Arr
 	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
 	director.auto_run = true
 	fix.knight.ability.points_left = 1
+	var projected_knight: UnitState = director.projected_state.get_unit_by_id(1) if director.projected_state != null else null
+	if projected_knight != null:
+		projected_knight.ability.points_left = 1
 	var bowling_idx: int = _ability_index(fix.knight, BOWLING_CHARGE_ID)
 	if bowling_idx < 0:
 		failures.append("PlanningQAGate action_range_auto_run_ap_gate: Bowling Charge missing")
