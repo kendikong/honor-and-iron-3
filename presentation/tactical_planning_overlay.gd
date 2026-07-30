@@ -342,7 +342,7 @@ func set_preview_board(board: BoardState) -> void:
 	queue_redraw()
 
 
-func set_hover_coord(coord: Vector2i) -> void:
+func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 	if coord == _hover_coord:
 		return
 	_hover_coord = coord
@@ -351,7 +351,8 @@ func set_hover_coord(coord: Vector2i) -> void:
 		_recompute_hover_ranges_from_inputs()
 	if _planning_input == null:
 		_update_hover_action_icon()
-	queue_redraw()
+	if redraw:
+		queue_redraw()
 
 
 func begin_drag_sprite(unit_id: int) -> void:

@@ -27,6 +27,7 @@ var _drag_press_local: Vector2 = Vector2.ZERO
 
 const _DRAG_THRESHOLD_PX: float = 6.0
 const _ABILITY_SCROLL_SETTLE_SEC: float = 0.075
+const _HOVER_HEAVY_MIN_INTERVAL_SEC: float = 0.032
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -47,6 +48,10 @@ var _plan_refresh_followup_pending: bool = false
 var _hover_preview_refresh_pending: bool = false
 var _ability_scroll_settle_generation: int = 0
 var _ability_hover_settle_pending: bool = false
+var _hover_heavy_frame_pending: bool = false
+var _hover_heavy_throttle_gen: int = 0
+var _hover_heavy_last_flush_usec: int = 0
+var _last_heavy_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -705,7 +710,8 @@ func _resync_hover_after_ability_change() -> void:
 	if not _director.board.is_in_bounds(hover):
 		return
 	_last_planning_hover_cell = Vector2i(-9999, -9999)
-	on_hover_moved(hover)
+	_last_heavy_hover_refresh_cell = Vector2i(-9999, -9999)
+	_flush_hover_heavy_sync()
 
 
 func _schedule_ability_settled_refresh() -> void:
@@ -819,12 +825,78 @@ func on_hover_moved(cell: Vector2i) -> void:
 		if _intent_state != null:
 			_intent_state.set_hover_coord(cell)
 		if _planning != null:
-			_planning.set_hover_coord(cell)
+			_planning.set_hover_coord(cell, false)
 	if not _is_planning() or dragging:
 		return
 	var planning_cell_changed: bool = cell != _last_planning_hover_cell
 	if planning_cell_changed:
 		_last_planning_hover_cell = cell
+	if _director.board.is_in_bounds(cell) and _director.selected_unit_id >= 0 and planning_cell_changed:
+		var p_unit := _proj_unit(_director.selected_unit_id)
+		if p_unit != null:
+			var ability := _selected_ability_data(p_unit)
+			var is_awaiting_move = awaiting_targeting_active() and ability != null and AbilitySystem.ability_has_movement_effect(ability)
+			if _basic_move_allowed() or is_awaiting_move:
+				if _drag_route.is_empty():
+					_drag_unit_id = _director.selected_unit_id
+					_drag_route = [_proj_move_origin(p_unit)]
+				_extend_drag_route(cell)
+	if not _director.board.is_in_bounds(cell):
+		_flush_hover_heavy_sync()
+		return
+	_schedule_hover_heavy_refresh()
+
+
+func _schedule_hover_heavy_refresh() -> void:
+	if _map_view == null or not _map_view.is_inside_tree():
+		_flush_hover_heavy_sync()
+		return
+	if _hover_heavy_frame_pending:
+		return
+	_hover_heavy_frame_pending = true
+	call_deferred("_deferred_begin_hover_heavy_flush")
+
+
+func _deferred_begin_hover_heavy_flush() -> void:
+	_hover_heavy_frame_pending = false
+	_begin_hover_heavy_throttled_flush()
+
+
+func _begin_hover_heavy_throttled_flush() -> void:
+	if _director == null or not _is_planning() or dragging:
+		return
+	var now_usec: int = Time.get_ticks_usec()
+	var elapsed_sec: float = (
+		float(now_usec - _hover_heavy_last_flush_usec) / 1_000_000.0
+		if _hover_heavy_last_flush_usec > 0
+		else _HOVER_HEAVY_MIN_INTERVAL_SEC
+	)
+	if elapsed_sec < _HOVER_HEAVY_MIN_INTERVAL_SEC:
+		_hover_heavy_throttle_gen += 1
+		var gen: int = _hover_heavy_throttle_gen
+		var wait_sec: float = maxf(_HOVER_HEAVY_MIN_INTERVAL_SEC - elapsed_sec, 0.001)
+		_map_view.get_tree().create_timer(wait_sec).timeout.connect(
+			func() -> void:
+				if gen != _hover_heavy_throttle_gen:
+					return
+				_run_hover_heavy_refresh(),
+			CONNECT_ONE_SHOT,
+		)
+		return
+	_run_hover_heavy_refresh()
+
+
+func _flush_hover_heavy_sync() -> void:
+	_hover_heavy_throttle_gen += 1
+	_hover_heavy_frame_pending = false
+	_run_hover_heavy_refresh()
+
+
+func _run_hover_heavy_refresh() -> void:
+	if _director == null or _director.board == null or not _is_planning() or dragging:
+		return
+	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	_hover_heavy_last_flush_usec = Time.get_ticks_usec()
 	if not _director.board.is_in_bounds(cell):
 		if _director.selected_unit_id >= 0:
 			_restore_hover_preview()
@@ -833,31 +905,26 @@ func on_hover_moved(cell: Vector2i) -> void:
 			if _planning != null:
 				_planning._invalidate_hover_cache()
 				_planning._recompute_hover_ranges_from_inputs()
-		if planning_cell_changed:
-			refresh_mouse_cursor(cell)
+		_last_heavy_hover_refresh_cell = cell
+		if _planning != null:
+			_planning.queue_redraw()
+		refresh_mouse_cursor(cell)
 		return
+	var planning_cell_changed: bool = cell != _last_heavy_hover_refresh_cell
 	if _director.selected_unit_id >= 0:
-		if planning_cell_changed:
-			var p_unit := _proj_unit(_director.selected_unit_id)
-			if p_unit != null:
-				var ability := _selected_ability_data(p_unit)
-				var is_awaiting_move = awaiting_targeting_active() and ability != null and AbilitySystem.ability_has_movement_effect(ability)
-				if _basic_move_allowed() or is_awaiting_move:
-					if _drag_route.is_empty():
-						_drag_unit_id = _director.selected_unit_id
-						_drag_route = [_proj_move_origin(p_unit)]
-					_extend_drag_route(cell)
 		if planning_cell_changed:
 			_sync_threat_origin_from_cell(cell)
 		if _should_refresh_hover_preview(cell, planning_cell_changed):
 			_refresh_selected_interaction_preview()
 	elif planning_cell_changed:
 		_update_hover_attack_preview()
-	# Red action-range tiles anchor on live preview stand — recompute only after preview refresh.
 	if _planning != null and planning_cell_changed:
 		_planning._recompute_hover_ranges_from_inputs()
 	if planning_cell_changed:
 		refresh_mouse_cursor(cell)
+	_last_heavy_hover_refresh_cell = cell
+	if _planning != null:
+		_planning.queue_redraw()
 
 
 func get_hover_tile_for_ui() -> Vector2i:
@@ -1368,6 +1435,7 @@ func _commit_at_cell(
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
 	face_dir: int = -1,
 ) -> bool:
+	_flush_hover_heavy_sync()
 	if selected_phase_action_exhausted(unit_id):
 		_play_sfx("invalid")
 		return false
