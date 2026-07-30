@@ -55,6 +55,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_timeline_ghost_clears_when_committed,
 		_test_action_range_centered_on_live_stand,
 		_test_enemy_skill_hover_not_movement_route,
+		_test_enemy_bash_approach_move_leg,
 		_test_hook_pull_preview_keeps_attack_target,
 	]
 	var names: PackedStringArray = [
@@ -97,6 +98,7 @@ static func run_all(failures: Array[String]) -> void:
 		"timeline_ghost_commit",
 		"action_range_live_stand",
 		"enemy_hover_not_move_route",
+		"bash_enemy_approach_leg",
 		"hook_pull_attack_target",
 	]
 	for i: int in range(tests.size()):
@@ -1652,6 +1654,36 @@ static func _test_enemy_skill_hover_not_movement_route(failures: Array[String]) 
 	if input.hover_attack_target_id() != fix.enemy.id:
 		failures.append(
 			"PlanningQAGate enemy_hover_not_move_route: enemy hover must resolve attack target id",
+		)
+
+
+static func _test_enemy_bash_approach_move_leg(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate bash_enemy_approach_leg: Shield Bash missing")
+		return
+	director.selected_ability_index = bash_idx
+	input.on_hover_moved(ENEMY_POS)
+	if not input.is_live_preview_active():
+		failures.append(
+			"PlanningQAGate bash_enemy_approach_leg: live preview required on enemy hover",
+		)
+		return
+	if input.interaction_move_hover_active(1, ENEMY_POS):
+		failures.append(
+			"PlanningQAGate bash_enemy_approach_leg: enemy hover must not be move-tile hover",
+		)
+		return
+	var leg: Array = CombatPlanningPreview.pending_move_route_leg(
+		1, input.preview_state, director, fix.board,
+	)
+	if leg.size() < 2:
+		failures.append(
+			"PlanningQAGate bash_enemy_approach_leg: expected pre-move leg, got %s" % str(leg),
 		)
 
 

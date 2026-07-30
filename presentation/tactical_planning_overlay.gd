@@ -1399,11 +1399,15 @@ func _draw_interaction_overlay() -> void:
 		_planning_input != null
 		and not _planning_input.drag_preview_failed
 		and _planning_input.is_live_preview_active()
-		and _interaction_move_hover_active(actor.id)
 	):
 		var draw_route: Array = _interaction_move_route(actor.id, prev, route)
 		if draw_route.size() >= 2:
-			_draw_route_line(draw_route, p_col, true, true)
+			var draw_move_line: bool = _interaction_move_hover_active(actor.id)
+			# Skill targeting on enemy: draw pre-move approach leg (solid), not only dotted target arrow.
+			if not draw_move_line and _resolve_overlay_attack_target_id() >= 0:
+				draw_move_line = true
+			if draw_move_line:
+				_draw_route_line(draw_route, p_col, true, true)
 	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
 	var route_col := Color(p_col.r, p_col.g, p_col.b, 0.95)
 	var attack_target_id: int = _resolve_overlay_attack_target_id()
