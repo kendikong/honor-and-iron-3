@@ -900,6 +900,12 @@ func _sync_planning_unit_position(unit: UnitState) -> void:
 		_sync_planning_final_facing(unit.id)
 		_update_depth(unit.id)
 		return
+	if _director != null and _director.plan_refresh_snap_units:
+		_kill_move_tween(unit.id)
+		_position_actor(unit.id, target)
+		_sync_planning_final_facing(unit.id)
+		_update_depth(unit.id)
+		return
 	if _director != null and _director.take_planning_move_instant(unit.id):
 		_position_actor(unit.id, target)
 		_sync_planning_final_facing(unit.id)

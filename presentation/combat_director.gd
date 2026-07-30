@@ -66,6 +66,10 @@ var _pending_refresh_board: BoardState
 var _pending_refresh_plan: Timeline
 var _pending_refresh_statuses: PackedStringArray
 var _pending_refresh_preview: SimResult
+## Undo/remove: snap sprites immediately; enables sim-only fast path (never skips walk/run on commit).
+var plan_refresh_snap_units: bool = false
+var _refresh_plan_queued: bool = false
+var _cached_wait_marker_ghost_events: Array[SimEvent] = []
 ## When this returns true, default victory/defeat checks are skipped (battle continues).
 var suppress_end_state: Callable = Callable()
 
@@ -283,7 +287,7 @@ func rpc_plan_wait(unit_id: int) -> void:
 	if unit_has_wait_planned(unit_id):
 		_clear_unit_wait(unit_id)
 		plan_affected_unit_ids = [unit_id]
-		_refresh_plan()
+		_queue_refresh_plan()
 		return
 	var target_timing: int = _get_move_timing(unit_id)
 	if target_timing != GameEnums.MoveTiming.PRE_ACTION:
@@ -299,7 +303,7 @@ func rpc_plan_wait(unit_id: int) -> void:
 	selected_ability_index = -1
 	EventBus.ability_selected.emit(selected_ability_index)
 	plan_affected_unit_ids = [unit_id]
-	_refresh_plan()
+	_queue_refresh_plan()
 
 
 func unit_has_wait_planned(unit_id: int) -> bool:
@@ -1432,7 +1436,7 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						return
 					var removed: TimelineAction = plan_post_move.entries[i]
 					plan_post_move.remove_at(i)
-					plan_affected_unit_ids = [unit_id]
+					_begin_undo_plan_refresh(unit_id)
 					_refresh_plan()
 					_reselect_ability_from_action(removed)
 					return
@@ -1444,7 +1448,7 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						return
 					var removed: TimelineAction = plan_action.entries[i]
 					plan_action.remove_at(i)
-					plan_affected_unit_ids = [unit_id]
+					_begin_undo_plan_refresh(unit_id)
 					_refresh_plan()
 					_reselect_ability_from_action(removed)
 					return
@@ -1457,7 +1461,7 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 					var removed: TimelineAction = plan_pre_move.entries[i]
 					_cancel_ally_plans_after_movement_step(removed)
 					plan_pre_move.remove_at(i)
-					plan_affected_unit_ids = [unit_id]
+					_begin_undo_plan_refresh(unit_id)
 					_refresh_plan()
 					_reselect_ability_from_action(removed)
 					return
@@ -1504,7 +1508,7 @@ func rpc_remove_action(index: int) -> void:
 			EventBus.action_rejected.emit("cannot_undo_trample")
 			return
 		plan_post_move.remove_at(post_idx)
-	plan_affected_unit_ids = [action.actor_id]
+	_begin_undo_plan_refresh(action.actor_id)
 	_refresh_plan()
 	_reselect_ability_from_action(action)
 
@@ -1551,8 +1555,8 @@ func rpc_clear_unit_actions(unit_id: int) -> void:
 				kept_2.append(a)
 		plan_post_move.entries = kept_2
 		_clear_unit_wait(unit_id)
-		plan_affected_unit_ids = [unit_id]
-	_refresh_plan()
+		_begin_undo_plan_refresh(unit_id)
+		_refresh_plan()
 
 func clear_plan() -> void:
 	if is_planning_phase(phase):
@@ -2127,8 +2131,36 @@ func unit_has_undoable_action(unit_id: int) -> bool:
 	return false
 
 
+func _begin_undo_plan_refresh(unit_id: int) -> void:
+	plan_affected_unit_ids = [unit_id]
+	plan_refresh_snap_units = true
+
+
 func _refresh_plan() -> void:
+	_refresh_plan_core()
+
+
+func _queue_refresh_plan() -> void:
+	if _refresh_plan_queued:
+		return
+	_refresh_plan_queued = true
+	call_deferred("_flush_queued_refresh_plan")
+
+
+func _flush_queued_refresh_plan() -> void:
+	_refresh_plan_queued = false
+	_refresh_plan_core()
+
+
+func _refresh_plan_core() -> void:
 	var plan_to_run := _get_combined_plan()
+	if _plan_is_wait_marker_only(plan_to_run):
+		_refresh_plan_wait_marker_only(plan_to_run)
+		return
+	_cached_wait_marker_ghost_events.clear()
+	if plan_refresh_snap_units and _plan_is_movement_only(plan_to_run):
+		_refresh_plan_snap_movement_only(plan_to_run)
+		return
 	var move_only := base_board.clone()
 	var full_proj := base_board.clone()
 	var statuses := PackedStringArray()
@@ -2193,6 +2225,74 @@ func _refresh_plan() -> void:
 	_defer_plan_refresh_signals(board, plan_to_run, statuses, sim_res)
 
 
+func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
+	var move_only := base_board.clone()
+	for action: TimelineAction in plan.entries:
+		if action.awaiting_target or action.type != GameEnums.ActionType.MOVE:
+			continue
+		var move_ev: Array[SimEvent] = []
+		ResolutionPipeline.apply_action(move_only, action, move_ev)
+		ResolutionPipeline.resolve_pending_pushes(move_only, move_ev)
+	_commit_animate_actions.clear()
+
+	projected_state = base_board.clone()
+	var evs: Array[SimEvent] = []
+	Simulator.simulate_player_turn(projected_state, plan, evs)
+	board = move_only
+
+	var new_intents := EnemyPlanner.plan(projected_state)
+	base_board.intents = new_intents
+	board.intents = new_intents
+	projected_state.intents = new_intents
+
+	plan_revision += 1
+	sync_selected_ability_if_invalid()
+
+	var preview_board: BoardState = projected_state.clone()
+	var ghost_evs := _build_ghost_events(preview_board, plan, new_intents)
+	var sim_res := SimResult.new(preview_board)
+	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
+	var statuses := PackedStringArray()
+	statuses.resize(maxi(plan.size(), 1))
+	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
+
+
+func _refresh_plan_wait_marker_only(plan: Timeline) -> void:
+	_commit_animate_actions.clear()
+	projected_state = base_board.clone()
+	for action: TimelineAction in plan.entries:
+		if action.awaiting_target:
+			continue
+		if action.type != GameEnums.ActionType.ABILITY:
+			continue
+		if action.ability == null or not action.ability.is_universal_wait():
+			continue
+		var unit: UnitState = projected_state.get_unit_by_id(action.actor_id)
+		if unit != null:
+			unit.turn_action_used = true
+	board = projected_state
+	var intents: Array = base_board.intents
+	if intents.is_empty():
+		intents = EnemyPlanner.plan(projected_state)
+		base_board.intents = intents
+	board.intents = base_board.intents
+	projected_state.intents = base_board.intents
+	plan_revision += 1
+	sync_selected_ability_if_invalid()
+	var ghost_evs: Array[SimEvent]
+	if not _cached_wait_marker_ghost_events.is_empty():
+		ghost_evs = _cached_wait_marker_ghost_events
+	else:
+		var preview_board: BoardState = projected_state.clone()
+		ghost_evs = _build_ghost_events(preview_board, plan, intents)
+		_cached_wait_marker_ghost_events = ghost_evs.duplicate()
+	var sim_res := SimResult.new(projected_state.clone())
+	sim_res.events = _preview_events_for_overlay([], ghost_evs)
+	var statuses := PackedStringArray()
+	statuses.resize(maxi(plan.size(), 1))
+	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
+
+
 func _plan_is_movement_only(plan: Timeline) -> bool:
 	if plan == null:
 		return true
@@ -2204,6 +2304,22 @@ func _plan_is_movement_only(plan: Timeline) -> bool:
 	return true
 
 
+func _plan_is_wait_marker_only(plan: Timeline) -> bool:
+	if plan == null:
+		return true
+	for action: TimelineAction in plan.entries:
+		if action.awaiting_target:
+			continue
+		if action.type == GameEnums.ActionType.MOVE:
+			return false
+		if action.type == GameEnums.ActionType.FACE:
+			return false
+		if action.type == GameEnums.ActionType.ABILITY:
+			if action.ability == null or not action.ability.is_universal_wait():
+				return false
+			continue
+		return false
+	return true
 
 
 func _defer_plan_refresh_signals(
@@ -2235,6 +2351,7 @@ func _flush_plan_refresh_signals() -> void:
 	EventBus.timeline_changed.emit(_pending_refresh_plan, _pending_refresh_statuses)
 	EventBus.preview_updated.emit(_pending_refresh_preview)
 	plan_affected_unit_ids.clear()
+	plan_refresh_snap_units = false
 	_pending_refresh_board = null
 	_pending_refresh_plan = null
 	_pending_refresh_preview = null
