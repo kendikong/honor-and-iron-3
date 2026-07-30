@@ -45,6 +45,10 @@ const _TARGETING_INTENT_FLOW_SPEED: float = 45.0
 const _TARGETING_INTENT_HEAD_SPACING: float = 90.0
 const _FORCED_MOVE_INTENT_FLOW_SPEED: float = 45.0
 const _FORCED_MOVE_INTENT_HEAD_SPACING: float = 48.0
+const _PUSH_INTENT_DASH_LEN: float = 6.0
+const _PUSH_INTENT_DASH_GAP: float = 4.0
+const _PUSH_INTENT_CHEVRON_LEN: float = 5.0
+const _PUSH_INTENT_CHEVRON_HALF_W: float = 3.5
 const _INTENT_DOT_FLOW_SPEED: float = _TARGETING_INTENT_FLOW_SPEED * 0.4
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
@@ -1162,6 +1166,80 @@ func _draw_flowing_arrowheads_on_line(
 		arrow_pos += head_spacing
 
 
+func _draw_dashed_shaft_on_line(
+	start_pt: Vector2,
+	end_pt: Vector2,
+	color: Color,
+	line_w: float,
+	dash_len: float,
+	gap_len: float,
+) -> void:
+	var delta: Vector2 = end_pt - start_pt
+	var dist: float = delta.length()
+	if dist < 0.001:
+		return
+	var travel_dir: Vector2 = delta / dist
+	var d: float = 0.0
+	while d < dist:
+		var draw_end: float = minf(d + dash_len, dist)
+		draw_line(start_pt + travel_dir * d, start_pt + travel_dir * draw_end, color, line_w)
+		d += dash_len + gap_len
+
+
+func _draw_filled_chevron_at(
+	tip: Vector2,
+	dir: Vector2,
+	color: Color,
+	chevron_len: float,
+	half_w: float,
+) -> void:
+	var travel_dir: Vector2 = dir
+	if travel_dir.length_squared() < 0.0001:
+		travel_dir = Vector2.RIGHT
+	else:
+		travel_dir = travel_dir.normalized()
+	var perp: Vector2 = Vector2(-travel_dir.y, travel_dir.x)
+	var base: Vector2 = tip - travel_dir * chevron_len
+	var wing_l: Vector2 = base + perp * half_w
+	var wing_r: Vector2 = base - perp * half_w
+	var head := PackedVector2Array([
+		Vector2(round(tip.x), round(tip.y)),
+		Vector2(round(wing_l.x), round(wing_l.y)),
+		Vector2(round(wing_r.x), round(wing_r.y)),
+	])
+	draw_colored_polygon(head, color)
+
+
+func _draw_flowing_filled_chevrons_on_line(
+	start_pt: Vector2,
+	end_pt: Vector2,
+	color: Color,
+	start_offset: float = 0.0,
+	end_offset: float = 0.0,
+	flow_speed: float = _FORCED_MOVE_INTENT_FLOW_SPEED,
+	head_spacing: float = _FORCED_MOVE_INTENT_HEAD_SPACING,
+) -> void:
+	var delta: Vector2 = end_pt - start_pt
+	var total_len: float = delta.length()
+	if total_len < 0.001:
+		return
+	var dir: Vector2 = delta / total_len
+	var t: float = Time.get_ticks_msec() / 1000.0
+	var path_offset: float = fmod(t * flow_speed, head_spacing)
+	var arrow_pos: float = path_offset
+	while arrow_pos < total_len - end_offset:
+		if arrow_pos > start_offset:
+			var tip: Vector2 = start_pt + dir * arrow_pos
+			_draw_filled_chevron_at(
+				tip,
+				dir,
+				color,
+				_PUSH_INTENT_CHEVRON_LEN,
+				_PUSH_INTENT_CHEVRON_HALF_W,
+			)
+		arrow_pos += head_spacing
+
+
 func _draw_flowing_arrowheads_for_route(
 	cells: Array,
 	color: Color,
@@ -1752,17 +1830,55 @@ func _draw_dotted_intent_segment(
 			)
 
 
-func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
-	_draw_dotted_intent_segment(
-		from,
-		to,
+func _draw_displacement_intent_segment(
+	from: Vector2i,
+	to: Vector2i,
+	color: Color,
+	trim_start: bool,
+	with_head: bool,
+) -> void:
+	if _map_view == null:
+		return
+	var start_center: Vector2 = _map_view.grid_to_local(from)
+	var dest_center: Vector2 = _map_view.grid_to_local(to)
+	var delta: Vector2 = dest_center - start_center
+	if delta.length_squared() < 0.001:
+		return
+	var travel_dir: Vector2 = delta.normalized()
+	var start_pt: Vector2 = start_center
+	if trim_start:
+		start_pt = start_center + travel_dir * _token_radius()
+	if not with_head:
+		_draw_dashed_shaft_on_line(
+			start_pt,
+			dest_center,
+			color,
+			_FORCED_MOVE_LINE_W,
+			_PUSH_INTENT_DASH_LEN,
+			_PUSH_INTENT_DASH_GAP,
+		)
+		return
+	var shaft_end: Vector2 = dest_center
+	var inset: float = _PUSH_INTENT_CHEVRON_LEN * _ROUTE_SHAFT_HEAD_OVERLAP
+	shaft_end = dest_center - travel_dir * inset
+	if start_pt.distance_to(shaft_end) >= 1.0:
+		_draw_dashed_shaft_on_line(
+			start_pt,
+			shaft_end,
+			color,
+			_FORCED_MOVE_LINE_W,
+			_PUSH_INTENT_DASH_LEN,
+			_PUSH_INTENT_DASH_GAP,
+		)
+	_draw_flowing_filled_chevrons_on_line(
+		start_pt,
+		dest_center,
 		color,
-		true,
-		true,
-		true,
-		_FORCED_MOVE_INTENT_FLOW_SPEED,
-		_FORCED_MOVE_INTENT_HEAD_SPACING,
 	)
+
+
+func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
+	_draw_displacement_intent_segment(from, to, color, true, true)
 
 
 func _draw_targeting_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
