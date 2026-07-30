@@ -786,6 +786,8 @@ func _should_animate_move(event: SimEvent) -> bool:
 	var unit_id: int = int(event.data.get("actor", -1))
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if CombatDirector.is_planning_phase(_phase):
+		if _director != null and _director.is_planning_move_instant(unit_id):
+			return false
 		return unit != null and not unit.is_enemy()
 	if unit != null and unit.is_enemy():
 		return true

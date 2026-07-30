@@ -893,6 +893,14 @@ func take_planning_move_instant(unit_id: int) -> bool:
 	return _instant_planning_move_units.erase(unit_id)
 
 
+func is_planning_move_instant(unit_id: int) -> bool:
+	return _instant_planning_move_units.has(unit_id)
+
+
+func clear_planning_move_instant(unit_id: int) -> void:
+	_instant_planning_move_units.erase(unit_id)
+
+
 func get_planned_move_waypoints(unit_id: int) -> Array[Vector2i]:
 	for i: int in range(plan_post_move.size() - 1, -1, -1):
 		var action: TimelineAction = plan_post_move.entries[i]

@@ -1466,13 +1466,15 @@ func _commit_at_cell(
 		_play_sfx("invalid")
 		_clear_intent_snapshot()
 		return false
+	_notify_drag_plan_move_committed(unit_id)
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
+		if _drag_move_commit_instant and _director != null:
+			_director.clear_planning_move_instant(unit_id)
 		_play_sfx("invalid")
 		return false
 	_play_commit_sfx(slots)
 	_promote_intent_preview_after_commit()
 	_on_commit_slots_applied(unit_id, slots)
-	_notify_drag_plan_move_committed(unit_id)
 	_clear_intent_snapshot()
 	return true
 
