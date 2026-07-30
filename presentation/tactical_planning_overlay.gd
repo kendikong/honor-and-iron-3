@@ -42,7 +42,9 @@ const _INTENT_DOT_SPACING: float = 7.0
 const _INTENT_ARROW_HEAD_LEN: float = 7.0
 const _INTENT_ARROW_HEAD_ANGLE_DEG: float = 28.0
 const _TARGETING_INTENT_FLOW_SPEED: float = 45.0
-const _FORCED_MOVE_INTENT_FLOW_SPEED: float = 95.0
+const _TARGETING_INTENT_HEAD_SPACING: float = 90.0
+const _FORCED_MOVE_INTENT_FLOW_SPEED: float = 45.0
+const _FORCED_MOVE_INTENT_HEAD_SPACING: float = 48.0
 const _INTENT_DOT_FLOW_SPEED: float = _TARGETING_INTENT_FLOW_SPEED * 0.4
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
@@ -1140,6 +1142,7 @@ func _draw_flowing_arrowheads_on_line(
 	start_offset: float = 0.0,
 	end_offset: float = 0.0,
 	flow_speed: float = _TARGETING_INTENT_FLOW_SPEED,
+	head_spacing: float = _TARGETING_INTENT_HEAD_SPACING,
 ) -> void:
 	var delta: Vector2 = end_pt - start_pt
 	var total_len: float = delta.length()
@@ -1147,8 +1150,7 @@ func _draw_flowing_arrowheads_on_line(
 		return
 	var dir: Vector2 = delta / total_len
 	var t: float = Time.get_ticks_msec() / 1000.0
-	var wave_spacing := 90.0
-	var path_offset: float = fmod(t * flow_speed, wave_spacing)
+	var path_offset: float = fmod(t * flow_speed, head_spacing)
 	var arrow_pos: float = path_offset
 	while arrow_pos < total_len - end_offset:
 		if arrow_pos > start_offset:
@@ -1157,7 +1159,7 @@ func _draw_flowing_arrowheads_on_line(
 			var wing2: Vector2 = tip - dir.rotated(deg_to_rad(-wing_angle_deg)) * wing_len
 			draw_line(tip, wing1, color, line_w)
 			draw_line(tip, wing2, color, line_w)
-		arrow_pos += wave_spacing
+		arrow_pos += head_spacing
 
 
 func _draw_flowing_arrowheads_for_route(
@@ -1675,6 +1677,7 @@ func _draw_dotted_intent_segment(
 	with_head: bool,
 	flowing_head: bool = false,
 	flow_speed: float = _TARGETING_INTENT_FLOW_SPEED,
+	head_spacing: float = _TARGETING_INTENT_HEAD_SPACING,
 ) -> void:
 	if _map_view == null:
 		return
@@ -1704,6 +1707,7 @@ func _draw_dotted_intent_segment(
 					0.0,
 					0.0,
 					flow_speed,
+					head_spacing,
 				)
 			else:
 				_draw_line_arrowhead(
@@ -1735,6 +1739,7 @@ func _draw_dotted_intent_segment(
 				0.0,
 				0.0,
 				flow_speed,
+				head_spacing,
 			)
 		else:
 			_draw_line_arrowhead(
@@ -1749,13 +1754,27 @@ func _draw_dotted_intent_segment(
 
 func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
 	_draw_dotted_intent_segment(
-		from, to, color, true, true, true, _FORCED_MOVE_INTENT_FLOW_SPEED,
+		from,
+		to,
+		color,
+		true,
+		true,
+		true,
+		_FORCED_MOVE_INTENT_FLOW_SPEED,
+		_FORCED_MOVE_INTENT_HEAD_SPACING,
 	)
 
 
 func _draw_targeting_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
 	_draw_dotted_intent_segment(
-		from, to, color, true, true, true, _TARGETING_INTENT_FLOW_SPEED,
+		from,
+		to,
+		color,
+		true,
+		true,
+		true,
+		_TARGETING_INTENT_FLOW_SPEED,
+		_TARGETING_INTENT_HEAD_SPACING,
 	)
 
 
