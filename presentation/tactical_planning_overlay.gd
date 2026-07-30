@@ -815,29 +815,6 @@ func _on_preview_updated(result: SimResult) -> void:
 		queue_redraw()
 		return
 	set_preview_board(result.final_state)
-	var movement_only: bool = (
-		_director != null
-		and _director.consume_movement_only_refresh()
-		and not _director.plan_refresh_snap_units
-	)
-	if movement_only and _board != null:
-		if _committed_preview.preview_board == null:
-			_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
-		else:
-			CombatPlanningPreview.apply_movement_result(
-				_committed_preview, result, _director, _board,
-			)
-		_preview_board = _committed_preview.preview_board
-		_has_stashed_committed = false
-		if _planning_input == null or not _planning_input.is_live_preview_active():
-			if _unit_layer != null:
-				_unit_layer.set_predicted_stats(
-					_committed_preview.predicted_hp,
-					_committed_preview.predicted_armor,
-				)
-			live_preview_changed.emit()
-		queue_redraw()
-		return
 	_invalidate_hover_cache()
 	if _director != null and _board != null:
 		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
