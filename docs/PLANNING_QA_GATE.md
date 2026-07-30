@@ -1,8 +1,10 @@
 # Planning QA Gate
 
+**Mandatory** after any planning/commit/preview/undo gameplay change — see `.cursor/rules/qa-after-gameplay-changes.mdc`.
+
 Automated mirror of the owner's manual planning checklist (Skill Arena / TestBattle).
-Use this gate **before and after every performance optimization** that touches planning,
-preview, commit slots, overlay draw, or hover sim.
+Use this gate **before and after every change** that touches planning,
+preview, commit slots, overlay draw, hover sim, or `CombatDirector` refresh — not only perf work.
 
 ## Two layers
 

@@ -1,0 +1,60 @@
+---
+description: ABSOLUTE — run automated QA after any gameplay-system edit before ending the turn
+alwaysApply: true
+---
+
+# QA After Gameplay Changes (ABSOLUTE — ALWAYS ON)
+
+**Mandatory.** The owner must not have to ask "did you run QA?" after combat, planning, sim, or ability work.
+
+If this turn **changed gameplay systems** (see scope below), the agent **must run the matching automated QA suite(s)** and **report PASS or FAIL** in the turn **Changelog** before ending the turn. **Do not claim a fix is done without QA output.**
+
+## What counts as a gameplay-system change
+
+Any edit under these paths (or equivalent behavior owners):
+
+| Domain | Typical paths / owners |
+|--------|-------------------------|
+| Simulation | `core/simulation/`, `Simulator`, `ResolutionPipeline`, `BoardState` / `UnitState` resolution |
+| Combat systems | `core/systems/` (`AbilitySystem`, `MovementSystem`, `CombatSystem`, …) |
+| Planning / commit | `presentation/combat_planning_input.gd`, `combat_director.gd`, commit slots, preview, drag/drop, undo |
+| Abilities / data | `data/definitions/`, ability `.tres`, factories that affect combat legality or resolution |
+| Presentation tied to sim | `tactical_unit_layer.gd`, `tactical_planning_overlay.gd`, planning cursor/icons when commit/preview semantics change |
+| Tests that **fix** gameplay | Changing production code **and** tests together still requires running the suite |
+
+**Not in scope (QA not required):** pure docs, `.cursor/rules`, menu/UI theming with no combat behavior, living-map/VFX-only slices (use phase visual gates from `phase-audit.mdc` instead).
+
+## Which suite to run
+
+| Change touches | Run (headless) |
+|----------------|----------------|
+| Planning, preview, commit, drag, undo, cursor, overlay paths, `CombatDirector` refresh | **Planning QA gate** — `.\scripts\run_planning_qa_gate.ps1` or `res://tests/run_planning_qa_gate.gd` |
+| Drag-drop / `on_left_release` / stash only (narrow) | `res://tests/run_drag_e2e_only.gd` **plus** note in Changelog if full gate was skipped |
+| Core sim / bridge / broad combat regression | **Full regression** — `.\scripts\run_regression_tests.ps1 -GodotPath "<godot.exe>"` |
+| Both planning and core sim | **Full regression** (includes planning gate) |
+
+When unsure, run **Planning QA gate** at minimum for anything in `presentation/combat_*` or planning input. Run **full regression** when `core/simulation/` or `ResolutionPipeline` changes.
+
+Authoritative checklist mapping: `docs/PLANNING_QA_GATE.md`.
+
+## Agent workflow (every gameplay edit turn)
+
+1. Implement the change.
+2. **Run** the required suite(s) — agent executes the command; do not only tell the owner to run it.
+3. **Changelog (mandatory):** under `### QA`, record:
+   - Suite name(s) run
+   - **Result:** `PASS` or `FAIL`
+   - On FAIL: paste or summarize `[FAIL]` lines; **fix or stop** — do not hand-wave "should work"
+4. **Commit** per `auto-commit-absolute.mdc` only after QA **PASS**, or after documenting FAIL with owner-approved deferral.
+
+## Fail policy
+
+- **FAIL → do not mark task complete.** Fix and re-run QA, or stop and report blockers.
+- **Skipped QA → rule violation** (same severity as skipping auto-commit).
+- **Manual Layer B** (F5 pixels, walk anim feel, FPS) remains the owner's job; headless PASS does not replace visual checks for animation/perf claims.
+
+## Relationship to other rules
+
+- **Parent:** `global-systems-first.mdc` — preview/commit parity tests live in planning QA.
+- **Complements:** `phase-audit.mdc` (phase gates), `move-preview-intent-truth.mdc` (drag E2E catches release path).
+- **Wins over:** convenience, "small fix", ending the turn without running tests.

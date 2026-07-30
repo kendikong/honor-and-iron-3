@@ -11,7 +11,7 @@ The project owner must **not** have to re-explain this. Agents enforce it on **e
 
 ## Priority order (when rules conflict)
 
-1. **This rule** + `.cursor/rules/no-bandaid-fixes.mdc` + `.cursor/rules/skill-global-rules.mdc` + `.cursor/rules/move-preview-intent-truth.mdc`
+1. **This rule** + `.cursor/rules/no-bandaid-fixes.mdc` + `.cursor/rules/skill-global-rules.mdc` + `.cursor/rules/move-preview-intent-truth.mdc` + `.cursor/rules/qa-after-gameplay-changes.mdc`
 2. Roadmap / phase gates / architecture skills (`Simulator`, layers, timeline, `AbilitySystem`)
 3. Convenience, speed, “small local fix,” model-default shortcuts
 
