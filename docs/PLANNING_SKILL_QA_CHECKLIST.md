@@ -14,27 +14,157 @@ Use this checklist for **every class skill** (manual F5 + automated tests). One 
 
 Every skill test must record pass/fail at **each** phase. Do not skip a phase because “slots looked fine in code.”
 
-| Phase | What you do | What must be correct |
-|-------|-------------|----------------------|
-| **1. Select** | Click your unit. Select the skill (or basic move). | Blue move tiles. Red skill-range tiles (or correctly hidden). Cursor state. AP/MP display if shown. |
-| **2. Hover empty tiles** | Move mouse over open tiles (no commit). | Blue and red update with the cursor. Move-preview ghosts/paths match where you would stand. Nothing stale from start tile. |
-| **3. Pathing** | Paint a path (walk and/or run). Change hover while pathing. | Path line, waypoints, run vs walk icon, blue/red at **intent stand** (end of path / hover), previews stay in sync. |
-| **4. Hover enemy** (if skill targets enemy) | Hover enemy (and approach tiles if needed). | Approach path, walk/run cursor, attack cursor, push/pull arrows, blue/red anchored at **attack stand** not knight start. |
-| **5. Commit** | Click or drop to lock the plan. | **Same** paths, tiles, arrows, timeline icons, projected AP/MP as last valid preview. No jump or redraw after click. |
-| **6. Execute** | End planning / run turn. | Units end where preview/commit said. Pushes, pulls, damage, statuses match preview. |
-| **7. Pre / post-move** | Add or change PRE_MOVE or POST_MOVE after the above. | Phases 2–6 checks still hold. Tiles and preview refresh; nothing left stale from before. |
+### Phase 1 — Select unit and skill
 
-### At every phase, check these layers together
+**What you do:** Click your unit. Select the skill from the bar (or leave basic move selected).
 
-| Layer | Question |
-|-------|----------|
-| **Blue tiles** | Can I move here? Correct set for MP, run, committed pre-move? |
-| **Red tiles** | Can this skill hit from **where I would stand**? Hidden when skill is impossible (e.g. run ate last AP)? |
-| **Move preview** | Ghost/path shows the route and end position I expect? |
-| **Arrows** | Push, pull, approach, trample — direction and target match design? |
-| **Cursor** | Walk, run, attack, composite icons match intent? |
-| **Slots / timeline** | Pre / action / post columns match what preview showed? |
-| **Economy** | AP/MP after commit matches what preview implied? |
+**What must be correct:**
+
+- **Selection:** The right unit is selected. Enemy units are not accidentally selected. Selection highlight matches the unit you clicked.
+- **Blue move tiles:** Every blue tile is a tile you can legally reach this turn with current MP, movement type, and terrain. Tiles you cannot reach are not blue. If you already committed a PRE_MOVE, blue is calculated from your **projected** position and remaining MP — not from where you started the turn.
+- **Blue when blocked:** Rooted, staggered, or out-of-MP units show no blue (or the correct reduced set). Bleed doubles move cost where rules say so.
+- **Red skill-range tiles:** If a class skill is selected, red shows where that skill can target **from your current intent stand** (usually current projected position). Red is absent when no skill is selected, when Run/Wait is selected, or when the skill cannot be used (silence, stagger, pacify on attack skills, etc.).
+- **Red anchor:** Red is drawn from where you would **stand** to use the skill, not from a stale start tile after you have already committed movement.
+- **Red vs economy:** If using the skill after an implicit or committed move would cost too much AP/MP, red must hide — not show a range you cannot afford.
+- **Move preview at rest:** With no hover yet, ghosts/paths should be idle or absent — not showing a path from a previous unit, previous skill, or previous hover.
+- **Cursor:** Default planning cursor (or skill-appropriate idle cursor). No walk/run/attack composite until you hover a valid target.
+- **AP/MP display:** Side panel or HUD shows correct AP and MP for the **projected** unit state (after committed pre-moves on the timeline).
+- **Timeline:** Empty columns show empty. Any already-committed pre/action/post icons match what you committed earlier in the test.
+- **No stale overlay:** Switching onto this unit from another unit clears the previous unit’s blue/red, paths, and arrows.
+
+---
+
+### Phase 2 — Hover empty tiles
+
+**What you do:** Move the mouse over open tiles (no enemy on tile). Do not commit yet.
+
+**What must be correct:**
+
+- **Blue updates live:** As the cursor moves, the blue reachable set stays correct for the hovered intent. It does not flicker to a wrong set or freeze on the first tile you hovered.
+- **Red follows stand:** Red skill range re-anchors to the tile you would stand on if you moved there (implicit premove / hover stand). Red tiles shift when the stand shifts — they do not stay drawn as if you were still on your start cell.
+- **Red hide when illegal:** Hovering a tile that requires Run when you cannot afford Run + skill must hide red (or show that bash/trample/etc. is impossible after that premove). Same for any AP/MP rule that blocks the skill after that stand.
+- **Move preview ghost:** Unit ghost (or path endpoint) appears on the hovered tile when that hover represents a valid move intent. Ghost position equals preview board position for your unit.
+- **Path line:** If the game draws a path to the hover tile, every step is walkable, respects MP budget, and uses Run only when rules require Run. Path does not cut through blockers or show a route you cannot afford.
+- **Path vs committed plan:** If you already have a committed PRE_MOVE, hovering other tiles shows preview **in addition to** or **instead of** committed state per rules — but never contradicts the timeline (e.g. ghost on a tile that committed plan says you will not visit).
+- **Cursor on empty tile:** Walk glyph on adjacent/legal walk tiles; run glyph when destination requires run; no attack glyph on empty tiles unless a movement skill targets tiles.
+- **Composite cursor:** If auto-use-skill-after-move is on and AP allows move+skill, cursor may show walk+attack (or run+attack) on tiles that set up a valid pair — only when both legs are actually affordable.
+- **Arrows:** No push/pull/approach arrows on empty tiles unless a skill explicitly previews displacement through that hover (e.g. trample corridor). No orphan arrows from last hover.
+- **Threat / danger overlay:** If enabled, danger tiles stay consistent with hover — no stale threat from previous cell.
+- **Performance:** Hover does not leave trails of wrong tiles; moving mouse away clears or updates preview promptly.
+
+---
+
+### Phase 3 — Pathing (walk, run, drag)
+
+**What you do:** Paint a path by dragging or stepping through tiles. Include at least one walk-only segment and one run-required segment if the skill test allows.
+
+**What must be correct:**
+
+- **Paint order:** Waypoints are stored in the order you painted them. Autocorrect on jump-drag does not silently reorder your corridor (e.g. east-then-north stays east-then-north).
+- **Path preview:** The drawn route matches painted waypoints tile-for-tile. Preview path in data (`preview_paths`) matches what you see.
+- **Run vs walk:** Tiles that require Run show run cursor/icon on commit preview; walk tiles show walk. Run is not shown when a walk suffices. Run is shown when distance/rules require it.
+- **Run economy:** If Run would consume AP needed for the selected skill, red range and skill pairing behave correctly (hide red or drop skill leg — per design).
+- **Blue during drag:** While dragging, blue reachable set reflects drag origin rules (fixed range origin if applicable). Illegal extensions are rejected or not painted.
+- **Red during drag:** Red range anchors to the **end** of the current drag route (intent stand), not the drag start, unless rules say otherwise for awaiting-target skills.
+- **Drop preview:** Releasing drag on a valid cell shows the same slots/preview as clicking that cell (click/drop parity).
+- **Cancel drag:** Right-click or invalid cancel clears painted route and restores preview to committed + hover state — no leftover waypoints in slots.
+- **Stale route rejected:** Changing hover or enemy target after a bad drag does not keep stale approach waypoints (e.g. diagonal shortcut that is not the canonical bash approach).
+- **Occupancy:** Path cannot end on an occupied enemy tile for a plain move; skill approach rules handle enemy-adjacent stops correctly.
+- **Timeline ghost:** Before commit, timeline ghost (if shown) matches painted intent — pre/action/post placement preview.
+
+---
+
+### Phase 4 — Hover enemy (and approach tiles)
+
+**What you do:** Hover the enemy unit (and any approach tiles between you and the enemy). Do not commit until you have verified preview.
+
+**What must be correct:**
+
+- **Approach leg:** If you are not adjacent, preview builds a pre-move to the correct approach tile (e.g. bash approach `(6,5)` from knight `(4,5)` vs dummy `(7,5)`). Approach is walk or run per MP/rules — not an illegal diagonal or wrong flank if design specifies one approach.
+- **Action leg:** Skill action targets the enemy (or correct cell), correct ability id, correct timing column (usually PRE_ACTION for bash/hook).
+- **Walk + attack cursor:** Enemy hover shows composite cursor when move+skill is valid (walk+attack or run+attack). Cursor matches what slots will commit.
+- **Red at attack stand:** Red tiles are centered on **approach / stand** cell, not knight’s pre-move start. Enemy must be inside red if in range from that stand.
+- **Blue on enemy hover:** Blue still shows legal movement options from projected state where rules allow — not confused with attack range.
+- **Push arrow (bash, etc.):** Orange push arrow points **away** from player. Segment is from enemy cell to landing cell. Arrow only appears when skill is valid.
+- **Pull arrow (hook, etc.):** Orange pull arrow points **toward** player. Segment matches preview displacement.
+- **Trample / tile skills:** For tile-target skills, hover shows valid target tiles in red; painted corridor matches trample path; awaiting-target state keeps red visible where rules say so.
+- **Preview board:** Ghost positions match — knight on approach tile, enemy still on start until push/pull applied in preview; after push/pull, enemy on landing cell in preview board.
+- **preview_pushes / displacement:** Data matches arrows — landing cell equals preview board enemy position.
+- **Targeting cell:** Skills that need pre-push position target the enemy **before** displacement, not the cell they land on.
+- **Out of range:** Hovering enemy when bash/hook cannot reach even with move shows invalid slots or no attack leg — not a lying attack cursor.
+- **Switch hover:** Moving from enemy A to enemy B (if multiple) updates approach, arrows, and slots — no stale arrow toward first enemy.
+
+---
+
+### Phase 5 — Commit
+
+**What you do:** Click or drop to lock the plan shown in preview.
+
+**What must be correct:**
+
+- **Preview = commit (absolute):** Timeline entries match last valid preview slots — same pre-move destination, same waypoints, same action target, same ability, same uses_run flag, same timing column.
+- **No post-click jump:** Immediately after commit, ghosts, blue/red, paths, and arrows do not **change interpretation** relative to what preview showed on the frame before click. Commit ratifies; it does not recalculate a different move or attack.
+- **Promote path:** Live preview is promoted to committed display; stale live preview board is cleared; overlay recomputes tiles from new projected state.
+- **Timeline icons:** PRE_MOVE shows walk or run icon matching committed step. ACTION shows skill icon. POST_MOVE if used shows move icon.
+- **Projected AP/MP:** After commit, projected unit AP/MP match what preview implied (e.g. committed run only → 0 AP if run costs 1 AP and you had 1).
+- **Red after commit:** If skill is no longer affordable from new projected state, red hides (e.g. bash selected, run committed, 0 AP, hover destination → **no red**).
+- **Blue after commit:** Move range reflects remaining MP and whether another move slot is open.
+- **Cursor after commit:** Cursor glyph matches new state (often run icon on committed run dest, or idle on exhausted unit).
+- **Undo available:** If rules allow undo, undo stack includes what you just committed.
+- **Reject invalid:** Invalid click does not partial-commit — no half timeline, no corrupted preview.
+- **Click vs drop:** Same cell → same commit for click path and drag-drop path.
+- **Sound/UI:** Reject sound on invalid only; no false success feedback.
+
+---
+
+### Phase 6 — Execute
+
+**What you do:** End planning and run the turn (or run sim in headless test).
+
+**What must be correct:**
+
+- **Unit positions:** Every unit ends on the cell preview and commit promised. Knight on approach/final cell; enemy on pushed/pulled cell or original if no displacement.
+- **Push direction:** Bash pushes away from attacker along correct axis. Hook pulls toward attacker. No sideways or zero-length displacement unless design says so.
+- **Order of resolution:** Pre-move resolves before action; post-move after action; matches timeline column order.
+- **Run spend:** Run consumes AP and applies run boost when committed step uses run. Walk consumes MP only when walk step.
+- **Damage / effects:** HP, armor, statuses match preview predictions where preview shows them.
+- **Failed action:** If sim would fail, preview should have blocked commit earlier — no surprise fail after honest preview.
+- **Determinism:** Same plan executed twice → same result (no combat RNG).
+- **Animation layer (manual):** Sprites follow committed path smoothly; no teleport except where sim says teleport. See Layer B.
+
+---
+
+### Phase 7 — Pre-move / post-move after
+
+**What you do:** After a commit (or partial plan), add or change PRE_MOVE or POST_MOVE — e.g. commit walk first, then skill; or skill then post-move reposition.
+
+**What must be correct:**
+
+- **Column rules:** PRE_MOVE fills before action when appropriate; POST_MOVE only when action slot allows; no illegal double-fill of same timing slot.
+- **Re-run phases 2–6:** After each new commit, hover empty tiles, path, enemy hover, commit, and execute all behave as in phases 2–6 — using **new** projected stand as the baseline.
+- **Red/blue refresh:** Tiles recompute from projection + timeline — not from turn-start position.
+- **Approach from new stand:** Enemy hover builds approach from **committed** pre-move destination, not from original spawn cell.
+- **Arrows refresh:** Push/pull preview uses new geometry after pre-move committed.
+- **Undo boundaries:** Undo last action removes skill but may keep pre-move (per rules); tiles/preview match after undo.
+- **Exhaustion:** When AP/MP/slots are exhausted, blue/red hide correctly; wait/run rules apply.
+- **No ghost bleed:** Committed timeline ghost clears when live hover matches committed pre-move; live ghost does not stack on committed ghost incorrectly.
+
+---
+
+### At every phase — check these layers together
+
+Do not pass a phase if only one layer looks right. All applicable rows must pass.
+
+| Layer | What must be correct |
+|-------|----------------------|
+| **Blue tiles** | Set equals legal reachable tiles for projected MP, movement type, terrain, bleed, root/stagger, and open move slot. Updates when hover, drag, commit, or timeline changes. Never includes blocked or out-of-budget cells. |
+| **Red tiles** | Set equals skill range from **intent stand** (hover stand, path end, or projected position). Hidden when no skill, Run/Wait selected, skill illegal, or economy forbids skill after premove. Overlay red matches `action_range_visible_for_hover()` gate. |
+| **Move preview** | `preview_board` unit positions match ghosts. `preview_paths` match drawn path. Clearing hover clears or updates preview — no orphan preview board. Live preview active flag matches whether preview is shown. |
+| **Arrows** | Push/pull/trample/approach arrows match `preview_pushes` and design direction. Arrows disappear when intent becomes invalid. No arrows from previous hover cell. |
+| **Cursor** | `compute_hover_action_icon` / commit-slot cursor match intent (walk, run, attack, composite, wait). Hidden or default when invalid. |
+| **Slots / timeline** | `_final_commit_slots_for_interaction` (or click/drop equivalent) matches preview. pre/action/post arrays match timeline after commit. Waypoints preserved. `uses_run` correct. |
+| **Economy** | `planning_display_ap_left` / projected AP match preview. MP idem. Run cost applied in projection when run step committed or previewed. |
+| **Parity** | Hover slots = click slots = drop slots for same cell. Preview = commit. Commit = sim (for execute phase). |
 
 **Automated tests must assert the same layers** at each scripted step (overlay tile sets + live preview + slots + sim). Slot-only checks alone are **not** enough.
 
@@ -47,13 +177,35 @@ Copy this block per skill, per build:
 ```
 Skill: _______________  Date: _______  Build/commit: _______
 
-[ ] 1 Select       — blue / red / cursor / AP
-[ ] 2 Hover empty  — tiles + preview follow cursor
-[ ] 3 Pathing      — walk + run + path preview
-[ ] 4 Hover enemy  — approach + arrows + tiles at stand
-[ ] 5 Commit       — matches last preview (no jump)
-[ ] 6 Execute      — sim matches commit
-[ ] 7 Pre/post     — add move column; repeat 2–6
+Phase 1 — Select
+[ ] Blue correct for MP / projection / terrain
+[ ] Red correct or hidden (skill, economy, status)
+[ ] Red anchored on stand not stale start
+[ ] Cursor + AP/MP + timeline baseline
+
+Phase 2 — Hover empty
+[ ] Blue + red follow cursor / intent stand
+[ ] Ghost + path match hover; no stale tiles
+[ ] Cursor walk/run correct; arrows absent unless valid
+
+Phase 3 — Pathing
+[ ] Paint order preserved; preview path = painted
+[ ] Run vs walk icon + economy; red at path end
+[ ] Click/drop parity; cancel clears stale route
+
+Phase 4 — Hover enemy (or tile target)
+[ ] Approach + action legs; composite cursor
+[ ] Red at attack stand; push/pull arrows + preview board
+
+Phase 5 — Commit
+[ ] Timeline = last preview; no post-click jump
+[ ] AP/MP projected; red/blue refresh (e.g. run + 0 AP)
+
+Phase 6 — Execute
+[ ] Positions + push/pull + order match preview/sim
+
+Phase 7 — Pre/post move
+[ ] Re-check phases 2–6 from new projected stand
 
 Notes / failures:
 ```
