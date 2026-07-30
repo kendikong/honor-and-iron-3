@@ -695,10 +695,7 @@ func _on_ability_selected(_index: int) -> void:
 
 
 func _schedule_ability_selection_flush() -> void:
-	if _map_view != null and _map_view.is_inside_tree():
-		_map_view.get_tree().call_deferred(Callable(self, "_flush_ability_selection_refresh"))
-	else:
-		call_deferred("_flush_ability_selection_refresh")
+	call_deferred("_flush_ability_selection_refresh")
 
 
 func _resync_hover_after_ability_change() -> void:
