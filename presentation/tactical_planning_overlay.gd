@@ -41,6 +41,8 @@ const _INTENT_DOT_RADIUS: float = 1.25
 const _INTENT_DOT_SPACING: float = 7.0
 const _INTENT_ARROW_HEAD_LEN: float = 7.0
 const _INTENT_ARROW_HEAD_ANGLE_DEG: float = 28.0
+const _TARGETING_INTENT_FLOW_SPEED: float = 45.0
+const _FORCED_MOVE_INTENT_FLOW_SPEED: float = 95.0
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
 const _INTENT_ROUTE_ALPHA: float = 0.40
@@ -1136,6 +1138,7 @@ func _draw_flowing_arrowheads_on_line(
 	wing_angle_deg: float,
 	start_offset: float = 0.0,
 	end_offset: float = 0.0,
+	flow_speed: float = _TARGETING_INTENT_FLOW_SPEED,
 ) -> void:
 	var delta: Vector2 = end_pt - start_pt
 	var total_len: float = delta.length()
@@ -1143,7 +1146,6 @@ func _draw_flowing_arrowheads_on_line(
 		return
 	var dir: Vector2 = delta / total_len
 	var t: float = Time.get_ticks_msec() / 1000.0
-	var flow_speed := 45.0
 	var wave_spacing := 90.0
 	var path_offset: float = fmod(t * flow_speed, wave_spacing)
 	var arrow_pos: float = path_offset
@@ -1671,6 +1673,7 @@ func _draw_dotted_intent_segment(
 	trim_start: bool,
 	with_head: bool,
 	flowing_head: bool = false,
+	flow_speed: float = _TARGETING_INTENT_FLOW_SPEED,
 ) -> void:
 	if _map_view == null:
 		return
@@ -1697,6 +1700,9 @@ func _draw_dotted_intent_segment(
 					_FORCED_MOVE_LINE_W,
 					_INTENT_ARROW_HEAD_LEN,
 					_INTENT_ARROW_HEAD_ANGLE_DEG,
+					0.0,
+					0.0,
+					flow_speed,
 				)
 			else:
 				_draw_line_arrowhead(
@@ -1710,6 +1716,9 @@ func _draw_dotted_intent_segment(
 		return
 	var dist: float = start_pt.distance_to(shaft_end)
 	var d: float = 0.0
+	if flowing_head:
+		var t: float = Time.get_ticks_msec() / 1000.0
+		d = fmod(t * flow_speed * 0.4, _INTENT_DOT_SPACING)
 	while d < dist:
 		draw_circle(start_pt + travel_dir * d, _INTENT_DOT_RADIUS, color)
 		d += _INTENT_DOT_SPACING
@@ -1722,6 +1731,9 @@ func _draw_dotted_intent_segment(
 				_FORCED_MOVE_LINE_W,
 				_INTENT_ARROW_HEAD_LEN,
 				_INTENT_ARROW_HEAD_ANGLE_DEG,
+				0.0,
+				0.0,
+				flow_speed,
 			)
 		else:
 			_draw_line_arrowhead(
@@ -1735,11 +1747,15 @@ func _draw_dotted_intent_segment(
 
 
 func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
-	_draw_dotted_intent_segment(from, to, color, true, true, true)
+	_draw_dotted_intent_segment(
+		from, to, color, true, true, true, _FORCED_MOVE_INTENT_FLOW_SPEED,
+	)
 
 
 func _draw_targeting_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
-	_draw_dotted_intent_segment(from, to, color, true, true, true)
+	_draw_dotted_intent_segment(
+		from, to, color, true, true, true, _TARGETING_INTENT_FLOW_SPEED,
+	)
 
 
 func _draw_push_arrow(from: Vector2i, to: Vector2i, pushed_unit: UnitState = null) -> void:
