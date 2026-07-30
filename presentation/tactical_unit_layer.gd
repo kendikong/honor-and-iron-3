@@ -61,6 +61,7 @@ var _drag_preview_last_failed: bool = false
 var _planning_input: CombatPlanningInput
 var _planning_overlay: TacticalPlanningOverlay
 var _show_team_outlines: bool = false
+var _contact_shadow_sync_pending: bool = false
 
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
 
@@ -88,6 +89,35 @@ func sync_all_contact_shadows(settings: EffectsSettings) -> void:
 	if _map_view != null:
 		shadow_root = _map_view.get_shadow_sprites()
 	EffectsController.sync_contact_shadow_on_actors(_actors, settings, shadow_root)
+
+
+func _schedule_contact_shadow_sync() -> void:
+	if _contact_shadow_sync_pending:
+		return
+	_contact_shadow_sync_pending = true
+	call_deferred("_flush_contact_shadow_sync")
+
+
+func _flush_contact_shadow_sync() -> void:
+	_contact_shadow_sync_pending = false
+	if _map_view == null or not _move_tweens.is_empty():
+		return
+	var shadow_settings: EffectsSettings = _map_view.get_effects_settings()
+	if shadow_settings == null:
+		return
+	if shadow_settings.oblique_contact_shadows or shadow_settings.cloud_shadows:
+		sync_all_contact_shadows(shadow_settings)
+
+
+func _sync_actor_contact_shadow_after_move(unit_id: int) -> void:
+	if _map_view == null:
+		return
+	var shadow_settings: EffectsSettings = _map_view.get_effects_settings()
+	if shadow_settings == null:
+		return
+	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
+	if actor != null:
+		actor.sync_contact_shadow(shadow_settings)
 
 
 func bind_sfx(sfx: SfxPlayer) -> void:
@@ -532,12 +562,7 @@ func _sync_actors() -> void:
 		if not live.has(id) and not _pending_death.has(id):
 			_remove_actor(int(id))
 	_refresh_unit_glows()
-	if _map_view != null:
-		var shadow_settings: EffectsSettings = _map_view.get_effects_settings()
-		if shadow_settings != null and (
-			shadow_settings.oblique_contact_shadows or shadow_settings.cloud_shadows
-		):
-			sync_all_contact_shadows(shadow_settings)
+	_schedule_contact_shadow_sync()
 
 
 func _record_attack_source(event: SimEvent) -> void:
@@ -1077,6 +1102,8 @@ func _play_cell_path_tween(
 				_position_actor(unit_id, live.position)
 			_sync_planning_final_facing(unit_id)
 		_update_depth(unit_id)
+		_sync_actor_contact_shadow_after_move(unit_id)
+		_schedule_contact_shadow_sync()
 	)
 
 

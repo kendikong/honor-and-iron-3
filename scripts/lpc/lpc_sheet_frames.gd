@@ -6,6 +6,9 @@ extends RefCounted
 const WALK_ANIMS: Array[StringName] = [
 	&"walk_up", &"walk_left", &"walk_down", &"walk_right",
 ]
+const RUN_ANIMS: Array[StringName] = [
+	&"run_up", &"run_left", &"run_down", &"run_right",
+]
 const IDLE_ANIMS: Array[StringName] = [
 	&"idle_up", &"idle_left", &"idle_down", &"idle_right",
 ]
@@ -38,8 +41,12 @@ static func get_lazy_frames(
 static func prewarm_locomotion(frames: SpriteFrames) -> void:
 	if frames == null:
 		return
-	ensure_animation(frames, &"walk_up")
-	ensure_animation(frames, &"run_up")
+	for anim: StringName in WALK_ANIMS:
+		ensure_animation(frames, anim)
+	for anim: StringName in RUN_ANIMS:
+		ensure_animation(frames, anim)
+	for anim: StringName in IDLE_ANIMS:
+		ensure_animation(frames, anim)
 
 
 static func ensure_animation(frames: SpriteFrames, action: StringName) -> void:

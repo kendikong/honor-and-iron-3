@@ -317,7 +317,8 @@ func set_facing(anim: StringName) -> void:
 		return
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
-	_schedule_contact_shadow_rebuild()
+	if not _walking:
+		_schedule_contact_shadow_rebuild()
 
 
 func apply_path_motion(
@@ -341,7 +342,7 @@ func apply_path_motion(
 		return
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
-	_schedule_contact_shadow_rebuild()
+	# Locomotion reuses the last baked silhouette; rebuild when walk stops or idle turns.
 
 
 func set_walking(moving: bool) -> void:
@@ -352,7 +353,8 @@ func set_walking(moving: bool) -> void:
 		return
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
-	_schedule_contact_shadow_rebuild()
+	if not moving:
+		_schedule_contact_shadow_rebuild()
 
 
 func set_running(running: bool) -> void:
@@ -364,7 +366,8 @@ func set_running(running: bool) -> void:
 		return
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
-	_schedule_contact_shadow_rebuild()
+	if not _walking:
+		_schedule_contact_shadow_rebuild()
 
 
 func set_dash_running(enabled: bool) -> void:
@@ -374,7 +377,8 @@ func set_dash_running(enabled: bool) -> void:
 		return
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
-	_schedule_contact_shadow_rebuild()
+	if not _walking:
+		_schedule_contact_shadow_rebuild()
 
 
 func set_planning_exhausted(exhausted: bool) -> void:
