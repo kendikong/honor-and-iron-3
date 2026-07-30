@@ -815,6 +815,12 @@ func _on_preview_updated(result: SimResult) -> void:
 		queue_redraw()
 		return
 	set_preview_board(result.final_state)
+	var wait_marker_only: bool = (
+		_director != null and _director.consume_wait_marker_only_refresh()
+	)
+	if wait_marker_only:
+		queue_redraw()
+		return
 	var movement_only: bool = (
 		_director != null and _director.consume_movement_only_refresh()
 	)
