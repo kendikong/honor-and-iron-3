@@ -1376,10 +1376,8 @@ static func _test_ability_select_refreshes_enemy_hover_path(failures: Array[Stri
 	input.on_hover_moved(ENEMY_POS)
 	director.selected_ability_index = other_idx
 	input._on_ability_selected(other_idx)
-	input._flush_ability_selection_refresh()
 	director.selected_ability_index = bash_idx
 	input._on_ability_selected(bash_idx)
-	input._flush_ability_selection_refresh()
 	if not input.is_live_preview_active():
 		failures.append(
 			"PlanningQAGate ability scroll hover: Shield Bash on enemy must activate live preview",

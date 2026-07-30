@@ -392,6 +392,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		if _paint_valid_movement_endpoint_intent():
 			return
 		drag_preview_failed = true
+		_hover_preview_cache_key = ""
 		preview_state.clear_interaction()
 		## Drop stale spent-AP boards so UI does not keep a previous skill's preview.
 		preview_state.preview_board = null
@@ -685,22 +686,40 @@ func _on_ability_selected(_index: int) -> void:
 	if _director == null:
 		return
 	_invalidate_planning_hover_cache()
+	_clear_intent_snapshot()
+	_sync_intent_skill_mode()
+	_resync_hover_after_ability_change()
 	if not _ability_selection_flush_pending:
 		_ability_selection_flush_pending = true
+		_schedule_ability_selection_flush()
+
+
+func _schedule_ability_selection_flush() -> void:
+	if _map_view != null and _map_view.is_inside_tree():
+		_map_view.get_tree().call_deferred(Callable(self, "_flush_ability_selection_refresh"))
+	else:
 		call_deferred("_flush_ability_selection_refresh")
+
+
+func _resync_hover_after_ability_change() -> void:
+	if not _is_planning() or dragging or _intent_state == null or _director.board == null:
+		return
+	var hover: Vector2i = _intent_state.hover_coord
+	if not _director.board.is_in_bounds(hover):
+		return
+	_last_planning_hover_cell = Vector2i(-9999, -9999)
+	on_hover_moved(hover)
 
 
 func _flush_ability_selection_refresh() -> void:
 	_ability_selection_flush_pending = false
 	if _director == null:
 		return
-	_sync_intent_skill_mode()
 	if dragging:
 		clear_awaiting_targeting()
 		_request_planning_selection_refresh()
 		refresh_live_preview()
 		return
-	_refresh_planning_hover_at_current_cell(false)
 	_schedule_ability_settled_refresh()
 
 
@@ -1119,9 +1138,8 @@ func _refresh_live_interaction_preview(
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else move_coord
 	var cache_key: String = _hover_interaction_cache_key(unit_id, cell, attack_target_id)
-	if cache_key == _hover_preview_cache_key:
+	if cache_key == _hover_preview_cache_key and preview_state.preview_board != null:
 		return
-	_hover_preview_cache_key = cache_key
 	var res: Dictionary = _preview_at_interaction_cell(
 		unit_id, cell, move_coord, attack_target_id, waypoints, _snapshot_drag_legal_move_tiles(),
 	)
@@ -1139,6 +1157,10 @@ func _refresh_live_interaction_preview(
 	var pv_actor: UnitState = temp_board.get_unit_by_id(unit_id) if temp_board != null else null
 	drag_sim_actor_pos = pv_actor.position if pv_actor != null else move_coord
 	_apply_live_preview(res)
+	if preview_state.preview_board != null and not drag_preview_failed:
+		_hover_preview_cache_key = cache_key
+	else:
+		_hover_preview_cache_key = ""
 
 
 func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> int:
