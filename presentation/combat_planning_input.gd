@@ -45,8 +45,8 @@ var _overlay_cursor_cell: Vector2i = Vector2i(-9999, -9999)
 var _selection_refresh_pending: bool = false
 var _plan_refresh_followup_pending: bool = false
 var _hover_preview_refresh_pending: bool = false
-var _ability_selection_flush_pending: bool = false
 var _ability_scroll_settle_generation: int = 0
+var _ability_hover_settle_pending: bool = false
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -685,17 +685,17 @@ func _finish_selection_changed() -> void:
 func _on_ability_selected(_index: int) -> void:
 	if _director == null:
 		return
-	_invalidate_planning_hover_cache()
+	_invalidate_planning_hover_cache(false)
 	_clear_intent_snapshot()
 	_sync_intent_skill_mode()
-	_resync_hover_after_ability_change()
-	if not _ability_selection_flush_pending:
-		_ability_selection_flush_pending = true
-		_schedule_ability_selection_flush()
-
-
-func _schedule_ability_selection_flush() -> void:
-	call_deferred("_flush_ability_selection_refresh")
+	if dragging:
+		_ability_hover_settle_pending = false
+		clear_awaiting_targeting()
+		_request_planning_selection_refresh()
+		refresh_live_preview()
+		return
+	_ability_hover_settle_pending = true
+	_schedule_ability_settled_refresh()
 
 
 func _resync_hover_after_ability_change() -> void:
@@ -706,18 +706,6 @@ func _resync_hover_after_ability_change() -> void:
 		return
 	_last_planning_hover_cell = Vector2i(-9999, -9999)
 	on_hover_moved(hover)
-
-
-func _flush_ability_selection_refresh() -> void:
-	_ability_selection_flush_pending = false
-	if _director == null:
-		return
-	if dragging:
-		clear_awaiting_targeting()
-		_request_planning_selection_refresh()
-		refresh_live_preview()
-		return
-	_schedule_ability_settled_refresh()
 
 
 func _schedule_ability_settled_refresh() -> void:
@@ -739,10 +727,12 @@ func _schedule_ability_settled_refresh() -> void:
 func _run_ability_settled_refresh() -> void:
 	if _director == null:
 		return
+	_ability_hover_settle_pending = false
 	var had_awaiting: bool = awaiting_targeting_active()
 	clear_awaiting_targeting()
 	if had_awaiting:
 		return
+	_resync_hover_after_ability_change()
 	if _intent_state != null:
 		refresh_mouse_cursor(_intent_state.hover_coord)
 
@@ -806,8 +796,9 @@ func _sync_intent_skill_mode() -> void:
 		_intent_state.set_skill_interaction_active(_skill_interaction_active() or aiming)
 
 
-func _invalidate_planning_hover_cache() -> void:
-	_last_planning_hover_cell = Vector2i(-9999, -9999)
+func _invalidate_planning_hover_cache(reset_hover_cell: bool = true) -> void:
+	if reset_hover_cell:
+		_last_planning_hover_cell = Vector2i(-9999, -9999)
 	_hover_preview_cache_key = ""
 	_hover_cursor_cache_key = ""
 	_hover_cursor_cached_icon = ""
@@ -858,7 +849,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 					_extend_drag_route(cell)
 		if planning_cell_changed:
 			_sync_threat_origin_from_cell(cell)
-		_refresh_selected_interaction_preview()
+		if _should_refresh_hover_preview(cell, planning_cell_changed):
+			_refresh_selected_interaction_preview()
 	elif planning_cell_changed:
 		_update_hover_attack_preview()
 	# Red action-range tiles anchor on live preview stand — recompute only after preview refresh.
@@ -882,6 +874,26 @@ func is_live_preview_active() -> bool:
 	if selected_phase_action_exhausted():
 		return false
 	return preview_state.preview_board != null
+
+
+func _should_refresh_hover_preview(cell: Vector2i, planning_cell_changed: bool) -> bool:
+	if planning_cell_changed:
+		return true
+	if _ability_hover_settle_pending:
+		return false
+	return not _hover_preview_fresh_at(cell)
+
+
+func _hover_preview_fresh_at(cell: Vector2i) -> bool:
+	if preview_state.preview_board == null or _hover_preview_cache_key.is_empty():
+		return false
+	if _director == null or _director.selected_unit_id < 0:
+		return false
+	var target_id: int = _hover_attack_target_id()
+	var expected_key: String = _hover_interaction_cache_key(
+		_director.selected_unit_id, cell, target_id,
+	)
+	return expected_key == _hover_preview_cache_key
 
 
 func interaction_move_hover_active(unit_id: int, cell: Vector2i) -> bool:

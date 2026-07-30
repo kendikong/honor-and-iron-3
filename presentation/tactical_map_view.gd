@@ -57,6 +57,7 @@ var _last_tree_variant_b: bool = false
 var _char_profile: CharacterGenProfile = CharacterGenProfile.new()
 var _fps_hud: FpsHud
 var _clock_hud: WorldClockHud
+var _last_polled_hover_cell: Vector2i = Vector2i(-999999, -999999)
 var _tree_fader: TreeCanopyFader
 var _planning_input: CombatPlanningInput
 var _autobattler_panel: AutobattlerControlPanel
@@ -479,12 +480,18 @@ func _update_hover_coord() -> void:
 		return
 	var hc: Control = get_viewport().gui_get_hovered_control()
 	if hc != null and _hover_blocked_by_ui(hc):
-		if _planning_input != null:
-			_planning_input.on_hover_moved(Vector2i(-999, -999))
-		elif _side_panels != null:
-			_side_panels.set_hover_coord(Vector2i(-999, -999))
+		var blocked_cell := Vector2i(-999, -999)
+		if _last_polled_hover_cell != blocked_cell:
+			_last_polled_hover_cell = blocked_cell
+			if _planning_input != null:
+				_planning_input.on_hover_moved(blocked_cell)
+			elif _side_panels != null:
+				_side_panels.set_hover_coord(blocked_cell)
 		return
 	var cell: Vector2i = screen_to_grid(get_viewport().get_mouse_position())
+	if cell == _last_polled_hover_cell:
+		return
+	_last_polled_hover_cell = cell
 	if _planning_input != null:
 		_planning_input.on_hover_moved(cell)
 	else:
