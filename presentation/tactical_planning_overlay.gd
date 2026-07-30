@@ -747,7 +747,7 @@ func _process(delta: float) -> void:
 
 
 func _overlay_needs_flow_animation() -> bool:
-	if _attack_target_id >= 0:
+	if _resolve_overlay_attack_target_id() >= 0:
 		return true
 	if _planning_input != null and _planning_input.dragging:
 		return true
@@ -978,7 +978,19 @@ func _draw_ability_intents() -> void:
 					if path_leg.size() >= 2:
 						draw_route = path_leg
 			if draw_route.size() >= 2:
-				_draw_route_line(draw_route, p_col, true, true)
+				var from_cell: Vector2i = draw_route[0] as Vector2i
+				var to_cell: Vector2i = draw_route[draw_route.size() - 1] as Vector2i
+				if (
+					action.ability != null
+					and AbilitySystem.ability_has_movement_effect(action.ability)
+				):
+					_draw_route_line(draw_route, p_col, true, true)
+				else:
+					if action.target_unit_id >= 0:
+						var tgt: UnitState = _board.get_unit_by_id(action.target_unit_id)
+						if tgt != null:
+							to_cell = tgt.position
+					_draw_targeting_intent_arrow(from_cell, to_cell, p_col)
 	var preview_board: BoardState = _display_preview_board()
 
 	for intent: Variant in _display_intent_list():
@@ -1366,6 +1378,12 @@ func _interaction_move_route(unit_id: int, prev: CombatPlanningPreview, route: A
 	return []
 
 
+func _resolve_overlay_attack_target_id() -> int:
+	if _planning_input != null:
+		return _planning_input.hover_attack_target_id()
+	return _attack_target_id
+
+
 func _draw_interaction_overlay() -> void:
 	if _director == null or _director.selected_unit_id < 0:
 		return
@@ -1395,16 +1413,16 @@ func _draw_interaction_overlay() -> void:
 			_draw_route_line(draw_route, p_col, true, true)
 	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
 	var route_col := Color(p_col.r, p_col.g, p_col.b, 0.95)
-	
-	if _attack_target_id >= 0:
+	var attack_target_id: int = _resolve_overlay_attack_target_id()
+	if attack_target_id >= 0:
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord
-		var target_unit := prev.preview_board.get_unit_by_id(_attack_target_id)
+		var target_unit := prev.preview_board.get_unit_by_id(attack_target_id)
 		if target_unit == null and _board != null:
-			target_unit = _board.get_unit_by_id(_attack_target_id)
+			target_unit = _board.get_unit_by_id(attack_target_id)
 		if target_unit != null:
 			target_coord = target_unit.position
-		if origin != target_coord and not _unit_has_push_preview(prev, _attack_target_id):
+		if origin != target_coord:
 			_draw_targeting_intent_arrow(origin, target_coord, route_col)
 	elif (
 		sel_ability != null

@@ -54,6 +54,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_timeline_ghost_clears_when_committed,
 		_test_action_range_centered_on_live_stand,
 		_test_enemy_skill_hover_not_movement_route,
+		_test_hook_pull_preview_keeps_attack_target,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -94,6 +95,7 @@ static func run_all(failures: Array[String]) -> void:
 		"timeline_ghost_commit",
 		"action_range_live_stand",
 		"enemy_hover_not_move_route",
+		"hook_pull_attack_target",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -1608,7 +1610,30 @@ static func _test_enemy_skill_hover_not_movement_route(failures: Array[String]) 
 		failures.append(
 			"PlanningQAGate enemy_hover_not_move_route: enemy skill targeting must not use movement hover route",
 		)
-	if input._hover_attack_target_id() != fix.enemy.id:
+	if input.hover_attack_target_id() != fix.enemy.id:
 		failures.append(
 			"PlanningQAGate enemy_hover_not_move_route: enemy hover must resolve attack target id",
+		)
+
+
+static func _test_hook_pull_preview_keeps_attack_target(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var hook_idx: int = _ability_index(fix.knight, CHAIN_HOOK_ID)
+	if hook_idx < 0:
+		failures.append("PlanningQAGate hook_pull_attack_target: Chain Hook missing")
+		return
+	director.selected_ability_index = hook_idx
+	input.on_hover_moved(ENEMY_POS)
+	if input.hover_attack_target_id() != fix.enemy.id:
+		failures.append(
+			"PlanningQAGate hook_pull_attack_target: enemy hover must resolve attack target",
+		)
+		return
+	var pushes: Array = input.preview_state.preview_pushes.get(fix.enemy.id, [])
+	if pushes.is_empty():
+		failures.append(
+			"PlanningQAGate hook_pull_attack_target: hook hover must preview pull displacement",
 		)

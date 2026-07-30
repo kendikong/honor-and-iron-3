@@ -2413,6 +2413,11 @@ func _aim_enemy_pos(unit_id: int) -> Vector2i:
 	return preview_unit.position if preview_unit != null else live.position
 
 
+## Live hover enemy/unit id for skill targeting overlays (presentation only).
+func hover_attack_target_id() -> int:
+	return _hover_attack_target_id()
+
+
 func _hover_attack_target_id() -> int:
 	if _director == null or _director.board == null:
 		return -1
