@@ -2257,6 +2257,24 @@ func action_range_premove_cell_for_gate() -> Vector2i:
 	var actor: UnitState = _proj_unit(unit_id)
 	if actor == null:
 		return Vector2i(-999999, -999999)
+	if is_live_preview_active() and preview_state.preview_board != null:
+		var live: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
+		if live != null and live.position != actor.position:
+			return live.position
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	if move_timing >= 0 and _director.unit_has_move_planned_at_timing(unit_id, move_timing):
+		for step: TimelineAction in _director.get_unit_plan_steps(unit_id):
+			if step == null or step.type != GameEnums.ActionType.MOVE:
+				continue
+			if step.move_timing == move_timing:
+				return step.target_coord
+	var intent_dest: Vector2i = move_intent_destination(unit_id)
+	if (
+		_director.board != null
+		and _director.board.is_in_bounds(intent_dest)
+		and intent_dest != actor.position
+	):
+		return intent_dest
 	var cell: Vector2i = (
 		_intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
 	)

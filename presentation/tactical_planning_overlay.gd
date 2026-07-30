@@ -585,8 +585,15 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if AbilitySystem.is_run_ability(ability):
 		return false
-	var premove_cell: Vector2i = _premove_cell_for_action_range_gate(unit)
 	var plan_board: BoardState = _director.projected_state if _director.projected_state != null else _board
+	## Same economy read as the planning timeline / side panel — not hover-move-tile membership.
+	if _planning_input != null and ability != null:
+		var ap_left: int = _planning_input.planning_display_ap_left(unit.id)
+		if ap_left >= 0:
+			var ap_cost: int = AbilitySystem.get_action_point_cost(p_unit, ability, plan_board)
+			if ap_left < ap_cost:
+				return false
+	var premove_cell: Vector2i = _premove_cell_for_action_range_gate(unit)
 	var auto_run_active: bool = (
 		_planning_input != null and _planning_input.auto_run_movement_active(p_unit)
 	)
