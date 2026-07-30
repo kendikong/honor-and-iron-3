@@ -24,8 +24,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_show_move_hover_without_action_slot,
 		_test_show_enemy_bash_with_committed_premove,
 		_test_show_red_anchor_follows_stand_not_knight_start,
-		_test_hide_committed_run_leaves_no_ap,
-		_test_hide_shield_bash_after_committed_run_prefresh,
+		_test_hide_red_after_commit_run_icon_shield_bash,
 		_test_hide_no_ability_selected,
 		_test_show_awaiting_trample,
 		_test_hover_step_updates_stand_and_red_tiles,
@@ -36,8 +35,7 @@ static func run_all(failures: Array[String]) -> void:
 		"show_move_hover_no_action_slot",
 		"show_enemy_bash_committed_premove",
 		"show_red_anchor_on_stand",
-		"hide_committed_run_no_ap",
-		"hide_bash_committed_run_prefresh",
+		"hide_after_commit_run_icon_bash",
 		"hide_no_ability",
 		"show_awaiting_trample",
 		"hover_step_updates_stand",
@@ -285,69 +283,122 @@ static func _test_hide_auto_run_consumes_skill_ap(failures: Array[String]) -> vo
 	)
 
 
-static func _test_hide_committed_run_leaves_no_ap(failures: Array[String]) -> void:
-	const COMMITTED_RUN_DEST := Vector2i(3, 6)
+## Owner-report regression: commit run via slots (run icon on timeline), Shield Bash selected,
+## hover destination at 0 AP — red tiles must hide. Replaces synthetic timeline injection tests.
+static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
 	var director: CombatDirector = fix.director
 	var input: CombatPlanningInput = fix.input
 	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
 	director.auto_run = true
 	_sync_knight_ap(fix, 1, 0)
-	director.plan_pre_move.entries.append(
-		TimelineAction.make_run_move(
-			1, COMMITTED_RUN_DEST, -1, [], GameEnums.MoveTiming.PRE_ACTION,
-		),
-	)
-	director._refresh_plan()
-	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
-	director.selected_ability_index = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
-	_assert_contract(
-		failures, "hide_committed_run_no_ap", fix, overlay, input,
-		COMMITTED_RUN_DEST, ability, false,
-	)
-
-
-static func _test_hide_shield_bash_after_committed_run_prefresh(failures: Array[String]) -> void:
-	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
-	var director: CombatDirector = fix.director
-	var input: CombatPlanningInput = fix.input
-	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
-	director.auto_run = true
-	_sync_knight_ap(fix, 1, 0)
-	var run_dest: Vector2i = _find_run_hover_tile(fix.board, fix.knight)
-	if run_dest.x <= -900000:
-		failures.append("ActionRangeRegression hide_bash_committed_run_prefresh: no run dest")
-		return
-	director.plan_pre_move.entries.append(
-		TimelineAction.make_run_move(
-			1, run_dest, -1, [], GameEnums.MoveTiming.PRE_ACTION,
-		),
-	)
-	director._refresh_plan()
 	var bash_idx: int = PlanningQAGateTest._ability_index(fix.knight, SHIELD_BASH_ID)
 	if bash_idx < 0:
-		failures.append("ActionRangeRegression hide_bash_committed_run_prefresh: Shield Bash missing")
+		failures.append("ActionRangeRegression hide_after_commit_run_icon_bash: Shield Bash missing")
 		return
 	director.selected_ability_index = bash_idx
-	var ability: AbilityData = PlanningQAGateTest._knight_ability(SHIELD_BASH_ID)
-	var projected: UnitState = director.projected_state.get_unit_by_id(1) if director.projected_state != null else null
+	var run_dest: Vector2i = _find_run_hover_tile(fix.board, fix.knight)
+	if run_dest.x <= -900000:
+		failures.append("ActionRangeRegression hide_after_commit_run_icon_bash: no run destination tile")
+		return
+	input.on_hover_moved(run_dest)
+	input._flush_hover_heavy_sync()
+	var slots: Dictionary = PlanningQAGateTest._click_slots_at(input, 1, run_dest)
+	if bool(slots.get("invalid", true)):
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: hover slots invalid at %s"
+			% run_dest,
+		)
+		return
+	var pre_moves: Array = slots.get("pre", []) as Array
+	if pre_moves.is_empty():
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: hover must build pre-move before commit",
+		)
+		return
+	var pre_move: TimelineAction = pre_moves[0] as TimelineAction
+	if pre_move == null:
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: pre-move action missing",
+		)
+		return
+	if not pre_move.uses_run:
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: pre-move must be run (uses_run) before commit",
+		)
+		return
+	if pre_move.target_coord != run_dest:
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: pre-move dest expected %s got %s"
+			% [run_dest, pre_move.target_coord],
+		)
+		return
+	var run_glyph: String = input._cursor_icon_from_commit_slots(slots, fix.knight)
+	if run_glyph != PlanningIcons.GLYPH_RUN:
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: cursor must show run icon, got %s"
+			% run_glyph,
+		)
+		return
+	if not director.commit_from_slots(1, slots):
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: commit_from_slots failed",
+		)
+		return
+	director.flush_plan_refresh_signals_if_pending()
+	if director.plan_pre_move.entries.is_empty():
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: run must appear on timeline after commit",
+		)
+		return
+	var timeline_run: TimelineAction = director.plan_pre_move.entries[0] as TimelineAction
+	if timeline_run == null or not timeline_run.uses_run:
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: timeline pre-move must be run (run icon)",
+		)
+		return
+	if timeline_run.target_coord != run_dest:
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: timeline run dest expected %s got %s"
+			% [run_dest, timeline_run.target_coord],
+		)
+		return
+	var projected: UnitState = (
+		director.projected_state.get_unit_by_id(1) if director.projected_state != null else null
+	)
 	if projected == null:
-		failures.append("ActionRangeRegression hide_bash_committed_run_prefresh: projected knight missing")
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bash: projected knight missing after commit",
+		)
 		return
 	if projected.position != run_dest:
 		failures.append(
-			"ActionRangeRegression hide_bash_committed_run_prefresh: projected stand expected %s got %s"
+			"ActionRangeRegression hide_after_commit_run_icon_bash: projected stand expected %s got %s"
 			% [run_dest, projected.position],
 		)
+		return
 	if projected.ability.points_left > 0:
 		failures.append(
-			"ActionRangeRegression hide_bash_committed_run_prefresh: run premove must spend AP (got %d left)"
+			"ActionRangeRegression hide_after_commit_run_icon_bash: run commit must leave 0 AP (got %d)"
 			% projected.ability.points_left,
 		)
+		return
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(SHIELD_BASH_ID)
 	_assert_contract(
-		failures, "hide_bash_committed_run_prefresh", fix, overlay, input,
-		run_dest, ability, false, run_dest,
+		failures,
+		"hide_after_commit_run_icon_bash",
+		fix,
+		overlay,
+		input,
+		run_dest,
+		ability,
+		false,
+		run_dest,
 	)
+
+
+static func _test_hide_red_after_commit_run_icon_shield_bash(failures: Array[String]) -> void:
+	assert_hide_red_after_commit_run_icon_shield_bash(failures)
 
 
 static func _test_hide_no_ability_selected(failures: Array[String]) -> void:

@@ -68,7 +68,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_timeline_ghost_clears_when_committed,
 		_test_action_range_centered_on_live_stand,
 		_test_action_range_hides_when_auto_run_blocks_skill_ap,
-		_test_action_range_hides_with_committed_run_intent,
+		_test_action_range_hides_after_commit_run_icon,
 		_test_action_range_shows_while_awaiting_trample,
 		_test_action_range_shows_on_enemy_hover,
 		_test_action_range_follows_cursor_on_move_hover,
@@ -129,7 +129,7 @@ static func run_all(failures: Array[String]) -> void:
 		"timeline_ghost_commit",
 		"action_range_live_stand",
 		"action_range_auto_run_ap_gate",
-		"action_range_committed_run_intent",
+		"action_range_commit_run_icon_hide",
 		"action_range_awaiting_trample",
 		"action_range_enemy_hover",
 		"action_range_move_hover_follows_cursor",
@@ -2117,46 +2117,8 @@ static func _test_action_range_hides_when_auto_run_blocks_skill_ap(failures: Arr
 			return
 
 
-static func _test_action_range_hides_with_committed_run_intent(failures: Array[String]) -> void:
-	const COMMITTED_RUN_DEST := Vector2i(3, 6)
-	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
-	var director: CombatDirector = fix.director
-	var input: CombatPlanningInput = fix.input
-	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
-	director.auto_run = true
-	director.plan_pre_move.entries.append(
-		TimelineAction.make_run_move(
-			1, COMMITTED_RUN_DEST, -1, [], GameEnums.MoveTiming.PRE_ACTION,
-		),
-	)
-	fix.knight.ability.points_left = 1
-	fix.knight.movement.points_left = 0
-	var projected_knight: UnitState = director.projected_state.get_unit_by_id(1) if director.projected_state != null else null
-	if projected_knight != null:
-		projected_knight.ability.points_left = 1
-		projected_knight.movement.points_left = 0
-	var bowling_idx: int = _ability_index(fix.knight, BOWLING_CHARGE_ID)
-	if bowling_idx < 0:
-		failures.append("PlanningQAGate action_range_committed_run_intent: Bowling Charge missing")
-		return
-	director.selected_ability_index = bowling_idx
-	input.on_hover_moved(COMMITTED_RUN_DEST)
-	input._flush_hover_heavy_sync()
-	overlay._recompute_hover_ranges_from_inputs()
-	var ability: AbilityData = _knight_ability(BOWLING_CHARGE_ID)
-	if ability == null:
-		failures.append("PlanningQAGate action_range_committed_run_intent: Bowling Charge ability missing")
-		return
-	var dash_tiles: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
-		fix.board, fix.knight, ability, COMMITTED_RUN_DEST,
-	)
-	for tile: Vector2i in dash_tiles:
-		if overlay.is_hover_action_range_tile(tile):
-			failures.append(
-				"PlanningQAGate action_range_committed_run_intent: red tile %s must hide when committed run leaves no AP for skill (hover %s)"
-				% [tile, COMMITTED_RUN_DEST],
-			)
-			return
+static func _test_action_range_hides_after_commit_run_icon(failures: Array[String]) -> void:
+	ActionRangeRegressionTest.assert_hide_red_after_commit_run_icon_shield_bash(failures)
 
 
 static func _test_action_range_shows_while_awaiting_trample(failures: Array[String]) -> void:
