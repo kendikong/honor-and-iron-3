@@ -2,6 +2,8 @@
 
 **Mandatory** after any planning/commit/preview/undo gameplay change — see `.cursor/rules/qa-after-gameplay-changes.mdc`.
 
+**Owner skill checklist (7 phases, move preview = truth):** [PLANNING_SKILL_QA_CHECKLIST.md](PLANNING_SKILL_QA_CHECKLIST.md) — use for every skill manual test and for what automated tests must eventually cover.
+
 Automated mirror of the owner's manual planning checklist (Skill Arena / TestBattle).
 Use this gate **before and after every change** that touches planning,
 preview, commit slots, overlay draw, hover sim, or `CombatDirector` refresh — not only perf work.
@@ -22,7 +24,10 @@ Layer A must pass. Layer B is still required for pixel/animation/FPS.
 | **Drag E2E** | `tests/planning_drag_e2e_test.gd` | Production path: `_begin_drag` → `update_drag` → `on_left_release` → `board_changed` → undo |
 | **Planning input** | `tests/planning_input_test.gd` | Cursor/slots parity, drop route, undo, awaiting refresh |
 | **Trample E2E** | `tests/trampling_advance_e2e_test.gd` | Painted waypoint order through commit + sim |
+| **Action-range regression** | `tests/action_range_regression_test.gd` | Red tile visibility + overlay parity |
 | **Checklist mirror** | `tests/planning_qa_gate_test.gd` | Manual Skill Arena checklist APIs (slots, sim, click/drop parity) |
+
+**Coverage honesty:** Most skill rows in the gate are **partial** — they check slots, preview, or sim slices, not all 7 phases with blue+red+preview at every step. Full per-skill phase coverage is defined in [PLANNING_SKILL_QA_CHECKLIST.md](PLANNING_SKILL_QA_CHECKLIST.md).
 
 **Important:** Slot-only tests (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
 
