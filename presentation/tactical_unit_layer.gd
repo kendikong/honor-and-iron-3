@@ -199,10 +199,6 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
-	if _director != null and _director.peek_movement_only_refresh():
-		_refresh_player_exhaustion()
-		queue_redraw()
-		return
 	_sync_actors()
 	_refresh_planning_visuals()
 	queue_redraw()

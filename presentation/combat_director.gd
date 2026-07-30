@@ -66,7 +66,6 @@ var _pending_refresh_board: BoardState
 var _pending_refresh_plan: Timeline
 var _pending_refresh_statuses: PackedStringArray
 var _pending_refresh_preview: SimResult
-var _last_refresh_movement_only: bool = false
 ## When this returns true, default victory/defeat checks are skipped (battle continues).
 var suppress_end_state: Callable = Callable()
 
@@ -2122,10 +2121,6 @@ func unit_has_undoable_action(unit_id: int) -> bool:
 
 func _refresh_plan() -> void:
 	var plan_to_run := _get_combined_plan()
-	if _plan_is_movement_only(plan_to_run):
-		_refresh_plan_movement_only(plan_to_run)
-		return
-	_last_refresh_movement_only = false
 	var move_only := base_board.clone()
 	var full_proj := base_board.clone()
 	var statuses := PackedStringArray()
@@ -2188,66 +2183,6 @@ func _refresh_plan() -> void:
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
 	_defer_plan_refresh_signals(board, plan_to_run, statuses, sim_res)
-
-
-func _refresh_plan_movement_only(plan: Timeline) -> void:
-	_last_refresh_movement_only = true
-	var anim_events: Array[SimEvent] = []
-	var any_cancelled := false
-	var trial: BoardState = base_board.clone()
-	for action: TimelineAction in plan.entries:
-		if action.type != GameEnums.ActionType.MOVE:
-			continue
-		var pre_board: BoardState = trial.clone()
-		var move_ev: Array[SimEvent] = []
-		ResolutionPipeline.apply_action(trial, action, move_ev)
-		ResolutionPipeline.resolve_pending_pushes(trial, move_ev)
-		if _move_has_commit_side_effects(move_ev):
-			action.irreversible = true
-			if _cancel_plans_for_displacement(action.actor_id, pre_board, move_ev):
-				any_cancelled = true
-		if action in _commit_animate_actions:
-			anim_events.append_array(_extract_commit_anim_events(move_ev))
-	_commit_animate_actions.clear()
-	if any_cancelled:
-		_refresh_plan()
-		return
-
-	projected_state = base_board.clone()
-	var evs: Array[SimEvent] = []
-	Simulator.simulate_player_turn(projected_state, plan, evs)
-	board = projected_state
-
-	var new_intents := EnemyPlanner.plan(projected_state)
-	base_board.intents = new_intents
-	board.intents = new_intents
-	projected_state.intents = new_intents
-
-	if not anim_events.is_empty():
-		EventBus.planning_commit_events.emit(anim_events)
-	plan_revision += 1
-	sync_selected_ability_if_invalid()
-
-	var preview_board: BoardState = projected_state.clone()
-	var sim_res := SimResult.new(preview_board)
-	# For movement only refresh, we can just use the events we just simulated!
-	# But wait, we need the enemy intent ghost events too for the preview!
-	var ghost_evs := _build_ghost_events(preview_board, plan, new_intents)
-	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
-	
-	var statuses := PackedStringArray()
-	statuses.resize(maxi(plan.size(), 1))
-	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
-
-
-func peek_movement_only_refresh() -> bool:
-	return _last_refresh_movement_only
-
-
-func consume_movement_only_refresh() -> bool:
-	var was_movement_only: bool = _last_refresh_movement_only
-	_last_refresh_movement_only = false
-	return was_movement_only
 
 
 func _plan_is_movement_only(plan: Timeline) -> bool:
