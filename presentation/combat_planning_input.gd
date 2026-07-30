@@ -654,17 +654,25 @@ func _request_planning_selection_refresh() -> void:
 	call_deferred("_run_planning_selection_refresh")
 
 
-func _run_planning_selection_refresh() -> void:
-	_selection_refresh_pending = false
-	if _director == null or _planning == null:
+func _refresh_planning_hover_at_current_cell(refresh_cursor: bool) -> void:
+	if _director == null or _planning == null or not _is_planning():
 		return
+	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	if _intent_state != null:
-		_sync_threat_origin_from_cell(_intent_state.hover_coord)
+		_sync_threat_origin_from_cell(cell)
+	if _director.selected_unit_id >= 0:
+		_refresh_selected_interaction_preview()
+	elif _director.board != null and _director.board.is_in_bounds(cell):
+		_update_hover_attack_preview()
 	_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_skill_mode()
-	call_deferred("_refresh_hover_if_planning")
-	if _intent_state != null:
-		refresh_mouse_cursor(_intent_state.hover_coord)
+	if refresh_cursor and _intent_state != null:
+		refresh_mouse_cursor(cell)
+
+
+func _run_planning_selection_refresh() -> void:
+	_selection_refresh_pending = false
+	_refresh_planning_hover_at_current_cell(true)
 
 
 func _finish_selection_changed() -> void:
@@ -692,6 +700,7 @@ func _flush_ability_selection_refresh() -> void:
 		_request_planning_selection_refresh()
 		refresh_live_preview()
 		return
+	_refresh_planning_hover_at_current_cell(false)
 	_schedule_ability_settled_refresh()
 
 
@@ -714,8 +723,12 @@ func _schedule_ability_settled_refresh() -> void:
 func _run_ability_settled_refresh() -> void:
 	if _director == null:
 		return
+	var had_awaiting: bool = awaiting_targeting_active()
 	clear_awaiting_targeting()
-	_request_planning_selection_refresh()
+	if had_awaiting:
+		return
+	if _intent_state != null:
+		refresh_mouse_cursor(_intent_state.hover_coord)
 
 
 func _on_preview_updated(_result: SimResult) -> void:

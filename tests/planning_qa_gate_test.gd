@@ -46,6 +46,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_invalid_slots_block_commit,
 		_test_full_slot_signature_on_commit,
 		_test_ability_switch_clears_preview_cache,
+		_test_ability_select_refreshes_enemy_hover_path,
 		_test_trample_paint_commit_sim_chain,
 		_test_bash_sim_determinism,
 		_test_hover_order_invariant,
@@ -87,6 +88,7 @@ static func run_all(failures: Array[String]) -> void:
 		"invalid_blocks_commit",
 		"full_slot_signature",
 		"ability_cache_clear",
+		"ability_scroll_hover_path",
 		"trample_full_chain",
 		"bash_sim_determinism",
 		"hover_order_invariant",
@@ -1348,6 +1350,45 @@ static func _test_ability_switch_clears_preview_cache(failures: Array[String]) -
 	if input._hover_preview_cache_key != "":
 		failures.append(
 			"PlanningQAGate cache clear: ability select must invalidate hover preview cache",
+		)
+
+
+static func _test_ability_select_refreshes_enemy_hover_path(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate ability scroll hover: Shield Bash missing")
+		return
+	var other_idx: int = -1
+	for i: int in range(fix.knight.active_abilities.size()):
+		if i == bash_idx:
+			continue
+		var ability: AbilityData = fix.knight.active_abilities[i] as AbilityData
+		if ability != null and not ability.is_universal_run():
+			other_idx = i
+			break
+	if other_idx < 0:
+		failures.append("PlanningQAGate ability scroll hover: no alternate ability for scroll test")
+		return
+	input.on_hover_moved(ENEMY_POS)
+	director.selected_ability_index = other_idx
+	input._on_ability_selected(other_idx)
+	input._flush_ability_selection_refresh()
+	director.selected_ability_index = bash_idx
+	input._on_ability_selected(bash_idx)
+	input._flush_ability_selection_refresh()
+	if not input.is_live_preview_active():
+		failures.append(
+			"PlanningQAGate ability scroll hover: Shield Bash on enemy must activate live preview",
+		)
+		return
+	var path: Array = input.preview_state.preview_paths.get(1, [])
+	if path.size() < 2:
+		failures.append(
+			"PlanningQAGate ability scroll hover: expected approach path, got %s" % str(path),
 		)
 
 
