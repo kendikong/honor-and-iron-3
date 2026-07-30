@@ -199,10 +199,8 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
-	if _director != null and (
-		_director.peek_movement_only_refresh() or _director.peek_wait_marker_only_refresh()
-	):
-		_refresh_plan_affected_exhaustion()
+	if _director != null and _director.peek_movement_only_refresh():
+		_refresh_player_exhaustion()
 		queue_redraw()
 		return
 	_sync_actors()
@@ -229,22 +227,9 @@ func _on_selection_changed(unit_id: int) -> void:
 
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
-		if _director.peek_wait_marker_only_refresh():
-			_refresh_plan_affected_exhaustion()
-			_refresh_unit_glows()
-			return
 		_sync_planning_facings_for_queued_actions()
 		_refresh_player_exhaustion()
 		_refresh_unit_glows()
-
-
-func _refresh_plan_affected_exhaustion() -> void:
-	if _board == null or _director == null:
-		return
-	for unit_id: int in _director.plan_affected_unit_ids:
-		var unit: UnitState = _board.get_unit_by_id(unit_id)
-		if unit != null and unit.is_alive() and not unit.is_enemy():
-			_apply_exhaustion_state(unit)
 
 
 func _refresh_planning_visuals() -> void:
