@@ -2249,6 +2249,31 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	return actor != null and AbilitySystem.can_afford_run(actor)
 
 
+## Implicit pre-move destination for overlay action-range AP gate (matches commit-slot intent).
+func action_range_premove_cell_for_gate() -> Vector2i:
+	if _director == null or _director.selected_unit_id < 0:
+		return Vector2i(-999999, -999999)
+	var unit_id: int = _director.selected_unit_id
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		return Vector2i(-999999, -999999)
+	var cell: Vector2i = (
+		_intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
+	)
+	if _director.board == null or not _director.board.is_in_bounds(cell):
+		return actor.position
+	var slots: Dictionary = _final_commit_slots_for_click_at_cell(
+		unit_id, cell, _mouse_local_for_facing(),
+	)
+	var pre_moves: Array = slots.get("pre", [])
+	if pre_moves.is_empty():
+		return actor.position
+	var last_move: TimelineAction = pre_moves[pre_moves.size() - 1] as TimelineAction
+	if last_move == null:
+		return actor.position
+	return last_move.destination
+
+
 ## True when this unit's current planning intent (drag / live path / committed move) needs Run.
 func unit_move_requires_run(unit_id: int) -> bool:
 	if _director == null or unit_id < 0:

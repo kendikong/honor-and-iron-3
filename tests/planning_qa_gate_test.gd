@@ -10,6 +10,7 @@ const BASH_APPROACH := Vector2i(6, 5)
 const SHIELD_BASH_ID: StringName = &"knight_shield_bash"
 const CHAIN_HOOK_ID: StringName = &"knight_chain_hook"
 const TRAMPLE_ID: StringName = &"knight_trampling_advance"
+const BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -66,6 +67,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_approach_bash_slots_preview_keeps_push,
 		_test_timeline_ghost_clears_when_committed,
 		_test_action_range_centered_on_live_stand,
+		_test_action_range_hides_when_auto_run_blocks_skill_ap,
 		_test_enemy_skill_hover_not_movement_route,
 		_test_enemy_bash_approach_move_leg,
 		_test_bash_targeting_uses_pre_push_enemy_cell,
@@ -122,6 +124,7 @@ static func run_all(failures: Array[String]) -> void:
 		"approach_bash_push_preview",
 		"timeline_ghost_commit",
 		"action_range_live_stand",
+		"action_range_auto_run_ap_gate",
 		"enemy_hover_not_move_route",
 		"bash_enemy_approach_leg",
 		"bash_target_pre_push_cell",
@@ -2037,6 +2040,58 @@ static func _test_action_range_centered_on_live_stand(failures: Array[String]) -
 				"PlanningQAGate action_range_live_stand: red tile %s missing (stand %s)"
 				% [tile, live_knight.position],
 			)
+
+
+static func _find_run_hover_tile(board: BoardState, unit: UnitState) -> Vector2i:
+	if board == null or unit == null:
+		return Vector2i(-999999, -999999)
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			if coord == unit.position:
+				continue
+			if AbilitySystem.movement_requires_run(board, unit, coord, []):
+				return coord
+	return Vector2i(-999999, -999999)
+
+
+static func _test_action_range_hides_when_auto_run_blocks_skill_ap(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	director.auto_run = true
+	fix.knight.ability.points_left = 1
+	var bowling_idx: int = _ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("PlanningQAGate action_range_auto_run_ap_gate: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var run_tile: Vector2i = _find_run_hover_tile(fix.board, fix.knight)
+	if run_tile.x <= -900000:
+		failures.append("PlanningQAGate action_range_auto_run_ap_gate: no run-requiring hover tile found")
+		return
+	input.on_hover_moved(run_tile)
+	overlay._recompute_hover_ranges_from_inputs()
+	if overlay.is_hover_action_range_tile(ENEMY_POS):
+		failures.append(
+			"PlanningQAGate action_range_auto_run_ap_gate: red tiles must hide when auto-run premove consumes skill AP (hover %s)"
+			% run_tile,
+		)
+	var ability: AbilityData = _knight_ability(BOWLING_CHARGE_ID)
+	if ability == null:
+		failures.append("PlanningQAGate action_range_auto_run_ap_gate: Bowling Charge ability missing")
+		return
+	var expected: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, fix.knight, ability, fix.knight.position,
+	)
+	for tile: Vector2i in expected:
+		if overlay.is_hover_action_range_tile(tile):
+			failures.append(
+				"PlanningQAGate action_range_auto_run_ap_gate: red tile %s must be hidden after run hover %s"
+				% [tile, run_tile],
+			)
+			return
 
 
 static func _test_enemy_skill_hover_not_movement_route(failures: Array[String]) -> void:
