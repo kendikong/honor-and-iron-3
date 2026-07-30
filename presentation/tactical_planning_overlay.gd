@@ -43,6 +43,7 @@ const _INTENT_ARROW_HEAD_LEN: float = 7.0
 const _INTENT_ARROW_HEAD_ANGLE_DEG: float = 28.0
 const _TARGETING_INTENT_FLOW_SPEED: float = 45.0
 const _FORCED_MOVE_INTENT_FLOW_SPEED: float = 95.0
+const _INTENT_DOT_FLOW_SPEED: float = _TARGETING_INTENT_FLOW_SPEED * 0.4
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
 const _INTENT_ROUTE_ALPHA: float = 0.40
@@ -1716,6 +1717,9 @@ func _draw_dotted_intent_segment(
 		return
 	var dist: float = start_pt.distance_to(shaft_end)
 	var d: float = 0.0
+	if flowing_head:
+		var t: float = Time.get_ticks_msec() / 1000.0
+		d = fmod(t * _INTENT_DOT_FLOW_SPEED, _INTENT_DOT_SPACING)
 	while d < dist:
 		draw_circle(start_pt + travel_dir * d, _INTENT_DOT_RADIUS, color)
 		d += _INTENT_DOT_SPACING
