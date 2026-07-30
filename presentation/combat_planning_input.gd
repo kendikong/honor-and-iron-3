@@ -44,6 +44,7 @@ var _overlay_cursor_cell: Vector2i = Vector2i(-9999, -9999)
 var _selection_refresh_pending: bool = false
 var _plan_refresh_followup_pending: bool = false
 var _hover_preview_refresh_pending: bool = false
+var _ability_selection_flush_pending: bool = false
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -673,10 +674,20 @@ func _finish_selection_changed() -> void:
 func _on_ability_selected(_index: int) -> void:
 	if _director == null:
 		return
-	clear_awaiting_targeting()
-	## Same hover cell + new skill must rebuild preview — cache key can match a prior skill visit.
 	_invalidate_planning_hover_cache()
+	if not _ability_selection_flush_pending:
+		_ability_selection_flush_pending = true
+		call_deferred("_flush_ability_selection_refresh")
+
+
+func _flush_ability_selection_refresh() -> void:
+	_ability_selection_flush_pending = false
+	if _director == null:
+		return
+	clear_awaiting_targeting()
 	_request_planning_selection_refresh()
+	if dragging:
+		refresh_live_preview()
 
 
 func _on_preview_updated(_result: SimResult) -> void:

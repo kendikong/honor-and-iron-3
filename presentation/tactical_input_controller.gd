@@ -115,20 +115,6 @@ func _cycle_ability(delta: int) -> void:
 		return
 	_director.select_ability(next)
 	_play_sfx("select")
-	if _planning_input != null:
-		_planning_input.invalidate_hover_preview_cache()
-	if _planning_input != null and _planning_input.dragging:
-		_planning_input.refresh_live_preview()
-	if _planning_input != null and not _planning_input.dragging:
-		var cell: Vector2i = _map_view.screen_to_grid(get_viewport().get_mouse_position())
-		_planning_input.on_hover_moved(cell)
-	if _planning != null:
-		_planning.recompute_hover_ranges(
-			_planning_input.force_basic_movement if _planning_input != null else false,
-			_director.selected_ability_index,
-			_planning_input.dragging if _planning_input != null else false,
-			_planning_input.get_drag_unit_id() if _planning_input != null else -1,
-		)
 
 
 func _selected_class_id() -> StringName:

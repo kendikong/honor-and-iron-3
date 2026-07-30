@@ -473,6 +473,7 @@ func _add_rich_panel(parent: VBoxContainer, title: String, min_h: int = 120) -> 
 var _last_skill_rebuild_key: String = ""
 var _skill_ui_lock: bool = false
 var _skill_scroll_generation: int = 0
+var _info_refresh_pending: bool = false
 
 
 func _on_board_changed(board: BoardState) -> void:
@@ -527,9 +528,40 @@ func _on_ability_selected(index: int) -> void:
 	_selected_ability = index
 	if _skill_ui_lock:
 		return
-	_refresh_info()
-	_refresh_ability_buttons_if_dirty()
+	if _skill_list != null and _skill_list.get_child_count() > 0:
+		_update_skill_selection_highlight()
+	else:
+		_refresh_ability_buttons_if_dirty()
+	_schedule_info_refresh()
 	_scroll_selected_skill_into_view()
+
+
+func _schedule_info_refresh() -> void:
+	if _info_refresh_pending:
+		return
+	_info_refresh_pending = true
+	call_deferred("_flush_info_refresh")
+
+
+func _flush_info_refresh() -> void:
+	_info_refresh_pending = false
+	_refresh_info()
+
+
+func _update_skill_selection_highlight() -> void:
+	if _skill_list == null:
+		return
+	for c: Node in _skill_list.get_children():
+		var row_btn := c as Button
+		if row_btn == null:
+			continue
+		var index: int = int(row_btn.get_meta(&"ability_index", -1))
+		if index < 0:
+			continue
+		var usable: bool = not row_btn.disabled
+		row_btn.modulate = COLOR_SELECT if index == _selected_ability else (
+			Color.WHITE if usable else COLOR_SKILL_DISABLED
+		)
 
 
 func _skill_list_row_for_ability_index(ability_index: int) -> int:
@@ -763,9 +795,8 @@ func _skill_rebuild_cache_key(unit: UnitState) -> String:
 		status_bits |= 2
 	if unit.has_status(GameEnums.StatusType.PACIFY):
 		status_bits |= 4
-	return "%d:%d:%d:%d:%d" % [
+	return "%d:%d:%d:%d" % [
 		_selected_id,
-		_selected_ability,
 		unit.ability.points_left,
 		1 if unit.turn_action_used else 0,
 		status_bits,
@@ -812,6 +843,7 @@ func _rebuild_ability_buttons() -> void:
 			continue
 		var index: int = i
 		var row_btn := Button.new()
+		row_btn.set_meta(&"ability_index", index)
 		var usable: bool = AbilitySystem.ability_planning_selectable(unit, ability, _board)
 		row_btn.disabled = not usable
 		row_btn.modulate = COLOR_SELECT if index == _selected_ability else (

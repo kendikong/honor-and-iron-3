@@ -117,7 +117,6 @@ func setup(
 			return
 		_invalidate_hover_cache()
 		_schedule_hover_recompute()
-		_update_hover_action_icon()
 		queue_redraw(),
 	)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
