@@ -747,6 +747,8 @@ func _process(delta: float) -> void:
 
 
 func _overlay_needs_flow_animation() -> bool:
+	if _attack_target_id >= 0:
+		return true
 	if _planning_input != null and _planning_input.dragging:
 		return true
 	var prev: CombatPlanningPreview = _active_preview()
@@ -1403,7 +1405,7 @@ func _draw_interaction_overlay() -> void:
 		if target_unit != null:
 			target_coord = target_unit.position
 		if origin != target_coord and not _unit_has_push_preview(prev, _attack_target_id):
-			_draw_route_line([origin, target_coord], route_col, true, true)
+			_draw_dashed_route([origin, target_coord], route_col)
 	elif (
 		sel_ability != null
 		and _planning_input != null
