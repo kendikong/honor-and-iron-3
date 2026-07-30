@@ -119,7 +119,8 @@ func _on_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void
 	_invalidate_planning_hover_cache()
 	_drag_route.clear()
 	_drag_last_free = Vector2i(-1, -1)
-	preview_state.clear_interaction()
+	## Drop stale hover preview (paths + preview_board) so post-commit action-range uses projection.
+	preview_state.clear_all()
 	if _planning != null:
 		_planning.restore_committed_display()
 

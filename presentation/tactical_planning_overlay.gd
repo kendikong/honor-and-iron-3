@@ -803,6 +803,8 @@ func _on_preview_updated(result: SimResult) -> void:
 	if _lock_committed_from_intent:
 		_lock_committed_from_intent = false
 		_has_stashed_committed = false
+		_invalidate_hover_cache()
+		_schedule_hover_recompute()
 		queue_redraw()
 		return
 	set_preview_board(result.final_state)

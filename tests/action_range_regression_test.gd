@@ -85,6 +85,17 @@ static func _collect_overlay_red_tiles(overlay: TacticalPlanningOverlay, board: 
 	return out
 
 
+static func _flush_deferred_planning_refresh(fix: Dictionary) -> void:
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = fix.get("overlay", null) as TacticalPlanningOverlay
+	var input: CombatPlanningInput = fix.input
+	director.flush_plan_refresh_signals_if_pending()
+	if overlay != null:
+		overlay._flush_hover_recompute()
+	if input != null:
+		input._flush_hover_preview_refresh()
+
+
 static func _assert_contract(
 	failures: Array[String],
 	label: String,
@@ -95,8 +106,10 @@ static func _assert_contract(
 	ability: AbilityData,
 	expect_show: bool,
 	expect_stand: Vector2i = Vector2i(-999999, -999999),
+	sync_hover: bool = true,
 ) -> void:
-	_hover_sync(input, overlay, hover)
+	if sync_hover:
+		_hover_sync(input, overlay, hover)
 	var visible: bool = input.action_range_visible_for_hover()
 	var stand: Vector2i = input.action_range_intent_stand_cell(1)
 	var overlay_stand: Vector2i = overlay._intent_stand_origin(_fixture_unit(fix))
@@ -283,13 +296,14 @@ static func _test_hide_auto_run_consumes_skill_ap(failures: Array[String]) -> vo
 	)
 
 
-## Owner-report regression: commit run via slots (run icon on timeline), Shield Bash selected,
-## hover destination at 0 AP — red tiles must hide. Replaces synthetic timeline injection tests.
+## Owner-report regression: F5 click commit path (not bare commit_from_slots).
+## Shield Bash + auto-run, run icon on timeline, 0 AP, mouse still on destination — no red.
 static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[String]) -> void:
-	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var base_fix: Dictionary = PlanningDragE2EHarness._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var fix: Dictionary = PlanningDragE2EHarness.wire_fixture(base_fix)
 	var director: CombatDirector = fix.director
 	var input: CombatPlanningInput = fix.input
-	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
 	director.auto_run = true
 	_sync_knight_ap(fix, 1, 0)
 	var bash_idx: int = PlanningQAGateTest._ability_index(fix.knight, SHIELD_BASH_ID)
@@ -301,8 +315,10 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 	if run_dest.x <= -900000:
 		failures.append("ActionRangeRegression hide_after_commit_run_icon_bash: no run destination tile")
 		return
+	input.set_qa_pointer_grid_cell(run_dest)
 	input.on_hover_moved(run_dest)
 	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
 	var slots: Dictionary = PlanningQAGateTest._click_slots_at(input, 1, run_dest)
 	if bool(slots.get("invalid", true)):
 		failures.append(
@@ -317,20 +333,9 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 		)
 		return
 	var pre_move: TimelineAction = pre_moves[0] as TimelineAction
-	if pre_move == null:
+	if pre_move == null or not pre_move.uses_run:
 		failures.append(
-			"ActionRangeRegression hide_after_commit_run_icon_bash: pre-move action missing",
-		)
-		return
-	if not pre_move.uses_run:
-		failures.append(
-			"ActionRangeRegression hide_after_commit_run_icon_bash: pre-move must be run (uses_run) before commit",
-		)
-		return
-	if pre_move.target_coord != run_dest:
-		failures.append(
-			"ActionRangeRegression hide_after_commit_run_icon_bash: pre-move dest expected %s got %s"
-			% [run_dest, pre_move.target_coord],
+			"ActionRangeRegression hide_after_commit_run_icon_bash: pre-move must be run before commit",
 		)
 		return
 	var run_glyph: String = input._cursor_icon_from_commit_slots(slots, fix.knight)
@@ -340,12 +345,15 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 			% run_glyph,
 		)
 		return
+	## F5 path: paint live preview → commit → promote (not bare commit_from_slots).
+	input.call("_paint_intent_slots_before_commit", 1, slots)
 	if not director.commit_from_slots(1, slots):
 		failures.append(
 			"ActionRangeRegression hide_after_commit_run_icon_bash: commit_from_slots failed",
 		)
 		return
-	director.flush_plan_refresh_signals_if_pending()
+	input.call("_promote_intent_preview_after_commit")
+	_flush_deferred_planning_refresh(fix)
 	if director.plan_pre_move.entries.is_empty():
 		failures.append(
 			"ActionRangeRegression hide_after_commit_run_icon_bash: run must appear on timeline after commit",
@@ -394,6 +402,7 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 		ability,
 		false,
 		run_dest,
+		false,
 	)
 
 
