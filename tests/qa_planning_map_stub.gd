@@ -1,22 +1,20 @@
 class_name QaPlanningMapStub
 extends Node2D
 
-## Headless map stub for drag-drop E2E (grid ↔ screen, mock mouse). Assigned via set("_map_view", …).
+## Headless map stub for drag-drop E2E (grid ↔ screen). Assigned via set("_map_view", …).
+## Mouse position is injected on CombatPlanningInput.set_qa_pointer_screen_pos — do not
+## override Node2D.get_viewport / get_local_mouse_position (engine will not call them).
 
-var _qa_viewport: QaPlanningMockViewport
-
-
-func _init() -> void:
-	_qa_viewport = QaPlanningMockViewport.new()
-
-
-func get_viewport() -> Viewport:
-	return _qa_viewport
+var _mock_screen_mouse: Vector2 = Vector2.ZERO
 
 
 func set_mock_mouse_for_cell(cell: Vector2i) -> void:
 	var t: float = float(TacticalConstants.TILE_PX)
-	_qa_viewport.mock_mouse = Vector2(cell) * t + Vector2(t * 0.5, t * 0.5)
+	_mock_screen_mouse = Vector2(cell) * t + Vector2(t * 0.5, t * 0.5)
+
+
+func get_mock_screen_mouse() -> Vector2:
+	return _mock_screen_mouse
 
 
 func grid_to_local(cell: Vector2i) -> Vector2:
@@ -27,7 +25,3 @@ func grid_to_local(cell: Vector2i) -> Vector2:
 func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 	var t: float = float(TacticalConstants.TILE_PX)
 	return Vector2i(int(floor(screen_pos.x / t)), int(floor(screen_pos.y / t)))
-
-
-func get_local_mouse_position() -> Vector2:
-	return grid_to_local(screen_to_grid(_qa_viewport.mock_mouse))

@@ -540,7 +540,9 @@ static func _test_post_move_leg_keeps_painted_route_after_trample(failures: Arra
 	if post_move == null:
 		failures.append("TramplingAdvanceE2E post-move: missing committed post-move action")
 		return
-	var expected_post_wps: Array[Vector2i] = commit.post_waypoints
+	var expected_post_wps: Array[Vector2i] = []
+	for wp: Variant in commit.get("post_waypoints", []):
+		expected_post_wps.append(wp as Vector2i)
 	if post_move.waypoints != expected_post_wps:
 		failures.append(
 			"TramplingAdvanceE2E post-move: expected waypoints %s, got %s"

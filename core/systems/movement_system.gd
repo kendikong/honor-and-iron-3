@@ -133,6 +133,59 @@ static func find_path(
 		
 	return path
 
+
+## Drag-paint corridor: horizontal axis first, then vertical (matches player paint intent).
+## Returns tiles to ENTER (excluding start). Falls back to BFS when corridor is blocked.
+static func drag_corridor_path(
+	board: BoardState,
+	start: Vector2i,
+	goal: Vector2i,
+	max_steps: int,
+	movement_type: GameEnums.MovementType = GameEnums.MovementType.WALK,
+	move_cost: int = 1,
+	unit: UnitState = null,
+	ability: AbilityData = null,
+) -> Array[Vector2i]:
+	if start == goal:
+		return []
+	var corridor: Array[Vector2i] = []
+	var cur: Vector2i = start
+	var dx: int = goal.x - start.x
+	var dy: int = goal.y - start.y
+	if dx != 0:
+		var step_x: int = 1 if dx > 0 else -1
+		for _i: int in absi(dx):
+			cur = Vector2i(cur.x + step_x, cur.y)
+			corridor.append(cur)
+	if dy != 0:
+		var step_y: int = 1 if dy > 0 else -1
+		for _i: int in absi(dy):
+			cur = Vector2i(cur.x, cur.y + step_y)
+			corridor.append(cur)
+	if corridor.is_empty():
+		return []
+	var validated: Array[Vector2i] = []
+	var prev: Vector2i = start
+	for tile: Vector2i in corridor:
+		if GridSystem.manhattan(prev, tile) != 1:
+			break
+		if not _is_walkable_for(board, tile, unit, ability):
+			break
+		validated.append(tile)
+		prev = tile
+	if validated.is_empty() or validated.back() != goal:
+		return find_path(board, start, goal, max_steps, movement_type, move_cost, ability)
+	if validated.size() * move_cost > max_steps:
+		validated = validated.slice(0, floori(max_steps / float(move_cost)))
+	var team: GameEnums.Team = unit.team if unit != null else GameEnums.Team.PLAYER
+	while validated.size() > 0 and GridSystem.is_occupied(board, validated[validated.size() - 1]):
+		var end_occ: UnitState = board.get_unit_at(validated[validated.size() - 1])
+		if end_occ != null and end_occ.team != team and can_pass_through_enemy(unit, ability):
+			break
+		validated.pop_back()
+	return validated
+
+
 static func move_cost_for(unit: UnitState) -> int:
 	if unit != null and unit.has_status(GameEnums.StatusType.BLEED):
 		return 2

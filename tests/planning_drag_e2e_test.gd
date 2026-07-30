@@ -177,7 +177,7 @@ static func _test_oob_release_cancels_without_plan(failures: Array[String]) -> v
 		fix, [PlanningDragE2EHarness.KNIGHT_START, dest],
 	)
 	var oob := Vector2i(-1, -1)
-	fix.map_stub.set_mock_mouse_for_cell(oob)
+	fix.input.set_qa_pointer_grid_cell(oob)
 	fix.input.on_left_release(Vector2.ZERO)
 	fix.director.flush_plan_refresh_signals_if_pending()
 	if fix.director.plan_pre_move.size() > 0:

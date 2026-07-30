@@ -104,7 +104,7 @@ static func wire_fixture(fix: Dictionary) -> Dictionary:
 	var overlay := TacticalPlanningOverlay.new()
 	overlay.setup(null, fix.director, intent)
 	overlay.set_board(fix.board)
-	fix.input.set("_map_view", map_stub)
+	fix.input._map_view = map_stub
 	fix.input._planning = overlay
 	fix.input._intent_state = intent
 	fix.input._bind_event_bus()
@@ -129,12 +129,12 @@ static func begin_drag_route(fix: Dictionary, route: Array[Vector2i]) -> void:
 	input._begin_drag(unit, local, true)
 	for i: int in range(1, route.size()):
 		var cell: Vector2i = route[i]
-		fix.map_stub.set_mock_mouse_for_cell(cell)
+		fix.input.set_qa_pointer_grid_cell(cell)
 		input.update_drag(fix.map_stub.grid_to_local(cell))
 
 
 static func release_at(fix: Dictionary, cell: Vector2i) -> void:
-	fix.map_stub.set_mock_mouse_for_cell(cell)
+	fix.input.set_qa_pointer_grid_cell(cell)
 	var local: Vector2 = fix.map_stub.grid_to_local(cell)
 	fix.input.on_left_release(local)
 	fix.director.flush_plan_refresh_signals_if_pending()

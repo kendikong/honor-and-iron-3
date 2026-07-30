@@ -122,6 +122,8 @@ static func ability_glyph(ability: AbilityData) -> String:
 		return GLYPH_WAIT
 	if AbilitySystem.is_run_ability(ability):
 		return GLYPH_RUN
+	if ability.is_movement_kind() and AbilitySystem.ability_has_movement_effect(ability):
+		return GLYPH_DASH
 	if AbilitySystem.ability_is_offensive_dash(ability):
 		return GLYPH_ATTACK
 	if AbilitySystem.ability_has_movement_effect(ability):

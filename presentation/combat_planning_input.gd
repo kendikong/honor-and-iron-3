@@ -14,7 +14,7 @@ var auto_run: bool:
 		if _director != null:
 			_director.auto_run = value
 
-var _map_view: TacticalMapView
+var _map_view: Node2D
 var _director: CombatDirector
 var _planning: TacticalPlanningOverlay
 var _intent_state: CombatIntentState
@@ -48,6 +48,10 @@ var _plan_refresh_followup_pending: bool = false
 var _hover_preview_refresh_pending: bool = false
 var _ability_scroll_settle_generation: int = 0
 var _ability_hover_settle_pending: bool = false
+var _qa_pointer_override: bool = false
+var _qa_pointer_screen_pos: Vector2 = Vector2.ZERO
+var _qa_pointer_grid_override: bool = false
+var _qa_pointer_grid_cell: Vector2i = Vector2i.ZERO
 var _hover_heavy_frame_pending: bool = false
 var _hover_heavy_throttle_gen: int = 0
 var _hover_heavy_last_flush_usec: int = 0
@@ -145,7 +149,7 @@ func cancel_aim() -> void:
 
 
 func on_left_press(local: Vector2) -> void:
-	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
+	var cell: Vector2i = _pointer_grid_cell()
 	var board: BoardState = _director.board
 	if board == null or not board.is_in_bounds(cell):
 		cancel_aim()
@@ -214,7 +218,7 @@ func on_left_release(local: Vector2) -> void:
 		return
 	var had_movement: bool = _drag_had_movement()
 	var board: BoardState = _director.board
-	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
+	var cell: Vector2i = _pointer_grid_cell()
 	var actor := board.get_unit_by_id(_drag_unit_id) if board != null else null
 	if actor == null or board == null or not board.is_in_bounds(cell):
 		dragging = false
@@ -235,7 +239,7 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 	var committed: bool = false
 	var board: BoardState = _director.board
 	var actor := board.get_unit_by_id(released_unit_id) if board != null else null
-	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
+	var cell: Vector2i = _pointer_grid_cell()
 	if actor == null or board == null or not board.is_in_bounds(cell):
 		return false
 	var dropped_on := _unit_at_input_cell(cell)
@@ -305,7 +309,7 @@ func on_right_click() -> void:
 
 func update_drag(local: Vector2) -> void:
 	var board: BoardState = _director.board
-	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
+	var cell: Vector2i = _pointer_grid_cell()
 	if _intent_state != null:
 		_intent_state.set_hover_coord(cell)
 	if board == null or not board.is_in_bounds(cell):
@@ -371,7 +375,7 @@ func refresh_live_preview() -> void:
 	if not dragging or _drag_unit_id < 0:
 		return
 	var board: BoardState = _director.board
-	var cell: Vector2i = _map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position())
+	var cell: Vector2i = _pointer_grid_cell()
 	if not board.is_in_bounds(cell):
 		return
 	var occ := board.get_unit_at(cell)
@@ -379,7 +383,7 @@ func refresh_live_preview() -> void:
 	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
 	var preview: Dictionary = _preview_at_interaction_cell(
 		_drag_unit_id,
-		_map_view.screen_to_grid(_map_view.get_viewport().get_mouse_position()),
+		_pointer_grid_cell(),
 		_drag_last_free,
 		drag_target_id,
 		_route_waypoints(),
@@ -586,7 +590,9 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 	_request_planning_selection_refresh()
 
 
-func _on_board_changed(_board: BoardState) -> void:
+func _on_board_changed(board: BoardState) -> void:
+	if _director == null or board != _director.board:
+		return
 	var interacting: bool = aiming or dragging or _drag_armed
 	if not interacting:
 		# Stale stash after drag ended must not restore over a committed plan.
@@ -625,6 +631,8 @@ func _stash_committed_preview() -> void:
 	if _planning != null:
 		_planning.stash_committed_preview()
 		_drag_saved_preview = _planning.get_preview_board()
+	if _drag_saved_preview == null and _director != null and _director.board != null:
+		_drag_saved_preview = _director.board.clone()
 
 
 func _restore_committed_preview() -> void:
@@ -1334,7 +1342,7 @@ func _commit_interaction_params(
 		legal_moves = _snapshot_drag_legal_move_tiles()
 	var face_dir: int = -1
 	if _map_view != null:
-		face_dir = _facing_from_drop(_map_view.get_local_mouse_position(), hover_cell)
+		face_dir = _facing_from_drop(_mouse_local_for_facing(), hover_cell)
 	return {
 		"cell": commit_cell,
 		"waypoints": waypoints,
@@ -1580,9 +1588,48 @@ func _clear_intent_snapshot() -> void:
 
 
 func _mouse_local_for_facing() -> Vector2:
-	if _map_view != null:
-		return _map_view.get_local_mouse_position()
-	return Vector2.ZERO
+	if _map_view == null:
+		return Vector2.ZERO
+	if _qa_pointer_grid_override:
+		return _map_view.grid_to_local(_qa_pointer_grid_cell)
+	if _qa_pointer_override:
+		return _map_view.grid_to_local(_map_view.screen_to_grid(_qa_pointer_screen_pos))
+	return _map_view.get_local_mouse_position()
+
+
+func set_qa_pointer_screen_pos(screen_pos: Vector2) -> void:
+	_qa_pointer_override = true
+	_qa_pointer_screen_pos = screen_pos
+	_qa_pointer_grid_override = false
+
+
+func set_qa_pointer_grid_cell(cell: Vector2i) -> void:
+	_qa_pointer_grid_override = true
+	_qa_pointer_grid_cell = cell
+	_qa_pointer_override = false
+
+
+func clear_qa_pointer_override() -> void:
+	_qa_pointer_override = false
+	_qa_pointer_screen_pos = Vector2.ZERO
+	_qa_pointer_grid_override = false
+	_qa_pointer_grid_cell = Vector2i.ZERO
+
+
+func _pointer_screen_pos() -> Vector2:
+	if _qa_pointer_override:
+		return _qa_pointer_screen_pos
+	if _map_view == null:
+		return Vector2.ZERO
+	return _map_view.get_viewport().get_mouse_position()
+
+
+func _pointer_grid_cell() -> Vector2i:
+	if _qa_pointer_grid_override:
+		return _qa_pointer_grid_cell
+	if _map_view == null:
+		return Vector2i.ZERO
+	return _map_view.screen_to_grid(_pointer_screen_pos())
 
 
 func _move_origin_for_commit_facing(unit_id: int, move_action: TimelineAction) -> Vector2i:
@@ -1933,7 +1980,10 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	var budget: int = _drag_max_steps(unit)
 	var move_cost: int = MovementSystem.move_cost_for(unit)
 	if GridSystem.manhattan(last, cell) != 1:
-		for c: Vector2i in MovementSystem.find_path(board, last, cell, budget, mt, move_cost, ability):
+		var corridor: Array[Vector2i] = MovementSystem.drag_corridor_path(
+			board, last, cell, budget, mt, move_cost, unit, ability,
+		)
+		for c: Vector2i in corridor:
 			_append_route_tile(c)
 		if not _drag_route.is_empty() and _drag_route.back() != cell:
 			_repath_drag_route_to(cell, unit, board, mt, budget, move_cost, ability)
@@ -1956,8 +2006,8 @@ func _repath_drag_route_to(
 	ability: AbilityData,
 ) -> void:
 	var move_origin: Vector2i = _proj_move_origin(unit)
-	var path: Array[Vector2i] = MovementSystem.find_path(
-		board, move_origin, cell, budget, mt, move_cost, ability,
+	var path: Array[Vector2i] = MovementSystem.drag_corridor_path(
+		board, move_origin, cell, budget, mt, move_cost, unit, ability,
 	)
 	if path.is_empty() or path.back() != cell:
 		return
@@ -2031,6 +2081,15 @@ func _route_waypoints() -> Array[Vector2i]:
 	if _drag_route.size() >= 2:
 		for i: int in range(1, _drag_route.size()):
 			waypoints.append(_drag_route[i])
+	return _normalize_adjacent_single_step_waypoints(waypoints, _drag_route[0] if not _drag_route.is_empty() else Vector2i.ZERO)
+
+
+func _normalize_adjacent_single_step_waypoints(
+	waypoints: Array[Vector2i],
+	origin: Vector2i,
+) -> Array[Vector2i]:
+	if waypoints.size() == 1 and GridSystem.manhattan(origin, waypoints[0]) == 1:
+		return []
 	return waypoints
 
 
