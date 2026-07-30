@@ -10,6 +10,7 @@ func _initialize() -> void:
 		{"name": "drag_e2e", "path": "res://tests/planning_drag_e2e_test.gd"},
 		{"name": "planning_input", "path": "res://tests/planning_input_test.gd"},
 		{"name": "trample_e2e", "path": "res://tests/trampling_advance_e2e_test.gd"},
+		{"name": "action_range_regression", "path": "res://tests/action_range_regression_test.gd"},
 		{"name": "qa_checklist", "path": "res://tests/planning_qa_gate_test.gd"},
 	]
 	for suite: Dictionary in suites:
@@ -26,7 +27,7 @@ func _initialize() -> void:
 				report.store_line("[FAIL] %s" % failure)
 		report.close()
 	if failures.is_empty():
-		print("[PASS] Planning QA gate — drag E2E, planning input, trample, and checklist.")
+		print("[PASS] Planning QA gate — drag E2E, planning input, trample, action-range regression, and checklist.")
 	else:
 		for failure: String in failures:
 			printerr("[FAIL] %s" % failure)

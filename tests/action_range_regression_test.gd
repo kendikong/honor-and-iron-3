@@ -1,0 +1,431 @@
+class_name ActionRangeRegressionTest
+extends RefCounted
+
+## Regression matrix — red action-range tiles (owner bugs from manual QA).
+##
+## Contract (every case asserts as many layers as apply):
+##   1. action_range_visible_for_hover() matches expect_show
+##   2. action_range_intent_stand_cell() matches expect_stand when set
+##   3. Overlay draws red tiles anchored on stand (not stale knight origin)
+##   4. visibility gate parity: expect_show == overlay has any red tile
+##
+## Rule under test: red follows cursor stand; hide only when skill impossible after premove.
+
+const KNIGHT_START := Vector2i(4, 5)
+const ENEMY_POS := Vector2i(7, 5)
+const BASH_APPROACH := Vector2i(6, 5)
+const SHIELD_BASH_ID: StringName = &"knight_shield_bash"
+const BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
+const TRAMPLE_ID: StringName = &"knight_trampling_advance"
+
+
+static func run_all(failures: Array[String]) -> void:
+	var tests: Array[Callable] = [
+		_test_show_move_hover_without_action_slot,
+		_test_show_enemy_bash_with_committed_premove,
+		_test_show_red_anchor_follows_stand_not_knight_start,
+		_test_hide_auto_run_consumes_skill_ap,
+		_test_hide_committed_run_leaves_no_ap,
+		_test_hide_no_ability_selected,
+		_test_show_awaiting_trample,
+		_test_hover_step_updates_stand_and_red_tiles,
+		_test_visibility_gate_parity_show,
+		_test_visibility_gate_parity_hide,
+	]
+	var names: PackedStringArray = [
+		"show_move_hover_no_action_slot",
+		"show_enemy_bash_committed_premove",
+		"show_red_anchor_on_stand",
+		"hide_auto_run_ap_gate",
+		"hide_committed_run_no_ap",
+		"hide_no_ability",
+		"show_awaiting_trample",
+		"hover_step_updates_stand",
+		"parity_gate_show",
+		"parity_gate_hide",
+	]
+	for i: int in range(tests.size()):
+		print("[RUN] action_range/%s" % names[i])
+		tests[i].call(failures)
+
+
+static func _fixture_unit(fix: Dictionary) -> UnitState:
+	if fix.has("knight"):
+		return fix.knight as UnitState
+	return fix.get("unit", null) as UnitState
+
+
+static func _hover_sync(
+	input: CombatPlanningInput,
+	overlay: TacticalPlanningOverlay,
+	cell: Vector2i,
+) -> void:
+	input.on_hover_moved(cell)
+	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+
+
+static func _overlay_has_any_red(overlay: TacticalPlanningOverlay, board: BoardState) -> bool:
+	if board == null:
+		return false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			if overlay.is_hover_action_range_tile(Vector2i(x, y)):
+				return true
+	return false
+
+
+static func _collect_overlay_red_tiles(overlay: TacticalPlanningOverlay, board: BoardState) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if board == null:
+		return out
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			if overlay.is_hover_action_range_tile(coord):
+				out.append(coord)
+	return out
+
+
+static func _assert_contract(
+	failures: Array[String],
+	label: String,
+	fix: Dictionary,
+	overlay: TacticalPlanningOverlay,
+	input: CombatPlanningInput,
+	hover: Vector2i,
+	ability: AbilityData,
+	expect_show: bool,
+	expect_stand: Vector2i = Vector2i(-999999, -999999),
+) -> void:
+	_hover_sync(input, overlay, hover)
+	var visible: bool = input.action_range_visible_for_hover()
+	var stand: Vector2i = input.action_range_intent_stand_cell(1)
+	var overlay_stand: Vector2i = overlay._intent_stand_origin(_fixture_unit(fix))
+	var has_red: bool = _overlay_has_any_red(overlay, fix.board)
+	if visible != expect_show:
+		failures.append(
+			"ActionRangeRegression %s: visibility gate expected %s got %s (hover %s stand %s)"
+			% [label, expect_show, visible, hover, stand],
+		)
+	if has_red != expect_show:
+		failures.append(
+			"ActionRangeRegression %s: overlay red tiles expected %s got %s (hover %s)"
+			% [label, expect_show, has_red, hover],
+		)
+	if expect_stand.x > -900000 and stand != expect_stand:
+		failures.append(
+			"ActionRangeRegression %s: stand expected %s got %s"
+			% [label, expect_stand, stand],
+		)
+	if stand != overlay_stand:
+		failures.append(
+			"ActionRangeRegression %s: input stand %s != overlay stand %s"
+			% [label, stand, overlay_stand],
+		)
+	if expect_show and ability != null:
+		var actor: UnitState = _fixture_unit(fix)
+		var range_tiles: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+			fix.board, actor, ability, stand,
+		)
+		var anchored: bool = false
+		for tile: Vector2i in range_tiles:
+			if overlay.is_hover_action_range_tile(tile):
+				anchored = true
+				break
+		if not anchored:
+			failures.append(
+				"ActionRangeRegression %s: no red tile from stand %s ability range"
+				% [label, stand],
+			)
+		if stand != _fixture_unit(fix).position:
+			var from_start: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+				fix.board, _fixture_unit(fix), ability, _fixture_unit(fix).position,
+			)
+			var only_start: bool = true
+			for tile: Vector2i in _collect_overlay_red_tiles(overlay, fix.board):
+				if not from_start.has(tile):
+					only_start = false
+					break
+			if only_start and not from_start.is_empty():
+				failures.append(
+					"ActionRangeRegression %s: red tiles still anchored on knight start %s not stand %s"
+					% [label, _fixture_unit(fix).position, stand],
+				)
+
+
+static func _test_show_move_hover_without_action_slot(failures: Array[String]) -> void:
+	const HOVER_DEST := Vector2i(3, 4)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.auto_run = true
+	fix.knight.ability.points_left = 1
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_move(
+			1, HOVER_DEST, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression show_move_hover_no_action_slot: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, HOVER_DEST)
+	if not (slots.get("action", []) as Array).is_empty():
+		failures.append(
+			"ActionRangeRegression show_move_hover_no_action_slot: fixture expects empty action slot",
+		)
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
+	_assert_contract(
+		failures, "show_move_hover_no_action_slot", fix, overlay, input,
+		HOVER_DEST, ability, true, HOVER_DEST,
+	)
+
+
+static func _test_show_enemy_bash_with_committed_premove(failures: Array[String]) -> void:
+	const PREMOVE_DEST := Vector2i(5, 4)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_move(
+			1, PREMOVE_DEST, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	var bash_idx: int = PlanningQAGateTest._ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("ActionRangeRegression show_enemy_bash_committed_premove: Shield Bash missing")
+		return
+	director.selected_ability_index = bash_idx
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(SHIELD_BASH_ID)
+	_assert_contract(
+		failures, "show_enemy_bash_committed_premove", fix, overlay, input,
+		ENEMY_POS, ability, true, BASH_APPROACH,
+	)
+
+
+static func _test_show_red_anchor_follows_stand_not_knight_start(failures: Array[String]) -> void:
+	const HOVER_DEST := Vector2i(3, 4)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.auto_run = true
+	fix.knight.ability.points_left = 1
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_move(
+			1, HOVER_DEST, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression show_red_anchor_on_stand: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
+	_hover_sync(input, overlay, HOVER_DEST)
+	var stand: Vector2i = input.action_range_intent_stand_cell(1)
+	var at_stand: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, fix.knight, ability, stand,
+	)
+	var at_start: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, fix.knight, ability, KNIGHT_START,
+	)
+	var shifted_tile: Vector2i = Vector2i(-999999, -999999)
+	for tile: Vector2i in at_stand:
+		if not at_start.has(tile):
+			shifted_tile = tile
+			break
+	if shifted_tile.x <= -900000:
+		failures.append("ActionRangeRegression show_red_anchor_on_stand: need tile in stand range not start range")
+		return
+	if not overlay.is_hover_action_range_tile(shifted_tile):
+		failures.append(
+			"ActionRangeRegression show_red_anchor_on_stand: tile %s must be red at stand %s not start %s"
+			% [shifted_tile, stand, KNIGHT_START],
+		)
+
+
+
+static func _test_hide_auto_run_consumes_skill_ap(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.auto_run = true
+	fix.knight.ability.points_left = 1
+	fix.knight.movement.points_left = 2
+	var projected: UnitState = director.projected_state.get_unit_by_id(1) if director.projected_state != null else null
+	if projected != null:
+		projected.ability.points_left = 1
+		projected.movement.points_left = 2
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression hide_auto_run_ap_gate: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var run_tile: Vector2i = _find_run_hover_tile(fix.board, fix.knight)
+	if run_tile.x <= -900000:
+		failures.append("ActionRangeRegression hide_auto_run_ap_gate: no run tile")
+		return
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
+	_assert_contract(
+		failures, "hide_auto_run_ap_gate", fix, overlay, input,
+		run_tile, ability, false,
+	)
+
+
+static func _test_hide_committed_run_leaves_no_ap(failures: Array[String]) -> void:
+	const COMMITTED_RUN_DEST := Vector2i(3, 6)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.auto_run = true
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_run_move(
+			1, COMMITTED_RUN_DEST, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	fix.knight.ability.points_left = 1
+	fix.knight.movement.points_left = 0
+	var projected_knight: UnitState = director.projected_state.get_unit_by_id(1) if director.projected_state != null else null
+	if projected_knight != null:
+		projected_knight.ability.points_left = 1
+		projected_knight.movement.points_left = 0
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
+	director.selected_ability_index = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	_assert_contract(
+		failures, "hide_committed_run_no_ap", fix, overlay, input,
+		COMMITTED_RUN_DEST, ability, false,
+	)
+
+
+static func _test_hide_no_ability_selected(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.selected_ability_index = -1
+	_assert_contract(
+		failures, "hide_no_ability", fix, overlay, input,
+		Vector2i(3, 4), null, false,
+	)
+
+
+static func _test_show_awaiting_trample(failures: Array[String]) -> void:
+	var fix: Dictionary = TramplingAdvanceE2ETest._knight_fixture(TramplingAdvanceE2ETest.START_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	if fix.trample_idx < 0:
+		failures.append("ActionRangeRegression show_awaiting_trample: Trampling Advance missing")
+		return
+	if not TramplingAdvanceE2ETest._arm_trample_awaiting(input, director, unit):
+		failures.append("ActionRangeRegression show_awaiting_trample: arm awaiting failed")
+		return
+	var trample: AbilityData = null
+	for ab: AbilityData in unit.active_abilities:
+		if ab != null and ab.id == TRAMPLE_ID:
+			trample = ab
+			break
+	_assert_contract(
+		failures, "show_awaiting_trample", fix, overlay, input,
+		TramplingAdvanceE2ETest.END_CELL, trample, true,
+	)
+
+
+static func _test_hover_step_updates_stand_and_red_tiles(failures: Array[String]) -> void:
+	const DEST_A := Vector2i(3, 4)
+	const DEST_B := Vector2i(4, 4)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.auto_run = true
+	fix.knight.ability.points_left = 1
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression hover_step_updates_stand: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
+	_hover_sync(input, overlay, DEST_A)
+	var stand_a: Vector2i = input.action_range_intent_stand_cell(1)
+	var reds_a: Array[Vector2i] = _collect_overlay_red_tiles(overlay, fix.board)
+	_hover_sync(input, overlay, DEST_B)
+	var stand_b: Vector2i = input.action_range_intent_stand_cell(1)
+	var reds_b: Array[Vector2i] = _collect_overlay_red_tiles(overlay, fix.board)
+	if stand_a == stand_b:
+		failures.append(
+			"ActionRangeRegression hover_step_updates_stand: stand must change %s -> %s on hover step"
+			% [stand_a, stand_b],
+		)
+	if reds_a == reds_b:
+		failures.append(
+			"ActionRangeRegression hover_step_updates_stand: red tile set must update on hover step",
+		)
+	var range_b: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, fix.knight, ability, stand_b,
+	)
+	var anchored_b: bool = false
+	for tile: Vector2i in range_b:
+		if overlay.is_hover_action_range_tile(tile):
+			anchored_b = true
+			break
+	if not anchored_b:
+		failures.append(
+			"ActionRangeRegression hover_step_updates_stand: red tiles must anchor on new stand %s"
+			% stand_b,
+		)
+
+
+static func _test_visibility_gate_parity_show(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	var bash_idx: int = PlanningQAGateTest._ability_index(fix.knight, SHIELD_BASH_ID)
+	director.selected_ability_index = bash_idx
+	_hover_sync(input, overlay, ENEMY_POS)
+	if input.action_range_visible_for_hover() != _overlay_has_any_red(overlay, fix.board):
+		failures.append(
+			"ActionRangeRegression parity_gate_show: visibility gate must match overlay red presence on enemy hover",
+		)
+
+
+static func _test_visibility_gate_parity_hide(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.auto_run = true
+	fix.knight.ability.points_left = 1
+	fix.knight.movement.points_left = 2
+	director.selected_ability_index = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	var run_tile: Vector2i = _find_run_hover_tile(fix.board, fix.knight)
+	if run_tile.x <= -900000:
+		failures.append("ActionRangeRegression parity_gate_hide: no run tile")
+		return
+	_hover_sync(input, overlay, run_tile)
+	if input.action_range_visible_for_hover() != _overlay_has_any_red(overlay, fix.board):
+		failures.append(
+			"ActionRangeRegression parity_gate_hide: visibility gate must match overlay red absence on unaffordable run hover",
+		)
+
+
+static func _find_run_hover_tile(board: BoardState, unit: UnitState) -> Vector2i:
+	if board == null or unit == null:
+		return Vector2i(-999999, -999999)
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			if coord == unit.position:
+				continue
+			if AbilitySystem.movement_requires_run(board, unit, coord, []):
+				return coord
+	return Vector2i(-999999, -999999)
