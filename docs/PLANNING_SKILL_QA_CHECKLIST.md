@@ -217,7 +217,9 @@ Notes / failures:
 Below: exact boards, cells, cursors, timeline icons, and preview positions.  
 **Training Arena / QA fixture** unless noted: open 12×12 plain grid, knight **1 AP / 3 MP** (knight default), auto-run **on**, auto-skill-after-move **on**.
 
-**1 AP means:** One class skill **or** Run per turn — not both. Shield Bash (1 AP) uses your whole pool. Run (1 AP) uses your whole pool. Skills that cost **2+ AP** (Trample, Chain Hook, Bowling Charge) **cannot be committed** in standard Training unless you enable infinite AP debug.
+**Economy (read from code, not ability names):** Knight has **1 AP / 3 MP** per turn (`knight_factory.gd`). **Every knight class skill costs 1 AP** — `DataLibrary._make_ability(..., ap_cost: 1)` in `knight_factory.gd`. **Run also costs 1 AP** when a step requires it. So with 1 AP you get **one** of: a class skill, **or** a run-required move — **not** run + skill in the same turn.
+
+**Do not confuse range with AP:** Numbers in ability names or upgrade text (e.g. Chain Hook **range 3**, Trampling Advance **range 2**, Bowling Charge **range 3** dash) are `range_tiles` / effect amounts — **not** `action_point_cost`. Trampling Advance additionally costs **2 MP** (`movement_point_cost = 2`), not extra AP.
 
 **Legend**
 
@@ -392,11 +394,9 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
 
 ---
 
-## Chain Hook (`knight_chain_hook`) — reference (needs 3 AP)
+## Chain Hook (`knight_chain_hook`) — full 7 phases
 
-> **Training Arena:** Knight has **1 AP**. Chain Hook costs **3 AP** — you **cannot commit** it in standard F5 training. Use this section only with **infinite AP** debug or a boosted-AP test setup. Headless tests may inflate AP to 3.
-
-**Skill:** **3 AP** · range **1** · **PULL 2**
+**Skill:** **1 AP** · **range 3** · **PULL 2** (`knight_factory.gd` — third `_make_ability` arg is range, fifth is AP)
 
 **Board (start):**
 
@@ -405,7 +405,7 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
   3   .   K   .   .   E   .
 ```
 
-- **K** = `(1,3)` · **E** = `(4,3)` (3 tiles east — **out of hook range** from start)
+- **K** = `(1,3)` · **E** = `(4,3)` (Manhattan **3** — at hook **range** edge from start)
 
 ---
 
@@ -413,9 +413,9 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
 
 | What | Exactly |
 |------|---------|
-| **AP / MP** | **1 / 1** AP · **3 / 3** MP (standard training — hook **not affordable**) |
+| **AP / MP** | **1 / 1** AP · **3 / 3** MP |
 | **Blue** | Full 3 MP walk reach from `(1,3)` |
-| **Red** | Around stand `(1,3)` only — **dummy `(4,3)` NOT in red** |
+| **Red** | Around stand `(1,3)` — **dummy `(4,3)` IS in red** (range 3 reaches Manhattan 3). |
 | **Ghost / arrows** | None |
 
 ### Phase 2 — Hover empty `(2,3)`
@@ -424,15 +424,15 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
 |------|---------|
 | **Ghost** | `(2,3)` |
 | **Path** | `(1,3) → (2,3)` |
-| **Red** | Re-anchored to `(2,3)` — still may not reach dummy |
+| **Red** | Re-anchored to `(2,3)` — dummy still in red (distance 2 ≤ 3) |
 
 ### Phase 3 — Pathing toward dummy
 
-Paint **`(1,3) → (2,3) → (3,3)`** (get adjacent west of dummy).
+Paint **`(1,3) → (2,3) → (3,3)`** (approach tile west of dummy).
 
 | What | Exactly |
 |------|---------|
-| **Red at end** | From `(3,3)`, red can include **`(4,3)`** |
+| **Red at end** | From `(3,3)`, red includes **`(4,3)`** (adjacent) |
 
 ### Phase 4 — Hover enemy `(4,3)`
 
@@ -440,7 +440,7 @@ Paint **`(1,3) → (2,3) → (3,3)`** (get adjacent west of dummy).
 |------|---------|
 | **Ghost knight** | **`(3,3)`** (adjacent west of dummy) |
 | **Cursor** | **Walk + attack** composite |
-| **Orange pull arrow** | **`(4,3) → (2,3)`** (west, toward knight) — 2 tiles with PULL 2 |
+| **Orange pull arrow** | **`(4,3) → (2,3)`** (west, toward knight) — PULL 2 |
 | **Preview dummy** | Lands **`(2,3)`** on preview board |
 | **Dashed line (manual)** | Player `(3,3)` to enemy `(4,3)` targeting segment (Layer B pixels) |
 
@@ -449,7 +449,7 @@ Paint **`(1,3) → (2,3) → (3,3)`** (get adjacent west of dummy).
 | What | Exactly |
 |------|---------|
 | **Timeline** | PRE walk to **`(3,3)`** + ACTION Chain Hook on enemy |
-| **AP after** | **0 / 3** AP only if you had **3+ AP** to start; with **1 AP** commit must **fail** or not be offered |
+| **AP after** | **0 / 1** (hook spent your only AP) |
 | **No jump** | Pull arrow and landing cell unchanged vs preview |
 
 ### Phase 6 — Execute
@@ -465,11 +465,9 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 
 ---
 
-## Trampling Advance (`knight_trampling_advance`) — reference (needs 2 AP)
+## Trampling Advance (`knight_trampling_advance`) — full 7 phases
 
-> **Training Arena:** Knight has **1 AP**. Trampling Advance costs **2 AP** — **not committable** in standard 1 AP training. Use infinite AP debug or headless E2E fixture for full trample walkthrough.
-
-**Skill:** **2 AP** · **2 MP** · tile-target movement skill
+**Skill:** **1 AP** · **2 MP** (`movement_point_cost`) · **range 2** tiles · tile-target movement skill
 
 **Board (E2E reference):**
 
@@ -487,7 +485,7 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 
 | What | Exactly |
 |------|---------|
-| **Red** | Trample target pattern from current stand (tile-target range) |
+| **Red** | Trample target pattern from current stand (tile-target range 2) |
 | **Blue** | Normal move range |
 
 ### Phase 2–3 — Arm + paint corridor
@@ -512,7 +510,7 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 | What | Exactly |
 |------|---------|
 | **Timeline ACTION** | Trample with waypoints **`(6,4)`, `(6,3)`** preserved |
-| **AP / MP** | **2 AP** and **2 MP** spent per skill rules |
+| **AP / MP** | **1 AP** and **2 MP** spent per skill rules |
 
 ### Phase 6 — Execute
 
@@ -531,13 +529,13 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 
 ---
 
-## Bowling Charge — red tile / run economy (3 AP skill, 1 AP knight)
+## Bowling Charge — red tile / run economy (1 AP skill)
 
-**Skill:** Bowling Charge **3 AP** — cannot be **committed** with 1 AP. Used in tests **selected on the bar** to check red tiles when **run would eat your only AP**.
+**Skill:** **1 AP** · **range 3** (dash) · DASH 3 + BULLDOZE (`knight_factory.gd`)
 
 **Board:** Knight `(4,5)`, dummy `(7,5)`, auto-run on, knight **1 / 1** AP
 
-**Also applies with Shield Bash selected** (your main F5 case) — same economy: run OR bash, not both.
+**Also applies with Shield Bash selected** (your main F5 case) — same economy: run OR skill, not both.
 
 ### Hover run tile (e.g. `(3,6)`) with **1 AP** — phases 2–3
 
@@ -545,7 +543,7 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 |------|---------|
 | **Red** | **Completely off** — no red on dummy `(7,5)`, no red at knight start |
 | **Cursor** | **Run** on that hover |
-| **Reason** | Only **1 AP** · implicit premove = run → **0 AP** → Bowling (3 AP) and Bash (1 AP) both impossible → **red off** |
+| **Reason** | Only **1 AP** · implicit premove = run → **0 AP** → any **1 AP** class skill (Bowling, Bash, etc.) impossible → **red off** |
 
 ### After commit run only — phase 5
 

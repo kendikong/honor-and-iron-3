@@ -1311,7 +1311,7 @@ static func _test_undo_movement_action_preserves_premove(failures: Array[String]
 	var trample := AbilityData.new()
 	trample.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
 	trample.id = &"knight_trampling_advance"
-	trample.action_point_cost = 2
+	trample.action_point_cost = 1
 	trample.movement_point_cost = 2
 	trample.targeting_flags = GameEnums.TargetingFlags.TILE
 	var move_eff := EffectData.new()
@@ -1324,8 +1324,8 @@ static func _test_undo_movement_action_preserves_premove(failures: Array[String]
 	knight.position = Vector2i(3, 3)
 	knight.movement.points_left = 4
 	knight.movement.max_points = 4
-	knight.ability.points_left = 2
-	knight.ability.max_points = 2
+	knight.ability.points_left = 1
+	knight.ability.max_points = 1
 	knight.active_abilities = [trample]
 	board.units = [knight]
 	GridSystem.set_occupant(board, knight.position, knight.id)

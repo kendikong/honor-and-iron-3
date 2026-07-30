@@ -29,7 +29,7 @@ Layer A must pass. Layer B is still required for pixel/animation/FPS.
 
 **Coverage honesty:** Most skill rows in the gate are **partial** — they check slots, preview, or sim slices, not all 7 phases with blue+red+preview at every step. Full per-skill phase coverage is defined in [PLANNING_SKILL_QA_CHECKLIST.md](PLANNING_SKILL_QA_CHECKLIST.md).
 
-**Training Arena defaults:** Knight **1 AP / 3 MP** (`knight_factory` `action_points = 1`, `move_points = 3`). Headless `_planning_fixture` matches F5 unless a test overrides AP for multi-cost skills (Hook, Trample). (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
+**Training Arena defaults:** Knight **1 AP / 3 MP** (`knight_factory` `action_points = 1`, `move_points = 3`). All knight class skills: **`action_point_cost = 1`** in `knight_factory.gd`. Headless `_planning_fixture` matches F5. Slot-only tests (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
 
 ## Run (fast — planning gate only)
 
