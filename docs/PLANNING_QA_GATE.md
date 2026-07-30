@@ -106,6 +106,7 @@ Beyond the manual checklist — game rules that must not regress during perf wor
 | Selection vs drop: walk commit → sim | `_test_click_drop_commit_sim_walk` | `commit_from_slots` → `Simulator` |
 | Painted drag walk == selection walk sim | `_test_click_drop_drag_walk_sim_parity` | `_paint_drag_route` + drop vs click |
 | Painted drag bash on enemy == selection | `_test_click_drop_drag_bash_enemy_parity` | approach route + drop on enemy |
+| Drag-drop commit then undo clears plan | `_test_drag_drop_commit_undo_clears_plan` | `_begin_drag` → commit → `rpc_remove_last_for_unit` |
 | Hover cursor == slots cursor | `_test_cursor_equals_slots_on_hover` | `compute_hover_action_icon` |
 | Bash commit → sim lands at preview push | `_test_bash_commit_sim_push` | `commit_from_slots` → `Simulator` |
 | Hook commit → sim matches preview pull | `_test_hook_commit_sim_pull` | preview_board then `Simulator` |

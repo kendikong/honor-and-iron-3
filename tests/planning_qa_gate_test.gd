@@ -51,6 +51,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_click_drop_commit_sim_walk,
 		_test_click_drop_drag_walk_sim_parity,
 		_test_click_drop_drag_bash_enemy_parity,
+		_test_drag_drop_commit_undo_clears_plan,
 		_test_cursor_equals_slots_on_hover,
 		_test_bash_commit_sim_push,
 		_test_hook_commit_sim_pull,
@@ -106,6 +107,7 @@ static func run_all(failures: Array[String]) -> void:
 		"click_drop_sim_walk",
 		"click_drop_drag_walk_sim",
 		"click_drop_drag_bash",
+		"drag_drop_undo",
 		"cursor_equals_slots",
 		"bash_commit_sim",
 		"hook_commit_sim",
@@ -1520,6 +1522,58 @@ static func _test_click_drop_drag_bash_enemy_parity(failures: Array[String]) -> 
 		failures.append(
 			"PlanningQAGate click/drop drag bash: selection vs painted-drop differ %s vs %s"
 			% [_intent_slot_signature(click_slots), _intent_slot_signature(drop_slots)],
+		)
+
+
+static func _test_drag_drop_commit_undo_clears_plan(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
+	_wire_click_drop_context(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	director.selected_ability_index = -1
+	input.force_basic_movement = true
+	var dest := Vector2i(5, 5)
+	input._begin_drag(fix.knight, Vector2.ZERO, true)
+	var route: Array[Vector2i] = [KNIGHT_START, dest]
+	input._drag_route = route.duplicate()
+	input._drag_last_free = dest
+	var params: Dictionary = input._commit_interaction_params(dest, -1)
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		1, params.cell, params.waypoints, params.legal_move_tiles, params.preferred,
+		int(params.get("face_dir", -1)),
+	)
+	if _slots_invalid(slots):
+		failures.append("PlanningQAGate drag_drop_undo: painted drag commit slots invalid")
+		return
+	if not director.commit_from_slots(1, slots):
+		failures.append("PlanningQAGate drag_drop_undo: commit_from_slots failed")
+		return
+	input._end_drag_interaction(false, false)
+	director.flush_plan_refresh_signals_if_pending()
+	if input._drag_saved_preview != null:
+		failures.append(
+			"PlanningQAGate drag_drop_undo: successful drop must clear _drag_saved_preview",
+		)
+	if director.plan_pre_move.size() == 0:
+		failures.append("PlanningQAGate drag_drop_undo: drag commit must write pre-move")
+		return
+	var move_action: TimelineAction = director.plan_pre_move.entries[0]
+	if move_action.irreversible:
+		failures.append("PlanningQAGate drag_drop_undo: basic drag walk must stay undoable")
+		return
+	if not director.unit_has_undoable_action(1):
+		failures.append("PlanningQAGate drag_drop_undo: unit must be undoable after drag commit")
+		return
+	var before: int = director.plan_pre_move.size()
+	director.rpc_remove_last_for_unit(1)
+	director.flush_plan_refresh_signals_if_pending()
+	if director.plan_pre_move.size() >= before:
+		failures.append(
+			"PlanningQAGate drag_drop_undo: undo must remove drag-committed pre-move",
+		)
+	if input._drag_saved_preview != null:
+		failures.append(
+			"PlanningQAGate drag_drop_undo: undo must not leave stale drag preview stash",
 		)
 
 

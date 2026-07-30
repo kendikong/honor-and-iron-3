@@ -576,6 +576,7 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 	if restore_committed:
 		_restore_committed_preview()
 	else:
+		_drag_saved_preview = null
 		if _planning != null:
 			_planning.restore_committed_display()
 	_sync_intent_live_board()
