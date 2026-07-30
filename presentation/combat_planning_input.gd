@@ -2284,24 +2284,40 @@ func action_range_visible_for_hover() -> bool:
 	if awaiting_targeting_active():
 		return true
 	var unit_id: int = _director.selected_unit_id
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor == null:
+	var committed: UnitState = _proj_unit(unit_id)
+	if committed == null:
+		committed = _director.board.get_unit_by_id(unit_id)
+	if committed == null:
 		return false
-	var ability: AbilityData = _selected_ability_data(actor)
+	var ability: AbilityData = _selected_ability_data(committed)
 	if ability == null or AbilitySystem.is_run_ability(ability) or AbilitySystem.is_wait_ability(ability):
 		return false
 	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
 	if not _director.board.is_in_bounds(stand):
 		return false
-	return AbilitySystem.can_show_planning_action_range_after_premove(
-		_proj(),
-		actor,
-		ability,
-		stand,
-		auto_run_movement_active(actor),
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	var has_committed_move: bool = (
+		move_timing >= 0
+		and _director.unit_has_move_planned_at_timing(unit_id, move_timing)
 	)
+	if has_committed_move and _proj_move_origin(committed) == stand:
+		return AbilitySystem.can_plan(committed, ability, _proj())
+	var origin_actor: UnitState = committed
+	if not has_committed_move and _director.base_board != null:
+		var base_actor: UnitState = _director.base_board.get_unit_by_id(unit_id)
+		if base_actor != null:
+			origin_actor = base_actor
+	if origin_actor.position == stand:
+		return AbilitySystem.can_plan(origin_actor, ability, _proj())
+	var after_premove: UnitState = AbilitySystem.project_actor_after_premove(
+		_proj(),
+		origin_actor,
+		stand,
+		auto_run_movement_active(origin_actor),
+	)
+	if after_premove == null:
+		return false
+	return AbilitySystem.can_plan(after_premove, ability, _proj())
 
 
 ## True when this unit's current planning intent (drag / live path / committed move) needs Run.
