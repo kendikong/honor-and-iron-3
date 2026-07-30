@@ -39,7 +39,18 @@ static func run_all(failures: Array[String]) -> void:
 		_test_trample_sim_follows_painted_order,
 		# Intent-truth pipeline (preview = slots = commit = sim)
 		_test_bash_slots_preview_board_parity,
-		_test_hover_click_slot_parity,
+		_test_hover_click_drop_slot_parity,
+		_test_click_drop_parity_bash_enemy,
+		_test_click_drop_parity_walk_adjacent,
+		_test_click_drop_parity_bash_approach,
+		_test_click_drop_parity_hook_enemy,
+		_test_click_drop_parity_oob_invalid,
+		_test_click_drop_cursor_parity_bash,
+		_test_click_drop_cursor_parity_walk,
+		_test_click_drop_commit_sim_bash,
+		_test_click_drop_commit_sim_walk,
+		_test_click_drop_drag_walk_sim_parity,
+		_test_click_drop_drag_bash_enemy_parity,
 		_test_cursor_equals_slots_on_hover,
 		_test_bash_commit_sim_push,
 		_test_hook_commit_sim_pull,
@@ -83,7 +94,18 @@ static func run_all(failures: Array[String]) -> void:
 		"trample_commit_wps",
 		"trample_sim_order",
 		"bash_preview_board_parity",
-		"hover_click_parity",
+		"hover_click_drop_parity",
+		"click_drop_bash",
+		"click_drop_walk",
+		"click_drop_approach",
+		"click_drop_hook",
+		"click_drop_oob",
+		"click_drop_cursor_bash",
+		"click_drop_cursor_walk",
+		"click_drop_sim_bash",
+		"click_drop_sim_walk",
+		"click_drop_drag_walk_sim",
+		"click_drop_drag_bash",
 		"cursor_equals_slots",
 		"bash_commit_sim",
 		"hook_commit_sim",
@@ -174,6 +196,86 @@ static func _commit_slots_at(
 	return input._final_commit_slots_for_interaction(
 		unit_id, cell, waypoints, empty_legal, Vector2i(-999999, -999999),
 	)
+
+
+static func _clear_drag_state(input: CombatPlanningInput) -> void:
+	input.dragging = false
+	input._drag_route.clear()
+	input._drag_unit_id = -1
+	input._drag_last_free = Vector2i(-999999, -999999)
+	input._drag_unit_was_selected = false
+
+
+static func _click_slots_at(
+	input: CombatPlanningInput,
+	unit_id: int,
+	cell: Vector2i,
+) -> Dictionary:
+	return input._final_commit_slots_for_click_at_cell(unit_id, cell, Vector2.ZERO)
+
+
+static func _drop_slots_at(
+	input: CombatPlanningInput,
+	unit_id: int,
+	cell: Vector2i,
+) -> Dictionary:
+	var legal_moves: Array[Vector2i] = []
+	if input._drag_route_commits_active():
+		legal_moves = input._snapshot_drag_legal_move_tiles()
+	return input._final_commit_slots_for_drop_at_cell(
+		unit_id, cell, Vector2.ZERO, legal_moves,
+	)
+
+
+static func _assert_click_drop_signature_parity(
+	failures: Array[String],
+	label: String,
+	input: CombatPlanningInput,
+	unit_id: int,
+	cell: Vector2i,
+) -> void:
+	var click_slots: Dictionary = _click_slots_at(input, unit_id, cell)
+	var drop_slots: Dictionary = _drop_slots_at(input, unit_id, cell)
+	if _intent_slot_signature(click_slots) != _intent_slot_signature(drop_slots):
+		failures.append(
+			"PlanningQAGate click/drop parity %s: selection vs drop slots differ %s vs %s"
+			% [label, _intent_slot_signature(click_slots), _intent_slot_signature(drop_slots)],
+		)
+
+
+static func _sim_unit_position_after_slots_commit(
+	director: CombatDirector,
+	unit_id: int,
+	slots: Dictionary,
+) -> Vector2i:
+	if _slots_invalid(slots):
+		return Vector2i(-999999, -999999)
+	if not director.commit_from_slots(unit_id, slots):
+		return Vector2i(-999998, -999998)
+	director.flush_plan_refresh_signals_if_pending()
+	var result: SimResult = _simulate_committed_plan(director)
+	var unit: UnitState = result.final_state.get_unit_by_id(unit_id)
+	if unit == null:
+		return Vector2i(-999997, -999997)
+	return unit.position
+
+
+static func _sim_enemy_position_after_slots_commit(
+	director: CombatDirector,
+	actor_id: int,
+	enemy_id: int,
+	slots: Dictionary,
+) -> Vector2i:
+	if _slots_invalid(slots):
+		return Vector2i(-999999, -999999)
+	if not director.commit_from_slots(actor_id, slots):
+		return Vector2i(-999998, -999998)
+	director.flush_plan_refresh_signals_if_pending()
+	var result: SimResult = _simulate_committed_plan(director)
+	var enemy: UnitState = result.final_state.get_unit_by_id(enemy_id)
+	if enemy == null:
+		return Vector2i(-999997, -999997)
+	return enemy.position
 
 
 static func _actions_from_slots(slots: Dictionary) -> Array[TimelineAction]:
@@ -377,6 +479,10 @@ static func _wire_overlay(fix: Dictionary) -> TacticalPlanningOverlay:
 	fix.input._intent_state = intent
 	overlay.bind_planning_input(fix.input)
 	return overlay
+
+
+static func _wire_click_drop_context(fix: Dictionary) -> void:
+	_wire_overlay(fix)
 
 
 static func _test_waypoint_paint_order_preserved_on_tile_drag(failures: Array[String]) -> void:
@@ -1151,23 +1257,269 @@ static func _test_bash_slots_preview_board_parity(failures: Array[String]) -> vo
 		)
 
 
-static func _test_hover_click_slot_parity(failures: Array[String]) -> void:
+static func _test_hover_click_drop_slot_parity(failures: Array[String]) -> void:
 	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(fix)
 	var input: CombatPlanningInput = fix.input
 	if _bash_img1_ready(fix) < 0:
-		failures.append("PlanningQAGate hover/click parity: Shield Bash missing")
+		failures.append("PlanningQAGate hover/click/drop parity: Shield Bash missing")
 		return
+	_clear_drag_state(input)
 	var hover_slots: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
-	var click_slots: Dictionary = input._final_commit_slots_for_click_at_cell(
-		1, ENEMY_POS, Vector2.ZERO,
-	)
-	if _slots_invalid(hover_slots) or _slots_invalid(click_slots):
-		failures.append("PlanningQAGate hover/click parity: bash enemy hover must be valid")
+	var click_slots: Dictionary = _click_slots_at(input, 1, ENEMY_POS)
+	var drop_slots: Dictionary = _drop_slots_at(input, 1, ENEMY_POS)
+	if _slots_invalid(hover_slots) or _slots_invalid(click_slots) or _slots_invalid(drop_slots):
+		failures.append("PlanningQAGate hover/click/drop parity: bash enemy must be valid in all modes")
 		return
-	if _intent_slot_signature(hover_slots) != _intent_slot_signature(click_slots):
+	var hover_sig: String = _intent_slot_signature(hover_slots)
+	var click_sig: String = _intent_slot_signature(click_slots)
+	var drop_sig: String = _intent_slot_signature(drop_slots)
+	if hover_sig != click_sig:
 		failures.append(
-			"PlanningQAGate hover/click parity: interaction vs click slots differ %s vs %s"
-			% [_intent_slot_signature(hover_slots), _intent_slot_signature(click_slots)],
+			"PlanningQAGate hover/click/drop parity: interaction vs click differ %s vs %s"
+			% [hover_sig, click_sig],
+		)
+	if click_sig != drop_sig:
+		failures.append(
+			"PlanningQAGate hover/click/drop parity: selection vs drop differ %s vs %s"
+			% [click_sig, drop_sig],
+		)
+
+
+static func _test_click_drop_parity_bash_enemy(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(fix)
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate click/drop bash: Shield Bash missing")
+		return
+	_clear_drag_state(fix.input)
+	_assert_click_drop_signature_parity(failures, "bash enemy", fix.input, 1, ENEMY_POS)
+
+
+static func _test_click_drop_parity_walk_adjacent(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(fix)
+	var director: CombatDirector = fix.director
+	director.selected_ability_index = -1
+	fix.input.force_basic_movement = true
+	_clear_drag_state(fix.input)
+	_assert_click_drop_signature_parity(failures, "walk adjacent", fix.input, 1, Vector2i(5, 5))
+
+
+static func _test_click_drop_parity_bash_approach(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(fix)
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate click/drop approach: Shield Bash missing")
+		return
+	_clear_drag_state(fix.input)
+	_assert_click_drop_signature_parity(failures, "bash approach", fix.input, 1, BASH_APPROACH)
+
+
+static func _test_click_drop_parity_hook_enemy(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(Vector2i(1, 3), Vector2i(4, 3))
+	_wire_click_drop_context(fix)
+	var hook_idx: int = _ability_index(fix.knight, CHAIN_HOOK_ID)
+	if hook_idx < 0:
+		failures.append("PlanningQAGate click/drop hook: Chain Hook missing")
+		return
+	fix.director.selected_ability_index = hook_idx
+	_clear_drag_state(fix.input)
+	_assert_click_drop_signature_parity(
+		failures, "hook enemy", fix.input, 1, fix.enemy.position,
+	)
+
+
+static func _test_click_drop_parity_oob_invalid(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(fix)
+	var director: CombatDirector = fix.director
+	_clear_drag_state(fix.input)
+	var oob := Vector2i(-1, 0)
+	var click_slots: Dictionary = _click_slots_at(fix.input, 1, oob)
+	var drop_slots: Dictionary = _drop_slots_at(fix.input, 1, oob)
+	if not _slots_invalid(click_slots):
+		failures.append("PlanningQAGate click/drop oob: selection must reject out-of-bounds")
+	if _actions_from_slots(drop_slots).size() > 0:
+		failures.append("PlanningQAGate click/drop oob: drop must not offer OOB actions")
+	if director.commit_from_slots(1, click_slots):
+		failures.append("PlanningQAGate click/drop oob: selection commit must fail")
+	if director.commit_from_slots(1, drop_slots):
+		failures.append("PlanningQAGate click/drop oob: drop commit must fail")
+
+
+static func _test_click_drop_cursor_parity_bash(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(fix)
+	var input: CombatPlanningInput = fix.input
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate click/drop cursor bash: Shield Bash missing")
+		return
+	_clear_drag_state(input)
+	var click_slots: Dictionary = _click_slots_at(input, 1, ENEMY_POS)
+	var drop_slots: Dictionary = _drop_slots_at(input, 1, ENEMY_POS)
+	var click_icon: String = input._cursor_icon_from_commit_slots(click_slots, fix.knight)
+	var drop_icon: String = input._cursor_icon_from_commit_slots(drop_slots, fix.knight)
+	if click_icon != drop_icon:
+		failures.append(
+			"PlanningQAGate click/drop cursor bash: selection %s != drop %s"
+			% [click_icon, drop_icon],
+		)
+
+
+static func _test_click_drop_cursor_parity_walk(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	director.selected_ability_index = -1
+	input.force_basic_movement = true
+	_clear_drag_state(input)
+	var dest := Vector2i(5, 5)
+	var click_slots: Dictionary = _click_slots_at(input, 1, dest)
+	var drop_slots: Dictionary = _drop_slots_at(input, 1, dest)
+	if _slots_invalid(click_slots) or _slots_invalid(drop_slots):
+		failures.append("PlanningQAGate click/drop cursor walk: adjacent walk must be valid")
+		return
+	var click_icon: String = input._cursor_icon_from_commit_slots(click_slots, fix.knight)
+	var drop_icon: String = input._cursor_icon_from_commit_slots(drop_slots, fix.knight)
+	if click_icon != drop_icon:
+		failures.append(
+			"PlanningQAGate click/drop cursor walk: selection %s != drop %s"
+			% [click_icon, drop_icon],
+		)
+
+
+static func _test_click_drop_commit_sim_bash(failures: Array[String]) -> void:
+	var click_fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(click_fix)
+	if _bash_img1_ready(click_fix) < 0:
+		failures.append("PlanningQAGate click/drop sim bash: Shield Bash missing")
+		return
+	_clear_drag_state(click_fix.input)
+	var click_slots: Dictionary = _click_slots_at(click_fix.input, 1, ENEMY_POS)
+	if _slots_invalid(click_slots):
+		failures.append("PlanningQAGate click/drop sim bash: selection slots invalid")
+		return
+	var click_enemy_pos: Vector2i = _sim_enemy_position_after_slots_commit(
+		click_fix.director, 1, 2, click_slots,
+	)
+	if click_enemy_pos.x < -900000:
+		failures.append("PlanningQAGate click/drop sim bash: selection commit/sim failed")
+		return
+	var drop_fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(drop_fix)
+	if _bash_img1_ready(drop_fix) < 0:
+		failures.append("PlanningQAGate click/drop sim bash: Shield Bash missing on drop fixture")
+		return
+	_clear_drag_state(drop_fix.input)
+	var drop_slots: Dictionary = _drop_slots_at(drop_fix.input, 1, ENEMY_POS)
+	if _slots_invalid(drop_slots):
+		failures.append("PlanningQAGate click/drop sim bash: drop slots invalid")
+		return
+	var drop_enemy_pos: Vector2i = _sim_enemy_position_after_slots_commit(
+		drop_fix.director, 1, 2, drop_slots,
+	)
+	if drop_enemy_pos != click_enemy_pos:
+		failures.append(
+			"PlanningQAGate click/drop sim bash: enemy at %s (selection) vs %s (drop)"
+			% [str(click_enemy_pos), str(drop_enemy_pos)],
+		)
+
+
+static func _test_click_drop_commit_sim_walk(failures: Array[String]) -> void:
+	var dest := Vector2i(5, 5)
+	var click_fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(click_fix)
+	click_fix.director.selected_ability_index = -1
+	click_fix.input.force_basic_movement = true
+	_clear_drag_state(click_fix.input)
+	var click_slots: Dictionary = _click_slots_at(click_fix.input, 1, dest)
+	if _slots_invalid(click_slots):
+		failures.append("PlanningQAGate click/drop sim walk: selection slots invalid")
+		return
+	var click_knight_pos: Vector2i = _sim_unit_position_after_slots_commit(
+		click_fix.director, 1, click_slots,
+	)
+	if click_knight_pos != dest:
+		failures.append(
+			"PlanningQAGate click/drop sim walk: selection ended at %s expected %s"
+			% [str(click_knight_pos), str(dest)],
+		)
+		return
+	var drop_fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(drop_fix)
+	drop_fix.director.selected_ability_index = -1
+	drop_fix.input.force_basic_movement = true
+	_clear_drag_state(drop_fix.input)
+	var drop_slots: Dictionary = _drop_slots_at(drop_fix.input, 1, dest)
+	if _slots_invalid(drop_slots):
+		failures.append("PlanningQAGate click/drop sim walk: drop slots invalid")
+		return
+	var drop_knight_pos: Vector2i = _sim_unit_position_after_slots_commit(
+		drop_fix.director, 1, drop_slots,
+	)
+	if drop_knight_pos != click_knight_pos:
+		failures.append(
+			"PlanningQAGate click/drop sim walk: knight at %s (selection) vs %s (drop)"
+			% [str(click_knight_pos), str(drop_knight_pos)],
+		)
+
+
+static func _test_click_drop_drag_walk_sim_parity(failures: Array[String]) -> void:
+	var dest := Vector2i(5, 5)
+	var click_fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(click_fix)
+	click_fix.director.selected_ability_index = -1
+	click_fix.input.force_basic_movement = true
+	_clear_drag_state(click_fix.input)
+	var click_slots: Dictionary = _click_slots_at(click_fix.input, 1, dest)
+	var click_pos: Vector2i = _sim_unit_position_after_slots_commit(click_fix.director, 1, click_slots)
+	if click_pos != dest:
+		failures.append(
+			"PlanningQAGate click/drop drag walk: selection baseline failed at %s"
+			% str(click_pos),
+		)
+		return
+	var drop_fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(drop_fix)
+	drop_fix.director.selected_ability_index = -1
+	drop_fix.input.force_basic_movement = true
+	var route: Array[Vector2i] = [KNIGHT_START, dest]
+	TramplingAdvanceE2ETest._paint_drag_route(drop_fix.input, drop_fix.knight, route, dest)
+	var drop_slots: Dictionary = _drop_slots_at(drop_fix.input, 1, dest)
+	if _slots_invalid(drop_slots):
+		failures.append("PlanningQAGate click/drop drag walk: painted drop slots invalid")
+		return
+	var drop_pos: Vector2i = _sim_unit_position_after_slots_commit(drop_fix.director, 1, drop_slots)
+	if drop_pos != click_pos:
+		failures.append(
+			"PlanningQAGate click/drop drag walk: painted drop ended at %s, selection at %s"
+			% [str(drop_pos), str(click_pos)],
+		)
+
+
+static func _test_click_drop_drag_bash_enemy_parity(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(fix)
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate click/drop drag bash: Shield Bash missing")
+		return
+	_clear_drag_state(fix.input)
+	var click_slots: Dictionary = _click_slots_at(fix.input, 1, ENEMY_POS)
+	if _slots_invalid(click_slots):
+		failures.append("PlanningQAGate click/drop drag bash: selection slots invalid")
+		return
+	var route: Array[Vector2i] = [KNIGHT_START, BASH_APPROACH]
+	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.knight, route, BASH_APPROACH)
+	var drop_slots: Dictionary = _drop_slots_at(fix.input, 1, ENEMY_POS)
+	if _slots_invalid(drop_slots):
+		failures.append("PlanningQAGate click/drop drag bash: painted drop on enemy invalid")
+		return
+	if _intent_slot_signature(click_slots) != _intent_slot_signature(drop_slots):
+		failures.append(
+			"PlanningQAGate click/drop drag bash: selection vs painted-drop differ %s vs %s"
+			% [_intent_slot_signature(click_slots), _intent_slot_signature(drop_slots)],
 		)
 
 

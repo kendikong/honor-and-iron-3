@@ -94,7 +94,18 @@ Beyond the manual checklist — game rules that must not regress during perf wor
 | Integrity rule | Automated test | API asserted |
 |----------------|----------------|--------------|
 | Slots → preview board enemy at push dest | `_test_bash_slots_preview_board_parity` | `_preview_from_commit_slots_at_cell` |
-| Hover slots == click slots | `_test_hover_click_slot_parity` | interaction vs `_final_commit_slots_for_click_at_cell` |
+| Hover slots == click slots == drop slots | `_test_hover_click_drop_slot_parity` | interaction vs `_final_commit_slots_for_click_at_cell` vs `_final_commit_slots_for_drop_at_cell` |
+| Selection vs drop: Shield Bash enemy | `_test_click_drop_parity_bash_enemy` | click/drop slot signature parity |
+| Selection vs drop: adjacent walk | `_test_click_drop_parity_walk_adjacent` | click/drop slot signature parity |
+| Selection vs drop: bash approach tile | `_test_click_drop_parity_bash_approach` | click/drop slot signature parity |
+| Selection vs drop: Chain Hook enemy | `_test_click_drop_parity_hook_enemy` | click/drop slot signature parity |
+| Selection vs drop: OOB invalid | `_test_click_drop_parity_oob_invalid` | both modes block commit on `(-1,0)` |
+| Selection vs drop: bash cursor | `_test_click_drop_cursor_parity_bash` | `_cursor_icon_from_commit_slots` |
+| Selection vs drop: walk cursor | `_test_click_drop_cursor_parity_walk` | `_cursor_icon_from_commit_slots` |
+| Selection vs drop: bash commit → sim | `_test_click_drop_commit_sim_bash` | `commit_from_slots` → `Simulator` |
+| Selection vs drop: walk commit → sim | `_test_click_drop_commit_sim_walk` | `commit_from_slots` → `Simulator` |
+| Painted drag walk == selection walk sim | `_test_click_drop_drag_walk_sim_parity` | `_paint_drag_route` + drop vs click |
+| Painted drag bash on enemy == selection | `_test_click_drop_drag_bash_enemy_parity` | approach route + drop on enemy |
 | Hover cursor == slots cursor | `_test_cursor_equals_slots_on_hover` | `compute_hover_action_icon` |
 | Bash commit → sim lands at preview push | `_test_bash_commit_sim_push` | `commit_from_slots` → `Simulator` |
 | Hook commit → sim matches preview pull | `_test_hook_commit_sim_pull` | preview_board then `Simulator` |

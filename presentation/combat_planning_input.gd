@@ -2618,6 +2618,8 @@ func _aim_enemy_board() -> BoardState:
 
 
 func _facing_from_drop(local: Vector2, coord: Vector2i) -> int:
+	if _map_view == null:
+		return -1
 	var center: Vector2 = _map_view.grid_to_local(coord)
 	var offset: Vector2 = local - center
 	var threshold: float = float(TacticalConstants.TILE_PX) * 0.22
