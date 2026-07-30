@@ -112,13 +112,6 @@ func setup(
 		_update_hover_action_icon()
 		queue_redraw(),
 	)
-	EventBus.ability_selected.connect(func(_idx: int) -> void:
-		if _director == null:
-			return
-		_invalidate_hover_cache()
-		_schedule_hover_recompute()
-		queue_redraw(),
-	)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		_phase = phase
 		var planning: bool = CombatDirector.is_planning_phase(phase)

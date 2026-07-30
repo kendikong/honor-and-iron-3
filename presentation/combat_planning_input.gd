@@ -26,6 +26,7 @@ var _drag_armed: bool = false
 var _drag_press_local: Vector2 = Vector2.ZERO
 
 const _DRAG_THRESHOLD_PX: float = 6.0
+const _ABILITY_SCROLL_SETTLE_SEC: float = 0.075
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -45,6 +46,7 @@ var _selection_refresh_pending: bool = false
 var _plan_refresh_followup_pending: bool = false
 var _hover_preview_refresh_pending: bool = false
 var _ability_selection_flush_pending: bool = false
+var _ability_scroll_settle_generation: int = 0
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -684,10 +686,36 @@ func _flush_ability_selection_refresh() -> void:
 	_ability_selection_flush_pending = false
 	if _director == null:
 		return
+	_sync_intent_skill_mode()
+	if dragging:
+		clear_awaiting_targeting()
+		_request_planning_selection_refresh()
+		refresh_live_preview()
+		return
+	_schedule_ability_settled_refresh()
+
+
+func _schedule_ability_settled_refresh() -> void:
+	_ability_scroll_settle_generation += 1
+	var gen: int = _ability_scroll_settle_generation
+	var tree: SceneTree = _map_view.get_tree() if _map_view != null else null
+	if tree == null or _map_view == null or not _map_view.is_inside_tree():
+		_run_ability_settled_refresh()
+		return
+	tree.create_timer(_ABILITY_SCROLL_SETTLE_SEC).timeout.connect(
+		func() -> void:
+			if gen != _ability_scroll_settle_generation:
+				return
+			_run_ability_settled_refresh(),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func _run_ability_settled_refresh() -> void:
+	if _director == null:
+		return
 	clear_awaiting_targeting()
 	_request_planning_selection_refresh()
-	if dragging:
-		refresh_live_preview()
 
 
 func _on_preview_updated(_result: SimResult) -> void:

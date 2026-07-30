@@ -6,6 +6,7 @@ extends CanvasLayer
 const COLOR_SELECT: Color = Color(0.98, 0.86, 0.32, 0.95)
 const COLOR_SKILL_DISABLED: Color = Color(0.55, 0.55, 0.55, 0.85)
 const LOG_FONT_SIZE: int = 10
+const _SKILL_UI_SETTLE_SEC: float = 0.075
 
 var _panel_width: int = 280
 var _ui_scale: float = 1.0
@@ -473,7 +474,7 @@ func _add_rich_panel(parent: VBoxContainer, title: String, min_h: int = 120) -> 
 var _last_skill_rebuild_key: String = ""
 var _skill_ui_lock: bool = false
 var _skill_scroll_generation: int = 0
-var _info_refresh_pending: bool = false
+var _skill_ui_settle_generation: int = 0
 
 
 func _on_board_changed(board: BoardState) -> void:
@@ -533,19 +534,23 @@ func _on_ability_selected(index: int) -> void:
 	else:
 		_refresh_ability_buttons_if_dirty()
 	_schedule_info_refresh()
-	_scroll_selected_skill_into_view()
 
 
 func _schedule_info_refresh() -> void:
-	if _info_refresh_pending:
+	_skill_ui_settle_generation += 1
+	var gen: int = _skill_ui_settle_generation
+	if not is_inside_tree():
+		_refresh_info()
+		_scroll_selected_skill_into_view()
 		return
-	_info_refresh_pending = true
-	call_deferred("_flush_info_refresh")
-
-
-func _flush_info_refresh() -> void:
-	_info_refresh_pending = false
-	_refresh_info()
+	get_tree().create_timer(_SKILL_UI_SETTLE_SEC).timeout.connect(
+		func() -> void:
+			if gen != _skill_ui_settle_generation:
+				return
+			_refresh_info()
+			_scroll_selected_skill_into_view(),
+		CONNECT_ONE_SHOT,
+	)
 
 
 func _update_skill_selection_highlight() -> void:
