@@ -56,6 +56,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_action_range_centered_on_live_stand,
 		_test_enemy_skill_hover_not_movement_route,
 		_test_enemy_bash_approach_move_leg,
+		_test_bash_targeting_uses_pre_push_enemy_cell,
 		_test_hook_pull_preview_keeps_attack_target,
 	]
 	var names: PackedStringArray = [
@@ -99,6 +100,7 @@ static func run_all(failures: Array[String]) -> void:
 		"action_range_live_stand",
 		"enemy_hover_not_move_route",
 		"bash_enemy_approach_leg",
+		"bash_target_pre_push_cell",
 		"hook_pull_attack_target",
 	]
 	for i: int in range(tests.size()):
@@ -1684,6 +1686,38 @@ static func _test_enemy_bash_approach_move_leg(failures: Array[String]) -> void:
 	if leg.size() < 2:
 		failures.append(
 			"PlanningQAGate bash_enemy_approach_leg: expected pre-move leg, got %s" % str(leg),
+		)
+
+
+static func _test_bash_targeting_uses_pre_push_enemy_cell(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate bash_target_pre_push_cell: Shield Bash missing")
+		return
+	director.selected_ability_index = bash_idx
+	input.on_hover_moved(ENEMY_POS)
+	if not input.is_live_preview_active():
+		failures.append(
+			"PlanningQAGate bash_target_pre_push_cell: live preview required on enemy hover",
+		)
+		return
+	var pushes: Array = input.preview_state.preview_pushes.get(fix.enemy.id, [])
+	if pushes.is_empty():
+		failures.append(
+			"PlanningQAGate bash_target_pre_push_cell: Shield Bash must preview push displacement",
+		)
+		return
+	var preview_enemy: UnitState = input.preview_state.preview_board.get_unit_by_id(fix.enemy.id)
+	if preview_enemy == null:
+		failures.append("PlanningQAGate bash_target_pre_push_cell: preview enemy missing")
+		return
+	if preview_enemy.position == fix.enemy.position:
+		failures.append(
+			"PlanningQAGate bash_target_pre_push_cell: preview enemy must move on push preview",
 		)
 
 

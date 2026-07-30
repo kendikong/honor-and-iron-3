@@ -1414,9 +1414,12 @@ func _draw_interaction_overlay() -> void:
 	if attack_target_id >= 0:
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord
-		var target_unit := prev.preview_board.get_unit_by_id(attack_target_id)
-		if target_unit == null and _board != null:
+		# Targeting dotted arrow = aim at current enemy tile; forced push uses orange only.
+		var target_unit: UnitState = null
+		if _board != null:
 			target_unit = _board.get_unit_by_id(attack_target_id)
+		if target_unit == null and prev.preview_board != null:
+			target_unit = prev.preview_board.get_unit_by_id(attack_target_id)
 		if target_unit != null:
 			target_coord = target_unit.position
 		if origin != target_coord:
