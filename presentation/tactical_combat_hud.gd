@@ -59,7 +59,6 @@ func setup(
 	EventBus.action_rejected.connect(_on_action_rejected)
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
-	EventBus.wait_marker_changed.connect(_on_wait_marker_changed)
 	EventBus.selection_changed.connect(func(id: int) -> void:
 		if _timeline_grid != null:
 			_timeline_grid.set_selected(id)
@@ -390,11 +389,6 @@ func _on_phase_changed(phase: int) -> void:
 func _on_timeline_changed(_timeline: Timeline, statuses: PackedStringArray) -> void:
 	_refresh_timeline(statuses)
 	_refresh_undo_button()
-
-
-func _on_wait_marker_changed(unit_id: int, active: bool) -> void:
-	if _timeline_grid != null:
-		_timeline_grid.apply_unit_wait_marker(unit_id, active)
 
 
 func _on_board_changed(board: BoardState) -> void:

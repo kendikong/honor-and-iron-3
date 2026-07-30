@@ -70,7 +70,6 @@ var _last_refresh_movement_only: bool = false
 var _last_refresh_wait_marker_only: bool = false
 var _refresh_plan_queued: bool = false
 var _cached_wait_marker_ghost_events: Array[SimEvent] = []
-var _pending_refresh_wait_marker_only: bool = false
 ## When this returns true, default victory/defeat checks are skipped (battle continues).
 var suppress_end_state: Callable = Callable()
 
@@ -302,6 +301,7 @@ func rpc_plan_wait(unit_id: int) -> void:
 	_clear_unit_post_moves_from_plan(unit_id)
 	_set_unit_waiting(unit_id, true)
 	selected_ability_index = -1
+	EventBus.ability_selected.emit(selected_ability_index)
 	plan_affected_unit_ids = [unit_id]
 	_queue_refresh_plan()
 
@@ -2317,7 +2317,6 @@ func _plan_is_wait_marker_only(plan: Timeline) -> bool:
 func _refresh_plan_wait_marker_only(plan: Timeline) -> void:
 	_last_refresh_movement_only = false
 	_last_refresh_wait_marker_only = true
-	_pending_refresh_wait_marker_only = true
 	_commit_animate_actions.clear()
 	projected_state = base_board.clone()
 	for action: TimelineAction in plan.entries:
@@ -2379,19 +2378,6 @@ func flush_plan_refresh_signals_if_pending() -> void:
 func _flush_plan_refresh_signals() -> void:
 	_plan_refresh_emit_pending = false
 	if _pending_refresh_board == null:
-		return
-	if _pending_refresh_wait_marker_only:
-		_pending_refresh_wait_marker_only = false
-		_last_refresh_wait_marker_only = false
-		var unit_id: int = -1
-		if not plan_affected_unit_ids.is_empty():
-			unit_id = plan_affected_unit_ids[0]
-		var active: bool = unit_id >= 0 and unit_has_wait_planned(unit_id)
-		plan_affected_unit_ids.clear()
-		_pending_refresh_board = null
-		_pending_refresh_plan = null
-		_pending_refresh_preview = null
-		EventBus.wait_marker_changed.emit(unit_id, active)
 		return
 	EventBus.board_changed.emit(_pending_refresh_board)
 	EventBus.timeline_changed.emit(_pending_refresh_plan, _pending_refresh_statuses)

@@ -54,7 +54,4 @@ signal push_animations_complete
 ## Interface sliders (UI/text scale, panel width) saved live — combat hosts reload + apply.
 signal interface_settings_changed()
 
-## Wait modifier toggled without a full plan sim refresh (unit_id, active).
-signal wait_marker_changed(unit_id: int, active: bool)
-
 @warning_ignore_restore("unused_signal")
