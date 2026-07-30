@@ -587,13 +587,11 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 
 
 func _on_board_changed(_board: BoardState) -> void:
-	var interacting: bool = (
-		aiming
-		or dragging
-		or _drag_armed
-		or _drag_saved_preview != null
-	)
+	var interacting: bool = aiming or dragging or _drag_armed
 	if not interacting:
+		# Stale stash after drag ended must not restore over a committed plan.
+		if _drag_saved_preview != null:
+			_drag_saved_preview = null
 		if _planning != null:
 			_planning.mark_danger_dirty()
 		_schedule_plan_refresh_followup()

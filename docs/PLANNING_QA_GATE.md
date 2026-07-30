@@ -8,10 +8,21 @@ preview, commit slots, overlay draw, or hover sim.
 
 | Layer | Who | What |
 |-------|-----|------|
-| **A — Headless (agent)** | Cursor agent / CI | `tests/planning_qa_gate_test.gd` |
+| **A — Headless (agent)** | Cursor agent / CI | `run_planning_qa_gate.gd` (see suites below) |
 | **B — Visual (owner)** | You, F5 in Skill Arena | Short checklist below — **only** items marked *manual* |
 
 Layer A must pass. Layer B is still required for pixel/animation/FPS.
+
+### Layer A suites (run in order)
+
+| Suite | Script | What it catches |
+|-------|--------|-----------------|
+| **Drag E2E** | `tests/planning_drag_e2e_test.gd` | Production path: `_begin_drag` → `update_drag` → `on_left_release` → `board_changed` → undo |
+| **Planning input** | `tests/planning_input_test.gd` | Cursor/slots parity, drop route, undo, awaiting refresh |
+| **Trample E2E** | `tests/trampling_advance_e2e_test.gd` | Painted waypoint order through commit + sim |
+| **Checklist mirror** | `tests/planning_qa_gate_test.gd` | Manual Skill Arena checklist APIs (slots, sim, click/drop parity) |
+
+**Important:** Slot-only tests (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
 
 ## Run (fast — planning gate only)
 
@@ -23,6 +34,12 @@ Or:
 
 ```powershell
 & "<godot.exe>" --headless --path . --script res://tests/run_planning_qa_gate.gd
+```
+
+Or drag E2E only (fastest drag regression):
+
+```powershell
+& "<godot.exe>" --headless --path . --script res://tests/run_drag_e2e_only.gd
 ```
 
 Full regression (includes this gate):
