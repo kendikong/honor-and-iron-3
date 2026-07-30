@@ -585,25 +585,11 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if AbilitySystem.is_run_ability(ability):
 		return false
-	var plan_board: BoardState = _director.projected_state if _director.projected_state != null else _board
-	## Same economy read as the planning timeline / side panel — not hover-move-tile membership.
-	if _planning_input != null and ability != null:
-		var ap_left: int = _planning_input.planning_display_ap_left(unit.id)
-		if ap_left >= 0:
-			var ap_cost: int = AbilitySystem.get_action_point_cost(p_unit, ability, plan_board)
-			if ap_left < ap_cost:
-				return false
-	var premove_cell: Vector2i = _premove_cell_for_action_range_gate(unit)
-	var auto_run_active: bool = (
-		_planning_input != null and _planning_input.auto_run_movement_active(p_unit)
-	)
-	if not AbilitySystem.can_show_planning_action_range_after_premove(
-		plan_board, p_unit, ability, premove_cell, auto_run_active,
-	):
-		return false
 	if force_basic:
 		return true
-	return p_unit.ability.points_left >= ability.action_point_cost
+	if _planning_input == null:
+		return false
+	return _planning_input.action_range_visible_for_hover()
 
 
 func recompute_hover_ranges(
@@ -2046,16 +2032,6 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	if unit == null or _director == null:
 		return Vector2i(-999999, -999999)
 	return CombatPlanningPreview.planning_move_origin_cell(_director, _board, unit.id)
-
-
-## Commit-slot implicit pre-move stand for action-range AP gate (intent truth).
-func _premove_cell_for_action_range_gate(unit: UnitState) -> Vector2i:
-	if _planning_input != null and _is_selected_player_unit(unit):
-		var gate_cell: Vector2i = _planning_input.action_range_premove_cell_for_gate()
-		if _board != null and _board.is_in_bounds(gate_cell):
-			return gate_cell
-	var p_unit: UnitState = _proj_unit(unit.id) if unit != null else null
-	return p_unit.position if p_unit != null else _intent_stand_origin(unit)
 
 
 ## Action-range anchor: committed projection plus live move-preview stand (intent truth).

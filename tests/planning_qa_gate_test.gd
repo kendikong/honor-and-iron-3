@@ -69,6 +69,8 @@ static func run_all(failures: Array[String]) -> void:
 		_test_action_range_centered_on_live_stand,
 		_test_action_range_hides_when_auto_run_blocks_skill_ap,
 		_test_action_range_hides_with_committed_run_intent,
+		_test_action_range_shows_while_awaiting_trample,
+		_test_action_range_shows_on_enemy_hover,
 		_test_enemy_skill_hover_not_movement_route,
 		_test_enemy_bash_approach_move_leg,
 		_test_bash_targeting_uses_pre_push_enemy_cell,
@@ -127,6 +129,8 @@ static func run_all(failures: Array[String]) -> void:
 		"action_range_live_stand",
 		"action_range_auto_run_ap_gate",
 		"action_range_committed_run_intent",
+		"action_range_awaiting_trample",
+		"action_range_enemy_hover",
 		"enemy_hover_not_move_route",
 		"bash_enemy_approach_leg",
 		"bash_target_pre_push_cell",
@@ -2002,17 +2006,25 @@ static func _test_timeline_ghost_clears_when_committed(failures: Array[String]) 
 
 
 static func _test_action_range_centered_on_live_stand(failures: Array[String]) -> void:
-	const MOVE_WEST := Vector2i(1, 5)
 	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
 	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
 	var input: CombatPlanningInput = fix.input
-	if _bash_img1_ready(fix) < 0:
+	var director: CombatDirector = fix.director
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
 		failures.append("PlanningQAGate action_range_live_stand: Shield Bash missing")
 		return
-	input.on_hover_moved(MOVE_WEST)
+	director.selected_ability_index = bash_idx
+	input.on_hover_moved(ENEMY_POS)
+	input._flush_hover_heavy_sync()
 	if not input.is_live_preview_active():
 		failures.append(
-			"PlanningQAGate action_range_live_stand: hover move west must activate live preview",
+			"PlanningQAGate action_range_live_stand: enemy hover must activate live preview",
+		)
+		return
+	if not input.action_range_visible_for_hover():
+		failures.append(
+			"PlanningQAGate action_range_live_stand: enemy hover must include Shield Bash in commit slots",
 		)
 		return
 	var live_board: BoardState = overlay.get_live_preview().preview_board
@@ -2023,10 +2035,10 @@ static func _test_action_range_centered_on_live_stand(failures: Array[String]) -
 	if live_knight == null:
 		failures.append("PlanningQAGate action_range_live_stand: live knight missing on preview board")
 		return
-	if live_knight.position != MOVE_WEST:
+	if live_knight.position != BASH_APPROACH:
 		failures.append(
 			"PlanningQAGate action_range_live_stand: expected live stand %s got %s"
-			% [MOVE_WEST, live_knight.position],
+			% [BASH_APPROACH, live_knight.position],
 		)
 		return
 	var ability: AbilityData = _knight_ability(SHIELD_BASH_ID)
@@ -2143,6 +2155,88 @@ static func _test_action_range_hides_with_committed_run_intent(failures: Array[S
 				% [tile, COMMITTED_RUN_DEST],
 			)
 			return
+
+
+static func _test_action_range_shows_while_awaiting_trample(failures: Array[String]) -> void:
+	var fix: Dictionary = TramplingAdvanceE2ETest._knight_fixture(TramplingAdvanceE2ETest.START_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	if fix.trample_idx < 0:
+		failures.append("PlanningQAGate action_range_awaiting_trample: Trampling Advance missing")
+		return
+	if not TramplingAdvanceE2ETest._arm_trample_awaiting(input, director, unit):
+		failures.append("PlanningQAGate action_range_awaiting_trample: arm awaiting failed")
+		return
+	input.on_hover_moved(TramplingAdvanceE2ETest.END_CELL)
+	overlay._recompute_hover_ranges_from_inputs()
+	if not input.action_range_visible_for_hover():
+		failures.append(
+			"PlanningQAGate action_range_awaiting_trample: awaiting trample must keep action-range visible",
+		)
+		return
+	var trample: AbilityData = unit.active_abilities[fix.trample_idx]
+	var origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(director, fix.board, unit.id)
+	var expected: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, unit, trample, origin,
+	)
+	if expected.is_empty():
+		failures.append("PlanningQAGate action_range_awaiting_trample: expected trample range tiles")
+		return
+	var found: bool = false
+	for tile: Vector2i in expected:
+		if overlay.is_hover_action_range_tile(tile):
+			found = true
+			break
+	if not found:
+		failures.append(
+			"PlanningQAGate action_range_awaiting_trample: red tiles missing while awaiting (origin %s)"
+			% origin,
+		)
+
+
+static func _test_action_range_shows_on_enemy_hover(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate action_range_enemy_hover: Shield Bash missing")
+		return
+	director.selected_ability_index = bash_idx
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_move(
+			1, BASH_APPROACH, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	input.on_hover_moved(ENEMY_POS)
+	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+	if not input.action_range_visible_for_hover():
+		failures.append(
+			"PlanningQAGate action_range_enemy_hover: enemy hover slots must include Shield Bash action",
+		)
+		return
+	var ability: AbilityData = _knight_ability(SHIELD_BASH_ID)
+	if ability == null:
+		failures.append("PlanningQAGate action_range_enemy_hover: Shield Bash ability missing")
+		return
+	var stand: Vector2i = BASH_APPROACH
+	var expected: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, fix.knight, ability, stand,
+	)
+	var found: bool = false
+	for tile: Vector2i in expected:
+		if overlay.is_hover_action_range_tile(tile):
+			found = true
+			break
+	if not found:
+		failures.append(
+			"PlanningQAGate action_range_enemy_hover: red tiles must show on enemy hover (stand %s)"
+			% stand,
+		)
 
 
 static func _test_enemy_skill_hover_not_movement_route(failures: Array[String]) -> void:

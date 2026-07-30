@@ -2249,47 +2249,25 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	return actor != null and AbilitySystem.can_afford_run(actor)
 
 
-## Implicit pre-move destination for overlay action-range AP gate (matches commit-slot intent).
-func action_range_premove_cell_for_gate() -> Vector2i:
-	if _director == null or _director.selected_unit_id < 0:
-		return Vector2i(-999999, -999999)
+## Red action-range tiles follow commit-slot intent: show when slots include an ability action.
+func action_range_visible_for_hover() -> bool:
+	if _director == null or _director.selected_unit_id < 0 or _director.board == null:
+		return false
+	if awaiting_targeting_active():
+		return true
 	var unit_id: int = _director.selected_unit_id
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null:
-		return Vector2i(-999999, -999999)
-	if is_live_preview_active() and preview_state.preview_board != null:
-		var live: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
-		if live != null and live.position != actor.position:
-			return live.position
-	var move_timing: int = _director.get_planning_move_timing(unit_id)
-	if move_timing >= 0 and _director.unit_has_move_planned_at_timing(unit_id, move_timing):
-		for step: TimelineAction in _director.get_unit_plan_steps(unit_id):
-			if step == null or step.type != GameEnums.ActionType.MOVE:
-				continue
-			if step.move_timing == move_timing:
-				return step.target_coord
-	var intent_dest: Vector2i = move_intent_destination(unit_id)
-	if (
-		_director.board != null
-		and _director.board.is_in_bounds(intent_dest)
-		and intent_dest != actor.position
-	):
-		return intent_dest
-	var cell: Vector2i = (
-		_intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
-	)
-	if _director.board == null or not _director.board.is_in_bounds(cell):
-		return actor.position
+	var cell: Vector2i = get_hover_tile_for_ui()
+	if not _director.board.is_in_bounds(cell):
+		return false
 	var slots: Dictionary = _final_commit_slots_for_click_at_cell(
 		unit_id, cell, _mouse_local_for_facing(),
 	)
-	var pre_moves: Array = slots.get("pre", [])
-	if pre_moves.is_empty():
-		return actor.position
-	var last_move: TimelineAction = pre_moves[pre_moves.size() - 1] as TimelineAction
-	if last_move == null:
-		return actor.position
-	return last_move.target_coord
+	for raw: Variant in slots.get("action", []):
+		if raw is TimelineAction:
+			var action: TimelineAction = raw as TimelineAction
+			if action.type == GameEnums.ActionType.ABILITY:
+				return true
+	return false
 
 
 ## True when this unit's current planning intent (drag / live path / committed move) needs Run.
@@ -3486,14 +3464,16 @@ func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitSt
 		return not AbilitySystem.can_target_self(p_unit, ability) and not AbilitySystem.is_run_ability(ability)
 	if hover_unit != null and not hover_unit.is_enemy() and hover_unit.id != p_unit.id:
 		return not _can_target_unit_with_selected_ability(p_unit, hover_unit)
-	if _awaiting_flow_selected(p_unit, ability) and _planning != null:
-		if awaiting_targeting_active() and (
-			_planning.is_hover_action_range_tile(cell)
-			and not AbilitySystem.planning_is_valid_awaiting_endpoint(
-				_proj_origin(p_unit), cell, ability,
+	if _awaiting_flow_selected(p_unit, ability):
+		if awaiting_targeting_active():
+			var origin: Vector2i = _proj_origin(p_unit)
+			if AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability):
+				return false
+			var threat: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+				_proj(), p_unit, ability, origin, [],
 			)
-		):
-			return true
+			if threat.has(cell):
+				return true
 	return false
 
 
