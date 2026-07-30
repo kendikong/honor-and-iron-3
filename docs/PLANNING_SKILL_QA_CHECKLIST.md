@@ -212,75 +212,377 @@ Notes / failures:
 
 ---
 
-## Shield Bash (`knight_shield_bash`)
+## Skill walkthroughs — what you should **see** (specific)
 
-**Setup:** Knight `(4,5)`, training dummy `(7,5)`, approach tile `(6,5)`.
+Below: exact boards, cells, cursors, timeline icons, and preview positions.  
+**Training Arena / QA fixture** unless noted: open 12×12 plain grid, knight **3 AP / 3 MP**, auto-run **on**, auto-skill-after-move **on**.
 
-| Phase | Expected behavior | Automated coverage |
-|-------|-------------------|-------------------|
-| **1 Select** | Bash selected: red range from current stand; blue from MP/run rules. | Partial — `action_range_enemy_hover`, `action_range_live_stand` (red only; not full select step) |
-| **2 Hover empty** | Red follows cursor stand; blue shows reachable tiles; preview ghost at hover dest when valid. | Partial — `action_range_move_hover_follows_cursor`, `show_move_hover_no_action_slot` |
-| **3 Pathing** | Walk to approach or run tile: path preview, run icon when needed, red at path end. | Gap — no full pathing snapshot test |
-| **4 Hover enemy** | Pre-move to `(6,5)` + bash on dummy; walk+attack cursor; orange push **east**; red at approach. | Partial — `bash_slots`, `bash_push`, `bash_cursor`, `bash_full_approach_push` (slots/preview, not all tiles every step) |
-| **5 Commit** | Timeline: pre walk + bash; projected state matches preview; tiles refresh (e.g. committed run + 0 AP → **no red**). | Partial — `commit_matches_hover`, `bash_commit_sim`, `action_range_commit_run_icon_hide` (run+AP case only) |
-| **6 Execute** | Dummy pushed east to preview destination. | `bash_commit_sim_push`, `bash_sim_determinism` |
-| **7 Pre/post** | Pre-move committed first; hover enemy again — approach from new stand; post-move after bash if applicable. | Partial — `show_enemy_bash_committed_premove`; gap on post-move |
+**Legend**
 
-**Known gap:** No single automated test runs phases 1–7 in order with blue+red+preview+commit parity at each step.
+- **K** = knight · **E** = enemy dummy · **.** = empty  
+- **Blue** = move range overlay · **Red** = selected skill range overlay  
+- **Ghost** = translucent unit on preview board · **→** = path or push/pull arrow  
 
 ---
 
-## Chain Hook (`knight_chain_hook`)
+## Shield Bash (`knight_shield_bash`) — full 7 phases
 
-**Setup:** Knight west of dummy (e.g. `(1,3)` vs `(4,3)`).
+**Skill:** 1 AP · melee range **1** · **PUSH 2** (east when knight is west of dummy)
 
-| Phase | Expected behavior | Automated coverage |
-|-------|-------------------|-------------------|
-| **1 Select** | Red range for hook; blue move tiles. | Gap |
-| **2 Hover empty** | Tiles + preview follow cursor. | Gap |
-| **3 Pathing** | Path to hook range if needed. | Gap |
-| **4 Hover enemy** | Hook action on enemy; pull arrow **west** (toward player). | `hook_segment`, `hook_pull` |
-| **5 Commit** | Timeline matches preview; pull direction preserved. | `hook_commit_sim` |
-| **6 Execute** | Enemy ends at pulled cell from preview. | `hook_commit_sim_pull` |
-| **7 Pre/post** | Committed pre-move then hook from new stand. | `hook_committed_premove` |
+**Board (start):**
 
-**Known gap:** No tile/preview checks at phases 1–3; line rendering is manual only.
+```
+      3   4   5   6   7   8   9
+  5   .   .   K   .   .   E   .
+```
+
+- **K** = `(4,5)` · **E** = `(7,5)` · canonical **approach** = `(6,5)` (tile east of K, west of E)
 
 ---
 
-## Trampling Advance (`knight_trampling_advance`)
+### Phase 1 — Select knight + Shield Bash
 
-| Phase | Expected behavior | Automated coverage |
-|-------|-------------------|-------------------|
-| **1 Select** | Red trample pattern; blue move tiles. | Partial — `action_range_awaiting_trample` (after arm only) |
-| **2 Hover empty** | Tiles while picking trample route. | Gap |
-| **3 Pathing** | Painted corridor (e.g. east then north); preview path = paint order. | `trample_paint_preview`, `trample_commit_wps`, `trample_sim_order` |
-| **4 Hover enemy** | N/A (tile-target skill) — use tile hover / arm flow. | `trample_flow` |
-| **5 Commit** | Pre-move on timeline if used; trample segment committed; preview promoted. | `trample_full_chain`, `trample_flow` |
-| **6 Execute** | Sim visits painted cells in order. | `trample_sim_order`, trample E2E suite |
-| **7 Pre/post** | Pre-move walk then arm trample from new stand; post-move trample leg if used. | `trample_flow`, `post_move_sim_preview` (E2E) |
+**You do:** Click knight. Click Shield Bash on the bar.
 
-**Known gap:** Phases 1–2 red/blue at select + empty hover not fully automated.
+**You must see:**
 
----
-
-## Bowling Charge / auto-run AP (action-range reference)
-
-Used to verify **red hides when run would consume skill AP**.
-
-| Phase | Expected behavior | Automated coverage |
-|-------|-------------------|-------------------|
-| **2–3** | Hover run-required tile with 1 AP: red **off** (run eats AP). | `action_range_auto_run_ap_gate`, `hide_auto_run_ap_gate` |
-| **5** | Commit run only; 0 AP; bash still selected; hover dest: **no red**. | `hide_after_commit_run_icon_bash` |
+| What | Exactly |
+|------|---------|
+| **Selection** | Knight at `(4,5)` highlighted. Dummy stays at `(7,5)`. |
+| **AP / MP** | **3 / 3** AP and **3 / 3** MP (full pools). |
+| **Blue tiles** | Walk reach from `(4,5)` with 3 MP — includes `(3,5)(5,5)(4,4)(4,6)` and tiles up to 3 steps away on open ground. Does **not** include dummy cell `(7,5)`. |
+| **Red tiles** | Small pattern around **knight stand `(4,5)`** only (range-1 bash footprint from current stand). **Dummy `(7,5)` is NOT covered in red** — too far to bash from start. |
+| **Ghost / path** | **None** (no hover yet). |
+| **Arrows** | **None**. |
+| **Cursor** | Default planning cursor (not walk/run/attack composite). |
+| **Timeline** | PRE / ACTION / POST empty. |
 
 ---
 
-## Universal skills (Run / Wait)
+### Phase 2 — Hover empty tiles (no commit)
 
-| Skill | Phase 5 commit check | Automated |
-|-------|----------------------|-----------|
-| **Run** | Run icon on timeline; MP+AP spent per rules; tiles refresh. | Partial — drag/walk suites, `action_range_commit_run_icon_hide` |
-| **Wait** | Wait marker; planning exhausted rules. | Partial — planning input wait cursor tests |
+**You do:** Move mouse over empty tiles. Try at least: `(5,5)`, `(3,4)`, `(3,6)`.
+
+**Hover `(5,5)` — one step east:**
+
+| What | Exactly |
+|------|---------|
+| **Ghost** | Knight ghost on **`(5,5)`**. |
+| **Path** | Line **`(4,5) → (5,5)`** (one walk step). |
+| **Blue** | Reachable set from **projected** start `(4,5)` still (no commit). |
+| **Red** | Red range **re-anchored to `(5,5)`** (intent stand). Still **does not** reach dummy at `(7,5)`. |
+| **Cursor** | **Walk** icon. |
+| **Arrows** | None. |
+
+**Hover `(3,6)` — run-required tile (with 0 MP test setup) or far tile:**
+
+| What | Exactly |
+|------|---------|
+| **Ghost** | Knight ghost on **`(3,6)`** (if valid). |
+| **Path** | Uses **run** segment when distance/rules require run (diagonal/down-left from start in typical fixture). |
+| **Cursor** | **Run** icon on commit preview for that tile. |
+| **Red** | If only **1 AP** left and run would consume it: **no red tiles** (bash impossible after that premove). With **3 AP**: red may still show from stand `(3,6)` if bash affordable after implicit run. |
+
+**Moving mouse away:** Ghost, path, and stale red at old stand **clear or update** — no red still drawn as if knight were on start `(4,5)` while ghost is elsewhere.
+
+---
+
+### Phase 3 — Pathing (walk toward approach)
+
+**You do:** Drag or step a path toward `(6,5)` — e.g. paint **`(4,5) → (5,5) → (6,5)`**.
+
+**You must see:**
+
+| What | Exactly |
+|------|---------|
+| **Painted route** | Waypoints in order: `(4,5)`, `(5,5)`, `(6,5)` — not reordered to a shortcut. |
+| **Path overlay** | Same cells as painted route. |
+| **Ghost at end of drag** | Knight ghost on last painted cell (e.g. `(6,5)` when path complete). |
+| **Red** | Anchored on **path end / hover stand** `(6,5)`, not on `(4,5)`. From `(6,5)`, red **includes dummy `(7,5)`** (adjacent, in bash range). |
+| **Cursor (on path end)** | **Walk** icon for pure walk path; **Run** only if a step requires run. |
+| **Timeline** | Still empty until commit — only **preview**, not committed yet. |
+
+---
+
+### Phase 4 — Hover enemy (dummy at `(7,5)`)
+
+**You do:** With Shield Bash selected, hover the **dummy** (not just approach tile).
+
+**You must see:**
+
+| What | Exactly |
+|------|---------|
+| **Ghost knight** | On **`(6,5)`** (approach tile), **not** on `(4,5)`. |
+| **Path** | Walk path **`(4,5) → (5,5) → (6,5)`** (or equivalent minimum walk approach on open board). |
+| **Cursor** | **Walk + attack** composite (walk glyph + attack glyph). |
+| **Red tiles** | Centered on stand **`(6,5)`**; **dummy cell `(7,5)` inside red**. |
+| **Orange push arrow** | Starts on dummy **`(7,5)`**, points **east**, ends on landing cell (open board: **`(9,5)`** with PUSH 2 — arrow tip = preview landing). |
+| **Preview board** | Knight at **`(6,5)`**; dummy **starts `(7,5)`**, then appears at **arrow tip** (e.g. **`(9,5)`**) after push resolution in preview. |
+| **Slots (if inspected)** | PRE: move to **`(6,5)`** · ACTION: Shield Bash targeting enemy id **2** at **`(7,5)`**. |
+
+**Wrong (fail):** Ghost on `(4,5)` while showing bash on enemy. Red drawn from `(4,5)`. Push arrow north/south/west. Approach to `(5,5)` when hovering enemy (stale drag). Cursor attack-only with no walk leg when approach required.
+
+---
+
+### Phase 5 — Commit (click dummy or approach per your hover)
+
+**You do:** Click to commit exactly what phase 4 preview showed.
+
+**You must see (immediately after click, no mouse move):**
+
+| What | Exactly |
+|------|---------|
+| **Timeline PRE** | Walk (or run) icon · destination **`(6,5)`** · `uses_run` = false for walk approach. |
+| **Timeline ACTION** | Shield Bash icon · target enemy. |
+| **AP / MP after** | **2 / 3** AP (spent 1 on bash) · MP reduced by walk steps (2 MP for two east steps). |
+| **Ghost / live preview** | Promoted to **committed** picture — same knight/enemy positions as last preview. |
+| **Blue / red** | Recomputed from **projected** stand `(6,5)` and remaining AP — red still shows bash range from `(6,5)` if AP allows another action (usually not on same turn after 1-cost bash from 3 AP pool… if 1 AP left, red only if another bash legal). |
+| **No jump** | Arrow tip, ghost, and timeline **do not change** to a different approach or target than preview showed. |
+
+**Special case — commit RUN only (your regression):**
+
+- Setup: **1 AP**, **0 MP**, auto-run on, Shield Bash selected.  
+- Hover run destination e.g. **`(3,6)`** → run cursor → commit **run only**.  
+- **Timeline PRE:** **Run** icon · dest **`(3,6)`** · `uses_run` = true.  
+- **AP after:** **0 / 1** (run spent the AP).  
+- **Red:** **OFF** everywhere (bash cannot fire). Blue per remaining rules.  
+- **Mouse still on `(3,6)`:** Still **no red**.  
+
+---
+
+### Phase 6 — Execute
+
+**You do:** End planning; run turn.
+
+**You must see:**
+
+| What | Exactly |
+|------|---------|
+| **Knight** | Ends **`(6,5)`** (after pre-move resolves). |
+| **Dummy** | Ends on **push landing cell** = orange arrow tip from phase 4 (e.g. **`(9,5)`** on open board). |
+| **Order** | Pre-move walk **then** bash **then** push — not bash before knight reaches `(6,5)`. |
+| **Match preview** | Final positions **equal** preview board from phase 4 / commit. |
+
+---
+
+### Phase 7 — Pre-move then bash (two-step plan)
+
+**You do:** Commit **walk only** to `(5,5)` first. Then hover dummy and commit bash.
+
+**After first commit (walk to `(5,5)` only):**
+
+| What | Exactly |
+|------|---------|
+| **Timeline** | PRE: walk to **`(5,5)`** only. ACTION empty. |
+| **Projected knight** | **`(5,5)`**. |
+| **Blue / red** | From **`(5,5)`** — red still does not reach dummy until you hover enemy for approach to `(6,5)`. |
+
+**After hover enemy + second commit:**
+
+| What | Exactly |
+|------|---------|
+| **Timeline** | PRE: **`(6,5)`** (or combined plan per rules) + ACTION: bash. |
+| **Preview** | Same as single-step bash: ghost **`(6,5)`**, push east from **`(7,5)`**. |
+
+**Automated coverage:** partial — see table at end of doc. **Gap:** no single test asserts every row above in order.
+
+---
+
+## Chain Hook (`knight_chain_hook`) — full 7 phases
+
+**Skill:** **3 AP** · range **1** · **PULL 2**
+
+**Board (start):**
+
+```
+      0   1   2   3   4   5
+  3   .   K   .   .   E   .
+```
+
+- **K** = `(1,3)` · **E** = `(4,3)` (3 tiles east — **out of hook range** from start)
+
+---
+
+### Phase 1 — Select Chain Hook
+
+| What | Exactly |
+|------|---------|
+| **AP / MP** | **3 / 3** AP · **3 / 3** MP |
+| **Blue** | Full 3 MP walk reach from `(1,3)` |
+| **Red** | Around stand `(1,3)` only — **dummy `(4,3)` NOT in red** |
+| **Ghost / arrows** | None |
+
+### Phase 2 — Hover empty `(2,3)`
+
+| What | Exactly |
+|------|---------|
+| **Ghost** | `(2,3)` |
+| **Path** | `(1,3) → (2,3)` |
+| **Red** | Re-anchored to `(2,3)` — still may not reach dummy |
+
+### Phase 3 — Pathing toward dummy
+
+Paint **`(1,3) → (2,3) → (3,3)`** (get adjacent west of dummy).
+
+| What | Exactly |
+|------|---------|
+| **Red at end** | From `(3,3)`, red can include **`(4,3)`** |
+
+### Phase 4 — Hover enemy `(4,3)`
+
+| What | Exactly |
+|------|---------|
+| **Ghost knight** | **`(3,3)`** (adjacent west of dummy) |
+| **Cursor** | **Walk + attack** composite |
+| **Orange pull arrow** | **`(4,3) → (2,3)`** (west, toward knight) — 2 tiles with PULL 2 |
+| **Preview dummy** | Lands **`(2,3)`** on preview board |
+| **Dashed line (manual)** | Player `(3,3)` to enemy `(4,3)` targeting segment (Layer B pixels) |
+
+### Phase 5 — Commit
+
+| What | Exactly |
+|------|---------|
+| **Timeline** | PRE walk to **`(3,3)`** + ACTION Chain Hook on enemy |
+| **AP after** | **0 / 3** AP (hook costs 3) |
+| **No jump** | Pull arrow and landing cell unchanged vs preview |
+
+### Phase 6 — Execute
+
+| What | Exactly |
+|------|---------|
+| **Knight** | **`(3,3)`** |
+| **Dummy** | **`(2,3)`** (matches preview landing) |
+
+### Phase 7 — Committed pre-move then hook
+
+Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new stand · approach path updates · pull arrow still west · **no** approach built in POST column when rules require PRE.
+
+---
+
+## Trampling Advance (`knight_trampling_advance`) — full 7 phases
+
+**Skill:** **2 AP** · **2 MP** · tile-target movement skill
+
+**Board (E2E reference):**
+
+```
+      4   5   6
+  3   .   .   T
+  4   .   K   .
+```
+
+- **K** = `(5,4)` · painted route **`(5,4) → (6,4) → (6,3)`** · end **`(6,3)`**
+
+---
+
+### Phase 1 — Select Trampling Advance
+
+| What | Exactly |
+|------|---------|
+| **Red** | Trample target pattern from current stand (tile-target range) |
+| **Blue** | Normal move range |
+
+### Phase 2–3 — Arm + paint corridor
+
+**You do:** Select skill → arm awaiting targeting → drag **east then north**.
+
+| What | Exactly |
+|------|---------|
+| **Paint order** | `(5,4)` → `(6,4)` → `(6,3)` — **not** north-first shortcut |
+| **Path preview** | Same three cells in same order |
+| **Red** | Stays visible while awaiting (skill still armed) |
+
+### Phase 4 — Hover end tile `(6,3)`
+
+| What | Exactly |
+|------|---------|
+| **Ghost / path** | Full painted corridor to `(6,3)` |
+| **No enemy** | Tile skill — no bash-style push arrow on units |
+
+### Phase 5 — Commit
+
+| What | Exactly |
+|------|---------|
+| **Timeline ACTION** | Trample with waypoints **`(6,4)`, `(6,3)`** preserved |
+| **AP / MP** | **2 AP** and **2 MP** spent per skill rules |
+
+### Phase 6 — Execute
+
+| What | Exactly |
+|------|---------|
+| **Sim path** | Knight visits **`(6,4)` then `(6,3)`** in that order |
+
+### Phase 7 — Pre-move walk then trample
+
+**You do:** Commit basic walk to `(6,4)` · then arm trample · paint `(6,4)→(6,3)` · commit.
+
+| What | Exactly |
+|------|---------|
+| **Timeline** | PRE walk + ACTION trample |
+| **Tiles** | Recomputed from **`(6,4)`** stand, not `(5,4)` |
+
+---
+
+## Bowling Charge + run/AP (red tile reference)
+
+**Skill:** Bowling Charge **3 AP** · used with **1 AP** to test run eating skill budget
+
+**Board:** Knight `(4,5)`, dummy `(7,5)`, auto-run on
+
+### Hover run tile (e.g. `(3,6)`) with **1 AP** — phases 2–3
+
+| What | Exactly |
+|------|---------|
+| **Red** | **Completely off** — no red on dummy `(7,5)`, no red at knight start |
+| **Cursor** | **Run** on that hover |
+| **Reason** | Implicit premove = run → 0 AP left → Bowling Charge (3 AP) impossible |
+
+### After commit run only — phase 5
+
+| What | Exactly |
+|------|---------|
+| **Timeline PRE** | **Run** icon · **`(3,6)`** |
+| **AP** | **0 / 1** |
+| **Shield Bash selected** | **No red** with mouse still on `(3,6)` |
+
+---
+
+## Run / Wait (universal)
+
+### Run — commit to `(5,5)` from `(4,5)` (adjacent walk)
+
+| Phase | Exactly |
+|-------|---------|
+| **4 hover** | Walk cursor · path `(4,5)→(5,5)` |
+| **5 commit** | PRE walk icon · dest `(5,5)` · MP **2/3** |
+| **6 execute** | Knight **`(5,5)`** |
+
+### Run — run-required tile with run icon
+
+| Phase | Exactly |
+|-------|---------|
+| **Cursor** | **Run** glyph only (no attack) |
+| **Timeline after commit** | PRE **run** icon · `uses_run` true |
+
+### Wait
+
+| Phase | Exactly |
+|-------|---------|
+| **5 commit** | Wait marker on timeline · planning exhausted per rules |
+| **Blue / red** | Cleared or per exhausted rules |
+
+---
+
+## Automation vs this checklist
+
+| Skill | Phases with **automated** row-by-row coverage | Still manual / gap |
+|-------|-----------------------------------------------|-------------------|
+| Shield Bash | Pieces in `bash_*`, `action_range_*`, `hide_after_commit_run_icon_bash` | Full phases 1–7 in one scenario |
+| Chain Hook | `hook_*`, commit sim | Phases 1–3 tiles/preview |
+| Trample | `trample_*` E2E | Phase 1–2 select/hover tiles |
+| Run + 0 AP bash | `hide_after_commit_run_icon_bash` | — |
+
+**Target:** `tests/skills/shield_bash_scenario.gd` snapshots **every table row** above at each phase.
 
 ---
 
