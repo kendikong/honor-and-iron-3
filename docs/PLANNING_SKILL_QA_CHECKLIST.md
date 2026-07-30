@@ -215,7 +215,9 @@ Notes / failures:
 ## Skill walkthroughs — what you should **see** (specific)
 
 Below: exact boards, cells, cursors, timeline icons, and preview positions.  
-**Training Arena / QA fixture** unless noted: open 12×12 plain grid, knight **3 AP / 3 MP**, auto-run **on**, auto-skill-after-move **on**.
+**Training Arena / QA fixture** unless noted: open 12×12 plain grid, knight **1 AP / 3 MP** (knight default), auto-run **on**, auto-skill-after-move **on**.
+
+**1 AP means:** One class skill **or** Run per turn — not both. Shield Bash (1 AP) uses your whole pool. Run (1 AP) uses your whole pool. Skills that cost **2+ AP** (Trample, Chain Hook, Bowling Charge) **cannot be committed** in standard Training unless you enable infinite AP debug.
 
 **Legend**
 
@@ -249,7 +251,7 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
 | What | Exactly |
 |------|---------|
 | **Selection** | Knight at `(4,5)` highlighted. Dummy stays at `(7,5)`. |
-| **AP / MP** | **3 / 3** AP and **3 / 3** MP (full pools). |
+| **AP / MP** | **1 / 1** AP and **3 / 3** MP (full pools). |
 | **Blue tiles** | Walk reach from `(4,5)` with 3 MP — includes `(3,5)(5,5)(4,4)(4,6)` and tiles up to 3 steps away on open ground. Does **not** include dummy cell `(7,5)`. |
 | **Red tiles** | Small pattern around **knight stand `(4,5)`** only (range-1 bash footprint from current stand). **Dummy `(7,5)` is NOT covered in red** — too far to bash from start. |
 | **Ghost / path** | **None** (no hover yet). |
@@ -274,14 +276,16 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
 | **Cursor** | **Walk** icon. |
 | **Arrows** | None. |
 
-**Hover `(3,6)` — run-required tile (with 0 MP test setup) or far tile:**
+**Hover `(3,6)` — run-required tile (typical with 0 MP test setup):**
 
 | What | Exactly |
 |------|---------|
 | **Ghost** | Knight ghost on **`(3,6)`** (if valid). |
-| **Path** | Uses **run** segment when distance/rules require run (diagonal/down-left from start in typical fixture). |
+| **Path** | Uses **run** segment when distance/rules require run. |
 | **Cursor** | **Run** icon on commit preview for that tile. |
-| **Red** | If only **1 AP** left and run would consume it: **no red tiles** (bash impossible after that premove). With **3 AP**: red may still show from stand `(3,6)` if bash affordable after implicit run. |
+| **Red** | **Off** — run would consume your only AP, so Shield Bash (1 AP) cannot follow. **No red anywhere.** |
+
+**Hover `(5,5)` with only 1 AP:** You may see walk cursor and path; red re-anchors to `(5,5)` but still does not reach dummy. Pairing bash on enemy still costs 1 AP on commit — you have exactly enough for **one** bash after walk, not bash after run.
 
 **Moving mouse away:** Ghost, path, and stale red at old stand **clear or update** — no red still drawn as if knight were on start `(4,5)` while ghost is elsewhere.
 
@@ -334,18 +338,18 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
 |------|---------|
 | **Timeline PRE** | Walk (or run) icon · destination **`(6,5)`** · `uses_run` = false for walk approach. |
 | **Timeline ACTION** | Shield Bash icon · target enemy. |
-| **AP / MP after** | **2 / 3** AP (spent 1 on bash) · MP reduced by walk steps (2 MP for two east steps). |
+| **AP / MP after** | **0 / 1** AP (bash spent your only action point) · MP reduced by walk steps (e.g. **1 / 3** after two east steps from `(4,5)` to `(6,5)`). |
 | **Ghost / live preview** | Promoted to **committed** picture — same knight/enemy positions as last preview. |
-| **Blue / red** | Recomputed from **projected** stand `(6,5)` and remaining AP — red still shows bash range from `(6,5)` if AP allows another action (usually not on same turn after 1-cost bash from 3 AP pool… if 1 AP left, red only if another bash legal). |
+| **Blue / red** | **Red OFF** — 0 AP left, cannot bash again. Blue shows remaining move range from `(6,5)` if MP left. |
 | **No jump** | Arrow tip, ghost, and timeline **do not change** to a different approach or target than preview showed. |
 
 **Special case — commit RUN only (your regression):**
 
-- Setup: **1 AP**, **0 MP**, auto-run on, Shield Bash selected.  
+- Setup: **1 / 1** AP, **0 / 3** MP, auto-run on, Shield Bash selected.  
 - Hover run destination e.g. **`(3,6)`** → run cursor → commit **run only**.  
 - **Timeline PRE:** **Run** icon · dest **`(3,6)`** · `uses_run` = true.  
-- **AP after:** **0 / 1** (run spent the AP).  
-- **Red:** **OFF** everywhere (bash cannot fire). Blue per remaining rules.  
+- **AP after:** **0 / 1** (run spent your only AP).  
+- **Red:** **OFF** everywhere — bash cannot fire with 0 AP.  
 - **Mouse still on `(3,6)`:** Still **no red**.  
 
 ---
@@ -388,7 +392,9 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
 
 ---
 
-## Chain Hook (`knight_chain_hook`) — full 7 phases
+## Chain Hook (`knight_chain_hook`) — reference (needs 3 AP)
+
+> **Training Arena:** Knight has **1 AP**. Chain Hook costs **3 AP** — you **cannot commit** it in standard F5 training. Use this section only with **infinite AP** debug or a boosted-AP test setup. Headless tests may inflate AP to 3.
 
 **Skill:** **3 AP** · range **1** · **PULL 2**
 
@@ -407,7 +413,7 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
 
 | What | Exactly |
 |------|---------|
-| **AP / MP** | **3 / 3** AP · **3 / 3** MP |
+| **AP / MP** | **1 / 1** AP · **3 / 3** MP (standard training — hook **not affordable**) |
 | **Blue** | Full 3 MP walk reach from `(1,3)` |
 | **Red** | Around stand `(1,3)` only — **dummy `(4,3)` NOT in red** |
 | **Ghost / arrows** | None |
@@ -443,7 +449,7 @@ Paint **`(1,3) → (2,3) → (3,3)`** (get adjacent west of dummy).
 | What | Exactly |
 |------|---------|
 | **Timeline** | PRE walk to **`(3,3)`** + ACTION Chain Hook on enemy |
-| **AP after** | **0 / 3** AP (hook costs 3) |
+| **AP after** | **0 / 3** AP only if you had **3+ AP** to start; with **1 AP** commit must **fail** or not be offered |
 | **No jump** | Pull arrow and landing cell unchanged vs preview |
 
 ### Phase 6 — Execute
@@ -459,7 +465,9 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 
 ---
 
-## Trampling Advance (`knight_trampling_advance`) — full 7 phases
+## Trampling Advance (`knight_trampling_advance`) — reference (needs 2 AP)
+
+> **Training Arena:** Knight has **1 AP**. Trampling Advance costs **2 AP** — **not committable** in standard 1 AP training. Use infinite AP debug or headless E2E fixture for full trample walkthrough.
 
 **Skill:** **2 AP** · **2 MP** · tile-target movement skill
 
@@ -523,11 +531,13 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 
 ---
 
-## Bowling Charge + run/AP (red tile reference)
+## Bowling Charge — red tile / run economy (3 AP skill, 1 AP knight)
 
-**Skill:** Bowling Charge **3 AP** · used with **1 AP** to test run eating skill budget
+**Skill:** Bowling Charge **3 AP** — cannot be **committed** with 1 AP. Used in tests **selected on the bar** to check red tiles when **run would eat your only AP**.
 
-**Board:** Knight `(4,5)`, dummy `(7,5)`, auto-run on
+**Board:** Knight `(4,5)`, dummy `(7,5)`, auto-run on, knight **1 / 1** AP
+
+**Also applies with Shield Bash selected** (your main F5 case) — same economy: run OR bash, not both.
 
 ### Hover run tile (e.g. `(3,6)`) with **1 AP** — phases 2–3
 
@@ -535,7 +545,7 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 |------|---------|
 | **Red** | **Completely off** — no red on dummy `(7,5)`, no red at knight start |
 | **Cursor** | **Run** on that hover |
-| **Reason** | Implicit premove = run → 0 AP left → Bowling Charge (3 AP) impossible |
+| **Reason** | Only **1 AP** · implicit premove = run → **0 AP** → Bowling (3 AP) and Bash (1 AP) both impossible → **red off** |
 
 ### After commit run only — phase 5
 
@@ -554,7 +564,7 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 | Phase | Exactly |
 |-------|---------|
 | **4 hover** | Walk cursor · path `(4,5)→(5,5)` |
-| **5 commit** | PRE walk icon · dest `(5,5)` · MP **2/3** |
+| **5 commit** | PRE walk icon · dest `(5,5)` · MP **2/3** · AP stays **1/1** (walk does not spend AP) |
 | **6 execute** | Knight **`(5,5)`** |
 
 ### Run — run-required tile with run icon
@@ -562,7 +572,7 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 | Phase | Exactly |
 |-------|---------|
 | **Cursor** | **Run** glyph only (no attack) |
-| **Timeline after commit** | PRE **run** icon · `uses_run` true |
+| **Timeline after commit** | PRE **run** icon · `uses_run` true · AP **0/1** |
 
 ### Wait
 

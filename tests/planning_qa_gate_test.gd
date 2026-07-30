@@ -172,8 +172,8 @@ static func _planning_fixture(
 	var knight: UnitState = UnitState.create(1, knight_def, GameEnums.Team.PLAYER, knight_pos)
 	knight.active_abilities = DataLibrary.build_training_abilities(knight_def)
 	knight.movement.points_left = knight.movement.max_points
-	knight.ability.points_left = 3
-	knight.ability.max_points = 3
+	knight.ability.points_left = 1
+	knight.ability.max_points = 1
 	var units: Array[UnitState] = [knight]
 	if enemy_pos.x >= 0:
 		var dummy_def: UnitData = DataLibrary.get_training_dummy()
