@@ -1050,12 +1050,8 @@ func _play_cell_path_tween(
 		actor.cancel_dash_windup()
 	else:
 		actor.position = _map_view.grid_to_foot_local(start_cell)
-	if is_dash:
-		actor.set_dash_running(true)
-	else:
-		actor.set_running(use_run)
-	actor.set_walking(true)
-	_apply_path_step_facing(unit_id, _facing_toward(start_cell, cells[0]))
+	var facing_anim: StringName = _facing_anim(_facing_toward(start_cell, cells[0]))
+	actor.apply_path_motion(true, use_run or is_dash, facing_anim, is_dash)
 	var tile_time: float = CombatDirector.RUN_STEP_TIME if use_run else step_time
 	var tween: Tween = create_tween()
 	_move_tweens[unit_id] = tween
@@ -1602,13 +1598,9 @@ func update_drag_preview(
 		actor.modulate = Color(1.0, 0.45, 0.45, 1.0)
 	match anim_mode:
 		DragPreviewAnim.WALK:
-			actor.set_running(false)
-			actor.set_facing(_facing_anim(facing))
-			actor.set_walking(true)
+			actor.apply_path_motion(true, false, _facing_anim(facing), false)
 		DragPreviewAnim.RUN:
-			actor.set_facing(_facing_anim(facing))
-			actor.set_running(true)
-			actor.set_walking(true)
+			actor.apply_path_motion(true, true, _facing_anim(facing), false)
 		DragPreviewAnim.ATTACK:
 			actor.set_running(false)
 			actor.set_facing(_attack_anim(facing))

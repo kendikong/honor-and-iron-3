@@ -35,6 +35,13 @@ static func get_lazy_frames(
 	_cache[cache_key] = frames
 	return frames
 
+static func prewarm_locomotion(frames: SpriteFrames) -> void:
+	if frames == null:
+		return
+	ensure_animation(frames, &"walk_up")
+	ensure_animation(frames, &"run_up")
+
+
 static func ensure_animation(frames: SpriteFrames, action: StringName) -> void:
 	if frames.has_animation(action):
 		return

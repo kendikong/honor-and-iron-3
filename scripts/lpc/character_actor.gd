@@ -48,6 +48,7 @@ var _planning_exhausted: bool = false
 var _spell_flash_active: bool = false
 var _spell_flash_generation: int = 0
 var _oblique_band_modulates: Array[Color] = [Color.WHITE, Color.WHITE, Color.WHITE]
+var _shadow_rebuild_scheduled: bool = false
 var _oblique_modulate_stamp: int = -1
 var _oblique_cloud_stamp: int = -1
 var _oblique_modulate_pos_px: Vector2i = Vector2i(999999, 999999)
@@ -298,13 +299,49 @@ func _rebuild_contact_shadow_silhouette() -> void:
 	_contact_shadow.rebuild_silhouette(_layers, anim)
 
 
+func _schedule_contact_shadow_rebuild() -> void:
+	if _shadow_rebuild_scheduled:
+		return
+	_shadow_rebuild_scheduled = true
+	call_deferred("_deferred_contact_shadow_rebuild")
+
+
+func _deferred_contact_shadow_rebuild() -> void:
+	_shadow_rebuild_scheduled = false
+	_rebuild_contact_shadow_silhouette()
+
+
 func set_facing(anim: StringName) -> void:
 	_facing = anim
 	if _one_shot_generation > 0:
 		return
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
-	_rebuild_contact_shadow_silhouette()
+	_schedule_contact_shadow_rebuild()
+
+
+func apply_path_motion(
+	walking: bool,
+	running: bool,
+	facing_anim: StringName,
+	dash_running: bool = false,
+) -> void:
+	if (
+		_walking == walking
+		and _running == running
+		and _dash_running == dash_running
+		and _facing == facing_anim
+	):
+		return
+	_walking = walking
+	_running = running
+	_dash_running = dash_running
+	_facing = facing_anim
+	if _one_shot_generation > 0:
+		return
+	for spr: AnimatedSprite2D in _layers:
+		_apply_motion_state(spr)
+	_schedule_contact_shadow_rebuild()
 
 
 func set_walking(moving: bool) -> void:
@@ -315,7 +352,7 @@ func set_walking(moving: bool) -> void:
 		return
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
-	_rebuild_contact_shadow_silhouette()
+	_schedule_contact_shadow_rebuild()
 
 
 func set_running(running: bool) -> void:
@@ -327,7 +364,7 @@ func set_running(running: bool) -> void:
 		return
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
-	_rebuild_contact_shadow_silhouette()
+	_schedule_contact_shadow_rebuild()
 
 
 func set_dash_running(enabled: bool) -> void:
@@ -337,7 +374,7 @@ func set_dash_running(enabled: bool) -> void:
 		return
 	for spr: AnimatedSprite2D in _layers:
 		_apply_motion_state(spr)
-	_rebuild_contact_shadow_silhouette()
+	_schedule_contact_shadow_rebuild()
 
 
 func set_planning_exhausted(exhausted: bool) -> void:
@@ -794,7 +831,19 @@ func get_layer_count() -> int:
 ## Apply a CharacterRecipe using CharacterComposer.
 ## Returns the report dictionary from CharacterComposer.apply.
 func apply_recipe(recipe: CharacterRecipe) -> Dictionary:
-	return CharacterComposer.apply(self, recipe)
+	var report: Dictionary = CharacterComposer.apply(self, recipe)
+	prewarm_locomotion_animations()
+	return report
+
+
+func prewarm_locomotion_animations() -> void:
+	var seen: Dictionary = {}
+	for spr: AnimatedSprite2D in _layers:
+		var frames: SpriteFrames = spr.sprite_frames
+		if frames == null or seen.has(frames):
+			continue
+		seen[frames] = true
+		LpcSheetFrames.prewarm_locomotion(frames)
 
 
 func _make_sprite() -> AnimatedSprite2D:
