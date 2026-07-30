@@ -2034,24 +2034,13 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	return CombatPlanningPreview.planning_move_origin_cell(_director, _board, unit.id)
 
 
-## Action-range anchor: committed projection plus live move-preview stand (intent truth).
-## Phase-2 armed movement skills keep projected stand — dash endpoints come from there.
+## Action-range anchor: shared with CombatPlanningInput.action_range_intent_stand_cell.
 func _intent_stand_origin(unit: UnitState) -> Vector2i:
-	var projected: Vector2i = _proj_origin(unit)
 	if unit == null:
-		return projected
-	if _planning_input != null and _planning_input.awaiting_targeting_active():
-		var sel_idx: int = _director.selected_ability_index if _director != null else -1
-		var ability: AbilityData = _selected_ability_data(unit, sel_idx)
-		if ability != null and AbilitySystem.is_movement_skill(ability):
-			return projected
-	if _planning_input != null and _planning_input.is_live_preview_active():
-		var live_board: BoardState = _live_preview.preview_board
-		if live_board != null:
-			var live_unit: UnitState = live_board.get_unit_by_id(unit.id)
-			if live_unit != null:
-				return live_unit.position
-	return projected
+		return Vector2i(-999999, -999999)
+	if _planning_input != null:
+		return _planning_input.action_range_intent_stand_cell(unit.id)
+	return _proj_origin(unit)
 
 
 func _selected_ability_data(unit: UnitState, ability_index: int) -> AbilityData:

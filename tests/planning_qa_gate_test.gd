@@ -71,6 +71,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_action_range_hides_with_committed_run_intent,
 		_test_action_range_shows_while_awaiting_trample,
 		_test_action_range_shows_on_enemy_hover,
+		_test_action_range_follows_cursor_on_move_hover,
 		_test_enemy_skill_hover_not_movement_route,
 		_test_enemy_bash_approach_move_leg,
 		_test_bash_targeting_uses_pre_push_enemy_cell,
@@ -131,6 +132,7 @@ static func run_all(failures: Array[String]) -> void:
 		"action_range_committed_run_intent",
 		"action_range_awaiting_trample",
 		"action_range_enemy_hover",
+		"action_range_move_hover_follows_cursor",
 		"enemy_hover_not_move_route",
 		"bash_enemy_approach_leg",
 		"bash_target_pre_push_cell",
@@ -2024,7 +2026,7 @@ static func _test_action_range_centered_on_live_stand(failures: Array[String]) -
 		return
 	if not input.action_range_visible_for_hover():
 		failures.append(
-			"PlanningQAGate action_range_live_stand: enemy hover must include Shield Bash in commit slots",
+			"PlanningQAGate action_range_live_stand: enemy hover must keep action-range visible at live stand",
 		)
 		return
 	var live_board: BoardState = overlay.get_live_preview().preview_board
@@ -2216,7 +2218,7 @@ static func _test_action_range_shows_on_enemy_hover(failures: Array[String]) -> 
 	overlay._recompute_hover_ranges_from_inputs()
 	if not input.action_range_visible_for_hover():
 		failures.append(
-			"PlanningQAGate action_range_enemy_hover: enemy hover slots must include Shield Bash action",
+			"PlanningQAGate action_range_enemy_hover: enemy hover must keep action-range visible",
 		)
 		return
 	var ability: AbilityData = _knight_ability(SHIELD_BASH_ID)
@@ -2235,6 +2237,64 @@ static func _test_action_range_shows_on_enemy_hover(failures: Array[String]) -> 
 	if not found:
 		failures.append(
 			"PlanningQAGate action_range_enemy_hover: red tiles must show on enemy hover (stand %s)"
+			% stand,
+		)
+
+
+static func _test_action_range_follows_cursor_on_move_hover(failures: Array[String]) -> void:
+	const HOVER_DEST := Vector2i(3, 4)
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	director.auto_run = true
+	fix.knight.ability.points_left = 1
+	var projected_knight: UnitState = (
+		director.projected_state.get_unit_by_id(1) if director.projected_state != null else null
+	)
+	if projected_knight != null:
+		projected_knight.ability.points_left = 1
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_move(
+			1, HOVER_DEST, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	var bowling_idx: int = _ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("PlanningQAGate action_range_move_hover_follows_cursor: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	input.on_hover_moved(HOVER_DEST)
+	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+	if not input.action_range_visible_for_hover():
+		failures.append(
+			"PlanningQAGate action_range_move_hover_follows_cursor: red tiles must show on move hover when skill stays affordable after premove (hover %s)"
+			% HOVER_DEST,
+		)
+		return
+	var stand: Vector2i = input.action_range_intent_stand_cell(1)
+	if stand != HOVER_DEST:
+		failures.append(
+			"PlanningQAGate action_range_move_hover_follows_cursor: expected stand %s got %s"
+			% [HOVER_DEST, stand],
+		)
+		return
+	var ability: AbilityData = _knight_ability(BOWLING_CHARGE_ID)
+	if ability == null:
+		failures.append("PlanningQAGate action_range_move_hover_follows_cursor: Bowling Charge ability missing")
+		return
+	var expected: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, fix.knight, ability, stand,
+	)
+	var found: bool = false
+	for tile: Vector2i in expected:
+		if overlay.is_hover_action_range_tile(tile):
+			found = true
+			break
+	if not found:
+		failures.append(
+			"PlanningQAGate action_range_move_hover_follows_cursor: red tiles must anchor on cursor stand %s"
 			% stand,
 		)
 

@@ -2249,25 +2249,59 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	return actor != null and AbilitySystem.can_afford_run(actor)
 
 
-## Red action-range tiles follow commit-slot intent: show when slots include an ability action.
+## Where red action-range tiles anchor — projected stand plus live move-preview stand (intent truth).
+func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
+	if _director == null:
+		return Vector2i(-999999, -999999)
+	if unit_id < 0:
+		unit_id = _director.selected_unit_id
+	if unit_id < 0:
+		return Vector2i(-999999, -999999)
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return Vector2i(-999999, -999999)
+	var projected: Vector2i = _proj_move_origin(actor)
+	if awaiting_targeting_active() and unit_id == _director.selected_unit_id:
+		var ability: AbilityData = _selected_ability_data(actor)
+		if ability != null and AbilitySystem.is_movement_skill(ability):
+			return projected
+	if is_live_preview_active() and preview_state.preview_board != null:
+		var live_unit: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
+		if live_unit != null:
+			return live_unit.position
+	var dest: Vector2i = move_intent_destination(unit_id)
+	if _director.board.is_in_bounds(dest) and dest != projected:
+		return dest
+	return projected
+
+
+## Red tiles follow cursor stand; hide only when selected skill is impossible after that premove.
 func action_range_visible_for_hover() -> bool:
 	if _director == null or _director.selected_unit_id < 0 or _director.board == null:
 		return false
 	if awaiting_targeting_active():
 		return true
 	var unit_id: int = _director.selected_unit_id
-	var cell: Vector2i = get_hover_tile_for_ui()
-	if not _director.board.is_in_bounds(cell):
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
 		return false
-	var slots: Dictionary = _final_commit_slots_for_click_at_cell(
-		unit_id, cell, _mouse_local_for_facing(),
+	var ability: AbilityData = _selected_ability_data(actor)
+	if ability == null or AbilitySystem.is_run_ability(ability) or AbilitySystem.is_wait_ability(ability):
+		return false
+	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
+	if not _director.board.is_in_bounds(stand):
+		return false
+	return AbilitySystem.can_show_planning_action_range_after_premove(
+		_proj(),
+		actor,
+		ability,
+		stand,
+		auto_run_movement_active(actor),
 	)
-	for raw: Variant in slots.get("action", []):
-		if raw is TimelineAction:
-			var action: TimelineAction = raw as TimelineAction
-			if action.type == GameEnums.ActionType.ABILITY:
-				return true
-	return false
 
 
 ## True when this unit's current planning intent (drag / live path / committed move) needs Run.
