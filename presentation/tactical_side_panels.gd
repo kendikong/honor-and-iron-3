@@ -108,6 +108,7 @@ func setup(
 	EventBus.ability_selected.connect(_on_ability_selected)
 	EventBus.turn_phase_changed.connect(_on_phase_changed)
 	EventBus.timeline_changed.connect(_on_timeline_changed)
+	EventBus.wait_marker_changed.connect(_on_wait_marker_changed)
 	EventBus.sim_event.connect(_on_sim_event)
 	EventBus.action_rejected.connect(_on_action_rejected)
 	if _intent_state != null:
@@ -502,6 +503,45 @@ func _on_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void
 	_refresh_wait_button()
 
 
+func _on_wait_marker_changed(unit_id: int, _active: bool) -> void:
+	if _director != null:
+		_selected_ability = _director.selected_ability_index
+	_refresh_wait_button()
+	if unit_id != _selected_id:
+		return
+	_refresh_wait_skill_affordability()
+
+
+func _refresh_wait_skill_affordability() -> void:
+	if _skill_list == null or _selected_id < 0 or _board == null:
+		return
+	var unit := _committed_plan_unit(_selected_id)
+	if unit == null:
+		unit = _board.get_unit_by_id(_selected_id)
+	if unit == null or unit.is_enemy():
+		return
+	var waiting: bool = _director != null and _director.unit_has_wait_planned(_selected_id)
+	for c: Node in _skill_list.get_children():
+		var row_btn := c as Button
+		if row_btn == null:
+			continue
+		var index: int = int(row_btn.get_meta(&"ability_index", -1))
+		if index < 0 or index >= unit.active_abilities.size():
+			continue
+		var ability: AbilityData = unit.active_abilities[index] as AbilityData
+		if ability == null:
+			continue
+		if _planning_input != null and _planning_input.auto_run and ability.is_universal_run():
+			continue
+		var usable: bool = (
+			not waiting
+			and AbilitySystem.ability_planning_selectable(unit, ability, _board)
+		)
+		row_btn.disabled = not usable
+	_update_skill_selection_highlight()
+	_last_skill_rebuild_key = _skill_rebuild_cache_key(unit)
+
+
 func _on_selection_changed(unit_id: int) -> void:
 	_selected_id = unit_id
 	if unit_id >= 0 and _director != null:
@@ -800,11 +840,12 @@ func _skill_rebuild_cache_key(unit: UnitState) -> String:
 		status_bits |= 2
 	if unit.has_status(GameEnums.StatusType.PACIFY):
 		status_bits |= 4
-	return "%d:%d:%d:%d" % [
+	return "%d:%d:%d:%d:%d" % [
 		_selected_id,
 		unit.ability.points_left,
 		1 if unit.turn_action_used else 0,
 		status_bits,
+		1 if _director != null and _director.unit_has_wait_planned(_selected_id) else 0,
 	]
 
 

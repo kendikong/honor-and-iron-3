@@ -115,6 +115,7 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.selection_changed.connect(_on_selection_changed)
 	EventBus.timeline_changed.connect(_on_timeline_changed)
+	EventBus.wait_marker_changed.connect(_on_wait_marker_changed)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		_phase = phase
 		if not CombatDirector.is_planning_phase(phase):
@@ -229,13 +230,19 @@ func _on_selection_changed(unit_id: int) -> void:
 
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
-		if _director.peek_wait_marker_only_refresh():
-			_refresh_plan_affected_exhaustion()
-			_refresh_unit_glows()
-			return
 		_sync_planning_facings_for_queued_actions()
 		_refresh_player_exhaustion()
 		_refresh_unit_glows()
+
+
+func _on_wait_marker_changed(unit_id: int, _active: bool) -> void:
+	if _director == null or not CombatDirector.is_planning_phase(_director.phase):
+		return
+	if _board != null and unit_id >= 0:
+		var unit: UnitState = _board.get_unit_by_id(unit_id)
+		if unit != null and unit.is_alive() and not unit.is_enemy():
+			_apply_exhaustion_state(unit)
+	_refresh_unit_glows()
 
 
 func _refresh_plan_affected_exhaustion() -> void:

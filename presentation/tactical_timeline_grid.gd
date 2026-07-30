@@ -47,6 +47,7 @@ var _timeline_hover_id: int = -1
 var _header_font_px: int = 12
 var _cell_font_px: int = 12
 var _rows_root: VBoxContainer
+var _row_panels: Dictionary = {}
 var _last_row_click_unit: int = -1
 var _last_row_click_ms: int = 0
 var _pending_plan_labels: Array[Label] = []
@@ -103,6 +104,7 @@ func apply_font_sizes(header_px: int, cell_px: int) -> void:
 
 func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 	_pending_plan_labels.clear()
+	_row_panels.clear()
 	for child: Node in get_children():
 		remove_child(child)
 		child.queue_free()
@@ -122,6 +124,23 @@ func rebuild(timeline: Timeline, statuses: PackedStringArray) -> void:
 		if first_warning.is_empty() and not warn.is_empty():
 			first_warning = warn
 	warning_changed.emit(first_warning)
+
+
+func apply_unit_wait_marker(unit_id: int, waiting: bool) -> void:
+	var row_panel: PanelContainer = _row_panels.get(unit_id) as PanelContainer
+	if row_panel == null:
+		return
+	var is_selected: bool = unit_id == _selected_id
+	var row_bg: Color = COLOR_ROW_EXHAUSTED if waiting else (
+		COLOR_ROW_SEL if is_selected else COLOR_ROW
+	)
+	row_panel.add_theme_stylebox_override(
+		"panel",
+		_panel_style(row_bg, is_selected and not waiting),
+	)
+	var plan: Control = row_panel.get_meta(&"plan_section") as Control
+	if plan != null:
+		plan.modulate = COLOR_PLAN_EXHAUSTED if waiting else Color.WHITE
 
 
 func get_hover_unit_id() -> int:
@@ -199,6 +218,9 @@ func _add_party_row(
 	if is_exhausted:
 		plan.modulate = COLOR_PLAN_EXHAUSTED
 	row_panel.add_child(_wrap_row_inset(row))
+	if unit != null:
+		_row_panels[unit.id] = row_panel
+		row_panel.set_meta(&"plan_section", plan)
 	var player_col: Color = CombatUiFormatters.player_color(slot) if not is_empty else COLOR_EMPTY
 	_add_body_cell(info, "P%d" % slot, "", player_col, W_PLAYER, false)
 	_add_info_gap(info)
