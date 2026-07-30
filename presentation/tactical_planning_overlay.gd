@@ -1405,7 +1405,7 @@ func _draw_interaction_overlay() -> void:
 		if target_unit != null:
 			target_coord = target_unit.position
 		if origin != target_coord and not _unit_has_push_preview(prev, _attack_target_id):
-			_draw_dashed_route([origin, target_coord], route_col)
+			_draw_targeting_intent_arrow(origin, target_coord, route_col)
 	elif (
 		sel_ability != null
 		and _planning_input != null
@@ -1414,7 +1414,7 @@ func _draw_interaction_overlay() -> void:
 		and AbilitySystem.planning_commit_flow(actor, sel_ability) == GameEnums.PlanningCommitFlow.AWAITING_TARGET
 		and AbilitySystem.planning_is_valid_awaiting_endpoint(_proj_origin(actor), _hover_coord, sel_ability)
 	):
-		_draw_dashed_route([actor.position, _hover_coord], route_col)
+		_draw_targeting_intent_arrow(actor.position, _hover_coord, route_col)
 
 
 func _unit_can_still_move(unit_id: int) -> bool:
@@ -1720,6 +1720,10 @@ func _draw_displacement_intent_arrow(from: Vector2i, to: Vector2i, color: Color)
 	_draw_dotted_intent_segment(from, to, color, true, true, true)
 
 
+func _draw_targeting_intent_arrow(from: Vector2i, to: Vector2i, color: Color) -> void:
+	_draw_dotted_intent_segment(from, to, color, true, true, true)
+
+
 func _draw_push_arrow(from: Vector2i, to: Vector2i, pushed_unit: UnitState = null) -> void:
 	_draw_displacement_intent_arrow(from, to, _forced_movement_intent_color(pushed_unit))
 
@@ -1825,7 +1829,7 @@ func _draw_move_ghosts() -> void:
 		)
 		_draw_route_line(route_cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
 	else:
-		_draw_route_line([origin, _hover_coord], Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
+		_draw_targeting_intent_arrow(origin, _hover_coord, Color(p_col.r, p_col.g, p_col.b, 0.85))
 
 
 func _facing_toward(from: Vector2i, to: Vector2i) -> int:
