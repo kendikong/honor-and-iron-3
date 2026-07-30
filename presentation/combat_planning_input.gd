@@ -758,7 +758,8 @@ func _on_preview_updated(_result: SimResult) -> void:
 	if _suppress_post_commit_hover_refresh:
 		_suppress_post_commit_hover_refresh = false
 		return
-	_schedule_hover_preview_refresh()
+	if _director == null or not _director.peek_movement_only_refresh() or _director.plan_refresh_snap_units:
+		_schedule_hover_preview_refresh()
 
 
 func _schedule_plan_refresh_followup() -> void:

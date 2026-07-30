@@ -479,6 +479,13 @@ var _skill_ui_settle_generation: int = 0
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
+	if (
+		_director != null
+		and _director.peek_movement_only_refresh()
+		and not _director.plan_refresh_snap_units
+	):
+		_refresh_intent_label()
+		return
 	_refresh_info()
 	_refresh_intent_label()
 	_refresh_ability_buttons_if_dirty()

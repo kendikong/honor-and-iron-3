@@ -229,6 +229,15 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
+	var light_refresh: bool = (
+		_director != null
+		and _director.peek_movement_only_refresh()
+		and not _director.plan_refresh_snap_units
+	)
+	if light_refresh:
+		_refresh_player_exhaustion()
+		queue_redraw()
+		return
 	_sync_actors()
 	_refresh_planning_visuals()
 	queue_redraw()
@@ -897,6 +906,12 @@ func _sync_planning_unit_position(unit: UnitState) -> void:
 	var target: Vector2i = unit.position
 	var current_cell: Vector2i = _actor_grid_cell(unit.id)
 	if current_cell == target:
+		_sync_planning_final_facing(unit.id)
+		_update_depth(unit.id)
+		return
+	if _director != null and _director.plan_refresh_snap_units:
+		_kill_move_tween(unit.id)
+		_position_actor(unit.id, target)
 		_sync_planning_final_facing(unit.id)
 		_update_depth(unit.id)
 		return
