@@ -161,6 +161,294 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 	return _find_approach_tile(proj, actor, target.position, rng, preferred_tile)
 "@
 		ExpectMinFails = 1
+	},
+	@{
+		Name = "7_invalid_sim_passes"
+		Coverage = "preview_commit_valid, OOB commit, invalid_slots_block_commit"
+		File = "presentation/combat_director.gd"
+		Old = @"
+		if int(e.data.get("actor", -1)) == unit_id:
+			return e.data.get("reason", "cannot_use_ability") as String
+	return ""
+"@
+		New = @"
+		if int(e.data.get("actor", -1)) == unit_id:
+			return ""  # QA_MUT
+	return ""
+"@
+		ExpectMinFails = 1
+	},
+	@{
+		Name = "8_undo_clears_premove"
+		Coverage = "undo_action_keeps_premove, undo_movement_action_preserves_premove"
+		File = "presentation/combat_director.gd"
+		Old = @"
+					var removed: TimelineAction = plan_action.entries[i]
+					plan_action.remove_at(i)
+					_begin_undo_plan_refresh(unit_id)
+"@
+		New = @"
+					var removed: TimelineAction = plan_action.entries[i]
+					plan_action.remove_at(i)
+					plan_pre_move.clear()  # QA_MUT
+					_begin_undo_plan_refresh(unit_id)
+"@
+		ExpectMinFails = 1
+	},
+	@{
+		Name = "9_cursor_empty"
+		Coverage = "cursor walk/run/composite, click_drop_cursor_parity, scenario phase3"
+		File = "presentation/combat_planning_input.gd"
+		Old = @"
+func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -> String:
+	if _is_invalid_dict(slots):
+		return PlanningIcons.GLYPH_NULL
+"@
+		New = @"
+func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -> String:
+	return ""  # QA_MUT
+	if _is_invalid_dict(slots):
+		return PlanningIcons.GLYPH_NULL
+"@
+		ExpectMinFails = 3
+	},
+	@{
+		Name = "10_no_blue_tiles"
+		Coverage = "blue move tiles, scenario phase1, drag walk, MP budget"
+		File = "presentation/tactical_planning_overlay.gd"
+		Old = @"
+			_hover_move_tiles = MovementSystem.get_reachable_tiles(
+				move_board,
+				move_from,
+				move_budget,
+				mt,
+				move_cost,
+				move_ability,
+			)
+"@
+		New = @"
+			_hover_move_tiles = []  # QA_MUT
+"@
+		ExpectMinFails = 1
+	},
+	@{
+		Name = "11_trample_no_awaiting"
+		Coverage = "trample e2e, trample scenario, awaiting_plan_refresh, action_range awaiting"
+		File = "presentation/combat_director.gd"
+		Old = @"
+func find_awaiting_action(unit_id: int) -> TimelineAction:
+	if unit_id < 0:
+		return null
+"@
+		New = @"
+func find_awaiting_action(unit_id: int) -> TimelineAction:
+	return null  # QA_MUT
+	if unit_id < 0:
+		return null
+"@
+		ExpectMinFails = 5
+	},
+	@{
+		Name = "12_drag_no_append"
+		Coverage = "waypoint_paint_order, trample paint/commit, drop_commit_preserves_drag_route"
+		File = "presentation/combat_planning_input.gd"
+		Old = @"
+func _extend_drag_route(cell: Vector2i) -> void:
+	if _drag_route.is_empty():
+		return
+"@
+		New = @"
+func _extend_drag_route(cell: Vector2i) -> void:
+	return  # QA_MUT
+	if _drag_route.is_empty():
+		return
+"@
+		ExpectMinFails = 4
+	},
+	@{
+		Name = "13_click_slots_invalid"
+		Coverage = "hover_click_drop_slot_parity, click_drop_parity_*, commit_plan_matches_hover"
+		File = "presentation/combat_planning_input.gd"
+		Old = @"
+func _final_commit_slots_for_click_at_cell(
+	unit_id: int,
+	cell: Vector2i,
+	local: Vector2,
+) -> Dictionary:
+	if _director == null or _director.board == null or unit_id < 0:
+"@
+		New = @"
+func _final_commit_slots_for_click_at_cell(
+	unit_id: int,
+	cell: Vector2i,
+	local: Vector2,
+) -> Dictionary:
+	return {"invalid": "QA_MUT"}  # QA_MUT
+	if _director == null or _director.board == null or unit_id < 0:
+"@
+		ExpectMinFails = 5
+	},
+	@{
+		Name = "14_walk_sim_wrong_dest"
+		Coverage = "walk/trample sim, click_drop_commit_sim, committed_walk_preview_matches_sim"
+		File = "core/systems/movement_system.gd"
+		Old = "	unit.position = path[path.size() - 1]"
+		New = "	unit.position = from  # QA_MUT"
+		ExpectMinFails = 5
+	},
+	@{
+		Name = "15_ability_no_cache_clear"
+		Coverage = "ability_switch_clears_preview_cache, ability_scroll_clears_hover_preview_cache"
+		File = "presentation/combat_planning_input.gd"
+		Old = @"
+func _on_ability_selected(_index: int) -> void:
+	if _director == null:
+		return
+	_invalidate_planning_hover_cache(false)
+"@
+		New = @"
+func _on_ability_selected(_index: int) -> void:
+	return  # QA_MUT
+	if _director == null:
+		return
+	_invalidate_planning_hover_cache(false)
+"@
+		ExpectMinFails = 1
+	},
+	@{
+		Name = "16_ghost_never_clears"
+		Coverage = "timeline_ghost_clears_when_committed, timeline_ghost_slots"
+		File = "presentation/combat_planning_input.gd"
+		Old = @"
+	var intent: Dictionary = _duplicate_commit_slots(_intent_snapshot_slots)
+	var committed: Dictionary = _committed_plan_slots(unit_id)
+	for col: String in ["pre", "action", "post"]:
+"@
+		New = @"
+	var intent: Dictionary = _duplicate_commit_slots(_intent_snapshot_slots)
+	return intent  # QA_MUT
+	var committed: Dictionary = _committed_plan_slots(unit_id)
+	for col: String in ["pre", "action", "post"]:
+"@
+		ExpectMinFails = 1
+	},
+	@{
+		Name = "17_strip_waypoints_on_commit"
+		Coverage = "trample_commit_preserves_waypoints, full_slot_signature, trample_paint_commit_sim"
+		File = "presentation/combat_director.gd"
+		Old = @"
+			if raw is TimelineAction:
+				var action: TimelineAction = raw as TimelineAction
+				actions.append(action)
+				plans.append(_slot_plan_for_action(action))
+"@
+		New = @"
+			if raw is TimelineAction:
+				var action: TimelineAction = raw as TimelineAction
+				action.waypoints.clear()  # QA_MUT
+				actions.append(action)
+				plans.append(_slot_plan_for_action(action))
+"@
+		ExpectMinFails = 2
+	},
+	@{
+		Name = "18_run_never_required"
+		Coverage = "run_economy scenario, action_range_auto_run_ap_gate, planning_display_ap_run"
+		File = "core/systems/ability_system.gd"
+		Old = @"
+static func movement_requires_run(
+	board: BoardState,
+	unit: UnitState,
+	target_coord: Vector2i,
+	waypoints: Array[Vector2i] = [],
+) -> bool:
+	if unit == null or unit.has_run_boost():
+		return false
+"@
+		New = @"
+static func movement_requires_run(
+	board: BoardState,
+	unit: UnitState,
+	target_coord: Vector2i,
+	waypoints: Array[Vector2i] = [],
+) -> bool:
+	return false  # QA_MUT
+	if unit == null or unit.has_run_boost():
+		return false
+"@
+		ExpectMinFails = 2
+	},
+	@{
+		Name = "19_oob_click_allows_empty"
+		Coverage = "click_drop_parity_oob, out_of_range_hover_is_invalid, invalid_slots_block_commit"
+		File = "presentation/combat_planning_input.gd"
+		Old = @"
+	if not _director.board.is_in_bounds(cell):
+		return {"invalid": "Out of bounds."}
+	if selected_phase_action_exhausted(unit_id):
+		return _empty_commit_slots()
+	var unit_at: UnitState = _unit_at_input_cell(cell)
+"@
+		New = @"
+	if not _director.board.is_in_bounds(cell):
+		return _empty_commit_slots()  # QA_MUT
+	if selected_phase_action_exhausted(unit_id):
+		return _empty_commit_slots()
+	var unit_at: UnitState = _unit_at_input_cell(cell)
+"@
+		ExpectMinFails = 1
+	},
+	@{
+		Name = "20_drag_corridor_direct"
+		Coverage = "jump_drag_autocorrect, stale_hover_updates_commit_waypoints, shield_bash stale approach"
+		File = "core/systems/movement_system.gd"
+		Old = @"
+) -> Array[Vector2i]:
+	if start == goal:
+		return []
+	var corridor: Array[Vector2i] = []
+"@
+		New = @"
+) -> Array[Vector2i]:
+	return [goal]  # QA_MUT
+	if start == goal:
+		return []
+	var corridor: Array[Vector2i] = []
+"@
+		ExpectMinFails = 1
+	},
+	@{
+		Name = "21_drop_slots_invalid"
+		Coverage = "click_drop_drag_walk_sim_parity, click_drop_drag_bash_enemy_parity, drop_commit"
+		File = "presentation/combat_planning_input.gd"
+		Old = @"
+func _final_commit_slots_for_drop_at_cell(
+	unit_id: int,
+	cell: Vector2i,
+	local: Vector2,
+	legal_move_tiles: Array[Vector2i],
+) -> Dictionary:
+	if _director == null or _director.board == null or unit_id < 0:
+"@
+		New = @"
+func _final_commit_slots_for_drop_at_cell(
+	unit_id: int,
+	cell: Vector2i,
+	local: Vector2,
+	legal_move_tiles: Array[Vector2i],
+) -> Dictionary:
+	return {"invalid": "QA_MUT"}  # QA_MUT
+	if _director == null or _director.board == null or unit_id < 0:
+"@
+		ExpectMinFails = 3
+	},
+	@{
+		Name = "22_display_mp_wrong"
+		Coverage = "planning_display_mp_left, planning_input MP display"
+		File = "presentation/combat_planning_input.gd"
+		Old = "	return AbilitySystem.planning_display_mp_left(committed, live_actor, live_valid)"
+		New = "	return 999  # QA_MUT"
+		ExpectMinFails = 1
 	}
 )
 
@@ -175,6 +463,7 @@ foreach ($m in $mutations) {
 		$ok = ($r.Exit -ne 0) -and ($r.Count -ge $m.ExpectMinFails)
 		$report += [pscustomobject]@{
 			Mutation = $m.Name
+			Coverage = $m.Coverage
 			Exit = $r.Exit
 			FailCount = $r.Count
 			Expected = $(if ($ok) { "CAUGHT" } else { "MISSED" })

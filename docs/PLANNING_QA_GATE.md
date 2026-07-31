@@ -62,7 +62,7 @@ Full regression (includes this gate):
 
 | Manual check | Automated test | API asserted |
 |--------------|----------------|--------------|
-| 1A Waypoint paint order | `_test_waypoint_paint_order_preserved_on_tile_drag` | `CombatPlanningInput._drag_route` |
+| 1A Blue move tiles on walk select | `_test_blue_move_tiles_on_walk_select` | `TacticalPlanningOverlay.is_hover_move_tile` |
 | 1A Autocorrect on jump drag | `_test_jump_drag_autocorrect_preserves_painted_corridor` | `_extend_drag_route` keeps E-then-N corridor |
 | 1A Stale hover / invalid waypoint | `_test_stale_hover_updates_commit_waypoints`, `_test_shield_bash_hover_change_clears_stale_approach` | `_final_commit_slots_for_interaction` |
 | 1B Walk / run / composite cursor | `_test_cursor_walk_run_and_composite`, Shield Bash cursor test | `_cursor_icon_from_commit_slots` |
@@ -154,7 +154,45 @@ Beyond the manual checklist — game rules that must not regress during perf wor
 ## Perf optimization sign-off
 
 - [ ] Agent: `run_planning_qa_gate.ps1` → PASS
+- [ ] Agent: `validate_qa_mutations.ps1` → all mutations CAUGHT (22 unfixes, ~90% gate coverage)
 - [ ] Owner: Layer B manual items above → PASS
 - [ ] Commit hash recorded in changelog
+
+## Mutation validation (~90% gate coverage)
+
+Run after adding or changing QA tests:
+
+```powershell
+.\scripts\validate_qa_mutations.ps1
+```
+
+**22 temporary unfixes** (6 original + 16 expanded) each break one production path; the gate must **fail** for every mutation, then **PASS** after revert. Report: `tests/qa_mutation_report.json`.
+
+| # | Unfix | Primary suites caught |
+|---|--------|------------------------|
+| 1 | Red tiles always visible | action_range, run_economy, scenarios |
+| 2 | Bash/hook no approach tile | drag, scenarios, gate approach |
+| 3 | CLASS_SKILL AP not spent | execute AP, player_turn AP, scenarios |
+| 4 | Skip post-commit promote | bash_promote_ghost, scenario phase5 |
+| 5 | Push direction reversed | bash push, hook pull, sim |
+| 6 | Hook in-range wrong stand | hook_in_range, scenario |
+| 7 | `preview_commit_valid` ignores sim failure | invalid commit, OOB |
+| 8 | Undo clears pre-move | undo keeps premove |
+| 9 | Empty cursor glyphs | cursor parity, scenarios phase3 |
+| 10 | No blue move tiles | phase1 blue, drag walk |
+| 11 | `find_awaiting_action` always null | trample e2e + scenario |
+| 12 | `_append_route_tile` no-op | waypoint order, trample paint |
+| 13 | Click slots always invalid | hover/click/drop parity |
+| 14 | Walk sim steps skipped | sim path, trample sim |
+| 15 | Ability select skips cache clear | ability_switch cache |
+| 16 | Timeline ghost always on | timeline_ghost tests |
+| 17 | Strip waypoints on commit | trample waypoint commit |
+| 18 | `movement_requires_run` always false | run_economy, auto_run gate |
+| 19 | OOB slots not marked invalid | OOB invalid, slot reject |
+| 20 | `drag_corridor_path` teleports to goal | jump drag autocorrect |
+| 21 | Drop slots always invalid | drag-drop parity |
+| 22 | `planning_display_mp_left` returns max MP | MP display tests |
+
+**Not mutation-covered (manual / Layer B):** pixel draw, FPS, walk animation tweens, dashed-line rendering.
 
 See also: `BUG_REPORT.md` (regression contract), `tests/trampling_advance_e2e_test.gd` (Trampling deep suite).

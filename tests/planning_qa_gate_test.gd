@@ -19,6 +19,8 @@ static func run_all(failures: Array[String]) -> void:
 		_test_jump_drag_autocorrect_preserves_painted_corridor,
 		_test_stale_hover_updates_commit_waypoints,
 		_test_cursor_walk_run_and_composite,
+		_test_blue_move_tiles_on_walk_select,
+		_test_planning_display_mp_left_contract,
 		_test_committed_walk_preview_matches_sim_path,
 		_test_shield_bash_enemy_hover_commit_slots,
 		_test_shield_bash_push_away_from_player,
@@ -86,6 +88,8 @@ static func run_all(failures: Array[String]) -> void:
 		"jump_autocorrect",
 		"stale_hover",
 		"cursor-glyphs",
+		"blue_move_tiles",
+		"mp_display_contract",
 		"walk_sim",
 		"bash_slots",
 		"bash_push",
@@ -585,6 +589,41 @@ static func _test_stale_hover_updates_commit_waypoints(failures: Array[String]) 
 		failures.append(
 			"PlanningQAGate movement stale: enemy hover pre-move must target %s, got %s"
 			% [str(BASH_APPROACH), str(enemy_move.target_coord if enemy_move != null else null)],
+		)
+
+
+static func _test_planning_display_mp_left_contract(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
+	fix.knight.movement.points_left = 2
+	fix.knight.movement.max_points = 3
+	var proj: UnitState = fix.director.projected_state.get_unit_by_id(1)
+	if proj != null:
+		proj.movement.points_left = 2
+		proj.movement.max_points = 3
+	var display_mp: int = fix.input.planning_display_mp_left(1)
+	if display_mp != 2:
+		failures.append(
+			"PlanningQAGate MP display: committed budget must match points_left (got %d)" % display_mp,
+		)
+
+
+static func _test_blue_move_tiles_on_walk_select(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	fix["overlay"] = overlay
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	director.selected_ability_index = -1
+	input.force_basic_movement = true
+	PlanningChecklistHarness.hover(fix, KNIGHT_START)
+	var blue: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
+	if blue.is_empty():
+		failures.append("PlanningQAGate blue tiles: walk select must show reachable move tiles")
+		return
+	var dest := Vector2i(5, 5)
+	if not blue.has(dest):
+		failures.append(
+			"PlanningQAGate blue tiles: walk dest (5,5) must be reachable, got %s" % str(blue),
 		)
 
 
