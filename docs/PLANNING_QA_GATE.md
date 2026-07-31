@@ -57,6 +57,11 @@ committed projected position, real right-click input removes that committed pre-
 and real scroll-wheel input changes the selected ability after the production settle
 interval.
 
+Click-versus-drag slot parity remains Tier 2 coverage: the live movement UI only
+commits by drag, while `PlanningDragE2ETest` compares that real release path against
+the canonical click-slot builder without inventing a non-existent click-to-move scene
+interaction.
+
 Run Tier 3 alone:
 
 ```powershell
