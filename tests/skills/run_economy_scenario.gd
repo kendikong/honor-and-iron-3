@@ -46,6 +46,7 @@ static func _run_spends_ap_and_hides_red(failures: Array[String]) -> void:
 	var ability: AbilityData = fix.knight.active_abilities[
 		PlanningChecklistHarness.ability_index(fix.knight, PlanningChecklistHarness.SHIELD_BASH_ID)
 	]
+	PlanningChecklistHarness.assert_action_range_hidden(failures, "run_economy/visibility_gate")
 	PlanningChecklistHarness.assert_red_contract(failures, "run_economy/red_off_hover", fix, ability, false)
 	PlanningChecklistHarness.assert_eq_int(
 		failures, "run_economy/display_ap_hover",

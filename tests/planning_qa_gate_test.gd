@@ -76,6 +76,10 @@ static func run_all(failures: Array[String]) -> void:
 		_test_enemy_bash_approach_move_leg,
 		_test_bash_targeting_uses_pre_push_enemy_cell,
 		_test_hook_pull_preview_keeps_attack_target,
+		_test_class_skill_execute_spends_ap,
+		_test_class_skill_player_turn_spends_ap,
+		_test_bash_promote_locks_committed_ghost,
+		_test_hook_in_range_approach_tile_is_actor_position,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -137,6 +141,10 @@ static func run_all(failures: Array[String]) -> void:
 		"bash_enemy_approach_leg",
 		"bash_target_pre_push_cell",
 		"hook_pull_attack_target",
+		"class_skill_execute_ap",
+		"class_skill_player_turn_ap",
+		"bash_promote_ghost",
+		"hook_in_range_approach",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -2096,6 +2104,11 @@ static func _test_action_range_hides_when_auto_run_blocks_skill_ap(failures: Arr
 	input.on_hover_moved(run_tile)
 	input._flush_hover_heavy_sync()
 	overlay._recompute_hover_ranges_from_inputs()
+	if input.action_range_visible_for_hover():
+		failures.append(
+			"PlanningQAGate action_range_auto_run_ap_gate: action_range_visible_for_hover must be false after run hover %s"
+			% run_tile,
+		)
 	if overlay.is_hover_action_range_tile(ENEMY_POS):
 		failures.append(
 			"PlanningQAGate action_range_auto_run_ap_gate: red tiles must hide when auto-run premove consumes skill AP (hover %s)"
@@ -2370,3 +2383,74 @@ static func _test_hook_pull_preview_keeps_attack_target(failures: Array[String])
 		failures.append(
 			"PlanningQAGate hook_pull_attack_target: hook hover must preview pull displacement",
 		)
+
+
+static func _test_class_skill_execute_spends_ap(failures: Array[String]) -> void:
+	const HOOK_KNIGHT := Vector2i(1, 3)
+	const HOOK_ENEMY := Vector2i(4, 3)
+	var fix: Dictionary = _planning_fixture(HOOK_KNIGHT, HOOK_ENEMY)
+	var ability: AbilityData = _knight_ability(CHAIN_HOOK_ID)
+	if ability == null:
+		failures.append("PlanningQAGate class_skill_execute_ap: Chain Hook missing")
+		return
+	var action := TimelineAction.new()
+	action.type = GameEnums.ActionType.ABILITY
+	action.actor_id = 1
+	action.target_unit_id = 2
+	action.target_coord = HOOK_ENEMY
+	action.ability = ability
+	PlanningChecklistHarness.assert_execute_spends_ap(
+		failures, "PlanningQAGate class_skill_execute_ap", fix.board, action, 0,
+	)
+
+
+static func _test_class_skill_player_turn_spends_ap(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningDragE2EHarness.wire_fixture(
+		PlanningDragE2EHarness._planning_fixture(KNIGHT_START, ENEMY_POS),
+	)
+	fix.director.auto_run = true
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate class_skill_player_turn_ap: Shield Bash missing")
+		return
+	fix.director.selected_ability_index = bash_idx
+	fix.input.on_hover_moved(ENEMY_POS)
+	fix.input._flush_hover_heavy_sync()
+	if not PlanningChecklistHarness.commit_paint_promote_only(fix, ENEMY_POS):
+		failures.append("PlanningQAGate class_skill_player_turn_ap: bash commit failed")
+		return
+	PlanningChecklistHarness.assert_player_turn_ap_spent(
+		failures, "PlanningQAGate class_skill_player_turn_ap", fix.director, 1, 0,
+	)
+
+
+static func _test_bash_promote_locks_committed_ghost(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningDragE2EHarness.wire_minimal_fixture(KNIGHT_START, ENEMY_POS)
+	fix.director.auto_run = true
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate bash_promote_ghost: Shield Bash missing")
+		return
+	fix.director.selected_ability_index = bash_idx
+	fix.input.on_hover_moved(ENEMY_POS)
+	fix.input._flush_hover_heavy_sync()
+	if not PlanningChecklistHarness.commit_paint_promote_only(fix, ENEMY_POS):
+		failures.append("PlanningQAGate bash_promote_ghost: paint/commit failed")
+		return
+	PlanningChecklistHarness.assert_committed_ghost_pos(
+		failures, "PlanningQAGate bash_promote_ghost", fix, 1, BASH_APPROACH,
+	)
+
+
+static func _test_hook_in_range_approach_tile_is_actor_position(failures: Array[String]) -> void:
+	const HOOK_KNIGHT := Vector2i(1, 3)
+	const HOOK_ENEMY := Vector2i(4, 3)
+	var fix: Dictionary = _planning_fixture(HOOK_KNIGHT, HOOK_ENEMY)
+	var hook_idx: int = _ability_index(fix.knight, CHAIN_HOOK_ID)
+	if hook_idx < 0:
+		failures.append("PlanningQAGate hook_in_range_approach: Chain Hook missing")
+		return
+	PlanningChecklistHarness.assert_preview_approach_tile(
+		failures, "PlanningQAGate hook_in_range_approach", fix, 2, hook_idx,
+		HOOK_ENEMY, HOOK_KNIGHT,
+	)

@@ -27,6 +27,14 @@ static func _phase1_select(failures: Array[String]) -> void:
 	if PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.CHAIN_HOOK_ID) < 0:
 		PlanningChecklistHarness.assert_fail(failures, "hook/phase1", "Chain Hook missing")
 		return
+	var hook_idx: int = PlanningChecklistHarness.ability_index(
+		fix.knight, PlanningChecklistHarness.CHAIN_HOOK_ID,
+	)
+	PlanningChecklistHarness.assert_preview_approach_tile(
+		failures, "hook/phase1/approach_tile", fix, 2, hook_idx,
+		PlanningChecklistHarness.HOOK_ENEMY_POS,
+		PlanningChecklistHarness.HOOK_KNIGHT_START,
+	)
 	PlanningChecklistHarness.assert_ability_kind_class(failures, "hook/phase1", ability)
 	PlanningChecklistHarness.assert_eq_int(failures, "hook/phase1/ap", fix.knight.ability.points_left, 1)
 	PlanningChecklistHarness.assert_red_contract(
@@ -72,6 +80,14 @@ static func _phase4_hover_enemy(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_hook_board()
 	PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.CHAIN_HOOK_ID)
 	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.HOOK_ENEMY_POS)
+	var hook_idx: int = PlanningChecklistHarness.ability_index(
+		fix.knight, PlanningChecklistHarness.CHAIN_HOOK_ID,
+	)
+	PlanningChecklistHarness.assert_preview_approach_tile(
+		failures, "hook/phase4/approach_tile", fix, 2, hook_idx,
+		PlanningChecklistHarness.HOOK_ENEMY_POS,
+		PlanningChecklistHarness.HOOK_KNIGHT_START,
+	)
 	# At range 3, preview_approach_tile returns actor.position — knight stays at start.
 	PlanningChecklistHarness.assert_eq_cell(
 		failures, "hook/phase4/ghost_stand",
@@ -138,6 +154,9 @@ static func _phase6_execute(failures: Array[String]) -> void:
 		failures, "hook/phase6/enemy",
 		enemy.position if enemy != null else Vector2i(-1, -1),
 		expected_enemy,
+	)
+	PlanningChecklistHarness.assert_player_turn_ap_spent(
+		failures, "hook/phase6/ap_spent", fix.director, 1, 0,
 	)
 
 

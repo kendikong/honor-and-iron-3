@@ -198,6 +198,22 @@ static func _phase4_hover_enemy(failures: Array[String]) -> void:
 
 
 static func _phase5_commit(failures: Array[String]) -> void:
+	var fix_promote: Dictionary = PlanningChecklistHarness.wire_bash_board_minimal()
+	fix_promote.director.auto_run = true
+	PlanningChecklistHarness.select_ability(fix_promote, PlanningChecklistHarness.SHIELD_BASH_ID)
+	PlanningChecklistHarness.hover(fix_promote, PlanningChecklistHarness.ENEMY_POS)
+	if not PlanningChecklistHarness.commit_paint_promote_only(
+		fix_promote, PlanningChecklistHarness.ENEMY_POS,
+	):
+		PlanningChecklistHarness.assert_fail(failures, "bash/phase5/promote_push", "commit paint/promote failed")
+	else:
+		PlanningChecklistHarness.assert_committed_ghost_pos(
+			failures, "bash/phase5/promote_ghost", fix_promote, 1,
+			PlanningChecklistHarness.BASH_APPROACH,
+		)
+		PlanningChecklistHarness.assert_committed_preview_push(
+			failures, "bash/phase5/promote_push", fix_promote, 2,
+		)
 	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
 	fix.director.auto_run = true
 	PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.SHIELD_BASH_ID)
@@ -265,6 +281,9 @@ static func _phase6_execute(failures: Array[String]) -> void:
 		failures, "bash/phase6/enemy_push",
 		enemy.position if enemy != null else Vector2i(-1, -1),
 		push_to,
+	)
+	PlanningChecklistHarness.assert_player_turn_ap_spent(
+		failures, "bash/phase6/ap_spent", fix.director, 1, 0,
 	)
 
 

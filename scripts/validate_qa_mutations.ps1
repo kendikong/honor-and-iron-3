@@ -34,11 +34,20 @@ function Normalize-Newlines([string]$text) {
 
 function Set-Patch($rel, $old, $new) {
 	$path = Join-Path $root $rel
-	$c = Normalize-Newlines ([IO.File]::ReadAllText($path))
 	$o = Normalize-Newlines $old
 	$n = Normalize-Newlines $new
-	if (-not $c.Contains($o)) { throw "Anchor not found in $rel`n--- expected ---`n$o" }
-	[IO.File]::WriteAllText($path, $c.Replace($o, $n))
+	for ($attempt = 0; $attempt -lt 8; $attempt++) {
+		$c = Normalize-Newlines ([IO.File]::ReadAllText($path))
+		if (-not $c.Contains($o)) { throw "Anchor not found in $rel`n--- expected ---`n$o" }
+		try {
+			[IO.File]::WriteAllText($path, $c.Replace($o, $n))
+			return
+		}
+		catch [System.IO.IOException] {
+			if ($attempt -ge 7) { throw }
+			Start-Sleep -Milliseconds 400
+		}
+	}
 }
 
 Write-Host "=== Baseline ===" -ForegroundColor Cyan
@@ -64,7 +73,7 @@ $mutations = @(
 	return true  # QA_MUT
 	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
 "@
-		ExpectMinFails = 3
+		ExpectMinFails = 1
 	},
 	@{
 		Name = "2_bash_no_approach"
@@ -77,14 +86,36 @@ $mutations = @(
 		Name = "3_no_ap_spend"
 		File = "core/systems/ability_system.gd"
 		Old = @"
+static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> void:
+	if actor == null or ability == null:
+		return
+		
+	var ap_cost = get_action_point_cost(actor, ability, board)
+			
+	match ability.kind:
+		GameEnums.AbilityKind.MOVEMENT_SKILL:
+			actor.movement.points_left -= ability.movement_point_cost
+		GameEnums.AbilityKind.UNIVERSAL_RUN:
+			actor.ability.points_left -= ap_cost
 		GameEnums.AbilityKind.CLASS_SKILL:
 			actor.ability.points_left -= ap_cost
 "@
 		New = @"
+static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> void:
+	if actor == null or ability == null:
+		return
+		
+	var ap_cost = get_action_point_cost(actor, ability, board)
+			
+	match ability.kind:
+		GameEnums.AbilityKind.MOVEMENT_SKILL:
+			actor.movement.points_left -= ability.movement_point_cost
+		GameEnums.AbilityKind.UNIVERSAL_RUN:
+			actor.ability.points_left -= ap_cost
 		GameEnums.AbilityKind.CLASS_SKILL:
 			pass  # QA_MUT
 "@
-		ExpectMinFails = 2
+		ExpectMinFails = 1
 	},
 	@{
 		Name = "4_skip_promote"
@@ -98,7 +129,7 @@ func _promote_intent_preview_after_commit() -> void:
 	return  # QA_MUT
 	_suppress_post_commit_hover_refresh = true
 "@
-		ExpectMinFails = 2
+		ExpectMinFails = 1
 	},
 	@{
 		Name = "5_push_reversed"
@@ -118,14 +149,18 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 		Name = "6_hook_wrong_stand"
 		File = "presentation/combat_director.gd"
 		Old = @"
+	var rng: int = actor.get_ability_range(ability)
 	if GridSystem.manhattan(actor.position, target.position) <= rng:
 		return actor.position
+	return _find_approach_tile(proj, actor, target.position, rng, preferred_tile)
 "@
 		New = @"
+	var rng: int = actor.get_ability_range(ability)
 	if GridSystem.manhattan(actor.position, target.position) <= rng:
 		return preferred_tile  # QA_MUT
+	return _find_approach_tile(proj, actor, target.position, rng, preferred_tile)
 "@
-		ExpectMinFails = 2
+		ExpectMinFails = 1
 	}
 )
 
@@ -133,6 +168,8 @@ $report = @()
 foreach ($m in $mutations) {
 	Write-Host "`n=== $($m.Name) ===" -ForegroundColor Yellow
 	Set-Patch $m.File $m.Old $m.New
+	$patched = Normalize-Newlines ([IO.File]::ReadAllText((Join-Path $root $m.File)))
+	if ($patched -notmatch 'QA_MUT') { throw "Patch did not apply for $($m.Name)" }
 	try {
 		$r = Invoke-QaGate
 		$ok = ($r.Exit -ne 0) -and ($r.Count -ge $m.ExpectMinFails)

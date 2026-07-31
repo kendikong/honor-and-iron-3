@@ -2,30 +2,30 @@
     {
         "Mutation":  "1_red_always_visible",
         "Exit":  1,
-        "FailCount":  1,
-        "Expected":  "MISSED",
-        "Sample":  "[FAIL] PlanningQAGate action_range_auto_run_ap_gate: red tile (4, 4) must be hidden after run hover (4, 2)"
+        "FailCount":  2,
+        "Expected":  "CAUGHT",
+        "Sample":  "[FAIL] PlanningQAGate action_range_auto_run_ap_gate: action_range_visible_for_hover must be false after run hover (4, 2) | [FAIL] PlanningQAGate action_range_auto_run_ap_gate: red tile (4, 4) must be hidden after run hover (4, 2)"
     },
     {
         "Mutation":  "2_bash_no_approach",
         "Exit":  1,
-        "FailCount":  27,
+        "FailCount":  29,
         "Expected":  "CAUGHT",
         "Sample":  "[FAIL] DragE2E release_bash_enemy: bash release must write pre-move | [FAIL] ActionRangeRegression show_enemy_bash_committed_premove: visibility gate expected true got false (hover (7, 5) stand (7, 5)) | [FAIL] ActionRangeRegression show_enemy_bash_committed_premove: overlay red tiles expected true got false (hover (7, 5))"
     },
     {
         "Mutation":  "3_no_ap_spend",
-        "Exit":  0,
-        "FailCount":  0,
-        "Expected":  "MISSED",
-        "Sample":  ""
+        "Exit":  1,
+        "FailCount":  2,
+        "Expected":  "CAUGHT",
+        "Sample":  "[FAIL] PlanningQAGate class_skill_execute_ap: expected 0 got 1 | [FAIL] PlanningQAGate class_skill_player_turn_ap: expected 0 got 1"
     },
     {
         "Mutation":  "4_skip_promote",
-        "Exit":  0,
-        "FailCount":  0,
-        "Expected":  "MISSED",
-        "Sample":  ""
+        "Exit":  1,
+        "FailCount":  1,
+        "Expected":  "CAUGHT",
+        "Sample":  "[FAIL] PlanningQAGate bash_promote_ghost: committed preview board missing"
     },
     {
         "Mutation":  "5_push_reversed",
@@ -36,9 +36,9 @@
     },
     {
         "Mutation":  "6_hook_wrong_stand",
-        "Exit":  0,
-        "FailCount":  0,
-        "Expected":  "MISSED",
-        "Sample":  ""
+        "Exit":  1,
+        "FailCount":  1,
+        "Expected":  "CAUGHT",
+        "Sample":  "[FAIL] PlanningQAGate hook_in_range_approach: expected (1, 3) got (4, 3)"
     }
 ]

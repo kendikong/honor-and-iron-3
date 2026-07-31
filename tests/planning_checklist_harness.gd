@@ -20,6 +20,13 @@ const TRAMPLE_ID: StringName = &"knight_trampling_advance"
 const BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
 
 
+static func wire_bash_board_minimal() -> Dictionary:
+	var fix: Dictionary = PlanningDragE2EHarness.wire_minimal_fixture(
+		KNIGHT_START, ENEMY_POS,
+	)
+	return fix
+
+
 static func wire_bash_board() -> Dictionary:
 	return PlanningDragE2EHarness.wire_fixture(
 		PlanningDragE2EHarness._planning_fixture(KNIGHT_START, ENEMY_POS),
@@ -88,6 +95,114 @@ static func slots_for_hover(fix: Dictionary, cell: Vector2i) -> Dictionary:
 	)
 
 
+static func assert_execute_spends_ap(
+	failures: Array[String],
+	label: String,
+	board: BoardState,
+	action: TimelineAction,
+	expected_ap_left: int,
+) -> void:
+	var trial: BoardState = board.clone()
+	var actor: UnitState = trial.get_unit_by_id(action.actor_id)
+	if actor == null:
+		assert_fail(failures, label, "actor missing for execute AP check")
+		return
+	var events: Array[SimEvent] = []
+	AbilitySystem.execute(trial, action, events)
+	assert_eq_int(failures, label, actor.ability.points_left, expected_ap_left)
+
+
+static func assert_committed_ghost_pos(
+	failures: Array[String],
+	label: String,
+	fix: Dictionary,
+	unit_id: int,
+	expected: Vector2i,
+) -> void:
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	if overlay == null:
+		assert_fail(failures, label, "overlay missing")
+		return
+	var board: BoardState = overlay.get_committed_preview().preview_board
+	if board == null:
+		assert_fail(failures, label, "committed preview board missing")
+		return
+	var unit: UnitState = board.get_unit_by_id(unit_id)
+	assert_eq_cell(
+		failures, label,
+		unit.position if unit != null else Vector2i(-999999, -999999),
+		expected,
+	)
+
+
+static func commit_paint_promote_only(fix: Dictionary, cell: Vector2i) -> bool:
+	var slots: Dictionary = slots_for_click(fix, cell)
+	if _slots_invalid(slots):
+		return false
+	fix.input.call("_paint_intent_slots_before_commit", 1, slots)
+	if not fix.director.commit_from_slots(1, slots):
+		return false
+	fix.input.call("_promote_intent_preview_after_commit")
+	return true
+
+
+static func assert_committed_preview_push(
+	failures: Array[String], label: String, fix: Dictionary, enemy_id: int,
+) -> void:
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	if overlay == null:
+		assert_fail(failures, label, "overlay missing")
+		return
+	var live_pushes: Array = fix.input.preview_state.preview_pushes.get(enemy_id, [])
+	var committed_pushes: Array = overlay.get_committed_preview().preview_pushes.get(enemy_id, [])
+	assert_true(
+		failures, label, not live_pushes.is_empty(),
+		"live preview must show push before promote",
+	)
+	assert_true(
+		failures, label, committed_pushes == live_pushes,
+		"committed overlay pushes %s must match live %s after promote"
+		% [committed_pushes, live_pushes],
+	)
+
+
+static func assert_preview_approach_tile(
+	failures: Array[String],
+	label: String,
+	fix: Dictionary,
+	target_unit_id: int,
+	ability_index: int,
+	preferred_tile: Vector2i,
+	expected: Vector2i,
+) -> void:
+	var stand: Vector2i = fix.director.preview_approach_tile(
+		1, target_unit_id, ability_index, preferred_tile,
+	)
+	assert_eq_cell(failures, label, stand, expected)
+
+
+static func assert_player_turn_ap_spent(
+	failures: Array[String], label: String, director: CombatDirector, unit_id: int, expected_ap: int,
+) -> void:
+	var board: BoardState = simulate_player_committed(director)
+	var unit: UnitState = board.get_unit_by_id(unit_id)
+	assert_eq_int(
+		failures, label,
+		unit.ability.points_left if unit != null else -1,
+		expected_ap,
+	)
+
+
+static func assert_action_range_hidden(
+	failures: Array[String], label: String, fix: Dictionary,
+) -> void:
+	assert_true(
+		failures, label,
+		not fix.input.action_range_visible_for_hover(),
+		"action_range_visible_for_hover must be false",
+	)
+
+
 static func commit_production(fix: Dictionary, cell: Vector2i) -> Dictionary:
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
@@ -114,6 +229,14 @@ static func commit_slots_production(fix: Dictionary, slots: Dictionary) -> bool:
 	input.call("_promote_intent_preview_after_commit")
 	flush_planning(fix)
 	return true
+
+
+static func simulate_player_committed(director: CombatDirector) -> BoardState:
+	var board: BoardState = director.base_board.clone()
+	board.intents = []
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, director.get_player_plan(), events)
+	return board
 
 
 static func simulate_committed(director: CombatDirector) -> SimResult:

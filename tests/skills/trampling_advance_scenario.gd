@@ -154,6 +154,10 @@ static func _phase6_execute(failures: Array[String]) -> void:
 		and visited[1] == PlanningChecklistHarness.TRAMPLE_ROUTE[1],
 		"sim must visit %s in order, got %s" % [PlanningChecklistHarness.TRAMPLE_ROUTE, visited],
 	)
+	var knight: UnitState = result.final_state.get_unit_by_id(1)
+	PlanningChecklistHarness.assert_player_turn_ap_spent(
+		failures, "trample/phase6/ap_spent", fix.director, 1, 0,
+	)
 
 
 static func _phase7_premove_then_trample(failures: Array[String]) -> void:
