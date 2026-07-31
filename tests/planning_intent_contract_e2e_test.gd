@@ -12,6 +12,8 @@ static func run_all(failures: Array[String]) -> void:
 	_test_committed_run_center_blue_hover_hides_red(failures)
 	_test_pre_run_binding_when_move_timing_closed(failures)
 	_test_red_hidden_when_projected_ap_zero(failures)
+	_test_f5_display_ap_zero_implies_no_red(failures)
+	_test_f5_stale_projection_at_run_dest_display_ap_zero(failures)
 	_test_simulation_validator_rejects_invalid_timeline_action(failures)
 
 
@@ -500,6 +502,123 @@ static func _test_red_hidden_when_projected_ap_zero(failures: Array[String]) -> 
 		fix,
 		bowling,
 		false,
+	)
+
+
+## F5 screenshot parity: committed center Run, Bowling, display AP 0 → no red (gate + overlay).
+static func _test_f5_display_ap_zero_implies_no_red(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	var input: CombatPlanningInput = fix.input
+	fix.director.auto_run = true
+	input.auto_use_skill_after_move = false
+	fix.director.selected_ability_index = -1
+	var painted: Dictionary = PlanningChecklistHarness.find_painted_center_run_dest(fix, 1, 0)
+	if painted.is_empty():
+		painted = PlanningChecklistHarness.find_painted_center_run_dest(fix, 1, 1)
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/f5_display_ap/setup",
+		not painted.is_empty(),
+		"need painted center Run destination for F5 parity",
+	)
+	if painted.is_empty():
+		return
+	var run_dest: Vector2i = painted.dest as Vector2i
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/f5_display_ap/commit",
+		PlanningChecklistHarness.commit_slots_production(
+			fix, painted.slots as Dictionary,
+		),
+		"F5 route commit must succeed for %s" % run_dest,
+	)
+	var bowling_index: int = PlanningChecklistHarness.select_ability(
+		fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
+	)
+	if bowling_index < 0:
+		PlanningChecklistHarness.assert_fail(
+			failures, "intent_contract/f5_display_ap", "Bowling Charge missing",
+		)
+		return
+	var bowling: AbilityData = fix.knight.active_abilities[bowling_index]
+	PlanningChecklistHarness.assert_no_red_when_display_ap_zero(
+		failures, "intent_contract/f5_display_ap/at_dest", fix, 1,
+	)
+	var walk_diamond: Array[Vector2i] = PlanningChecklistHarness.walk_diamond_from(
+		fix.board, PlanningChecklistHarness.KNIGHT_START, fix.knight.movement.max_points,
+	)
+	var interior: Vector2i = PlanningChecklistHarness.blue_tile_near_stand(
+		walk_diamond, run_dest, false,
+	)
+	var overlay_red: Array[Vector2i] = PlanningChecklistHarness.collect_overlay_red_hovers(
+		fix, walk_diamond,
+	)
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/f5_display_ap/walk_diamond_overlay",
+		overlay_red.is_empty(),
+		"display AP 0: overlay red on walk diamond hovers=%s" % overlay_red,
+	)
+	if interior.x > -900000:
+		PlanningChecklistHarness.assert_red_off_at_hover(
+			failures,
+			"intent_contract/f5_display_ap/interior",
+			fix,
+			bowling,
+			interior,
+		)
+
+
+## F5 bug shape: projected knight already at run dest with stale 1 AP while UI shows 0 AP.
+static func _test_f5_stale_projection_at_run_dest_display_ap_zero(
+	failures: Array[String],
+) -> void:
+	const RUN_DEST := Vector2i(3, 4)
+	const INTERIOR_HOVER := Vector2i(4, 4)
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	director.auto_run = true
+	input.auto_use_skill_after_move = false
+	PlanningChecklistHarness.set_knight_pools(fix, 1, 0)
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_run_move(
+			1, RUN_DEST, -1, [INTERIOR_HOVER], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	var projected: UnitState = PlanningChecklistHarness.projected_unit(fix, 1)
+	if projected == null:
+		PlanningChecklistHarness.assert_fail(
+			failures, "intent_contract/f5_stale_projection", "projected knight missing",
+		)
+		return
+	projected.position = RUN_DEST
+	projected.ability.points_left = 1
+	projected.movement.points_left = 0
+	var bowling_index: int = PlanningChecklistHarness.select_ability(
+		fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
+	)
+	if bowling_index < 0:
+		PlanningChecklistHarness.assert_fail(
+			failures, "intent_contract/f5_stale_projection", "Bowling Charge missing",
+		)
+		return
+	var bowling: AbilityData = fix.knight.active_abilities[bowling_index]
+	PlanningChecklistHarness.assert_eq_int(
+		failures,
+		"intent_contract/f5_stale_projection/display_ap",
+		input.planning_display_ap_left(1),
+		0,
+	)
+	PlanningChecklistHarness.assert_no_red_when_display_ap_zero(
+		failures, "intent_contract/f5_stale_projection", fix, 1,
+	)
+	PlanningChecklistHarness.assert_red_off_at_hover(
+		failures,
+		"intent_contract/f5_stale_projection/interior",
+		fix,
+		bowling,
+		INTERIOR_HOVER,
 	)
 
 

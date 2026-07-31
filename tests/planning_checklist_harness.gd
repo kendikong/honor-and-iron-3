@@ -360,6 +360,49 @@ static func collect_red_visible_hovers(
 	return out
 
 
+## Overlay truth: cells where red tiles are actually drawn (not gate-only).
+static func collect_overlay_red_hovers(
+	fix: Dictionary,
+	cells: Array[Vector2i],
+) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for cell: Vector2i in cells:
+		hover(fix, cell)
+		fix.input.call("_run_ability_settled_refresh")
+		flush_planning(fix)
+		if not collect_red_tiles(fix).is_empty():
+			out.append(cell)
+	return out
+
+
+## F5 contract: when planning UI shows 0 AP, red must be off (gate + overlay).
+static func assert_no_red_when_display_ap_zero(
+	failures: Array[String],
+	label: String,
+	fix: Dictionary,
+	unit_id: int = 1,
+) -> void:
+	var input: CombatPlanningInput = fix.input
+	var display_ap: int = input.planning_display_ap_left(unit_id)
+	assert_eq_int(failures, "%s/display_ap_pre" % label, display_ap, 0)
+	if display_ap != 0:
+		return
+	var gate_on: bool = input.action_range_visible_for_hover()
+	var overlay_red: Array[Vector2i] = collect_red_tiles(fix)
+	assert_true(
+		failures,
+		label,
+		not gate_on,
+		"visibility gate must be off when display AP is 0 (gate=%s)" % gate_on,
+	)
+	assert_true(
+		failures,
+		label,
+		overlay_red.is_empty(),
+		"overlay red must be empty when display AP is 0 (tiles=%s)" % overlay_red,
+	)
+
+
 static func collect_cells_where_hover_stand_matches(
 	fix: Dictionary,
 	cells: Array[Vector2i],

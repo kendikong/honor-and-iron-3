@@ -2379,20 +2379,19 @@ func _actor_after_binding_move_intent(
 	unit_id: int,
 	move_action: TimelineAction,
 ) -> UnitState:
-	if move_action == null:
+	if move_action == null or move_action.type != GameEnums.ActionType.MOVE:
 		return null
-	var origin: UnitState = _proj_unit(unit_id)
-	if origin == null:
-		origin = _director.board.get_unit_by_id(unit_id)
-	if origin == null:
-		return null
-	return AbilitySystem.project_actor_after_premove(
-		_proj(),
-		origin,
-		move_action.target_coord,
-		auto_run_movement_active(origin),
-		move_action.uses_run,
-	)
+	var trial: BoardState = _proj().clone()
+	var events: Array[SimEvent] = []
+	ResolutionPipeline.apply_action(trial, move_action, events)
+	ResolutionPipeline.resolve_pending_pushes(trial, events)
+	for event: SimEvent in events:
+		if event.type != GameEnums.SimEventType.ACTION_FAILED:
+			continue
+		if int(event.data.get("actor", -1)) == unit_id:
+			return null
+	var after: UnitState = trial.get_unit_by_id(unit_id)
+	return after.clone() if after != null else null
 
 
 ## Red tiles show only when the selected skill is legal after binding move intent or hover stand.
