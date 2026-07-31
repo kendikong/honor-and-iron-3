@@ -24,7 +24,11 @@ Get-Content $stderrPath
 $testFailures = Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]'
 $scriptErrors = Select-String -Path $stdoutPath, $stderrPath -Pattern '(^|\s)SCRIPT ERROR:'
 $leakDiagnostics = Select-String -Path $stdoutPath, $stderrPath -Pattern 'WARNING: .*leaked|ERROR: .*resources still in use'
-if ($godotExit -ne 0 -or $null -ne $testFailures -or $null -ne $scriptErrors) {
+$runtimeErrors = @(
+	Select-String -Path $stdoutPath, $stderrPath -Pattern '(^|\s)ERROR:' |
+		Where-Object { $_.Line -notmatch 'resources still in use' }
+)
+if ($godotExit -ne 0 -or $null -ne $testFailures -or $null -ne $scriptErrors -or $runtimeErrors.Count -gt 0) {
 	if ($null -ne $testFailures) {
 		Write-Error "Planning QA test failures:"
 		$testFailures | ForEach-Object { Write-Error $_.Line }
@@ -32,6 +36,10 @@ if ($godotExit -ne 0 -or $null -ne $testFailures -or $null -ne $scriptErrors) {
 	if ($null -ne $scriptErrors) {
 		Write-Error "Planning QA script errors:"
 		$scriptErrors | ForEach-Object { Write-Error $_.Line }
+	}
+	if ($runtimeErrors.Count -gt 0) {
+		Write-Error "Planning QA runtime errors:"
+		$runtimeErrors | ForEach-Object { Write-Error $_.Line }
 	}
 	exit 1
 }
