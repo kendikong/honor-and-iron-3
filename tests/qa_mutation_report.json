@@ -3,89 +3,89 @@
         "Mutation":  "1_red_always_visible",
         "Coverage":  null,
         "Exit":  1,
-        "FailCount":  2,
+        "FailCount":  28,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] PlanningQAGate action_range_auto_run_ap_gate: action_range_visible_for_hover must be false after run hover (4, 2) | [FAIL] PlanningQAGate action_range_auto_run_ap_gate: red tile (4, 4) must be hidden after run hover (4, 2)"
+        "Sample":  "[FAIL] bash/phase2/red_off_run: visibility gate expected false got true | [FAIL] bash/phase2/red_off_run: overlay red expected false got true | [FAIL] bash/phase5/red_off_0ap: visibility gate expected false got true"
     },
     {
         "Mutation":  "2_bash_no_approach",
         "Coverage":  null,
         "Exit":  1,
-        "FailCount":  29,
+        "FailCount":  42,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] DragE2E release_bash_enemy: bash release must write pre-move | [FAIL] ActionRangeRegression show_enemy_bash_committed_premove: visibility gate expected true got false (hover (7, 5) stand (7, 5)) | [FAIL] ActionRangeRegression show_enemy_bash_committed_premove: overlay red tiles expected true got false (hover (7, 5))"
+        "Sample":  "[FAIL] bash/phase4/ghost_approach: expected (6, 5) got (4, 5) | [FAIL] bash/phase4/path_approach: approach path must end at (6, 5), got [] | [FAIL] bash/phase4/cursor_walk: cursor must contain 👟, got ∅"
     },
     {
         "Mutation":  "3_no_ap_spend",
         "Coverage":  null,
         "Exit":  1,
-        "FailCount":  2,
+        "FailCount":  8,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] PlanningQAGate class_skill_execute_ap: expected 0 got 1 | [FAIL] PlanningQAGate class_skill_player_turn_ap: expected 0 got 1"
+        "Sample":  "[FAIL] bash/phase5/ap_after: expected 0 got 1 | [FAIL] bash/phase6/ap_spent: expected 0 got 1 | [FAIL] hook/phase5/ap_after: expected 0 got 1"
     },
     {
         "Mutation":  "4_skip_promote",
         "Coverage":  null,
         "Exit":  1,
-        "FailCount":  1,
+        "FailCount":  3,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] PlanningQAGate bash_promote_ghost: committed preview board missing"
+        "Sample":  "[FAIL] bash/phase5/promote_ghost: committed preview board missing | [FAIL] bash/phase5/promote_push: committed overlay pushes [] must match live [[(7, 5), (9, 5)]] after promote | [FAIL] PlanningQAGate bash_promote_ghost: committed preview board missing"
     },
     {
         "Mutation":  "5_push_reversed",
         "Coverage":  null,
         "Exit":  1,
-        "FailCount":  9,
+        "FailCount":  17,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] PlanningQAGate Shield Bash 2A push: preview_pushes missing segment | [FAIL] PlanningQAGate Shield Bash 2A threat: missing push preview | [FAIL] PlanningQAGate Chain Hook 2B pull: must pull west toward player (4, 3) -\u003e (6, 3)"
+        "Sample":  "[FAIL] bash/phase4/push_east: push must go east from (7, 5), landing (-999999, -999999) | [FAIL] bash/phase4/preview_enemy_lands: preview enemy must land at push tip (-999999, -999999) | [FAIL] bash/phase5/promote_push: live preview must show push before promote"
     },
     {
         "Mutation":  "6_hook_wrong_stand",
         "Coverage":  null,
         "Exit":  1,
-        "FailCount":  1,
+        "FailCount":  3,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] PlanningQAGate hook_in_range_approach: expected (1, 3) got (4, 3)"
+        "Sample":  "[FAIL] hook/phase1/approach_tile: expected (1, 3) got (4, 3) | [FAIL] hook/phase4/approach_tile: expected (1, 3) got (4, 3) | [FAIL] PlanningQAGate hook_in_range_approach: expected (1, 3) got (4, 3)"
     },
     {
         "Mutation":  "7_invalid_sim_passes",
         "Coverage":  "preview_commit_valid, OOB commit, invalid_slots_block_commit",
         "Exit":  1,
-        "FailCount":  2,
+        "FailCount":  1,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] ActionRangeRegression hide_after_commit_run_icon_bash: pre-move must be run before commit | [FAIL] ActionRangeRegression hide_after_commit_run_icon_bash: pre-move must be run before commit"
+        "Sample":  "[FAIL] intent_contract/sim_reject: preview_commit_valid must reject an out-of-bounds timeline action"
     },
     {
         "Mutation":  "8_undo_clears_premove",
         "Coverage":  "undo_action_keeps_premove, undo_movement_action_preserves_premove",
         "Exit":  1,
-        "FailCount":  1,
+        "FailCount":  2,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] PlanningQAGate integrity: undo must not remove paired pre-move walk"
+        "Sample":  "[FAIL] PlanningInputTest: undo movement skill must keep pre-move walk on timeline | [FAIL] PlanningQAGate integrity: undo must not remove paired pre-move walk"
     },
     {
         "Mutation":  "9_cursor_empty",
         "Coverage":  "cursor walk/run/composite, click_drop_cursor_parity, scenario phase3",
         "Exit":  1,
-        "FailCount":  7,
+        "FailCount":  16,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] PlanningInputTest: composite cursor should join move and action when enabled | [FAIL] PlanningInputTest: run-only premove cursor must be run icon, got  | [FAIL] PlanningInputTest: paired run+dash cursor should composite, got "
+        "Sample":  "[FAIL] bash/phase2/cursor_walk: cursor must contain 👟, got  | [FAIL] bash/phase2/cursor_run: cursor expected 🏃 got  | [FAIL] bash/phase4/cursor_walk: cursor must contain 👟, got "
     },
     {
         "Mutation":  "10_no_blue_tiles",
         "Coverage":  "blue move tiles, scenario phase1, drag walk, MP budget",
         "Exit":  1,
-        "FailCount":  1,
+        "FailCount":  31,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] PlanningQAGate blue tiles: walk select must show reachable move tiles"
+        "Sample":  "[FAIL] bash/phase2/ghost_walk: expected (5, 5) got (4, 5) | [FAIL] bash/phase2/path_walk: path must be (4, 5) -\u003e (5, 5), got [] | [FAIL] bash/phase2/cursor_walk: cursor must contain 👟, got ∅"
     },
     {
         "Mutation":  "11_trample_no_awaiting",
         "Coverage":  "trample e2e, trample scenario, awaiting_plan_refresh, action_range awaiting",
         "Exit":  1,
-        "FailCount":  16,
+        "FailCount":  28,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] TramplingAdvanceE2E smoke: awaiting missing after arm; plan_action=1 combined=1 | [FAIL] TramplingAdvanceE2E drag commit: expected waypoints [(6, 4), (6, 3)], got [] | [FAIL] TramplingAdvanceE2E drag commit: target should be (6, 3), got (5, 4)"
+        "Sample":  "[FAIL] trample/phase2: arm awaiting failed | [FAIL] trample/phase4: arm awaiting failed | [FAIL] trample/phase5: arm awaiting failed"
     },
     {
         "Mutation":  "12_drag_no_append",
@@ -99,17 +99,17 @@
         "Mutation":  "13_click_slots_invalid",
         "Coverage":  "hover_click_drop_slot_parity, click_drop_parity_*, commit_plan_matches_hover",
         "Exit":  1,
-        "FailCount":  16,
+        "FailCount":  45,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] DragE2E release_click_parity: click slots invalid QA_MUT | [FAIL] PlanningQAGate hover/click/drop parity: bash enemy must be valid in all modes | [FAIL] PlanningQAGate click/drop parity bash enemy: selection vs drop slots differ (-999, -999)|[]|-1||0|true vs (6, 5)|[]|2|knight_shield_bash|0|false"
+        "Sample":  "[FAIL] bash/phase5/promote_push: commit paint/promote failed | [FAIL] bash/phase5/hover_click_parity: hover slots must match click slots at (7, 5) | [FAIL] bash/phase5/no_jump: commit must succeed"
     },
     {
         "Mutation":  "14_walk_sim_wrong_dest",
         "Coverage":  "walk/trample sim, click_drop_commit_sim, committed_walk_preview_matches_sim",
         "Exit":  1,
-        "FailCount":  33,
+        "FailCount":  66,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] DragE2E release_bash_enemy: bash release must write pre-move | [FAIL] ActionRangeRegression show_enemy_bash_committed_premove: visibility gate expected true got false (hover (7, 5) stand (7, 5)) | [FAIL] ActionRangeRegression show_enemy_bash_committed_premove: overlay red tiles expected true got false (hover (7, 5))"
+        "Sample":  "[FAIL] bash/phase2/ghost_walk: expected (5, 5) got (4, 5) | [FAIL] bash/phase2/red_walk: expected (5, 5) got (4, 5) | [FAIL] bash/phase2/red_off_run: visibility gate expected false got true"
     },
     {
         "Mutation":  "15_ability_no_cache_clear",
@@ -131,17 +131,17 @@
         "Mutation":  "17_strip_waypoints_on_commit",
         "Coverage":  "trample_commit_preserves_waypoints, full_slot_signature, trample_paint_commit_sim",
         "Exit":  1,
-        "FailCount":  18,
+        "FailCount":  20,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] TramplingAdvanceE2E smoke: waypoints [] expected [(6, 4), (6, 3)] | [FAIL] TramplingAdvanceE2E drag commit: expected waypoints [(6, 4), (6, 3)], got [] | [FAIL] TramplingAdvanceE2E auto-skill drag commit: expected waypoints [(6, 4), (6, 3)], got []"
+        "Sample":  "[FAIL] trample/phase5/waypoints: waypoints [] expected [(6, 4), (6, 3)] | [FAIL] trample/phase6/order: sim must visit [(5, 4), (6, 4), (6, 3)] in order, got [(5, 4), (5, 3), (6, 3)] | [FAIL] TramplingAdvanceE2E smoke: waypoints [] expected [(6, 4), (6, 3)]"
     },
     {
         "Mutation":  "18_run_never_required",
         "Coverage":  "run_economy scenario, action_range_auto_run_ap_gate, planning_display_ap_run",
         "Exit":  1,
-        "FailCount":  4,
+        "FailCount":  14,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] ActionRangeRegression hide_after_commit_run_icon_bash: no run destination tile | [FAIL] ActionRangeRegression parity_gate_hide: no run tile | [FAIL] PlanningQAGate action_range_auto_run_ap_gate: no run-requiring hover tile found"
+        "Sample":  "[FAIL] bash/phase2: no run tile in fixture | [FAIL] bash/phase5/run: no run tile | [FAIL] run_economy/run_hover: no run tile"
     },
     {
         "Mutation":  "19_oob_click_allows_empty",
@@ -163,9 +163,9 @@
         "Mutation":  "21_drop_slots_invalid",
         "Coverage":  "click_drop_drag_walk_sim_parity, click_drop_drag_bash_enemy_parity, drop_commit",
         "Exit":  1,
-        "FailCount":  12,
+        "FailCount":  14,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] DragE2E release_click_parity: painted drop slots invalid QA_MUT | [FAIL] PlanningQAGate hover/click/drop parity: bash enemy must be valid in all modes | [FAIL] PlanningQAGate click/drop parity bash enemy: selection vs drop slots differ (6, 5)|[]|2|knight_shield_bash|0|false vs (-999, -999)|[]|-1||0|true"
+        "Sample":  "[FAIL] DragE2E release_click_parity: painted drop slots invalid QA_MUT | [FAIL] PlanningInputTest: drag cursor \u0027∅\u0027 must match commit slots \u0027👟/💨\u0027 | [FAIL] PlanningInputTest: drag cursor must ignore drag_preview_failed (got \u0027∅\u0027, expected \u0027👟/💨\u0027)"
     },
     {
         "Mutation":  "22_display_mp_wrong",
@@ -174,5 +174,13 @@
         "FailCount":  1,
         "Expected":  "CAUGHT",
         "Sample":  "[FAIL] PlanningQAGate MP display: committed budget must match points_left (got 999)"
+    },
+    {
+        "Mutation":  "23_committed_run_reclassified_as_walk",
+        "Coverage":  "intent_contract/bowling_run, committed run timeline AP projection",
+        "Exit":  1,
+        "FailCount":  2,
+        "Expected":  "CAUGHT",
+        "Sample":  "[FAIL] ActionRangeRegression hide_committed_run_timeline_bowling: visibility gate expected false got true (hover (3, 6) stand (3, 6)) | [FAIL] ActionRangeRegression hide_committed_run_timeline_bowling: overlay red tiles expected false got true (hover (3, 6))"
     }
 ]

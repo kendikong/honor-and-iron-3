@@ -9,8 +9,8 @@ function Invoke-QaGate {
 	$outFile = Join-Path $env:TEMP ("qa_gate_{0}.txt" -f [guid]::NewGuid().ToString("N"))
 	$errFile = "$outFile.err"
 	$p = Start-Process -FilePath $GodotPath `
-		-ArgumentList @("--headless", "--path", $root, "--script", "res://tests/run_planning_qa_gate.gd") `
-		-Wait -PassThru -NoNewWindow `
+		-ArgumentList @("--headless", "--path", $root, "res://tests/PlanningQaGate.tscn") `
+		-Wait -PassThru `
 		-RedirectStandardOutput $outFile `
 		-RedirectStandardError $errFile
 	$all = ""
@@ -25,7 +25,7 @@ function Invoke-QaGate {
 		Remove-Item $errFile -Force -ErrorAction SilentlyContinue
 	}
 	$fails = @([regex]::Matches($all, '\[FAIL\][^\r\n]*') | ForEach-Object { $_.Value })
-	return @{ Exit = $p.ExitCode; Fails = $fails; Count = $fails.Count; Output = $all }
+	return @{ ExitCode = $p.ExitCode; Fails = $fails; Count = $fails.Count; Output = $all }
 }
 
 function Normalize-Newlines([string]$text) {
@@ -52,9 +52,9 @@ function Set-Patch($rel, $old, $new) {
 
 Write-Host "=== Baseline ===" -ForegroundColor Cyan
 $base = Invoke-QaGate
-if ($base.Exit -ne 0) {
+if ($base.ExitCode -ne 0) {
 	Write-Host $base.Output
-	throw "Baseline must PASS (exit $($base.Exit), $($base.Count) fails)"
+	throw "Baseline must PASS (exit $($base.ExitCode), $($base.Count) fails)"
 }
 Write-Host "PASS (exit 0)"
 
@@ -65,13 +65,11 @@ $mutations = @(
 		Old = @"
 	if ability == null or AbilitySystem.is_run_ability(ability) or AbilitySystem.is_wait_ability(ability):
 		return false
-	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
 "@
 		New = @"
 	if ability == null or AbilitySystem.is_run_ability(ability) or AbilitySystem.is_wait_ability(ability):
 		return false
 	return true  # QA_MUT
-	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
 "@
 		ExpectMinFails = 1
 	},
@@ -223,7 +221,7 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -
 				move_budget,
 				mt,
 				move_cost,
-				move_ability,
+				null,
 			)
 "@
 		New = @"
@@ -449,6 +447,14 @@ func _final_commit_slots_for_drop_at_cell(
 		Old = "	return AbilitySystem.planning_display_mp_left(committed, live_actor, live_valid)"
 		New = "	return 999  # QA_MUT"
 		ExpectMinFails = 1
+	},
+	@{
+		Name = "23_committed_run_reclassified_as_walk"
+		Coverage = "intent_contract/bowling_run, committed run timeline AP projection"
+		File = "core/systems/ability_system.gd"
+		Old = "	var needs_run: bool = force_run or movement_requires_run(board, actor, premove_cell, [])"
+		New = "	var needs_run: bool = movement_requires_run(board, actor, premove_cell, [])  # QA_MUT"
+		ExpectMinFails = 1
 	}
 )
 
@@ -460,18 +466,18 @@ foreach ($m in $mutations) {
 	if ($patched -notmatch 'QA_MUT') { throw "Patch did not apply for $($m.Name)" }
 	try {
 		$r = Invoke-QaGate
-		$ok = ($r.Exit -ne 0) -and ($r.Count -ge $m.ExpectMinFails)
+		$ok = ($r.ExitCode -ne 0) -and ($r.Count -ge $m.ExpectMinFails)
 		$report += [pscustomobject]@{
 			Mutation = $m.Name
 			Coverage = $m.Coverage
-			Exit = $r.Exit
+			Exit = $r.ExitCode
 			FailCount = $r.Count
 			Expected = $(if ($ok) { "CAUGHT" } else { "MISSED" })
 			Sample = ($r.Fails | Select-Object -First 3) -join " | "
 		}
 		if ($ok) { Write-Host "CAUGHT ($($r.Count) failures)" -ForegroundColor Green }
 		else {
-			Write-Host "MISSED (exit=$($r.Exit) fails=$($r.Count), need >=$($m.ExpectMinFails))" -ForegroundColor Red
+			Write-Host "MISSED (exit=$($r.ExitCode) fails=$($r.Count), need >=$($m.ExpectMinFails))" -ForegroundColor Red
 			if ($r.Count -gt 0) { $r.Fails | Select-Object -First 5 | ForEach-Object { Write-Host "  $_" } }
 		}
 	}
@@ -482,7 +488,7 @@ foreach ($m in $mutations) {
 
 Write-Host "`n=== Post-revert baseline ===" -ForegroundColor Cyan
 $final = Invoke-QaGate
-if ($final.Exit -ne 0) { throw "Revert incomplete (exit $($final.Exit))" }
+if ($final.ExitCode -ne 0) { throw "Revert incomplete (exit $($final.ExitCode))" }
 Write-Host "PASS"
 
 $report | Format-Table -AutoSize

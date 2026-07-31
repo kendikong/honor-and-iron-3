@@ -22,6 +22,7 @@ func _run_gate() -> void:
 		{"name": "trample_e2e", "path": "res://tests/trampling_advance_e2e_test.gd"},
 		{"name": "action_range_regression", "path": "res://tests/action_range_regression_test.gd"},
 		{"name": "qa_checklist", "path": "res://tests/planning_qa_gate_test.gd"},
+		{"name": "intent_contract_e2e", "path": "res://tests/planning_intent_contract_e2e_test.gd"},
 	]
 	for suite: Dictionary in suites:
 		print("[SUITE] %s" % suite.name)
@@ -51,7 +52,7 @@ func _run_gate() -> void:
 				report.store_line("[FAIL] %s" % failure)
 		report.close()
 	if failures.is_empty():
-		print("[PASS] Planning QA gate — skill scenarios, drag E2E, planning input, trample, action-range regression, and checklist.")
+		print("[PASS] Planning QA gate — skill scenarios, drag E2E, planning input, trample, action-range regression, checklist, and intent contracts.")
 	else:
 		for failure: String in failures:
 			printerr("[FAIL] %s" % failure)
