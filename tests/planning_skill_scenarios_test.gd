@@ -16,3 +16,4 @@ static func run_all(failures: Array[String]) -> void:
 		print("[SCENARIO] %s" % suite.name)
 		var runner: Callable = suite.runner as Callable
 		runner.call(failures)
+		PlanningDragE2EHarness.cleanup_all()

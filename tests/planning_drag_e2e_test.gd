@@ -32,6 +32,7 @@ static func run_all(failures: Array[String]) -> void:
 	for i: int in range(tests.size()):
 		print("[RUN drag-e2e] %s" % names[i])
 		tests[i].call(failures)
+		PlanningDragE2EHarness.cleanup_all()
 
 
 static func _test_release_walk_commit_undo(failures: Array[String]) -> void:

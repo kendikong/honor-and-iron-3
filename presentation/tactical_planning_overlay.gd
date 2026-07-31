@@ -80,6 +80,8 @@ var _cached_hover_action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_proj_key: int = -1
 var _cached_hover_awaiting_targeting: bool = false
 var _cached_hover_coord: Vector2i = Vector2i(-999, -999)
+var _cached_hover_range_visible: bool = false
+var _event_bus_bound: bool = false
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -110,43 +112,120 @@ func setup(
 	_intent_state = intent_state
 	z_as_relative = false
 	z_index = 11
+	_bind_event_bus()
+	_bind_intent_state_signals()
+	set_process(true)
+
+
+func _bind_event_bus() -> void:
+	if _event_bus_bound:
+		return
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
-	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
-		_invalidate_hover_cache()
-		_schedule_hover_recompute()
-	)
-	EventBus.selection_changed.connect(func(_id: int) -> void:
-		if _director == null:
-			return
-		_update_hover_action_icon()
-		queue_redraw(),
-	)
-	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
-		_phase = phase
-		var planning: bool = CombatDirector.is_planning_phase(phase)
-		if not planning and _planning_input != null:
-			_planning_input.clear_interaction_preview()
-		_invalidate_hover_cache()
-		if planning:
-			_recompute_hover_ranges_from_inputs()
-		else:
-			_hover_move_tiles.clear()
-			_hover_action_range_tiles.clear()
-		mark_danger_dirty()
-		queue_redraw(),
-	)
+	EventBus.timeline_changed.connect(_on_eventbus_timeline_changed)
+	EventBus.ability_selected.connect(_on_eventbus_ability_selected)
+	EventBus.selection_changed.connect(_on_eventbus_selection_changed)
+	EventBus.turn_phase_changed.connect(_on_eventbus_turn_phase_changed)
 	EventBus.sim_event.connect(_on_sim_event)
-	if _intent_state != null:
-		_intent_state.intents_changed.connect(func(_units: Dictionary) -> void: queue_redraw())
-		_intent_state.hover_coord_changed.connect(func(coord: Vector2i) -> void:
-			_hover_coord = coord
-			if _director != null and _director.selected_unit_id < 0:
-				_invalidate_hover_cache()
-				_recompute_hover_ranges_from_inputs()
-			queue_redraw(),
-		)
-	set_process(true)
+	_event_bus_bound = true
+
+
+func _bind_intent_state_signals() -> void:
+	if _intent_state == null:
+		return
+	if not _intent_state.intents_changed.is_connected(_on_intent_intents_changed):
+		_intent_state.intents_changed.connect(_on_intent_intents_changed)
+	if not _intent_state.hover_coord_changed.is_connected(_on_intent_hover_coord_changed):
+		_intent_state.hover_coord_changed.connect(_on_intent_hover_coord_changed)
+
+
+func _unbind_event_bus() -> void:
+	if not _event_bus_bound:
+		return
+	if EventBus.board_changed.is_connected(_on_board_changed):
+		EventBus.board_changed.disconnect(_on_board_changed)
+	if EventBus.preview_updated.is_connected(_on_preview_updated):
+		EventBus.preview_updated.disconnect(_on_preview_updated)
+	if EventBus.timeline_changed.is_connected(_on_eventbus_timeline_changed):
+		EventBus.timeline_changed.disconnect(_on_eventbus_timeline_changed)
+	if EventBus.ability_selected.is_connected(_on_eventbus_ability_selected):
+		EventBus.ability_selected.disconnect(_on_eventbus_ability_selected)
+	if EventBus.selection_changed.is_connected(_on_eventbus_selection_changed):
+		EventBus.selection_changed.disconnect(_on_eventbus_selection_changed)
+	if EventBus.turn_phase_changed.is_connected(_on_eventbus_turn_phase_changed):
+		EventBus.turn_phase_changed.disconnect(_on_eventbus_turn_phase_changed)
+	if EventBus.sim_event.is_connected(_on_sim_event):
+		EventBus.sim_event.disconnect(_on_sim_event)
+	_event_bus_bound = false
+
+
+func _unbind_intent_state_signals() -> void:
+	if _intent_state == null:
+		return
+	if _intent_state.intents_changed.is_connected(_on_intent_intents_changed):
+		_intent_state.intents_changed.disconnect(_on_intent_intents_changed)
+	if _intent_state.hover_coord_changed.is_connected(_on_intent_hover_coord_changed):
+		_intent_state.hover_coord_changed.disconnect(_on_intent_hover_coord_changed)
+
+
+func teardown() -> void:
+	_unbind_intent_state_signals()
+	_unbind_event_bus()
+	_planning_input = null
+	_director = null
+	_intent_state = null
+	_map_view = null
+	_unit_layer = null
+	set_process(false)
+
+
+func _exit_tree() -> void:
+	teardown()
+
+
+func _on_eventbus_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void:
+	_invalidate_hover_cache()
+	_schedule_hover_recompute()
+
+
+func _on_eventbus_ability_selected(_index: int) -> void:
+	_invalidate_hover_cache()
+	_recompute_hover_ranges_from_inputs()
+	queue_redraw()
+
+
+func _on_eventbus_selection_changed(_id: int) -> void:
+	if _director == null:
+		return
+	_update_hover_action_icon()
+	queue_redraw()
+
+
+func _on_eventbus_turn_phase_changed(phase: int) -> void:
+	_phase = phase
+	var planning: bool = CombatDirector.is_planning_phase(phase)
+	if not planning and _planning_input != null:
+		_planning_input.clear_interaction_preview()
+	_invalidate_hover_cache()
+	if planning:
+		_recompute_hover_ranges_from_inputs()
+	else:
+		_hover_move_tiles.clear()
+		_hover_action_range_tiles.clear()
+	mark_danger_dirty()
+	queue_redraw()
+
+
+func _on_intent_intents_changed(_units: Dictionary) -> void:
+	queue_redraw()
+
+
+func _on_intent_hover_coord_changed(coord: Vector2i) -> void:
+	_hover_coord = coord
+	if _director != null and _director.selected_unit_id < 0:
+		_invalidate_hover_cache()
+		_recompute_hover_ranges_from_inputs()
+	queue_redraw()
 
 
 func apply_settings(settings: GameSettings) -> void:
@@ -626,6 +705,9 @@ func recompute_hover_ranges(
 	var cache_awaiting_targeting: bool = (
 		_planning_input != null and _planning_input.awaiting_targeting_active()
 	)
+	var cache_range_visible: bool = (
+		_planning_input != null and _planning_input.action_range_visible_for_hover()
+	)
 	if (
 		_cached_hover_unit_id == unit.id
 		and _cached_hover_origin == move_origin
@@ -635,6 +717,7 @@ func recompute_hover_ranges(
 		and _cached_hover_proj_key == proj_key
 		and _cached_hover_awaiting_targeting == cache_awaiting_targeting
 		and _cached_hover_coord == _hover_coord
+		and _cached_hover_range_visible == cache_range_visible
 	):
 		return
 	_cached_hover_unit_id = unit.id
@@ -645,6 +728,7 @@ func recompute_hover_ranges(
 	_cached_hover_proj_key = proj_key
 	_cached_hover_awaiting_targeting = cache_awaiting_targeting
 	_cached_hover_coord = _hover_coord
+	_cached_hover_range_visible = cache_range_visible
 	_hover_move_tiles.clear()
 	_hover_action_range_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):

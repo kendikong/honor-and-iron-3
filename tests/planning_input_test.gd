@@ -4,39 +4,46 @@ extends RefCounted
 ## Headless planning-input smoke tests (Phase 11).
 
 static func run_all(failures: Array[String]) -> void:
-	_test_force_basic_flag(failures)
-	_test_undoable_action_director(failures)
-	_test_planning_action_range_tiles(failures)
-	_test_offensive_dash_heuristic(failures)
-	_test_action_range_auto_run_ap_gate(failures)
-	_test_composite_cursor_gate(failures)
-	_test_cursor_matches_commit_slots(failures)
-	_test_drag_cursor_matches_commit_slots(failures)
-	_test_drag_cursor_ignores_preview_failed_flag(failures)
-	_test_drop_commit_preserves_drag_route(failures)
-	_test_cursor_omits_unaffordable_run_skill_pair(failures)
-	_test_slots_only_cursor_matches_commit(failures)
-	_test_preview_from_commit_slots(failures)
-	_test_audit_regression_fixes(failures)
-	_test_auto_skill_after_move_arms_dash(failures)
-	_test_awaiting_plan_refresh(failures)
-	_test_dash_arm_survives_plan_refresh(failures)
-	_test_dash_self_click_blocks_false_wait(failures)
-	_test_action_range_hidden_after_premove_mp(failures)
-	_test_hover_cursor_matches_click_commit_slots(failures)
-	_test_enemy_target_params_ignore_pseudo_drag(failures)
-	_test_shield_bash_preview_pushes(failures)
-	_test_planning_display_ap_run_intent(failures)
-	_test_planning_display_mp_left(failures)
-	_test_timeline_ghost_slots(failures)
-	_test_committed_action_approach_uses_premove_slot(failures)
-	_test_undo_movement_action_preserves_premove(failures)
-	_test_ability_scroll_clears_hover_preview_cache(failures)
+	## Ability economy, action-range, displacement, and range-approach parity live in
+	## the production-fixture suites run by PlanningQaGate: skill scenarios,
+	## action-range regression, trample E2E, and the checklist gate.
+	var tests: Array[Callable] = [
+		_test_force_basic_flag,
+		_test_undoable_action_director,
+		_test_planning_action_range_tiles,
+		_test_offensive_dash_heuristic,
+		_test_composite_cursor_gate,
+		_test_cursor_matches_commit_slots,
+		_test_drag_cursor_matches_commit_slots,
+		_test_drag_cursor_ignores_preview_failed_flag,
+		_test_drop_commit_preserves_drag_route,
+		_test_cursor_omits_unaffordable_run_skill_pair,
+		_test_slots_only_cursor_matches_commit,
+		_test_preview_from_commit_slots,
+		_test_awaiting_plan_refresh,
+		_test_dash_arm_survives_plan_refresh,
+		_test_dash_self_click_blocks_false_wait,
+		_test_hover_cursor_matches_click_commit_slots,
+		_test_planning_display_mp_left,
+		_test_undo_movement_action_preserves_premove,
+		_test_ability_scroll_clears_hover_preview_cache,
+	]
+	for test: Callable in tests:
+		test.call(failures)
+		PlanningDragE2EHarness.cleanup_all()
+
+
+static func _new_director() -> CombatDirector:
+	return CombatDirector.new()
+
+
+static func _register_fixture(input: CombatPlanningInput, director: CombatDirector) -> void:
+	PlanningDragE2EHarness.track_raw_fixture({"input": input, "director": director})
 
 
 static func _bowling_charge_arm_fixture() -> Dictionary:
 	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(8, 8)
 	var plain := TerrainData.new()
@@ -70,6 +77,7 @@ static func _bowling_charge_arm_fixture() -> Dictionary:
 	director.selected_unit_id = 1
 	director.selected_ability_index = 0
 	input._director = director
+	_register_fixture(input, director)
 	return {"input": input, "director": director, "board": board, "unit": unit, "dash": dash}
 
 
@@ -81,7 +89,7 @@ static func _test_force_basic_flag(failures: Array[String]) -> void:
 
 
 static func _test_undoable_action_director(failures: Array[String]) -> void:
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(8, 6)
 	var unit := UnitState.new()
@@ -394,7 +402,7 @@ static func _test_drop_commit_preserves_drag_route(failures: Array[String]) -> v
 
 static func _test_cursor_omits_unaffordable_run_skill_pair(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
+	var director := _new_director()
 	director.auto_run = true
 	var board := BoardState.new()
 	board.grid_size = Vector2i(8, 8)
@@ -430,6 +438,7 @@ static func _test_cursor_omits_unaffordable_run_skill_pair(failures: Array[Strin
 	director.selected_unit_id = 1
 	director.selected_ability_index = 0
 	input._director = director
+	_register_fixture(input, director)
 	input.auto_use_skill_after_move = true
 	var dest := Vector2i(2, 5)
 	var slots: Dictionary = input._final_commit_slots_for_interaction(1, dest)
@@ -528,7 +537,7 @@ static func _assert_cursor_matches_slots(
 
 static func _test_preview_from_commit_slots(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(6, 6)
 	var plain := TerrainData.new()
@@ -552,6 +561,7 @@ static func _test_preview_from_commit_slots(failures: Array[String]) -> void:
 	director.selected_unit_id = 1
 	director.selected_ability_index = -1
 	input._director = director
+	_register_fixture(input, director)
 	var invalid: Dictionary = input._preview_from_commit_slots_at_cell(1, Vector2i(20, 20))
 	if not bool(invalid.get("invalid", false)):
 		failures.append("PlanningInputTest: out-of-range commit preview should be invalid")
@@ -569,7 +579,7 @@ static func _test_preview_from_commit_slots(failures: Array[String]) -> void:
 
 static func _test_audit_regression_fixes(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(6, 6)
 	var plain := TerrainData.new()
@@ -600,6 +610,7 @@ static func _test_audit_regression_fixes(failures: Array[String]) -> void:
 	director.phase = CombatDirector.Phase.PLANNING
 	director.selected_unit_id = 1
 	input._director = director
+	_register_fixture(input, director)
 	director.selected_ability_index = 0
 	var self_slots: Dictionary = input._build_commit_slots_at_cell(1, unit.position)
 	var action_steps: Array = self_slots.get("action", [])
@@ -625,7 +636,7 @@ static func _test_audit_regression_fixes(failures: Array[String]) -> void:
 
 static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(8, 8)
 	var plain := TerrainData.new()
@@ -659,6 +670,7 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	director.selected_unit_id = 1
 	director.selected_ability_index = 0
 	input._director = director
+	_register_fixture(input, director)
 	input.auto_use_skill_after_move = true
 	var paired_slots: Dictionary = input._finalize_commit_slots(
 		input._build_commit_slots_at_cell(1, Vector2i(3, 2)),
@@ -751,7 +763,7 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 
 
 static func _test_awaiting_plan_refresh(failures: Array[String]) -> void:
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(8, 8)
 	var plain := TerrainData.new()
@@ -893,7 +905,7 @@ static func _test_action_range_hidden_after_premove_mp(failures: Array[String]) 
 
 static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(8, 8)
 	var plain := TerrainData.new()
@@ -930,6 +942,7 @@ static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String
 	director.selected_ability_index = 0
 	director.auto_run = true
 	input._director = director
+	_register_fixture(input, director)
 	input.auto_use_skill_after_move = true
 	input._drag_unit_id = 1
 	input._drag_route = [knight.position, Vector2i(1, 2), Vector2i(2, 2), Vector2i(3, 2)]
@@ -959,7 +972,7 @@ static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String
 
 static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(8, 8)
 	var plain := TerrainData.new()
@@ -996,6 +1009,7 @@ static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]
 	director.selected_ability_index = 0
 	director.auto_run = true
 	input._director = director
+	_register_fixture(input, director)
 	input._drag_unit_id = 1
 	input._drag_route = [knight.position, Vector2i(1, 2), Vector2i(2, 2), Vector2i(3, 2)]
 	input._drag_last_free = Vector2i(3, 2)
@@ -1019,7 +1033,7 @@ static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]
 
 
 static func _test_shield_bash_preview_pushes(failures: Array[String]) -> void:
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(8, 8)
 	var plain := TerrainData.new()
@@ -1165,7 +1179,7 @@ static func _test_planning_display_mp_left(failures: Array[String]) -> void:
 
 static func _test_timeline_ghost_slots(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var setup: Dictionary = _plain_board_with_unit(Vector2i(2, 2), 4, 2)
 	var board: BoardState = setup["board"] as BoardState
 	var unit: UnitState = setup["unit"] as UnitState
@@ -1175,6 +1189,7 @@ static func _test_timeline_ghost_slots(failures: Array[String]) -> void:
 	director.phase = CombatDirector.Phase.PLANNING
 	director.selected_unit_id = 1
 	input._director = director
+	_register_fixture(input, director)
 	var move := TimelineAction.make_move(
 		1, Vector2i(4, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION,
 	)
@@ -1202,7 +1217,7 @@ static func _test_timeline_ghost_slots(failures: Array[String]) -> void:
 
 static func _test_committed_action_approach_uses_premove_slot(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(10, 6)
 	var plain := TerrainData.new()
@@ -1250,6 +1265,7 @@ static func _test_committed_action_approach_uses_premove_slot(failures: Array[St
 	director.plan_affected_unit_ids = [1]
 	director._refresh_plan()
 	input._director = director
+	_register_fixture(input, director)
 	input.auto_use_skill_after_move = true
 	var slots: Dictionary = input._final_commit_slots_for_interaction(
 		1, enemy.position, [], [], Vector2i(-999999, -999999),
@@ -1300,7 +1316,7 @@ static func _test_committed_action_approach_uses_premove_slot(failures: Array[St
 
 
 static func _test_undo_movement_action_preserves_premove(failures: Array[String]) -> void:
-	var director := CombatDirector.new()
+	var director := _new_director()
 	var board := BoardState.new()
 	board.grid_size = Vector2i(10, 6)
 	var plain := TerrainData.new()
@@ -1360,9 +1376,10 @@ static func _test_undo_movement_action_preserves_premove(failures: Array[String]
 
 static func _test_ability_scroll_clears_hover_preview_cache(failures: Array[String]) -> void:
 	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
+	var director := _new_director()
 	director.phase = CombatDirector.Phase.PLANNING
 	input._director = director
+	_register_fixture(input, director)
 	input._hover_preview_cache_key = "stale|1|ability|0"
 	input._on_ability_selected(0)
 	if input._hover_preview_cache_key != "":

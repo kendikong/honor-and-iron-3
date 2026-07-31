@@ -45,6 +45,7 @@ static func run_all(failures: Array[String]) -> void:
 	for i: int in range(tests.size()):
 		print("[RUN] action_range/%s" % names[i])
 		tests[i].call(failures)
+		PlanningDragE2EHarness.cleanup_all()
 
 
 static func _fixture_unit(fix: Dictionary) -> UnitState:
@@ -271,6 +272,12 @@ static func _sync_knight_ap(fix: Dictionary, ap: int, mp: int = -1) -> void:
 			base_knight.ability.points_left = ap
 			if mp >= 0:
 				base_knight.movement.points_left = mp
+	if fix.director.projected_state != null:
+		var projected_knight: UnitState = fix.director.projected_state.get_unit_by_id(1)
+		if projected_knight != null:
+			projected_knight.ability.points_left = ap
+			if mp >= 0:
+				projected_knight.movement.points_left = mp
 
 
 static func _test_hide_auto_run_consumes_skill_ap(failures: Array[String]) -> void:
@@ -310,7 +317,8 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 	if bash_idx < 0:
 		failures.append("ActionRangeRegression hide_after_commit_run_icon_bash: Shield Bash missing")
 		return
-	director.selected_ability_index = bash_idx
+	director.selected_ability_index = -1
+	_sync_knight_ap(fix, 1, 1)
 	var run_dest: Vector2i = _find_run_hover_tile(fix.board, fix.knight)
 	if run_dest.x <= -900000:
 		failures.append("ActionRangeRegression hide_after_commit_run_icon_bash: no run destination tile")
@@ -320,7 +328,7 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 	input._flush_hover_heavy_sync()
 	overlay._recompute_hover_ranges_from_inputs()
 	var slots: Dictionary = PlanningQAGateTest._click_slots_at(input, 1, run_dest)
-	if bool(slots.get("invalid", true)):
+	if PlanningQAGateTest._slots_invalid(slots):
 		failures.append(
 			"ActionRangeRegression hide_after_commit_run_icon_bash: hover slots invalid at %s"
 			% run_dest,
@@ -391,6 +399,9 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 			% projected.ability.points_left,
 		)
 		return
+	director.select_ability(bash_idx)
+	input.call("_run_ability_settled_refresh")
+	_flush_deferred_planning_refresh(fix)
 	var ability: AbilityData = PlanningQAGateTest._knight_ability(SHIELD_BASH_ID)
 	_assert_contract(
 		failures,
@@ -402,7 +413,6 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 		ability,
 		false,
 		run_dest,
-		false,
 	)
 
 

@@ -1,11 +1,20 @@
-extends SceneTree
+extends Node
 
 ## Planning QA Gate — production drag E2E + planning input + trample + checklist mirror.
 ## Run:
 ##   "<godot.exe>" --headless --path . --script res://tests/run_planning_qa_gate.gd
 
-func _initialize() -> void:
+func _ready() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
+	await _run_gate()
+
+
+func _run_gate() -> void:
 	var failures: Array[String] = []
+	PlanningDragE2EHarness.set_host(self)
 	var suites: Array[Dictionary] = [
 		{"name": "skill_scenarios", "path": "res://tests/planning_skill_scenarios_test.gd"},
 		{"name": "drag_e2e", "path": "res://tests/planning_drag_e2e_test.gd"},
@@ -26,6 +35,12 @@ func _initialize() -> void:
 			failures.append("suite_run_all_invalid:%s" % path)
 			continue
 		run_callable.call(failures)
+		PlanningDragE2EHarness.cleanup_all()
+		await get_tree().process_frame
+	PlanningDragE2EHarness.set_host(null)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
 	var report_path := "user://planning_qa_gate_result.txt"
 	var report := FileAccess.open(report_path, FileAccess.WRITE)
 	if report != null:
@@ -40,4 +55,4 @@ func _initialize() -> void:
 	else:
 		for failure: String in failures:
 			printerr("[FAIL] %s" % failure)
-	quit(0 if failures.is_empty() else 1)
+	get_tree().quit(0 if failures.is_empty() else 1)

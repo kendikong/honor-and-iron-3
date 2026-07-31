@@ -153,6 +153,7 @@ static func run_all(failures: Array[String]) -> void:
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
 		tests[i].call(failures)
+		PlanningDragE2EHarness.cleanup_all()
 
 
 static func _plain_board(size: Vector2i, units: Array[UnitState]) -> BoardState:
@@ -202,13 +203,15 @@ static func _planning_fixture(
 	director.selected_unit_id = 1
 	input._director = director
 	input.auto_use_skill_after_move = true
-	return {
+	var fix: Dictionary = {
 		"input": input,
 		"director": director,
 		"board": board,
 		"knight": knight,
 		"enemy": units[1] if units.size() > 1 else null,
 	}
+	PlanningDragE2EHarness.track_raw_fixture(fix)
+	return fix
 
 
 static func _commit_slots_at(
@@ -503,6 +506,7 @@ static func _wire_overlay(fix: Dictionary) -> TacticalPlanningOverlay:
 	fix.input._planning = overlay
 	fix.input._intent_state = intent
 	overlay.bind_planning_input(fix.input)
+	PlanningDragE2EHarness.track_overlay_fixture(fix, overlay)
 	return overlay
 
 

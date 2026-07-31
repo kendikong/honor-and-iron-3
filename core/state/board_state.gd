@@ -20,6 +20,12 @@ var pending_pushes: Array[Dictionary] = []
 func get_tile(coord: Vector2i) -> TileState:
 	return tiles.get(coord, null)
 
+
+func set_tile_terrain(coord: Vector2i, terrain: TerrainData) -> void:
+	assert(terrain != null, "BoardState.set_tile_terrain requires terrain")
+	tiles[coord] = TileState.create(coord, terrain)
+
+
 func is_in_bounds(coord: Vector2i) -> bool:
 	return coord.x >= 0 and coord.y >= 0 and coord.x < grid_size.x and coord.y < grid_size.y
 

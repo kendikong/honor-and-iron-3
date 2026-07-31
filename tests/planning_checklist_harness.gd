@@ -21,6 +21,7 @@ const BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
 
 
 static func wire_bash_board_minimal() -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
 	var fix: Dictionary = PlanningDragE2EHarness.wire_minimal_fixture(
 		KNIGHT_START, ENEMY_POS,
 	)
@@ -28,12 +29,14 @@ static func wire_bash_board_minimal() -> Dictionary:
 
 
 static func wire_bash_board() -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
 	return PlanningDragE2EHarness.wire_fixture(
 		PlanningDragE2EHarness._planning_fixture(KNIGHT_START, ENEMY_POS),
 	)
 
 
 static func wire_hook_board() -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
 	var base: Dictionary = PlanningDragE2EHarness._planning_fixture(
 		HOOK_KNIGHT_START, HOOK_ENEMY_POS,
 	)
@@ -41,6 +44,7 @@ static func wire_hook_board() -> Dictionary:
 
 
 static func wire_trample_board() -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
 	var fix: Dictionary = TramplingAdvanceE2ETest._knight_fixture(TRAMPLE_START)
 	fix["knight"] = fix.unit
 	return PlanningDragE2EHarness.wire_fixture(fix)

@@ -73,13 +73,15 @@ static func _knight_fixture(start: Vector2i) -> Dictionary:
 	director.selected_ability_index = trample_idx
 	input._director = director
 	input.auto_use_skill_after_move = false
-	return {
+	var fix: Dictionary = {
 		"input": input,
 		"director": director,
 		"board": board,
 		"unit": unit,
 		"trample_idx": trample_idx,
 	}
+	PlanningDragE2EHarness.track_raw_fixture(fix)
+	return fix
 
 
 static func _test_arm_and_commit_smoke(failures: Array[String]) -> void:

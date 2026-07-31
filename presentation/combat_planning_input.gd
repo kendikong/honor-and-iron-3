@@ -84,12 +84,19 @@ func setup(
 
 
 func teardown() -> void:
+	flush_deferred_planning()
 	_disconnect_event_bus()
 	_map_view = null
 	_director = null
 	_planning = null
 	_intent_state = null
 	_sfx = null
+
+
+func flush_deferred_planning() -> void:
+	if _selection_refresh_pending:
+		_run_planning_selection_refresh()
+	_flush_hover_preview_refresh()
 
 
 func _disconnect_event_bus() -> void:

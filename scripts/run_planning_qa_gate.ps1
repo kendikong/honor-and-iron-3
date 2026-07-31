@@ -9,5 +9,35 @@ if (-not (Test-Path $GodotPath)) {
 	Write-Error "Godot not found at: $GodotPath. Pass -GodotPath to your Godot_v4.7-stable_win64.exe"
 }
 
-& $GodotPath --headless --path $projectRoot --script res://tests/run_planning_qa_gate.gd
-exit $LASTEXITCODE
+$stdoutPath = Join-Path $env:TEMP "honor-and-iron-planning-qa.stdout.log"
+$stderrPath = Join-Path $env:TEMP "honor-and-iron-planning-qa.stderr.log"
+$process = Start-Process -FilePath $GodotPath `
+	-ArgumentList "--headless --path `"$projectRoot`" res://tests/PlanningQaGate.tscn" `
+	-RedirectStandardOutput $stdoutPath `
+	-RedirectStandardError $stderrPath `
+	-Wait `
+	-PassThru
+$godotExit = $process.ExitCode
+Get-Content $stdoutPath
+Get-Content $stderrPath
+
+$testFailures = Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]'
+$scriptErrors = Select-String -Path $stdoutPath, $stderrPath -Pattern '(^|\s)SCRIPT ERROR:'
+$leakDiagnostics = Select-String -Path $stdoutPath, $stderrPath -Pattern 'WARNING: .*leaked|ERROR: .*resources still in use'
+if ($godotExit -ne 0 -or $null -ne $testFailures -or $null -ne $scriptErrors) {
+	if ($null -ne $testFailures) {
+		Write-Error "Planning QA test failures:"
+		$testFailures | ForEach-Object { Write-Error $_.Line }
+	}
+	if ($null -ne $scriptErrors) {
+		Write-Error "Planning QA script errors:"
+		$scriptErrors | ForEach-Object { Write-Error $_.Line }
+	}
+	exit 1
+}
+if ($null -ne $leakDiagnostics) {
+	Write-Warning "Planning QA passed assertions; engine reported residual leaks (not gate-blocking):"
+	$leakDiagnostics | ForEach-Object { Write-Warning $_.Line }
+}
+
+exit 0

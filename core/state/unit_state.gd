@@ -16,9 +16,9 @@ var controlling_player_id: int = 1
 var position: Vector2i = Vector2i.ZERO
 var facing: GameEnums.Facing = GameEnums.Facing.SOUTH
 
-var health: HealthComponent
-var movement: MovementComponent
-var ability: AbilityComponent
+var health: HealthComponent = HealthComponent.new()
+var movement: MovementComponent = MovementComponent.new()
+var ability: AbilityComponent = AbilityComponent.new()
 
 ## True after this unit uses their one skill/basic attack this turn (1-phase turn system).
 var turn_action_used: bool = false
