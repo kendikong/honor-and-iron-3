@@ -791,16 +791,14 @@ func recompute_hover_ranges(
 		else:
 			move_budget = unit.movement.points_left
 		if move_budget > 0:
-			var move_ability: AbilityData = null
-			if is_selected_player and selected_ability >= 0:
-				move_ability = _selected_ability_data(unit, selected_ability)
+			# Blue tiles = MP walk/run only. Selected skill pass-through (BULLDOZE/TRAMPLE) must not widen them.
 			_hover_move_tiles = MovementSystem.get_reachable_tiles(
 				move_board,
 				move_from,
 				move_budget,
 				mt,
 				move_cost,
-				move_ability,
+				null,
 			)
 	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
 		queue_redraw()

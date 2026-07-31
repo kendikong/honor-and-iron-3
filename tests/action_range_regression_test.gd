@@ -26,6 +26,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_show_red_anchor_follows_stand_not_knight_start,
 		_test_bowling_enemy_hover_red_at_origin,
 		_test_bowling_enemy_hover_not_bash_route,
+		_test_bowling_dash_only_tiles_not_blue,
 		_test_hide_red_after_commit_run_icon_shield_bash,
 		_test_hide_no_ability_selected,
 		_test_show_awaiting_trample,
@@ -39,6 +40,7 @@ static func run_all(failures: Array[String]) -> void:
 		"show_red_anchor_on_stand",
 		"bowling_enemy_hover_red",
 		"bowling_enemy_hover_not_bash",
+		"bowling_dash_only_not_blue",
 		"hide_after_commit_run_icon_bash",
 		"hide_no_ability",
 		"show_awaiting_trample",
@@ -338,6 +340,42 @@ static func _test_bowling_enemy_hover_not_bash_route(failures: Array[String]) ->
 	if not overlay.awaiting_movement_hover_route_cells().is_empty():
 		failures.append(
 			"ActionRangeRegression bowling_enemy_hover_not_bash: bash enemy hover must not use awaiting dash route",
+		)
+
+
+static func _test_bowling_dash_only_tiles_not_blue(failures: Array[String]) -> void:
+	const KNIGHT := Vector2i(5, 5)
+	const ENEMY := Vector2i(6, 5)
+	const DASH_ONLY_A := Vector2i(7, 5)
+	const DASH_ONLY_B := Vector2i(8, 5)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT, ENEMY)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression bowling_dash_only_not_blue: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	_hover_sync(input, overlay, KNIGHT)
+	for dash_tile: Vector2i in [DASH_ONLY_A, DASH_ONLY_B]:
+		if overlay.is_hover_move_tile(dash_tile):
+			failures.append(
+				"ActionRangeRegression bowling_dash_only_not_blue: dash-only tile %s must not be blue move"
+				% dash_tile,
+			)
+	_hover_sync(input, overlay, DASH_ONLY_A)
+	var icon: String = input.compute_hover_action_icon(DASH_ONLY_A)
+	if icon != PlanningIcons.GLYPH_NULL:
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_not_blue: dash-only hover cursor must be null, got %s"
+			% icon,
+		)
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
+	if not AbilitySystem.planning_is_valid_awaiting_endpoint(KNIGHT, DASH_ONLY_A, ability):
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_not_blue: fixture tile %s must be valid dash endpoint"
+			% DASH_ONLY_A,
 		)
 
 

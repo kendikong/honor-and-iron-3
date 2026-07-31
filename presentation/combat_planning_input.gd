@@ -2607,12 +2607,10 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	var board := _proj()
 	if not MovementSystem.can_end_movement_on(board, coord, unit):
 		return false
-	var ability: AbilityData = null
-	if not force_basic_movement and _director.selected_ability_index >= 0:
-		ability = _selected_ability_data(unit)
+	# Premove pathing is walk/run only — never pass selected class skill for pass-through widening.
 	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
 	return not MovementSystem.find_path(
-		board, move_origin, coord, _move_budget(unit), mt, 1, ability,
+		board, move_origin, coord, _move_budget(unit), mt, 1, null,
 	).is_empty()
 
 
@@ -3002,6 +3000,19 @@ func _build_commit_slots_at_cell(
 					))
 					return slots
 				slots["invalid"] = "Invalid target or distance for this ability."
+				return slots
+			elif (
+				AbilitySystem.planning_is_valid_awaiting_endpoint(_proj_origin(actor), cell, ability)
+				and not _drop_allows_move_tile(cell, legal_move_tiles, actor)
+			):
+				slots["action"].append(TimelineAction.make_ability(
+					unit_id,
+					ability,
+					cell,
+					AbilitySystem.planning_commit_target_unit_id(ability, -1),
+					GameEnums.MoveTiming.PRE_ACTION,
+					effective_waypoints,
+				))
 				return slots
 		else:
 			if AbilitySystem.can_target_self(actor, ability):
@@ -3453,6 +3464,15 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var p_unit := _proj_unit(sel_id)
 	if p_unit == null:
 		return ""
+	if _skill_interaction_active():
+		var ability := _selected_ability_data(p_unit)
+		if _awaiting_flow_selected(p_unit, ability):
+			var origin := _proj_origin(p_unit)
+			if (
+				AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability)
+				and not _drop_allows_move_tile(cell, _snapshot_drag_legal_move_tiles(), p_unit)
+			):
+				return PlanningIcons.GLYPH_NULL
 	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
 	var attack_target_id: int = -1
 	if hover_unit != null:
