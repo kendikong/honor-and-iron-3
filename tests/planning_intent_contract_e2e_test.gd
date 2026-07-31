@@ -11,6 +11,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_painted_run_preview_interior_walk_hides_red(failures)
 	_test_committed_run_center_blue_hover_hides_red(failures)
 	_test_pre_run_binding_when_move_timing_closed(failures)
+	_test_red_hidden_when_projected_ap_zero(failures)
 	_test_simulation_validator_rejects_invalid_timeline_action(failures)
 
 
@@ -451,6 +452,51 @@ static func _test_pre_run_binding_when_move_timing_closed(failures: Array[String
 	PlanningChecklistHarness.assert_red_contract(
 		failures,
 		"intent_contract/pre_run_binding_closed_timing/overlay_parity",
+		fix,
+		bowling,
+		false,
+	)
+
+
+## Resource gate: projected actor at 0 AP must never show red for a 1-AP class skill.
+static func _test_red_hidden_when_projected_ap_zero(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	director.auto_run = true
+	input.auto_use_skill_after_move = false
+	PlanningChecklistHarness.set_knight_pools(fix, 0, 0)
+	var projected: UnitState = PlanningChecklistHarness.projected_unit(fix, 1)
+	PlanningChecklistHarness.assert_eq_int(
+		failures,
+		"intent_contract/projected_ap_zero/precondition",
+		projected.ability.points_left if projected != null else -1,
+		0,
+	)
+	var bowling_index: int = PlanningChecklistHarness.select_ability(
+		fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
+	)
+	if bowling_index < 0:
+		PlanningChecklistHarness.assert_fail(
+			failures, "intent_contract/projected_ap_zero", "Bowling Charge missing",
+		)
+		return
+	var bowling: AbilityData = fix.knight.active_abilities[bowling_index]
+	var walk_diamond: Array[Vector2i] = PlanningChecklistHarness.walk_diamond_from(
+		fix.board, PlanningChecklistHarness.KNIGHT_START, fix.knight.movement.max_points,
+	)
+	var red_hovers: Array[Vector2i] = PlanningChecklistHarness.collect_red_visible_hovers(
+		fix, walk_diamond,
+	)
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/projected_ap_zero/no_red_anywhere",
+		red_hovers.is_empty(),
+		"0 AP projected actor: red must stay off on all hovers, on=%s" % [red_hovers],
+	)
+	PlanningChecklistHarness.assert_red_contract(
+		failures,
+		"intent_contract/projected_ap_zero/gate",
 		fix,
 		bowling,
 		false,
