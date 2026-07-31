@@ -2030,8 +2030,6 @@ func _draw_move_ghosts() -> void:
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null or AbilitySystem.planning_commit_flow(unit, ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:
 		return
-	if _planning_input != null and not _planning_input.awaiting_targeting_active():
-		return
 	var origin: Vector2i = _proj_origin(unit)
 	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, _hover_coord, ability):
 		return

@@ -24,6 +24,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_show_move_hover_without_action_slot,
 		_test_show_enemy_bash_with_committed_premove,
 		_test_show_red_anchor_follows_stand_not_knight_start,
+		_test_bowling_enemy_hover_red_at_origin,
 		_test_hide_red_after_commit_run_icon_shield_bash,
 		_test_hide_no_ability_selected,
 		_test_show_awaiting_trample,
@@ -35,6 +36,7 @@ static func run_all(failures: Array[String]) -> void:
 		"show_move_hover_no_action_slot",
 		"show_enemy_bash_committed_premove",
 		"show_red_anchor_on_stand",
+		"bowling_enemy_hover_red",
 		"hide_after_commit_run_icon_bash",
 		"hide_no_ability",
 		"show_awaiting_trample",
@@ -260,6 +262,48 @@ static func _test_show_red_anchor_follows_stand_not_knight_start(failures: Array
 			% [shifted_tile, stand, KNIGHT_START],
 		)
 
+
+static func _test_bowling_enemy_hover_red_at_origin(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression bowling_enemy_hover_red: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
+	_hover_sync(input, overlay, ENEMY_POS)
+	var stand: Vector2i = input.action_range_intent_stand_cell(1)
+	if stand != KNIGHT_START:
+		failures.append(
+			"ActionRangeRegression bowling_enemy_hover_red: stand must stay at dash origin %s, got %s"
+			% [KNIGHT_START, stand],
+		)
+	var expected: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, fix.knight, ability, KNIGHT_START,
+	)
+	if not overlay.is_hover_action_range_tile(ENEMY_POS):
+		failures.append(
+			"ActionRangeRegression bowling_enemy_hover_red: enemy tile must be red on dash line from %s"
+			% KNIGHT_START,
+		)
+	for tile: Vector2i in expected:
+		if not overlay.is_hover_action_range_tile(tile):
+			failures.append(
+				"ActionRangeRegression bowling_enemy_hover_red: missing red tile %s from origin %s"
+				% [tile, KNIGHT_START],
+			)
+			break
+	var route: Array[Vector2i] = CombatPlanningPreview.awaiting_movement_route_cells(
+		KNIGHT_START, ENEMY_POS, [], [], -1,
+	)
+	if route.size() < 2 or route[0] != KNIGHT_START or route[route.size() - 1] != ENEMY_POS:
+		failures.append(
+			"ActionRangeRegression bowling_enemy_hover_red: dash route %s must span origin to enemy"
+			% str(route),
+		)
 
 
 static func _sync_knight_ap(fix: Dictionary, ap: int, mp: int = -1) -> void:

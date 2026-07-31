@@ -2271,10 +2271,21 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	if actor == null:
 		return Vector2i(-999999, -999999)
 	var projected: Vector2i = _proj_move_origin(actor)
-	if awaiting_targeting_active() and unit_id == _director.selected_unit_id:
-		var ability: AbilityData = _selected_ability_data(actor)
-		if ability != null and AbilitySystem.is_movement_skill(ability):
+	var ability: AbilityData = null
+	if unit_id == _director.selected_unit_id:
+		ability = _selected_ability_data(actor)
+	if ability != null and _awaiting_flow_selected(actor, ability) and AbilitySystem.is_movement_skill(ability):
+		if awaiting_targeting_active():
 			return projected
+		var hover: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
+		if _director.board.is_in_bounds(hover):
+			var hover_unit: UnitState = _director.board.get_unit_at(hover)
+			if (
+				hover_unit != null
+				and hover_unit.is_enemy()
+				and AbilitySystem.planning_is_valid_awaiting_endpoint(projected, hover, ability)
+			):
+				return projected
 	if is_live_preview_active() and preview_state.preview_board != null:
 		var live_unit: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
 		if live_unit != null:
