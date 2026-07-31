@@ -29,6 +29,8 @@ static func run_all(failures: Array[String]) -> void:
 		_test_bowling_dash_only_tiles_not_blue,
 		_test_bowling_dash_only_click_no_premove,
 		_test_hide_red_after_commit_run_icon_shield_bash,
+		_test_hide_red_after_commit_run_icon_bowling,
+		_test_hide_red_committed_run_timeline_bowling,
 		_test_hide_no_ability_selected,
 		_test_show_awaiting_trample,
 		_test_hover_step_updates_stand_and_red_tiles,
@@ -44,6 +46,8 @@ static func run_all(failures: Array[String]) -> void:
 		"bowling_dash_only_not_blue",
 		"bowling_dash_only_no_premove_click",
 		"hide_after_commit_run_icon_bash",
+		"hide_after_commit_run_icon_bowling",
+		"hide_committed_run_timeline_bowling",
 		"hide_no_ability",
 		"show_awaiting_trample",
 		"hover_step_updates_stand",
@@ -581,6 +585,102 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 
 static func _test_hide_red_after_commit_run_icon_shield_bash(failures: Array[String]) -> void:
 	assert_hide_red_after_commit_run_icon_shield_bash(failures)
+
+
+static func _test_hide_red_after_commit_run_icon_bowling(failures: Array[String]) -> void:
+	var base_fix: Dictionary = PlanningDragE2EHarness._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var fix: Dictionary = PlanningDragE2EHarness.wire_fixture(base_fix)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	director.auto_run = true
+	_sync_knight_ap(fix, 1, 0)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression hide_after_commit_run_icon_bowling: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var run_dest: Vector2i = _find_run_hover_tile(fix.board, fix.knight)
+	if run_dest.x <= -900000:
+		failures.append("ActionRangeRegression hide_after_commit_run_icon_bowling: no run destination tile")
+		return
+	input.set_qa_pointer_grid_cell(run_dest)
+	input.on_hover_moved(run_dest)
+	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+	var slots: Dictionary = PlanningQAGateTest._click_slots_at(input, 1, run_dest)
+	if PlanningQAGateTest._slots_invalid(slots):
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bowling: hover slots invalid at %s"
+			% run_dest,
+		)
+		return
+	var pre_moves: Array = slots.get("pre", []) as Array
+	if pre_moves.is_empty():
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bowling: hover must build pre-move before commit",
+		)
+		return
+	var pre_move: TimelineAction = pre_moves[0] as TimelineAction
+	if pre_move == null or not pre_move.uses_run:
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bowling: pre-move must be run before commit",
+		)
+		return
+	input.call("_paint_intent_slots_before_commit", 1, slots)
+	if not director.commit_from_slots(1, slots):
+		failures.append(
+			"ActionRangeRegression hide_after_commit_run_icon_bowling: commit_from_slots failed",
+		)
+		return
+	input.call("_promote_intent_preview_after_commit")
+	_flush_deferred_planning_refresh(fix)
+	director.select_ability(bowling_idx)
+	input.call("_run_ability_settled_refresh")
+	_flush_deferred_planning_refresh(fix)
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
+	_assert_contract(
+		failures,
+		"hide_after_commit_run_icon_bowling",
+		fix,
+		overlay,
+		input,
+		run_dest,
+		ability,
+		false,
+		run_dest,
+	)
+
+
+static func _test_hide_red_committed_run_timeline_bowling(failures: Array[String]) -> void:
+	const RUN_DEST := Vector2i(3, 6)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.auto_run = true
+	fix.knight.ability.points_left = 1
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_run_move(
+			1, RUN_DEST, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression hide_committed_run_timeline_bowling: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
+	_assert_contract(
+		failures,
+		"hide_committed_run_timeline_bowling",
+		fix,
+		overlay,
+		input,
+		RUN_DEST,
+		ability,
+		false,
+	)
 
 
 static func _test_hide_no_ability_selected(failures: Array[String]) -> void:

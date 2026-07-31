@@ -2321,8 +2321,6 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 func action_range_visible_for_hover() -> bool:
 	if _director == null or _director.selected_unit_id < 0 or _director.board == null:
 		return false
-	if awaiting_targeting_active():
-		return true
 	var unit_id: int = _director.selected_unit_id
 	var committed: UnitState = _proj_unit(unit_id)
 	if committed == null:
@@ -2332,16 +2330,36 @@ func action_range_visible_for_hover() -> bool:
 	var ability: AbilityData = _selected_ability_data(committed)
 	if ability == null or AbilitySystem.is_run_ability(ability) or AbilitySystem.is_wait_ability(ability):
 		return false
-	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
-	if not _director.board.is_in_bounds(stand):
-		return false
 	var move_timing: int = _director.get_planning_move_timing(unit_id)
 	var has_committed_move: bool = (
 		move_timing >= 0
 		and _director.unit_has_move_planned_at_timing(unit_id, move_timing)
 	)
-	if has_committed_move and _proj_move_origin(committed) == stand:
+	if has_committed_move:
+		var plan: Timeline = (
+			_director.plan_post_move
+			if move_timing == GameEnums.MoveTiming.POST_ACTION
+			else _director.plan_pre_move
+		)
+		var move_action: TimelineAction = CombatPlanningPreview.committed_move_action(
+			plan, unit_id, move_timing,
+		)
+		if move_action != null:
+			var post_move: UnitState = AbilitySystem.project_actor_after_premove(
+				_proj(),
+				committed,
+				move_action.target_coord,
+				auto_run_movement_active(committed),
+				move_action.uses_run,
+			)
+			if post_move == null:
+				return false
+			return AbilitySystem.can_plan(post_move, ability, _proj())
+	if awaiting_targeting_active():
 		return AbilitySystem.can_plan(committed, ability, _proj())
+	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
+	if not _director.board.is_in_bounds(stand):
+		return false
 	var origin_actor: UnitState = committed
 	if not has_committed_move and _director.base_board != null:
 		var base_actor: UnitState = _director.base_board.get_unit_by_id(unit_id)
