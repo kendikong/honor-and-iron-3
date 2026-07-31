@@ -25,6 +25,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_show_enemy_bash_with_committed_premove,
 		_test_show_red_anchor_follows_stand_not_knight_start,
 		_test_bowling_enemy_hover_red_at_origin,
+		_test_bowling_enemy_hover_not_bash_route,
 		_test_hide_red_after_commit_run_icon_shield_bash,
 		_test_hide_no_ability_selected,
 		_test_show_awaiting_trample,
@@ -37,6 +38,7 @@ static func run_all(failures: Array[String]) -> void:
 		"show_enemy_bash_committed_premove",
 		"show_red_anchor_on_stand",
 		"bowling_enemy_hover_red",
+		"bowling_enemy_hover_not_bash",
 		"hide_after_commit_run_icon_bash",
 		"hide_no_ability",
 		"show_awaiting_trample",
@@ -275,6 +277,14 @@ static func _test_bowling_enemy_hover_red_at_origin(failures: Array[String]) -> 
 	director.selected_ability_index = bowling_idx
 	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
 	_hover_sync(input, overlay, ENEMY_POS)
+	if input.awaiting_targeting_active():
+		failures.append(
+			"ActionRangeRegression bowling_enemy_hover_red: enemy hover preview must not require self-arm",
+		)
+	if not input.is_live_preview_active():
+		failures.append(
+			"ActionRangeRegression bowling_enemy_hover_red: live preview required on enemy hover",
+		)
 	var stand: Vector2i = input.action_range_intent_stand_cell(1)
 	if stand != KNIGHT_START:
 		failures.append(
@@ -296,13 +306,38 @@ static func _test_bowling_enemy_hover_red_at_origin(failures: Array[String]) -> 
 				% [tile, KNIGHT_START],
 			)
 			break
-	var route: Array[Vector2i] = CombatPlanningPreview.awaiting_movement_route_cells(
-		KNIGHT_START, ENEMY_POS, [], [], -1,
-	)
-	if route.size() < 2 or route[0] != KNIGHT_START or route[route.size() - 1] != ENEMY_POS:
+	var route: Array[Vector2i] = overlay.awaiting_movement_hover_route_cells()
+	if route.size() < 2:
 		failures.append(
-			"ActionRangeRegression bowling_enemy_hover_red: dash route %s must span origin to enemy"
+			"ActionRangeRegression bowling_enemy_hover_red: blue dash route must be drawable, got %s"
 			% str(route),
+		)
+	elif route[0] != KNIGHT_START or route[route.size() - 1] != ENEMY_POS:
+		failures.append(
+			"ActionRangeRegression bowling_enemy_hover_red: blue dash route must span origin to enemy, got %s"
+			% str(route),
+		)
+	var pushes: Array = input.preview_state.preview_pushes.get(fix.enemy.id, [])
+	if pushes.is_empty():
+		failures.append(
+			"ActionRangeRegression bowling_enemy_hover_red: orange push preview must show on enemy hover",
+		)
+
+
+static func _test_bowling_enemy_hover_not_bash_route(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	var bash_idx: int = PlanningQAGateTest._ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("ActionRangeRegression bowling_enemy_hover_not_bash: Shield Bash missing")
+		return
+	director.selected_ability_index = bash_idx
+	_hover_sync(input, overlay, ENEMY_POS)
+	if not overlay.awaiting_movement_hover_route_cells().is_empty():
+		failures.append(
+			"ActionRangeRegression bowling_enemy_hover_not_bash: bash enemy hover must not use awaiting dash route",
 		)
 
 
