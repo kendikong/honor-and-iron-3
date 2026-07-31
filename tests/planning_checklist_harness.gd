@@ -348,6 +348,56 @@ static func find_run_hover_tile(board: BoardState, unit: UnitState) -> Vector2i:
 	return Vector2i(-999999, -999999)
 
 
+static func find_painted_center_run_dest(
+	fix: Dictionary,
+	ap_left: int = 1,
+	mp_left: int = 1,
+	min_route_len: int = 3,
+) -> Dictionary:
+	var board: BoardState = fix.board
+	var unit: UnitState = fix.knight
+	var input: CombatPlanningInput = fix.input
+	const CENTER_MIN := 4
+	const CENTER_MAX := 7
+	var edge_run: Vector2i = find_run_hover_tile(board, unit)
+	for y: int in range(CENTER_MIN, CENTER_MAX + 1):
+		for x: int in range(CENTER_MIN, CENTER_MAX + 1):
+			var dest := Vector2i(x, y)
+			if dest == unit.position or dest == edge_run:
+				continue
+			var route: Array[Vector2i] = build_orthogonal_route(unit.position, dest)
+			if route.size() < min_route_len:
+				continue
+			set_knight_pools(fix, ap_left, mp_left)
+			flush_planning(fix)
+			fix.director.selected_ability_index = -1
+			TramplingAdvanceE2ETest._paint_drag_route(input, unit, route, dest)
+			hover(fix, dest)
+			var slots: Dictionary = slots_for_hover(fix, dest)
+			if _slots_invalid(slots):
+				continue
+			var pre: Array = slots.get("pre", []) as Array
+			if pre.is_empty() or not (pre[0] is TimelineAction):
+				continue
+			var step: TimelineAction = pre[0] as TimelineAction
+			if not step.uses_run or step.target_coord != dest:
+				continue
+			return {"dest": dest, "route": route, "slots": slots}
+	return {}
+
+
+static func build_orthogonal_route(origin: Vector2i, dest: Vector2i) -> Array[Vector2i]:
+	var route: Array[Vector2i] = [origin]
+	var cursor: Vector2i = origin
+	while cursor.x != dest.x:
+		cursor.x += 1 if dest.x > cursor.x else -1
+		route.append(cursor)
+	while cursor.y != dest.y:
+		cursor.y += 1 if dest.y > cursor.y else -1
+		route.append(cursor)
+	return route
+
+
 static func set_knight_pools(fix: Dictionary, ap_left: int, mp_left: int) -> void:
 	fix.knight.ability.points_left = ap_left
 	fix.knight.ability.max_points = maxi(ap_left, fix.knight.ability.max_points)
