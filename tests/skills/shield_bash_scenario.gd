@@ -250,7 +250,10 @@ static func _phase5_commit(failures: Array[String]) -> void:
 		"run-only commit must succeed",
 	)
 	var pre: Array = fix_run.director.plan_pre_move.entries
-	PlanningChecklistHarness.assert_true(failures, "bash/phase5/run_timeline", not pre.is_empty())
+	PlanningChecklistHarness.assert_true(
+		failures, "bash/phase5/run_timeline", not pre.is_empty(),
+		"run commit must queue pre-move",
+	)
 	if not pre.is_empty() and pre[0] is TimelineAction:
 		var step: TimelineAction = pre[0] as TimelineAction
 		PlanningChecklistHarness.assert_true(
@@ -311,4 +314,4 @@ static func _phase7_premove_then_bash(failures: Array[String]) -> void:
 		PlanningChecklistHarness.preview_unit_pos(fix, 1), PlanningChecklistHarness.BASH_APPROACH,
 	)
 	PlanningChecklistHarness.commit_production(fix, PlanningChecklistHarness.ENEMY_POS)
-	PlanningChecklistHarness.assert_sim_matches_preview(failures, "bash/phase7/sim_preview")
+	PlanningChecklistHarness.assert_sim_matches_preview(failures, "bash/phase7/sim_preview", fix)

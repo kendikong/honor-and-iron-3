@@ -16,11 +16,16 @@ func _initialize() -> void:
 	]
 	for suite: Dictionary in suites:
 		print("[SUITE] %s" % suite.name)
-		var runner: GDScript = load(suite.path as String) as GDScript
-		if runner == null:
-			failures.append("suite_load_failed:%s" % suite.path)
+		var path: String = suite.path as String
+		var script: GDScript = load(path) as GDScript
+		if script == null:
+			failures.append("suite_load_failed:%s" % path)
 			continue
-		runner.run_all(failures)
+		var run_callable := Callable(script, "run_all")
+		if not run_callable.is_valid():
+			failures.append("suite_run_all_invalid:%s" % path)
+			continue
+		run_callable.call(failures)
 	var report_path := "user://planning_qa_gate_result.txt"
 	var report := FileAccess.open(report_path, FileAccess.WRITE)
 	if report != null:

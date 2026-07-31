@@ -114,7 +114,10 @@ static func _phase5_commit(failures: Array[String]) -> void:
 		"trample drag commit must succeed",
 	)
 	var action: TimelineAction = TramplingAdvanceE2ETest._committed_trample_action(fix.director)
-	PlanningChecklistHarness.assert_true(failures, "trample/phase5/action", action != null)
+	PlanningChecklistHarness.assert_true(
+		failures, "trample/phase5/action", action != null,
+		"trample action must be committed",
+	)
 	if action != null:
 		PlanningChecklistHarness.assert_true(
 			failures, "trample/phase5/waypoints",
@@ -178,4 +181,7 @@ static func _phase7_premove_then_trample(failures: Array[String]) -> void:
 	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.unit, route, PlanningChecklistHarness.TRAMPLE_END)
 	TramplingAdvanceE2ETest._commit_drag_route(fix.input, fix.director, PlanningChecklistHarness.TRAMPLE_END)
 	var action: TimelineAction = TramplingAdvanceE2ETest._committed_trample_action(fix.director)
-	PlanningChecklistHarness.assert_true(failures, "trample/phase7/committed", action != null)
+	PlanningChecklistHarness.assert_true(
+		failures, "trample/phase7/committed", action != null,
+		"trample must remain committed after second drag",
+	)

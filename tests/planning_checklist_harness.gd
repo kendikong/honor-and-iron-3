@@ -90,8 +90,10 @@ static func slots_for_click(fix: Dictionary, cell: Vector2i) -> Dictionary:
 
 
 static func slots_for_hover(fix: Dictionary, cell: Vector2i) -> Dictionary:
+	var empty_wps: Array[Vector2i] = []
+	var empty_legal: Array[Vector2i] = []
 	return fix.input._final_commit_slots_for_interaction(
-		1, cell, [], [], Vector2i(-999999, -999999),
+		1, cell, empty_wps, empty_legal, Vector2i(-999999, -999999),
 	)
 
 
