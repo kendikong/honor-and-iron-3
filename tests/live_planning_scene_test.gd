@@ -48,6 +48,49 @@ func test_run_spends_ap_before_bowling_hover_has_no_live_red_range(timeout := 15
 	assert_bool(_overlay_has_red_tile(overlay, director.board)).is_false()
 
 
+func test_live_drag_preview_commits_then_right_click_undoes(timeout := 15000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	await runner.simulate_frames(8)
+	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
+	var shell: TacticalCombatShell = scene.get_node("CombatShell") as TacticalCombatShell
+	var director: CombatDirector = scene.get_node("CombatDirector") as CombatDirector
+	scene.get_session().reset_defaults()
+	scene.apply_training_board()
+	await runner.simulate_frames(4)
+	var player: UnitState = director.board.get_unit_by_id(1)
+	await _select_ability_by_id(runner, director, player, _RUN_ID)
+	await _move_pointer_to_cell(runner, scene, _START_CELL)
+	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	await runner.simulate_frames(2)
+	await _move_pointer_to_cell(runner, scene, _RUN_DESTINATION)
+	await runner.simulate_frames(3)
+	var preview_actor: UnitState = shell.planning_input.preview_state.preview_board.get_unit_by_id(1)
+	assert_that(preview_actor.position).is_equal(_RUN_DESTINATION)
+	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
+	await runner.simulate_frames(6, 20)
+	var committed_actor: UnitState = director.projected_state.get_unit_by_id(1)
+	assert_that(committed_actor.position).is_equal(_RUN_DESTINATION)
+	runner.simulate_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+	await runner.simulate_frames(4)
+	assert_int(director.plan_pre_move.entries.size()).is_equal(0)
+
+
+func test_scroll_wheel_changes_live_ability_selection(timeout := 15000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	await runner.simulate_frames(8)
+	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
+	var director: CombatDirector = scene.get_node("CombatDirector") as CombatDirector
+	scene.get_session().reset_defaults()
+	scene.apply_training_board()
+	await runner.simulate_frames(4)
+	var player: UnitState = director.board.get_unit_by_id(1)
+	await _select_ability_by_id(runner, director, player, _RUN_ID)
+	var before: int = director.selected_ability_index
+	runner.simulate_mouse_button_pressed(MOUSE_BUTTON_WHEEL_DOWN)
+	await runner.simulate_frames(6, 20)
+	assert_int(director.selected_ability_index).is_not_equal(before)
+
+
 func _select_ability_by_id(
 	runner: GdUnitSceneRunner,
 	director: CombatDirector,

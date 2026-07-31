@@ -52,6 +52,11 @@ The required first journey is:
 4. Assert displayed AP is 0, `action_range_visible_for_hover()` is false, and no live
    red action-range tile exists.
 
+The required companion journeys verify that a live drag preview position is exactly the
+committed projected position, real right-click input removes that committed pre-move,
+and real scroll-wheel input changes the selected ability after the production settle
+interval.
+
 Run Tier 3 alone:
 
 ```powershell
