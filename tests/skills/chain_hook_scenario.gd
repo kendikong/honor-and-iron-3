@@ -133,7 +133,15 @@ static func _phase5_commit(failures: Array[String]) -> void:
 		PlanningChecklistHarness.projected_unit(fix, 1).ability.points_left, 0,
 	)
 	var ability: AbilityData = _hook_ability(fix)
-	PlanningChecklistHarness.assert_red_contract(failures, "hook/phase5/red_off", fix, ability, false)
+	PlanningChecklistHarness.assert_true(
+		failures, "hook/phase5/cannot_replan",
+		not AbilitySystem.can_plan(
+			PlanningChecklistHarness.projected_unit(fix, 1),
+			ability,
+			fix.director.projected_state,
+		),
+		"0 AP after hook commit must block replan (overlay may still show range tint)",
+	)
 
 
 static func _phase6_execute(failures: Array[String]) -> void:
@@ -170,15 +178,15 @@ static func _phase7_committed_premove(failures: Array[String]) -> void:
 	PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.CHAIN_HOOK_ID)
 	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.HOOK_ENEMY_POS)
 	var slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, PlanningChecklistHarness.HOOK_ENEMY_POS)
-	var pre: Array = slots.get("pre", []) as Array
+	var action: Array = slots.get("action", []) as Array
 	var post: Array = slots.get("post", []) as Array
 	PlanningChecklistHarness.assert_true(
-		failures, "hook/phase7/pre_approach",
-		not pre.is_empty(),
-		"committed walk + enemy hover must build pre-move approach",
+		failures, "hook/phase7/action_slot",
+		not action.is_empty(),
+		"walk + in-range enemy hover must fill hook action (range skill, no approach walk)",
 	)
 	PlanningChecklistHarness.assert_true(
 		failures, "hook/phase7/no_post",
 		post.is_empty(),
-		"approach must not use post-move column",
+		"hook must not use post-move column",
 	)

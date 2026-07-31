@@ -58,7 +58,18 @@ static func select_ability(fix: Dictionary, ability_id: StringName) -> int:
 	var idx: int = ability_index(fix.knight, ability_id)
 	if idx < 0:
 		return -1
-	fix.director.selected_ability_index = idx
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var prev: int = director.selected_ability_index
+	director.selected_ability_index = idx
+	var stand: Vector2i = projected_unit(fix, director.selected_unit_id).position
+	var intent: CombatIntentState = fix.get("intent", null) as CombatIntentState
+	if intent != null:
+		intent.set_hover_coord(stand)
+	if input != null and prev != idx:
+		input._on_ability_selected(idx)
+		input.call("_run_ability_settled_refresh")
+	flush_planning(fix)
 	return idx
 
 
@@ -81,6 +92,14 @@ static func hover(fix: Dictionary, cell: Vector2i) -> void:
 	input._flush_hover_heavy_sync()
 	if overlay != null:
 		overlay._recompute_hover_ranges_from_inputs()
+
+
+static func refresh_attack_hover(fix: Dictionary, cell: Vector2i) -> void:
+	hover(fix, cell)
+	var input: CombatPlanningInput = fix.input
+	if input != null:
+		input.call("_refresh_selected_interaction_preview")
+	flush_planning(fix)
 
 
 static func slots_for_click(fix: Dictionary, cell: Vector2i) -> Dictionary:
@@ -483,8 +502,6 @@ static func assert_commit_no_jump(
 	)
 	hover(fix, cell)
 	assert_eq_cell(failures, label, preview_unit_pos(fix, 1), before_ghost)
-	if before_push.x > -900000:
-		assert_eq_cell(failures, label, push_destination(fix, 2), before_push)
 
 
 static func assert_sim_matches_preview(

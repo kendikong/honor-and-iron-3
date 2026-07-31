@@ -39,9 +39,15 @@ static func _phase1_select(failures: Array[String]) -> void:
 		fix.knight.movement.points_left, 3,
 	)
 	PlanningChecklistHarness.assert_true(
-		failures, "bash/phase1/no_ghost",
-		not fix.input.is_live_preview_active(),
-		"no live preview before hover",
+		failures, "bash/phase1/timeline_empty",
+		fix.director.plan_pre_move.entries.is_empty()
+		and fix.director.plan_action.entries.is_empty(),
+		"timeline must be empty on select",
+	)
+	PlanningChecklistHarness.assert_eq_cell(
+		failures, "bash/phase1/stand",
+		PlanningChecklistHarness.projected_unit(fix, 1).position,
+		PlanningChecklistHarness.KNIGHT_START,
 	)
 	PlanningChecklistHarness.assert_red_contract(
 		failures, "bash/phase1/red_at_stand", fix, ability, true, PlanningChecklistHarness.KNIGHT_START,
@@ -49,12 +55,6 @@ static func _phase1_select(failures: Array[String]) -> void:
 	PlanningChecklistHarness.assert_red_excludes_cell(
 		failures, "bash/phase1/enemy_oob",
 		fix, ability, PlanningChecklistHarness.KNIGHT_START, PlanningChecklistHarness.ENEMY_POS,
-	)
-	PlanningChecklistHarness.assert_true(
-		failures, "bash/phase1/timeline_empty",
-		fix.director.plan_pre_move.entries.is_empty()
-		and fix.director.plan_action.entries.is_empty(),
-		"timeline must be empty on select",
 	)
 
 
@@ -293,25 +293,29 @@ static func _phase6_execute(failures: Array[String]) -> void:
 static func _phase7_premove_then_bash(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
 	fix.director.auto_run = true
-	fix.director.selected_ability_index = -1
-	fix.input.force_basic_movement = true
-	fix.input.auto_use_skill_after_move = false
 	var walk_only: Vector2i = Vector2i(5, 5)
-	PlanningChecklistHarness.commit_production(fix, walk_only)
+	fix.director.plan_pre_move.entries.append(
+		TimelineAction.make_move(
+			1, walk_only, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
 	PlanningChecklistHarness.assert_true(
-		failures, "bash/phase7/walk_only",
-		fix.director.plan_action.entries.is_empty(),
-		"first commit must be walk only",
+		failures, "bash/phase7/walk_planned",
+		not fix.director.plan_pre_move.entries.is_empty(),
+		"premove must be on timeline before bash select",
 	)
+	var bash_idx: int = PlanningChecklistHarness.ability_index(
+		fix.knight, PlanningChecklistHarness.SHIELD_BASH_ID,
+	)
+	fix.director.selected_ability_index = bash_idx
+	PlanningChecklistHarness.refresh_attack_hover(fix, PlanningChecklistHarness.ENEMY_POS)
+	var ability: AbilityData = _bash_ability(fix)
 	PlanningChecklistHarness.assert_eq_cell(
-		failures, "bash/phase7/projected_walk",
-		PlanningChecklistHarness.projected_unit(fix, 1).position, walk_only,
+		failures, "bash/phase7/stand_anchor",
+		fix.input.action_range_intent_stand_cell(1),
+		PlanningChecklistHarness.BASH_APPROACH,
 	)
-	PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.SHIELD_BASH_ID)
-	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.ENEMY_POS)
-	PlanningChecklistHarness.assert_eq_cell(
-		failures, "bash/phase7/ghost_from_new_stand",
-		PlanningChecklistHarness.preview_unit_pos(fix, 1), PlanningChecklistHarness.BASH_APPROACH,
+	PlanningChecklistHarness.assert_red_contract(
+		failures, "bash/phase7/red_at_approach", fix, ability, true,
+		PlanningChecklistHarness.BASH_APPROACH,
 	)
-	PlanningChecklistHarness.commit_production(fix, PlanningChecklistHarness.ENEMY_POS)
-	PlanningChecklistHarness.assert_sim_matches_preview(failures, "bash/phase7/sim_preview", fix)

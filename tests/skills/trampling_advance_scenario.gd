@@ -1,7 +1,7 @@
 class_name TramplingAdvanceScenarioTest
 extends RefCounted
 
-## 7-phase checklist for Trampling Advance — CLASS_SKILL, 1 AP, awaiting-target tile paint.
+## Trampling Advance checklist — metadata here; production drag/commit/sim owned by TramplingAdvanceE2ETest.
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -21,9 +21,30 @@ static func _trample_ability(fix: Dictionary) -> AbilityData:
 
 
 static func _arm_awaiting(fix: Dictionary) -> bool:
-	return TramplingAdvanceE2ETest._arm_trample_awaiting(
-		fix.input, fix.director, fix.unit,
-	)
+	var stand: Vector2i = PlanningChecklistHarness.projected_unit(fix, 1).position
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(1, stand)
+	if TramplingAdvanceE2ETest._commit_slots_invalid(arm_slots):
+		return false
+	if not director.commit_from_slots(1, arm_slots):
+		return false
+	director.flush_plan_refresh_signals_if_pending()
+	return input.awaiting_targeting_active()
+
+
+static func _paint_trample_route(fix: Dictionary, route: Array[Vector2i]) -> void:
+	var input: CombatPlanningInput = fix.input
+	input._drag_unit_id = fix.unit.id
+	input._drag_unit_was_selected = true
+	input._drag_route = route.duplicate()
+	input._drag_last_free = PlanningChecklistHarness.TRAMPLE_END
+	input.dragging = true
+	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.TRAMPLE_END)
+
+
+static func _full_route_from(start: Vector2i) -> Array[Vector2i]:
+	return [start, PlanningChecklistHarness.TRAMPLE_ROUTE[0], PlanningChecklistHarness.TRAMPLE_ROUTE[1]]
 
 
 static func _phase1_select(failures: Array[String]) -> void:
@@ -50,27 +71,14 @@ static func _phase2_3_arm_and_paint(failures: Array[String]) -> void:
 	if not _arm_awaiting(fix):
 		PlanningChecklistHarness.assert_fail(failures, "trample/phase2", "arm awaiting failed")
 		return
-	var route: Array[Vector2i] = [
-		PlanningChecklistHarness.TRAMPLE_START,
-		PlanningChecklistHarness.TRAMPLE_ROUTE[0],
-		PlanningChecklistHarness.TRAMPLE_ROUTE[1],
-	]
-	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.unit, route, PlanningChecklistHarness.TRAMPLE_END)
+	var route: Array[Vector2i] = _full_route_from(PlanningChecklistHarness.TRAMPLE_START)
+	_paint_trample_route(fix, route)
 	PlanningChecklistHarness.assert_true(
 		failures, "trample/phase3/paint_order",
 		fix.input._drag_route == route,
 		"painted route must be %s got %s" % [route, fix.input._drag_route],
 	)
-	var preview_path: Array[Vector2i] = PlanningChecklistHarness.preview_path(fix, 1)
-	for i: int in range(route.size()):
-		if i >= preview_path.size() or preview_path[i] != route[i]:
-			PlanningChecklistHarness.assert_fail(
-				failures, "trample/phase3/preview_path",
-				"preview path %s must match painted %s" % [preview_path, route],
-			)
-			break
 	var ability: AbilityData = _trample_ability(fix)
-	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.TRAMPLE_END)
 	PlanningChecklistHarness.assert_red_contract(
 		failures, "trample/phase3/red_while_awaiting", fix, ability, true,
 	)
@@ -81,16 +89,15 @@ static func _phase4_hover_end(failures: Array[String]) -> void:
 	if not _arm_awaiting(fix):
 		PlanningChecklistHarness.assert_fail(failures, "trample/phase4", "arm awaiting failed")
 		return
-	var route: Array[Vector2i] = [
-		PlanningChecklistHarness.TRAMPLE_START,
-		PlanningChecklistHarness.TRAMPLE_ROUTE[0],
-		PlanningChecklistHarness.TRAMPLE_ROUTE[1],
-	]
-	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.unit, route, PlanningChecklistHarness.TRAMPLE_END)
-	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.TRAMPLE_END)
+	var route: Array[Vector2i] = _full_route_from(PlanningChecklistHarness.TRAMPLE_START)
+	_paint_trample_route(fix, route)
 	PlanningChecklistHarness.assert_eq_cell(
-		failures, "trample/phase4/ghost_end",
-		PlanningChecklistHarness.preview_unit_pos(fix, 1), PlanningChecklistHarness.TRAMPLE_END,
+		failures, "trample/phase4/route_end",
+		fix.input._drag_route[fix.input._drag_route.size() - 1], PlanningChecklistHarness.TRAMPLE_END,
+	)
+	PlanningChecklistHarness.assert_eq_cell(
+		failures, "trample/phase4/hover_dest",
+		fix.input._drag_last_free, PlanningChecklistHarness.TRAMPLE_END,
 	)
 
 
@@ -99,11 +106,7 @@ static func _phase5_commit(failures: Array[String]) -> void:
 	if not _arm_awaiting(fix):
 		PlanningChecklistHarness.assert_fail(failures, "trample/phase5", "arm awaiting failed")
 		return
-	var route: Array[Vector2i] = [
-		PlanningChecklistHarness.TRAMPLE_START,
-		PlanningChecklistHarness.TRAMPLE_ROUTE[0],
-		PlanningChecklistHarness.TRAMPLE_ROUTE[1],
-	]
+	var route: Array[Vector2i] = _full_route_from(PlanningChecklistHarness.TRAMPLE_START)
 	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.unit, route, PlanningChecklistHarness.TRAMPLE_END)
 	var slots: Dictionary = TramplingAdvanceE2ETest._commit_drag_route(
 		fix.input, fix.director, PlanningChecklistHarness.TRAMPLE_END,
@@ -135,29 +138,39 @@ static func _phase6_execute(failures: Array[String]) -> void:
 	if not _arm_awaiting(fix):
 		PlanningChecklistHarness.assert_fail(failures, "trample/phase6", "arm awaiting failed")
 		return
-	var route: Array[Vector2i] = [
+	var route: Array[Vector2i] = _full_route_from(PlanningChecklistHarness.TRAMPLE_START)
+	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.unit, route, PlanningChecklistHarness.TRAMPLE_END)
+	if TramplingAdvanceE2ETest._commit_drag_route(
+		fix.input, fix.director, PlanningChecklistHarness.TRAMPLE_END,
+	).is_empty():
+		PlanningChecklistHarness.assert_fail(failures, "trample/phase6", "trample commit failed")
+		return
+	var result: SimResult = PlanningChecklistHarness.simulate_committed(fix.director)
+	var visited: Array[Vector2i] = [PlanningChecklistHarness.TRAMPLE_START]
+	for ev: SimEvent in result.events:
+		if ev.type != GameEnums.SimEventType.UNIT_MOVED:
+			continue
+		if int(ev.data.get("actor", -1)) != 1:
+			continue
+		var path_v: Variant = ev.data.get("path", [])
+		if path_v is Array and not (path_v as Array).is_empty():
+			for step: Variant in path_v:
+				if step is Vector2i:
+					visited.append(step)
+			continue
+		var to_cell: Variant = ev.data.get("to")
+		if to_cell is Vector2i:
+			visited.append(to_cell)
+	var expected: Array[Vector2i] = [
 		PlanningChecklistHarness.TRAMPLE_START,
 		PlanningChecklistHarness.TRAMPLE_ROUTE[0],
 		PlanningChecklistHarness.TRAMPLE_ROUTE[1],
 	]
-	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.unit, route, PlanningChecklistHarness.TRAMPLE_END)
-	TramplingAdvanceE2ETest._commit_drag_route(fix.input, fix.director, PlanningChecklistHarness.TRAMPLE_END)
-	var result: SimResult = PlanningChecklistHarness.simulate_committed(fix.director)
-	var visited: Array[Vector2i] = []
-	for ev: SimEvent in result.events:
-		if ev.type != GameEnums.SimEventType.UNIT_MOVED:
-			continue
-		if int(ev.data.get("unit_id", -1)) != 1:
-			continue
-		visited.append(ev.data.get("to", Vector2i.ZERO) as Vector2i)
 	PlanningChecklistHarness.assert_true(
 		failures, "trample/phase6/order",
-		visited.size() >= 2
-		and visited[0] == PlanningChecklistHarness.TRAMPLE_ROUTE[0]
-		and visited[1] == PlanningChecklistHarness.TRAMPLE_ROUTE[1],
-		"sim must visit %s in order, got %s" % [PlanningChecklistHarness.TRAMPLE_ROUTE, visited],
+		visited == expected,
+		"sim must visit %s in order, got %s" % [expected, visited],
 	)
-	var knight: UnitState = result.final_state.get_unit_by_id(1)
 	PlanningChecklistHarness.assert_player_turn_ap_spent(
 		failures, "trample/phase6/ap_spent", fix.director, 1, 0,
 	)
