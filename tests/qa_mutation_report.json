@@ -3,7 +3,7 @@
         "Mutation":  "1_red_always_visible",
         "Coverage":  null,
         "Exit":  1,
-        "FailCount":  28,
+        "FailCount":  60,
         "Expected":  "CAUGHT",
         "Sample":  "[FAIL] bash/phase2/red_off_run: visibility gate expected false got true | [FAIL] bash/phase2/red_off_run: overlay red expected false got true | [FAIL] bash/phase5/red_off_0ap: visibility gate expected false got true"
     },
@@ -75,7 +75,7 @@
         "Mutation":  "10_no_blue_tiles",
         "Coverage":  "blue move tiles, scenario phase1, drag walk, MP budget",
         "Exit":  1,
-        "FailCount":  31,
+        "FailCount":  34,
         "Expected":  "CAUGHT",
         "Sample":  "[FAIL] bash/phase2/ghost_walk: expected (5, 5) got (4, 5) | [FAIL] bash/phase2/path_walk: path must be (4, 5) -\u003e (5, 5), got [] | [FAIL] bash/phase2/cursor_walk: cursor must contain 👟, got ∅"
     },
@@ -107,7 +107,7 @@
         "Mutation":  "14_walk_sim_wrong_dest",
         "Coverage":  "walk/trample sim, click_drop_commit_sim, committed_walk_preview_matches_sim",
         "Exit":  1,
-        "FailCount":  66,
+        "FailCount":  67,
         "Expected":  "CAUGHT",
         "Sample":  "[FAIL] bash/phase2/ghost_walk: expected (5, 5) got (4, 5) | [FAIL] bash/phase2/red_walk: expected (5, 5) got (4, 5) | [FAIL] bash/phase2/red_off_run: visibility gate expected false got true"
     },
@@ -139,7 +139,7 @@
         "Mutation":  "18_run_never_required",
         "Coverage":  "run_economy scenario, action_range_auto_run_ap_gate, planning_display_ap_run",
         "Exit":  1,
-        "FailCount":  14,
+        "FailCount":  18,
         "Expected":  "CAUGHT",
         "Sample":  "[FAIL] bash/phase2: no run tile in fixture | [FAIL] bash/phase5/run: no run tile | [FAIL] run_economy/run_hover: no run tile"
     },
@@ -179,8 +179,8 @@
         "Mutation":  "23_committed_run_reclassified_as_walk",
         "Coverage":  "intent_contract/bowling_run, committed run timeline AP projection",
         "Exit":  1,
-        "FailCount":  2,
+        "FailCount":  1,
         "Expected":  "CAUGHT",
-        "Sample":  "[FAIL] ActionRangeRegression hide_committed_run_timeline_bowling: visibility gate expected false got true (hover (3, 6) stand (3, 6)) | [FAIL] ActionRangeRegression hide_committed_run_timeline_bowling: overlay red tiles expected false got true (hover (3, 6))"
+        "Sample":  "[FAIL] intent_contract/pre_run_binding_closed_timing/forced_run_economy: expected 0 got -1"
     }
 ]

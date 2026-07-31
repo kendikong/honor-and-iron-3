@@ -435,6 +435,15 @@ static func _test_pre_run_binding_when_move_timing_closed(failures: Array[String
 		binding != null and binding.uses_run and binding.target_coord == RUN_DEST,
 		"binding must still find pre-run on timeline (got %s)" % binding,
 	)
+	var forced_run_projection: UnitState = AbilitySystem.project_actor_after_premove(
+		fix.board, fix.knight, RUN_DEST, true, true,
+	)
+	PlanningChecklistHarness.assert_eq_int(
+		failures,
+		"intent_contract/pre_run_binding_closed_timing/forced_run_economy",
+		forced_run_projection.ability.points_left if forced_run_projection != null else -1,
+		0,
+	)
 	var bowling_index: int = PlanningChecklistHarness.select_ability(
 		fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
 	)
