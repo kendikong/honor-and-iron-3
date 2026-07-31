@@ -202,8 +202,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.TRAMPLE, 2),
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
 	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
-	trampling_advance.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
-	trampling_advance.movement_point_cost = 2
 	trampling_advance.targeting_flags = GameEnums.TargetingFlags.TILE
 	trampling_advance.presentation_anim = GameEnums.PresentationAnim.RUN
 	trampling_advance.upgrade_description = ""

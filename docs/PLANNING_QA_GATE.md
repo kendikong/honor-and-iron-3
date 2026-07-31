@@ -21,13 +21,14 @@ Layer A must pass. Layer B is still required for pixel/animation/FPS.
 
 | Suite | Script | What it catches |
 |-------|--------|-----------------|
+| **Skill scenarios (checklist)** | `tests/planning_skill_scenarios_test.gd` | **7-phase owner checklist** per skill: blue/red, preview, cursor, slots, economy, sim — production commit path |
 | **Drag E2E** | `tests/planning_drag_e2e_test.gd` | Production path: `_begin_drag` → `update_drag` → `on_left_release` → `board_changed` → undo |
 | **Planning input** | `tests/planning_input_test.gd` | Cursor/slots parity, drop route, undo, awaiting refresh |
 | **Trample E2E** | `tests/trampling_advance_e2e_test.gd` | Painted waypoint order through commit + sim |
 | **Action-range regression** | `tests/action_range_regression_test.gd` | Red tile visibility + overlay parity |
 | **Checklist mirror** | `tests/planning_qa_gate_test.gd` | Manual Skill Arena checklist APIs (slots, sim, click/drop parity) |
 
-**Coverage honesty:** Most skill rows in the gate are **partial** — they check slots, preview, or sim slices, not all 7 phases with blue+red+preview at every step. Full per-skill phase coverage is defined in [PLANNING_SKILL_QA_CHECKLIST.md](PLANNING_SKILL_QA_CHECKLIST.md).
+**Coverage honesty:** Skill scenarios (`tests/skills/*_scenario.gd`) are the **canonical checklist contract** — phases 1–7 with overlay + preview + slots + sim. The `planning_qa_gate_test.gd` mirror adds regression slices; slot-only rows alone are not sufficient.
 
 **Training Arena defaults:** Knight **1 AP / 3 MP** (`knight_factory` `action_points = 1`, `move_points = 3`). All knight class skills: **`action_point_cost = 1`** in `knight_factory.gd`. Headless `_planning_fixture` matches F5. Slot-only tests (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
 

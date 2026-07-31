@@ -60,8 +60,8 @@ static func _knight_fixture(start: Vector2i) -> Dictionary:
 	var unit: UnitState = UnitState.create(1, knight_def, GameEnums.Team.PLAYER, start)
 	unit.active_abilities = DataLibrary.build_training_abilities(knight_def)
 	unit.movement.points_left = unit.movement.max_points
-	unit.ability.points_left = 3
-	unit.ability.max_points = 3
+	unit.ability.points_left = 1
+	unit.ability.max_points = 1
 	board.units = [unit]
 	GridSystem.set_occupant(board, unit.position, unit.id)
 	director.board = board

@@ -585,10 +585,10 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 
 | Skill | Phases with **automated** row-by-row coverage | Still manual / gap |
 |-------|-----------------------------------------------|-------------------|
-| Shield Bash | Pieces in `bash_*`, `action_range_*`, `hide_after_commit_run_icon_bash` | Full phases 1–7 in one scenario |
-| Chain Hook | `hook_*`, commit sim | Phases 1–3 tiles/preview |
-| Trample | `trample_*` E2E | Phase 1–2 select/hover tiles |
-| Run + 0 AP bash | `hide_after_commit_run_icon_bash` | — |
+| Shield Bash | `tests/skills/shield_bash_scenario.gd` | Phases 1–7 (full) |
+| Chain Hook | `tests/skills/chain_hook_scenario.gd` | Phases 1–7 (full) |
+| Trample | `tests/skills/trampling_advance_scenario.gd` | Phases 1–7 (full) |
+| Run + 0 AP | `tests/skills/run_economy_scenario.gd` + `hide_after_commit_run_icon_bash` | Run economy + F5 commit path |
 
 **Target:** `tests/skills/shield_bash_scenario.gd` snapshots **every table row** above at each phase.
 
@@ -626,7 +626,7 @@ Each skill needs a **scenario test** that steps through phases 1–7 and snapsho
 - Commit slots (phase 5)  
 - Sim result (phase 6)  
 
-**Template skill:** Shield Bash first (`tests/skills/shield_bash_scenario.gd` — not yet implemented).
+**Template skill:** Shield Bash (`tests/skills/shield_bash_scenario.gd`). Add new skills by copying that file + registering in `planning_skill_scenarios_test.gd`.
 
 Until that exists, use this document for manual sign-off and treat “partial” rows above as regression risk.
 
