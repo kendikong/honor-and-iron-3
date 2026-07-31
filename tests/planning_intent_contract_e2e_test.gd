@@ -8,6 +8,8 @@ extends RefCounted
 static func run_all(failures: Array[String]) -> void:
 	_test_bowling_run_click_hides_red_across_refreshes(failures)
 	_test_bowling_waypoint_run_center_hides_red(failures)
+	_test_painted_run_preview_interior_walk_hides_red(failures)
+	_test_committed_run_center_blue_hover_hides_red(failures)
 	_test_simulation_validator_rejects_invalid_timeline_action(failures)
 
 
@@ -176,6 +178,215 @@ static func _test_bowling_waypoint_run_center_hides_red(failures: Array[String])
 	_assert_red_stays_hidden_after_refresh(
 		failures, fix, input, bowling, PlanningChecklistHarness.ENEMY_POS, "enemy",
 		"intent_contract/bowling_waypoint_run",
+	)
+
+
+## Painted waypoint Run in live preview (not committed): Bowling selected, hover interior
+## walk tile in the start diamond — red must stay off (AP consumed by queued Run intent).
+static func _test_painted_run_preview_interior_walk_hides_red(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	director.auto_run = true
+	input.auto_use_skill_after_move = false
+	director.selected_ability_index = -1
+	var painted: Dictionary = PlanningChecklistHarness.find_painted_center_run_dest(fix, 1, 1)
+	if painted.is_empty():
+		painted = PlanningChecklistHarness.find_painted_center_run_dest(fix, 1, 0)
+	if painted.is_empty():
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"intent_contract/painted_run_preview",
+			"no painted center Run destination",
+		)
+		return
+	var run_dest: Vector2i = painted.dest as Vector2i
+	var route: Array[Vector2i] = painted.route as Array[Vector2i]
+	var drop_slots: Dictionary = painted.slots as Dictionary
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/painted_run_preview/slots",
+		not PlanningChecklistHarness._slots_invalid(drop_slots),
+		"finder must yield valid Run slots at %s" % run_dest,
+	)
+	TramplingAdvanceE2ETest._paint_drag_route(input, fix.knight, route, run_dest)
+	PlanningChecklistHarness.hover(fix, run_dest)
+	var bowling_index: int = PlanningChecklistHarness.select_ability(
+		fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
+	)
+	if bowling_index < 0:
+		PlanningChecklistHarness.assert_fail(
+			failures, "intent_contract/painted_run_preview", "Bowling Charge missing",
+		)
+		return
+	var bowling: AbilityData = fix.knight.active_abilities[bowling_index]
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/painted_run_preview/drag",
+		input.dragging and input._drag_route.size() >= 2,
+		"painted Run route must stay active on drag before release",
+	)
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/painted_run_preview/queued_run",
+		input.call("_queued_run_action_for_action_range", 1) != null,
+		"painted drag must expose queued Run for action-range economy",
+	)
+	var drag_tiles: Array[Vector2i] = PlanningChecklistHarness.collect_drag_hover_tiles(fix)
+	var walk_diamond: Array[Vector2i] = PlanningChecklistHarness.walk_diamond_from(
+		fix.board, PlanningChecklistHarness.KNIGHT_START, fix.knight.movement.max_points,
+	)
+	var hover_cells: Array[Vector2i] = drag_tiles if drag_tiles.size() >= 3 else walk_diamond
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/painted_run_preview/hover_cells",
+		hover_cells.size() >= 3,
+		"need hover sweep cells during painted Run drag, count=%d" % hover_cells.size(),
+	)
+	var interior: Vector2i = PlanningChecklistHarness.blue_tile_near_stand(
+		hover_cells, run_dest, false,
+	)
+	var edge: Vector2i = PlanningChecklistHarness.blue_tile_near_stand(
+		hover_cells, run_dest, true,
+	)
+	PlanningChecklistHarness.assert_red_off_at_hover(
+		failures,
+		"intent_contract/painted_run_preview/red_off_interior_walk",
+		fix,
+		bowling,
+		interior,
+	)
+	PlanningChecklistHarness.assert_red_off_at_hover(
+		failures,
+		"intent_contract/painted_run_preview/red_off_edge_walk",
+		fix,
+		bowling,
+		edge,
+	)
+	var red_hovers: Array[Vector2i] = PlanningChecklistHarness.collect_red_visible_hovers(
+		fix, hover_cells,
+	)
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/painted_run_preview/no_red_on_drag_hovers",
+		red_hovers.is_empty(),
+		"queued Run drag: red must stay off on hover sweep, on=%s" % [red_hovers],
+	)
+
+
+## F5 screenshot parity: committed Run to (3,4) through waypoint (4,4), Bowling selected,
+## 0 AP — red must stay off when hovering interior blue tiles (not only map edge).
+static func _test_committed_run_center_blue_hover_hides_red(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	director.auto_run = true
+	input.auto_use_skill_after_move = false
+	director.selected_ability_index = -1
+	const SCREENSHOT_DEST := Vector2i(3, 4)
+	var painted: Dictionary = PlanningChecklistHarness.try_painted_run_to_dest(
+		fix, SCREENSHOT_DEST, 1, 0,
+	)
+	if painted.is_empty():
+		painted = PlanningChecklistHarness.find_painted_center_run_dest(fix, 1, 0)
+	if painted.is_empty():
+		painted = PlanningChecklistHarness.find_painted_center_run_dest(fix, 1, 1)
+	if painted.is_empty():
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"intent_contract/committed_run_center",
+			"no painted center Run destination (mp=0 or mp=1)",
+		)
+		return
+	var run_dest: Vector2i = painted.dest as Vector2i
+	var drop_slots: Dictionary = painted.slots as Dictionary
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/committed_run_center/commit",
+		PlanningChecklistHarness.commit_slots_production(fix, drop_slots),
+		"painted center hover commit must succeed for %s" % run_dest,
+	)
+	input.call("_promote_intent_preview_after_commit")
+	PlanningChecklistHarness.flush_planning(fix)
+	var pre_moves: Array = director.plan_pre_move.entries
+	if pre_moves.is_empty() or not (pre_moves[0] is TimelineAction):
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"intent_contract/committed_run_center/timeline",
+			"timeline must contain Run pre-move",
+		)
+		return
+	var run: TimelineAction = pre_moves[0] as TimelineAction
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/committed_run_center/timeline",
+		run.uses_run and run.target_coord == run_dest,
+		"timeline must be Run to %s (got %s)" % [run_dest, run],
+	)
+	var projected: UnitState = PlanningChecklistHarness.projected_unit(fix, 1)
+	PlanningChecklistHarness.assert_eq_int(
+		failures,
+		"intent_contract/committed_run_center/ap",
+		projected.ability.points_left if projected != null else -1,
+		0,
+	)
+	var bowling_index: int = PlanningChecklistHarness.select_ability(
+		fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
+	)
+	if bowling_index < 0:
+		PlanningChecklistHarness.assert_fail(
+			failures, "intent_contract/committed_run_center", "Bowling Charge missing",
+		)
+		return
+	var bowling: AbilityData = fix.knight.active_abilities[bowling_index]
+	PlanningChecklistHarness.assert_red_off_at_hover(
+		failures, "intent_contract/committed_run_center/red_off_dest", fix, bowling, run_dest,
+	)
+	var walk_mp: int = fix.knight.movement.max_points
+	var walk_diamond: Array[Vector2i] = PlanningChecklistHarness.walk_diamond_from(
+		fix.board, PlanningChecklistHarness.KNIGHT_START, walk_mp,
+	)
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/committed_run_center/walk_diamond",
+		walk_diamond.size() >= 3,
+		"need walk diamond tiles from start, count=%d" % walk_diamond.size(),
+	)
+	var center_hover: Vector2i = PlanningChecklistHarness.blue_tile_near_stand(
+		walk_diamond, run_dest, false,
+	)
+	var edge_hover: Vector2i = PlanningChecklistHarness.blue_tile_near_stand(
+		walk_diamond, run_dest, true,
+	)
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/committed_run_center/walk_diamond",
+		center_hover.x > -900000 and edge_hover.x > -900000 and center_hover != edge_hover,
+		"need distinct interior and edge walk hovers (center=%s edge=%s)"
+		% [center_hover, edge_hover],
+	)
+	PlanningChecklistHarness.assert_red_off_at_hover(
+		failures,
+		"intent_contract/committed_run_center/red_off_interior_walk",
+		fix,
+		bowling,
+		center_hover,
+	)
+	PlanningChecklistHarness.assert_red_off_at_hover(
+		failures,
+		"intent_contract/committed_run_center/red_off_edge_walk",
+		fix,
+		bowling,
+		edge_hover,
+	)
+	var red_hovers: Array[Vector2i] = PlanningChecklistHarness.collect_red_visible_hovers(
+		fix, walk_diamond,
+	)
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/committed_run_center/no_red_on_walk_diamond",
+		red_hovers.is_empty(),
+		"0 AP after Run commit: red must stay off on all walk-diamond hovers, on=%s" % [red_hovers],
 	)
 
 

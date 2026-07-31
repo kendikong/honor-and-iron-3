@@ -31,6 +31,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_hide_red_after_commit_run_icon_shield_bash,
 		_test_hide_red_after_commit_run_icon_bowling,
 		_test_hide_red_committed_run_timeline_bowling,
+		_test_hide_red_committed_run_interior_hover_bowling,
 		_test_hide_no_ability_selected,
 		_test_show_awaiting_trample,
 		_test_hover_step_updates_stand_and_red_tiles,
@@ -48,6 +49,7 @@ static func run_all(failures: Array[String]) -> void:
 		"hide_after_commit_run_icon_bash",
 		"hide_after_commit_run_icon_bowling",
 		"hide_committed_run_timeline_bowling",
+		"hide_committed_run_interior_hover_bowling",
 		"hide_no_ability",
 		"show_awaiting_trample",
 		"hover_step_updates_stand",
@@ -678,6 +680,41 @@ static func _test_hide_red_committed_run_timeline_bowling(failures: Array[String
 		overlay,
 		input,
 		RUN_DEST,
+		ability,
+		false,
+	)
+
+
+static func _test_hide_red_committed_run_interior_hover_bowling(failures: Array[String]) -> void:
+	const RUN_DEST := Vector2i(3, 4)
+	const INTERIOR_HOVER := Vector2i(4, 4)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.auto_run = true
+	fix.knight.ability.points_left = 1
+	fix.knight.movement.points_left = 0
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_run_move(
+			1, RUN_DEST, -1, [INTERIOR_HOVER], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append(
+			"ActionRangeRegression hide_committed_run_interior_hover_bowling: Bowling Charge missing",
+		)
+		return
+	director.selected_ability_index = bowling_idx
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
+	_assert_contract(
+		failures,
+		"hide_committed_run_interior_hover_bowling",
+		fix,
+		overlay,
+		input,
+		INTERIOR_HOVER,
 		ability,
 		false,
 	)

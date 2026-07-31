@@ -2317,6 +2317,68 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	return projected
 
 
+## Timeline or painted-drag Run that must gate action-range economy (AP), regardless of hover stand.
+func _queued_run_action_for_action_range(unit_id: int) -> TimelineAction:
+	if _director == null or unit_id < 0:
+		return null
+	for timing: int in [GameEnums.MoveTiming.PRE_ACTION, GameEnums.MoveTiming.POST_ACTION]:
+		var plan: Timeline = (
+			_director.plan_pre_move
+			if timing == GameEnums.MoveTiming.PRE_ACTION
+			else _director.plan_post_move
+		)
+		var step: TimelineAction = CombatPlanningPreview.committed_move_action(
+			plan, unit_id, timing,
+		)
+		if step != null and step.uses_run:
+			return step
+	if dragging and _drag_unit_id == unit_id and _drag_route_commits_active():
+		var dest: Vector2i = _drag_route[_drag_route.size() - 1]
+		var actor: UnitState = _proj_unit(unit_id)
+		if actor == null:
+			actor = _director.board.get_unit_by_id(unit_id)
+		if actor == null:
+			return null
+		var params: Dictionary = _commit_interaction_params(dest, -1)
+		var slots: Dictionary = _final_commit_slots_for_interaction(
+			unit_id,
+			params.cell as Vector2i,
+			params.waypoints as Array[Vector2i],
+			params.legal_move_tiles as Array[Vector2i],
+			params.preferred as Vector2i,
+			params.face_dir as int,
+		)
+		var pre_moves: Array = slots.get("pre", []) as Array
+		if not pre_moves.is_empty() and pre_moves[0] is TimelineAction:
+			var painted: TimelineAction = pre_moves[0] as TimelineAction
+			if painted.uses_run:
+				return painted
+		var waypoints: Array[Vector2i] = _route_waypoints()
+		if AbilitySystem.movement_requires_run(_proj(), actor, dest, waypoints):
+			return TimelineAction.make_run_move(
+				unit_id, dest, -1, waypoints, GameEnums.MoveTiming.PRE_ACTION,
+			)
+	return null
+
+
+func _action_range_actor_after_queued_run(unit_id: int) -> UnitState:
+	var run_action: TimelineAction = _queued_run_action_for_action_range(unit_id)
+	if run_action == null:
+		return null
+	var origin: UnitState = _proj_unit(unit_id)
+	if origin == null:
+		origin = _director.board.get_unit_by_id(unit_id)
+	if origin == null:
+		return null
+	return AbilitySystem.project_actor_after_premove(
+		_proj(),
+		origin,
+		run_action.target_coord,
+		auto_run_movement_active(origin),
+		true,
+	)
+
+
 ## Red tiles follow cursor stand; hide only when selected skill is impossible after that premove.
 func action_range_visible_for_hover() -> bool:
 	if _director == null or _director.selected_unit_id < 0 or _director.board == null:
@@ -2330,6 +2392,9 @@ func action_range_visible_for_hover() -> bool:
 	var ability: AbilityData = _selected_ability_data(committed)
 	if ability == null or AbilitySystem.is_run_ability(ability) or AbilitySystem.is_wait_ability(ability):
 		return false
+	var after_run: UnitState = _action_range_actor_after_queued_run(unit_id)
+	if after_run != null:
+		return AbilitySystem.can_plan(after_run, ability, _proj())
 	var move_timing: int = _director.get_planning_move_timing(unit_id)
 	var has_committed_move: bool = (
 		move_timing >= 0

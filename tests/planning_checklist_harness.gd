@@ -328,6 +328,125 @@ static func collect_blue_tiles(fix: Dictionary) -> Array[Vector2i]:
 	return out
 
 
+static func walk_diamond_from(
+	board: BoardState,
+	origin: Vector2i,
+	mp_budget: int,
+) -> Array[Vector2i]:
+	var mt: int = GameEnums.MovementType.WALK
+	return MovementSystem.get_reachable_tiles(board, origin, mp_budget, mt)
+
+
+static func collect_drag_hover_tiles(fix: Dictionary) -> Array[Vector2i]:
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	if overlay != null:
+		overlay._recompute_hover_ranges_from_inputs()
+	return input._snapshot_drag_legal_move_tiles()
+
+
+static func collect_red_visible_hovers(
+	fix: Dictionary,
+	cells: Array[Vector2i],
+) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var input: CombatPlanningInput = fix.input
+	for cell: Vector2i in cells:
+		hover(fix, cell)
+		input.call("_run_ability_settled_refresh")
+		flush_planning(fix)
+		if input.action_range_visible_for_hover():
+			out.append(cell)
+	return out
+
+
+static func collect_cells_where_hover_stand_matches(
+	fix: Dictionary,
+	cells: Array[Vector2i],
+) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var input: CombatPlanningInput = fix.input
+	for cell: Vector2i in cells:
+		hover(fix, cell)
+		input.call("_run_ability_settled_refresh")
+		flush_planning(fix)
+		if input.action_range_intent_stand_cell(1) == cell:
+			out.append(cell)
+	return out
+
+
+static func blue_tile_near_stand(
+	blue_tiles: Array[Vector2i],
+	stand: Vector2i,
+	prefer_far: bool = false,
+) -> Vector2i:
+	var best: Vector2i = Vector2i(-999999, -999999)
+	var best_dist: int = -1 if prefer_far else 999999
+	for tile: Vector2i in blue_tiles:
+		if tile == stand:
+			continue
+		var dist: int = GridSystem.manhattan(stand, tile)
+		if prefer_far:
+			if dist > best_dist:
+				best_dist = dist
+				best = tile
+		elif dist < best_dist:
+			best_dist = dist
+			best = tile
+	return best
+
+
+static func slots_for_painted_hover(fix: Dictionary, dest: Vector2i) -> Dictionary:
+	var input: CombatPlanningInput = fix.input
+	var params: Dictionary = input._commit_interaction_params(dest, -1)
+	return input._final_commit_slots_for_interaction(
+		1,
+		params.cell as Vector2i,
+		params.waypoints as Array[Vector2i],
+		params.legal_move_tiles as Array[Vector2i],
+		params.preferred as Vector2i,
+		params.face_dir as int,
+	)
+
+
+static func commit_painted_run_route(
+	fix: Dictionary,
+	route: Array[Vector2i],
+	dest: Vector2i,
+	ap_left: int = 1,
+	mp_left: int = 0,
+) -> bool:
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	director.auto_run = true
+	input.auto_use_skill_after_move = false
+	director.selected_ability_index = -1
+	set_knight_pools(fix, ap_left, mp_left)
+	TramplingAdvanceE2ETest._paint_drag_route(input, fix.knight, route, dest)
+	hover(fix, dest)
+	var slots: Dictionary = slots_for_painted_hover(fix, dest)
+	if _slots_invalid(slots):
+		return false
+	if not commit_slots_production(fix, slots):
+		return false
+	input.call("_promote_intent_preview_after_commit")
+	flush_planning(fix)
+	return true
+
+
+static func assert_red_off_at_hover(
+	failures: Array[String],
+	label: String,
+	fix: Dictionary,
+	ability: AbilityData,
+	cell: Vector2i,
+) -> void:
+	hover(fix, cell)
+	fix.input.call("_run_ability_settled_refresh")
+	flush_planning(fix)
+	assert_red_contract(failures, label, fix, ability, false)
+
+
 static func expected_red_tiles(
 	board: BoardState,
 	unit: UnitState,
@@ -373,7 +492,7 @@ static func find_painted_center_run_dest(
 			fix.director.selected_ability_index = -1
 			TramplingAdvanceE2ETest._paint_drag_route(input, unit, route, dest)
 			hover(fix, dest)
-			var slots: Dictionary = slots_for_hover(fix, dest)
+			var slots: Dictionary = slots_for_painted_hover(fix, dest)
 			if _slots_invalid(slots):
 				continue
 			var pre: Array = slots.get("pre", []) as Array
@@ -384,6 +503,45 @@ static func find_painted_center_run_dest(
 				continue
 			return {"dest": dest, "route": route, "slots": slots}
 	return {}
+
+
+static func build_orthogonal_route_y_first(origin: Vector2i, dest: Vector2i) -> Array[Vector2i]:
+	var route: Array[Vector2i] = [origin]
+	var cursor: Vector2i = origin
+	while cursor.y != dest.y:
+		cursor.y += 1 if dest.y > cursor.y else -1
+		route.append(cursor)
+	while cursor.x != dest.x:
+		cursor.x += 1 if dest.x > cursor.x else -1
+		route.append(cursor)
+	return route
+
+
+static func try_painted_run_to_dest(
+	fix: Dictionary,
+	dest: Vector2i,
+	ap_left: int,
+	mp_left: int,
+) -> Dictionary:
+	var unit: UnitState = fix.knight
+	var input: CombatPlanningInput = fix.input
+	var route: Array[Vector2i] = build_orthogonal_route_y_first(unit.position, dest)
+	fix.director.auto_run = true
+	fix.director.selected_ability_index = -1
+	set_knight_pools(fix, ap_left, mp_left)
+	flush_planning(fix)
+	TramplingAdvanceE2ETest._paint_drag_route(input, unit, route, dest)
+	hover(fix, dest)
+	var slots: Dictionary = slots_for_painted_hover(fix, dest)
+	if _slots_invalid(slots):
+		return {}
+	var pre: Array = slots.get("pre", []) as Array
+	if pre.is_empty() or not (pre[0] is TimelineAction):
+		return {}
+	var step: TimelineAction = pre[0] as TimelineAction
+	if not step.uses_run or step.target_coord != dest:
+		return {}
+	return {"dest": dest, "route": route, "slots": slots}
 
 
 static func build_orthogonal_route(origin: Vector2i, dest: Vector2i) -> Array[Vector2i]:
