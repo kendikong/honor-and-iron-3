@@ -10,6 +10,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_bowling_waypoint_run_center_hides_red(failures)
 	_test_painted_run_preview_interior_walk_hides_red(failures)
 	_test_committed_run_center_blue_hover_hides_red(failures)
+	_test_pre_run_binding_when_move_timing_closed(failures)
 	_test_simulation_validator_rejects_invalid_timeline_action(failures)
 
 
@@ -387,6 +388,72 @@ static func _test_committed_run_center_blue_hover_hides_red(failures: Array[Stri
 		"intent_contract/committed_run_center/no_red_on_walk_diamond",
 		red_hovers.is_empty(),
 		"0 AP after Run commit: red must stay off on all walk-diamond hovers, on=%s" % [red_hovers],
+	)
+
+
+## Regression: pre-run on timeline but get_planning_move_timing() == -1 (action spent, no canto).
+## Old code only checked the open timing slot → hover walk sim showed red at 0 AP after Run.
+static func _test_pre_run_binding_when_move_timing_closed(failures: Array[String]) -> void:
+	const RUN_DEST := Vector2i(3, 4)
+	const INTERIOR_HOVER := Vector2i(4, 4)
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	director.auto_run = true
+	input.auto_use_skill_after_move = false
+	PlanningChecklistHarness.set_knight_pools(fix, 1, 0)
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_run_move(
+			1, RUN_DEST, -1, [INTERIOR_HOVER], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	var projected: UnitState = PlanningChecklistHarness.projected_unit(fix, 1)
+	if projected != null:
+		projected.turn_action_used = true
+	var move_timing: int = director.get_planning_move_timing(1)
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/pre_run_binding_closed_timing/setup",
+		move_timing < 0,
+		"fixture must close move-timing slot (got %d)" % move_timing,
+	)
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/pre_run_binding_closed_timing/setup",
+		director.unit_has_move_planned_at_timing(1, GameEnums.MoveTiming.PRE_ACTION),
+		"pre-run must remain on timeline",
+	)
+	var binding: TimelineAction = input.call(
+		"_binding_move_action_for_action_range", 1,
+	) as TimelineAction
+	PlanningChecklistHarness.assert_true(
+		failures,
+		"intent_contract/pre_run_binding_closed_timing/setup",
+		binding != null and binding.uses_run and binding.target_coord == RUN_DEST,
+		"binding must still find pre-run on timeline (got %s)" % binding,
+	)
+	var bowling_index: int = PlanningChecklistHarness.select_ability(
+		fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
+	)
+	if bowling_index < 0:
+		PlanningChecklistHarness.assert_fail(
+			failures, "intent_contract/pre_run_binding_closed_timing", "Bowling Charge missing",
+		)
+		return
+	var bowling: AbilityData = fix.knight.active_abilities[bowling_index]
+	PlanningChecklistHarness.assert_red_off_at_hover(
+		failures,
+		"intent_contract/pre_run_binding_closed_timing/red_off_interior",
+		fix,
+		bowling,
+		INTERIOR_HOVER,
+	)
+	PlanningChecklistHarness.assert_red_contract(
+		failures,
+		"intent_contract/pre_run_binding_closed_timing/overlay_parity",
+		fix,
+		bowling,
+		false,
 	)
 
 
