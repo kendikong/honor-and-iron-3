@@ -1,0 +1,44 @@
+[
+    {
+        "Mutation":  "1_red_always_visible",
+        "Exit":  1,
+        "FailCount":  1,
+        "Expected":  "MISSED",
+        "Sample":  "[FAIL] PlanningQAGate action_range_auto_run_ap_gate: red tile (4, 4) must be hidden after run hover (4, 2)"
+    },
+    {
+        "Mutation":  "2_bash_no_approach",
+        "Exit":  1,
+        "FailCount":  27,
+        "Expected":  "CAUGHT",
+        "Sample":  "[FAIL] DragE2E release_bash_enemy: bash release must write pre-move | [FAIL] ActionRangeRegression show_enemy_bash_committed_premove: visibility gate expected true got false (hover (7, 5) stand (7, 5)) | [FAIL] ActionRangeRegression show_enemy_bash_committed_premove: overlay red tiles expected true got false (hover (7, 5))"
+    },
+    {
+        "Mutation":  "3_no_ap_spend",
+        "Exit":  0,
+        "FailCount":  0,
+        "Expected":  "MISSED",
+        "Sample":  ""
+    },
+    {
+        "Mutation":  "4_skip_promote",
+        "Exit":  0,
+        "FailCount":  0,
+        "Expected":  "MISSED",
+        "Sample":  ""
+    },
+    {
+        "Mutation":  "5_push_reversed",
+        "Exit":  1,
+        "FailCount":  9,
+        "Expected":  "CAUGHT",
+        "Sample":  "[FAIL] PlanningQAGate Shield Bash 2A push: preview_pushes missing segment | [FAIL] PlanningQAGate Shield Bash 2A threat: missing push preview | [FAIL] PlanningQAGate Chain Hook 2B pull: must pull west toward player (4, 3) -\u003e (6, 3)"
+    },
+    {
+        "Mutation":  "6_hook_wrong_stand",
+        "Exit":  0,
+        "FailCount":  0,
+        "Expected":  "MISSED",
+        "Sample":  ""
+    }
+]

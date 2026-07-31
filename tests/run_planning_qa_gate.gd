@@ -17,6 +17,9 @@ func _initialize() -> void:
 	for suite: Dictionary in suites:
 		print("[SUITE] %s" % suite.name)
 		var runner: GDScript = load(suite.path as String) as GDScript
+		if runner == null:
+			failures.append("suite_load_failed:%s" % suite.path)
+			continue
 		runner.run_all(failures)
 	var report_path := "user://planning_qa_gate_result.txt"
 	var report := FileAccess.open(report_path, FileAccess.WRITE)
