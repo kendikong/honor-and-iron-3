@@ -474,7 +474,11 @@ func _paint_valid_movement_endpoint_intent() -> bool:
 	var origin: Vector2i = _proj_origin(actor)
 	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability):
 		return false
-	var route_wps: Array[Vector2i] = _route_waypoints()
+	var route_wps: Array[Vector2i]
+	if AbilitySystem.ability_has_dash(ability):
+		route_wps = _awaiting_endpoint_waypoints(origin, cell, ability, [], [])
+	else:
+		route_wps = _route_waypoints()
 	var action: TimelineAction = TimelineAction.make_ability(
 		unit_id, ability, cell, AbilitySystem.planning_commit_target_unit_id(ability, -1),
 		GameEnums.MoveTiming.PRE_ACTION, route_wps,
@@ -851,8 +855,21 @@ func on_hover_moved(cell: Vector2i) -> void:
 		var p_unit := _proj_unit(_director.selected_unit_id)
 		if p_unit != null:
 			var ability := _selected_ability_data(p_unit)
-			var is_awaiting_move = awaiting_targeting_active() and ability != null and AbilitySystem.ability_has_movement_effect(ability)
-			if _basic_move_allowed() or is_awaiting_move:
+			var is_awaiting_move: bool = (
+				awaiting_targeting_active()
+				and ability != null
+				and AbilitySystem.ability_has_movement_effect(ability)
+			)
+			var is_dash_only_hover: bool = false
+			if ability != null and _awaiting_flow_selected(p_unit, ability):
+				if (
+					AbilitySystem.planning_is_valid_awaiting_endpoint(
+						_proj_move_origin(p_unit), cell, ability,
+					)
+					and not _is_premove_move_tile(cell, p_unit)
+				):
+					is_dash_only_hover = true
+			if (_basic_move_allowed() or is_awaiting_move) and not is_dash_only_hover:
 				if _drag_route.is_empty():
 					_drag_unit_id = _director.selected_unit_id
 					_drag_route = [_proj_move_origin(p_unit)]
@@ -1073,8 +1090,6 @@ func _refresh_selected_interaction_preview() -> void:
 		return
 	if (
 		_director.selected_ability_index >= 0
-		and awaiting_targeting_active()
-		and _director.board.is_in_bounds(cell)
 	):
 		var dash_ab := _selected_ability_data(p_unit)
 		if (
@@ -1083,6 +1098,7 @@ func _refresh_selected_interaction_preview() -> void:
 			and AbilitySystem.planning_is_valid_awaiting_endpoint(
 				_proj_origin(p_unit), cell, dash_ab,
 			)
+			and (awaiting_targeting_active() or not _is_premove_move_tile(cell, p_unit))
 		):
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 			_refresh_click_target_highlight()
@@ -1278,12 +1294,17 @@ func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> i
 
 
 func _should_use_awaiting_endpoint_on_input(ability: AbilityData) -> bool:
-	if not awaiting_targeting_active():
-		return false
 	if ability == null or _director == null or _director.selected_ability_index < 0:
 		return false
 	var actor := _proj_unit(_director.selected_unit_id)
 	if actor == null or not _awaiting_flow_selected(actor, ability):
+		return false
+	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
+	if not _director.board.is_in_bounds(cell):
+		return false
+	if not AbilitySystem.planning_is_valid_awaiting_endpoint(_proj_origin(actor), cell, ability):
+		return false
+	if not awaiting_targeting_active() and _is_premove_move_tile(cell, actor):
 		return false
 	if _skill_interaction_active() or aiming:
 		return true
@@ -2620,6 +2641,37 @@ func _snapshot_drag_legal_move_tiles() -> Array[Vector2i]:
 	return _planning.get_hover_move_tiles()
 
 
+## Blue overlay tiles are the only legal premove destinations when the overlay is bound.
+func _is_premove_move_tile(cell: Vector2i, actor: UnitState) -> bool:
+	if actor == null or _director == null or not _director.board.is_in_bounds(cell):
+		return false
+	if cell == _proj_move_origin(actor):
+		return false
+	if _planning != null:
+		return _planning.is_hover_move_tile(cell)
+	var legal: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
+	if not legal.is_empty():
+		return legal.has(cell)
+	return _can_move_to(actor, cell)
+
+
+func _awaiting_endpoint_waypoints(
+	origin: Vector2i,
+	cell: Vector2i,
+	ability: AbilityData,
+	painted_waypoints: Array[Vector2i],
+	sim_path: Array,
+) -> Array[Vector2i]:
+	if ability == null or not AbilitySystem.ability_has_movement_effect(ability):
+		return []
+	var route: Array[Vector2i] = CombatPlanningPreview.awaiting_movement_route_cells(
+		origin, cell, painted_waypoints, sim_path, -1,
+	)
+	if route.size() <= 1:
+		return []
+	return route.slice(1, route.size()) as Array[Vector2i]
+
+
 func _drop_allows_move_tile(
 	cell: Vector2i,
 	legal_move_tiles: Array[Vector2i],
@@ -2632,7 +2684,7 @@ func _drop_allows_move_tile(
 		return false
 	if not legal_move_tiles.is_empty():
 		return legal_move_tiles.has(cell)
-	return _can_move_to(actor, cell)
+	return _is_premove_move_tile(cell, actor)
 
 
 func _enemy_attackable_from_legal_tiles(
@@ -2881,6 +2933,8 @@ func _maybe_append_premove_action_pair(
 		return
 	if (slots.get("pre", []) as Array).is_empty() and (slots.get("post", []) as Array).is_empty():
 		return
+	if not _is_premove_move_tile(cell, actor):
+		return
 	if not (slots.get("action", []) as Array).is_empty():
 		return
 	if selected_phase_action_exhausted(unit_id) or awaiting_targeting_active():
@@ -2986,33 +3040,34 @@ func _build_commit_slots_at_cell(
 			)
 
 		if _awaiting_flow_selected(actor, ability):
-			if awaiting_targeting_active():
-				if AbilitySystem.planning_is_valid_awaiting_endpoint(
-					_proj_origin(actor), cell, ability,
-				):
+			var origin: Vector2i = _proj_origin(actor)
+			if AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability):
+				if awaiting_targeting_active() or not _is_premove_move_tile(cell, actor):
+					var sim_path: Array = (
+						preview_state.preview_paths.get(unit_id, [])
+						if is_live_preview_active()
+						else []
+					)
+					var endpoint_wps: Array[Vector2i] = effective_waypoints
+					if not _is_premove_move_tile(cell, actor) and AbilitySystem.ability_has_dash(ability):
+						endpoint_wps = _awaiting_endpoint_waypoints(
+							origin, cell, ability, [], sim_path,
+						)
+					elif endpoint_wps.is_empty():
+						endpoint_wps = _awaiting_endpoint_waypoints(
+							origin, cell, ability, _route_waypoints(), sim_path,
+						)
 					slots["action"].append(TimelineAction.make_ability(
 						unit_id,
 						ability,
 						cell,
 						AbilitySystem.planning_commit_target_unit_id(ability, -1),
 						GameEnums.MoveTiming.PRE_ACTION,
-						effective_waypoints,
+						endpoint_wps,
 					))
 					return slots
+			if awaiting_targeting_active():
 				slots["invalid"] = "Invalid target or distance for this ability."
-				return slots
-			elif (
-				AbilitySystem.planning_is_valid_awaiting_endpoint(_proj_origin(actor), cell, ability)
-				and not _drop_allows_move_tile(cell, legal_move_tiles, actor)
-			):
-				slots["action"].append(TimelineAction.make_ability(
-					unit_id,
-					ability,
-					cell,
-					AbilitySystem.planning_commit_target_unit_id(ability, -1),
-					GameEnums.MoveTiming.PRE_ACTION,
-					effective_waypoints,
-				))
 				return slots
 		else:
 			if AbilitySystem.can_target_self(actor, ability):
@@ -3470,7 +3525,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 			var origin := _proj_origin(p_unit)
 			if (
 				AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability)
-				and not _drop_allows_move_tile(cell, _snapshot_drag_legal_move_tiles(), p_unit)
+				and not _is_premove_move_tile(cell, p_unit)
 			):
 				return PlanningIcons.GLYPH_NULL
 	var hover_unit: UnitState = _resolve_hover_unit_at(cell)

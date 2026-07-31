@@ -27,6 +27,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_bowling_enemy_hover_red_at_origin,
 		_test_bowling_enemy_hover_not_bash_route,
 		_test_bowling_dash_only_tiles_not_blue,
+		_test_bowling_dash_only_click_no_premove,
 		_test_hide_red_after_commit_run_icon_shield_bash,
 		_test_hide_no_ability_selected,
 		_test_show_awaiting_trample,
@@ -41,6 +42,7 @@ static func run_all(failures: Array[String]) -> void:
 		"bowling_enemy_hover_red",
 		"bowling_enemy_hover_not_bash",
 		"bowling_dash_only_not_blue",
+		"bowling_dash_only_no_premove_click",
 		"hide_after_commit_run_icon_bash",
 		"hide_no_ability",
 		"show_awaiting_trample",
@@ -376,6 +378,50 @@ static func _test_bowling_dash_only_tiles_not_blue(failures: Array[String]) -> v
 		failures.append(
 			"ActionRangeRegression bowling_dash_only_not_blue: fixture tile %s must be valid dash endpoint"
 			% DASH_ONLY_A,
+		)
+
+
+static func _test_bowling_dash_only_click_no_premove(failures: Array[String]) -> void:
+	const KNIGHT := Vector2i(5, 5)
+	const ENEMY := Vector2i(6, 5)
+	const DASH_ONLY := Vector2i(8, 5)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT, ENEMY)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression bowling_dash_only_no_premove_click: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	_hover_sync(input, overlay, DASH_ONLY)
+	var hover_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, DASH_ONLY, Vector2.ZERO)
+	if not (hover_slots.get("pre", []) as Array).is_empty():
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_no_premove_click: dash-only hover must not build premove",
+		)
+	if (hover_slots.get("action", []) as Array).is_empty():
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_no_premove_click: dash-only hover must build action preview",
+		)
+	var arm_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, KNIGHT, Vector2.ZERO)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_no_premove_click: arm commit failed",
+		)
+	_hover_sync(input, overlay, DASH_ONLY)
+	if input.compute_hover_action_icon(DASH_ONLY) != PlanningIcons.GLYPH_NULL:
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_no_premove_click: armed dash-only cursor must be null",
+		)
+	var armed_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, DASH_ONLY, Vector2.ZERO)
+	if not (armed_slots.get("pre", []) as Array).is_empty():
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_no_premove_click: armed dash-only click must not commit premove",
+		)
+	if (armed_slots.get("action", []) as Array).is_empty():
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_no_premove_click: armed dash-only click must build action",
 		)
 
 
