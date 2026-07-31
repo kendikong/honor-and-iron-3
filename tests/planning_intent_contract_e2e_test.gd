@@ -228,9 +228,9 @@ static func _test_painted_run_preview_interior_walk_hides_red(failures: Array[St
 	)
 	PlanningChecklistHarness.assert_true(
 		failures,
-		"intent_contract/painted_run_preview/queued_run",
-		input.call("_queued_run_action_for_action_range", 1) != null,
-		"painted drag must expose queued Run for action-range economy",
+		"intent_contract/painted_run_preview/binding_move",
+		input.call("_binding_move_action_for_action_range", 1) != null,
+		"painted drag must expose binding pre-move for action-range economy",
 	)
 	var drag_tiles: Array[Vector2i] = PlanningChecklistHarness.collect_drag_hover_tiles(fix)
 	var walk_diamond: Array[Vector2i] = PlanningChecklistHarness.walk_diamond_from(
