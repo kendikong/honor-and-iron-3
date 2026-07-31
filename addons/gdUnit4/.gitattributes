@@ -1,0 +1,39 @@
+# .gitattributes
+# Exclude files not needed for AssetLib users.
+
+/**                    export-ignore
+/addons                !export-ignore
+/addons/gdUnit4        !export-ignore
+/addons/gdUnit4/**     !export-ignore
+/addons/gdUnit4/test   export-ignore
+/documentation         export-ignore
+
+# Exclude AI agent files from asset library exports
+/addons/gdUnit4/**/AGENTS.md   export-ignore
+/addons/gdUnit4/**/CLAUDE.md   export-ignore
+/addons/gdUnit4/**/.claude     export-ignore
+
+
+# Ensure Unix line endings for text files
+* text=auto eol=lf
+
+# Specific file types
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.js text eol=lf
+*.cs text eol=lf
+*.gd text eol=lf
+*.cfg text eol=lf
+*.txt text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.exe binary
+*.dll binary

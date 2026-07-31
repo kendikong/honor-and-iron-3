@@ -557,7 +557,7 @@ static func _test_f5_display_ap_zero_implies_no_red(failures: Array[String]) -> 
 		failures,
 		"intent_contract/f5_display_ap/walk_diamond_overlay",
 		overlay_red.is_empty(),
-		"display AP 0: overlay red on walk diamond hovers=%s" % overlay_red,
+		"display AP 0: overlay red on walk diamond hovers=%s" % [overlay_red],
 	)
 	if interior.x > -900000:
 		PlanningChecklistHarness.assert_red_off_at_hover(

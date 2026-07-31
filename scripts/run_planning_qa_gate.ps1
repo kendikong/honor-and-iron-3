@@ -40,4 +40,20 @@ if ($null -ne $leakDiagnostics) {
 	$leakDiagnostics | ForEach-Object { Write-Warning $_.Line }
 }
 
+$sceneGate = Join-Path $PSScriptRoot "run_planning_scene_acceptance.ps1"
+if (-not (Test-Path $sceneGate)) {
+	Write-Error "[INCOMPLETE] Tier 3 TestBattle scene acceptance runner is missing."
+	exit 2
+}
+& $sceneGate -GodotPath $GodotPath
+$sceneExit = $LASTEXITCODE
+if ($sceneExit -eq 2) {
+	Write-Error "[INCOMPLETE] Tier 1/2 contracts passed, but Tier 3 TestBattle scene acceptance was unavailable."
+	exit 2
+}
+if ($sceneExit -ne 0) {
+	Write-Error "[FAIL] Tier 1/2 contracts passed, but Tier 3 TestBattle scene acceptance failed."
+	exit $sceneExit
+}
+Write-Output "[PASS] Planning QA gate: Tier 1/2 contracts and Tier 3 TestBattle acceptance."
 exit 0

@@ -1,6 +1,9 @@
 extends Node
 
-## Planning QA Gate — production drag E2E + planning input + trample + checklist mirror.
+## Tier 1/2 Planning QA Gate — deterministic economy, slots, and fixture contracts.
+##
+## This runner intentionally does not instantiate TestBattle.tscn. The PowerShell
+## gate runs Tier 3 separately and refuses to aggregate a PASS when it is absent.
 ## Run:
 ##   "<godot.exe>" --headless --path . --script res://tests/run_planning_qa_gate.gd
 
@@ -52,7 +55,7 @@ func _run_gate() -> void:
 				report.store_line("[FAIL] %s" % failure)
 		report.close()
 	if failures.is_empty():
-		print("[PASS] Planning QA gate — skill scenarios, drag E2E, planning input, trample, action-range regression, checklist, and intent contracts.")
+		print("[PASS] Tier 1/2 planning contracts: skill scenarios, drag E2E, planning input, trample, action-range regression, checklist, and intent contracts.")
 	else:
 		for failure: String in failures:
 			printerr("[FAIL] %s" % failure)

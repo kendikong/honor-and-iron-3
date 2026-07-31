@@ -8,16 +8,19 @@ Automated mirror of the owner's manual planning checklist (Skill Arena / TestBat
 Use this gate **before and after every change** that touches planning,
 preview, commit slots, overlay draw, hover sim, or `CombatDirector` refresh — not only perf work.
 
-## Two layers
+## Three tiers
 
-| Layer | Who | What |
-|-------|-----|------|
-| **A — Headless (agent)** | Cursor agent / CI | `run_planning_qa_gate.gd` (see suites below) |
-| **B — Visual (owner)** | You, F5 in Skill Arena | Short checklist below — **only** items marked *manual* |
+| Tier | Runner | Truth it establishes |
+|------|--------|--------------------|
+| **1 — Simulation/economy** | fast fixture suites | Deterministic resolution, ability cost, legality, and projected state |
+| **2 — Planning contracts** | `tests/run_planning_qa_gate.gd` | Commit slots, preview/commit parity, cursor, drag, undo, and overlay contracts |
+| **3 — TestBattle acceptance** | `tests/live_planning_scene_test.gd` through GdUnit4 | Actual `TestBattle.tscn`, production input events, process frames, and the live overlay collection drawn by F5 |
+| **Manual visual** | Owner F5 review | Pixel authorship, animation feel, and performance |
 
-Layer A must pass. Layer B is still required for pixel/animation/FPS.
+Tiers 1–3 must pass. A missing Tier 3 dependency or runner is **INCOMPLETE**, never a
+passing aggregate. Manual visual review is still required for pixel/animation/FPS.
 
-### Layer A suites (run in order)
+### Tier 1/2 suites (run in order)
 
 | Suite | Script | What it catches |
 |-------|--------|-----------------|
@@ -28,9 +31,40 @@ Layer A must pass. Layer B is still required for pixel/animation/FPS.
 | **Action-range regression** | `tests/action_range_regression_test.gd` | Red tile visibility + overlay parity |
 | **Checklist mirror** | `tests/planning_qa_gate_test.gd` | Manual Skill Arena checklist APIs (slots, sim, click/drop parity) |
 
-**Coverage honesty:** Skill scenarios (`tests/skills/*_scenario.gd`) are the **canonical checklist contract** — phases 1–7 with overlay + preview + slots + sim. The `planning_qa_gate_test.gd` mirror adds regression slices; slot-only rows alone are not sufficient.
+**Coverage honesty:** Every suite in this table is a Tier 1/2 fixture contract. It is
+valuable regression coverage, but it is not F5 proof: these suites use
+`PlanningDragE2EHarness`, mock map/viewport objects, QA pointer overrides, or direct
+planning APIs. Skill scenarios (`tests/skills/*_scenario.gd`) remain the canonical
+deterministic checklist contract; slot-only rows do not replace drag E2E.
 
-**Training Arena defaults:** Knight **1 AP / 3 MP** (`knight_factory` `action_points = 1`, `move_points = 3`). All knight class skills: **`action_point_cost = 1`** in `knight_factory.gd`. Headless `_planning_fixture` matches F5. Slot-only tests (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
+### Tier 3 TestBattle acceptance
+
+`tests/live_planning_scene_test.gd` boots the actual `TestBattle.tscn` through GdUnit4.
+It pins the training session, uses real mouse move/press/release events, advances
+production frames, and inspects `TacticalPlanningOverlay.is_hover_action_range_tile()`,
+which reads the same `_hover_action_range_tiles` collection drawn on screen.
+
+The required first journey is:
+
+1. Commit a Run by dragging the Knight beyond normal MP.
+2. Select Bowling Charge and wait through the production ability-settle interval.
+3. Hover an interior board cell.
+4. Assert displayed AP is 0, `action_range_visible_for_hover()` is false, and no live
+   red action-range tile exists.
+
+Run Tier 3 alone:
+
+```powershell
+.\scripts\run_planning_scene_acceptance.ps1
+```
+
+Prove that this journey can fail (the source is restored even if the assertion fails):
+
+```powershell
+.\scripts\validate_live_planning_mutation.ps1
+```
+
+**Training Arena defaults:** Knight **1 AP / 3 MP** (`knight_factory` `action_points = 1`, `move_points = 3`). All knight class skills: **`action_point_cost = 1`** in `knight_factory.gd`. Headless `_planning_fixture` deliberately mirrors these data defaults but does **not** establish F5 parity. Slot-only tests (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
 
 ## Run (fast — planning gate only)
 
@@ -145,7 +179,7 @@ Beyond the manual checklist — game rules that must not regress during perf wor
 | Approach+bash slots preview keeps push | `_test_approach_bash_slots_preview_keeps_push` | slots→preview `preview_pushes` |
 | Timeline ghost clears when committed | `_test_timeline_ghost_clears_when_committed` | `timeline_ghost_slots` |
 
-## What stays manual (Layer B — ~3 min)
+## What stays manual (visual review — ~3 min)
 
 1. **FPS / hover stutter** — no headless FPS yet; watch top-right counter after perf changes.
 2. **Pixel authorship** — arrow colors, dashed style, threat tile outlines, ghost feet alignment.
@@ -155,7 +189,7 @@ Beyond the manual checklist — game rules that must not regress during perf wor
 
 - [ ] Agent: `run_planning_qa_gate.ps1` → PASS
 - [ ] Agent: `validate_qa_mutations.ps1` → all mutations CAUGHT (22 unfixes, ~90% gate coverage)
-- [ ] Owner: Layer B manual items above → PASS
+- [ ] Owner: visual-review items above → PASS
 - [ ] Commit hash recorded in changelog
 
 ## Mutation validation (~90% gate coverage)
@@ -193,6 +227,6 @@ Run after adding or changing QA tests:
 | 21 | Drop slots always invalid | drag-drop parity |
 | 22 | `planning_display_mp_left` returns max MP | MP display tests |
 
-**Not mutation-covered (manual / Layer B):** pixel draw, FPS, walk animation tweens, dashed-line rendering.
+**Not mutation-covered (manual visual review):** pixel draw, FPS, walk animation tweens, dashed-line rendering.
 
 See also: `BUG_REPORT.md` (regression contract), `tests/trampling_advance_e2e_test.gd` (Trampling deep suite).

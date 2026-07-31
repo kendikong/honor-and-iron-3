@@ -399,7 +399,7 @@ static func assert_no_red_when_display_ap_zero(
 		failures,
 		label,
 		overlay_red.is_empty(),
-		"overlay red must be empty when display AP is 0 (tiles=%s)" % overlay_red,
+		"overlay red must be empty when display AP is 0 (tiles=%s)" % [overlay_red],
 	)
 
 
