@@ -52,7 +52,7 @@ state, then presses Ready → Execute and verifies final unit positions.
 | K1 `(4,5)` | Shield Bash | phases 1–5: blue/red, walk ghost + `preview_paths`, enemy approach path, push preview, cursor glyphs, pre-move `target_coord`, commit, red-off at 0 AP |
 | K2 `(1,3)` | Chain Hook | in-range red, walk ghost + path, pull preview, commit, projected enemy cell |
 | K3 `(5,4)` | Trampling Advance | arm awaiting, red while awaiting, per-step `get_drag_route()` + `preview_paths` paint (E→N), committed waypoints |
-| K4 `(4,1)` | Run → Bowling | 3-tile run corridor drag (`preview_paths` == painted route), display AP 0, bowling red hidden |
+| K4 `(4,1)` | Run → Bowling | **Detour drag** E→N→W loop (walk-only): `preview_paths` + ghost at `(4,2)`, red **on**, AP 1, `cancel_drag` clears K4 pre-move. **Run corridor** west to `(0,1)`: per-step corridor + path paint, first step walk/red **on**, final hover run required + red **off** + display AP 0; commit; post-commit bowling red hidden |
 | All | Execute | `GlobalTimeline` ready → sim; knight + dummy final cells match commit |
 | Reset | Scroll + undo | wheel changes ability; run drag + right-click clears pre-move |
 

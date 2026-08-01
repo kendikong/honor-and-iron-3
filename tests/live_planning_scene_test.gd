@@ -22,8 +22,13 @@ const _HOVER_WALK := Vector2i(5, 5)
 const _TRAMPLE_ROUTE: Array[Vector2i] = [Vector2i(6, 4), Vector2i(6, 3)]
 const _TRAMPLE_END := Vector2i(6, 3)
 const _K4_RUN_DEST := Vector2i(0, 1)
-const _K4_RUN_MID := Vector2i(2, 1)
-const _K4_RUN_ROUTE: Array[Vector2i] = [_K4_CELL, _K4_RUN_MID, _K4_RUN_DEST]
+## Walk-only loop around K4 (3 MP): E → N → W, blocked north at hook dummy (4,3).
+const _K4_DETOUR_ROUTE: Array[Vector2i] = [
+	Vector2i(4, 1), Vector2i(5, 1), Vector2i(5, 2), Vector2i(4, 2),
+]
+const _K4_WEST_RUN_ROUTE: Array[Vector2i] = [
+	_K4_CELL, Vector2i(3, 1), Vector2i(2, 1), Vector2i(1, 1), _K4_RUN_DEST,
+]
 
 const _SETTLE_FRAMES := 4
 const _SETTLE_DELTA_MS := 20
@@ -209,19 +214,19 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 	var director: CombatDirector = ctx.director
 	var input: CombatPlanningInput = ctx.input
 	var k4_id: int = ctx.k4_id
+	var unit: UnitState = director.board.get_unit_by_id(k4_id)
+	assert_object(unit).is_not_null()
 	await _select_unit_live(ctx, k4_id, _K4_CELL)
-	await _select_ability_for_unit(ctx, k4_id, _RUN_ID)
-	await _drag_through_cells_with_route_checks(
-		ctx, _K4_RUN_ROUTE, "k4/run", false, &"corridor_horizontal",
-	)
+	var bowling: AbilityData = await _select_ability_for_unit(ctx, k4_id, _BOWLING_CHARGE_ID)
+	assert_object(bowling).is_not_null()
+	await _drag_k4_detour_walk_preview(ctx, k4_id, bowling)
+	await _drag_k4_run_corridor_preview(ctx, k4_id, bowling)
 	assert_bool(_plan_uses_run_for_unit(director, k4_id)).is_true()
 	var projected: UnitState = director.projected_state.get_unit_by_id(k4_id)
 	assert_that(projected.position).is_equal(_K4_RUN_DEST)
 	assert_int(input.planning_display_ap_left(k4_id)).is_equal(0)
-	var bowling: AbilityData = await _select_ability_for_unit(ctx, k4_id, _BOWLING_CHARGE_ID)
-	assert_object(bowling).is_not_null()
 	await _hover_cell(ctx, Vector2i(2, 1))
-	await ctx.runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
+	await _wait_ability_settle(ctx)
 	assert_int(input.planning_display_ap_left(k4_id)).is_equal(0)
 	assert_bool(input.action_range_visible_for_hover()).is_false()
 	assert_bool(_overlay_has_red_tile(ctx.overlay, director.board)).is_false()
@@ -339,6 +344,118 @@ func _drag_through_cells(
 		await runner.simulate_frames(3, _SETTLE_DELTA_MS)
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
+
+
+func _drag_k4_detour_walk_preview(
+	ctx: Dictionary,
+	unit_id: int,
+	bowling: AbilityData,
+) -> void:
+	var runner: GdUnitSceneRunner = ctx.runner
+	var input: CombatPlanningInput = ctx.input
+	await _hover_cell(ctx, _K4_DETOUR_ROUTE[0])
+	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+	for step_index: int in range(1, _K4_DETOUR_ROUTE.size()):
+		await _hover_cell(ctx, _K4_DETOUR_ROUTE[step_index])
+		await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+		var detour_prefix: Array[Vector2i] = []
+		for j: int in range(step_index + 1):
+			detour_prefix.append(_K4_DETOUR_ROUTE[j])
+		_assert_drag_route_equals(ctx, detour_prefix, "k4/detour/walk_route_%d" % step_index)
+		_assert_preview_path_matches_drag_route(ctx, unit_id, "k4/detour/walk_preview_%d" % step_index)
+		if _K4_DETOUR_ROUTE[step_index] == Vector2i(4, 2):
+			var ghost: UnitState = await _preview_unit(ctx, unit_id, Vector2i(4, 2))
+			assert_object(ghost).is_not_null()
+			assert_that(ghost.position).is_equal(Vector2i(4, 2))
+			_assert_k4_walk_drag_preview(
+				ctx, unit_id, bowling, Vector2i(4, 2), "k4/detour/walk_loop_end",
+			)
+	input.cancel_drag()
+	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
+	assert_object(_committed_pre_move_for_unit(ctx.director, unit_id)).is_null()
+	assert_bool(input.dragging).is_false()
+	await _hover_cell(ctx, _K4_CELL)
+	await _wait_ability_settle(ctx)
+
+
+func _drag_k4_run_corridor_preview(
+	ctx: Dictionary,
+	unit_id: int,
+	bowling: AbilityData,
+) -> void:
+	var runner: GdUnitSceneRunner = ctx.runner
+	_cancel_active_pointer(ctx)
+	await _hover_cell(ctx, _K4_WEST_RUN_ROUTE[0])
+	await _wait_ability_settle(ctx)
+	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+	for step_index: int in range(1, _K4_WEST_RUN_ROUTE.size()):
+		await _hover_cell(ctx, _K4_WEST_RUN_ROUTE[step_index])
+		await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+		_assert_drag_route_corridor(
+			ctx, _K4_CELL, _K4_WEST_RUN_ROUTE[step_index],
+			"k4/run/corridor_%d" % step_index,
+		)
+		_assert_preview_path_matches_drag_route(
+			ctx, unit_id, "k4/run/preview_%d" % step_index,
+		)
+		if step_index == 1:
+			_assert_k4_walk_drag_preview(
+				ctx, unit_id, bowling, _K4_WEST_RUN_ROUTE[step_index],
+				"k4/run/walk_first_step",
+			)
+	_assert_k4_run_drag_preview(ctx, unit_id, bowling, "k4/run/before_release")
+	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
+	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
+
+
+func _assert_preview_path_matches_drag_route(
+	ctx: Dictionary,
+	unit_id: int,
+	label: String,
+) -> void:
+	var drag_route: Array[Vector2i] = ctx.input.get_drag_route()
+	_assert_preview_path_equals(ctx, unit_id, drag_route, label)
+
+
+func _assert_k4_walk_drag_preview(
+	ctx: Dictionary,
+	unit_id: int,
+	bowling: AbilityData,
+	stand: Vector2i,
+	label: String,
+) -> void:
+	var input: CombatPlanningInput = ctx.input
+	assert_bool(input.unit_move_requires_run(unit_id)).override_failure_message(
+		"%s: walk detour must not require Run at stand %s" % [label, stand],
+	).is_false()
+	assert_int(input.planning_display_ap_left(unit_id)).override_failure_message(
+		"%s: walk detour must keep skill AP at stand %s" % [label, stand],
+	).is_equal(1)
+	_assert_red_live(ctx, bowling, true, stand, "%s/red_on" % label)
+
+
+func _assert_k4_run_drag_preview(
+	ctx: Dictionary,
+	unit_id: int,
+	bowling: AbilityData,
+	label: String,
+) -> void:
+	var input: CombatPlanningInput = ctx.input
+	assert_bool(input.unit_move_requires_run(unit_id)).override_failure_message(
+		"%s: extension past detour must require Run" % label,
+	).is_true()
+	assert_int(input.planning_display_ap_left(unit_id)).override_failure_message(
+		"%s: Run intent must show 0 display AP" % label,
+	).is_equal(0)
+	assert_bool(input.action_range_visible_for_hover()).override_failure_message(
+		"%s: action-range gate must hide when Run is queued" % label,
+	).is_false()
+	assert_bool(_overlay_has_red_tile(ctx.overlay, ctx.board)).override_failure_message(
+		"%s: overlay red must hide when Run is queued" % label,
+	).is_false()
+	_assert_red_live(ctx, bowling, false, Vector2i(-999999, -999999), "%s/red_off" % label)
 
 
 func _drag_through_cells_with_route_checks(
