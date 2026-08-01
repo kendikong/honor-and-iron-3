@@ -344,6 +344,7 @@ static func dash(
 		"path": path,
 		"presentation_anim": anim,
 	}))
+	TerrainSystem.apply_landing(board, unit, events)
 
 
 ## Tags pass-through / bulldoze side effects so presentation can interleave per dash step.
@@ -352,7 +353,6 @@ static func tag_dash_hit_step(events: Array, from_index: int, step_index: int) -
 		var ev: SimEvent = events[tag_i] as SimEvent
 		if ev != null and not ev.data.has("dash_hit_step"):
 			ev.data["dash_hit_step"] = step_index
-	TerrainSystem.apply_landing(board, unit, events)
 
 static func push(board: BoardState, target: UnitState, direction: Vector2i, distance: int, events: Array[SimEvent], pusher: UnitState = null, ability_id: StringName = &"", collision_immune_id: int = -1) -> void:
 	if target == null or not target.is_alive() or direction == Vector2i.ZERO or distance <= 0:
