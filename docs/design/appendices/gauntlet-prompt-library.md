@@ -100,8 +100,8 @@ ARTIFACT: this file, .cursor/agents/gauntlet-critic.md
 
 ## Exit criteria
 
-- [ ] Lead prompt includes 8 numbered orchestration steps
-- [ ] Critic handoff includes ARTIFACT bullet list + Infrastructure line
+- [x] Lead prompt includes 8 numbered orchestration steps
+- [x] Critic handoff includes ARTIFACT bullet list + Infrastructure line
 
 ## Doc polish scorecard
 

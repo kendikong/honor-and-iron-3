@@ -82,7 +82,7 @@ REFERENCE: reports/<capture>.png
 | Input | Output | Consumer |
 |-------|--------|----------|
 | PixelForge ASSET_SPEC | `res://` paths | TileMap layers |
-| manifest.md | Disk audit list | All map work |
+| `docs/asset_manifest.md` | Disk audit list | All map work |
 
 ## Exit criteria
 

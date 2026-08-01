@@ -89,8 +89,8 @@ REFERENCE: reports/<capture>.png
 
 ## Exit criteria
 
-- [ ] I/O chain documented
-- [ ] Matches v14 entities (workspace, CANON, pipeline phases)
+- [x] I/O chain documented
+- [x] Matches v14 entities (workspace, CANON, pipeline phases)
 
 ## Doc polish scorecard
 

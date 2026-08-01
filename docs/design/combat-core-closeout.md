@@ -14,7 +14,7 @@ Close tactical SP combat parity (Phases 10–14) using **parity plan as sole pha
 |-------------|---------------|-------------|
 | Sim + bridge | `.\scripts\run_regression_tests.ps1` PASS | — |
 | Planning path | `.\scripts\run_planning_qa_gate.ps1` PASS | F5 parity checklists Ph 10–14 |
-| Intent single-owner | `rg "_recompute_intent_units" presentation/` → single owner | — |
+| Intent single-owner (tactical path) | `rg "func recompute|_recompute_now" presentation/combat_intent_state.gd` — sole owner per parity plan Ph 10.1; tactical stack must not call `board_view._recompute_intent_units` | — |
 
 ## Non-goals
 
@@ -28,7 +28,7 @@ N/A
 
 | Piece | Parity anchor | BAR |
 |-------|---------------|-----|
-| P2-ph10 | Phase 10 deliverables | `.\scripts\run_regression_tests.ps1` PASS |
+| P2-ph10 | Phase 10 deliverables (`CombatIntentState`) | `rg "func recompute|_recompute_now" presentation/combat_intent_state.gd` + `.\scripts\run_regression_tests.ps1` PASS |
 | P2-ph11 | Phase 11 | `.\scripts\run_planning_qa_gate.ps1` PASS |
 | P2-ph12 | Phase 12 | `.\scripts\run_planning_qa_gate.ps1` PASS |
 | P2-ph13 | Phase 13 | `.\scripts\run_planning_qa_gate.ps1` PASS |

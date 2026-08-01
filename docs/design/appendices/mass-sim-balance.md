@@ -86,8 +86,8 @@ ARTIFACT: this file, lint stdout, tests/run_mass_sim_test.gd path
 
 ## Exit criteria
 
-- [ ] Triggers documented in P6
-- [ ] Interpretation path matches `tests/captures/README.md`
+- [x] Triggers documented in P6
+- [x] Interpretation path matches `tests/captures/README.md`
 
 ## Doc polish scorecard
 

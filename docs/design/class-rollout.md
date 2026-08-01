@@ -27,15 +27,16 @@ N/A
 
 ## Decomposition
 
-1. One class = copy P3 checklist
-2. Batch 2–3 skills per wave
-3. Mass sim epoch after class complete
+1. One class = copy P3 checklist (`docs/design/knight-template.md`)
+2. Per skill: clone `tests/skills/shield_bash_scenario.gd` → `tests/skills/<skill>_scenario.gd`; register in `tests/planning_skill_scenarios_test.gd`
+3. Batch 2–3 skills per wave; run Tier 3 gate + `tests/run_skill_scenarios_only.gd` per knight-template
+4. Mass sim epoch after class complete (`appendices/mass-sim-balance.md`)
 
 ## Builder playbook
 
 1. Read class section in `class_abilities.txt`.
-2. Clone shield_bash scenario pattern per skill.
-3. Run `.\scripts\run_planning_qa_gate.ps1` + `tests/run_skill_scenarios_only.gd` per `knight-template.md`.
+2. Clone `tests/skills/shield_bash_scenario.gd` per skill; register in `tests/planning_skill_scenarios_test.gd`.
+3. Run `.\scripts\run_planning_qa_gate.ps1` + `godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd` per `knight-template.md`.
 
 ## Critic playbook
 

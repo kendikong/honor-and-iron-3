@@ -14,7 +14,7 @@ Define v1 **run loop** spec (worksheet-gated implementation). **Doc gauntlet PAS
 |-------------|---------------|-------------|
 | Run spec | — | Worksheet filled + owner approves v1 scope |
 | Implementation | `PLANNED — tests/run_state_test.gd` (create with run impl) | Fun / pacing |
-| Combat integration | Skirmish launch from run node uses tactical path | — |
+| Combat integration | `autoload/skirmish_launch.gd` (`SkirmishLaunch` autoload) launches tactical path | — |
 
 ## Non-goals
 
@@ -40,7 +40,7 @@ Define v1 **run loop** spec (worksheet-gated implementation). **Doc gauntlet PAS
 1. Owner fills worksheet → spec `LOOP_READY`
 2. `RunState` headless RefCounted + tests
 3. Map/node UI shell
-4. Hook to `SkirmishLaunch` / tactical combat
+4. Hook to `autoload/skirmish_launch.gd` (`SkirmishLaunch`) / tactical combat
 
 ## Builder playbook
 
