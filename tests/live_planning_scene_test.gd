@@ -545,15 +545,8 @@ func _unit_layer(ctx: Dictionary) -> TacticalUnitLayer:
 	return ctx.scene.get_node("WorldModulate/MapRoot/UnitLayer") as TacticalUnitLayer
 
 
-func _map_view(ctx: Dictionary) -> TacticalMapView:
-	return ctx.scene.get_node("WorldModulate/MapRoot") as TacticalMapView
-
-
 func _actor_grid_cell(ctx: Dictionary, unit_id: int) -> Vector2i:
-	var actor: CharacterActor = _unit_layer(ctx).get_actor(unit_id)
-	if actor == null:
-		return Vector2i(-999, -999)
-	return _map_view(ctx).foot_local_to_grid(actor.position)
+	return _unit_layer(ctx).actor_grid_cell(unit_id)
 
 
 func _assert_actor_on_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:

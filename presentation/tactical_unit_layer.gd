@@ -204,6 +204,10 @@ func has_move_tween(unit_id: int) -> bool:
 	return _move_tweens.has(unit_id)
 
 
+func actor_grid_cell(unit_id: int) -> Vector2i:
+	return _actor_grid_cell(unit_id)
+
+
 func set_predicted_stats(hp: Dictionary, armor: Dictionary) -> void:
 	_predicted_hp = hp
 	_predicted_armor = armor
