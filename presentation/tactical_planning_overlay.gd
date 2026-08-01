@@ -857,6 +857,9 @@ func _apply_committed_preview_update(result: SimResult, light_refresh: bool = fa
 			_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
 			_preview_board = _committed_preview.preview_board
 		_has_stashed_committed = false
+		# Undo snap: red action-range tiles must track projected stand immediately.
+		_invalidate_hover_cache()
+		_recompute_hover_ranges_from_inputs()
 		queue_redraw()
 		return
 	_invalidate_hover_cache()

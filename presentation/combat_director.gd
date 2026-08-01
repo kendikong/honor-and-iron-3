@@ -2197,7 +2197,8 @@ func unit_has_undoable_action(unit_id: int) -> bool:
 func _begin_undo_plan_refresh(unit_id: int) -> void:
 	plan_affected_unit_ids = [unit_id]
 	plan_refresh_snap_units = true
-	plan_refresh_defer_overlay = true
+	# Undo must refresh red action-range tiles immediately — do not defer overlay.
+	plan_refresh_defer_overlay = false
 	plan_refresh_light_overlay = true
 	_pending_planning_commit_events.clear()
 	clear_planning_move_instant(unit_id)
@@ -2338,7 +2339,6 @@ func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
 	var statuses := PackedStringArray()
 	statuses.resize(maxi(plan.size(), 1))
-	plan_refresh_defer_overlay = true
 	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
 
 
@@ -2363,7 +2363,6 @@ func _refresh_plan_snap_turn_start(plan: Timeline, player_events: Array[SimEvent
 	sim_res.events = _preview_events_for_overlay(player_events, ghost_evs)
 	var statuses := PackedStringArray()
 	statuses.resize(maxi(plan.size(), 1))
-	plan_refresh_defer_overlay = true
 	plan_refresh_light_overlay = true
 	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
 
@@ -2443,6 +2442,11 @@ func _defer_plan_refresh_signals(
 	_pending_refresh_plan = plan
 	_pending_refresh_statuses = statuses
 	_pending_refresh_preview = preview
+	if not plan_refresh_defer_overlay:
+		# Undo snap: emit board + preview this frame so red range tiles update immediately.
+		_plan_refresh_emit_pending = false
+		_flush_plan_refresh_signals()
+		return
 	if _plan_refresh_emit_pending:
 		return
 	_plan_refresh_emit_pending = true
