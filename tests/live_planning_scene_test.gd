@@ -216,38 +216,36 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 	}, "k1/phase4/approach")
 	var push_to: Vector2i = _preview_push_destination(input, e_bash_id)
 	assert_bool(push_to.x > _E_BASH_CELL.x).is_true()
-	if not _qa_fast_enabled():
-		await _probe_cell(ctx, k1_id, _E_BASH_CELL, {
-			"ghost_pos": _BASH_APPROACH,
-			"path_end": _BASH_APPROACH,
-			"path_start": _K1_CELL,
-			"path_min_size": 3,
-			"manhattan": true,
-			"icon_has": [PlanningIcons.GLYPH_WALK, PlanningIcons.GLYPH_ATTACK],
-			"push_dest": push_to,
-			"push_enemy_id": e_bash_id,
-		}, "k1/selection/pre_tap")
-		await _tap_cell(ctx, _E_BASH_CELL, "k1/selection/release")
-		await _wait_ability_settle(ctx)
-		_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
-		await _capture_commit_state(ctx, k1_id, "k1/selection/committed")
-		_remember_mode_commit(ctx, "k1/selection", k1_id)
-		await _probe_cell(ctx, k1_id, _BASH_APPROACH, {
-			"red_on": false,
-			"red_stand": _BASH_APPROACH,
-			"ability": bash,
-			"manhattan": true,
-		}, "k1/selection/post_commit")
-		await _wait_ability_settle(ctx)
-		_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
-		await _undo_until_unit_clear(ctx, k1_id, _K1_CELL)
+	await _probe_cell(ctx, k1_id, _E_BASH_CELL, {
+		"ghost_pos": _BASH_APPROACH,
+		"path_end": _BASH_APPROACH,
+		"path_start": _K1_CELL,
+		"path_min_size": 3,
+		"manhattan": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK, PlanningIcons.GLYPH_ATTACK],
+		"push_dest": push_to,
+		"push_enemy_id": e_bash_id,
+	}, "k1/selection/pre_tap")
+	await _tap_cell(ctx, _E_BASH_CELL, "k1/selection/release")
+	await _wait_ability_settle(ctx)
+	_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
+	await _capture_commit_state(ctx, k1_id, "k1/selection/committed")
+	_remember_mode_commit(ctx, "k1/selection", k1_id)
+	await _probe_cell(ctx, k1_id, _BASH_APPROACH, {
+		"red_on": false,
+		"red_stand": _BASH_APPROACH,
+		"ability": bash,
+		"manhattan": true,
+	}, "k1/selection/post_commit")
+	await _wait_ability_settle(ctx)
+	_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
+	await _undo_until_unit_clear(ctx, k1_id, _K1_CELL)
 	await _drag_release_at(ctx, [_K1_CELL, _BASH_APPROACH], _E_BASH_CELL, "k1/drag")
 	await _wait_ability_settle(ctx)
 	_assert_k1_bash_committed(ctx, k1_id, "k1/drag")
 	await _capture_commit_state(ctx, k1_id, "k1/drag/committed")
 	_remember_mode_commit(ctx, "k1/drag", k1_id)
-	if not _qa_fast_enabled():
-		_assert_mode_commit_parity(ctx, "k1/selection", "k1/drag")
+	_assert_mode_commit_parity(ctx, "k1/selection", "k1/drag")
 	await _probe_cell(ctx, k1_id, _BASH_APPROACH, {
 		"red_on": false,
 		"red_stand": _BASH_APPROACH,
@@ -306,14 +304,13 @@ func _journey_knight2_chain_hook(ctx: Dictionary) -> void:
 	_assert_k2_hook_committed(ctx, k2_id, e_hook_id, "k2/selection")
 	await _capture_commit_state(ctx, k2_id, "k2/selection/committed")
 	_remember_mode_commit(ctx, "k2/selection", k2_id)
-	if not _qa_fast_enabled():
-		await _undo_until_unit_clear(ctx, k2_id, _K2_CELL)
-		await _drag_release_at(ctx, [_K2_CELL], _E_HOOK_CELL, "k2/drag")
-		await _wait_ability_settle(ctx)
-		_assert_k2_hook_committed(ctx, k2_id, e_hook_id, "k2/drag")
-		await _capture_commit_state(ctx, k2_id, "k2/drag/committed")
-		_remember_mode_commit(ctx, "k2/drag", k2_id)
-		_assert_mode_commit_parity(ctx, "k2/selection", "k2/drag")
+	await _undo_until_unit_clear(ctx, k2_id, _K2_CELL)
+	await _drag_release_at(ctx, [_K2_CELL], _E_HOOK_CELL, "k2/drag")
+	await _wait_ability_settle(ctx)
+	_assert_k2_hook_committed(ctx, k2_id, e_hook_id, "k2/drag")
+	await _capture_commit_state(ctx, k2_id, "k2/drag/committed")
+	_remember_mode_commit(ctx, "k2/drag", k2_id)
+	_assert_mode_commit_parity(ctx, "k2/selection", "k2/drag")
 	var projected: UnitState = director.projected_state.get_unit_by_id(k2_id)
 	assert_int(projected.ability.points_left).is_equal(0)
 	var hooked: UnitState = director.projected_state.get_unit_by_id(e_hook_id)
@@ -369,27 +366,25 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"red_stand": _K3_CELL,
 		"ability": trample,
 	}, "k3/hover/end")
-	if not _qa_fast_enabled():
-		await _rearm_trample_awaiting(ctx, k3_id)
-		await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
-			"path": _TRAMPLE_FULL_PATH,
-			"ghost_pos": _TRAMPLE_END,
-			"manhattan": true,
-			"preview_nonempty": true,
-		}, "k3/selection/pre_tap")
-		await _tap_cell(ctx, _TRAMPLE_END, "k3/selection/release")
-		await _wait_ability_settle(ctx)
-		_assert_k3_trample_committed(ctx, k3_id, "k3/selection")
-		await _capture_commit_state(ctx, k3_id, "k3/selection/committed")
-		_remember_mode_commit(ctx, "k3/selection", k3_id)
-		await _undo_until_unit_clear(ctx, k3_id, _K3_CELL)
+	await _rearm_trample_awaiting(ctx, k3_id)
+	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
+		"path": _TRAMPLE_FULL_PATH,
+		"ghost_pos": _TRAMPLE_END,
+		"manhattan": true,
+		"preview_nonempty": true,
+	}, "k3/selection/pre_tap")
+	await _tap_cell(ctx, _TRAMPLE_END, "k3/selection/release")
+	await _wait_ability_settle(ctx)
+	_assert_k3_trample_committed(ctx, k3_id, "k3/selection")
+	await _capture_commit_state(ctx, k3_id, "k3/selection/committed")
+	_remember_mode_commit(ctx, "k3/selection", k3_id)
+	await _undo_until_unit_clear(ctx, k3_id, _K3_CELL)
 	await _rearm_trample_awaiting(ctx, k3_id)
 	await _drag_through_cells_with_route_checks(ctx, route, "k3", false, &"trample_paint")
 	_assert_k3_trample_committed(ctx, k3_id, "k3/drag")
 	await _capture_commit_state(ctx, k3_id, "k3/drag/committed")
 	_remember_mode_commit(ctx, "k3/drag", k3_id)
-	if not _qa_fast_enabled():
-		_assert_mode_commit_parity(ctx, "k3/selection", "k3/drag")
+	_assert_mode_commit_parity(ctx, "k3/selection", "k3/drag")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
 		"red_on": false,
 		"red_stand": _TRAMPLE_END,
@@ -452,21 +447,19 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 		"manhattan": true,
 	}, "k4/phase1/stand")
 	await _enter_k4_auto_run_paint_mode(ctx, k4_id)
-	if not _qa_fast_enabled():
-		await _select_k4_detour_and_run_route(ctx, k4_id, bowling, "k4/selection")
-		await _wait_ability_settle(ctx)
-		await _capture_commit_state(ctx, k4_id, "k4/selection/committed")
-		_assert_k4_run_committed(ctx, k4_id, bowling, "k4/selection")
-		_remember_mode_commit(ctx, "k4/selection", k4_id)
-		await _undo_until_unit_clear(ctx, k4_id, _K4_CELL)
-		await _enter_k4_auto_run_paint_mode(ctx, k4_id)
+	await _select_k4_detour_and_run_route(ctx, k4_id, bowling, "k4/selection")
+	await _wait_ability_settle(ctx)
+	await _capture_commit_state(ctx, k4_id, "k4/selection/committed")
+	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/selection")
+	_remember_mode_commit(ctx, "k4/selection", k4_id)
+	await _undo_until_unit_clear(ctx, k4_id, _K4_CELL)
+	await _enter_k4_auto_run_paint_mode(ctx, k4_id)
 	await _paint_k4_detour_and_run_route(ctx, k4_id, bowling, "k4/drag")
 	await _capture_commit_state(ctx, k4_id, "k4/drag/committed")
 	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/drag")
 	_remember_mode_commit(ctx, "k4/drag", k4_id)
-	if not _qa_fast_enabled():
-		_record_mode_commit_comparison(ctx, "k4/selection", "k4/drag")
-		_assert_mode_commit_parity(ctx, "k4/selection", "k4/drag")
+	_record_mode_commit_comparison(ctx, "k4/selection", "k4/drag")
+	_assert_mode_commit_parity(ctx, "k4/selection", "k4/drag")
 	await _select_ability_for_unit(ctx, k4_id, _BOWLING_CHARGE_ID)
 	await _probe_cell(ctx, k4_id, _K4_RUN_TRIGGER_CELL, {
 		"red_on": false,

@@ -154,6 +154,14 @@ func setup(
 	set_process(true)
 
 
+func teardown() -> void:
+	set_process(false)
+	_map_view = null
+	_director = null
+	_intent_state = null
+	_planning_input = null
+
+
 func apply_settings(settings: GameSettings) -> void:
 	_game_settings = settings
 	if _planning_input != null:
@@ -281,6 +289,45 @@ func is_hover_action_range_tile(cell: Vector2i) -> bool:
 
 func is_hover_threat_tile(cell: Vector2i) -> bool:
 	return is_hover_action_range_tile(cell)
+
+
+## Blue route for an armed movement skill, shared with the preview route renderer.
+func awaiting_movement_hover_route_cells() -> Array[Vector2i]:
+	if _director == null or _board == null or _planning_input == null:
+		return []
+	if _director.selected_unit_id < 0 or not _board.is_in_bounds(_hover_coord):
+		return []
+	var unit: UnitState = _proj_unit(_director.selected_unit_id)
+	if unit == null or not unit.is_alive():
+		return []
+	if not _can_show_action_range_tiles(
+		unit, _director.selected_ability_index, _planning_input.force_basic_movement,
+	):
+		return []
+	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
+	if (
+		ability == null
+		or AbilitySystem.planning_commit_flow(unit, ability)
+		!= GameEnums.PlanningCommitFlow.AWAITING_TARGET
+		or not AbilitySystem.planning_is_valid_awaiting_endpoint(
+			_proj_origin(unit), _hover_coord, ability,
+		)
+		or not AbilitySystem.ability_has_movement_effect(ability)
+	):
+		return []
+	var sim_path: Array = []
+	var action_split: int = -1
+	var hover_preview: CombatPlanningPreview = _planning_input.preview_state
+	if hover_preview != null:
+		sim_path = hover_preview.preview_paths.get(unit.id, [])
+		action_split = int(hover_preview.action_splits.get(unit.id, -1))
+	return CombatPlanningPreview.awaiting_movement_route_cells(
+		_proj_origin(unit),
+		_hover_coord,
+		_planning_input.get_drag_route(),
+		sim_path,
+		action_split,
+	)
 
 
 func clear_live_preview() -> void:

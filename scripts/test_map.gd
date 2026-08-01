@@ -134,7 +134,6 @@ func _ready() -> void:
 	_fps_hud.name = "FpsHud"
 	add_child(_fps_hud)
 	get_viewport().size_changed.connect(_on_viewport_resized)
-	get_window().close_requested.connect(_persist_settings)
 
 	_generate_map()
 	_spawn_character_actor()
@@ -186,12 +185,6 @@ func _load_character_profile() -> void:
 
 
 func _exit_tree() -> void:
-	_persist_settings()
-
-
-func _persist_settings() -> void:
-	_settings.capture_placement_from_window(get_window())
-	_settings.save_to_disk()
 	_effects.settings.save_to_disk()
 
 

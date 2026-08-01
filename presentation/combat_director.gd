@@ -34,9 +34,9 @@ const PUSH_ANIM_FALLBACK: float = 1.0 ## Safety timeout if push signal never arr
 
 var base_board: BoardState
 var board: BoardState
-var plan_pre_move: Timeline
-var plan_action: Timeline
-var plan_post_move: Timeline
+var plan_pre_move: Timeline = Timeline.new()
+var plan_action: Timeline = Timeline.new()
+var plan_post_move: Timeline = Timeline.new()
 var phase: Phase = Phase.PLANNING
 var selected_unit_id: int = -1
 var selected_ability_index: int = 0

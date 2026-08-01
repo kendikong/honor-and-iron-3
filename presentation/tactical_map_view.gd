@@ -145,7 +145,6 @@ func _ready() -> void:
 	_combat_shell.bind_settings(_settings)
 	_camera.changed.connect(_center_map)
 	get_viewport().size_changed.connect(_on_viewport_resized)
-	get_window().close_requested.connect(_persist_settings)
 
 	_clock_hud = _WorldClockHud.new()
 	_clock_hud.name = "WorldClockHud"
@@ -311,12 +310,6 @@ func _init_tile_pipeline() -> void:
 
 
 func _exit_tree() -> void:
-	_persist_settings()
-
-
-func _persist_settings() -> void:
-	_settings.capture_placement_from_window(get_window())
-	_settings.save_to_disk()
 	_effects.settings.save_to_disk()
 
 

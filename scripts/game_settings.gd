@@ -23,6 +23,7 @@ const RESOLUTION_PRESETS: Array[Vector2i] = [
 
 const WINDOW_MODE_LABELS: PackedStringArray = [
 	"Windowed",
+	"Maximized",
 	"Fullscreen (Borderless Window)",
 	"Exclusive Fullscreen",
 ]
@@ -158,7 +159,10 @@ func load_from_disk() -> void:
 
 
 func capture_placement_from_window(window: Window) -> void:
-	window_mode = DisplayServer.window_get_mode()
+	var captured_mode: DisplayServer.WindowMode = DisplayServer.window_get_mode()
+	if captured_mode == DisplayServer.WINDOW_MODE_MINIMIZED:
+		return
+	window_mode = captured_mode
 	if window != null:
 		screen_index = window.current_screen
 	else:
@@ -289,19 +293,23 @@ func set_resolution_index(index: int) -> void:
 
 func window_mode_index() -> int:
 	match window_mode:
-		DisplayServer.WINDOW_MODE_FULLSCREEN:
+		DisplayServer.WINDOW_MODE_MAXIMIZED:
 			return 1
-		DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
+		DisplayServer.WINDOW_MODE_FULLSCREEN:
 			return 2
+		DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
+			return 3
 		_:
 			return 0
 
 
 func set_window_mode_index(index: int) -> void:
-	match clampi(index, 0, 2):
+	match clampi(index, 0, 3):
 		1:
-			window_mode = DisplayServer.WINDOW_MODE_FULLSCREEN
+			window_mode = DisplayServer.WINDOW_MODE_MAXIMIZED
 		2:
+			window_mode = DisplayServer.WINDOW_MODE_FULLSCREEN
+		3:
 			window_mode = DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
 		_:
 			window_mode = DisplayServer.WINDOW_MODE_WINDOWED
