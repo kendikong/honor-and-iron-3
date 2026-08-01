@@ -120,6 +120,15 @@ Scenarios must prove **both** rules:
 
 **Summary (honest):** **14 / 30** factory rows meta-critic `PASS` · **16** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only). **Manifest:** `docs/knight_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
 
+### Owner no-regression (do not modify without explicit approval)
+
+| Factory id | Reason |
+|------------|--------|
+| `knight_bowling_charge` | Owner-verified correct — DASH / chain-push behavior |
+| `knight_trampling_advance` | Owner-verified correct — MOVE / TRAMPLE / PUSH path |
+
+Do **not** weaken, replace, or “simplify” harness/scenario/production paths for these skills during K3-LOCK matrix work. Matrix may stay `HARNESS_ONLY` until owner requests promotion; **correctness &gt; coverage row status**.
+
 ### Movement + actives
 
 | Bible / factory id | Type | Scenario file | Tier 1 | Notes |

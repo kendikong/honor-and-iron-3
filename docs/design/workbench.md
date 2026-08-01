@@ -13,6 +13,7 @@ GAUNTLET SCORE │ knight-template K3-LOCK │ Round 6 (critic)
 SCORE: 55/100 │ THRESHOLD: 95 │ FAIL │ CLIMBING
 DELTA: +7 vs round 5 (was 48)
 NEXT: deepen 14 PASS row asserts; promote remaining 16 rows; re-critic until ≥95
+STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
 

@@ -713,6 +713,7 @@ static func run_indestructible_bastion(failures: Array[String]) -> void:
 	var knight: UnitState = unit_on_board(board, 1)
 	knight.health.current_hp = 3
 	soften_for_melee_hit(knight)
+	var def_at_trigger: int = knight.current_defense
 	place_enemy_basher(board, 2, Vector2i(4, 2))
 	boost_striker(unit_on_board(board, 2))
 	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
@@ -729,6 +730,11 @@ static func run_indestructible_bastion(failures: Array[String]) -> void:
 		failures, "indestructible_bastion/used",
 		after != null and after.passive_flags.get("bastion_used", false),
 		"bastion trigger must fire once",
+	)
+	assert_true(
+		failures, "indestructible_bastion/shield_def",
+		after != null and after.armor >= def_at_trigger,
+		"bastion must grant SHIELD equal to DEF on lethal trigger",
 	)
 	var cfg_up: Dictionary = with_single_passive(&"indestructible_bastion", true)
 	var board2: BoardState = make_plain_board(Vector2i(8, 5))

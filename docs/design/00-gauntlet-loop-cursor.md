@@ -167,6 +167,26 @@ Do not cap at “3 rounds” as the primary stop condition. Use:
 
 When **MAX_ROUNDS_PER_PIECE** exhausts: write `FAILURE_REPORT.md` and stop — do **not** accept the piece or expand scope.
 
+### Rule 5c — Forbidden early stop (owner-mandated loops)
+
+When the owner sets the stop condition to **critic `RESULT: PASS` and `SCORE ≥ PASS_THRESHOLD`** (e.g. K3-LOCK at 95):
+
+| Forbidden end-of-turn behavior | Why |
+|--------------------------------|-----|
+| Closing with “loop continues next turn” / “loop status: ACTIVE” | Turn boundary is **not** a stop condition |
+| Reporting harness green, matrix `N/30`, or score climb as if work is done | Substitutes **progress** for **PASS** (Rule 4 violation) |
+| Ending after builder work **without** a fresh `gauntlet-critic` invocation in the **same** turn | Self-grading by omission |
+| Marking template `LOCKED` or matrix rows `PASS` without critic manifest | Builder cannot approve |
+
+**Required before ending a turn:**
+
+1. **Either** post critic score banner with `RESULT: PASS` and `SCORE ≥ threshold`
+2. **Or** post `BLOCKER:` with one concrete item that **requires the owner** (missing Godot, auth, explicit stop) — not “remaining work exists”
+
+If builder work shipped and score is still below threshold → **invoke critic again** in the same turn when context allows; otherwise end with `BLOCKER: context/token — resume with "continue gauntlet"` and **do not** imply completion.
+
+**Workbench:** set `STOP_CONDITION_MET: yes | no` on every update; must be `yes` only when critic PASS ≥ threshold on the piece.
+
 For long runs: use **Cursor Cloud Automations** or a **recurring local Agent task** (if your build supports it). The `/loop` skill is **Claude Code / Fable** terminology — Cursor may not expose the same slash command; if not, the **lead must explicitly re-invoke** builder → critic each round. For overnight: Cloud Automation or explicit “continue until boundary in `UNATTENDED_RUN.md`.”
 
 ### Rule 6 — Watch without mediating
