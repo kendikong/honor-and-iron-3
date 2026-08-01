@@ -41,7 +41,7 @@ const _SETTLE_DELTA_MS := 20
 const _ABILITY_SETTLE_FRAMES := 6
 
 
-func test_live_planning_bible_multi_knight_session(timeout := 150000) -> void:
+func test_live_planning_bible_multi_knight_session(timeout := 180000) -> void:
 	var runner := scene_runner("res://scenes/TestBattle.tscn")
 	_ensure_live_test_window(runner)
 	await runner.simulate_frames(8)
@@ -119,50 +119,70 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 	assert_int(knight.movement.points_left).is_equal(3)
 	var bash: AbilityData = await _select_ability_for_unit(ctx, k1_id, _SHIELD_BASH_ID)
 	assert_object(bash).is_not_null()
-	await _hover_cell(ctx, _K1_CELL)
-	assert_bool(_overlay_has_blue_tile(overlay, director.board)).is_true()
-	_assert_red_live(ctx, bash, true, _K1_CELL, "k1/phase1/red_at_stand")
-	_assert_red_cell_live(ctx, bash, false, _K1_CELL, _E_BASH_CELL, "k1/phase1/enemy_oob")
-	await _hover_cell(ctx, _HOVER_WALK)
-	var ghost: UnitState = await _preview_unit(ctx, k1_id, _HOVER_WALK)
-	assert_object(ghost).is_not_null()
-	assert_that(ghost.position).is_equal(_HOVER_WALK)
-	_assert_preview_path_ends(
-		ctx, k1_id, _HOVER_WALK, 2, _K1_CELL, "k1/phase2/walk_path",
-	)
-	_assert_red_live(ctx, bash, true, _HOVER_WALK, "k1/phase2/red_follows_walk")
-	var walk_icon: String = input.compute_hover_action_icon(_HOVER_WALK)
-	assert_bool(walk_icon.contains(PlanningIcons.GLYPH_WALK)).is_true()
-	await _hover_cell(ctx, _E_BASH_CELL)
-	ghost = await _preview_unit(ctx, k1_id, _BASH_APPROACH)
-	assert_that(ghost.position).is_equal(_BASH_APPROACH)
-	_assert_preview_path_ends(
-		ctx, k1_id, _BASH_APPROACH, 3, _K1_CELL, "k1/phase4/approach_path",
-	)
-	_assert_red_live(ctx, bash, true, _BASH_APPROACH, "k1/phase4/red_at_approach")
+	await _probe_cell(ctx, k1_id, _K1_CELL, {
+		"blue_any": true,
+		"red_on": true,
+		"red_stand": _K1_CELL,
+		"ability": bash,
+		"red_cell": {"cell": _E_BASH_CELL, "stand": _K1_CELL, "in_range": false},
+	}, "k1/phase1/stand")
+	await _probe_cell(ctx, k1_id, _HOVER_WALK, {
+		"ghost_pos": _HOVER_WALK,
+		"path_end": _HOVER_WALK,
+		"path_start": _K1_CELL,
+		"path_min_size": 2,
+		"manhattan": true,
+		"red_on": true,
+		"red_stand": _HOVER_WALK,
+		"ability": bash,
+		"icon_has": [PlanningIcons.GLYPH_WALK],
+		"blue_any": true,
+	}, "k1/phase2/walk")
+	await _probe_cell(ctx, k1_id, _E_BASH_CELL, {
+		"ghost_pos": _BASH_APPROACH,
+		"path_end": _BASH_APPROACH,
+		"path_start": _K1_CELL,
+		"path_min_size": 3,
+		"manhattan": true,
+		"red_on": true,
+		"red_stand": _BASH_APPROACH,
+		"ability": bash,
+		"icon_has": [PlanningIcons.GLYPH_WALK, PlanningIcons.GLYPH_ATTACK],
+		"blue_any": true,
+	}, "k1/phase4/approach")
 	var push_to: Vector2i = _preview_push_destination(input, e_bash_id)
 	assert_bool(push_to.x > _E_BASH_CELL.x).is_true()
-	var enemy_icon: String = input.compute_hover_action_icon(_E_BASH_CELL)
-	assert_bool(enemy_icon.contains(PlanningIcons.GLYPH_WALK)).is_true()
-	assert_bool(enemy_icon.contains(PlanningIcons.GLYPH_ATTACK)).is_true()
 	var bash_drag_route: Array[Vector2i] = [_K1_CELL, _BASH_APPROACH]
-	await _dry_drag_then_cancel(ctx, bash_drag_route)
+	await _dry_drag_then_cancel(ctx, bash_drag_route, k1_id, "k1/dry_drag")
+	await _probe_cell(ctx, k1_id, _E_BASH_CELL, {
+		"ghost_pos": _BASH_APPROACH,
+		"path_end": _BASH_APPROACH,
+		"path_start": _K1_CELL,
+		"path_min_size": 3,
+		"manhattan": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK, PlanningIcons.GLYPH_ATTACK],
+	}, "k1/selection/pre_tap")
 	await _tap_cell(ctx, _E_BASH_CELL)
+	await _wait_ability_settle(ctx)
+	_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
+	await _probe_cell(ctx, k1_id, _BASH_APPROACH, {
+		"red_on": false,
+		"red_stand": _BASH_APPROACH,
+		"ability": bash,
+		"manhattan": true,
+	}, "k1/selection/post_commit")
 	await _wait_ability_settle(ctx)
 	_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
 	await _undo_until_unit_clear(ctx, k1_id)
 	await _drag_release_at(ctx, bash_drag_route, _E_BASH_CELL)
 	await _wait_ability_settle(ctx)
 	_assert_k1_bash_committed(ctx, k1_id, "k1/drag")
-	var bash_pre: TimelineAction = _committed_pre_move_for_unit(director, k1_id)
-	assert_object(bash_pre).is_not_null()
-	assert_that(bash_pre.target_coord).is_equal(_BASH_APPROACH)
-	var projected: UnitState = director.projected_state.get_unit_by_id(k1_id)
-	assert_object(projected).is_not_null()
-	assert_int(projected.ability.points_left).is_equal(0)
-	await _hover_cell(ctx, _BASH_APPROACH)
-	await _wait_ability_settle(ctx)
-	_assert_red_live(ctx, bash, false, _BASH_APPROACH, "k1/phase5/red_off_after_commit")
+	await _probe_cell(ctx, k1_id, _BASH_APPROACH, {
+		"red_on": false,
+		"red_stand": _BASH_APPROACH,
+		"ability": bash,
+		"manhattan": true,
+	}, "k1/drag/post_commit")
 	ctx.expect["k1_pos"] = _BASH_APPROACH
 	var bashed: UnitState = director.projected_state.get_unit_by_id(e_bash_id)
 	assert_object(bashed).is_not_null()
@@ -178,24 +198,31 @@ func _journey_knight2_chain_hook(ctx: Dictionary) -> void:
 	await _select_unit_live(ctx, k2_id, _K2_CELL)
 	var hook: AbilityData = await _select_ability_for_unit(ctx, k2_id, _CHAIN_HOOK_ID)
 	assert_object(hook).is_not_null()
-	await _hover_cell(ctx, _K2_CELL)
-	_assert_red_live(ctx, hook, true, _K2_CELL, "k2/phase1/red_at_stand")
-	_assert_red_cell_live(ctx, hook, true, _K2_CELL, _E_HOOK_CELL, "k2/phase1/enemy_in_red")
-	await _hover_cell(ctx, Vector2i(2, 3))
-	var ghost: UnitState = await _preview_unit(ctx, k2_id, Vector2i(2, 3))
-	assert_that(ghost.position).is_equal(Vector2i(2, 3))
-	_assert_preview_path_ends(
-		ctx, k2_id, Vector2i(2, 3), 2, _K2_CELL, "k2/phase2/walk_path",
-	)
-	_assert_red_cell_live(ctx, hook, true, Vector2i(2, 3), _E_HOOK_CELL, "k2/phase2/enemy_in_red")
-	await _hover_cell(ctx, _E_HOOK_CELL)
-	await _wait_ability_settle(ctx)
+	await _probe_cell(ctx, k2_id, _K2_CELL, {
+		"red_on": true,
+		"red_stand": _K2_CELL,
+		"ability": hook,
+		"red_cell": {"cell": _E_HOOK_CELL, "stand": _K2_CELL, "in_range": true},
+		"blue_any": true,
+	}, "k2/phase1/stand")
+	await _probe_cell(ctx, k2_id, Vector2i(2, 3), {
+		"ghost_pos": Vector2i(2, 3),
+		"path_end": Vector2i(2, 3),
+		"path_start": _K2_CELL,
+		"path_min_size": 2,
+		"manhattan": true,
+		"red_cell": {"cell": _E_HOOK_CELL, "stand": Vector2i(2, 3), "in_range": true},
+		"blue_any": true,
+	}, "k2/phase2/walk")
+	await _probe_cell(ctx, k2_id, _E_HOOK_CELL, {
+		"icon_has": [PlanningIcons.GLYPH_ATTACK],
+		"manhattan": true,
+		"blue_any": true,
+	}, "k2/phase4/enemy")
 	var pull_preview: Vector2i = _preview_push_destination(input, e_hook_id)
 	if pull_preview.x > -900000:
 		assert_bool(pull_preview.x < _E_HOOK_CELL.x).is_true()
-	var hook_icon: String = input.compute_hover_action_icon(_E_HOOK_CELL)
-	assert_bool(hook_icon.contains(PlanningIcons.GLYPH_ATTACK)).is_true()
-	await _dry_drag_then_cancel(ctx, [_K2_CELL, Vector2i(2, 3)])
+	await _dry_drag_then_cancel(ctx, [_K2_CELL, Vector2i(2, 3)], k2_id, "k2/dry_drag")
 	await _tap_cell(ctx, _E_HOOK_CELL)
 	await _wait_ability_settle(ctx)
 	_assert_k2_hook_committed(ctx, k2_id, e_hook_id, "k2/selection")
@@ -220,41 +247,121 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 	await _select_unit_live(ctx, k3_id, _K3_CELL)
 	var trample: AbilityData = await _select_ability_for_unit(ctx, k3_id, _TRAMPLE_ID)
 	assert_object(trample).is_not_null()
+	await _probe_cell(ctx, k3_id, _K3_CELL, {
+		"blue_any": true,
+		"red_on": true,
+		"red_stand": _K3_CELL,
+		"ability": trample,
+		"manhattan": true,
+	}, "k3/phase1/stand")
 	await _tap_cell(ctx, _K3_CELL)
 	await _wait_ability_settle(ctx)
 	assert_bool(input.awaiting_targeting_active()).is_true()
 	assert_object(director.find_awaiting_action(k3_id)).is_not_null()
-	_assert_red_live(ctx, trample, true, _K3_CELL, "k3/phase3/red_while_awaiting")
+	await _probe_cell(ctx, k3_id, _K3_CELL, {
+		"red_on": true,
+		"red_stand": _K3_CELL,
+		"ability": trample,
+		"manhattan": true,
+	}, "k3/phase2/awaiting_armed")
 	var route: Array[Vector2i] = _TRAMPLE_FULL_PATH.duplicate()
-	await _dry_drag_then_cancel(ctx, route)
+	await _probe_cell(ctx, k3_id, _TRAMPLE_ROUTE[0], {
+		"path": [_K3_CELL, _TRAMPLE_ROUTE[0]],
+		"ghost_pos": _TRAMPLE_ROUTE[0],
+		"manhattan": true,
+		"preview_nonempty": true,
+		"red_on": true,
+		"red_stand": _K3_CELL,
+		"ability": trample,
+	}, "k3/hover/east")
+	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
+		"path": _TRAMPLE_FULL_PATH,
+		"ghost_pos": _TRAMPLE_END,
+		"manhattan": true,
+		"preview_nonempty": true,
+		"red_on": true,
+		"red_stand": _K3_CELL,
+		"ability": trample,
+	}, "k3/hover/end")
+	var trample_dry_steps: Array = [
+		{"path": [_K3_CELL, _TRAMPLE_ROUTE[0]], "ghost_pos": _TRAMPLE_ROUTE[0]},
+		{"path": _TRAMPLE_FULL_PATH, "ghost_pos": _TRAMPLE_END},
+	]
+	await _dry_drag_then_cancel(ctx, route, k3_id, "k3/dry_drag", trample_dry_steps)
 	await _rearm_trample_awaiting(ctx, k3_id)
+	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
+		"path": _TRAMPLE_FULL_PATH,
+		"ghost_pos": _TRAMPLE_END,
+		"manhattan": true,
+		"preview_nonempty": true,
+	}, "k3/selection/pre_tap")
 	await _tap_cell(ctx, _TRAMPLE_END)
 	await _wait_ability_settle(ctx)
 	_assert_k3_trample_committed(ctx, k3_id, "k3/selection")
 	await _undo_until_unit_clear(ctx, k3_id)
 	await _rearm_trample_awaiting(ctx, k3_id)
-	await _drag_through_cells_with_route_checks(ctx, route, "k3", false, &"exact")
+	await _drag_through_cells_with_route_checks(ctx, route, "k3", false, &"trample_paint")
 	_assert_k3_trample_committed(ctx, k3_id, "k3/drag")
-	await _hover_cell(ctx, _TRAMPLE_END)
-	await _wait_ability_settle(ctx)
-	_assert_red_live(ctx, trample, false, _TRAMPLE_END, "k3/drag/red_off_after_commit")
+	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
+		"red_on": false,
+		"red_stand": _TRAMPLE_END,
+		"ability": trample,
+		"manhattan": true,
+	}, "k3/drag/post_commit")
 	await _select_unit_live(ctx, k3_id, _TRAMPLE_END)
 	await _enter_basic_movement_mode(ctx, k3_id)
-	await _hover_cell(ctx, _TRAMPLE_POST_DEST)
-	await _wait_ability_settle(ctx)
-	var post_ghost: UnitState = await _preview_unit(ctx, k3_id, _TRAMPLE_POST_DEST)
-	assert_object(post_ghost).override_failure_message(
-		"k3/post/hover: preview ghost missing",
-	).is_not_null()
-	assert_that(post_ghost.position).override_failure_message(
-		"k3/post/hover: preview ghost position",
-	).is_equal(_TRAMPLE_POST_DEST)
-	_assert_preview_path_equals(ctx, k3_id, _TRAMPLE_POST_FULL_PATH, "k3/post/hover_preview")
-	await _dry_drag_then_cancel(ctx, _TRAMPLE_POST_ROUTE)
+	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
+		"blue_any": true,
+		"manhattan": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK],
+		"icon_not": [PlanningIcons.GLYPH_ATTACK],
+	}, "k3/post/stand")
+	await _probe_cell(ctx, k3_id, Vector2i(7, 3), {
+		"blue_has": [Vector2i(7, 3)],
+		"ghost_pos": Vector2i(7, 3),
+		"path": [_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_END, Vector2i(7, 3)],
+		"manhattan": true,
+		"preview_nonempty": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK],
+		"icon_not": [PlanningIcons.GLYPH_ATTACK],
+	}, "k3/post/hover_east")
+	await _probe_cell(ctx, k3_id, _TRAMPLE_POST_DEST, {
+		"path": _TRAMPLE_POST_FULL_PATH,
+		"ghost_pos": _TRAMPLE_POST_DEST,
+		"manhattan": true,
+		"preview_nonempty": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK],
+		"blue_any": true,
+	}, "k3/post/hover_dest")
+	var post_dry_steps: Array = [
+		{
+			"path": [_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_END, Vector2i(7, 3)],
+			"ghost_pos": Vector2i(7, 3),
+			"preview_nonempty": true,
+		},
+		{
+			"path": [_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_END, Vector2i(7, 3), Vector2i(8, 3)],
+			"ghost_pos": Vector2i(8, 3),
+			"preview_nonempty": true,
+		},
+		{
+			"path": _TRAMPLE_POST_FULL_PATH,
+			"ghost_pos": _TRAMPLE_POST_DEST,
+			"preview_nonempty": true,
+		},
+	]
+	await _dry_drag_then_cancel(ctx, _TRAMPLE_POST_ROUTE, k3_id, "k3/post/dry_drag", post_dry_steps)
 	await _drag_through_cells_with_route_checks(
 		ctx, _TRAMPLE_POST_ROUTE, "k3/post", false, &"post_after_trample",
 	)
 	_assert_k3_post_move_committed(ctx, k3_id, "k3/post")
+	await _probe_cell(ctx, k3_id, _TRAMPLE_POST_DEST, {
+		"path": _TRAMPLE_POST_FULL_PATH,
+		"ghost_pos": _TRAMPLE_POST_DEST,
+		"manhattan": true,
+		"preview_nonempty": true,
+		"blue_any": true,
+	}, "k3/post/after_commit")
 	ctx.expect["k3_pos"] = _TRAMPLE_POST_DEST
 	_cancel_active_pointer(ctx)
 
@@ -268,15 +375,33 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 	await _select_unit_live(ctx, k4_id, _K4_CELL)
 	var bowling: AbilityData = await _select_ability_for_unit(ctx, k4_id, _BOWLING_CHARGE_ID)
 	assert_object(bowling).is_not_null()
-	await _dry_drag_then_cancel(ctx, _K4_DETOUR_PLUS_RUN_ROUTE)
+	await _probe_cell(ctx, k4_id, _K4_CELL, {
+		"blue_any": true,
+		"red_on": true,
+		"red_stand": _K4_CELL,
+		"ability": bowling,
+		"manhattan": true,
+	}, "k4/phase1/stand")
+	await _dry_drag_then_cancel(ctx, _K4_DETOUR_PLUS_RUN_ROUTE, k4_id, "k4/dry_drag")
+	await _probe_cell(ctx, k4_id, _K4_RUN_TRIGGER_CELL, {
+		"path": _K4_DETOUR_PLUS_RUN_ROUTE,
+		"ghost_pos": _K4_RUN_TRIGGER_CELL,
+		"manhattan": true,
+		"preview_nonempty": true,
+	}, "k4/selection/pre_tap")
 	await _tap_cell(ctx, _K4_RUN_TRIGGER_CELL)
 	await _wait_ability_settle(ctx)
 	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/selection")
 	await _undo_until_unit_clear(ctx, k4_id)
 	await _drag_k4_detour_and_run_preview(ctx, k4_id, bowling, 0)
 	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/drag")
-	await _hover_cell(ctx, _K4_RUN_TRIGGER_CELL)
-	await _wait_ability_settle(ctx)
+	await _probe_cell(ctx, k4_id, _K4_RUN_TRIGGER_CELL, {
+		"red_on": false,
+		"red_stand": _K4_RUN_TRIGGER_CELL,
+		"ability": bowling,
+		"manhattan": true,
+		"blue_any": true,
+	}, "k4/drag/post_commit")
 	assert_int(input.planning_display_ap_left(k4_id)).is_equal(0)
 	assert_bool(input.action_range_visible_for_hover()).is_false()
 	assert_bool(_overlay_has_red_tile(ctx.overlay, director.board)).is_false()
@@ -390,19 +515,35 @@ func _tap_cell(ctx: Dictionary, cell: Vector2i) -> void:
 	await runner.simulate_frames(_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 
 
-func _dry_drag_then_cancel(ctx: Dictionary, cells: Array[Vector2i]) -> void:
+func _dry_drag_then_cancel(
+	ctx: Dictionary,
+	cells: Array[Vector2i],
+	unit_id: int,
+	label_prefix: String,
+	step_contracts: Array = [],
+) -> void:
 	if cells.size() < 2:
 		return
 	var runner: GdUnitSceneRunner = ctx.runner
 	var input: CombatPlanningInput = ctx.input
-	await _hover_cell(ctx, cells[0])
+	await _probe_cell(ctx, unit_id, cells[0], {}, "%s/start" % label_prefix)
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
 	for i: int in range(1, cells.size()):
+		var step_label: String = "%s/step_%d" % [label_prefix, i]
+		var contract: Dictionary = {}
+		if i - 1 < step_contracts.size():
+			contract = step_contracts[i - 1]
+		if not contract.has("preview_nonempty"):
+			contract["preview_nonempty"] = true
+		if not contract.has("manhattan"):
+			contract["manhattan"] = true
 		await _hover_cell(ctx, cells[i])
 		await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+		await _audit_surface(ctx, unit_id, cells[i], contract, step_label)
 	input.cancel_drag()
 	await _wait_ability_settle(ctx)
+	assert_bool(input.dragging).is_false()
 	assert_bool(input.dragging).is_false()
 
 
@@ -571,6 +712,97 @@ func _hover_cell(ctx: Dictionary, cell: Vector2i) -> void:
 	var screen_pos: Vector2 = scene.position + scene.grid_to_local(cell) * map_root.scale.x
 	runner.simulate_mouse_move(screen_pos)
 	await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+
+
+## Hover + full planning-surface audit (preview path, blue/red overlay, cursor glyph).
+## Contract keys (all optional): path, path_end, path_start, path_min_size, manhattan,
+## ghost_pos, preview_nonempty, icon_has, icon_not, red_on, red_stand, ability,
+## red_cell, red_cell_in, blue_any, blue_has, blue_not.
+func _probe_cell(
+	ctx: Dictionary,
+	unit_id: int,
+	cell: Vector2i,
+	contract: Dictionary,
+	label: String,
+) -> Dictionary:
+	await _hover_cell(ctx, cell)
+	await _wait_ability_settle(ctx)
+	return await _audit_surface(ctx, unit_id, cell, contract, label)
+
+
+func _audit_surface(
+	ctx: Dictionary,
+	unit_id: int,
+	hover_cell: Vector2i,
+	contract: Dictionary,
+	label: String,
+) -> Dictionary:
+	var input: CombatPlanningInput = ctx.input
+	var path: Array[Vector2i] = _preview_path(input, unit_id)
+	var icon: String = input.compute_hover_action_icon(hover_cell)
+	var surface: Dictionary = {
+		"hover": hover_cell,
+		"path": path,
+		"icon": icon,
+		"red_gate": input.action_range_visible_for_hover(),
+		"overlay_red": _overlay_has_red_tile(ctx.overlay, ctx.board),
+		"overlay_blue": _overlay_has_blue_tile(ctx.overlay, ctx.board),
+		"blue_tiles": _collect_blue_tiles(ctx),
+		"red_tiles": _collect_red_tiles(ctx),
+		"dragging": input.dragging,
+		"drag_route": input.get_drag_route() if input.dragging else [],
+	}
+	if contract.has("preview_nonempty"):
+		assert_bool(path.size() > 0).override_failure_message(
+			"%s: preview path must not be empty at %s" % [label, hover_cell],
+		).is_equal(contract["preview_nonempty"])
+	if contract.has("path"):
+		_assert_preview_path_equals(ctx, unit_id, contract["path"], label)
+	elif contract.has("path_end"):
+		var min_sz: int = int(contract.get("path_min_size", 2))
+		var start: Vector2i = contract.get("path_start", hover_cell)
+		_assert_preview_path_ends(ctx, unit_id, contract["path_end"], min_sz, start, label)
+	if contract.get("manhattan", false) and not path.is_empty():
+		_assert_path_is_manhattan(path, label)
+	if contract.has("ghost_pos"):
+		var ghost: UnitState = await _preview_unit(ctx, unit_id, contract["ghost_pos"])
+		assert_object(ghost).override_failure_message(
+			"%s: preview ghost missing at %s" % [label, hover_cell],
+		).is_not_null()
+		assert_that(ghost.position).override_failure_message(
+			"%s: preview ghost position" % label,
+		).is_equal(contract["ghost_pos"])
+	for glyph: Variant in contract.get("icon_has", []):
+		assert_bool(icon.contains(glyph)).override_failure_message(
+			"%s: icon must contain %s, got %s" % [label, glyph, icon],
+		).is_true()
+	for glyph_n: Variant in contract.get("icon_not", []):
+		assert_bool(icon.contains(glyph_n)).override_failure_message(
+			"%s: icon must not contain %s, got %s" % [label, glyph_n, icon],
+		).is_false()
+	if contract.has("red_on"):
+		var ability: AbilityData = contract.get("ability", null)
+		var stand: Vector2i = contract.get("red_stand", hover_cell)
+		_assert_red_live(ctx, ability, contract["red_on"], stand, "%s/red" % label)
+	if contract.has("red_cell"):
+		var rc: Dictionary = contract["red_cell"]
+		_assert_red_cell_live(
+			ctx,
+			contract.get("ability", null),
+			rc.get("in_range", true),
+			rc.get("stand", hover_cell),
+			rc["cell"],
+			"%s/red_cell" % label,
+		)
+	if contract.has("blue_any"):
+		assert_bool(surface["overlay_blue"] == contract["blue_any"]).override_failure_message(
+			"%s: overlay blue expected %s at %s" % [label, contract["blue_any"], hover_cell],
+		).is_true()
+	for blue_cell: Variant in contract.get("blue_has", []):
+		_assert_move_tile_at(ctx, blue_cell, true, "%s/blue_has_%s" % [label, blue_cell])
+	for blue_off: Variant in contract.get("blue_not", []):
+		_assert_move_tile_at(ctx, blue_off, false, "%s/blue_not_%s" % [label, blue_off])
+	return surface
 
 
 func _drag_between_cells(ctx: Dictionary, from: Vector2i, to: Vector2i) -> void:
@@ -764,6 +996,26 @@ func _drag_through_cells_with_route_checks(
 			_assert_preview_path_equals(
 				ctx, unit_id, preview_expected, "%s/preview_path_%d" % [label_prefix, step_index],
 			)
+			var post_icon: String = input.compute_hover_action_icon(cells[step_index])
+			assert_bool(post_icon.contains(PlanningIcons.GLYPH_WALK)).override_failure_message(
+				"%s: post drag must show walk glyph, got %s" % [label_prefix, post_icon],
+			).is_true()
+			assert_bool(_overlay_has_blue_tile(ctx.overlay, ctx.board)).override_failure_message(
+				"%s: post drag must show blue move tiles" % label_prefix,
+			).is_true()
+		elif route_mode == &"trample_paint":
+			_assert_drag_route_equals(ctx, expected, "%s/drag_route_%d" % [label_prefix, step_index])
+			assert_bool(input._paint_valid_movement_endpoint_intent()).override_failure_message(
+				"%s: endpoint paint failed at step %d" % [label_prefix, step_index],
+			).is_true()
+			await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+			_assert_preview_path_equals(
+				ctx, unit_id, expected, "%s/preview_path_%d" % [label_prefix, step_index],
+			)
+			var trample_icon: String = input.compute_hover_action_icon(cells[step_index])
+			assert_bool(trample_icon.contains(PlanningIcons.GLYPH_DASH)).override_failure_message(
+				"%s: trample drag must show dash glyph, got %s" % [label_prefix, trample_icon],
+			).is_true()
 		else:
 			_assert_drag_route_equals(ctx, expected, "%s/drag_route_%d" % [label_prefix, step_index])
 			assert_bool(input._paint_valid_movement_endpoint_intent()).override_failure_message(
@@ -820,10 +1072,25 @@ func _assert_preview_path_equals(
 	expected: Array[Vector2i],
 	label: String,
 ) -> void:
+	if not expected.is_empty():
+		_assert_path_is_manhattan(expected, "%s/expected" % label)
 	var path: Array[Vector2i] = _preview_path(ctx.input, unit_id)
+	if not path.is_empty():
+		_assert_path_is_manhattan(path, "%s/actual" % label)
 	assert_that(path).override_failure_message(
 		"%s: preview path expected %s got %s" % [label, expected, path],
 	).is_equal(expected)
+
+
+func _assert_path_is_manhattan(path: Array[Vector2i], label: String) -> void:
+	for i: int in range(1, path.size()):
+		var a: Vector2i = path[i - 1]
+		var b: Vector2i = path[i]
+		var dx: int = absi(b.x - a.x)
+		var dy: int = absi(b.y - a.y)
+		assert_bool(dx + dy == 1).override_failure_message(
+			"%s: non-orthogonal step %s -> %s in %s" % [label, a, b, path],
+		).is_true()
 
 
 func _assert_preview_path_ends(
@@ -967,6 +1234,36 @@ func _overlay_has_blue_tile(overlay: TacticalPlanningOverlay, board: BoardState)
 			if overlay.is_hover_move_tile(Vector2i(x, y)):
 				return true
 	return false
+
+
+func _collect_blue_tiles(ctx: Dictionary) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var overlay: TacticalPlanningOverlay = ctx.overlay
+	var board: BoardState = ctx.board
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			if overlay.is_hover_move_tile(coord):
+				out.append(coord)
+	return out
+
+
+func _collect_red_tiles(ctx: Dictionary) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var overlay: TacticalPlanningOverlay = ctx.overlay
+	var board: BoardState = ctx.board
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			if overlay.is_hover_action_range_tile(coord):
+				out.append(coord)
+	return out
+
+
+func _assert_move_tile_at(ctx: Dictionary, cell: Vector2i, expect: bool, label: String) -> void:
+	assert_bool(ctx.overlay.is_hover_move_tile(cell) == expect).override_failure_message(
+		"%s: blue move tile at %s expected %s" % [label, cell, expect],
+	).is_true()
 
 
 func _assert_red_live(
