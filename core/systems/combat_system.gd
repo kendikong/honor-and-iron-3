@@ -637,12 +637,7 @@ static func deal_damage(
 			if has_infinite_range or GridSystem.manhattan(target.position, attacker.position) == 1:
 				var retal_dmg := calculate_scaled_damage(target, 2, GameEnums.StatType.PHYSICAL, board)
 				deal_damage_raw(board, target, attacker, retal_dmg, GameEnums.StatType.PHYSICAL, events, "Retaliation Protocol", 2)
-				var is_upgraded = false
-				for status in target.active_statuses:
-					if status.type == GameEnums.StatusType.RETALIATION_PROTOCOL and status.amount == 1:
-						is_upgraded = true
-						break
-				if is_upgraded:
+				if target.is_ability_upgraded(&"knight_retaliation_protocol"):
 					var push_dir = PhysicsSystem.cardinal_from_to(target.position, attacker.position)
 					PhysicsSystem.push(board, attacker, push_dir, 1, events, target)
 

@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight-template K3-LOCK │ Round 3
-SCORE: 64/100 │ THRESHOLD: 95 │ FAIL
-DELTA: +20 vs round 2 (44/100)
-NEXT: fix 5 active [+] implementations → re-add sim asserts → per-row critic → manifest
+GAUNTLET SCORE │ knight-template K3-LOCK │ Round 4 (critic)
+SCORE: 44/100 │ THRESHOLD: 95 │ FAIL │ SLIPPED
+DELTA: −20 vs round 3 (was 64)
+NEXT: fix retaliation StatusData bug, deepen passives, sync matrix notes, per-row critic batch
 ══════════════════════════════════════
 ```
 

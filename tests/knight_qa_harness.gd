@@ -628,6 +628,22 @@ static func run_shield_mastery(failures: Array[String]) -> void:
 		knight != null and knight.armor > armor_before,
 		"front-arc hit must grant SHIELD via Shield Mastery",
 	)
+	var cfg_up: Dictionary = with_single_passive(&"shield_mastery", true)
+	var board2: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
+	unit_on_board(board2, 10).facing = GameEnums.Facing.EAST
+	place_enemy_basher(board2, 11, Vector2i(4, 2))
+	var bash2: AbilityData = ability_on_unit(unit_on_board(board2, 11), &"knight_shield_bash")
+	var armor_before2: int = unit_on_board(board2, 10).armor
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(11, bash2, Vector2i(3, 2), 10))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var knight2: UnitState = result2.final_state.get_unit_by_id(10)
+	assert_true(
+		failures, "shield_mastery/upgrade/shield3",
+		knight2 != null and knight2.armor >= armor_before2 + 3,
+		"upgraded shield mastery must grant SHIELD 3 on front-arc hit",
+	)
 
 
 static func run_bulwark(failures: Array[String]) -> void:
@@ -669,6 +685,24 @@ static func run_kinetic_armor(failures: Array[String]) -> void:
 		knight_after != null and (knight_after.armor > 0 or knight_after.health.current_hp == knight.health.current_hp),
 		"kinetic armor must mitigate damage while shield active",
 	)
+	var cfg_up: Dictionary = with_single_passive(&"kinetic_armor", true)
+	var board2: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
+	var knight2: UnitState = unit_on_board(board2, 10)
+	knight2.armor = 5
+	knight2.health.current_hp = 20
+	place_enemy_basher(board2, 11, Vector2i(4, 2))
+	var bash2: AbilityData = ability_on_unit(unit_on_board(board2, 11), &"knight_shield_bash")
+	var hp_before2: int = knight2.health.current_hp
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(11, bash2, Vector2i(3, 2), 10))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var knight_after2: UnitState = result2.final_state.get_unit_by_id(10)
+	assert_true(
+		failures, "kinetic_armor/upgrade/mitigate2",
+		knight_after2 != null and knight_after2.health.current_hp >= hp_before2 - 1,
+		"upgraded kinetic armor must reduce incoming damage by 2 while shield active",
+	)
 
 
 static func run_indestructible_bastion(failures: Array[String]) -> void:
@@ -695,6 +729,24 @@ static func run_indestructible_bastion(failures: Array[String]) -> void:
 		failures, "indestructible_bastion/used",
 		after != null and after.passive_flags.get("bastion_used", false),
 		"bastion trigger must fire once",
+	)
+	var cfg_up: Dictionary = with_single_passive(&"indestructible_bastion", true)
+	var board2: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
+	var knight2: UnitState = unit_on_board(board2, 10)
+	knight2.health.current_hp = 3
+	soften_for_melee_hit(knight2)
+	place_enemy_basher(board2, 11, Vector2i(4, 2))
+	boost_striker(unit_on_board(board2, 11))
+	var bash2: AbilityData = ability_on_unit(unit_on_board(board2, 11), &"knight_shield_bash")
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(11, bash2, Vector2i(3, 2), 10))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var after2: UnitState = result2.final_state.get_unit_by_id(10)
+	assert_true(
+		failures, "indestructible_bastion/upgrade/str",
+		after2 != null and has_status(after2, GameEnums.StatusType.STAT_BUFF_STR),
+		"upgraded indestructible bastion must grant +2 STR after trigger",
 	)
 
 
@@ -804,6 +856,26 @@ static func run_kinetic_converter(failures: Array[String]) -> void:
 		knight != null and has_status(knight, GameEnums.StatusType.STAT_BUFF_MOV),
 		"being hit must grant MOV buff via Kinetic Converter",
 	)
+	var cfg_up: Dictionary = with_single_passive(&"kinetic_converter", true)
+	var board2: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
+	soften_for_melee_hit(unit_on_board(board2, 10))
+	place_enemy_basher(board2, 11, Vector2i(4, 2))
+	boost_striker(unit_on_board(board2, 11))
+	var bash2: AbilityData = ability_on_unit(unit_on_board(board2, 11), &"knight_shield_bash")
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(11, bash2, Vector2i(3, 2), 10))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var knight2: UnitState = result2.final_state.get_unit_by_id(10)
+	var str_amt: int = 0
+	for s: StatusData in knight2.active_statuses if knight2 else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_STR:
+			str_amt = s.value
+	assert_true(
+		failures, "kinetic_converter/upgrade/str2",
+		knight2 != null and str_amt >= 2,
+		"upgraded kinetic converter must grant +2 STR when hit",
+	)
 
 
 static func run_kinetic_redirection(failures: Array[String]) -> void:
@@ -825,6 +897,25 @@ static func run_rallying_presence(failures: Array[String]) -> void:
 		failures, "rallying_presence/mov_buff",
 		ally != null and has_status(ally, GameEnums.StatusType.STAT_BUFF_MP),
 		"adjacent ally must gain MOV at turn start via Rallying Presence",
+	)
+	var cfg_up: Dictionary = with_single_passive(&"rallying_presence", true)
+	var board2: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board2, 10, Vector2i(3, 3), cfg_up)
+	var ally_def2: UnitData = knight_unit_data()
+	place_unit(board2, 11, ally_def2, GameEnums.Team.PLAYER, Vector2i(3, 4), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var plan2 := Timeline.new()
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var ally2: UnitState = result2.final_state.get_unit_by_id(11)
+	var mov_amt: int = 0
+	for s: StatusData in ally2.active_statuses if ally2 else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_MP:
+			mov_amt = s.value
+	assert_true(
+		failures, "rallying_presence/upgrade/mov2",
+		ally2 != null and mov_amt >= 2,
+		"upgraded rallying presence must grant +2 MOV",
 	)
 
 
@@ -859,6 +950,24 @@ static func run_intercept_tactics(failures: Array[String]) -> void:
 		failures, "intercept_tactics/def_buff",
 		after != null and has_status(after, GameEnums.StatusType.STAT_BUFF_DEF),
 		"redirect skill must grant DEF via Intercept Tactics",
+	)
+	var cfg_up: Dictionary = with_single_passive(&"intercept_tactics", true)
+	var board2: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board2, 10, Vector2i(3, 3), cfg_up)
+	var knight2: UnitState = unit_on_board(board2, 10)
+	var redirect2: AbilityData = ability_on_unit(knight2, &"knight_redirect_strike")
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, redirect2, knight2.position, knight2.id))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var after2: UnitState = result2.final_state.get_unit_by_id(10)
+	var def_amt: int = 0
+	for s: StatusData in after2.active_statuses if after2 else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+			def_amt = s.value
+	assert_true(
+		failures, "intercept_tactics/upgrade/def3",
+		after2 != null and def_amt >= 3,
+		"upgraded intercept tactics must grant +3 DEF on redirect",
 	)
 
 
@@ -947,6 +1056,17 @@ static func run_taunting_strike(failures: Array[String]) -> void:
 		failures, "taunting_strike/taunt",
 		enemy != null and has_status(enemy, GameEnums.StatusType.TAUNT),
 		"taunting strike must apply TAUNT",
+	)
+	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_taunting_strike")
+	var board2: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board2, 10, Vector2i(3, 4), cfg_up)
+	place_dummy(board2, 11, Vector2i(6, 4))
+	var strike_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_taunting_strike")
+	assert_true(
+		failures, "taunting_strike/upgrade/pull2",
+		ability_has_effect(strike_up, GameEnums.EffectType.PULL, true)
+		and strike_up.upgraded_effects[1].amount == 2,
+		"upgraded taunting strike must PULL 2",
 	)
 
 
@@ -1177,6 +1297,26 @@ static func run_retaliation_protocol(failures: Array[String]) -> void:
 		failures, "retaliation_protocol/counter",
 		enemy != null and enemy.health.current_hp < hp_before,
 		"retaliation protocol must counter-attack melee attacker",
+	)
+	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_retaliation_protocol")
+	var board2: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
+	var protocol_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_retaliation_protocol")
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, protocol_up, Vector2i(3, 2), 10))
+	simulate_player_turn(board2, plan2)
+	soften_for_melee_hit(unit_on_board(board2, 10))
+	place_enemy_basher(board2, 11, Vector2i(4, 2))
+	var bash2: AbilityData = ability_on_unit(unit_on_board(board2, 11), &"knight_shield_bash")
+	var pos_before: Vector2i = unit_on_board(board2, 11).position
+	var attack2 := Timeline.new()
+	attack2.add(plan_ability(11, bash2, Vector2i(3, 2), 10))
+	var result2: SimResult = simulate_player_turn(board2, attack2)
+	var enemy2: UnitState = result2.final_state.get_unit_by_id(11)
+	assert_true(
+		failures, "retaliation_protocol/upgrade/push",
+		enemy2 != null and enemy2.position != pos_before,
+		"upgraded retaliation protocol must PUSH counter-attack target",
 	)
 
 
