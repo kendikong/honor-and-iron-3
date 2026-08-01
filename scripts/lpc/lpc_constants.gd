@@ -18,6 +18,19 @@ const LPC_PLAYER_CLASS_IDS: Array[String] = [
 	"assassin", "mercenary", "gryphon", "monk", "engineer", "shaman",
 ]
 
+
+static func class_override_slot_label(slot_name: String) -> String:
+	match slot_name:
+		"armour":
+			return "Armor (torso)"
+		"clothes":
+			return "Clothes (torso)"
+		"shoes":
+			return "Shoes / feet"
+		_:
+			return slot_name
+
+
 const FRAME_SIZE: int = 64
 const FRAMES_PER_ROW: int = 13
 

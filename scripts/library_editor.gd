@@ -6,6 +6,8 @@ const _CLASS_LOADOUTS = preload("res://scripts/lpc/lpc_class_loadout_defaults.gd
 var _class_loadout_class_opt: OptionButton
 var _preview_class_opt: OptionButton
 var _class_loadout_vbox: VBoxContainer
+var _class_loadout_panel: VBoxContainer
+var _left_vbox: VBoxContainer
 var _class_loadout_rows: Dictionary = {}
 var _selected_loadout_class: String = "knight"
 
@@ -34,6 +36,10 @@ func _ready() -> void:
 	# Scale all text by 2x
 	_double_font_sizes(self)
 	generated.connect(func(_report, _recipe): _double_font_sizes(_parts_section_vbox))
+	if _generate_btn != null:
+		for conn: Dictionary in _generate_btn.pressed.get_connections():
+			_generate_btn.pressed.disconnect(conn["callable"])
+		_generate_btn.pressed.connect(_on_generate_pressed)
 
 func _double_font_sizes(node: Node) -> void:
 	if node is Control:
@@ -76,6 +82,7 @@ func _build_ui() -> void:
 	var left_vbox := VBoxContainer.new()
 	left_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left_scroll.add_child(left_vbox)
+	_left_vbox = left_vbox
 	
 	var vsep := VSeparator.new()
 	split.add_child(vsep)
@@ -137,6 +144,8 @@ func _build_ui() -> void:
 			left_vbox.add_child(c)
 
 	_build_class_loadout_section(left_vbox)
+	if _class_loadout_panel != null:
+		left_vbox.move_child(_class_loadout_panel, 3)
 			
 	# Enlarge the preview viewport significantly now that we have space
 	_preview_container.custom_minimum_size = Vector2(500, 400)
@@ -405,6 +414,13 @@ func _on_search_changed(query: String) -> void:
 					btn.text = "▼  " + n
 
 
+func _on_recipe_applied(report: Dictionary) -> void:
+	super._on_recipe_applied(report)
+	var preview_class: String = _preview_class_id()
+	var mode: String = preview_class if not preview_class.is_empty() else "random"
+	_report_label.text += "  preview=%s" % mode
+
+
 func _on_generate_pressed() -> void:
 	if _catalog == null or _preview_node == null:
 		return
@@ -421,19 +437,29 @@ func _preview_class_id() -> String:
 
 
 func _build_class_loadout_section(parent: VBoxContainer) -> void:
-	parent.add_child(HSeparator.new())
+	_class_loadout_panel = VBoxContainer.new()
+	_class_loadout_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_class_loadout_panel.add_theme_constant_override("separation", 6)
+	parent.add_child(_class_loadout_panel)
+	var panel := _class_loadout_panel
+
+	panel.add_child(HSeparator.new())
 	var hdr := Label.new()
 	hdr.text = "Class Loadouts"
 	hdr.add_theme_font_size_override("font_size", 16)
 	hdr.add_theme_color_override("font_color", Color(0.85, 0.92, 1.0))
-	parent.add_child(hdr)
+	panel.add_child(hdr)
 
 	var hint := Label.new()
-	hint.text = "Force slot items per player class. Combat units use their class id automatically."
+	hint.text = (
+		"Overrides apply only when Preview as is NOT Random. "
+		+ "Slot key is armour (British LPC spelling), not armor. "
+		+ "Random rolls use Slot Weights below (~12% for torso armour)."
+	)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_font_size_override("font_size", 12)
 	hint.add_theme_color_override("font_color", Color(0.62, 0.66, 0.74))
-	parent.add_child(hint)
+	panel.add_child(hint)
 
 	var class_row := HBoxContainer.new()
 	var class_lbl := Label.new()
@@ -446,7 +472,7 @@ func _build_class_loadout_section(parent: VBoxContainer) -> void:
 		_class_loadout_class_opt.add_item(class_id.capitalize())
 		_class_loadout_class_opt.set_item_metadata(_class_loadout_class_opt.item_count - 1, class_id)
 	class_row.add_child(_class_loadout_class_opt)
-	parent.add_child(class_row)
+	panel.add_child(class_row)
 
 	var preview_row := HBoxContainer.new()
 	var preview_lbl := Label.new()
@@ -461,17 +487,17 @@ func _build_class_loadout_section(parent: VBoxContainer) -> void:
 		_preview_class_opt.add_item(class_id.capitalize())
 		_preview_class_opt.set_item_metadata(_preview_class_opt.item_count - 1, class_id)
 	preview_row.add_child(_preview_class_opt)
-	parent.add_child(preview_row)
+	panel.add_child(preview_row)
 
 	var reset_btn := Button.new()
 	reset_btn.text = "Reset class loadouts to defaults"
 	reset_btn.pressed.connect(_on_reset_class_loadouts_pressed)
-	parent.add_child(reset_btn)
+	panel.add_child(reset_btn)
 
 	_class_loadout_vbox = VBoxContainer.new()
 	_class_loadout_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_class_loadout_vbox.add_theme_constant_override("separation", 4)
-	parent.add_child(_class_loadout_vbox)
+	panel.add_child(_class_loadout_vbox)
 
 	_class_loadout_class_opt.item_selected.connect(func(_idx: int) -> void:
 		_selected_loadout_class = str(
@@ -501,7 +527,7 @@ func _rebuild_class_loadout_rows() -> void:
 		var row := HBoxContainer.new()
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var slot_lbl := Label.new()
-		slot_lbl.text = slot_name
+		slot_lbl.text = LpcConstants.class_override_slot_label(slot_name)
 		slot_lbl.custom_minimum_size.x = 88
 		slot_lbl.clip_text = true
 		row.add_child(slot_lbl)
