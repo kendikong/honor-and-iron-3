@@ -6,7 +6,7 @@
 
 ## Goal
 
-Knight is the **reference class**: every skill Bible-complete with headless scenario + 7-phase planning QA; other classes clone this pipeline (P6).
+Knight is the **reference class**: every skill Bible-complete with a headless scenario row (`run_skill_scenarios_only.gd`) **and** Tier 3 planning gate PASS; other classes clone this pipeline (P6).
 
 ## Quality bar
 
@@ -30,7 +30,7 @@ N/A
 
 1. One skill = one gauntlet piece (data + factory + scenario test)
 2. Register scenario in `planning_skill_scenarios_test.gd`
-3. Run planning QA gate
+3. Run **Tier 3 gate** (`run_planning_qa_gate.ps1`) and **skill scenarios** (`run_skill_scenarios_only.gd`) separately
 
 ## Builder playbook
 
@@ -38,12 +38,13 @@ N/A
 2. Copy `tests/skills/shield_bash_scenario.gd` → `tests/skills/<skill>_scenario.gd`.
 3. Add `.tres` / factory hooks per global systems.
 4. Register in `planning_skill_scenarios_test.gd`.
-5. Run `run_planning_qa_gate.ps1`.
+5. Run `.\scripts\run_planning_qa_gate.ps1` (Tier 3) **and** `godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd`.
 
 ## Critic playbook
 
 ```powershell
 .\scripts\run_planning_qa_gate.ps1
+godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd
 ```
 
 Grep skill id in `planning_skill_scenarios_test.gd`.

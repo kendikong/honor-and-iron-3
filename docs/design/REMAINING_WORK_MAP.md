@@ -38,16 +38,19 @@ N/A — see `roguelike-run.md` (P4) and `world-assets-and-map.md` (P7) for owner
 | 7 | Map assets + PixelForge MVP | `world-assets-and-map.md` | `docs/asset_manifest.md` |
 | 8 | Living map ROADMAP close | `world-assets-and-map.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` |
 | 9 | UI + SFX shell | `presentation-audio-ui.md` | `PLANNED — Sfx event map in P8 doc` |
-| — | Verification index | `verification-matrix.md` | `lint_design_doc.ps1` |
+| — | Verification index | `verification-matrix.md` | `.\scripts\lint_design_doc.ps1` |
 
 ```mermaid
 flowchart TD
-  A[Parity 10-14] --> B[Knight LOCK]
-  B --> C[Roguelike v1]
-  C --> D[Enemies]
-  D --> E[Classes 2+]
-  F[Map/PixelForge] --> G[Living map]
-  H[UI/SFX] --> I[Polish gauntlets]
+  P10[Parity Phase 10-13 combat core] --> P14[Phase 14 Knight MVP re-gate]
+  P14 --> KT[Knight template LOCK - P3]
+  KT --> RUN[Roguelike run v1 - P4]
+  RUN --> EN[Enemy puzzle kit - P5]
+  EN --> CR[Class rollout 2+ - P6]
+  MAP[Map assets + PixelForge MVP - P7] --> LM[Living map ROADMAP close]
+  UI[Presentation shell - P8] --> UII[UI gauntlets]
+  P14 --> CR
+  RUN --> CR
 ```
 
 ## Decomposition
@@ -89,9 +92,9 @@ ARTIFACT: this file, lint stdout, Test-Path per Primary command
 
 ## Exit criteria
 
-- [ ] All rows link to existing pillar files
-- [ ] All primary commands verified on disk
-- [ ] Mermaid matches suite plan critical path
+- [x] All rows link to existing pillar files
+- [x] All primary commands verified on disk or marked `PLANNED —`
+- [x] Mermaid matches suite plan critical path (`00-remaining-work-suite-plan.md`)
 
 ## Doc polish scorecard
 

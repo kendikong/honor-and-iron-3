@@ -31,11 +31,11 @@ N/A
 | Combat closeout | P2 | `.\scripts\run_regression_tests.ps1` | `.\scripts\run_planning_qa_gate.ps1` | F5 Ph 10–14 parity lists |
 | Knight template | P3 | `.\scripts\run_planning_qa_gate.ps1` | `tests/planning_skill_scenarios_test.gd` | Checklist 7 phases |
 | Roguelike run | P4 | `PLANNED — tests/run_state_test.gd` | — | P4 worksheet |
-| Enemy design | P5 | `tests/bridge_test_runner.gd` | Encounter fixture → sim | Puzzle fun |
+| Enemy design | P5 | `tests/bridge_test_runner.gd` | `docs/design/appendices/encounter-fixture-format.md` | Puzzle fun |
 | Class rollout | P6 | `.\scripts\run_planning_qa_gate.ps1` | `tests/run_mass_sim_test.gd` | Balance taste |
-| World / map | P7 | `docs/asset_manifest.md` | F5 compositor | P7 worksheet |
-| Presentation | P8 | `PLANNED — Sfx event map (P8 doc)` | Scene inventory | Typography/layout |
-| Triage / autobattler | W4 appendix | `tests/run_mass_sim_test.gd` | Parity Phase 15 defer | Owner |
+| World / map | P7 | `docs/asset_manifest.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | P7 worksheet |
+| Presentation | P8 | `PLANNED — Sfx event map (P8 doc)` | `docs/design/presentation-audio-ui.md` | Typography/layout |
+| Triage / autobattler | W4 appendix | `tests/run_mass_sim_test.gd` | `docs/design/appendices/mass-sim-balance.md` | Owner |
 | Design docs | meta | `scripts/lint_design_doc.ps1` | `gauntlet-critic` ≥88/90 | Owner LOCK |
 
 **Mass sim CLI:**
@@ -79,9 +79,9 @@ PASS_THRESHOLD: 88
 
 ## Exit criteria
 
-- [ ] No row cites missing path without `PLANNED`
-- [ ] Matches suite plan inline matrix
-- [ ] Linked from `README.md`
+- [x] No row cites missing path without `PLANNED`
+- [x] Matches suite plan inline matrix (triage: test + `mass-sim-balance.md`)
+- [x] Linked from `README.md`
 
 ## Doc polish scorecard
 

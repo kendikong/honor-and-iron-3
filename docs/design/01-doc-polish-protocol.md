@@ -1,6 +1,6 @@
 # Doc polish protocol (P1)
 
-**Status:** `DRAFT`  
+**Status:** `POLISHED`  
 **Pillar ID:** P1 (pairs with `00-gauntlet-loop-cursor.md` runtime OS)  
 **Authority chain:** `docs/design/00-gauntlet-loop-cursor.md` · `docs/design/_TEMPLATE.md` · `.cursor/agents/gauntlet-critic.md`
 
