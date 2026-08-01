@@ -9,6 +9,7 @@ const CONFIG_SECTION: String = "character_gen"
 ## Shared with mana-seed-test — Godot user:// is per project name; weights live here instead.
 const SHARED_USERDATA_PROJECT: String = "mana-seed-test"
 const CFG_FILE_NAME: String = "character_gen.cfg"
+const _CLASS_LOADOUT_DEFAULTS = preload("res://scripts/lpc/lpc_class_loadout_defaults.gd")
 
 var seed: int = 42
 var display_scale: float = 2.0
@@ -115,7 +116,7 @@ func set_item_gender_tag(item_id: String, tag: String) -> void:
 func ensure_default_class_loadouts() -> void:
 	if not class_loadouts.is_empty():
 		return
-	class_loadouts = LpcClassLoadoutDefaults.build().duplicate(true)
+	class_loadouts = _CLASS_LOADOUT_DEFAULTS.build().duplicate(true)
 
 
 func class_loadout(class_id: String) -> Dictionary:

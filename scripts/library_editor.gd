@@ -1,6 +1,7 @@
 extends CharacterGeneratorPanel
 
 const CATALOG_PATH: String = "res://resources/character/lpc_catalog.json"
+const _CLASS_LOADOUTS = preload("res://scripts/lpc/lpc_class_loadout_defaults.gd")
 
 var _class_loadout_class_opt: OptionButton
 var _preview_class_opt: OptionButton
@@ -441,7 +442,7 @@ func _build_class_loadout_section(parent: VBoxContainer) -> void:
 	class_row.add_child(class_lbl)
 	_class_loadout_class_opt = OptionButton.new()
 	_class_loadout_class_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	for class_id: String in LpcClassLoadoutDefaults.PLAYER_CLASS_IDS:
+	for class_id: String in _CLASS_LOADOUTS.PLAYER_CLASS_IDS:
 		_class_loadout_class_opt.add_item(class_id.capitalize())
 		_class_loadout_class_opt.set_item_metadata(_class_loadout_class_opt.item_count - 1, class_id)
 	class_row.add_child(_class_loadout_class_opt)
@@ -456,7 +457,7 @@ func _build_class_loadout_section(parent: VBoxContainer) -> void:
 	_preview_class_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_preview_class_opt.add_item("(Random — no class)")
 	_preview_class_opt.set_item_metadata(0, "")
-	for class_id: String in LpcClassLoadoutDefaults.PLAYER_CLASS_IDS:
+	for class_id: String in _CLASS_LOADOUTS.PLAYER_CLASS_IDS:
 		_preview_class_opt.add_item(class_id.capitalize())
 		_preview_class_opt.set_item_metadata(_preview_class_opt.item_count - 1, class_id)
 	preview_row.add_child(_preview_class_opt)
@@ -485,7 +486,7 @@ func _build_class_loadout_section(parent: VBoxContainer) -> void:
 
 
 func _on_reset_class_loadouts_pressed() -> void:
-	_profile.class_loadouts = LpcClassLoadoutDefaults.build().duplicate(true)
+	_profile.class_loadouts = _CLASS_LOADOUTS.build().duplicate(true)
 	_save_config()
 	_refresh_class_loadout_rows()
 
@@ -496,7 +497,7 @@ func _rebuild_class_loadout_rows() -> void:
 	_class_loadout_rows.clear()
 	if _catalog == null:
 		return
-	for slot_name: String in LpcClassLoadoutDefaults.OVERRIDE_SLOTS:
+	for slot_name: String in _CLASS_LOADOUTS.OVERRIDE_SLOTS:
 		var row := HBoxContainer.new()
 		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var slot_lbl := Label.new()
