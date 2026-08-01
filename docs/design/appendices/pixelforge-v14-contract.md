@@ -1,6 +1,6 @@
 # PixelForge v14 contract (appendix)
 
-**Status:** `DRAFT`  
+**Status:** `LOOP_READY` *(gauntlet C5: 88/88 PASS)*  
 **Pillar ID:** P7 support  
 **Authority chain:** PixelForge v14 Master Implementation Specification (owner `.docx`) · `docs/asset_manifest.md` · `docs/tile_registry.md`
 

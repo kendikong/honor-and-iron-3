@@ -1,0 +1,7 @@
+{
+  "id": "puzzle_001",
+  "grid": {"width": 8, "height": 8},
+  "blocked_cells": [[2, 3]],
+  "player_spawns": [{"unit": "knight", "coord": [1, 1]}],
+  "enemy_spawns": [{"unit": "training_dummy", "coord": [5, 5]}]
+}

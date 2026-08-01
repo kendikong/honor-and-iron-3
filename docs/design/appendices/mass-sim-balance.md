@@ -1,6 +1,6 @@
 # Mass sim balance (appendix)
 
-**Status:** `DRAFT`  
+**Status:** `LOOP_READY` *(gauntlet C5: 88/88 PASS)*  
 **Authority chain:** `core/batch/mass_sim_*.gd` · `tests/run_mass_sim_test.gd` · `tests/captures/README.md`
 
 ## Goal

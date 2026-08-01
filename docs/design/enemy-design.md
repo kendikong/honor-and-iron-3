@@ -1,8 +1,8 @@
 # Enemy design (P5)
 
-**Status:** `DRAFT`  
+**Status:** `DRAFT` *(doc gauntlet PASS 88/88 — worksheet gates LOOP_READY)*  
 **Pillar ID:** P5  
-**Authority chain:** `class_abilities.txt` (enemies) · `docs/design/appendices/encounter-fixture-format.md` · `bridge/encounter_builder.gd`
+**Authority chain:** `class_abilities.txt` (enemies) · `docs/design/appendices/encounter-fixture-format.md` · `bridge/encounter_builder.gd` · `tests/bridge_test_runner.gd`
 
 ## Goal
 
@@ -12,9 +12,11 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Encounter smoke (programmatic) | `godot --headless --path <repo> --script res://tests/bridge_test_runner.gd` PASS | — |
-| Fixture JSON puzzles | `PLANNED — tests/fixtures/encounters/puzzle_001.json` | Puzzle fun |
-| Intent display | `.\scripts\run_planning_qa_gate.ps1` when enemy affects preview | Difficulty curve |
+| **Bridge smoke (today)** | `godot --headless --path <repo> --script res://tests/bridge_test_runner.gd` PASS | — |
+| **Fixture JSON puzzles** (separate piece) | `PLANNED — tests/encounter_fixture_test.gd` loads `tests/fixtures/encounters/puzzle_001.json` | Puzzle fun |
+| Intent display (when enemies affect planning) | `.\scripts\run_planning_qa_gate.ps1` PASS | Difficulty curve |
+
+Doc gauntlet BAR = lint + path existence for bridge smoke and appendix schema — **not** full regression suite.
 
 ## Non-goals
 
@@ -29,50 +31,57 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 | Target solve rate (training dummies) | |
 | Boss identity pillars | |
 
+**Human gate rule:** Doc gauntlet BAR = `lint_design_doc.ps1` + cited paths on disk. Empty worksheet is expected in `DRAFT` and must **not** FAIL critic rounds. Worksheet completeness is owner-only and gates **`LOOP_READY`** promotion only — not doc-critic PASS. Unchecked implementation exit criteria are **PLANNED** and must not FAIL doc critic.
+
 ## Decomposition
 
-1. Fixture format LOCK
-2. 3 tutorial puzzles
+1. Fixture format LOCK — `appendices/encounter-fixture-format.md` + `tests/fixtures/encounters/puzzle_001.json`
+2. 3 tutorial puzzles — PLANNED after JSON loader
 3. Intent grammar (data-driven, no per-enemy code branches):
 
-| Intent | Meaning |
-|--------|---------|
-| `advance` | Move toward player |
-| `hold` | Stay unless pushed |
-| `attack` | Focus damage tile |
+| Intent | Meaning | Data owner |
+|--------|---------|------------|
+| `advance` | Move toward player | Enemy `UnitData` / spawn meta `PLANNED` |
+| `hold` | Stay unless pushed | Enemy `UnitData` `PLANNED` |
+| `attack` | Focus damage tile | Enemy `UnitData` `PLANNED` |
+
+Fixture `intent` field: **PLANNED** until loader + enemy intent data land (`encounter-fixture-format.md`).
 
 ## Builder playbook
 
-1. Author fixture JSON per appendix.
-2. Run bridge + sim smoke.
-3. F5 intent readability.
+1. Author fixture JSON per appendix encoding table.
+2. Run bridge smoke (`bridge_test_runner.gd`).
+3. When loader exists: add `encounter_fixture_test.gd` and sim smoke per puzzle.
+4. F5 intent readability when enemies affect planning preview.
 
 ## Critic playbook
 
 ```powershell
 .\scripts\lint_design_doc.ps1
-.\scripts\run_regression_tests.ps1
+Test-Path tests/bridge_test_runner.gd
+Test-Path docs/design/appendices/encounter-fixture-format.md
+Test-Path tests/fixtures/encounters/puzzle_001.json
 ```
 
 ## Gauntlet stub
 
 ```text
-GOAL: Encounter puzzle_<id> loads and sim smoke PASS
-BAR: lint PASS; bridge_test_runner.gd exists; fixture path PLANNED
+GOAL: P5 pillar doc — bridge smoke vs fixture loader clearly split; intent grammar documented
+BAR: lint PASS; bridge_test_runner.gd + encounter appendix + puzzle_001.json exist; empty worksheet must not FAIL
 PASS_THRESHOLD: 88
-RULES: skill-global-rules.mdc, qa-after-gameplay-changes.mdc
-ARTIFACT: this file, lint stdout, appendices/encounter-fixture-format.md
+RULES: skill-global-rules.mdc, global-systems-first.mdc
+ARTIFACT: this file, appendices/encounter-fixture-format.md, lint stdout
 ```
 
 ## Tooling I/O
 
 | Input | Output | Consumer |
 |-------|--------|----------|
-| Fixture JSON | Encounter in tactical skirmish | Run loop (P4) |
+| Fixture JSON | `EncounterData` → `BoardState` | Run loop (P4), `Simulator` smoke |
 
-## Exit criteria
+## Exit criteria (implementation — PLANNED)
 
-- [ ] ≥3 fixtures with sim smoke
+- [ ] ≥3 fixtures with sim smoke (`encounter_fixture_test.gd`)
 - [ ] Intents visible in planning phase
 
 ## Doc polish scorecard

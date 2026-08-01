@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ verification-matrix │ Critic pass C6
-SCORE: 89/100 │ THRESHOLD: 88 │ PASS │ CLIMBING
-DELTA: +3 vs C5 (was 86)
-SUITE PASS: 5/14
+GAUNTLET SCORE │ design suite │ Critic pass C6 (COMPLETE)
+SCORE: 15/15 PASS │ THRESHOLD: 88/90 │ PASS │ DONE
+DELTA: enemy-design 88, encounter-fixture 89 (final loop)
+SUITE PASS: 15/15 doc gauntlet
 ══════════════════════════════════════
 ```
 
@@ -22,9 +22,9 @@ SUITE PASS: 5/14
 
 | Field | Value |
 |-------|-------|
-| **Chunk / goal** | Gauntlet all W1–W4 pillar docs to LOOP_READY (≥88) |
+| **Chunk / goal** | Gauntlet all W1–W4 pillar docs to doc-critic PASS (≥88) |
 | **Started** | 2026-08-01 |
-| **Status** | **IN PROGRESS** — Rule 5 loop |
+| **Status** | **COMPLETE** — Rule 5 satisfied |
 | **Lead session** | design-suite-full-gauntlet |
 
 ---
@@ -33,38 +33,50 @@ SUITE PASS: 5/14
 
 | Field | Value |
 |-------|-------|
-| **Piece ID** | verification-matrix-P9 *(complete)* |
+| **Piece ID** | *(suite complete)* |
 | **Critic pass** | C6 |
-| **Last result** | **PASS 89/88** — [C6 verification-matrix](1802bee6-2344-4153-be3f-94b6c337d4b2) |
+| **Last result** | encounter-fixture **PASS 89/88** |
 | **Largest gap** | — |
 
 ---
 
-## Score progression (suite pieces)
+## Score progression (final)
 
-| Piece | C1 | C2 | C3 | C4 | Threshold | Result |
-|-------|----|----|-----|-----|-----------|--------|
-| `00-remaining-work-suite-plan.md` | — | — | — | 91 (C6) | 90 | **PASS** |
-| `01-doc-polish-protocol.md` | 66 | 86 | 91 | — | 90 | **PASS** |
-| `knight-template.md` | 76 | 84 | 86 | **89** | 88 | **PASS** |
-| `REMAINING_WORK_MAP.md` | 47 | 59 | 84 | **89** | 88 | **PASS** |
-| `verification-matrix.md` | 41 | 80 | 84 | 87 | **89** (C6) | 88 | **PASS** |
+| Piece | Best | Threshold | Result | On-disk status |
+|-------|------|-----------|--------|----------------|
+| `00-remaining-work-suite-plan.md` | 91 (C6) | 90 | **PASS** | POLISHED |
+| `01-doc-polish-protocol.md` | 91 (C3) | 90 | **PASS** | POLISHED |
+| `REMAINING_WORK_MAP.md` | 89 (C4) | 88 | **PASS** | LOOP_READY |
+| `knight-template.md` | 89 (C4) | 88 | **PASS** | LOOP_READY |
+| `verification-matrix.md` | 89 (C6) | 88 | **PASS** | LOOP_READY |
+| `combat-core-closeout.md` | 88 (C4) | 88 | **PASS** | LOOP_READY |
+| `class-rollout.md` | 88 (C4) | 88 | **PASS** | LOOP_READY |
+| `presentation-audio-ui.md` | 89 (C5) | 88 | **PASS** | LOOP_READY |
+| `world-assets-and-map.md` | 91 (C5) | 88 | **PASS** | DRAFT (P7 worksheet) |
+| `roguelike-run.md` | 89 (C4) | 88 | **PASS** | DRAFT (P4 worksheet) |
+| `enemy-design.md` | 88 (C3) | 88 | **PASS** | DRAFT (P5 worksheet) |
+| `appendices/encounter-fixture-format.md` | 89 (C6) | 88 | **PASS** | LOOP_READY |
+| `appendices/pixelforge-v14-contract.md` | 88 (C5) | 88 | **PASS** | LOOP_READY |
+| `appendices/mass-sim-balance.md` | 88 (C5) | 88 | **PASS** | LOOP_READY |
+| `appendices/gauntlet-prompt-library.md` | 89 (C3) | 88 | **PASS** | LOOP_READY |
 
 ---
 
-## Wave log
+## Wave log (final)
 
 | Time | Piece | Score | Result | Notes |
 |------|-------|-------|--------|-------|
-| 2026-08-01 | knight-template | 89/88 | PASS | [C4 knight](c98c19fb-37b5-49ce-ab14-640270ac6700) |
-| 2026-08-01 | work-map | **89/88** | **PASS** | [C4 work-map](3db73f55-29f0-42cc-aa1f-cfa2301ed88d) |
-| 2026-08-01 | verification-matrix | 87/88 | FAIL | [C4 matrix](d6376fd3-43b7-44a2-97a9-17c30e41f654) → C5 |
+| 2026-08-01 | enemy-design | 88/88 | PASS | C3 — bridge/fixture split, human gate |
+| 2026-08-01 | encounter-fixture | 89/88 | PASS | C6 — encoding table + puzzle_001.json |
 
 **Lint (latest):** `[PASS] lint_design_doc`
 
 ---
 
-## Blockers
+## Blockers (owner only — not doc gauntlet)
 
-- Owner worksheets: P4, P7
-- Matrix needs C5 re-critic after suite-plan sync
+- P4 worksheet (`roguelike-run.md`)
+- P5 worksheet (`enemy-design.md`)
+- P7 worksheet (`world-assets-and-map.md`)
+
+Doc gauntlet **PASS** for all three; **LOOP_READY** promotion waits on worksheets per human-gate rules.

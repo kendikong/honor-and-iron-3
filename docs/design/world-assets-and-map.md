@@ -1,6 +1,6 @@
 # World assets and map (P7)
 
-**Status:** `DRAFT` — **blocked on owner worksheet (art)**  
+**Status:** `DRAFT` *(doc gauntlet PASS 91/88 — worksheet gates LOOP_READY)*  
 **Pillar ID:** P7  
 **Authority chain:** `ROADMAP.md` · `sandbox_map_system.md` · `docs/asset_manifest.md` · `docs/design/appendices/pixelforge-v14-contract.md`
 

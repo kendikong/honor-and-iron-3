@@ -1,6 +1,6 @@
 # Presentation, audio, and UI (P8)
 
-**Status:** `DRAFT`  
+**Status:** `LOOP_READY` *(gauntlet C5: 89/88 PASS)*  
 **Pillar ID:** P8  
 **Authority chain:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (HUD phases) · `presentation/` · `ui/` · `SfxPlayer`
 
