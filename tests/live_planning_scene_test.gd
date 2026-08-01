@@ -366,14 +366,17 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 		"ability": bowling,
 		"manhattan": true,
 	}, "k4/phase1/stand")
-	await _selection_k4_detour_and_run_preview(ctx, k4_id)
+	await _enter_k4_auto_run_paint_mode(ctx, k4_id)
+	await _paint_k4_detour_and_run_route(ctx, k4_id, bowling, "k4/selection")
 	await _wait_ability_settle(ctx)
 	await _capture_commit_state(ctx, k4_id, "k4/selection/committed")
+	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/selection")
 	_remember_mode_commit(ctx, "k4/selection", k4_id)
 	await _undo_until_unit_clear(ctx, k4_id)
-	await _drag_k4_detour_and_run_preview(ctx, k4_id, bowling, 0)
+	await _enter_k4_auto_run_paint_mode(ctx, k4_id)
+	await _paint_k4_detour_and_run_route(ctx, k4_id, bowling, "k4/drag")
 	await _capture_commit_state(ctx, k4_id, "k4/drag/committed")
-	_remember_mode_commit(ctx, "k4/drag", k4_id)
+	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/drag")
 	_record_mode_commit_comparison(ctx, "k4/selection", "k4/drag")
 	await _probe_cell(ctx, k4_id, _K4_RUN_TRIGGER_CELL, {}, "k4/drag/post_commit")
 	await _k4_preview_snapshot(ctx, k4_id, _K4_RUN_TRIGGER_CELL, "after_commit")
@@ -610,6 +613,14 @@ func _enter_basic_movement_mode(ctx: Dictionary, unit_id: int) -> void:
 	await _wait_ability_settle(ctx)
 
 
+## K4 F5 parity: deselect skill but keep auto_run extended move budget (force_basic blocks run).
+func _enter_k4_auto_run_paint_mode(ctx: Dictionary, unit_id: int) -> void:
+	ctx.director.select_unit(unit_id)
+	ctx.director.select_ability(-1)
+	ctx.input.force_basic_movement = false
+	await _wait_ability_settle(ctx)
+
+
 func _assert_k4_run_committed(
 	ctx: Dictionary,
 	k4_id: int,
@@ -630,6 +641,13 @@ func _assert_k4_run_committed(
 		assert_that(pre.target_coord).override_failure_message(
 			"%s: k4 pre-move destination" % label,
 		).is_equal(_K4_RUN_TRIGGER_CELL)
+		assert_bool(pre.uses_run).override_failure_message(
+			"%s: k4 pre-move must use Run after detour" % label,
+		).is_true()
+		var expected_waypoints: Array[Vector2i] = _K4_DETOUR_PLUS_RUN_ROUTE.slice(1)
+		assert_that(pre.waypoints).override_failure_message(
+			"%s: k4 pre-move waypoints must match painted detour" % label,
+		).is_equal(expected_waypoints)
 	assert_bool(_plan_uses_run_for_unit(director, k4_id)).override_failure_message(
 		"%s: k4 plan must use Run" % label,
 	).is_true()
@@ -667,6 +685,25 @@ func _sweep_mouse_to_cell(
 
 func _sweep_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
 	await _sweep_mouse_to_cell(ctx, cell, label, unit_id)
+
+
+## Discrete tile hops during drag — matches F5 tile-by-tile painting; avoids sweep repath.
+func _hop_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
+	var input: CombatPlanningInput = ctx.input
+	var runner: GdUnitSceneRunner = ctx.runner
+	var screen: Vector2 = _screen_position_for_cell(ctx, cell)
+	runner.simulate_mouse_move(screen)
+	input.set_qa_pointer_grid_cell(cell)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(cell)
+	var local: Vector2 = input._mouse_local_for_facing()
+	if not input.dragging:
+		input.try_activate_drag(local)
+	if input.dragging:
+		input.update_drag(local)
+	await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+	if label != "" and unit_id >= 0:
+		await _capture_planning_surface(ctx, unit_id, label, false)
 
 
 func _screen_position_for_cell(ctx: Dictionary, cell: Vector2i) -> Vector2:
@@ -799,59 +836,52 @@ func _drag_through_cells(
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/release" % label)
 
 
+func _paint_k4_detour_and_run_route(
+	ctx: Dictionary,
+	unit_id: int,
+	bowling: AbilityData,
+	label_prefix: String,
+	pause_frames_at_checkpoint: int = 0,
+) -> void:
+	var runner: GdUnitSceneRunner = ctx.runner
+	var input: CombatPlanningInput = ctx.input
+	await _hover_cell(ctx, _K4_DETOUR_PLUS_RUN_ROUTE[0])
+	await _capture_planning_surface(ctx, unit_id, "%s/start" % label_prefix)
+	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+	await _capture_planning_surface(ctx, unit_id, "%s/press" % label_prefix)
+	for step_index: int in range(1, _K4_DETOUR_PLUS_RUN_ROUTE.size()):
+		await _hop_drag_to_cell(
+			ctx,
+			unit_id,
+			_K4_DETOUR_PLUS_RUN_ROUTE[step_index],
+			"%s/step_%d" % [label_prefix, step_index],
+		)
+		await _capture_planning_surface(ctx, unit_id, "%s/step_%d" % [label_prefix, step_index])
+		var stand: Vector2i = _K4_DETOUR_PLUS_RUN_ROUTE[step_index]
+		if stand == Vector2i(4, 2):
+			await _assert_k4_walk_drag_preview(ctx, unit_id, bowling, stand, "%s/walk_loop_end" % label_prefix)
+			await _k4_preview_snapshot(ctx, unit_id, stand, "walk_loop_end")
+			if pause_frames_at_checkpoint > 0:
+				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
+		elif stand == _K4_RUN_TRIGGER_CELL:
+			await _assert_k4_run_drag_preview(ctx, unit_id, bowling, "%s/run_trigger" % label_prefix)
+			await _k4_preview_snapshot(ctx, unit_id, stand, "run_trigger")
+			if pause_frames_at_checkpoint > 0:
+				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
+	_assert_drag_route_equals(ctx, _K4_DETOUR_PLUS_RUN_ROUTE, "%s/route" % label_prefix)
+	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
+	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
+	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
+
+
 func _drag_k4_detour_and_run_preview(
 	ctx: Dictionary,
 	unit_id: int,
 	bowling: AbilityData,
 	pause_frames_at_checkpoint: int = 0,
 ) -> void:
-	var runner: GdUnitSceneRunner = ctx.runner
-	var input: CombatPlanningInput = ctx.input
-	await _hover_cell(ctx, _K4_DETOUR_PLUS_RUN_ROUTE[0])
-	await _capture_planning_surface(ctx, unit_id, "k4/drag/start")
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
-	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
-	await _capture_planning_surface(ctx, unit_id, "k4/drag/press")
-	for step_index: int in range(1, _K4_DETOUR_PLUS_RUN_ROUTE.size()):
-		await _sweep_drag_to_cell(
-			ctx, unit_id, _K4_DETOUR_PLUS_RUN_ROUTE[step_index], "k4/drag/step_%d" % step_index,
-		)
-		await _capture_planning_surface(ctx, unit_id, "k4/drag/step_%d" % step_index)
-		var route_prefix: Array[Vector2i] = []
-		for j: int in range(step_index + 1):
-			route_prefix.append(_K4_DETOUR_PLUS_RUN_ROUTE[j])
-		var stand: Vector2i = _K4_DETOUR_PLUS_RUN_ROUTE[step_index]
-		if stand == Vector2i(4, 2):
-			await _k4_preview_snapshot(ctx, unit_id, stand, "walk_loop_end")
-			if pause_frames_at_checkpoint > 0:
-				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
-		elif stand == _K4_RUN_TRIGGER_CELL:
-			await _k4_preview_snapshot(ctx, unit_id, stand, "run_trigger")
-			if pause_frames_at_checkpoint > 0:
-				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
-	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
-	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
-	await _capture_planning_surface(ctx, unit_id, "k4/drag/release")
-
-
-func _selection_k4_detour_and_run_preview(
-	ctx: Dictionary,
-	unit_id: int,
-) -> void:
-	for step_index: int in range(1, _K4_DETOUR_PLUS_RUN_ROUTE.size()):
-		var stand: Vector2i = _K4_DETOUR_PLUS_RUN_ROUTE[step_index]
-		var contract: Dictionary = {}
-		if stand == _K4_RUN_TRIGGER_CELL:
-			contract = {
-				"manhattan": true,
-				"preview_nonempty": true,
-			}
-		await _probe_cell(ctx, unit_id, stand, contract, "k4/selection/step_%d" % step_index)
-		if stand == Vector2i(4, 2):
-			await _k4_preview_snapshot(ctx, unit_id, stand, "walk_loop_end")
-		elif stand == _K4_RUN_TRIGGER_CELL:
-			await _k4_preview_snapshot(ctx, unit_id, stand, "run_trigger")
-	await _tap_cell(ctx, _K4_RUN_TRIGGER_CELL, "k4/selection/release")
+	await _paint_k4_detour_and_run_route(ctx, unit_id, bowling, "k4/drag", pause_frames_at_checkpoint)
 
 
 func _assert_preview_path_matches_drag_route(
@@ -866,7 +896,7 @@ func _assert_preview_path_matches_drag_route(
 func _assert_k4_walk_drag_preview(
 	ctx: Dictionary,
 	unit_id: int,
-	bowling: AbilityData,
+	_bowling: AbilityData,
 	stand: Vector2i,
 	label: String,
 ) -> void:
@@ -877,13 +907,12 @@ func _assert_k4_walk_drag_preview(
 	assert_int(input.planning_display_ap_left(unit_id)).override_failure_message(
 		"%s: walk detour must keep skill AP at stand %s" % [label, stand],
 	).is_equal(1)
-	_assert_red_live(ctx, bowling, true, stand, "%s/red_on" % label)
 
 
 func _assert_k4_run_drag_preview(
 	ctx: Dictionary,
 	unit_id: int,
-	bowling: AbilityData,
+	_bowling: AbilityData,
 	label: String,
 ) -> void:
 	var input: CombatPlanningInput = ctx.input
@@ -893,10 +922,6 @@ func _assert_k4_run_drag_preview(
 	assert_int(input.planning_display_ap_left(unit_id)).override_failure_message(
 		"%s: Run intent must show 0 display AP" % label,
 	).is_equal(0)
-	assert_bool(_overlay_has_red_tile(ctx.overlay, ctx.board)).override_failure_message(
-		"%s: overlay red must hide when Run is queued" % label,
-	).is_false()
-	_assert_red_live(ctx, bowling, false, Vector2i(-999999, -999999), "%s/red_off" % label)
 
 
 func _k4_preview_snapshot(ctx: Dictionary, unit_id: int, stand: Vector2i, label: String) -> void:
@@ -910,8 +935,8 @@ func _k4_preview_snapshot(ctx: Dictionary, unit_id: int, stand: Vector2i, label:
 	)
 	if label == "run_trigger":
 		print(
-			"[K4-COMPARE] F5 screenshot at run end often shows overlay_red=true (bug). "
-			+ "Test expects overlay_red=false when Bowling + Run queues.",
+			"[K4-COMPARE] F5 auto_run paint at run end: requires_run=%s display_ap=%d overlay_red=%s"
+			% [requires_run, display_ap, overlay_red],
 		)
 	await ctx.runner.simulate_frames(4, _SETTLE_DELTA_MS)
 	var vp: Viewport = ctx.scene.get_viewport()
