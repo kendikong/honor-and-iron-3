@@ -13,6 +13,7 @@ static func run_all() -> Dictionary:
 	_test_class_visual_seed_differs(failures)
 	_test_unlimited_actions_flag(failures)
 	_test_player_loadout_matches_normal_rules(failures)
+	_test_extra_players_get_distinct_timeline_slots(failures)
 	return {"passed": failures.is_empty(), "failures": failures}
 
 
@@ -103,3 +104,21 @@ static func _test_player_loadout_matches_normal_rules(failures: Array[String]) -
 		failures.append("Training loadout should include universal Run")
 	if not has_movement_skill:
 		failures.append("Knight training loadout should include a movement skill")
+
+
+static func _test_extra_players_get_distinct_timeline_slots(failures: Array[String]) -> void:
+	var session := TestBattleSession.new()
+	session.try_add_player_at(null, Vector2i(1, 5))
+	session.try_add_player_at(null, Vector2i(2, 5))
+	var board: BoardState = TestBattleEncounterBuilder.build_board(session)
+	var player_ids: Array[int] = []
+	for unit: UnitState in board.units:
+		if unit.team != GameEnums.Team.PLAYER:
+			continue
+		player_ids.append(unit.controlling_player_id)
+	player_ids.sort()
+	if player_ids != [1, 2, 3]:
+		failures.append(
+			"Extra allies need distinct controlling_player_id slots (expected [1,2,3], got %s)"
+			% str(player_ids),
+		)

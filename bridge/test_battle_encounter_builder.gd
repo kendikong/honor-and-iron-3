@@ -69,14 +69,21 @@ static func build_board(session: TestBattleSession) -> BoardState:
 	var plain: TerrainData = DataLibrary.get_terrain(&"plain")
 	var board: BoardState = BoardFactory.build_empty(TestBattleSession.MAP_SIZE, plain)
 	var id_counter: int = 1
+	var player_slot: int = 0
 	for placement: Dictionary in _collect_placements(session):
+		var team: int = int(placement["team"])
+		var controlling_player_id: int = 1
+		if team == GameEnums.Team.PLAYER:
+			player_slot += 1
+			controlling_player_id = player_slot
 		BoardFactory.place_configured_unit(
 			board,
 			id_counter,
 			placement["unit"],
-			int(placement["team"]),
+			team,
 			placement["coord"],
 			placement["config"],
+			controlling_player_id,
 		)
 		id_counter += 1
 	_apply_training_modifiers(board, session)
