@@ -33,7 +33,7 @@ NEXT: deepen 14 PASS row asserts; promote remaining 16 rows; re-critic until ≥
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-LOCK gauntlet loop** — critic r2 **44/95 FAIL** (4/30 manifest PASS) |
+| **Status** | **K3-LOCK gauntlet loop** — critic r6 **55/95 FAIL** (14/30 manifest PASS) |
 | **Lead session** | knight-template-gauntlet-rerun |
 
 ---
@@ -43,8 +43,8 @@ NEXT: deepen 14 PASS row asserts; promote remaining 16 rows; re-critic until ≥
 | Field | Value |
 |-------|-------|
 | **Piece ID** | K3-LOCK (full matrix — owner threshold 95) |
-| **Critic pass** | r3 (gauntlet-critic subagent) |
-| **Last result** | **FAIL 64/95** — largest gap: 5 active `[+]` implementations |
+| **Critic pass** | r6 (gauntlet-critic subagent) |
+| **Last result** | **FAIL 55/95** — 16 rows HARNESS_ONLY; deepen asserts on 14 PASS rows |
 | **Largest gap** | 26 rows HARNESS_ONLY; manifest 4/30 |
 
 ---
