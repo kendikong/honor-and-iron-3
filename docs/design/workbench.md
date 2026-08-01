@@ -9,12 +9,21 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight-template K3-LOCK │ Round 5 (critic)
-SCORE: 48/100 │ THRESHOLD: 95 │ FAIL │ CLIMBING
-DELTA: +4 vs round 4 (was 44)
-NEXT: per-row meta-critic batch → manifest; fix living_barricade fixture; bowling/redirect/bulwark depth
+GAUNTLET SCORE │ knight-template K3-LOCK │ Round 6 (critic)
+SCORE: 55/100 │ THRESHOLD: 95 │ FAIL │ CLIMBING
+DELTA: +7 vs round 5 (was 48)
+NEXT: deepen 14 PASS row asserts; promote remaining 16 rows; re-critic until ≥95
 ══════════════════════════════════════
 ```
+
+| Round | Score | Delta | Result |
+|-------|-------|-------|--------|
+| r1 | 51 | — | FAIL |
+| r2 | 44 | −7 | FAIL |
+| r3 | 64 | +20 | FAIL |
+| r4 | 44 | −20 | FAIL (SLIPPED) |
+| r5 | 48 | +4 | FAIL |
+| r6 | 55 | +7 | FAIL (CLIMBING) |
 
 ---
 
