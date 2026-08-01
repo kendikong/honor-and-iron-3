@@ -996,6 +996,15 @@ static func events_contain_reason(events: Array, reason: String) -> bool:
 	return false
 
 
+static func events_have_damage_base(events: Array, base_power: int) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+			var d: Dictionary = e.data
+			if str(d.get("type", "")) == "damage" and int(d.get("base", -1)) == base_power:
+				return true
+	return false
+
+
 static func events_have_terrain_changed(events: Array, coord: Vector2i) -> bool:
 	for e: Variant in events:
 		if e is SimEvent and e.type == GameEnums.SimEventType.TERRAIN_CHANGED:
@@ -1224,6 +1233,11 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		failures, "seismic_stomp/aoe_damage",
 		enemy != null and enemy.health.current_hp < hp_before,
 		"seismic stomp AOE must damage adjacent enemy",
+	)
+	assert_true(
+		failures, "seismic_stomp/damage_atk2",
+		events_have_damage_base(result.events, 2),
+		"seismic stomp must resolve DAMAGE at base power ATK 2 (MATH_TELEMETRY)",
 	)
 	var board_purge: BoardState = make_plain_board(Vector2i(10, 8))
 	place_knight(board_purge, 20, Vector2i(4, 4))
