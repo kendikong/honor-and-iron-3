@@ -50,6 +50,7 @@ func test_live_planning_bible_multi_knight_session(timeout := 180000) -> void:
 	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
 	assert_object(scene).is_not_null()
 	var ctx: Dictionary = await _boot_multi_knight_session(runner, scene)
+	await _journey_undo_sprite_smoke(ctx)
 	await _journey_knight1_shield_bash(ctx)
 	await _journey_knight2_chain_hook(ctx)
 	await _journey_knight3_trampling_advance(ctx)
@@ -109,6 +110,23 @@ func _boot_multi_knight_session(runner: GdUnitSceneRunner, scene: TestBattleMapV
 	assert_int(ctx.e_bash_id).is_greater(0)
 	assert_int(ctx.e_hook_id).is_greater(0)
 	return ctx
+
+
+func _journey_undo_sprite_smoke(ctx: Dictionary) -> void:
+	## Commit a real pre-move, undo via production right-click, sprite must return home.
+	var k1_id: int = ctx.k1_id
+	var home: Vector2i = _K1_CELL
+	var dest: Vector2i = _HOVER_WALK
+	await _select_unit_live(ctx, k1_id, home)
+	await _drag_release_at(ctx, [home, dest], dest, "undo_smoke")
+	await _wait_ability_settle(ctx)
+	assert_int(ctx.director.plan_pre_move.entries.size()).override_failure_message(
+		"undo_smoke: drag commit must write pre-move",
+	).is_greater(0)
+	await _wait_planning_move_tween(ctx, k1_id)
+	await _assert_actor_on_cell(ctx, k1_id, dest, "undo_smoke/after_commit")
+	await _undo_until_unit_clear(ctx, k1_id, home)
+	await _capture_planning_surface(ctx, k1_id, "undo_smoke/cleared")
 
 
 func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
@@ -179,7 +197,7 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 	}, "k1/selection/post_commit")
 	await _wait_ability_settle(ctx)
 	_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
-	await _undo_until_unit_clear(ctx, k1_id)
+	await _undo_until_unit_clear(ctx, k1_id, _K1_CELL)
 	await _drag_release_at(ctx, [_K1_CELL, _BASH_APPROACH], _E_BASH_CELL, "k1/drag")
 	await _wait_ability_settle(ctx)
 	_assert_k1_bash_committed(ctx, k1_id, "k1/drag")
@@ -244,7 +262,7 @@ func _journey_knight2_chain_hook(ctx: Dictionary) -> void:
 	_assert_k2_hook_committed(ctx, k2_id, e_hook_id, "k2/selection")
 	await _capture_commit_state(ctx, k2_id, "k2/selection/committed")
 	_remember_mode_commit(ctx, "k2/selection", k2_id)
-	await _undo_until_unit_clear(ctx, k2_id)
+	await _undo_until_unit_clear(ctx, k2_id, _K2_CELL)
 	await _drag_release_at(ctx, [_K2_CELL], _E_HOOK_CELL, "k2/drag")
 	await _wait_ability_settle(ctx)
 	_assert_k2_hook_committed(ctx, k2_id, e_hook_id, "k2/drag")
@@ -316,7 +334,7 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 	_assert_k3_trample_committed(ctx, k3_id, "k3/selection")
 	await _capture_commit_state(ctx, k3_id, "k3/selection/committed")
 	_remember_mode_commit(ctx, "k3/selection", k3_id)
-	await _undo_until_unit_clear(ctx, k3_id)
+	await _undo_until_unit_clear(ctx, k3_id, _K3_CELL)
 	await _rearm_trample_awaiting(ctx, k3_id)
 	await _drag_through_cells_with_route_checks(ctx, route, "k3", false, &"trample_paint")
 	_assert_k3_trample_committed(ctx, k3_id, "k3/drag")
@@ -388,7 +406,7 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 	await _capture_commit_state(ctx, k4_id, "k4/selection/committed")
 	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/selection")
 	_remember_mode_commit(ctx, "k4/selection", k4_id)
-	await _undo_until_unit_clear(ctx, k4_id)
+	await _undo_until_unit_clear(ctx, k4_id, _K4_CELL)
 	await _enter_k4_auto_run_paint_mode(ctx, k4_id)
 	await _paint_k4_detour_and_run_route(ctx, k4_id, bowling, "k4/drag")
 	await _capture_commit_state(ctx, k4_id, "k4/drag/committed")
@@ -516,27 +534,69 @@ func _tap_cell(
 
 
 func _right_click_undo(ctx: Dictionary) -> void:
-	ctx.runner.simulate_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+	var director: CombatDirector = ctx.director
+	director.flush_plan_refresh_signals_if_pending()
+	ctx.input.on_right_click()
+	director.flush_plan_refresh_signals_if_pending()
 	await _wait_ability_settle(ctx)
 
 
-func _undo_until_unit_clear(ctx: Dictionary, unit_id: int) -> void:
+func _unit_layer(ctx: Dictionary) -> TacticalUnitLayer:
+	return ctx.scene.get_node("WorldModulate/MapRoot/UnitLayer") as TacticalUnitLayer
+
+
+func _map_view(ctx: Dictionary) -> TacticalMapView:
+	return ctx.scene.get_node("WorldModulate/MapRoot") as TacticalMapView
+
+
+func _actor_grid_cell(ctx: Dictionary, unit_id: int) -> Vector2i:
+	var actor: CharacterActor = _unit_layer(ctx).get_actor(unit_id)
+	if actor == null:
+		return Vector2i(-999, -999)
+	return _map_view(ctx).foot_local_to_grid(actor.position)
+
+
+func _assert_actor_on_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
+	var actor_cell: Vector2i = _actor_grid_cell(ctx, unit_id)
+	assert_that(actor_cell).override_failure_message(
+		"%s: sprite must stand on %s, got actor grid %s" % [label, _cell_name(cell), _cell_name(actor_cell)],
+	).is_equal(cell)
+
+
+func _wait_planning_move_tween(ctx: Dictionary, unit_id: int, extra_settle_frames: int = 4) -> void:
+	var layer: TacticalUnitLayer = _unit_layer(ctx)
+	var runner: GdUnitSceneRunner = ctx.runner
+	for _frame: int in range(240):
+		if not layer.has_move_tween(unit_id):
+			break
+		await runner.simulate_frames(1, _SETTLE_DELTA_MS)
+	await runner.simulate_frames(extra_settle_frames, _SETTLE_DELTA_MS)
+
+
+func _undo_until_unit_clear(ctx: Dictionary, unit_id: int, home_cell: Vector2i) -> void:
 	var director: CombatDirector = ctx.director
 	var input: CombatPlanningInput = ctx.input
+	director.select_unit(unit_id)
+	await _wait_ability_settle(ctx)
+	await _wait_planning_move_tween(ctx, unit_id)
 	for _attempt: int in range(8):
 		if director.unit_has_undoable_action(unit_id):
-			director.rpc_remove_last_for_unit(unit_id)
-			director.flush_plan_refresh_signals_if_pending()
-			await _wait_ability_settle(ctx)
+			await _right_click_undo(ctx)
+			await _wait_planning_move_tween(ctx, unit_id)
 			continue
 		if input.awaiting_targeting_active():
-			input.on_right_click()
+			await _right_click_undo(ctx)
 			await _wait_ability_settle(ctx)
 			continue
-		var unit: UnitState = director.board.get_unit_by_id(unit_id)
-		if unit != null:
-			await _reposition_mouse_to_unit(ctx, unit_id, unit.position)
-		return
+		break
+	var unit: UnitState = director.board.get_unit_by_id(unit_id)
+	assert_object(unit).override_failure_message(
+		"undo_until_clear: missing unit %d on board" % unit_id,
+	).is_not_null()
+	assert_that(unit.position).override_failure_message(
+		"undo_until_clear: board cell must return to %s" % _cell_name(home_cell),
+	).is_equal(home_cell)
+	await _assert_actor_on_cell(ctx, unit_id, home_cell, "undo_until_clear/sprite")
 	assert_bool(director.unit_has_undoable_action(unit_id)).override_failure_message(
 		"undo_until_clear: unit %d still has undoable plan" % unit_id,
 	).is_false()

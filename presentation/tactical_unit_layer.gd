@@ -200,6 +200,10 @@ func has_planning_move_tweens() -> bool:
 	return not _move_tweens.is_empty()
 
 
+func has_move_tween(unit_id: int) -> bool:
+	return _move_tweens.has(unit_id)
+
+
 func set_predicted_stats(hp: Dictionary, armor: Dictionary) -> void:
 	_predicted_hp = hp
 	_predicted_armor = armor
