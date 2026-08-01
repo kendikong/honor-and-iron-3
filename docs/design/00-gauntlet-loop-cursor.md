@@ -83,7 +83,7 @@ The bar must be **inspectable**. Vague goals are invalid.
 | Planning / commit | `.\scripts\run_planning_qa_gate.ps1` → **PASS** |
 | Sim / bridge | `.\scripts\run_regression_tests.ps1` → **PASS** (wraps headless `regression_test.gd`) |
 | Skill | `tests/planning_skill_scenarios_test.gd` row for that skill |
-| Docs | Section checklist + `scripts/lint_design_doc.ps1` (planned; not on disk yet) |
+| Docs | Section checklist + `scripts/lint_design_doc.ps1` (W1 bar; pillar files must include `## Goal` + `## Quality bar`) |
 | Visual / map | F5 compositor gates in `phase-audit.mdc` + screenshot vs reference |
 | Backend (Shumer) | Test suite, determinism hash, fail-loud asserts |
 
@@ -280,6 +280,7 @@ Do not implement. PASS or FAIL + largest gap + evidence.
 | `docs/design/UNATTENDED_RUN.md` | Per-run scope lock and stop conditions (overnight) |
 | `docs/design/*` pillar specs | Per-domain goals and bars |
 | **This file** | How agents loop to hit those bars in Cursor |
+| `docs/design/00-remaining-work-suite-plan.md` | How to create the pillar doc suite (waves W1–W4) |
 
 ---
 
