@@ -3768,7 +3768,7 @@ func _spawn_floating_text(u_id: int, amount: int, dmg_type: StringName) -> void:
 		&"hazard", &"chasm", &"collision": color = Color(0.8, 0.4, 0.1)
 		&"heal": color = Color(0.2, 1.0, 0.2)
 		_: color = Color.WHITE
-	ft.setup(to_global(pos), str(amount), color)
+	ft.setup(to_global(pos), str(amount), color, maxf(1.0, scale.x * 2.0))
 
 func _append_log(text: String) -> void:
 	if text.strip_edges().is_empty():

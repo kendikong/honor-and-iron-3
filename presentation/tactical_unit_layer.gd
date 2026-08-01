@@ -813,7 +813,12 @@ func spawn_floating_damage(unit_id: int, amount: int, dmg_type: StringName) -> v
 	var ft: FloatingText = _FloatingTextScene.instantiate()
 	var layer: CanvasLayer = _ensure_floater_layer()
 	layer.add_child(ft)
-	ft.setup(canvas_pos, label, color, _combat_text_scale)
+	ft.setup(canvas_pos, label, color, _floater_text_scale())
+
+
+func _floater_text_scale() -> float:
+	var map_zoom: float = _map_view.get_map_root_scale() if _map_view != null else 1.0
+	return maxf(1.0, map_zoom * _display_scale() * _combat_text_scale)
 
 
 func _ensure_floater_layer() -> CanvasLayer:
