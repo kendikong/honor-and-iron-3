@@ -70,6 +70,8 @@ var _pending_refresh_preview: SimResult
 var plan_refresh_snap_units: bool = false
 var _refresh_plan_queued: bool = false
 var _cached_wait_marker_ghost_events: Array[SimEvent] = []
+## Autobattler batches rpc_plan_move commits; one parallel planning walk plays at batch end.
+var _autobattler_plan_batch: bool = false
 ## When this returns true, default victory/defeat checks are skipped (battle continues).
 var suppress_end_state: Callable = Callable()
 
@@ -877,7 +879,7 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 					return
 	for i: int in range(actions.size()):
 		target_plans[i].add(actions[i])
-		if actions[i].type == GameEnums.ActionType.MOVE:
+		if actions[i].type == GameEnums.ActionType.MOVE and not _autobattler_plan_batch:
 			_commit_animate_actor_ids[actions[i].actor_id] = true
 		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null \
 				and actions[i].ability.is_movement_kind():
@@ -2398,6 +2400,42 @@ func _defer_plan_refresh_signals(
 func flush_plan_refresh_signals_if_pending() -> void:
 	if _plan_refresh_emit_pending:
 		_flush_plan_refresh_signals()
+
+
+func begin_autobattler_plan_batch() -> void:
+	_autobattler_plan_batch = true
+	_commit_animate_actor_ids.clear()
+
+
+func finish_autobattler_plan_batch(unit_layer: TacticalUnitLayer) -> void:
+	_autobattler_plan_batch = false
+	_commit_animate_actor_ids.clear()
+	flush_plan_refresh_signals_if_pending()
+	var anim_events: Array[SimEvent] = _collect_all_planning_move_anim_events()
+	if not anim_events.is_empty() and unit_layer != null:
+		unit_layer.reset_planning_walk_origins_for_moves(anim_events)
+		EventBus.planning_commit_events.emit(anim_events)
+	if unit_layer != null:
+		await unit_layer.await_planning_move_tweens()
+
+
+func _collect_all_planning_move_anim_events() -> Array[SimEvent]:
+	var plan_to_run := _get_combined_plan()
+	if plan_to_run.is_empty() or base_board == null:
+		return []
+	var move_only := base_board.clone()
+	var anim_events: Array[SimEvent] = []
+	for action: TimelineAction in plan_to_run.entries:
+		if action.awaiting_target or action.type != GameEnums.ActionType.MOVE:
+			continue
+		var actor := base_board.get_unit_by_id(action.actor_id)
+		if actor == null or actor.is_enemy():
+			continue
+		var move_ev: Array[SimEvent] = []
+		ResolutionPipeline.apply_action(move_only, action, move_ev)
+		ResolutionPipeline.resolve_pending_pushes(move_only, move_ev)
+		anim_events.append_array(_extract_commit_anim_events(move_ev))
+	return anim_events
 
 
 func _flush_plan_refresh_signals() -> void:

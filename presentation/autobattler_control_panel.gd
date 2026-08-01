@@ -23,9 +23,10 @@ var _phase_btn: Button
 var _aggro_label: Label
 
 
-func setup(director: CombatDirector) -> void:
+func setup(director: CombatDirector, unit_layer: TacticalUnitLayer = null) -> void:
 	_director = director
 	_hook = AutobattlerHookRegistry.new(director)
+	_hook.set_unit_layer(unit_layer)
 	layer = 23
 	_load_prefs()
 	_build_ui()

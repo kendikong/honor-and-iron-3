@@ -8,10 +8,15 @@ var _ai_instance: AutobattlerAI
 var _active: bool = false
 var _auto_commit: bool = true  ## True = Full Autobattle. False = planning assist (user presses Execute).
 var _combat_director = null
+var _unit_layer: TacticalUnitLayer = null
 
 func _init(director) -> void:
 	_combat_director = director
 	_ai_instance = AutobattlerAI.new()
+
+
+func set_unit_layer(layer: TacticalUnitLayer) -> void:
+	_unit_layer = layer
 
 func set_active(active: bool, auto_commit: bool = true) -> void:
 	_active = active
@@ -50,6 +55,7 @@ func _on_turn_phase_changed(phase: int) -> void:
 	
 	var vector = _ai_instance.decide_team_vector(board)
 	
+	_combat_director.begin_autobattler_plan_batch()
 	if vector != null:
 		print("[Autobattler] Found Team Vector (Utility: %.2f)" % vector.utility_score)
 		
@@ -68,6 +74,8 @@ func _on_turn_phase_changed(phase: int) -> void:
 			EventBus.ai_telemetry_generated.emit(vector.telemetry)
 	else:
 		print("[Autobattler] No valid vectors found or no units alive.")
+
+	await _combat_director.finish_autobattler_plan_batch(_unit_layer)
 
 	if _auto_commit:
 		if NetworkManager != null and NetworkManager.is_multiplayer and NetworkManager.multiplayer.has_multiplayer_peer():

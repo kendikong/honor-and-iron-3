@@ -212,6 +212,55 @@ func is_sprites_active() -> bool:
 	return not _actors.is_empty()
 
 
+func reset_planning_walk_origins_for_moves(events: Array) -> void:
+	var reset_ids: Dictionary = {}
+	for raw: Variant in events:
+		if not raw is SimEvent:
+			continue
+		var event: SimEvent = raw as SimEvent
+		if event.type != GameEnums.SimEventType.UNIT_MOVED:
+			continue
+		var unit_id: int = int(event.data.get("actor", -1))
+		if unit_id >= 0:
+			reset_ids[unit_id] = true
+	for unit_id: Variant in reset_ids.keys():
+		reset_planning_walk_origin(int(unit_id))
+
+
+func reset_planning_walk_origin(unit_id: int) -> void:
+	if unit_id < 0:
+		return
+	_kill_move_tween(unit_id)
+	var start_cell: Vector2i = _turn_start_cell(unit_id)
+	_position_actor(unit_id, start_cell)
+	_apply_facing(unit_id, _turn_start_facing(unit_id))
+	_update_depth(unit_id)
+
+
+func await_planning_move_tweens() -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+	while _has_planning_player_move_tweens():
+		await tree.process_frame
+
+
+func _has_planning_player_move_tweens() -> bool:
+	if not _is_planning_phase():
+		return false
+	for unit_id: Variant in _move_tweens.keys():
+		if _is_friendly_player_unit(int(unit_id)):
+			return true
+	return false
+
+
+func _is_friendly_player_unit(unit_id: int) -> bool:
+	var unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
+	if unit == null and _director != null and _director.board != null:
+		unit = _director.board.get_unit_by_id(unit_id)
+	return unit != null and not unit.is_enemy()
+
+
 func refresh_display_scale() -> void:
 	var scale: float = _display_scale()
 	for id: Variant in _actors.keys():
