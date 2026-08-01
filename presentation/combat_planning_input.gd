@@ -943,6 +943,8 @@ func _run_hover_heavy_refresh() -> void:
 	if not _director.board.is_in_bounds(cell):
 		if _director.selected_unit_id >= 0:
 			_restore_hover_preview()
+			if _planning != null:
+				_planning._recompute_hover_ranges_from_inputs()
 		else:
 			_sync_intent_live_board()
 			if _planning != null:

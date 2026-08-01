@@ -18,6 +18,8 @@ const _E_BASH_CELL := Vector2i(7, 5)
 const _E_HOOK_CELL := Vector2i(4, 3)
 const _BASH_APPROACH := Vector2i(6, 5)
 const _HOVER_WALK := Vector2i(5, 5)
+const _OFF_BLUE_CELL := Vector2i(9, 9)
+const _OFF_MAP_HOVER := Vector2i(-999, -999)
 const _TRAMPLE_ROUTE: Array[Vector2i] = [Vector2i(6, 4), Vector2i(6, 3)]
 const _TRAMPLE_END := Vector2i(6, 3)
 const _TRAMPLE_FULL_PATH: Array[Vector2i] = [_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_ROUTE[1]]
@@ -186,6 +188,7 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 		"ability": bash,
 		"red_cell": {"cell": _E_BASH_CELL, "stand": _K1_CELL, "in_range": false},
 	}, "k1/phase1/stand")
+	await _probe_hover_edge_cases(ctx, k1_id, bash, _K1_CELL, "k1/hover_edges")
 	await _probe_cell(ctx, k1_id, _HOVER_WALK, {
 		"ghost_pos": _HOVER_WALK,
 		"path_end": _HOVER_WALK,
@@ -967,6 +970,13 @@ func _audit_surface(
 		_assert_move_tile_at(ctx, blue_cell, true, "%s/blue_has_%s" % [label, blue_cell])
 	for blue_off: Variant in contract.get("blue_not", []):
 		_assert_move_tile_at(ctx, blue_off, false, "%s/blue_not_%s" % [label, blue_off])
+	if contract.get("tiles_only_in_bounds", false):
+		_assert_overlay_tiles_in_bounds(ctx, label)
+	if contract.get("hover_oob", false):
+		var hover_ui: Vector2i = input.get_hover_tile_for_ui()
+		assert_bool(not ctx.board.is_in_bounds(hover_ui)).override_failure_message(
+			"%s: hover must be out of bounds, got %s" % [label, hover_ui],
+		).is_true()
 	if contract.has("push_dest"):
 		var enemy_id: int = int(contract.get("push_enemy_id", -1))
 		var push_to: Vector2i = _preview_push_destination(input, enemy_id)
@@ -980,6 +990,64 @@ func _audit_surface(
 			"%s: pull preview destination" % label,
 		).is_equal(contract["pull_dest"])
 	return surface
+
+
+## On-map unreachable cell + off-map hover: blue/red overlay must stay in-bounds and gate-aligned.
+func _probe_hover_edge_cases(
+	ctx: Dictionary,
+	unit_id: int,
+	ability: AbilityData,
+	red_stand: Vector2i,
+	label_prefix: String,
+) -> void:
+	await _probe_hover_surface(ctx, unit_id, _OFF_BLUE_CELL, {
+		"blue_any": true,
+		"blue_not": [_OFF_BLUE_CELL],
+		"red_on": false,
+		"tiles_only_in_bounds": true,
+	}, "%s/off_blue" % label_prefix)
+	await _hover_mouse_off_map(ctx)
+	await _probe_hover_surface(ctx, unit_id, _OFF_MAP_HOVER, {
+		"hover_oob": true,
+		"blue_any": true,
+		"red_on": true,
+		"red_stand": red_stand,
+		"ability": ability,
+		"tiles_only_in_bounds": true,
+	}, "%s/off_map" % label_prefix)
+
+
+func _probe_hover_surface(
+	ctx: Dictionary,
+	unit_id: int,
+	hover_cell: Vector2i,
+	contract: Dictionary,
+	label: String,
+) -> void:
+	if hover_cell == _OFF_MAP_HOVER:
+		pass
+	elif _qa_fast_enabled():
+		await _reposition_mouse_to_unit(ctx, unit_id, hover_cell)
+	else:
+		await _sweep_mouse_to_cell(ctx, hover_cell, "%s/approach" % label, unit_id)
+	if hover_cell == _OFF_MAP_HOVER:
+		await ctx.runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
+	else:
+		await ctx.runner.simulate_frames(2, _settle_delta_ms())
+	await _audit_surface(ctx, unit_id, hover_cell, contract, label)
+
+
+func _hover_mouse_off_map(ctx: Dictionary) -> void:
+	var input: CombatPlanningInput = ctx.input
+	var director: CombatDirector = ctx.director
+	input.clear_qa_pointer_override()
+	ctx.runner.simulate_mouse_move(Vector2(-10000.0, -10000.0))
+	await ctx.runner.simulate_frames(1, _MOUSE_MOTION_DELTA_MS)
+	input.on_hover_moved(_OFF_MAP_HOVER)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(_OFF_MAP_HOVER)
+	director.flush_plan_refresh_signals_if_pending()
+	await ctx.runner.simulate_frames(2, _settle_delta_ms())
 
 
 func _drag_between_cells(ctx: Dictionary, from: Vector2i, to: Vector2i) -> void:
@@ -1827,6 +1895,18 @@ func _assert_move_tile_at(ctx: Dictionary, cell: Vector2i, expect: bool, label: 
 	assert_bool(ctx.overlay.is_hover_move_tile(cell) == expect).override_failure_message(
 		"%s: blue move tile at %s expected %s" % [label, cell, expect],
 	).is_true()
+
+
+func _assert_overlay_tiles_in_bounds(ctx: Dictionary, label: String) -> void:
+	var board: BoardState = ctx.board
+	for cell: Vector2i in _collect_blue_tiles(ctx):
+		assert_bool(board.is_in_bounds(cell)).override_failure_message(
+			"%s: blue tile %s must be in bounds" % [label, cell],
+		).is_true()
+	for cell: Vector2i in _collect_red_tiles(ctx):
+		assert_bool(board.is_in_bounds(cell)).override_failure_message(
+			"%s: red tile %s must be in bounds" % [label, cell],
+		).is_true()
 
 
 func _assert_red_live(
