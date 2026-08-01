@@ -10,17 +10,16 @@ preview, commit slots, overlay draw, hover sim, or `CombatDirector` refresh — 
 
 ## Three tiers
 
-| Tier | Runner | Truth it establishes |
-|------|--------|--------------------|
-| **1 — Simulation/economy** | fast fixture suites | Deterministic resolution, ability cost, legality, and projected state |
-| **2 — Planning contracts** | `tests/run_planning_qa_gate.gd` | Commit slots, preview/commit parity, cursor, drag, undo, and overlay contracts |
-| **3 — TestBattle acceptance** | `tests/live_planning_scene_test.gd` through GdUnit4 | Actual `TestBattle.tscn`, production input events, process frames, and the live overlay collection drawn by F5 |
-| **Manual visual** | Owner F5 review | Pixel authorship, animation feel, and performance |
+| Tier | Runner | QA gate status |
+|------|--------|----------------|
+| **1 — Simulation/economy** | fast fixture suites | **Legacy — disabled** (drifted from F5) |
+| **2 — Planning contracts** | `tests/run_planning_qa_gate.gd` | **Legacy — disabled** (drifted from F5) |
+| **3 — TestBattle acceptance** | `tests/live_planning_scene_test.gd` through GdUnit4 | **Required** — actual `TestBattle.tscn`, production input, frames, live overlay |
+| **Manual visual** | Owner F5 review | Required for pixel/animation/FPS |
 
-Tiers 1–3 must pass. A missing Tier 3 dependency or runner is **INCOMPLETE**, never a
-passing aggregate. Manual visual review is still required for pixel/animation/FPS.
+**Only Tier 3 blocks the planning QA gate.** Tier 1/2 remain in the repo for optional local archaeology (`-IncludeLegacyTier12`); failures there are expected and ignored.
 
-### Tier 1/2 suites (run in order)
+### Tier 1/2 suites (legacy — not gate-blocking)
 
 | Suite | Script | What it catches |
 |-------|--------|-----------------|
@@ -88,32 +87,38 @@ Prove that this journey can fail (the source is restored even if the assertion f
 
 **Training Arena defaults:** Knight **1 AP / 3 MP** (`knight_factory` `action_points = 1`, `move_points = 3`). All knight class skills: **`action_point_cost = 1`** in `knight_factory.gd`. Headless `_planning_fixture` deliberately mirrors these data defaults but does **not** establish F5 parity. Slot-only tests (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
 
-## Run (fast — planning gate only)
+## Run (planning gate — Tier 3 only)
 
-**One command, one Tier 3 boot.** `run_planning_qa_gate.ps1` already chains Tier 3.
-Do **not** also run `run_planning_scene_acceptance.ps1` in the same QA turn (agents or humans) —
-that doubles the ~33s live TestBattle session for no extra signal.
+**One command, one Tier 3 boot.**
 
 ```powershell
 .\scripts\run_planning_qa_gate.ps1
 ```
 
-Or:
+Optional local archaeology for disabled Tier 1/2 fixtures (failures ignored):
 
 ```powershell
-& "<godot.exe>" --headless --path . --script res://tests/run_planning_qa_gate.gd
+.\scripts\run_planning_qa_gate.ps1 -IncludeLegacyTier12
 ```
 
-Or drag E2E only (fastest drag regression):
+Do **not** also run `run_planning_scene_acceptance.ps1` in the same QA turn — that doubles the live TestBattle session.
+
+Tier 3 alone (owner debugging):
 
 ```powershell
-& "<godot.exe>" --headless --path . --script res://tests/run_drag_e2e_only.gd
+.\scripts\run_planning_scene_acceptance.ps1
 ```
 
-Full regression (includes this gate):
+Sim/bridge regression (no planning fixtures):
 
 ```powershell
 .\scripts\run_regression_tests.ps1 -GodotPath "<godot.exe>"
+```
+
+Full QA (Tier 3 planning gate + sim/bridge regression):
+
+```powershell
+.\scripts\run_full_qa.ps1 -GodotPath "<godot.exe>"
 ```
 
 ## Checklist mapping
@@ -213,7 +218,7 @@ Beyond the manual checklist — game rules that must not regress during perf wor
 
 ## Perf optimization sign-off
 
-- [ ] Agent: `run_planning_qa_gate.ps1` → PASS
+- [ ] Agent: `run_planning_qa_gate.ps1` → Tier 3 PASS (Tier 1/2 legacy optional only)
 - [ ] Agent: `validate_qa_mutations.ps1` → all mutations CAUGHT (22 unfixes, ~90% gate coverage)
 - [ ] Owner: visual-review items above → PASS
 - [ ] Commit hash recorded in changelog

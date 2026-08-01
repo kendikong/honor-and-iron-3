@@ -1,10 +1,10 @@
 extends Node
 
-## Tier 1/2 Planning QA Gate — deterministic economy, slots, and fixture contracts.
+## LEGACY Tier 1/2 — headless fixture contracts (DISABLED from QA gate).
 ##
-## This runner intentionally does not instantiate TestBattle.tscn. The PowerShell
-## gate runs Tier 3 separately and refuses to aggregate a PASS when it is absent.
-## Run:
+## Not part of run_planning_qa_gate.ps1 unless -IncludeLegacyTier12. Use Tier 3:
+##   .\scripts\run_planning_scene_acceptance.ps1
+## Optional local archaeology:
 ##   "<godot.exe>" --headless --path . --script res://tests/run_planning_qa_gate.gd
 
 func _ready() -> void:

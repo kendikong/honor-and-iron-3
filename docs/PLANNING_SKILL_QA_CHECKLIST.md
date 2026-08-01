@@ -642,6 +642,6 @@ Until that exists, use this document for manual sign-off and treat “partial”
 
 ## Sign-off
 
-- [ ] Headless: `run_planning_qa_gate.ps1` → PASS  
+- [ ] Automated: `run_planning_qa_gate.ps1` → Tier 3 PASS  
 - [ ] This checklist: skill(s) touched → phases 1–7 manual PASS  
 - [ ] Commit hash: `________________`
