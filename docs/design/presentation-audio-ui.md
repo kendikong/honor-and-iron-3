@@ -12,9 +12,22 @@ Inventory screens, wire SFX events, align HUD with tactical path — extend pari
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| SFX map | Every listed combat event calls `SfxPlayer` | Loudness / feel |
-| UI inventory | Scene paths exist for each listed screen | Layout / fonts |
-| Menu apply | `MenuInterfaceApplier` pattern for settings | — |
+| SFX map | `PLANNED — §Event→SFX map below` | Loudness / feel |
+| UI inventory | `scenes/TacticalCombat.tscn`, `scenes/MainMenu.tscn`, `scenes/Options.tscn` on disk | Layout / fonts |
+| Menu apply | `ui/menu_interface_applier.gd` pattern | — |
+
+## Screen inventory (partial — expand as HUD ships)
+
+| Screen | Scene path |
+|--------|------------|
+| Tactical combat | `scenes/TacticalCombat.tscn` |
+| Main menu | `scenes/MainMenu.tscn` |
+| Options | `scenes/Options.tscn` |
+| Battle setup | `scenes/BattleSetup.tscn` |
+
+## Event→SFX map
+
+`PLANNED —` table mapping `EventBus` combat events → `SfxPlayer` clip paths (fill during P8 implementation).
 
 ## Non-goals
 
@@ -55,6 +68,8 @@ Grep event names vs Sfx map in this doc (when table filled).
 GOAL: SFX map complete for combat events in spec table
 BAR: grep SfxPlayer hooks
 PASS_THRESHOLD: 88
+RULES: global-systems-first.mdc, qa-after-gameplay-changes.mdc
+ARTIFACT: this file, lint stdout, grep SfxPlayer in presentation/
 ```
 
 ## Tooling I/O

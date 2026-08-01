@@ -12,7 +12,7 @@ When and how to run mass sim for class/enemy balance signals during P6 — not f
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
 | Smoke | `godot --headless --script res://tests/run_mass_sim_test.gd` | — |
-| Interpretation | `tests/captures/mass_sim_interpretation.json` exists after run | Balance taste |
+| Interpretation | `PLANNED — tests/captures/mass_sim_interpretation.json` after run | Balance taste |
 | Epoch honesty | `RULES_REVISION` bump when rules change | — |
 
 ## Non-goals

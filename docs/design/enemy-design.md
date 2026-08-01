@@ -13,7 +13,8 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
 | Fixture → sim | `tests/bridge_test_runner.gd` PASS | Puzzle fun |
-| Intent display | Planning QA if enemy affects preview | Difficulty curve |
+| Fixture schema | `docs/design/appendices/encounter-fixture-format.md` | — |
+| Intent display | `.\scripts\run_planning_qa_gate.ps1` when enemy affects preview | Difficulty curve |
 
 ## Non-goals
 
@@ -43,6 +44,7 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 ## Critic playbook
 
 ```powershell
+.\scripts\lint_design_doc.ps1
 .\scripts\run_regression_tests.ps1
 ```
 

@@ -6,7 +6,7 @@
 
 ## Goal
 
-Define and implement v1 **run loop** (nodes, death, rewards, save) after Knight MVP — agent implements only after human worksheet is filled.
+Define v1 **run loop** spec (worksheet-gated implementation). **Doc gauntlet PASS** = agent-executable spec with clear worksheet gate; **LOOP_READY** requires worksheet filled.
 
 ## Quality bar
 

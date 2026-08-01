@@ -2,7 +2,7 @@
 
 **Status:** `DRAFT`  
 **Pillar ID:** P5 support  
-**Authority chain:** `bridge/encounter_builder.gd` · `docs/design/enemy-design.md`
+**Authority chain:** `bridge/encounter_builder.gd` · `tests/bridge_test_runner.gd` · `docs/design/enemy-design.md`
 
 ## Goal
 
@@ -12,8 +12,8 @@ JSON/schema for handcrafted puzzle encounters loadable through `EncounterBuilder
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Schema doc | Fields listed below | — |
-| Loader | `PLANNED — tests/encounter_fixture_test.gd` | Puzzle quality |
+| Loader smoke | `tests/bridge_test_runner.gd` PASS (EncounterBuilder cases) | Puzzle quality |
+| Dedicated fixture test | `PLANNED — tests/encounter_fixture_test.gd` | — |
 
 ## Non-goals
 
@@ -60,8 +60,10 @@ N/A
 
 ```text
 GOAL: Schema + test loads fixture to sim
-BAR: bridge_test_runner or encounter_fixture_test PASS
+BAR: lint PASS; tests/bridge_test_runner.gd PASS
 PASS_THRESHOLD: 88
+RULES: global-systems-first.mdc
+ARTIFACT: this file, bridge/encounter_builder.gd, tests/bridge_test_runner.gd
 ```
 
 ## Tooling I/O

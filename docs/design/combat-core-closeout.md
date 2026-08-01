@@ -14,7 +14,7 @@ Close tactical SP combat parity (Phases 10–14) using **parity plan as sole pha
 |-------------|---------------|-------------|
 | Sim + bridge | `.\scripts\run_regression_tests.ps1` PASS | — |
 | Planning path | `.\scripts\run_planning_qa_gate.ps1` PASS | F5 parity checklists Ph 10–14 |
-| Intent single-owner | Grep: one `_recompute_intent_units` | — |
+| Intent single-owner | `rg "_recompute_intent_units" presentation/` → single owner | — |
 
 ## Non-goals
 
@@ -24,11 +24,11 @@ See parity plan §Explicit deferrals (Phase 15+). Do not duplicate that table he
 
 | Piece | Parity anchor | BAR |
 |-------|---------------|-----|
-| P2-ph10 | Phase 10 deliverables | regression PASS |
-| P2-ph11 | Phase 11 | planning QA PASS |
-| P2-ph12 | Phase 12 | planning QA PASS |
-| P2-ph13 | Phase 13 | planning QA PASS |
-| P2-ph14 | Phase 14 Knight re-gate | both QA scripts PASS |
+| P2-ph10 | Phase 10 deliverables | `.\scripts\run_regression_tests.ps1` PASS |
+| P2-ph11 | Phase 11 | `.\scripts\run_planning_qa_gate.ps1` PASS |
+| P2-ph12 | Phase 12 | `.\scripts\run_planning_qa_gate.ps1` PASS |
+| P2-ph13 | Phase 13 | `.\scripts\run_planning_qa_gate.ps1` PASS |
+| P2-ph14 | Phase 14 Knight re-gate | both scripts PASS |
 
 ## Builder playbook
 

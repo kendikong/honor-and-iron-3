@@ -47,11 +47,33 @@ Evaluate Infrastructure: ADEQUATE | INADEQUATE
 | Pillar specs (this suite) | 88 |
 | Meta (suite plan, doc-polish) | 90 |
 
+## Critic playbook
+
+```powershell
+.\scripts\lint_design_doc.ps1
+```
+
+## Gauntlet stub
+
+```text
+GOAL: Prompt blocks match gauntlet spec §8–9 with Infrastructure line
+BAR: lint PASS; compare to 00-gauntlet-loop-cursor.md
+PASS_THRESHOLD: 88
+RULES: gauntlet-critic agent spec
+ARTIFACT: this file, .cursor/agents/gauntlet-critic.md
+```
+
 ## Decomposition
 
 1. Lead prompt
 2. Critic handoff
 3. Per-pillar BAR one-liners in each pillar doc
+
+## Builder playbook
+
+1. Copy blocks from this file into lead/critic handoffs.
+2. Fill `GOAL` / `BAR` from target pillar doc gauntlet stub.
+3. Never omit `Infrastructure: ADEQUATE | INADEQUATE` line in critic handoff.
 
 ## Exit criteria
 

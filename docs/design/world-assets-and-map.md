@@ -6,15 +6,15 @@
 
 ## Goal
 
-Mana Seed → custom asset path with PixelForge handoff, living-map phase completion, manifest truth, compositor gates.
+Mana Seed → custom asset path with PixelForge handoff, living-map phase completion, manifest truth, compositor gates. **Doc gauntlet PASS** = spec + paths; **LOOP_READY** requires art worksheet filled.
 
 ## Quality bar
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Manifest | Every `res://` art ref in manifest + on disk | Art direction |
-| Compositor | F5 gates per `phase-audit.mdc` | Boredom test |
-| PixelForge | CANON promote → manifest row | Owner promote only |
+| Manifest | `docs/asset_manifest.md` exists; grep `res://` refs | Art direction |
+| Compositor | `PLANNED — F5 compositor gate (.cursor/rules/phase-audit.mdc)` | Boredom test |
+| PixelForge | `docs/design/appendices/pixelforge-v14-contract.md` | Owner CANON promote only |
 
 ## Non-goals
 

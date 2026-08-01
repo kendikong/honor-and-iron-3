@@ -12,8 +12,8 @@ Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, clonin
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Per class | P3 bar (QA + skill scenarios) | Balance taste |
-| Optional balance | `tests/run_mass_sim_test.gd` | `mass_sim_interpretation.json` review |
+| Per class | `.\scripts\run_planning_qa_gate.ps1` + `tests/run_skill_scenarios_only.gd` (P3 clone) | Balance taste |
+| Optional balance | `tests/run_mass_sim_test.gd` | `tests/captures/mass_sim_interpretation.json` review |
 
 ## Non-goals
 
@@ -34,7 +34,7 @@ N/A
 
 1. Read class section in `class_abilities.txt`.
 2. Clone shield_bash scenario pattern per skill.
-3. Run planning QA + optional mass sim.
+3. Run `.\scripts\run_planning_qa_gate.ps1` + `tests/run_skill_scenarios_only.gd` per `knight-template.md`.
 
 ## Critic playbook
 

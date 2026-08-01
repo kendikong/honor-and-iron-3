@@ -1,6 +1,7 @@
 # PixelForge v14 contract (appendix)
 
 **Status:** `DRAFT`  
+**Pillar ID:** P7 support  
 **Authority chain:** PixelForge v14 Master Implementation Specification (owner `.docx`) · `docs/asset_manifest.md` · `docs/tile_registry.md`
 
 ## Goal
@@ -67,6 +68,9 @@ Compare manifest entry vs file on disk; REFERENCE PNG for visual.
 GOAL: CANON asset promoted with manifest + F5 PASS
 BAR: manifest row + compositor
 PASS_THRESHOLD: 88
+RULES: living-sandbox-architect.mdc, phase-audit.mdc
+ARTIFACT: docs/asset_manifest.md, this file
+REFERENCE: reports/<capture>.png
 ```
 
 ## Exit criteria
