@@ -39,23 +39,25 @@ deterministic checklist contract; slot-only rows do not replace drag E2E.
 
 ### Tier 3 TestBattle acceptance
 
-`tests/live_planning_scene_test.gd` boots the actual `TestBattle.tscn` through GdUnit4.
-It pins the training session, uses real mouse move/press/release events, advances
-production frames, and inspects `TacticalPlanningOverlay.is_hover_action_range_tile()`,
-which reads the same `_hover_action_range_tiles` collection drawn on screen.
+`tests/live_planning_scene_test.gd` boots the actual `TestBattle.tscn` **once** through
+GdUnit4 and runs `test_live_planning_bible_multi_knight_session` (~13s). It pins a
+four-knight / two-dummy training layout, uses real mouse move/press/release events,
+advances production frames, inspects overlay tile collections and preview/commit
+state, then presses Ready → Execute and verifies final unit positions.
 
-The required first journey is:
+**Single-session journeys (all in one boot):**
 
-1. Commit a Run by dragging the Knight beyond normal MP.
-2. Select Bowling Charge and wait through the production ability-settle interval.
-3. Hover an interior board cell.
-4. Assert displayed AP is 0, `action_range_visible_for_hover()` is false, and no live
-   red action-range tile exists.
+| Knight | Skill | Live checks |
+|--------|-------|-------------|
+| K1 `(4,5)` | Shield Bash | phases 1–5: blue/red, walk ghost, enemy approach, push preview, cursor glyphs, commit, red-off at 0 AP |
+| K2 `(1,3)` | Chain Hook | in-range red, hover ghost, pull preview, commit, projected enemy cell |
+| K3 `(5,4)` | Trampling Advance | arm awaiting, red while awaiting, painted E→N route commit + waypoints |
+| K4 `(4,1)` | Run → Bowling | run drag commit, display AP 0, bowling red hidden |
+| All | Execute | `GlobalTimeline` ready → sim; knight + dummy final cells match commit |
+| Reset | Scroll + undo | wheel changes ability; run drag + right-click clears pre-move |
 
-The required companion journeys verify that a live drag preview position is exactly the
-committed projected position, real right-click input removes that committed pre-move,
-and real scroll-wheel input changes the selected ability after the production settle
-interval.
+Click-versus-drag slot parity remains Tier 2 coverage: the live movement UI commits by
+drag for runs/trample corridors, while enemy-target skills commit by click on the dummy.
 
 Click-versus-drag slot parity remains Tier 2 coverage: the live movement UI only
 commits by drag, while `PlanningDragE2ETest` compares that real release path against
