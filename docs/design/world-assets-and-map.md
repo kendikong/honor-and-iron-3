@@ -14,7 +14,8 @@ Mana Seed → custom asset path with PixelForge handoff, living-map phase comple
 |-------------|---------------|-------------|
 | Manifest | `docs/asset_manifest.md` exists; grep `res://` refs | Art direction |
 | Compositor | `PLANNED — F5 compositor gate (.cursor/rules/phase-audit.mdc)` | Boredom test |
-| PixelForge | `docs/design/appendices/pixelforge-v14-contract.md` | Owner CANON promote only |
+| PixelForge contract | `docs/design/appendices/pixelforge-v14-contract.md` | Owner CANON promote only |
+| Reference map scene | `scenes/test_map.tscn` on disk | Compositor audit |
 
 ## Non-goals
 
@@ -40,7 +41,8 @@ Mana Seed → custom asset path with PixelForge handoff, living-map phase comple
 
 ## Builder playbook
 
-1. Read `docs/asset_manifest.md` only.
+1. **Stop** if worksheet empty — status stays `DRAFT`.
+2. Read `docs/asset_manifest.md` only.
 2. PixelForge proposes → owner promotes CANON.
 3. Run map scene 10s — no shader errors.
 
@@ -55,8 +57,8 @@ Visual: REFERENCE PNG + capture under `reports/`.
 ## Gauntlet stub
 
 ```text
-GOAL: Asset in manifest + F5 compositor PASS
-BAR: manifest grep + 10s runtime
+GOAL: P7 spec + paths; LOOP_READY requires worksheet filled
+BAR: lint PASS; docs/asset_manifest.md exists
 PASS_THRESHOLD: 88
 RULES: living-sandbox-architect.mdc, phase-audit.mdc
 ARTIFACT: this file, lint stdout, docs/asset_manifest.md grep

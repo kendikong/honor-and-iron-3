@@ -25,9 +25,18 @@ Inventory screens, wire SFX events, align HUD with tactical path — extend pari
 | Options | `scenes/Options.tscn` |
 | Battle setup | `scenes/BattleSetup.tscn` |
 
-## Event→SFX map
+## Event→SFX map (skeleton — wire during P8)
 
-`PLANNED —` table mapping `EventBus` combat events → `SfxPlayer` clip paths (fill during P8 implementation).
+| SfxPlayer key | SimEvent / trigger | Status |
+|---------------|-------------------|--------|
+| `select` | Unit select | `presentation/sfx_player.gd` DEFS |
+| `move` | Move commit | wired |
+| `ability` | Skill use | wired |
+| `invalid` | Illegal action | wired |
+| `hit` | Damage dealt | wired |
+| `die` | Unit death | wired |
+| `win` / `lose` | Combat end | wired |
+| *(expand)* | `PLANNED —` grep `EventBus` combat events | fill rows |
 
 ## Non-goals
 

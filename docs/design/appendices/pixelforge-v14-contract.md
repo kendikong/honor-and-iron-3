@@ -39,8 +39,9 @@ N/A — CANON promote = owner always.
 | Input | Output | Consumer |
 |-------|--------|----------|
 | ASSET_SPECIFICATION | Candidate assets | PixelForge workspace |
-| CANON_BOARD | `res://` exports | `asset_manifest.md` |
-| manifest.md | Disk truth | Map generators / TileMap |
+| CANON_BOARD | `res://` exports | `asset_manifest.md` row |
+| `docs/tile_registry.md` | Tile id registry | Map generators / TileMap |
+| manifest.md | Disk truth | All map work |
 
 ## Decomposition
 

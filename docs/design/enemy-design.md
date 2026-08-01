@@ -12,8 +12,8 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Fixture → sim | `tests/bridge_test_runner.gd` PASS | Puzzle fun |
-| Fixture schema | `docs/design/appendices/encounter-fixture-format.md` | — |
+| Fixture → sim | `godot --headless --path <repo> --script res://tests/bridge_test_runner.gd` PASS | Puzzle fun |
+| Fixture files | `PLANNED — tests/fixtures/encounters/puzzle_001.json` | — |
 | Intent display | `.\scripts\run_planning_qa_gate.ps1` when enemy affects preview | Difficulty curve |
 
 ## Non-goals

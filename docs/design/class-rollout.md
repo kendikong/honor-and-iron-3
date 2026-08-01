@@ -40,17 +40,20 @@ N/A
 
 ```powershell
 .\scripts\run_planning_qa_gate.ps1
-godot --headless --script res://tests/run_mass_sim_test.gd
+godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd
+godot --headless --path <repo> --script res://tests/run_mass_sim_test.gd
 ```
+
+Per skill/class: clone `docs/design/knight-template.md` critic playbook.
 
 ## Gauntlet stub
 
 ```text
-GOAL: <class> skills per Bible
-BAR: P3 bar per skill + class scenario registry
+GOAL: P6 class rollout clones P3 machine bars per class
+BAR: lint PASS; run_planning_qa_gate.ps1 + run_skill_scenarios_only.gd paths per knight-template.md
 PASS_THRESHOLD: 88
-RULES: skill-global-rules.mdc, knight-template.md (P3 clone path)
-ARTIFACT: this file, lint stdout
+RULES: skill-global-rules.mdc, knight-template.md
+ARTIFACT: this file, knight-template.md, lint stdout
 ```
 
 ## Tooling I/O

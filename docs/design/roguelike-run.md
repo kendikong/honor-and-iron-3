@@ -12,7 +12,7 @@ Define v1 **run loop** spec (worksheet-gated implementation). **Doc gauntlet PAS
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Run spec | Worksheet filled in this doc | Owner approves v1 scope |
+| Run spec | — | Worksheet filled + owner approves v1 scope |
 | Implementation | `PLANNED — tests/run_state_test.gd` (create with run impl) | Fun / pacing |
 | Combat integration | Skirmish launch from run node uses tactical path | — |
 

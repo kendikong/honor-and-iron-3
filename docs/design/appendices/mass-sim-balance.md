@@ -24,6 +24,15 @@ When and how to run mass sim for class/enemy balance signals during P6 — not f
 
 N/A
 
+## P6 balance loop (owner + agent)
+
+| Step | Action | Path / command |
+|------|--------|----------------|
+| 1 | Configure skirmish | Mass Sim dashboard / `core/batch/mass_sim_skirmish_setup.gd` |
+| 2 | New Epoch before rule change | `core/batch/mass_sim_constants.gd` `RULES_REVISION` bump |
+| 3 | Run queue | `godot --headless --script res://tests/run_mass_sim_test.gd` |
+| 4 | Interpret export | `tests/captures/mass_sim_interpretation.json` (see `tests/captures/README.md`) |
+
 ## When to run
 
 | Trigger | Command |

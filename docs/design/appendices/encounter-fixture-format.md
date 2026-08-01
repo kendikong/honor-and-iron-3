@@ -12,8 +12,8 @@ JSON/schema for handcrafted puzzle encounters loadable through `EncounterBuilder
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Loader smoke | `tests/bridge_test_runner.gd` PASS (EncounterBuilder cases) | Puzzle quality |
-| Dedicated fixture test | `PLANNED — tests/encounter_fixture_test.gd` | — |
+| Loader smoke | `PLANNED — tests/encounter_fixture_test.gd` after JSON loader lands | — |
+| Schema reference | `bridge/encounter_builder.gd` API (programmatic grid today) | — |
 
 ## Non-goals
 
@@ -60,10 +60,11 @@ N/A
 
 ```text
 GOAL: Schema + test loads fixture to sim
-BAR: lint PASS; tests/bridge_test_runner.gd PASS
+GOAL: JSON schema documented; loader + fixture files are PLANNED infrastructure
+BAR: lint PASS; bridge/encounter_builder.gd exists; do NOT claim JSON loader exists yet
 PASS_THRESHOLD: 88
 RULES: global-systems-first.mdc
-ARTIFACT: this file, bridge/encounter_builder.gd, tests/bridge_test_runner.gd
+ARTIFACT: this file, bridge/encounter_builder.gd
 ```
 
 ## Tooling I/O

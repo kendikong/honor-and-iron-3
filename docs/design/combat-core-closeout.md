@@ -20,6 +20,10 @@ Close tactical SP combat parity (Phases 10–14) using **parity plan as sole pha
 
 See parity plan §Explicit deferrals (Phase 15+). Do not duplicate that table here.
 
+## Human-only worksheet
+
+N/A
+
 ## Decomposition (gauntlet pieces)
 
 | Piece | Parity anchor | BAR |
@@ -70,3 +74,14 @@ ARTIFACT: this file, lint stdout, docs/TACTICAL_COMBAT_PARITY_PLAN.md link-only 
 ## Doc polish scorecard
 
 *(Critic fills — do not self-grade.)*
+
+| Dimension | /10 |
+|-----------|-----|
+| Covers scope | |
+| Machine bars | |
+| No duplication | |
+| Agent-executable | |
+| Human boundaries | |
+| Sequencing | |
+| Tooling I/O | |
+| Loop-polishable | |
