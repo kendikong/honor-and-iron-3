@@ -80,9 +80,10 @@ presentation/combat_planning_input.gd
 1. Decompose **GOAL** into smallest judgeable pieces (see main spec Rule 3).
 2. Per piece: builder subagent → **readonly** [`gauntlet-critic`](../../.cursor/agents/gauntlet-critic.md) with §9 handoff payload only.
 3. **Piece PASS gate:** critic must return `RESULT: PASS` **and** `SCORE ≥ PASS_THRESHOLD` — log score in `workbench.md`. No PASS without critic.
-4. Update [`workbench.md`](workbench.md) every wave.
-5. On piece PASS: `git add` + commit per `auto-commit-absolute.mdc`.
-6. Do not expand scope when a piece fails — report and stop or skip per **STOP_ON**.
+4. Update [`workbench.md`](workbench.md) every wave — **score ticker**, **score progression** row, wave log.
+5. **Loud banner:** first line of lead message after critic = score banner (Rule 6b) with DELTA.
+6. On piece PASS: `git add` + commit per `auto-commit-absolute.mdc`.
+7. Do not expand scope when a piece fails — report and stop or skip per **STOP_ON**.
 
 ---
 

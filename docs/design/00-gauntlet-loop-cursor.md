@@ -163,6 +163,34 @@ Lead maintains **`docs/design/workbench.md`** (or run-specific path) with:
 
 Owner checks from phone or morning review — **without** stopping the agent each round.
 
+### Rule 6b — Loud score announcements (mandatory while owner watches)
+
+Every critic round must be **impossible to miss**. The owner should see score movement at a glance.
+
+**Critic:** first output line = score banner (see `gauntlet-critic` format).
+
+**Lead:** immediately after critic returns, post the **same banner** as the **first line** of the lead message (before changelog, before builder plan). Include:
+
+- Piece ID + round number
+- `SCORE: x/100` and `THRESHOLD: y`
+- `DELTA: +N` or `−N` vs previous round on this piece (or `first round`)
+- `RESULT: PASS | FAIL`
+- One-word progress hint: `CLIMBING` (delta ≥ +3), `STALLED` (|delta| ≤ 2), `SLIPPED` (delta ≤ −3)
+
+**Workbench:** append every round to **Score progression** (below); update **Score ticker** at top.
+
+**Example (lead + critic must match):**
+
+```text
+══════════════════════════════════════
+GAUNTLET SCORE │ knight-fortify │ Round 3
+SCORE: 82/100 │ THRESHOLD: 85 │ FAIL │ CLIMBING
+DELTA: +7 vs round 2 (was 75)
+══════════════════════════════════════
+```
+
+Do **not** bury scores only in `workbench.md` or Changelog — the banner is the headline.
+
 ### Rule 7 — Optional smoothing pass
 
 After a wave (e.g. 5 skills), one **fresh readonly** subagent reviews the **combined** diff for consistency, duplicate paths, and global-rule violations. It does not redesign scope.
@@ -199,6 +227,7 @@ Invoke: `/gauntlet-critic` or “use gauntlet-critic subagent on this piece.”
 Add to the overnight prompt (or `.cursor/rules` pointer):
 
 - Spawn **separate** `gauntlet-critic` subagent after **every** builder pass on a piece — log invocation in `workbench.md` (`Critic: yes`)
+- **Loud score banner** as first line of every post-critic message (Rule 6b) — include DELTA vs prior round
 - Never self-grade — piece PASS requires critic `RESULT: PASS` **and** `SCORE ≥ PASS_THRESHOLD` in the wave log
 - Update `docs/design/workbench.md` every wave
 - On gameplay edits: run mandatory QA per `qa-after-gameplay-changes.mdc` before claiming PASS
@@ -264,7 +293,7 @@ You are the LEAD. Do not ask the owner questions during this run.
 2. Per piece: builder subagent implements → separate readonly gauntlet-critic subagent judges ARTIFACT against BAR.
 3. Critic never sees builder reasoning. Critic returns SCORE/100 + largest gap only.
 4. Loop until BAR passes **and** SCORE ≥ PASS_THRESHOLD for that piece, or MAX_ROUNDS_PER_PIECE in UNATTENDED_RUN.md.
-5. Update docs/design/workbench.md every wave (piece, bar result, gap, commit).
+5. Update docs/design/workbench.md every wave (piece, bar result, **score ticker**, score progression row, gap, commit).
 6. On piece PASS: commit full backup per auto-commit-absolute.mdc.
 7. Optional: after each wave, readonly smoothing pass on combined diff.
 8. Stop at chunk complete or documented FAILURE_REPORT.md — do not expand scope.
@@ -325,3 +354,4 @@ Do not implement. SCORE/100 + PASS or FAIL + largest gap + evidence.
 | 2026-08-01 | Review pass: clarify bar pass/fail loop, dedupe critic agent, `/loop` caveat, regression script path, `UNATTENDED_RUN.md` |
 | 2026-08-01 | Hardening: propose-bar-if-missing, critic-required PASS, visual A/B bar, MAX_ROUNDS → FAILURE_REPORT, workbench critic column |
 | 2026-08-01 | Harsh score gate: SCORE/100 + PASS_THRESHOLD by work type; rubric in gauntlet-critic agent |
+| 2026-08-01 | Rule 6b: loud score banners + DELTA + workbench score progression for owner visibility |
