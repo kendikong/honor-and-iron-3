@@ -2421,7 +2421,7 @@ func finish_autobattler_plan_batch(unit_layer: TacticalUnitLayer) -> void:
 
 func _collect_all_planning_move_anim_events() -> Array[SimEvent]:
 	var plan_to_run := _get_combined_plan()
-	if plan_to_run.is_empty() or base_board == null:
+	if plan_to_run.size() == 0 or base_board == null:
 		return []
 	var move_only := base_board.clone()
 	var anim_events: Array[SimEvent] = []

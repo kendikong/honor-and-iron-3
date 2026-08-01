@@ -65,7 +65,6 @@ var _autobattler_panel: AutobattlerControlPanel
 
 func _ready() -> void:
 	_settings.load_from_disk()
-	_settings.apply_to_window(get_window())
 	_settings.apply_audio_buses()
 
 	_atmosphere.setup(_world_modulate, _sky_overlay, _map_root)

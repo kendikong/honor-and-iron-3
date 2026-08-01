@@ -237,6 +237,9 @@ func apply_to_window(window: Window, preserve_center_on_resize: bool = false) ->
 					resolution,
 					screen_id,
 				)
+		DisplayServer.WINDOW_MODE_MAXIMIZED:
+			window.current_screen = screen_id
+			window.mode = Window.MODE_MAXIMIZED
 		DisplayServer.WINDOW_MODE_FULLSCREEN:
 			window.current_screen = screen_id
 			window.mode = Window.MODE_FULLSCREEN

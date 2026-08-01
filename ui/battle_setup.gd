@@ -336,6 +336,7 @@ func _launch_skirmish(size_preset: Vector2i, setup: MassSimSkirmishSetup) -> voi
 	config.map_seed = randi()
 	config.skirmish_setup = setup.to_dict()
 	SkirmishLaunch.set_pending(config)
+	SettingsManager.persist_window_placement()
 	get_tree().change_scene_to_file("res://scenes/TacticalCombat.tscn")
 
 

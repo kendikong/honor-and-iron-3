@@ -26,6 +26,10 @@ func save_settings(_w: int, _h: int, _fs: bool) -> void:
 	_persist_window_placement()
 
 
+func persist_window_placement() -> void:
+	_persist_window_placement()
+
+
 func _persist_window_placement() -> void:
 	var window: Window = get_window()
 	if window == null:
