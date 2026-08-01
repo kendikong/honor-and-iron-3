@@ -13,7 +13,7 @@ Knight is the **reference class**: every skill Bible-complete with a headless sc
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
 | **Tier 3 planning gate** (blocks release) | `.\scripts\run_planning_qa_gate.ps1` PASS — Tier 3 live scene only; Tier 1/2 legacy in script is **informational** | F5 drag/commit parity |
-| **Per Knight skill** (separate code pieces) | Row in `tests/planning_skill_scenarios_test.gd` PASS | `docs/PLANNING_SKILL_QA_CHECKLIST.md` phases 1–7 |
+| **Per Knight skill** (separate code pieces) | `tests/run_skill_scenarios_only.gd` PASS | `docs/PLANNING_SKILL_QA_CHECKLIST.md` phases 1–7 |
 | Reference scenario | `tests/skills/shield_bash_scenario.gd` exists | — |
 
 ## Non-goals
@@ -68,8 +68,9 @@ ARTIFACT: this file, lint stdout, grep planning_skill_scenarios_test.gd
 
 ## Exit criteria
 
-- [ ] All Knight MVP skills have scenarios
-- [ ] Planning QA PASS
+- [ ] All Knight MVP skills have scenarios registered in `planning_skill_scenarios_test.gd`
+- [ ] Tier 3 planning QA PASS (`run_planning_qa_gate.ps1`)
+- [ ] Skill scenario runner PASS (`run_skill_scenarios_only.gd`)
 - [ ] No bandaid preview/commit paths
 
 ## Doc polish scorecard

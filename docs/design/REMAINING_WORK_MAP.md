@@ -12,7 +12,7 @@ One page: what is left to ship Honor & Iron as a playable roguelike tactical gam
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Every milestone row | Primary command path exists on disk | Sequencing approved at owner gate |
+| Every milestone row | Primary command path exists on disk **or** `PLANNED — …` | Sequencing approved at owner gate |
 | No orphan work | Each row links to `docs/design/*.md` | — |
 
 ## Non-goals
@@ -44,7 +44,7 @@ N/A — see `roguelike-run.md` (P4) and `world-assets-and-map.md` (P7) for owner
 flowchart TD
   P10[Parity Phase 10-13 combat core] --> P14[Phase 14 Knight MVP re-gate]
   P14 --> KT[Knight template LOCK - P3]
-  KT --> RUN[Roguelike run v1 - P4]
+  KT --> RUN[Roguelike run v1 - P4 human worksheet]
   RUN --> EN[Enemy puzzle kit - P5]
   EN --> CR[Class rollout 2+ - P6]
   MAP[Map assets + PixelForge MVP - P7] --> LM[Living map ROADMAP close]
@@ -92,9 +92,9 @@ ARTIFACT: this file, lint stdout, Test-Path per Primary command
 
 ## Exit criteria
 
-- [x] All rows link to existing pillar files
-- [x] All primary commands verified on disk or marked `PLANNED —`
-- [x] Mermaid matches suite plan critical path (`00-remaining-work-suite-plan.md`)
+- [ ] All rows link to existing pillar files *(critic verifies)*
+- [ ] All primary commands verified on disk or marked `PLANNED —` *(critic verifies)*
+- [ ] Mermaid matches suite plan critical path (`00-remaining-work-suite-plan.md`) *(critic verifies)*
 
 ## Doc polish scorecard
 
