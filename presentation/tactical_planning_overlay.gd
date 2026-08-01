@@ -590,13 +590,16 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if AbilitySystem.is_run_ability(ability):
 		return false
-	## Phase 1 (selected AWAITING_TARGET, not yet armed) and phase 2 (awaiting armed)
-	## both show action-range tiles from projected stand — dash/move tiles in phase 2.
+	if _planning_input != null:
+		if not _planning_input.action_range_visible_for_hover():
+			return false
+		if force_basic:
+			return true
+		return p_unit.ability.points_left >= ability.action_point_cost
+	## Fallback when planning input is unavailable (headless fixtures).
 	var premove_cell: Vector2i = _intent_stand_origin(unit)
 	var plan_board: BoardState = _director.projected_state if _director.projected_state != null else _board
-	var auto_run_active: bool = (
-		_planning_input != null and _planning_input.auto_run_movement_active(p_unit)
-	)
+	var auto_run_active: bool = false
 	if not (
 		_planning_input != null
 		and _planning_input.awaiting_targeting_active()
@@ -2096,6 +2099,10 @@ func _intent_stand_origin(unit: UnitState) -> Vector2i:
 	var projected: Vector2i = _proj_origin(unit)
 	if unit == null:
 		return projected
+	if _planning_input != null and _is_selected_player_unit(unit):
+		var intent_stand: Vector2i = _planning_input.action_range_intent_stand_cell(unit.id)
+		if intent_stand.x > -900000:
+			return intent_stand
 	if _planning_input != null and _planning_input.awaiting_targeting_active():
 		var sel_idx: int = _director.selected_ability_index if _director != null else -1
 		var ability: AbilityData = _selected_ability_data(unit, sel_idx)

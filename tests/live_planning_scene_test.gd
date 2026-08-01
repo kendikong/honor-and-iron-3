@@ -701,10 +701,9 @@ func _enter_basic_movement_mode(ctx: Dictionary, unit_id: int) -> void:
 	await _wait_ability_settle(ctx)
 
 
-## K4 F5 parity: deselect skill but keep auto_run extended move budget (force_basic blocks run).
+## K4 F5 parity: keep selected skill armed; auto_run extended move budget (force_basic blocks run).
 func _enter_k4_auto_run_paint_mode(ctx: Dictionary, unit_id: int) -> void:
 	ctx.director.select_unit(unit_id)
-	ctx.director.select_ability(-1)
 	ctx.input.force_basic_movement = false
 	await _wait_ability_settle(ctx)
 
@@ -985,8 +984,10 @@ func _select_k4_detour_and_run_route(
 		_assert_not_dragging(ctx, step_label)
 		_assert_preview_path_equals(ctx, unit_id, expected_path, "%s/path" % step_label)
 		if cell == Vector2i(4, 2):
+			await _wait_ability_settle(ctx)
 			await _assert_k4_walk_loop_preview(ctx, unit_id, bowling, cell, "%s/walk_loop" % step_label)
 		elif cell == _K4_RUN_TRIGGER_CELL:
+			await _wait_ability_settle(ctx)
 			await _assert_k4_run_loop_preview(ctx, unit_id, bowling, "%s/run_trigger" % step_label)
 		await _capture_planning_surface(ctx, unit_id, step_label)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, _K4_RUN_TRIGGER_CELL, false)
@@ -1027,11 +1028,13 @@ func _paint_k4_detour_and_run_route(
 		await _capture_planning_surface(ctx, unit_id, "%s/step_%d" % [label_prefix, step_index])
 		var stand: Vector2i = _K4_DETOUR_PLUS_RUN_ROUTE[step_index]
 		if stand == Vector2i(4, 2):
+			await _wait_ability_settle(ctx)
 			await _assert_k4_walk_loop_preview(ctx, unit_id, bowling, stand, "%s/walk_loop_end" % label_prefix)
 			await _k4_preview_snapshot(ctx, unit_id, stand, "walk_loop_end")
 			if pause_frames_at_checkpoint > 0:
 				await runner.simulate_frames(pause_frames_at_checkpoint, _MOUSE_MOTION_DELTA_MS)
 		elif stand == _K4_RUN_TRIGGER_CELL:
+			await _wait_ability_settle(ctx)
 			await _assert_k4_run_loop_preview(ctx, unit_id, bowling, "%s/run_trigger" % label_prefix)
 			await _k4_preview_snapshot(ctx, unit_id, stand, "run_trigger")
 			if pause_frames_at_checkpoint > 0:
@@ -1077,12 +1080,13 @@ func _assert_k4_walk_loop_preview(
 	assert_int(input.planning_display_ap_left(unit_id)).override_failure_message(
 		"%s: walk detour must keep skill AP at stand %s" % [label, stand],
 	).is_equal(1)
-	if bowling != null and ctx.director.selected_ability_index >= 0:
-		_assert_red_live(ctx, bowling, true, stand, "%s/red" % label)
-	else:
-		assert_bool(_overlay_has_red_tile(ctx.overlay, ctx.board)).override_failure_message(
-			"%s: basic-move paint must hide bowling red at walk loop %s" % [label, stand],
-		).is_false()
+	assert_object(bowling).override_failure_message(
+		"%s: K4 walk loop requires Bowling selected" % label,
+	).is_not_null()
+	assert_bool(input.action_range_visible_for_hover()).override_failure_message(
+		"%s: walk detour must keep action-range gate on at stand %s" % [label, stand],
+	).is_true()
+	_assert_red_live(ctx, bowling, true, stand, "%s/red" % label)
 
 
 func _assert_k4_run_loop_preview(
@@ -1098,6 +1102,9 @@ func _assert_k4_run_loop_preview(
 	assert_int(input.planning_display_ap_left(unit_id)).override_failure_message(
 		"%s: Run intent must show 0 display AP" % label,
 	).is_equal(0)
+	assert_bool(input.action_range_visible_for_hover()).override_failure_message(
+		"%s: Run trigger must hide action-range gate" % label,
+	).is_false()
 	assert_bool(_overlay_has_red_tile(ctx.overlay, ctx.board)).override_failure_message(
 		"%s: Run trigger must hide action-range red" % label,
 	).is_false()
@@ -1108,14 +1115,15 @@ func _k4_preview_snapshot(ctx: Dictionary, unit_id: int, stand: Vector2i, label:
 	var requires_run: bool = input.unit_move_requires_run(unit_id)
 	var display_ap: int = input.planning_display_ap_left(unit_id)
 	var overlay_red: bool = _overlay_has_red_tile(ctx.overlay, ctx.board)
+	var red_gate: bool = input.action_range_visible_for_hover()
 	print(
-		"[K4-SNAPSHOT] %s | stand=%s requires_run=%s display_ap=%d overlay_red=%s"
-		% [label, stand, requires_run, display_ap, overlay_red],
+		"[K4-SNAPSHOT] %s | stand=%s requires_run=%s display_ap=%d red_gate=%s overlay_red=%s"
+		% [label, stand, requires_run, display_ap, red_gate, overlay_red],
 	)
 	if label == "run_trigger":
 		print(
-			"[K4-COMPARE] F5 auto_run paint at run end: requires_run=%s display_ap=%d overlay_red=%s"
-			% [requires_run, display_ap, overlay_red],
+			"[K4-COMPARE] F5 auto_run paint at run end: requires_run=%s display_ap=%d red_gate=%s overlay_red=%s"
+			% [requires_run, display_ap, red_gate, overlay_red],
 		)
 	await ctx.runner.simulate_frames(4, _SETTLE_DELTA_MS)
 	var vp: Viewport = ctx.scene.get_viewport()
@@ -1799,6 +1807,10 @@ func _assert_red_live(
 ) -> void:
 	var overlay: TacticalPlanningOverlay = ctx.overlay
 	var has_red: bool = _overlay_has_red_tile(overlay, ctx.board)
+	var gate_on: bool = ctx.input.action_range_visible_for_hover()
+	assert_bool(gate_on == expect_show).override_failure_message(
+		"%s: action-range gate expected %s got %s" % [label, expect_show, gate_on],
+	).is_true()
 	assert_bool(has_red == expect_show).override_failure_message(
 		"%s: overlay red expected %s got %s" % [label, expect_show, has_red],
 	).is_true()

@@ -2287,6 +2287,185 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	return actor != null and AbilitySystem.can_afford_run(actor)
 
 
+## Where red action-range tiles anchor — projected stand plus live move-preview stand (intent truth).
+func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
+	if _director == null:
+		return Vector2i(-999999, -999999)
+	if unit_id < 0:
+		unit_id = _director.selected_unit_id
+	if unit_id < 0:
+		return Vector2i(-999999, -999999)
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return Vector2i(-999999, -999999)
+	var projected: Vector2i = _proj_move_origin(actor)
+	var ability: AbilityData = null
+	if unit_id == _director.selected_unit_id:
+		ability = _selected_ability_data(actor)
+	if ability != null and _awaiting_flow_selected(actor, ability) and AbilitySystem.is_movement_skill(ability):
+		if awaiting_targeting_active():
+			return projected
+		var hover: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
+		if _director.board.is_in_bounds(hover):
+			var hover_unit: UnitState = _director.board.get_unit_at(hover)
+			if (
+				hover_unit != null
+				and hover_unit.is_enemy()
+				and AbilitySystem.planning_is_valid_awaiting_endpoint(projected, hover, ability)
+			):
+				return projected
+	var dest: Vector2i = move_intent_destination(unit_id)
+	if _director.board.is_in_bounds(dest) and dest != projected and _is_hover_move_cell(actor, dest):
+		return dest
+	if is_live_preview_active() and preview_state.preview_board != null:
+		var live_unit: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
+		if live_unit != null:
+			return live_unit.position
+	return projected
+
+
+## Locked move intent (timeline or painted drag) used for action-range economy — not hover stand.
+func _timeline_move_action_for_action_range(unit_id: int) -> TimelineAction:
+	if _director == null or unit_id < 0:
+		return null
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	if (
+		move_timing >= 0
+		and _director.unit_has_move_planned_at_timing(unit_id, move_timing)
+	):
+		var plan: Timeline = (
+			_director.plan_post_move
+			if move_timing == GameEnums.MoveTiming.POST_ACTION
+			else _director.plan_pre_move
+		)
+		var current: TimelineAction = CombatPlanningPreview.committed_move_action(
+			plan, unit_id, move_timing,
+		)
+		if current != null:
+			return current
+	for timing: int in [GameEnums.MoveTiming.PRE_ACTION, GameEnums.MoveTiming.POST_ACTION]:
+		if timing == move_timing:
+			continue
+		var plan: Timeline = (
+			_director.plan_pre_move
+			if timing == GameEnums.MoveTiming.PRE_ACTION
+			else _director.plan_post_move
+		)
+		var step: TimelineAction = CombatPlanningPreview.committed_move_action(
+			plan, unit_id, timing,
+		)
+		if step != null:
+			return step
+	return null
+
+
+func _binding_move_action_for_action_range(unit_id: int) -> TimelineAction:
+	if _director == null or unit_id < 0:
+		return null
+	var timeline_move: TimelineAction = _timeline_move_action_for_action_range(unit_id)
+	if timeline_move != null:
+		return timeline_move
+	if dragging and _drag_unit_id == unit_id and _drag_route_commits_active():
+		var dest: Vector2i = _drag_route[_drag_route.size() - 1]
+		var params: Dictionary = _commit_interaction_params(dest, -1)
+		var slots: Dictionary = _final_commit_slots_for_interaction(
+			unit_id,
+			params.cell as Vector2i,
+			params.waypoints as Array[Vector2i],
+			params.legal_move_tiles as Array[Vector2i],
+			params.preferred as Vector2i,
+			params.face_dir as int,
+		)
+		var pre_moves: Array = slots.get("pre", []) as Array
+		if not pre_moves.is_empty() and pre_moves[0] is TimelineAction:
+			return pre_moves[0] as TimelineAction
+	if unit_id == _director.selected_unit_id and not dragging:
+		var live_path: Array = preview_state.preview_paths.get(unit_id, [])
+		if live_path.size() >= 2:
+			var dest: Vector2i = live_path[live_path.size() - 1] as Vector2i
+			var actor: UnitState = _proj_unit(unit_id)
+			if actor == null or not _is_hover_move_cell(actor, dest):
+				return null
+			var waypoints: Array[Vector2i] = []
+			for i: int in range(1, live_path.size()):
+				waypoints.append(live_path[i] as Vector2i)
+			var params: Dictionary = _commit_interaction_params(dest, -1)
+			var slots: Dictionary = _final_commit_slots_for_interaction(
+				unit_id,
+				dest,
+				waypoints,
+				params.legal_move_tiles as Array[Vector2i],
+				params.preferred as Vector2i,
+				params.face_dir as int,
+			)
+			var hover_pre_moves: Array = slots.get("pre", []) as Array
+			if not hover_pre_moves.is_empty() and hover_pre_moves[0] is TimelineAction:
+				return hover_pre_moves[0] as TimelineAction
+	return null
+
+
+func _actor_after_binding_move_intent(
+	unit_id: int,
+	move_action: TimelineAction,
+) -> UnitState:
+	if move_action == null or _director == null:
+		return null
+	var origin: UnitState = _proj_unit(unit_id)
+	if origin == null and _director.board != null:
+		origin = _director.board.get_unit_by_id(unit_id)
+	if origin == null:
+		return null
+	var trial: BoardState = _proj().clone()
+	var trial_actor: UnitState = trial.get_unit_by_id(unit_id)
+	if trial_actor == null:
+		return null
+	var plan: Timeline = Timeline.new()
+	plan.entries.append(move_action)
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(trial, plan, events)
+	for event: SimEvent in events:
+		if event.type != GameEnums.SimEventType.ACTION_FAILED:
+			continue
+		if int(event.data.get("actor", -1)) == unit_id:
+			return null
+	var projected: UnitState = trial.get_unit_by_id(unit_id)
+	return projected.clone() if projected != null else null
+
+
+## Red tiles show only when the selected skill is legal after binding move intent or hover stand.
+## Economy owner: AbilitySystem.can_plan / can_show_planning_action_range_after_premove on projected actor.
+func action_range_visible_for_hover() -> bool:
+	if _director == null or _director.selected_unit_id < 0 or _director.board == null:
+		return false
+	var unit_id: int = _director.selected_unit_id
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return false
+	var ability: AbilityData = _selected_ability_data(actor)
+	if ability == null or AbilitySystem.is_run_ability(ability) or AbilitySystem.is_wait_ability(ability):
+		return false
+	var board: BoardState = _proj()
+	var auto_run_move: bool = auto_run_movement_active(actor)
+	if unit_move_requires_run(unit_id):
+		auto_run_move = true
+	var binding_move: TimelineAction = _binding_move_action_for_action_range(unit_id)
+	if binding_move != null:
+		var after_intent: UnitState = _actor_after_binding_move_intent(unit_id, binding_move)
+		if after_intent == null:
+			return false
+		return AbilitySystem.can_plan(after_intent, ability, board)
+	if awaiting_targeting_active():
+		return AbilitySystem.can_plan(actor, ability, board)
+	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
+	return AbilitySystem.can_show_planning_action_range_after_premove(
+		board, actor, ability, stand, auto_run_move,
+	)
+
+
 ## True when this unit's current planning intent (drag / live path / committed move) needs Run.
 func unit_move_requires_run(unit_id: int) -> bool:
 	if _director == null or unit_id < 0:
