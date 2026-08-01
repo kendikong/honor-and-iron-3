@@ -196,6 +196,10 @@ func bind_planning_overlay(overlay: TacticalPlanningOverlay) -> void:
 	_planning_overlay = overlay
 
 
+func has_planning_move_tweens() -> bool:
+	return not _move_tweens.is_empty()
+
+
 func set_predicted_stats(hp: Dictionary, armor: Dictionary) -> void:
 	_predicted_hp = hp
 	_predicted_armor = armor
@@ -279,6 +283,8 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
+	if _director != null and _director.plan_refresh_snap_units:
+		return
 	_sync_actors()
 	_refresh_planning_visuals()
 	queue_redraw()
@@ -287,7 +293,10 @@ func _on_board_changed(board: BoardState) -> void:
 func _on_preview_updated(result: SimResult) -> void:
 	_preview_board = result.final_state
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
-		_sync_planning_actor_positions()
+		if not _director.plan_refresh_defer_overlay:
+			_sync_planning_actor_positions()
+			queue_redraw()
+		return
 	queue_redraw()
 
 
@@ -318,6 +327,8 @@ func _on_selection_changed(unit_id: int) -> void:
 
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
+		if _director.plan_refresh_snap_units or _director.plan_refresh_defer_overlay:
+			return
 		_sync_planning_facings_for_queued_actions()
 		_refresh_player_exhaustion()
 		_refresh_unit_glows()

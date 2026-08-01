@@ -632,7 +632,8 @@ func _on_board_changed(board: BoardState) -> void:
 		# Snap undo/move refresh emits preview_updated in the same flush — skip duplicate danger pass.
 		if _planning != null and not _director.plan_refresh_snap_units:
 			_planning.mark_danger_dirty()
-		_schedule_plan_refresh_followup()
+		if not _director.plan_refresh_snap_units:
+			_schedule_plan_refresh_followup()
 		return
 	if aiming:
 		cancel_aim()
@@ -785,6 +786,8 @@ func _run_ability_settled_refresh() -> void:
 func _on_preview_updated(_result: SimResult) -> void:
 	_drag_saved_preview = null
 	if dragging:
+		return
+	if _director != null and _director.plan_refresh_defer_overlay:
 		return
 	_schedule_plan_refresh_followup()
 	if _suppress_post_commit_hover_refresh:

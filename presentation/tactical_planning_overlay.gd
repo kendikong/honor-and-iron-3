@@ -94,6 +94,8 @@ var _danger_tiles_cache: Dictionary = {}
 var _danger_tiles_dirty: bool = true
 var _hit_markers: Array = []
 var _hover_recompute_pending: bool = false
+var _deferred_preview_pending: bool = false
+var _deferred_preview_result: SimResult = null
 var _drag_overlay_redraw_accum: float = 0.0
 var _flow_overlay_redraw_accum: float = 0.0
 var _game_settings: GameSettings
@@ -113,6 +115,10 @@ func setup(
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
+		if _director != null and (
+			_director.plan_refresh_snap_units or _director.plan_refresh_defer_overlay
+		):
+			return
 		_invalidate_hover_cache()
 		_schedule_hover_recompute()
 	)
@@ -723,6 +729,8 @@ func recompute_hover_ranges(
 
 func _on_board_changed(board: BoardState) -> void:
 	set_board(board)
+	if _director != null and _director.plan_refresh_snap_units:
+		return
 	_danger_tiles_dirty = true
 	_invalidate_hover_cache()
 
@@ -819,6 +827,27 @@ func _on_preview_updated(result: SimResult) -> void:
 		_has_stashed_committed = false
 		queue_redraw()
 		return
+	if _director != null and _director.plan_refresh_defer_overlay:
+		_deferred_preview_result = result
+		if not _deferred_preview_pending:
+			_deferred_preview_pending = true
+			call_deferred("_flush_deferred_preview_updated")
+		return
+	_apply_committed_preview_update(result)
+
+
+func _flush_deferred_preview_updated() -> void:
+	_deferred_preview_pending = false
+	var result: SimResult = _deferred_preview_result
+	_deferred_preview_result = null
+	if _director != null:
+		_director.plan_refresh_defer_overlay = false
+	if result == null:
+		return
+	_apply_committed_preview_update(result)
+
+
+func _apply_committed_preview_update(result: SimResult) -> void:
 	set_preview_board(result.final_state)
 	_invalidate_hover_cache()
 	if _director != null and _board != null:
@@ -827,7 +856,7 @@ func _on_preview_updated(result: SimResult) -> void:
 	_has_stashed_committed = false
 	_schedule_hover_recompute()
 	if _planning_input == null or not _planning_input.is_live_preview_active():
-		if _unit_layer != null:
+		if _unit_layer != null and not _unit_layer.has_planning_move_tweens():
 			_unit_layer.set_predicted_stats(
 				_committed_preview.predicted_hp,
 				_committed_preview.predicted_armor,

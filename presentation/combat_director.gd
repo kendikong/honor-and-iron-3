@@ -68,6 +68,8 @@ var _pending_refresh_statuses: PackedStringArray
 var _pending_refresh_preview: SimResult
 ## Undo/remove: snap sprites immediately; enables sim-only fast path (never skips walk/run on commit).
 var plan_refresh_snap_units: bool = false
+## Defer heavy overlay preview rebuild one frame (walk commit / undo snap).
+var plan_refresh_defer_overlay: bool = false
 var _refresh_plan_queued: bool = false
 var _cached_wait_marker_ghost_events: Array[SimEvent] = []
 ## Autobattler batches rpc_plan_move commits; one parallel planning walk plays at batch end.
@@ -2190,6 +2192,7 @@ func unit_has_undoable_action(unit_id: int) -> bool:
 func _begin_undo_plan_refresh(unit_id: int) -> void:
 	plan_affected_unit_ids = [unit_id]
 	plan_refresh_snap_units = true
+	plan_refresh_defer_overlay = true
 	clear_planning_move_instant(unit_id)
 
 
@@ -2274,6 +2277,7 @@ func _refresh_plan_core() -> void:
 
 	if not anim_events.is_empty():
 		EventBus.planning_commit_events.emit(anim_events)
+		plan_refresh_defer_overlay = true
 	plan_revision += 1
 	sync_selected_ability_if_invalid()
 
@@ -2293,17 +2297,17 @@ func _refresh_plan_core() -> void:
 
 func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 	var move_only := base_board.clone()
+	var evs: Array[SimEvent] = []
 	for action: TimelineAction in plan.entries:
 		if action.awaiting_target or action.type != GameEnums.ActionType.MOVE:
 			continue
 		var move_ev: Array[SimEvent] = []
 		ResolutionPipeline.apply_action(move_only, action, move_ev)
 		ResolutionPipeline.resolve_pending_pushes(move_only, move_ev)
+		evs.append_array(move_ev)
 	_commit_animate_actor_ids.clear()
 
-	projected_state = base_board.clone()
-	var evs: Array[SimEvent] = []
-	Simulator.simulate_player_turn(projected_state, plan, evs)
+	projected_state = move_only.clone()
 	board = move_only
 
 	var new_intents := EnemyPlanner.plan(projected_state)
@@ -2320,6 +2324,7 @@ func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
 	var statuses := PackedStringArray()
 	statuses.resize(maxi(plan.size(), 1))
+	plan_refresh_defer_overlay = true
 	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
 
 

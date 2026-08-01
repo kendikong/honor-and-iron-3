@@ -37,8 +37,9 @@ const _K4_DETOUR_PLUS_RUN_ROUTE: Array[Vector2i] = [
 
 const _SETTLE_FRAMES := 4
 const _SETTLE_DELTA_MS := 20
+const _MOUSE_MOTION_DELTA_MS := 10
 const _ABILITY_SETTLE_FRAMES := 6
-const _DRAG_SAMPLE_PIXELS := 36.0
+const _DRAG_SAMPLE_PIXELS := 72.0
 const _TRACE_DIR := "res://reports/live_planning_trace/"
 
 
@@ -731,12 +732,12 @@ func _sweep_mouse_to_cell(
 	for sample_index: int in range(1, sample_count + 1):
 		var alpha: float = float(sample_index) / float(sample_count)
 		runner.simulate_mouse_move(start.lerp(target, alpha))
-		await runner.simulate_frames(1, _SETTLE_DELTA_MS)
+		await runner.simulate_frames(1, _MOUSE_MOTION_DELTA_MS)
 		if capture_motion and motion_label != "" and unit_id >= 0:
 			await _capture_planning_surface(
 				ctx, unit_id, "%s/motion_%03d" % [motion_label, sample_index], false,
 			)
-	await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+	await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 
 
 func _sweep_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
@@ -763,7 +764,7 @@ func _hop_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: Str
 	assert_that(input.compute_hover_action_icon(cell)).override_failure_message(
 		"%s: planning cursor icon must stay hidden during drag (F5 parity)" % label,
 	).is_equal("")
-	await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+	await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 	if label != "" and unit_id >= 0:
 		await _capture_planning_surface(ctx, unit_id, label, false)
 
@@ -898,7 +899,7 @@ func _drag_through_cells(
 	if assert_hover_steps:
 		assert_that(input.get_hover_tile_for_ui()).is_equal(cells[0])
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
-	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/press" % label)
 	for i: int in range(1, cells.size()):
 		await _sweep_drag_to_cell(ctx, ctx.director.selected_unit_id, cells[i], "%s/step_%d" % [label, i])
@@ -956,7 +957,7 @@ func _paint_k4_detour_and_run_route(
 	await _reposition_mouse_to_unit(ctx, unit_id, _K4_DETOUR_PLUS_RUN_ROUTE[0])
 	await _capture_planning_surface(ctx, unit_id, "%s/start" % label_prefix)
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
-	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/press" % label_prefix)
 	for step_index: int in range(1, _K4_DETOUR_PLUS_RUN_ROUTE.size()):
 		await _hop_drag_to_cell(
@@ -976,12 +977,12 @@ func _paint_k4_detour_and_run_route(
 			await _assert_k4_walk_loop_preview(ctx, unit_id, bowling, stand, "%s/walk_loop_end" % label_prefix)
 			await _k4_preview_snapshot(ctx, unit_id, stand, "walk_loop_end")
 			if pause_frames_at_checkpoint > 0:
-				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
+				await runner.simulate_frames(pause_frames_at_checkpoint, _MOUSE_MOTION_DELTA_MS)
 		elif stand == _K4_RUN_TRIGGER_CELL:
 			await _assert_k4_run_loop_preview(ctx, unit_id, bowling, "%s/run_trigger" % label_prefix)
 			await _k4_preview_snapshot(ctx, unit_id, stand, "run_trigger")
 			if pause_frames_at_checkpoint > 0:
-				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
+				await runner.simulate_frames(pause_frames_at_checkpoint, _MOUSE_MOTION_DELTA_MS)
 	_assert_drag_route_equals(ctx, _K4_DETOUR_PLUS_RUN_ROUTE, "%s/route" % label_prefix)
 	_assert_preview_path_matches_drag_route(ctx, unit_id, "%s/pre_release" % label_prefix)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, _K4_RUN_TRIGGER_CELL, true)
@@ -1095,7 +1096,7 @@ func _drag_through_cells_with_route_checks(
 	var unit_id: int = director.selected_unit_id
 	await _reposition_mouse_to_unit(ctx, ctx.director.selected_unit_id, cells[0])
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
-	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/press" % label_prefix)
 	for step_index: int in range(1, cells.size()):
 		await _sweep_drag_to_cell(
@@ -1110,14 +1111,14 @@ func _drag_through_cells_with_route_checks(
 				ctx, cells[0], cells[step_index],
 				"%s/drag_route_%d" % [label_prefix, step_index],
 			)
-			await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+			await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 			var painted: Array[Vector2i] = ctx.input.get_drag_route()
 			_assert_preview_path_equals(
 				ctx, unit_id, painted, "%s/preview_path_%d" % [label_prefix, step_index],
 			)
 		elif route_mode == &"post_after_trample":
 			_assert_drag_route_equals(ctx, expected, "%s/drag_route_%d" % [label_prefix, step_index])
-			await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+			await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 			var preview_expected: Array[Vector2i] = []
 			var preview_len: int = _TRAMPLE_FULL_PATH.size() + step_index
 			for j: int in range(preview_len):
@@ -1133,7 +1134,7 @@ func _drag_through_cells_with_route_checks(
 			assert_bool(input._paint_valid_movement_endpoint_intent()).override_failure_message(
 				"%s: endpoint paint failed at step %d" % [label_prefix, step_index],
 			).is_true()
-			await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+			await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 			_assert_preview_path_equals(
 				ctx, unit_id, expected, "%s/preview_path_%d" % [label_prefix, step_index],
 			)
@@ -1142,7 +1143,7 @@ func _drag_through_cells_with_route_checks(
 			assert_bool(input._paint_valid_movement_endpoint_intent()).override_failure_message(
 				"%s: endpoint paint failed at step %d" % [label_prefix, step_index],
 			).is_true()
-			await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+			await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 			_assert_preview_path_equals(
 				ctx, unit_id, expected, "%s/preview_path_%d" % [label_prefix, step_index],
 			)
@@ -1249,7 +1250,7 @@ func _cancel_active_pointer(ctx: Dictionary) -> void:
 	var input: CombatPlanningInput = ctx.input
 	if input.dragging:
 		ctx.runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
-		await ctx.runner.simulate_frames(2, _SETTLE_DELTA_MS)
+		await ctx.runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 
 
 func _wait_ability_settle(ctx: Dictionary) -> void:
@@ -1268,7 +1269,7 @@ func _preview_unit(
 			if unit != null:
 				if expected_pos.x < -900000 or unit.position == expected_pos:
 					return unit
-		await ctx.runner.simulate_frames(2, _SETTLE_DELTA_MS)
+		await ctx.runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 	return null
 
 
