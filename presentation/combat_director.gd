@@ -2190,6 +2190,7 @@ func unit_has_undoable_action(unit_id: int) -> bool:
 func _begin_undo_plan_refresh(unit_id: int) -> void:
 	plan_affected_unit_ids = [unit_id]
 	plan_refresh_snap_units = true
+	clear_planning_move_instant(unit_id)
 
 
 func _refresh_plan() -> void:

@@ -1725,6 +1725,8 @@ func end_drag_preview(snap_back: bool = false) -> void:
 	var drop_cell: Vector2i = _actor_grid_cell(unit_id)
 	_finish_snap_at_cell(unit_id, drop_cell)
 	_apply_exhaustion_state(unit)
+	if _director != null:
+		_director.clear_planning_move_instant(unit_id)
 
 
 func _finish_drag_preview_at_home(unit_id: int, unit: UnitState) -> void:
