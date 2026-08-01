@@ -1,6 +1,6 @@
 # Combat core closeout (P2)
 
-**Status:** `DRAFT`  
+**Status:** `LOOP_READY` *(gauntlet C4: 88/88 PASS)*  
 **Pillar ID:** P2  
 **Authority chain:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Phases 10–14) · `IMPLEMENTATION_STATUS.md` · `presentation/combat_planning_input.gd`
 

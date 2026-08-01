@@ -44,6 +44,8 @@ Mana Seed → custom asset path with PixelForge handoff, living-map phase comple
 | PixelForge contract | `docs/design/appendices/pixelforge-v14-contract.md` |
 | Compositor rules | `.cursor/rules/phase-audit.mdc` |
 
+## Decomposition
+
 1. Owner worksheet → art direction LOCK
 2. PixelForge MVP per appendix
 3. ROADMAP living-map remaining phases
@@ -53,8 +55,8 @@ Mana Seed → custom asset path with PixelForge handoff, living-map phase comple
 
 1. **Stop** if worksheet empty — status stays `DRAFT`.
 2. Read `docs/asset_manifest.md` only.
-2. PixelForge proposes → owner promotes CANON.
-3. Run map scene 10s — no shader errors.
+3. PixelForge proposes → owner promotes CANON.
+4. Run map scene 10s — no shader errors.
 
 ## Critic playbook
 

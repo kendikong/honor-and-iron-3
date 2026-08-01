@@ -47,6 +47,14 @@ godot --headless --path <repo> --script res://tests/run_mass_sim_test.gd
 
 Optional capture: `.\scripts\capture_mass_sim_dashboard.ps1`
 
+## Tooling I/O
+
+| Input | Output | Consumer |
+|-------|--------|----------|
+| `core/batch/mass_sim_constants.gd` | `RULES_REVISION` epoch | Interpretation compare |
+| Skirmish setup | Battle queue | `run_mass_sim_test.gd` |
+| Run output | `tests/captures/mass_sim_interpretation.json` | P6 balance review |
+
 ## Decomposition
 
 1. Document triggers (this file)
@@ -69,8 +77,8 @@ godot --headless --script res://tests/run_mass_sim_test.gd
 ## Gauntlet stub
 
 ```text
-GOAL: Mass sim smoke PASS after class slice
-BAR: run_mass_sim_test.gd exit 0
+GOAL: Mass sim appendix doc — triggers + P6 loop paths
+BAR: lint PASS; Test-Path run_mass_sim_test.gd + captures/README.md
 PASS_THRESHOLD: 88
 RULES: qa-after-gameplay-changes.mdc
 ARTIFACT: this file, lint stdout, tests/run_mass_sim_test.gd path

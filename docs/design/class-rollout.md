@@ -1,6 +1,6 @@
 # Class rollout (P6)
 
-**Status:** `DRAFT`  
+**Status:** `LOOP_READY` *(gauntlet C4: 88/88 PASS)*  
 **Pillar ID:** P6  
 **Authority chain:** `class_abilities.txt` · `docs/design/knight-template.md` (P3) · `docs/design/appendices/mass-sim-balance.md`
 

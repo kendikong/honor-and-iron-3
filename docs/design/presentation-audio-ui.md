@@ -12,7 +12,7 @@ Inventory screens, wire SFX events, align HUD with tactical path — extend pari
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| SFX map | `PLANNED — §Event→SFX map below` | Loudness / feel |
+| SFX map | `presentation/sfx_player.gd` DEFS keys (see §Event→SFX map) | Loudness / feel |
 | UI inventory | `scenes/TacticalCombat.tscn`, `scenes/MainMenu.tscn`, `scenes/Options.tscn` on disk | Layout / fonts |
 | Menu apply | `ui/menu_interface_applier.gd` pattern | — |
 

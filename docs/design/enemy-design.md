@@ -33,7 +33,13 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 
 1. Fixture format LOCK
 2. 3 tutorial puzzles
-3. Intent grammar doc in data
+3. Intent grammar (data-driven, no per-enemy code branches):
+
+| Intent | Meaning |
+|--------|---------|
+| `advance` | Move toward player |
+| `hold` | Stay unless pushed |
+| `attack` | Focus damage tile |
 
 ## Builder playbook
 

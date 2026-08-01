@@ -9,7 +9,7 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 | [`00-remaining-work-suite-plan.md`](00-remaining-work-suite-plan.md) | How to create this suite (W1–W4) | POLISHED (C6=91) |
 | [`REMAINING_WORK_MAP.md`](REMAINING_WORK_MAP.md) | What to build — milestone index | LOOP_READY |
 | [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) | Builder/critic loops | ACTIVE |
-| [`01-doc-polish-protocol.md`](01-doc-polish-protocol.md) | Doc polish process (P1) | DRAFT |
+| [`01-doc-polish-protocol.md`](01-doc-polish-protocol.md) | Doc polish process (P1) | POLISHED |
 | [`verification-matrix.md`](verification-matrix.md) | Machine bar per domain (P9) | LOOP_READY |
 | [`workbench.md`](workbench.md) | Live gauntlet scores | — |
 
@@ -17,12 +17,12 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 
 | ID | Doc | Status |
 |----|-----|--------|
-| P2 | [`combat-core-closeout.md`](combat-core-closeout.md) | DRAFT |
+| P2 | [`combat-core-closeout.md`](combat-core-closeout.md) | LOOP_READY |
 | P3 | [`knight-template.md`](knight-template.md) | LOOP_READY |
-| P4 | [`roguelike-run.md`](roguelike-run.md) | DRAFT (owner worksheet) |
+| P4 | [`roguelike-run.md`](roguelike-run.md) | DRAFT *(doc gauntlet PASS; worksheet gates LOOP_READY)* |
 | P5 | [`enemy-design.md`](enemy-design.md) | DRAFT |
-| P6 | [`class-rollout.md`](class-rollout.md) | DRAFT |
-| P7 | [`world-assets-and-map.md`](world-assets-and-map.md) | DRAFT (owner worksheet) |
+| P6 | [`class-rollout.md`](class-rollout.md) | LOOP_READY |
+| P7 | [`world-assets-and-map.md`](world-assets-and-map.md) | DRAFT *(worksheet gate)* |
 | P8 | [`presentation-audio-ui.md`](presentation-audio-ui.md) | DRAFT |
 
 ## Appendices
@@ -32,7 +32,7 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 | [`appendices/encounter-fixture-format.md`](appendices/encounter-fixture-format.md) | DRAFT |
 | [`appendices/pixelforge-v14-contract.md`](appendices/pixelforge-v14-contract.md) | DRAFT |
 | [`appendices/mass-sim-balance.md`](appendices/mass-sim-balance.md) | DRAFT |
-| [`appendices/gauntlet-prompt-library.md`](appendices/gauntlet-prompt-library.md) | DRAFT |
+| [`appendices/gauntlet-prompt-library.md`](appendices/gauntlet-prompt-library.md) | LOOP_READY |
 
 ## Reference
 

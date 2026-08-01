@@ -24,17 +24,23 @@ JSON/schema for handcrafted puzzle encounters — **PLANNED** loader through `En
 
 N/A
 
-## Schema (stub)
+## Schema (stub — `EncounterBuilder.build_from_player_grid`)
+
+`PLANNED` JSON loader. Bridge today: `PlayerGrid` + `blocked_cells: Dictionary` + `Array[UnitPlacement]`.
+
+| Fixture field | Bridge type |
+|---------------|-------------|
+| `grid.width` / `grid.height` | `PlayerGrid` size |
+| `blocked_cells` | `Dictionary` (cell → blocked) |
+| `player_spawns[]` / `enemy_spawns[]` | `UnitPlacement` (`unit` + `coord`) |
 
 ```json
 {
   "id": "puzzle_001",
-  "player_grid_seed": 12345,
-  "blocked_cells": [[2, 3]],
-  "units": [
-    {"team": "player", "class": "knight", "cell": [1, 1]},
-    {"team": "enemy", "archetype": "tank", "cell": [5, 5], "intent": "advance"}
-  ],
+  "grid": {"width": 8, "height": 8},
+  "blocked_cells": {"2,3": true},
+  "player_spawns": [{"unit_id": "knight", "coord": [1, 1]}],
+  "enemy_spawns": [{"unit_id": "tank", "coord": [5, 5], "intent": "advance"}],
   "win_condition": "eliminate_enemies"
 }
 ```

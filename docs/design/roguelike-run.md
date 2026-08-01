@@ -1,6 +1,6 @@
 # Roguelike run (P4)
 
-**Status:** `DRAFT` — **blocked on owner worksheet**  
+**Status:** `DRAFT` *(doc gauntlet PASS 89/88 — worksheet gates LOOP_READY)*  
 **Pillar ID:** P4  
 **Authority chain:** `ROADMAP.md` (post-combat) · `docs/design/00-remaining-work-suite-plan.md` · gameplay skill
 

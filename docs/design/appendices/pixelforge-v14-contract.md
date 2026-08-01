@@ -63,11 +63,24 @@ N/A — CANON promote = owner always.
 
 Compare manifest entry vs file on disk; REFERENCE PNG for visual.
 
+## ASSET_SPECIFICATION (stub)
+
+```json
+{
+  "id": "tile_grass_variant_a",
+  "kind": "tile",
+  "size_px": 16,
+  "palette": "mana_seed",
+  "candidate_path": "res://art/candidates/...",
+  "canon_path": "PLANNED — owner promotes to res://"
+}
+```
+
 ## Gauntlet stub
 
 ```text
-GOAL: CANON asset promoted with manifest + F5 PASS
-BAR: manifest row + compositor
+GOAL: PixelForge contract doc — pipeline + I/O paths (not CANON promote execution)
+BAR: lint PASS; docs/asset_manifest.md + docs/tile_registry.md exist
 PASS_THRESHOLD: 88
 RULES: living-sandbox-architect.mdc, phase-audit.mdc
 ARTIFACT: docs/asset_manifest.md, this file
