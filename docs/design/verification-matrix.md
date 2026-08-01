@@ -6,7 +6,7 @@
 
 ## Goal
 
-Single table: for each work domain, the **machine bar**, **secondary check**, and **human gate** — every path exists on disk or is marked `PLANNED`.
+Single table: for each work domain, the **machine bar**, **secondary check**, and **human gate** — every path exists on disk or is marked `PLANNED`. **Authoritative** over the draft inline table in `00-remaining-work-suite-plan.md` §Verification matrix.
 
 ## Quality bar
 
@@ -36,7 +36,7 @@ N/A
 | World / map | P7 | `docs/asset_manifest.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | P7 worksheet |
 | Presentation | P8 | `PLANNED — Sfx event map (P8 doc)` | `docs/design/presentation-audio-ui.md` | Typography/layout |
 | Triage / autobattler | W4 appendix | `tests/run_mass_sim_test.gd` | `docs/design/appendices/mass-sim-balance.md` | Owner |
-| Design docs | meta | `scripts/lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK (SCORE ≥88 pillar / ≥90 meta) |
+| Design docs | meta | `.\scripts\lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK (SCORE ≥88 pillar / ≥90 meta) |
 
 **Mass sim CLI:**
 

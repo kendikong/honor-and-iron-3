@@ -173,20 +173,20 @@ Every pillar spec **must** include:
 
 ---
 
-## Verification matrix (draft — P9; expand in W1)
+## Verification matrix (P9 — authoritative copy: `verification-matrix.md`)
 
 | Pillar | Primary machine bar | Secondary | Human gate |
 |--------|---------------------|-----------|------------|
-| **P2** combat closeout | `.\scripts\run_regression_tests.ps1` PASS | `.\scripts\run_planning_qa_gate.ps1` PASS | F5 Phase 10–14 manual lists in parity plan |
-| **P3** knight template | Planning QA PASS + skill row in `tests/planning_skill_scenarios_test.gd` | Checklist phases 1–7 in `docs/PLANNING_SKILL_QA_CHECKLIST.md` | 60s Boredom / play feel |
-| **P4** roguelike run | Named test path in spec (TBD until `RunState` exists) | — | **Worksheet required** (below) |
-| **P5** enemy design | Encounter fixture loads → `EncounterBuilder` → headless sim smoke | `bridge_test_runner.gd` green | Puzzle fun / difficulty |
-| **P6** class rollout | Per-class: P3 bar + optional `godot --headless --script res://tests/run_mass_sim_test.gd` | `mass_sim_interpretation.json` epoch compare | Balance taste |
-| **P7** world/map | `docs/asset_manifest.md` entries match disk; F5 compositor gates | PixelForge CANON promote log | Art direction |
-| **P8** presentation | Event→SFX map complete; no missing `SfxPlayer` hooks for listed events | UI screen inventory vs scenes | Layout / typography taste |
-| **P9** matrix | Every row cites a path that exists on disk or `PLANNED — W1` | `scripts/lint_design_doc.ps1` PASS | — |
-| **Triage / autobattler** | Deferred Parity Phase 15 — row in `appendices/mass-sim-balance.md` (W4) | `mass_sim_*` smoke when balancing | Human gate |
-| **Docs (meta)** | `lint_design_doc.ps1` on `docs/design/*.md` | `gauntlet-critic` SCORE ≥ 90 | Owner LOCK on master map |
+| **P2** combat closeout | `.\scripts\run_regression_tests.ps1` | `.\scripts\run_planning_qa_gate.ps1` | F5 Phase 10–14 manual lists in parity plan |
+| **P3** knight template | `.\scripts\run_planning_qa_gate.ps1` | `tests/run_skill_scenarios_only.gd` | `docs/PLANNING_SKILL_QA_CHECKLIST.md` |
+| **P4** roguelike run | `PLANNED — tests/run_state_test.gd` | — | **Worksheet required** (below) |
+| **P5** enemy design | `tests/bridge_test_runner.gd` | `docs/design/appendices/encounter-fixture-format.md` | Puzzle fun |
+| **P6** class rollout | `.\scripts\run_planning_qa_gate.ps1` | `tests/run_mass_sim_test.gd` | Balance taste |
+| **P7** world/map | `docs/asset_manifest.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | P7 worksheet |
+| **P8** presentation | `PLANNED — Sfx event map (P8 doc)` | `docs/design/presentation-audio-ui.md` | Typography/layout |
+| **P9** matrix | `.\scripts\lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK |
+| **Triage / autobattler** | `tests/run_mass_sim_test.gd` | `docs/design/appendices/mass-sim-balance.md` | Owner |
+| **Docs (meta)** | `.\scripts\lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK (SCORE ≥88 pillar / ≥90 meta) |
 
 **Mass sim CLI (document in appendix):**
 

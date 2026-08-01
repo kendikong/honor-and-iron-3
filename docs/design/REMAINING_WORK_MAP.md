@@ -1,6 +1,6 @@
 # Remaining work map (Layer 0)
 
-**Status:** `DRAFT`  
+**Status:** `LOOP_READY` *(gauntlet C4: 89/88 PASS — commit `304320c30`)*  
 **Pillar ID:** Layer 0 index (not P2–P9)  
 **Authority chain:** `ROADMAP.md` · `docs/TACTICAL_COMBAT_PARITY_PLAN.md` · `IMPLEMENTATION_STATUS.md` · `docs/design/00-remaining-work-suite-plan.md`
 
@@ -38,6 +38,7 @@ N/A — see `roguelike-run.md` (P4) and `world-assets-and-map.md` (P7) for owner
 | 7 | Map assets + PixelForge MVP | `world-assets-and-map.md` | `docs/asset_manifest.md` |
 | 8 | Living map ROADMAP close | `world-assets-and-map.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` |
 | 9 | UI + SFX shell | `presentation-audio-ui.md` | `PLANNED — Sfx event map in P8 doc` |
+| 10 | UI gauntlets polish | `presentation-audio-ui.md` | `PLANNED — P8 UI gauntlet checklist` |
 | — | Verification index | `verification-matrix.md` | `.\scripts\lint_design_doc.ps1` |
 
 ```mermaid
