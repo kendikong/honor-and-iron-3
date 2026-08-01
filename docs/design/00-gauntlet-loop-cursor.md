@@ -135,9 +135,26 @@ Override via **PASS_THRESHOLD** in the §9 handoff. Full rubric: [`.cursor/agent
 
 **Calibration:** 65–78 = mediocre; 79–84 = not ship-ready; **85+** = pass candidate. Critic must not inflate.
 
-**Automatic FAIL scores:** BAR failure → capped at **59**; unverified artifact (summary only) → capped at **40**.
+**Automatic FAIL scores:** BAR failure → capped at **59**; unverified artifact (summary only) → capped at **40**; infrastructure **INADEQUATE** → capped at **65**.
 
-Lead logs **Score** and **threshold** in `workbench.md` every wave. Commit on piece PASS only when critic score meets threshold.
+### Rule 4c — Infrastructure adequacy (mandatory)
+
+Before scoring work quality, the critic must judge whether **inspection infrastructure** is adequate to evaluate **GOAL**:
+
+- **ADEQUATE** — BAR + artifacts (+ reference images when visual) can judge the piece; proceed to rubric.
+- **INADEQUATE** — critic cannot properly verify GOAL (missing test, no capture path, no vision reference, doc lint gap, PixelForge/manifest chain missing, BAR misaligned with GOAL).
+
+When **INADEQUATE**:
+
+1. **RESULT: FAIL** (even if partial BAR passed).
+2. Critic returns **`Proposed infrastructure:`** — one concrete tool, test, script, or pipeline step (e.g. new skill scenario, `run_planning_qa_gate` coverage, screenshot capture + reference PNG, `lint_design_doc.ps1` rule, PixelForge CANON promote path).
+3. Lead schedules a **separate bar-infrastructure piece** — builder implements proposal → critic re-checks infrastructure → then original piece is re-criticed.
+
+Critics **do not** implement infrastructure; they **name** what’s missing. See [`.cursor/agents/gauntlet-critic.md`](../../.cursor/agents/gauntlet-critic.md) § Infrastructure adequacy.
+
+**PASS gate adds a third condition:** `Infrastructure: ADEQUATE` in critic output.
+
+Lead logs **Infrastructure** verdict in `workbench.md` wave notes when `INADEQUATE`.
 
 ### Rule 5 — Keep looping
 
@@ -228,7 +245,7 @@ Add to the overnight prompt (or `.cursor/rules` pointer):
 
 - Spawn **separate** `gauntlet-critic` subagent after **every** builder pass on a piece — log invocation in `workbench.md` (`Critic: yes`)
 - **Loud score banner** as first line of every post-critic message (Rule 6b) — include DELTA vs prior round
-- Never self-grade — piece PASS requires critic `RESULT: PASS` **and** `SCORE ≥ PASS_THRESHOLD` in the wave log
+- Never self-grade — piece PASS requires critic `RESULT: PASS`, `SCORE ≥ PASS_THRESHOLD`, and **`Infrastructure: ADEQUATE`**
 - Update `docs/design/workbench.md` every wave
 - On gameplay edits: run mandatory QA per `qa-after-gameplay-changes.mdc` before claiming PASS
 - Commit per `auto-commit-absolute.mdc` when bar passes for a piece
@@ -265,6 +282,7 @@ For sleep/work runs, also pass [`docs/design/UNATTENDED_RUN.md`](UNATTENDED_RUN.
 | Builder and critic in same message without subagent | Self-grading |
 | Lead marks piece PASS without `gauntlet-critic` `RESULT: PASS` **and** score ≥ threshold | Fake gauntlet — same as self-grading |
 | Accepting piece with tests green but critic score 79/100 | Below threshold — keep looping |
+| PASS while critic reports `Infrastructure: INADEQUATE` | Bar cannot judge GOAL — schedule bar-infrastructure piece first |
 | Critic reads builder’s “implementation notes” | Contaminated judgment |
 | “LGTM” without running bar commands | False PASS (Phase 9 lesson) |
 | Owner pastes between two chats each round | Not unattended; lead should orchestrate |
@@ -318,7 +336,7 @@ ARTIFACT:
 - relevant test stdout (lead runs BAR if critic cannot shell; paste raw output only)
 - screenshot paths if visual
 - reference asset path if visual (for A/B)
-Do not implement. SCORE/100 + PASS or FAIL + largest gap + evidence.
+Do not implement. SCORE/100 + PASS or FAIL + Infrastructure + Proposed infrastructure + largest gap + evidence.
 ```
 
 ---
@@ -355,3 +373,4 @@ Do not implement. SCORE/100 + PASS or FAIL + largest gap + evidence.
 | 2026-08-01 | Hardening: propose-bar-if-missing, critic-required PASS, visual A/B bar, MAX_ROUNDS → FAILURE_REPORT, workbench critic column |
 | 2026-08-01 | Harsh score gate: SCORE/100 + PASS_THRESHOLD by work type; rubric in gauntlet-critic agent |
 | 2026-08-01 | Rule 6b: loud score banners + DELTA + workbench score progression for owner visibility |
+| 2026-08-01 | Rule 4c: critic must judge infrastructure adequacy; Proposed infrastructure on INADEQUATE |
