@@ -69,7 +69,7 @@ var _hover_coord: Vector2i = Vector2i(-999, -999)
 var _phase: int = CombatDirector.Phase.PLANNING
 var _hover_move_tiles: Array[Vector2i] = []
 var _hover_action_range_tiles: Array[Vector2i] = []
-## Tier 3 QA: skip 30fps flow redraws from committed plan entries (drag-only pulse).
+## Tier 3 QA: skip flow redraws from committed plan entries (drag-only pulse).
 var qa_static_overlay: bool = false
 var _cached_hover_unit_id: int = -1
 var _cached_hover_origin: Vector2i = Vector2i(-999, -999)
@@ -98,10 +98,7 @@ var _hit_markers: Array = []
 var _hover_recompute_pending: bool = false
 var _deferred_preview_pending: bool = false
 var _deferred_preview_result: SimResult = null
-var _drag_overlay_redraw_accum: float = 0.0
-var _flow_overlay_redraw_accum: float = 0.0
 var _game_settings: GameSettings
-const _OVERLAY_ANIM_REDRAW_SEC: float = 1.0 / 30.0
 
 
 func setup(
@@ -755,18 +752,6 @@ func _process(delta: float) -> void:
 	if need_redraw:
 		queue_redraw()
 	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
-		var accum: float = _drag_overlay_redraw_accum
-		if _planning_input != null and _planning_input.dragging:
-			_drag_overlay_redraw_accum += delta
-			accum = _drag_overlay_redraw_accum
-		else:
-			_flow_overlay_redraw_accum += delta
-			accum = _flow_overlay_redraw_accum
-		if accum >= _OVERLAY_ANIM_REDRAW_SEC:
-			_drag_overlay_redraw_accum = 0.0
-			_flow_overlay_redraw_accum = 0.0
-			queue_redraw()
-	elif not _hit_markers.is_empty():
 		queue_redraw()
 
 
