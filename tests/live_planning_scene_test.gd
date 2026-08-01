@@ -39,6 +39,8 @@ const _SETTLE_FRAMES := 4
 const _SETTLE_DELTA_MS := 20
 const _ABILITY_SETTLE_FRAMES := 6
 const _DRAG_SAMPLE_PIXELS := 36.0
+## After undo, snap pointer back to the unit — no slow hover sweep or motion captures.
+const _REPOSITION_SAMPLE_PIXELS := 512.0
 const _TRACE_DIR := "res://reports/live_planning_trace/"
 
 
@@ -501,6 +503,9 @@ func _undo_until_unit_clear(ctx: Dictionary, unit_id: int) -> void:
 			input.on_right_click()
 			await _wait_ability_settle(ctx)
 			continue
+		var unit: UnitState = director.board.get_unit_by_id(unit_id)
+		if unit != null:
+			await _reposition_mouse_to_unit(ctx, unit_id, unit.position)
 		return
 	assert_bool(director.unit_has_undoable_action(unit_id)).override_failure_message(
 		"undo_until_clear: unit %d still has undoable plan" % unit_id,
@@ -660,23 +665,30 @@ func _hover_cell(ctx: Dictionary, cell: Vector2i) -> void:
 	await _sweep_mouse_to_cell(ctx, cell)
 
 
+func _reposition_mouse_to_unit(ctx: Dictionary, unit_id: int, cell: Vector2i) -> void:
+	await _sweep_mouse_to_cell(ctx, cell, "", unit_id, _REPOSITION_SAMPLE_PIXELS, false)
+
+
 ## Sweeps the pointer in pixel steps so selection and drag both match F5 hover motion.
 func _sweep_mouse_to_cell(
 	ctx: Dictionary,
 	cell: Vector2i,
 	motion_label: String = "",
 	unit_id: int = -1,
+	sample_pixels: float = -1.0,
+	capture_motion: bool = true,
 ) -> void:
 	ctx.input.clear_qa_pointer_override()
 	var runner: GdUnitSceneRunner = ctx.runner
 	var start: Vector2 = runner.get_mouse_position()
 	var target: Vector2 = _screen_position_for_cell(ctx, cell)
-	var sample_count: int = maxi(1, ceili(start.distance_to(target) / _DRAG_SAMPLE_PIXELS))
+	var step_px: float = sample_pixels if sample_pixels > 0.0 else _DRAG_SAMPLE_PIXELS
+	var sample_count: int = maxi(1, ceili(start.distance_to(target) / step_px))
 	for sample_index: int in range(1, sample_count + 1):
 		var alpha: float = float(sample_index) / float(sample_count)
 		runner.simulate_mouse_move(start.lerp(target, alpha))
 		await runner.simulate_frames(1, _SETTLE_DELTA_MS)
-		if motion_label != "" and unit_id >= 0:
+		if capture_motion and motion_label != "" and unit_id >= 0:
 			await _capture_planning_surface(
 				ctx, unit_id, "%s/motion_%03d" % [motion_label, sample_index], false,
 			)
@@ -701,6 +713,12 @@ func _hop_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: Str
 		input.try_activate_drag(local)
 	if input.dragging:
 		input.update_drag(local)
+	assert_bool(input.dragging).override_failure_message(
+		"%s: drag paint must be active at %s" % [label, cell],
+	).is_true()
+	assert_that(input.compute_hover_action_icon(cell)).override_failure_message(
+		"%s: planning cursor icon must stay hidden during drag (F5 parity)" % label,
+	).is_equal("")
 	await runner.simulate_frames(2, _SETTLE_DELTA_MS)
 	if label != "" and unit_id >= 0:
 		await _capture_planning_surface(ctx, unit_id, label, false)
@@ -1267,6 +1285,7 @@ func _capture_planning_surface(
 		"selected_unit": director.selected_unit_id,
 		"selected_ability_index": director.selected_ability_index,
 		"hover": _cell_name(input.get_hover_tile_for_ui()),
+		"cursor_icon": input.compute_hover_action_icon(input.get_hover_tile_for_ui()),
 		"dragging": input.dragging,
 		"drag_route": _cell_names(input.get_drag_route() if input.dragging else []),
 		"preview_paths": _all_preview_paths(input),

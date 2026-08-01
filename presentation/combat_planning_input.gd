@@ -555,6 +555,7 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	dragging = true
 	_drag_unit_id = unit.id
 	_drag_unit_was_selected = was_already_selected
+	_clear_planning_cursor_for_drag()
 	_drag_route = [_planning_drag_origin(unit.id)]
 	_drag_last_free = _drag_route[0]
 	_planning.set_fixed_range_origin(_drag_route[0])
@@ -3324,6 +3325,16 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -
 	return PlanningIcons.join_glyphs(glyphs)
 
 
+func _clear_planning_cursor_for_drag() -> void:
+	_overlay_cursor_icon = ""
+	_overlay_cursor_cell = Vector2i(-999999, -999999)
+	_hover_cursor_cache_key = ""
+	_hover_cursor_cached_icon = ""
+	if _planning != null:
+		_planning.clear_planning_cursor_icon()
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+
+
 func refresh_mouse_cursor(cell: Vector2i) -> void:
 	var icon: String = _compute_hover_action_icon(cell)
 	if icon == _overlay_cursor_icon and cell == _overlay_cursor_cell:
@@ -3346,13 +3357,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	if _director == null or _director.board == null or not _director.board.is_in_bounds(cell):
 		return ""
 	if dragging:
-		if _drag_unit_was_selected and _drag_unit_id >= 0:
-			var drag_unit := _director.board.get_unit_by_id(_drag_unit_id)
-			if drag_unit != null and not drag_unit.is_enemy():
-				var actor := _proj_unit(drag_unit.id)
-				if actor == null:
-					actor = drag_unit
-				return _drag_hover_icon(actor, cell)
+		## F5: drag preview is the unit sprite only — hide planning emoji cursor.
 		return ""
 	var sel_id: int = _director.selected_unit_id
 	if sel_id < 0:
