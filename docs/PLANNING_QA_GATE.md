@@ -49,10 +49,10 @@ state, then presses Ready → Execute and verifies final unit positions.
 
 | Knight | Skill | Live checks |
 |--------|-------|-------------|
-| K1 `(4,5)` | Shield Bash | phases 1–5: blue/red, walk ghost, enemy approach, push preview, cursor glyphs, commit, red-off at 0 AP |
-| K2 `(1,3)` | Chain Hook | in-range red, hover ghost, pull preview, commit, projected enemy cell |
-| K3 `(5,4)` | Trampling Advance | arm awaiting, red while awaiting, painted E→N route commit + waypoints |
-| K4 `(4,1)` | Run → Bowling | run drag commit, display AP 0, bowling red hidden |
+| K1 `(4,5)` | Shield Bash | phases 1–5: blue/red, walk ghost + `preview_paths`, enemy approach path, push preview, cursor glyphs, pre-move `target_coord`, commit, red-off at 0 AP |
+| K2 `(1,3)` | Chain Hook | in-range red, walk ghost + path, pull preview, commit, projected enemy cell |
+| K3 `(5,4)` | Trampling Advance | arm awaiting, red while awaiting, per-step `get_drag_route()` + `preview_paths` paint (E→N), committed waypoints |
+| K4 `(4,1)` | Run → Bowling | 3-tile run corridor drag (`preview_paths` == painted route), display AP 0, bowling red hidden |
 | All | Execute | `GlobalTimeline` ready → sim; knight + dummy final cells match commit |
 | Reset | Scroll + undo | wheel changes ability; run drag + right-click clears pre-move |
 
