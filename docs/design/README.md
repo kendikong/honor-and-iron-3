@@ -19,7 +19,7 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 | ID | Doc | Status |
 |----|-----|--------|
 | P2 | [`combat-core-closeout.md`](combat-core-closeout.md) | CLOSED *(owner 2026-08-01)* |
-| P3 | [`knight-template.md`](knight-template.md) | LOOP_READY *(K3-doc 90/88; K3-LOCK active)* |
+| P3 | [`knight-template.md`](knight-template.md) | LOOP_READY *(K3-LOCK ACTIVE — 14/30; [`runs/K3-LOCK.md`](runs/K3-LOCK.md))* |
 | P4 | [`roguelike-run.md`](roguelike-run.md) | DRAFT *(doc gauntlet PASS; worksheet gates LOOP_READY)* |
 | P5 | [`enemy-design.md`](enemy-design.md) | DRAFT *(doc gauntlet PASS; worksheet gates LOOP_READY)* |
 | P6 | [`class-rollout.md`](class-rollout.md) | LOOP_READY |
@@ -40,7 +40,8 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 | Doc | Purpose |
 |-----|---------|
 | [`_TEMPLATE.md`](_TEMPLATE.md) | Copy for new pillar files |
-| [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) | Overnight boundary template |
+| [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) | **ACTIVE** K3-LOCK boundary contract · template: [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md) |
+| [`runs/K3-LOCK.md`](runs/K3-LOCK.md) | Knight LOCK gauntlet run card + `/loop` prompt |
 
 ## Polish legend
 

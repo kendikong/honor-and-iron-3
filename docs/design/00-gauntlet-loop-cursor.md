@@ -484,7 +484,8 @@ Do not implement. SCORE/100 + PASS or FAIL + Infrastructure + Proposed infrastru
 | `ROADMAP.md` | What to build (canonical phases) |
 | `docs/TACTICAL_COMBAT_PARITY_PLAN.md` | Combat path truth |
 | `docs/PLANNING_QA_GATE.md` | Planning bar detail |
-| `docs/design/UNATTENDED_RUN.md` | Per-run scope lock and stop conditions (overnight) |
+| `docs/design/UNATTENDED_RUN.md` | Per-run scope lock and stop conditions (overnight) — **ACTIVE:** K3-LOCK |
+| `docs/design/runs/K3-LOCK.md` | Knight LOCK run card + `/loop` start prompt |
 | `docs/design/*` pillar specs | Per-domain goals and bars |
 | **This file** | How agents loop to hit those bars in Cursor |
 | `docs/design/00-remaining-work-suite-plan.md` | How to create the pillar doc suite (waves W1–W4) |
@@ -511,3 +512,4 @@ Do not implement. SCORE/100 + PASS or FAIL + Infrastructure + Proposed infrastru
 | 2026-08-01 | Rule 6b: loud score banners + DELTA + workbench score progression for owner visibility |
 | 2026-08-01 | Rule 4c: critic must judge infrastructure adequacy; Proposed infrastructure on INADEQUATE |
 | 2026-08-01 | §5.4: recommended unattended process — local Agent + `/loop` (primary), Cloud/Automation secondary; K3-LOCK Godot caveat |
+| 2026-08-01 | Active K3-LOCK run: filled `UNATTENDED_RUN.md`, `runs/K3-LOCK.md`, template split |

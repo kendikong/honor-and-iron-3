@@ -1,8 +1,8 @@
 {
   "piece": "K3-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 6,
-  "last_score": 48,
+  "last_critic_round": 7,
+  "last_score": 57,
   "last_result": "FAIL",
   "approved_rows": [
     {

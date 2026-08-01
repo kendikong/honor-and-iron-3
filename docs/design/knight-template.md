@@ -1,6 +1,7 @@
 # Knight template (P3)
 
-**Status:** `LOOP_READY` *(K3-LOCK gauntlet active — critic r2 **44/95 FAIL**; manifest 4/30 PASS)*  
+**Status:** `LOOP_READY` *(K3-LOCK gauntlet **ACTIVE** — critic r7 **57/95 FAIL**; manifest **14/30** PASS)*  
+**Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) · **Run card:** [`runs/K3-LOCK.md`](runs/K3-LOCK.md)
 **Pillar ID:** P3  
 **Authority chain:** `class_abilities.txt` § Knight · `docs/KNIGHT_QA_GATE.md` · `core/factory/classes/knight_factory.gd` · `data/` factories
 
@@ -60,10 +61,10 @@ N/A — Bible + matrix are authoritative. Owner defers rows only via explicit `N
 | K3-passives | Builder | One `tests/passives/<id>_scenario.gd` per passive (trigger setup) | **DONE** (factory smoke; deepen triggers) |
 | K3-registry | Builder | `tests/knight_scenario_registry.gd` lists actives + passives | **DONE** |
 | K3-gate | Builder | `run_knight_qa_gate.ps1` fails until matrix 100% PASS + manifest | **Tier 1 PASS** (exit 2 until critic-approved rows) |
-| K3-meta | Critic | Adequacy score per matrix row; fixture recommendations | **4/30 PASS** (r2 critic) |
-| **K3-LOCK** | Owner | Matrix 100% PASS + gate PASS + meta-critic ≥ 95 | **IN PROGRESS** |
+| K3-meta | Critic | Adequacy score per matrix row; fixture recommendations | **14/30 PASS** (manifest) |
+| **K3-LOCK** | Owner | Matrix 100% PASS + gate PASS + meta-critic ≥ 95 | **IN PROGRESS** — [`runs/K3-LOCK.md`](runs/K3-LOCK.md) |
 
-**Implementation tally:** **4 / 30** factory rows meta-critic `PASS` · **26** `HARNESS_ONLY` · Tier 1 harness green · **no self-grade**.
+**Implementation tally:** **14 / 30** factory rows meta-critic `PASS` · **16** `HARNESS_ONLY` · Tier 1 harness green · gate exit **2** until LOCK · **no self-grade**.
 
 ## Builder playbook
 

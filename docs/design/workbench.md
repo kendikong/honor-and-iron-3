@@ -35,8 +35,8 @@ STOP_CONDITION_MET: no
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-LOCK gauntlet loop** — critic r6 **55/95 FAIL** (14/30 manifest PASS) |
-| **Lead session** | knight-template-gauntlet-rerun |
+| **Status** | **K3-LOCK gauntlet ACTIVE** — critic r7 **57/95 FAIL** (14/30 manifest PASS) · [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) |
+| **Lead session** | knight-k3-lock-2026-08-01 |
 
 ---
 
@@ -45,9 +45,9 @@ STOP_CONDITION_MET: no
 | Field | Value |
 |-------|-------|
 | **Piece ID** | K3-LOCK (full matrix — owner threshold 95) |
-| **Critic pass** | r6 (gauntlet-critic subagent) |
-| **Last result** | **FAIL 55/95** — 16 rows HARNESS_ONLY; deepen asserts on 14 PASS rows |
-| **Largest gap** | 26 rows HARNESS_ONLY; manifest 4/30 |
+| **Critic pass** | r7 (gauntlet-critic subagent) |
+| **Last result** | **FAIL 57/95** — 16 rows HARNESS_ONLY; deepen 14 PASS rows per critic gaps |
+| **Largest gap** | 16 rows HARNESS_ONLY; promote per [`runs/K3-LOCK.md`](runs/K3-LOCK.md) queue |
 
 ---
 
@@ -58,7 +58,7 @@ STOP_CONDITION_MET: no
 | `00-remaining-work-suite-plan.md` | 91 (C6) | 90 | **PASS** | POLISHED |
 | `01-doc-polish-protocol.md` | 91 (C3) | 90 | **PASS** | POLISHED |
 | `REMAINING_WORK_MAP.md` | 89 (C4) | 88 | **PASS** | LOOP_READY |
-| `knight-template.md` | 90 (K3-r1) | 88 | **PASS** | LOOP_READY *(K3-LOCK 0/30)* |
+| `knight-template.md` | 90 (K3-r1) | 88 | **PASS** | LOOP_READY *(K3-LOCK 14/30 — LOCK pending)* |
 | `verification-matrix.md` | 89 (C6) | 88 | **PASS** | LOOP_READY |
 | `combat-core-closeout.md` | 88 (C4) | 88 | **PASS** | LOOP_READY |
 | `class-rollout.md` | 88 (C4) | 88 | **PASS** | LOOP_READY |
@@ -84,9 +84,9 @@ STOP_CONDITION_MET: no
 
 ---
 
-## Blockers (owner only — not doc gauntlet)
+## Blockers (owner only)
 
-- **P3 K3-LOCK:** 30 factory rows need meta-critic `PASS` (scenarios + Bible/`[+]` asserts)
+- **P3 K3-LOCK:** 16 HARNESS_ONLY rows — unattended loop in [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) + [`runs/K3-LOCK.md`](runs/K3-LOCK.md)
 - P4 worksheet (`roguelike-run.md`)
 - P5 worksheet (`enemy-design.md`)
 - P7 worksheet (`world-assets-and-map.md`)
