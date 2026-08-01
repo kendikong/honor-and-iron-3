@@ -7,7 +7,7 @@
 | `00-remaining-work-suite-plan.md` | 91 | C6 | 90 | **PASS** | POLISHED |
 | `01-doc-polish-protocol.md` | 91 | C3 | 90 | **PASS** | POLISHED |
 | `REMAINING_WORK_MAP.md` | 89 | C4 | 88 | **PASS** | LOOP_READY |
-| `knight-template.md` | 89 | C4 | 88 | **PASS** | LOOP_READY |
+| `knight-template.md` | 90 | K3-r1 | 88 | **PASS** | LOOP_READY *(K3-doc rerun; K3-LOCK 0/30)* |
 | `verification-matrix.md` | 89 | C6 | 88 | **PASS** | LOOP_READY |
 | `combat-core-closeout.md` | 88 | C4 | 88 | **PASS** | LOOP_READY |
 | `class-rollout.md` | 88 | C4 | 88 | **PASS** | LOOP_READY |
@@ -20,7 +20,14 @@
 | `appendices/mass-sim-balance.md` | 88 | C5 | 88 | **PASS** | LOOP_READY |
 | `appendices/gauntlet-prompt-library.md` | 89 | C3 | 88 | **PASS** | LOOP_READY |
 
-**Suite summary:** **15/15 PASS** (doc gauntlet). **12 LOOP_READY** on disk; **3 DRAFT** remain worksheet-gated (P4, P5, P7) per human-gate rules — doc critic PASS does not require filled worksheets.
+**Suite summary:** **15/15 PASS** (doc gauntlet). **12 LOOP_READY** on disk; **3 DRAFT** remain worksheet-gated (P4, P5, P7).
+
+## Knight template rerun (K3-doc — 2026-08-01)
+
+- **Scope:** Full moveset + meta-critic spec; planning QA unchanged; P6 clone path at LOCK
+- **New:** `docs/KNIGHT_QA_GATE.md`, `scripts/run_knight_qa_gate.ps1`
+- **Score:** `knight-template.md` **90/88** (K3-r1); companion `KNIGHT_QA_GATE.md` **91/88**
+- **Honest matrix:** 0/30 `PASS`, 3 `HARNESS_ONLY`, 27 `PLANNED` — gates **K3-LOCK**, not K3-doc
 
 ## Exempt (not scored)
 

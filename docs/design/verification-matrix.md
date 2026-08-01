@@ -30,7 +30,7 @@ N/A
 |--------|--------|---------------------|-----------|------------|
 | Gameplay core (planning/intent/UI) | P2 | `.\scripts\run_planning_qa_gate.ps1` | `.\scripts\run_regression_tests.ps1` | F5 planning parity — **uses Knights as fixtures, not class validation** |
 | Combat closeout | P2 | — | — | ✅ **Closed** *(owner 2026-08-01)* |
-| Knight template | P3 | `PLANNED — scripts/run_knight_qa_gate.ps1` | `tests/run_skill_scenarios_only.gd` *(interim)* | `docs/PLANNING_SKILL_QA_CHECKLIST.md` |
+| Knight template | P3 | `scripts/run_knight_qa_gate.ps1` | `docs/KNIGHT_QA_GATE.md` coverage matrix | Meta-critic ≥ 88 per row; 0/30 PASS until LOCK |
 | Roguelike run | P4 | `PLANNED — tests/run_state_test.gd` | — | P4 worksheet |
 | Enemy design | P5 | `tests/bridge_test_runner.gd` | `docs/design/appendices/encounter-fixture-format.md` | Puzzle fun |
 | Class rollout | P6 | `PLANNED — scripts/run_<class>_qa_gate.ps1` (clone Knight gate) | `tests/run_mass_sim_test.gd` | Balance taste |

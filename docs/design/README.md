@@ -19,7 +19,7 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 | ID | Doc | Status |
 |----|-----|--------|
 | P2 | [`combat-core-closeout.md`](combat-core-closeout.md) | CLOSED *(owner 2026-08-01)* |
-| P3 | [`knight-template.md`](knight-template.md) | LOOP_READY |
+| P3 | [`knight-template.md`](knight-template.md) | LOOP_READY *(K3-doc 90/88; K3-LOCK active)* |
 | P4 | [`roguelike-run.md`](roguelike-run.md) | DRAFT *(doc gauntlet PASS; worksheet gates LOOP_READY)* |
 | P5 | [`enemy-design.md`](enemy-design.md) | DRAFT *(doc gauntlet PASS; worksheet gates LOOP_READY)* |
 | P6 | [`class-rollout.md`](class-rollout.md) | LOOP_READY |

@@ -1,87 +1,143 @@
 # Knight template (P3)
 
-**Status:** `LOOP_READY` *(gauntlet C4: 89/88 PASS — owner scope clarified 2026-08-01)*  
+**Status:** `LOOP_READY` *(K3-doc gauntlet PASS 90/88 — implementation gates LOCK)*  
 **Pillar ID:** P3  
-**Authority chain:** `class_abilities.txt` (Knight) · `docs/PLANNING_SKILL_QA_CHECKLIST.md` · `data/` factories
+**Authority chain:** `class_abilities.txt` § Knight · `docs/KNIGHT_QA_GATE.md` · `core/factory/classes/knight_factory.gd` · `data/` factories
 
 ## Goal
 
-Knight is the **reference class** for **class/skill validation**: every MVP skill Bible-complete with its own scenario row, run through a **dedicated Knight QA gate** (PLANNED — separate from gameplay-core planning QA). P6 clones this gate per class.
+Ship a **perfectly working Knight moveset**: every active skill, movement skill (`knight_swap`), and passive in `knight_factory.gd` **100% tested** against the Bible, with a **meta-critic** that judges whether tests are adequate (not just green). On **LOCK**, P6 **clones** this pipeline per class (`run_<class>_qa_gate.ps1` + coverage matrix + critic rubric).
 
-**Do not conflate with gameplay-core QA:** `.\scripts\run_planning_qa_gate.ps1` / `tests/live_planning_scene_test.gd` validate intent system, planning UI, battle shell, and commit path — they use Knights as **fixtures only**. That suite is **not** Knight LOCK and must **not** be changed to serve class validation.
+**Gameplay-core QA is out of scope for Knight LOCK:** `run_planning_qa_gate.ps1` validates intent/UI/commit only (Knights as fixtures). Do **not** change that suite for Knight coverage.
 
 ## Quality bar
 
+### Doc gauntlet (K3-doc — this critic round)
+
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| **Knight QA gate** (blocks Knight LOCK) | `PLANNED — scripts/run_knight_qa_gate.ps1` — class/skill acceptance (design mirrors planning gate structure; **new** runner) | `docs/PLANNING_SKILL_QA_CHECKLIST.md` per skill |
-| **Per-skill scenarios** (interim + gate input) | `godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd` PASS | Checklist phases 1–7 |
-| Reference scenario | `tests/skills/shield_bash_scenario.gd` exists | — |
-| Gameplay-core regression (when touching planning) | `.\scripts\run_planning_qa_gate.ps1` — **P2 / core only**; not a Knight bar | — |
+| **Knight QA spec** | `docs/KNIGHT_QA_GATE.md` exists; matrix lists every `knight_factory.gd` id | — |
+| **Meta-critic contract** | Decision tree + fix-target taxonomy in gate doc | — |
+| **Planning separation** | Both docs forbid changing `live_planning_scene_test.gd` | — |
+| **Lint** | `.\scripts\lint_design_doc.ps1` PASS | — |
+| **Gate script on disk** | `Test-Path scripts/run_knight_qa_gate.ps1` | — |
+
+Doc gauntlet BAR = lint + cited paths + honest matrix — **not** 100% matrix PASS or LOCK.
+
+### Implementation LOCK (K3-actives … K3-LOCK — separate gauntlet pieces)
+
+| Deliverable | Machine check | Human check |
+|-------------|---------------|-------------|
+| **Coverage matrix** | `docs/KNIGHT_QA_GATE.md` — every row `PASS` (meta-critic approved) | Owner agrees MVP = full factory list |
+| **Knight QA gate** | `.\scripts\run_knight_qa_gate.ps1` → PASS (all rows PASS) | — |
+| **Tier 1 scenarios** | One scenario per matrix row; registry lists actives + passives | Checklist phases 1–7 per **active** |
+| **Meta-critic** | Per-row adequacy ≥ 88; names fix `implementation` vs `qa_test` vs `fixture` | — |
+| **Planning QA** (core edits only) | `run_planning_qa_gate.ps1` — **not** Knight LOCK | F5 core parity |
+
+**Human gate rule:** Doc gauntlet BAR = `lint_design_doc.ps1` + `Test-Path` on `docs/KNIGHT_QA_GATE.md`, `core/factory/classes/knight_factory.gd`, `scripts/run_knight_qa_gate.ps1`. Unchecked implementation exit criteria, incomplete matrix (`PLANNED` / `HARNESS_ONLY` rows), and **0/31 meta-critic PASS** must **not** FAIL the **K3-doc** critic round. Matrix **100% PASS** gates **`LOCKED`** only — not `LOOP_READY`.
 
 ## Non-goals
 
-- Non-Knight classes (P6) — clone Knight gate, do not extend planning QA
-- Changing `live_planning_scene_test.gd` or `run_planning_qa_gate.ps1` for Knight coverage
-- New global timeline rules without owner exception
-- Per-skill `if ability.id` branches
+- Using planning QA PASS as Knight sign-off
+- Changing `live_planning_scene_test.gd` or `run_planning_qa_gate.ps1`
+- Testing non-Knight classes (P6)
+- Per-ability `if ability.id` branches in sim/presentation
+- Critic-only PASS without deterministic scenario asserts
 
 ## Human-only worksheet
 
-N/A
+N/A — Bible + matrix are authoritative. Owner defers rows only via explicit `N/A` in matrix with reason.
 
-## Decomposition
+## Decomposition (gauntlet pieces)
 
-1. **PLANNED:** Design `run_knight_qa_gate.ps1` + acceptance spec (`docs/KNIGHT_QA_GATE.md` — to write) modeled on `docs/PLANNING_QA_GATE.md` tier structure
-2. One skill = one scenario file + registry row in `planning_skill_scenarios_test.gd`
-3. Knight gate runs skill scenarios (+ future live class acceptance when designed)
-4. Gameplay-core changes still use planning QA gate separately — never merge the two gates
+| Piece | Owner | BAR | Status |
+|-------|-------|-----|--------|
+| **K3-doc** | Spec | lint + gate doc + gate script exist; honest matrix; meta-critic contract | **PASS** (90/88) |
+| K3-matrix | Coverage | All factory ids listed; status honest | In K3-doc |
+| K3-actives | Builder | One `tests/skills/<id>_scenario.gd` per active + swap | PLANNED |
+| K3-passives | Builder | One `tests/passives/<id>_scenario.gd` per passive (trigger setup) | PLANNED |
+| K3-registry | Builder | `tests/knight_scenario_registry.gd` lists actives + passives | PLANNED |
+| K3-gate | Builder | `run_knight_qa_gate.ps1` fails until matrix 100% PASS | Stub on disk |
+| K3-meta | Critic | Adequacy score per matrix row; fixture recommendations | PLANNED |
+| **K3-LOCK** | Owner | Matrix 100% PASS + gate PASS + meta-critic ≥ 88 | PLANNED |
+
+**Implementation tally:** **0 / 30** factory rows meta-critic `PASS` (3 `HARNESS_ONLY`, 27 `PLANNED`). Work **one matrix row per gauntlet piece** after K3-doc.
 
 ## Builder playbook
 
-1. Read Knight section in `class_abilities.txt`.
-2. Copy `tests/skills/shield_bash_scenario.gd` → `tests/skills/<skill>_scenario.gd`.
-3. Add `.tres` / factory hooks per global systems.
-4. Register in `planning_skill_scenarios_test.gd`.
-5. Run **Knight** bar: `run_skill_scenarios_only.gd` today; `run_knight_qa_gate.ps1` when implemented.
-6. If you touched planning/intent/UI core: run `run_planning_qa_gate.ps1` per `qa-after-gameplay-changes.mdc` — that is **not** Knight sign-off.
+1. Read Bible § Knight + row in `docs/KNIGHT_QA_GATE.md`.
+2. **Actives / swap:** copy `tests/skills/shield_bash_scenario.gd` → `tests/skills/<id>_scenario.gd` (7-phase where planning applies).
+3. **Passives:** copy pattern from collision-style stub (PLANNED) — **must trigger** passive (push, hit, lethal, turn start).
+4. Wire data in `knight_factory.gd` / `.tres` — global systems only.
+5. Register in knight scenario registry; run `run_knight_qa_gate.ps1`.
+6. Submit **artifacts only** to meta-critic: stdout, matrix row, scenario file path, Bible excerpt.
+7. If critic says `Fix target: qa_test` — deepen asserts or fixture; if `implementation` — fix game/data.
+8. Core planning edits: run `run_planning_qa_gate.ps1` separately.
 
-## Critic playbook
+## Critic playbook (meta-QA — owner proxy)
+
+### K3-doc round (spec only)
 
 ```powershell
 .\scripts\lint_design_doc.ps1
-Test-Path tests/run_skill_scenarios_only.gd
-Test-Path tests/skills/shield_bash_scenario.gd
-grep planning_skill_scenarios_test.gd
+Test-Path docs/KNIGHT_QA_GATE.md
+Test-Path core/factory/classes/knight_factory.gd
+Test-Path scripts/run_knight_qa_gate.ps1
 ```
 
-Do **not** use `run_planning_qa_gate.ps1` as the P3 doc-critic BAR.
+Judge: matrix completeness vs factory, meta-critic contract, planning≠Knight split. **Do not** FAIL for open implementation exit criteria or `HARNESS_ONLY` rows.
 
-## Gauntlet stub
+### Per-row rounds (after K3-doc)
+
+```powershell
+.\scripts\run_knight_qa_gate.ps1
+# Read docs/KNIGHT_QA_GATE.md row vs tests/skills/ tests/passives/
+```
+
+Judge per row:
+
+- Asserts cover Bible base + `[+]` when `upgraded_effects` exist
+- Passive rows: real triggers, not stat-only
+- Recommendations: larger map, multi-knight fixture, packed scenarios
+- **Do not** conflate planning QA results with Knight score
+
+Handoff payload: see `docs/KNIGHT_QA_GATE.md` § Meta-critic.
+
+## Gauntlet stub (K3-doc — doc critic only)
 
 ```text
-GOAL: P3 doc — Knight QA gate separate from gameplay-core planning QA; planning gate is fixture-only
-BAR: lint PASS; run_skill_scenarios_only.gd + shield_bash_scenario.gd exist; no claim that planning gate = Knight LOCK
+GOAL: P3 pillar spec — Knight QA gate doc + meta-critic contract + honest matrix; planning QA explicitly out-of-scope; P6-cloneable at LOCK
+BAR: lint PASS; Test-Path docs/KNIGHT_QA_GATE.md, core/factory/classes/knight_factory.gd, scripts/run_knight_qa_gate.ps1; matrix lists all factory ids with honest status legend; unchecked LOCK exit criteria must not FAIL this round
 PASS_THRESHOLD: 88
-RULES: skill-global-rules.mdc, qa-after-gameplay-changes.mdc, move-preview-intent-truth.mdc
-ARTIFACT: this file, lint stdout, grep planning_skill_scenarios_test.gd
+RULES: skill-global-rules.mdc, global-systems-first.mdc, move-preview-intent-truth.mdc
+ARTIFACT: this file, docs/KNIGHT_QA_GATE.md, knight_factory.gd, lint stdout, Test-Path gate script
 ```
 
 ## Tooling I/O
 
 | Input | Output | Consumer |
 |-------|--------|----------|
-| `class_abilities.txt` | Ability `.tres` | `AbilitySystem` |
-| Scenario `.gd` | Knight gate PASS | P6 clone (`run_<class>_qa_gate.ps1` pattern) |
-| Planning QA gate | Core planning PASS | P2 / gameplay edits only |
+| `class_abilities.txt` § Knight | Matrix rows | `KNIGHT_QA_GATE.md` |
+| `knight_factory.gd` | Ability/passive ids | Matrix authoritative list |
+| Scenario `.gd` | Tier 1 harness / PASS | Meta-critic adequacy review |
+| Meta-critic report | Fix list (game vs QA vs fixture) | Builder next piece |
+| Knight LOCK | `docs/<CLASS>_QA_GATE.md` clone | P6 |
 
 ## Exit criteria
 
-- [ ] `docs/KNIGHT_QA_GATE.md` + `scripts/run_knight_qa_gate.ps1` designed (PLANNED)
-- [ ] All Knight MVP skills registered in `planning_skill_scenarios_test.gd`
-- [ ] Knight QA gate PASS (when implemented)
-- [ ] Skill scenario runner PASS (`run_skill_scenarios_only.gd`)
-- [ ] No bandaid preview/commit paths on Knight skills
+### K3-doc (promote to `LOOP_READY`)
+
+- [x] `docs/KNIGHT_QA_GATE.md` complete (matrix + meta-critic + tiers)
+- [x] `scripts/run_knight_qa_gate.ps1` on disk (may FAIL until matrix complete)
+- [x] Doc gauntlet critic ≥ 88 on K3-doc stub (90/88, round 1)
+- [x] `docs/design/knight-template.md` status → `LOOP_READY`
+
+### K3-LOCK (promote to `LOCKED`)
+
+- [ ] **100%** matrix rows `PASS` (actives + passives + swap; meta-critic approved per row)
+- [ ] `.\scripts\run_knight_qa_gate.ps1` → PASS
+- [ ] Meta-critic adequacy **≥ 88** on full matrix review
+- [ ] P6 can copy gate + matrix pattern without planning QA changes
 
 ## Doc polish scorecard
 
