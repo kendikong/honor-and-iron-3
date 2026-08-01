@@ -11,7 +11,7 @@ $exempt = @(
 	"workbench.md",
 	"UNATTENDED_RUN.md",
 	"README.md",
-	"00-remaining-work-suite-plan.md"
+	"00-gauntlet-loop-cursor.md"
 )
 
 $requiredHeadings = @("## Goal", "## Quality bar")

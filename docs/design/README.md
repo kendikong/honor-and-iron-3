@@ -6,11 +6,11 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 
 | Doc | Purpose | Status |
 |-----|---------|--------|
-| [`00-remaining-work-suite-plan.md`](00-remaining-work-suite-plan.md) | **How to create** all remaining-work docs (waves W1–W4) | LOOP_READY |
+| [`00-remaining-work-suite-plan.md`](00-remaining-work-suite-plan.md) | **How to create** all remaining-work docs (waves W1–W4) | POLISHED *(C6=91/90)* |
 | [`REMAINING_WORK_MAP.md`](REMAINING_WORK_MAP.md) | **What to build** — game milestones (Layer 0) | *W1 — not written* |
 | [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) | Builder/critic loops in Cursor | ACTIVE |
 | [`verification-matrix.md`](verification-matrix.md) | Machine bar per pillar | *W1 — not written* |
-| [`workbench.md`](workbench.md) | Live gauntlet progress | IDLE |
+| [`workbench.md`](workbench.md) | Live gauntlet progress | IN PROGRESS |
 
 ## Polish status legend
 

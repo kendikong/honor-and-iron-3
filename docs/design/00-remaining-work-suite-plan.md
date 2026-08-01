@@ -1,24 +1,40 @@
 # Remaining Work — Design Suite Implementation Plan (v3)
 
-**Status:** `LOOP_READY` (plan artifact — not yet `LOCKED`)  
+**Status:** `POLISHED` (critic pass **C6 = 91/90** — owner **gate** pending for LOCK)  
 **Authority:** User goals (map, SFX, UI, classes, run, Knight, enemies, agent looping, PixelForge)  
 **Gauntlet spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md)  
 **Progress log:** [`workbench.md`](workbench.md)
 
-This file is the **implementation plan for creating all remaining-work documents**. It is loop-polished via the doc-polish gauntlet (Rounds 1–3 below). Game work itself lives in pillar specs once written — starting with [`REMAINING_WORK_MAP.md`](REMAINING_WORK_MAP.md) (Wave W1).
+## Goal
+
+Single agent-executable plan to create all `docs/design/` pillar specs (W1–W4): master map, template, verification matrix, and nine domain contracts — without duplicating `ROADMAP.md` / parity plan bodies.
+
+## Quality bar
+
+| Deliverable | Machine check | Human check |
+|-------------|---------------|-------------|
+| This plan | `.\scripts\lint_design_doc.ps1` PASS | — |
+| Harsh gauntlet | `gauntlet-critic` `RESULT: PASS` + **SCORE ≥ 90** (`PASS_THRESHOLD: 90`) | Owner LOCK on sequencing |
+| W1 outputs | Paths in file tree exist or README marks `W1 — not written` | — |
+| Verification | Inline matrix rows cite paths that exist on disk (or `PLANNED — W1`) | — |
+
+This file is the **implementation plan for creating all remaining-work documents**. It is loop-polished via the doc-polish gauntlet (ledger below). Game work itself lives in pillar specs once written — starting with [`REMAINING_WORK_MAP.md`](REMAINING_WORK_MAP.md) (Wave W1).
 
 ---
 
 ## Doc-polish gauntlet ledger
 
-| Round | Critic focus | Score | Largest gap | Status |
-|-------|--------------|-------|-------------|--------|
-| 1 | Structure (v1 → master map + 9 pillars) | 6.5 → 8.0 | No single master map | v2 drafted (prior chat) |
-| 2 | Completeness vs repo + user scope | 7.2 | P0 duplicated gauntlet doc; critical path not tied to parity Phases 10–14 | **v3 this file** |
-| 3 | Executability (real paths, waves) | 8.4 | `lint_design_doc.ps1` missing — staged doc bar | **v3 this file** |
-| 4 | Owner alignment | TBD | Lock `REMAINING_WORK_MAP.md` + roguelike worksheet | **pending you** |
+| Pass | Critic focus | Score (/100) | Largest gap | Status |
+|------|--------------|--------------|-------------|--------|
+| C1 | Structure (v1 → master map + 9 pillars) | — *(pre-/100)* | No single master map | v2 drafted |
+| C2 | Completeness vs repo | — *(pre-/100)* | P0 duplicated gauntlet doc | v3 drafted |
+| C3 | Executability (paths, waves) | — *(pre-/100)* | lint script staged | v3 on disk |
+| **C4–C6** | **Harsh gauntlet-critic** | **54 → 82 → 87 → 88 → 89 → 91** | Naming harmonized | **PASS** |
+| **Owner gate** | You: LOCK map + worksheets | TBD | `REMAINING_WORK_MAP.md` + P4/P7 | **after POLISHED ≥90** |
 
-**Pass rule (suite plan):** avg ≥ 8.0, no dimension &lt; 6, ≤2 open items documented with target wave.
+**Pass rule (this plan):** `gauntlet-critic` **`RESULT: PASS`** and **`SCORE ≥ 90`** (`PASS_THRESHOLD: 90` for meta docs per Rule 4b). Legacy `avg ≥ 8.0` rubric retired.
+
+**Naming:** **Critic pass** = harsh subagent score. **Owner gate** = human LOCK only after POLISHED — not a critic pass number.
 
 ---
 
@@ -51,12 +67,12 @@ This file is the **implementation plan for creating all remaining-work documents
 | `run_regression_tests.ps1` exists | PASS |
 | `planning_skill_scenarios_test.gd` in gate | PASS (`tests/run_planning_qa_gate.gd`) |
 | `PLANNING_SKILL_QA_CHECKLIST.md` (7 phases) | PASS |
-| `mass_sim_*` + `run_mass_sim_test.gd` | PASS (no PS1 wrapper — doc bar uses Godot CLI) |
-| `lint_design_doc.ps1` | FAIL — **not on disk**; Wave W1 creates minimal linter |
-| P0 duplicate of gauntlet doc | FAIL — merge strategy required |
-| Suite plan file on disk | FAIL before this commit |
+| `mass_sim_*` + `run_mass_sim_test.gd` | PASS (Godot CLI — no PS1 wrapper) |
+| `lint_design_doc.ps1` | PASS — on disk at `scripts/lint_design_doc.ps1`; exempts operational gauntlet OS |
+| P0 duplicate of gauntlet doc | PASS — merge strategy in file tree |
+| Suite plan file on disk | PASS |
 
-**Round 3 result: PASS with 2 deferred** (lint script → W1; owner lock → Round 4)
+**Round 3 result:** PASS with 1 deferred (owner lock → **Owner gate**)
 
 ---
 
@@ -112,23 +128,23 @@ docs/design/
 ├── 01-doc-polish-protocol.md              # P1 — how any doc reaches POLISHED (W1)
 ├── UNATTENDED_RUN.md                      # EXISTS
 ├── workbench.md                           # EXISTS
-├── _TEMPLATE.md                           # Mandatory pillar sections (W1)
-├── REMAINING_WORK_MAP.md                  # Layer 0 master map (W1)
-├── verification-matrix.md                 # P9 — machine bars (W1)
+├── _TEMPLATE.md                           # PLANNED — W1
+├── REMAINING_WORK_MAP.md                  # PLANNED — W1
+├── verification-matrix.md                 # PLANNED — W1 (draft inline below until extracted)
 │
-├── combat-core-closeout.md                # P2 — parity Ph10-14 open deltas (W2)
-├── knight-template.md                     # P3 (W2)
-├── roguelike-run.md                       # P4 + human worksheet (W2)
-├── enemy-design.md                        # P5 (W3)
-├── class-rollout.md                       # P6 (W3)
-├── world-assets-and-map.md                # P7 (W3)
-├── presentation-audio-ui.md               # P8 (W3)
+├── combat-core-closeout.md                # PLANNED — W2
+├── knight-template.md                     # PLANNED — W2
+├── roguelike-run.md                       # PLANNED — W2
+├── enemy-design.md                        # PLANNED — W3
+├── class-rollout.md                       # PLANNED — W3
+├── world-assets-and-map.md                # PLANNED — W3
+├── presentation-audio-ui.md               # PLANNED — W3
 │
 └── appendices/
-    ├── pixelforge-v14-contract.md           # W3
-    ├── mass-sim-balance.md                # W4
-    ├── encounter-fixture-format.md        # W2 stub → W3 expand
-    └── gauntlet-prompt-library.md         # W4
+    ├── pixelforge-v14-contract.md         # PLANNED — W3
+    ├── mass-sim-balance.md                # PLANNED — W4
+    ├── encounter-fixture-format.md        # PLANNED — W2 stub → W3 expand
+    └── gauntlet-prompt-library.md         # PLANNED — W4
 ```
 
 **P0 naming:** Do **not** add `00-agentic-operating-system.md`. Pillar P0 = **`00-gauntlet-loop-cursor.md`** + **`01-doc-polish-protocol.md`**.
@@ -168,8 +184,9 @@ Every pillar spec **must** include:
 | **P6** class rollout | Per-class: P3 bar + optional `godot --headless --script res://tests/run_mass_sim_test.gd` | `mass_sim_interpretation.json` epoch compare | Balance taste |
 | **P7** world/map | `docs/asset_manifest.md` entries match disk; F5 compositor gates | PixelForge CANON promote log | Art direction |
 | **P8** presentation | Event→SFX map complete; no missing `SfxPlayer` hooks for listed events | UI screen inventory vs scenes | Layout / typography taste |
-| **P9** matrix | Every row cites a path that exists on disk | `scripts/lint_design_doc.ps1` PASS (W1) | — |
-| **Docs (meta)** | `lint_design_doc.ps1` on `docs/design/*.md` | `gauntlet-critic` `RESULT: PASS` | Owner LOCK on master map |
+| **P9** matrix | Every row cites a path that exists on disk or `PLANNED — W1` | `scripts/lint_design_doc.ps1` PASS | — |
+| **Triage / autobattler** | Deferred Parity Phase 15 — row in `appendices/mass-sim-balance.md` (W4) | `mass_sim_*` smoke when balancing | Human gate |
+| **Docs (meta)** | `lint_design_doc.ps1` on `docs/design/*.md` | `gauntlet-critic` SCORE ≥ 90 | Owner LOCK on master map |
 
 **Mass sim CLI (document in appendix):**
 
@@ -207,36 +224,44 @@ godot --headless --path <repo> --script res://tests/run_mass_sim_test.gd
 
 ### W1 — Spine + meta (first unattended chunk)
 
-| Output | Bar |
-|--------|-----|
-| `README.md`, `_TEMPLATE.md`, `01-doc-polish-protocol.md` | Template sections present |
-| `REMAINING_WORK_MAP.md` | Every milestone → pillar + command |
-| `verification-matrix.md` | All paths exist or marked `PLANNED` |
-| `scripts/lint_design_doc.ps1` | Fails if pillar missing required H2s |
+| Output | Status on disk | Bar |
+|--------|----------------|-----|
+| `README.md` | **EXISTS** | Index + polish status table |
+| `_TEMPLATE.md` | PLANNED — W1 | Template sections present |
+| `01-doc-polish-protocol.md` | PLANNED — W1 | Matches Rule 4b + 6b in gauntlet spec |
+| `REMAINING_WORK_MAP.md` | PLANNED — W1 | Every milestone → pillar + command |
+| `verification-matrix.md` | PLANNED — W1 (draft inline below until extracted) | All paths exist or marked `PLANNED` |
+| `scripts/lint_design_doc.ps1` | **EXISTS** | Pillar `## Goal` + `## Quality bar`; exempt operational docs |
 
 **W1 gauntlet:** builder writes → **`/gauntlet-critic`** with `PASS_THRESHOLD: 90`, BAR = lint script + matrix path grep → fix largest gap → repeat until `RESULT: PASS` **and** `SCORE ≥ 90`.
 
 ### W2 — Combat spine docs
 
-| Output | Bar |
-|--------|-----|
-| P2, P3, P4 | P3 cites Shield Bash scenario + checklist phases |
-| `appendices/encounter-fixture-format.md` (stub) | Schema fields listed |
+| Output | Status on disk | Bar |
+|--------|----------------|-----|
+| P2 `combat-core-closeout.md` | PLANNED — W2 | Open parity Ph10–14 deltas only |
+| P3 `knight-template.md` | PLANNED — W2 | Shield Bash scenario + checklist phases |
+| P4 `roguelike-run.md` | PLANNED — W2 | Human worksheet filled |
+| `appendices/encounter-fixture-format.md` | PLANNED — W2 | Schema fields listed |
 
-**Depends on:** W1 LOCK or LOOP_READY.
+**Depends on:** W1 LOOP_READY or POLISHED.
 
 ### W3 — Content + world
 
-| Output | Bar |
-|--------|-----|
-| P5, P6, P7, P8 | P7 I/O: PixelForge → `asset_manifest.md` |
-| `appendices/pixelforge-v14-contract.md` | Matches v14 `.docx` entities (distilled) |
+| Output | Status on disk | Bar |
+|--------|----------------|-----|
+| P5 `enemy-design.md` | PLANNED — W3 | Encounter fixture → sim smoke |
+| P6 `class-rollout.md` | PLANNED — W3 | Clone P3 + mass-sim hooks |
+| P7 `world-assets-and-map.md` | PLANNED — W3 | PixelForge → `asset_manifest.md` |
+| P8 `presentation-audio-ui.md` | PLANNED — W3 | SFX event map + UI inventory |
+| `appendices/pixelforge-v14-contract.md` | PLANNED — W3 | Matches v14 entities |
 
 ### W4 — Prompt library + balance
 
-| Output | Bar |
-|--------|-----|
-| `appendices/gauntlet-prompt-library.md`, `mass-sim-balance.md` | Prompts run without editing |
+| Output | Status on disk | Bar |
+|--------|----------------|-----|
+| `appendices/gauntlet-prompt-library.md` | PLANNED — W4 | Prompts runnable without editing |
+| `appendices/mass-sim-balance.md` | PLANNED — W4 | When to run `run_mass_sim_test.gd` |
 
 **Human gate between waves:** you read `REMAINING_WORK_MAP.md` + P4/P7 worksheets only.
 
@@ -252,23 +277,24 @@ For **any** design doc (including this plan):
 4. **Builder** fixes largest gap → repeat until PASS gate met or `MAX_ROUNDS_PER_PIECE` → `FAILURE_REPORT.md`.
 5. **Status promotion:** `DRAFT` → `LOOP_READY` (critic PASS + score ≥ 88) → `POLISHED` (score ≥ 90 on meta docs, ≥ 88 on pillars) → `LOCKED` (owner).
 
-**Doc BAR (until custom linter ships):**
+**Doc BAR:**
 
 | Stage | Machine check | Harsh critic |
 |-------|----------------|--------------|
-| LOOP_READY | `_TEMPLATE.md` H2s + ≥1 machine bar | `SCORE ≥ 88`, `PASS_THRESHOLD: 88` |
-| POLISHED | lint + matrix paths | `SCORE ≥ 90`, `PASS_THRESHOLD: 90` |
+| LOOP_READY | `lint_design_doc.ps1` PASS on this file | `SCORE ≥ 88`, `PASS_THRESHOLD: 88` |
+| POLISHED | W1 paths accurate; matrix extracted or inline marked | `SCORE ≥ 90`, `PASS_THRESHOLD: 90` |
 | LOCKED | Owner reply + commit hash in header | — |
 
 ---
 
-## `lint_design_doc.ps1` (W1 deliverable — spec)
+## `lint_design_doc.ps1` (exists — maintain in W1+)
 
-Minimal checks (PowerShell):
+Checks (PowerShell):
 
-- Every `docs/design/*.md` except `workbench.md` has: `**Status:**`, `## Goal`, `## Quality bar` OR is listed as exempt in README
-- Pillar files match `P[0-9]` or named in README exempt list
-- No pillar body pastes full `ROADMAP.md` / parity plan sections (&gt;40 consecutive lines from those files = FAIL)
+- Every `docs/design/*.md` except README exempt list has: `**Status:**`, `## Goal`, `## Quality bar`
+- **Exempt (operational / meta):** `workbench.md`, `UNATTENDED_RUN.md`, `README.md`, `00-gauntlet-loop-cursor.md`
+- **Not exempt:** pillar specs and this suite plan (must include Goal + Quality bar)
+- No pillar body pastes full `ROADMAP.md` / parity plan sections (&gt;40 consecutive lines = FAIL) — *future lint rule W1b*
 
 ---
 
@@ -299,9 +325,11 @@ Minimal checks (PowerShell):
 
 | Option | What happens |
 |--------|----------------|
-| **W1 unattended** | Fill `UNATTENDED_RUN.md` for chunk `design-suite-w1`; lead runs gauntlet on W1 files |
-| **Round 4 (you)** | Fill P4/P7 worksheets; reply LOCK on sequencing |
+| **W1 unattended** | Fill `UNATTENDED_RUN.md` for chunk `design-suite-w1`; lead gauntlets W1 files |
+| **Owner gate (you)** | Fill P4/P7 worksheets; reply **LOCK** on sequencing — **only after** this plan is `POLISHED` (SCORE ≥ 90) |
 | **Adjust** | Change pillar list, wave order, or deferrals |
+
+**Note:** **Critic passes** (C1–C5 harsh scores) are separate from the **owner gate**. Do not run owner LOCK until `POLISHED`.
 
 ---
 
@@ -311,3 +339,4 @@ Minimal checks (PowerShell):
 |------|--------|
 | 2026-08-01 | v3: Rounds 2–3 gauntlet; repo-aligned path; P0 merge; verification matrix draft; W1 lint spec |
 | 2026-08-01 | Harsh score gate aligned with gauntlet-critic Rule 4b (88/90 doc thresholds) |
+| 2026-08-01 | Gauntlet test loop C1–C6: 54→91/90 PASS; POLISHED status; workbench score progression |

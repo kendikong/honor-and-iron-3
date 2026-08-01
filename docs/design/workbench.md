@@ -9,14 +9,12 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ <piece-id> │ Round <n>
-SCORE: —/100 │ THRESHOLD: — │ — │ —
-DELTA: — vs round <n-1>
-BEST THIS PIECE: — │ ROUNDS: —
+GAUNTLET SCORE │ remaining-work-suite-plan-v3 │ Critic pass C6
+SCORE: 91/100 │ THRESHOLD: 90 │ PASS │ CLIMBING
+DELTA: +2 vs C5 (was 89)
+BEST THIS PIECE: 91 │ CRITIC PASSES: 6
 ══════════════════════════════════════
 ```
-
-*(Lead replaces `—` after each critic. Copy the same banner to chat as the first line of the lead message.)*
 
 ---
 
@@ -24,10 +22,10 @@ BEST THIS PIECE: — │ ROUNDS: —
 
 | Field | Value |
 |-------|-------|
-| **Chunk / goal** | *(not started)* |
-| **Started** | — |
-| **Status** | IDLE |
-| **Lead session** | — |
+| **Chunk / goal** | Polish `00-remaining-work-suite-plan.md` to SCORE ≥ 90 |
+| **Started** | 2026-08-01 |
+| **Status** | PASS — piece complete |
+| **Lead session** | design-suite-plan-gauntlet-test |
 
 ---
 
@@ -35,22 +33,27 @@ BEST THIS PIECE: — │ ROUNDS: —
 
 | Field | Value |
 |-------|-------|
-| **Piece ID** | — |
-| **Round** | — |
-| **Critic invoked** | — *(yes/no — required before PASS)* |
-| **Last bar** | — |
-| **Last result** | — *(PASS/FAIL)* |
-| **Last score** | — *(e.g. 82/100, threshold 85 — required)* |
-| **Best score this piece** | — |
-| **Largest gap** | — |
+| **Piece ID** | remaining-work-suite-plan-v3 |
+| **Critic pass** | C6 |
+| **Critic invoked** | yes |
+| **Last bar** | lint PASS + paths + naming |
+| **Last result** | **PASS** |
+| **Last score** | **91/100**, threshold 90 |
+| **Best score this piece** | **91** |
+| **Largest gap** | none |
 
 ---
 
-## Score progression (append one row per critic round — shows loop momentum)
+## Score progression (append one row per critic pass — shows loop momentum)
 
-| Round | Score | Threshold | Δ vs prior | Hint | Result | Largest gap |
-|-------|-------|-----------|------------|------|--------|-------------|
-| — | — | — | — | — | — | — |
+| Pass | Score | Threshold | Δ vs prior | Hint | Result | Largest gap |
+|------|-------|-----------|------------|------|--------|-------------|
+| C1 | 54 | 90 | FIRST | FIRST | FAIL | Stale lint/pass-rule contradictions |
+| C2 | 82 | 90 | +28 | CLIMBING | FAIL | README LOOP_READY vs plan DRAFT |
+| C3 | 87 | 90 | +5 | CLIMBING | FAIL | workbench stale vs ledger |
+| C4 | 88 | 90 | +1 | STALLED | FAIL | Round label collision |
+| C5 | 89 | 90 | +1 | STALLED | FAIL | Naming incomplete |
+| C6 | 91 | 90 | +2 | CLIMBING | **PASS** | none |
 
 **Hint legend:** `CLIMBING` (Δ ≥ +3) · `STALLED` (|Δ| ≤ 2) · `SLIPPED` (Δ ≤ −3) · `FIRST`
 
@@ -60,10 +63,17 @@ BEST THIS PIECE: — │ ROUNDS: —
 
 | Time | Piece | Bar | Critic | Score | Result | Commit | Notes |
 |------|-------|-----|--------|-------|--------|--------|-------|
-| — | — | — | — | — | — | — | — |
+| 2026-08-01 | suite-plan-v3 | lint+paths | yes | 54/90 | FAIL | — | Critic pass C1 |
+| 2026-08-01 | suite-plan-v3 | lint+paths | yes | 82/90 | FAIL | — | Critic pass C2 |
+| 2026-08-01 | suite-plan-v3 | lint+paths | yes | 87/90 | FAIL | — | Critic pass C3 |
+| 2026-08-01 | suite-plan-v3 | lint+paths | yes | 88/90 | FAIL | — | Critic pass C4 |
+| 2026-08-01 | suite-plan-v3 | lint+paths | yes | 89/90 | FAIL | — | Critic pass C5 |
+| 2026-08-01 | suite-plan-v3 | lint+paths | yes | **91/90** | **PASS** | *(this commit)* | Critic pass C6 |
+
+**Lint (latest):** `[PASS] lint_design_doc: exempt list OK; pillar files will be checked when added`
 
 ---
 
 ## Blockers
 
-*(Lead writes FAILURE_REPORT details here if run stops on FAIL.)*
+*(None — owner gate optional for LOCK.)*
