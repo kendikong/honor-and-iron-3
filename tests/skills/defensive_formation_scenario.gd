@@ -8,13 +8,7 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_KnightQaHarness.run_active_smoke( 
-		failures,
-		&"knight_defensive_formation",
-		"Defensive Formation",
-		[],
-		[GameEnums.StatusType.STAT_BUFF_DEF, GameEnums.StatusType.STURDY],
-	)
+	_KnightQaHarness.run_defensive_formation(failures)
 	var form: AbilityData = _KnightQaHarness.factory_ability(&"knight_defensive_formation")
 	_KnightQaHarness.assert_true(
 		failures, "defensive_formation/upgrade/shield",

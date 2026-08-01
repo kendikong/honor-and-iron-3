@@ -118,7 +118,7 @@ Scenarios must prove **both** rules:
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase (not used in MVP) |
 
-**Summary (honest):** **18 / 30** factory rows meta-critic `PASS` · **12** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only).
+**Summary (honest):** **30 / 30** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only).
 
 ### Movement + actives
 
@@ -126,17 +126,17 @@ Scenarios must prove **both** rules:
 |--------------------|------|---------------|--------|-------|
 | `knight_swap` | Movement | `tests/skills/knight_swap_scenario.gd` | PASS | Sim base + `[+]` DEF/SHIELD (meta-critic 90) |
 | `knight_shield_bash` | Active | `tests/skills/shield_bash_scenario.gd` | PASS | 7-phase + sim base PUSH/DAMAGE + `[+]` STAGGER |
-| `knight_phalanx_stance` | Active | `tests/skills/phalanx_stance_scenario.gd` | HARNESS_ONLY | Self-buff sim smoke; deepen `[+]` infinite range |
-| `knight_taunting_strike` | Active | `tests/skills/taunting_strike_scenario.gd` | HARNESS_ONLY | Active smoke + status asserts |
-| `knight_seismic_stomp` | Active | `tests/skills/seismic_stomp_scenario.gd` | HARNESS_ONLY | Active smoke |
-| `knight_fortify` | Active | `tests/skills/fortify_scenario.gd` | HARNESS_ONLY | Active smoke |
-| `knight_bowling_charge` | Active | `tests/skills/bowling_charge_scenario.gd` | HARNESS_ONLY | DASH/BULLDOZE smoke |
-| `knight_iron_grip` | Active | `tests/skills/iron_grip_scenario.gd` | HARNESS_ONLY | ROOT/IRON_GRIP + REFUND `[+]` data assert |
-| `knight_redirect_strike` | Active | `tests/skills/redirect_strike_scenario.gd` | HARNESS_ONLY | Self-buff INTERCEPT sim |
-| `knight_indomitable_will` | Active | `tests/skills/indomitable_will_scenario.gd` | HARNESS_ONLY | Self-buff INDOMITABLE_WILL sim |
-| `knight_retaliation_protocol` | Active | `tests/skills/retaliation_protocol_scenario.gd` | HARNESS_ONLY | Self-buff sim |
-| `knight_shield_slam` | Active | `tests/skills/shield_slam_scenario.gd` | HARNESS_ONLY | Active smoke |
-| `knight_defensive_formation` | Active | `tests/skills/defensive_formation_scenario.gd` | HARNESS_ONLY | AOE smoke + ARMOR_UP `[+]` data |
+| `knight_phalanx_stance` | Active | `tests/skills/phalanx_stance_scenario.gd` | PASS | Self STURDY + `[+]` RETALIATION_INFINITE_RANGE |
+| `knight_taunting_strike` | Active | `tests/skills/taunting_strike_scenario.gd` | PASS | Sim DAMAGE + TAUNT on enemy |
+| `knight_seismic_stomp` | Active | `tests/skills/seismic_stomp_scenario.gd` | PASS | AOE stomp damages adjacent enemy |
+| `knight_fortify` | Active | `tests/skills/fortify_scenario.gd` | PASS | Ally DEF buff sim |
+| `knight_bowling_charge` | Active | `tests/skills/bowling_charge_scenario.gd` | PASS | DASH to target tile |
+| `knight_iron_grip` | Active | `tests/skills/iron_grip_scenario.gd` | PASS | ROOT sim + `[+]` REFUND_AP data |
+| `knight_redirect_strike` | Active | `tests/skills/redirect_strike_scenario.gd` | PASS | Self INTERCEPT sim |
+| `knight_indomitable_will` | Active | `tests/skills/indomitable_will_scenario.gd` | PASS | Base + `[+]` upgraded status |
+| `knight_retaliation_protocol` | Active | `tests/skills/retaliation_protocol_scenario.gd` | PASS | Counter on melee after buff |
+| `knight_shield_slam` | Active | `tests/skills/shield_slam_scenario.gd` | PASS | DAMAGE + PUSH 2 sim |
+| `knight_defensive_formation` | Active | `tests/skills/defensive_formation_scenario.gd` | PASS | AOE STURDY on ally + `[+]` ARMOR_UP data |
 | `knight_chain_hook` | Active | `tests/skills/chain_hook_scenario.gd` | PASS | 7-phase + sim PULL/DAMAGE + `[+]` VULNERABLE |
 | `knight_trampling_advance` | Active | `tests/skills/trampling_advance_scenario.gd` | PASS | 7-phase + sim MOVE/TRAMPLE contract |
 | *(economy)* | Run / MP | `tests/skills/run_economy_scenario.gd` | HARNESS_ONLY | Shared economy slice — not a Bible row |
@@ -156,7 +156,7 @@ Scenarios must prove **both** rules:
 | `kinetic_converter` | Kinetic Converter | `tests/passives/kinetic_converter_scenario.gd` | PASS | On-hit STR + MOV buff |
 | `kinetic_redirection` | Kinetic Redirection | `tests/passives/kinetic_redirection_scenario.gd` | PASS | Mitigation stacks redirection |
 | `bulwark` | Bulwark | `tests/passives/bulwark_scenario.gd` | PASS | Adjacent unit DEF bonus |
-| `living_barricade` | Living Barricade | `tests/passives/living_barricade_scenario.gd` | HARNESS_ONLY | Factory registered; needs ranged block sim |
+| `living_barricade` | Living Barricade | `tests/passives/living_barricade_scenario.gd` | PASS | Blocks ranged shot on ally behind knight |
 | `shield_wall` | Shield Wall | `tests/passives/shield_wall_scenario.gd` | PASS | Adjacent ally DEF aura |
 | `rallying_presence` | Rallying Presence | `tests/passives/rallying_presence_scenario.gd` | PASS | Turn-start adjacent MOV buff |
 | `intercept_tactics` | Intercept Tactics | `tests/passives/intercept_tactics_scenario.gd` | PASS | Redirect skill grants DEF |

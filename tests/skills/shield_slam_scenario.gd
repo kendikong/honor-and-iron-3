@@ -8,5 +8,5 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_KnightQaHarness.run_active_smoke( failures, &"knight_shield_slam", "Shield Slam", [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.PUSH])
+	_KnightQaHarness.run_shield_slam(failures)
 

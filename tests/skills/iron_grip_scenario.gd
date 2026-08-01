@@ -8,13 +8,7 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_KnightQaHarness.run_active_smoke( 
-		failures,
-		&"knight_iron_grip",
-		"Iron Grip",
-		[],
-		[GameEnums.StatusType.ROOT, GameEnums.StatusType.IRON_GRIP_DEBUFF],
-	)
+	_KnightQaHarness.run_iron_grip(failures)
 	var grip: AbilityData = _KnightQaHarness.factory_ability(&"knight_iron_grip")
 	_KnightQaHarness.assert_true(
 		failures, "iron_grip/upgrade/refund",

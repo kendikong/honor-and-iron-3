@@ -34,7 +34,9 @@ $plannedRows = @()
 $harnessRows = @()
 
 foreach ($id in $requiredFactoryIds) {
-	$rowLine = ($matrixText -split "`n" | Where-Object { $_ -match [regex]::Escape($id) } | Select-Object -First 1)
+	$escaped = [regex]::Escape($id)
+	$tablePattern = '`\s*' + $escaped + '\s*`'
+	$rowLine = ($matrixText -split "`n" | Where-Object { $_ -match $tablePattern -and $_ -match '\|' } | Select-Object -First 1)
 	if ($null -eq $rowLine -or $rowLine.Trim().Length -eq 0) {
 		$plannedRows += $id
 		continue

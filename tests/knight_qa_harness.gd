@@ -810,3 +810,238 @@ static func run_intercept_tactics(failures: Array[String]) -> void:
 		after != null and has_status(after, GameEnums.StatusType.STAT_BUFF_DEF),
 		"redirect skill must grant DEF via Intercept Tactics",
 	)
+
+
+static func place_enemy_artillery(board: BoardState, unit_id: int, pos: Vector2i) -> UnitState:
+	var def: UnitData = DataLibrary.get_unit(&"artillery")
+	if def == null:
+		def = DataLibrary.get_training_dummy()
+	var abilities: Array[AbilityData] = []
+	if def.behavior != null and def.behavior.default_ability != null:
+		abilities.append(def.behavior.default_ability)
+	return place_unit(board, unit_id, def, GameEnums.Team.ENEMY, pos, {
+		"active_abilities": abilities if not abilities.is_empty() else [factory_ability(&"knight_chain_hook")],
+	})
+
+
+static func events_contain_reason(events: Array, reason: String) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and str(e.data.get("reason", "")) == reason:
+			return true
+	return false
+
+
+static func run_phalanx_stance(failures: Array[String]) -> void:
+	run_self_buff(failures, &"knight_phalanx_stance", GameEnums.StatusType.STURDY)
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	var cfg: Dictionary = with_upgraded_ability({}, &"knight_phalanx_stance")
+	place_knight(board, 1, Vector2i(3, 3), cfg)
+	var knight: UnitState = unit_on_board(board, 1)
+	var ability: AbilityData = ability_on_unit(knight, &"knight_phalanx_stance")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, ability, knight.position, knight.id))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "phalanx_stance/upgrade/infinite_range",
+		after != null and has_status(after, GameEnums.StatusType.RETALIATION_INFINITE_RANGE),
+		"upgraded phalanx must grant infinite retaliation range",
+	)
+
+
+static func run_taunting_strike(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(10, 6))
+	place_knight(board, 1, Vector2i(3, 3))
+	place_dummy(board, 2, Vector2i(5, 3))
+	var knight: UnitState = unit_on_board(board, 1)
+	var strike: AbilityData = ability_on_unit(knight, &"knight_taunting_strike")
+	var hp_before: int = unit_on_board(board, 2).health.current_hp
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, strike, Vector2i(5, 3), 2))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "taunting_strike/damage",
+		enemy != null and enemy.health.current_hp < hp_before,
+		"taunting strike must deal damage",
+	)
+	assert_true(
+		failures, "taunting_strike/taunt",
+		enemy != null and has_status(enemy, GameEnums.StatusType.TAUNT),
+		"taunting strike must apply TAUNT",
+	)
+
+
+static func run_seismic_stomp(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board, 1, Vector2i(4, 4))
+	place_dummy(board, 2, Vector2i(5, 4))
+	var stomp: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_seismic_stomp")
+	var hp_before: int = unit_on_board(board, 2).health.current_hp
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, stomp, Vector2i(4, 4), 1))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "seismic_stomp/aoe_damage",
+		enemy != null and enemy.health.current_hp < hp_before,
+		"seismic stomp AOE must damage adjacent enemy",
+	)
+
+
+static func run_fortify(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board, 1, Vector2i(3, 3))
+	var ally_def: UnitData = knight_unit_data()
+	place_unit(board, 3, ally_def, GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var fortify: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_fortify")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, fortify, Vector2i(4, 3), 3))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var ally: UnitState = result.final_state.get_unit_by_id(3)
+	assert_true(
+		failures, "fortify/ally_def",
+		ally != null and has_status(ally, GameEnums.StatusType.STAT_BUFF_DEF),
+		"fortify must buff ally DEF",
+	)
+
+
+static func run_bowling_charge(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(12, 6))
+	place_knight(board, 1, Vector2i(2, 3))
+	place_dummy(board, 2, Vector2i(3, 3))
+	var charge: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_bowling_charge")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, charge, Vector2i(5, 3), -1))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var knight: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "bowling_charge/dash",
+		knight != null and knight.position == Vector2i(5, 3),
+		"bowling charge must DASH to target tile",
+	)
+
+
+static func run_iron_grip(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(10, 6))
+	place_knight(board, 1, Vector2i(3, 3))
+	place_dummy(board, 2, Vector2i(4, 3))
+	var grip: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_iron_grip")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, grip, Vector2i(4, 3), 2))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "iron_grip/root",
+		enemy != null and has_status(enemy, GameEnums.StatusType.ROOT),
+		"iron grip must ROOT target",
+	)
+
+
+static func run_shield_slam(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(10, 6))
+	place_knight(board, 1, Vector2i(4, 3))
+	place_dummy(board, 2, Vector2i(5, 3))
+	var slam: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_shield_slam")
+	var hp_before: int = unit_on_board(board, 2).health.current_hp
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_move(1, Vector2i(4, 3)))
+	plan.add(plan_ability(1, slam, Vector2i(5, 3), 2))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "shield_slam/damage",
+		enemy != null and enemy.health.current_hp < hp_before,
+		"shield slam must deal damage",
+	)
+	assert_eq_cell(failures, "shield_slam/push", enemy.position, Vector2i(7, 3))
+
+
+static func run_defensive_formation(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board, 1, Vector2i(4, 4))
+	var ally_def: UnitData = knight_unit_data()
+	place_unit(board, 3, ally_def, GameEnums.Team.PLAYER, Vector2i(5, 4), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var form: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_defensive_formation")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, form, Vector2i(4, 4), 1))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var ally: UnitState = result.final_state.get_unit_by_id(3)
+	assert_true(
+		failures, "defensive_formation/ally_sturdy",
+		ally != null and has_status(ally, GameEnums.StatusType.STURDY),
+		"defensive formation AOE must grant STURDY to nearby ally",
+	)
+
+
+static func run_indomitable_will(failures: Array[String]) -> void:
+	run_self_buff(failures, &"knight_indomitable_will", GameEnums.StatusType.INDOMITABLE_WILL)
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	var cfg: Dictionary = with_upgraded_ability({}, &"knight_indomitable_will")
+	place_knight(board, 1, Vector2i(3, 3), cfg)
+	var knight: UnitState = unit_on_board(board, 1)
+	var will: AbilityData = ability_on_unit(knight, &"knight_indomitable_will")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, will, knight.position, knight.id))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "indomitable_will/upgrade/status",
+		after != null and has_status(after, GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED),
+		"upgraded indomitable will must apply upgraded status",
+	)
+
+
+static func run_retaliation_protocol(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	var cfg: Dictionary = {}
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	var protocol: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_retaliation_protocol")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, protocol, Vector2i(3, 2), 1))
+	simulate_player_turn(board, plan)
+	soften_for_melee_hit(unit_on_board(board, 1))
+	place_enemy_basher(board, 2, Vector2i(4, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
+	var hp_before: int = unit_on_board(board, 2).health.current_hp
+	var attack := Timeline.new()
+	attack.add(plan_ability(2, bash, Vector2i(3, 2), 1))
+	var result: SimResult = simulate_player_turn(board, attack)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "retaliation_protocol/counter",
+		enemy != null and enemy.health.current_hp < hp_before,
+		"retaliation protocol must counter-attack melee attacker",
+	)
+
+
+static func run_living_barricade(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(10, 8))
+	var cfg: Dictionary = with_single_passive(&"living_barricade", false)
+	place_knight(board, 1, Vector2i(4, 3), cfg)
+	var ally_def: UnitData = knight_unit_data()
+	place_unit(board, 2, ally_def, GameEnums.Team.PLAYER, Vector2i(3, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	place_enemy_artillery(board, 3, Vector2i(6, 3))
+	var artillery: UnitState = unit_on_board(board, 3)
+	var bolt: AbilityData = artillery.active_abilities[0]
+	var hp_before: int = unit_on_board(board, 2).health.current_hp
+	var plan := Timeline.new()
+	plan.add(plan_ability(3, bolt, Vector2i(3, 3), 2))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var ally: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "living_barricade/block",
+		ally != null and ally.health.current_hp == hp_before,
+		"ranged shot on protected ally must be blocked",
+	)
+	assert_true(
+		failures, "living_barricade/event",
+		events_contain_reason(result.events, "blocked_by_living_barricade"),
+		"living barricade must emit block event",
+	)

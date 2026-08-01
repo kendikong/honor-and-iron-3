@@ -8,5 +8,5 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_KnightQaHarness.run_self_buff( failures, &"knight_phalanx_stance", GameEnums.StatusType.STURDY)
+	_KnightQaHarness.run_phalanx_stance(failures)
 
