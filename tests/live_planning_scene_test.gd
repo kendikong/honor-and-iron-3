@@ -38,7 +38,7 @@ const _K4_DETOUR_PLUS_RUN_ROUTE: Array[Vector2i] = [
 const _SETTLE_FRAMES := 4
 const _SETTLE_DELTA_MS := 20
 const _ABILITY_SETTLE_FRAMES := 6
-const _DRAG_SAMPLE_PIXELS := 12.0
+const _DRAG_SAMPLE_PIXELS := 36.0
 const _TRACE_DIR := "res://reports/live_planning_trace/"
 
 
@@ -366,11 +366,7 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 		"ability": bowling,
 		"manhattan": true,
 	}, "k4/phase1/stand")
-	await _probe_cell(ctx, k4_id, _K4_RUN_TRIGGER_CELL, {
-		"manhattan": true,
-		"preview_nonempty": true,
-	}, "k4/selection/pre_tap")
-	await _tap_cell(ctx, _K4_RUN_TRIGGER_CELL, "k4/selection/release")
+	await _selection_k4_detour_and_run_preview(ctx, k4_id)
 	await _wait_ability_settle(ctx)
 	await _capture_commit_state(ctx, k4_id, "k4/selection/committed")
 	_remember_mode_commit(ctx, "k4/selection", k4_id)
@@ -836,6 +832,26 @@ func _drag_k4_detour_and_run_preview(
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "k4/drag/release")
+
+
+func _selection_k4_detour_and_run_preview(
+	ctx: Dictionary,
+	unit_id: int,
+) -> void:
+	for step_index: int in range(1, _K4_DETOUR_PLUS_RUN_ROUTE.size()):
+		var stand: Vector2i = _K4_DETOUR_PLUS_RUN_ROUTE[step_index]
+		var contract: Dictionary = {}
+		if stand == _K4_RUN_TRIGGER_CELL:
+			contract = {
+				"manhattan": true,
+				"preview_nonempty": true,
+			}
+		await _probe_cell(ctx, unit_id, stand, contract, "k4/selection/step_%d" % step_index)
+		if stand == Vector2i(4, 2):
+			await _k4_preview_snapshot(ctx, unit_id, stand, "walk_loop_end")
+		elif stand == _K4_RUN_TRIGGER_CELL:
+			await _k4_preview_snapshot(ctx, unit_id, stand, "run_trigger")
+	await _tap_cell(ctx, _K4_RUN_TRIGGER_CELL, "k4/selection/release")
 
 
 func _assert_preview_path_matches_drag_route(
