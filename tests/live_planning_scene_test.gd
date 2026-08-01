@@ -39,8 +39,6 @@ const _SETTLE_FRAMES := 4
 const _SETTLE_DELTA_MS := 20
 const _ABILITY_SETTLE_FRAMES := 6
 const _DRAG_SAMPLE_PIXELS := 36.0
-## After undo, snap pointer back to the unit — no slow hover sweep or motion captures.
-const _REPOSITION_SAMPLE_PIXELS := 512.0
 const _TRACE_DIR := "res://reports/live_planning_trace/"
 
 
@@ -369,7 +367,7 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 		"manhattan": true,
 	}, "k4/phase1/stand")
 	await _enter_k4_auto_run_paint_mode(ctx, k4_id)
-	await _paint_k4_detour_and_run_route(ctx, k4_id, bowling, "k4/selection")
+	await _select_k4_detour_and_run_route(ctx, k4_id, bowling, "k4/selection")
 	await _wait_ability_settle(ctx)
 	await _capture_commit_state(ctx, k4_id, "k4/selection/committed")
 	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/selection")
@@ -379,7 +377,9 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 	await _paint_k4_detour_and_run_route(ctx, k4_id, bowling, "k4/drag")
 	await _capture_commit_state(ctx, k4_id, "k4/drag/committed")
 	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/drag")
+	_remember_mode_commit(ctx, "k4/drag", k4_id)
 	_record_mode_commit_comparison(ctx, "k4/selection", "k4/drag")
+	_assert_mode_commit_parity(ctx, "k4/selection", "k4/drag")
 	await _probe_cell(ctx, k4_id, _K4_RUN_TRIGGER_CELL, {}, "k4/drag/post_commit")
 	await _k4_preview_snapshot(ctx, k4_id, _K4_RUN_TRIGGER_CELL, "after_commit")
 	var k4_projected: UnitState = director.projected_state.get_unit_by_id(k4_id)
@@ -440,7 +440,7 @@ func _select_unit_live(ctx: Dictionary, unit_id: int, cell: Vector2i) -> void:
 	ctx.director.select_unit(unit_id)
 	await _wait_ability_settle(ctx)
 	assert_int(ctx.director.selected_unit_id).is_equal(unit_id)
-	await _hover_cell(ctx, cell)
+	await _reposition_mouse_to_unit(ctx, unit_id, cell)
 
 
 func _rearm_trample_awaiting(ctx: Dictionary, k3_id: int) -> void:
@@ -666,7 +666,22 @@ func _hover_cell(ctx: Dictionary, cell: Vector2i) -> void:
 
 
 func _reposition_mouse_to_unit(ctx: Dictionary, unit_id: int, cell: Vector2i) -> void:
-	await _sweep_mouse_to_cell(ctx, cell, "", unit_id, _REPOSITION_SAMPLE_PIXELS, false)
+	var input: CombatPlanningInput = ctx.input
+	var director: CombatDirector = ctx.director
+	var runner: GdUnitSceneRunner = ctx.runner
+	input.clear_qa_pointer_override()
+	runner.simulate_mouse_move(_screen_position_for_cell(ctx, cell))
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(cell)
+	input.refresh_mouse_cursor(cell)
+	director.flush_plan_refresh_signals_if_pending()
+	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
+
+
+func _assert_not_dragging(ctx: Dictionary, label: String) -> void:
+	assert_bool(ctx.input.dragging).override_failure_message(
+		"%s: selection mode must not activate drag (sprite must not follow cursor)" % label,
+	).is_false()
 
 
 ## Sweeps the pointer in pixel steps so selection and drag both match F5 hover motion.
@@ -837,7 +852,7 @@ func _drag_through_cells(
 		return
 	var runner: GdUnitSceneRunner = ctx.runner
 	var input: CombatPlanningInput = ctx.input
-	await _hover_cell(ctx, cells[0])
+	await _reposition_mouse_to_unit(ctx, ctx.director.selected_unit_id, cells[0])
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/start" % label)
 	if assert_hover_steps:
 		assert_that(input.get_hover_tile_for_ui()).is_equal(cells[0])
@@ -854,6 +869,29 @@ func _drag_through_cells(
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/release" % label)
 
 
+func _select_k4_detour_and_run_route(
+	ctx: Dictionary,
+	unit_id: int,
+	bowling: AbilityData,
+	label_prefix: String,
+) -> void:
+	var input: CombatPlanningInput = ctx.input
+	await _reposition_mouse_to_unit(ctx, unit_id, _K4_DETOUR_PLUS_RUN_ROUTE[0])
+	await _capture_planning_surface(ctx, unit_id, "%s/start" % label_prefix)
+	_assert_not_dragging(ctx, "%s/start" % label_prefix)
+	for step_index: int in range(1, _K4_DETOUR_PLUS_RUN_ROUTE.size()):
+		var cell: Vector2i = _K4_DETOUR_PLUS_RUN_ROUTE[step_index]
+		var step_label: String = "%s/step_%d" % [label_prefix, step_index]
+		await _sweep_mouse_to_cell(ctx, cell, "%s/approach" % step_label, unit_id, -1.0, false)
+		_assert_not_dragging(ctx, step_label)
+		await _capture_planning_surface(ctx, unit_id, step_label)
+	await _tap_cell(ctx, _K4_RUN_TRIGGER_CELL, "%s/release" % label_prefix)
+	_assert_not_dragging(ctx, "%s/after_release" % label_prefix)
+	assert_that(input.get_drag_route()).override_failure_message(
+		"%s: selection mode must not leave a drag route" % label_prefix,
+	).is_equal([])
+
+
 func _paint_k4_detour_and_run_route(
 	ctx: Dictionary,
 	unit_id: int,
@@ -863,7 +901,7 @@ func _paint_k4_detour_and_run_route(
 ) -> void:
 	var runner: GdUnitSceneRunner = ctx.runner
 	var input: CombatPlanningInput = ctx.input
-	await _hover_cell(ctx, _K4_DETOUR_PLUS_RUN_ROUTE[0])
+	await _reposition_mouse_to_unit(ctx, unit_id, _K4_DETOUR_PLUS_RUN_ROUTE[0])
 	await _capture_planning_surface(ctx, unit_id, "%s/start" % label_prefix)
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
@@ -878,12 +916,12 @@ func _paint_k4_detour_and_run_route(
 		await _capture_planning_surface(ctx, unit_id, "%s/step_%d" % [label_prefix, step_index])
 		var stand: Vector2i = _K4_DETOUR_PLUS_RUN_ROUTE[step_index]
 		if stand == Vector2i(4, 2):
-			await _assert_k4_walk_drag_preview(ctx, unit_id, bowling, stand, "%s/walk_loop_end" % label_prefix)
+			await _assert_k4_walk_loop_preview(ctx, unit_id, bowling, stand, "%s/walk_loop_end" % label_prefix)
 			await _k4_preview_snapshot(ctx, unit_id, stand, "walk_loop_end")
 			if pause_frames_at_checkpoint > 0:
 				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
 		elif stand == _K4_RUN_TRIGGER_CELL:
-			await _assert_k4_run_drag_preview(ctx, unit_id, bowling, "%s/run_trigger" % label_prefix)
+			await _assert_k4_run_loop_preview(ctx, unit_id, bowling, "%s/run_trigger" % label_prefix)
 			await _k4_preview_snapshot(ctx, unit_id, stand, "run_trigger")
 			if pause_frames_at_checkpoint > 0:
 				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
@@ -911,7 +949,7 @@ func _assert_preview_path_matches_drag_route(
 	_assert_preview_path_equals(ctx, unit_id, drag_route, label)
 
 
-func _assert_k4_walk_drag_preview(
+func _assert_k4_walk_loop_preview(
 	ctx: Dictionary,
 	unit_id: int,
 	_bowling: AbilityData,
@@ -927,7 +965,7 @@ func _assert_k4_walk_drag_preview(
 	).is_equal(1)
 
 
-func _assert_k4_run_drag_preview(
+func _assert_k4_run_loop_preview(
 	ctx: Dictionary,
 	unit_id: int,
 	_bowling: AbilityData,
@@ -986,7 +1024,7 @@ func _drag_through_cells_with_route_checks(
 	var input: CombatPlanningInput = ctx.input
 	var director: CombatDirector = ctx.director
 	var unit_id: int = director.selected_unit_id
-	await _hover_cell(ctx, cells[0])
+	await _reposition_mouse_to_unit(ctx, ctx.director.selected_unit_id, cells[0])
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/press" % label_prefix)
