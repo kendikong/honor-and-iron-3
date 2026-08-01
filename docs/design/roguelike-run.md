@@ -33,6 +33,8 @@ Define v1 **run loop** spec (worksheet-gated implementation). **Doc gauntlet PAS
 | Co-op in v1 run loop (yes/no) | |
 | Save model (`user://` schema owner) | |
 
+**Human gate rule:** Doc gauntlet BAR = `lint_design_doc.ps1` only. Empty worksheet is expected in `DRAFT` and must **not** FAIL critic rounds. Worksheet completeness is owner-only and gates **`LOOP_READY`** promotion only — not doc-critic PASS.
+
 ## Decomposition
 
 1. Owner fills worksheet → spec `LOOP_READY`
@@ -61,7 +63,7 @@ GOAL: Run loop per filled worksheet
 BAR: run_state_test.gd PASS when implemented
 PASS_THRESHOLD: 88
 RULES: global-systems-first.mdc, roadmap.mdc
-ARTIFACT: this file, lint stdout; worksheet completeness for LOOP_READY
+ARTIFACT: this file, lint stdout; worksheet gates LOOP_READY only
 ```
 
 ## Tooling I/O

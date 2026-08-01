@@ -57,7 +57,7 @@ ARTIFACT:
 - relevant test stdout (lead runs BAR if critic cannot shell; paste raw output only)
 - screenshot paths if visual
 - reference asset path if visual (for A/B)
-Do not implement. SCORE/100 + PASS or FAIL + Infrastructure: ADEQUATE|INADEQUATE + Proposed infrastructure + largest gap + evidence.
+Do not implement. SCORE/100 + PASS or FAIL + Infrastructure + Proposed infrastructure + largest gap + evidence.
 ```
 
 ## Pillar quick thresholds

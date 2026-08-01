@@ -32,7 +32,7 @@ N/A
 | P2-ph11 | Phase 11 | `.\scripts\run_planning_qa_gate.ps1` PASS |
 | P2-ph12 | Phase 12 | `.\scripts\run_planning_qa_gate.ps1` PASS |
 | P2-ph13 | Phase 13 | `.\scripts\run_planning_qa_gate.ps1` PASS |
-| P2-ph14 | Phase 14 Knight re-gate | both scripts PASS |
+| P2-ph14 | Phase 14 Knight re-gate | `.\scripts\run_regression_tests.ps1` + `.\scripts\run_planning_qa_gate.ps1` PASS |
 
 ## Builder playbook
 

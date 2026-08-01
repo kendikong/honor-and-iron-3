@@ -50,9 +50,9 @@ Per skill/class: clone `docs/design/knight-template.md` critic playbook.
 
 ```text
 GOAL: P6 class rollout clones P3 machine bars per class
-BAR: lint PASS; run_planning_qa_gate.ps1 + run_skill_scenarios_only.gd paths per knight-template.md
+BAR: lint PASS; run_planning_qa_gate.ps1 + run_skill_scenarios_only.gd + run_mass_sim_test.gd (see critic playbook)
 PASS_THRESHOLD: 88
-RULES: skill-global-rules.mdc, knight-template.md
+RULES: skill-global-rules.mdc, knight-template.md, qa-after-gameplay-changes.mdc
 ARTIFACT: this file, knight-template.md, lint stdout
 ```
 
