@@ -34,8 +34,8 @@ NEXT: fix 5 active [+] implementations → re-add sim asserts → per-row critic
 | Field | Value |
 |-------|-------|
 | **Piece ID** | K3-LOCK (full matrix — owner threshold 95) |
-| **Critic pass** | r2 (gauntlet-critic subagent) |
-| **Last result** | **FAIL 44/95** — largest gap: self-grade + missing `[+]` sims |
+| **Critic pass** | r3 (gauntlet-critic subagent) |
+| **Last result** | **FAIL 64/95** — largest gap: 5 active `[+]` implementations |
 | **Largest gap** | 26 rows HARNESS_ONLY; manifest 4/30 |
 
 ---
