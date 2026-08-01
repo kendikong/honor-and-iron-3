@@ -1118,9 +1118,10 @@ func _refresh_selected_interaction_preview() -> void:
 			return
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
 		var target_id := _hover_attack_target_id()
-		_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
-		_refresh_click_target_highlight()
-		return
+		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
+			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
+			_refresh_click_target_highlight()
+			return
 	_restore_hover_preview()
 
 
@@ -2514,7 +2515,9 @@ func move_intent_destination(unit_id: int) -> Vector2i:
 	if unit_id == _director.selected_unit_id:
 		var hover: Vector2i = get_hover_tile_for_ui()
 		if _director.board != null and _director.board.is_in_bounds(hover):
-			return hover
+			var actor: UnitState = _proj_unit(unit_id)
+			if actor != null and _is_hover_move_cell(actor, hover):
+				return hover
 	return Vector2i(-999, -999)
 
 

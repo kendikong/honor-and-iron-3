@@ -1003,7 +1003,9 @@ func _probe_hover_edge_cases(
 	await _probe_hover_surface(ctx, unit_id, _OFF_BLUE_CELL, {
 		"blue_any": true,
 		"blue_not": [_OFF_BLUE_CELL],
-		"red_on": false,
+		"red_on": true,
+		"red_stand": red_stand,
+		"ability": ability,
 		"tiles_only_in_bounds": true,
 	}, "%s/off_blue" % label_prefix)
 	await _hover_mouse_off_map(ctx)
