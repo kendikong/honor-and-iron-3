@@ -1,6 +1,6 @@
 # Knight template (P3)
 
-**Status:** `DRAFT`  
+**Status:** `LOOP_READY` *(gauntlet C4: 89/88 PASS — commit `304320c30`)*  
 **Pillar ID:** P3  
 **Authority chain:** `class_abilities.txt` (Knight) · `docs/PLANNING_SKILL_QA_CHECKLIST.md` · `data/` factories
 
