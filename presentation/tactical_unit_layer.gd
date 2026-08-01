@@ -292,10 +292,24 @@ func _display_scale() -> float:
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
 	if _director != null and _director.plan_refresh_snap_units:
+		_sync_snap_plan_refresh_units()
 		return
 	_sync_actors()
 	_refresh_planning_visuals()
 	queue_redraw()
+
+
+func _sync_snap_plan_refresh_units() -> void:
+	if _board == null or _director == null:
+		return
+	for unit_id: int in _director.plan_affected_unit_ids:
+		var unit: UnitState = _board.get_unit_by_id(unit_id)
+		if unit == null or not unit.is_alive() or unit.is_enemy():
+			continue
+		_kill_move_tween(unit_id)
+		_position_actor(unit_id, unit.position)
+		_sync_planning_final_facing(unit_id)
+		_update_depth(unit_id)
 
 
 func _on_preview_updated(result: SimResult) -> void:
