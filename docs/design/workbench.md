@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ remaining-work-map │ Critic pass C4
+GAUNTLET SCORE │ verification-matrix │ Critic pass C6
 SCORE: 89/100 │ THRESHOLD: 88 │ PASS │ CLIMBING
-DELTA: +5 vs C3 (was 84)
-SUITE PASS: 4/14 │ matrix C5 pending (87/88)
+DELTA: +3 vs C5 (was 86)
+SUITE PASS: 5/14
 ══════════════════════════════════════
 ```
 

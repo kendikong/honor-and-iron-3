@@ -1,6 +1,6 @@
 # Verification matrix (P9)
 
-**Status:** `DRAFT`  
+**Status:** `LOOP_READY` *(gauntlet C6: 89/88 PASS)*  
 **Pillar ID:** P9  
 **Authority chain:** `docs/design/REMAINING_WORK_MAP.md` · `docs/PLANNING_QA_GATE.md` · `docs/design/00-remaining-work-suite-plan.md`
 
@@ -35,8 +35,9 @@ N/A
 | Class rollout | P6 | `.\scripts\run_planning_qa_gate.ps1` | `tests/run_mass_sim_test.gd` | Balance taste |
 | World / map | P7 | `docs/asset_manifest.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | P7 worksheet |
 | Presentation | P8 | `PLANNED — Sfx event map (P8 doc)` | `docs/design/presentation-audio-ui.md` | Typography/layout |
+| Verification matrix | P9 | `.\scripts\lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK |
 | Triage / autobattler | W4 appendix | `tests/run_mass_sim_test.gd` | `docs/design/appendices/mass-sim-balance.md` | Owner |
-| Design docs | meta | `.\scripts\lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK (SCORE ≥88 pillar / ≥90 meta) |
+| Design docs (meta) | meta | `.\scripts\lint_design_doc.ps1` | `docs/design/01-doc-polish-protocol.md` | Owner LOCK (SCORE ≥88 pillar / ≥90 meta) |
 
 **Mass sim CLI:**
 

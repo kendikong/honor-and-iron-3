@@ -186,7 +186,7 @@ Every pillar spec **must** include:
 | **P8** presentation | `PLANNED — Sfx event map (P8 doc)` | `docs/design/presentation-audio-ui.md` | Typography/layout |
 | **P9** matrix | `.\scripts\lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK |
 | **Triage / autobattler** | `tests/run_mass_sim_test.gd` | `docs/design/appendices/mass-sim-balance.md` | Owner |
-| **Docs (meta)** | `.\scripts\lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK (SCORE ≥88 pillar / ≥90 meta) |
+| **Docs (meta)** | `.\scripts\lint_design_doc.ps1` | `docs/design/01-doc-polish-protocol.md` | Owner LOCK (SCORE ≥88 pillar / ≥90 meta) |
 
 **Mass sim CLI (document in appendix):**
 

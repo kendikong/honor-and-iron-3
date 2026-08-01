@@ -10,7 +10,7 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 | [`REMAINING_WORK_MAP.md`](REMAINING_WORK_MAP.md) | What to build — milestone index | LOOP_READY |
 | [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) | Builder/critic loops | ACTIVE |
 | [`01-doc-polish-protocol.md`](01-doc-polish-protocol.md) | Doc polish process (P1) | DRAFT |
-| [`verification-matrix.md`](verification-matrix.md) | Machine bar per domain (P9) | DRAFT |
+| [`verification-matrix.md`](verification-matrix.md) | Machine bar per domain (P9) | LOOP_READY |
 | [`workbench.md`](workbench.md) | Live gauntlet scores | — |
 
 ## Pillar specs
