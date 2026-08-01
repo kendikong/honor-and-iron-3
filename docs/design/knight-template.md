@@ -43,6 +43,8 @@ Doc gauntlet BAR = lint + cited paths + honest matrix — **not** 100% matrix PA
 - Testing non-Knight classes (P6)
 - Per-ability `if ability.id` branches in sim/presentation
 - Critic-only PASS without deterministic scenario asserts
+- **Misusing global keywords** (e.g. SWAP for Bible “behind caster” reposition) — see `docs/KNIGHT_QA_GATE.md` § Global systems fidelity
+- **Heuristic one-off skill logic** that future abilities cannot reuse without new branches
 
 ## Human-only worksheet
 
@@ -66,13 +68,14 @@ N/A — Bible + matrix are authoritative. Owner defers rows only via explicit `N
 ## Builder playbook
 
 1. Read Bible § Knight + row in `docs/KNIGHT_QA_GATE.md`.
-2. **Actives / swap:** copy `tests/skills/shield_bash_scenario.gd` → `tests/skills/<id>_scenario.gd` (7-phase where planning applies).
-3. **Passives:** copy pattern from collision-style stub (PLANNED) — **must trigger** passive (push, hit, lethal, turn start).
-4. Wire data in `knight_factory.gd` / `.tres` — global systems only.
-5. Register in knight scenario registry; run `run_knight_qa_gate.ps1`.
-6. Submit **artifacts only** to meta-critic: stdout, matrix row, scenario file path, Bible excerpt.
-7. If critic says `Fix target: qa_test` — deepen asserts or fixture; if `implementation` — fix game/data.
-8. Core planning edits: run `run_planning_qa_gate.ps1` separately.
+2. **Map Bible → global system:** name exact `EffectType` / passive trigger in scenario header. If no exact global exists, add canonical effect in shared system (⚠ owner exception) — **never** pick a “close” keyword (see Rule B in gate doc; Suplex ≠ SWAP).
+3. **Actives / swap:** copy `tests/skills/shield_bash_scenario.gd` → `tests/skills/<id>_scenario.gd` (7-phase where planning applies).
+4. **Passives:** copy pattern from collision-style stub (PLANNED) — **must trigger** passive via shared hook (push, hit, lethal, turn start).
+5. Wire data in `knight_factory.gd` / `.tres` — global systems only; no per-id sim/presentation branches.
+6. Register in knight scenario registry; run `run_knight_qa_gate.ps1`.
+7. Submit **artifacts only** to meta-critic: stdout, matrix row, scenario file path, Bible excerpt + named global effect(s).
+8. If critic says `Fix target: qa_test` — deepen asserts or fixture; if `implementation` — fix game/data (wrong effect type = implementation).
+9. Core planning edits: run `run_planning_qa_gate.ps1` separately.
 
 ## Critic playbook (meta-QA — owner proxy)
 
@@ -96,12 +99,14 @@ Judge: matrix completeness vs factory, meta-critic contract, planning≠Knight s
 
 Judge per row:
 
+- **Global systems fidelity:** shared effect/trigger path (Rule A)? Bible-exact keyword — not misused SWAP/PUSH/etc. (Rule B)?
 - Asserts cover Bible base + `[+]` when `upgraded_effects` exist
-- Passive rows: real triggers, not stat-only
+- Scenario header names expected `EffectType` or passive trigger
+- Passive rows: real triggers via shared hooks, not stat-only
 - Recommendations: larger map, multi-knight fixture, packed scenarios
 - **Do not** conflate planning QA results with Knight score
 
-Handoff payload: see `docs/KNIGHT_QA_GATE.md` § Meta-critic.
+Handoff payload: see `docs/KNIGHT_QA_GATE.md` § Meta-critic and § Global systems fidelity.
 
 ## Gauntlet stub (K3-doc — doc critic only)
 

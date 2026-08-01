@@ -25,9 +25,10 @@
 The **gauntlet-critic** on Knight work is **not** only “tests green.” It judges:
 
 1. **Bible adherence** — does behavior match `class_abilities.txt` + data in `knight_factory.gd`?
-2. **Test adequacy** — does each scenario **prove** the Bible clauses it claims (base + `[+]` upgrade when implemented)?
-3. **Coverage** — every matrix row has a scenario (or documented owner deferral)?
-4. **Wrong owner** — failure in game vs failure in test design?
+2. **Global systems fidelity** — shared effects/triggers (Rule A)? Bible-exact keywords, not misused globals (Rule B)?
+3. **Test adequacy** — does each scenario **prove** the Bible clauses it claims (base + `[+]` upgrade when implemented)?
+4. **Coverage** — every matrix row has a scenario (or documented owner deferral)?
+5. **Wrong owner** — failure in game vs failure in test design?
 
 ### Critic outputs (required)
 
@@ -45,14 +46,64 @@ The **gauntlet-critic** on Knight work is **not** only “tests green.” It jud
 ```
 BAR failed?
   yes → assert names Bible clause?
-    yes → Fix implementation (data / AbilitySystem / effects)
+    yes → assert names correct global effect/trigger (Rule B)?
+      yes → Fix implementation (data / AbilitySystem / effects)
+      no  → Fix QA test (wrong effect asserted or header missing keyword)
     no  → Fix QA test (add asserts, triggers, upgrade tier)
   no  → critic: matrix row missing or scenario too shallow?
     yes → Fix QA (new scenario or deepen phases)
+    no  → critic: per-skill branch or misused keyword in production?
+    yes → Fix implementation (global systems fidelity Rule A/B)
     no  → PASS candidate for that ability row
 ```
 
 **Forbidden:** Using planning QA PASS as Knight sign-off. **Forbidden:** Changing `live_planning_scene_test.gd` for Knight coverage.
+
+---
+
+## Global systems fidelity (mandatory — implementation + QA)
+
+**Parent rules:** `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/skill-global-rules.mdc`. This section **double-enforces** them for Knight work and every P6 clone.
+
+### Rule A — Prefer shared global systems (reduce heuristics)
+
+Skills and passives must ride **existing** global paths so future abilities reuse the same machinery:
+
+| Layer | Use (not reinvent) |
+|-------|---------------------|
+| **Actives** | `EffectType` / `EffectData` in factory data · `AbilitySystem` · timeline · AP/MP · targeting modes |
+| **Passives** | Shared passive trigger hooks (collision, melee hit, lethal, turn start, adjacent count, etc.) — data-driven meta on `PassiveData` |
+| **Planning** | `PlanningChecklistHarness` · commit slots · `Simulator` — one truth path |
+| **QA** | Assert through production resolution — **no** parallel “test-only” skill logic or per-id branches |
+
+**Goal:** A new class skill should be **factory data + scenario**, not a new `if ability.id == …` branch in sim or presentation.
+
+### Rule B — Bible-exact keywords only (no “close enough” globals)
+
+Map Bible text to a global keyword **only when semantics match exactly**. If the Bible describes different behavior, use the **correct** shared effect — or add a **canonical** new effect in the global system (owner ⚠ exception if unavoidable). **Never** misuse a familiar keyword because it is “sort of similar.”
+
+| Bible intent | Wrong global | Why | Right approach |
+|--------------|--------------|-----|----------------|
+| **Suplex:** move target to empty tile **behind** caster | `EffectType.SWAP` | SWAP = **exchange** positions; no forced behind placement | `THROW_BEHIND` / reposition effect (see `bruiser_suplex` in factory) |
+| **Swap (movement skill):** exchange tiles with target/ally | Custom teleport or PUSH chain | Bible names swap | `EffectType.SWAP` in movement ability data |
+| **PUSH 2** into wall | SWAP or TELEPORT | Displacement ≠ exchange | `PUSH` + collision pipeline |
+| Passive: “on melee hit” | Poll HP every frame in presentation | Wrong owner / heuristic | Shared on-hit passive trigger in sim |
+
+**Authority order:** `class_abilities.txt` clause → match to global definition (`ui/class_library_schema.gd` keyword hints, `EffectType` resolution) → factory `.tres` / `*_factory.gd`. Bible wins over convenience.
+
+### QA + meta-critic enforcement
+
+Scenarios must prove **both** rules:
+
+1. **Scenario header** cites Bible clause **and** names expected global effect(s) or passive trigger (e.g. `EffectType.PUSH`, `collision_retaliator` on collision).
+2. **Asserts** verify outcome through shared resolution (sim events, board positions, status stacks) — not a one-off test helper that bypasses `AbilitySystem` / passive pipeline.
+3. **Meta-critic FAIL** (`Fix target: implementation`) when:
+   - Wrong effect type for Bible text (SWAP used for behind-placement, etc.)
+   - Per-skill branch in production code where data/effects could express it
+   - Passive tested via stat read only — no real trigger fired
+4. **Meta-critic FAIL** (`Fix target: qa_test`) when scenario does not assert the **named** global effect/trigger even though implementation is correct.
+
+**Forbidden (implementation + QA):** Keyword shopping — picking SWAP/PUSH/PULL because the test is easier. **Forbidden:** New heuristics that the next skill cannot reuse without another special case.
 
 ---
 
@@ -121,10 +172,11 @@ Registry today: `tests/planning_skill_scenarios_test.gd` — expand to `tests/kn
 Each `tests/skills/<id>_scenario.gd` (or `tests/passives/<id>_scenario.gd`) must:
 
 1. Cite **Bible clause** in file header (one-line expected behavior).
-2. Run **planning phases** where applicable (actives) or **sim-only trigger** (passives).
-3. Assert **base** and **`[+]` upgrade** when `upgraded_effects` exist in factory data.
-4. Use `PlanningChecklistHarness` / headless `Simulator` — no parallel preview path.
-5. Register in knight scenario registry (not planning QA legacy tier).
+2. Name **expected global effect(s) or passive trigger** in the same header (per § Global systems fidelity — Rule B).
+3. Run **planning phases** where applicable (actives) or **sim-only trigger** (passives).
+4. Assert **base** and **`[+]` upgrade** when `upgraded_effects` exist in factory data.
+5. Assert outcomes via **`PlanningChecklistHarness` / headless `Simulator`** — no parallel preview path, no test-only skill logic.
+6. Register in knight scenario registry (not planning QA legacy tier).
 
 **Promotion:** `HARNESS_ONLY` → `PASS` only after meta-critic approves adequacy for that row.
 
@@ -173,9 +225,9 @@ godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd
 ## Gauntlet stub (Knight QA gate doc — K3-doc companion)
 
 ```text
-GOAL: Knight class QA spec — full factory matrix, honest status legend, meta-critic contract, separate from planning QA
-BAR: lint PASS (pillar knight-template); matrix lists all knight_factory ids; decision tree present; gate script exists on disk
+GOAL: Knight class QA spec — full factory matrix, global systems fidelity (Rule A/B), meta-critic contract, separate from planning QA
+BAR: lint PASS (pillar knight-template); matrix lists all knight_factory ids; § Global systems fidelity present; decision tree present; gate script exists on disk
 PASS_THRESHOLD: 88
-RULES: skill-global-rules.mdc, global-systems-first.mdc
+RULES: skill-global-rules.mdc, global-systems-first.mdc, move-preview-intent-truth.mdc
 ARTIFACT: this file, docs/design/knight-template.md, core/factory/classes/knight_factory.gd, scripts/run_knight_qa_gate.ps1
 ```

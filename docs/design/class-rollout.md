@@ -20,6 +20,17 @@ Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, clonin
 
 - Knight re-work (use P3 LOCK)
 - Per-class global rule exceptions without owner approval
+- Misusing global keywords for “close enough” Bible text (clone `docs/KNIGHT_QA_GATE.md` § Global systems fidelity)
+
+## Global systems fidelity (P6 — clone from P3)
+
+Every shipped class must follow **`docs/KNIGHT_QA_GATE.md` § Global systems fidelity**:
+
+- **Rule A:** Factory data + shared `EffectType` / passive triggers — no per-skill heuristics.
+- **Rule B:** Bible-exact keywords only (e.g. behind-placement ≠ SWAP).
+- **QA:** Scenario headers name Bible clause + expected global effect; meta-critic FAIL on keyword mismatch.
+
+Copy that section verbatim into each `docs/<CLASS>_QA_GATE.md` at P6 split.
 
 ## Human-only worksheet
 
@@ -35,8 +46,9 @@ N/A
 ## Builder playbook
 
 1. Read class section in `class_abilities.txt`.
-2. Clone `tests/skills/shield_bash_scenario.gd` per skill; register in `tests/planning_skill_scenarios_test.gd`.
-3. Run class QA gate (PLANNED) + `godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd` (or class-specific runner when split).
+2. Map each skill/passive to **exact** global effect or passive trigger (`docs/KNIGHT_QA_GATE.md` § Global systems fidelity) before writing factory data or scenarios.
+3. Clone `tests/skills/shield_bash_scenario.gd` per skill; register in class scenario registry.
+4. Run class QA gate + `run_skill_scenarios_only.gd` (or per-class runner when split).
 
 ## Critic playbook
 
@@ -69,6 +81,7 @@ ARTIFACT: this file, knight-template.md, lint stdout
 
 - [ ] Each shipped class has full scenario coverage
 - [ ] No per-skill global bypasses
+- [ ] No Bible/keyword mismatches (Rule B) in factory data or scenarios
 
 ## Doc polish scorecard
 
