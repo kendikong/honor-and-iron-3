@@ -5,6 +5,7 @@ param(
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $matrixDoc = Join-Path $projectRoot "docs\KNIGHT_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\knight_meta_critic_manifest.json"
 
 Write-Output "=== Knight QA gate (class validation - NOT planning QA) ==="
 Write-Output "Spec: docs/KNIGHT_QA_GATE.md"
@@ -56,6 +57,36 @@ Write-Output ("HARNESS_ONLY:  {0}" -f $harnessRows.Count)
 Write-Output ("PLANNED/other: {0}" -f $plannedRows.Count)
 Write-Output ""
 
+$manifestApproved = @()
+$manifestThreshold = 95
+if (Test-Path $manifestPath) {
+	$manifest = Get-Content -Path $manifestPath -Raw | ConvertFrom-Json
+	if ($null -ne $manifest.pass_threshold) {
+		$manifestThreshold = [int]$manifest.pass_threshold
+	}
+	foreach ($row in $manifest.approved_rows) {
+		if ($null -ne $row.factory_id) {
+			$manifestApproved += [string]$row.factory_id
+		}
+	}
+	Write-Output ("=== Meta-critic manifest ({0} approved, threshold {1}) ===" -f $manifestApproved.Count, $manifestThreshold)
+} else {
+	Write-Output "[WARN] Missing manifest: docs/knight_meta_critic_manifest.json"
+}
+
+$unapprovedPass = @($passRows | Where-Object { $manifestApproved -notcontains $_ })
+if ($unapprovedPass.Count -gt 0) {
+	Write-Output "[FAIL] Matrix PASS without manifest approval: $($unapprovedPass -join ', ')"
+	$matrixPassValid = $false
+} elseif ($passRows.Count -gt $manifestApproved.Count) {
+	Write-Output "[FAIL] Matrix PASS count exceeds manifest approved count."
+	$matrixPassValid = $false
+} else {
+	$matrixPassValid = $true
+}
+
+Write-Output ""
+
 if ($passRows.Count -lt $requiredFactoryIds.Count) {
 	Write-Output "[INCOMPLETE] Knight LOCK requires all factory rows PASS (meta-critic approved)."
 	if ($harnessRows.Count -gt 0) {
@@ -100,6 +131,10 @@ if ($harnessPass) {
 
 Write-Output ""
 Write-Output "=== Knight QA gate summary ==="
+if (-not $matrixPassValid) {
+	Write-Output "[FAIL] Matrix contains self-graded PASS rows (manifest mismatch). Fix docs or update manifest via gauntlet-critic only."
+	exit 3
+}
 if ($passRows.Count -eq $requiredFactoryIds.Count) {
 	Write-Output "[PASS] Knight QA gate: matrix 100% PASS + Tier 1 harness PASS."
 	exit 0

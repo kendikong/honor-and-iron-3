@@ -1,0 +1,33 @@
+{
+  "piece": "K3-LOCK",
+  "pass_threshold": 95,
+  "last_critic_round": 2,
+  "last_score": 44,
+  "last_result": "FAIL",
+  "approved_rows": [
+    {
+      "factory_id": "knight_swap",
+      "score": 90,
+      "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_shield_bash",
+      "score": 90,
+      "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_chain_hook",
+      "score": 90,
+      "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "collision_retaliator",
+      "score": 90,
+      "critic_round": 2,
+      "fix_target": "none"
+    }
+  ]
+}

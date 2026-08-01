@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight-template K3-doc │ Round K3-r1
-SCORE: 90/100 │ THRESHOLD: 88 │ PASS
-DELTA: +1 vs C4 (89) — full moveset + meta-critic scope
-NEXT: K3-LOCK — one matrix row per gauntlet piece (0/30 PASS)
+GAUNTLET SCORE │ knight-template K3-LOCK │ Round 2
+SCORE: 44/100 │ THRESHOLD: 95 │ FAIL
+DELTA: −7 vs round 1 (51/100)
+NEXT: revert self-grade → deepen [+] sims → re-critic (Critic: yes)
 ══════════════════════════════════════
 ```
 
@@ -24,7 +24,7 @@ NEXT: K3-LOCK — one matrix row per gauntlet piece (0/30 PASS)
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-doc PASS** — K3-LOCK active (implementation) |
+| **Status** | **K3-LOCK gauntlet loop** — critic r2 **44/95 FAIL** (4/30 manifest PASS) |
 | **Lead session** | knight-template-gauntlet-rerun |
 
 ---
@@ -33,10 +33,10 @@ NEXT: K3-LOCK — one matrix row per gauntlet piece (0/30 PASS)
 
 | Field | Value |
 |-------|-------|
-| **Piece ID** | K3-actives / K3-passives (per matrix row) |
-| **Critic pass** | K3-r1 |
-| **Last result** | knight-template **PASS 90/88** |
-| **Largest gap** | 0/30 matrix PASS; passives untested |
+| **Piece ID** | K3-LOCK (full matrix — owner threshold 95) |
+| **Critic pass** | r2 (gauntlet-critic subagent) |
+| **Last result** | **FAIL 44/95** — largest gap: self-grade + missing `[+]` sims |
+| **Largest gap** | 26 rows HARNESS_ONLY; manifest 4/30 |
 
 ---
 

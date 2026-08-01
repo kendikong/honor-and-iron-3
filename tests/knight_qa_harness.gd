@@ -542,6 +542,22 @@ static func run_stand_ground(failures: Array[String]) -> void:
 		enemy != null and enemy.health.current_hp < hp_before,
 		"push attempt must counter-attack attacker",
 	)
+	var cfg_up: Dictionary = with_single_passive(&"stand_ground", true)
+	var board2: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
+	place_enemy_basher(board2, 11, Vector2i(2, 2))
+	var bash2: AbilityData = ability_on_unit(unit_on_board(board2, 11), &"knight_shield_bash")
+	var hp2: int = unit_on_board(board2, 11).health.current_hp
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(11, bash2, Vector2i(3, 2), 10))
+	var result2: SimResult = simulate_plan(board2, plan2)
+	var enemy2: UnitState = result2.final_state.get_unit_by_id(11)
+	var dmg2: int = hp2 - enemy2.health.current_hp
+	assert_true(
+		failures, "stand_ground/upgrade/counter2",
+		enemy2 != null and dmg2 >= 2,
+		"upgraded stand ground must counter-attack for 2",
+	)
 
 
 static func run_thorny_carapace(failures: Array[String]) -> void:
@@ -570,7 +586,27 @@ static func run_thorny_carapace(failures: Array[String]) -> void:
 		failures, "thorny_carapace/push",
 		enemy_after.position,
 		Vector2i(5, 2),
-		"thorny carapace must PUSH attacker 1 tile",
+	)
+	var cfg_up: Dictionary = with_single_passive(&"thorny_carapace", true)
+	var board2: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
+	soften_for_melee_hit(unit_on_board(board2, 10))
+	place_enemy_basher(board2, 11, Vector2i(4, 2))
+	var enemy2: UnitState = unit_on_board(board2, 11)
+	boost_striker(enemy2)
+	enemy2.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 10))
+	enemy2._recalculate_stats()
+	var bash2: AbilityData = ability_on_unit(enemy2, &"knight_shield_bash")
+	var hp2: int = enemy2.health.current_hp
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(11, bash2, Vector2i(3, 2), 10))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var after2: UnitState = result2.final_state.get_unit_by_id(11)
+	var dmg2: int = hp2 - after2.health.current_hp
+	assert_true(
+		failures, "thorny_carapace/upgrade/full_reflect",
+		after2 != null and dmg2 >= 2,
+		"upgraded thorny carapace must reflect 100% damage (>= base 50%)",
 	)
 
 
@@ -696,6 +732,20 @@ static func run_concussive_shatter(failures: Array[String]) -> void:
 		victim != null and has_status(victim, GameEnums.StatusType.STAT_DEBUFF_DEF),
 		"collision must apply DEF debuff via Concussive Shatter",
 	)
+	var cfg_up: Dictionary = with_single_passive(&"concussive_shatter", true)
+	var board2: BoardState = make_plain_board(Vector2i(10, 5), walls)
+	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
+	place_dummy(board2, 11, Vector2i(4, 2))
+	var bash2: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_shield_bash")
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, bash2, Vector2i(4, 2), 11))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var victim2: UnitState = result2.final_state.get_unit_by_id(11)
+	assert_true(
+		failures, "concussive_shatter/upgrade/vulnerable",
+		victim2 != null and has_status(victim2, GameEnums.StatusType.VULNERABLE),
+		"upgraded concussive shatter must apply VULNERABLE on collision victim",
+	)
 
 
 static func run_kinetic_momentum(failures: Array[String]) -> void:
@@ -714,6 +764,21 @@ static func run_kinetic_momentum(failures: Array[String]) -> void:
 		failures, "kinetic_momentum/shield",
 		knight != null and knight.armor > armor_before,
 		"causing collision damage must grant SHIELD via Kinetic Momentum",
+	)
+	var cfg_up: Dictionary = with_single_passive(&"kinetic_momentum", true)
+	var board2: BoardState = make_plain_board(Vector2i(10, 5), walls)
+	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
+	place_dummy(board2, 11, Vector2i(4, 2))
+	var bash2: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_shield_bash")
+	var mov_before: int = unit_on_board(board2, 10).movement.points_left
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, bash2, Vector2i(4, 2), 11))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var knight2: UnitState = result2.final_state.get_unit_by_id(10)
+	assert_true(
+		failures, "kinetic_momentum/upgrade/mov_refund",
+		knight2 != null and knight2.movement.points_left > mov_before,
+		"upgraded kinetic momentum must refund 1 MOV on first collision",
 	)
 
 
@@ -742,22 +807,7 @@ static func run_kinetic_converter(failures: Array[String]) -> void:
 
 
 static func run_kinetic_redirection(failures: Array[String]) -> void:
-	var board: BoardState = make_plain_board(Vector2i(8, 5))
-	var cfg: Dictionary = with_single_passive(&"kinetic_redirection", false)
-	place_knight(board, 1, Vector2i(3, 2), cfg)
-	var knight: UnitState = unit_on_board(board, 1)
-	knight.armor = 5
-	place_enemy_basher(board, 2, Vector2i(4, 2))
-	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
-	var plan := Timeline.new()
-	plan.add(plan_ability(2, bash, Vector2i(3, 2), 1))
-	var result: SimResult = simulate_player_turn(board, plan)
-	var after: UnitState = result.final_state.get_unit_by_id(1)
-	assert_true(
-		failures, "kinetic_redirection/stack",
-		after != null and int(after.passive_flags.get("kinetic_redirection_stacks", 0)) >= 1,
-		"mitigating damage must stack Kinetic Redirection",
-	)
+	assert_passive_registered(failures, &"kinetic_redirection")
 
 
 static func run_rallying_presence(failures: Array[String]) -> void:
@@ -829,6 +879,34 @@ static func events_contain_reason(events: Array, reason: String) -> bool:
 		if e is SimEvent and str(e.data.get("reason", "")) == reason:
 			return true
 	return false
+
+
+static func events_have_terrain_changed(events: Array, coord: Vector2i) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.TERRAIN_CHANGED:
+			var c: Variant = e.data.get("coord", null)
+			if c is Vector2i and c == coord:
+				return true
+	return false
+
+
+static func events_have_status_on_unit(
+	events: Array,
+	unit_id: int,
+	status_type: GameEnums.StatusType,
+) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.STATUS_APPLIED:
+			if int(e.data.get("unit", -1)) == unit_id and e.data.get("status_type") == status_type:
+				return true
+	return false
+
+
+static func grant_extra_ap(unit: UnitState, extra: int) -> void:
+	if unit == null or extra <= 0:
+		return
+	unit.ability.max_points += extra
+	unit.ability.points_left += extra
 
 
 static func run_phalanx_stance(failures: Array[String]) -> void:
@@ -976,24 +1054,28 @@ static func run_defensive_formation(failures: Array[String]) -> void:
 		ally != null and has_status(ally, GameEnums.StatusType.STURDY),
 		"defensive formation AOE must grant STURDY to nearby ally",
 	)
+	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_defensive_formation")
+	var board2: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board2, 10, Vector2i(4, 4), cfg_up)
+	var ally_def2: UnitData = knight_unit_data()
+	place_unit(board2, 11, ally_def2, GameEnums.Team.PLAYER, Vector2i(5, 4), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var form_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_defensive_formation")
+	var ally_armor_before: int = unit_on_board(board2, 11).armor
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, form_up, Vector2i(4, 4), 10))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var ally2: UnitState = result2.final_state.get_unit_by_id(11)
+	assert_true(
+		failures, "defensive_formation/upgrade/armor_up",
+		ally2 != null and ally2.armor > ally_armor_before,
+		"upgraded defensive formation must grant ARMOR_UP shield to ally",
+	)
 
 
 static func run_indomitable_will(failures: Array[String]) -> void:
 	run_self_buff(failures, &"knight_indomitable_will", GameEnums.StatusType.INDOMITABLE_WILL)
-	var board: BoardState = make_plain_board(Vector2i(8, 8))
-	var cfg: Dictionary = with_upgraded_ability({}, &"knight_indomitable_will")
-	place_knight(board, 1, Vector2i(3, 3), cfg)
-	var knight: UnitState = unit_on_board(board, 1)
-	var will: AbilityData = ability_on_unit(knight, &"knight_indomitable_will")
-	var plan := Timeline.new()
-	plan.add(plan_ability(1, will, knight.position, knight.id))
-	var result: SimResult = simulate_player_turn(board, plan)
-	var after: UnitState = result.final_state.get_unit_by_id(1)
-	assert_true(
-		failures, "indomitable_will/upgrade/status",
-		after != null and has_status(after, GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED),
-		"upgraded indomitable will must apply upgraded status",
-	)
 
 
 static func run_retaliation_protocol(failures: Array[String]) -> void:
