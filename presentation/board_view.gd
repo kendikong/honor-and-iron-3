@@ -3755,7 +3755,8 @@ func _spawn_floating_text(u_id: int, amount: int, dmg_type: StringName) -> void:
 	var pos: Vector2 = _visual[u_id]["pos"] + jitter
 	
 	var ft = _floating_text_scene.instantiate()
-	add_child(ft)
+	var host: Node = get_viewport() if get_viewport() != null else self
+	host.add_child(ft)
 	ft.z_index = 100
 	var color := Color.WHITE
 	match dmg_type:
@@ -3767,7 +3768,7 @@ func _spawn_floating_text(u_id: int, amount: int, dmg_type: StringName) -> void:
 		&"hazard", &"chasm", &"collision": color = Color(0.8, 0.4, 0.1)
 		&"heal": color = Color(0.2, 1.0, 0.2)
 		_: color = Color.WHITE
-	ft.setup(pos, str(amount), color)
+	ft.setup(to_global(pos), str(amount), color)
 
 func _append_log(text: String) -> void:
 	if text.strip_edges().is_empty():

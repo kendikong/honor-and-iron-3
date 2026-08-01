@@ -44,6 +44,8 @@ var _downed_actors: Array[CharacterActor] = []
 var _damage_flash: Dictionary = {}
 var _hit_bursts: Array = []
 var _sfx: SfxPlayer
+var _floater_layer: CanvasLayer
+var _combat_text_scale: float = 1.0
 var _spellcast_target_ids: Dictionary = {}
 var _pending_spellcast_damage: Dictionary = {}
 var _pending_spellcast_deaths: Dictionary = {}
@@ -128,6 +130,7 @@ func apply_settings(settings: GameSettings) -> void:
 	if settings == null:
 		return
 	_show_team_outlines = settings.show_team_outlines
+	_combat_text_scale = settings.combat_text_scale
 	_refresh_unit_glows()
 
 
@@ -805,16 +808,23 @@ func spawn_floating_damage(unit_id: int, amount: int, dmg_type: StringName) -> v
 		return
 	spawn_pos += Vector2(randf_range(-4.0, 4.0), randf_range(-3.0, 2.0))
 	var color: Color = _damage_number_color(dmg_type)
-	var ui_scale: float = _floating_text_scale()
 	var label: String = ("+%d" % amount) if dmg_type == &"heal" else str(amount)
+	var canvas_pos: Vector2 = to_global(spawn_pos)
 	var ft: FloatingText = _FloatingTextScene.instantiate()
-	ft.z_index = 40
-	add_child(ft)
-	ft.setup(spawn_pos, label, color, ui_scale)
+	var layer: CanvasLayer = _ensure_floater_layer()
+	layer.add_child(ft)
+	ft.setup(canvas_pos, label, color, _combat_text_scale)
 
 
-func _floating_text_scale() -> float:
-	return maxf(1.5, _display_scale() * 0.9)
+func _ensure_floater_layer() -> CanvasLayer:
+	if _floater_layer != null and is_instance_valid(_floater_layer):
+		return _floater_layer
+	_floater_layer = CanvasLayer.new()
+	_floater_layer.name = "CombatFloaters"
+	_floater_layer.layer = 24
+	var host: Node = _map_view if _map_view != null else self
+	host.add_child(_floater_layer)
+	return _floater_layer
 
 
 func _damage_number_color(dmg_type: StringName) -> Color:

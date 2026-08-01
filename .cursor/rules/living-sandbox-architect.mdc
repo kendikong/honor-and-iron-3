@@ -66,7 +66,9 @@ Any response that makes file changes **must** end with a **## Changelog** sectio
 - **GPU Over CPU:** Do not use `_draw()` loops or `_process()` for thousands of grass blades or environmental physics. Push ambient liveliness to GPU Shaders and `GPUParticles2D`.
 - **Feature toggles (mandatory):** Every phase living-system effect ships with an `EffectsSettings` bool, an `EffectsPanel` checkbox, and an `EffectsController.apply_*` path. Persist toggles in `user://game_settings.cfg`. Disabling a toggle must fully stop that system's visuals and CPU/GPU work (autoload `process_mode`, material teardown, VFX erase).
 
-## 5. PIXEL-PERFECT RENDER MANDATE (CRITICAL)
+## 5. PIXEL-PERFECT RENDER MANDATE (WORLD ART)
+
+Applies to tiles, sprites, and environmental shaders under the map root — **not** HUD, floaters, or planning UI (`sandbox_map_system.md` §2 World art vs presentation layer).
 
 - **Quantized Shaders:** Standard vertex displacement causes sub-pixel smearing, destroying the 16×16 retro aesthetic. ALL shader movement (wind sway, water ripples, floating) MUST be quantized/snapped to the nearest whole pixel using `round()` or `floor()`.
-- **Texture Filtering:** All materials, canvases, and `TileMapLayer` nodes must strictly use **Nearest** texture filtering. Smooth sub-pixel rotation or interpolation is an instant failure.
+- **Texture Filtering:** World `TileMapLayer` nodes and sprite materials must strictly use **Nearest** texture filtering. Presentation-layer combat floaters and HUD use crisp full-resolution fonts on `CanvasLayer`.

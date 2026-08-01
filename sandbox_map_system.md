@@ -33,7 +33,22 @@ The root of the render pipeline MUST be a low-res SubViewport (e.g., 320×180) s
 
 The Mana Seed collection is composed of intentionally arranged pixel clusters. These clusters are part of the artwork itself.
 
-**The AI must preserve pixel integrity above all visual effects. A perfectly static sprite is preferable to a distorted sprite.**
+**The AI must preserve pixel integrity above all visual effects on world-authored content. A perfectly static sprite is preferable to a distorted sprite.**
+
+### World art vs presentation layer (HD-2D split)
+
+The pixel integrity mandate applies to **battlefield world content**: `TileMapLayer` tiles, LPC character sprites, obstacle art, environmental shaders, and shadows composited on the map.
+
+It does **not** apply to **presentation-layer** UI and combat feedback rendered above the map scale transform:
+
+- Combat HUD, menus, inspectors, and tooltips
+- Floating damage/heal numbers and screen-space hit feedback
+- Planning overlays, cursors, timeline UI, and ability icons
+- Non-diegetic combat VFX (flashes, banners, telegraphs drawn as UI)
+
+These elements render at **full viewport resolution** on `CanvasLayer` nodes (not inside the map root scale). Use **crisp antialiased fonts**, clean outlines, and smooth motion — the HD-2D pattern (e.g. Octopath, Triangle Strategy): retro world art with modern, readable UI and VFX.
+
+**Do not** force presentation-layer elements through SubViewport downscale, faux low-res pixel filtering, or map-root scale transforms. That produces muddy, blurred UI. World art stays pixel-perfect; UI/VFX stay sharp.
 
 ### Rule 1: Never Shear Pixel Clusters (The Forbidden List)
 
@@ -86,7 +101,7 @@ To achieve modern smoothness without breaking retro pixels, implement the **Subp
 
 This allows the camera to pan smoothly while ensuring the pixel art environment never shimmers, distorts, or misaligns.
 
-**Texture filtering:** All materials, canvases, and `TileMapLayer` nodes must use **Nearest** filtering only.
+**Texture filtering:** All **world** materials, world `CanvasItem` nodes under the map root, and `TileMapLayer` nodes must use **Nearest** filtering only. Presentation-layer `CanvasLayer` UI and combat floaters are exempt — use default crisp font rendering.
 
 ---
 

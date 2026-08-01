@@ -1,59 +1,56 @@
 class_name FloatingText
 extends Label
 
-## Combat floater — light snap, readable at map scale.
+## Screen-space combat floater — crisp HD-2D UI text (not map-scaled world art).
 
 const ACCUMULATION_DURATION: float = 0.45
-const BASE_FONT_SIZE: int = 11
-const BASE_OUTLINE: int = 2
-const POP_SCALE: float = 1.06
+const BASE_FONT_REF: int = 22
+const BASE_OUTLINE: int = 3
+const RISE_PX: float = 30.0
 
-var _accumulated_damage: int = 0
 var _current_tween: Tween
 var _base_pos: Vector2 = Vector2.ZERO
-var _ui_scale: float = 1.0
 
 
 func _ready() -> void:
-	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	set("theme_override_colors/font_outline_color", Color(0.05, 0.02, 0.08, 1.0))
+	add_theme_color_override("font_outline_color", Color(0.04, 0.04, 0.08, 1.0))
 	modulate.a = 1.0
-	scale = Vector2.ZERO
 
 
-func setup(pos: Vector2, text_val: String, color: Color, ui_scale: float = 1.0) -> void:
-	_ui_scale = maxf(ui_scale, 1.25)
-	_base_pos = Vector2(roundf(pos.x), roundf(pos.y))
-	position = _base_pos
+func setup(canvas_pos: Vector2, text_val: String, color: Color, text_scale: float = 1.0) -> void:
+	var scale_factor: float = maxf(text_scale, 0.75)
+	_base_pos = Vector2(roundf(canvas_pos.x), roundf(canvas_pos.y))
+	global_position = _base_pos
 	text = text_val
-	var font_size: int = maxi(10, roundi(float(BASE_FONT_SIZE) * _ui_scale))
+	var font_size: int = maxi(16, roundi(float(BASE_FONT_REF) * scale_factor))
 	add_theme_font_size_override("font_size", font_size)
-	add_theme_constant_override("outline_size", maxi(2, roundi(float(BASE_OUTLINE) * _ui_scale)))
+	add_theme_constant_override(
+		"outline_size",
+		maxi(2, roundi(float(BASE_OUTLINE) * scale_factor * 0.85)),
+	)
 	add_theme_color_override("font_color", color)
-	_accumulated_damage = text_val.to_int()
-	_animate()
+	_animate(scale_factor)
 
 
-func _animate() -> void:
+func _animate(text_scale: float) -> void:
 	if _current_tween != null and _current_tween.is_valid():
 		_current_tween.kill()
-	scale = Vector2.ONE
 	modulate.a = 1.0
-	position = _base_pos
-	var rise: float = 18.0 * _ui_scale
+	var rise: float = RISE_PX * text_scale
+	var end_pos: Vector2 = _base_pos + Vector2(0.0, -rise)
 	_current_tween = create_tween()
-	_current_tween.set_parallel(true)
-	_current_tween.tween_property(self, "scale", Vector2(POP_SCALE, POP_SCALE), 0.08).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_LINEAR)
-	_current_tween.tween_property(
-		self,
-		"position",
-		_base_pos + Vector2(0.0, -rise),
+	_current_tween.tween_method(
+		_set_canvas_position,
+		_base_pos,
+		end_pos,
 		ACCUMULATION_DURATION + 0.25,
-	).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_LINEAR)
-	_current_tween.chain().tween_property(self, "scale", Vector2.ONE, 0.06).set_trans(Tween.TRANS_LINEAR)
-	_current_tween.set_parallel(false)
-	_current_tween.tween_interval(ACCUMULATION_DURATION)
-	_current_tween.tween_property(self, "modulate:a", 0.0, 0.22).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_LINEAR)
+	).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	_current_tween.tween_interval(0.08)
+	_current_tween.tween_property(self, "modulate:a", 0.0, 0.22).set_ease(Tween.EASE_IN)
 	_current_tween.tween_callback(queue_free)
+
+
+func _set_canvas_position(pos: Vector2) -> void:
+	global_position = Vector2(roundf(pos.x), roundf(pos.y))
