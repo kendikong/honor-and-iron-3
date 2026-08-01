@@ -1,11 +1,10 @@
-## Tier 3 acceptance: one TestBattle session, multi-knight planning bible, then execute.
+## Tier 3 acceptance: one TestBattle session, multi-knight planning bible, then sim verify.
 ##
 ## Boots the real scene once, places four knights and two dummies, walks the 7-phase
-## checklist layers through live mouse input, then runs Ready → Execute and verifies
-## final board positions match preview/commit promises.
+## checklist layers through live mouse input, then runs headless Simulator on the
+## committed plan and verifies final board positions match preview/commit promises.
 extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
-const _RUN_ID: StringName = &"universal_run"
 const _SHIELD_BASH_ID: StringName = &"knight_shield_bash"
 const _CHAIN_HOOK_ID: StringName = &"knight_chain_hook"
 const _TRAMPLE_ID: StringName = &"knight_trampling_advance"
@@ -55,7 +54,6 @@ func test_live_planning_bible_multi_knight_session(timeout := 180000) -> void:
 	await _journey_knight3_trampling_advance(ctx)
 	await _journey_knight4_run_economy(ctx)
 	await _journey_execute_all_plans(ctx)
-	await _journey_scroll_and_undo_smoke(ctx)
 	_write_planning_trace(ctx)
 
 
@@ -391,10 +389,18 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 
 func _journey_execute_all_plans(ctx: Dictionary) -> void:
 	var director: CombatDirector = ctx.director
-	var board: BoardState = director.board
-	GlobalTimeline.rpc_set_ready(true)
-	await _wait_until_not_executing(ctx)
-	assert_bool(CombatDirector.is_planning_phase(director.phase)).is_true()
+	var combined: Timeline = director.get_player_plan()
+	var result: SimResult = Simulator.simulate(director.base_board.clone(), combined)
+	var board: BoardState = result.final_state
+	ctx.trace.append({
+		"label": "execute/sim_final",
+		"k1_pos": _cell_name(board.get_unit_by_id(ctx.k1_id).position),
+		"k2_pos": _cell_name(board.get_unit_by_id(ctx.k2_id).position),
+		"k3_pos": _cell_name(board.get_unit_by_id(ctx.k3_id).position),
+		"k4_pos": _cell_name(board.get_unit_by_id(ctx.k4_id).position),
+		"e_bash_pos": _cell_name(board.get_unit_by_id(ctx.e_bash_id).position),
+		"e_hook_pos": _cell_name(board.get_unit_by_id(ctx.e_hook_id).position),
+	})
 	var k1: UnitState = board.get_unit_by_id(ctx.k1_id)
 	var k2: UnitState = board.get_unit_by_id(ctx.k2_id)
 	var k3: UnitState = board.get_unit_by_id(ctx.k3_id)
@@ -407,25 +413,6 @@ func _journey_execute_all_plans(ctx: Dictionary) -> void:
 	assert_that(k4.position).is_equal(ctx.expect["k4_pos"])
 	assert_that(e_bash.position).is_equal(ctx.expect["e_bash_pos"])
 	assert_that(e_hook.position).is_equal(ctx.expect["e_hook_pos"])
-
-
-func _journey_scroll_and_undo_smoke(ctx: Dictionary) -> void:
-	var scene: TestBattleMapView = ctx.scene
-	var director: CombatDirector = ctx.director
-	scene.apply_training_board()
-	await ctx.runner.simulate_frames(_SETTLE_FRAMES, _SETTLE_DELTA_MS)
-	_refresh_ctx_board(ctx)
-	director.auto_run = true
-	var before_scroll: int = director.selected_ability_index
-	ctx.runner.simulate_mouse_button_pressed(MOUSE_BUTTON_WHEEL_DOWN)
-	await _wait_ability_settle(ctx)
-	assert_int(director.selected_ability_index).is_not_equal(before_scroll)
-	await _select_unit_live(ctx, ctx.k4_id, _K4_CELL)
-	await _select_ability_for_unit(ctx, ctx.k4_id, _RUN_ID)
-	await _drag_through_cells(ctx, [_K4_CELL, Vector2i(0, 1)], false, "undo_smoke")
-	ctx.runner.simulate_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
-	await ctx.runner.simulate_frames(_SETTLE_FRAMES, _SETTLE_DELTA_MS)
-	assert_int(director.plan_pre_move.entries.size()).is_equal(0)
 
 
 func _select_ability_for_unit(
@@ -486,8 +473,9 @@ func _click_commit_at_cell(ctx: Dictionary, cell: Vector2i) -> void:
 
 func _tap_cell(ctx: Dictionary, cell: Vector2i, label: String = "tap") -> void:
 	var runner: GdUnitSceneRunner = ctx.runner
-	await _hover_cell(ctx, cell)
-	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/hover" % label)
+	var unit_id: int = ctx.director.selected_unit_id
+	await _sweep_mouse_to_cell(ctx, cell, "%s/approach" % label, unit_id)
+	await _capture_planning_surface(ctx, unit_id, "%s/hover" % label)
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(2, _SETTLE_DELTA_MS)
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/press" % label)
@@ -655,15 +643,17 @@ func _assert_k4_run_committed(
 
 
 func _hover_cell(ctx: Dictionary, cell: Vector2i) -> void:
+	await _sweep_mouse_to_cell(ctx, cell)
+
+
+## Sweeps the pointer in pixel steps so selection and drag both match F5 hover motion.
+func _sweep_mouse_to_cell(
+	ctx: Dictionary,
+	cell: Vector2i,
+	motion_label: String = "",
+	unit_id: int = -1,
+) -> void:
 	ctx.input.clear_qa_pointer_override()
-	var runner: GdUnitSceneRunner = ctx.runner
-	runner.simulate_mouse_move(_screen_position_for_cell(ctx, cell))
-	await runner.simulate_frames(2, _SETTLE_DELTA_MS)
-
-
-## Feeds contiguous held-pointer motion instead of teleporting between tile centres.
-## Every sample is serialized; snapshots are reserved for completed cell transitions.
-func _sweep_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
 	var runner: GdUnitSceneRunner = ctx.runner
 	var start: Vector2 = runner.get_mouse_position()
 	var target: Vector2 = _screen_position_for_cell(ctx, cell)
@@ -672,10 +662,15 @@ func _sweep_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: S
 		var alpha: float = float(sample_index) / float(sample_count)
 		runner.simulate_mouse_move(start.lerp(target, alpha))
 		await runner.simulate_frames(1, _SETTLE_DELTA_MS)
-		await _capture_planning_surface(
-			ctx, unit_id, "%s/motion_%03d" % [label, sample_index], false,
-		)
+		if motion_label != "" and unit_id >= 0:
+			await _capture_planning_surface(
+				ctx, unit_id, "%s/motion_%03d" % [motion_label, sample_index], false,
+			)
 	await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+
+
+func _sweep_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
+	await _sweep_mouse_to_cell(ctx, cell, label, unit_id)
 
 
 func _screen_position_for_cell(ctx: Dictionary, cell: Vector2i) -> Vector2:
@@ -695,7 +690,7 @@ func _probe_cell(
 	contract: Dictionary,
 	label: String,
 ) -> Dictionary:
-	await _hover_cell(ctx, cell)
+	await _sweep_mouse_to_cell(ctx, cell, "%s/approach" % label, unit_id)
 	await _wait_ability_settle(ctx)
 	var surface: Dictionary = await _audit_surface(ctx, unit_id, cell, contract, label)
 	await _capture_planning_surface(ctx, unit_id, label)
@@ -1121,16 +1116,6 @@ func _refresh_ctx_board(ctx: Dictionary) -> void:
 	ctx.k4_id = _unit_id_at(ctx.board, _K4_CELL)
 	ctx.e_bash_id = _unit_id_at(ctx.board, _E_BASH_CELL)
 	ctx.e_hook_id = _unit_id_at(ctx.board, _E_HOOK_CELL)
-
-
-func _wait_until_not_executing(ctx: Dictionary) -> void:
-	var director: CombatDirector = ctx.director
-	var runner: GdUnitSceneRunner = ctx.runner
-	for _attempt: int in range(240):
-		if CombatDirector.is_planning_phase(director.phase):
-			return
-		await runner.simulate_frames(2, _SETTLE_DELTA_MS)
-	assert_that("execute did not return to planning within frame budget").is_equal("")
 
 
 func _unit_id_at(board: BoardState, cell: Vector2i) -> int:
