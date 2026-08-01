@@ -629,7 +629,8 @@ func _on_board_changed(board: BoardState) -> void:
 		# Stale stash after drag ended must not restore over a committed plan.
 		if _drag_saved_preview != null:
 			_drag_saved_preview = null
-		if _planning != null:
+		# Snap undo/move refresh emits preview_updated in the same flush — skip duplicate danger pass.
+		if _planning != null and not _director.plan_refresh_snap_units:
 			_planning.mark_danger_dirty()
 		_schedule_plan_refresh_followup()
 		return

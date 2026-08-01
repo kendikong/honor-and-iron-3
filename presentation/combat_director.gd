@@ -2277,8 +2277,14 @@ func _refresh_plan_core() -> void:
 	plan_revision += 1
 	sync_selected_ability_if_invalid()
 
-	var preview_board := base_board.clone()
-	var ghost_evs := _build_ghost_events(preview_board, plan_to_run, new_intents)
+	var preview_board: BoardState
+	var ghost_evs: Array[SimEvent]
+	if _plan_is_movement_only(plan_to_run):
+		preview_board = projected_state.clone()
+		ghost_evs = _build_enemy_ghost_events(preview_board, new_intents)
+	else:
+		preview_board = base_board.clone()
+		ghost_evs = _build_ghost_events(preview_board, plan_to_run, new_intents)
 
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
@@ -2308,8 +2314,8 @@ func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 	plan_revision += 1
 	sync_selected_ability_if_invalid()
 
-	var preview_board: BoardState = base_board.clone()
-	var ghost_evs := _build_ghost_events(preview_board, plan, new_intents)
+	var preview_board: BoardState = projected_state.clone()
+	var ghost_evs := _build_enemy_ghost_events(preview_board, new_intents)
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
 	var statuses := PackedStringArray()
@@ -2457,14 +2463,18 @@ func _build_ghost_events(sim: BoardState, timeline: Timeline, intents: Array[Int
 	for action in timeline.entries:
 		ResolutionPipeline.apply_action(sim, action, evs)
 	ResolutionPipeline.resolve_pending_pushes(sim, evs)
-	
-	# Add Enemy intents for preview
+	evs.append_array(_build_enemy_ghost_events(sim, intents))
+	return evs
+
+
+## Enemy ghost tail only — player phase already applied on `sim` (e.g. projected_state).
+func _build_enemy_ghost_events(sim: BoardState, intents: Array[Intent]) -> Array[SimEvent]:
+	var evs: Array[SimEvent] = []
 	evs.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
 	for intent in intents:
 		for action in intent.actions:
 			ResolutionPipeline.apply_action(sim, action, evs)
-	ResolutionPipeline.resolve_pending_pushes(sim, evs)
-	
+		ResolutionPipeline.resolve_pending_pushes(sim, evs)
 	return evs
 
 
