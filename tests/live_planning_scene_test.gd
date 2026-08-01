@@ -41,7 +41,6 @@ const _MOUSE_MOTION_DELTA_MS := 10
 const _ABILITY_SETTLE_FRAMES := 6
 const _DRAG_SAMPLE_PIXELS := 72.0
 const _TRACE_DIR := "res://reports/live_planning_trace/"
-const _QA_FAST_VIEWPORT := Vector2i(1280, 720)
 
 static var _qa_profile_resolved: bool = false
 static var _qa_fast_profile: bool = true
@@ -99,9 +98,6 @@ func _ensure_live_test_window(runner: GdUnitSceneRunner) -> void:
 	runner.move_window_to_foreground()
 	var target_w: int = int(ProjectSettings.get_setting("display/window/size/viewport_width", 1920))
 	var target_h: int = int(ProjectSettings.get_setting("display/window/size/viewport_height", 1080))
-	if _qa_fast_enabled():
-		target_w = _QA_FAST_VIEWPORT.x
-		target_h = _QA_FAST_VIEWPORT.y
 	var screen: Vector2i = DisplayServer.screen_get_size()
 	target_w = mini(target_w, screen.x)
 	target_h = mini(target_h, screen.y)

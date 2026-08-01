@@ -49,7 +49,7 @@ state, then presses Ready → Execute and verifies final unit positions.
 
 | Profile | Set via | Behavior |
 |---------|---------|----------|
-| **fast** (default) | unset or `LIVE_QA_PROFILE=fast` | 1280×720 viewport; checkpoint PNGs only; `qa_static_overlay` + ambient VFX off; hop probes; K1/K3 drag-only, K2 tap-only, K4 full; tighter frame settles (~2× faster) |
+| **fast** (default) | unset or `LIVE_QA_PROFILE=fast` | Project viewport size (`project.godot`); checkpoint PNGs only; `qa_static_overlay` + ambient VFX off; hop probes; K1/K3 drag-only, K2 tap-only, K4 drag-only; tighter frame settles |
 | **full** | `LIVE_QA_PROFILE=full` | Legacy 1920×1080; every step PNG; selection + drag parity on K1–K3; mouse sweep probes |
 
 `run_planning_scene_acceptance.ps1` sets `LIVE_QA_PROFILE=fast` before launch. JSON trace
