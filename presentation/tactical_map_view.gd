@@ -375,10 +375,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
+var _tree_fade_sync_accum: float = 0.0
+const _TREE_FADE_SYNC_INTERVAL_SEC: float = 1.0 / 20.0
+
+
 func _process(delta: float) -> void:
 	_effects.process_frame(delta)
 	_update_hover_coord()
-	_sync_tree_canopy_fade()
+	_tree_fade_sync_accum += delta
+	var interval: float = _TREE_FADE_SYNC_INTERVAL_SEC
+	if _tree_fader != null and _tree_fader.has_active_fades():
+		interval = 1.0 / 30.0
+	if _tree_fade_sync_accum >= interval:
+		_tree_fade_sync_accum = 0.0
+		_sync_tree_canopy_fade()
 
 
 func _regenerate() -> void:

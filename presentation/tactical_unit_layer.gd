@@ -1843,10 +1843,18 @@ func _facing_anim(facing: int) -> StringName:
 func _draw() -> void:
 	if _board == null or _map_view == null:
 		return
+	var walk_only_redraw: bool = (
+		not _move_tweens.is_empty()
+		and _damage_flash.is_empty()
+		and _hit_bursts.is_empty()
+		and not _any_predicted_change()
+	)
 	for unit in _board.units:
 		if not unit.is_alive() or _pending_death.has(unit.id):
 			continue
 		if _drag_preview_active and unit.id == _drag_preview_id:
+			continue
+		if walk_only_redraw and not _move_tweens.has(unit.id):
 			continue
 		_draw_hp_bar(unit)
 	_draw_hit_bursts()

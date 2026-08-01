@@ -95,8 +95,9 @@ var _danger_tiles_dirty: bool = true
 var _hit_markers: Array = []
 var _hover_recompute_pending: bool = false
 var _drag_overlay_redraw_accum: float = 0.0
+var _flow_overlay_redraw_accum: float = 0.0
 var _game_settings: GameSettings
-const _DRAG_OVERLAY_REDRAW_SEC: float = 1.0 / 30.0
+const _OVERLAY_ANIM_REDRAW_SEC: float = 1.0 / 30.0
 
 
 func setup(
@@ -737,12 +738,16 @@ func _process(delta: float) -> void:
 	if need_redraw:
 		queue_redraw()
 	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
+		var accum: float = _drag_overlay_redraw_accum
 		if _planning_input != null and _planning_input.dragging:
 			_drag_overlay_redraw_accum += delta
-			if _drag_overlay_redraw_accum >= _DRAG_OVERLAY_REDRAW_SEC:
-				_drag_overlay_redraw_accum = 0.0
-				queue_redraw()
+			accum = _drag_overlay_redraw_accum
 		else:
+			_flow_overlay_redraw_accum += delta
+			accum = _flow_overlay_redraw_accum
+		if accum >= _OVERLAY_ANIM_REDRAW_SEC:
+			_drag_overlay_redraw_accum = 0.0
+			_flow_overlay_redraw_accum = 0.0
 			queue_redraw()
 	elif not _hit_markers.is_empty():
 		queue_redraw()

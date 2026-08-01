@@ -12,6 +12,8 @@ var _grid: PlayerGrid
 var _settings: EffectsSettings
 var _fade_sprites: Dictionary = {}
 var _stored_cells: Dictionary = {}
+var _cached_tree_anchors: Array[Vector2i] = []
+var _tree_anchors_dirty: bool = true
 
 
 func setup(
@@ -24,12 +26,18 @@ func setup(
 	_settings = settings
 	z_as_relative = false
 	z_index = _C.Z_TREE
+	_tree_anchors_dirty = true
 
 
 func clear_all() -> void:
 	var anchors: Array = _fade_sprites.keys()
 	for anchor: Variant in anchors:
 		_restore_tree(anchor)
+	_tree_anchors_dirty = true
+
+
+func has_active_fades() -> bool:
+	return not _fade_sprites.is_empty()
 
 
 func sync_actors(actors: Dictionary) -> void:
@@ -58,11 +66,23 @@ func sync_actors(actors: Dictionary) -> void:
 			_fade_tree(anchor as Vector2i)
 
 
+func _invalidate_tree_anchor_cache() -> void:
+	_tree_anchors_dirty = true
+
+
+func _ensure_tree_anchor_cache() -> void:
+	if not _tree_anchors_dirty and not _cached_tree_anchors.is_empty():
+		return
+	_cached_tree_anchors = TreeGameplay.tree_anchors(_trees)
+	_tree_anchors_dirty = false
+
+
 ## Faded trees are erased from TileMapLayer — must keep checking their anchors until restore.
 func _all_check_anchors() -> Array[Vector2i]:
+	_ensure_tree_anchor_cache()
 	var seen: Dictionary = {}
 	var out: Array[Vector2i] = []
-	for anchor: Vector2i in TreeGameplay.tree_anchors(_trees):
+	for anchor: Vector2i in _cached_tree_anchors:
 		var key: String = "%d,%d" % [anchor.x, anchor.y]
 		if seen.has(key):
 			continue

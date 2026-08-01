@@ -2308,7 +2308,7 @@ func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 	plan_revision += 1
 	sync_selected_ability_if_invalid()
 
-	var preview_board: BoardState = projected_state.clone()
+	var preview_board: BoardState = base_board.clone()
 	var ghost_evs := _build_ghost_events(preview_board, plan, new_intents)
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
