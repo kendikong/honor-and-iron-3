@@ -155,7 +155,6 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 	}, "k1/phase4/approach")
 	var push_to: Vector2i = _preview_push_destination(input, e_bash_id)
 	assert_bool(push_to.x > _E_BASH_CELL.x).is_true()
-	var bash_drag_route: Array[Vector2i] = [_K1_CELL, _BASH_APPROACH]
 	await _probe_cell(ctx, k1_id, _E_BASH_CELL, {
 		"ghost_pos": _BASH_APPROACH,
 		"path_end": _BASH_APPROACH,
@@ -163,6 +162,8 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 		"path_min_size": 3,
 		"manhattan": true,
 		"icon_has": [PlanningIcons.GLYPH_WALK, PlanningIcons.GLYPH_ATTACK],
+		"push_dest": push_to,
+		"push_enemy_id": e_bash_id,
 	}, "k1/selection/pre_tap")
 	await _tap_cell(ctx, _E_BASH_CELL, "k1/selection/release")
 	await _wait_ability_settle(ctx)
@@ -178,7 +179,7 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 	await _wait_ability_settle(ctx)
 	_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
 	await _undo_until_unit_clear(ctx, k1_id)
-	await _drag_release_at(ctx, bash_drag_route, _E_BASH_CELL, "k1/drag")
+	await _drag_release_at(ctx, [_K1_CELL, _BASH_APPROACH], _E_BASH_CELL, "k1/drag")
 	await _wait_ability_settle(ctx)
 	_assert_k1_bash_committed(ctx, k1_id, "k1/drag")
 	await _capture_commit_state(ctx, k1_id, "k1/drag/committed")
@@ -220,14 +221,23 @@ func _journey_knight2_chain_hook(ctx: Dictionary) -> void:
 		"manhattan": true,
 		"blue_any": true,
 	}, "k2/phase2/walk")
-	await _probe_cell(ctx, k2_id, _E_HOOK_CELL, {
-		"icon_has": [PlanningIcons.GLYPH_ATTACK],
-		"manhattan": true,
-		"blue_any": true,
-	}, "k2/phase4/enemy")
 	var pull_preview: Vector2i = _preview_push_destination(input, e_hook_id)
 	if pull_preview.x > -900000:
 		assert_bool(pull_preview.x < _E_HOOK_CELL.x).is_true()
+	await _probe_cell(ctx, k2_id, _E_HOOK_CELL, {
+		"path_end": _K2_CELL,
+		"path_start": _K2_CELL,
+		"path_min_size": 1,
+		"icon_has": [PlanningIcons.GLYPH_ATTACK],
+		"manhattan": true,
+		"blue_any": true,
+		"red_on": true,
+		"red_stand": _K2_CELL,
+		"ability": hook,
+		"red_cell": {"cell": _E_HOOK_CELL, "stand": _K2_CELL, "in_range": true},
+		"pull_dest": pull_preview,
+		"pull_enemy_id": e_hook_id,
+	}, "k2/phase4/enemy")
 	await _tap_cell(ctx, _E_HOOK_CELL, "k2/selection/release")
 	await _wait_ability_settle(ctx)
 	_assert_k2_hook_committed(ctx, k2_id, e_hook_id, "k2/selection")
@@ -345,7 +355,12 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		ctx, _TRAMPLE_POST_ROUTE, "k3/post", false, &"post_after_trample",
 	)
 	_assert_k3_post_move_committed(ctx, k3_id, "k3/post")
-	await _probe_cell(ctx, k3_id, _TRAMPLE_POST_DEST, {}, "k3/post/after_commit")
+	await _probe_cell(ctx, k3_id, _TRAMPLE_POST_DEST, {
+		"red_on": false,
+		"red_stand": _TRAMPLE_POST_DEST,
+		"ability": trample,
+		"manhattan": true,
+	}, "k3/post/after_commit")
 	ctx.expect["k3_pos"] = _TRAMPLE_POST_DEST
 	_cancel_active_pointer(ctx)
 
@@ -380,7 +395,13 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 	_remember_mode_commit(ctx, "k4/drag", k4_id)
 	_record_mode_commit_comparison(ctx, "k4/selection", "k4/drag")
 	_assert_mode_commit_parity(ctx, "k4/selection", "k4/drag")
-	await _probe_cell(ctx, k4_id, _K4_RUN_TRIGGER_CELL, {}, "k4/drag/post_commit")
+	await _select_ability_for_unit(ctx, k4_id, _BOWLING_CHARGE_ID)
+	await _probe_cell(ctx, k4_id, _K4_RUN_TRIGGER_CELL, {
+		"red_on": false,
+		"red_stand": _K4_RUN_TRIGGER_CELL,
+		"ability": bowling,
+		"manhattan": true,
+	}, "k4/drag/post_commit")
 	await _k4_preview_snapshot(ctx, k4_id, _K4_RUN_TRIGGER_CELL, "after_commit")
 	var k4_projected: UnitState = director.projected_state.get_unit_by_id(k4_id)
 	if k4_projected != null:
@@ -472,17 +493,25 @@ func _click_commit_at_cell(ctx: Dictionary, cell: Vector2i) -> void:
 	await ctx.runner.simulate_frames(_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 
 
-func _tap_cell(ctx: Dictionary, cell: Vector2i, label: String = "tap") -> void:
+func _tap_cell(
+	ctx: Dictionary,
+	cell: Vector2i,
+	label: String = "tap",
+	assert_preview_commit: bool = true,
+) -> void:
 	var runner: GdUnitSceneRunner = ctx.runner
 	var unit_id: int = ctx.director.selected_unit_id
 	await _sweep_mouse_to_cell(ctx, cell, "%s/approach" % label, unit_id)
 	await _capture_planning_surface(ctx, unit_id, "%s/hover" % label)
+	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, cell, false)
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(2, _SETTLE_DELTA_MS)
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/press" % label)
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/settled" % label)
+	if assert_preview_commit:
+		_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, label)
 
 
 func _right_click_undo(ctx: Dictionary) -> void:
@@ -835,6 +864,18 @@ func _audit_surface(
 		_assert_move_tile_at(ctx, blue_cell, true, "%s/blue_has_%s" % [label, blue_cell])
 	for blue_off: Variant in contract.get("blue_not", []):
 		_assert_move_tile_at(ctx, blue_off, false, "%s/blue_not_%s" % [label, blue_off])
+	if contract.has("push_dest"):
+		var enemy_id: int = int(contract.get("push_enemy_id", -1))
+		var push_to: Vector2i = _preview_push_destination(input, enemy_id)
+		assert_that(push_to).override_failure_message(
+			"%s: push preview destination" % label,
+		).is_equal(contract["push_dest"])
+	if contract.has("pull_dest"):
+		var pull_enemy_id: int = int(contract.get("pull_enemy_id", -1))
+		var pull_to: Vector2i = _preview_push_destination(input, pull_enemy_id)
+		assert_that(pull_to).override_failure_message(
+			"%s: pull preview destination" % label,
+		).is_equal(contract["pull_dest"])
 	return surface
 
 
@@ -864,9 +905,12 @@ func _drag_through_cells(
 		if assert_hover_steps:
 			assert_that(input.get_hover_tile_for_ui()).is_equal(cells[i])
 		await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/step_%d" % [label, i])
+	var release_cell: Vector2i = cells[cells.size() - 1]
+	var pre_intent: Dictionary = _capture_preview_intent(ctx, ctx.director.selected_unit_id, release_cell, true)
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/release" % label)
+	_assert_commit_ratifies_preview(ctx, ctx.director.selected_unit_id, pre_intent, "%s/release" % label)
 
 
 func _select_k4_detour_and_run_route(
@@ -882,10 +926,18 @@ func _select_k4_detour_and_run_route(
 	for step_index: int in range(1, _K4_DETOUR_PLUS_RUN_ROUTE.size()):
 		var cell: Vector2i = _K4_DETOUR_PLUS_RUN_ROUTE[step_index]
 		var step_label: String = "%s/step_%d" % [label_prefix, step_index]
+		var expected_path: Array[Vector2i] = _K4_DETOUR_PLUS_RUN_ROUTE.slice(0, step_index + 1)
 		await _sweep_mouse_to_cell(ctx, cell, "%s/approach" % step_label, unit_id, -1.0, false)
 		_assert_not_dragging(ctx, step_label)
+		_assert_preview_path_equals(ctx, unit_id, expected_path, "%s/path" % step_label)
+		if cell == Vector2i(4, 2):
+			await _assert_k4_walk_loop_preview(ctx, unit_id, bowling, cell, "%s/walk_loop" % step_label)
+		elif cell == _K4_RUN_TRIGGER_CELL:
+			await _assert_k4_run_loop_preview(ctx, unit_id, bowling, "%s/run_trigger" % step_label)
 		await _capture_planning_surface(ctx, unit_id, step_label)
-	await _tap_cell(ctx, _K4_RUN_TRIGGER_CELL, "%s/release" % label_prefix)
+	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, _K4_RUN_TRIGGER_CELL, false)
+	await _tap_cell(ctx, _K4_RUN_TRIGGER_CELL, "%s/release" % label_prefix, false)
+	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
 	_assert_not_dragging(ctx, "%s/after_release" % label_prefix)
 	assert_that(input.get_drag_route()).override_failure_message(
 		"%s: selection mode must not leave a drag route" % label_prefix,
@@ -913,6 +965,11 @@ func _paint_k4_detour_and_run_route(
 			_K4_DETOUR_PLUS_RUN_ROUTE[step_index],
 			"%s/step_%d" % [label_prefix, step_index],
 		)
+		var expected_path: Array[Vector2i] = _K4_DETOUR_PLUS_RUN_ROUTE.slice(0, step_index + 1)
+		_assert_drag_route_equals(ctx, expected_path, "%s/drag_route_%d" % [label_prefix, step_index])
+		_assert_preview_path_equals(
+			ctx, unit_id, expected_path, "%s/preview_path_%d" % [label_prefix, step_index],
+		)
 		await _capture_planning_surface(ctx, unit_id, "%s/step_%d" % [label_prefix, step_index])
 		var stand: Vector2i = _K4_DETOUR_PLUS_RUN_ROUTE[step_index]
 		if stand == Vector2i(4, 2):
@@ -926,9 +983,12 @@ func _paint_k4_detour_and_run_route(
 			if pause_frames_at_checkpoint > 0:
 				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
 	_assert_drag_route_equals(ctx, _K4_DETOUR_PLUS_RUN_ROUTE, "%s/route" % label_prefix)
+	_assert_preview_path_matches_drag_route(ctx, unit_id, "%s/pre_release" % label_prefix)
+	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, _K4_RUN_TRIGGER_CELL, true)
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
+	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
 
 
 func _drag_k4_detour_and_run_preview(
@@ -952,7 +1012,7 @@ func _assert_preview_path_matches_drag_route(
 func _assert_k4_walk_loop_preview(
 	ctx: Dictionary,
 	unit_id: int,
-	_bowling: AbilityData,
+	bowling: AbilityData,
 	stand: Vector2i,
 	label: String,
 ) -> void:
@@ -963,12 +1023,18 @@ func _assert_k4_walk_loop_preview(
 	assert_int(input.planning_display_ap_left(unit_id)).override_failure_message(
 		"%s: walk detour must keep skill AP at stand %s" % [label, stand],
 	).is_equal(1)
+	if bowling != null and ctx.director.selected_ability_index >= 0:
+		_assert_red_live(ctx, bowling, true, stand, "%s/red" % label)
+	else:
+		assert_bool(_overlay_has_red_tile(ctx.overlay, ctx.board)).override_failure_message(
+			"%s: basic-move paint must hide bowling red at walk loop %s" % [label, stand],
+		).is_false()
 
 
 func _assert_k4_run_loop_preview(
 	ctx: Dictionary,
 	unit_id: int,
-	_bowling: AbilityData,
+	bowling: AbilityData,
 	label: String,
 ) -> void:
 	var input: CombatPlanningInput = ctx.input
@@ -978,6 +1044,9 @@ func _assert_k4_run_loop_preview(
 	assert_int(input.planning_display_ap_left(unit_id)).override_failure_message(
 		"%s: Run intent must show 0 display AP" % label,
 	).is_equal(0)
+	assert_bool(_overlay_has_red_tile(ctx.overlay, ctx.board)).override_failure_message(
+		"%s: Run trigger must hide action-range red" % label,
+	).is_false()
 
 
 func _k4_preview_snapshot(ctx: Dictionary, unit_id: int, stand: Vector2i, label: String) -> void:
@@ -1079,9 +1148,12 @@ func _drag_through_cells_with_route_checks(
 			)
 		if assert_timeline_empty:
 			assert_int(director.plan_pre_move.entries.size()).is_equal(0)
+	var release_cell: Vector2i = cells[cells.size() - 1]
+	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, release_cell, true)
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
+	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
 
 
 func _assert_drag_route_corridor(
@@ -1263,6 +1335,209 @@ func _preview_path(input: CombatPlanningInput, unit_id: int) -> Array[Vector2i]:
 		if step is Vector2i:
 			out.append(step)
 	return out
+
+
+func _slots_invalid(slots: Dictionary) -> bool:
+	var flag: Variant = slots.get("invalid", false)
+	if flag is bool:
+		return flag
+	if flag is String:
+		return not (flag as String).is_empty()
+	return bool(flag)
+
+
+func _pre_target_from_slots(slots: Dictionary) -> Vector2i:
+	var pre: Array = slots.get("pre", []) as Array
+	if pre.is_empty():
+		return Vector2i(-999999, -999999)
+	var step: TimelineAction = pre[0] as TimelineAction
+	return step.target_coord if step != null else Vector2i(-999999, -999999)
+
+
+func _action_target_unit_from_slots(slots: Dictionary) -> int:
+	var action_steps: Array = slots.get("action", []) as Array
+	if action_steps.is_empty():
+		return -1
+	var step: TimelineAction = action_steps[0] as TimelineAction
+	return step.target_unit_id if step != null else -1
+
+
+func _post_target_from_slots(slots: Dictionary) -> Vector2i:
+	var post: Array = slots.get("post", []) as Array
+	if post.is_empty():
+		return Vector2i(-999999, -999999)
+	var step: TimelineAction = post[0] as TimelineAction
+	return step.target_coord if step != null else Vector2i(-999999, -999999)
+
+
+func _intent_slot_signature(slots: Dictionary) -> String:
+	var pre_wps: String = "[]"
+	var pre: Array = slots.get("pre", []) as Array
+	if not pre.is_empty() and pre[0] is TimelineAction:
+		pre_wps = str((pre[0] as TimelineAction).waypoints)
+	var action_ability: String = ""
+	var action_steps: Array = slots.get("action", []) as Array
+	if not action_steps.is_empty() and action_steps[0] is TimelineAction:
+		var act: TimelineAction = action_steps[0] as TimelineAction
+		action_ability = str(act.ability.id) if act.ability != null else ""
+	var post_count: int = (slots.get("post", []) as Array).size()
+	return "%s|%s|%s|%s|%d|%s" % [
+		str(_pre_target_from_slots(slots)),
+		pre_wps,
+		str(_action_target_unit_from_slots(slots)),
+		action_ability,
+		post_count,
+		str(_slots_invalid(slots)),
+	]
+
+
+func _commit_slots_for_interaction(
+	ctx: Dictionary,
+	unit_id: int,
+	cell: Vector2i,
+	use_drop: bool,
+) -> Dictionary:
+	var input: CombatPlanningInput = ctx.input
+	if use_drop and input.dragging:
+		var legal_moves: Array[Vector2i] = []
+		if input._drag_route_commits_active():
+			legal_moves = input._snapshot_drag_legal_move_tiles()
+		return input._final_commit_slots_for_drop_at_cell(
+			unit_id, cell, Vector2.ZERO, legal_moves,
+		)
+	return input._final_commit_slots_for_click_at_cell(unit_id, cell, Vector2.ZERO)
+
+
+func _capture_preview_intent(
+	ctx: Dictionary,
+	unit_id: int,
+	cell: Vector2i,
+	use_drop: bool = false,
+) -> Dictionary:
+	var input: CombatPlanningInput = ctx.input
+	var director: CombatDirector = ctx.director
+	director.flush_plan_refresh_signals_if_pending()
+	var slots: Dictionary = _commit_slots_for_interaction(ctx, unit_id, cell, use_drop)
+	var preview_path: Array[Vector2i] = _preview_path(input, unit_id)
+	var drag_route: Array[Vector2i] = []
+	if input.dragging:
+		drag_route = input.get_drag_route()
+	return {
+		"cell": cell,
+		"slots": slots,
+		"slots_signature": _intent_slot_signature(slots),
+		"preview_path": preview_path.duplicate(),
+		"drag_route": drag_route.duplicate(),
+		"display_ap": input.planning_display_ap_left(unit_id),
+		"requires_run": input.unit_move_requires_run(unit_id),
+		"invalid": _slots_invalid(slots),
+	}
+
+
+func _assert_commit_ratifies_preview(
+	ctx: Dictionary,
+	unit_id: int,
+	pre: Dictionary,
+	label: String,
+) -> void:
+	var director: CombatDirector = ctx.director
+	var slots: Dictionary = pre.get("slots", {}) as Dictionary
+	assert_bool(_slots_invalid(slots)).override_failure_message(
+		"%s: commit must not run when preview slots are invalid" % label,
+	).is_false()
+	var pre_move: TimelineAction = _committed_pre_move_for_unit(director, unit_id)
+	var pre_target: Vector2i = _pre_target_from_slots(slots)
+	var post_target: Vector2i = _post_target_from_slots(slots)
+	if pre_target.x > -900000:
+		assert_object(pre_move).override_failure_message(
+			"%s: committed pre-move missing for preview target %s" % [label, pre_target],
+		).is_not_null()
+		if pre_move != null:
+			assert_that(pre_move.target_coord).override_failure_message(
+				"%s: committed pre-move target must ratify preview" % label,
+			).is_equal(pre_target)
+			var slot_pre: Array = slots.get("pre", []) as Array
+			if not slot_pre.is_empty() and slot_pre[0] is TimelineAction:
+				var slot_action: TimelineAction = slot_pre[0] as TimelineAction
+				assert_that(pre_move.uses_run).override_failure_message(
+					"%s: committed pre-move uses_run must ratify preview" % label,
+				).is_equal(slot_action.uses_run)
+				if not (pre.get("drag_route", []) as Array).is_empty():
+					assert_that(pre_move.waypoints).override_failure_message(
+						"%s: committed pre-move waypoints must ratify preview" % label,
+					).is_equal(slot_action.waypoints)
+	var post_move: TimelineAction = _committed_post_move_for_unit(director, unit_id)
+	if post_target.x > -900000:
+		assert_object(post_move).override_failure_message(
+			"%s: committed post-move missing for preview target %s" % [label, post_target],
+		).is_not_null()
+		if post_move != null:
+			assert_that(post_move.target_coord).override_failure_message(
+				"%s: committed post-move target must ratify preview" % label,
+			).is_equal(post_target)
+			var slot_post: Array = slots.get("post", []) as Array
+			if not slot_post.is_empty() and slot_post[0] is TimelineAction:
+				var slot_post_action: TimelineAction = slot_post[0] as TimelineAction
+				if not (pre.get("drag_route", []) as Array).is_empty():
+					assert_that(post_move.waypoints).override_failure_message(
+						"%s: committed post-move waypoints must ratify preview" % label,
+					).is_equal(slot_post_action.waypoints)
+	var action: TimelineAction = _committed_action_for_unit(director, unit_id)
+	var action_target_id: int = _action_target_unit_from_slots(slots)
+	var slot_actions: Array = slots.get("action", []) as Array
+	if action_target_id >= 0:
+		assert_object(action).override_failure_message(
+			"%s: committed action missing for preview target unit %d" % [label, action_target_id],
+		).is_not_null()
+		if action != null:
+			assert_that(action.target_unit_id).override_failure_message(
+				"%s: committed action target must ratify preview" % label,
+			).is_equal(action_target_id)
+	elif not slot_actions.is_empty() and slot_actions[0] is TimelineAction:
+		var slot_act: TimelineAction = slot_actions[0] as TimelineAction
+		assert_object(action).override_failure_message(
+			"%s: committed action missing for preview slots" % label,
+		).is_not_null()
+		if action != null:
+			if slot_act.ability != null:
+				assert_that(str(action.ability.id if action.ability != null else "")).override_failure_message(
+					"%s: committed action ability must ratify preview" % label,
+				).is_equal(str(slot_act.ability.id))
+			assert_that(action.target_coord).override_failure_message(
+				"%s: committed action coord must ratify preview" % label,
+			).is_equal(slot_act.target_coord)
+			assert_that(action.waypoints).override_failure_message(
+				"%s: committed action waypoints must ratify preview" % label,
+			).is_equal(slot_act.waypoints)
+	var preview_path: Array = pre.get("preview_path", [])
+	if not preview_path.is_empty():
+		var preview_end: Vector2i = preview_path[preview_path.size() - 1] as Vector2i
+		if pre_target.x > -900000:
+			assert_that(preview_end).override_failure_message(
+				"%s: preview path end must match slot pre-move target" % label,
+			).is_equal(pre_target)
+		elif post_target.x > -900000:
+			assert_that(preview_end).override_failure_message(
+				"%s: preview path end must match slot post-move target" % label,
+			).is_equal(post_target)
+		elif action != null and action.type == GameEnums.ActionType.MOVE:
+			assert_that(preview_end).override_failure_message(
+				"%s: preview path end must match move action target" % label,
+			).is_equal(action.target_coord)
+	var projected: UnitState = director.projected_state.get_unit_by_id(unit_id)
+	if projected != null and pre_target.x > -900000:
+		assert_that(projected.position).override_failure_message(
+			"%s: projected position must ratify preview pre-move target" % label,
+		).is_equal(pre_target)
+	elif projected != null and post_target.x > -900000:
+		assert_that(projected.position).override_failure_message(
+			"%s: projected position must ratify preview post-move target" % label,
+		).is_equal(post_target)
+	var drag_route: Array = pre.get("drag_route", [])
+	if not drag_route.is_empty() and pre_move != null and not pre_move.waypoints.is_empty():
+		assert_that(pre_move.waypoints).override_failure_message(
+			"%s: committed waypoints must ratify painted drag route tail" % label,
+		).is_equal(drag_route.slice(1))
 
 
 func _overlay_has_red_tile(overlay: TacticalPlanningOverlay, board: BoardState) -> bool:
