@@ -11,12 +11,20 @@ $exempt = @(
 	"workbench.md",
 	"UNATTENDED_RUN.md",
 	"README.md",
-	"00-gauntlet-loop-cursor.md"
+	"00-gauntlet-loop-cursor.md",
+	"_TEMPLATE.md"
 )
 
 $requiredHeadings = @("## Goal", "## Quality bar")
 
-Get-ChildItem -Path $DesignDir -Filter "*.md" -File | ForEach-Object {
+$dirs = @(
+	$DesignDir,
+	(Join-Path $DesignDir "appendices")
+)
+
+foreach ($dir in $dirs) {
+	if (-not (Test-Path $dir)) { continue }
+	Get-ChildItem -Path $dir -Filter "*.md" -File | ForEach-Object {
 	$name = $_.Name
 	if ($exempt -contains $name) {
 		return
@@ -29,6 +37,7 @@ Get-ChildItem -Path $DesignDir -Filter "*.md" -File | ForEach-Object {
 		if ($content -notmatch [regex]::Escape($h)) {
 			$failures += "$name : missing heading $h"
 		}
+	}
 	}
 }
 

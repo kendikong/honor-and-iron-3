@@ -1,0 +1,77 @@
+# Class rollout (P6)
+
+**Status:** `DRAFT`  
+**Pillar ID:** P6  
+**Authority chain:** `class_abilities.txt` · `docs/design/knight-template.md` (P3) · `docs/design/appendices/mass-sim-balance.md`
+
+## Goal
+
+Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, cloning P3 pipeline; optional mass-sim balance between classes.
+
+## Quality bar
+
+| Deliverable | Machine check | Human check |
+|-------------|---------------|-------------|
+| Per class | P3 bar (QA + skill scenarios) | Balance taste |
+| Optional balance | `tests/run_mass_sim_test.gd` | `mass_sim_interpretation.json` review |
+
+## Non-goals
+
+- Knight re-work (use P3 LOCK)
+- Per-class global rule exceptions without owner approval
+
+## Human-only worksheet
+
+N/A
+
+## Decomposition
+
+1. One class = copy P3 checklist
+2. Batch 2–3 skills per wave
+3. Mass sim epoch after class complete
+
+## Builder playbook
+
+1. Read class section in `class_abilities.txt`.
+2. Clone shield_bash scenario pattern per skill.
+3. Run planning QA + optional mass sim.
+
+## Critic playbook
+
+```powershell
+.\scripts\run_planning_qa_gate.ps1
+godot --headless --script res://tests/run_mass_sim_test.gd
+```
+
+## Gauntlet stub
+
+```text
+GOAL: <class> skills per Bible
+BAR: P3 bar per skill + class scenario registry
+PASS_THRESHOLD: 85
+```
+
+## Tooling I/O
+
+| Input | Output | Consumer |
+|-------|--------|----------|
+| P3 template | Class scenarios | QA gate |
+| mass_sim | interpretation export | Balance review |
+
+## Exit criteria
+
+- [ ] Each shipped class has full scenario coverage
+- [ ] No per-skill global bypasses
+
+## Doc polish scorecard
+
+| Dimension | /10 |
+|-----------|-----|
+| Covers scope | 9 |
+| Machine bars | 9 |
+| No duplication | 9 |
+| Agent-executable | 9 |
+| Human boundaries | 8 |
+| Sequencing | 9 |
+| Tooling I/O | 8 |
+| Loop-polishable | 8 |

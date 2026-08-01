@@ -6,21 +6,43 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 
 | Doc | Purpose | Status |
 |-----|---------|--------|
-| [`00-remaining-work-suite-plan.md`](00-remaining-work-suite-plan.md) | **How to create** all remaining-work docs (waves W1–W4) | POLISHED *(C6=91/90)* |
-| [`REMAINING_WORK_MAP.md`](REMAINING_WORK_MAP.md) | **What to build** — game milestones (Layer 0) | *W1 — not written* |
-| [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) | Builder/critic loops in Cursor | ACTIVE |
-| [`verification-matrix.md`](verification-matrix.md) | Machine bar per pillar | *W1 — not written* |
-| [`workbench.md`](workbench.md) | Live gauntlet progress | IN PROGRESS |
+| [`00-remaining-work-suite-plan.md`](00-remaining-work-suite-plan.md) | How to create this suite (W1–W4) | POLISHED (C6=91) |
+| [`REMAINING_WORK_MAP.md`](REMAINING_WORK_MAP.md) | What to build — milestone index | DRAFT |
+| [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) | Builder/critic loops | ACTIVE |
+| [`01-doc-polish-protocol.md`](01-doc-polish-protocol.md) | Doc polish process (P1) | DRAFT |
+| [`verification-matrix.md`](verification-matrix.md) | Machine bar per domain (P9) | DRAFT |
+| [`workbench.md`](workbench.md) | Live gauntlet scores | — |
 
-## Polish status legend
+## Pillar specs
 
-`DRAFT` → `LOOP_READY` → `POLISHED` → `LOCKED`
+| ID | Doc | Status |
+|----|-----|--------|
+| P2 | [`combat-core-closeout.md`](combat-core-closeout.md) | DRAFT |
+| P3 | [`knight-template.md`](knight-template.md) | DRAFT |
+| P4 | [`roguelike-run.md`](roguelike-run.md) | DRAFT (owner worksheet) |
+| P5 | [`enemy-design.md`](enemy-design.md) | DRAFT |
+| P6 | [`class-rollout.md`](class-rollout.md) | DRAFT |
+| P7 | [`world-assets-and-map.md`](world-assets-and-map.md) | DRAFT (owner worksheet) |
+| P8 | [`presentation-audio-ui.md`](presentation-audio-ui.md) | DRAFT |
 
-See [`01-doc-polish-protocol.md`](01-doc-polish-protocol.md) (*W1*) and suite plan § Doc-polish protocol.
+## Appendices
 
-## Reading order (after W1–W4 complete)
+| Doc | Status |
+|-----|--------|
+| [`appendices/encounter-fixture-format.md`](appendices/encounter-fixture-format.md) | DRAFT |
+| [`appendices/pixelforge-v14-contract.md`](appendices/pixelforge-v14-contract.md) | DRAFT |
+| [`appendices/mass-sim-balance.md`](appendices/mass-sim-balance.md) | DRAFT |
+| [`appendices/gauntlet-prompt-library.md`](appendices/gauntlet-prompt-library.md) | DRAFT |
 
-1. `REMAINING_WORK_MAP.md`
-2. Pillar for your chunk (combat / run / world / presentation)
-3. Relevant appendix (PixelForge, mass sim, encounters)
-4. `00-gauntlet-loop-cursor.md` when running unattended work
+## Reference
+
+| Doc | Purpose |
+|-----|---------|
+| [`_TEMPLATE.md`](_TEMPLATE.md) | Copy for new pillar files |
+| [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) | Overnight boundary template |
+
+## Polish legend
+
+`DRAFT` → `LOOP_READY` (critic ≥88) → `POLISHED` (≥90 meta) → `LOCKED` (owner)
+
+Run: `.\scripts\lint_design_doc.ps1` then `/gauntlet-critic` per file.
