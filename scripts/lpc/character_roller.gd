@@ -26,6 +26,7 @@ static func roll(
 	catalog: LpcCatalog,
 	profile: CharacterGenProfile,
 	seed: int = -1,
+	class_id: String = "",
 ) -> CharacterRecipe:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	if seed < 0:
@@ -68,7 +69,7 @@ static func roll(
 		if type_name == "hairextl" or type_name == "hairextr":
 			should_fill = want_hair_ext and (rng.randf() < 0.99)
 		elif type_name == "shoes_toe":
-			should_fill = _should_fill_slot(catalog, profile, type_name, rng)
+			should_fill = _should_fill_slot(catalog, profile, type_name, rng, class_id)
 			if should_fill:
 				var has_boots: bool = false
 				if recipe.selections.has("shoes"):
@@ -78,13 +79,25 @@ static func roll(
 				if not has_boots:
 					should_fill = false
 		else:
-			should_fill = _should_fill_slot(catalog, profile, type_name, rng)
+			should_fill = _should_fill_slot(catalog, profile, type_name, rng, class_id)
 			
 		if not should_fill:
 			continue
 			
 		var item: Dictionary = {}
-		if type_name == "hairextr" and picked_hair_ext != "":
+		var forced_item_id: String = (
+			profile.class_forced_item(class_id, type_name) if not class_id.is_empty() else ""
+		)
+		if not forced_item_id.is_empty():
+			var found: Dictionary = catalog.find_item(forced_item_id)
+			if not found.is_empty():
+				item = found["item"] as Dictionary
+			else:
+				push_warning(
+					"LPC class loadout: missing item '%s' for class '%s' slot '%s'"
+					% [forced_item_id, class_id, type_name]
+				)
+		elif type_name == "hairextr" and picked_hair_ext != "":
 			var target_id: String = picked_hair_ext.substr(0, picked_hair_ext.length() - 1) + "r"
 			for raw: Variant in catalog.items_for_slot("hairextr"):
 				if typeof(raw) == TYPE_DICTIONARY and str(raw.get("id", "")) == target_id:
@@ -106,47 +119,25 @@ static func roll(
 					% [type_name, recipe.body_type]
 				)
 			continue
-		var prefix: String = LpcPath.path_prefix_for_item(item, recipe.body_type)
-		if prefix == "":
+		var selection: Dictionary = _build_selection_entry(
+			catalog,
+			profile,
+			item,
+			type_name,
+			recipe.body_type,
+			skin,
+			hair_color,
+			primary_cloth_color,
+			rng,
+		)
+		if selection.is_empty():
 			if catalog.is_required_slot(type_name):
 				push_warning(
 					"LPC roll: item '%s' has no sprite path for body=%s (slot=%s)"
 					% [str(item.get("id", "")), recipe.body_type, type_name]
 				)
 			continue
-		var bg_prefix: String = LpcPath.path_prefix_for_bg_item(item, recipe.body_type)
-		var recolor_kind: String = str(item.get("recolor_kind", "none"))
-		var recolor: String = ""
-		var variant: String = ""
-		var variants: Variant = item.get("variants", [])
-		if recolor_kind == "skin" or bool(item.get("match_body_color", false)):
-			recolor = skin
-		elif recolor_kind == "hair":
-			recolor = hair_color
-		elif recolor_kind == "cloth":
-			if type_name == "clothes" or type_name == "sleeves":
-				recolor = primary_cloth_color
-			else:
-				recolor = _pick_recolor(catalog.cloth_recolors, rng, profile, "cloth")
-				var c_attempts = 0
-				while _is_naked_colored(recolor, skin) and c_attempts < 15:
-					recolor = _pick_recolor(catalog.cloth_recolors, rng, profile, "cloth")
-					c_attempts += 1
-		elif typeof(variants) == TYPE_ARRAY and not variants.is_empty():
-			variant = str(variants[rng.randi_range(0, variants.size() - 1)])
-		recipe.selections[type_name] = {
-			"id": str(item.get("id", "")),
-			"z_pos": int(item.get("z_pos", 0)),
-			"path_prefix": prefix,
-			"bg_path_prefix": bg_prefix,
-			"recolor_kind": recolor_kind,
-			"recolor": recolor,
-			"variant": variant,
-			"palette_base": str(item.get("palette_base", "")),
-			"tags": item.get("tags", []),
-			"requires_tags": item.get("requires_tags", []),
-			"excludes_tags": item.get("excludes_tags", []),
-		}
+		recipe.selections[type_name] = selection
 		
 	# --- Cleanup / Validation Pass ---
 	var tag_counts: Dictionary = {}
@@ -224,6 +215,17 @@ static func roll(
 		recipe.selections.erase("hair")
 		recipe.selections.erase("hairextl")
 		recipe.selections.erase("hairextr")
+
+	_apply_class_forced_items(
+		catalog,
+		profile,
+		class_id,
+		recipe,
+		skin,
+		hair_color,
+		primary_cloth_color,
+		rng,
+	)
 		
 	_warn_missing_required_slots(catalog, recipe, seed)
 	if not recipe.selections.has("head"):
@@ -274,14 +276,117 @@ static func _should_fill_slot(
 	profile: CharacterGenProfile,
 	type_name: String,
 	rng: RandomNumberGenerator,
+	class_id: String = "",
 ) -> bool:
+	if not class_id.is_empty():
+		var forced_id: String = profile.class_forced_item(class_id, type_name)
+		if not forced_id.is_empty():
+			return true
 	if catalog.is_required_slot(type_name):
 		return true
-	var chance: float = profile.slot_fill_chance(
-		type_name,
-		catalog.default_fill_chance(type_name),
-	)
+	var default_chance: float = catalog.default_fill_chance(type_name)
+	var chance: float = profile.slot_fill_chance(type_name, default_chance)
+	if not class_id.is_empty():
+		chance = profile.class_slot_fill_chance(class_id, type_name, chance)
 	return rng.randf() < chance
+
+
+static func _build_selection_entry(
+	catalog: LpcCatalog,
+	profile: CharacterGenProfile,
+	item: Dictionary,
+	type_name: String,
+	body_type: String,
+	skin: String,
+	hair_color: String,
+	primary_cloth_color: String,
+	rng: RandomNumberGenerator,
+) -> Dictionary:
+	var prefix: String = LpcPath.path_prefix_for_item(item, body_type)
+	if prefix == "":
+		return {}
+	var bg_prefix: String = LpcPath.path_prefix_for_bg_item(item, body_type)
+	var recolor_kind: String = str(item.get("recolor_kind", "none"))
+	var recolor: String = ""
+	var variant: String = ""
+	var variants: Variant = item.get("variants", [])
+	if recolor_kind == "skin" or bool(item.get("match_body_color", false)):
+		recolor = skin
+	elif recolor_kind == "hair":
+		recolor = hair_color
+	elif recolor_kind == "cloth":
+		if type_name == "clothes" or type_name == "sleeves":
+			recolor = primary_cloth_color
+		else:
+			recolor = _pick_recolor(catalog.cloth_recolors, rng, profile, "cloth")
+			var c_attempts: int = 0
+			while _is_naked_colored(recolor, skin) and c_attempts < 15:
+				recolor = _pick_recolor(catalog.cloth_recolors, rng, profile, "cloth")
+				c_attempts += 1
+	elif typeof(variants) == TYPE_ARRAY and not variants.is_empty():
+		variant = str(variants[rng.randi_range(0, variants.size() - 1)])
+	return {
+		"id": str(item.get("id", "")),
+		"z_pos": int(item.get("z_pos", 0)),
+		"path_prefix": prefix,
+		"bg_path_prefix": bg_prefix,
+		"recolor_kind": recolor_kind,
+		"recolor": recolor,
+		"variant": variant,
+		"palette_base": str(item.get("palette_base", "")),
+		"tags": item.get("tags", []),
+		"requires_tags": item.get("requires_tags", []),
+		"excludes_tags": item.get("excludes_tags", []),
+	}
+
+
+static func _apply_class_forced_items(
+	catalog: LpcCatalog,
+	profile: CharacterGenProfile,
+	class_id: String,
+	recipe: CharacterRecipe,
+	skin: String,
+	hair_color: String,
+	primary_cloth_color: String,
+	rng: RandomNumberGenerator,
+) -> void:
+	if class_id.is_empty():
+		return
+	var loadout: Dictionary = profile.class_loadout(class_id)
+	var forced: Variant = loadout.get("forced_items", {})
+	if typeof(forced) != TYPE_DICTIONARY:
+		return
+	for slot_name: Variant in forced.keys():
+		var item_id: String = str(forced[slot_name])
+		if item_id.is_empty():
+			continue
+		var found: Dictionary = catalog.find_item(item_id)
+		if found.is_empty():
+			push_warning(
+				"LPC class loadout: cannot apply missing item '%s' for class '%s'"
+				% [item_id, class_id]
+			)
+			continue
+		var slot: String = str(found.get("slot", slot_name))
+		var item: Dictionary = found["item"] as Dictionary
+		var selection: Dictionary = _build_selection_entry(
+			catalog,
+			profile,
+			item,
+			slot,
+			recipe.body_type,
+			skin,
+			hair_color,
+			primary_cloth_color,
+			rng,
+		)
+		if selection.is_empty():
+			push_warning(
+				"LPC class loadout: item '%s' incompatible with body=%s for class '%s'"
+				% [item_id, recipe.body_type, class_id]
+			)
+			continue
+		recipe.selections[slot] = selection
 
 
 static func _pick_item(

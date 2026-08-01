@@ -25,7 +25,15 @@ static func roll_recipe_for_unit(
 	profile: CharacterGenProfile,
 	unit: UnitState,
 ) -> CharacterRecipe:
-	return CharacterRoller.roll(catalog, profile, recipe_seed_for_unit_state(unit))
+	var class_id: String = ""
+	if unit != null and unit.definition != null:
+		class_id = str(unit.definition.id)
+	return CharacterRoller.roll(
+		catalog,
+		profile,
+		recipe_seed_for_unit_state(unit),
+		class_id,
+	)
 
 
 static func display_scale_for_profile(profile: CharacterGenProfile) -> float:

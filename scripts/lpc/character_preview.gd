@@ -40,8 +40,12 @@ func set_action(action: String) -> void:
 	_update_actors_state()
 
 
-func roll_and_apply(catalog: LpcCatalog, profile: CharacterGenProfile) -> void:
-	var recipe: CharacterRecipe = CharacterRoller.roll(catalog, profile)
+func roll_and_apply(
+	catalog: LpcCatalog,
+	profile: CharacterGenProfile,
+	class_id: String = "",
+) -> void:
+	var recipe: CharacterRecipe = CharacterRoller.roll(catalog, profile, -1, class_id)
 	last_recipe = recipe
 	var report: Dictionary = {}
 	for i in range(_actors.size()):

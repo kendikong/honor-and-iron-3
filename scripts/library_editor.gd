@@ -2,6 +2,12 @@ extends CharacterGeneratorPanel
 
 const CATALOG_PATH: String = "res://resources/character/lpc_catalog.json"
 
+var _class_loadout_class_opt: OptionButton
+var _preview_class_opt: OptionButton
+var _class_loadout_vbox: VBoxContainer
+var _class_loadout_rows: Dictionary = {}
+var _selected_loadout_class: String = "knight"
+
 func _ready() -> void:
 	super._ready()
 	# Optional: visually distinguish the editor
@@ -128,6 +134,8 @@ func _build_ui() -> void:
 			right_vbox.add_child(c)
 		else:
 			left_vbox.add_child(c)
+
+	_build_class_loadout_section(left_vbox)
 			
 	# Enlarge the preview viewport significantly now that we have space
 	_preview_container.custom_minimum_size = Vector2(500, 400)
@@ -394,3 +402,192 @@ func _on_search_changed(query: String) -> void:
 					category_vbox.visible = true
 					var n = btn.text.replace("▶  ", "").replace("▼  ", "")
 					btn.text = "▼  " + n
+
+
+func _on_generate_pressed() -> void:
+	if _catalog == null or _preview_node == null:
+		return
+	_profile.seed = randi() % 100000
+	_save_config()
+	var preview_class: String = _preview_class_id()
+	_preview_node.roll_and_apply(_catalog, _profile, preview_class)
+
+
+func _preview_class_id() -> String:
+	if _preview_class_opt == null or _preview_class_opt.selected <= 0:
+		return ""
+	return str(_preview_class_opt.get_item_metadata(_preview_class_opt.selected))
+
+
+func _build_class_loadout_section(parent: VBoxContainer) -> void:
+	parent.add_child(HSeparator.new())
+	var hdr := Label.new()
+	hdr.text = "Class Loadouts"
+	hdr.add_theme_font_size_override("font_size", 16)
+	hdr.add_theme_color_override("font_color", Color(0.85, 0.92, 1.0))
+	parent.add_child(hdr)
+
+	var hint := Label.new()
+	hint.text = "Force slot items per player class. Combat units use their class id automatically."
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.add_theme_font_size_override("font_size", 12)
+	hint.add_theme_color_override("font_color", Color(0.62, 0.66, 0.74))
+	parent.add_child(hint)
+
+	var class_row := HBoxContainer.new()
+	var class_lbl := Label.new()
+	class_lbl.text = "Edit class"
+	class_lbl.custom_minimum_size.x = 90
+	class_row.add_child(class_lbl)
+	_class_loadout_class_opt = OptionButton.new()
+	_class_loadout_class_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for class_id: String in LpcClassLoadoutDefaults.PLAYER_CLASS_IDS:
+		_class_loadout_class_opt.add_item(class_id.capitalize())
+		_class_loadout_class_opt.set_item_metadata(_class_loadout_class_opt.item_count - 1, class_id)
+	class_row.add_child(_class_loadout_class_opt)
+	parent.add_child(class_row)
+
+	var preview_row := HBoxContainer.new()
+	var preview_lbl := Label.new()
+	preview_lbl.text = "Preview as"
+	preview_lbl.custom_minimum_size.x = 90
+	preview_row.add_child(preview_lbl)
+	_preview_class_opt = OptionButton.new()
+	_preview_class_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_preview_class_opt.add_item("(Random — no class)")
+	_preview_class_opt.set_item_metadata(0, "")
+	for class_id: String in LpcClassLoadoutDefaults.PLAYER_CLASS_IDS:
+		_preview_class_opt.add_item(class_id.capitalize())
+		_preview_class_opt.set_item_metadata(_preview_class_opt.item_count - 1, class_id)
+	preview_row.add_child(_preview_class_opt)
+	parent.add_child(preview_row)
+
+	var reset_btn := Button.new()
+	reset_btn.text = "Reset class loadouts to defaults"
+	reset_btn.pressed.connect(_on_reset_class_loadouts_pressed)
+	parent.add_child(reset_btn)
+
+	_class_loadout_vbox = VBoxContainer.new()
+	_class_loadout_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_class_loadout_vbox.add_theme_constant_override("separation", 4)
+	parent.add_child(_class_loadout_vbox)
+
+	_class_loadout_class_opt.item_selected.connect(func(_idx: int) -> void:
+		_selected_loadout_class = str(
+			_class_loadout_class_opt.get_item_metadata(_class_loadout_class_opt.selected)
+		)
+		_refresh_class_loadout_rows()
+	)
+	_selected_loadout_class = str(
+		_class_loadout_class_opt.get_item_metadata(_class_loadout_class_opt.selected)
+	)
+	_rebuild_class_loadout_rows()
+
+
+func _on_reset_class_loadouts_pressed() -> void:
+	_profile.class_loadouts = LpcClassLoadoutDefaults.build().duplicate(true)
+	_save_config()
+	_refresh_class_loadout_rows()
+
+
+func _rebuild_class_loadout_rows() -> void:
+	for c: Node in _class_loadout_vbox.get_children():
+		c.queue_free()
+	_class_loadout_rows.clear()
+	if _catalog == null:
+		return
+	for slot_name: String in LpcClassLoadoutDefaults.OVERRIDE_SLOTS:
+		var row := HBoxContainer.new()
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var slot_lbl := Label.new()
+		slot_lbl.text = slot_name
+		slot_lbl.custom_minimum_size.x = 88
+		slot_lbl.clip_text = true
+		row.add_child(slot_lbl)
+		var force := CheckButton.new()
+		force.text = "Force"
+		force.custom_minimum_size.x = 72
+		row.add_child(force)
+		var item_opt := OptionButton.new()
+		item_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		item_opt.add_item("(none)")
+		item_opt.set_item_metadata(0, "")
+		for raw: Variant in _catalog.items_for_slot(slot_name):
+			if typeof(raw) != TYPE_DICTIONARY:
+				continue
+			var item: Dictionary = raw
+			var item_id: String = str(item.get("id", ""))
+			if item_id.is_empty():
+				continue
+			var label: String = str(item.get("name", item_id))
+			item_opt.add_item("%s (%s)" % [label, item_id])
+			item_opt.set_item_metadata(item_opt.item_count - 1, item_id)
+		row.add_child(item_opt)
+		_class_loadout_vbox.add_child(row)
+		_class_loadout_rows[slot_name] = {"force": force, "items": item_opt}
+		force.toggled.connect(func(on: bool, slot: String = slot_name) -> void:
+			_on_class_loadout_force_toggled(slot, on)
+		)
+		item_opt.item_selected.connect(func(_idx: int, slot: String = slot_name) -> void:
+			_on_class_loadout_item_selected(slot)
+		)
+	_refresh_class_loadout_rows()
+
+
+func _refresh_class_loadout_rows() -> void:
+	if _profile == null:
+		return
+	for slot_name: String in _class_loadout_rows.keys():
+		var row_data: Dictionary = _class_loadout_rows[slot_name]
+		var force: CheckButton = row_data["force"]
+		var item_opt: OptionButton = row_data["items"]
+		var forced_id: String = _profile.class_forced_item(_selected_loadout_class, slot_name)
+		force.set_block_signals(true)
+		force.button_pressed = not forced_id.is_empty()
+		force.set_block_signals(false)
+		item_opt.set_block_signals(true)
+		var pick_idx: int = 0
+		for i in range(item_opt.item_count):
+			if str(item_opt.get_item_metadata(i)) == forced_id:
+				pick_idx = i
+				break
+		item_opt.selected = pick_idx
+		item_opt.set_block_signals(false)
+
+
+func _on_class_loadout_force_toggled(slot_name: String, on: bool) -> void:
+	if _profile == null:
+		return
+	if not on:
+		_profile.set_class_forced_item(_selected_loadout_class, slot_name, "")
+		_save_config()
+		_refresh_class_loadout_rows()
+		return
+	_on_class_loadout_item_selected(slot_name)
+
+
+func _on_class_loadout_item_selected(slot_name: String) -> void:
+	if _profile == null or not _class_loadout_rows.has(slot_name):
+		return
+	var row_data: Dictionary = _class_loadout_rows[slot_name]
+	var item_opt: OptionButton = row_data["items"]
+	var force: CheckButton = row_data["force"]
+	var item_id: String = str(item_opt.get_item_metadata(item_opt.selected))
+	if item_id.is_empty():
+		force.set_block_signals(true)
+		force.button_pressed = false
+		force.set_block_signals(false)
+		_profile.set_class_forced_item(_selected_loadout_class, slot_name, "")
+	else:
+		force.set_block_signals(true)
+		force.button_pressed = true
+		force.set_block_signals(false)
+		_profile.set_class_forced_item(_selected_loadout_class, slot_name, item_id)
+		var fill_chance: float = _profile.class_slot_fill_chance(
+			_selected_loadout_class,
+			slot_name,
+			1.0,
+		)
+		if fill_chance < 1.0:
+			_profile.set_class_slot_fill(_selected_loadout_class, slot_name, 1.0)
+	_save_config()

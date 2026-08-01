@@ -21,6 +21,9 @@ var required_animations: Array[String] = []
 
 var allow_non_human_parts: bool = true
 
+## class_id -> { forced_items: { slot: item_id }, slot_fill: { slot: 0..1 } }
+var class_loadouts: Dictionary = {}
+
 var body_type_weights: Dictionary = {
 	"male": 1.0,
 	"female": 1.0,
@@ -49,10 +52,12 @@ func load_from_config(cfg: ConfigFile) -> void:
 	var item_json: String = str(cfg.get_value(CONFIG_SECTION, "item_weights", "{}"))
 	var tags_json: String = str(cfg.get_value(CONFIG_SECTION, "item_gender_tags", "{}"))
 	var body_json: String = str(cfg.get_value(CONFIG_SECTION, "body_type_weights", "{}"))
+	var loadouts_json: String = str(cfg.get_value(CONFIG_SECTION, "class_loadouts", "{}"))
 	var slot_parsed: Variant = JSON.parse_string(slot_json)
 	var item_parsed: Variant = JSON.parse_string(item_json)
 	var tags_parsed: Variant = JSON.parse_string(tags_json)
 	var body_parsed: Variant = JSON.parse_string(body_json)
+	var loadouts_parsed: Variant = JSON.parse_string(loadouts_json)
 	slot_weights = slot_parsed if typeof(slot_parsed) == TYPE_DICTIONARY else {}
 	item_weights = item_parsed if typeof(item_parsed) == TYPE_DICTIONARY else {}
 	item_gender_tags = tags_parsed if typeof(tags_parsed) == TYPE_DICTIONARY else {}
@@ -60,6 +65,9 @@ func load_from_config(cfg: ConfigFile) -> void:
 	if typeof(body_parsed) == TYPE_DICTIONARY:
 		for bt: Variant in body_parsed.keys():
 			body_type_weights[str(bt)] = float(body_parsed[bt])
+	class_loadouts = loadouts_parsed if typeof(loadouts_parsed) == TYPE_DICTIONARY else {}
+	if class_loadouts.is_empty():
+		ensure_default_class_loadouts()
 
 
 func save_to_config(cfg: ConfigFile) -> void:
@@ -71,10 +79,12 @@ func save_to_config(cfg: ConfigFile) -> void:
 	var item_json: String = JSON.stringify(item_weights)
 	var tags_json: String = JSON.stringify(item_gender_tags)
 	var body_json: String = JSON.stringify(body_type_weights)
+	var loadouts_json: String = JSON.stringify(class_loadouts)
 	cfg.set_value(CONFIG_SECTION, "slot_weights", slot_json)
 	cfg.set_value(CONFIG_SECTION, "item_weights", item_json)
 	cfg.set_value(CONFIG_SECTION, "item_gender_tags", tags_json)
 	cfg.set_value(CONFIG_SECTION, "body_type_weights", body_json)
+	cfg.set_value(CONFIG_SECTION, "class_loadouts", loadouts_json)
 	cfg.set_value(CONFIG_SECTION, "required_animations", required_animations)
 
 
@@ -99,6 +109,67 @@ func set_item_gender_tag(item_id: String, tag: String) -> void:
 		item_gender_tags.erase(item_id)
 	else:
 		item_gender_tags[item_id] = tag
+	emit_changed()
+
+
+func ensure_default_class_loadouts() -> void:
+	if not class_loadouts.is_empty():
+		return
+	class_loadouts = LpcClassLoadoutDefaults.build().duplicate(true)
+
+
+func class_loadout(class_id: String) -> Dictionary:
+	if class_id.is_empty():
+		return {}
+	var raw: Variant = class_loadouts.get(class_id, {})
+	return raw if typeof(raw) == TYPE_DICTIONARY else {}
+
+
+func class_forced_item(class_id: String, slot_name: String) -> String:
+	var loadout: Dictionary = class_loadout(class_id)
+	var forced: Variant = loadout.get("forced_items", {})
+	if typeof(forced) != TYPE_DICTIONARY:
+		return ""
+	return str(forced.get(slot_name, ""))
+
+
+func set_class_forced_item(class_id: String, slot_name: String, item_id: String) -> void:
+	if class_id.is_empty() or slot_name.is_empty():
+		return
+	var loadout: Dictionary = class_loadout(class_id)
+	if not loadout.has("forced_items") or typeof(loadout["forced_items"]) != TYPE_DICTIONARY:
+		loadout["forced_items"] = {}
+	var forced: Dictionary = loadout["forced_items"]
+	if item_id.is_empty():
+		forced.erase(slot_name)
+	else:
+		forced[slot_name] = item_id
+	class_loadouts[class_id] = loadout
+	emit_changed()
+
+
+func class_slot_fill_chance(
+	class_id: String,
+	slot_name: String,
+	catalog_default: float,
+) -> float:
+	var loadout: Dictionary = class_loadout(class_id)
+	var fills: Variant = loadout.get("slot_fill", {})
+	if typeof(fills) != TYPE_DICTIONARY:
+		return catalog_default
+	if not fills.has(slot_name):
+		return catalog_default
+	return float(fills[slot_name])
+
+
+func set_class_slot_fill(class_id: String, slot_name: String, chance: float) -> void:
+	if class_id.is_empty() or slot_name.is_empty():
+		return
+	var loadout: Dictionary = class_loadout(class_id)
+	if not loadout.has("slot_fill") or typeof(loadout["slot_fill"]) != TYPE_DICTIONARY:
+		loadout["slot_fill"] = {}
+	loadout["slot_fill"][slot_name] = clampf(chance, 0.0, 1.0)
+	class_loadouts[class_id] = loadout
 	emit_changed()
 
 
@@ -138,6 +209,8 @@ func load_from_user_disk() -> void:
 	var cfg: ConfigFile = ConfigFile.new()
 	if load_user_config(cfg) == OK:
 		load_from_config(cfg)
+	else:
+		ensure_default_class_loadouts()
 
 
 func save_to_user_disk() -> void:

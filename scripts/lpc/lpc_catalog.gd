@@ -67,6 +67,18 @@ func default_fill_chance(type_name: String) -> float:
 	return float(slot.get("fill_chance", 0.0))
 
 
+func find_item(item_id: String) -> Dictionary:
+	if item_id.is_empty():
+		return {}
+	for slot_name: String in slot_names():
+		for raw: Variant in items_for_slot(slot_name):
+			if typeof(raw) != TYPE_DICTIONARY:
+				continue
+			if str(raw.get("id", "")) == item_id:
+				return {"slot": slot_name, "item": raw}
+	return {}
+
+
 func recolor_pool(kind: String) -> PackedStringArray:
 	match kind:
 		"skin":

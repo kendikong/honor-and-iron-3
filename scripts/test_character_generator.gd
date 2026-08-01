@@ -18,6 +18,7 @@ func _ready() -> void:
 	_test_set_slot_weight_clamps()
 	_test_set_item_weight_clamps()
 	_test_profile_persistence()
+	_test_class_loadout_forced_items()
 	_test_weight_manager_get_weight()
 	_test_weighted_distribution()
 	print("=== Results: %d passed, %d failed ===" % [_pass, _fail])
@@ -77,6 +78,35 @@ func _test_profile_persistence() -> void:
 	p2.load_from_config(cfg)
 	_assert(is_equal_approx(p2.slot_weights.get("hair", 0.0), 0.42), "slot weight round-trips")
 	_assert(is_equal_approx(p2.item_weights.get("hat_wizard", 0.0), 0.88), "item weight round-trips")
+
+
+func _test_class_loadout_forced_items() -> void:
+	print("-- test_class_loadout_forced_items")
+	var catalog := LpcCatalog.load_from_disk()
+	if catalog.find_item("weapon_sword_longsword").is_empty():
+		print("  SKIP: catalog item missing in headless environment")
+		_pass += 1
+		return
+	var profile := CharacterGenProfile.new()
+	profile.ensure_default_class_loadouts()
+	profile.body_type_weights = {
+		"male": 1.0, "female": 0.0, "teen": 0.0,
+		"child": 0.0, "muscular": 0.0, "pregnant": 0.0,
+	}
+	var recipe := CharacterRoller.roll(catalog, profile, 12345, "knight")
+	_assert(
+		recipe.selections.has("weapon"),
+		"knight loadout includes weapon slot",
+	)
+	if recipe.selections.has("weapon"):
+		_assert(
+			str(recipe.selections["weapon"].get("id", "")) == "weapon_sword_longsword",
+			"knight weapon forced to longsword",
+		)
+	_assert(
+		recipe.selections.has("shield"),
+		"knight loadout includes shield slot",
+	)
 
 
 func _test_weight_manager_get_weight() -> void:
