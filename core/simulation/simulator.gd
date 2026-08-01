@@ -33,7 +33,11 @@ static func simulate(state_in: BoardState, plan: Timeline) -> SimResult:
 	events.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
 	_tick_start_of_turn(board, events, GameEnums.Team.ENEMY)
 	_tick_statuses(board, events)
-	for intent in board.intents:
+	## Replan from the live board after the player phase — planning-time intents are
+	## preview only; execution must not attack corpses or ignore player-phase deaths.
+	var enemy_intents: Array = EnemyPlanner.plan(board)
+	board.intents = enemy_intents
+	for intent in enemy_intents:
 		for action in intent.actions:
 			ResolutionPipeline.apply_action(board, action, events)
 	ResolutionPipeline.resolve_pending_pushes(board, events)
