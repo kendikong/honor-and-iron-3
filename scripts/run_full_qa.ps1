@@ -23,23 +23,13 @@ $planningGate = Join-Path $PSScriptRoot "run_planning_qa_gate.ps1"
 $regression = Join-Path $PSScriptRoot "run_regression_tests.ps1"
 
 Write-QaLine "########## PLANNING QA GATE ##########"
-try {
-	& powershell.exe -NoProfile -File $planningGate -GodotPath $GodotPath 2>&1 | ForEach-Object { Write-QaLine "$_" }
-	$planningExit = $LASTEXITCODE
-} catch {
-	Write-QaLine "Planning gate error: $_"
-	$planningExit = 1
-}
+& powershell.exe -NoProfile -File $planningGate -GodotPath $GodotPath 2>&1 | ForEach-Object { Write-QaLine "$_" }
+$planningExit = $LASTEXITCODE
 
 Write-QaLine ""
 Write-QaLine "########## SIM/BRIDGE REGRESSION ##########"
-try {
-	& powershell.exe -NoProfile -File $regression -GodotPath $GodotPath 2>&1 | ForEach-Object { Write-QaLine "$_" }
-	$regressionExit = $LASTEXITCODE
-} catch {
-	Write-QaLine "Regression error: $_"
-	$regressionExit = 1
-}
+& powershell.exe -NoProfile -File $regression -GodotPath $GodotPath 2>&1 | ForEach-Object { Write-QaLine "$_" }
+$regressionExit = $LASTEXITCODE
 
 Write-QaLine ""
 Write-QaLine "########## FULL QA SUMMARY ##########"

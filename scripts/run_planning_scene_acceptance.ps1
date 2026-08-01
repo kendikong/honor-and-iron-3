@@ -26,11 +26,17 @@ $godotArgs = @(
 	$cmdTool,
 	"-a", $suite
 )
+$stdoutPath = Join-Path $env:TEMP "honor-and-iron-tier3.stdout.log"
+$stderrPath = Join-Path $env:TEMP "honor-and-iron-tier3.stderr.log"
 $process = Start-Process -FilePath $GodotPath `
 	-ArgumentList $godotArgs `
 	-WorkingDirectory $projectRoot `
+	-RedirectStandardOutput $stdoutPath `
+	-RedirectStandardError $stderrPath `
 	-Wait -PassThru -NoNewWindow
 $exitCode = $process.ExitCode
+if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
+if (Test-Path $stderrPath) { Get-Content $stderrPath }
 
 if ($null -eq $exitCode) {
 	Write-Output "[INCOMPLETE] Tier 3 TestBattle acceptance: Godot exit code unavailable."
