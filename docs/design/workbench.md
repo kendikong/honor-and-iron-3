@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight-template K3-LOCK │ Round 2
-SCORE: 44/100 │ THRESHOLD: 95 │ FAIL
-DELTA: −7 vs round 1 (51/100)
-NEXT: revert self-grade → deepen [+] sims → re-critic (Critic: yes)
+GAUNTLET SCORE │ knight-template K3-LOCK │ Round 3
+SCORE: 64/100 │ THRESHOLD: 95 │ FAIL
+DELTA: +20 vs round 2 (44/100)
+NEXT: fix 5 active [+] implementations → re-add sim asserts → per-row critic → manifest
 ══════════════════════════════════════
 ```
 
