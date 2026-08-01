@@ -4,15 +4,71 @@
 > Append phase completion notes to `IMPLEMENTATION_STATUS.md`, not this file.  
 > Visual/ecology bible: `sandbox_map_system.md` (Living Stillness & Pixel Integrity) · Coding guardrails: `.cursor/rules/living-sandbox-architect.mdc`
 
-**Project:** mana-seed-test  
+**Project:** honor-and-iron-3 (mana-seed-test heritage)  
 **Target:** Godot 4.7  
-**Current phase:** 6 (in progress — audit pass, user verify pending) — Phase 4 deferred
+**Current focus:** **Design-suite milestones** (`docs/design/REMAINING_WORK_MAP.md`) — combat parity Ph 10–14 **closed**; living-map phases 0–10 **closed or waived**
 
 Phases ship visible progress with explicit exit criteria. **No phase closes** until criteria pass, including Boredom Tests where marked. **Do not skip phases.**
+
+**Where progress is logged:** Living-map phase audits → `IMPLEMENTATION_STATUS.md`. Active game milestones → `docs/design/` pillar specs + `workbench.md`.
 
 **Phase audit gate (mandatory):** Every phase must be rigorously audited for coherence to rules and code. Re-audit until **≤ 2 issues** remain. See `.cursor/rules/phase-audit.mdc`.
 
 **Phase commit gate (mandatory):** Commit at every phase. Each commit is a **standalone full backup** — reverting to it restores **100% the exact project state** at commit time. See `.cursor/rules/phase-commit.mdc`.
+
+---
+
+## Status at a glance (2026-08-01)
+
+### Cleared — no longer active work
+
+| Track | Scope | Status | Detail |
+|-------|--------|--------|--------|
+| **Living map** | This file §Phase 0–10 | ✅ **Closed / waived** | User waiver 2026-07-13; compositor F5 checks may remain manual |
+| **Bootstrap** | `IMPLEMENTATION_STATUS` Ph 0–2 | ✅ **Closed** | Bridge, skirmish, headless sim |
+| **Tactical shell** | `IMPLEMENTATION_STATUS` Ph 3–8 | ✅ **Closed** | Scene, planning, Knight MVP shell |
+| **Combat parity** | `TACTICAL_COMBAT_PARITY_PLAN` Ph 10–14 | ✅ **Closed** | Intent state, planning input, HUD, SP tactical path |
+| **Design doc suite** | `docs/design/` W1–W4 | ✅ **15/15 gauntlet PASS** | See `docs/design/GAUNTLET_REVIEW_RESULTS.md` |
+
+### Superseded / failed (do not re-open)
+
+| Item | Status | Superseded by |
+|------|--------|----------------|
+| `IMPLEMENTATION_STATUS` Phase 9 | ❌ **FAIL** (false PASS) | Parity Ph 10–14 |
+| Legacy `Combat.tscn` SP path | Deferred | `TacticalCombat.tscn` (Ph 14) |
+
+### Active — use design suite (not this file’s §0–10 bodies)
+
+| Layer | Doc | Purpose |
+|-------|-----|---------|
+| **0 — Master map** | [`docs/design/REMAINING_WORK_MAP.md`](docs/design/REMAINING_WORK_MAP.md) | Milestone order + primary commands |
+| **1 — Pillars** | [`docs/design/README.md`](docs/design/README.md) | P2–P9 agent contracts |
+| **2 — Appendices** | [`docs/design/README.md`](docs/design/README.md) § Appendices | Fixtures, PixelForge, mass-sim, gauntlet prompts |
+| **Verification** | [`docs/design/verification-matrix.md`](docs/design/verification-matrix.md) | Machine bar per domain |
+| **Gauntlet OS** | [`docs/design/00-gauntlet-loop-cursor.md`](docs/design/00-gauntlet-loop-cursor.md) | Builder/critic loops |
+
+**Owner gates (worksheet before `LOOP_READY`):** P4 roguelike · P5 enemy design · P7 world/map art — see pillar docs.
+
+---
+
+## Living Sandbox Map — Phase Registry (§0–10 below)
+
+> **Historical canonical spec** — phases below remain the bible for map/VFX work. They are **not** the active sprint list; use `docs/design/REMAINING_WORK_MAP.md` for what to build next.
+
+| Phase | Title | Status |
+|-------|-------|--------|
+| 0 | Project skeleton & asset truth | ✅ Closed |
+| 1 | Two-grid core | ✅ Closed |
+| 2 | Minimal procedural generator | ✅ Closed |
+| 3 | Terrain, decoration & opportunism | ✅ Closed |
+| 4 | Wind & grass (GPU) | ✅ Closed *(toggle: Effects `wind_field`)* |
+| 5 | Sky, light, atmosphere & shadows | ✅ Closed |
+| 6 | Water channel | ✅ Closed |
+| 6.5 | Minimal biome gate | ✅ Closed |
+| 7 | Ecology & full motion set | ✅ Closed |
+| 8 | Biome / palette swap | ✅ Closed |
+| 9 | Full opportunism & composites | ✅ Waived / partial |
+| 10 | Full audit & tactics bridge | ✅ Closed (waiver) |
 
 ---
 
@@ -538,15 +594,98 @@ Update `IMPLEMENTATION_STATUS.md`:
 
 ---
 
+## Honor & Iron — Remaining Work (Design Suite)
+
+> **Added 2026-08-01.** Agent-executable milestone layer. Does **not** replace living-map §0–10 or `TACTICAL_COMBAT_PARITY_PLAN.md` — links them.
+
+### Suite index
+
+| Doc | Role | Gauntlet |
+|-----|------|----------|
+| [`00-remaining-work-suite-plan.md`](docs/design/00-remaining-work-suite-plan.md) | How W1–W4 was built | POLISHED (91) |
+| [`01-doc-polish-protocol.md`](docs/design/01-doc-polish-protocol.md) | Doc polish process (P1) | POLISHED (91) |
+| [`REMAINING_WORK_MAP.md`](docs/design/REMAINING_WORK_MAP.md) | **Layer 0** — what to build | LOOP_READY |
+| [`verification-matrix.md`](docs/design/verification-matrix.md) | Machine bar per domain (P9) | LOOP_READY |
+| [`00-gauntlet-loop-cursor.md`](docs/design/00-gauntlet-loop-cursor.md) | Builder/critic loop OS | ACTIVE |
+| [`GAUNTLET_REVIEW_RESULTS.md`](docs/design/GAUNTLET_REVIEW_RESULTS.md) | Scoreboard | **15/15 PASS** |
+
+### Milestone index (dependency order)
+
+| # | Milestone | Pillar | Primary command | Spec status |
+|---|-----------|--------|-----------------|-------------|
+| 1 | Parity Ph 10–13 combat core | P2 `combat-core-closeout.md` | `.\scripts\run_regression_tests.ps1` | LOOP_READY — **implementation largely done** |
+| 2 | Phase 14 Knight MVP re-gate | P2 | `.\scripts\run_planning_qa_gate.ps1` | LOOP_READY — **closed in parity plan** |
+| 3 | Knight template LOCK | P3 `knight-template.md` | Tier 3 gate + `run_skill_scenarios_only.gd` | LOOP_READY |
+| 4 | Roguelike run v1 | P4 `roguelike-run.md` | `PLANNED — tests/run_state_test.gd` | DRAFT *(worksheet gate)* |
+| 5 | Enemy puzzle kit | P5 `enemy-design.md` | `tests/bridge_test_runner.gd` | DRAFT *(worksheet gate)* |
+| 6 | Class rollout 2+ | P6 `class-rollout.md` | Planning gate + skill scenarios | LOOP_READY |
+| 7 | Map assets + PixelForge MVP | P7 `world-assets-and-map.md` | `docs/asset_manifest.md` | DRAFT *(worksheet gate)* |
+| 8 | Living map ROADMAP close | P7 | F5 compositor gate | PLANNED |
+| 9 | UI + SFX shell | P8 `presentation-audio-ui.md` | SfxPlayer DEFS map in P8 doc | LOOP_READY |
+| 10 | UI gauntlets polish | P8 | P8 checklist | PLANNED |
+
+### Pillar specs (P2–P9)
+
+| ID | Document | Status |
+|----|----------|--------|
+| P2 | [`combat-core-closeout.md`](docs/design/combat-core-closeout.md) | LOOP_READY |
+| P3 | [`knight-template.md`](docs/design/knight-template.md) | LOOP_READY |
+| P4 | [`roguelike-run.md`](docs/design/roguelike-run.md) | DRAFT |
+| P5 | [`enemy-design.md`](docs/design/enemy-design.md) | DRAFT |
+| P6 | [`class-rollout.md`](docs/design/class-rollout.md) | LOOP_READY |
+| P7 | [`world-assets-and-map.md`](docs/design/world-assets-and-map.md) | DRAFT |
+| P8 | [`presentation-audio-ui.md`](docs/design/presentation-audio-ui.md) | LOOP_READY |
+| P9 | [`verification-matrix.md`](docs/design/verification-matrix.md) | LOOP_READY |
+
+### Appendices (Layer 2)
+
+| Document | Status |
+|----------|--------|
+| [`encounter-fixture-format.md`](docs/design/appendices/encounter-fixture-format.md) | LOOP_READY |
+| [`pixelforge-v14-contract.md`](docs/design/appendices/pixelforge-v14-contract.md) | LOOP_READY |
+| [`mass-sim-balance.md`](docs/design/appendices/mass-sim-balance.md) | LOOP_READY |
+| [`gauntlet-prompt-library.md`](docs/design/appendices/gauntlet-prompt-library.md) | LOOP_READY |
+
+### Critical path
+
+```mermaid
+flowchart TD
+  P10[Parity Ph 10-13 combat core] --> P14[Phase 14 Knight MVP re-gate]
+  P14 --> KT[Knight template LOCK - P3]
+  KT --> RUN[Roguelike run v1 - P4 worksheet]
+  RUN --> EN[Enemy puzzle kit - P5]
+  EN --> CR[Class rollout 2+ - P6]
+  MAP[Map assets + PixelForge MVP - P7] --> LM[Living map close]
+  UI[Presentation shell - P8] --> UII[UI gauntlets]
+  P14 --> CR
+  RUN --> CR
+```
+
+**Authority:** Full matrix and bars → [`verification-matrix.md`](docs/design/verification-matrix.md). Do not invent parallel QA paths.
+
+---
+
 ## Next Step
 
-**Current:** Phase 11 — Tactics Polish Continuation (user-directed, open-ended).
+**Active sprint:** Design-suite milestones per [`REMAINING_WORK_MAP.md`](docs/design/REMAINING_WORK_MAP.md).
 
-Phase 10 closed by user waiver 2026-07-13. All core roadmap phases (0–10) complete or waived.
+**Recommended order now that parity Ph 10–14 is closed:**
 
-Phase 11 scope lives in `IMPLEMENTATION_STATUS.md` (Phase 11 block at top). Work is driven by user requests each session.
+1. **Owner:** Fill P4 / P5 / P7 worksheets → promote those pillars to `LOOP_READY`
+2. **Knight LOCK (P3):** Per-skill scenarios + Tier 3 gate per `knight-template.md`
+3. **Roguelike v1 (P4):** `RunState` + `tests/run_state_test.gd` after worksheet
+4. **Enemy puzzles (P5):** Fixture loader + `tests/fixtures/encounters/` per appendix
+5. **Class rollout (P6):** Clone P3 pipeline per `class-rollout.md`
+6. **World + PixelForge (P7):** CANON promote loop per `pixelforge-v14-contract.md`
+7. **Presentation (P8):** Wire remaining SfxPlayer / HUD rows
 
-**Previous deferred items still available:**
+**Implementation status:** [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md)  
+**Combat detail:** [`docs/TACTICAL_COMBAT_PARITY_PLAN.md`](docs/TACTICAL_COMBAT_PARITY_PLAN.md)  
+**Gauntlet live scores:** [`docs/design/workbench.md`](docs/design/workbench.md)
+
+**Deferred (not blocking design suite):**
+
 - Phase 4 wind: re-enable via Effects panel (`wind_field` toggle)
 - v04–v10 seasonal PNGs: blocked until assets acquired
-- Full pixel-height shadow Z 0/1/2 angles (Phase 9 waived)
+- Full pixel-height shadow Z 0/1/2 (Phase 9 waived)
+- MP `Combat.tscn` → tactical path (Parity Phase 15)

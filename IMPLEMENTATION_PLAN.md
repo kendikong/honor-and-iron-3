@@ -135,18 +135,25 @@ Players: left third, near vertical center. Enemies: right third.
 - 2026-07-16 slice added UI shells without H&I planning parity; audits were invalid.
 - **Do not continue Phase 9.** Follow **`docs/TACTICAL_COMBAT_PARITY_PLAN.md`** (Phases 10–16).
 
-### Phases 10–16 — Tactical combat parity (ACTIVE)
-See **`docs/TACTICAL_COMBAT_PARITY_PLAN.md`** for full deliverables, Knight playtest scripts (K1–K8, M1–M8), and **mandatory full audit protocol** per phase.
+### Phases 10–14 — Tactical combat parity ✅ CLOSED
 
-| Phase | Summary |
-|-------|---------|
-| **10** | Foundation: `CombatIntentState`, `TacticalCombatShell`, Phase 9 bug fixes |
-| **11** | H&I planning input: force basic move, approach/trample, dash, skill-at-coord |
-| **12** | Inspector + overlays + layout parity |
-| **13** | Pause, ready UI, log/SFX/HP prediction |
-| **14** | Knight MVP re-gate on tactical path only |
-| **15** | MP, sandbox, danger, autobattler (optional) |
-| **16** | Options unification (optional) |
+See **`docs/TACTICAL_COMBAT_PARITY_PLAN.md`** and **`IMPLEMENTATION_STATUS.md`** (Ph 10–14 audits PASS).
+
+| Phase | Summary | Status |
+|-------|---------|--------|
+| **10** | Foundation: `CombatIntentState`, `TacticalCombatShell` | ✅ PASS |
+| **11** | H&I planning input | ✅ PASS |
+| **12** | Inspector + overlays + layout parity | ✅ PASS |
+| **13** | Pause, ready UI, log/SFX/HP prediction | ✅ PASS |
+| **14** | Knight MVP re-gate on tactical path only | ✅ PASS |
+| **15** | MP, sandbox, danger, autobattler (optional) | Deferred |
+| **16** | Options unification (optional) | Deferred |
+
+### Active — Design suite milestones
+
+**Canonical index:** [`docs/design/REMAINING_WORK_MAP.md`](docs/design/REMAINING_WORK_MAP.md)  
+**Pillar specs:** [`docs/design/README.md`](docs/design/README.md)  
+**Living map bible:** [`ROADMAP.md`](ROADMAP.md) §0–10 (closed/waived; reference only)
 
 ### Phase 17+ (post-MVP)
 - Additional classes; full `board_view` retirement; autobattler on `EncounterBuilder`

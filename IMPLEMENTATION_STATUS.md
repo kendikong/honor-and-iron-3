@@ -1,8 +1,9 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** 10 next (Tactical Combat Parity) — Phase 8 complete (legacy path); Phase 9 **FAIL**  
-**Active plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md`  
-**Last updated:** 2026-07-19  
+**Current phase:** Design-suite milestones ([`docs/design/REMAINING_WORK_MAP.md`](docs/design/REMAINING_WORK_MAP.md)) — Parity Ph 10–14 **PASS**; living-map ROADMAP §0–10 closed/waived  
+**Active plan:** `docs/design/` pillar specs + [`verification-matrix.md`](docs/design/verification-matrix.md)  
+**Combat reference:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed)  
+**Last updated:** 2026-08-01  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
 ---
