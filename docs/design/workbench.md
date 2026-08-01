@@ -9,11 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight_phalanx_stance (row) │ Round 10 (critic)
-SCORE: 87/100 │ THRESHOLD: 88 │ FAIL │ CLIMBING
-DELTA: +1 vs r9 (was 87); +8 vs r8
-NEXT: row re-critic after infinite_range_expires assert; promote at ≥88
-STOP_CONDITION_MET: no
+GAUNTLET SCORE │ K3-LOCK matrix │ Round 11–12
+FULL MATRIX: 57/95 (stale) │ ROW: phalanx PASS 89/88 ✓ │ seismic 85→pending r2
+MANIFEST: 15/30 │ STOP_CONDITION_MET: no
+NEXT: seismic r2 critic; then iron_grip queue
 ══════════════════════════════════════
 ```
 
@@ -28,7 +27,9 @@ STOP_CONDITION_MET: no
 | r7 | 57 | +2 | FAIL (STALLED) |
 | r8 | 79 | +22 | FAIL (row: phalanx) |
 | r9 | 87 | +8 | FAIL (row: phalanx — map-wide gap) |
-| r10 | 87 | +0 | FAIL (row: phalanx — expiry gap; harness deepened post-critic) |
+| r10 | 87 | +0 | FAIL (row: phalanx) |
+| r11 | 89 | +2 | **PASS** (row: phalanx → manifest) |
+| r12 | 85 | — | FAIL (row: seismic) |
 
 ---
 
@@ -38,7 +39,8 @@ STOP_CONDITION_MET: no
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-LOCK loop ACTIVE** (`/loop 200m`, job 1) — phalanx row r10 **87/88** |
+| **Status** | **K3-LOCK ACTIVE** — **15/30** manifest · phalanx **PASS** · seismic **86/88** |
+| **Last result** | phalanx promoted r11; seismic r13 **86/88** after purge_all + contracts |
 | **Lead session** | knight-k3-lock-2026-08-01 |
 
 ---
@@ -61,7 +63,7 @@ STOP_CONDITION_MET: no
 | `00-remaining-work-suite-plan.md` | 91 (C6) | 90 | **PASS** | POLISHED |
 | `01-doc-polish-protocol.md` | 91 (C3) | 90 | **PASS** | POLISHED |
 | `REMAINING_WORK_MAP.md` | 89 (C4) | 88 | **PASS** | LOOP_READY |
-| `knight-template.md` | 90 (K3-r1) | 88 | **PASS** | LOOP_READY *(K3-LOCK 14/30 — LOCK pending)* |
+| `knight-template.md` | 90 (K3-r1) | 88 | **PASS** | LOOP_READY *(K3-LOCK 15/30 — LOCK pending)* |
 | `verification-matrix.md` | 89 (C6) | 88 | **PASS** | LOOP_READY |
 | `combat-core-closeout.md` | 88 (C4) | 88 | **PASS** | LOOP_READY |
 | `class-rollout.md` | 88 (C4) | 88 | **PASS** | LOOP_READY |

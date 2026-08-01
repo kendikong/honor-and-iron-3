@@ -1241,6 +1241,29 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		enemy_purged != null and not has_status(enemy_purged, GameEnums.StatusType.STAT_BUFF_STR),
 		"seismic stomp must PURGE enemy buffs",
 	)
+	var board_purge2: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_purge2, 22, Vector2i(4, 4))
+	place_dummy(board_purge2, 23, Vector2i(5, 4))
+	place_dummy(board_purge2, 24, Vector2i(4, 5))
+	unit_on_board(board_purge2, 23).active_statuses.append(
+		DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 3),
+	)
+	unit_on_board(board_purge2, 24).active_statuses.append(
+		DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2),
+	)
+	var stomp_p2: AbilityData = ability_on_unit(unit_on_board(board_purge2, 22), &"knight_seismic_stomp")
+	var plan_p2 := Timeline.new()
+	plan_p2.add(plan_ability(22, stomp_p2, Vector2i(4, 4), 22))
+	var result_p2: SimResult = simulate_player_turn(board_purge2, plan_p2)
+	var e_a: UnitState = result_p2.final_state.get_unit_by_id(23)
+	var e_b: UnitState = result_p2.final_state.get_unit_by_id(24)
+	assert_true(
+		failures, "seismic_stomp/purge_all_enemies",
+		e_a != null and e_b != null
+		and not has_status(e_a, GameEnums.StatusType.STAT_BUFF_STR)
+		and not has_status(e_b, GameEnums.StatusType.STAT_BUFF_DEF),
+		"seismic stomp AOE PURGE must strip buffs from all enemies in AOE",
+	)
 	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_seismic_stomp")
 	var board2: BoardState = make_plain_board(Vector2i(10, 8))
 	place_knight(board2, 10, Vector2i(4, 4), cfg_up)
@@ -1253,6 +1276,40 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		failures, "seismic_stomp/upgrade/cracked",
 		events_have_terrain_changed(result2.events, Vector2i(5, 4)),
 		"upgraded seismic stomp must create CRACKED terrain in AOE",
+	)
+	var cracked_tile: TileState = result2.final_state.get_tile(Vector2i(5, 4))
+	assert_true(
+		failures, "seismic_stomp/upgrade/cracked_tile",
+		cracked_tile != null and cracked_tile.definition != null and cracked_tile.definition.id == &"cracked",
+		"upgraded seismic stomp must set cracked terrain id on AOE cell",
+	)
+	var board_base: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_base, 50, Vector2i(4, 4))
+	place_dummy(board_base, 51, Vector2i(5, 4))
+	var stomp_base: AbilityData = ability_on_unit(unit_on_board(board_base, 50), &"knight_seismic_stomp")
+	var plan_base := Timeline.new()
+	plan_base.add(plan_ability(50, stomp_base, Vector2i(4, 4), 50))
+	var result_base: SimResult = simulate_player_turn(board_base, plan_base)
+	var plain_tile: TileState = result_base.final_state.get_tile(Vector2i(5, 4))
+	assert_true(
+		failures, "seismic_stomp/base/no_cracked",
+		plain_tile != null and plain_tile.definition != null and plain_tile.definition.id == &"plain",
+		"base seismic stomp must not change terrain to cracked",
+	)
+	var board_multi: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_multi, 1, Vector2i(4, 4))
+	place_dummy(board_multi, 2, Vector2i(5, 4))
+	place_dummy(board_multi, 3, Vector2i(4, 5))
+	var stomp_m: AbilityData = ability_on_unit(unit_on_board(board_multi, 1), &"knight_seismic_stomp")
+	var hp_e2: int = unit_on_board(board_multi, 3).health.current_hp
+	var plan_multi := Timeline.new()
+	plan_multi.add(plan_ability(1, stomp_m, Vector2i(4, 4), 1))
+	var result_multi: SimResult = simulate_player_turn(board_multi, plan_multi)
+	var e2: UnitState = result_multi.final_state.get_unit_by_id(3)
+	assert_true(
+		failures, "seismic_stomp/aoe_second_target",
+		e2 != null and e2.health.current_hp < hp_e2,
+		"seismic stomp AOE must damage second adjacent enemy",
 	)
 
 

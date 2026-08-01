@@ -1,9 +1,10 @@
 {
   "piece": "K3-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 7,
-  "last_score": 57,
-  "last_result": "FAIL",
+  "last_critic_round": 11,
+  "last_score": 89,
+  "last_result": "PASS",
+  "last_row_promoted": "knight_phalanx_stance",
   "approved_rows": [
     {
       "factory_id": "knight_swap",
@@ -87,6 +88,12 @@
       "factory_id": "kinetic_converter",
       "score": 90,
       "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_phalanx_stance",
+      "score": 89,
+      "critic_round": 11,
       "fix_target": "none"
     }
   ]
