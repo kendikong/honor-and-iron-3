@@ -34,9 +34,9 @@ const PUSH_ANIM_FALLBACK: float = 1.0 ## Safety timeout if push signal never arr
 
 var base_board: BoardState
 var board: BoardState
-var plan_pre_move: Timeline = Timeline.new()
-var plan_action: Timeline = Timeline.new()
-var plan_post_move: Timeline = Timeline.new()
+var plan_pre_move: Timeline
+var plan_action: Timeline
+var plan_post_move: Timeline
 var phase: Phase = Phase.PLANNING
 var selected_unit_id: int = -1
 var selected_ability_index: int = 0
@@ -46,8 +46,8 @@ var unit_ability_memory: Dictionary = {}
 ## reachability and target highlights so they follow planned moves, not start tiles.
 var projected_state: BoardState
 var _run_id: int = 0
-## Actor ids whose MOVE was just committed via _try_add_multiple (planning walk anim).
-var _commit_animate_actor_ids: Dictionary = {}
+## Moves just added via _try_add_multiple that may need a planning commit animation.
+var _commit_animate_actions: Array[TimelineAction] = []
 var initial_board: BoardState
 ## Snapshot at the start of the current player turn (planning).
 var turn_start_board: BoardState
@@ -875,7 +875,7 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 	for i: int in range(actions.size()):
 		target_plans[i].add(actions[i])
 		if actions[i].type == GameEnums.ActionType.MOVE:
-			_commit_animate_actor_ids[actions[i].actor_id] = true
+			_commit_animate_actions.append(actions[i])
 		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null \
 				and actions[i].ability.is_movement_kind():
 			_cancel_ally_plans_after_movement_step(actions[i])
@@ -1923,7 +1923,12 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 		attack_i += 1
 	if run_id != _run_id: return
 	
-	# --- Forced movement from the action resolves before player post-move ---
+	if not post_move_events.is_empty():
+		await _play_move_batch(post_move_events, run_id)
+		if run_id != _run_id:
+			return
+	
+	# --- Forced movement — all pushes/collisions at the same time ---
 	if not push_events.is_empty():
 		for e in push_events:
 			if run_id != _run_id: return
@@ -1941,11 +1946,6 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 		await get_tree().create_timer(delay).timeout
 		post_push_i += 1
 	if run_id != _run_id: return
-	
-	if not post_move_events.is_empty():
-		await _play_move_batch(post_move_events, run_id)
-		if run_id != _run_id:
-			return
 	
 	# --- Meta events (TURN_ENDED, ACTION_FAILED, etc.) ---
 	for e in meta_events:
@@ -2183,10 +2183,7 @@ func _refresh_plan_core() -> void:
 				action.irreversible = true
 				if _cancel_plans_for_displacement(action.actor_id, pre_board, move_ev):
 					any_cancelled = true
-			if (
-				action.type == GameEnums.ActionType.MOVE
-				and _commit_animate_actor_ids.has(action.actor_id)
-			):
+			if action in _commit_animate_actions:
 				anim_events.append_array(_extract_commit_anim_events(move_ev))
 			
 		var reason := ""
@@ -2200,7 +2197,7 @@ func _refresh_plan_core() -> void:
 		_refresh_plan()
 		return
 
-	_commit_animate_actor_ids.clear()
+	_commit_animate_actions.clear()
 		
 	var dummy_ev: Array[SimEvent] = []
 	ResolutionPipeline.resolve_pending_pushes(full_proj, dummy_ev)
@@ -2236,7 +2233,7 @@ func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 		var move_ev: Array[SimEvent] = []
 		ResolutionPipeline.apply_action(move_only, action, move_ev)
 		ResolutionPipeline.resolve_pending_pushes(move_only, move_ev)
-	_commit_animate_actor_ids.clear()
+	_commit_animate_actions.clear()
 
 	projected_state = base_board.clone()
 	var evs: Array[SimEvent] = []
@@ -2261,7 +2258,7 @@ func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 
 
 func _refresh_plan_wait_marker_only(plan: Timeline) -> void:
-	_commit_animate_actor_ids.clear()
+	_commit_animate_actions.clear()
 	projected_state = base_board.clone()
 	for action: TimelineAction in plan.entries:
 		if action.awaiting_target:
