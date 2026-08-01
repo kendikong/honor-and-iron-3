@@ -882,7 +882,8 @@ func _screen_position_for_cell(ctx: Dictionary, cell: Vector2i) -> Vector2:
 
 ## Hover + full planning-surface audit (preview path, blue/red overlay, cursor glyph).
 ## Contract keys (all optional): path, path_end, path_start, path_min_size, manhattan,
-## ghost_pos, preview_nonempty, icon_has, icon_not, red_on, red_stand, ability,
+## ghost_pos, preview_nonempty, icon_has, icon_not, icon_is, slots_invalid,
+## red_on, red_stand, ability,
 ## red_cell, red_cell_in, blue_any, blue_has, blue_not.
 func _probe_cell(
 	ctx: Dictionary,
@@ -951,6 +952,15 @@ func _audit_surface(
 		assert_bool(icon.contains(glyph_n)).override_failure_message(
 			"%s: icon must not contain %s, got %s" % [label, glyph_n, icon],
 		).is_false()
+	if contract.has("icon_is"):
+		assert_that(icon).override_failure_message(
+			"%s: cursor icon expected %s got %s" % [label, contract["icon_is"], icon],
+		).is_equal(contract["icon_is"])
+	if contract.get("slots_invalid", false):
+		var hover_slots: Dictionary = _commit_slots_for_interaction(ctx, unit_id, hover_cell, false)
+		assert_bool(_slots_invalid(hover_slots)).override_failure_message(
+			"%s: hover commit slots must be invalid at %s, got %s" % [label, hover_cell, hover_slots],
+		).is_true()
 	if contract.has("red_on"):
 		var ability: AbilityData = contract.get("ability", null)
 		var stand: Vector2i = contract.get("red_stand", hover_cell)
@@ -1025,8 +1035,11 @@ func _probe_hover_edge_cases(
 		"ability": ability,
 		"red_tiles_exact": true,
 		"attack_target_clear": true,
+		"icon_is": PlanningIcons.GLYPH_NULL,
+		"slots_invalid": true,
 		"tiles_only_in_bounds": true,
 	}, "%s/off_blue" % label_prefix)
+	await _tap_off_blue_must_not_commit(ctx, unit_id, _OFF_BLUE_CELL, "%s/off_blue/click" % label_prefix)
 	await _hover_mouse_off_map(ctx)
 	await _probe_hover_surface(ctx, unit_id, _OFF_MAP_HOVER, {
 		"hover_oob": true,
@@ -1036,6 +1049,40 @@ func _probe_hover_edge_cases(
 		"ability": ability,
 		"tiles_only_in_bounds": true,
 	}, "%s/off_map" % label_prefix)
+
+
+func _plan_entry_count(director: CombatDirector) -> int:
+	return (
+		director.plan_pre_move.entries.size()
+		+ director.plan_action.entries.size()
+		+ director.plan_post_move.entries.size()
+	)
+
+
+func _tap_off_blue_must_not_commit(
+	ctx: Dictionary,
+	unit_id: int,
+	cell: Vector2i,
+	label: String,
+) -> void:
+	var director: CombatDirector = ctx.director
+	var before: int = _plan_entry_count(director)
+	var pre_action: TimelineAction = _committed_action_for_unit(director, unit_id)
+	var pre_move: TimelineAction = _committed_pre_move_for_unit(director, unit_id)
+	await _tap_cell(ctx, cell, label, false)
+	director.flush_plan_refresh_signals_if_pending()
+	assert_int(_plan_entry_count(director)).override_failure_message(
+		"%s: off-blue click must not add timeline entries (before=%d)" % [label, before],
+	).is_equal(before)
+	assert_object(_committed_action_for_unit(director, unit_id)).override_failure_message(
+		"%s: off-blue click must not commit action" % label,
+	).is_equal(pre_action)
+	assert_object(_committed_pre_move_for_unit(director, unit_id)).override_failure_message(
+		"%s: off-blue click must not commit move" % label,
+	).is_equal(pre_move)
+	assert_bool(ctx.input.preview_state.preview_board == null).override_failure_message(
+		"%s: off-blue click must not leave painted attack preview" % label,
+	).is_true()
 
 
 func _probe_hover_surface(

@@ -1113,9 +1113,21 @@ func _should_restore_stand_hover_preview(cell: Vector2i) -> bool:
 		):
 			return false
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
-		if _is_hover_move_cell(p_unit, cell) or _hover_attack_target_id() >= 0:
+		var target_id: int = _attack_target_id_at_cell(p_unit, cell)
+		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
 			return false
 	return true
+
+
+func _attack_target_id_at_cell(p_unit: UnitState, cell: Vector2i) -> int:
+	if p_unit == null or _director == null or _director.board == null:
+		return -1
+	if not _director.board.is_in_bounds(cell):
+		return -1
+	var hover_unit: UnitState = _director.board.get_unit_at(cell)
+	if hover_unit == null:
+		return -1
+	return _resolve_hover_attack_target(p_unit, hover_unit)
 
 
 func _refresh_selected_interaction_preview() -> void:
@@ -1149,9 +1161,13 @@ func _refresh_selected_interaction_preview() -> void:
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 			_refresh_click_target_highlight()
 			return
-	var target_id := _hover_attack_target_id()
-	_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
-	_refresh_click_target_highlight()
+	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
+		var target_id: int = _attack_target_id_at_cell(p_unit, cell)
+		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
+			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
+			_refresh_click_target_highlight()
+			return
+	_restore_hover_preview()
 
 
 func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
@@ -1163,6 +1179,8 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 			return false
 	if _planning != null and _planning.is_hover_move_tile(cell):
 		return true
+	if _skill_interaction_active():
+		return false
 	return _can_move_to(p_unit, cell)
 
 
@@ -2812,8 +2830,15 @@ func _drop_allows_move_tile(
 	var move_origin: Vector2i = _proj_move_origin(actor)
 	if cell == move_origin:
 		return false
-	if not legal_move_tiles.is_empty():
-		return legal_move_tiles.has(cell)
+	var effective_legal: Array[Vector2i] = legal_move_tiles
+	if effective_legal.is_empty() and _skill_interaction_active() and _planning != null:
+		effective_legal = _planning.get_hover_move_tiles()
+	if _skill_interaction_active():
+		if effective_legal.is_empty():
+			return false
+		return effective_legal.has(cell)
+	if not effective_legal.is_empty():
+		return effective_legal.has(cell)
 	return _can_move_to(actor, cell)
 
 
