@@ -1,11 +1,13 @@
 extends SceneTree
 
+const _KNIGHT_QA_RUNNER := preload("res://tests/knight_qa_runner.gd")
+
 func _initialize() -> void:
 	var failures: Array[String] = []
-	print("[SUITE] skill_scenarios_only")
-	PlanningSkillScenariosTest.run_all(failures)
+	print("[SUITE] knight_qa_tier1")
+	_KNIGHT_QA_RUNNER.run_all(failures)
 	if failures.is_empty():
-		print("[PASS] Skill scenario checklist")
+		print("[PASS] Knight QA Tier 1 scenarios")
 	else:
 		for failure: String in failures:
 			printerr("[FAIL] %s" % failure)

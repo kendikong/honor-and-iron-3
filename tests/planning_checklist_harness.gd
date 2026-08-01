@@ -45,8 +45,13 @@ static func wire_hook_board() -> Dictionary:
 
 static func wire_trample_board() -> Dictionary:
 	PlanningDragE2EHarness.cleanup_all()
-	var fix: Dictionary = TramplingAdvanceE2ETest._knight_fixture(TRAMPLE_START)
-	fix["knight"] = fix.unit
+	var fix: Dictionary = PlanningDragE2EHarness._planning_fixture(TRAMPLE_START)
+	fix.input.auto_use_skill_after_move = false
+	var trample_idx: int = ability_index(fix.knight, TRAMPLE_ID)
+	if trample_idx >= 0:
+		fix.director.selected_ability_index = trample_idx
+	fix["unit"] = fix.knight
+	fix["trample_idx"] = trample_idx
 	return PlanningDragE2EHarness.wire_fixture(fix)
 
 

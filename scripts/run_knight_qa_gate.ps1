@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $matrixDoc = Join-Path $projectRoot "docs\KNIGHT_QA_GATE.md"
 
-Write-Output "=== Knight QA gate (class validation — NOT planning QA) ==="
+Write-Output "=== Knight QA gate (class validation - NOT planning QA) ==="
 Write-Output "Spec: docs/KNIGHT_QA_GATE.md"
 Write-Output ""
 
@@ -64,9 +64,9 @@ if ($passRows.Count -lt $requiredFactoryIds.Count) {
 	}
 }
 
-# Tier 1 harness — interim; green here does not imply matrix PASS
+# Tier 1 harness - interim; green here does not imply matrix PASS
 if (-not (Test-Path $GodotPath)) {
-	Write-Output "[SKIP] Godot not found at: $GodotPath — matrix check only."
+	Write-Output "[SKIP] Godot not found at: $GodotPath - matrix check only."
 	if ($passRows.Count -lt $requiredFactoryIds.Count) { exit 2 }
 	exit 0
 }
@@ -103,5 +103,5 @@ if ($passRows.Count -eq $requiredFactoryIds.Count) {
 	exit 0
 }
 
-Write-Output "[INCOMPLETE] Harness PASS but matrix not LOCK-ready ($($passRows.Count)/$($requiredFactoryIds.Count) PASS)."
+Write-Output ('[INCOMPLETE] Harness PASS but matrix not LOCK-ready ({0}/{1} PASS rows).' -f $passRows.Count, $requiredFactoryIds.Count)
 exit 2

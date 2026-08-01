@@ -6,14 +6,5 @@ extends RefCounted
 
 
 static func run_all(failures: Array[String]) -> void:
-	var suites: Array[Dictionary] = [
-		{"name": "shield_bash", "runner": ShieldBashScenarioTest.run_all},
-		{"name": "chain_hook", "runner": ChainHookScenarioTest.run_all},
-		{"name": "trampling_advance", "runner": TramplingAdvanceScenarioTest.run_all},
-		{"name": "run_economy", "runner": RunEconomyScenarioTest.run_all},
-	]
-	for suite: Dictionary in suites:
-		print("[SCENARIO] %s" % suite.name)
-		var runner: Callable = suite.runner as Callable
-		runner.call(failures)
-		PlanningDragE2EHarness.cleanup_all()
+	## Legacy alias — Knight class QA owns Tier 1 scenarios (not planning QA gate).
+	KnightQaRunner.run_all(failures)

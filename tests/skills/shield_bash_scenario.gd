@@ -1,10 +1,15 @@
 class_name ShieldBashScenarioTest
 extends RefCounted
 
-## 7-phase checklist for Shield Bash — production path, all layers per phase.
+const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+
+## Bible: Shield Bash â€” DAMAGE 1 + PUSH 2; [+] STAGGER if push collides with wall/enemy.
+## Globals: EffectType.DAMAGE, PUSH; upgraded PUSH_STAGGER_ON_COLLISION via AbilitySystem.
+## Tier 1: 7-phase planning harness + sim upgrade collision assert (Knight QA â€” not planning gate).
 
 
 static func run_all(failures: Array[String]) -> void:
+	_sim_contract(failures)
 	_phase1_select(failures)
 	_phase2_hover_empty(failures)
 	_phase3_pathing(failures)
@@ -12,6 +17,23 @@ static func run_all(failures: Array[String]) -> void:
 	_phase5_commit(failures)
 	_phase6_execute(failures)
 	_phase7_premove_then_bash(failures)
+
+
+static func _sim_contract(failures: Array[String]) -> void:
+	var bash: AbilityData = _KnightQaHarness.factory_ability(&"knight_shield_bash")
+	_KnightQaHarness.assert_true(
+		failures, "bash/contract/damage",
+		_KnightQaHarness.ability_has_effect(bash, GameEnums.EffectType.DAMAGE, false),
+	)
+	_KnightQaHarness.assert_true(
+		failures, "bash/contract/push",
+		_KnightQaHarness.ability_has_effect(bash, GameEnums.EffectType.PUSH, false),
+	)
+	_KnightQaHarness.assert_true(
+		failures, "bash/contract/upgrade_stagger",
+		_KnightQaHarness.ability_has_effect(bash, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, true),
+	)
+	_KnightQaHarness.run_bash_wall_stagger_upgrade(failures)
 
 
 static func _bash_ability(fix: Dictionary) -> AbilityData:
@@ -87,7 +109,7 @@ static func _phase2_hover_empty(failures: Array[String]) -> void:
 	PlanningChecklistHarness.assert_cursor_contains(
 		failures, "bash/phase2/cursor_walk", fix, walk_slots, PlanningIcons.GLYPH_WALK,
 	)
-	# Run-required hover with 0 MP — red off (run eats only AP).
+	# Run-required hover with 0 MP â€” red off (run eats only AP).
 	PlanningChecklistHarness.set_knight_pools(fix, 1, 0)
 	var run_tile: Vector2i = PlanningChecklistHarness.find_run_hover_tile(fix.board, fix.knight)
 	if run_tile.x <= -900000:

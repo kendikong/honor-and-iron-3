@@ -289,10 +289,17 @@ static func ability_arms_dash_on_self_click(actor: UnitState, ability: AbilityDa
 	return planning_arms_on_self_tile(actor, ability)
 
 
-static func effect_amount(ability: AbilityData, effect_type: GameEnums.EffectType) -> int:
+static func effect_amount(
+	ability: AbilityData,
+	effect_type: GameEnums.EffectType,
+	actor: UnitState = null,
+) -> int:
 	if ability == null:
 		return 0
-	for eff in ability.effects:
+	var effects: Array = ability.effects
+	if actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
+		effects = ability.upgraded_effects
+	for eff in effects:
 		if eff.type == effect_type:
 			return eff.amount
 	return 0
@@ -1108,10 +1115,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"ability_id": action.ability.id
 					}
 					
-					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION) > 0:
+					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, actor) > 0:
 						pending["stagger_on_collision"] = true
 						
-					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0:
+					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION, actor) > 0:
 						pending["bowling_upgrade"] = true
 					
 					board.pending_pushes.append(pending)
@@ -1150,7 +1157,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"ability_id": action.ability.id
 					}
 					
-					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT) > 0:
+					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, actor) > 0:
 						pending["vulnerable_on_adjacent"] = true
 						
 					board.pending_pushes.append(pending)

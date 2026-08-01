@@ -78,6 +78,7 @@ static func _knight_fixture(start: Vector2i) -> Dictionary:
 		"director": director,
 		"board": board,
 		"unit": unit,
+		"knight": unit,
 		"trample_idx": trample_idx,
 	}
 	PlanningDragE2EHarness.track_raw_fixture(fix)

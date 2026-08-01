@@ -1,10 +1,16 @@
 class_name TramplingAdvanceScenarioTest
 extends RefCounted
 
-## Trampling Advance checklist — metadata here; production drag/commit/sim owned by TramplingAdvanceE2ETest.
+const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+
+## Bible: Trampling Advance â€” MOVE + TRAMPLE + PUSH on tile target.
+## Globals: EffectType.MOVE, TRAMPLE, PUSH via AbilitySystem.
+## Tier 1: planning E2E harness (Knight QA â€” not planning gate).
 
 
 static func run_all(failures: Array[String]) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	_sim_contract(failures)
 	_phase1_select(failures)
 	_phase2_3_arm_and_paint(failures)
 	_phase4_hover_end(failures)
@@ -13,14 +19,43 @@ static func run_all(failures: Array[String]) -> void:
 	_phase7_premove_then_trample(failures)
 
 
-static func _trample_ability(fix: Dictionary) -> AbilityData:
-	var idx: int = PlanningChecklistHarness.ability_index(
-		fix.knight, PlanningChecklistHarness.TRAMPLE_ID,
+static func _sim_contract(failures: Array[String]) -> void:
+	var trample: AbilityData = _KnightQaHarness.factory_ability(&"knight_trampling_advance")
+	_KnightQaHarness.assert_true(
+		failures, "trample/contract/move",
+		_KnightQaHarness.ability_has_effect(trample, GameEnums.EffectType.MOVE, false),
 	)
-	return fix.knight.active_abilities[idx] if idx >= 0 else null
+	_KnightQaHarness.assert_true(
+		failures, "trample/contract/trample",
+		_KnightQaHarness.ability_has_effect(trample, GameEnums.EffectType.TRAMPLE, false),
+	)
+	_KnightQaHarness.assert_true(
+		failures, "trample/contract/push",
+		_KnightQaHarness.ability_has_effect(trample, GameEnums.EffectType.PUSH, false),
+	)
+
+
+static func _fixture_unit(fix: Dictionary) -> UnitState:
+	if fix.has("unit") and fix.unit != null:
+		return fix.unit as UnitState
+	if fix.has("knight") and fix.knight != null:
+		return fix.knight as UnitState
+	return null
+
+
+static func _trample_ability(fix: Dictionary) -> AbilityData:
+	var unit: UnitState = _fixture_unit(fix)
+	if unit == null:
+		return null
+	var idx: int = PlanningChecklistHarness.ability_index(
+		unit, PlanningChecklistHarness.TRAMPLE_ID,
+	)
+	return unit.active_abilities[idx] if idx >= 0 else null
 
 
 static func _arm_awaiting(fix: Dictionary) -> bool:
+	if PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.TRAMPLE_ID) < 0:
+		return false
 	var stand: Vector2i = PlanningChecklistHarness.projected_unit(fix, 1).position
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
@@ -35,7 +70,8 @@ static func _arm_awaiting(fix: Dictionary) -> bool:
 
 static func _paint_trample_route(fix: Dictionary, route: Array[Vector2i]) -> void:
 	var input: CombatPlanningInput = fix.input
-	input._drag_unit_id = fix.unit.id
+	var unit: UnitState = _fixture_unit(fix)
+	input._drag_unit_id = unit.id
 	input._drag_unit_was_selected = true
 	input._drag_route = route.duplicate()
 	input._drag_last_free = PlanningChecklistHarness.TRAMPLE_END
@@ -49,9 +85,13 @@ static func _full_route_from(start: Vector2i) -> Array[Vector2i]:
 
 static func _phase1_select(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_trample_board()
+	fix.director.auto_run = true
+	if PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.TRAMPLE_ID) < 0:
+		PlanningChecklistHarness.assert_fail(failures, "trample/phase1", "Trampling Advance missing")
+		return
 	var ability: AbilityData = _trample_ability(fix)
 	if ability == null:
-		PlanningChecklistHarness.assert_fail(failures, "trample/phase1", "Trampling Advance missing")
+		PlanningChecklistHarness.assert_fail(failures, "trample/phase1", "Trampling Advance missing after select")
 		return
 	PlanningChecklistHarness.assert_ability_kind_class(failures, "trample/phase1", ability)
 	PlanningChecklistHarness.assert_eq_int(
@@ -68,6 +108,7 @@ static func _phase1_select(failures: Array[String]) -> void:
 
 static func _phase2_3_arm_and_paint(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_trample_board()
+	fix.director.auto_run = true
 	if not _arm_awaiting(fix):
 		PlanningChecklistHarness.assert_fail(failures, "trample/phase2", "arm awaiting failed")
 		return
@@ -86,6 +127,7 @@ static func _phase2_3_arm_and_paint(failures: Array[String]) -> void:
 
 static func _phase4_hover_end(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_trample_board()
+	fix.director.auto_run = true
 	if not _arm_awaiting(fix):
 		PlanningChecklistHarness.assert_fail(failures, "trample/phase4", "arm awaiting failed")
 		return
@@ -103,6 +145,7 @@ static func _phase4_hover_end(failures: Array[String]) -> void:
 
 static func _phase5_commit(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_trample_board()
+	fix.director.auto_run = true
 	if not _arm_awaiting(fix):
 		PlanningChecklistHarness.assert_fail(failures, "trample/phase5", "arm awaiting failed")
 		return
@@ -135,6 +178,7 @@ static func _phase5_commit(failures: Array[String]) -> void:
 
 static func _phase6_execute(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_trample_board()
+	fix.director.auto_run = true
 	if not _arm_awaiting(fix):
 		PlanningChecklistHarness.assert_fail(failures, "trample/phase6", "arm awaiting failed")
 		return

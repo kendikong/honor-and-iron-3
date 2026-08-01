@@ -2959,6 +2959,17 @@
 							"status_duration": 1,
 							"status_type": 0,
 							"type": 2
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"modifiers": {},
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 24
 						}
 					],
 					"upgraded_range_tiles": -1,
@@ -3098,7 +3109,7 @@
 				},
 				"knight_indomitable_will": {
 					"action_point_cost": 1,
-					"can_target_self": false,
+					"can_target_self": true,
 					"display_name": "Indomitable Will",
 					"effects": [
 						{
@@ -3131,8 +3142,8 @@
 					"scaling_stat": 0,
 					"target_shape": 0,
 					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"targeting_flags": 1,
+					"targeting_mode": 0,
 					"upgrade_description": "When expires, gain +2 STR.",
 					"upgraded_effects": [
 						{
@@ -3183,7 +3194,7 @@
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
-							"status_type": 40,
+							"status_type": 41,
 							"type": 8
 						}
 					],
@@ -3217,7 +3228,7 @@
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
-							"status_type": 40,
+							"status_type": 41,
 							"type": 8
 						},
 						{
@@ -3513,7 +3524,7 @@
 					"target_shape_size": 1,
 					"targeting_flags": 4,
 					"targeting_mode": 2,
-					"upgrade_description": "Apply STUN if collides with wall/enemy.",
+					"upgrade_description": "Apply STAGGER if collides with wall/enemy.",
 					"upgraded_effects": [
 						{
 							"amount": 1,
@@ -3534,6 +3545,17 @@
 							"status_duration": 1,
 							"status_type": 0,
 							"type": 1
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"modifiers": {},
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 23
 						}
 					],
 					"upgraded_range_tiles": -1,

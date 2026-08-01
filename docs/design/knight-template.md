@@ -56,14 +56,14 @@ N/A — Bible + matrix are authoritative. Owner defers rows only via explicit `N
 |-------|-------|-----|--------|
 | **K3-doc** | Spec | lint + gate doc + gate script exist; honest matrix; meta-critic contract | **PASS** (90/88) |
 | K3-matrix | Coverage | All factory ids listed; status honest | In K3-doc |
-| K3-actives | Builder | One `tests/skills/<id>_scenario.gd` per active + swap | PLANNED |
-| K3-passives | Builder | One `tests/passives/<id>_scenario.gd` per passive (trigger setup) | PLANNED |
-| K3-registry | Builder | `tests/knight_scenario_registry.gd` lists actives + passives | PLANNED |
-| K3-gate | Builder | `run_knight_qa_gate.ps1` fails until matrix 100% PASS | Stub on disk |
-| K3-meta | Critic | Adequacy score per matrix row; fixture recommendations | PLANNED |
-| **K3-LOCK** | Owner | Matrix 100% PASS + gate PASS + meta-critic ≥ 88 | PLANNED |
+| K3-actives | Builder | One `tests/skills/<id>_scenario.gd` per active + swap | **DONE** (Tier 1 green) |
+| K3-passives | Builder | One `tests/passives/<id>_scenario.gd` per passive (trigger setup) | **DONE** (factory smoke; deepen triggers) |
+| K3-registry | Builder | `tests/knight_scenario_registry.gd` lists actives + passives | **DONE** |
+| K3-gate | Builder | `run_knight_qa_gate.ps1` fails until matrix 100% PASS | **Tier 1 PASS** (exit 2 until matrix PASS) |
+| K3-meta | Critic | Adequacy score per matrix row; fixture recommendations | **NEXT** |
+| **K3-LOCK** | Owner | Matrix 100% PASS + gate PASS + meta-critic ≥ 88 | **IN PROGRESS** |
 
-**Implementation tally:** **0 / 30** factory rows meta-critic `PASS` (3 `HARNESS_ONLY`, 27 `PLANNED`). Work **one matrix row per gauntlet piece** after K3-doc.
+**Implementation tally:** **0 / 30** factory rows meta-critic `PASS` · **30** `HARNESS_ONLY` (Tier 1 harness green 2026-08-01). Next: meta-critic per row → promote to PASS.
 
 ## Builder playbook
 
