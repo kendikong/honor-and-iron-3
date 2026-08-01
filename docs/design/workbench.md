@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight-template K3-LOCK │ Round 7 (critic)
-SCORE: 57/100 │ THRESHOLD: 95 │ FAIL │ STALLED
-DELTA: +2 vs round 6 (was 55)
-NEXT: deepen 14 PASS row asserts; promote remaining 16 rows; re-critic until ≥95
+GAUNTLET SCORE │ knight_phalanx_stance (row) │ Round 8 (critic)
+SCORE: 79/100 │ THRESHOLD: 88 │ FAIL │ CLIMBING
+DELTA: +22 vs full-matrix r7 (row-level); full-matrix still 57/95
+NEXT: STURDY turn-expiry deepen OR re-critic row; then manifest promote
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
@@ -26,6 +26,7 @@ STOP_CONDITION_MET: no
 | r5 | 48 | +4 | FAIL |
 | r6 | 55 | +7 | FAIL (CLIMBING) |
 | r7 | 57 | +2 | FAIL (STALLED) |
+| r8 | 79 | +22 | FAIL (row: phalanx — below 88) |
 
 ---
 
@@ -35,7 +36,7 @@ STOP_CONDITION_MET: no
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-LOCK gauntlet ACTIVE** — critic r7 **57/95 FAIL** (14/30 manifest PASS) · [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) |
+| **Status** | **K3-LOCK loop ACTIVE** (`/loop 20m`) — phalanx tick r8 row critic 79/88 |
 | **Lead session** | knight-k3-lock-2026-08-01 |
 
 ---
@@ -46,8 +47,8 @@ STOP_CONDITION_MET: no
 |-------|-------|
 | **Piece ID** | K3-LOCK (full matrix — owner threshold 95) |
 | **Critic pass** | r7 (gauntlet-critic subagent) |
-| **Last result** | **FAIL 57/95** — 16 rows HARNESS_ONLY; deepen 14 PASS rows per critic gaps |
-| **Largest gap** | 16 rows HARNESS_ONLY; promote per [`runs/K3-LOCK.md`](runs/K3-LOCK.md) queue |
+| **Last result** | Row r8: phalanx **79/88 FAIL** — harness green; STURDY expiry deepen for manifest |
+| **Largest gap** | phalanx row < 88; 15 HARNESS_ONLY rows remain |
 
 ---
 

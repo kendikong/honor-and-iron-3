@@ -1043,6 +1043,34 @@ static func run_phalanx_stance(failures: Array[String]) -> void:
 		after0 != null and has_status(after0, GameEnums.StatusType.STURDY),
 		"phalanx stance must grant STURDY",
 	)
+	var def_amt: int = 0
+	if after0 != null:
+		for s: StatusData in after0.active_statuses:
+			if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+				def_amt = s.value
+	assert_true(
+		failures, "phalanx_stance/def_amount",
+		def_amt >= 5,
+		"phalanx stance must grant DEF +5",
+	)
+	var sturdy_before: StatusData = null
+	if after0 != null:
+		for s: StatusData in after0.active_statuses:
+			if s.type == GameEnums.StatusType.STURDY:
+				sturdy_before = s
+	assert_true(
+		failures, "phalanx_stance/sturdy_has_duration",
+		sturdy_before != null and sturdy_before.duration > 0,
+		"STURDY must have timed duration (until next turn)",
+	)
+	var advanced: SimResult = Simulator.simulate(board0, Timeline.new())
+	advanced = Simulator.simulate(advanced.final_state, Timeline.new())
+	var after_turn: UnitState = advanced.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "phalanx_stance/sturdy_expires",
+		after_turn != null and not has_status(after_turn, GameEnums.StatusType.STURDY),
+		"STURDY must clear after next turn",
+	)
 	var board: BoardState = make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = with_upgraded_ability({}, &"knight_phalanx_stance")
 	place_knight(board, 1, Vector2i(3, 3), cfg)
@@ -1056,6 +1084,41 @@ static func run_phalanx_stance(failures: Array[String]) -> void:
 		failures, "phalanx_stance/upgrade/infinite_range",
 		after != null and has_status(after, GameEnums.StatusType.RETALIATION_INFINITE_RANGE),
 		"upgraded phalanx must grant infinite retaliation range",
+	)
+	var cfg_combo: Dictionary = with_upgraded_ability(
+		with_upgraded_ability({}, &"knight_phalanx_stance"), &"knight_retaliation_protocol")
+	var board_combo: BoardState = make_plain_board(Vector2i(12, 5))
+	place_knight(board_combo, 1, Vector2i(2, 2), cfg_combo)
+	var knight_combo: UnitState = unit_on_board(board_combo, 1)
+	knight_combo.passive_flags["training_unlimited_actions"] = true
+	grant_extra_ap(knight_combo, 1)
+	var phalanx_ab: AbilityData = ability_on_unit(knight_combo, &"knight_phalanx_stance")
+	var protocol_ab: AbilityData = ability_on_unit(knight_combo, &"knight_retaliation_protocol")
+	var setup := Timeline.new()
+	setup.add(plan_ability(1, phalanx_ab, knight_combo.position, knight_combo.id))
+	setup.add(plan_ability(1, protocol_ab, knight_combo.position, knight_combo.id))
+	simulate_player_turn(board_combo, setup)
+	var armed: UnitState = unit_on_board(board_combo, 1)
+	assert_true(
+		failures, "phalanx_stance/upgrade/retaliation_status",
+		armed != null
+		and has_status(armed, GameEnums.StatusType.RETALIATION_PROTOCOL)
+		and has_status(armed, GameEnums.StatusType.RETALIATION_INFINITE_RANGE),
+		"phalanx [+] with retaliation protocol must arm both statuses",
+	)
+	soften_for_melee_hit(armed)
+	place_enemy_artillery(board_combo, 2, Vector2i(4, 2))
+	var artillery: UnitState = unit_on_board(board_combo, 2)
+	var bolt: AbilityData = artillery.active_abilities[0]
+	var hp_before: int = artillery.health.current_hp
+	var attack := Timeline.new()
+	attack.add(plan_ability(2, bolt, Vector2i(2, 2), 1))
+	var result_combo: SimResult = simulate_player_turn(board_combo, attack)
+	var enemy_after: UnitState = result_combo.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "phalanx_stance/upgrade/retaliation_at_range",
+		enemy_after != null and enemy_after.health.current_hp < hp_before,
+		"phalanx [+] must enable retaliation counter beyond melee range",
 	)
 
 
