@@ -10,6 +10,7 @@ static func run_all(failures: Array[String]) -> void:
 	var tests: Array[Callable] = [
 		_test_force_basic_flag,
 		_test_undoable_action_director,
+		_test_wait_blocks_move_commit,
 		_test_planning_action_range_tiles,
 		_test_offensive_dash_heuristic,
 		_test_composite_cursor_gate,
@@ -120,6 +121,63 @@ static func _test_undoable_action_director(failures: Array[String]) -> void:
 	director.rpc_plan_wait(1)
 	if director.unit_has_wait_planned(1):
 		failures.append("PlanningInputTest: second wait call should cancel wait modifier")
+
+
+static func _test_wait_blocks_move_commit(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := _new_director()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 6)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(2, 2)
+	unit.movement.points_left = 4
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	input._director = director
+	_register_fixture(input, director)
+	director.rpc_plan_wait(1)
+	if not input.selected_phase_action_exhausted(1):
+		failures.append("PlanningInputTest: wait should mark phase actions exhausted")
+	var dest := Vector2i(3, 2)
+	var slots: Dictionary = input._build_commit_slots_at_cell(1, dest)
+	if not slots.has("invalid"):
+		failures.append("PlanningInputTest: move slots must be invalid after wait")
+	if director.commit_from_slots(1, slots):
+		failures.append("PlanningInputTest: commit_from_slots must reject move after wait")
+	var forged_slots: Dictionary = {
+		"pre": [
+			TimelineAction.make_move(
+				1, dest, -1, [], GameEnums.MoveTiming.PRE_ACTION,
+			),
+		],
+		"action": [],
+		"post": [],
+	}
+	if director.commit_from_slots(1, forged_slots):
+		failures.append(
+			"PlanningInputTest: director must reject forged pre-move while wait is planned",
+		)
+	if input._basic_move_allowed():
+		failures.append("PlanningInputTest: basic move must be blocked after wait")
+	input._arm_drag(unit, Vector2.ZERO, true)
+	if input._drag_armed or input._drag_unit_id >= 0:
+		failures.append("PlanningInputTest: wait must block drag arming")
 
 
 static func _test_planning_action_range_tiles(failures: Array[String]) -> void:

@@ -122,6 +122,8 @@ func _on_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void
 	preview_state.clear_interaction()
 	if _planning != null:
 		_planning.restore_committed_display()
+	if _drag_unit_id >= 0 and selected_phase_action_exhausted(_drag_unit_id):
+		_cancel_drag_if_exhausted()
 
 
 func cancel_drag() -> void:
@@ -235,6 +237,10 @@ func on_left_release(local: Vector2) -> void:
 func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 	_drag_move_commit_instant = had_movement
 	var released_unit_id: int = _drag_unit_id
+	if selected_phase_action_exhausted(released_unit_id):
+		_play_sfx("invalid")
+		_drag_move_commit_instant = false
+		return false
 	var legal_move_tiles: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
 	var committed: bool = false
 	var board: BoardState = _director.board
@@ -308,6 +314,9 @@ func on_right_click() -> void:
 
 
 func update_drag(local: Vector2) -> void:
+	if selected_phase_action_exhausted(_drag_unit_id):
+		_cancel_drag_if_exhausted()
+		return
 	var board: BoardState = _director.board
 	var cell: Vector2i = _pointer_grid_cell()
 	if _intent_state != null:
@@ -512,6 +521,10 @@ func _sync_intent_live_board() -> void:
 func try_activate_drag(local: Vector2) -> void:
 	if not _drag_armed or dragging or _director == null or _director.board == null:
 		return
+	if selected_phase_action_exhausted(_drag_unit_id):
+		_cancel_drag_armed()
+		_play_sfx("invalid")
+		return
 	if local.distance_to(_drag_press_local) < _DRAG_THRESHOLD_PX:
 		return
 	var unit: UnitState = _director.board.get_unit_by_id(_drag_unit_id)
@@ -528,6 +541,9 @@ func is_drag_armed() -> bool:
 
 
 func _arm_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
+	if selected_phase_action_exhausted(unit.id):
+		_play_sfx("invalid")
+		return
 	_cancel_drag_armed()
 	_drag_armed = true
 	_drag_press_local = local
@@ -546,7 +562,21 @@ func _cancel_drag_armed() -> void:
 	_drag_route.clear()
 
 
+func _cancel_drag_if_exhausted() -> void:
+	if not dragging and not _drag_armed:
+		return
+	var had_movement: bool = _drag_had_movement() if dragging else false
+	_drag_armed = false
+	dragging = false
+	_drag_unit_id = -1
+	_end_drag_interaction(true, had_movement)
+	_play_sfx("invalid")
+
+
 func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
+	if selected_phase_action_exhausted(unit.id):
+		_play_sfx("invalid")
+		return
 	_invalidate_planning_hover_cache()
 	_clear_drag_preview_cache()
 	_stash_committed_preview()
@@ -1935,6 +1965,9 @@ func _move_slot_timing_for_commit(unit_id: int, actor: UnitState, cell: Vector2i
 
 
 func _basic_move_allowed() -> bool:
+	if _director != null and _director.selected_unit_id >= 0:
+		if selected_phase_action_exhausted(_director.selected_unit_id):
+			return false
 	if force_basic_movement:
 		return true
 	return not _movement_blocked_by_dash()

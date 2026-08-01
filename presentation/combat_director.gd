@@ -748,6 +748,9 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 	if _actions_are_wait_only(actions):
 		rpc_plan_wait(unit_id)
 		return true
+	if unit_has_wait_planned(unit_id):
+		EventBus.action_rejected.emit("no_actions_left")
+		return false
 	if slots.get("_preview_validated", false) != true:
 		var reason := preview_commit_valid(unit_id, actions)
 		if reason != "":
