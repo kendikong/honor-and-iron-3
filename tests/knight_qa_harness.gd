@@ -118,11 +118,59 @@ static func place_knight(
 	return place_unit(board, unit_id, knight_unit_data(), GameEnums.Team.PLAYER, pos, cfg)
 
 
-static func place_dummy(board: BoardState, unit_id: int, pos: Vector2i) -> UnitState:
+static func place_dummy(board: BoardState, unit_id: int, pos: Vector2i, config: Dictionary = {}) -> UnitState:
 	var def: UnitData = DataLibrary.get_training_dummy()
 	if def == null:
 		def = knight_unit_data()
-	return place_unit(board, unit_id, def, GameEnums.Team.ENEMY, pos)
+	return place_unit(board, unit_id, def, GameEnums.Team.ENEMY, pos, config)
+
+
+static func place_enemy_basher(board: BoardState, unit_id: int, pos: Vector2i) -> UnitState:
+	var def: UnitData = DataLibrary.get_training_dummy()
+	if def == null:
+		def = knight_unit_data()
+	var unit: UnitState = place_unit(board, unit_id, def, GameEnums.Team.ENEMY, pos, {
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(&"knight_shield_bash"),
+		],
+	})
+	unit.ability.max_points = 2
+	unit.ability.points_left = 2
+	return unit
+
+
+static func place_player_basher(board: BoardState, unit_id: int, pos: Vector2i) -> UnitState:
+	return place_knight(board, unit_id, pos, {
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(&"knight_shield_bash"),
+		],
+	})
+
+
+static func soften_for_melee_hit(unit: UnitState) -> void:
+	unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.VULNERABLE, 1, 1))
+	unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 5))
+	unit._recalculate_stats()
+
+
+static func boost_striker(unit: UnitState) -> void:
+	unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 20))
+	unit._recalculate_stats()
+
+
+static func events_have_retaliator_upgrade_push(events: Array, blocker_id: int) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.COLLISION:
+			var d: Dictionary = e.data
+			if (
+				int(d.get("pusher_id", -1)) == blocker_id
+				and d.get("is_collision_side_effect", false)
+				and int(d.get("push_distance", 0)) == 1
+			):
+				return true
+	return false
 
 
 static func with_upgraded_ability(config: Dictionary, ability_id: StringName) -> Dictionary:
@@ -393,19 +441,372 @@ static func run_hook_vulnerable_upgrade(failures: Array[String]) -> void:
 
 
 static func run_collision_retaliator(failures: Array[String]) -> void:
-	var walls: Array[Vector2i] = [Vector2i(5, 2)]
-	var board: BoardState = make_plain_board(Vector2i(8, 5), walls)
+	## Collision Retaliator: victim pushed into knight takes collision damage.
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
 	var cfg: Dictionary = with_single_passive(&"collision_retaliator", false)
 	place_knight(board, 1, Vector2i(3, 2), cfg)
 	place_dummy(board, 2, Vector2i(4, 2))
-	var bash: AbilityData = factory_ability(&"knight_shield_bash")
+	place_player_basher(board, 3, Vector2i(5, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 3), &"knight_shield_bash")
 	var plan := Timeline.new()
-	plan.add(plan_ability(1, bash, Vector2i(4, 2), 2))
+	plan.add(plan_ability(3, bash, Vector2i(4, 2), 2))
 	var hp_before: int = unit_on_board(board, 2).health.current_hp
 	var result: SimResult = simulate_plan(board, plan)
-	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	var victim: UnitState = result.final_state.get_unit_by_id(2)
 	assert_true(
 		failures, "collision_retaliator/damage",
+		victim != null and victim.health.current_hp < hp_before,
+		"collision into knight must damage victim via retaliator",
+	)
+
+
+static func run_bash_base_sim(failures: Array[String]) -> void:
+	## Shield Bash base: DAMAGE 1 + PUSH 2; no STAGGER without upgrade.
+	var board: BoardState = make_plain_board(Vector2i(10, 5))
+	place_knight(board, 1, Vector2i(4, 2))
+	place_dummy(board, 2, Vector2i(6, 2))
+	var knight: UnitState = unit_on_board(board, 1)
+	var bash: AbilityData = ability_on_unit(knight, &"knight_shield_bash")
+	var hp_before: int = unit_on_board(board, 2).health.current_hp
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_move(1, Vector2i(5, 2)))
+	plan.add(plan_ability(1, bash, Vector2i(6, 2), 2))
+	var result: SimResult = simulate_plan(board, plan)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(failures, "bash/base/damage", enemy != null and enemy.health.current_hp < hp_before, "bash must deal damage")
+	assert_eq_cell(failures, "bash/base/push", enemy.position, Vector2i(8, 2))
+	assert_true(
+		failures, "bash/base/no_stagger",
+		enemy != null and not has_status(enemy, GameEnums.StatusType.STAGGER),
+		"base bash must not apply STAGGER without upgrade",
+	)
+
+
+static func run_hook_base_sim(failures: Array[String]) -> void:
+	## Chain Hook base: DAMAGE + PULL 2; no VULNERABLE without upgrade.
+	var board: BoardState = make_plain_board(Vector2i(10, 6))
+	place_knight(board, 1, Vector2i(1, 3))
+	place_dummy(board, 2, Vector2i(4, 3))
+	var knight: UnitState = unit_on_board(board, 1)
+	var hook: AbilityData = ability_on_unit(knight, &"knight_chain_hook")
+	var hp_before: int = unit_on_board(board, 2).health.current_hp
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, hook, Vector2i(4, 3), 2))
+	var result: SimResult = simulate_plan(board, plan)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(failures, "chain_hook/base/damage", enemy != null and enemy.health.current_hp < hp_before, "hook must deal damage")
+	assert_eq_cell(failures, "chain_hook/base/pull", enemy.position, Vector2i(2, 3))
+	assert_true(
+		failures, "chain_hook/base/no_vuln",
+		enemy != null and not has_status(enemy, GameEnums.StatusType.VULNERABLE),
+		"base hook must not apply VULNERABLE without upgrade",
+	)
+
+
+static func run_collision_retaliator_upgrade(failures: Array[String]) -> void:
+	## Collision Retaliator [+]: victim also PUSHED 1 after collision.
+	var board: BoardState = make_plain_board(Vector2i(10, 5))
+	var cfg: Dictionary = with_single_passive(&"collision_retaliator", true)
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	place_dummy(board, 2, Vector2i(4, 2))
+	place_player_basher(board, 3, Vector2i(6, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 3), &"knight_shield_bash")
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_move(3, Vector2i(5, 2)))
+	plan.add(plan_ability(3, bash, Vector2i(4, 2), 2))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var victim: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "collision_retaliator/upgrade/push",
+		events_have_retaliator_upgrade_push(result.events, 1),
+		"upgraded retaliator must trigger bonus PUSH on collision",
+	)
+
+
+static func run_stand_ground(failures: Array[String]) -> void:
+	## Stand Ground: immune to PUSH; attacker suffers counter ATK 1.
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	var cfg: Dictionary = with_single_passive(&"stand_ground", false)
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	place_enemy_basher(board, 2, Vector2i(2, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
+	var hp_before: int = unit_on_board(board, 2).health.current_hp
+	var plan := Timeline.new()
+	plan.add(plan_ability(2, bash, Vector2i(3, 2), 1))
+	var result: SimResult = simulate_plan(board, plan)
+	var knight: UnitState = result.final_state.get_unit_by_id(1)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	assert_eq_cell(failures, "stand_ground/no_push", knight.position, Vector2i(3, 2))
+	assert_true(
+		failures, "stand_ground/counter",
 		enemy != null and enemy.health.current_hp < hp_before,
-		"collision into knight must damage enemy via retaliator",
+		"push attempt must counter-attack attacker",
+	)
+
+
+static func run_thorny_carapace(failures: Array[String]) -> void:
+	## Thorny Carapace: melee hit reflects damage and PUSH 1.
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	var cfg: Dictionary = with_single_passive(&"thorny_carapace", false)
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	soften_for_melee_hit(unit_on_board(board, 1))
+	place_enemy_basher(board, 2, Vector2i(4, 2))
+	var enemy: UnitState = unit_on_board(board, 2)
+	boost_striker(enemy)
+	enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 10))
+	enemy._recalculate_stats()
+	var bash: AbilityData = ability_on_unit(enemy, &"knight_shield_bash")
+	var hp_before: int = enemy.health.current_hp
+	var plan := Timeline.new()
+	plan.add(plan_ability(2, bash, Vector2i(3, 2), 1))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var enemy_after: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "thorny_carapace/reflect",
+		enemy_after != null and enemy_after.health.current_hp < hp_before,
+		"melee hit must reflect damage to attacker",
+	)
+	assert_eq_cell(
+		failures, "thorny_carapace/push",
+		enemy_after.position,
+		Vector2i(5, 2),
+		"thorny carapace must PUSH attacker 1 tile",
+	)
+
+
+static func run_shield_mastery(failures: Array[String]) -> void:
+	## Shield Mastery: front-arc hit grants SHIELD 2.
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	var cfg: Dictionary = with_single_passive(&"shield_mastery", false)
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	unit_on_board(board, 1).facing = GameEnums.Facing.EAST
+	place_enemy_basher(board, 2, Vector2i(4, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
+	var armor_before: int = unit_on_board(board, 1).armor
+	var plan := Timeline.new()
+	plan.add(plan_ability(2, bash, Vector2i(3, 2), 1))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var knight: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "shield_mastery/shield",
+		knight != null and knight.armor > armor_before,
+		"front-arc hit must grant SHIELD via Shield Mastery",
+	)
+
+
+static func run_bulwark(failures: Array[String]) -> void:
+	## Bulwark: +1 DEF per adjacent unit.
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	var cfg: Dictionary = with_single_passive(&"bulwark", false)
+	place_knight(board, 1, Vector2i(3, 3), cfg)
+	place_dummy(board, 2, Vector2i(4, 3))
+	var knight: UnitState = unit_on_board(board, 1)
+	var base_def: int = knight.current_defense
+	var with_adj: int = CombatSystem.get_dynamic_defense(board, knight)
+	assert_true(
+		failures, "bulwark/def_bonus",
+		with_adj > base_def,
+		"adjacent unit must increase DEF via Bulwark",
+	)
+
+
+static func run_kinetic_armor(failures: Array[String]) -> void:
+	## Kinetic Armor: flat -1 damage while SHIELD active.
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	var cfg: Dictionary = with_single_passive(&"kinetic_armor", false)
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	var knight: UnitState = unit_on_board(board, 1)
+	knight.armor = 3
+	place_enemy_basher(board, 2, Vector2i(4, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
+	var plan := Timeline.new()
+	plan.add(plan_ability(2, bash, Vector2i(3, 2), 1))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var knight_after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "kinetic_armor/mitigate",
+		knight_after != null and knight_after.is_alive(),
+		"knight must survive melee hit with kinetic armor",
+	)
+	assert_true(
+		failures, "kinetic_armor/shield_retained",
+		knight_after != null and (knight_after.armor > 0 or knight_after.health.current_hp == knight.health.current_hp),
+		"kinetic armor must mitigate damage while shield active",
+	)
+
+
+static func run_indestructible_bastion(failures: Array[String]) -> void:
+	## Indestructible Bastion: lethal -> 1 HP + SHIELD = DEF (once).
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	var cfg: Dictionary = with_single_passive(&"indestructible_bastion", false)
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	var knight: UnitState = unit_on_board(board, 1)
+	knight.health.current_hp = 3
+	soften_for_melee_hit(knight)
+	place_enemy_basher(board, 2, Vector2i(4, 2))
+	boost_striker(unit_on_board(board, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
+	var plan := Timeline.new()
+	plan.add(plan_ability(2, bash, Vector2i(3, 2), 1))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "indestructible_bastion/survive",
+		after != null and after.is_alive() and after.health.current_hp == 1,
+		"lethal hit must survive at 1 HP via Indestructible Bastion",
+	)
+	assert_true(
+		failures, "indestructible_bastion/used",
+		after != null and after.passive_flags.get("bastion_used", false),
+		"bastion trigger must fire once",
+	)
+
+
+static func run_trample_base_sim(failures: Array[String]) -> void:
+	## Trampling Advance base: MOVE + TRAMPLE + PUSH on tile target.
+	var board: BoardState = make_plain_board(Vector2i(12, 8))
+	place_knight(board, 1, Vector2i(5, 4))
+	place_dummy(board, 2, Vector2i(6, 4))
+	var knight: UnitState = unit_on_board(board, 1)
+	var trample: AbilityData = ability_on_unit(knight, &"knight_trampling_advance")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, trample, Vector2i(6, 3), -1))
+	var result: SimResult = simulate_plan(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "trample/base/moved",
+		after != null and after.position != Vector2i(5, 4),
+		"trample must move caster along route",
+	)
+
+
+static func run_concussive_shatter(failures: Array[String]) -> void:
+	var walls: Array[Vector2i] = [Vector2i(6, 2)]
+	var board: BoardState = make_plain_board(Vector2i(10, 5), walls)
+	var cfg: Dictionary = with_single_passive(&"concussive_shatter", false)
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	place_dummy(board, 2, Vector2i(4, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_shield_bash")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, bash, Vector2i(4, 2), 2))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var victim: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "concussive_shatter/debuff",
+		victim != null and has_status(victim, GameEnums.StatusType.STAT_DEBUFF_DEF),
+		"collision must apply DEF debuff via Concussive Shatter",
+	)
+
+
+static func run_kinetic_momentum(failures: Array[String]) -> void:
+	var walls: Array[Vector2i] = [Vector2i(6, 2)]
+	var board: BoardState = make_plain_board(Vector2i(10, 5), walls)
+	var cfg: Dictionary = with_single_passive(&"kinetic_momentum", false)
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	var armor_before: int = unit_on_board(board, 1).armor
+	place_dummy(board, 2, Vector2i(4, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_shield_bash")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, bash, Vector2i(4, 2), 2))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var knight: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "kinetic_momentum/shield",
+		knight != null and knight.armor > armor_before,
+		"causing collision damage must grant SHIELD via Kinetic Momentum",
+	)
+
+
+static func run_kinetic_converter(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	var cfg: Dictionary = with_single_passive(&"kinetic_converter", false)
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	soften_for_melee_hit(unit_on_board(board, 1))
+	place_enemy_basher(board, 2, Vector2i(4, 2))
+	boost_striker(unit_on_board(board, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
+	var plan := Timeline.new()
+	plan.add(plan_ability(2, bash, Vector2i(3, 2), 1))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var knight: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "kinetic_converter/str",
+		knight != null and has_status(knight, GameEnums.StatusType.STAT_BUFF_STR),
+		"being hit must grant STR buff via Kinetic Converter",
+	)
+	assert_true(
+		failures, "kinetic_converter/mov",
+		knight != null and has_status(knight, GameEnums.StatusType.STAT_BUFF_MOV),
+		"being hit must grant MOV buff via Kinetic Converter",
+	)
+
+
+static func run_kinetic_redirection(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	var cfg: Dictionary = with_single_passive(&"kinetic_redirection", false)
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	var knight: UnitState = unit_on_board(board, 1)
+	knight.armor = 5
+	place_enemy_basher(board, 2, Vector2i(4, 2))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
+	var plan := Timeline.new()
+	plan.add(plan_ability(2, bash, Vector2i(3, 2), 1))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "kinetic_redirection/stack",
+		after != null and int(after.passive_flags.get("kinetic_redirection_stacks", 0)) >= 1,
+		"mitigating damage must stack Kinetic Redirection",
+	)
+
+
+static func run_rallying_presence(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	var cfg: Dictionary = with_single_passive(&"rallying_presence", false)
+	place_knight(board, 1, Vector2i(3, 3), cfg)
+	var ally_def: UnitData = knight_unit_data()
+	place_unit(board, 3, ally_def, GameEnums.Team.PLAYER, Vector2i(3, 4), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var plan := Timeline.new()
+	var result: SimResult = simulate_player_turn(board, plan)
+	var ally: UnitState = result.final_state.get_unit_by_id(3)
+	assert_true(
+		failures, "rallying_presence/mov_buff",
+		ally != null and has_status(ally, GameEnums.StatusType.STAT_BUFF_MP),
+		"adjacent ally must gain MOV at turn start via Rallying Presence",
+	)
+
+
+static func run_shield_wall(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	var cfg: Dictionary = with_single_passive(&"shield_wall", false)
+	place_knight(board, 1, Vector2i(3, 3), cfg)
+	var ally_def: UnitData = knight_unit_data()
+	var ally: UnitState = place_unit(board, 3, ally_def, GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var base_def: int = ally.current_defense
+	var with_aura: int = CombatSystem.get_dynamic_defense(board, ally)
+	assert_true(
+		failures, "shield_wall/ally_def",
+		with_aura > base_def,
+		"adjacent ally must gain DEF from Shield Wall aura",
+	)
+
+
+static func run_intercept_tactics(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	var cfg: Dictionary = with_single_passive(&"intercept_tactics", false)
+	place_knight(board, 1, Vector2i(3, 3), cfg)
+	var knight: UnitState = unit_on_board(board, 1)
+	var redirect: AbilityData = ability_on_unit(knight, &"knight_redirect_strike")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, redirect, knight.position, knight.id))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "intercept_tactics/def_buff",
+		after != null and has_status(after, GameEnums.StatusType.STAT_BUFF_DEF),
+		"redirect skill must grant DEF via Intercept Tactics",
 	)

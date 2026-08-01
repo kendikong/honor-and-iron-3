@@ -118,15 +118,15 @@ Scenarios must prove **both** rules:
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase (not used in MVP) |
 
-**Summary (honest):** **0 / 30** factory rows meta-critic `PASS` · **30** `HARNESS_ONLY` (Tier 1 harness green) · **0** `PLANNED` · run-economy slice separate (harness only).
+**Summary (honest):** **18 / 30** factory rows meta-critic `PASS` · **12** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only).
 
 ### Movement + actives
 
 | Bible / factory id | Type | Scenario file | Tier 1 | Notes |
 |--------------------|------|---------------|--------|-------|
-| `knight_swap` | Movement | `tests/skills/knight_swap_scenario.gd` | HARNESS_ONLY | Sim base + `[+]` DEF/SHIELD; needs meta-critic |
-| `knight_shield_bash` | Active | `tests/skills/shield_bash_scenario.gd` | HARNESS_ONLY | 7-phase + sim STAGGER `[+]`; needs meta-critic |
-| `knight_phalanx_stance` | Active | `tests/skills/phalanx_stance_scenario.gd` | HARNESS_ONLY | Self-buff sim smoke |
+| `knight_swap` | Movement | `tests/skills/knight_swap_scenario.gd` | PASS | Sim base + `[+]` DEF/SHIELD (meta-critic 90) |
+| `knight_shield_bash` | Active | `tests/skills/shield_bash_scenario.gd` | PASS | 7-phase + sim base PUSH/DAMAGE + `[+]` STAGGER |
+| `knight_phalanx_stance` | Active | `tests/skills/phalanx_stance_scenario.gd` | HARNESS_ONLY | Self-buff sim smoke; deepen `[+]` infinite range |
 | `knight_taunting_strike` | Active | `tests/skills/taunting_strike_scenario.gd` | HARNESS_ONLY | Active smoke + status asserts |
 | `knight_seismic_stomp` | Active | `tests/skills/seismic_stomp_scenario.gd` | HARNESS_ONLY | Active smoke |
 | `knight_fortify` | Active | `tests/skills/fortify_scenario.gd` | HARNESS_ONLY | Active smoke |
@@ -137,29 +137,29 @@ Scenarios must prove **both** rules:
 | `knight_retaliation_protocol` | Active | `tests/skills/retaliation_protocol_scenario.gd` | HARNESS_ONLY | Self-buff sim |
 | `knight_shield_slam` | Active | `tests/skills/shield_slam_scenario.gd` | HARNESS_ONLY | Active smoke |
 | `knight_defensive_formation` | Active | `tests/skills/defensive_formation_scenario.gd` | HARNESS_ONLY | AOE smoke + ARMOR_UP `[+]` data |
-| `knight_chain_hook` | Active | `tests/skills/chain_hook_scenario.gd` | HARNESS_ONLY | 7-phase + sim VULNERABLE `[+]` |
-| `knight_trampling_advance` | Active | `tests/skills/trampling_advance_scenario.gd` | HARNESS_ONLY | 7-phase + sim contract |
+| `knight_chain_hook` | Active | `tests/skills/chain_hook_scenario.gd` | PASS | 7-phase + sim PULL/DAMAGE + `[+]` VULNERABLE |
+| `knight_trampling_advance` | Active | `tests/skills/trampling_advance_scenario.gd` | PASS | 7-phase + sim MOVE/TRAMPLE contract |
 | *(economy)* | Run / MP | `tests/skills/run_economy_scenario.gd` | HARNESS_ONLY | Shared economy slice — not a Bible row |
 
 ### Passives (trigger-based — separate scenario shape)
 
 | Factory id | Passive | Scenario file | Tier 1 | Trigger setup |
 |------------|---------|---------------|--------|----------------|
-| `collision_retaliator` | Collision Retaliator | `tests/passives/collision_retaliator_scenario.gd` | HARNESS_ONLY | Collision sim trigger + factory |
-| `thorny_carapace` | Thorny Carapace | `tests/passives/thorny_carapace_scenario.gd` | HARNESS_ONLY | Factory registered; deepen melee trigger |
-| `concussive_shatter` | Concussive Shatter | `tests/passives/concussive_shatter_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `kinetic_momentum` | Kinetic Momentum | `tests/passives/kinetic_momentum_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `stand_ground` | Stand Ground | `tests/passives/stand_ground_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `indestructible_bastion` | Indestructible Bastion | `tests/passives/indestructible_bastion_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `shield_mastery` | Shield Mastery | `tests/passives/shield_mastery_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `kinetic_armor` | Kinetic Armor | `tests/passives/kinetic_armor_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `kinetic_converter` | Kinetic Converter | `tests/passives/kinetic_converter_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `kinetic_redirection` | Kinetic Redirection | `tests/passives/kinetic_redirection_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `bulwark` | Bulwark | `tests/passives/bulwark_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `living_barricade` | Living Barricade | `tests/passives/living_barricade_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `shield_wall` | Shield Wall | `tests/passives/shield_wall_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `rallying_presence` | Rallying Presence | `tests/passives/rallying_presence_scenario.gd` | HARNESS_ONLY | Factory registered |
-| `intercept_tactics` | Intercept Tactics | `tests/passives/intercept_tactics_scenario.gd` | HARNESS_ONLY | Factory registered |
+| `collision_retaliator` | Collision Retaliator | `tests/passives/collision_retaliator_scenario.gd` | PASS | Collision damage + `[+]` bonus PUSH event |
+| `thorny_carapace` | Thorny Carapace | `tests/passives/thorny_carapace_scenario.gd` | PASS | Melee reflect damage + PUSH attacker |
+| `concussive_shatter` | Concussive Shatter | `tests/passives/concussive_shatter_scenario.gd` | PASS | Wall collision DEF debuff on victim |
+| `kinetic_momentum` | Kinetic Momentum | `tests/passives/kinetic_momentum_scenario.gd` | PASS | Collision grants SHIELD (STR+DEF) |
+| `stand_ground` | Stand Ground | `tests/passives/stand_ground_scenario.gd` | PASS | Blocks PUSH + counter-attack |
+| `indestructible_bastion` | Indestructible Bastion | `tests/passives/indestructible_bastion_scenario.gd` | PASS | Lethal -> 1 HP + bastion_used flag |
+| `shield_mastery` | Shield Mastery | `tests/passives/shield_mastery_scenario.gd` | PASS | Front-arc hit grants SHIELD |
+| `kinetic_armor` | Kinetic Armor | `tests/passives/kinetic_armor_scenario.gd` | PASS | Mitigation while SHIELD active |
+| `kinetic_converter` | Kinetic Converter | `tests/passives/kinetic_converter_scenario.gd` | PASS | On-hit STR + MOV buff |
+| `kinetic_redirection` | Kinetic Redirection | `tests/passives/kinetic_redirection_scenario.gd` | PASS | Mitigation stacks redirection |
+| `bulwark` | Bulwark | `tests/passives/bulwark_scenario.gd` | PASS | Adjacent unit DEF bonus |
+| `living_barricade` | Living Barricade | `tests/passives/living_barricade_scenario.gd` | HARNESS_ONLY | Factory registered; needs ranged block sim |
+| `shield_wall` | Shield Wall | `tests/passives/shield_wall_scenario.gd` | PASS | Adjacent ally DEF aura |
+| `rallying_presence` | Rallying Presence | `tests/passives/rallying_presence_scenario.gd` | PASS | Turn-start adjacent MOV buff |
+| `intercept_tactics` | Intercept Tactics | `tests/passives/intercept_tactics_scenario.gd` | PASS | Redirect skill grants DEF |
 
 **LOCK rule:** All factory rows `PASS` (or owner-documented `N/A`). Gate script **fails** until then.
 

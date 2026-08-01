@@ -8,5 +8,6 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_KnightQaHarness.run_collision_retaliator( failures)
+	_KnightQaHarness.run_collision_retaliator(failures)
+	_KnightQaHarness.run_collision_retaliator_upgrade(failures)
 

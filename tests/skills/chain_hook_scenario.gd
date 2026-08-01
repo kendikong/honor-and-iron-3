@@ -26,7 +26,8 @@ static func _sim_contract(failures: Array[String]) -> void:
 		failures, "hook/contract/pull",
 		_KnightQaHarness.ability_has_effect(hook, GameEnums.EffectType.PULL, false),
 	)
-	_KnightQaHarness.run_hook_vulnerable_upgrade( failures)
+	_KnightQaHarness.run_hook_vulnerable_upgrade(failures)
+	_KnightQaHarness.run_hook_base_sim(failures)
 
 
 static func _hook_ability(fix: Dictionary) -> AbilityData:
