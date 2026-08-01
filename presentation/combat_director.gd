@@ -70,6 +70,11 @@ var _pending_refresh_preview: SimResult
 var plan_refresh_snap_units: bool = false
 ## Defer heavy overlay preview rebuild one frame (walk commit / undo snap).
 var plan_refresh_defer_overlay: bool = false
+## Snap undo back to turn-start layout: skip hover/stats churn in overlay apply.
+var plan_refresh_light_overlay: bool = false
+var _turn_start_intents: Array = []
+var _turn_start_enemy_ghost_events: Array[SimEvent] = []
+var _pending_planning_commit_events: Array[SimEvent] = []
 var _refresh_plan_queued: bool = false
 var _cached_wait_marker_ghost_events: Array[SimEvent] = []
 ## Autobattler batches rpc_plan_move commits; one parallel planning walk plays at batch end.
@@ -2193,6 +2198,8 @@ func _begin_undo_plan_refresh(unit_id: int) -> void:
 	plan_affected_unit_ids = [unit_id]
 	plan_refresh_snap_units = true
 	plan_refresh_defer_overlay = true
+	plan_refresh_light_overlay = true
+	_pending_planning_commit_events.clear()
 	clear_planning_move_instant(unit_id)
 
 
@@ -2276,8 +2283,10 @@ func _refresh_plan_core() -> void:
 	projected_state.intents = new_intents
 
 	if not anim_events.is_empty():
-		EventBus.planning_commit_events.emit(anim_events)
+		for event: SimEvent in anim_events:
+			_pending_planning_commit_events.append(event)
 		plan_refresh_defer_overlay = true
+		call_deferred("_flush_pending_planning_commit_events")
 	plan_revision += 1
 	sync_selected_ability_if_invalid()
 
@@ -2306,6 +2315,11 @@ func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 		ResolutionPipeline.resolve_pending_pushes(move_only, move_ev)
 		evs.append_array(move_ev)
 	_commit_animate_actor_ids.clear()
+	_pending_planning_commit_events.clear()
+
+	if _player_positions_match_turn_start(move_only):
+		_refresh_plan_snap_turn_start(plan, evs)
+		return
 
 	projected_state = move_only.clone()
 	board = move_only
@@ -2325,6 +2339,32 @@ func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 	var statuses := PackedStringArray()
 	statuses.resize(maxi(plan.size(), 1))
 	plan_refresh_defer_overlay = true
+	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
+
+
+func _refresh_plan_snap_turn_start(plan: Timeline, player_events: Array[SimEvent]) -> void:
+	projected_state = base_board.clone()
+	board = base_board.clone()
+	var intents: Array = _clone_intents(_turn_start_intents)
+	if intents.is_empty():
+		intents = EnemyPlanner.plan(projected_state)
+	base_board.intents = intents
+	board.intents = intents
+	projected_state.intents = intents
+
+	plan_revision += 1
+	sync_selected_ability_if_invalid()
+
+	var preview_board: BoardState = projected_state.clone()
+	var ghost_evs: Array[SimEvent] = _turn_start_enemy_ghost_events.duplicate()
+	if ghost_evs.is_empty():
+		ghost_evs = _build_enemy_ghost_events(preview_board, intents)
+	var sim_res := SimResult.new(preview_board)
+	sim_res.events = _preview_events_for_overlay(player_events, ghost_evs)
+	var statuses := PackedStringArray()
+	statuses.resize(maxi(plan.size(), 1))
+	plan_refresh_defer_overlay = true
+	plan_refresh_light_overlay = true
 	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
 
 
@@ -2501,6 +2541,46 @@ func _preview_events_for_overlay(
 
 func _capture_turn_start() -> void:
 	turn_start_board = base_board.clone()
+	_cache_turn_start_enemy_preview()
+
+
+func _cache_turn_start_enemy_preview() -> void:
+	_turn_start_intents = _clone_intents(base_board.intents)
+	var preview_board: BoardState = base_board.clone()
+	var intents: Array = _turn_start_intents
+	if intents.is_empty():
+		intents = EnemyPlanner.plan(preview_board)
+		_turn_start_intents = _clone_intents(intents)
+	_turn_start_enemy_ghost_events = _build_enemy_ghost_events(preview_board, intents)
+
+
+func _clone_intents(source: Array) -> Array:
+	var out: Array = []
+	for intent: Variant in source:
+		if intent is Intent:
+			out.append((intent as Intent).clone())
+	return out
+
+
+func _player_positions_match_turn_start(candidate: BoardState) -> bool:
+	if turn_start_board == null or candidate == null:
+		return false
+	for unit: UnitState in turn_start_board.units:
+		if not unit.is_alive() or unit.is_enemy():
+			continue
+		var other: UnitState = candidate.get_unit_by_id(unit.id)
+		if other == null or other.position != unit.position:
+			return false
+	return true
+
+
+func _flush_pending_planning_commit_events() -> void:
+	if _pending_planning_commit_events.is_empty():
+		return
+	var events: Array[SimEvent] = _pending_planning_commit_events.duplicate()
+	_pending_planning_commit_events.clear()
+	EventBus.planning_commit_events.emit(events)
+
 
 func _lock_enemy_intents() -> void:
 	base_board.intents = EnemyPlanner.plan(base_board)

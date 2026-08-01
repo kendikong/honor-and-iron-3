@@ -840,15 +840,25 @@ func _flush_deferred_preview_updated() -> void:
 	_deferred_preview_pending = false
 	var result: SimResult = _deferred_preview_result
 	_deferred_preview_result = null
+	var light_refresh: bool = false
 	if _director != null:
+		light_refresh = _director.plan_refresh_light_overlay
+		_director.plan_refresh_light_overlay = false
 		_director.plan_refresh_defer_overlay = false
 	if result == null:
 		return
-	_apply_committed_preview_update(result)
+	_apply_committed_preview_update(result, light_refresh)
 
 
-func _apply_committed_preview_update(result: SimResult) -> void:
+func _apply_committed_preview_update(result: SimResult, light_refresh: bool = false) -> void:
 	set_preview_board(result.final_state)
+	if light_refresh:
+		if _director != null and _board != null:
+			_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
+			_preview_board = _committed_preview.preview_board
+		_has_stashed_committed = false
+		queue_redraw()
+		return
 	_invalidate_hover_cache()
 	if _director != null and _board != null:
 		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
