@@ -90,6 +90,8 @@ func _spawn_heal_text(event: SimEvent) -> void:
 
 
 func _on_planning_commit_events(events: Array) -> void:
+	if _unit_layer != null and _director != null and _director.board != null:
+		_unit_layer.adopt_board(_director.board)
 	var had_push: bool = false
 	for raw: Variant in events:
 		if raw is SimEvent:

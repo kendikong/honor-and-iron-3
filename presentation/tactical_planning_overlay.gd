@@ -390,6 +390,11 @@ func update_drag_sprite_position(
 		_unit_layer.update_drag_preview_position(map_local, preview_cell, cursor_cell)
 
 
+func finish_drag_for_commit() -> void:
+	if _unit_layer != null:
+		_unit_layer.finish_drag_for_commit()
+
+
 func end_drag_sprite(snap_back: bool = false) -> void:
 	if _unit_layer != null:
 		_unit_layer.end_drag_preview(snap_back)

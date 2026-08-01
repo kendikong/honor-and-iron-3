@@ -226,6 +226,8 @@ func on_left_release(local: Vector2) -> void:
 		_drag_unit_id = -1
 		_end_drag_interaction(true, had_movement)
 		return
+	if had_movement and _planning != null:
+		_planning.finish_drag_for_commit()
 	var committed: bool = _process_unit_drop(local, had_movement)
 	dragging = false
 	var snap_back: bool = had_movement and not committed

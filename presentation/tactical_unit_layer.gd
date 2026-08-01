@@ -234,6 +234,10 @@ func _on_board_changed(board: BoardState) -> void:
 	queue_redraw()
 
 
+func adopt_board(board: BoardState) -> void:
+	_board = board
+
+
 func _on_preview_updated(result: SimResult) -> void:
 	_preview_board = result.final_state
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
@@ -811,8 +815,6 @@ func _should_animate_move(event: SimEvent) -> bool:
 	var unit_id: int = int(event.data.get("actor", -1))
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if _is_planning_phase():
-		if _director != null and _director.is_planning_move_instant(unit_id):
-			return false
 		return unit != null and not unit.is_enemy()
 	if unit != null and unit.is_enemy():
 		return true
@@ -902,11 +904,6 @@ func _sync_planning_unit_position(unit: UnitState) -> void:
 		return
 	if _director != null and _director.plan_refresh_snap_units:
 		_kill_move_tween(unit.id)
-		_position_actor(unit.id, target)
-		_sync_planning_final_facing(unit.id)
-		_update_depth(unit.id)
-		return
-	if _director != null and _director.take_planning_move_instant(unit.id):
 		_position_actor(unit.id, target)
 		_sync_planning_final_facing(unit.id)
 		_update_depth(unit.id)
@@ -1567,10 +1564,23 @@ func begin_drag_preview(unit_id: int) -> void:
 	_kill_move_tween(unit_id)
 
 
-func end_drag_preview(snap_back: bool = false) -> void:
-	if _drag_preview_id < 0:
+func finish_drag_for_commit() -> void:
+	if not _drag_preview_active or _drag_preview_id < 0:
 		return
 	var unit_id: int = _drag_preview_id
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
+	if unit == null or actor == null or _map_view == null:
+		_clear_drag_preview_state()
+		return
+	_kill_move_tween(unit_id)
+	var origin_cell: Vector2i = unit.position
+	_clear_drag_preview_state()
+	_finish_snap_at_cell(unit_id, origin_cell)
+	_apply_exhaustion_state(unit)
+
+
+func _clear_drag_preview_state() -> void:
 	_drag_preview_active = false
 	_drag_preview_id = -1
 	_drag_preview_failed = false
@@ -1578,22 +1588,31 @@ func end_drag_preview(snap_back: bool = false) -> void:
 	_drag_preview_last_facing = -1
 	_drag_preview_last_failed = false
 	clear_drag_attack_target()
+
+
+func end_drag_preview(snap_back: bool = false) -> void:
+	if _drag_preview_id < 0:
+		return
+	var unit_id: int = _drag_preview_id
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	var actor: CharacterActor = _actors.get(unit_id)
 	if unit == null or actor == null:
+		_clear_drag_preview_state()
 		return
 	var home: Vector2 = _map_view.grid_to_foot_local(unit.position)
 	if snap_back and actor.position.distance_to(home) > 1.5:
+		_clear_drag_preview_state()
 		_snap_actor_rubberband(unit_id, unit.position)
 		return
 	if snap_back:
+		_clear_drag_preview_state()
 		_finish_drag_preview_at_home(unit_id, unit)
 		return
 	if _move_tweens.has(unit_id):
+		_clear_drag_preview_state()
 		_apply_exhaustion_state(unit)
 		return
-	var drop_cell: Vector2i = _actor_grid_cell(unit_id)
-	_finish_snap_at_cell(unit_id, drop_cell)
+	_clear_drag_preview_state()
 	_apply_exhaustion_state(unit)
 
 
