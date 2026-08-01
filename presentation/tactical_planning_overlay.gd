@@ -79,9 +79,6 @@ var _action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_proj_key: int = -1
 var _cached_hover_awaiting_targeting: bool = false
-var _cached_hover_coord: Vector2i = Vector2i(-999, -999)
-var _cached_hover_range_visible: bool = false
-var _event_bus_bound: bool = false
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -112,120 +109,43 @@ func setup(
 	_intent_state = intent_state
 	z_as_relative = false
 	z_index = 11
-	_bind_event_bus()
-	_bind_intent_state_signals()
-	set_process(true)
-
-
-func _bind_event_bus() -> void:
-	if _event_bus_bound:
-		return
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
-	EventBus.timeline_changed.connect(_on_eventbus_timeline_changed)
-	EventBus.ability_selected.connect(_on_eventbus_ability_selected)
-	EventBus.selection_changed.connect(_on_eventbus_selection_changed)
-	EventBus.turn_phase_changed.connect(_on_eventbus_turn_phase_changed)
-	EventBus.sim_event.connect(_on_sim_event)
-	_event_bus_bound = true
-
-
-func _bind_intent_state_signals() -> void:
-	if _intent_state == null:
-		return
-	if not _intent_state.intents_changed.is_connected(_on_intent_intents_changed):
-		_intent_state.intents_changed.connect(_on_intent_intents_changed)
-	if not _intent_state.hover_coord_changed.is_connected(_on_intent_hover_coord_changed):
-		_intent_state.hover_coord_changed.connect(_on_intent_hover_coord_changed)
-
-
-func _unbind_event_bus() -> void:
-	if not _event_bus_bound:
-		return
-	if EventBus.board_changed.is_connected(_on_board_changed):
-		EventBus.board_changed.disconnect(_on_board_changed)
-	if EventBus.preview_updated.is_connected(_on_preview_updated):
-		EventBus.preview_updated.disconnect(_on_preview_updated)
-	if EventBus.timeline_changed.is_connected(_on_eventbus_timeline_changed):
-		EventBus.timeline_changed.disconnect(_on_eventbus_timeline_changed)
-	if EventBus.ability_selected.is_connected(_on_eventbus_ability_selected):
-		EventBus.ability_selected.disconnect(_on_eventbus_ability_selected)
-	if EventBus.selection_changed.is_connected(_on_eventbus_selection_changed):
-		EventBus.selection_changed.disconnect(_on_eventbus_selection_changed)
-	if EventBus.turn_phase_changed.is_connected(_on_eventbus_turn_phase_changed):
-		EventBus.turn_phase_changed.disconnect(_on_eventbus_turn_phase_changed)
-	if EventBus.sim_event.is_connected(_on_sim_event):
-		EventBus.sim_event.disconnect(_on_sim_event)
-	_event_bus_bound = false
-
-
-func _unbind_intent_state_signals() -> void:
-	if _intent_state == null:
-		return
-	if _intent_state.intents_changed.is_connected(_on_intent_intents_changed):
-		_intent_state.intents_changed.disconnect(_on_intent_intents_changed)
-	if _intent_state.hover_coord_changed.is_connected(_on_intent_hover_coord_changed):
-		_intent_state.hover_coord_changed.disconnect(_on_intent_hover_coord_changed)
-
-
-func teardown() -> void:
-	_unbind_intent_state_signals()
-	_unbind_event_bus()
-	_planning_input = null
-	_director = null
-	_intent_state = null
-	_map_view = null
-	_unit_layer = null
-	set_process(false)
-
-
-func _exit_tree() -> void:
-	teardown()
-
-
-func _on_eventbus_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void:
-	_invalidate_hover_cache()
-	_schedule_hover_recompute()
-
-
-func _on_eventbus_ability_selected(_index: int) -> void:
-	_invalidate_hover_cache()
-	_recompute_hover_ranges_from_inputs()
-	queue_redraw()
-
-
-func _on_eventbus_selection_changed(_id: int) -> void:
-	if _director == null:
-		return
-	_update_hover_action_icon()
-	queue_redraw()
-
-
-func _on_eventbus_turn_phase_changed(phase: int) -> void:
-	_phase = phase
-	var planning: bool = CombatDirector.is_planning_phase(phase)
-	if not planning and _planning_input != null:
-		_planning_input.clear_interaction_preview()
-	_invalidate_hover_cache()
-	if planning:
-		_recompute_hover_ranges_from_inputs()
-	else:
-		_hover_move_tiles.clear()
-		_hover_action_range_tiles.clear()
-	mark_danger_dirty()
-	queue_redraw()
-
-
-func _on_intent_intents_changed(_units: Dictionary) -> void:
-	queue_redraw()
-
-
-func _on_intent_hover_coord_changed(coord: Vector2i) -> void:
-	_hover_coord = coord
-	if _director != null and _director.selected_unit_id < 0:
+	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
 		_invalidate_hover_cache()
-		_recompute_hover_ranges_from_inputs()
-	queue_redraw()
+		_schedule_hover_recompute()
+	)
+	EventBus.selection_changed.connect(func(_id: int) -> void:
+		if _director == null:
+			return
+		_update_hover_action_icon()
+		queue_redraw(),
+	)
+	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
+		_phase = phase
+		var planning: bool = CombatDirector.is_planning_phase(phase)
+		if not planning and _planning_input != null:
+			_planning_input.clear_interaction_preview()
+		_invalidate_hover_cache()
+		if planning:
+			_recompute_hover_ranges_from_inputs()
+		else:
+			_hover_move_tiles.clear()
+			_hover_action_range_tiles.clear()
+		mark_danger_dirty()
+		queue_redraw(),
+	)
+	EventBus.sim_event.connect(_on_sim_event)
+	if _intent_state != null:
+		_intent_state.intents_changed.connect(func(_units: Dictionary) -> void: queue_redraw())
+		_intent_state.hover_coord_changed.connect(func(coord: Vector2i) -> void:
+			_hover_coord = coord
+			if _director != null and _director.selected_unit_id < 0:
+				_invalidate_hover_cache()
+				_recompute_hover_ranges_from_inputs()
+			queue_redraw(),
+		)
+	set_process(true)
 
 
 func apply_settings(settings: GameSettings) -> void:
@@ -293,7 +213,6 @@ func _invalidate_hover_cache() -> void:
 	_cached_hover_ability = -1
 	_cached_hover_proj_key = -1
 	_cached_hover_awaiting_targeting = false
-	_cached_hover_coord = Vector2i(-999, -999)
 
 
 func _planning_action_range_tiles_for_unit(
@@ -352,38 +271,6 @@ func is_hover_action_range_tile(cell: Vector2i) -> bool:
 
 func is_hover_threat_tile(cell: Vector2i) -> bool:
 	return is_hover_action_range_tile(cell)
-
-
-## Blue awaiting-movement route cells drawn by `_draw_move_ghosts`; empty when no arrow should draw.
-func awaiting_movement_hover_route_cells() -> Array[Vector2i]:
-	if _director == null or _board == null or _planning_input == null:
-		return []
-	if _director.selected_unit_id < 0 or not _board.is_in_bounds(_hover_coord):
-		return []
-	var unit := _proj_unit(_director.selected_unit_id)
-	if unit == null or not unit.is_alive():
-		return []
-	var force_basic: bool = _planning_input.force_basic_movement
-	if not _can_show_action_range_tiles(unit, _director.selected_ability_index, force_basic):
-		return []
-	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
-	if ability == null or AbilitySystem.planning_commit_flow(unit, ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:
-		return []
-	var origin: Vector2i = _proj_origin(unit)
-	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, _hover_coord, ability):
-		return []
-	if not AbilitySystem.ability_has_movement_effect(ability):
-		return []
-	var drag_route: Array = _planning_input.get_drag_route()
-	var sim_path: Array = []
-	var action_split: int = -1
-	var hover_preview: CombatPlanningPreview = _planning_input.preview_state
-	if hover_preview != null:
-		sim_path = hover_preview.preview_paths.get(unit.id, [])
-		action_split = int(hover_preview.action_splits.get(unit.id, -1))
-	return CombatPlanningPreview.awaiting_movement_route_cells(
-		origin, _hover_coord, drag_route, sim_path, action_split,
-	)
 
 
 func clear_live_preview() -> void:
@@ -468,8 +355,8 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 	if coord == _hover_coord:
 		return
 	_hover_coord = coord
-	_invalidate_hover_cache()
 	if _director != null and _director.selected_unit_id < 0:
+		_invalidate_hover_cache()
 		_recompute_hover_ranges_from_inputs()
 	if _planning_input == null:
 		_update_hover_action_icon()
@@ -696,11 +583,24 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if AbilitySystem.is_run_ability(ability):
 		return false
+	## Phase 1 (selected AWAITING_TARGET, not yet armed) and phase 2 (awaiting armed)
+	## both show action-range tiles from projected stand — dash/move tiles in phase 2.
+	var premove_cell: Vector2i = _intent_stand_origin(unit)
+	var plan_board: BoardState = _director.projected_state if _director.projected_state != null else _board
+	var auto_run_active: bool = (
+		_planning_input != null and _planning_input.auto_run_movement_active(p_unit)
+	)
+	if not (
+		_planning_input != null
+		and _planning_input.awaiting_targeting_active()
+	):
+		if not AbilitySystem.can_show_planning_action_range_after_premove(
+			plan_board, p_unit, ability, premove_cell, auto_run_active,
+		):
+			return false
 	if force_basic:
 		return true
-	if _planning_input == null:
-		return false
-	return _planning_input.action_range_visible_for_hover()
+	return p_unit.ability.points_left >= ability.action_point_cost
 
 
 func recompute_hover_ranges(
@@ -737,9 +637,6 @@ func recompute_hover_ranges(
 	var cache_awaiting_targeting: bool = (
 		_planning_input != null and _planning_input.awaiting_targeting_active()
 	)
-	var cache_range_visible: bool = (
-		_planning_input != null and _planning_input.action_range_visible_for_hover()
-	)
 	if (
 		_cached_hover_unit_id == unit.id
 		and _cached_hover_origin == move_origin
@@ -748,8 +645,6 @@ func recompute_hover_ranges(
 		and _cached_hover_force == cache_force
 		and _cached_hover_proj_key == proj_key
 		and _cached_hover_awaiting_targeting == cache_awaiting_targeting
-		and _cached_hover_coord == _hover_coord
-		and _cached_hover_range_visible == cache_range_visible
 	):
 		return
 	_cached_hover_unit_id = unit.id
@@ -759,8 +654,6 @@ func recompute_hover_ranges(
 	_cached_hover_force = cache_force
 	_cached_hover_proj_key = proj_key
 	_cached_hover_awaiting_targeting = cache_awaiting_targeting
-	_cached_hover_coord = _hover_coord
-	_cached_hover_range_visible = cache_range_visible
 	_hover_move_tiles.clear()
 	_hover_action_range_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):
@@ -791,14 +684,16 @@ func recompute_hover_ranges(
 		else:
 			move_budget = unit.movement.points_left
 		if move_budget > 0:
-			# Blue tiles = MP walk/run only. Selected skill pass-through (BULLDOZE/TRAMPLE) must not widen them.
+			var move_ability: AbilityData = null
+			if is_selected_player and selected_ability >= 0:
+				move_ability = _selected_ability_data(unit, selected_ability)
 			_hover_move_tiles = MovementSystem.get_reachable_tiles(
 				move_board,
 				move_from,
 				move_budget,
 				mt,
 				move_cost,
-				null,
+				move_ability,
 			)
 	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
 		queue_redraw()
@@ -917,8 +812,6 @@ func _on_preview_updated(result: SimResult) -> void:
 	if _lock_committed_from_intent:
 		_lock_committed_from_intent = false
 		_has_stashed_committed = false
-		_invalidate_hover_cache()
-		_schedule_hover_recompute()
 		queue_redraw()
 		return
 	set_preview_board(result.final_state)
@@ -2060,6 +1953,8 @@ func _draw_move_ghosts() -> void:
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null or AbilitySystem.planning_commit_flow(unit, ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:
 		return
+	if _planning_input != null and not _planning_input.awaiting_targeting_active():
+		return
 	var origin: Vector2i = _proj_origin(unit)
 	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, _hover_coord, ability):
 		return
@@ -2069,9 +1964,19 @@ func _draw_move_ghosts() -> void:
 	var dash_face: int = _facing_toward(origin, _hover_coord)
 	_draw_facing_wedge(center, dash_face, Color(p_col.r, p_col.g, p_col.b, 0.85))
 	if ability != null and AbilitySystem.ability_has_movement_effect(ability):
-		var route_cells: Array[Vector2i] = awaiting_movement_hover_route_cells()
-		if route_cells.size() >= 2:
-			_draw_route_line(route_cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
+		var drag_route: Array = []
+		var sim_path: Array = []
+		var action_split: int = -1
+		if _planning_input != null:
+			drag_route = _planning_input.get_drag_route()
+			var hover_preview: CombatPlanningPreview = _planning_input.preview_state
+			if hover_preview != null:
+				sim_path = hover_preview.preview_paths.get(unit.id, [])
+				action_split = int(hover_preview.action_splits.get(unit.id, -1))
+		var route_cells: Array[Vector2i] = CombatPlanningPreview.awaiting_movement_route_cells(
+			origin, _hover_coord, drag_route, sim_path, action_split,
+		)
+		_draw_route_line(route_cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
 	else:
 		_draw_targeting_intent_arrow(origin, _hover_coord, Color(p_col.r, p_col.g, p_col.b, 0.85))
 
@@ -2138,13 +2043,24 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	return CombatPlanningPreview.planning_move_origin_cell(_director, _board, unit.id)
 
 
-## Action-range anchor: shared with CombatPlanningInput.action_range_intent_stand_cell.
+## Action-range anchor: committed projection plus live move-preview stand (intent truth).
+## Phase-2 armed movement skills keep projected stand — dash endpoints come from there.
 func _intent_stand_origin(unit: UnitState) -> Vector2i:
+	var projected: Vector2i = _proj_origin(unit)
 	if unit == null:
-		return Vector2i(-999999, -999999)
-	if _planning_input != null:
-		return _planning_input.action_range_intent_stand_cell(unit.id)
-	return _proj_origin(unit)
+		return projected
+	if _planning_input != null and _planning_input.awaiting_targeting_active():
+		var sel_idx: int = _director.selected_ability_index if _director != null else -1
+		var ability: AbilityData = _selected_ability_data(unit, sel_idx)
+		if ability != null and AbilitySystem.is_movement_skill(ability):
+			return projected
+	if _planning_input != null and _planning_input.is_live_preview_active():
+		var live_board: BoardState = _live_preview.preview_board
+		if live_board != null:
+			var live_unit: UnitState = live_board.get_unit_by_id(unit.id)
+			if live_unit != null:
+				return live_unit.position
+	return projected
 
 
 func _selected_ability_data(unit: UnitState, ability_index: int) -> AbilityData:

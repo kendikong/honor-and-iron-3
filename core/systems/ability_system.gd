@@ -463,7 +463,6 @@ static func project_actor_after_premove(
 	actor: UnitState,
 	premove_cell: Vector2i,
 	auto_run_active: bool,
-	force_run: bool = false,
 ) -> UnitState:
 	if board == null or actor == null:
 		return null
@@ -471,7 +470,7 @@ static func project_actor_after_premove(
 		return actor.clone()
 	if not board.is_in_bounds(premove_cell):
 		return null
-	var needs_run: bool = force_run or movement_requires_run(board, actor, premove_cell, [])
+	var needs_run: bool = movement_requires_run(board, actor, premove_cell, [])
 	if needs_run and not auto_run_active:
 		return null
 	var trial: BoardState = board.clone()
