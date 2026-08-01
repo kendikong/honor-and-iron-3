@@ -6,7 +6,7 @@
 
 ## Goal
 
-JSON/schema for handcrafted puzzle encounters loadable through `EncounterBuilder` → headless `Simulator` smoke.
+JSON/schema for handcrafted puzzle encounters — **PLANNED** loader through `EncounterBuilder` → headless `Simulator` smoke.
 
 ## Quality bar
 

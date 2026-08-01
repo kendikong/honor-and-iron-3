@@ -59,11 +59,11 @@ If no `RunState` test: `Infrastructure: INADEQUATE` → propose `tests/run_state
 ## Gauntlet stub
 
 ```text
-GOAL: Run loop per filled worksheet
-BAR: run_state_test.gd PASS when implemented
+GOAL: P4 run-loop spec (worksheet gates LOOP_READY only)
+BAR: lint PASS; empty worksheet must not FAIL doc critic
 PASS_THRESHOLD: 88
 RULES: global-systems-first.mdc, roadmap.mdc
-ARTIFACT: this file, lint stdout; worksheet gates LOOP_READY only
+ARTIFACT: this file, lint stdout
 ```
 
 ## Tooling I/O

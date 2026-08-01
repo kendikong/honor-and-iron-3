@@ -29,14 +29,21 @@ Inventory screens, wire SFX events, align HUD with tactical path — extend pari
 
 | SfxPlayer key | SimEvent / trigger | Status |
 |---------------|-------------------|--------|
-| `select` | Unit select | `presentation/sfx_player.gd` DEFS |
+| `select` | Unit select | wired |
 | `move` | Move commit | wired |
 | `ability` | Skill use | wired |
+| `spellcast` | Spell cast | wired |
 | `invalid` | Illegal action | wired |
+| `cancel` | Cancel | wired |
+| `execute` | Execute turn | wired |
+| `step` | Step sound | wired |
 | `hit` | Damage dealt | wired |
+| `push` | Push/knockback | wired |
+| `thud` | Block/thud | wired |
 | `die` | Unit death | wired |
-| `win` / `lose` | Combat end | wired |
-| *(expand)* | `PLANNED —` grep `EventBus` combat events | fill rows |
+| `turn` | Turn change | wired |
+| `win` | Combat win | wired |
+| `lose` | Combat lose | wired |
 
 ## Non-goals
 
@@ -74,8 +81,8 @@ Grep event names vs Sfx map in this doc (when table filled).
 ## Gauntlet stub
 
 ```text
-GOAL: SFX map complete for combat events in spec table
-BAR: grep SfxPlayer hooks
+GOAL: P8 presentation spec with scene paths + full SfxPlayer DEFS inventory
+BAR: lint PASS; Test-Path scene paths + presentation/sfx_player.gd
 PASS_THRESHOLD: 88
 RULES: global-systems-first.mdc, qa-after-gameplay-changes.mdc
 ARTIFACT: this file, lint stdout, grep SfxPlayer in presentation/

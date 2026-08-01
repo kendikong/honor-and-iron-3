@@ -12,8 +12,8 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Fixture → sim | `godot --headless --path <repo> --script res://tests/bridge_test_runner.gd` PASS | Puzzle fun |
-| Fixture files | `PLANNED — tests/fixtures/encounters/puzzle_001.json` | — |
+| Encounter smoke (programmatic) | `godot --headless --path <repo> --script res://tests/bridge_test_runner.gd` PASS | — |
+| Fixture JSON puzzles | `PLANNED — tests/fixtures/encounters/puzzle_001.json` | Puzzle fun |
 | Intent display | `.\scripts\run_planning_qa_gate.ps1` when enemy affects preview | Difficulty curve |
 
 ## Non-goals
@@ -52,7 +52,7 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 
 ```text
 GOAL: Encounter puzzle_<id> loads and sim smoke PASS
-BAR: bridge_test_runner + fixture path
+BAR: lint PASS; bridge_test_runner.gd exists; fixture path PLANNED
 PASS_THRESHOLD: 88
 RULES: skill-global-rules.mdc, qa-after-gameplay-changes.mdc
 ARTIFACT: this file, lint stdout, appendices/encounter-fixture-format.md

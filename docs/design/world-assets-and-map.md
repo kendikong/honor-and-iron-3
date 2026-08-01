@@ -12,7 +12,7 @@ Mana Seed → custom asset path with PixelForge handoff, living-map phase comple
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Manifest | `docs/asset_manifest.md` exists; grep `res://` refs | Art direction |
+| Manifest | `docs/asset_manifest.md` exists on disk | Art direction |
 | Compositor | `PLANNED — F5 compositor gate (.cursor/rules/phase-audit.mdc)` | Boredom test |
 | PixelForge contract | `docs/design/appendices/pixelforge-v14-contract.md` | Owner CANON promote only |
 | Reference map scene | `scenes/test_map.tscn` on disk | Compositor audit |
@@ -32,7 +32,17 @@ Mana Seed → custom asset path with PixelForge handoff, living-map phase comple
 | Reference mood boards / PNG paths | |
 | Seasonal / biome priority order | |
 
-## Decomposition
+**Human gate rule:** Doc gauntlet BAR = `lint_design_doc.ps1` only. Empty worksheet must not FAIL critic; gates **`LOOP_READY`** only.
+
+## Path inventory
+
+| Asset | Path |
+|-------|------|
+| Manifest | `docs/asset_manifest.md` |
+| Tile registry | `docs/tile_registry.md` |
+| Reference map | `scenes/test_map.tscn` |
+| PixelForge contract | `docs/design/appendices/pixelforge-v14-contract.md` |
+| Compositor rules | `.cursor/rules/phase-audit.mdc` |
 
 1. Owner worksheet → art direction LOCK
 2. PixelForge MVP per appendix

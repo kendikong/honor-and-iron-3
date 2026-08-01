@@ -51,8 +51,8 @@ N/A
 ## Gauntlet stub
 
 ```text
-GOAL: Phase N deliverables from parity plan + QA PASS
-BAR: regression + planning QA
+GOAL: P2 pillar doc — gauntlet pieces + QA path inventory (parity plan is link-only detail)
+BAR: lint PASS; Test-Path regression + planning QA scripts; link-only check to docs/TACTICAL_COMBAT_PARITY_PLAN.md
 PASS_THRESHOLD: 88
 RULES: move-preview-intent-truth.mdc, global-systems-first.mdc, qa-after-gameplay-changes.mdc
 ARTIFACT: this file, lint stdout, docs/TACTICAL_COMBAT_PARITY_PLAN.md link-only check

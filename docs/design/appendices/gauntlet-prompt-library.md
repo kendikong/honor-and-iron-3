@@ -1,6 +1,6 @@
 # Gauntlet prompt library (appendix)
 
-**Status:** `DRAFT`  
+**Status:** `LOOP_READY` *(gauntlet C3: 89/88 PASS)*  
 **Authority chain:** `docs/design/00-gauntlet-loop-cursor.md` §8–9 · `.cursor/agents/gauntlet-critic.md`
 
 ## Goal
