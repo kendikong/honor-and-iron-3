@@ -21,13 +21,10 @@ const _BASH_APPROACH := Vector2i(6, 5)
 const _HOVER_WALK := Vector2i(5, 5)
 const _TRAMPLE_ROUTE: Array[Vector2i] = [Vector2i(6, 4), Vector2i(6, 3)]
 const _TRAMPLE_END := Vector2i(6, 3)
-const _K4_RUN_DEST := Vector2i(0, 1)
-## Walk-only loop around K4 (3 MP): E → N → W, blocked north at hook dummy (4,3).
-const _K4_DETOUR_ROUTE: Array[Vector2i] = [
-	Vector2i(4, 1), Vector2i(5, 1), Vector2i(5, 2), Vector2i(4, 2),
-]
-const _K4_WEST_RUN_ROUTE: Array[Vector2i] = [
-	_K4_CELL, Vector2i(3, 1), Vector2i(2, 1), Vector2i(1, 1), _K4_RUN_DEST,
+const _K4_RUN_TRIGGER_CELL := Vector2i(3, 2)
+## Walk-only loop (3 MP) then one west tile triggers auto_run: E → N → W → W.
+const _K4_DETOUR_PLUS_RUN_ROUTE: Array[Vector2i] = [
+	Vector2i(4, 1), Vector2i(5, 1), Vector2i(5, 2), Vector2i(4, 2), _K4_RUN_TRIGGER_CELL,
 ]
 
 const _SETTLE_FRAMES := 4
@@ -219,18 +216,17 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 	await _select_unit_live(ctx, k4_id, _K4_CELL)
 	var bowling: AbilityData = await _select_ability_for_unit(ctx, k4_id, _BOWLING_CHARGE_ID)
 	assert_object(bowling).is_not_null()
-	await _drag_k4_detour_walk_preview(ctx, k4_id, bowling)
-	await _drag_k4_run_corridor_preview(ctx, k4_id, bowling)
+	await _drag_k4_detour_and_run_preview(ctx, k4_id, bowling)
 	assert_bool(_plan_uses_run_for_unit(director, k4_id)).is_true()
 	var projected: UnitState = director.projected_state.get_unit_by_id(k4_id)
-	assert_that(projected.position).is_equal(_K4_RUN_DEST)
+	assert_that(projected.position).is_equal(_K4_RUN_TRIGGER_CELL)
 	assert_int(input.planning_display_ap_left(k4_id)).is_equal(0)
-	await _hover_cell(ctx, Vector2i(2, 1))
+	await _hover_cell(ctx, Vector2i(2, 2))
 	await _wait_ability_settle(ctx)
 	assert_int(input.planning_display_ap_left(k4_id)).is_equal(0)
 	assert_bool(input.action_range_visible_for_hover()).is_false()
 	assert_bool(_overlay_has_red_tile(ctx.overlay, director.board)).is_false()
-	ctx.expect["k4_pos"] = _K4_RUN_DEST
+	ctx.expect["k4_pos"] = _K4_RUN_TRIGGER_CELL
 	_cancel_active_pointer(ctx)
 
 
@@ -267,7 +263,7 @@ func _journey_scroll_and_undo_smoke(ctx: Dictionary) -> void:
 	assert_int(director.selected_ability_index).is_not_equal(before_scroll)
 	await _select_unit_live(ctx, ctx.k4_id, _K4_CELL)
 	await _select_ability_for_unit(ctx, ctx.k4_id, _RUN_ID)
-	await _drag_between_cells(ctx, _K4_CELL, _K4_RUN_DEST)
+	await _drag_between_cells(ctx, _K4_CELL, Vector2i(0, 1))
 	assert_int(director.plan_pre_move.entries.size()).is_greater(0)
 	ctx.runner.simulate_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 	await ctx.runner.simulate_frames(_SETTLE_FRAMES, _SETTLE_DELTA_MS)
@@ -346,66 +342,37 @@ func _drag_through_cells(
 	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 
 
-func _drag_k4_detour_walk_preview(
+func _drag_k4_detour_and_run_preview(
 	ctx: Dictionary,
 	unit_id: int,
 	bowling: AbilityData,
 ) -> void:
 	var runner: GdUnitSceneRunner = ctx.runner
 	var input: CombatPlanningInput = ctx.input
-	await _hover_cell(ctx, _K4_DETOUR_ROUTE[0])
+	await _hover_cell(ctx, _K4_DETOUR_PLUS_RUN_ROUTE[0])
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
-	for step_index: int in range(1, _K4_DETOUR_ROUTE.size()):
-		await _hover_cell(ctx, _K4_DETOUR_ROUTE[step_index])
+	for step_index: int in range(1, _K4_DETOUR_PLUS_RUN_ROUTE.size()):
+		await _hover_cell(ctx, _K4_DETOUR_PLUS_RUN_ROUTE[step_index])
 		await runner.simulate_frames(3, _SETTLE_DELTA_MS)
-		var detour_prefix: Array[Vector2i] = []
+		var route_prefix: Array[Vector2i] = []
 		for j: int in range(step_index + 1):
-			detour_prefix.append(_K4_DETOUR_ROUTE[j])
-		_assert_drag_route_equals(ctx, detour_prefix, "k4/detour/walk_route_%d" % step_index)
-		_assert_preview_path_matches_drag_route(ctx, unit_id, "k4/detour/walk_preview_%d" % step_index)
-		if _K4_DETOUR_ROUTE[step_index] == Vector2i(4, 2):
-			var ghost: UnitState = await _preview_unit(ctx, unit_id, Vector2i(4, 2))
+			route_prefix.append(_K4_DETOUR_PLUS_RUN_ROUTE[j])
+		_assert_drag_route_equals(ctx, route_prefix, "k4/detour/route_%d" % step_index)
+		_assert_preview_path_matches_drag_route(ctx, unit_id, "k4/detour/preview_%d" % step_index)
+		var stand: Vector2i = _K4_DETOUR_PLUS_RUN_ROUTE[step_index]
+		if stand == Vector2i(4, 2):
+			var ghost: UnitState = await _preview_unit(ctx, unit_id, stand)
 			assert_object(ghost).is_not_null()
-			assert_that(ghost.position).is_equal(Vector2i(4, 2))
+			assert_that(ghost.position).is_equal(stand)
 			_assert_k4_walk_drag_preview(
-				ctx, unit_id, bowling, Vector2i(4, 2), "k4/detour/walk_loop_end",
+				ctx, unit_id, bowling, stand, "k4/detour/walk_loop_end",
 			)
-	input.cancel_drag()
-	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
-	assert_object(_committed_pre_move_for_unit(ctx.director, unit_id)).is_null()
-	assert_bool(input.dragging).is_false()
-	await _hover_cell(ctx, _K4_CELL)
-	await _wait_ability_settle(ctx)
-
-
-func _drag_k4_run_corridor_preview(
-	ctx: Dictionary,
-	unit_id: int,
-	bowling: AbilityData,
-) -> void:
-	var runner: GdUnitSceneRunner = ctx.runner
-	_cancel_active_pointer(ctx)
-	await _hover_cell(ctx, _K4_WEST_RUN_ROUTE[0])
-	await _wait_ability_settle(ctx)
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
-	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
-	for step_index: int in range(1, _K4_WEST_RUN_ROUTE.size()):
-		await _hover_cell(ctx, _K4_WEST_RUN_ROUTE[step_index])
-		await runner.simulate_frames(3, _SETTLE_DELTA_MS)
-		_assert_drag_route_corridor(
-			ctx, _K4_CELL, _K4_WEST_RUN_ROUTE[step_index],
-			"k4/run/corridor_%d" % step_index,
-		)
-		_assert_preview_path_matches_drag_route(
-			ctx, unit_id, "k4/run/preview_%d" % step_index,
-		)
-		if step_index == 1:
-			_assert_k4_walk_drag_preview(
-				ctx, unit_id, bowling, _K4_WEST_RUN_ROUTE[step_index],
-				"k4/run/walk_first_step",
-			)
-	_assert_k4_run_drag_preview(ctx, unit_id, bowling, "k4/run/before_release")
+		elif stand == _K4_RUN_TRIGGER_CELL:
+			var ghost_run: UnitState = await _preview_unit(ctx, unit_id, stand)
+			assert_object(ghost_run).is_not_null()
+			assert_that(ghost_run.position).is_equal(stand)
+			_assert_k4_run_drag_preview(ctx, unit_id, bowling, "k4/detour/run_trigger")
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 
