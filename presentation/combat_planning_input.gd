@@ -878,22 +878,39 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_intent_state.set_hover_coord(cell)
 		if _planning != null:
 			_planning.set_hover_coord(cell, false)
-	if not _is_planning() or dragging:
+	if not _is_planning():
 		return
 	var planning_cell_changed: bool = cell != _last_planning_hover_cell
 	if planning_cell_changed:
 		_last_planning_hover_cell = cell
-	if _director.board.is_in_bounds(cell) and _director.selected_unit_id >= 0 and planning_cell_changed:
-		if dragging:
-			var p_unit := _proj_unit(_director.selected_unit_id)
-			if p_unit != null:
-				var ability := _selected_ability_data(p_unit)
-				var is_awaiting_move = awaiting_targeting_active() and ability != null and AbilitySystem.ability_has_movement_effect(ability)
-				if _basic_move_allowed() or is_awaiting_move:
-					if _drag_route.is_empty():
-						_drag_unit_id = _director.selected_unit_id
-						_drag_route = [_proj_move_origin(p_unit)]
-					_extend_drag_route(cell)
+	if (
+		not dragging
+		and _director.board.is_in_bounds(cell)
+		and _director.selected_unit_id >= 0
+		and planning_cell_changed
+	):
+		var p_unit := _proj_unit(_director.selected_unit_id)
+		if p_unit != null:
+			var ability := _selected_ability_data(p_unit)
+			var is_awaiting_move: bool = (
+				awaiting_targeting_active()
+				and ability != null
+				and AbilitySystem.ability_has_movement_effect(ability)
+			)
+			var move_already_planned: bool = (
+				_director.unit_has_move_planned_at_timing(
+					p_unit.id, GameEnums.MoveTiming.PRE_ACTION,
+				)
+				or _director.unit_has_move_planned_at_timing(
+					p_unit.id, GameEnums.MoveTiming.POST_ACTION,
+				)
+			)
+			if (not move_already_planned and _basic_move_allowed()) or is_awaiting_move:
+				if _drag_route.is_empty() or _drag_unit_id != p_unit.id:
+					_drag_unit_id = p_unit.id
+					_drag_route = [_proj_move_origin(p_unit)]
+					_drag_last_free = _drag_route[0]
+				_extend_drag_route(cell)
 	if not _director.board.is_in_bounds(cell):
 		_flush_hover_heavy_sync()
 		return
@@ -1921,10 +1938,12 @@ func _preview_at_interaction_cell(
 	hover_cell: Vector2i,
 	_move_coord: Vector2i,
 	attack_target_id: int = -1,
-	_waypoints: Array[Vector2i] = [],
+	waypoints: Array[Vector2i] = [],
 	legal_move_tiles: Array[Vector2i] = [],
 ) -> Dictionary:
 	var params: Dictionary = _commit_interaction_params(hover_cell, attack_target_id)
+	if not waypoints.is_empty():
+		params.waypoints = waypoints.duplicate()
 	var tiles: Array[Vector2i] = legal_move_tiles
 	if tiles.is_empty():
 		tiles = params.legal_move_tiles
@@ -2378,6 +2397,9 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return Vector2i(-999999, -999999)
+	var planned_move: TimelineAction = _timeline_move_action_for_action_range(unit_id)
+	if planned_move != null:
+		return planned_move.target_coord
 	var projected: Vector2i = _proj_move_origin(actor)
 	var ability: AbilityData = null
 	if unit_id == _director.selected_unit_id:
@@ -2445,7 +2467,12 @@ func _binding_move_action_for_action_range(unit_id: int) -> TimelineAction:
 	var timeline_move: TimelineAction = _timeline_move_action_for_action_range(unit_id)
 	if timeline_move != null:
 		return timeline_move
-	if dragging and _drag_unit_id == unit_id and _drag_route_commits_active():
+	if (
+		dragging
+		and _drag_unit_id == unit_id
+		and _drag_route_commits_active()
+		and not _drag_route.is_empty()
+	):
 		var dest: Vector2i = _drag_route[_drag_route.size() - 1]
 		var params: Dictionary = _commit_interaction_params(dest, -1)
 		var slots: Dictionary = _final_commit_slots_for_interaction(
@@ -2844,7 +2871,7 @@ func _drop_allows_move_tile(
 		effective_legal = _planning.get_hover_move_tiles()
 	if _skill_interaction_active():
 		if effective_legal.is_empty():
-			return false
+			return _planning == null and _can_move_to(actor, cell)
 		return effective_legal.has(cell)
 	if not effective_legal.is_empty():
 		return effective_legal.has(cell)
