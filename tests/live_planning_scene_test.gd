@@ -46,6 +46,38 @@ func test_live_planning_bible_multi_knight_session(timeout := 90000) -> void:
 	await _journey_scroll_and_undo_smoke(ctx)
 
 
+func test_k4_preview_compare_visual(timeout := 180000) -> void:
+	## Slow K4-only drag so you can watch walk-end (red ON) vs run-trigger (red OFF).
+	## Snapshots: res://reports/k4_preview/k4_walk_loop_end.png and k4_run_trigger.png
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	await runner.simulate_frames(8)
+	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
+	assert_object(scene).is_not_null()
+	var ctx: Dictionary = await _boot_multi_knight_session(runner, scene)
+	var k4_id: int = ctx.k4_id
+	await _select_unit_live(ctx, k4_id, _K4_CELL)
+	var bowling: AbilityData = await _select_ability_for_unit(ctx, k4_id, _BOWLING_CHARGE_ID)
+	assert_object(bowling).is_not_null()
+	_print_k4_f5_compare_banner()
+	await _drag_k4_detour_and_run_preview(ctx, k4_id, bowling, 90)
+
+
+func _print_k4_f5_compare_banner() -> void:
+	print("")
+	print("========== K4 PREVIEW COMPARE ==========")
+	print("Skill: Bowling Charge | Auto Run: ON")
+	print("")
+	print("| Moment              | Stand  | requires_run | display_AP | red tiles |")
+	print("|---------------------|--------|--------------|------------|-----------|")
+	print("| Walk loop end       | (4,2)  | false        | 1          | ON        |")
+	print("| Run trigger (test)  | (3,2)  | true         | 0          | OFF       |")
+	print("| Your F5 screenshot  | (3,6)  | true         | 0          | ON (bug?) |")
+	print("")
+	print("PNG snapshots -> res://reports/k4_preview/")
+	print("========================================")
+	print("")
+
+
 func _boot_multi_knight_session(runner: GdUnitSceneRunner, scene: TestBattleMapView) -> Dictionary:
 	var session: TestBattleSession = scene.get_session()
 	session.reset_defaults()
@@ -216,7 +248,7 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 	await _select_unit_live(ctx, k4_id, _K4_CELL)
 	var bowling: AbilityData = await _select_ability_for_unit(ctx, k4_id, _BOWLING_CHARGE_ID)
 	assert_object(bowling).is_not_null()
-	await _drag_k4_detour_and_run_preview(ctx, k4_id, bowling)
+	await _drag_k4_detour_and_run_preview(ctx, k4_id, bowling, 0)
 	assert_bool(_plan_uses_run_for_unit(director, k4_id)).is_true()
 	var projected: UnitState = director.projected_state.get_unit_by_id(k4_id)
 	assert_that(projected.position).is_equal(_K4_RUN_TRIGGER_CELL)
@@ -346,6 +378,7 @@ func _drag_k4_detour_and_run_preview(
 	ctx: Dictionary,
 	unit_id: int,
 	bowling: AbilityData,
+	pause_frames_at_checkpoint: int = 0,
 ) -> void:
 	var runner: GdUnitSceneRunner = ctx.runner
 	var input: CombatPlanningInput = ctx.input
@@ -368,11 +401,17 @@ func _drag_k4_detour_and_run_preview(
 			_assert_k4_walk_drag_preview(
 				ctx, unit_id, bowling, stand, "k4/detour/walk_loop_end",
 			)
+			await _k4_preview_snapshot(ctx, unit_id, stand, "walk_loop_end")
+			if pause_frames_at_checkpoint > 0:
+				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
 		elif stand == _K4_RUN_TRIGGER_CELL:
 			var ghost_run: UnitState = await _preview_unit(ctx, unit_id, stand)
 			assert_object(ghost_run).is_not_null()
 			assert_that(ghost_run.position).is_equal(stand)
 			_assert_k4_run_drag_preview(ctx, unit_id, bowling, "k4/detour/run_trigger")
+			await _k4_preview_snapshot(ctx, unit_id, stand, "run_trigger")
+			if pause_frames_at_checkpoint > 0:
+				await runner.simulate_frames(pause_frames_at_checkpoint, _SETTLE_DELTA_MS)
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 
@@ -423,6 +462,38 @@ func _assert_k4_run_drag_preview(
 		"%s: overlay red must hide when Run is queued" % label,
 	).is_false()
 	_assert_red_live(ctx, bowling, false, Vector2i(-999999, -999999), "%s/red_off" % label)
+
+
+func _k4_preview_snapshot(ctx: Dictionary, unit_id: int, stand: Vector2i, label: String) -> void:
+	var input: CombatPlanningInput = ctx.input
+	var requires_run: bool = input.unit_move_requires_run(unit_id)
+	var display_ap: int = input.planning_display_ap_left(unit_id)
+	var red_gate: bool = input.action_range_visible_for_hover()
+	var overlay_red: bool = _overlay_has_red_tile(ctx.overlay, ctx.board)
+	print(
+		"[K4-SNAPSHOT] %s | stand=%s requires_run=%s display_ap=%d red_gate=%s overlay_red=%s"
+		% [label, stand, requires_run, display_ap, red_gate, overlay_red],
+	)
+	if label == "run_trigger":
+		print(
+			"[K4-COMPARE] F5 screenshot at run end often shows overlay_red=true (bug). "
+			+ "Test expects overlay_red=false when Bowling + Run queues.",
+		)
+	await ctx.runner.simulate_frames(4, _SETTLE_DELTA_MS)
+	var vp: Viewport = ctx.scene.get_viewport()
+	if vp == null:
+		return
+	var tex: ViewportTexture = vp.get_texture()
+	if tex == null:
+		return
+	var img: Image = tex.get_image()
+	if img == null or img.is_empty():
+		return
+	var out_dir: String = "res://reports/k4_preview/"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out_dir))
+	var out_path: String = "%sk4_%s.png" % [out_dir, label]
+	img.save_png(out_path)
+	print("[K4-SNAPSHOT] saved %s" % out_path)
 
 
 func _drag_through_cells_with_route_checks(
