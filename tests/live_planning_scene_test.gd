@@ -21,6 +21,15 @@ const _BASH_APPROACH := Vector2i(6, 5)
 const _HOVER_WALK := Vector2i(5, 5)
 const _TRAMPLE_ROUTE: Array[Vector2i] = [Vector2i(6, 4), Vector2i(6, 3)]
 const _TRAMPLE_END := Vector2i(6, 3)
+const _TRAMPLE_FULL_PATH: Array[Vector2i] = [_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_ROUTE[1]]
+const _TRAMPLE_POST_DEST := Vector2i(8, 2)
+const _TRAMPLE_POST_ROUTE: Array[Vector2i] = [
+	_TRAMPLE_END, Vector2i(7, 3), Vector2i(8, 3), _TRAMPLE_POST_DEST,
+]
+const _TRAMPLE_POST_WAYPOINTS: Array[Vector2i] = [Vector2i(7, 3), Vector2i(8, 3), _TRAMPLE_POST_DEST]
+const _TRAMPLE_POST_FULL_PATH: Array[Vector2i] = [
+	_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_ROUTE[1], Vector2i(7, 3), Vector2i(8, 3), _TRAMPLE_POST_DEST,
+]
 const _K4_RUN_TRIGGER_CELL := Vector2i(3, 2)
 ## Walk-only loop (3 MP) then one west tile triggers auto_run: E → N → W → W.
 const _K4_DETOUR_PLUS_RUN_ROUTE: Array[Vector2i] = [
@@ -216,7 +225,7 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 	assert_bool(input.awaiting_targeting_active()).is_true()
 	assert_object(director.find_awaiting_action(k3_id)).is_not_null()
 	_assert_red_live(ctx, trample, true, _K3_CELL, "k3/phase3/red_while_awaiting")
-	var route: Array[Vector2i] = [_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_ROUTE[1]]
+	var route: Array[Vector2i] = _TRAMPLE_FULL_PATH.duplicate()
 	await _dry_drag_then_cancel(ctx, route)
 	await _rearm_trample_awaiting(ctx, k3_id)
 	await _tap_cell(ctx, _TRAMPLE_END)
@@ -226,7 +235,27 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 	await _rearm_trample_awaiting(ctx, k3_id)
 	await _drag_through_cells_with_route_checks(ctx, route, "k3", false, &"exact")
 	_assert_k3_trample_committed(ctx, k3_id, "k3/drag")
-	ctx.expect["k3_pos"] = _TRAMPLE_END
+	await _hover_cell(ctx, _TRAMPLE_END)
+	await _wait_ability_settle(ctx)
+	_assert_red_live(ctx, trample, false, _TRAMPLE_END, "k3/drag/red_off_after_commit")
+	await _select_unit_live(ctx, k3_id, _TRAMPLE_END)
+	await _enter_basic_movement_mode(ctx, k3_id)
+	await _hover_cell(ctx, _TRAMPLE_POST_DEST)
+	await _wait_ability_settle(ctx)
+	var post_ghost: UnitState = await _preview_unit(ctx, k3_id, _TRAMPLE_POST_DEST)
+	assert_object(post_ghost).override_failure_message(
+		"k3/post/hover: preview ghost missing",
+	).is_not_null()
+	assert_that(post_ghost.position).override_failure_message(
+		"k3/post/hover: preview ghost position",
+	).is_equal(_TRAMPLE_POST_DEST)
+	_assert_preview_path_equals(ctx, k3_id, _TRAMPLE_POST_FULL_PATH, "k3/post/hover_preview")
+	await _dry_drag_then_cancel(ctx, _TRAMPLE_POST_ROUTE)
+	await _drag_through_cells_with_route_checks(
+		ctx, _TRAMPLE_POST_ROUTE, "k3/post", false, &"post_after_trample",
+	)
+	_assert_k3_post_move_committed(ctx, k3_id, "k3/post")
+	ctx.expect["k3_pos"] = _TRAMPLE_POST_DEST
 	_cancel_active_pointer(ctx)
 
 
@@ -246,11 +275,12 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 	await _undo_until_unit_clear(ctx, k4_id)
 	await _drag_k4_detour_and_run_preview(ctx, k4_id, bowling, 0)
 	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/drag")
-	await _hover_cell(ctx, Vector2i(2, 2))
+	await _hover_cell(ctx, _K4_RUN_TRIGGER_CELL)
 	await _wait_ability_settle(ctx)
 	assert_int(input.planning_display_ap_left(k4_id)).is_equal(0)
 	assert_bool(input.action_range_visible_for_hover()).is_false()
 	assert_bool(_overlay_has_red_tile(ctx.overlay, director.board)).is_false()
+	await _k4_preview_snapshot(ctx, k4_id, _K4_RUN_TRIGGER_CELL, "after_commit")
 	ctx.expect["k4_pos"] = _K4_RUN_TRIGGER_CELL
 	_cancel_active_pointer(ctx)
 
@@ -477,6 +507,34 @@ func _assert_k3_trample_committed(ctx: Dictionary, k3_id: int, label: String) ->
 	).is_equal(0)
 
 
+func _assert_k3_post_move_committed(ctx: Dictionary, k3_id: int, label: String) -> void:
+	var director: CombatDirector = ctx.director
+	var post: TimelineAction = _committed_post_move_for_unit(director, k3_id)
+	assert_object(post).override_failure_message(
+		"%s: post-move missing" % label,
+	).is_not_null()
+	assert_that(post.target_coord).override_failure_message(
+		"%s: post-move destination" % label,
+	).is_equal(_TRAMPLE_POST_DEST)
+	assert_that(post.waypoints).override_failure_message(
+		"%s: post-move waypoints" % label,
+	).is_equal(_TRAMPLE_POST_WAYPOINTS)
+	var projected: UnitState = director.projected_state.get_unit_by_id(k3_id)
+	assert_object(projected).override_failure_message(
+		"%s: post-move projected unit missing" % label,
+	).is_not_null()
+	assert_that(projected.position).override_failure_message(
+		"%s: post-move projected position" % label,
+	).is_equal(_TRAMPLE_POST_DEST)
+
+
+func _enter_basic_movement_mode(ctx: Dictionary, unit_id: int) -> void:
+	ctx.director.select_unit(unit_id)
+	ctx.director.select_ability(-1)
+	ctx.input.force_basic_movement = true
+	await _wait_ability_settle(ctx)
+
+
 func _assert_k4_run_committed(
 	ctx: Dictionary,
 	k4_id: int,
@@ -497,13 +555,12 @@ func _assert_k4_run_committed(
 		assert_that(pre.target_coord).override_failure_message(
 			"%s: k4 pre-move destination" % label,
 		).is_equal(_K4_RUN_TRIGGER_CELL)
-	if label.ends_with("/drag"):
-		assert_bool(_plan_uses_run_for_unit(director, k4_id)).override_failure_message(
-			"%s: painted drag must use Run" % label,
-		).is_true()
-		assert_int(input.planning_display_ap_left(k4_id)).override_failure_message(
-			"%s: k4 display AP after run drag commit" % label,
-		).is_equal(0)
+	assert_bool(_plan_uses_run_for_unit(director, k4_id)).override_failure_message(
+		"%s: k4 plan must use Run" % label,
+	).is_true()
+	assert_int(input.planning_display_ap_left(k4_id)).override_failure_message(
+		"%s: k4 display AP after commit" % label,
+	).is_equal(0)
 
 
 func _hover_cell(ctx: Dictionary, cell: Vector2i) -> void:
@@ -697,6 +754,16 @@ func _drag_through_cells_with_route_checks(
 			_assert_preview_path_equals(
 				ctx, unit_id, painted, "%s/preview_path_%d" % [label_prefix, step_index],
 			)
+		elif route_mode == &"post_after_trample":
+			_assert_drag_route_equals(ctx, expected, "%s/drag_route_%d" % [label_prefix, step_index])
+			await runner.simulate_frames(2, _SETTLE_DELTA_MS)
+			var preview_expected: Array[Vector2i] = []
+			var preview_len: int = _TRAMPLE_FULL_PATH.size() + step_index
+			for j: int in range(preview_len):
+				preview_expected.append(_TRAMPLE_POST_FULL_PATH[j])
+			_assert_preview_path_equals(
+				ctx, unit_id, preview_expected, "%s/preview_path_%d" % [label_prefix, step_index],
+			)
 		else:
 			_assert_drag_route_equals(ctx, expected, "%s/drag_route_%d" % [label_prefix, step_index])
 			assert_bool(input._paint_valid_movement_endpoint_intent()).override_failure_message(
@@ -857,6 +924,13 @@ func _committed_action_for_unit(director: CombatDirector, unit_id: int) -> Timel
 
 func _committed_pre_move_for_unit(director: CombatDirector, unit_id: int) -> TimelineAction:
 	for action: TimelineAction in director.plan_pre_move.entries:
+		if action != null and action.actor_id == unit_id:
+			return action
+	return null
+
+
+func _committed_post_move_for_unit(director: CombatDirector, unit_id: int) -> TimelineAction:
+	for action: TimelineAction in director.plan_post_move.entries:
 		if action != null and action.actor_id == unit_id:
 			return action
 	return null
