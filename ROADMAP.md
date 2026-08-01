@@ -27,7 +27,7 @@ Phases ship visible progress with explicit exit criteria. **No phase closes** un
 | **Living map** | This file §Phase 0–10 | ✅ **Closed / waived** | User waiver 2026-07-13; compositor F5 checks may remain manual |
 | **Bootstrap** | `IMPLEMENTATION_STATUS` Ph 0–2 | ✅ **Closed** | Bridge, skirmish, headless sim |
 | **Tactical shell** | `IMPLEMENTATION_STATUS` Ph 3–8 | ✅ **Closed** | Scene, planning, Knight MVP shell |
-| **Combat parity** | `TACTICAL_COMBAT_PARITY_PLAN` Ph 10–14 | ✅ **Closed** | Intent state, planning input, HUD, SP tactical path |
+| **Combat closeout** | `IMPLEMENTATION_STATUS` + parity Ph 10–14 | ✅ **Closed** *(owner 2026-08-01)* | P2 `combat-core-closeout.md` — done for now |
 | **Design doc suite** | `docs/design/` W1–W4 | ✅ **15/15 gauntlet PASS** | See `docs/design/GAUNTLET_REVIEW_RESULTS.md` |
 
 ### Superseded / failed (do not re-open)
@@ -613,9 +613,9 @@ Update `IMPLEMENTATION_STATUS.md`:
 
 | # | Milestone | Pillar | Primary command | Spec status |
 |---|-----------|--------|-----------------|-------------|
-| 1 | Parity Ph 10–13 combat core | P2 `combat-core-closeout.md` | `.\scripts\run_regression_tests.ps1` | LOOP_READY — **implementation largely done** |
-| 2 | Phase 14 Knight MVP re-gate | P2 | `.\scripts\run_planning_qa_gate.ps1` | LOOP_READY — **closed in parity plan** |
-| 3 | Knight template LOCK | P3 `knight-template.md` | Tier 3 gate + `run_skill_scenarios_only.gd` | LOOP_READY |
+| 1 | Parity Ph 10–13 combat core | P2 `combat-core-closeout.md` | `.\scripts\run_regression_tests.ps1` | ✅ **Closed** *(owner 2026-08-01)* |
+| 2 | Phase 14 Knight MVP re-gate | P2 | `.\scripts\run_planning_qa_gate.ps1` | ✅ **Closed** *(owner 2026-08-01)* |
+| 3 | Knight template LOCK | P3 `knight-template.md` | Tier 3 gate + `run_skill_scenarios_only.gd` | **Active** |
 | 4 | Roguelike run v1 | P4 `roguelike-run.md` | `PLANNED — tests/run_state_test.gd` | DRAFT *(worksheet gate)* |
 | 5 | Enemy puzzle kit | P5 `enemy-design.md` | `tests/bridge_test_runner.gd` | DRAFT *(worksheet gate)* |
 | 6 | Class rollout 2+ | P6 `class-rollout.md` | Planning gate + skill scenarios | LOOP_READY |
@@ -628,7 +628,7 @@ Update `IMPLEMENTATION_STATUS.md`:
 
 | ID | Document | Status |
 |----|----------|--------|
-| P2 | [`combat-core-closeout.md`](docs/design/combat-core-closeout.md) | LOOP_READY |
+| P2 | [`combat-core-closeout.md`](docs/design/combat-core-closeout.md) | CLOSED *(owner 2026-08-01)* |
 | P3 | [`knight-template.md`](docs/design/knight-template.md) | LOOP_READY |
 | P4 | [`roguelike-run.md`](docs/design/roguelike-run.md) | DRAFT |
 | P5 | [`enemy-design.md`](docs/design/enemy-design.md) | DRAFT |
@@ -650,14 +650,13 @@ Update `IMPLEMENTATION_STATUS.md`:
 
 ```mermaid
 flowchart TD
-  P10[Parity Ph 10-13 combat core] --> P14[Phase 14 Knight MVP re-gate]
-  P14 --> KT[Knight template LOCK - P3]
+  P2done[P2 combat core CLOSED] --> KT[Knight template LOCK - P3]
   KT --> RUN[Roguelike run v1 - P4 worksheet]
   RUN --> EN[Enemy puzzle kit - P5]
   EN --> CR[Class rollout 2+ - P6]
   MAP[Map assets + PixelForge MVP - P7] --> LM[Living map close]
   UI[Presentation shell - P8] --> UII[UI gauntlets]
-  P14 --> CR
+  P2done --> CR
   RUN --> CR
 ```
 
@@ -669,15 +668,17 @@ flowchart TD
 
 **Active sprint:** Design-suite milestones per [`REMAINING_WORK_MAP.md`](docs/design/REMAINING_WORK_MAP.md).
 
-**Recommended order now that parity Ph 10–14 is closed:**
+**Recommended order (P2 closed 2026-08-01):**
 
-1. **Owner:** Fill P4 / P5 / P7 worksheets → promote those pillars to `LOOP_READY`
-2. **Knight LOCK (P3):** Per-skill scenarios + Tier 3 gate per `knight-template.md`
+1. **Knight LOCK (P3):** Per-skill scenarios + Tier 3 gate per `knight-template.md`
+2. **Owner:** Fill P4 / P5 / P7 worksheets when ready for roguelike / enemies / map art
 3. **Roguelike v1 (P4):** `RunState` + `tests/run_state_test.gd` after worksheet
 4. **Enemy puzzles (P5):** Fixture loader + `tests/fixtures/encounters/` per appendix
 5. **Class rollout (P6):** Clone P3 pipeline per `class-rollout.md`
 6. **World + PixelForge (P7):** CANON promote loop per `pixelforge-v14-contract.md`
 7. **Presentation (P8):** Wire remaining SfxPlayer / HUD rows
+
+*P2 combat-core (parity Ph 10–14): owner closed for now — reopen only for regressions or Phase 15 MP path.*
 
 **Implementation status:** [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md)  
 **Combat detail:** [`docs/TACTICAL_COMBAT_PARITY_PLAN.md`](docs/TACTICAL_COMBAT_PARITY_PLAN.md)  

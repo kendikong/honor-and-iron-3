@@ -28,7 +28,7 @@ N/A
 
 | Domain | Pillar | Primary machine bar | Secondary | Human gate |
 |--------|--------|---------------------|-----------|------------|
-| Combat closeout | P2 | `.\scripts\run_regression_tests.ps1` | `.\scripts\run_planning_qa_gate.ps1` | F5 Ph 10–14 parity lists |
+| Combat closeout | P2 | `.\scripts\run_regression_tests.ps1` | `.\scripts\run_planning_qa_gate.ps1` | ✅ **Closed** *(owner 2026-08-01 — done for now)* |
 | Knight template | P3 | `.\scripts\run_planning_qa_gate.ps1` | `tests/run_skill_scenarios_only.gd` | `docs/PLANNING_SKILL_QA_CHECKLIST.md` |
 | Roguelike run | P4 | `PLANNED — tests/run_state_test.gd` | — | P4 worksheet |
 | Enemy design | P5 | `tests/bridge_test_runner.gd` | `docs/design/appendices/encounter-fixture-format.md` | Puzzle fun |

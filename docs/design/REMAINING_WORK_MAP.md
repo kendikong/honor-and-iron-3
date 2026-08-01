@@ -27,39 +27,39 @@ N/A — see `roguelike-run.md` (P4) and `world-assets-and-map.md` (P7) for owner
 
 ## Milestone index
 
-| Order | Milestone | Pillar doc | Primary command |
-|-------|-----------|------------|-----------------|
-| 1 | Parity Ph 10–13 combat core | `combat-core-closeout.md` | `.\scripts\run_regression_tests.ps1` |
-| 2 | Phase 14 Knight MVP re-gate | `combat-core-closeout.md` | `.\scripts\run_planning_qa_gate.ps1` |
-| 3 | Knight template LOCK | `knight-template.md` | `.\scripts\run_planning_qa_gate.ps1` |
-| 4 | Roguelike run v1 | `roguelike-run.md` | `PLANNED — tests/run_state_test.gd` |
-| 5 | Enemy puzzle kit | `enemy-design.md` | `tests/bridge_test_runner.gd` |
-| 6 | Class rollout 2+ | `class-rollout.md` | `.\scripts\run_planning_qa_gate.ps1` |
-| 7 | Map assets + PixelForge MVP | `world-assets-and-map.md` | `docs/asset_manifest.md` |
-| 8 | Living map ROADMAP close | `world-assets-and-map.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` |
-| 9 | UI + SFX shell | `presentation-audio-ui.md` | `PLANNED — Sfx event map in P8 doc` |
-| 10 | UI gauntlets polish | `presentation-audio-ui.md` | `PLANNED — P8 UI gauntlet checklist` |
-| — | Verification index | `verification-matrix.md` | `.\scripts\lint_design_doc.ps1` |
+| Order | Milestone | Pillar doc | Primary command | Status |
+|-------|-----------|------------|-----------------|--------|
+| 1 | Parity Ph 10–13 combat core | `combat-core-closeout.md` | `.\scripts\run_regression_tests.ps1` | ✅ **Closed** *(owner 2026-08-01)* |
+| 2 | Phase 14 Knight MVP re-gate | `combat-core-closeout.md` | `.\scripts\run_planning_qa_gate.ps1` | ✅ **Closed** *(owner 2026-08-01)* |
+| 3 | Knight template LOCK | `knight-template.md` | `.\scripts\run_planning_qa_gate.ps1` | **Active** |
+| 4 | Roguelike run v1 | `roguelike-run.md` | `PLANNED — tests/run_state_test.gd` | DRAFT *(worksheet)* |
+| 5 | Enemy puzzle kit | `enemy-design.md` | `tests/bridge_test_runner.gd` | DRAFT *(worksheet)* |
+| 6 | Class rollout 2+ | `class-rollout.md` | `.\scripts\run_planning_qa_gate.ps1` | **Active** |
+| 7 | Map assets + PixelForge MVP | `world-assets-and-map.md` | `docs/asset_manifest.md` | DRAFT *(worksheet)* |
+| 8 | Living map ROADMAP close | `world-assets-and-map.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | PLANNED |
+| 9 | UI + SFX shell | `presentation-audio-ui.md` | `presentation/sfx_player.gd` DEFS map | **Active** |
+| 10 | UI gauntlets polish | `presentation-audio-ui.md` | `PLANNED — P8 UI gauntlet checklist` | PLANNED |
+| — | Verification index | `verification-matrix.md` | `.\scripts\lint_design_doc.ps1` | — |
 
 ```mermaid
 flowchart TD
-  P10[Parity Phase 10-13 combat core] --> P14[Phase 14 Knight MVP re-gate]
-  P14 --> KT[Knight template LOCK - P3]
+  P2done[P2 combat core CLOSED] --> KT[Knight template LOCK - P3]
   KT --> RUN[Roguelike run v1 - P4 human worksheet]
   RUN --> EN[Enemy puzzle kit - P5]
   EN --> CR[Class rollout 2+ - P6]
   MAP[Map assets + PixelForge MVP - P7] --> LM[Living map ROADMAP close]
   UI[Presentation shell - P8] --> UII[UI gauntlets]
-  P14 --> CR
+  P2done --> CR
   RUN --> CR
 ```
 
 ## Decomposition
 
-1. Combat spine (milestones 1–3)
-2. Run loop (4)
-3. Content (5–6)
-4. World + presentation (7–9)
+1. ~~Combat spine milestones 1–2~~ ✅ closed (owner 2026-08-01)
+2. Knight LOCK (milestone 3)
+3. Run loop (4)
+4. Content (5–6)
+5. World + presentation (7–10)
 
 ## Builder playbook
 

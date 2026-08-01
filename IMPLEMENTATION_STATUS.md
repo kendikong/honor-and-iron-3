@@ -1,8 +1,8 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** Design-suite milestones ([`docs/design/REMAINING_WORK_MAP.md`](docs/design/REMAINING_WORK_MAP.md)) — Parity Ph 10–14 **PASS**; living-map ROADMAP §0–10 closed/waived  
+**Current phase:** Knight template LOCK (P3) — P2 combat-core **closed** per owner 2026-08-01  
 **Active plan:** `docs/design/` pillar specs + [`verification-matrix.md`](docs/design/verification-matrix.md)  
-**Combat reference:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed)  
+**Combat reference:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed; P2 done for now)  
 **Last updated:** 2026-08-01  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
