@@ -34,6 +34,7 @@ const _ABILITY_SETTLE_FRAMES := 6
 
 func test_live_planning_bible_multi_knight_session(timeout := 90000) -> void:
 	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	_ensure_live_test_window(runner)
 	await runner.simulate_frames(8)
 	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
 	assert_object(scene).is_not_null()
@@ -76,6 +77,17 @@ func _print_k4_f5_compare_banner() -> void:
 	print("PNG snapshots -> res://reports/k4_preview/")
 	print("========================================")
 	print("")
+
+
+func _ensure_live_test_window(runner: GdUnitSceneRunner) -> void:
+	## GdUnit CLI starts minimized; restore project viewport size so mouse coords match F5.
+	runner.move_window_to_foreground()
+	var target_w: int = int(ProjectSettings.get_setting("display/window/size/viewport_width", 1920))
+	var target_h: int = int(ProjectSettings.get_setting("display/window/size/viewport_height", 1080))
+	var screen: Vector2i = DisplayServer.screen_get_size()
+	target_w = mini(target_w, screen.x)
+	target_h = mini(target_h, screen.y)
+	DisplayServer.window_set_size(Vector2i(target_w, target_h))
 
 
 func _boot_multi_knight_session(runner: GdUnitSceneRunner, scene: TestBattleMapView) -> Dictionary:
