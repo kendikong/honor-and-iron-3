@@ -33,10 +33,10 @@ SUITE PASS: 5/14
 
 | Field | Value |
 |-------|-------|
-| **Piece ID** | verification-matrix-P9 |
-| **Critic pass** | C5 (after suite-plan sync) |
-| **Last result** | C4 **87/88 FAIL** — drift fixes on disk |
-| **Largest gap** | Suite inline matrix sync; meta path prefix |
+| **Piece ID** | verification-matrix-P9 *(complete)* |
+| **Critic pass** | C6 |
+| **Last result** | **PASS 89/88** — [C6 verification-matrix](1802bee6-2344-4153-be3f-94b6c337d4b2) |
+| **Largest gap** | — |
 
 ---
 
@@ -48,7 +48,7 @@ SUITE PASS: 5/14
 | `01-doc-polish-protocol.md` | 66 | 86 | 91 | — | 90 | **PASS** |
 | `knight-template.md` | 76 | 84 | 86 | **89** | 88 | **PASS** |
 | `REMAINING_WORK_MAP.md` | 47 | 59 | 84 | **89** | 88 | **PASS** |
-| `verification-matrix.md` | 41 | 80 | 84 | 87 | 88 | FAIL → C5 |
+| `verification-matrix.md` | 41 | 80 | 84 | 87 | **89** (C6) | 88 | **PASS** |
 
 ---
 
