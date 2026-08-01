@@ -4,29 +4,41 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$runner = Join-Path $projectRoot "addons\gdUnit4\runtest.cmd"
 $suite = "res://tests/live_planning_scene_test.gd"
+$cmdTool = "res://addons/gdUnit4/bin/GdUnitCmdTool.gd"
 
 if (-not (Test-Path $GodotPath)) {
 	Write-Output "[INCOMPLETE] Tier 3 TestBattle acceptance: Godot executable not found: $GodotPath"
 	exit 2
 }
-if (-not (Test-Path $runner) -or -not (Test-Path (Join-Path $projectRoot "tests\live_planning_scene_test.gd"))) {
-	Write-Output "[INCOMPLETE] Tier 3 TestBattle acceptance: GdUnit4 runner or live suite is unavailable."
+if (-not (Test-Path (Join-Path $projectRoot "tests\live_planning_scene_test.gd"))) {
+	Write-Output "[INCOMPLETE] Tier 3 TestBattle acceptance: live suite is unavailable."
 	exit 2
 }
 
-Push-Location $projectRoot
-try {
-	& $runner --godot_binary $GodotPath -a $suite
-	$exitCode = $LASTEXITCODE
-}
-finally {
-	Pop-Location
-}
+Write-Output "[Tier 3] Single live TestBattle run (GdUnit once; no second log-copy Godot boot)."
 
+# GdUnitCmdTool only accepts -a/-i/etc. --godot_binary is runtest.cmd-only (stripped before invoke).
+$godotArgs = @(
+	"--path", $projectRoot,
+	"-s", "-d",
+	"--remote-debug", "tcp://127.0.0.1:0",
+	$cmdTool,
+	"-a", $suite
+)
+$process = Start-Process -FilePath $GodotPath `
+	-ArgumentList $godotArgs `
+	-WorkingDirectory $projectRoot `
+	-Wait -PassThru -NoNewWindow
+$exitCode = $process.ExitCode
+
+if ($null -eq $exitCode) {
+	Write-Output "[INCOMPLETE] Tier 3 TestBattle acceptance: Godot exit code unavailable."
+	exit 2
+}
 if ($exitCode -ne 0) {
-	Write-Output "[FAIL] Tier 3 TestBattle scene acceptance"
+	Write-Output "[FAIL] Tier 3 TestBattle scene acceptance (exit $exitCode)"
 	exit $exitCode
 }
 Write-Output "[PASS] Tier 3 TestBattle scene acceptance"
+exit 0

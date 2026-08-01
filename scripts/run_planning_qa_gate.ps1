@@ -1,5 +1,6 @@
 param(
-	[string]$GodotPath = "C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64.exe"
+	[string]$GodotPath = "C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64.exe",
+	[switch]$SkipTier3
 )
 
 $ErrorActionPreference = "Stop"
@@ -56,24 +57,26 @@ if (-not $tier12Pass) {
 }
 
 Write-Output ""
+if ($SkipTier3) {
+	Write-Output "=== Tier 3: skipped (-SkipTier3) ==="
+	Write-Output ""
+	Write-Output "=== Planning QA gate summary ==="
+	Write-Output ("Tier 1/2: {0}" -f $(if ($tier12Pass) { "PASS" } else { "FAIL - $($testFailures.Count) failures" }))
+	Write-Output "Tier 3:   SKIPPED"
+	if (-not $tier12Pass) { exit 1 }
+	exit 0
+}
+
 Write-Output "=== Tier 3: TestBattle scene acceptance (GdUnit4) ==="
+Write-Output "Note: run_planning_qa_gate.ps1 already includes Tier 3; do not also run run_planning_scene_acceptance.ps1."
 $sceneGate = Join-Path $PSScriptRoot "run_planning_scene_acceptance.ps1"
 if (-not (Test-Path $sceneGate)) {
 	Write-Error "[INCOMPLETE] Tier 3 runner missing: $sceneGate"
 	exit 2
 }
 
-$tier3Stdout = Join-Path $env:TEMP "honor-and-iron-planning-qa-tier3.stdout.log"
-$tier3Stderr = Join-Path $env:TEMP "honor-and-iron-planning-qa-tier3.stderr.log"
-$tier3Process = Start-Process -FilePath "powershell.exe" `
-	-ArgumentList "-NoProfile -File `"$sceneGate`" -GodotPath `"$GodotPath`"" `
-	-RedirectStandardOutput $tier3Stdout `
-	-RedirectStandardError $tier3Stderr `
-	-Wait `
-	-PassThru
-$sceneExit = $tier3Process.ExitCode
-Get-Content $tier3Stdout
-Get-Content $tier3Stderr
+& $sceneGate -GodotPath $GodotPath
+$sceneExit = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } else { 1 }
 
 $tier3Pass = $false
 $tier3Incomplete = $false
@@ -89,7 +92,7 @@ if ($sceneExit -eq 2) {
 
 Write-Output ""
 Write-Output "=== Planning QA gate summary ==="
-$tier12Label = if ($tier12Pass) { "PASS" } else { "FAIL ($($testFailures.Count) assertion(s))" }
+	$tier12Label = if ($tier12Pass) { "PASS" } else { "FAIL - $($testFailures.Count) failures" }
 $tier3Label = if ($tier3Incomplete) { "INCOMPLETE" } elseif ($tier3Pass) { "PASS" } else { "FAIL" }
 Write-Output ("Tier 1/2: {0}" -f $tier12Label)
 Write-Output ("Tier 3:   {0}" -f $tier3Label)

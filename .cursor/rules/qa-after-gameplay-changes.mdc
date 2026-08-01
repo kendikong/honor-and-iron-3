@@ -28,7 +28,7 @@ Any edit under these paths (or equivalent behavior owners):
 
 | Change touches | Run (headless) |
 |----------------|----------------|
-| Planning, preview, commit, drag, undo, cursor, overlay paths, `CombatDirector` refresh | **Planning QA gate** — `.\scripts\run_planning_qa_gate.ps1` or `res://tests/run_planning_qa_gate.gd` |
+| Planning, preview, commit, drag, undo, cursor, overlay paths, `CombatDirector` refresh | **Planning QA gate** — `.\scripts\run_planning_qa_gate.ps1` once (includes Tier 3). Do **not** also run `run_planning_scene_acceptance.ps1` in the same turn. |
 | Drag-drop / `on_left_release` / stash only (narrow) | `res://tests/run_drag_e2e_only.gd` **plus** note in Changelog if full gate was skipped |
 | Core sim / bridge / broad combat regression | **Full regression** — `.\scripts\run_regression_tests.ps1 -GodotPath "<godot.exe>"` |
 | Both planning and core sim | **Full regression** (includes planning gate) |
