@@ -9,9 +9,9 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight-template K3-LOCK │ Round 6 (critic)
-SCORE: 55/100 │ THRESHOLD: 95 │ FAIL │ CLIMBING
-DELTA: +7 vs round 5 (was 48)
+GAUNTLET SCORE │ knight-template K3-LOCK │ Round 7 (critic)
+SCORE: 57/100 │ THRESHOLD: 95 │ FAIL │ STALLED
+DELTA: +2 vs round 6 (was 55)
 NEXT: deepen 14 PASS row asserts; promote remaining 16 rows; re-critic until ≥95
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
@@ -25,6 +25,7 @@ STOP_CONDITION_MET: no
 | r4 | 44 | −20 | FAIL (SLIPPED) |
 | r5 | 48 | +4 | FAIL |
 | r6 | 55 | +7 | FAIL (CLIMBING) |
+| r7 | 57 | +2 | FAIL (STALLED) |
 
 ---
 
