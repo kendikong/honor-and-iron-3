@@ -59,6 +59,8 @@ var _last_heavy_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
+var _drag_preview_refresh_pending: bool = false
+var _drag_preview_last_flush_usec: int = 0
 var _drag_last_cursor_cell: Vector2i = Vector2i(-999999, -999999)
 var _drag_last_sprite_cell: Vector2i = Vector2i(-999999, -999999)
 ## Last painted intent (move-preview truth) — commit ratifies these slots, does not rebuild.
@@ -97,6 +99,7 @@ func teardown() -> void:
 func flush_deferred_planning() -> void:
 	if _selection_refresh_pending:
 		_run_planning_selection_refresh()
+	_flush_drag_preview_refresh()
 	_flush_hover_preview_refresh()
 	_finish_plan_refresh_followup()
 
@@ -245,6 +248,7 @@ func on_left_release(local: Vector2) -> void:
 
 func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 	_drag_move_commit_instant = had_movement
+	_flush_drag_preview_refresh()
 	var released_unit_id: int = _drag_unit_id
 	if selected_phase_action_exhausted(released_unit_id):
 		_play_sfx("invalid")
@@ -343,7 +347,8 @@ func update_drag(local: Vector2) -> void:
 	var occ := board.get_unit_at(cell)
 	var drag_unit := board.get_unit_by_id(_drag_unit_id)
 	
-	if _basic_move_allowed():
+	var cell_changed: bool = cell != _drag_last_cursor_cell
+	if _basic_move_allowed() and cell_changed:
 		_extend_drag_route(cell)
 		
 	if drag_unit != null and (occ == null or occ.id == _drag_unit_id):
@@ -360,22 +365,9 @@ func update_drag(local: Vector2) -> void:
 		and _planning.is_hover_move_tile(occ.position)
 	):
 		_drag_last_free = occ.position
-	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
-	var waypoints: Array[Vector2i] = _route_waypoints()
-	var cache_key: int = _drag_preview_cache_key_for(cell, drag_target_id, waypoints)
-	var cache_miss: bool = cache_key != _drag_preview_cache_key
-	if cache_miss:
-		_drag_preview_cache_key = cache_key
-		_drag_preview_cache = _preview_at_interaction_cell(
-			_drag_unit_id,
-			cell,
-			_drag_last_free,
-			drag_target_id,
-			[],
-			_snapshot_drag_legal_move_tiles(),
-		)
-		_apply_live_preview(_drag_preview_cache)
-	if cache_miss or cell != _drag_last_sprite_cell:
+	if cell_changed:
+		_schedule_or_refresh_drag_preview()
+	if cell_changed:
 		_update_drag_sprite(local, cell, _drag_preview_cache)
 		_drag_last_sprite_cell = cell
 	else:
@@ -383,6 +375,64 @@ func update_drag(local: Vector2) -> void:
 	if cell != _drag_last_cursor_cell:
 		_drag_last_cursor_cell = cell
 		refresh_mouse_cursor(cell)
+
+
+func _schedule_or_refresh_drag_preview() -> void:
+	var now_usec: int = Time.get_ticks_usec()
+	var elapsed_sec: float = (
+		float(now_usec - _drag_preview_last_flush_usec) / 1_000_000.0
+		if _drag_preview_last_flush_usec > 0
+		else _HOVER_HEAVY_MIN_INTERVAL_SEC
+	)
+	if _drag_preview_last_flush_usec == 0 or elapsed_sec >= _HOVER_HEAVY_MIN_INTERVAL_SEC:
+		_refresh_drag_preview_now()
+		return
+	if _drag_preview_refresh_pending:
+		return
+	_drag_preview_refresh_pending = true
+	var wait_sec: float = maxf(_HOVER_HEAVY_MIN_INTERVAL_SEC - elapsed_sec, 0.001)
+	if _map_view == null or not _map_view.is_inside_tree():
+		_drag_preview_refresh_pending = false
+		_refresh_drag_preview_now()
+		return
+	_map_view.get_tree().create_timer(wait_sec).timeout.connect(
+		func() -> void:
+			_drag_preview_refresh_pending = false
+			_refresh_drag_preview_now(),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func _flush_drag_preview_refresh() -> void:
+	_drag_preview_refresh_pending = false
+	if dragging:
+		_refresh_drag_preview_now()
+
+
+func _refresh_drag_preview_now() -> void:
+	if not dragging or _drag_unit_id < 0 or _director == null or _director.board == null:
+		return
+	var cell: Vector2i = _pointer_grid_cell()
+	if not _director.board.is_in_bounds(cell):
+		return
+	var occ: UnitState = _director.board.get_unit_at(cell)
+	var drag_unit: UnitState = _director.board.get_unit_by_id(_drag_unit_id)
+	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
+	var waypoints: Array[Vector2i] = _route_waypoints()
+	var cache_key: int = _drag_preview_cache_key_for(cell, drag_target_id, waypoints)
+	if cache_key == _drag_preview_cache_key:
+		return
+	_drag_preview_last_flush_usec = Time.get_ticks_usec()
+	_drag_preview_cache_key = cache_key
+	_drag_preview_cache = _preview_at_interaction_cell(
+		_drag_unit_id,
+		cell,
+		_drag_last_free,
+		drag_target_id,
+		[],
+		_snapshot_drag_legal_move_tiles(),
+	)
+	_apply_live_preview(_drag_preview_cache)
 
 
 func get_drag_unit_id() -> int:
@@ -834,6 +884,7 @@ func _schedule_hover_preview_refresh() -> void:
 
 func _flush_hover_preview_refresh() -> void:
 	_hover_preview_refresh_pending = false
+	_flush_drag_preview_refresh()
 	_refresh_hover_if_planning()
 
 
@@ -962,6 +1013,7 @@ func _begin_hover_heavy_throttled_flush() -> void:
 func _flush_hover_heavy_sync() -> void:
 	_hover_heavy_throttle_gen += 1
 	_hover_heavy_frame_pending = false
+	_flush_drag_preview_refresh()
 	_run_hover_heavy_refresh()
 
 
@@ -2279,6 +2331,8 @@ func _drag_had_movement() -> bool:
 func _clear_drag_preview_cache() -> void:
 	_drag_preview_cache_key = 0
 	_drag_preview_cache = {}
+	_drag_preview_refresh_pending = false
+	_drag_preview_last_flush_usec = 0
 	_drag_last_cursor_cell = Vector2i(-999999, -999999)
 	_drag_last_sprite_cell = Vector2i(-999999, -999999)
 
