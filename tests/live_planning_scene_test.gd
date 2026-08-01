@@ -359,7 +359,9 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"ability": trample,
 	}, "k3/hover/east")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
-		"path": _TRAMPLE_FULL_PATH,
+		"path_end": _TRAMPLE_END,
+		"path_start": _K3_CELL,
+		"path_min_size": 3,
 		"ghost_pos": _TRAMPLE_END,
 		"manhattan": true,
 		"preview_nonempty": true,
@@ -410,7 +412,9 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"icon_not": [PlanningIcons.GLYPH_ATTACK],
 	}, "k3/post/hover_east")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_POST_DEST, {
-		"path": _TRAMPLE_POST_FULL_PATH,
+		"path_end": _TRAMPLE_POST_DEST,
+		"path_start": _K3_CELL,
+		"path_min_size": 6,
 		"ghost_pos": _TRAMPLE_POST_DEST,
 		"manhattan": true,
 		"preview_nonempty": true,
@@ -802,8 +806,7 @@ func _reposition_mouse_to_unit(ctx: Dictionary, unit_id: int, cell: Vector2i) ->
 	var runner: GdUnitSceneRunner = ctx.runner
 	input.set_qa_pointer_grid_cell(cell)
 	runner.simulate_mouse_move(_screen_position_for_cell(ctx, cell))
-	if input._intent_state != null:
-		input._intent_state.set_hover_coord(cell)
+	input.on_hover_moved(cell)
 	input.refresh_mouse_cursor(cell)
 	director.flush_plan_refresh_signals_if_pending()
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
@@ -972,6 +975,17 @@ func _audit_surface(
 		_assert_move_tile_at(ctx, blue_off, false, "%s/blue_not_%s" % [label, blue_off])
 	if contract.get("tiles_only_in_bounds", false):
 		_assert_overlay_tiles_in_bounds(ctx, label)
+	if contract.get("red_tiles_exact", false):
+		_assert_red_tiles_match_stand(
+			ctx,
+			contract.get("ability", null),
+			contract.get("red_stand", hover_cell),
+			label,
+		)
+	if contract.get("attack_target_clear", false):
+		assert_int(ctx.input.hover_attack_target_id()).override_failure_message(
+			"%s: hover must not keep enemy attack target" % label,
+		).is_equal(-1)
 	if contract.get("hover_oob", false):
 		var hover_ui: Vector2i = input.get_hover_tile_for_ui()
 		assert_bool(not ctx.board.is_in_bounds(hover_ui)).override_failure_message(
@@ -1000,12 +1014,17 @@ func _probe_hover_edge_cases(
 	red_stand: Vector2i,
 	label_prefix: String,
 ) -> void:
+	await _probe_hover_surface(ctx, unit_id, _E_BASH_CELL, {
+		"ability": ability,
+	}, "%s/from_enemy" % label_prefix)
 	await _probe_hover_surface(ctx, unit_id, _OFF_BLUE_CELL, {
 		"blue_any": true,
 		"blue_not": [_OFF_BLUE_CELL],
 		"red_on": true,
 		"red_stand": red_stand,
 		"ability": ability,
+		"red_tiles_exact": true,
+		"attack_target_clear": true,
 		"tiles_only_in_bounds": true,
 	}, "%s/off_blue" % label_prefix)
 	await _hover_mouse_off_map(ctx)
@@ -1909,6 +1928,32 @@ func _assert_overlay_tiles_in_bounds(ctx: Dictionary, label: String) -> void:
 		assert_bool(board.is_in_bounds(cell)).override_failure_message(
 			"%s: red tile %s must be in bounds" % [label, cell],
 		).is_true()
+
+
+func _assert_red_tiles_match_stand(
+	ctx: Dictionary,
+	ability: AbilityData,
+	stand: Vector2i,
+	label: String,
+) -> void:
+	assert_object(ability).override_failure_message(
+		"%s: red_tiles_exact requires ability" % label,
+	).is_not_null()
+	var unit_id: int = ctx.director.selected_unit_id
+	var actor: UnitState = ctx.director.projected_state.get_unit_by_id(unit_id)
+	assert_object(actor).override_failure_message(
+		"%s: red_tiles_exact missing projected actor" % label,
+	).is_not_null()
+	var expected: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		ctx.board, actor, ability, stand,
+	)
+	var actual: Array[Vector2i] = _collect_red_tiles(ctx)
+	expected.sort()
+	actual.sort()
+	assert_that(actual).override_failure_message(
+		"%s: overlay red tiles %s must match AbilitySystem range %s at stand %s"
+		% [label, actual, expected, stand],
+	).is_equal(expected)
 
 
 func _assert_red_live(

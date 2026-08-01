@@ -875,16 +875,20 @@ func on_hover_moved(cell: Vector2i) -> void:
 	if planning_cell_changed:
 		_last_planning_hover_cell = cell
 	if _director.board.is_in_bounds(cell) and _director.selected_unit_id >= 0 and planning_cell_changed:
-		var p_unit := _proj_unit(_director.selected_unit_id)
-		if p_unit != null:
-			var ability := _selected_ability_data(p_unit)
-			var is_awaiting_move = awaiting_targeting_active() and ability != null and AbilitySystem.ability_has_movement_effect(ability)
-			if _basic_move_allowed() or is_awaiting_move:
-				if _drag_route.is_empty():
-					_drag_unit_id = _director.selected_unit_id
-					_drag_route = [_proj_move_origin(p_unit)]
-				_extend_drag_route(cell)
+		if dragging:
+			var p_unit := _proj_unit(_director.selected_unit_id)
+			if p_unit != null:
+				var ability := _selected_ability_data(p_unit)
+				var is_awaiting_move = awaiting_targeting_active() and ability != null and AbilitySystem.ability_has_movement_effect(ability)
+				if _basic_move_allowed() or is_awaiting_move:
+					if _drag_route.is_empty():
+						_drag_unit_id = _director.selected_unit_id
+						_drag_route = [_proj_move_origin(p_unit)]
+					_extend_drag_route(cell)
 	if not _director.board.is_in_bounds(cell):
+		_flush_hover_heavy_sync()
+		return
+	if _should_restore_stand_hover_preview(cell):
 		_flush_hover_heavy_sync()
 		return
 	_schedule_hover_heavy_refresh()
@@ -1082,18 +1086,47 @@ func clear_interaction_preview() -> void:
 	_restore_hover_preview()
 
 
+func _should_restore_stand_hover_preview(cell: Vector2i) -> bool:
+	if _director == null or _director.board == null:
+		return true
+	if _director.selected_unit_id < 0 or not _director.board.is_in_bounds(cell):
+		return true
+	var p_unit := _proj_unit(_director.selected_unit_id)
+	if p_unit == null or p_unit.is_enemy() or not p_unit.is_alive():
+		return true
+	if selected_phase_action_exhausted():
+		return true
+	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
+		return false
+	if (
+		_director.selected_ability_index >= 0
+		and awaiting_targeting_active()
+		and _director.board.is_in_bounds(cell)
+	):
+		var dash_ab := _selected_ability_data(p_unit)
+		if (
+			dash_ab != null
+			and _awaiting_flow_selected(p_unit, dash_ab)
+			and AbilitySystem.planning_is_valid_awaiting_endpoint(
+				_proj_origin(p_unit), cell, dash_ab,
+			)
+		):
+			return false
+	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
+		if _is_hover_move_cell(p_unit, cell) or _hover_attack_target_id() >= 0:
+			return false
+	return true
+
+
 func _refresh_selected_interaction_preview() -> void:
 	if dragging or _director == null or _director.board == null:
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
-	if _director.selected_unit_id < 0 or not _director.board.is_in_bounds(cell):
+	if _should_restore_stand_hover_preview(cell):
 		_restore_hover_preview()
 		return
 	var p_unit := _proj_unit(_director.selected_unit_id)
-	if p_unit == null or p_unit.is_enemy() or not p_unit.is_alive():
-		_restore_hover_preview()
-		return
-	if selected_phase_action_exhausted():
+	if p_unit == null:
 		_restore_hover_preview()
 		return
 	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
@@ -1116,13 +1149,9 @@ func _refresh_selected_interaction_preview() -> void:
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 			_refresh_click_target_highlight()
 			return
-	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
-		var target_id := _hover_attack_target_id()
-		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
-			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
-			_refresh_click_target_highlight()
-			return
-	_restore_hover_preview()
+	var target_id := _hover_attack_target_id()
+	_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
+	_refresh_click_target_highlight()
 
 
 func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
@@ -1170,6 +1199,7 @@ func _refresh_click_target_highlight() -> void:
 
 func _restore_hover_preview() -> void:
 	_hover_preview_cache_key = ""
+	_clear_hover_drag_route()
 	if _planning != null:
 		_planning.set_drag_attack_target(-1)
 	preview_state.clear_interaction()
@@ -1181,8 +1211,21 @@ func _restore_hover_preview() -> void:
 	drag_preview_failed = false
 	_clear_intent_snapshot()
 	if _planning != null:
+		_planning.clear_threat_origin()
 		_planning.restore_committed_display()
+		if _director != null and _director.selected_unit_id >= 0 and _is_planning():
+			_planning._recompute_hover_ranges_from_inputs()
+			_planning.queue_redraw()
 	_sync_intent_live_board()
+
+
+func _clear_hover_drag_route() -> void:
+	if _drag_route.is_empty() and _drag_unit_id < 0:
+		return
+	_drag_route.clear()
+	_drag_unit_id = -1
+	if _planning != null:
+		_planning.clear_drag_route()
 
 
 func _update_hover_attack_preview() -> void:
