@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight_phalanx_stance (row) │ Round 8 (critic)
-SCORE: 79/100 │ THRESHOLD: 88 │ FAIL │ CLIMBING
-DELTA: +22 vs full-matrix r7 (row-level); full-matrix still 57/95
-NEXT: STURDY turn-expiry deepen OR re-critic row; then manifest promote
+GAUNTLET SCORE │ knight_phalanx_stance (row) │ Round 10 (critic)
+SCORE: 87/100 │ THRESHOLD: 88 │ FAIL │ CLIMBING
+DELTA: +1 vs r9 (was 87); +8 vs r8
+NEXT: row re-critic after infinite_range_expires assert; promote at ≥88
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
@@ -26,7 +26,9 @@ STOP_CONDITION_MET: no
 | r5 | 48 | +4 | FAIL |
 | r6 | 55 | +7 | FAIL (CLIMBING) |
 | r7 | 57 | +2 | FAIL (STALLED) |
-| r8 | 79 | +22 | FAIL (row: phalanx — below 88) |
+| r8 | 79 | +22 | FAIL (row: phalanx) |
+| r9 | 87 | +8 | FAIL (row: phalanx — map-wide gap) |
+| r10 | 87 | +0 | FAIL (row: phalanx — expiry gap; harness deepened post-critic) |
 
 ---
 
@@ -36,7 +38,7 @@ STOP_CONDITION_MET: no
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-LOCK loop ACTIVE** (`/loop 20m`) — phalanx tick r8 row critic 79/88 |
+| **Status** | **K3-LOCK loop ACTIVE** (`/loop 200m`, job 1) — phalanx row r10 **87/88** |
 | **Lead session** | knight-k3-lock-2026-08-01 |
 
 ---
@@ -47,7 +49,7 @@ STOP_CONDITION_MET: no
 |-------|-------|
 | **Piece ID** | K3-LOCK (full matrix — owner threshold 95) |
 | **Critic pass** | r7 (gauntlet-critic subagent) |
-| **Last result** | Row r8: phalanx **79/88 FAIL** — harness green; STURDY expiry deepen for manifest |
+| **Last result** | Row r10: phalanx **87/88 FAIL** — map-wide + negative control + infinite_range_expires added; re-critic next tick |
 | **Largest gap** | phalanx row < 88; 15 HARNESS_ONLY rows remain |
 
 ---

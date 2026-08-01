@@ -1120,6 +1120,60 @@ static func run_phalanx_stance(failures: Array[String]) -> void:
 		enemy_after != null and enemy_after.health.current_hp < hp_before,
 		"phalanx [+] must enable retaliation counter beyond melee range",
 	)
+	var board_wide: BoardState = make_plain_board(Vector2i(12, 5))
+	place_knight(board_wide, 30, Vector2i(2, 2), cfg_combo)
+	var k_wide: UnitState = unit_on_board(board_wide, 30)
+	k_wide.passive_flags["training_unlimited_actions"] = true
+	grant_extra_ap(k_wide, 1)
+	var ph_wide: AbilityData = ability_on_unit(k_wide, &"knight_phalanx_stance")
+	var pr_wide: AbilityData = ability_on_unit(k_wide, &"knight_retaliation_protocol")
+	var setup_w := Timeline.new()
+	setup_w.add(plan_ability(30, ph_wide, k_wide.position, 30))
+	setup_w.add(plan_ability(30, pr_wide, k_wide.position, 30))
+	simulate_player_turn(board_wide, setup_w)
+	soften_for_melee_hit(unit_on_board(board_wide, 30))
+	place_enemy_artillery(board_wide, 31, Vector2i(9, 2))
+	var bolt_w: AbilityData = unit_on_board(board_wide, 31).active_abilities[0]
+	bolt_w.range_tiles = 10
+	var hp_wide: int = unit_on_board(board_wide, 31).health.current_hp
+	var atk_w := Timeline.new()
+	atk_w.add(plan_ability(31, bolt_w, Vector2i(2, 2), 30))
+	var res_w: SimResult = simulate_player_turn(board_wide, atk_w)
+	var en_wide: UnitState = res_w.final_state.get_unit_by_id(31)
+	assert_true(
+		failures, "phalanx_stance/upgrade/retaliation_map_wide",
+		en_wide != null and en_wide.health.current_hp < hp_wide,
+		"phalanx [+] must counter at map-wide range (Manhattan 7)",
+	)
+	var expire_inf: SimResult = Simulator.simulate(board_wide, Timeline.new())
+	expire_inf = Simulator.simulate(expire_inf.final_state, Timeline.new())
+	var k_exp: UnitState = expire_inf.final_state.get_unit_by_id(30)
+	assert_true(
+		failures, "phalanx_stance/upgrade/infinite_range_expires",
+		k_exp != null and not has_status(k_exp, GameEnums.StatusType.RETALIATION_INFINITE_RANGE),
+		"RETALIATION_INFINITE_RANGE must clear after turn boundary (this turn only)",
+	)
+	var cfg_proto: Dictionary = with_upgraded_ability({}, &"knight_retaliation_protocol")
+	var board_neg: BoardState = make_plain_board(Vector2i(12, 5))
+	place_knight(board_neg, 40, Vector2i(2, 2), cfg_proto)
+	var k_neg: UnitState = unit_on_board(board_neg, 40)
+	var pr_neg: AbilityData = ability_on_unit(k_neg, &"knight_retaliation_protocol")
+	var setup_n := Timeline.new()
+	setup_n.add(plan_ability(40, pr_neg, k_neg.position, 40))
+	simulate_player_turn(board_neg, setup_n)
+	soften_for_melee_hit(unit_on_board(board_neg, 40))
+	place_enemy_artillery(board_neg, 41, Vector2i(4, 2))
+	var hp_neg: int = unit_on_board(board_neg, 41).health.current_hp
+	var bolt_n: AbilityData = unit_on_board(board_neg, 41).active_abilities[0]
+	var atk_n := Timeline.new()
+	atk_n.add(plan_ability(41, bolt_n, Vector2i(2, 2), 40))
+	var res_n: SimResult = simulate_player_turn(board_neg, atk_n)
+	var en_neg: UnitState = res_n.final_state.get_unit_by_id(41)
+	assert_true(
+		failures, "phalanx_stance/upgrade/no_infinite_without_phalanx",
+		en_neg != null and en_neg.health.current_hp == hp_neg,
+		"without phalanx [+] infinite range, counter must not hit beyond melee 1",
+	)
 
 
 static func run_taunting_strike(failures: Array[String]) -> void:
