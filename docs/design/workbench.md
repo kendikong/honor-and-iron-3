@@ -24,16 +24,17 @@
 | **Round** | — |
 | **Critic invoked** | — *(yes/no — required before PASS)* |
 | **Last bar** | — |
-| **Last result** | — |
+| **Last result** | — *(PASS/FAIL)* |
+| **Last score** | — *(e.g. 82/100, threshold 85 — required)* |
 | **Largest gap** | — |
 
 ---
 
 ## Wave log
 
-| Time | Piece | Bar | Critic | Result | Commit | Notes |
-|------|-------|-----|--------|--------|--------|-------|
-| — | — | — | — | — | — | — |
+| Time | Piece | Bar | Critic | Score | Result | Commit | Notes |
+|------|-------|-----|--------|-------|--------|--------|-------|
+| — | — | — | — | — | — | — | — |
 
 ---
 

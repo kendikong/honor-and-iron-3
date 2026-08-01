@@ -214,7 +214,7 @@ godot --headless --path <repo> --script res://tests/run_mass_sim_test.gd
 | `verification-matrix.md` | All paths exist or marked `PLANNED` |
 | `scripts/lint_design_doc.ps1` | Fails if pillar missing required H2s |
 
-**W1 gauntlet:** builder writes → **`/gauntlet-critic`** with BAR = lint script + matrix path grep → fix largest gap → repeat until PASS.
+**W1 gauntlet:** builder writes → **`/gauntlet-critic`** with `PASS_THRESHOLD: 90`, BAR = lint script + matrix path grep → fix largest gap → repeat until `RESULT: PASS` **and** `SCORE ≥ 90`.
 
 ### W2 — Combat spine docs
 
@@ -248,17 +248,17 @@ For **any** design doc (including this plan):
 
 1. **Builder** drafts from authority docs + grep — not from memory.
 2. **Lead** invokes **`gauntlet-critic`** (readonly) with §9 handoff from `00-gauntlet-loop-cursor.md` — **no builder chat log**.
-3. **Critic** returns `RESULT: PASS | FAIL` + largest gap + evidence.
-4. **Builder** fixes one gap → repeat until PASS or `MAX_ROUNDS_PER_PIECE` → `FAILURE_REPORT.md`.
-5. **Status promotion:** `DRAFT` → `LOOP_READY` (critic PASS once) → `POLISHED` (scorecard ≥8 avg) → `LOCKED` (owner).
+3. **Critic** returns `RESULT`, **`SCORE: x/100`**, largest gap, evidence. **PASS only if** BAR passes **and** `SCORE ≥ PASS_THRESHOLD` (85 code / 88 docs / 90 meta — see gauntlet spec Rule 4b).
+4. **Builder** fixes largest gap → repeat until PASS gate met or `MAX_ROUNDS_PER_PIECE` → `FAILURE_REPORT.md`.
+5. **Status promotion:** `DRAFT` → `LOOP_READY` (critic PASS + score ≥ 88) → `POLISHED` (score ≥ 90 on meta docs, ≥ 88 on pillars) → `LOCKED` (owner).
 
 **Doc BAR (until custom linter ships):**
 
-| Stage | Machine check |
-|-------|----------------|
-| LOOP_READY | All `_TEMPLATE.md` H2s present; ≥1 machine bar per deliverable |
-| POLISHED | `gauntlet-critic` PASS + 8-dimension scorecard in doc footer |
-| LOCKED | Owner reply + commit hash in doc header |
+| Stage | Machine check | Harsh critic |
+|-------|----------------|--------------|
+| LOOP_READY | `_TEMPLATE.md` H2s + ≥1 machine bar | `SCORE ≥ 88`, `PASS_THRESHOLD: 88` |
+| POLISHED | lint + matrix paths | `SCORE ≥ 90`, `PASS_THRESHOLD: 90` |
+| LOCKED | Owner reply + commit hash in header | — |
 
 ---
 
@@ -310,3 +310,4 @@ Minimal checks (PowerShell):
 | Date | Change |
 |------|--------|
 | 2026-08-01 | v3: Rounds 2–3 gauntlet; repo-aligned path; P0 merge; verification matrix draft; W1 lint spec |
+| 2026-08-01 | Harsh score gate aligned with gauntlet-critic Rule 4b (88/90 doc thresholds) |

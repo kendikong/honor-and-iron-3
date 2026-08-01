@@ -115,13 +115,35 @@ When possible: **blind A/B** (reference vs output, labels swapped).
 
 On failure: return **one largest meaningful gap**, not a laundry list.
 
-**Lead cannot mark a piece PASS** without a `gauntlet-critic` subagent returning `RESULT: PASS` on that piece in the same run. “Looks good to me” without critic invocation = **Rule 4 violation**.
+**Lead cannot mark a piece PASS** without a `gauntlet-critic` subagent returning **`RESULT: PASS`** and **`SCORE: ≥ PASS_THRESHOLD`** on that piece in the same run. “Looks good to me” without critic invocation = **Rule 4 violation**.
+
+### Rule 4b — Harsh score gate (mandatory)
+
+The critic is **harsh** and returns **`SCORE: x/100`**. A piece passes only when **both** are true:
+
+1. All **BAR** commands/checks pass (machine truth).
+2. **`SCORE ≥ PASS_THRESHOLD`** (human+rules quality).
+
+| Work type | Default PASS_THRESHOLD |
+|-----------|----------------------|
+| Code / gameplay piece | **85** |
+| Design doc (`docs/design/` pillar) | **88** |
+| Meta / plan / suite docs | **90** |
+| Wave smoothing pass | **80** |
+
+Override via **PASS_THRESHOLD** in the §9 handoff. Full rubric: [`.cursor/agents/gauntlet-critic.md`](../../.cursor/agents/gauntlet-critic.md).
+
+**Calibration:** 65–78 = mediocre; 79–84 = not ship-ready; **85+** = pass candidate. Critic must not inflate.
+
+**Automatic FAIL scores:** BAR failure → capped at **59**; unverified artifact (summary only) → capped at **40**.
+
+Lead logs **Score** and **threshold** in `workbench.md` every wave. Commit on piece PASS only when critic score meets threshold.
 
 ### Rule 5 — Keep looping
 
 Do not cap at “3 rounds” as the primary stop condition. Use:
 
-- Bar met (tests PASS, critic accepts)
+- Bar met (tests PASS **and** critic `SCORE ≥ PASS_THRESHOLD`)
 - Improvements below noise (document criterion)
 - **Boundary** (max rounds per piece, token budget, time box) — safety only; **not** “good enough”
 - Owner stops the run
@@ -135,7 +157,7 @@ For long runs: use **Cursor Cloud Automations** or a **recurring local Agent tas
 Lead maintains **`docs/design/workbench.md`** (or run-specific path) with:
 
 - Current piece / wave
-- Last bar result (PASS/FAIL + command output excerpt)
+- Last bar result (PASS/FAIL + **SCORE/threshold** + command output excerpt)
 - Largest open gap
 - Commit hash when green
 
@@ -177,7 +199,7 @@ Invoke: `/gauntlet-critic` or “use gauntlet-critic subagent on this piece.”
 Add to the overnight prompt (or `.cursor/rules` pointer):
 
 - Spawn **separate** `gauntlet-critic` subagent after **every** builder pass on a piece — log invocation in `workbench.md` (`Critic: yes`)
-- Never self-grade — piece PASS requires critic `RESULT: PASS` in the wave log
+- Never self-grade — piece PASS requires critic `RESULT: PASS` **and** `SCORE ≥ PASS_THRESHOLD` in the wave log
 - Update `docs/design/workbench.md` every wave
 - On gameplay edits: run mandatory QA per `qa-after-gameplay-changes.mdc` before claiming PASS
 - Commit per `auto-commit-absolute.mdc` when bar passes for a piece
@@ -212,7 +234,8 @@ For sleep/work runs, also pass [`docs/design/UNATTENDED_RUN.md`](UNATTENDED_RUN.
 | Anti-pattern | Why it fails |
 |--------------|--------------|
 | Builder and critic in same message without subagent | Self-grading |
-| Lead marks piece PASS without `gauntlet-critic` `RESULT: PASS` in workbench | Fake gauntlet — same as self-grading |
+| Lead marks piece PASS without `gauntlet-critic` `RESULT: PASS` **and** score ≥ threshold | Fake gauntlet — same as self-grading |
+| Accepting piece with tests green but critic score 79/100 | Below threshold — keep looping |
 | Critic reads builder’s “implementation notes” | Contaminated judgment |
 | “LGTM” without running bar commands | False PASS (Phase 9 lesson) |
 | Owner pastes between two chats each round | Not unattended; lead should orchestrate |
@@ -239,8 +262,8 @@ You are the LEAD. Do not ask the owner questions during this run.
 
 1. Decompose into smallest independently judgeable pieces.
 2. Per piece: builder subagent implements → separate readonly gauntlet-critic subagent judges ARTIFACT against BAR.
-3. Critic never sees builder reasoning. Critic returns largest gap only.
-4. Loop until BAR passes for that piece or MAX_ROUNDS_PER_PIECE in UNATTENDED_RUN.md.
+3. Critic never sees builder reasoning. Critic returns SCORE/100 + largest gap only.
+4. Loop until BAR passes **and** SCORE ≥ PASS_THRESHOLD for that piece, or MAX_ROUNDS_PER_PIECE in UNATTENDED_RUN.md.
 5. Update docs/design/workbench.md every wave (piece, bar result, gap, commit).
 6. On piece PASS: commit full backup per auto-commit-absolute.mdc.
 7. Optional: after each wave, readonly smoothing pass on combined diff.
@@ -259,13 +282,14 @@ Lead sends **only this** to `gauntlet-critic` (no builder chat log):
 PIECE: [id + one sentence]
 GOAL: [acceptance for this piece only]
 BAR: [exact commands to run]
+PASS_THRESHOLD: [85 | 88 | 90 | 80 — default 85 if omitted]
 RULES: [bullet list of enforced .mdc paths]
 ARTIFACT:
 - git diff --stat
 - relevant test stdout (lead runs BAR if critic cannot shell; paste raw output only)
 - screenshot paths if visual
 - reference asset path if visual (for A/B)
-Do not implement. PASS or FAIL + largest gap + evidence.
+Do not implement. SCORE/100 + PASS or FAIL + largest gap + evidence.
 ```
 
 ---
@@ -300,3 +324,4 @@ Do not implement. PASS or FAIL + largest gap + evidence.
 | 2026-08-01 | Initial Cursor/Composer 2.5 adaptation for Honor & Iron |
 | 2026-08-01 | Review pass: clarify bar pass/fail loop, dedupe critic agent, `/loop` caveat, regression script path, `UNATTENDED_RUN.md` |
 | 2026-08-01 | Hardening: propose-bar-if-missing, critic-required PASS, visual A/B bar, MAX_ROUNDS → FAILURE_REPORT, workbench critic column |
+| 2026-08-01 | Harsh score gate: SCORE/100 + PASS_THRESHOLD by work type; rubric in gauntlet-critic agent |
