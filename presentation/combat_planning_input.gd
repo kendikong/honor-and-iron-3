@@ -1653,6 +1653,11 @@ func clear_qa_pointer_override() -> void:
 	_qa_pointer_grid_cell = Vector2i.ZERO
 
 
+## Hover poll owner: respects QA grid override so live tests can hop tiles without sweep.
+func pointer_grid_cell() -> Vector2i:
+	return _pointer_grid_cell()
+
+
 func _pointer_screen_pos() -> Vector2:
 	if _qa_pointer_override:
 		return _qa_pointer_screen_pos

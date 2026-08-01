@@ -16,7 +16,8 @@ if (-not (Test-Path (Join-Path $projectRoot "tests\live_planning_scene_test.gd")
 	exit 2
 }
 
-Write-Output "[Tier 3] Single live TestBattle run (GdUnit once; no second log-copy Godot boot)."
+$env:LIVE_QA_PROFILE = "fast"
+Write-Output "[Tier 3] LIVE_QA_PROFILE=fast (set LIVE_QA_PROFILE=full for legacy PNG + selection/drag parity on all knights)."
 
 # GdUnitCmdTool only accepts -a/-i/etc. --godot_binary is runtest.cmd-only (stripped before invoke).
 $godotArgs = @(

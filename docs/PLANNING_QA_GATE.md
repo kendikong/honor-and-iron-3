@@ -40,10 +40,20 @@ deterministic checklist contract; slot-only rows do not replace drag E2E.
 ### Tier 3 TestBattle acceptance
 
 `tests/live_planning_scene_test.gd` boots the actual `TestBattle.tscn` **once** through
-GdUnit4 and runs `test_live_planning_bible_multi_knight_session` (~13s). It pins a
+GdUnit4 and runs `test_live_planning_bible_multi_knight_session`. It pins a
 four-knight / two-dummy training layout, uses real mouse move/press/release events,
 advances production frames, inspects overlay tile collections and preview/commit
 state, then presses Ready → Execute and verifies final unit positions.
+
+#### Tier 3 profiles (`LIVE_QA_PROFILE`)
+
+| Profile | Set via | Behavior |
+|---------|---------|----------|
+| **fast** (default) | unset or `LIVE_QA_PROFILE=fast` | 1280×720 viewport; checkpoint PNGs only; `qa_static_overlay` + ambient VFX off; hop probes; K1/K3 drag-only, K2 tap-only, K4 full; tighter frame settles (~2× faster) |
+| **full** | `LIVE_QA_PROFILE=full` | Legacy 1920×1080; every step PNG; selection + drag parity on K1–K3; mouse sweep probes |
+
+`run_planning_scene_acceptance.ps1` sets `LIVE_QA_PROFILE=fast` before launch. JSON trace
+assertions (blue/red tiles, paths, commit slots, K4 run economy) run in both profiles.
 
 **Single-session journeys (all in one boot):**
 
@@ -52,7 +62,7 @@ state, then presses Ready → Execute and verifies final unit positions.
 | K1 `(4,5)` | Shield Bash | phases 1–5: blue/red, walk ghost + `preview_paths`, enemy approach path, push preview, cursor glyphs, pre-move `target_coord`, commit, red-off at 0 AP |
 | K2 `(1,3)` | Chain Hook | in-range red, walk ghost + path, pull preview, commit, projected enemy cell |
 | K3 `(5,4)` | Trampling Advance | arm awaiting, red while awaiting, per-step `get_drag_route()` + `preview_paths` paint (E→N), committed waypoints |
-| K4 `(4,1)` | Run → Bowling | **One drag:** detour loop E→N→W to `(4,2)` (walk, red **on**, AP 1), then **one more tile** west to `(3,2)` with `auto_run` (run required, red **off**, display AP 0); commit; post-commit bowling red hidden |
+| K4 `(4,1)` | Run → Bowling | **Drag:** detour loop E→N→W to `(4,2)` (walk, red **on**, AP 1), then west to `(3,2)` with `auto_run` (run required, red **off**, display AP 0); commit; post-commit bowling red hidden. **Fast profile:** drag only (selection + parity in `full` only). |
 | All | Execute | `GlobalTimeline` ready → sim; knight + dummy final cells match commit |
 | Reset | Scroll + undo | wheel changes ability; run drag + right-click clears pre-move |
 

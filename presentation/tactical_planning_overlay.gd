@@ -69,6 +69,8 @@ var _hover_coord: Vector2i = Vector2i(-999, -999)
 var _phase: int = CombatDirector.Phase.PLANNING
 var _hover_move_tiles: Array[Vector2i] = []
 var _hover_action_range_tiles: Array[Vector2i] = []
+## Tier 3 QA: skip 30fps flow redraws from committed plan entries (drag-only pulse).
+var qa_static_overlay: bool = false
 var _cached_hover_unit_id: int = -1
 var _cached_hover_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_ability: int = -1
@@ -266,6 +268,10 @@ func get_committed_preview() -> CombatPlanningPreview:
 
 func get_hover_move_tiles() -> Array[Vector2i]:
 	return _hover_move_tiles.duplicate()
+
+
+func get_hover_action_range_tiles() -> Array[Vector2i]:
+	return _hover_action_range_tiles.duplicate()
 
 
 func is_hover_move_tile(cell: Vector2i) -> bool:
@@ -765,6 +771,8 @@ func _process(delta: float) -> void:
 
 
 func _overlay_needs_flow_animation() -> bool:
+	if qa_static_overlay:
+		return _planning_input != null and _planning_input.dragging
 	if _resolve_overlay_attack_target_id() >= 0:
 		return true
 	if _planning_input != null and _planning_input.dragging:

@@ -43,6 +43,7 @@ var _tile_set: TileSet
 var _decorator: AutoDecorator = AutoDecorator.new()
 var _atmosphere: AtmosphereBinder = AtmosphereBinder.new()
 var _effects: EffectsController = EffectsController.new()
+var _qa_perf_mode: bool = false
 var _player_grid: PlayerGrid
 var _logical_provenance: PlayerGridProvenance = PlayerGridProvenance.new()
 var _render_provenance: MapRenderProvenance = MapRenderProvenance.new()
@@ -230,6 +231,21 @@ func get_effects_settings() -> EffectsSettings:
 	return _effects.settings
 
 
+## Tier 3 QA: disable ambient VFX tick and staticize planning overlay animations.
+func apply_qa_performance_mode(overlay: TacticalPlanningOverlay) -> void:
+	_qa_perf_mode = true
+	if overlay != null:
+		overlay.qa_static_overlay = true
+	var fx: EffectsSettings = _effects.settings
+	fx.wind_field = false
+	fx.time_light = false
+	fx.cloud_shadows = false
+	fx.mist = false
+	fx.oblique_contact_shadows = false
+	fx.tree_variant_b = false
+	_apply_effects()
+
+
 func get_shadow_sprites() -> Node2D:
 	return _shadow_sprites
 
@@ -380,7 +396,8 @@ const _TREE_FADE_SYNC_INTERVAL_SEC: float = 1.0 / 20.0
 
 
 func _process(delta: float) -> void:
-	_effects.process_frame(delta)
+	if not _qa_perf_mode:
+		_effects.process_frame(delta)
 	_update_hover_coord()
 	_tree_fade_sync_accum += delta
 	var interval: float = _TREE_FADE_SYNC_INTERVAL_SEC
@@ -497,7 +514,11 @@ func _update_hover_coord() -> void:
 			elif _side_panels != null:
 				_side_panels.set_hover_coord(blocked_cell)
 		return
-	var cell: Vector2i = screen_to_grid(get_viewport().get_mouse_position())
+	var cell: Vector2i
+	if _planning_input != null:
+		cell = _planning_input.pointer_grid_cell()
+	else:
+		cell = screen_to_grid(get_viewport().get_mouse_position())
 	if cell == _last_polled_hover_cell:
 		return
 	_last_polled_hover_cell = cell
