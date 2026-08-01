@@ -49,3 +49,7 @@ When **BAR** omits commands but the piece touches:
 | Broad sim / bridge | `.\scripts\run_regression_tests.ps1` with project Godot path |
 
 Report FAIL with evidence if you cannot run a command (missing Godot on PATH) — do not claim PASS.
+
+## Shell fallback
+
+If this subagent cannot execute BAR commands (readonly or sandbox limits), reply `FAIL` with evidence `Critic cannot execute BAR; lead must run commands and resubmit ARTIFACT as test stdout only.` Do not guess PASS from a builder summary.

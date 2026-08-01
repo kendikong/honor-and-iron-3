@@ -14,8 +14,8 @@ A **lead agent** receives a short goal and a **concrete quality bar**. It:
 
 1. Decomposes the goal into the **smallest independently judgeable pieces**
 2. For each piece: **builder subagent** creates → **critic subagent** (fresh context) judges against the bar
-3. If the bar wins: critic returns the **largest meaningful gap** → builder fixes → repeat
-4. Continues until the bar is met, improvements plateau, a **documented boundary** fires, or the **owner stops the run**
+3. While our output **fails** the bar: critic returns the **largest meaningful gap** → builder fixes → repeat
+4. **Stops** when the bar is **met**, improvements plateau, a **documented boundary** fires, or the **owner stops the run**
 
 **Unattended is in-scope:** Shumer’s CoD run used one prompt, then *“left it alone”* for many hours. Mediation is done by the **lead agent**, not the human between every round.
 
@@ -81,9 +81,9 @@ The bar must be **inspectable**. Vague goals are invalid.
 | Work type | Honor & Iron bar examples |
 |-----------|---------------------------|
 | Planning / commit | `.\scripts\run_planning_qa_gate.ps1` → **PASS** |
-| Sim / bridge | `tests/bridge_test.gd` / regression suite green |
+| Sim / bridge | `.\scripts\run_regression_tests.ps1` → **PASS** (wraps headless `regression_test.gd`) |
 | Skill | `tests/planning_skill_scenarios_test.gd` row for that skill |
-| Docs | Section checklist + `scripts/lint_design_doc.ps1` when present |
+| Docs | Section checklist + `scripts/lint_design_doc.ps1` (planned; not on disk yet) |
 | Visual / map | F5 compositor gates in `phase-audit.mdc` + screenshot vs reference |
 | Backend (Shumer) | Test suite, determinism hash, fail-loud asserts |
 
@@ -120,7 +120,7 @@ Do not cap at “3 rounds” as the primary stop condition. Use:
 - **Boundary** (max rounds per piece, token budget, time box) — safety only
 - Owner stops the run
 
-For Cursor local: `/loop` where available. For overnight: Cloud Automation or explicit “continue until boundary in `UNATTENDED_RUN.md`.”
+For long runs: use **Cursor Cloud Automations** or a **recurring local Agent task** (if your build supports it). The `/loop` skill is **Claude Code / Fable** terminology — Cursor may not expose the same slash command; if not, the **lead must explicitly re-invoke** builder → critic each round. For overnight: Cloud Automation or explicit “continue until boundary in `UNATTENDED_RUN.md`.”
 
 ### Rule 6 — Watch without mediating
 
@@ -156,31 +156,13 @@ After a wave (e.g. 5 skills), one **fresh readonly** subagent reviews the **comb
 
 ## 5. Cursor setup
 
-### 5.1 Critic subagent (recommended)
+### 5.1 Critic subagent (installed)
 
-Create `.cursor/agents/gauntlet-critic.md`:
-
-```markdown
----
-name: gauntlet-critic
-description: Readonly gauntlet critic — inspects artifacts against a bar; returns largest gap only.
-model: composer-2.5
-readonly: true
----
-
-You are a gauntlet CRITIC. You do not implement fixes.
-
-You receive: GOAL (one piece), BAR (commands/checks), RULES (paths), ARTIFACT (diff, test log, screenshots).
-
-1. Run or verify the BAR (commands must be executed, not assumed).
-2. Inspect real output only — never trust a builder summary.
-3. If BAR passes: reply `PASS` and one line of residual risk (or `none`).
-4. If BAR fails: reply `FAIL`, then **Largest gap:** (one item), **Evidence:** (file:line or log excerpt).
-5. Do not propose a full rewrite. Do not expand scope.
-6. Enforce Honor & Iron global rules: preview==commit, no per-skill engine branches, no bandaids.
-```
+**Canonical definition:** [`.cursor/agents/gauntlet-critic.md`](../../.cursor/agents/gauntlet-critic.md) — do not duplicate its body in this doc (avoids drift).
 
 Invoke: `/gauntlet-critic` or “use gauntlet-critic subagent on this piece.”
+
+**Readonly + shell fallback:** `readonly: true` blocks file edits, not necessarily read-only commands. If your Cursor build prevents the critic subagent from running PowerShell/Godot, the **lead** runs the BAR commands, then passes **stdout/stderr only** to the critic (no builder rationale).
 
 ### 5.2 Lead agent instructions
 
@@ -194,7 +176,7 @@ Add to the overnight prompt (or `.cursor/rules` pointer):
 
 ### 5.3 Unattended boundary file
 
-For sleep/work runs, also pass `docs/design/UNATTENDED_RUN.md` when it exists:
+For sleep/work runs, also pass [`docs/design/UNATTENDED_RUN.md`](UNATTENDED_RUN.md):
 
 - `CHUNK_ID` — one scoped deliverable
 - `ALLOWED_PATHS` — glob allowlist
@@ -285,6 +267,7 @@ Do not implement. PASS or FAIL + largest gap + evidence.
 | `ROADMAP.md` | What to build (canonical phases) |
 | `docs/TACTICAL_COMBAT_PARITY_PLAN.md` | Combat path truth |
 | `docs/PLANNING_QA_GATE.md` | Planning bar detail |
+| `docs/design/UNATTENDED_RUN.md` | Per-run scope lock and stop conditions (overnight) |
 | `docs/design/*` pillar specs | Per-domain goals and bars |
 | **This file** | How agents loop to hit those bars in Cursor |
 
@@ -304,3 +287,4 @@ Do not implement. PASS or FAIL + largest gap + evidence.
 | Date | Change |
 |------|--------|
 | 2026-08-01 | Initial Cursor/Composer 2.5 adaptation for Honor & Iron |
+| 2026-08-01 | Review pass: clarify bar pass/fail loop, dedupe critic agent, `/loop` caveat, regression script path, `UNATTENDED_RUN.md` |
