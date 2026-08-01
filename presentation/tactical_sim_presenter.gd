@@ -90,16 +90,29 @@ func _spawn_heal_text(event: SimEvent) -> void:
 
 
 func _on_planning_commit_events(events: Array) -> void:
-	if _unit_layer != null and _director != null and _director.board != null:
-		_unit_layer.adopt_board(_director.board)
 	var had_push: bool = false
 	for raw: Variant in events:
 		if raw is SimEvent:
-			if _is_push_event(raw):
+			var event: SimEvent = raw as SimEvent
+			if _is_push_event(event):
 				had_push = true
-			_on_sim_event(raw as SimEvent)
+			if _defer_planning_player_move_to_unit_layer(event):
+				continue
+			_on_sim_event(event)
 	if had_push:
 		_schedule_push_flush()
+
+
+func _defer_planning_player_move_to_unit_layer(event: SimEvent) -> bool:
+	if event.type != GameEnums.SimEventType.UNIT_MOVED or _director == null:
+		return false
+	if not CombatDirector.is_planning_phase(_director.phase):
+		return false
+	var unit_id: int = int(event.data.get("actor", -1))
+	if _director.is_planning_move_instant(unit_id):
+		return false
+	var unit := _director.board.get_unit_by_id(unit_id) if _director.board != null else null
+	return unit != null and not unit.is_enemy()
 
 
 func _is_push_event(event: SimEvent) -> bool:

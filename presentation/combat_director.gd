@@ -46,8 +46,8 @@ var unit_ability_memory: Dictionary = {}
 ## reachability and target highlights so they follow planned moves, not start tiles.
 var projected_state: BoardState
 var _run_id: int = 0
-## Moves just added via _try_add_multiple that may need a planning commit animation.
-var _commit_animate_actions: Array[TimelineAction] = []
+## Actor ids whose MOVE was just committed via _try_add_multiple (planning walk anim).
+var _commit_animate_actor_ids: Dictionary = {}
 var initial_board: BoardState
 ## Snapshot at the start of the current player turn (planning).
 var turn_start_board: BoardState
@@ -57,6 +57,8 @@ var plan_revision: int = 0
 var plan_affected_unit_ids: Array[int] = []
 ## When true, Run is hidden from the skill list and applied automatically for out-of-range moves.
 var auto_run: bool = false
+## Drag-drop move commits snap instantly; selection/hover commits walk/run on plan.
+var _instant_planning_move_units: Dictionary = {}
 ## Hidden exhaustion slot (Master Bible § Universal Wait) — not in plan_action.
 var _wait_unit_ids: Dictionary = {}
 var _plan_refresh_emit_pending: bool = false
@@ -876,7 +878,7 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 	for i: int in range(actions.size()):
 		target_plans[i].add(actions[i])
 		if actions[i].type == GameEnums.ActionType.MOVE:
-			_commit_animate_actions.append(actions[i])
+			_commit_animate_actor_ids[actions[i].actor_id] = true
 		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null \
 				and actions[i].ability.is_movement_kind():
 			_cancel_ally_plans_after_movement_step(actions[i])
@@ -887,6 +889,23 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 
 func get_player_plan() -> Timeline:
 	return _get_combined_plan()
+
+
+func mark_planning_move_instant(unit_id: int) -> void:
+	if unit_id >= 0:
+		_instant_planning_move_units[unit_id] = true
+
+
+func take_planning_move_instant(unit_id: int) -> bool:
+	return _instant_planning_move_units.erase(unit_id)
+
+
+func is_planning_move_instant(unit_id: int) -> bool:
+	return _instant_planning_move_units.has(unit_id)
+
+
+func clear_planning_move_instant(unit_id: int) -> void:
+	_instant_planning_move_units.erase(unit_id)
 
 
 func get_planned_move_waypoints(unit_id: int) -> Array[Vector2i]:
@@ -2218,7 +2237,10 @@ func _refresh_plan_core() -> void:
 				action.irreversible = true
 				if _cancel_plans_for_displacement(action.actor_id, pre_board, move_ev):
 					any_cancelled = true
-			if action in _commit_animate_actions:
+			if (
+				action.type == GameEnums.ActionType.MOVE
+				and _commit_animate_actor_ids.has(action.actor_id)
+			):
 				anim_events.append_array(_extract_commit_anim_events(move_ev))
 			
 		var reason := ""
@@ -2232,7 +2254,7 @@ func _refresh_plan_core() -> void:
 		_refresh_plan()
 		return
 
-	_commit_animate_actions.clear()
+	_commit_animate_actor_ids.clear()
 		
 	var dummy_ev: Array[SimEvent] = []
 	ResolutionPipeline.resolve_pending_pushes(full_proj, dummy_ev)
@@ -2268,7 +2290,7 @@ func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 		var move_ev: Array[SimEvent] = []
 		ResolutionPipeline.apply_action(move_only, action, move_ev)
 		ResolutionPipeline.resolve_pending_pushes(move_only, move_ev)
-	_commit_animate_actions.clear()
+	_commit_animate_actor_ids.clear()
 
 	projected_state = base_board.clone()
 	var evs: Array[SimEvent] = []
@@ -2293,7 +2315,7 @@ func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
 
 
 func _refresh_plan_wait_marker_only(plan: Timeline) -> void:
-	_commit_animate_actions.clear()
+	_commit_animate_actor_ids.clear()
 	projected_state = base_board.clone()
 	for action: TimelineAction in plan.entries:
 		if action.awaiting_target:

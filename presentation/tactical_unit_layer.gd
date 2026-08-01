@@ -143,6 +143,7 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	_catalog = LpcCatalog.load_from_disk()
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
+	EventBus.planning_commit_events.connect(_on_planning_commit_events)
 	EventBus.selection_changed.connect(_on_selection_changed)
 	EventBus.timeline_changed.connect(_on_timeline_changed)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
@@ -234,15 +235,26 @@ func _on_board_changed(board: BoardState) -> void:
 	queue_redraw()
 
 
-func adopt_board(board: BoardState) -> void:
-	_board = board
-
-
 func _on_preview_updated(result: SimResult) -> void:
 	_preview_board = result.final_state
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
 		_sync_planning_actor_positions()
 	queue_redraw()
+
+
+func _on_planning_commit_events(events: Array) -> void:
+	if not _is_planning_phase():
+		return
+	for raw: Variant in events:
+		if not raw is SimEvent:
+			continue
+		var event: SimEvent = raw as SimEvent
+		if event.type != GameEnums.SimEventType.UNIT_MOVED:
+			continue
+		var unit_id: int = int(event.data.get("actor", -1))
+		if not _should_animate_planning_commit_move(unit_id):
+			continue
+		_animate_planning_commit_move(event)
 
 
 func _on_selection_changed(unit_id: int) -> void:
@@ -470,6 +482,13 @@ func _append_target_id(out: Array[int], seen: Dictionary, unit_id: int) -> void:
 
 func apply_sim_event(event: SimEvent) -> void:
 	if _board == null:
+		return
+	if (
+		event.type == GameEnums.SimEventType.UNIT_MOVED
+		and _is_planning_phase()
+		and _should_animate_planning_commit_move(int(event.data.get("actor", -1)))
+	):
+		# Selection premove: owned by planning_commit_events → _animate_planning_commit_move.
 		return
 	match event.type:
 		GameEnums.SimEventType.UNIT_MOVED:
@@ -813,8 +832,12 @@ func _should_animate_move(event: SimEvent) -> bool:
 	if event.data.get("teleport", false):
 		return false
 	var unit_id: int = int(event.data.get("actor", -1))
+	if _is_planning_phase() and _should_animate_planning_commit_move(unit_id):
+		return false
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if _is_planning_phase():
+		if _director != null and _director.is_planning_move_instant(unit_id):
+			return false
 		return unit != null and not unit.is_enemy()
 	if unit != null and unit.is_enemy():
 		return true
@@ -908,6 +931,11 @@ func _sync_planning_unit_position(unit: UnitState) -> void:
 		_sync_planning_final_facing(unit.id)
 		_update_depth(unit.id)
 		return
+	if _director != null and _director.take_planning_move_instant(unit.id):
+		_position_actor(unit.id, target)
+		_sync_planning_final_facing(unit.id)
+		_update_depth(unit.id)
+		return
 	if _should_rubberband_planning_move(unit.id, current_cell, target):
 		_snap_actor_rubberband(unit.id, target)
 		return
@@ -953,6 +981,56 @@ func _should_rubberband_planning_move(
 ) -> bool:
 	var start_cell: Vector2i = _turn_start_cell(unit_id)
 	return GridSystem.manhattan(to_cell, start_cell) < GridSystem.manhattan(from_cell, start_cell)
+
+
+func _should_animate_planning_commit_move(unit_id: int) -> bool:
+	if unit_id < 0 or _director == null:
+		return false
+	if _director.is_planning_move_instant(unit_id):
+		return false
+	if _drag_preview_active and unit_id == _drag_preview_id:
+		return false
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	if unit == null and _director.board != null:
+		unit = _director.board.get_unit_by_id(unit_id)
+	return unit != null and not unit.is_enemy()
+
+
+func _cells_from_move_event(event: SimEvent, from_cell: Vector2i) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for raw: Variant in event.data.get("path", []):
+		if raw is Vector2i:
+			cells.append(raw)
+	if cells.is_empty() and event.data.get("to") is Vector2i:
+		var to_cell: Vector2i = event.data["to"]
+		if to_cell != from_cell:
+			cells.append(to_cell)
+	return cells
+
+
+func _animate_planning_commit_move(event: SimEvent) -> void:
+	var unit_id: int = int(event.data.get("actor", -1))
+	if unit_id < 0:
+		return
+	var from_cell: Vector2i = _actor_grid_cell(unit_id)
+	if from_cell.x <= -900 and event.data.get("from") is Vector2i:
+		from_cell = event.data["from"]
+	var to_cell: Vector2i = from_cell
+	if event.data.get("to") is Vector2i:
+		to_cell = event.data["to"]
+	elif _director != null and _director.board != null:
+		var live := _director.board.get_unit_by_id(unit_id)
+		if live != null:
+			to_cell = live.position
+	if from_cell == to_cell:
+		return
+	var use_run: bool = (
+		_unit_uses_run_anim(unit_id)
+		or int(event.data.get("presentation_anim", GameEnums.PresentationAnim.AUTO))
+		== GameEnums.PresentationAnim.RUN
+	)
+	var fallback_cells: Array[Vector2i] = _cells_from_move_event(event, from_cell)
+	_animate_planning_path(unit_id, from_cell, to_cell, use_run, fallback_cells)
 
 
 func _snap_actor_rubberband(unit_id: int, grid_cell: Vector2i) -> void:
@@ -1044,17 +1122,26 @@ func _animate_planning_path(
 	from_cell: Vector2i,
 	to_cell: Vector2i,
 	use_run: bool,
+	fallback_cells: Array[Vector2i] = [],
 ) -> void:
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	if unit == null and _director != null and _director.board != null:
+		unit = _director.board.get_unit_by_id(unit_id)
 	if unit == null:
 		return
 	var cells: Array[Vector2i] = _resolve_planning_path_cells(from_cell, to_cell, unit)
+	if cells.is_empty() and not fallback_cells.is_empty():
+		cells = fallback_cells.duplicate()
 	if cells.is_empty():
 		_position_actor(unit_id, to_cell)
 		if _actor_grid_cell(unit_id) == to_cell:
 			_sync_planning_final_facing(unit_id)
 		_update_depth(unit_id)
 		return
+	if _board != null:
+		var board_unit := _board.get_unit_by_id(unit_id)
+		if board_unit != null:
+			board_unit.position = to_cell
 	unit.position = to_cell
 	_play_cell_path_tween(unit_id, from_cell, cells, CombatDirector.MOVE_STEP_TIME, use_run)
 
@@ -1564,23 +1651,10 @@ func begin_drag_preview(unit_id: int) -> void:
 	_kill_move_tween(unit_id)
 
 
-func finish_drag_for_commit() -> void:
-	if not _drag_preview_active or _drag_preview_id < 0:
+func end_drag_preview(snap_back: bool = false) -> void:
+	if _drag_preview_id < 0:
 		return
 	var unit_id: int = _drag_preview_id
-	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
-	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
-	if unit == null or actor == null or _map_view == null:
-		_clear_drag_preview_state()
-		return
-	_kill_move_tween(unit_id)
-	var origin_cell: Vector2i = unit.position
-	_clear_drag_preview_state()
-	_finish_snap_at_cell(unit_id, origin_cell)
-	_apply_exhaustion_state(unit)
-
-
-func _clear_drag_preview_state() -> void:
 	_drag_preview_active = false
 	_drag_preview_id = -1
 	_drag_preview_failed = false
@@ -1588,31 +1662,19 @@ func _clear_drag_preview_state() -> void:
 	_drag_preview_last_facing = -1
 	_drag_preview_last_failed = false
 	clear_drag_attack_target()
-
-
-func end_drag_preview(snap_back: bool = false) -> void:
-	if _drag_preview_id < 0:
-		return
-	var unit_id: int = _drag_preview_id
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	var actor: CharacterActor = _actors.get(unit_id)
 	if unit == null or actor == null:
-		_clear_drag_preview_state()
 		return
 	var home: Vector2 = _map_view.grid_to_foot_local(unit.position)
 	if snap_back and actor.position.distance_to(home) > 1.5:
-		_clear_drag_preview_state()
 		_snap_actor_rubberband(unit_id, unit.position)
 		return
 	if snap_back:
-		_clear_drag_preview_state()
 		_finish_drag_preview_at_home(unit_id, unit)
 		return
-	if _move_tweens.has(unit_id):
-		_clear_drag_preview_state()
-		_apply_exhaustion_state(unit)
-		return
-	_clear_drag_preview_state()
+	var drop_cell: Vector2i = _actor_grid_cell(unit_id)
+	_finish_snap_at_cell(unit_id, drop_cell)
 	_apply_exhaustion_state(unit)
 
 
