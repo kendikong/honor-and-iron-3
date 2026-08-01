@@ -1437,14 +1437,7 @@ func _commit_interaction_params(
 			commit_cell = target.position
 			preferred = target.position
 			if _drag_route_commits_active():
-				var actor: UnitState = _proj_unit(_director.selected_unit_id)
-				var ability: AbilityData = _selected_ability_data(actor)
-				var route_waypoints: Array[Vector2i] = _route_waypoints()
-				if _enemy_hover_respects_painted_route(actor, target, ability, route_waypoints):
-					waypoints = route_waypoints
-					legal_moves = _snapshot_drag_legal_move_tiles()
-					if _drag_last_free != commit_cell:
-						preferred = _drag_last_free
+				legal_moves = _snapshot_drag_legal_move_tiles()
 	elif _drag_route_commits_active():
 		waypoints = _route_waypoints()
 		legal_moves = _snapshot_drag_legal_move_tiles()
@@ -2845,6 +2838,13 @@ func _drop_allows_move_tile(
 	if cell == move_origin:
 		return false
 	var effective_legal: Array[Vector2i] = legal_move_tiles
+	var painted_drag: bool = _drag_route_commits_active()
+	if painted_drag and effective_legal.is_empty() and _planning != null:
+		effective_legal = _planning.get_hover_move_tiles()
+	if painted_drag and _skill_interaction_active():
+		if effective_legal.is_empty():
+			return _planning == null and _can_move_to(actor, cell)
+		return effective_legal.has(cell)
 	if not effective_legal.is_empty():
 		return effective_legal.has(cell)
 	return _can_move_to(actor, cell)
@@ -3501,19 +3501,6 @@ func _final_commit_slots_for_input_at_cell(
 	var params: Dictionary = _commit_interaction_params(cell, target_id)
 	if not legal_move_tiles.is_empty():
 		params.legal_move_tiles = legal_move_tiles.duplicate()
-	var actor: UnitState = _proj_unit(unit_id)
-	var ability: AbilityData = _selected_ability_data(actor)
-	var params_waypoints: Array[Vector2i] = params.waypoints as Array[Vector2i]
-	if (
-		not legal_move_tiles.is_empty()
-		and target_id >= 0
-		and ability != null
-		and not AbilitySystem.ability_has_movement_effect(ability)
-		and not params_waypoints.is_empty()
-		and params_waypoints.back() == params.preferred
-	):
-		params_waypoints.resize(params_waypoints.size() - 1)
-		params.waypoints = params_waypoints
 	return _slots_with_facing_for_commit(
 		unit_id,
 		params.cell,
