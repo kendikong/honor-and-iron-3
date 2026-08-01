@@ -1,5 +1,9 @@
 # Planning QA Gate
 
+**Scope:** Gameplay-core validation — intent system, planning input, battle UI, preview/commit parity, overlay correctness. **Not** class/skill Bible completeness (see `docs/design/knight-template.md` → planned `run_knight_qa_gate.ps1`).
+
+Tier 3 uses multiple Knights in `live_planning_scene_test.gd` as **exercise fixtures** for the shared planning stack. Passing Tier 3 does **not** mean Knight LOCK.
+
 **Mandatory** after any planning/commit/preview/undo gameplay change — see `.cursor/rules/qa-after-gameplay-changes.mdc`.
 
 **Owner skill checklist (7 phases, move preview = truth):** [PLANNING_SKILL_QA_CHECKLIST.md](PLANNING_SKILL_QA_CHECKLIST.md) — use for every skill manual test and for what automated tests must eventually cover.

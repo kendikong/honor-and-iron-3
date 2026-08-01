@@ -615,7 +615,7 @@ Update `IMPLEMENTATION_STATUS.md`:
 |---|-----------|--------|-----------------|-------------|
 | 1 | Parity Ph 10–13 combat core | P2 `combat-core-closeout.md` | `.\scripts\run_regression_tests.ps1` | ✅ **Closed** *(owner 2026-08-01)* |
 | 2 | Phase 14 Knight MVP re-gate | P2 | `.\scripts\run_planning_qa_gate.ps1` | ✅ **Closed** *(owner 2026-08-01)* |
-| 3 | Knight template LOCK | P3 `knight-template.md` | Tier 3 gate + `run_skill_scenarios_only.gd` | **Active** |
+| 3 | Knight template LOCK | P3 `knight-template.md` | `PLANNED — scripts/run_knight_qa_gate.ps1` | **Active** |
 | 4 | Roguelike run v1 | P4 `roguelike-run.md` | `PLANNED — tests/run_state_test.gd` | DRAFT *(worksheet gate)* |
 | 5 | Enemy puzzle kit | P5 `enemy-design.md` | `tests/bridge_test_runner.gd` | DRAFT *(worksheet gate)* |
 | 6 | Class rollout 2+ | P6 `class-rollout.md` | Planning gate + skill scenarios | LOOP_READY |
@@ -670,7 +670,7 @@ flowchart TD
 
 **Recommended order (P2 closed 2026-08-01):**
 
-1. **Knight LOCK (P3):** Per-skill scenarios + Tier 3 gate per `knight-template.md`
+1. **Knight LOCK (P3):** Design `run_knight_qa_gate.ps1` + per-skill scenarios (`knight-template.md`) — **not** the planning QA gate
 2. **Owner:** Fill P4 / P5 / P7 worksheets when ready for roguelike / enemies / map art
 3. **Roguelike v1 (P4):** `RunState` + `tests/run_state_test.gd` after worksheet
 4. **Enemy puzzles (P5):** Fixture loader + `tests/fixtures/encounters/` per appendix

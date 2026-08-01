@@ -12,8 +12,8 @@ Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, clonin
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Per class | `.\scripts\run_planning_qa_gate.ps1` (Tier 3 gate) | Balance taste |
-| Per-class skills | `tests/run_skill_scenarios_only.gd` (P3 clone) | `docs/PLANNING_SKILL_QA_CHECKLIST.md` |
+| Per class | `PLANNED — scripts/run_<class>_qa_gate.ps1` (clone P3 Knight gate) | Balance taste |
+| Per-class skills | `tests/run_skill_scenarios_only.gd` pattern per class | `docs/PLANNING_SKILL_QA_CHECKLIST.md` |
 | Optional balance | `tests/run_mass_sim_test.gd` | `tests/captures/mass_sim_interpretation.json` review |
 
 ## Non-goals
@@ -29,21 +29,21 @@ N/A
 
 1. One class = copy P3 checklist (`docs/design/knight-template.md`)
 2. Per skill: clone `tests/skills/shield_bash_scenario.gd` → `tests/skills/<skill>_scenario.gd`; register in `tests/planning_skill_scenarios_test.gd`
-3. Batch 2–3 skills per wave; run Tier 3 gate + `tests/run_skill_scenarios_only.gd` per knight-template
+3. Batch 2–3 skills per wave; run **class QA gate** + skill scenarios per `knight-template.md` (not planning QA gate)
 4. Mass sim epoch after class complete (`appendices/mass-sim-balance.md`)
 
 ## Builder playbook
 
 1. Read class section in `class_abilities.txt`.
 2. Clone `tests/skills/shield_bash_scenario.gd` per skill; register in `tests/planning_skill_scenarios_test.gd`.
-3. Run `.\scripts\run_planning_qa_gate.ps1` + `godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd` per `knight-template.md`.
+3. Run class QA gate (PLANNED) + `godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd` (or class-specific runner when split).
 
 ## Critic playbook
 
 ```powershell
-.\scripts\run_planning_qa_gate.ps1
+# Class bar (when run_knight_qa_gate.ps1 / per-class gate exists)
+# Planning QA gate: only after gameplay-core edits — see qa-after-gameplay-changes.mdc
 godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd
-godot --headless --path <repo> --script res://tests/run_mass_sim_test.gd
 ```
 
 Per skill/class: clone `docs/design/knight-template.md` critic playbook.
@@ -51,7 +51,7 @@ Per skill/class: clone `docs/design/knight-template.md` critic playbook.
 ## Gauntlet stub
 
 ```text
-GOAL: P6 doc clones P3 Tier 3 vs per-skill split
+GOAL: P6 doc clones P3 class QA gate — not gameplay planning QA
 BAR: lint PASS; Test-Path paths in quality bar; knight-template.md alignment
 PASS_THRESHOLD: 88
 RULES: skill-global-rules.mdc, knight-template.md, qa-after-gameplay-changes.mdc
