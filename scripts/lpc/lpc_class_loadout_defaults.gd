@@ -1,45 +1,6 @@
-class_name LpcClassLoadoutDefaults
 extends RefCounted
 
-## Recommended per-class LPC visual overrides (slot -> catalog item id).
-## Used when no user overrides exist yet.
-
-const OVERRIDE_SLOTS: PackedStringArray = PackedStringArray([
-	"weapon",
-	"shield",
-	"armour",
-	"clothes",
-	"legs",
-	"shoes",
-	"hat",
-	"cape",
-	"quiver",
-	"belt",
-	"sash",
-	"shoulders",
-	"gloves",
-	"wings",
-	"tail",
-	"horns",
-	"backpack",
-])
-
-const PLAYER_CLASS_IDS: PackedStringArray = PackedStringArray([
-	"knight",
-	"paladin",
-	"bruiser",
-	"cavalier",
-	"archer",
-	"mage",
-	"cleric",
-	"assassin",
-	"mercenary",
-	"gryphon",
-	"monk",
-	"engineer",
-	"shaman",
-])
-
+## Default per-class LPC visual overrides. Constants live on LpcConstants for parser safety.
 
 static func build() -> Dictionary:
 	return {

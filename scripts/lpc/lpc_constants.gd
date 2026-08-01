@@ -8,6 +8,16 @@ const SPARSE_DIR: String = "_lpc_sparse"
 const SPRITESHEETS_DIR: String = "spritesheets"
 const CATALOG_PATH: String = "res://resources/character/lpc_catalog.json"
 
+const LPC_CLASS_OVERRIDE_SLOTS: PackedStringArray = PackedStringArray([
+	"weapon", "shield", "armour", "clothes", "legs", "shoes", "hat", "cape", "quiver",
+	"belt", "sash", "shoulders", "gloves", "wings", "tail", "horns", "backpack",
+])
+
+const LPC_PLAYER_CLASS_IDS: PackedStringArray = PackedStringArray([
+	"knight", "paladin", "bruiser", "cavalier", "archer", "mage", "cleric",
+	"assassin", "mercenary", "gryphon", "monk", "engineer", "shaman",
+])
+
 const FRAME_SIZE: int = 64
 const FRAMES_PER_ROW: int = 13
 
