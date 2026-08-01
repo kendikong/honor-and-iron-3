@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight-template K3-LOCK │ Round 4 (critic)
-SCORE: 44/100 │ THRESHOLD: 95 │ FAIL │ SLIPPED
-DELTA: −20 vs round 3 (was 64)
-NEXT: fix retaliation StatusData bug, deepen passives, sync matrix notes, per-row critic batch
+GAUNTLET SCORE │ knight-template K3-LOCK │ Round 5 (critic)
+SCORE: 48/100 │ THRESHOLD: 95 │ FAIL │ CLIMBING
+DELTA: +4 vs round 4 (was 44)
+NEXT: per-row meta-critic batch → manifest; fix living_barricade fixture; bowling/redirect/bulwark depth
 ══════════════════════════════════════
 ```
 

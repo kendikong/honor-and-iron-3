@@ -976,8 +976,8 @@ static func place_enemy_artillery(board: BoardState, unit_id: int, pos: Vector2i
 	if def == null:
 		def = DataLibrary.get_training_dummy()
 	var abilities: Array[AbilityData] = []
-	if def.behavior != null and def.behavior.default_ability != null:
-		abilities.append(def.behavior.default_ability)
+	if def.behavior != null and def.behavior.attack != null:
+		abilities.append(def.behavior.attack)
 	return place_unit(board, unit_id, def, GameEnums.Team.ENEMY, pos, {
 		"active_abilities": abilities if not abilities.is_empty() else [factory_ability(&"knight_chain_hook")],
 	})
