@@ -62,7 +62,9 @@ godot --headless --script res://tests/run_mass_sim_test.gd
 ```text
 GOAL: Mass sim smoke PASS after class slice
 BAR: run_mass_sim_test.gd exit 0
-PASS_THRESHOLD: 85
+PASS_THRESHOLD: 88
+RULES: qa-after-gameplay-changes.mdc
+ARTIFACT: this file, lint stdout, tests/run_mass_sim_test.gd path
 ```
 
 ## Exit criteria
@@ -72,13 +74,15 @@ PASS_THRESHOLD: 85
 
 ## Doc polish scorecard
 
+*(Critic fills — do not self-grade.)*
+
 | Dimension | /10 |
 |-----------|-----|
-| Covers scope | 9 |
-| Machine bars | 9 |
-| No duplication | 9 |
-| Agent-executable | 9 |
-| Human boundaries | 8 |
-| Sequencing | 8 |
-| Tooling I/O | 9 |
-| Loop-polishable | 9 |
+| Covers scope | |
+| Machine bars | |
+| No duplication | |
+| Agent-executable | |
+| Human boundaries | |
+| Sequencing | |
+| Tooling I/O | |
+| Loop-polishable | |

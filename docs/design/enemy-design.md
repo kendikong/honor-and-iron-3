@@ -51,7 +51,9 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 ```text
 GOAL: Encounter puzzle_<id> loads and sim smoke PASS
 BAR: bridge_test_runner + fixture path
-PASS_THRESHOLD: 85
+PASS_THRESHOLD: 88
+RULES: skill-global-rules.mdc, qa-after-gameplay-changes.mdc
+ARTIFACT: this file, lint stdout, appendices/encounter-fixture-format.md
 ```
 
 ## Tooling I/O
@@ -67,13 +69,15 @@ PASS_THRESHOLD: 85
 
 ## Doc polish scorecard
 
+*(Critic fills — do not self-grade.)*
+
 | Dimension | /10 |
 |-----------|-----|
-| Covers scope | 8 |
-| Machine bars | 8 |
-| No duplication | 9 |
-| Agent-executable | 8 |
-| Human boundaries | 8 |
-| Sequencing | 8 |
-| Tooling I/O | 8 |
-| Loop-polishable | 8 |
+| Covers scope | |
+| Machine bars | |
+| No duplication | |
+| Agent-executable | |
+| Human boundaries | |
+| Sequencing | |
+| Tooling I/O | |
+| Loop-polishable | |

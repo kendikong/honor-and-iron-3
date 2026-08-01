@@ -57,7 +57,9 @@ Visual: REFERENCE PNG + capture under `reports/`.
 ```text
 GOAL: Asset in manifest + F5 compositor PASS
 BAR: manifest grep + 10s runtime
-PASS_THRESHOLD: 85
+PASS_THRESHOLD: 88
+RULES: living-sandbox-architect.mdc, phase-audit.mdc
+ARTIFACT: this file, lint stdout, docs/asset_manifest.md grep
 REFERENCE: reports/<capture>.png
 ```
 
@@ -76,13 +78,15 @@ REFERENCE: reports/<capture>.png
 
 ## Doc polish scorecard
 
+*(Critic fills — do not self-grade.)*
+
 | Dimension | /10 |
 |-----------|-----|
-| Covers scope | 9 |
-| Machine bars | 8 |
-| No duplication | 9 |
-| Agent-executable | 8 |
-| Human boundaries | 10 |
-| Sequencing | 8 |
-| Tooling I/O | 9 |
-| Loop-polishable | 8 |
+| Covers scope | |
+| Machine bars | |
+| No duplication | |
+| Agent-executable | |
+| Human boundaries | |
+| Sequencing | |
+| Tooling I/O | |
+| Loop-polishable | |

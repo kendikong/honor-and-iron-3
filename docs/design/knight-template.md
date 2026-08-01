@@ -12,9 +12,9 @@ Knight is the **reference class**: every skill Bible-complete with headless scen
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Per Knight skill | Row in `tests/planning_skill_scenarios_test.gd` PASS | Checklist phases 1–7 |
-| Gate | `.\scripts\run_planning_qa_gate.ps1` PASS | 60s Boredom / play feel |
-| Template | `tests/skills/shield_bash_scenario.gd` pattern copied | — |
+| **Tier 3 planning gate** (blocks release) | `.\scripts\run_planning_qa_gate.ps1` PASS — Tier 3 live scene only; Tier 1/2 legacy in script is **informational** | F5 drag/commit parity |
+| **Per Knight skill** (separate code pieces) | Row in `tests/planning_skill_scenarios_test.gd` PASS | `docs/PLANNING_SKILL_QA_CHECKLIST.md` phases 1–7 |
+| Reference scenario | `tests/skills/shield_bash_scenario.gd` exists | — |
 
 ## Non-goals
 
@@ -51,9 +51,11 @@ Grep skill id in `planning_skill_scenarios_test.gd`.
 ## Gauntlet stub
 
 ```text
-GOAL: knight_<skill> Bible-complete
-BAR: planning QA PASS + scenario file exists
-PASS_THRESHOLD: 85
+GOAL: P3 pillar doc — Tier 3 gate vs per-skill scenarios clearly split
+BAR: lint_design_doc.ps1 PASS; quality bar paths exist on disk
+PASS_THRESHOLD: 88
+RULES: skill-global-rules.mdc, qa-after-gameplay-changes.mdc, move-preview-intent-truth.mdc
+ARTIFACT: this file, lint stdout, grep planning_skill_scenarios_test.gd
 ```
 
 ## Tooling I/O
@@ -71,13 +73,15 @@ PASS_THRESHOLD: 85
 
 ## Doc polish scorecard
 
+*(Critic fills — do not self-grade.)*
+
 | Dimension | /10 |
 |-----------|-----|
-| Covers scope | 9 |
-| Machine bars | 10 |
-| No duplication | 9 |
-| Agent-executable | 9 |
-| Human boundaries | 8 |
-| Sequencing | 8 |
-| Tooling I/O | 9 |
-| Loop-polishable | 9 |
+| Covers scope | |
+| Machine bars | |
+| No duplication | |
+| Agent-executable | |
+| Human boundaries | |
+| Sequencing | |
+| Tooling I/O | |
+| Loop-polishable | |

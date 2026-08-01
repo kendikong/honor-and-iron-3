@@ -59,7 +59,9 @@ If no `RunState` test: `Infrastructure: INADEQUATE` → propose `tests/run_state
 ```text
 GOAL: Run loop per filled worksheet
 BAR: run_state_test.gd PASS when implemented
-PASS_THRESHOLD: 85
+PASS_THRESHOLD: 88
+RULES: global-systems-first.mdc, roadmap.mdc
+ARTIFACT: this file, lint stdout; worksheet completeness for LOOP_READY
 ```
 
 ## Tooling I/O
@@ -77,13 +79,15 @@ PASS_THRESHOLD: 85
 
 ## Doc polish scorecard
 
+*(Critic fills — do not self-grade.)*
+
 | Dimension | /10 |
 |-----------|-----|
-| Covers scope | 8 |
-| Machine bars | 7 |
-| No duplication | 9 |
-| Agent-executable | 8 |
-| Human boundaries | 10 |
-| Sequencing | 9 |
-| Tooling I/O | 7 |
-| Loop-polishable | 8 |
+| Covers scope | |
+| Machine bars | |
+| No duplication | |
+| Agent-executable | |
+| Human boundaries | |
+| Sequencing | |
+| Tooling I/O | |
+| Loop-polishable | |

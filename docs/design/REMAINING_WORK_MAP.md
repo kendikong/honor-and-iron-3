@@ -76,6 +76,8 @@ flowchart TD
 GOAL: Every milestone has pillar + real primary command
 BAR: lint PASS; grep verification-matrix.md for same rows
 PASS_THRESHOLD: 88
+RULES: global-systems-first.mdc, roadmap.mdc
+ARTIFACT: this file, lint stdout, Test-Path per Primary command
 ```
 
 ## Tooling I/O
@@ -93,13 +95,15 @@ PASS_THRESHOLD: 88
 
 ## Doc polish scorecard
 
+*(Critic fills — do not self-grade.)*
+
 | Dimension | /10 |
 |-----------|-----|
-| Covers scope | 9 |
-| Machine bars | 8 |
-| No duplication | 9 |
-| Agent-executable | 9 |
-| Human boundaries | 8 |
-| Sequencing | 9 |
-| Tooling I/O | 7 |
-| Loop-polishable | 8 |
+| Covers scope | |
+| Machine bars | |
+| No duplication | |
+| Agent-executable | |
+| Human boundaries | |
+| Sequencing | |
+| Tooling I/O | |
+| Loop-polishable | |

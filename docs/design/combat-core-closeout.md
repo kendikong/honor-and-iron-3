@@ -50,7 +50,8 @@ See parity plan §Explicit deferrals (Phase 15+). Do not duplicate that table he
 GOAL: Phase N deliverables from parity plan + QA PASS
 BAR: regression + planning QA
 PASS_THRESHOLD: 88
-RULES: move-preview-intent-truth.mdc, global-systems-first.mdc
+RULES: move-preview-intent-truth.mdc, global-systems-first.mdc, qa-after-gameplay-changes.mdc
+ARTIFACT: this file, lint stdout, docs/TACTICAL_COMBAT_PARITY_PLAN.md link-only check
 ```
 
 ## Tooling I/O

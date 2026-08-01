@@ -48,7 +48,9 @@ godot --headless --script res://tests/run_mass_sim_test.gd
 ```text
 GOAL: <class> skills per Bible
 BAR: P3 bar per skill + class scenario registry
-PASS_THRESHOLD: 85
+PASS_THRESHOLD: 88
+RULES: skill-global-rules.mdc, knight-template.md (P3 clone path)
+ARTIFACT: this file, lint stdout
 ```
 
 ## Tooling I/O
@@ -65,13 +67,15 @@ PASS_THRESHOLD: 85
 
 ## Doc polish scorecard
 
+*(Critic fills — do not self-grade.)*
+
 | Dimension | /10 |
 |-----------|-----|
-| Covers scope | 9 |
-| Machine bars | 9 |
-| No duplication | 9 |
-| Agent-executable | 9 |
-| Human boundaries | 8 |
-| Sequencing | 9 |
-| Tooling I/O | 8 |
-| Loop-polishable | 8 |
+| Covers scope | |
+| Machine bars | |
+| No duplication | |
+| Agent-executable | |
+| Human boundaries | |
+| Sequencing | |
+| Tooling I/O | |
+| Loop-polishable | |

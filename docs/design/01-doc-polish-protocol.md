@@ -31,6 +31,22 @@ Any `docs/design/` pillar or meta doc reaches **POLISHED** only through builder 
 - **4c:** `Infrastructure: ADEQUATE | INADEQUATE` — can BAR+artifacts judge **GOAL**? If INADEQUATE → FAIL + **Proposed infrastructure** (new test, capture, lint rule, PixelForge step).
 - **6b:** Critic + lead post loud score banner first line; update `workbench.md` score progression every pass.
 
+### Rule 6b — Loud score banner (verbatim)
+
+Critic **first output line** and lead **first line** after every pass must match:
+
+```text
+══════════════════════════════════════
+GAUNTLET SCORE │ [piece-id] │ Critic pass Cn
+SCORE: x/100 │ THRESHOLD: y │ PASS|FAIL │ CLIMBING|STALLED|SLIPPED
+DELTA: +N vs C(n-1) (was z)
+══════════════════════════════════════
+```
+
+**Hint legend:** `CLIMBING` (Δ ≥ +3) · `STALLED` (|Δ| ≤ 2) · `SLIPPED` (Δ ≤ −3) · `FIRST` (no prior pass).
+
+Update `workbench.md` **Score ticker** and **Score progression** every pass. Do not bury scores only in Changelog.
+
 ## Non-goals
 
 - Replacing `ROADMAP.md` or parity plan bodies
