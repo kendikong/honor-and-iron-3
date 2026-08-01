@@ -32,7 +32,7 @@ const _SETTLE_DELTA_MS := 20
 const _ABILITY_SETTLE_FRAMES := 6
 
 
-func test_live_planning_bible_multi_knight_session(timeout := 90000) -> void:
+func test_live_planning_bible_multi_knight_session(timeout := 150000) -> void:
 	var runner := scene_runner("res://scenes/TestBattle.tscn")
 	_ensure_live_test_window(runner)
 	await runner.simulate_frames(8)
@@ -45,38 +45,6 @@ func test_live_planning_bible_multi_knight_session(timeout := 90000) -> void:
 	await _journey_knight4_run_economy(ctx)
 	await _journey_execute_all_plans(ctx)
 	await _journey_scroll_and_undo_smoke(ctx)
-
-
-func test_k4_preview_compare_visual(timeout := 180000) -> void:
-	## Slow K4-only drag so you can watch walk-end (red ON) vs run-trigger (red OFF).
-	## Snapshots: res://reports/k4_preview/k4_walk_loop_end.png and k4_run_trigger.png
-	var runner := scene_runner("res://scenes/TestBattle.tscn")
-	await runner.simulate_frames(8)
-	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
-	assert_object(scene).is_not_null()
-	var ctx: Dictionary = await _boot_multi_knight_session(runner, scene)
-	var k4_id: int = ctx.k4_id
-	await _select_unit_live(ctx, k4_id, _K4_CELL)
-	var bowling: AbilityData = await _select_ability_for_unit(ctx, k4_id, _BOWLING_CHARGE_ID)
-	assert_object(bowling).is_not_null()
-	_print_k4_f5_compare_banner()
-	await _drag_k4_detour_and_run_preview(ctx, k4_id, bowling, 90)
-
-
-func _print_k4_f5_compare_banner() -> void:
-	print("")
-	print("========== K4 PREVIEW COMPARE ==========")
-	print("Skill: Bowling Charge | Auto Run: ON")
-	print("")
-	print("| Moment              | Stand  | requires_run | display_AP | red tiles |")
-	print("|---------------------|--------|--------------|------------|-----------|")
-	print("| Walk loop end       | (4,2)  | false        | 1          | ON        |")
-	print("| Run trigger (test)  | (3,2)  | true         | 0          | OFF       |")
-	print("| Your F5 screenshot  | (3,6)  | true         | 0          | ON (bug?) |")
-	print("")
-	print("PNG snapshots -> res://reports/k4_preview/")
-	print("========================================")
-	print("")
 
 
 func _ensure_live_test_window(runner: GdUnitSceneRunner) -> void:
@@ -168,10 +136,15 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 	var enemy_icon: String = input.compute_hover_action_icon(_E_BASH_CELL)
 	assert_bool(enemy_icon.contains(PlanningIcons.GLYPH_WALK)).is_true()
 	assert_bool(enemy_icon.contains(PlanningIcons.GLYPH_ATTACK)).is_true()
+	var bash_drag_route: Array[Vector2i] = [_K1_CELL, _BASH_APPROACH]
+	await _dry_drag_then_cancel(ctx, bash_drag_route)
 	await _tap_cell(ctx, _E_BASH_CELL)
 	await _wait_ability_settle(ctx)
-	assert_int(director.plan_pre_move.entries.size()).is_greater(0)
-	assert_int(director.plan_action.entries.size()).is_greater(0)
+	_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
+	await _undo_until_unit_clear(ctx, k1_id)
+	await _drag_release_at(ctx, bash_drag_route, _E_BASH_CELL)
+	await _wait_ability_settle(ctx)
+	_assert_k1_bash_committed(ctx, k1_id, "k1/drag")
 	var bash_pre: TimelineAction = _committed_pre_move_for_unit(director, k1_id)
 	assert_object(bash_pre).is_not_null()
 	assert_that(bash_pre.target_coord).is_equal(_BASH_APPROACH)
@@ -213,9 +186,14 @@ func _journey_knight2_chain_hook(ctx: Dictionary) -> void:
 		assert_bool(pull_preview.x < _E_HOOK_CELL.x).is_true()
 	var hook_icon: String = input.compute_hover_action_icon(_E_HOOK_CELL)
 	assert_bool(hook_icon.contains(PlanningIcons.GLYPH_ATTACK)).is_true()
+	await _dry_drag_then_cancel(ctx, [_K2_CELL, Vector2i(2, 3)])
 	await _tap_cell(ctx, _E_HOOK_CELL)
-	await ctx.runner.simulate_frames(_ABILITY_SETTLE_FRAMES, _SETTLE_DELTA_MS)
-	assert_int(director.plan_action.entries.size()).is_greater(0)
+	await _wait_ability_settle(ctx)
+	_assert_k2_hook_committed(ctx, k2_id, e_hook_id, "k2/selection")
+	await _undo_until_unit_clear(ctx, k2_id)
+	await _drag_release_at(ctx, [_K2_CELL], _E_HOOK_CELL)
+	await _wait_ability_settle(ctx)
+	_assert_k2_hook_committed(ctx, k2_id, e_hook_id, "k2/drag")
 	var projected: UnitState = director.projected_state.get_unit_by_id(k2_id)
 	assert_int(projected.ability.points_left).is_equal(0)
 	var hooked: UnitState = director.projected_state.get_unit_by_id(e_hook_id)
@@ -239,14 +217,15 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 	assert_object(director.find_awaiting_action(k3_id)).is_not_null()
 	_assert_red_live(ctx, trample, true, _K3_CELL, "k3/phase3/red_while_awaiting")
 	var route: Array[Vector2i] = [_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_ROUTE[1]]
+	await _dry_drag_then_cancel(ctx, route)
+	await _rearm_trample_awaiting(ctx, k3_id)
+	await _tap_cell(ctx, _TRAMPLE_END)
+	await _wait_ability_settle(ctx)
+	_assert_k3_trample_committed(ctx, k3_id, "k3/selection")
+	await _undo_until_unit_clear(ctx, k3_id)
+	await _rearm_trample_awaiting(ctx, k3_id)
 	await _drag_through_cells_with_route_checks(ctx, route, "k3", false, &"exact")
-	var action: TimelineAction = _committed_action_for_unit(director, k3_id)
-	assert_object(action).is_not_null()
-	assert_that(action.waypoints).is_equal(_TRAMPLE_ROUTE)
-	var projected: UnitState = director.projected_state.get_unit_by_id(k3_id)
-	assert_object(projected).is_not_null()
-	assert_that(projected.position).is_equal(_TRAMPLE_END)
-	assert_int(projected.ability.points_left).is_equal(0)
+	_assert_k3_trample_committed(ctx, k3_id, "k3/drag")
 	ctx.expect["k3_pos"] = _TRAMPLE_END
 	_cancel_active_pointer(ctx)
 
@@ -260,11 +239,13 @@ func _journey_knight4_run_economy(ctx: Dictionary) -> void:
 	await _select_unit_live(ctx, k4_id, _K4_CELL)
 	var bowling: AbilityData = await _select_ability_for_unit(ctx, k4_id, _BOWLING_CHARGE_ID)
 	assert_object(bowling).is_not_null()
+	await _dry_drag_then_cancel(ctx, _K4_DETOUR_PLUS_RUN_ROUTE)
+	await _tap_cell(ctx, _K4_RUN_TRIGGER_CELL)
+	await _wait_ability_settle(ctx)
+	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/selection")
+	await _undo_until_unit_clear(ctx, k4_id)
 	await _drag_k4_detour_and_run_preview(ctx, k4_id, bowling, 0)
-	assert_bool(_plan_uses_run_for_unit(director, k4_id)).is_true()
-	var projected: UnitState = director.projected_state.get_unit_by_id(k4_id)
-	assert_that(projected.position).is_equal(_K4_RUN_TRIGGER_CELL)
-	assert_int(input.planning_display_ap_left(k4_id)).is_equal(0)
+	_assert_k4_run_committed(ctx, k4_id, bowling, "k4/drag")
 	await _hover_cell(ctx, Vector2i(2, 2))
 	await _wait_ability_settle(ctx)
 	assert_int(input.planning_display_ap_left(k4_id)).is_equal(0)
@@ -341,6 +322,35 @@ func _select_unit_live(ctx: Dictionary, unit_id: int, cell: Vector2i) -> void:
 	await _hover_cell(ctx, cell)
 
 
+func _rearm_trample_awaiting(ctx: Dictionary, k3_id: int) -> void:
+	var director: CombatDirector = ctx.director
+	var input: CombatPlanningInput = ctx.input
+	await _select_ability_for_unit(ctx, k3_id, _TRAMPLE_ID)
+	await _tap_cell(ctx, _K3_CELL)
+	await _wait_ability_settle(ctx)
+	assert_bool(input.awaiting_targeting_active()).override_failure_message(
+		"k3: trample must re-arm awaiting at stand",
+	).is_true()
+	assert_object(director.find_awaiting_action(k3_id)).override_failure_message(
+		"k3: awaiting action missing after re-arm",
+	).is_not_null()
+
+
+func _click_commit_at_cell(ctx: Dictionary, cell: Vector2i) -> void:
+	var input: CombatPlanningInput = ctx.input
+	var director: CombatDirector = ctx.director
+	input.set_qa_pointer_grid_cell(cell)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(cell)
+	var local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_press(local)
+	await ctx.runner.simulate_frames(2, _SETTLE_DELTA_MS)
+	input.on_left_release(local)
+	director.flush_plan_refresh_signals_if_pending()
+	input.clear_qa_pointer_override()
+	await ctx.runner.simulate_frames(_SETTLE_FRAMES, _SETTLE_DELTA_MS)
+
+
 func _tap_cell(ctx: Dictionary, cell: Vector2i) -> void:
 	var runner: GdUnitSceneRunner = ctx.runner
 	await _hover_cell(ctx, cell)
@@ -350,7 +360,154 @@ func _tap_cell(ctx: Dictionary, cell: Vector2i) -> void:
 	await runner.simulate_frames(_SETTLE_FRAMES, _SETTLE_DELTA_MS)
 
 
+func _dry_drag_then_cancel(ctx: Dictionary, cells: Array[Vector2i]) -> void:
+	if cells.size() < 2:
+		return
+	var runner: GdUnitSceneRunner = ctx.runner
+	var input: CombatPlanningInput = ctx.input
+	await _hover_cell(ctx, cells[0])
+	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+	for i: int in range(1, cells.size()):
+		await _hover_cell(ctx, cells[i])
+		await runner.simulate_frames(3, _SETTLE_DELTA_MS)
+	input.cancel_drag()
+	await _wait_ability_settle(ctx)
+	assert_bool(input.dragging).is_false()
+
+
+func _right_click_undo(ctx: Dictionary) -> void:
+	ctx.runner.simulate_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+	await _wait_ability_settle(ctx)
+
+
+func _undo_until_unit_clear(ctx: Dictionary, unit_id: int) -> void:
+	var director: CombatDirector = ctx.director
+	var input: CombatPlanningInput = ctx.input
+	for _attempt: int in range(8):
+		if director.unit_has_undoable_action(unit_id):
+			director.rpc_remove_last_for_unit(unit_id)
+			director.flush_plan_refresh_signals_if_pending()
+			await _wait_ability_settle(ctx)
+			continue
+		if input.awaiting_targeting_active():
+			input.on_right_click()
+			await _wait_ability_settle(ctx)
+			continue
+		return
+	assert_bool(director.unit_has_undoable_action(unit_id)).override_failure_message(
+		"undo_until_clear: unit %d still has undoable plan" % unit_id,
+	).is_false()
+
+
+func _drag_release_at(
+	ctx: Dictionary,
+	route: Array[Vector2i],
+	release_cell: Vector2i,
+) -> void:
+	var cells: Array[Vector2i] = route.duplicate()
+	if cells.is_empty() or cells[cells.size() - 1] != release_cell:
+		cells.append(release_cell)
+	await _drag_through_cells(ctx, cells, false)
+
+
+func _assert_k1_bash_committed(ctx: Dictionary, k1_id: int, label: String) -> void:
+	var director: CombatDirector = ctx.director
+	assert_int(director.plan_pre_move.entries.size()).override_failure_message(
+		"%s: bash must write pre-move" % label,
+	).is_greater(0)
+	assert_int(director.plan_action.entries.size()).override_failure_message(
+		"%s: bash must write action" % label,
+	).is_greater(0)
+	var bash_pre: TimelineAction = _committed_pre_move_for_unit(director, k1_id)
+	assert_object(bash_pre).override_failure_message(
+		"%s: missing bash pre-move" % label,
+	).is_not_null()
+	assert_that(bash_pre.target_coord).override_failure_message(
+		"%s: bash pre-move dest" % label,
+	).is_equal(_BASH_APPROACH)
+
+
+func _assert_k2_hook_committed(
+	ctx: Dictionary,
+	k2_id: int,
+	e_hook_id: int,
+	label: String,
+) -> void:
+	var director: CombatDirector = ctx.director
+	assert_int(director.plan_action.entries.size()).override_failure_message(
+		"%s: hook must write action" % label,
+	).is_greater(0)
+	var projected: UnitState = director.projected_state.get_unit_by_id(k2_id)
+	assert_int(projected.ability.points_left).override_failure_message(
+		"%s: hook spends AP" % label,
+	).is_equal(0)
+	var hooked: UnitState = director.projected_state.get_unit_by_id(e_hook_id)
+	assert_object(hooked).override_failure_message(
+		"%s: hook target missing" % label,
+	).is_not_null()
+	assert_bool(hooked.position.x < _E_HOOK_CELL.x).override_failure_message(
+		"%s: hook must pull west" % label,
+	).is_true()
+
+
+func _assert_k3_trample_committed(ctx: Dictionary, k3_id: int, label: String) -> void:
+	var director: CombatDirector = ctx.director
+	var action: TimelineAction = _committed_action_for_unit(director, k3_id)
+	assert_object(action).override_failure_message(
+		"%s: trample action missing" % label,
+	).is_not_null()
+	var projected: UnitState = director.projected_state.get_unit_by_id(k3_id)
+	assert_object(projected).override_failure_message(
+		"%s: trample projected unit missing" % label,
+	).is_not_null()
+	if label.ends_with("/drag"):
+		assert_that(action.waypoints).override_failure_message(
+			"%s: trample waypoints" % label,
+		).is_equal(_TRAMPLE_ROUTE)
+		assert_that(projected.position).override_failure_message(
+			"%s: trample end position" % label,
+		).is_equal(_TRAMPLE_END)
+	else:
+		assert_that(action.target_coord).override_failure_message(
+			"%s: trample target" % label,
+		).is_equal(_TRAMPLE_END)
+	assert_int(projected.ability.points_left).override_failure_message(
+		"%s: trample spends AP" % label,
+	).is_equal(0)
+
+
+func _assert_k4_run_committed(
+	ctx: Dictionary,
+	k4_id: int,
+	bowling: AbilityData,
+	label: String,
+) -> void:
+	var director: CombatDirector = ctx.director
+	var input: CombatPlanningInput = ctx.input
+	var projected: UnitState = director.projected_state.get_unit_by_id(k4_id)
+	assert_that(projected.position).override_failure_message(
+		"%s: k4 destination" % label,
+	).is_equal(_K4_RUN_TRIGGER_CELL)
+	var pre: TimelineAction = _committed_pre_move_for_unit(director, k4_id)
+	assert_object(pre).override_failure_message(
+		"%s: k4 must commit pre-move" % label,
+	).is_not_null()
+	if pre != null:
+		assert_that(pre.target_coord).override_failure_message(
+			"%s: k4 pre-move destination" % label,
+		).is_equal(_K4_RUN_TRIGGER_CELL)
+	if label.ends_with("/drag"):
+		assert_bool(_plan_uses_run_for_unit(director, k4_id)).override_failure_message(
+			"%s: painted drag must use Run" % label,
+		).is_true()
+		assert_int(input.planning_display_ap_left(k4_id)).override_failure_message(
+			"%s: k4 display AP after run drag commit" % label,
+		).is_equal(0)
+
+
 func _hover_cell(ctx: Dictionary, cell: Vector2i) -> void:
+	ctx.input.clear_qa_pointer_override()
 	var runner: GdUnitSceneRunner = ctx.runner
 	var scene: TestBattleMapView = ctx.scene
 	var map_root: Node2D = scene.get_node("WorldModulate/MapRoot") as Node2D
