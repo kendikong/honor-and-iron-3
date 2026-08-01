@@ -354,6 +354,38 @@ func is_hover_threat_tile(cell: Vector2i) -> bool:
 	return is_hover_action_range_tile(cell)
 
 
+## Blue awaiting-movement route cells drawn by `_draw_move_ghosts`; empty when no arrow should draw.
+func awaiting_movement_hover_route_cells() -> Array[Vector2i]:
+	if _director == null or _board == null or _planning_input == null:
+		return []
+	if _director.selected_unit_id < 0 or not _board.is_in_bounds(_hover_coord):
+		return []
+	var unit := _proj_unit(_director.selected_unit_id)
+	if unit == null or not unit.is_alive():
+		return []
+	var force_basic: bool = _planning_input.force_basic_movement
+	if not _can_show_action_range_tiles(unit, _director.selected_ability_index, force_basic):
+		return []
+	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
+	if ability == null or AbilitySystem.planning_commit_flow(unit, ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:
+		return []
+	var origin: Vector2i = _proj_origin(unit)
+	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, _hover_coord, ability):
+		return []
+	if not AbilitySystem.ability_has_movement_effect(ability):
+		return []
+	var drag_route: Array = _planning_input.get_drag_route()
+	var sim_path: Array = []
+	var action_split: int = -1
+	var hover_preview: CombatPlanningPreview = _planning_input.preview_state
+	if hover_preview != null:
+		sim_path = hover_preview.preview_paths.get(unit.id, [])
+		action_split = int(hover_preview.action_splits.get(unit.id, -1))
+	return CombatPlanningPreview.awaiting_movement_route_cells(
+		origin, _hover_coord, drag_route, sim_path, action_split,
+	)
+
+
 func clear_live_preview() -> void:
 	restore_committed_display()
 
@@ -759,16 +791,14 @@ func recompute_hover_ranges(
 		else:
 			move_budget = unit.movement.points_left
 		if move_budget > 0:
-			var move_ability: AbilityData = null
-			if is_selected_player and selected_ability >= 0:
-				move_ability = _selected_ability_data(unit, selected_ability)
+			# Blue tiles = MP walk/run only. Selected skill pass-through (BULLDOZE/TRAMPLE) must not widen them.
 			_hover_move_tiles = MovementSystem.get_reachable_tiles(
 				move_board,
 				move_from,
 				move_budget,
 				mt,
 				move_cost,
-				move_ability,
+				null,
 			)
 	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
 		queue_redraw()
@@ -2030,8 +2060,6 @@ func _draw_move_ghosts() -> void:
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null or AbilitySystem.planning_commit_flow(unit, ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:
 		return
-	if _planning_input != null and not _planning_input.awaiting_targeting_active():
-		return
 	var origin: Vector2i = _proj_origin(unit)
 	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, _hover_coord, ability):
 		return
@@ -2041,19 +2069,9 @@ func _draw_move_ghosts() -> void:
 	var dash_face: int = _facing_toward(origin, _hover_coord)
 	_draw_facing_wedge(center, dash_face, Color(p_col.r, p_col.g, p_col.b, 0.85))
 	if ability != null and AbilitySystem.ability_has_movement_effect(ability):
-		var drag_route: Array = []
-		var sim_path: Array = []
-		var action_split: int = -1
-		if _planning_input != null:
-			drag_route = _planning_input.get_drag_route()
-			var hover_preview: CombatPlanningPreview = _planning_input.preview_state
-			if hover_preview != null:
-				sim_path = hover_preview.preview_paths.get(unit.id, [])
-				action_split = int(hover_preview.action_splits.get(unit.id, -1))
-		var route_cells: Array[Vector2i] = CombatPlanningPreview.awaiting_movement_route_cells(
-			origin, _hover_coord, drag_route, sim_path, action_split,
-		)
-		_draw_route_line(route_cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
+		var route_cells: Array[Vector2i] = awaiting_movement_hover_route_cells()
+		if route_cells.size() >= 2:
+			_draw_route_line(route_cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
 	else:
 		_draw_targeting_intent_arrow(origin, _hover_coord, Color(p_col.r, p_col.g, p_col.b, 0.85))
 
