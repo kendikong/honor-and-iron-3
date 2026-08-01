@@ -22,6 +22,7 @@
 |-------|-------|
 | **Piece ID** | — |
 | **Round** | — |
+| **Critic invoked** | — *(yes/no — required before PASS)* |
 | **Last bar** | — |
 | **Last result** | — |
 | **Largest gap** | — |
@@ -30,9 +31,9 @@
 
 ## Wave log
 
-| Time | Piece | Bar | Result | Commit | Notes |
-|------|-------|-----|--------|--------|-------|
-| — | — | — | — | — | — |
+| Time | Piece | Bar | Critic | Result | Commit | Notes |
+|------|-------|-----|--------|--------|--------|-------|
+| — | — | — | — | — | — | — |
 
 ---
 

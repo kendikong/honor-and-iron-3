@@ -31,7 +31,7 @@ A **lead agent** receives a short goal and a **concrete quality bar**. It:
 | **Builder subagent** | Task/subagent with write access |
 | **Critic subagent** | Separate invocation; use `readonly: true` in `.cursor/agents/*.md` |
 | **Fresh critic context** | Subagent does not receive builder chat history — only artifact + bar + rules |
-| **Long runs** | Local Agent + `/loop` (machine on) · **Cloud Agents + Automations** (machine off) |
+| **Long runs** | Local Agent re-invoking builder → critic each round (machine on) · **Cloud Agents + Automations** (machine off). `/loop` is Claude Code/Fable — not a Cursor guarantee; see Rule 5. |
 | **Progress without interrupting** | Lead updates `workbench.md` (or HTML) each wave |
 
 ### Not supported
@@ -89,6 +89,8 @@ The bar must be **inspectable**. Vague goals are invalid.
 
 Bar may be **aspirational** (unreachable reference) — it prevents stopping at “good enough for AI.”
 
+If the owner gives a goal but **no bar**, the lead must **propose a concrete bar** (commands + artifacts) and write it to `workbench.md` **before** the first builder pass. No building until the bar is inspectable.
+
 ### Rule 3 — Lead decomposes
 
 Do not pre-split every task in the owner prompt. Tell the lead:
@@ -109,7 +111,11 @@ Critic inspects **the real artifact**: test stdout, `git diff`, running scene ou
 
 When possible: **blind A/B** (reference vs output, labels swapped).
 
+**Visual / map pieces:** BAR must name a **reference asset path** (PNG, scene screenshot, or `reports/` capture). Critic compares output to reference — not builder prose. If labels are not blind, critic still must cite **specific pixel/compositor deltas** (draw order, blend mode, z_index, shader errors).
+
 On failure: return **one largest meaningful gap**, not a laundry list.
+
+**Lead cannot mark a piece PASS** without a `gauntlet-critic` subagent returning `RESULT: PASS` on that piece in the same run. “Looks good to me” without critic invocation = **Rule 4 violation**.
 
 ### Rule 5 — Keep looping
 
@@ -117,8 +123,10 @@ Do not cap at “3 rounds” as the primary stop condition. Use:
 
 - Bar met (tests PASS, critic accepts)
 - Improvements below noise (document criterion)
-- **Boundary** (max rounds per piece, token budget, time box) — safety only
+- **Boundary** (max rounds per piece, token budget, time box) — safety only; **not** “good enough”
 - Owner stops the run
+
+When **MAX_ROUNDS_PER_PIECE** exhausts: write `FAILURE_REPORT.md` and stop — do **not** accept the piece or expand scope.
 
 For long runs: use **Cursor Cloud Automations** or a **recurring local Agent task** (if your build supports it). The `/loop` skill is **Claude Code / Fable** terminology — Cursor may not expose the same slash command; if not, the **lead must explicitly re-invoke** builder → critic each round. For overnight: Cloud Automation or explicit “continue until boundary in `UNATTENDED_RUN.md`.”
 
@@ -168,8 +176,8 @@ Invoke: `/gauntlet-critic` or “use gauntlet-critic subagent on this piece.”
 
 Add to the overnight prompt (or `.cursor/rules` pointer):
 
-- Spawn **separate** critic after every builder pass on a piece
-- Never self-grade (“looks good to me”)
+- Spawn **separate** `gauntlet-critic` subagent after **every** builder pass on a piece — log invocation in `workbench.md` (`Critic: yes`)
+- Never self-grade — piece PASS requires critic `RESULT: PASS` in the wave log
 - Update `docs/design/workbench.md` every wave
 - On gameplay edits: run mandatory QA per `qa-after-gameplay-changes.mdc` before claiming PASS
 - Commit per `auto-commit-absolute.mdc` when bar passes for a piece
@@ -194,7 +202,7 @@ For sleep/work runs, also pass [`docs/design/UNATTENDED_RUN.md`](UNATTENDED_RUN.
 | Core sim | `.\scripts\run_regression_tests.ps1` | Script |
 | Single skill | Skill scenario + planning QA | Script + checklist grep |
 | Design doc | Template sections + lint script | Script + readonly LLM |
-| Map / VFX slice | Compositor gates + 10s runtime | Script + F5/screenshot (human or vision) |
+| Map / VFX slice | Compositor gates + 10s runtime + reference PNG path in BAR | Script + blind A/B or vision critic (not builder summary) |
 | Roguelike / pacing | **Human gate** — not overnight LLM |
 
 ---
@@ -204,6 +212,7 @@ For sleep/work runs, also pass [`docs/design/UNATTENDED_RUN.md`](UNATTENDED_RUN.
 | Anti-pattern | Why it fails |
 |--------------|--------------|
 | Builder and critic in same message without subagent | Self-grading |
+| Lead marks piece PASS without `gauntlet-critic` `RESULT: PASS` in workbench | Fake gauntlet — same as self-grading |
 | Critic reads builder’s “implementation notes” | Contaminated judgment |
 | “LGTM” without running bar commands | False PASS (Phase 9 lesson) |
 | Owner pastes between two chats each round | Not unattended; lead should orchestrate |
@@ -253,8 +262,9 @@ BAR: [exact commands to run]
 RULES: [bullet list of enforced .mdc paths]
 ARTIFACT:
 - git diff --stat
-- relevant test stdout
-- screenshots paths if visual
+- relevant test stdout (lead runs BAR if critic cannot shell; paste raw output only)
+- screenshot paths if visual
+- reference asset path if visual (for A/B)
 Do not implement. PASS or FAIL + largest gap + evidence.
 ```
 
@@ -288,3 +298,4 @@ Do not implement. PASS or FAIL + largest gap + evidence.
 |------|--------|
 | 2026-08-01 | Initial Cursor/Composer 2.5 adaptation for Honor & Iron |
 | 2026-08-01 | Review pass: clarify bar pass/fail loop, dedupe critic agent, `/loop` caveat, regression script path, `UNATTENDED_RUN.md` |
+| 2026-08-01 | Hardening: propose-bar-if-missing, critic-required PASS, visual A/B bar, MAX_ROUNDS → FAILURE_REPORT, workbench critic column |

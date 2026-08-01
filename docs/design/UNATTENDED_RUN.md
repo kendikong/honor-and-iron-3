@@ -22,7 +22,7 @@ The lead agent must **not** ask the owner questions during the run. It stops onl
 
 | Boundary | Value |
 |----------|-------|
-| **MAX_ROUNDS_PER_PIECE** | `8` |
+| **MAX_ROUNDS_PER_PIECE** | `8` *(safety cap — on exhaust write FAILURE_REPORT; do not accept partial work)* |
 | **MAX_PIECES** | *(e.g. `3` skills max this run)* |
 | **MAX_WALL_CLOCK** | *(e.g. `6h` — optional)* |
 
@@ -49,6 +49,7 @@ presentation/combat_planning_input.gd
 - Editing `presentation/board_view.gd` for SP tactical path fixes (use `CombatPlanningInput` / tactical stack)
 - Scope beyond **GOAL** / **CHUNK_ID**
 - Skipping BAR commands while claiming PASS
+- Marking a piece PASS without `gauntlet-critic` returning `RESULT: PASS`
 
 ---
 
@@ -75,11 +76,13 @@ presentation/combat_planning_input.gd
 
 ## Gauntlet orchestration (lead checklist)
 
+0. If **BAR** is empty or vague, propose concrete BAR + write to `workbench.md` — then stop until next owner-approved run (unattended: BAR must be filled before start).
 1. Decompose **GOAL** into smallest judgeable pieces (see main spec Rule 3).
 2. Per piece: builder subagent → **readonly** [`gauntlet-critic`](../../.cursor/agents/gauntlet-critic.md) with §9 handoff payload only.
-3. Update [`workbench.md`](workbench.md) every wave.
-4. On piece PASS: `git add` + commit per `auto-commit-absolute.mdc`.
-5. Do not expand scope when a piece fails — report and stop or skip per **STOP_ON**.
+3. **Piece PASS gate:** critic must return `RESULT: PASS` — log `Critic: yes` in `workbench.md` wave row. No PASS without critic.
+4. Update [`workbench.md`](workbench.md) every wave.
+5. On piece PASS: `git add` + commit per `auto-commit-absolute.mdc`.
+6. Do not expand scope when a piece fails — report and stop or skip per **STOP_ON**.
 
 ---
 
