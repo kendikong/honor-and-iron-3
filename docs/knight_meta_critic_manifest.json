@@ -1,8 +1,8 @@
 {
   "piece": "K3-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 2,
-  "last_score": 44,
+  "last_critic_round": 6,
+  "last_score": 48,
   "last_result": "FAIL",
   "approved_rows": [
     {
@@ -27,6 +27,66 @@
       "factory_id": "collision_retaliator",
       "score": 90,
       "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_retaliation_protocol",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "indestructible_bastion",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "shield_mastery",
+      "score": 80,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_fortify",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_shield_slam",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "thorny_carapace",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "concussive_shatter",
+      "score": 80,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "kinetic_momentum",
+      "score": 80,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "stand_ground",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "kinetic_converter",
+      "score": 90,
+      "critic_round": 6,
       "fix_target": "none"
     }
   ]

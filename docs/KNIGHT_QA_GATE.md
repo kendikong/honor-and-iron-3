@@ -118,7 +118,7 @@ Scenarios must prove **both** rules:
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase (not used in MVP) |
 
-**Summary (honest):** **4 / 30** factory rows meta-critic `PASS` · **26** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only). **Manifest:** `docs/knight_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
+**Summary (honest):** **14 / 30** factory rows meta-critic `PASS` · **16** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only). **Manifest:** `docs/knight_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
 
 ### Movement + actives
 
@@ -129,13 +129,13 @@ Scenarios must prove **both** rules:
 | `knight_phalanx_stance` | Active | `tests/skills/phalanx_stance_scenario.gd` | HARNESS_ONLY | Base/`[+]` sim (infinite retaliation); no 7-phase planning |
 | `knight_taunting_strike` | Active | `tests/skills/taunting_strike_scenario.gd` | HARNESS_ONLY | Base sim + `[+]` PULL2 data assert; no 7-phase |
 | `knight_seismic_stomp` | Active | `tests/skills/seismic_stomp_scenario.gd` | HARNESS_ONLY | Base AOE + `[+]` CRACKED terrain sim; no 7-phase |
-| `knight_fortify` | Active | `tests/skills/fortify_scenario.gd` | HARNESS_ONLY | Ally DEF base + `[+]` THORNS sim; no 7-phase |
+| `knight_fortify` | Active | `tests/skills/fortify_scenario.gd` | PASS | Ally DEF base + `[+]` THORNS sim (meta-critic r6) |
 | `knight_bowling_charge` | Active | `tests/skills/bowling_charge_scenario.gd` | HARNESS_ONLY | DASH only; no `[+]` chain-push sim |
 | `knight_iron_grip` | Active | `tests/skills/iron_grip_scenario.gd` | HARNESS_ONLY | ROOT base + `[+]` AP refund sim; no 7-phase |
 | `knight_redirect_strike` | Active | `tests/skills/redirect_strike_scenario.gd` | HARNESS_ONLY | INTERCEPT base; no `[+]` DEF sim |
 | `knight_indomitable_will` | Active | `tests/skills/indomitable_will_scenario.gd` | HARNESS_ONLY | Base/`[+]` status sim; no 7-phase |
-| `knight_retaliation_protocol` | Active | `tests/skills/retaliation_protocol_scenario.gd` | HARNESS_ONLY | Counter base + `[+]` PUSH-on-counter sim |
-| `knight_shield_slam` | Active | `tests/skills/shield_slam_scenario.gd` | HARNESS_ONLY | DAMAGE+PUSH base + `[+]` DEF-debuff events; no 7-phase |
+| `knight_retaliation_protocol` | Active | `tests/skills/retaliation_protocol_scenario.gd` | PASS | Counter base + `[+]` PUSH-on-counter sim (meta-critic r6) |
+| `knight_shield_slam` | Active | `tests/skills/shield_slam_scenario.gd` | PASS | DAMAGE+PUSH base + `[+]` DEF-debuff events (meta-critic r6) |
 | `knight_defensive_formation` | Active | `tests/skills/defensive_formation_scenario.gd` | HARNESS_ONLY | STURDY base + `[+]` ARMOR_UP sim; no 7-phase |
 | `knight_chain_hook` | Active | `tests/skills/chain_hook_scenario.gd` | PASS | 7-phase + sim PULL/DAMAGE + `[+]` VULNERABLE |
 | `knight_trampling_advance` | Active | `tests/skills/trampling_advance_scenario.gd` | HARNESS_ONLY | 7-phase + weak sim; empty factory `[+]` |
@@ -146,14 +146,14 @@ Scenarios must prove **both** rules:
 | Factory id | Passive | Scenario file | Tier 1 | Trigger setup |
 |------------|---------|---------------|--------|----------------|
 | `collision_retaliator` | Collision Retaliator | `tests/passives/collision_retaliator_scenario.gd` | PASS | Collision damage + `[+]` bonus PUSH event |
-| `thorny_carapace` | Thorny Carapace | `tests/passives/thorny_carapace_scenario.gd` | HARNESS_ONLY | Base reflect+PUSH + `[+]` 100% reflect sim |
-| `concussive_shatter` | Concussive Shatter | `tests/passives/concussive_shatter_scenario.gd` | HARNESS_ONLY | DEF debuff base + `[+]` VULNERABLE sim |
-| `kinetic_momentum` | Kinetic Momentum | `tests/passives/kinetic_momentum_scenario.gd` | HARNESS_ONLY | SHIELD base + `[+]` MOV refund sim |
-| `stand_ground` | Stand Ground | `tests/passives/stand_ground_scenario.gd` | HARNESS_ONLY | Counter 1 base + `[+]` counter 2 sim |
-| `indestructible_bastion` | Indestructible Bastion | `tests/passives/indestructible_bastion_scenario.gd` | HARNESS_ONLY | Lethal->1 HP base + `[+]` STR sim |
-| `shield_mastery` | Shield Mastery | `tests/passives/shield_mastery_scenario.gd` | HARNESS_ONLY | SHIELD 2 base + `[+]` SHIELD 3 sim |
+| `thorny_carapace` | Thorny Carapace | `tests/passives/thorny_carapace_scenario.gd` | PASS | Base reflect+PUSH + `[+]` 100% reflect sim (meta-critic r6) |
+| `concussive_shatter` | Concussive Shatter | `tests/passives/concussive_shatter_scenario.gd` | PASS | DEF debuff base + `[+]` VULNERABLE sim (meta-critic r6) |
+| `kinetic_momentum` | Kinetic Momentum | `tests/passives/kinetic_momentum_scenario.gd` | PASS | SHIELD base + `[+]` MOV refund sim (meta-critic r6) |
+| `stand_ground` | Stand Ground | `tests/passives/stand_ground_scenario.gd` | PASS | Counter 1 base + `[+]` counter 2 sim (meta-critic r6) |
+| `indestructible_bastion` | Indestructible Bastion | `tests/passives/indestructible_bastion_scenario.gd` | PASS | Lethal->1 HP base + `[+]` STR sim (meta-critic r6) |
+| `shield_mastery` | Shield Mastery | `tests/passives/shield_mastery_scenario.gd` | PASS | SHIELD 2 base + `[+]` SHIELD 3 sim (meta-critic r6) |
 | `kinetic_armor` | Kinetic Armor | `tests/passives/kinetic_armor_scenario.gd` | HARNESS_ONLY | Mitigation base + `[+]` reduce-by-2 sim |
-| `kinetic_converter` | Kinetic Converter | `tests/passives/kinetic_converter_scenario.gd` | HARNESS_ONLY | STR+MOV base + `[+]` STR+2 sim |
+| `kinetic_converter` | Kinetic Converter | `tests/passives/kinetic_converter_scenario.gd` | PASS | STR+MOV base + `[+]` STR+2 sim (meta-critic r6) |
 | `kinetic_redirection` | Kinetic Redirection | `tests/passives/kinetic_redirection_scenario.gd` | HARNESS_ONLY | Factory registration stub; no `[+]` PIERCE sim |
 | `bulwark` | Bulwark | `tests/passives/bulwark_scenario.gd` | HARNESS_ONLY | DEF read; not trigger pipeline |
 | `living_barricade` | Living Barricade | `tests/passives/living_barricade_scenario.gd` | HARNESS_ONLY | Ranged block base; no `[+]` ally DEF sim |

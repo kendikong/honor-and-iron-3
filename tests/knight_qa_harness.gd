@@ -1019,7 +1019,24 @@ static func grant_extra_ap(unit: UnitState, extra: int) -> void:
 
 
 static func run_phalanx_stance(failures: Array[String]) -> void:
-	run_self_buff(failures, &"knight_phalanx_stance", GameEnums.StatusType.STURDY)
+	var board0: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board0, 1, Vector2i(3, 3))
+	var knight0: UnitState = unit_on_board(board0, 1)
+	var ability0: AbilityData = ability_on_unit(knight0, &"knight_phalanx_stance")
+	var plan0 := Timeline.new()
+	plan0.add(plan_ability(1, ability0, knight0.position, knight0.id))
+	var result0: SimResult = simulate_player_turn(board0, plan0)
+	var after0: UnitState = result0.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "phalanx_stance/def_buff",
+		after0 != null and has_status(after0, GameEnums.StatusType.STAT_BUFF_DEF),
+		"phalanx stance must grant DEF buff",
+	)
+	assert_true(
+		failures, "phalanx_stance/sturdy",
+		after0 != null and has_status(after0, GameEnums.StatusType.STURDY),
+		"phalanx stance must grant STURDY",
+	)
 	var board: BoardState = make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = with_upgraded_ability({}, &"knight_phalanx_stance")
 	place_knight(board, 1, Vector2i(3, 3), cfg)
@@ -1084,6 +1101,22 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		failures, "seismic_stomp/aoe_damage",
 		enemy != null and enemy.health.current_hp < hp_before,
 		"seismic stomp AOE must damage adjacent enemy",
+	)
+	var board_purge: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_purge, 20, Vector2i(4, 4))
+	place_dummy(board_purge, 21, Vector2i(5, 4))
+	var stomp2: AbilityData = ability_on_unit(unit_on_board(board_purge, 20), &"knight_seismic_stomp")
+	unit_on_board(board_purge, 21).active_statuses.append(
+		DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 3),
+	)
+	var plan_purge := Timeline.new()
+	plan_purge.add(plan_ability(20, stomp2, Vector2i(4, 4), 20))
+	var result_purge: SimResult = simulate_player_turn(board_purge, plan_purge)
+	var enemy_purged: UnitState = result_purge.final_state.get_unit_by_id(21)
+	assert_true(
+		failures, "seismic_stomp/purge",
+		enemy_purged != null and not has_status(enemy_purged, GameEnums.StatusType.STAT_BUFF_STR),
+		"seismic stomp must PURGE enemy buffs",
 	)
 	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_seismic_stomp")
 	var board2: BoardState = make_plain_board(Vector2i(10, 8))
@@ -1166,6 +1199,11 @@ static func run_iron_grip(failures: Array[String]) -> void:
 		enemy != null and has_status(enemy, GameEnums.StatusType.ROOT),
 		"iron grip must ROOT target",
 	)
+	assert_true(
+		failures, "iron_grip/debuff",
+		enemy != null and has_status(enemy, GameEnums.StatusType.IRON_GRIP_DEBUFF),
+		"iron grip must apply IRON_GRIP_DEBUFF",
+	)
 	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_iron_grip")
 	var board2: BoardState = make_plain_board(Vector2i(10, 6))
 	place_knight(board2, 10, Vector2i(3, 3), cfg_up)
@@ -1239,6 +1277,11 @@ static func run_defensive_formation(failures: Array[String]) -> void:
 		ally != null and has_status(ally, GameEnums.StatusType.STURDY),
 		"defensive formation AOE must grant STURDY to nearby ally",
 	)
+	assert_true(
+		failures, "defensive_formation/ally_def",
+		ally != null and has_status(ally, GameEnums.StatusType.STAT_BUFF_DEF),
+		"defensive formation AOE must grant DEF buff to nearby ally",
+	)
 	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_defensive_formation")
 	var board2: BoardState = make_plain_board(Vector2i(10, 8))
 	place_knight(board2, 10, Vector2i(4, 4), cfg_up)
@@ -1260,19 +1303,38 @@ static func run_defensive_formation(failures: Array[String]) -> void:
 
 
 static func run_indomitable_will(failures: Array[String]) -> void:
-	run_self_buff(failures, &"knight_indomitable_will", GameEnums.StatusType.INDOMITABLE_WILL)
 	var board: BoardState = make_plain_board(Vector2i(8, 8))
-	var cfg: Dictionary = with_upgraded_ability({}, &"knight_indomitable_will")
-	place_knight(board, 1, Vector2i(3, 3), cfg)
+	place_knight(board, 1, Vector2i(3, 3))
 	var knight: UnitState = unit_on_board(board, 1)
+	knight.health.current_hp = knight.health.max_hp - 5
+	var armor_before: int = knight.armor
 	var ability: AbilityData = ability_on_unit(knight, &"knight_indomitable_will")
 	var plan := Timeline.new()
 	plan.add(plan_ability(1, ability, knight.position, knight.id))
 	var result: SimResult = simulate_player_turn(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	assert_true(
+		failures, "indomitable_will/shield",
+		after != null and after.armor > armor_before,
+		"indomitable will must convert missing HP into SHIELD",
+	)
+	assert_true(
+		failures, "indomitable_will/self_status",
+		after != null and has_status(after, GameEnums.StatusType.INDOMITABLE_WILL),
+		"indomitable will must apply INDOMITABLE_WILL status",
+	)
+	var cfg: Dictionary = with_upgraded_ability({}, &"knight_indomitable_will")
+	var board2: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board2, 10, Vector2i(3, 3), cfg)
+	var knight2: UnitState = unit_on_board(board2, 10)
+	var ability2: AbilityData = ability_on_unit(knight2, &"knight_indomitable_will")
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, ability2, knight2.position, knight2.id))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var after2: UnitState = result2.final_state.get_unit_by_id(10)
+	assert_true(
 		failures, "indomitable_will/upgrade/status",
-		after != null and has_status(after, GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED),
+		after2 != null and has_status(after2, GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED),
 		"upgraded indomitable will must apply INDOMITABLE_WILL_UPGRADED",
 	)
 
