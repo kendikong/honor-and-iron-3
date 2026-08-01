@@ -84,12 +84,19 @@ func setup(
 
 
 func teardown() -> void:
+	flush_deferred_planning()
 	_disconnect_event_bus()
 	_map_view = null
 	_director = null
 	_planning = null
 	_intent_state = null
 	_sfx = null
+
+
+func flush_deferred_planning() -> void:
+	if _selection_refresh_pending:
+		_run_planning_selection_refresh()
+	_flush_hover_preview_refresh()
 
 
 func _disconnect_event_bus() -> void:
@@ -119,7 +126,8 @@ func _on_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void
 	_invalidate_planning_hover_cache()
 	_drag_route.clear()
 	_drag_last_free = Vector2i(-1, -1)
-	preview_state.clear_interaction()
+	## Drop stale hover preview (paths + preview_board) so post-commit action-range uses projection.
+	preview_state.clear_all()
 	if _planning != null:
 		_planning.restore_committed_display()
 
@@ -2249,6 +2257,77 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	return actor != null and AbilitySystem.can_afford_run(actor)
 
 
+## Where red action-range tiles anchor — projected stand plus live move-preview stand (intent truth).
+func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
+	if _director == null:
+		return Vector2i(-999999, -999999)
+	if unit_id < 0:
+		unit_id = _director.selected_unit_id
+	if unit_id < 0:
+		return Vector2i(-999999, -999999)
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return Vector2i(-999999, -999999)
+	var projected: Vector2i = _proj_move_origin(actor)
+	if awaiting_targeting_active() and unit_id == _director.selected_unit_id:
+		var ability: AbilityData = _selected_ability_data(actor)
+		if ability != null and AbilitySystem.is_movement_skill(ability):
+			return projected
+	if is_live_preview_active() and preview_state.preview_board != null:
+		var live_unit: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
+		if live_unit != null:
+			return live_unit.position
+	var dest: Vector2i = move_intent_destination(unit_id)
+	if _director.board.is_in_bounds(dest) and dest != projected:
+		return dest
+	return projected
+
+
+## Red tiles follow cursor stand; hide only when selected skill is impossible after that premove.
+func action_range_visible_for_hover() -> bool:
+	if _director == null or _director.selected_unit_id < 0 or _director.board == null:
+		return false
+	if awaiting_targeting_active():
+		return true
+	var unit_id: int = _director.selected_unit_id
+	var committed: UnitState = _proj_unit(unit_id)
+	if committed == null:
+		committed = _director.board.get_unit_by_id(unit_id)
+	if committed == null:
+		return false
+	var ability: AbilityData = _selected_ability_data(committed)
+	if ability == null or AbilitySystem.is_run_ability(ability) or AbilitySystem.is_wait_ability(ability):
+		return false
+	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
+	if not _director.board.is_in_bounds(stand):
+		return false
+	var move_timing: int = _director.get_planning_move_timing(unit_id)
+	var has_committed_move: bool = (
+		move_timing >= 0
+		and _director.unit_has_move_planned_at_timing(unit_id, move_timing)
+	)
+	if has_committed_move and _proj_move_origin(committed) == stand:
+		return AbilitySystem.can_plan(committed, ability, _proj())
+	var origin_actor: UnitState = committed
+	if not has_committed_move and _director.base_board != null:
+		var base_actor: UnitState = _director.base_board.get_unit_by_id(unit_id)
+		if base_actor != null:
+			origin_actor = base_actor
+	if origin_actor.position == stand:
+		return AbilitySystem.can_plan(origin_actor, ability, _proj())
+	var after_premove: UnitState = AbilitySystem.project_actor_after_premove(
+		_proj(),
+		origin_actor,
+		stand,
+		auto_run_movement_active(origin_actor),
+	)
+	if after_premove == null:
+		return false
+	return AbilitySystem.can_plan(after_premove, ability, _proj())
+
+
 ## True when this unit's current planning intent (drag / live path / committed move) needs Run.
 func unit_move_requires_run(unit_id: int) -> bool:
 	if _director == null or unit_id < 0:
@@ -3443,14 +3522,16 @@ func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitSt
 		return not AbilitySystem.can_target_self(p_unit, ability) and not AbilitySystem.is_run_ability(ability)
 	if hover_unit != null and not hover_unit.is_enemy() and hover_unit.id != p_unit.id:
 		return not _can_target_unit_with_selected_ability(p_unit, hover_unit)
-	if _awaiting_flow_selected(p_unit, ability) and _planning != null:
-		if awaiting_targeting_active() and (
-			_planning.is_hover_action_range_tile(cell)
-			and not AbilitySystem.planning_is_valid_awaiting_endpoint(
-				_proj_origin(p_unit), cell, ability,
+	if _awaiting_flow_selected(p_unit, ability):
+		if awaiting_targeting_active():
+			var origin: Vector2i = _proj_origin(p_unit)
+			if AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability):
+				return false
+			var threat: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+				_proj(), p_unit, ability, origin, [],
 			)
-		):
-			return true
+			if threat.has(cell):
+				return true
 	return false
 
 
