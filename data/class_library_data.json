@@ -3098,7 +3098,7 @@
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
-							"status_type": 39,
+							"status_type": 40,
 							"type": 8
 						}
 					],
@@ -3163,7 +3163,7 @@
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 2,
-							"status_type": 38,
+							"status_type": 39,
 							"type": 9
 						}
 					],

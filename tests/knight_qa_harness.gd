@@ -965,6 +965,19 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		enemy != null and enemy.health.current_hp < hp_before,
 		"seismic stomp AOE must damage adjacent enemy",
 	)
+	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_seismic_stomp")
+	var board2: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board2, 10, Vector2i(4, 4), cfg_up)
+	place_dummy(board2, 11, Vector2i(5, 4))
+	var stomp_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_seismic_stomp")
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, stomp_up, Vector2i(4, 4), 10))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	assert_true(
+		failures, "seismic_stomp/upgrade/cracked",
+		events_have_terrain_changed(result2.events, Vector2i(5, 4)),
+		"upgraded seismic stomp must create CRACKED terrain in AOE",
+	)
 
 
 static func run_fortify(failures: Array[String]) -> void:
@@ -983,6 +996,23 @@ static func run_fortify(failures: Array[String]) -> void:
 		failures, "fortify/ally_def",
 		ally != null and has_status(ally, GameEnums.StatusType.STAT_BUFF_DEF),
 		"fortify must buff ally DEF",
+	)
+	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_fortify")
+	var board2: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board2, 10, Vector2i(3, 3), cfg_up)
+	var ally_def2: UnitData = knight_unit_data()
+	place_unit(board2, 11, ally_def2, GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var fortify_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_fortify")
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, fortify_up, Vector2i(4, 3), 11))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var ally2: UnitState = result2.final_state.get_unit_by_id(11)
+	assert_true(
+		failures, "fortify/upgrade/thorns",
+		ally2 != null and has_status(ally2, GameEnums.StatusType.THORNS),
+		"upgraded fortify must grant THORNS to ally",
 	)
 
 
@@ -1016,6 +1046,25 @@ static func run_iron_grip(failures: Array[String]) -> void:
 		enemy != null and has_status(enemy, GameEnums.StatusType.ROOT),
 		"iron grip must ROOT target",
 	)
+	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_iron_grip")
+	var board2: BoardState = make_plain_board(Vector2i(10, 6))
+	place_knight(board2, 10, Vector2i(3, 3), cfg_up)
+	place_dummy(board2, 11, Vector2i(4, 3))
+	var enemy_pre: UnitState = unit_on_board(board2, 11)
+	enemy_pre.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.ROOT, 1, 0))
+	enemy_pre._recalculate_stats()
+	var grip_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_iron_grip")
+	var knight_before: UnitState = unit_on_board(board2, 10)
+	var ap_before: int = knight_before.ability.points_left
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, grip_up, Vector2i(4, 3), 11))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var knight_after: UnitState = result2.final_state.get_unit_by_id(10)
+	assert_true(
+		failures, "iron_grip/upgrade/ap_refund",
+		knight_after != null and knight_after.ability.points_left == ap_before,
+		"upgraded iron grip must refund 1 AP when target already has ROOT/STAGGER",
+	)
 
 
 static func run_shield_slam(failures: Array[String]) -> void:
@@ -1035,6 +1084,22 @@ static func run_shield_slam(failures: Array[String]) -> void:
 		"shield slam must deal damage",
 	)
 	assert_eq_cell(failures, "shield_slam/push", enemy.position, Vector2i(7, 3))
+	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_shield_slam")
+	var board2: BoardState = make_plain_board(Vector2i(10, 6))
+	place_knight(board2, 10, Vector2i(4, 3), cfg_up)
+	place_dummy(board2, 11, Vector2i(5, 3))
+	var slam_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_shield_slam")
+	var plan2 := Timeline.new()
+	plan2.add(TimelineAction.make_move(10, Vector2i(4, 3)))
+	plan2.add(plan_ability(10, slam_up, Vector2i(5, 3), 11))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	assert_true(
+		failures, "shield_slam/upgrade/def_debuff",
+		events_have_status_on_unit(
+			result2.events, 11, GameEnums.StatusType.STAT_DEBUFF_DEF,
+		),
+		"upgraded shield slam must apply DEF debuff before damage",
+	)
 
 
 static func run_defensive_formation(failures: Array[String]) -> void:
@@ -1076,6 +1141,20 @@ static func run_defensive_formation(failures: Array[String]) -> void:
 
 static func run_indomitable_will(failures: Array[String]) -> void:
 	run_self_buff(failures, &"knight_indomitable_will", GameEnums.StatusType.INDOMITABLE_WILL)
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	var cfg: Dictionary = with_upgraded_ability({}, &"knight_indomitable_will")
+	place_knight(board, 1, Vector2i(3, 3), cfg)
+	var knight: UnitState = unit_on_board(board, 1)
+	var ability: AbilityData = ability_on_unit(knight, &"knight_indomitable_will")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, ability, knight.position, knight.id))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "indomitable_will/upgrade/status",
+		after != null and has_status(after, GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED),
+		"upgraded indomitable will must apply INDOMITABLE_WILL_UPGRADED",
+	)
 
 
 static func run_retaliation_protocol(failures: Array[String]) -> void:

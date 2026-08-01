@@ -829,6 +829,16 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if actor.is_ability_upgraded(action.ability.id) and action.ability.upgraded_effects.size() > 0:
 		effects_to_apply = action.ability.upgraded_effects
 
+	var cast_cc_snapshot: Dictionary = {}
+	if actor != null:
+		for unit in board.units:
+			if unit != null and unit.is_alive():
+				cast_cc_snapshot[unit.id] = (
+					unit.has_status(GameEnums.StatusType.ROOT)
+					or unit.has_status(GameEnums.StatusType.STAGGER)
+				)
+		actor.passive_flags["__cast_cc_snapshot"] = cast_cc_snapshot
+
 	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
 	if (has_pass_through_effects(ability) or is_move) and not ability_has_dash(ability) and target_coord != actor.position:
 		var walk_steps: int = effect_amount(ability, GameEnums.EffectType.MOVE)
@@ -909,6 +919,9 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, def_bonus))
 			actor._recalculate_stats()
 			
+	if actor != null:
+		actor.passive_flags.erase("__cast_cc_snapshot")
+
 	if actor != null and actor.is_alive() and actor.has_passive(&"kinetic_redirection"):
 		var is_attack = false
 		for effect in effects_to_apply:
@@ -1061,6 +1074,13 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				)
 				target.active_statuses.append(temp_def_debuff)
 				target._recalculate_stats()
+				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+					"unit": target.id,
+					"status_type": GameEnums.StatusType.STAT_DEBUFF_DEF,
+					"duration": 1,
+					"amount": effect.def_debuff_before_damage,
+					"temporary": true,
+				}))
 			
 			if target != null:
 				if _is_backstab(actor, target):
@@ -1425,9 +1445,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"coord": tile_coord, "terrain": terrain_id
 					}))
 		GameEnums.EffectType.REFUND_AP_ON_CC:
-			if target != null:
-				if target.has_status(GameEnums.StatusType.ROOT) or target.has_status(GameEnums.StatusType.STAGGER):
-					actor.ability.points_left = mini(actor.definition.action_points, actor.ability.points_left + 1)
+			if target != null and actor != null:
+				var snap: Variant = actor.passive_flags.get("__cast_cc_snapshot", null)
+				var had_cc_at_cast: bool = snap is Dictionary and snap.get(target.id, false)
+				if had_cc_at_cast:
+					actor.ability.points_left = mini(actor.ability.max_points, actor.ability.points_left + 1)
 
 		GameEnums.EffectType.ADD_STATUS_SELF:
 			if actor.has_status(GameEnums.StatusType.INVULNERABLE) and GameEnums.is_debuff(effect.status_type):
