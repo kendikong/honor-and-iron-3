@@ -56,7 +56,6 @@ var _hover_heavy_frame_pending: bool = false
 var _hover_heavy_throttle_gen: int = 0
 var _hover_heavy_last_flush_usec: int = 0
 var _last_heavy_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
-var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
 var _drag_last_cursor_cell: Vector2i = Vector2i(-999999, -999999)
@@ -235,11 +234,9 @@ func on_left_release(local: Vector2) -> void:
 
 
 func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
-	_drag_move_commit_instant = had_movement
 	var released_unit_id: int = _drag_unit_id
 	if selected_phase_action_exhausted(released_unit_id):
 		_play_sfx("invalid")
-		_drag_move_commit_instant = false
 		return false
 	var legal_move_tiles: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
 	var committed: bool = false
@@ -288,7 +285,6 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 			params.preferred,
 			int(params.get("face_dir", -1)),
 		)
-	_drag_move_commit_instant = false
 	return committed
 
 
@@ -1507,10 +1503,7 @@ func _commit_at_cell(
 		_play_sfx("invalid")
 		_clear_intent_snapshot()
 		return false
-	_notify_drag_plan_move_committed(unit_id)
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
-		if _drag_move_commit_instant and _director != null:
-			_director.clear_planning_move_instant(unit_id)
 		_play_sfx("invalid")
 		return false
 	_play_commit_sfx(slots)
@@ -1864,11 +1857,6 @@ func _prefer_approach_over_trample_move(actor: UnitState, enemy: UnitState) -> b
 	if _director.selected_ability_index < 0:
 		return false
 	return MovementSystem.has_trample(actor) and _can_move_to(actor, enemy.position)
-
-
-func _notify_drag_plan_move_committed(unit_id: int) -> void:
-	if _drag_move_commit_instant and _director != null:
-		_director.mark_planning_move_instant(unit_id)
 
 
 func _unit_move_slot_open(unit_id: int, cell: Vector2i = Vector2i(-999999, -999999)) -> bool:

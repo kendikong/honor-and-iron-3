@@ -810,7 +810,7 @@ func _should_animate_move(event: SimEvent) -> bool:
 		return false
 	var unit_id: int = int(event.data.get("actor", -1))
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
-	if CombatDirector.is_planning_phase(_phase):
+	if _is_planning_phase():
 		if _director != null and _director.is_planning_move_instant(unit_id):
 			return false
 		return unit != null and not unit.is_enemy()
@@ -1588,6 +1588,9 @@ func end_drag_preview(snap_back: bool = false) -> void:
 		return
 	if snap_back:
 		_finish_drag_preview_at_home(unit_id, unit)
+		return
+	if _move_tweens.has(unit_id):
+		_apply_exhaustion_state(unit)
 		return
 	var drop_cell: Vector2i = _actor_grid_cell(unit_id)
 	_finish_snap_at_cell(unit_id, drop_cell)
