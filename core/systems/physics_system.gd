@@ -231,17 +231,20 @@ static func dash(
 	var trampled_restore: Dictionary = {}
 
 	for step_i in range(distance):
+		var step_emit_start: int = events.size()
 		var next := unit.position + direction
 
 		if GridSystem.stops_displacement(board, next) or not GridSystem.is_in_bounds(board, next):
 			if not use_trample_atk and not use_bulldoze:
 				_emit_collision(board, unit, null, next, distance, traveled, events, pusher, ability_id)
+			tag_dash_hit_step(events, step_emit_start, step_i)
 			break
 
 		var occupant := board.get_unit_at(next)
 		if occupant != null and _cannot_be_displaced(occupant):
 			if not use_trample_atk and not use_bulldoze:
 				_emit_collision(board, unit, occupant, next, distance, traveled, events, pusher, ability_id)
+			tag_dash_hit_step(events, step_emit_start, step_i)
 			break
 
 		if use_bulldoze or use_trample_atk:
@@ -254,12 +257,15 @@ static func dash(
 					trample_push if use_trample_atk else 0,
 					events, ability_id, trample_hit_ids, trampled_restore, source_label
 				):
+					tag_dash_hit_step(events, step_emit_start, step_i)
 					break
 				occupant = board.get_unit_at(next)
 				if occupant != null and occupant.id != unit.id:
+					tag_dash_hit_step(events, step_emit_start, step_i)
 					break
 		elif occupant != null:
 			_emit_collision(board, unit, occupant, next, distance, traveled, events, pusher, ability_id)
+			tag_dash_hit_step(events, step_emit_start, step_i)
 			break
 
 		if trampled_restore.has(unit.position):
@@ -286,6 +292,7 @@ static func dash(
 		else:
 			unit_on_board = false
 
+		tag_dash_hit_step(events, step_emit_start, step_i)
 		if GridSystem.is_hazard(board, next):
 			break
 
@@ -337,6 +344,14 @@ static func dash(
 		"path": path,
 		"presentation_anim": anim,
 	}))
+
+
+## Tags pass-through / bulldoze side effects so presentation can interleave per dash step.
+static func tag_dash_hit_step(events: Array, from_index: int, step_index: int) -> void:
+	for tag_i: int in range(from_index, events.size()):
+		var ev: SimEvent = events[tag_i] as SimEvent
+		if ev != null and not ev.data.has("dash_hit_step"):
+			ev.data["dash_hit_step"] = step_index
 	TerrainSystem.apply_landing(board, unit, events)
 
 static func push(board: BoardState, target: UnitState, direction: Vector2i, distance: int, events: Array[SimEvent], pusher: UnitState = null, ability_id: StringName = &"", collision_immune_id: int = -1) -> void:

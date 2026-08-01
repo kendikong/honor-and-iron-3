@@ -1724,6 +1724,72 @@ func _find_dash_blocks(events: Array[SimEvent]) -> Array:
 	return blocks
 
 
+func _is_displacement_playback_event(event: SimEvent) -> bool:
+	return event.type in [
+		GameEnums.SimEventType.UNIT_PUSHED,
+		GameEnums.SimEventType.COLLISION,
+	]
+
+
+func _step_playback_sort_key(event: SimEvent) -> int:
+	if _is_displacement_playback_event(event):
+		return 3
+	match event.type:
+		GameEnums.SimEventType.TRAMPLE_HIT:
+			return 0
+		GameEnums.SimEventType.UNIT_DAMAGED, \
+		GameEnums.SimEventType.MATH_TELEMETRY, \
+		GameEnums.SimEventType.UNIT_ARMORED, \
+		GameEnums.SimEventType.UNIT_HEALED:
+			return 1
+		GameEnums.SimEventType.STATUS_APPLIED, \
+		GameEnums.SimEventType.STATUS_REMOVED, \
+		GameEnums.SimEventType.UNIT_DIED, \
+		GameEnums.SimEventType.UNIT_EXPLODED:
+			return 2
+		_:
+			return 1
+
+
+func _playback_step_index(event: SimEvent) -> int:
+	if event.data.has("dash_hit_step"):
+		return int(event.data.get("dash_hit_step", -1))
+	if event.data.has("trample_step"):
+		return int(event.data.get("trample_step", -1))
+	return -1
+
+
+func _append_step_playback_event(step_events: Dictionary, event: SimEvent) -> void:
+	var step: int = _playback_step_index(event)
+	if step < 0:
+		return
+	if not step_events.has(step):
+		step_events[step] = []
+	(step_events[step] as Array).append(event)
+
+
+func _sorted_step_playback_events(step_events: Array) -> Array:
+	var ordered: Array = step_events.duplicate()
+	ordered.sort_custom(func(a: SimEvent, b: SimEvent) -> bool:
+		return _step_playback_sort_key(a) < _step_playback_sort_key(b)
+	)
+	return ordered
+
+
+func _emit_step_playback_events(step_events: Array, run_id: int) -> void:
+	if step_events.is_empty() or run_id != _run_id:
+		return
+	var had_displacement := false
+	for event: SimEvent in _sorted_step_playback_events(step_events):
+		if run_id != _run_id:
+			return
+		EventBus.sim_event.emit(event)
+		if _is_displacement_playback_event(event):
+			had_displacement = true
+	if had_displacement:
+		await _await_push_animations(run_id)
+
+
 func _play_dash_sequence(block: Array, run_id: int) -> void:
 	if block.is_empty() or run_id != _run_id:
 		return
@@ -1757,22 +1823,18 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 				else:
 					pre_ability_events.append(event)
 			GameEnums.SimEventType.UNIT_PUSHED:
-				push_events.append(event)
+				var push_step: int = _playback_step_index(event)
+				if push_step >= 0:
+					_append_step_playback_event(step_events, event)
+				else:
+					push_events.append(event)
 			_:
 				if event.type in step_event_types:
-					var step: int = -1
-					if event.data.has("dash_hit_step"):
-						step = int(event.data.get("dash_hit_step", -1))
-					elif event.data.has("trample_step"):
-						step = int(event.data.get("trample_step", -1))
+					var step: int = _playback_step_index(event)
 					if step >= 0:
-						if not step_events.has(step):
-							step_events[step] = []
-						(step_events[step] as Array).append(event)
+						_append_step_playback_event(step_events, event)
 					else:
 						post_dash_events.append(event)
-				elif event.type in step_event_types:
-					post_dash_events.append(event)
 				else:
 					pre_ability_events.append(event)
 	
@@ -1789,16 +1851,10 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 			return
 	
 	if move_event == null:
-		for e in post_dash_events:
-			if run_id != _run_id:
-				return
-			EventBus.sim_event.emit(e)
-		for e in push_events:
-			if run_id != _run_id:
-				return
-			EventBus.sim_event.emit(e)
-		if not push_events.is_empty():
-			await _await_push_animations(run_id)
+		var tail_no_move: Array = []
+		tail_no_move.append_array(post_dash_events)
+		tail_no_move.append_array(push_events)
+		await _emit_step_playback_events(tail_no_move, run_id)
 		return
 	
 	var path: Array = move_event.data.get("path", [])
@@ -1811,20 +1867,16 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 		if run_id != _run_id:
 			return
 		if step_events.has(step_i):
-			for e in step_events[step_i]:
-				EventBus.sim_event.emit(e)
+			await _emit_step_playback_events(step_events[step_i] as Array, run_id)
 	
 	await get_tree().create_timer(0.05).timeout
 	if run_id != _run_id:
 		return
 	
-	for e in post_dash_events:
-		EventBus.sim_event.emit(e)
-	
-	for e in push_events:
-		EventBus.sim_event.emit(e)
-	if not push_events.is_empty():
-		await _await_push_animations(run_id)
+	var tail_events: Array = []
+	tail_events.append_array(post_dash_events)
+	tail_events.append_array(push_events)
+	await _emit_step_playback_events(tail_events, run_id)
 
 
 func _await_push_animations(run_id: int) -> void:
@@ -2036,8 +2088,7 @@ func _play_move_batch(move_events: Array[SimEvent], run_id: int) -> void:
 		if run_id != _run_id:
 			return
 		if trample_step_events.has(step_i):
-			for e: SimEvent in (trample_step_events[step_i] as Array):
-				EventBus.sim_event.emit(e)
+			await _emit_step_playback_events(trample_step_events[step_i] as Array, run_id)
 	# Small tail buffer so the last hit animation settles before we move on.
 	await get_tree().create_timer(0.05).timeout
 
