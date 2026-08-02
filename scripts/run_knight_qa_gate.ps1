@@ -34,10 +34,16 @@ $passRows = @()
 $plannedRows = @()
 $harnessRows = @()
 
-foreach ($id in $requiredFactoryIds) {
+	foreach ($id in $requiredFactoryIds) {
 	$escaped = [regex]::Escape($id)
 	$tablePattern = '`\s*' + $escaped + '\s*`'
-	$rowLine = ($matrixText -split "`n" | Where-Object { $_ -match $tablePattern -and $_ -match '\|' } | Select-Object -First 1)
+	$rowLine = (
+		$matrixText -split "`n" |
+		Where-Object {
+			$_ -match $tablePattern -and $_ -match '\|' -and $_ -match '\|\s*(PASS|HARNESS_ONLY|PLANNED|N/A)\s*\|'
+		} |
+		Select-Object -First 1
+	)
 	if ($null -eq $rowLine -or $rowLine.Trim().Length -eq 0) {
 		$plannedRows += $id
 		continue

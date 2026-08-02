@@ -2894,6 +2894,16 @@
 							"status_duration": 1,
 							"status_type": 0,
 							"type": 21
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 25
 						}
 					],
 					"upgraded_range_tiles": -1,

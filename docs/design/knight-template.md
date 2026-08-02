@@ -1,6 +1,6 @@
 # Knight template (P3)
 
-**Status:** `LOOP_READY` *(K3-LOCK gauntlet **ACTIVE** — critic r7 **57/95 FAIL**; manifest **14/30** PASS)*  
+**Status:** `LOOP_READY` *(K3-LOCK gauntlet — **30/30** matrix + gate exit **0**; full-matrix critic r32 **59/95 FAIL** — LOCK pending)*  
 **Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) · **Run card:** [`runs/K3-LOCK.md`](runs/K3-LOCK.md)
 **Pillar ID:** P3  
 **Authority chain:** `class_abilities.txt` § Knight · `docs/KNIGHT_QA_GATE.md` · `core/factory/classes/knight_factory.gd` · `data/` factories
@@ -62,9 +62,9 @@ N/A — Bible + matrix are authoritative. Owner defers rows only via explicit `N
 | K3-registry | Builder | `tests/knight_scenario_registry.gd` lists actives + passives | **DONE** |
 | K3-gate | Builder | `run_knight_qa_gate.ps1` fails until matrix 100% PASS + manifest | **Tier 1 PASS** (exit 2 until critic-approved rows) |
 | K3-meta | Critic | Adequacy score per matrix row; fixture recommendations | **14/30 PASS** (manifest) |
-| **K3-LOCK** | Owner | Matrix 100% PASS + gate PASS + meta-critic ≥ 95 | **IN PROGRESS** — [`runs/K3-LOCK.md`](runs/K3-LOCK.md) |
+| **K3-LOCK** | Owner | Matrix 100% PASS + gate PASS + meta-critic ≥ 95 | **BLOCKED** — gate PASS; full-matrix critic 59/95 (r32) — [`runs/K3-LOCK.md`](runs/K3-LOCK.md) |
 
-**Implementation tally:** **14 / 30** factory rows meta-critic `PASS` · **16** `HARNESS_ONLY` · Tier 1 harness green · gate exit **2** until LOCK · **no self-grade**.
+**Implementation tally:** **30 / 30** factory rows meta-critic `PASS` · gate exit **0** · full-matrix critic **59/95 FAIL** (r32) · **no self-grade**.
 
 ## Builder playbook
 
@@ -140,10 +140,10 @@ ARTIFACT: this file, docs/KNIGHT_QA_GATE.md, knight_factory.gd, lint stdout, Tes
 
 ### K3-LOCK (promote to `LOCKED`)
 
-- [ ] **100%** matrix rows `PASS` (actives + passives + swap; meta-critic approved per row)
-- [ ] `.\scripts\run_knight_qa_gate.ps1` → PASS (manifest + matrix + harness)
-- [ ] Meta-critic adequacy **≥ 95** on full matrix review (owner mandate)
-- [ ] P6 can copy gate + matrix pattern without planning QA changes
+- [x] **100%** matrix rows `PASS` (actives + passives + swap; meta-critic approved per row)
+- [x] `.\scripts\run_knight_qa_gate.ps1` → PASS (manifest + matrix + harness)
+- [ ] Meta-critic adequacy **≥ 95** on full matrix review (owner mandate) — **59/95 FAIL r32**
+- [ ] P6 can copy gate + matrix pattern without planning QA changes (blocked on EventBus headless)
 
 ## Doc polish scorecard
 

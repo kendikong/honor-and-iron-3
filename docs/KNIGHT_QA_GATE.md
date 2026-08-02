@@ -118,7 +118,7 @@ Scenarios must prove **both** rules:
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase (not used in MVP) |
 
-**Summary (honest):** **18 / 30** factory rows meta-critic `PASS` · **12** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only). **Manifest:** `docs/knight_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
+**Summary (honest):** **30 / 30** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only). **Manifest:** `docs/knight_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
 
 ### Owner no-regression (do not modify without explicit approval)
 
@@ -139,7 +139,7 @@ Do **not** weaken, replace, or “simplify” harness/scenario/production paths 
 | `knight_taunting_strike` | Active | `tests/skills/taunting_strike_scenario.gd` | PASS | ATK1/PULL1/TAUNT + `[+]` AOE PULL2 sim (meta-critic r16) |
 | `knight_seismic_stomp` | Active | `tests/skills/seismic_stomp_scenario.gd` | PASS | AOE/PURGE/`[+]` CRACKED + terrain MP sim (meta-critic r15) |
 | `knight_fortify` | Active | `tests/skills/fortify_scenario.gd` | PASS | Ally DEF base + `[+]` THORNS sim (meta-critic r6) |
-| `knight_bowling_charge` | Active | `tests/skills/bowling_charge_scenario.gd` | HARNESS_ONLY | DASH only; no `[+]` chain-push sim |
+| `knight_bowling_charge` | Active | `tests/skills/bowling_charge_scenario.gd` | PASS | DASH/BULLDOZE sim + `[+]` chain collision + planning intent contracts (meta-critic r31) |
 | `knight_iron_grip` | Active | `tests/skills/iron_grip_scenario.gd` | PASS | ROOT + next-turn DEF halving + `[+]` AP refund sim (meta-critic r14) |
 | `knight_redirect_strike` | Active | `tests/skills/redirect_strike_scenario.gd` | PASS | INTERCEPT 50% + mid-window persist + `[+]` DEF stack sim (meta-critic r17) |
 | `knight_indomitable_will` | Active | `tests/skills/indomitable_will_scenario.gd` | PASS | missing HP→SHIELD 2t + expiry/break + `[+]` STR sim (meta-critic r18) |
@@ -147,7 +147,7 @@ Do **not** weaken, replace, or “simplify” harness/scenario/production paths 
 | `knight_shield_slam` | Active | `tests/skills/shield_slam_scenario.gd` | PASS | DAMAGE+PUSH base + `[+]` DEF-debuff events (meta-critic r6) |
 | `knight_defensive_formation` | Active | `tests/skills/defensive_formation_scenario.gd` | PASS | AOE allies-only STURDY/PUSH/PULL + `[+]` SHIELD 2 sim (meta-critic r19) |
 | `knight_chain_hook` | Active | `tests/skills/chain_hook_scenario.gd` | PASS | 7-phase + sim PULL/DAMAGE + `[+]` VULNERABLE |
-| `knight_trampling_advance` | Active | `tests/skills/trampling_advance_scenario.gd` | HARNESS_ONLY | 7-phase + weak sim; empty factory `[+]` |
+| `knight_trampling_advance` | Active | `tests/skills/trampling_advance_scenario.gd` | PASS | MOVE/TRAMPLE/PUSH sim + 7-phase E2E; `[+]` SHIELD N/A (factory duplicate) (meta-critic r29) |
 | *(economy)* | Run / MP | `tests/skills/run_economy_scenario.gd` | HARNESS_ONLY | Shared economy slice — not a Bible row |
 
 ### Passives (trigger-based — separate scenario shape)

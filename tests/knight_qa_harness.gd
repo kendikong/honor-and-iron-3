@@ -181,6 +181,38 @@ static func events_have_retaliator_upgrade_push(events: Array, blocker_id: int) 
 	return false
 
 
+static func events_have_collision_for_unit(events: Array, unit_id: int) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.COLLISION:
+			if int(e.data.get("unit", -1)) == unit_id:
+				return true
+	return false
+
+
+static func events_have_chain_collision(events: Array, pushed_id: int, against_id: int) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.COLLISION:
+			var d: Dictionary = e.data
+			if int(d.get("unit", -1)) == pushed_id and int(d.get("against_unit", -1)) == against_id:
+				return true
+	return false
+
+
+static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_PUSHED:
+			if int(e.data.get("unit", -1)) == unit_id:
+				return true
+	return false
+
+
+static func unit_hp(state: BoardState, unit_id: int) -> int:
+	var unit: UnitState = state.get_unit_by_id(unit_id)
+	if unit == null or unit.health == null:
+		return -1
+	return unit.health.current_hp
+
+
 static func with_upgraded_ability(config: Dictionary, ability_id: StringName) -> Dictionary:
 	var cfg: Dictionary = config.duplicate(true)
 	var ups: Array = cfg.get("upgraded_abilities", []) as Array
@@ -864,19 +896,49 @@ static func run_indestructible_bastion(failures: Array[String]) -> void:
 
 static func run_trample_base_sim(failures: Array[String]) -> void:
 	## Trampling Advance base: MOVE + TRAMPLE + PUSH on tile target.
+	var trample_data: AbilityData = factory_ability(&"knight_trampling_advance")
+	assert_true(
+		failures, "trample/contract/move",
+		ability_has_effect(trample_data, GameEnums.EffectType.MOVE, false),
+	)
+	assert_true(
+		failures, "trample/contract/trample",
+		ability_has_effect(trample_data, GameEnums.EffectType.TRAMPLE, false),
+	)
+	assert_true(
+		failures, "trample/contract/push",
+		ability_has_effect(trample_data, GameEnums.EffectType.PUSH, false),
+	)
 	var board: BoardState = make_plain_board(Vector2i(12, 8))
-	place_knight(board, 1, Vector2i(5, 4))
-	place_dummy(board, 2, Vector2i(6, 4))
+	place_knight(board, 1, Vector2i(4, 4))
+	place_dummy(board, 2, Vector2i(5, 4))
+	var enemy_hp_before: int = unit_hp(board, 2)
 	var knight: UnitState = unit_on_board(board, 1)
 	var trample: AbilityData = ability_on_unit(knight, &"knight_trampling_advance")
 	var plan := Timeline.new()
-	plan.add(plan_ability(1, trample, Vector2i(6, 3), -1))
+	plan.add(plan_ability(1, trample, Vector2i(6, 4), -1))
 	var result: SimResult = simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
 	assert_true(
 		failures, "trample/base/moved",
-		after != null and after.position != Vector2i(5, 4),
-		"trample must move caster along route",
+		after != null and after.position == Vector2i(6, 4),
+		"trample must MOVE 2 tiles to target",
+	)
+	assert_true(
+		failures, "trample/base/trample_damage",
+		events_have_damage_base(result.events, 2),
+		"TRAMPLE 2 must emit base-2 contact damage telemetry",
+	)
+	assert_true(
+		failures, "trample/base/enemy_damaged",
+		enemy != null and unit_hp(result.final_state, 2) < enemy_hp_before,
+		"trample path must damage enemy on contact",
+	)
+	assert_eq_cell(
+		failures, "trample/base/push",
+		enemy.position if enemy != null else Vector2i(-1, -1),
+		Vector2i(5, 5),
 	)
 
 
@@ -2213,18 +2275,93 @@ static func run_fortify(failures: Array[String]) -> void:
 
 
 static func run_bowling_charge(failures: Array[String]) -> void:
+	var charge_data: AbilityData = factory_ability(&"knight_bowling_charge")
+	assert_true(
+		failures, "bowling_charge/contract/dash",
+		ability_has_effect(charge_data, GameEnums.EffectType.DASH, false),
+	)
+	assert_true(
+		failures, "bowling_charge/contract/bulldoze",
+		ability_has_effect(charge_data, GameEnums.EffectType.BULLDOZE, false),
+	)
+	assert_eq_int(
+		failures,
+		"bowling_charge/contract/dash_steps",
+		AbilitySystem.effect_amount(charge_data, GameEnums.EffectType.DASH),
+		3,
+	)
 	var board: BoardState = make_plain_board(Vector2i(12, 6))
 	place_knight(board, 1, Vector2i(2, 3))
 	place_dummy(board, 2, Vector2i(3, 3))
+	var victim_hp_before: int = unit_hp(board, 2)
 	var charge: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_bowling_charge")
 	var plan := Timeline.new()
 	plan.add(plan_ability(1, charge, Vector2i(5, 3), -1))
 	var result: SimResult = simulate_player_turn(board, plan)
 	var knight: UnitState = result.final_state.get_unit_by_id(1)
+	var victim: UnitState = result.final_state.get_unit_by_id(2)
 	assert_true(
 		failures, "bowling_charge/dash",
 		knight != null and knight.position == Vector2i(5, 3),
 		"bowling charge must DASH to target tile",
+	)
+	assert_true(
+		failures, "bowling_charge/collision",
+		events_have_collision_for_unit(result.events, 2),
+		"BULLDOZE must emit collision on victim",
+	)
+	assert_true(
+		failures, "bowling_charge/damage",
+		victim != null and unit_hp(result.final_state, 2) < victim_hp_before,
+		"bulldoze collision must damage victim",
+	)
+	assert_eq_cell(
+		failures, "bowling_charge/push",
+		victim.position if victim != null else Vector2i(-1, -1),
+		Vector2i(3, 4),
+	)
+	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_bowling_charge")
+	var board2: BoardState = make_plain_board(Vector2i(12, 6))
+	place_knight(board2, 10, Vector2i(2, 3), cfg_up)
+	place_dummy(board2, 11, Vector2i(4, 3))
+	place_dummy(board2, 12, Vector2i(5, 3))
+	var e1_hp: int = unit_hp(board2, 11)
+	var e2_hp: int = unit_hp(board2, 12)
+	var charge_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_bowling_charge")
+	assert_true(
+		failures, "bowling_charge/upgrade/effect",
+		ability_has_effect(charge_up, GameEnums.EffectType.PUSH_CHAIN_COLLISION, true),
+		"upgraded bowling charge must include PUSH_CHAIN_COLLISION",
+	)
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, charge_up, Vector2i(4, 3), -1))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	assert_true(
+		failures, "bowling_charge/upgrade/chain_collision",
+		events_have_chain_collision(result2.events, 11, 12),
+		"[+] must chain-push front enemy into rear enemy",
+	)
+	assert_true(
+		failures, "bowling_charge/upgrade/chain_damage_front",
+		unit_hp(result2.final_state, 11) < e1_hp,
+		"[+] chain collision must damage pushed enemy",
+	)
+	assert_true(
+		failures, "bowling_charge/upgrade/chain_damage_rear",
+		unit_hp(result2.final_state, 12) < e2_hp,
+		"[+] chain collision must damage blocking enemy",
+	)
+	var knight_up: UnitState = result2.final_state.get_unit_by_id(10)
+	assert_eq_cell(
+		failures, "bowling_charge/upgrade/knight_stop",
+		knight_up.position if knight_up != null else Vector2i(-1, -1),
+		Vector2i(3, 3),
+	)
+	var e1_after: UnitState = result2.final_state.get_unit_by_id(11)
+	assert_eq_cell(
+		failures, "bowling_charge/upgrade/front_pos",
+		e1_after.position if e1_after != null else Vector2i(-1, -1),
+		Vector2i(4, 3),
 	)
 
 

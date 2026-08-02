@@ -1,10 +1,10 @@
 {
   "piece": "K3-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 26,
-  "last_score": 88,
+  "last_critic_round": 31,
+  "last_score": 89,
   "last_result": "PASS",
-  "last_row_promoted": "rallying_presence",
+  "last_row_promoted": "knight_bowling_charge",
   "approved_rows": [
     {
       "factory_id": "knight_swap",
@@ -172,6 +172,18 @@
       "factory_id": "rallying_presence",
       "score": 88,
       "critic_round": 26,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_trampling_advance",
+      "score": 90,
+      "critic_round": 29,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_bowling_charge",
+      "score": 89,
+      "critic_round": 31,
       "fix_target": "none"
     }
   ]
