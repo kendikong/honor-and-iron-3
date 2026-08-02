@@ -877,11 +877,23 @@ func _on_preview_updated(_result: SimResult) -> void:
 	_drag_saved_preview = null
 	if dragging:
 		return
-	if _director != null and _director.plan_refresh_defer_overlay:
+	if (
+		_director != null
+		and _director.plan_refresh_defer_overlay
+		and not _suppress_post_commit_hover_refresh
+	):
 		return
 	_schedule_plan_refresh_followup()
 	if _suppress_post_commit_hover_refresh:
 		_suppress_post_commit_hover_refresh = false
+		if _result != null and _director != null:
+			CombatPlanningPreview.apply_movement_result(
+				preview_state,
+				_result,
+				_director,
+				_director.base_board,
+			)
+			_sync_intent_live_board()
 		return
 	if _director != null and _director.plan_refresh_snap_units:
 		return
@@ -1136,18 +1148,10 @@ func interaction_move_hover_active(unit_id: int, cell: Vector2i) -> bool:
 		return true
 	var hover_unit: UnitState = _director.board.get_unit_at(cell)
 	if hover_unit != null and not hover_unit.is_enemy() and hover_unit.id != p_unit.id:
-		var ally_target_id: int = _resolve_hover_attack_target(p_unit, hover_unit)
-		if ally_target_id >= 0 and (_skill_interaction_active() or aiming):
-			var ability: AbilityData = _selected_ability_data(p_unit)
-			if ability != null:
-				var approach: Vector2i = _director.preview_approach_tile(
-					p_unit.id,
-					hover_unit.id,
-					_director.selected_ability_index,
-					cell,
-				)
-				if approach != _proj_move_origin(p_unit) and _director.board.is_in_bounds(approach):
-					return true
+		var ally_slots: Dictionary = _ally_skill_preview_slots(p_unit, cell)
+		for raw: Variant in ally_slots.get("pre", []):
+			if raw is TimelineAction and (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
+				return true
 	if hover_unit != null and hover_unit.is_enemy():
 		var target_id: int = _resolve_hover_attack_target(p_unit, hover_unit)
 		if target_id >= 0:
@@ -1220,6 +1224,8 @@ func _should_restore_stand_hover_preview(cell: Vector2i) -> bool:
 		return true
 	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
 		return false
+	if not _ally_skill_preview_slots(p_unit, cell).is_empty():
+		return false
 	if (
 		_director.selected_ability_index >= 0
 		and awaiting_targeting_active()
@@ -1252,6 +1258,24 @@ func _attack_target_id_at_cell(p_unit: UnitState, cell: Vector2i) -> int:
 	return _resolve_hover_attack_target(p_unit, hover_unit)
 
 
+func _ally_skill_preview_slots(p_unit: UnitState, cell: Vector2i) -> Dictionary:
+	if (
+		p_unit == null
+		or _director == null
+		or _director.selected_ability_index < 0
+		or not _director.board.is_in_bounds(cell)
+	):
+		return {}
+	var hover_unit: UnitState = _director.board.get_unit_at(cell)
+	if hover_unit == null or hover_unit.is_enemy() or hover_unit.id == p_unit.id:
+		return {}
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if ability == null or not AbilitySystem.planning_allows_paired_premove(ability):
+		return {}
+	var slots: Dictionary = _final_commit_slots_for_interaction(p_unit.id, cell)
+	return {} if _is_invalid_dict(slots) else slots
+
+
 func _refresh_selected_interaction_preview() -> void:
 	if dragging or _director == null or _director.board == null:
 		return
@@ -1265,6 +1289,12 @@ func _refresh_selected_interaction_preview() -> void:
 		return
 	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
+		_refresh_click_target_highlight()
+		return
+	var ally_slots: Dictionary = _ally_skill_preview_slots(p_unit, cell)
+	if not ally_slots.is_empty():
+		var ally: UnitState = _director.board.get_unit_at(cell)
+		_refresh_live_interaction_preview(_director.selected_unit_id, cell, ally.id, [])
 		_refresh_click_target_highlight()
 		return
 	if (

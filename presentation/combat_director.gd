@@ -181,6 +181,9 @@ func _init_combat() -> void:
 	plan_action = Timeline.new()
 	plan_post_move = Timeline.new()
 	_wait_unit_ids.clear()
+	_instant_planning_move_units.clear()
+	_pending_planning_commit_events.clear()
+	_swap_planning_presentations.clear()
 	_lock_enemy_intents()
 	
 	# Start with no unit selected
@@ -2322,7 +2325,9 @@ func _refresh_plan_core() -> void:
 				action.type == GameEnums.ActionType.MOVE
 				and _commit_animate_actor_ids.has(action.actor_id)
 			):
-				anim_events.append_array(_extract_commit_anim_events(move_ev))
+				for move_event: SimEvent in _extract_commit_anim_events(move_ev):
+					move_event.data["planning_commit_move"] = true
+					anim_events.append(move_event)
 			
 		var reason := ""
 		for e in events:
@@ -2358,7 +2363,9 @@ func _refresh_plan_core() -> void:
 			_pending_planning_commit_events.append(event)
 	if not _swap_planning_presentations.is_empty():
 		for swap_action: TimelineAction in _swap_planning_presentations:
-			_pending_planning_commit_events.append(_make_planning_swap_ability_event(swap_action))
+			_pending_planning_commit_events.append(
+				_make_planning_swap_ability_event(swap_action, plan_to_run)
+			)
 		_swap_planning_presentations.clear()
 	if not _pending_planning_commit_events.is_empty():
 		plan_refresh_defer_overlay = true
@@ -2558,7 +2565,9 @@ func _collect_all_planning_move_anim_events() -> Array[SimEvent]:
 		var move_ev: Array[SimEvent] = []
 		ResolutionPipeline.apply_action(move_only, action, move_ev)
 		ResolutionPipeline.resolve_pending_pushes(move_only, move_ev)
-		anim_events.append_array(_extract_commit_anim_events(move_ev))
+		for move_event: SimEvent in _extract_commit_anim_events(move_ev):
+			move_event.data["planning_commit_move"] = true
+			anim_events.append(move_event)
 	return anim_events
 
 
@@ -2672,10 +2681,19 @@ func _sync_live_enemy_positions_to_turn_start(live: BoardState) -> void:
 		GridSystem.set_occupant(live, to_pos, live_unit.id)
 
 
-func _make_planning_swap_ability_event(action: TimelineAction) -> SimEvent:
+func _make_planning_swap_ability_event(action: TimelineAction, plan: Timeline) -> SimEvent:
 	var pres_anim: int = action.ability.presentation_anim
 	if pres_anim == GameEnums.PresentationAnim.AUTO:
 		pres_anim = GameEnums.PresentationAnim.WALK
+	var before: BoardState = _board_before_planning_action(action, plan)
+	var after: BoardState = before.clone()
+	var swap_events: Array[SimEvent] = []
+	ResolutionPipeline.apply_action(after, action, swap_events)
+	ResolutionPipeline.resolve_pending_pushes(after, swap_events)
+	var actor_before: UnitState = before.get_unit_by_id(action.actor_id)
+	var target_before: UnitState = before.get_unit_by_id(action.target_unit_id)
+	var actor_after: UnitState = after.get_unit_by_id(action.actor_id)
+	var target_after: UnitState = after.get_unit_by_id(action.target_unit_id)
 	return SimEvent.make(GameEnums.SimEventType.ABILITY_USED, {
 		"actor": action.actor_id,
 		"ability": action.ability.id,
@@ -2683,8 +2701,28 @@ func _make_planning_swap_ability_event(action: TimelineAction) -> SimEvent:
 		"target_coord": action.target_coord,
 		"target_unit": action.target_unit_id,
 		"presentation_anim": pres_anim,
+		"actor_from": actor_before.position if actor_before != null else action.target_coord,
+		"actor_to": actor_after.position if actor_after != null else action.target_coord,
+		"target_from": target_before.position if target_before != null else action.target_coord,
+		"target_to": target_after.position if target_after != null else action.target_coord,
 		"planning_swap_presentation": true,
 	})
+
+
+func _board_before_planning_action(action: TimelineAction, plan: Timeline) -> BoardState:
+	assert(action != null)
+	assert(plan != null)
+	assert(base_board != null)
+	var before: BoardState = base_board.clone()
+	for entry: TimelineAction in plan.entries:
+		if entry == action:
+			return before
+		if entry.awaiting_target:
+			continue
+		var events: Array[SimEvent] = []
+		ResolutionPipeline.apply_action(before, entry, events)
+		ResolutionPipeline.resolve_pending_pushes(before, events)
+	return before
 
 
 func _filter_committed_premove_visual_events(events: Array[SimEvent]) -> Array[SimEvent]:

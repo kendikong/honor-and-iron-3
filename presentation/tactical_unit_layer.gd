@@ -67,6 +67,7 @@ var _show_team_outlines: bool = false
 var _contact_shadow_sync_pending: bool = false
 var _planning_commit_sequence_running: bool = false
 var _planning_commit_queue: Array[SimEvent] = []
+var _planning_commit_stage: StringName = &""
 
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
 
@@ -267,6 +268,10 @@ func is_planning_commit_sequence_active() -> bool:
 	return _planning_commit_sequence_running or not _planning_commit_queue.is_empty()
 
 
+func planning_commit_stage() -> StringName:
+	return _planning_commit_stage
+
+
 func await_planning_commit_sequence() -> void:
 	var tree := get_tree()
 	if tree == null:
@@ -374,25 +379,37 @@ func _drain_planning_commit_queue() -> void:
 	if not _is_planning_phase():
 		_planning_commit_queue.clear()
 		_planning_commit_sequence_running = false
+		_planning_commit_stage = &""
 		return
 	if _planning_commit_queue.is_empty():
 		_planning_commit_sequence_running = false
+		_planning_commit_stage = &""
 		return
 	_planning_commit_sequence_running = true
 	var event: SimEvent = _planning_commit_queue.pop_front()
 	match event.type:
 		GameEnums.SimEventType.UNIT_MOVED:
+			_planning_commit_stage = &"walk"
 			var unit_id: int = int(event.data.get("actor", -1))
-			if _should_animate_planning_commit_move(unit_id):
+			if _should_animate_planning_commit_move(unit_id, event):
 				_animate_planning_commit_move(event)
 				await_planning_move_tweens_for_actor(unit_id)
 		GameEnums.SimEventType.ABILITY_USED:
 			if event.data.get("planning_swap_presentation", false):
+				_planning_commit_stage = &"swap"
+				var swap_tree := get_tree()
+				if swap_tree != null:
+					await swap_tree.process_frame
 				await _play_planning_swap_presentation(event)
 	if not _planning_commit_queue.is_empty():
+		var tree := get_tree()
+		if tree != null:
+			await tree.process_frame
+			await tree.process_frame
 		_drain_planning_commit_queue()
 	else:
 		_planning_commit_sequence_running = false
+		_planning_commit_stage = &""
 
 
 func await_planning_move_tweens_for_actor(unit_id: int) -> void:
@@ -409,17 +426,10 @@ func _play_planning_swap_presentation(event: SimEvent) -> void:
 	if actor_id < 0 or target_id < 0:
 		_finish_planning_swap_snap(event)
 		return
-	var actor_from: Vector2i = _actor_grid_cell(actor_id)
-	var target_from: Vector2i = _actor_grid_cell(target_id)
-	var actor_to: Vector2i = actor_from
-	var target_to: Vector2i = target_from
-	if _board != null:
-		var live_actor: UnitState = _board.get_unit_by_id(actor_id)
-		var live_target: UnitState = _board.get_unit_by_id(target_id)
-		if live_actor != null:
-			actor_to = live_actor.position
-		if live_target != null:
-			target_to = live_target.position
+	var actor_from: Vector2i = _event_grid_cell(event, &"actor_from", _actor_grid_cell(actor_id))
+	var target_from: Vector2i = _event_grid_cell(event, &"target_from", _actor_grid_cell(target_id))
+	var actor_to: Vector2i = _event_grid_cell(event, &"actor_to", actor_from)
+	var target_to: Vector2i = _event_grid_cell(event, &"target_to", target_from)
 	if actor_from == actor_to and target_from == target_to:
 		_finish_planning_swap_snap(event)
 		return
@@ -429,6 +439,13 @@ func _play_planning_swap_presentation(event: SimEvent) -> void:
 		_tween_planning_visual_cells(target_id, target_from, target_to)
 	await _await_planning_swap_tweens(actor_id, target_id)
 	_finish_planning_swap_snap(event)
+
+
+func _event_grid_cell(event: SimEvent, key: StringName, fallback: Vector2i) -> Vector2i:
+	if event == null:
+		return fallback
+	var raw: Variant = event.data.get(key)
+	return raw as Vector2i if raw is Vector2i else fallback
 
 
 func _await_planning_swap_tweens(actor_id: int, target_id: int) -> void:
@@ -686,7 +703,7 @@ func apply_sim_event(event: SimEvent) -> void:
 	if (
 		event.type == GameEnums.SimEventType.UNIT_MOVED
 		and _is_planning_phase()
-		and _should_animate_planning_commit_move(int(event.data.get("actor", -1)))
+		and _should_animate_planning_commit_move(int(event.data.get("actor", -1)), event)
 	):
 		# Selection premove: owned by planning_commit_events → _animate_planning_commit_move.
 		return
@@ -1044,7 +1061,7 @@ func _should_animate_move(event: SimEvent) -> bool:
 	if event.data.get("teleport", false):
 		return false
 	var unit_id: int = int(event.data.get("actor", -1))
-	if _is_planning_phase() and _should_animate_planning_commit_move(unit_id):
+	if _is_planning_phase() and _should_animate_planning_commit_move(unit_id, event):
 		return false
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if _is_planning_phase():
@@ -1203,9 +1220,11 @@ func _should_rubberband_planning_move(
 	return GridSystem.manhattan(to_cell, start_cell) < GridSystem.manhattan(from_cell, start_cell)
 
 
-func _should_animate_planning_commit_move(unit_id: int) -> bool:
+func _should_animate_planning_commit_move(unit_id: int, event: SimEvent = null) -> bool:
 	if unit_id < 0 or _director == null:
 		return false
+	if event != null and bool(event.data.get("planning_commit_move", false)):
+		return true
 	if _director.is_planning_move_instant(unit_id):
 		return false
 	if _drag_preview_active and unit_id == _drag_preview_id:

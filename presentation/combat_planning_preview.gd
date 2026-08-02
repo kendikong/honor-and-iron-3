@@ -256,6 +256,7 @@ func ensure_movement_intent_from_actions(
 	if start_board == null or actions.is_empty():
 		return
 	var origins: Dictionary = {}
+	var move_actors: Dictionary = {}
 	for unit: UnitState in start_board.units:
 		origins[unit.id] = unit.position
 	for raw: Variant in actions:
@@ -263,6 +264,7 @@ func ensure_movement_intent_from_actions(
 			continue
 		var action: TimelineAction = raw as TimelineAction
 		if action.type == GameEnums.ActionType.MOVE:
+			move_actors[action.actor_id] = true
 			var move_origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
 			var existing: Array = preview_paths.get(action.actor_id, [])
 			if existing.size() < 2:
@@ -284,6 +286,22 @@ func ensure_movement_intent_from_actions(
 			origins[action.actor_id] = action.target_coord
 			continue
 		if action.type != GameEnums.ActionType.ABILITY or action.awaiting_target:
+			continue
+		if action.ability != null and AbilitySystem.ability_has_swap_effect(action.ability):
+			## Swap is a paired displacement presentation, not an additional walk leg.
+			## Keep the preview route on the explicit approach MOVE.
+			if move_actors.get(action.actor_id, false):
+				var route: Array = preview_paths.get(action.actor_id, [])
+				var approach: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+				var approach_index: int = -1
+				for route_index: int in range(route.size() - 1, -1, -1):
+					if route[route_index] == approach:
+						approach_index = route_index
+						break
+				if approach_index >= 0:
+					preview_paths[action.actor_id] = route.slice(0, approach_index + 1)
+					preview_splits[action.actor_id] = approach_index + 1
+			origins[action.actor_id] = action.target_coord
 			continue
 		if action.ability == null or not AbilitySystem.ability_has_movement_effect(action.ability):
 			continue

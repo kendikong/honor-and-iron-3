@@ -219,7 +219,7 @@ func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:
 	assert_that(pre_moves[1].type).override_failure_message(
 		"walk_swap/click_ally: second pre-move must be swap ability",
 	).is_equal(GameEnums.ActionType.ABILITY)
-	await _wait_planning_move_tween(ctx, k1_id)
+	await _wait_for_planning_commit_stage(ctx, &"swap")
 	_assert_actor_on_cell(ctx, k1_id, _WALK_SWAP_APPROACH, "walk_swap/after_walk/k1")
 	_assert_actor_on_cell(ctx, ctx.ally_id, _WALK_SWAP_ALLY_CELL, "walk_swap/after_walk/ally")
 	await _wait_planning_move_tween(ctx, ctx.ally_id)
@@ -921,6 +921,18 @@ func _wait_planning_move_tween(ctx: Dictionary, unit_id: int, extra_settle_frame
 			break
 		await runner.simulate_frames(1, _settle_delta_ms())
 	await runner.simulate_frames(extra_settle_frames, _settle_delta_ms())
+
+
+func _wait_for_planning_commit_stage(ctx: Dictionary, expected: StringName) -> void:
+	var layer: TacticalUnitLayer = _unit_layer(ctx)
+	var runner: GdUnitSceneRunner = ctx.runner
+	for _frame: int in range(120):
+		if layer.planning_commit_stage() == expected:
+			return
+		await runner.simulate_frames(1, _settle_delta_ms())
+	assert_that(layer.planning_commit_stage()).override_failure_message(
+		"planning commit stage must reach %s, got %s" % [expected, layer.planning_commit_stage()],
+	).is_equal(expected)
 
 
 func _undo_until_unit_clear(ctx: Dictionary, unit_id: int, home_cell: Vector2i) -> void:
