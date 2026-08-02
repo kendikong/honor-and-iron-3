@@ -88,6 +88,14 @@ Run Tier 3 alone (owner debugging only — **not** in addition to the gate):
 .\scripts\run_planning_scene_acceptance.ps1
 ```
 
+**Swap-only iteration** (while fixing walk/swap commit, swap preview, swap sprites — **do not** run the full gate until swap PASS):
+
+```powershell
+.\scripts\run_swap_planning_acceptance.ps1
+```
+
+Runs only `test_live_swap_session`; ignores `test_live_planning_bible_multi_knight_session`. Agents must use this during swap fix loops and must not dismiss swap `[FAIL]` lines as pre-existing.
+
 Prove that this journey can fail (the source is restored even if the assertion fails):
 
 ```powershell
