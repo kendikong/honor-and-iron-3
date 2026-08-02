@@ -469,18 +469,196 @@ Fail loud; do not silently “fix up” intent.
 
 ---
 
-## 12. What this replaces (legacy flat AbilityData)
+## 12. Migration from current code (reuse / restructure / add)
 
-Today’s flat resource roughly has: one `range_tiles`, one `kind`, one effect list, targeting flags, shape, presentation, upgrade overrides.
+Source of truth for “what exists today”: `data/definitions/ability_data.gd`, `effect_data.gd`, `core/game_enums.gd` (`EffectType`, `TargetShape`, `AbilityKind`, `TargetingFlags`, …), plus factory/`modifiers` usage in `AbilitySystem` / Bruiser–Knight factories.
 
-**Pain this design removes**
+For every category: **Reuse** = keep as-is or thin rename · **Restructure** = same idea, new home in header/module/layer · **Add** = missing option the modular design needs.
 
-- `range_tiles` used for both attack range and move distance  
-- No clean “move N then range M” or “range M then canto N”  
-- Effect `modifiers` dictionaries and one-off EffectTypes growing without structure  
+### 12.1 Skill header / identity
+
+| Item | Today | Verdict |
+|------|-------|---------|
+| `id`, `display_name` | `AbilityData` | **Reuse** |
+| `uses_per_combat` | `AbilityData` | **Reuse** |
+| `upgrade_description` | `AbilityData` | **Reuse** |
+| `presentation_key`, `presentation_anim` | `AbilityData` + `PresentationAnim` | **Reuse** on header; optional per-module override **Add** |
+| `is_movement_skill` | Legacy mirror of `kind` | **Restructure** → drop; derive from `skill_type` / `AbilityKind` |
+| `scaling_stat` (ability-level) | `AbilityData` | **Restructure** → live on damage/heal **module or layer** (effects already have `scaling_stat`) |
+| Modular `modules[]` | Missing (flat `effects[]` only) | **Add** `AbilityModule` resource list on header |
+
+### 12.2 Skill type / planner bucket
+
+| Item | Today | Verdict |
+|------|-------|---------|
+| `AbilityKind.CLASS_SKILL` | Exists | **Reuse** → header `skill_type` CLASS_SKILL |
+| `AbilityKind.MOVEMENT_SKILL` | Exists | **Reuse** → PRE_MOVE / movement skill |
+| `AbilityKind.UNIVERSAL_RUN` / `WAIT` | Exists | **Reuse** as system actions (not class-library modular cards) |
+| `BASIC_ATTACK` as first-class kind | Basic attack is usually a CLASS_SKILL with AP 0 | **Add** optional `BASIC_ATTACK` skill_type **or** keep CLASS_SKILL + AP 0 (prefer reuse AP 0) |
+| Module `execution_phase` (PRE/ACTION/POST) | Only timeline `MoveTiming` on walk slots, not on ability steps | **Add** on each module |
+| `PlanningCommitFlow` / awaiting | Derived in `AbilitySystem.planning_commit_flow` from TILE/move heuristics | **Restructure** → derive from module tile mode / motion (same enums **Reuse**) |
+
+### 12.3 Cost block
+
+| Item | Today | Verdict |
+|------|-------|---------|
+| `action_point_cost` | `AbilityData` | **Reuse** inside cost block as AP value |
+| `movement_point_cost` | `AbilityData` | **Reuse** inside cost block as MP value |
+| HP spend | `EffectType.DAMAGE_SELF` as first effect (Blood Boil, Adrenaline Surge) | **Restructure** → header **secondary/primary HP cost** (keep DAMAGE_SELF only when the hit is part of combat fantasy, e.g. Headbutt) |
+| `zero_ap_adjacent_enemies` | `EffectData.modifiers` | **Restructure** → cost_modifier `ZERO_IF_ADJACENT_ENEMIES_GTE_N` |
+| `ALL_REMAINING` MP | Missing | **Add** |
+| Dual cost (AP + HP) | Simulated by effects | **Add** explicit secondary_cost on header |
+
+### 12.4 Range
+
+| Item | Today | Verdict |
+|------|-------|---------|
+| `range_tiles` (max only) | Single int; also fallback walk length | **Restructure** → per-module `min_range` + `max_range`; **stop** MOVE fallback to this field |
+| `upgraded_range_tiles` | Scalar override | **Restructure** → upgraded module profile |
+| GLOBAL / ignore LOS | Heuristic / planning checks | **Add** `requires_los` + `max_range` unlimited (GLOBAL) on module |
+| Range origin | Always actor at cast (mostly) | **Add** origin enum (actor / last tile / last unit tile) |
+| DASH length | `EffectType.DASH` `amount` **and/or** `range_tiles` | **Restructure** → motion module min/max (or amount = max) only |
+
+### 12.5 Targeting (who / tile vs unit)
+
+| Item | Today | Verdict |
+|------|-------|---------|
+| `TargetingFlags` SELF/ALLY/ENEMY/TILE/DASH_LINE | Bitmask + editor checkboxes | **Reuse** as unit/tile checkboxes + dash-line shape/mode |
+| `TargetingMode` legacy enum | Synced mirror | **Restructure** → derive from flags + tile/unit mode; keep sync helpers during migration |
+| `can_target_self` | Legacy mirror | **Reuse** via SELF flag |
+| Tile awaiting two-phase | `PlanningCommitFlow.AWAITING_TARGET` | **Reuse** behavior; driven by module tile/motion |
+| Aim binding NEW / SAME / RULE_PICK | Missing (always one aim) | **Add** |
+| Target filters (HP%, debuff, …) | Mostly missing or hard-coded | **Add** filter checklist on module |
+| Affect allies/enemies on tiles | Partial via flags + shape gather | **Restructure** → explicit tile-occupant checkboxes on module |
+
+### 12.6 Shape
+
+| Item | Today | Verdict |
+|------|-------|---------|
+| `TargetShape` SINGLE, AOE_SQUARE, AOE_CROSS, ARC, CONE, LINE, AOE_DIAMOND | `GameEnums` + `target_shape` / `target_shape_size` | **Reuse** on module |
+| `upgraded_target_shape(_size)` | Scalar overrides | **Restructure** → upgraded modules |
+| HAZARD_LINE | Not in enum (special-cased elsewhere) | **Add** shape or CREATE_HAZARD utility with line params |
+
+### 12.7 Primary effects (`EffectType` → module primary / layer)
+
+Map each current `EffectType` into the modular model:
+
+| `EffectType` today | Modular home | Verdict |
+|--------------------|--------------|---------|
+| `DAMAGE` | Module primary or layer | **Reuse** |
+| `DAMAGE_SELF` | Layer `self_also` / self target **or** header HP cost | **Restructure** (split cost vs combat self-hit) |
+| `HEAL` | Module / layer | **Reuse** |
+| `ARMOR_UP` (shield-ish) | Module / layer SHIELD | **Reuse** (name toward SHIELD in UI) |
+| `PUSH`, `PULL` | Layer or primary control | **Reuse** |
+| `SWAP` | Motion/primary | **Reuse** |
+| `DASH` | Motion primary + mode | **Reuse** type; length → range |
+| `MOVE` | Motion primary | **Reuse**; walk steps → module range (not ability `range_tiles`) |
+| `TELEPORT_CASTER` | Motion JUMP/TELEPORT | **Reuse** / rename to motion mode |
+| `TRAMPLE`, `BULLDOZE` | Keyword layers on motion module | **Reuse** as keywords (already engine-backed) |
+| `MOVE_INTO_AND_PUSH` | Motion mode `INTO_OCCUPIED_PUSH` / `TO_TARGET_UNIT` | **Restructure** from effect-type into **motion mode** |
+| `THROW_BEHIND` | Control primary/layer | **Reuse** |
+| `ADD_STATUS`, `ADD_STATUS_SELF`, `REMOVE_STATUS` | Layer / primary status | **Reuse** |
+| `CLEANSE`, `PURGE` | Utility / status family | **Reuse** |
+| `DESTROY_OBSTACLE` | Utility layer (path or tile) | **Reuse** |
+| `CHANGE_TERRAIN` | Utility | **Reuse** |
+| `SPAWN` | Utility (+ `spawn_unit_id`) | **Reuse** |
+| `EXPLODE`, `RANGED_EXPLODE` | Damage + shape / on-land | **Restructure** toward DAMAGE + shape or ON_LAND layer |
+| `REFUND_AP_ON_CC` | Layer condition + GRANT_AP | **Restructure** out of EffectType into layer gate |
+| `PUSH_STAGGER_ON_COLLISION`, `PULL_VULNERABLE_ON_ADJACENT`, `PUSH_CHAIN_COLLISION` | Layer conditions on PUSH/PULL | **Restructure** — these are **conditions**, not primaries |
+
+**Add** as first-class primaries/utilities (today missing or only modifiers):  
+`GRANT_AP`, `GRANT_NEXT_ATTACK_MOD`, `ARM_REACTION`, `CREATE_HAZARD`, `PULL_SELF_TO_TARGET` / choice bundle, `MOVE_OTHER`, `PAIRED_MOVE`, hit_count on DAMAGE.
+
+### 12.8 `EffectData` fields → layer / module values
+
+| Field | Today | Verdict |
+|-------|-------|---------|
+| `type`, `amount` | Core | **Reuse** on module/layer |
+| `status_type`, `status_duration` | Status effects | **Reuse** |
+| `scaling_stat` | Per effect | **Reuse** on module/layer |
+| `spawn_unit_id` | SPAWN | **Reuse** |
+| `bonus_if_adjacent_at_cast` | DAMAGE-only export | **Restructure** → layer condition `IF_ALREADY_ADJACENT` + bonus amount |
+| `def_debuff_before_damage` | DAMAGE-only export | **Restructure** → layer (temp DEF debuff before damage) |
+| `modifiers` Dictionary | Catch-all string keys | **Restructure** → typed layer conditions / flags / cost modifiers (see §12.9); retire ad-hoc keys over time |
+
+### 12.9 Known `modifiers` keys → typed slots
+
+These already work in sim/factories; modular design should **absorb** them as named layer/gate/cost fields (not keep a free-form dict as the long-term API):
+
+| Modifier key (today) | Becomes |
+|----------------------|---------|
+| `ghost_move` | Motion flag / GHOST keyword on MOVE module |
+| `bulldoze`, `push` (on DASH/MOVE) | BULLDOZE keyword amounts |
+| `violent_collision_recast` | Module gate `IF_COLLIDED` + second MOVE module |
+| `object_collision_stagger`, `enemy_collision_stagger_both`, `stagger_on_collision` | Layer condition on PUSH/collision |
+| `zero_ap_adjacent_enemies` | Header cost_modifier |
+| `bonus_dmg_from_terrain`, `bonus_dmg_per_10_hp`, `bonus_dmg_pct_max_hp` | Layer/scaling rules on DAMAGE |
+| `weapon_scaled` | Scaling = WPN (or bleed X) |
+| `heal_per_target_hit` | Layer condition `PER_TARGET_HIT` + HEAL |
+| `on_kill_heal_shield`, `frenzy_on_kill_ap` | Layer `ON_KILL` + HEAL/SHIELD/GRANT_AP |
+| `next_attack_pierce` | Utility `GRANT_NEXT_ATTACK_MOD` |
+| `buff_per_destroyed_object` | Layer after DESTROY_OBSTACLE |
+| `intercept_grant_str` | Status/INTERCEPT layer params |
+| `push_board_items`, `item_collision_damage` | Layer flags on PUSH AoE |
+| `damage_adjacent_on_landing`, `belly_flop_push` | Layer `ON_LAND` |
+| `exclude_caster` | Targeting checkbox |
+| `buff_on_push` | Layer on PUSH (Push Through [+]) |
+
+**Add** any Bible need not in this table as a **new named condition/flag**, not a new anonymous dict key.
+
+### 12.10 Motion modes (mostly Add; some Restructure)
+
+| Mode | Today | Verdict |
+|------|-------|---------|
+| Walk / dash / teleport to empty | `MOVE`, `DASH`, `TELEPORT_CASTER` + TILE | **Reuse** effects → modes `TO_EMPTY_TILE` |
+| Into occupied + push | `MOVE_INTO_AND_PUSH` | **Restructure** → mode |
+| Pass-through package | `TRAMPLE` / `BULLDOZE` effects | **Reuse** as keyword layers |
+| `TO_TARGET_UNIT`, `ADJACENT_TO_TARGET`, `BEHIND_TARGET`, `VAULT_OVER`, `BACKWARDS`, `SLIDE_TARGET_OPPOSITE`, `ALLY_STEP` | Missing or one-off | **Add** |
+| `MovementType` WALK/FLY/TELEPORT (unit locomotion) | Unit data, not ability | **Reuse** for unit; don’t confuse with skill motion mode |
+
+### 12.11 Gates, layer conditions, OR choice
+
+| Item | Today | Verdict |
+|------|-------|---------|
+| Ordered `effects[]` always all run | Flat list | **Restructure** → modules with gates; layers with conditions |
+| On-kill / on-land / collision behavior | Scattered `modifiers` + special EffectTypes | **Restructure** into shared condition table |
+| `resolution_choice` (OR) | Missing | **Add** |
+| Condition vocabulary | Implicit in code | **Add** explicit shared ids (Always, IF_KILL, IF_COLLIDED, ON_LAND, …) |
+
+### 12.12 Status / presentation / upgrades
+
+| Item | Today | Verdict |
+|------|-------|---------|
+| `StatusType` enum (incl. RETALIATION_*, CANTO, GHOST, …) | Rich | **Reuse** for ADD_STATUS layers; ARM_REACTION can apply these |
+| `PresentationAnim` | Exists | **Reuse** |
+| Upgraded parallel fields + `upgraded_effects` | Flat overrides | **Restructure** → full upgraded header+modules profile (transitional: keep generating upgraded_effects from modules) |
+
+### 12.13 Path vs destination (engine)
+
+| Item | Today | Verdict |
+|------|-------|---------|
+| Pass-through resolution | `PhysicsSystem` + TRAMPLE/BULLDOZE | **Reuse** |
+| Destination aim | TILE / DASH_LINE | **Reuse** |
+| Authoring clarity path vs end | Overloaded in one ability | **Restructure** docs + module layers (no need to throw away physics) |
+
+### 12.14 Suggested resource split (refactor shape)
+
+```
+AbilityData                    ← header (id, skill_type/kind, cost block, uses, presentation, turn_flags, modules[], upgrade profile)
+AbilityModule                  ← NEW: phase, primary effect, motion mode, min/max range, origin, shape, aim binding, tile/unit flags, filters, values, layers[], gate, optional choice
+AbilityLayer                   ← NEW (or EffectData+): effect, amount, status fields, condition, scaling
+EffectData                     ← REUSE during migration as the payload inside layer/primary; slim modifiers over time
+GameEnums.EffectType           ← REUSE primaries; demote “modifier-only” types to conditions
+```
+
+### 12.15 Pain this removes (unchanged intent)
+
+- One `range_tiles` for attack **and** move distance  
+- Anonymous `modifiers` as the only extension point  
 - Unclear multi-hit vs multi-target  
+- No clean move-then-range / range-then-canto authorship  
 
-**Migration note (later refactor):** factories and `.tres` should emit **header + modules**; runtime adapters may temporarily flatten into old structures only if needed for a transitional bridge — prefer one cut to modular runtime.
+**Migration note:** Prefer one cut to modular runtime; if a bridge is needed, generate flat `effects[]` from modules temporarily — do not keep two authoring UIs.
 
 ---
 
@@ -502,20 +680,18 @@ Everything else called out in Bible skill lines (OR choice, vault modes, HP cost
 
 Use this doc as the acceptance bar:
 
-1. [ ] Data schema: header (incl. cost block + turn_flags) + `AbilityModule` + `AbilityLayer`
+1. [ ] Data schema per §12.14: header + `AbilityModule` + `AbilityLayer` (EffectData payload reused)
 2. [ ] Shared tables: gates, layer conditions, target filters, motion modes, cost modifiers, rule-pick ids
-3. [ ] Keyword expansion (TRAMPLE, BULLDOZE, …)
-4. [ ] Range origin + LOS/GLOBAL
-5. [ ] Aim binding: NEW_AIM / SAME_AS_MODULE_N / RULE_PICK
-6. [ ] Path vs destination for movement modules
-7. [ ] `resolution_choice` for OR skills
-8. [ ] Planning: multi-aim + choices + gated aims preview-correct
+3. [ ] Port §12.9 modifier keys → typed fields; stop adding new anonymous modifiers
+4. [ ] Demote modifier-only `EffectType`s (§12.7) to layer conditions
+5. [ ] Keyword expansion (TRAMPLE, BULLDOZE, GHOST, …) — reuse engine paths
+6. [ ] Range: per-module min/max + origin + LOS; delete MOVE→`range_tiles` fallback
+7. [ ] Aim binding + `resolution_choice`
+8. [ ] Planning: multi-aim + choices + gated aims preview-correct (`PlanningCommitFlow` reused)
 9. [ ] Sim: modules in order; layers; gates; events for presentation
-10. [ ] Presentation: header/module anim sequencing
-11. [ ] Class library editor follows authoring order in §2
-12. [ ] Migrate Knight/Bruiser factories; expand options as later classes need them
-13. [ ] QA: planning gate + regression; Bible spot-checks
-14. [ ] Delete obsolete fallbacks (e.g. MOVE distance falling back to attack range)
+10. [ ] Class library editor follows §2; factories emit modules (Knight/Bruiser first)
+11. [ ] QA: planning gate + regression; Bible spot-checks
+12. [ ] Remove `is_movement_skill` mirror; slim ability-level `scaling_stat` if fully per-module
 
 ---
 
@@ -539,3 +715,4 @@ Use this doc as the acceptance bar:
 |------|--------|
 | 2026-08-02 | Initial DRAFT from owner modular design + planning/presentation/upgrade gaps filled for refactor readiness |
 | 2026-08-02 | Clarified structure vs vocabulary; filled cost block, motion modes, aim binding, filters, OR choice, LOS/turn flags, expanded gates/layers — Bible gaps as options inside the same structure |
+| 2026-08-02 | §12 Migration inventory: reuse / restructure / add vs live AbilityData, EffectData, EffectType, TargetingFlags, modifiers keys, planning enums |
