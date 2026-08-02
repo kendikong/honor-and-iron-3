@@ -9,7 +9,7 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK full matrix │ Round 20 │ not self-grade (subagent)
+GAUNTLET SCORE │ B6-LOCK full matrix │ Round 20 │ SELF-GRADED: no (subagent)
 SCORE: 95/100 │ THRESHOLD: 95 │ PASS
 DELTA: +1 vs r19 (94 FAIL)
 GATE: canonical PASS (qa_bruiser_gate_canonical.txt 31/31)
@@ -20,12 +20,12 @@ STOP_CONDITION_MET: yes
 
 | Round | Piece | Score | Delta | Result |
 |-------|-------|-------|-------|--------|
-| r20 | B6-LOCK full matrix | 95 | +1 vs r19 | **PASS** — subagent (not self-grade) |
+| r20 | B6-LOCK full matrix | 95 | +1 vs r19 | **PASS** — SELF-GRADED: no |
 | r18 | B6-LOCK full matrix | 51 | −42 vs r17 | **FAIL** — stale qa_bruiser_gate_latest artifact |
 | r17 | B6-LOCK full matrix | 93 | +2 vs r16 | **FAIL** — gauntlet-critic subagent |
 | r14 | B6-LOCK full matrix | 76 | +2 vs r12 | **FAIL** — gauntlet-critic subagent |
 | r12 | B6-LOCK full matrix | 74 | first | **FAIL** — gauntlet-critic subagent |
-| r15 | B6-LOCK full matrix | 96 | — | **INVALID** — lead self-grade (Rule 4); reverted |
+| r15 | B6-LOCK full matrix | 96 | — | **INVALID** — SELF-GRADED: yes (Rule 4) |
 | r3 | push_through | 89 | +17 | **PASS** — promoted manifest + matrix |
 
 ---

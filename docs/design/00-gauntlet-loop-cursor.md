@@ -208,21 +208,21 @@ Every critic round must be **impossible to miss**. The owner should see score mo
 
 **Lead:** immediately after critic returns, post the **same banner** as the **first line** of the lead message (before changelog, before builder plan). Include:
 
-- Piece ID + round number on the **GAUNTLET SCORE** line, plus **`not self-grade (subagent)`** or **`self-grade (INVALID)`** on that **same line** (pipe-separated) — never a separate banner row; never claim `not self-grade` without a subagent invocation in the same turn
+- Piece ID + round number on the **GAUNTLET SCORE** line, plus **`SELF-GRADED: no (subagent)`** or **`SELF-GRADED: yes (invalid)`** on that **same line** (pipe-separated) — never a separate banner row; never claim `SELF-GRADED: no` without a subagent invocation in the same turn
 - `SCORE: x/100` and `THRESHOLD: y`
 - `DELTA: +N` or `−N` vs previous round on this piece (or `first round`)
 - `RESULT: PASS | FAIL`
 - One-word progress hint: `CLIMBING` (delta ≥ +3), `STALLED` (|delta| ≤ 2), `SLIPPED` (delta ≤ −3)
 
-**Critic subagent:** GAUNTLET SCORE line must end with **`not self-grade (subagent)`** (this agent is never a valid self-grade path).
+**Critic subagent:** GAUNTLET SCORE line must end with **`SELF-GRADED: no (subagent)`** (this agent is never a valid self-grade path).
 
-**Workbench:** append every round to **Score progression** (below); update **Score ticker** at top — **Result** column must repeat `subagent` or `self-grade (INVALID)`.
+**Workbench:** append every round to **Score progression** (below); update **Score ticker** at top — **Result** column must repeat `SELF-GRADED: no` or `SELF-GRADED: yes (invalid)`.
 
 **Example (lead + critic must match):**
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight-fortify │ Round 3 │ not self-grade (subagent)
+GAUNTLET SCORE │ knight-fortify │ Round 3 │ SELF-GRADED: no (subagent)
 SCORE: 82/100 │ THRESHOLD: 85 │ FAIL │ CLIMBING
 DELTA: +7 vs round 2 (was 75)
 ══════════════════════════════════════
@@ -232,7 +232,7 @@ DELTA: +7 vs round 2 (was 75)
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK │ Round 15 │ self-grade (INVALID)
+GAUNTLET SCORE │ B6-LOCK │ Round 15 │ SELF-GRADED: yes (invalid)
 SCORE: 96/100 │ THRESHOLD: 95 │ FAIL
 DELTA: n/a
 ══════════════════════════════════════
@@ -276,7 +276,7 @@ Invoke: `/gauntlet-critic` or “use gauntlet-critic subagent on this piece.”
 Add to the overnight prompt (or `.cursor/rules` pointer):
 
 - Spawn **separate** `gauntlet-critic` subagent after **every** builder pass on a piece — log invocation in `workbench.md` (`Critic: yes`)
-- **Loud score banner** as first line of every post-critic message (Rule 6b) — GAUNTLET SCORE line includes **`not self-grade (subagent)`** or **`self-grade (INVALID)`**; include DELTA vs prior round
+- **Loud score banner** as first line of every post-critic message (Rule 6b) — GAUNTLET SCORE line includes **`SELF-GRADED: no (subagent)`** or **`SELF-GRADED: yes (invalid)`**; include DELTA vs prior round
 - Never self-grade — piece PASS requires critic `RESULT: PASS`, `SCORE ≥ PASS_THRESHOLD`, and **`Infrastructure: ADEQUATE`**
 - Update `docs/design/workbench.md` every wave
 - On gameplay edits: run mandatory QA per `qa-after-gameplay-changes.mdc` before claiming PASS
@@ -358,7 +358,7 @@ Each tick:
 1. Fix largest gap within ALLOWED_PATHS
 2. Run MANDATORY_COMMANDS / BAR from UNATTENDED_RUN.md
 3. Spawn separate readonly gauntlet-critic subagent (never self-grade)
-4. First line of your reply = score banner with DELTA vs prior round; GAUNTLET SCORE line states **`not self-grade (subagent)`** or **`self-grade (INVALID)`**
+4. First line of your reply = score banner with DELTA vs prior round; GAUNTLET SCORE line states **`SELF-GRADED: no (subagent)`** or **`SELF-GRADED: yes (invalid)`**
 5. Update workbench.md (ticker, score progression, STOP_CONDITION_MET)
 6. Commit if you changed files (auto-commit-absolute.mdc)
 
@@ -521,7 +521,7 @@ Do not implement. SCORE/100 + PASS or FAIL + Infrastructure + Proposed infrastru
 | 2026-08-01 | Review pass: clarify bar pass/fail loop, dedupe critic agent, `/loop` caveat, regression script path, `UNATTENDED_RUN.md` |
 | 2026-08-01 | Hardening: propose-bar-if-missing, critic-required PASS, visual A/B bar, MAX_ROUNDS → FAILURE_REPORT, workbench critic column |
 | 2026-08-01 | Harsh score gate: SCORE/100 + PASS_THRESHOLD by work type; rubric in gauntlet-critic agent |
-| 2026-08-02 | Rule 6b: GAUNTLET SCORE line must state `not self-grade (subagent)` or `self-grade (INVALID)` |
+| 2026-08-02 | Rule 6b: GAUNTLET SCORE line must state `SELF-GRADED: no (subagent)` or `SELF-GRADED: yes (invalid)` |
 | 2026-08-01 | Rule 6b: loud score banners + DELTA + workbench score progression for owner visibility |
 | 2026-08-01 | Rule 4c: critic must judge infrastructure adequacy; Proposed infrastructure on INADEQUATE |
 | 2026-08-01 | §5.4: recommended unattended process — local Agent + `/loop` (primary), Cloud/Automation secondary; K3-LOCK Godot caveat |
