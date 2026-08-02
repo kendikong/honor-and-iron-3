@@ -1575,9 +1575,6 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 					"unit": actor.id, "to": actor.position
 				}))
-				if actor.has_passive(&"push_through") and actor.is_passive_upgraded(&"push_through"):
-					actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
-					actor._recalculate_stats()
 		
 		if push_type == "push" or push_type == "pull":
 			if push.get("stagger_on_collision", false):

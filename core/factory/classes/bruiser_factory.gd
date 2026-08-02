@@ -97,6 +97,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_MOV, 1)
 	], 1)
 	adrenaline_surge.upgrade_description = "On Kill: HEAL 1 and gain SHIELD 2."
+	adrenaline_surge.targeting_mode = GameEnums.TargetingMode.SELF
+	adrenaline_surge.targeting_flags = GameEnums.TargetingFlags.SELF
 	adrenaline_surge.upgraded_effects = DataLibrary._duplicate_effects(adrenaline_surge.effects)
 	adrenaline_surge.upgraded_effects[1].modifiers["on_kill_heal_shield"] = 1
 	def.abilities.append(adrenaline_surge)
@@ -156,6 +158,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_STR, 1)
 	], 1)
 	blood_boil.effects[1].amount = 3
+	blood_boil.targeting_mode = GameEnums.TargetingMode.SELF
+	blood_boil.targeting_flags = GameEnums.TargetingFlags.SELF
 	blood_boil.upgrade_description = "Spend 10 HP to gain STR +5 instead."
 	blood_boil.upgraded_effects = DataLibrary._duplicate_effects(blood_boil.effects)
 	blood_boil.upgraded_effects[0].amount = 10

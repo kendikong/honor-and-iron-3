@@ -9,4 +9,5 @@ const _BruiserQaHarness := preload("res://tests/bruiser_qa_harness.gd")
 
 static func run_all(failures: Array[String]) -> void:
 	_BruiserQaHarness.run_push_through_base(failures)
+	_BruiserQaHarness.run_push_through_blocked(failures)
 	_BruiserQaHarness.run_push_through_upgrade(failures)

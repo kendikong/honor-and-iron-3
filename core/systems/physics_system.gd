@@ -357,6 +357,10 @@ static func tag_dash_hit_step(events: Array, from_index: int, step_index: int) -
 static func push(board: BoardState, target: UnitState, direction: Vector2i, distance: int, events: Array[SimEvent], pusher: UnitState = null, ability_id: StringName = &"", collision_immune_id: int = -1) -> void:
 	if target == null or not target.is_alive() or direction == Vector2i.ZERO or distance <= 0:
 		return
+
+	var effective_distance: int = distance
+	if pusher != null and pusher.has_passive(&"battering_ram"):
+		effective_distance += 1
 		
 	var is_vulnerable = target.has_status(GameEnums.StatusType.VULNERABLE)
 	var has_stand_ground = target.has_passive(&"stand_ground")
@@ -375,18 +379,26 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 
 	var from := target.position
 	var traveled := 0
-	for _i in range(distance):
+	for _i in range(effective_distance):
 		var next := target.position + direction
 
 		# Wall or board edge: stop and take collision damage.
 		if GridSystem.stops_displacement(board, next) or not GridSystem.is_in_bounds(board, next):
-			_emit_collision(board, target, null, next, distance, traveled, events, pusher, ability_id, collision_immune_id)
+			_emit_collision(board, target, null, next, effective_distance, traveled, events, pusher, ability_id, collision_immune_id)
+			if (
+				traveled == 0
+				and pusher != null
+				and pusher.has_passive(&"battering_ram")
+				and pusher.is_passive_upgraded(&"battering_ram")
+			):
+				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+				target._recalculate_stats()
 			break
 
 		# Another unit: both take collision damage; neither moves further.
 		var blocker := board.get_unit_at(next)
 		if blocker != null:
-			_emit_collision(board, target, blocker, next, distance, traveled, events, pusher, ability_id, collision_immune_id)
+			_emit_collision(board, target, blocker, next, effective_distance, traveled, events, pusher, ability_id, collision_immune_id)
 			break
 
 		# Clear tile: advance one step.
@@ -460,7 +472,6 @@ static func _emit_collision(
 	
 	var object_collision_stagger = false
 	var enemy_collision_stagger_both = false
-	var buff_on_push = false
 	var stagger_on_collision = false
 	var violent_collision_recast = false
 	
@@ -473,14 +484,10 @@ static func _emit_collision(
 			for eff in effects:
 				if eff.modifiers.has("object_collision_stagger"): object_collision_stagger = true
 				if eff.modifiers.has("enemy_collision_stagger_both"): enemy_collision_stagger_both = true
-				if eff.modifiers.has("buff_on_push"): buff_on_push = true
 				if eff.modifiers.has("stagger_on_collision"): stagger_on_collision = true
 				if eff.modifiers.has("violent_collision_recast"): violent_collision_recast = true
 
 	if pusher != null and pusher != target:
-		if buff_on_push:
-			pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
-			pusher._recalculate_stats()
 		if violent_collision_recast and not pusher.passive_flags.get("violent_collision_recast_used", false):
 			pusher.passive_flags["violent_collision_recast_used"] = true
 			pusher.ability.points_left += 1

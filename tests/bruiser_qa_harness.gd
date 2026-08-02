@@ -27,7 +27,116 @@ static func assert_eq_cell(failures: Array[String], tag: String, got: Vector2i, 
 
 
 static func bruiser_unit_data() -> UnitData:
-	return DataLibrary.get_unit(BRUISER_DEF_ID)
+	var template: UnitData = DataLibrary.get_unit(BRUISER_DEF_ID)
+	if template == null:
+		return null
+	var weapon: WeaponData = template.equipped_weapon
+	if weapon == null:
+		return template
+	return BruiserFactory.build(weapon)
+
+
+static func ability_has_status_effect(
+	ability: AbilityData,
+	status_type: GameEnums.StatusType,
+	upgraded: bool = false,
+) -> bool:
+	if ability == null:
+		return false
+	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
+	for eff: EffectData in effects:
+		if eff == null:
+			continue
+		if eff.type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF]:
+			if eff.status_type == status_type:
+				return true
+	return false
+
+
+static func run_active_smoke(
+	failures: Array[String],
+	ability_id: StringName,
+	bible_line: String,
+	effect_types: Array = [],
+	status_types: Array = [],
+) -> void:
+	var ability: AbilityData = factory_ability(ability_id)
+	assert_true(
+		failures, "%s/data" % ability_id,
+		ability != null,
+		"missing factory ability (%s)" % bible_line,
+	)
+	if ability == null:
+		return
+	for eff_type: Variant in effect_types:
+		var et: GameEnums.EffectType = eff_type as GameEnums.EffectType
+		assert_true(
+			failures, "%s/effect/%s" % [ability_id, et],
+			ability_has_effect(ability, et, false),
+			"base effects must include %s" % et,
+		)
+	for st: Variant in status_types:
+		var status_type: GameEnums.StatusType = st as GameEnums.StatusType
+		assert_true(
+			failures, "%s/status/%s" % [ability_id, status_type],
+			ability_has_status_effect(ability, status_type, false),
+			"base effects must include status %s" % status_type,
+		)
+	if ability.upgraded_effects.size() > 0:
+		assert_true(
+			failures, "%s/upgrade_data" % ability_id,
+			ability.upgrade_description.length() > 0,
+			"upgraded_effects require upgrade_description",
+		)
+
+
+static func bruiser_with_ability(ability_id: StringName, upgraded: bool = false) -> Dictionary:
+	var cfg: Dictionary = {
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(ability_id),
+		],
+	}
+	if upgraded:
+		cfg = with_upgraded_ability(cfg, ability_id)
+	return cfg
+
+
+static func enemy_hp_before_attack(
+	board: BoardState,
+	enemy_id: int,
+	ability_id: StringName,
+	target_cell: Vector2i,
+	upgraded: bool = false,
+) -> int:
+	var cfg: Dictionary = bruiser_with_ability(ability_id, upgraded)
+	place_bruiser(board, 1, Vector2i(2, 3), cfg)
+	place_dummy(board, enemy_id, target_cell)
+	return unit_hp(board, enemy_id)
+
+
+static func cast_on_enemy(
+	board: BoardState,
+	ability_id: StringName,
+	bruiser_pos: Vector2i,
+	enemy_id: int,
+	enemy_pos: Vector2i,
+	upgraded: bool = false,
+) -> SimResult:
+	var cfg: Dictionary = bruiser_with_ability(ability_id, upgraded)
+	place_bruiser(board, 1, bruiser_pos, cfg)
+	place_dummy(board, enemy_id, enemy_pos)
+	var ability: AbilityData = ability_on_unit(unit_on_board(board, 1), ability_id)
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, ability, enemy_pos, enemy_id))
+	return simulate_plan(board, plan)
+
+
+static func events_have_type(events: Array, event_type: GameEnums.SimEventType) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == event_type:
+			return true
+	return false
 
 
 static func factory_ability(ability_id: StringName) -> AbilityData:
@@ -98,6 +207,9 @@ static func place_unit(
 	config: Dictionary = {},
 ) -> UnitState:
 	var unit: UnitState = UnitState.create(unit_id, def, team, pos, config)
+	if config.has("passive_flags"):
+		for key: Variant in config.passive_flags.keys():
+			unit.passive_flags[key] = config.passive_flags[key]
 	board.units.append(unit)
 	GridSystem.set_occupant(board, pos, unit_id)
 	unit.movement.points_left = unit.movement.max_points
@@ -249,6 +361,33 @@ static func run_push_through_base(failures: Array[String]) -> void:
 		failures, "push_through/mp_spent",
 		mp_before - b_after.movement.points_left,
 		2,
+	)
+	assert_true(
+		failures, "push_through/base_no_str_buff",
+		not has_status(b_after, GameEnums.StatusType.STAT_BUFF_STR),
+		"base tier must not grant STR buff_on_push",
+	)
+
+
+static func run_push_through_blocked(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 8), [Vector2i(3, 5)])
+	var cfg: Dictionary = with_upgraded_ability({
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(&"bruiser_push_through"),
+		],
+	}, &"bruiser_push_through")
+	place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	place_dummy(board, 2, Vector2i(3, 4))
+	var push: AbilityData = ability_on_unit(unit_on_board(board, 1), &"bruiser_push_through")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, push, Vector2i(3, 4), 2, GameEnums.MoveTiming.PRE_ACTION))
+	var result: SimResult = simulate_plan(board, plan)
+	var b_after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "push_through/blocked_no_str_buff",
+		not has_status(b_after, GameEnums.StatusType.STAT_BUFF_STR),
+		"blocked push must not grant buff_on_push without displacement",
 	)
 
 
