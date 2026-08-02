@@ -425,19 +425,17 @@ Each module has its **own** aim → this is not “two hits on the same AoE targ
 ### Example C — Trampling Advance
 
 ```
-Header: CLASS_SKILL (or as Bible class line requires), cost 1 AP
-presentation_anim: WALK or ATTACK per art direction
+Header: CLASS_SKILL, cost 1 AP
 
-Module 1 — PRE_MOVE or ACTION (pick one phase policy; prefer ACTION if the whole package is the skill)
+Module 1 — ACTION (single-module skill; phase defaults ACTION)
   Effect: MOVE
-  Range: 1–2
+  Range: max 2 (up to 2)
   Shape: SINGLE, mode: TILE
+  Keywords: TRAMPLE 2 (includes path ATK; push 1 as keyword param or one PUSH layer)
   Gate: Always
-  Layer: TRAMPLE 2          → passthrough + ATK 2 on move-through
-  Layer: PUSH 1             → when enemy moved through
 ```
 
-Destination = end tile. Trample/push layers use **path** enemies.
+Destination = end tile. Path hits come from the **TRAMPLE** keyword (don’t split into passthrough + damage checkboxes).
 
 ### Example D — Bowling Charge
 
@@ -709,6 +707,100 @@ Use this doc as the acceptance bar:
 
 ---
 
+## 16. Design audit (second pass)
+
+Honest pass over this bible: what to leave alone, what to simplify, what must stay a **keyword**, what is still missing, what to defer.
+
+### 16.1 Leave alone (do not “improve” into the modular model)
+
+| Keep as-is | Why |
+|------------|-----|
+| `AbilityKind` (CLASS_SKILL / MOVEMENT_SKILL / RUN / WAIT) | Already matches planner buckets. Do **not** add a parallel `skill_type` rename — use `kind` (BASIC_ATTACK = CLASS_SKILL + AP 0). |
+| `TargetingFlags` bitmask + editor checkboxes | Already the right authoring model. Modules reuse flags; don’t invent a second checkbox schema. |
+| `TargetShape` + `target_shape_size` | Complete enough for current classes; add shapes only when a skill needs them. |
+| `PlanningCommitFlow` / awaiting machinery | Keep; feed it clearer module data instead of rewriting commit UX. |
+| Physics pass-through (TRAMPLE / BULLDOZE resolution) | Engine already correct — wrap with keywords, don’t re-specify physics in AbilityData. |
+| `StatusType` catalog | Skills apply statuses; don’t rebuild status rules inside modules. |
+| Passives / reactions | Stay outside AbilityData (ARM_REACTION = apply a status you already have). |
+| Header `presentation_key` / `presentation_anim` | Enough for v1. Per-layer anim is noise. |
+| Transitional `targeting_mode` sync helpers | Fine until flags-only authoring is universal. |
+
+### 16.2 Simplify (doc is heavier than v1 needs)
+
+| Simplify | Recommendation |
+|----------|----------------|
+| `skill_type` vs `kind` | **One field:** keep `AbilityKind`. Drop `PRE_MOVE` naming duplicate. |
+| Cost block | v1 = `action_point_cost` + `movement_point_cost` + optional HP cost + optional one cost_modifier. Defer `ALL_REMAINING` / fancy dual-cost UI until a skill needs it. |
+| `min_range` everywhere | Default **max-only** (today’s mental model). Min defaults by effect (self 0, melee 1, move “up to N” → max N). Expose min only when Bible needs 2–3 style bands. |
+| `execution_phase` on every module | Default **ACTION**. Set PRE/POST only on multi-step skills. Single-module skills shouldn’t ask. |
+| Aim binding on every module | Default **NEW_AIM** for multi-module; **same-target extras = layers** (don’t make authors pick SAME_AS_MODULE_N for push-after-damage). Add RULE_PICK / SAME only when needed. |
+| `AbilityLayer` as a new Resource type | Prefer **`EffectData` + `condition` id** (and optional keyword id) so migration isn’t a full type explosion. |
+| Motion mode laundry list | Ship with what factories already imply: empty-tile walk/dash/teleport, into-occupied push, pass-through keywords. Add vault/behind/ally-step when those classes are implemented. |
+| Range origin “last unit tile” | Defer until a spotter-style skill is built. Default actor-after-prior-modules is enough. |
+| `turn_flags` DELAY / ENDS_TURN | Defer to mage/teleport work. Don’t block Knight/Bruiser modular cut. |
+| Per-module presentation override | Defer; sequence from module primary effect if needed later. |
+| Demote every modifier-`EffectType` in one go | Migrate when touching that skill. Don’t big-bang rename PUSH_STAGGER_* on day one. |
+
+### 16.3 Keep as keywords (do not split for authors)
+
+Author-facing keywords; engine may expand. Splitting into five checkboxes is worse UX and fights Bible keyword parity.
+
+| Keyword | Keep bundled | Do **not** author as |
+|---------|--------------|----------------------|
+| **TRAMPLE X** | Passthrough + ATK X on move-through | Separate “ghost + damage on path + …” checkboxes |
+| **BULLDOZE X** (push Y) | Passthrough + collision ATK/PUSH package | Separate dash flag + collision damage + push layers for the common case |
+| **GHOST** (during this move) | Movement flag for the module | DIY terrain rules on the card |
+| **PIERCE** | Damage flag / status | Its own EffectType primary |
+| **CANTO** (full refund) | Passive/status | A skill “keyword” that reinvents post-move — skill partial canto = POST_MOVE module |
+
+**Optional extra layers** only when the Bible adds something *beyond* the keyword (e.g. Bowling [+] chain collision, Trampling [+] SHIELD per tile). Base Trampling Advance can be: MOVE module + **TRAMPLE 2** + push amount on the keyword (or one PUSH layer) — not “passthrough layer + damage layer + push layer” as the default teaching example.
+
+**Also prefer compact forms**
+
+| Pattern | Prefer |
+|---------|--------|
+| Frenzy 3 hits | `DAMAGE` + `hit_count: 3` — not three damage layers |
+| Shield Slam adjacent +ATK | Keep simple condition or existing `bonus_if_adjacent_at_cast` until a generic condition table exists |
+| Iron Grip AP refund | One layered “refund AP if target has CC” (today’s EffectType/modifier) — don’t force GRANT_AP + hand-built gate for v1 |
+
+### 16.4 Still missing / underspecified
+
+| Gap | Notes |
+|-----|-------|
+| **MOVE “up to N” default min** | Document default: max N, min 0 or 1 — pick one and stick (recommend min 1 if destination ≠ start, else allow stay only when Bible says). |
+| **CLASS_SKILL with internal PRE/POST modules vs timeline cancel** | Who owns cancel if a class skill includes a move step? Needs one clear rule (skill cancel rolls back all modules of that commit). |
+| **Gated second aim (Violent Collision)** | Preview requires aiming the second MOVE when collision is expected — planning UX not spelled out. |
+| **Upgrade authorship** | Replace whole module list vs patch fields — pick one for editor (recommend: full upgraded profile copy, edit deltas). |
+| **Facing** | `BACKWARDS` / behind landing exist as modes; **attack from behind** as a filter/condition still thin. |
+| **Accuracy / ACC interactions** | Not in this doc; leave to combat math unless a skill modifies ACC. |
+| **Class library / JSON schema** | No mapping yet from modular resources ↔ `class_library_data.json`. |
+| **Tooltip generation** | “Derive Bible line from modules” stated but no precedence rules (order of keywords). |
+| **OR choice commit payload** | Branch id must live on timeline/commit slots — not designed. |
+| **Multi-module phase vs universal walk** | Reaffirm: skill modules never spend the universal walk pool unless the module is literally that walk (they shouldn’t be). |
+
+### 16.5 Recommended v1 slice (refactor scope)
+
+Do these first; leave the rest as “vocabulary when needed”:
+
+1. Header keeps `kind`, AP/MP costs, uses, presentation, upgrade text.  
+2. `modules[]` each with: primary `EffectData`-like payload, max range (min optional), shape, targeting flags, optional keywords (TRAMPLE/BULLDOZE/GHOST), optional layers (`EffectData` + condition).  
+3. Kill MOVE-distance fallback to ability `range_tiles`.  
+4. Multi-module skills for move→strike→optional post-move.  
+5. Port Bruiser/Knight factories; absorb the worst `modifiers` into keyword/condition fields as you touch them.  
+
+Defer: OR choice, RULE_PICK, DELAY/ENDS_TURN, exotic motion modes, ally-origin range, full cost-block UI, AbilityLayer as a separate class.
+
+### 16.6 Audit verdict
+
+| Question | Answer |
+|----------|--------|
+| Is the structure sound? | **Yes** — header + modules + layers + gates. |
+| Is the doc over-specified for v1? | **Yes** — trim per §16.2–16.5. |
+| Biggest authorship win? | Per-module range + keywords for charge skills + layers for same-target extras. |
+| Biggest risk? | Building every dropdown before any skill migrates; or splitting TRAMPLE/BULLDOZE into micro-layers. |
+
+---
+
 ## Changelog (doc)
 
 | Date | Change |
@@ -716,3 +808,4 @@ Use this doc as the acceptance bar:
 | 2026-08-02 | Initial DRAFT from owner modular design + planning/presentation/upgrade gaps filled for refactor readiness |
 | 2026-08-02 | Clarified structure vs vocabulary; filled cost block, motion modes, aim binding, filters, OR choice, LOS/turn flags, expanded gates/layers — Bible gaps as options inside the same structure |
 | 2026-08-02 | §12 Migration inventory: reuse / restructure / add vs live AbilityData, EffectData, EffectType, TargetingFlags, modifiers keys, planning enums |
+| 2026-08-02 | §16 Second-pass audit: leave alone, simplify, keyword vs split, missing, v1 slice |
