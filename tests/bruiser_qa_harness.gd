@@ -344,6 +344,10 @@ static func run_push_through_base(failures: Array[String]) -> void:
 		failures, "push_through/effect",
 		ability_has_effect(push, GameEnums.EffectType.MOVE_INTO_AND_PUSH, false),
 	)
+	assert_true(
+		failures, "push_through/not_swap",
+		not ability_has_effect(push, GameEnums.EffectType.SWAP, false),
+	)
 	assert_eq_int(failures, "push_through/base_mp_cost", push.movement_point_cost, 2)
 	var mp_before: int = bruiser.movement.points_left
 	var plan := Timeline.new()
@@ -384,6 +388,14 @@ static func run_push_through_blocked(failures: Array[String]) -> void:
 	plan.add(plan_ability(1, push, Vector2i(3, 4), 2, GameEnums.MoveTiming.PRE_ACTION))
 	var result: SimResult = simulate_plan(board, plan)
 	var b_after: UnitState = result.final_state.get_unit_by_id(1)
+	var e_after: UnitState = result.final_state.get_unit_by_id(2)
+	assert_eq_cell(failures, "push_through/blocked_bruiser_pos", b_after.position, Vector2i(3, 3))
+	assert_eq_cell(failures, "push_through/blocked_enemy_pos", e_after.position, Vector2i(3, 4))
+	assert_true(
+		failures, "push_through/blocked_no_push_event",
+		not events_have_unit_pushed(result.events, 2),
+		"wall-blocked push must not emit UNIT_PUSHED",
+	)
 	assert_true(
 		failures, "push_through/blocked_no_str_buff",
 		not has_status(b_after, GameEnums.StatusType.STAT_BUFF_STR),
