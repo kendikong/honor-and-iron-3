@@ -10,6 +10,7 @@ const BAR_W: float = 14.0
 const BAR_H: float = 3.0
 const BAR_OFFSET_Y: float = 6.0
 const BAR_OFFSET_ABOVE_Y: float = -22.0
+const ATTACK_ANIM_TIME: float = 0.35
 
 const _COLOR_HP_BG := Color(0.08, 0.08, 0.10, 0.92)
 const _COLOR_HP_FILL := Color(0.38, 0.78, 0.46)
@@ -64,6 +65,8 @@ var _planning_input: CombatPlanningInput
 var _planning_overlay: TacticalPlanningOverlay
 var _show_team_outlines: bool = false
 var _contact_shadow_sync_pending: bool = false
+var _planning_commit_sequence_running: bool = false
+var _planning_commit_queue: Array[SimEvent] = []
 
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
 
@@ -260,6 +263,18 @@ func await_planning_move_tweens() -> void:
 		await tree.process_frame
 
 
+func is_planning_commit_sequence_active() -> bool:
+	return _planning_commit_sequence_running or not _planning_commit_queue.is_empty()
+
+
+func await_planning_commit_sequence() -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+	while is_planning_commit_sequence_active() and _is_planning_phase():
+		await tree.process_frame
+
+
 func _has_planning_player_move_tweens() -> bool:
 	if not _is_planning_phase():
 		return false
@@ -347,15 +362,79 @@ func _on_planning_commit_events(events: Array) -> void:
 	if not _is_planning_phase():
 		return
 	for raw: Variant in events:
-		if not raw is SimEvent:
-			continue
-		var event: SimEvent = raw as SimEvent
-		if event.type != GameEnums.SimEventType.UNIT_MOVED:
-			continue
-		var unit_id: int = int(event.data.get("actor", -1))
-		if not _should_animate_planning_commit_move(unit_id):
-			continue
-		_animate_planning_commit_move(event)
+		if raw is SimEvent:
+			_planning_commit_queue.append(raw as SimEvent)
+	if _planning_commit_sequence_running:
+		return
+	_drain_planning_commit_queue()
+
+
+func _drain_planning_commit_queue() -> void:
+	if not _is_planning_phase():
+		_planning_commit_queue.clear()
+		_planning_commit_sequence_running = false
+		return
+	if _planning_commit_queue.is_empty():
+		_planning_commit_sequence_running = false
+		return
+	_planning_commit_sequence_running = true
+	var event: SimEvent = _planning_commit_queue.pop_front()
+	match event.type:
+		GameEnums.SimEventType.UNIT_MOVED:
+			var unit_id: int = int(event.data.get("actor", -1))
+			if _should_animate_planning_commit_move(unit_id):
+				_animate_planning_commit_move(event)
+				await_planning_move_tweens_for_actor(unit_id)
+		GameEnums.SimEventType.ABILITY_USED:
+			if event.data.get("planning_swap_presentation", false):
+				await _play_planning_swap_presentation(event)
+	if not _planning_commit_queue.is_empty():
+		_drain_planning_commit_queue()
+	else:
+		_planning_commit_sequence_running = false
+
+
+func await_planning_move_tweens_for_actor(unit_id: int) -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+	while _move_tweens.has(unit_id) and _is_planning_phase():
+		await tree.process_frame
+
+
+func _play_planning_swap_presentation(event: SimEvent) -> void:
+	var unit_id: int = int(event.data.get("actor", -1))
+	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
+	if actor == null:
+		_finish_planning_swap_snap(event)
+		return
+	var facing: int = int(event.data.get("facing", GameEnums.Facing.SOUTH))
+	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
+	var thrust_dir: Vector2 = _facing_vector(facing)
+	if unit != null and event.data.has("target_unit"):
+		var target_unit := _board.get_unit_by_id(int(event.data["target_unit"]))
+		if target_unit != null:
+			var delta := target_unit.position - _actor_grid_cell(unit_id)
+			if delta != Vector2i.ZERO:
+				thrust_dir = Vector2(delta).normalized()
+				facing = _facing_toward(_actor_grid_cell(unit_id), target_unit.position)
+	actor.play_attack_thrust(thrust_dir, _attack_anim(facing))
+	var tree := get_tree()
+	if tree != null:
+		await tree.create_timer(ATTACK_ANIM_TIME).timeout
+	_finish_planning_swap_snap(event)
+
+
+func _finish_planning_swap_snap(event: SimEvent) -> void:
+	if _director == null:
+		return
+	var actor_id: int = int(event.data.get("actor", -1))
+	var target_id: int = int(event.data.get("target_unit", -1))
+	if actor_id >= 0:
+		_director.mark_planning_move_instant(actor_id)
+	if target_id >= 0:
+		_director.mark_planning_move_instant(target_id)
+	_snap_planning_instant_units_from_board()
 
 
 func _on_selection_changed(unit_id: int) -> void:
@@ -1531,7 +1610,13 @@ func _play_attack_anim(event: SimEvent) -> void:
 				thrust_dir = Vector2(delta2).normalized()
 	var ability_id: StringName = event.data.get("ability", &"")
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
-	if ability_data != null and AbilitySystem.ability_has_movement_effect(ability_data):
+	if ability_data != null and (
+		AbilitySystem.ability_has_movement_effect(ability_data)
+		or (
+			ability_data.is_movement_kind()
+			and AbilitySystem.ability_has_swap_effect(ability_data)
+		)
+	):
 		var pres_anim: int = ability_data.presentation_anim
 		if pres_anim == GameEnums.PresentationAnim.AUTO:
 			if AbilitySystem.effect_amount(ability_data, GameEnums.EffectType.DASH) > 0:

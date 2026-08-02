@@ -752,6 +752,9 @@ static func ability_uses_spellcast_animation(ability: AbilityData) -> bool:
 		return false
 	if ability_has_movement_effect(ability):
 		return false
+	## Movement skills (Swap, Trampling Advance, etc.) use walk/thrust presentation — not spellcast.
+	if ability.is_movement_kind():
+		return false
 	if ability.presentation_anim == GameEnums.PresentationAnim.SPELL:
 		return true
 	if ability.presentation_anim == GameEnums.PresentationAnim.ATTACK:

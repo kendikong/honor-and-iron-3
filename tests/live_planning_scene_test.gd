@@ -930,11 +930,12 @@ func _drag_release_at(
 	route: Array[Vector2i],
 	release_cell: Vector2i,
 	label: String = "drag",
+	assert_commit_ratify: bool = true,
 ) -> void:
 	var cells: Array[Vector2i] = route.duplicate()
 	if cells.is_empty() or cells[cells.size() - 1] != release_cell:
 		cells.append(release_cell)
-	await _drag_through_cells(ctx, cells, false, label)
+	await _drag_through_cells(ctx, cells, false, label, assert_commit_ratify)
 
 
 func _assert_k1_bash_committed(ctx: Dictionary, k1_id: int, label: String) -> void:
@@ -1404,6 +1405,7 @@ func _drag_through_cells(
 	cells: Array[Vector2i],
 	assert_hover_steps: bool = true,
 	label: String = "drag",
+	assert_commit_ratify: bool = true,
 ) -> void:
 	if cells.is_empty():
 		return
@@ -1429,7 +1431,8 @@ func _drag_through_cells(
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/release" % label)
-	_assert_commit_ratifies_preview(ctx, ctx.director.selected_unit_id, pre_intent, "%s/release" % label)
+	if assert_commit_ratify:
+		_assert_commit_ratifies_preview(ctx, ctx.director.selected_unit_id, pre_intent, "%s/release" % label)
 
 
 func _select_k4_detour_and_run_route(
@@ -1784,6 +1787,9 @@ func _cancel_active_pointer(ctx: Dictionary) -> void:
 
 func _wait_ability_settle(ctx: Dictionary) -> void:
 	await ctx.runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
+	var layer: TacticalUnitLayer = _unit_layer(ctx)
+	if layer != null:
+		await layer.await_planning_commit_sequence()
 
 
 func _preview_unit(
