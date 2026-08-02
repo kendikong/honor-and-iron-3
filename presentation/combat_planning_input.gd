@@ -712,6 +712,14 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 func _on_board_changed(board: BoardState) -> void:
 	if _director == null or board != _director.board:
 		return
+	var fresh_session: bool = (
+		_director.plan_pre_move.size() == 0
+		and _director.plan_action.size() == 0
+		and _director.plan_post_move.size() == 0
+	)
+	if fresh_session and not aiming and not dragging and not _drag_armed:
+		invalidate_hover_preview_cache()
+		preview_state.clear_interaction()
 	var interacting: bool = aiming or dragging or _drag_armed
 	if not interacting:
 		# Stale stash after drag ended must not restore over a committed plan.
@@ -2116,9 +2124,9 @@ func _prefer_approach_over_trample_move(actor: UnitState, enemy: UnitState) -> b
 	return MovementSystem.has_trample(actor) and _can_move_to(actor, enemy.position)
 
 
-func _notify_drag_plan_move_committed(unit_id: int) -> void:
-	if _drag_move_commit_instant and _director != null:
-		_director.mark_planning_move_instant(unit_id)
+func _notify_drag_plan_move_committed(_unit_id: int) -> void:
+	## Premove walk animation is owned by planning_commit_events — do not mark instant.
+	pass
 
 
 func _unit_move_slot_open(unit_id: int, cell: Vector2i = Vector2i(-999999, -999999)) -> bool:
