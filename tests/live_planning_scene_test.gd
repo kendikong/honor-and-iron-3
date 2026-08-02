@@ -245,18 +245,16 @@ func _journey_swap_then_premove(ctx: Dictionary) -> void:
 	await _probe_cell(ctx, k1_id, _SWAP_PREMOVE_ROUTE[0], {
 		"blue_has": [_SWAP_PREMOVE_ROUTE[0]],
 		"ghost_pos": _SWAP_PREMOVE_ROUTE[0],
-		"path_end": _SWAP_PREMOVE_ROUTE[0],
-		"path_start": _K1_CELL,
-		"path_min_size": 2,
+		"path": [_K1_CELL, _SWAP_ALLY_CELL, _SWAP_PREMOVE_ROUTE[0]],
+		"manhattan": true,
 		"preview_nonempty": true,
 		"icon_has": [PlanningIcons.GLYPH_WALK],
 	}, "swap/premove/hover_west")
 	await _probe_cell(ctx, k1_id, _SWAP_PREMOVE_DEST, {
 		"blue_has": [_SWAP_PREMOVE_DEST],
 		"ghost_pos": _SWAP_PREMOVE_DEST,
-		"path_end": _SWAP_PREMOVE_DEST,
-		"path_start": _K1_CELL,
-		"path_min_size": 2,
+		"path": [_K1_CELL, _SWAP_ALLY_CELL, _SWAP_PREMOVE_ROUTE[0], _SWAP_PREMOVE_DEST],
+		"manhattan": true,
 		"preview_nonempty": true,
 		"icon_has": [PlanningIcons.GLYPH_WALK],
 	}, "swap/premove/hover_dest")

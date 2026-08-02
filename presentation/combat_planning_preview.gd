@@ -367,6 +367,16 @@ static func build_preview_paths(
 					)
 					(pushes[pid] as Array).append([from_pos, to_pos])
 					current_positions[pid] = to_pos
+					## Voluntary displacement (SWAP has no pusher) — extend voluntary route so
+					## follow-up pre-move arrows anchor on projected stand, not turn-start.
+					if not enemy_phase and not d.has("pusher") and paths.has(pid):
+						var route: Array = paths[pid]
+						if route.is_empty():
+							route.append(from_pos)
+						var tail: Variant = route[route.size() - 1]
+						if tail is Vector2i and (tail as Vector2i) != to_pos:
+							route.append(to_pos)
+							splits[pid] = int(splits[pid]) + 1
 
 
 func get_predicted_hp(unit_id: int, current: int) -> int:

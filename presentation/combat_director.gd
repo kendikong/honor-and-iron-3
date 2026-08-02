@@ -1003,7 +1003,7 @@ func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 				strip_act = true
 	var combined := Timeline.new()
 	for a: TimelineAction in plan_pre_move.entries:
-		if a.actor_id == unit_id and strip_pre:
+		if a.actor_id == unit_id and strip_pre and a.type == GameEnums.ActionType.MOVE:
 			continue
 		combined.add(a)
 	for a: TimelineAction in plan_action.entries:
@@ -1015,7 +1015,7 @@ func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 	for uid_var: Variant in wait_ids:
 		combined.add(_make_wait_action(int(uid_var)))
 	for a: TimelineAction in plan_post_move.entries:
-		if a.actor_id == unit_id and strip_post:
+		if a.actor_id == unit_id and strip_post and a.type == GameEnums.ActionType.MOVE:
 			continue
 		combined.add(a)
 	for a: Variant in new_actions:
