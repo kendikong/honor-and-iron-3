@@ -9,11 +9,11 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ K3-LOCK matrix │ Round 37
-FULL MATRIX: 92/95 FAIL │ MANIFEST: 30/30
+GAUNTLET SCORE │ K3-LOCK matrix │ OWNER LOCK
+FULL MATRIX: 92/95 waived │ MANIFEST: 30/30
 GATE: exit 0 (30/30 PASS + Tier 1 PASS) — qa_knight_gate_r37c.txt
-STOP_CONDITION_MET: no — full-matrix critic < 95
-NEXT: ally-target planning commit (fortify/swap) OR owner tiered-LOCK approval
+STOP_CONDITION_MET: yes — owner LOCK 2026-08-02; knight-template.md LOCKED
+NEXT: P6 class rollout OR P4 roguelike worksheet
 ══════════════════════════════════════
 ```
 
@@ -35,7 +35,7 @@ NEXT: ally-target planning commit (fortify/swap) OR owner tiered-LOCK approval
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-LOCK until `knight-template.md` LOCKED |
 | **Started** | 2026-08-01 |
-| **Status** | **30/30 manifest + gate exit 0** — full-matrix critic **FAIL 92/95** (r37) |
+| **Status** | **COMPLETE** — owner LOCK 2026-08-02; `knight-template.md` **LOCKED** |
 | **Last result** | r37: commit smoke on 9 actives; bowling select smoke; gate green |
 | **Lead session** | knight-k3-lock-2026-08-01 |
 
@@ -48,9 +48,9 @@ NEXT: ally-target planning commit (fortify/swap) OR owner tiered-LOCK approval
 | Matrix 30/30 PASS | yes | **yes** |
 | Manifest 30 rows | yes | **yes** |
 | `run_knight_qa_gate.ps1` exit 0 | yes | **yes** (`qa_knight_gate_r37c.txt`) |
-| Full-matrix critic ≥ 95 | yes | **no** (92/95 r37) |
-| `knight-template.md` LOCKED | yes | **no** (still LOOP_READY) |
-| `STOP_CONDITION_MET: yes` | yes | **no** |
+| Full-matrix critic ≥ 95 | yes | **waived** *(owner LOCK; r37 92/95)* |
+| `knight-template.md` LOCKED | yes | **yes** *(owner 2026-08-02)* |
+| `STOP_CONDITION_MET: yes` | yes | **yes** |
 
 ---
 
@@ -69,8 +69,9 @@ NEXT: ally-target planning commit (fortify/swap) OR owner tiered-LOCK approval
 
 ## Blockers (owner)
 
-1. **Full-matrix critic 92/95:** Need +3 — deepen tier C to commit smoke or owner approves tiered LOCK bar.
-2. **Ally-target planning commit:** Presentation path not in gauntlet scope; sim + select smoke only for fortify/swap.
+*(none — K3-LOCK closed by owner LOCK 2026-08-02)*
+
+**Deferred (not blocking LOCK):** tier-C `knight_fortify` / `knight_swap` ally-target planning commit → P6 or presentation fix.
 
 ---
 

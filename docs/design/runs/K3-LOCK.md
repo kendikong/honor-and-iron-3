@@ -1,6 +1,6 @@
 # Gauntlet run card — K3-LOCK
 
-**Parent:** [`../UNATTENDED_RUN.md`](../UNATTENDED_RUN.md) (ACTIVE)  
+**Parent:** [`../UNATTENDED_RUN.md`](../UNATTENDED_RUN.md) *(COMPLETE — owner LOCK 2026-08-02)*  
 **Pillar:** [`../knight-template.md`](../knight-template.md)  
 **Matrix:** [`../../KNIGHT_QA_GATE.md`](../../KNIGHT_QA_GATE.md)  
 **Manifest:** [`../../knight_meta_critic_manifest.json`](../../knight_meta_critic_manifest.json)

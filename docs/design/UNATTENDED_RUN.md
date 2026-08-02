@@ -1,6 +1,6 @@
-# Unattended Gauntlet Run — K3-LOCK (ACTIVE)
+# Unattended Gauntlet Run — K3-LOCK (COMPLETE)
 
-**Status:** **ACTIVE** — Knight template implementation LOCK  
+**Status:** **COMPLETE** — owner LOCK 2026-08-02 · `knight-template.md` → **`LOCKED`**  
 **Run card:** [`runs/K3-LOCK.md`](runs/K3-LOCK.md)  
 **Spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) §5.4 · **Progress:** [`workbench.md`](workbench.md)  
 **Template for future runs:** [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md)
