@@ -43,7 +43,51 @@ static func run_concussion_blow(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(failures, "concussion_blow/hit", H.unit_hp(result.final_state, 2) < hp_before)
+	H.assert_true(
+		failures, "concussion_blow/push",
+		H.events_have_unit_pushed(result.events, 2),
+	)
+	var wall_board: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(5, 3)])
+	H.place_bruiser(wall_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_concussion_blow"))
+	H.place_dummy(wall_board, 11, Vector2i(4, 3))
+	var wall_skill: AbilityData = H.ability_on_unit(H.unit_on_board(wall_board, 10), &"bruiser_concussion_blow")
+	var wall_plan := Timeline.new()
+	wall_plan.add(H.plan_ability(10, wall_skill, Vector2i(4, 3), 11))
+	var wall_result: SimResult = H.simulate_plan(wall_board, wall_plan)
+	var wall_enemy: UnitState = wall_result.final_state.get_unit_by_id(11)
+	H.assert_true(
+		failures, "concussion_blow/wall_stagger",
+		wall_enemy != null and H.has_status(wall_enemy, GameEnums.StatusType.STAGGER),
+		"object_collision_stagger must STAGGER target on wall hit",
+	)
 
+
+static func run_concussion_blow_upgrade(failures: Array[String]) -> void:
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_ability(&"bruiser_concussion_blow"),
+		&"bruiser_concussion_blow",
+	)
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	H.place_dummy(board, 3, Vector2i(4, 3))
+	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_concussion_blow")
+	H.assert_true(
+		failures, "concussion_blow/upgrade_mod",
+		skill.upgraded_effects[1].modifiers.has("enemy_collision_stagger_both"),
+	)
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var pushed: UnitState = result.final_state.get_unit_by_id(2)
+	var blocker: UnitState = result.final_state.get_unit_by_id(3)
+	H.assert_true(
+		failures, "concussion_blow/upgrade_mutual_stagger",
+		pushed != null and blocker != null
+		and H.has_status(pushed, GameEnums.StatusType.STAGGER)
+		and H.has_status(blocker, GameEnums.StatusType.STAGGER),
+		"[+] enemy collision must STAGGER both units",
+	)
 
 static func run_cleave(failures: Array[String]) -> void:
 	H.run_active_smoke(
@@ -73,10 +117,52 @@ static func run_suplex(failures: Array[String]) -> void:
 		not H.ability_has_effect(H.factory_ability(&"bruiser_suplex"), GameEnums.EffectType.SWAP, false),
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	var hp_before: int = 0
+	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_suplex"))
+	H.place_dummy(board, 2, Vector2i(3, 4))
+	hp_before = H.unit_hp(board, 2)
 	var result: SimResult = H.cast_on_enemy(board, &"bruiser_suplex", Vector2i(3, 3), 2, Vector2i(3, 4))
 	var enemy: UnitState = result.final_state.get_unit_by_id(2)
 	H.assert_eq_cell(failures, "suplex/behind_caster", enemy.position, Vector2i(3, 2))
+	H.assert_true(failures, "suplex/damage", enemy.health.current_hp < hp_before)
 
+
+static func run_suplex_upgrade(failures: Array[String]) -> void:
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_ability(&"bruiser_suplex"),
+		&"bruiser_suplex",
+	)
+	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	var bruiser: UnitState = H.unit_on_board(board, 1)
+	bruiser.health.current_hp = bruiser.health.max_hp
+	H.place_dummy(board, 2, Vector2i(3, 4))
+	var hp: int = H.unit_hp(board, 2)
+	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_suplex")
+	H.assert_true(
+		failures, "suplex/upgrade_mod",
+		skill.upgraded_effects[0].modifiers.has("bonus_dmg_per_10_hp"),
+	)
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 4), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var dmg_up: int = hp - H.unit_hp(result.final_state, 2)
+	var board_base: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board_base, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_suplex"))
+	var bruiser_base: UnitState = H.unit_on_board(board_base, 10)
+	bruiser_base.health.current_hp = bruiser_base.health.max_hp
+	H.place_dummy(board_base, 11, Vector2i(3, 4))
+	var hp_base: int = H.unit_hp(board_base, 11)
+	var base_skill: AbilityData = H.ability_on_unit(bruiser_base, &"bruiser_suplex")
+	var plan_base := Timeline.new()
+	plan_base.add(H.plan_ability(10, base_skill, Vector2i(3, 4), 11))
+	var result_base: SimResult = H.simulate_plan(board_base, plan_base)
+	var dmg_base: int = hp_base - H.unit_hp(result_base.final_state, 11)
+	H.assert_true(
+		failures, "suplex/upgrade_bonus_damage",
+		dmg_up > dmg_base,
+		"[+] bonus_dmg_per_10_hp must increase damage at full HP",
+	)
 
 static func run_adrenaline_surge(failures: Array[String]) -> void:
 	H.run_active_smoke(

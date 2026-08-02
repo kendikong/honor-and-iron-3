@@ -1,9 +1,16 @@
 {
   "piece": "B6-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 0,
-  "last_score": 0,
-  "last_result": "PENDING",
-  "last_row_promoted": "",
-  "approved_rows": []
+  "last_critic_round": 3,
+  "last_score": 89,
+  "last_result": "PASS",
+  "last_row_promoted": "bruiser_push_through",
+  "approved_rows": [
+    {
+      "factory_id": "bruiser_push_through",
+      "score": 89,
+      "critic_round": 3,
+      "fix_target": "none"
+    }
+  ]
 }

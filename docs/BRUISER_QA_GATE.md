@@ -56,13 +56,13 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **0 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **31** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
+**Summary (honest):** **1 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **30** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
 
 ### Movement + actives
 
 | Bible / factory id | Type | Scenario file | Tier 1 | Notes |
 |--------------------|------|---------------|--------|-------|
-| `bruiser_push_through` | Movement | `tests/skills/bruiser_push_through_scenario.gd` | PLANNED | MOVE_INTO_AND_PUSH; `[+]` cost 1 MOV + STR on push |
+| `bruiser_push_through` | Movement | `tests/skills/bruiser_push_through_scenario.gd` | PASS | MOVE_INTO_AND_PUSH; `[+]` cost 1 MOV + STR on push |
 | `bruiser_charge_strike` | Active | `tests/skills/bruiser_charge_strike_scenario.gd` | PLANNED | MOVE 2 + DAMAGE 3 + PUSH 1; `[+]` GHOST + terrain bonus |
 | `bruiser_concussion_blow` | Active | `tests/skills/bruiser_concussion_blow_scenario.gd` | PLANNED | DAMAGE + PUSH; object STAGGER; `[+]` mutual STAGGER on enemy collision |
 | `bruiser_cleave` | Active | `tests/skills/bruiser_cleave_scenario.gd` | PLANNED | ARC DAMAGE; `[+]` BLEED (WPN-scaled) |
