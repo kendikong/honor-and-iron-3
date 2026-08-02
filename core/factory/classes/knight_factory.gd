@@ -214,10 +214,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	trampling_advance.presentation_anim = GameEnums.PresentationAnim.RUN
 	trampling_advance.sync_legacy_targeting()
 	trampling_advance.upgrade_description = ""
-	trampling_advance.upgraded_effects = [
+	var trample_upgraded: Array[EffectData] = [
 		DataLibrary._effect(GameEnums.EffectType.TRAMPLE, 2),
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
 	]
+	trampling_advance.upgraded_effects = trample_upgraded
 	def.abilities.append(trampling_advance)
 
 	return def
