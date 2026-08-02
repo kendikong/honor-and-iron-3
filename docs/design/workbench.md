@@ -9,19 +9,18 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK full matrix │ Round 20 (pending)
-SCORE: —/100 │ THRESHOLD: 95 │ PENDING CRITIC
-DELTA: n/a — r19 critic 94 FAIL (+43 vs r18 artifact-only 51)
+GAUNTLET SCORE │ B6-LOCK full matrix │ Round 20
+SCORE: 95/100 │ THRESHOLD: 95 │ PASS
+DELTA: +1 vs r19 (94 FAIL)
 GATE: canonical PASS (qa_bruiser_gate_canonical.txt 31/31)
 MATRIX: 31/31 PASS (manifest-aligned)
-STOP_CONDITION_MET: no
-NEXT: spawn gauntlet-critic r20 after governance sync
+STOP_CONDITION_MET: yes
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Delta | Result |
 |-------|-------|-------|-------|--------|
-| r19 | B6-LOCK full matrix | 94 | +43 vs r18 | **FAIL** — gauntlet-critic subagent |
+| r20 | B6-LOCK full matrix | 95 | +1 vs r19 | **PASS** — gauntlet-critic subagent |
 | r18 | B6-LOCK full matrix | 51 | −42 vs r17 | **FAIL** — stale qa_bruiser_gate_latest artifact |
 | r17 | B6-LOCK full matrix | 93 | +2 vs r16 | **FAIL** — gauntlet-critic subagent |
 | r14 | B6-LOCK full matrix | 76 | +2 vs r12 | **FAIL** — gauntlet-critic subagent |
@@ -37,8 +36,8 @@ NEXT: spawn gauntlet-critic r20 after governance sync
 |-------|-------|
 | **Chunk / goal** | P6 Bruiser — B6-LOCK until `bruiser-template.md` LOCKED |
 | **Started** | 2026-08-02 |
-| **Status** | **ACTIVE** — gate exit 0; awaiting full-matrix critic ≥ 95 |
-| **Last real critic** | r14 full matrix **76/95 FAIL** |
+| **Status** | **COMPLETE** — STOP_ON met r20 |
+| **Last real critic** | r20 full matrix **95/95 PASS** |
 | **Lead session** | bruiser-b6-lock-2026-08-02 |
 | **Critic:** yes | per-row critics done; full-matrix r16 pending |
 
@@ -51,9 +50,9 @@ NEXT: spawn gauntlet-critic r20 after governance sync
 | Matrix 31/31 PASS | yes | **yes** |
 | Manifest 31 rows | yes | **yes** |
 | `run_bruiser_qa_gate.ps1` exit 0 | yes | **yes** (`qa_bruiser_gate_canonical.txt`) |
-| Full-matrix critic ≥ 95 | yes | **no** (last: r19 **94**) |
-| `bruiser-template.md` LOCKED | yes | **no** (`LOOP_READY`) |
-| `STOP_CONDITION_MET: yes` | yes | **no** |
+| Full-matrix critic ≥ 95 | yes | **yes** (r20 **95 PASS**) |
+| `bruiser-template.md` LOCKED | yes | **yes** |
+| `STOP_CONDITION_MET: yes` | yes | **yes** |
 
 ---
 

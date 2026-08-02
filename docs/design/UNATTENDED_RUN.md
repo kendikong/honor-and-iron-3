@@ -1,6 +1,6 @@
 # Unattended Gauntlet Run — B6-LOCK (ACTIVE)
 
-**Status:** **ACTIVE** — Bruiser class implementation LOCK (P6 first class)  
+**Status:** **COMPLETE** — B6-LOCK STOP_ON met (r20 critic 95 PASS)  
 **Prior run:** K3-LOCK **COMPLETE** — see [`runs/K3-LOCK.md`](runs/K3-LOCK.md)  
 **Run card:** [`runs/B6-LOCK.md`](runs/B6-LOCK.md)  
 **Spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) §5.4 · **Progress:** [`workbench.md`](workbench.md)  

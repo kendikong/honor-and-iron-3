@@ -1,6 +1,6 @@
 # Bruiser template (P6 — first class rollout)
 
-**Status:** `LOOP_READY` *(B6-LOCK active — canonical gate 31/31 PASS; full-matrix critic r19 **94/95 FAIL**; r15 self-grade invalidated)*  
+**Status:** `LOCKED` *(B6-LOCK complete — canonical gate 31/31 PASS; full-matrix critic r20 **95/95 PASS**; commit `72414aeaa`+)*  
 **Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) *(ACTIVE — B6-LOCK)* · **Run card:** [`runs/B6-LOCK.md`](runs/B6-LOCK.md)  
 **Pillar ID:** P6 (first class — clones P3)  
 **Authority chain:** `class_abilities.txt` § Bruiser · `docs/BRUISER_QA_GATE.md` · `core/factory/classes/bruiser_factory.gd` · `docs/design/knight-template.md` (P3 LOCKED)
@@ -51,16 +51,16 @@ N/A — Bible + matrix are authoritative.
 
 | Piece | Owner | BAR | Status |
 |-------|-------|-----|--------|
-| **B6-doc** | Spec | lint + gate doc + gate script exist; honest 31-row matrix | **PENDING** |
-| B6-matrix | Coverage | All factory ids listed; status honest | In B6-doc |
-| B6-actives | Builder | One `tests/skills/<id>_scenario.gd` per active + movement | **PLANNED** (0/16) |
-| B6-passives | Builder | One `tests/passives/<id>_scenario.gd` per passive | **PLANNED** (0/15) |
+| **B6-doc** | Spec | lint + gate doc + gate script exist; honest 31-row matrix | **DONE** |
+| B6-matrix | Coverage | All factory ids listed; status honest | **DONE** |
+| B6-actives | Builder | One `tests/skills/<id>_scenario.gd` per active + movement | **DONE** (16/16 via harness) |
+| B6-passives | Builder | One `tests/passives/<id>_scenario.gd` per passive | **DONE** (15/15 via harness) |
 | B6-registry | Builder | `tests/bruiser_scenario_registry.gd` lists all rows | **DONE** |
-| B6-gate | Builder | `run_bruiser_qa_gate.ps1` fails until matrix 100% PASS + manifest | **DONE** (exit 2 at tick 0) |
-| B6-meta | Critic | Adequacy score per matrix row | **31/31** manifest approved; full-matrix critic pending ≥95 |
-| **B6-LOCK** | Owner | Matrix 31/31 PASS + gate PASS + meta-critic ≥ 95 | **ACTIVE** — [`runs/B6-LOCK.md`](runs/B6-LOCK.md) |
+| B6-gate | Builder | `run_bruiser_qa_gate.ps1` fails until matrix 100% PASS + manifest | **DONE** (exit 0; `qa_bruiser_gate_canonical.txt`) |
+| B6-meta | Critic | Adequacy score per matrix row | **DONE** — r20 full-matrix **95/95 PASS** |
+| **B6-LOCK** | Owner | Matrix 31/31 PASS + gate PASS + meta-critic ≥ 95 | **COMPLETE** — [`runs/B6-LOCK.md`](runs/B6-LOCK.md) |
 
-**Implementation tally:** **0 / 31** factory rows · gate exit **2** (incomplete matrix) · harness **FAIL** until first scenario lands.
+**Implementation tally:** **31 / 31** factory rows · gate exit **0** · harness **PASS** · critic r20 **95/95 PASS**.
 
 ## Builder playbook
 
