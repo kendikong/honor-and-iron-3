@@ -404,6 +404,15 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 		for status in target.active_statuses:
 			if status.type == GameEnums.StatusType.BLEED:
 				CombatSystem.deal_damage(board, target, 3 * traveled, events, &"bleed", false, false, null, "Bleed (push)", 3 * traveled)
+		if pusher != null and ability_id != &"":
+			var ability: AbilityData = pusher.get_ability_by_id(ability_id)
+			if ability != null:
+				var effects: Array = ability.upgraded_effects if pusher.is_ability_upgraded(ability_id) else ability.effects
+				for eff: EffectData in effects:
+					if eff != null and eff.modifiers.has("buff_on_push"):
+						pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+						pusher._recalculate_stats()
+						break
 				
 		var pushed_data: Dictionary = {
 			"unit": target.id,

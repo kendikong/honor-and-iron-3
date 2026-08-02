@@ -9,17 +9,19 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK matrix │ Tick 0 (setup)
-FULL MATRIX: —/95 PENDING │ MANIFEST: 0/31
-GATE: exit 2 (0/31 PLANNED) — infrastructure only
-STOP_CONDITION_MET: no — gauntlet loop armed, no rows promoted
-NEXT: B6-doc critic → first row `bruiser_push_through`
+GAUNTLET SCORE │ B6-LOCK │ bruiser_push_through │ Round 1
+SCORE: 67/100 │ THRESHOLD: 88 │ FAIL │ FIRST
+DELTA: first round
+GATE: Tier 1 harness PASS; matrix 0/31 (row still PLANNED)
+STOP_CONDITION_MET: no
+NEXT: fix buff_on_push owner + deepen scenario asserts (critic gaps)
 ══════════════════════════════════════
 ```
 
-| Round | Score | Delta | Result |
-|-------|-------|-------|--------|
-| setup | — | — | Infrastructure on disk (tick 0) |
+| Round | Piece | Score | Delta | Result |
+|-------|-------|-------|-------|--------|
+| r1 | bruiser_push_through | 67 | first | **FAIL** — dead passive branch; buff_on_push collision path; shallow asserts |
+| setup | infrastructure | — | — | B6-LOCK armed |
 
 ---
 
@@ -29,9 +31,10 @@ NEXT: B6-doc critic → first row `bruiser_push_through`
 |-------|-------|
 | **Chunk / goal** | P6 Bruiser — B6-LOCK until `bruiser-template.md` LOCKED |
 | **Started** | 2026-08-02 |
-| **Status** | **ACTIVE** — 0/31 matrix; gate + harness + docs on disk |
-| **Last result** | Setup complete — awaiting first builder tick |
+| **Status** | **ACTIVE** — Tier 1 green for row 1; critic **67/88 FAIL** |
+| **Last result** | r1 gauntlet-critic on `bruiser_push_through` |
 | **Lead session** | bruiser-b6-lock-2026-08-02 |
+| **Critic:** yes | r1 manifest not updated (FAIL < 88) |
 
 ---
 
@@ -41,7 +44,7 @@ NEXT: B6-doc critic → first row `bruiser_push_through`
 |-------|--------|--------|
 | Matrix 31/31 PASS | yes | **no** (0/31) |
 | Manifest 31 rows | yes | **no** (0/31) |
-| `run_bruiser_qa_gate.ps1` exit 0 | yes | **no** (exit 2) |
+| `run_bruiser_qa_gate.ps1` exit 0 | yes | **no** (exit 2 — harness PASS) |
 | Full-matrix critic ≥ 95 | yes | **no** |
 | `bruiser-template.md` LOCKED | yes | **no** (DRAFT) |
 | `STOP_CONDITION_MET: yes` | yes | **no** |
@@ -50,7 +53,12 @@ NEXT: B6-doc critic → first row `bruiser_push_through`
 
 ## Blockers (owner)
 
-*(none — loop ready to start)*
+*(none)*
+
+**Open gaps (r1 critic):**
+1. Remove dead `has_passive(&"push_through")` in `ability_system.gd`
+2. Consolidate `buff_on_push` — only on successful displacement (`traveled > 0`)
+3. Deepen scenario: base no STR buff; blocked push negative
 
 ---
 
@@ -58,4 +66,5 @@ NEXT: B6-doc critic → first row `bruiser_push_through`
 
 | Time | Piece | Score | Result | Notes |
 |------|-------|-------|--------|-------|
-| 2026-08-02 | B6-setup | — | — | Gate doc, script, harness, registry, UNATTENDED_RUN, B6-LOCK run card |
+| 2026-08-02 | bruiser_push_through | 67 | FAIL | Scenario + factory/json fix + physics buff path; harness PASS |
+| 2026-08-02 | B6-setup | — | — | Gate infrastructure |

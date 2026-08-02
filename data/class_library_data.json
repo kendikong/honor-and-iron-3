@@ -1197,21 +1197,12 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 1
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 3
+							"type": 26
 						}
 					],
 					"is_movement_skill": true,
@@ -1219,35 +1210,29 @@
 					"movement_point_cost": 2,
 					"presentation_anim": 3,
 					"presentation_key": "bruiser_push_through",
-					"range_tiles": 2,
+					"range_tiles": 1,
 					"scaling_stat": 0,
 					"target_shape": 0,
 					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
 					"upgrade_description": "Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack.",
 					"upgraded_effects": [
 						{
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"buff_on_push": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 1
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 3
+							"type": 26
 						}
 					],
+					"upgraded_movement_point_cost": 1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,

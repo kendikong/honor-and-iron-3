@@ -113,6 +113,18 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 	return ap_cost
 
 
+static func movement_point_cost(actor: UnitState, ability: AbilityData) -> int:
+	if ability == null:
+		return 0
+	if (
+		actor != null
+		and actor.is_ability_upgraded(ability.id)
+		and ability.upgraded_movement_point_cost >= 0
+	):
+		return ability.upgraded_movement_point_cost
+	return ability.movement_point_cost
+
+
 static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
 	if ability == null or actor == null:
 		return false
@@ -121,7 +133,7 @@ static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, bo
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
-			return actor.movement.points_left >= ability.movement_point_cost
+			return actor.movement.points_left >= movement_point_cost(actor, ability)
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			if actor.has_run_boost():
 				return false
@@ -971,7 +983,7 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: B
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
-			actor.movement.points_left -= ability.movement_point_cost
+			actor.movement.points_left -= movement_point_cost(actor, ability)
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			actor.ability.points_left -= ap_cost
 		GameEnums.AbilityKind.CLASS_SKILL:

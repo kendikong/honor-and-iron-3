@@ -1043,6 +1043,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.target_shape = int(data.get("target_shape", dst.target_shape))
 	dst.target_shape_size = int(data.get("target_shape_size", dst.target_shape_size))
 	dst.upgraded_range_tiles = int(data.get("upgraded_range_tiles", dst.upgraded_range_tiles))
+	dst.upgraded_movement_point_cost = int(data.get("upgraded_movement_point_cost", dst.upgraded_movement_point_cost))
 	dst.upgraded_target_shape = int(data.get("upgraded_target_shape", dst.upgraded_target_shape))
 	dst.upgraded_target_shape_size = int(data.get("upgraded_target_shape_size", dst.upgraded_target_shape_size))
 	dst.upgrade_description = String(data.get("upgrade_description", dst.upgrade_description))

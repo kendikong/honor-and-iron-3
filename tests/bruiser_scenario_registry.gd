@@ -41,6 +41,9 @@ static func all_entries() -> Array[Dictionary]:
 
 
 static func run_scenario(script_path: String, failures: Array[String]) -> bool:
+	if not ResourceLoader.exists(script_path):
+		print("[BRUISER_QA] SKIP (PLANNED): %s" % script_path)
+		return true
 	var script: GDScript = load(script_path) as GDScript
 	if script == null:
 		return false

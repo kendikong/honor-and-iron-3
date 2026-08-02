@@ -150,9 +150,17 @@ static func with_single_passive(passive_id: StringName, upgraded: bool = false) 
 	return cfg
 
 
+static func simulate_player_turn(board: BoardState, plan: Timeline) -> SimResult:
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	var out := SimResult.new()
+	out.final_state = board
+	out.events = events
+	return out
+
+
 static func simulate_plan(board: BoardState, plan: Timeline) -> SimResult:
-	board.intents = []
-	return Simulator.simulate(board, plan)
+	return simulate_player_turn(board, plan)
 
 
 static func unit_on_board(board: BoardState, unit_id: int) -> UnitState:
@@ -198,3 +206,85 @@ static func plan_ability(
 	timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION,
 ) -> TimelineAction:
 	return TimelineAction.make_ability(actor_id, ability, target, target_unit_id, timing)
+
+
+static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_PUSHED:
+			if int(e.data.get("unit", -1)) == unit_id:
+				return true
+	return false
+
+
+static func run_push_through_base(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	var cfg: Dictionary = {
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(&"bruiser_push_through"),
+		],
+	}
+	place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	place_dummy(board, 2, Vector2i(3, 4))
+	var bruiser: UnitState = unit_on_board(board, 1)
+	var push: AbilityData = ability_on_unit(bruiser, &"bruiser_push_through")
+	assert_true(
+		failures, "push_through/effect",
+		ability_has_effect(push, GameEnums.EffectType.MOVE_INTO_AND_PUSH, false),
+	)
+	assert_eq_int(failures, "push_through/base_mp_cost", push.movement_point_cost, 2)
+	var mp_before: int = bruiser.movement.points_left
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, push, Vector2i(3, 4), 2, GameEnums.MoveTiming.PRE_ACTION))
+	var result: SimResult = simulate_plan(board, plan)
+	var b_after: UnitState = result.final_state.get_unit_by_id(1)
+	var e_after: UnitState = result.final_state.get_unit_by_id(2)
+	assert_eq_cell(failures, "push_through/bruiser_pos", b_after.position, Vector2i(3, 4))
+	assert_eq_cell(failures, "push_through/enemy_pos", e_after.position, Vector2i(3, 5))
+	assert_true(
+		failures, "push_through/pushed_event",
+		events_have_unit_pushed(result.events, 2),
+	)
+	assert_eq_int(
+		failures, "push_through/mp_spent",
+		mp_before - b_after.movement.points_left,
+		2,
+	)
+
+
+static func run_push_through_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	var cfg: Dictionary = with_upgraded_ability({
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(&"bruiser_push_through"),
+		],
+	}, &"bruiser_push_through")
+	place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	place_dummy(board, 2, Vector2i(3, 4))
+	var bruiser: UnitState = unit_on_board(board, 1)
+	var push: AbilityData = ability_on_unit(bruiser, &"bruiser_push_through")
+	assert_true(
+		failures, "push_through/upgrade_modifier",
+		push.upgraded_effects[0].modifiers.has("buff_on_push"),
+	)
+	assert_eq_int(
+		failures, "push_through/upgrade_mp_cost",
+		AbilitySystem.movement_point_cost(bruiser, push),
+		1,
+	)
+	var mp_before: int = bruiser.movement.points_left
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, push, Vector2i(3, 4), 2, GameEnums.MoveTiming.PRE_ACTION))
+	var result: SimResult = simulate_plan(board, plan)
+	var b_after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "push_through/upgrade_str_buff",
+		has_status(b_after, GameEnums.StatusType.STAT_BUFF_STR),
+		"[+] must grant +1 STR after push via buff_on_push",
+	)
+	assert_eq_int(
+		failures, "push_through/upgrade_mp_spent",
+		mp_before - b_after.movement.points_left,
+		1,
+	)
