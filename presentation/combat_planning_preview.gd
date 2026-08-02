@@ -59,9 +59,11 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	## Intent geometry comes from planned actions (valid TILE/move selection), not only sim paths.
 	var actions_v: Variant = res.get("actions", [])
 	if actions_v is Array:
-		ensure_movement_intent_from_actions(actions_v as Array, base_board)
-		ensure_swap_approach_paths_from_actions(actions_v as Array, base_board, preview_paths, preview_splits, action_splits)
-		adjust_swap_intent_actor_pose(temp_board, actions_v as Array)
+		ensure_movement_intent_from_actions(actions_v as Array, base_board, {}, director)
+		ensure_swap_approach_paths_from_actions(
+			actions_v as Array, base_board, preview_paths, preview_splits, action_splits, director,
+		)
+		adjust_swap_intent_actor_pose(temp_board, actions_v as Array, director)
 
 
 ## Walk→swap hover: inject approach route when sim path is missing but commit slots include a pre-walk.
@@ -71,6 +73,7 @@ static func ensure_swap_approach_paths_from_actions(
 	preview_paths: Dictionary,
 	preview_splits: Dictionary,
 	action_splits: Dictionary,
+	director: CombatDirector = null,
 ) -> void:
 	if start_board == null or actions.is_empty():
 		return
@@ -92,7 +95,7 @@ static func ensure_swap_approach_paths_from_actions(
 			actor_id = action.actor_id
 	if not has_swap or actor_id < 0 or swap_action == null:
 		return
-	walk_dest = _infer_swap_approach_cell(start_board, swap_action)
+	walk_dest = _swap_approach_cell(director, start_board, swap_action)
 	for raw2: Variant in actions:
 		if not raw2 is TimelineAction:
 			continue
@@ -125,39 +128,39 @@ static func ensure_swap_approach_paths_from_actions(
 		action_splits[actor_id] = 0
 
 
-static func _infer_swap_approach_cell(start_board: BoardState, swap_action: TimelineAction) -> Vector2i:
-	if start_board == null or swap_action == null:
+static func _swap_approach_cell(
+	director: CombatDirector,
+	board: BoardState,
+	swap_action: TimelineAction,
+) -> Vector2i:
+	if director == null or board == null or swap_action == null or swap_action.ability == null:
 		return Vector2i(-999999, -999999)
-	var actor: UnitState = start_board.get_unit_by_id(swap_action.actor_id)
-	var ally: UnitState = (
-		start_board.get_unit_by_id(swap_action.target_unit_id)
-		if swap_action.target_unit_id >= 0
-		else start_board.get_unit_at(swap_action.target_coord)
+	var actor: UnitState = board.get_unit_by_id(swap_action.actor_id)
+	if actor == null:
+		return Vector2i(-999999, -999999)
+	var ability_index: int = 0
+	for i: int in range(actor.active_abilities.size()):
+		if actor.active_abilities[i].id == swap_action.ability.id:
+			ability_index = i
+			break
+	var target_unit_id: int = swap_action.target_unit_id
+	if target_unit_id < 0:
+		var ally: UnitState = board.get_unit_at(swap_action.target_coord)
+		if ally != null:
+			target_unit_id = ally.id
+	if target_unit_id < 0:
+		return Vector2i(-999999, -999999)
+	return director.preview_approach_tile(
+		swap_action.actor_id, target_unit_id, ability_index, actor.position,
 	)
-	if actor == null or ally == null:
-		return Vector2i(-999999, -999999)
-	var best: Vector2i = Vector2i(-999999, -999999)
-	var best_dist: int = 999999
-	var cardinal: Array[Vector2i] = [
-		Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0),
-	]
-	for offset: Vector2i in cardinal:
-		var candidate: Vector2i = ally.position + offset
-		if not start_board.is_in_bounds(candidate):
-			continue
-		if GridSystem.is_occupied(start_board, candidate):
-			var occ: UnitState = start_board.get_unit_at(candidate)
-			if occ != null and occ.id != actor.id:
-				continue
-		var dist: int = GridSystem.manhattan(actor.position, candidate)
-		if dist < best_dist:
-			best_dist = dist
-			best = candidate
-	return best
 
 
 ## Walk→swap hover: preview_board sim ends swapped; ghost must stand on the walk leg endpoint.
-static func adjust_swap_intent_actor_pose(preview_board: BoardState, actions: Array) -> void:
+static func adjust_swap_intent_actor_pose(
+	preview_board: BoardState,
+	actions: Array,
+	director: CombatDirector = null,
+) -> void:
 	if preview_board == null or actions.is_empty():
 		return
 	var actor_id: int = -1
@@ -179,7 +182,7 @@ static func adjust_swap_intent_actor_pose(preview_board: BoardState, actions: Ar
 			if actor_id < 0:
 				actor_id = action.actor_id
 			if walk_dest.x < -900000:
-				walk_dest = _infer_swap_approach_cell(preview_board, action)
+				walk_dest = _swap_approach_cell(director, preview_board, action)
 	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
 		return
 	var actor: UnitState = preview_board.get_unit_by_id(actor_id)
@@ -291,6 +294,7 @@ func ensure_movement_intent_from_actions(
 	actions: Array,
 	start_board: BoardState,
 	actors_with_committed_move: Dictionary = {},
+	director: CombatDirector = null,
 ) -> void:
 	if start_board == null or actions.is_empty():
 		return
@@ -347,7 +351,7 @@ func ensure_movement_intent_from_actions(
 					preview_paths[action.actor_id] = route_cells
 					preview_splits[action.actor_id] = route_cells.size()
 			else:
-				var inferred: Vector2i = _infer_swap_approach_cell(start_board, action)
+				var inferred: Vector2i = _swap_approach_cell(director, start_board, action)
 				if inferred.x > -900000:
 					approach = inferred
 					var walker2: UnitState = start_board.get_unit_by_id(action.actor_id)
@@ -631,7 +635,11 @@ static func planning_move_origin_cell_for_timing(
 		if board != null and board.is_in_bounds(action_end):
 			return action_end
 		return Vector2i(-999999, -999999)
-	var board: BoardState = planning_projection_board(director, fallback_board)
+	var board: BoardState = (
+		director.live_planning_board()
+		if director != null
+		else planning_projection_board(director, fallback_board)
+	)
 	var unit: UnitState = board.get_unit_by_id(unit_id) if board != null else null
 	if unit != null:
 		return unit.position

@@ -430,14 +430,6 @@ func _play_planning_swap_presentation(event: SimEvent) -> void:
 	var target_from: Vector2i = _event_grid_cell(event, &"target_from", _actor_grid_cell(target_id))
 	var actor_to: Vector2i = _event_grid_cell(event, &"actor_to", actor_from)
 	var target_to: Vector2i = _event_grid_cell(event, &"target_to", target_from)
-	var actor_visual: Vector2i = _actor_grid_cell(actor_id)
-	if actor_visual.x > -900 and actor_visual != actor_from:
-		_animate_planning_path(actor_id, actor_visual, actor_from, false)
-		await await_planning_move_tweens_for_actor(actor_id)
-	var target_visual: Vector2i = _actor_grid_cell(target_id)
-	if target_visual.x > -900 and target_visual != target_from:
-		_animate_planning_path(target_id, target_visual, target_from, false)
-		await await_planning_move_tweens_for_actor(target_id)
 	if actor_from == actor_to and target_from == target_to:
 		_finish_planning_swap_snap(event)
 		return
@@ -1237,10 +1229,7 @@ func _should_animate_planning_commit_move(unit_id: int, event: SimEvent = null) 
 		return false
 	if _drag_preview_active and unit_id == _drag_preview_id:
 		return false
-	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
-	if unit == null and _director.board != null:
-		unit = _director.board.get_unit_by_id(unit_id)
-	return unit != null and not unit.is_enemy()
+	return false
 
 
 func _cells_from_move_event(event: SimEvent, from_cell: Vector2i) -> Array[Vector2i]:
@@ -1376,7 +1365,11 @@ func _animate_planning_path(
 		unit = _director.board.get_unit_by_id(unit_id)
 	if unit == null:
 		return
-	var cells: Array[Vector2i] = _resolve_planning_path_cells(from_cell, to_cell, unit)
+	var cells: Array[Vector2i] = []
+	if _planning_commit_sequence_running and not fallback_cells.is_empty():
+		cells = fallback_cells.duplicate()
+	if cells.is_empty():
+		cells = _resolve_planning_path_cells(from_cell, to_cell, unit)
 	if cells.is_empty() and not fallback_cells.is_empty():
 		cells = fallback_cells.duplicate()
 	if cells.is_empty():

@@ -585,13 +585,14 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 	var start_board: BoardState = (
 		_director.base_board if _director != null and _director.base_board != null else _director.board
 	)
-	preview_state.ensure_movement_intent_from_actions(actions_v as Array, start_board)
+	preview_state.ensure_movement_intent_from_actions(actions_v as Array, start_board, {}, _director)
 	CombatPlanningPreview.ensure_swap_approach_paths_from_actions(
 		actions_v as Array,
 		start_board,
 		preview_state.preview_paths,
 		preview_state.preview_splits,
 		preview_state.action_splits,
+		_director,
 	)
 
 
@@ -1719,8 +1720,14 @@ func _commit_at_cell(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
 	var slots: Dictionary
+	var actor := _proj_unit(unit_id)
+	var ability: AbilityData = _selected_ability_data(actor)
+	var force_fresh_slots: bool = (
+		ability != null and AbilitySystem.ability_has_swap_effect(ability)
+	)
 	if (
-		_intent_snapshot_valid
+		not force_fresh_slots
+		and _intent_snapshot_valid
 		and _intent_snapshot_key == snapshot_key
 		and not _intent_snapshot_slots.is_empty()
 	):
@@ -3567,9 +3574,14 @@ func _build_ally_commit_slots(
 			move_dest = _drag_route_stand_cell()
 	if move_wps.is_empty():
 		var swap_range: int = _ability_range(actor)
+		var live_origin: Vector2i = _proj_move_origin(actor)
+		if _director != null:
+			var live_unit: UnitState = _director.live_planning_board().get_unit_by_id(unit_id)
+			if live_unit != null:
+				live_origin = live_unit.position
 		if (
 			swap_range >= 0
-			and GridSystem.manhattan(_proj_move_origin(actor), ally.position) <= swap_range
+			and GridSystem.manhattan(live_origin, ally.position) <= swap_range
 		):
 			_append_movement_skill_to_premove_slots(slots, unit_id, ability, ally, [])
 			return slots
@@ -3590,10 +3602,15 @@ func _build_ally_commit_slots(
 	var approach: Vector2i = _director.preview_approach_tile(
 		unit_id, ally.id, ability_index, approach_hint,
 	)
-	if approach == _proj_move_origin(actor) and not _in_ability_range_from(actor, ally.position, ally):
+	var live_origin: Vector2i = _proj_move_origin(actor)
+	if _director != null:
+		var live_unit: UnitState = _director.live_planning_board().get_unit_by_id(unit_id)
+		if live_unit != null:
+			live_origin = live_unit.position
+	if approach == live_origin and not _in_ability_range_from(actor, ally.position, ally):
 		slots["invalid"] = "Target is out of range."
 		return slots
-	if approach != _proj_move_origin(actor) and _unit_move_slot_open(unit_id, approach):
+	if approach != live_origin and _unit_move_slot_open(unit_id, approach):
 		var approach_path: Array[Vector2i] = []
 		if _ally_hover_respects_painted_route(actor, ally, ability, move_wps, move_dest):
 			approach_path = move_wps

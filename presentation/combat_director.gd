@@ -687,9 +687,9 @@ func preview_approach_tile(
 	ability_index: int,
 	preferred_tile: Vector2i,
 ) -> Vector2i:
-	var proj: BoardState = _get_planning_state()
-	var actor: UnitState = proj.get_unit_by_id(unit_id)
-	var target: UnitState = proj.get_unit_by_id(target_unit_id)
+	var plan_board: BoardState = _build_live_planning_board()
+	var actor: UnitState = plan_board.get_unit_by_id(unit_id)
+	var target: UnitState = plan_board.get_unit_by_id(target_unit_id)
 	if actor == null:
 		return preferred_tile
 	if target == null or actor.active_abilities.is_empty():
@@ -699,7 +699,7 @@ func preview_approach_tile(
 	var rng: int = actor.get_ability_range(ability)
 	if GridSystem.manhattan(actor.position, target.position) <= rng:
 		return actor.position
-	return _find_approach_tile(proj, actor, target.position, rng, preferred_tile)
+	return _find_approach_tile(plan_board, actor, target.position, rng, preferred_tile)
 
 
 func planning_move_budget(actor: UnitState, board: BoardState = null) -> int:
@@ -2325,8 +2325,19 @@ func _refresh_plan_core() -> void:
 				action.type == GameEnums.ActionType.MOVE
 				and _commit_animate_actor_ids.has(action.actor_id)
 			):
-				for move_event: SimEvent in _extract_commit_anim_events(move_ev):
-					move_event.data["planning_commit_move"] = true
+				var before_action: BoardState = _board_before_planning_action(
+					action as TimelineAction, plan_to_run,
+				)
+				var scratch: BoardState = before_action.clone()
+				var commit_ev: Array[SimEvent] = []
+				ResolutionPipeline.apply_action(scratch, action as TimelineAction, commit_ev)
+				ResolutionPipeline.resolve_pending_pushes(scratch, commit_ev)
+				for move_event: SimEvent in _extract_commit_anim_events(commit_ev):
+					if move_event.type != GameEnums.SimEventType.UNIT_MOVED:
+						continue
+					_finalize_planning_commit_move_event(
+						move_event, action as TimelineAction, before_action,
+					)
 					anim_events.append(move_event)
 			
 		var reason := ""
@@ -2351,7 +2362,7 @@ func _refresh_plan_core() -> void:
 
 	# Premoves (walk + movement skills like Swap) apply immediately on live board.
 	# Action-phase displacement (bash push, hook pull, etc.) stays preview-only until execute.
-	board = projected_state.clone()
+	board = _build_live_planning_board()
 	_sync_live_enemy_positions_to_turn_start(board)
 	var new_intents := EnemyPlanner.plan(projected_state)
 	base_board.intents = new_intents
@@ -2557,7 +2568,6 @@ func _collect_all_planning_move_anim_events() -> Array[SimEvent]:
 	var plan_to_run := _get_combined_plan()
 	if plan_to_run.size() == 0 or base_board == null:
 		return []
-	var move_only := base_board.clone()
 	var anim_events: Array[SimEvent] = []
 	for action: TimelineAction in plan_to_run.entries:
 		if action.awaiting_target or action.type != GameEnums.ActionType.MOVE:
@@ -2565,11 +2575,15 @@ func _collect_all_planning_move_anim_events() -> Array[SimEvent]:
 		var actor := base_board.get_unit_by_id(action.actor_id)
 		if actor == null or actor.is_enemy():
 			continue
+		var before_action: BoardState = _board_before_planning_action(action, plan_to_run)
+		var scratch: BoardState = before_action.clone()
 		var move_ev: Array[SimEvent] = []
-		ResolutionPipeline.apply_action(move_only, action, move_ev)
-		ResolutionPipeline.resolve_pending_pushes(move_only, move_ev)
+		ResolutionPipeline.apply_action(scratch, action, move_ev)
+		ResolutionPipeline.resolve_pending_pushes(scratch, move_ev)
 		for move_event: SimEvent in _extract_commit_anim_events(move_ev):
-			move_event.data["planning_commit_move"] = true
+			if move_event.type != GameEnums.SimEventType.UNIT_MOVED:
+				continue
+			_finalize_planning_commit_move_event(move_event, action, before_action)
 			anim_events.append(move_event)
 	return anim_events
 
@@ -2711,31 +2725,19 @@ func _prepend_swap_walk_commit_anims(
 	var actor_before: UnitState = before_move.get_unit_by_id(swap_action.actor_id)
 	if actor_before == null:
 		return
-	var walk_from: Vector2i = actor_before.position
 	var walk_to: Vector2i = move_action.target_coord
-	if walk_to.x < -900000 or walk_from == walk_to:
+	if walk_to.x < -900000 or actor_before.position == walk_to:
 		return
-	var path_cells: Array = [walk_from]
-	if move_action != null and not move_action.waypoints.is_empty():
-		path_cells = move_action.waypoints.duplicate()
-		if path_cells.is_empty() or path_cells[0] != walk_from:
-			path_cells.insert(0, walk_from)
-	else:
-		var found: Array[Vector2i] = MovementSystem.find_path(
-			before_move, walk_from, walk_to, actor_before.movement.points_left,
-		)
-		if not found.is_empty():
-			path_cells.append_array(found)
-		elif GridSystem.manhattan(walk_from, walk_to) == 1:
-			path_cells.append(walk_to)
-	var move_event: SimEvent = SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
-		"actor": swap_action.actor_id,
-		"from": walk_from,
-		"to": walk_to,
-		"path": path_cells,
-		"planning_commit_move": true,
-	})
-	anim_events.append(move_event)
+	var scratch: BoardState = before_move.clone()
+	var move_ev: Array[SimEvent] = []
+	ResolutionPipeline.apply_action(scratch, move_action, move_ev)
+	ResolutionPipeline.resolve_pending_pushes(scratch, move_ev)
+	for move_event: SimEvent in _extract_commit_anim_events(move_ev):
+		if move_event.type != GameEnums.SimEventType.UNIT_MOVED:
+			continue
+		_finalize_planning_commit_move_event(move_event, move_action, before_move)
+		anim_events.append(move_event)
+		return
 
 
 func _make_planning_swap_ability_event(action: TimelineAction, plan: Timeline) -> SimEvent:
@@ -2780,6 +2782,53 @@ func _board_before_planning_action(action: TimelineAction, plan: Timeline) -> Bo
 		ResolutionPipeline.apply_action(before, entry, events)
 		ResolutionPipeline.resolve_pending_pushes(before, events)
 	return before
+
+
+func _build_live_planning_board() -> BoardState:
+	var live: BoardState = base_board.clone()
+	for action: TimelineAction in plan_pre_move.entries:
+		if action.awaiting_target:
+			continue
+		var events: Array[SimEvent] = []
+		ResolutionPipeline.apply_action(live, action, events)
+		ResolutionPipeline.resolve_pending_pushes(live, events)
+	return live
+
+
+## Committed premove positions only — never action-phase preview displacement.
+func live_planning_board() -> BoardState:
+	return _build_live_planning_board()
+
+
+func _finalize_planning_commit_move_event(
+	move_event: SimEvent,
+	action: TimelineAction,
+	before_board: BoardState,
+) -> void:
+	if move_event == null or action == null or before_board == null:
+		return
+	var actor: UnitState = before_board.get_unit_by_id(action.actor_id)
+	if actor == null:
+		return
+	var from_cell: Vector2i = actor.position
+	move_event.data["from"] = from_cell
+	move_event.data["to"] = action.target_coord
+	var path_cells: Array = []
+	if not action.waypoints.is_empty():
+		path_cells = action.waypoints.duplicate()
+		if path_cells.is_empty() or path_cells[0] != from_cell:
+			path_cells.insert(0, from_cell)
+	else:
+		path_cells = [from_cell]
+		var found: Array[Vector2i] = MovementSystem.find_path(
+			before_board, from_cell, action.target_coord, actor.movement.points_left,
+		)
+		if not found.is_empty():
+			path_cells.append_array(found)
+		elif GridSystem.manhattan(from_cell, action.target_coord) == 1:
+			path_cells.append(action.target_coord)
+	move_event.data["path"] = path_cells
+	move_event.data["planning_commit_move"] = true
 
 
 func _filter_committed_premove_visual_events(events: Array[SimEvent]) -> Array[SimEvent]:
