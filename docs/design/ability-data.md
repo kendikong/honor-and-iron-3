@@ -72,14 +72,27 @@ Authored once per skill. Modules do **not** each pay AP/MP or pick a second “c
 | **id** | Stable id (`bruiser_charge_strike`, …) |
 | **display_name** | Player-facing name |
 | **skill_type** | Planner bucket + classification only: `PRE_MOVE` (class movement skill), `CLASS_SKILL` (Action column), `BASIC_ATTACK` (0 AP Action). Universal Run/Wait stay system actions, not normal class-library skills. |
-| **cost_resource** | `AP` or `MP` |
-| **cost_value** | Integer (0 allowed, e.g. basic attack) |
+| **cost** | See **Cost block** below (not only a bare integer) |
 | **uses_per_combat** | Max uses this fight (`-1` = unlimited) |
+| **turn_flags** | Optional: `ENDS_TURN`, `DELAY_TURNS` (e.g. Meteor delay 1) |
 | **upgrade** | Optional upgraded variant (see §8) |
 | **presentation_key** | Opaque key for VFX/SFX bank (sim only stores/forwards the string) |
 | **presentation_anim** | Pose/anim hint: `AUTO`, `ATTACK`, `SPELL`, `WALK`, `RUN`, `NONE`, … |
 | **tooltip / keyword line** | Derived for UI from modules when possible; may store Bible-style summary text |
 | **notes (editor only)** | Designer comments; ignored by sim |
+
+### Cost block (header)
+
+Same structure for every skill — fill the fields the skill needs:
+
+| Field | Options / meaning |
+|-------|-------------------|
+| **primary_resource** | `AP`, `MP`, `HP` (Bible flat HP spend), or `NONE` |
+| **primary_value** | Integer, or special: `ALL_REMAINING` (e.g. Guardian Step spends all MOV) |
+| **cost_modifier** | Optional rule that changes the paid cost: `NONE`, `ZERO_IF_<condition>` (e.g. Adrenaline Surge: 0 AP if adjacent to 2+ enemies) |
+| **secondary_cost** | Optional extra pay (e.g. Time Warp: AP skill + spend HP) — same resource/value shape |
+
+Examples: basic attack → AP 0; Swap → MP 1; Blood Boil → HP 5 (+ AP if the card also costs AP); Adrenaline Surge → AP 1 with modifier `ZERO_IF_ADJACENT_ENEMIES_GTE_2`.
 
 ### Skill type → planner
 
@@ -94,14 +107,20 @@ Authored once per skill. Modules do **not** each pay AP/MP or pick a second “c
 ### Cost rules
 
 - Cost is charged **once** when the skill is committed/used (header), not per module.
-- A class skill may include move modules; that does **not** add a second AP cost unless the header says so.
+- A class skill may include move modules; that does **not** add a second AP cost unless the header cost block says so.
 - Movement-skill cards (`PRE_MOVE` + MP cost) never consume the Action slot.
+- **Universal walk MP** still obeys Bible “pre **or** post, not split.” Skill MOVE modules are skill-owned steps, not a second split of that universal pool.
+
+### Structure vs vocabulary
+
+The **structure** (header → modules → layers → gates) is fixed.  
+**Dropdown / option lists** (effects, motion modes, conditions, filters, cost modifiers) grow as the Bible needs them — same fields, more choices. Filling gaps means adding options, not inventing a new architecture.
 
 ---
 
 ## 2. Module (one step)
 
-Modules run in **order**. Each module is a full targeting pass (new criteria), unless a future option explicitly links targets (not required for v1).
+Modules run in **order**. Default: each module is a **new aim**. Optional **aim binding** can reuse or auto-pick targets (see §2.5).
 
 ### 2.1 Execution phase
 
@@ -115,27 +134,45 @@ When this step runs relative to the turn columns:
 
 Default: if omitted, infer from effect (MOVE/DASH → often Pre or Post by gate; damage/heal → Action). Prefer **explicit** phase in the editor.
 
-### 2.2 Primary effect
+### 2.2 Primary effect (+ motion mode when motion)
 
-What this module *is*. Examples (non-exhaustive; grow as shared vocabulary):
+What this module *is*. Families (grow the list; keep the field):
 
 | Effect family | Examples |
 |---------------|----------|
-| Damage | ATK-based, MAG-based, fixed |
-| Heal | Mag-based heal, fixed heal, HP%-based heal |
-| Motion | MOVE, DASH, JUMP/teleport-to-tile, SWAP |
-| Control | PUSH, PULL, THROW_BEHIND, … |
-| Status | Apply / remove status |
-| Utility | SHIELD, CHANGE_TERRAIN, DESTROY_OBSTACLE, SPAWN, … |
+| Damage | ATK-based, MAG-based, fixed; optional hit_count for multi-hit |
+| Heal / Shield | Mag heal, fixed/HP% heal, SHIELD; convert-missing-HP→SHIELD |
+| Motion | MOVE, DASH, JUMP, TELEPORT, SWAP, MOVE_OTHER, PAIRED_MOVE (you + another) |
+| Control | PUSH, PULL, THROW_BEHIND, PULL_SELF_TO_TARGET, PULL_TARGET_TO_SELF |
+| Status | Apply / remove / PURGE / CLEANSE |
+| Utility | CHANGE_TERRAIN, CREATE_HAZARD, DESTROY_OBSTACLE, SPAWN, GRANT_AP, GRANT_NEXT_ATTACK_MOD, ARM_REACTION |
 | Keywords (bundles) | TRAMPLE, BULLDOZE (see §6) |
 
-Editor greys out illegal combos (e.g. MOVE + ARC shape).
+**Motion mode** (when primary effect is motion):
 
-### 2.3 Min / max range
+| Mode | Meaning |
+|------|---------|
+| `TO_EMPTY_TILE` | Normal walk/dash/jump/teleport destination |
+| `TO_TARGET_UNIT` | Move into engagement with aimed unit (Swift Strike) |
+| `ADJACENT_TO_TARGET` | Land adjacent to aimed unit (Shadow Step) |
+| `BEHIND_TARGET` | Land behind aimed unit |
+| `VAULT_OVER` | Jump over unit/obstacle to opposite empty tile |
+| `INTO_OCCUPIED_PUSH` | Enter occupied tile and push occupant (Push Through) |
+| `BACKWARDS` | Facing-constrained retreat (Tactical Retreat) |
+| `SLIDE_TARGET_OPPOSITE` | Reposition: slide targeted unit to opposite side of you |
+| `ALLY_STEP` | Usher: ally steps into empty adjacent (you may stay put) |
+
+Editor greys out illegal shape/mode combos.
+
+**Player choice (OR)** — still inside the module, not a new system:  
+`resolution_choice`: `NONE` \| `PICK_ONE_OF_EFFECTS` (e.g. Grappling Hook: pull self **or** pull target). Planner shows the choice; commit stores which branch was picked.
+
+### 2.3 Min / max range + LOS
 
 - Inclusive Manhattan range from the **range origin** (see §3).
-- Examples: `0–0` (self), `1–1` (melee), `1–3`, `2–2`, `0–unlimited` (GLOBAL-style).
-- Some mins/maxes greyed out by effect (e.g. MOVE: must allow a legal destination rule; often `1–N` or `0–N` “up to N”).
+- Examples: `0–0` (self), `1–1` (melee), `1–3`, `2–2`, `0–unlimited` (**GLOBAL**).
+- **requires_los**: default on; off when GLOBAL or Bible says otherwise.
+- Some mins/maxes greyed out by effect (e.g. MOVE often `1–N` or `0–N` “up to N”).
 
 **Important:** RANGE is **per module**. Move 2 and attack range 4 are different modules — never one overloaded field.
 
@@ -148,27 +185,49 @@ Editor greys out illegal combos (e.g. MOVE + ARC shape).
 | AOE cross / diamond | Size = radius |
 | ARC | Sweep; size rules per Bible |
 | CONE / LINE (skewer) | Directional; size = length |
+| HAZARD_LINE | Suppressing Fire / Spear Wall style lines |
 
 Editor shows only shapes valid for the primary effect (MOVE → typically SINGLE destination).
 
-### 2.5 Targeting mode: tile vs unit
+### 2.5 Aim binding + targeting mode
+
+**Aim binding** (how this module gets its targets):
+
+| Binding | Meaning |
+|---------|---------|
+| `NEW_AIM` (default) | Player aims again — two different targets |
+| `SAME_AS_MODULE_N` | Reuse targets from module N — second effect, same aim |
+| `RULE_PICK` | Auto-pick by rule + params (e.g. highest HP enemy in R3 — Board Scrambler) |
 
 **Tile mode**
 
-- Player aims a **tile** (empty or occupied per rules).
-- Invokes **two-phase awaiting** when the skill needs destination confirm (same spirit as today’s awaiting-target for movement endpoints).
-- Checkboxes: **affect allies on tiles?** / **affect enemies on tiles?** (disabled if the effect does not care about occupants).
+- Player aims a **tile** (empty or occupied per motion mode / checkboxes).
+- Invokes **two-phase awaiting** when destination confirm is required.
+- Checkboxes: **affect allies on tiles?** / **affect enemies on tiles?**
+- Optional: **allow occupied destination** (Push Through).
 
 **Unit mode**
 
 - Player aims a **unit** only; empty tile = invalid.
 - Checkboxes: **ally valid?** / **enemy valid?** / **self valid?** as applicable.
 
-### 2.6 Effect values + duration
+**Target filters** (validity checklist on the same module — add rows as needed):
 
-- Magnitude(s) for the primary effect (ATK power, heal X, dash length already in range, push distance if primary is push, etc.).
-- **Duration** when the effect is a status or timed buff/debuff.
-- Scaling (STR / MAG / NONE / special) attaches here or on damage/heal subtypes.
+| Filter examples | Bible use |
+|-----------------|-----------|
+| HP below % | Executioner’s Blade |
+| Has at least one debuff | Bestial Roar, Terrify |
+| Target current HP &lt; caster Max HP | Hex |
+| Already damaged | Swift Strike [+] |
+| Has status X | vs BLEED, etc. |
+| Not acted yet this round | Precision Strike style |
+
+### 2.6 Effect values + duration + scaling
+
+- Magnitude(s) for the primary effect.
+- **Duration** when status / timed buff.
+- **Scaling**: STR / MAG / NONE / WPN / caster DEF / Max HP % / missing HP / per-tile-moved / per-target-hit.
+- Optional **self_also** for Headbutt-style self + target.
 
 ### 2.7 Module gate (does this module run?)
 
@@ -177,14 +236,15 @@ Checked at **this module’s resolution time**, using the board **after earlier 
 | Gate examples | Meaning |
 |---------------|---------|
 | Always | Always runs (if skill itself was legal) |
-| If killed enemy | At least one enemy reached 0 HP from earlier steps of this skill |
+| If killed enemy | Enemy reached 0 HP from earlier steps of this skill |
 | If damage dealt | Earlier step dealt damage |
+| If collided | Motion collided (Violent Collision → second MOVE) |
 | If adjacent to enemy / ally | Actor adjacency at check time |
-| If isolated | No allies adjacent (Bible-style flanking isolation) |
+| If isolated | No allies adjacent |
 | If no move this turn yet | Actor has not spent movement before this skill |
-| … | Shared vocabulary grows; no per-skill code |
+| … | **Add rows here as Bible needs — same gate field** |
 
-**Planning:** Preview uses the same sim rules. If a gated module would not run, its aim/path is inactive or cleared in UI so commit does not show a lie.
+**Planning:** Preview uses the same sim rules. If a gated module would not run, its aim is inactive/cleared. If preview shows the gate will pass, that module’s aim is required up front.
 
 ---
 
@@ -198,7 +258,7 @@ Checked at **this module’s resolution time**, using the board **after earlier 
 |--------|-----|
 | Actor (default) | Normal skills |
 | Last targeted tile | Effects measured from the tile aimed by a previous module |
-| *(future)* Last targeted unit’s tile | Spotter-style / ally-origin skills |
+| Last targeted unit’s tile | Spotter-style / ally-origin skills |
 
 If unspecified → Actor default.
 
@@ -231,7 +291,7 @@ Each layer has:
 | **Values / duration** | As applicable |
 | **Activation condition** | When the layer fires |
 
-**Layer condition examples**
+**Layer condition examples** (same idea as module gates — grow the list):
 
 | Condition | Typical use |
 |-----------|-------------|
@@ -239,10 +299,15 @@ Each layer has:
 | When damage dealt | Push only if the hit connected |
 | When moved through enemy | Path hit (trample push, etc.) |
 | On collision | Bowling / bulldoze end or ram |
-| On kill | Bonus on that target |
+| On chain collision | Bowling [+]: rammed enemy hits another |
+| On kill | Bonus on that target / spawn decoy |
 | On land | After jump/teleport arrival |
+| Per tile moved | Trampling [+] SHIELD per tile |
+| Per target hit | Crimson Whirlwind [+] HEAL per hit |
+| If already adjacent at cast | Shield Slam bonus ATK |
+| If from behind / not acted yet / has status | Facing & state checks |
 
-**Multi-hit:** Prefer a damage layer (or hit-count on the primary damage) on the **same** module — not a second module — when targets are the same.
+**Multi-hit:** Prefer a damage layer (or hit_count on the primary damage) on the **same** module — not a second module — when targets are the same.
 
 ---
 
@@ -252,10 +317,11 @@ Some Bible terms are **packages** so authors do not assemble five checkboxes eve
 
 | Keyword | Intent (author-facing) | Expands to (engine) |
 |---------|------------------------|---------------------|
-| **TRAMPLE** | Passthrough + attack-on-move-through | Pass-through movement flag + ON_PASS damage (amount on keyword) |
+| **TRAMPLE** | Passthrough + attack-on-move-through | Pass-through flag + ON_PASS damage (amount on keyword) |
 | **BULLDOZE** | Passthrough + collision package | Pass-through + ON_COLLISION damage/push (amounts on keyword) |
 | **GHOST** (during move) | Pass terrain/units per Bible | Movement flag for that module |
-| **CANTO** (full refund) | Unit/passive style full MOV refund after action | Status / passive — prefer header or post-move module with fixed tiles for **skill-granted** partial canto |
+| **PIERCE** | Ignore DEF/MAG on this hit | Damage flag |
+| **CANTO** (full refund) | Unit/passive full MOV refund after action | Status/passive; skill-granted partial canto = POST_MOVE module with fixed range |
 
 Authors may **split** a keyword into separate layers when a skill needs only part of the bundle. Default: keep the keyword for simplicity.
 
@@ -418,17 +484,17 @@ Today’s flat resource roughly has: one `range_tiles`, one `kind`, one effect l
 
 ---
 
-## 13. Known holes (not solved by v1 modules alone)
+## 13. Outside this system (on purpose)
 
-Still out of scope unless we add a **new shared construct** (owner approval):
+These are **not** AbilityData module problems — they live elsewhere:
 
-| Hole | Why |
-|------|-----|
-| Player **OR** branch (pull me **or** pull them) | Needs choice / XOR branches, not only if-gates |
-| Range from **another unit** without standing there | Needs range origin = selected ally (listed as future origin) |
-| Reactions / interrupts | Outside Pre-Move → Action → Post-Move planning |
-| Mimic / cast another unit’s skill | Ability-as-value, not static modules |
-| Passives | Separate system; not AbilityData modules |
+| Item | Where it belongs |
+|------|------------------|
+| Passives | Passive / trait system |
+| Enemy-turn reactions / ZoC interrupts | Reaction / status triggers (a skill may **ARM_REACTION**, but the interrupt isn’t a planned module) |
+| Mimic / cast another unit’s skill | Ability-as-value (rare; approve if ever needed) |
+
+Everything else called out in Bible skill lines (OR choice, vault modes, HP cost, filters, rule-pick targets, delay/ends turn, next-attack grants, ally-origin range, etc.) is expressed by **adding options to the fields above**, not by a second architecture.
 
 ---
 
@@ -436,30 +502,32 @@ Still out of scope unless we add a **new shared construct** (owner approval):
 
 Use this doc as the acceptance bar:
 
-1. [ ] Data schema: `AbilityData` header + `AbilityModule` + `AbilityLayer` (+ condition ids)
-2. [ ] Shared condition table (module gates + layer conditions)
+1. [ ] Data schema: header (incl. cost block + turn_flags) + `AbilityModule` + `AbilityLayer`
+2. [ ] Shared tables: gates, layer conditions, target filters, motion modes, cost modifiers, rule-pick ids
 3. [ ] Keyword expansion (TRAMPLE, BULLDOZE, …)
-4. [ ] Range origin default + optional overrides
-5. [ ] Path vs destination targeting for movement modules
-6. [ ] Planning: multi-aim in module order; gated aims preview-correct
-7. [ ] Sim: execute modules in order; layers; gates; events for presentation
-8. [ ] Presentation: header/module anim sequencing
-9. [ ] Class library editor UX matches §2 field order (effect → range → shape → mode → values → layers → gate)
-10. [ ] Migrate Knight/Bruiser factories off flat range/effects
-11. [ ] QA: planning gate + regression; Bible spot-checks for trampling / bowling / charge lines
-12. [ ] Delete obsolete fallbacks (e.g. MOVE distance falling back to attack range)
+4. [ ] Range origin + LOS/GLOBAL
+5. [ ] Aim binding: NEW_AIM / SAME_AS_MODULE_N / RULE_PICK
+6. [ ] Path vs destination for movement modules
+7. [ ] `resolution_choice` for OR skills
+8. [ ] Planning: multi-aim + choices + gated aims preview-correct
+9. [ ] Sim: modules in order; layers; gates; events for presentation
+10. [ ] Presentation: header/module anim sequencing
+11. [ ] Class library editor follows authoring order in §2
+12. [ ] Migrate Knight/Bruiser factories; expand options as later classes need them
+13. [ ] QA: planning gate + regression; Bible spot-checks
+14. [ ] Delete obsolete fallbacks (e.g. MOVE distance falling back to attack range)
 
 ---
 
 ## 15. Owner quick reference
 
-**To invent a skill:** pick header (type + cost) → add modules in order → for each module set effect, min/max range, shape, tile/unit, values → add layers for same-target extras → set module gate if not Always → set presentation.
+**To invent a skill:** pick header (type + cost block) → add modules in order → for each module: effect (+ motion mode if needed), min/max range, shape, aim binding, tile/unit + filters, values → layers → gate → presentation.
 
 **Remember**
 
-- Cost/type once on the header  
-- New aim = new module  
-- Same targets extra juice = layer  
+- Structure stays the same; new Bible needs = new dropdown rows  
+- Cost/type once on the header (with modifiers / HP / all-MOV as needed)  
+- New player aim = new module (`NEW_AIM`); same targets = layer or `SAME_AS_MODULE_N`  
 - After move, next RANGE is from the new tile (unless you override origin)  
 - Move destination ≠ path; trample/bowling use path/collision layers  
 
@@ -470,3 +538,4 @@ Use this doc as the acceptance bar:
 | Date | Change |
 |------|--------|
 | 2026-08-02 | Initial DRAFT from owner modular design + planning/presentation/upgrade gaps filled for refactor readiness |
+| 2026-08-02 | Clarified structure vs vocabulary; filled cost block, motion modes, aim binding, filters, OR choice, LOS/turn flags, expanded gates/layers — Bible gaps as options inside the same structure |
