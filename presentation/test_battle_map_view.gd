@@ -58,11 +58,15 @@ func _active_board() -> BoardState:
 func apply_training_board() -> void:
 	if _director == null:
 		return
+	if _unit_layer != null:
+		_unit_layer.abort_planning_commit_sequence()
+	_director.flush_plan_refresh_signals_if_pending()
 	_encounter = TestBattleEncounterBuilder.build_encounter(_session)
 	var board: BoardState = TestBattleEncounterBuilder.build_board(_session)
 	_director.start_from_custom(board)
 	if _unit_layer != null:
 		_unit_layer.rebuild_all_actor_visuals()
+	_director.flush_plan_refresh_signals_if_pending()
 	_director.select_unit(_first_player_unit_id())
 
 

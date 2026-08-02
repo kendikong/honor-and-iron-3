@@ -184,7 +184,10 @@ static func adjust_swap_intent_actor_pose(
 			if actor_id < 0:
 				actor_id = action.actor_id
 			if walk_dest.x < -900000:
-				walk_dest = _swap_approach_cell(director, preview_board, action)
+				var approach_board: BoardState = preview_board
+				if director != null and director.base_board != null:
+					approach_board = director.base_board
+				walk_dest = _swap_approach_cell(director, approach_board, action)
 	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
 		return
 	var actor: UnitState = preview_board.get_unit_by_id(actor_id)

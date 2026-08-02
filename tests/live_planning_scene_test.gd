@@ -167,6 +167,13 @@ func _boot_swap_session(
 func _reapply_swap_training_board(ctx: Dictionary, ally_cell: Vector2i) -> void:
 	var scene: TestBattleMapView = ctx.scene as TestBattleMapView
 	var runner: GdUnitSceneRunner = ctx.runner as GdUnitSceneRunner
+	var director: CombatDirector = ctx.director
+	director.flush_plan_refresh_signals_if_pending()
+	var layer: TacticalUnitLayer = _unit_layer(ctx)
+	if layer != null:
+		await layer.await_planning_commit_sequence()
+		await _wait_planning_move_tween(ctx, ctx.k1_id)
+		await _wait_planning_move_tween(ctx, ctx.ally_id)
 	var session: TestBattleSession = scene.get_session()
 	session.reset_defaults()
 	session.extra_player_coords = [ally_cell]
@@ -175,13 +182,25 @@ func _reapply_swap_training_board(ctx: Dictionary, ally_cell: Vector2i) -> void:
 	if _qa_fast_enabled():
 		scene._center_map()
 	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
-	var director: CombatDirector = ctx.director
+	if layer != null:
+		await layer.await_planning_commit_sequence()
+	director = ctx.director
 	var board: BoardState = director.board
 	ctx["board"] = board
 	ctx["ally_cell"] = ally_cell
 	ctx["ally_id"] = _unit_id_at(board, ally_cell)
 	ctx["start_k1_mp"] = director.turn_start_board.get_unit_by_id(ctx.k1_id).movement.points_left
+	_refresh_ctx_board(ctx)
 	_cancel_active_pointer(ctx)
+	var k1: UnitState = board.get_unit_by_id(ctx.k1_id)
+	assert_object(k1).override_failure_message(
+		"reapply: k1 missing after training board reset",
+	).is_not_null()
+	if k1 != null:
+		assert_that(k1.position).override_failure_message(
+			"reapply: k1 board cell must reset to %s" % _cell_name(_K1_CELL),
+		).is_equal(_K1_CELL)
+	await _assert_actor_on_cell(ctx, ctx.k1_id, _K1_CELL, "reapply/k1_sprite")
 
 
 func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:

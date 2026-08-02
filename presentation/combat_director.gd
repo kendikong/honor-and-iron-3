@@ -783,6 +783,10 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 		_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 	if has_action:
 		if _try_finalize_awaiting_from_slots(unit_id, slots):
+			var swap_entry: TimelineAction = _find_plan_swap_action(unit_id)
+			if swap_entry != null:
+				_register_planning_swap_presentation(swap_entry)
+			var added_pre_move: bool = false
 			if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
 				if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 					return false
@@ -790,8 +794,12 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 				for raw: Variant in slots.get("pre", []):
 					if raw is TimelineAction:
 						_try_add(raw as TimelineAction, plan_pre_move)
-			plan_affected_unit_ids = [unit_id]
-			_refresh_plan()
+						added_pre_move = true
+			if not added_pre_move:
+				plan_affected_unit_ids = [unit_id]
+				_refresh_plan()
+			elif unit_id not in plan_affected_unit_ids:
+				plan_affected_unit_ids.append(unit_id)
 			return true
 		_clear_unit_wait(unit_id)
 		_clear_unit_class_actions_from_plan(unit_id)
@@ -935,15 +943,7 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null:
 			if actions[i].ability.is_movement_kind():
 				_cancel_ally_plans_after_movement_step(actions[i])
-			if AbilitySystem.ability_has_swap_effect(actions[i].ability):
-				## Every swap commit animates both units; never pre-mark instant or sprites
-				## snap on board_changed and skip the swap presentation tween.
-				clear_planning_move_instant(actions[i].actor_id)
-				if actions[i].target_unit_id >= 0:
-					clear_planning_move_instant(actions[i].target_unit_id)
-				_swap_planning_presentations.append(actions[i])
-				if actions[i].target_unit_id >= 0 and actions[i].target_unit_id not in plan_affected_unit_ids:
-					plan_affected_unit_ids.append(actions[i].target_unit_id)
+			_register_planning_swap_presentation(actions[i])
 	for actor_id: int in new_actors:
 		if actor_id not in plan_affected_unit_ids:
 			plan_affected_unit_ids.append(actor_id)
@@ -956,6 +956,43 @@ func get_player_plan() -> Timeline:
 func mark_planning_move_instant(unit_id: int) -> void:
 	if unit_id >= 0:
 		_instant_planning_move_units[unit_id] = true
+
+
+func _register_planning_swap_presentation(action: TimelineAction) -> void:
+	if action == null or action.ability == null:
+		return
+	if not AbilitySystem.ability_has_swap_effect(action.ability):
+		return
+	var resolved: TimelineAction = _find_plan_swap_action(action.actor_id, action.ability)
+	if resolved != null:
+		action = resolved
+	## Every swap commit animates both units; never pre-mark instant or sprites snap
+	## on board_changed and skip the swap presentation tween.
+	clear_planning_move_instant(action.actor_id)
+	if action.target_unit_id >= 0:
+		clear_planning_move_instant(action.target_unit_id)
+	if action in _swap_planning_presentations:
+		return
+	_swap_planning_presentations.append(action)
+	if action.target_unit_id >= 0 and action.target_unit_id not in plan_affected_unit_ids:
+		plan_affected_unit_ids.append(action.target_unit_id)
+
+
+func _find_plan_swap_action(actor_id: int, ability: AbilityData = null) -> TimelineAction:
+	if actor_id < 0:
+		return null
+	for plan: Timeline in _all_plans():
+		for entry: TimelineAction in plan.entries:
+			if entry.actor_id != actor_id or entry.awaiting_target:
+				continue
+			if entry.type != GameEnums.ActionType.ABILITY or entry.ability == null:
+				continue
+			if not AbilitySystem.ability_has_swap_effect(entry.ability):
+				continue
+			if ability != null and entry.ability != ability:
+				continue
+			return entry
+	return null
 
 
 func take_planning_move_instant(unit_id: int) -> bool:
@@ -2715,24 +2752,25 @@ func _prepend_swap_walk_commit_anims(
 ) -> void:
 	if swap_action == null or plan == null or base_board == null:
 		return
+	var swap_entry: TimelineAction = _plan_swap_entry(swap_action, plan)
 	for existing: SimEvent in anim_events:
 		if (
 			existing.type == GameEnums.SimEventType.UNIT_MOVED
-			and int(existing.data.get("actor", -1)) == swap_action.actor_id
+			and int(existing.data.get("actor", -1)) == swap_entry.actor_id
 		):
 			return
 	var move_action: TimelineAction = null
 	for entry: TimelineAction in plan.entries:
-		if entry == swap_action:
+		if _timeline_actions_same_commit(entry, swap_entry):
 			break
 		if entry.awaiting_target:
 			continue
-		if entry.type == GameEnums.ActionType.MOVE and entry.actor_id == swap_action.actor_id:
+		if entry.type == GameEnums.ActionType.MOVE and entry.actor_id == swap_entry.actor_id:
 			move_action = entry
 	if move_action == null:
 		return
 	var before_move: BoardState = _board_before_planning_action(move_action, plan)
-	var actor_before: UnitState = before_move.get_unit_by_id(swap_action.actor_id)
+	var actor_before: UnitState = before_move.get_unit_by_id(swap_entry.actor_id)
 	if actor_before == null:
 		return
 	var walk_to: Vector2i = move_action.target_coord
@@ -2748,6 +2786,15 @@ func _prepend_swap_walk_commit_anims(
 		_finalize_planning_commit_move_event(move_event, move_action, before_move)
 		anim_events.append(move_event)
 		return
+
+
+func _plan_swap_entry(swap_action: TimelineAction, plan: Timeline) -> TimelineAction:
+	if swap_action == null or plan == null:
+		return swap_action
+	for entry: TimelineAction in plan.entries:
+		if _timeline_actions_same_commit(entry, swap_action):
+			return entry
+	return swap_action
 
 
 func _make_planning_swap_ability_event(action: TimelineAction, plan: Timeline) -> SimEvent:
@@ -2784,7 +2831,7 @@ func _board_before_planning_action(action: TimelineAction, plan: Timeline) -> Bo
 	assert(base_board != null)
 	var before: BoardState = base_board.clone()
 	for entry: TimelineAction in plan.entries:
-		if entry == action:
+		if _timeline_actions_same_commit(entry, action):
 			return before
 		if entry.awaiting_target:
 			continue
@@ -2792,6 +2839,31 @@ func _board_before_planning_action(action: TimelineAction, plan: Timeline) -> Bo
 		ResolutionPipeline.apply_action(before, entry, events)
 		ResolutionPipeline.resolve_pending_pushes(before, events)
 	return before
+
+
+func _timeline_actions_same_commit(a: TimelineAction, b: TimelineAction) -> bool:
+	if a == b:
+		return true
+	if a == null or b == null:
+		return false
+	if a.actor_id != b.actor_id or a.type != b.type:
+		return false
+	match a.type:
+		GameEnums.ActionType.MOVE:
+			return (
+				a.target_coord == b.target_coord
+				and a.move_timing == b.move_timing
+			)
+		GameEnums.ActionType.ABILITY:
+			if a.ability == null or b.ability == null:
+				return false
+			return (
+				a.ability == b.ability
+				and a.target_unit_id == b.target_unit_id
+				and a.target_coord == b.target_coord
+			)
+		_:
+			return false
 
 
 func _build_live_planning_board() -> BoardState:
