@@ -12,7 +12,7 @@ Set-Location $projectRoot
 function Get-CurrentBranch {
 	$b = (git rev-parse --abbrev-ref HEAD).Trim()
 	if (-not $b -or $b -eq "HEAD") {
-		throw "Detached HEAD — checkout a branch before sync."
+		throw "Detached HEAD - checkout a branch before sync."
 	}
 	return $b
 }
