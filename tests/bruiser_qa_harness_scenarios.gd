@@ -665,6 +665,22 @@ static func run_adrenaline_junkie(failures: Array[String]) -> void:
 	var mov_plain: int = plain.movement.max_points
 	H.assert_eq_int(failures, "adrenaline_junkie/str", str_at_half - str_plain, expected_bonus)
 	H.assert_eq_int(failures, "adrenaline_junkie/mov", mov_at_half - mov_plain, expected_bonus)
+	bruiser.health.current_hp = bruiser.health.max_hp
+	bruiser._recalculate_stats(board)
+	var str_full: int = CombatSystem.get_dynamic_strength(board, bruiser)
+	var mov_full: int = bruiser.movement.max_points
+	plain.health.current_hp = plain.health.max_hp
+	plain._recalculate_stats(plain_board)
+	H.assert_eq_int(failures, "adrenaline_junkie/full_hp_str", str_full - CombatSystem.get_dynamic_strength(plain_board, plain), 0)
+	H.assert_eq_int(failures, "adrenaline_junkie/full_hp_mov", mov_full - plain.movement.max_points, 0)
+	bruiser.health.current_hp = ceili(float(bruiser.health.max_hp) * 0.10)
+	bruiser._recalculate_stats(board)
+	var expected_nine: int = floori(0.9 / 0.10)
+	H.assert_eq_int(
+		failures, "adrenaline_junkie/ninety_pct_missing",
+		CombatSystem.get_dynamic_strength(board, bruiser) - str_full,
+		expected_nine,
+	)
 
 
 static func run_enraged(failures: Array[String]) -> void:
@@ -695,6 +711,12 @@ static func run_enraged(failures: Array[String]) -> void:
 	plain._recalculate_stats(plain_board)
 	var str_plain_clean: int = CombatSystem.get_dynamic_strength(plain_board, plain)
 	H.assert_eq_int(failures, "enraged/debuff_no_passive", str_plain_debuff - str_plain_clean, 0)
+	bruiser.active_statuses.clear()
+	bruiser.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1))
+	bruiser.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_MOV, 1, 1))
+	bruiser._recalculate_stats(board)
+	var str_two_types: int = CombatSystem.get_dynamic_strength(board, bruiser)
+	H.assert_eq_int(failures, "enraged/two_unique_debuffs", str_two_types - str_clean, 2)
 	var hazard_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.set_tile_trap(hazard_board, Vector2i(3, 3))
 	H.place_bruiser(hazard_board, 20, Vector2i(3, 3), cfg)
@@ -862,6 +884,15 @@ static func run_thrill_of_pain(failures: Array[String]) -> void:
 		board.pending_pushes.size() > 0,
 		"thrill attack must enqueue a PUSH on the target",
 	)
+	var self_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(self_board, 20, Vector2i(3, 3), H.with_single_passive(&"thrill_of_pain", false))
+	var self_bruiser: UnitState = H.unit_on_board(self_board, 20)
+	var self_events: Array[SimEvent] = []
+	CombatSystem.deal_damage(self_board, self_bruiser, 4, self_events, &"physical", false, false, null, "self")
+	H.assert_true(
+		failures, "thrill_of_pain/self_damage_active",
+		self_bruiser.passive_flags.get("thrill_active", false),
+	)
 
 
 static func run_momentum_of_titan(failures: Array[String]) -> void:
@@ -999,7 +1030,7 @@ static func run_crowd_breaker(failures: Array[String]) -> void:
 	H.place_bruiser(board2, 10, Vector2i(3, 3), H.with_single_passive(&"crowd_breaker", false))
 	var str_alone: int = CombatSystem.get_dynamic_strength(board2, H.unit_on_board(board2, 10))
 	H.assert_eq_int(failures, "crowd_breaker/adj_str", str_adj - str_alone, 1)
-	H.assert_true(failures, "crowd_breaker/splash", splash_dmg > 0)
+	H.assert_eq_int(failures, "crowd_breaker/splash_amount", splash_dmg, 1)
 	H.assert_true(
 		failures, "crowd_breaker/splash_bonus",
 		splash_dmg > splash_plain,

@@ -56,7 +56,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **17 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **14** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
+**Summary (honest):** **20 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **11** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
 
 ### Movement + actives
 
@@ -69,7 +69,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `bruiser_suplex` | Active | `tests/skills/bruiser_suplex_scenario.gd` | PASS | DAMAGE + THROW_BEHIND — **not SWAP** |
 | `bruiser_adrenaline_surge` | Active | `tests/skills/bruiser_adrenaline_surge_scenario.gd` | PASS | SELF cost + buffs; 0 AP adjacency rule; `[+]` on-kill heal/shield |
 | `bruiser_earthshatter` | Active | `tests/skills/bruiser_earthshatter_scenario.gd` | PLANNED | ARC + DESTROY_OBSTACLE; `[+]` ATK per destroy |
-| `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | PLANNED | SWAP ally + INTERCEPT; `[+]` RANGE 3 + STR per intercept |
+| `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | PASS | SWAP ally + INTERCEPT; `[+]` RANGE 3 + STR per intercept |
 | `bruiser_frenzy` | Active | `tests/skills/bruiser_frenzy_scenario.gd` | PASS | Triple hit; `[+]` on-kill AP |
 | `bruiser_guttural_roar` | Active | `tests/skills/bruiser_guttural_roar_scenario.gd` | PASS | AOE PUSH + DEF debuff; `[+]` item push/collision |
 | `bruiser_headbutt` | Active | `tests/skills/bruiser_headbutt_scenario.gd` | PASS | Mutual DAMAGE + STAGGER; `[+]` % Max HP bonus |
@@ -86,9 +86,9 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `cellular_regeneration` | Cellular Regeneration | `tests/passives/cellular_regeneration_scenario.gd` | PASS | Turn start + adjacent enemy count |
 | `blood_for_blood` | Blood for Blood | `tests/passives/blood_for_blood_scenario.gd` | PASS | Damaged last turn → BLEED on attack |
 | `adrenaline_junkie` | Adrenaline Junkie | `tests/passives/adrenaline_junkie_scenario.gd` | PLANNED | Missing HP → MOV/STR; `[+]` DEF |
-| `enraged` | Enraged | `tests/passives/enraged_scenario.gd` | PLANNED | Debuff/hazard count → STR; `[+]` MOV |
+| `enraged` | Enraged | `tests/passives/enraged_scenario.gd` | PASS | Debuff/hazard count → STR; `[+]` MOV |
 | `last_stand` | Last Stand | `tests/passives/last_stand_scenario.gd` | PASS | HP &lt; 25% → STR/DEF |
-| `colossal_mass` | Colossal Mass | `tests/passives/colossal_mass_scenario.gd` | PLANNED | Max HP → STR scaling |
+| `colossal_mass` | Colossal Mass | `tests/passives/colossal_mass_scenario.gd` | PASS | Max HP → STR scaling |
 | `overwhelming_bulk` | Overwhelming Bulk | `tests/passives/overwhelming_bulk_scenario.gd` | PASS | HP vs target Max HP → PIERCE; `[+]` PUSH |
 | `thrill_of_pain` | Thrill of Pain | `tests/passives/thrill_of_pain_scenario.gd` | PLANNED | On damage → next attack buff |
 | `momentum_of_titan` | Momentum of the Titan | `tests/passives/momentum_of_titan_scenario.gd` | PLANNED | PUSH collision % Max HP damage |

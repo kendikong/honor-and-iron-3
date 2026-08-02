@@ -212,6 +212,24 @@ static func run_earthshatter_upgrade(failures: Array[String]) -> void:
 		failures, "earthshatter/upgrade/mod",
 		ab.upgraded_effects[1].modifiers.has("buff_per_destroyed_object"),
 	)
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_ability(&"bruiser_earthshatter"),
+		&"bruiser_earthshatter",
+	)
+	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	var construct_def: UnitData = DataLibrary.get_unit(&"construct_turret")
+	H.place_unit(board, 11, construct_def, GameEnums.Team.ENEMY, Vector2i(4, 4), {})
+	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_earthshatter")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 11))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var bruiser: UnitState = result.final_state.get_unit_by_id(1)
+	H.assert_eq_int(
+		failures, "earthshatter/upgrade/str_buff",
+		H.status_value(bruiser, GameEnums.StatusType.STAT_BUFF_STR),
+		1,
+	)
 
 
 static func run_frenzy_upgrade(failures: Array[String]) -> void:
@@ -336,6 +354,21 @@ static func run_blood_boil_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_blood_boil")
 	H.assert_eq_int(failures, "blood_boil/upgrade/hp_cost", ab.upgraded_effects[0].amount, 10)
 	H.assert_eq_int(failures, "blood_boil/upgrade/str", ab.upgraded_effects[1].amount, 5)
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_ability(&"bruiser_blood_boil"),
+		&"bruiser_blood_boil",
+	)
+	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	var bruiser: UnitState = H.unit_on_board(board, 1)
+	var hp_before: int = bruiser.health.current_hp
+	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_blood_boil")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, bruiser.position, bruiser.id))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	H.assert_eq_int(failures, "blood_boil/upgrade/hp_cost_sim", hp_before - after.health.current_hp, 10)
+	H.assert_eq_int(failures, "blood_boil/upgrade/str_sim", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 5)
 
 
 static func run_violent_collision_upgrade(failures: Array[String]) -> void:
@@ -391,9 +424,19 @@ static func run_momentum_of_titan_upgrade(failures: Array[String]) -> void:
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, ab, Vector2i(3, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
-	H.assert_true(
-		failures, "momentum_of_titan/upgrade/collision_dmg",
-		H.unit_hp(result.final_state, 2) < hp,
+	var dmg_up: int = hp - H.unit_hp(result.final_state, 2)
+	var board_base: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(5, 3)])
+	H.place_bruiser(board_base, 10, Vector2i(2, 3), cfg_base)
+	H.place_dummy(board_base, 11, Vector2i(3, 3))
+	var hp_base: int = H.unit_hp(board_base, 11)
+	var plan_base := Timeline.new()
+	plan_base.add(H.plan_ability(10, H.ability_on_unit(H.unit_on_board(board_base, 10), &"bruiser_concussion_blow"), Vector2i(3, 3), 11))
+	var result_base: SimResult = H.simulate_plan(board_base, plan_base)
+	var dmg_base: int = hp_base - H.unit_hp(result_base.final_state, 11)
+	H.assert_eq_int(
+		failures, "momentum_of_titan/upgrade/collision_delta",
+		dmg_up - dmg_base,
+		bonus_up - bonus_base,
 	)
 
 
@@ -779,7 +822,7 @@ static func run_crowd_breaker_upgrade(failures: Array[String]) -> void:
 	plan2.add(H.plan_ability(10, H.ability_on_unit(H.unit_on_board(board2, 10), &"bruiser_concussion_blow"), Vector2i(4, 3), 11))
 	var result2: SimResult = H.simulate_plan(board2, plan2)
 	var dmg_base: int = hp2 - H.unit_hp(result2.final_state, 12)
-	H.assert_true(failures, "crowd_breaker/upgrade/splash", dmg_up > dmg_base)
+	H.assert_eq_int(failures, "crowd_breaker/upgrade/splash", dmg_up - dmg_base, 1)
 
 
 static func run_juggernaut_upgrade(failures: Array[String]) -> void:

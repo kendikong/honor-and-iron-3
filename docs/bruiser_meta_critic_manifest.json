@@ -1,10 +1,10 @@
 {
   "piece": "B6-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 7,
-  "last_score": 89,
+  "last_critic_round": 10,
+  "last_score": 90,
   "last_result": "PASS",
-  "last_row_promoted": "bruiser_headbutt",
+  "last_row_promoted": "colossal_mass",
   "approved_rows": [
     {
       "factory_id": "bruiser_push_through",
@@ -106,6 +106,24 @@
       "factory_id": "overwhelming_bulk",
       "score": 89,
       "critic_round": 8,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "enraged",
+      "score": 89,
+      "critic_round": 10,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "colossal_mass",
+      "score": 90,
+      "critic_round": 10,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_meat_shield",
+      "score": 89,
+      "critic_round": 10,
       "fix_target": "none"
     }
   ]

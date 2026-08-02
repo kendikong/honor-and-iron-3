@@ -56,10 +56,6 @@ static func deal_collision_damage(
 	var str_val := get_dynamic_strength(board, pusher)
 	var mult_raw := COLLISION_FORCE_MULT * (base + wpn) * (1.0 + str_val / 5.0)
 	
-	if pusher.has_passive(&"momentum_of_the_titan"):
-		var pct := 0.20 if pusher.is_passive_upgraded(&"momentum_of_the_titan") else 0.10
-		mult_raw += pusher.health.max_hp * pct
-	
 	# Apply generic collision damage modifiers from passives
 	for passive: PassiveData in pusher.active_passives:
 		if passive.modifiers.has("collision_add_def_pct"):
