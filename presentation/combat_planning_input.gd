@@ -175,12 +175,25 @@ func on_left_press(local: Vector2) -> void:
 				return
 		if _director.selected_unit_id >= 0 and unit.id != _director.selected_unit_id:
 			var caster := _proj_unit(_director.selected_unit_id)
-			if caster != null and _can_target_unit_with_selected_ability(caster, unit):
-				if selected_phase_action_exhausted(_director.selected_unit_id):
-					_play_sfx("invalid")
-				else:
-					_commit_at_interaction_cell(_director.selected_unit_id, cell, local, unit.id)
-				return
+			if caster != null:
+				if not force_basic_movement and _director.selected_ability_index >= 0:
+					var ability: AbilityData = _selected_ability_data(caster)
+					if ability != null and AbilitySystem.target_passes_mode(caster, ability, unit):
+						if selected_phase_action_exhausted(_director.selected_unit_id):
+							_play_sfx("invalid")
+						elif _commit_at_interaction_cell(
+							_director.selected_unit_id, cell, local, unit.id,
+						):
+							return
+						else:
+							_play_sfx("invalid")
+						return
+				if _can_target_unit_with_selected_ability(caster, unit):
+					if selected_phase_action_exhausted(_director.selected_unit_id):
+						_play_sfx("invalid")
+					else:
+						_commit_at_interaction_cell(_director.selected_unit_id, cell, local, unit.id)
+					return
 		if aiming and unit.id == _director.selected_unit_id:
 			if not _commit_at_interaction_cell(_director.selected_unit_id, cell, local):
 				_play_sfx("invalid")
@@ -3773,17 +3786,31 @@ func _final_commit_slots_for_click_at_cell(
 	if unit_at != null and not unit_at.is_enemy() and unit_at.is_alive():
 		if unit_at.id != unit_id:
 			var caster: UnitState = _proj_unit(unit_id)
-			if caster != null and _can_target_unit_with_selected_ability(caster, unit_at):
-				var params: Dictionary = _commit_interaction_params(cell, unit_at.id)
-				return _slots_with_facing_for_commit(
-					unit_id,
-					params.cell,
-					local,
-					params.waypoints,
-					params.legal_move_tiles,
-					params.preferred,
-					int(params.get("face_dir", -1)),
-				)
+			if caster != null:
+				if not force_basic_movement and _director.selected_ability_index >= 0:
+					var ability: AbilityData = _selected_ability_data(caster)
+					if ability != null and AbilitySystem.target_passes_mode(caster, ability, unit_at):
+						var params: Dictionary = _commit_interaction_params(cell, unit_at.id)
+						return _slots_with_facing_for_commit(
+							unit_id,
+							params.cell,
+							local,
+							params.waypoints,
+							params.legal_move_tiles,
+							params.preferred,
+							int(params.get("face_dir", -1)),
+						)
+				if _can_target_unit_with_selected_ability(caster, unit_at):
+					var params: Dictionary = _commit_interaction_params(cell, unit_at.id)
+					return _slots_with_facing_for_commit(
+						unit_id,
+						params.cell,
+						local,
+						params.waypoints,
+						params.legal_move_tiles,
+						params.preferred,
+						int(params.get("face_dir", -1)),
+					)
 	if unit_at != null and unit_at.is_enemy():
 		var params: Dictionary = _commit_interaction_params(cell, unit_at.id)
 		return _slots_with_facing_for_commit(
@@ -3887,15 +3914,12 @@ func _cursor_icon_from_commit_slots(slots: Dictionary, unit: UnitState = null) -
 		return PlanningIcons.GLYPH_NULL
 	var glyphs: PackedStringArray = []
 	for col: String in ["pre", "action", "post"]:
-		var steps: Array = slots.get(col, [])
-		if steps.is_empty():
-			continue
-		var step: TimelineAction = steps[0] as TimelineAction
-		if step == null:
-			continue
-		var glyph: String = _step_cursor_glyph(step, unit)
-		if glyph != "":
-			glyphs.append(glyph)
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var glyph: String = _step_cursor_glyph(raw as TimelineAction, unit)
+			if glyph != "":
+				glyphs.append(glyph)
 	if glyphs.is_empty():
 		return ""
 	if not _composite_cursors_enabled() or glyphs.size() == 1:

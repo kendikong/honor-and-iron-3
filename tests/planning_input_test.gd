@@ -30,6 +30,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_swap_undo_cascades_all_plans_after,
 		_test_swap_refresh_updates_live_board,
 		_test_walk_then_swap_commit_appends_skill,
+		_test_swap_ally_out_of_range_click_parity,
 		_test_ability_scroll_clears_hover_preview_cache,
 	]
 	for test: Callable in tests:
@@ -326,6 +327,36 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 	if icon != expected_paired:
 		failures.append(
 			"PlanningInputTest: paired run+dash cursor should composite, got %s" % icon,
+		)
+	var swap := AbilityData.new()
+	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.id = &"knight_swap"
+	swap.movement_point_cost = 1
+	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
+	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	var walk_swap_slots: Dictionary = {
+		"pre": [
+			TimelineAction.make_move(
+				1, Vector2i(3, 4), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+			),
+			TimelineAction.make_ability(
+				1, swap, Vector2i(2, 4), 3, GameEnums.MoveTiming.PRE_ACTION, [],
+			),
+		],
+		"action": [],
+		"post": [],
+		"invalid": false,
+	}
+	icon = input._cursor_icon_from_commit_slots(walk_swap_slots, unit)
+	var expected_walk_swap: String = PlanningIcons.join_glyphs([
+		PlanningIcons.GLYPH_WALK,
+		PlanningIcons.GLYPH_SWAP,
+	])
+	if icon != expected_walk_swap:
+		failures.append(
+			"PlanningInputTest: paired walk+swap premove cursor should composite, got %s"
+			% icon,
 		)
 	var move_glyph: String = input._step_cursor_glyph(
 		TimelineAction.make_run_move(
@@ -1569,6 +1600,94 @@ static func _test_walk_then_swap_commit_appends_skill(failures: Array[String]) -
 		failures.append("PlanningInputTest: walk-then-swap first step must be MOVE")
 	if k1_steps[1].type != GameEnums.ActionType.ABILITY:
 		failures.append("PlanningInputTest: walk-then-swap second step must be swap ABILITY")
+
+
+static func _test_swap_ally_out_of_range_click_parity(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := _new_director()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(10, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			board.set_tile_terrain(Vector2i(x, y), plain)
+	var swap := AbilityData.new()
+	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.id = &"knight_swap"
+	swap.movement_point_cost = 1
+	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
+	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	var knight := UnitState.new()
+	knight.id = 1
+	knight.team = GameEnums.Team.PLAYER
+	knight.position = Vector2i(4, 5)
+	knight.movement.points_left = 3
+	knight.movement.max_points = 3
+	knight.active_abilities = [swap]
+	var ally := UnitState.new()
+	ally.id = 3
+	ally.team = GameEnums.Team.PLAYER
+	ally.position = Vector2i(2, 4)
+	ally.movement.points_left = 3
+	ally.movement.max_points = 3
+	board.units = [knight, ally]
+	GridSystem.set_occupant(board, knight.position, knight.id)
+	GridSystem.set_occupant(board, ally.position, ally.id)
+	director.board = board
+	director.base_board = board
+	director.turn_start_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	director.auto_run = true
+	input._director = director
+	input.auto_use_skill_after_move = true
+	_register_fixture(input, director)
+	var ally_cell := ally.position
+	var click_slots: Dictionary = input._final_commit_slots_for_click_at_cell(
+		1, ally_cell, Vector2.ZERO,
+	)
+	if click_slots.get("invalid", false):
+		failures.append(
+			"PlanningInputTest: swap ally out of range click slots must be valid, got %s"
+			% click_slots.get("invalid", ""),
+		)
+		return
+	var pre_steps: Array = click_slots.get("pre", [])
+	if pre_steps.size() < 2:
+		failures.append(
+			"PlanningInputTest: swap ally out of range click slots need walk+swap pre, got %d"
+			% pre_steps.size(),
+		)
+	var hover_icon: String = input.compute_hover_action_icon(ally_cell)
+	var expected_icon: String = input._cursor_icon_from_commit_slots(click_slots, knight)
+	if hover_icon != expected_icon:
+		failures.append(
+			"PlanningInputTest: swap ally hover must match click slots (hover=%s click=%s)"
+			% [hover_icon, expected_icon],
+		)
+	if expected_icon.find(PlanningIcons.GLYPH_WALK) < 0:
+		failures.append(
+			"PlanningInputTest: swap ally approach icon must include walk, got %s"
+			% expected_icon,
+		)
+	if expected_icon.find(PlanningIcons.GLYPH_SWAP) < 0:
+		failures.append(
+			"PlanningInputTest: swap ally approach icon must include swap, got %s"
+			% expected_icon,
+		)
+	input.set_qa_pointer_grid_cell(ally_cell)
+	if not input._commit_at_interaction_cell(1, ally_cell, Vector2.ZERO, ally.id):
+		failures.append("PlanningInputTest: swap ally out of range click must commit")
+		return
+	if director.selected_unit_id != 1:
+		failures.append(
+			"PlanningInputTest: swap ally click must keep knight selected, got %d"
+			% director.selected_unit_id,
+		)
 
 
 static func _test_swap_refresh_updates_live_board(failures: Array[String]) -> void:

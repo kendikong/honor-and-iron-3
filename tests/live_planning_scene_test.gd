@@ -126,6 +126,48 @@ func test_live_walk_then_swap(timeout := 90000) -> void:
 	await _journey_walk_then_swap(ctx)
 
 
+func test_live_swap_ally_out_of_range_parity(timeout := 90000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	_ensure_live_test_window(runner)
+	await runner.simulate_frames(8)
+	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
+	assert_object(scene).is_not_null()
+	var ctx: Dictionary = await _boot_walk_swap_session(runner, scene)
+	await _journey_swap_ally_out_of_range_parity(ctx)
+
+
+func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:
+	var director: CombatDirector = ctx.director
+	var k1_id: int = ctx.k1_id
+	await _select_unit_live(ctx, k1_id, _K1_CELL)
+	var swap: AbilityData = await _select_ability_for_unit(ctx, k1_id, _SWAP_ID)
+	assert_object(swap).is_not_null()
+	await _probe_cell(ctx, k1_id, _WALK_SWAP_ALLY_CELL, {
+		"preview_nonempty": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK, PlanningIcons.GLYPH_SWAP],
+	}, "walk_swap/hover_ally_out_of_range")
+	var pre_click: Dictionary = _commit_slots_for_interaction(
+		ctx, k1_id, _WALK_SWAP_ALLY_CELL, false,
+	)
+	assert_bool(_slots_invalid(pre_click)).override_failure_message(
+		"walk_swap/hover_ally_out_of_range: click slots must be valid",
+	).is_false()
+	await _click_commit_at_cell(ctx, _WALK_SWAP_ALLY_CELL)
+	assert_int(director.selected_unit_id).override_failure_message(
+		"walk_swap/click_ally: must keep k1 selected after ally-target commit",
+	).is_equal(k1_id)
+	var pre_moves: Array[TimelineAction] = _pre_moves_for_unit(director, k1_id)
+	assert_int(pre_moves.size()).override_failure_message(
+		"walk_swap/click_ally: expected walk + swap pre-moves",
+	).is_equal(2)
+	assert_that(pre_moves[0].type).override_failure_message(
+		"walk_swap/click_ally: first pre-move must be walk",
+	).is_equal(GameEnums.ActionType.MOVE)
+	assert_that(pre_moves[1].type).override_failure_message(
+		"walk_swap/click_ally: second pre-move must be swap ability",
+	).is_equal(GameEnums.ActionType.ABILITY)
+
+
 func _boot_walk_swap_session(runner: GdUnitSceneRunner, scene: TestBattleMapView) -> Dictionary:
 	var session: TestBattleSession = scene.get_session()
 	session.reset_defaults()
