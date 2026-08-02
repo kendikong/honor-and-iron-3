@@ -1,6 +1,6 @@
 # AbilityData — Modular Skill Design Bible
 
-**Status:** `DRAFT` — owner design authority for the future AbilityData refactor  
+**Status:** `READY_FOR_REFACTOR` — owner-locked design authority for the AbilityData refactor (start at §0)  
 **Audience:** Project owner (readable) + implementers (refactor checklist)  
 **Authority chain:** `class_abilities.txt` (Master Bible keywords & economy) → **this doc** (AbilityData shape) → `AbilitySystem` / planning / sim (interpretation)  
 **Non-authority:** Current flat `AbilityData` fields are **legacy** until refactor; when they conflict with this doc, **this doc wins** for the target design.
@@ -973,6 +973,7 @@ Defer: OR choice, RULE_PICK, DELAY/ENDS_TURN, exotic motion modes, ally-origin r
 | 2026-08-02 | §17 Doc QA pass: fixed stale CLASS_SKILL examples, MOVE 0 contradictions, anim priority table, checklist/quick-ref drift; renamed module phases ON_PRE/ON_ACTION/ON_POST |
 | 2026-08-02 | §18 Audit pass 2: 7.1 vs 7.2, trampling AUTO scope, Violent Collision in-scope, migration/defer alignment, Example E Swap |
 | 2026-08-02 | §19 Audit pass 3: §0 normative summary, precedence, cost↔planner coupling, gated-aim rule, Example F, validation grey-out, trampling AP-only migration note |
+| 2026-08-02 | Status → READY_FOR_REFACTOR; push to origin |
 
 ---
 
