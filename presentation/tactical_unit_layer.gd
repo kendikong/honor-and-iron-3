@@ -408,6 +408,8 @@ func _drain_planning_commit_queue() -> void:
 	else:
 		_planning_commit_sequence_running = false
 		_planning_commit_stage = &""
+		if _planning_overlay != null:
+			_planning_overlay.queue_redraw()
 
 
 func await_planning_move_tweens_for_actor(unit_id: int) -> void:
@@ -1479,6 +1481,8 @@ func _play_cell_path_tween(
 		_update_depth(unit_id)
 		_sync_actor_contact_shadow_after_move(unit_id)
 		_schedule_contact_shadow_sync()
+		if _is_planning_phase() and _planning_overlay != null:
+			_planning_overlay.queue_redraw()
 	)
 
 

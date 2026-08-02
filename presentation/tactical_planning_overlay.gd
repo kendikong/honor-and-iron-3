@@ -1409,8 +1409,11 @@ func _draw_preview_arrows() -> void:
 				GameEnums.MoveTiming.PRE_ACTION,
 				GameEnums.MoveTiming.POST_ACTION,
 			]:
+				var visual_cell: Vector2i = CombatPlanningPreview.INVALID_VISUAL_CELL
+				if _unit_layer != null:
+					visual_cell = _unit_layer.actor_grid_cell(unit.id)
 				var leg: Array = CombatPlanningPreview.committed_move_route_leg(
-					unit.id, _committed_preview, _director, _board, move_timing,
+					unit.id, _committed_preview, _director, _board, move_timing, visual_cell,
 				)
 				if leg.size() < 2:
 					continue

@@ -1,6 +1,8 @@
 class_name CombatPlanningPreview
 extends RefCounted
 
+const INVALID_VISUAL_CELL := Vector2i(-999999, -999999)
+
 ## Shared live-preview state for tactical planning (paths, predicted HP/armor).
 
 var predicted_hp: Dictionary = {}
@@ -753,8 +755,9 @@ static func move_route_leg_from_preview(
 	return route.slice(start_idx, end_idx)
 
 
-## True when a committed PRE-MOVE displacement is done — unit stands on target.
+## True when a committed PRE-MOVE displacement is visually done (sprite on target).
 ## Post-move legs always draw: they document action-end → post-dest even after full projection.
+## When visual_cell is set, logical/projected board must not hide arrows before commit walk finishes.
 static func committed_move_already_realized(
 	director: CombatDirector,
 	board: BoardState,
@@ -762,6 +765,7 @@ static func committed_move_already_realized(
 	timing: int,
 	move_action: TimelineAction,
 	_route_leg: Array,
+	visual_cell: Vector2i = INVALID_VISUAL_CELL,
 ) -> bool:
 	if timing != GameEnums.MoveTiming.PRE_ACTION:
 		return false
@@ -774,14 +778,14 @@ static func committed_move_already_realized(
 	if origin == move_action.target_coord:
 		return false
 	var target: Vector2i = move_action.target_coord
+	if visual_cell != INVALID_VISUAL_CELL:
+		if director.is_planning_move_instant(unit_id):
+			return true
+		return visual_cell == target
 	if board != null:
 		var live_unit: UnitState = board.get_unit_by_id(unit_id)
 		if live_unit != null and _committed_pre_move_satisfied(origin, live_unit.position, target):
 			return true
-	var plan_board: BoardState = planning_projection_board(director, board)
-	var proj_unit: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else null
-	if proj_unit != null and _committed_pre_move_satisfied(origin, proj_unit.position, target):
-		return true
 	return false
 
 
@@ -804,6 +808,7 @@ static func committed_move_route_leg(
 	director: CombatDirector,
 	board: BoardState,
 	timing: int,
+	visual_cell: Vector2i = INVALID_VISUAL_CELL,
 ) -> Array:
 	if director == null:
 		return []
@@ -816,7 +821,9 @@ static func committed_move_route_leg(
 		unit_id, preview, director, board, timing, false,
 	)
 	if leg.size() >= 2:
-		if committed_move_already_realized(director, board, unit_id, timing, move_action, leg):
+		if committed_move_already_realized(
+			director, board, unit_id, timing, move_action, leg, visual_cell,
+		):
 			return []
 		return leg
 	var origin: Vector2i = move_leg_origin_cell(
@@ -827,7 +834,9 @@ static func committed_move_route_leg(
 	var fallback: Array = movement_intent_cells(origin, move_action)
 	if (
 		fallback.size() >= 2
-		and committed_move_already_realized(director, board, unit_id, timing, move_action, fallback)
+		and committed_move_already_realized(
+			director, board, unit_id, timing, move_action, fallback, visual_cell,
+		)
 	):
 		return []
 	return fallback
