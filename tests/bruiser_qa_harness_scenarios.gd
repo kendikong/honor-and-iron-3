@@ -202,8 +202,8 @@ static func run_adrenaline_surge(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_eq_int(failures, "adrenaline_surge/self_cost", hp_before - after.health.current_hp, 5)
-	H.assert_true(failures, "adrenaline_surge/str", H.has_status(after, GameEnums.StatusType.STAT_BUFF_STR))
-	H.assert_true(failures, "adrenaline_surge/mov", H.has_status(after, GameEnums.StatusType.STAT_BUFF_MOV))
+	H.assert_eq_int(failures, "adrenaline_surge/str", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 1)
+	H.assert_eq_int(failures, "adrenaline_surge/mov", H.status_value(after, GameEnums.StatusType.STAT_BUFF_MOV), 1)
 	var adj_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(adj_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_adrenaline_surge"))
 	H.place_dummy(adj_board, 11, Vector2i(4, 3))
@@ -284,29 +284,63 @@ static func run_meat_shield(failures: Array[String]) -> void:
 		H.bruiser_unit_data(),
 		GameEnums.Team.ENEMY,
 		Vector2i(2, 3),
-		{"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")]},
+		{
+			"active_abilities": [H.factory_ability(&"bruiser_headbutt")],
+			"active_passives": [],
+		},
 	)
-	var ally_hp: int = ally.health.current_hp
-	var attack_ab: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
+	var solo_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(
+		solo_board, 30, Vector2i(3, 3), {"active_abilities": [DataLibrary.get_universal_run()]},
+	)
+	H.place_unit(
+		solo_board,
+		31,
+		H.bruiser_unit_data(),
+		GameEnums.Team.ENEMY,
+		Vector2i(2, 3),
+		{
+			"active_abilities": [H.factory_ability(&"bruiser_headbutt")],
+			"active_passives": [],
+		},
+	)
+	var solo_attack: AbilityData = H.factory_ability(&"bruiser_headbutt")
+	var solo_plan := Timeline.new()
+	solo_plan.add(H.plan_ability(31, solo_attack, Vector2i(3, 3), 30))
+	var solo_result: SimResult = H.simulate_plan(solo_board, solo_plan)
+	var solo_incoming: int = H.sum_unit_incoming_damage_events(solo_result.events, 30)
+	var attack_ab: AbilityData = H.factory_ability(&"bruiser_headbutt")
 	var attack_plan := Timeline.new()
 	attack_plan.add(H.plan_ability(11, attack_ab, Vector2i(3, 3), 3))
 	var attack_result: SimResult = H.simulate_plan(redirect_board, attack_plan)
 	var ally_after: UnitState = attack_result.final_state.get_unit_by_id(3)
-	var bruiser_after: UnitState = attack_result.final_state.get_unit_by_id(1)
+	var ally_incoming: int = H.sum_unit_incoming_damage_events(attack_result.events, 3)
+	var bruiser_incoming: int = H.sum_unit_incoming_damage_events(attack_result.events, 1)
+	var ally_hp_split: int = H.sum_unit_hp_damage_events(attack_result.events, 3)
 	H.assert_true(
 		failures, "meat_shield/redirect_ally",
-		ally_after != null and ally_after.health.current_hp < ally_hp,
+		ally_after != null and ally_hp_split > 0,
 	)
 	H.assert_true(
-		failures, "meat_shield/redirect_interceptor",
-		H.count_unit_hp_damage_events(attack_result.events, 1) > 0
-		or (
-			bruiser_after != null
-			and (
-				bruiser_after.health.current_hp < bruiser.health.current_hp
-				or bruiser_after.armor < bruiser.armor
-			)
-		),
+		failures, "meat_shield/interceptor_took",
+		bruiser_incoming > 0,
+		"INTERCEPT must route damage to the caster",
+	)
+	H.assert_true(
+		failures, "meat_shield/ally_protected",
+		ally_incoming < solo_incoming,
+		"intercept must reduce ally incoming damage",
+	)
+	H.assert_eq_int(
+		failures, "meat_shield/redirect_half",
+		ally_incoming,
+		bruiser_incoming,
+	)
+	var split_total: int = ally_incoming + bruiser_incoming
+	H.assert_true(
+		failures, "meat_shield/redirect_total",
+		split_total > 0 and split_total <= solo_incoming,
+		"split incoming cannot exceed solo baseline",
 	)
 
 
@@ -344,6 +378,10 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_guttural_roar")
 	H.assert_eq_int(failures, "guttural_roar/aoe", ab.target_shape, GameEnums.TargetShape.AOE_SQUARE)
+	H.assert_eq_int(failures, "guttural_roar/aoe_size", ab.target_shape_size, 2)
+	ab.ensure_targeting_flags_from_mode()
+	H.assert_eq_int(failures, "guttural_roar/tile_targeting", ab.targeting_mode, GameEnums.TargetingMode.TILE)
+	H.assert_true(failures, "guttural_roar/tile_flags", ab.has_targeting(GameEnums.TargetingFlags.TILE))
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_guttural_roar"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -361,10 +399,10 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 		"AOE PUSH must displace adjacent enemy",
 	)
 	var def_after: int = CombatSystem.get_dynamic_defense(result.final_state, enemy)
-	H.assert_true(
+	H.assert_eq_int(
 		failures, "guttural_roar/def_debuff",
-		def_after < def_before,
-		"AOE must apply DEF debuff (-2) to enemies in area",
+		def_before - def_after,
+		2,
 	)
 	var aoe_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(aoe_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_guttural_roar"))
@@ -401,8 +439,15 @@ static func run_headbutt(failures: Array[String]) -> void:
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
-	H.assert_true(failures, "headbutt/enemy_dmg", H.unit_hp(result.final_state, 2) < enemy_hp)
-	H.assert_true(failures, "headbutt/self_dmg", H.unit_hp(result.final_state, 1) < bruiser_hp)
+	var enemy_damage: int = enemy_hp - H.unit_hp(result.final_state, 2)
+	var self_damage: int = bruiser_hp - H.unit_hp(result.final_state, 1)
+	var attacker: UnitState = H.unit_on_board(board, 1)
+	var scaled_raw: int = CombatSystem.calculate_scaled_damage(
+		attacker, 3, GameEnums.StatType.PHYSICAL, board,
+	)
+	var expected_enemy: int = H.damage_dealt_to_unit(board, 2, scaled_raw, attacker)
+	H.assert_eq_int(failures, "headbutt/enemy_dmg", enemy_damage, expected_enemy)
+	H.assert_eq_int(failures, "headbutt/self_dmg", self_damage, 1)
 	var enemy_after: UnitState = result.final_state.get_unit_by_id(2)
 	H.assert_true(
 		failures, "headbutt/stagger",

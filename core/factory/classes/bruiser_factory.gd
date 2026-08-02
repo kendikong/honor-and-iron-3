@@ -93,8 +93,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 
 	var adrenaline_surge = DataLibrary._make_ability(&"bruiser_adrenaline_surge", "Adrenaline Surge", 1, [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 5),
-		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_STR, 1),
-		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_MOV, 1)
+		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_STR, 1, 1),
+		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_MOV, 1, 1)
 	], 1)
 	adrenaline_surge.upgrade_description = "On Kill: HEAL 1 and gain SHIELD 2."
 	adrenaline_surge.targeting_mode = GameEnums.TargetingMode.SELF

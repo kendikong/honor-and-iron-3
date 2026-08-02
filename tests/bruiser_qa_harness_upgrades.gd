@@ -166,6 +166,7 @@ static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	bruiser.ability.max_points = 3
 	bruiser.ability.points_left = 3
+	var hp_before: int = bruiser.health.current_hp
 	var armor_before: int = bruiser.armor
 	var surge: AbilityData = H.ability_on_unit(bruiser, &"bruiser_adrenaline_surge")
 	var plan := Timeline.new()
@@ -179,6 +180,7 @@ static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
 		not result.final_state.get_unit_by_id(2).is_alive() and after != null,
 	)
 	H.assert_eq_int(failures, "adrenaline_surge/upgrade/shield", after.armor, armor_before + 2)
+	H.assert_eq_int(failures, "adrenaline_surge/upgrade/heal", after.health.current_hp, hp_before - 4)
 	var base_cfg: Dictionary = H.bruiser_with_abilities([&"bruiser_adrenaline_surge", &"bruiser_concussion_blow"])
 	base_cfg["passive_flags"] = {"training_unlimited_actions": true}
 	var base_board: BoardState = H.make_plain_board(Vector2i(8, 8))
