@@ -10,6 +10,7 @@
 ```text
 ══════════════════════════════════════
 GAUNTLET SCORE │ B6-LOCK full matrix │ Round 20
+SELF-GRADE: no (gauntlet-critic subagent)
 SCORE: 95/100 │ THRESHOLD: 95 │ PASS
 DELTA: +1 vs r19 (94 FAIL)
 GATE: canonical PASS (qa_bruiser_gate_canonical.txt 31/31)
@@ -20,7 +21,7 @@ STOP_CONDITION_MET: yes
 
 | Round | Piece | Score | Delta | Result |
 |-------|-------|-------|-------|--------|
-| r20 | B6-LOCK full matrix | 95 | +1 vs r19 | **PASS** — gauntlet-critic subagent |
+| r20 | B6-LOCK full matrix | 95 | +1 vs r19 | **PASS** — subagent (not self-grade) |
 | r18 | B6-LOCK full matrix | 51 | −42 vs r17 | **FAIL** — stale qa_bruiser_gate_latest artifact |
 | r17 | B6-LOCK full matrix | 93 | +2 vs r16 | **FAIL** — gauntlet-critic subagent |
 | r14 | B6-LOCK full matrix | 76 | +2 vs r12 | **FAIL** — gauntlet-critic subagent |

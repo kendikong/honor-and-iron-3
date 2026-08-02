@@ -106,11 +106,12 @@ Lead may set **PASS_THRESHOLD** in handoff to override.
 4. Score all six rubric categories with brief justification.
 5. Apply caps. Compute **total_score**.
 6. Set **RESULT** per PASS gate above.
-7. Your **first line** must be the loud score banner (Rule 6b in main spec). Then respond in this format:
+7. Your **first line** must be the loud score banner (Rule 6b in main spec). Banner **must** include **`SELF-GRADE: no`** (this subagent is never a self-grade). Then respond in this format:
 
 ```
 ══════════════════════════════════════
 GAUNTLET SCORE │ <PIECE> │ Round <n>
+SELF-GRADE: no (gauntlet-critic subagent)
 SCORE: <total>/100 │ THRESHOLD: <PASS_THRESHOLD> │ <RESULT>
 DELTA: <+N | −N | first round> vs prior round
 SUBSCORES: BAR=<n> Goal=<n> Rules=<n> Artifact=<n> Quality=<n> Bonus=<n>
