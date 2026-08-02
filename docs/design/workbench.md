@@ -9,20 +9,19 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ bruiser_charge_strike │ Round 4 │ SELF-GRADED: no (subagent)
+GAUNTLET SCORE │ bruiser_suplex │ Round 2 │ SELF-GRADED: no (subagent)
 SCORE: 88/100 │ THRESHOLD: 88 │ PASS
-DELTA: +2 vs r3 (86)
-GATE: harness PASS · matrix 2/31 PASS
-STOP_CONDITION_MET: no — next: bruiser_concussion_blow
+DELTA: +11 vs r1 (77)
+GATE: harness PASS · matrix 5/31 PASS
+STOP_CONDITION_MET: no — next: bruiser_adrenaline_surge
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Result |
 |-------|-------|-------|--------|
-| r4 | bruiser_charge_strike | 88 | **PASS** — promoted |
-| r3 | bruiser_charge_strike | 86 | FAIL |
-| r2 | bruiser_push_through | 89 | **PASS** — promoted |
-| r1 | bruiser_charge_strike | 74 | FAIL |
+| r2 | bruiser_suplex | 88 | **PASS** — promoted |
+| r3 | bruiser_cleave | 89 | **PASS** — promoted |
+| r3 | bruiser_concussion_blow | 89 | **PASS** — promoted |
 
 ---
 
@@ -30,11 +29,11 @@ STOP_CONDITION_MET: no — next: bruiser_concussion_blow
 
 | Field | Value |
 |-------|-------|
-| **Status** | **ACTIVE** — row 3 `bruiser_concussion_blow` next |
-| **Matrix** | **2/31** PASS |
+| **Status** | **ACTIVE** — row 6 `bruiser_adrenaline_surge` next |
+| **Matrix** | **5/31** PASS |
 
 ---
 
 ## STOP_ON
 
-`STOP_CONDITION_MET: no` (2/31, gate exit 2)
+`STOP_CONDITION_MET: no` (5/31, gate exit 2)

@@ -353,6 +353,15 @@ static func events_have_damage_pierce(events: Array, pierce: bool) -> bool:
 	return false
 
 
+static func first_damage_math(events: Array) -> Dictionary:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+			var d: Dictionary = e.data
+			if str(d.get("type", "")) == "damage":
+				return d
+	return {}
+
+
 static func events_have_terrain_changed(events: Array, coord: Vector2i) -> bool:
 	for e: Variant in events:
 		if e is SimEvent and e.type == GameEnums.SimEventType.TERRAIN_CHANGED:

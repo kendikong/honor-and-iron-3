@@ -64,9 +64,9 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 |--------------------|------|---------------|--------|-------|
 | `bruiser_push_through` | Movement | `tests/skills/bruiser_push_through_scenario.gd` | PASS | MOVE_INTO_AND_PUSH; `[+]` cost 1 MOV + STR on push |
 | `bruiser_charge_strike` | Active | `tests/skills/bruiser_charge_strike_scenario.gd` | PASS | MOVE 2 + DAMAGE 3 + PUSH 1; `[+]` GHOST + terrain bonus |
-| `bruiser_concussion_blow` | Active | `tests/skills/bruiser_concussion_blow_scenario.gd` | HARNESS_ONLY | DAMAGE + PUSH; object STAGGER; `[+]` mutual STAGGER on enemy collision |
-| `bruiser_cleave` | Active | `tests/skills/bruiser_cleave_scenario.gd` | HARNESS_ONLY | ARC DAMAGE; `[+]` BLEED (WPN-scaled) |
-| `bruiser_suplex` | Active | `tests/skills/bruiser_suplex_scenario.gd` | HARNESS_ONLY | DAMAGE + THROW_BEHIND — **not SWAP** |
+| `bruiser_concussion_blow` | Active | `tests/skills/bruiser_concussion_blow_scenario.gd` | PASS | RANGE 1 ATK 2 PUSH 1; object STAGGER; `[+]` mutual STAGGER on enemy collision |
+| `bruiser_cleave` | Active | `tests/skills/bruiser_cleave_scenario.gd` | PASS | RANGE 1 ARC ATK 2; `[+]` BLEED (WPN-scaled) on all arc targets |
+| `bruiser_suplex` | Active | `tests/skills/bruiser_suplex_scenario.gd` | PASS | RANGE 1 ATK 4 THROW_BEHIND (not SWAP); `[+]` bonus_dmg_per_10_hp |
 | `bruiser_adrenaline_surge` | Active | `tests/skills/bruiser_adrenaline_surge_scenario.gd` | HARNESS_ONLY | SELF cost + buffs; 0 AP adjacency rule; `[+]` on-kill heal/shield |
 | `bruiser_earthshatter` | Active | `tests/skills/bruiser_earthshatter_scenario.gd` | HARNESS_ONLY | ARC + DESTROY_OBSTACLE; `[+]` ATK per destroy |
 | `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | HARNESS_ONLY | SWAP ally + INTERCEPT; `[+]` RANGE 3 + STR per intercept |

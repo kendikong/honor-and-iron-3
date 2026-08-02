@@ -107,14 +107,31 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 
 
 static func run_cleave_upgrade(failures: Array[String]) -> void:
+	var ab: AbilityData = H.factory_ability(&"bruiser_cleave")
+	H.assert_eq_int(failures, "cleave/upgrade/effects_size", ab.upgraded_effects.size(), 2)
+	H.assert_eq_int(
+		failures, "cleave/upgrade/bleed_status",
+		ab.upgraded_effects[1].status_type,
+		GameEnums.StatusType.BLEED,
+	)
+	H.assert_true(
+		failures, "cleave/upgrade/weapon_scaled",
+		ab.upgraded_effects[1].modifiers.has("weapon_scaled"),
+	)
+	H.assert_eq_int(
+		failures, "cleave/upgrade/weapon_scaled_val",
+		int(ab.upgraded_effects[1].modifiers["weapon_scaled"]),
+		1,
+	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_cleave"),
 		&"bruiser_cleave",
 	)
-	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
 	H.place_dummy(board, 3, Vector2i(4, 4))
+	H.place_dummy(board, 4, Vector2i(5, 3))
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_cleave")
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	var wpn: int = bruiser.definition.equipped_weapon.might if bruiser.definition.equipped_weapon != null else 0
@@ -123,6 +140,7 @@ static func run_cleave_upgrade(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var enemy_center: UnitState = result.final_state.get_unit_by_id(2)
 	var enemy_perp: UnitState = result.final_state.get_unit_by_id(3)
+	var enemy_outside: UnitState = result.final_state.get_unit_by_id(4)
 	H.assert_true(
 		failures, "cleave/upgrade/bleed_center",
 		enemy_center != null and H.has_status(enemy_center, GameEnums.StatusType.BLEED),
@@ -132,9 +150,19 @@ static func run_cleave_upgrade(failures: Array[String]) -> void:
 		enemy_perp != null and H.has_status(enemy_perp, GameEnums.StatusType.BLEED),
 	)
 	H.assert_eq_int(
-		failures, "cleave/upgrade/bleed_wpn",
+		failures, "cleave/upgrade/bleed_wpn_center",
 		H.status_value(enemy_center, GameEnums.StatusType.BLEED),
 		wpn,
+	)
+	H.assert_eq_int(
+		failures, "cleave/upgrade/bleed_wpn_perp",
+		H.status_value(enemy_perp, GameEnums.StatusType.BLEED),
+		wpn,
+	)
+	H.assert_true(
+		failures, "cleave/upgrade/arc_outside_no_bleed",
+		enemy_outside != null and not H.has_status(enemy_outside, GameEnums.StatusType.BLEED),
+		"upgraded BLEED must not apply outside ARC sweep",
 	)
 
 

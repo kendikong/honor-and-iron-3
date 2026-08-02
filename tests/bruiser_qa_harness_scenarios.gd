@@ -50,27 +50,58 @@ static func run_charge_strike(failures: Array[String]) -> void:
 
 
 static func run_concussion_blow(failures: Array[String]) -> void:
+	## Bible: Concussion Blow — RANGE 1 | ATK 2 | PUSH 1 | object STAGGER; [+] mutual enemy STAGGER.
 	H.run_active_smoke(
-		failures, &"bruiser_concussion_blow", "DAMAGE + PUSH",
+		failures, &"bruiser_concussion_blow", "RANGE 1 | ATK 2 | PUSH 1",
 		[GameEnums.EffectType.DAMAGE, GameEnums.EffectType.PUSH],
 	)
-	var ab: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
+	H.assert_eq_int(failures, "concussion_blow/range", factory_ab.range_tiles, 1)
+	H.assert_eq_int(failures, "concussion_blow/dmg_amount", factory_ab.effects[0].amount, 2)
+	H.assert_eq_int(failures, "concussion_blow/push_amount", factory_ab.effects[1].amount, 1)
 	H.assert_true(
 		failures, "concussion_blow/object_stagger_mod",
-		ab.effects[1].modifiers.has("object_collision_stagger"),
+		factory_ab.effects[1].modifiers.has("object_collision_stagger"),
 	)
-	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.assert_eq_int(
+		failures, "concussion_blow/object_stagger_val",
+		int(factory_ab.effects[1].modifiers["object_collision_stagger"]),
+		1,
+	)
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_concussion_blow"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
-	var hp_before: int = H.unit_hp(board, 2)
-	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_concussion_blow")
+	var bruiser_before: UnitState = H.unit_on_board(board, 1)
+	var hp: int = H.unit_hp(board, 2)
+	var skill: AbilityData = H.ability_on_unit(bruiser_before, &"bruiser_concussion_blow")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
-	H.assert_true(failures, "concussion_blow/hit", H.unit_hp(result.final_state, 2) < hp_before)
+	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	H.assert_eq_cell(failures, "concussion_blow/bruiser_pos", bruiser_after.position, Vector2i(3, 3))
+	H.assert_eq_cell(failures, "concussion_blow/enemy_pos", enemy.position, Vector2i(5, 3))
+	var enemy_damage: int = hp - enemy.health.current_hp
+	var scaled_raw: int = CombatSystem.calculate_scaled_damage(
+		bruiser_before, 2, GameEnums.StatType.PHYSICAL, board,
+	)
+	var expected_enemy: int = H.damage_dealt_to_unit(board, 2, scaled_raw, bruiser_before)
+	H.assert_eq_int(failures, "concussion_blow/dmg_dealt", enemy_damage, expected_enemy)
+	H.assert_eq_int(failures, "concussion_blow/push_distance", H.event_push_distance(result.events, 2), 1)
 	H.assert_true(
-		failures, "concussion_blow/push",
-		H.events_have_unit_pushed(result.events, 2),
+		failures, "concussion_blow/open_no_stagger",
+		enemy != null and not H.has_status(enemy, GameEnums.StatusType.STAGGER),
+		"open-board PUSH must not STAGGER without wall/collision",
+	)
+	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(far_board, 10, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_concussion_blow"))
+	H.place_dummy(far_board, 11, Vector2i(3, 3))
+	var far_ab: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 10), &"bruiser_concussion_blow")
+	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(3, 3), 11)
+	H.assert_true(
+		failures, "concussion_blow/out_of_range",
+		not AbilitySystem.can_use(far_board, far_action),
+		"RANGE 1 must reject non-adjacent targets",
 	)
 	var wall_board: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(5, 3)])
 	H.place_bruiser(wall_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_concussion_blow"))
@@ -115,86 +146,169 @@ static func run_concussion_blow_upgrade(failures: Array[String]) -> void:
 	)
 
 static func run_cleave(failures: Array[String]) -> void:
+	## Bible: Cleave — RANGE 1 | ARC | ATK 2; [+] BLEED X (WPN) on all targets.
 	H.run_active_smoke(
-		failures, &"bruiser_cleave", "ARC DAMAGE",
+		failures, &"bruiser_cleave", "RANGE 1 | ARC | ATK 2",
 		[GameEnums.EffectType.DAMAGE],
 	)
-	var ab: AbilityData = H.factory_ability(&"bruiser_cleave")
-	H.assert_eq_int(failures, "cleave/shape", ab.target_shape, GameEnums.TargetShape.ARC)
-	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_cleave")
+	H.assert_eq_int(failures, "cleave/range", factory_ab.range_tiles, 1)
+	H.assert_eq_int(failures, "cleave/shape", factory_ab.target_shape, GameEnums.TargetShape.ARC)
+	H.assert_eq_int(failures, "cleave/dmg_amount", factory_ab.effects[0].amount, 2)
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_cleave"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
+	var bruiser_before: UnitState = H.unit_on_board(board, 1)
 	var hp: int = H.unit_hp(board, 2)
-	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_cleave")
+	var skill: AbilityData = H.ability_on_unit(bruiser_before, &"bruiser_cleave")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
-	H.assert_true(failures, "cleave/hit", H.unit_hp(result.final_state, 2) < hp)
-	var arc_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	H.assert_eq_cell(failures, "cleave/bruiser_pos", bruiser_after.position, Vector2i(3, 3))
+	var enemy_damage: int = hp - enemy.health.current_hp
+	var scaled_raw: int = CombatSystem.calculate_scaled_damage(
+		bruiser_before, 2, GameEnums.StatType.PHYSICAL, board,
+	)
+	var expected_enemy: int = H.damage_dealt_to_unit(board, 2, scaled_raw, bruiser_before)
+	H.assert_eq_int(failures, "cleave/dmg_dealt", enemy_damage, expected_enemy)
+	H.assert_true(
+		failures, "cleave/base_no_bleed",
+		not H.has_status(enemy, GameEnums.StatusType.BLEED),
+		"base Cleave must not apply BLEED without upgrade",
+	)
+	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(far_board, 10, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_cleave"))
+	H.place_dummy(far_board, 11, Vector2i(3, 3))
+	var far_ab: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 10), &"bruiser_cleave")
+	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(3, 3), 11)
+	H.assert_true(
+		failures, "cleave/out_of_range",
+		not AbilitySystem.can_use(far_board, far_action),
+		"RANGE 1 must reject non-adjacent targets",
+	)
+	var arc_board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(arc_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_cleave"))
 	H.place_dummy(arc_board, 11, Vector2i(4, 3))
 	H.place_dummy(arc_board, 12, Vector2i(4, 4))
+	H.place_dummy(arc_board, 13, Vector2i(5, 3))
+	var arc_bruiser: UnitState = H.unit_on_board(arc_board, 10)
 	var hp_center: int = H.unit_hp(arc_board, 11)
 	var hp_perp: int = H.unit_hp(arc_board, 12)
-	var arc_skill: AbilityData = H.ability_on_unit(H.unit_on_board(arc_board, 10), &"bruiser_cleave")
+	var hp_outside: int = H.unit_hp(arc_board, 13)
+	var arc_skill: AbilityData = H.ability_on_unit(arc_bruiser, &"bruiser_cleave")
 	var arc_plan := Timeline.new()
 	arc_plan.add(H.plan_ability(10, arc_skill, Vector2i(4, 3), 11))
 	var arc_result: SimResult = H.simulate_plan(arc_board, arc_plan)
-	H.assert_true(
-		failures, "cleave/arc_center",
-		H.unit_hp(arc_result.final_state, 11) < hp_center,
-		"ARC center target must take damage",
+	var center_dmg: int = hp_center - H.unit_hp(arc_result.final_state, 11)
+	var perp_dmg: int = hp_perp - H.unit_hp(arc_result.final_state, 12)
+	var scaled_arc: int = CombatSystem.calculate_scaled_damage(
+		arc_bruiser, 2, GameEnums.StatType.PHYSICAL, arc_board,
 	)
-	H.assert_true(
-		failures, "cleave/arc_perp",
-		H.unit_hp(arc_result.final_state, 12) < hp_perp,
-		"ARC perpendicular tile must take damage",
-	)
+	var expected_arc: int = H.damage_dealt_to_unit(arc_board, 11, scaled_arc, arc_bruiser)
+	H.assert_eq_int(failures, "cleave/arc_center_dmg", center_dmg, expected_arc)
+	H.assert_eq_int(failures, "cleave/arc_perp_dmg", perp_dmg, expected_arc)
+	H.assert_eq_int(failures, "cleave/arc_outside", H.unit_hp(arc_result.final_state, 13), hp_outside)
 
 
 static func run_suplex(failures: Array[String]) -> void:
+	## Bible: Suplex — RANGE 1 | ATK 4 | THROW_BEHIND to empty tile behind caster; [+] +1 ATK per 10 current HP.
 	H.run_active_smoke(
-		failures, &"bruiser_suplex", "DAMAGE + THROW_BEHIND",
+		failures, &"bruiser_suplex", "RANGE 1 | ATK 4 | THROW_BEHIND",
 		[GameEnums.EffectType.DAMAGE, GameEnums.EffectType.THROW_BEHIND],
 	)
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_suplex")
+	H.assert_eq_int(failures, "suplex/range", factory_ab.range_tiles, 1)
+	H.assert_eq_int(failures, "suplex/dmg_amount", factory_ab.effects[0].amount, 4)
 	H.assert_true(
 		failures, "suplex/not_swap",
-		not H.ability_has_effect(H.factory_ability(&"bruiser_suplex"), GameEnums.EffectType.SWAP, false),
+		not H.ability_has_effect(factory_ab, GameEnums.EffectType.SWAP, false),
 	)
-	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.assert_true(
+		failures, "suplex/throw_behind",
+		H.ability_has_effect(factory_ab, GameEnums.EffectType.THROW_BEHIND, false),
+	)
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_suplex"))
 	H.place_dummy(board, 2, Vector2i(3, 4))
+	var bruiser_before: UnitState = H.unit_on_board(board, 1)
 	var hp_before: int = H.unit_hp(board, 2)
-	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_suplex")
+	var skill: AbilityData = H.ability_on_unit(bruiser_before, &"bruiser_suplex")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(3, 4), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
+	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
 	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	H.assert_eq_cell(failures, "suplex/bruiser_pos", bruiser_after.position, Vector2i(3, 3))
 	H.assert_eq_cell(failures, "suplex/behind_caster", enemy.position, Vector2i(3, 2))
-	H.assert_true(failures, "suplex/damage", enemy.health.current_hp < hp_before)
+	var enemy_damage: int = hp_before - enemy.health.current_hp
+	var dmg_math: Dictionary = H.first_damage_math(result.events)
+	H.assert_eq_int(failures, "suplex/dmg_base_amt", int(dmg_math.get("base", -1)), 4)
+	var expected_enemy: int = H.damage_dealt_to_unit(
+		board, 2, int(dmg_math.get("final_raw", 0)), bruiser_before,
+	)
+	H.assert_eq_int(failures, "suplex/dmg_dealt", enemy_damage, expected_enemy)
+	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(far_board, 10, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_suplex"))
+	H.place_dummy(far_board, 11, Vector2i(3, 3))
+	var far_ab: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 10), &"bruiser_suplex")
+	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(3, 3), 11)
+	H.assert_true(
+		failures, "suplex/out_of_range",
+		not AbilitySystem.can_use(far_board, far_action),
+		"RANGE 1 must reject non-adjacent targets",
+	)
+	var blocked_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(blocked_board, 20, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_suplex"))
+	H.place_dummy(blocked_board, 21, Vector2i(3, 2))
+	H.place_dummy(blocked_board, 22, Vector2i(3, 4))
+	var blocked_skill: AbilityData = H.ability_on_unit(H.unit_on_board(blocked_board, 20), &"bruiser_suplex")
+	var blocked_plan := Timeline.new()
+	blocked_plan.add(H.plan_ability(20, blocked_skill, Vector2i(3, 4), 22))
+	var blocked_result: SimResult = H.simulate_plan(blocked_board, blocked_plan)
+	var blocked_enemy: UnitState = blocked_result.final_state.get_unit_by_id(22)
+	H.assert_eq_cell(
+		failures, "suplex/blocked_behind_pos",
+		blocked_enemy.position,
+		Vector2i(3, 4),
+	)
 
 
 static func run_suplex_upgrade(failures: Array[String]) -> void:
+	var ab: AbilityData = H.factory_ability(&"bruiser_suplex")
+	H.assert_true(
+		failures, "suplex/upgrade/mod",
+		ab.upgraded_effects[0].modifiers.has("bonus_dmg_per_10_hp"),
+	)
+	H.assert_eq_int(
+		failures, "suplex/upgrade/mod_val",
+		int(ab.upgraded_effects[0].modifiers["bonus_dmg_per_10_hp"]),
+		1,
+	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_suplex"),
 		&"bruiser_suplex",
 	)
-	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	bruiser.health.current_hp = bruiser.health.max_hp
 	H.place_dummy(board, 2, Vector2i(3, 4))
 	var hp: int = H.unit_hp(board, 2)
 	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_suplex")
-	H.assert_true(
-		failures, "suplex/upgrade_mod",
-		skill.upgraded_effects[0].modifiers.has("bonus_dmg_per_10_hp"),
-	)
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(3, 4), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var dmg_up: int = hp - H.unit_hp(result.final_state, 2)
-	var board_base: BoardState = H.make_plain_board(Vector2i(8, 8))
+	var hp_tiers: int = floori(float(bruiser.health.current_hp) / 10.0)
+	var up_math: Dictionary = H.first_damage_math(result.events)
+	H.assert_eq_int(failures, "suplex/upgrade/dmg_base_amt", int(up_math.get("base", -1)), 4 + hp_tiers)
+	var expected_up: int = H.damage_dealt_to_unit(
+		board, 2, int(up_math.get("final_raw", 0)), bruiser,
+	)
+	H.assert_eq_int(failures, "suplex/upgrade/dmg_dealt", dmg_up, expected_up)
+	var board_base: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board_base, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_suplex"))
 	var bruiser_base: UnitState = H.unit_on_board(board_base, 10)
 	bruiser_base.health.current_hp = bruiser_base.health.max_hp
@@ -205,6 +319,12 @@ static func run_suplex_upgrade(failures: Array[String]) -> void:
 	plan_base.add(H.plan_ability(10, base_skill, Vector2i(3, 4), 11))
 	var result_base: SimResult = H.simulate_plan(board_base, plan_base)
 	var dmg_base: int = hp_base - H.unit_hp(result_base.final_state, 11)
+	var base_math: Dictionary = H.first_damage_math(result_base.events)
+	H.assert_eq_int(failures, "suplex/upgrade/base_dmg_base_amt", int(base_math.get("base", -1)), 4)
+	var expected_base: int = H.damage_dealt_to_unit(
+		board_base, 11, int(base_math.get("final_raw", 0)), bruiser_base,
+	)
+	H.assert_eq_int(failures, "suplex/upgrade/base_dmg_dealt", dmg_base, expected_base)
 	H.assert_true(
 		failures, "suplex/upgrade_bonus_damage",
 		dmg_up > dmg_base,

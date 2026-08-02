@@ -2,11 +2,11 @@
   "piece": "B6-REOPEN",
   "pass_threshold": 95,
   "per_row_threshold": 88,
-  "last_critic_round": 4,
+  "last_critic_round": 2,
   "last_score": 88,
   "last_result": "PASS",
-  "last_row_promoted": "bruiser_charge_strike",
-  "notes": "B6-REOPEN per-row gauntlet-critic. 2/31 promoted.",
+  "last_row_promoted": "bruiser_suplex",
+  "notes": "B6-REOPEN per-row gauntlet-critic. 5/31 promoted.",
   "approved_rows": [
     {
       "factory_id": "bruiser_push_through",
@@ -18,6 +18,24 @@
       "factory_id": "bruiser_charge_strike",
       "score": 88,
       "critic_round": 4,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_concussion_blow",
+      "score": 89,
+      "critic_round": 3,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_cleave",
+      "score": 89,
+      "critic_round": 3,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_suplex",
+      "score": 88,
+      "critic_round": 2,
       "fix_target": "none"
     }
   ]
