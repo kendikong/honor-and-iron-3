@@ -628,8 +628,12 @@ static func run_colossal_mass_upgrade(failures: Array[String]) -> void:
 	var str_up: int = CombatSystem.get_dynamic_strength(board, up)
 	var board2: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board2, 10, Vector2i(3, 3), H.with_single_passive(&"colossal_mass", false))
-	var str_base: int = CombatSystem.get_dynamic_strength(board2, H.unit_on_board(board2, 10))
-	H.assert_true(failures, "colossal_mass/upgrade/str", str_up > str_base)
+	var base_bruiser: UnitState = H.unit_on_board(board2, 10)
+	var str_base: int = CombatSystem.get_dynamic_strength(board2, base_bruiser)
+	var expected_delta: int = (
+		floori(float(up.health.max_hp) / 10.0) - floori(float(base_bruiser.health.max_hp) / 15.0)
+	)
+	H.assert_eq_int(failures, "colossal_mass/upgrade/str", str_up - str_base, expected_delta)
 
 
 static func run_overwhelming_bulk_upgrade(failures: Array[String]) -> void:

@@ -498,8 +498,8 @@ static func run_blood_boil(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, bruiser.position, bruiser.id))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
-	H.assert_true(failures, "blood_boil/hp_cost", after.health.current_hp < hp_before)
-	H.assert_true(failures, "blood_boil/str_buff", H.has_status(after, GameEnums.StatusType.STAT_BUFF_STR))
+	H.assert_eq_int(failures, "blood_boil/hp_cost", hp_before - after.health.current_hp, 5)
+	H.assert_eq_int(failures, "blood_boil/str_value", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 3)
 
 
 static func run_violent_collision(failures: Array[String]) -> void:
@@ -545,7 +545,8 @@ static func run_crimson_whirlwind(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(
 		failures, "crimson_whirlwind/multi_hit",
-		H.unit_hp(result.final_state, 2) < hp2 or H.unit_hp(result.final_state, 3) < hp3,
+		H.unit_hp(result.final_state, 2) < hp2 and H.unit_hp(result.final_state, 3) < hp3,
+		"AOE must damage multiple adjacent enemies",
 	)
 
 
@@ -652,15 +653,18 @@ static func run_adrenaline_junkie(failures: Array[String]) -> void:
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	bruiser.health.current_hp = bruiser.health.max_hp / 2
 	bruiser._recalculate_stats()
+	var expected_bonus: int = floori(0.5 / 0.10)
 	var str_at_half: int = CombatSystem.get_dynamic_strength(board, bruiser)
-	bruiser.health.current_hp = bruiser.health.max_hp
-	bruiser._recalculate_stats()
-	var str_full: int = CombatSystem.get_dynamic_strength(board, bruiser)
-	H.assert_true(
-		failures, "adrenaline_junkie/missing_hp_str",
-		str_at_half > str_full,
-		"missing HP must increase STR",
-	)
+	var mov_at_half: int = bruiser.movement.max_points
+	var plain_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(plain_board, 10, Vector2i(3, 3), {})
+	var plain: UnitState = H.unit_on_board(plain_board, 10)
+	plain.health.current_hp = plain.health.max_hp / 2
+	plain._recalculate_stats()
+	var str_plain: int = CombatSystem.get_dynamic_strength(plain_board, plain)
+	var mov_plain: int = plain.movement.max_points
+	H.assert_eq_int(failures, "adrenaline_junkie/str", str_at_half - str_plain, expected_bonus)
+	H.assert_eq_int(failures, "adrenaline_junkie/mov", mov_at_half - mov_plain, expected_bonus)
 
 
 static func run_enraged(failures: Array[String]) -> void:
@@ -675,7 +679,18 @@ static func run_enraged(failures: Array[String]) -> void:
 	bruiser.active_statuses.clear()
 	bruiser._recalculate_stats()
 	var str_clean: int = CombatSystem.get_dynamic_strength(board, bruiser)
-	H.assert_true(failures, "enraged/debuff_str", str_debuff > str_clean)
+	H.assert_eq_int(failures, "enraged/debuff_str", str_debuff - str_clean, 1)
+	var hazard_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.set_tile_trap(hazard_board, Vector2i(3, 3))
+	H.place_bruiser(hazard_board, 20, Vector2i(3, 3), cfg)
+	var str_hazard: int = CombatSystem.get_dynamic_strength(hazard_board, H.unit_on_board(hazard_board, 20))
+	var plain_trap_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.set_tile_trap(plain_trap_board, Vector2i(3, 3))
+	H.place_bruiser(plain_trap_board, 21, Vector2i(3, 3), {})
+	var str_plain_trap: int = CombatSystem.get_dynamic_strength(
+		plain_trap_board, H.unit_on_board(plain_trap_board, 21),
+	)
+	H.assert_eq_int(failures, "enraged/hazard_str", str_hazard - str_plain_trap, 1)
 
 
 static func run_last_stand(failures: Array[String]) -> void:
@@ -723,10 +738,12 @@ static func run_colossal_mass(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"colossal_mass", false))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
-	H.assert_true(
-		failures, "colossal_mass/str_from_hp",
-		bruiser.current_strength >= 1 + bruiser.health.max_hp / 15,
-	)
+	var expected_bonus: int = floori(float(bruiser.health.max_hp) / 15.0)
+	var str_with: int = CombatSystem.get_dynamic_strength(board, bruiser)
+	var plain_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(plain_board, 10, Vector2i(3, 3), {})
+	var str_plain: int = CombatSystem.get_dynamic_strength(plain_board, H.unit_on_board(plain_board, 10))
+	H.assert_eq_int(failures, "colossal_mass/str_bonus", str_with - str_plain, expected_bonus)
 
 
 static func run_overwhelming_bulk(failures: Array[String]) -> void:
@@ -782,23 +799,32 @@ static func run_thrill_of_pain(failures: Array[String]) -> void:
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	var enemy: UnitState = H.unit_on_board(board, 2)
 	var hp: int = enemy.health.current_hp
+	var base_scaled: int = CombatSystem.calculate_scaled_damage(
+		bruiser, 2, GameEnums.StatType.PHYSICAL, board,
+	)
 	bruiser.passive_flags["thrill_active"] = true
 	var events: Array[SimEvent] = []
 	CombatSystem.deal_damage_raw(
-		board, bruiser, enemy, 0, GameEnums.StatType.PHYSICAL, events, "thrill_test", 2,
+		board, bruiser, enemy, base_scaled, GameEnums.StatType.PHYSICAL, events, "thrill_test", 2,
 	)
 	var dmg_thrill: int = hp - enemy.health.current_hp
-	var board2: BoardState = H.make_plain_board(Vector2i(8, 8))
-	H.place_bruiser(board2, 10, Vector2i(3, 3), {"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")]})
-	H.place_dummy(board2, 11, Vector2i(4, 3))
-	var enemy2: UnitState = H.unit_on_board(board2, 11)
-	var hp2: int = enemy2.health.current_hp
-	var events2: Array[SimEvent] = []
+	var board_base: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board_base, 10, Vector2i(3, 3), H.with_single_passive(&"thrill_of_pain", false))
+	H.place_dummy(board_base, 11, Vector2i(4, 3))
+	var bruiser_base: UnitState = H.unit_on_board(board_base, 10)
+	var enemy_base: UnitState = H.unit_on_board(board_base, 11)
+	var hp_base: int = enemy_base.health.current_hp
+	var events_base: Array[SimEvent] = []
 	CombatSystem.deal_damage_raw(
-		board2, H.unit_on_board(board2, 10), enemy2, 0, GameEnums.StatType.PHYSICAL, events2, "base", 2,
+		board_base, bruiser_base, enemy_base,
+		base_scaled, GameEnums.StatType.PHYSICAL, events_base, "base", 2,
 	)
-	var dmg_base: int = hp2 - enemy2.health.current_hp
-	H.assert_true(failures, "thrill_of_pain/bonus_damage", dmg_thrill > dmg_base)
+	var dmg_no_thrill: int = hp_base - enemy_base.health.current_hp
+	var expected_delta: int = (
+		CombatSystem.calculate_scaled_damage(bruiser, 4, GameEnums.StatType.PHYSICAL, board)
+		- base_scaled
+	)
+	H.assert_eq_int(failures, "thrill_of_pain/bonus_damage", dmg_thrill - dmg_no_thrill, expected_delta)
 	H.assert_true(
 		failures, "thrill_of_pain/consumed",
 		not bruiser.passive_flags.get("thrill_active", false),
@@ -807,19 +833,39 @@ static func run_thrill_of_pain(failures: Array[String]) -> void:
 
 static func run_momentum_of_titan(failures: Array[String]) -> void:
 	H.assert_passive_registered(failures, &"momentum_of_titan")
-	var board: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(5, 3)])
+	var board: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(4, 3)])
 	var cfg: Dictionary = H.with_single_passive(&"momentum_of_titan", false)
 	cfg["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
 	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(3, 3))
+	var bruiser: UnitState = H.unit_on_board(board, 1)
+	var expected_bonus: int = floori(float(bruiser.health.max_hp) * 0.10)
 	var hp: int = H.unit_hp(board, 2)
-	var ab: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_concussion_blow")
+	var ab: AbilityData = H.ability_on_unit(bruiser, &"bruiser_concussion_blow")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, ab, Vector2i(3, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
+	var dmg_with: int = hp - H.unit_hp(result.final_state, 2)
+	var board_plain: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(4, 3)])
+	H.place_bruiser(
+		board_plain, 10, Vector2i(2, 3),
+		{"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")]},
+	)
+	H.place_dummy(board_plain, 11, Vector2i(3, 3))
+	var hp_plain: int = H.unit_hp(board_plain, 11)
+	var ab_plain: AbilityData = H.ability_on_unit(H.unit_on_board(board_plain, 10), &"bruiser_concussion_blow")
+	var plan_plain := Timeline.new()
+	plan_plain.add(H.plan_ability(10, ab_plain, Vector2i(3, 3), 11))
+	var result_plain: SimResult = H.simulate_plan(board_plain, plan_plain)
+	var dmg_plain: int = hp_plain - H.unit_hp(result_plain.final_state, 11)
 	H.assert_true(
 		failures, "momentum_of_titan/collision_dmg",
-		H.unit_hp(result.final_state, 2) < hp,
+		dmg_with > dmg_plain,
+		"PUSH wall collision must add max-HP-scaled damage with passive",
+	)
+	H.assert_true(
+		failures, "momentum_of_titan/bonus_at_least",
+		dmg_with - dmg_plain >= expected_bonus,
 	)
 
 
@@ -891,14 +937,41 @@ static func run_momentum_transfer(failures: Array[String]) -> void:
 static func run_crowd_breaker(failures: Array[String]) -> void:
 	H.assert_passive_registered(failures, &"crowd_breaker")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
-	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"crowd_breaker", false))
+	var cfg: Dictionary = H.with_single_passive(&"crowd_breaker", false)
+	cfg["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
+	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
-	H.place_dummy(board, 3, Vector2i(3, 4))
+	H.place_dummy(board, 3, Vector2i(5, 3))
 	var str_adj: int = CombatSystem.get_dynamic_strength(board, H.unit_on_board(board, 1))
+	var hp_splash: int = H.unit_hp(board, 3)
+	var ab: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_concussion_blow")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, ab, Vector2i(4, 3), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var splash_dmg: int = hp_splash - H.unit_hp(result.final_state, 3)
+	var board_plain: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(
+		board_plain, 20, Vector2i(3, 3),
+		{"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")]},
+	)
+	H.place_dummy(board_plain, 21, Vector2i(4, 3))
+	H.place_dummy(board_plain, 22, Vector2i(5, 3))
+	var hp_plain_splash: int = H.unit_hp(board_plain, 22)
+	var ab_plain: AbilityData = H.ability_on_unit(H.unit_on_board(board_plain, 20), &"bruiser_concussion_blow")
+	var plan_plain := Timeline.new()
+	plan_plain.add(H.plan_ability(20, ab_plain, Vector2i(4, 3), 21))
+	var result_plain: SimResult = H.simulate_plan(board_plain, plan_plain)
+	var splash_plain: int = hp_plain_splash - H.unit_hp(result_plain.final_state, 22)
 	var board2: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board2, 10, Vector2i(3, 3), H.with_single_passive(&"crowd_breaker", false))
 	var str_alone: int = CombatSystem.get_dynamic_strength(board2, H.unit_on_board(board2, 10))
-	H.assert_true(failures, "crowd_breaker/adj_str", str_adj > str_alone)
+	H.assert_eq_int(failures, "crowd_breaker/adj_str", str_adj - str_alone, 1)
+	H.assert_true(failures, "crowd_breaker/splash", splash_dmg > 0)
+	H.assert_true(
+		failures, "crowd_breaker/splash_bonus",
+		splash_dmg > splash_plain,
+		"crowd breaker must add splash damage to adjacent targets",
+	)
 
 
 static func run_juggernaut(failures: Array[String]) -> void:
