@@ -53,6 +53,19 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 		failures, "charge_strike/upgrade/terrain_bonus",
 		ab.upgraded_effects[1].modifiers.has("bonus_dmg_from_terrain"),
 	)
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_ability(&"bruiser_charge_strike"),
+		&"bruiser_charge_strike",
+	)
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.set_tile_terrain(board, Vector2i(2, 3), &"cracked")
+	H.place_bruiser(board, 1, Vector2i(1, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(4, 3))
+	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_charge_strike")
+	H.assert_true(
+		failures, "charge_strike/upgrade/ghost_runtime",
+		skill.upgraded_effects[0].modifiers.has("ghost_move"),
+	)
 
 
 static func run_cleave_upgrade(failures: Array[String]) -> void:
@@ -63,14 +76,27 @@ static func run_cleave_upgrade(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
+	H.place_dummy(board, 3, Vector2i(4, 4))
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_cleave")
+	var bruiser: UnitState = H.unit_on_board(board, 1)
+	var wpn: int = bruiser.definition.equipped_weapon.might if bruiser.definition.equipped_weapon != null else 0
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
-	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	var enemy_center: UnitState = result.final_state.get_unit_by_id(2)
+	var enemy_perp: UnitState = result.final_state.get_unit_by_id(3)
 	H.assert_true(
-		failures, "cleave/upgrade/bleed",
-		enemy != null and H.has_status(enemy, GameEnums.StatusType.BLEED),
+		failures, "cleave/upgrade/bleed_center",
+		enemy_center != null and H.has_status(enemy_center, GameEnums.StatusType.BLEED),
+	)
+	H.assert_true(
+		failures, "cleave/upgrade/bleed_perp",
+		enemy_perp != null and H.has_status(enemy_perp, GameEnums.StatusType.BLEED),
+	)
+	H.assert_eq_int(
+		failures, "cleave/upgrade/bleed_wpn",
+		H.status_value(enemy_center, GameEnums.StatusType.BLEED),
+		wpn,
 	)
 
 
@@ -81,6 +107,42 @@ static func run_meat_shield_upgrade(failures: Array[String]) -> void:
 	)
 	var skill: AbilityData = H.factory_ability(&"bruiser_meat_shield")
 	H.assert_eq_int(failures, "meat_shield/upgrade/range", skill.upgraded_range_tiles, 3)
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
+	H.place_bruiser(board, 3, Vector2i(5, 3), {"active_abilities": [DataLibrary.get_universal_run()]})
+	var shield: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_meat_shield")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, shield, Vector2i(5, 3), 3))
+	var result: SimResult = H.simulate_plan(board, plan)
+	H.assert_eq_cell(failures, "meat_shield/upgrade/swap", result.final_state.get_unit_by_id(1).position, Vector2i(5, 3))
+	var intercept_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(intercept_board, 10, Vector2i(3, 3), cfg)
+	H.place_bruiser(intercept_board, 12, Vector2i(4, 3), {"active_abilities": [DataLibrary.get_universal_run()]})
+	var intercept_shield: AbilityData = H.ability_on_unit(H.unit_on_board(intercept_board, 10), &"bruiser_meat_shield")
+	var intercept_plan := Timeline.new()
+	intercept_plan.add(H.plan_ability(10, intercept_shield, Vector2i(4, 3), 12))
+	var intercept_swap: SimResult = H.simulate_plan(intercept_board, intercept_plan)
+	var bruiser: UnitState = intercept_swap.final_state.get_unit_by_id(10)
+	var str_before: int = CombatSystem.get_dynamic_strength(intercept_swap.final_state, bruiser)
+	H.place_unit(
+		intercept_swap.final_state,
+		11,
+		H.bruiser_unit_data(),
+		GameEnums.Team.ENEMY,
+		Vector2i(2, 3),
+		{"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")]},
+	)
+	var attack_ab: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
+	var attack_plan := Timeline.new()
+	attack_plan.add(H.plan_ability(11, attack_ab, Vector2i(3, 3), 12))
+	var attack_result: SimResult = H.simulate_plan(intercept_swap.final_state, attack_plan)
+	var bruiser_after: UnitState = attack_result.final_state.get_unit_by_id(10)
+	var str_after: int = CombatSystem.get_dynamic_strength(attack_result.final_state, bruiser_after)
+	H.assert_true(
+		failures, "meat_shield/upgrade/intercept_str",
+		str_after > str_before,
+		"[+] interception must grant STR +2",
+	)
 
 
 static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
@@ -187,18 +249,31 @@ static func run_breaching_dash_upgrade(failures: Array[String]) -> void:
 
 
 static func run_momentum_of_titan_upgrade(failures: Array[String]) -> void:
-	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
-	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_upgraded_passive(
-		H.with_single_passive(&"momentum_of_titan", false), &"momentum_of_titan",
-	))
-	var up: UnitState = H.unit_on_board(board, 1)
-	var pct_up: float = 0.20 if up.is_passive_upgraded(&"momentum_of_titan") else 0.10
-	var board2: BoardState = H.make_plain_board(Vector2i(8, 8))
-	H.place_bruiser(board2, 10, Vector2i(3, 3), H.with_single_passive(&"momentum_of_titan", false))
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(5, 3)])
+	var cfg: Dictionary = H.with_upgraded_passive(
+		H.with_single_passive(&"momentum_of_titan", false),
+		&"momentum_of_titan",
+	)
+	cfg["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
+	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	var bruiser: UnitState = H.unit_on_board(board, 1)
+	var bonus_up: int = floori(bruiser.health.max_hp * 0.20)
+	var board_base: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(5, 3)])
+	var cfg_base: Dictionary = H.with_single_passive(&"momentum_of_titan", false)
+	cfg_base["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
+	H.place_bruiser(board_base, 10, Vector2i(2, 3), cfg_base)
+	var bruiser_base: UnitState = H.unit_on_board(board_base, 10)
+	var bonus_base: int = floori(bruiser_base.health.max_hp * 0.10)
+	H.assert_true(failures, "momentum_of_titan/upgrade/pct", bonus_up > bonus_base)
+	var hp: int = H.unit_hp(board, 2)
+	var ab: AbilityData = H.ability_on_unit(bruiser, &"bruiser_concussion_blow")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, ab, Vector2i(3, 3), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(
-		failures, "momentum_of_titan/upgrade/pct",
-		pct_up == 0.20,
-		"[+] collision damage must use 20% Max HP (factory upgraded passive)",
+		failures, "momentum_of_titan/upgrade/collision_dmg",
+		H.unit_hp(result.final_state, 2) < hp,
 	)
 
 
@@ -294,12 +369,29 @@ static func run_cellular_regeneration_upgrade(failures: Array[String]) -> void:
 	H.place_dummy(board, 3, Vector2i(3, 4))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	bruiser.health.current_hp = bruiser.health.max_hp - 2
+	var hp: int = bruiser.health.current_hp
 	var plan := Timeline.new()
 	var result: SimResult = H.simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
+	H.assert_eq_int(
+		failures, "cellular_regeneration/upgrade/heal",
+		after.health.current_hp,
+		hp + 1,
+	)
 	H.assert_true(
 		failures, "cellular_regeneration/upgrade/str",
 		H.has_status(after, GameEnums.StatusType.STAT_BUFF_STR),
+	)
+	var board_one: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board_one, 10, Vector2i(3, 3), cfg)
+	H.place_dummy(board_one, 11, Vector2i(4, 3))
+	var one_hp: int = H.unit_on_board(board_one, 10).health.current_hp
+	var one_result: SimResult = H.simulate_plan(board_one, Timeline.new())
+	var one_after: UnitState = one_result.final_state.get_unit_by_id(10)
+	H.assert_true(
+		failures, "cellular_regeneration/upgrade/no_str_one_adj",
+		not H.has_status(one_after, GameEnums.StatusType.STAT_BUFF_STR),
+		"[+] STR buff requires 2+ adjacent enemies",
 	)
 
 
@@ -384,15 +476,12 @@ static func run_last_stand_upgrade(failures: Array[String]) -> void:
 	up._recalculate_stats()
 	var str_up: int = CombatSystem.get_dynamic_strength(board, up)
 	var def_up: int = CombatSystem.get_dynamic_defense(board, up)
-	var board2: BoardState = H.make_plain_board(Vector2i(8, 8))
-	H.place_bruiser(board2, 10, Vector2i(3, 3), H.with_single_passive(&"last_stand", false))
-	var base: UnitState = H.unit_on_board(board2, 10)
-	base.health.current_hp = 1
-	base._recalculate_stats()
-	var str_base: int = CombatSystem.get_dynamic_strength(board2, base)
-	var def_base: int = CombatSystem.get_dynamic_defense(board2, base)
-	H.assert_true(failures, "last_stand/upgrade/str", str_up > str_base)
-	H.assert_true(failures, "last_stand/upgrade/def", def_up > def_base)
+	up.health.current_hp = up.health.max_hp
+	up._recalculate_stats()
+	var str_full: int = CombatSystem.get_dynamic_strength(board, up)
+	var def_full: int = CombatSystem.get_dynamic_defense(board, up)
+	H.assert_eq_int(failures, "last_stand/upgrade/str", str_up - str_full, 3)
+	H.assert_eq_int(failures, "last_stand/upgrade/def", def_up - def_full, 3)
 
 
 static func run_colossal_mass_upgrade(failures: Array[String]) -> void:

@@ -1,15 +1,63 @@
 {
   "piece": "B6-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 3,
-  "last_score": 89,
+  "last_critic_round": 5,
+  "last_score": 90,
   "last_result": "PASS",
-  "last_row_promoted": "bruiser_push_through",
+  "last_row_promoted": "cellular_regeneration",
   "approved_rows": [
     {
       "factory_id": "bruiser_push_through",
       "score": 89,
       "critic_round": 3,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_suplex",
+      "score": 89,
+      "critic_round": 4,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_concussion_blow",
+      "score": 90,
+      "critic_round": 4,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "blood_for_blood",
+      "score": 89,
+      "critic_round": 4,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "momentum_transfer",
+      "score": 88,
+      "critic_round": 4,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "battering_ram",
+      "score": 90,
+      "critic_round": 4,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "unstoppable_force",
+      "score": 89,
+      "critic_round": 4,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_cleave",
+      "score": 88,
+      "critic_round": 5,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "cellular_regeneration",
+      "score": 90,
+      "critic_round": 5,
       "fix_target": "none"
     }
   ]

@@ -921,6 +921,14 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				var adj_unit = board.get_unit_at(adj_coord)
 				_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
 			continue
+
+		if effect.modifiers.has("damage_adjacent_on_landing"):
+			for dir in GridSystem.DIRECTIONS:
+				var adj_coord: Vector2i = actor.position + dir
+				var adj_unit: UnitState = board.get_unit_at(adj_coord)
+				if adj_unit != null and adj_unit != actor and adj_unit.is_alive() and adj_unit.team != actor.team:
+					_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
+			continue
 			
 		for tile_coord in affected_tiles:
 			var target_unit := board.get_unit_at(tile_coord)

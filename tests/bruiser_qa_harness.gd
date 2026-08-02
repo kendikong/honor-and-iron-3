@@ -374,6 +374,27 @@ static func set_tile_trap(board: BoardState, coord: Vector2i) -> void:
 	board.tiles[coord] = TileState.create(coord, trap)
 
 
+static func set_tile_terrain(board: BoardState, coord: Vector2i, terrain_id: StringName) -> void:
+	var def: TerrainData = DataLibrary.get_terrain(terrain_id)
+	if def == null:
+		var custom := TerrainData.new()
+		custom.id = terrain_id
+		custom.blocks_movement = false
+		custom.stops_displacement = false
+		board.tiles[coord] = TileState.create(coord, custom)
+	else:
+		board.tiles[coord] = TileState.create(coord, def)
+
+
+static func status_value(unit: UnitState, status_type: GameEnums.StatusType) -> int:
+	if unit == null:
+		return 0
+	for status: StatusData in unit.active_statuses:
+		if status.type == status_type:
+			return status.value
+	return 0
+
+
 static func bruiser_with_abilities(ability_ids: Array, upgraded: Dictionary = {}) -> Dictionary:
 	var abilities: Array = [DataLibrary.get_universal_run()]
 	for id: Variant in ability_ids:

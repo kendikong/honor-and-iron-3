@@ -191,6 +191,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.TELEPORT_CASTER, 0),
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
 	], 2, GameEnums.StatType.PHYSICAL)
+	belly_flop.effects[1].modifiers["damage_adjacent_on_landing"] = 1
 	belly_flop.upgrade_description = "Landing applies PUSH 1 to all adjacent enemies."
 	belly_flop.targeting_mode = GameEnums.TargetingMode.TILE
 	belly_flop.targeting_flags = GameEnums.TargetingFlags.TILE

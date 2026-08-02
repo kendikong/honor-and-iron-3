@@ -56,7 +56,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **1 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **30** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
+**Summary (honest):** **9 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **22** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
 
 ### Movement + actives
 
@@ -64,9 +64,9 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 |--------------------|------|---------------|--------|-------|
 | `bruiser_push_through` | Movement | `tests/skills/bruiser_push_through_scenario.gd` | PASS | MOVE_INTO_AND_PUSH; `[+]` cost 1 MOV + STR on push |
 | `bruiser_charge_strike` | Active | `tests/skills/bruiser_charge_strike_scenario.gd` | PLANNED | MOVE 2 + DAMAGE 3 + PUSH 1; `[+]` GHOST + terrain bonus |
-| `bruiser_concussion_blow` | Active | `tests/skills/bruiser_concussion_blow_scenario.gd` | PLANNED | DAMAGE + PUSH; object STAGGER; `[+]` mutual STAGGER on enemy collision |
-| `bruiser_cleave` | Active | `tests/skills/bruiser_cleave_scenario.gd` | PLANNED | ARC DAMAGE; `[+]` BLEED (WPN-scaled) |
-| `bruiser_suplex` | Active | `tests/skills/bruiser_suplex_scenario.gd` | PLANNED | DAMAGE + THROW_BEHIND — **not SWAP** |
+| `bruiser_concussion_blow` | Active | `tests/skills/bruiser_concussion_blow_scenario.gd` | PASS | DAMAGE + PUSH; object STAGGER; `[+]` mutual STAGGER on enemy collision |
+| `bruiser_cleave` | Active | `tests/skills/bruiser_cleave_scenario.gd` | PASS | ARC DAMAGE; `[+]` BLEED (WPN-scaled) |
+| `bruiser_suplex` | Active | `tests/skills/bruiser_suplex_scenario.gd` | PASS | DAMAGE + THROW_BEHIND — **not SWAP** |
 | `bruiser_adrenaline_surge` | Active | `tests/skills/bruiser_adrenaline_surge_scenario.gd` | PLANNED | SELF cost + buffs; 0 AP adjacency rule; `[+]` on-kill heal/shield |
 | `bruiser_earthshatter` | Active | `tests/skills/bruiser_earthshatter_scenario.gd` | PLANNED | ARC + DESTROY_OBSTACLE; `[+]` ATK per destroy |
 | `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | PLANNED | SWAP ally + INTERCEPT; `[+]` RANGE 3 + STR per intercept |
@@ -83,8 +83,8 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 
 | Factory id | Passive | Scenario file | Tier 1 | Trigger setup |
 |------------|---------|---------------|--------|----------------|
-| `cellular_regeneration` | Cellular Regeneration | `tests/passives/cellular_regeneration_scenario.gd` | PLANNED | Turn start + adjacent enemy count |
-| `blood_for_blood` | Blood for Blood | `tests/passives/blood_for_blood_scenario.gd` | PLANNED | Damaged last turn → BLEED on attack |
+| `cellular_regeneration` | Cellular Regeneration | `tests/passives/cellular_regeneration_scenario.gd` | PASS | Turn start + adjacent enemy count |
+| `blood_for_blood` | Blood for Blood | `tests/passives/blood_for_blood_scenario.gd` | PASS | Damaged last turn → BLEED on attack |
 | `adrenaline_junkie` | Adrenaline Junkie | `tests/passives/adrenaline_junkie_scenario.gd` | PLANNED | Missing HP → MOV/STR; `[+]` DEF |
 | `enraged` | Enraged | `tests/passives/enraged_scenario.gd` | PLANNED | Debuff/hazard count → STR; `[+]` MOV |
 | `last_stand` | Last Stand | `tests/passives/last_stand_scenario.gd` | PLANNED | HP &lt; 25% → STR/DEF |
@@ -93,11 +93,11 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `thrill_of_pain` | Thrill of Pain | `tests/passives/thrill_of_pain_scenario.gd` | PLANNED | On damage → next attack buff |
 | `momentum_of_titan` | Momentum of the Titan | `tests/passives/momentum_of_titan_scenario.gd` | PLANNED | PUSH collision % Max HP damage |
 | `scar_tissue` | Scar Tissue | `tests/passives/scar_tissue_scenario.gd` | PLANNED | Physical damage reduction scaling |
-| `momentum_transfer` | Momentum Transfer | `tests/passives/momentum_transfer_scenario.gd` | PLANNED | PUSH collision → HEAL; `[+]` STR |
+| `momentum_transfer` | Momentum Transfer | `tests/passives/momentum_transfer_scenario.gd` | PASS | PUSH collision → HEAL; `[+]` STR |
 | `crowd_breaker` | Crowd Breaker | `tests/passives/crowd_breaker_scenario.gd` | PLANNED | Adjacent enemy STR + splash |
 | `juggernaut` | Juggernaut | `tests/passives/juggernaut_scenario.gd` | PLANNED | Trap destroy; `[+]` SHIELD |
-| `battering_ram` | Battering Ram | `tests/passives/battering_ram_scenario.gd` | PLANNED | PUSH +1 tile; `[+]` wall STAGGER |
-| `unstoppable_force` | Unstoppable Force | `tests/passives/unstoppable_force_scenario.gd` | PLANNED | STAGGER/ROOT immune + SHIELD on resist |
+| `battering_ram` | Battering Ram | `tests/passives/battering_ram_scenario.gd` | PASS | PUSH +1 tile; `[+]` wall STAGGER |
+| `unstoppable_force` | Unstoppable Force | `tests/passives/unstoppable_force_scenario.gd` | PASS | STAGGER/ROOT immune + SHIELD on resist |
 
 **LOCK rule:** All factory rows `PASS` (or owner-documented `N/A`). Gate script **fails** until then.
 

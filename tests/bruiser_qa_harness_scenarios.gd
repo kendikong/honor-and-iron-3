@@ -105,6 +105,26 @@ static func run_cleave(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(failures, "cleave/hit", H.unit_hp(result.final_state, 2) < hp)
+	var arc_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(arc_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_cleave"))
+	H.place_dummy(arc_board, 11, Vector2i(4, 3))
+	H.place_dummy(arc_board, 12, Vector2i(4, 4))
+	var hp_center: int = H.unit_hp(arc_board, 11)
+	var hp_perp: int = H.unit_hp(arc_board, 12)
+	var arc_skill: AbilityData = H.ability_on_unit(H.unit_on_board(arc_board, 10), &"bruiser_cleave")
+	var arc_plan := Timeline.new()
+	arc_plan.add(H.plan_ability(10, arc_skill, Vector2i(4, 3), 11))
+	var arc_result: SimResult = H.simulate_plan(arc_board, arc_plan)
+	H.assert_true(
+		failures, "cleave/arc_center",
+		H.unit_hp(arc_result.final_state, 11) < hp_center,
+		"ARC center target must take damage",
+	)
+	H.assert_true(
+		failures, "cleave/arc_perp",
+		H.unit_hp(arc_result.final_state, 12) < hp_perp,
+		"ARC perpendicular tile must take damage",
+	)
 
 
 static func run_suplex(failures: Array[String]) -> void:
@@ -187,6 +207,17 @@ static func run_adrenaline_surge(failures: Array[String]) -> void:
 		H.has_status(after, GameEnums.StatusType.STAT_BUFF_STR)
 		or H.has_status(after, GameEnums.StatusType.STAT_BUFF_MOV),
 	)
+	var adj_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(adj_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_adrenaline_surge"))
+	H.place_dummy(adj_board, 11, Vector2i(4, 3))
+	H.place_dummy(adj_board, 12, Vector2i(3, 4))
+	var adj_bruiser: UnitState = H.unit_on_board(adj_board, 10)
+	var adj_ab: AbilityData = H.ability_on_unit(adj_bruiser, &"bruiser_adrenaline_surge")
+	H.assert_eq_int(
+		failures, "adrenaline_surge/zero_ap_adjacent",
+		AbilitySystem.get_action_point_cost(adj_bruiser, adj_ab, adj_board),
+		0,
+	)
 
 
 static func run_earthshatter(failures: Array[String]) -> void:
@@ -203,6 +234,24 @@ static func run_earthshatter(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(failures, "earthshatter/hit", H.unit_hp(result.final_state, 2) < hp)
+	var destroy_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(destroy_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_earthshatter"))
+	var construct_def: UnitData = DataLibrary.get_unit(&"construct_turret")
+	H.place_unit(
+		destroy_board, 11, construct_def, GameEnums.Team.ENEMY, Vector2i(4, 4), {},
+	)
+	var construct_hp: int = H.unit_hp(destroy_board, 11)
+	var destroy_skill: AbilityData = H.ability_on_unit(
+		H.unit_on_board(destroy_board, 10), &"bruiser_earthshatter",
+	)
+	var destroy_plan := Timeline.new()
+	destroy_plan.add(H.plan_ability(10, destroy_skill, Vector2i(4, 3), 11))
+	var destroy_result: SimResult = H.simulate_plan(destroy_board, destroy_plan)
+	H.assert_true(
+		failures, "earthshatter/destroy_construct",
+		H.unit_hp(destroy_result.final_state, 11) < construct_hp,
+		"DESTROY_OBSTACLE must kill construct in ARC",
+	)
 
 
 static func run_meat_shield(failures: Array[String]) -> void:
@@ -284,6 +333,25 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 		def_after < def_before,
 		"AOE must apply DEF debuff (-2) to enemies in area",
 	)
+	var aoe_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(aoe_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_guttural_roar"))
+	H.place_dummy(aoe_board, 11, Vector2i(4, 3))
+	H.place_dummy(aoe_board, 12, Vector2i(3, 4))
+	var hp_side: int = H.unit_hp(aoe_board, 12)
+	var aoe_skill: AbilityData = H.ability_on_unit(H.unit_on_board(aoe_board, 10), &"bruiser_guttural_roar")
+	var aoe_plan := Timeline.new()
+	aoe_plan.add(H.plan_ability(10, aoe_skill, Vector2i(4, 3), 11))
+	var aoe_result: SimResult = H.simulate_plan(aoe_board, aoe_plan)
+	var side_enemy: UnitState = aoe_result.final_state.get_unit_by_id(12)
+	H.assert_true(
+		failures, "guttural_roar/aoe_second",
+		side_enemy != null
+		and (
+			H.unit_hp(aoe_result.final_state, 12) < hp_side
+			or side_enemy.position != Vector2i(3, 4)
+		),
+		"AOE must PUSH or debuff multiple adjacent enemies",
+	)
 
 static func run_headbutt(failures: Array[String]) -> void:
 	H.run_active_smoke(
@@ -302,6 +370,18 @@ static func run_headbutt(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(failures, "headbutt/enemy_dmg", H.unit_hp(result.final_state, 2) < enemy_hp)
 	H.assert_true(failures, "headbutt/self_dmg", H.unit_hp(result.final_state, 1) < bruiser_hp)
+	var enemy_after: UnitState = result.final_state.get_unit_by_id(2)
+	H.assert_true(
+		failures, "headbutt/stagger",
+		enemy_after != null and H.has_status(enemy_after, GameEnums.StatusType.STAGGER),
+		"headbutt must STAGGER the target",
+	)
+	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
+	H.assert_true(
+		failures, "headbutt/self_stagger",
+		bruiser_after != null and H.has_status(bruiser_after, GameEnums.StatusType.STAGGER),
+		"headbutt must STAGGER the caster",
+	)
 
 
 static func run_blood_boil(failures: Array[String]) -> void:
@@ -389,10 +469,16 @@ static func run_belly_flop(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_eq_cell(failures, "belly_flop/teleport", result.final_state.get_unit_by_id(1).position, Vector2i(5, 3))
+	var damaged_adjacent := false
+	for e: Variant in result.events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+			if int(e.data.get("unit", -1)) == 2:
+				damaged_adjacent = true
+				break
 	H.assert_true(
-		failures, "belly_flop/ability_used",
-		result.events.size() > 0,
-		"belly flop must emit sim events on cast",
+		failures, "belly_flop/adjacent_damage",
+		damaged_adjacent or H.unit_hp(result.final_state, 2) < hp,
+		"belly flop must DAMAGE enemies adjacent to landing tile",
 	)
 
 
@@ -420,10 +506,22 @@ static func run_cellular_regeneration(failures: Array[String]) -> void:
 	var hp: int = bruiser.health.current_hp
 	var plan := Timeline.new()
 	var result: SimResult = H.simulate_plan(board, plan)
+	var neg_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(neg_board, 10, Vector2i(3, 3), {})
+	H.place_dummy(neg_board, 11, Vector2i(4, 3))
+	var neg_bruiser: UnitState = H.unit_on_board(neg_board, 10)
+	neg_bruiser.health.current_hp = neg_bruiser.health.max_hp - 2
+	var neg_hp: int = neg_bruiser.health.current_hp
+	var neg_result: SimResult = H.simulate_plan(neg_board, Timeline.new())
+	H.assert_eq_int(
+		failures, "cellular_regeneration/no_passive",
+		H.unit_hp(neg_result.final_state, 10),
+		neg_hp,
+	)
 	H.assert_true(
 		failures, "cellular_regeneration/heal",
-		H.unit_hp(result.final_state, 1) > hp,
-		"adjacent enemy at turn start must HEAL 1",
+		H.unit_hp(result.final_state, 1) == hp + 1,
+		"adjacent enemy at turn start must HEAL exactly 1",
 	)
 
 
@@ -494,8 +592,8 @@ static func run_last_stand(failures: Array[String]) -> void:
 	bruiser._recalculate_stats()
 	var full_str: int = CombatSystem.get_dynamic_strength(board, bruiser)
 	var full_def: int = CombatSystem.get_dynamic_defense(board, bruiser)
-	H.assert_true(failures, "last_stand/str", low_str > full_str)
-	H.assert_true(failures, "last_stand/def", low_def > full_def)
+	H.assert_eq_int(failures, "last_stand/str_bonus", low_str - full_str, 2)
+	H.assert_eq_int(failures, "last_stand/def_bonus", low_def - full_def, 2)
 
 
 static func run_colossal_mass(failures: Array[String]) -> void:
@@ -609,11 +707,30 @@ static func run_scar_tissue(failures: Array[String]) -> void:
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"scar_tissue", false))
 	H.place_dummy(board, 2, Vector2i(4, 3))
 	var victim: UnitState = H.unit_on_board(board, 1)
+	victim.health.current_hp = victim.health.max_hp - 10
+	victim._recalculate_stats()
 	var hp: int = victim.health.current_hp
 	var events: Array[SimEvent] = []
-	CombatSystem.deal_damage(board, victim, 5, events, &"test", false, false, H.unit_on_board(board, 2))
+	CombatSystem.deal_damage(board, victim, 8, events, &"physical", false, false, H.unit_on_board(board, 2))
 	var reduced: int = hp - victim.health.current_hp
-	H.assert_true(failures, "scar_tissue/reduces", reduced < 5)
+	H.assert_true(failures, "scar_tissue/reduces", reduced < 8)
+	var plain_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(plain_board, 10, Vector2i(3, 3), {})
+	H.place_dummy(plain_board, 11, Vector2i(4, 3))
+	var plain_victim: UnitState = H.unit_on_board(plain_board, 10)
+	plain_victim.health.current_hp = plain_victim.health.max_hp - 10
+	plain_victim._recalculate_stats()
+	var plain_hp: int = plain_victim.health.current_hp
+	var plain_events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		plain_board, plain_victim, 8, plain_events, &"physical", false, false, H.unit_on_board(plain_board, 11),
+	)
+	var plain_reduced: int = plain_hp - plain_victim.health.current_hp
+	H.assert_true(
+		failures, "scar_tissue/vs_plain",
+		reduced < plain_reduced,
+		"scar tissue must mitigate more than a bruiser without the passive (same damage, same missing HP)",
+	)
 
 
 static func run_momentum_transfer(failures: Array[String]) -> void:
@@ -670,6 +787,21 @@ static func run_juggernaut(failures: Array[String]) -> void:
 		H.events_have_terrain_changed(events, Vector2i(4, 3)),
 	)
 	H.assert_eq_int(failures, "juggernaut/no_trap_dmg", bruiser.health.current_hp, hp)
+	var plain_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.set_tile_trap(plain_board, Vector2i(4, 3))
+	H.place_bruiser(plain_board, 10, Vector2i(3, 3), {})
+	var plain: UnitState = H.unit_on_board(plain_board, 10)
+	var plain_hp: int = plain.health.current_hp
+	GridSystem.set_occupant(plain_board, Vector2i(3, 3), -1)
+	plain.position = Vector2i(4, 3)
+	GridSystem.set_occupant(plain_board, Vector2i(4, 3), plain.id)
+	var plain_events: Array[SimEvent] = []
+	TerrainSystem.apply_landing(plain_board, plain, plain_events)
+	H.assert_true(
+		failures, "juggernaut/plain_takes_trap",
+		plain.health.current_hp < plain_hp,
+		"without juggernaut, trap landing must deal hazard damage",
+	)
 
 
 static func run_battering_ram(failures: Array[String]) -> void:
