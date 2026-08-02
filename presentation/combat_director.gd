@@ -926,7 +926,11 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 					return
 	for i: int in range(actions.size()):
 		target_plans[i].add(actions[i])
-		if actions[i].type == GameEnums.ActionType.MOVE and not _autobattler_plan_batch:
+		if (
+			actions[i].type == GameEnums.ActionType.MOVE
+			and not _autobattler_plan_batch
+			and _move_commits_with_planning_anim(actions[i])
+		):
 			_commit_animate_actor_ids[actions[i].actor_id] = true
 		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null:
 			if actions[i].ability.is_movement_kind():
@@ -2326,6 +2330,7 @@ func _refresh_plan_core() -> void:
 			if (
 				action.type == GameEnums.ActionType.MOVE
 				and _commit_animate_actor_ids.has(action.actor_id)
+				and _move_commits_with_planning_anim(action as TimelineAction)
 			):
 				var before_action: BoardState = _board_before_planning_action(
 					action as TimelineAction, plan_to_run,
@@ -2574,6 +2579,8 @@ func _collect_all_planning_move_anim_events() -> Array[SimEvent]:
 	var anim_events: Array[SimEvent] = []
 	for action: TimelineAction in plan_to_run.entries:
 		if action.awaiting_target or action.type != GameEnums.ActionType.MOVE:
+			continue
+		if not _move_commits_with_planning_anim(action):
 			continue
 		var actor := base_board.get_unit_by_id(action.actor_id)
 		if actor == null or actor.is_enemy():
@@ -2855,6 +2862,15 @@ func _finalize_planning_commit_move_event(
 			path_cells.append(action.target_coord)
 	move_event.data["path"] = path_cells
 	move_event.data["planning_commit_move"] = true
+	move_event.data["move_timing"] = action.move_timing
+
+
+func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
+	## Only pre-action (pre-move) walks animate on planning commit. Post-move and
+	## action-phase displacement stay preview-only until Execute.
+	if action == null or action.type != GameEnums.ActionType.MOVE:
+		return false
+	return action.move_timing != GameEnums.MoveTiming.POST_ACTION
 
 
 func _filter_committed_premove_visual_events(events: Array[SimEvent]) -> Array[SimEvent]:

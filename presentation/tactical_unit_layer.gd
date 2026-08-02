@@ -1065,7 +1065,8 @@ func _should_animate_move(event: SimEvent) -> bool:
 	if _is_planning_phase():
 		if _director != null and _director.is_planning_move_instant(unit_id):
 			return false
-		return unit != null and not unit.is_enemy()
+		# Player planning walks: commit queue only (_animate_planning_commit_move).
+		return false
 	if unit != null and unit.is_enemy():
 		return true
 	if event.data.get("presentation_anim", GameEnums.PresentationAnim.WALK) == GameEnums.PresentationAnim.SUPER_RUN:
@@ -1224,6 +1225,8 @@ func _should_animate_planning_commit_move(unit_id: int, event: SimEvent = null) 
 	if unit_id < 0 or _director == null:
 		return false
 	if event != null and bool(event.data.get("planning_commit_move", false)):
+		if int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION)) == GameEnums.MoveTiming.POST_ACTION:
+			return false
 		return true
 	if _director.is_planning_move_instant(unit_id):
 		return false
