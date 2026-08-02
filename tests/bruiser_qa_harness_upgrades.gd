@@ -275,9 +275,20 @@ static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3)))
 	var result: SimResult = H.simulate_plan(board, plan)
+	var final_items: Array = result.final_state.items
+	var item_pushed_east: bool = false
+	for coord: Variant in final_items:
+		if coord is Vector2i and coord.x >= 5 and coord.y == 3:
+			item_pushed_east = true
+			break
 	H.assert_true(
 		failures, "guttural_roar/upgrade/item_push",
-		not board.items.has(Vector2i(4, 3)),
+		not final_items.has(Vector2i(4, 3)),
+	)
+	H.assert_true(
+		failures, "guttural_roar/upgrade/item_dest",
+		item_pushed_east,
+		"item must be pushed east into the enemy",
 	)
 	H.assert_eq_int(
 		failures, "guttural_roar/upgrade/item_collision",

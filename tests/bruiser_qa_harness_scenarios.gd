@@ -289,6 +289,12 @@ static func run_meat_shield(failures: Array[String]) -> void:
 			"active_passives": [],
 		},
 	)
+	var attacker: UnitState = redirect_board.get_unit_by_id(11)
+	H.assert_true(
+		failures, "meat_shield/no_crowd_breaker",
+		attacker != null and not attacker.has_passive(&"crowd_breaker"),
+		"redirect baseline must not include crowd_breaker splash",
+	)
 	var solo_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(
 		solo_board, 30, Vector2i(3, 3), {"active_abilities": [DataLibrary.get_universal_run()]},
@@ -340,7 +346,7 @@ static func run_meat_shield(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "meat_shield/redirect_total",
 		split_total > 0 and split_total <= solo_incoming,
-		"split incoming cannot exceed solo baseline",
+		"intercept splits damage; post-mitigation total cannot exceed solo baseline",
 	)
 
 
