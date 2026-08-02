@@ -1318,18 +1318,21 @@ func _audit_surface(
 		_assert_path_is_manhattan(path, label)
 	if contract.has("ghost_pos"):
 		var ghost: UnitState = await _preview_unit(ctx, unit_id, contract["ghost_pos"])
+		var approach_text: String = "n/a"
+		if ctx.has("ally_id"):
+			approach_text = str((ctx["director"] as CombatDirector).preview_approach_tile(
+				unit_id,
+				int(ctx["ally_id"]),
+				(ctx["director"] as CombatDirector).selected_ability_index,
+				hover_cell,
+			))
 		assert_object(ghost).override_failure_message(
 			"%s: preview ghost missing at %s; path=%s slots=%s approach=%s preview_board=%s" % [
 				label,
 				hover_cell,
 				str(path),
 				str(_commit_slots_for_interaction(ctx, unit_id, hover_cell, false)),
-				str((ctx["director"] as CombatDirector).preview_approach_tile(
-					unit_id,
-					int(ctx["ally_id"]),
-					(ctx["director"] as CombatDirector).selected_ability_index,
-					hover_cell,
-				)),
+				approach_text,
 				str(input.preview_state.preview_board),
 			],
 		).is_not_null()
