@@ -5,23 +5,24 @@
 
 ---
 
-## Score ticker (update every critic round — owner reads this first)
+## Score ticker
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ bruiser_push_through │ Round 1 │ SELF-GRADED: no (subagent)
-SCORE: 82/100 │ THRESHOLD: 88 │ FAIL
-DELTA: first round (B6-REOPEN)
-GATE: harness PASS · matrix 0/31 PASS (31 HARNESS_ONLY)
-STOP_CONDITION_MET: no
-NEXT: re-critic push_through after qa_test deepening (r2)
+GAUNTLET SCORE │ bruiser_charge_strike │ Round 4 │ SELF-GRADED: no (subagent)
+SCORE: 88/100 │ THRESHOLD: 88 │ PASS
+DELTA: +2 vs r3 (86)
+GATE: harness PASS · matrix 2/31 PASS
+STOP_CONDITION_MET: no — next: bruiser_concussion_blow
 ══════════════════════════════════════
 ```
 
-| Round | Piece | Score | Delta | Result |
-|-------|-------|-------|-------|--------|
-| r1 | bruiser_push_through | 82 | first | **FAIL** — gauntlet-critic (adjacent/push distance/STR delta gaps) |
-| r20 | B6-LOCK full matrix | 95 | — | **INVALIDATED** — B6-LOCK REVOKED |
+| Round | Piece | Score | Result |
+|-------|-------|-------|--------|
+| r4 | bruiser_charge_strike | 88 | **PASS** — promoted |
+| r3 | bruiser_charge_strike | 86 | FAIL |
+| r2 | bruiser_push_through | 89 | **PASS** — promoted |
+| r1 | bruiser_charge_strike | 74 | FAIL |
 
 ---
 
@@ -29,38 +30,11 @@ NEXT: re-critic push_through after qa_test deepening (r2)
 
 | Field | Value |
 |-------|-------|
-| **Chunk / goal** | P6 Bruiser — B6-REOPEN until honest 31/31 + critic ≥95 |
-| **Started** | 2026-08-02 (reopen) |
-| **Status** | **ACTIVE** |
-| **Last real critic** | — (manifest cleared) |
-| **Lead session** | bruiser-b6-reopen-2026-08-02 |
-| **Critic:** yes | per-row only; no self-grade |
+| **Status** | **ACTIVE** — row 3 `bruiser_concussion_blow` next |
+| **Matrix** | **2/31** PASS |
 
 ---
 
-## STOP_ON checklist
+## STOP_ON
 
-| Check | Target | Actual |
-|-------|--------|--------|
-| Matrix 31/31 PASS | yes | **no** (0/31) |
-| Manifest 31 rows | yes | **no** (0) |
-| `run_bruiser_qa_gate.ps1` exit 0 | yes | **no** (INCOMPLETE) |
-| Full-matrix critic ≥ 95 | yes | **no** |
-| `bruiser-template.md` LOCKED | yes | **no** (`LOOP_READY`) |
-| `STOP_CONDITION_MET: yes` | yes | **no** |
-
----
-
-## Blockers (owner)
-
-*(none)*
-
----
-
-## Wave log (latest)
-
-| Time | Piece | Score | Result | Notes |
-|------|-------|-------|--------|-------|
-| 2026-08-02 | B6-REOPEN | — | reset | LOCK revoked; manifest cleared; matrix → HARNESS_ONLY |
-| 2026-08-02 | push_through deepen | — | qa_test | push_distance, non_adjacent, STR value + attack delta asserts |
-| 2026-08-02 | push_through r1 critic | 82 | FAIL | gauntlet-critic subagent — not promoted |
+`STOP_CONDITION_MET: no` (2/31, gate exit 2)

@@ -89,7 +89,11 @@ static func find_path(
 	if not goal_tile_ok and unit != null:
 		var goal_occ := board.get_unit_at(goal)
 		if goal_occ != null and goal_occ.team != team:
-			if can_pass_through_enemy(unit, ability) or unit.has_status(GameEnums.StatusType.GHOST):
+			if (
+				can_pass_through_enemy(unit, ability)
+				or unit.has_status(GameEnums.StatusType.GHOST)
+				or (ability != null and AbilitySystem.has_displacement_effects(ability))
+			):
 				goal_tile_ok = true
 	if not goal_tile_ok:
 		return empty
@@ -142,6 +146,7 @@ static func find_path(
 		var end_occ := board.get_unit_at(path[path.size() - 1])
 		if end_occ != null and end_occ.team != team and (
 			can_pass_through_enemy(unit, ability) or unit.has_status(GameEnums.StatusType.GHOST)
+			or (ability != null and AbilitySystem.has_displacement_effects(ability))
 		):
 			break  # TRAMPLE/BULLDOZE/GHOST can land on an enemy tile; execution handles displacement
 		path.pop_back()

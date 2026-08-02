@@ -51,11 +51,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.passives.append(DataLibrary._make_passive(&"unstoppable_force", "Unstoppable Force", "Immune to STAGGER/ROOT. Resisting grants SHIELD 1.", "[+] Resisting grants SHIELD 2."))
 	
 	# Actives
-	var charge_strike = DataLibrary._make_ability(&"bruiser_charge_strike", "Charge Strike", 2, [
+	var charge_strike = DataLibrary._make_ability(&"bruiser_charge_strike", "Charge Strike", 1, [
 		DataLibrary._effect(GameEnums.EffectType.MOVE, 2),
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3),
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
-	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.SINGLE, 2)
+	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.SINGLE, 1)
 	charge_strike.upgrade_description = "Gain GHOST during MOVE. Gain ATK +2 if passing through terrain."
 	charge_strike.upgraded_effects = DataLibrary._duplicate_effects(charge_strike.effects)
 	charge_strike.upgraded_effects[0].modifiers["ghost_move"] = 1

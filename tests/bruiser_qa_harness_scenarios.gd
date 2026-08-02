@@ -13,20 +13,40 @@ static func run_charge_strike(failures: Array[String]) -> void:
 		[GameEnums.EffectType.MOVE, GameEnums.EffectType.DAMAGE, GameEnums.EffectType.PUSH],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_charge_strike")
+	H.assert_eq_int(failures, "charge_strike/range", factory_ab.range_tiles, 1)
 	H.assert_eq_int(failures, "charge_strike/move_amount", factory_ab.effects[0].amount, 2)
 	H.assert_eq_int(failures, "charge_strike/dmg_amount", factory_ab.effects[1].amount, 3)
 	H.assert_eq_int(failures, "charge_strike/push_amount", factory_ab.effects[2].amount, 1)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
-	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_charge_strike"))
-	H.place_dummy(board, 2, Vector2i(4, 3))
+	H.place_bruiser(board, 1, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_charge_strike"))
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	var bruiser_before: UnitState = H.unit_on_board(board, 1)
 	var hp: int = H.unit_hp(board, 2)
-	var ab: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_charge_strike")
+	var ab: AbilityData = H.ability_on_unit(bruiser_before, &"bruiser_charge_strike")
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, ab, Vector2i(4, 3), 2))
+	plan.add(H.plan_ability(1, ab, Vector2i(3, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
+	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
 	var enemy: UnitState = result.final_state.get_unit_by_id(2)
-	H.assert_true(failures, "charge_strike/damage", enemy != null and enemy.health.current_hp < hp)
-	H.assert_true(failures, "charge_strike/push", H.events_have_unit_pushed(result.events, 2))
+	H.assert_eq_cell(failures, "charge_strike/bruiser_pos", bruiser_after.position, Vector2i(1, 3))
+	H.assert_eq_cell(failures, "charge_strike/enemy_pos", enemy.position, Vector2i(4, 3))
+	var enemy_damage: int = hp - enemy.health.current_hp
+	var scaled_raw: int = CombatSystem.calculate_scaled_damage(
+		bruiser_before, 3, GameEnums.StatType.PHYSICAL, board,
+	)
+	var expected_enemy: int = H.damage_dealt_to_unit(board, 2, scaled_raw, bruiser_before)
+	H.assert_eq_int(failures, "charge_strike/dmg_dealt", enemy_damage, expected_enemy)
+	H.assert_eq_int(failures, "charge_strike/push_distance", H.event_push_distance(result.events, 2), 1)
+	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(far_board, 10, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_charge_strike"))
+	H.place_dummy(far_board, 11, Vector2i(4, 3))
+	var far_ab: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 10), &"bruiser_charge_strike")
+	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(4, 3), 11)
+	H.assert_true(
+		failures, "charge_strike/out_of_range",
+		not AbilitySystem.can_use(far_board, far_action),
+		"RANGE 1 + MOVE 2 must reject targets beyond 2 tiles",
+	)
 
 
 static func run_concussion_blow(failures: Array[String]) -> void:

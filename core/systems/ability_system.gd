@@ -38,6 +38,9 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	var max_range: int = actor.get_ability_range(ability)
 	if ability_has_dash(ability):
 		max_range = maxi(max_range, dash_steps(ability))
+	var move_steps_for_range: int = effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+	if move_steps_for_range > 0:
+		max_range = maxi(max_range, move_steps_for_range)
 	if dist > max_range:
 		return false
 	if dist == 0 and actor.get_ability_range(ability) > 0 and not can_target_self(actor, ability):

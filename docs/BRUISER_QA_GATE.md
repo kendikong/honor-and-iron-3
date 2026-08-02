@@ -56,14 +56,14 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **0 / 31** factory rows meta-critic `PASS` · **31** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — **B6-LOCK REVOKED** (2026-08-02); prior r20 approval invalidated; gate fails until per-row fresh `gauntlet-critic` ≥88 with Bible evidence.
+**Summary (honest):** **2 / 31** factory rows meta-critic `PASS` · **29** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — B6-REOPEN active.
 
 ### Movement + actives
 
 | Bible / factory id | Type | Scenario file | Tier 1 | Notes |
 |--------------------|------|---------------|--------|-------|
-| `bruiser_push_through` | Movement | `tests/skills/bruiser_push_through_scenario.gd` | HARNESS_ONLY | MOVE_INTO_AND_PUSH; `[+]` cost 1 MOV + STR on push |
-| `bruiser_charge_strike` | Active | `tests/skills/bruiser_charge_strike_scenario.gd` | HARNESS_ONLY | MOVE 2 + DAMAGE 3 + PUSH 1; `[+]` GHOST + terrain bonus |
+| `bruiser_push_through` | Movement | `tests/skills/bruiser_push_through_scenario.gd` | PASS | MOVE_INTO_AND_PUSH; `[+]` cost 1 MOV + STR on push |
+| `bruiser_charge_strike` | Active | `tests/skills/bruiser_charge_strike_scenario.gd` | PASS | MOVE 2 + DAMAGE 3 + PUSH 1; `[+]` GHOST + terrain bonus |
 | `bruiser_concussion_blow` | Active | `tests/skills/bruiser_concussion_blow_scenario.gd` | HARNESS_ONLY | DAMAGE + PUSH; object STAGGER; `[+]` mutual STAGGER on enemy collision |
 | `bruiser_cleave` | Active | `tests/skills/bruiser_cleave_scenario.gd` | HARNESS_ONLY | ARC DAMAGE; `[+]` BLEED (WPN-scaled) |
 | `bruiser_suplex` | Active | `tests/skills/bruiser_suplex_scenario.gd` | HARNESS_ONLY | DAMAGE + THROW_BEHIND — **not SWAP** |
