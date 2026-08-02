@@ -1,6 +1,6 @@
 # Bruiser template (P6 — first class rollout)
 
-**Status:** `LOOP_READY` *(B6-LOCK active — gate exit 0 + 31/31 matrix; **full-matrix critic NOT PASS** — r14 FAIL ~76; r15 self-grade invalidated)*  
+**Status:** `LOOP_READY` *(B6-LOCK active — canonical gate 31/31 PASS; full-matrix critic r19 **94/95 FAIL**; r15 self-grade invalidated)*  
 **Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) *(ACTIVE — B6-LOCK)* · **Run card:** [`runs/B6-LOCK.md`](runs/B6-LOCK.md)  
 **Pillar ID:** P6 (first class — clones P3)  
 **Authority chain:** `class_abilities.txt` § Bruiser · `docs/BRUISER_QA_GATE.md` · `core/factory/classes/bruiser_factory.gd` · `docs/design/knight-template.md` (P3 LOCKED)

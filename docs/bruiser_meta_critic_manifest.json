@@ -1,10 +1,11 @@
 {
   "piece": "B6-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 15,
-  "last_score": 96,
-  "last_result": "PASS",
+  "last_critic_round": 19,
+  "last_score": 94,
+  "last_result": "FAIL",
   "last_row_promoted": "bruiser_violent_collision",
+  "notes": "Round 15 score 96 was lead self-grade (Rule 4) — invalidated. r19 full-matrix critic 94/95 FAIL (canonical gate 31/31 PASS). Gate artifact: qa_bruiser_gate_canonical.txt.",
   "approved_rows": [
     {
       "factory_id": "bruiser_push_through",

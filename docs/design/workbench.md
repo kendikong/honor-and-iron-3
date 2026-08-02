@@ -9,18 +9,20 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK full matrix │ Round 18 (pending)
+GAUNTLET SCORE │ B6-LOCK full matrix │ Round 20 (pending)
 SCORE: —/100 │ THRESHOLD: 95 │ PENDING CRITIC
-DELTA: n/a — r17 critic 93 FAIL; gate r18b PASS
-GATE: Tier 1 harness PASS (qa_bruiser_gate_round18b.txt exit 0)
+DELTA: n/a — r19 critic 94 FAIL (+43 vs r18 artifact-only 51)
+GATE: canonical PASS (qa_bruiser_gate_canonical.txt 31/31)
 MATRIX: 31/31 PASS (manifest-aligned)
 STOP_CONDITION_MET: no
-NEXT: spawn gauntlet-critic r18 → LOCK if ≥95
+NEXT: spawn gauntlet-critic r20 after governance sync
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Delta | Result |
 |-------|-------|-------|-------|--------|
+| r19 | B6-LOCK full matrix | 94 | +43 vs r18 | **FAIL** — gauntlet-critic subagent |
+| r18 | B6-LOCK full matrix | 51 | −42 vs r17 | **FAIL** — stale qa_bruiser_gate_latest artifact |
 | r17 | B6-LOCK full matrix | 93 | +2 vs r16 | **FAIL** — gauntlet-critic subagent |
 | r14 | B6-LOCK full matrix | 76 | +2 vs r12 | **FAIL** — gauntlet-critic subagent |
 | r12 | B6-LOCK full matrix | 74 | first | **FAIL** — gauntlet-critic subagent |
@@ -48,8 +50,8 @@ NEXT: spawn gauntlet-critic r18 → LOCK if ≥95
 |-------|--------|--------|
 | Matrix 31/31 PASS | yes | **yes** |
 | Manifest 31 rows | yes | **yes** |
-| `run_bruiser_qa_gate.ps1` exit 0 | yes | **yes** (`qa_bruiser_gate_round18b.txt`) |
-| Full-matrix critic ≥ 95 | yes | **no** (last real: r14 **76**) |
+| `run_bruiser_qa_gate.ps1` exit 0 | yes | **yes** (`qa_bruiser_gate_canonical.txt`) |
+| Full-matrix critic ≥ 95 | yes | **no** (last: r19 **94**) |
 | `bruiser-template.md` LOCKED | yes | **no** (`LOOP_READY`) |
 | `STOP_CONDITION_MET: yes` | yes | **no** |
 

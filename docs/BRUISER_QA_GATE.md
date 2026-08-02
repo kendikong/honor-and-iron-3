@@ -4,7 +4,7 @@
 
 **End state (Bruiser LOCK):** 100% coverage matrix rows **PASS** (meta-critic approved) + `run_bruiser_qa_gate.ps1` PASS + meta-critic **≥ 95** on full matrix.
 
-**Runner:** `scripts/run_bruiser_qa_gate.ps1` — cloned from Knight gate; **does not** invoke or modify `run_planning_qa_gate.ps1`.
+**Runner:** `scripts/run_bruiser_qa_gate.ps1` — cloned from Knight gate; **does not** invoke or modify `run_planning_qa_gate.ps1`. Each run writes **`qa_bruiser_gate_canonical.txt`** (authoritative stdout snapshot for gauntlet-critic BAR).
 
 **P3 clone authority:** [`docs/design/knight-template.md`](design/knight-template.md) · [`docs/KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global systems fidelity
 
