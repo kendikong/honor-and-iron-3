@@ -105,35 +105,83 @@ func test_live_planning_bible_multi_knight_session(timeout := 180000) -> void:
 	_write_planning_trace(ctx)
 
 
-func test_live_swap_then_premove(timeout := 90000) -> void:
-	## Swap premove applies immediately; follow-up walk premove must layer on projected state.
+func test_live_swap_session(timeout := 120000) -> void:
+	## One TestBattle boot: adjacent swap+premove, then walk-swap parity and two-step flow.
 	var runner := scene_runner("res://scenes/TestBattle.tscn")
 	_ensure_live_test_window(runner)
 	await runner.simulate_frames(8)
 	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
 	assert_object(scene).is_not_null()
-	var ctx: Dictionary = await _boot_swap_ally_session(runner, scene)
+	var ctx: Dictionary = await _boot_swap_session(runner, scene, _SWAP_ALLY_CELL)
 	await _journey_swap_then_premove(ctx)
-
-
-func test_live_walk_then_swap(timeout := 90000) -> void:
-	var runner := scene_runner("res://scenes/TestBattle.tscn")
-	_ensure_live_test_window(runner)
-	await runner.simulate_frames(8)
-	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
-	assert_object(scene).is_not_null()
-	var ctx: Dictionary = await _boot_walk_swap_session(runner, scene)
+	await _reapply_swap_training_board(ctx, _WALK_SWAP_ALLY_CELL)
+	await _journey_swap_ally_out_of_range_parity(ctx)
+	await _undo_until_unit_clear(ctx, ctx.k1_id, _K1_CELL)
 	await _journey_walk_then_swap(ctx)
 
 
-func test_live_swap_ally_out_of_range_parity(timeout := 90000) -> void:
-	var runner := scene_runner("res://scenes/TestBattle.tscn")
-	_ensure_live_test_window(runner)
-	await runner.simulate_frames(8)
-	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
-	assert_object(scene).is_not_null()
-	var ctx: Dictionary = await _boot_walk_swap_session(runner, scene)
-	await _journey_swap_ally_out_of_range_parity(ctx)
+func _boot_swap_session(
+	runner: GdUnitSceneRunner,
+	scene: TestBattleMapView,
+	ally_cell: Vector2i,
+) -> Dictionary:
+	var session: TestBattleSession = scene.get_session()
+	session.reset_defaults()
+	session.extra_player_coords = [ally_cell]
+	session.dummy_coords = []
+	scene.apply_training_board()
+	if _qa_fast_enabled():
+		scene._center_map()
+	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
+	var shell: TacticalCombatShell = scene.get_node("CombatShell") as TacticalCombatShell
+	var director: CombatDirector = scene.get_node("CombatDirector") as CombatDirector
+	var overlay: TacticalPlanningOverlay = scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	director.auto_run = true
+	if _qa_fast_enabled():
+		scene.apply_qa_performance_mode(overlay)
+	var board: BoardState = director.board
+	assert_object(board).is_not_null()
+	var k1_id: int = _unit_id_at(board, _K1_CELL)
+	var ally_id: int = _unit_id_at(board, ally_cell)
+	assert_int(k1_id).is_greater(0)
+	assert_int(ally_id).is_greater(0)
+	assert_int(k1_id).is_not_equal(ally_id)
+	return {
+		"runner": runner,
+		"scene": scene,
+		"shell": shell,
+		"director": director,
+		"input": shell.planning_input,
+		"overlay": overlay,
+		"board": board,
+		"k1_id": k1_id,
+		"ally_id": ally_id,
+		"ally_cell": ally_cell,
+		"start_k1_mp": director.turn_start_board.get_unit_by_id(k1_id).movement.points_left,
+		"trace": [],
+	}
+
+
+func _reapply_swap_training_board(ctx: Dictionary, ally_cell: Vector2i) -> void:
+	var scene: TestBattleMapView = ctx.scene as TestBattleMapView
+	var runner: GdUnitSceneRunner = ctx.runner as GdUnitSceneRunner
+	var session: TestBattleSession = scene.get_session()
+	session.reset_defaults()
+	session.extra_player_coords = [ally_cell]
+	session.dummy_coords = []
+	scene.apply_training_board()
+	if _qa_fast_enabled():
+		scene._center_map()
+	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
+	var director: CombatDirector = ctx.director
+	var board: BoardState = director.board
+	ctx["board"] = board
+	ctx["ally_cell"] = ally_cell
+	ctx["ally_id"] = _unit_id_at(board, ally_cell)
+	ctx["start_k1_mp"] = director.turn_start_board.get_unit_by_id(ctx.k1_id).movement.points_left
+	_cancel_active_pointer(ctx)
 
 
 func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:
@@ -166,43 +214,6 @@ func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:
 	assert_that(pre_moves[1].type).override_failure_message(
 		"walk_swap/click_ally: second pre-move must be swap ability",
 	).is_equal(GameEnums.ActionType.ABILITY)
-
-
-func _boot_walk_swap_session(runner: GdUnitSceneRunner, scene: TestBattleMapView) -> Dictionary:
-	var session: TestBattleSession = scene.get_session()
-	session.reset_defaults()
-	session.extra_player_coords = [_WALK_SWAP_ALLY_CELL]
-	session.dummy_coords = []
-	scene.apply_training_board()
-	if _qa_fast_enabled():
-		scene._center_map()
-	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
-	var shell: TacticalCombatShell = scene.get_node("CombatShell") as TacticalCombatShell
-	var director: CombatDirector = scene.get_node("CombatDirector") as CombatDirector
-	var overlay: TacticalPlanningOverlay = scene.get_node(
-		"WorldModulate/MapRoot/PlanningOverlay",
-	) as TacticalPlanningOverlay
-	director.auto_run = true
-	if _qa_fast_enabled():
-		scene.apply_qa_performance_mode(overlay)
-	var board: BoardState = director.board
-	var k1_id: int = _unit_id_at(board, _K1_CELL)
-	var ally_id: int = _unit_id_at(board, _WALK_SWAP_ALLY_CELL)
-	assert_int(k1_id).is_greater(0)
-	assert_int(ally_id).is_greater(0)
-	return {
-		"runner": runner,
-		"scene": scene,
-		"shell": shell,
-		"director": director,
-		"input": shell.planning_input,
-		"overlay": overlay,
-		"board": board,
-		"k1_id": k1_id,
-		"ally_id": ally_id,
-		"start_k1_mp": director.turn_start_board.get_unit_by_id(k1_id).movement.points_left,
-		"trace": [],
-	}
 
 
 func _journey_walk_then_swap(ctx: Dictionary) -> void:
@@ -311,46 +322,6 @@ func _boot_multi_knight_session(runner: GdUnitSceneRunner, scene: TestBattleMapV
 	assert_int(ctx.k4_id).is_greater(0)
 	assert_int(ctx.e_bash_id).is_greater(0)
 	assert_int(ctx.e_hook_id).is_greater(0)
-	return ctx
-
-
-func _boot_swap_ally_session(runner: GdUnitSceneRunner, scene: TestBattleMapView) -> Dictionary:
-	var session: TestBattleSession = scene.get_session()
-	session.reset_defaults()
-	session.extra_player_coords = [_SWAP_ALLY_CELL]
-	session.dummy_coords = []
-	scene.apply_training_board()
-	if _qa_fast_enabled():
-		scene._center_map()
-	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
-	var shell: TacticalCombatShell = scene.get_node("CombatShell") as TacticalCombatShell
-	var director: CombatDirector = scene.get_node("CombatDirector") as CombatDirector
-	var overlay: TacticalPlanningOverlay = scene.get_node(
-		"WorldModulate/MapRoot/PlanningOverlay",
-	) as TacticalPlanningOverlay
-	director.auto_run = true
-	if _qa_fast_enabled():
-		scene.apply_qa_performance_mode(overlay)
-	var board: BoardState = director.board
-	assert_object(board).is_not_null()
-	var k1_id: int = _unit_id_at(board, _K1_CELL)
-	var ally_id: int = _unit_id_at(board, _SWAP_ALLY_CELL)
-	assert_int(k1_id).is_greater(0)
-	assert_int(ally_id).is_greater(0)
-	assert_int(k1_id).is_not_equal(ally_id)
-	var ctx: Dictionary = {
-		"runner": runner,
-		"scene": scene,
-		"shell": shell,
-		"director": director,
-		"input": shell.planning_input,
-		"overlay": overlay,
-		"board": board,
-		"k1_id": k1_id,
-		"ally_id": ally_id,
-		"start_k1_mp": director.turn_start_board.get_unit_by_id(k1_id).movement.points_left,
-		"trace": [],
-	}
 	return ctx
 
 

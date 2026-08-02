@@ -46,11 +46,12 @@ deterministic checklist contract; slot-only rows do not replace drag E2E.
 GdUnit4. **`test_live_planning_bible_multi_knight_session`** runs one four-knight /
 two-dummy session, advances production frames, inspects overlay tile collections and
 preview/commit state, then presses Ready → Execute and verifies final unit positions.
-**`test_live_swap_then_premove`** runs a focused knight+ally layout
-that commits Swap (immediate projected-state snap) then a **2-tile L-route drag**
-`(4,4) → (3,4) → (3,5)` around the ally (3 MP total: swap 1 + walk 2),
-asserting live board / projected / preview / sprites / MP / timeline waypoints /
-headless sim parity at each checkpoint.
+**`test_live_swap_session`** runs one knight+ally boot through all swap journeys:
+adjacent swap + L-route premove `(4,4) → (3,4) → (3,5)`; board reapply for
+walk-swap layout; out-of-range hover/click parity (walk+swap icon, click commits
+without selecting ally); undo reset; two-step walk-then-swap drag flow. Asserts live
+board / projected / preview / sprites / MP / timeline / headless sim parity at each
+checkpoint.
 
 #### Tier 3 profiles (`LIVE_QA_PROFILE`)
 
