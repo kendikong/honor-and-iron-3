@@ -388,6 +388,7 @@ static func run_planning_commit_smoke(
 	use_ally_fixture: bool = false,
 	ally_pos: Vector2i = Vector2i(-1, -1),
 	enemy_pos: Vector2i = Vector2i(-999999, -999999),
+	verify_no_jump: bool = true,
 ) -> void:
 	PlanningDragE2EHarness.cleanup_all()
 	var fix: Dictionary
@@ -430,9 +431,10 @@ static func run_planning_commit_smoke(
 	PlanningChecklistHarness.assert_slots_match_preview_commit(
 		failures, "%s/planning/hover_click_parity" % tag, fix, commit_cell,
 	)
-	PlanningChecklistHarness.assert_commit_no_jump(
-		failures, "%s/planning/no_jump" % tag, fix, commit_cell,
-	)
+	if verify_no_jump:
+		PlanningChecklistHarness.assert_commit_no_jump(
+			failures, "%s/planning/no_jump" % tag, fix, commit_cell,
+		)
 
 
 static func run_active_smoke(

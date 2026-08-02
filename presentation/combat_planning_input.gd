@@ -3265,6 +3265,7 @@ func _build_commit_slots_at_cell(
 				GameEnums.MoveTiming.PRE_ACTION,
 				[],
 			))
+			return slots
 		if _skill_interaction_active() and hover_unit.id != actor.id:
 			slots["invalid"] = "Cannot target this unit with selected skill."
 			return slots

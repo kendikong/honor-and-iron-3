@@ -179,8 +179,8 @@ Knight LOCK uses **tiered** planning proof in Tier 1 harness (`tests/knight_qa_h
 | Tier | Meaning | Actives |
 |------|---------|---------|
 | **A** | Full 7-phase checklist (`PlanningChecklistHarness`) | `knight_shield_bash`, `knight_chain_hook`, `knight_trampling_advance` |
-| **B** | `run_planning_commit_smoke` — select, hover, hover/click slot parity, `assert_commit_no_jump` | phalanx, taunting, seismic, iron_grip, redirect, indomitable, retaliation, shield_slam, defensive_formation |
-| **C** | Select and/or intent contracts only | `knight_fortify`, `knight_swap` (ally-target commit invalid on bash fixture — sim green), `knight_bowling_charge` (intent E2E + select) |
+| **B** | `run_planning_commit_smoke` — select, hover, hover/click slot parity, `assert_commit_no_jump` (swap: parity only — position preview shifts post-commit) | phalanx, taunting, seismic, iron_grip, redirect, indomitable, retaliation, shield_slam, defensive_formation, **fortify**, **knight_swap** |
+| **C** | Select and/or intent contracts only | `knight_bowling_charge` (intent E2E + select) |
 
 Passives: sim trigger scenarios only (no planning phases). **Do not** conflate planning QA PASS with Knight LOCK.
 

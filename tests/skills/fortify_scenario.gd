@@ -9,4 +9,6 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 static func run_all(failures: Array[String]) -> void:
 	_KnightQaHarness.run_fortify(failures)
-	_KnightQaHarness.run_planning_select_smoke(failures, &"knight_fortify", "fortify")
+	_KnightQaHarness.run_planning_commit_smoke(
+		failures, &"knight_fortify", "fortify", Vector2i(4, 4), true, Vector2i(4, 4),
+	)
