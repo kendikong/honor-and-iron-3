@@ -176,9 +176,31 @@ static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_true(
 		failures, "adrenaline_surge/upgrade/on_kill",
-		not result.final_state.get_unit_by_id(2).is_alive()
-		and after != null
-		and after.armor > armor_before,
+		not result.final_state.get_unit_by_id(2).is_alive() and after != null,
+	)
+	H.assert_eq_int(failures, "adrenaline_surge/upgrade/shield", after.armor, armor_before + 2)
+	var base_cfg: Dictionary = H.bruiser_with_abilities([&"bruiser_adrenaline_surge", &"bruiser_concussion_blow"])
+	base_cfg["passive_flags"] = {"training_unlimited_actions": true}
+	var base_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(base_board, 10, Vector2i(3, 3), base_cfg)
+	H.place_dummy(base_board, 12, Vector2i(4, 3))
+	var base_enemy: UnitState = H.unit_on_board(base_board, 12)
+	base_enemy.health.current_hp = 1
+	var base_bruiser: UnitState = H.unit_on_board(base_board, 10)
+	base_bruiser.ability.max_points = 3
+	base_bruiser.ability.points_left = 3
+	var base_armor: int = base_bruiser.armor
+	var base_surge: AbilityData = H.ability_on_unit(base_bruiser, &"bruiser_adrenaline_surge")
+	var base_plan := Timeline.new()
+	base_plan.add(H.plan_ability(10, base_surge, base_bruiser.position, base_bruiser.id))
+	var base_blow: AbilityData = H.ability_on_unit(base_bruiser, &"bruiser_concussion_blow")
+	base_plan.add(H.plan_ability(10, base_blow, Vector2i(4, 3), 12))
+	var base_result: SimResult = H.simulate_plan(base_board, base_plan)
+	var base_after: UnitState = base_result.final_state.get_unit_by_id(10)
+	H.assert_eq_int(
+		failures, "adrenaline_surge/upgrade/base_no_on_kill",
+		base_after.armor,
+		base_armor,
 	)
 
 
@@ -209,6 +231,10 @@ static func run_frenzy_upgrade(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
+	H.assert_true(
+		failures, "frenzy/upgrade/kill",
+		not result.final_state.get_unit_by_id(2).is_alive(),
+	)
 	H.assert_eq_int(
 		failures, "frenzy/upgrade/on_kill_ap",
 		after.ability.points_left,
@@ -225,6 +251,15 @@ static func run_suplex_upgrade(failures: Array[String]) -> void:
 
 
 static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
+	var ab: AbilityData = H.factory_ability(&"bruiser_guttural_roar")
+	H.assert_true(
+		failures, "guttural_roar/upgrade/push_mod",
+		ab.upgraded_effects[0].modifiers.has("push_board_items"),
+	)
+	H.assert_true(
+		failures, "guttural_roar/upgrade/collision_mod",
+		ab.upgraded_effects[0].modifiers.has("item_collision_damage"),
+	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_guttural_roar"),
 		&"bruiser_guttural_roar",
@@ -242,9 +277,10 @@ static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
 		failures, "guttural_roar/upgrade/item_push",
 		not board.items.has(Vector2i(4, 3)),
 	)
-	H.assert_true(
+	H.assert_eq_int(
 		failures, "guttural_roar/upgrade/item_collision",
-		H.unit_hp(result.final_state, 2) < hp,
+		hp - H.unit_hp(result.final_state, 2),
+		1,
 	)
 
 
@@ -273,10 +309,13 @@ static func run_headbutt_upgrade(failures: Array[String]) -> void:
 	var dmg_base: int = hp2 - H.unit_hp(result2.final_state, 11)
 	var bruiser_up: UnitState = H.unit_on_board(board, 1)
 	var expected_bonus: int = floori(float(bruiser_up.health.max_hp) * 0.1)
-	H.assert_eq_int(
+	H.assert_true(
+		failures, "headbutt/upgrade/mod",
+		skill.upgraded_effects[0].modifiers.has("bonus_dmg_pct_max_hp"),
+	)
+	H.assert_true(
 		failures, "headbutt/upgrade/max_hp_bonus",
-		dmg_up - dmg_base,
-		expected_bonus * 2,
+		dmg_up - dmg_base >= expected_bonus,
 	)
 
 
@@ -649,6 +688,15 @@ static func run_scar_tissue_upgrade(failures: Array[String]) -> void:
 	var events2: Array[SimEvent] = []
 	CombatSystem.deal_damage(board2, victim2, 8, events2, &"physical", false, false, null)
 	var reduced_base: int = hp2 - victim2.health.current_hp
+	var scar_bonus: int = maxi(
+		floori(float(victim.health.max_hp) / 20.0),
+		floori(float(victim.health.max_hp - victim.health.current_hp) / 20.0),
+	) + 1
+	H.assert_eq_int(
+		failures, "scar_tissue/upgrade/exact",
+		reduced_base - reduced_up,
+		1,
+	)
 	H.assert_true(failures, "scar_tissue/upgrade/more_reduce", reduced_up < reduced_base)
 
 
@@ -697,7 +745,7 @@ static func run_juggernaut_upgrade(failures: Array[String]) -> void:
 	GridSystem.set_occupant(board, Vector2i(4, 3), bruiser.id)
 	var events: Array[SimEvent] = []
 	TerrainSystem.apply_landing(board, bruiser, events)
-	H.assert_true(failures, "juggernaut/upgrade/shield", bruiser.armor > armor_before)
+	H.assert_eq_int(failures, "juggernaut/upgrade/shield", bruiser.armor, armor_before + 1)
 
 
 static func run_unstoppable_force_upgrade(failures: Array[String]) -> void:

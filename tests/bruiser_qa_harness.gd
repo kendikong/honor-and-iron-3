@@ -353,6 +353,18 @@ static func events_have_terrain_changed(events: Array, coord: Vector2i) -> bool:
 	return false
 
 
+static func count_unit_hp_damage_events(events: Array, unit_id: int) -> int:
+	var count: int = 0
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+			if int(e.data.get("unit", -1)) != unit_id:
+				continue
+			var hp_dmg: int = int(e.data.get("hp_damaged", e.data.get("amount", 0)))
+			if hp_dmg > 0:
+				count += 1
+	return count
+
+
 static func damage_dealt_to_unit(board: BoardState, unit_id: int, raw_amount: int, attacker: UnitState = null) -> int:
 	var target: UnitState = board.get_unit_by_id(unit_id)
 	if target == null or target.health == null:

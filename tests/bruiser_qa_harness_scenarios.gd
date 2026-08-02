@@ -201,12 +201,9 @@ static func run_adrenaline_surge(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, ab, bruiser.position, bruiser.id))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
-	H.assert_true(failures, "adrenaline_surge/self_cost", after.health.current_hp < hp_before)
-	H.assert_true(
-		failures, "adrenaline_surge/str",
-		H.has_status(after, GameEnums.StatusType.STAT_BUFF_STR)
-		or H.has_status(after, GameEnums.StatusType.STAT_BUFF_MOV),
-	)
+	H.assert_eq_int(failures, "adrenaline_surge/self_cost", hp_before - after.health.current_hp, 5)
+	H.assert_true(failures, "adrenaline_surge/str", H.has_status(after, GameEnums.StatusType.STAT_BUFF_STR))
+	H.assert_true(failures, "adrenaline_surge/mov", H.has_status(after, GameEnums.StatusType.STAT_BUFF_MOV))
 	var adj_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(adj_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_adrenaline_surge"))
 	H.place_dummy(adj_board, 11, Vector2i(4, 3))
@@ -280,6 +277,37 @@ static func run_meat_shield(failures: Array[String]) -> void:
 		failures, "meat_shield/intercept",
 		H.has_status(bruiser, GameEnums.StatusType.INTERCEPT),
 	)
+	var redirect_board: BoardState = result.final_state
+	H.place_unit(
+		redirect_board,
+		11,
+		H.bruiser_unit_data(),
+		GameEnums.Team.ENEMY,
+		Vector2i(2, 3),
+		{"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")]},
+	)
+	var ally_hp: int = ally.health.current_hp
+	var attack_ab: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
+	var attack_plan := Timeline.new()
+	attack_plan.add(H.plan_ability(11, attack_ab, Vector2i(3, 3), 3))
+	var attack_result: SimResult = H.simulate_plan(redirect_board, attack_plan)
+	var ally_after: UnitState = attack_result.final_state.get_unit_by_id(3)
+	var bruiser_after: UnitState = attack_result.final_state.get_unit_by_id(1)
+	H.assert_true(
+		failures, "meat_shield/redirect_ally",
+		ally_after != null and ally_after.health.current_hp < ally_hp,
+	)
+	H.assert_true(
+		failures, "meat_shield/redirect_interceptor",
+		H.count_unit_hp_damage_events(attack_result.events, 1) > 0
+		or (
+			bruiser_after != null
+			and (
+				bruiser_after.health.current_hp < bruiser.health.current_hp
+				or bruiser_after.armor < bruiser.armor
+			)
+		),
+	)
 
 
 static func run_frenzy(failures: Array[String]) -> void:
@@ -301,6 +329,11 @@ static func run_frenzy(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(failures, "frenzy/damage", H.unit_hp(result.final_state, 2) < hp)
+	H.assert_eq_int(
+		failures, "frenzy/hit_count",
+		H.count_unit_hp_damage_events(result.events, 2),
+		3,
+	)
 
 
 static func run_guttural_roar(failures: Array[String]) -> void:
@@ -600,10 +633,23 @@ static func run_last_stand(failures: Array[String]) -> void:
 	plain.health.current_hp = 1
 	plain._recalculate_stats()
 	var plain_low_str: int = CombatSystem.get_dynamic_strength(neg_board, plain)
+	var plain_low_def: int = CombatSystem.get_dynamic_defense(neg_board, plain)
 	plain.health.current_hp = plain.health.max_hp
 	plain._recalculate_stats()
 	var plain_full_str: int = CombatSystem.get_dynamic_strength(neg_board, plain)
-	H.assert_eq_int(failures, "last_stand/no_passive", plain_low_str - plain_full_str, 0)
+	var plain_full_def: int = CombatSystem.get_dynamic_defense(neg_board, plain)
+	H.assert_eq_int(failures, "last_stand/no_passive_str", plain_low_str - plain_full_str, 0)
+	H.assert_eq_int(failures, "last_stand/no_passive_def", plain_low_def - plain_full_def, 0)
+	var boundary_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(boundary_board, 20, Vector2i(3, 3), H.with_single_passive(&"last_stand", false))
+	var boundary: UnitState = H.unit_on_board(boundary_board, 20)
+	boundary.health.current_hp = ceili(float(boundary.health.max_hp) * 0.25)
+	boundary._recalculate_stats()
+	var boundary_str: int = CombatSystem.get_dynamic_strength(boundary_board, boundary)
+	boundary.health.current_hp = boundary.health.max_hp
+	boundary._recalculate_stats()
+	var boundary_full_str: int = CombatSystem.get_dynamic_strength(boundary_board, boundary)
+	H.assert_eq_int(failures, "last_stand/boundary_off", boundary_str - boundary_full_str, 0)
 
 
 static func run_colossal_mass(failures: Array[String]) -> void:
@@ -736,6 +782,15 @@ static func run_scar_tissue(failures: Array[String]) -> void:
 		plain_board, plain_victim, 8, plain_events, &"physical", false, false, H.unit_on_board(plain_board, 11),
 	)
 	var plain_reduced: int = plain_hp - plain_victim.health.current_hp
+	var scar_bonus: int = maxi(
+		floori(float(victim.health.max_hp) / 20.0),
+		floori(float(victim.health.max_hp - victim.health.current_hp) / 20.0),
+	)
+	H.assert_eq_int(
+		failures, "scar_tissue/exact",
+		plain_reduced - reduced,
+		scar_bonus,
+	)
 	H.assert_true(
 		failures, "scar_tissue/vs_plain",
 		reduced < plain_reduced,
