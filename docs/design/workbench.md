@@ -9,24 +9,19 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK full matrix │ Round 20 │ SELF-GRADED: no (subagent)
-SCORE: 95/100 │ THRESHOLD: 95 │ PASS
-DELTA: +1 vs r19 (94 FAIL)
-GATE: canonical PASS (qa_bruiser_gate_canonical.txt 31/31)
-MATRIX: 31/31 PASS (manifest-aligned)
-STOP_CONDITION_MET: yes
+GAUNTLET SCORE │ bruiser_push_through │ Round 1 │ SELF-GRADED: no (subagent)
+SCORE: 82/100 │ THRESHOLD: 88 │ FAIL
+DELTA: first round (B6-REOPEN)
+GATE: harness PASS · matrix 0/31 PASS (31 HARNESS_ONLY)
+STOP_CONDITION_MET: no
+NEXT: re-critic push_through after qa_test deepening (r2)
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Delta | Result |
 |-------|-------|-------|-------|--------|
-| r20 | B6-LOCK full matrix | 95 | +1 vs r19 | **PASS** — SELF-GRADED: no |
-| r18 | B6-LOCK full matrix | 51 | −42 vs r17 | **FAIL** — stale qa_bruiser_gate_latest artifact |
-| r17 | B6-LOCK full matrix | 93 | +2 vs r16 | **FAIL** — gauntlet-critic subagent |
-| r14 | B6-LOCK full matrix | 76 | +2 vs r12 | **FAIL** — gauntlet-critic subagent |
-| r12 | B6-LOCK full matrix | 74 | first | **FAIL** — gauntlet-critic subagent |
-| r15 | B6-LOCK full matrix | 96 | — | **INVALID** — SELF-GRADED: yes (Rule 4) |
-| r3 | push_through | 89 | +17 | **PASS** — promoted manifest + matrix |
+| r1 | bruiser_push_through | 82 | first | **FAIL** — gauntlet-critic (adjacent/push distance/STR delta gaps) |
+| r20 | B6-LOCK full matrix | 95 | — | **INVALIDATED** — B6-LOCK REVOKED |
 
 ---
 
@@ -34,12 +29,12 @@ STOP_CONDITION_MET: yes
 
 | Field | Value |
 |-------|-------|
-| **Chunk / goal** | P6 Bruiser — B6-LOCK until `bruiser-template.md` LOCKED |
-| **Started** | 2026-08-02 |
-| **Status** | **COMPLETE** — STOP_ON met r20 |
-| **Last real critic** | r20 full matrix **95/95 PASS** |
-| **Lead session** | bruiser-b6-lock-2026-08-02 |
-| **Critic:** yes | per-row critics done; full-matrix r16 pending |
+| **Chunk / goal** | P6 Bruiser — B6-REOPEN until honest 31/31 + critic ≥95 |
+| **Started** | 2026-08-02 (reopen) |
+| **Status** | **ACTIVE** |
+| **Last real critic** | — (manifest cleared) |
+| **Lead session** | bruiser-b6-reopen-2026-08-02 |
+| **Critic:** yes | per-row only; no self-grade |
 
 ---
 
@@ -47,12 +42,12 @@ STOP_CONDITION_MET: yes
 
 | Check | Target | Actual |
 |-------|--------|--------|
-| Matrix 31/31 PASS | yes | **yes** |
-| Manifest 31 rows | yes | **yes** |
-| `run_bruiser_qa_gate.ps1` exit 0 | yes | **yes** (`qa_bruiser_gate_canonical.txt`) |
-| Full-matrix critic ≥ 95 | yes | **yes** (r20 **95 PASS**) |
-| `bruiser-template.md` LOCKED | yes | **yes** |
-| `STOP_CONDITION_MET: yes` | yes | **yes** |
+| Matrix 31/31 PASS | yes | **no** (0/31) |
+| Manifest 31 rows | yes | **no** (0) |
+| `run_bruiser_qa_gate.ps1` exit 0 | yes | **no** (INCOMPLETE) |
+| Full-matrix critic ≥ 95 | yes | **no** |
+| `bruiser-template.md` LOCKED | yes | **no** (`LOOP_READY`) |
+| `STOP_CONDITION_MET: yes` | yes | **no** |
 
 ---
 
@@ -66,7 +61,6 @@ STOP_CONDITION_MET: yes
 
 | Time | Piece | Score | Result | Notes |
 |------|-------|-------|--------|-------|
-| 2026-08-02 | honesty revert | — | fix | r15 self-grade invalidated; template → LOOP_READY |
-| 2026-08-02 | meat_shield redirect | — | harness | 50/50 INTERCEPT vs solo baseline (`6853c322d`) |
-| 2026-08-02 | overwhelming_bulk ability path | — | harness | headbutt simulate_plan pierce+push; latest gate artifact |
-| 2026-08-02 | gate r17c | — | PASS | 31/31 harness green |
+| 2026-08-02 | B6-REOPEN | — | reset | LOCK revoked; manifest cleared; matrix → HARNESS_ONLY |
+| 2026-08-02 | push_through deepen | — | qa_test | push_distance, non_adjacent, STR value + attack delta asserts |
+| 2026-08-02 | push_through r1 critic | 82 | FAIL | gauntlet-critic subagent — not promoted |

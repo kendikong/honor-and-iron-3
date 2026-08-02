@@ -1,7 +1,7 @@
 # Bruiser template (P6 — first class rollout)
 
-**Status:** `LOCKED` *(B6-LOCK complete — canonical gate 31/31 PASS; full-matrix critic r20 **95/95 PASS**; commit `72414aeaa`+)*  
-**Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) *(ACTIVE — B6-LOCK)* · **Run card:** [`runs/B6-LOCK.md`](runs/B6-LOCK.md)  
+**Status:** `LOOP_READY` *(B6-LOCK **REVOKED** 2026-08-02 — restart B6-REOPEN; 0/31 critic PASS until re-earned)*
+**Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) *(ACTIVE — B6-REOPEN)* · **Run card:** [`runs/B6-REOPEN.md`](runs/B6-REOPEN.md)
 **Pillar ID:** P6 (first class — clones P3)  
 **Authority chain:** `class_abilities.txt` § Bruiser · `docs/BRUISER_QA_GATE.md` · `core/factory/classes/bruiser_factory.gd` · `docs/design/knight-template.md` (P3 LOCKED)
 
@@ -57,10 +57,10 @@ N/A — Bible + matrix are authoritative.
 | B6-passives | Builder | One `tests/passives/<id>_scenario.gd` per passive | **DONE** (15/15 via harness) |
 | B6-registry | Builder | `tests/bruiser_scenario_registry.gd` lists all rows | **DONE** |
 | B6-gate | Builder | `run_bruiser_qa_gate.ps1` fails until matrix 100% PASS + manifest | **DONE** (exit 0; `qa_bruiser_gate_canonical.txt`) |
-| B6-meta | Critic | Adequacy score per matrix row | **DONE** — r20 full-matrix **95/95 PASS** |
-| **B6-LOCK** | Owner | Matrix 31/31 PASS + gate PASS + meta-critic ≥ 95 | **COMPLETE** — [`runs/B6-LOCK.md`](runs/B6-LOCK.md) |
+| B6-meta | Critic | Adequacy score per matrix row | **REOPEN** — per-row fresh critic required |
+| **B6-LOCK** | Owner | Matrix 31/31 PASS + gate PASS + meta-critic ≥ 95 | **REVOKED** — see [`runs/B6-REOPEN.md`](runs/B6-REOPEN.md) |
 
-**Implementation tally:** **31 / 31** factory rows · gate exit **0** · harness **PASS** · critic r20 **95/95 PASS**.
+**Implementation tally:** **0 / 31** critic PASS · **31** HARNESS_ONLY · gate **INCOMPLETE** until matrix refilled.
 
 ## Builder playbook
 

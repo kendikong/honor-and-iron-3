@@ -328,6 +328,14 @@ static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:
 	return false
 
 
+static func event_push_distance(events: Array, unit_id: int) -> int:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_PUSHED:
+			if int(e.data.get("unit", -1)) == unit_id:
+				return int(e.data.get("distance", -1))
+	return -1
+
+
 static func events_have_unit_damaged_pierce(events: Array, pierce: bool) -> bool:
 	for e: Variant in events:
 		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
@@ -476,6 +484,11 @@ static func run_push_through_base(failures: Array[String]) -> void:
 		events_have_unit_pushed(result.events, 2),
 	)
 	assert_eq_int(
+		failures, "push_through/push_distance",
+		event_push_distance(result.events, 2),
+		1,
+	)
+	assert_eq_int(
 		failures, "push_through/mp_spent",
 		mp_before - b_after.movement.points_left,
 		2,
@@ -549,9 +562,38 @@ static func run_push_through_upgrade(failures: Array[String]) -> void:
 		"[+] must grant +1 STR after push via buff_on_push",
 	)
 	assert_eq_int(
+		failures, "push_through/upgrade_str_value",
+		status_value(b_after, GameEnums.StatusType.STAT_BUFF_STR),
+		1,
+	)
+	assert_eq_int(
 		failures, "push_through/upgrade_mp_spent",
 		mp_before - b_after.movement.points_left,
 		1,
+	)
+
+
+static func run_push_through_non_adjacent(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	place_bruiser(board, 1, Vector2i(3, 3), {
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(&"bruiser_push_through"),
+		],
+	})
+	place_dummy(board, 2, Vector2i(3, 5))
+	var push: AbilityData = ability_on_unit(unit_on_board(board, 1), &"bruiser_push_through")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, push, Vector2i(3, 5), 2, GameEnums.MoveTiming.PRE_ACTION))
+	var result: SimResult = simulate_plan(board, plan)
+	var b_after: UnitState = result.final_state.get_unit_by_id(1)
+	var e_after: UnitState = result.final_state.get_unit_by_id(2)
+	assert_eq_cell(failures, "push_through/non_adjacent_bruiser", b_after.position, Vector2i(3, 3))
+	assert_eq_cell(failures, "push_through/non_adjacent_enemy", e_after.position, Vector2i(3, 5))
+	assert_true(
+		failures, "push_through/non_adjacent_no_push",
+		not events_have_unit_pushed(result.events, 2),
+		"Push Through requires adjacent occupied tile",
 	)
 
 
@@ -582,8 +624,14 @@ static func run_push_through_upgrade_next_attack(failures: Array[String]) -> voi
 	plan_base.add(plan_ability(10, cleave, Vector2i(3, 4), 11))
 	var result_base: SimResult = simulate_plan(board_base, plan_base)
 	var dmg_base: int = hp_base - unit_hp(result_base.final_state, 11)
-	assert_true(
-		failures, "push_through/upgrade_str_increases_attack",
-		dmg_buffed > dmg_base,
-		"[+] STR buff_on_push must increase follow-up attack damage same turn",
+	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
+	var base_cleave_power: int = cleave.effects[0].amount
+	var expected_delta: int = (
+		CombatSystem.calculate_scaled_damage(bruiser_after, base_cleave_power + 1, GameEnums.StatType.PHYSICAL, board)
+		- CombatSystem.calculate_scaled_damage(bruiser_after, base_cleave_power, GameEnums.StatType.PHYSICAL, board)
+	)
+	assert_eq_int(
+		failures, "push_through/upgrade_str_attack_delta",
+		dmg_buffed - dmg_base,
+		expected_delta,
 	)

@@ -7,10 +7,15 @@ const H := preload("res://tests/bruiser_qa_harness.gd")
 
 
 static func run_charge_strike(failures: Array[String]) -> void:
+	## Bible: MOVE 2 | ATK 3 | PUSH 1 — class_abilities.txt § Charge Strike (Siegebreaker).
 	H.run_active_smoke(
-		failures, &"bruiser_charge_strike", "MOVE + DAMAGE + PUSH",
+		failures, &"bruiser_charge_strike", "MOVE 2 | ATK 3 | PUSH 1",
 		[GameEnums.EffectType.MOVE, GameEnums.EffectType.DAMAGE, GameEnums.EffectType.PUSH],
 	)
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_charge_strike")
+	H.assert_eq_int(failures, "charge_strike/move_amount", factory_ab.effects[0].amount, 2)
+	H.assert_eq_int(failures, "charge_strike/dmg_amount", factory_ab.effects[1].amount, 3)
+	H.assert_eq_int(failures, "charge_strike/push_amount", factory_ab.effects[2].amount, 1)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_charge_strike"))
 	H.place_dummy(board, 2, Vector2i(4, 3))

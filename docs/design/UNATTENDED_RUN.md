@@ -1,8 +1,8 @@
-# Unattended Gauntlet Run — B6-LOCK (ACTIVE)
+# Unattended Gauntlet Run — B6-REOPEN (ACTIVE)
 
-**Status:** **COMPLETE** — B6-LOCK STOP_ON met (r20 critic 95 PASS)  
-**Prior run:** K3-LOCK **COMPLETE** — see [`runs/K3-LOCK.md`](runs/K3-LOCK.md)  
-**Run card:** [`runs/B6-LOCK.md`](runs/B6-LOCK.md)  
+**Status:** **ACTIVE** — B6-LOCK revoked; per-row critic restart  
+**Prior run:** B6-LOCK **REVOKED** — see [`runs/B6-LOCK.md`](runs/B6-LOCK.md) (historical)  
+**Run card:** [`runs/B6-REOPEN.md`](runs/B6-REOPEN.md)  
 **Spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) §5.4 · **Progress:** [`workbench.md`](workbench.md)  
 **Template for future runs:** [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md)
 
@@ -14,10 +14,10 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 
 | Field | Value |
 |-------|-------|
-| **CHUNK_ID** | `bruiser-b6-lock-2026-08-02` |
-| **PIECE_ID** | `B6-LOCK` (full 31-row Bruiser matrix — one gauntlet piece) |
-| **GOAL** | Promote `docs/design/bruiser-template.md` from `DRAFT` → **`LOCKED`**: every `bruiser_factory.gd` row meta-critic `PASS`, matrix 31/31, gate exit **0**, full-matrix critic **≥ 95** |
-| **PASS_THRESHOLD** | **95** (full-matrix critic) |
+| **CHUNK_ID** | `bruiser-b6-reopen-2026-08-02` |
+| **PIECE_ID** | `B6-REOPEN` (31-row Bruiser matrix — per-row critic) |
+| **GOAL** | Re-earn **`LOCKED`**: every factory row meta-critic `PASS` (Bible base + `[+]`), matrix 31/31, gate exit **0**, full-matrix critic **≥ 95** |
+| **PASS_THRESHOLD** | **88** per row · **95** full matrix |
 | **BAR** | See **Machine bar** below |
 | **Started (UTC)** | 2026-08-02 |
 | **Godot** | `C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64.exe` |
@@ -35,10 +35,10 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 | Metric | Value |
 |--------|-------|
 | Matrix PASS | **0 / 31** |
-| HARNESS_ONLY | **0** |
+| HARNESS_ONLY | **31** |
 | Manifest approved | **0** rows |
-| Last full-matrix critic | — *(not run)* |
-| Tier 1 harness | **FAIL** (no scenario files yet) |
+| Last full-matrix critic | **REVOKED** (r20 invalidated) |
+| Tier 1 harness | must stay **PASS** while deepening rows |
 
 ---
 
@@ -47,9 +47,9 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 | Boundary | Value |
 |----------|-------|
 | **MAX_ROUNDS_PER_PIECE** | `40` |
-| **MAX_SUBPIECE_ROUNDS** | `4` *(per matrix row — then pick next PLANNED)* |
+| **MAX_SUBPIECE_ROUNDS** | `4` *(per matrix row — then pick next HARNESS_ONLY)* |
 | **MAX_WALL_CLOCK** | `24h` *(optional owner stop)* |
-| **ROWS_PER_TICK** | `1–2` |
+| **ROWS_PER_TICK** | `1` |
 
 ---
 
@@ -63,6 +63,8 @@ core/factory/**
 core/simulation/**
 data/**
 tests/bruiser_qa_harness.gd
+tests/bruiser_qa_harness_scenarios.gd
+tests/bruiser_qa_harness_upgrades.gd
 tests/bruiser_qa_runner.gd
 tests/bruiser_scenario_registry.gd
 tests/skills/bruiser_*
@@ -87,7 +89,7 @@ docs/BRUISER_QA_GATE.md
 docs/bruiser_meta_critic_manifest.json
 docs/design/bruiser-template.md
 docs/design/workbench.md
-docs/design/runs/B6-LOCK.md
+docs/design/runs/B6-REOPEN.md
 scripts/run_bruiser_qa_gate.ps1
 ```
 
@@ -124,24 +126,23 @@ scripts/run_bruiser_qa_gate.ps1
 ## Copy-paste: `/loop` prompt (Honor & Iron)
 
 ```text
-UNATTENDED GAUNTLET — honor-and-iron-3 — B6-LOCK
+UNATTENDED GAUNTLET — honor-and-iron-3 — B6-REOPEN
 
-Read and obey docs/design/UNATTENDED_RUN.md (ACTIVE B6-LOCK).
-Read docs/design/runs/B6-LOCK.md.
+Read and obey docs/design/UNATTENDED_RUN.md (ACTIVE B6-REOPEN).
+Read docs/design/runs/B6-REOPEN.md.
 Read docs/design/00-gauntlet-loop-cursor.md Rules 4, 5c, 6b, §5.4.
 Read docs/design/workbench.md — continue from last round.
 
 You are the LEAD. Do not ask the owner questions.
 
 Each tick:
-1. Fix largest gap within ALLOWED_PATHS (1–2 PLANNED rows)
+1. Fix largest gap within ALLOWED_PATHS (1 HARNESS_ONLY row)
 2. Run .\scripts\run_bruiser_qa_gate.ps1
-3. Spawn separate readonly gauntlet-critic subagent (never self-grade)
-4. First line of your reply = score banner with DELTA vs prior round; GAUNTLET SCORE line states **`SELF-GRADED: no (subagent)`** or **`SELF-GRADED: yes (invalid)`**
-5. Update workbench.md (ticker, score progression, STOP_CONDITION_MET)
-6. Commit if you changed files (auto-commit-absolute.mdc)
+3. Spawn separate readonly gauntlet-critic subagent on THAT ROW (never self-grade)
+4. On row critic PASS ≥88: manifest + matrix PASS for that row only
+5. First line = score banner; update workbench.md; commit
 
 Stop only when STOP_ON in UNATTENDED_RUN.md is satisfied, or write BLOCKER: <one owner-only item>.
 
-FORBIDDEN: knight regression; planning QA edits; self-grade manifest; ending with "loop ACTIVE" below PASS_THRESHOLD.
+FORBIDDEN: knight regression; planning QA edits; self-grade manifest; matrix PASS without critic.
 ```
