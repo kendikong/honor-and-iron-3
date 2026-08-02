@@ -9,20 +9,23 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK │ bruiser_push_through │ Round 2
-SCORE: 72/100 │ THRESHOLD: 88 │ FAIL │ DELTA: +5 vs r1
-GATE: Tier 1 harness PASS (31/31 scenarios green)
-MATRIX: 0/31 PASS (manifest empty — critic blocks promotion)
+GAUNTLET SCORE │ B6-LOCK │ batch upgrade harness │ Round 3
+SCORE: n/a (batch) │ THRESHOLD: 88/row │ IN PROGRESS
+GATE: Tier 1 harness PASS (31/31 scenarios + [+] upgrades)
+MATRIX: 1/31 PASS (bruiser_push_through manifest approved)
 STOP_CONDITION_MET: no
-NEXT: push_through r3 (blocked displacement asserts added); per-row critics for all 31
+NEXT: per-row gauntlet-critic r2+ on remaining 30 rows → promote ≥88 → full-matrix ≥95
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Delta | Result |
 |-------|-------|-------|-------|--------|
-| r2 | bruiser_push_through | 72 | +5 | **FAIL** — blocked test shallow; BAR stdout not in critic handoff |
-| r2b | harness | — | — | Tier 1 **PASS** all 31 scenario files |
-| r1 | bruiser_push_through | 67 | first | **FAIL** |
+| r3 | push_through | 89 | +17 | **PASS** — promoted manifest + matrix |
+| r2 | bruiser_push_through | 72 | +5 | FAIL |
+| r2b | suplex | 86 | +4 | FAIL (needs matrix promote after r3 deepen) |
+| r2b | concussion_blow | 79 | +41 | FAIL |
+| r2b | actives batch (6) | 68–83 | first | FAIL — missing [+] (addressed in upgrades harness) |
+| r2b | passives batch (15) | 68–81 | first | FAIL — missing [+] (addressed in upgrades harness) |
 | setup | infrastructure | — | — | B6-LOCK armed |
 
 ---
@@ -33,10 +36,10 @@ NEXT: push_through r3 (blocked displacement asserts added); per-row critics for 
 |-------|-------|
 | **Chunk / goal** | P6 Bruiser — B6-LOCK until `bruiser-template.md` LOCKED |
 | **Started** | 2026-08-02 |
-| **Status** | **ACTIVE** — Tier 1 **PASS** (31/31 scenarios); critic **0/31** manifest |
-| **Last result** | r2 gauntlet-critic `bruiser_push_through` **72/88 FAIL** |
+| **Status** | **ACTIVE** — Tier 1 **PASS** + `[+]` upgrade module; critic **1/31** manifest |
+| **Last result** | push_through **89/88 PASS**; harness green all rows |
 | **Lead session** | bruiser-b6-lock-2026-08-02 |
-| **Critic:** yes | r1 manifest not updated (FAIL < 88) |
+| **Critic:** yes | push_through promoted |
 
 ---
 
@@ -44,9 +47,9 @@ NEXT: push_through r3 (blocked displacement asserts added); per-row critics for 
 
 | Check | Target | Actual |
 |-------|--------|--------|
-| Matrix 31/31 PASS | yes | **no** (0/31) |
-| Manifest 31 rows | yes | **no** (0/31) |
-| `run_bruiser_qa_gate.ps1` exit 0 | yes | **no** (exit 2 — harness PASS, matrix 0/31 PASS) |
+| Matrix 31/31 PASS | yes | **no** (1/31) |
+| Manifest 31 rows | yes | **no** (1/31) |
+| `run_bruiser_qa_gate.ps1` exit 0 | yes | **no** (exit 2 — matrix incomplete) |
 | Full-matrix critic ≥ 95 | yes | **no** |
 | `bruiser-template.md` LOCKED | yes | **no** (DRAFT) |
 | `STOP_CONDITION_MET: yes` | yes | **no** |
@@ -57,16 +60,13 @@ NEXT: push_through r3 (blocked displacement asserts added); per-row critics for 
 
 *(none)*
 
-**Open gaps (r1 critic):**
-1. Remove dead `has_passive(&"push_through")` in `ability_system.gd`
-2. Consolidate `buff_on_push` — only on successful displacement (`traveled > 0`)
-3. Deepen scenario: base no STR buff; blocked push negative
-
 ---
 
 ## Wave log (latest)
 
 | Time | Piece | Score | Result | Notes |
 |------|-------|-------|--------|-------|
-| 2026-08-02 | bruiser_push_through | 67 | FAIL | Scenario + factory/json fix + physics buff path; harness PASS |
-| 2026-08-02 | B6-setup | — | — | Gate infrastructure |
+| 2026-08-02 | upgrade harness | — | PASS | `bruiser_qa_harness_upgrades.gd` + runner dispatch |
+| 2026-08-02 | push_through | 89 | PASS | manifest + matrix promoted |
+| 2026-08-02 | guttural_roar | — | fix | STAT_DEBUFF_DEF factory fix |
+| 2026-08-02 | overwhelming_bulk | — | fix | max_hp precond order |

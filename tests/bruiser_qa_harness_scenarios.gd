@@ -117,11 +117,13 @@ static func run_suplex(failures: Array[String]) -> void:
 		not H.ability_has_effect(H.factory_ability(&"bruiser_suplex"), GameEnums.EffectType.SWAP, false),
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
-	var hp_before: int = 0
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_suplex"))
 	H.place_dummy(board, 2, Vector2i(3, 4))
-	hp_before = H.unit_hp(board, 2)
-	var result: SimResult = H.cast_on_enemy(board, &"bruiser_suplex", Vector2i(3, 3), 2, Vector2i(3, 4))
+	var hp_before: int = H.unit_hp(board, 2)
+	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_suplex")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 4), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
 	var enemy: UnitState = result.final_state.get_unit_by_id(2)
 	H.assert_eq_cell(failures, "suplex/behind_caster", enemy.position, Vector2i(3, 2))
 	H.assert_true(failures, "suplex/damage", enemy.health.current_hp < hp_before)
