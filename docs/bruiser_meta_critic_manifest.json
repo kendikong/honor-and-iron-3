@@ -95,6 +95,18 @@
       "score": 88,
       "critic_round": 6,
       "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_guttural_roar",
+      "score": 89,
+      "critic_round": 8,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "overwhelming_bulk",
+      "score": 89,
+      "critic_round": 8,
+      "fix_target": "none"
     }
   ]
 }

@@ -277,6 +277,21 @@ static func run_meat_shield(failures: Array[String]) -> void:
 		failures, "meat_shield/intercept",
 		H.has_status(bruiser, GameEnums.StatusType.INTERCEPT),
 	)
+	var expiry_board: BoardState = result.final_state.clone()
+	var advanced: SimResult = Simulator.simulate(expiry_board, Timeline.new())
+	var mid_bruiser: UnitState = advanced.final_state.get_unit_by_id(1)
+	H.assert_true(
+		failures, "meat_shield/intercept_persists",
+		mid_bruiser != null and H.has_status(mid_bruiser, GameEnums.StatusType.INTERCEPT),
+		"INTERCEPT must remain active until turn boundary",
+	)
+	advanced = Simulator.simulate(advanced.final_state, Timeline.new())
+	var expired_bruiser: UnitState = advanced.final_state.get_unit_by_id(1)
+	H.assert_true(
+		failures, "meat_shield/intercept_expires",
+		expired_bruiser != null and not H.has_status(expired_bruiser, GameEnums.StatusType.INTERCEPT),
+		"INTERCEPT must clear after turn boundary",
+	)
 	var redirect_board: BoardState = result.final_state
 	H.place_unit(
 		redirect_board,

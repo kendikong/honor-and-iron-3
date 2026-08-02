@@ -56,7 +56,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **15 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **16** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
+**Summary (honest):** **17 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **14** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
 
 ### Movement + actives
 
@@ -71,7 +71,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `bruiser_earthshatter` | Active | `tests/skills/bruiser_earthshatter_scenario.gd` | PLANNED | ARC + DESTROY_OBSTACLE; `[+]` ATK per destroy |
 | `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | PLANNED | SWAP ally + INTERCEPT; `[+]` RANGE 3 + STR per intercept |
 | `bruiser_frenzy` | Active | `tests/skills/bruiser_frenzy_scenario.gd` | PASS | Triple hit; `[+]` on-kill AP |
-| `bruiser_guttural_roar` | Active | `tests/skills/bruiser_guttural_roar_scenario.gd` | PLANNED | AOE PUSH + DEF debuff; `[+]` item push/collision |
+| `bruiser_guttural_roar` | Active | `tests/skills/bruiser_guttural_roar_scenario.gd` | PASS | AOE PUSH + DEF debuff; `[+]` item push/collision |
 | `bruiser_headbutt` | Active | `tests/skills/bruiser_headbutt_scenario.gd` | PASS | Mutual DAMAGE + STAGGER; `[+]` % Max HP bonus |
 | `bruiser_blood_boil` | Active | `tests/skills/bruiser_blood_boil_scenario.gd` | PLANNED | SELF HP → STR; `[+]` 10 HP → STR +5 |
 | `bruiser_violent_collision` | Active | `tests/skills/bruiser_violent_collision_scenario.gd` | PLANNED | DASH bulldoze + recast; `[+]` STAGGER on collision |
@@ -89,7 +89,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `enraged` | Enraged | `tests/passives/enraged_scenario.gd` | PLANNED | Debuff/hazard count → STR; `[+]` MOV |
 | `last_stand` | Last Stand | `tests/passives/last_stand_scenario.gd` | PASS | HP &lt; 25% → STR/DEF |
 | `colossal_mass` | Colossal Mass | `tests/passives/colossal_mass_scenario.gd` | PLANNED | Max HP → STR scaling |
-| `overwhelming_bulk` | Overwhelming Bulk | `tests/passives/overwhelming_bulk_scenario.gd` | PLANNED | HP vs target Max HP → PIERCE; `[+]` PUSH |
+| `overwhelming_bulk` | Overwhelming Bulk | `tests/passives/overwhelming_bulk_scenario.gd` | PASS | HP vs target Max HP → PIERCE; `[+]` PUSH |
 | `thrill_of_pain` | Thrill of Pain | `tests/passives/thrill_of_pain_scenario.gd` | PLANNED | On damage → next attack buff |
 | `momentum_of_titan` | Momentum of the Titan | `tests/passives/momentum_of_titan_scenario.gd` | PLANNED | PUSH collision % Max HP damage |
 | `scar_tissue` | Scar Tissue | `tests/passives/scar_tissue_scenario.gd` | PASS | Physical damage reduction scaling |
