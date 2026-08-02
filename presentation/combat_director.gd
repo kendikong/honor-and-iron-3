@@ -786,7 +786,6 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			var swap_entry: TimelineAction = _find_plan_swap_action(unit_id)
 			if swap_entry != null:
 				_register_planning_swap_presentation(swap_entry)
-			var added_pre_move: bool = false
 			if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
 				if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 					return false
@@ -794,12 +793,8 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 				for raw: Variant in slots.get("pre", []):
 					if raw is TimelineAction:
 						_try_add(raw as TimelineAction, plan_pre_move)
-						added_pre_move = true
-			if not added_pre_move:
-				plan_affected_unit_ids = [unit_id]
-				_refresh_plan()
-			elif unit_id not in plan_affected_unit_ids:
-				plan_affected_unit_ids.append(unit_id)
+			plan_affected_unit_ids = [unit_id]
+			_refresh_plan()
 			return true
 		_clear_unit_wait(unit_id)
 		_clear_unit_class_actions_from_plan(unit_id)

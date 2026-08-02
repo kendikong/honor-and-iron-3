@@ -83,7 +83,9 @@ static func ensure_swap_approach_paths_from_actions(
 	var walk_dest: Vector2i = Vector2i(-999999, -999999)
 	var has_swap: bool = false
 	var swap_action: TimelineAction = null
-	for raw: Variant in actions:
+	var swap_index: int = -1
+	for action_index: int in range(actions.size()):
+		var raw: Variant = actions[action_index]
 		if not raw is TimelineAction:
 			continue
 		var action: TimelineAction = raw as TimelineAction
@@ -95,33 +97,60 @@ static func ensure_swap_approach_paths_from_actions(
 			has_swap = true
 			swap_action = action
 			actor_id = action.actor_id
+			swap_index = action_index
 	if not has_swap or actor_id < 0 or swap_action == null:
 		return
 	walk_dest = _swap_approach_cell(director, start_board, swap_action)
-	for raw2: Variant in actions:
+	var move_action: TimelineAction = null
+	var move_index: int = -1
+	for action_index2: int in range(actions.size()):
+		var raw2: Variant = actions[action_index2]
 		if not raw2 is TimelineAction:
 			continue
-		var move_action: TimelineAction = raw2 as TimelineAction
-		if move_action.type == GameEnums.ActionType.MOVE and move_action.actor_id == actor_id:
-			if GridSystem.manhattan(move_action.target_coord, walk_dest) <= 1:
-				walk_dest = move_action.target_coord
+		var candidate: TimelineAction = raw2 as TimelineAction
+		if candidate.type == GameEnums.ActionType.MOVE and candidate.actor_id == actor_id:
+			move_action = candidate
+			move_index = action_index2
+			if GridSystem.manhattan(candidate.target_coord, walk_dest) <= 1:
+				walk_dest = candidate.target_coord
 			break
+	if move_action == null and director != null and director.plan_pre_move != null:
+		for planned: TimelineAction in director.plan_pre_move.entries:
+			if planned.type == GameEnums.ActionType.MOVE and planned.actor_id == actor_id:
+				move_action = planned
+				move_index = -1
+				break
 	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
 		return
 	var actor: UnitState = start_board.get_unit_by_id(actor_id)
 	if actor == null:
 		return
 	var origin: Vector2i = actor.position
+	if move_action != null and move_index > swap_index:
+		var existing_after_swap: Array = preview_paths.get(actor_id, [])
+		if (
+			existing_after_swap.size() >= 2
+			and existing_after_swap.back() is Vector2i
+			and (existing_after_swap.back() as Vector2i) == move_action.target_coord
+		):
+			return
 	var route_cells: Array = [origin]
 	if walk_dest != origin:
-		var budget: int = actor.movement.points_left
-		var found: Array[Vector2i] = MovementSystem.find_path(
-			start_board, origin, walk_dest, budget,
-		)
-		if not found.is_empty():
-			route_cells.append_array(found)
-		elif GridSystem.manhattan(origin, walk_dest) == 1:
-			route_cells.append(walk_dest)
+		if (
+			move_action != null
+			and not move_action.waypoints.is_empty()
+			and (move_index < 0 or move_index < swap_index)
+		):
+			route_cells = movement_intent_cells(origin, move_action)
+		else:
+			var budget: int = actor.movement.points_left
+			var found: Array[Vector2i] = MovementSystem.find_path(
+				start_board, origin, walk_dest, budget,
+			)
+			if not found.is_empty():
+				route_cells.append_array(found)
+			elif GridSystem.manhattan(origin, walk_dest) == 1:
+				route_cells.append(walk_dest)
 	if route_cells.size() < 2:
 		return
 	preview_paths[actor_id] = route_cells
@@ -305,6 +334,7 @@ func ensure_movement_intent_from_actions(
 		return
 	var origins: Dictionary = {}
 	var move_actors: Dictionary = {}
+	var movement_intents: Dictionary = {}
 	for unit: UnitState in start_board.units:
 		origins[unit.id] = unit.position
 	for raw: Variant in actions:
@@ -313,8 +343,13 @@ func ensure_movement_intent_from_actions(
 		var action: TimelineAction = raw as TimelineAction
 		if action.type == GameEnums.ActionType.MOVE:
 			move_actors[action.actor_id] = true
-			var move_origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+			var move_origin_from_plan: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+			if not action.waypoints.is_empty():
+				movement_intents[action.actor_id] = movement_intent_cells(move_origin_from_plan, action)
 			var existing: Array = preview_paths.get(action.actor_id, [])
+			var move_origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+			if not existing.is_empty() and existing.back() is Vector2i:
+				move_origin = existing.back() as Vector2i
 			if existing.size() < 2:
 				var route_cells: Array = movement_intent_cells(move_origin, action)
 				if route_cells.size() < 2 and start_board != null:
@@ -340,6 +375,12 @@ func ensure_movement_intent_from_actions(
 			## Keep the preview route on the explicit approach MOVE (never sim swap tail).
 			var approach: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
 			if move_actors.get(action.actor_id, false):
+				var planned_route: Array = movement_intents.get(action.actor_id, [])
+				if planned_route.size() >= 2:
+					preview_paths[action.actor_id] = planned_route
+					preview_splits[action.actor_id] = planned_route.size()
+					origins[action.actor_id] = action.target_coord
+					continue
 				var walker: UnitState = start_board.get_unit_by_id(action.actor_id)
 				var walk_origin: Vector2i = walker.position if walker != null else approach
 				var route_cells: Array = [walk_origin]
@@ -385,6 +426,19 @@ func ensure_movement_intent_from_actions(
 		var existing: Array = preview_paths.get(action.actor_id, [])
 		## Committed waypoints are intent truth — never keep a same-endpoint sim path with different steps.
 		if not action.waypoints.is_empty():
+			if (
+				not existing.is_empty()
+				and existing.back() is Vector2i
+				and (existing.back() as Vector2i) == origin
+			):
+				var combined: Array = existing.duplicate()
+				combined.append_array(intent.slice(1))
+				preview_paths[action.actor_id] = combined
+				preview_splits[action.actor_id] = combined.size()
+				if not action_splits.has(action.actor_id):
+					action_splits[action.actor_id] = 0
+				origins[action.actor_id] = action.target_coord
+				continue
 			if existing.size() > intent.size():
 				preview_paths[action.actor_id] = _splice_waypoint_action_leg(existing, origin, action)
 				preview_splits[action.actor_id] = (preview_paths[action.actor_id] as Array).size()

@@ -722,6 +722,11 @@ func _on_board_changed(board: BoardState) -> void:
 		preview_state.clear_interaction()
 	var interacting: bool = aiming or dragging or _drag_armed
 	if not interacting:
+		_drag_route.clear()
+		if _planning != null:
+			_planning.clear_drag_route()
+		if not _director.plan_refresh_defer_overlay:
+			preview_state.clear_interaction()
 		# Stale stash after drag ended must not restore over a committed plan.
 		if _drag_saved_preview != null:
 			_drag_saved_preview = null
@@ -1288,6 +1293,8 @@ func _ally_skill_preview_slots(p_unit: UnitState, cell: Vector2i) -> Dictionary:
 func _refresh_selected_interaction_preview() -> void:
 	if dragging or _director == null or _director.board == null:
 		return
+	if not _drag_armed and not _drag_route.is_empty():
+		_clear_hover_drag_route()
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	if _should_restore_stand_hover_preview(cell):
 		_restore_hover_preview()
@@ -1296,14 +1303,14 @@ func _refresh_selected_interaction_preview() -> void:
 	if p_unit == null:
 		_restore_hover_preview()
 		return
-	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
-		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
-		_refresh_click_target_highlight()
-		return
 	var ally_slots: Dictionary = _ally_skill_preview_slots(p_unit, cell)
 	if not ally_slots.is_empty():
 		var ally: UnitState = _director.board.get_unit_at(cell)
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, ally.id, [])
+		_refresh_click_target_highlight()
+		return
+	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
+		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 		_refresh_click_target_highlight()
 		return
 	if (
@@ -3406,7 +3413,7 @@ func _build_commit_slots_at_cell(
 		):
 			return _build_ally_commit_slots(
 				slots, actor, unit_id, hover_unit, ability, ability_index,
-				waypoints, legal_move_tiles, preferred_approach,
+					waypoints, legal_move_tiles, preferred_approach,
 			)
 		if _skill_interaction_active() and hover_unit.id != actor.id:
 			slots["invalid"] = "Cannot target this unit with selected skill."

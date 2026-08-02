@@ -836,6 +836,9 @@ func _click_commit_at_cell(ctx: Dictionary, cell: Vector2i) -> void:
 	if input._intent_state != null:
 		input._intent_state.set_hover_coord(cell)
 	var local: Vector2 = input._mouse_local_for_facing()
+	ctx["last_click_slots"] = _slot_action_summary(
+		_commit_slots_for_interaction(ctx, director.selected_unit_id, cell, false),
+	)
 	input.on_left_press(local)
 	await ctx.runner.simulate_frames(2, _settle_delta_ms())
 	input.on_left_release(local)
@@ -910,8 +913,50 @@ func _actor_grid_cell(ctx: Dictionary, unit_id: int) -> Vector2i:
 func _assert_actor_on_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
 	var actor_cell: Vector2i = _actor_grid_cell(ctx, unit_id)
 	assert_that(actor_cell).override_failure_message(
-		"%s: sprite must stand on %s, got actor grid %s" % [label, _cell_name(cell), _cell_name(actor_cell)],
+		"%s: sprite must stand on %s, got actor grid %s; route trace=%s; plan=%s; preview_path=%s; drag_route=%s; %s" % [
+			label,
+			_cell_name(cell),
+			_cell_name(actor_cell),
+			str(_unit_layer(ctx).planning_route_trace()),
+			_plan_route_summary(ctx.director as CombatDirector, unit_id),
+			str(ctx.input.preview_state.preview_paths.get(unit_id, [])),
+			str(ctx.input.get_drag_route()),
+			"click_slots=%s" % str(ctx.get("last_click_slots", "")),
+		],
 	).is_equal(cell)
+
+
+func _plan_route_summary(director: CombatDirector, unit_id: int) -> String:
+	if director == null:
+		return "director=null"
+	var out: Array[String] = []
+	for plan: Timeline in [director.plan_pre_move, director.plan_action, director.plan_post_move]:
+		for action: TimelineAction in plan.entries:
+			if action.actor_id != unit_id:
+				continue
+			out.append("%s:%s:%s:%s" % [
+				str(action.type),
+				str(action.target_coord),
+				str(action.waypoints),
+				str(action.target_unit_id),
+			])
+	return "[" + ", ".join(out) + "]"
+
+
+func _slot_action_summary(slots: Dictionary) -> String:
+	var out: Array[String] = []
+	for column: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(column, []):
+			if not raw is TimelineAction:
+				continue
+			var action: TimelineAction = raw as TimelineAction
+			out.append("%s:%s:%s:%s" % [
+				column,
+				str(action.type),
+				str(action.target_coord),
+				str(action.waypoints),
+			])
+	return "[" + ", ".join(out) + "]"
 
 
 func _assert_enemy_live_unchanged_during_planning(
@@ -1274,7 +1319,19 @@ func _audit_surface(
 	if contract.has("ghost_pos"):
 		var ghost: UnitState = await _preview_unit(ctx, unit_id, contract["ghost_pos"])
 		assert_object(ghost).override_failure_message(
-			"%s: preview ghost missing at %s" % [label, hover_cell],
+			"%s: preview ghost missing at %s; path=%s slots=%s approach=%s preview_board=%s" % [
+				label,
+				hover_cell,
+				str(path),
+				str(_commit_slots_for_interaction(ctx, unit_id, hover_cell, false)),
+				str((ctx["director"] as CombatDirector).preview_approach_tile(
+					unit_id,
+					int(ctx["ally_id"]),
+					(ctx["director"] as CombatDirector).selected_ability_index,
+					hover_cell,
+				)),
+				str(input.preview_state.preview_board),
+			],
 		).is_not_null()
 		if ghost != null:
 			assert_that(ghost.position).override_failure_message(
@@ -1794,8 +1851,38 @@ func _assert_preview_path_equals(
 	if not path.is_empty():
 		_assert_path_is_manhattan(path, "%s/actual" % label)
 	assert_that(path).override_failure_message(
-		"%s: preview path expected %s got %s" % [label, expected, path],
+		"%s: preview path expected %s got %s; events=%s; plan=%s" % [
+			label,
+			expected,
+			path,
+			_preview_event_summary(ctx.director as CombatDirector, unit_id, path.back() if not path.is_empty() else Vector2i.ZERO),
+			_plan_route_summary(ctx.director as CombatDirector, unit_id),
+		],
 	).is_equal(expected)
+
+
+func _preview_event_summary(
+	director: CombatDirector,
+	unit_id: int,
+	target: Vector2i,
+) -> String:
+	if director == null:
+		return "director=null"
+	var result: Dictionary = director.preview_drag(unit_id, target)
+	var out: Array[String] = []
+	for raw: Variant in result.get("events", []):
+		if not raw is SimEvent:
+			continue
+		var event: SimEvent = raw as SimEvent
+		if int(event.data.get("actor", -1)) != unit_id:
+			continue
+		out.append("%s:%s:%s:%s" % [
+			str(event.type),
+			str(event.data.get("from", Vector2i(-999, -999))),
+			str(event.data.get("to", Vector2i(-999, -999))),
+			str(event.data.get("path", [])),
+		])
+	return "[" + ", ".join(out) + "]"
 
 
 func _assert_path_is_manhattan(path: Array, label: String) -> void:
@@ -2120,10 +2207,13 @@ func _slots_invalid(slots: Dictionary) -> bool:
 
 func _pre_target_from_slots(slots: Dictionary) -> Vector2i:
 	var pre: Array = slots.get("pre", []) as Array
-	if pre.is_empty():
-		return Vector2i(-999999, -999999)
-	var step: TimelineAction = pre[0] as TimelineAction
-	return step.target_coord if step != null else Vector2i(-999999, -999999)
+	for raw: Variant in pre:
+		if not raw is TimelineAction:
+			continue
+		var step: TimelineAction = raw as TimelineAction
+		if step.type == GameEnums.ActionType.MOVE:
+			return step.target_coord
+	return Vector2i(-999999, -999999)
 
 
 func _action_target_unit_from_slots(slots: Dictionary) -> int:
@@ -2301,7 +2391,12 @@ func _assert_commit_ratifies_preview(
 		var preview_end: Vector2i = preview_path[preview_path.size() - 1] as Vector2i
 		if pre_target.x > -900000:
 			assert_that(preview_end).override_failure_message(
-				"%s: preview path end must match slot pre-move target" % label,
+				"%s: preview path end must match slot pre-move target; path=%s target=%s slots=%s" % [
+					label,
+					str(preview_path),
+					str(pre_target),
+					_slot_action_summary(slots),
+				],
 			).is_equal(pre_target)
 		elif post_target.x > -900000:
 			assert_that(preview_end).override_failure_message(
@@ -2325,6 +2420,72 @@ func _assert_commit_ratifies_preview(
 		assert_that(pre_move.waypoints).override_failure_message(
 			"%s: committed waypoints must ratify painted drag route tail" % label,
 		).is_equal(drag_route.slice(1))
+	if not preview_path.is_empty() and label.contains("swap"):
+		await _assert_animation_route_matches_preview(ctx, unit_id, preview_path, label)
+
+
+func _assert_animation_route_matches_preview(
+	ctx: Dictionary,
+	unit_id: int,
+	preview_path: Array,
+	label: String,
+) -> void:
+	var movement_commit: bool = false
+	var director: CombatDirector = ctx.director as CombatDirector
+	for raw: Variant in director.plan_pre_move.entries:
+		if raw is TimelineAction and (raw as TimelineAction).actor_id == unit_id:
+			if (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
+				movement_commit = true
+	if not movement_commit:
+		return
+	await _wait_planning_move_tween(ctx, unit_id)
+	var traces: Array[Dictionary] = _unit_layer(ctx).planning_route_trace()
+	var event_path: Array = []
+	var animation_path: Array = []
+	for i: int in range(traces.size() - 1, -1, -1):
+		var trace: Dictionary = traces[i]
+		if (
+			event_path.is_empty()
+			and trace.get("kind") == &"commit_event"
+			and int(trace.get("unit_id", -1)) == unit_id
+		):
+			event_path = (trace.get("path", []) as Array).duplicate()
+		if (
+			animation_path.is_empty()
+			and trace.get("kind") == &"animation"
+			and trace.get("stage") == &"walk"
+			and int(trace.get("unit_id", -1)) == unit_id
+		):
+			var start: Variant = trace.get("start", null)
+			var cells: Array = (trace.get("actual_cells", []) as Array).duplicate()
+			if start is Vector2i and not cells.is_empty():
+				animation_path = cells
+			elif start is Vector2i:
+				animation_path = [start]
+	var expected_path: Array = preview_path
+	if not event_path.is_empty():
+		var event_start: Variant = event_path[0]
+		for path_index: int in range(preview_path.size()):
+			if preview_path[path_index] == event_start:
+				expected_path = preview_path.slice(path_index)
+				break
+	if not event_path.is_empty():
+		assert_that(event_path).override_failure_message(
+			"%s: commit event route must match preview path; preview=%s event=%s plan=%s" % [
+				label,
+				str(expected_path),
+				str(event_path),
+				_plan_route_summary(ctx.director as CombatDirector, unit_id),
+			],
+		).is_equal(expected_path)
+	assert_that(animation_path).override_failure_message(
+			"%s: animation route must match preview path; preview=%s animation=%s plan=%s" % [
+			label,
+			str(expected_path),
+			str(animation_path),
+				_plan_route_summary(ctx.director as CombatDirector, unit_id),
+		],
+	).is_equal(expected_path)
 
 
 func _overlay_has_red_tile(overlay: TacticalPlanningOverlay, _board: BoardState) -> bool:

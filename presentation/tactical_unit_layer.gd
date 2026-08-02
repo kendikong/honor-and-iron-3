@@ -69,6 +69,7 @@ var _planning_commit_sequence_running: bool = false
 var _planning_commit_queue: Array[SimEvent] = []
 var _planning_commit_stage: StringName = &""
 var _planning_commit_epoch: int = 0
+var _planning_route_trace: Array[Dictionary] = []
 
 enum DragPreviewAnim { IDLE, WALK, RUN, ATTACK, SPELL }
 
@@ -272,6 +273,14 @@ func planning_commit_stage() -> StringName:
 	return _planning_commit_stage
 
 
+func planning_route_trace() -> Array[Dictionary]:
+	return _planning_route_trace.duplicate(true)
+
+
+func clear_planning_route_trace() -> void:
+	_planning_route_trace.clear()
+
+
 func await_planning_commit_sequence() -> void:
 	var tree := get_tree()
 	if tree == null:
@@ -370,10 +379,28 @@ func _on_planning_commit_events(events: Array) -> void:
 		return
 	for raw: Variant in events:
 		if raw is SimEvent:
-			_planning_commit_queue.append(raw as SimEvent)
+			var event: SimEvent = raw as SimEvent
+			_planning_commit_queue.append(event)
+			if event.type == GameEnums.SimEventType.UNIT_MOVED:
+				_record_planning_route_event(event)
 	if _planning_commit_sequence_running:
 		return
 	_drain_planning_commit_queue()
+
+
+func _record_planning_route_event(event: SimEvent) -> void:
+	var path: Array[Vector2i] = []
+	for raw: Variant in event.data.get("path", []):
+		if raw is Vector2i:
+			path.append(raw as Vector2i)
+	_planning_route_trace.append({
+		"kind": &"commit_event",
+		"unit_id": int(event.data.get("actor", -1)),
+		"from": event.data.get("from", Vector2i(-999, -999)),
+		"to": event.data.get("to", Vector2i(-999, -999)),
+		"path": path,
+		"move_timing": int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION)),
+	})
 
 
 func _drain_planning_commit_queue() -> void:
@@ -810,6 +837,7 @@ func abort_planning_commit_sequence() -> void:
 func _abort_planning_commit_sequence() -> void:
 	_planning_commit_epoch += 1
 	_planning_commit_queue.clear()
+	_planning_route_trace.clear()
 	_planning_commit_sequence_running = false
 	_planning_commit_stage = &""
 	for tween_id: Variant in _move_tweens.keys():
@@ -1521,6 +1549,19 @@ func _play_cell_path_tween(
 	if actor == null or _map_view == null or cells.is_empty():
 		return
 	_kill_move_tween(unit_id)
+	var route_trace: Dictionary = {}
+	if _planning_commit_sequence_running:
+		route_trace = {
+			"kind": &"animation",
+			"unit_id": unit_id,
+			"start": start_cell,
+			"cells": cells.duplicate(),
+			"use_run": use_run or is_dash,
+			"step_time": CombatDirector.RUN_STEP_TIME if use_run else step_time,
+			"actual_cells": [start_cell],
+			"stage": _planning_commit_stage,
+		}
+		_planning_route_trace.append(route_trace)
 	if is_dash:
 		actor.cancel_dash_windup()
 	else:
@@ -1537,6 +1578,12 @@ func _play_cell_path_tween(
 		tween.tween_property(actor, "position", _map_view.grid_to_foot_local(cell), tile_time)
 		if per_step is Callable and (per_step as Callable).is_valid():
 			tween.tween_callback((per_step as Callable).bind(step_index))
+		if not route_trace.is_empty():
+			tween.tween_callback(func() -> void:
+				var actual_cells: Array = route_trace["actual_cells"]
+				if actual_cells.is_empty() or actual_cells.back() != cell:
+					actual_cells.append(cell)
+			)
 		if step_index + 1 < cells.size():
 			var next_cell: Vector2i = cells[step_index + 1]
 			var next_facing: int = _facing_toward(cell, next_cell)
@@ -1550,6 +1597,8 @@ func _play_cell_path_tween(
 		var live := _board.get_unit_by_id(unit_id) if _board != null else null
 		actor.set_running(live != null and live.has_run_boost())
 		var path_end: Vector2i = cells.back() if not cells.is_empty() else start_cell
+		if not route_trace.is_empty():
+			route_trace["finished_cell"] = _actor_grid_cell(unit_id)
 		if _planning_commit_sequence_running:
 			if _actor_grid_cell(unit_id) != path_end:
 				_position_actor(unit_id, path_end)

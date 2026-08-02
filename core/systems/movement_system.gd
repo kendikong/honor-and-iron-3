@@ -303,6 +303,7 @@ static func _is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState
 				if unit != null and (unit.has_status(GameEnums.StatusType.GHOST) or can_pass_through_enemy(unit, ability)):
 					return true # Ghost/Trample/BULLDOZE can walk through enemies
 				return false # Cannot walk through enemies
+			return false # Allied units block transit; only explicit pass-through may enter occupants
 	return true
 
 ## Shared trample check — used by pathfinding, move execution, and UI.
