@@ -162,7 +162,6 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 					has_rallying_knight = true
 					if adj_unit.is_passive_upgraded(&"rallying_presence"):
 						rally_upgraded = true
-						rally_upgraded = true
 						break
 			if has_rallying_knight:
 				var mov_bonus: int = 2 if rally_upgraded else 1

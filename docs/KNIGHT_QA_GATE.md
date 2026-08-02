@@ -164,11 +164,11 @@ Do **not** weaken, replace, or “simplify” harness/scenario/production paths 
 | `kinetic_armor` | Kinetic Armor | `tests/passives/kinetic_armor_scenario.gd` | PASS | SHIELD-gated −1/−2 mitigation + hazard bypass sim (meta-critic r20) |
 | `kinetic_converter` | Kinetic Converter | `tests/passives/kinetic_converter_scenario.gd` | PASS | STR+MOV base + `[+]` STR+2 sim (meta-critic r6) |
 | `kinetic_redirection` | Kinetic Redirection | `tests/passives/kinetic_redirection_scenario.gd` | PASS | DEF/SHIELD stack cap/reset + [+] PIERCE sim (meta-critic r21) |
-| `bulwark` | Bulwark | `tests/passives/bulwark_scenario.gd` | HARNESS_ONLY | DEF read; not trigger pipeline |
-| `living_barricade` | Living Barricade | `tests/passives/living_barricade_scenario.gd` | HARNESS_ONLY | Ranged block base; no `[+]` ally DEF sim |
-| `shield_wall` | Shield Wall | `tests/passives/shield_wall_scenario.gd` | HARNESS_ONLY | Aura DEF base; no `[+]` range-2 sim |
-| `rallying_presence` | Rallying Presence | `tests/passives/rallying_presence_scenario.gd` | HARNESS_ONLY | +1 MOV base + `[+]` +2 MOV sim |
-| `intercept_tactics` | Intercept Tactics | `tests/passives/intercept_tactics_scenario.gd` | HARNESS_ONLY | +2 DEF base + `[+]` +3 DEF sim |
+| `bulwark` | Bulwark | `tests/passives/bulwark_scenario.gd` | PASS | DEF/STR adjacent + deal_damage sim (meta-critic r22) |
+| `living_barricade` | Living Barricade | `tests/passives/living_barricade_scenario.gd` | PASS | Ranged block + facing + [+] ally DEF sim (meta-critic r25) |
+| `shield_wall` | Shield Wall | `tests/passives/shield_wall_scenario.gd` | PASS | Adjacent DEF + PULL immune + [+] range-2 sim (meta-critic r23) |
+| `rallying_presence` | Rallying Presence | `tests/passives/rallying_presence_scenario.gd` | PASS | +1/+2 MOV + expiry + no self-buff (meta-critic r26) |
+| `intercept_tactics` | Intercept Tactics | `tests/passives/intercept_tactics_scenario.gd` | PASS | Redirect +2/+3 DEF + mitigation sim (meta-critic r24) |
 
 **LOCK rule:** All factory rows `PASS` (or owner-documented `N/A`). Gate script **fails** until then.
 

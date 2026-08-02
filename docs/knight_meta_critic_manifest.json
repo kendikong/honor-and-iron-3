@@ -1,10 +1,10 @@
 {
   "piece": "K3-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 21,
+  "last_critic_round": 26,
   "last_score": 88,
   "last_result": "PASS",
-  "last_row_promoted": "kinetic_redirection",
+  "last_row_promoted": "rallying_presence",
   "approved_rows": [
     {
       "factory_id": "knight_swap",
@@ -142,6 +142,36 @@
       "factory_id": "kinetic_redirection",
       "score": 88,
       "critic_round": 21,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bulwark",
+      "score": 88,
+      "critic_round": 22,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "shield_wall",
+      "score": 89,
+      "critic_round": 23,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "intercept_tactics",
+      "score": 89,
+      "critic_round": 24,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "living_barricade",
+      "score": 88,
+      "critic_round": 25,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "rallying_presence",
+      "score": 88,
+      "critic_round": 26,
       "fix_target": "none"
     }
   ]

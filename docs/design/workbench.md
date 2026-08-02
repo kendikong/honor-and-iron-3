@@ -9,10 +9,11 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ K3-LOCK matrix │ Round 21
-FULL MATRIX: 57/95 (stale) │ ROW: kinetic_redirection PASS 88/88 ✓
-MANIFEST: 23/30 │ STOP_CONDITION_MET: no
-NEXT: bulwark queue
+GAUNTLET SCORE │ K3-LOCK matrix │ Round 26
+FULL MATRIX: 57/95 (stale) │ MANIFEST: 28/30
+HARNESS_ONLY (no-regression): bowling_charge, trampling_advance
+STOP_CONDITION_MET: no — gate exit 2 until 30/30 or owner defers no-regression pair
+NEXT: full-matrix critic refresh; bowling/trample policy
 ══════════════════════════════════════
 ```
 
@@ -49,8 +50,8 @@ NEXT: bulwark queue
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-LOCK ACTIVE** — **23/30** manifest |
-| **Last result** | kinetic_redirection promoted r21 (88) |
+| **Status** | **K3-LOCK ACTIVE** — **28/30** manifest |
+| **Last result** | living_barricade r25 + rallying_presence r26 promoted; Tier 1 PASS |
 | **Lead session** | knight-k3-lock-2026-08-01 |
 
 ---

@@ -742,7 +742,6 @@ static func run_bulwark(failures: Array[String]) -> void:
 		failures, "bulwark/base/no_str_from_enemies",
 		floored_base_enemies,
 		floored_base_iso,
-		"non-upgraded bulwark must not grant STR from adjacent enemies",
 	)
 
 
@@ -1201,56 +1200,140 @@ static func _kinetic_redirection_apply_partial_hit(board: BoardState, unit_id: i
 
 
 static func run_rallying_presence(failures: Array[String]) -> void:
-	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	## Bible: adjacent allies +1 MOV at turn start; [+] +2 MOV.
 	var cfg: Dictionary = with_single_passive(&"rallying_presence", false)
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
 	place_knight(board, 1, Vector2i(3, 3), cfg)
 	var ally_def: UnitData = knight_unit_data()
 	place_unit(board, 3, ally_def, GameEnums.Team.PLAYER, Vector2i(3, 4), {
 		"active_abilities": [DataLibrary.get_universal_run()],
 	})
+	var mov_max_before: int = unit_on_board(board, 3).movement.max_points
 	var plan := Timeline.new()
 	var result: SimResult = simulate_player_turn(board, plan)
 	var ally: UnitState = result.final_state.get_unit_by_id(3)
-	assert_true(
+	assert_eq_int(
 		failures, "rallying_presence/mov_buff",
-		ally != null and has_status(ally, GameEnums.StatusType.STAT_BUFF_MP),
-		"adjacent ally must gain MOV at turn start via Rallying Presence",
+		ally.movement.max_points,
+		mov_max_before + 1,
+	)
+	var knight_after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "rallying_presence/carrier_no_self_buff",
+		knight_after != null and not has_status(knight_after, GameEnums.StatusType.STAT_BUFF_MP),
+		"rallying presence must buff allies only, not the carrier knight",
+	)
+	var board_far: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board_far, 5, Vector2i(3, 3), cfg)
+	place_unit(board_far, 6, ally_def, GameEnums.Team.PLAYER, Vector2i(6, 6), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var result_far: SimResult = simulate_player_turn(board_far, Timeline.new())
+	var ally_far: UnitState = result_far.final_state.get_unit_by_id(6)
+	assert_true(
+		failures, "rallying_presence/non_adjacent_no_buff",
+		ally_far != null and not has_status(ally_far, GameEnums.StatusType.STAT_BUFF_MP),
+		"non-adjacent ally must not receive MOV buff",
 	)
 	var cfg_up: Dictionary = with_single_passive(&"rallying_presence", true)
 	var board2: BoardState = make_plain_board(Vector2i(8, 8))
 	place_knight(board2, 10, Vector2i(3, 3), cfg_up)
-	var ally_def2: UnitData = knight_unit_data()
-	place_unit(board2, 11, ally_def2, GameEnums.Team.PLAYER, Vector2i(3, 4), {
+	place_unit(board2, 11, ally_def, GameEnums.Team.PLAYER, Vector2i(3, 4), {
 		"active_abilities": [DataLibrary.get_universal_run()],
 	})
-	var plan2 := Timeline.new()
-	var result2: SimResult = simulate_player_turn(board2, plan2)
+	mov_max_before = unit_on_board(board2, 11).movement.max_points
+	var result2: SimResult = simulate_player_turn(board2, Timeline.new())
 	var ally2: UnitState = result2.final_state.get_unit_by_id(11)
-	var mov_amt: int = 0
-	for s: StatusData in ally2.active_statuses if ally2 else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_MP:
-			mov_amt = s.value
-	assert_true(
+	assert_eq_int(
 		failures, "rallying_presence/upgrade/mov2",
-		ally2 != null and mov_amt >= 2,
-		"upgraded rallying presence must grant +2 MOV",
+		ally2.movement.max_points,
+		mov_max_before + 2,
+	)
+	var board_exp: BoardState = result.final_state.clone()
+	var knight_carrier: UnitState = board_exp.get_unit_by_id(1)
+	if knight_carrier != null:
+		GridSystem.set_occupant(board_exp, knight_carrier.position, -1)
+		knight_carrier.position = Vector2i(7, 7)
+		GridSystem.set_occupant(board_exp, Vector2i(7, 7), 1)
+	var advanced: SimResult = Simulator.simulate(board_exp, Timeline.new())
+	advanced = Simulator.simulate(advanced.final_state, Timeline.new())
+	var ally_next: UnitState = advanced.final_state.get_unit_by_id(3)
+	assert_true(
+		failures, "rallying_presence/buff_expires_next_turn",
+		ally_next != null and not has_status(ally_next, GameEnums.StatusType.STAT_BUFF_MP),
+		"rallying presence MOV buff must expire after the turn",
 	)
 
 
 static func run_shield_wall(failures: Array[String]) -> void:
-	var board: BoardState = make_plain_board(Vector2i(8, 8))
-	var cfg: Dictionary = with_single_passive(&"shield_wall", false)
-	place_knight(board, 1, Vector2i(3, 3), cfg)
+	## Bible: adjacent allies +1 DEF + PULL immune; [+] aura range 2.
 	var ally_def: UnitData = knight_unit_data()
-	var ally: UnitState = place_unit(board, 3, ally_def, GameEnums.Team.PLAYER, Vector2i(4, 3), {
+	var board_iso: BoardState = make_plain_board(Vector2i(10, 8))
+	place_unit(board_iso, 30, ally_def, GameEnums.Team.PLAYER, Vector2i(4, 3), {
 		"active_abilities": [DataLibrary.get_universal_run()],
 	})
-	var base_def: int = ally.current_defense
-	var with_aura: int = CombatSystem.get_dynamic_defense(board, ally)
-	assert_true(
-		failures, "shield_wall/ally_def",
-		with_aura > base_def,
-		"adjacent ally must gain DEF from Shield Wall aura",
+	var def_iso: int = CombatSystem.get_dynamic_defense(board_iso, unit_on_board(board_iso, 30))
+	var cfg: Dictionary = with_single_passive(&"shield_wall", false)
+	var board_adj: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_adj, 1, Vector2i(3, 3), cfg)
+	var ally: UnitState = place_unit(board_adj, 2, ally_def, GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var def_adj: int = CombatSystem.get_dynamic_defense(board_adj, ally)
+	assert_eq_int(
+		failures, "shield_wall/adjacent_def",
+		def_adj - def_iso,
+		1,
+	)
+	var cfg_up: Dictionary = with_single_passive(&"shield_wall", true)
+	var board_range: BoardState = make_plain_board(Vector2i(12, 8))
+	place_knight(board_range, 10, Vector2i(3, 3), cfg_up)
+	var ally_far: UnitState = place_unit(board_range, 11, ally_def, GameEnums.Team.PLAYER, Vector2i(5, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var def_far: int = CombatSystem.get_dynamic_defense(board_range, ally_far)
+	assert_eq_int(
+		failures, "shield_wall/upgrade/range_two_def",
+		def_far - def_iso,
+		1,
+	)
+	var board_pull: BoardState = make_plain_board(Vector2i(12, 8))
+	place_knight(board_pull, 20, Vector2i(3, 3), cfg)
+	place_unit(board_pull, 21, ally_def, GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	place_unit(board_pull, 22, knight_unit_data(), GameEnums.Team.ENEMY, Vector2i(6, 3), {
+		"active_abilities": [factory_ability(&"knight_chain_hook")],
+	})
+	var ally_pull_pos: Vector2i = unit_on_board(board_pull, 21).position
+	var hook: AbilityData = ability_on_unit(unit_on_board(board_pull, 22), &"knight_chain_hook")
+	var plan_pull := Timeline.new()
+	plan_pull.add(plan_ability(22, hook, Vector2i(4, 3), 21))
+	var pull_result: SimResult = simulate_plan(board_pull, plan_pull)
+	var ally_after_pull: UnitState = pull_result.final_state.get_unit_by_id(21)
+	assert_eq_cell(
+		failures, "shield_wall/adjacent_pull_immune",
+		ally_after_pull.position if ally_after_pull else Vector2i(-1, -1),
+		ally_pull_pos,
+	)
+	var board_pull2: BoardState = make_plain_board(Vector2i(12, 8))
+	place_knight(board_pull2, 30, Vector2i(3, 3), cfg_up)
+	place_unit(board_pull2, 31, ally_def, GameEnums.Team.PLAYER, Vector2i(5, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	place_unit(board_pull2, 32, knight_unit_data(), GameEnums.Team.ENEMY, Vector2i(7, 3), {
+		"active_abilities": [factory_ability(&"knight_chain_hook")],
+	})
+	var ally_far_pos: Vector2i = unit_on_board(board_pull2, 31).position
+	var hook2: AbilityData = ability_on_unit(unit_on_board(board_pull2, 32), &"knight_chain_hook")
+	var plan_pull2 := Timeline.new()
+	plan_pull2.add(plan_ability(32, hook2, Vector2i(5, 3), 31))
+	var pull_result2: SimResult = simulate_plan(board_pull2, plan_pull2)
+	var ally_after_far: UnitState = pull_result2.final_state.get_unit_by_id(31)
+	assert_eq_cell(
+		failures, "shield_wall/upgrade/range_two_pull_immune",
+		ally_after_far.position if ally_after_far else Vector2i(-1, -1),
+		ally_far_pos,
 	)
 
 
@@ -1456,8 +1539,9 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 
 
 static func run_intercept_tactics(failures: Array[String]) -> void:
-	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	## Bible: redirect skill grants +2 DEF; [+] +3 DEF.
 	var cfg: Dictionary = with_single_passive(&"intercept_tactics", false)
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
 	place_knight(board, 1, Vector2i(3, 3), cfg)
 	var knight: UnitState = unit_on_board(board, 1)
 	var redirect: AbilityData = ability_on_unit(knight, &"knight_redirect_strike")
@@ -1465,10 +1549,23 @@ static func run_intercept_tactics(failures: Array[String]) -> void:
 	plan.add(plan_ability(1, redirect, knight.position, knight.id))
 	var result: SimResult = simulate_player_turn(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
-	assert_true(
+	var def_amt: int = 0
+	for s: StatusData in after.active_statuses if after else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+			def_amt = s.value
+	assert_eq_int(
 		failures, "intercept_tactics/def_buff",
-		after != null and has_status(after, GameEnums.StatusType.STAT_BUFF_DEF),
-		"redirect skill must grant DEF via Intercept Tactics",
+		def_amt,
+		2,
+	)
+	var loss_with: int = damage_taken_on_unit(result.final_state, 1, 12)
+	var board_no: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board_no, 2, Vector2i(3, 3))
+	var loss_without_buff: int = damage_taken_on_unit(board_no, 2, 12)
+	assert_true(
+		failures, "intercept_tactics/def_mitigates_damage",
+		loss_with < loss_without_buff,
+		"intercept tactics DEF must reduce incoming damage after redirect",
 	)
 	var cfg_up: Dictionary = with_single_passive(&"intercept_tactics", true)
 	var board2: BoardState = make_plain_board(Vector2i(8, 8))
@@ -1479,14 +1576,27 @@ static func run_intercept_tactics(failures: Array[String]) -> void:
 	plan2.add(plan_ability(10, redirect2, knight2.position, knight2.id))
 	var result2: SimResult = simulate_player_turn(board2, plan2)
 	var after2: UnitState = result2.final_state.get_unit_by_id(10)
-	var def_amt: int = 0
+	def_amt = 0
 	for s: StatusData in after2.active_statuses if after2 else []:
 		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
 			def_amt = s.value
-	assert_true(
+	assert_eq_int(
 		failures, "intercept_tactics/upgrade/def3",
-		after2 != null and def_amt >= 3,
-		"upgraded intercept tactics must grant +3 DEF on redirect",
+		def_amt,
+		3,
+	)
+	var loss_up: int = damage_taken_on_unit(result2.final_state, 10, 12)
+	var board_base: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board_base, 12, Vector2i(3, 3), cfg)
+	var redirect_base: AbilityData = ability_on_unit(unit_on_board(board_base, 12), &"knight_redirect_strike")
+	var plan_base := Timeline.new()
+	plan_base.add(plan_ability(12, redirect_base, Vector2i(3, 3), 12))
+	var result_base: SimResult = simulate_player_turn(board_base, plan_base)
+	var loss_base_redirect: int = damage_taken_on_unit(result_base.final_state, 12, 12)
+	assert_true(
+		failures, "intercept_tactics/upgrade/def_mitigates_more",
+		loss_up < loss_base_redirect,
+		"upgraded intercept tactics must mitigate more damage than base +2 DEF",
 	)
 
 
@@ -2646,9 +2756,11 @@ static func run_retaliation_protocol(failures: Array[String]) -> void:
 
 
 static func run_living_barricade(failures: Array[String]) -> void:
+	## Bible: allies behind immune to ranged; [+] allies behind +1 DEF.
 	var board: BoardState = make_plain_board(Vector2i(10, 8))
 	var cfg: Dictionary = with_single_passive(&"living_barricade", false)
 	place_knight(board, 1, Vector2i(4, 3), cfg)
+	unit_on_board(board, 1).facing = GameEnums.Facing.EAST
 	var ally_def: UnitData = knight_unit_data()
 	place_unit(board, 2, ally_def, GameEnums.Team.PLAYER, Vector2i(3, 3), {
 		"active_abilities": [DataLibrary.get_universal_run()],
@@ -2670,4 +2782,48 @@ static func run_living_barricade(failures: Array[String]) -> void:
 		failures, "living_barricade/event",
 		events_contain_reason(result.events, "blocked_by_living_barricade"),
 		"living barricade must emit block event",
+	)
+	var cfg_up: Dictionary = with_single_passive(&"living_barricade", true)
+	var board_def: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_def, 10, Vector2i(4, 3), cfg_up)
+	unit_on_board(board_def, 10).facing = GameEnums.Facing.EAST
+	place_unit(board_def, 11, ally_def, GameEnums.Team.PLAYER, Vector2i(3, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var board_iso: BoardState = make_plain_board(Vector2i(10, 8))
+	place_unit(board_iso, 20, ally_def, GameEnums.Team.PLAYER, Vector2i(3, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var def_iso: int = CombatSystem.get_dynamic_defense(board_iso, unit_on_board(board_iso, 20))
+	var def_behind: int = CombatSystem.get_dynamic_defense(
+		board_def, unit_on_board(board_def, 11),
+	)
+	assert_eq_int(
+		failures, "living_barricade/upgrade/ally_def_behind",
+		def_behind - def_iso,
+		1,
+	)
+	var loss_behind: int = damage_taken_on_unit(board_def, 11, 12)
+	assert_true(
+		failures, "living_barricade/upgrade/def_reduces_damage",
+		loss_behind < damage_taken_on_unit(board_iso, 20, 12),
+		"upgraded living barricade ally behind must take less damage via +1 DEF",
+	)
+	var board_exposed: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_exposed, 30, Vector2i(4, 3), cfg)
+	unit_on_board(board_exposed, 30).facing = GameEnums.Facing.WEST
+	place_unit(board_exposed, 31, ally_def, GameEnums.Team.PLAYER, Vector2i(5, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	place_enemy_artillery(board_exposed, 32, Vector2i(7, 3))
+	var hp_exposed_before: int = unit_on_board(board_exposed, 31).health.current_hp
+	var bolt_exposed: AbilityData = unit_on_board(board_exposed, 32).active_abilities[0]
+	var plan_exposed := Timeline.new()
+	plan_exposed.add(plan_ability(32, bolt_exposed, Vector2i(5, 3), 31))
+	var result_exposed: SimResult = simulate_player_turn(board_exposed, plan_exposed)
+	var ally_exposed: UnitState = result_exposed.final_state.get_unit_by_id(31)
+	assert_true(
+		failures, "living_barricade/no_block_wrong_facing",
+		ally_exposed != null and ally_exposed.health.current_hp < hp_exposed_before,
+		"ally not behind knight facing must not be protected from ranged fire",
 	)

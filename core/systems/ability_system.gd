@@ -986,13 +986,15 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			var front_tile = target.position - dir_to_target
 			var knight = board.get_unit_at(front_tile)
 			if knight != null and knight.team == target.team and knight.has_passive(&"living_barricade"):
-				var protects_aoe = knight.is_passive_upgraded(&"living_barricade")
-				if (is_ranged and not is_aoe) or (is_aoe and protects_aoe):
-					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-						"actor": actor.id, "reason": "blocked_by_living_barricade",
-						"target": target.id
-					}))
-					return
+				var dir_to_actor := PhysicsSystem.cardinal_from_to(knight.position, actor.position)
+				if PhysicsSystem.facing_to_vector(knight.facing) == dir_to_actor:
+					var protects_aoe = knight.is_passive_upgraded(&"living_barricade")
+					if (is_ranged and not is_aoe) or (is_aoe and protects_aoe):
+						events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+							"actor": actor.id, "reason": "blocked_by_living_barricade",
+							"target": target.id
+						}))
+						return
 					
 	if target != null:
 		var hostile := false
