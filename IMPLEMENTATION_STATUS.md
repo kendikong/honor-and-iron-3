@@ -10,7 +10,7 @@
 
 ## P3 — Knight template LOCK ✅
 
-**Closed:** owner LOCK 2026-08-02 — `knight-template.md` → **`LOCKED`**
+**Closed:** owner LOCK 2026-08-02 — `knight-template.md` → **`LOCKED`** — commit `ab8789ee193fdd36d62b88af9972a9823b94c1fa`
 
 ### Deliverables
 - [x] 30/30 Knight matrix rows meta-critic `PASS` (`docs/knight_meta_critic_manifest.json`)
