@@ -13,7 +13,9 @@ const _SWAP_ID: StringName = &"knight_swap"
 
 const _K1_CELL := Vector2i(4, 5)
 const _SWAP_ALLY_CELL := Vector2i(4, 4)
-const _SWAP_PREMOVE_DEST := Vector2i(5, 4)
+## After swap knight stands here; L-route west then north around ally at (4,5).
+const _SWAP_PREMOVE_ROUTE: Array[Vector2i] = [Vector2i(3, 4), Vector2i(3, 5)]
+const _SWAP_PREMOVE_DEST := Vector2i(3, 5)
 const _K2_CELL := Vector2i(1, 3)
 const _K3_CELL := Vector2i(5, 4)
 const _K4_CELL := Vector2i(4, 1)
@@ -239,27 +241,41 @@ func _journey_swap_then_premove(ctx: Dictionary) -> void:
 	})
 	await _capture_commit_state(ctx, k1_id, "swap/after_swap/committed")
 	await _enter_basic_movement_mode(ctx, k1_id)
+	await _select_unit_live(ctx, k1_id, _SWAP_ALLY_CELL)
+	await _probe_cell(ctx, k1_id, _SWAP_PREMOVE_ROUTE[0], {
+		"blue_has": [_SWAP_PREMOVE_ROUTE[0]],
+		"ghost_pos": _SWAP_PREMOVE_ROUTE[0],
+		"path_end": _SWAP_PREMOVE_ROUTE[0],
+		"path_start": _K1_CELL,
+		"path_min_size": 2,
+		"preview_nonempty": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK],
+	}, "swap/premove/hover_west")
 	await _probe_cell(ctx, k1_id, _SWAP_PREMOVE_DEST, {
 		"blue_has": [_SWAP_PREMOVE_DEST],
 		"ghost_pos": _SWAP_PREMOVE_DEST,
-		"path_start": _K1_CELL,
 		"path_end": _SWAP_PREMOVE_DEST,
-		"path_min_size": 3,
-		"manhattan": true,
+		"path_start": _K1_CELL,
+		"path_min_size": 2,
 		"preview_nonempty": true,
 		"icon_has": [PlanningIcons.GLYPH_WALK],
-	}, "swap/premove/hover")
-	await _reposition_mouse_to_unit(ctx, k1_id, _SWAP_PREMOVE_DEST)
-	await _commit_via_slots_at_cell(ctx, k1_id, _SWAP_PREMOVE_DEST, "swap/premove/commit")
+	}, "swap/premove/hover_dest")
+	await _drag_release_at(
+		ctx,
+		[_SWAP_ALLY_CELL, _SWAP_PREMOVE_ROUTE[0], _SWAP_PREMOVE_DEST],
+		_SWAP_PREMOVE_DEST,
+		"swap/premove",
+	)
 	await _wait_ability_settle(ctx)
 	await _wait_planning_move_tween(ctx, k1_id)
 	_assert_swap_premove_state_layers(ctx, "swap/after_premove", {
 		"k1_pos": _SWAP_PREMOVE_DEST,
 		"ally_pos": _K1_CELL,
-		"k1_mp": start_mp - 2,
+		"k1_mp": start_mp - 3,
 		"pre_move_count": 2,
 		"require_swap_first": true,
 		"last_pre_dest": _SWAP_PREMOVE_DEST,
+		"last_pre_waypoints": _SWAP_PREMOVE_ROUTE,
 	})
 	await _capture_commit_state(ctx, k1_id, "swap/after_premove/committed")
 	_cancel_active_pointer(ctx)
@@ -1840,6 +1856,10 @@ func _assert_swap_premove_state_layers(
 		assert_that(walk_action.target_coord).override_failure_message(
 			"%s: follow-up pre-move destination" % label,
 		).is_equal(expect["last_pre_dest"] as Vector2i)
+		if expect.has("last_pre_waypoints"):
+			assert_that(walk_action.waypoints).override_failure_message(
+				"%s: follow-up pre-move waypoints" % label,
+			).is_equal(expect["last_pre_waypoints"] as Array)
 
 	_assert_sim_matches_projected_units(ctx, [k1_id, ally_id], label)
 	_assert_actor_on_cell(ctx, k1_id, k1_pos, "%s/sprite_k1" % label)
