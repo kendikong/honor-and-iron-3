@@ -9,18 +9,20 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK │ bruiser_push_through │ Round 1
-SCORE: 67/100 │ THRESHOLD: 88 │ FAIL │ FIRST
-DELTA: first round
-GATE: Tier 1 harness PASS; matrix 0/31 (row still PLANNED)
+GAUNTLET SCORE │ B6-LOCK │ bruiser_push_through │ Round 2
+SCORE: 72/100 │ THRESHOLD: 88 │ FAIL │ DELTA: +5 vs r1
+GATE: Tier 1 harness PASS (31/31 scenarios green)
+MATRIX: 0/31 PASS (manifest empty — critic blocks promotion)
 STOP_CONDITION_MET: no
-NEXT: fix buff_on_push owner + deepen scenario asserts (critic gaps)
+NEXT: push_through r3 (blocked displacement asserts added); per-row critics for all 31
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Delta | Result |
 |-------|-------|-------|-------|--------|
-| r1 | bruiser_push_through | 67 | first | **FAIL** — dead passive branch; buff_on_push collision path; shallow asserts |
+| r2 | bruiser_push_through | 72 | +5 | **FAIL** — blocked test shallow; BAR stdout not in critic handoff |
+| r2b | harness | — | — | Tier 1 **PASS** all 31 scenario files |
+| r1 | bruiser_push_through | 67 | first | **FAIL** |
 | setup | infrastructure | — | — | B6-LOCK armed |
 
 ---
@@ -31,8 +33,8 @@ NEXT: fix buff_on_push owner + deepen scenario asserts (critic gaps)
 |-------|-------|
 | **Chunk / goal** | P6 Bruiser — B6-LOCK until `bruiser-template.md` LOCKED |
 | **Started** | 2026-08-02 |
-| **Status** | **ACTIVE** — Tier 1 green for row 1; critic **67/88 FAIL** |
-| **Last result** | r1 gauntlet-critic on `bruiser_push_through` |
+| **Status** | **ACTIVE** — Tier 1 **PASS** (31/31 scenarios); critic **0/31** manifest |
+| **Last result** | r2 gauntlet-critic `bruiser_push_through` **72/88 FAIL** |
 | **Lead session** | bruiser-b6-lock-2026-08-02 |
 | **Critic:** yes | r1 manifest not updated (FAIL < 88) |
 
@@ -44,7 +46,7 @@ NEXT: fix buff_on_push owner + deepen scenario asserts (critic gaps)
 |-------|--------|--------|
 | Matrix 31/31 PASS | yes | **no** (0/31) |
 | Manifest 31 rows | yes | **no** (0/31) |
-| `run_bruiser_qa_gate.ps1` exit 0 | yes | **no** (exit 2 — harness PASS) |
+| `run_bruiser_qa_gate.ps1` exit 0 | yes | **no** (exit 2 — harness PASS, matrix 0/31 PASS) |
 | Full-matrix critic ≥ 95 | yes | **no** |
 | `bruiser-template.md` LOCKED | yes | **no** (DRAFT) |
 | `STOP_CONDITION_MET: yes` | yes | **no** |
