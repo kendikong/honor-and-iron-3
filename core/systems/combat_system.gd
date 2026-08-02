@@ -421,6 +421,15 @@ static func deal_damage_raw(
 				
 	deal_damage(board, target, raw_amount, events, dmg_type, pierce, false, attacker, source_label)
 
+static func _apply_kinetic_redirection_stack(target: UnitState) -> void:
+	if target == null or not target.has_passive(&"kinetic_redirection"):
+		return
+	var stacks: int = int(target.passive_flags.get("kinetic_redirection_stacks", 0))
+	if stacks >= 3:
+		return
+	target.passive_flags["kinetic_redirection_stacks"] = stacks + 1
+	target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, -1, 1))
+
 static func deal_damage(
 	board: BoardState,
 	target: UnitState,
@@ -524,8 +533,12 @@ static func deal_damage(
 	var incoming := maxi(0, amount - fort - mitigation)
 	var mitigated_amount = amount - incoming
 	if incoming <= 0:
-		if mitigated_amount > 0 and target.has_passive(&"kinetic_redirection"):
-			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+		if (
+			source_type != &"hazard"
+			and mitigated_amount > 0
+			and target.has_passive(&"kinetic_redirection")
+		):
+			_apply_kinetic_redirection_stack(target)
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
 			"unit": target.id,
 			"amount": 0,
@@ -606,11 +619,12 @@ static func deal_damage(
 	
 	if hp_dmg + armor_dmg > 0:
 		target.passive_flags["damaged_this_turn"] = true
-		if mitigated_amount > 0 and target.has_passive(&"kinetic_redirection"):
-			var stacks = target.passive_flags.get("kinetic_redirection_stacks", 0)
-			if stacks < 3:
-				target.passive_flags["kinetic_redirection_stacks"] = stacks + 1
-				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, -1, 1))
+		if (
+			source_type != &"hazard"
+			and target.has_passive(&"kinetic_redirection")
+			and (mitigated_amount > 0 or armor_dmg > 0)
+		):
+			_apply_kinetic_redirection_stack(target)
 			
 		if target.has_passive(&"kinetic_converter"):
 			var str_buff = 2 if target.is_passive_upgraded(&"kinetic_converter") else 1

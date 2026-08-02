@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ K3-LOCK matrix │ Round 19
-FULL MATRIX: 57/95 (stale) │ ROW: defensive_formation PASS 88/88 ✓
-MANIFEST: 21/30 │ STOP_CONDITION_MET: no
-NEXT: kinetic_armor queue; full-matrix critic refresh
+GAUNTLET SCORE │ K3-LOCK matrix │ Round 21
+FULL MATRIX: 57/95 (stale) │ ROW: kinetic_redirection PASS 88/88 ✓
+MANIFEST: 23/30 │ STOP_CONDITION_MET: no
+NEXT: bulwark queue
 ══════════════════════════════════════
 ```
 
@@ -38,6 +38,8 @@ NEXT: kinetic_armor queue; full-matrix critic refresh
 | r17 | 88 | — | **PASS** (row: redirect_strike → manifest) |
 | r18 | 88 | — | **PASS** (row: indomitable_will → manifest) |
 | r19 | 88 | — | **PASS** (row: defensive_formation → manifest) |
+| r20 | 88 | — | **PASS** (row: kinetic_armor → manifest) |
+| r21 | 88 | — | **PASS** (row: kinetic_redirection → manifest) |
 
 ---
 
@@ -47,8 +49,8 @@ NEXT: kinetic_armor queue; full-matrix critic refresh
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-LOCK ACTIVE** — **21/30** manifest |
-| **Last result** | defensive_formation promoted r19 (88) |
+| **Status** | **K3-LOCK ACTIVE** — **23/30** manifest |
+| **Last result** | kinetic_redirection promoted r21 (88) |
 | **Lead session** | knight-k3-lock-2026-08-01 |
 
 ---

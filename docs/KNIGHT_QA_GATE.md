@@ -161,9 +161,9 @@ Do **not** weaken, replace, or “simplify” harness/scenario/production paths 
 | `stand_ground` | Stand Ground | `tests/passives/stand_ground_scenario.gd` | PASS | Counter 1 base + `[+]` counter 2 sim (meta-critic r6) |
 | `indestructible_bastion` | Indestructible Bastion | `tests/passives/indestructible_bastion_scenario.gd` | PASS | Lethal->1 HP base + `[+]` STR sim (meta-critic r6) |
 | `shield_mastery` | Shield Mastery | `tests/passives/shield_mastery_scenario.gd` | PASS | SHIELD 2 base + `[+]` SHIELD 3 sim (meta-critic r6) |
-| `kinetic_armor` | Kinetic Armor | `tests/passives/kinetic_armor_scenario.gd` | HARNESS_ONLY | Mitigation base + `[+]` reduce-by-2 sim |
+| `kinetic_armor` | Kinetic Armor | `tests/passives/kinetic_armor_scenario.gd` | PASS | SHIELD-gated −1/−2 mitigation + hazard bypass sim (meta-critic r20) |
 | `kinetic_converter` | Kinetic Converter | `tests/passives/kinetic_converter_scenario.gd` | PASS | STR+MOV base + `[+]` STR+2 sim (meta-critic r6) |
-| `kinetic_redirection` | Kinetic Redirection | `tests/passives/kinetic_redirection_scenario.gd` | HARNESS_ONLY | Factory registration stub; no `[+]` PIERCE sim |
+| `kinetic_redirection` | Kinetic Redirection | `tests/passives/kinetic_redirection_scenario.gd` | PASS | DEF/SHIELD stack cap/reset + [+] PIERCE sim (meta-critic r21) |
 | `bulwark` | Bulwark | `tests/passives/bulwark_scenario.gd` | HARNESS_ONLY | DEF read; not trigger pipeline |
 | `living_barricade` | Living Barricade | `tests/passives/living_barricade_scenario.gd` | HARNESS_ONLY | Ranged block base; no `[+]` ally DEF sim |
 | `shield_wall` | Shield Wall | `tests/passives/shield_wall_scenario.gd` | HARNESS_ONLY | Aura DEF base; no `[+]` range-2 sim |

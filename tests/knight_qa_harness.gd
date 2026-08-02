@@ -671,45 +671,68 @@ static func run_bulwark(failures: Array[String]) -> void:
 
 
 static func run_kinetic_armor(failures: Array[String]) -> void:
-	## Kinetic Armor: flat -1 damage while SHIELD active.
-	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	## Bible: flat -1 damage while SHIELD active; [+] flat -2.
+	var board_no: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board_no, 1, Vector2i(3, 2))
+	var knight_no: UnitState = unit_on_board(board_no, 1)
+	knight_no.armor = 10
+	var loss_no_passive: int = damage_taken_pierce(board_no, 1, 12)
 	var cfg: Dictionary = with_single_passive(&"kinetic_armor", false)
-	place_knight(board, 1, Vector2i(3, 2), cfg)
-	var knight: UnitState = unit_on_board(board, 1)
-	knight.armor = 3
-	place_enemy_basher(board, 2, Vector2i(4, 2))
-	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
-	var plan := Timeline.new()
-	plan.add(plan_ability(2, bash, Vector2i(3, 2), 1))
-	var result: SimResult = simulate_player_turn(board, plan)
-	var knight_after: UnitState = result.final_state.get_unit_by_id(1)
-	assert_true(
-		failures, "kinetic_armor/mitigate",
-		knight_after != null and knight_after.is_alive(),
-		"knight must survive melee hit with kinetic armor",
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board, 10, Vector2i(3, 2), cfg)
+	var knight: UnitState = unit_on_board(board, 10)
+	knight.armor = 10
+	var loss_with: int = damage_taken_pierce(board, 10, 12)
+	assert_eq_int(
+		failures, "kinetic_armor/mitigate_one",
+		loss_no_passive - loss_with,
+		1,
 	)
-	assert_true(
-		failures, "kinetic_armor/shield_retained",
-		knight_after != null and (knight_after.armor > 0 or knight_after.health.current_hp == knight.health.current_hp),
-		"kinetic armor must mitigate damage while shield active",
+	var board_no_shield: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board_no_shield, 20, Vector2i(3, 2), cfg)
+	var knight_bare: UnitState = unit_on_board(board_no_shield, 20)
+	knight_bare.armor = 0
+	var loss_bare: int = damage_taken_pierce(board_no_shield, 20, 12)
+	var board_ref: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board_ref, 21, Vector2i(3, 2))
+	var knight_ref: UnitState = unit_on_board(board_ref, 21)
+	knight_ref.armor = 0
+	var loss_ref: int = damage_taken_pierce(board_ref, 21, 12)
+	assert_eq_int(
+		failures, "kinetic_armor/no_shield_no_mitigate",
+		loss_bare,
+		loss_ref,
+	)
+	var board_hazard: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board_hazard, 30, Vector2i(3, 2), cfg)
+	var knight_hz: UnitState = unit_on_board(board_hazard, 30)
+	knight_hz.armor = 10
+	var hp_hz_before: int = knight_hz.health.current_hp
+	var hz_events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board_hazard, knight_hz, 12, hz_events, &"hazard", true, false, null, "knight_qa",
+	)
+	var loss_hazard: int = hp_hz_before - knight_hz.health.current_hp
+	assert_eq_int(
+		failures, "kinetic_armor/hazard_no_mitigate",
+		loss_hazard,
+		loss_no_passive,
 	)
 	var cfg_up: Dictionary = with_single_passive(&"kinetic_armor", true)
-	var board2: BoardState = make_plain_board(Vector2i(8, 5))
-	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
-	var knight2: UnitState = unit_on_board(board2, 10)
-	knight2.armor = 5
-	knight2.health.current_hp = 20
-	place_enemy_basher(board2, 11, Vector2i(4, 2))
-	var bash2: AbilityData = ability_on_unit(unit_on_board(board2, 11), &"knight_shield_bash")
-	var hp_before2: int = knight2.health.current_hp
-	var plan2 := Timeline.new()
-	plan2.add(plan_ability(11, bash2, Vector2i(3, 2), 10))
-	var result2: SimResult = simulate_player_turn(board2, plan2)
-	var knight_after2: UnitState = result2.final_state.get_unit_by_id(10)
+	var board_up: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board_up, 40, Vector2i(3, 2), cfg_up)
+	var knight_up: UnitState = unit_on_board(board_up, 40)
+	knight_up.armor = 10
+	var loss_up: int = damage_taken_pierce(board_up, 40, 12)
+	assert_eq_int(
+		failures, "kinetic_armor/upgrade/mitigate_two",
+		loss_no_passive - loss_up,
+		2,
+	)
 	assert_true(
-		failures, "kinetic_armor/upgrade/mitigate2",
-		knight_after2 != null and knight_after2.health.current_hp >= hp_before2 - 1,
-		"upgraded kinetic armor must reduce incoming damage by 2 while shield active",
+		failures, "kinetic_armor/upgrade/better_than_base",
+		loss_up < loss_with,
+		"upgraded kinetic armor must mitigate more than base",
 	)
 
 
@@ -893,7 +916,212 @@ static func run_kinetic_converter(failures: Array[String]) -> void:
 
 
 static func run_kinetic_redirection(failures: Array[String]) -> void:
-	assert_passive_registered(failures, &"kinetic_redirection")
+	## Bible: mitigated DEF/SHIELD damage stacks +1 STR (max 3); resets on attack; [+] PIERCE on next attack.
+	var cfg: Dictionary = with_single_passive(&"kinetic_redirection", false)
+	var board: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board, 1, Vector2i(3, 2), cfg)
+	_kinetic_redirection_apply_partial_hit(board, 1)
+	var knight: UnitState = unit_on_board(board, 1)
+	assert_eq_int(
+		failures, "kinetic_redirection/stack_after_mitigate",
+		int(knight.passive_flags.get("kinetic_redirection_stacks", 0)),
+		1,
+	)
+	assert_true(
+		failures, "kinetic_redirection/str_buff_after_mitigate",
+		_kinetic_redirection_has_stack_str(knight),
+		"mitigation must grant duration -1 STR buff for next attack",
+	)
+	var board_shield: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board_shield, 5, Vector2i(3, 2), cfg)
+	_kinetic_redirection_apply_shield_hit(board_shield, 5)
+	assert_eq_int(
+		failures, "kinetic_redirection/shield_mitigate_stack",
+		int(unit_on_board(board_shield, 5).passive_flags.get("kinetic_redirection_stacks", 0)),
+		1,
+	)
+	var board_block: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board_block, 7, Vector2i(3, 2), cfg)
+	_kinetic_redirection_apply_full_block_hit(board_block, 7)
+	assert_eq_int(
+		failures, "kinetic_redirection/full_def_block_stack",
+		int(unit_on_board(board_block, 7).passive_flags.get("kinetic_redirection_stacks", 0)),
+		1,
+	)
+	var board_hz: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board_hz, 6, Vector2i(3, 2), cfg)
+	var knight_hz: UnitState = unit_on_board(board_hz, 6)
+	knight_hz.armor = 10
+	var hz_events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board_hz, knight_hz, 6, hz_events, &"hazard", false, false, null, "knight_qa",
+	)
+	assert_eq_int(
+		failures, "kinetic_redirection/hazard_no_stack",
+		int(knight_hz.passive_flags.get("kinetic_redirection_stacks", 0)),
+		0,
+	)
+	var board2: BoardState = board.clone()
+	place_dummy(board2, 3, Vector2i(2, 2))
+	var bash_self: AbilityData = ability_on_unit(unit_on_board(board2, 1), &"knight_shield_bash")
+	var attack := Timeline.new()
+	attack.add(plan_ability(1, bash_self, Vector2i(2, 2), 3))
+	var attack_result: SimResult = simulate_plan(board2, attack)
+	var after_attack: UnitState = attack_result.final_state.get_unit_by_id(1)
+	assert_eq_int(
+		failures, "kinetic_redirection/stacks_reset_on_attack",
+		int(after_attack.passive_flags.get("kinetic_redirection_stacks", 0)),
+		0,
+	)
+	var board_cap: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board_cap, 10, Vector2i(3, 2), cfg)
+	for _i: int in range(4):
+		_kinetic_redirection_apply_partial_hit(board_cap, 10)
+	var after_cap: UnitState = unit_on_board(board_cap, 10)
+	assert_eq_int(
+		failures, "kinetic_redirection/stack_cap_three",
+		int(after_cap.passive_flags.get("kinetic_redirection_stacks", 0)),
+		3,
+	)
+	var board_payoff: BoardState = make_plain_board(Vector2i(10, 5))
+	place_knight(board_payoff, 15, Vector2i(3, 2), cfg)
+	var knight_pay: UnitState = unit_on_board(board_payoff, 15)
+	for _i: int in range(3):
+		knight_pay.passive_flags["kinetic_redirection_stacks"] = _i + 1
+		knight_pay.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, -1, 1))
+	knight_pay._recalculate_stats()
+	place_dummy(board_payoff, 16, Vector2i(2, 2))
+	var bash_pay: AbilityData = ability_on_unit(knight_pay, &"knight_shield_bash")
+	var atk_pay := Timeline.new()
+	atk_pay.add(plan_ability(15, bash_pay, Vector2i(2, 2), 16))
+	var result_pay: SimResult = simulate_plan(board_payoff, atk_pay)
+	var stat_stacked: int = events_max_damage_stat_val(result_pay.events)
+	var board_plain: BoardState = make_plain_board(Vector2i(10, 5))
+	place_knight(board_plain, 17, Vector2i(3, 2), cfg)
+	place_dummy(board_plain, 18, Vector2i(2, 2))
+	var bash_plain: AbilityData = ability_on_unit(unit_on_board(board_plain, 17), &"knight_shield_bash")
+	var atk_plain := Timeline.new()
+	atk_plain.add(plan_ability(17, bash_plain, Vector2i(2, 2), 18))
+	var result_plain: SimResult = simulate_plan(board_plain, atk_plain)
+	var stat_plain: int = events_max_damage_stat_val(result_plain.events)
+	assert_true(
+		failures, "kinetic_redirection/stacked_attack_str_payoff",
+		stat_stacked > stat_plain,
+		"stacked STR buff must increase attack stat scaling vs zero stacks",
+	)
+	var cfg_up: Dictionary = with_single_passive(&"kinetic_redirection", true)
+	var board_up: BoardState = make_plain_board(Vector2i(10, 5))
+	place_knight(board_up, 20, Vector2i(3, 2), cfg_up)
+	_kinetic_redirection_apply_partial_hit(board_up, 20)
+	assert_eq_int(
+		failures, "kinetic_redirection/upgrade/stacks_before_attack",
+		int(unit_on_board(board_up, 20).passive_flags.get("kinetic_redirection_stacks", 0)),
+		1,
+	)
+	place_dummy(board_up, 22, Vector2i(2, 2))
+	var dummy_up: UnitState = unit_on_board(board_up, 22)
+	dummy_up.armor = 0
+	dummy_up.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 5))
+	dummy_up._recalculate_stats()
+	var bash_up: AbilityData = ability_on_unit(unit_on_board(board_up, 20), &"knight_shield_bash")
+	var atk_up := Timeline.new()
+	atk_up.add(plan_ability(20, bash_up, Vector2i(2, 2), 22))
+	var result_up: SimResult = simulate_plan(board_up, atk_up)
+	var incoming_up: int = events_incoming_damage_to_unit(result_up.events, 22)
+	assert_true(
+		failures, "kinetic_redirection/upgrade/pierce_telemetry",
+		events_have_damage_pierce(result_up.events, true),
+		"upgraded kinetic redirection must set pierce on stacked attack telemetry",
+	)
+	var board_base: BoardState = make_plain_board(Vector2i(10, 5))
+	place_knight(board_base, 30, Vector2i(3, 2), cfg)
+	_kinetic_redirection_apply_partial_hit(board_base, 30)
+	place_dummy(board_base, 32, Vector2i(2, 2))
+	var dummy_base: UnitState = unit_on_board(board_base, 32)
+	dummy_base.armor = 0
+	dummy_base.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 5))
+	dummy_base._recalculate_stats()
+	var bash_base: AbilityData = ability_on_unit(unit_on_board(board_base, 30), &"knight_shield_bash")
+	var atk_base := Timeline.new()
+	atk_base.add(plan_ability(30, bash_base, Vector2i(2, 2), 32))
+	var result_base: SimResult = simulate_plan(board_base, atk_base)
+	var incoming_base: int = events_incoming_damage_to_unit(result_base.events, 32)
+	assert_true(
+		failures, "kinetic_redirection/base/no_pierce_without_upgrade",
+		not events_have_damage_pierce(result_base.events, true),
+		"base kinetic redirection must not pierce even with stacks",
+	)
+	assert_true(
+		failures, "kinetic_redirection/upgrade/pierce_extra_damage",
+		incoming_up > incoming_base,
+		"upgraded kinetic redirection must pierce DEF on stacked attack",
+	)
+
+
+static func _kinetic_redirection_has_stack_str(unit: UnitState) -> bool:
+	if unit == null:
+		return false
+	for s: StatusData in unit.active_statuses:
+		if s.type == GameEnums.StatusType.STAT_BUFF_STR and s.duration == -1:
+			return true
+	return false
+
+
+static func _kinetic_redirection_apply_full_block_hit(board: BoardState, unit_id: int) -> void:
+	## Full DEF block: incoming <= 0 with mitigated_amount > 0.
+	var knight: UnitState = unit_on_board(board, unit_id)
+	if knight == null:
+		return
+	knight.armor = 0
+	var kept: Array[StatusData] = []
+	for s: StatusData in knight.active_statuses:
+		if s.type != GameEnums.StatusType.STAT_BUFF_DEF:
+			kept.append(s)
+	knight.active_statuses = kept
+	knight.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 12))
+	knight._recalculate_stats()
+	var events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board, knight, 3, events, &"physical", false, false, null, "knight_qa",
+	)
+
+
+static func _kinetic_redirection_apply_shield_hit(board: BoardState, unit_id: int) -> void:
+	## SHIELD-only mitigation: armor absorbs incoming with no DEF reduction.
+	var knight: UnitState = unit_on_board(board, unit_id)
+	if knight == null:
+		return
+	knight.armor = 10
+	var kept: Array[StatusData] = []
+	for s: StatusData in knight.active_statuses:
+		if s.type != GameEnums.StatusType.STAT_BUFF_DEF:
+			kept.append(s)
+	knight.active_statuses = kept
+	knight._recalculate_stats()
+	var events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board, knight, 4, events, &"physical", false, false, null, "knight_qa",
+	)
+
+
+static func _kinetic_redirection_apply_partial_hit(board: BoardState, unit_id: int) -> void:
+	## Partial DEF mitigation (not full block) so kinetic_redirection_stacks increments.
+	var knight: UnitState = unit_on_board(board, unit_id)
+	if knight == null:
+		return
+	knight.armor = maxi(knight.armor, 5)
+	var has_def_buff := false
+	for s: StatusData in knight.active_statuses:
+		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+			has_def_buff = true
+			break
+	if not has_def_buff:
+		knight.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 3))
+		knight._recalculate_stats()
+	var events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board, knight, 10, events, &"physical", false, false, null, "knight_qa",
+	)
 
 
 static func run_rallying_presence(failures: Array[String]) -> void:
@@ -1227,6 +1455,45 @@ static func damage_taken_pierce(board: BoardState, unit_id: int, raw_amount: int
 		board, target, raw_amount, events, &"physical", true, false, null, "knight_qa",
 	)
 	return hp_before - target.health.current_hp
+
+
+static func events_have_damage_pierce(events: Array, pierce: bool) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+			var d: Dictionary = e.data
+			if str(d.get("type", "")) == "damage" and bool(d.get("pierce", false)) == pierce:
+				return true
+	return false
+
+
+static func events_max_damage_floored(events: Array) -> int:
+	var best: int = 0
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+			var d: Dictionary = e.data
+			if str(d.get("type", "")) == "damage":
+				best = maxi(best, int(d.get("floored", 0)))
+	return best
+
+
+static func events_max_damage_stat_val(events: Array) -> int:
+	var best: int = 0
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+			var d: Dictionary = e.data
+			if str(d.get("type", "")) == "damage":
+				best = maxi(best, int(d.get("stat_val", 0)))
+	return best
+
+
+static func events_incoming_damage_to_unit(events: Array, unit_id: int) -> int:
+	var best: int = 0
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+			var d: Dictionary = e.data
+			if int(d.get("unit", -1)) == unit_id:
+				best = maxi(best, int(d.get("amount", 0)))
+	return best
 
 
 static func events_have_damage_base(events: Array, base_power: int) -> bool:

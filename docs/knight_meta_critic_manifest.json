@@ -1,10 +1,10 @@
 {
   "piece": "K3-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 19,
+  "last_critic_round": 21,
   "last_score": 88,
   "last_result": "PASS",
-  "last_row_promoted": "knight_defensive_formation",
+  "last_row_promoted": "kinetic_redirection",
   "approved_rows": [
     {
       "factory_id": "knight_swap",
@@ -130,6 +130,18 @@
       "factory_id": "knight_defensive_formation",
       "score": 88,
       "critic_round": 19,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "kinetic_armor",
+      "score": 88,
+      "critic_round": 20,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "kinetic_redirection",
+      "score": 88,
+      "critic_round": 21,
       "fix_target": "none"
     }
   ]
