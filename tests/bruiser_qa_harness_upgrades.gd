@@ -440,24 +440,76 @@ static func run_violent_collision_upgrade(failures: Array[String]) -> void:
 
 
 static func run_breaching_dash_upgrade(failures: Array[String]) -> void:
-	var cfg: Dictionary = H.with_upgraded_ability(
-		H.bruiser_with_ability(&"bruiser_breaching_dash"),
-		&"bruiser_breaching_dash",
-	)
-	var board: BoardState = H.make_plain_board(Vector2i(12, 6))
-	H.place_bruiser(board, 1, Vector2i(4, 3), cfg)
-	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_breaching_dash")
+	var ab: AbilityData = H.factory_ability(&"bruiser_breaching_dash")
 	H.assert_true(
 		failures, "breaching_dash/upgrade/pierce_mod",
-		skill.upgraded_effects[0].modifiers.has("next_attack_pierce"),
+		ab.upgraded_effects[0].modifiers.has("next_attack_pierce"),
 	)
+	var base_cfg: Dictionary = {
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			H.factory_ability(&"bruiser_breaching_dash"),
+			H.factory_ability(&"bruiser_headbutt"),
+		],
+	}
+	var cfg: Dictionary = H.with_upgraded_ability(base_cfg, &"bruiser_breaching_dash")
+	cfg["passive_flags"] = {"training_unlimited_actions": true}
+	var board: BoardState = H.make_plain_board(Vector2i(12, 6))
+	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
+	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_breaching_dash")
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), -1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var bruiser: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_true(
 		failures, "breaching_dash/upgrade/pierce_flag",
 		bruiser != null and bruiser.passive_flags.get("breaching_dash_pierce", false),
+	)
+	var pierce_board: BoardState = H.make_plain_board(Vector2i(12, 6))
+	H.place_bruiser(pierce_board, 20, Vector2i(2, 3), cfg)
+	H.place_dummy(pierce_board, 21, Vector2i(4, 3))
+	var enemy: UnitState = H.unit_on_board(pierce_board, 21)
+	enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 20))
+	enemy._recalculate_stats()
+	var dash_skill: AbilityData = H.ability_on_unit(H.unit_on_board(pierce_board, 20), &"bruiser_breaching_dash")
+	var dash_plan := Timeline.new()
+	dash_plan.add(H.plan_ability(20, dash_skill, Vector2i(3, 3), -1))
+	var dash_result: SimResult = H.simulate_plan(pierce_board, dash_plan)
+	var dash_bruiser: UnitState = dash_result.final_state.get_unit_by_id(20)
+	H.assert_true(
+		failures, "breaching_dash/upgrade/pierce_flag_mid",
+		dash_bruiser != null and dash_bruiser.passive_flags.get("breaching_dash_pierce", false),
+	)
+	dash_bruiser.ability.max_points = 3
+	dash_bruiser.ability.points_left = 3
+	var hp_before: int = H.unit_hp(dash_result.final_state, 21)
+	var headbutt_skill: AbilityData = H.ability_on_unit(dash_bruiser, &"bruiser_headbutt")
+	var attack_plan := Timeline.new()
+	attack_plan.add(H.plan_ability(20, headbutt_skill, Vector2i(4, 3), 21))
+	var pierce_result: SimResult = H.simulate_plan(dash_result.final_state, attack_plan)
+	H.assert_true(
+		failures, "breaching_dash/upgrade/pierce_events",
+		H.events_have_damage_pierce(pierce_result.events, true),
+	)
+	var dmg_pierce: int = hp_before - H.unit_hp(pierce_result.final_state, 21)
+	var control_board: BoardState = H.make_plain_board(Vector2i(12, 6))
+	H.place_bruiser(control_board, 30, Vector2i(2, 3), cfg)
+	H.place_dummy(control_board, 31, Vector2i(4, 3))
+	var control_enemy: UnitState = H.unit_on_board(control_board, 31)
+	control_enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 20))
+	control_enemy._recalculate_stats()
+	var control_hp: int = H.unit_hp(control_board, 31)
+	var control_headbutt: AbilityData = H.ability_on_unit(
+		H.unit_on_board(control_board, 30), &"bruiser_headbutt",
+	)
+	var control_plan := Timeline.new()
+	control_plan.add(H.plan_ability(30, control_headbutt, Vector2i(4, 3), 31))
+	var control_result: SimResult = H.simulate_plan(control_board, control_plan)
+	var dmg_control: int = control_hp - H.unit_hp(control_result.final_state, 31)
+	H.assert_true(
+		failures, "breaching_dash/upgrade/pierce_dmg",
+		dmg_pierce > dmg_control,
+		"upgraded breaching dash must grant PIERCE damage on the next attack",
 	)
 
 
@@ -762,22 +814,41 @@ static func run_colossal_mass_upgrade(failures: Array[String]) -> void:
 
 
 static func run_overwhelming_bulk_upgrade(failures: Array[String]) -> void:
+	var cfg: Dictionary = H.with_single_passive(&"overwhelming_bulk", false)
+	cfg["active_abilities"] = [H.factory_ability(&"bruiser_headbutt")]
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
-	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_upgraded_passive(
-		H.with_single_passive(&"overwhelming_bulk", false), &"overwhelming_bulk",
-	))
+	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
+	bruiser.upgraded_passives.append(&"overwhelming_bulk")
+	bruiser.health.max_hp = 150
+	bruiser.health.current_hp = 150
+	bruiser._recalculate_stats()
 	var enemy: UnitState = H.unit_on_board(board, 2)
-	enemy.health.max_hp = 10
-	enemy.health.current_hp = 10
-	var events: Array[SimEvent] = []
-	CombatSystem.deal_damage_raw(
-		board, bruiser, enemy, 4, GameEnums.StatType.PHYSICAL, events, "bulk_up",
-	)
+	enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 20))
+	enemy.health.max_hp = 80
+	enemy.health.current_hp = 80
+	enemy._recalculate_stats()
 	H.assert_true(
-		failures, "overwhelming_bulk/upgrade/push_pending",
-		board.pending_pushes.size() > 0,
+		failures, "overwhelming_bulk/upgrade/precond",
+		bruiser.is_passive_upgraded(&"overwhelming_bulk")
+			and bruiser.health.current_hp > enemy.health.max_hp,
+	)
+	var start_pos: Vector2i = enemy.position
+	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_headbutt")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
+	H.assert_true(
+		failures, "overwhelming_bulk/upgrade/pierce_events",
+		H.events_have_damage_pierce(result.events, true),
+		"upgraded bulk pierce must apply on AbilitySystem DAMAGE path",
+	)
+	var after: UnitState = result.final_state.get_unit_by_id(2)
+	H.assert_true(
+		failures, "overwhelming_bulk/upgrade/push_lands",
+		after != null and after.position != start_pos,
+		"upgraded overwhelming bulk must PUSH 1 on pierce ability attack",
 	)
 
 

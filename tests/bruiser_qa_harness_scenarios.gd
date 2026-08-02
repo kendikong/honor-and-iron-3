@@ -621,8 +621,8 @@ static func run_belly_flop(failures: Array[String]) -> void:
 				break
 	H.assert_true(
 		failures, "belly_flop/adjacent_damage",
-		damaged_adjacent or H.unit_hp(result.final_state, 2) < hp,
-		"belly flop must DAMAGE enemies adjacent to landing tile",
+		damaged_adjacent,
+		"belly flop must emit UNIT_DAMAGED for enemy adjacent to landing tile",
 	)
 
 
@@ -638,6 +638,27 @@ static func run_breaching_dash(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_eq_cell(failures, "breaching_dash/lands", result.final_state.get_unit_by_id(1).position, Vector2i(5, 3))
+	var destroy_board: BoardState = H.make_plain_board(Vector2i(12, 6))
+	var dash_cfg: Dictionary = H.bruiser_with_ability(&"bruiser_breaching_dash")
+	dash_cfg["passive_flags"] = {"training_unlimited_actions": true}
+	H.place_bruiser(destroy_board, 10, Vector2i(3, 3), dash_cfg)
+	var construct_def: UnitData = DataLibrary.get_unit(&"construct_turret")
+	H.place_unit(
+		destroy_board, 11, construct_def, GameEnums.Team.ENEMY, Vector2i(5, 3), {},
+	)
+	var construct_hp: int = H.unit_hp(destroy_board, 11)
+	var dash_skill: AbilityData = H.ability_on_unit(
+		H.unit_on_board(destroy_board, 10), &"bruiser_breaching_dash",
+	)
+	var dash_plan := Timeline.new()
+	dash_plan.add(H.plan_ability(10, dash_skill, Vector2i(6, 3), -1))
+	var dash_result: SimResult = H.simulate_plan(destroy_board, dash_plan)
+	var construct_after: UnitState = dash_result.final_state.get_unit_by_id(11)
+	H.assert_true(
+		failures, "breaching_dash/destroy_cover",
+		construct_after == null or not construct_after.is_alive() or H.unit_hp(dash_result.final_state, 11) < construct_hp,
+		"DESTROY_OBSTACLE must kill construct on dash path",
+	)
 
 
 static func run_cellular_regeneration(failures: Array[String]) -> void:
@@ -876,6 +897,45 @@ static func run_overwhelming_bulk(failures: Array[String]) -> void:
 		failures, "overwhelming_bulk/pierce",
 		dmg_bulk > dmg_plain,
 		"attacker HP > target Max HP must pierce DEF and deal more damage",
+	)
+	var cfg_ab: Dictionary = H.with_single_passive(&"overwhelming_bulk", false)
+	cfg_ab["active_abilities"] = [H.factory_ability(&"bruiser_headbutt")]
+	var board_ab: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board_ab, 20, Vector2i(3, 3), cfg_ab)
+	H.place_dummy(board_ab, 21, Vector2i(4, 3))
+	var enemy_ab: UnitState = H.unit_on_board(board_ab, 21)
+	enemy_ab.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 20))
+	enemy_ab._recalculate_stats()
+	enemy_ab.health.max_hp = 10
+	enemy_ab.health.current_hp = 10
+	var hp_ab: int = enemy_ab.health.current_hp
+	var skill_ab: AbilityData = H.ability_on_unit(H.unit_on_board(board_ab, 20), &"bruiser_headbutt")
+	var plan_ab := Timeline.new()
+	plan_ab.add(H.plan_ability(20, skill_ab, Vector2i(4, 3), 21))
+	var result_ab: SimResult = H.simulate_plan(board_ab, plan_ab)
+	H.assert_true(
+		failures, "overwhelming_bulk/ability_pierce_events",
+		H.events_have_damage_pierce(result_ab.events, true),
+	)
+	var dmg_ab: int = hp_ab - H.unit_hp(result_ab.final_state, 21)
+	var board_ctl: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board_ctl, 30, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_headbutt"))
+	H.place_dummy(board_ctl, 31, Vector2i(4, 3))
+	var enemy_ctl: UnitState = H.unit_on_board(board_ctl, 31)
+	enemy_ctl.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 20))
+	enemy_ctl._recalculate_stats()
+	enemy_ctl.health.max_hp = 10
+	enemy_ctl.health.current_hp = 10
+	var hp_ctl: int = enemy_ctl.health.current_hp
+	var skill_ctl: AbilityData = H.ability_on_unit(H.unit_on_board(board_ctl, 30), &"bruiser_headbutt")
+	var plan_ctl := Timeline.new()
+	plan_ctl.add(H.plan_ability(30, skill_ctl, Vector2i(4, 3), 31))
+	var result_ctl: SimResult = H.simulate_plan(board_ctl, plan_ctl)
+	var dmg_ctl: int = hp_ctl - H.unit_hp(result_ctl.final_state, 31)
+	H.assert_true(
+		failures, "overwhelming_bulk/ability_pierce_dmg",
+		dmg_ab > dmg_ctl,
+		"AbilitySystem DAMAGE path must pierce when bulk precond met",
 	)
 
 

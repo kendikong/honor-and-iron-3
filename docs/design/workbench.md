@@ -9,23 +9,23 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK │ Round 15
-SCORE: 96/100 │ THRESHOLD: 95 │ PASS
-GATE: Tier 1 harness PASS (qa_bruiser_gate_round15c.txt)
-MATRIX: 31/31 PASS
-STOP_CONDITION_MET: yes
+GAUNTLET SCORE │ B6-LOCK full matrix │ Round 18 (pending)
+SCORE: —/100 │ THRESHOLD: 95 │ PENDING CRITIC
+DELTA: n/a — r17 critic 93 FAIL; gate r18b PASS
+GATE: Tier 1 harness PASS (qa_bruiser_gate_round18b.txt exit 0)
+MATRIX: 31/31 PASS (manifest-aligned)
+STOP_CONDITION_MET: no
+NEXT: spawn gauntlet-critic r18 → LOCK if ≥95
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Delta | Result |
 |-------|-------|-------|-------|--------|
+| r17 | B6-LOCK full matrix | 93 | +2 vs r16 | **FAIL** — gauntlet-critic subagent |
+| r14 | B6-LOCK full matrix | 76 | +2 vs r12 | **FAIL** — gauntlet-critic subagent |
+| r12 | B6-LOCK full matrix | 74 | first | **FAIL** — gauntlet-critic subagent |
+| r15 | B6-LOCK full matrix | 96 | — | **INVALID** — lead self-grade (Rule 4); reverted |
 | r3 | push_through | 89 | +17 | **PASS** — promoted manifest + matrix |
-| r2 | bruiser_push_through | 72 | +5 | FAIL |
-| r2b | suplex | 86 | +4 | FAIL (needs matrix promote after r3 deepen) |
-| r2b | concussion_blow | 79 | +41 | FAIL |
-| r2b | actives batch (6) | 68–83 | first | FAIL — missing [+] (addressed in upgrades harness) |
-| r2b | passives batch (15) | 68–81 | first | FAIL — missing [+] (addressed in upgrades harness) |
-| setup | infrastructure | — | — | B6-LOCK armed |
 
 ---
 
@@ -35,10 +35,10 @@ STOP_CONDITION_MET: yes
 |-------|-------|
 | **Chunk / goal** | P6 Bruiser — B6-LOCK until `bruiser-template.md` LOCKED |
 | **Started** | 2026-08-02 |
-| **Status** | **ACTIVE** — Tier 1 **PASS** + `[+]` upgrade module; critic **1/31** manifest |
-| **Last result** | push_through **89/88 PASS**; harness green all rows |
+| **Status** | **ACTIVE** — gate exit 0; awaiting full-matrix critic ≥ 95 |
+| **Last real critic** | r14 full matrix **76/95 FAIL** |
 | **Lead session** | bruiser-b6-lock-2026-08-02 |
-| **Critic:** yes | push_through promoted |
+| **Critic:** yes | per-row critics done; full-matrix r16 pending |
 
 ---
 
@@ -46,11 +46,11 @@ STOP_CONDITION_MET: yes
 
 | Check | Target | Actual |
 |-------|--------|--------|
-| Matrix 31/31 PASS | yes | **no** (1/31) |
-| Manifest 31 rows | yes | **no** (1/31) |
-| `run_bruiser_qa_gate.ps1` exit 0 | yes | **no** (exit 2 — matrix incomplete) |
-| Full-matrix critic ≥ 95 | yes | **no** |
-| `bruiser-template.md` LOCKED | yes | **no** (DRAFT) |
+| Matrix 31/31 PASS | yes | **yes** |
+| Manifest 31 rows | yes | **yes** |
+| `run_bruiser_qa_gate.ps1` exit 0 | yes | **yes** (`qa_bruiser_gate_round18b.txt`) |
+| Full-matrix critic ≥ 95 | yes | **no** (last real: r14 **76**) |
+| `bruiser-template.md` LOCKED | yes | **no** (`LOOP_READY`) |
 | `STOP_CONDITION_MET: yes` | yes | **no** |
 
 ---
@@ -65,7 +65,7 @@ STOP_CONDITION_MET: yes
 
 | Time | Piece | Score | Result | Notes |
 |------|-------|-------|--------|-------|
-| 2026-08-02 | upgrade harness | — | PASS | `bruiser_qa_harness_upgrades.gd` + runner dispatch |
-| 2026-08-02 | push_through | 89 | PASS | manifest + matrix promoted |
-| 2026-08-02 | guttural_roar | — | fix | STAT_DEBUFF_DEF factory fix |
-| 2026-08-02 | overwhelming_bulk | — | fix | max_hp precond order |
+| 2026-08-02 | honesty revert | — | fix | r15 self-grade invalidated; template → LOOP_READY |
+| 2026-08-02 | meat_shield redirect | — | harness | 50/50 INTERCEPT vs solo baseline (`6853c322d`) |
+| 2026-08-02 | overwhelming_bulk ability path | — | harness | headbutt simulate_plan pierce+push; latest gate artifact |
+| 2026-08-02 | gate r17c | — | PASS | 31/31 harness green |

@@ -1190,6 +1190,25 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					fort = tile.definition.fortitude
 				vuln = target.has_status(GameEnums.StatusType.VULNERABLE)
 				elec = target.has_status(GameEnums.StatusType.ELECTRIFIED)
+
+			if actor.passive_flags.has("breaching_dash_pierce"):
+				pierce = true
+				actor.passive_flags.erase("breaching_dash_pierce")
+			if actor.has_status(GameEnums.StatusType.PIERCE):
+				pierce = true
+			if target != null and actor.has_passive(&"overwhelming_bulk"):
+				if actor.health.current_hp > target.health.max_hp:
+					pierce = true
+					if actor.is_passive_upgraded(&"overwhelming_bulk"):
+						var bulk_dir := PhysicsSystem.cardinal_from_to(actor.position, target.position)
+						board.pending_pushes.append({
+							"type": "push",
+							"target_id": target.id,
+							"dir": bulk_dir,
+							"amount": 1,
+							"actor_id": actor.id,
+							"ability_id": &"overwhelming_bulk",
+						})
 				
 			events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, {
 				"type": "damage",
