@@ -192,6 +192,11 @@ func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:
 	assert_object(swap).is_not_null()
 	await _probe_cell(ctx, k1_id, _WALK_SWAP_ALLY_CELL, {
 		"preview_nonempty": true,
+		"path_end": _WALK_SWAP_APPROACH,
+		"path_start": _K1_CELL,
+		"path_min_size": 2,
+		"ghost_pos": _WALK_SWAP_APPROACH,
+		"manhattan": true,
 		"icon_has": [PlanningIcons.GLYPH_WALK, PlanningIcons.GLYPH_SWAP],
 	}, "walk_swap/hover_ally_out_of_range")
 	var pre_click: Dictionary = _commit_slots_for_interaction(
@@ -214,6 +219,15 @@ func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:
 	assert_that(pre_moves[1].type).override_failure_message(
 		"walk_swap/click_ally: second pre-move must be swap ability",
 	).is_equal(GameEnums.ActionType.ABILITY)
+	await _wait_planning_move_tween(ctx, k1_id)
+	_assert_actor_on_cell(ctx, k1_id, _WALK_SWAP_APPROACH, "walk_swap/after_walk/k1")
+	_assert_actor_on_cell(ctx, ctx.ally_id, _WALK_SWAP_ALLY_CELL, "walk_swap/after_walk/ally")
+	await _wait_planning_move_tween(ctx, ctx.ally_id)
+	_assert_swap_premove_state_layers(ctx, "walk_swap/click_ally/after_anim", {
+		"k1_pos": _WALK_SWAP_ALLY_CELL,
+		"ally_pos": _WALK_SWAP_APPROACH,
+		"pre_move_count": 2,
+	})
 
 
 func _journey_walk_then_swap(ctx: Dictionary) -> void:

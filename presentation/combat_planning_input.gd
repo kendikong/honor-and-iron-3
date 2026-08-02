@@ -586,6 +586,13 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 		_director.base_board if _director != null and _director.base_board != null else _director.board
 	)
 	preview_state.ensure_movement_intent_from_actions(actions_v as Array, start_board)
+	CombatPlanningPreview.ensure_swap_approach_paths_from_actions(
+		actions_v as Array,
+		start_board,
+		preview_state.preview_paths,
+		preview_state.preview_splits,
+		preview_state.action_splits,
+	)
 
 
 func _sync_intent_live_board() -> void:
@@ -1128,6 +1135,19 @@ func interaction_move_hover_active(unit_id: int, cell: Vector2i) -> bool:
 	if _is_hover_move_cell(p_unit, cell):
 		return true
 	var hover_unit: UnitState = _director.board.get_unit_at(cell)
+	if hover_unit != null and not hover_unit.is_enemy() and hover_unit.id != p_unit.id:
+		var ally_target_id: int = _resolve_hover_attack_target(p_unit, hover_unit)
+		if ally_target_id >= 0 and (_skill_interaction_active() or aiming):
+			var ability: AbilityData = _selected_ability_data(p_unit)
+			if ability != null:
+				var approach: Vector2i = _director.preview_approach_tile(
+					p_unit.id,
+					hover_unit.id,
+					_director.selected_ability_index,
+					cell,
+				)
+				if approach != _proj_move_origin(p_unit) and _director.board.is_in_bounds(approach):
+					return true
 	if hover_unit != null and hover_unit.is_enemy():
 		var target_id: int = _resolve_hover_attack_target(p_unit, hover_unit)
 		if target_id >= 0:

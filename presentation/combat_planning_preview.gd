@@ -60,6 +60,92 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	var actions_v: Variant = res.get("actions", [])
 	if actions_v is Array:
 		ensure_movement_intent_from_actions(actions_v as Array, base_board)
+		ensure_swap_approach_paths_from_actions(actions_v as Array, base_board, preview_paths, preview_splits, action_splits)
+		adjust_swap_intent_actor_pose(temp_board, actions_v as Array)
+
+
+## Walk→swap hover: inject approach route when sim path is missing but commit slots include a pre-walk.
+static func ensure_swap_approach_paths_from_actions(
+	actions: Array,
+	start_board: BoardState,
+	preview_paths: Dictionary,
+	preview_splits: Dictionary,
+	action_splits: Dictionary,
+) -> void:
+	if start_board == null or actions.is_empty():
+		return
+	var actor_id: int = -1
+	var walk_dest: Vector2i = Vector2i(-999999, -999999)
+	var has_swap: bool = false
+	for raw: Variant in actions:
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if action.type == GameEnums.ActionType.MOVE:
+			actor_id = action.actor_id
+			walk_dest = action.target_coord
+		elif (
+			action.type == GameEnums.ActionType.ABILITY
+			and action.ability != null
+			and AbilitySystem.ability_has_swap_effect(action.ability)
+		):
+			has_swap = true
+			if actor_id < 0:
+				actor_id = action.actor_id
+	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
+		return
+	var existing: Array = preview_paths.get(actor_id, [])
+	if existing.size() >= 2:
+		return
+	var actor: UnitState = start_board.get_unit_by_id(actor_id)
+	if actor == null:
+		return
+	var origin: Vector2i = actor.position
+	var route_cells: Array = [origin]
+	if walk_dest != origin:
+		var budget: int = actor.movement.points_left
+		var found: Array[Vector2i] = MovementSystem.find_path(
+			start_board, origin, walk_dest, budget,
+		)
+		if not found.is_empty():
+			route_cells.append_array(found)
+		elif GridSystem.manhattan(origin, walk_dest) == 1:
+			route_cells.append(walk_dest)
+	if route_cells.size() < 2:
+		return
+	preview_paths[actor_id] = route_cells
+	preview_splits[actor_id] = route_cells.size()
+	if not action_splits.has(actor_id):
+		action_splits[actor_id] = 0
+
+
+## Walk→swap hover: preview_board sim ends swapped; ghost must stand on the walk leg endpoint.
+static func adjust_swap_intent_actor_pose(preview_board: BoardState, actions: Array) -> void:
+	if preview_board == null or actions.is_empty():
+		return
+	var actor_id: int = -1
+	var walk_dest: Vector2i = Vector2i(-999999, -999999)
+	var has_swap: bool = false
+	for raw: Variant in actions:
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if action.type == GameEnums.ActionType.MOVE:
+			actor_id = action.actor_id
+			walk_dest = action.target_coord
+		elif (
+			action.type == GameEnums.ActionType.ABILITY
+			and action.ability != null
+			and AbilitySystem.ability_has_swap_effect(action.ability)
+		):
+			has_swap = true
+			if actor_id < 0:
+				actor_id = action.actor_id
+	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
+		return
+	var actor: UnitState = preview_board.get_unit_by_id(actor_id)
+	if actor != null and actor.position != walk_dest:
+		actor.position = walk_dest
 
 
 ## Replace the action leg inside a longer preview route with waypoint intent geometry.

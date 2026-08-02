@@ -424,9 +424,9 @@ func _play_planning_swap_presentation(event: SimEvent) -> void:
 		_finish_planning_swap_snap(event)
 		return
 	if actor_from != actor_to:
-		_animate_planning_path(actor_id, actor_from, actor_to, false, [])
+		_tween_planning_visual_cells(actor_id, actor_from, actor_to)
 	if target_from != target_to:
-		_animate_planning_path(target_id, target_from, target_to, false, [])
+		_tween_planning_visual_cells(target_id, target_from, target_to)
 	await _await_planning_swap_tweens(actor_id, target_id)
 	_finish_planning_swap_snap(event)
 
@@ -1107,12 +1107,19 @@ func _sync_planning_actor_positions() -> void:
 	if _board == null or _map_view == null or not _is_planning_phase():
 		return
 	_snap_planning_instant_units_from_board()
+	var hold_visuals: bool = is_planning_commit_sequence_active()
+	if _director != null and _director.plan_refresh_defer_overlay:
+		hold_visuals = true
 	var force_sync: Dictionary = {}
-	if _director != null:
+	if _director != null and not hold_visuals:
 		for unit_id: int in _director.plan_affected_unit_ids:
 			force_sync[unit_id] = true
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or unit.is_enemy():
+			continue
+		if hold_visuals and not _director.is_planning_move_instant(unit.id):
+			if not _move_tweens.has(unit.id):
+				_sync_planning_final_facing(unit.id)
 			continue
 		if _drag_preview_active and unit.id == _drag_preview_id:
 			continue
@@ -1351,12 +1358,20 @@ func _animate_planning_path(
 			_sync_planning_final_facing(unit_id)
 		_update_depth(unit_id)
 		return
-	if _board != null:
-		var board_unit := _board.get_unit_by_id(unit_id)
-		if board_unit != null:
-			board_unit.position = to_cell
-	unit.position = to_cell
+	var visual_only: bool = _planning_commit_sequence_running
+	if not visual_only:
+		if _board != null:
+			var board_unit := _board.get_unit_by_id(unit_id)
+			if board_unit != null:
+				board_unit.position = to_cell
+		unit.position = to_cell
 	_play_cell_path_tween(unit_id, from_cell, cells, CombatDirector.MOVE_STEP_TIME, use_run)
+
+
+func _tween_planning_visual_cells(unit_id: int, from_cell: Vector2i, to_cell: Vector2i) -> void:
+	if from_cell == to_cell:
+		return
+	_play_cell_path_tween(unit_id, from_cell, [to_cell], CombatDirector.MOVE_STEP_TIME, false)
 
 
 func _play_cell_path_tween(

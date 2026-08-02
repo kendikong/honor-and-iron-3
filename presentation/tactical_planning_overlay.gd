@@ -913,7 +913,11 @@ func _apply_committed_preview_update(result: SimResult, light_refresh: bool = fa
 	_has_stashed_committed = false
 	_schedule_hover_recompute()
 	if _planning_input == null or not _planning_input.is_live_preview_active():
-		if _unit_layer != null and not _unit_layer.has_planning_move_tweens():
+		if (
+			_unit_layer != null
+			and not _unit_layer.has_planning_move_tweens()
+			and not _unit_layer.is_planning_commit_sequence_active()
+		):
 			_unit_layer.set_predicted_stats(
 				_committed_preview.predicted_hp,
 				_committed_preview.predicted_armor,

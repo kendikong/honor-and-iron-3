@@ -927,20 +927,12 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 			if actions[i].ability.is_movement_kind():
 				_cancel_ally_plans_after_movement_step(actions[i])
 			if AbilitySystem.ability_has_swap_effect(actions[i].ability):
-				var paired_walk: bool = false
-				for j: int in range(actions.size()):
-					if (
-						actions[j].type == GameEnums.ActionType.MOVE
-						and actions[j].actor_id == actions[i].actor_id
-					):
-						paired_walk = true
-						break
-				if paired_walk:
-					_swap_planning_presentations.append(actions[i])
-				else:
-					mark_planning_move_instant(actions[i].actor_id)
-					if actions[i].target_unit_id >= 0:
-						mark_planning_move_instant(actions[i].target_unit_id)
+				## Every swap commit animates both units; never pre-mark instant or sprites
+				## snap on board_changed and skip the swap presentation tween.
+				clear_planning_move_instant(actions[i].actor_id)
+				if actions[i].target_unit_id >= 0:
+					clear_planning_move_instant(actions[i].target_unit_id)
+				_swap_planning_presentations.append(actions[i])
 				if actions[i].target_unit_id >= 0 and actions[i].target_unit_id not in plan_affected_unit_ids:
 					plan_affected_unit_ids.append(actions[i].target_unit_id)
 	for actor_id: int in new_actors:
@@ -2574,6 +2566,12 @@ func _flush_plan_refresh_signals() -> void:
 	_plan_refresh_emit_pending = false
 	if _pending_refresh_board == null:
 		return
+	## Animations + walk-origin reset must run before board_changed so sprites are not
+	## pulled to post-swap logical cells before the commit presentation queue starts.
+	var commit_events: Array[SimEvent] = _pending_planning_commit_events.duplicate()
+	_pending_planning_commit_events.clear()
+	if not commit_events.is_empty():
+		EventBus.planning_commit_events.emit(commit_events)
 	EventBus.board_changed.emit(_pending_refresh_board)
 	EventBus.timeline_changed.emit(_pending_refresh_plan, _pending_refresh_statuses)
 	EventBus.preview_updated.emit(_pending_refresh_preview)
@@ -2583,7 +2581,6 @@ func _flush_plan_refresh_signals() -> void:
 	_pending_refresh_board = null
 	_pending_refresh_plan = null
 	_pending_refresh_preview = null
-	_flush_pending_planning_commit_events()
 
 func _build_ghost_events(sim: BoardState, timeline: Timeline, intents: Array[Intent]) -> Array[SimEvent]:
 	var evs: Array[SimEvent] = []
