@@ -683,13 +683,14 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 		[GameEnums.StatusType.STAT_DEBUFF_DEF],
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_guttural_roar")
+	H.assert_eq_int(failures, "guttural_roar/range", ab.range_tiles, 0)
 	H.assert_eq_int(failures, "guttural_roar/aoe", ab.target_shape, GameEnums.TargetShape.AOE_SQUARE)
 	H.assert_eq_int(failures, "guttural_roar/aoe_size", ab.target_shape_size, 2)
 	H.assert_eq_int(failures, "guttural_roar/push_amount", ab.effects[0].amount, 1)
 	H.assert_eq_int(failures, "guttural_roar/def_debuff_amount", ab.effects[1].amount, 2)
 	ab.ensure_targeting_flags_from_mode()
-	H.assert_eq_int(failures, "guttural_roar/tile_targeting", ab.targeting_mode, GameEnums.TargetingMode.TILE)
-	H.assert_true(failures, "guttural_roar/tile_flags", ab.has_targeting(GameEnums.TargetingFlags.TILE))
+	H.assert_eq_int(failures, "guttural_roar/self_targeting", ab.targeting_mode, GameEnums.TargetingMode.SELF)
+	H.assert_true(failures, "guttural_roar/self_flags", ab.has_targeting(GameEnums.TargetingFlags.SELF))
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_guttural_roar"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -698,7 +699,7 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 	var start: Vector2i = enemy_before.position
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_guttural_roar")
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_eq_cell(failures, "guttural_roar/bruiser_pos", result.final_state.get_unit_by_id(1).position, Vector2i(3, 3))
 	var enemy: UnitState = result.final_state.get_unit_by_id(2)
@@ -717,20 +718,22 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 	H.place_bruiser(aoe_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_guttural_roar"))
 	H.place_dummy(aoe_board, 11, Vector2i(4, 3))
 	H.place_dummy(aoe_board, 12, Vector2i(3, 4))
-	var hp_side: int = H.unit_hp(aoe_board, 12)
+	var side_start: Vector2i = Vector2i(3, 4)
+	var side_def_before: int = CombatSystem.get_dynamic_defense(aoe_board, H.unit_on_board(aoe_board, 12))
 	var aoe_skill: AbilityData = H.ability_on_unit(H.unit_on_board(aoe_board, 10), &"bruiser_guttural_roar")
 	var aoe_plan := Timeline.new()
-	aoe_plan.add(H.plan_ability(10, aoe_skill, Vector2i(4, 3), 11))
+	aoe_plan.add(H.plan_ability(10, aoe_skill, Vector2i(3, 3), 10))
 	var aoe_result: SimResult = H.simulate_plan(aoe_board, aoe_plan)
 	var side_enemy: UnitState = aoe_result.final_state.get_unit_by_id(12)
+	var side_def_after: int = CombatSystem.get_dynamic_defense(aoe_result.final_state, side_enemy)
 	H.assert_true(
 		failures, "guttural_roar/aoe_second",
 		side_enemy != null
 		and (
-			H.unit_hp(aoe_result.final_state, 12) < hp_side
-			or side_enemy.position != Vector2i(3, 4)
+			side_enemy.position != side_start
+			or side_def_before - side_def_after >= 2
 		),
-		"AOE must PUSH or debuff multiple adjacent enemies",
+		"AOE must PUSH or DEF-debuff multiple adjacent enemies from caster anchor",
 	)
 
 static func run_headbutt(failures: Array[String]) -> void:

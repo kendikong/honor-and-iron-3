@@ -54,6 +54,6 @@
 
 ## B6-REOPEN handoff (current)
 
-- Matrix: **25/31** PASS · 6 HARNESS_ONLY deepened · harness green
+- Matrix: **26/31** PASS · 5 HARNESS_ONLY deepened · harness green
 - Prompt: [`docs/design/prompts/B6-REOPEN-CLOUD.md`](prompts/B6-REOPEN-CLOUD.md)
 - Run card: [`docs/design/runs/B6-REOPEN.md`](runs/B6-REOPEN.md)

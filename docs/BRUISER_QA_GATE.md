@@ -56,7 +56,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **25 / 31** factory rows meta-critic `PASS` · **6** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — B6-REOPEN active.
+**Summary (honest):** **26 / 31** factory rows meta-critic `PASS` · **5** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — B6-REOPEN active.
 
 ### Movement + actives
 
@@ -71,7 +71,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `bruiser_earthshatter` | Active | `tests/skills/bruiser_earthshatter_scenario.gd` | PASS | RANGE 1 ARC ATK 2 + destroy; `[+]` ATK per destroy |
 | `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | PASS | RANGE 1 ally SWAP + INTERCEPT 50%; `[+]` RANGE 3 + STR per intercept |
 | `bruiser_frenzy` | Active | `tests/skills/bruiser_frenzy_scenario.gd` | PASS | RANGE 1 ATK 1 x3; `[+]` on-kill +1 AP |
-| `bruiser_guttural_roar` | Active | `tests/skills/bruiser_guttural_roar_scenario.gd` | HARNESS_ONLY | AOE PUSH + DEF debuff; `[+]` item push/collision |
+| `bruiser_guttural_roar` | Active | `tests/skills/bruiser_guttural_roar_scenario.gd` | PASS | AOE PUSH + DEF debuff; `[+]` item push/collision |
 | `bruiser_headbutt` | Active | `tests/skills/bruiser_headbutt_scenario.gd` | PASS | Mutual DAMAGE + STAGGER; `[+]` % Max HP bonus |
 | `bruiser_blood_boil` | Active | `tests/skills/bruiser_blood_boil_scenario.gd` | PASS | SELF HP → STR; `[+]` 10 HP → STR +5 |
 | `bruiser_violent_collision` | Active | `tests/skills/bruiser_violent_collision_scenario.gd` | PASS | DASH bulldoze + recast; `[+]` STAGGER on collision |

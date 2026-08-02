@@ -10,10 +10,11 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-REOPEN │ 25/31 │ SELF-GRADED: no (prior batch critic)
-SCORE: 25/31 rows PASS │ THRESHOLD: 88/row · 95 full-matrix
-GATE: harness PASS · exit 2 INCOMPLETE
-STOP_CONDITION_MET: no — handoff: Cloud Agent + gauntlet-critic (local Task quota dead)
+GAUNTLET SCORE │ bruiser_guttural_roar │ Round 2 │ SELF-GRADED: no (subagent)
+SCORE: 89/100 │ THRESHOLD: 88 │ PASS │ CLIMBING
+DELTA: +5 vs round 1 (was 84)
+MATRIX: 26/31 PASS │ GATE: harness PASS · exit 2 INCOMPLETE
+STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
 
@@ -21,7 +22,9 @@ STOP_CONDITION_MET: no — handoff: Cloud Agent + gauntlet-critic (local Task qu
 |-------|-------|-------|--------|
 | batch | 16 rows | ≥88 | PASS — promoted |
 | deepen | 6 FAIL rows | pending critic | harness deepen done |
-| — | local Task | blocked | usage exhausted — use Cloud |
+| r1 | bruiser_guttural_roar | 84 | FAIL — RANGE 0 gap |
+| r2 | bruiser_guttural_roar | 89 | PASS — promoted |
+| next | bruiser_crimson_whirlwind | pending | — |
 
 ---
 
@@ -29,8 +32,9 @@ STOP_CONDITION_MET: no — handoff: Cloud Agent + gauntlet-critic (local Task qu
 
 | Field | Value |
 |-------|-------|
-| **Status** | **ACTIVE** — Cloud handoff ready after push |
-| **Matrix** | **25/31** PASS |
+| **Status** | **ACTIVE** — Cloud B6-REOPEN |
+| **Matrix** | **26/31** PASS |
+| **Remaining** | crimson_whirlwind, blood_for_blood, momentum_transfer, battering_ram, unstoppable_force |
 | **Cloud prompt** | `docs/design/prompts/B6-REOPEN-CLOUD.md` |
 
 ---

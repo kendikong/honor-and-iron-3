@@ -416,7 +416,7 @@ static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
 	var hp: int = H.unit_hp(board, 2)
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_guttural_roar")
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(4, 3)))
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var final_items: Array = result.final_state.items
 	var item_pushed_east: bool = false
