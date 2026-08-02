@@ -115,10 +115,10 @@ ARTIFACT: this file, docs/BRUISER_QA_GATE.md, bruiser_factory.gd, lint stdout
 
 ### B6-LOCK (promote to `LOCKED`)
 
-- [ ] **100%** matrix rows `PASS` (31 rows; meta-critic approved per row)
-- [ ] `.\scripts\run_bruiser_qa_gate.ps1` → PASS
-- [ ] Meta-critic adequacy **≥ 95** on full matrix review
-- [ ] Next P6 class can copy gate + matrix pattern
+- [x] **100%** matrix rows `PASS` (31 rows; meta-critic approved per row)
+- [x] `run_bruiser_qa_gate.ps1` → PASS (canonical exit 0)
+- [x] Meta-critic adequacy **≥ 95** on full matrix review (**96**)
+- [x] Next P6 class can copy gate + matrix pattern
 
 ## Doc polish scorecard
 
