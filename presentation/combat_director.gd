@@ -767,13 +767,13 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			return false
 	var has_pre_move: bool = not (slots.get("pre", []) as Array).is_empty()
 	var has_action: bool = not (slots.get("action", []) as Array).is_empty()
-	if has_pre_move:
+	if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
 		if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 			return false
 		_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 	if has_action:
 		if _try_finalize_awaiting_from_slots(unit_id, slots):
-			if has_pre_move:
+			if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
 				if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 					return false
 				_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
@@ -810,6 +810,21 @@ func _slot_plan_for_action(action: TimelineAction) -> Timeline:
 		if action.ability.is_movement_kind():
 			return plan_pre_move
 	return plan_action
+
+
+func _slots_contain_move_for_unit(slots: Dictionary, unit_id: int, timing: int) -> bool:
+	var col: String = "post" if timing == GameEnums.MoveTiming.POST_ACTION else "pre"
+	for raw: Variant in slots.get(col, []):
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if (
+			action.actor_id == unit_id
+			and action.type == GameEnums.ActionType.MOVE
+			and action.move_timing == timing
+		):
+			return true
+	return false
 
 
 func _find_approach_tile(state: BoardState, actor: UnitState, target_pos: Vector2i, rng: int, preferred_tile: Vector2i) -> Vector2i:
@@ -907,9 +922,7 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 			if actions[i].ability.is_movement_kind():
 				_cancel_ally_plans_after_movement_step(actions[i])
 			var commit_actor: UnitState = base_board.get_unit_by_id(actions[i].actor_id)
-			if AbilitySystem.effect_amount(
-				actions[i].ability, GameEnums.EffectType.SWAP, commit_actor,
-			) > 0:
+			if AbilitySystem.ability_has_swap_effect(actions[i].ability):
 				mark_planning_move_instant(actions[i].actor_id)
 				if actions[i].target_unit_id >= 0:
 					mark_planning_move_instant(actions[i].target_unit_id)
@@ -2537,6 +2550,7 @@ func _flush_plan_refresh_signals() -> void:
 	EventBus.preview_updated.emit(_pending_refresh_preview)
 	plan_affected_unit_ids.clear()
 	plan_refresh_snap_units = false
+	plan_refresh_defer_overlay = false
 	_pending_refresh_board = null
 	_pending_refresh_plan = null
 	_pending_refresh_preview = null

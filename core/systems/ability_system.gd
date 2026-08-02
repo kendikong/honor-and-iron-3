@@ -305,6 +305,15 @@ static func effect_amount(
 	return 0
 
 
+static func ability_has_swap_effect(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	for eff: EffectData in ability.effects:
+		if eff.type == GameEnums.EffectType.SWAP:
+			return true
+	return false
+
+
 static func has_pass_through_effects(ability: AbilityData) -> bool:
 	return effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0 \
 		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
@@ -313,7 +322,7 @@ static func has_pass_through_effects(ability: AbilityData) -> bool:
 static func has_displacement_effects(ability: AbilityData) -> bool:
 	return effect_amount(ability, GameEnums.EffectType.PUSH) > 0 \
 		or effect_amount(ability, GameEnums.EffectType.PULL) > 0 \
-		or effect_amount(ability, GameEnums.EffectType.SWAP) > 0 \
+		or ability_has_swap_effect(ability) \
 		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
 
 
@@ -690,6 +699,13 @@ static func movement_requires_run(
 ## Kept for API compatibility; dash skills no longer suppress basic movement.
 static func ability_blocks_basic_movement(_ability: AbilityData) -> bool:
 	return false
+
+
+## Master Bible: basic walk/run may precede class Movement Skills in the pre-move column (e.g. Move → Swap).
+static func planning_allows_paired_premove(ability: AbilityData) -> bool:
+	if ability == null or is_run_ability(ability) or is_wait_ability(ability):
+		return false
+	return ability.is_movement_kind()
 
 
 static func ability_uses_attack_animation(ability: AbilityData) -> bool:

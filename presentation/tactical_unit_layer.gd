@@ -297,9 +297,27 @@ func _on_board_changed(board: BoardState) -> void:
 	if _director != null and _director.plan_refresh_snap_units:
 		_sync_snap_plan_refresh_units()
 		return
+	_snap_planning_instant_units_from_board()
 	_sync_actors()
 	_refresh_planning_visuals()
 	queue_redraw()
+
+
+func _snap_planning_instant_units_from_board() -> void:
+	if _board == null or _map_view == null or _director == null or not _is_planning_phase():
+		return
+	for unit: UnitState in _board.units:
+		if not unit.is_alive() or unit.is_enemy():
+			continue
+		if not _director.is_planning_move_instant(unit.id):
+			continue
+		_kill_move_tween(unit.id)
+		var current_cell: Vector2i = _actor_grid_cell(unit.id)
+		if current_cell != unit.position:
+			_position_actor(unit.id, unit.position)
+		_director.take_planning_move_instant(unit.id)
+		_sync_planning_final_facing(unit.id)
+		_update_depth(unit.id)
 
 
 func _sync_snap_plan_refresh_units() -> void:
@@ -991,6 +1009,7 @@ func _is_planning_phase() -> bool:
 func _sync_planning_actor_positions() -> void:
 	if _board == null or _map_view == null or not _is_planning_phase():
 		return
+	_snap_planning_instant_units_from_board()
 	var force_sync: Dictionary = {}
 	if _director != null:
 		for unit_id: int in _director.plan_affected_unit_ids:

@@ -786,9 +786,12 @@ func _finish_selection_changed() -> void:
 	_request_planning_selection_refresh()
 
 
-func _on_ability_selected(_index: int) -> void:
+func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
+	## Arming a skill exits force-basic walk-only mode so movement skills (e.g. Swap) can target.
+	if index >= 0:
+		force_basic_movement = false
 	_invalidate_planning_hover_cache(false)
 	_clear_intent_snapshot()
 	_sync_intent_skill_mode()
@@ -1258,6 +1261,9 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 	if _planning != null and _planning.is_hover_move_tile(cell):
 		return true
 	if _skill_interaction_active():
+		var selected_ability := _selected_ability_data(p_unit)
+		if selected_ability != null and AbilitySystem.planning_allows_paired_premove(selected_ability):
+			return _can_move_to(p_unit, cell)
 		return false
 	return _can_move_to(p_unit, cell)
 
@@ -1511,7 +1517,20 @@ func _commit_interaction_params(
 				var actor: UnitState = _proj_unit(_director.selected_unit_id)
 				var ability: AbilityData = _selected_ability_data(actor)
 				var route_waypoints: Array[Vector2i] = _route_waypoints()
-				if _enemy_hover_respects_painted_route(actor, target, ability, route_waypoints):
+				if target.is_enemy():
+					if _enemy_hover_respects_painted_route(actor, target, ability, route_waypoints):
+						waypoints = route_waypoints
+						legal_moves = _snapshot_drag_legal_move_tiles()
+						if _drag_last_free != commit_cell:
+							preferred = _drag_last_free
+				elif (
+					actor != null
+					and ability != null
+					and AbilitySystem.planning_allows_paired_premove(ability)
+					and _ally_hover_respects_painted_route(
+						actor, target, ability, route_waypoints, _drag_last_free,
+					)
+				):
 					waypoints = route_waypoints
 					legal_moves = _snapshot_drag_legal_move_tiles()
 					if _drag_last_free != commit_cell:
@@ -2851,14 +2870,37 @@ func _ability_range(actor: UnitState) -> int:
 
 
 func _in_ability_range(actor: UnitState, target: UnitState) -> bool:
+	return _in_ability_range_from(actor, target.position, target)
+
+
+func _in_ability_range_from(actor: UnitState, coord: Vector2i, target: UnitState = null) -> bool:
 	var rng := _ability_range(actor)
 	if rng < 0:
 		return false
-	var actor_pos: Vector2i = _proj_origin(actor) if aiming else actor.position
-	var target_pos: Vector2i = target.position
-	if aiming and target.is_enemy():
+	var actor_pos: Vector2i = _ability_range_origin(actor)
+	var target_pos: Vector2i = coord
+	if target != null and aiming and target.is_enemy():
 		target_pos = _aim_enemy_pos(target.id)
 	return GridSystem.manhattan(actor_pos, target_pos) <= rng
+
+
+func _ability_range_origin(actor: UnitState) -> Vector2i:
+	if actor == null:
+		return Vector2i.ZERO
+	if aiming:
+		return _proj_origin(actor)
+	if (
+		_drag_route_commits_active()
+		and _director != null
+		and actor.id == _drag_unit_id
+		and not _drag_route.is_empty()
+	):
+		var ability := _selected_ability_data(actor)
+		if ability != null and AbilitySystem.planning_allows_paired_premove(ability):
+			var stand: Vector2i = _drag_last_free
+			if _director.board != null and _director.board.is_in_bounds(stand):
+				return stand
+	return _proj_origin(actor)
 
 
 func _in_ability_range_of_coord(actor: UnitState, coord: Vector2i) -> bool:
@@ -2881,7 +2923,7 @@ func _can_target_unit_with_selected_ability(actor: UnitState, target: UnitState)
 		return AbilitySystem.can_target_self(actor, ability)
 	if not AbilitySystem.target_passes_mode(actor, ability, target):
 		return false
-	return _in_ability_range(actor, target)
+	return _in_ability_range_from(actor, target.position, target)
 
 
 func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
@@ -3255,17 +3297,11 @@ func _build_commit_slots_at_cell(
 			ability_index >= 0
 			and ability != null
 			and not force_basic_movement
-			and _can_target_unit_with_selected_ability(actor, hover_unit)
 		):
-			slots["action"].append(TimelineAction.make_ability(
-				unit_id,
-				ability,
-				hover_unit.position,
-				AbilitySystem.planning_commit_target_unit_id(ability, hover_unit.id),
-				GameEnums.MoveTiming.PRE_ACTION,
-				[],
-			))
-			return slots
+			return _build_ally_commit_slots(
+				slots, actor, unit_id, hover_unit, ability, ability_index,
+				waypoints, legal_move_tiles, preferred_approach,
+			)
 		if _skill_interaction_active() and hover_unit.id != actor.id:
 			slots["invalid"] = "Cannot target this unit with selected skill."
 			return slots
@@ -3352,6 +3388,129 @@ func _build_commit_slots_at_cell(
 		return slots
 	if _skill_interaction_active() and _invalid_hover_target(actor, cell, hover_unit):
 		slots["invalid"] = "Invalid target."
+	return slots
+
+
+func _ally_hover_respects_painted_route(
+	actor: UnitState,
+	ally: UnitState,
+	ability: AbilityData,
+	route_waypoints: Array[Vector2i],
+	stand_cell: Vector2i,
+) -> bool:
+	if actor == null or ally == null or ability == null or route_waypoints.is_empty():
+		return false
+	if not AbilitySystem.planning_allows_paired_premove(ability):
+		return false
+	if not AbilitySystem.target_passes_mode(actor, ability, ally):
+		return false
+	var move_action: TimelineAction = TimelineAction.make_move(
+		actor.id, stand_cell, -1, route_waypoints, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	var after_move: UnitState = _actor_after_binding_move_intent(actor.id, move_action)
+	if after_move == null:
+		return false
+	return _in_ability_range_from(after_move, ally.position, ally)
+
+
+func _append_movement_skill_to_premove_slots(
+	slots: Dictionary,
+	unit_id: int,
+	ability: AbilityData,
+	target: UnitState,
+	waypoints: Array[Vector2i],
+) -> void:
+	if ability == null or target == null:
+		return
+	slots["pre"].append(
+		TimelineAction.make_ability(
+			unit_id,
+			ability,
+			target.position,
+			AbilitySystem.planning_commit_target_unit_id(ability, target.id),
+			GameEnums.MoveTiming.PRE_ACTION,
+			waypoints,
+		),
+	)
+
+
+func _build_ally_commit_slots(
+	slots: Dictionary,
+	actor: UnitState,
+	unit_id: int,
+	ally: UnitState,
+	ability: AbilityData,
+	ability_index: int,
+	waypoints: Array[Vector2i],
+	legal_move_tiles: Array[Vector2i],
+	preferred_approach: Vector2i,
+) -> Dictionary:
+	if ability == null or actor == null or ally == null:
+		slots["invalid"] = "Invalid target."
+		return slots
+	if not AbilitySystem.target_passes_mode(actor, ability, ally):
+		slots["invalid"] = "Invalid target for this skill."
+		return slots
+	if not ability.is_movement_kind():
+		if _can_target_unit_with_selected_ability(actor, ally):
+			slots["action"].append(
+				TimelineAction.make_ability(
+					unit_id,
+					ability,
+					ally.position,
+					AbilitySystem.planning_commit_target_unit_id(ability, ally.id),
+					GameEnums.MoveTiming.PRE_ACTION,
+					[],
+				),
+			)
+		else:
+			slots["invalid"] = "Invalid target."
+		return slots
+	var board: BoardState = _proj()
+	var move_wps: Array[Vector2i] = waypoints.duplicate()
+	var move_dest: Vector2i = _proj_move_origin(actor)
+	if not move_wps.is_empty():
+		move_dest = move_wps[move_wps.size() - 1]
+		if _drag_route_commits_active() and _director.board.is_in_bounds(_drag_last_free):
+			move_dest = _drag_last_free
+	if _in_ability_range_from(actor, ally.position, ally) and move_wps.is_empty():
+		_append_movement_skill_to_premove_slots(slots, unit_id, ability, ally, [])
+		return slots
+	if (
+		not move_wps.is_empty()
+		and _ally_hover_respects_painted_route(actor, ally, ability, move_wps, move_dest)
+	):
+		if (
+			_unit_move_slot_open(unit_id, move_dest)
+			and move_dest != _proj_move_origin(actor)
+		):
+			_append_move_to_commit_slots(slots, unit_id, move_dest, move_wps, actor)
+		_append_movement_skill_to_premove_slots(slots, unit_id, ability, ally, move_wps)
+		return slots
+	var approach_hint: Vector2i = ally.position
+	if preferred_approach != _NO_PREFERRED_APPROACH:
+		approach_hint = preferred_approach
+	var approach: Vector2i = _director.preview_approach_tile(
+		unit_id, ally.id, ability_index, approach_hint,
+	)
+	if approach == _proj_move_origin(actor) and not _in_ability_range_from(actor, ally.position, ally):
+		slots["invalid"] = "Target is out of range."
+		return slots
+	if approach != _proj_move_origin(actor) and _unit_move_slot_open(unit_id, approach):
+		var approach_path: Array[Vector2i] = []
+		if _ally_hover_respects_painted_route(actor, ally, ability, move_wps, move_dest):
+			approach_path = move_wps
+		slots["pre"].append(
+			_director.make_planning_move_action(
+				unit_id,
+				approach,
+				board,
+				actor,
+				approach_path,
+				GameEnums.MoveTiming.PRE_ACTION,
+			),
+		)
+	_append_movement_skill_to_premove_slots(slots, unit_id, ability, ally, [])
 	return slots
 
 

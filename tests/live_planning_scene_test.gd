@@ -16,6 +16,9 @@ const _SWAP_ALLY_CELL := Vector2i(4, 4)
 ## After swap knight stands here; L-route west then north around ally at (4,5).
 const _SWAP_PREMOVE_ROUTE: Array[Vector2i] = [Vector2i(3, 4), Vector2i(3, 5)]
 const _SWAP_PREMOVE_DEST := Vector2i(3, 5)
+## Walk-then-swap: knight starts at _K1_CELL; ally not adjacent until knight walks.
+const _WALK_SWAP_ALLY_CELL := Vector2i(2, 4)
+const _WALK_SWAP_APPROACH := Vector2i(3, 4)
 const _K2_CELL := Vector2i(1, 3)
 const _K3_CELL := Vector2i(5, 4)
 const _K4_CELL := Vector2i(4, 1)
@@ -111,6 +114,105 @@ func test_live_swap_then_premove(timeout := 90000) -> void:
 	assert_object(scene).is_not_null()
 	var ctx: Dictionary = await _boot_swap_ally_session(runner, scene)
 	await _journey_swap_then_premove(ctx)
+
+
+func test_live_walk_then_swap(timeout := 90000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	_ensure_live_test_window(runner)
+	await runner.simulate_frames(8)
+	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
+	assert_object(scene).is_not_null()
+	var ctx: Dictionary = await _boot_walk_swap_session(runner, scene)
+	await _journey_walk_then_swap(ctx)
+
+
+func _boot_walk_swap_session(runner: GdUnitSceneRunner, scene: TestBattleMapView) -> Dictionary:
+	var session: TestBattleSession = scene.get_session()
+	session.reset_defaults()
+	session.extra_player_coords = [_WALK_SWAP_ALLY_CELL]
+	session.dummy_coords = []
+	scene.apply_training_board()
+	if _qa_fast_enabled():
+		scene._center_map()
+	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
+	var shell: TacticalCombatShell = scene.get_node("CombatShell") as TacticalCombatShell
+	var director: CombatDirector = scene.get_node("CombatDirector") as CombatDirector
+	var overlay: TacticalPlanningOverlay = scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	director.auto_run = true
+	if _qa_fast_enabled():
+		scene.apply_qa_performance_mode(overlay)
+	var board: BoardState = director.board
+	var k1_id: int = _unit_id_at(board, _K1_CELL)
+	var ally_id: int = _unit_id_at(board, _WALK_SWAP_ALLY_CELL)
+	assert_int(k1_id).is_greater(0)
+	assert_int(ally_id).is_greater(0)
+	return {
+		"runner": runner,
+		"scene": scene,
+		"shell": shell,
+		"director": director,
+		"input": shell.planning_input,
+		"overlay": overlay,
+		"board": board,
+		"k1_id": k1_id,
+		"ally_id": ally_id,
+		"start_k1_mp": director.turn_start_board.get_unit_by_id(k1_id).movement.points_left,
+		"trace": [],
+	}
+
+
+func _journey_walk_then_swap(ctx: Dictionary) -> void:
+	var director: CombatDirector = ctx.director
+	var k1_id: int = ctx.k1_id
+	var ally_id: int = ctx.ally_id
+	var start_mp: int = int(ctx.start_k1_mp)
+	await _select_unit_live(ctx, k1_id, _K1_CELL)
+	var swap: AbilityData = await _select_ability_for_unit(ctx, k1_id, _SWAP_ID)
+	assert_object(swap).is_not_null()
+	await _enter_basic_movement_mode(ctx, k1_id)
+	await _drag_release_at(
+		ctx,
+		[_K1_CELL, Vector2i(3, 5), _WALK_SWAP_APPROACH],
+		_WALK_SWAP_APPROACH,
+		"walk_swap/walk",
+	)
+	await _wait_planning_move_tween(ctx, k1_id)
+	await _select_ability_for_unit(ctx, k1_id, _SWAP_ID)
+	await _reposition_mouse_to_unit(ctx, k1_id, _WALK_SWAP_ALLY_CELL)
+	await _commit_via_slots_at_cell(ctx, k1_id, _WALK_SWAP_ALLY_CELL, "walk_swap/swap")
+	var pre_moves: Array[TimelineAction] = _pre_moves_for_unit(director, k1_id)
+	if pre_moves.size() != 2:
+		assert_int(pre_moves.size()).override_failure_message(
+			"walk_swap: expected walk + swap pre-moves",
+		).is_equal(2)
+		return
+	assert_that(pre_moves[0].type).override_failure_message(
+		"walk_swap: first pre-move must be walk",
+	).is_equal(GameEnums.ActionType.MOVE)
+	assert_that(pre_moves[0].target_coord).override_failure_message(
+		"walk_swap: walk destination",
+	).is_equal(_WALK_SWAP_APPROACH)
+	assert_that(pre_moves[1].type).override_failure_message(
+		"walk_swap: second pre-move must be ability",
+	).is_equal(GameEnums.ActionType.ABILITY)
+	assert_object(pre_moves[1].ability).override_failure_message(
+		"walk_swap: swap ability missing",
+	).is_not_null()
+	if pre_moves[1].ability != null:
+		assert_that(pre_moves[1].ability.id).is_equal(_SWAP_ID)
+	assert_that(pre_moves[1].target_unit_id).is_equal(ally_id)
+	await _wait_ability_settle(ctx)
+	await _wait_planning_move_tween(ctx, k1_id)
+	await _wait_planning_move_tween(ctx, ally_id)
+	_assert_swap_premove_state_layers(ctx, "walk_swap/after_commit", {
+		"k1_pos": _WALK_SWAP_ALLY_CELL,
+		"ally_pos": _WALK_SWAP_APPROACH,
+		"k1_mp": start_mp - 3,
+		"pre_move_count": 2,
+		"require_swap_first": false,
+	})
 
 
 func _ensure_live_test_window(runner: GdUnitSceneRunner) -> void:

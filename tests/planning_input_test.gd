@@ -29,6 +29,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_undo_movement_action_preserves_premove,
 		_test_swap_undo_cascades_all_plans_after,
 		_test_swap_refresh_updates_live_board,
+		_test_walk_then_swap_commit_appends_skill,
 		_test_ability_scroll_clears_hover_preview_cache,
 	]
 	for test: Callable in tests:
@@ -1504,6 +1505,70 @@ static func _test_swap_undo_cascades_all_plans_after(failures: Array[String]) ->
 		failures.append(
 			"PlanningInputTest: swap undo must clear all action entries after swap (both players)",
 		)
+
+
+static func _test_walk_then_swap_commit_appends_skill(failures: Array[String]) -> void:
+	var director := _new_director()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(10, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			board.set_tile_terrain(Vector2i(x, y), plain)
+	var swap := AbilityData.new()
+	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.id = &"knight_swap"
+	swap.movement_point_cost = 1
+	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
+	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	var knight := UnitState.new()
+	knight.id = 1
+	knight.team = GameEnums.Team.PLAYER
+	knight.position = Vector2i(4, 5)
+	knight.movement.points_left = 3
+	knight.movement.max_points = 3
+	var ally := UnitState.new()
+	ally.id = 3
+	ally.team = GameEnums.Team.PLAYER
+	ally.position = Vector2i(2, 4)
+	ally.movement.points_left = 3
+	ally.movement.max_points = 3
+	board.units = [knight, ally]
+	GridSystem.set_occupant(board, knight.position, knight.id)
+	GridSystem.set_occupant(board, ally.position, ally.id)
+	director.board = board
+	director.base_board = board
+	director.turn_start_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_move(
+			1, Vector2i(3, 4), -1, [Vector2i(3, 5), Vector2i(3, 4)], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	director._refresh_plan()
+	var swap_action: TimelineAction = TimelineAction.make_ability(
+		1, swap, ally.position, ally.id, GameEnums.MoveTiming.PRE_ACTION, [],
+	)
+	var slots: Dictionary = {"pre": [swap_action], "action": [], "post": []}
+	if not director.commit_from_slots(1, slots):
+		failures.append("PlanningInputTest: walk-then-swap second commit must succeed")
+		return
+	var k1_steps: Array[TimelineAction] = UnitPlanOrder.ordered_steps_for_unit(
+		director.get_player_plan(), 1,
+	)
+	if k1_steps.size() != 2:
+		failures.append(
+			"PlanningInputTest: walk-then-swap expected 2 pre steps got %d" % k1_steps.size(),
+		)
+		return
+	if k1_steps[0].type != GameEnums.ActionType.MOVE:
+		failures.append("PlanningInputTest: walk-then-swap first step must be MOVE")
+	if k1_steps[1].type != GameEnums.ActionType.ABILITY:
+		failures.append("PlanningInputTest: walk-then-swap second step must be swap ABILITY")
 
 
 static func _test_swap_refresh_updates_live_board(failures: Array[String]) -> void:
