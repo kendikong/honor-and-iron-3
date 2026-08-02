@@ -82,6 +82,8 @@ var _skip_committed_premove_visuals: bool = false
 var _execute_premove_skip_actions: Array[TimelineAction] = []
 var _refresh_plan_queued: bool = false
 var _cached_wait_marker_ghost_events: Array[SimEvent] = []
+## Move-preview paths frozen at commit time — commit anim must match hover/drag preview exactly.
+var _commit_intent_preview_paths: Dictionary = {}
 ## Autobattler batches rpc_plan_move commits; one parallel planning walk plays at batch end.
 var _autobattler_plan_batch: bool = false
 ## When this returns true, default victory/defeat checks are skipped (battle continues).
@@ -2383,6 +2385,7 @@ func _refresh_plan_core() -> void:
 		_swap_planning_presentations.clear()
 	if not _pending_planning_commit_events.is_empty():
 		plan_refresh_defer_overlay = true
+	clear_commit_intent_preview_paths()
 	plan_revision += 1
 	sync_selected_ability_if_invalid()
 
@@ -2800,6 +2803,14 @@ func live_planning_board() -> BoardState:
 	return _build_live_planning_board()
 
 
+func stash_commit_intent_preview_paths(paths: Dictionary) -> void:
+	_commit_intent_preview_paths = paths.duplicate(true)
+
+
+func clear_commit_intent_preview_paths() -> void:
+	_commit_intent_preview_paths.clear()
+
+
 func _finalize_planning_commit_move_event(
 	move_event: SimEvent,
 	action: TimelineAction,
@@ -2815,10 +2826,25 @@ func _finalize_planning_commit_move_event(
 	move_event.data["to"] = action.target_coord
 	var path_cells: Array = []
 	if not action.waypoints.is_empty():
-		path_cells = action.waypoints.duplicate()
-		if path_cells.is_empty() or path_cells[0] != from_cell:
-			path_cells.insert(0, from_cell)
-	else:
+		path_cells = CombatPlanningPreview.movement_intent_cells(from_cell, action)
+	elif not _commit_intent_preview_paths.is_empty():
+		var preview_stub: CombatPlanningPreview = CombatPlanningPreview.new()
+		preview_stub.preview_paths = _commit_intent_preview_paths.duplicate(true)
+		var leg: Array = CombatPlanningPreview.committed_action_route_leg(
+			action.actor_id, preview_stub, action, from_cell,
+		)
+		if leg.size() >= 2:
+			path_cells = leg
+		else:
+			var route: Variant = _commit_intent_preview_paths.get(action.actor_id, [])
+			if route is Array and (route as Array).size() >= 2:
+				var dest: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
+					route, from_cell, action.target_coord,
+				)
+				if not dest.is_empty():
+					path_cells = [from_cell]
+					path_cells.append_array(dest)
+	if path_cells.size() < 2:
 		path_cells = [from_cell]
 		var found: Array[Vector2i] = MovementSystem.find_path(
 			before_board, from_cell, action.target_coord, actor.movement.points_left,

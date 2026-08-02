@@ -1260,13 +1260,23 @@ func _animate_planning_commit_move(event: SimEvent) -> void:
 			to_cell = live.position
 	if from_cell == to_cell:
 		return
+	var fallback_cells: Array[Vector2i] = _cells_from_move_event(event, from_cell)
+	var steps: Array[Vector2i] = []
+	if fallback_cells.size() >= 2 and fallback_cells[0] == from_cell:
+		for i: int in range(1, fallback_cells.size()):
+			steps.append(fallback_cells[i])
+	elif not fallback_cells.is_empty():
+		steps = fallback_cells
+	elif to_cell != from_cell:
+		steps = [to_cell]
+	if steps.is_empty():
+		return
 	var use_run: bool = (
 		_unit_uses_run_anim(unit_id)
 		or int(event.data.get("presentation_anim", GameEnums.PresentationAnim.AUTO))
 		== GameEnums.PresentationAnim.RUN
 	)
-	var fallback_cells: Array[Vector2i] = _cells_from_move_event(event, from_cell)
-	_animate_planning_path(unit_id, from_cell, to_cell, use_run, fallback_cells)
+	_play_cell_path_tween(unit_id, from_cell, steps, CombatDirector.MOVE_STEP_TIME, use_run)
 
 
 func _snap_actor_rubberband(unit_id: int, grid_cell: Vector2i) -> void:

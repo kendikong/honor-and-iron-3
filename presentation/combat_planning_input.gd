@@ -1749,6 +1749,8 @@ func _commit_at_cell(
 		_clear_intent_snapshot()
 		return false
 	_notify_drag_plan_move_committed(unit_id)
+	if _director != null:
+		_director.stash_commit_intent_preview_paths(preview_state.preview_paths)
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
 		if _drag_move_commit_instant and _director != null:
 			_director.clear_planning_move_instant(unit_id)
