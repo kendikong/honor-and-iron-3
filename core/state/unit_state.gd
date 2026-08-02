@@ -263,6 +263,8 @@ func reset_for_turn() -> void:
 	armor = 0
 	passive_flags.erase("collision_refunded_this_turn")
 	passive_flags.erase("adrenaline_surge_active")
+	passive_flags.erase("frenzy_on_kill_ap")
+	passive_flags.erase("meat_shield_intercept_str")
 	passive_flags.erase("violent_collision_recast_used")
 
 func clone() -> UnitState:

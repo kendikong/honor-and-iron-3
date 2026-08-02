@@ -488,8 +488,11 @@ static func deal_damage(
 							if is_upgraded:
 								ally.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2))
 								ally._recalculate_stats()
-							if ally.is_ability_upgraded(&"bruiser_meat_shield"):
-								ally.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 2))
+							var intercept_str: int = int(ally.passive_flags.get("meat_shield_intercept_str", 0))
+							if intercept_str > 0:
+								ally.active_statuses.append(
+									DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, intercept_str),
+								)
 								ally._recalculate_stats()
 							CombatSystem.deal_damage(
 								board, ally, intercept_amount, events, source_type, pierce, true, attacker, source_label, intercept_amount
@@ -677,7 +680,7 @@ static func deal_damage(
 			if attacker.passive_flags.has("adrenaline_surge_active"):
 				heal(board, attacker, 1, events)
 				add_armor(board, attacker, 2, events)
-			if attacker.is_ability_upgraded(&"bruiser_frenzy") and source_label == "Frenzy":
+			if attacker.passive_flags.get("frenzy_on_kill_ap", false) and source_label == "Frenzy":
 				attacker.ability.points_left += 1
 
 static func heal(board: BoardState, target: UnitState, amount: int, events: Array[SimEvent]) -> void:

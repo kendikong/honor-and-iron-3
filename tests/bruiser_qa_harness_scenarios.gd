@@ -594,6 +594,16 @@ static func run_last_stand(failures: Array[String]) -> void:
 	var full_def: int = CombatSystem.get_dynamic_defense(board, bruiser)
 	H.assert_eq_int(failures, "last_stand/str_bonus", low_str - full_str, 2)
 	H.assert_eq_int(failures, "last_stand/def_bonus", low_def - full_def, 2)
+	var neg_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(neg_board, 10, Vector2i(3, 3), {})
+	var plain: UnitState = H.unit_on_board(neg_board, 10)
+	plain.health.current_hp = 1
+	plain._recalculate_stats()
+	var plain_low_str: int = CombatSystem.get_dynamic_strength(neg_board, plain)
+	plain.health.current_hp = plain.health.max_hp
+	plain._recalculate_stats()
+	var plain_full_str: int = CombatSystem.get_dynamic_strength(neg_board, plain)
+	H.assert_eq_int(failures, "last_stand/no_passive", plain_low_str - plain_full_str, 0)
 
 
 static func run_colossal_mass(failures: Array[String]) -> void:

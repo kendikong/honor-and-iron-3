@@ -101,15 +101,22 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 static func get_action_point_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> int:
 	if ability == null:
 		return 0
-	var ap_cost = ability.action_point_cost
-	if board != null and actor != null and ability.id == &"bruiser_adrenaline_surge":
-		var adj_enemies = 0
-		for dir in GridSystem.DIRECTIONS:
-			var occ = board.get_unit_at(actor.position + dir)
-			if occ != null and occ.team != actor.team:
-				adj_enemies += 1
-		if adj_enemies >= 2:
-			ap_cost = 0
+	var ap_cost := ability.action_point_cost
+	if actor == null or board == null:
+		return ap_cost
+	var effects: Array = ability.effects
+	if actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
+		effects = ability.upgraded_effects
+	for eff: EffectData in effects:
+		if eff != null and eff.modifiers.has("zero_ap_adjacent_enemies"):
+			var needed: int = int(eff.modifiers["zero_ap_adjacent_enemies"])
+			var adj_enemies := 0
+			for dir in GridSystem.DIRECTIONS:
+				var occ := board.get_unit_at(actor.position + dir)
+				if occ != null and occ.team != actor.team:
+					adj_enemies += 1
+			if adj_enemies >= needed:
+				return 0
 	return ap_cost
 
 
@@ -870,9 +877,9 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				)
 		actor.passive_flags["__cast_cc_snapshot"] = cast_cc_snapshot
 
-	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
+	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
 	if (has_pass_through_effects(ability) or is_move) and not ability_has_dash(ability) and target_coord != actor.position:
-		var walk_steps: int = effect_amount(ability, GameEnums.EffectType.MOVE)
+		var walk_steps: int = effect_amount(ability, GameEnums.EffectType.MOVE, actor)
 		if walk_steps <= 0:
 			walk_steps = ability.range_tiles
 			
@@ -909,6 +916,12 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		if eff.modifiers.has("buff_per_destroyed_object"): buff_per_object = true
 		if eff.modifiers.has("next_attack_pierce"):
 			actor.passive_flags["breaching_dash_pierce"] = true
+		if eff.modifiers.has("on_kill_heal_shield"):
+			actor.passive_flags["adrenaline_surge_active"] = true
+		if eff.modifiers.has("intercept_grant_str"):
+			actor.passive_flags["meat_shield_intercept_str"] = int(eff.modifiers["intercept_grant_str"])
+		if eff.modifiers.has("frenzy_on_kill_ap"):
+			actor.passive_flags["frenzy_on_kill_ap"] = true
 
 	for effect in effects_to_apply:
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
@@ -929,6 +942,31 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				if adj_unit != null and adj_unit != actor and adj_unit.is_alive() and adj_unit.team != actor.team:
 					_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
 			continue
+
+		if effect.modifiers.has("push_board_items"):
+			for tile_coord in affected_tiles:
+				var item_idx: int = board.items.find(tile_coord)
+				if item_idx < 0:
+					continue
+				var push_dir: Vector2i = PhysicsSystem.cardinal_from_to(actor.position, tile_coord)
+				if push_dir == Vector2i.ZERO:
+					continue
+				var dest: Vector2i = tile_coord + push_dir
+				if not GridSystem.is_in_bounds(board, dest) or GridSystem.is_wall(board, dest):
+					continue
+				var hit_unit: UnitState = board.get_unit_at(dest)
+				board.items[item_idx] = dest
+				if (
+					hit_unit != null
+					and hit_unit.is_alive()
+					and hit_unit.team != actor.team
+					and effect.modifiers.has("item_collision_damage")
+				):
+					var item_dmg: int = int(effect.modifiers["item_collision_damage"])
+					CombatSystem.deal_damage(
+						board, hit_unit, item_dmg, events, &"true", true, false, actor,
+						action.ability.display_name, item_dmg,
+					)
 			
 		for tile_coord in affected_tiles:
 			var target_unit := board.get_unit_at(tile_coord)

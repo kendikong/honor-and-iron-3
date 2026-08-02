@@ -123,7 +123,6 @@ static func run_meat_shield_upgrade(failures: Array[String]) -> void:
 	intercept_plan.add(H.plan_ability(10, intercept_shield, Vector2i(4, 3), 12))
 	var intercept_swap: SimResult = H.simulate_plan(intercept_board, intercept_plan)
 	var bruiser: UnitState = intercept_swap.final_state.get_unit_by_id(10)
-	var str_before: int = CombatSystem.get_dynamic_strength(intercept_swap.final_state, bruiser)
 	H.place_unit(
 		intercept_swap.final_state,
 		11,
@@ -137,11 +136,14 @@ static func run_meat_shield_upgrade(failures: Array[String]) -> void:
 	attack_plan.add(H.plan_ability(11, attack_ab, Vector2i(3, 3), 12))
 	var attack_result: SimResult = H.simulate_plan(intercept_swap.final_state, attack_plan)
 	var bruiser_after: UnitState = attack_result.final_state.get_unit_by_id(10)
-	var str_after: int = CombatSystem.get_dynamic_strength(attack_result.final_state, bruiser_after)
-	H.assert_true(
+	var intercept_str_amount: int = 0
+	for status: StatusData in bruiser_after.active_statuses:
+		if status.type == GameEnums.StatusType.STAT_BUFF_STR and status.duration == 1:
+			intercept_str_amount = maxi(intercept_str_amount, status.value)
+	H.assert_eq_int(
 		failures, "meat_shield/upgrade/intercept_str",
-		str_after > str_before,
-		"[+] interception must grant STR +2",
+		intercept_str_amount,
+		2,
 	)
 
 
@@ -150,6 +152,33 @@ static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "adrenaline_surge/upgrade/mod",
 		ab.upgraded_effects[1].modifiers.has("on_kill_heal_shield"),
+	)
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_abilities([&"bruiser_adrenaline_surge", &"bruiser_concussion_blow"]),
+		&"bruiser_adrenaline_surge",
+	)
+	cfg["passive_flags"] = {"training_unlimited_actions": true}
+	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(4, 3))
+	var enemy: UnitState = H.unit_on_board(board, 2)
+	enemy.health.current_hp = 1
+	var bruiser: UnitState = H.unit_on_board(board, 1)
+	bruiser.ability.max_points = 3
+	bruiser.ability.points_left = 3
+	var armor_before: int = bruiser.armor
+	var surge: AbilityData = H.ability_on_unit(bruiser, &"bruiser_adrenaline_surge")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, surge, bruiser.position, bruiser.id))
+	var blow: AbilityData = H.ability_on_unit(bruiser, &"bruiser_concussion_blow")
+	plan.add(H.plan_ability(1, blow, Vector2i(4, 3), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	H.assert_true(
+		failures, "adrenaline_surge/upgrade/on_kill",
+		not result.final_state.get_unit_by_id(2).is_alive()
+		and after != null
+		and after.armor > armor_before,
 	)
 
 
@@ -162,12 +191,29 @@ static func run_earthshatter_upgrade(failures: Array[String]) -> void:
 
 
 static func run_frenzy_upgrade(failures: Array[String]) -> void:
-	var ab: AbilityData = H.factory_ability(&"bruiser_frenzy")
-	var has_on_kill: bool = false
-	for eff: EffectData in ab.upgraded_effects:
-		if eff != null and eff.modifiers.has("frenzy_on_kill_ap"):
-			has_on_kill = true
-	H.assert_true(failures, "frenzy/upgrade/on_kill_ap", has_on_kill)
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_ability(&"bruiser_frenzy"),
+		&"bruiser_frenzy",
+	)
+	cfg["passive_flags"] = {"training_unlimited_actions": true}
+	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(4, 3))
+	var enemy: UnitState = H.unit_on_board(board, 2)
+	enemy.health.current_hp = 1
+	var bruiser: UnitState = H.unit_on_board(board, 1)
+	bruiser.ability.max_points = 3
+	bruiser.ability.points_left = 1
+	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_frenzy")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	H.assert_eq_int(
+		failures, "frenzy/upgrade/on_kill_ap",
+		after.ability.points_left,
+		1,
+	)
 
 
 static func run_concussion_blow_upgrade(failures: Array[String]) -> void:
@@ -179,10 +225,26 @@ static func run_suplex_upgrade(failures: Array[String]) -> void:
 
 
 static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
-	var ab: AbilityData = H.factory_ability(&"bruiser_guttural_roar")
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_ability(&"bruiser_guttural_roar"),
+		&"bruiser_guttural_roar",
+	)
+	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(5, 3))
+	board.items.append(Vector2i(4, 3))
+	var hp: int = H.unit_hp(board, 2)
+	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_guttural_roar")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3)))
+	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(
-		failures, "guttural_roar/upgrade/data",
-		ab.upgraded_effects.size() > 0 and ab.upgrade_description.length() > 0,
+		failures, "guttural_roar/upgrade/item_push",
+		not board.items.has(Vector2i(4, 3)),
+	)
+	H.assert_true(
+		failures, "guttural_roar/upgrade/item_collision",
+		H.unit_hp(result.final_state, 2) < hp,
 	)
 
 
@@ -209,7 +271,13 @@ static func run_headbutt_upgrade(failures: Array[String]) -> void:
 	plan2.add(H.plan_ability(10, base_skill, Vector2i(4, 3), 11))
 	var result2: SimResult = H.simulate_plan(board2, plan2)
 	var dmg_base: int = hp2 - H.unit_hp(result2.final_state, 11)
-	H.assert_true(failures, "headbutt/upgrade/max_hp_bonus", dmg_up > dmg_base)
+	var bruiser_up: UnitState = H.unit_on_board(board, 1)
+	var expected_bonus: int = floori(float(bruiser_up.health.max_hp) * 0.1)
+	H.assert_eq_int(
+		failures, "headbutt/upgrade/max_hp_bonus",
+		dmg_up - dmg_base,
+		expected_bonus * 2,
+	)
 
 
 static func run_blood_boil_upgrade(failures: Array[String]) -> void:
@@ -350,12 +418,27 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 
 
 static func run_belly_flop_upgrade(failures: Array[String]) -> void:
-	var ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
-	var has_push: bool = false
-	for eff: EffectData in ab.upgraded_effects:
-		if eff != null and eff.modifiers.has("belly_flop_push"):
-			has_push = true
-	H.assert_true(failures, "belly_flop/upgrade/push_mod", has_push)
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_ability(&"bruiser_belly_flop"),
+		&"bruiser_belly_flop",
+	)
+	cfg["passive_flags"] = {"training_unlimited_actions": true}
+	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	var bruiser_ap: UnitState = H.unit_on_board(board, 1)
+	bruiser_ap.ability.max_points = 2
+	bruiser_ap.ability.points_left = 2
+	H.place_dummy(board, 2, Vector2i(5, 4))
+	var start: Vector2i = H.unit_on_board(board, 2).position
+	var skill: AbilityData = H.ability_on_unit(bruiser_ap, &"bruiser_belly_flop")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	H.assert_true(
+		failures, "belly_flop/upgrade/push",
+		enemy != null and enemy.position != start,
+	)
 
 
 static func run_cellular_regeneration_upgrade(failures: Array[String]) -> void:

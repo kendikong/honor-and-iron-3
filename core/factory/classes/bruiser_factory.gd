@@ -101,6 +101,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	adrenaline_surge.targeting_flags = GameEnums.TargetingFlags.SELF
 	adrenaline_surge.upgraded_effects = DataLibrary._duplicate_effects(adrenaline_surge.effects)
 	adrenaline_surge.upgraded_effects[1].modifiers["on_kill_heal_shield"] = 1
+	adrenaline_surge.effects[0].modifiers["zero_ap_adjacent_enemies"] = 2
 	def.abilities.append(adrenaline_surge)
 
 	var earthshatter = DataLibrary._make_ability(&"bruiser_earthshatter", "Earthshatter", 1, [
@@ -121,6 +122,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	meat_shield.upgrade_description = "RANGE 3. Gain STR +2 per interception."
 	meat_shield.upgraded_range_tiles = 3
 	meat_shield.upgraded_effects = DataLibrary._duplicate_effects(meat_shield.effects)
+	meat_shield.upgraded_effects[1].modifiers["intercept_grant_str"] = 2
 	def.abilities.append(meat_shield)
 
 	var frenzy = DataLibrary._make_ability(&"bruiser_frenzy", "Frenzy", 1, [
@@ -139,7 +141,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 2)
 	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_SQUARE, 2)
 	guttural_roar.upgrade_description = "PUSH 1 all items/coins/scrap. Item collision: ATK 1."
+	guttural_roar.targeting_mode = GameEnums.TargetingMode.TILE
+	guttural_roar.targeting_flags = GameEnums.TargetingFlags.TILE
 	guttural_roar.upgraded_effects = DataLibrary._duplicate_effects(guttural_roar.effects)
+	guttural_roar.upgraded_effects[0].modifiers["push_board_items"] = 1
+	guttural_roar.upgraded_effects[0].modifiers["item_collision_damage"] = 1
 	def.abilities.append(guttural_roar)
 
 	var headbutt = DataLibrary._make_ability(&"bruiser_headbutt", "Headbutt", 1, [
