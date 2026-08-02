@@ -30,3 +30,12 @@ Re-earn Bruiser LOCK: **31/31** matrix rows `PASS` only after **fresh per-row `g
 - Gate exit **0**
 - Full-matrix gauntlet-critic **≥95**, `Infrastructure: ADEQUATE`
 - `bruiser-template.md` → `LOCKED`
+
+## Local ↔ Cloud (when local Task quota is dead)
+
+1. Lead runs `.\scripts\sync_local_remote.ps1 -Mode Push` (see [`LOCAL_CLOUD_SYNC.md`](../LOCAL_CLOUD_SYNC.md)).
+2. Owner starts **Cloud Agent** or **Automation** with paste from [`prompts/B6-REOPEN-CLOUD.md`](../prompts/B6-REOPEN-CLOUD.md).
+3. Cloud lead spawns **gauntlet-critic** Task on that VM (separate critic — not self-grade).
+4. Owner merges Cloud PR → local `.\scripts\sync_local_remote.ps1 -Mode Pull`.
+
+**Current:** 25/31 PASS · remaining: `bruiser_guttural_roar`, `bruiser_crimson_whirlwind`, `blood_for_blood`, `momentum_transfer`, `battering_ram`, `unstoppable_force`.

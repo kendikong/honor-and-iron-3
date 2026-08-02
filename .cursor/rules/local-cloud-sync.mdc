@@ -1,0 +1,25 @@
+---
+description: Keep local Agent and Cloud Agent on the same git commit via push/pull discipline.
+alwaysApply: true
+---
+
+# Local ↔ Cloud sync (ALWAYS ON)
+
+Cloud Agents **clone GitHub**. They never see uncommitted or unpushed local files.
+
+## Agent must
+
+1. **Commit** every edit turn (auto-commit-absolute).
+2. **Push** to `origin` at least every 3 local commits, at session end, and **immediately before any Cloud / Automation handoff** via:
+   `.\scripts\sync_local_remote.ps1 -Mode Push`
+3. After owner merges a Cloud PR / Cloud branch: run
+   `.\scripts\sync_local_remote.ps1 -Mode Pull`
+   before further local edits on that branch.
+4. If push/pull fails (auth, dirty tracked files, diverged history): **stop and report** — do not claim Cloud is in sync.
+5. Point owner at `docs/design/LOCAL_CLOUD_SYNC.md` for steps only they can do (GitHub connect, Cloud env + Godot snapshot, start Cloud, merge PR).
+
+## Forbidden
+
+- Starting Cloud work assumptions on unpushed commits
+- Editing local while ignoring that Cloud already pushed different commits (pull first)
+- Staging junk (`qa_*_round*.txt`, `.tmp_*`, `.docx`) as required sync — sync **game-needed** source only

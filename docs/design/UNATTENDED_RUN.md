@@ -30,15 +30,16 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 4. Fresh **`gauntlet-critic`** on **full matrix** returns `RESULT: PASS`, `SCORE ≥ 95`, `Infrastructure: ADEQUATE`
 5. `docs/design/bruiser-template.md` status → **`LOCKED`**
 
-### Current baseline (tick 0 — do not regress)
+### Current baseline (do not regress)
 
 | Metric | Value |
 |--------|-------|
-| Matrix PASS | **0 / 31** |
-| HARNESS_ONLY | **31** |
-| Manifest approved | **0** rows |
-| Last full-matrix critic | **REVOKED** (r20 invalidated) |
-| Tier 1 harness | must stay **PASS** while deepening rows |
+| Matrix PASS | **25 / 31** |
+| HARNESS_ONLY | **6** (deepened; await fresh critic) |
+| Manifest approved | **25** rows |
+| Remaining | guttural_roar, crimson_whirlwind, blood_for_blood, momentum_transfer, battering_ram, unstoppable_force |
+| Tier 1 harness | must stay **PASS** |
+| Cloud handoff | [`LOCAL_CLOUD_SYNC.md`](LOCAL_CLOUD_SYNC.md) · [`prompts/B6-REOPEN-CLOUD.md`](prompts/B6-REOPEN-CLOUD.md) |
 
 ---
 
