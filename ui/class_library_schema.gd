@@ -577,6 +577,43 @@ static func duplicate_effect(src: EffectData) -> EffectData:
 	return e
 
 
+static func ability_field_signature(ability: AbilityData, field: String) -> String:
+	if ability == null:
+		return ""
+	var data: Dictionary = ability_to_dict(ability)
+	if not data.has(field):
+		return ""
+	return JSON.stringify(data[field])
+
+
+static func snapshot_ability_map_from_units(units: Array[UnitData]) -> Dictionary:
+	var out: Dictionary = {}
+	for unit: UnitData in units:
+		if unit == null:
+			continue
+		for ability: AbilityData in unit.abilities:
+			if ability == null or ability.id == &"":
+				continue
+			out[ability.id] = duplicate_ability(ability)
+	return out
+
+
+const FactoryBaseline = preload("res://ui/class_library_factory_baseline.gd")
+
+
+static func snapshot_factory_abilities() -> Dictionary:
+	var out: Dictionary = {}
+	for unit_key: Variant in FactoryBaseline.build_all_player_units().keys():
+		var unit: UnitData = FactoryBaseline.build_all_player_units()[unit_key] as UnitData
+		if unit == null:
+			continue
+		for ability: AbilityData in unit.abilities:
+			if ability == null or ability.id == &"":
+				continue
+			out[ability.id] = duplicate_ability(ability)
+	return out
+
+
 static func duplicate_ability(src: AbilityData) -> AbilityData:
 	var dst := AbilityData.new()
 	copy_ability_into(dst, src)
@@ -1006,6 +1043,7 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"target_shape": src.target_shape,
 		"target_shape_size": src.target_shape_size,
 		"upgraded_range_tiles": src.upgraded_range_tiles,
+		"upgraded_movement_point_cost": src.upgraded_movement_point_cost,
 		"upgraded_target_shape": src.upgraded_target_shape,
 		"upgraded_target_shape_size": src.upgraded_target_shape_size,
 		"upgrade_description": src.upgrade_description,

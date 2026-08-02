@@ -118,7 +118,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.BULLDOZE, 1),
 	], 1)
 	bowling_charge.effects[0].scaling_stat = GameEnums.StatType.PHYSICAL
-	bowling_charge.upgrade_description = "Pushed target chain-pushes enemies behind them."
+	bowling_charge.targeting_mode = GameEnums.TargetingMode.DASH_LINE
+	bowling_charge.targeting_flags = GameEnums.TargetingFlags.TILE
+	bowling_charge.sync_legacy_targeting()
+	bowling_charge.upgrade_description = ""
 	bowling_charge.upgraded_effects = DataLibrary._duplicate_effects(bowling_charge.effects)
 	bowling_charge.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH_CHAIN_COLLISION, 1))
 	def.abilities.append(bowling_charge)
@@ -206,9 +209,15 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
 	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
 	trampling_advance.targeting_flags = GameEnums.TargetingFlags.TILE
+	trampling_advance.targeting_mode = GameEnums.TargetingMode.TILE
+	trampling_advance.movement_point_cost = 2
 	trampling_advance.presentation_anim = GameEnums.PresentationAnim.RUN
+	trampling_advance.sync_legacy_targeting()
 	trampling_advance.upgrade_description = ""
-	trampling_advance.upgraded_effects = DataLibrary._duplicate_effects(trampling_advance.effects)
+	trampling_advance.upgraded_effects = [
+		DataLibrary._effect(GameEnums.EffectType.TRAMPLE, 2),
+		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
+	]
 	def.abilities.append(trampling_advance)
 
 	return def

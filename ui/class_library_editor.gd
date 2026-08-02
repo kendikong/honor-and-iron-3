@@ -5,7 +5,8 @@ const PREVIEW_VIEWPORT_SIZE: Vector2i = Vector2i(1280, 720)
 
 static var _restore_unit_id: StringName = &""
 
-enum ViewMode { UNIT, GLOSSARY, DEFINITIONS }
+enum FieldTrackState { MATCHES_FACTORY, SAVED_OVERRIDE, UNSAVED_EDIT }
+
 
 var _selected_unit: UnitData
 var _view_mode: ViewMode = ViewMode.UNIT
@@ -53,7 +54,9 @@ var _glossary_overrides: Dictionary = {}
 var _class_buttons: Dictionary = {}
 var _nav_buttons: Array[Button] = []
 var _active_sidebar_btn: Button = null
-var _ability_defaults: Dictionary = {}
+var _factory_abilities: Dictionary = {}
+var _saved_abilities: Dictionary = {}
+var _field_tracks: Dictionary = {}
 var _preview_unit_state: UnitState
 var _preview_panel: PanelContainer
 var _preview_viewport: SubViewport
@@ -77,8 +80,8 @@ func _ready() -> void:
 	_load_overrides()
 	_build_layout()
 	DataLibrary.get_all_player_units()
-	_snapshot_ability_defaults()
-	ClassLibrarySchema.apply_saved_unit_overrides()
+	_factory_abilities = ClassLibrarySchema.snapshot_factory_abilities()
+	_saved_abilities = ClassLibrarySchema.snapshot_ability_map_from_units(DataLibrary.get_all_player_units())
 	var units: Array[UnitData] = DataLibrary.get_all_player_units()
 	var pick: UnitData = null
 	if _restore_unit_id != &"":
@@ -555,8 +558,10 @@ func _add_color_key(parent: VBoxContainer) -> void:
 	key_hdr.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
 	parent.add_child(key_hdr)
 	for spec: Array in [
-		[ClassLibraryTheme.ACCENT_INGAME, "Gold — in-game"],
-		[ClassLibraryTheme.ACCENT_DATA, "Blue — data"],
+		[ClassLibraryTheme.ACCENT_OVERRIDE_SAVED, "Gold — saved library override"],
+		[ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED, "Orange — unsaved edit"],
+		[ClassLibraryTheme.ACCENT_INGAME, "Yellow — in-game preview"],
+		[ClassLibraryTheme.ACCENT_DATA, "Blue — data column"],
 		[ClassLibraryTheme.ACCENT_IMPL, "Teal — implementation"],
 	]:
 		var row := HBoxContainer.new()
@@ -1147,6 +1152,7 @@ func _rebuild_ability_detail_panes(ability: AbilityData) -> void:
 		ability.display_name = t
 		_refresh_ability_ui(ability)
 	)
+	_track_ability_field(ability, "display_name", [name_edit])
 	name_inner.add_child(name_edit)
 	var id_badge := Label.new()
 	id_badge.text = String(ability.id)
@@ -1155,7 +1161,7 @@ func _rebuild_ability_detail_panes(ability: AbilityData) -> void:
 	name_inner.add_child(id_badge)
 	var reset_btn := Button.new()
 	reset_btn.text = "Reset"
-	reset_btn.tooltip_text = "Restore this skill to factory defaults"
+	reset_btn.tooltip_text = "Restore this skill to coded factory defaults"
 	_style_toolbar_button(reset_btn)
 	reset_btn.pressed.connect(func() -> void: _reset_ability_to_default(ability))
 	name_inner.add_child(reset_btn)
@@ -1394,6 +1400,7 @@ func _refresh_passive_preview(passive: PassiveData, preview: RichTextLabel) -> v
 
 
 func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) -> void:
+	_field_tracks.erase(ability.id)
 	ability.ensure_targeting_flags_from_mode()
 	ability.is_movement_skill = ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
 	var grid := GridContainer.new()
@@ -1401,58 +1408,78 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	grid.add_theme_constant_override("h_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
 	grid.add_theme_constant_override("v_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
 	parent.add_child(grid)
-	_bind_enum(grid, "kind", GameEnums.AbilityKind, ability.kind, func(v: int) -> void:
-		ability.kind = v
-		ability.is_movement_skill = v == GameEnums.AbilityKind.MOVEMENT_SKILL
-		_refresh_ability_ui(ability)
-	)
 	var ap_row := _bind_int(grid, "AP", ability.action_point_cost, func(v: int) -> void:
 		ability.action_point_cost = v
 		_refresh_ability_ui(ability)
 	)
+	_track_ability_field(ability, "action_point_cost", ap_row)
 	var mp_row := _bind_int(grid, "MP", ability.movement_point_cost, func(v: int) -> void:
 		ability.movement_point_cost = v
 		_refresh_ability_ui(ability)
 	)
-	_bind_int(grid, "Range", ability.range_tiles, func(v: int) -> void:
+	_track_ability_field(ability, "movement_point_cost", mp_row)
+	var range_row := _bind_int(grid, "Range", ability.range_tiles, func(v: int) -> void:
 		ability.range_tiles = v
 		_refresh_ability_ui(ability)
 	)
+	_track_ability_field(ability, "range_tiles", range_row)
 	_bind_targeting_flags(parent, ability)
 	var shape_row := _bind_enum(grid, "Shape", GameEnums.TargetShape, ability.target_shape, func(v: int) -> void:
 		ability.target_shape = v
 		_refresh_ability_ui(ability)
 	)
+	_track_ability_field(ability, "target_shape", shape_row)
 	var shape_size_row := _bind_int(grid, "Shape Size", ability.target_shape_size, func(v: int) -> void:
 		ability.target_shape_size = v
 		_refresh_ability_ui(ability)
 	)
+	_track_ability_field(ability, "target_shape_size", shape_size_row)
 	var scaling_row := _bind_enum(grid, "Scaling", GameEnums.StatType, ability.scaling_stat, func(v: int) -> void:
 		ability.scaling_stat = v
 		_refresh_ability_ui(ability)
 	)
-	_bind_int(grid, "Uses/Combat", ability.uses_per_combat, func(v: int) -> void: ability.uses_per_combat = v)
-	_bind_string(grid, "Present Key", String(ability.presentation_key), func(v: String) -> void:
+	_track_ability_field(ability, "scaling_stat", scaling_row)
+	var uses_row := _bind_int(grid, "Uses/Combat", ability.uses_per_combat, func(v: int) -> void: ability.uses_per_combat = v)
+	_track_ability_field(ability, "uses_per_combat", uses_row)
+	var present_key_row := _bind_string(grid, "Present Key", String(ability.presentation_key), func(v: String) -> void:
 		ability.presentation_key = StringName(v)
 	)
-	_bind_enum(grid, "Present Anim", GameEnums.PresentationAnim, ability.presentation_anim, func(v: int) -> void:
+	_track_ability_field(ability, "presentation_key", present_key_row)
+	var present_anim_row := _bind_enum(grid, "Present Anim", GameEnums.PresentationAnim, ability.presentation_anim, func(v: int) -> void:
 		ability.presentation_anim = v
 	)
+	_track_ability_field(ability, "presentation_anim", present_anim_row)
 	var upg_range_row := _bind_int(grid, "Upg Range", ability.upgraded_range_tiles, func(v: int) -> void:
 		ability.upgraded_range_tiles = v
 		_refresh_ability_ui(ability)
 	)
+	_track_ability_field(ability, "upgraded_range_tiles", upg_range_row)
 	var upg_shape_row := _bind_enum(grid, "Upg Shape", GameEnums.TargetShape, ability.upgraded_target_shape, func(v: int) -> void:
 		ability.upgraded_target_shape = v
 		_refresh_ability_ui(ability)
 	)
+	_track_ability_field(ability, "upgraded_target_shape", upg_shape_row)
 	var upg_size_row := _bind_int(grid, "Upg Size", ability.upgraded_target_shape_size, func(v: int) -> void:
 		ability.upgraded_target_shape_size = v
 		_refresh_ability_ui(ability)
 	)
-	_bind_multiline(parent, "Upgrade Text", ability.upgrade_description, func(v: String) -> void:
-		ability.upgrade_description = v
+	_track_ability_field(ability, "upgraded_target_shape_size", upg_size_row)
+	var upg_mp_row := _bind_int(grid, "Upg MP", ability.upgraded_movement_point_cost, func(v: int) -> void:
+		ability.upgraded_movement_point_cost = v
+		_refresh_ability_ui(ability)
 	)
+	_track_ability_field(ability, "upgraded_movement_point_cost", upg_mp_row)
+	var kind_row := _bind_enum(grid, "kind", GameEnums.AbilityKind, ability.kind, func(v: int) -> void:
+		ability.kind = v
+		ability.is_movement_skill = v == GameEnums.AbilityKind.MOVEMENT_SKILL
+		_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "kind", kind_row)
+	var upgrade_edit := _bind_multiline(parent, "Upgrade Text", ability.upgrade_description, func(v: String) -> void:
+		ability.upgrade_description = v
+		_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "upgrade_description", [upgrade_edit])
 	# Grey out fields that don't apply to this ability configuration dynamically.
 	var grey_cb := func() -> void:
 		var is_class_skill: bool = ability.kind == GameEnums.AbilityKind.CLASS_SKILL
@@ -1685,6 +1712,9 @@ func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effect
 			_ability_ui[ability][inner_cb_key] = cbs
 		eff_grey_cb.call()
 
+	var field_key := "upgraded_effects" if upgraded else "effects"
+	_track_ability_field(ability, field_key, _collect_effect_editor_controls(parent))
+
 
 func _refresh_ability_ui(ability: AbilityData) -> void:
 	if not _ability_ui.has(ability):
@@ -1735,33 +1765,47 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 	if range_row != null:
 		var range_chip_row: Dictionary = CombatUiFormatters.ability_range_chip(ability, _preview_unit())
 		range_row.tooltip_text = String(range_chip_row.get("tooltip", ""))
-	var is_dirty: bool = false
-	if _ability_defaults.has(ability.id):
-		var orig = _ability_defaults[ability.id]
-		is_dirty = ClassLibrarySchema.ability_data_dump(ability) != ClassLibrarySchema.ability_data_dump(orig)
+	var is_unsaved: bool = false
+	var is_saved_override: bool = false
+	if _saved_abilities.has(ability.id):
+		var saved_ab: AbilityData = _saved_abilities[ability.id] as AbilityData
+		is_unsaved = ClassLibrarySchema.ability_data_dump(ability) != ClassLibrarySchema.ability_data_dump(saved_ab)
+	if _factory_abilities.has(ability.id) and _saved_abilities.has(ability.id):
+		var factory_ab: AbilityData = _factory_abilities[ability.id] as AbilityData
+		var saved_ab2: AbilityData = _saved_abilities[ability.id] as AbilityData
+		is_saved_override = (
+			ClassLibrarySchema.ability_data_dump(saved_ab2)
+			!= ClassLibrarySchema.ability_data_dump(factory_ab)
+		)
 
 	var title: Label = refs.get("title")
 	if title != null:
 		title.text = ability.display_name
 		title.tooltip_text = CombatUiFormatters.ability_tooltip_text(ability, _preview_unit())
-		if is_dirty:
-			title.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_DANGER)
+		if is_unsaved:
+			title.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
+		elif is_saved_override:
+			title.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_SAVED)
 		else:
 			title.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
 			
 	var reset_btn: Button = refs.get("reset_btn")
 	if reset_btn != null:
-		if is_dirty:
-			reset_btn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_DANGER)
+		if is_unsaved or is_saved_override:
+			reset_btn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
 		else:
 			reset_btn.remove_theme_color_override("font_color")
 			
 	var name_edit: LineEdit = refs.get("name_edit")
 	if name_edit != null:
-		if is_dirty:
-			name_edit.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_DANGER)
+		if is_unsaved:
+			name_edit.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
+		elif is_saved_override:
+			name_edit.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_SAVED)
 		else:
 			name_edit.remove_theme_color_override("font_color")
+
+	_refresh_ability_field_colors(ability)
 
 	if refs.has("impl") and refs["impl"] != null:
 		refs["impl"].text = ClassLibrarySchema.ability_implementation_notes(ability)
@@ -1770,21 +1814,89 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 
 
 func _snapshot_ability_defaults() -> void:
-	_ability_defaults.clear()
-	for unit: UnitData in DataLibrary.get_all_player_units():
-		for ability: AbilityData in unit.abilities:
-			if ability == null or ability.id == &"":
-				continue
-			if not _ability_defaults.has(ability.id):
-				_ability_defaults[ability.id] = ClassLibrarySchema.duplicate_ability(ability)
+	_factory_abilities = ClassLibrarySchema.snapshot_factory_abilities()
+	_saved_abilities = ClassLibrarySchema.snapshot_ability_map_from_units(DataLibrary.get_all_player_units())
+
+
+func _track_ability_field(ability: AbilityData, field: String, controls: Variant) -> void:
+	if ability == null or field.is_empty():
+		return
+	if not _field_tracks.has(ability.id):
+		_field_tracks[ability.id] = []
+	var rows: Array = _field_tracks[ability.id] as Array
+	for i: int in range(rows.size() - 1, -1, -1):
+		var row: Dictionary = rows[i] as Dictionary
+		if String(row.get("field", "")) == field:
+			rows.remove_at(i)
+	var packed: Array[Control] = []
+	if controls is Array:
+		for ctrl: Variant in controls as Array:
+			if ctrl is Control:
+				packed.append(ctrl as Control)
+	elif controls is Control:
+		packed.append(controls as Control)
+	rows.append({"field": field, "controls": packed})
+
+
+func _ability_field_state(ability: AbilityData, field: String) -> FieldTrackState:
+	var factory_ab: AbilityData = _factory_abilities.get(ability.id) as AbilityData
+	var saved_ab: AbilityData = _saved_abilities.get(ability.id) as AbilityData
+	var cur_sig: String = ClassLibrarySchema.ability_field_signature(ability, field)
+	var saved_sig: String = ClassLibrarySchema.ability_field_signature(saved_ab, field) if saved_ab != null else ClassLibrarySchema.ability_field_signature(factory_ab, field)
+	var factory_sig: String = ClassLibrarySchema.ability_field_signature(factory_ab, field) if factory_ab != null else cur_sig
+	if cur_sig != saved_sig:
+		return FieldTrackState.UNSAVED_EDIT
+	if saved_sig != factory_sig:
+		return FieldTrackState.SAVED_OVERRIDE
+	return FieldTrackState.MATCHES_FACTORY
+
+
+func _apply_field_track_color(controls: Array, state: FieldTrackState) -> void:
+	for ctrl: Variant in controls:
+		if not (ctrl is Control):
+			continue
+		var node: Control = ctrl as Control
+		if node is Label:
+			continue
+		match state:
+			FieldTrackState.SAVED_OVERRIDE:
+				node.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_SAVED)
+			FieldTrackState.UNSAVED_EDIT:
+				node.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
+			_:
+				node.remove_theme_color_override("font_color")
+
+
+func _refresh_ability_field_colors(ability: AbilityData) -> void:
+	if ability == null or not _field_tracks.has(ability.id):
+		return
+	for entry: Variant in _field_tracks[ability.id] as Array:
+		var row: Dictionary = entry as Dictionary
+		var field: String = String(row.get("field", ""))
+		var controls: Array = row.get("controls", []) as Array
+		_apply_field_track_color(controls, _ability_field_state(ability, field))
+
+
+func _collect_effect_editor_controls(parent: VBoxContainer) -> Array[Control]:
+	var out: Array[Control] = []
+	for child: Node in parent.get_children():
+		_collect_controls_recursive(child, out)
+	return out
+
+
+func _collect_controls_recursive(node: Node, out: Array[Control]) -> void:
+	if node is SpinBox or node is OptionButton or node is LineEdit or node is TextEdit or node is CheckBox:
+		out.append(node as Control)
+	for child: Node in node.get_children():
+		_collect_controls_recursive(child, out)
 
 
 func _reset_ability_to_default(ability: AbilityData) -> void:
-	if ability == null or not _ability_defaults.has(ability.id) or _selected_unit == null:
+	if ability == null or not _factory_abilities.has(ability.id) or _selected_unit == null:
 		return
 	ClassLibrarySchema.copy_ability_into(
 		ability,
-		_ability_defaults[ability.id] as AbilityData,
+		_factory_abilities[ability.id] as AbilityData,
 	)
 	var keep_id: StringName = ability.id
 	_select_unit(_selected_unit)
@@ -2044,6 +2156,7 @@ func _bind_targeting_flags(parent: VBoxContainer, ability: AbilityData) -> void:
 		[GameEnums.TargetingFlags.TILE, "Tile"],
 		[GameEnums.TargetingFlags.DASH_LINE, "Dash line"],
 	]
+	var checks: Array[Control] = []
 	for spec: Array in specs:
 		var flag: int = int(spec[0])
 		var label: String = String(spec[1])
@@ -2056,6 +2169,9 @@ func _bind_targeting_flags(parent: VBoxContainer, ability: AbilityData) -> void:
 			_refresh_ability_ui(ability)
 		)
 		row.add_child(chk)
+		checks.append(chk)
+	_track_ability_field(ability, "targeting_flags", checks)
+	_track_ability_field(ability, "targeting_mode", checks)
 
 
 func _bind_string(parent: GridContainer, label: String, value: String, setter: Callable) -> Array[Control]:
@@ -2126,6 +2242,9 @@ func _save_overrides() -> void:
 	if _selected_unit != null:
 		data["last_unit"] = String(_selected_unit.id)
 	if ClassLibrarySchema.write_editor_save(data):
+		_saved_abilities = ClassLibrarySchema.snapshot_ability_map_from_units(DataLibrary.get_all_player_units())
+		if _selected_ability != null:
+			_refresh_ability_field_colors(_selected_ability)
 		if _save_status != null:
 			_save_status.text = "Saved"
 			_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_SUCCESS)
