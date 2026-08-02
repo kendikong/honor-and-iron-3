@@ -314,18 +314,8 @@ static func bible_ability_targeting_label(ability: AbilityData) -> String:
 	for eff: EffectData in ability.effects:
 		if eff.type == GameEnums.EffectType.DASH:
 			return "DASH %d" % eff.amount
-	match ability.id:
-		&"knight_redirect_strike":
-			return "RANGE 2"
-		_:
-			pass
 	if ability.range_tiles > 0:
-		if AbilitySystem.ability_has_movement_effect(ability):
-			var move_amount := AbilitySystem.effect_amount(ability, GameEnums.EffectType.MOVE)
-			if move_amount > 0:
-				return "MOVE %d" % move_amount
-			return "MOVE %d" % ability.range_tiles
-		return "MOVE"
+		return "RANGE %d" % ability.range_tiles
 	if ability.targeting_mode == GameEnums.TargetingMode.SELF and ability.range_tiles == 0:
 		if ability.target_shape != GameEnums.TargetShape.SINGLE:
 			return "RANGE 0"
