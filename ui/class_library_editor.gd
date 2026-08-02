@@ -6,6 +6,7 @@ const PREVIEW_VIEWPORT_SIZE: Vector2i = Vector2i(1280, 720)
 static var _restore_unit_id: StringName = &""
 
 enum FieldTrackState { MATCHES_FACTORY, SAVED_OVERRIDE, UNSAVED_EDIT }
+enum ViewMode { UNIT, GLOSSARY, DEFINITIONS }
 
 
 var _selected_unit: UnitData
