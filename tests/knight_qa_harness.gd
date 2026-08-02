@@ -1933,17 +1933,39 @@ static func run_shield_slam(failures: Array[String]) -> void:
 
 
 static func run_defensive_formation(failures: Array[String]) -> void:
-	var board: BoardState = make_plain_board(Vector2i(10, 8))
+	var board: BoardState = make_plain_board(Vector2i(12, 8))
 	place_knight(board, 1, Vector2i(4, 4))
 	var ally_def: UnitData = knight_unit_data()
 	place_unit(board, 3, ally_def, GameEnums.Team.PLAYER, Vector2i(5, 4), {
 		"active_abilities": [DataLibrary.get_universal_run()],
 	})
-	var form: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_defensive_formation")
+	place_enemy_basher(board, 5, Vector2i(3, 4))
+	place_unit(board, 4, ally_def, GameEnums.Team.PLAYER, Vector2i(8, 4), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var knight: UnitState = unit_on_board(board, 1)
+	var form: AbilityData = ability_on_unit(knight, &"knight_defensive_formation")
+	var cast_action: TimelineAction = plan_ability(1, form, knight.position, knight.id)
+	assert_true(
+		failures, "defensive_formation/ability_system/can_use",
+		AbilitySystem.can_use(board, cast_action),
+		"AbilitySystem must allow defensive formation self-centered AOE cast",
+	)
 	var plan := Timeline.new()
 	plan.add(plan_ability(1, form, Vector2i(4, 4), 1))
 	var result: SimResult = simulate_player_turn(board, plan)
 	var ally: UnitState = result.final_state.get_unit_by_id(3)
+	var caster_after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "defensive_formation/caster_no_sturdy",
+		caster_after != null and not has_status(caster_after, GameEnums.StatusType.STURDY),
+		"defensive formation must not grant STURDY to caster (allies only)",
+	)
+	assert_true(
+		failures, "defensive_formation/caster_no_def",
+		caster_after != null and not has_status(caster_after, GameEnums.StatusType.STAT_BUFF_DEF),
+		"defensive formation must not grant DEF buff to caster (allies only)",
+	)
 	assert_true(
 		failures, "defensive_formation/ally_sturdy",
 		ally != null and has_status(ally, GameEnums.StatusType.STURDY),
@@ -1954,6 +1976,86 @@ static func run_defensive_formation(failures: Array[String]) -> void:
 		ally != null and has_status(ally, GameEnums.StatusType.STAT_BUFF_DEF),
 		"defensive formation AOE must grant DEF buff to nearby ally",
 	)
+	var def_amt: int = 0
+	var sturdy_dur: int = 0
+	for s: StatusData in ally.active_statuses if ally else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+			def_amt = s.value
+		if s.type == GameEnums.StatusType.STURDY:
+			sturdy_dur = s.duration
+	assert_eq_int(
+		failures, "defensive_formation/def_amount",
+		def_amt,
+		2,
+	)
+	assert_eq_int(
+		failures, "defensive_formation/sturdy_duration",
+		sturdy_dur,
+		1,
+	)
+	var far_ally: UnitState = result.final_state.get_unit_by_id(4)
+	assert_true(
+		failures, "defensive_formation/out_of_aoe/no_sturdy",
+		far_ally != null and not has_status(far_ally, GameEnums.StatusType.STURDY),
+		"ally outside AOE must not gain STURDY",
+	)
+	assert_true(
+		failures, "defensive_formation/out_of_aoe/no_def",
+		far_ally != null and not has_status(far_ally, GameEnums.StatusType.STAT_BUFF_DEF),
+		"ally outside AOE must not gain DEF buff",
+	)
+	var enemy_in_aoe: UnitState = result.final_state.get_unit_by_id(5)
+	assert_true(
+		failures, "defensive_formation/enemy_in_aoe/no_sturdy",
+		enemy_in_aoe != null and not has_status(enemy_in_aoe, GameEnums.StatusType.STURDY),
+		"enemy inside AOE must not gain STURDY (allies only)",
+	)
+	assert_true(
+		failures, "defensive_formation/enemy_in_aoe/no_def",
+		enemy_in_aoe != null and not has_status(enemy_in_aoe, GameEnums.StatusType.STAT_BUFF_DEF),
+		"enemy inside AOE must not gain DEF buff (allies only)",
+	)
+	var board_push: BoardState = result.final_state.clone()
+	place_enemy_basher(board_push, 99, Vector2i(6, 4))
+	var bash: AbilityData = ability_on_unit(unit_on_board(board_push, 99), &"knight_shield_bash")
+	var ally_pos_before: Vector2i = board_push.get_unit_by_id(3).position
+	var plan_bash := Timeline.new()
+	plan_bash.add(plan_ability(99, bash, Vector2i(5, 4), 3))
+	var push_result: SimResult = simulate_plan(board_push, plan_bash)
+	var ally_after_bash: UnitState = push_result.final_state.get_unit_by_id(3)
+	assert_eq_cell(
+		failures, "defensive_formation/sturdy_blocks_push",
+		ally_after_bash.position if ally_after_bash else Vector2i(-1, -1),
+		ally_pos_before,
+	)
+	var board_pull: BoardState = result.final_state.clone()
+	place_unit(board_pull, 98, knight_unit_data(), GameEnums.Team.ENEMY, Vector2i(7, 4), {
+		"active_abilities": [factory_ability(&"knight_chain_hook")],
+	})
+	var hook: AbilityData = ability_on_unit(unit_on_board(board_pull, 98), &"knight_chain_hook")
+	var ally_pull_pos: Vector2i = board_pull.get_unit_by_id(3).position
+	var plan_pull := Timeline.new()
+	plan_pull.add(plan_ability(98, hook, Vector2i(5, 4), 3))
+	var pull_result: SimResult = simulate_plan(board_pull, plan_pull)
+	var ally_after_pull: UnitState = pull_result.final_state.get_unit_by_id(3)
+	assert_eq_cell(
+		failures, "defensive_formation/sturdy_blocks_pull",
+		ally_after_pull.position if ally_after_pull else Vector2i(-1, -1),
+		ally_pull_pos,
+	)
+	var advanced: SimResult = Simulator.simulate(result.final_state, Timeline.new())
+	advanced = Simulator.simulate(advanced.final_state, Timeline.new())
+	var ally_expired: UnitState = advanced.final_state.get_unit_by_id(3)
+	assert_true(
+		failures, "defensive_formation/sturdy_expires",
+		ally_expired != null and not has_status(ally_expired, GameEnums.StatusType.STURDY),
+		"STURDY must clear after 1 turn",
+	)
+	assert_true(
+		failures, "defensive_formation/def_expires",
+		ally_expired != null and not has_status(ally_expired, GameEnums.StatusType.STAT_BUFF_DEF),
+		"DEF buff must clear after 1 turn",
+	)
 	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_defensive_formation")
 	var board2: BoardState = make_plain_board(Vector2i(10, 8))
 	place_knight(board2, 10, Vector2i(4, 4), cfg_up)
@@ -1963,14 +2065,43 @@ static func run_defensive_formation(failures: Array[String]) -> void:
 	})
 	var form_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_defensive_formation")
 	var ally_armor_before: int = unit_on_board(board2, 11).armor
+	var caster_armor_before: int = unit_on_board(board2, 10).armor
 	var plan2 := Timeline.new()
 	plan2.add(plan_ability(10, form_up, Vector2i(4, 4), 10))
 	var result2: SimResult = simulate_player_turn(board2, plan2)
 	var ally2: UnitState = result2.final_state.get_unit_by_id(11)
+	var caster_up: UnitState = result2.final_state.get_unit_by_id(10)
+	assert_eq_int(
+		failures, "defensive_formation/upgrade/caster_no_shield",
+		caster_up.armor if caster_up else caster_armor_before,
+		caster_armor_before,
+	)
+	assert_true(
+		failures, "defensive_formation/upgrade/caster_no_sturdy",
+		caster_up != null and not has_status(caster_up, GameEnums.StatusType.STURDY),
+		"upgraded defensive formation must not grant STURDY to caster",
+	)
+	assert_true(
+		failures, "defensive_formation/upgrade/caster_no_def",
+		caster_up != null and not has_status(caster_up, GameEnums.StatusType.STAT_BUFF_DEF),
+		"upgraded defensive formation must not grant DEF buff to caster",
+	)
 	assert_true(
 		failures, "defensive_formation/upgrade/armor_up",
 		ally2 != null and ally2.armor > ally_armor_before,
 		"upgraded defensive formation must grant ARMOR_UP shield to ally",
+	)
+	assert_eq_int(
+		failures, "defensive_formation/upgrade/shield_amount",
+		ally2.armor - ally_armor_before,
+		2,
+	)
+	assert_true(
+		failures, "defensive_formation/upgrade/keeps_base_buffs",
+		ally2 != null
+		and has_status(ally2, GameEnums.StatusType.STURDY)
+		and has_status(ally2, GameEnums.StatusType.STAT_BUFF_DEF),
+		"upgraded defensive formation must still grant base DEF and STURDY",
 	)
 
 
@@ -2039,6 +2170,28 @@ static func run_indomitable_will(failures: Array[String]) -> void:
 		base_str,
 		0,
 	)
+	var board_base_break: BoardState = result.final_state.clone()
+	damage_taken_pierce(board_base_break, 1, MISSING_HP)
+	var broken_base: UnitState = board_base_break.get_unit_by_id(1)
+	assert_eq_int(
+		failures, "indomitable_will/base/shield_break_clears_armor",
+		broken_base.armor,
+		0,
+	)
+	assert_true(
+		failures, "indomitable_will/base/shield_break_clears_status",
+		broken_base != null and not has_status(broken_base, GameEnums.StatusType.INDOMITABLE_WILL),
+		"breaking base indomitable shield must remove INDOMITABLE_WILL status",
+	)
+	var base_break_str: int = 0
+	for s: StatusData in broken_base.active_statuses if broken_base else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_STR:
+			base_break_str += s.value
+	assert_eq_int(
+		failures, "indomitable_will/base/no_str_on_shield_break",
+		base_break_str,
+		0,
+	)
 	var cfg: Dictionary = with_upgraded_ability({}, &"knight_indomitable_will")
 	var board2: BoardState = make_plain_board(Vector2i(8, 8))
 	place_knight(board2, 10, Vector2i(3, 3), cfg)
@@ -2091,9 +2244,18 @@ static func run_indomitable_will(failures: Array[String]) -> void:
 		0,
 	)
 	assert_true(
+		failures, "indomitable_will/upgrade/shield_break_clears_status",
+		broken != null and not has_status(broken, GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED),
+		"breaking upgraded indomitable shield must remove INDOMITABLE_WILL_UPGRADED status",
+	)
+	var break_str: int = 0
+	for s: StatusData in broken.active_statuses if broken else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_STR:
+			break_str += s.value
+	assert_eq_int(
 		failures, "indomitable_will/upgrade/shield_break_grants_str",
-		broken != null and has_status(broken, GameEnums.StatusType.STAT_BUFF_STR),
-		"breaking upgraded indomitable shield must grant +2 STR",
+		break_str,
+		2,
 	)
 
 

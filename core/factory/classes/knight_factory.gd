@@ -183,9 +183,12 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)
 	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_DIAMOND, 3)
 	defensive_formation.effects[0].amount = 2
+	defensive_formation.effects[0].modifiers["exclude_caster"] = true
+	defensive_formation.effects[1].modifiers["exclude_caster"] = true
 	defensive_formation.upgrade_description = "Allies gain SHIELD 2."
 	defensive_formation.upgraded_effects = DataLibrary._duplicate_effects(defensive_formation.effects)
 	defensive_formation.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 2))
+	defensive_formation.upgraded_effects[2].modifiers["exclude_caster"] = true
 	def.abilities.append(defensive_formation)
 
 	var chain_hook = DataLibrary._make_ability(&"knight_chain_hook", "Chain Hook", 3, [

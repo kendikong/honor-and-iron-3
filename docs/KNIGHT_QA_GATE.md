@@ -142,10 +142,10 @@ Do **not** weaken, replace, or “simplify” harness/scenario/production paths 
 | `knight_bowling_charge` | Active | `tests/skills/bowling_charge_scenario.gd` | HARNESS_ONLY | DASH only; no `[+]` chain-push sim |
 | `knight_iron_grip` | Active | `tests/skills/iron_grip_scenario.gd` | PASS | ROOT + next-turn DEF halving + `[+]` AP refund sim (meta-critic r14) |
 | `knight_redirect_strike` | Active | `tests/skills/redirect_strike_scenario.gd` | PASS | INTERCEPT 50% + mid-window persist + `[+]` DEF stack sim (meta-critic r17) |
-| `knight_indomitable_will` | Active | `tests/skills/indomitable_will_scenario.gd` | HARNESS_ONLY | Base/`[+]` status sim; no 7-phase |
+| `knight_indomitable_will` | Active | `tests/skills/indomitable_will_scenario.gd` | PASS | missing HP→SHIELD 2t + expiry/break + `[+]` STR sim (meta-critic r18) |
 | `knight_retaliation_protocol` | Active | `tests/skills/retaliation_protocol_scenario.gd` | PASS | Counter base + `[+]` PUSH-on-counter sim (meta-critic r6) |
 | `knight_shield_slam` | Active | `tests/skills/shield_slam_scenario.gd` | PASS | DAMAGE+PUSH base + `[+]` DEF-debuff events (meta-critic r6) |
-| `knight_defensive_formation` | Active | `tests/skills/defensive_formation_scenario.gd` | HARNESS_ONLY | STURDY base + `[+]` ARMOR_UP sim; no 7-phase |
+| `knight_defensive_formation` | Active | `tests/skills/defensive_formation_scenario.gd` | PASS | AOE allies-only STURDY/PUSH/PULL + `[+]` SHIELD 2 sim (meta-critic r19) |
 | `knight_chain_hook` | Active | `tests/skills/chain_hook_scenario.gd` | PASS | 7-phase + sim PULL/DAMAGE + `[+]` VULNERABLE |
 | `knight_trampling_advance` | Active | `tests/skills/trampling_advance_scenario.gd` | HARNESS_ONLY | 7-phase + weak sim; empty factory `[+]` |
 | *(economy)* | Run / MP | `tests/skills/run_economy_scenario.gd` | HARNESS_ONLY | Shared economy slice — not a Bible row |

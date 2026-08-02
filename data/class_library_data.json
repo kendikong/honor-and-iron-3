@@ -2986,6 +2986,9 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"exclude_caster": true
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2996,6 +2999,9 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"exclude_caster": true
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3020,6 +3026,9 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"exclude_caster": true
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3030,6 +3039,9 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"exclude_caster": true
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3040,6 +3052,9 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"exclude_caster": true
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
