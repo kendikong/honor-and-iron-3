@@ -328,6 +328,65 @@ static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:
 	return false
 
 
+static func events_have_unit_damaged_pierce(events: Array, pierce: bool) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+			if bool(e.data.get("pierce", false)) == pierce:
+				return true
+	return false
+
+
+static func events_have_damage_pierce(events: Array, pierce: bool) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+			var d: Dictionary = e.data
+			if str(d.get("type", "")) == "damage" and bool(d.get("pierce", false)) == pierce:
+				return true
+	return false
+
+
+static func events_have_terrain_changed(events: Array, coord: Vector2i) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.TERRAIN_CHANGED:
+			if e.data.get("coord", Vector2i(-99, -99)) == coord:
+				return true
+	return false
+
+
+static func damage_dealt_to_unit(board: BoardState, unit_id: int, raw_amount: int, attacker: UnitState = null) -> int:
+	var target: UnitState = board.get_unit_by_id(unit_id)
+	if target == null or target.health == null:
+		return 0
+	var hp_before: int = target.health.current_hp
+	var events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board, target, raw_amount, events, &"physical", false, false, attacker, "bruiser_qa",
+	)
+	return hp_before - target.health.current_hp
+
+
+static func set_tile_trap(board: BoardState, coord: Vector2i) -> void:
+	var trap := TerrainData.new()
+	trap.id = &"trap"
+	trap.display_name = "Trap"
+	trap.hazard_damage = 5
+	trap.blocks_movement = false
+	board.tiles[coord] = TileState.create(coord, trap)
+
+
+static func bruiser_with_abilities(ability_ids: Array, upgraded: Dictionary = {}) -> Dictionary:
+	var abilities: Array = [DataLibrary.get_universal_run()]
+	for id: Variant in ability_ids:
+		var ab: AbilityData = factory_ability(id as StringName)
+		if ab != null:
+			abilities.append(ab)
+	var cfg: Dictionary = {"active_abilities": abilities}
+	for up_id: Variant in upgraded.keys():
+		if bool(upgraded[up_id]):
+			cfg = with_upgraded_ability(cfg, up_id as StringName)
+	return cfg
+
+
 static func run_push_through_base(failures: Array[String]) -> void:
 	var board: BoardState = make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = {
@@ -438,4 +497,38 @@ static func run_push_through_upgrade(failures: Array[String]) -> void:
 		failures, "push_through/upgrade_mp_spent",
 		mp_before - b_after.movement.points_left,
 		1,
+	)
+
+
+static func run_push_through_upgrade_next_attack(failures: Array[String]) -> void:
+	var cleave: AbilityData = factory_ability(&"bruiser_cleave")
+	var cfg: Dictionary = with_upgraded_ability({
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(&"bruiser_push_through"),
+			cleave,
+		],
+	}, &"bruiser_push_through")
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	place_dummy(board, 2, Vector2i(3, 4))
+	var hp_enemy: int = unit_hp(board, 2)
+	var push: AbilityData = ability_on_unit(unit_on_board(board, 1), &"bruiser_push_through")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, push, Vector2i(3, 4), 2, GameEnums.MoveTiming.PRE_ACTION))
+	plan.add(plan_ability(1, cleave, Vector2i(3, 5), 2))
+	var result: SimResult = simulate_plan(board, plan)
+	var dmg_buffed: int = hp_enemy - unit_hp(result.final_state, 2)
+	var board_base: BoardState = make_plain_board(Vector2i(8, 8))
+	place_bruiser(board_base, 10, Vector2i(3, 3), {"active_abilities": [DataLibrary.get_universal_run(), cleave]})
+	place_dummy(board_base, 11, Vector2i(3, 4))
+	var hp_base: int = unit_hp(board_base, 11)
+	var plan_base := Timeline.new()
+	plan_base.add(plan_ability(10, cleave, Vector2i(3, 4), 11))
+	var result_base: SimResult = simulate_plan(board_base, plan_base)
+	var dmg_base: int = hp_base - unit_hp(result_base.final_state, 11)
+	assert_true(
+		failures, "push_through/upgrade_str_increases_attack",
+		dmg_buffed > dmg_base,
+		"[+] STR buff_on_push must increase follow-up attack damage same turn",
 	)

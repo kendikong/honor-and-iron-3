@@ -116,6 +116,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.SWAP, 0),
 		DataLibrary._status_effect_self(GameEnums.StatusType.INTERCEPT, 1)
 	], 1)
+	meat_shield.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	meat_shield.targeting_flags = GameEnums.TargetingFlags.ALLY
 	meat_shield.upgrade_description = "RANGE 3. Gain STR +2 per interception."
 	meat_shield.upgraded_range_tiles = 3
 	meat_shield.upgraded_effects = DataLibrary._duplicate_effects(meat_shield.effects)
@@ -172,6 +174,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	violent_collision.effects[0].modifiers["bulldoze"] = 1
 	violent_collision.effects[0].modifiers["push"] = 1
 	violent_collision.effects[0].modifiers["violent_collision_recast"] = 1
+	violent_collision.targeting_mode = GameEnums.TargetingMode.DASH_LINE
+	violent_collision.targeting_flags = GameEnums.TargetingFlags.DASH_LINE
 	violent_collision.upgrade_description = "Collisions apply STAGGER (1 turn)."
 	violent_collision.upgraded_effects = DataLibrary._duplicate_effects(violent_collision.effects)
 	violent_collision.upgraded_effects[0].modifiers["stagger_on_collision"] = 1
@@ -185,11 +189,13 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	crimson_whirlwind.upgraded_effects[0].modifiers["heal_per_target_hit"] = 1
 	def.abilities.append(crimson_whirlwind)
 
-	var belly_flop = DataLibrary._make_ability(&"bruiser_belly_flop", "Belly Flop", 1, [
+	var belly_flop = DataLibrary._make_ability(&"bruiser_belly_flop", "Belly Flop", 2, [
 		DataLibrary._effect(GameEnums.EffectType.TELEPORT_CASTER, 0),
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
 	], 2, GameEnums.StatType.PHYSICAL)
 	belly_flop.upgrade_description = "Landing applies PUSH 1 to all adjacent enemies."
+	belly_flop.targeting_mode = GameEnums.TargetingMode.TILE
+	belly_flop.targeting_flags = GameEnums.TargetingFlags.TILE
 	belly_flop.upgraded_effects = DataLibrary._duplicate_effects(belly_flop.effects)
 	belly_flop.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))
 	belly_flop.upgraded_effects[2].modifiers["belly_flop_push"] = 1
@@ -200,6 +206,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0)
 	], 1, GameEnums.StatType.PHYSICAL)
 	breaching_dash.upgrade_description = "Your next attack this turn gains PIERCE."
+	breaching_dash.targeting_mode = GameEnums.TargetingMode.DASH_LINE
+	breaching_dash.targeting_flags = GameEnums.TargetingFlags.DASH_LINE
 	breaching_dash.upgraded_effects = DataLibrary._duplicate_effects(breaching_dash.effects)
 	breaching_dash.upgraded_effects[0].modifiers["next_attack_pierce"] = 1
 	def.abilities.append(breaching_dash)
