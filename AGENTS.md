@@ -220,3 +220,26 @@ To keep workspace limits and API usage optimized:
 - Keep responses concise; avoid re-explaining architecture the rules already state.
 - One scoped deliverable per request when possible; ask before expanding scope.
 
+## Cursor Cloud specific instructions
+
+Durable, non-obvious notes for running this Godot 4.7 project on the Linux Cloud VM. Standard commands live in `scripts/*.ps1`, `docs/PLANNING_QA_GATE.md`, and `ROADMAP.md` — those are not duplicated here.
+
+### Engine
+- Godot **4.7-stable** is installed on `PATH` as `godot` (Linux x86_64 build). The startup update script re-installs it only if missing and pre-warms the asset import cache (`godot --headless --import`).
+- The `scripts/*.ps1` QA wrappers are **Windows/PowerShell + local `.exe`** only. On this VM, invoke Godot directly (the `.ps1` files just wrap these commands):
+  - Sim/bridge regression (headless): `godot --headless --path . --script res://tests/regression_test.gd`
+  - Result file is written to `~/.local/share/godot/app_userdata/Honor and Iron 3/regression_test_result.txt` (Linux user:// path; the `.ps1` scripts read the Windows `%APPDATA%` path instead).
+  - Other headless entry points: `res://tests/run_*.gd` (e.g. `run_planning_input_only.gd`, `run_skill_scenarios_only.gd`).
+
+### Running the GUI (no GPU on this VM)
+- This VM has **no GPU / no Vulkan**, so the default Forward+ renderer will not start. Run the app with the Compatibility renderer + software GL on the virtual display:
+  - `DISPLAY=:1 LIBGL_ALWAYS_SOFTWARE=1 godot --path . --rendering-driver opengl3 res://scenes/MainMenu.tscn`
+- Entry scene is `res://scenes/MainMenu.tscn`. Fastest path into playable combat: **"Skill Test Arena"** → `TestBattle.tscn`. Core loop: left-click a unit to select → **double-click** a destination tile to plan a move (cyan marker) → **"Ready to Execute"** resolves the turn (Battle Log logs `<unit> moves to (x, y)`).
+
+### Known-benign runtime noise (software rendering)
+- A 2D canvas-light shader fails to compile under llvmpipe (`CanvasShaderGLES3 ... sampler arrays indexed with non-constant expressions`). This is a **software-GL limitation only** — it does not affect the headless `Simulator`/game logic. Pressing "Ready to Execute" can show a brief black **boot-cube loading flicker** while shaders recompile; the turn still resolves.
+- Audio has no sound card and falls back to the **dummy driver** (ALSA errors in logs are benign).
+
+### Test state caveat
+- As of environment setup, the **sim/bridge regression suite (`res://tests/regression_test.gd`) reports FAILs on `master`** due to pre-existing test/production drift — the test runners assign properties that no longer exist on the data classes (e.g. `UnitData.max_hp`, `BoardState.width`, `MovementComponent.points_max`). These are **repo-side code issues, not environment issues**; the harness itself runs deterministically and other suites (e.g. `run_planning_input_only.gd`) report PASS.
+
