@@ -332,11 +332,20 @@ static func run_suplex_upgrade(failures: Array[String]) -> void:
 	)
 
 static func run_adrenaline_surge(failures: Array[String]) -> void:
+	## Bible: Adrenaline Surge — SELF | spend 5 HP | +1 MOV +1 STR 1 turn; 0 AP if 2+ adjacent enemies.
 	H.run_active_smoke(
-		failures, &"bruiser_adrenaline_surge", "SELF cost + buffs",
+		failures, &"bruiser_adrenaline_surge", "SELF | spend 5 HP | +1 MOV +1 STR",
 		[GameEnums.EffectType.DAMAGE_SELF],
 		[GameEnums.StatusType.STAT_BUFF_STR, GameEnums.StatusType.STAT_BUFF_MOV],
 	)
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_adrenaline_surge")
+	H.assert_eq_int(failures, "adrenaline_surge/self_cost_amt", factory_ab.effects[0].amount, 5)
+	H.assert_eq_int(
+		failures, "adrenaline_surge/zero_ap_threshold",
+		int(factory_ab.effects[0].modifiers["zero_ap_adjacent_enemies"]),
+		2,
+	)
+	H.assert_eq_int(failures, "adrenaline_surge/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.SELF)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_adrenaline_surge"))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
@@ -349,6 +358,14 @@ static func run_adrenaline_surge(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "adrenaline_surge/self_cost", hp_before - after.health.current_hp, 5)
 	H.assert_eq_int(failures, "adrenaline_surge/str", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 1)
 	H.assert_eq_int(failures, "adrenaline_surge/mov", H.status_value(after, GameEnums.StatusType.STAT_BUFF_MOV), 1)
+	for eff: EffectData in ab.effects:
+		if eff != null and eff.type in [
+			GameEnums.EffectType.ADD_STATUS_SELF,
+		] and eff.status_type in [
+			GameEnums.StatusType.STAT_BUFF_STR,
+			GameEnums.StatusType.STAT_BUFF_MOV,
+		]:
+			H.assert_eq_int(failures, "adrenaline_surge/buff_duration", eff.status_duration, 1)
 	var adj_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(adj_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_adrenaline_surge"))
 	H.place_dummy(adj_board, 11, Vector2i(4, 3))
@@ -360,22 +377,58 @@ static func run_adrenaline_surge(failures: Array[String]) -> void:
 		AbilitySystem.get_action_point_cost(adj_bruiser, adj_ab, adj_board),
 		0,
 	)
+	var solo_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(solo_board, 20, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_adrenaline_surge"))
+	H.place_dummy(solo_board, 21, Vector2i(4, 3))
+	var solo_bruiser: UnitState = H.unit_on_board(solo_board, 20)
+	var solo_ab: AbilityData = H.ability_on_unit(solo_bruiser, &"bruiser_adrenaline_surge")
+	H.assert_true(
+		failures, "adrenaline_surge/one_adjacent_pays_ap",
+		AbilitySystem.get_action_point_cost(solo_bruiser, solo_ab, solo_board) > 0,
+		"0 AP only when adjacent to 2+ enemies",
+	)
 
 
 static func run_earthshatter(failures: Array[String]) -> void:
+	## Bible: Earthshatter — RANGE 1 | ARC | ATK 2 | destroy traps/cover in area.
 	H.run_active_smoke(
-		failures, &"bruiser_earthshatter", "ARC + destroy",
+		failures, &"bruiser_earthshatter", "RANGE 1 | ARC | ATK 2 | DESTROY",
 		[GameEnums.EffectType.DAMAGE, GameEnums.EffectType.DESTROY_OBSTACLE],
 	)
-	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_earthshatter")
+	H.assert_eq_int(failures, "earthshatter/range", factory_ab.range_tiles, 1)
+	H.assert_eq_int(failures, "earthshatter/shape", factory_ab.target_shape, GameEnums.TargetShape.ARC)
+	H.assert_eq_int(failures, "earthshatter/dmg_amount", factory_ab.effects[0].amount, 2)
+	H.assert_true(
+		failures, "earthshatter/destroy_effect",
+		H.ability_has_effect(factory_ab, GameEnums.EffectType.DESTROY_OBSTACLE, false),
+	)
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_earthshatter"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
+	var bruiser_before: UnitState = H.unit_on_board(board, 1)
 	var hp: int = H.unit_hp(board, 2)
-	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_earthshatter")
+	var skill: AbilityData = H.ability_on_unit(bruiser_before, &"bruiser_earthshatter")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
-	H.assert_true(failures, "earthshatter/hit", H.unit_hp(result.final_state, 2) < hp)
+	H.assert_eq_cell(failures, "earthshatter/bruiser_pos", result.final_state.get_unit_by_id(1).position, Vector2i(3, 3))
+	var enemy_damage: int = hp - H.unit_hp(result.final_state, 2)
+	var dmg_math: Dictionary = H.first_damage_math(result.events)
+	H.assert_eq_int(failures, "earthshatter/dmg_base_amt", int(dmg_math.get("base", -1)), 2)
+	var expected_enemy: int = H.damage_dealt_to_unit(
+		board, 2, int(dmg_math.get("final_raw", 0)), bruiser_before,
+	)
+	H.assert_eq_int(failures, "earthshatter/dmg_dealt", enemy_damage, expected_enemy)
+	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(far_board, 10, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_earthshatter"))
+	H.place_dummy(far_board, 11, Vector2i(3, 3))
+	var far_ab: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 10), &"bruiser_earthshatter")
+	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(3, 3), 11)
+	H.assert_true(
+		failures, "earthshatter/out_of_range",
+		not AbilitySystem.can_use(far_board, far_action),
+	)
 	var destroy_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(destroy_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_earthshatter"))
 	var construct_def: UnitData = DataLibrary.get_unit(&"construct_turret")
@@ -397,14 +450,18 @@ static func run_earthshatter(failures: Array[String]) -> void:
 
 
 static func run_meat_shield(failures: Array[String]) -> void:
+	## Bible: Meat Shield — RANGE 1 ally SWAP + INTERCEPT 50%; [+] RANGE 3 + STR per intercept.
 	H.run_active_smoke(
-		failures, &"bruiser_meat_shield", "SWAP + INTERCEPT",
+		failures, &"bruiser_meat_shield", "RANGE 1 ally SWAP + INTERCEPT",
 		[GameEnums.EffectType.SWAP],
 		[GameEnums.StatusType.INTERCEPT],
 	)
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_meat_shield")
+	H.assert_eq_int(failures, "meat_shield/range", factory_ab.range_tiles, 1)
+	H.assert_eq_int(failures, "meat_shield/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.ALLY_UNIT)
 	H.assert_true(
 		failures, "meat_shield/not_teleport",
-		not H.ability_has_effect(H.factory_ability(&"bruiser_meat_shield"), GameEnums.EffectType.TELEPORT_CASTER, false),
+		not H.ability_has_effect(factory_ab, GameEnums.EffectType.TELEPORT_CASTER, false),
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_meat_shield")
@@ -513,43 +570,78 @@ static func run_meat_shield(failures: Array[String]) -> void:
 		split_total > 0 and split_total <= solo_incoming,
 		"intercept splits damage; post-mitigation total cannot exceed solo baseline",
 	)
+	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(far_board, 20, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_meat_shield"))
+	H.place_bruiser(far_board, 21, Vector2i(4, 3), {"active_abilities": [DataLibrary.get_universal_run()]})
+	var far_shield: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 20), &"bruiser_meat_shield")
+	var far_action: TimelineAction = H.plan_ability(20, far_shield, Vector2i(4, 3), 21)
+	H.assert_true(
+		failures, "meat_shield/out_of_range",
+		not AbilitySystem.can_use(far_board, far_action),
+		"RANGE 1 must reject non-adjacent ally targets",
+	)
 
 
 static func run_frenzy(failures: Array[String]) -> void:
+	## Bible: Frenzy — RANGE 1 | ATK 1 (3 times); [+] on kill gain 1 AP.
+	H.run_active_smoke(
+		failures, &"bruiser_frenzy", "RANGE 1 | ATK 1 x3",
+		[GameEnums.EffectType.DAMAGE],
+	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_frenzy")
-	H.assert_true(failures, "frenzy/data", ab != null)
-	if ab == null:
-		return
+	H.assert_eq_int(failures, "frenzy/range", ab.range_tiles, 1)
 	var dmg_count: int = 0
 	for eff: EffectData in ab.effects:
 		if eff != null and eff.type == GameEnums.EffectType.DAMAGE:
 			dmg_count += 1
+			H.assert_eq_int(failures, "frenzy/dmg_amount", eff.amount, 1)
 	H.assert_eq_int(failures, "frenzy/triple_hit", dmg_count, 3)
-	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_frenzy"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
+	var bruiser_before: UnitState = H.unit_on_board(board, 1)
 	var hp: int = H.unit_hp(board, 2)
-	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_frenzy")
+	var skill: AbilityData = H.ability_on_unit(bruiser_before, &"bruiser_frenzy")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
-	H.assert_true(failures, "frenzy/damage", H.unit_hp(result.final_state, 2) < hp)
+	H.assert_eq_cell(failures, "frenzy/bruiser_pos", result.final_state.get_unit_by_id(1).position, Vector2i(3, 3))
 	H.assert_eq_int(
 		failures, "frenzy/hit_count",
 		H.count_unit_hp_damage_events(result.events, 2),
 		3,
 	)
+	var total_dmg: int = H.sum_unit_hp_damage_events(result.events, 2)
+	H.assert_true(failures, "frenzy/damage", total_dmg > 0 and H.unit_hp(result.final_state, 2) < hp)
+	var dmg_math: Dictionary = H.first_damage_math(result.events)
+	H.assert_eq_int(failures, "frenzy/dmg_base_amt", int(dmg_math.get("base", -1)), 1)
+	var expected_hit: int = H.damage_dealt_to_unit(
+		board, 2, int(dmg_math.get("final_raw", 0)), bruiser_before,
+	)
+	H.assert_eq_int(failures, "frenzy/dmg_per_hit", total_dmg, expected_hit * 3)
+	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(far_board, 10, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_frenzy"))
+	H.place_dummy(far_board, 11, Vector2i(3, 3))
+	var far_ab: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 10), &"bruiser_frenzy")
+	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(3, 3), 11)
+	H.assert_true(
+		failures, "frenzy/out_of_range",
+		not AbilitySystem.can_use(far_board, far_action),
+	)
 
 
 static func run_guttural_roar(failures: Array[String]) -> void:
+	## Bible: Guttural Roar — RANGE 0 | AOE 2 | PUSH 1 | DEF -2; [+] item push + collision ATK 1.
 	H.run_active_smoke(
-		failures, &"bruiser_guttural_roar", "AOE PUSH + DEF debuff",
+		failures, &"bruiser_guttural_roar", "RANGE 0 | AOE 2 | PUSH 1 | DEF -2",
 		[GameEnums.EffectType.PUSH],
 		[GameEnums.StatusType.STAT_DEBUFF_DEF],
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_guttural_roar")
 	H.assert_eq_int(failures, "guttural_roar/aoe", ab.target_shape, GameEnums.TargetShape.AOE_SQUARE)
 	H.assert_eq_int(failures, "guttural_roar/aoe_size", ab.target_shape_size, 2)
+	H.assert_eq_int(failures, "guttural_roar/push_amount", ab.effects[0].amount, 1)
+	H.assert_eq_int(failures, "guttural_roar/def_debuff_amount", ab.effects[1].amount, 2)
 	ab.ensure_targeting_flags_from_mode()
 	H.assert_eq_int(failures, "guttural_roar/tile_targeting", ab.targeting_mode, GameEnums.TargetingMode.TILE)
 	H.assert_true(failures, "guttural_roar/tile_flags", ab.has_targeting(GameEnums.TargetingFlags.TILE))
@@ -563,6 +655,7 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
+	H.assert_eq_cell(failures, "guttural_roar/bruiser_pos", result.final_state.get_unit_by_id(1).position, Vector2i(3, 3))
 	var enemy: UnitState = result.final_state.get_unit_by_id(2)
 	H.assert_true(
 		failures, "guttural_roar/push",
@@ -596,11 +689,16 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 	)
 
 static func run_headbutt(failures: Array[String]) -> void:
+	## Bible: Headbutt — RANGE 1 | ATK 3 | mutual 1 dmg + STAGGER; [+] bonus % Max HP damage.
 	H.run_active_smoke(
-		failures, &"bruiser_headbutt", "mutual damage + stagger",
+		failures, &"bruiser_headbutt", "RANGE 1 | ATK 3 | mutual STAGGER",
 		[GameEnums.EffectType.DAMAGE, GameEnums.EffectType.DAMAGE_SELF],
 		[GameEnums.StatusType.STAGGER],
 	)
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_headbutt")
+	H.assert_eq_int(failures, "headbutt/range", factory_ab.range_tiles, 1)
+	H.assert_eq_int(failures, "headbutt/dmg_amount", factory_ab.effects[0].amount, 3)
+	H.assert_eq_int(failures, "headbutt/self_dmg_amount", factory_ab.effects[1].amount, 1)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_headbutt"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -613,10 +711,12 @@ static func run_headbutt(failures: Array[String]) -> void:
 	var enemy_damage: int = enemy_hp - H.unit_hp(result.final_state, 2)
 	var self_damage: int = bruiser_hp - H.unit_hp(result.final_state, 1)
 	var attacker: UnitState = H.unit_on_board(board, 1)
-	var scaled_raw: int = CombatSystem.calculate_scaled_damage(
-		attacker, 3, GameEnums.StatType.PHYSICAL, board,
+	H.assert_eq_cell(failures, "headbutt/bruiser_pos", result.final_state.get_unit_by_id(1).position, Vector2i(3, 3))
+	var dmg_math: Dictionary = H.first_damage_math(result.events)
+	H.assert_eq_int(failures, "headbutt/dmg_base_amt", int(dmg_math.get("base", -1)), 3)
+	var expected_enemy: int = H.damage_dealt_to_unit(
+		board, 2, int(dmg_math.get("final_raw", 0)), attacker,
 	)
-	var expected_enemy: int = H.damage_dealt_to_unit(board, 2, scaled_raw, attacker)
 	H.assert_eq_int(failures, "headbutt/enemy_dmg", enemy_damage, expected_enemy)
 	H.assert_eq_int(failures, "headbutt/self_dmg", self_damage, 1)
 	var enemy_after: UnitState = result.final_state.get_unit_by_id(2)
@@ -631,14 +731,29 @@ static func run_headbutt(failures: Array[String]) -> void:
 		bruiser_after != null and H.has_status(bruiser_after, GameEnums.StatusType.STAGGER),
 		"headbutt must STAGGER the caster",
 	)
+	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(far_board, 10, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_headbutt"))
+	H.place_dummy(far_board, 11, Vector2i(3, 3))
+	var far_ab: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 10), &"bruiser_headbutt")
+	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(3, 3), 11)
+	H.assert_true(
+		failures, "headbutt/out_of_range",
+		not AbilitySystem.can_use(far_board, far_action),
+		"RANGE 1 must reject non-adjacent targets",
+	)
 
 
 static func run_blood_boil(failures: Array[String]) -> void:
+	## Bible: Blood Boil — SELF | spend 5 HP for STR +3; [+] spend 10 HP for STR +5.
 	H.run_active_smoke(
-		failures, &"bruiser_blood_boil", "HP for STR",
+		failures, &"bruiser_blood_boil", "SELF | 5 HP for STR +3",
 		[GameEnums.EffectType.DAMAGE_SELF],
 		[GameEnums.StatusType.STAT_BUFF_STR],
 	)
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_blood_boil")
+	H.assert_eq_int(failures, "blood_boil/hp_cost_amount", factory_ab.effects[0].amount, 5)
+	H.assert_eq_int(failures, "blood_boil/str_amount", factory_ab.effects[1].amount, 3)
+	H.assert_eq_int(failures, "blood_boil/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.SELF)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_blood_boil"))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
@@ -653,11 +768,13 @@ static func run_blood_boil(failures: Array[String]) -> void:
 
 
 static func run_violent_collision(failures: Array[String]) -> void:
+	## Bible: Violent Collision — MOVE 3 | bulldoze + recast MOVE 2; [+] collision STAGGER.
 	H.run_active_smoke(
-		failures, &"bruiser_violent_collision", "DASH bulldoze",
+		failures, &"bruiser_violent_collision", "DASH 3 | bulldoze + recast",
 		[GameEnums.EffectType.DASH],
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
+	H.assert_eq_int(failures, "violent_collision/dash_amount", ab.effects[0].amount, 3)
 	H.assert_true(failures, "violent_collision/bulldoze", ab.effects[0].modifiers.has("bulldoze"))
 	H.assert_true(
 		failures, "violent_collision/recast_mod",
@@ -716,12 +833,15 @@ static func run_violent_collision(failures: Array[String]) -> void:
 
 
 static func run_crimson_whirlwind(failures: Array[String]) -> void:
+	## Bible: Crimson Whirlwind — RANGE 0 | AOE 3x3 | ATK 1; [+] HEAL 1 per target hit.
 	H.run_active_smoke(
-		failures, &"bruiser_crimson_whirlwind", "AOE damage",
+		failures, &"bruiser_crimson_whirlwind", "RANGE 0 | AOE 3x3 | ATK 1",
 		[GameEnums.EffectType.DAMAGE],
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_crimson_whirlwind")
 	H.assert_eq_int(failures, "crimson_whirlwind/aoe", ab.target_shape, GameEnums.TargetShape.AOE_SQUARE)
+	H.assert_eq_int(failures, "crimson_whirlwind/aoe_size", ab.target_shape_size, 1)
+	H.assert_eq_int(failures, "crimson_whirlwind/dmg_amount", ab.effects[0].amount, 1)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_crimson_whirlwind"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -732,6 +852,23 @@ static func run_crimson_whirlwind(failures: Array[String]) -> void:
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
+	var bruiser_before: UnitState = H.unit_on_board(board, 1)
+	H.assert_eq_cell(failures, "crimson_whirlwind/bruiser_pos", result.final_state.get_unit_by_id(1).position, Vector2i(3, 3))
+	var dmg_math: Dictionary = H.first_damage_math(result.events)
+	H.assert_eq_int(failures, "crimson_whirlwind/dmg_base_amt", int(dmg_math.get("base", -1)), 1)
+	var expected_hit: int = H.damage_dealt_to_unit(
+		board, 2, int(dmg_math.get("final_raw", 0)), bruiser_before,
+	)
+	var total_center: int = H.sum_unit_hp_damage_events(result.events, 2)
+	var total_side: int = H.sum_unit_hp_damage_events(result.events, 3)
+	var center_hits: int = H.count_unit_hp_damage_events(result.events, 2)
+	var side_hits: int = H.count_unit_hp_damage_events(result.events, 3)
+	H.assert_eq_int(failures, "crimson_whirlwind/dmg_center", total_center, expected_hit * center_hits)
+	H.assert_true(
+		failures, "crimson_whirlwind/dmg_side",
+		total_side > 0 and side_hits > 0,
+		"AOE must deal scaled damage to secondary target",
+	)
 	H.assert_true(
 		failures, "crimson_whirlwind/multi_hit",
 		H.unit_hp(result.final_state, 2) < hp2 and H.unit_hp(result.final_state, 3) < hp3,
@@ -740,10 +877,14 @@ static func run_crimson_whirlwind(failures: Array[String]) -> void:
 
 
 static func run_belly_flop(failures: Array[String]) -> void:
+	## Bible: Belly Flop — RANGE 2 | ATK 2 | jump to empty tile; [+] landing PUSH 1 adjacent.
 	H.run_active_smoke(
-		failures, &"bruiser_belly_flop", "teleport + damage",
+		failures, &"bruiser_belly_flop", "RANGE 2 | TELEPORT + ATK 2",
 		[GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.DAMAGE],
 	)
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
+	H.assert_eq_int(failures, "belly_flop/range", factory_ab.range_tiles, 2)
+	H.assert_eq_int(failures, "belly_flop/dmg_amount", factory_ab.effects[1].amount, 2)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_belly_flop")
 	cfg["passive_flags"] = {"training_unlimited_actions": true}
@@ -769,12 +910,29 @@ static func run_belly_flop(failures: Array[String]) -> void:
 		damaged_adjacent,
 		"belly flop must emit UNIT_DAMAGED for enemy adjacent to landing tile",
 	)
+	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var far_cfg: Dictionary = H.bruiser_with_ability(&"bruiser_belly_flop")
+	H.place_bruiser(far_board, 10, Vector2i(1, 3), far_cfg)
+	var far_ab: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 10), &"bruiser_belly_flop")
+	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(4, 3), -1)
+	H.assert_true(
+		failures, "belly_flop/out_of_range",
+		not AbilitySystem.can_use(far_board, far_action),
+		"RANGE 2 must reject tiles beyond 2 steps",
+	)
 
 
 static func run_breaching_dash(failures: Array[String]) -> void:
+	## Bible: Breaching Dash — DASH 3 | destroy cover on path; [+] next attack PIERCE.
 	H.run_active_smoke(
-		failures, &"bruiser_breaching_dash", "dash + destroy",
+		failures, &"bruiser_breaching_dash", "DASH 3 | DESTROY_OBSTACLE",
 		[GameEnums.EffectType.DASH, GameEnums.EffectType.DESTROY_OBSTACLE],
+	)
+	var factory_ab: AbilityData = H.factory_ability(&"bruiser_breaching_dash")
+	H.assert_eq_int(failures, "breaching_dash/dash_amount", factory_ab.effects[0].amount, 3)
+	H.assert_true(
+		failures, "breaching_dash/destroy_effect",
+		H.ability_has_effect(factory_ab, GameEnums.EffectType.DESTROY_OBSTACLE, false),
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(12, 6))
 	H.place_bruiser(board, 1, Vector2i(4, 3), H.bruiser_with_ability(&"bruiser_breaching_dash"))
@@ -807,6 +965,7 @@ static func run_breaching_dash(failures: Array[String]) -> void:
 
 
 static func run_cellular_regeneration(failures: Array[String]) -> void:
+	## Bible: Cellular Regeneration — HEAL 1 at turn start if 1+ adjacent enemies; [+] STR if 2+.
 	H.assert_passive_registered(failures, &"cellular_regeneration")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"cellular_regeneration", false))
@@ -836,6 +995,7 @@ static func run_cellular_regeneration(failures: Array[String]) -> void:
 
 
 static func run_blood_for_blood(failures: Array[String]) -> void:
+	## Bible: Blood for Blood — damaged last turn → attacks apply BLEED (WPN); [+] ATK +1.
 	H.assert_passive_registered(failures, &"blood_for_blood")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.with_single_passive(&"blood_for_blood", false)
@@ -856,6 +1016,7 @@ static func run_blood_for_blood(failures: Array[String]) -> void:
 
 
 static func run_adrenaline_junkie(failures: Array[String]) -> void:
+	## Bible: Adrenaline Junkie — +MOV/+STR per 10% missing HP; [+] +DEF per 20% missing HP.
 	H.assert_passive_registered(failures, &"adrenaline_junkie")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.with_single_passive(&"adrenaline_junkie", false)
@@ -897,6 +1058,7 @@ static func run_adrenaline_junkie(failures: Array[String]) -> void:
 
 
 static func run_enraged(failures: Array[String]) -> void:
+	## Bible: Enraged — +1 STR per unique debuff/hazard; [+] +1 MOV per debuff/hazard.
 	H.assert_passive_registered(failures, &"enraged")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.with_single_passive(&"enraged", false)
@@ -944,6 +1106,7 @@ static func run_enraged(failures: Array[String]) -> void:
 
 
 static func run_last_stand(failures: Array[String]) -> void:
+	## Bible: Last Stand — HP < 25% → +2 STR/DEF; [+] +3 STR/DEF instead.
 	H.assert_passive_registered(failures, &"last_stand")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"last_stand", false))
@@ -984,6 +1147,7 @@ static func run_last_stand(failures: Array[String]) -> void:
 
 
 static func run_colossal_mass(failures: Array[String]) -> void:
+	## Bible: Colossal Mass — +1 STR per 15 Max HP; [+] per 10 Max HP instead.
 	H.assert_passive_registered(failures, &"colossal_mass")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"colossal_mass", false))
@@ -1001,6 +1165,7 @@ static func run_colossal_mass(failures: Array[String]) -> void:
 
 
 static func run_overwhelming_bulk(failures: Array[String]) -> void:
+	## Bible: Overwhelming Bulk — Current HP > target Max HP → PIERCE; [+] PUSH 1 on attacks.
 	H.assert_passive_registered(failures, &"overwhelming_bulk")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"overwhelming_bulk", false))
@@ -1085,6 +1250,7 @@ static func run_overwhelming_bulk(failures: Array[String]) -> void:
 
 
 static func run_thrill_of_pain(failures: Array[String]) -> void:
+	## Bible: Thrill of Pain — on damage, next attack ATK +2 + PUSH 1; [+] ATK +3 instead.
 	H.assert_passive_registered(failures, &"thrill_of_pain")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"thrill_of_pain", false))
@@ -1148,6 +1314,7 @@ static func run_thrill_of_pain(failures: Array[String]) -> void:
 
 
 static func run_momentum_of_titan(failures: Array[String]) -> void:
+	## Bible: Momentum of the Titan — PUSH collision +10% Max HP dmg; [+] 20% Max HP.
 	H.assert_passive_registered(failures, &"momentum_of_titan")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(4, 3)])
 	var cfg: Dictionary = H.with_single_passive(&"momentum_of_titan", false)
@@ -1186,6 +1353,7 @@ static func run_momentum_of_titan(failures: Array[String]) -> void:
 
 
 static func run_scar_tissue(failures: Array[String]) -> void:
+	## Bible: Scar Tissue — reduce physical dmg by 1 per 20 Max/missing HP; [+] additional 1.
 	H.assert_passive_registered(failures, &"scar_tissue")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"scar_tissue", false))
@@ -1227,6 +1395,7 @@ static func run_scar_tissue(failures: Array[String]) -> void:
 
 
 static func run_momentum_transfer(failures: Array[String]) -> void:
+	## Bible: Momentum Transfer — PUSH collision HEAL 1; [+] HEAL 1 and +1 STR.
 	H.assert_passive_registered(failures, &"momentum_transfer")
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(5, 3)])
 	var cfg: Dictionary = H.with_single_passive(&"momentum_transfer", false)
@@ -1251,6 +1420,7 @@ static func run_momentum_transfer(failures: Array[String]) -> void:
 
 
 static func run_crowd_breaker(failures: Array[String]) -> void:
+	## Bible: Crowd Breaker — +1 STR per adjacent enemy + splash ATK 1; [+] splash ATK 2.
 	H.assert_passive_registered(failures, &"crowd_breaker")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.with_single_passive(&"crowd_breaker", false)
@@ -1291,6 +1461,7 @@ static func run_crowd_breaker(failures: Array[String]) -> void:
 
 
 static func run_juggernaut(failures: Array[String]) -> void:
+	## Bible: Juggernaut — trap destroy for 0 damage; [+] trap destroy grants SHIELD 1.
 	H.assert_passive_registered(failures, &"juggernaut")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.set_tile_trap(board, Vector2i(4, 3))
@@ -1325,6 +1496,7 @@ static func run_juggernaut(failures: Array[String]) -> void:
 
 
 static func run_battering_ram(failures: Array[String]) -> void:
+	## Bible: Battering Ram — PUSH +1 tile; [+] wall collision STAGGER.
 	H.assert_passive_registered(failures, &"battering_ram")
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(6, 3)])
 	var cfg: Dictionary = H.with_single_passive(&"battering_ram", false)
@@ -1341,6 +1513,7 @@ static func run_battering_ram(failures: Array[String]) -> void:
 
 
 static func run_unstoppable_force(failures: Array[String]) -> void:
+	## Bible: Unstoppable Force — STAGGER/ROOT immune; resist grants SHIELD 1; [+] SHIELD 2.
 	H.assert_passive_registered(failures, &"unstoppable_force")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"unstoppable_force", false))

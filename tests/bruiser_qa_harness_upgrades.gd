@@ -219,6 +219,11 @@ static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
 		failures, "adrenaline_surge/upgrade/mod",
 		ab.upgraded_effects[1].modifiers.has("on_kill_heal_shield"),
 	)
+	H.assert_eq_int(
+		failures, "adrenaline_surge/upgrade/mod_val",
+		int(ab.upgraded_effects[1].modifiers["on_kill_heal_shield"]),
+		1,
+	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_abilities([&"bruiser_adrenaline_surge", &"bruiser_concussion_blow"]),
 		&"bruiser_adrenaline_surge",
@@ -270,6 +275,21 @@ static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
 		base_after.armor,
 		base_armor,
 	)
+	var up_adj_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var up_cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_ability(&"bruiser_adrenaline_surge"),
+		&"bruiser_adrenaline_surge",
+	)
+	H.place_bruiser(up_adj_board, 30, Vector2i(3, 3), up_cfg)
+	H.place_dummy(up_adj_board, 31, Vector2i(4, 3))
+	H.place_dummy(up_adj_board, 32, Vector2i(3, 4))
+	var up_bruiser: UnitState = H.unit_on_board(up_adj_board, 30)
+	var up_ab: AbilityData = H.ability_on_unit(up_bruiser, &"bruiser_adrenaline_surge")
+	H.assert_eq_int(
+		failures, "adrenaline_surge/upgrade/zero_ap_adjacent",
+		AbilitySystem.get_action_point_cost(up_bruiser, up_ab, up_adj_board),
+		0,
+	)
 
 
 static func run_earthshatter_upgrade(failures: Array[String]) -> void:
@@ -277,6 +297,11 @@ static func run_earthshatter_upgrade(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "earthshatter/upgrade/mod",
 		ab.upgraded_effects[1].modifiers.has("buff_per_destroyed_object"),
+	)
+	H.assert_eq_int(
+		failures, "earthshatter/upgrade/mod_val",
+		int(ab.upgraded_effects[1].modifiers["buff_per_destroyed_object"]),
+		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_earthshatter"),
@@ -307,6 +332,16 @@ static func run_earthshatter_upgrade(failures: Array[String]) -> void:
 
 
 static func run_frenzy_upgrade(failures: Array[String]) -> void:
+	var ab: AbilityData = H.factory_ability(&"bruiser_frenzy")
+	H.assert_true(
+		failures, "frenzy/upgrade/mod",
+		ab.upgraded_effects[0].modifiers.has("frenzy_on_kill_ap"),
+	)
+	H.assert_eq_int(
+		failures, "frenzy/upgrade/mod_val",
+		int(ab.upgraded_effects[0].modifiers["frenzy_on_kill_ap"]),
+		1,
+	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_frenzy"),
 		&"bruiser_frenzy",
@@ -350,9 +385,19 @@ static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
 		failures, "guttural_roar/upgrade/push_mod",
 		ab.upgraded_effects[0].modifiers.has("push_board_items"),
 	)
+	H.assert_eq_int(
+		failures, "guttural_roar/upgrade/push_mod_val",
+		int(ab.upgraded_effects[0].modifiers["push_board_items"]),
+		1,
+	)
 	H.assert_true(
 		failures, "guttural_roar/upgrade/collision_mod",
 		ab.upgraded_effects[0].modifiers.has("item_collision_damage"),
+	)
+	H.assert_eq_int(
+		failures, "guttural_roar/upgrade/collision_mod_val",
+		int(ab.upgraded_effects[0].modifiers["item_collision_damage"]),
+		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_guttural_roar"),
@@ -451,6 +496,11 @@ static func run_violent_collision_upgrade(failures: Array[String]) -> void:
 		failures, "violent_collision/upgrade/stagger_mod",
 		ab.upgraded_effects[0].modifiers.has("stagger_on_collision"),
 	)
+	H.assert_eq_int(
+		failures, "violent_collision/upgrade/mod_val",
+		int(ab.upgraded_effects[0].modifiers["stagger_on_collision"]),
+		1,
+	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_violent_collision"),
 		&"bruiser_violent_collision",
@@ -476,6 +526,11 @@ static func run_breaching_dash_upgrade(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "breaching_dash/upgrade/pierce_mod",
 		ab.upgraded_effects[0].modifiers.has("next_attack_pierce"),
+	)
+	H.assert_eq_int(
+		failures, "breaching_dash/upgrade/mod_val",
+		int(ab.upgraded_effects[0].modifiers["next_attack_pierce"]),
+		1,
 	)
 	var base_cfg: Dictionary = {
 		"active_abilities": [
@@ -641,6 +696,16 @@ static func run_battering_ram_upgrade(failures: Array[String]) -> void:
 
 
 static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
+	var ab: AbilityData = H.factory_ability(&"bruiser_crimson_whirlwind")
+	H.assert_true(
+		failures, "crimson_whirlwind/upgrade/mod",
+		ab.upgraded_effects[0].modifiers.has("heal_per_target_hit"),
+	)
+	H.assert_eq_int(
+		failures, "crimson_whirlwind/upgrade/mod_val",
+		int(ab.upgraded_effects[0].modifiers["heal_per_target_hit"]),
+		1,
+	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_crimson_whirlwind"),
 		&"bruiser_crimson_whirlwind",
@@ -662,6 +727,16 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 
 
 static func run_belly_flop_upgrade(failures: Array[String]) -> void:
+	var ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
+	H.assert_true(
+		failures, "belly_flop/upgrade/push_mod",
+		ab.upgraded_effects[2].modifiers.has("belly_flop_push"),
+	)
+	H.assert_eq_int(
+		failures, "belly_flop/upgrade/mod_val",
+		int(ab.upgraded_effects[2].modifiers["belly_flop_push"]),
+		1,
+	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_belly_flop"),
 		&"bruiser_belly_flop",
