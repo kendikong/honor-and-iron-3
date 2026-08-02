@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ K3-LOCK matrix │ Round 16
-FULL MATRIX: 57/95 (stale) │ ROW: taunting PASS 88/88 ✓
-MANIFEST: 18/30 │ STOP_CONDITION_MET: no
-NEXT: redirect_strike queue; full-matrix critic refresh
+GAUNTLET SCORE │ K3-LOCK matrix │ Round 17
+FULL MATRIX: 57/95 (stale) │ ROW: redirect_strike PASS 88/88 ✓
+MANIFEST: 19/30 │ STOP_CONDITION_MET: no
+NEXT: indomitable_will queue; full-matrix critic refresh
 ══════════════════════════════════════
 ```
 
@@ -35,6 +35,7 @@ NEXT: redirect_strike queue; full-matrix critic refresh
 | r14b | 87 | — | FAIL (row: seismic) |
 | r15 | 88 | +1 | **PASS** (row: seismic → manifest) |
 | r16 | 88 | — | **PASS** (row: taunting → manifest) |
+| r17 | 88 | — | **PASS** (row: redirect_strike → manifest) |
 
 ---
 
@@ -44,8 +45,8 @@ NEXT: redirect_strike queue; full-matrix critic refresh
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-LOCK ACTIVE** — **18/30** manifest |
-| **Last result** | taunting_strike promoted r16 (88) |
+| **Status** | **K3-LOCK ACTIVE** — **19/30** manifest |
+| **Last result** | redirect_strike promoted r17 (88) |
 | **Lead session** | knight-k3-lock-2026-08-01 |
 
 ---

@@ -141,7 +141,7 @@ Do **not** weaken, replace, or “simplify” harness/scenario/production paths 
 | `knight_fortify` | Active | `tests/skills/fortify_scenario.gd` | PASS | Ally DEF base + `[+]` THORNS sim (meta-critic r6) |
 | `knight_bowling_charge` | Active | `tests/skills/bowling_charge_scenario.gd` | HARNESS_ONLY | DASH only; no `[+]` chain-push sim |
 | `knight_iron_grip` | Active | `tests/skills/iron_grip_scenario.gd` | PASS | ROOT + next-turn DEF halving + `[+]` AP refund sim (meta-critic r14) |
-| `knight_redirect_strike` | Active | `tests/skills/redirect_strike_scenario.gd` | HARNESS_ONLY | INTERCEPT base; no `[+]` DEF sim |
+| `knight_redirect_strike` | Active | `tests/skills/redirect_strike_scenario.gd` | PASS | INTERCEPT 50% + mid-window persist + `[+]` DEF stack sim (meta-critic r17) |
 | `knight_indomitable_will` | Active | `tests/skills/indomitable_will_scenario.gd` | HARNESS_ONLY | Base/`[+]` status sim; no 7-phase |
 | `knight_retaliation_protocol` | Active | `tests/skills/retaliation_protocol_scenario.gd` | PASS | Counter base + `[+]` PUSH-on-counter sim (meta-critic r6) |
 | `knight_shield_slam` | Active | `tests/skills/shield_slam_scenario.gd` | PASS | DAMAGE+PUSH base + `[+]` DEF-debuff events (meta-critic r6) |

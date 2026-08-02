@@ -41,6 +41,14 @@ static func factory_ability(ability_id: StringName) -> AbilityData:
 	return null
 
 
+static func library_ability_range_tiles(ability_id: StringName) -> int:
+	var save: Dictionary = ClassLibrarySchema.read_editor_save()
+	var knight: Dictionary = save.get("units", {}).get("knight", {})
+	var abilities: Dictionary = knight.get("abilities", {})
+	var ab_data: Dictionary = abilities.get(String(ability_id), {})
+	return int(ab_data.get("range_tiles", -1))
+
+
 static func factory_passive(passive_id: StringName) -> PassiveData:
 	var def: UnitData = knight_unit_data()
 	if def == null:
@@ -942,6 +950,207 @@ static func run_shield_wall(failures: Array[String]) -> void:
 	)
 
 
+static func run_redirect_strike(failures: Array[String]) -> void:
+	var cfg: Dictionary = {
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(&"knight_redirect_strike"),
+		],
+		"active_passives": [],
+	}
+	var board_no: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board_no, 1, Vector2i(3, 3), cfg)
+	var ally_def: UnitData = knight_unit_data()
+	place_unit(board_no, 2, ally_def, GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var loss_without: int = damage_taken_pierce(board_no, 2, 20)
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board, 10, Vector2i(3, 3), cfg)
+	place_unit(board, 11, ally_def, GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var knight: UnitState = unit_on_board(board, 10)
+	var redirect: AbilityData = ability_on_unit(knight, &"knight_redirect_strike")
+	var cast_action: TimelineAction = plan_ability(10, redirect, knight.position, knight.id)
+	assert_true(
+		failures, "redirect_strike/ability_system/can_use_self",
+		AbilitySystem.can_use(board, cast_action),
+		"AbilitySystem must allow self-cast redirect strike at RANGE 2",
+	)
+	var plan := Timeline.new()
+	plan.add(plan_ability(10, redirect, knight.position, knight.id))
+	var result: SimResult = simulate_player_turn(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(10)
+	assert_true(
+		failures, "redirect_strike/intercept_status",
+		after != null and has_status(after, GameEnums.StatusType.INTERCEPT),
+		"redirect strike must apply INTERCEPT to self",
+	)
+	var intercept_dur: int = 0
+	for s: StatusData in after.active_statuses if after else []:
+		if s.type == GameEnums.StatusType.INTERCEPT:
+			intercept_dur = s.duration
+	assert_eq_int(
+		failures, "redirect_strike/intercept_duration",
+		intercept_dur,
+		1,
+	)
+	var advanced_intercept: SimResult = Simulator.simulate(result.final_state, Timeline.new())
+	var mid_window: UnitState = advanced_intercept.final_state.get_unit_by_id(10)
+	assert_true(
+		failures, "redirect_strike/intercept_persists_mid_window",
+		mid_window != null and has_status(mid_window, GameEnums.StatusType.INTERCEPT),
+		"INTERCEPT must remain active until turn boundary",
+	)
+	var mid_board: BoardState = advanced_intercept.final_state.clone()
+	var knight_mid_before: int = mid_board.get_unit_by_id(10).health.current_hp
+	var loss_mid_ally: int = damage_taken_pierce(mid_board, 11, 20)
+	var knight_mid_loss: int = knight_mid_before - mid_board.get_unit_by_id(10).health.current_hp
+	assert_eq_int(
+		failures, "redirect_strike/mid_window/split_active",
+		knight_mid_loss,
+		10,
+	)
+	assert_eq_int(
+		failures, "redirect_strike/mid_window/ally_damage",
+		loss_mid_ally,
+		10,
+	)
+	advanced_intercept = Simulator.simulate(advanced_intercept.final_state, Timeline.new())
+	var after_expire: UnitState = advanced_intercept.final_state.get_unit_by_id(10)
+	assert_true(
+		failures, "redirect_strike/intercept_expires",
+		after_expire != null and not has_status(after_expire, GameEnums.StatusType.INTERCEPT),
+		"INTERCEPT must clear after next turn",
+	)
+	var knight_post_before: int = after_expire.health.current_hp
+	damage_taken_pierce(advanced_intercept.final_state, 11, 20)
+	var knight_post_loss: int = knight_post_before - advanced_intercept.final_state.get_unit_by_id(10).health.current_hp
+	assert_eq_int(
+		failures, "redirect_strike/post_expiry/no_redirect",
+		knight_post_loss,
+		0,
+	)
+	assert_eq_int(
+		failures, "redirect_strike/range",
+		redirect.range_tiles,
+		2,
+	)
+	var board_hit: BoardState = result.final_state.clone()
+	var knight_before: int = board_hit.get_unit_by_id(10).health.current_hp
+	var loss_with: int = damage_taken_pierce(board_hit, 11, 20)
+	var knight_after_hit: UnitState = board_hit.get_unit_by_id(10)
+	var knight_loss: int = knight_before - knight_after_hit.health.current_hp
+	assert_true(
+		failures, "redirect_strike/split_damage",
+		loss_with < loss_without and knight_loss > 0,
+		"INTERCEPT must redirect 50% damage (rounded down) to adjacent interceptor",
+	)
+	assert_eq_int(
+		failures, "redirect_strike/ally_damage_reduced",
+		loss_without - loss_with,
+		knight_loss,
+	)
+	assert_eq_int(
+		failures, "redirect_strike/intercept_amount",
+		knight_loss,
+		10,
+	)
+	assert_eq_int(
+		failures, "redirect_strike/ally_damage_after_intercept",
+		loss_with,
+		10,
+	)
+	var board_odd: BoardState = result.final_state.clone()
+	var knight_odd_before: int = board_odd.get_unit_by_id(10).health.current_hp
+	var loss_odd_ally: int = damage_taken_pierce(board_odd, 11, 19)
+	var knight_odd_loss: int = knight_odd_before - board_odd.get_unit_by_id(10).health.current_hp
+	assert_eq_int(
+		failures, "redirect_strike/round_down_odd",
+		knight_odd_loss,
+		9,
+	)
+	assert_eq_int(
+		failures, "redirect_strike/round_down_ally_save",
+		19 - loss_odd_ally,
+		9,
+	)
+	var knight_after_base: UnitState = board_hit.get_unit_by_id(10)
+	var base_def_buff: bool = false
+	for s: StatusData in knight_after_base.active_statuses if knight_after_base else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+			base_def_buff = true
+	assert_true(
+		failures, "redirect_strike/base/no_def_on_intercept",
+		not base_def_buff,
+		"base redirect strike must not grant DEF buff on intercepted hit",
+	)
+	var board_far: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_far, 30, Vector2i(3, 3), cfg)
+	place_unit(board_far, 31, ally_def, GameEnums.Team.PLAYER, Vector2i(5, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var knight_far: UnitState = unit_on_board(board_far, 30)
+	var redirect_far: AbilityData = ability_on_unit(knight_far, &"knight_redirect_strike")
+	var plan_far := Timeline.new()
+	plan_far.add(plan_ability(30, redirect_far, knight_far.position, knight_far.id))
+	var result_far: SimResult = simulate_player_turn(board_far, plan_far)
+	var board_far_hit: BoardState = result_far.final_state.clone()
+	var knight_far_before: int = board_far_hit.get_unit_by_id(30).health.current_hp
+	var loss_far_ally: int = damage_taken_pierce(board_far_hit, 31, 20)
+	var knight_far_loss: int = knight_far_before - board_far_hit.get_unit_by_id(30).health.current_hp
+	assert_eq_int(
+		failures, "redirect_strike/non_adjacent/no_redirect",
+		knight_far_loss,
+		0,
+	)
+	assert_eq_int(
+		failures, "redirect_strike/non_adjacent/full_ally_damage",
+		loss_far_ally,
+		20,
+	)
+	var cfg_up: Dictionary = with_upgraded_ability(cfg, &"knight_redirect_strike")
+	var board_up: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board_up, 20, Vector2i(3, 3), cfg_up)
+	place_unit(board_up, 21, ally_def, GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	var knight_up: UnitState = unit_on_board(board_up, 20)
+	var redirect_up: AbilityData = ability_on_unit(knight_up, &"knight_redirect_strike")
+	assert_true(
+		failures, "redirect_strike/upgrade/intercept_flag",
+		redirect_up.upgraded_effects[0].amount == 1,
+		"upgraded redirect strike must mark INTERCEPT with value 1 for [+] DEF",
+	)
+	var plan_up := Timeline.new()
+	plan_up.add(plan_ability(20, redirect_up, knight_up.position, knight_up.id))
+	var result_up: SimResult = simulate_player_turn(board_up, plan_up)
+	var board_up_hit: BoardState = result_up.final_state.clone()
+	damage_taken_pierce(board_up_hit, 21, 20)
+	var knight_up_mid: UnitState = board_up_hit.get_unit_by_id(20)
+	var def_after_one: int = 0
+	for s: StatusData in knight_up_mid.active_statuses if knight_up_mid else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+			def_after_one += s.value
+	assert_eq_int(
+		failures, "redirect_strike/upgrade/def_first_hit",
+		def_after_one,
+		2,
+	)
+	damage_taken_pierce(board_up_hit, 21, 20)
+	var knight_up_after: UnitState = board_up_hit.get_unit_by_id(20)
+	var def_total: int = 0
+	for s: StatusData in knight_up_after.active_statuses if knight_up_after else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+			def_total += s.value
+	assert_eq_int(
+		failures, "redirect_strike/upgrade/def_two_hits",
+		def_total,
+		4,
+	)
+
+
 static func run_intercept_tactics(failures: Array[String]) -> void:
 	var board: BoardState = make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = with_single_passive(&"intercept_tactics", false)
@@ -1004,6 +1213,18 @@ static func damage_taken_on_unit(board: BoardState, unit_id: int, raw_amount: in
 	var events: Array[SimEvent] = []
 	CombatSystem.deal_damage(
 		board, target, raw_amount, events, &"physical", false, false, null, "knight_qa",
+	)
+	return hp_before - target.health.current_hp
+
+
+static func damage_taken_pierce(board: BoardState, unit_id: int, raw_amount: int) -> int:
+	var target: UnitState = board.get_unit_by_id(unit_id)
+	if target == null or target.health == null:
+		return 0
+	var hp_before: int = target.health.current_hp
+	var events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board, target, raw_amount, events, &"physical", true, false, null, "knight_qa",
 	)
 	return hp_before - target.health.current_hp
 
@@ -1754,12 +1975,19 @@ static func run_defensive_formation(failures: Array[String]) -> void:
 
 
 static func run_indomitable_will(failures: Array[String]) -> void:
+	const MISSING_HP: int = 5
 	var board: BoardState = make_plain_board(Vector2i(8, 8))
 	place_knight(board, 1, Vector2i(3, 3))
 	var knight: UnitState = unit_on_board(board, 1)
-	knight.health.current_hp = knight.health.max_hp - 5
+	knight.health.current_hp = knight.health.max_hp - MISSING_HP
 	var armor_before: int = knight.armor
 	var ability: AbilityData = ability_on_unit(knight, &"knight_indomitable_will")
+	var cast_action: TimelineAction = plan_ability(1, ability, knight.position, knight.id)
+	assert_true(
+		failures, "indomitable_will/ability_system/can_use_self",
+		AbilitySystem.can_use(board, cast_action),
+		"AbilitySystem must allow self-cast indomitable will",
+	)
 	var plan := Timeline.new()
 	plan.add(plan_ability(1, ability, knight.position, knight.id))
 	var result: SimResult = simulate_player_turn(board, plan)
@@ -1769,15 +1997,53 @@ static func run_indomitable_will(failures: Array[String]) -> void:
 		after != null and after.armor > armor_before,
 		"indomitable will must convert missing HP into SHIELD",
 	)
+	assert_eq_int(
+		failures, "indomitable_will/shield_amount",
+		after.armor - armor_before,
+		MISSING_HP,
+	)
 	assert_true(
 		failures, "indomitable_will/self_status",
 		after != null and has_status(after, GameEnums.StatusType.INDOMITABLE_WILL),
 		"indomitable will must apply INDOMITABLE_WILL status",
 	)
+	var indo_duration: int = 0
+	for s: StatusData in after.active_statuses if after else []:
+		if s.type == GameEnums.StatusType.INDOMITABLE_WILL:
+			indo_duration = s.duration
+	assert_eq_int(
+		failures, "indomitable_will/duration",
+		indo_duration,
+		2,
+	)
+	var advanced: SimResult = Simulator.simulate(result.final_state, Timeline.new())
+	advanced = Simulator.simulate(advanced.final_state, Timeline.new())
+	advanced = Simulator.simulate(advanced.final_state, Timeline.new())
+	var expired: UnitState = advanced.final_state.get_unit_by_id(1)
+	assert_true(
+		failures, "indomitable_will/status_expires",
+		expired != null and not has_status(expired, GameEnums.StatusType.INDOMITABLE_WILL),
+		"INDOMITABLE_WILL must expire after 2 turns",
+	)
+	assert_eq_int(
+		failures, "indomitable_will/shield_cleared_on_expire",
+		expired.armor,
+		0,
+	)
+	var base_str: int = 0
+	for s: StatusData in expired.active_statuses if expired else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_STR:
+			base_str += s.value
+	assert_eq_int(
+		failures, "indomitable_will/base/no_str_on_expire",
+		base_str,
+		0,
+	)
 	var cfg: Dictionary = with_upgraded_ability({}, &"knight_indomitable_will")
 	var board2: BoardState = make_plain_board(Vector2i(8, 8))
 	place_knight(board2, 10, Vector2i(3, 3), cfg)
 	var knight2: UnitState = unit_on_board(board2, 10)
+	knight2.health.current_hp = knight2.health.max_hp - MISSING_HP
 	var ability2: AbilityData = ability_on_unit(knight2, &"knight_indomitable_will")
 	var plan2 := Timeline.new()
 	plan2.add(plan_ability(10, ability2, knight2.position, knight2.id))
@@ -1787,6 +2053,47 @@ static func run_indomitable_will(failures: Array[String]) -> void:
 		failures, "indomitable_will/upgrade/status",
 		after2 != null and has_status(after2, GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED),
 		"upgraded indomitable will must apply INDOMITABLE_WILL_UPGRADED",
+	)
+	assert_eq_int(
+		failures, "indomitable_will/upgrade/shield_amount",
+		after2.armor,
+		MISSING_HP,
+	)
+	var advanced_up: SimResult = Simulator.simulate(result2.final_state, Timeline.new())
+	advanced_up = Simulator.simulate(advanced_up.final_state, Timeline.new())
+	advanced_up = Simulator.simulate(advanced_up.final_state, Timeline.new())
+	var expired_up: UnitState = advanced_up.final_state.get_unit_by_id(10)
+	assert_true(
+		failures, "indomitable_will/upgrade/status_expires",
+		expired_up != null and not has_status(expired_up, GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED),
+		"upgraded INDOMITABLE_WILL must expire after 2 turns",
+	)
+	assert_eq_int(
+		failures, "indomitable_will/upgrade/shield_cleared_on_expire",
+		expired_up.armor,
+		0,
+	)
+	var up_str: int = 0
+	for s: StatusData in expired_up.active_statuses if expired_up else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_STR:
+			up_str += s.value
+	assert_eq_int(
+		failures, "indomitable_will/upgrade/str_on_expire",
+		up_str,
+		2,
+	)
+	var board_break: BoardState = result2.final_state.clone()
+	damage_taken_pierce(board_break, 10, MISSING_HP)
+	var broken: UnitState = board_break.get_unit_by_id(10)
+	assert_eq_int(
+		failures, "indomitable_will/upgrade/shield_break_clears_armor",
+		broken.armor,
+		0,
+	)
+	assert_true(
+		failures, "indomitable_will/upgrade/shield_break_grants_str",
+		broken != null and has_status(broken, GameEnums.StatusType.STAT_BUFF_STR),
+		"breaking upgraded indomitable shield must grant +2 STR",
 	)
 
 

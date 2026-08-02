@@ -132,7 +132,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	iron_grip.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.REFUND_AP_ON_CC, 0))
 	def.abilities.append(iron_grip)
 
-	var redirect_strike = DataLibrary._make_ability(&"knight_redirect_strike", "Redirect Strike", 0, [
+	var redirect_strike = DataLibrary._make_ability(&"knight_redirect_strike", "Redirect Strike", 2, [
 		DataLibrary._status_effect_self(GameEnums.StatusType.INTERCEPT, 1)
 	], 1)
 	redirect_strike.upgrade_description = "Gain DEF +2 per redirected hit."

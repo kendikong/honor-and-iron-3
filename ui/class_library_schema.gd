@@ -291,7 +291,7 @@ static func bible_ability_effect_line(ability: AbilityData) -> String:
 		&"knight_iron_grip":
 			return "Apply ROOT | DEF halved next turn"
 		&"knight_redirect_strike":
-			return "Apply INTERCEPT 50%"
+			return "RANGE 2 | Apply INTERCEPT 50%"
 		&"knight_indomitable_will":
 			return "SHIELD = missing HP (2 turns)"
 		&"knight_retaliation_protocol":

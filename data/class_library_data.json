@@ -3343,7 +3343,7 @@
 					"movement_point_cost": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_redirect_strike",
-					"range_tiles": 0,
+					"range_tiles": 2,
 					"scaling_stat": 0,
 					"target_shape": 0,
 					"target_shape_size": 1,
