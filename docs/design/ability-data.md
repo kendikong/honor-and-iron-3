@@ -5,6 +5,18 @@
 **Authority chain:** `class_abilities.txt` (Master Bible keywords & economy) → **this doc** (AbilityData shape) → `AbilitySystem` / planning / sim (interpretation)  
 **Non-authority:** Current flat `AbilityData` fields are **legacy** until refactor; when they conflict with this doc, **this doc wins** for the target design.
 
+### How to read this doc
+
+| If you need… | Read |
+|--------------|------|
+| Owner one-pager | **§0** + locked table below |
+| Authoring a skill | §0 → §1 → §2 → §6 → §10 examples |
+| Anim / tags | §7 |
+| Code migration | §12 → §14 |
+| History of audits | §16–§19 (not normative) |
+
+**Conflict precedence (highest wins):** Locked table → **§0–§11** (normative) → §12 migration notes → §14 checklist → §16+ audits.
+
 ### Owner decisions (locked)
 
 | Topic | Decision |
@@ -12,11 +24,34 @@
 | MOVE 0 | Illegal; editor greys out options that do nothing |
 | Undo | **Not** part of AbilityData — planning/timeline only |
 | Trampling packaging | MOVE + **TRAMPLE** keyword + separate **PUSH** layer |
-| Upgrades | **Separate** base `modules[]` and upgraded `modules[]` (full profiles; upgraded may diverge a lot) |
+| Upgrades | **Separate** `modules` and `upgraded_modules` (full profiles; upgraded may diverge a lot) |
 | Refactor scope | All **current** movesets in the project (factories/class library/readers) — not uncoded Bible classes |
-| Planner column | Rename economy `kind` → **`planner_group`**: `PRE_MOVE` or `ACTION` (post-move steps are modules inside an ACTION skill) |
+| Planner column | Rename economy `kind` → **`planner_group`**: `PRE_MOVE` or `ACTION` (post-move steps = `ON_POST` modules inside an ACTION skill) |
 | Classification / anim | **Tags** (e.g. attack, movement) — not overloaded “movement skill” naming |
 | Basic positioning | Today’s MP Swap / Push Through style skills → **basic positioning** (`planner_group = PRE_MOVE`), distinct from “has a MOVE effect” |
+
+---
+
+## 0. Normative summary (v1 target)
+
+One skill card =
+
+1. **Header:** `planner_group` + **tags** + **cost once** + presentation + `modules` / `upgraded_modules`  
+2. **Each module:** primary effect + range + shape + tile/unit flags + optional **keywords** + **layers** + **gate**  
+3. **Same target extras** → layers · **New player aim** → new module · **Path hits** → TRAMPLE/BULLDOZE keywords (not micro-checkboxes)
+
+| `planner_group` | Column | Cost | Action slot |
+|-----------------|--------|------|-------------|
+| `PRE_MOVE` | Pre-Move | **MP** | No — basic positioning |
+| `ACTION` | Action | **AP** (0 OK) | Yes — may include `ON_PRE` / `ON_POST` modules |
+
+**Canonical tags (v1):** `attack` · `movement` · `positioning` · `spell` · `heal` (optional). Multi-tag OK.
+
+**AUTO anim (target):** DASH→`SUPER_RUN` · BULLDOZE→`RUN` · MOVE+TRAMPLE→`RUN` · other MOVE→`WALK` · else attack/spell/positioning rules in §7.2.
+
+**Must migrate now (current code):** Knight + Bruiser abilities, Swap / Push Through positioning, universals they use, class-library + sim/planning readers. Includes **Violent Collision** (gated second move).
+
+**Explicitly out of AbilityData:** undo/cancel UX, passives, enemy-turn reactions.
 
 ---
 
@@ -105,12 +140,17 @@ Same structure for every skill — fill the fields the skill needs:
 
 | Field | Options / meaning |
 |-------|-------------------|
-| **primary_resource** | `AP`, `MP`, `HP` (Bible flat HP spend), or `NONE` |
-| **primary_value** | Integer, or special: `ALL_REMAINING` (e.g. Guardian Step spends all MOV) |
-| **cost_modifier** | Optional rule that changes the paid cost: `NONE`, `ZERO_IF_<condition>` (e.g. Adrenaline Surge: 0 AP if adjacent to 2+ enemies) |
-| **secondary_cost** | Optional extra pay (e.g. Time Warp: AP skill + spend HP) — same resource/value shape |
+| **primary_resource** | `AP`, `MP`, or `HP` (Bible flat HP spend) |
+| **primary_value** | Non-negative integer |
+| **cost_modifier** | Optional: `NONE`, `ZERO_IF_ADJACENT_ENEMIES_GTE_N` (Adrenaline Surge) |
+| **secondary_cost** | Optional second pay (e.g. AP skill that also spends HP) — same shape |
 
-Examples: basic attack → AP 0; Swap → MP 1; Blood Boil → HP 5 (+ AP if the card also costs AP); Adrenaline Surge → AP 1 with modifier `ZERO_IF_ADJACENT_ENEMIES_GTE_2`.
+**Coupling (editor enforces):**  
+- `planner_group = PRE_MOVE` → primary cost resource **MP** (not AP).  
+- `planner_group = ACTION` → primary cost resource **AP** (HP may be primary or secondary for self-spend skills).  
+
+Examples: basic attack → AP 0; Swap → MP 1; Blood Boil → AP 1 + HP 5 (or HP primary if authored that way); Adrenaline Surge → AP 1 with `ZERO_IF_ADJACENT_ENEMIES_GTE_2`.  
+`ALL_REMAINING` MP — **not in current movesets**; defer.
 
 ### Planner group → timeline
 
@@ -135,7 +175,7 @@ Examples: basic attack → AP 0; Swap → MP 1; Blood Boil → HP 5 (+ AP if the
 
 ### Structure vs vocabulary
 
-The **structure** (header → modules → layers → gates) is fixed.  
+The **structure** (header → modules → keywords → layers → gates) is fixed.  
 **Dropdown / option lists** (effects, motion modes, conditions, filters, cost modifiers) grow as the Bible needs them — same fields, more choices. Filling gaps means adding options, not inventing a new architecture.
 
 ---
@@ -268,7 +308,15 @@ Checked at **this module’s resolution time**, using the board **after earlier 
 | If no move this turn yet | Actor has not spent movement before this skill |
 | … | **Add rows here as Bible needs — same gate field** |
 
-**Planning:** Preview uses the same sim rules. If a gated module would not run, its aim is inactive/cleared. If preview shows the gate will pass, that module’s aim is required up front.
+**Planning (gated modules — normative):**
+
+1. Player may aim every module that needs an aim, including gated follow-ups.  
+2. Preview runs the same gate logic as sim.  
+3. If the gate **would pass**, the follow-up aim is **required** and shown as active intent.  
+4. If the gate **would fail**, the follow-up aim is inactive (not part of commit intent).  
+5. On resolve: gate fails → module skipped; gate passes with missing/invalid aim → **fail loud** (do not invent a destination).
+
+This is the Violent Collision rule (DASH + BULLDOZE, then MOVE if collided).
 
 ---
 
@@ -495,34 +543,19 @@ Header:
   planner_group: ACTION
   tags: attack, movement
   cost: 1 AP
-  presentation_anim: AUTO  → RUN (MOVE + TRAMPLE/offensive rule)
+  presentation_anim: AUTO  → RUN (MOVE + TRAMPLE)
 
 Module 1 — ON_ACTION
   Effect: MOVE
-  Range: max 2 (min 1 — MOVE 0 disabled)
+  Range: max 2 (min 1)
   Shape: SINGLE, mode: TILE
   Keywords: TRAMPLE 2
   Layer: PUSH 1 — when moved through enemy
   Gate: Always
 ```
 
-Destination = end tile. Path ATK from **TRAMPLE**; push as its own layer (owner choice B).
-
-### Example E — Swap (basic positioning)
-
-```
-Header:
-  planner_group: PRE_MOVE
-  tags: positioning
-  cost: 1 MP
-  presentation_anim: AUTO  → WALK
-
-Module 1 — ON_ACTION
-  Effect: SWAP
-  Range: 1–1
-  Shape: SINGLE, mode: UNIT, ally only
-  Gate: Always
-```
+Destination = end tile. Path ATK from **TRAMPLE**; push as its own layer.  
+**Migration note:** today’s factory also sets `movement_point_cost = 2` while keeping AP — target authorship is **AP only** + `planner_group = ACTION` (Bible class skill, not basic positioning).
 
 ### Example D — Bowling Charge
 
@@ -541,21 +574,62 @@ Module 1 — ON_ACTION
   Gate: Always
 ```
 
+### Example E — Swap (basic positioning)
+
+```
+Header:
+  planner_group: PRE_MOVE
+  tags: positioning
+  cost: 1 MP
+  presentation_anim: AUTO  → WALK
+
+Module 1 — ON_ACTION
+  Effect: SWAP
+  Range: 1–1
+  Shape: SINGLE, mode: UNIT, ally only
+  Gate: Always
+```
+
+### Example F — Violent Collision (gated follow-up)
+
+```
+Header:
+  planner_group: ACTION
+  tags: attack, movement
+  cost: 1 AP
+  presentation_anim: AUTO  → SUPER_RUN (DASH)
+
+Module 1 — ON_ACTION
+  Effect: DASH
+  Range: 1–3 (min 1)
+  Shape: dash-line
+  Keywords: BULLDOZE (amounts per factory)
+  Gate: Always
+
+Module 2 — ON_ACTION
+  Effect: MOVE
+  Range: 1–2 (min 1)
+  Shape: SINGLE, mode: TILE
+  Gate: If collided (from module 1)
+```
+
+Planning uses §2.7 gated-aim rules. Upgrade layer: STAGGER on collision.
+
 ---
 
 ## 11. Validation rules (editor + runtime)
 
-Fail loud; do not silently “fix up” intent.
+Fail loud; do not silently “fix up” intent. **Grey out** illegal combos in the class library (don’t offer MOVE 0, ARC on SWAP, AP on PRE_MOVE, etc.).
 
-1. Header `planner_group` + cost present and legal; tags recommended for AUTO anim.
-2. At least one module in `modules` (and in `upgraded_modules` if the skill has an upgrade).
-3. Each module: effect + legal range + legal shape + legal tile/unit mode for that effect.
-4. MOVE modules: min range ≥ 1.
-5. Unit mode: at least one of self/ally/enemy allowed when required.
-6. Gated modules: condition id known to the shared condition table.
-7. Keywords expand to known engine flags/effects.
-8. `upgraded_modules` validates the same way as base when present.
-9. `presentation_anim` must be a known enum value.
+1. Header `planner_group` + cost present; cost resource matches planner_group (§1).  
+2. Tags: at least one recommended; unknown tag ids rejected.  
+3. At least one module in `modules`; if upgrade exists, `upgraded_modules` non-empty and valid.  
+4. Each module: effect + legal range + legal shape + legal tile/unit mode for that effect.  
+5. MOVE/DASH: min range ≥ 1; destination rules match motion mode.  
+6. Keywords only on modules that support them (motion); known keyword ids only.  
+7. Unit mode: ≥1 of self/ally/enemy when required.  
+8. Gate / layer condition ids known.  
+9. `presentation_anim` is a known enum value.
 
 ---
 
@@ -776,7 +850,7 @@ Use this doc as the acceptance bar:
 4. [ ] Keyword expansion (TRAMPLE, BULLDOZE, GHOST, …) — reuse engine paths
 5. [ ] Range: per-module range; MOVE min ≥ 1; delete MOVE→`range_tiles` fallback
 6. [ ] AUTO anim per §7.2
-7. [ ] Planning: multi-aim + gated aims preview-correct (`PlanningCommitFlow` reused)
+7. [ ] Planning: multi-aim + gated-aim rules per §2.7 (`PlanningCommitFlow` reused); cover Violent Collision
 8. [ ] Sim: modules in order; keywords; layers; gates; presentation events
 9. [ ] Class library editor: grey out illegal options; dual module lists for upgrades
 10. [ ] Migrate **all current** moveset factories/definitions + readers
@@ -787,16 +861,13 @@ Use this doc as the acceptance bar:
 
 ## 15. Owner quick reference
 
-**To invent a skill:** set `planner_group` + tags + cost → author `modules` (and `upgraded_modules` if needed) → each module: effect, range, shape, tile/unit, keywords, layers, gate → leave anim on AUTO unless overriding.
+Start at **§0**. Author: `planner_group` + tags + cost → `modules` / `upgraded_modules` → per module effect, range, shape, tile/unit, keywords, layers, gate → AUTO anim unless override.
 
-**Remember**
-
-- `planner_group` = column; **tags** = identity/anim  
-- Basic positioning ≠ “has MOVE effect”  
+- Column ≠ tags; basic positioning ≠ “has MOVE”  
 - MOVE min ≥ 1; grey out useless options  
-- New player aim = new module; same-target extras = layer  
-- After move, next RANGE is from the new tile (unless origin override)  
-- Destination ≠ path; TRAMPLE/BULLDOZE stay keywords 
+- New aim = new module; same-target extras = layer  
+- After move, range from new tile  
+- Path hits = TRAMPLE/BULLDOZE keywords 
 
 ---
 
@@ -861,12 +932,11 @@ Author-facing keywords; engine may expand. Splitting into five checkboxes is wor
 
 | Gap | Notes |
 |-----|-------|
-| **Violent Collision (current skill)** | Needs `IF_COLLIDED` + second MOVE module + **planning UX** for the gated second aim — **in scope** for current-moveset refactor, design detail TBD at implement. |
-| **Class library / JSON schema** | Mapping modular resources ↔ `class_library_data.json` not written. |
-| **Tooltip keyword order** | Derive Bible line from modules — precedence not listed. |
-| **Multi-module anim sequencing** | §7.3 allows v1 single header anim; strike-after-move may look like WALK-only until sequencing lands. |
+| **Class library / JSON schema** | Mapping modular resources ↔ `class_library_data.json` not written (implement with editor). |
+| **Tooltip keyword order** | Suggest: planner cost → RANGE/MOVE/DASH → keywords → layers → gates. Finalize when building tooltip codegen. |
+| **Multi-module anim sequencing** | §7.3: v1 may keep one header anim; improve later. |
 
-**Resolved (do not re-open):** MOVE min ≥ 1; undo out of doc; separate upgrade modules; `planner_group` + tags; trampling = TRAMPLE + PUSH layer; OR/exotic vault modes deferred (not in current movesets).
+**Resolved (do not re-open):** MOVE min ≥ 1; undo out of doc; separate upgrade modules; `planner_group` + tags; trampling = TRAMPLE + PUSH layer; Violent Collision gated-aim rule (§2.7 + Example F); OR/exotic vault deferred.
 
 ### 16.5 Recommended v1 slice (refactor scope)
 
@@ -902,6 +972,25 @@ Defer: OR choice, RULE_PICK, DELAY/ENDS_TURN, exotic motion modes, ally-origin r
 | 2026-08-02 | Locked owner decisions: planner_group, tags, basic positioning rename, anim rules from live AUTO, separate upgrade modules, current-moveset scope; undo out of doc |
 | 2026-08-02 | §17 Doc QA pass: fixed stale CLASS_SKILL examples, MOVE 0 contradictions, anim priority table, checklist/quick-ref drift; renamed module phases ON_PRE/ON_ACTION/ON_POST |
 | 2026-08-02 | §18 Audit pass 2: 7.1 vs 7.2, trampling AUTO scope, Violent Collision in-scope, migration/defer alignment, Example E Swap |
+| 2026-08-02 | §19 Audit pass 3: §0 normative summary, precedence, cost↔planner coupling, gated-aim rule, Example F, validation grey-out, trampling AP-only migration note |
+
+---
+
+## 19. Doc audit pass 3 (2026-08-02) — improve
+
+| # | Finding | Severity | Status |
+|---|---------|----------|--------|
+| 1 | Doc hard to navigate; audits buried the normative target | High | Fixed — **§0** + read-order + precedence |
+| 2 | Violent Collision planning still “TBD” while in scope | High | Fixed — §2.7 normative gated-aim + **Example F** |
+| 3 | Cost could be AP on PRE_MOVE / MP on ACTION | Med | Fixed — editor coupling rules in §1 / §11 |
+| 4 | Examples D/E out of order; no Violent Collision example | Med | Fixed — C→D→E→F |
+| 5 | Trampling factory today charges MP+AP; doc said AP only without calling out migrate | Med | Fixed — Example C migration note |
+| 6 | `ALL_REMAINING` in cost examples (not current moveset) | Low | Fixed — deferred |
+| 7 | Tag vocabulary not listed | Low | Fixed — canonical tags in §0 |
+| 8 | Validation didn’t stress grey-out / planner↔cost | Low | Fixed — §11 |
+
+**Audit result:** Normative path is §0–§11. Open leftovers are tooltip order + JSON schema + optional multi-module anim polish — none block starting the refactor.  
+
 
 ---
 
@@ -937,4 +1026,4 @@ Defer: OR choice, RULE_PICK, DELAY/ENDS_TURN, exotic motion modes, ally-origin r
 | 7 | No basic-positioning worked example | Low | Fixed — Example E Swap |
 | 8 | Multi-module anim (move then strike) underspecified | Low | Noted in §16.4 / §7.2 Example A note |
 
-**Audit result:** No remaining high contradictions with locked decisions. **≤2 open design gaps** that matter for refactor: Violent Collision gated-aim UX; multi-module anim sequencing (v1 may ship single header anim).  
+**Audit result (pass 2):** Contradictions cleared; Violent Collision later specified in §19 / §2.7.  
