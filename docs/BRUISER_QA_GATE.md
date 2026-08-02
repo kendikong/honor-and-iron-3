@@ -67,10 +67,10 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `bruiser_concussion_blow` | Active | `tests/skills/bruiser_concussion_blow_scenario.gd` | PASS | RANGE 1 ATK 2 PUSH 1; object STAGGER; `[+]` mutual STAGGER on enemy collision |
 | `bruiser_cleave` | Active | `tests/skills/bruiser_cleave_scenario.gd` | PASS | RANGE 1 ARC ATK 2; `[+]` BLEED (WPN-scaled) on all arc targets |
 | `bruiser_suplex` | Active | `tests/skills/bruiser_suplex_scenario.gd` | PASS | RANGE 1 ATK 4 THROW_BEHIND (not SWAP); `[+]` bonus_dmg_per_10_hp |
-| `bruiser_adrenaline_surge` | Active | `tests/skills/bruiser_adrenaline_surge_scenario.gd` | HARNESS_ONLY | SELF cost + buffs; 0 AP adjacency rule; `[+]` on-kill heal/shield |
-| `bruiser_earthshatter` | Active | `tests/skills/bruiser_earthshatter_scenario.gd` | HARNESS_ONLY | ARC + DESTROY_OBSTACLE; `[+]` ATK per destroy |
-| `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | HARNESS_ONLY | SWAP ally + INTERCEPT; `[+]` RANGE 3 + STR per intercept |
-| `bruiser_frenzy` | Active | `tests/skills/bruiser_frenzy_scenario.gd` | HARNESS_ONLY | Triple hit; `[+]` on-kill AP |
+| `bruiser_adrenaline_surge` | Active | `tests/skills/bruiser_adrenaline_surge_scenario.gd` | PASS | SELF spend 5 HP +MOV/+STR; 0 AP if 2+ adjacent; `[+]` on-kill heal/shield |
+| `bruiser_earthshatter` | Active | `tests/skills/bruiser_earthshatter_scenario.gd` | PASS | RANGE 1 ARC ATK 2 + destroy; `[+]` ATK per destroy |
+| `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | PASS | RANGE 1 ally SWAP + INTERCEPT 50%; `[+]` RANGE 3 + STR per intercept |
+| `bruiser_frenzy` | Active | `tests/skills/bruiser_frenzy_scenario.gd` | PASS | RANGE 1 ATK 1 x3; `[+]` on-kill +1 AP |
 | `bruiser_guttural_roar` | Active | `tests/skills/bruiser_guttural_roar_scenario.gd` | HARNESS_ONLY | AOE PUSH + DEF debuff; `[+]` item push/collision |
 | `bruiser_headbutt` | Active | `tests/skills/bruiser_headbutt_scenario.gd` | HARNESS_ONLY | Mutual DAMAGE + STAGGER; `[+]` % Max HP bonus |
 | `bruiser_blood_boil` | Active | `tests/skills/bruiser_blood_boil_scenario.gd` | HARNESS_ONLY | SELF HP → STR; `[+]` 10 HP → STR +5 |

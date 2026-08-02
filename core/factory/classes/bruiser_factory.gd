@@ -99,9 +99,9 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	adrenaline_surge.upgrade_description = "On Kill: HEAL 1 and gain SHIELD 2."
 	adrenaline_surge.targeting_mode = GameEnums.TargetingMode.SELF
 	adrenaline_surge.targeting_flags = GameEnums.TargetingFlags.SELF
+	adrenaline_surge.effects[0].modifiers["zero_ap_adjacent_enemies"] = 2
 	adrenaline_surge.upgraded_effects = DataLibrary._duplicate_effects(adrenaline_surge.effects)
 	adrenaline_surge.upgraded_effects[1].modifiers["on_kill_heal_shield"] = 1
-	adrenaline_surge.effects[0].modifiers["zero_ap_adjacent_enemies"] = 2
 	def.abilities.append(adrenaline_surge)
 
 	var earthshatter = DataLibrary._make_ability(&"bruiser_earthshatter", "Earthshatter", 1, [

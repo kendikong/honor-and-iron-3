@@ -4,6 +4,7 @@ extends RefCounted
 ## Per-row sim + factory asserts for Bruiser B6-LOCK matrix (rows 2–31).
 
 const H := preload("res://tests/bruiser_qa_harness.gd")
+const KH := preload("res://tests/knight_qa_harness.gd")
 
 
 static func run_charge_strike(failures: Array[String]) -> void:
@@ -429,6 +430,28 @@ static func run_earthshatter(failures: Array[String]) -> void:
 		failures, "earthshatter/out_of_range",
 		not AbilitySystem.can_use(far_board, far_action),
 	)
+	var arc_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(arc_board, 20, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_earthshatter"))
+	H.place_dummy(arc_board, 21, Vector2i(4, 3))
+	H.place_dummy(arc_board, 22, Vector2i(4, 4))
+	H.place_dummy(arc_board, 23, Vector2i(5, 3))
+	var arc_bruiser: UnitState = H.unit_on_board(arc_board, 20)
+	var hp_center: int = H.unit_hp(arc_board, 21)
+	var hp_perp: int = H.unit_hp(arc_board, 22)
+	var hp_outside: int = H.unit_hp(arc_board, 23)
+	var arc_skill: AbilityData = H.ability_on_unit(arc_bruiser, &"bruiser_earthshatter")
+	var arc_plan := Timeline.new()
+	arc_plan.add(H.plan_ability(20, arc_skill, Vector2i(4, 3), 21))
+	var arc_result: SimResult = H.simulate_plan(arc_board, arc_plan)
+	var center_dmg: int = hp_center - H.unit_hp(arc_result.final_state, 21)
+	var perp_dmg: int = hp_perp - H.unit_hp(arc_result.final_state, 22)
+	var arc_math: Dictionary = H.first_damage_math(arc_result.events)
+	var expected_arc: int = H.damage_dealt_to_unit(
+		arc_board, 21, int(arc_math.get("final_raw", 0)), arc_bruiser,
+	)
+	H.assert_eq_int(failures, "earthshatter/arc_center_dmg", center_dmg, expected_arc)
+	H.assert_eq_int(failures, "earthshatter/arc_perp_dmg", perp_dmg, expected_arc)
+	H.assert_eq_int(failures, "earthshatter/arc_outside", H.unit_hp(arc_result.final_state, 23), hp_outside)
 	var destroy_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(destroy_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_earthshatter"))
 	var construct_def: UnitData = DataLibrary.get_unit(&"construct_turret")
@@ -442,9 +465,10 @@ static func run_earthshatter(failures: Array[String]) -> void:
 	var destroy_plan := Timeline.new()
 	destroy_plan.add(H.plan_ability(10, destroy_skill, Vector2i(4, 3), 11))
 	var destroy_result: SimResult = H.simulate_plan(destroy_board, destroy_plan)
+	var construct_after: UnitState = destroy_result.final_state.get_unit_by_id(11)
 	H.assert_true(
 		failures, "earthshatter/destroy_construct",
-		H.unit_hp(destroy_result.final_state, 11) < construct_hp,
+		construct_after == null or not construct_after.is_alive(),
 		"DESTROY_OBSTACLE must kill construct in ARC",
 	)
 
@@ -459,6 +483,7 @@ static func run_meat_shield(failures: Array[String]) -> void:
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_meat_shield")
 	H.assert_eq_int(failures, "meat_shield/range", factory_ab.range_tiles, 1)
 	H.assert_eq_int(failures, "meat_shield/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.ALLY_UNIT)
+	H.assert_eq_int(failures, "meat_shield/intercept_duration", factory_ab.effects[1].status_duration, 1)
 	H.assert_true(
 		failures, "meat_shield/not_teleport",
 		not H.ability_has_effect(factory_ab, GameEnums.EffectType.TELEPORT_CASTER, false),
@@ -493,6 +518,26 @@ static func run_meat_shield(failures: Array[String]) -> void:
 		failures, "meat_shield/intercept_expires",
 		expired_bruiser != null and not H.has_status(expired_bruiser, GameEnums.StatusType.INTERCEPT),
 		"INTERCEPT must clear after turn boundary",
+	)
+	var post_board: BoardState = advanced.final_state.clone()
+	H.place_unit(
+		post_board,
+		40,
+		H.bruiser_unit_data(),
+		GameEnums.Team.ENEMY,
+		Vector2i(2, 3),
+		{
+			"active_abilities": [H.factory_ability(&"bruiser_headbutt")],
+			"active_passives": [],
+		},
+	)
+	var post_plan := Timeline.new()
+	post_plan.add(H.plan_ability(40, H.factory_ability(&"bruiser_headbutt"), Vector2i(3, 3), 3))
+	var post_result: SimResult = H.simulate_plan(post_board, post_plan)
+	H.assert_eq_int(
+		failures, "meat_shield/post_expiry/no_redirect",
+		H.sum_unit_incoming_damage_events(post_result.events, 1),
+		0,
 	)
 	var redirect_board: BoardState = result.final_state
 	H.place_unit(
@@ -1004,6 +1049,9 @@ static func run_blood_for_blood(failures: Array[String]) -> void:
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
+	var wpn: int = 0
+	if bruiser.definition != null and bruiser.definition.equipped_weapon != null:
+		wpn = bruiser.definition.equipped_weapon.might
 	var ab: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, ab, Vector2i(4, 3), 2))
@@ -1012,6 +1060,26 @@ static func run_blood_for_blood(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "blood_for_blood/bleed",
 		enemy != null and H.has_status(enemy, GameEnums.StatusType.BLEED),
+	)
+	H.assert_eq_int(
+		failures, "blood_for_blood/bleed_wpn",
+		H.status_value(enemy, GameEnums.StatusType.BLEED),
+		wpn,
+	)
+	var neg_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	var neg_cfg: Dictionary = H.with_single_passive(&"blood_for_blood", false)
+	neg_cfg["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
+	H.place_bruiser(neg_board, 10, Vector2i(3, 3), neg_cfg)
+	H.place_dummy(neg_board, 11, Vector2i(4, 3))
+	var neg_ab: AbilityData = H.ability_on_unit(H.unit_on_board(neg_board, 10), &"bruiser_concussion_blow")
+	var neg_plan := Timeline.new()
+	neg_plan.add(H.plan_ability(10, neg_ab, Vector2i(4, 3), 11))
+	var neg_result: SimResult = H.simulate_plan(neg_board, neg_plan)
+	var neg_enemy: UnitState = neg_result.final_state.get_unit_by_id(11)
+	H.assert_true(
+		failures, "blood_for_blood/no_bleed_without_flag",
+		neg_enemy != null and not H.has_status(neg_enemy, GameEnums.StatusType.BLEED),
+		"without damaged_last_turn flag attacks must not apply BLEED",
 	)
 
 
@@ -1417,6 +1485,25 @@ static func run_momentum_transfer(failures: Array[String]) -> void:
 		failures, "momentum_transfer/heal",
 		H.unit_hp(result.final_state, 1) > hp,
 	)
+	var plain_board: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(5, 3)])
+	var plain_cfg: Dictionary = {
+		"active_passives": [H.factory_passive(&"battering_ram")],
+		"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")],
+	}
+	H.place_bruiser(plain_board, 20, Vector2i(2, 3), plain_cfg)
+	H.place_dummy(plain_board, 21, Vector2i(3, 3))
+	var plain_bruiser: UnitState = H.unit_on_board(plain_board, 20)
+	plain_bruiser.health.current_hp = plain_bruiser.health.max_hp - 3
+	var plain_hp: int = plain_bruiser.health.current_hp
+	var plain_ab: AbilityData = H.ability_on_unit(plain_bruiser, &"bruiser_concussion_blow")
+	var plain_plan := Timeline.new()
+	plain_plan.add(H.plan_ability(20, plain_ab, Vector2i(3, 3), 21))
+	var plain_result: SimResult = H.simulate_plan(plain_board, plain_plan)
+	H.assert_eq_int(
+		failures, "momentum_transfer/plain_no_heal",
+		H.unit_hp(plain_result.final_state, 20),
+		plain_hp,
+	)
 
 
 static func run_crowd_breaker(failures: Array[String]) -> void:
@@ -1510,6 +1597,23 @@ static func run_battering_ram(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var end_pos: Vector2i = result.final_state.get_unit_by_id(2).position
 	H.assert_eq_cell(failures, "battering_ram/extra_tile", end_pos, Vector2i(5, 3))
+	var plain_board: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(6, 3)])
+	H.place_bruiser(
+		plain_board, 10, Vector2i(2, 3),
+		{"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")]},
+	)
+	H.place_dummy(plain_board, 11, Vector2i(3, 3))
+	var plain_ab: AbilityData = H.ability_on_unit(H.unit_on_board(plain_board, 10), &"bruiser_concussion_blow")
+	var plain_plan := Timeline.new()
+	plain_plan.add(H.plan_ability(10, plain_ab, Vector2i(3, 3), 11))
+	var plain_result: SimResult = H.simulate_plan(plain_board, plain_plan)
+	var plain_end: Vector2i = plain_result.final_state.get_unit_by_id(11).position
+	H.assert_eq_cell(failures, "battering_ram/base_push", plain_end, Vector2i(4, 3))
+	H.assert_eq_int(
+		failures, "battering_ram/extra_tile_delta",
+		end_pos.x - plain_end.x,
+		1,
+	)
 
 
 static func run_unstoppable_force(failures: Array[String]) -> void:
@@ -1536,13 +1640,51 @@ static func run_unstoppable_force(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	bruiser = result.final_state.get_unit_by_id(1)
 	H.assert_true(failures, "unstoppable_force/no_stagger", not H.has_status(bruiser, GameEnums.StatusType.STAGGER))
-	var prevented: bool = false
+	var prevented_stagger: bool = false
 	for e: Variant in result.events:
 		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
 			if str(e.data.get("reason", "")) == "status_prevented_by_unstoppable_force":
-				prevented = true
+				prevented_stagger = true
 				break
+	H.assert_true(failures, "unstoppable_force/stagger_prevented", prevented_stagger)
+	H.assert_eq_int(
+		failures, "unstoppable_force/shield_gain",
+		bruiser.armor - armor_before,
+		1,
+	)
+	var root_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(root_board, 3, Vector2i(3, 3), H.with_single_passive(&"unstoppable_force", false))
+	var root_enemy_cfg: Dictionary = {
+		"active_abilities": [KH.factory_ability(&"knight_iron_grip")],
+	}
+	H.place_unit(
+		root_board,
+		4,
+		H.bruiser_unit_data(),
+		GameEnums.Team.ENEMY,
+		Vector2i(4, 3),
+		root_enemy_cfg,
+	)
+	var root_bruiser: UnitState = H.unit_on_board(root_board, 3)
+	var armor_root_before: int = root_bruiser.armor
+	var grip: AbilityData = KH.factory_ability(&"knight_iron_grip")
+	var root_plan := Timeline.new()
+	root_plan.add(H.plan_ability(4, grip, Vector2i(3, 3), 3))
+	var root_result: SimResult = H.simulate_plan(root_board, root_plan)
+	root_bruiser = root_result.final_state.get_unit_by_id(3)
 	H.assert_true(
-		failures, "unstoppable_force/shield",
-		bruiser.armor > armor_before or prevented,
+		failures, "unstoppable_force/no_root",
+		not H.has_status(root_bruiser, GameEnums.StatusType.ROOT),
+	)
+	var prevented_root: bool = false
+	for e: Variant in root_result.events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
+			if str(e.data.get("reason", "")) == "status_prevented_by_unstoppable_force":
+				prevented_root = true
+				break
+	H.assert_true(failures, "unstoppable_force/root_prevented", prevented_root)
+	H.assert_eq_int(
+		failures, "unstoppable_force/root_shield_gain",
+		root_bruiser.armor - armor_root_before,
+		1,
 	)

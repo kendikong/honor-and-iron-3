@@ -173,6 +173,11 @@ static func run_meat_shield_upgrade(failures: Array[String]) -> void:
 	)
 	var skill: AbilityData = H.factory_ability(&"bruiser_meat_shield")
 	H.assert_eq_int(failures, "meat_shield/upgrade/range", skill.upgraded_range_tiles, 3)
+	H.assert_eq_int(
+		failures, "meat_shield/upgrade/intercept_str_mod",
+		int(skill.upgraded_effects[1].modifiers["intercept_grant_str"]),
+		2,
+	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
 	H.place_bruiser(board, 3, Vector2i(5, 3), {"active_abilities": [DataLibrary.get_universal_run()]})
@@ -407,6 +412,7 @@ static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(5, 3))
 	board.items.append(Vector2i(4, 3))
+	board.items.append(Vector2i(3, 4))
 	var hp: int = H.unit_hp(board, 2)
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_guttural_roar")
 	var plan := Timeline.new()
@@ -414,18 +420,30 @@ static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var final_items: Array = result.final_state.items
 	var item_pushed_east: bool = false
+	var item_pushed_south: bool = false
 	for coord: Variant in final_items:
 		if coord is Vector2i and coord.x >= 5 and coord.y == 3:
 			item_pushed_east = true
-			break
+		if coord is Vector2i and coord.x == 3 and coord.y >= 5:
+			item_pushed_south = true
 	H.assert_true(
 		failures, "guttural_roar/upgrade/item_push",
 		not final_items.has(Vector2i(4, 3)),
 	)
 	H.assert_true(
+		failures, "guttural_roar/upgrade/item_push_south",
+		not final_items.has(Vector2i(3, 4)),
+		"second board item must leave origin (coins/scrap path)",
+	)
+	H.assert_true(
 		failures, "guttural_roar/upgrade/item_dest",
 		item_pushed_east,
 		"item must be pushed east into the enemy",
+	)
+	H.assert_true(
+		failures, "guttural_roar/upgrade/item_dest_south",
+		item_pushed_south,
+		"second item must be pushed south away from caster",
 	)
 	H.assert_eq_int(
 		failures, "guttural_roar/upgrade/item_collision",
@@ -716,13 +734,20 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 	bruiser.health.current_hp = bruiser.health.max_hp - 3
 	var hp: int = bruiser.health.current_hp
 	H.place_dummy(board, 2, Vector2i(4, 3))
+	H.place_dummy(board, 3, Vector2i(3, 4))
 	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_crimson_whirlwind")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
+	var heal_gain: int = H.unit_hp(result.final_state, 1) - hp
 	H.assert_true(
 		failures, "crimson_whirlwind/upgrade/heal",
-		H.unit_hp(result.final_state, 1) > hp,
+		heal_gain > 0,
+	)
+	H.assert_eq_int(
+		failures, "crimson_whirlwind/upgrade/heal_per_target",
+		heal_gain,
+		2,
 	)
 
 
@@ -1109,7 +1134,16 @@ static func run_unstoppable_force_upgrade(failures: Array[String]) -> void:
 	var result2: SimResult = H.simulate_plan(board2, plan2)
 	var armor_up_gain: int = bruiser.armor - armor_before
 	var armor_base_gain: int = result2.final_state.get_unit_by_id(10).armor - armor_base_before
-	H.assert_true(failures, "unstoppable_force/upgrade/shield", armor_up_gain > armor_base_gain)
+	H.assert_eq_int(
+		failures, "unstoppable_force/upgrade/shield_gain",
+		armor_up_gain,
+		2,
+	)
+	H.assert_eq_int(
+		failures, "unstoppable_force/upgrade/shield_over_base",
+		armor_up_gain - armor_base_gain,
+		1,
+	)
 
 
 static func enemy_def_buff(board: BoardState, unit_id: int, amount: int) -> void:
