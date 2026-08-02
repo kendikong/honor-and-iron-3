@@ -39,6 +39,7 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 
 | Doc | Purpose |
 |-----|---------|
+| [`ability-data.md`](ability-data.md) | Modular AbilityData bible (header + modules + layers) — target for AbilityData refactor |
 | [`_TEMPLATE.md`](_TEMPLATE.md) | Copy for new pillar files |
 | [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) | **ACTIVE** K3-LOCK boundary contract · template: [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md) |
 | [`runs/K3-LOCK.md`](runs/K3-LOCK.md) | Knight LOCK gauntlet run card + `/loop` prompt |
