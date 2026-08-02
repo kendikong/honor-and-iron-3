@@ -205,6 +205,21 @@ static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 		
 	return def
 
+static func count_enraged_debuff_hazard_sources(board: BoardState, unit: UnitState) -> int:
+	if unit == null or not unit.has_passive(&"enraged"):
+		return 0
+	var count := 0
+	var counted_types := {}
+	for status in unit.active_statuses:
+		if GameEnums.is_debuff(status.type) and not counted_types.has(status.type):
+			counted_types[status.type] = true
+			count += 1
+	if board != null:
+		var unit_tile := board.get_tile(unit.position)
+		if unit_tile != null and unit_tile.definition != null and unit_tile.definition.id == &"trap":
+			count += 1
+	return count
+
 static func get_dynamic_strength(board: BoardState, unit: UnitState) -> int:
 	if unit == null: return 0
 	var str_val = unit.current_strength
@@ -225,14 +240,7 @@ static func get_dynamic_strength(board: BoardState, unit: UnitState) -> int:
 		str_val += floori(missing_pct / 0.10)
 		
 	if unit.has_passive(&"enraged"):
-		var debuffs = 0
-		for st in unit.active_statuses:
-			if GameEnums.is_debuff(st.type): debuffs += 1
-		if board != null:
-			var unit_tile = board.get_tile(unit.position)
-			if unit_tile != null and unit_tile.definition != null and unit_tile.definition.id == &"trap":
-				debuffs += 1
-		str_val += debuffs
+		str_val += count_enraged_debuff_hazard_sources(board, unit)
 		
 	if unit.has_passive(&"last_stand") and unit.health.current_hp < unit.health.max_hp * 0.25:
 		str_val += 3 if unit.is_passive_upgraded(&"last_stand") else 2

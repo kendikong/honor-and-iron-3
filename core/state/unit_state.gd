@@ -119,7 +119,7 @@ func has_passive(passive_id: StringName) -> bool:
 func is_passive_upgraded(passive_id: StringName) -> bool:
 	return upgraded_passives.has(passive_id)
 
-func _recalculate_stats() -> void:
+func _recalculate_stats(board: BoardState = null) -> void:
 	var w_str := 0
 	var w_mag := 0
 	var w_def := 0
@@ -168,15 +168,7 @@ func _recalculate_stats() -> void:
 		stat_mov += floori(missing_pct / 0.10)
 		
 	if is_passive_upgraded(&"enraged"):
-		var debuff_count := 0
-		var counted_types := {}
-		for status in active_statuses:
-			if GameEnums.is_debuff(status.type) and not counted_types.has(status.type):
-				debuff_count += 1
-				counted_types[status.type] = true
-		stat_mov += debuff_count
-		# Hazard tile not easily checked here, but debuffs are. If tile logic is needed, 
-		# we would pass board state, but UnitState._recalculate_stats does not have board state.
+		stat_mov += CombatSystem.count_enraged_debuff_hazard_sources(board, self)
 
 	current_strength = maxi(0, base_str + w_str + stat_str)
 	current_magic = maxi(0, base_mag + w_mag + stat_mag)

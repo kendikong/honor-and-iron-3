@@ -674,12 +674,27 @@ static func run_enraged(failures: Array[String]) -> void:
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	bruiser.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1))
-	bruiser._recalculate_stats()
+	bruiser._recalculate_stats(board)
 	var str_debuff: int = CombatSystem.get_dynamic_strength(board, bruiser)
 	bruiser.active_statuses.clear()
-	bruiser._recalculate_stats()
+	bruiser._recalculate_stats(board)
 	var str_clean: int = CombatSystem.get_dynamic_strength(board, bruiser)
 	H.assert_eq_int(failures, "enraged/debuff_str", str_debuff - str_clean, 1)
+	bruiser.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1))
+	bruiser.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 2, 1))
+	bruiser._recalculate_stats(board)
+	var str_dup: int = CombatSystem.get_dynamic_strength(board, bruiser)
+	H.assert_eq_int(failures, "enraged/unique_debuff", str_dup - str_clean, 1)
+	var plain_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(plain_board, 10, Vector2i(3, 3), {})
+	var plain: UnitState = H.unit_on_board(plain_board, 10)
+	plain.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1))
+	plain._recalculate_stats(plain_board)
+	var str_plain_debuff: int = CombatSystem.get_dynamic_strength(plain_board, plain)
+	plain.active_statuses.clear()
+	plain._recalculate_stats(plain_board)
+	var str_plain_clean: int = CombatSystem.get_dynamic_strength(plain_board, plain)
+	H.assert_eq_int(failures, "enraged/debuff_no_passive", str_plain_debuff - str_plain_clean, 0)
 	var hazard_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.set_tile_trap(hazard_board, Vector2i(3, 3))
 	H.place_bruiser(hazard_board, 20, Vector2i(3, 3), cfg)
@@ -744,6 +759,10 @@ static func run_colossal_mass(failures: Array[String]) -> void:
 	H.place_bruiser(plain_board, 10, Vector2i(3, 3), {})
 	var str_plain: int = CombatSystem.get_dynamic_strength(plain_board, H.unit_on_board(plain_board, 10))
 	H.assert_eq_int(failures, "colossal_mass/str_bonus", str_with - str_plain, expected_bonus)
+	bruiser.health.current_hp = 1
+	bruiser._recalculate_stats(board)
+	var str_wounded: int = CombatSystem.get_dynamic_strength(board, bruiser)
+	H.assert_eq_int(failures, "colossal_mass/max_hp_not_current", str_wounded, str_with)
 
 
 static func run_overwhelming_bulk(failures: Array[String]) -> void:
@@ -798,11 +817,20 @@ static func run_thrill_of_pain(failures: Array[String]) -> void:
 	H.place_dummy(board, 2, Vector2i(4, 3))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	var enemy: UnitState = H.unit_on_board(board, 2)
+	H.assert_true(
+		failures, "thrill_of_pain/inactive",
+		not bruiser.passive_flags.get("thrill_active", false),
+	)
+	var trigger_events: Array[SimEvent] = []
+	CombatSystem.deal_damage(board, bruiser, 3, trigger_events, &"physical", false, false, enemy)
+	H.assert_true(
+		failures, "thrill_of_pain/on_damage_active",
+		bruiser.passive_flags.get("thrill_active", false),
+	)
 	var hp: int = enemy.health.current_hp
 	var base_scaled: int = CombatSystem.calculate_scaled_damage(
 		bruiser, 2, GameEnums.StatType.PHYSICAL, board,
 	)
-	bruiser.passive_flags["thrill_active"] = true
 	var events: Array[SimEvent] = []
 	CombatSystem.deal_damage_raw(
 		board, bruiser, enemy, base_scaled, GameEnums.StatType.PHYSICAL, events, "thrill_test", 2,
@@ -828,6 +856,11 @@ static func run_thrill_of_pain(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "thrill_of_pain/consumed",
 		not bruiser.passive_flags.get("thrill_active", false),
+	)
+	H.assert_true(
+		failures, "thrill_of_pain/push",
+		board.pending_pushes.size() > 0,
+		"thrill attack must enqueue a PUSH on the target",
 	)
 
 

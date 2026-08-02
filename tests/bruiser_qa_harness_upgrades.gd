@@ -570,15 +570,18 @@ static func run_adrenaline_junkie_upgrade(failures: Array[String]) -> void:
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	bruiser.health.current_hp = bruiser.health.max_hp / 5
-	bruiser._recalculate_stats()
+	bruiser._recalculate_stats(board)
 	var def_low: int = CombatSystem.get_dynamic_defense(board, bruiser)
 	var board2: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board2, 10, Vector2i(3, 3), H.with_single_passive(&"adrenaline_junkie", false))
 	var bruiser2: UnitState = H.unit_on_board(board2, 10)
 	bruiser2.health.current_hp = bruiser2.health.max_hp / 5
-	bruiser2._recalculate_stats()
+	bruiser2._recalculate_stats(board2)
 	var def_base: int = CombatSystem.get_dynamic_defense(board2, bruiser2)
-	H.assert_true(failures, "adrenaline_junkie/upgrade/def", def_low > def_base)
+	var expected_def: int = floori(
+		(bruiser.health.max_hp - bruiser.health.current_hp) / float(bruiser.health.max_hp) / 0.20
+	)
+	H.assert_eq_int(failures, "adrenaline_junkie/upgrade/def", def_low - def_base, expected_def)
 
 
 static func run_enraged_upgrade(failures: Array[String]) -> void:
@@ -590,15 +593,29 @@ static func run_enraged_upgrade(failures: Array[String]) -> void:
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	bruiser.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1))
-	bruiser._recalculate_stats()
+	bruiser._recalculate_stats(board)
 	var mov_up: int = bruiser.movement.max_points
 	var board2: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board2, 10, Vector2i(3, 3), H.with_single_passive(&"enraged", false))
 	var bruiser2: UnitState = H.unit_on_board(board2, 10)
 	bruiser2.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1))
-	bruiser2._recalculate_stats()
+	bruiser2._recalculate_stats(board2)
 	var mov_base: int = bruiser2.movement.max_points
-	H.assert_true(failures, "enraged/upgrade/mov", mov_up > mov_base)
+	H.assert_eq_int(failures, "enraged/upgrade/mov", mov_up - mov_base, 1)
+	var trap_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.set_tile_trap(trap_board, Vector2i(3, 3))
+	H.place_bruiser(trap_board, 20, Vector2i(3, 3), cfg)
+	var trap_bruiser: UnitState = H.unit_on_board(trap_board, 20)
+	trap_bruiser._recalculate_stats(trap_board)
+	var plain_trap_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(plain_trap_board, 21, Vector2i(3, 3), cfg)
+	var plain_trap: UnitState = H.unit_on_board(plain_trap_board, 21)
+	plain_trap._recalculate_stats(plain_trap_board)
+	H.assert_eq_int(
+		failures, "enraged/upgrade/hazard_mov",
+		trap_bruiser.movement.max_points - plain_trap.movement.max_points,
+		1,
+	)
 
 
 static func run_last_stand_upgrade(failures: Array[String]) -> void:
@@ -663,25 +680,43 @@ static func run_thrill_of_pain_upgrade(failures: Array[String]) -> void:
 	))
 	H.place_dummy(board, 2, Vector2i(4, 3))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
-	bruiser.passive_flags["thrill_active"] = true
-	var hp: int = H.unit_hp(board, 2)
+	var enemy_up: UnitState = H.unit_on_board(board, 2)
+	var trig: Array[SimEvent] = []
+	CombatSystem.deal_damage(board, bruiser, 3, trig, &"physical", false, false, enemy_up)
+	H.assert_true(
+		failures, "thrill_of_pain/upgrade/thrill_active",
+		bruiser.passive_flags.get("thrill_active", false),
+	)
+	var hp: int = enemy_up.health.current_hp
+	var base_scaled: int = CombatSystem.calculate_scaled_damage(
+		bruiser, 2, GameEnums.StatType.PHYSICAL, board,
+	)
 	var events: Array[SimEvent] = []
 	CombatSystem.deal_damage_raw(
-		board, bruiser, H.unit_on_board(board, 2), 0, GameEnums.StatType.PHYSICAL, events, "thrill", 2,
+		board, bruiser, enemy_up, base_scaled, GameEnums.StatType.PHYSICAL, events, "thrill", 2,
 	)
-	var dmg_up: int = hp - H.unit_hp(board, 2)
+	var dmg_up: int = hp - enemy_up.health.current_hp
 	var board2: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board2, 10, Vector2i(3, 3), H.with_single_passive(&"thrill_of_pain", false))
 	H.place_dummy(board2, 11, Vector2i(4, 3))
 	var bruiser2: UnitState = H.unit_on_board(board2, 10)
-	bruiser2.passive_flags["thrill_active"] = true
-	var hp2: int = H.unit_hp(board2, 11)
+	var enemy_base: UnitState = H.unit_on_board(board2, 11)
+	var trig2: Array[SimEvent] = []
+	CombatSystem.deal_damage(board2, bruiser2, 3, trig2, &"physical", false, false, enemy_base)
+	var hp2: int = enemy_base.health.current_hp
+	var base_scaled2: int = CombatSystem.calculate_scaled_damage(
+		bruiser2, 2, GameEnums.StatType.PHYSICAL, board2,
+	)
 	var events2: Array[SimEvent] = []
 	CombatSystem.deal_damage_raw(
-		board2, bruiser2, H.unit_on_board(board2, 11), 0, GameEnums.StatType.PHYSICAL, events2, "thrill", 2,
+		board2, bruiser2, enemy_base, base_scaled2, GameEnums.StatType.PHYSICAL, events2, "thrill", 2,
 	)
-	var dmg_base: int = hp2 - H.unit_hp(board2, 11)
-	H.assert_true(failures, "thrill_of_pain/upgrade/bonus", dmg_up > dmg_base)
+	var dmg_base: int = hp2 - enemy_base.health.current_hp
+	var expected_upgrade_delta: int = (
+		CombatSystem.calculate_scaled_damage(bruiser, 5, GameEnums.StatType.PHYSICAL, board)
+		- CombatSystem.calculate_scaled_damage(bruiser, 4, GameEnums.StatType.PHYSICAL, board)
+	)
+	H.assert_eq_int(failures, "thrill_of_pain/upgrade/bonus", dmg_up - dmg_base, expected_upgrade_delta)
 
 
 static func run_scar_tissue_upgrade(failures: Array[String]) -> void:
