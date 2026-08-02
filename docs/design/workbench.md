@@ -9,19 +9,18 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ bruiser_suplex │ Round 2 │ SELF-GRADED: no (subagent)
-SCORE: 88/100 │ THRESHOLD: 88 │ PASS
-DELTA: +11 vs r1 (77)
-GATE: harness PASS · matrix 5/31 PASS
-STOP_CONDITION_MET: no — next: bruiser_adrenaline_surge
+GAUNTLET SCORE │ B6-REOPEN batch promote │ Round 1 │ SELF-GRADED: no (prior batch critic)
+SCORE: 25/31 rows PASS │ THRESHOLD: 88/row │ INCOMPLETE
+DELTA: +16 promoted (prior batch critic PASS)
+GATE: harness PASS · matrix 25/31 PASS
+STOP_CONDITION_MET: no — next: re-critic 6 deepened rows
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Result |
 |-------|-------|-------|--------|
-| r2 | bruiser_suplex | 88 | **PASS** — promoted |
-| r3 | bruiser_cleave | 89 | **PASS** — promoted |
-| r3 | bruiser_concussion_blow | 89 | **PASS** — promoted |
+| batch | 16 HARNESS_ONLY → PASS | ≥88 | **PASS** — promoted (prior critic) |
+| deepen | guttural / crimson / blood_for_blood / momentum_transfer / battering_ram / unstoppable | pending | harness deepen done; **critic blocked** (Task usage) |
 
 ---
 
@@ -29,11 +28,12 @@ STOP_CONDITION_MET: no — next: bruiser_adrenaline_surge
 
 | Field | Value |
 |-------|-------|
-| **Status** | **ACTIVE** — row 6 `bruiser_adrenaline_surge` next |
-| **Matrix** | **5/31** PASS |
+| **Status** | **ACTIVE** — 6 rows await fresh `gauntlet-critic` after deepen |
+| **Matrix** | **25/31** PASS |
+| **Remaining** | `bruiser_guttural_roar`, `bruiser_crimson_whirlwind`, `blood_for_blood`, `momentum_transfer`, `battering_ram`, `unstoppable_force` |
 
 ---
 
 ## STOP_ON
 
-`STOP_CONDITION_MET: no` (5/31, gate exit 2)
+`STOP_CONDITION_MET: no` (25/31, gate exit 2; critic subagent usage exhausted)

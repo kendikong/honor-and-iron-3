@@ -56,7 +56,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **2 / 31** factory rows meta-critic `PASS` · **29** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — B6-REOPEN active.
+**Summary (honest):** **25 / 31** factory rows meta-critic `PASS` · **6** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — B6-REOPEN active.
 
 ### Movement + actives
 
@@ -72,30 +72,30 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | PASS | RANGE 1 ally SWAP + INTERCEPT 50%; `[+]` RANGE 3 + STR per intercept |
 | `bruiser_frenzy` | Active | `tests/skills/bruiser_frenzy_scenario.gd` | PASS | RANGE 1 ATK 1 x3; `[+]` on-kill +1 AP |
 | `bruiser_guttural_roar` | Active | `tests/skills/bruiser_guttural_roar_scenario.gd` | HARNESS_ONLY | AOE PUSH + DEF debuff; `[+]` item push/collision |
-| `bruiser_headbutt` | Active | `tests/skills/bruiser_headbutt_scenario.gd` | HARNESS_ONLY | Mutual DAMAGE + STAGGER; `[+]` % Max HP bonus |
-| `bruiser_blood_boil` | Active | `tests/skills/bruiser_blood_boil_scenario.gd` | HARNESS_ONLY | SELF HP → STR; `[+]` 10 HP → STR +5 |
-| `bruiser_violent_collision` | Active | `tests/skills/bruiser_violent_collision_scenario.gd` | HARNESS_ONLY | DASH bulldoze + recast; `[+]` STAGGER on collision |
+| `bruiser_headbutt` | Active | `tests/skills/bruiser_headbutt_scenario.gd` | PASS | Mutual DAMAGE + STAGGER; `[+]` % Max HP bonus |
+| `bruiser_blood_boil` | Active | `tests/skills/bruiser_blood_boil_scenario.gd` | PASS | SELF HP → STR; `[+]` 10 HP → STR +5 |
+| `bruiser_violent_collision` | Active | `tests/skills/bruiser_violent_collision_scenario.gd` | PASS | DASH bulldoze + recast; `[+]` STAGGER on collision |
 | `bruiser_crimson_whirlwind` | Active | `tests/skills/bruiser_crimson_whirlwind_scenario.gd` | HARNESS_ONLY | AOE DAMAGE; `[+]` heal per hit |
-| `bruiser_belly_flop` | Active | `tests/skills/bruiser_belly_flop_scenario.gd` | HARNESS_ONLY | TELEPORT_CASTER + DAMAGE; `[+]` landing PUSH |
-| `bruiser_breaching_dash` | Active | `tests/skills/bruiser_breaching_dash_scenario.gd` | HARNESS_ONLY | DASH + destroy cover; `[+]` next attack PIERCE |
+| `bruiser_belly_flop` | Active | `tests/skills/bruiser_belly_flop_scenario.gd` | PASS | TELEPORT_CASTER + DAMAGE; `[+]` landing PUSH |
+| `bruiser_breaching_dash` | Active | `tests/skills/bruiser_breaching_dash_scenario.gd` | PASS | DASH + destroy cover; `[+]` next attack PIERCE |
 
 ### Passives (trigger-based)
 
 | Factory id | Passive | Scenario file | Tier 1 | Trigger setup |
 |------------|---------|---------------|--------|----------------|
-| `cellular_regeneration` | Cellular Regeneration | `tests/passives/cellular_regeneration_scenario.gd` | HARNESS_ONLY | Turn start + adjacent enemy count |
+| `cellular_regeneration` | Cellular Regeneration | `tests/passives/cellular_regeneration_scenario.gd` | PASS | Turn start + adjacent enemy count |
 | `blood_for_blood` | Blood for Blood | `tests/passives/blood_for_blood_scenario.gd` | HARNESS_ONLY | Damaged last turn → BLEED on attack |
-| `adrenaline_junkie` | Adrenaline Junkie | `tests/passives/adrenaline_junkie_scenario.gd` | HARNESS_ONLY | Missing HP → MOV/STR; `[+]` DEF |
-| `enraged` | Enraged | `tests/passives/enraged_scenario.gd` | HARNESS_ONLY | Debuff/hazard count → STR; `[+]` MOV |
-| `last_stand` | Last Stand | `tests/passives/last_stand_scenario.gd` | HARNESS_ONLY | HP &lt; 25% → STR/DEF |
-| `colossal_mass` | Colossal Mass | `tests/passives/colossal_mass_scenario.gd` | HARNESS_ONLY | Max HP → STR scaling |
-| `overwhelming_bulk` | Overwhelming Bulk | `tests/passives/overwhelming_bulk_scenario.gd` | HARNESS_ONLY | HP vs target Max HP → PIERCE; `[+]` PUSH |
-| `thrill_of_pain` | Thrill of Pain | `tests/passives/thrill_of_pain_scenario.gd` | HARNESS_ONLY | On damage → next attack buff |
-| `momentum_of_titan` | Momentum of the Titan | `tests/passives/momentum_of_titan_scenario.gd` | HARNESS_ONLY | PUSH collision % Max HP damage |
-| `scar_tissue` | Scar Tissue | `tests/passives/scar_tissue_scenario.gd` | HARNESS_ONLY | Physical damage reduction scaling |
+| `adrenaline_junkie` | Adrenaline Junkie | `tests/passives/adrenaline_junkie_scenario.gd` | PASS | Missing HP → MOV/STR; `[+]` DEF |
+| `enraged` | Enraged | `tests/passives/enraged_scenario.gd` | PASS | Debuff/hazard count → STR; `[+]` MOV |
+| `last_stand` | Last Stand | `tests/passives/last_stand_scenario.gd` | PASS | HP &lt; 25% → STR/DEF |
+| `colossal_mass` | Colossal Mass | `tests/passives/colossal_mass_scenario.gd` | PASS | Max HP → STR scaling |
+| `overwhelming_bulk` | Overwhelming Bulk | `tests/passives/overwhelming_bulk_scenario.gd` | PASS | HP vs target Max HP → PIERCE; `[+]` PUSH |
+| `thrill_of_pain` | Thrill of Pain | `tests/passives/thrill_of_pain_scenario.gd` | PASS | On damage → next attack buff |
+| `momentum_of_titan` | Momentum of the Titan | `tests/passives/momentum_of_titan_scenario.gd` | PASS | PUSH collision % Max HP damage |
+| `scar_tissue` | Scar Tissue | `tests/passives/scar_tissue_scenario.gd` | PASS | Physical damage reduction scaling |
 | `momentum_transfer` | Momentum Transfer | `tests/passives/momentum_transfer_scenario.gd` | HARNESS_ONLY | PUSH collision → HEAL; `[+]` STR |
-| `crowd_breaker` | Crowd Breaker | `tests/passives/crowd_breaker_scenario.gd` | HARNESS_ONLY | Adjacent enemy STR + splash |
-| `juggernaut` | Juggernaut | `tests/passives/juggernaut_scenario.gd` | HARNESS_ONLY | Trap destroy; `[+]` SHIELD |
+| `crowd_breaker` | Crowd Breaker | `tests/passives/crowd_breaker_scenario.gd` | PASS | Adjacent enemy STR + splash |
+| `juggernaut` | Juggernaut | `tests/passives/juggernaut_scenario.gd` | PASS | Trap destroy; `[+]` SHIELD |
 | `battering_ram` | Battering Ram | `tests/passives/battering_ram_scenario.gd` | HARNESS_ONLY | PUSH +1 tile; `[+]` wall STAGGER |
 | `unstoppable_force` | Unstoppable Force | `tests/passives/unstoppable_force_scenario.gd` | HARNESS_ONLY | STAGGER/ROOT immune + SHIELD on resist |
 
