@@ -1,10 +1,10 @@
 {
   "piece": "K3-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 15,
+  "last_critic_round": 16,
   "last_score": 88,
   "last_result": "PASS",
-  "last_row_promoted": "knight_seismic_stomp",
+  "last_row_promoted": "knight_taunting_strike",
   "approved_rows": [
     {
       "factory_id": "knight_swap",
@@ -106,6 +106,12 @@
       "factory_id": "knight_seismic_stomp",
       "score": 88,
       "critic_round": 15,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_taunting_strike",
+      "score": 88,
+      "critic_round": 16,
       "fix_target": "none"
     }
   ]

@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ K3-LOCK matrix │ Round 15
-FULL MATRIX: 57/95 (stale) │ ROW: seismic PASS 88/88 ✓ │ taunting pending r1
-MANIFEST: 17/30 │ STOP_CONDITION_MET: no
-NEXT: taunting_strike critic; then redirect_strike queue
+GAUNTLET SCORE │ K3-LOCK matrix │ Round 16
+FULL MATRIX: 57/95 (stale) │ ROW: taunting PASS 88/88 ✓
+MANIFEST: 18/30 │ STOP_CONDITION_MET: no
+NEXT: redirect_strike queue; full-matrix critic refresh
 ══════════════════════════════════════
 ```
 
@@ -34,6 +34,7 @@ NEXT: taunting_strike critic; then redirect_strike queue
 | r14 | 88 | +2 | **PASS** (row: iron_grip → manifest) |
 | r14b | 87 | — | FAIL (row: seismic) |
 | r15 | 88 | +1 | **PASS** (row: seismic → manifest) |
+| r16 | 88 | — | **PASS** (row: taunting → manifest) |
 
 ---
 
@@ -43,8 +44,8 @@ NEXT: taunting_strike critic; then redirect_strike queue
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-LOCK ACTIVE** — **17/30** manifest · seismic **PASS** · taunting **pending** |
-| **Last result** | seismic promoted r15 (88); taunting_strike deepened same tick |
+| **Status** | **K3-LOCK ACTIVE** — **18/30** manifest |
+| **Last result** | taunting_strike promoted r16 (88) |
 | **Lead session** | knight-k3-lock-2026-08-01 |
 
 ---
@@ -95,7 +96,7 @@ NEXT: taunting_strike critic; then redirect_strike queue
 
 ## Blockers (owner only)
 
-- **P3 K3-LOCK:** 13 HARNESS_ONLY rows — unattended loop in [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) + [`runs/K3-LOCK.md`](runs/K3-LOCK.md)
+- **P3 K3-LOCK:** 12 HARNESS_ONLY rows — unattended loop in [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) + [`runs/K3-LOCK.md`](runs/K3-LOCK.md)
 - P4 worksheet (`roguelike-run.md`)
 - P5 worksheet (`enemy-design.md`)
 - P7 worksheet (`world-assets-and-map.md`)
