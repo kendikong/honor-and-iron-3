@@ -136,12 +136,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 
 	var guttural_roar = DataLibrary._make_ability(&"bruiser_guttural_roar", "Guttural Roar", 1, [
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
-		DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1)
+		DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 2)
 	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_SQUARE, 2)
-	guttural_roar.effects[1].amount = -2
 	guttural_roar.upgrade_description = "PUSH 1 all items/coins/scrap. Item collision: ATK 1."
 	guttural_roar.upgraded_effects = DataLibrary._duplicate_effects(guttural_roar.effects)
-	guttural_roar.upgraded_effects[1].amount = -2
 	def.abilities.append(guttural_roar)
 
 	var headbutt = DataLibrary._make_ability(&"bruiser_headbutt", "Headbutt", 1, [
