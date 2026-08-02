@@ -86,7 +86,7 @@ Authored once per skill. Modules do **not** each pay AP/MP or pick a second “c
 |-------|---------|
 | **id** | Stable id (`bruiser_charge_strike`, …) |
 | **display_name** | Player-facing name |
-| **planner_group** | Timeline column only: `PRE_MOVE` (basic positioning — MP, no Action slot) or `ACTION` (AP class skills / basic attack; may contain POST_MOVE modules). Replaces old `AbilityKind` for class-library cards. Universal Run/Wait stay system actions. |
+| **planner_group** | Timeline column only: `PRE_MOVE` (basic positioning — MP, no Action slot) or `ACTION` (AP class skills / basic attack; may contain `ON_POST` modules). Replaces old `AbilityKind` for class-library cards. Universal Run/Wait stay system actions. |
 | **tags** | Classification set for identity + AUTO anim (see §7): e.g. `attack`, `movement`, `positioning`, `spell`. A skill may have several (Trampling Advance: attack + movement). |
 | **cost** | See **Cost block** below (not only a bare integer) |
 | **uses_per_combat** | Max uses this fight (`-1` = unlimited) |
@@ -169,7 +169,8 @@ What this module *is*. Families (grow the list; keep the field):
 | Control | PUSH, PULL, THROW_BEHIND, PULL_SELF_TO_TARGET, PULL_TARGET_TO_SELF |
 | Status | Apply / remove / PURGE / CLEANSE |
 | Utility | CHANGE_TERRAIN, CREATE_HAZARD, DESTROY_OBSTACLE, SPAWN, GRANT_AP, GRANT_NEXT_ATTACK_MOD, ARM_REACTION |
-| Keywords (bundles) | TRAMPLE, BULLDOZE (see §6) |
+
+Keywords (TRAMPLE, BULLDOZE, GHOST, …) are a **separate module field** (§6), not a primary-effect family.
 
 **Motion mode** (when primary effect is motion):
 
@@ -344,7 +345,7 @@ Some Bible terms are **packages** so authors do not assemble five checkboxes eve
 | **BULLDOZE** | Passthrough + collision package | Pass-through + ON_COLLISION damage/push (amounts on keyword) |
 | **GHOST** (during move) | Pass terrain/units per Bible | Movement flag for that module |
 | **PIERCE** | Ignore DEF/MAG on this hit | Damage flag |
-| **CANTO** (full refund) | Unit/passive full MOV refund after action | Status/passive; skill-granted partial canto = POST_MOVE module with fixed range |
+| **CANTO** (full refund) | Unit/passive full MOV refund after action | Status/passive; skill-granted partial canto = `ON_POST` MOVE module with fixed range |
 
 Do **not** split TRAMPLE/BULLDOZE into passthrough + damage micro-checkboxes. Extra Bible bits beyond the keyword (e.g. Trampling’s PUSH, Bowling [+] chain) are **separate layers**, not a dismantled keyword.
 
@@ -380,22 +381,23 @@ From `AbilitySystem.execute` + `ability_uses_attack_animation` / spell helpers +
 - **Spellcast** if: not a movement-effect skill, not positioning kind, and not attack (buffs/utility often land here).  
 - Director: `WALK`/`RUN` on ability-used play with the move; `ATTACK` / `SPELL` / `SUPER_RUN` go down the attack/cast presentation path.
 
-### 7.2 AUTO rules going forward (tags + modules — same priorities)
+### 7.2 AUTO rules going forward (tags + modules)
 
-Keep the **same priority order** as live code; express inputs with tags/modules instead of `AbilityKind` heuristics:
+**§7.1 = live code today.** **§7.2 = target** after refactor (not identical — trampling must AUTO to `RUN` without a factory override).
 
 | Priority | Condition (modules / tags / keywords) | Anim |
 |----------|----------------------------------------|------|
 | 0 | `presentation_anim` override ≠ AUTO | That override |
-| 1 | Primary/keyword **DASH** | `SUPER_RUN` |
+| 1 | Primary **DASH** | `SUPER_RUN` |
 | 2 | Keyword/effect **BULLDOZE** | `RUN` |
-| 3 | **MOVE** + (**TRAMPLE** or tag `attack`) and not DASH | `RUN` (charge / trampling package; matches factory intent) |
-| 4 | **MOVE** / walk only (reposition, no offensive package) | `WALK` |
-| 5 | Tag `attack` **or** damage/push/pull/explode, and not basic-positioning-only | `ATTACK` |
+| 3 | **MOVE** + keyword **TRAMPLE** (and not DASH) | `RUN` (Trampling / charge-walk package) |
+| 4 | **MOVE** without TRAMPLE/BULLDOZE/DASH | `WALK` (includes move-then-strike skills’ motion event) |
+| 5 | No motion package; tag `attack` **or** damage/push/pull/explode; not basic-positioning-only | `ATTACK` |
 | 6 | Else (buffs, heals, pure utility) | `SPELL` |
 | 7 | Basic positioning (`planner_group = PRE_MOVE`) with no override | `WALK` |
 
-**Trampling Advance:** tags `{attack, movement}` + MOVE + TRAMPLE → priority **3** → `RUN` under AUTO (no manual override required).
+**Trampling Advance:** MOVE + TRAMPLE → priority **3** → `RUN`.  
+**Example A (move then strike):** MOVE without TRAMPLE → priority **4** → `WALK` for the motion-facing event; multi-module sequencing may still play ATTACK on the strike module later (§7.3).
 
 ### 7.3 Sequencing
 
@@ -506,6 +508,22 @@ Module 1 — ON_ACTION
 
 Destination = end tile. Path ATK from **TRAMPLE**; push as its own layer (owner choice B).
 
+### Example E — Swap (basic positioning)
+
+```
+Header:
+  planner_group: PRE_MOVE
+  tags: positioning
+  cost: 1 MP
+  presentation_anim: AUTO  → WALK
+
+Module 1 — ON_ACTION
+  Effect: SWAP
+  Range: 1–1
+  Shape: SINGLE, mode: UNIT, ally only
+  Gate: Always
+```
+
 ### Example D — Bowling Charge
 
 ```
@@ -579,8 +597,8 @@ For every category: **Reuse** = keep as-is or thin rename · **Restructure** = s
 | `movement_point_cost` | `AbilityData` | **Reuse** inside cost block as MP value |
 | HP spend | `EffectType.DAMAGE_SELF` as first effect (Blood Boil, Adrenaline Surge) | **Restructure** → header **secondary/primary HP cost** (keep DAMAGE_SELF only when the hit is part of combat fantasy, e.g. Headbutt) |
 | `zero_ap_adjacent_enemies` | `EffectData.modifiers` | **Restructure** → cost_modifier `ZERO_IF_ADJACENT_ENEMIES_GTE_N` |
-| `ALL_REMAINING` MP | Missing | **Add** |
-| Dual cost (AP + HP) | Simulated by effects | **Add** explicit secondary_cost on header |
+| `ALL_REMAINING` MP | Missing | **Defer** until a current moveset needs it |
+| Dual cost (AP + HP) | Simulated by effects | **Add** when migrating skills that spend HP (Adrenaline Surge / Blood Boil) — not a global UI requirement on day one |
 
 ### 12.4 Range
 
@@ -600,8 +618,8 @@ For every category: **Reuse** = keep as-is or thin rename · **Restructure** = s
 | `TargetingMode` legacy enum | Synced mirror | **Restructure** → derive from flags + tile/unit mode; keep sync helpers during migration |
 | `can_target_self` | Legacy mirror | **Reuse** via SELF flag |
 | Tile awaiting two-phase | `PlanningCommitFlow.AWAITING_TARGET` | **Reuse** behavior; driven by module tile/motion |
-| Aim binding NEW / SAME / RULE_PICK | Missing (always one aim) | **Add** |
-| Target filters (HP%, debuff, …) | Mostly missing or hard-coded | **Add** filter checklist on module |
+| Aim binding NEW / SAME / RULE_PICK | Missing (always one aim) | **Add** NEW_AIM default; SAME/RULE_PICK only if a current skill needs them |
+| Target filters (HP%, debuff, …) | Mostly missing or hard-coded | **Defer** unless a current moveset skill needs them |
 | Affect allies/enemies on tiles | Partial via flags + shape gather | **Restructure** → explicit tile-occupant checkboxes on module |
 
 ### 12.6 Shape
@@ -683,10 +701,10 @@ These already work in sim/factories; modular design should **absorb** them as na
 
 | Mode | Today | Verdict |
 |------|-------|---------|
-| Walk / dash / teleport to empty | `MOVE`, `DASH`, `TELEPORT_CASTER` + TILE | **Reuse** effects → modes `TO_EMPTY_TILE` |
-| Into occupied + push | `MOVE_INTO_AND_PUSH` | **Restructure** → mode |
-| Pass-through package | `TRAMPLE` / `BULLDOZE` effects | **Reuse** as keyword layers |
-| `TO_TARGET_UNIT`, `ADJACENT_TO_TARGET`, `BEHIND_TARGET`, `VAULT_OVER`, `BACKWARDS`, `SLIDE_TARGET_OPPOSITE`, `ALLY_STEP` | Missing or one-off | **Add** |
+| Walk / dash / teleport to empty | `MOVE`, `DASH`, `TELEPORT_CASTER` + TILE | **Reuse** → mode `TO_EMPTY_TILE` |
+| Into occupied + push (Push Through) | `MOVE_INTO_AND_PUSH` | **Restructure** → mode `INTO_OCCUPIED_PUSH` (current moveset) |
+| Pass-through package | `TRAMPLE` / `BULLDOZE` effects | **Reuse** as keywords |
+| Other exotic modes (vault, behind, ally-step, …) | Missing or one-off | **Defer** until those skills exist in the project |
 | `MovementType` WALK/FLY/TELEPORT (unit locomotion) | Unit data, not ability | **Reuse** for unit; don’t confuse with skill motion mode |
 
 ### 12.11 Gates, layer conditions, OR choice
@@ -695,8 +713,8 @@ These already work in sim/factories; modular design should **absorb** them as na
 |------|-------|---------|
 | Ordered `effects[]` always all run | Flat list | **Restructure** → modules with gates; layers with conditions |
 | On-kill / on-land / collision behavior | Scattered `modifiers` + special EffectTypes | **Restructure** into shared condition table |
-| `resolution_choice` (OR) | Missing | **Add** |
-| Condition vocabulary | Implicit in code | **Add** explicit shared ids (Always, IF_KILL, IF_COLLIDED, ON_LAND, …) |
+| `resolution_choice` (OR) | Missing | **Defer** (no current moveset requires player OR) |
+| Condition vocabulary | Implicit in code | **Add** ids needed by current skills (Always, IF_KILL, IF_COLLIDED, ON_LAND, when damage dealt, …) |
 
 ### 12.12 Status / presentation / upgrades
 
@@ -808,7 +826,7 @@ Honest pass over this bible: what to leave alone, what to simplify, what must st
 | Old `AbilityKind` on cards | Replace with **`planner_group`** + **tags**; rename MOVEMENT_SKILL → basic positioning (`PRE_MOVE`). |
 | Cost block | v1 = `action_point_cost` + `movement_point_cost` + optional HP cost + optional one cost_modifier. Defer `ALL_REMAINING` / fancy dual-cost UI until a skill needs it. |
 | `min_range` everywhere | Max-first; **MOVE min ≥ 1** (MOVE 0 disabled). Expose other mins only when Bible needs bands (e.g. 2–3). |
-| `execution_phase` on every module | Default **ACTION**. Set PRE/POST only on multi-step skills. Single-module skills shouldn’t ask. |
+| Module phase on every module | Default **`ON_ACTION`**. Set `ON_PRE` / `ON_POST` only on multi-step skills. |
 | Aim binding on every module | Default **NEW_AIM** for multi-module; **same-target extras = layers** (don’t make authors pick SAME_AS_MODULE_N for push-after-damage). Add RULE_PICK / SAME only when needed. |
 | `AbilityLayer` as a new Resource type | Prefer **`EffectData` + `condition` id** (and optional keyword id) so migration isn’t a full type explosion. |
 | Motion mode laundry list | Ship with what factories already imply: empty-tile walk/dash/teleport, into-occupied push, pass-through keywords. Add vault/behind/ally-step when those classes are implemented. |
@@ -827,7 +845,7 @@ Author-facing keywords; engine may expand. Splitting into five checkboxes is wor
 | **BULLDOZE X** (push Y) | Passthrough + collision ATK/PUSH package | Separate dash flag + collision damage + push layers for the common case |
 | **GHOST** (during this move) | Movement flag for the module | DIY terrain rules on the card |
 | **PIERCE** | Damage flag / status | Its own EffectType primary |
-| **CANTO** (full refund) | Passive/status | A skill “keyword” that reinvents post-move — skill partial canto = POST_MOVE module |
+| **CANTO** (full refund) | Passive/status | A skill “keyword” that reinvents post-move — skill partial canto = `ON_POST` MOVE module |
 
 **Optional extra layers** when the Bible adds something beyond the keyword (e.g. Bowling [+] chain). Trampling Advance (locked): MOVE + **TRAMPLE 2** + **PUSH** layer — not passthrough/damage micro-checkboxes.
 
@@ -843,13 +861,12 @@ Author-facing keywords; engine may expand. Splitting into five checkboxes is wor
 
 | Gap | Notes |
 |-----|-------|
-| **Gated second aim (Violent Collision)** | Preview/planning UX when a gated second MOVE is required — specify at implementation. |
-| **Facing as attack filter** | Behind-target landing modes exist; “attack from behind” as a shared filter still thin. |
+| **Violent Collision (current skill)** | Needs `IF_COLLIDED` + second MOVE module + **planning UX** for the gated second aim — **in scope** for current-moveset refactor, design detail TBD at implement. |
 | **Class library / JSON schema** | Mapping modular resources ↔ `class_library_data.json` not written. |
 | **Tooltip keyword order** | Derive Bible line from modules — precedence not listed. |
-| **OR choice commit payload** | Only if a current skill needs OR (none forced in v1 slice). |
+| **Multi-module anim sequencing** | §7.3 allows v1 single header anim; strike-after-move may look like WALK-only until sequencing lands. |
 
-**Resolved (do not re-open):** MOVE min ≥ 1; undo out of doc; separate upgrade modules; `planner_group` + tags; trampling = TRAMPLE + PUSH layer.
+**Resolved (do not re-open):** MOVE min ≥ 1; undo out of doc; separate upgrade modules; `planner_group` + tags; trampling = TRAMPLE + PUSH layer; OR/exotic vault modes deferred (not in current movesets).
 
 ### 16.5 Recommended v1 slice (refactor scope)
 
@@ -884,6 +901,7 @@ Defer: OR choice, RULE_PICK, DELAY/ENDS_TURN, exotic motion modes, ally-origin r
 | 2026-08-02 | §16 Second-pass audit: leave alone, simplify, keyword vs split, missing, v1 slice |
 | 2026-08-02 | Locked owner decisions: planner_group, tags, basic positioning rename, anim rules from live AUTO, separate upgrade modules, current-moveset scope; undo out of doc |
 | 2026-08-02 | §17 Doc QA pass: fixed stale CLASS_SKILL examples, MOVE 0 contradictions, anim priority table, checklist/quick-ref drift; renamed module phases ON_PRE/ON_ACTION/ON_POST |
+| 2026-08-02 | §18 Audit pass 2: 7.1 vs 7.2, trampling AUTO scope, Violent Collision in-scope, migration/defer alignment, Example E Swap |
 
 ---
 
@@ -903,3 +921,20 @@ Defer: OR choice, RULE_PICK, DELAY/ENDS_TURN, exotic motion modes, ally-origin r
 | 10 | §16.4 listed locked items as “missing” | Low | Fixed — moved to resolved |
 
 **QA result:** Internal contradictions from locked decisions cleared. Open gaps left only in §16.4 (implementation-time).  
+
+---
+
+## 18. Doc audit pass 2 (2026-08-02)
+
+| # | Finding | Severity | Status |
+|---|---------|----------|--------|
+| 1 | §7.2 claimed “same as live code” but changed trampling AUTO | High | Fixed — §7.1 today vs §7.2 target |
+| 2 | Priority “MOVE + tag attack → RUN” made Example A wrongly RUN | High | Fixed — RUN only for MOVE+TRAMPLE (or BULLDOZE/DASH rows) |
+| 3 | Violent Collision is a **current** skill but treated like deferrable OR/vault | High | Fixed — called out in-scope in §16.4 |
+| 4 | Migration §12 said Add OR / exotic modes / ALL_MOV while §16 deferred them | Med | Fixed — aligned to defer unless current skill needs |
+| 5 | Keywords listed as a “primary effect family” | Med | Fixed — separate field |
+| 6 | Stale “POST_MOVE modules” / “Default ACTION” phase names in header & §16.2 | Low | Fixed → `ON_POST` / `ON_ACTION` |
+| 7 | No basic-positioning worked example | Low | Fixed — Example E Swap |
+| 8 | Multi-module anim (move then strike) underspecified | Low | Noted in §16.4 / §7.2 Example A note |
+
+**Audit result:** No remaining high contradictions with locked decisions. **≤2 open design gaps** that matter for refactor: Violent Collision gated-aim UX; multi-module anim sequencing (v1 may ship single header anim).  
