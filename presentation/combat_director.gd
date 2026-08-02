@@ -2358,6 +2358,9 @@ func _refresh_plan_core() -> void:
 	board.intents = new_intents
 	projected_state.intents = new_intents
 
+	if not _swap_planning_presentations.is_empty():
+		for swap_action: TimelineAction in _swap_planning_presentations:
+			_prepend_swap_walk_commit_anims(swap_action, plan_to_run, anim_events)
 	if not anim_events.is_empty():
 		for event: SimEvent in anim_events:
 			_pending_planning_commit_events.append(event)
@@ -2681,6 +2684,60 @@ func _sync_live_enemy_positions_to_turn_start(live: BoardState) -> void:
 		GridSystem.set_occupant(live, to_pos, live_unit.id)
 
 
+func _prepend_swap_walk_commit_anims(
+	swap_action: TimelineAction,
+	plan: Timeline,
+	anim_events: Array[SimEvent],
+) -> void:
+	if swap_action == null or plan == null or base_board == null:
+		return
+	for existing: SimEvent in anim_events:
+		if (
+			existing.type == GameEnums.SimEventType.UNIT_MOVED
+			and int(existing.data.get("actor", -1)) == swap_action.actor_id
+		):
+			return
+	var move_action: TimelineAction = null
+	for entry: TimelineAction in plan.entries:
+		if entry == swap_action:
+			break
+		if entry.awaiting_target:
+			continue
+		if entry.type == GameEnums.ActionType.MOVE and entry.actor_id == swap_action.actor_id:
+			move_action = entry
+	if move_action == null:
+		return
+	var before_move: BoardState = _board_before_planning_action(move_action, plan)
+	var actor_before: UnitState = before_move.get_unit_by_id(swap_action.actor_id)
+	if actor_before == null:
+		return
+	var walk_from: Vector2i = actor_before.position
+	var walk_to: Vector2i = move_action.target_coord
+	if walk_to.x < -900000 or walk_from == walk_to:
+		return
+	var path_cells: Array = [walk_from]
+	if move_action != null and not move_action.waypoints.is_empty():
+		path_cells = move_action.waypoints.duplicate()
+		if path_cells.is_empty() or path_cells[0] != walk_from:
+			path_cells.insert(0, walk_from)
+	else:
+		var found: Array[Vector2i] = MovementSystem.find_path(
+			before_move, walk_from, walk_to, actor_before.movement.points_left,
+		)
+		if not found.is_empty():
+			path_cells.append_array(found)
+		elif GridSystem.manhattan(walk_from, walk_to) == 1:
+			path_cells.append(walk_to)
+	var move_event: SimEvent = SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+		"actor": swap_action.actor_id,
+		"from": walk_from,
+		"to": walk_to,
+		"path": path_cells,
+		"planning_commit_move": true,
+	})
+	anim_events.append(move_event)
+
+
 func _make_planning_swap_ability_event(action: TimelineAction, plan: Timeline) -> SimEvent:
 	var pres_anim: int = action.ability.presentation_anim
 	if pres_anim == GameEnums.PresentationAnim.AUTO:
@@ -2732,6 +2789,12 @@ func _filter_committed_premove_visual_events(events: Array[SimEvent]) -> Array[S
 	var out: Array[SimEvent] = []
 	var skip_push_unit_ids: Dictionary = {}
 	for event: SimEvent in events:
+		if (
+			event.type == GameEnums.SimEventType.UNIT_PUSHED
+			and bool(event.data.get("swap_displacement", false))
+			and _execute_premove_swap_covers_unit(int(event.data.get("unit", -1)))
+		):
+			continue
 		if remaining.is_empty():
 			if (
 				event.type == GameEnums.SimEventType.UNIT_PUSHED
@@ -2778,19 +2841,23 @@ func _consume_committed_premove_visual_event(
 						skip_push_unit_ids[action.target_unit_id] = true
 					skip_push_unit_ids[action.actor_id] = true
 				return true
-			if (
-				event.type == GameEnums.SimEventType.UNIT_PUSHED
-				and action.ability.is_movement_kind()
-				and AbilitySystem.ability_has_swap_effect(action.ability)
-			):
-				var unit_id: int = int(event.data.get("unit", -1))
-				if unit_id == action.actor_id or unit_id == action.target_unit_id:
-					remaining.pop_front()
-					return true
 			return false
 		_:
 			remaining.pop_front()
 			return _consume_committed_premove_visual_event(event, remaining, skip_push_unit_ids)
+
+
+func _execute_premove_swap_covers_unit(unit_id: int) -> bool:
+	if unit_id < 0:
+		return false
+	for action: TimelineAction in _execute_premove_skip_actions:
+		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+			continue
+		if not AbilitySystem.ability_has_swap_effect(action.ability):
+			continue
+		if action.actor_id == unit_id or action.target_unit_id == unit_id:
+			return true
+	return false
 
 
 func _flush_pending_planning_commit_events() -> void:

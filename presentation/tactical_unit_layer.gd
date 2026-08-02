@@ -393,7 +393,7 @@ func _drain_planning_commit_queue() -> void:
 			var unit_id: int = int(event.data.get("actor", -1))
 			if _should_animate_planning_commit_move(unit_id, event):
 				_animate_planning_commit_move(event)
-				await_planning_move_tweens_for_actor(unit_id)
+				await await_planning_move_tweens_for_actor(unit_id)
 		GameEnums.SimEventType.ABILITY_USED:
 			if event.data.get("planning_swap_presentation", false):
 				_planning_commit_stage = &"swap"
@@ -430,6 +430,14 @@ func _play_planning_swap_presentation(event: SimEvent) -> void:
 	var target_from: Vector2i = _event_grid_cell(event, &"target_from", _actor_grid_cell(target_id))
 	var actor_to: Vector2i = _event_grid_cell(event, &"actor_to", actor_from)
 	var target_to: Vector2i = _event_grid_cell(event, &"target_to", target_from)
+	var actor_visual: Vector2i = _actor_grid_cell(actor_id)
+	if actor_visual.x > -900 and actor_visual != actor_from:
+		_animate_planning_path(actor_id, actor_visual, actor_from, false)
+		await await_planning_move_tweens_for_actor(actor_id)
+	var target_visual: Vector2i = _actor_grid_cell(target_id)
+	if target_visual.x > -900 and target_visual != target_from:
+		_animate_planning_path(target_id, target_visual, target_from, false)
+		await await_planning_move_tweens_for_actor(target_id)
 	if actor_from == actor_to and target_from == target_to:
 		_finish_planning_swap_snap(event)
 		return

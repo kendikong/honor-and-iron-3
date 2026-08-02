@@ -550,9 +550,11 @@ static func swap(board: BoardState, a: UnitState, b: UnitState, events: Array[Si
 			CombatSystem.deal_damage(board, b, 3 * dist, events, &"bleed", false, false, null, "Bleed (swap)", 3 * dist)
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
 		"unit": a.id, "from": pa, "to": a.position, "distance": GridSystem.manhattan(pa, pb),
+		"swap_displacement": true,
 	}))
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
 		"unit": b.id, "from": pb, "to": b.position, "distance": GridSystem.manhattan(pa, pb),
+		"swap_displacement": true,
 	}))
 	TerrainSystem.apply_landing(board, a, events)
 	TerrainSystem.apply_landing(board, b, events)

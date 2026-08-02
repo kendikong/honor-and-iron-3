@@ -77,25 +77,31 @@ static func ensure_swap_approach_paths_from_actions(
 	var actor_id: int = -1
 	var walk_dest: Vector2i = Vector2i(-999999, -999999)
 	var has_swap: bool = false
+	var swap_action: TimelineAction = null
 	for raw: Variant in actions:
 		if not raw is TimelineAction:
 			continue
 		var action: TimelineAction = raw as TimelineAction
-		if action.type == GameEnums.ActionType.MOVE:
-			actor_id = action.actor_id
-			walk_dest = action.target_coord
-		elif (
+		if (
 			action.type == GameEnums.ActionType.ABILITY
 			and action.ability != null
 			and AbilitySystem.ability_has_swap_effect(action.ability)
 		):
 			has_swap = true
-			if actor_id < 0:
-				actor_id = action.actor_id
-	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
+			swap_action = action
+			actor_id = action.actor_id
+	if not has_swap or actor_id < 0 or swap_action == null:
 		return
-	var existing: Array = preview_paths.get(actor_id, [])
-	if existing.size() >= 2:
+	walk_dest = _infer_swap_approach_cell(start_board, swap_action)
+	for raw2: Variant in actions:
+		if not raw2 is TimelineAction:
+			continue
+		var move_action: TimelineAction = raw2 as TimelineAction
+		if move_action.type == GameEnums.ActionType.MOVE and move_action.actor_id == actor_id:
+			if GridSystem.manhattan(move_action.target_coord, walk_dest) <= 1:
+				walk_dest = move_action.target_coord
+			break
+	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
 		return
 	var actor: UnitState = start_board.get_unit_by_id(actor_id)
 	if actor == null:
@@ -117,6 +123,37 @@ static func ensure_swap_approach_paths_from_actions(
 	preview_splits[actor_id] = route_cells.size()
 	if not action_splits.has(actor_id):
 		action_splits[actor_id] = 0
+
+
+static func _infer_swap_approach_cell(start_board: BoardState, swap_action: TimelineAction) -> Vector2i:
+	if start_board == null or swap_action == null:
+		return Vector2i(-999999, -999999)
+	var actor: UnitState = start_board.get_unit_by_id(swap_action.actor_id)
+	var ally: UnitState = (
+		start_board.get_unit_by_id(swap_action.target_unit_id)
+		if swap_action.target_unit_id >= 0
+		else start_board.get_unit_at(swap_action.target_coord)
+	)
+	if actor == null or ally == null:
+		return Vector2i(-999999, -999999)
+	var best: Vector2i = Vector2i(-999999, -999999)
+	var best_dist: int = 999999
+	var cardinal: Array[Vector2i] = [
+		Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0),
+	]
+	for offset: Vector2i in cardinal:
+		var candidate: Vector2i = ally.position + offset
+		if not start_board.is_in_bounds(candidate):
+			continue
+		if GridSystem.is_occupied(start_board, candidate):
+			var occ: UnitState = start_board.get_unit_at(candidate)
+			if occ != null and occ.id != actor.id:
+				continue
+		var dist: int = GridSystem.manhattan(actor.position, candidate)
+		if dist < best_dist:
+			best_dist = dist
+			best = candidate
+	return best
 
 
 ## Walk→swap hover: preview_board sim ends swapped; ghost must stand on the walk leg endpoint.
@@ -141,6 +178,8 @@ static func adjust_swap_intent_actor_pose(preview_board: BoardState, actions: Ar
 			has_swap = true
 			if actor_id < 0:
 				actor_id = action.actor_id
+			if walk_dest.x < -900000:
+				walk_dest = _infer_swap_approach_cell(preview_board, action)
 	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
 		return
 	var actor: UnitState = preview_board.get_unit_by_id(actor_id)
@@ -289,18 +328,43 @@ func ensure_movement_intent_from_actions(
 			continue
 		if action.ability != null and AbilitySystem.ability_has_swap_effect(action.ability):
 			## Swap is a paired displacement presentation, not an additional walk leg.
-			## Keep the preview route on the explicit approach MOVE.
+			## Keep the preview route on the explicit approach MOVE (never sim swap tail).
+			var approach: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
 			if move_actors.get(action.actor_id, false):
-				var route: Array = preview_paths.get(action.actor_id, [])
-				var approach: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
-				var approach_index: int = -1
-				for route_index: int in range(route.size() - 1, -1, -1):
-					if route[route_index] == approach:
-						approach_index = route_index
-						break
-				if approach_index >= 0:
-					preview_paths[action.actor_id] = route.slice(0, approach_index + 1)
-					preview_splits[action.actor_id] = approach_index + 1
+				var walker: UnitState = start_board.get_unit_by_id(action.actor_id)
+				var walk_origin: Vector2i = walker.position if walker != null else approach
+				var route_cells: Array = [walk_origin]
+				if approach != walk_origin:
+					var budget: int = walker.movement.points_left if walker != null else 999
+					var found: Array[Vector2i] = MovementSystem.find_path(
+						start_board, walk_origin, approach, budget,
+					)
+					if not found.is_empty():
+						route_cells.append_array(found)
+					elif GridSystem.manhattan(walk_origin, approach) == 1:
+						route_cells.append(approach)
+				if route_cells.size() >= 2:
+					preview_paths[action.actor_id] = route_cells
+					preview_splits[action.actor_id] = route_cells.size()
+			else:
+				var inferred: Vector2i = _infer_swap_approach_cell(start_board, action)
+				if inferred.x > -900000:
+					approach = inferred
+					var walker2: UnitState = start_board.get_unit_by_id(action.actor_id)
+					var walk_origin2: Vector2i = walker2.position if walker2 != null else approach
+					var route2: Array = [walk_origin2]
+					if approach != walk_origin2:
+						var budget2: int = walker2.movement.points_left if walker2 != null else 999
+						var found2: Array[Vector2i] = MovementSystem.find_path(
+							start_board, walk_origin2, approach, budget2,
+						)
+						if not found2.is_empty():
+							route2.append_array(found2)
+						elif GridSystem.manhattan(walk_origin2, approach) == 1:
+							route2.append(approach)
+					if route2.size() >= 2:
+						preview_paths[action.actor_id] = route2
+						preview_splits[action.actor_id] = route2.size()
 			origins[action.actor_id] = action.target_coord
 			continue
 		if action.ability == null or not AbilitySystem.ability_has_movement_effect(action.ability):

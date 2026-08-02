@@ -78,7 +78,8 @@ func _on_sim_event(event: SimEvent) -> void:
 			if is_enemy_turn or not is_player:
 				play("step")
 		GameEnums.SimEventType.UNIT_PUSHED:
-			play("push")
+			if not bool(event.data.get("swap_displacement", false)):
+				play("push")
 		GameEnums.SimEventType.ABILITY_USED:
 			if not _event_uses_spellcast_animation(event):
 				play("ability")
