@@ -655,18 +655,94 @@ static func run_shield_mastery(failures: Array[String]) -> void:
 
 
 static func run_bulwark(failures: Array[String]) -> void:
-	## Bulwark: +1 DEF per adjacent unit.
-	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	## Bible: +1 DEF per adjacent unit; [+] +1 STR per adjacent enemy.
 	var cfg: Dictionary = with_single_passive(&"bulwark", false)
-	place_knight(board, 1, Vector2i(3, 3), cfg)
-	place_dummy(board, 2, Vector2i(4, 3))
-	var knight: UnitState = unit_on_board(board, 1)
-	var base_def: int = knight.current_defense
-	var with_adj: int = CombatSystem.get_dynamic_defense(board, knight)
+	var board_iso: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board_iso, 1, Vector2i(3, 3), cfg)
+	var def_iso: int = CombatSystem.get_dynamic_defense(board_iso, unit_on_board(board_iso, 1))
+	var board_adj: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board_adj, 10, Vector2i(3, 3), cfg)
+	place_dummy(board_adj, 11, Vector2i(4, 3))
+	place_knight(board_adj, 12, Vector2i(3, 4), cfg)
+	var def_adj: int = CombatSystem.get_dynamic_defense(board_adj, unit_on_board(board_adj, 10))
+	assert_eq_int(
+		failures, "bulwark/def_per_adjacent",
+		def_adj - def_iso,
+		2,
+	)
+	var cfg_up: Dictionary = with_single_passive(&"bulwark", true)
+	var board_str: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board_str, 20, Vector2i(3, 3), cfg_up)
+	var str_iso: int = CombatSystem.get_dynamic_strength(board_str, unit_on_board(board_str, 20))
+	place_dummy(board_str, 21, Vector2i(4, 3))
+	place_dummy(board_str, 22, Vector2i(2, 3))
+	var str_two_enemies: int = CombatSystem.get_dynamic_strength(
+		board_str, unit_on_board(board_str, 20),
+	)
+	assert_eq_int(
+		failures, "bulwark/upgrade/str_per_enemy",
+		str_two_enemies - str_iso,
+		2,
+	)
+	place_knight(board_str, 23, Vector2i(3, 4), cfg_up)
+	var str_with_ally: int = CombatSystem.get_dynamic_strength(
+		board_str, unit_on_board(board_str, 20),
+	)
+	assert_eq_int(
+		failures, "bulwark/upgrade/ally_does_not_add_str",
+		str_with_ally,
+		str_two_enemies,
+	)
+	var loss_iso: int = damage_taken_on_unit(board_iso, 1, 12)
+	var loss_adj: int = damage_taken_on_unit(board_adj, 10, 12)
 	assert_true(
-		failures, "bulwark/def_bonus",
-		with_adj > base_def,
-		"adjacent unit must increase DEF via Bulwark",
+		failures, "bulwark/def_mitigates_damage",
+		loss_adj < loss_iso,
+		"bulwark DEF bonus must reduce incoming damage in CombatSystem.deal_damage",
+	)
+	var board_atk: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_atk, 30, Vector2i(4, 4), cfg_up)
+	place_dummy(board_atk, 31, Vector2i(3, 4))
+	var bash_iso: AbilityData = ability_on_unit(unit_on_board(board_atk, 30), &"knight_shield_bash")
+	var plan_iso := Timeline.new()
+	plan_iso.add(plan_ability(30, bash_iso, Vector2i(3, 4), 31))
+	var result_iso: SimResult = simulate_plan(board_atk, plan_iso)
+	var floored_iso: int = events_max_damage_floored(result_iso.events)
+	place_dummy(board_atk, 32, Vector2i(5, 4))
+	place_dummy(board_atk, 33, Vector2i(4, 5))
+	var bash_adj: AbilityData = ability_on_unit(unit_on_board(board_atk, 30), &"knight_shield_bash")
+	var plan_adj := Timeline.new()
+	plan_adj.add(plan_ability(30, bash_adj, Vector2i(3, 4), 31))
+	var result_adj: SimResult = simulate_plan(board_atk, plan_adj)
+	var floored_adj: int = events_max_damage_floored(result_adj.events)
+	assert_true(
+		failures, "bulwark/upgrade/str_increases_attack_damage",
+		floored_adj > floored_iso,
+		"upgraded bulwark STR from adjacent enemies must increase attack damage",
+	)
+	var board_base: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_base, 40, Vector2i(4, 4), cfg)
+	place_dummy(board_base, 41, Vector2i(3, 4))
+	place_dummy(board_base, 42, Vector2i(5, 4))
+	var bash_base: AbilityData = ability_on_unit(unit_on_board(board_base, 40), &"knight_shield_bash")
+	var plan_base := Timeline.new()
+	plan_base.add(plan_ability(40, bash_base, Vector2i(3, 4), 41))
+	var result_base: SimResult = simulate_plan(board_base, plan_base)
+	var floored_base_enemies: int = events_max_damage_floored(result_base.events)
+	var board_base_iso: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_base_iso, 50, Vector2i(4, 4), cfg)
+	place_dummy(board_base_iso, 51, Vector2i(3, 4))
+	var plan_base_iso := Timeline.new()
+	plan_base_iso.add(
+		plan_ability(50, ability_on_unit(unit_on_board(board_base_iso, 50), &"knight_shield_bash"), Vector2i(3, 4), 51),
+	)
+	var result_base_iso: SimResult = simulate_plan(board_base_iso, plan_base_iso)
+	var floored_base_iso: int = events_max_damage_floored(result_base_iso.events)
+	assert_eq_int(
+		failures, "bulwark/base/no_str_from_enemies",
+		floored_base_enemies,
+		floored_base_iso,
+		"non-upgraded bulwark must not grant STR from adjacent enemies",
 	)
 
 
