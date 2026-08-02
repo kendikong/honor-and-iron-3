@@ -186,8 +186,7 @@ static func drag_corridor_path(
 		prev = tile
 	if validated.is_empty() or validated.back() != goal:
 		return find_path(board, start, goal, max_steps, movement_type, move_cost, ability)
-	if validated.size() * move_cost > max_steps:
-		validated = validated.slice(0, floori(max_steps / float(move_cost)))
+	validated = _trim_route_to_budget(board, validated, max_steps, unit)
 	var team: GameEnums.Team = unit.team if unit != null else GameEnums.Team.PLAYER
 	while validated.size() > 0 and GridSystem.is_occupied(board, validated[validated.size() - 1]):
 		var end_occ: UnitState = board.get_unit_at(validated[validated.size() - 1])
@@ -210,6 +209,30 @@ static func step_mp_cost(board: BoardState, coord: Vector2i, unit: UnitState) ->
 	if tile != null and tile.definition != null:
 		terrain_cost = maxi(1, tile.definition.mp_cost_per_tile)
 	return unit_cost * terrain_cost
+
+
+static func route_mp_cost(board: BoardState, route: Array[Vector2i], unit: UnitState) -> int:
+	var spent: int = 0
+	for step_coord: Vector2i in route:
+		spent += step_mp_cost(board, step_coord, unit)
+	return spent
+
+
+static func _trim_route_to_budget(
+	board: BoardState,
+	route: Array[Vector2i],
+	budget: int,
+	unit: UnitState,
+) -> Array[Vector2i]:
+	var trimmed: Array[Vector2i] = []
+	var spent: int = 0
+	for step_coord: Vector2i in route:
+		var step_cost: int = step_mp_cost(board, step_coord, unit)
+		if spent + step_cost > budget:
+			break
+		spent += step_cost
+		trimmed.append(step_coord)
+	return trimmed
 
 
 static func resolve_move_path(
@@ -237,7 +260,7 @@ static func resolve_move_path(
 		if (
 			_is_contiguous_cardinal_route(start, waypoints)
 			and waypoints[waypoints.size() - 1] == target_coord
-			and waypoints.size() * move_cost <= max_steps
+			and route_mp_cost(board, waypoints, unit) <= max_steps
 		):
 			return waypoints.duplicate()
 		return []

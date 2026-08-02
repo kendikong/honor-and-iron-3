@@ -118,7 +118,7 @@ Scenarios must prove **both** rules:
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase (not used in MVP) |
 
-**Summary (honest):** **16 / 30** factory rows meta-critic `PASS` · **14** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only). **Manifest:** `docs/knight_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
+**Summary (honest):** **17 / 30** factory rows meta-critic `PASS` · **13** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only). **Manifest:** `docs/knight_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
 
 ### Owner no-regression (do not modify without explicit approval)
 
@@ -137,7 +137,7 @@ Do **not** weaken, replace, or “simplify” harness/scenario/production paths 
 | `knight_shield_bash` | Active | `tests/skills/shield_bash_scenario.gd` | PASS | 7-phase + sim base PUSH/DAMAGE + `[+]` STAGGER |
 | `knight_phalanx_stance` | Active | `tests/skills/phalanx_stance_scenario.gd` | PASS | Base/`[+]` sim + map-wide retaliation combo (meta-critic r11) |
 | `knight_taunting_strike` | Active | `tests/skills/taunting_strike_scenario.gd` | HARNESS_ONLY | Base sim + `[+]` PULL2 data assert; no 7-phase |
-| `knight_seismic_stomp` | Active | `tests/skills/seismic_stomp_scenario.gd` | HARNESS_ONLY | Base AOE + `[+]` CRACKED terrain sim; no 7-phase |
+| `knight_seismic_stomp` | Active | `tests/skills/seismic_stomp_scenario.gd` | PASS | AOE/PURGE/`[+]` CRACKED + terrain MP sim (meta-critic r15) |
 | `knight_fortify` | Active | `tests/skills/fortify_scenario.gd` | PASS | Ally DEF base + `[+]` THORNS sim (meta-critic r6) |
 | `knight_bowling_charge` | Active | `tests/skills/bowling_charge_scenario.gd` | HARNESS_ONLY | DASH only; no `[+]` chain-push sim |
 | `knight_iron_grip` | Active | `tests/skills/iron_grip_scenario.gd` | PASS | ROOT + next-turn DEF halving + `[+]` AP refund sim (meta-critic r14) |

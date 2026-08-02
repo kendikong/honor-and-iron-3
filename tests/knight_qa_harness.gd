@@ -1223,20 +1223,49 @@ static func run_taunting_strike(failures: Array[String]) -> void:
 		"taunting strike must deal damage",
 	)
 	assert_true(
+		failures, "taunting_strike/damage_atk1",
+		events_have_damage_base(result.events, 1),
+		"taunting strike must resolve DAMAGE at base power ATK 1",
+	)
+	assert_true(
 		failures, "taunting_strike/taunt",
 		enemy != null and has_status(enemy, GameEnums.StatusType.TAUNT),
 		"taunting strike must apply TAUNT",
 	)
+	assert_eq_cell(failures, "taunting_strike/pull", enemy.position, Vector2i(4, 3))
+	assert_eq_int(failures, "taunting_strike/range", strike.range_tiles, 2)
 	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_taunting_strike")
-	var board2: BoardState = make_plain_board(Vector2i(10, 8))
-	place_knight(board2, 10, Vector2i(3, 4), cfg_up)
-	place_dummy(board2, 11, Vector2i(6, 4))
+	var board2: BoardState = make_plain_board(Vector2i(12, 10))
+	place_knight(board2, 10, Vector2i(5, 5), cfg_up)
+	place_dummy(board2, 11, Vector2i(7, 5))
+	place_dummy(board2, 12, Vector2i(6, 6))
 	var strike_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_taunting_strike")
 	assert_true(
 		failures, "taunting_strike/upgrade/pull2",
 		ability_has_effect(strike_up, GameEnums.EffectType.PULL, true)
 		and strike_up.upgraded_effects[1].amount == 2,
 		"upgraded taunting strike must PULL 2",
+	)
+	assert_eq_int(failures, "taunting_strike/upgrade/range", strike_up.upgraded_range_tiles, 3)
+	assert_true(
+		failures, "taunting_strike/upgrade/aoe_shape",
+		strike_up.upgraded_target_shape == GameEnums.TargetShape.AOE_SQUARE
+		and strike_up.upgraded_target_shape_size == 1,
+		"upgraded taunting strike must be AOE 3x3",
+	)
+	var plan2 := Timeline.new()
+	plan2.add(plan_ability(10, strike_up, Vector2i(7, 5), 11))
+	var result2: SimResult = simulate_player_turn(board2, plan2)
+	var e1: UnitState = result2.final_state.get_unit_by_id(11)
+	var e2: UnitState = result2.final_state.get_unit_by_id(12)
+	assert_eq_cell(failures, "taunting_strike/upgrade/aoe_pull_e1", e1.position, Vector2i(6, 5))
+	assert_eq_cell(failures, "taunting_strike/upgrade/aoe_pull_e2", e2.position, Vector2i(4, 6))
+	assert_true(
+		failures, "taunting_strike/upgrade/aoe_taunt_all",
+		e1 != null and e2 != null
+		and has_status(e1, GameEnums.StatusType.TAUNT)
+		and has_status(e2, GameEnums.StatusType.TAUNT),
+		"upgraded taunting strike AOE must TAUNT all enemies hit",
 	)
 
 
@@ -1306,6 +1335,12 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		and not has_status(e_b, GameEnums.StatusType.STAT_BUFF_DEF),
 		"seismic stomp AOE PURGE must strip buffs from all enemies in AOE",
 	)
+	assert_true(
+		failures, "seismic_stomp/purge_all_events",
+		events_have_status_removed(result_p2.events, 23, GameEnums.StatusType.STAT_BUFF_STR)
+		and events_have_status_removed(result_p2.events, 24, GameEnums.StatusType.STAT_BUFF_DEF),
+		"seismic stomp AOE PURGE must emit STATUS_REMOVED per enemy buff",
+	)
 	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_seismic_stomp")
 	var board2: BoardState = make_plain_board(Vector2i(10, 8))
 	place_knight(board2, 10, Vector2i(4, 4), cfg_up)
@@ -1325,13 +1360,17 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		cracked_tile != null and cracked_tile.definition != null and cracked_tile.definition.id == &"cracked",
 		"upgraded seismic stomp must set cracked terrain id on AOE cell",
 	)
-	for cracked_coord: Vector2i in [Vector2i(3, 4), Vector2i(4, 5), Vector2i(5, 5)]:
-		var tile_up: TileState = result2.final_state.get_tile(cracked_coord)
-		assert_true(
-			failures, "seismic_stomp/upgrade/cracked_aoe_%d_%d" % [cracked_coord.x, cracked_coord.y],
-			tile_up != null and tile_up.definition != null and tile_up.definition.id == &"cracked",
-			"upgraded seismic stomp must crack all AOE footprint tiles",
-		)
+	for dx: int in range(-1, 2):
+		for dy: int in range(-1, 2):
+			if dx == 0 and dy == 0:
+				continue
+			var cracked_coord: Vector2i = Vector2i(4 + dx, 4 + dy)
+			var tile_up: TileState = result2.final_state.get_tile(cracked_coord)
+			assert_true(
+				failures, "seismic_stomp/upgrade/cracked_aoe_%d_%d" % [cracked_coord.x, cracked_coord.y],
+				tile_up != null and tile_up.definition != null and tile_up.definition.id == &"cracked",
+				"upgraded seismic stomp must crack full AOE 1 (3x3) footprint",
+			)
 	var board_base: BoardState = make_plain_board(Vector2i(10, 8))
 	place_knight(board_base, 50, Vector2i(4, 4))
 	place_dummy(board_base, 51, Vector2i(5, 4))
@@ -1408,6 +1447,58 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		failures, "seismic_stomp/range",
 		stomp.range_tiles,
 		0,
+	)
+	var board_path: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_path, 60, Vector2i(4, 3))
+	var path_unit: UnitState = unit_on_board(board_path, 60)
+	board_path.set_tile_terrain(Vector2i(5, 3), DataLibrary.get_terrain(&"cracked"))
+	var reachable: Array[Vector2i] = MovementSystem.get_reachable_tiles(
+		board_path, Vector2i(4, 3), 2,
+	)
+	var can_reach_cracked: bool = false
+	var cannot_reach_past: bool = true
+	for coord: Vector2i in reachable:
+		if coord == Vector2i(5, 3):
+			can_reach_cracked = true
+		if coord == Vector2i(6, 3):
+			cannot_reach_past = false
+	assert_true(
+		failures, "seismic_stomp/cracked/reachable",
+		can_reach_cracked and cannot_reach_past,
+		"cracked tile must cost 2 MP — budget 2 reaches cracked only, not tile beyond",
+	)
+	var path_cracked: Array[Vector2i] = MovementSystem.find_path(
+		board_path, Vector2i(4, 3), Vector2i(5, 3), 2,
+	)
+	assert_true(
+		failures, "seismic_stomp/cracked/find_path",
+		path_cracked.size() == 1 and path_cracked[0] == Vector2i(5, 3),
+		"find_path must reach cracked tile within 2 MP budget",
+	)
+	var path_blocked: Array[Vector2i] = MovementSystem.find_path(
+		board_path, Vector2i(4, 3), Vector2i(6, 3), 2,
+	)
+	assert_true(
+		failures, "seismic_stomp/cracked/find_path_blocked",
+		path_blocked.is_empty(),
+		"find_path must not reach goal beyond cracked terrain MP budget",
+	)
+	var corridor: Array[Vector2i] = MovementSystem.drag_corridor_path(
+		board_path, Vector2i(4, 3), Vector2i(6, 3), 2, GameEnums.MovementType.WALK, 1, path_unit,
+	)
+	assert_true(
+		failures, "seismic_stomp/cracked/drag_corridor",
+		corridor.size() == 1 and corridor[0] == Vector2i(5, 3),
+		"drag_corridor_path must respect cracked terrain MP budget",
+	)
+	var waypoints: Array[Vector2i] = [Vector2i(5, 3), Vector2i(6, 3)]
+	var resolved: Array[Vector2i] = MovementSystem.resolve_move_path(
+		board_path, path_unit, Vector2i(6, 3), waypoints, 2,
+	)
+	assert_true(
+		failures, "seismic_stomp/cracked/waypoint_budget",
+		resolved.is_empty(),
+		"committed waypoints exceeding cracked terrain MP budget must be rejected",
 	)
 
 
