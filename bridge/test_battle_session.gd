@@ -14,13 +14,13 @@ const PREFS_PATH: String = "user://test_battle_debug_prefs.cfg"
 var player_class_id: StringName = DEFAULT_PLAYER_CLASS
 var player_level: int = TRAINING_LEVEL
 ## passive_id -> enabled
-var passive_enabled: Dictionary = {}
+var 	passive_enabled: Dictionary = {}
 ## ability_id -> enabled (defaults to true — all skills on unless explicitly disabled)
 var skill_enabled: Dictionary = {}
 var dummy_coords: Array[Vector2i] = [DEFAULT_DUMMY_CELL]
 var extra_player_coords: Array[Vector2i] = []
 var unkillable_dummies: bool = true
-var 	infinite_player_ap: bool = false
+var infinite_player_ap: bool = false
 
 
 func load_prefs() -> void:
@@ -33,6 +33,9 @@ func load_prefs() -> void:
 	infinite_player_ap = bool(cfg.get_value("debug", "infinite_ap", infinite_player_ap))
 	_import_bool_map(cfg.get_value("debug", "passive_enabled", {}), passive_enabled)
 	_import_bool_map(cfg.get_value("debug", "skill_enabled", {}), skill_enabled)
+	var dummy_count: int = maxi(1, int(cfg.get_value("debug", "dummy_count", dummy_coords.size())))
+	var extra_ally_count: int = maxi(0, int(cfg.get_value("debug", "extra_ally_count", extra_player_coords.size())))
+	_restore_spawn_layout(dummy_count, extra_ally_count)
 
 
 func save_prefs(collapsed: bool = false) -> void:
@@ -44,6 +47,8 @@ func save_prefs(collapsed: bool = false) -> void:
 	cfg.set_value("debug", "infinite_ap", infinite_player_ap)
 	cfg.set_value("debug", "passive_enabled", passive_enabled)
 	cfg.set_value("debug", "skill_enabled", skill_enabled)
+	cfg.set_value("debug", "dummy_count", dummy_coords.size())
+	cfg.set_value("debug", "extra_ally_count", extra_player_coords.size())
 	cfg.save(PREFS_PATH)
 
 
@@ -62,10 +67,24 @@ func reset_defaults() -> void:
 	skill_enabled.clear()
 	set_all_passives_enabled(player_class_id, false)
 	set_all_skills_enabled(player_class_id, true)
-	dummy_coords = [DEFAULT_DUMMY_CELL]
-	extra_player_coords.clear()
+	_restore_spawn_layout(1, 0)
 	unkillable_dummies = true
 	infinite_player_ap = false
+
+
+func _restore_spawn_layout(dummy_count: int, extra_ally_count: int) -> void:
+	dummy_coords = []
+	extra_player_coords = []
+	for i: int in range(maxi(1, dummy_count)):
+		var preferred: Vector2i = DEFAULT_DUMMY_CELL + Vector2i(i, 0)
+		var result: Dictionary = try_add_dummy_at(null, preferred)
+		if not bool(result.get("ok", false)):
+			break
+	for i: int in range(maxi(0, extra_ally_count)):
+		var preferred: Vector2i = DEFAULT_PLAYER_CELL + Vector2i(-i - 1, 0)
+		var result: Dictionary = try_add_player_at(null, preferred)
+		if not bool(result.get("ok", false)):
+			break
 
 
 func set_all_passives_enabled(class_id: StringName, enabled: bool) -> void:

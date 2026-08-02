@@ -267,6 +267,7 @@ func _on_add_dummy_pressed() -> void:
 		_set_status(String(result.get("reason", "Could not add dummy")))
 		return
 	_map_view.apply_training_board()
+	_save_settings()
 	_set_status("Added dummy at %s." % result["coord"])
 
 
@@ -280,6 +281,7 @@ func _on_add_player_pressed() -> void:
 		_set_status(String(result.get("reason", "Could not add ally")))
 		return
 	_map_view.apply_training_board()
+	_save_settings()
 	_set_status("Added ally at %s." % result["coord"])
 
 
@@ -298,6 +300,7 @@ func _on_full_reset_pressed() -> void:
 	_unkillable_check.button_pressed = _session.unkillable_dummies
 	_infinite_ap_check.button_pressed = _session.infinite_player_ap
 	_map_view.apply_training_board()
+	_save_settings()
 	_set_status("Arena reset to defaults.")
 
 
