@@ -54,6 +54,6 @@
 
 ## B6-REOPEN handoff (current)
 
-- Matrix: **27/31** PASS · 4 HARNESS_ONLY deepened · harness green
+- Matrix: **31/31** PASS · full-matrix critic **96** · template **LOCKED**
 - Prompt: [`docs/design/prompts/B6-REOPEN-CLOUD.md`](prompts/B6-REOPEN-CLOUD.md)
 - Run card: [`docs/design/runs/B6-REOPEN.md`](runs/B6-REOPEN.md)

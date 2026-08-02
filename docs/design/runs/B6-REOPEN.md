@@ -1,6 +1,6 @@
 # Run card — B6-REOPEN (Bruiser gauntlet restart)
 
-**Status:** ACTIVE  
+**Status:** DONE — LOCKED  
 **Prior:** B6-LOCK **REVOKED** — r20 critic did not prove Bible clause coverage per owner audit  
 **Spec:** `docs/design/00-gauntlet-loop-cursor.md` Rules 4, 5c, 6b, §5.4  
 **Unattended:** `docs/design/UNATTENDED_RUN.md`
@@ -38,4 +38,4 @@ Re-earn Bruiser LOCK: **31/31** matrix rows `PASS` only after **fresh per-row `g
 3. Cloud lead spawns **gauntlet-critic** Task on that VM (separate critic — not self-grade).
 4. Owner merges Cloud PR → local `.\scripts\sync_local_remote.ps1 -Mode Pull`.
 
-**Current:** 27/31 PASS · remaining: `blood_for_blood`, `momentum_transfer`, `battering_ram`, `unstoppable_force`.
+**Current:** 31/31 PASS · full-matrix critic **96** · `bruiser-template.md` **LOCKED**.

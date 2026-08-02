@@ -56,7 +56,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **27 / 31** factory rows meta-critic `PASS` · **4** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — B6-REOPEN active.
+**Summary (honest):** **31 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — B6-REOPEN active.
 
 ### Movement + actives
 
@@ -84,7 +84,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | Factory id | Passive | Scenario file | Tier 1 | Trigger setup |
 |------------|---------|---------------|--------|----------------|
 | `cellular_regeneration` | Cellular Regeneration | `tests/passives/cellular_regeneration_scenario.gd` | PASS | Turn start + adjacent enemy count |
-| `blood_for_blood` | Blood for Blood | `tests/passives/blood_for_blood_scenario.gd` | HARNESS_ONLY | Damaged last turn → BLEED on attack |
+| `blood_for_blood` | Blood for Blood | `tests/passives/blood_for_blood_scenario.gd` | PASS | Damaged last turn → BLEED on attack |
 | `adrenaline_junkie` | Adrenaline Junkie | `tests/passives/adrenaline_junkie_scenario.gd` | PASS | Missing HP → MOV/STR; `[+]` DEF |
 | `enraged` | Enraged | `tests/passives/enraged_scenario.gd` | PASS | Debuff/hazard count → STR; `[+]` MOV |
 | `last_stand` | Last Stand | `tests/passives/last_stand_scenario.gd` | PASS | HP &lt; 25% → STR/DEF |
@@ -93,11 +93,11 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `thrill_of_pain` | Thrill of Pain | `tests/passives/thrill_of_pain_scenario.gd` | PASS | On damage → next attack buff |
 | `momentum_of_titan` | Momentum of the Titan | `tests/passives/momentum_of_titan_scenario.gd` | PASS | PUSH collision % Max HP damage |
 | `scar_tissue` | Scar Tissue | `tests/passives/scar_tissue_scenario.gd` | PASS | Physical damage reduction scaling |
-| `momentum_transfer` | Momentum Transfer | `tests/passives/momentum_transfer_scenario.gd` | HARNESS_ONLY | PUSH collision → HEAL; `[+]` STR |
+| `momentum_transfer` | Momentum Transfer | `tests/passives/momentum_transfer_scenario.gd` | PASS | PUSH collision → HEAL; `[+]` STR |
 | `crowd_breaker` | Crowd Breaker | `tests/passives/crowd_breaker_scenario.gd` | PASS | Adjacent enemy STR + splash |
 | `juggernaut` | Juggernaut | `tests/passives/juggernaut_scenario.gd` | PASS | Trap destroy; `[+]` SHIELD |
-| `battering_ram` | Battering Ram | `tests/passives/battering_ram_scenario.gd` | HARNESS_ONLY | PUSH +1 tile; `[+]` wall STAGGER |
-| `unstoppable_force` | Unstoppable Force | `tests/passives/unstoppable_force_scenario.gd` | HARNESS_ONLY | STAGGER/ROOT immune + SHIELD on resist |
+| `battering_ram` | Battering Ram | `tests/passives/battering_ram_scenario.gd` | PASS | PUSH +1 tile; `[+]` wall STAGGER |
+| `unstoppable_force` | Unstoppable Force | `tests/passives/unstoppable_force_scenario.gd` | PASS | STAGGER/ROOT immune + SHIELD on resist |
 
 **LOCK rule:** All factory rows `PASS` (or owner-documented `N/A`). Gate script **fails** until then.
 

@@ -115,13 +115,7 @@ static func deal_collision_damage(
 				status_amount = passive.modifiers["collision_apply_target_status_amount"]
 			
 		if apply_status >= 0:
-			if victim.has_passive(&"unstoppable_force") and apply_status in [GameEnums.StatusType.STAGGER, GameEnums.StatusType.ROOT]:
-				var shield = 2 if victim.is_passive_upgraded(&"unstoppable_force") else 1
-				victim.armor += shield
-				events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-					"actor": victim.id, "reason": "status_prevented_by_unstoppable_force",
-				}))
-			else:
+			if not try_resist_crowd_control(victim, apply_status, events):
 				victim.active_statuses.append(DataLibrary.make_status(apply_status, 1, status_amount))
 				victim._recalculate_stats()
 			
@@ -686,6 +680,28 @@ static func deal_damage(
 				add_armor(board, attacker, 2, events)
 			if attacker.passive_flags.get("frenzy_on_kill_ap", false) and source_label == "Frenzy":
 				attacker.ability.points_left += 1
+
+## Bible Unstoppable Force: immune to STAGGER/ROOT; resisting grants SHIELD 1 ([+] 2).
+## Returns true if status was prevented (caller must not apply it).
+static func try_resist_crowd_control(
+	target: UnitState,
+	status_type: int,
+	events: Array[SimEvent],
+) -> bool:
+	if target == null or not target.is_alive():
+		return false
+	if not target.has_passive(&"unstoppable_force"):
+		return false
+	if status_type != GameEnums.StatusType.STAGGER and status_type != GameEnums.StatusType.ROOT:
+		return false
+	var shield: int = 2 if target.is_passive_upgraded(&"unstoppable_force") else 1
+	target.armor += shield
+	events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+		"actor": target.id,
+		"reason": "status_prevented_by_unstoppable_force",
+	}))
+	return true
+
 
 static func heal(board: BoardState, target: UnitState, amount: int, events: Array[SimEvent]) -> void:
 	if target == null or not target.is_alive() or amount <= 0:

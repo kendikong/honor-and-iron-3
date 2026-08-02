@@ -1,18 +1,15 @@
-﻿=== Bruiser QA gate (class validation - NOT planning QA) ===
+=== Bruiser QA gate (class validation - NOT planning QA) ===
 Spec: docs/BRUISER_QA_GATE.md
 
 === Matrix summary (from docs/BRUISER_QA_GATE.md) ===
-PASS:          25/31
-HARNESS_ONLY:  6
+PASS:          31/31
+HARNESS_ONLY:  0
 PLANNED/other: 0
 
-=== Meta-critic manifest (25 approved, threshold 95) ===
+=== Meta-critic manifest (31 approved, threshold 95) ===
 
-[INCOMPLETE] Bruiser LOCK requires all factory rows PASS (meta-critic approved).
-HARNESS_ONLY (need Bible + [+] asserts): bruiser_guttural_roar, bruiser_crimson_whirlwind, blood_for_blood, momentum_transfer, battering_ram, unstoppable_force
 === Tier 1: headless skill scenarios (harness) ===
 Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
-
 [SUITE] bruiser_qa_tier1
 [BRUISER_QA] push_through (bruiser_push_through)
 [BRUISER_QA] charge_strike (bruiser_charge_strike)
@@ -49,4 +46,4 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 --- Tier 1 harness: PASS ---
 
 === Bruiser QA gate summary ===
-[INCOMPLETE] Harness PASS but matrix not LOCK-ready (25/31 PASS rows).
+[PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS.

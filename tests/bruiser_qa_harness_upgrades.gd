@@ -49,9 +49,19 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 		failures, "charge_strike/upgrade/ghost",
 		ab.upgraded_effects[0].modifiers.has("ghost_move"),
 	)
+	H.assert_eq_int(
+		failures, "charge_strike/upgrade/ghost_val",
+		int(ab.upgraded_effects[0].modifiers["ghost_move"]),
+		1,
+	)
 	H.assert_true(
 		failures, "charge_strike/upgrade/terrain_bonus",
 		ab.upgraded_effects[1].modifiers.has("bonus_dmg_from_terrain"),
+	)
+	H.assert_eq_int(
+		failures, "charge_strike/upgrade/terrain_bonus_val",
+		int(ab.upgraded_effects[1].modifiers["bonus_dmg_from_terrain"]),
+		2,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_charge_strike"),
@@ -481,9 +491,18 @@ static func run_headbutt_upgrade(failures: Array[String]) -> void:
 		failures, "headbutt/upgrade/mod",
 		skill.upgraded_effects[0].modifiers.has("bonus_dmg_pct_max_hp"),
 	)
-	H.assert_true(
+	## Bible [+] is base-power % Max HP — compare MATH_TELEMETRY base, not scaled HP delta.
+	var base_up: int = int(H.first_damage_math(result.events).get("base", -1))
+	var base_plain: int = int(H.first_damage_math(result2.events).get("base", -1))
+	H.assert_eq_int(
 		failures, "headbutt/upgrade/max_hp_bonus",
-		dmg_up - dmg_base >= expected_bonus,
+		base_up - base_plain,
+		expected_bonus,
+	)
+	H.assert_true(
+		failures, "headbutt/upgrade/extra_hp_loss",
+		dmg_up > dmg_base,
+		"upgraded headbutt must deal more HP damage than base",
 	)
 
 
@@ -694,15 +713,21 @@ static func run_momentum_transfer_upgrade(failures: Array[String]) -> void:
 
 
 static func run_battering_ram_upgrade(failures: Array[String]) -> void:
+	## Isolate [+] wall STAGGER from concussion's object_collision_stagger — plain PUSH only.
+	var push_only: AbilityData = DataLibrary._make_ability(
+		&"qa_plain_push", "QA Plain Push", 1,
+		[DataLibrary._effect(GameEnums.EffectType.PUSH, 1)],
+		1,
+	)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(4, 3)])
 	var cfg: Dictionary = H.with_upgraded_passive(
 		H.with_single_passive(&"battering_ram", false),
 		&"battering_ram",
 	)
-	cfg["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
+	cfg["active_abilities"] = [push_only]
 	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(3, 3))
-	var ab: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_concussion_blow")
+	var ab: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"qa_plain_push")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, ab, Vector2i(3, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
@@ -710,6 +735,22 @@ static func run_battering_ram_upgrade(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "battering_ram/upgrade/wall_stagger",
 		enemy != null and H.has_status(enemy, GameEnums.StatusType.STAGGER),
+		"[+] wall collision STAGGER must fire without concussion object_collision_stagger",
+	)
+	var base_board: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(4, 3)])
+	var base_cfg: Dictionary = H.with_single_passive(&"battering_ram", false)
+	base_cfg["active_abilities"] = [push_only]
+	H.place_bruiser(base_board, 10, Vector2i(2, 3), base_cfg)
+	H.place_dummy(base_board, 11, Vector2i(3, 3))
+	var base_ab: AbilityData = H.ability_on_unit(H.unit_on_board(base_board, 10), &"qa_plain_push")
+	var base_plan := Timeline.new()
+	base_plan.add(H.plan_ability(10, base_ab, Vector2i(3, 3), 11))
+	var base_result: SimResult = H.simulate_plan(base_board, base_plan)
+	var base_enemy: UnitState = base_result.final_state.get_unit_by_id(11)
+	H.assert_true(
+		failures, "battering_ram/base/no_wall_stagger",
+		base_enemy != null and not H.has_status(base_enemy, GameEnums.StatusType.STAGGER),
+		"base battering_ram must not STAGGER on wall without [+]",
 	)
 
 
@@ -783,6 +824,11 @@ static func run_belly_flop_upgrade(failures: Array[String]) -> void:
 		failures, "belly_flop/upgrade/push",
 		enemy != null and enemy.position != start,
 	)
+	H.assert_eq_int(
+		failures, "belly_flop/upgrade/push_distance",
+		H.event_push_distance(result.events, 2),
+		1,
+	)
 
 
 static func run_cellular_regeneration_upgrade(failures: Array[String]) -> void:
@@ -832,25 +878,24 @@ static func run_blood_for_blood_upgrade(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
-	var hp: int = H.unit_hp(board, 2)
 	var ab: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_concussion_blow")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, ab, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
-	var dmg_up: int = hp - H.unit_hp(result.final_state, 2)
 	var board2: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg2: Dictionary = H.with_single_passive(&"blood_for_blood", false)
 	cfg2["passive_flags"] = {"damaged_last_turn": true}
 	cfg2["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
 	H.place_bruiser(board2, 10, Vector2i(3, 3), cfg2)
 	H.place_dummy(board2, 11, Vector2i(4, 3))
-	var hp2: int = H.unit_hp(board2, 11)
 	var ab2: AbilityData = H.ability_on_unit(H.unit_on_board(board2, 10), &"bruiser_concussion_blow")
 	var plan2 := Timeline.new()
 	plan2.add(H.plan_ability(10, ab2, Vector2i(4, 3), 11))
 	var result2: SimResult = H.simulate_plan(board2, plan2)
-	var dmg_base: int = hp2 - H.unit_hp(result2.final_state, 11)
-	H.assert_true(failures, "blood_for_blood/upgrade/extra_dmg", dmg_up > dmg_base)
+	## Bible [+] ATK +1 is ability base power — compare MATH_TELEMETRY base, not scaled HP delta.
+	var base_up: int = int(H.first_damage_math(result.events).get("base", -1))
+	var base_plain: int = int(H.first_damage_math(result2.events).get("base", -1))
+	H.assert_eq_int(failures, "blood_for_blood/upgrade/atk_plus_1", base_up - base_plain, 1)
 
 
 static func run_adrenaline_junkie_upgrade(failures: Array[String]) -> void:
@@ -1060,7 +1105,6 @@ static func run_scar_tissue_upgrade(failures: Array[String]) -> void:
 		reduced_base - reduced_up,
 		1,
 	)
-	H.assert_true(failures, "scar_tissue/upgrade/more_reduce", reduced_up < reduced_base)
 
 
 static func run_crowd_breaker_upgrade(failures: Array[String]) -> void:
@@ -1109,6 +1153,22 @@ static func run_juggernaut_upgrade(failures: Array[String]) -> void:
 	var events: Array[SimEvent] = []
 	TerrainSystem.apply_landing(board, bruiser, events)
 	H.assert_eq_int(failures, "juggernaut/upgrade/shield", bruiser.armor, armor_before + 1)
+	## Base juggernaut destroys traps without SHIELD — isolate [+] grant.
+	var base_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.set_tile_trap(base_board, Vector2i(4, 3))
+	H.place_bruiser(base_board, 10, Vector2i(3, 3), H.with_single_passive(&"juggernaut", false))
+	var base_bruiser: UnitState = H.unit_on_board(base_board, 10)
+	var base_armor: int = base_bruiser.armor
+	GridSystem.set_occupant(base_board, Vector2i(3, 3), -1)
+	base_bruiser.position = Vector2i(4, 3)
+	GridSystem.set_occupant(base_board, Vector2i(4, 3), base_bruiser.id)
+	var base_events: Array[SimEvent] = []
+	TerrainSystem.apply_landing(base_board, base_bruiser, base_events)
+	H.assert_eq_int(
+		failures, "juggernaut/base/no_shield",
+		base_bruiser.armor,
+		base_armor,
+	)
 
 
 static func run_unstoppable_force_upgrade(failures: Array[String]) -> void:

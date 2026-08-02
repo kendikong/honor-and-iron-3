@@ -1,6 +1,6 @@
 # Unattended Gauntlet Run — B6-REOPEN (ACTIVE)
 
-**Status:** **ACTIVE** — B6-LOCK revoked; per-row critic restart  
+**Status:** **DONE** — B6-REOPEN LOCKED (full-matrix 96)  
 **Prior run:** B6-LOCK **REVOKED** — see [`runs/B6-LOCK.md`](runs/B6-LOCK.md) (historical)  
 **Run card:** [`runs/B6-REOPEN.md`](runs/B6-REOPEN.md)  
 **Spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) §5.4 · **Progress:** [`workbench.md`](workbench.md)  
@@ -34,10 +34,10 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 
 | Metric | Value |
 |--------|-------|
-| Matrix PASS | **27 / 31** |
-| HARNESS_ONLY | **4** (deepened; await fresh critic) |
-| Manifest approved | **27** rows |
-| Remaining | blood_for_blood, momentum_transfer, battering_ram, unstoppable_force |
+| Matrix PASS | **31 / 31** |
+| HARNESS_ONLY | **0** |
+| Manifest approved | **31** rows |
+| Remaining | none — LOCKED |
 | Tier 1 harness | must stay **PASS** |
 | Cloud handoff | [`LOCAL_CLOUD_SYNC.md`](LOCAL_CLOUD_SYNC.md) · [`prompts/B6-REOPEN-CLOUD.md`](prompts/B6-REOPEN-CLOUD.md) |
 

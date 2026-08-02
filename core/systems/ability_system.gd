@@ -1466,12 +1466,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 					return
 					
-				if target.has_passive(&"unstoppable_force") and effect.status_type in [GameEnums.StatusType.STAGGER, GameEnums.StatusType.ROOT]:
-					var shield = 2 if target.is_passive_upgraded(&"unstoppable_force") else 1
-					target.armor += shield
-					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-						"actor": target.id, "reason": "status_prevented_by_unstoppable_force",
-					}))
+				if CombatSystem.try_resist_crowd_control(target, effect.status_type, events):
 					return
 					
 				var stat_val = effect.amount
@@ -1666,8 +1661,9 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 				for i in range(push_ev_start, events.size()):
 					var ev = events[i]
 					if ev.type == GameEnums.SimEventType.COLLISION and ev.data.get("unit") == target.id:
-						target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
-						target._recalculate_stats()
+						if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events):
+							target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+							target._recalculate_stats()
 						break
 			
 			if push.get("vulnerable_on_adjacent", false) and actor != null:

@@ -813,6 +813,13 @@ static func run_blood_boil(failures: Array[String]) -> void:
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_eq_int(failures, "blood_boil/hp_cost", hp_before - after.health.current_hp, 5)
 	H.assert_eq_int(failures, "blood_boil/str_value", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 3)
+	var str_status: StatusData = null
+	for st: StatusData in after.active_statuses:
+		if st.type == GameEnums.StatusType.STAT_BUFF_STR:
+			str_status = st
+			break
+	H.assert_true(failures, "blood_boil/str_status_present", str_status != null)
+	H.assert_eq_int(failures, "blood_boil/str_duration", str_status.duration if str_status != null else -1, 1)
 
 
 static func run_violent_collision(failures: Array[String]) -> void:
@@ -1049,9 +1056,9 @@ static func run_cellular_regeneration(failures: Array[String]) -> void:
 static func run_blood_for_blood(failures: Array[String]) -> void:
 	## Bible: Blood for Blood — damaged last turn → attacks apply BLEED (WPN); [+] ATK +1.
 	H.assert_passive_registered(failures, &"blood_for_blood")
+	## Turn 1: real damage → full Simulator.simulate end-of-turn sets damaged_last_turn.
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.with_single_passive(&"blood_for_blood", false)
-	cfg["passive_flags"] = {"damaged_last_turn": true}
 	cfg["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -1059,10 +1066,27 @@ static func run_blood_for_blood(failures: Array[String]) -> void:
 	var wpn: int = 0
 	if bruiser.definition != null and bruiser.definition.equipped_weapon != null:
 		wpn = bruiser.definition.equipped_weapon.might
-	var ab: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
-	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, ab, Vector2i(4, 3), 2))
-	var result: SimResult = H.simulate_plan(board, plan)
+	var dmg_events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board, bruiser, 1, dmg_events, &"physical", true, false, null, "BloodForBloodQa",
+	)
+	H.assert_true(
+		failures, "blood_for_blood/damaged_this_turn",
+		bool(bruiser.passive_flags.get("damaged_this_turn", false)),
+	)
+	var after_hurt: SimResult = Simulator.simulate(board, Timeline.new())
+	H.assert_true(
+		failures, "blood_for_blood/damaged_last_turn",
+		bool(after_hurt.final_state.get_unit_by_id(1).passive_flags.get("damaged_last_turn", false)),
+		"end-of-turn must promote damaged_this_turn → damaged_last_turn",
+	)
+	## Turn 2: attack must apply BLEED = WPN from the real flag (not injected).
+	var strike: AbilityData = H.ability_on_unit(
+		after_hurt.final_state.get_unit_by_id(1), &"bruiser_concussion_blow",
+	)
+	var strike_plan := Timeline.new()
+	strike_plan.add(H.plan_ability(1, strike, Vector2i(4, 3), 2))
+	var result: SimResult = H.simulate_plan(after_hurt.final_state, strike_plan)
 	var enemy: UnitState = result.final_state.get_unit_by_id(2)
 	H.assert_true(
 		failures, "blood_for_blood/bleed",
@@ -1086,7 +1110,7 @@ static func run_blood_for_blood(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "blood_for_blood/no_bleed_without_flag",
 		neg_enemy != null and not H.has_status(neg_enemy, GameEnums.StatusType.BLEED),
-		"without damaged_last_turn flag attacks must not apply BLEED",
+		"without damaged_last_turn attacks must not apply BLEED",
 	)
 
 
@@ -1237,6 +1261,23 @@ static func run_colossal_mass(failures: Array[String]) -> void:
 	bruiser._recalculate_stats(board)
 	var str_wounded: int = CombatSystem.get_dynamic_strength(board, bruiser)
 	H.assert_eq_int(failures, "colossal_mass/max_hp_not_current", str_wounded, str_with)
+	## Altered Max HP proves floor(max_hp/15) scaling (not a constant buff).
+	## Set after _recalculate_stats — that path restores definition Max HP.
+	var big_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(big_board, 20, Vector2i(3, 3), H.with_single_passive(&"colossal_mass", false))
+	var big: UnitState = H.unit_on_board(big_board, 20)
+	big.health.max_hp = 45
+	big.health.current_hp = 45
+	var plain_big: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(plain_big, 21, Vector2i(3, 3), {})
+	var plain_big_u: UnitState = H.unit_on_board(plain_big, 21)
+	plain_big_u.health.max_hp = 45
+	plain_big_u.health.current_hp = 45
+	H.assert_eq_int(
+		failures, "colossal_mass/str_at_45_max",
+		CombatSystem.get_dynamic_strength(big_board, big) - CombatSystem.get_dynamic_strength(plain_big, plain_big_u),
+		floori(45.0 / 15.0),
+	)
 
 
 static func run_overwhelming_bulk(failures: Array[String]) -> void:
@@ -1440,7 +1481,6 @@ static func run_scar_tissue(failures: Array[String]) -> void:
 	var events: Array[SimEvent] = []
 	CombatSystem.deal_damage(board, victim, 8, events, &"physical", false, false, H.unit_on_board(board, 2))
 	var reduced: int = hp - victim.health.current_hp
-	H.assert_true(failures, "scar_tissue/reduces", reduced < 8)
 	var plain_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(plain_board, 10, Vector2i(3, 3), {})
 	H.place_dummy(plain_board, 11, Vector2i(4, 3))
@@ -1488,9 +1528,10 @@ static func run_momentum_transfer(failures: Array[String]) -> void:
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, ab, Vector2i(3, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
-	H.assert_true(
+	H.assert_eq_int(
 		failures, "momentum_transfer/heal",
-		H.unit_hp(result.final_state, 1) > hp,
+		H.unit_hp(result.final_state, 1),
+		hp + 1,
 	)
 	var plain_board: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(5, 3)])
 	var plain_cfg: Dictionary = {
@@ -1547,10 +1588,22 @@ static func run_crowd_breaker(failures: Array[String]) -> void:
 	var str_alone: int = CombatSystem.get_dynamic_strength(board2, H.unit_on_board(board2, 10))
 	H.assert_eq_int(failures, "crowd_breaker/adj_str", str_adj - str_alone, 1)
 	H.assert_eq_int(failures, "crowd_breaker/splash_amount", splash_dmg, 1)
-	H.assert_true(
-		failures, "crowd_breaker/splash_bonus",
-		splash_dmg > splash_plain,
-		"crowd breaker must add splash damage to adjacent targets",
+	H.assert_eq_int(
+		failures, "crowd_breaker/splash_vs_plain",
+		splash_dmg - splash_plain,
+		1,
+	)
+	var multi_board: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(multi_board, 30, Vector2i(3, 3), H.with_single_passive(&"crowd_breaker", false))
+	H.place_dummy(multi_board, 31, Vector2i(4, 3))
+	H.place_dummy(multi_board, 32, Vector2i(3, 4))
+	var multi_alone: BoardState = H.make_plain_board(Vector2i(8, 8))
+	H.place_bruiser(multi_alone, 33, Vector2i(3, 3), H.with_single_passive(&"crowd_breaker", false))
+	H.assert_eq_int(
+		failures, "crowd_breaker/adj_str_two",
+		CombatSystem.get_dynamic_strength(multi_board, H.unit_on_board(multi_board, 30))
+		- CombatSystem.get_dynamic_strength(multi_alone, H.unit_on_board(multi_alone, 33)),
+		2,
 	)
 
 
@@ -1693,5 +1746,38 @@ static func run_unstoppable_force(failures: Array[String]) -> void:
 	H.assert_eq_int(
 		failures, "unstoppable_force/root_shield_gain",
 		root_bruiser.armor - armor_root_before,
+		1,
+	)
+	## Collision / physics STAGGER path must also respect Unstoppable Force (shared helper).
+	var push_only: AbilityData = DataLibrary._make_ability(
+		&"qa_plain_push_uf", "QA Plain Push", 1,
+		[DataLibrary._effect(GameEnums.EffectType.PUSH, 1)],
+		1,
+	)
+	var col_board: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(4, 3)])
+	H.place_bruiser(col_board, 30, Vector2i(3, 3), H.with_single_passive(&"unstoppable_force", false))
+	var ram_cfg: Dictionary = H.with_upgraded_passive(
+		H.with_single_passive(&"battering_ram", false),
+		&"battering_ram",
+	)
+	ram_cfg["active_abilities"] = [push_only]
+	H.place_unit(
+		col_board, 31, H.bruiser_unit_data(), GameEnums.Team.ENEMY, Vector2i(2, 3), ram_cfg,
+	)
+	var uf_before: UnitState = H.unit_on_board(col_board, 30)
+	var armor_col_before: int = uf_before.armor
+	var ram_push: AbilityData = H.ability_on_unit(H.unit_on_board(col_board, 31), &"qa_plain_push_uf")
+	var col_plan := Timeline.new()
+	col_plan.add(H.plan_ability(31, ram_push, Vector2i(3, 3), 30))
+	var col_result: SimResult = H.simulate_plan(col_board, col_plan)
+	var uf_after: UnitState = col_result.final_state.get_unit_by_id(30)
+	H.assert_true(
+		failures, "unstoppable_force/collision_no_stagger",
+		uf_after != null and not H.has_status(uf_after, GameEnums.StatusType.STAGGER),
+		"wall/collision STAGGER must be resisted by Unstoppable Force",
+	)
+	H.assert_eq_int(
+		failures, "unstoppable_force/collision_shield",
+		uf_after.armor - armor_col_before,
 		1,
 	)

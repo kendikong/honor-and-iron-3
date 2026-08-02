@@ -10,11 +10,11 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ bruiser_crimson_whirlwind │ Round 1 │ SELF-GRADED: no (subagent)
-SCORE: 90/100 │ THRESHOLD: 88 │ PASS │ CLIMBING
-DELTA: first round
-MATRIX: 27/31 PASS │ GATE: harness PASS · exit 2 INCOMPLETE
-STOP_CONDITION_MET: no
+GAUNTLET SCORE │ B6-REOPEN full-matrix │ Round 2 │ SELF-GRADED: no (subagent)
+SCORE: 96/100 │ THRESHOLD: 95 │ PASS │ CLIMBING
+DELTA: +4 vs round 1 (was 92)
+MATRIX: 31/31 PASS │ GATE: exit 0
+STOP_CONDITION_MET: yes
 ══════════════════════════════════════
 ```
 
@@ -22,7 +22,13 @@ STOP_CONDITION_MET: no
 |-------|-------|-------|--------|
 | r2 | bruiser_guttural_roar | 89 | PASS |
 | r1 | bruiser_crimson_whirlwind | 90 | PASS |
-| next | blood_for_blood | pending | — |
+| r2 | blood_for_blood | 90 | PASS |
+| r2 | momentum_transfer | 89 | PASS |
+| r2 | battering_ram | 91 | PASS |
+| r2 | unstoppable_force | 91 | PASS |
+| floor re-score | 12×88 rows | 89–91 | PASS |
+| r1 | full-matrix | 92 | FAIL |
+| r2 | full-matrix | 96 | PASS — LOCKED |
 
 ---
 
@@ -30,12 +36,13 @@ STOP_CONDITION_MET: no
 
 | Field | Value |
 |-------|-------|
-| **Status** | **ACTIVE** — Cloud B6-REOPEN |
-| **Matrix** | **27/31** PASS |
-| **Remaining** | blood_for_blood, momentum_transfer, battering_ram, unstoppable_force |
+| **Status** | **DONE** — Bruiser `LOCKED` |
+| **Matrix** | **31/31** PASS |
+| **Full-matrix critic** | **96/100** |
+| **Template** | `docs/design/bruiser-template.md` → `LOCKED` |
 
 ---
 
 ## STOP_ON
 
-`STOP_CONDITION_MET: no`
+`STOP_CONDITION_MET: yes`

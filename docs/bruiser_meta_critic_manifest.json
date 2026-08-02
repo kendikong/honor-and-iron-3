@@ -2,11 +2,11 @@
   "piece": "B6-REOPEN",
   "pass_threshold": 95,
   "per_row_threshold": 88,
-  "last_critic_round": 1,
-  "last_score": 90,
+  "last_critic_round": 2,
+  "last_score": 96,
   "last_result": "PASS",
-  "last_row_promoted": "bruiser_crimson_whirlwind",
-  "notes": "B6-REOPEN. 27/31 promoted. Remaining: blood_for_blood, momentum_transfer, battering_ram, unstoppable_force.",
+  "last_row_promoted": "unstoppable_force",
+  "notes": "B6-REOPEN LOCKED. Full-matrix gauntlet-critic 96/100. 31/31 per-row PASS. STOP_CONDITION_MET yes.",
   "approved_rows": [
     {
       "factory_id": "bruiser_push_through",
@@ -16,8 +16,8 @@
     },
     {
       "factory_id": "bruiser_charge_strike",
-      "score": 88,
-      "critic_round": 4,
+      "score": 91,
+      "critic_round": 5,
       "fix_target": "none"
     },
     {
@@ -34,14 +34,14 @@
     },
     {
       "factory_id": "bruiser_suplex",
-      "score": 88,
-      "critic_round": 2,
+      "score": 91,
+      "critic_round": 3,
       "fix_target": "none"
     },
     {
       "factory_id": "bruiser_adrenaline_surge",
-      "score": 88,
-      "critic_round": 2,
+      "score": 89,
+      "critic_round": 3,
       "fix_target": "none"
     },
     {
@@ -58,20 +58,20 @@
     },
     {
       "factory_id": "bruiser_meat_shield",
-      "score": 88,
-      "critic_round": 3,
+      "score": 90,
+      "critic_round": 4,
       "fix_target": "none"
     },
     {
       "factory_id": "bruiser_headbutt",
-      "score": 88,
-      "critic_round": 1,
+      "score": 90,
+      "critic_round": 2,
       "fix_target": "none"
     },
     {
       "factory_id": "bruiser_blood_boil",
-      "score": 88,
-      "critic_round": 1,
+      "score": 89,
+      "critic_round": 2,
       "fix_target": "none"
     },
     {
@@ -82,8 +82,8 @@
     },
     {
       "factory_id": "bruiser_belly_flop",
-      "score": 88,
-      "critic_round": 1,
+      "score": 89,
+      "critic_round": 2,
       "fix_target": "none"
     },
     {
@@ -112,14 +112,14 @@
     },
     {
       "factory_id": "last_stand",
-      "score": 88,
-      "critic_round": 1,
+      "score": 89,
+      "critic_round": 2,
       "fix_target": "none"
     },
     {
       "factory_id": "colossal_mass",
-      "score": 88,
-      "critic_round": 1,
+      "score": 90,
+      "critic_round": 2,
       "fix_target": "none"
     },
     {
@@ -142,20 +142,20 @@
     },
     {
       "factory_id": "scar_tissue",
-      "score": 88,
-      "critic_round": 1,
+      "score": 89,
+      "critic_round": 2,
       "fix_target": "none"
     },
     {
       "factory_id": "crowd_breaker",
-      "score": 88,
-      "critic_round": 1,
+      "score": 90,
+      "critic_round": 2,
       "fix_target": "none"
     },
     {
       "factory_id": "juggernaut",
-      "score": 88,
-      "critic_round": 1,
+      "score": 90,
+      "critic_round": 2,
       "fix_target": "none"
     },
     {
@@ -168,6 +168,30 @@
       "factory_id": "bruiser_crimson_whirlwind",
       "score": 90,
       "critic_round": 1,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "blood_for_blood",
+      "score": 90,
+      "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "momentum_transfer",
+      "score": 89,
+      "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "battering_ram",
+      "score": 91,
+      "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "unstoppable_force",
+      "score": 91,
+      "critic_round": 2,
       "fix_target": "none"
     }
   ]
