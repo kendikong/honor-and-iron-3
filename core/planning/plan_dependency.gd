@@ -1,7 +1,9 @@
 class_name PlanDependency
 extends RefCounted
 
-## Cancels plans that depended on a movement skill affecting an ally (e.g. Swap undo).
+## Cancels plans invalidated when a movement skill affects an ally (e.g. Swap).
+## Premoves (including Swap) apply immediately in projected state; undoing or inserting
+## such a step drops every later entry on the combined timeline — all actors, both teams.
 
 
 static func ally_ids_affected_by_action(
@@ -36,14 +38,13 @@ static func cancel_ally_plans_after_step(
 	var cut_idx: int = combined.entries.find(removed_action)
 	if cut_idx < 0:
 		return false
-	var ally_set: Dictionary = {}
-	for id: int in ally_ids:
-		ally_set[id] = true
+	var to_remove: Array[TimelineAction] = []
+	for i: int in range(cut_idx + 1, combined.entries.size()):
+		to_remove.append(combined.entries[i])
+	if to_remove.is_empty():
+		return false
 	var cancelled := false
-	for i: int in range(cut_idx + 1, combined.size()):
-		var step: TimelineAction = combined.entries[i]
-		if not ally_set.has(step.actor_id):
-			continue
+	for step: TimelineAction in to_remove:
 		for plan: Timeline in plans:
 			var local_idx: int = plan.entries.find(step)
 			if local_idx >= 0:
@@ -52,7 +53,7 @@ static func cancel_ally_plans_after_step(
 	return cancelled
 
 
-## Preview-only: strip ally steps after `step` on a single combined timeline (no live plan mutate).
+## Preview-only: strip every step after `step` (all actors) when ally-affecting movement applies.
 static func strip_ally_entries_after_step(
 	combined: Timeline,
 	step: TimelineAction,
@@ -63,20 +64,14 @@ static func strip_ally_entries_after_step(
 	var cut_idx: int = combined.entries.find(step)
 	if cut_idx < 0:
 		return false
-	var ally_set: Dictionary = {}
-	for id: int in ally_ids:
-		ally_set[id] = true
+	var before: int = combined.entries.size()
 	var kept: Array[TimelineAction] = []
-	var cancelled := false
-	for i: int in range(combined.entries.size()):
-		var entry: TimelineAction = combined.entries[i]
-		if i > cut_idx and ally_set.has(entry.actor_id):
-			cancelled = true
-			continue
-		kept.append(entry)
-	if cancelled:
-		combined.entries = kept
-	return cancelled
+	for i: int in range(cut_idx + 1):
+		kept.append(combined.entries[i])
+	if kept.size() == before:
+		return false
+	combined.entries = kept
+	return true
 
 
 ## Preview-only: remove abilities that target displaced enemies (matches director commit cancel).

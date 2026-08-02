@@ -182,6 +182,8 @@ Knight LOCK uses **tiered** planning proof in Tier 1 harness (`tests/knight_qa_h
 | **B** | `run_planning_commit_smoke` — select, hover, hover/click slot parity, `assert_commit_no_jump` (swap: parity only — position preview shifts post-commit) | phalanx, taunting, seismic, iron_grip, redirect, indomitable, retaliation, shield_slam, defensive_formation, **fortify**, **knight_swap** |
 | **C** | Select and/or intent contracts only | `knight_bowling_charge` (intent E2E + select) |
 
+**Swap / premove rule:** Pre-move column entries (including Swap) apply immediately in `projected_state`. Undoing or inserting an ally-affecting movement skill strips **all** later combined-timeline entries for every actor (`PlanDependency.cancel_ally_plans_after_step`).
+
 Passives: sim trigger scenarios only (no planning phases). **Do not** conflate planning QA PASS with Knight LOCK.
 
 Registry: `tests/knight_scenario_registry.gd` + `tests/knight_qa_runner.gd` (30 factory rows + economy slice).

@@ -27,6 +27,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_hover_cursor_matches_click_commit_slots,
 		_test_planning_display_mp_left,
 		_test_undo_movement_action_preserves_premove,
+		_test_swap_undo_cascades_all_plans_after,
 		_test_ability_scroll_clears_hover_preview_cache,
 	]
 	for test: Callable in tests:
@@ -1429,6 +1430,78 @@ static func _test_undo_movement_action_preserves_premove(failures: Array[String]
 	if director.plan_pre_move.entries.is_empty():
 		failures.append(
 			"PlanningInputTest: undo movement skill must keep pre-move walk on timeline",
+		)
+
+
+static func _test_swap_undo_cascades_all_plans_after(failures: Array[String]) -> void:
+	var director := _new_director()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(10, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			board.set_tile_terrain(Vector2i(x, y), plain)
+	var swap := AbilityData.new()
+	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.id = &"knight_swap"
+	swap.movement_point_cost = 1
+	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
+	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	var bash := AbilityData.new()
+	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
+	bash.id = &"knight_shield_bash"
+	bash.action_point_cost = 1
+	bash.range_tiles = 1
+	bash.effects = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
+	var knight := UnitState.new()
+	knight.id = 1
+	knight.team = GameEnums.Team.PLAYER
+	knight.position = Vector2i(2, 3)
+	knight.movement.points_left = 3
+	knight.movement.max_points = 3
+	knight.ability.points_left = 1
+	knight.ability.max_points = 1
+	var ally := UnitState.new()
+	ally.id = 3
+	ally.team = GameEnums.Team.PLAYER
+	ally.position = Vector2i(2, 4)
+	ally.movement.points_left = 3
+	ally.movement.max_points = 3
+	ally.ability.points_left = 1
+	ally.ability.max_points = 1
+	board.units = [knight, ally]
+	GridSystem.set_occupant(board, knight.position, knight.id)
+	GridSystem.set_occupant(board, ally.position, ally.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_ability(
+			1, swap, ally.position, 3, GameEnums.MoveTiming.PRE_ACTION, [],
+		),
+	)
+	director.plan_pre_move.entries.append(
+		TimelineAction.make_move(
+			3, Vector2i(3, 4), -1, [], GameEnums.MoveTiming.PRE_ACTION,
+		),
+	)
+	director.plan_action.entries.append(
+		TimelineAction.make_ability(
+			1, bash, Vector2i(4, 3), 2, GameEnums.MoveTiming.PRE_ACTION, [],
+		),
+	)
+	director.rpc_remove_action(0)
+	if not director.plan_pre_move.entries.is_empty():
+		failures.append(
+			"PlanningInputTest: swap undo must clear all pre-move entries after swap (both players)",
+		)
+	if not director.plan_action.entries.is_empty():
+		failures.append(
+			"PlanningInputTest: swap undo must clear all action entries after swap (both players)",
 		)
 
 

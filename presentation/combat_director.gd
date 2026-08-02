@@ -1459,6 +1459,12 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
 					var removed: TimelineAction = plan_action.entries[i]
+					if (
+						removed.type == GameEnums.ActionType.ABILITY
+						and removed.ability != null
+						and removed.ability.is_movement_kind()
+					):
+						_cancel_ally_plans_after_movement_step(removed)
 					plan_action.remove_at(i)
 					_begin_undo_plan_refresh(unit_id)
 					_refresh_plan()
@@ -1510,9 +1516,16 @@ func rpc_remove_action(index: int) -> void:
 		plan_pre_move.remove_at(index)
 	elif index < plan_pre_move.size() + plan_action.size():
 		var act_idx: int = index - plan_pre_move.size()
-		if plan_action.entries[act_idx].irreversible:
+		var removed_act: TimelineAction = plan_action.entries[act_idx]
+		if removed_act.irreversible:
 			EventBus.action_rejected.emit("cannot_undo_trample")
 			return
+		if (
+			removed_act.type == GameEnums.ActionType.ABILITY
+			and removed_act.ability != null
+			and removed_act.ability.is_movement_kind()
+		):
+			_cancel_ally_plans_after_movement_step(removed_act)
 		plan_action.remove_at(act_idx)
 	elif index - plan_pre_move.size() - plan_action.size() < plan_post_move.size():
 		var post_idx: int = index - plan_pre_move.size() - plan_action.size()
