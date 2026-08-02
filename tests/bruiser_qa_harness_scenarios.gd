@@ -337,10 +337,15 @@ static func run_meat_shield(failures: Array[String]) -> void:
 	var ally_after: UnitState = attack_result.final_state.get_unit_by_id(3)
 	var ally_incoming: int = H.sum_unit_incoming_damage_events(attack_result.events, 3)
 	var bruiser_incoming: int = H.sum_unit_incoming_damage_events(attack_result.events, 1)
-	var ally_hp_split: int = H.sum_unit_hp_damage_events(attack_result.events, 3)
 	H.assert_true(
 		failures, "meat_shield/redirect_ally",
-		ally_after != null and ally_hp_split > 0,
+		solo_incoming > 0
+			and ally_after != null
+			and ally_incoming > 0
+			and bruiser_incoming > 0
+			and ally_incoming == bruiser_incoming
+			and ally_incoming < solo_incoming,
+		"INTERCEPT must 50/50 split incoming damage vs solo baseline",
 	)
 	H.assert_true(
 		failures, "meat_shield/interceptor_took",
