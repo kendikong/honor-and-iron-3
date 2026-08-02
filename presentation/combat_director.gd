@@ -2314,8 +2314,10 @@ func _refresh_plan_core() -> void:
 	var evs: Array[SimEvent] = []
 	Simulator.simulate_player_turn(projected_state, plan_to_run, evs)
 
-	# Premoves (walk + movement skills like Swap) apply immediately in projected_state.
+	# Premoves (walk + movement skills like Swap) apply immediately on live board.
+	# Action-phase displacement (bash push, hook pull, etc.) stays preview-only until execute.
 	board = projected_state.clone()
+	_sync_live_enemy_positions_to_turn_start(board)
 	var new_intents := EnemyPlanner.plan(projected_state)
 	base_board.intents = new_intents
 	board.intents = new_intents
@@ -2608,6 +2610,25 @@ func _player_positions_match_turn_start(candidate: BoardState) -> bool:
 		if other == null or other.position != unit.position:
 			return false
 	return true
+
+
+## Planning live board: player premoves snap; enemies stay on turn-start tiles until execute.
+func _sync_live_enemy_positions_to_turn_start(live: BoardState) -> void:
+	if turn_start_board == null or live == null:
+		return
+	for start_unit: UnitState in turn_start_board.units:
+		if not start_unit.is_alive() or not start_unit.is_enemy():
+			continue
+		var live_unit: UnitState = live.get_unit_by_id(start_unit.id)
+		if live_unit == null or not live_unit.is_alive():
+			continue
+		var from_pos: Vector2i = live_unit.position
+		var to_pos: Vector2i = start_unit.position
+		if from_pos == to_pos:
+			continue
+		GridSystem.set_occupant(live, from_pos, -1)
+		live_unit.position = to_pos
+		GridSystem.set_occupant(live, to_pos, live_unit.id)
 
 
 func _flush_pending_planning_commit_events() -> void:

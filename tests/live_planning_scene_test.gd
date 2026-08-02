@@ -350,6 +350,14 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 		"ability": bash,
 		"manhattan": true,
 	}, "k1/selection/post_commit")
+	_assert_enemy_live_unchanged_during_planning(
+		ctx, e_bash_id, _E_BASH_CELL, "k1/selection/post_commit",
+	)
+	var bashed_preview: UnitState = director.projected_state.get_unit_by_id(e_bash_id)
+	assert_object(bashed_preview).is_not_null()
+	assert_bool(bashed_preview.position.x > _E_BASH_CELL.x).override_failure_message(
+		"k1/selection/post_commit: projected enemy must show bash push in preview",
+	).is_true()
 	await _wait_ability_settle(ctx)
 	_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
 	await _undo_until_unit_clear(ctx, k1_id, _K1_CELL)
@@ -365,6 +373,9 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 		"ability": bash,
 		"manhattan": true,
 	}, "k1/drag/post_commit")
+	_assert_enemy_live_unchanged_during_planning(
+		ctx, e_bash_id, _E_BASH_CELL, "k1/drag/post_commit",
+	)
 	ctx.expect["k1_pos"] = _BASH_APPROACH
 	var bashed: UnitState = director.projected_state.get_unit_by_id(e_bash_id)
 	assert_object(bashed).is_not_null()
@@ -739,6 +750,24 @@ func _assert_actor_on_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label:
 	assert_that(actor_cell).override_failure_message(
 		"%s: sprite must stand on %s, got actor grid %s" % [label, _cell_name(cell), _cell_name(actor_cell)],
 	).is_equal(cell)
+
+
+func _assert_enemy_live_unchanged_during_planning(
+	ctx: Dictionary,
+	enemy_id: int,
+	turn_start_cell: Vector2i,
+	label: String,
+) -> void:
+	var director: CombatDirector = ctx.director
+	var live: UnitState = director.board.get_unit_by_id(enemy_id)
+	assert_object(live).override_failure_message(
+		"%s: live enemy missing on board" % label,
+	).is_not_null()
+	if live != null:
+		assert_that(live.position).override_failure_message(
+			"%s: enemy must stay at turn-start cell during planning (displacement is preview-only)",
+		).is_equal(turn_start_cell)
+	await _assert_actor_on_cell(ctx, enemy_id, turn_start_cell, "%s/enemy_sprite" % label)
 
 
 func _wait_planning_move_tween(ctx: Dictionary, unit_id: int, extra_settle_frames: int = 4) -> void:
