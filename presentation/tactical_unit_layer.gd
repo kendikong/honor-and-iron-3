@@ -361,6 +361,7 @@ func _on_preview_updated(result: SimResult) -> void:
 func _on_planning_commit_events(events: Array) -> void:
 	if not _is_planning_phase():
 		return
+	reset_planning_walk_origins_for_moves(events)
 	for raw: Variant in events:
 		if raw is SimEvent:
 			_planning_commit_queue.append(raw as SimEvent)
@@ -403,26 +404,43 @@ func await_planning_move_tweens_for_actor(unit_id: int) -> void:
 
 
 func _play_planning_swap_presentation(event: SimEvent) -> void:
-	var unit_id: int = int(event.data.get("actor", -1))
-	var actor: CharacterActor = _actors.get(unit_id) as CharacterActor
-	if actor == null:
+	var actor_id: int = int(event.data.get("actor", -1))
+	var target_id: int = int(event.data.get("target_unit", -1))
+	if actor_id < 0 or target_id < 0:
 		_finish_planning_swap_snap(event)
 		return
-	var facing: int = int(event.data.get("facing", GameEnums.Facing.SOUTH))
-	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
-	var thrust_dir: Vector2 = _facing_vector(facing)
-	if unit != null and event.data.has("target_unit"):
-		var target_unit := _board.get_unit_by_id(int(event.data["target_unit"]))
-		if target_unit != null:
-			var delta := target_unit.position - _actor_grid_cell(unit_id)
-			if delta != Vector2i.ZERO:
-				thrust_dir = Vector2(delta).normalized()
-				facing = _facing_toward(_actor_grid_cell(unit_id), target_unit.position)
-	actor.play_attack_thrust(thrust_dir, _attack_anim(facing))
-	var tree := get_tree()
-	if tree != null:
-		await tree.create_timer(ATTACK_ANIM_TIME).timeout
+	var actor_from: Vector2i = _actor_grid_cell(actor_id)
+	var target_from: Vector2i = _actor_grid_cell(target_id)
+	var actor_to: Vector2i = actor_from
+	var target_to: Vector2i = target_from
+	if _board != null:
+		var live_actor: UnitState = _board.get_unit_by_id(actor_id)
+		var live_target: UnitState = _board.get_unit_by_id(target_id)
+		if live_actor != null:
+			actor_to = live_actor.position
+		if live_target != null:
+			target_to = live_target.position
+	if actor_from == actor_to and target_from == target_to:
+		_finish_planning_swap_snap(event)
+		return
+	if actor_from != actor_to:
+		_animate_planning_path(actor_id, actor_from, actor_to, false, [])
+	if target_from != target_to:
+		_animate_planning_path(target_id, target_from, target_to, false, [])
+	await _await_planning_swap_tweens(actor_id, target_id)
 	_finish_planning_swap_snap(event)
+
+
+func _await_planning_swap_tweens(actor_id: int, target_id: int) -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+	while _is_planning_phase():
+		var actor_busy: bool = _move_tweens.has(actor_id)
+		var target_busy: bool = _move_tweens.has(target_id)
+		if not actor_busy and not target_busy:
+			return
+		await tree.process_frame
 
 
 func _finish_planning_swap_snap(event: SimEvent) -> void:

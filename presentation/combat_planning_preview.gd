@@ -177,6 +177,24 @@ func ensure_movement_intent_from_actions(
 			continue
 		var action: TimelineAction = raw as TimelineAction
 		if action.type == GameEnums.ActionType.MOVE:
+			var move_origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+			var existing: Array = preview_paths.get(action.actor_id, [])
+			if existing.size() < 2:
+				var route_cells: Array = movement_intent_cells(move_origin, action)
+				if route_cells.size() < 2 and start_board != null:
+					var actor: UnitState = start_board.get_unit_by_id(action.actor_id)
+					var budget: int = actor.movement.points_left if actor != null else 999
+					var found: Array[Vector2i] = MovementSystem.find_path(
+						start_board, move_origin, action.target_coord, budget,
+					)
+					if not found.is_empty():
+						route_cells = [move_origin]
+						route_cells.append_array(found)
+				if route_cells.size() >= 2:
+					preview_paths[action.actor_id] = route_cells
+					preview_splits[action.actor_id] = route_cells.size()
+					if not action_splits.has(action.actor_id):
+						action_splits[action.actor_id] = 0
 			origins[action.actor_id] = action.target_coord
 			continue
 		if action.type != GameEnums.ActionType.ABILITY or action.awaiting_target:
@@ -365,10 +383,7 @@ static func build_preview_paths(
 						pid,
 						from_unit.position if from_unit != null else to_pos,
 					)
-					(pushes[pid] as Array).append([from_pos, to_pos])
-					current_positions[pid] = to_pos
-					## Voluntary displacement (SWAP has no pusher) — extend voluntary route so
-					## follow-up pre-move arrows anchor on projected stand, not turn-start.
+					## Voluntary displacement (SWAP): extend route only — not orange push arrows.
 					if not enemy_phase and not d.has("pusher") and paths.has(pid):
 						var route: Array = paths[pid]
 						if route.is_empty():
@@ -377,6 +392,10 @@ static func build_preview_paths(
 						if tail is Vector2i and (tail as Vector2i) != to_pos:
 							route.append(to_pos)
 							splits[pid] = int(splits[pid]) + 1
+						current_positions[pid] = to_pos
+						continue
+					(pushes[pid] as Array).append([from_pos, to_pos])
+					current_positions[pid] = to_pos
 
 
 func get_predicted_hp(unit_id: int, current: int) -> int:
