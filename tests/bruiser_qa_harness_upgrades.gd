@@ -58,13 +58,47 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 		&"bruiser_charge_strike",
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
-	H.set_tile_terrain(board, Vector2i(2, 3), &"cracked")
-	H.place_bruiser(board, 1, Vector2i(1, 3), cfg)
+	H.set_tile_terrain(board, Vector2i(3, 3), &"tall_grass")
+	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
-	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_charge_strike")
-	H.assert_true(
-		failures, "charge_strike/upgrade/ghost_runtime",
-		skill.upgraded_effects[0].modifiers.has("ghost_move"),
+	var bruiser: UnitState = H.unit_on_board(board, 1)
+	var hp: int = H.unit_hp(board, 2)
+	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_charge_strike")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var dmg_cracked: int = hp - H.unit_hp(result.final_state, 2)
+	var board_plain: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(board_plain, 10, Vector2i(2, 3), cfg)
+	H.place_dummy(board_plain, 11, Vector2i(4, 3))
+	var hp_plain: int = H.unit_hp(board_plain, 11)
+	var plain_skill: AbilityData = H.ability_on_unit(H.unit_on_board(board_plain, 10), &"bruiser_charge_strike")
+	var plain_plan := Timeline.new()
+	plain_plan.add(H.plan_ability(10, plain_skill, Vector2i(4, 3), 11))
+	var plain_result: SimResult = H.simulate_plan(board_plain, plain_plan)
+	var dmg_plain: int = hp_plain - H.unit_hp(plain_result.final_state, 11)
+	var base_power: int = ab.upgraded_effects[1].amount
+	var expected_delta: int = (
+		CombatSystem.calculate_scaled_damage(bruiser, base_power + 2, GameEnums.StatType.PHYSICAL, board)
+		- CombatSystem.calculate_scaled_damage(bruiser, base_power, GameEnums.StatType.PHYSICAL, board)
+	)
+	H.assert_eq_int(
+		failures, "charge_strike/upgrade/terrain_dmg",
+		dmg_cracked - dmg_plain,
+		expected_delta,
+	)
+	var ghost_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(ghost_board, 20, Vector2i(2, 3), cfg)
+	H.place_dummy(ghost_board, 21, Vector2i(3, 3))
+	H.place_dummy(ghost_board, 22, Vector2i(4, 3))
+	var ghost_skill: AbilityData = H.ability_on_unit(H.unit_on_board(ghost_board, 20), &"bruiser_charge_strike")
+	var ghost_plan := Timeline.new()
+	ghost_plan.add(H.plan_ability(20, ghost_skill, Vector2i(4, 3), 22))
+	var ghost_result: SimResult = H.simulate_plan(ghost_board, ghost_plan)
+	H.assert_eq_cell(
+		failures, "charge_strike/upgrade/ghost_path",
+		ghost_result.final_state.get_unit_by_id(20).position,
+		Vector2i(4, 3),
 	)
 
 
@@ -220,14 +254,22 @@ static func run_earthshatter_upgrade(failures: Array[String]) -> void:
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	var construct_def: UnitData = DataLibrary.get_unit(&"construct_turret")
 	H.place_unit(board, 11, construct_def, GameEnums.Team.ENEMY, Vector2i(4, 4), {})
-	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_earthshatter")
+	var bruiser_before: UnitState = H.unit_on_board(board, 1)
+	var str_before: int = CombatSystem.get_dynamic_strength(board, bruiser_before)
+	var skill: AbilityData = H.ability_on_unit(bruiser_before, &"bruiser_earthshatter")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 11))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var bruiser: UnitState = result.final_state.get_unit_by_id(1)
+	var construct_after: UnitState = result.final_state.get_unit_by_id(11)
+	H.assert_true(
+		failures, "earthshatter/upgrade/destroyed",
+		construct_after == null or not construct_after.is_alive(),
+	)
+	var str_after: int = CombatSystem.get_dynamic_strength(result.final_state, bruiser)
 	H.assert_eq_int(
 		failures, "earthshatter/upgrade/str_buff",
-		H.status_value(bruiser, GameEnums.StatusType.STAT_BUFF_STR),
+		str_after - str_before,
 		1,
 	)
 
@@ -377,6 +419,24 @@ static func run_violent_collision_upgrade(failures: Array[String]) -> void:
 		failures, "violent_collision/upgrade/stagger_mod",
 		ab.upgraded_effects[0].modifiers.has("stagger_on_collision"),
 	)
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.bruiser_with_ability(&"bruiser_violent_collision"),
+		&"bruiser_violent_collision",
+	)
+	cfg["passive_flags"] = {"training_unlimited_actions": true}
+	var board: BoardState = H.make_plain_board(Vector2i(8, 6), [Vector2i(4, 3)])
+	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_violent_collision")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), -1))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var victim: UnitState = result.final_state.get_unit_by_id(2)
+	H.assert_true(
+		failures, "violent_collision/upgrade/stagger",
+		victim != null and H.has_status(victim, GameEnums.StatusType.STAGGER),
+		"upgraded dash collision must STAGGER the bulldozed enemy",
+	)
 
 
 static func run_breaching_dash_upgrade(failures: Array[String]) -> void:
@@ -402,7 +462,7 @@ static func run_breaching_dash_upgrade(failures: Array[String]) -> void:
 
 
 static func run_momentum_of_titan_upgrade(failures: Array[String]) -> void:
-	var board: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(5, 3)])
+	var board: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(4, 3)])
 	var cfg: Dictionary = H.with_upgraded_passive(
 		H.with_single_passive(&"momentum_of_titan", false),
 		&"momentum_of_titan",
@@ -410,14 +470,13 @@ static func run_momentum_of_titan_upgrade(failures: Array[String]) -> void:
 	cfg["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
 	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(3, 3))
+	var enemy_up: UnitState = H.unit_on_board(board, 2)
+	enemy_up.health.max_hp = 300
+	enemy_up.health.current_hp = 300
+	enemy_up._recalculate_stats()
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	var bonus_up: int = floori(bruiser.health.max_hp * 0.20)
-	var board_base: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(5, 3)])
-	var cfg_base: Dictionary = H.with_single_passive(&"momentum_of_titan", false)
-	cfg_base["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
-	H.place_bruiser(board_base, 10, Vector2i(2, 3), cfg_base)
-	var bruiser_base: UnitState = H.unit_on_board(board_base, 10)
-	var bonus_base: int = floori(bruiser_base.health.max_hp * 0.10)
+	var bonus_base: int = floori(bruiser.health.max_hp * 0.10)
 	H.assert_true(failures, "momentum_of_titan/upgrade/pct", bonus_up > bonus_base)
 	var hp: int = H.unit_hp(board, 2)
 	var ab: AbilityData = H.ability_on_unit(bruiser, &"bruiser_concussion_blow")
@@ -425,9 +484,15 @@ static func run_momentum_of_titan_upgrade(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, ab, Vector2i(3, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var dmg_up: int = hp - H.unit_hp(result.final_state, 2)
-	var board_base: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(5, 3)])
+	var cfg_base: Dictionary = H.with_single_passive(&"momentum_of_titan", false)
+	cfg_base["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
+	var board_base: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(4, 3)])
 	H.place_bruiser(board_base, 10, Vector2i(2, 3), cfg_base)
 	H.place_dummy(board_base, 11, Vector2i(3, 3))
+	var enemy_base: UnitState = H.unit_on_board(board_base, 11)
+	enemy_base.health.max_hp = 300
+	enemy_base.health.current_hp = 300
+	enemy_base._recalculate_stats()
 	var hp_base: int = H.unit_hp(board_base, 11)
 	var plan_base := Timeline.new()
 	plan_base.add(H.plan_ability(10, H.ability_on_unit(H.unit_on_board(board_base, 10), &"bruiser_concussion_blow"), Vector2i(3, 3), 11))
@@ -804,7 +869,7 @@ static func run_crowd_breaker_upgrade(failures: Array[String]) -> void:
 	cfg["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
-	H.place_dummy(board, 3, Vector2i(5, 3))
+	H.place_dummy(board, 3, Vector2i(4, 4))
 	var hp_splash: int = H.unit_hp(board, 3)
 	var ab: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_concussion_blow")
 	var plan := Timeline.new()
@@ -816,7 +881,7 @@ static func run_crowd_breaker_upgrade(failures: Array[String]) -> void:
 	cfg2["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
 	H.place_bruiser(board2, 10, Vector2i(3, 3), cfg2)
 	H.place_dummy(board2, 11, Vector2i(4, 3))
-	H.place_dummy(board2, 12, Vector2i(5, 3))
+	H.place_dummy(board2, 12, Vector2i(4, 4))
 	var hp2: int = H.unit_hp(board2, 12)
 	var plan2 := Timeline.new()
 	plan2.add(H.plan_ability(10, H.ability_on_unit(H.unit_on_board(board2, 10), &"bruiser_concussion_blow"), Vector2i(4, 3), 11))

@@ -1,6 +1,6 @@
 # Bruiser template (P6 — first class rollout)
 
-**Status:** `DRAFT` *(B6-LOCK gauntlet setup — **0/31** matrix · gate infrastructure on disk)*  
+**Status:** `LOCKED` *(B6-LOCK closed Round 15 — 31/31 matrix PASS, gate exit 0, meta-critic 96)*  
 **Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) *(ACTIVE — B6-LOCK)* · **Run card:** [`runs/B6-LOCK.md`](runs/B6-LOCK.md)  
 **Pillar ID:** P6 (first class — clones P3)  
 **Authority chain:** `class_abilities.txt` § Bruiser · `docs/BRUISER_QA_GATE.md` · `core/factory/classes/bruiser_factory.gd` · `docs/design/knight-template.md` (P3 LOCKED)

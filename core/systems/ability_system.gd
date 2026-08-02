@@ -35,7 +35,10 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
 			return false
 		dist = PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
-	if dist > actor.get_ability_range(ability):
+	var max_range: int = actor.get_ability_range(ability)
+	if ability_has_dash(ability):
+		max_range = maxi(max_range, dash_steps(ability))
+	if dist > max_range:
 		return false
 	if dist == 0 and actor.get_ability_range(ability) > 0 and not can_target_self(actor, ability):
 		return false
@@ -334,8 +337,9 @@ static func ability_has_swap_effect(ability: AbilityData) -> bool:
 
 
 static func has_pass_through_effects(ability: AbilityData) -> bool:
-	return effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0 \
-		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
+	if ability == null:
+		return false
+	return has_pass_through_effects_from(ability.effects)
 
 
 static func has_displacement_effects(ability: AbilityData) -> bool:
@@ -443,6 +447,11 @@ static func pass_through_modifiers_from(effects: Array) -> Dictionary:
 			bulldoze = eff.amount
 		elif eff.type == GameEnums.EffectType.PUSH:
 			push = eff.amount
+		elif eff.type == GameEnums.EffectType.DASH:
+			if eff.modifiers.has("bulldoze"):
+				bulldoze = int(eff.modifiers["bulldoze"])
+			if eff.modifiers.has("push"):
+				push = int(eff.modifiers["push"])
 	return {"trample_atk": trample_atk, "bulldoze": bulldoze, "push": push}
 
 
@@ -923,6 +932,12 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		if eff.modifiers.has("frenzy_on_kill_ap"):
 			actor.passive_flags["frenzy_on_kill_ap"] = true
 
+	if buff_per_object:
+		for tile_coord in affected_tiles:
+			var construct_unit := board.get_unit_at(tile_coord)
+			if construct_unit != null and construct_unit.definition.is_construct:
+				objects_destroyed_count += 1
+
 	for effect in effects_to_apply:
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
 			_apply_effect_to_tile(board, actor, action, effect, events, target_coord, board.get_unit_at(target_coord))
@@ -970,11 +985,13 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			
 		for tile_coord in affected_tiles:
 			var target_unit := board.get_unit_at(tile_coord)
+			if action.target_unit_id >= 0:
+				var pinned_target := board.get_unit_by_id(action.target_unit_id)
+				if pinned_target != null and pinned_target.position == tile_coord:
+					target_unit = pinned_target
 			
 			if effect.type == GameEnums.EffectType.DAMAGE and target_unit != null and target_unit != actor and target_unit.is_alive() and heal_per_target_hit:
 				targets_hit_count += 1
-			if effect.type == GameEnums.EffectType.DESTROY_OBSTACLE and target_unit != null and target_unit.definition.is_construct and buff_per_object:
-				objects_destroyed_count += 1
 				
 			_apply_effect_to_tile(board, actor, action, effect, events, tile_coord, target_unit)
 			

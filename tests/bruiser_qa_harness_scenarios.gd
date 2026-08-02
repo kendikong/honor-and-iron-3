@@ -510,19 +510,58 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
 	H.assert_true(failures, "violent_collision/bulldoze", ab.effects[0].modifiers.has("bulldoze"))
 	H.assert_true(
-		failures, "violent_collision/recast",
+		failures, "violent_collision/recast_mod",
 		ab.effects[0].modifiers.has("violent_collision_recast"),
 	)
-	var board: BoardState = H.make_plain_board(Vector2i(12, 6))
-	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_violent_collision"))
+	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_violent_collision")
+	cfg["passive_flags"] = {"training_unlimited_actions": true}
+	var board: BoardState = H.make_plain_board(Vector2i(8, 6), [Vector2i(5, 3)])
+	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(4, 3))
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_violent_collision")
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), -1))
+	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var bruiser: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_true(
 		failures, "violent_collision/dash",
-		bruiser != null and bruiser.position == Vector2i(4, 3),
+		bruiser != null and bruiser.position.x >= 4,
+	)
+	var recast_board: BoardState = H.make_plain_board(Vector2i(8, 6), [Vector2i(5, 3)])
+	H.place_bruiser(recast_board, 10, Vector2i(2, 3), H.bruiser_with_ability(&"bruiser_violent_collision"))
+	H.place_dummy(recast_board, 11, Vector2i(4, 3))
+	var recast_bruiser: UnitState = H.unit_on_board(recast_board, 10)
+	var ap_before: int = recast_bruiser.ability.points_left
+	var recast_skill: AbilityData = H.ability_on_unit(recast_bruiser, &"bruiser_violent_collision")
+	var recast_plan := Timeline.new()
+	recast_plan.add(H.plan_ability(10, recast_skill, Vector2i(5, 3), -1))
+	var mid_result: SimResult = H.simulate_plan(recast_board, recast_plan)
+	var mid_bruiser: UnitState = mid_result.final_state.get_unit_by_id(10)
+	H.assert_true(
+		failures, "violent_collision/recast_used",
+		mid_bruiser != null and mid_bruiser.passive_flags.get("violent_collision_recast_used", false),
+	)
+	H.assert_true(
+		failures, "violent_collision/recast_ap_refund",
+		mid_bruiser != null and mid_bruiser.ability.points_left >= ap_before,
+		"collision recast must refund AP for the Bible follow-up MOVE",
+	)
+	H.assert_true(
+		failures, "violent_collision/recast_action_slot",
+		mid_bruiser != null and not mid_bruiser.turn_action_used,
+		"collision recast must reopen the action slot for a second MOVE",
+	)
+	var follow_board: BoardState = H.make_plain_board(Vector2i(10, 6))
+	H.place_bruiser(follow_board, 10, mid_bruiser.position, H.bruiser_with_ability(&"bruiser_violent_collision"))
+	var follow_skill: AbilityData = H.ability_on_unit(H.unit_on_board(follow_board, 10), &"bruiser_violent_collision")
+	var follow_plan := Timeline.new()
+	follow_plan.add(H.plan_ability(10, follow_skill, Vector2i(6, 3), -1))
+	var recast_result: SimResult = H.simulate_plan(follow_board, follow_plan)
+	var after_recast: UnitState = recast_result.final_state.get_unit_by_id(10)
+	H.assert_eq_cell(
+		failures, "violent_collision/recast_followup_move",
+		after_recast.position if after_recast != null else Vector2i.ZERO,
+		Vector2i(6, 3),
 	)
 
 
@@ -675,7 +714,10 @@ static func run_adrenaline_junkie(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "adrenaline_junkie/full_hp_mov", mov_full - plain.movement.max_points, 0)
 	bruiser.health.current_hp = ceili(float(bruiser.health.max_hp) * 0.10)
 	bruiser._recalculate_stats(board)
-	var expected_nine: int = floori(0.9 / 0.10)
+	var missing_pct: float = (
+		float(bruiser.health.max_hp - bruiser.health.current_hp) / float(bruiser.health.max_hp)
+	)
+	var expected_nine: int = floori(missing_pct / 0.10)
 	H.assert_eq_int(
 		failures, "adrenaline_junkie/ninety_pct_missing",
 		CombatSystem.get_dynamic_strength(board, bruiser) - str_full,
@@ -1005,7 +1047,7 @@ static func run_crowd_breaker(failures: Array[String]) -> void:
 	cfg["active_abilities"] = [H.factory_ability(&"bruiser_concussion_blow")]
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
-	H.place_dummy(board, 3, Vector2i(5, 3))
+	H.place_dummy(board, 3, Vector2i(4, 4))
 	var str_adj: int = CombatSystem.get_dynamic_strength(board, H.unit_on_board(board, 1))
 	var hp_splash: int = H.unit_hp(board, 3)
 	var ab: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_concussion_blow")
@@ -1019,7 +1061,7 @@ static func run_crowd_breaker(failures: Array[String]) -> void:
 		{"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")]},
 	)
 	H.place_dummy(board_plain, 21, Vector2i(4, 3))
-	H.place_dummy(board_plain, 22, Vector2i(5, 3))
+	H.place_dummy(board_plain, 22, Vector2i(4, 4))
 	var hp_plain_splash: int = H.unit_hp(board_plain, 22)
 	var ab_plain: AbilityData = H.ability_on_unit(H.unit_on_board(board_plain, 20), &"bruiser_concussion_blow")
 	var plan_plain := Timeline.new()

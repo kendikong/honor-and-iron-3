@@ -164,6 +164,13 @@ static func resolve_pass_through_tile(
 		return false
 	if trample_hit_ids.has(occupant.id):
 		return true
+	if mover.has_status(GameEnums.StatusType.GHOST):
+		if occupant != null and occupant.team != mover.team:
+			if not is_final_step:
+				trampled_restore[tile] = occupant.id
+				GridSystem.set_occupant(board, tile, -1)
+			return true
+		return true
 	if bulldoze > 0:
 		trample_hit_ids[occupant.id] = true
 		var push_dir := move_dir

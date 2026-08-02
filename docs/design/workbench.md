@@ -9,12 +9,11 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK │ batch upgrade harness │ Round 3
-SCORE: n/a (batch) │ THRESHOLD: 88/row │ IN PROGRESS
-GATE: Tier 1 harness PASS (31/31 scenarios + [+] upgrades)
-MATRIX: 1/31 PASS (bruiser_push_through manifest approved)
-STOP_CONDITION_MET: no
-NEXT: per-row gauntlet-critic r2+ on remaining 30 rows → promote ≥88 → full-matrix ≥95
+GAUNTLET SCORE │ B6-LOCK │ Round 15
+SCORE: 96/100 │ THRESHOLD: 95 │ PASS
+GATE: Tier 1 harness PASS (qa_bruiser_gate_round15c.txt)
+MATRIX: 31/31 PASS
+STOP_CONDITION_MET: yes
 ══════════════════════════════════════
 ```
 

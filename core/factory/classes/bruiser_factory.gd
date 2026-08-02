@@ -51,7 +51,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.passives.append(DataLibrary._make_passive(&"unstoppable_force", "Unstoppable Force", "Immune to STAGGER/ROOT. Resisting grants SHIELD 1.", "[+] Resisting grants SHIELD 2."))
 	
 	# Actives
-	var charge_strike = DataLibrary._make_ability(&"bruiser_charge_strike", "Charge Strike", 1, [
+	var charge_strike = DataLibrary._make_ability(&"bruiser_charge_strike", "Charge Strike", 2, [
 		DataLibrary._effect(GameEnums.EffectType.MOVE, 2),
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3),
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)

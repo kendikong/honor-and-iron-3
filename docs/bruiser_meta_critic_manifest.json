@@ -1,10 +1,10 @@
 {
   "piece": "B6-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 10,
-  "last_score": 90,
+  "last_critic_round": 15,
+  "last_score": 96,
   "last_result": "PASS",
-  "last_row_promoted": "colossal_mass",
+  "last_row_promoted": "bruiser_violent_collision",
   "approved_rows": [
     {
       "factory_id": "bruiser_push_through",
@@ -124,6 +124,72 @@
       "factory_id": "bruiser_meat_shield",
       "score": 89,
       "critic_round": 10,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "adrenaline_junkie",
+      "score": 89,
+      "critic_round": 11,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "thrill_of_pain",
+      "score": 89,
+      "critic_round": 11,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "momentum_of_titan",
+      "score": 89,
+      "critic_round": 11,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "crowd_breaker",
+      "score": 89,
+      "critic_round": 11,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_blood_boil",
+      "score": 88,
+      "critic_round": 11,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_earthshatter",
+      "score": 90,
+      "critic_round": 11,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_charge_strike",
+      "score": 93,
+      "critic_round": 15,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_violent_collision",
+      "score": 93,
+      "critic_round": 15,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_crimson_whirlwind",
+      "score": 88,
+      "critic_round": 11,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_belly_flop",
+      "score": 88,
+      "critic_round": 11,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_breaching_dash",
+      "score": 88,
+      "critic_round": 11,
       "fix_target": "none"
     }
   ]
