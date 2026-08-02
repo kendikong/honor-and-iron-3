@@ -38,4 +38,4 @@ Re-earn Bruiser LOCK: **31/31** matrix rows `PASS` only after **fresh per-row `g
 3. Cloud lead spawns **gauntlet-critic** Task on that VM (separate critic — not self-grade).
 4. Owner merges Cloud PR → local `.\scripts\sync_local_remote.ps1 -Mode Pull`.
 
-**Current:** 25/31 PASS · remaining: `bruiser_guttural_roar`, `bruiser_crimson_whirlwind`, `blood_for_blood`, `momentum_transfer`, `battering_ram`, `unstoppable_force`.
+**Current:** 27/31 PASS · remaining: `blood_for_blood`, `momentum_transfer`, `battering_ram`, `unstoppable_force`.

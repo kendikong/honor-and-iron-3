@@ -183,7 +183,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	violent_collision.upgraded_effects[0].modifiers["stagger_on_collision"] = 1
 	def.abilities.append(violent_collision)
 
-	var crimson_whirlwind = DataLibrary._make_ability(&"bruiser_crimson_whirlwind", "Crimson Whirlwind", 1, [
+	var crimson_whirlwind = DataLibrary._make_ability(&"bruiser_crimson_whirlwind", "Crimson Whirlwind", 0, [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
 	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.AOE_SQUARE, 1)
 	crimson_whirlwind.upgrade_description = "HEAL 1 for every target successfully hit."

@@ -737,7 +737,7 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 	H.place_dummy(board, 3, Vector2i(3, 4))
 	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_crimson_whirlwind")
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var heal_gain: int = H.unit_hp(result.final_state, 1) - hp
 	H.assert_true(

@@ -2,11 +2,11 @@
   "piece": "B6-REOPEN",
   "pass_threshold": 95,
   "per_row_threshold": 88,
-  "last_critic_round": 2,
-  "last_score": 89,
+  "last_critic_round": 1,
+  "last_score": 90,
   "last_result": "PASS",
-  "last_row_promoted": "bruiser_guttural_roar",
-  "notes": "B6-REOPEN per-row gauntlet-critic. 26/31 promoted. Remaining HARNESS_ONLY: crimson_whirlwind, blood_for_blood, momentum_transfer, battering_ram, unstoppable_force.",
+  "last_row_promoted": "bruiser_crimson_whirlwind",
+  "notes": "B6-REOPEN. 27/31 promoted. Remaining: blood_for_blood, momentum_transfer, battering_ram, unstoppable_force.",
   "approved_rows": [
     {
       "factory_id": "bruiser_push_through",
@@ -162,6 +162,12 @@
       "factory_id": "bruiser_guttural_roar",
       "score": 89,
       "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bruiser_crimson_whirlwind",
+      "score": 90,
+      "critic_round": 1,
       "fix_target": "none"
     }
   ]

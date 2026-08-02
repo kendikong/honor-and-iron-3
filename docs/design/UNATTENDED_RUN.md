@@ -34,10 +34,10 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 
 | Metric | Value |
 |--------|-------|
-| Matrix PASS | **26 / 31** |
-| HARNESS_ONLY | **5** (deepened; await fresh critic) |
-| Manifest approved | **26** rows |
-| Remaining | crimson_whirlwind, blood_for_blood, momentum_transfer, battering_ram, unstoppable_force |
+| Matrix PASS | **27 / 31** |
+| HARNESS_ONLY | **4** (deepened; await fresh critic) |
+| Manifest approved | **27** rows |
+| Remaining | blood_for_blood, momentum_transfer, battering_ram, unstoppable_force |
 | Tier 1 harness | must stay **PASS** |
 | Cloud handoff | [`LOCAL_CLOUD_SYNC.md`](LOCAL_CLOUD_SYNC.md) · [`prompts/B6-REOPEN-CLOUD.md`](prompts/B6-REOPEN-CLOUD.md) |
 
