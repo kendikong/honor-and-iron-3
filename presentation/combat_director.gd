@@ -888,9 +888,18 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 		target_plans[i].add(actions[i])
 		if actions[i].type == GameEnums.ActionType.MOVE and not _autobattler_plan_batch:
 			_commit_animate_actor_ids[actions[i].actor_id] = true
-		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null \
-				and actions[i].ability.is_movement_kind():
-			_cancel_ally_plans_after_movement_step(actions[i])
+		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null:
+			if actions[i].ability.is_movement_kind():
+				_cancel_ally_plans_after_movement_step(actions[i])
+			var commit_actor: UnitState = base_board.get_unit_by_id(actions[i].actor_id)
+			if AbilitySystem.effect_amount(
+				actions[i].ability, GameEnums.EffectType.SWAP, commit_actor,
+			) > 0:
+				mark_planning_move_instant(actions[i].actor_id)
+				if actions[i].target_unit_id >= 0:
+					mark_planning_move_instant(actions[i].target_unit_id)
+					if actions[i].target_unit_id not in plan_affected_unit_ids:
+						plan_affected_unit_ids.append(actions[i].target_unit_id)
 	for actor_id: int in new_actors:
 		if actor_id not in plan_affected_unit_ids:
 			plan_affected_unit_ids.append(actor_id)
@@ -2289,8 +2298,9 @@ func _refresh_plan_core() -> void:
 	projected_state = base_board.clone()
 	var evs: Array[SimEvent] = []
 	Simulator.simulate_player_turn(projected_state, plan_to_run, evs)
-		
-	board = move_only
+
+	# Premoves (walk + movement skills like Swap) apply immediately in projected_state.
+	board = projected_state.clone()
 	var new_intents := EnemyPlanner.plan(projected_state)
 	base_board.intents = new_intents
 	board.intents = new_intents
@@ -2304,14 +2314,8 @@ func _refresh_plan_core() -> void:
 	plan_revision += 1
 	sync_selected_ability_if_invalid()
 
-	var preview_board: BoardState
-	var ghost_evs: Array[SimEvent]
-	if _plan_is_movement_only(plan_to_run):
-		preview_board = projected_state.clone()
-		ghost_evs = _build_enemy_ghost_events(preview_board, new_intents)
-	else:
-		preview_board = base_board.clone()
-		ghost_evs = _build_ghost_events(preview_board, plan_to_run, new_intents)
+	var preview_board: BoardState = projected_state.clone()
+	var ghost_evs: Array[SimEvent] = _build_enemy_ghost_events(preview_board, new_intents)
 
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
