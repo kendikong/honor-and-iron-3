@@ -9,8 +9,7 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-LOCK full matrix │ Round 20
-SELF-GRADE: no (gauntlet-critic subagent)
+GAUNTLET SCORE │ B6-LOCK full matrix │ Round 20 │ not self-grade (subagent)
 SCORE: 95/100 │ THRESHOLD: 95 │ PASS
 DELTA: +1 vs r19 (94 FAIL)
 GATE: canonical PASS (qa_bruiser_gate_canonical.txt 31/31)

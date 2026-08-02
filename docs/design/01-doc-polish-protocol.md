@@ -37,14 +37,13 @@ Critic **first output line** and lead **first line** after every pass must match
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ [piece-id] │ Critic pass Cn
-SELF-GRADE: no (gauntlet-critic subagent)
+GAUNTLET SCORE │ [piece-id] │ Critic pass Cn │ not self-grade (subagent)
 SCORE: x/100 │ THRESHOLD: y │ PASS|FAIL │ CLIMBING|STALLED|SLIPPED
 DELTA: +N vs C(n-1) (was z)
 ══════════════════════════════════════
 ```
 
-If the lead posts a score **without** spawning the critic subagent, banner must say **`SELF-GRADE: yes (INVALID)`** — that score cannot satisfy PASS or LOCK (Rule 4).
+If the lead posts a score **without** spawning the critic subagent, the GAUNTLET SCORE line must say **`self-grade (INVALID)`** — that score cannot satisfy PASS or LOCK (Rule 4).
 
 **Hint legend:** `CLIMBING` (Δ ≥ +3) · `STALLED` (|Δ| ≤ 2) · `SLIPPED` (Δ ≤ −3) · `FIRST` (no prior pass).
 

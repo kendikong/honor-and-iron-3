@@ -137,7 +137,7 @@ Each tick:
 1. Fix largest gap within ALLOWED_PATHS (1–2 PLANNED rows)
 2. Run .\scripts\run_bruiser_qa_gate.ps1
 3. Spawn separate readonly gauntlet-critic subagent (never self-grade)
-4. First line of your reply = score banner with DELTA vs prior round and **`SELF-GRADE: no | yes (INVALID)`**
+4. First line of your reply = score banner with DELTA vs prior round; GAUNTLET SCORE line states **`not self-grade (subagent)`** or **`self-grade (INVALID)`**
 5. Update workbench.md (ticker, score progression, STOP_CONDITION_MET)
 6. Commit if you changed files (auto-commit-absolute.mdc)
 
