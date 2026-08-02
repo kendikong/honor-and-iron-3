@@ -1154,6 +1154,8 @@ func _sync_planning_actor_positions() -> void:
 
 
 func _sync_planning_unit_position(unit: UnitState) -> void:
+	if is_planning_commit_sequence_active():
+		return
 	var target: Vector2i = unit.position
 	var current_cell: Vector2i = _actor_grid_cell(unit.id)
 	if current_cell == target:
@@ -1246,24 +1248,15 @@ func _animate_planning_commit_move(event: SimEvent) -> void:
 	var unit_id: int = int(event.data.get("actor", -1))
 	if unit_id < 0:
 		return
+	if not event.data.get("to") is Vector2i:
+		return
 	var from_cell: Vector2i = _actor_grid_cell(unit_id)
 	if from_cell.x <= -900 and event.data.get("from") is Vector2i:
 		from_cell = event.data["from"]
-	var to_cell: Vector2i = from_cell
-	if event.data.get("to") is Vector2i:
-		to_cell = event.data["to"]
-	elif _director != null and _director.board != null:
-		var live := _director.board.get_unit_by_id(unit_id)
-		if live != null:
-			to_cell = live.position
+	var to_cell: Vector2i = event.data["to"]
 	if from_cell == to_cell:
 		return
-	var full_path: Array = event.data.get("path", [])
-	var steps: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
-		full_path, from_cell, to_cell,
-	)
-	if steps.is_empty() and to_cell != from_cell:
-		steps = [to_cell]
+	var steps: Array[Vector2i] = _planning_commit_walk_steps(from_cell, event)
 	if steps.is_empty():
 		return
 	var use_run: bool = (
@@ -1272,6 +1265,36 @@ func _animate_planning_commit_move(event: SimEvent) -> void:
 		== GameEnums.PresentationAnim.RUN
 	)
 	_play_cell_path_tween(unit_id, from_cell, steps, CombatDirector.MOVE_STEP_TIME, use_run)
+
+
+func _planning_commit_walk_steps(from_cell: Vector2i, event: SimEvent) -> Array[Vector2i]:
+	if not event.data.get("to") is Vector2i:
+		return []
+	var to_cell: Vector2i = event.data["to"]
+	if from_cell == to_cell:
+		return []
+	var full_path: Array = event.data.get("path", [])
+	var steps: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
+		full_path, from_cell, to_cell,
+	)
+	if steps.is_empty() and full_path.size() >= 2:
+		var start_i: int = -1
+		var end_i: int = -1
+		for i: int in range(full_path.size()):
+			if not full_path[i] is Vector2i:
+				continue
+			var cell: Vector2i = full_path[i] as Vector2i
+			if cell == from_cell:
+				start_i = i
+			if cell == to_cell:
+				end_i = i
+		if start_i >= 0 and end_i > start_i:
+			for i: int in range(start_i + 1, end_i + 1):
+				if full_path[i] is Vector2i:
+					steps.append(full_path[i] as Vector2i)
+	if steps.is_empty() and to_cell != from_cell:
+		steps = [to_cell]
+	return steps
 
 
 func _snap_actor_rubberband(unit_id: int, grid_cell: Vector2i) -> void:
@@ -1338,6 +1361,8 @@ func _unit_uses_run_anim(unit_id: int) -> bool:
 
 func _resolve_planning_path_cells(from_cell: Vector2i, to_cell: Vector2i, unit: UnitState) -> Array[Vector2i]:
 	if unit == null:
+		return []
+	if _planning_commit_sequence_running:
 		return []
 	if _director != null:
 		var skill_wps: Array[Vector2i] = _director.get_planned_skill_walk_waypoints(unit.id, to_cell)
