@@ -770,13 +770,13 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 	if has_pre_move:
 		if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 			return false
-		_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+		_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 	if has_action:
 		if _try_finalize_awaiting_from_slots(unit_id, slots):
 			if has_pre_move:
 				if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 					return false
-				_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+				_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 				for raw: Variant in slots.get("pre", []):
 					if raw is TimelineAction:
 						_try_add(raw as TimelineAction, plan_pre_move)
@@ -806,6 +806,9 @@ func _slot_plan_for_action(action: TimelineAction) -> Timeline:
 		if action.move_timing == GameEnums.MoveTiming.POST_ACTION:
 			return plan_post_move
 		return plan_pre_move
+	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
+		if action.ability.is_movement_kind():
+			return plan_pre_move
 	return plan_action
 
 
@@ -842,6 +845,18 @@ func _clear_unit_from_plans(unit_id: int, from_timing: int) -> void:
 		var kept_2: Array[TimelineAction] = []
 		for a in plan_post_move.entries: if a.actor_id != unit_id: kept_2.append(a)
 		plan_post_move.entries = kept_2
+
+
+func _clear_unit_moves_from_plan_at_timing(unit_id: int, timing: int) -> void:
+	var plan: Timeline = (
+		plan_post_move if timing == GameEnums.MoveTiming.POST_ACTION else plan_pre_move
+	)
+	var kept: Array[TimelineAction] = []
+	for action: TimelineAction in plan.entries:
+		if action.actor_id == unit_id and action.type == GameEnums.ActionType.MOVE:
+			continue
+		kept.append(action)
+	plan.entries = kept
 
 func _try_add(action: TimelineAction, target_plan: Timeline) -> void:
 	_try_add_multiple([action], [target_plan])

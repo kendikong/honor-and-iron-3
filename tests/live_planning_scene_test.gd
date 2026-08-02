@@ -9,8 +9,11 @@ const _SHIELD_BASH_ID: StringName = &"knight_shield_bash"
 const _CHAIN_HOOK_ID: StringName = &"knight_chain_hook"
 const _TRAMPLE_ID: StringName = &"knight_trampling_advance"
 const _BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
+const _SWAP_ID: StringName = &"knight_swap"
 
 const _K1_CELL := Vector2i(4, 5)
+const _SWAP_ALLY_CELL := Vector2i(4, 4)
+const _SWAP_PREMOVE_DEST := Vector2i(5, 4)
 const _K2_CELL := Vector2i(1, 3)
 const _K3_CELL := Vector2i(5, 4)
 const _K4_CELL := Vector2i(4, 1)
@@ -76,6 +79,8 @@ func _wants_trace_png(label: String) -> bool:
 		return true
 	if label.ends_with("after_commit") or label.ends_with("/post_commit"):
 		return true
+	if label.begins_with("swap/"):
+		return true
 	return false
 
 
@@ -93,6 +98,17 @@ func test_live_planning_bible_multi_knight_session(timeout := 180000) -> void:
 	await _journey_knight4_run_economy(ctx)
 	await _journey_execute_all_plans(ctx)
 	_write_planning_trace(ctx)
+
+
+func test_live_swap_then_premove(timeout := 90000) -> void:
+	## Swap premove applies immediately; follow-up walk premove must layer on projected state.
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	_ensure_live_test_window(runner)
+	await runner.simulate_frames(8)
+	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
+	assert_object(scene).is_not_null()
+	var ctx: Dictionary = await _boot_swap_ally_session(runner, scene)
+	await _journey_swap_then_premove(ctx)
 
 
 func _ensure_live_test_window(runner: GdUnitSceneRunner) -> void:
@@ -150,6 +166,103 @@ func _boot_multi_knight_session(runner: GdUnitSceneRunner, scene: TestBattleMapV
 	assert_int(ctx.e_bash_id).is_greater(0)
 	assert_int(ctx.e_hook_id).is_greater(0)
 	return ctx
+
+
+func _boot_swap_ally_session(runner: GdUnitSceneRunner, scene: TestBattleMapView) -> Dictionary:
+	var session: TestBattleSession = scene.get_session()
+	session.reset_defaults()
+	session.extra_player_coords = [_SWAP_ALLY_CELL]
+	session.dummy_coords = []
+	scene.apply_training_board()
+	if _qa_fast_enabled():
+		scene._center_map()
+	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
+	var shell: TacticalCombatShell = scene.get_node("CombatShell") as TacticalCombatShell
+	var director: CombatDirector = scene.get_node("CombatDirector") as CombatDirector
+	var overlay: TacticalPlanningOverlay = scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	director.auto_run = true
+	if _qa_fast_enabled():
+		scene.apply_qa_performance_mode(overlay)
+	var board: BoardState = director.board
+	assert_object(board).is_not_null()
+	var k1_id: int = _unit_id_at(board, _K1_CELL)
+	var ally_id: int = _unit_id_at(board, _SWAP_ALLY_CELL)
+	assert_int(k1_id).is_greater(0)
+	assert_int(ally_id).is_greater(0)
+	assert_int(k1_id).is_not_equal(ally_id)
+	var ctx: Dictionary = {
+		"runner": runner,
+		"scene": scene,
+		"shell": shell,
+		"director": director,
+		"input": shell.planning_input,
+		"overlay": overlay,
+		"board": board,
+		"k1_id": k1_id,
+		"ally_id": ally_id,
+		"start_k1_mp": director.turn_start_board.get_unit_by_id(k1_id).movement.points_left,
+		"trace": [],
+	}
+	return ctx
+
+
+func _journey_swap_then_premove(ctx: Dictionary) -> void:
+	var director: CombatDirector = ctx.director
+	var k1_id: int = ctx.k1_id
+	var ally_id: int = ctx.ally_id
+	var start_mp: int = int(ctx.start_k1_mp)
+	await _select_unit_live(ctx, k1_id, _K1_CELL)
+	var swap: AbilityData = await _select_ability_for_unit(ctx, k1_id, _SWAP_ID)
+	assert_object(swap).is_not_null()
+	await _probe_cell(ctx, k1_id, _SWAP_ALLY_CELL, {
+		"blue_any": true,
+		"ability": swap,
+		"manhattan": true,
+		"preview_nonempty": true,
+	}, "swap/hover_ally")
+	await _reposition_mouse_to_unit(ctx, k1_id, _SWAP_ALLY_CELL)
+	await _commit_via_slots_at_cell(ctx, k1_id, _SWAP_ALLY_CELL, "swap/commit")
+	assert_int(director.selected_unit_id).override_failure_message(
+		"swap/commit: must keep k1 selected after ally-target commit",
+	).is_equal(k1_id)
+	await _wait_ability_settle(ctx)
+	await _wait_planning_move_tween(ctx, k1_id)
+	await _wait_planning_move_tween(ctx, ally_id)
+	_assert_swap_premove_state_layers(ctx, "swap/after_swap", {
+		"k1_pos": _SWAP_ALLY_CELL,
+		"ally_pos": _K1_CELL,
+		"k1_mp": start_mp - 1,
+		"pre_move_count": 1,
+		"require_swap_first": true,
+	})
+	await _capture_commit_state(ctx, k1_id, "swap/after_swap/committed")
+	await _enter_basic_movement_mode(ctx, k1_id)
+	await _probe_cell(ctx, k1_id, _SWAP_PREMOVE_DEST, {
+		"blue_has": [_SWAP_PREMOVE_DEST],
+		"ghost_pos": _SWAP_PREMOVE_DEST,
+		"path_start": _K1_CELL,
+		"path_end": _SWAP_PREMOVE_DEST,
+		"path_min_size": 3,
+		"manhattan": true,
+		"preview_nonempty": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK],
+	}, "swap/premove/hover")
+	await _reposition_mouse_to_unit(ctx, k1_id, _SWAP_PREMOVE_DEST)
+	await _commit_via_slots_at_cell(ctx, k1_id, _SWAP_PREMOVE_DEST, "swap/premove/commit")
+	await _wait_ability_settle(ctx)
+	await _wait_planning_move_tween(ctx, k1_id)
+	_assert_swap_premove_state_layers(ctx, "swap/after_premove", {
+		"k1_pos": _SWAP_PREMOVE_DEST,
+		"ally_pos": _K1_CELL,
+		"k1_mp": start_mp - 2,
+		"pre_move_count": 2,
+		"require_swap_first": true,
+		"last_pre_dest": _SWAP_PREMOVE_DEST,
+	})
+	await _capture_commit_state(ctx, k1_id, "swap/after_premove/committed")
+	_cancel_active_pointer(ctx)
 
 
 func _journey_undo_sprite_smoke(ctx: Dictionary) -> void:
@@ -556,6 +669,32 @@ func _click_commit_at_cell(ctx: Dictionary, cell: Vector2i) -> void:
 	director.flush_plan_refresh_signals_if_pending()
 	input.clear_qa_pointer_override()
 	await ctx.runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
+
+
+func _commit_via_slots_at_cell(
+	ctx: Dictionary,
+	unit_id: int,
+	cell: Vector2i,
+	label: String,
+) -> void:
+	var input: CombatPlanningInput = ctx.input
+	var director: CombatDirector = ctx.director
+	input.set_qa_pointer_grid_cell(cell)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(cell)
+	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, cell, false)
+	assert_bool(_slots_invalid(pre_intent["slots"] as Dictionary)).override_failure_message(
+		"%s: commit slots must be valid before commit" % label,
+	).is_false()
+	input.call("_paint_intent_slots_before_commit", unit_id, pre_intent["slots"])
+	assert_bool(director.commit_from_slots(unit_id, pre_intent["slots"])).override_failure_message(
+		"%s: commit_from_slots must succeed" % label,
+	).is_true()
+	input.call("_promote_intent_preview_after_commit")
+	director.flush_plan_refresh_signals_if_pending()
+	input.clear_qa_pointer_override()
+	await _wait_ability_settle(ctx)
+	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, label)
 
 
 func _tap_cell(
@@ -1559,6 +1698,180 @@ func _committed_pre_move_for_unit(director: CombatDirector, unit_id: int) -> Tim
 	return null
 
 
+func _pre_moves_for_unit(director: CombatDirector, unit_id: int) -> Array[TimelineAction]:
+	var out: Array[TimelineAction] = []
+	for action: TimelineAction in director.plan_pre_move.entries:
+		if action != null and action.actor_id == unit_id:
+			out.append(action)
+	return out
+
+
+func _assert_swap_premove_state_layers(
+	ctx: Dictionary,
+	label: String,
+	expect: Dictionary,
+) -> void:
+	var director: CombatDirector = ctx.director
+	var input: CombatPlanningInput = ctx.input
+	var k1_id: int = ctx.k1_id
+	var ally_id: int = ctx.ally_id
+	var k1_pos: Vector2i = expect["k1_pos"] as Vector2i
+	var ally_pos: Vector2i = expect["ally_pos"] as Vector2i
+
+	var board_k1: UnitState = director.board.get_unit_by_id(k1_id)
+	var board_ally: UnitState = director.board.get_unit_by_id(ally_id)
+	assert_object(board_k1).override_failure_message(
+		"%s: k1 missing on live board" % label,
+	).is_not_null()
+	assert_object(board_ally).override_failure_message(
+		"%s: ally missing on live board" % label,
+	).is_not_null()
+	assert_that(board_k1.position).override_failure_message(
+		"%s: live board k1 position" % label,
+	).is_equal(k1_pos)
+	assert_that(board_ally.position).override_failure_message(
+		"%s: live board ally position" % label,
+	).is_equal(ally_pos)
+
+	var proj_k1: UnitState = director.projected_state.get_unit_by_id(k1_id)
+	var proj_ally: UnitState = director.projected_state.get_unit_by_id(ally_id)
+	assert_object(proj_k1).override_failure_message(
+		"%s: k1 missing on projected_state" % label,
+	).is_not_null()
+	assert_object(proj_ally).override_failure_message(
+		"%s: ally missing on projected_state" % label,
+	).is_not_null()
+	assert_that(proj_k1.position).override_failure_message(
+		"%s: projected k1 must match live board" % label,
+	).is_equal(board_k1.position)
+	assert_that(proj_ally.position).override_failure_message(
+		"%s: projected ally must match live board" % label,
+	).is_equal(board_ally.position)
+
+	if input.preview_state != null and input.preview_state.preview_board != null:
+		var preview: BoardState = input.preview_state.preview_board
+		var preview_k1: UnitState = preview.get_unit_by_id(k1_id)
+		var preview_ally: UnitState = preview.get_unit_by_id(ally_id)
+		assert_object(preview_k1).override_failure_message(
+			"%s: k1 missing on preview_board" % label,
+		).is_not_null()
+		assert_object(preview_ally).override_failure_message(
+			"%s: ally missing on preview_board" % label,
+		).is_not_null()
+		assert_that(preview_k1.position).override_failure_message(
+			"%s: preview k1 must match projected" % label,
+		).is_equal(proj_k1.position)
+		assert_that(preview_ally.position).override_failure_message(
+			"%s: preview ally must match projected" % label,
+		).is_equal(proj_ally.position)
+
+	if expect.has("k1_mp"):
+		assert_that(proj_k1.movement.points_left).override_failure_message(
+			"%s: projected k1 MP" % label,
+		).is_equal(int(expect["k1_mp"]))
+
+	var pre_moves: Array[TimelineAction] = _pre_moves_for_unit(director, k1_id)
+	if expect.has("pre_move_count"):
+		assert_int(pre_moves.size()).override_failure_message(
+			"%s: k1 pre-move entry count" % label,
+		).is_equal(int(expect["pre_move_count"]))
+	if bool(expect.get("require_swap_first", false)):
+		assert_int(pre_moves.size()).override_failure_message(
+			"%s: swap must write a pre-move entry" % label,
+		).is_greater(0)
+		if pre_moves.is_empty():
+			return
+		var swap_action: TimelineAction = pre_moves[0]
+		assert_object(swap_action).override_failure_message(
+			"%s: first pre-move missing" % label,
+		).is_not_null()
+		assert_that(swap_action.type).override_failure_message(
+			"%s: first pre-move must be ability" % label,
+		).is_equal(GameEnums.ActionType.ABILITY)
+		assert_object(swap_action.ability).override_failure_message(
+			"%s: swap ability missing on timeline" % label,
+		).is_not_null()
+		if swap_action.ability != null:
+			assert_that(swap_action.ability.id).override_failure_message(
+				"%s: first pre-move must be knight_swap" % label,
+			).is_equal(_SWAP_ID)
+		assert_that(swap_action.target_unit_id).override_failure_message(
+			"%s: swap must target ally" % label,
+		).is_equal(ally_id)
+	if expect.has("last_pre_dest"):
+		assert_int(pre_moves.size()).override_failure_message(
+			"%s: expected follow-up pre-move" % label,
+		).is_greater_equal(2)
+		if pre_moves.size() < 2:
+			return
+		var walk_action: TimelineAction = pre_moves[pre_moves.size() - 1]
+		assert_that(walk_action.type).override_failure_message(
+			"%s: follow-up pre-move must be MOVE" % label,
+		).is_equal(GameEnums.ActionType.MOVE)
+		assert_that(walk_action.target_coord).override_failure_message(
+			"%s: follow-up pre-move destination" % label,
+		).is_equal(expect["last_pre_dest"] as Vector2i)
+
+	_assert_sim_matches_projected_units(ctx, [k1_id, ally_id], label)
+	_assert_actor_on_cell(ctx, k1_id, k1_pos, "%s/sprite_k1" % label)
+	_assert_actor_on_cell(ctx, ally_id, ally_pos, "%s/sprite_ally" % label)
+
+
+func _assert_sim_matches_projected_units(
+	ctx: Dictionary,
+	unit_ids: Array,
+	label: String,
+) -> void:
+	var director: CombatDirector = ctx.director
+	var combined: Timeline = director.get_player_plan()
+	var result: SimResult = Simulator.simulate(director.base_board.clone(), combined)
+	var sim_board: BoardState = result.final_state
+	for raw_id: Variant in unit_ids:
+		var unit_id: int = int(raw_id)
+		var sim_unit: UnitState = sim_board.get_unit_by_id(unit_id)
+		var proj_unit: UnitState = director.projected_state.get_unit_by_id(unit_id)
+		var live_unit: UnitState = director.board.get_unit_by_id(unit_id)
+		assert_object(sim_unit).override_failure_message(
+			"%s: sim missing unit %d" % [label, unit_id],
+		).is_not_null()
+		assert_object(proj_unit).override_failure_message(
+			"%s: projected missing unit %d" % [label, unit_id],
+		).is_not_null()
+		assert_object(live_unit).override_failure_message(
+			"%s: live board missing unit %d" % [label, unit_id],
+		).is_not_null()
+		assert_that(sim_unit.position).override_failure_message(
+			"%s: sim unit %d must match projected" % [label, unit_id],
+		).is_equal(proj_unit.position)
+		assert_that(live_unit.position).override_failure_message(
+			"%s: live unit %d must match sim" % [label, unit_id],
+		).is_equal(sim_unit.position)
+
+
+func _committed_pre_move_matching_slots(
+	director: CombatDirector,
+	unit_id: int,
+	slots: Dictionary,
+) -> TimelineAction:
+	var slot_pre: Array = slots.get("pre", []) as Array
+	if not slot_pre.is_empty() and slot_pre[0] is TimelineAction:
+		var slot_action: TimelineAction = slot_pre[0] as TimelineAction
+		for action: TimelineAction in _pre_moves_for_unit(director, unit_id):
+			if action.type != slot_action.type:
+				continue
+			if action.type == GameEnums.ActionType.MOVE:
+				if action.target_coord == slot_action.target_coord:
+					return action
+			elif (
+				action.type == GameEnums.ActionType.ABILITY
+				and slot_action.ability != null
+				and action.ability != null
+				and action.ability.id == slot_action.ability.id
+			):
+				return action
+	return _committed_pre_move_for_unit(director, unit_id)
+
+
 func _committed_post_move_for_unit(director: CombatDirector, unit_id: int) -> TimelineAction:
 	for action: TimelineAction in director.plan_post_move.entries:
 		if action != null and action.actor_id == unit_id:
@@ -1691,7 +2004,7 @@ func _assert_commit_ratifies_preview(
 	assert_bool(_slots_invalid(slots)).override_failure_message(
 		"%s: commit must not run when preview slots are invalid" % label,
 	).is_false()
-	var pre_move: TimelineAction = _committed_pre_move_for_unit(director, unit_id)
+	var pre_move: TimelineAction = _committed_pre_move_matching_slots(director, unit_id, slots)
 	var pre_target: Vector2i = _pre_target_from_slots(slots)
 	var post_target: Vector2i = _post_target_from_slots(slots)
 	if pre_target.x > -900000:
@@ -1731,6 +2044,21 @@ func _assert_commit_ratifies_preview(
 	var action: TimelineAction = _committed_action_for_unit(director, unit_id)
 	var action_target_id: int = _action_target_unit_from_slots(slots)
 	var slot_actions: Array = slots.get("action", []) as Array
+	if not slot_actions.is_empty() and slot_actions[0] is TimelineAction:
+		var slot_act0: TimelineAction = slot_actions[0] as TimelineAction
+		if (
+			slot_act0.type == GameEnums.ActionType.ABILITY
+			and slot_act0.ability != null
+			and slot_act0.ability.is_movement_kind()
+		):
+			for pre_act: TimelineAction in _pre_moves_for_unit(director, unit_id):
+				if (
+					pre_act.type == GameEnums.ActionType.ABILITY
+					and pre_act.ability != null
+					and pre_act.ability.id == slot_act0.ability.id
+				):
+					action = pre_act
+					break
 	if action_target_id >= 0:
 		assert_object(action).override_failure_message(
 			"%s: committed action missing for preview target unit %d" % [label, action_target_id],

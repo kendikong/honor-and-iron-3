@@ -42,9 +42,12 @@ deterministic checklist contract; slot-only rows do not replace drag E2E.
 
 ### Tier 3 TestBattle acceptance
 
-`tests/live_planning_scene_test.gd` boots the actual `TestBattle.tscn` **once** through
-GdUnit4 and runs `test_live_planning_bible_multi_knight_session`. It pins a
-four-knight / two-dummy training layout, uses real mouse move/press/release events,
+`tests/live_planning_scene_test.gd` boots the actual `TestBattle.tscn` through
+GdUnit4. **`test_live_planning_bible_multi_knight_session`** runs one four-knight /
+two-dummy session; **`test_live_swap_then_premove`** runs a focused knight+ally layout
+that commits Swap (immediate projected-state snap) then a follow-up pre-move walk,
+asserting live board / projected / preview / sprites / MP / timeline / headless sim
+parity at each checkpoint.
 advances production frames, inspects overlay tile collections and preview/commit
 state, then presses Ready → Execute and verifies final unit positions.
 
