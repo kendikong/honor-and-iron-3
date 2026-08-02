@@ -1293,8 +1293,6 @@ func _ally_skill_preview_slots(p_unit: UnitState, cell: Vector2i) -> Dictionary:
 func _refresh_selected_interaction_preview() -> void:
 	if dragging or _director == null or _director.board == null:
 		return
-	if not _drag_armed and not _drag_route.is_empty():
-		_clear_hover_drag_route()
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	if _should_restore_stand_hover_preview(cell):
 		_restore_hover_preview()
@@ -3426,10 +3424,8 @@ func _build_commit_slots_at_cell(
 			if not painted.is_empty() and painted.back() == cell:
 				effective_waypoints = painted
 		if effective_waypoints.is_empty() and AbilitySystem.ability_has_movement_effect(ability):
-			var live_path: Array = preview_state.preview_paths.get(unit_id, [])
-			var start_pos: Vector2i = _proj_origin(actor)
-			effective_waypoints = CombatPlanningPreview.destination_cells_from_route(
-				live_path, start_pos, cell,
+			effective_waypoints = _director.preview_waypoints_for_hover(
+				_proj(), actor, cell, effective_waypoints, ability,
 			)
 
 		if _awaiting_flow_selected(actor, ability):
@@ -3452,10 +3448,18 @@ func _build_commit_slots_at_cell(
 			if AbilitySystem.can_target_self(actor, ability):
 				if AbilitySystem.is_run_ability(ability):
 					if _drop_allows_move_tile(cell, legal_move_tiles, actor):
+						if effective_waypoints.is_empty():
+							effective_waypoints = _director.preview_waypoints_for_hover(
+								_proj(), actor, cell, effective_waypoints, ability,
+							)
 						if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
 							_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
 					return slots
 				if _drop_allows_move_tile(cell, legal_move_tiles, actor):
+					if effective_waypoints.is_empty():
+						effective_waypoints = _director.preview_waypoints_for_hover(
+							_proj(), actor, cell, effective_waypoints, ability,
+						)
 					if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
 						_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
 					_maybe_append_premove_action_pair(
@@ -3492,11 +3496,16 @@ func _build_commit_slots_at_cell(
 		and _unit_move_slot_open(unit_id, cell)
 		and _drop_allows_move_tile(cell, legal_move_tiles, actor)
 	):
+		var move_waypoints: Array[Vector2i] = waypoints
+		if move_waypoints.is_empty():
+			move_waypoints = _director.preview_waypoints_for_hover(
+				_proj(), actor, cell, move_waypoints, ability,
+			)
 		if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
-			_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
+			_append_move_to_commit_slots(slots, unit_id, cell, move_waypoints, actor)
 		if ability_index >= 0 and ability != null and not force_basic_movement:
 			_maybe_append_premove_action_pair(
-				slots, unit_id, actor, cell, ability, waypoints,
+				slots, unit_id, actor, cell, ability, move_waypoints,
 			)
 		return slots
 	if _skill_interaction_active() and _invalid_hover_target(actor, cell, hover_unit):

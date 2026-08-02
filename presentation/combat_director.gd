@@ -1168,6 +1168,32 @@ func preview_actions(unit_id: int, actions: Array[TimelineAction]) -> Dictionary
 	return res
 
 
+func preview_waypoints_for_hover(
+	board: BoardState,
+	actor: UnitState,
+	target: Vector2i,
+	waypoints: Array[Vector2i],
+	ability: AbilityData,
+) -> Array[Vector2i]:
+	if actor == null or not waypoints.is_empty() or target == actor.position:
+		return waypoints.duplicate()
+	var movement_type: GameEnums.MovementType = (
+		actor.definition.movement_type
+		if actor.definition != null
+		else GameEnums.MovementType.WALK
+	)
+	return MovementSystem.drag_corridor_path(
+		board,
+		actor.position,
+		target,
+		planning_move_budget(actor, board),
+		movement_type,
+		MovementSystem.move_cost_for(actor),
+		actor,
+		ability,
+	)
+
+
 func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, waypoints: Array[Vector2i] = []) -> Dictionary:
 	var move_timing: int = _get_move_timing(unit_id)
 	if move_timing < 0:
@@ -1176,6 +1202,20 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 	var actor := start_board.get_unit_by_id(unit_id)
 	var plan_board: BoardState = projected_state if projected_state != null else start_board
 	var plan_actor: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else actor
+	var selected_ability: AbilityData = null
+	if (
+		actor != null
+		and selected_ability_index >= 0
+		and selected_ability_index < actor.active_abilities.size()
+	):
+		selected_ability = actor.active_abilities[selected_ability_index]
+	waypoints = preview_waypoints_for_hover(
+		plan_board,
+		plan_actor if plan_actor != null else actor,
+		coord,
+		waypoints,
+		selected_ability,
+	)
 	var new_actions: Array[TimelineAction] = []
 	if attack_target_id >= 0:
 		var target := start_board.get_unit_by_id(attack_target_id)
