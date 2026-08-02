@@ -30,10 +30,11 @@ N/A
 |--------|--------|---------------------|-----------|------------|
 | Gameplay core (planning/intent/UI) | P2 | `.\scripts\run_planning_qa_gate.ps1` | `.\scripts\run_regression_tests.ps1` | F5 planning parity — **uses Knights as fixtures, not class validation** |
 | Combat closeout | P2 | — | — | ✅ **Closed** *(owner 2026-08-01)* |
-| Knight template | P3 | `scripts/run_knight_qa_gate.ps1` | `docs/KNIGHT_QA_GATE.md` coverage matrix | Meta-critic ≥ 88 per row; 0/30 PASS until LOCK |
+| Knight template | P3 | `scripts/run_knight_qa_gate.ps1` | `docs/KNIGHT_QA_GATE.md` coverage matrix | ✅ **LOCKED** *(owner 2026-08-02)* |
+| Bruiser template | P6 | `scripts/run_bruiser_qa_gate.ps1` | `docs/BRUISER_QA_GATE.md` coverage matrix | **Active** B6-LOCK — 0/31 PASS |
 | Roguelike run | P4 | `PLANNED — tests/run_state_test.gd` | — | P4 worksheet |
 | Enemy design | P5 | `tests/bridge_test_runner.gd` | `docs/design/appendices/encounter-fixture-format.md` | Puzzle fun |
-| Class rollout | P6 | `PLANNED — scripts/run_<class>_qa_gate.ps1` (clone Knight gate) | `tests/run_mass_sim_test.gd` | Balance taste |
+| Class rollout (other) | P6 | `PLANNED — scripts/run_<class>_qa_gate.ps1` (clone Bruiser/Knight gate) | `tests/run_mass_sim_test.gd` | Balance taste |
 | World / map | P7 | `docs/asset_manifest.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | P7 worksheet |
 | Presentation | P8 | `PLANNED — Sfx event map (P8 doc)` | `docs/design/presentation-audio-ui.md` | Typography/layout |
 | Verification matrix | P9 | `.\scripts\lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK |

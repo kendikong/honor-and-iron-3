@@ -1,0 +1,9 @@
+{
+  "piece": "B6-LOCK",
+  "pass_threshold": 95,
+  "last_critic_round": 0,
+  "last_score": 0,
+  "last_result": "PENDING",
+  "last_row_promoted": "",
+  "approved_rows": []
+}

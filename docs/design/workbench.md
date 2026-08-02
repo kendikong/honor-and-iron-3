@@ -9,23 +9,17 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ K3-LOCK matrix │ OWNER LOCK
-FULL MATRIX: 92/95 waived │ MANIFEST: 30/30
-GATE: exit 0 (30/30 PASS + Tier 1 PASS) — qa_knight_gate_r37c.txt
-STOP_CONDITION_MET: yes — owner LOCK 2026-08-02; knight-template.md LOCKED
-NEXT: P6 class rollout OR P4 roguelike worksheet
+GAUNTLET SCORE │ B6-LOCK matrix │ Tick 0 (setup)
+FULL MATRIX: —/95 PENDING │ MANIFEST: 0/31
+GATE: exit 2 (0/31 PLANNED) — infrastructure only
+STOP_CONDITION_MET: no — gauntlet loop armed, no rows promoted
+NEXT: B6-doc critic → first row `bruiser_push_through`
 ══════════════════════════════════════
 ```
 
 | Round | Score | Delta | Result |
 |-------|-------|-------|--------|
-| r37 | 92 | +2 | **FAIL** (full matrix LOCK review — commit smoke + docs) |
-| r36 | 92 | +2 | **FAIL** (9 actives commit smoke) |
-| r35 | 90 | +1 | **FAIL** (11 actives select smoke) |
-| r34 | 89 | +30 | **FAIL** (infra fixed; prior r32 59) |
-| r32 | 59 | — | **FAIL** (EventBus headless gap) |
-| r31 | 89 | — | **PASS** (row: knight_bowling_charge → manifest) |
-| r29 | 90 | — | **PASS** (row: knight_trampling_advance → manifest) |
+| setup | — | — | Infrastructure on disk (tick 0) |
 
 ---
 
@@ -33,11 +27,11 @@ NEXT: P6 class rollout OR P4 roguelike worksheet
 
 | Field | Value |
 |-------|-------|
-| **Chunk / goal** | P3 Knight — K3-LOCK until `knight-template.md` LOCKED |
-| **Started** | 2026-08-01 |
-| **Status** | **COMPLETE** — owner LOCK 2026-08-02; `knight-template.md` **LOCKED** |
-| **Last result** | r37: commit smoke on 9 actives; bowling select smoke; gate green |
-| **Lead session** | knight-k3-lock-2026-08-01 |
+| **Chunk / goal** | P6 Bruiser — B6-LOCK until `bruiser-template.md` LOCKED |
+| **Started** | 2026-08-02 |
+| **Status** | **ACTIVE** — 0/31 matrix; gate + harness + docs on disk |
+| **Last result** | Setup complete — awaiting first builder tick |
+| **Lead session** | bruiser-b6-lock-2026-08-02 |
 
 ---
 
@@ -45,33 +39,18 @@ NEXT: P6 class rollout OR P4 roguelike worksheet
 
 | Check | Target | Actual |
 |-------|--------|--------|
-| Matrix 30/30 PASS | yes | **yes** |
-| Manifest 30 rows | yes | **yes** |
-| `run_knight_qa_gate.ps1` exit 0 | yes | **yes** (`qa_knight_gate_r37c.txt`) |
-| Full-matrix critic ≥ 95 | yes | **waived** *(owner LOCK; r37 92/95)* |
-| `knight-template.md` LOCKED | yes | **yes** *(owner 2026-08-02)* |
-| `STOP_CONDITION_MET: yes` | yes | **yes** |
-
----
-
-## Planning coverage (honest tier — r37)
-
-| Tier | Skills | Count |
-|------|--------|------:|
-| **A** — full 7-phase | shield_bash, chain_hook, trampling_advance | 3 |
-| **B** — commit smoke (select + hover/click parity + no_jump) | phalanx, taunting, seismic, iron_grip, redirect, indomitable, retaliation, shield_slam, defensive_formation | 9 |
-| **C** — select / intent only | fortify, knight_swap (ally-target; bash fixture invalidates commit slots), bowling_charge (intent contracts + select) | 3 |
-| **Passives** — sim triggers | 14 passives | 14 |
-
-**Known gap:** `knight_fortify` / `knight_swap` ally-unit commit on planning fixture returns invalid slots (`combat_planning_input.gd` ally branch) — **outside K3-LOCK ALLOWED_PATHS**. Sim paths green; planning commit deferred to P6 or presentation fix.
+| Matrix 31/31 PASS | yes | **no** (0/31) |
+| Manifest 31 rows | yes | **no** (0/31) |
+| `run_bruiser_qa_gate.ps1` exit 0 | yes | **no** (exit 2) |
+| Full-matrix critic ≥ 95 | yes | **no** |
+| `bruiser-template.md` LOCKED | yes | **no** (DRAFT) |
+| `STOP_CONDITION_MET: yes` | yes | **no** |
 
 ---
 
 ## Blockers (owner)
 
-*(none — K3-LOCK closed by owner LOCK 2026-08-02)*
-
-**Deferred (not blocking LOCK):** tier-C `knight_fortify` / `knight_swap` ally-target planning commit → P6 or presentation fix.
+*(none — loop ready to start)*
 
 ---
 
@@ -79,8 +58,4 @@ NEXT: P6 class rollout OR P4 roguelike worksheet
 
 | Time | Piece | Score | Result | Notes |
 |------|-------|-------|--------|-------|
-| 2026-08-01 | K3-LOCK full matrix | 92/95 | FAIL | r37 — commit smoke ×9; bowling select |
-| 2026-08-01 | K3-LOCK full matrix | 92/95 | FAIL | r36 — same tier assessment |
-| 2026-08-01 | K3-LOCK full matrix | 90/95 | FAIL | r35 — select smoke ×11 |
-| 2026-08-01 | knight_bowling_charge | 89/88 | PASS | r31 — sim + planning intent contracts |
-| 2026-08-01 | knight_trampling_advance | 90/88 | PASS | r29 — MOVE/TRAMPLE/PUSH sim |
+| 2026-08-02 | B6-setup | — | — | Gate doc, script, harness, registry, UNATTENDED_RUN, B6-LOCK run card |

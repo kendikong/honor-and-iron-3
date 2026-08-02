@@ -1,6 +1,6 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** Roguelike run v1 (P4) — P3 Knight template **LOCKED** per owner 2026-08-02  
+**Current phase:** Bruiser template LOCK (P6 / B6-LOCK) — P3 Knight **LOCKED** per owner 2026-08-02  
 **Active plan:** `docs/design/` pillar specs + [`verification-matrix.md`](docs/design/verification-matrix.md)  
 **Combat reference:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed; P2 done for now)  
 **Last updated:** 2026-08-02  
@@ -8,7 +8,18 @@
 
 ---
 
-## P3 — Knight template LOCK ✅
+## P6 — Bruiser template LOCK (B6-LOCK) — ACTIVE
+
+**Started:** 2026-08-02 — gauntlet infrastructure cloned from P3 Knight pipeline
+
+### Deliverables (setup)
+- [x] `docs/BRUISER_QA_GATE.md` — 31-row honest matrix (all `PLANNED`)
+- [x] `scripts/run_bruiser_qa_gate.ps1`
+- [x] `tests/bruiser_qa_harness.gd`, `bruiser_scenario_registry.gd`, `bruiser_qa_runner.gd`, `BruiserQaGate.tscn`
+- [x] `docs/design/bruiser-template.md`, `UNATTENDED_RUN.md` (B6-LOCK), `runs/B6-LOCK.md`
+- [ ] 31/31 matrix PASS + `bruiser-template.md` → **LOCKED**
+
+---
 
 **Closed:** owner LOCK 2026-08-02 — `knight-template.md` → **`LOCKED`** — commit `ab8789ee193fdd36d62b88af9972a9823b94c1fa`
 
