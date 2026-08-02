@@ -1,10 +1,10 @@
 {
   "piece": "K3-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 11,
-  "last_score": 89,
+  "last_critic_round": 14,
+  "last_score": 88,
   "last_result": "PASS",
-  "last_row_promoted": "knight_phalanx_stance",
+  "last_row_promoted": "knight_iron_grip",
   "approved_rows": [
     {
       "factory_id": "knight_swap",
@@ -94,6 +94,12 @@
       "factory_id": "knight_phalanx_stance",
       "score": 89,
       "critic_round": 11,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_iron_grip",
+      "score": 88,
+      "critic_round": 14,
       "fix_target": "none"
     }
   ]

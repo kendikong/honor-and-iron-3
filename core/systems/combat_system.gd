@@ -196,7 +196,12 @@ static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 		def += 1
 		
 	if unit.has_status(GameEnums.StatusType.IRON_GRIP_DEBUFF):
-		def = ceili(def / 2.0)
+		for status: StatusData in unit.active_statuses:
+			if status.type == GameEnums.StatusType.IRON_GRIP_DEBUFF:
+				# Bible: DEF halved on the target's next turn — not the cast turn.
+				if status.ticks_remaining <= status.duration * 2:
+					def = ceili(def / 2.0)
+				break
 		
 	return def
 

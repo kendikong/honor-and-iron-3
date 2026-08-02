@@ -9,10 +9,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ K3-LOCK matrix │ Round 11–12
-FULL MATRIX: 57/95 (stale) │ ROW: phalanx PASS 89/88 ✓ │ seismic 85→pending r2
-MANIFEST: 15/30 │ STOP_CONDITION_MET: no
-NEXT: seismic r2 critic; then iron_grip queue
+GAUNTLET SCORE │ K3-LOCK matrix │ Round 14
+FULL MATRIX: 57/95 (stale) │ ROW: iron_grip PASS 88/88 ✓ │ seismic 87/88 pending
+MANIFEST: 16/30 │ STOP_CONDITION_MET: no
+NEXT: seismic r4 (drag_corridor + find_path asserts); then taunting_strike queue
 ══════════════════════════════════════
 ```
 
@@ -30,6 +30,9 @@ NEXT: seismic r2 critic; then iron_grip queue
 | r10 | 87 | +0 | FAIL (row: phalanx) |
 | r11 | 89 | +2 | **PASS** (row: phalanx → manifest) |
 | r12 | 85 | — | FAIL (row: seismic) |
+| r13 | 86 | +1 | FAIL (row: seismic) |
+| r14 | 88 | +2 | **PASS** (row: iron_grip → manifest) |
+| r14b | 87 | — | FAIL (row: seismic) |
 
 ---
 
@@ -39,8 +42,8 @@ NEXT: seismic r2 critic; then iron_grip queue
 |-------|-------|
 | **Chunk / goal** | P3 Knight — K3-doc spec + meta-critic; template for P6 |
 | **Started** | 2026-08-01 |
-| **Status** | **K3-LOCK ACTIVE** — **15/30** manifest · phalanx **PASS** · seismic **86/88** |
-| **Last result** | phalanx promoted r11; seismic r13 **86/88** after purge_all + contracts |
+| **Status** | **K3-LOCK ACTIVE** — **16/30** manifest · iron_grip **PASS** · seismic **87/88** |
+| **Last result** | iron_grip promoted r14 (88); seismic r14b 87/88 — drag_corridor gap |
 | **Lead session** | knight-k3-lock-2026-08-01 |
 
 ---
@@ -91,7 +94,7 @@ NEXT: seismic r2 critic; then iron_grip queue
 
 ## Blockers (owner only)
 
-- **P3 K3-LOCK:** 16 HARNESS_ONLY rows — unattended loop in [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) + [`runs/K3-LOCK.md`](runs/K3-LOCK.md)
+- **P3 K3-LOCK:** 14 HARNESS_ONLY rows — unattended loop in [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) + [`runs/K3-LOCK.md`](runs/K3-LOCK.md)
 - P4 worksheet (`roguelike-run.md`)
 - P5 worksheet (`enemy-design.md`)
 - P7 worksheet (`world-assets-and-map.md`)

@@ -775,6 +775,7 @@ static func _cracked() -> TerrainData:
 	var t := TerrainData.new()
 	t.id = &"cracked"
 	t.display_name = "Cracked Earth"
+	t.mp_cost_per_tile = 2
 	# Becomes pit if hit again
 	return t
 

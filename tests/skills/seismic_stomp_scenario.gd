@@ -3,7 +3,7 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Seismic Stomp — RANGE 0 AOE 1 ATK 2 PURGE all enemies; [+] CRACKED terrain (`cracked` tile id via CHANGE_TERRAIN).
+## Bible: Seismic Stomp — RANGE 0 AOE 1 ATK 2 PURGE all enemies; [+] CRACKED terrain (MOVE cost ×2 via TerrainData.mp_cost_per_tile).
 ## Globals: EffectType.DAMAGE, PURGE, CHANGE_TERRAIN via AbilitySystem.
 
 
@@ -32,6 +32,11 @@ static func _sim_contract(failures: Array[String]) -> void:
 		stomp != null and stomp.target_shape == GameEnums.TargetShape.AOE_SQUARE
 		and stomp.target_shape_size == 1,
 		"seismic stomp must be AOE 1 (3x3 square size 1)",
+	)
+	_KnightQaHarness.assert_true(
+		failures, "seismic/contract/range",
+		stomp != null and stomp.range_tiles == 0,
+		"seismic stomp must be RANGE 0",
 	)
 	_KnightQaHarness.assert_true(
 		failures, "seismic/contract/upgrade_terrain",

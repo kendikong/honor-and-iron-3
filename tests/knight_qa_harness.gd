@@ -996,11 +996,32 @@ static func events_contain_reason(events: Array, reason: String) -> bool:
 	return false
 
 
+static func damage_taken_on_unit(board: BoardState, unit_id: int, raw_amount: int) -> int:
+	var target: UnitState = board.get_unit_by_id(unit_id)
+	if target == null or target.health == null:
+		return 0
+	var hp_before: int = target.health.current_hp
+	var events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board, target, raw_amount, events, &"physical", false, false, null, "knight_qa",
+	)
+	return hp_before - target.health.current_hp
+
+
 static func events_have_damage_base(events: Array, base_power: int) -> bool:
 	for e: Variant in events:
 		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
 			var d: Dictionary = e.data
 			if str(d.get("type", "")) == "damage" and int(d.get("base", -1)) == base_power:
+				return true
+	return false
+
+
+static func events_have_status_removed(events: Array, unit_id: int, status_type: GameEnums.StatusType) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.STATUS_REMOVED:
+			var d: Dictionary = e.data
+			if int(d.get("unit", -1)) == unit_id and d.get("status_type", -1) == status_type:
 				return true
 	return false
 
@@ -1255,6 +1276,13 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		enemy_purged != null and not has_status(enemy_purged, GameEnums.StatusType.STAT_BUFF_STR),
 		"seismic stomp must PURGE enemy buffs",
 	)
+	assert_true(
+		failures, "seismic_stomp/purge_event",
+		events_have_status_removed(
+			result_purge.events, 21, GameEnums.StatusType.STAT_BUFF_STR,
+		),
+		"seismic stomp PURGE must emit STATUS_REMOVED for stripped buff",
+	)
 	var board_purge2: BoardState = make_plain_board(Vector2i(10, 8))
 	place_knight(board_purge2, 22, Vector2i(4, 4))
 	place_dummy(board_purge2, 23, Vector2i(5, 4))
@@ -1297,6 +1325,13 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		cracked_tile != null and cracked_tile.definition != null and cracked_tile.definition.id == &"cracked",
 		"upgraded seismic stomp must set cracked terrain id on AOE cell",
 	)
+	for cracked_coord: Vector2i in [Vector2i(3, 4), Vector2i(4, 5), Vector2i(5, 5)]:
+		var tile_up: TileState = result2.final_state.get_tile(cracked_coord)
+		assert_true(
+			failures, "seismic_stomp/upgrade/cracked_aoe_%d_%d" % [cracked_coord.x, cracked_coord.y],
+			tile_up != null and tile_up.definition != null and tile_up.definition.id == &"cracked",
+			"upgraded seismic stomp must crack all AOE footprint tiles",
+		)
 	var board_base: BoardState = make_plain_board(Vector2i(10, 8))
 	place_knight(board_base, 50, Vector2i(4, 4))
 	place_dummy(board_base, 51, Vector2i(5, 4))
@@ -1324,6 +1359,55 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		failures, "seismic_stomp/aoe_second_target",
 		e2 != null and e2.health.current_hp < hp_e2,
 		"seismic stomp AOE must damage second adjacent enemy",
+	)
+	var cracked_def: TerrainData = DataLibrary.get_terrain(&"cracked")
+	assert_eq_int(
+		failures, "seismic_stomp/cracked/mp_cost_data",
+		cracked_def.mp_cost_per_tile if cracked_def != null else 0,
+		2,
+	)
+	var board_move: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_move, 30, Vector2i(5, 3))
+	var mover: UnitState = unit_on_board(board_move, 30)
+	mover.movement.points_left = 3
+	board_move.set_tile_terrain(Vector2i(5, 4), DataLibrary.get_terrain(&"cracked"))
+	var plan_move := Timeline.new()
+	plan_move.add(TimelineAction.make_move(30, Vector2i(5, 4)))
+	var result_move: SimResult = simulate_player_turn(board_move, plan_move)
+	var mover_after: UnitState = result_move.final_state.get_unit_by_id(30)
+	assert_eq_int(
+		failures, "seismic_stomp/cracked/move_cost",
+		mover_after.movement.points_left if mover_after != null else -1,
+		1,
+	)
+	var board_e2e: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_e2e, 40, Vector2i(4, 4), cfg_up)
+	place_dummy(board_e2e, 41, Vector2i(6, 4))
+	var stomp_e2e: AbilityData = ability_on_unit(unit_on_board(board_e2e, 40), &"knight_seismic_stomp")
+	var knight_e2e: UnitState = unit_on_board(board_e2e, 40)
+	knight_e2e.movement.points_left = 4
+	var plan_e2e := Timeline.new()
+	plan_e2e.add(plan_ability(40, stomp_e2e, Vector2i(4, 4), 40))
+	plan_e2e.add(
+		TimelineAction.make_move(40, Vector2i(5, 4), -1, [], GameEnums.MoveTiming.POST_ACTION),
+	)
+	var result_e2e: SimResult = simulate_player_turn(board_e2e, plan_e2e)
+	var knight_e2e_after: UnitState = result_e2e.final_state.get_unit_by_id(40)
+	var cracked_e2e: TileState = result_e2e.final_state.get_tile(Vector2i(5, 4))
+	assert_true(
+		failures, "seismic_stomp/e2e/cracked_from_stomp",
+		cracked_e2e != null and cracked_e2e.definition != null and cracked_e2e.definition.id == &"cracked",
+		"stomp-created cracked tile must exist before move onto it",
+	)
+	assert_eq_int(
+		failures, "seismic_stomp/e2e/move_onto_stomp_cracked",
+		knight_e2e_after.movement.points_left if knight_e2e_after != null else -1,
+		2,
+	)
+	assert_eq_int(
+		failures, "seismic_stomp/range",
+		stomp.range_tiles,
+		0,
 	)
 
 
@@ -1383,6 +1467,8 @@ static func run_iron_grip(failures: Array[String]) -> void:
 	var board: BoardState = make_plain_board(Vector2i(10, 6))
 	place_knight(board, 1, Vector2i(3, 3))
 	place_dummy(board, 2, Vector2i(4, 3))
+	var enemy_before: UnitState = unit_on_board(board, 2)
+	var def_before: int = CombatSystem.get_dynamic_defense(board, enemy_before)
 	var grip: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_iron_grip")
 	var plan := Timeline.new()
 	plan.add(plan_ability(1, grip, Vector2i(4, 3), 2))
@@ -1397,6 +1483,35 @@ static func run_iron_grip(failures: Array[String]) -> void:
 		failures, "iron_grip/debuff",
 		enemy != null and has_status(enemy, GameEnums.StatusType.IRON_GRIP_DEBUFF),
 		"iron grip must apply IRON_GRIP_DEBUFF",
+	)
+	var def_after: int = CombatSystem.get_dynamic_defense(result.final_state, enemy)
+	assert_eq_int(
+		failures, "iron_grip/def_not_same_turn",
+		def_after,
+		def_before,
+	)
+	var advanced: SimResult = simulate_plan(result.final_state, Timeline.new())
+	var enemy_next: UnitState = advanced.final_state.get_unit_by_id(2)
+	var def_next_turn: int = CombatSystem.get_dynamic_defense(advanced.final_state, enemy_next)
+	assert_eq_int(
+		failures, "iron_grip/def_halved_next_turn",
+		def_next_turn,
+		int(ceil(def_before / 2.0)),
+	)
+	assert_eq_int(
+		failures, "iron_grip/range",
+		grip.range_tiles,
+		1,
+	)
+	var board_mit: BoardState = result.final_state.clone()
+	var loss_same_turn: int = damage_taken_on_unit(board_mit, 2, 30)
+	var board_mit_next: BoardState = result.final_state.clone()
+	var advanced_mit: SimResult = simulate_plan(board_mit_next, Timeline.new())
+	var loss_next_turn: int = damage_taken_on_unit(advanced_mit.final_state, 2, 30)
+	assert_true(
+		failures, "iron_grip/mitigation_next_turn",
+		loss_next_turn > loss_same_turn,
+		"iron grip must increase damage taken after DEF halves on target next turn",
 	)
 	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_iron_grip")
 	var board2: BoardState = make_plain_board(Vector2i(10, 6))
@@ -1413,9 +1528,60 @@ static func run_iron_grip(failures: Array[String]) -> void:
 	var result2: SimResult = simulate_player_turn(board2, plan2)
 	var knight_after: UnitState = result2.final_state.get_unit_by_id(10)
 	assert_true(
-		failures, "iron_grip/upgrade/ap_refund",
+		failures, "iron_grip/upgrade/ap_refund_root",
 		knight_after != null and knight_after.ability.points_left == ap_before,
-		"upgraded iron grip must refund 1 AP when target already has ROOT/STAGGER",
+		"upgraded iron grip must refund 1 AP when target already has ROOT",
+	)
+	var board_stag: BoardState = make_plain_board(Vector2i(10, 6))
+	place_knight(board_stag, 12, Vector2i(3, 3), cfg_up)
+	place_dummy(board_stag, 13, Vector2i(4, 3))
+	var enemy_stag: UnitState = unit_on_board(board_stag, 13)
+	enemy_stag.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1, 0))
+	enemy_stag._recalculate_stats()
+	var grip_stag: AbilityData = ability_on_unit(unit_on_board(board_stag, 12), &"knight_iron_grip")
+	var knight_stag_before: UnitState = unit_on_board(board_stag, 12)
+	var ap_stag_before: int = knight_stag_before.ability.points_left
+	var plan_stag := Timeline.new()
+	plan_stag.add(plan_ability(12, grip_stag, Vector2i(4, 3), 13))
+	var result_stag: SimResult = simulate_player_turn(board_stag, plan_stag)
+	var knight_stag_after: UnitState = result_stag.final_state.get_unit_by_id(12)
+	assert_true(
+		failures, "iron_grip/upgrade/ap_refund_stagger",
+		knight_stag_after != null and knight_stag_after.ability.points_left == ap_stag_before,
+		"upgraded iron grip must refund 1 AP when target already has STAGGER",
+	)
+	var board_no_cc: BoardState = make_plain_board(Vector2i(10, 6))
+	place_knight(board_no_cc, 14, Vector2i(3, 3), cfg_up)
+	place_dummy(board_no_cc, 15, Vector2i(4, 3))
+	var grip_no_cc: AbilityData = ability_on_unit(unit_on_board(board_no_cc, 14), &"knight_iron_grip")
+	var knight_no_cc_before: UnitState = unit_on_board(board_no_cc, 14)
+	var ap_no_cc_before: int = knight_no_cc_before.ability.points_left
+	var plan_no_cc := Timeline.new()
+	plan_no_cc.add(plan_ability(14, grip_no_cc, Vector2i(4, 3), 15))
+	var result_no_cc: SimResult = simulate_player_turn(board_no_cc, plan_no_cc)
+	var knight_no_cc_after: UnitState = result_no_cc.final_state.get_unit_by_id(14)
+	assert_eq_int(
+		failures, "iron_grip/upgrade/no_refund_without_cc",
+		knight_no_cc_after.ability.points_left,
+		ap_no_cc_before - 1,
+	)
+	var board_base_ref: BoardState = make_plain_board(Vector2i(10, 6))
+	place_knight(board_base_ref, 16, Vector2i(3, 3))
+	place_dummy(board_base_ref, 17, Vector2i(4, 3))
+	var enemy_base_pre: UnitState = unit_on_board(board_base_ref, 17)
+	enemy_base_pre.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.ROOT, 1, 0))
+	enemy_base_pre._recalculate_stats()
+	var grip_base: AbilityData = ability_on_unit(unit_on_board(board_base_ref, 16), &"knight_iron_grip")
+	var knight_base_before: UnitState = unit_on_board(board_base_ref, 16)
+	var ap_base_before: int = knight_base_before.ability.points_left
+	var plan_base := Timeline.new()
+	plan_base.add(plan_ability(16, grip_base, Vector2i(4, 3), 17))
+	var result_base: SimResult = simulate_player_turn(board_base_ref, plan_base)
+	var knight_base_after: UnitState = result_base.final_state.get_unit_by_id(16)
+	assert_eq_int(
+		failures, "iron_grip/base/no_refund_on_cc",
+		knight_base_after.ability.points_left,
+		ap_base_before - 1,
 	)
 
 

@@ -42,7 +42,8 @@ static func get_reachable_tiles(
 
 		for dir in GridSystem.DIRECTIONS:
 			var next: Vector2i = current + dir
-			var new_cost = cost_so_far[current] + move_cost
+			var step_cost: int = step_mp_cost(board, next, unit)
+			var new_cost = cost_so_far[current] + step_cost
 			if new_cost > max_steps:
 				continue
 			
@@ -92,9 +93,8 @@ static func find_path(
 		return empty
 
 	var came_from: Dictionary = {}   # Vector2i -> Vector2i
-	var visited: Dictionary = {}     # Vector2i -> true
+	var cost_so_far: Dictionary = {start: 0}
 	var queue: Array[Vector2i] = [start]
-	visited[start] = true
 
 	while not queue.is_empty():
 		var current: Vector2i = queue.pop_front()
@@ -102,11 +102,15 @@ static func find_path(
 			break
 		for dir in GridSystem.DIRECTIONS:
 			var next: Vector2i = current + dir
-			if visited.has(next):
+			var step_cost: int = step_mp_cost(board, next, unit)
+			var new_cost: int = int(cost_so_far[current]) + step_cost
+			if new_cost > max_steps:
 				continue
 			if not _is_walkable_for(board, next, unit, ability):
 				continue
-			visited[next] = true
+			if cost_so_far.has(next) and int(cost_so_far[next]) <= new_cost:
+				continue
+			cost_so_far[next] = new_cost
 			came_from[next] = current
 			queue.append(next)
 
@@ -119,8 +123,15 @@ static func find_path(
 		path.push_front(node)
 		node = came_from[node]
 
-	if path.size() * move_cost > max_steps:
-		path = path.slice(0, floori(max_steps / float(move_cost)))
+	var path_cost: int = 0
+	var trimmed: Array[Vector2i] = []
+	for step_coord: Vector2i in path:
+		var step_cost_path: int = step_mp_cost(board, step_coord, unit)
+		if path_cost + step_cost_path > max_steps:
+			break
+		path_cost += step_cost_path
+		trimmed.append(step_coord)
+	path = trimmed
 		
 	# A unit cannot end its movement on an occupied tile (e.g. an ally).
 	# Backtrack until we find an empty tile — but allow ending on an enemy tile
@@ -190,6 +201,15 @@ static func move_cost_for(unit: UnitState) -> int:
 	if unit != null and unit.has_status(GameEnums.StatusType.BLEED):
 		return 2
 	return 1
+
+
+static func step_mp_cost(board: BoardState, coord: Vector2i, unit: UnitState) -> int:
+	var unit_cost: int = move_cost_for(unit)
+	var terrain_cost: int = 1
+	var tile: TileState = board.get_tile(coord)
+	if tile != null and tile.definition != null:
+		terrain_cost = maxi(1, tile.definition.mp_cost_per_tile)
+	return unit_cost * terrain_cost
 
 
 static func resolve_move_path(
@@ -526,7 +546,10 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		TerrainSystem.apply_entry_at(board, unit, step, events)
 
 	unit.position = path[path.size() - 1]
-	unit.movement.points_left -= (path.size() * move_cost)
+	var mp_spent: int = 0
+	for step_coord: Vector2i in path:
+		mp_spent += step_mp_cost(board, step_coord, unit)
+	unit.movement.points_left -= mp_spent
 	GridSystem.set_occupant(board, unit.position, unit.id)
 
 	# Face the direction of the final step (used for flanking/backstab), unless the
@@ -575,11 +598,15 @@ static func _is_legal_walk(
 	unit: UnitState = null,
 	ability: AbilityData = null,
 ) -> bool:
-	if route.is_empty() or route.size() * move_cost > budget:
+	if route.is_empty():
 		return false
-		
 	if unit == null:
 		unit = board.get_unit_at(start)
+	var spent: int = 0
+	for step: Vector2i in route:
+		spent += step_mp_cost(board, step, unit)
+	if spent > budget:
+		return false
 		
 	var prev := start
 	for step in route:
