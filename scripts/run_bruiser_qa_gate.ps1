@@ -4,12 +4,41 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$latestGateLog = Join-Path $projectRoot "qa_bruiser_gate_latest.txt"
+$gateLogLines = New-Object System.Collections.Generic.List[string]
+
+function Write-GateLine([string]$Line) {
+	Write-Output $Line
+	[void]$gateLogLines.Add($Line)
+}
+
+function Save-GateLog() {
+	$canonical = Join-Path $projectRoot "qa_bruiser_gate_canonical.txt"
+	$gateLogLines | Set-Content -Path $canonical -Encoding utf8
+	$tmp = Join-Path $projectRoot "qa_bruiser_gate_latest.tmp"
+	$gateLogLines | Set-Content -Path $tmp -Encoding utf8
+	try {
+		if (Test-Path $latestGateLog) {
+			Remove-Item -LiteralPath $latestGateLog -Force -ErrorAction Stop
+		}
+		Move-Item -LiteralPath $tmp -Destination $latestGateLog -Force -ErrorAction Stop
+	} catch {
+		if (Test-Path $tmp) {
+			Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+		}
+	}
+}
+
+function Exit-Gate([int]$Code) {
+	Save-GateLog
+	exit $Code
+}
 $matrixDoc = Join-Path $projectRoot "docs\BRUISER_QA_GATE.md"
 $manifestPath = Join-Path $projectRoot "docs\bruiser_meta_critic_manifest.json"
 
-Write-Output "=== Bruiser QA gate (class validation - NOT planning QA) ==="
-Write-Output "Spec: docs/BRUISER_QA_GATE.md"
-Write-Output ""
+Write-GateLine "=== Bruiser QA gate (class validation - NOT planning QA) ==="
+Write-GateLine "Spec: docs/BRUISER_QA_GATE.md"
+Write-GateLine ""
 
 # Expected factory rows that must reach PASS before LOCK (from bruiser_factory.gd)
 $requiredFactoryIds = @(
@@ -55,11 +84,11 @@ foreach ($id in $requiredFactoryIds) {
 	}
 }
 
-Write-Output "=== Matrix summary (from docs/BRUISER_QA_GATE.md) ==="
-Write-Output ("PASS:          {0}/{1}" -f $passRows.Count, $requiredFactoryIds.Count)
-Write-Output ("HARNESS_ONLY:  {0}" -f $harnessRows.Count)
-Write-Output ("PLANNED/other: {0}" -f $plannedRows.Count)
-Write-Output ""
+Write-GateLine "=== Matrix summary (from docs/BRUISER_QA_GATE.md) ==="
+Write-GateLine ("PASS:          {0}/{1}" -f $passRows.Count, $requiredFactoryIds.Count)
+Write-GateLine ("HARNESS_ONLY:  {0}" -f $harnessRows.Count)
+Write-GateLine ("PLANNED/other: {0}" -f $plannedRows.Count)
+Write-GateLine ""
 
 $manifestApproved = @()
 $manifestThreshold = 95
@@ -73,41 +102,41 @@ if (Test-Path $manifestPath) {
 			$manifestApproved += [string]$row.factory_id
 		}
 	}
-	Write-Output ("=== Meta-critic manifest ({0} approved, threshold {1}) ===" -f $manifestApproved.Count, $manifestThreshold)
+	Write-GateLine ("=== Meta-critic manifest ({0} approved, threshold {1}) ===" -f $manifestApproved.Count, $manifestThreshold)
 } else {
-	Write-Output "[WARN] Missing manifest: docs/bruiser_meta_critic_manifest.json"
+	Write-GateLine "[WARN] Missing manifest: docs/bruiser_meta_critic_manifest.json"
 }
 
 $unapprovedPass = @($passRows | Where-Object { $manifestApproved -notcontains $_ })
 if ($unapprovedPass.Count -gt 0) {
-	Write-Output "[FAIL] Matrix PASS without manifest approval: $($unapprovedPass -join ', ')"
+	Write-GateLine "[FAIL] Matrix PASS without manifest approval: $($unapprovedPass -join ', ')"
 	$matrixPassValid = $false
 } elseif ($passRows.Count -gt $manifestApproved.Count) {
-	Write-Output "[FAIL] Matrix PASS count exceeds manifest approved count."
+	Write-GateLine "[FAIL] Matrix PASS count exceeds manifest approved count."
 	$matrixPassValid = $false
 } else {
 	$matrixPassValid = $true
 }
 
-Write-Output ""
+Write-GateLine ""
 
 if ($passRows.Count -lt $requiredFactoryIds.Count) {
-	Write-Output "[INCOMPLETE] Bruiser LOCK requires all factory rows PASS (meta-critic approved)."
+	Write-GateLine "[INCOMPLETE] Bruiser LOCK requires all factory rows PASS (meta-critic approved)."
 	if ($harnessRows.Count -gt 0) {
-		Write-Output "HARNESS_ONLY (need Bible + [+] asserts): $($harnessRows -join ', ')"
+		Write-GateLine "HARNESS_ONLY (need Bible + [+] asserts): $($harnessRows -join ', ')"
 	}
 	if ($plannedRows.Count -gt 0) {
-		Write-Output "PLANNED (no scenario): $($plannedRows -join ', ')"
+		Write-GateLine "PLANNED (no scenario): $($plannedRows -join ', ')"
 	}
 }
 
 if (-not (Test-Path $GodotPath)) {
-	Write-Output "[SKIP] Godot not found at: $GodotPath - matrix check only."
-	if ($passRows.Count -lt $requiredFactoryIds.Count) { exit 2 }
-	exit 0
+	Write-GateLine "[SKIP] Godot not found at: $GodotPath - matrix check only."
+	if ($passRows.Count -lt $requiredFactoryIds.Count) { Exit-Gate 2 }
+	Exit-Gate 0
 }
 
-Write-Output "=== Tier 1: headless skill scenarios (harness) ==="
+Write-GateLine "=== Tier 1: headless skill scenarios (harness) ==="
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-bruiser-qa.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-bruiser-qa.stderr.log"
 $process = Start-Process -FilePath $GodotPath `
@@ -116,37 +145,37 @@ $process = Start-Process -FilePath $GodotPath `
 	-RedirectStandardError $stderrPath `
 	-Wait `
 	-PassThru
-Get-Content $stdoutPath
-Get-Content $stderrPath
+Get-Content $stdoutPath | ForEach-Object { Write-GateLine $_ }
+Get-Content $stderrPath | ForEach-Object { Write-GateLine $_ }
 
 $testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
 $scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })
 $harnessPass = ($process.ExitCode -eq 0) -and ($testFailures.Count -eq 0) -and ($scriptErrors.Count -eq 0)
 
 if ($harnessPass) {
-	Write-Output "--- Tier 1 harness: PASS ---"
+	Write-GateLine "--- Tier 1 harness: PASS ---"
 } else {
-	Write-Output "--- Tier 1 harness: FAIL ---"
+	Write-GateLine "--- Tier 1 harness: FAIL ---"
 	if ($testFailures.Count -gt 0) {
-		$testFailures | Select-Object -First 10 | ForEach-Object { Write-Output $_ }
+		$testFailures | Select-Object -First 10 | ForEach-Object { Write-GateLine $_ }
 	}
 	if ($scriptErrors.Count -gt 0) {
-		Write-Output "[FAIL] Godot SCRIPT ERROR lines detected ($($scriptErrors.Count)):"
-		$scriptErrors | Select-Object -First 10 | ForEach-Object { Write-Output $_ }
+		Write-GateLine "[FAIL] Godot SCRIPT ERROR lines detected ($($scriptErrors.Count)):"
+		$scriptErrors | Select-Object -First 10 | ForEach-Object { Write-GateLine $_ }
 	}
-	exit 1
+	Exit-Gate 1
 }
 
-Write-Output ""
-Write-Output "=== Bruiser QA gate summary ==="
+Write-GateLine ""
+Write-GateLine "=== Bruiser QA gate summary ==="
 if (-not $matrixPassValid) {
-	Write-Output "[FAIL] Matrix contains self-graded PASS rows (manifest mismatch). Fix docs or update manifest via gauntlet-critic only."
-	exit 3
+	Write-GateLine "[FAIL] Matrix contains self-graded PASS rows (manifest mismatch). Fix docs or update manifest via gauntlet-critic only."
+	Exit-Gate 3
 }
 if ($passRows.Count -eq $requiredFactoryIds.Count) {
-	Write-Output "[PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS."
-	exit 0
+	Write-GateLine "[PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS."
+	Exit-Gate 0
 }
 
-Write-Output ('[INCOMPLETE] Harness PASS but matrix not LOCK-ready ({0}/{1} PASS rows).' -f $passRows.Count, $requiredFactoryIds.Count)
-exit 2
+Write-GateLine ('[INCOMPLETE] Harness PASS but matrix not LOCK-ready ({0}/{1} PASS rows).' -f $passRows.Count, $requiredFactoryIds.Count)
+Exit-Gate 2
