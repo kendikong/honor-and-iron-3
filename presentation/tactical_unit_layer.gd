@@ -232,6 +232,9 @@ func is_sprites_active() -> bool:
 
 
 func reset_planning_walk_origins_for_moves(events: Array) -> void:
+	## Autobattler batch only — kill in-flight tweens before parallel commit walks.
+	## Player commits must not call this; walk starts from current sprite cell via
+	## _animate_planning_commit_move (preview == commit, no origin reset).
 	var reset_ids: Dictionary = {}
 	for raw: Variant in events:
 		if not raw is SimEvent:
@@ -243,17 +246,13 @@ func reset_planning_walk_origins_for_moves(events: Array) -> void:
 		if unit_id >= 0:
 			reset_ids[unit_id] = true
 	for unit_id: Variant in reset_ids.keys():
-		reset_planning_walk_origin(int(unit_id))
+		_kill_move_tween(int(unit_id))
 
 
 func reset_planning_walk_origin(unit_id: int) -> void:
 	if unit_id < 0:
 		return
 	_kill_move_tween(unit_id)
-	var start_cell: Vector2i = _turn_start_cell(unit_id)
-	_position_actor(unit_id, start_cell)
-	_apply_facing(unit_id, _turn_start_facing(unit_id))
-	_update_depth(unit_id)
 
 
 func await_planning_move_tweens() -> void:
@@ -366,7 +365,6 @@ func _on_preview_updated(result: SimResult) -> void:
 func _on_planning_commit_events(events: Array) -> void:
 	if not _is_planning_phase():
 		return
-	reset_planning_walk_origins_for_moves(events)
 	for raw: Variant in events:
 		if raw is SimEvent:
 			_planning_commit_queue.append(raw as SimEvent)
@@ -1260,14 +1258,11 @@ func _animate_planning_commit_move(event: SimEvent) -> void:
 			to_cell = live.position
 	if from_cell == to_cell:
 		return
-	var fallback_cells: Array[Vector2i] = _cells_from_move_event(event, from_cell)
-	var steps: Array[Vector2i] = []
-	if fallback_cells.size() >= 2 and fallback_cells[0] == from_cell:
-		for i: int in range(1, fallback_cells.size()):
-			steps.append(fallback_cells[i])
-	elif not fallback_cells.is_empty():
-		steps = fallback_cells
-	elif to_cell != from_cell:
+	var full_path: Array = event.data.get("path", [])
+	var steps: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
+		full_path, from_cell, to_cell,
+	)
+	if steps.is_empty() and to_cell != from_cell:
 		steps = [to_cell]
 	if steps.is_empty():
 		return
@@ -1445,10 +1440,14 @@ func _play_cell_path_tween(
 		actor.set_walking(false)
 		var live := _board.get_unit_by_id(unit_id) if _board != null else null
 		actor.set_running(live != null and live.has_run_boost())
-		if live != null:
+		var path_end: Vector2i = cells.back() if not cells.is_empty() else start_cell
+		if _planning_commit_sequence_running:
+			if _actor_grid_cell(unit_id) != path_end:
+				_position_actor(unit_id, path_end)
+		elif live != null:
 			if _actor_grid_cell(unit_id) != live.position:
 				_position_actor(unit_id, live.position)
-			_sync_planning_final_facing(unit_id)
+		_sync_planning_final_facing(unit_id)
 		_update_depth(unit_id)
 		_sync_actor_contact_shadow_after_move(unit_id)
 		_schedule_contact_shadow_sync()
