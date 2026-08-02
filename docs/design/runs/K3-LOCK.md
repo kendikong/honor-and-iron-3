@@ -90,18 +90,17 @@ flowchart TD
 
 ---
 
-## Approved rows (14 — do not remove)
+## Approved rows (30 — manifest complete)
 
-`knight_swap`, `knight_shield_bash`, `knight_chain_hook`, `collision_retaliator`, `knight_retaliation_protocol`, `indestructible_bastion`, `shield_mastery`, `knight_fortify`, `knight_shield_slam`, `thorny_carapace`, `concussive_shatter`, `kinetic_momentum`, `stand_ground`, `kinetic_converter`
+All 30 `knight_factory.gd` rows in `docs/knight_meta_critic_manifest.json`. Full-matrix LOCK critic r37: **92/95 FAIL** — see `workbench.md` planning tiers.
 
 ---
 
-## Remaining HARNESS_ONLY (16)
+## Remaining work (LOCK — not HARNESS_ONLY)
 
-`knight_phalanx_stance`, `knight_taunting_strike`, `knight_seismic_stomp`, `knight_bowling_charge`*, `knight_iron_grip`, `knight_redirect_strike`, `knight_indomitable_will`, `knight_defensive_formation`, `knight_trampling_advance`*, `kinetic_armor`, `kinetic_redirection`, `bulwark`, `living_barricade`, `shield_wall`, `rallying_presence`, `intercept_tactics`
+Full-matrix gauntlet-critic **≥ 95**; `knight-template.md` → **LOCKED**; ally-target planning commit for `knight_fortify` / `knight_swap` (presentation scope) or owner tiered-LOCK approval.
 
-\* **No-regression** — assert depth only; no production/harness path changes.
-
+**No-regression:** `knight_bowling_charge`, `knight_trampling_advance` — assert depth only.
 ---
 
 ## Per-row critic handoff (template)

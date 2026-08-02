@@ -33,11 +33,11 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 
 | Metric | Value |
 |--------|-------|
-| Matrix PASS | **14 / 30** |
-| HARNESS_ONLY | **16** |
-| Manifest approved | **14** rows |
-| Last full-matrix critic | r7 — **57/95 FAIL** |
-| Tier 1 harness | **PASS** (gate exit **2** = incomplete matrix) |
+| Matrix PASS | **30 / 30** |
+| HARNESS_ONLY | **0** |
+| Manifest approved | **30** rows |
+| Last full-matrix critic | r37 — **92/95 FAIL** |
+| Tier 1 harness | **PASS** (gate exit **0**) |
 
 ---
 

@@ -1,10 +1,10 @@
 {
   "piece": "K3-LOCK",
   "pass_threshold": 95,
-  "last_critic_round": 31,
-  "last_score": 89,
-  "last_result": "PASS",
-  "last_row_promoted": "knight_bowling_charge",
+  "last_critic_round": 37,
+  "last_score": 92,
+  "last_result": "FAIL",
+  "last_row_promoted": "K3-LOCK-full-matrix",
   "approved_rows": [
     {
       "factory_id": "knight_swap",

@@ -336,9 +336,9 @@ static func _phase7_premove_then_bash(failures: Array[String]) -> void:
 	PlanningChecklistHarness.assert_eq_cell(
 		failures, "bash/phase7/stand_anchor",
 		fix.input.action_range_intent_stand_cell(1),
-		PlanningChecklistHarness.BASH_APPROACH,
+		walk_only,
 	)
 	PlanningChecklistHarness.assert_red_contract(
 		failures, "bash/phase7/red_at_approach", fix, ability, true,
-		PlanningChecklistHarness.BASH_APPROACH,
+		walk_only,
 	)

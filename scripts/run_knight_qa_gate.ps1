@@ -114,7 +114,7 @@ Write-Output "=== Tier 1: headless skill scenarios (harness) ==="
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-knight-qa.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-knight-qa.stderr.log"
 $process = Start-Process -FilePath $GodotPath `
-	-ArgumentList "--headless --path `"$projectRoot`" --script res://tests/run_skill_scenarios_only.gd" `
+	-ArgumentList "--headless --path `"$projectRoot`" res://tests/KnightQaGate.tscn" `
 	-RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath `
 	-Wait `
@@ -123,7 +123,8 @@ Get-Content $stdoutPath
 Get-Content $stderrPath
 
 $testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
-$harnessPass = ($process.ExitCode -eq 0) -and ($testFailures.Count -eq 0)
+$scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })
+$harnessPass = ($process.ExitCode -eq 0) -and ($testFailures.Count -eq 0) -and ($scriptErrors.Count -eq 0)
 
 if ($harnessPass) {
 	Write-Output "--- Tier 1 harness: PASS ---"
@@ -131,6 +132,10 @@ if ($harnessPass) {
 	Write-Output "--- Tier 1 harness: FAIL ---"
 	if ($testFailures.Count -gt 0) {
 		$testFailures | Select-Object -First 10 | ForEach-Object { Write-Output $_ }
+	}
+	if ($scriptErrors.Count -gt 0) {
+		Write-Output "[FAIL] Godot SCRIPT ERROR lines detected ($($scriptErrors.Count)):"
+		$scriptErrors | Select-Object -First 10 | ForEach-Object { Write-Output $_ }
 	}
 	exit 1
 }

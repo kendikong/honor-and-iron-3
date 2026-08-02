@@ -10,6 +10,9 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 static func run_all(failures: Array[String]) -> void:
 	_sim_contract(failures)
 	_KnightQaHarness.run_defensive_formation(failures)
+	_KnightQaHarness.run_planning_commit_smoke(
+		failures, &"knight_defensive_formation", "formation", PlanningChecklistHarness.KNIGHT_START,
+	)
 
 
 static func _sim_contract(failures: Array[String]) -> void:

@@ -10,3 +10,4 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 static func run_all(failures: Array[String]) -> void:
 	_KnightQaHarness.run_swap_base( failures)
 	_KnightQaHarness.run_swap_upgrade( failures)
+	_KnightQaHarness.run_planning_select_smoke(failures, &"knight_swap", "swap")

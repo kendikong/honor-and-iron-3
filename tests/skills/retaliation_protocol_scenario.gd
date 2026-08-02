@@ -9,4 +9,7 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 static func run_all(failures: Array[String]) -> void:
 	_KnightQaHarness.run_retaliation_protocol(failures)
+	_KnightQaHarness.run_planning_commit_smoke(
+		failures, &"knight_retaliation_protocol", "retaliation", PlanningChecklistHarness.KNIGHT_START,
+	)
 

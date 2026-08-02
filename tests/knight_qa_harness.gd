@@ -333,6 +333,108 @@ static func run_bash_wall_stagger_upgrade(failures: Array[String]) -> void:
 # --- Sim scenario patterns (Knight QA Tier 1) --------------------------------
 
 
+## Minimal planning smoke: ability select + overlay wire on shared bash fixture.
+static func wire_planning_board_with_ally(ally_pos: Vector2i) -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = PlanningDragE2EHarness._planning_fixture(
+		PlanningChecklistHarness.KNIGHT_START, PlanningChecklistHarness.ENEMY_POS,
+	)
+	var ally_def: UnitData = knight_unit_data()
+	var ally: UnitState = UnitState.create(3, ally_def, GameEnums.Team.PLAYER, ally_pos)
+	ally.active_abilities = [DataLibrary.get_universal_run()]
+	fix.board.units.append(ally)
+	GridSystem.set_occupant(fix.board, ally_pos, 3)
+	fix.director.board = fix.board
+	fix.director.base_board = fix.board.clone()
+	fix.director.projected_state = fix.board.clone()
+	fix.input.auto_use_skill_after_move = false
+	fix["ally"] = ally
+	return PlanningDragE2EHarness.wire_fixture(fix)
+
+
+static func run_planning_select_smoke(
+	failures: Array[String],
+	ability_id: StringName,
+	tag: String,
+) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	var idx: int = PlanningChecklistHarness.select_ability(fix, ability_id)
+	assert_true(
+		failures, "%s/planning/select" % tag,
+		idx >= 0,
+		"%s must be selectable on planning fixture" % ability_id,
+	)
+	if idx < 0:
+		return
+	var ability: AbilityData = fix.knight.active_abilities[idx]
+	assert_true(
+		failures, "%s/planning/ability_id" % tag,
+		ability != null and ability.id == ability_id,
+	)
+	assert_true(
+		failures, "%s/planning/overlay" % tag,
+		fix.get("overlay") != null,
+		"planning overlay must wire after ability select",
+	)
+
+
+## Planning commit smoke: select → hover → hover/click parity → commit_no_jump (preview==commit).
+static func run_planning_commit_smoke(
+	failures: Array[String],
+	ability_id: StringName,
+	tag: String,
+	commit_cell: Vector2i,
+	use_ally_fixture: bool = false,
+	ally_pos: Vector2i = Vector2i(-1, -1),
+	enemy_pos: Vector2i = Vector2i(-999999, -999999),
+) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary
+	if use_ally_fixture and ally_pos.x >= 0:
+		fix = wire_planning_board_with_ally(ally_pos)
+	elif enemy_pos.x > -999000:
+		fix = PlanningDragE2EHarness.wire_drag_fixture(
+			PlanningChecklistHarness.KNIGHT_START, enemy_pos,
+		)
+	else:
+		fix = PlanningChecklistHarness.wire_bash_board()
+	fix.director.auto_run = true
+	var idx: int = PlanningChecklistHarness.select_ability(fix, ability_id)
+	assert_true(
+		failures, "%s/planning/select" % tag,
+		idx >= 0,
+		"%s must be selectable on planning fixture" % ability_id,
+	)
+	if idx < 0:
+		return
+	var ability: AbilityData = fix.knight.active_abilities[idx]
+	assert_true(
+		failures, "%s/planning/ability_id" % tag,
+		ability != null and ability.id == ability_id,
+	)
+	assert_true(
+		failures, "%s/planning/overlay" % tag,
+		fix.get("overlay") != null,
+		"planning overlay must wire after ability select",
+	)
+	PlanningChecklistHarness.hover(fix, commit_cell)
+	var hover_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, commit_cell)
+	if PlanningChecklistHarness._slots_invalid(hover_slots):
+		assert_true(
+			failures, "%s/planning/valid_slots" % tag,
+			false,
+			"invalid commit slots at %s for %s" % [commit_cell, ability_id],
+		)
+		return
+	PlanningChecklistHarness.assert_slots_match_preview_commit(
+		failures, "%s/planning/hover_click_parity" % tag, fix, commit_cell,
+	)
+	PlanningChecklistHarness.assert_commit_no_jump(
+		failures, "%s/planning/no_jump" % tag, fix, commit_cell,
+	)
+
+
 static func run_active_smoke(
 	failures: Array[String],
 	ability_id: StringName,

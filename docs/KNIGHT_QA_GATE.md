@@ -172,6 +172,18 @@ Do **not** weaken, replace, or “simplify” harness/scenario/production paths 
 
 **LOCK rule:** All factory rows `PASS` (or owner-documented `N/A`). Gate script **fails** until then.
 
+### Planning coverage tiers (K3-LOCK — honest; not planning QA gate)
+
+Knight LOCK uses **tiered** planning proof in Tier 1 harness (`tests/knight_qa_harness.gd`), separate from `run_planning_qa_gate.ps1`.
+
+| Tier | Meaning | Actives |
+|------|---------|---------|
+| **A** | Full 7-phase checklist (`PlanningChecklistHarness`) | `knight_shield_bash`, `knight_chain_hook`, `knight_trampling_advance` |
+| **B** | `run_planning_commit_smoke` — select, hover, hover/click slot parity, `assert_commit_no_jump` | phalanx, taunting, seismic, iron_grip, redirect, indomitable, retaliation, shield_slam, defensive_formation |
+| **C** | Select and/or intent contracts only | `knight_fortify`, `knight_swap` (ally-target commit invalid on bash fixture — sim green), `knight_bowling_charge` (intent E2E + select) |
+
+Passives: sim trigger scenarios only (no planning phases). **Do not** conflate planning QA PASS with Knight LOCK.
+
 Registry: `tests/knight_scenario_registry.gd` + `tests/knight_qa_runner.gd` (30 factory rows + economy slice).
 
 ---

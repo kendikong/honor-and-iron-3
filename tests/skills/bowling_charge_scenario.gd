@@ -12,6 +12,7 @@ static func run_all(failures: Array[String]) -> void:
 	_sim_contract(failures)
 	_planning_bowling_run_contract(failures)
 	_planning_bowling_waypoint_contract(failures)
+	_KnightQaHarness.run_planning_select_smoke(failures, &"knight_bowling_charge", "bowling")
 
 
 static func _sim_contract(failures: Array[String]) -> void:
