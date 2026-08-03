@@ -454,23 +454,9 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 		awaiting.waypoints = action.waypoints.duplicate()
 		awaiting.face_dir = action.face_dir
 		var plan_board: BoardState = projected_state if projected_state != null else board
-		var need_indices: Array[int] = AbilitySystem.planning_modules_needing_aim(
-			actor, awaiting.ability,
+		var next_idx: int = AbilitySystem.planning_next_awaiting_module_index(
+			plan_board, actor, awaiting.ability, mod_idx, awaiting.module_coords,
 		)
-		var next_idx: int = -1
-		for idx: int in need_indices:
-			if idx <= mod_idx:
-				continue
-			var gate_idx: int = AbilitySystem.first_module_index_with_gate(
-				actor, awaiting.ability, GameEnums.ModuleGate.IF_COLLIDED,
-			)
-			if idx == gate_idx:
-				if not AbilitySystem.planning_gated_followup_active(
-					plan_board, actor, awaiting.ability, awaiting.get_module_coord(mod_idx),
-				):
-					continue
-			next_idx = idx
-			break
 		if next_idx >= 0:
 			awaiting.awaiting_module_index = next_idx
 			awaiting.awaiting_target = true

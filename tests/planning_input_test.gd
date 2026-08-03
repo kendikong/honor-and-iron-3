@@ -7,6 +7,12 @@ static func run_all(failures: Array[String]) -> void:
 	## Ability economy, action-range, displacement, and range-approach parity live in
 	## the production-fixture suites run by PlanningQaGate: skill scenarios,
 	## action-range regression, trample E2E, and the checklist gate.
+	var probe: CombatDirector = CombatDirector.new()
+	if probe == null:
+		failures.append(
+			"PlanningInputTest: CombatDirector.new() failed — EventBus/autoload not ready",
+		)
+		return
 	var tests: Array[Callable] = [
 		_test_force_basic_flag,
 		_test_undoable_action_director,
@@ -24,6 +30,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_awaiting_plan_refresh,
 		_test_dash_arm_survives_plan_refresh,
 		_test_dash_self_click_blocks_false_wait,
+		_test_violent_collision_gated_aim,
 		_test_hover_cursor_matches_click_commit_slots,
 		_test_planning_display_mp_left,
 		_test_undo_movement_action_preserves_premove,
@@ -38,8 +45,15 @@ static func run_all(failures: Array[String]) -> void:
 		PlanningDragE2EHarness.cleanup_all()
 
 
-static func _new_director() -> CombatDirector:
-	return CombatDirector.new()
+static func _new_director(failures: Array[String] = []) -> CombatDirector:
+	var director: CombatDirector = CombatDirector.new()
+	if director == null:
+		if not failures.is_empty():
+			failures.append(
+				"PlanningInputTest: CombatDirector.new() returned null (script/autoload broken)",
+			)
+		return null
+	return director
 
 
 static func _register_fixture(input: CombatPlanningInput, director: CombatDirector) -> void:
@@ -935,6 +949,9 @@ static func _test_dash_self_click_blocks_false_wait(failures: Array[String]) -> 
 	var director: CombatDirector = fixture["director"] as CombatDirector
 	var unit: UnitState = fixture["unit"] as UnitState
 	var dash: AbilityData = fixture["dash"] as AbilityData
+	if input == null or director == null:
+		failures.append("PlanningInputTest: bowling charge fixture missing input/director")
+		return
 	if not AbilitySystem.planning_arms_on_self_tile(unit, dash):
 		failures.append("PlanningInputTest: bowling charge should arm awaiting flow on self click")
 	var dash_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
@@ -945,6 +962,221 @@ static func _test_dash_self_click_blocks_false_wait(failures: Array[String]) -> 
 		failures.append("PlanningInputTest: dash self click must arm awaiting action")
 	if director.unit_has_wait_planned(1):
 		failures.append("PlanningInputTest: dash self click must not plan wait")
+
+
+static func _violent_collision_planning_fixture(
+	failures: Array[String],
+	enemy_pos: Vector2i = Vector2i(-9999, -9999),
+) -> Dictionary:
+	var board: BoardState = BruiserQaHarness.make_plain_board(Vector2i(8, 6))
+	BruiserQaHarness.place_bruiser(
+		board,
+		1,
+		Vector2i(2, 3),
+		BruiserQaHarness.bruiser_with_ability(&"bruiser_violent_collision"),
+	)
+	if enemy_pos.x != -9999:
+		BruiserQaHarness.place_dummy(board, 2, enemy_pos)
+	var input := CombatPlanningInput.new()
+	var director := _new_director(failures)
+	if director == null:
+		return {}
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	var unit: UnitState = BruiserQaHarness.unit_on_board(board, 1)
+	var vc_idx: int = BruiserQaHarness.ability_index(unit, &"bruiser_violent_collision")
+	if vc_idx < 0:
+		failures.append("PlanningInputTest: violent_collision missing on bruiser fixture")
+		return {}
+	director.selected_ability_index = vc_idx
+	input._director = director
+	_register_fixture(input, director)
+	return {
+		"input": input,
+		"director": director,
+		"board": board,
+		"unit": unit,
+		"vc_idx": vc_idx,
+	}
+
+
+static func _arm_violent_collision_awaiting(
+	failures: Array[String],
+	fixture: Dictionary,
+) -> bool:
+	var input: CombatPlanningInput = fixture.get("input") as CombatPlanningInput
+	var director: CombatDirector = fixture.get("director") as CombatDirector
+	var unit: UnitState = fixture.get("unit") as UnitState
+	if input == null or director == null or unit == null:
+		failures.append("PlanningInputTest: violent_collision fixture incomplete")
+		return false
+	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append("PlanningInputTest: violent_collision self click must arm awaiting")
+		return false
+	if not input.awaiting_targeting_active():
+		failures.append("PlanningInputTest: violent_collision must enter awaiting after arm")
+		return false
+	return true
+
+
+static func _slots_invalid(slots: Dictionary) -> bool:
+	if not slots.has("invalid"):
+		return false
+	var v: Variant = slots["invalid"]
+	if typeof(v) == TYPE_BOOL:
+		return v
+	if typeof(v) == TYPE_STRING:
+		return v != ""
+	return false
+
+
+static func _action_from_slots(slots: Dictionary) -> TimelineAction:
+	var actions: Array = slots.get("action", []) as Array
+	if actions.is_empty():
+		return null
+	return actions[0] as TimelineAction
+
+
+static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
+	## §2.7 gated-aim: dash-only when gate inactive; stay awaiting until follow-up aimed when gate active.
+	var empty_fixture: Dictionary = _violent_collision_planning_fixture(failures)
+	if empty_fixture.is_empty():
+		return
+	if not _arm_violent_collision_awaiting(failures, empty_fixture):
+		return
+	var empty_input: CombatPlanningInput = empty_fixture["input"] as CombatPlanningInput
+	var empty_director: CombatDirector = empty_fixture["director"] as CombatDirector
+	var empty_board: BoardState = empty_fixture["board"] as BoardState
+	var empty_unit: UnitState = empty_fixture["unit"] as UnitState
+	var empty_skill: AbilityData = BruiserQaHarness.ability_on_unit(
+		empty_unit, &"bruiser_violent_collision",
+	)
+	var dash_only_cell := Vector2i(4, 3)
+	var empty_build: Dictionary = empty_input._build_commit_slots_at_cell(1, dash_only_cell)
+	if _slots_invalid(empty_build):
+		failures.append(
+			"PlanningInputTest: violent_collision empty dash build invalid: %s" % empty_build["invalid"],
+		)
+	var empty_preview: Dictionary = empty_input._final_commit_slots_for_interaction(1, dash_only_cell)
+	var empty_action: TimelineAction = _action_from_slots(empty_preview)
+	if empty_action == null:
+		failures.append("PlanningInputTest: violent_collision empty-line dash must build preview action")
+		return
+	if empty_action.awaiting_target:
+		failures.append(
+			"PlanningInputTest: violent_collision dash without collision must not stay awaiting",
+		)
+	if empty_action.has_module_coord(1):
+		failures.append(
+			"PlanningInputTest: violent_collision empty dash must not require module 1 coord",
+		)
+	if not AbilitySystem.planning_gated_followup_active(
+		empty_board, empty_unit, empty_skill, dash_only_cell,
+	):
+		pass
+	else:
+		failures.append("PlanningInputTest: violent_collision empty-line fixture should not predict collision")
+	if _slots_invalid(empty_preview):
+		failures.append(
+			"PlanningInputTest: violent_collision empty dash preview invalid: %s" % empty_preview["invalid"],
+		)
+	if not empty_director.commit_from_slots(1, empty_preview):
+		failures.append("PlanningInputTest: violent_collision empty dash commit must succeed")
+		return
+	if empty_director.find_awaiting_action(1) != null:
+		failures.append("PlanningInputTest: violent_collision empty dash must finalize (not awaiting)")
+	var committed: TimelineAction = empty_director.plan_action.entries[0] as TimelineAction
+	if committed == null or committed.awaiting_target:
+		failures.append("PlanningInputTest: violent_collision committed dash must be simulatable")
+	if committed != null and committed.has_module_coord(1):
+		failures.append("PlanningInputTest: violent_collision dash-only commit must omit module 1")
+	## Collision path: first dash aim stays awaiting; second MOVE aim finalizes with module_coords parity.
+	var collide_fixture: Dictionary = _violent_collision_planning_fixture(
+		failures, Vector2i(4, 3),
+	)
+	if collide_fixture.is_empty():
+		return
+	if not _arm_violent_collision_awaiting(failures, collide_fixture):
+		return
+	var collide_input: CombatPlanningInput = collide_fixture["input"] as CombatPlanningInput
+	var collide_director: CombatDirector = collide_fixture["director"] as CombatDirector
+	var collide_board: BoardState = collide_fixture["board"] as BoardState
+	var collide_unit: UnitState = collide_fixture["unit"] as UnitState
+	var collide_skill: AbilityData = BruiserQaHarness.ability_on_unit(
+		collide_unit, &"bruiser_violent_collision",
+	)
+	var dash_cell := Vector2i(5, 3)
+	if not AbilitySystem.planning_gated_followup_active(
+		collide_board, collide_unit, collide_skill, dash_cell,
+	):
+		failures.append("PlanningInputTest: violent_collision collision fixture must predict gated follow-up")
+	var dash_preview: Dictionary = collide_input._final_commit_slots_for_interaction(1, dash_cell)
+	var dash_action: TimelineAction = _action_from_slots(dash_preview)
+	if dash_action == null:
+		failures.append("PlanningInputTest: violent_collision collision dash must build preview action")
+		return
+	if not dash_action.awaiting_target:
+		failures.append(
+			"PlanningInputTest: violent_collision collision dash preview must stay awaiting for module 1",
+		)
+	if dash_action.awaiting_module_index != 1:
+		failures.append(
+			"PlanningInputTest: violent_collision collision dash preview awaiting_module_index expected 1 got %d"
+			% dash_action.awaiting_module_index,
+		)
+	if _slots_invalid(dash_preview):
+		failures.append(
+			"PlanningInputTest: violent_collision collision dash preview must not be invalid: %s"
+			% dash_preview["invalid"],
+		)
+	if not collide_director.commit_from_slots(1, dash_preview):
+		failures.append("PlanningInputTest: violent_collision collision dash commit must arm module 1")
+		return
+	var plan_awaiting: TimelineAction = collide_director.find_awaiting_action(1)
+	if plan_awaiting == null or not plan_awaiting.awaiting_target:
+		failures.append("PlanningInputTest: violent_collision must remain awaiting after collision dash")
+	if plan_awaiting != null and plan_awaiting.awaiting_module_index != 1:
+		failures.append(
+			"PlanningInputTest: violent_collision plan awaiting_module_index expected 1 got %d"
+			% (plan_awaiting.awaiting_module_index if plan_awaiting != null else -1),
+		)
+	var follow_cell := Vector2i(6, 3)
+	var follow_preview: Dictionary = collide_input._final_commit_slots_for_interaction(1, follow_cell)
+	var follow_action: TimelineAction = _action_from_slots(follow_preview)
+	if follow_action == null:
+		failures.append("PlanningInputTest: violent_collision follow-up MOVE must build preview action")
+		return
+	if _slots_invalid(follow_preview):
+		failures.append(
+			"PlanningInputTest: violent_collision follow-up preview invalid: %s" % follow_preview["invalid"],
+		)
+	if follow_action.awaiting_target:
+		failures.append("PlanningInputTest: violent_collision follow-up preview must finalize (not awaiting)")
+	if not follow_action.has_module_coord(1) or follow_action.get_module_coord(1) != follow_cell:
+		failures.append("PlanningInputTest: violent_collision follow-up preview must set module_coords[1]")
+	var dash_click: Dictionary = collide_input._final_commit_slots_for_click_at_cell(1, follow_cell, Vector2.ZERO)
+	if _slots_invalid(dash_click):
+		failures.append(
+			"PlanningInputTest: violent_collision click commit slots invalid: %s" % dash_click["invalid"],
+		)
+	var click_action: TimelineAction = _action_from_slots(dash_click)
+	if click_action == null or click_action.get_module_coord(1) != follow_action.get_module_coord(1):
+		failures.append("PlanningInputTest: violent_collision preview/commit module_coords[1] mismatch")
+	if not collide_director.commit_from_slots(1, follow_preview):
+		failures.append("PlanningInputTest: violent_collision follow-up commit must succeed")
+		return
+	var finalized: TimelineAction = collide_director.plan_action.entries[0] as TimelineAction
+	if finalized == null or finalized.awaiting_target:
+		failures.append("PlanningInputTest: violent_collision must finalize after follow-up aim")
+	if finalized != null:
+		if not finalized.has_module_coord(0) or finalized.get_module_coord(0) != dash_cell:
+			failures.append("PlanningInputTest: violent_collision finalized module_coords[0] mismatch")
+		if not finalized.has_module_coord(1) or finalized.get_module_coord(1) != follow_cell:
+			failures.append("PlanningInputTest: violent_collision finalized module_coords[1] mismatch")
 
 
 static func _plain_board_with_unit(

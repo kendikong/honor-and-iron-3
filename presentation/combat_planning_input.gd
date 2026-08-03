@@ -2496,17 +2496,45 @@ func _append_awaiting_ability_slot(
 	waypoints: Array[Vector2i],
 ) -> void:
 	var mod_idx: int = _awaiting_module_index_for(unit_id)
+	var module_coords_buf: Array[Vector2i] = []
+	var plan_awaiting: TimelineAction = (
+		_director.find_awaiting_action(unit_id) if _director != null else null
+	)
+	if plan_awaiting != null:
+		for i: int in range(mod_idx):
+			if plan_awaiting.has_module_coord(i):
+				while module_coords_buf.size() <= i:
+					module_coords_buf.append(TimelineAction.MODULE_COORD_UNSET)
+				module_coords_buf[i] = plan_awaiting.get_module_coord(i)
+	while module_coords_buf.size() <= mod_idx:
+		module_coords_buf.append(TimelineAction.MODULE_COORD_UNSET)
+	module_coords_buf[mod_idx] = cell
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null and _director != null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	var next_idx: int = AbilitySystem.planning_next_awaiting_module_index(
+		_proj(), actor, ability, mod_idx, module_coords_buf,
+	)
+	var target_cell: Vector2i = cell
+	var final_waypoints: Array[Vector2i] = waypoints.duplicate()
+	if next_idx < 0 and mod_idx > 0 and module_coords_buf[0] != TimelineAction.MODULE_COORD_UNSET:
+		target_cell = module_coords_buf[0]
+		if final_waypoints.is_empty():
+			final_waypoints.append(module_coords_buf[0])
+			if module_coords_buf[mod_idx] != TimelineAction.MODULE_COORD_UNSET:
+				final_waypoints.append(module_coords_buf[mod_idx])
 	var action: TimelineAction = TimelineAction.make_ability(
 		unit_id,
 		ability,
-		cell,
+		target_cell,
 		AbilitySystem.planning_commit_target_unit_id(ability, -1),
 		GameEnums.MoveTiming.PRE_ACTION,
-		waypoints,
+		final_waypoints,
 	)
-	while action.module_coords.size() <= mod_idx:
-		action.module_coords.append(TimelineAction.MODULE_COORD_UNSET)
-	action.module_coords[mod_idx] = cell
+	action.module_coords = module_coords_buf.duplicate()
+	if next_idx >= 0:
+		action.awaiting_target = true
+		action.awaiting_module_index = next_idx
 	slots["action"].append(action)
 
 
@@ -3872,6 +3900,9 @@ func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 	if _slots_are_wait_only(actions):
 		slots["_preview_validated"] = true
 		return slots
+	if _slots_contain_incomplete_awaiting_ability(actions):
+		slots["_preview_validated"] = true
+		return slots
 	var error_reason: String = _director.preview_commit_valid(unit_id, actions) if _director != null else ""
 	if error_reason != "":
 		slots["invalid"] = error_reason
@@ -3889,6 +3920,13 @@ func _slots_are_wait_only(actions: Array[TimelineAction]) -> bool:
 		and action.ability != null
 		and action.ability.is_universal_wait()
 	)
+
+
+func _slots_contain_incomplete_awaiting_ability(actions: Array[TimelineAction]) -> bool:
+	for action: TimelineAction in actions:
+		if action.type == GameEnums.ActionType.ABILITY and action.awaiting_target:
+			return true
+	return false
 
 
 func _composite_cursors_enabled() -> bool:

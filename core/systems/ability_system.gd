@@ -311,6 +311,61 @@ static func _module_needs_player_aim(mod: AbilityModule) -> bool:
 	return mod.has_targeting(GameEnums.TargetingFlags.TILE) or mod.has_targeting(GameEnums.TargetingFlags.DASH_LINE)
 
 
+## Next module index needing player aim after `after_mod_idx`, or -1 when complete / gate skips follow-up.
+static func planning_next_awaiting_module_index(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	after_mod_idx: int,
+	module_coords: Array = [],
+) -> int:
+	if actor == null or ability == null:
+		return -1
+	var need_indices: Array[int] = planning_modules_needing_aim(actor, ability)
+	var modules: Array = modules_for_actor(actor, ability)
+	for idx: int in need_indices:
+		if idx <= after_mod_idx:
+			continue
+		if idx >= modules.size():
+			continue
+		var mod: AbilityModule = modules[idx]
+		if mod == null:
+			continue
+		if mod.gate != GameEnums.ModuleGate.ALWAYS:
+			if not _planning_module_gate_would_activate(
+				board, actor, ability, mod, after_mod_idx, module_coords,
+			):
+				continue
+		return idx
+	return -1
+
+
+static func _planning_module_gate_would_activate(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	mod: AbilityModule,
+	prior_mod_idx: int,
+	module_coords: Array,
+) -> bool:
+	if mod == null:
+		return false
+	match mod.gate:
+		GameEnums.ModuleGate.ALWAYS:
+			return true
+		GameEnums.ModuleGate.IF_COLLIDED:
+			var dash_coord: Vector2i = TimelineAction.MODULE_COORD_UNSET
+			if prior_mod_idx >= 0 and prior_mod_idx < module_coords.size():
+				var raw: Variant = module_coords[prior_mod_idx]
+				if raw is Vector2i:
+					dash_coord = raw
+			if dash_coord == TimelineAction.MODULE_COORD_UNSET:
+				return false
+			return planning_gated_followup_active(board, actor, ability, dash_coord)
+		_:
+			return false
+
+
 ## First module index with this gate, or -1.
 static func first_module_index_with_gate(
 	actor: UnitState,
@@ -379,8 +434,12 @@ static func planning_awaiting_module_range(
 	if mod == null:
 		return 0
 	if mod.primary_type == GameEnums.EffectType.DASH:
+		if mod.amount > 0:
+			return mod.amount
 		return mod.max_range if mod.max_range > 0 else dash_steps(ability)
 	if mod.primary_type == GameEnums.EffectType.MOVE:
+		if mod.amount > 0 and mod.max_range <= 0:
+			return mod.amount
 		return mod.max_range if mod.max_range > 0 else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
 	return mod.max_range if mod.max_range > 0 else ability.range_tiles
 
