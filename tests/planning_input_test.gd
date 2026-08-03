@@ -1205,17 +1205,57 @@ static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
 		var bad_input: CombatPlanningInput = bad_fixture["input"] as CombatPlanningInput
 		var bad_director: CombatDirector = bad_fixture["director"] as CombatDirector
 		var bad_dash_preview: Dictionary = bad_input._final_commit_slots_for_interaction(1, dash_cell)
-		if bad_director.commit_from_slots(1, bad_dash_preview):
+		if not bad_director.commit_from_slots(1, bad_dash_preview):
+			failures.append(
+				"PlanningInputTest: violent_collision bad-path setup must arm module 1 awaiting",
+			)
+		else:
 			var bad_follow := Vector2i(9, 3) ## beyond MOVE 2 from post-dash (~5,3)
 			var bad_slots: Dictionary = bad_input._final_commit_slots_for_interaction(1, bad_follow)
 			if not _slots_invalid(bad_slots):
-				var bad_action: TimelineAction = _action_from_slots(bad_slots)
-				if bad_action != null and not bad_action.awaiting_target:
-					var bad_reason: String = bad_director.preview_commit_valid(1, [bad_action])
-					if bad_reason == "":
-						failures.append(
-							"PlanningInputTest: violent_collision invalid follow-up must fail preview_commit_valid",
-						)
+				failures.append(
+					"PlanningInputTest: violent_collision out-of-range follow-up must mark slots invalid",
+				)
+			else:
+				var inv: Variant = bad_slots.get("invalid", "")
+				var inv_str: String = str(inv) if typeof(inv) != TYPE_BOOL else "invalid"
+				if inv_str == "" or inv_str == "false":
+					failures.append(
+						"PlanningInputTest: violent_collision invalid follow-up must set invalid reason",
+					)
+			if bad_director.commit_from_slots(1, bad_slots):
+				failures.append(
+					"PlanningInputTest: violent_collision commit_from_slots must reject out-of-range follow-up",
+				)
+			## Force a completed action with illegal dest through preview_commit_valid / sim.
+			var illegal := TimelineAction.make_ability(
+				1, collide_skill, dash_cell, -1, GameEnums.MoveTiming.PRE_ACTION, [],
+			)
+			illegal.module_coords = [dash_cell, bad_follow]
+			illegal.awaiting_target = false
+			var illegal_reason: String = bad_director.preview_commit_valid(1, [illegal])
+			if illegal_reason == "":
+				failures.append(
+					"PlanningInputTest: violent_collision illegal follow-up dest must fail preview_commit_valid",
+				)
+			var illegal_plan := Timeline.new()
+			illegal_plan.add(illegal)
+			var illegal_sim: SimResult = Simulator.simulate(
+				(bad_fixture["board"] as BoardState).clone(), illegal_plan,
+			)
+			var illegal_failed: bool = false
+			for ev2: SimEvent in illegal_sim.events:
+				if (
+					ev2 != null
+					and ev2.type == GameEnums.SimEventType.ACTION_FAILED
+					and String(ev2.data.get("reason", "")) == "gated_followup_invalid_dest"
+				):
+					illegal_failed = true
+					break
+			if not illegal_failed:
+				failures.append(
+					"PlanningInputTest: violent_collision illegal follow-up must ACTION_FAILED gated_followup_invalid_dest",
+				)
 			## Missing follow-up on a completed (non-awaiting) collision plan → fail loud.
 			var missing := TimelineAction.make_ability(
 				1, collide_skill, dash_cell, -1, GameEnums.MoveTiming.PRE_ACTION, [],
