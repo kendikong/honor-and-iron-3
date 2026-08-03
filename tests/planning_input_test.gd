@@ -1219,9 +1219,10 @@ static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
 			else:
 				var inv: Variant = bad_slots.get("invalid", "")
 				var inv_str: String = str(inv) if typeof(inv) != TYPE_BOOL else "invalid"
-				if inv_str == "" or inv_str == "false":
+				if inv_str != "gated_followup_invalid_dest":
 					failures.append(
-						"PlanningInputTest: violent_collision invalid follow-up must set invalid reason",
+						"PlanningInputTest: violent_collision invalid follow-up reason expected gated_followup_invalid_dest got %s"
+						% inv_str,
 					)
 			if bad_director.commit_from_slots(1, bad_slots):
 				failures.append(

@@ -2464,6 +2464,24 @@ func _awaiting_module_index_for(unit_id: int) -> int:
 	return awaiting.awaiting_module_index
 
 
+func _awaiting_invalid_endpoint_reason(actor: UnitState, ability: AbilityData) -> String:
+	## Align planning reject reason with sim fail-loud codes (ability-data.md §2.7 rule 5).
+	if actor == null or ability == null or _director == null:
+		return "Invalid target or distance for this ability."
+	var awaiting: TimelineAction = _director.find_awaiting_action(actor.id)
+	if awaiting == null:
+		return "Invalid target or distance for this ability."
+	var mod_idx: int = (
+		awaiting.awaiting_module_index if awaiting.awaiting_module_index >= 0 else 0
+	)
+	var modules: Array[AbilityModule] = AbilitySystem.modules_for_actor(actor, ability)
+	if mod_idx >= 0 and mod_idx < modules.size():
+		var mod: AbilityModule = modules[mod_idx]
+		if mod != null and mod.gate == GameEnums.ModuleGate.IF_COLLIDED:
+			return "gated_followup_invalid_dest"
+	return "Invalid target or distance for this ability."
+
+
 func _planning_valid_awaiting_cell(
 	actor: UnitState,
 	ability: AbilityData,
@@ -3521,7 +3539,7 @@ func _build_commit_slots_at_cell(
 						slots, unit_id, ability, cell, effective_waypoints,
 					)
 					return slots
-				slots["invalid"] = "Invalid target or distance for this ability."
+				slots["invalid"] = _awaiting_invalid_endpoint_reason(actor, ability)
 				return slots
 		else:
 			if AbilitySystem.can_target_self(actor, ability):
