@@ -1223,7 +1223,9 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		return
 	dst.display_name = String(data.get("display_name", dst.display_name))
 	if data.has("planner_group"):
-		dst.planner_group = int(data.get("planner_group", dst.planner_group))
+		apply_planner_group_change(
+			dst, int(data.get("planner_group", dst.planner_group)) as GameEnums.PlannerGroup
+		)
 	if data.has("kind"):
 		var kind_v: int = int(data.get("kind"))
 		var kind_enum: GameEnums.AbilityKind = kind_v as GameEnums.AbilityKind
@@ -1234,9 +1236,13 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 			dst.kind = kind_enum
 		elif not data.has("planner_group"):
 			dst.kind = kind_enum
-			dst.planner_group = AbilityModuleBridge.planner_group_from_kind(kind_enum)
+			apply_planner_group_change(
+				dst, AbilityModuleBridge.planner_group_from_kind(kind_enum)
+			)
 	elif not data.has("planner_group"):
-		dst.planner_group = AbilityModuleBridge.planner_group_from_kind(dst.kind as GameEnums.AbilityKind)
+		apply_planner_group_change(
+			dst, AbilityModuleBridge.planner_group_from_kind(dst.kind as GameEnums.AbilityKind)
+		)
 	if data.has("tags"):
 		var tags_v: Variant = data.get("tags", [])
 		var tags_out: Array[StringName] = []

@@ -405,6 +405,37 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 	if switch_ab.is_movement_kind():
 		failures.append("ACTION+MOVE must not set is_movement_kind")
 	switch_ob.free()
+	## Dict import must use the same planner apply path (critic AD-5b residual).
+	var dict_switch := AbilityData.new()
+	dict_switch.id = &"dict_planner_switch_probe"
+	dict_switch.planner_group = GameEnums.PlannerGroup.ACTION
+	dict_switch.kind = GameEnums.AbilityKind.CLASS_SKILL
+	dict_switch.primary_resource = GameEnums.CostResource.HP
+	dict_switch.primary_value = 5
+	dict_switch.action_point_cost = 0
+	dict_switch.movement_point_cost = 2
+	dict_switch.tags = [AbilityModuleBridge.TAG_ATTACK]
+	dict_switch.effects = [EffectData.new()]
+	dict_switch.effects[0].type = GameEnums.EffectType.DAMAGE
+	dict_switch.effects[0].amount = 1
+	dict_switch.finalize_modular()
+	var dict_payload: Dictionary = ClassLibrarySchema.ability_to_dict(dict_switch)
+	dict_payload["planner_group"] = GameEnums.PlannerGroup.PRE_MOVE
+	var dict_clone := AbilityData.new()
+	dict_clone.id = dict_switch.id
+	ClassLibrarySchema.apply_ability_dict(dict_clone, dict_payload)
+	if dict_clone.planner_group != GameEnums.PlannerGroup.PRE_MOVE:
+		failures.append("apply_ability_dict planner_group via apply_planner_group_change failed")
+	if dict_clone.primary_resource != GameEnums.CostResource.MP:
+		failures.append("apply_ability_dict PRE_MOVE switch must force MP from HP (shared path)")
+	var schema_src := FileAccess.get_file_as_string("res://ui/class_library_schema.gd")
+	var dict_fn_idx: int = schema_src.find("static func apply_ability_dict")
+	if dict_fn_idx < 0:
+		failures.append("apply_ability_dict missing in schema")
+	else:
+		var dict_slice: String = schema_src.substr(dict_fn_idx, 900)
+		if dict_slice.find("apply_planner_group_change") < 0:
+			failures.append("apply_ability_dict must call apply_planner_group_change")
 	## Editor source must wire planner OptionButton to apply_planner_group_change (not inline enforce).
 	var editor_src := FileAccess.get_file_as_string("res://ui/class_library_editor.gd")
 	if editor_src.find("ClassLibrarySchema.apply_planner_group_change") < 0:
