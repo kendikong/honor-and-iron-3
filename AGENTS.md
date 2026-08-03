@@ -226,7 +226,8 @@ To keep workspace limits and API usage optimized:
 Durable, non-obvious notes for running this Godot 4.7 project on the Linux Cloud VM. Standard commands live in `scripts/*.ps1`, `docs/PLANNING_QA_GATE.md`, and `ROADMAP.md` — those are not duplicated here.
 
 ### Engine
-- Godot **4.7-stable** is installed on `PATH` as `godot` (Linux x86_64 build). The startup update script re-installs it only if missing and pre-warms the asset import cache (`godot --headless --import`).
+- Godot **4.7-stable** is on `PATH` as `godot`. Image build: `.cursor/Dockerfile`. Boot install (`.cursor/environment.json`): reinstall if missing + `godot --headless --import`.
+- If a new Cloud Agent reports `godot: command not found`, check its setup log for `skipping install script` / `stale build` — that means Cursor reused an old snapshot and skipped install. Fix: rebuild from the Dockerfile (merge Dockerfile changes; wait for a new Environment **Build** to finish), then start a **new** agent.
 - The `scripts/*.ps1` QA wrappers are **Windows/PowerShell + local `.exe`** only. On this VM, invoke Godot directly (the `.ps1` files just wrap these commands):
   - Sim/bridge regression (headless): `godot --headless --path . --script res://tests/regression_test.gd`
   - Result file is written to `~/.local/share/godot/app_userdata/Honor and Iron 3/regression_test_result.txt` (Linux user:// path; the `.ps1` scripts read the Windows `%APPDATA%` path instead).
