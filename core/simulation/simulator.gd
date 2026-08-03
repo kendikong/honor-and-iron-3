@@ -132,7 +132,7 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 					DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 99, 2),
 				)
 			if to_remove.size() > 0 or indomitable_will_expired:
-				unit._recalculate_stats()
+				unit._recalculate_stats(board)
 
 
 static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team: GameEnums.Team) -> void:
@@ -162,14 +162,13 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 					has_rallying_knight = true
 					if adj_unit.is_passive_upgraded(&"rallying_presence"):
 						rally_upgraded = true
-						rally_upgraded = true
 						break
 			if has_rallying_knight:
 				var mov_bonus: int = 2 if rally_upgraded else 1
 				unit.active_statuses.append(
 					DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_MP, 1, mov_bonus),
 				)
-				unit._recalculate_stats()
+				unit._recalculate_stats(board)
 				
 			if unit.has_passive(&"cellular_regeneration"):
 				var adj_enemies = 0
@@ -181,7 +180,7 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 					CombatSystem.heal(board, unit, 1, events)
 				if adj_enemies >= 2 and unit.is_passive_upgraded(&"cellular_regeneration"):
 					unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
-					unit._recalculate_stats()
+					unit._recalculate_stats(board)
 
 
 static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> void:

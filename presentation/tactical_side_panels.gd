@@ -524,6 +524,12 @@ func _clear_skill_buttons() -> void:
 
 func _on_ability_selected(index: int) -> void:
 	_selected_ability = index
+	if index >= 0 and _force_basic_check != null and _force_basic_check.button_pressed:
+		_force_basic_check.set_pressed_no_signal(false)
+		if _planning_input != null:
+			_planning_input.force_basic_movement = false
+		if _settings != null:
+			_settings.planning_force_basic = false
 	if _skill_ui_lock:
 		return
 	if _skill_list != null and _skill_list.get_child_count() > 0:

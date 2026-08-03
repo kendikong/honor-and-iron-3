@@ -42,11 +42,16 @@ deterministic checklist contract; slot-only rows do not replace drag E2E.
 
 ### Tier 3 TestBattle acceptance
 
-`tests/live_planning_scene_test.gd` boots the actual `TestBattle.tscn` **once** through
-GdUnit4 and runs `test_live_planning_bible_multi_knight_session`. It pins a
-four-knight / two-dummy training layout, uses real mouse move/press/release events,
-advances production frames, inspects overlay tile collections and preview/commit
-state, then presses Ready → Execute and verifies final unit positions.
+`tests/live_planning_scene_test.gd` boots the actual `TestBattle.tscn` through
+GdUnit4. **`test_live_planning_bible_multi_knight_session`** runs one four-knight /
+two-dummy session, advances production frames, inspects overlay tile collections and
+preview/commit state, then presses Ready → Execute and verifies final unit positions.
+**`test_live_swap_session`** runs one knight+ally boot through all swap journeys:
+adjacent swap + L-route premove `(4,4) → (3,4) → (3,5)`; board reapply for
+walk-swap layout; out-of-range hover/click parity (walk+swap icon, click commits
+without selecting ally); undo reset; two-step walk-then-swap drag flow. Asserts live
+board / projected / preview / sprites / MP / timeline / headless sim parity at each
+checkpoint.
 
 #### Tier 3 profiles (`LIVE_QA_PROFILE`)
 
@@ -82,6 +87,14 @@ Run Tier 3 alone (owner debugging only — **not** in addition to the gate):
 ```powershell
 .\scripts\run_planning_scene_acceptance.ps1
 ```
+
+**Swap-only iteration** (while fixing walk/swap commit, swap preview, swap sprites — **do not** run the full gate until swap PASS):
+
+```powershell
+.\scripts\run_swap_planning_acceptance.ps1
+```
+
+Runs only `test_live_swap_session`; ignores `test_live_planning_bible_multi_knight_session`. Agents must use this during swap fix loops and must not dismiss swap `[FAIL]` lines as pre-existing.
 
 Prove that this journey can fail (the source is restored even if the assertion fails):
 

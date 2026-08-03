@@ -1,6 +1,8 @@
 class_name CombatPlanningPreview
 extends RefCounted
 
+const INVALID_VISUAL_CELL := Vector2i(-999999, -999999)
+
 ## Shared live-preview state for tactical planning (paths, predicted HP/armor).
 
 var predicted_hp: Dictionary = {}
@@ -59,7 +61,167 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	## Intent geometry comes from planned actions (valid TILE/move selection), not only sim paths.
 	var actions_v: Variant = res.get("actions", [])
 	if actions_v is Array:
-		ensure_movement_intent_from_actions(actions_v as Array, base_board)
+		ensure_movement_intent_from_actions(actions_v as Array, base_board, {}, director)
+		ensure_swap_approach_paths_from_actions(
+			actions_v as Array, base_board, preview_paths, preview_splits, action_splits, director,
+		)
+		adjust_swap_intent_actor_pose(temp_board, actions_v as Array, director)
+
+
+## Walk→swap hover: inject approach route when sim path is missing but commit slots include a pre-walk.
+static func ensure_swap_approach_paths_from_actions(
+	actions: Array,
+	start_board: BoardState,
+	preview_paths: Dictionary,
+	preview_splits: Dictionary,
+	action_splits: Dictionary,
+	director: CombatDirector = null,
+) -> void:
+	if start_board == null or actions.is_empty():
+		return
+	var actor_id: int = -1
+	var walk_dest: Vector2i = Vector2i(-999999, -999999)
+	var has_swap: bool = false
+	var swap_action: TimelineAction = null
+	var swap_index: int = -1
+	for action_index: int in range(actions.size()):
+		var raw: Variant = actions[action_index]
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if (
+			action.type == GameEnums.ActionType.ABILITY
+			and action.ability != null
+			and AbilitySystem.ability_has_swap_effect(action.ability)
+		):
+			has_swap = true
+			swap_action = action
+			actor_id = action.actor_id
+			swap_index = action_index
+	if not has_swap or actor_id < 0 or swap_action == null:
+		return
+	walk_dest = _swap_approach_cell(director, start_board, swap_action)
+	var move_action: TimelineAction = null
+	var move_index: int = -1
+	for action_index2: int in range(actions.size()):
+		var raw2: Variant = actions[action_index2]
+		if not raw2 is TimelineAction:
+			continue
+		var candidate: TimelineAction = raw2 as TimelineAction
+		if candidate.type == GameEnums.ActionType.MOVE and candidate.actor_id == actor_id:
+			move_action = candidate
+			move_index = action_index2
+			if GridSystem.manhattan(candidate.target_coord, walk_dest) <= 1:
+				walk_dest = candidate.target_coord
+			break
+	if move_action == null and director != null and director.plan_pre_move != null:
+		for planned: TimelineAction in director.plan_pre_move.entries:
+			if planned.type == GameEnums.ActionType.MOVE and planned.actor_id == actor_id:
+				move_action = planned
+				move_index = -1
+				break
+	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
+		return
+	var actor: UnitState = start_board.get_unit_by_id(actor_id)
+	if actor == null:
+		return
+	var origin: Vector2i = actor.position
+	if move_action != null and move_index > swap_index:
+		var existing_after_swap: Array = preview_paths.get(actor_id, [])
+		if (
+			existing_after_swap.size() >= 2
+			and existing_after_swap.back() is Vector2i
+			and (existing_after_swap.back() as Vector2i) == move_action.target_coord
+		):
+			return
+	var route_cells: Array = [origin]
+	if walk_dest != origin:
+		if (
+			move_action != null
+			and not move_action.waypoints.is_empty()
+			and (move_index < 0 or move_index < swap_index)
+		):
+			route_cells = movement_intent_cells(origin, move_action)
+		else:
+			var budget: int = actor.movement.points_left
+			var found: Array[Vector2i] = MovementSystem.find_path(
+				start_board, origin, walk_dest, budget,
+			)
+			if not found.is_empty():
+				route_cells.append_array(found)
+			elif GridSystem.manhattan(origin, walk_dest) == 1:
+				route_cells.append(walk_dest)
+	if route_cells.size() < 2:
+		return
+	preview_paths[actor_id] = route_cells
+	preview_splits[actor_id] = route_cells.size()
+	if not action_splits.has(actor_id):
+		action_splits[actor_id] = 0
+
+
+static func _swap_approach_cell(
+	director: CombatDirector,
+	board: BoardState,
+	swap_action: TimelineAction,
+) -> Vector2i:
+	if director == null or board == null or swap_action == null or swap_action.ability == null:
+		return Vector2i(-999999, -999999)
+	var actor: UnitState = board.get_unit_by_id(swap_action.actor_id)
+	if actor == null:
+		return Vector2i(-999999, -999999)
+	var ability_index: int = 0
+	for i: int in range(actor.active_abilities.size()):
+		if actor.active_abilities[i].id == swap_action.ability.id:
+			ability_index = i
+			break
+	var target_unit_id: int = swap_action.target_unit_id
+	if target_unit_id < 0:
+		var ally: UnitState = board.get_unit_at(swap_action.target_coord)
+		if ally != null:
+			target_unit_id = ally.id
+	if target_unit_id < 0:
+		return Vector2i(-999999, -999999)
+	return director.preview_approach_tile(
+		swap_action.actor_id, target_unit_id, ability_index, actor.position,
+	)
+
+
+## Walk→swap hover: preview_board sim ends swapped; ghost must stand on the walk leg endpoint.
+static func adjust_swap_intent_actor_pose(
+	preview_board: BoardState,
+	actions: Array,
+	director: CombatDirector = null,
+) -> void:
+	if preview_board == null or actions.is_empty():
+		return
+	var actor_id: int = -1
+	var walk_dest: Vector2i = Vector2i(-999999, -999999)
+	var has_swap: bool = false
+	for raw: Variant in actions:
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if action.type == GameEnums.ActionType.MOVE:
+			actor_id = action.actor_id
+			walk_dest = action.target_coord
+		elif (
+			action.type == GameEnums.ActionType.ABILITY
+			and action.ability != null
+			and AbilitySystem.ability_has_swap_effect(action.ability)
+		):
+			has_swap = true
+			if actor_id < 0:
+				actor_id = action.actor_id
+			if walk_dest.x < -900000:
+				var approach_board: BoardState = preview_board
+				if director != null and director.base_board != null:
+					approach_board = director.base_board
+				walk_dest = _swap_approach_cell(director, approach_board, action)
+	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
+		return
+	var actor: UnitState = preview_board.get_unit_by_id(actor_id)
+	if actor != null and actor.position != walk_dest:
+		actor.position = walk_dest
 
 
 ## Replace the action leg inside a longer preview route with waypoint intent geometry.
@@ -166,10 +328,13 @@ func ensure_movement_intent_from_actions(
 	actions: Array,
 	start_board: BoardState,
 	actors_with_committed_move: Dictionary = {},
+	director: CombatDirector = null,
 ) -> void:
 	if start_board == null or actions.is_empty():
 		return
 	var origins: Dictionary = {}
+	var move_actors: Dictionary = {}
+	var movement_intents: Dictionary = {}
 	for unit: UnitState in start_board.units:
 		origins[unit.id] = unit.position
 	for raw: Variant in actions:
@@ -177,9 +342,80 @@ func ensure_movement_intent_from_actions(
 			continue
 		var action: TimelineAction = raw as TimelineAction
 		if action.type == GameEnums.ActionType.MOVE:
+			move_actors[action.actor_id] = true
+			var move_origin_from_plan: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+			if not action.waypoints.is_empty():
+				movement_intents[action.actor_id] = movement_intent_cells(move_origin_from_plan, action)
+			var existing: Array = preview_paths.get(action.actor_id, [])
+			var move_origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+			if not existing.is_empty() and existing.back() is Vector2i:
+				move_origin = existing.back() as Vector2i
+			if existing.size() < 2:
+				var route_cells: Array = movement_intent_cells(move_origin, action)
+				if route_cells.size() < 2 and start_board != null:
+					var actor: UnitState = start_board.get_unit_by_id(action.actor_id)
+					var budget: int = actor.movement.points_left if actor != null else 999
+					var found: Array[Vector2i] = MovementSystem.find_path(
+						start_board, move_origin, action.target_coord, budget,
+					)
+					if not found.is_empty():
+						route_cells = [move_origin]
+						route_cells.append_array(found)
+				if route_cells.size() >= 2:
+					preview_paths[action.actor_id] = route_cells
+					preview_splits[action.actor_id] = route_cells.size()
+					if not action_splits.has(action.actor_id):
+						action_splits[action.actor_id] = 0
 			origins[action.actor_id] = action.target_coord
 			continue
 		if action.type != GameEnums.ActionType.ABILITY or action.awaiting_target:
+			continue
+		if action.ability != null and AbilitySystem.ability_has_swap_effect(action.ability):
+			## Swap is a paired displacement presentation, not an additional walk leg.
+			## Keep the preview route on the explicit approach MOVE (never sim swap tail).
+			var approach: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+			if move_actors.get(action.actor_id, false):
+				var planned_route: Array = movement_intents.get(action.actor_id, [])
+				if planned_route.size() >= 2:
+					preview_paths[action.actor_id] = planned_route
+					preview_splits[action.actor_id] = planned_route.size()
+					origins[action.actor_id] = action.target_coord
+					continue
+				var walker: UnitState = start_board.get_unit_by_id(action.actor_id)
+				var walk_origin: Vector2i = walker.position if walker != null else approach
+				var route_cells: Array = [walk_origin]
+				if approach != walk_origin:
+					var budget: int = walker.movement.points_left if walker != null else 999
+					var found: Array[Vector2i] = MovementSystem.find_path(
+						start_board, walk_origin, approach, budget,
+					)
+					if not found.is_empty():
+						route_cells.append_array(found)
+					elif GridSystem.manhattan(walk_origin, approach) == 1:
+						route_cells.append(approach)
+				if route_cells.size() >= 2:
+					preview_paths[action.actor_id] = route_cells
+					preview_splits[action.actor_id] = route_cells.size()
+			else:
+				var inferred: Vector2i = _swap_approach_cell(director, start_board, action)
+				if inferred.x > -900000:
+					approach = inferred
+					var walker2: UnitState = start_board.get_unit_by_id(action.actor_id)
+					var walk_origin2: Vector2i = walker2.position if walker2 != null else approach
+					var route2: Array = [walk_origin2]
+					if approach != walk_origin2:
+						var budget2: int = walker2.movement.points_left if walker2 != null else 999
+						var found2: Array[Vector2i] = MovementSystem.find_path(
+							start_board, walk_origin2, approach, budget2,
+						)
+						if not found2.is_empty():
+							route2.append_array(found2)
+						elif GridSystem.manhattan(walk_origin2, approach) == 1:
+							route2.append(approach)
+					if route2.size() >= 2:
+						preview_paths[action.actor_id] = route2
+						preview_splits[action.actor_id] = route2.size()
+			origins[action.actor_id] = action.target_coord
 			continue
 		if action.ability == null or not AbilitySystem.ability_has_movement_effect(action.ability):
 			continue
@@ -190,6 +426,19 @@ func ensure_movement_intent_from_actions(
 		var existing: Array = preview_paths.get(action.actor_id, [])
 		## Committed waypoints are intent truth — never keep a same-endpoint sim path with different steps.
 		if not action.waypoints.is_empty():
+			if (
+				not existing.is_empty()
+				and existing.back() is Vector2i
+				and (existing.back() as Vector2i) == origin
+			):
+				var combined: Array = existing.duplicate()
+				combined.append_array(intent.slice(1))
+				preview_paths[action.actor_id] = combined
+				preview_splits[action.actor_id] = combined.size()
+				if not action_splits.has(action.actor_id):
+					action_splits[action.actor_id] = 0
+				origins[action.actor_id] = action.target_coord
+				continue
 			if existing.size() > intent.size():
 				preview_paths[action.actor_id] = _splice_waypoint_action_leg(existing, origin, action)
 				preview_splits[action.actor_id] = (preview_paths[action.actor_id] as Array).size()
@@ -365,6 +614,17 @@ static func build_preview_paths(
 						pid,
 						from_unit.position if from_unit != null else to_pos,
 					)
+					## Voluntary displacement (SWAP): extend route only — not orange push arrows.
+					if not enemy_phase and not d.has("pusher") and paths.has(pid):
+						var route: Array = paths[pid]
+						if route.is_empty():
+							route.append(from_pos)
+						var tail: Variant = route[route.size() - 1]
+						if tail is Vector2i and (tail as Vector2i) != to_pos:
+							route.append(to_pos)
+							splits[pid] = int(splits[pid]) + 1
+						current_positions[pid] = to_pos
+						continue
 					(pushes[pid] as Array).append([from_pos, to_pos])
 					current_positions[pid] = to_pos
 
@@ -434,7 +694,11 @@ static func planning_move_origin_cell_for_timing(
 		if board != null and board.is_in_bounds(action_end):
 			return action_end
 		return Vector2i(-999999, -999999)
-	var board: BoardState = planning_projection_board(director, fallback_board)
+	var board: BoardState = (
+		director.live_planning_board()
+		if director != null
+		else planning_projection_board(director, fallback_board)
+	)
 	var unit: UnitState = board.get_unit_by_id(unit_id) if board != null else null
 	if unit != null:
 		return unit.position
@@ -548,8 +812,9 @@ static func move_route_leg_from_preview(
 	return route.slice(start_idx, end_idx)
 
 
-## True when a committed PRE-MOVE displacement is done — unit stands on target.
+## True when a committed PRE-MOVE displacement is visually done (sprite on target).
 ## Post-move legs always draw: they document action-end → post-dest even after full projection.
+## When visual_cell is set, logical/projected board must not hide arrows before commit walk finishes.
 static func committed_move_already_realized(
 	director: CombatDirector,
 	board: BoardState,
@@ -557,6 +822,7 @@ static func committed_move_already_realized(
 	timing: int,
 	move_action: TimelineAction,
 	_route_leg: Array,
+	visual_cell: Vector2i = INVALID_VISUAL_CELL,
 ) -> bool:
 	if timing != GameEnums.MoveTiming.PRE_ACTION:
 		return false
@@ -569,14 +835,14 @@ static func committed_move_already_realized(
 	if origin == move_action.target_coord:
 		return false
 	var target: Vector2i = move_action.target_coord
+	if visual_cell != INVALID_VISUAL_CELL:
+		if director.is_planning_move_instant(unit_id):
+			return true
+		return visual_cell == target
 	if board != null:
 		var live_unit: UnitState = board.get_unit_by_id(unit_id)
 		if live_unit != null and _committed_pre_move_satisfied(origin, live_unit.position, target):
 			return true
-	var plan_board: BoardState = planning_projection_board(director, board)
-	var proj_unit: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else null
-	if proj_unit != null and _committed_pre_move_satisfied(origin, proj_unit.position, target):
-		return true
 	return false
 
 
@@ -599,6 +865,7 @@ static func committed_move_route_leg(
 	director: CombatDirector,
 	board: BoardState,
 	timing: int,
+	visual_cell: Vector2i = INVALID_VISUAL_CELL,
 ) -> Array:
 	if director == null:
 		return []
@@ -611,7 +878,9 @@ static func committed_move_route_leg(
 		unit_id, preview, director, board, timing, false,
 	)
 	if leg.size() >= 2:
-		if committed_move_already_realized(director, board, unit_id, timing, move_action, leg):
+		if committed_move_already_realized(
+			director, board, unit_id, timing, move_action, leg, visual_cell,
+		):
 			return []
 		return leg
 	var origin: Vector2i = move_leg_origin_cell(
@@ -622,7 +891,9 @@ static func committed_move_route_leg(
 	var fallback: Array = movement_intent_cells(origin, move_action)
 	if (
 		fallback.size() >= 2
-		and committed_move_already_realized(director, board, unit_id, timing, move_action, fallback)
+		and committed_move_already_realized(
+			director, board, unit_id, timing, move_action, fallback, visual_cell,
+		)
 	):
 		return []
 	return fallback

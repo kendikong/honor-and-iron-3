@@ -1,0 +1,15 @@
+class_name KnightShieldSlamScenarioTest
+extends RefCounted
+
+const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+
+## Bible: Shield Slam: DAMAGE + PUSH
+## Globals: DAMAGE, PUSH via AbilitySystem / EffectData
+
+
+static func run_all(failures: Array[String]) -> void:
+	_KnightQaHarness.run_shield_slam(failures)
+	_KnightQaHarness.run_planning_commit_smoke(
+		failures, &"knight_shield_slam", "slam", PlanningChecklistHarness.ENEMY_POS,
+	)
+

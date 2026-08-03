@@ -1,0 +1,33 @@
+---
+description: Keep owner-facing replies short — no code dumps they will not read
+alwaysApply: true
+---
+
+# Owner-Facing Brevity (Mandatory)
+
+The project owner is **not** a coder. Default replies must be **readable in plain language**, not padded with code they will skip.
+
+## Default (talking to the owner)
+
+- **Lead with the answer** — outcome, verdict, or decision in the first sentence or two.
+- **Prose over paste** — explain what changed or how something works in short paragraphs or a tight table. Do **not** paste multi-line code blocks “for completeness.”
+- **No factory dumps** — do not quote `bruiser_factory.gd`, harness functions, or long `ability_system` paths unless the owner **asked to see code** or a **single line** is the whole answer.
+- **Spot checks / audits** — Bible text + behavior summary + match yes/no/noise. Skip implementation walkthroughs unless asked.
+- **One reference max** when helpful — file path or symbol name inline (e.g. `bruiser_charge_strike` in `bruiser_factory.gd`), not a fenced block.
+- **Changelogs** — still follow `living-sandbox-architect.mdc` Before/After, but keep **owner-visible prose** short; detail belongs in changelog sections, not repeated as code in the opening reply.
+
+## When code in the reply is OK
+
+- Owner explicitly asks: “show me the code,” “paste the diff,” “what does the function look like.”
+- A **≤3-line** snippet is the only way to disambiguate (rare).
+- Required **permission-gate** or **⚠ Global system exception** blocks (unchanged).
+
+## Forbidden in owner-facing text
+
+- Long fenced code blocks copied from the repo “so you can see it.”
+- Stack-walking multiple files with line-number citations when a summary suffices.
+- Repeating the same code in the reply **and** changelog **and** plan.
+
+## Does not relax
+
+- `global-systems-first.mdc`, `interpret-plan-permission.mdc`, `qa-after-gameplay-changes.mdc`, gauntlet banners, or auto-commit — those stay mandatory; just **don’t bury the headline under code**.

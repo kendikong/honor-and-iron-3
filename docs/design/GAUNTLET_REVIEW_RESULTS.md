@@ -7,7 +7,7 @@
 | `00-remaining-work-suite-plan.md` | 91 | C6 | 90 | **PASS** | POLISHED |
 | `01-doc-polish-protocol.md` | 91 | C3 | 90 | **PASS** | POLISHED |
 | `REMAINING_WORK_MAP.md` | 89 | C4 | 88 | **PASS** | LOOP_READY |
-| `knight-template.md` | 90 | K3-r1 | 88 | **PASS** | LOOP_READY *(K3-doc rerun; K3-LOCK 0/30)* |
+| `knight-template.md` | 90 | K3-r1 | 88 | **PASS** | **LOCKED** *(owner 2026-08-02; K3-LOCK complete)* |
 | `verification-matrix.md` | 89 | C6 | 88 | **PASS** | LOOP_READY |
 | `combat-core-closeout.md` | 88 | C4 | 88 | **PASS** | LOOP_READY |
 | `class-rollout.md` | 88 | C4 | 88 | **PASS** | LOOP_READY |

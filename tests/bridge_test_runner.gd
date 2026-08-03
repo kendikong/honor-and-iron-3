@@ -301,6 +301,43 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	CombatPlanningPreview.build_preview_paths([move, push], null, paths, splits, pushes)
 	if paths.is_empty():
 		failures.append("CombatPlanningPreview: paths empty without director (expected no crash)")
+	# SWAP uses UNIT_PUSHED (no pusher) — voluntary route must include swap tile before walk tail.
+	var swap_board := BoardState.new()
+	swap_board.grid_size = Vector2i(8, 8)
+	var knight := UnitState.new()
+	knight.id = 1
+	knight.team = GameEnums.Team.PLAYER
+	knight.position = Vector2i(4, 5)
+	var ally := UnitState.new()
+	ally.id = 2
+	ally.team = GameEnums.Team.PLAYER
+	ally.position = Vector2i(4, 4)
+	swap_board.units = [knight, ally]
+	GridSystem.set_occupant(swap_board, knight.position, knight.id)
+	GridSystem.set_occupant(swap_board, ally.position, ally.id)
+	var swap_director := CombatDirector.new()
+	swap_director.base_board = swap_board
+	swap_director.board = swap_board
+	var swap_plan := Timeline.new()
+	var swap_ab := AbilityData.new()
+	swap_ab.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap_ab.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap_plan.add(TimelineAction.make_ability(1, swap_ab, ally.position, 2, GameEnums.MoveTiming.PRE_ACTION))
+	swap_plan.add(TimelineAction.make_move(1, Vector2i(3, 5), -1, [Vector2i(3, 4)], GameEnums.MoveTiming.PRE_ACTION))
+	var swap_events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(swap_board, swap_plan, swap_events)
+	var swap_paths: Dictionary = {}
+	var swap_splits: Dictionary = {}
+	var swap_pushes: Dictionary = {}
+	CombatPlanningPreview.build_preview_paths(
+		swap_events, swap_director, swap_paths, swap_splits, swap_pushes,
+	)
+	var swap_route: Array = swap_paths.get(1, [])
+	if swap_route != [Vector2i(4, 5), Vector2i(4, 4), Vector2i(3, 4), Vector2i(3, 5)]:
+		failures.append(
+			"CombatPlanningPreview: swap+walk path expected [(4,5),(4,4),(3,4),(3,5)] got %s"
+			% str(swap_route),
+		)
 	var route: Array = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Vector2i(3, 0)]
 	var cells: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
 		route, Vector2i(0, 0), Vector2i(3, 0),

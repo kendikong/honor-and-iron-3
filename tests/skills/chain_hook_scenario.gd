@@ -1,10 +1,16 @@
-class_name ChainHookScenarioTest
+﻿class_name ChainHookScenarioTest
 extends RefCounted
 
-## 7-phase checklist for Chain Hook — in-range hook from (1,3) needs no approach walk.
+const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+
+## Bible: Chain Hook â€” DAMAGE + PULL 2; [+] VULNERABLE if pulled adjacent.
+## Globals: EffectType.DAMAGE, PULL; upgraded PULL_VULNERABLE_ON_ADJACENT.
+## Tier 1: planning harness + sim upgrade assert (Knight QA â€” not planning gate).
 
 
 static func run_all(failures: Array[String]) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	_sim_contract(failures)
 	_phase1_select(failures)
 	_phase2_hover_empty(failures)
 	_phase3_pathing_optional(failures)
@@ -12,6 +18,16 @@ static func run_all(failures: Array[String]) -> void:
 	_phase5_commit(failures)
 	_phase6_execute(failures)
 	_phase7_committed_premove(failures)
+
+
+static func _sim_contract(failures: Array[String]) -> void:
+	var hook: AbilityData = _KnightQaHarness.factory_ability(&"knight_chain_hook")
+	_KnightQaHarness.assert_true(
+		failures, "hook/contract/pull",
+		_KnightQaHarness.ability_has_effect(hook, GameEnums.EffectType.PULL, false),
+	)
+	_KnightQaHarness.run_hook_vulnerable_upgrade(failures)
+	_KnightQaHarness.run_hook_base_sim(failures)
 
 
 static func _hook_ability(fix: Dictionary) -> AbilityData:
@@ -48,6 +64,7 @@ static func _phase1_select(failures: Array[String]) -> void:
 
 static func _phase2_hover_empty(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_hook_board()
+	fix.director.auto_run = true
 	var ability: AbilityData = _hook_ability(fix)
 	PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.CHAIN_HOOK_ID)
 	var cell: Vector2i = Vector2i(2, 3)
@@ -88,7 +105,7 @@ static func _phase4_hover_enemy(failures: Array[String]) -> void:
 		PlanningChecklistHarness.HOOK_ENEMY_POS,
 		PlanningChecklistHarness.HOOK_KNIGHT_START,
 	)
-	# At range 3, preview_approach_tile returns actor.position — knight stays at start.
+	# At range 3, preview_approach_tile returns actor.position â€” knight stays at start.
 	PlanningChecklistHarness.assert_eq_cell(
 		failures, "hook/phase4/ghost_stand",
 		PlanningChecklistHarness.preview_unit_pos(fix, 1), PlanningChecklistHarness.HOOK_KNIGHT_START,

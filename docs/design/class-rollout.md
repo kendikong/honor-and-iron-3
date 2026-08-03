@@ -1,12 +1,12 @@
 # Class rollout (P6)
 
-**Status:** `LOOP_READY` *(gauntlet C4: 88/88 PASS)*  
+**Status:** `LOOP_READY` *(gauntlet C4: 88/88 PASS)* — **Active class:** Bruiser (`bruiser-template.md`, B6-LOCK)  
 **Pillar ID:** P6  
 **Authority chain:** `class_abilities.txt` · `docs/design/knight-template.md` (P3) · `docs/design/appendices/mass-sim-balance.md`
 
 ## Goal
 
-Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, cloning P3 pipeline; optional mass-sim balance between classes.
+Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, cloning P3 pipeline. **Active:** Bruiser B6-LOCK (`docs/design/bruiser-template.md`, `scripts/run_bruiser_qa_gate.ps1`).
 
 ## Quality bar
 

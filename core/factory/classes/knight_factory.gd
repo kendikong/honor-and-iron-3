@@ -118,7 +118,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.BULLDOZE, 1),
 	], 1)
 	bowling_charge.effects[0].scaling_stat = GameEnums.StatType.PHYSICAL
-	bowling_charge.upgrade_description = "Pushed target chain-pushes enemies behind them."
+	bowling_charge.targeting_mode = GameEnums.TargetingMode.DASH_LINE
+	bowling_charge.targeting_flags = GameEnums.TargetingFlags.TILE
+	bowling_charge.sync_legacy_targeting()
+	bowling_charge.upgrade_description = ""
 	bowling_charge.upgraded_effects = DataLibrary._duplicate_effects(bowling_charge.effects)
 	bowling_charge.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH_CHAIN_COLLISION, 1))
 	def.abilities.append(bowling_charge)
@@ -132,7 +135,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	iron_grip.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.REFUND_AP_ON_CC, 0))
 	def.abilities.append(iron_grip)
 
-	var redirect_strike = DataLibrary._make_ability(&"knight_redirect_strike", "Redirect Strike", 0, [
+	var redirect_strike = DataLibrary._make_ability(&"knight_redirect_strike", "Redirect Strike", 2, [
 		DataLibrary._status_effect_self(GameEnums.StatusType.INTERCEPT, 1)
 	], 1)
 	redirect_strike.upgrade_description = "Gain DEF +2 per redirected hit."
@@ -183,9 +186,12 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)
 	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_DIAMOND, 3)
 	defensive_formation.effects[0].amount = 2
+	defensive_formation.effects[0].modifiers["exclude_caster"] = true
+	defensive_formation.effects[1].modifiers["exclude_caster"] = true
 	defensive_formation.upgrade_description = "Allies gain SHIELD 2."
 	defensive_formation.upgraded_effects = DataLibrary._duplicate_effects(defensive_formation.effects)
 	defensive_formation.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 2))
+	defensive_formation.upgraded_effects[2].modifiers["exclude_caster"] = true
 	def.abilities.append(defensive_formation)
 
 	var chain_hook = DataLibrary._make_ability(&"knight_chain_hook", "Chain Hook", 3, [
@@ -203,9 +209,16 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
 	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
 	trampling_advance.targeting_flags = GameEnums.TargetingFlags.TILE
+	trampling_advance.targeting_mode = GameEnums.TargetingMode.TILE
+	trampling_advance.movement_point_cost = 2
 	trampling_advance.presentation_anim = GameEnums.PresentationAnim.RUN
+	trampling_advance.sync_legacy_targeting()
 	trampling_advance.upgrade_description = ""
-	trampling_advance.upgraded_effects = DataLibrary._duplicate_effects(trampling_advance.effects)
+	var trample_upgraded: Array[EffectData] = [
+		DataLibrary._effect(GameEnums.EffectType.TRAMPLE, 2),
+		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
+	]
+	trampling_advance.upgraded_effects = trample_upgraded
 	def.abilities.append(trampling_advance)
 
 	return def

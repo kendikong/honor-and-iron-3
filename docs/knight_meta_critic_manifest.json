@@ -1,0 +1,190 @@
+{
+  "piece": "K3-LOCK",
+  "pass_threshold": 95,
+  "last_critic_round": 37,
+  "last_score": 92,
+  "last_result": "FAIL",
+  "last_row_promoted": "K3-LOCK-full-matrix",
+  "approved_rows": [
+    {
+      "factory_id": "knight_swap",
+      "score": 90,
+      "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_shield_bash",
+      "score": 90,
+      "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_chain_hook",
+      "score": 90,
+      "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "collision_retaliator",
+      "score": 90,
+      "critic_round": 2,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_retaliation_protocol",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "indestructible_bastion",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "shield_mastery",
+      "score": 80,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_fortify",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_shield_slam",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "thorny_carapace",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "concussive_shatter",
+      "score": 80,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "kinetic_momentum",
+      "score": 80,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "stand_ground",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "kinetic_converter",
+      "score": 90,
+      "critic_round": 6,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_phalanx_stance",
+      "score": 89,
+      "critic_round": 11,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_iron_grip",
+      "score": 88,
+      "critic_round": 14,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_seismic_stomp",
+      "score": 88,
+      "critic_round": 15,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_taunting_strike",
+      "score": 88,
+      "critic_round": 16,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_redirect_strike",
+      "score": 88,
+      "critic_round": 17,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_indomitable_will",
+      "score": 88,
+      "critic_round": 18,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_defensive_formation",
+      "score": 88,
+      "critic_round": 19,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "kinetic_armor",
+      "score": 88,
+      "critic_round": 20,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "kinetic_redirection",
+      "score": 88,
+      "critic_round": 21,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "bulwark",
+      "score": 88,
+      "critic_round": 22,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "shield_wall",
+      "score": 89,
+      "critic_round": 23,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "intercept_tactics",
+      "score": 89,
+      "critic_round": 24,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "living_barricade",
+      "score": 88,
+      "critic_round": 25,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "rallying_presence",
+      "score": 88,
+      "critic_round": 26,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_trampling_advance",
+      "score": 90,
+      "critic_round": 29,
+      "fix_target": "none"
+    },
+    {
+      "factory_id": "knight_bowling_charge",
+      "score": 89,
+      "critic_round": 31,
+      "fix_target": "none"
+    }
+  ]
+}

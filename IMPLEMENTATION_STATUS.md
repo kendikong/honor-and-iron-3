@@ -1,10 +1,41 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** Knight template LOCK (P3) — P2 combat-core **closed** per owner 2026-08-01  
+**Current phase:** Bruiser template LOCK (P6 / B6-LOCK) — P3 Knight **LOCKED** per owner 2026-08-02  
 **Active plan:** `docs/design/` pillar specs + [`verification-matrix.md`](docs/design/verification-matrix.md)  
 **Combat reference:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed; P2 done for now)  
-**Last updated:** 2026-08-01  
+**Last updated:** 2026-08-02  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
+
+---
+
+## P6 — Bruiser template LOCK (B6-LOCK) — ACTIVE
+
+**Started:** 2026-08-02 — gauntlet infrastructure cloned from P3 Knight pipeline
+
+### Deliverables (setup)
+- [x] `docs/BRUISER_QA_GATE.md` — 31-row honest matrix (all `PLANNED`)
+- [x] `scripts/run_bruiser_qa_gate.ps1`
+- [x] `tests/bruiser_qa_harness.gd`, `bruiser_scenario_registry.gd`, `bruiser_qa_runner.gd`, `BruiserQaGate.tscn`
+- [x] `docs/design/bruiser-template.md`, `UNATTENDED_RUN.md` (B6-LOCK), `runs/B6-LOCK.md`
+- [ ] 31/31 matrix PASS + `bruiser-template.md` → **LOCKED**
+
+---
+
+**Closed:** owner LOCK 2026-08-02 — `knight-template.md` → **`LOCKED`** — commit `ab8789ee193fdd36d62b88af9972a9823b94c1fa`
+
+### Deliverables
+- [x] 30/30 Knight matrix rows meta-critic `PASS` (`docs/knight_meta_critic_manifest.json`)
+- [x] `.\scripts\run_knight_qa_gate.ps1` → exit **0**
+- [x] `docs/design/knight-template.md` status → **`LOCKED`**
+- [x] K3-LOCK gauntlet run complete (`docs/design/UNATTENDED_RUN.md`)
+
+### Deferred (documented, not blocking LOCK)
+| # | Item | Target |
+|---|------|--------|
+| 1 | Tier-C planning commit smoke (`knight_fortify`, `knight_swap` ally-target) | P6 or presentation |
+| 2 | Full-matrix critic score 92/95 (threshold 95) | Owner waived at LOCK |
+
+**Audit result:** **PASS** (owner gate per `01-doc-polish-protocol.md` § Status promotion)
 
 ---
 

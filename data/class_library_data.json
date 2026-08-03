@@ -5,40 +5,6 @@
 	"units": {
 		"archer": {
 			"abilities": {
-				"archer_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Snap Shot",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "archer_basic",
-					"range_tiles": 2,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"archer_shove": {
 					"action_point_cost": 0,
 					"can_target_self": false,
@@ -48,6 +14,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -68,6 +35,7 @@
 					"targeting_mode": 2,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -82,6 +50,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -102,6 +71,7 @@
 					"targeting_mode": 2,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -137,40 +107,6 @@
 		},
 		"assassin": {
 			"abilities": {
-				"assassin_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Knife Slash",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "assassin_basic",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"assassin_execute": {
 					"action_point_cost": 1,
 					"can_target_self": false,
@@ -180,6 +116,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -200,6 +137,7 @@
 					"targeting_mode": 2,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -214,6 +152,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -234,6 +173,7 @@
 					"targeting_mode": 1,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -271,13 +211,16 @@
 			"abilities": {
 				"bruiser_adrenaline_surge": {
 					"action_point_cost": 1,
-					"can_target_self": true,
+					"can_target_self": false,
 					"display_name": "Adrenaline Surge",
 					"effects": [
 						{
 							"amount": 5,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"zero_ap_adjacent_enemies": 2
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -285,9 +228,10 @@
 							"type": 11
 						},
 						{
-							"amount": 0,
+							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -295,9 +239,10 @@
 							"type": 9
 						},
 						{
-							"amount": 0,
+							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -310,7 +255,7 @@
 					"movement_point_cost": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_adrenaline_surge",
-					"range_tiles": 0,
+					"range_tiles": 1,
 					"scaling_stat": 0,
 					"target_shape": 0,
 					"target_shape_size": 1,
@@ -322,6 +267,9 @@
 							"amount": 5,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"zero_ap_adjacent_enemies": 2
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -329,9 +277,12 @@
 							"type": 11
 						},
 						{
-							"amount": 0,
+							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"on_kill_heal_shield": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -339,9 +290,10 @@
 							"type": 9
 						},
 						{
-							"amount": 0,
+							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -349,54 +301,22 @@
 							"type": 9
 						}
 					],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
-				"bruiser_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Wild Swing",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "bruiser_basic",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_belly_flop": {
-					"action_point_cost": 1,
+					"action_point_cost": 2,
 					"can_target_self": false,
 					"display_name": "Belly Flop",
 					"effects": [
 						{
-							"amount": 2,
+							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -407,6 +327,9 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"damage_adjacent_on_landing": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -423,14 +346,15 @@
 					"scaling_stat": 1,
 					"target_shape": 0,
 					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"targeting_flags": 8,
+					"targeting_mode": 4,
 					"upgrade_description": "Landing applies PUSH 1 to all adjacent enemies.",
 					"upgraded_effects": [
 						{
-							"amount": 2,
+							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -441,13 +365,30 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"damage_adjacent_on_landing": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
 							"type": 0
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"belly_flop_push": 1
+							},
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 1
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -455,13 +396,14 @@
 				},
 				"bruiser_blood_boil": {
 					"action_point_cost": 1,
-					"can_target_self": true,
+					"can_target_self": false,
 					"display_name": "Blood Boil",
 					"effects": [
 						{
 							"amount": 5,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -472,6 +414,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -484,7 +427,7 @@
 					"movement_point_cost": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_blood_boil",
-					"range_tiles": 0,
+					"range_tiles": 1,
 					"scaling_stat": 0,
 					"target_shape": 0,
 					"target_shape_size": 1,
@@ -496,6 +439,7 @@
 							"amount": 10,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -506,6 +450,7 @@
 							"amount": 5,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -513,6 +458,7 @@
 							"type": 9
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -527,6 +473,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -537,6 +484,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -549,18 +497,21 @@
 					"movement_point_cost": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_breaching_dash",
-					"range_tiles": 3,
+					"range_tiles": 1,
 					"scaling_stat": 1,
 					"target_shape": 0,
 					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"targeting_flags": 16,
+					"targeting_mode": 5,
 					"upgrade_description": "Your next attack this turn gains PIERCE.",
 					"upgraded_effects": [
 						{
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"next_attack_pierce": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -571,6 +522,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -578,6 +530,7 @@
 							"type": 16
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -589,9 +542,21 @@
 					"display_name": "Charge Strike",
 					"effects": [
 						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"modifiers": {},
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 22
+						},
+						{
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -602,6 +567,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -614,7 +580,7 @@
 					"movement_point_cost": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_charge_strike",
-					"range_tiles": 2,
+					"range_tiles": 1,
 					"scaling_stat": 1,
 					"target_shape": 0,
 					"target_shape_size": 1,
@@ -623,9 +589,25 @@
 					"upgrade_description": "Gain GHOST during MOVE. Gain ATK +2 if passing through terrain.",
 					"upgraded_effects": [
 						{
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"ghost_move": 1
+							},
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 22
+						},
+						{
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"bonus_dmg_from_terrain": 2
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -636,6 +618,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -643,6 +626,7 @@
 							"type": 1
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -657,6 +641,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -681,13 +666,28 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
 							"type": 0
+						},
+						{
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"weapon_scaled": 1
+							},
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 2,
+							"status_type": 12,
+							"type": 8
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -702,6 +702,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -712,6 +713,9 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"object_collision_stagger": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -730,12 +734,13 @@
 					"target_shape_size": 1,
 					"targeting_flags": 4,
 					"targeting_mode": 2,
-					"upgrade_description": "Enemy collision applies STUN to both units.",
+					"upgrade_description": "Enemy collision applies STAGGER to both units.",
 					"upgraded_effects": [
 						{
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -746,6 +751,10 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"enemy_collision_stagger_both": 1,
+								"object_collision_stagger": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -753,6 +762,7 @@
 							"type": 1
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -767,6 +777,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -791,6 +802,9 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"heal_per_target_hit": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -798,6 +812,7 @@
 							"type": 0
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -812,6 +827,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -822,6 +838,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -846,6 +863,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -856,6 +874,9 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"buff_per_destroyed_object": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -863,6 +884,7 @@
 							"type": 16
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -877,6 +899,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -887,6 +910,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -897,6 +921,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -921,6 +946,9 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"frenzy_on_kill_ap": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -931,6 +959,9 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"frenzy_on_kill_ap": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -941,6 +972,9 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"frenzy_on_kill_ap": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -948,6 +982,7 @@
 							"type": 0
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -962,6 +997,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -969,13 +1005,14 @@
 							"type": 1
 						},
 						{
-							"amount": -2,
+							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
-							"status_type": 4,
+							"status_type": 6,
 							"type": 8
 						}
 					],
@@ -996,6 +1033,10 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"item_collision_damage": 1,
+								"push_board_items": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1003,16 +1044,18 @@
 							"type": 1
 						},
 						{
-							"amount": -2,
+							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
-							"status_type": 4,
+							"status_type": 6,
 							"type": 8
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1027,6 +1070,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1037,6 +1081,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1047,6 +1092,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1057,6 +1103,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1081,6 +1128,9 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"bonus_dmg_pct_max_hp": 0.1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1091,6 +1141,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1101,6 +1152,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1111,6 +1163,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1118,6 +1171,7 @@
 							"type": 9
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1132,6 +1186,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1142,6 +1197,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1166,6 +1222,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1176,6 +1233,9 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"intercept_grant_str": 2
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1183,6 +1243,7 @@
 							"type": 9
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": 3,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1197,21 +1258,12 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 1
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 3
+							"type": 26
 						}
 					],
 					"is_movement_skill": true,
@@ -1219,35 +1271,29 @@
 					"movement_point_cost": 2,
 					"presentation_anim": 3,
 					"presentation_key": "bruiser_push_through",
-					"range_tiles": 2,
+					"range_tiles": 1,
 					"scaling_stat": 0,
 					"target_shape": 0,
 					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"targeting_flags": 4,
+					"targeting_mode": 2,
 					"upgrade_description": "Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack.",
 					"upgraded_effects": [
 						{
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"buff_on_push": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 1
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 3
+							"type": 26
 						}
 					],
+					"upgraded_movement_point_cost": 1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1262,6 +1308,7 @@
 							"amount": 4,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1272,11 +1319,12 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 3
+							"type": 27
 						}
 					],
 					"is_movement_skill": false,
@@ -1296,6 +1344,9 @@
 							"amount": 4,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"bonus_dmg_per_10_hp": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1306,13 +1357,15 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 3
+							"type": 27
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1327,6 +1380,11 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"bulldoze": 1,
+								"push": 1,
+								"violent_collision_recast": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1339,18 +1397,24 @@
 					"movement_point_cost": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_violent_collision",
-					"range_tiles": 3,
+					"range_tiles": 1,
 					"scaling_stat": 0,
 					"target_shape": 0,
 					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "Collisions apply STUN (1 turn).",
+					"targeting_flags": 16,
+					"targeting_mode": 5,
+					"upgrade_description": "Collisions apply STAGGER (1 turn).",
 					"upgraded_effects": [
 						{
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"bulldoze": 1,
+								"push": 1,
+								"stagger_on_collision": 1,
+								"violent_collision_recast": 1
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1358,6 +1422,7 @@
 							"type": 15
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1371,7 +1436,7 @@
 			"base_strength": 4,
 			"display_name": "Bruiser",
 			"level": 1,
-			"move_points": 4,
+			"move_points": 3,
 			"movement_type": 0,
 			"passives": {
 				"adrenaline_junkie": {
@@ -1382,10 +1447,10 @@
 				"battering_ram": {
 					"description": "PUSH pushes 1 additional tile.",
 					"display_name": "Battering Ram",
-					"upgraded_description": "[+] Pushed enemies hitting walls suffer STUN."
+					"upgraded_description": "[+] Pushed enemies hitting walls suffer STAGGER."
 				},
 				"blood_for_blood": {
-					"description": "If damaged last turn, attacks apply BLEED X.",
+					"description": "If damaged last turn, attacks apply BLEED X (X = WPN).",
 					"display_name": "Blood for Blood",
 					"upgraded_description": "[+] Attacks also gain ATK +1."
 				},
@@ -1440,12 +1505,12 @@
 					"upgraded_description": "[+] Reduce damage by additional 1."
 				},
 				"thrill_of_pain": {
-					"description": "Damage taken before your action adds ATK +2 and PUSH 1 to your next attack.",
+					"description": "Damage taken adds ATK +2 and PUSH 1 to NEXT attack.",
 					"display_name": "Thrill of Pain",
 					"upgraded_description": "[+] Next attack gains ATK +3 instead."
 				},
 				"unstoppable_force": {
-					"description": "Immune to STUN/ROOT. Resisting grants SHIELD 1.",
+					"description": "Immune to STAGGER/ROOT. Resisting grants SHIELD 1.",
 					"display_name": "Unstoppable Force",
 					"upgraded_description": "[+] Resisting grants SHIELD 2."
 				}
@@ -1463,40 +1528,6 @@
 		},
 		"cavalier": {
 			"abilities": {
-				"cavalier_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Lance Thrust",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "cavalier_basic",
-					"range_tiles": 2,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"cavalier_brace": {
 					"action_point_cost": 1,
 					"can_target_self": true,
@@ -1506,6 +1537,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1524,12 +1556,13 @@
 					"target_shape_size": 1,
 					"targeting_flags": 1,
 					"targeting_mode": 0,
-					"upgrade_description": "Attacker suffers STUN.",
+					"upgrade_description": "Attacker suffers STAGGER.",
 					"upgraded_effects": [
 						{
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1537,6 +1570,7 @@
 							"type": 9
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1551,6 +1585,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1575,6 +1610,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1582,6 +1618,7 @@
 							"type": 0
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1596,6 +1633,7 @@
 							"amount": 4,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1606,6 +1644,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1630,6 +1669,7 @@
 							"amount": 4,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1640,6 +1680,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1647,6 +1688,7 @@
 							"type": 0
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1661,6 +1703,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1671,6 +1714,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1695,6 +1739,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1705,6 +1750,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1712,6 +1758,7 @@
 							"type": 2
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1726,6 +1773,7 @@
 							"amount": 4,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1736,6 +1784,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1760,6 +1809,7 @@
 							"amount": 4,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1770,6 +1820,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1777,6 +1828,7 @@
 							"type": 0
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1791,6 +1843,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1801,6 +1854,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1825,6 +1879,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1835,6 +1890,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1842,6 +1898,7 @@
 							"type": 0
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1856,6 +1913,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1866,6 +1924,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1876,6 +1935,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1900,6 +1960,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1910,6 +1971,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1920,6 +1982,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1927,6 +1990,7 @@
 							"type": 1
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1941,6 +2005,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1965,6 +2030,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -1972,6 +2038,7 @@
 							"type": 17
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -1986,6 +2053,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2010,6 +2078,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2017,6 +2086,7 @@
 							"type": 1
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2031,6 +2101,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2055,6 +2126,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2062,6 +2134,7 @@
 							"type": 8
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2076,6 +2149,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2100,6 +2174,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2107,6 +2182,7 @@
 							"type": 0
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2121,6 +2197,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2131,6 +2208,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2155,6 +2233,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2165,6 +2244,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2172,6 +2252,7 @@
 							"type": 8
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2186,6 +2267,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2196,6 +2278,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2214,12 +2297,13 @@
 					"target_shape_size": 2,
 					"targeting_flags": 4,
 					"targeting_mode": 2,
-					"upgrade_description": "Enemy collision on PULL applies STUN.",
+					"upgrade_description": "Enemy collision on PULL applies STAGGER.",
 					"upgraded_effects": [
 						{
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2230,6 +2314,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2237,6 +2322,7 @@
 							"type": 2
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2251,6 +2337,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2261,6 +2348,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2285,6 +2373,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2295,6 +2384,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2302,6 +2392,7 @@
 							"type": 8
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2326,7 +2417,7 @@
 				"crashing_impact": {
 					"description": "Landing creates shockwave (PUSH 1 adjacent).",
 					"display_name": "Crashing Impact",
-					"upgraded_description": "[+] Pushed enemies hitting obstacles suffer STUN."
+					"upgraded_description": "[+] Pushed enemies hitting obstacles suffer STAGGER."
 				},
 				"disengage": {
 					"description": "Attacking at RANGE 1 applies PUSH 1 to yourself before damage.",
@@ -2407,40 +2498,6 @@
 		},
 		"cleric": {
 			"abilities": {
-				"cleric_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Mending Touch",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 4
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "cleric_basic",
-					"range_tiles": 1,
-					"scaling_stat": 2,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"cleric_blessing": {
 					"action_point_cost": 1,
 					"can_target_self": false,
@@ -2450,6 +2507,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2470,6 +2528,7 @@
 					"targeting_mode": 1,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2484,6 +2543,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2504,6 +2564,7 @@
 					"targeting_mode": 1,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2548,6 +2609,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2568,6 +2630,7 @@
 					"targeting_mode": 2,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2582,6 +2645,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2602,40 +2666,7 @@
 					"targeting_mode": 2,
 					"upgrade_description": "",
 					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
-				"engineer_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Pistol Tap",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "engineer_basic",
-					"range_tiles": 2,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2671,40 +2702,6 @@
 		},
 		"gryphon": {
 			"abilities": {
-				"gryphon_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Lance Jab",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "gryphon_basic",
-					"range_tiles": 2,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"gryphon_shove": {
 					"action_point_cost": 0,
 					"can_target_self": false,
@@ -2714,6 +2711,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2734,6 +2732,7 @@
 					"targeting_mode": 1,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2748,6 +2747,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2768,6 +2768,7 @@
 					"targeting_mode": 2,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2803,103 +2804,86 @@
 		},
 		"knight": {
 			"abilities": {
-				"knight_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Shield Strike",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "knight_basic",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"knight_bowling_charge": {
-					"action_point_cost": 1,
+					"action_point_cost": 1.0,
 					"can_target_self": false,
 					"display_name": "Bowling Charge",
 					"effects": [
 						{
-							"amount": 3,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
+							"amount": 3.0,
+							"bonus_if_adjacent_at_cast": 0.0,
+							"def_debuff_before_damage": 0.0,
+							"modifiers": {},
+							"scaling_stat": 1.0,
 							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 15
+							"status_duration": 1.0,
+							"status_type": 0.0,
+							"type": 15.0
 						},
 						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
+							"amount": 1.0,
+							"bonus_if_adjacent_at_cast": 0.0,
+							"def_debuff_before_damage": 0.0,
+							"modifiers": {},
+							"scaling_stat": 0.0,
 							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 21
+							"status_duration": 1.0,
+							"status_type": 0.0,
+							"type": 21.0
 						}
 					],
 					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
+					"kind": 0.0,
+					"movement_point_cost": 0.0,
+					"presentation_anim": 0.0,
 					"presentation_key": "knight_bowling_charge",
-					"range_tiles": 3,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 8,
-					"targeting_mode": 4,
+					"range_tiles": 3.0,
+					"scaling_stat": 0.0,
+					"target_shape": 0.0,
+					"target_shape_size": 1.0,
+					"targeting_flags": 8.0,
+					"targeting_mode": 4.0,
+					"upgrade_description": "",
 					"upgraded_effects": [
 						{
-							"amount": 3,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
+							"amount": 3.0,
+							"bonus_if_adjacent_at_cast": 0.0,
+							"def_debuff_before_damage": 0.0,
+							"modifiers": {},
+							"scaling_stat": 1.0,
 							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 15
+							"status_duration": 1.0,
+							"status_type": 0.0,
+							"type": 15.0
 						},
 						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
+							"amount": 1.0,
+							"bonus_if_adjacent_at_cast": 0.0,
+							"def_debuff_before_damage": 0.0,
+							"modifiers": {},
+							"scaling_stat": 0.0,
 							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 21
+							"status_duration": 1.0,
+							"status_type": 0.0,
+							"type": 21.0
+						},
+						{
+							"amount": 1.0,
+							"bonus_if_adjacent_at_cast": 0.0,
+							"def_debuff_before_damage": 0.0,
+							"modifiers": {},
+							"scaling_stat": 0.0,
+							"spawn_unit_id": "",
+							"status_duration": 1.0,
+							"status_type": 0.0,
+							"type": 25.0
 						}
 					],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
+					"upgraded_movement_point_cost": -1.0,
+					"upgraded_range_tiles": -1.0,
+					"upgraded_target_shape": 0.0,
+					"upgraded_target_shape_size": -1.0,
+					"uses_per_combat": -1.0
 				},
 				"knight_chain_hook": {
 					"action_point_cost": 1,
@@ -2910,6 +2894,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2920,6 +2905,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2944,6 +2930,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2954,13 +2941,26 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
 							"type": 2
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"modifiers": {},
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 24
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -2975,6 +2975,9 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"exclude_caster": true
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -2985,6 +2988,9 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"exclude_caster": true
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3009,6 +3015,9 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"exclude_caster": true
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3019,6 +3028,9 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"exclude_caster": true
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3029,6 +3041,9 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {
+								"exclude_caster": true
+							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3036,6 +3051,7 @@
 							"type": 5
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3050,6 +3066,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 3,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3074,6 +3091,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 3,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3084,13 +3102,15 @@
 							"amount": 50,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
-							"status_type": 39,
+							"status_type": 40,
 							"type": 8
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3098,13 +3118,14 @@
 				},
 				"knight_indomitable_will": {
 					"action_point_cost": 1,
-					"can_target_self": false,
+					"can_target_self": true,
 					"display_name": "Indomitable Will",
 					"effects": [
 						{
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 5,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3115,6 +3136,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 2,
@@ -3132,13 +3154,14 @@
 					"target_shape": 0,
 					"target_shape_size": 1,
 					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"targeting_mode": 0,
 					"upgrade_description": "When expires, gain +2 STR.",
 					"upgraded_effects": [
 						{
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 5,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3149,13 +3172,15 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 2,
-							"status_type": 38,
+							"status_type": 39,
 							"type": 9
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3170,6 +3195,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3180,10 +3206,11 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
-							"status_type": 40,
+							"status_type": 41,
 							"type": 8
 						}
 					],
@@ -3198,12 +3225,13 @@
 					"target_shape_size": 1,
 					"targeting_flags": 4,
 					"targeting_mode": 2,
-					"upgrade_description": "Refund 1 AP if already ROOT/STUN.",
+					"upgrade_description": "Refund 1 AP if already ROOT/STAGGER.",
 					"upgraded_effects": [
 						{
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3214,16 +3242,18 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
-							"status_type": 40,
+							"status_type": 41,
 							"type": 8
 						},
 						{
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3231,6 +3261,7 @@
 							"type": 19
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3245,6 +3276,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3255,6 +3287,7 @@
 							"amount": 5,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3279,6 +3312,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3289,6 +3323,7 @@
 							"amount": 5,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3299,6 +3334,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3306,6 +3342,7 @@
 							"type": 9
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3320,6 +3357,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3332,11 +3370,11 @@
 					"movement_point_cost": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_redirect_strike",
-					"range_tiles": 0,
+					"range_tiles": 2,
 					"scaling_stat": 0,
 					"target_shape": 0,
 					"target_shape_size": 1,
-					"targeting_flags": 1,
+					"targeting_flags": 2,
 					"targeting_mode": 0,
 					"upgrade_description": "Gain DEF +2 per redirected hit.",
 					"upgraded_effects": [
@@ -3344,6 +3382,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3351,6 +3390,7 @@
 							"type": 9
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3365,6 +3405,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3389,6 +3430,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3396,6 +3438,7 @@
 							"type": 9
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3410,6 +3453,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3420,6 +3464,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3444,6 +3489,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3454,6 +3500,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3464,6 +3511,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3471,6 +3519,7 @@
 							"type": 18
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3485,6 +3534,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3495,6 +3545,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3513,12 +3564,13 @@
 					"target_shape_size": 1,
 					"targeting_flags": 4,
 					"targeting_mode": 2,
-					"upgrade_description": "Apply STUN if collides with wall/enemy.",
+					"upgrade_description": "Apply STAGGER if collides with wall/enemy.",
 					"upgraded_effects": [
 						{
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3529,13 +3581,26 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
 							"type": 1
+						},
+						{
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"modifiers": {},
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"type": 23
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3550,6 +3615,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 2,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3560,6 +3626,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3584,6 +3651,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 2,
 							"def_debuff_before_damage": 1,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3594,6 +3662,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3601,6 +3670,7 @@
 							"type": 1
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3615,6 +3685,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3639,6 +3710,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3649,6 +3721,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3659,6 +3732,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3666,6 +3740,7 @@
 							"type": 5
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -3680,6 +3755,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3690,6 +3766,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3700,6 +3777,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3724,6 +3802,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3734,6 +3813,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3744,6 +3824,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3751,85 +3832,92 @@
 							"type": 8
 						}
 					],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": 3,
 					"upgraded_target_shape": 1,
 					"upgraded_target_shape_size": 1,
 					"uses_per_combat": -1
 				},
 				"knight_trampling_advance": {
-					"action_point_cost": 1,
+					"action_point_cost": 1.0,
 					"can_target_self": false,
 					"display_name": "Trampling Advance",
 					"effects": [
 						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
+							"amount": 2.0,
+							"bonus_if_adjacent_at_cast": 0.0,
+							"def_debuff_before_damage": 0.0,
+							"modifiers": {},
+							"scaling_stat": 0.0,
 							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 22
+							"status_duration": 1.0,
+							"status_type": 0.0,
+							"type": 22.0
 						},
 						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
+							"amount": 2.0,
+							"bonus_if_adjacent_at_cast": 0.0,
+							"def_debuff_before_damage": 0.0,
+							"modifiers": {},
+							"scaling_stat": 0.0,
 							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 20
+							"status_duration": 1.0,
+							"status_type": 0.0,
+							"type": 20.0
 						},
 						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
+							"amount": 1.0,
+							"bonus_if_adjacent_at_cast": 0.0,
+							"def_debuff_before_damage": 0.0,
+							"modifiers": {},
+							"scaling_stat": 0.0,
 							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"status_duration": 1.0,
+							"status_type": 0.0,
+							"type": 1.0
 						}
 					],
 					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 2,
-					"presentation_anim": 4,
+					"kind": 0.0,
+					"movement_point_cost": 2.0,
+					"presentation_anim": 4.0,
 					"presentation_key": "knight_trampling_advance",
-					"range_tiles": 2,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 8,
-					"targeting_mode": 4,
+					"range_tiles": 2.0,
+					"scaling_stat": 0.0,
+					"target_shape": 0.0,
+					"target_shape_size": 1.0,
+					"targeting_flags": 8.0,
+					"targeting_mode": 4.0,
 					"upgrade_description": "",
 					"upgraded_effects": [
 						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
+							"amount": 2.0,
+							"bonus_if_adjacent_at_cast": 0.0,
+							"def_debuff_before_damage": 0.0,
+							"modifiers": {},
+							"scaling_stat": 0.0,
 							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 20
+							"status_duration": 1.0,
+							"status_type": 0.0,
+							"type": 20.0
 						},
 						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
+							"amount": 1.0,
+							"bonus_if_adjacent_at_cast": 0.0,
+							"def_debuff_before_damage": 0.0,
+							"modifiers": {},
+							"scaling_stat": 0.0,
 							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"status_duration": 1.0,
+							"status_type": 0.0,
+							"type": 1.0
 						}
 					],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
+					"upgraded_movement_point_cost": -1.0,
+					"upgraded_range_tiles": -1.0,
+					"upgraded_target_shape": 0.0,
+					"upgraded_target_shape_size": -1.0,
+					"uses_per_combat": -1.0
 				}
 			},
 			"action_points": 1,
@@ -3852,6 +3940,11 @@
 					"display_name": "Collision Retaliator",
 					"upgraded_description": "[+] PUSH 1."
 				},
+				"concussive_shatter": {
+					"description": "Enemy collision suffers extra damage equal to 50% of your DEF, and target loses -1 DEF.",
+					"display_name": "Concussive Shatter",
+					"upgraded_description": "[+] Target also suffers VULNERABLE."
+				},
 				"indestructible_bastion": {
 					"description": "Lethal damage -> 1 HP + SHIELD = DEF (Once).",
 					"display_name": "Indestructible Bastion",
@@ -3871,6 +3964,11 @@
 					"description": "When hit, gain STR +1 and MOVE +1 for next turn.",
 					"display_name": "Kinetic Converter",
 					"upgraded_description": "[+] Gain STR +2."
+				},
+				"kinetic_momentum": {
+					"description": "Causing an enemy to suffer collision damage grants SHIELD equal to your STR + DEF for 1 turn.",
+					"display_name": "Kinetic Momentum",
+					"upgraded_description": "[+] Also refunds 1 MOV point on your first collision each turn."
 				},
 				"kinetic_redirection": {
 					"description": "Mitigating damage adds +1 STR to next attack (Stacks to +3).",
@@ -3897,11 +3995,6 @@
 					"display_name": "Shield Wall",
 					"upgraded_description": "[+] Range of aura = 2 tiles."
 				},
-				"spiked_barricade": {
-					"description": "PUSH into walls/obstacles applies STUN.",
-					"display_name": "Spiked Barricade",
-					"upgraded_description": "[+] Target also suffers -1 DEF."
-				},
 				"stand_ground": {
 					"description": "Immune to PUSH/PULL. Enemy attempts trigger COUNTER ATTACK 1.",
 					"display_name": "Stand Ground",
@@ -3911,11 +4004,6 @@
 					"description": "Melee hit reflects 50% damage (rounded down) & PUSH 1.",
 					"display_name": "Thorny Carapace",
 					"upgraded_description": "[+] Reflects 100% damage instead."
-				},
-				"trample_move": {
-					"description": "Normal movement gains TRAMPLE.",
-					"display_name": "Trample Move",
-					"upgraded_description": "[+] Enemies trampled suffer -1 DEF."
 				}
 			},
 			"preferred_stat": 3,
@@ -3931,40 +4019,6 @@
 		},
 		"mage": {
 			"abilities": {
-				"mage_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Arcane Flick",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "mage_basic",
-					"range_tiles": 2,
-					"scaling_stat": 2,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"mage_fireball": {
 					"action_point_cost": 1,
 					"can_target_self": false,
@@ -3974,6 +4028,7 @@
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -3994,6 +4049,7 @@
 					"targeting_mode": 2,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -4008,6 +4064,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -4028,6 +4085,7 @@
 					"targeting_mode": 1,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -4072,6 +4130,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -4092,6 +4151,7 @@
 					"targeting_mode": 1,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -4106,6 +4166,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -4126,40 +4187,7 @@
 					"targeting_mode": 2,
 					"upgrade_description": "",
 					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
-				"mercenary_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Quick Cut",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "mercenary_basic",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -4195,40 +4223,6 @@
 		},
 		"monk": {
 			"abilities": {
-				"monk_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Finger Jab",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "monk_basic",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"monk_palm": {
 					"action_point_cost": 1,
 					"can_target_self": false,
@@ -4238,6 +4232,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -4248,6 +4243,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -4268,6 +4264,7 @@
 					"targeting_mode": 2,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -4282,6 +4279,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -4302,6 +4300,7 @@
 					"targeting_mode": 1,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -4337,40 +4336,6 @@
 		},
 		"paladin": {
 			"abilities": {
-				"paladin_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Holy Mending",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 4
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "paladin_basic",
-					"range_tiles": 1,
-					"scaling_stat": 2,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"paladin_heal": {
 					"action_point_cost": 1,
 					"can_target_self": false,
@@ -4380,6 +4345,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -4400,6 +4366,7 @@
 					"targeting_mode": 1,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -4414,6 +4381,7 @@
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -4434,6 +4402,7 @@
 					"targeting_mode": 1,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -4469,40 +4438,6 @@
 		},
 		"shaman": {
 			"abilities": {
-				"shaman_basic": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Spirit Nudge",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "shaman_basic",
-					"range_tiles": 2,
-					"scaling_stat": 2,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"shaman_shove": {
 					"action_point_cost": 0,
 					"can_target_self": false,
@@ -4512,6 +4447,7 @@
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -4532,6 +4468,7 @@
 					"targeting_mode": 2,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,
@@ -4546,6 +4483,7 @@
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
+							"modifiers": {},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
@@ -4566,6 +4504,7 @@
 					"targeting_mode": 1,
 					"upgrade_description": "",
 					"upgraded_effects": [],
+					"upgraded_movement_point_cost": -1,
 					"upgraded_range_tiles": -1,
 					"upgraded_target_shape": 0,
 					"upgraded_target_shape_size": -1,

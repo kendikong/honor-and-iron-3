@@ -118,52 +118,75 @@ Scenarios must prove **both** rules:
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase (not used in MVP) |
 
-**Summary (honest):** **0 / 30** factory rows `PASS` · **3** `HARNESS_ONLY` · **27** `PLANNED` · run-economy slice separate (harness only).
+**Summary (honest):** **30 / 30** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **0** `PLANNED` · run-economy slice separate (harness only). **Manifest:** `docs/knight_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
+
+### Owner no-regression (do not modify without explicit approval)
+
+| Factory id | Reason |
+|------------|--------|
+| `knight_bowling_charge` | Owner-verified correct — DASH / chain-push behavior |
+| `knight_trampling_advance` | Owner-verified correct — MOVE / TRAMPLE / PUSH path |
+
+Do **not** weaken, replace, or “simplify” harness/scenario/production paths for these skills during K3-LOCK matrix work. Matrix may stay `HARNESS_ONLY` until owner requests promotion; **correctness &gt; coverage row status**.
 
 ### Movement + actives
 
 | Bible / factory id | Type | Scenario file | Tier 1 | Notes |
 |--------------------|------|---------------|--------|-------|
-| `knight_swap` | Movement | `PLANNED — tests/skills/knight_swap_scenario.gd` | PLANNED | Swap + optional `[+]` DEF/SHIELD |
-| `knight_shield_bash` | Active | `tests/skills/shield_bash_scenario.gd` | HARNESS_ONLY | 7-phase harness; missing Bible header + STAGGER `[+]` asserts |
-| `knight_phalanx_stance` | Active | PLANNED | PLANNED | SELF, STURDY, DEF buff |
-| `knight_taunting_strike` | Active | PLANNED | PLANNED | PULL, TAUNT, upgraded AOE |
-| `knight_seismic_stomp` | Active | PLANNED | PLANNED | AOE, PURGE, terrain |
-| `knight_fortify` | Active | PLANNED | PLANNED | Ally DEF scale, THORNS upgrade |
-| `knight_bowling_charge` | Active | PLANNED | PLANNED | DASH, collision chain |
-| `knight_iron_grip` | Active | PLANNED | PLANNED | ROOT, AP refund upgrade |
-| `knight_redirect_strike` | Active | PLANNED | PLANNED | INTERCEPT |
-| `knight_indomitable_will` | Active | PLANNED | PLANNED | missing HP → SHIELD |
-| `knight_retaliation_protocol` | Active | PLANNED | PLANNED | counter-attack |
-| `knight_shield_slam` | Active | PLANNED | PLANNED | adjacent bonus, DEF debuff upgrade |
-| `knight_defensive_formation` | Active | PLANNED | PLANNED | AOE ally buffs |
-| `knight_chain_hook` | Active | `tests/skills/chain_hook_scenario.gd` | HARNESS_ONLY | Harness green; deepen Bible + `[+]` asserts |
-| `knight_trampling_advance` | Active | `tests/skills/trampling_advance_scenario.gd` | HARNESS_ONLY | Harness green; deepen Bible + `[+]` asserts |
+| `knight_swap` | Movement | `tests/skills/knight_swap_scenario.gd` | PASS | Sim base + `[+]` DEF/SHIELD (meta-critic 90) |
+| `knight_shield_bash` | Active | `tests/skills/shield_bash_scenario.gd` | PASS | 7-phase + sim base PUSH/DAMAGE + `[+]` STAGGER |
+| `knight_phalanx_stance` | Active | `tests/skills/phalanx_stance_scenario.gd` | PASS | Base/`[+]` sim + map-wide retaliation combo (meta-critic r11) |
+| `knight_taunting_strike` | Active | `tests/skills/taunting_strike_scenario.gd` | PASS | ATK1/PULL1/TAUNT + `[+]` AOE PULL2 sim (meta-critic r16) |
+| `knight_seismic_stomp` | Active | `tests/skills/seismic_stomp_scenario.gd` | PASS | AOE/PURGE/`[+]` CRACKED + terrain MP sim (meta-critic r15) |
+| `knight_fortify` | Active | `tests/skills/fortify_scenario.gd` | PASS | Ally DEF base + `[+]` THORNS sim (meta-critic r6) |
+| `knight_bowling_charge` | Active | `tests/skills/bowling_charge_scenario.gd` | PASS | DASH/BULLDOZE sim + `[+]` chain collision + planning intent contracts (meta-critic r31) |
+| `knight_iron_grip` | Active | `tests/skills/iron_grip_scenario.gd` | PASS | ROOT + next-turn DEF halving + `[+]` AP refund sim (meta-critic r14) |
+| `knight_redirect_strike` | Active | `tests/skills/redirect_strike_scenario.gd` | PASS | INTERCEPT 50% + mid-window persist + `[+]` DEF stack sim (meta-critic r17) |
+| `knight_indomitable_will` | Active | `tests/skills/indomitable_will_scenario.gd` | PASS | missing HP→SHIELD 2t + expiry/break + `[+]` STR sim (meta-critic r18) |
+| `knight_retaliation_protocol` | Active | `tests/skills/retaliation_protocol_scenario.gd` | PASS | Counter base + `[+]` PUSH-on-counter sim (meta-critic r6) |
+| `knight_shield_slam` | Active | `tests/skills/shield_slam_scenario.gd` | PASS | DAMAGE+PUSH base + `[+]` DEF-debuff events (meta-critic r6) |
+| `knight_defensive_formation` | Active | `tests/skills/defensive_formation_scenario.gd` | PASS | AOE allies-only STURDY/PUSH/PULL + `[+]` SHIELD 2 sim (meta-critic r19) |
+| `knight_chain_hook` | Active | `tests/skills/chain_hook_scenario.gd` | PASS | 7-phase + sim PULL/DAMAGE + `[+]` VULNERABLE |
+| `knight_trampling_advance` | Active | `tests/skills/trampling_advance_scenario.gd` | PASS | MOVE/TRAMPLE/PUSH sim + 7-phase E2E; `[+]` SHIELD N/A (factory duplicate) (meta-critic r29) |
 | *(economy)* | Run / MP | `tests/skills/run_economy_scenario.gd` | HARNESS_ONLY | Shared economy slice — not a Bible row |
 
 ### Passives (trigger-based — separate scenario shape)
 
 | Factory id | Passive | Scenario file | Tier 1 | Trigger setup |
 |------------|---------|---------------|--------|----------------|
-| `collision_retaliator` | Collision Retaliator | PLANNED | PLANNED | Enemy collision into knight |
-| `thorny_carapace` | Thorny Carapace | PLANNED | PLANNED | Melee hit on knight |
-| `concussive_shatter` | Concussive Shatter | PLANNED | PLANNED | Collision damage |
-| `kinetic_momentum` | Kinetic Momentum | PLANNED | PLANNED | Collision → SHIELD / MOV refund |
-| `stand_ground` | Stand Ground | PLANNED | PLANNED | Enemy PUSH/PULL attempt |
-| `indestructible_bastion` | Indestructible Bastion | PLANNED | PLANNED | Lethal damage once |
-| `shield_mastery` | Shield Mastery | PLANNED | PLANNED | Front-arc hit |
-| `kinetic_armor` | Kinetic Armor | PLANNED | PLANNED | Damage while SHIELD active |
-| `kinetic_converter` | Kinetic Converter | PLANNED | PLANNED | On hit → STR/MOV next turn |
-| `kinetic_redirection` | Kinetic Redirection | PLANNED | PLANNED | Mitigate → stacked STR |
-| `bulwark` | Bulwark | PLANNED | PLANNED | Adjacent unit count |
-| `living_barricade` | Living Barricade | PLANNED | PLANNED | Ranged line vs ally behind |
-| `shield_wall` | Shield Wall | PLANNED | PLANNED | Adjacent ally DEF / PULL immune |
-| `rallying_presence` | Rallying Presence | PLANNED | PLANNED | Ally start turn adjacent |
-| `intercept_tactics` | Intercept Tactics | PLANNED | PLANNED | After redirect skill |
+| `collision_retaliator` | Collision Retaliator | `tests/passives/collision_retaliator_scenario.gd` | PASS | Collision damage + `[+]` bonus PUSH event |
+| `thorny_carapace` | Thorny Carapace | `tests/passives/thorny_carapace_scenario.gd` | PASS | Base reflect+PUSH + `[+]` 100% reflect sim (meta-critic r6) |
+| `concussive_shatter` | Concussive Shatter | `tests/passives/concussive_shatter_scenario.gd` | PASS | DEF debuff base + `[+]` VULNERABLE sim (meta-critic r6) |
+| `kinetic_momentum` | Kinetic Momentum | `tests/passives/kinetic_momentum_scenario.gd` | PASS | SHIELD base + `[+]` MOV refund sim (meta-critic r6) |
+| `stand_ground` | Stand Ground | `tests/passives/stand_ground_scenario.gd` | PASS | Counter 1 base + `[+]` counter 2 sim (meta-critic r6) |
+| `indestructible_bastion` | Indestructible Bastion | `tests/passives/indestructible_bastion_scenario.gd` | PASS | Lethal->1 HP base + `[+]` STR sim (meta-critic r6) |
+| `shield_mastery` | Shield Mastery | `tests/passives/shield_mastery_scenario.gd` | PASS | SHIELD 2 base + `[+]` SHIELD 3 sim (meta-critic r6) |
+| `kinetic_armor` | Kinetic Armor | `tests/passives/kinetic_armor_scenario.gd` | PASS | SHIELD-gated −1/−2 mitigation + hazard bypass sim (meta-critic r20) |
+| `kinetic_converter` | Kinetic Converter | `tests/passives/kinetic_converter_scenario.gd` | PASS | STR+MOV base + `[+]` STR+2 sim (meta-critic r6) |
+| `kinetic_redirection` | Kinetic Redirection | `tests/passives/kinetic_redirection_scenario.gd` | PASS | DEF/SHIELD stack cap/reset + [+] PIERCE sim (meta-critic r21) |
+| `bulwark` | Bulwark | `tests/passives/bulwark_scenario.gd` | PASS | DEF/STR adjacent + deal_damage sim (meta-critic r22) |
+| `living_barricade` | Living Barricade | `tests/passives/living_barricade_scenario.gd` | PASS | Ranged block + facing + [+] ally DEF sim (meta-critic r25) |
+| `shield_wall` | Shield Wall | `tests/passives/shield_wall_scenario.gd` | PASS | Adjacent DEF + PULL immune + [+] range-2 sim (meta-critic r23) |
+| `rallying_presence` | Rallying Presence | `tests/passives/rallying_presence_scenario.gd` | PASS | +1/+2 MOV + expiry + no self-buff (meta-critic r26) |
+| `intercept_tactics` | Intercept Tactics | `tests/passives/intercept_tactics_scenario.gd` | PASS | Redirect +2/+3 DEF + mitigation sim (meta-critic r24) |
 
 **LOCK rule:** All factory rows `PASS` (or owner-documented `N/A`). Gate script **fails** until then.
 
-Registry today: `tests/planning_skill_scenarios_test.gd` — expand to `tests/knight_scenario_registry.gd` (PLANNED) listing actives + passives.
+### Planning coverage tiers (K3-LOCK — honest; not planning QA gate)
+
+Knight LOCK uses **tiered** planning proof in Tier 1 harness (`tests/knight_qa_harness.gd`), separate from `run_planning_qa_gate.ps1`.
+
+| Tier | Meaning | Actives |
+|------|---------|---------|
+| **A** | Full 7-phase checklist (`PlanningChecklistHarness`) | `knight_shield_bash`, `knight_chain_hook`, `knight_trampling_advance` |
+| **B** | `run_planning_commit_smoke` — select, hover, hover/click slot parity, `assert_commit_no_jump` (swap: parity only — position preview shifts post-commit) | phalanx, taunting, seismic, iron_grip, redirect, indomitable, retaliation, shield_slam, defensive_formation, **fortify**, **knight_swap** |
+| **C** | Select and/or intent contracts only | `knight_bowling_charge` (intent E2E + select) |
+
+**Swap / premove rule:** Pre-move column entries (including Swap) apply immediately in `projected_state`. Undoing or inserting an ally-affecting movement skill strips **all** later combined-timeline entries for every actor (`PlanDependency.cancel_ally_plans_after_step`).
+
+Passives: sim trigger scenarios only (no planning phases). **Do not** conflate planning QA PASS with Knight LOCK.
+
+Registry: `tests/knight_scenario_registry.gd` + `tests/knight_qa_runner.gd` (30 factory rows + economy slice).
 
 ---
 

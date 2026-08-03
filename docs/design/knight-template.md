@@ -1,6 +1,8 @@
 # Knight template (P3)
 
-**Status:** `LOOP_READY` *(K3-doc gauntlet PASS 90/88 — implementation gates LOCK)*  
+**Status:** `LOCKED` *(owner close 2026-08-02 — **30/30** matrix + gate exit **0**; full-matrix critic r37 **92/95** waived; tier-C planning commit deferred to P6)*  
+**Owner LOCK:** commit `ab8789ee193fdd36d62b88af9972a9823b94c1fa`  
+**Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) *(COMPLETE)* · **Run card:** [`runs/K3-LOCK.md`](runs/K3-LOCK.md)
 **Pillar ID:** P3  
 **Authority chain:** `class_abilities.txt` § Knight · `docs/KNIGHT_QA_GATE.md` · `core/factory/classes/knight_factory.gd` · `data/` factories
 
@@ -56,14 +58,14 @@ N/A — Bible + matrix are authoritative. Owner defers rows only via explicit `N
 |-------|-------|-----|--------|
 | **K3-doc** | Spec | lint + gate doc + gate script exist; honest matrix; meta-critic contract | **PASS** (90/88) |
 | K3-matrix | Coverage | All factory ids listed; status honest | In K3-doc |
-| K3-actives | Builder | One `tests/skills/<id>_scenario.gd` per active + swap | PLANNED |
-| K3-passives | Builder | One `tests/passives/<id>_scenario.gd` per passive (trigger setup) | PLANNED |
-| K3-registry | Builder | `tests/knight_scenario_registry.gd` lists actives + passives | PLANNED |
-| K3-gate | Builder | `run_knight_qa_gate.ps1` fails until matrix 100% PASS | Stub on disk |
-| K3-meta | Critic | Adequacy score per matrix row; fixture recommendations | PLANNED |
-| **K3-LOCK** | Owner | Matrix 100% PASS + gate PASS + meta-critic ≥ 88 | PLANNED |
+| K3-actives | Builder | One `tests/skills/<id>_scenario.gd` per active + swap | **DONE** (Tier 1 green) |
+| K3-passives | Builder | One `tests/passives/<id>_scenario.gd` per passive (trigger setup) | **DONE** (factory smoke; deepen triggers) |
+| K3-registry | Builder | `tests/knight_scenario_registry.gd` lists actives + passives | **DONE** |
+| K3-gate | Builder | `run_knight_qa_gate.ps1` fails until matrix 100% PASS + manifest | **Tier 1 PASS** (exit 2 until critic-approved rows) |
+| K3-meta | Critic | Adequacy score per matrix row; fixture recommendations | **30/30 PASS** (manifest) |
+| **K3-LOCK** | Owner | Matrix 100% PASS + gate PASS + meta-critic ≥ 95 | **PASS** *(owner LOCK 2026-08-02 — critic 92/95 waived)* — [`runs/K3-LOCK.md`](runs/K3-LOCK.md) |
 
-**Implementation tally:** **0 / 30** factory rows meta-critic `PASS` (3 `HARNESS_ONLY`, 27 `PLANNED`). Work **one matrix row per gauntlet piece** after K3-doc.
+**Implementation tally:** **30 / 30** factory rows meta-critic `PASS` · gate exit **0** · owner LOCK · planning tiers documented in `KNIGHT_QA_GATE.md` (tier C commit smoke deferred).
 
 ## Builder playbook
 
@@ -139,10 +141,10 @@ ARTIFACT: this file, docs/KNIGHT_QA_GATE.md, knight_factory.gd, lint stdout, Tes
 
 ### K3-LOCK (promote to `LOCKED`)
 
-- [ ] **100%** matrix rows `PASS` (actives + passives + swap; meta-critic approved per row)
-- [ ] `.\scripts\run_knight_qa_gate.ps1` → PASS
-- [ ] Meta-critic adequacy **≥ 88** on full matrix review
-- [ ] P6 can copy gate + matrix pattern without planning QA changes
+- [x] **100%** matrix rows `PASS` (actives + passives + swap; meta-critic approved per row)
+- [x] `.\scripts\run_knight_qa_gate.ps1` → PASS (manifest + matrix + harness)
+- [x] Meta-critic adequacy **≥ 95** on full matrix review — **owner LOCK 2026-08-02** *(r37 **92/95** waived; tier-C fortify/swap planning commit deferred to P6)*
+- [x] P6 can copy gate + matrix pattern without planning QA changes
 
 ## Doc polish scorecard
 

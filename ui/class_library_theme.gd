@@ -35,6 +35,8 @@ const ACCENT_PASSIVE := Color("7dce82")
 const ACCENT_NEUTRAL := Color("6b7785")
 const ACCENT_DANGER := Color("e86a6a")
 const ACCENT_SUCCESS := Color("6bcf8a")
+const ACCENT_OVERRIDE_SAVED := Color("e8b84a")
+const ACCENT_OVERRIDE_UNSAVED := Color("ff8c5a")
 
 const BORDER_SUBTLE := Color("3a424f")
 

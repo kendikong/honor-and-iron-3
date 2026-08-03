@@ -75,8 +75,15 @@ var plan_refresh_light_overlay: bool = false
 var _turn_start_intents: Array = []
 var _turn_start_enemy_ghost_events: Array[SimEvent] = []
 var _pending_planning_commit_events: Array[SimEvent] = []
+## Swap premoves: play planning presentation before snapping sprites to swapped board tiles.
+var _swap_planning_presentations: Array[TimelineAction] = []
+## Execute replay: skip player premove visuals already shown during planning commit.
+var _skip_committed_premove_visuals: bool = false
+var _execute_premove_skip_actions: Array[TimelineAction] = []
 var _refresh_plan_queued: bool = false
 var _cached_wait_marker_ghost_events: Array[SimEvent] = []
+## Move-preview paths frozen at commit time — commit anim must match hover/drag preview exactly.
+var _commit_intent_preview_paths: Dictionary = {}
 ## Autobattler batches rpc_plan_move commits; one parallel planning walk plays at batch end.
 var _autobattler_plan_batch: bool = false
 ## When this returns true, default victory/defeat checks are skipped (battle continues).
@@ -176,6 +183,9 @@ func _init_combat() -> void:
 	plan_action = Timeline.new()
 	plan_post_move = Timeline.new()
 	_wait_unit_ids.clear()
+	_instant_planning_move_units.clear()
+	_pending_planning_commit_events.clear()
+	_swap_planning_presentations.clear()
 	_lock_enemy_intents()
 	
 	# Start with no unit selected
@@ -679,9 +689,9 @@ func preview_approach_tile(
 	ability_index: int,
 	preferred_tile: Vector2i,
 ) -> Vector2i:
-	var proj: BoardState = _get_planning_state()
-	var actor: UnitState = proj.get_unit_by_id(unit_id)
-	var target: UnitState = proj.get_unit_by_id(target_unit_id)
+	var plan_board: BoardState = _build_live_planning_board()
+	var actor: UnitState = plan_board.get_unit_by_id(unit_id)
+	var target: UnitState = plan_board.get_unit_by_id(target_unit_id)
 	if actor == null:
 		return preferred_tile
 	if target == null or actor.active_abilities.is_empty():
@@ -691,7 +701,7 @@ func preview_approach_tile(
 	var rng: int = actor.get_ability_range(ability)
 	if GridSystem.manhattan(actor.position, target.position) <= rng:
 		return actor.position
-	return _find_approach_tile(proj, actor, target.position, rng, preferred_tile)
+	return _find_approach_tile(plan_board, actor, target.position, rng, preferred_tile)
 
 
 func planning_move_budget(actor: UnitState, board: BoardState = null) -> int:
@@ -767,16 +777,19 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			return false
 	var has_pre_move: bool = not (slots.get("pre", []) as Array).is_empty()
 	var has_action: bool = not (slots.get("action", []) as Array).is_empty()
-	if has_pre_move:
+	if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
 		if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 			return false
-		_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+		_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 	if has_action:
 		if _try_finalize_awaiting_from_slots(unit_id, slots):
-			if has_pre_move:
+			var swap_entry: TimelineAction = _find_plan_swap_action(unit_id)
+			if swap_entry != null:
+				_register_planning_swap_presentation(swap_entry)
+			if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
 				if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 					return false
-				_clear_unit_from_plans(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+				_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 				for raw: Variant in slots.get("pre", []):
 					if raw is TimelineAction:
 						_try_add(raw as TimelineAction, plan_pre_move)
@@ -806,7 +819,25 @@ func _slot_plan_for_action(action: TimelineAction) -> Timeline:
 		if action.move_timing == GameEnums.MoveTiming.POST_ACTION:
 			return plan_post_move
 		return plan_pre_move
+	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
+		if action.ability.is_movement_kind():
+			return plan_pre_move
 	return plan_action
+
+
+func _slots_contain_move_for_unit(slots: Dictionary, unit_id: int, timing: int) -> bool:
+	var col: String = "post" if timing == GameEnums.MoveTiming.POST_ACTION else "pre"
+	for raw: Variant in slots.get(col, []):
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if (
+			action.actor_id == unit_id
+			and action.type == GameEnums.ActionType.MOVE
+			and action.move_timing == timing
+		):
+			return true
+	return false
 
 
 func _find_approach_tile(state: BoardState, actor: UnitState, target_pos: Vector2i, rng: int, preferred_tile: Vector2i) -> Vector2i:
@@ -842,6 +873,18 @@ func _clear_unit_from_plans(unit_id: int, from_timing: int) -> void:
 		var kept_2: Array[TimelineAction] = []
 		for a in plan_post_move.entries: if a.actor_id != unit_id: kept_2.append(a)
 		plan_post_move.entries = kept_2
+
+
+func _clear_unit_moves_from_plan_at_timing(unit_id: int, timing: int) -> void:
+	var plan: Timeline = (
+		plan_post_move if timing == GameEnums.MoveTiming.POST_ACTION else plan_pre_move
+	)
+	var kept: Array[TimelineAction] = []
+	for action: TimelineAction in plan.entries:
+		if action.actor_id == unit_id and action.type == GameEnums.ActionType.MOVE:
+			continue
+		kept.append(action)
+	plan.entries = kept
 
 func _try_add(action: TimelineAction, target_plan: Timeline) -> void:
 	_try_add_multiple([action], [target_plan])
@@ -886,11 +929,16 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 					return
 	for i: int in range(actions.size()):
 		target_plans[i].add(actions[i])
-		if actions[i].type == GameEnums.ActionType.MOVE and not _autobattler_plan_batch:
+		if (
+			actions[i].type == GameEnums.ActionType.MOVE
+			and not _autobattler_plan_batch
+			and _move_commits_with_planning_anim(actions[i])
+		):
 			_commit_animate_actor_ids[actions[i].actor_id] = true
-		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null \
-				and actions[i].ability.is_movement_kind():
-			_cancel_ally_plans_after_movement_step(actions[i])
+		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null:
+			if actions[i].ability.is_movement_kind():
+				_cancel_ally_plans_after_movement_step(actions[i])
+			_register_planning_swap_presentation(actions[i])
 	for actor_id: int in new_actors:
 		if actor_id not in plan_affected_unit_ids:
 			plan_affected_unit_ids.append(actor_id)
@@ -903,6 +951,43 @@ func get_player_plan() -> Timeline:
 func mark_planning_move_instant(unit_id: int) -> void:
 	if unit_id >= 0:
 		_instant_planning_move_units[unit_id] = true
+
+
+func _register_planning_swap_presentation(action: TimelineAction) -> void:
+	if action == null or action.ability == null:
+		return
+	if not AbilitySystem.ability_has_swap_effect(action.ability):
+		return
+	var resolved: TimelineAction = _find_plan_swap_action(action.actor_id, action.ability)
+	if resolved != null:
+		action = resolved
+	## Every swap commit animates both units; never pre-mark instant or sprites snap
+	## on board_changed and skip the swap presentation tween.
+	clear_planning_move_instant(action.actor_id)
+	if action.target_unit_id >= 0:
+		clear_planning_move_instant(action.target_unit_id)
+	if action in _swap_planning_presentations:
+		return
+	_swap_planning_presentations.append(action)
+	if action.target_unit_id >= 0 and action.target_unit_id not in plan_affected_unit_ids:
+		plan_affected_unit_ids.append(action.target_unit_id)
+
+
+func _find_plan_swap_action(actor_id: int, ability: AbilityData = null) -> TimelineAction:
+	if actor_id < 0:
+		return null
+	for plan: Timeline in _all_plans():
+		for entry: TimelineAction in plan.entries:
+			if entry.actor_id != actor_id or entry.awaiting_target:
+				continue
+			if entry.type != GameEnums.ActionType.ABILITY or entry.ability == null:
+				continue
+			if not AbilitySystem.ability_has_swap_effect(entry.ability):
+				continue
+			if ability != null and entry.ability != ability:
+				continue
+			return entry
+	return null
 
 
 func take_planning_move_instant(unit_id: int) -> bool:
@@ -979,7 +1064,7 @@ func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 				strip_act = true
 	var combined := Timeline.new()
 	for a: TimelineAction in plan_pre_move.entries:
-		if a.actor_id == unit_id and strip_pre:
+		if a.actor_id == unit_id and strip_pre and a.type == GameEnums.ActionType.MOVE:
 			continue
 		combined.add(a)
 	for a: TimelineAction in plan_action.entries:
@@ -991,7 +1076,7 @@ func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 	for uid_var: Variant in wait_ids:
 		combined.add(_make_wait_action(int(uid_var)))
 	for a: TimelineAction in plan_post_move.entries:
-		if a.actor_id == unit_id and strip_post:
+		if a.actor_id == unit_id and strip_post and a.type == GameEnums.ActionType.MOVE:
 			continue
 		combined.add(a)
 	for a: Variant in new_actions:
@@ -1083,6 +1168,32 @@ func preview_actions(unit_id: int, actions: Array[TimelineAction]) -> Dictionary
 	return res
 
 
+func preview_waypoints_for_hover(
+	board: BoardState,
+	actor: UnitState,
+	target: Vector2i,
+	waypoints: Array[Vector2i],
+	ability: AbilityData,
+) -> Array[Vector2i]:
+	if actor == null or not waypoints.is_empty() or target == actor.position:
+		return waypoints.duplicate()
+	var movement_type: GameEnums.MovementType = (
+		actor.definition.movement_type
+		if actor.definition != null
+		else GameEnums.MovementType.WALK
+	)
+	return MovementSystem.drag_corridor_path(
+		board,
+		actor.position,
+		target,
+		planning_move_budget(actor, board),
+		movement_type,
+		MovementSystem.move_cost_for(actor),
+		actor,
+		ability,
+	)
+
+
 func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, waypoints: Array[Vector2i] = []) -> Dictionary:
 	var move_timing: int = _get_move_timing(unit_id)
 	if move_timing < 0:
@@ -1091,6 +1202,20 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 	var actor := start_board.get_unit_by_id(unit_id)
 	var plan_board: BoardState = projected_state if projected_state != null else start_board
 	var plan_actor: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else actor
+	var selected_ability: AbilityData = null
+	if (
+		actor != null
+		and selected_ability_index >= 0
+		and selected_ability_index < actor.active_abilities.size()
+	):
+		selected_ability = actor.active_abilities[selected_ability_index]
+	waypoints = preview_waypoints_for_hover(
+		plan_board,
+		plan_actor if plan_actor != null else actor,
+		coord,
+		waypoints,
+		selected_ability,
+	)
 	var new_actions: Array[TimelineAction] = []
 	if attack_target_id >= 0:
 		var target := start_board.get_unit_by_id(attack_target_id)
@@ -1459,6 +1584,12 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 						EventBus.action_rejected.emit("cannot_undo_trample")
 						return
 					var removed: TimelineAction = plan_action.entries[i]
+					if (
+						removed.type == GameEnums.ActionType.ABILITY
+						and removed.ability != null
+						and removed.ability.is_movement_kind()
+					):
+						_cancel_ally_plans_after_movement_step(removed)
 					plan_action.remove_at(i)
 					_begin_undo_plan_refresh(unit_id)
 					_refresh_plan()
@@ -1510,9 +1641,16 @@ func rpc_remove_action(index: int) -> void:
 		plan_pre_move.remove_at(index)
 	elif index < plan_pre_move.size() + plan_action.size():
 		var act_idx: int = index - plan_pre_move.size()
-		if plan_action.entries[act_idx].irreversible:
+		var removed_act: TimelineAction = plan_action.entries[act_idx]
+		if removed_act.irreversible:
 			EventBus.action_rejected.emit("cannot_undo_trample")
 			return
+		if (
+			removed_act.type == GameEnums.ActionType.ABILITY
+			and removed_act.ability != null
+			and removed_act.ability.is_movement_kind()
+		):
+			_cancel_ally_plans_after_movement_step(removed_act)
 		plan_action.remove_at(act_idx)
 	elif index - plan_pre_move.size() - plan_action.size() < plan_post_move.size():
 		var post_idx: int = index - plan_pre_move.size() - plan_action.size()
@@ -1606,9 +1744,15 @@ func execute_turn() -> void:
 		return
 	var current_run_id: int = _run_id
 	var combined := _get_combined_plan()
+	_skip_committed_premove_visuals = not plan_pre_move.entries.is_empty()
+	_execute_premove_skip_actions.clear()
+	for action: TimelineAction in plan_pre_move.entries:
+		_execute_premove_skip_actions.append(action)
 	var result: SimResult = Simulator.simulate(base_board, combined)
 	_set_phase(Phase.EXECUTING)
 	await _play_events(result.events)
+	_skip_committed_premove_visuals = false
+	_execute_premove_skip_actions.clear()
 	if current_run_id != _run_id:
 		return
 	base_board = result.final_state
@@ -1908,6 +2052,10 @@ func _await_push_animations(run_id: int) -> void:
 func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 	if events.is_empty() or run_id != _run_id:
 		return
+	if _skip_committed_premove_visuals:
+		events = _filter_committed_premove_visual_events(events)
+		if events.is_empty():
+			return
 	
 	var pre_move_events: Array[SimEvent] = []
 	var post_move_events: Array[SimEvent] = []
@@ -2254,8 +2402,22 @@ func _refresh_plan_core() -> void:
 			if (
 				action.type == GameEnums.ActionType.MOVE
 				and _commit_animate_actor_ids.has(action.actor_id)
+				and _move_commits_with_planning_anim(action as TimelineAction)
 			):
-				anim_events.append_array(_extract_commit_anim_events(move_ev))
+				var before_action: BoardState = _board_before_planning_action(
+					action as TimelineAction, plan_to_run,
+				)
+				var scratch: BoardState = before_action.clone()
+				var commit_ev: Array[SimEvent] = []
+				ResolutionPipeline.apply_action(scratch, action as TimelineAction, commit_ev)
+				ResolutionPipeline.resolve_pending_pushes(scratch, commit_ev)
+				for move_event: SimEvent in _extract_commit_anim_events(commit_ev):
+					if move_event.type != GameEnums.SimEventType.UNIT_MOVED:
+						continue
+					_finalize_planning_commit_move_event(
+						move_event, action as TimelineAction, before_action,
+					)
+					anim_events.append(move_event)
 			
 		var reason := ""
 		for e in events:
@@ -2276,29 +2438,36 @@ func _refresh_plan_core() -> void:
 	projected_state = base_board.clone()
 	var evs: Array[SimEvent] = []
 	Simulator.simulate_player_turn(projected_state, plan_to_run, evs)
-		
-	board = move_only
+
+	# Premoves (walk + movement skills like Swap) apply immediately on live board.
+	# Action-phase displacement (bash push, hook pull, etc.) stays preview-only until execute.
+	board = _build_live_planning_board()
+	_sync_live_enemy_positions_to_turn_start(board)
 	var new_intents := EnemyPlanner.plan(projected_state)
 	base_board.intents = new_intents
 	board.intents = new_intents
 	projected_state.intents = new_intents
 
+	if not _swap_planning_presentations.is_empty():
+		for swap_action: TimelineAction in _swap_planning_presentations:
+			_prepend_swap_walk_commit_anims(swap_action, plan_to_run, anim_events)
 	if not anim_events.is_empty():
 		for event: SimEvent in anim_events:
 			_pending_planning_commit_events.append(event)
+	if not _swap_planning_presentations.is_empty():
+		for swap_action: TimelineAction in _swap_planning_presentations:
+			_pending_planning_commit_events.append(
+				_make_planning_swap_ability_event(swap_action, plan_to_run)
+			)
+		_swap_planning_presentations.clear()
+	if not _pending_planning_commit_events.is_empty():
 		plan_refresh_defer_overlay = true
-		call_deferred("_flush_pending_planning_commit_events")
+	clear_commit_intent_preview_paths()
 	plan_revision += 1
 	sync_selected_ability_if_invalid()
 
-	var preview_board: BoardState
-	var ghost_evs: Array[SimEvent]
-	if _plan_is_movement_only(plan_to_run):
-		preview_board = projected_state.clone()
-		ghost_evs = _build_enemy_ghost_events(preview_board, new_intents)
-	else:
-		preview_board = base_board.clone()
-		ghost_evs = _build_ghost_events(preview_board, plan_to_run, new_intents)
+	var preview_board: BoardState = projected_state.clone()
+	var ghost_evs: Array[SimEvent] = _build_enemy_ghost_events(preview_board, new_intents)
 
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
@@ -2479,18 +2648,25 @@ func _collect_all_planning_move_anim_events() -> Array[SimEvent]:
 	var plan_to_run := _get_combined_plan()
 	if plan_to_run.size() == 0 or base_board == null:
 		return []
-	var move_only := base_board.clone()
 	var anim_events: Array[SimEvent] = []
 	for action: TimelineAction in plan_to_run.entries:
 		if action.awaiting_target or action.type != GameEnums.ActionType.MOVE:
 			continue
+		if not _move_commits_with_planning_anim(action):
+			continue
 		var actor := base_board.get_unit_by_id(action.actor_id)
 		if actor == null or actor.is_enemy():
 			continue
+		var before_action: BoardState = _board_before_planning_action(action, plan_to_run)
+		var scratch: BoardState = before_action.clone()
 		var move_ev: Array[SimEvent] = []
-		ResolutionPipeline.apply_action(move_only, action, move_ev)
-		ResolutionPipeline.resolve_pending_pushes(move_only, move_ev)
-		anim_events.append_array(_extract_commit_anim_events(move_ev))
+		ResolutionPipeline.apply_action(scratch, action, move_ev)
+		ResolutionPipeline.resolve_pending_pushes(scratch, move_ev)
+		for move_event: SimEvent in _extract_commit_anim_events(move_ev):
+			if move_event.type != GameEnums.SimEventType.UNIT_MOVED:
+				continue
+			_finalize_planning_commit_move_event(move_event, action, before_action)
+			anim_events.append(move_event)
 	return anim_events
 
 
@@ -2498,11 +2674,18 @@ func _flush_plan_refresh_signals() -> void:
 	_plan_refresh_emit_pending = false
 	if _pending_refresh_board == null:
 		return
+	## Animations + walk-origin reset must run before board_changed so sprites are not
+	## pulled to post-swap logical cells before the commit presentation queue starts.
+	var commit_events: Array[SimEvent] = _pending_planning_commit_events.duplicate()
+	_pending_planning_commit_events.clear()
+	if not commit_events.is_empty():
+		EventBus.planning_commit_events.emit(commit_events)
 	EventBus.board_changed.emit(_pending_refresh_board)
 	EventBus.timeline_changed.emit(_pending_refresh_plan, _pending_refresh_statuses)
 	EventBus.preview_updated.emit(_pending_refresh_preview)
 	plan_affected_unit_ids.clear()
 	plan_refresh_snap_units = false
+	plan_refresh_defer_overlay = false
 	_pending_refresh_board = null
 	_pending_refresh_plan = null
 	_pending_refresh_preview = null
@@ -2576,6 +2759,303 @@ func _player_positions_match_turn_start(candidate: BoardState) -> bool:
 		if other == null or other.position != unit.position:
 			return false
 	return true
+
+
+## Planning live board: player premoves snap; enemies stay on turn-start tiles until execute.
+func _sync_live_enemy_positions_to_turn_start(live: BoardState) -> void:
+	if turn_start_board == null or live == null:
+		return
+	for start_unit: UnitState in turn_start_board.units:
+		if not start_unit.is_alive() or not start_unit.is_enemy():
+			continue
+		var live_unit: UnitState = live.get_unit_by_id(start_unit.id)
+		if live_unit == null or not live_unit.is_alive():
+			continue
+		var from_pos: Vector2i = live_unit.position
+		var to_pos: Vector2i = start_unit.position
+		if from_pos == to_pos:
+			continue
+		GridSystem.set_occupant(live, from_pos, -1)
+		live_unit.position = to_pos
+		GridSystem.set_occupant(live, to_pos, live_unit.id)
+
+
+func _prepend_swap_walk_commit_anims(
+	swap_action: TimelineAction,
+	plan: Timeline,
+	anim_events: Array[SimEvent],
+) -> void:
+	if swap_action == null or plan == null or base_board == null:
+		return
+	var swap_entry: TimelineAction = _plan_swap_entry(swap_action, plan)
+	for existing: SimEvent in anim_events:
+		if (
+			existing.type == GameEnums.SimEventType.UNIT_MOVED
+			and int(existing.data.get("actor", -1)) == swap_entry.actor_id
+		):
+			return
+	var move_action: TimelineAction = null
+	for entry: TimelineAction in plan.entries:
+		if _timeline_actions_same_commit(entry, swap_entry):
+			break
+		if entry.awaiting_target:
+			continue
+		if entry.type == GameEnums.ActionType.MOVE and entry.actor_id == swap_entry.actor_id:
+			move_action = entry
+	if move_action == null:
+		return
+	var before_move: BoardState = _board_before_planning_action(move_action, plan)
+	var actor_before: UnitState = before_move.get_unit_by_id(swap_entry.actor_id)
+	if actor_before == null:
+		return
+	var walk_to: Vector2i = move_action.target_coord
+	if walk_to.x < -900000 or actor_before.position == walk_to:
+		return
+	var scratch: BoardState = before_move.clone()
+	var move_ev: Array[SimEvent] = []
+	ResolutionPipeline.apply_action(scratch, move_action, move_ev)
+	ResolutionPipeline.resolve_pending_pushes(scratch, move_ev)
+	for move_event: SimEvent in _extract_commit_anim_events(move_ev):
+		if move_event.type != GameEnums.SimEventType.UNIT_MOVED:
+			continue
+		_finalize_planning_commit_move_event(move_event, move_action, before_move)
+		anim_events.append(move_event)
+		return
+
+
+func _plan_swap_entry(swap_action: TimelineAction, plan: Timeline) -> TimelineAction:
+	if swap_action == null or plan == null:
+		return swap_action
+	for entry: TimelineAction in plan.entries:
+		if _timeline_actions_same_commit(entry, swap_action):
+			return entry
+	return swap_action
+
+
+func _make_planning_swap_ability_event(action: TimelineAction, plan: Timeline) -> SimEvent:
+	var pres_anim: int = action.ability.presentation_anim
+	if pres_anim == GameEnums.PresentationAnim.AUTO:
+		pres_anim = GameEnums.PresentationAnim.WALK
+	var before: BoardState = _board_before_planning_action(action, plan)
+	var after: BoardState = before.clone()
+	var swap_events: Array[SimEvent] = []
+	ResolutionPipeline.apply_action(after, action, swap_events)
+	ResolutionPipeline.resolve_pending_pushes(after, swap_events)
+	var actor_before: UnitState = before.get_unit_by_id(action.actor_id)
+	var target_before: UnitState = before.get_unit_by_id(action.target_unit_id)
+	var actor_after: UnitState = after.get_unit_by_id(action.actor_id)
+	var target_after: UnitState = after.get_unit_by_id(action.target_unit_id)
+	return SimEvent.make(GameEnums.SimEventType.ABILITY_USED, {
+		"actor": action.actor_id,
+		"ability": action.ability.id,
+		"ability_name": action.ability.display_name,
+		"target_coord": action.target_coord,
+		"target_unit": action.target_unit_id,
+		"presentation_anim": pres_anim,
+		"actor_from": actor_before.position if actor_before != null else action.target_coord,
+		"actor_to": actor_after.position if actor_after != null else action.target_coord,
+		"target_from": target_before.position if target_before != null else action.target_coord,
+		"target_to": target_after.position if target_after != null else action.target_coord,
+		"planning_swap_presentation": true,
+	})
+
+
+func _board_before_planning_action(action: TimelineAction, plan: Timeline) -> BoardState:
+	assert(action != null)
+	assert(plan != null)
+	assert(base_board != null)
+	var before: BoardState = base_board.clone()
+	for entry: TimelineAction in plan.entries:
+		if _timeline_actions_same_commit(entry, action):
+			return before
+		if entry.awaiting_target:
+			continue
+		var events: Array[SimEvent] = []
+		ResolutionPipeline.apply_action(before, entry, events)
+		ResolutionPipeline.resolve_pending_pushes(before, events)
+	return before
+
+
+func _timeline_actions_same_commit(a: TimelineAction, b: TimelineAction) -> bool:
+	if a == b:
+		return true
+	if a == null or b == null:
+		return false
+	if a.actor_id != b.actor_id or a.type != b.type:
+		return false
+	match a.type:
+		GameEnums.ActionType.MOVE:
+			return (
+				a.target_coord == b.target_coord
+				and a.move_timing == b.move_timing
+			)
+		GameEnums.ActionType.ABILITY:
+			if a.ability == null or b.ability == null:
+				return false
+			return (
+				a.ability == b.ability
+				and a.target_unit_id == b.target_unit_id
+				and a.target_coord == b.target_coord
+			)
+		_:
+			return false
+
+
+func _build_live_planning_board() -> BoardState:
+	var live: BoardState = base_board.clone()
+	for action: TimelineAction in plan_pre_move.entries:
+		if action.awaiting_target:
+			continue
+		var events: Array[SimEvent] = []
+		ResolutionPipeline.apply_action(live, action, events)
+		ResolutionPipeline.resolve_pending_pushes(live, events)
+	return live
+
+
+## Committed premove positions only — never action-phase preview displacement.
+func live_planning_board() -> BoardState:
+	return _build_live_planning_board()
+
+
+func stash_commit_intent_preview_paths(paths: Dictionary) -> void:
+	_commit_intent_preview_paths = paths.duplicate(true)
+
+
+func clear_commit_intent_preview_paths() -> void:
+	_commit_intent_preview_paths.clear()
+
+
+func _finalize_planning_commit_move_event(
+	move_event: SimEvent,
+	action: TimelineAction,
+	before_board: BoardState,
+) -> void:
+	if move_event == null or action == null or before_board == null:
+		return
+	var actor: UnitState = before_board.get_unit_by_id(action.actor_id)
+	if actor == null:
+		return
+	var from_cell: Vector2i = actor.position
+	move_event.data["from"] = from_cell
+	move_event.data["to"] = action.target_coord
+	var path_cells: Array = []
+	if not action.waypoints.is_empty():
+		path_cells = CombatPlanningPreview.movement_intent_cells(from_cell, action)
+	elif not _commit_intent_preview_paths.is_empty():
+		var preview_stub: CombatPlanningPreview = CombatPlanningPreview.new()
+		preview_stub.preview_paths = _commit_intent_preview_paths.duplicate(true)
+		var leg: Array = CombatPlanningPreview.committed_action_route_leg(
+			action.actor_id, preview_stub, action, from_cell,
+		)
+		if leg.size() >= 2:
+			path_cells = leg
+		else:
+			var route: Variant = _commit_intent_preview_paths.get(action.actor_id, [])
+			if route is Array and (route as Array).size() >= 2:
+				var dest: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
+					route, from_cell, action.target_coord,
+				)
+				if not dest.is_empty():
+					path_cells = [from_cell]
+					path_cells.append_array(dest)
+	if path_cells.size() < 2:
+		path_cells = [from_cell]
+		var found: Array[Vector2i] = MovementSystem.find_path(
+			before_board, from_cell, action.target_coord, actor.movement.points_left,
+		)
+		if not found.is_empty():
+			path_cells.append_array(found)
+		elif GridSystem.manhattan(from_cell, action.target_coord) == 1:
+			path_cells.append(action.target_coord)
+	move_event.data["path"] = path_cells
+	move_event.data["planning_commit_move"] = true
+	move_event.data["move_timing"] = action.move_timing
+
+
+func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
+	## Only pre-action (pre-move) walks animate on planning commit. Post-move and
+	## action-phase displacement stay preview-only until Execute.
+	if action == null or action.type != GameEnums.ActionType.MOVE:
+		return false
+	return action.move_timing != GameEnums.MoveTiming.POST_ACTION
+
+
+func _filter_committed_premove_visual_events(events: Array[SimEvent]) -> Array[SimEvent]:
+	if _execute_premove_skip_actions.is_empty():
+		return events
+	var remaining: Array[TimelineAction] = _execute_premove_skip_actions.duplicate()
+	var out: Array[SimEvent] = []
+	var skip_push_unit_ids: Dictionary = {}
+	for event: SimEvent in events:
+		if (
+			event.type == GameEnums.SimEventType.UNIT_PUSHED
+			and bool(event.data.get("swap_displacement", false))
+			and _execute_premove_swap_covers_unit(int(event.data.get("unit", -1)))
+		):
+			continue
+		if remaining.is_empty():
+			if (
+				event.type == GameEnums.SimEventType.UNIT_PUSHED
+				and skip_push_unit_ids.has(int(event.data.get("unit", -1)))
+				and not event.data.has("pusher")
+			):
+				continue
+			out.append(event)
+			continue
+		if _consume_committed_premove_visual_event(event, remaining, skip_push_unit_ids):
+			continue
+		out.append(event)
+	return out
+
+
+func _consume_committed_premove_visual_event(
+	event: SimEvent,
+	remaining: Array[TimelineAction],
+	skip_push_unit_ids: Dictionary,
+) -> bool:
+	if remaining.is_empty():
+		return false
+	var action: TimelineAction = remaining[0]
+	match action.type:
+		GameEnums.ActionType.MOVE:
+			if event.type != GameEnums.SimEventType.UNIT_MOVED:
+				return false
+			if int(event.data.get("actor", -1)) != action.actor_id:
+				return false
+			remaining.pop_front()
+			return true
+		GameEnums.ActionType.ABILITY:
+			if action.ability == null:
+				remaining.pop_front()
+				return _consume_committed_premove_visual_event(event, remaining, skip_push_unit_ids)
+			if event.type == GameEnums.SimEventType.ABILITY_USED:
+				if int(event.data.get("actor", -1)) != action.actor_id:
+					return false
+				if event.data.get("ability", &"") != action.ability.id:
+					return false
+				remaining.pop_front()
+				if action.ability.is_movement_kind() and AbilitySystem.ability_has_swap_effect(action.ability):
+					if action.target_unit_id >= 0:
+						skip_push_unit_ids[action.target_unit_id] = true
+					skip_push_unit_ids[action.actor_id] = true
+				return true
+			return false
+		_:
+			remaining.pop_front()
+			return _consume_committed_premove_visual_event(event, remaining, skip_push_unit_ids)
+
+
+func _execute_premove_swap_covers_unit(unit_id: int) -> bool:
+	if unit_id < 0:
+		return false
+	for action: TimelineAction in _execute_premove_skip_actions:
+		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+			continue
+		if not AbilitySystem.ability_has_swap_effect(action.ability):
+			continue
+		if action.actor_id == unit_id or action.target_unit_id == unit_id:
+			return true
+	return false
 
 
 func _flush_pending_planning_commit_events() -> void:

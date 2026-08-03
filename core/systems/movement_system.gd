@@ -42,7 +42,8 @@ static func get_reachable_tiles(
 
 		for dir in GridSystem.DIRECTIONS:
 			var next: Vector2i = current + dir
-			var new_cost = cost_so_far[current] + move_cost
+			var step_cost: int = step_mp_cost(board, next, unit)
+			var new_cost = cost_so_far[current] + step_cost
 			if new_cost > max_steps:
 				continue
 			
@@ -82,19 +83,24 @@ static func find_path(
 	var unit := board.get_unit_at(start)
 	var team := unit.team if unit != null else GameEnums.Team.PLAYER
 
-	# Allow pathing to an enemy-occupied goal when the unit has pass-through (TRAMPLE/BULLDOZE).
+	# Allow pathing to an enemy-occupied goal when the unit has pass-through (TRAMPLE/BULLDOZE)
+	# or temporary GHOST from ghost_move during skill execution.
 	var goal_tile_ok: bool = GridSystem.is_passable(board, goal)
-	if not goal_tile_ok and can_pass_through_enemy(unit, ability):
+	if not goal_tile_ok and unit != null:
 		var goal_occ := board.get_unit_at(goal)
 		if goal_occ != null and goal_occ.team != team:
-			goal_tile_ok = true
+			if (
+				can_pass_through_enemy(unit, ability)
+				or unit.has_status(GameEnums.StatusType.GHOST)
+				or (ability != null and AbilitySystem.has_displacement_effects(ability))
+			):
+				goal_tile_ok = true
 	if not goal_tile_ok:
 		return empty
 
 	var came_from: Dictionary = {}   # Vector2i -> Vector2i
-	var visited: Dictionary = {}     # Vector2i -> true
+	var cost_so_far: Dictionary = {start: 0}
 	var queue: Array[Vector2i] = [start]
-	visited[start] = true
 
 	while not queue.is_empty():
 		var current: Vector2i = queue.pop_front()
@@ -102,11 +108,15 @@ static func find_path(
 			break
 		for dir in GridSystem.DIRECTIONS:
 			var next: Vector2i = current + dir
-			if visited.has(next):
+			var step_cost: int = step_mp_cost(board, next, unit)
+			var new_cost: int = int(cost_so_far[current]) + step_cost
+			if new_cost > max_steps:
 				continue
 			if not _is_walkable_for(board, next, unit, ability):
 				continue
-			visited[next] = true
+			if cost_so_far.has(next) and int(cost_so_far[next]) <= new_cost:
+				continue
+			cost_so_far[next] = new_cost
 			came_from[next] = current
 			queue.append(next)
 
@@ -119,16 +129,26 @@ static func find_path(
 		path.push_front(node)
 		node = came_from[node]
 
-	if path.size() * move_cost > max_steps:
-		path = path.slice(0, floori(max_steps / float(move_cost)))
+	var path_cost: int = 0
+	var trimmed: Array[Vector2i] = []
+	for step_coord: Vector2i in path:
+		var step_cost_path: int = step_mp_cost(board, step_coord, unit)
+		if path_cost + step_cost_path > max_steps:
+			break
+		path_cost += step_cost_path
+		trimmed.append(step_coord)
+	path = trimmed
 		
 	# A unit cannot end its movement on an occupied tile (e.g. an ally).
 	# Backtrack until we find an empty tile — but allow ending on an enemy tile
 	# if the ability grants pass-through movement (TRAMPLE/BULLDOZE pushes them aside).
 	while path.size() > 0 and GridSystem.is_occupied(board, path[path.size() - 1]):
 		var end_occ := board.get_unit_at(path[path.size() - 1])
-		if end_occ != null and end_occ.team != team and can_pass_through_enemy(unit, ability):
-			break  # TRAMPLE/BULLDOZE can land on an enemy tile; execution handles displacement
+		if end_occ != null and end_occ.team != team and (
+			can_pass_through_enemy(unit, ability) or unit.has_status(GameEnums.StatusType.GHOST)
+			or (ability != null and AbilitySystem.has_displacement_effects(ability))
+		):
+			break  # TRAMPLE/BULLDOZE/GHOST can land on an enemy tile; execution handles displacement
 		path.pop_back()
 		
 	return path
@@ -175,8 +195,7 @@ static func drag_corridor_path(
 		prev = tile
 	if validated.is_empty() or validated.back() != goal:
 		return find_path(board, start, goal, max_steps, movement_type, move_cost, ability)
-	if validated.size() * move_cost > max_steps:
-		validated = validated.slice(0, floori(max_steps / float(move_cost)))
+	validated = _trim_route_to_budget(board, validated, max_steps, unit)
 	var team: GameEnums.Team = unit.team if unit != null else GameEnums.Team.PLAYER
 	while validated.size() > 0 and GridSystem.is_occupied(board, validated[validated.size() - 1]):
 		var end_occ: UnitState = board.get_unit_at(validated[validated.size() - 1])
@@ -190,6 +209,39 @@ static func move_cost_for(unit: UnitState) -> int:
 	if unit != null and unit.has_status(GameEnums.StatusType.BLEED):
 		return 2
 	return 1
+
+
+static func step_mp_cost(board: BoardState, coord: Vector2i, unit: UnitState) -> int:
+	var unit_cost: int = move_cost_for(unit)
+	var terrain_cost: int = 1
+	var tile: TileState = board.get_tile(coord)
+	if tile != null and tile.definition != null:
+		terrain_cost = maxi(1, tile.definition.mp_cost_per_tile)
+	return unit_cost * terrain_cost
+
+
+static func route_mp_cost(board: BoardState, route: Array[Vector2i], unit: UnitState) -> int:
+	var spent: int = 0
+	for step_coord: Vector2i in route:
+		spent += step_mp_cost(board, step_coord, unit)
+	return spent
+
+
+static func _trim_route_to_budget(
+	board: BoardState,
+	route: Array[Vector2i],
+	budget: int,
+	unit: UnitState,
+) -> Array[Vector2i]:
+	var trimmed: Array[Vector2i] = []
+	var spent: int = 0
+	for step_coord: Vector2i in route:
+		var step_cost: int = step_mp_cost(board, step_coord, unit)
+		if spent + step_cost > budget:
+			break
+		spent += step_cost
+		trimmed.append(step_coord)
+	return trimmed
 
 
 static func resolve_move_path(
@@ -217,7 +269,7 @@ static func resolve_move_path(
 		if (
 			_is_contiguous_cardinal_route(start, waypoints)
 			and waypoints[waypoints.size() - 1] == target_coord
-			and waypoints.size() * move_cost <= max_steps
+			and route_mp_cost(board, waypoints, unit) <= max_steps
 		):
 			return waypoints.duplicate()
 		return []
@@ -260,6 +312,7 @@ static func _is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState
 				if unit != null and (unit.has_status(GameEnums.StatusType.GHOST) or can_pass_through_enemy(unit, ability)):
 					return true # Ghost/Trample/BULLDOZE can walk through enemies
 				return false # Cannot walk through enemies
+			return false # Allied units block transit; only explicit pass-through may enter occupants
 	return true
 
 ## Shared trample check — used by pathfinding, move execution, and UI.
@@ -526,7 +579,10 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		TerrainSystem.apply_entry_at(board, unit, step, events)
 
 	unit.position = path[path.size() - 1]
-	unit.movement.points_left -= (path.size() * move_cost)
+	var mp_spent: int = 0
+	for step_coord: Vector2i in path:
+		mp_spent += step_mp_cost(board, step_coord, unit)
+	unit.movement.points_left -= mp_spent
 	GridSystem.set_occupant(board, unit.position, unit.id)
 
 	# Face the direction of the final step (used for flanking/backstab), unless the
@@ -575,11 +631,15 @@ static func _is_legal_walk(
 	unit: UnitState = null,
 	ability: AbilityData = null,
 ) -> bool:
-	if route.is_empty() or route.size() * move_cost > budget:
+	if route.is_empty():
 		return false
-		
 	if unit == null:
 		unit = board.get_unit_at(start)
+	var spent: int = 0
+	for step: Vector2i in route:
+		spent += step_mp_cost(board, step, unit)
+	if spent > budget:
+		return false
 		
 	var prev := start
 	for step in route:

@@ -7,7 +7,7 @@ extends RefCounted
 const KW_COLOR: String = "#FBBF24"
 
 static var _ABILITY_CODE_BRANCHES: Dictionary = {
-	&"knight_defensive_formation": "Phalanx: ability_system applies DEF buff to self and adjacent allies (ID branch).",
+	&"knight_defensive_formation": "Defensive Formation: AOE diamond 3; ADD_STATUS DEF+STURDY on allies via exclude_caster modifier in AbilitySystem.",
 	&"knight_shield_bash": "Shield Bash: upgrade adds PUSH 1 on hit (ID branch in ability_system).",
 	&"knight_chain_hook": "Chain Hook: upgrade extends PULL range / behavior (ID branch in ability_system).",
 	&"knight_bowling_charge": "Bowling Charge upgrade: enemy-enemy chain collision in ability_system (ID branch).",
@@ -291,7 +291,7 @@ static func bible_ability_effect_line(ability: AbilityData) -> String:
 		&"knight_iron_grip":
 			return "Apply ROOT | DEF halved next turn"
 		&"knight_redirect_strike":
-			return "Apply INTERCEPT 50%"
+			return "RANGE 2 | Apply INTERCEPT 50%"
 		&"knight_indomitable_will":
 			return "SHIELD = missing HP (2 turns)"
 		&"knight_retaliation_protocol":
@@ -314,18 +314,8 @@ static func bible_ability_targeting_label(ability: AbilityData) -> String:
 	for eff: EffectData in ability.effects:
 		if eff.type == GameEnums.EffectType.DASH:
 			return "DASH %d" % eff.amount
-	match ability.id:
-		&"knight_redirect_strike":
-			return "RANGE 2"
-		_:
-			pass
 	if ability.range_tiles > 0:
-		if AbilitySystem.ability_has_movement_effect(ability):
-			var move_amount := AbilitySystem.effect_amount(ability, GameEnums.EffectType.MOVE)
-			if move_amount > 0:
-				return "MOVE %d" % move_amount
-			return "MOVE %d" % ability.range_tiles
-		return "MOVE"
+		return "RANGE %d" % ability.range_tiles
 	if ability.targeting_mode == GameEnums.TargetingMode.SELF and ability.range_tiles == 0:
 		if ability.target_shape != GameEnums.TargetShape.SINGLE:
 			return "RANGE 0"
@@ -585,6 +575,43 @@ static func duplicate_effect(src: EffectData) -> EffectData:
 	e.def_debuff_before_damage = src.def_debuff_before_damage
 	e.spawn_unit_id = src.spawn_unit_id
 	return e
+
+
+static func ability_field_signature(ability: AbilityData, field: String) -> String:
+	if ability == null:
+		return ""
+	var data: Dictionary = ability_to_dict(ability)
+	if not data.has(field):
+		return ""
+	return JSON.stringify(data[field])
+
+
+static func snapshot_ability_map_from_units(units: Array[UnitData]) -> Dictionary:
+	var out: Dictionary = {}
+	for unit: UnitData in units:
+		if unit == null:
+			continue
+		for ability: AbilityData in unit.abilities:
+			if ability == null or ability.id == &"":
+				continue
+			out[ability.id] = duplicate_ability(ability)
+	return out
+
+
+const FactoryBaseline = preload("res://ui/class_library_factory_baseline.gd")
+
+
+static func snapshot_factory_abilities() -> Dictionary:
+	var out: Dictionary = {}
+	for unit_key: Variant in FactoryBaseline.build_all_player_units().keys():
+		var unit: UnitData = FactoryBaseline.build_all_player_units()[unit_key] as UnitData
+		if unit == null:
+			continue
+		for ability: AbilityData in unit.abilities:
+			if ability == null or ability.id == &"":
+				continue
+			out[ability.id] = duplicate_ability(ability)
+	return out
 
 
 static func duplicate_ability(src: AbilityData) -> AbilityData:
@@ -1016,6 +1043,7 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"target_shape": src.target_shape,
 		"target_shape_size": src.target_shape_size,
 		"upgraded_range_tiles": src.upgraded_range_tiles,
+		"upgraded_movement_point_cost": src.upgraded_movement_point_cost,
 		"upgraded_target_shape": src.upgraded_target_shape,
 		"upgraded_target_shape_size": src.upgraded_target_shape_size,
 		"upgrade_description": src.upgrade_description,
@@ -1043,6 +1071,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.target_shape = int(data.get("target_shape", dst.target_shape))
 	dst.target_shape_size = int(data.get("target_shape_size", dst.target_shape_size))
 	dst.upgraded_range_tiles = int(data.get("upgraded_range_tiles", dst.upgraded_range_tiles))
+	dst.upgraded_movement_point_cost = int(data.get("upgraded_movement_point_cost", dst.upgraded_movement_point_cost))
 	dst.upgraded_target_shape = int(data.get("upgraded_target_shape", dst.upgraded_target_shape))
 	dst.upgraded_target_shape_size = int(data.get("upgraded_target_shape_size", dst.upgraded_target_shape_size))
 	dst.upgrade_description = String(data.get("upgrade_description", dst.upgrade_description))

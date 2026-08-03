@@ -56,10 +56,6 @@ static func deal_collision_damage(
 	var str_val := get_dynamic_strength(board, pusher)
 	var mult_raw := COLLISION_FORCE_MULT * (base + wpn) * (1.0 + str_val / 5.0)
 	
-	if pusher.has_passive(&"momentum_of_the_titan"):
-		var pct := 0.20 if pusher.is_passive_upgraded(&"momentum_of_the_titan") else 0.10
-		mult_raw += pusher.health.max_hp * pct
-	
 	# Apply generic collision damage modifiers from passives
 	for passive: PassiveData in pusher.active_passives:
 		if passive.modifiers.has("collision_add_def_pct"):
@@ -119,13 +115,7 @@ static func deal_collision_damage(
 				status_amount = passive.modifiers["collision_apply_target_status_amount"]
 			
 		if apply_status >= 0:
-			if victim.has_passive(&"unstoppable_force") and apply_status in [GameEnums.StatusType.STAGGER, GameEnums.StatusType.ROOT]:
-				var shield = 2 if victim.is_passive_upgraded(&"unstoppable_force") else 1
-				victim.armor += shield
-				events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-					"actor": victim.id, "reason": "status_prevented_by_unstoppable_force",
-				}))
-			else:
+			if not try_resist_crowd_control(victim, apply_status, events):
 				victim.active_statuses.append(DataLibrary.make_status(apply_status, 1, status_amount))
 				victim._recalculate_stats()
 			
@@ -196,9 +186,29 @@ static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 		def += 1
 		
 	if unit.has_status(GameEnums.StatusType.IRON_GRIP_DEBUFF):
-		def = ceili(def / 2.0)
+		for status: StatusData in unit.active_statuses:
+			if status.type == GameEnums.StatusType.IRON_GRIP_DEBUFF:
+				# Bible: DEF halved on the target's next turn — not the cast turn.
+				if status.ticks_remaining <= status.duration * 2:
+					def = ceili(def / 2.0)
+				break
 		
 	return def
+
+static func count_enraged_debuff_hazard_sources(board: BoardState, unit: UnitState) -> int:
+	if unit == null or not unit.has_passive(&"enraged"):
+		return 0
+	var count := 0
+	var counted_types := {}
+	for status in unit.active_statuses:
+		if GameEnums.is_debuff(status.type) and not counted_types.has(status.type):
+			counted_types[status.type] = true
+			count += 1
+	if board != null:
+		var unit_tile := board.get_tile(unit.position)
+		if unit_tile != null and unit_tile.definition != null and unit_tile.definition.id == &"trap":
+			count += 1
+	return count
 
 static func get_dynamic_strength(board: BoardState, unit: UnitState) -> int:
 	if unit == null: return 0
@@ -220,14 +230,7 @@ static func get_dynamic_strength(board: BoardState, unit: UnitState) -> int:
 		str_val += floori(missing_pct / 0.10)
 		
 	if unit.has_passive(&"enraged"):
-		var debuffs = 0
-		for st in unit.active_statuses:
-			if GameEnums.is_debuff(st.type): debuffs += 1
-		if board != null:
-			var unit_tile = board.get_tile(unit.position)
-			if unit_tile != null and unit_tile.definition != null and unit_tile.definition.id == &"trap":
-				debuffs += 1
-		str_val += debuffs
+		str_val += count_enraged_debuff_hazard_sources(board, unit)
 		
 	if unit.has_passive(&"last_stand") and unit.health.current_hp < unit.health.max_hp * 0.25:
 		str_val += 3 if unit.is_passive_upgraded(&"last_stand") else 2
@@ -416,6 +419,15 @@ static func deal_damage_raw(
 				
 	deal_damage(board, target, raw_amount, events, dmg_type, pierce, false, attacker, source_label)
 
+static func _apply_kinetic_redirection_stack(target: UnitState) -> void:
+	if target == null or not target.has_passive(&"kinetic_redirection"):
+		return
+	var stacks: int = int(target.passive_flags.get("kinetic_redirection_stacks", 0))
+	if stacks >= 3:
+		return
+	target.passive_flags["kinetic_redirection_stacks"] = stacks + 1
+	target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, -1, 1))
+
 static func deal_damage(
 	board: BoardState,
 	target: UnitState,
@@ -474,8 +486,11 @@ static func deal_damage(
 							if is_upgraded:
 								ally.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2))
 								ally._recalculate_stats()
-							if ally.is_ability_upgraded(&"bruiser_meat_shield"):
-								ally.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 2))
+							var intercept_str: int = int(ally.passive_flags.get("meat_shield_intercept_str", 0))
+							if intercept_str > 0:
+								ally.active_statuses.append(
+									DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, intercept_str),
+								)
 								ally._recalculate_stats()
 							CombatSystem.deal_damage(
 								board, ally, intercept_amount, events, source_type, pierce, true, attacker, source_label, intercept_amount
@@ -519,8 +534,12 @@ static func deal_damage(
 	var incoming := maxi(0, amount - fort - mitigation)
 	var mitigated_amount = amount - incoming
 	if incoming <= 0:
-		if mitigated_amount > 0 and target.has_passive(&"kinetic_redirection"):
-			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+		if (
+			source_type != &"hazard"
+			and mitigated_amount > 0
+			and target.has_passive(&"kinetic_redirection")
+		):
+			_apply_kinetic_redirection_stack(target)
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
 			"unit": target.id,
 			"amount": 0,
@@ -601,11 +620,12 @@ static func deal_damage(
 	
 	if hp_dmg + armor_dmg > 0:
 		target.passive_flags["damaged_this_turn"] = true
-		if mitigated_amount > 0 and target.has_passive(&"kinetic_redirection"):
-			var stacks = target.passive_flags.get("kinetic_redirection_stacks", 0)
-			if stacks < 3:
-				target.passive_flags["kinetic_redirection_stacks"] = stacks + 1
-				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, -1, 1))
+		if (
+			source_type != &"hazard"
+			and target.has_passive(&"kinetic_redirection")
+			and (mitigated_amount > 0 or armor_dmg > 0)
+		):
+			_apply_kinetic_redirection_stack(target)
 			
 		if target.has_passive(&"kinetic_converter"):
 			var str_buff = 2 if target.is_passive_upgraded(&"kinetic_converter") else 1
@@ -637,12 +657,7 @@ static func deal_damage(
 			if has_infinite_range or GridSystem.manhattan(target.position, attacker.position) == 1:
 				var retal_dmg := calculate_scaled_damage(target, 2, GameEnums.StatType.PHYSICAL, board)
 				deal_damage_raw(board, target, attacker, retal_dmg, GameEnums.StatType.PHYSICAL, events, "Retaliation Protocol", 2)
-				var is_upgraded = false
-				for status in target.active_statuses:
-					if status.type == GameEnums.StatusType.RETALIATION_PROTOCOL and status.amount == 1:
-						is_upgraded = true
-						break
-				if is_upgraded:
+				if target.is_ability_upgraded(&"knight_retaliation_protocol"):
 					var push_dir = PhysicsSystem.cardinal_from_to(target.position, attacker.position)
 					PhysicsSystem.push(board, attacker, push_dir, 1, events, target)
 
@@ -663,8 +678,30 @@ static func deal_damage(
 			if attacker.passive_flags.has("adrenaline_surge_active"):
 				heal(board, attacker, 1, events)
 				add_armor(board, attacker, 2, events)
-			if attacker.is_ability_upgraded(&"bruiser_frenzy") and source_label == "Frenzy":
+			if attacker.passive_flags.get("frenzy_on_kill_ap", false) and source_label == "Frenzy":
 				attacker.ability.points_left += 1
+
+## Bible Unstoppable Force: immune to STAGGER/ROOT; resisting grants SHIELD 1 ([+] 2).
+## Returns true if status was prevented (caller must not apply it).
+static func try_resist_crowd_control(
+	target: UnitState,
+	status_type: int,
+	events: Array[SimEvent],
+) -> bool:
+	if target == null or not target.is_alive():
+		return false
+	if not target.has_passive(&"unstoppable_force"):
+		return false
+	if status_type != GameEnums.StatusType.STAGGER and status_type != GameEnums.StatusType.ROOT:
+		return false
+	var shield: int = 2 if target.is_passive_upgraded(&"unstoppable_force") else 1
+	target.armor += shield
+	events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+		"actor": target.id,
+		"reason": "status_prevented_by_unstoppable_force",
+	}))
+	return true
+
 
 static func heal(board: BoardState, target: UnitState, amount: int, events: Array[SimEvent]) -> void:
 	if target == null or not target.is_alive() or amount <= 0:

@@ -112,6 +112,7 @@ func _targeting_flags_to_mode() -> int:
 
 ## Optional overrides for when the ability is upgraded. -1 means do not override.
 @export var upgraded_range_tiles: int = -1
+@export var upgraded_movement_point_cost: int = -1
 @export var upgraded_target_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
 @export var upgraded_target_shape_size: int = -1
 

@@ -31,10 +31,10 @@ N/A — see `roguelike-run.md` (P4) and `world-assets-and-map.md` (P7) for owner
 |-------|-----------|------------|-----------------|--------|
 | 1 | Parity Ph 10–13 combat core | `combat-core-closeout.md` | `.\scripts\run_regression_tests.ps1` | ✅ **Closed** *(owner 2026-08-01)* |
 | 2 | Phase 14 Knight MVP re-gate | `combat-core-closeout.md` | `.\scripts\run_planning_qa_gate.ps1` | ✅ **Closed** *(owner 2026-08-01)* |
-| 3 | Knight template LOCK | `knight-template.md` + `docs/KNIGHT_QA_GATE.md` | `scripts/run_knight_qa_gate.ps1` | **Active** — K3-doc rerun |
+| 3 | Knight template LOCK | `knight-template.md` + `docs/KNIGHT_QA_GATE.md` | `scripts/run_knight_qa_gate.ps1` | ✅ **Closed** *(owner LOCK 2026-08-02)* |
 | 4 | Roguelike run v1 | `roguelike-run.md` | `PLANNED — tests/run_state_test.gd` | DRAFT *(worksheet)* |
 | 5 | Enemy puzzle kit | `enemy-design.md` | `tests/bridge_test_runner.gd` | DRAFT *(worksheet)* |
-| 6 | Class rollout 2+ | `class-rollout.md` | `.\scripts\run_planning_qa_gate.ps1` | **Active** |
+| 6 | Class rollout — **Bruiser LOCK** (first) | `bruiser-template.md` + `docs/BRUISER_QA_GATE.md` | `scripts/run_bruiser_qa_gate.ps1` | **Active** — B6-LOCK |
 | 7 | Map assets + PixelForge MVP | `world-assets-and-map.md` | `docs/asset_manifest.md` | DRAFT *(worksheet)* |
 | 8 | Living map ROADMAP close | `world-assets-and-map.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | PLANNED |
 | 9 | UI + SFX shell | `presentation-audio-ui.md` | `presentation/sfx_player.gd` DEFS map | **Active** |
@@ -56,7 +56,7 @@ flowchart TD
 ## Decomposition
 
 1. ~~Combat spine milestones 1–2~~ ✅ closed (owner 2026-08-01)
-2. Knight LOCK (milestone 3)
+2. ~~Knight LOCK (milestone 3)~~ ✅ closed (owner LOCK 2026-08-02)
 3. Run loop (4)
 4. Content (5–6)
 5. World + presentation (7–10)

@@ -14,10 +14,19 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.equipped_weapon = basic_axe
 	
 	# Movement Skill (Push Through)
-	var push_through := DataLibrary._make_movement_ability(&"bruiser_push_through", "Push Through", 2, [
-		DataLibrary._effect(GameEnums.EffectType.MOVE_INTO_AND_PUSH, 1)
-	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
+	var push_through := DataLibrary._make_movement_ability(
+		&"bruiser_push_through",
+		"Push Through",
+		1,
+		[DataLibrary._effect(GameEnums.EffectType.MOVE_INTO_AND_PUSH, 1)],
+		2,
+		GameEnums.StatType.NONE,
+		GameEnums.TargetShape.SINGLE,
+		1,
+		GameEnums.TargetingMode.ENEMY_UNIT,
+	)
 	push_through.upgrade_description = "Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack."
+	push_through.upgraded_movement_point_cost = 1
 	push_through.upgraded_effects = DataLibrary._duplicate_effects(push_through.effects)
 	push_through.upgraded_effects[0].modifiers["buff_on_push"] = 1
 	def.abilities.append(push_through)
@@ -46,7 +55,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.MOVE, 2),
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3),
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
-	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.SINGLE, 2)
+	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.SINGLE, 1)
 	charge_strike.upgrade_description = "Gain GHOST during MOVE. Gain ATK +2 if passing through terrain."
 	charge_strike.upgraded_effects = DataLibrary._duplicate_effects(charge_strike.effects)
 	charge_strike.upgraded_effects[0].modifiers["ghost_move"] = 1
@@ -84,10 +93,13 @@ static func build(basic_axe: WeaponData) -> UnitData:
 
 	var adrenaline_surge = DataLibrary._make_ability(&"bruiser_adrenaline_surge", "Adrenaline Surge", 1, [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 5),
-		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_STR, 1),
-		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_MOV, 1)
+		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_STR, 1, 1),
+		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_MOV, 1, 1)
 	], 1)
 	adrenaline_surge.upgrade_description = "On Kill: HEAL 1 and gain SHIELD 2."
+	adrenaline_surge.targeting_mode = GameEnums.TargetingMode.SELF
+	adrenaline_surge.targeting_flags = GameEnums.TargetingFlags.SELF
+	adrenaline_surge.effects[0].modifiers["zero_ap_adjacent_enemies"] = 2
 	adrenaline_surge.upgraded_effects = DataLibrary._duplicate_effects(adrenaline_surge.effects)
 	adrenaline_surge.upgraded_effects[1].modifiers["on_kill_heal_shield"] = 1
 	def.abilities.append(adrenaline_surge)
@@ -105,9 +117,12 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.SWAP, 0),
 		DataLibrary._status_effect_self(GameEnums.StatusType.INTERCEPT, 1)
 	], 1)
+	meat_shield.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
+	meat_shield.targeting_flags = GameEnums.TargetingFlags.ALLY
 	meat_shield.upgrade_description = "RANGE 3. Gain STR +2 per interception."
 	meat_shield.upgraded_range_tiles = 3
 	meat_shield.upgraded_effects = DataLibrary._duplicate_effects(meat_shield.effects)
+	meat_shield.upgraded_effects[1].modifiers["intercept_grant_str"] = 2
 	def.abilities.append(meat_shield)
 
 	var frenzy = DataLibrary._make_ability(&"bruiser_frenzy", "Frenzy", 1, [
@@ -121,14 +136,14 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		eff.modifiers["frenzy_on_kill_ap"] = 1
 	def.abilities.append(frenzy)
 
-	var guttural_roar = DataLibrary._make_ability(&"bruiser_guttural_roar", "Guttural Roar", 1, [
+	var guttural_roar = DataLibrary._make_ability(&"bruiser_guttural_roar", "Guttural Roar", 0, [
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
-		DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1)
+		DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 2)
 	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_SQUARE, 2)
-	guttural_roar.effects[1].amount = -2
 	guttural_roar.upgrade_description = "PUSH 1 all items/coins/scrap. Item collision: ATK 1."
 	guttural_roar.upgraded_effects = DataLibrary._duplicate_effects(guttural_roar.effects)
-	guttural_roar.upgraded_effects[1].amount = -2
+	guttural_roar.upgraded_effects[0].modifiers["push_board_items"] = 1
+	guttural_roar.upgraded_effects[0].modifiers["item_collision_damage"] = 1
 	def.abilities.append(guttural_roar)
 
 	var headbutt = DataLibrary._make_ability(&"bruiser_headbutt", "Headbutt", 1, [
@@ -147,6 +162,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_STR, 1)
 	], 1)
 	blood_boil.effects[1].amount = 3
+	blood_boil.targeting_mode = GameEnums.TargetingMode.SELF
+	blood_boil.targeting_flags = GameEnums.TargetingFlags.SELF
 	blood_boil.upgrade_description = "Spend 10 HP to gain STR +5 instead."
 	blood_boil.upgraded_effects = DataLibrary._duplicate_effects(blood_boil.effects)
 	blood_boil.upgraded_effects[0].amount = 10
@@ -159,12 +176,14 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	violent_collision.effects[0].modifiers["bulldoze"] = 1
 	violent_collision.effects[0].modifiers["push"] = 1
 	violent_collision.effects[0].modifiers["violent_collision_recast"] = 1
+	violent_collision.targeting_mode = GameEnums.TargetingMode.DASH_LINE
+	violent_collision.targeting_flags = GameEnums.TargetingFlags.DASH_LINE
 	violent_collision.upgrade_description = "Collisions apply STAGGER (1 turn)."
 	violent_collision.upgraded_effects = DataLibrary._duplicate_effects(violent_collision.effects)
 	violent_collision.upgraded_effects[0].modifiers["stagger_on_collision"] = 1
 	def.abilities.append(violent_collision)
 
-	var crimson_whirlwind = DataLibrary._make_ability(&"bruiser_crimson_whirlwind", "Crimson Whirlwind", 1, [
+	var crimson_whirlwind = DataLibrary._make_ability(&"bruiser_crimson_whirlwind", "Crimson Whirlwind", 0, [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
 	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.AOE_SQUARE, 1)
 	crimson_whirlwind.upgrade_description = "HEAL 1 for every target successfully hit."
@@ -172,11 +191,14 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	crimson_whirlwind.upgraded_effects[0].modifiers["heal_per_target_hit"] = 1
 	def.abilities.append(crimson_whirlwind)
 
-	var belly_flop = DataLibrary._make_ability(&"bruiser_belly_flop", "Belly Flop", 1, [
+	var belly_flop = DataLibrary._make_ability(&"bruiser_belly_flop", "Belly Flop", 2, [
 		DataLibrary._effect(GameEnums.EffectType.TELEPORT_CASTER, 0),
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
 	], 2, GameEnums.StatType.PHYSICAL)
+	belly_flop.effects[1].modifiers["damage_adjacent_on_landing"] = 1
 	belly_flop.upgrade_description = "Landing applies PUSH 1 to all adjacent enemies."
+	belly_flop.targeting_mode = GameEnums.TargetingMode.TILE
+	belly_flop.targeting_flags = GameEnums.TargetingFlags.TILE
 	belly_flop.upgraded_effects = DataLibrary._duplicate_effects(belly_flop.effects)
 	belly_flop.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))
 	belly_flop.upgraded_effects[2].modifiers["belly_flop_push"] = 1
@@ -187,6 +209,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0)
 	], 1, GameEnums.StatType.PHYSICAL)
 	breaching_dash.upgrade_description = "Your next attack this turn gains PIERCE."
+	breaching_dash.targeting_mode = GameEnums.TargetingMode.DASH_LINE
+	breaching_dash.targeting_flags = GameEnums.TargetingFlags.DASH_LINE
 	breaching_dash.upgraded_effects = DataLibrary._duplicate_effects(breaching_dash.effects)
 	breaching_dash.upgraded_effects[0].modifiers["next_attack_pierce"] = 1
 	def.abilities.append(breaching_dash)

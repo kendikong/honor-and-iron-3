@@ -13,6 +13,7 @@ The core constitution is managed through Antigravity's Customizations. The core 
 - `roadmap` — Phase 5: milestones & build order.
 
 ## Quick Rules of Thumb
+- **Owner-facing brevity:** `.cursor/rules/owner-facing-brevity.mdc` — plain-language replies; no code dumps unless asked.
 - **Global systems first (absolute):** Every edit uses shared global systems; minimal heuristics; **warn before any exception** — see `.cursor/rules/global-systems-first.mdc` (always on). Owner must not re-explain this.
 - **Move preview = intent truth (absolute):** On-screen move preview is the intent system; commit ratifies it and must not change/re-render a different outcome — see `.cursor/rules/move-preview-intent-truth.mdc` (always on).
 - **QA after gameplay changes (absolute):** Any edit to sim, combat systems, planning/commit, or ability data **must** run the matching headless suite and report PASS/FAIL in Changelog before ending the turn — see `.cursor/rules/qa-after-gameplay-changes.mdc`.

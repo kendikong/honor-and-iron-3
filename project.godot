@@ -31,16 +31,16 @@ NetworkManager="*res://core/systems/network_manager.gd"
 GlobalTimeline="*res://core/state/global_timeline.gd"
 SkirmishLaunch="*res://autoload/skirmish_launch.gd"
 
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg")
-
 [display]
 
 window/size/viewport_width=3840
 window/size/viewport_height=1800
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gdUnit4/plugin.cfg")
 
 [physics]
 

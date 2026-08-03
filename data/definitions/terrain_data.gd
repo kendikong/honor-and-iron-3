@@ -27,3 +27,6 @@ extends Resource
 ## If true, this tile is a bottomless pit. Instantly kills normal units; bosses take 5 damage and snap back.
 @export var is_chasm: bool = false
 
+## Movement points spent to enter this tile (plain = 1). Cracked earth uses 2 per Bible.
+@export var mp_cost_per_tile: int = 1
+

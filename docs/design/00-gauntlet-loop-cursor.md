@@ -31,7 +31,7 @@ A **lead agent** receives a short goal and a **concrete quality bar**. It:
 | **Builder subagent** | Task/subagent with write access |
 | **Critic subagent** | Separate invocation; use `readonly: true` in `.cursor/agents/*.md` |
 | **Fresh critic context** | Subagent does not receive builder chat history — only artifact + bar + rules |
-| **Long runs** | Local Agent re-invoking builder → critic each round (machine on) · **Cloud Agents + Automations** (machine off). `/loop` is Claude Code/Fable — not a Cursor guarantee; see Rule 5. |
+| **Long runs** | **Recommended:** local Agent + `/loop` (§5.4). Also: Cloud Agents + Automations (§5.4 secondary). |
 | **Progress without interrupting** | Lead updates `workbench.md` (or HTML) each wave |
 
 ### Not supported
@@ -167,7 +167,27 @@ Do not cap at “3 rounds” as the primary stop condition. Use:
 
 When **MAX_ROUNDS_PER_PIECE** exhausts: write `FAILURE_REPORT.md` and stop — do **not** accept the piece or expand scope.
 
-For long runs: use **Cursor Cloud Automations** or a **recurring local Agent task** (if your build supports it). The `/loop` skill is **Claude Code / Fable** terminology — Cursor may not expose the same slash command; if not, the **lead must explicitly re-invoke** builder → critic each round. For overnight: Cloud Automation or explicit “continue until boundary in `UNATTENDED_RUN.md`.”
+### Rule 5c — Forbidden early stop (owner-mandated loops)
+
+When the owner sets the stop condition to **critic `RESULT: PASS` and `SCORE ≥ PASS_THRESHOLD`** (e.g. K3-LOCK at 95):
+
+| Forbidden end-of-turn behavior | Why |
+|--------------------------------|-----|
+| Closing with “loop continues next turn” / “loop status: ACTIVE” | Turn boundary is **not** a stop condition |
+| Reporting harness green, matrix `N/30`, or score climb as if work is done | Substitutes **progress** for **PASS** (Rule 4 violation) |
+| Ending after builder work **without** a fresh `gauntlet-critic` invocation in the **same** turn | Self-grading by omission |
+| Marking template `LOCKED` or matrix rows `PASS` without critic manifest | Builder cannot approve |
+
+**Required before ending a turn:**
+
+1. **Either** post critic score banner with `RESULT: PASS` and `SCORE ≥ threshold`
+2. **Or** post `BLOCKER:` with one concrete item that **requires the owner** (missing Godot, auth, explicit stop) — not “remaining work exists”
+
+If builder work shipped and score is still below threshold → **invoke critic again** in the same turn when context allows; otherwise end with `BLOCKER: context/token — resume with "continue gauntlet"` and **do not** imply completion.
+
+**Workbench:** set `STOP_CONDITION_MET: yes | no` on every update; must be `yes` only when critic PASS ≥ threshold on the piece.
+
+For long runs: follow **§5.4 Recommended unattended process** (`/loop` on local Agent). Cloud Automations are secondary after local loop is proven.
 
 ### Rule 6 — Watch without mediating
 
@@ -188,21 +208,33 @@ Every critic round must be **impossible to miss**. The owner should see score mo
 
 **Lead:** immediately after critic returns, post the **same banner** as the **first line** of the lead message (before changelog, before builder plan). Include:
 
-- Piece ID + round number
+- Piece ID + round number on the **GAUNTLET SCORE** line, plus **`SELF-GRADED: no (subagent)`** or **`SELF-GRADED: yes (invalid)`** on that **same line** (pipe-separated) — never a separate banner row; never claim `SELF-GRADED: no` without a subagent invocation in the same turn
 - `SCORE: x/100` and `THRESHOLD: y`
 - `DELTA: +N` or `−N` vs previous round on this piece (or `first round`)
 - `RESULT: PASS | FAIL`
 - One-word progress hint: `CLIMBING` (delta ≥ +3), `STALLED` (|delta| ≤ 2), `SLIPPED` (delta ≤ −3)
 
-**Workbench:** append every round to **Score progression** (below); update **Score ticker** at top.
+**Critic subagent:** GAUNTLET SCORE line must end with **`SELF-GRADED: no (subagent)`** (this agent is never a valid self-grade path).
+
+**Workbench:** append every round to **Score progression** (below); update **Score ticker** at top — **Result** column must repeat `SELF-GRADED: no` or `SELF-GRADED: yes (invalid)`.
 
 **Example (lead + critic must match):**
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ knight-fortify │ Round 3
+GAUNTLET SCORE │ knight-fortify │ Round 3 │ SELF-GRADED: no (subagent)
 SCORE: 82/100 │ THRESHOLD: 85 │ FAIL │ CLIMBING
 DELTA: +7 vs round 2 (was 75)
+══════════════════════════════════════
+```
+
+**Invalid (lead-only score — Rule 4 violation; do not use for PASS or LOCK):**
+
+```text
+══════════════════════════════════════
+GAUNTLET SCORE │ B6-LOCK │ Round 15 │ SELF-GRADED: yes (invalid)
+SCORE: 96/100 │ THRESHOLD: 95 │ FAIL
+DELTA: n/a
 ══════════════════════════════════════
 ```
 
@@ -223,7 +255,7 @@ After a wave (e.g. 5 skills), one **fresh readonly** subagent reviews the **comb
 | **Subagents** | Required for rule 4; each critic spawn ≈ extra context — keep critic prompts **small** |
 | **Parallel builders** | Only for **independent** pieces; never builder+critic in parallel on same piece |
 | **Cheapest critic** | Machine bar only (scripts) — valid for backend per Shumer, but not a full visual gauntlet |
-| **Overnight, PC off** | Cloud Agent + Automation — not the same as Composer pool pricing |
+| **Overnight, PC off** | Cloud Agent + Automation (§5.4 secondary) — only after Godot/BAR works in cloud env |
 
 **Honor & Iron bias:** Prefer **script bars** (QA gate, bridge tests) as critic ground truth; add LLM critic only for gaps scripts cannot see (doc clarity, visual compositor).
 
@@ -244,7 +276,7 @@ Invoke: `/gauntlet-critic` or “use gauntlet-critic subagent on this piece.”
 Add to the overnight prompt (or `.cursor/rules` pointer):
 
 - Spawn **separate** `gauntlet-critic` subagent after **every** builder pass on a piece — log invocation in `workbench.md` (`Critic: yes`)
-- **Loud score banner** as first line of every post-critic message (Rule 6b) — include DELTA vs prior round
+- **Loud score banner** as first line of every post-critic message (Rule 6b) — GAUNTLET SCORE line includes **`SELF-GRADED: no (subagent)`** or **`SELF-GRADED: yes (invalid)`**; include DELTA vs prior round
 - Never self-grade — piece PASS requires critic `RESULT: PASS`, `SCORE ≥ PASS_THRESHOLD`, and **`Infrastructure: ADEQUATE`**
 - Update `docs/design/workbench.md` every wave
 - On gameplay edits: run mandatory QA per `qa-after-gameplay-changes.mdc` before claiming PASS
@@ -259,6 +291,122 @@ For sleep/work runs, also pass [`docs/design/UNATTENDED_RUN.md`](UNATTENDED_RUN.
 - `MAX_ROUNDS_PER_PIECE` — e.g. 8
 - `MANDATORY_COMMANDS` — exact QA commands
 - `STOP_ON` — PASS + commit, or `FAILURE_REPORT.md` + stop
+
+### 5.4 Recommended unattended process (Cursor — use this)
+
+**Default for Honor & Iron:** local **Agent** chat + **`/loop`**. This is how gauntlet loops run “nonstop” in Cursor today.
+
+#### Why not “just keep chatting”?
+
+Local Agent chat runs **one turn per message**, then stops. Progress reports, harness green, and matrix `N/30` are **not** stop conditions (Rule 5c). Something must **start the next turn** automatically — that outer loop is `/loop` (or Automations; see below).
+
+#### What `/loop` does
+
+Each tick = **one new Agent turn** with your prompt. The lead should run: **fix largest gap → BAR commands → spawn `gauntlet-critic` → update `workbench.md` → score banner (Rule 6b)**. Repeat until `STOP_ON` in `UNATTENDED_RUN.md` or Rule 5c stop condition.
+
+`/loop` is **local only** (PC on, Cursor open). It does **not** run inside Cloud Agent sessions.
+
+#### Prerequisites (before first `/loop`)
+
+1. Fill [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) — `GOAL`, `BAR`, `MANDATORY_COMMANDS`, `STOP_ON`, boundaries. No vague bars.
+2. Ensure **BAR commands run on this machine** (e.g. K3-LOCK needs Godot headless for `.\scripts\run_knight_qa_gate.ps1`). If Godot is only on your Windows box, **do not** start with Cloud/Automation until that env is configured.
+3. Commit/push anything the run must read (`workbench.md`, `UNATTENDED_RUN.md`, rules) so ticks see current state.
+
+#### Step-by-step (owner)
+
+1. Open **Agent** (Composer 2.5) on this repo.
+2. Paste the **loop prompt** below (adjust `GOAL` / piece id).
+3. Start the loop in chat:
+
+   ```text
+   /loop 20m <same prompt as below>
+   ```
+
+   **Interval:** `15m`–`30m` is typical. Shorter = more rounds, more quota burn. Longer = fewer rounds, risk of idle time if a turn finishes early.
+
+4. **Leave Cursor open.** Machine awake. Do not close the Agent session.
+5. Morning: read **`docs/design/workbench.md`** score ticker + `STOP_CONDITION_MET`. If `no`, send one message: `continue gauntlet` or restart `/loop`.
+
+#### What the lead must do every tick
+
+| Step | Action |
+|------|--------|
+| 1 | Read `workbench.md` + `UNATTENDED_RUN.md` |
+| 2 | Builder work — fix **one** largest gap (stay in `ALLOWED_PATHS`) |
+| 3 | Run **MANDATORY_COMMANDS** / BAR (e.g. `.\scripts\run_knight_qa_gate.ps1`) |
+| 4 | Spawn **fresh** `gauntlet-critic` subagent (Rule 4 — no self-grade) |
+| 5 | Post **score banner** first line (Rule 6b); set `STOP_CONDITION_MET: yes \| no` |
+| 6 | Commit per `auto-commit-absolute.mdc` if files changed |
+| 7 | If `STOP_ON` not met and no `BLOCKER:` → **continue** (do not hand off) |
+
+**Forbidden on every tick:** ending with only “loop ACTIVE”; promoting matrix rows without manifest critic approval; marking `LOCKED` without full-piece critic PASS ≥ threshold.
+
+#### Copy-paste: `/loop` prompt (Honor & Iron)
+
+Attach `UNATTENDED_RUN.md` content or point to the filled file.
+
+```text
+UNATTENDED GAUNTLET — honor-and-iron-3
+
+Read and obey docs/design/UNATTENDED_RUN.md (filled).
+Read docs/design/00-gauntlet-loop-cursor.md (Rules 4, 5c, 6b, this §5.4).
+Read docs/design/workbench.md — continue from last round.
+
+You are the LEAD. Do not ask the owner questions.
+
+Each tick:
+1. Fix largest gap within ALLOWED_PATHS
+2. Run MANDATORY_COMMANDS / BAR from UNATTENDED_RUN.md
+3. Spawn separate readonly gauntlet-critic subagent (never self-grade)
+4. First line of your reply = score banner with DELTA vs prior round; GAUNTLET SCORE line states **`SELF-GRADED: no (subagent)`** or **`SELF-GRADED: yes (invalid)`**
+5. Update workbench.md (ticker, score progression, STOP_CONDITION_MET)
+6. Commit if you changed files (auto-commit-absolute.mdc)
+
+Stop only when STOP_ON in UNATTENDED_RUN.md is satisfied, or write BLOCKER: <one owner-only item>.
+
+Do not stop for harness green, matrix N/30, or score climb below PASS_THRESHOLD.
+```
+
+**K3-LOCK example** — add to the prompt or `UNATTENDED_RUN.md`:
+
+```text
+GOAL: K3-LOCK — 30/30 Knight matrix PASS (manifest-aligned) + run_knight_qa_gate.ps1 exit 0
+STOP_ON: gauntlet-critic full-matrix SCORE ≥ 95 AND Infrastructure ADEQUATE
+FORBIDDEN: regress knight_bowling_charge / knight_trampling_advance (see KNIGHT_QA_GATE.md § Owner no-regression)
+```
+
+#### Windows note (agent-armed loop)
+
+If `/loop` is unavailable in your build, the lead may arm a **PowerShell** sleeper (local only):
+
+```powershell
+while ($true) {
+  Start-Sleep -Seconds 1200
+  Write-Output 'AGENT_LOOP_TICK_GAUNTLET {"prompt":"Continue gauntlet per UNATTENDED_RUN.md and workbench.md. Rule 5c."}'
+}
+```
+
+Use Cursor’s monitored terminal / `notify_on_output` on `^AGENT_LOOP_TICK_GAUNTLET` so each sentinel starts a new Agent turn with the JSON `prompt`. See Cursor loop skill (`~/.cursor/skills-cursor/loop/SKILL.md`).
+
+#### Secondary: Cloud Agent + Automations
+
+Use **after** local `/loop` proves one full cycle (BAR → critic → workbench update) works.
+
+| Option | When | Caveat |
+|--------|------|--------|
+| **Cloud Agent** | Long single push, PC can sleep after launch | VM must have Godot + same BAR paths, or BAR will fail |
+| **Automations** (Agents → Automations) | Recurring unattended, PC off | Configure repo branch, prompt, schedule; prove Godot on cloud env first |
+
+Do **not** default to Cloud/Automation for K3-LOCK until `run_knight_qa_gate.ps1` passes on that environment.
+
+#### What does not work as “nonstop”
+
+| Setup | Reality |
+|-------|---------|
+| Agent chat without `/loop` | Stops every turn until you type again |
+| One long message “keep going until PASS” | Turn still ends; context/time cap |
+| Builder self-grade | Rule 4 violation |
+| Background subagent only | One job; not full builder→critic orchestration |
 
 ---
 
@@ -285,7 +433,7 @@ For sleep/work runs, also pass [`docs/design/UNATTENDED_RUN.md`](UNATTENDED_RUN.
 | PASS while critic reports `Infrastructure: INADEQUATE` | Bar cannot judge GOAL — schedule bar-infrastructure piece first |
 | Critic reads builder’s “implementation notes” | Contaminated judgment |
 | “LGTM” without running bar commands | False PASS (Phase 9 lesson) |
-| Owner pastes between two chats each round | Not unattended; lead should orchestrate |
+| Owner pastes “continue” every round manually | Works but not unattended — use `/loop` (§5.4) instead |
 | Open-ended “improve the game” overnight | Scope explosion |
 | Fixing `board_view.gd` when tactical path is canonical | Wrong owner — see parity plan |
 | `Heuristics added: none` without audit | Rule violation — critic should catch |
@@ -348,7 +496,8 @@ Do not implement. SCORE/100 + PASS or FAIL + Infrastructure + Proposed infrastru
 | `ROADMAP.md` | What to build (canonical phases) |
 | `docs/TACTICAL_COMBAT_PARITY_PLAN.md` | Combat path truth |
 | `docs/PLANNING_QA_GATE.md` | Planning bar detail |
-| `docs/design/UNATTENDED_RUN.md` | Per-run scope lock and stop conditions (overnight) |
+| `docs/design/UNATTENDED_RUN.md` | Per-run scope lock and stop conditions (overnight) — **ACTIVE:** K3-LOCK |
+| `docs/design/runs/K3-LOCK.md` | Knight LOCK run card + `/loop` start prompt |
 | `docs/design/*` pillar specs | Per-domain goals and bars |
 | **This file** | How agents loop to hit those bars in Cursor |
 | `docs/design/00-remaining-work-suite-plan.md` | How to create the pillar doc suite (waves W1–W4) |
@@ -372,5 +521,8 @@ Do not implement. SCORE/100 + PASS or FAIL + Infrastructure + Proposed infrastru
 | 2026-08-01 | Review pass: clarify bar pass/fail loop, dedupe critic agent, `/loop` caveat, regression script path, `UNATTENDED_RUN.md` |
 | 2026-08-01 | Hardening: propose-bar-if-missing, critic-required PASS, visual A/B bar, MAX_ROUNDS → FAILURE_REPORT, workbench critic column |
 | 2026-08-01 | Harsh score gate: SCORE/100 + PASS_THRESHOLD by work type; rubric in gauntlet-critic agent |
+| 2026-08-02 | Rule 6b: GAUNTLET SCORE line must state `SELF-GRADED: no (subagent)` or `SELF-GRADED: yes (invalid)` |
 | 2026-08-01 | Rule 6b: loud score banners + DELTA + workbench score progression for owner visibility |
 | 2026-08-01 | Rule 4c: critic must judge infrastructure adequacy; Proposed infrastructure on INADEQUATE |
+| 2026-08-01 | §5.4: recommended unattended process — local Agent + `/loop` (primary), Cloud/Automation secondary; K3-LOCK Godot caveat |
+| 2026-08-01 | Active K3-LOCK run: filled `UNATTENDED_RUN.md`, `runs/K3-LOCK.md`, template split |

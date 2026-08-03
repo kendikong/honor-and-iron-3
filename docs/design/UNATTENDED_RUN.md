@@ -1,9 +1,12 @@
-# Unattended Gauntlet Run — Boundary Contract
+# Unattended Gauntlet Run — B6-REOPEN (ACTIVE)
 
-**Status:** TEMPLATE — copy this file per run and fill the fields below.  
-**Spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) · **Progress:** [`workbench.md`](workbench.md)
+**Status:** **DONE** — B6-REOPEN LOCKED (full-matrix 96)  
+**Prior run:** B6-LOCK **REVOKED** — see [`runs/B6-LOCK.md`](runs/B6-LOCK.md) (historical)  
+**Run card:** [`runs/B6-REOPEN.md`](runs/B6-REOPEN.md)  
+**Spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) §5.4 · **Progress:** [`workbench.md`](workbench.md)  
+**Template for future runs:** [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md)
 
-The lead agent must **not** ask the owner questions during the run. It stops only when **STOP_ON** is satisfied or a **boundary** below fires.
+The lead agent must **not** ask the owner questions during this run. It stops only when **STOP_ON** is satisfied or a **boundary** fires.
 
 ---
 
@@ -11,10 +14,32 @@ The lead agent must **not** ask the owner questions during the run. It stops onl
 
 | Field | Value |
 |-------|-------|
-| **CHUNK_ID** | *(e.g. `knight-fortify-2026-08-02`)* |
-| **GOAL** | *(one scoped outcome)* |
-| **BAR** | *(exact PASS criteria — commands, not vibes)* |
-| **Started (UTC)** | — |
+| **CHUNK_ID** | `bruiser-b6-reopen-2026-08-02` |
+| **PIECE_ID** | `B6-REOPEN` (31-row Bruiser matrix — per-row critic) |
+| **GOAL** | Re-earn **`LOCKED`**: every factory row meta-critic `PASS` (Bible base + `[+]`), matrix 31/31, gate exit **0**, full-matrix critic **≥ 95** |
+| **PASS_THRESHOLD** | **88** per row · **95** full matrix |
+| **BAR** | See **Machine bar** below |
+| **Started (UTC)** | 2026-08-02 |
+| **Godot** | `C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64.exe` |
+
+### Machine bar (all must be true to claim STOP_ON success)
+
+1. `.\scripts\run_bruiser_qa_gate.ps1` → exit **0** (31/31 matrix `PASS` + Tier 1 harness green + manifest aligned)
+2. `docs/BRUISER_QA_GATE.md` summary line matches **31 / 31** meta-critic `PASS`
+3. `docs/bruiser_meta_critic_manifest.json` — **31** `approved_rows`; no matrix `PASS` without manifest entry
+4. Fresh **`gauntlet-critic`** on **full matrix** returns `RESULT: PASS`, `SCORE ≥ 95`, `Infrastructure: ADEQUATE`
+5. `docs/design/bruiser-template.md` status → **`LOCKED`**
+
+### Current baseline (do not regress)
+
+| Metric | Value |
+|--------|-------|
+| Matrix PASS | **31 / 31** |
+| HARNESS_ONLY | **0** |
+| Manifest approved | **31** rows |
+| Remaining | none — LOCKED |
+| Tier 1 harness | must stay **PASS** |
+| Cloud handoff | [`LOCAL_CLOUD_SYNC.md`](LOCAL_CLOUD_SYNC.md) · [`prompts/B6-REOPEN-CLOUD.md`](prompts/B6-REOPEN-CLOUD.md) |
 
 ---
 
@@ -22,45 +47,70 @@ The lead agent must **not** ask the owner questions during the run. It stops onl
 
 | Boundary | Value |
 |----------|-------|
-| **MAX_ROUNDS_PER_PIECE** | `8` *(safety cap — on exhaust write FAILURE_REPORT; do not accept partial work)* |
-| **MAX_PIECES** | *(e.g. `3` skills max this run)* |
-| **MAX_WALL_CLOCK** | *(e.g. `6h` — optional)* |
+| **MAX_ROUNDS_PER_PIECE** | `40` |
+| **MAX_SUBPIECE_ROUNDS** | `4` *(per matrix row — then pick next HARNESS_ONLY)* |
+| **MAX_WALL_CLOCK** | `24h` *(optional owner stop)* |
+| **ROWS_PER_TICK** | `1` |
 
 ---
 
 ## Scope lock
 
-### ALLOWED_PATHS (globs — lead must not edit outside these)
+### ALLOWED_PATHS
 
 ```
-data/**
-core/factory/**
 core/systems/**
-tests/**
-docs/design/**
-presentation/combat_planning_input.gd
+core/factory/**
+core/simulation/**
+data/**
+tests/bruiser_qa_harness.gd
+tests/bruiser_qa_harness_scenarios.gd
+tests/bruiser_qa_harness_upgrades.gd
+tests/bruiser_qa_runner.gd
+tests/bruiser_scenario_registry.gd
+tests/skills/bruiser_*
+tests/passives/cellular_regeneration_scenario.gd
+tests/passives/blood_for_blood_scenario.gd
+tests/passives/adrenaline_junkie_scenario.gd
+tests/passives/enraged_scenario.gd
+tests/passives/last_stand_scenario.gd
+tests/passives/colossal_mass_scenario.gd
+tests/passives/overwhelming_bulk_scenario.gd
+tests/passives/thrill_of_pain_scenario.gd
+tests/passives/momentum_of_titan_scenario.gd
+tests/passives/scar_tissue_scenario.gd
+tests/passives/momentum_transfer_scenario.gd
+tests/passives/crowd_breaker_scenario.gd
+tests/passives/juggernaut_scenario.gd
+tests/passives/battering_ram_scenario.gd
+tests/passives/unstoppable_force_scenario.gd
+tests/run_bruiser_scenarios_only.gd
+tests/BruiserQaGate.tscn
+docs/BRUISER_QA_GATE.md
+docs/bruiser_meta_critic_manifest.json
+docs/design/bruiser-template.md
+docs/design/workbench.md
+docs/design/runs/B6-REOPEN.md
+scripts/run_bruiser_qa_gate.ps1
 ```
 
-*(Adjust per chunk; tighten for doc-only or skill-only runs.)*
+### FORBIDDEN (hard stop — write `docs/design/FAILURE_REPORT.md` and exit)
 
-### FORBIDDEN (hard stop — write FAILURE_REPORT and exit)
-
-- New global rules or per-skill `if ability.id == …` branches without owner ⚠ exception
-- Editing `presentation/board_view.gd` for SP tactical path fixes (use `CombatPlanningInput` / tactical stack)
-- Scope beyond **GOAL** / **CHUNK_ID**
-- Skipping BAR commands while claiming PASS
-- Marking a piece PASS without `gauntlet-critic` returning `RESULT: PASS` **and** `SCORE ≥ PASS_THRESHOLD`
+| Rule | Detail |
+|------|--------|
+| Knight regression | Do not weaken `knight_*` scenarios, manifest, or `run_knight_qa_gate.ps1` |
+| Planning QA edits | Do not change `live_planning_scene_test.gd` / `run_planning_qa_gate.ps1` for Bruiser coverage |
+| Self-grade manifest | Matrix `PASS` only after gauntlet-critic row approval |
+| Global bypass | No per-skill `if ability.id` without owner ⚠ exception |
 
 ---
 
-## MANDATORY_COMMANDS (run after every piece that touches gameplay)
+## MANDATORY_COMMANDS
 
 | Order | Command | When |
 |-------|---------|------|
-| 1 | `.\scripts\run_planning_qa_gate.ps1` | Planning / commit / preview / overlay / `presentation/combat_*` |
-| 2 | `.\scripts\run_regression_tests.ps1` | `core/simulation/`, `core/systems/`, bridge, broad sim |
-
-*(Delete rows that do not apply to this chunk.)*
+| 1 | `.\scripts\run_bruiser_qa_gate.ps1` | Every tick after builder work |
+| 2 | Spawn `gauntlet-critic` subagent | After BAR run; never self-grade |
 
 ---
 
@@ -68,31 +118,32 @@ presentation/combat_planning_input.gd
 
 | Condition | Action |
 |-----------|--------|
-| **Success** | All pieces meet **BAR** + **MANDATORY_COMMANDS** PASS **and** critic `SCORE ≥ PASS_THRESHOLD` → full backup commit → update `workbench.md` → stop |
-| **Failure** | `MAX_ROUNDS_PER_PIECE` exhausted on a piece, or FORBIDDEN triggered → write `docs/design/FAILURE_REPORT.md` → update `workbench.md` → stop |
-| **Blocked** | Godot not on PATH / command cannot run → FAILURE_REPORT with evidence → stop (do not fake PASS) |
+| **Success** | All machine bar checks + critic ≥ 95 → `bruiser-template.md` LOCKED → commit → workbench `STOP_CONDITION_MET: yes` → stop |
+| **Failure** | MAX_ROUNDS → `FAILURE_REPORT.md` → stop |
+| **Blocked** | Godot missing → `BLOCKER:` → stop |
 
 ---
 
-## Gauntlet orchestration (lead checklist)
-
-0. If **BAR** is empty or vague, propose concrete BAR + write to `workbench.md` — then stop until next owner-approved run (unattended: BAR must be filled before start).
-1. Decompose **GOAL** into smallest judgeable pieces (see main spec Rule 3).
-2. Per piece: builder subagent → **readonly** [`gauntlet-critic`](../../.cursor/agents/gauntlet-critic.md) with §9 handoff payload only.
-3. **Piece PASS gate:** critic must return `RESULT: PASS`, `SCORE ≥ PASS_THRESHOLD`, and **`Infrastructure: ADEQUATE`**
-4. Update [`workbench.md`](workbench.md) every wave — **score ticker**, **score progression** row, wave log.
-5. **Loud banner:** first line of lead message after critic = score banner (Rule 6b) with DELTA.
-6. On piece PASS: `git add` + commit per `auto-commit-absolute.mdc`.
-7. Do not expand scope when a piece fails — report and stop or skip per **STOP_ON**.
-
----
-
-## Copy-paste: attach to lead prompt
+## Copy-paste: `/loop` prompt (Honor & Iron)
 
 ```text
-UNATTENDED RUN — honor-and-iron-3
-Read and obey docs/design/UNATTENDED_RUN.md (this file, filled).
-Read docs/design/00-gauntlet-loop-cursor.md.
-Update docs/design/workbench.md each wave.
-Do not ask the owner questions. Stop per STOP_ON only.
+UNATTENDED GAUNTLET — honor-and-iron-3 — B6-REOPEN
+
+Read and obey docs/design/UNATTENDED_RUN.md (ACTIVE B6-REOPEN).
+Read docs/design/runs/B6-REOPEN.md.
+Read docs/design/00-gauntlet-loop-cursor.md Rules 4, 5c, 6b, §5.4.
+Read docs/design/workbench.md — continue from last round.
+
+You are the LEAD. Do not ask the owner questions.
+
+Each tick:
+1. Fix largest gap within ALLOWED_PATHS (1 HARNESS_ONLY row)
+2. Run .\scripts\run_bruiser_qa_gate.ps1
+3. Spawn separate readonly gauntlet-critic subagent on THAT ROW (never self-grade)
+4. On row critic PASS ≥88: manifest + matrix PASS for that row only
+5. First line = score banner; update workbench.md; commit
+
+Stop only when STOP_ON in UNATTENDED_RUN.md is satisfied, or write BLOCKER: <one owner-only item>.
+
+FORBIDDEN: knight regression; planning QA edits; self-grade manifest; matrix PASS without critic.
 ```

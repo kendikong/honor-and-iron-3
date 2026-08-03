@@ -164,6 +164,13 @@ static func resolve_pass_through_tile(
 		return false
 	if trample_hit_ids.has(occupant.id):
 		return true
+	if mover.has_status(GameEnums.StatusType.GHOST):
+		if occupant != null and occupant.team != mover.team:
+			if not is_final_step:
+				trampled_restore[tile] = occupant.id
+				GridSystem.set_occupant(board, tile, -1)
+			return true
+		return true
 	if bulldoze > 0:
 		trample_hit_ids[occupant.id] = true
 		var push_dir := move_dir
@@ -357,6 +364,10 @@ static func tag_dash_hit_step(events: Array, from_index: int, step_index: int) -
 static func push(board: BoardState, target: UnitState, direction: Vector2i, distance: int, events: Array[SimEvent], pusher: UnitState = null, ability_id: StringName = &"", collision_immune_id: int = -1) -> void:
 	if target == null or not target.is_alive() or direction == Vector2i.ZERO or distance <= 0:
 		return
+
+	var effective_distance: int = distance
+	if pusher != null and pusher.has_passive(&"battering_ram"):
+		effective_distance += 1
 		
 	var is_vulnerable = target.has_status(GameEnums.StatusType.VULNERABLE)
 	var has_stand_ground = target.has_passive(&"stand_ground")
@@ -375,18 +386,26 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 
 	var from := target.position
 	var traveled := 0
-	for _i in range(distance):
+	for _i in range(effective_distance):
 		var next := target.position + direction
 
 		# Wall or board edge: stop and take collision damage.
 		if GridSystem.stops_displacement(board, next) or not GridSystem.is_in_bounds(board, next):
-			_emit_collision(board, target, null, next, distance, traveled, events, pusher, ability_id, collision_immune_id)
+			_emit_collision(board, target, null, next, effective_distance, traveled, events, pusher, ability_id, collision_immune_id)
+			if (
+				pusher != null
+				and pusher.has_passive(&"battering_ram")
+				and pusher.is_passive_upgraded(&"battering_ram")
+			):
+				if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events):
+					target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+					target._recalculate_stats()
 			break
 
 		# Another unit: both take collision damage; neither moves further.
 		var blocker := board.get_unit_at(next)
 		if blocker != null:
-			_emit_collision(board, target, blocker, next, distance, traveled, events, pusher, ability_id, collision_immune_id)
+			_emit_collision(board, target, blocker, next, effective_distance, traveled, events, pusher, ability_id, collision_immune_id)
 			break
 
 		# Clear tile: advance one step.
@@ -404,6 +423,15 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 		for status in target.active_statuses:
 			if status.type == GameEnums.StatusType.BLEED:
 				CombatSystem.deal_damage(board, target, 3 * traveled, events, &"bleed", false, false, null, "Bleed (push)", 3 * traveled)
+		if pusher != null and ability_id != &"":
+			var ability: AbilityData = pusher.get_ability_by_id(ability_id)
+			if ability != null:
+				var effects: Array = ability.upgraded_effects if pusher.is_ability_upgraded(ability_id) else ability.effects
+				for eff: EffectData in effects:
+					if eff != null and eff.modifiers.has("buff_on_push"):
+						pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+						pusher._recalculate_stats()
+						break
 				
 		var pushed_data: Dictionary = {
 			"unit": target.id,
@@ -451,7 +479,6 @@ static func _emit_collision(
 	
 	var object_collision_stagger = false
 	var enemy_collision_stagger_both = false
-	var buff_on_push = false
 	var stagger_on_collision = false
 	var violent_collision_recast = false
 	
@@ -464,14 +491,10 @@ static func _emit_collision(
 			for eff in effects:
 				if eff.modifiers.has("object_collision_stagger"): object_collision_stagger = true
 				if eff.modifiers.has("enemy_collision_stagger_both"): enemy_collision_stagger_both = true
-				if eff.modifiers.has("buff_on_push"): buff_on_push = true
 				if eff.modifiers.has("stagger_on_collision"): stagger_on_collision = true
 				if eff.modifiers.has("violent_collision_recast"): violent_collision_recast = true
 
 	if pusher != null and pusher != target:
-		if buff_on_push:
-			pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
-			pusher._recalculate_stats()
 		if violent_collision_recast and not pusher.passive_flags.get("violent_collision_recast_used", false):
 			pusher.passive_flags["violent_collision_recast_used"] = true
 			pusher.ability.points_left += 1
@@ -485,15 +508,18 @@ static func _emit_collision(
 						stun_on_hit = e.data["stagger_on_collision"]
 					break
 		if stun_on_hit:
-			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
-			target._recalculate_stats()
+			if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events):
+				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+				target._recalculate_stats()
 			
 	if blocker != null:
 		if enemy_collision_stagger_both:
-			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
-			target._recalculate_stats()
-			blocker.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
-			blocker._recalculate_stats()
+			if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events):
+				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+				target._recalculate_stats()
+			if not CombatSystem.try_resist_crowd_control(blocker, GameEnums.StatusType.STAGGER, events):
+				blocker.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+				blocker._recalculate_stats()
 			
 		if blocker.has_passive(&"collision_retaliator") and blocker.team != target.team:
 			if target.id != collision_immune_id:
@@ -515,8 +541,9 @@ static func _emit_collision(
 				)
 	else:
 		if object_collision_stagger:
-			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
-			target._recalculate_stats()
+			if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events):
+				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+				target._recalculate_stats()
 			
 		if target.id != collision_immune_id:
 			CombatSystem.deal_collision_damage(
@@ -550,9 +577,11 @@ static func swap(board: BoardState, a: UnitState, b: UnitState, events: Array[Si
 			CombatSystem.deal_damage(board, b, 3 * dist, events, &"bleed", false, false, null, "Bleed (swap)", 3 * dist)
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
 		"unit": a.id, "from": pa, "to": a.position, "distance": GridSystem.manhattan(pa, pb),
+		"swap_displacement": true,
 	}))
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
 		"unit": b.id, "from": pb, "to": b.position, "distance": GridSystem.manhattan(pa, pb),
+		"swap_displacement": true,
 	}))
 	TerrainSystem.apply_landing(board, a, events)
 	TerrainSystem.apply_landing(board, b, events)

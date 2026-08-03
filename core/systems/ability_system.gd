@@ -35,7 +35,13 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
 			return false
 		dist = PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
-	if dist > actor.get_ability_range(ability):
+	var max_range: int = actor.get_ability_range(ability)
+	if ability_has_dash(ability):
+		max_range = maxi(max_range, dash_steps(ability))
+	var move_steps_for_range: int = effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+	if move_steps_for_range > 0:
+		max_range = maxi(max_range, move_steps_for_range)
+	if dist > max_range:
 		return false
 	if dist == 0 and actor.get_ability_range(ability) > 0 and not can_target_self(actor, ability):
 		return false
@@ -101,16 +107,35 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 static func get_action_point_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> int:
 	if ability == null:
 		return 0
-	var ap_cost = ability.action_point_cost
-	if board != null and actor != null and ability.id == &"bruiser_adrenaline_surge":
-		var adj_enemies = 0
-		for dir in GridSystem.DIRECTIONS:
-			var occ = board.get_unit_at(actor.position + dir)
-			if occ != null and occ.team != actor.team:
-				adj_enemies += 1
-		if adj_enemies >= 2:
-			ap_cost = 0
+	var ap_cost := ability.action_point_cost
+	if actor == null or board == null:
+		return ap_cost
+	var effects: Array = ability.effects
+	if actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
+		effects = ability.upgraded_effects
+	for eff: EffectData in effects:
+		if eff != null and eff.modifiers.has("zero_ap_adjacent_enemies"):
+			var needed: int = int(eff.modifiers["zero_ap_adjacent_enemies"])
+			var adj_enemies := 0
+			for dir in GridSystem.DIRECTIONS:
+				var occ := board.get_unit_at(actor.position + dir)
+				if occ != null and occ.team != actor.team:
+					adj_enemies += 1
+			if adj_enemies >= needed:
+				return 0
 	return ap_cost
+
+
+static func movement_point_cost(actor: UnitState, ability: AbilityData) -> int:
+	if ability == null:
+		return 0
+	if (
+		actor != null
+		and actor.is_ability_upgraded(ability.id)
+		and ability.upgraded_movement_point_cost >= 0
+	):
+		return ability.upgraded_movement_point_cost
+	return ability.movement_point_cost
 
 
 static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
@@ -121,7 +146,7 @@ static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, bo
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
-			return actor.movement.points_left >= ability.movement_point_cost
+			return actor.movement.points_left >= movement_point_cost(actor, ability)
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			if actor.has_run_boost():
 				return false
@@ -289,24 +314,41 @@ static func ability_arms_dash_on_self_click(actor: UnitState, ability: AbilityDa
 	return planning_arms_on_self_tile(actor, ability)
 
 
-static func effect_amount(ability: AbilityData, effect_type: GameEnums.EffectType) -> int:
+static func effect_amount(
+	ability: AbilityData,
+	effect_type: GameEnums.EffectType,
+	actor: UnitState = null,
+) -> int:
 	if ability == null:
 		return 0
-	for eff in ability.effects:
+	var effects: Array = ability.effects
+	if actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
+		effects = ability.upgraded_effects
+	for eff in effects:
 		if eff.type == effect_type:
 			return eff.amount
 	return 0
 
 
+static func ability_has_swap_effect(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	for eff: EffectData in ability.effects:
+		if eff.type == GameEnums.EffectType.SWAP:
+			return true
+	return false
+
+
 static func has_pass_through_effects(ability: AbilityData) -> bool:
-	return effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0 \
-		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
+	if ability == null:
+		return false
+	return has_pass_through_effects_from(ability.effects)
 
 
 static func has_displacement_effects(ability: AbilityData) -> bool:
 	return effect_amount(ability, GameEnums.EffectType.PUSH) > 0 \
 		or effect_amount(ability, GameEnums.EffectType.PULL) > 0 \
-		or effect_amount(ability, GameEnums.EffectType.SWAP) > 0 \
+		or ability_has_swap_effect(ability) \
 		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0
 
 
@@ -408,6 +450,11 @@ static func pass_through_modifiers_from(effects: Array) -> Dictionary:
 			bulldoze = eff.amount
 		elif eff.type == GameEnums.EffectType.PUSH:
 			push = eff.amount
+		elif eff.type == GameEnums.EffectType.DASH:
+			if eff.modifiers.has("bulldoze"):
+				bulldoze = int(eff.modifiers["bulldoze"])
+			if eff.modifiers.has("push"):
+				push = int(eff.modifiers["push"])
 	return {"trample_atk": trample_atk, "bulldoze": bulldoze, "push": push}
 
 
@@ -685,6 +732,13 @@ static func ability_blocks_basic_movement(_ability: AbilityData) -> bool:
 	return false
 
 
+## Master Bible: basic walk/run may precede class Movement Skills in the pre-move column (e.g. Move → Swap).
+static func planning_allows_paired_premove(ability: AbilityData) -> bool:
+	if ability == null or is_run_ability(ability) or is_wait_ability(ability):
+		return false
+	return ability.is_movement_kind()
+
+
 static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
@@ -728,6 +782,9 @@ static func ability_uses_spellcast_animation(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
 	if ability_has_movement_effect(ability):
+		return false
+	## Movement skills (Swap, Trampling Advance, etc.) use walk/thrust presentation — not spellcast.
+	if ability.is_movement_kind():
 		return false
 	if ability.presentation_anim == GameEnums.PresentationAnim.SPELL:
 		return true
@@ -822,9 +879,19 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if actor.is_ability_upgraded(action.ability.id) and action.ability.upgraded_effects.size() > 0:
 		effects_to_apply = action.ability.upgraded_effects
 
-	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
+	var cast_cc_snapshot: Dictionary = {}
+	if actor != null:
+		for unit in board.units:
+			if unit != null and unit.is_alive():
+				cast_cc_snapshot[unit.id] = (
+					unit.has_status(GameEnums.StatusType.ROOT)
+					or unit.has_status(GameEnums.StatusType.STAGGER)
+				)
+		actor.passive_flags["__cast_cc_snapshot"] = cast_cc_snapshot
+
+	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
 	if (has_pass_through_effects(ability) or is_move) and not ability_has_dash(ability) and target_coord != actor.position:
-		var walk_steps: int = effect_amount(ability, GameEnums.EffectType.MOVE)
+		var walk_steps: int = effect_amount(ability, GameEnums.EffectType.MOVE, actor)
 		if walk_steps <= 0:
 			walk_steps = ability.range_tiles
 			
@@ -861,6 +928,18 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		if eff.modifiers.has("buff_per_destroyed_object"): buff_per_object = true
 		if eff.modifiers.has("next_attack_pierce"):
 			actor.passive_flags["breaching_dash_pierce"] = true
+		if eff.modifiers.has("on_kill_heal_shield"):
+			actor.passive_flags["adrenaline_surge_active"] = true
+		if eff.modifiers.has("intercept_grant_str"):
+			actor.passive_flags["meat_shield_intercept_str"] = int(eff.modifiers["intercept_grant_str"])
+		if eff.modifiers.has("frenzy_on_kill_ap"):
+			actor.passive_flags["frenzy_on_kill_ap"] = true
+
+	if buff_per_object:
+		for tile_coord in affected_tiles:
+			var construct_unit := board.get_unit_at(tile_coord)
+			if construct_unit != null and construct_unit.definition.is_construct:
+				objects_destroyed_count += 1
 
 	for effect in effects_to_apply:
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
@@ -873,14 +952,49 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				var adj_unit = board.get_unit_at(adj_coord)
 				_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
 			continue
+
+		if effect.modifiers.has("damage_adjacent_on_landing"):
+			for dir in GridSystem.DIRECTIONS:
+				var adj_coord: Vector2i = actor.position + dir
+				var adj_unit: UnitState = board.get_unit_at(adj_coord)
+				if adj_unit != null and adj_unit != actor and adj_unit.is_alive() and adj_unit.team != actor.team:
+					_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
+			continue
+
+		if effect.modifiers.has("push_board_items"):
+			for tile_coord in affected_tiles:
+				var item_idx: int = board.items.find(tile_coord)
+				if item_idx < 0:
+					continue
+				var push_dir: Vector2i = PhysicsSystem.cardinal_from_to(actor.position, tile_coord)
+				if push_dir == Vector2i.ZERO:
+					continue
+				var dest: Vector2i = tile_coord + push_dir
+				if not GridSystem.is_in_bounds(board, dest) or GridSystem.is_wall(board, dest):
+					continue
+				var hit_unit: UnitState = board.get_unit_at(dest)
+				board.items[item_idx] = dest
+				if (
+					hit_unit != null
+					and hit_unit.is_alive()
+					and hit_unit.team != actor.team
+					and effect.modifiers.has("item_collision_damage")
+				):
+					var item_dmg: int = int(effect.modifiers["item_collision_damage"])
+					CombatSystem.deal_damage(
+						board, hit_unit, item_dmg, events, &"true", true, false, actor,
+						action.ability.display_name, item_dmg,
+					)
 			
 		for tile_coord in affected_tiles:
 			var target_unit := board.get_unit_at(tile_coord)
+			if action.target_unit_id >= 0:
+				var pinned_target := board.get_unit_by_id(action.target_unit_id)
+				if pinned_target != null and pinned_target.position == tile_coord:
+					target_unit = pinned_target
 			
 			if effect.type == GameEnums.EffectType.DAMAGE and target_unit != null and target_unit != actor and target_unit.is_alive() and heal_per_target_hit:
 				targets_hit_count += 1
-			if effect.type == GameEnums.EffectType.DESTROY_OBSTACLE and target_unit != null and target_unit.definition.is_construct and buff_per_object:
-				objects_destroyed_count += 1
 				
 			_apply_effect_to_tile(board, actor, action, effect, events, tile_coord, target_unit)
 			
@@ -902,6 +1016,9 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, def_bonus))
 			actor._recalculate_stats()
 			
+	if actor != null:
+		actor.passive_flags.erase("__cast_cc_snapshot")
+
 	if actor != null and actor.is_alive() and actor.has_passive(&"kinetic_redirection"):
 		var is_attack = false
 		for effect in effects_to_apply:
@@ -932,7 +1049,7 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: B
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
-			actor.movement.points_left -= ability.movement_point_cost
+			actor.movement.points_left -= movement_point_cost(actor, ability)
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			actor.ability.points_left -= ap_cost
 		GameEnums.AbilityKind.CLASS_SKILL:
@@ -966,13 +1083,15 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			var front_tile = target.position - dir_to_target
 			var knight = board.get_unit_at(front_tile)
 			if knight != null and knight.team == target.team and knight.has_passive(&"living_barricade"):
-				var protects_aoe = knight.is_passive_upgraded(&"living_barricade")
-				if (is_ranged and not is_aoe) or (is_aoe and protects_aoe):
-					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-						"actor": actor.id, "reason": "blocked_by_living_barricade",
-						"target": target.id
-					}))
-					return
+				var dir_to_actor := PhysicsSystem.cardinal_from_to(knight.position, actor.position)
+				if PhysicsSystem.facing_to_vector(knight.facing) == dir_to_actor:
+					var protects_aoe = knight.is_passive_upgraded(&"living_barricade")
+					if (is_ranged and not is_aoe) or (is_aoe and protects_aoe):
+						events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+							"actor": actor.id, "reason": "blocked_by_living_barricade",
+							"target": target.id
+						}))
+						return
 					
 	if target != null:
 		var hostile := false
@@ -988,6 +1107,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				hostile = true
 				
 		if target == actor:
+			if effect.modifiers.get("exclude_caster", false):
+				return
 			if not friendly and not effect.type in [GameEnums.EffectType.ADD_STATUS_SELF, GameEnums.EffectType.DAMAGE_SELF, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
 				return
 		elif actor != null:
@@ -1054,6 +1175,13 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				)
 				target.active_statuses.append(temp_def_debuff)
 				target._recalculate_stats()
+				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+					"unit": target.id,
+					"status_type": GameEnums.StatusType.STAT_DEBUFF_DEF,
+					"duration": 1,
+					"amount": effect.def_debuff_before_damage,
+					"temporary": true,
+				}))
 			
 			if target != null:
 				if _is_backstab(actor, target):
@@ -1065,6 +1193,25 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					fort = tile.definition.fortitude
 				vuln = target.has_status(GameEnums.StatusType.VULNERABLE)
 				elec = target.has_status(GameEnums.StatusType.ELECTRIFIED)
+
+			if actor.passive_flags.has("breaching_dash_pierce"):
+				pierce = true
+				actor.passive_flags.erase("breaching_dash_pierce")
+			if actor.has_status(GameEnums.StatusType.PIERCE):
+				pierce = true
+			if target != null and actor.has_passive(&"overwhelming_bulk"):
+				if actor.health.current_hp > target.health.max_hp:
+					pierce = true
+					if actor.is_passive_upgraded(&"overwhelming_bulk"):
+						var bulk_dir := PhysicsSystem.cardinal_from_to(actor.position, target.position)
+						board.pending_pushes.append({
+							"type": "push",
+							"target_id": target.id,
+							"dir": bulk_dir,
+							"amount": 1,
+							"actor_id": actor.id,
+							"ability_id": &"overwhelming_bulk",
+						})
 				
 			events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, {
 				"type": "damage",
@@ -1108,10 +1255,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"ability_id": action.ability.id
 					}
 					
-					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION) > 0:
+					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, actor) > 0:
 						pending["stagger_on_collision"] = true
 						
-					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0:
+					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION, actor) > 0:
 						pending["bowling_upgrade"] = true
 					
 					board.pending_pushes.append(pending)
@@ -1150,7 +1297,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"ability_id": action.ability.id
 					}
 					
-					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT) > 0:
+					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, actor) > 0:
 						pending["vulnerable_on_adjacent"] = true
 						
 					board.pending_pushes.append(pending)
@@ -1319,12 +1466,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 					return
 					
-				if target.has_passive(&"unstoppable_force") and effect.status_type in [GameEnums.StatusType.STAGGER, GameEnums.StatusType.ROOT]:
-					var shield = 2 if target.is_passive_upgraded(&"unstoppable_force") else 1
-					target.armor += shield
-					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-						"actor": target.id, "reason": "status_prevented_by_unstoppable_force",
-					}))
+				if CombatSystem.try_resist_crowd_control(target, effect.status_type, events):
 					return
 					
 				var stat_val = effect.amount
@@ -1418,9 +1560,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"coord": tile_coord, "terrain": terrain_id
 					}))
 		GameEnums.EffectType.REFUND_AP_ON_CC:
-			if target != null:
-				if target.has_status(GameEnums.StatusType.ROOT) or target.has_status(GameEnums.StatusType.STAGGER):
-					actor.ability.points_left = mini(actor.definition.action_points, actor.ability.points_left + 1)
+			if target != null and actor != null:
+				var snap: Variant = actor.passive_flags.get("__cast_cc_snapshot", null)
+				var had_cc_at_cast: bool = snap is Dictionary and snap.get(target.id, false)
+				if had_cc_at_cast:
+					actor.ability.points_left = mini(actor.ability.max_points, actor.ability.points_left + 1)
 
 		GameEnums.EffectType.ADD_STATUS_SELF:
 			if actor.has_status(GameEnums.StatusType.INVULNERABLE) and GameEnums.is_debuff(effect.status_type):
@@ -1511,17 +1655,15 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 					"unit": actor.id, "to": actor.position
 				}))
-				if actor.has_passive(&"push_through") and actor.is_passive_upgraded(&"push_through"):
-					actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
-					actor._recalculate_stats()
 		
 		if push_type == "push" or push_type == "pull":
 			if push.get("stagger_on_collision", false):
 				for i in range(push_ev_start, events.size()):
 					var ev = events[i]
 					if ev.type == GameEnums.SimEventType.COLLISION and ev.data.get("unit") == target.id:
-						target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
-						target._recalculate_stats()
+						if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events):
+							target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+							target._recalculate_stats()
 						break
 			
 			if push.get("vulnerable_on_adjacent", false) and actor != null:

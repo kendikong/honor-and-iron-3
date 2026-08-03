@@ -32,6 +32,18 @@ Any edit under these paths (or equivalent behavior owners):
 | Core sim / bridge / broad combat regression | **Full regression** — `.\scripts\run_regression_tests.ps1 -GodotPath "<godot.exe>"` |
 | Both planning and core sim | **Planning QA gate** + **full regression** (two commands, one run each) |
 
+### Focused swap iteration (mandatory while fixing swap)
+
+When the turn is **only** fixing swap / walk-then-swap / swap commit presentation / swap preview parity:
+
+| Do | Don't |
+|----|-------|
+| Run **`.\scripts\run_swap_planning_acceptance.ps1`** each fix attempt | Run `run_planning_qa_gate.ps1` or the full bible session until swap PASS |
+| Report swap script **PASS** or **FAIL** with `[FAIL]` lines | Dismiss swap failures as "pre-existing" or unrelated |
+| After swap PASS, run **`.\scripts\run_planning_qa_gate.ps1`** once before claiming the turn done | Stop at swap PASS if other planning files changed outside swap scope without re-gating |
+
+Swap-only runner: GdUnit `test_live_swap_session` in `tests/live_planning_scene_test.gd` (ignores `test_live_planning_bible_multi_knight_session`).
+
 **Tier 1/2 headless fixture suites are legacy and disabled** from the gate and from `bridge_test_runner` — do not run `PlanningQaGate.tscn`, `run_planning_qa_gate.gd`, or `run_drag_e2e_only.gd` as QA unless the owner explicitly requests `-IncludeLegacyTier12` archaeology.
 
 When unsure, run **Planning QA gate** at minimum for anything in `presentation/combat_*` or planning input. Run **full regression** when `core/simulation/` or `ResolutionPipeline` changes.
@@ -53,6 +65,8 @@ Authoritative checklist mapping: `docs/PLANNING_QA_GATE.md`.
 ## Fail policy
 
 - **FAIL → do not mark task complete.** Fix and re-run QA, or stop and report blockers.
+- **Never ignore Tier 3 `[FAIL]` lines** — every failure is in scope until fixed or owner explicitly defers.
+- **Swap-only work:** iterate with `run_swap_planning_acceptance.ps1` until PASS; full gate only after swap is green.
 - **Skipped QA → rule violation** (same severity as skipping auto-commit).
 - **Manual Layer B** (F5 pixels, walk anim feel, FPS) remains the owner's job; headless PASS does not replace visual checks for animation/perf claims.
 
