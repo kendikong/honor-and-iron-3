@@ -215,4 +215,5 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	breaching_dash.upgraded_effects[0].modifiers["next_attack_pierce"] = 1
 	def.abilities.append(breaching_dash)
 
+	DataLibrary.finalize_unit_abilities(def)
 	return def

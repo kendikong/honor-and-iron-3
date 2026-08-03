@@ -157,11 +157,104 @@ enum ActionType {
 }
 
 ## How an ability is classified for economy, timeline column, and validation.
+## Legacy mirror of PlannerGroup for UNIVERSAL_* system actions; prefer planner_group on AbilityData.
 enum AbilityKind {
 	CLASS_SKILL,      ## AP cost; consumes action slot; Action column.
 	MOVEMENT_SKILL,   ## MP cost; pre-move only; does not consume action slot.
 	UNIVERSAL_RUN,    ## AP + extended movement (Run); pre-move column.
 	UNIVERSAL_WAIT,   ## Exhaust marker (not shown in skill list).
+}
+
+## Timeline column for class-library cards (ability-data.md §1). Replaces AbilityKind for authored skills.
+enum PlannerGroup {
+	ACTION,    ## Action column; AP; consumes action slot; may contain ON_PRE/ON_POST modules.
+	PRE_MOVE,  ## Pre-Move column; MP; basic positioning; no action slot.
+}
+
+## Header cost primary/secondary resource (ability-data.md §1 cost block).
+enum CostResource {
+	NONE,
+	AP,
+	MP,
+	HP,
+}
+
+## Header cost modifiers (ability-data.md §1).
+enum CostModifier {
+	NONE,
+	ZERO_IF_ADJACENT_ENEMIES_GTE_N,
+}
+
+## When a module runs inside an ACTION skill (ability-data.md §2.1).
+enum ModulePhase {
+	ON_ACTION,
+	ON_PRE,
+	ON_POST,
+}
+
+## Motion destination mode when primary effect is motion (ability-data.md §2.2).
+enum MotionMode {
+	NONE,
+	TO_EMPTY_TILE,
+	TO_TARGET_UNIT,
+	ADJACENT_TO_TARGET,
+	BEHIND_TARGET,
+	VAULT_OVER,
+	INTO_OCCUPIED_PUSH,
+	BACKWARDS,
+	SLIDE_TARGET_OPPOSITE,
+	ALLY_STEP,
+}
+
+## How a module obtains its aim (ability-data.md §2.5).
+enum AimBinding {
+	NEW_AIM,
+	SAME_AS_MODULE_N,
+	RULE_PICK,
+}
+
+## Range measurement origin (ability-data.md §3).
+enum RangeOrigin {
+	ACTOR,
+	LAST_TARGETED_TILE,
+	LAST_TARGETED_UNIT_TILE,
+}
+
+## Module gate — whether the module runs (ability-data.md §2.7).
+enum ModuleGate {
+	ALWAYS,
+	IF_KILL,
+	IF_DAMAGE_DEALT,
+	IF_COLLIDED,
+	IF_ADJACENT_ENEMY,
+	IF_ADJACENT_ALLY,
+	IF_ISOLATED,
+	IF_NO_MOVE_THIS_TURN,
+}
+
+## Layer activation condition (ability-data.md §5).
+enum LayerCondition {
+	AT_RESOLUTION,
+	WHEN_DAMAGE_DEALT,
+	WHEN_MOVED_THROUGH_ENEMY,
+	ON_COLLISION,
+	ON_CHAIN_COLLISION,
+	ON_KILL,
+	ON_LAND,
+	PER_TILE_MOVED,
+	PER_TARGET_HIT,
+	IF_ALREADY_ADJACENT,
+	IF_FROM_BEHIND,
+}
+
+## Bundled keyword packages on a motion/damage module (ability-data.md §6).
+enum AbilityKeywordId {
+	NONE,
+	TRAMPLE,
+	BULLDOZE,
+	GHOST,
+	PIERCE,
+	CANTO,
 }
 
 ## Who may be selected when using an ability (legacy single-choice; synced from targeting_flags).

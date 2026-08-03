@@ -123,13 +123,16 @@ static func _ensure_init() -> void:
 	_universal_run.targeting_flags = GameEnums.TargetingFlags.SELF
 	_universal_run.sync_legacy_targeting()
 	_universal_run.presentation_anim = GameEnums.PresentationAnim.WALK
+	_universal_run.finalize_modular()
 	_universal_wait = _make_ability(&"universal_wait", "Wait", 0, [], 0)
 	_universal_wait.kind = GameEnums.AbilityKind.UNIVERSAL_WAIT
 	_universal_wait.targeting_mode = GameEnums.TargetingMode.SELF
 	_universal_wait.targeting_flags = GameEnums.TargetingFlags.SELF
 	_universal_wait.sync_legacy_targeting()
-		
+	_universal_wait.finalize_modular()
+
 	var _trade := _make_ability(&"swap", "Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
+	_trade.finalize_modular()
 	
 	var c_turret = _make_construct(&"construct_turret", "Construct Turret", 50.0)
 	var c_tesla = _make_construct(&"tesla_barricade", "Tesla Barricade", 150.0)
@@ -222,6 +225,7 @@ static func _ensure_init() -> void:
 	]
 	for u in _player_units:
 		_ensure_player_basic_attack(u)
+		finalize_unit_abilities(u)
 
 	var charger := _make_unit_data(&"charger", "Charger", 3, 4, 1, [],
 		_behavior(&"charger", _make_ability(&"gore", "Gore", 1, [_effect(GameEnums.EffectType.DAMAGE, 1)], 1, GameEnums.StatType.PHYSICAL)), GameEnums.MovementType.WALK, 4, 0, 1)
@@ -265,6 +269,8 @@ static func _ensure_init() -> void:
 		# All enemies except hatchlings get a basic attack for when they are staggered
 		if u.id != &"hatchling":
 			_ensure_player_basic_attack(u)
+		finalize_unit_abilities(u)
+		_finalize_behavior_abilities(u)
 
 	for u in _player_units:
 		_all_units_dict[u.id] = u
@@ -272,6 +278,11 @@ static func _ensure_init() -> void:
 		_all_units_dict[u.id] = u
 
 	ClassLibrarySchema.apply_saved_unit_overrides()
+	for u in _player_units:
+		finalize_unit_abilities(u)
+	for u in _enemy_units:
+		finalize_unit_abilities(u)
+		_finalize_behavior_abilities(u)
 
 	var training_dummy := _make_unit_data(
 		&"training_dummy",
@@ -457,6 +468,9 @@ static func _make_ability(p_id: StringName, p_name: String, p_range: int, effect
 	ability.id = p_id
 	ability.display_name = p_name
 	ability.kind = GameEnums.AbilityKind.CLASS_SKILL
+	ability.planner_group = GameEnums.PlannerGroup.ACTION
+	ability.primary_resource = GameEnums.CostResource.AP
+	ability.primary_value = ap_cost
 	ability.action_point_cost = ap_cost
 	ability.range_tiles = p_range
 	ability.presentation_key = p_id
@@ -467,6 +481,8 @@ static func _make_ability(p_id: StringName, p_name: String, p_range: int, effect
 	_configure_ability_targeting(ability)
 	if is_basic_ability(p_id):
 		ability.action_point_cost = 0
+		ability.primary_value = 0
+	## finalize_modular() runs after factory post-mutations (see finalize_unit_abilities).
 	return ability
 
 
@@ -532,13 +548,35 @@ static func _make_movement_ability(
 ) -> AbilityData:
 	var ability := _make_ability(p_id, p_name, p_range, effects, 0, stat, shape, shape_size)
 	ability.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	ability.planner_group = GameEnums.PlannerGroup.PRE_MOVE
+	ability.primary_resource = GameEnums.CostResource.MP
+	ability.primary_value = mp_cost
 	ability.movement_point_cost = mp_cost
 	ability.targeting_mode = targeting
 	ability.is_movement_skill = true
 	ability.presentation_anim = GameEnums.PresentationAnim.WALK
 	ability.targeting_flags = AbilityData._targeting_mode_to_flags(ability.targeting_mode)
 	ability.sync_legacy_targeting()
+	ability.tags = [AbilityModuleBridge.TAG_POSITIONING]
+	## finalize_modular() runs after factory post-mutations (see finalize_unit_abilities).
 	return ability
+
+
+## Call after factory finishes mutating abilities (modifiers, upgrades, targeting).
+static func finalize_unit_abilities(unit: UnitData) -> void:
+	if unit == null:
+		return
+	for ability: AbilityData in unit.abilities:
+		if ability != null:
+			ability.finalize_modular()
+
+
+static func _finalize_behavior_abilities(unit: UnitData) -> void:
+	if unit == null or unit.behavior == null:
+		return
+	var behavior_ability: AbilityData = unit.behavior.attack
+	if behavior_ability != null:
+		behavior_ability.finalize_modular()
 
 
 static func is_basic_ability(ability_id: StringName) -> bool:

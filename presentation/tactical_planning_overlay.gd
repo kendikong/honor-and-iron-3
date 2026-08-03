@@ -367,9 +367,9 @@ func restore_committed_display() -> void:
 
 ## Promote the painted live intent to committed display (move-preview intent truth).
 ## Locks the next preview_updated so director refresh cannot replace that picture.
+## Keeps preview_pushes — commit ratifies the full live picture (including forced movement).
 func promote_live_preview_to_committed() -> void:
 	_committed_preview.copy_from(_live_preview)
-	_committed_preview.preview_pushes.clear()
 	if _director != null and _director.base_board != null:
 		_committed_preview.ensure_movement_intent_from_plan(
 			_director.get_player_plan(),

@@ -221,4 +221,5 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	trampling_advance.upgraded_effects = trample_upgraded
 	def.abilities.append(trampling_advance)
 
+	DataLibrary.finalize_unit_abilities(def)
 	return def

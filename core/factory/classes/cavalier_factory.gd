@@ -141,4 +141,5 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	meteor_drop.upgraded_effects = DataLibrary._duplicate_effects(meteor_drop.effects)
 	def.abilities.append(meteor_drop)
 
+	DataLibrary.finalize_unit_abilities(def)
 	return def

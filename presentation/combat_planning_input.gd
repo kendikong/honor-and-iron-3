@@ -1799,16 +1799,15 @@ func _promote_intent_preview_after_commit() -> void:
 	_suppress_post_commit_hover_refresh = true
 	if _planning == null:
 		return
-	if is_live_preview_active():
-		_planning.promote_live_preview_to_committed()
-		return
+	## Always re-apply input preview_state before promote. commit_from_slots may refresh
+	## the overlay and clear live pushes; preview_state remains the intent picture.
 	if preview_state.preview_board != null:
 		_planning.apply_preview_state(
 			preview_state,
 			_director.selected_unit_id if _director != null else -1,
 			_hover_attack_target_id(),
 		)
-		_planning.promote_live_preview_to_committed()
+	_planning.promote_live_preview_to_committed()
 
 
 func _intent_snapshot_key_for(
