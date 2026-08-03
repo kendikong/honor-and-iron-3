@@ -1177,6 +1177,74 @@ static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
 			failures.append("PlanningInputTest: violent_collision finalized module_coords[0] mismatch")
 		if not finalized.has_module_coord(1) or finalized.get_module_coord(1) != follow_cell:
 			failures.append("PlanningInputTest: violent_collision finalized module_coords[1] mismatch")
+	## §2.7 rule 5 + preview==sim: completed gated plan must preview_commit_valid and resolve to follow-up tile.
+	if finalized != null and not finalized.awaiting_target:
+		var valid_reason: String = collide_director.preview_commit_valid(1, [finalized])
+		if valid_reason != "":
+			failures.append(
+				"PlanningInputTest: violent_collision finalized plan preview_commit_valid failed: %s"
+				% valid_reason,
+			)
+		var sim_plan := Timeline.new()
+		sim_plan.add(finalized.clone())
+		var sim_result: SimResult = Simulator.simulate(collide_board.clone(), sim_plan)
+		var sim_bruiser: UnitState = sim_result.final_state.get_unit_by_id(1)
+		if sim_bruiser == null or sim_bruiser.position != follow_cell:
+			failures.append(
+				"PlanningInputTest: violent_collision sim end expected %s got %s"
+				% [
+					str(follow_cell),
+					str(sim_bruiser.position if sim_bruiser != null else Vector2i.ZERO),
+				],
+			)
+	## Invalid follow-up aim (out of MOVE 2 range) must fail loud at planning.
+	var bad_fixture: Dictionary = _violent_collision_planning_fixture(
+		failures, Vector2i(4, 3),
+	)
+	if not bad_fixture.is_empty() and _arm_violent_collision_awaiting(failures, bad_fixture):
+		var bad_input: CombatPlanningInput = bad_fixture["input"] as CombatPlanningInput
+		var bad_director: CombatDirector = bad_fixture["director"] as CombatDirector
+		var bad_dash_preview: Dictionary = bad_input._final_commit_slots_for_interaction(1, dash_cell)
+		if bad_director.commit_from_slots(1, bad_dash_preview):
+			var bad_follow := Vector2i(9, 3) ## beyond MOVE 2 from post-dash (~5,3)
+			var bad_slots: Dictionary = bad_input._final_commit_slots_for_interaction(1, bad_follow)
+			if not _slots_invalid(bad_slots):
+				var bad_action: TimelineAction = _action_from_slots(bad_slots)
+				if bad_action != null and not bad_action.awaiting_target:
+					var bad_reason: String = bad_director.preview_commit_valid(1, [bad_action])
+					if bad_reason == "":
+						failures.append(
+							"PlanningInputTest: violent_collision invalid follow-up must fail preview_commit_valid",
+						)
+			## Missing follow-up on a completed (non-awaiting) collision plan → fail loud.
+			var missing := TimelineAction.make_ability(
+				1, collide_skill, dash_cell, -1, GameEnums.MoveTiming.PRE_ACTION, [],
+			)
+			missing.module_coords = [dash_cell]
+			missing.awaiting_target = false
+			var miss_reason: String = bad_director.preview_commit_valid(1, [missing])
+			if miss_reason == "":
+				failures.append(
+					"PlanningInputTest: violent_collision missing module_coords[1] must fail preview_commit_valid",
+				)
+			var miss_plan := Timeline.new()
+			miss_plan.add(missing)
+			var miss_sim: SimResult = Simulator.simulate(
+				(bad_fixture["board"] as BoardState).clone(), miss_plan,
+			)
+			var miss_failed: bool = false
+			for ev: SimEvent in miss_sim.events:
+				if (
+					ev != null
+					and ev.type == GameEnums.SimEventType.ACTION_FAILED
+					and String(ev.data.get("reason", "")) == "gated_followup_missing_aim"
+				):
+					miss_failed = true
+					break
+			if not miss_failed:
+				failures.append(
+					"PlanningInputTest: violent_collision missing follow-up must ACTION_FAILED gated_followup_missing_aim",
+				)
 
 
 static func _plain_board_with_unit(
