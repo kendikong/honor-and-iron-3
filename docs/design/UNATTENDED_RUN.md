@@ -1,10 +1,10 @@
-# Unattended Gauntlet Run — AbilityData Modular Refactor (REOPENED — AD-5b)
+# Unattended Gauntlet Run — AbilityData Modular Refactor (CLOSED — STOP_ON met)
 
-**Status:** **REOPENED** — owner ordered finish of unfinished plan pieces. AD-REGRESS remains PASS 93; **AD-5b** closes AD-5 planner-callback gap (bar **92**).  
+**Status:** **CLOSED** — AD-5b critic **PASS 93/92** ADEQUATE; AD-REGRESS **PASS 93/90** with Tier 3 live r8; `ability-data.md` §14 checklist complete.  
 **Spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) §5.4 · **Progress:** [`workbench.md`](workbench.md)  
 **Authority:** [`ability-data.md`](ability-data.md) (READY_FOR_REFACTOR)  
 **Template:** [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md)  
-**AD-5 deferral / AD-5b:** [`FAILURE_REPORT.md`](FAILURE_REPORT.md)
+**AD-5 / AD-5b:** [`FAILURE_REPORT.md`](FAILURE_REPORT.md)
 
 The lead agent must **not** ask the owner questions during this run. It stops only when **STOP_ON** is satisfied or a **boundary** fires.
 
@@ -15,10 +15,10 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 | Field | Value |
 |-------|-------|
 | **CHUNK_ID** | `ability-data-modular-2026-08-03` |
-| **PIECE_ID** | `AD-5b` — editor planner callback BAR (closes AD-5 r13 gap); AD-REGRESS remains PASS |
-| **GOAL** | `ClassLibrarySchema.apply_planner_group_change` is the sole planner OptionButton path; BAR exercises it + OptionButton + source wiring; `is_movement_skill` = displacement effects (§14.12) |
-| **PASS_THRESHOLD** | **92** for AD-5b · **90** wave smooth |
-| **BAR** | `run_class_library_editor_roundtrip_test.gd` PASS · bridge + Knight + Bruiser PASS · critic ≥92 ADEQUATE |
+| **PIECE_ID** | `AD-5b` **CLOSED** (critic 93/92 ADEQUATE) — AD-REGRESS remains PASS |
+| **GOAL** | Modular AbilityData per `ability-data.md` §0–§14; editor planner path unified; behavior freeze via AD-REGRESS Tier 3 |
+| **PASS_THRESHOLD** | **92** per code piece · **90** wave smooth |
+| **BAR** | See **Machine bar** below |
 | **Started (UTC)** | 2026-08-03 |
 | **Godot** | `godot` on PATH (`4.7.stable`) |
 
@@ -30,7 +30,7 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 4. **Tier 3 live planning** (`LIVE_QA_PROFILE=fast`): GdUnit `res://tests/live_planning_scene_test.gd` via planning gate / CmdTool → **PASS** (zero `[FAIL]`; exit 0). Scenario-only is **not** enough.
 5. Fresh **`gauntlet-critic`** on closeout with **Tier 3 live stdout on disk** → `RESULT: PASS`, `SCORE ≥ 90`, `Infrastructure: ADEQUATE`
 6. No new per-skill `if ability.id == …` heuristics; no new anonymous `modifiers` keys
-7. **AD-5 deferred** at critic 90; **AD-5b must PASS ≥92** before claiming plan complete
+7. **AD-5 deferred** at critic 90; **AD-5b PASS 93** closes planner-callback gap
 8. `is_movement_skill` = displacement **effects**; `is_movement_kind` = **PRE_MOVE column** — do not conflate
 
 ### Behavior freeze (must not change)
