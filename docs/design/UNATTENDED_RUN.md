@@ -61,6 +61,7 @@ core/factory/**
 core/simulation/**
 presentation/combat_*.gd
 presentation/tactical_planning_overlay.gd
+presentation/tactical_map_view.gd
 presentation/combat_ui_formatters.gd
 ui/class_library_*.gd
 tests/**

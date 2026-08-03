@@ -854,8 +854,8 @@ Use this doc as the acceptance bar:
 8. [ ] Sim: modules in order; keywords; layers; gates; presentation events
 9. [ ] Class library editor: grey out illegal options; dual module lists for upgrades
 10. [ ] Migrate **all current** moveset factories/definitions + readers
-11. [ ] QA: planning gate + regression
-12. [ ] Remove `is_movement_skill` / old kind heuristics once `planner_group` + tags are live
+11. [ ] QA: **Tier 3 live** planning gate + Knight/Bruiser QA + regression (scenario-only is inadequate for behavior freeze)
+12. [ ] Keep `is_movement_skill` = displacement **effects**; `is_movement_kind` / `planner_group` = column — do **not** alias them away
 
 ---
 

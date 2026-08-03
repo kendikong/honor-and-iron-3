@@ -497,16 +497,20 @@ func _sync_overlay_huds(map_origin: Vector2, map_size: Vector2) -> void:
 func _update_hover_coord() -> void:
 	if _director == null or _director.board == null:
 		return
-	var hc: Control = get_viewport().gui_get_hovered_control()
-	if hc != null and _hover_blocked_by_ui(hc):
-		var blocked_cell := Vector2i(-999, -999)
-		if _last_polled_hover_cell != blocked_cell:
-			_last_polled_hover_cell = blocked_cell
-			if _planning_input != null:
-				_planning_input.on_hover_moved(blocked_cell)
-			elif _side_panels != null:
-				_side_panels.set_hover_coord(blocked_cell)
-		return
+	var qa_override: bool = (
+		_planning_input != null and _planning_input.has_qa_pointer_override()
+	)
+	if not qa_override:
+		var hc: Control = get_viewport().gui_get_hovered_control()
+		if hc != null and _hover_blocked_by_ui(hc):
+			var blocked_cell := Vector2i(-999, -999)
+			if _last_polled_hover_cell != blocked_cell:
+				_last_polled_hover_cell = blocked_cell
+				if _planning_input != null:
+					_planning_input.on_hover_moved(blocked_cell)
+				elif _side_panels != null:
+					_side_panels.set_hover_coord(blocked_cell)
+			return
 	var cell: Vector2i
 	if _planning_input != null:
 		cell = _planning_input.pointer_grid_cell()

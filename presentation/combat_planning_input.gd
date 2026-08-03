@@ -984,6 +984,9 @@ func invalidate_hover_preview_cache() -> void:
 func on_hover_moved(cell: Vector2i) -> void:
 	if _director == null or _director.board == null:
 		return
+	## Live QA pins a grid cell; map hover poll must not wipe it via HUD OOB (-999).
+	if _qa_pointer_grid_override and not _director.board.is_in_bounds(cell):
+		cell = _qa_pointer_grid_cell
 	if not dragging:
 		_sync_intent_skill_mode()
 		if _intent_state != null:
@@ -1906,6 +1909,11 @@ func clear_qa_pointer_override() -> void:
 	_qa_pointer_screen_pos = Vector2.ZERO
 	_qa_pointer_grid_override = false
 	_qa_pointer_grid_cell = Vector2i.ZERO
+
+
+## True while live Tier 3 / harness pins pointer to a grid cell (ignore HUD OOB polls).
+func has_qa_pointer_override() -> bool:
+	return _qa_pointer_grid_override or _qa_pointer_override
 
 
 ## Hover poll owner: respects QA grid override so live tests can hop tiles without sweep.
