@@ -884,10 +884,15 @@ func _tap_cell(
 	await _sweep_mouse_to_cell(ctx, cell, "%s/approach" % label, unit_id)
 	await _capture_planning_surface(ctx, unit_id, "%s/hover" % label)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, cell, false)
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	var input: CombatPlanningInput = ctx.input
+	input.set_qa_pointer_grid_cell(cell)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(cell)
+	var local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_press(local)
 	await runner.simulate_frames(2, _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/press" % label)
-	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
+	input.on_left_release(local)
 	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/settled" % label)
 	if assert_preview_commit:
@@ -1243,14 +1248,18 @@ func _hop_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: Str
 	if input._intent_state != null:
 		input._intent_state.set_hover_coord(cell)
 	var local: Vector2 = input._mouse_local_for_facing()
-	if not input.dragging and not input.is_drag_armed():
-		input.on_left_press(local)
+	## Never re-press on hop targets (enemy/empty) — that cancels arm. Press only at route start.
 	if not input.dragging:
+		if not input.is_drag_armed():
+			assert_bool(false).override_failure_message(
+				"%s: drag must be armed before hop to %s" % [label, cell],
+			).is_true()
+			return
 		input.try_activate_drag(local)
 	if input.dragging:
 		input.update_drag(local)
 	assert_bool(input.dragging).override_failure_message(
-		"%s: drag paint must be active at %s" % [label, cell],
+		"%s: drag paint must be active at %s (armed=%s)" % [label, cell, input.is_drag_armed()],
 	).is_true()
 	assert_that(input.compute_hover_action_icon(cell)).override_failure_message(
 		"%s: planning cursor icon must stay hidden during drag (F5 parity)" % label,
@@ -1538,10 +1547,9 @@ func _drag_through_cells(
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/start" % label)
 	if assert_hover_steps:
 		assert_that(input.get_hover_tile_for_ui()).is_equal(cells[0])
-	## Drive planning directly — HUD can swallow GdUnit mouse presses on cloud/software GL.
+	## Direct planning press only — do not also simulate (HUD/unhandled double-press races).
 	var press_local: Vector2 = input._mouse_local_for_facing()
 	input.on_left_press(press_local)
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/press" % label)
 	for i: int in range(1, cells.size()):
@@ -1556,7 +1564,6 @@ func _drag_through_cells(
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, ctx.director.selected_unit_id, release_cell, true)
 	var release_local: Vector2 = input._mouse_local_for_facing()
 	input.on_left_release(release_local)
-	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/release" % label)
 	if assert_commit_ratify:
@@ -1609,7 +1616,6 @@ func _paint_k4_detour_and_run_route(
 	await _capture_planning_surface(ctx, unit_id, "%s/start" % label_prefix)
 	var press_local: Vector2 = input._mouse_local_for_facing()
 	input.on_left_press(press_local)
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/press" % label_prefix)
 	for step_index: int in range(1, _K4_DETOUR_PLUS_RUN_ROUTE.size()):
@@ -1643,7 +1649,6 @@ func _paint_k4_detour_and_run_route(
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, _K4_RUN_TRIGGER_CELL, true)
 	var release_local: Vector2 = input._mouse_local_for_facing()
 	input.on_left_release(release_local)
-	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
 	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
@@ -1761,7 +1766,6 @@ func _drag_through_cells_with_route_checks(
 	await _reposition_mouse_to_unit(ctx, ctx.director.selected_unit_id, cells[0])
 	var press_local: Vector2 = input._mouse_local_for_facing()
 	input.on_left_press(press_local)
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/press" % label_prefix)
 	for step_index: int in range(1, cells.size()):
@@ -1822,7 +1826,6 @@ func _drag_through_cells_with_route_checks(
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, release_cell, true)
 	var release_local: Vector2 = input._mouse_local_for_facing()
 	input.on_left_release(release_local)
-	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
 	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
