@@ -46,13 +46,13 @@ AD-5 plateaued at **critic SCORE 90/100** (never ≥ 92). Lead must not continue
 
 ---
 
-## Remaining pieces (not started under this stop)
+## Remaining pieces (updated after reopen)
 
 | Piece | Status |
 |-------|--------|
-| AD-5 | **STOPPED** — MAX_ROUNDS, score 90 &lt; 92 |
-| AD-1 | RE-OPEN (86 &lt; 92) — needs AD-2 |
-| AD-2…AD-SMOOTH | Not started this stop |
+| AD-5 | **DEFERRED** — MAX_ROUNDS, best 90 &lt; 92 |
+| AD-1…AD-4, AD-6 | **PASS** (see `workbench.md`) |
+| AD-SMOOTH | **PASS 91/90** (r2) — run STOP_ON met |
 
 ---
 

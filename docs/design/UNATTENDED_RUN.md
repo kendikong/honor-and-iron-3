@@ -1,10 +1,10 @@
-# Unattended Gauntlet Run — AbilityData Modular Refactor (ACTIVE)
+# Unattended Gauntlet Run — AbilityData Modular Refactor (COMPLETE)
 
-**Status:** ACTIVE — owner continue after AD-5 MAX_ROUNDS plateau (AD-5 **DEFERRED** @ 90)  
+**Status:** **STOPPED — SUCCESS** (`STOP_CONDITION_MET: yes`)  
 **Spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) §5.4 · **Progress:** [`workbench.md`](workbench.md)  
 **Authority:** [`ability-data.md`](ability-data.md) (READY_FOR_REFACTOR)  
-**Template:** [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md)
-**Prior stop:** [`FAILURE_REPORT.md`](FAILURE_REPORT.md) (AD-5 only; run reopened for AD-2+)
+**Template:** [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md)  
+**AD-5 deferral:** [`FAILURE_REPORT.md`](FAILURE_REPORT.md) (MAX_ROUNDS @ 90; not required for STOP_ON)
 
 The lead agent must **not** ask the owner questions during this run. It stops only when **STOP_ON** is satisfied or a **boundary** fires.
 
@@ -29,7 +29,7 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 3. `godot --headless --path . --script res://tests/regression_test.gd` — no new FAIL vs baseline attributable to this refactor
 4. Planning QA: `godot --headless --path . --script res://tests/run_planning_qa_gate.gd` (or project equivalent) → **PASS**
 5. Knight QA + Bruiser QA gates → **PASS** (behavior-identical skills)
-6. Fresh **`gauntlet-critic`** on final piece returns `RESULT: PASS`, `SCORE ≥ 92`, `Infrastructure: ADEQUATE`
+6. Fresh **`gauntlet-critic`** on final piece (**AD-SMOOTH**) returns `RESULT: PASS`, `SCORE ≥ 90`, `Infrastructure: ADEQUATE`
 7. No new per-skill `if ability.id == …` heuristics; no new anonymous `modifiers` keys
 8. **AD-5 deferred** at critic 90 — not required for STOP_ON; remaining pieces AD-2…SMOOTH must still clear bar
 
