@@ -63,7 +63,7 @@ STOP_CONDITION_MET: no
 
 **Preview truth fix:** `_append_awaiting_ability_slot` uses `planning_next_awaiting_module_index`; incomplete gated aims keep `awaiting_target=true`; finalize skips sim for awaiting slots; multi-module finalize sets `target_coord`/waypoints from module 0 dash endpoint.
 
-**Commit:** *(pending push)*
+**Commit:** `be6c18ef65e6a3682f2f58482b33d1c0d0bd6e59`
 
 ---
 
