@@ -80,14 +80,22 @@ func _check_violent_collision_modules(failures: Array[String]) -> void:
 		return
 	if vc.modules[1].gate != GameEnums.ModuleGate.IF_COLLIDED:
 		failures.append("violent_collision module[1] gate not IF_COLLIDED")
-	if vc.effects.is_empty() or not vc.effects[0].modifiers.has("violent_collision_recast"):
-		failures.append("violent_collision legacy effects lost violent_collision_recast")
+	if not AbilitySystem.ability_has_module_gate(vc, GameEnums.ModuleGate.IF_COLLIDED):
+		failures.append("ability_has_module_gate IF_COLLIDED false for violent_collision")
+	if vc.effects.is_empty() or vc.effects[0].modifiers.has("violent_collision_recast"):
+		failures.append(
+			"violent_collision flat effects must not stamp violent_collision_recast (gate is modular)"
+		)
 	if vc.effects.size() != 1:
 		failures.append(
 			"violent_collision legacy effects should stay 1 DASH (got %d)" % vc.effects.size()
 		)
 	if not vc.effects[0].modifiers.has("bulldoze"):
 		failures.append("violent_collision lost bulldoze modifier")
+	if not AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_COLLIDED, true):
+		failures.append("evaluate_module_gate IF_COLLIDED should pass when collided=true")
+	if AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_COLLIDED, false):
+		failures.append("evaluate_module_gate IF_COLLIDED should fail when collided=false")
 	## Charge Strike: MOVE module + DAMAGE module with PUSH layer (not three peer modules).
 	var charge: AbilityData = null
 	for ab2: AbilityData in bruiser.abilities:

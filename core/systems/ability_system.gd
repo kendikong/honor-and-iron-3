@@ -234,6 +234,66 @@ static func is_movement_skill(ability: AbilityData) -> bool:
 	return false
 
 
+## Module list for resolution (upgraded profile when applicable).
+static func modules_for_actor(actor: UnitState, ability: AbilityData) -> Array[AbilityModule]:
+	var empty: Array[AbilityModule] = []
+	if ability == null:
+		return empty
+	if (
+		actor != null
+		and actor.is_ability_upgraded(ability.id)
+		and not ability.upgraded_modules.is_empty()
+	):
+		return ability.upgraded_modules
+	return ability.modules
+
+
+## True when any module declares this gate (ability-data.md §2.7).
+## Legacy fallback: IF_COLLIDED may still appear as violent_collision_recast until factories drop it.
+static func ability_has_module_gate(
+	ability: AbilityData,
+	gate: GameEnums.ModuleGate,
+	actor: UnitState = null
+) -> bool:
+	if ability == null:
+		return false
+	for mod: AbilityModule in modules_for_actor(actor, ability):
+		if mod != null and mod.gate == gate:
+			return true
+	if gate == GameEnums.ModuleGate.IF_COLLIDED:
+		var effects: Array[EffectData] = ability.effects
+		if (
+			actor != null
+			and actor.is_ability_upgraded(ability.id)
+			and not ability.upgraded_effects.is_empty()
+		):
+			effects = ability.upgraded_effects
+		for eff: EffectData in effects:
+			if eff != null and eff.modifiers.has("violent_collision_recast"):
+				return true
+	return false
+
+
+## Gate check at module resolution time (board after earlier modules).
+static func evaluate_module_gate(
+	gate: GameEnums.ModuleGate,
+	collided: bool = false,
+	killed_enemy: bool = false,
+	damage_dealt: bool = false
+) -> bool:
+	match gate:
+		GameEnums.ModuleGate.ALWAYS:
+			return true
+		GameEnums.ModuleGate.IF_COLLIDED:
+			return collided
+		GameEnums.ModuleGate.IF_KILL:
+			return killed_enemy
+		GameEnums.ModuleGate.IF_DAMAGE_DEALT:
+			return damage_dealt
+		_:
+			return true
+
+
 ## Planning: one-click commit vs two-phase awaiting-target flow (keyword rules live here only).
 static func planning_commit_flow(actor: UnitState, ability: AbilityData) -> int:
 	if actor == null or ability == null:

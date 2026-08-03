@@ -11,18 +11,19 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ STOPPED │ SELF-GRADED: no (subagent)
-THRESHOLD: 92 │ AD-5 final critic: 90 FAIL
-STOP_REASON: MAX_ROUNDS_PER_PIECE (8) on AD-5
+GAUNTLET SCORE │ REOPENED │ SELF-GRADED: no
+THRESHOLD: 92 │ wave smooth: 90
+AD-5: DEFERRED @ 90 (MAX_ROUNDS) — owner continue rest of refactor
+AD-2: IN PROGRESS (native module/gate runtime)
+AD-1: RE-OPEN after AD-2
 STOP_CONDITION_MET: no
-See docs/design/FAILURE_REPORT.md
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Threshold | Result |
 |-------|-------|-------|-----------|--------|
-| r2 | AD-1 | 86 | **92** | RE-OPEN (not resumed) |
-| r6→r13 | AD-5 | best **90** | **92** | **STOPPED** — MAX_ROUNDS |
+| r2 | AD-1 | 86 | **92** | RE-OPEN (await AD-2) |
+| r6–r13 | AD-5 | best **90** | **92** | **DEFERRED** (MAX_ROUNDS; owner continue other pieces) |
 
 ---
 
@@ -30,21 +31,25 @@ See docs/design/FAILURE_REPORT.md
 
 | Field | Value |
 |-------|-------|
-| **Status** | **STOPPED** — MAX_ROUNDS on AD-5 |
+| **Status** | **ACTIVE** — owner continue after AD-5 plateau |
 | **PASS_THRESHOLD** | **92** |
-| **Failure doc** | `docs/design/FAILURE_REPORT.md` |
+| **Next** | AD-2 native module/gate → re-critic AD-1 → AD-3/4/6 → SMOOTH |
 
 ### Piece queue
 
 | Piece | Status |
 |-------|--------|
-| AD-5 Class library editor | **STOPPED** @ 90/92 after 8 critic rounds |
-| AD-1 Schema + bridge | RE-OPEN (86) — blocked pending owner restart / AD-2 |
-| AD-2…SMOOTH | Not started |
+| AD-5 Class library editor | **DEFERRED** @ 90/92 |
+| AD-2 Native module/gate runtime | **IN PROGRESS** |
+| AD-1 Schema + bridge | RE-OPEN (86) — re-critic after AD-2 |
+| AD-3 Planning gated-aim | PENDING |
+| AD-4 Factories modules-first | PARTIAL |
+| AD-6 Remove legacy kind authoring | PENDING |
+| AD-SMOOTH | PENDING (threshold **90**) |
 
 ---
 
 ## STOP_ON
 
 `STOP_CONDITION_MET: no`  
-Stopped on **MAX_ROUNDS_PER_PIECE**, not success.
+Owner directed: finish AbilityData refactor (AD-5 deferred; continue AD-2+).

@@ -832,8 +832,12 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "violent_collision/dash_amount", ab.effects[0].amount, 3)
 	H.assert_true(failures, "violent_collision/bulldoze", ab.effects[0].modifiers.has("bulldoze"))
 	H.assert_true(
-		failures, "violent_collision/recast_mod",
-		ab.effects[0].modifiers.has("violent_collision_recast"),
+		failures, "violent_collision/if_collided_gate",
+		AbilitySystem.ability_has_module_gate(ab, GameEnums.ModuleGate.IF_COLLIDED),
+	)
+	H.assert_true(
+		failures, "violent_collision/no_recast_stamp",
+		not ab.effects[0].modifiers.has("violent_collision_recast"),
 	)
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_violent_collision")
 	cfg["passive_flags"] = {"training_unlimited_actions": true}

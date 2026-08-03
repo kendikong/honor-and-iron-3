@@ -1,9 +1,10 @@
 # Unattended Gauntlet Run — AbilityData Modular Refactor (ACTIVE)
 
-**Status:** ACTIVE  
+**Status:** ACTIVE — owner continue after AD-5 MAX_ROUNDS plateau (AD-5 **DEFERRED** @ 90)  
 **Spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) §5.4 · **Progress:** [`workbench.md`](workbench.md)  
 **Authority:** [`ability-data.md`](ability-data.md) (READY_FOR_REFACTOR)  
 **Template:** [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md)
+**Prior stop:** [`FAILURE_REPORT.md`](FAILURE_REPORT.md) (AD-5 only; run reopened for AD-2+)
 
 The lead agent must **not** ask the owner questions during this run. It stops only when **STOP_ON** is satisfied or a **boundary** fires.
 
@@ -30,6 +31,7 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 5. Knight QA + Bruiser QA gates → **PASS** (behavior-identical skills)
 6. Fresh **`gauntlet-critic`** on final piece returns `RESULT: PASS`, `SCORE ≥ 92`, `Infrastructure: ADEQUATE`
 7. No new per-skill `if ability.id == …` heuristics; no new anonymous `modifiers` keys
+8. **AD-5 deferred** at critic 90 — not required for STOP_ON; remaining pieces AD-2…SMOOTH must still clear bar
 
 ### Behavior freeze (must not change)
 
@@ -41,7 +43,7 @@ Knight + Bruiser factory actives, Swap / Push Through, universals they use — s
 
 | Boundary | Value |
 |----------|-------|
-| **MAX_ROUNDS_PER_PIECE** | `8` |
+| **MAX_ROUNDS_PER_PIECE** | `8` *(AD-5 exhausted; other pieces reset)* |
 | **MAX_PIECES** | `8` |
 | **MAX_WALL_CLOCK** | `24h` *(optional owner stop)* |
 

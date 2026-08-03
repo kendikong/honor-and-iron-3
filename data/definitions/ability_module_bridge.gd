@@ -159,18 +159,17 @@ static func enforce_planner_cost_coupling(ability: AbilityData) -> void:
 
 static func compile_modules_to_effects(modules: Array[AbilityModule]) -> Array[EffectData]:
 	var out: Array[EffectData] = []
-	var has_collided_gate := false
 	for mod: AbilityModule in modules:
 		if mod == null:
 			continue
-		## Gated follow-ups (e.g. Violent Collision MOVE) are modular authoring only until
-		## AbilitySystem executes gates natively. Legacy flat list keeps the stamp modifier
-		## on the prior motion primary — do not emit a second MOVE effect here.
-		if mod.gate == GameEnums.ModuleGate.IF_COLLIDED:
-			has_collided_gate = true
+		## Gated follow-ups stay modular — runtime evaluates ModuleGate (ability-data.md §2.7).
+		## Do not stamp anonymous modifiers; Physics/AbilitySystem read modules for IF_COLLIDED.
+		if mod.gate != GameEnums.ModuleGate.ALWAYS:
 			continue
 		var primary: EffectData = mod.primary_as_effect()
 		_apply_keywords_to_effect(primary, mod)
+		## ModuleGate owns IF_COLLIDED — never re-emit the transitional stamp on flat effects.
+		primary.modifiers.erase("violent_collision_recast")
 		out.append(primary)
 		for kw: AbilityKeyword in mod.keywords:
 			if kw == null or not kw.emit_as_effect:
@@ -191,10 +190,6 @@ static func compile_modules_to_effects(modules: Array[AbilityModule]) -> Array[E
 			var layer_eff: EffectData = _duplicate_effect(layer.effect)
 			_apply_layer_condition_to_effect(layer_eff, layer.condition)
 			out.append(layer_eff)
-	if has_collided_gate and not out.is_empty():
-		var stamp: EffectData = out[0]
-		if stamp != null:
-			stamp.modifiers["violent_collision_recast"] = 1
 	return out
 
 
@@ -245,6 +240,8 @@ static func infer_modules_from_effects(
 	):
 		var motion_mod: AbilityModule = modules[0]
 		motion_mod.keywords = _ensure_bulldoze_keyword(motion_mod)
+		## Gate owns the follow-up; strip anonymous stamp from motion module payload.
+		motion_mod.legacy_modifiers.erase("violent_collision_recast")
 		var move_mod := AbilityModule.new()
 		move_mod.execution_phase = GameEnums.ModulePhase.ON_ACTION
 		move_mod.primary_type = GameEnums.EffectType.MOVE
@@ -283,8 +280,8 @@ static func finalize_ability(ability: AbilityData) -> void:
 		upgraded_proxy.effects = ability.upgraded_effects
 		ability.upgraded_modules = infer_modules_from_effects(ability.upgraded_effects, upgraded_proxy)
 	if not ability.modules.is_empty():
-		## Authoritative modules: compile to flat effects for legacy readers.
-		## Exception: keep violent_collision_recast on primary until native gate runtime.
+		## Authoritative modules: compile ALWAYS modules to flat effects for legacy readers.
+		## Gated modules (IF_COLLIDED, …) stay modular — AbilitySystem/Physics evaluate gates.
 		var compiled: Array[EffectData] = compile_modules_to_effects(ability.modules)
 		if not compiled.is_empty():
 			ability.effects = compiled
