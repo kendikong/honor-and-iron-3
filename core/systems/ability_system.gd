@@ -248,8 +248,7 @@ static func modules_for_actor(actor: UnitState, ability: AbilityData) -> Array[A
 	return ability.modules
 
 
-## True when any module declares this gate (ability-data.md §2.7).
-## Legacy fallback: IF_COLLIDED may still appear as violent_collision_recast until factories drop it.
+## True when any module declares this gate (ability-data.md §2.7). Modules are the only source.
 static func ability_has_module_gate(
 	ability: AbilityData,
 	gate: GameEnums.ModuleGate,
@@ -260,17 +259,6 @@ static func ability_has_module_gate(
 	for mod: AbilityModule in modules_for_actor(actor, ability):
 		if mod != null and mod.gate == gate:
 			return true
-	if gate == GameEnums.ModuleGate.IF_COLLIDED:
-		var effects: Array[EffectData] = ability.effects
-		if (
-			actor != null
-			and actor.is_ability_upgraded(ability.id)
-			and not ability.upgraded_effects.is_empty()
-		):
-			effects = ability.upgraded_effects
-		for eff: EffectData in effects:
-			if eff != null and eff.modifiers.has("violent_collision_recast"):
-				return true
 	return false
 
 
@@ -291,7 +279,8 @@ static func evaluate_module_gate(
 		GameEnums.ModuleGate.IF_DAMAGE_DEALT:
 			return damage_dealt
 		_:
-			return true
+			## Unknown / unimplemented gates fail closed (do not silently run).
+			return false
 
 
 ## Planning: one-click commit vs two-phase awaiting-target flow (keyword rules live here only).

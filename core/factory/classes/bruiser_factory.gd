@@ -175,12 +175,13 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	], 1, GameEnums.StatType.NONE)
 	violent_collision.effects[0].modifiers["bulldoze"] = 1
 	violent_collision.effects[0].modifiers["push"] = 1
-	violent_collision.effects[0].modifiers["violent_collision_recast"] = 1
 	violent_collision.targeting_mode = GameEnums.TargetingMode.DASH_LINE
 	violent_collision.targeting_flags = GameEnums.TargetingFlags.DASH_LINE
 	violent_collision.upgrade_description = "Collisions apply STAGGER (1 turn)."
 	violent_collision.upgraded_effects = DataLibrary._duplicate_effects(violent_collision.effects)
 	violent_collision.upgraded_effects[0].modifiers["stagger_on_collision"] = 1
+	## Authored gate (ability-data.md §2.7) — not anonymous modifiers.
+	AbilityModuleBridge.ensure_if_collided_followup_move(violent_collision)
 	def.abilities.append(violent_collision)
 
 	var crimson_whirlwind = DataLibrary._make_ability(&"bruiser_crimson_whirlwind", "Crimson Whirlwind", 0, [

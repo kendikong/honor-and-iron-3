@@ -485,7 +485,7 @@ static func _emit_collision(
 	if ability_id != &"" and pusher != null:
 		var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 		if ability != null:
-			## Native gate: IF_COLLIDED module drives recast (ability-data.md §2.7).
+			## Native gate only: IF_COLLIDED module drives recast (ability-data.md §2.7).
 			## Behavior freeze: still refunds AP so the player can take the follow-up MOVE.
 			if AbilitySystem.ability_has_module_gate(
 				ability, GameEnums.ModuleGate.IF_COLLIDED, pusher
@@ -498,12 +498,10 @@ static func _emit_collision(
 				if eff.modifiers.has("object_collision_stagger"): object_collision_stagger = true
 				if eff.modifiers.has("enemy_collision_stagger_both"): enemy_collision_stagger_both = true
 				if eff.modifiers.has("stagger_on_collision"): stagger_on_collision = true
-				if eff.modifiers.has("violent_collision_recast"): violent_collision_recast = true
 
 	if pusher != null and pusher != target:
 		if (
 			violent_collision_recast
-			and AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_COLLIDED, true)
 			and not pusher.passive_flags.get("violent_collision_recast_used", false)
 		):
 			pusher.passive_flags["violent_collision_recast_used"] = true

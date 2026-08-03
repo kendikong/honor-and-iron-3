@@ -255,6 +255,62 @@ static func infer_modules_from_effects(
 	return modules
 
 
+## Ensure a gated follow-up MOVE module exists (Violent Collision rule — ability-data.md §2.7).
+## Call from factories after authoring the primary DASH/motion; no anonymous stamp required.
+static func ensure_if_collided_followup_move(ability: AbilityData) -> void:
+	if ability == null:
+		return
+	if ability.modules.is_empty() and not ability.effects.is_empty():
+		ability.modules = infer_modules_from_effects(ability.effects, ability)
+	_append_if_collided_move_if_missing(ability.modules)
+	if not ability.upgraded_effects.is_empty():
+		if ability.upgraded_modules.is_empty():
+			var upgraded_proxy := AbilityData.new()
+			upgraded_proxy.range_tiles = (
+				ability.upgraded_range_tiles if ability.upgraded_range_tiles >= 0 else ability.range_tiles
+			)
+			upgraded_proxy.target_shape = ability.upgraded_target_shape
+			upgraded_proxy.target_shape_size = (
+				ability.upgraded_target_shape_size
+				if ability.upgraded_target_shape_size >= 0
+				else ability.target_shape_size
+			)
+			upgraded_proxy.targeting_flags = ability.targeting_flags
+			upgraded_proxy.effects = ability.upgraded_effects
+			ability.upgraded_modules = infer_modules_from_effects(ability.upgraded_effects, upgraded_proxy)
+		_append_if_collided_move_if_missing(ability.upgraded_modules)
+	for mod: AbilityModule in ability.modules:
+		if mod != null:
+			mod.legacy_modifiers.erase("violent_collision_recast")
+	for mod2: AbilityModule in ability.upgraded_modules:
+		if mod2 != null:
+			mod2.legacy_modifiers.erase("violent_collision_recast")
+	for eff: EffectData in ability.effects:
+		if eff != null:
+			eff.modifiers.erase("violent_collision_recast")
+	for eff2: EffectData in ability.upgraded_effects:
+		if eff2 != null:
+			eff2.modifiers.erase("violent_collision_recast")
+
+
+static func _append_if_collided_move_if_missing(modules: Array[AbilityModule]) -> void:
+	if modules.is_empty():
+		return
+	for mod: AbilityModule in modules:
+		if mod != null and mod.gate == GameEnums.ModuleGate.IF_COLLIDED:
+			return
+	var move_mod := AbilityModule.new()
+	move_mod.execution_phase = GameEnums.ModulePhase.ON_ACTION
+	move_mod.primary_type = GameEnums.EffectType.MOVE
+	move_mod.min_range = 1
+	move_mod.max_range = 2
+	move_mod.motion_mode = GameEnums.MotionMode.TO_EMPTY_TILE
+	move_mod.targeting_flags = GameEnums.TargetingFlags.TILE
+	move_mod.gate = GameEnums.ModuleGate.IF_COLLIDED
+	move_mod.aim_binding = GameEnums.AimBinding.NEW_AIM
+	modules.append(move_mod)
+
+
 ## Populate modules from flat effects when modules empty; compile modules → effects when modules set.
 static func finalize_ability(ability: AbilityData) -> void:
 	if ability == null:
@@ -441,13 +497,6 @@ static func _infer_motion_mode(eff: EffectData) -> GameEnums.MotionMode:
 
 static func _infer_phase(_eff: EffectData, _idx: int, _ability: AbilityData) -> GameEnums.ModulePhase:
 	return GameEnums.ModulePhase.ON_ACTION
-
-
-static func _gate_from_modifiers(mods: Dictionary) -> GameEnums.ModuleGate:
-	if mods.has("violent_collision_recast"):
-		## Gate lives on the follow-up MOVE module; primary stays ALWAYS.
-		return GameEnums.ModuleGate.ALWAYS
-	return GameEnums.ModuleGate.ALWAYS
 
 
 static func _keywords_from_effect(eff: EffectData) -> Array[AbilityKeyword]:
