@@ -399,7 +399,7 @@ func set_awaiting_action(unit_id: int, ability: AbilityData) -> void:
 		return
 	_clear_unit_class_actions_from_plan(unit_id)
 	var action: TimelineAction = TimelineAction.make_ability_awaiting(
-		unit_id, ability, actor.position,
+		unit_id, ability, actor.position, [], 0,
 	)
 	plan_action.entries.append(action)
 	plan_affected_unit_ids = [unit_id]
@@ -435,11 +435,48 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			continue
 		if awaiting.ability != action.ability:
 			return false
+		var actor: UnitState = (
+			projected_state.get_unit_by_id(unit_id)
+			if projected_state != null
+			else board.get_unit_by_id(unit_id)
+		)
+		if actor == null:
+			actor = board.get_unit_by_id(unit_id)
+		var mod_idx: int = awaiting.awaiting_module_index if awaiting.awaiting_module_index >= 0 else 0
+		while awaiting.module_coords.size() <= mod_idx:
+			awaiting.module_coords.append(TimelineAction.MODULE_COORD_UNSET)
+		if not action.module_coords.is_empty() and action.has_module_coord(mod_idx):
+			awaiting.module_coords[mod_idx] = action.get_module_coord(mod_idx)
+		else:
+			awaiting.module_coords[mod_idx] = action.target_coord
 		awaiting.target_coord = action.target_coord
 		awaiting.target_unit_id = action.target_unit_id
 		awaiting.waypoints = action.waypoints.duplicate()
 		awaiting.face_dir = action.face_dir
+		var plan_board: BoardState = projected_state if projected_state != null else board
+		var need_indices: Array[int] = AbilitySystem.planning_modules_needing_aim(
+			actor, awaiting.ability,
+		)
+		var next_idx: int = -1
+		for idx: int in need_indices:
+			if idx <= mod_idx:
+				continue
+			var gate_idx: int = AbilitySystem.first_module_index_with_gate(
+				actor, awaiting.ability, GameEnums.ModuleGate.IF_COLLIDED,
+			)
+			if idx == gate_idx:
+				if not AbilitySystem.planning_gated_followup_active(
+					plan_board, actor, awaiting.ability, awaiting.get_module_coord(mod_idx),
+				):
+					continue
+			next_idx = idx
+			break
+		if next_idx >= 0:
+			awaiting.awaiting_module_index = next_idx
+			awaiting.awaiting_target = true
+			return true
 		awaiting.awaiting_target = false
+		awaiting.awaiting_module_index = -1
 		return true
 	return false
 

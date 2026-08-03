@@ -316,8 +316,16 @@ static func plan_ability(
 	target: Vector2i,
 	target_unit_id: int = -1,
 	timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION,
+	module_coords: Array[Vector2i] = [],
 ) -> TimelineAction:
-	return TimelineAction.make_ability(actor_id, ability, target, target_unit_id, timing)
+	var action: TimelineAction = TimelineAction.make_ability(
+		actor_id, ability, target, target_unit_id, timing,
+	)
+	if not module_coords.is_empty():
+		action.module_coords = module_coords.duplicate()
+	elif target != Vector2i.ZERO:
+		action.module_coords = [target]
+	return action
 
 
 static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:

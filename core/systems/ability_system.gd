@@ -283,6 +283,181 @@ static func evaluate_module_gate(
 			return false
 
 
+## Indices of modules that need a fresh player aim (NEW_AIM + motion/tile).
+static func planning_modules_needing_aim(actor: UnitState, ability: AbilityData) -> Array[int]:
+	var result: Array[int] = []
+	if ability == null:
+		return result
+	var modules: Array = modules_for_actor(actor, ability)
+	for i: int in range(modules.size()):
+		var mod: AbilityModule = modules[i]
+		if mod == null or mod.aim_binding != GameEnums.AimBinding.NEW_AIM:
+			continue
+		if _module_needs_player_aim(mod):
+			result.append(i)
+	return result
+
+
+static func _module_needs_player_aim(mod: AbilityModule) -> bool:
+	if mod == null:
+		return false
+	if mod.primary_type in [
+		GameEnums.EffectType.DASH,
+		GameEnums.EffectType.MOVE,
+		GameEnums.EffectType.TELEPORT_CASTER,
+		GameEnums.EffectType.MOVE_INTO_AND_PUSH,
+	]:
+		return true
+	return mod.has_targeting(GameEnums.TargetingFlags.TILE) or mod.has_targeting(GameEnums.TargetingFlags.DASH_LINE)
+
+
+## First module index with this gate, or -1.
+static func first_module_index_with_gate(
+	actor: UnitState,
+	ability: AbilityData,
+	gate: GameEnums.ModuleGate,
+) -> int:
+	if ability == null:
+		return -1
+	var modules: Array = modules_for_actor(actor, ability)
+	for i: int in range(modules.size()):
+		var mod: AbilityModule = modules[i]
+		if mod != null and mod.gate == gate:
+			return i
+	return -1
+
+
+## Predict whether IF_COLLIDED follow-up would activate after dashing to dash_coord (matches sim gate).
+static func planning_gated_followup_active(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	dash_coord: Vector2i,
+) -> bool:
+	if board == null or actor == null or ability == null:
+		return false
+	if first_module_index_with_gate(actor, ability, GameEnums.ModuleGate.IF_COLLIDED) < 0:
+		return false
+	var scratch: BoardState = board.clone()
+	var sim_actor: UnitState = scratch.get_unit_by_id(actor.id)
+	if sim_actor == null:
+		return false
+	sim_actor.passive_flags.erase("module_gate_collided")
+	var dir: Vector2i = PhysicsSystem.straight_line_dir(sim_actor.position, dash_coord)
+	var steps: int = PhysicsSystem.straight_line_distance(sim_actor.position, dash_coord)
+	if dir == Vector2i.ZERO or steps < 1:
+		return false
+	var mods: Dictionary = pass_through_modifiers(ability, actor)
+	var events: Array[SimEvent] = []
+	PhysicsSystem.dash(
+		scratch,
+		sim_actor,
+		dir,
+		steps,
+		events,
+		sim_actor,
+		ability.id,
+		int(mods.get("trample_atk", 0)),
+		ability.display_name,
+		int(mods.get("bulldoze", 0)),
+		true,
+	)
+	return sim_actor.passive_flags.get("module_gate_collided", false)
+
+
+static func planning_awaiting_module_range(
+	actor: UnitState,
+	ability: AbilityData,
+	module_index: int,
+) -> int:
+	if ability == null or module_index < 0:
+		return 0
+	var modules: Array = modules_for_actor(actor, ability)
+	if module_index >= modules.size():
+		return 0
+	var mod: AbilityModule = modules[module_index]
+	if mod == null:
+		return 0
+	if mod.primary_type == GameEnums.EffectType.DASH:
+		return mod.max_range if mod.max_range > 0 else dash_steps(ability)
+	if mod.primary_type == GameEnums.EffectType.MOVE:
+		return mod.max_range if mod.max_range > 0 else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+	return mod.max_range if mod.max_range > 0 else ability.range_tiles
+
+
+static func planning_awaiting_module_min_range(
+	actor: UnitState,
+	ability: AbilityData,
+	module_index: int,
+) -> int:
+	if ability == null or module_index < 0:
+		return 1
+	var modules: Array = modules_for_actor(actor, ability)
+	if module_index >= modules.size():
+		return 1
+	var mod: AbilityModule = modules[module_index]
+	if mod == null:
+		return 1
+	return maxi(1, mod.min_range)
+
+
+## Range origin for the module currently being aimed (prior module coords when chained).
+static func planning_awaiting_origin_for_action(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+) -> Vector2i:
+	if actor == null:
+		return Vector2i.ZERO
+	if action != null and action.awaiting_module_index > 0:
+		for prior: int in range(action.awaiting_module_index):
+			if action.has_module_coord(prior):
+				return action.get_module_coord(prior)
+	return actor.position if actor != null else Vector2i.ZERO
+
+
+static func planning_is_valid_module_endpoint(
+	board: BoardState,
+	origin: Vector2i,
+	coord: Vector2i,
+	ability: AbilityData,
+	actor: UnitState,
+	module_index: int,
+) -> bool:
+	if ability == null or board == null or actor == null or module_index < 0:
+		return false
+	var modules: Array = modules_for_actor(actor, ability)
+	if module_index >= modules.size():
+		return false
+	var mod: AbilityModule = modules[module_index]
+	if mod == null:
+		return false
+	var min_range: int = planning_awaiting_module_min_range(actor, ability, module_index)
+	var max_range: int = planning_awaiting_module_range(actor, ability, module_index)
+	if max_range <= 0:
+		return false
+	if coord == origin:
+		return false
+	if mod.primary_type == GameEnums.EffectType.DASH or mod.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
+		var delta: Vector2i = coord - origin
+		if delta.x != 0 and delta.y != 0:
+			return false
+		var steps: int = PhysicsSystem.straight_line_distance(origin, coord)
+		return steps >= min_range and steps <= max_range
+	var dist: int = GridSystem.manhattan(origin, coord)
+	if dist < min_range or dist > max_range:
+		return false
+	if mod.primary_type == GameEnums.EffectType.MOVE and mod.has_targeting(GameEnums.TargetingFlags.TILE):
+		if not board.is_in_bounds(coord):
+			return false
+		var occ: UnitState = board.get_unit_at(coord)
+		if occ != null and occ.id != actor.id:
+			return false
+		if GridSystem.is_wall(board, coord):
+			return false
+	return true
+
+
 ## Planning: one-click commit vs two-phase awaiting-target flow (keyword rules live here only).
 static func planning_commit_flow(actor: UnitState, ability: AbilityData) -> int:
 	if actor == null or ability == null:
@@ -871,6 +1046,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	
 	if actor != null:
 		actor.passive_flags.erase("passed_through_terrain")
+		actor.passive_flags.erase("module_gate_collided")
 		
 	_spend_ability_cost(actor, ability, board)
 	if not actor.has_unlimited_training_actions() and ability.consumes_action_slot():
@@ -1579,6 +1755,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					pending["caster_collision_immune"] = true
 				if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0:
 					pending["bowling_upgrade"] = true
+				if not action.module_coords.is_empty():
+					pending["module_coords"] = action.module_coords.duplicate()
 				board.pending_pushes.append(pending)
 		GameEnums.EffectType.TRAMPLE, GameEnums.EffectType.BULLDOZE:
 			# Movement modifiers — applied during dash or execute_pass_through_walk, not per-tile.
@@ -1663,12 +1841,63 @@ static func _resolve_target_coord(board: BoardState, action: TimelineAction) -> 
 		var target = board.get_unit_by_id(action.target_unit_id)
 		if target != null:
 			return target.position
+	if action.has_module_coord(0):
+		return action.get_module_coord(0)
 	return action.target_coord
 
 ## True when the attacker stands on the tile directly behind the target's facing.
 static func _is_backstab(actor: UnitState, target: UnitState) -> bool:
 	var behind := -PhysicsSystem.facing_to_vector(target.facing)
 	return PhysicsSystem.cardinal_from_to(target.position, actor.position) == behind
+
+
+static func _execute_gated_module_followups(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	module_coords: Array,
+	events: Array[SimEvent],
+) -> void:
+	if actor == null or ability == null or not actor.is_alive():
+		return
+	var collided: bool = actor.passive_flags.get("module_gate_collided", false)
+	actor.passive_flags.erase("module_gate_collided")
+	var modules: Array = modules_for_actor(actor, ability)
+	for i: int in range(modules.size()):
+		var mod: AbilityModule = modules[i]
+		if mod == null or mod.gate != GameEnums.ModuleGate.IF_COLLIDED:
+			continue
+		if not evaluate_module_gate(GameEnums.ModuleGate.IF_COLLIDED, collided):
+			return
+		var has_coord: bool = (
+			i < module_coords.size()
+			and module_coords[i] is Vector2i
+			and module_coords[i] != TimelineAction.MODULE_COORD_UNSET
+		)
+		if not has_coord:
+			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+				"actor": actor.id,
+				"reason": "gated_followup_missing_aim",
+				"module_index": i,
+			}))
+			return
+		var dest: Vector2i = module_coords[i]
+		if not planning_is_valid_module_endpoint(
+			board, actor.position, dest, ability, actor, i,
+		):
+			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+				"actor": actor.id,
+				"reason": "gated_followup_invalid_dest",
+				"module_index": i,
+			}))
+			return
+		var move_effect: EffectData = mod.primary_as_effect()
+		var walk_steps: int = mod.max_range if mod.max_range > 0 else mod.amount
+		MovementSystem.execute_skill_walk(
+			board, actor, dest, [], ability, events, [move_effect], walk_steps,
+		)
+		return
+
 
 static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -> void:
 	var pending = board.pending_pushes.duplicate()
@@ -1742,3 +1971,8 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 						CombatSystem.deal_damage_raw(
 							board, target, chain_hit, chain_dmg, GameEnums.StatType.PHYSICAL, events, "Bowling Charge", 2
 						)
+			if push.has("module_coords"):
+				var module_coords: Array = push["module_coords"]
+				_execute_gated_module_followups(
+					board, actor, ability, module_coords, events,
+				)

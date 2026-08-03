@@ -3,7 +3,7 @@ extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
-## Bible: Violent Collision — DASH 3 | bulldoze + IF_COLLIDED gated follow-up (AP recast).
+## Bible: Violent Collision — DASH 3 | bulldoze + IF_COLLIDED gated inline MOVE (module_coords).
 ## [+] collisions apply STAGGER (1 turn).
 ## Globals: EffectType.DASH + bulldoze; ModuleGate.IF_COLLIDED (not anonymous stamp).
 

@@ -823,9 +823,9 @@ static func run_blood_boil(failures: Array[String]) -> void:
 
 
 static func run_violent_collision(failures: Array[String]) -> void:
-	## Bible: Violent Collision — MOVE 3 | bulldoze + recast MOVE 2; [+] collision STAGGER.
+	## Bible: Violent Collision — DASH 3 | bulldoze + IF_COLLIDED gated inline MOVE 1–2.
 	H.run_active_smoke(
-		failures, &"bruiser_violent_collision", "DASH 3 | bulldoze + recast",
+		failures, &"bruiser_violent_collision", "DASH 3 | bulldoze + gated MOVE",
 		[GameEnums.EffectType.DASH],
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
@@ -839,55 +839,67 @@ static func run_violent_collision(failures: Array[String]) -> void:
 		failures, "violent_collision/no_recast_stamp",
 		not ab.effects[0].modifiers.has("violent_collision_recast"),
 	)
+	## Empty dash (no collision) — dash only, no fail.
+	var empty_board: BoardState = H.make_plain_board(Vector2i(8, 6))
+	H.place_bruiser(empty_board, 20, Vector2i(2, 3), H.bruiser_with_ability(&"bruiser_violent_collision"))
+	var empty_skill: AbilityData = H.ability_on_unit(H.unit_on_board(empty_board, 20), &"bruiser_violent_collision")
+	var empty_plan := Timeline.new()
+	empty_plan.add(H.plan_ability(20, empty_skill, Vector2i(4, 3), -1, GameEnums.MoveTiming.PRE_ACTION, [Vector2i(4, 3)]))
+	var empty_result: SimResult = H.simulate_plan(empty_board, empty_plan)
+	var empty_bruiser: UnitState = empty_result.final_state.get_unit_by_id(20)
+	H.assert_eq_cell(
+		failures, "violent_collision/empty_dash_end",
+		empty_bruiser.position if empty_bruiser != null else Vector2i.ZERO,
+		Vector2i(4, 3),
+	)
+	var empty_failed: bool = false
+	for e: Variant in empty_result.events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
+			if int(e.data.get("actor", -1)) == 20:
+				empty_failed = true
+				break
+	H.assert_true(failures, "violent_collision/empty_dash_no_fail", not empty_failed)
+	## Collision + module_coords follow-up — single plan ends on follow-up tile.
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_violent_collision")
 	cfg["passive_flags"] = {"training_unlimited_actions": true}
-	var board: BoardState = H.make_plain_board(Vector2i(8, 6), [Vector2i(5, 3)])
+	var board: BoardState = H.make_plain_board(Vector2i(8, 6))
 	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_violent_collision")
+	H.assert_true(
+		failures, "violent_collision/gate_predict",
+		AbilitySystem.planning_gated_followup_active(board, H.unit_on_board(board, 1), skill, Vector2i(5, 3)),
+	)
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
+	plan.add(H.plan_ability(
+		1, skill, Vector2i(5, 3), -1, GameEnums.MoveTiming.PRE_ACTION,
+		[Vector2i(5, 3), Vector2i(6, 3)],
+	))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var bruiser: UnitState = result.final_state.get_unit_by_id(1)
-	H.assert_true(
-		failures, "violent_collision/dash",
-		bruiser != null and bruiser.position.x >= 4,
-	)
-	var recast_board: BoardState = H.make_plain_board(Vector2i(8, 6), [Vector2i(5, 3)])
-	H.place_bruiser(recast_board, 10, Vector2i(2, 3), H.bruiser_with_ability(&"bruiser_violent_collision"))
-	H.place_dummy(recast_board, 11, Vector2i(4, 3))
-	var recast_bruiser: UnitState = H.unit_on_board(recast_board, 10)
-	var ap_before: int = recast_bruiser.ability.points_left
-	var recast_skill: AbilityData = H.ability_on_unit(recast_bruiser, &"bruiser_violent_collision")
-	var recast_plan := Timeline.new()
-	recast_plan.add(H.plan_ability(10, recast_skill, Vector2i(5, 3), -1))
-	var mid_result: SimResult = H.simulate_plan(recast_board, recast_plan)
-	var mid_bruiser: UnitState = mid_result.final_state.get_unit_by_id(10)
-	H.assert_true(
-		failures, "violent_collision/recast_used",
-		mid_bruiser != null and mid_bruiser.passive_flags.get("violent_collision_recast_used", false),
-	)
-	H.assert_true(
-		failures, "violent_collision/recast_ap_refund",
-		mid_bruiser != null and mid_bruiser.ability.points_left >= ap_before,
-		"collision recast must refund AP for the Bible follow-up MOVE",
-	)
-	H.assert_true(
-		failures, "violent_collision/recast_action_slot",
-		mid_bruiser != null and not mid_bruiser.turn_action_used,
-		"collision recast must reopen the action slot for a second MOVE",
-	)
-	var follow_board: BoardState = H.make_plain_board(Vector2i(10, 6))
-	H.place_bruiser(follow_board, 10, mid_bruiser.position, H.bruiser_with_ability(&"bruiser_violent_collision"))
-	var follow_skill: AbilityData = H.ability_on_unit(H.unit_on_board(follow_board, 10), &"bruiser_violent_collision")
-	var follow_plan := Timeline.new()
-	follow_plan.add(H.plan_ability(10, follow_skill, Vector2i(6, 3), -1))
-	var recast_result: SimResult = H.simulate_plan(follow_board, follow_plan)
-	var after_recast: UnitState = recast_result.final_state.get_unit_by_id(10)
 	H.assert_eq_cell(
-		failures, "violent_collision/recast_followup_move",
-		after_recast.position if after_recast != null else Vector2i.ZERO,
+		failures, "violent_collision/followup_end",
+		bruiser.position if bruiser != null else Vector2i.ZERO,
 		Vector2i(6, 3),
+	)
+	## Collision without follow-up coord — fail loud.
+	var fail_board: BoardState = H.make_plain_board(Vector2i(8, 6))
+	H.place_bruiser(fail_board, 10, Vector2i(2, 3), H.bruiser_with_ability(&"bruiser_violent_collision"))
+	H.place_dummy(fail_board, 11, Vector2i(4, 3))
+	var fail_skill: AbilityData = H.ability_on_unit(H.unit_on_board(fail_board, 10), &"bruiser_violent_collision")
+	var fail_plan := Timeline.new()
+	fail_plan.add(H.plan_ability(10, fail_skill, Vector2i(5, 3), -1, GameEnums.MoveTiming.PRE_ACTION, [Vector2i(5, 3)]))
+	var fail_result: SimResult = H.simulate_plan(fail_board, fail_plan)
+	var saw_fail: bool = false
+	for e: Variant in fail_result.events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
+			if int(e.data.get("actor", -1)) == 10:
+				saw_fail = true
+				break
+	H.assert_true(
+		failures, "violent_collision/missing_followup_fail_loud",
+		saw_fail,
+		"collision without module_coords[1] must ACTION_FAILED",
 	)
 
 

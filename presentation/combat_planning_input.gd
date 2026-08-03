@@ -553,13 +553,17 @@ func _paint_valid_movement_endpoint_intent() -> bool:
 	if not _director.board.is_in_bounds(cell):
 		return false
 	var origin: Vector2i = _proj_origin(actor)
-	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability):
+	if not _planning_valid_awaiting_cell(actor, ability, cell, origin):
 		return false
 	var route_wps: Array[Vector2i] = _route_waypoints()
+	var mod_idx: int = _awaiting_module_index_for(unit_id)
 	var action: TimelineAction = TimelineAction.make_ability(
 		unit_id, ability, cell, AbilitySystem.planning_commit_target_unit_id(ability, -1),
 		GameEnums.MoveTiming.PRE_ACTION, route_wps,
 	)
+	while action.module_coords.size() <= mod_idx:
+		action.module_coords.append(TimelineAction.MODULE_COORD_UNSET)
+	action.module_coords[mod_idx] = cell
 	var base: BoardState = (
 		_director.base_board.clone() if _director.base_board != null else _director.board.clone()
 	)
@@ -2451,6 +2455,61 @@ func _is_awaiting_movement_endpoint(actor: UnitState, ability: AbilityData) -> b
 	)
 
 
+func _awaiting_module_index_for(unit_id: int) -> int:
+	if _director == null or unit_id < 0:
+		return 0
+	var awaiting: TimelineAction = _director.find_awaiting_action(unit_id)
+	if awaiting == null or awaiting.awaiting_module_index < 0:
+		return 0
+	return awaiting.awaiting_module_index
+
+
+func _planning_valid_awaiting_cell(
+	actor: UnitState,
+	ability: AbilityData,
+	cell: Vector2i,
+	origin: Vector2i = Vector2i(-999999, -999999),
+) -> bool:
+	if actor == null or ability == null:
+		return false
+	var awaiting: TimelineAction = (
+		_director.find_awaiting_action(actor.id) if _director != null else null
+	)
+	if awaiting != null and awaiting.awaiting_module_index >= 0:
+		var mod_idx: int = awaiting.awaiting_module_index
+		var aim_origin: Vector2i = origin
+		if aim_origin.x == -999999:
+			aim_origin = AbilitySystem.planning_awaiting_origin_for_action(_proj(), actor, awaiting)
+		return AbilitySystem.planning_is_valid_module_endpoint(
+			_proj(), aim_origin, cell, ability, actor, mod_idx,
+		)
+	if origin.x == -999999:
+		origin = _proj_origin(actor)
+	return AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability)
+
+
+func _append_awaiting_ability_slot(
+	slots: Dictionary,
+	unit_id: int,
+	ability: AbilityData,
+	cell: Vector2i,
+	waypoints: Array[Vector2i],
+) -> void:
+	var mod_idx: int = _awaiting_module_index_for(unit_id)
+	var action: TimelineAction = TimelineAction.make_ability(
+		unit_id,
+		ability,
+		cell,
+		AbilitySystem.planning_commit_target_unit_id(ability, -1),
+		GameEnums.MoveTiming.PRE_ACTION,
+		waypoints,
+	)
+	while action.module_coords.size() <= mod_idx:
+		action.module_coords.append(TimelineAction.MODULE_COORD_UNSET)
+	action.module_coords[mod_idx] = cell
+	slots["action"].append(action)
+
+
 func _drag_had_movement() -> bool:
 	if _drag_route.is_empty():
 		return false
@@ -3429,17 +3488,10 @@ func _build_commit_slots_at_cell(
 
 		if _awaiting_flow_selected(actor, ability):
 			if awaiting_targeting_active():
-				if AbilitySystem.planning_is_valid_awaiting_endpoint(
-					_proj_origin(actor), cell, ability,
-				):
-					slots["action"].append(TimelineAction.make_ability(
-						unit_id,
-						ability,
-						cell,
-						AbilitySystem.planning_commit_target_unit_id(ability, -1),
-						GameEnums.MoveTiming.PRE_ACTION,
-						effective_waypoints,
-					))
+				if _planning_valid_awaiting_cell(actor, ability, cell):
+					_append_awaiting_ability_slot(
+						slots, unit_id, ability, cell, effective_waypoints,
+					)
 					return slots
 				slots["invalid"] = "Invalid target or distance for this ability."
 				return slots

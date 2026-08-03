@@ -480,20 +480,18 @@ static func _emit_collision(
 	var object_collision_stagger = false
 	var enemy_collision_stagger_both = false
 	var stagger_on_collision = false
-	var violent_collision_recast = false
 	
 	if ability_id != &"" and pusher != null:
 		var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 		if ability != null:
-			## Native gate: presence + evaluate_module_gate on collision (ability-data.md §2.7).
-			## Behavior freeze: still refunds AP so the player can take the follow-up MOVE.
+			## Native gate: IF_COLLIDED follow-up MOVE is resolved inline via module_coords (AD-3).
 			if (
 				AbilitySystem.ability_has_module_gate(
 					ability, GameEnums.ModuleGate.IF_COLLIDED, pusher
 				)
 				and AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_COLLIDED, true)
 			):
-				violent_collision_recast = true
+				pusher.passive_flags["module_gate_collided"] = true
 			var effects = ability.effects
 			if pusher.is_ability_upgraded(ability_id):
 				effects = ability.upgraded_effects
@@ -503,14 +501,6 @@ static func _emit_collision(
 				if eff.modifiers.has("stagger_on_collision"): stagger_on_collision = true
 
 	if pusher != null and pusher != target:
-		if (
-			violent_collision_recast
-			and not pusher.passive_flags.get("violent_collision_recast_used", false)
-		):
-			pusher.passive_flags["violent_collision_recast_used"] = true
-			pusher.ability.points_left += 1
-			pusher.turn_action_used = false
-			
 		var stun_on_hit = stagger_on_collision
 		if events.size() > 0 and not stun_on_hit:
 			for e in events:
