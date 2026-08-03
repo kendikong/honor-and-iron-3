@@ -1382,8 +1382,7 @@
 							"def_debuff_before_damage": 0,
 							"modifiers": {
 								"bulldoze": 1,
-								"push": 1,
-								"violent_collision_recast": 1
+								"push": 1
 							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
@@ -1412,8 +1411,7 @@
 							"modifiers": {
 								"bulldoze": 1,
 								"push": 1,
-								"stagger_on_collision": 1,
-								"violent_collision_recast": 1
+								"stagger_on_collision": 1
 							},
 							"scaling_stat": 0,
 							"spawn_unit_id": "",

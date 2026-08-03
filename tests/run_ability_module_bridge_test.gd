@@ -1,14 +1,10 @@
-extends Node
+extends SceneTree
 
 ## Headless smoke: modular finalize preserves Knight/Bruiser effect fingerprints.
-## Extends Node so project autoloads (EventBus) are registered before DataLibrary compiles.
+## SceneTree + body checks (not Node --script): autoloads register before DataLibrary compiles.
 
 
-func _ready() -> void:
-	call_deferred("_run")
-
-
-func _run() -> void:
+func _initialize() -> void:
 	var failures: Array[String] = []
 	DataLibrary.reset_cache()
 	_check_bruiser(failures)
@@ -16,12 +12,12 @@ func _run() -> void:
 	_check_violent_collision_modules(failures)
 	if failures.is_empty():
 		print("ABILITY_MODULE_BRIDGE_TEST: PASS")
-		get_tree().quit(0)
+		quit(0)
 	else:
 		print("ABILITY_MODULE_BRIDGE_TEST: FAIL")
 		for f: String in failures:
 			printerr("  [FAIL] %s" % f)
-		get_tree().quit(1)
+		quit(1)
 
 
 func _check_bruiser(failures: Array[String]) -> void:
@@ -96,6 +92,11 @@ func _check_violent_collision_modules(failures: Array[String]) -> void:
 		failures.append("evaluate_module_gate IF_COLLIDED should pass when collided=true")
 	if AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_COLLIDED, false):
 		failures.append("evaluate_module_gate IF_COLLIDED should fail when collided=false")
+	if AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_ADJACENT_ENEMY, true):
+		failures.append("unimplemented gates must fail closed")
+	## Factory must not leave anonymous stamp after ensure + finalize.
+	if vc.effects[0].modifiers.has("violent_collision_recast"):
+		failures.append("factory path left violent_collision_recast stamp")
 	## Charge Strike: MOVE module + DAMAGE module with PUSH layer (not three peer modules).
 	var charge: AbilityData = null
 	for ab2: AbilityData in bruiser.abilities:

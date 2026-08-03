@@ -571,9 +571,13 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 static func in_game_ability_bbcode(ability: AbilityData, unit: UnitState = null) -> String:
 	if ability == null:
 		return ""
-	CombatUiFormatters.configure_body_font(ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	## load() — do not hard-reference CombatUiFormatters here. That class pulls CombatDirector
+	## → EventBus; a static class_name edge made DataLibrary (schema) fail to compile under
+	## headless `--script` before autoloads register (AbilityData BAR runners).
+	var formatters: GDScript = load("res://presentation/combat_ui_formatters.gd") as GDScript
+	formatters.call("configure_body_font", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	var body_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY)
-	var body: String = CombatUiFormatters.ability_effect_bbcode(ability, unit)
+	var body: String = str(formatters.call("ability_effect_bbcode", ability, unit))
 	return "[font_size=%d]%s[/font_size]" % [body_px, body]
 
 

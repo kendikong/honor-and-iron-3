@@ -342,6 +342,14 @@ static func finalize_ability(ability: AbilityData) -> void:
 		if not compiled.is_empty():
 			ability.effects = compiled
 		_apply_module_range_to_ability(ability, ability.modules)
+	## Class-library JSON apply clears modules then re-infers; restore IF_COLLIDED when stamp
+	## or an existing gated module was wiped. ensure_* is idempotent.
+	if _should_ensure_if_collided_followup(ability):
+		ensure_if_collided_followup_move(ability)
+		var recompiled: Array[EffectData] = compile_modules_to_effects(ability.modules)
+		if not recompiled.is_empty():
+			ability.effects = recompiled
+		_apply_module_range_to_ability(ability, ability.modules)
 	if not ability.upgraded_modules.is_empty():
 		var up_compiled: Array[EffectData] = compile_modules_to_effects(ability.upgraded_modules)
 		if not up_compiled.is_empty():
@@ -349,6 +357,69 @@ static func finalize_ability(ability: AbilityData) -> void:
 	sync_legacy_from_header(ability)
 	_prefer_authored_targeting_mode(ability)
 	ability.sync_legacy_targeting()
+
+
+static func _should_ensure_if_collided_followup(ability: AbilityData) -> bool:
+	## Restore IF_COLLIDED MOVE after class-library effect overrides wipe `modules`.
+	## Idempotent: skip when gate already present. Prefer stamp remnant, else Violent Collision
+	## package (DASH + bulldoze + push) — not Breaching Dash (DASH without bulldoze).
+	if ability == null:
+		return false
+	if ability_has_module_gate(ability, GameEnums.ModuleGate.IF_COLLIDED):
+		return false
+	for eff: EffectData in ability.effects:
+		if eff != null and eff.modifiers.has("violent_collision_recast"):
+			return true
+	return _has_violent_collision_dash_package(ability)
+
+
+static func ability_has_module_gate(ability: AbilityData, gate: GameEnums.ModuleGate) -> bool:
+	if ability == null:
+		return false
+	for mod: AbilityModule in ability.modules:
+		if mod != null and mod.gate == gate:
+			return true
+	for mod2: AbilityModule in ability.upgraded_modules:
+		if mod2 != null and mod2.gate == gate:
+			return true
+	return false
+
+
+static func _has_violent_collision_dash_package(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	## Modules path (after infer): motion + BULLDOZE keyword / bulldoze legacy.
+	for mod: AbilityModule in ability.modules:
+		if mod == null or not _is_motion_type(mod.primary_type):
+			continue
+		if mod.primary_type != GameEnums.EffectType.DASH:
+			continue
+		for kw: AbilityKeyword in mod.keywords:
+			if kw != null and kw.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
+				return true
+		if mod.legacy_modifiers.has("bulldoze") and mod.legacy_modifiers.has("push"):
+			return true
+	## Flat effects path (JSON apply before infer completes, or compile stripped keywords).
+	var has_dash: bool = false
+	var has_bulldoze: bool = false
+	var has_push: bool = false
+	for eff: EffectData in ability.effects:
+		if eff == null:
+			continue
+		match eff.type:
+			GameEnums.EffectType.DASH:
+				has_dash = true
+				if eff.modifiers.has("bulldoze"):
+					has_bulldoze = true
+				if eff.modifiers.has("push"):
+					has_push = true
+			GameEnums.EffectType.BULLDOZE:
+				has_bulldoze = true
+			GameEnums.EffectType.PUSH:
+				has_push = true
+			_:
+				pass
+	return has_dash and has_bulldoze and has_push
 
 
 static func _prefer_authored_targeting_mode(ability: AbilityData) -> void:
@@ -541,9 +612,11 @@ static func _ensure_bulldoze_keyword(mod: AbilityModule) -> Array[AbilityKeyword
 
 
 static func _strip_promoted_modifier_keys(mod: AbilityModule) -> void:
-	## Keep keys that AbilitySystem still reads from modifiers until typed runtime lands.
-	## Do not strip bulldoze/push/ghost_move/violent_collision_recast yet.
-	pass
+	if mod == null:
+		return
+	## ModuleGate.IF_COLLIDED owns recast — strip transitional stamp from module payload.
+	mod.legacy_modifiers.erase("violent_collision_recast")
+	## Keep bulldoze/push/ghost_move until keyword-only compile is universal.
 
 
 static func _apply_keywords_to_effect(eff: EffectData, mod: AbilityModule) -> void:
