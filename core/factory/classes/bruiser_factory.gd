@@ -216,5 +216,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	breaching_dash.upgraded_effects[0].modifiers["next_attack_pierce"] = 1
 	def.abilities.append(breaching_dash)
 
+	## AD-4 modules-first: author flat effects; call AbilityModuleBridge.ensure_* for
+	## explicit gates (e.g. violent_collision IF_COLLIDED) before append;
+	## finalize_unit_abilities infers modules + compiles legacy effects[].
 	DataLibrary.finalize_unit_abilities(def)
 	return def

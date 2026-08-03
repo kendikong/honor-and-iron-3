@@ -30,6 +30,8 @@ func _check_bruiser(failures: Array[String]) -> void:
 			continue
 		if ab.modules.is_empty() and not ab.effects.is_empty():
 			failures.append("%s has effects but empty modules" % String(ab.id))
+		if not ab.upgraded_effects.is_empty() and ab.upgraded_modules.is_empty():
+			failures.append("%s has upgraded_effects but empty upgraded_modules" % String(ab.id))
 		if ab.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 			if ab.primary_resource != GameEnums.CostResource.MP:
 				failures.append("%s PRE_MOVE primary_resource not MP" % String(ab.id))
@@ -47,9 +49,22 @@ func _check_knight(failures: Array[String]) -> void:
 		return
 	var swap: AbilityData = null
 	for ab: AbilityData in knight.abilities:
-		if ab != null and ab.id == &"knight_swap":
+		if ab == null:
+			continue
+		if ab.modules.is_empty() and not ab.effects.is_empty():
+			failures.append("%s has effects but empty modules" % String(ab.id))
+		if not ab.upgraded_effects.is_empty() and ab.upgraded_modules.is_empty():
+			failures.append("%s has upgraded_effects but empty upgraded_modules" % String(ab.id))
+		if ab.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
+			if ab.primary_resource != GameEnums.CostResource.MP:
+				failures.append("%s PRE_MOVE primary_resource not MP" % String(ab.id))
+			if not ab.has_tag(AbilityModuleBridge.TAG_POSITIONING):
+				failures.append("%s PRE_MOVE missing positioning tag" % String(ab.id))
+		elif ab.kind == GameEnums.AbilityKind.CLASS_SKILL:
+			if ab.primary_resource != GameEnums.CostResource.AP:
+				failures.append("%s ACTION primary_resource not AP" % String(ab.id))
+		if ab.id == &"knight_swap":
 			swap = ab
-			break
 	if swap == null:
 		failures.append("knight_swap missing")
 		return

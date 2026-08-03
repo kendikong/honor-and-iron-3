@@ -221,5 +221,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	trampling_advance.upgraded_effects = trample_upgraded
 	def.abilities.append(trampling_advance)
 
+	## AD-4 modules-first: author flat effects; call AbilityModuleBridge.ensure_* for
+	## explicit gates before append; finalize_unit_abilities infers modules + compiles
+	## legacy effects[] for AbilitySystem readers (ability-data.md §14 item 10).
 	DataLibrary.finalize_unit_abilities(def)
 	return def
