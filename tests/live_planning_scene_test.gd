@@ -1215,23 +1215,37 @@ func _sweep_mouse_to_cell(
 	sample_pixels: float = -1.0,
 	capture_motion: bool = true,
 ) -> void:
-	ctx.input.clear_qa_pointer_override()
+	var input: CombatPlanningInput = ctx.input
 	var runner: GdUnitSceneRunner = ctx.runner
+	var scene: TestBattleMapView = ctx.scene as TestBattleMapView
 	var start: Vector2 = runner.get_mouse_position()
 	var target: Vector2 = _screen_position_for_cell(ctx, cell)
 	var step_px: float = sample_pixels if sample_pixels > 0.0 else _DRAG_SAMPLE_PIXELS
 	var sample_count: int = maxi(1, ceili(start.distance_to(target) / step_px))
 	for sample_index: int in range(1, sample_count + 1):
 		var alpha: float = float(sample_index) / float(sample_count)
-		runner.simulate_mouse_move(start.lerp(target, alpha))
+		var screen: Vector2 = start.lerp(target, alpha)
+		runner.simulate_mouse_move(screen)
+		var sample_cell: Vector2i = scene.screen_to_grid(screen)
+		## Prefer in-bounds sample under the cursor; otherwise keep destination pin so HUD
+		## polls cannot wipe hover to (-999) and corrupt the painted route.
+		if scene.get_node("CombatDirector").board.is_in_bounds(sample_cell):
+			input.set_qa_pointer_grid_cell(sample_cell)
+			input.on_hover_moved(sample_cell)
+		else:
+			input.set_qa_pointer_grid_cell(cell)
+			input.on_hover_moved(cell)
 		await runner.simulate_frames(1, _MOUSE_MOTION_DELTA_MS)
 		if capture_motion and motion_label != "" and unit_id >= 0:
 			await _capture_planning_surface(
 				ctx, unit_id, "%s/motion_%03d" % [motion_label, sample_index], false,
 			)
+	input.set_qa_pointer_grid_cell(cell)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(cell)
+	input.on_hover_moved(cell)
+	input.call("_flush_hover_heavy_sync")
 	await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
-	ctx.input.set_qa_pointer_grid_cell(cell)
-	ctx.input.on_hover_moved(cell)
 
 
 func _sweep_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
