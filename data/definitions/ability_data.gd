@@ -1,26 +1,43 @@
 class_name AbilityData
 extends Resource
 
-## Purpose: A data-driven ability. An ability is a target rule + cost + a list of
-## effects. Adding an ability means authoring a Resource, not writing code
-## (constitution: "Abilities become data").
-## Responsibilities: Describe targeting, cost, and the effects to apply.
-## Dependencies: EffectData.
+## Purpose: A data-driven ability — header + ordered modules (ability-data.md).
+## Responsibilities: Describe planner column, cost, tags, presentation, and modules.
+## Legacy flat effects[] are compiled from modules for AbilitySystem during migration.
+## Dependencies: EffectData, AbilityModule, AbilityModuleBridge.
 ## Lifecycle: immutable definition shared by all units that own it.
 
 @export var id: StringName = &""
 @export var display_name: String = ""
 
-## Economy / timeline classification (see Master Bible § Universal Action Economy).
+## Timeline column for class-library cards (ability-data.md §1). Source of truth when set.
+@export var planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION
+
+## Classification tags: attack, movement, positioning, spell, heal (multi-tag OK).
+@export var tags: Array[StringName] = []
+
+## Cost block (ability-data.md §1).
+@export var primary_resource: GameEnums.CostResource = GameEnums.CostResource.NONE
+@export var primary_value: int = 1
+@export var cost_modifier: GameEnums.CostModifier = GameEnums.CostModifier.NONE
+@export var cost_modifier_n: int = 0
+@export var secondary_resource: GameEnums.CostResource = GameEnums.CostResource.NONE
+@export var secondary_value: int = 0
+
+## Ordered modular steps (source of truth when non-empty after finalize).
+@export var modules: Array[AbilityModule] = []
+@export var upgraded_modules: Array[AbilityModule] = []
+
+## Economy / timeline classification — legacy mirror of planner_group (+ UNIVERSAL_*).
 @export var kind: GameEnums.AbilityKind = GameEnums.AbilityKind.CLASS_SKILL
 
 ## Action points consumed when used (CLASS_SKILL only; Run AP is spent on MOVE via uses_run).
 @export var action_point_cost: int = 1
 
-## Movement points consumed when used (MOVEMENT_SKILL only).
+## Movement points consumed when used (MOVEMENT_SKILL / PRE_MOVE only).
 @export var movement_point_cost: int = 0
 
-## Maximum Manhattan distance from actor to target tile.
+## Maximum Manhattan distance from actor to target tile (legacy mirror of primary aim module).
 @export var range_tiles: int = 1
 
 ## Who may be targeted. Author with targeting_flags; targeting_mode is synced legacy.
@@ -104,7 +121,7 @@ func _targeting_flags_to_mode() -> int:
 		return GameEnums.TargetingMode.TILE
 	return GameEnums.TargetingMode.ENEMY_UNIT
 
-## The geometric shape of the affected area.
+## The geometric shape of the affected area (legacy mirror of primary aim module).
 @export var target_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
 
 ## The size/radius parameter for the geometric shape (e.g., 3 for 3x3 square).
@@ -116,10 +133,10 @@ func _targeting_flags_to_mode() -> int:
 @export var upgraded_target_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
 @export var upgraded_target_shape_size: int = -1
 
-## Ordered list of effects applied to the target, in order.
+## Ordered list of effects — compiled from modules for legacy AbilitySystem readers.
 @export var effects: Array[EffectData] = []
 
-## Effects applied to the target if this ability is upgraded.
+## Effects applied to the target if this ability is upgraded (compiled from upgraded_modules).
 @export var upgraded_effects: Array[EffectData] = []
 
 ## Description of what the upgrade does.
@@ -132,17 +149,37 @@ func _targeting_flags_to_mode() -> int:
 ## The simulation never loads or plays anything; it only forwards this string.
 @export var presentation_key: StringName = &""
 
-## Presentation anim override; AUTO uses kind + targeting rules.
+## Presentation anim override; AUTO uses tags + module rules (ability-data.md §7).
 @export var presentation_anim: GameEnums.PresentationAnim = GameEnums.PresentationAnim.AUTO
 
-## Determines which stat (STR/MAG/NONE) scales the damage of this ability.
+## Determines which stat (STR/MAG/NONE) scales the damage of this ability (legacy; prefer per-module).
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
 
-## Legacy mirror of kind == MOVEMENT_SKILL (synced from kind in factories/editor; not authored separately).
+## Legacy mirror of planner_group == PRE_MOVE (synced; not authored separately).
 @export var is_movement_skill: bool = false
 
 
+## Infer modules from flat effects when needed; compile modules → effects; sync kind/cost mirrors.
+func finalize_modular() -> void:
+	AbilityModuleBridge.finalize_ability(self)
+
+
+func has_modules() -> bool:
+	return not modules.is_empty()
+
+
+func is_pre_move_planner() -> bool:
+	return planner_group == GameEnums.PlannerGroup.PRE_MOVE
+
+
+func has_tag(tag: StringName) -> bool:
+	return tags.has(tag)
+
+
 func is_movement_kind() -> bool:
+	## Prefer planner_group when synced; kind remains authoritative for UNIVERSAL_* and pre-finalize.
+	if planner_group == GameEnums.PlannerGroup.PRE_MOVE and kind == GameEnums.AbilityKind.MOVEMENT_SKILL:
+		return true
 	return kind == GameEnums.AbilityKind.MOVEMENT_SKILL
 
 

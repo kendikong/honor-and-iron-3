@@ -2,7 +2,8 @@
 
 **Updated by:** lead agent during gauntlet runs  
 **Spec:** `docs/design/00-gauntlet-loop-cursor.md` Rule 6 + Rule 6b  
-**Sync:** `docs/design/LOCAL_CLOUD_SYNC.md`
+**Run:** AbilityData modular refactor (`docs/design/UNATTENDED_RUN.md`)  
+**PR:** https://github.com/kendikong/honor-and-iron-3/pull/5
 
 ---
 
@@ -10,25 +11,19 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ B6-REOPEN full-matrix │ Round 2 │ SELF-GRADED: no (subagent)
-SCORE: 96/100 │ THRESHOLD: 95 │ PASS │ CLIMBING
-DELTA: +4 vs round 1 (was 92)
-MATRIX: 31/31 PASS │ GATE: exit 0
-STOP_CONDITION_MET: yes
+GAUNTLET SCORE │ AD-5 │ Round 2 │ SELF-GRADED: no (subagent)
+SCORE: 88/100 │ THRESHOLD: 85 │ PASS │ CLIMBING
+DELTA: +15 vs round 1 (was 73)
+AD-1: 86 PASS │ AD-5: 88 PASS
+STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Result |
 |-------|-------|-------|--------|
-| r2 | bruiser_guttural_roar | 89 | PASS |
-| r1 | bruiser_crimson_whirlwind | 90 | PASS |
-| r2 | blood_for_blood | 90 | PASS |
-| r2 | momentum_transfer | 89 | PASS |
-| r2 | battering_ram | 91 | PASS |
-| r2 | unstoppable_force | 91 | PASS |
-| floor re-score | 12×88 rows | 89–91 | PASS |
-| r1 | full-matrix | 92 | FAIL |
-| r2 | full-matrix | 96 | PASS — LOCKED |
+| r2 | AD-1 | 86 | PASS |
+| r1 | AD-5 | 73 | FAIL — dual authoring |
+| r2 | AD-5 | 88 | PASS — effects rebuild modules |
 
 ---
 
@@ -36,13 +31,23 @@ STOP_CONDITION_MET: yes
 
 | Field | Value |
 |-------|-------|
-| **Status** | **DONE** — Bruiser `LOCKED` |
-| **Matrix** | **31/31** PASS |
-| **Full-matrix critic** | **96/100** |
-| **Template** | `docs/design/bruiser-template.md` → `LOCKED` |
+| **Status** | **ACTIVE** — resume next for AD-2 |
+| **Commits** | AD-1 `1c782669…` · AD-5 `470ac0c8…` |
+| **BAR** | bridge / Knight / Bruiser **PASS** (`*_r5.txt`) |
+
+### Remaining to STOP_ON
+
+| Piece | Status |
+|-------|--------|
+| AD-2 AbilitySystem native module/gate runtime | **NEXT** |
+| AD-3 Planning gated-aim via modules | PENDING |
+| AD-4 Factories author modules-first | PARTIAL |
+| AD-6 Remove legacy kind authoring | PENDING |
+| AD-SMOOTH Combined critic ≥ 80 | PENDING |
 
 ---
 
 ## STOP_ON
 
-`STOP_CONDITION_MET: yes`
+`STOP_CONDITION_MET: no`  
+`BLOCKER: context/token — resume with "continue gauntlet"`
