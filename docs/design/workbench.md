@@ -11,10 +11,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ AD-1 │ Round 3 │ SELF-GRADED: no (subagent)
-SCORE: 93/100 │ THRESHOLD: 92 │ PASS
-DELTA: +7 vs r2 (86)
-AD-2: PASS 93 │ AD-5: DEFERRED 90 │ AD-3: IN PROGRESS
+GAUNTLET SCORE │ ACTIVE │ SELF-GRADED: no
+THRESHOLD: 92 │ wave smooth: 90
+AD-1: PASS 93 │ AD-2: PASS 93 │ AD-5: DEFERRED 90
+AD-3: r1 BAR green — awaiting gauntlet-critic
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
@@ -24,6 +24,7 @@ STOP_CONDITION_MET: no
 | r3 | AD-1 | **93** | **92** | **PASS** |
 | r3 | AD-2 | **93** | **92** | **PASS** |
 | r6–r13 | AD-5 | best **90** | **92** | **DEFERRED** |
+| r1 | AD-3 | *(critic pending)* | **92** | BAR PASS — critic next |
 
 ---
 
@@ -33,7 +34,7 @@ STOP_CONDITION_MET: no
 |-------|-------|
 | **Status** | **ACTIVE** |
 | **PASS_THRESHOLD** | **92** |
-| **Next** | AD-3 planning gated-aim → AD-4/6 → SMOOTH |
+| **Next** | AD-3 critic ≥92 → AD-4/6 → SMOOTH |
 
 ### Piece queue
 
@@ -42,10 +43,25 @@ STOP_CONDITION_MET: no
 | AD-5 Class library editor | **DEFERRED** @ 90/92 |
 | AD-2 Native module/gate runtime | **PASS** @ 93 |
 | AD-1 Schema + bridge | **PASS** @ 93 |
-| AD-3 Planning gated-aim | **IN PROGRESS** |
+| AD-3 Planning gated-aim | **r1 BAR PASS** — critic pending (`7b3eb9f32`) |
 | AD-4 Factories modules-first | PARTIAL |
 | AD-6 Remove legacy kind authoring | PENDING |
 | AD-SMOOTH | PENDING (threshold **90**) |
+
+---
+
+## AD-3 r1 builder notes (for critic)
+
+**GOAL:** §2.7 gated-aim — `module_coords` intent; inline IF_COLLIDED MOVE; no AP-refund stand-in; fail-loud if gate passes without aim.
+
+**BAR (lead verified):**
+- bridge → PASS (`reports/ability_data_gauntlet/bridge_ad3_r1b.txt`)
+- Bruiser → PASS (`bruiser_ad3_r1b.txt`)
+- Knight → PASS (`knight_ad3_r1b.txt`)
+- PlanningInputTest → PASS (`planning_input_ad3_r1b.txt`)
+- `run_planning_qa_gate.gd` — EventBus headless compile gap (pre-existing); planning_input_only used as secondary
+
+**Commit:** `7b3eb9f329f9ad03db93f64c12be3753b25f1d89`
 
 ---
 

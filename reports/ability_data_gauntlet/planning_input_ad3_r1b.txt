@@ -1,0 +1,227 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCRIPT ERROR: Compile Error: Identifier not found: EventBus
+          at: GDScript::reload (res://presentation/combat_director.gd:196)
+SCRIPT ERROR: Compile Error: Identifier not found: EventBus
+          at: GDScript::reload (res://presentation/combat_planning_input.gd:108)
+SCRIPT ERROR: Compile Error: Identifier not found: EventBus
+          at: GDScript::reload (res://presentation/tactical_planning_overlay.gd:114)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://tests/planning_drag_e2e_harness.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://tests/planning_input_test.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://tests/run_planning_input_only.gd:0)
+ERROR: Failed to load script "res://tests/run_planning_input_only.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _test_force_basic_flag (res://tests/planning_input_test.gd:90)
+          GDScript backtrace (most recent call first):
+              [0] _test_force_basic_flag (res://tests/planning_input_test.gd:90)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _new_director (res://tests/planning_input_test.gd:42)
+          GDScript backtrace (most recent call first):
+              [0] _new_director (res://tests/planning_input_test.gd:42)
+              [1] _test_undoable_action_director (res://tests/planning_input_test.gd:97)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid assignment of property or key 'board' with value of type 'RefCounted (BoardState)' on a base object of type 'Nil'.
+          at: _test_undoable_action_director (res://tests/planning_input_test.gd:105)
+          GDScript backtrace (most recent call first):
+              [0] _test_undoable_action_director (res://tests/planning_input_test.gd:105)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _test_wait_blocks_move_commit (res://tests/planning_input_test.gd:131)
+          GDScript backtrace (most recent call first):
+              [0] _test_wait_blocks_move_commit (res://tests/planning_input_test.gd:131)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _test_composite_cursor_gate (res://tests/planning_input_test.gd:270)
+          GDScript backtrace (most recent call first):
+              [0] _test_composite_cursor_gate (res://tests/planning_input_test.gd:270)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _test_cursor_matches_commit_slots (res://tests/planning_input_test.gd:288)
+          GDScript backtrace (most recent call first):
+              [0] _test_cursor_matches_commit_slots (res://tests/planning_input_test.gd:288)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+          GDScript backtrace (most recent call first):
+              [0] _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+              [1] _test_drag_cursor_matches_commit_slots (res://tests/planning_input_test.gd:372)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid access to property or key 'input' on a base object of type 'Dictionary'.
+          at: _test_drag_cursor_matches_commit_slots (res://tests/planning_input_test.gd:373)
+          GDScript backtrace (most recent call first):
+              [0] _test_drag_cursor_matches_commit_slots (res://tests/planning_input_test.gd:373)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+          GDScript backtrace (most recent call first):
+              [0] _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+              [1] _test_drag_cursor_ignores_preview_failed_flag (res://tests/planning_input_test.gd:414)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid access to property or key 'input' on a base object of type 'Dictionary'.
+          at: _test_drag_cursor_ignores_preview_failed_flag (res://tests/planning_input_test.gd:415)
+          GDScript backtrace (most recent call first):
+              [0] _test_drag_cursor_ignores_preview_failed_flag (res://tests/planning_input_test.gd:415)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+          GDScript backtrace (most recent call first):
+              [0] _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+              [1] _test_drop_commit_preserves_drag_route (res://tests/planning_input_test.gd:452)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid access to property or key 'input' on a base object of type 'Dictionary'.
+          at: _test_drop_commit_preserves_drag_route (res://tests/planning_input_test.gd:453)
+          GDScript backtrace (most recent call first):
+              [0] _test_drop_commit_preserves_drag_route (res://tests/planning_input_test.gd:453)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _test_cursor_omits_unaffordable_run_skill_pair (res://tests/planning_input_test.gd:496)
+          GDScript backtrace (most recent call first):
+              [0] _test_cursor_omits_unaffordable_run_skill_pair (res://tests/planning_input_test.gd:496)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+          GDScript backtrace (most recent call first):
+              [0] _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+              [1] _test_slots_only_cursor_matches_commit (res://tests/planning_input_test.gd:565)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid access to property or key 'input' on a base object of type 'Dictionary'.
+          at: _test_slots_only_cursor_matches_commit (res://tests/planning_input_test.gd:566)
+          GDScript backtrace (most recent call first):
+              [0] _test_slots_only_cursor_matches_commit (res://tests/planning_input_test.gd:566)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _test_preview_from_commit_slots (res://tests/planning_input_test.gd:631)
+          GDScript backtrace (most recent call first):
+              [0] _test_preview_from_commit_slots (res://tests/planning_input_test.gd:631)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _new_director (res://tests/planning_input_test.gd:42)
+          GDScript backtrace (most recent call first):
+              [0] _new_director (res://tests/planning_input_test.gd:42)
+              [1] _test_awaiting_plan_refresh (res://tests/planning_input_test.gd:858)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid assignment of property or key 'board' with value of type 'RefCounted (BoardState)' on a base object of type 'Nil'.
+          at: _test_awaiting_plan_refresh (res://tests/planning_input_test.gd:883)
+          GDScript backtrace (most recent call first):
+              [0] _test_awaiting_plan_refresh (res://tests/planning_input_test.gd:883)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+          GDScript backtrace (most recent call first):
+              [0] _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+              [1] _test_dash_arm_survives_plan_refresh (res://tests/planning_input_test.gd:905)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid access to property or key 'input' on a base object of type 'Dictionary'.
+          at: _test_dash_arm_survives_plan_refresh (res://tests/planning_input_test.gd:906)
+          GDScript backtrace (most recent call first):
+              [0] _test_dash_arm_survives_plan_refresh (res://tests/planning_input_test.gd:906)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+          GDScript backtrace (most recent call first):
+              [0] _bowling_charge_arm_fixture (res://tests/planning_input_test.gd:50)
+              [1] _test_dash_self_click_blocks_false_wait (res://tests/planning_input_test.gd:933)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid access to property or key 'input' on a base object of type 'Dictionary'.
+          at: _test_dash_self_click_blocks_false_wait (res://tests/planning_input_test.gd:934)
+          GDScript backtrace (most recent call first):
+              [0] _test_dash_self_click_blocks_false_wait (res://tests/planning_input_test.gd:934)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _test_hover_cursor_matches_click_commit_slots (res://tests/planning_input_test.gd:999)
+          GDScript backtrace (most recent call first):
+              [0] _test_hover_cursor_matches_click_commit_slots (res://tests/planning_input_test.gd:999)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _new_director (res://tests/planning_input_test.gd:42)
+          GDScript backtrace (most recent call first):
+              [0] _new_director (res://tests/planning_input_test.gd:42)
+              [1] _test_undo_movement_action_preserves_premove (res://tests/planning_input_test.gd:1411)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid assignment of property or key 'board' with value of type 'RefCounted (BoardState)' on a base object of type 'Nil'.
+          at: _test_undo_movement_action_preserves_premove (res://tests/planning_input_test.gd:1440)
+          GDScript backtrace (most recent call first):
+              [0] _test_undo_movement_action_preserves_premove (res://tests/planning_input_test.gd:1440)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _new_director (res://tests/planning_input_test.gd:42)
+          GDScript backtrace (most recent call first):
+              [0] _new_director (res://tests/planning_input_test.gd:42)
+              [1] _test_swap_undo_cascades_all_plans_after (res://tests/planning_input_test.gd:1470)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid assignment of property or key 'board' with value of type 'RefCounted (BoardState)' on a base object of type 'Nil'.
+          at: _test_swap_undo_cascades_all_plans_after (res://tests/planning_input_test.gd:1510)
+          GDScript backtrace (most recent call first):
+              [0] _test_swap_undo_cascades_all_plans_after (res://tests/planning_input_test.gd:1510)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _new_director (res://tests/planning_input_test.gd:42)
+          GDScript backtrace (most recent call first):
+              [0] _new_director (res://tests/planning_input_test.gd:42)
+              [1] _test_swap_refresh_updates_live_board (res://tests/planning_input_test.gd:1694)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid assignment of property or key 'board' with value of type 'RefCounted (BoardState)' on a base object of type 'Nil'.
+          at: _test_swap_refresh_updates_live_board (res://tests/planning_input_test.gd:1724)
+          GDScript backtrace (most recent call first):
+              [0] _test_swap_refresh_updates_live_board (res://tests/planning_input_test.gd:1724)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _new_director (res://tests/planning_input_test.gd:42)
+          GDScript backtrace (most recent call first):
+              [0] _new_director (res://tests/planning_input_test.gd:42)
+              [1] _test_walk_then_swap_commit_appends_skill (res://tests/planning_input_test.gd:1542)
+              [2] run_all (res://tests/planning_input_test.gd:37)
+              [3] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid assignment of property or key 'board' with value of type 'RefCounted (BoardState)' on a base object of type 'Nil'.
+          at: _test_walk_then_swap_commit_appends_skill (res://tests/planning_input_test.gd:1572)
+          GDScript backtrace (most recent call first):
+              [0] _test_walk_then_swap_commit_appends_skill (res://tests/planning_input_test.gd:1572)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _test_swap_ally_out_of_range_click_parity (res://tests/planning_input_test.gd:1606)
+          GDScript backtrace (most recent call first):
+              [0] _test_swap_ally_out_of_range_click_parity (res://tests/planning_input_test.gd:1606)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+SCRIPT ERROR: Invalid call. Nonexistent function 'new' in base 'GDScript'.
+          at: _test_ability_scroll_clears_hover_preview_cache (res://tests/planning_input_test.gd:1753)
+          GDScript backtrace (most recent call first):
+              [0] _test_ability_scroll_clears_hover_preview_cache (res://tests/planning_input_test.gd:1753)
+              [1] run_all (res://tests/planning_input_test.gd:37)
+              [2] _initialize (res://tests/run_planning_input_only.gd:5)
+[PASS] PlanningInputTest
