@@ -4,11 +4,10 @@
 **Stopped (UTC):** 2026-08-03  
 **Branch:** `cursor/ability-data-modular-refactor-5448`  
 **PR:** https://github.com/kendikong/honor-and-iron-3/pull/6  
-**Final commit:** `cb3b618a21532b5fc6b05a42589bbc9e9872a7db`
 
 ---
 
-## Stop reason
+## Stop reason (historical)
 
 **MAX_ROUNDS_PER_PIECE (8) reached on AD-5** under `PASS_THRESHOLD: 92`.
 
@@ -31,11 +30,21 @@ AD-5 plateaued at **critic SCORE 90/100** (never ≥ 92). Lead must not continue
 
 **Best score:** 90  
 **Threshold:** 92  
-**RESULT:** FAIL (plateau)
+**RESULT:** FAIL (plateau) → **AD-5b spawned** (owner: finish remaining plan)
 
 ---
 
-## What shipped (valuable, not locked PASS)
+## AD-5b (in progress)
+
+**Scope:** editor planner callback BAR hook — extract `ClassLibrarySchema.apply_planner_group_change`; editor OptionButton + BAR share it; source-wiring assert; §14.12 displacement sync for `is_movement_skill`.
+
+**Builder evidence:** `editor_ad5b_r1.txt` PASS · bridge/Knight/Bruiser `*_ad5b_r1.txt` PASS
+
+**Critic:** pending (≥92)
+
+---
+
+## What shipped under AD-5 (valuable, locked via AD-5b completion)
 
 - Modular dump dirty-detection (`planner_group` / `tags` / `cost` / modules)
 - Effects editable surface → modules rebuild; range/shape resync
@@ -46,20 +55,11 @@ AD-5 plateaued at **critic SCORE 90/100** (never ≥ 92). Lead must not continue
 
 ---
 
-## Remaining pieces (updated after reopen)
+## Remaining pieces
 
 | Piece | Status |
 |-------|--------|
 | AD-5 | **DEFERRED** — MAX_ROUNDS, best 90 &lt; 92 |
-| AD-1…AD-4, AD-6 | **PASS** (see `workbench.md`) |
-| AD-SMOOTH | **PASS 91/90** (r2) — run STOP_ON met |
-
----
-
-## Owner options
-
-1. **Accept AD-5 at 90** and reopen the run with a new piece focus (AD-2 native module/gate) and/or lower bar for editor-only polish.
-2. **Raise MAX_ROUNDS** or spawn a fresh piece `AD-5b` scoped only to “editor planner callback BAR hook” (static assert / extracted `apply_planner_group_change` tested by BAR).
-3. **Merge PR #6 as progress** (behavior-preserving editor/schema improvements) without claiming gauntlet STOP_ON success.
-
-`STOP_CONDITION_MET: no` (machine bar / critic ≥92 on all pieces not achieved)
+| AD-5b | **IN PROGRESS** — closes AD-5 planner-callback gap |
+| AD-1…AD-4, AD-6, AD-REGRESS | **PASS** (see `workbench.md`) |
+| AD-SMOOTH | **REVOKED** — re-closed via AD-REGRESS |

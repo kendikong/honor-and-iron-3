@@ -155,7 +155,7 @@ func _targeting_flags_to_mode() -> int:
 ## Determines which stat (STR/MAG/NONE) scales the damage of this ability (legacy; prefer per-module).
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
 
-## Legacy mirror of planner_group == PRE_MOVE (synced; not authored separately).
+## Legacy mirror of displacement effects (synced from effects[]; not planner_group).
 @export var is_movement_skill: bool = false
 
 

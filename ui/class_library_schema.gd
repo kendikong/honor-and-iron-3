@@ -692,7 +692,7 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.presentation_key = src.presentation_key
 	dst.presentation_anim = src.presentation_anim
 	dst.scaling_stat = src.scaling_stat
-	dst.is_movement_skill = src.planner_group == GameEnums.PlannerGroup.PRE_MOVE
+	dst.is_movement_skill = AbilityModuleBridge.ability_has_displacement_effect(src)
 	dst.effects.clear()
 	for eff: EffectData in src.effects:
 		dst.effects.append(duplicate_effect(eff))
@@ -1113,7 +1113,7 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"presentation_key": String(src.presentation_key),
 		"presentation_anim": src.presentation_anim,
 		"scaling_stat": src.scaling_stat,
-		"is_movement_skill": src.planner_group == GameEnums.PlannerGroup.PRE_MOVE,
+		"is_movement_skill": AbilityModuleBridge.ability_has_displacement_effect(src),
 		"effects": effects_to_dict_array(src.effects),
 		"upgraded_effects": effects_to_dict_array(src.upgraded_effects),
 		"module_count": src.modules.size(),
@@ -1181,6 +1181,22 @@ static func try_apply_primary_resource(
 	ability.primary_resource = primary_resource
 	AbilityModuleBridge.sync_legacy_from_header(ability)
 	return {"ok": true, "reason": ""}
+
+
+## Shared editor/schema path for planner_group OptionButton (AD-5b — BAR must call this, not bare enforce).
+static func apply_planner_group_change(
+	ability: AbilityData,
+	planner_group: GameEnums.PlannerGroup
+) -> void:
+	if ability == null:
+		return
+	ability.planner_group = planner_group
+	## Sole §11 owner: keep primary if still legal; else enforce_planner_cost_coupling.
+	if not AbilityModuleBridge.is_planner_cost_legal(
+		ability.planner_group, ability.primary_resource
+	):
+		AbilityModuleBridge.enforce_planner_cost_coupling(ability)
+	AbilityModuleBridge.sync_legacy_from_header(ability)
 
 
 ## Populate an OptionButton with only §11-legal CostResource values (editor + BAR share this).

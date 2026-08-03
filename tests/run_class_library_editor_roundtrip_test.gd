@@ -1,14 +1,10 @@
-extends Node
+extends SceneTree
 
-## AD-5 BAR: class-library dump dirty-detection + effects→modules resync round-trip.
-## Extends Node so project autoloads register before DataLibrary compiles.
-
-
-func _ready() -> void:
-	call_deferred("_run")
+## AD-5 / AD-5b BAR: class-library dump dirty-detection + effects→modules + planner callback.
+## SceneTree + _initialize (not Node --script): autoloads register; body checks run immediately.
 
 
-func _run() -> void:
+func _initialize() -> void:
 	var failures: Array[String] = []
 	DataLibrary.reset_cache()
 	_check_dump_includes_modular_header(failures)
@@ -20,12 +16,12 @@ func _run() -> void:
 	_check_dict_roundtrip_modular_header(failures)
 	if failures.is_empty():
 		print("CLASS_LIBRARY_EDITOR_ROUNDTRIP_TEST: PASS")
-		get_tree().quit(0)
+		quit(0)
 	else:
 		print("CLASS_LIBRARY_EDITOR_ROUNDTRIP_TEST: FAIL")
 		for f: String in failures:
 			printerr("  [FAIL] %s" % f)
-		get_tree().quit(1)
+		quit(1)
 
 
 func _find_ability(unit_id: StringName, ability_id: StringName) -> AbilityData:
@@ -360,29 +356,65 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 		failures.append("PRE_MOVE OptionButton must offer only MP")
 	action_ob.free()
 	pre_ob.free()
-	## Planner switch → enforce owner → OptionButton repopulates to legal set only.
+	## Planner switch via shared editor callback (AD-5b) — not bare enforce alone.
 	var switch_ab := AbilityData.new()
 	switch_ab.planner_group = GameEnums.PlannerGroup.ACTION
+	switch_ab.kind = GameEnums.AbilityKind.CLASS_SKILL
 	switch_ab.primary_resource = GameEnums.CostResource.HP
 	switch_ab.primary_value = 5
-	switch_ab.planner_group = GameEnums.PlannerGroup.PRE_MOVE
-	if AbilityModuleBridge.is_planner_cost_legal(switch_ab.planner_group, switch_ab.primary_resource):
-		failures.append("HP must be illegal after switch to PRE_MOVE")
-	AbilityModuleBridge.enforce_planner_cost_coupling(switch_ab)
+	switch_ab.action_point_cost = 0
+	switch_ab.movement_point_cost = 2
+	ClassLibrarySchema.apply_planner_group_change(switch_ab, GameEnums.PlannerGroup.PRE_MOVE)
+	if switch_ab.planner_group != GameEnums.PlannerGroup.PRE_MOVE:
+		failures.append("apply_planner_group_change did not set PRE_MOVE")
 	if switch_ab.primary_resource != GameEnums.CostResource.MP:
-		failures.append("planner switch enforce should force MP")
+		failures.append("apply_planner_group_change should force MP on PRE_MOVE from HP")
+	if not switch_ab.is_movement_kind():
+		failures.append("apply_planner_group_change should sync is_movement_kind via PRE_MOVE")
+	if switch_ab.is_movement_skill:
+		failures.append("PRE_MOVE without displacement effects must not set is_movement_skill")
 	var switch_ob := OptionButton.new()
 	ClassLibrarySchema.populate_legal_primary_option_button(switch_ob, switch_ab)
 	if switch_ob.item_count != 1 or switch_ob.get_item_id(0) != int(GameEnums.CostResource.MP):
-		failures.append("after planner switch OptionButton must offer only MP")
-	## ACTION←PRE_MOVE: MP becomes illegal → enforce AP; dropdown AP+HP.
-	switch_ab.planner_group = GameEnums.PlannerGroup.ACTION
-	if AbilityModuleBridge.is_planner_cost_legal(switch_ab.planner_group, switch_ab.primary_resource):
-		failures.append("MP must be illegal on ACTION")
-	AbilityModuleBridge.enforce_planner_cost_coupling(switch_ab)
+		failures.append("after apply_planner_group_change OptionButton must offer only MP")
+	## ACTION←PRE_MOVE via same callback: MP → AP; dropdown AP+HP; kind CLASS_SKILL.
+	ClassLibrarySchema.apply_planner_group_change(switch_ab, GameEnums.PlannerGroup.ACTION)
+	if switch_ab.planner_group != GameEnums.PlannerGroup.ACTION:
+		failures.append("apply_planner_group_change did not set ACTION")
 	if switch_ab.primary_resource != GameEnums.CostResource.AP:
-		failures.append("planner switch to ACTION should force AP from MP")
+		failures.append("apply_planner_group_change to ACTION should force AP from MP")
+	if switch_ab.is_movement_kind():
+		failures.append("ACTION must not report is_movement_kind")
 	ClassLibrarySchema.populate_legal_primary_option_button(switch_ob, switch_ab)
 	if switch_ob.item_count != 2:
-		failures.append("after switch to ACTION OptionButton want 2 items")
+		failures.append("after apply_planner_group_change to ACTION OptionButton want 2 items")
+	## Legal primary preserved: ACTION AP → stays AP (no stomp).
+	switch_ab.primary_resource = GameEnums.CostResource.AP
+	switch_ab.primary_value = 3
+	ClassLibrarySchema.apply_planner_group_change(switch_ab, GameEnums.PlannerGroup.ACTION)
+	if switch_ab.primary_resource != GameEnums.CostResource.AP or switch_ab.primary_value != 3:
+		failures.append("apply_planner_group_change must keep legal AP primary")
+	## Displacement flag follows effects, not column (ACTION + MOVE → is_movement_skill true).
+	var move_eff := EffectData.new()
+	move_eff.type = GameEnums.EffectType.MOVE
+	move_eff.amount = 2
+	switch_ab.effects = [move_eff]
+	ClassLibrarySchema.apply_planner_group_change(switch_ab, GameEnums.PlannerGroup.ACTION)
+	if not switch_ab.is_movement_skill:
+		failures.append("ACTION+MOVE must set is_movement_skill via apply_planner_group_change")
+	if switch_ab.is_movement_kind():
+		failures.append("ACTION+MOVE must not set is_movement_kind")
 	switch_ob.free()
+	## Editor source must wire planner OptionButton to apply_planner_group_change (not inline enforce).
+	var editor_src := FileAccess.get_file_as_string("res://ui/class_library_editor.gd")
+	if editor_src.find("ClassLibrarySchema.apply_planner_group_change") < 0:
+		failures.append("class_library_editor.gd must call ClassLibrarySchema.apply_planner_group_change")
+	if editor_src.find("enforce_planner_cost_coupling(ability)") >= 0:
+		## Only allowed inside schema apply_planner_group_change — editor must not inline it.
+		var planner_bind_idx: int = editor_src.find("\"planner_group\"")
+		if planner_bind_idx >= 0:
+			var slice: String = editor_src.substr(planner_bind_idx, 400)
+			if slice.find("enforce_planner_cost_coupling") >= 0:
+				failures.append(
+					"planner_group OptionButton must not inline enforce — use apply_planner_group_change"
+				)

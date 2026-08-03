@@ -1413,13 +1413,10 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	var planner_row := _bind_enum(
 		grid, "planner_group", GameEnums.PlannerGroup, ability.planner_group,
 		func(v: int) -> void:
-			ability.planner_group = v
-			## Sole §11 owner: keep primary if still legal; else enforce_planner_cost_coupling.
-			if not AbilityModuleBridge.is_planner_cost_legal(
-				ability.planner_group, ability.primary_resource
-			):
-				AbilityModuleBridge.enforce_planner_cost_coupling(ability)
-			AbilityModuleBridge.sync_legacy_from_header(ability)
+			## Same path BAR exercises (ClassLibrarySchema.apply_planner_group_change).
+			ClassLibrarySchema.apply_planner_group_change(
+				ability, v as GameEnums.PlannerGroup
+			)
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)

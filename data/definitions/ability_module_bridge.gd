@@ -79,12 +79,30 @@ static func kind_from_planner_group(
 			return GameEnums.AbilityKind.CLASS_SKILL
 
 
+static func ability_has_displacement_effect(ability: AbilityData) -> bool:
+	## Mirror of AbilitySystem.ability_has_movement_effect — data layer, no systems import.
+	if ability == null:
+		return false
+	for eff: EffectData in ability.effects:
+		if eff == null:
+			continue
+		if eff.type in [
+			GameEnums.EffectType.DASH,
+			GameEnums.EffectType.MOVE,
+			GameEnums.EffectType.TELEPORT_CASTER,
+			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
+		]:
+			return true
+	return false
+
+
 static func sync_legacy_from_header(ability: AbilityData) -> void:
 	if ability == null:
 		return
 	enforce_planner_cost_coupling(ability)
 	ability.kind = kind_from_planner_group(ability.planner_group, ability.kind)
-	ability.is_movement_skill = ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
+	## §14.12: displacement effects — not planner_group (column is is_movement_kind).
+	ability.is_movement_skill = ability_has_displacement_effect(ability)
 	match ability.primary_resource:
 		GameEnums.CostResource.MP:
 			ability.movement_point_cost = ability.primary_value
