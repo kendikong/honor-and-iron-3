@@ -1179,6 +1179,25 @@ static func try_apply_primary_resource(
 	return {"ok": true, "reason": ""}
 
 
+## Populate an OptionButton with only §11-legal CostResource values (editor + BAR share this).
+static func populate_legal_primary_option_button(ob: OptionButton, ability: AbilityData) -> void:
+	if ob == null or ability == null:
+		return
+	ob.clear()
+	var legal: Array[GameEnums.CostResource] = AbilityModuleBridge.legal_primary_resources(
+		ability.planner_group
+	)
+	var select_idx: int = 0
+	for i: int in legal.size():
+		var res: GameEnums.CostResource = legal[i]
+		ob.add_item(GameEnums.CostResource.keys()[res], res as int)
+		ob.set_item_id(i, res as int)
+		if res == ability.primary_resource:
+			select_idx = i
+	if ob.item_count > 0:
+		ob.select(select_idx)
+
+
 static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	if dst == null or data.is_empty():
 		return
@@ -1222,8 +1241,21 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	if data.has("cost_modifier_n"):
 		dst.cost_modifier_n = int(data.get("cost_modifier_n", dst.cost_modifier_n))
 	AbilityModuleBridge.sync_legacy_from_header(dst)
-	dst.action_point_cost = int(data.get("action_point_cost", dst.action_point_cost))
-	dst.movement_point_cost = int(data.get("movement_point_cost", dst.movement_point_cost))
+	## Legacy AP/MP mirrors: only apply from dict when they match the coupled primary resource.
+	if data.has("action_point_cost"):
+		var ap_v: int = int(data.get("action_point_cost", dst.action_point_cost))
+		if dst.primary_resource == GameEnums.CostResource.AP:
+			dst.action_point_cost = ap_v
+			dst.primary_value = ap_v
+		else:
+			dst.action_point_cost = ap_v
+	if data.has("movement_point_cost"):
+		var mp_v: int = int(data.get("movement_point_cost", dst.movement_point_cost))
+		if dst.primary_resource == GameEnums.CostResource.MP:
+			dst.movement_point_cost = mp_v
+			dst.primary_value = mp_v
+		else:
+			dst.movement_point_cost = mp_v
 	dst.range_tiles = int(data.get("range_tiles", dst.range_tiles))
 	dst.targeting_mode = int(data.get("targeting_mode", dst.targeting_mode))
 	dst.targeting_flags = int(data.get("targeting_flags", dst.targeting_flags))

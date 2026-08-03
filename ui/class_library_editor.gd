@@ -1417,15 +1417,15 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			ability.planner_group = v
 			ability.kind = AbilityModuleBridge.kind_from_planner_group(v as GameEnums.PlannerGroup, ability.kind)
 			ability.is_movement_skill = v == GameEnums.PlannerGroup.PRE_MOVE
+			var forced: GameEnums.CostResource = GameEnums.CostResource.AP
 			if v == GameEnums.PlannerGroup.PRE_MOVE:
-				ability.primary_resource = GameEnums.CostResource.MP
-				ability.primary_value = ability.movement_point_cost
-			elif ability.kind == GameEnums.AbilityKind.CLASS_SKILL:
-				## Keep HP primary when already authored; otherwise default to AP.
-				if ability.primary_resource != GameEnums.CostResource.HP:
-					ability.primary_resource = GameEnums.CostResource.AP
-					ability.primary_value = ability.action_point_cost
-			AbilityModuleBridge.sync_legacy_from_header(ability)
+				forced = GameEnums.CostResource.MP
+			elif ability.primary_resource == GameEnums.CostResource.HP:
+				forced = GameEnums.CostResource.HP
+			var cost_result: Dictionary = ClassLibrarySchema.try_apply_primary_resource(ability, forced)
+			if not bool(cost_result["ok"]):
+				AbilityModuleBridge.enforce_planner_cost_coupling(ability)
+				AbilityModuleBridge.sync_legacy_from_header(ability)
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
@@ -2307,19 +2307,7 @@ func _bind_legal_primary_resource(
 
 
 func _fill_legal_primary_options(ob: OptionButton, ability: AbilityData) -> void:
-	ob.clear()
-	var legal: Array[GameEnums.CostResource] = AbilityModuleBridge.legal_primary_resources(
-		ability.planner_group
-	)
-	var select_idx: int = 0
-	for i: int in legal.size():
-		var res: GameEnums.CostResource = legal[i]
-		ob.add_item(GameEnums.CostResource.keys()[res], res as int)
-		ob.set_item_id(i, res as int)
-		if res == ability.primary_resource:
-			select_idx = i
-	if ob.item_count > 0:
-		ob.select(select_idx)
+	ClassLibrarySchema.populate_legal_primary_option_button(ob, ability)
 
 
 func _bind_int(parent: GridContainer, label: String, value: int, setter: Callable) -> Array[Control]:

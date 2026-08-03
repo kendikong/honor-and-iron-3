@@ -337,3 +337,26 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 	)
 	if pre_legal.size() != 1 or pre_legal[0] != GameEnums.CostResource.MP:
 		failures.append("PRE_MOVE legal_primary_resources want MP only")
+	## Critic-proposed infra: OptionButton fill must match legal_primary_resources (same path as editor).
+	var action_ab := AbilityData.new()
+	action_ab.planner_group = GameEnums.PlannerGroup.ACTION
+	action_ab.primary_resource = GameEnums.CostResource.AP
+	var action_ob := OptionButton.new()
+	ClassLibrarySchema.populate_legal_primary_option_button(action_ob, action_ab)
+	if action_ob.item_count != 2:
+		failures.append("ACTION OptionButton item_count want 2 got %d" % action_ob.item_count)
+	else:
+		var ids: Array[int] = [action_ob.get_item_id(0), action_ob.get_item_id(1)]
+		if GameEnums.CostResource.AP not in ids or GameEnums.CostResource.HP not in ids:
+			failures.append("ACTION OptionButton missing AP/HP ids")
+		if GameEnums.CostResource.MP in ids or GameEnums.CostResource.NONE in ids:
+			failures.append("ACTION OptionButton offered illegal MP/NONE")
+	var pre_ab := AbilityData.new()
+	pre_ab.planner_group = GameEnums.PlannerGroup.PRE_MOVE
+	pre_ab.primary_resource = GameEnums.CostResource.MP
+	var pre_ob := OptionButton.new()
+	ClassLibrarySchema.populate_legal_primary_option_button(pre_ob, pre_ab)
+	if pre_ob.item_count != 1 or pre_ob.get_item_id(0) != int(GameEnums.CostResource.MP):
+		failures.append("PRE_MOVE OptionButton must offer only MP")
+	action_ob.free()
+	pre_ob.free()
