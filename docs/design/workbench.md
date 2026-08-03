@@ -11,17 +11,18 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ AD-1 │ Round 2 │ SELF-GRADED: no (subagent)
-SCORE: 86/100 │ THRESHOLD: 85 │ PASS │ CLIMBING
-DELTA: +29 vs round 1 (was 57)
+GAUNTLET SCORE │ AD-5 │ Round 1 │ SELF-GRADED: pending critic
+SCORE: —/100 │ THRESHOLD: 85 │ PENDING
+DELTA: first round for AD-5
+AD-1 LOCKED: 86/100 PASS
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
 
 | Round | Piece | Score | Result |
 |-------|-------|-------|--------|
-| r1 | AD-1 | 57 | FAIL — bridge BAR unverified; layers unused |
-| r2 | AD-1 | 86 | PASS — layers+keywords infer; BAR logs on disk |
+| r2 | AD-1 | 86 | PASS |
+| r1 | AD-5 | pending | Editor planner_group/tags/modules summary + save finalize |
 
 ---
 
@@ -29,27 +30,20 @@ STOP_CONDITION_MET: no
 
 | Field | Value |
 |-------|-------|
-| **Status** | **ACTIVE** — AbilityData modular refactor |
-| **Current piece** | AD-5 (class library editor modular authoring) next |
-| **Last PASS** | AD-1 @ 86 |
-| **Commit** | `1c782669bb3481c56ff1461067d8801e10d74627` |
+| **Status** | **ACTIVE** |
+| **Last PASS piece** | AD-1 @ 86 |
+| **Current** | AD-5 class library editor modular fields |
+| **BAR r4** | bridge / Knight / Bruiser **PASS** (`reports/ability_data_gauntlet/*_r4.txt`) |
 
-### Piece queue
+### Remaining
 
-| Piece | Goal | BAR | Status |
-|-------|------|-----|--------|
-| AD-0 | UNATTENDED_RUN + workbench + freeze | Docs | DONE |
-| AD-1 | Schema + bridge + finalize | Bridge + Knight/Bruiser QA | **PASS 86** |
-| AD-2 | AbilitySystem native module/gate runtime | skill QA | PENDING |
-| AD-3 | Planning gated-aim via modules | planning QA | PENDING |
-| AD-4 | Factories author modules-first | Knight+Bruiser QA | PARTIAL (infer path) |
-| AD-5 | Class library editor modular UI | editor + factory sync | **IN PROGRESS** |
-| AD-6 | Remove legacy kind/is_movement authoring | full QA | PENDING |
-| AD-SMOOTH | Combined-diff critic | ≥ 80 | PENDING |
-
-### BAR logs
-
-`reports/ability_data_gauntlet/*_r2.txt` — bridge / Bruiser / Knight all PASS
+| Piece | Status |
+|-------|--------|
+| AD-2 native module/gate runtime | PENDING |
+| AD-4 modules-first factories | PARTIAL |
+| AD-5 editor modular authoring | BUILDER DONE — critic next |
+| AD-6 remove legacy kind authoring | PENDING |
+| AD-SMOOTH | PENDING |
 
 ---
 

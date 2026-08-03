@@ -1031,8 +1031,17 @@ static func effects_from_dict_array(data: Array) -> Array[EffectData]:
 
 
 static func ability_to_dict(src: AbilityData) -> Dictionary:
+	var tag_strs: Array = []
+	for t: StringName in src.tags:
+		tag_strs.append(String(t))
 	return {
 		"display_name": src.display_name,
+		"planner_group": src.planner_group,
+		"tags": tag_strs,
+		"primary_resource": src.primary_resource,
+		"primary_value": src.primary_value,
+		"cost_modifier": src.cost_modifier,
+		"cost_modifier_n": src.cost_modifier_n,
 		"kind": src.kind,
 		"action_point_cost": src.action_point_cost,
 		"movement_point_cost": src.movement_point_cost,
@@ -1054,7 +1063,37 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"is_movement_skill": src.is_movement_skill,
 		"effects": effects_to_dict_array(src.effects),
 		"upgraded_effects": effects_to_dict_array(src.upgraded_effects),
+		"module_count": src.modules.size(),
+		"upgraded_module_count": src.upgraded_modules.size(),
 	}
+
+
+static func modules_summary_bbcode(ability: AbilityData) -> String:
+	if ability == null:
+		return "[i]no ability[/i]"
+	if ability.modules.is_empty():
+		return "[i]No modules yet — edit Effects then Save (finalize builds modules).[/i]"
+	var lines: PackedStringArray = PackedStringArray()
+	var i: int = 0
+	for mod: AbilityModule in ability.modules:
+		if mod == null:
+			continue
+		var phase: String = GameEnums.ModulePhase.keys()[mod.execution_phase]
+		var ptype: String = GameEnums.EffectType.keys()[mod.primary_type]
+		var gate: String = GameEnums.ModuleGate.keys()[mod.gate]
+		var kw_parts: PackedStringArray = PackedStringArray()
+		for kw: AbilityKeyword in mod.keywords:
+			if kw != null:
+				kw_parts.append(GameEnums.AbilityKeywordId.keys()[kw.keyword_id])
+		var kw_s: String = (", ".join(kw_parts)) if not kw_parts.is_empty() else "—"
+		lines.append(
+			"[b]M%d[/b] %s · %s · range %d–%d · gate %s · keywords [%s] · layers %d"
+			% [i, phase, ptype, mod.min_range, mod.max_range, gate, kw_s, mod.layers.size()]
+		)
+		i += 1
+	if not ability.upgraded_modules.is_empty():
+		lines.append("[color=#FBBF24]upgraded_modules: %d[/color]" % ability.upgraded_modules.size())
+	return "\n".join(lines)
 
 
 static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
@@ -1062,6 +1101,21 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		return
 	dst.display_name = String(data.get("display_name", dst.display_name))
 	dst.kind = int(data.get("kind", dst.kind))
+	if data.has("planner_group"):
+		dst.planner_group = int(data.get("planner_group", dst.planner_group))
+	else:
+		dst.planner_group = AbilityModuleBridge.planner_group_from_kind(dst.kind as GameEnums.AbilityKind)
+	if data.has("tags"):
+		var tags_v: Variant = data.get("tags", [])
+		var tags_out: Array[StringName] = []
+		if tags_v is Array:
+			for t: Variant in tags_v as Array:
+				tags_out.append(StringName(String(t)))
+		dst.tags = tags_out
+	dst.primary_resource = int(data.get("primary_resource", dst.primary_resource)) as GameEnums.CostResource
+	dst.primary_value = int(data.get("primary_value", dst.primary_value))
+	dst.cost_modifier = int(data.get("cost_modifier", dst.cost_modifier)) as GameEnums.CostModifier
+	dst.cost_modifier_n = int(data.get("cost_modifier_n", dst.cost_modifier_n))
 	dst.action_point_cost = int(data.get("action_point_cost", dst.action_point_cost))
 	dst.movement_point_cost = int(data.get("movement_point_cost", dst.movement_point_cost))
 	dst.range_tiles = int(data.get("range_tiles", dst.range_tiles))
@@ -1079,12 +1133,23 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.presentation_key = StringName(String(data.get("presentation_key", String(dst.presentation_key))))
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
 	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
-	dst.is_movement_skill = bool(data.get("is_movement_skill", dst.kind == GameEnums.AbilityKind.MOVEMENT_SKILL))
+	dst.is_movement_skill = bool(data.get("is_movement_skill", dst.planner_group == GameEnums.PlannerGroup.PRE_MOVE))
 	if data.has("effects"):
 		dst.effects = effects_from_dict_array(data.get("effects", []))
+		dst.modules.clear()
 	if data.has("upgraded_effects"):
 		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
+		dst.upgraded_modules.clear()
+	## Saved JSON sometimes has SELF mode with stale ALLY flags. Prefer self-target authoring.
+	if (
+		bool(data.get("can_target_self", false))
+		or int(data.get("targeting_mode", -1)) == GameEnums.TargetingMode.SELF
+	):
+		dst.targeting_flags = GameEnums.TargetingFlags.SELF
+		dst.targeting_mode = GameEnums.TargetingMode.SELF
+		dst.can_target_self = true
 	dst.sync_legacy_targeting()
+	dst.finalize_modular()
 
 
 static func passive_to_dict(src: PassiveData) -> Dictionary:
