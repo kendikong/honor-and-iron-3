@@ -103,6 +103,7 @@ static func sync_header_from_legacy(ability: AbilityData) -> void:
 static func sync_legacy_from_header(ability: AbilityData) -> void:
 	if ability == null:
 		return
+	enforce_planner_cost_coupling(ability)
 	ability.kind = kind_from_planner_group(ability.planner_group, ability.kind)
 	ability.is_movement_skill = ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
 	match ability.primary_resource:
@@ -114,6 +115,26 @@ static func sync_legacy_from_header(ability: AbilityData) -> void:
 			pass
 	if ability.cost_modifier == GameEnums.CostModifier.ZERO_IF_ADJACENT_ENEMIES_GTE_N:
 		_ensure_zero_ap_modifier_on_effects(ability)
+
+
+## §11: PRE_MOVE primary must be MP; ACTION primary must be AP or HP.
+static func enforce_planner_cost_coupling(ability: AbilityData) -> void:
+	if ability == null:
+		return
+	match ability.planner_group:
+		GameEnums.PlannerGroup.PRE_MOVE:
+			if ability.primary_resource != GameEnums.CostResource.MP:
+				ability.primary_resource = GameEnums.CostResource.MP
+				ability.primary_value = ability.movement_point_cost
+		GameEnums.PlannerGroup.ACTION:
+			if (
+				ability.primary_resource != GameEnums.CostResource.AP
+				and ability.primary_resource != GameEnums.CostResource.HP
+			):
+				ability.primary_resource = GameEnums.CostResource.AP
+				ability.primary_value = ability.action_point_cost
+		_:
+			pass
 
 
 static func compile_modules_to_effects(modules: Array[AbilityModule]) -> Array[EffectData]:

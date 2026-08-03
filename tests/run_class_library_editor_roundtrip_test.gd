@@ -226,13 +226,30 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 		failures.append("dict roundtrip lost tags")
 	if clone.primary_resource != swap.primary_resource:
 		failures.append("dict roundtrip lost primary_resource")
-	## Unknown tag must not apply (fail-loud path leaves only canonical).
+	## Unknown tag must not apply (fail-loud — leave tags unchanged).
 	var bad := data.duplicate(true)
 	bad["tags"] = ["attack", "totally_fake_tag"]
 	var clone2 := AbilityData.new()
 	clone2.id = &"tag_reject_probe"
+	clone2.tags = [AbilityModuleBridge.TAG_SPELL]
 	ClassLibrarySchema.apply_ability_dict(clone2, bad)
 	if clone2.tags.has(&"totally_fake_tag"):
 		failures.append("apply_ability_dict applied unknown tag")
-	if not clone2.tags.has(AbilityModuleBridge.TAG_ATTACK):
-		failures.append("apply_ability_dict dropped valid tag while rejecting unknown")
+	if clone2.tags.has(AbilityModuleBridge.TAG_ATTACK):
+		failures.append("apply_ability_dict partially applied mixed tag list")
+	if not clone2.tags.has(AbilityModuleBridge.TAG_SPELL):
+		failures.append("apply_ability_dict should leave prior tags when reject")
+	## Cost modifier roundtrip.
+	if int(data.get("cost_modifier", -1)) != int(swap.cost_modifier):
+		failures.append("ability_to_dict missing/wrong cost_modifier")
+	if clone.cost_modifier != swap.cost_modifier or clone.cost_modifier_n != swap.cost_modifier_n:
+		failures.append("dict roundtrip lost cost_modifier fields")
+	## Illegal PRE_MOVE + AP primary must be correctable via planner sync helper.
+	var probe := AbilityData.new()
+	probe.planner_group = GameEnums.PlannerGroup.PRE_MOVE
+	probe.primary_resource = GameEnums.CostResource.AP
+	probe.primary_value = 1
+	probe.movement_point_cost = 1
+	AbilityModuleBridge.enforce_planner_cost_coupling(probe)
+	if probe.primary_resource != GameEnums.CostResource.MP:
+		failures.append("enforce_planner_cost_coupling did not force MP on PRE_MOVE")

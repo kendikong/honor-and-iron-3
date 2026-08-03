@@ -1163,14 +1163,17 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		var validated: Dictionary = AbilityModuleBridge.validate_tag_list(tags_out)
 		if not bool(validated["ok"]):
 			push_error(
-				"ClassLibrarySchema.apply_ability_dict: rejected unknown tags [%s] on ability %s"
+				"ClassLibrarySchema.apply_ability_dict: rejected unknown tags [%s] on ability %s — tags not applied"
 				% [",".join(validated["rejected"] as PackedStringArray), String(dst.id)]
 			)
-		dst.tags = validated["tags"] as Array[StringName]
+			## Fail loud: do not partially apply a mixed tag list (§11).
+		else:
+			dst.tags = validated["tags"] as Array[StringName]
 	dst.primary_resource = int(data.get("primary_resource", dst.primary_resource)) as GameEnums.CostResource
 	dst.primary_value = int(data.get("primary_value", dst.primary_value))
 	dst.cost_modifier = int(data.get("cost_modifier", dst.cost_modifier)) as GameEnums.CostModifier
 	dst.cost_modifier_n = int(data.get("cost_modifier_n", dst.cost_modifier_n))
+	AbilityModuleBridge.enforce_planner_cost_coupling(dst)
 	dst.action_point_cost = int(data.get("action_point_cost", dst.action_point_cost))
 	dst.movement_point_cost = int(data.get("movement_point_cost", dst.movement_point_cost))
 	dst.range_tiles = int(data.get("range_tiles", dst.range_tiles))

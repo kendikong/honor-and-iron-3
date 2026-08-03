@@ -1423,6 +1423,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			elif ability.kind == GameEnums.AbilityKind.CLASS_SKILL:
 				ability.primary_resource = GameEnums.CostResource.AP
 				ability.primary_value = ability.action_point_cost
+			AbilityModuleBridge.sync_legacy_from_header(ability)
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
@@ -1454,7 +1455,15 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	var primary_res_row := _bind_enum(
 		grid, "primary_resource", GameEnums.CostResource, ability.primary_resource,
 		func(v: int) -> void:
-			ability.primary_resource = v as GameEnums.CostResource
+			## §11: PRE_MOVE ↔ MP, ACTION ↔ AP (HP allowed as ACTION primary for self-spend).
+			var next: GameEnums.CostResource = v as GameEnums.CostResource
+			if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
+				if next != GameEnums.CostResource.MP:
+					return
+			elif ability.planner_group == GameEnums.PlannerGroup.ACTION:
+				if next != GameEnums.CostResource.AP and next != GameEnums.CostResource.HP:
+					return
+			ability.primary_resource = next
 			AbilityModuleBridge.sync_legacy_from_header(ability)
 			_refresh_ability_ui(ability)
 	)
@@ -1579,6 +1588,8 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		var has_upg_range: bool = ability.upgraded_range_tiles != -1
 		_grey_row(ap_row, not is_action)
 		_grey_row(mp_row, not is_pre_move)
+		## §11: lock primary_resource to planner coupling — grey the enum so illegal combos aren't offered.
+		_grey_row(primary_res_row, true)
 		_grey_row(cost_mod_n_row, ability.cost_modifier == GameEnums.CostModifier.NONE)
 		_grey_row(shape_row, is_displacement)
 		_grey_row(shape_size_row, is_displacement)
