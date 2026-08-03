@@ -269,3 +269,26 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 	ClassLibrarySchema.apply_ability_dict(clone3, bad_cost)
 	if clone3.primary_resource != GameEnums.CostResource.MP:
 		failures.append("apply_ability_dict did not correct illegal PRE_MOVE+AP")
+	## HP-primary ACTION must survive dict roundtrip.
+	var hp_skill := AbilityData.new()
+	hp_skill.id = &"hp_primary_probe"
+	hp_skill.planner_group = GameEnums.PlannerGroup.ACTION
+	hp_skill.kind = GameEnums.AbilityKind.CLASS_SKILL
+	hp_skill.primary_resource = GameEnums.CostResource.HP
+	hp_skill.primary_value = 5
+	hp_skill.action_point_cost = 0
+	hp_skill.tags = [AbilityModuleBridge.TAG_ATTACK]
+	hp_skill.effects = [EffectData.new()]
+	hp_skill.effects[0].type = GameEnums.EffectType.DAMAGE
+	hp_skill.effects[0].amount = 1
+	hp_skill.finalize_modular()
+	var hp_dict: Dictionary = ClassLibrarySchema.ability_to_dict(hp_skill)
+	if int(hp_dict.get("primary_resource", -1)) != int(GameEnums.CostResource.HP):
+		failures.append("ability_to_dict lost HP primary_resource")
+	var hp_clone := AbilityData.new()
+	hp_clone.id = hp_skill.id
+	ClassLibrarySchema.apply_ability_dict(hp_clone, hp_dict)
+	if hp_clone.primary_resource != GameEnums.CostResource.HP:
+		failures.append("dict roundtrip lost HP primary_resource")
+	if hp_clone.primary_value != 5:
+		failures.append("dict roundtrip lost HP primary_value")

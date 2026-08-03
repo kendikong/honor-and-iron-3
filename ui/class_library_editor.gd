@@ -1454,17 +1454,29 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		)
 	parent.add_child(tags_warn)
 	## Cost block (ability-data.md §1) — primary authoring; AP/MP stay legacy mirrors.
+	var cost_warn := Label.new()
+	cost_warn.visible = false
+	cost_warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	cost_warn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
+	cost_warn.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
 	var primary_res_row := _bind_enum(
 		grid, "primary_resource", GameEnums.CostResource, ability.primary_resource,
 		func(v: int) -> void:
 			## §11: PRE_MOVE ↔ MP, ACTION ↔ AP (HP allowed as ACTION primary for self-spend).
 			var next: GameEnums.CostResource = v as GameEnums.CostResource
-			if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
-				if next != GameEnums.CostResource.MP:
-					return
-			elif ability.planner_group == GameEnums.PlannerGroup.ACTION:
-				if next != GameEnums.CostResource.AP and next != GameEnums.CostResource.HP:
-					return
+			if not AbilityModuleBridge.is_planner_cost_legal(ability.planner_group, next):
+				cost_warn.text = (
+					"Illegal primary_resource %s for %s (not applied)"
+					% [
+						GameEnums.CostResource.keys()[next],
+						GameEnums.PlannerGroup.keys()[ability.planner_group],
+					]
+				)
+				cost_warn.visible = true
+				_refresh_ability_ui(ability)
+				return
+			cost_warn.text = ""
+			cost_warn.visible = false
 			ability.primary_resource = next
 			AbilityModuleBridge.sync_legacy_from_header(ability)
 			_refresh_ability_ui(ability)
@@ -1490,18 +1502,24 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "cost_modifier_n", cost_mod_n_row)
+	parent.add_child(cost_warn)
 	var ap_row := _bind_int(grid, "AP (legacy)", ability.action_point_cost, func(v: int) -> void:
 		ability.action_point_cost = v
-		if ability.planner_group == GameEnums.PlannerGroup.ACTION:
-			ability.primary_resource = GameEnums.CostResource.AP
+		## Do not stomp HP-primary ACTION skills when editing the legacy AP mirror.
+		if (
+			ability.planner_group == GameEnums.PlannerGroup.ACTION
+			and ability.primary_resource == GameEnums.CostResource.AP
+		):
 			ability.primary_value = v
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "action_point_cost", ap_row)
 	var mp_row := _bind_int(grid, "MP (legacy)", ability.movement_point_cost, func(v: int) -> void:
 		ability.movement_point_cost = v
-		if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
-			ability.primary_resource = GameEnums.CostResource.MP
+		if (
+			ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
+			and ability.primary_resource == GameEnums.CostResource.MP
+		):
 			ability.primary_value = v
 		_refresh_ability_ui(ability)
 	)
@@ -1588,7 +1606,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			or AbilitySystem.effect_amount(ability, GameEnums.EffectType.HEAL) != 0
 		)
 		var has_upg_range: bool = ability.upgraded_range_tiles != -1
-		_grey_row(ap_row, not is_action)
+		_grey_row(ap_row, not is_action or ability.primary_resource == GameEnums.CostResource.HP)
 		_grey_row(mp_row, not is_pre_move)
 		## §11: PRE_MOVE locks resource to MP; ACTION may choose AP or HP (not MP/NONE).
 		_grey_row(primary_res_row, is_pre_move)
@@ -1605,8 +1623,11 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	_ability_ui[ability]["greying_cb"] = grey_cb
 	_ability_ui[ability]["kind_lbl"] = kind_lbl
 	_ability_ui[ability]["tags_warn"] = tags_warn
+	_ability_ui[ability]["cost_warn"] = cost_warn
 	if tags_row.size() >= 2:
 		_ability_ui[ability]["tags_edit"] = tags_row[1]
+	if primary_res_row.size() >= 2:
+		_ability_ui[ability]["primary_res_edit"] = primary_res_row[1]
 	grey_cb.call()
 	_add_subsection_label(parent, "Modules (bible — rebuilt from Effects)", ClassLibraryTheme.ACCENT_DATA)
 	var modules_preview := RichTextLabel.new()
@@ -1890,6 +1911,11 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 		var want_tags: String = _tags_to_csv(ability.tags)
 		if (tags_edit as LineEdit).text != want_tags:
 			(tags_edit as LineEdit).text = want_tags
+	var primary_res_edit: Control = refs.get("primary_res_edit")
+	if primary_res_edit is OptionButton:
+		var ob: OptionButton = primary_res_edit as OptionButton
+		if ob.selected != ability.primary_resource:
+			ob.select(ability.primary_resource)
 
 	var preview: RichTextLabel = refs.get("preview")
 	if preview != null:
