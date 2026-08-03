@@ -477,6 +477,15 @@ static func ability_data_dump(ability: AbilityData) -> String:
 	for t: StringName in ability.tags:
 		tag_parts.append(String(t))
 	lines.append("tags: %s" % (",".join(tag_parts) if not tag_parts.is_empty() else "(none)"))
+	lines.append(
+		"cost: %s %d mod %s n=%d"
+		% [
+			GameEnums.CostResource.keys()[ability.primary_resource],
+			ability.primary_value,
+			GameEnums.CostModifier.keys()[ability.cost_modifier],
+			ability.cost_modifier_n,
+		]
+	)
 	lines.append("kind: %s" % GameEnums.AbilityKind.keys()[ability.kind])
 	lines.append("action_point_cost: %d" % ability.action_point_cost)
 	lines.append("movement_point_cost: %d" % ability.movement_point_cost)
@@ -1151,7 +1160,13 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		if tags_v is Array:
 			for t: Variant in tags_v as Array:
 				tags_out.append(StringName(String(t)))
-		dst.tags = AbilityModuleBridge.sanitize_tags(tags_out)
+		var validated: Dictionary = AbilityModuleBridge.validate_tag_list(tags_out)
+		if not bool(validated["ok"]):
+			push_error(
+				"ClassLibrarySchema.apply_ability_dict: rejected unknown tags [%s] on ability %s"
+				% [",".join(validated["rejected"] as PackedStringArray), String(dst.id)]
+			)
+		dst.tags = validated["tags"] as Array[StringName]
 	dst.primary_resource = int(data.get("primary_resource", dst.primary_resource)) as GameEnums.CostResource
 	dst.primary_value = int(data.get("primary_value", dst.primary_value))
 	dst.cost_modifier = int(data.get("cost_modifier", dst.cost_modifier)) as GameEnums.CostModifier

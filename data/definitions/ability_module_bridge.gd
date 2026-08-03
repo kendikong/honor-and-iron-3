@@ -31,14 +31,27 @@ static func is_canonical_tag(tag: StringName) -> bool:
 
 ## Drop unknown tags; keep first occurrence of each canonical tag.
 static func sanitize_tags(tags: Array[StringName]) -> Array[StringName]:
+	var validated: Dictionary = validate_tag_list(tags)
+	return validated["tags"] as Array[StringName]
+
+
+## Fail-loud tag check (ability-data.md §11): unknown ids rejected — not silently fixed up.
+## Returns { ok: bool, tags: Array[StringName], rejected: PackedStringArray }.
+static func validate_tag_list(tags: Array[StringName]) -> Dictionary:
 	var out: Array[StringName] = []
+	var rejected: PackedStringArray = PackedStringArray()
 	for t: StringName in tags:
 		if not is_canonical_tag(t):
+			rejected.append(String(t))
 			continue
 		if t in out:
 			continue
 		out.append(t)
-	return out
+	return {
+		"ok": rejected.is_empty(),
+		"tags": out,
+		"rejected": rejected,
+	}
 
 
 static func planner_group_from_kind(kind: GameEnums.AbilityKind) -> GameEnums.PlannerGroup:

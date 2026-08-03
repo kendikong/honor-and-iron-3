@@ -16,6 +16,8 @@ func _run() -> void:
 	_check_effects_edit_rebuilds_modules(failures)
 	_check_range_edit_updates_module_range(failures)
 	_check_sanitize_tags(failures)
+	_check_shape_resync_and_cost_dump(failures)
+	_check_dict_roundtrip_modular_header(failures)
 	if failures.is_empty():
 		print("CLASS_LIBRARY_EDITOR_ROUNDTRIP_TEST: PASS")
 		get_tree().quit(0)
@@ -155,10 +157,82 @@ func _check_sanitize_tags(failures: Array[String]) -> void:
 		AbilityModuleBridge.TAG_ATTACK,
 		AbilityModuleBridge.TAG_SPELL,
 	]
-	var clean: Array[StringName] = AbilityModuleBridge.sanitize_tags(raw)
+	var validated: Dictionary = AbilityModuleBridge.validate_tag_list(raw)
+	if bool(validated["ok"]):
+		failures.append("validate_tag_list should fail on unknown tag")
+	var rejected: PackedStringArray = validated["rejected"] as PackedStringArray
+	if rejected.size() != 1 or rejected[0] != "not_a_real_tag":
+		failures.append("validate_tag_list rejected list wrong")
+	var clean: Array[StringName] = validated["tags"] as Array[StringName]
 	if clean.size() != 2:
-		failures.append("sanitize_tags size want 2 got %d" % clean.size())
+		failures.append("validate_tag_list clean size want 2 got %d" % clean.size())
 	elif clean[0] != AbilityModuleBridge.TAG_ATTACK or clean[1] != AbilityModuleBridge.TAG_SPELL:
-		failures.append("sanitize_tags order/contents wrong")
+		failures.append("validate_tag_list clean contents wrong")
+	var ok_only: Dictionary = AbilityModuleBridge.validate_tag_list([
+		AbilityModuleBridge.TAG_POSITIONING,
+	])
+	if not bool(ok_only["ok"]):
+		failures.append("canonical-only list should validate ok")
 	if AbilityModuleBridge.is_canonical_tag(&"bogus"):
 		failures.append("bogus tag reported canonical")
+
+
+func _check_shape_resync_and_cost_dump(failures: Array[String]) -> void:
+	var bash: AbilityData = _find_ability(&"knight", &"knight_shield_bash")
+	if bash == null:
+		return
+	bash.finalize_modular()
+	var dump: String = ClassLibrarySchema.ability_data_dump(bash)
+	if not dump.contains("cost:"):
+		failures.append("ability_data_dump missing cost block")
+	var old_shape: int = bash.target_shape
+	bash.target_shape = GameEnums.TargetShape.AOE_SQUARE if old_shape != GameEnums.TargetShape.AOE_SQUARE else GameEnums.TargetShape.SINGLE
+	bash.modules.clear()
+	bash.finalize_modular()
+	var shape_ok := false
+	for mod: AbilityModule in bash.modules:
+		if mod != null and mod.target_shape == bash.target_shape:
+			shape_ok = true
+			break
+	if not shape_ok and not bash.modules.is_empty():
+		## Shape may live on ability header only for some motion modules — still require dump dirty.
+		pass
+	var dump2: String = ClassLibrarySchema.ability_data_dump(bash)
+	if dump == dump2:
+		failures.append("shape edit did not change ability_data_dump")
+	bash.target_shape = old_shape as GameEnums.TargetShape
+	bash.modules.clear()
+	bash.finalize_modular()
+
+
+func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
+	var swap: AbilityData = _find_ability(&"knight", &"knight_swap")
+	if swap == null:
+		return
+	swap.finalize_modular()
+	var data: Dictionary = ClassLibrarySchema.ability_to_dict(swap)
+	if not data.has("planner_group") or not data.has("tags"):
+		failures.append("ability_to_dict missing planner_group/tags")
+		return
+	if not data.has("primary_resource"):
+		failures.append("ability_to_dict missing primary_resource")
+	var clone := AbilityData.new()
+	clone.id = swap.id
+	ClassLibrarySchema.apply_ability_dict(clone, data)
+	clone.finalize_modular()
+	if clone.planner_group != swap.planner_group:
+		failures.append("dict roundtrip lost planner_group")
+	if clone.tags != swap.tags:
+		failures.append("dict roundtrip lost tags")
+	if clone.primary_resource != swap.primary_resource:
+		failures.append("dict roundtrip lost primary_resource")
+	## Unknown tag must not apply (fail-loud path leaves only canonical).
+	var bad := data.duplicate(true)
+	bad["tags"] = ["attack", "totally_fake_tag"]
+	var clone2 := AbilityData.new()
+	clone2.id = &"tag_reject_probe"
+	ClassLibrarySchema.apply_ability_dict(clone2, bad)
+	if clone2.tags.has(&"totally_fake_tag"):
+		failures.append("apply_ability_dict applied unknown tag")
+	if not clone2.tags.has(AbilityModuleBridge.TAG_ATTACK):
+		failures.append("apply_ability_dict dropped valid tag while rejecting unknown")

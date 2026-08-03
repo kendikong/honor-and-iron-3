@@ -1426,16 +1426,60 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
+	var tags_warn := Label.new()
+	tags_warn.visible = false
+	tags_warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tags_warn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
+	tags_warn.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
 	var tags_row := _bind_string(grid, "tags", _tags_to_csv(ability.tags), func(v: String) -> void:
-		ability.tags = AbilityModuleBridge.sanitize_tags(_tags_from_csv(v))
+		var parsed: Array[StringName] = _tags_from_csv(v)
+		var validated: Dictionary = AbilityModuleBridge.validate_tag_list(parsed)
+		if not bool(validated["ok"]):
+			var rejected: PackedStringArray = validated["rejected"] as PackedStringArray
+			tags_warn.text = "Rejected unknown tags (not applied): %s" % ",".join(rejected)
+			tags_warn.visible = true
+			return
+		tags_warn.text = ""
+		tags_warn.visible = false
+		ability.tags = validated["tags"] as Array[StringName]
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "tags", tags_row)
 	if tags_row.size() >= 2 and tags_row[1] is LineEdit:
 		(tags_row[1] as LineEdit).tooltip_text = (
-			"Canonical only: attack, movement, positioning, spell, heal (unknowns dropped)"
+			"Canonical only: attack, movement, positioning, spell, heal — unknown ids rejected"
 		)
-	var ap_row := _bind_int(grid, "AP", ability.action_point_cost, func(v: int) -> void:
+	parent.add_child(tags_warn)
+	## Cost block (ability-data.md §1) — primary authoring; AP/MP stay legacy mirrors.
+	var primary_res_row := _bind_enum(
+		grid, "primary_resource", GameEnums.CostResource, ability.primary_resource,
+		func(v: int) -> void:
+			ability.primary_resource = v as GameEnums.CostResource
+			AbilityModuleBridge.sync_legacy_from_header(ability)
+			_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "primary_resource", primary_res_row)
+	var primary_val_row := _bind_int(grid, "primary_value", ability.primary_value, func(v: int) -> void:
+		ability.primary_value = v
+		AbilityModuleBridge.sync_legacy_from_header(ability)
+		_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "primary_value", primary_val_row)
+	var cost_mod_row := _bind_enum(
+		grid, "cost_modifier", GameEnums.CostModifier, ability.cost_modifier,
+		func(v: int) -> void:
+			ability.cost_modifier = v as GameEnums.CostModifier
+			AbilityModuleBridge.sync_legacy_from_header(ability)
+			_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "cost_modifier", cost_mod_row)
+	var cost_mod_n_row := _bind_int(grid, "cost_modifier_n", ability.cost_modifier_n, func(v: int) -> void:
+		ability.cost_modifier_n = v
+		AbilityModuleBridge.sync_legacy_from_header(ability)
+		_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "cost_modifier_n", cost_mod_n_row)
+	var ap_row := _bind_int(grid, "AP (legacy)", ability.action_point_cost, func(v: int) -> void:
 		ability.action_point_cost = v
 		if ability.planner_group == GameEnums.PlannerGroup.ACTION:
 			ability.primary_resource = GameEnums.CostResource.AP
@@ -1443,7 +1487,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "action_point_cost", ap_row)
-	var mp_row := _bind_int(grid, "MP", ability.movement_point_cost, func(v: int) -> void:
+	var mp_row := _bind_int(grid, "MP (legacy)", ability.movement_point_cost, func(v: int) -> void:
 		ability.movement_point_cost = v
 		if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 			ability.primary_resource = GameEnums.CostResource.MP
@@ -1535,6 +1579,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		var has_upg_range: bool = ability.upgraded_range_tiles != -1
 		_grey_row(ap_row, not is_action)
 		_grey_row(mp_row, not is_pre_move)
+		_grey_row(cost_mod_n_row, ability.cost_modifier == GameEnums.CostModifier.NONE)
 		_grey_row(shape_row, is_displacement)
 		_grey_row(shape_size_row, is_displacement)
 		_grey_row(scaling_row, not has_dmg_or_heal)
@@ -1546,10 +1591,11 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		_ability_ui[ability] = {}
 	_ability_ui[ability]["greying_cb"] = grey_cb
 	_ability_ui[ability]["kind_lbl"] = kind_lbl
+	_ability_ui[ability]["tags_warn"] = tags_warn
 	if tags_row.size() >= 2:
 		_ability_ui[ability]["tags_edit"] = tags_row[1]
 	grey_cb.call()
-	_add_subsection_label(parent, "Modules (bible)", ClassLibraryTheme.ACCENT_DATA)
+	_add_subsection_label(parent, "Modules (bible — rebuilt from Effects)", ClassLibraryTheme.ACCENT_DATA)
 	var modules_preview := RichTextLabel.new()
 	modules_preview.bbcode_enabled = true
 	modules_preview.fit_content = true
@@ -1557,7 +1603,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	modules_preview.text = ClassLibrarySchema.modules_summary_bbcode(ability)
 	parent.add_child(modules_preview)
 	_ability_ui[ability]["modules_preview"] = modules_preview
-	_add_subsection_label(parent, "Effects (legacy flat — compiled from modules)", ClassLibraryTheme.ACCENT_DATA)
+	_add_subsection_label(parent, "Effects (editable surface — modules rebuild from these)", ClassLibraryTheme.ACCENT_DATA)
 	var eff_box := VBoxContainer.new()
 	eff_box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
 	parent.add_child(eff_box)
