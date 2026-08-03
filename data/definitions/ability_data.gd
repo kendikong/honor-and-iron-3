@@ -177,8 +177,8 @@ func has_tag(tag: StringName) -> bool:
 
 
 func is_movement_kind() -> bool:
-	## Prefer planner_group when synced; kind remains authoritative for UNIVERSAL_* and pre-finalize.
-	if planner_group == GameEnums.PlannerGroup.PRE_MOVE and kind == GameEnums.AbilityKind.MOVEMENT_SKILL:
+	## planner_group owns column; MOVEMENT_SKILL kind is legacy fallback (stubs / pre-sync).
+	if planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 		return true
 	return kind == GameEnums.AbilityKind.MOVEMENT_SKILL
 

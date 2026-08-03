@@ -1113,7 +1113,7 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"presentation_key": String(src.presentation_key),
 		"presentation_anim": src.presentation_anim,
 		"scaling_stat": src.scaling_stat,
-		"is_movement_skill": src.is_movement_skill,
+		"is_movement_skill": src.planner_group == GameEnums.PlannerGroup.PRE_MOVE,
 		"effects": effects_to_dict_array(src.effects),
 		"upgraded_effects": effects_to_dict_array(src.upgraded_effects),
 		"module_count": src.modules.size(),
@@ -1206,10 +1206,20 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	if dst == null or data.is_empty():
 		return
 	dst.display_name = String(data.get("display_name", dst.display_name))
-	dst.kind = int(data.get("kind", dst.kind))
 	if data.has("planner_group"):
 		dst.planner_group = int(data.get("planner_group", dst.planner_group))
-	else:
+	if data.has("kind"):
+		var kind_v: int = int(data.get("kind"))
+		var kind_enum: GameEnums.AbilityKind = kind_v as GameEnums.AbilityKind
+		if (
+			kind_enum == GameEnums.AbilityKind.UNIVERSAL_RUN
+			or kind_enum == GameEnums.AbilityKind.UNIVERSAL_WAIT
+		):
+			dst.kind = kind_enum
+		elif not data.has("planner_group"):
+			dst.kind = kind_enum
+			dst.planner_group = AbilityModuleBridge.planner_group_from_kind(kind_enum)
+	elif not data.has("planner_group"):
 		dst.planner_group = AbilityModuleBridge.planner_group_from_kind(dst.kind as GameEnums.AbilityKind)
 	if data.has("tags"):
 		var tags_v: Variant = data.get("tags", [])
@@ -1275,7 +1285,6 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.presentation_key = StringName(String(data.get("presentation_key", String(dst.presentation_key))))
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
 	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
-	dst.is_movement_skill = bool(data.get("is_movement_skill", dst.planner_group == GameEnums.PlannerGroup.PRE_MOVE))
 	if data.has("effects"):
 		dst.effects = effects_from_dict_array(data.get("effects", []))
 		dst.modules.clear()

@@ -1405,7 +1405,6 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	ability.ensure_targeting_flags_from_mode()
 	if ability.modules.is_empty() and not ability.effects.is_empty():
 		ability.finalize_modular()
-	ability.is_movement_skill = ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
@@ -1415,8 +1414,6 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		grid, "planner_group", GameEnums.PlannerGroup, ability.planner_group,
 		func(v: int) -> void:
 			ability.planner_group = v
-			ability.kind = AbilityModuleBridge.kind_from_planner_group(v as GameEnums.PlannerGroup, ability.kind)
-			ability.is_movement_skill = v == GameEnums.PlannerGroup.PRE_MOVE
 			## Sole §11 owner: keep primary if still legal; else enforce_planner_cost_coupling.
 			if not AbilityModuleBridge.is_planner_cost_legal(
 				ability.planner_group, ability.primary_resource
@@ -1900,7 +1897,7 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 		var type_str := "ACTION"
 		if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 			type_str = "PRE_MOVE (basic positioning)"
-		elif AbilitySystem.is_movement_skill(ability):
+		elif ability.has_tag(AbilityModuleBridge.TAG_MOVEMENT) or AbilitySystem.ability_has_movement_effect(ability):
 			type_str = "ACTION + movement"
 		sub_lbl.text = String(ability.id) + " | " + type_str
 	var cost_val: Label = refs.get("cost_val")

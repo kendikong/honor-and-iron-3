@@ -15,7 +15,7 @@ GAUNTLET SCORE │ AD-4 │ Round 2 │ SELF-GRADED: no (subagent)
 SCORE: 93/100 │ THRESHOLD: 92 │ PASS
 DELTA: +4 vs r1 (89)
 AD-1 PASS 93 │ AD-2 PASS 93 │ AD-3 PASS 92 │ AD-4 PASS 93 │ AD-5 DEFERRED 90
-NEXT: AD-6 → SMOOTH
+NEXT: AD-6 critic → SMOOTH
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
@@ -47,7 +47,7 @@ STOP_CONDITION_MET: no
 | AD-2 Native module/gate | **PASS** @ 93 |
 | AD-3 Planning gated-aim | **PASS** @ 92 |
 | AD-4 Factories modules-first | **PASS** @ 93 (`0a0ba41ef`) |
-| AD-6 Remove legacy kind authoring | **IN PROGRESS** |
+| AD-6 Remove legacy kind authoring | **AWAITING CRITIC** |
 | AD-SMOOTH | PENDING |
 
 ---

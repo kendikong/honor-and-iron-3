@@ -467,7 +467,6 @@ static func _make_ability(p_id: StringName, p_name: String, p_range: int, effect
 	var ability := AbilityData.new()
 	ability.id = p_id
 	ability.display_name = p_name
-	ability.kind = GameEnums.AbilityKind.CLASS_SKILL
 	ability.planner_group = GameEnums.PlannerGroup.ACTION
 	ability.primary_resource = GameEnums.CostResource.AP
 	ability.primary_value = ap_cost
@@ -547,13 +546,11 @@ static func _make_movement_ability(
 	targeting: GameEnums.TargetingMode = GameEnums.TargetingMode.ALLY_UNIT,
 ) -> AbilityData:
 	var ability := _make_ability(p_id, p_name, p_range, effects, 0, stat, shape, shape_size)
-	ability.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
 	ability.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	ability.primary_resource = GameEnums.CostResource.MP
 	ability.primary_value = mp_cost
 	ability.movement_point_cost = mp_cost
 	ability.targeting_mode = targeting
-	ability.is_movement_skill = true
 	ability.presentation_anim = GameEnums.PresentationAnim.WALK
 	ability.targeting_flags = AbilityData._targeting_mode_to_flags(ability.targeting_mode)
 	ability.sync_legacy_targeting()

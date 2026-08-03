@@ -143,10 +143,9 @@ static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, bo
 		return false
 		
 	var ap_cost = get_action_point_cost(actor, ability, board)
-			
+	if ability.is_pre_move_planner():
+		return actor.movement.points_left >= movement_point_cost(actor, ability)
 	match ability.kind:
-		GameEnums.AbilityKind.MOVEMENT_SKILL:
-			return actor.movement.points_left >= movement_point_cost(actor, ability)
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			if actor.has_run_boost():
 				return false
@@ -221,17 +220,10 @@ static func ability_has_movement_effect(ability: AbilityData) -> bool:
 
 
 static func is_movement_skill(ability: AbilityData) -> bool:
+	## Legacy alias — prefer ability.is_movement_kind() / planner_group (ability-data.md §14.12).
 	if ability == null:
 		return false
-	for eff in ability.effects:
-		if eff.type in [
-			GameEnums.EffectType.DASH,
-			GameEnums.EffectType.MOVE,
-			GameEnums.EffectType.TELEPORT_CASTER,
-			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
-		]:
-			return true
-	return false
+	return ability.is_movement_kind()
 
 
 ## Module list for resolution (upgraded profile when applicable).
@@ -898,9 +890,9 @@ static func can_afford_run_for_commit(actor: UnitState, paired_ability: AbilityD
 		return true
 	if is_wait_ability(paired_ability):
 		return actor.can_use_action_slot()
+	if paired_ability.is_pre_move_planner():
+		return true
 	match paired_ability.kind:
-		GameEnums.AbilityKind.MOVEMENT_SKILL:
-			return true
 		GameEnums.AbilityKind.CLASS_SKILL:
 			var run_ability: AbilityData = DataLibrary.get_universal_run()
 			if run_ability == null:
@@ -1330,16 +1322,12 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: B
 		return
 		
 	var ap_cost = get_action_point_cost(actor, ability, board)
-			
-	match ability.kind:
-		GameEnums.AbilityKind.MOVEMENT_SKILL:
-			actor.movement.points_left -= movement_point_cost(actor, ability)
-		GameEnums.AbilityKind.UNIVERSAL_RUN:
-			actor.ability.points_left -= ap_cost
-		GameEnums.AbilityKind.CLASS_SKILL:
-			actor.ability.points_left -= ap_cost
-		_:
-			pass
+	if ability.is_pre_move_planner():
+		actor.movement.points_left -= movement_point_cost(actor, ability)
+	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
+		actor.ability.points_left -= ap_cost
+	elif ability.kind == GameEnums.AbilityKind.CLASS_SKILL:
+		actor.ability.points_left -= ap_cost
 
 
 static func apply_canto_move_refund(actor: UnitState) -> void:

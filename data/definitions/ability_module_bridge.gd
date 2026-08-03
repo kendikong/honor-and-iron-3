@@ -319,7 +319,12 @@ static func finalize_ability(ability: AbilityData) -> void:
 	## different value (e.g. SELF mode with ALLY flags). Prefer authored mode → flags.
 	_prefer_authored_targeting_mode(ability)
 	if ability.modules.is_empty() and not ability.effects.is_empty():
-		sync_header_from_legacy(ability)
+		## planner_group is authoring source — migrate legacy MOVEMENT_SKILL kind only when column unset.
+		if (
+			ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
+			and ability.planner_group != GameEnums.PlannerGroup.PRE_MOVE
+		):
+			ability.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 		ability.modules = infer_modules_from_effects(ability.effects, ability)
 	if ability.upgraded_modules.is_empty() and not ability.upgraded_effects.is_empty():
 		var upgraded_proxy := AbilityData.new()
