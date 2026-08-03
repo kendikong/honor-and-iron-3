@@ -1,6 +1,6 @@
-# Unattended Gauntlet Run — AbilityData Modular Refactor (ACTIVE — regression reopen)
+# Unattended Gauntlet Run — AbilityData Modular Refactor (CLOSED — STOP_ON met)
 
-**Status:** **ACTIVE** — false STOP revoked (2026-08-03). Scenario/bridge BAR was **INADEQUATE** for behavior freeze; Tier 3 live planning **FAIL** after AD-SMOOTH “PASS”.  
+**Status:** **CLOSED** — AD-REGRESS critic **PASS 93/90**, Infrastructure **ADEQUATE** (2026-08-03). Tier 3 live r8 green (bible + swap).  
 **Spec:** [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) §5.4 · **Progress:** [`workbench.md`](workbench.md)  
 **Authority:** [`ability-data.md`](ability-data.md) (READY_FOR_REFACTOR)  
 **Template:** [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md)  
@@ -15,7 +15,7 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 | Field | Value |
 |-------|-------|
 | **CHUNK_ID** | `ability-data-modular-2026-08-03` |
-| **PIECE_ID** | `AD-REGRESS` (live Tier 3 green + re-critic) then AD-SMOOTH re-close |
+| **PIECE_ID** | `AD-REGRESS` **CLOSED** (critic 93/90 ADEQUATE) — AD-SMOOTH re-closed via live evidence |
 | **GOAL** | Modular AbilityData per `ability-data.md` §0–§14; **all current** Knight/Bruiser/positioning skills keep **identical live planning + combat behavior** |
 | **PASS_THRESHOLD** | **92** per code piece · **90** wave smooth |
 | **BAR** | See **Machine bar** below — **Tier 3 live is mandatory** |
