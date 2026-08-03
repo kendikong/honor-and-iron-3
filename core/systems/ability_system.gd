@@ -220,10 +220,9 @@ static func ability_has_movement_effect(ability: AbilityData) -> bool:
 
 
 static func is_movement_skill(ability: AbilityData) -> bool:
-	## Legacy alias — prefer ability.is_movement_kind() / planner_group (ability-data.md §14.12).
-	if ability == null:
-		return false
-	return ability.is_movement_kind()
+	## Displacement effects (DASH/MOVE/…), NOT planner_group. Column ownership is
+	## `AbilityData.is_movement_kind()` / `is_pre_move_planner()` (ability-data.md).
+	return ability_has_movement_effect(ability)
 
 
 ## Module list for resolution (upgraded profile when applicable).

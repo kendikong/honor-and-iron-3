@@ -2692,7 +2692,7 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	var ability: AbilityData = null
 	if unit_id == _director.selected_unit_id:
 		ability = _selected_ability_data(actor)
-	if ability != null and _awaiting_flow_selected(actor, ability) and ability.is_movement_kind():
+	if ability != null and _awaiting_flow_selected(actor, ability) and AbilitySystem.is_movement_skill(ability):
 		if awaiting_targeting_active():
 			return projected
 		var hover: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
@@ -4287,12 +4287,12 @@ func _predicted_stand_tile_for_enemy_hover(cell: Vector2i, enemy: UnitState) -> 
 	var ability: AbilityData = null
 	if ability_index >= 0:
 		ability = _selected_ability_data(actor)
-		if ability != null and ability.is_pre_move_planner():
+		if ability != null and AbilitySystem.is_movement_skill(ability):
 			return origin
 	else:
 		if not actor.active_abilities.is_empty():
 			var basic_ability: AbilityData = CombatDirector.resolve_selected_ability(actor, 0)
-			if basic_ability != null and basic_ability.is_movement_kind():
+			if basic_ability != null and AbilitySystem.is_movement_skill(basic_ability):
 				return origin
 
 	if is_live_preview_active() and preview_state.preview_board != null:

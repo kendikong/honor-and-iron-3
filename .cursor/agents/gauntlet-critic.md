@@ -32,11 +32,14 @@ Ask:
 1. Can I verify **GOAL** with **BAR + ARTIFACT + REFERENCE** (and tools I can run or the lead supplied)?
 2. Would a harsh reviewer need **vision, headless replay, diff capture, lint, or pipeline output** that is **missing, stubbed, or owner-only**?
 3. Is the BAR **misaligned** with GOAL (tests green but goal untested — e.g. visual compositor with no screenshot bar)?
+4. If GOAL claims **behavior freeze**, **identical gameplay**, **working skills**, or **no regression**: does BAR include **Tier 3 live** TestBattle acceptance (`live_planning_scene_test` via planning QA gate) **and** class skill gates with raw PASS stdout on disk?
 
 | Verdict | Meaning |
 |---------|---------|
 | **ADEQUATE** | BAR + artifacts can judge GOAL; proceed to rubric |
 | **INADEQUATE** | Cannot judge GOAL properly with current tooling → **FAIL** regardless of builder claims |
+
+**Hard rule — behavior freeze:** If GOAL implies skills still work in planning/combat and BAR is only bridge / scenario / planning-input harnesses (no Tier 3 live PASS artifact), verdict is **INADEQUATE** (score ≤65). Do **not** award PASS for refactor polish while live planning is unproven or failing.
 
 When **INADEQUATE**:
 
@@ -47,7 +50,8 @@ When **INADEQUATE**:
 | Gap type | Propose (examples) |
 |----------|-------------------|
 | No headless test for behavior | New row in `tests/planning_skill_scenarios_test.gd`, `bridge_test_runner` case, or `run_regression_tests` coverage |
-| No planning/commit bar | Point at `.\scripts\run_planning_qa_gate.ps1` — if missing scenario, name the scenario file to add |
+| No planning/commit bar | Point at `.\scripts\run_planning_qa_gate.ps1` (**Tier 3 live** `live_planning_scene_test.gd`) — if missing scenario, name the scenario file to add |
+| Behavior-freeze / skill refactor without live proof | **Mandatory:** Tier 3 live planning gate + Knight QA + Bruiser QA raw PASS logs. Scenario-only / bridge-only / `run_planning_input_only` alone is **INADEQUATE** when GOAL claims identical gameplay or working skills |
 | No visual proof | Capture script + reference PNG path (e.g. `reports/live_planning_trace/`, compositor gate checklist) |
 | No doc machine bar | Extend `scripts/lint_design_doc.ps1` or pillar checklist |
 | No asset/canonical proof | PixelForge / `asset_manifest.md` / CANON promote step — cite `appendices/pixelforge-v14-contract.md` pattern |
@@ -128,11 +132,12 @@ Proposed infrastructure: (required if INADEQUATE — one concrete tool/test/scri
 
 Evidence: (file:line, log excerpt, or command output — required on FAIL)
 
-Residual risk: (one line — required on PASS and FAIL)
+Residual risk: (one line — required on PASS and FAIL; on PASS must name any suite **not** run, or "none — Tier 3 live + class gates green")
 ```
 
 8. On FAIL: **one** largest meaningful gap — not a full task list. If infrastructure is **INADEQUATE**, that gap **must** be the proposed tool/infrastructure.
 9. **Never PASS** from builder summaries, vibes, or "tests passed so it's fine" without rubric justification **and** infrastructure **ADEQUATE**.
+10. **Never PASS** a behavior-freeze / AbilityData / planning-reader piece when Tier 3 live log shows `[FAIL]` or is missing — even if scenario BAR is green.
 
 ## Honor & Iron defaults
 

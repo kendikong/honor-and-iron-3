@@ -5,11 +5,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ AD-SMOOTH │ Round 2 │ SELF-GRADED: no (subagent)
-SCORE: 91/100 │ THRESHOLD: 90 │ PASS │ CLIMBING
-DELTA: +4 vs round 1 (was 87)
-AD-1..AD-4 PASS │ AD-5 DEFERRED 90 │ AD-6 PASS 92 │ AD-SMOOTH PASS 91
-STOP_CONDITION_MET: yes
+GAUNTLET SCORE │ ACTIVE │ SELF-GRADED: no
+FALSE STOP REVOKED — Tier 3 live was FAIL after AD-SMOOTH “PASS”
+AD-REGRESS: restore is_movement_skill (effects) ≠ is_movement_kind (column)
+STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
 
@@ -19,16 +18,13 @@ STOP_CONDITION_MET: yes
 | AD-2 | **93** | PASS |
 | AD-3 | **92** | PASS |
 | AD-4 | **93** | PASS |
-| AD-5 | **90** | **DEFERRED** (MAX_ROUNDS) |
-| AD-6 | **92** | PASS |
-| AD-SMOOTH | **91** | **PASS** (r2) |
+| AD-5 | **90** | **DEFERRED** |
+| AD-6 | **92** | PASS *(column ownership; reader conflation fixed in AD-REGRESS)* |
+| AD-SMOOTH | **91** | **REVOKED** — inadequate BAR (no Tier 3 live) |
+| AD-REGRESS | pending | Tier 3 live must PASS |
 
-Commit smooth r2: `2687b48a011d5abebf4c7cdaf72dd4f6c46769ed`  
-Critic closeout commit: `baae420e2006640bf3556bd9a1b52837015a9c3b`
-
-## AD-SMOOTH r2 (critic PASS)
-- Afford/spend use planner_group helpers; dead `sync_header_from_legacy` removed
-- Critic residual (non-blocking): mixed Wait detection styles in presentation / `execute` id-gate
+## Lesson
+Scenario/bridge green ≠ behavior freeze. Critic must demand Tier 3 live evidence.
 
 ## STOP_ON
-`STOP_CONDITION_MET: yes` — AD-SMOOTH critic **91 ≥ 90**; AD-5 remains deferred
+`STOP_CONDITION_MET: no` — pending Tier 3 live PASS + re-critic ADEQUATE
