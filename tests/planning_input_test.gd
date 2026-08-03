@@ -1210,7 +1210,7 @@ static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
 				"PlanningInputTest: violent_collision bad-path setup must arm module 1 awaiting",
 			)
 		else:
-			var bad_follow := Vector2i(9, 3) ## beyond MOVE 2 from post-dash (~5,3)
+			var bad_follow := Vector2i(7, 5) ## in-bounds (8x6); Manhattan 4 from post-dash (~5,3) > MOVE 2
 			var bad_slots: Dictionary = bad_input._final_commit_slots_for_interaction(1, bad_follow)
 			if not _slots_invalid(bad_slots):
 				failures.append(

@@ -1,8 +1,7 @@
 # Gauntlet workbench (live progress)
 
 **Updated by:** lead agent  
-**Spec:** `docs/design/00-gauntlet-loop-cursor.md`  
-**Run:** AbilityData modular refactor · **PR:** https://github.com/kendikong/honor-and-iron-3/pull/6
+**PR:** https://github.com/kendikong/honor-and-iron-3/pull/6
 
 ```text
 ══════════════════════════════════════
@@ -14,9 +13,11 @@ STOP_CONDITION_MET: no
 ```
 
 ### AD-3 r5
-Planning reject reason for gated follow-up endpoint = `gated_followup_invalid_dest` (same code as sim). Slot invalid + commit reject asserted unconditionally.
+- Planning gated follow-up reject reason = `gated_followup_invalid_dest` (matches sim)
+- Unconditional slot invalid + commit reject + reason assert
+- In-bounds out-of-range cell `(7,5)` on 8×6 fixture
 
-BAR: `*ad3_r5*` PASS
+BAR: planning/bruiser/knight/bridge PASS (`*ad3_r5*`)
 
 ## STOP_ON
 `STOP_CONDITION_MET: no`
