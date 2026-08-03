@@ -1,0 +1,65 @@
+# Failure Report — AbilityData Gauntlet
+
+**CHUNK_ID:** `ability-data-modular-2026-08-03`  
+**Stopped (UTC):** 2026-08-03  
+**Branch:** `cursor/ability-data-modular-refactor-5448`  
+**PR:** https://github.com/kendikong/honor-and-iron-3/pull/6  
+**Final commit:** `cb3b618a21532b5fc6b05a42589bbc9e9872a7db`
+
+---
+
+## Stop reason
+
+**MAX_ROUNDS_PER_PIECE (8) reached on AD-5** under `PASS_THRESHOLD: 92`.
+
+AD-5 plateaued at **critic SCORE 90/100** (never ≥ 92). Lead must not continue AD-5 builder/critic cycles past the boundary.
+
+---
+
+## Critic trail (AD-5, bar 92)
+
+| Round | Score | Largest gap (critic) |
+|-------|-------|----------------------|
+| r6 | 87 | Silent tag drop; no cost block UI |
+| r7 | 90 | primary_resource not greyed/forced |
+| r8 | 89 | Over-grey blocked ACTION HP |
+| r9 | 90 | Silent illegal enum; AP stomps HP |
+| r10 | 90 | Editor UI fixes untested by BAR |
+| r11 | 63 | INADEQUATE — no OptionButton BAR |
+| r12 | 87 | Duplicate forced planner branch |
+| r13 | **90** | Planner-switch BAR not on editor callback wiring |
+
+**Best score:** 90  
+**Threshold:** 92  
+**RESULT:** FAIL (plateau)
+
+---
+
+## What shipped (valuable, not locked PASS)
+
+- Modular dump dirty-detection (`planner_group` / `tags` / `cost` / modules)
+- Effects editable surface → modules rebuild; range/shape resync
+- Fail-loud tags (`try_apply_tags` / `validate_tag_list`)
+- Cost coupling owner: `legal_primary_resources` / `enforce_planner_cost_coupling` / `try_apply_primary_resource`
+- Legal-only OptionButton populate + BAR asserts
+- Knight / Bruiser / bridge BAR green throughout
+
+---
+
+## Remaining pieces (not started under this stop)
+
+| Piece | Status |
+|-------|--------|
+| AD-5 | **STOPPED** — MAX_ROUNDS, score 90 &lt; 92 |
+| AD-1 | RE-OPEN (86 &lt; 92) — needs AD-2 |
+| AD-2…AD-SMOOTH | Not started this stop |
+
+---
+
+## Owner options
+
+1. **Accept AD-5 at 90** and reopen the run with a new piece focus (AD-2 native module/gate) and/or lower bar for editor-only polish.
+2. **Raise MAX_ROUNDS** or spawn a fresh piece `AD-5b` scoped only to “editor planner callback BAR hook” (static assert / extracted `apply_planner_group_change` tested by BAR).
+3. **Merge PR #6 as progress** (behavior-preserving editor/schema improvements) without claiming gauntlet STOP_ON success.
+
+`STOP_CONDITION_MET: no` (machine bar / critic ≥92 on all pieces not achieved)
