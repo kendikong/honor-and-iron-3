@@ -626,6 +626,12 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.id = src.id
 	dst.display_name = src.display_name
 	dst.kind = src.kind
+	dst.planner_group = src.planner_group
+	dst.tags = src.tags.duplicate()
+	dst.primary_resource = src.primary_resource
+	dst.primary_value = src.primary_value
+	dst.cost_modifier = src.cost_modifier
+	dst.cost_modifier_n = src.cost_modifier_n
 	dst.action_point_cost = src.action_point_cost
 	dst.movement_point_cost = src.movement_point_cost
 	dst.range_tiles = src.range_tiles
@@ -642,14 +648,17 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.presentation_key = src.presentation_key
 	dst.presentation_anim = src.presentation_anim
 	dst.scaling_stat = src.scaling_stat
-	dst.is_movement_skill = src.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
+	dst.is_movement_skill = src.planner_group == GameEnums.PlannerGroup.PRE_MOVE
 	dst.effects.clear()
 	for eff: EffectData in src.effects:
 		dst.effects.append(duplicate_effect(eff))
 	dst.upgraded_effects.clear()
 	for eff: EffectData in src.upgraded_effects:
 		dst.upgraded_effects.append(duplicate_effect(eff))
+	dst.modules.clear()
+	dst.upgraded_modules.clear()
 	dst.sync_legacy_targeting()
+	dst.finalize_modular()
 
 
 static func _effect_dump_line(index: int, eff: EffectData) -> String:
@@ -1072,7 +1081,7 @@ static func modules_summary_bbcode(ability: AbilityData) -> String:
 	if ability == null:
 		return "[i]no ability[/i]"
 	if ability.modules.is_empty():
-		return "[i]No modules yet — edit Effects then Save (finalize builds modules).[/i]"
+		return "[i]No modules yet — edit Effects (modules rebuild from effects automatically).[/i]"
 	var lines: PackedStringArray = PackedStringArray()
 	var i: int = 0
 	for mod: AbilityModule in ability.modules:
