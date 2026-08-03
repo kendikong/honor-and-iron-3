@@ -1229,7 +1229,8 @@ func _sweep_mouse_to_cell(
 		var sample_cell: Vector2i = scene.screen_to_grid(screen)
 		## Prefer in-bounds sample under the cursor; otherwise keep destination pin so HUD
 		## polls cannot wipe hover to (-999) and corrupt the painted route.
-		if scene.get_node("CombatDirector").board.is_in_bounds(sample_cell):
+		var board: BoardState = (ctx.director as CombatDirector).board
+		if board != null and board.is_in_bounds(sample_cell):
 			input.set_qa_pointer_grid_cell(sample_cell)
 			input.on_hover_moved(sample_cell)
 		else:
