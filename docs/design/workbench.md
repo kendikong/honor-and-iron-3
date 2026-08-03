@@ -11,19 +11,18 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ AD-5 │ Round 2 │ SELF-GRADED: no (subagent)
-SCORE: 88/100 │ THRESHOLD: 85 │ PASS │ CLIMBING
-DELTA: +15 vs round 1 (was 73)
-AD-1: 86 PASS │ AD-5: 88 PASS
+GAUNTLET SCORE │ THRESHOLD RAISED │ SELF-GRADED: n/a (owner bar change)
+THRESHOLD: 92 (was 85) │ wave smooth: 90 (was 80)
+AD-1 prior critic 86 → BELOW NEW BAR (re-critic required)
+AD-5 prior critic 88 → BELOW NEW BAR (re-critic required)
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
 
-| Round | Piece | Score | Result |
-|-------|-------|-------|--------|
-| r2 | AD-1 | 86 | PASS |
-| r1 | AD-5 | 73 | FAIL — dual authoring |
-| r2 | AD-5 | 88 | PASS — effects rebuild modules |
+| Round | Piece | Score | Threshold | Result |
+|-------|-------|-------|-----------|--------|
+| r2 | AD-1 | 86 | was 85 / now **92** | Was PASS → **re-open** (below 92) |
+| r2 | AD-5 | 88 | was 85 / now **92** | Was PASS → **re-open** (below 92) |
 
 ---
 
@@ -31,23 +30,25 @@ STOP_CONDITION_MET: no
 
 | Field | Value |
 |-------|-------|
-| **Status** | **ACTIVE** — resume next for AD-2 |
-| **Commits** | AD-1 `1c782669…` · AD-5 `470ac0c8…` |
-| **BAR** | bridge / Knight / Bruiser **PASS** (`*_r5.txt`) |
+| **Status** | **ACTIVE** — PASS_THRESHOLD **92** (owner) |
+| **PASS_THRESHOLD** | **92** code · **90** AD-SMOOTH |
+| **Next** | Close gap on AD-1/AD-5 to ≥92, or continue AD-2 then re-score prior pieces |
 
-### Remaining to STOP_ON
+### Piece queue under new bar
 
 | Piece | Status |
 |-------|--------|
-| AD-2 AbilitySystem native module/gate runtime | **NEXT** |
-| AD-3 Planning gated-aim via modules | PENDING |
-| AD-4 Factories author modules-first | PARTIAL |
+| AD-1 Schema + bridge | **RE-OPEN** (86 &lt; 92) — need critic ≥ 92 |
+| AD-5 Class library editor | **RE-OPEN** (88 &lt; 92) — need critic ≥ 92 |
+| AD-2 Native module/gate runtime | PENDING |
+| AD-3 Planning gated-aim | PENDING |
+| AD-4 Factories modules-first | PARTIAL |
 | AD-6 Remove legacy kind authoring | PENDING |
-| AD-SMOOTH Combined critic ≥ 80 | PENDING |
+| AD-SMOOTH | PENDING (threshold **90**) |
 
 ---
 
 ## STOP_ON
 
 `STOP_CONDITION_MET: no`  
-`BLOCKER: context/token — resume with "continue gauntlet"`
+Owner raised bar to **92**. Prior critic scores do not lock pieces under the new threshold.

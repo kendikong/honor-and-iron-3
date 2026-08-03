@@ -16,7 +16,7 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 | **CHUNK_ID** | `ability-data-modular-2026-08-03` |
 | **PIECE_ID** | `AD-0` … `AD-SMOOTH` (see workbench) |
 | **GOAL** | Refactor live AbilityData to modular header+modules per `ability-data.md` §0–§14; **all current** Knight/Bruiser/positioning skills keep identical gameplay |
-| **PASS_THRESHOLD** | **85** per code piece · **80** wave smooth |
+| **PASS_THRESHOLD** | **92** per code piece · **90** wave smooth |
 | **BAR** | See **Machine bar** below |
 | **Started (UTC)** | 2026-08-03 |
 | **Godot** | `godot` on PATH (`4.7.stable`) |
@@ -28,7 +28,7 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 3. `godot --headless --path . --script res://tests/regression_test.gd` — no new FAIL vs baseline attributable to this refactor
 4. Planning QA: `godot --headless --path . --script res://tests/run_planning_qa_gate.gd` (or project equivalent) → **PASS**
 5. Knight QA + Bruiser QA gates → **PASS** (behavior-identical skills)
-6. Fresh **`gauntlet-critic`** on final piece returns `RESULT: PASS`, `SCORE ≥ 85`, `Infrastructure: ADEQUATE`
+6. Fresh **`gauntlet-critic`** on final piece returns `RESULT: PASS`, `SCORE ≥ 92`, `Infrastructure: ADEQUATE`
 7. No new per-skill `if ability.id == …` heuristics; no new anonymous `modifiers` keys
 
 ### Behavior freeze (must not change)
@@ -95,7 +95,7 @@ docs/design/FAILURE_REPORT.md
 
 | Condition | Action |
 |-----------|--------|
-| **Success** | Checklist §14 items 1–12 done; machine bar green; critic PASS ≥ 85 on AD-SMOOTH → commit → workbench → stop |
+| **Success** | Checklist §14 items 1–12 done; machine bar green; critic PASS ≥ **92** on pieces / ≥ **90** on AD-SMOOTH → commit → workbench → stop |
 | **Failure** | MAX_ROUNDS or FORBIDDEN → `FAILURE_REPORT.md` → stop |
 | **Blocked** | Godot/auth missing → FAILURE_REPORT → stop |
 
