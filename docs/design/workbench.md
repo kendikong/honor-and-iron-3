@@ -22,7 +22,7 @@ STOP_CONDITION_MET: no
 | AD-6 | **92** | PASS |
 | AD-SMOOTH | pending | r2 BAR PASS — critic next |
 
-Commit smooth r2: *(set after commit)*
+Commit smooth r2: `2687b48a011d5abebf4c7cdaf72dd4f6c46769ed`
 
 ## AD-SMOOTH r2 delta
 - `_has_resource_for_ability` / `can_afford_run_for_commit` use same planner helpers as `_spend_ability_cost`
