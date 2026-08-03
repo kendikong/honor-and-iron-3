@@ -88,3 +88,15 @@ func _check_violent_collision_modules(failures: Array[String]) -> void:
 		)
 	if not vc.effects[0].modifiers.has("bulldoze"):
 		failures.append("violent_collision lost bulldoze modifier")
+	## Charge Strike: MOVE module + DAMAGE module with PUSH layer (not three peer modules).
+	var charge: AbilityData = null
+	for ab2: AbilityData in bruiser.abilities:
+		if ab2 != null and ab2.id == &"bruiser_charge_strike":
+			charge = ab2
+			break
+	if charge == null:
+		failures.append("bruiser_charge_strike missing")
+	elif charge.modules.size() < 2:
+		failures.append("charge_strike should be MOVE module + strike module")
+	elif charge.modules[1].layers.is_empty():
+		failures.append("charge_strike strike module should have PUSH layer")

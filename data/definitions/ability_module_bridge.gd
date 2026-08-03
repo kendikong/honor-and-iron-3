@@ -93,6 +93,19 @@ static func compile_modules_to_effects(modules: Array[AbilityModule]) -> Array[E
 		var primary: EffectData = mod.primary_as_effect()
 		_apply_keywords_to_effect(primary, mod)
 		out.append(primary)
+		for kw: AbilityKeyword in mod.keywords:
+			if kw == null or not kw.emit_as_effect:
+				continue
+			if kw.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE:
+				var trample_eff := EffectData.new()
+				trample_eff.type = GameEnums.EffectType.TRAMPLE
+				trample_eff.amount = kw.amount
+				out.append(trample_eff)
+			elif kw.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
+				var bulldoze_eff := EffectData.new()
+				bulldoze_eff.type = GameEnums.EffectType.BULLDOZE
+				bulldoze_eff.amount = kw.amount
+				out.append(bulldoze_eff)
 		for layer: AbilityLayer in mod.layers:
 			if layer == null or layer.effect == null:
 				continue
@@ -113,49 +126,46 @@ static func infer_modules_from_effects(
 	var modules: Array[AbilityModule] = []
 	if effects.is_empty():
 		return modules
-	## Group: first effect is primary; following effects that are "same-aim extras" become layers
-	## until the next motion primary or NEW_AIM boundary. Heuristic-free rule:
-	## each effect that is a distinct motion/DASH/MOVE/TELEPORT or has its own aim becomes a module;
-	## control/status/damage after a primary on the same ability share one module as layers when
-	## they historically shared one aim (flat list order).
-	##
-	## For behavior-identical compile: one module per effect, SAME_AS_MODULE_0 for non-first,
-	## preserving exact effect order and modifiers when compiled back.
-	var idx: int = 0
+	## Bible mapping (ability-data.md §2 / §5 / §6), compile-stable:
+	## - Motion primary → module; TRAMPLE/BULLDOZE EffectTypes → keywords on that motion.
+	## - After a motion module, the next non-keyword effect starts a new module (move then strike).
+	## - Same-aim extras on a non-motion module → layers (AT_RESOLUTION unless modifiers say otherwise).
 	for eff: EffectData in effects:
 		if eff == null:
 			continue
-		var mod := AbilityModule.new()
-		mod.execution_phase = _infer_phase(eff, idx, ability)
-		mod.primary_type = eff.type
-		mod.amount = eff.amount
-		mod.status_type = eff.status_type
-		mod.status_duration = eff.status_duration
-		mod.scaling_stat = eff.scaling_stat
-		mod.spawn_unit_id = eff.spawn_unit_id
-		mod.bonus_if_adjacent_at_cast = eff.bonus_if_adjacent_at_cast
-		mod.def_debuff_before_damage = eff.def_debuff_before_damage
-		mod.legacy_modifiers = eff.modifiers.duplicate(true)
-		mod.min_range = 0 if ability.range_tiles == 0 else (1 if _is_motion_type(eff.type) else 0)
-		mod.max_range = ability.range_tiles
-		mod.target_shape = ability.target_shape
-		mod.target_shape_size = ability.target_shape_size
-		mod.targeting_flags = ability.targeting_flags
-		mod.motion_mode = _infer_motion_mode(eff)
-		mod.gate = _gate_from_modifiers(eff.modifiers)
-		mod.keywords = _keywords_from_effect(eff)
-		## Strip typed keyword/gate keys from legacy bag after promotion.
-		_strip_promoted_modifier_keys(mod)
-		if idx > 0:
-			mod.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-			mod.aim_module_index = 0
-		modules.append(mod)
-		idx += 1
-	## Violent Collision: DASH + recast → second MOVE module with IF_COLLIDED gate.
-	if modules.size() == 1 and modules[0].legacy_modifiers.has("violent_collision_recast"):
-		var dash_mod: AbilityModule = modules[0]
-		## Keep stamp on primary for legacy compile; also expose modular gated MOVE.
-		dash_mod.keywords = _ensure_bulldoze_keyword(dash_mod)
+		if (
+			not modules.is_empty()
+			and _is_pass_through_type(eff.type)
+			and _is_motion_type(modules[modules.size() - 1].primary_type)
+		):
+			_merge_pass_through_into_motion(modules[modules.size() - 1], eff)
+			continue
+		if modules.is_empty() or _is_motion_type(eff.type):
+			var mod: AbilityModule = _module_from_primary_effect(eff, ability)
+			if not modules.is_empty():
+				mod.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
+				mod.aim_module_index = 0
+			modules.append(mod)
+			continue
+		if _is_motion_type(modules[modules.size() - 1].primary_type):
+			## Strike / utility after skill-owned motion — new module, shared aim.
+			var after_move: AbilityModule = _module_from_primary_effect(eff, ability)
+			after_move.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
+			after_move.aim_module_index = 0
+			modules.append(after_move)
+			continue
+		var layer := AbilityLayer.new()
+		layer.effect = _duplicate_effect(eff)
+		layer.condition = _infer_layer_condition(eff)
+		modules[modules.size() - 1].layers.append(layer)
+	## Recast stamp (modifiers) → gated follow-up MOVE module (bible §2.7 / §10 Violent Collision).
+	if (
+		not modules.is_empty()
+		and modules[0].legacy_modifiers.has("violent_collision_recast")
+		and modules.size() == 1
+	):
+		var motion_mod: AbilityModule = modules[0]
+		motion_mod.keywords = _ensure_bulldoze_keyword(motion_mod)
 		var move_mod := AbilityModule.new()
 		move_mod.execution_phase = GameEnums.ModulePhase.ON_ACTION
 		move_mod.primary_type = GameEnums.EffectType.MOVE
@@ -274,9 +284,71 @@ static func _is_motion_type(t: GameEnums.EffectType) -> bool:
 		or t == GameEnums.EffectType.TELEPORT_CASTER
 		or t == GameEnums.EffectType.SWAP
 		or t == GameEnums.EffectType.MOVE_INTO_AND_PUSH
-		or t == GameEnums.EffectType.TRAMPLE
-		or t == GameEnums.EffectType.BULLDOZE
 	)
+
+
+static func _is_pass_through_type(t: GameEnums.EffectType) -> bool:
+	return t == GameEnums.EffectType.TRAMPLE or t == GameEnums.EffectType.BULLDOZE
+
+
+static func _module_from_primary_effect(eff: EffectData, ability: AbilityData) -> AbilityModule:
+	var mod := AbilityModule.new()
+	mod.execution_phase = _infer_phase(eff, 0, ability)
+	mod.primary_type = eff.type
+	mod.amount = eff.amount
+	mod.status_type = eff.status_type
+	mod.status_duration = eff.status_duration
+	mod.scaling_stat = eff.scaling_stat
+	mod.spawn_unit_id = eff.spawn_unit_id
+	mod.bonus_if_adjacent_at_cast = eff.bonus_if_adjacent_at_cast
+	mod.def_debuff_before_damage = eff.def_debuff_before_damage
+	mod.legacy_modifiers = eff.modifiers.duplicate(true)
+	mod.min_range = 0 if ability.range_tiles == 0 else (1 if _is_motion_type(eff.type) else 0)
+	mod.max_range = ability.range_tiles
+	mod.target_shape = ability.target_shape
+	mod.target_shape_size = ability.target_shape_size
+	mod.targeting_flags = ability.targeting_flags
+	mod.motion_mode = _infer_motion_mode(eff)
+	mod.gate = GameEnums.ModuleGate.ALWAYS
+	mod.keywords = _keywords_from_effect(eff)
+	_strip_promoted_modifier_keys(mod)
+	return mod
+
+
+static func _merge_pass_through_into_motion(motion: AbilityModule, eff: EffectData) -> void:
+	var kw := AbilityKeyword.new()
+	if eff.type == GameEnums.EffectType.TRAMPLE:
+		kw.keyword_id = GameEnums.AbilityKeywordId.TRAMPLE
+	else:
+		kw.keyword_id = GameEnums.AbilityKeywordId.BULLDOZE
+	kw.amount = eff.amount
+	kw.emit_as_effect = true
+	motion.keywords.append(kw)
+	for key: Variant in eff.modifiers.keys():
+		motion.legacy_modifiers[key] = eff.modifiers[key]
+
+
+static func _infer_layer_condition(eff: EffectData) -> GameEnums.LayerCondition:
+	if eff.modifiers.has("damage_adjacent_on_landing") or eff.modifiers.has("belly_flop_push"):
+		return GameEnums.LayerCondition.ON_LAND
+	if eff.modifiers.has("heal_per_target_hit"):
+		return GameEnums.LayerCondition.PER_TARGET_HIT
+	if (
+		eff.modifiers.has("on_kill_heal_shield")
+		or eff.modifiers.has("frenzy_on_kill_ap")
+	):
+		return GameEnums.LayerCondition.ON_KILL
+	if (
+		eff.modifiers.has("object_collision_stagger")
+		or eff.modifiers.has("stagger_on_collision")
+		or eff.modifiers.has("enemy_collision_stagger_both")
+	):
+		return GameEnums.LayerCondition.ON_COLLISION
+	if eff.type == GameEnums.EffectType.PUSH_CHAIN_COLLISION:
+		return GameEnums.LayerCondition.ON_CHAIN_COLLISION
+	if eff.bonus_if_adjacent_at_cast != 0:
+		return GameEnums.LayerCondition.IF_ALREADY_ADJACENT
+	return GameEnums.LayerCondition.AT_RESOLUTION
 
 
 static func _infer_motion_mode(eff: EffectData) -> GameEnums.MotionMode:
