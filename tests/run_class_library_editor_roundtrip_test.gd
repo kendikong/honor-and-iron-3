@@ -360,3 +360,29 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 		failures.append("PRE_MOVE OptionButton must offer only MP")
 	action_ob.free()
 	pre_ob.free()
+	## Planner switch → enforce owner → OptionButton repopulates to legal set only.
+	var switch_ab := AbilityData.new()
+	switch_ab.planner_group = GameEnums.PlannerGroup.ACTION
+	switch_ab.primary_resource = GameEnums.CostResource.HP
+	switch_ab.primary_value = 5
+	switch_ab.planner_group = GameEnums.PlannerGroup.PRE_MOVE
+	if AbilityModuleBridge.is_planner_cost_legal(switch_ab.planner_group, switch_ab.primary_resource):
+		failures.append("HP must be illegal after switch to PRE_MOVE")
+	AbilityModuleBridge.enforce_planner_cost_coupling(switch_ab)
+	if switch_ab.primary_resource != GameEnums.CostResource.MP:
+		failures.append("planner switch enforce should force MP")
+	var switch_ob := OptionButton.new()
+	ClassLibrarySchema.populate_legal_primary_option_button(switch_ob, switch_ab)
+	if switch_ob.item_count != 1 or switch_ob.get_item_id(0) != int(GameEnums.CostResource.MP):
+		failures.append("after planner switch OptionButton must offer only MP")
+	## ACTION←PRE_MOVE: MP becomes illegal → enforce AP; dropdown AP+HP.
+	switch_ab.planner_group = GameEnums.PlannerGroup.ACTION
+	if AbilityModuleBridge.is_planner_cost_legal(switch_ab.planner_group, switch_ab.primary_resource):
+		failures.append("MP must be illegal on ACTION")
+	AbilityModuleBridge.enforce_planner_cost_coupling(switch_ab)
+	if switch_ab.primary_resource != GameEnums.CostResource.AP:
+		failures.append("planner switch to ACTION should force AP from MP")
+	ClassLibrarySchema.populate_legal_primary_option_button(switch_ob, switch_ab)
+	if switch_ob.item_count != 2:
+		failures.append("after switch to ACTION OptionButton want 2 items")
+	switch_ob.free()

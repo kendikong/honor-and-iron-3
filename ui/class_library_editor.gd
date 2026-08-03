@@ -1417,15 +1417,12 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			ability.planner_group = v
 			ability.kind = AbilityModuleBridge.kind_from_planner_group(v as GameEnums.PlannerGroup, ability.kind)
 			ability.is_movement_skill = v == GameEnums.PlannerGroup.PRE_MOVE
-			var forced: GameEnums.CostResource = GameEnums.CostResource.AP
-			if v == GameEnums.PlannerGroup.PRE_MOVE:
-				forced = GameEnums.CostResource.MP
-			elif ability.primary_resource == GameEnums.CostResource.HP:
-				forced = GameEnums.CostResource.HP
-			var cost_result: Dictionary = ClassLibrarySchema.try_apply_primary_resource(ability, forced)
-			if not bool(cost_result["ok"]):
+			## Sole §11 owner: keep primary if still legal; else enforce_planner_cost_coupling.
+			if not AbilityModuleBridge.is_planner_cost_legal(
+				ability.planner_group, ability.primary_resource
+			):
 				AbilityModuleBridge.enforce_planner_cost_coupling(ability)
-				AbilityModuleBridge.sync_legacy_from_header(ability)
+			AbilityModuleBridge.sync_legacy_from_header(ability)
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
