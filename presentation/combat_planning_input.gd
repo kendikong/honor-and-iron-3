@@ -1082,7 +1082,15 @@ func _flush_hover_heavy_sync() -> void:
 
 
 func _run_hover_heavy_refresh() -> void:
-	if _director == null or _director.board == null or not _is_planning() or dragging:
+	## Armed press (pre-drag) must keep `_drag_unit_id` for stand-tile release commits
+	## (awaiting arm / Wait / self-target). Hover restore must not run until drag starts or cancels.
+	if (
+		_director == null
+		or _director.board == null
+		or not _is_planning()
+		or dragging
+		or _drag_armed
+	):
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	_hover_heavy_last_flush_usec = Time.get_ticks_usec()
@@ -1298,7 +1306,7 @@ func _ally_skill_preview_slots(p_unit: UnitState, cell: Vector2i) -> Dictionary:
 
 
 func _refresh_selected_interaction_preview() -> void:
-	if dragging or _director == null or _director.board == null:
+	if dragging or _drag_armed or _director == null or _director.board == null:
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	if _should_restore_stand_hover_preview(cell):
@@ -1414,6 +1422,9 @@ func _restore_hover_preview() -> void:
 
 
 func _clear_hover_drag_route() -> void:
+	## Never wipe the armed/active drag unit — stand-tile release reads `_drag_unit_id`.
+	if _drag_armed or dragging:
+		return
 	if _drag_route.is_empty() and _drag_unit_id < 0:
 		return
 	_drag_route.clear()
