@@ -79,29 +79,6 @@ static func kind_from_planner_group(
 			return GameEnums.AbilityKind.CLASS_SKILL
 
 
-## Dead path: finalize_ability uses sync_legacy_from_header (planner_group → kind).
-## Kept for one-shot legacy JSON / flat-effects import that only sets kind + costs.
-static func sync_header_from_legacy(ability: AbilityData) -> void:
-	if ability == null:
-		return
-	ability.planner_group = planner_group_from_kind(ability.kind)
-	if ability.primary_resource == GameEnums.CostResource.NONE:
-		if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
-			ability.primary_resource = GameEnums.CostResource.MP
-			ability.primary_value = ability.movement_point_cost
-		else:
-			ability.primary_resource = GameEnums.CostResource.AP
-			ability.primary_value = ability.action_point_cost
-	## Promote zero-AP-adjacent cost modifier into header cost block.
-	for eff: EffectData in ability.effects:
-		if eff != null and eff.modifiers.has("zero_ap_adjacent_enemies"):
-			ability.cost_modifier = GameEnums.CostModifier.ZERO_IF_ADJACENT_ENEMIES_GTE_N
-			ability.cost_modifier_n = int(eff.modifiers["zero_ap_adjacent_enemies"])
-			break
-	if ability.tags.is_empty():
-		ability.tags = _infer_tags(ability)
-
-
 static func sync_legacy_from_header(ability: AbilityData) -> void:
 	if ability == null:
 		return
@@ -454,37 +431,6 @@ static func _apply_module_range_to_ability(ability: AbilityData, modules: Array[
 			if mod.targeting_flags != 0:
 				ability.targeting_flags = mod.targeting_flags
 			return
-
-
-static func _infer_tags(ability: AbilityData) -> Array[StringName]:
-	var tags: Array[StringName] = []
-	if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
-		tags.append(TAG_POSITIONING)
-	var has_damage := false
-	var has_move := false
-	var has_heal := false
-	for eff: EffectData in ability.effects:
-		if eff == null:
-			continue
-		match eff.type:
-			GameEnums.EffectType.DAMAGE, GameEnums.EffectType.TRAMPLE, GameEnums.EffectType.BULLDOZE:
-				has_damage = true
-			GameEnums.EffectType.MOVE, GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, \
-			GameEnums.EffectType.MOVE_INTO_AND_PUSH:
-				has_move = true
-			GameEnums.EffectType.HEAL:
-				has_heal = true
-			_:
-				pass
-	if has_damage:
-		tags.append(TAG_ATTACK)
-	if has_move:
-		tags.append(TAG_MOVEMENT)
-	if has_heal:
-		tags.append(TAG_HEAL)
-	if tags.is_empty():
-		tags.append(TAG_SPELL)
-	return tags
 
 
 static func _is_motion_type(t: GameEnums.EffectType) -> bool:

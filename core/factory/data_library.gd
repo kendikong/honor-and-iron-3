@@ -488,7 +488,7 @@ static func _make_ability(p_id: StringName, p_name: String, p_range: int, effect
 static func _configure_ability_targeting(ability: AbilityData) -> void:
 	if ability == null or ability.is_movement_kind():
 		return
-	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+	if ability.is_universal_wait():
 		ability.targeting_mode = GameEnums.TargetingMode.SELF
 		ability.targeting_flags = GameEnums.TargetingFlags.SELF
 		ability.sync_legacy_targeting()

@@ -141,19 +141,19 @@ static func movement_point_cost(actor: UnitState, ability: AbilityData) -> int:
 static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
 	if ability == null or actor == null:
 		return false
-		
-	var ap_cost = get_action_point_cost(actor, ability, board)
-	if ability.is_pre_move_planner():
+
+	## Same ownership order as `_spend_ability_cost` (planner_group helpers; UNIVERSAL_* via kind).
+	var ap_cost := get_action_point_cost(actor, ability, board)
+	if ability.is_universal_run():
+		if actor.has_run_boost():
+			return false
+		return actor.ability.points_left >= ap_cost
+	if ability.is_universal_wait():
+		return actor.can_use_action_slot()
+	if ability.is_movement_kind():
 		return actor.movement.points_left >= movement_point_cost(actor, ability)
-	match ability.kind:
-		GameEnums.AbilityKind.UNIVERSAL_RUN:
-			if actor.has_run_boost():
-				return false
-			return actor.ability.points_left >= ap_cost
-		GameEnums.AbilityKind.CLASS_SKILL:
-			return actor.ability.points_left >= ap_cost
-		GameEnums.AbilityKind.UNIVERSAL_WAIT:
-			return actor.can_use_action_slot()
+	if ability.consumes_action_slot():
+		return actor.ability.points_left >= ap_cost
 	return true
 
 
@@ -892,15 +892,14 @@ static func can_afford_run_for_commit(actor: UnitState, paired_ability: AbilityD
 		return actor.can_use_action_slot()
 	if paired_ability.is_pre_move_planner():
 		return true
-	match paired_ability.kind:
-		GameEnums.AbilityKind.CLASS_SKILL:
-			var run_ability: AbilityData = DataLibrary.get_universal_run()
-			if run_ability == null:
-				return false
-			var ap_after_run: int = actor.ability.points_left - run_ability.action_point_cost
-			if ap_after_run < paired_ability.action_point_cost:
-				return false
-			return actor.can_use_action_slot()
+	if paired_ability.consumes_action_slot() or paired_ability.is_class_kind():
+		var run_ability: AbilityData = DataLibrary.get_universal_run()
+		if run_ability == null:
+			return false
+		var ap_after_run: int = actor.ability.points_left - run_ability.action_point_cost
+		if ap_after_run < paired_ability.action_point_cost:
+			return false
+		return actor.can_use_action_slot()
 	return true
 
 
@@ -1029,7 +1028,7 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 		return false
 	if ability.is_movement_kind() or ability.is_pre_move_kind():
 		return false
-	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+	if ability.is_universal_wait():
 		return false
 	ability.ensure_targeting_flags_from_mode()
 	if (

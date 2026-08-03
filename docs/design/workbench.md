@@ -7,7 +7,7 @@
 ══════════════════════════════════════
 GAUNTLET SCORE │ ACTIVE │ SELF-GRADED: no
 AD-1..AD-4 PASS │ AD-5 DEFERRED 90 │ AD-6 PASS 92
-AD-SMOOTH: r1 BAR — awaiting critic (threshold 90)
+AD-SMOOTH: r2 BAR PASS — awaiting critic (threshold 90)
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
@@ -20,9 +20,14 @@ STOP_CONDITION_MET: no
 | AD-4 | **93** | PASS |
 | AD-5 | **90** | **DEFERRED** |
 | AD-6 | **92** | PASS |
-| AD-SMOOTH | pending | BAR PASS — critic next |
+| AD-SMOOTH | pending | r2 BAR PASS — critic next |
 
-Commit smooth: `8c28645bef67f43b84c64b57c5ff0b1c6f90bd17`
+Commit smooth r2: *(set after commit)*
+
+## AD-SMOOTH r2 delta
+- `_has_resource_for_ability` / `can_afford_run_for_commit` use same planner helpers as `_spend_ability_cost`
+- Removed dead `sync_header_from_legacy` + `_infer_tags`
+- Wait / bucket / targeting readers use `is_universal_wait()`
 
 ## STOP_ON
 `STOP_CONDITION_MET: no` — pending AD-SMOOTH critic ≥90

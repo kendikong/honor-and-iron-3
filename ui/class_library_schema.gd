@@ -133,9 +133,9 @@ static func manual_keyword_system(kw: String) -> String:
 				+ "(collision base X + PUSH X). Works on DASH or path walk without DASH."
 			)
 		"AP":
-			return "UnitState.ability.points_left; AbilitySystem._has_resource_for_ability spends on CLASS_SKILL / Run."
+			return "UnitState.ability.points_left; AbilitySystem._has_resource_for_ability spends AP on ACTION / Run (planner helpers)."
 		"MOV":
-			return "UnitState.movement.points_left; MovementSystem.execute_move deducts per tile; MOVEMENT_SKILL uses MP cost."
+			return "UnitState.movement.points_left; MovementSystem.execute_move deducts per tile; PRE_MOVE planner_group uses MP cost."
 		"RANGE":
 			return "AbilityData.range_tiles vs GridSystem.manhattan in AbilitySystem.can_use; LOS checks in planning input."
 		"RANGE 0":
