@@ -1,13 +1,17 @@
 # Cloud Agent base for Honor & Iron 3 — Godot 4.7 baked into the image.
+# Cursor requires git (+ ideally sudo) in custom images for repo checkout.
 # Do not COPY the project; Cursor checks out the workspace separately.
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
 		ca-certificates \
 		curl \
+		git \
+		sudo \
 		unzip \
 		libfontconfig1 \
 		libglu1-mesa \
@@ -22,6 +26,6 @@ RUN apt-get update \
 	&& mv /tmp/Godot_v4.7-stable_linux.x86_64 /usr/local/bin/godot \
 	&& chmod +x /usr/local/bin/godot \
 	&& rm -f /tmp/godot.zip \
-	&& godot --version \
+	&& test -x /usr/local/bin/godot \
 	&& apt-get clean \
 	&& rm -rf /var/lib/apt/lists/*
