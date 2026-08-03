@@ -1,3 +1,3 @@
 {
-  "install": "echo Honor-and-Iron: Godot 4.7 required for run_bruiser_qa_gate.ps1 / run_knight_qa_gate.ps1. Create a dashboard snapshot with Godot installed, then prefer that snapshot over this placeholder install."
+  "install": "if ! command -v godot >/dev/null 2>&1; then curl -fsSL --retry 3 -o /tmp/godot.zip https://github.com/godotengine/godot/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip && unzip -o /tmp/godot.zip -d /tmp && sudo mv /tmp/Godot_v4.7-stable_linux.x86_64 /usr/local/bin/godot && sudo chmod +x /usr/local/bin/godot; fi\ngodot --headless --import"
 }
