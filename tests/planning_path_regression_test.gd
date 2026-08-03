@@ -39,6 +39,7 @@ static func _test_painted_skill_path_is_preview_and_execution_truth(
 	var trample := AbilityData.new()
 	trample.id = &"test_trample"
 	trample.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	trample.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	trample.movement_point_cost = 2
 	trample.range_tiles = 2
 	trample.targeting_mode = GameEnums.TargetingMode.TILE

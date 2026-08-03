@@ -321,6 +321,7 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var swap_plan := Timeline.new()
 	var swap_ab := AbilityData.new()
 	swap_ab.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap_ab.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap_ab.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	swap_plan.add(TimelineAction.make_ability(1, swap_ab, ally.position, 2, GameEnums.MoveTiming.PRE_ACTION))
 	swap_plan.add(TimelineAction.make_move(1, Vector2i(3, 5), -1, [Vector2i(3, 4)], GameEnums.MoveTiming.PRE_ACTION))

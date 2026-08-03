@@ -303,6 +303,7 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 	input.auto_use_skill_after_move = true
 	var dash := AbilityData.new()
 	dash.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	dash.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	var dash_eff := EffectData.new()
 	dash_eff.type = GameEnums.EffectType.DASH
 	dash.effects = [dash_eff]
@@ -344,6 +345,7 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 		)
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.id = &"knight_swap"
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
@@ -705,6 +707,7 @@ static func _test_audit_regression_fixes(failures: Array[String]) -> void:
 	heal.targeting_flags = AbilityData._targeting_mode_to_flags(heal.targeting_mode)
 	var dash := AbilityData.new()
 	dash.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	dash.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	var dash_eff := EffectData.new()
 	dash_eff.type = GameEnums.EffectType.DASH
 	dash.effects = [dash_eff]
@@ -1319,6 +1322,7 @@ static func _test_action_range_hidden_after_premove_mp(failures: Array[String]) 
 	var unit: UnitState = setup["unit"] as UnitState
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.movement_point_cost = 1
 	swap.action_point_cost = 0
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
@@ -1759,6 +1763,7 @@ static func _test_undo_movement_action_preserves_premove(failures: Array[String]
 			board.set_tile_terrain(Vector2i(x, y), plain)
 	var trample := AbilityData.new()
 	trample.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	trample.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	trample.id = &"knight_trampling_advance"
 	trample.action_point_cost = 1
 	trample.movement_point_cost = 2
@@ -1818,6 +1823,7 @@ static func _test_swap_undo_cascades_all_plans_after(failures: Array[String]) ->
 			board.set_tile_terrain(Vector2i(x, y), plain)
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.id = &"knight_swap"
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
@@ -1890,6 +1896,7 @@ static func _test_walk_then_swap_commit_appends_skill(failures: Array[String]) -
 			board.set_tile_terrain(Vector2i(x, y), plain)
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.id = &"knight_swap"
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
@@ -1955,6 +1962,7 @@ static func _test_swap_ally_out_of_range_click_parity(failures: Array[String]) -
 			board.set_tile_terrain(Vector2i(x, y), plain)
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.id = &"knight_swap"
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
@@ -2042,6 +2050,7 @@ static func _test_swap_refresh_updates_live_board(failures: Array[String]) -> vo
 			board.set_tile_terrain(Vector2i(x, y), plain)
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.id = &"knight_swap"
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT

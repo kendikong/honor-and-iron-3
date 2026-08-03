@@ -477,6 +477,7 @@ func _test_movement_skill_spends_mp() -> bool:
 	var swap := AbilityData.new()
 	swap.id = &"test_swap"
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.movement_point_cost = 2
 	swap.range_tiles = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
@@ -504,6 +505,7 @@ func _test_movement_skill_spends_mp() -> bool:
 func _test_movement_skill_pre_move_bucket() -> bool:
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	var plan := Timeline.new()
 	plan.add(TimelineAction.make_move(1, Vector2i(3, 2)))
 	plan.add(TimelineAction.make_ability(1, swap, Vector2i(2, 2), 2, GameEnums.MoveTiming.PRE_ACTION))

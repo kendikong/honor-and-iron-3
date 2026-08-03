@@ -177,10 +177,8 @@ func has_tag(tag: StringName) -> bool:
 
 
 func is_movement_kind() -> bool:
-	## planner_group owns column; MOVEMENT_SKILL kind is legacy fallback (stubs / pre-sync).
-	if planner_group == GameEnums.PlannerGroup.PRE_MOVE:
-		return true
-	return kind == GameEnums.AbilityKind.MOVEMENT_SKILL
+	## Column ownership: planner_group only (ability-data.md §14.12). kind is a mirror.
+	return planner_group == GameEnums.PlannerGroup.PRE_MOVE
 
 
 func is_pre_move_kind() -> bool:
@@ -196,8 +194,14 @@ func is_universal_wait() -> bool:
 
 
 func is_class_kind() -> bool:
-	return kind == GameEnums.AbilityKind.CLASS_SKILL
+	## Prefer ACTION planner column; UNIVERSAL_* stay kind-identified system actions.
+	if is_universal_run() or is_universal_wait():
+		return false
+	return planner_group == GameEnums.PlannerGroup.ACTION
 
 
 func consumes_action_slot() -> bool:
-	return kind == GameEnums.AbilityKind.CLASS_SKILL
+	## ACTION-column cards consume the action slot; PRE_MOVE and universals do not.
+	if is_universal_run() or is_universal_wait():
+		return false
+	return planner_group == GameEnums.PlannerGroup.ACTION
