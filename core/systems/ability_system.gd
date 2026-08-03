@@ -1322,11 +1322,11 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: B
 		return
 		
 	var ap_cost = get_action_point_cost(actor, ability, board)
-	if ability.is_pre_move_planner():
+	if ability.is_movement_kind():
 		actor.movement.points_left -= movement_point_cost(actor, ability)
-	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
+	elif ability.is_universal_run():
 		actor.ability.points_left -= ap_cost
-	elif ability.kind == GameEnums.AbilityKind.CLASS_SKILL:
+	elif ability.consumes_action_slot():
 		actor.ability.points_left -= ap_cost
 
 

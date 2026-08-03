@@ -79,6 +79,8 @@ static func kind_from_planner_group(
 			return GameEnums.AbilityKind.CLASS_SKILL
 
 
+## Dead path: finalize_ability uses sync_legacy_from_header (planner_group → kind).
+## Kept for one-shot legacy JSON / flat-effects import that only sets kind + costs.
 static func sync_header_from_legacy(ability: AbilityData) -> void:
 	if ability == null:
 		return

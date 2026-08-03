@@ -37,7 +37,7 @@ func _check_bruiser(failures: Array[String]) -> void:
 				failures.append("%s PRE_MOVE primary_resource not MP" % String(ab.id))
 			if not ab.has_tag(AbilityModuleBridge.TAG_POSITIONING):
 				failures.append("%s PRE_MOVE missing positioning tag" % String(ab.id))
-		elif ab.kind == GameEnums.AbilityKind.CLASS_SKILL:
+		elif ab.planner_group == GameEnums.PlannerGroup.ACTION:
 			if ab.primary_resource != GameEnums.CostResource.AP:
 				failures.append("%s ACTION primary_resource not AP" % String(ab.id))
 
@@ -60,7 +60,7 @@ func _check_knight(failures: Array[String]) -> void:
 				failures.append("%s PRE_MOVE primary_resource not MP" % String(ab.id))
 			if not ab.has_tag(AbilityModuleBridge.TAG_POSITIONING):
 				failures.append("%s PRE_MOVE missing positioning tag" % String(ab.id))
-		elif ab.kind == GameEnums.AbilityKind.CLASS_SKILL:
+		elif ab.planner_group == GameEnums.PlannerGroup.ACTION:
 			if ab.primary_resource != GameEnums.CostResource.AP:
 				failures.append("%s ACTION primary_resource not AP" % String(ab.id))
 		if ab.id == &"knight_swap":
