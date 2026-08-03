@@ -28,8 +28,8 @@ func _check_bruiser(failures: Array[String]) -> void:
 	for ab: AbilityData in bruiser.abilities:
 		if ab == null:
 			continue
-		if ab.modules.is_empty() and not ab.effects.is_empty():
-			failures.append("%s has effects but empty modules" % String(ab.id))
+		if ab.modules.is_empty():
+			failures.append("%s must have non-empty modules after factory finalize" % String(ab.id))
 		if not ab.upgraded_effects.is_empty() and ab.upgraded_modules.is_empty():
 			failures.append("%s has upgraded_effects but empty upgraded_modules" % String(ab.id))
 		if ab.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
@@ -51,8 +51,8 @@ func _check_knight(failures: Array[String]) -> void:
 	for ab: AbilityData in knight.abilities:
 		if ab == null:
 			continue
-		if ab.modules.is_empty() and not ab.effects.is_empty():
-			failures.append("%s has effects but empty modules" % String(ab.id))
+		if ab.modules.is_empty():
+			failures.append("%s must have non-empty modules after factory finalize" % String(ab.id))
 		if not ab.upgraded_effects.is_empty() and ab.upgraded_modules.is_empty():
 			failures.append("%s has upgraded_effects but empty upgraded_modules" % String(ab.id))
 		if ab.planner_group == GameEnums.PlannerGroup.PRE_MOVE:

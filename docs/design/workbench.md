@@ -60,6 +60,9 @@ STOP_CONDITION_MET: no
 
 ---
 
+### AD-4 r2
+Unconditional non-empty `modules` assert for every Knight/Bruiser ability in bridge BAR.
+
 ## STOP_ON
 
 `STOP_CONDITION_MET: no`
