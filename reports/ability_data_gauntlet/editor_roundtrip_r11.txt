@@ -1,0 +1,15 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: ClassLibrarySchema.apply_ability_dict: rejected unknown tags [totally_fake_tag] on ability tag_reject_probe — tags not applied
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] apply_ability_dict (res://ui/class_library_schema.gd:1199)
+       [1] _check_dict_roundtrip_modular_header (res://tests/run_class_library_editor_roundtrip_test.gd:235)
+       [2] _run (res://tests/run_class_library_editor_roundtrip_test.gd:20)
+ERROR: ClassLibrarySchema.apply_ability_dict: Illegal primary_resource AP for PRE_MOVE on cost_reject_probe — cost not applied
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] apply_ability_dict (res://ui/class_library_schema.gd:1209)
+       [1] _check_dict_roundtrip_modular_header (res://tests/run_class_library_editor_roundtrip_test.gd:269)
+       [2] _run (res://tests/run_class_library_editor_roundtrip_test.gd:20)
+CLASS_LIBRARY_EDITOR_ROUNDTRIP_TEST: PASS

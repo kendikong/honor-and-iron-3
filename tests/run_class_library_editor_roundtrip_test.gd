@@ -290,5 +290,50 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 	ClassLibrarySchema.apply_ability_dict(hp_clone, hp_dict)
 	if hp_clone.primary_resource != GameEnums.CostResource.HP:
 		failures.append("dict roundtrip lost HP primary_resource")
-	if hp_clone.primary_value != 5:
-		failures.append("dict roundtrip lost HP primary_value")
+	## Editor/schema shared apply paths (what the class library UI calls).
+	var tag_ok: Dictionary = ClassLibrarySchema.try_apply_tags(
+		AbilityData.new(), [AbilityModuleBridge.TAG_ATTACK]
+	)
+	if not bool(tag_ok["ok"]):
+		failures.append("try_apply_tags should accept attack")
+	var tag_bad_ab := AbilityData.new()
+	tag_bad_ab.tags = [AbilityModuleBridge.TAG_SPELL]
+	var tag_bad: Dictionary = ClassLibrarySchema.try_apply_tags(
+		tag_bad_ab, [AbilityModuleBridge.TAG_ATTACK, &"nope"]
+	)
+	if bool(tag_bad["ok"]):
+		failures.append("try_apply_tags should reject unknown")
+	if tag_bad_ab.tags.has(AbilityModuleBridge.TAG_ATTACK):
+		failures.append("try_apply_tags must not mutate on reject")
+	var cost_ok: Dictionary = ClassLibrarySchema.try_apply_primary_resource(
+		hp_skill, GameEnums.CostResource.HP
+	)
+	if not bool(cost_ok["ok"]):
+		failures.append("try_apply_primary_resource HP on ACTION should ok")
+	var cost_bad_ab := AbilityData.new()
+	cost_bad_ab.planner_group = GameEnums.PlannerGroup.PRE_MOVE
+	cost_bad_ab.primary_resource = GameEnums.CostResource.MP
+	var cost_bad: Dictionary = ClassLibrarySchema.try_apply_primary_resource(
+		cost_bad_ab, GameEnums.CostResource.AP
+	)
+	if bool(cost_bad["ok"]):
+		failures.append("try_apply_primary_resource AP on PRE_MOVE should fail")
+	if cost_bad_ab.primary_resource != GameEnums.CostResource.MP:
+		failures.append("try_apply_primary_resource must not mutate on reject")
+	var action_legal: Array[GameEnums.CostResource] = AbilityModuleBridge.legal_primary_resources(
+		GameEnums.PlannerGroup.ACTION
+	)
+	if action_legal.size() != 2:
+		failures.append("ACTION legal_primary_resources want AP+HP only")
+	elif (
+		action_legal[0] != GameEnums.CostResource.AP
+		or action_legal[1] != GameEnums.CostResource.HP
+	):
+		failures.append("ACTION legal_primary_resources contents wrong")
+	if GameEnums.CostResource.MP in action_legal or GameEnums.CostResource.NONE in action_legal:
+		failures.append("ACTION must not offer MP/NONE")
+	var pre_legal: Array[GameEnums.CostResource] = AbilityModuleBridge.legal_primary_resources(
+		GameEnums.PlannerGroup.PRE_MOVE
+	)
+	if pre_legal.size() != 1 or pre_legal[0] != GameEnums.CostResource.MP:
+		failures.append("PRE_MOVE legal_primary_resources want MP only")

@@ -122,16 +122,23 @@ static func is_planner_cost_legal(
 	planner_group: GameEnums.PlannerGroup,
 	primary_resource: GameEnums.CostResource
 ) -> bool:
+	return primary_resource in legal_primary_resources(planner_group)
+
+
+## Resources the editor may offer for this planner_group (§11 — don't offer illegal combos).
+static func legal_primary_resources(
+	planner_group: GameEnums.PlannerGroup
+) -> Array[GameEnums.CostResource]:
+	var out: Array[GameEnums.CostResource] = []
 	match planner_group:
 		GameEnums.PlannerGroup.PRE_MOVE:
-			return primary_resource == GameEnums.CostResource.MP
+			out.append(GameEnums.CostResource.MP)
 		GameEnums.PlannerGroup.ACTION:
-			return (
-				primary_resource == GameEnums.CostResource.AP
-				or primary_resource == GameEnums.CostResource.HP
-			)
+			out.append(GameEnums.CostResource.AP)
+			out.append(GameEnums.CostResource.HP)
 		_:
-			return true
+			out.append(GameEnums.CostResource.AP)
+	return out
 
 
 static func enforce_planner_cost_coupling(ability: AbilityData) -> void:

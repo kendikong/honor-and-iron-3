@@ -1435,16 +1435,14 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	tags_warn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
 	tags_warn.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
 	var tags_row := _bind_string(grid, "tags", _tags_to_csv(ability.tags), func(v: String) -> void:
-		var parsed: Array[StringName] = _tags_from_csv(v)
-		var validated: Dictionary = AbilityModuleBridge.validate_tag_list(parsed)
-		if not bool(validated["ok"]):
-			var rejected: PackedStringArray = validated["rejected"] as PackedStringArray
+		var tag_result: Dictionary = ClassLibrarySchema.try_apply_tags(ability, _tags_from_csv(v))
+		if not bool(tag_result["ok"]):
+			var rejected: PackedStringArray = tag_result["rejected"] as PackedStringArray
 			tags_warn.text = "Rejected unknown tags (not applied): %s" % ",".join(rejected)
 			tags_warn.visible = true
 			return
 		tags_warn.text = ""
 		tags_warn.visible = false
-		ability.tags = validated["tags"] as Array[StringName]
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "tags", tags_row)
@@ -1459,28 +1457,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	cost_warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	cost_warn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
 	cost_warn.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
-	var primary_res_row := _bind_enum(
-		grid, "primary_resource", GameEnums.CostResource, ability.primary_resource,
-		func(v: int) -> void:
-			## §11: PRE_MOVE ↔ MP, ACTION ↔ AP (HP allowed as ACTION primary for self-spend).
-			var next: GameEnums.CostResource = v as GameEnums.CostResource
-			if not AbilityModuleBridge.is_planner_cost_legal(ability.planner_group, next):
-				cost_warn.text = (
-					"Illegal primary_resource %s for %s (not applied)"
-					% [
-						GameEnums.CostResource.keys()[next],
-						GameEnums.PlannerGroup.keys()[ability.planner_group],
-					]
-				)
-				cost_warn.visible = true
-				_refresh_ability_ui(ability)
-				return
-			cost_warn.text = ""
-			cost_warn.visible = false
-			ability.primary_resource = next
-			AbilityModuleBridge.sync_legacy_from_header(ability)
-			_refresh_ability_ui(ability)
-	)
+	var primary_res_row := _bind_legal_primary_resource(grid, ability, cost_warn)
 	_track_ability_field(ability, "primary_resource", primary_res_row)
 	var primary_val_row := _bind_int(grid, "primary_value", ability.primary_value, func(v: int) -> void:
 		ability.primary_value = v
@@ -1913,9 +1890,7 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 			(tags_edit as LineEdit).text = want_tags
 	var primary_res_edit: Control = refs.get("primary_res_edit")
 	if primary_res_edit is OptionButton:
-		var ob: OptionButton = primary_res_edit as OptionButton
-		if ob.selected != ability.primary_resource:
-			ob.select(ability.primary_resource)
+		_fill_legal_primary_options(primary_res_edit as OptionButton, ability)
 
 	var preview: RichTextLabel = refs.get("preview")
 	if preview != null:
@@ -2302,6 +2277,50 @@ func _add_subsection_label(parent: Control, text: String, accent: Color) -> void
 
 
 # --- Widget bindings ---
+
+## §11: only offer legal CostResource values for the current planner_group.
+func _bind_legal_primary_resource(
+	parent: GridContainer,
+	ability: AbilityData,
+	cost_warn: Label
+) -> Array[Control]:
+	var lbl := _field_label("primary_resource")
+	parent.add_child(lbl)
+	var ob := OptionButton.new()
+	ob.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ob.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	_fill_legal_primary_options(ob, ability)
+	ob.item_selected.connect(func(idx: int) -> void:
+		var next: GameEnums.CostResource = ob.get_item_id(idx) as GameEnums.CostResource
+		var result: Dictionary = ClassLibrarySchema.try_apply_primary_resource(ability, next)
+		if not bool(result["ok"]):
+			cost_warn.text = "%s (not applied)" % String(result.get("reason", "illegal cost"))
+			cost_warn.visible = true
+			_fill_legal_primary_options(ob, ability)
+			return
+		cost_warn.text = ""
+		cost_warn.visible = false
+		_refresh_ability_ui(ability)
+	)
+	parent.add_child(ob)
+	return [lbl, ob]
+
+
+func _fill_legal_primary_options(ob: OptionButton, ability: AbilityData) -> void:
+	ob.clear()
+	var legal: Array[GameEnums.CostResource] = AbilityModuleBridge.legal_primary_resources(
+		ability.planner_group
+	)
+	var select_idx: int = 0
+	for i: int in legal.size():
+		var res: GameEnums.CostResource = legal[i]
+		ob.add_item(GameEnums.CostResource.keys()[res], res as int)
+		ob.set_item_id(i, res as int)
+		if res == ability.primary_resource:
+			select_idx = i
+	if ob.item_count > 0:
+		ob.select(select_idx)
+
 
 func _bind_int(parent: GridContainer, label: String, value: int, setter: Callable) -> Array[Control]:
 	var lbl := _field_label(label)

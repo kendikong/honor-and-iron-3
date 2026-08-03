@@ -1145,6 +1145,40 @@ static func modules_summary_bbcode(ability: AbilityData) -> String:
 	return "\n".join(lines)
 
 
+static func try_apply_tags(ability: AbilityData, tags: Array[StringName]) -> Dictionary:
+	## Shared editor/schema path for §11 tag reject (fail-loud, not applied).
+	var validated: Dictionary = AbilityModuleBridge.validate_tag_list(tags)
+	if not bool(validated["ok"]):
+		return {
+			"ok": false,
+			"tags": ability.tags if ability != null else ([] as Array[StringName]),
+			"rejected": validated["rejected"],
+		}
+	if ability != null:
+		ability.tags = validated["tags"] as Array[StringName]
+	return {"ok": true, "tags": validated["tags"], "rejected": PackedStringArray()}
+
+
+static func try_apply_primary_resource(
+	ability: AbilityData,
+	primary_resource: GameEnums.CostResource
+) -> Dictionary:
+	## Shared editor/schema path for §11 planner↔cost (illegal not applied).
+	if ability == null:
+		return {"ok": false, "reason": "null ability"}
+	if not AbilityModuleBridge.is_planner_cost_legal(ability.planner_group, primary_resource):
+		return {
+			"ok": false,
+			"reason": "Illegal primary_resource %s for %s" % [
+				GameEnums.CostResource.keys()[primary_resource],
+				GameEnums.PlannerGroup.keys()[ability.planner_group],
+			],
+		}
+	ability.primary_resource = primary_resource
+	AbilityModuleBridge.sync_legacy_from_header(ability)
+	return {"ok": true, "reason": ""}
+
+
 static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	if dst == null or data.is_empty():
 		return
@@ -1160,29 +1194,34 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		if tags_v is Array:
 			for t: Variant in tags_v as Array:
 				tags_out.append(StringName(String(t)))
-		var validated: Dictionary = AbilityModuleBridge.validate_tag_list(tags_out)
-		if not bool(validated["ok"]):
+		var tag_result: Dictionary = try_apply_tags(dst, tags_out)
+		if not bool(tag_result["ok"]):
 			push_error(
 				"ClassLibrarySchema.apply_ability_dict: rejected unknown tags [%s] on ability %s — tags not applied"
-				% [",".join(validated["rejected"] as PackedStringArray), String(dst.id)]
+				% [",".join(tag_result["rejected"] as PackedStringArray), String(dst.id)]
 			)
-			## Fail loud: do not partially apply a mixed tag list (§11).
-		else:
-			dst.tags = validated["tags"] as Array[StringName]
-	dst.primary_resource = int(data.get("primary_resource", dst.primary_resource)) as GameEnums.CostResource
-	dst.primary_value = int(data.get("primary_value", dst.primary_value))
-	dst.cost_modifier = int(data.get("cost_modifier", dst.cost_modifier)) as GameEnums.CostModifier
-	dst.cost_modifier_n = int(data.get("cost_modifier_n", dst.cost_modifier_n))
-	if not AbilityModuleBridge.is_planner_cost_legal(dst.planner_group, dst.primary_resource):
-		push_error(
-			"ClassLibrarySchema.apply_ability_dict: illegal primary_resource %s for planner_group %s on %s — corrected"
-			% [
-				GameEnums.CostResource.keys()[dst.primary_resource],
-				GameEnums.PlannerGroup.keys()[dst.planner_group],
-				String(dst.id),
-			]
-		)
-	AbilityModuleBridge.enforce_planner_cost_coupling(dst)
+	if data.has("primary_resource") or data.has("primary_value"):
+		var requested: GameEnums.CostResource = int(
+			data.get("primary_resource", dst.primary_resource)
+		) as GameEnums.CostResource
+		var cost_result: Dictionary = try_apply_primary_resource(dst, requested)
+		if not bool(cost_result["ok"]):
+			push_error(
+				"ClassLibrarySchema.apply_ability_dict: %s on %s — cost not applied"
+				% [String(cost_result.get("reason", "")), String(dst.id)]
+			)
+			## Fail loud: do not silently rewrite illegal cost; still couple after planner change.
+			AbilityModuleBridge.enforce_planner_cost_coupling(dst)
+		elif data.has("primary_value"):
+			dst.primary_value = int(data.get("primary_value", dst.primary_value))
+			AbilityModuleBridge.sync_legacy_from_header(dst)
+	else:
+		AbilityModuleBridge.enforce_planner_cost_coupling(dst)
+	if data.has("cost_modifier"):
+		dst.cost_modifier = int(data.get("cost_modifier", dst.cost_modifier)) as GameEnums.CostModifier
+	if data.has("cost_modifier_n"):
+		dst.cost_modifier_n = int(data.get("cost_modifier_n", dst.cost_modifier_n))
+	AbilityModuleBridge.sync_legacy_from_header(dst)
 	dst.action_point_cost = int(data.get("action_point_cost", dst.action_point_cost))
 	dst.movement_point_cost = int(data.get("movement_point_cost", dst.movement_point_cost))
 	dst.range_tiles = int(data.get("range_tiles", dst.range_tiles))
