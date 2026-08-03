@@ -250,6 +250,22 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 	probe.primary_resource = GameEnums.CostResource.AP
 	probe.primary_value = 1
 	probe.movement_point_cost = 1
+	if AbilityModuleBridge.is_planner_cost_legal(probe.planner_group, probe.primary_resource):
+		failures.append("AP on PRE_MOVE should be illegal")
 	AbilityModuleBridge.enforce_planner_cost_coupling(probe)
 	if probe.primary_resource != GameEnums.CostResource.MP:
 		failures.append("enforce_planner_cost_coupling did not force MP on PRE_MOVE")
+	## ACTION may use HP primary.
+	if not AbilityModuleBridge.is_planner_cost_legal(
+		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.HP
+	):
+		failures.append("HP on ACTION should be legal")
+	## Dict apply fail-loud corrects illegal cost.
+	var bad_cost := data.duplicate(true)
+	bad_cost["planner_group"] = GameEnums.PlannerGroup.PRE_MOVE
+	bad_cost["primary_resource"] = GameEnums.CostResource.AP
+	var clone3 := AbilityData.new()
+	clone3.id = &"cost_reject_probe"
+	ClassLibrarySchema.apply_ability_dict(clone3, bad_cost)
+	if clone3.primary_resource != GameEnums.CostResource.MP:
+		failures.append("apply_ability_dict did not correct illegal PRE_MOVE+AP")

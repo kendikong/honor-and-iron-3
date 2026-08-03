@@ -118,21 +118,34 @@ static func sync_legacy_from_header(ability: AbilityData) -> void:
 
 
 ## §11: PRE_MOVE primary must be MP; ACTION primary must be AP or HP.
+static func is_planner_cost_legal(
+	planner_group: GameEnums.PlannerGroup,
+	primary_resource: GameEnums.CostResource
+) -> bool:
+	match planner_group:
+		GameEnums.PlannerGroup.PRE_MOVE:
+			return primary_resource == GameEnums.CostResource.MP
+		GameEnums.PlannerGroup.ACTION:
+			return (
+				primary_resource == GameEnums.CostResource.AP
+				or primary_resource == GameEnums.CostResource.HP
+			)
+		_:
+			return true
+
+
 static func enforce_planner_cost_coupling(ability: AbilityData) -> void:
 	if ability == null:
 		return
+	if is_planner_cost_legal(ability.planner_group, ability.primary_resource):
+		return
 	match ability.planner_group:
 		GameEnums.PlannerGroup.PRE_MOVE:
-			if ability.primary_resource != GameEnums.CostResource.MP:
-				ability.primary_resource = GameEnums.CostResource.MP
-				ability.primary_value = ability.movement_point_cost
+			ability.primary_resource = GameEnums.CostResource.MP
+			ability.primary_value = ability.movement_point_cost
 		GameEnums.PlannerGroup.ACTION:
-			if (
-				ability.primary_resource != GameEnums.CostResource.AP
-				and ability.primary_resource != GameEnums.CostResource.HP
-			):
-				ability.primary_resource = GameEnums.CostResource.AP
-				ability.primary_value = ability.action_point_cost
+			ability.primary_resource = GameEnums.CostResource.AP
+			ability.primary_value = ability.action_point_cost
 		_:
 			pass
 

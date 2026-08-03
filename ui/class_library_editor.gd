@@ -1421,8 +1421,10 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 				ability.primary_resource = GameEnums.CostResource.MP
 				ability.primary_value = ability.movement_point_cost
 			elif ability.kind == GameEnums.AbilityKind.CLASS_SKILL:
-				ability.primary_resource = GameEnums.CostResource.AP
-				ability.primary_value = ability.action_point_cost
+				## Keep HP primary when already authored; otherwise default to AP.
+				if ability.primary_resource != GameEnums.CostResource.HP:
+					ability.primary_resource = GameEnums.CostResource.AP
+					ability.primary_value = ability.action_point_cost
 			AbilityModuleBridge.sync_legacy_from_header(ability)
 			_refresh_ability_ui(ability)
 	)
@@ -1588,8 +1590,8 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		var has_upg_range: bool = ability.upgraded_range_tiles != -1
 		_grey_row(ap_row, not is_action)
 		_grey_row(mp_row, not is_pre_move)
-		## §11: lock primary_resource to planner coupling — grey the enum so illegal combos aren't offered.
-		_grey_row(primary_res_row, true)
+		## §11: PRE_MOVE locks resource to MP; ACTION may choose AP or HP (not MP/NONE).
+		_grey_row(primary_res_row, is_pre_move)
 		_grey_row(cost_mod_n_row, ability.cost_modifier == GameEnums.CostModifier.NONE)
 		_grey_row(shape_row, is_displacement)
 		_grey_row(shape_size_row, is_displacement)

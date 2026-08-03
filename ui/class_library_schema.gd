@@ -1173,6 +1173,15 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.primary_value = int(data.get("primary_value", dst.primary_value))
 	dst.cost_modifier = int(data.get("cost_modifier", dst.cost_modifier)) as GameEnums.CostModifier
 	dst.cost_modifier_n = int(data.get("cost_modifier_n", dst.cost_modifier_n))
+	if not AbilityModuleBridge.is_planner_cost_legal(dst.planner_group, dst.primary_resource):
+		push_error(
+			"ClassLibrarySchema.apply_ability_dict: illegal primary_resource %s for planner_group %s on %s — corrected"
+			% [
+				GameEnums.CostResource.keys()[dst.primary_resource],
+				GameEnums.PlannerGroup.keys()[dst.planner_group],
+				String(dst.id),
+			]
+		)
 	AbilityModuleBridge.enforce_planner_cost_coupling(dst)
 	dst.action_point_cost = int(data.get("action_point_cost", dst.action_point_cost))
 	dst.movement_point_cost = int(data.get("movement_point_cost", dst.movement_point_cost))
