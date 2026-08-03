@@ -1113,6 +1113,8 @@ func _assert_k3_post_move_committed(ctx: Dictionary, k3_id: int, label: String) 
 	assert_object(post).override_failure_message(
 		"%s: post-move missing" % label,
 	).is_not_null()
+	if post == null:
+		return
 	assert_that(post.target_coord).override_failure_message(
 		"%s: post-move destination" % label,
 	).is_equal(_TRAMPLE_POST_DEST)
@@ -1224,6 +1226,7 @@ func _sweep_mouse_to_cell(
 			)
 	await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 	ctx.input.set_qa_pointer_grid_cell(cell)
+	ctx.input.on_hover_moved(cell)
 
 
 func _sweep_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
@@ -1240,6 +1243,8 @@ func _hop_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: Str
 	if input._intent_state != null:
 		input._intent_state.set_hover_coord(cell)
 	var local: Vector2 = input._mouse_local_for_facing()
+	if not input.dragging and not input.is_drag_armed():
+		input.on_left_press(local)
 	if not input.dragging:
 		input.try_activate_drag(local)
 	if input.dragging:
@@ -1533,6 +1538,9 @@ func _drag_through_cells(
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/start" % label)
 	if assert_hover_steps:
 		assert_that(input.get_hover_tile_for_ui()).is_equal(cells[0])
+	## Drive planning directly — HUD can swallow GdUnit mouse presses on cloud/software GL.
+	var press_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_press(press_local)
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/press" % label)
@@ -1546,6 +1554,8 @@ func _drag_through_cells(
 	if input._intent_state != null:
 		input._intent_state.set_hover_coord(release_cell)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, ctx.director.selected_unit_id, release_cell, true)
+	var release_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_release(release_local)
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/release" % label)
@@ -1597,6 +1607,8 @@ func _paint_k4_detour_and_run_route(
 	var input: CombatPlanningInput = ctx.input
 	await _reposition_mouse_to_unit(ctx, unit_id, _K4_DETOUR_PLUS_RUN_ROUTE[0])
 	await _capture_planning_surface(ctx, unit_id, "%s/start" % label_prefix)
+	var press_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_press(press_local)
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/press" % label_prefix)
@@ -1629,6 +1641,8 @@ func _paint_k4_detour_and_run_route(
 	_assert_drag_route_equals(ctx, _K4_DETOUR_PLUS_RUN_ROUTE, "%s/route" % label_prefix)
 	_assert_preview_path_matches_drag_route(ctx, unit_id, "%s/pre_release" % label_prefix)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, _K4_RUN_TRIGGER_CELL, true)
+	var release_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_release(release_local)
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
@@ -1745,6 +1759,8 @@ func _drag_through_cells_with_route_checks(
 	var director: CombatDirector = ctx.director
 	var unit_id: int = director.selected_unit_id
 	await _reposition_mouse_to_unit(ctx, ctx.director.selected_unit_id, cells[0])
+	var press_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_press(press_local)
 	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/press" % label_prefix)
@@ -1800,7 +1816,12 @@ func _drag_through_cells_with_route_checks(
 		if assert_timeline_empty:
 			assert_int(director.plan_pre_move.entries.size()).is_equal(0)
 	var release_cell: Vector2i = cells[cells.size() - 1]
+	input.set_qa_pointer_grid_cell(release_cell)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(release_cell)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, release_cell, true)
+	var release_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_release(release_local)
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
