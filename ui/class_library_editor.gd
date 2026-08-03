@@ -1427,10 +1427,14 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
 	var tags_row := _bind_string(grid, "tags", _tags_to_csv(ability.tags), func(v: String) -> void:
-		ability.tags = _tags_from_csv(v)
+		ability.tags = AbilityModuleBridge.sanitize_tags(_tags_from_csv(v))
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "tags", tags_row)
+	if tags_row.size() >= 2 and tags_row[1] is LineEdit:
+		(tags_row[1] as LineEdit).tooltip_text = (
+			"Canonical only: attack, movement, positioning, spell, heal (unknowns dropped)"
+		)
 	var ap_row := _bind_int(grid, "AP", ability.action_point_cost, func(v: int) -> void:
 		ability.action_point_cost = v
 		if ability.planner_group == GameEnums.PlannerGroup.ACTION:
@@ -1449,17 +1453,20 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	_track_ability_field(ability, "movement_point_cost", mp_row)
 	var range_row := _bind_int(grid, "Range", ability.range_tiles, func(v: int) -> void:
 		ability.range_tiles = v
+		_resync_modules_from_effects(ability)
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "range_tiles", range_row)
 	_bind_targeting_flags(parent, ability)
 	var shape_row := _bind_enum(grid, "Shape", GameEnums.TargetShape, ability.target_shape, func(v: int) -> void:
 		ability.target_shape = v
+		_resync_modules_from_effects(ability)
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "target_shape", shape_row)
 	var shape_size_row := _bind_int(grid, "Shape Size", ability.target_shape_size, func(v: int) -> void:
 		ability.target_shape_size = v
+		_resync_modules_from_effects(ability)
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "target_shape_size", shape_size_row)
@@ -1480,16 +1487,19 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	_track_ability_field(ability, "presentation_anim", present_anim_row)
 	var upg_range_row := _bind_int(grid, "Upg Range", ability.upgraded_range_tiles, func(v: int) -> void:
 		ability.upgraded_range_tiles = v
+		_resync_modules_from_effects(ability)
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "upgraded_range_tiles", upg_range_row)
 	var upg_shape_row := _bind_enum(grid, "Upg Shape", GameEnums.TargetShape, ability.upgraded_target_shape, func(v: int) -> void:
 		ability.upgraded_target_shape = v
+		_resync_modules_from_effects(ability)
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "upgraded_target_shape", upg_shape_row)
 	var upg_size_row := _bind_int(grid, "Upg Size", ability.upgraded_target_shape_size, func(v: int) -> void:
 		ability.upgraded_target_shape_size = v
+		_resync_modules_from_effects(ability)
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "upgraded_target_shape_size", upg_size_row)
@@ -1498,13 +1508,14 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "upgraded_movement_point_cost", upg_mp_row)
-	var kind_row := _bind_enum(grid, "kind (legacy)", GameEnums.AbilityKind, ability.kind, func(v: int) -> void:
-		ability.kind = v
-		ability.planner_group = AbilityModuleBridge.planner_group_from_kind(v as GameEnums.AbilityKind)
-		ability.is_movement_skill = v == GameEnums.AbilityKind.MOVEMENT_SKILL
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "kind", kind_row)
+	## kind is synced from planner_group — not a second authoring control (ability-data.md).
+	grid.add_child(_field_label("kind (synced)"))
+	var kind_lbl := Label.new()
+	kind_lbl.text = GameEnums.AbilityKind.keys()[ability.kind]
+	kind_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+	kind_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	kind_lbl.tooltip_text = "Derived from planner_group (not editable)"
+	grid.add_child(kind_lbl)
 	var upgrade_edit := _bind_multiline(parent, "Upgrade Text", ability.upgrade_description, func(v: String) -> void:
 		ability.upgrade_description = v
 		_refresh_ability_ui(ability)
@@ -1534,6 +1545,9 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	if not _ability_ui.has(ability):
 		_ability_ui[ability] = {}
 	_ability_ui[ability]["greying_cb"] = grey_cb
+	_ability_ui[ability]["kind_lbl"] = kind_lbl
+	if tags_row.size() >= 2:
+		_ability_ui[ability]["tags_edit"] = tags_row[1]
 	grey_cb.call()
 	_add_subsection_label(parent, "Modules (bible)", ClassLibraryTheme.ACCENT_DATA)
 	var modules_preview := RichTextLabel.new()
@@ -1809,7 +1823,15 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 	var modules_preview: RichTextLabel = refs.get("modules_preview")
 	if modules_preview != null:
 		modules_preview.text = ClassLibrarySchema.modules_summary_bbcode(ability)
-				
+	var kind_lbl: Label = refs.get("kind_lbl")
+	if kind_lbl != null:
+		kind_lbl.text = GameEnums.AbilityKind.keys()[ability.kind]
+	var tags_edit: Control = refs.get("tags_edit")
+	if tags_edit is LineEdit:
+		var want_tags: String = _tags_to_csv(ability.tags)
+		if (tags_edit as LineEdit).text != want_tags:
+			(tags_edit as LineEdit).text = want_tags
+
 	var preview: RichTextLabel = refs.get("preview")
 	if preview != null:
 		preview.text = _ability_effect_preview_bbcode(ability)

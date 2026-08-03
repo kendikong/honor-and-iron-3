@@ -15,6 +15,31 @@ const TAG_POSITIONING := &"positioning"
 const TAG_SPELL := &"spell"
 const TAG_HEAL := &"heal"
 
+## Ordered vocabulary for editor validation / dumps.
+const CANONICAL_TAGS: Array[StringName] = [
+	TAG_ATTACK,
+	TAG_MOVEMENT,
+	TAG_POSITIONING,
+	TAG_SPELL,
+	TAG_HEAL,
+]
+
+
+static func is_canonical_tag(tag: StringName) -> bool:
+	return tag in CANONICAL_TAGS
+
+
+## Drop unknown tags; keep first occurrence of each canonical tag.
+static func sanitize_tags(tags: Array[StringName]) -> Array[StringName]:
+	var out: Array[StringName] = []
+	for t: StringName in tags:
+		if not is_canonical_tag(t):
+			continue
+		if t in out:
+			continue
+		out.append(t)
+	return out
+
 
 static func planner_group_from_kind(kind: GameEnums.AbilityKind) -> GameEnums.PlannerGroup:
 	match kind:

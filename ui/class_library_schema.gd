@@ -472,6 +472,11 @@ static func ability_data_dump(ability: AbilityData) -> String:
 	var lines: Array[String] = []
 	lines.append("id: %s" % String(ability.id))
 	lines.append("display_name: %s" % ability.display_name)
+	lines.append("planner_group: %s" % GameEnums.PlannerGroup.keys()[ability.planner_group])
+	var tag_parts: PackedStringArray = PackedStringArray()
+	for t: StringName in ability.tags:
+		tag_parts.append(String(t))
+	lines.append("tags: %s" % (",".join(tag_parts) if not tag_parts.is_empty() else "(none)"))
 	lines.append("kind: %s" % GameEnums.AbilityKind.keys()[ability.kind])
 	lines.append("action_point_cost: %d" % ability.action_point_cost)
 	lines.append("movement_point_cost: %d" % ability.movement_point_cost)
@@ -492,6 +497,13 @@ static func ability_data_dump(ability: AbilityData) -> String:
 		])
 	if not ability.upgrade_description.is_empty():
 		lines.append("upgrade_description: %s" % ability.upgrade_description)
+	lines.append("--- modules (%d) ---" % ability.modules.size())
+	for mi: int in ability.modules.size():
+		lines.append(_module_dump_line(mi, ability.modules[mi]))
+	if not ability.upgraded_modules.is_empty():
+		lines.append("--- upgraded_modules (%d) ---" % ability.upgraded_modules.size())
+		for umi: int in ability.upgraded_modules.size():
+			lines.append(_module_dump_line(umi, ability.upgraded_modules[umi]))
 	lines.append("--- effects (%d) ---" % ability.effects.size())
 	for i: int in ability.effects.size():
 		lines.append(_effect_dump_line(i, ability.effects[i]))
@@ -500,6 +512,25 @@ static func ability_data_dump(ability: AbilityData) -> String:
 		for j: int in ability.upgraded_effects.size():
 			lines.append(_effect_dump_line(j, ability.upgraded_effects[j]))
 	return "\n".join(lines)
+
+
+static func _module_dump_line(index: int, mod: AbilityModule) -> String:
+	if mod == null:
+		return "  [%d] null" % index
+	var kw_parts: PackedStringArray = PackedStringArray()
+	for kw: AbilityKeyword in mod.keywords:
+		if kw != null:
+			kw_parts.append(GameEnums.AbilityKeywordId.keys()[kw.keyword_id])
+	return "  [%d] %s %s range %d–%d gate %s kw[%s] layers %d" % [
+		index,
+		GameEnums.ModulePhase.keys()[mod.execution_phase],
+		GameEnums.EffectType.keys()[mod.primary_type],
+		mod.min_range,
+		mod.max_range,
+		GameEnums.ModuleGate.keys()[mod.gate],
+		",".join(kw_parts) if not kw_parts.is_empty() else "—",
+		mod.layers.size(),
+	]
 
 
 static func ability_implementation_notes(ability: AbilityData) -> String:
@@ -1120,7 +1151,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		if tags_v is Array:
 			for t: Variant in tags_v as Array:
 				tags_out.append(StringName(String(t)))
-		dst.tags = tags_out
+		dst.tags = AbilityModuleBridge.sanitize_tags(tags_out)
 	dst.primary_resource = int(data.get("primary_resource", dst.primary_resource)) as GameEnums.CostResource
 	dst.primary_value = int(data.get("primary_value", dst.primary_value))
 	dst.cost_modifier = int(data.get("cost_modifier", dst.cost_modifier)) as GameEnums.CostModifier
