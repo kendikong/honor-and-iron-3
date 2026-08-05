@@ -1,8 +1,8 @@
-class_name CloudShadowMaskBaker
+﻿class_name CloudShadowMaskBaker
 extends Node
 
 ## GPU bake of the cloud shade field (identical shader math to ground multiply).
-## Sprites and the J-key debug overlay sample this — not the GDScript FBM mirror.
+## Sprites and the J-key debug overlay sample this â€” not the GDScript FBM mirror.
 
 signal bake_completed
 

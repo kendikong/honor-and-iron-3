@@ -1,4 +1,4 @@
-class_name GdInlineParameterSetResolver
+﻿class_name GdInlineParameterSetResolver
 extends GdParameterSetResolver
 
 
@@ -203,7 +203,7 @@ static func _get_user_class_paths() -> Dictionary[String, String]:
 
 
 ## Builds the class-name-to-instance map by generating and executing a GDScript that
-## returns a dictionary literal — the only way to obtain live class references from
+## returns a dictionary literal â€” the only way to obtain live class references from
 ## [ClassDB] names, since GDScript has no eval or direct class-by-name lookup.
 static func _build_native_class_mapping() -> Dictionary[String, Variant]:
 	var source := """

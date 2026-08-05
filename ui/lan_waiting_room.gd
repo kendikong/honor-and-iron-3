@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 func _ready() -> void:
 	$VBoxContainer/LeaveButton.pressed.connect(_on_leave_pressed)

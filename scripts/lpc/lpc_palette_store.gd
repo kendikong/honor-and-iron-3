@@ -1,4 +1,4 @@
-class_name LpcPaletteStore
+﻿class_name LpcPaletteStore
 extends RefCounted
 
 ## Runtime ULPC palette JSON + shared recolor ShaderMaterials (matches chargen.js mapping).
@@ -53,7 +53,7 @@ static func get_recolor_material(
 	return null
 
 
-## CPU palette swap — matches chargen.js tolerance (1/255 per channel).
+## CPU palette swap â€” matches chargen.js tolerance (1/255 per channel).
 static func apply_recolor_to_image(
 	img: Image,
 	recolor_kind: String,

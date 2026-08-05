@@ -1,4 +1,4 @@
-class_name SampleMapLoader
+﻿class_name SampleMapLoader
 extends RefCounted
 
 ## Paints Tiled sample GIDs onto TileMapLayer nodes (Phase 0 reference render).

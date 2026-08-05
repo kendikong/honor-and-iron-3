@@ -1,4 +1,4 @@
-extends Node2D
+﻿extends Node2D
 
 const _SparkleSprites = preload("res://scripts/water_sparkle_sprites.gd")
 const _EcologyLayer = preload("res://scripts/ecology_layer.gd")
@@ -66,11 +66,11 @@ func _ready() -> void:
 	_lpc_catalog = LpcCatalog.load_from_disk()
 	if not LpcConstants.spritesheets_available():
 		push_warning(
-			"LPC sprites missing — run: powershell -ExecutionPolicy Bypass -File tools/fetch_lpc_spritesheets.ps1"
+			"LPC sprites missing â€” run: powershell -ExecutionPolicy Bypass -File tools/fetch_lpc_spritesheets.ps1"
 		)
 	elif not LpcPaletteStore.palettes_available():
 		push_warning(
-			"LPC palette JSON missing — clone Universal-LPC-Spritesheet-Character-Generator-master for GPU recolor"
+			"LPC palette JSON missing â€” clone Universal-LPC-Spritesheet-Character-Generator-master for GPU recolor"
 		)
 
 	_atmosphere.setup(_world_modulate, _sky_overlay, _map_root)
@@ -380,12 +380,12 @@ func _toggle_center_cell() -> void:
 	if current == TileId.Type.GRASS:
 		_player_grid.set_cell(center, TileId.Type.WATER)
 		_logical_provenance.add_step(
-			center, "manual_toggle", TileId.Type.WATER, "Key T — toggled center cell to WATER",
+			center, "manual_toggle", TileId.Type.WATER, "Key T â€” toggled center cell to WATER",
 		)
 	else:
 		_player_grid.set_cell(center, TileId.Type.GRASS)
 		_logical_provenance.add_step(
-			center, "manual_toggle", TileId.Type.GRASS, "Key T — toggled center cell to GRASS",
+			center, "manual_toggle", TileId.Type.GRASS, "Key T â€” toggled center cell to GRASS",
 		)
 	_regenerate()
 
@@ -433,7 +433,7 @@ func _set_walkability_overlay(enabled: bool) -> void:
 		return
 	_walkability_overlay.visible = enabled
 	if enabled:
-		print("Walkability overlay ON — K toggles · blue=logical red=trunk magenta=prop")
+		print("Walkability overlay ON â€” K toggles Â· blue=logical red=trunk magenta=prop")
 	else:
 		print("Walkability overlay OFF")
 	_walkability_overlay.sync(
@@ -447,7 +447,7 @@ func _set_shadow_debug_overlay(enabled: bool) -> void:
 	_shadow_debug_overlay.visible = enabled
 	if enabled:
 		print(
-			"Shadow hit debug ON — J toggles · red=cloud blue=oblique magenta=both · yellow foot dot",
+			"Shadow hit debug ON â€” J toggles Â· red=cloud blue=oblique magenta=both Â· yellow foot dot",
 		)
 	else:
 		print("Shadow hit debug OFF")
@@ -491,10 +491,10 @@ func _set_boredom_atmosphere_mode(enabled: bool) -> void:
 		_generator.height = 16
 		_generator.water_ratio = 0.0
 		_generator.tree_count = 0
-		print("Phase 5 Boredom Test map ON — 16×16 GRASS+RUIN")
+		print("Phase 5 Boredom Test map ON â€” 16Ã—16 GRASS+RUIN")
 	else:
 		_restore_default_generator()
-		print("Phase 5 Boredom Test map OFF — full procedural map")
+		print("Phase 5 Boredom Test map OFF â€” full procedural map")
 	_generate_map()
 	_sync_map_tool_panel()
 
@@ -513,10 +513,10 @@ func _set_boredom_water_mode(enabled: bool) -> void:
 		_generator.height = 16
 		_generator.water_ratio = 0.35
 		_generator.tree_count = 0
-		print("Phase 6 Boredom Test map ON — 16×16 GRASS+WATER")
+		print("Phase 6 Boredom Test map ON â€” 16Ã—16 GRASS+WATER")
 	else:
 		_restore_default_generator()
-		print("Phase 6 Boredom Test map OFF — full procedural map")
+		print("Phase 6 Boredom Test map OFF â€” full procedural map")
 	_generate_map()
 	_sync_map_tool_panel()
 
@@ -811,7 +811,7 @@ func _reroll_character() -> void:
 	var drawn_layers: int = int(compose_report.get("drawn", 0))
 	if drawn_layers < 1:
 		push_error(
-			"LPC character invisible — 0 layers drawn. Sprites root: %s"
+			"LPC character invisible â€” 0 layers drawn. Sprites root: %s"
 			% LpcConstants.spritesheet_root()
 		)
 	if _char_mover != null and is_instance_valid(_char_mover):
@@ -828,7 +828,7 @@ func _export_player_grid() -> void:
 	if err != OK:
 		push_error("PlayerGrid export failed (%d): %s" % [err, path])
 		return
-	print("PlayerGrid exported → %s (seed %d, %dx%d)" % [
+	print("PlayerGrid exported â†’ %s (seed %d, %dx%d)" % [
 		ProjectSettings.globalize_path(path),
 		_generator.map_seed,
 		_player_grid.width,
@@ -850,7 +850,7 @@ func _warn_missing_head(report: Dictionary) -> void:
 		if status == "drawn":
 			return
 		push_warning(
-			"LPC invisible face: head id '%s' %s — %s"
+			"LPC invisible face: head id '%s' %s â€” %s"
 			% [str(p.get("id", "")), status, str(p.get("path", ""))]
 		)
 		return

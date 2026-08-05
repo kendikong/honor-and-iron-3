@@ -1,7 +1,7 @@
-class_name LpcSheetFrames
+﻿class_name LpcSheetFrames
 extends RefCounted
 
-## Slice LPC walk + idle rows via Image.load — bypasses Godot res:// import pipeline.
+## Slice LPC walk + idle rows via Image.load â€” bypasses Godot res:// import pipeline.
 
 const WALK_ANIMS: Array[StringName] = [
 	&"walk_up", &"walk_left", &"walk_down", &"walk_right",
@@ -181,7 +181,7 @@ static func _atlas_frame(tex: Texture2D, frame_col: int, y0: int) -> AtlasTextur
 	return atlas
 
 
-## Per-animation PNGs (e.g. walk.png) are ~832×256; full composites use global row offsets.
+## Per-animation PNGs (e.g. walk.png) are ~832Ã—256; full composites use global row offsets.
 static func _anim_row_y0(
 	tex: Texture2D,
 	anim_name: StringName,

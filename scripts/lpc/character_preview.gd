@@ -1,4 +1,4 @@
-class_name CharacterPreview
+﻿class_name CharacterPreview
 extends Node2D
 
 ## Standalone preview node: rolls a new character from a catalog + profile,

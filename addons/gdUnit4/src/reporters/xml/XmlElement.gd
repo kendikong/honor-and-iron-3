@@ -1,4 +1,4 @@
-class_name XmlElement
+﻿class_name XmlElement
 extends RefCounted
 
 var _name :String

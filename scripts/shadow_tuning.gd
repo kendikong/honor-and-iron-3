@@ -1,7 +1,7 @@
-class_name ShadowTuning
+﻿class_name ShadowTuning
 extends RefCounted
 
-## Runtime bridge: persisted EffectsSettings scalars → WeatherBus + shared shadow math.
+## Runtime bridge: persisted EffectsSettings scalars â†’ WeatherBus + shared shadow math.
 
 const TWILIGHT_FADE_DEG_MIN: float = 4.0
 const TWILIGHT_FADE_DEG_MAX: float = 48.0
@@ -308,7 +308,7 @@ static func live_readout(settings: EffectsSettings = null) -> String:
 	var phase: float = WeatherBus.time_phase()
 	var window: String = WeatherBus.clock_preset_window_label(m_f)
 	return (
-		"Clock %s · window %s · phase %.2f · elev %.1f° · presence %.2f · contrast %.2f · vis %.3f · map gate %.3f · actor gate %.3f · geom %s"
+		"Clock %s Â· window %s Â· phase %.2f Â· elev %.1fÂ° Â· presence %.2f Â· contrast %.2f Â· vis %.3f Â· map gate %.3f Â· actor gate %.3f Â· geom %s"
 		% [
 			format_clock_minutes(m_f),
 			window,
@@ -348,11 +348,11 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "shadow_twilight_fade_deg",
-			"label": "Twilight fade band (° elev) (higher=longer dawn/dusk fade)",
+			"label": "Twilight fade band (Â° elev) (higher=longer dawn/dusk fade)",
 			"min": TWILIGHT_FADE_DEG_MIN,
 			"max": TWILIGHT_FADE_DEG_MAX,
 			"step": 1.0,
-			"fmt": "%.0f°",
+			"fmt": "%.0fÂ°",
 		},
 		{
 			"kind": "slider",
@@ -366,11 +366,11 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "shadow_full_contrast_below_noon_deg",
-			"label": "Full contrast below noon (°) (higher=full strength at lower sun)",
+			"label": "Full contrast below noon (Â°) (higher=full strength at lower sun)",
 			"min": FULL_CONTRAST_BELOW_NOON_MIN,
 			"max": FULL_CONTRAST_BELOW_NOON_MAX,
 			"step": 1.0,
-			"fmt": "%.0f°",
+			"fmt": "%.0fÂ°",
 		},
 		{
 			"kind": "slider",
@@ -402,7 +402,7 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "shadow_twilight_tint_night_lerp",
-			"label": "Twilight tint → night match (higher=more night-colored shadows)",
+			"label": "Twilight tint â†’ night match (higher=more night-colored shadows)",
 			"min": TINT_NIGHT_LERP_MIN,
 			"max": TINT_NIGHT_LERP_MAX,
 			"step": 0.02,
@@ -411,7 +411,7 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "shadow_twilight_tint_white_lerp",
-			"label": "Twilight tint → white wash (higher=shadows fade out faster)",
+			"label": "Twilight tint â†’ white wash (higher=shadows fade out faster)",
 			"min": TINT_WHITE_LERP_MIN,
 			"max": TINT_WHITE_LERP_MAX,
 			"step": 0.02,
@@ -420,13 +420,13 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "shadow_strength_contrast_mult",
-			"label": "Shadow strength × contrast (higher=darker at same sun)",
+			"label": "Shadow strength Ã— contrast (higher=darker at same sun)",
 			"min": STRENGTH_CONTRAST_MULT_MIN,
 			"max": STRENGTH_CONTRAST_MULT_MAX,
 			"step": 0.05,
-			"fmt": "%.2f×",
+			"fmt": "%.2fÃ—",
 		},
-		{"kind": "section", "text": "Clock atmosphere (map brightness tint — not shadows)"},
+		{"kind": "section", "text": "Clock atmosphere (map brightness tint â€” not shadows)"},
 		{
 			"kind": "slider",
 			"key": "shadow_preset_ramp_min",
@@ -439,7 +439,7 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "shadow_night_to_dusk_start_min",
-			"label": "Night → dawn twilight start (later=starts later in morning)",
+			"label": "Night â†’ dawn twilight start (later=starts later in morning)",
 			"min": CLOCK_WINDOW_MIN,
 			"max": CLOCK_WINDOW_MAX,
 			"step": 15.0,
@@ -448,7 +448,7 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "shadow_dusk_to_day_start_min",
-			"label": "Dawn → day start (later=when morning reaches full daylight)",
+			"label": "Dawn â†’ day start (later=when morning reaches full daylight)",
 			"min": CLOCK_WINDOW_MIN,
 			"max": CLOCK_WINDOW_MAX,
 			"step": 15.0,
@@ -457,7 +457,7 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "shadow_day_to_dusk_start_min",
-			"label": "Day → dusk start (later=afternoon dim starts later)",
+			"label": "Day â†’ dusk start (later=afternoon dim starts later)",
 			"min": CLOCK_WINDOW_MIN,
 			"max": CLOCK_WINDOW_MAX,
 			"step": 15.0,
@@ -466,7 +466,7 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "shadow_dusk_to_night_start_min",
-			"label": "Dusk → night start (later=evening fade starts later)",
+			"label": "Dusk â†’ night start (later=evening fade starts later)",
 			"min": CLOCK_WINDOW_MIN,
 			"max": CLOCK_WINDOW_MAX,
 			"step": 15.0,
@@ -562,7 +562,7 @@ static func panel_slider_specs() -> Array[Dictionary]:
 			"min": PERF_DOWNSCALE_LOW_MIN,
 			"max": PERF_DOWNSCALE_LOW_MAX,
 			"step": 1.0,
-			"fmt": "%.0f×",
+			"fmt": "%.0fÃ—",
 		},
 		{
 			"kind": "slider",
@@ -586,11 +586,11 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "shadow_arc_half_span_deg",
-			"label": "Shadow arc half-span (higher=wider E↔W shadow sweep)",
+			"label": "Shadow arc half-span (higher=wider Eâ†”W shadow sweep)",
 			"min": ARC_HALF_SPAN_MIN,
 			"max": ARC_HALF_SPAN_MAX,
 			"step": 1.0,
-			"fmt": "%.0f°",
+			"fmt": "%.0fÂ°",
 		},
 		{
 			"kind": "slider",

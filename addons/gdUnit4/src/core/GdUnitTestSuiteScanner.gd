@@ -1,4 +1,4 @@
-class_name GdUnitTestSuiteScanner
+﻿class_name GdUnitTestSuiteScanner
 extends RefCounted
 
 const TEST_FUNC_TEMPLATE ="""

@@ -1,4 +1,4 @@
-class_name GdUnitTestSuiteTemplate
+﻿class_name GdUnitTestSuiteTemplate
 extends RefCounted
 
 const TEMPLATE_ID_GD = 1000

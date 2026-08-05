@@ -16,8 +16,8 @@ extends RefCounted
 
 ## Purpose: Runs the data-driven ability pipeline (Validate -> Execute -> Resolve).
 ## Responsibilities: Validate cost/range, spend action points, and interpret each
-##   EffectData by delegating to the system that owns that effect.
-## Dependencies: BoardState, UnitState, TimelineAction, EffectData, GridSystem,
+##   AbilityModule by delegating to the system that owns that effect.
+## Dependencies: BoardState, UnitState, TimelineAction, AbilityModule, GridSystem,
 ##   CombatSystem, PhysicsSystem, SimEvent, GameEnums.
 ## Lifecycle: stateless; only static functions.
 
@@ -64,8 +64,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		return false
 
 	if actor.has_status(GameEnums.StatusType.PACIFY) and ability_uses_attack_animation(ability):
-		for effect in ability.effects:
-			if effect.type == GameEnums.EffectType.DAMAGE or effect.type == GameEnums.EffectType.EXPLODE or effect.type == GameEnums.EffectType.RANGED_EXPLODE:
+		for effect in ability.modules:
+			if effect.primary_type == GameEnums.EffectType.DAMAGE or effect.primary_type == GameEnums.EffectType.EXPLODE or effect.primary_type == GameEnums.EffectType.RANGED_EXPLODE:
 				return false
 
 	if ability.consumes_action_slot() and not actor.can_use_action_slot():
@@ -110,12 +110,12 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 	var ap_cost := ability.action_point_cost
 	if actor == null or board == null:
 		return ap_cost
-	var effects: Array = ability.effects
+	var effects: Array = ability.modules
 	if actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
 		effects = ability.upgraded_effects
-	for eff: EffectData in effects:
-		if eff != null and eff.modifiers.has("zero_ap_adjacent_enemies"):
-			var needed: int = int(eff.modifiers["zero_ap_adjacent_enemies"])
+	for eff: AbilityModule in effects:
+		if eff != null and eff.legacy_modifiers.has("zero_ap_adjacent_enemies"):
+			var needed: int = int(eff.legacy_modifiers["zero_ap_adjacent_enemies"])
 			var adj_enemies := 0
 			for dir in GridSystem.DIRECTIONS:
 				var occ := board.get_unit_at(actor.position + dir)
@@ -199,8 +199,8 @@ static func target_passes_mode(actor: UnitState, ability: AbilityData, target: U
 static func ability_has_dash(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
-	for eff in ability.effects:
-		if eff.type == GameEnums.EffectType.DASH:
+	for eff in ability.modules:
+		if eff.primary_type == GameEnums.EffectType.DASH:
 			return true
 	return false
 
@@ -208,8 +208,8 @@ static func ability_has_dash(ability: AbilityData) -> bool:
 static func ability_has_movement_effect(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
-	for eff in ability.effects:
-		if eff.type in [
+	for eff in ability.modules:
+		if eff.primary_type in [
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.MOVE,
 			GameEnums.EffectType.TELEPORT_CASTER,
@@ -595,11 +595,11 @@ static func effect_amount(
 ) -> int:
 	if ability == null:
 		return 0
-	var effects: Array = ability.effects
+	var effects: Array = ability.modules
 	if actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
 		effects = ability.upgraded_effects
 	for eff in effects:
-		if eff.type == effect_type:
+		if eff.primary_type == effect_type:
 			return eff.amount
 	return 0
 
@@ -607,8 +607,8 @@ static func effect_amount(
 static func ability_has_swap_effect(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
-	for eff: EffectData in ability.effects:
-		if eff.type == GameEnums.EffectType.SWAP:
+	for eff: AbilityModule in ability.modules:
+		if eff.primary_type == GameEnums.EffectType.SWAP:
 			return true
 	return false
 
@@ -616,7 +616,7 @@ static func ability_has_swap_effect(ability: AbilityData) -> bool:
 static func has_pass_through_effects(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
-	return has_pass_through_effects_from(ability.effects)
+	return has_pass_through_effects_from(ability.modules)
 
 
 static func has_displacement_effects(ability: AbilityData) -> bool:
@@ -707,7 +707,7 @@ static func manhattan_threat_tiles(
 
 
 static func pass_through_modifiers(ability: AbilityData, actor: UnitState = null) -> Dictionary:
-	var effects: Array = ability.effects if ability != null else []
+	var effects: Array = ability.modules if ability != null else []
 	if ability != null and actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
 		effects = ability.upgraded_effects
 	return pass_through_modifiers_from(effects)
@@ -717,18 +717,18 @@ static func pass_through_modifiers_from(effects: Array) -> Dictionary:
 	var trample_atk := 0
 	var bulldoze := 0
 	var push := 0
-	for eff: EffectData in effects:
-		if eff.type == GameEnums.EffectType.TRAMPLE:
+	for eff: AbilityModule in effects:
+		if eff.primary_type == GameEnums.EffectType.TRAMPLE:
 			trample_atk = eff.amount
-		elif eff.type == GameEnums.EffectType.BULLDOZE:
+		elif eff.primary_type == GameEnums.EffectType.BULLDOZE:
 			bulldoze = eff.amount
-		elif eff.type == GameEnums.EffectType.PUSH:
+		elif eff.primary_type == GameEnums.EffectType.PUSH:
 			push = eff.amount
-		elif eff.type == GameEnums.EffectType.DASH:
-			if eff.modifiers.has("bulldoze"):
-				bulldoze = int(eff.modifiers["bulldoze"])
-			if eff.modifiers.has("push"):
-				push = int(eff.modifiers["push"])
+		elif eff.primary_type == GameEnums.EffectType.DASH:
+			if eff.legacy_modifiers.has("bulldoze"):
+				bulldoze = int(eff.legacy_modifiers["bulldoze"])
+			if eff.legacy_modifiers.has("push"):
+				push = int(eff.legacy_modifiers["push"])
 	return {"trample_atk": trample_atk, "bulldoze": bulldoze, "push": push}
 
 
@@ -1042,11 +1042,11 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 		GameEnums.EffectType.EXPLODE,
 		GameEnums.EffectType.RANGED_EXPLODE,
 	]
-	for eff: EffectData in ability.effects:
-		if eff.type in offensive_effects:
+	for eff: AbilityModule in ability.modules:
+		if eff.primary_type in offensive_effects:
 			return true
-	for eff: EffectData in ability.upgraded_effects:
-		if eff.type in offensive_effects:
+	for eff: AbilityModule in ability.upgraded_effects:
+		if eff.primary_type in offensive_effects:
 			return true
 	return false
 
@@ -1149,7 +1149,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		"presentation_anim": pres_anim,
 	}))
 	
-	var effects_to_apply = action.ability.effects
+	var effects_to_apply = action.ability.modules
 	if actor.is_ability_upgraded(action.ability.id) and action.ability.upgraded_effects.size() > 0:
 		effects_to_apply = action.ability.upgraded_effects
 
@@ -1171,7 +1171,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			
 		var has_ghost = false
 		for eff in effects_to_apply:
-			if eff.type == GameEnums.EffectType.MOVE and eff.modifiers.has("ghost_move"):
+			if eff.primary_type == GameEnums.EffectType.MOVE and eff.legacy_modifiers.has("ghost_move"):
 				has_ghost = true
 				break
 				
@@ -1198,15 +1198,15 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var objects_destroyed_count = 0
 	
 	for eff in effects_to_apply:
-		if eff.modifiers.has("heal_per_target_hit"): heal_per_target_hit = true
-		if eff.modifiers.has("buff_per_destroyed_object"): buff_per_object = true
-		if eff.modifiers.has("next_attack_pierce"):
+		if eff.legacy_modifiers.has("heal_per_target_hit"): heal_per_target_hit = true
+		if eff.legacy_modifiers.has("buff_per_destroyed_object"): buff_per_object = true
+		if eff.legacy_modifiers.has("next_attack_pierce"):
 			actor.passive_flags["breaching_dash_pierce"] = true
-		if eff.modifiers.has("on_kill_heal_shield"):
+		if eff.legacy_modifiers.has("on_kill_heal_shield"):
 			actor.passive_flags["adrenaline_surge_active"] = true
-		if eff.modifiers.has("intercept_grant_str"):
-			actor.passive_flags["meat_shield_intercept_str"] = int(eff.modifiers["intercept_grant_str"])
-		if eff.modifiers.has("frenzy_on_kill_ap"):
+		if eff.legacy_modifiers.has("intercept_grant_str"):
+			actor.passive_flags["meat_shield_intercept_str"] = int(eff.legacy_modifiers["intercept_grant_str"])
+		if eff.legacy_modifiers.has("frenzy_on_kill_ap"):
 			actor.passive_flags["frenzy_on_kill_ap"] = true
 
 	if buff_per_object:
@@ -1216,18 +1216,18 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				objects_destroyed_count += 1
 
 	for effect in effects_to_apply:
-		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
+		if effect.primary_type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
 			_apply_effect_to_tile(board, actor, action, effect, events, target_coord, board.get_unit_at(target_coord))
 			continue
 			
-		if effect.modifiers.has("belly_flop_push"):
+		if effect.legacy_modifiers.has("belly_flop_push"):
 			for dir in GridSystem.DIRECTIONS:
 				var adj_coord = actor.position + dir
 				var adj_unit = board.get_unit_at(adj_coord)
 				_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
 			continue
 
-		if effect.modifiers.has("damage_adjacent_on_landing"):
+		if effect.legacy_modifiers.has("damage_adjacent_on_landing"):
 			for dir in GridSystem.DIRECTIONS:
 				var adj_coord: Vector2i = actor.position + dir
 				var adj_unit: UnitState = board.get_unit_at(adj_coord)
@@ -1235,7 +1235,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 					_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
 			continue
 
-		if effect.modifiers.has("push_board_items"):
+		if effect.legacy_modifiers.has("push_board_items"):
 			for tile_coord in affected_tiles:
 				var item_idx: int = board.items.find(tile_coord)
 				if item_idx < 0:
@@ -1252,9 +1252,9 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 					hit_unit != null
 					and hit_unit.is_alive()
 					and hit_unit.team != actor.team
-					and effect.modifiers.has("item_collision_damage")
+					and effect.legacy_modifiers.has("item_collision_damage")
 				):
-					var item_dmg: int = int(effect.modifiers["item_collision_damage"])
+					var item_dmg: int = int(effect.legacy_modifiers["item_collision_damage"])
 					CombatSystem.deal_damage(
 						board, hit_unit, item_dmg, events, &"true", true, false, actor,
 						action.ability.display_name, item_dmg,
@@ -1267,7 +1267,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				if pinned_target != null and pinned_target.position == tile_coord:
 					target_unit = pinned_target
 			
-			if effect.type == GameEnums.EffectType.DAMAGE and target_unit != null and target_unit != actor and target_unit.is_alive() and heal_per_target_hit:
+			if effect.primary_type == GameEnums.EffectType.DAMAGE and target_unit != null and target_unit != actor and target_unit.is_alive() and heal_per_target_hit:
 				targets_hit_count += 1
 				
 			_apply_effect_to_tile(board, actor, action, effect, events, tile_coord, target_unit)
@@ -1281,7 +1281,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if actor != null and actor.is_alive() and actor.has_passive(&"intercept_tactics"):
 		var is_redirect = false
 		for effect in effects_to_apply:
-			if effect.type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF] \
+			if effect.primary_type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF] \
 					and effect.status_type in [GameEnums.StatusType.INTERCEPT, GameEnums.StatusType.TAUNT]:
 				is_redirect = true
 				break
@@ -1296,7 +1296,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if actor != null and actor.is_alive() and actor.has_passive(&"kinetic_redirection"):
 		var is_attack = false
 		for effect in effects_to_apply:
-			if effect.type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]:
+			if effect.primary_type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]:
 				is_attack = true
 				break
 		if is_attack:
@@ -1342,7 +1342,7 @@ static func apply_canto_move_refund(actor: UnitState) -> void:
 			actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.CANTO, 1, 0))
 		actor._recalculate_stats()
 
-static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: TimelineAction, effect: EffectData, events: Array[SimEvent], tile_coord: Vector2i, target: UnitState) -> void:
+static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: TimelineAction, effect: AbilityModule, events: Array[SimEvent], tile_coord: Vector2i, target: UnitState) -> void:
 	if target != null and actor != target and actor != null:
 		var dist = GridSystem.manhattan(actor.position, target.position)
 		var is_ranged = dist > 1
@@ -1366,20 +1366,20 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 	if target != null:
 		var hostile := false
 		var friendly := false
-		if effect.type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.PURGE, GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL]:
+		if effect.primary_type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.PURGE, GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL]:
 			hostile = true
-		elif effect.type in [GameEnums.EffectType.HEAL, GameEnums.EffectType.ARMOR_UP, GameEnums.EffectType.CLEANSE]:
+		elif effect.primary_type in [GameEnums.EffectType.HEAL, GameEnums.EffectType.ARMOR_UP, GameEnums.EffectType.CLEANSE]:
 			friendly = true
-		elif effect.type == GameEnums.EffectType.ADD_STATUS:
+		elif effect.primary_type == GameEnums.EffectType.ADD_STATUS:
 			if GameEnums.is_buff(effect.status_type):
 				friendly = true
 			elif GameEnums.is_debuff(effect.status_type):
 				hostile = true
 				
 		if target == actor:
-			if effect.modifiers.get("exclude_caster", false):
+			if effect.legacy_modifiers.get("exclude_caster", false):
 				return
-			if not friendly and not effect.type in [GameEnums.EffectType.ADD_STATUS_SELF, GameEnums.EffectType.DAMAGE_SELF, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
+			if not friendly and not effect.primary_type in [GameEnums.EffectType.ADD_STATUS_SELF, GameEnums.EffectType.DAMAGE_SELF, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH, GameEnums.EffectType.EXPLODE]:
 				return
 		elif actor != null:
 			if hostile and target.team == actor.team:
@@ -1387,7 +1387,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if friendly and target.team != actor.team:
 				return
 
-	match effect.type:
+	match effect.primary_type:
 		GameEnums.EffectType.DAMAGE:
 			var pierce = false
 			if actor.has_passive(&"kinetic_redirection") and actor.is_passive_upgraded(&"kinetic_redirection"):
@@ -1396,12 +1396,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					
 			var base_amt := effect.amount
 			
-			if effect.modifiers.has("bonus_dmg_per_10_hp"):
-				base_amt += floori(actor.health.current_hp / 10.0) * effect.modifiers["bonus_dmg_per_10_hp"]
-			if effect.modifiers.has("bonus_dmg_pct_max_hp"):
-				base_amt += floori(actor.health.max_hp * float(effect.modifiers["bonus_dmg_pct_max_hp"]))
-			if effect.modifiers.has("bonus_dmg_from_terrain") and actor.passive_flags.get("passed_through_terrain", false):
-				base_amt += effect.modifiers["bonus_dmg_from_terrain"]
+			if effect.legacy_modifiers.has("bonus_dmg_per_10_hp"):
+				base_amt += floori(actor.health.current_hp / 10.0) * effect.legacy_modifiers["bonus_dmg_per_10_hp"]
+			if effect.legacy_modifiers.has("bonus_dmg_pct_max_hp"):
+				base_amt += floori(actor.health.max_hp * float(effect.legacy_modifiers["bonus_dmg_pct_max_hp"]))
+			if effect.legacy_modifiers.has("bonus_dmg_from_terrain") and actor.passive_flags.get("passed_through_terrain", false):
+				base_amt += effect.legacy_modifiers["bonus_dmg_from_terrain"]
 				
 			if actor.has_passive(&"blood_for_blood") and actor.is_passive_upgraded(&"blood_for_blood") and actor.passive_flags.get("damaged_last_turn", false):
 				base_amt += 1
@@ -1740,7 +1740,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					return
 					
 				var stat_val = effect.amount
-				if effect.modifiers.has("weapon_scaled"):
+				if effect.legacy_modifiers.has("weapon_scaled"):
 					if actor.definition != null and actor.definition.equipped_weapon != null:
 						stat_val = actor.definition.equipped_weapon.might
 				if effect.scaling_stat == GameEnums.StatType.DEFENSE:
@@ -1936,7 +1936,7 @@ static func _execute_gated_module_followups(
 				"module_index": i,
 			}))
 			return
-		var move_effect: EffectData = mod.primary_as_effect()
+		var move_effect: AbilityModule = mod.primary_as_effect()
 		var walk_steps: int = mod.max_range if mod.max_range > 0 else mod.amount
 		MovementSystem.execute_skill_walk(
 			board, actor, dest, [], ability, events, [move_effect], walk_steps,

@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 class_name GdUnitCSIMessageWriter
 extends GdUnitMessageWriter
 ## A message writer implementation using ANSI/CSI escape codes for console output.[br]
@@ -219,7 +219,7 @@ func _print_color_table() -> void:
 	for green in range(0, 6):
 		for red in range(0, 6):
 			for blue in range(0, 6):
-				color(Color8(red * 42, green * 42, blue * 42)).println_message("████████ ")
+				color(Color8(red * 42, green * 42, blue * 42)).println_message("â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ ")
 			new_line()
 		new_line()
 
@@ -228,7 +228,7 @@ func _print_color_table() -> void:
 	for green in range(0, 6):
 		for red in range(0, 6):
 			for blue in range(0, 6):
-				color(Color8(red * 42, green * 42, blue * 42)).println_message("████████ ")
+				color(Color8(red * 42, green * 42, blue * 42)).println_message("â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆ ")
 			new_line()
 		new_line()
 	_color_mode = COLOR_TABLE

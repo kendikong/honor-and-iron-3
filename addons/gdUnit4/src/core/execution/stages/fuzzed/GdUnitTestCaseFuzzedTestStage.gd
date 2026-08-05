@@ -1,4 +1,4 @@
-## The fuzzed test case execution stage.[br]
+﻿## The fuzzed test case execution stage.[br]
 class_name GdUnitTestCaseFuzzedTestStage
 extends IGdUnitExecutionStage
 

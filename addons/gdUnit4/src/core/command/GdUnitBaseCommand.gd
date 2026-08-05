@@ -1,4 +1,4 @@
-@abstract class_name GdUnitBaseCommand
+﻿@abstract class_name GdUnitBaseCommand
 extends Node
 
 

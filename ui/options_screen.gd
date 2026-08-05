@@ -1,7 +1,7 @@
-class_name OptionsScreen
+﻿class_name OptionsScreen
 extends Control
 
-## Unified settings — main menu scene and in-game overlay share this UI.
+## Unified settings â€” main menu scene and in-game overlay share this UI.
 
 signal close_requested
 signal map_regenerate_requested
@@ -52,19 +52,19 @@ const _PLANNING_PREVIEW_TOGGLES: Array[Dictionary] = [
 ]
 
 const _CONTROLS_TEXT: String = """[b]Tactical combat[/b]
-• Left click — select unit, plan move, or use ability
-• Right click — undo last action or deselect
-• Scroll wheel — change selected ability
-• A — aim mode (vector-target skills)
-• O — open in-game options
-• Esc — pause menu
+â€¢ Left click â€” select unit, plan move, or use ability
+â€¢ Right click â€” undo last action or deselect
+â€¢ Scroll wheel â€” change selected ability
+â€¢ A â€” aim mode (vector-target skills)
+â€¢ O â€” open in-game options
+â€¢ Esc â€” pause menu
 
 [b]Map camera[/b]
-• Middle mouse drag — pan map
-• Ctrl + scroll — zoom multiplier (session)
+â€¢ Middle mouse drag â€” pan map
+â€¢ Ctrl + scroll â€” zoom multiplier (session)
 
 [b]Menus[/b]
-• Esc / Back — return from sub-screens"""
+â€¢ Esc / Back â€” return from sub-screens"""
 
 var _game_settings: GameSettings
 var _effects_settings: EffectsSettings
@@ -302,7 +302,7 @@ func _build_display_tab(parent: TabContainer) -> void:
 	_add_section(vbox, "Video")
 	_resolution_option = OptionButton.new()
 	for res: Vector2i in GameSettings.RESOLUTION_PRESETS:
-		_resolution_option.add_item("%d × %d" % [res.x, res.y])
+		_resolution_option.add_item("%d Ã— %d" % [res.x, res.y])
 	_resolution_option.select(_game_settings.resolution_index())
 	_resolution_option.item_selected.connect(func(_i: int) -> void: _sync_resolution_controls())
 	vbox.add_child(_label("Resolution"))
@@ -384,9 +384,9 @@ func _build_graphics_tab(parent: TabContainer) -> void:
 	var vbox := _tab_page(parent, "Graphics")
 	_add_hint(
 		vbox,
-		"Living-map effects — saved automatically."
+		"Living-map effects â€” saved automatically."
 		if live_preview
-		else "Ambient living-map effects — saved automatically.",
+		else "Ambient living-map effects â€” saved automatically.",
 	)
 
 	var toggles_parent: Container = vbox
@@ -422,7 +422,7 @@ func _build_sound_tab(parent: TabContainer) -> void:
 
 func _build_gameplay_tab(parent: TabContainer) -> void:
 	var vbox := _tab_page(parent, "Gameplay")
-	_add_hint(vbox, "Core combat rules — not configurable.")
+	_add_hint(vbox, "Core combat rules â€” not configurable.")
 
 	var info := Label.new()
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -547,7 +547,7 @@ func _build_interface_tab(parent: TabContainer) -> void:
 
 func _on_char_scale_changed(value: float) -> void:
 	if _char_scale_label != null:
-		_char_scale_label.text = "%.2f×" % value
+		_char_scale_label.text = "%.2fÃ—" % value
 	if _char_profile != null:
 		_char_profile.display_scale = value
 		_char_profile.save_to_user_disk()
@@ -557,7 +557,7 @@ func _on_char_scale_changed(value: float) -> void:
 func _build_developer_tab(parent: TabContainer) -> void:
 	var vbox := _tab_page(parent, "Developer")
 	_developer_tab_root = parent.get_node("Developer") as Control
-	_add_hint(vbox, "Sandbox / debug tools — apply in test map and tactical scenes.")
+	_add_hint(vbox, "Sandbox / debug tools â€” apply in test map and tactical scenes.")
 
 	_dev_tile_labels_check = _add_dev_check(
 		vbox,
@@ -567,13 +567,13 @@ func _build_developer_tab(parent: TabContainer) -> void:
 	)
 	_dev_boredom_atmo_check = _add_dev_check(
 		vbox,
-		"Boredom test — atmosphere only",
+		"Boredom test â€” atmosphere only",
 		_game_settings.dev_boredom_atmosphere,
 		func(pressed: bool) -> void: _game_settings.dev_boredom_atmosphere = pressed,
 	)
 	_dev_boredom_water_check = _add_dev_check(
 		vbox,
-		"Boredom test — water only",
+		"Boredom test â€” water only",
 		_game_settings.dev_boredom_water,
 		func(pressed: bool) -> void: _game_settings.dev_boredom_water = pressed,
 	)
@@ -637,7 +637,7 @@ func _build_developer_tab(parent: TabContainer) -> void:
 	size_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_sandbox_tools_box.add_child(size_row)
 	var minus_btn := Button.new()
-	minus_btn.text = "Map −"
+	minus_btn.text = "Map âˆ’"
 	minus_btn.pressed.connect(func() -> void: map_resize_requested.emit(-2))
 	size_row.add_child(minus_btn)
 	var plus_btn := Button.new()
@@ -650,11 +650,11 @@ func _build_developer_tab(parent: TabContainer) -> void:
 	_sandbox_tile_labels_check.toggled.connect(func(pressed: bool) -> void: map_tile_labels_toggled.emit(pressed))
 	_sandbox_tools_box.add_child(_sandbox_tile_labels_check)
 	_sandbox_boredom_atmo_check = CheckButton.new()
-	_sandbox_boredom_atmo_check.text = "Boredom test — atmosphere only"
+	_sandbox_boredom_atmo_check.text = "Boredom test â€” atmosphere only"
 	_sandbox_boredom_atmo_check.toggled.connect(func(pressed: bool) -> void: map_boredom_atmosphere_toggled.emit(pressed))
 	_sandbox_tools_box.add_child(_sandbox_boredom_atmo_check)
 	_sandbox_boredom_water_check = CheckButton.new()
-	_sandbox_boredom_water_check.text = "Boredom test — water only"
+	_sandbox_boredom_water_check.text = "Boredom test â€” water only"
 	_sandbox_boredom_water_check.toggled.connect(func(pressed: bool) -> void: map_boredom_water_toggled.emit(pressed))
 	_sandbox_tools_box.add_child(_sandbox_boredom_water_check)
 
@@ -693,19 +693,19 @@ func _apply_map_zoom_live() -> void:
 
 
 func _on_map_scale_changed(value: float) -> void:
-	_map_scale_label.text = "%.2f×" % value
+	_map_scale_label.text = "%.2fÃ—" % value
 	_game_settings.map_zoom_multiplier = value
 	_save_game_settings()
 
 
 func _on_ui_scale_changed(value: float) -> void:
-	_ui_scale_label.text = "%.2f×" % value
+	_ui_scale_label.text = "%.2fÃ—" % value
 	_game_settings.combat_ui_scale = value
 	_apply_interface_live()
 
 
 func _on_text_scale_changed(value: float) -> void:
-	_text_scale_label.text = "%.2f×" % value
+	_text_scale_label.text = "%.2fÃ—" % value
 	_game_settings.combat_text_scale = value
 	_apply_interface_live()
 

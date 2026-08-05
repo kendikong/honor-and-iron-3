@@ -1,4 +1,4 @@
-class_name AIProfile
+﻿class_name AIProfile
 extends Resource
 
 ## Purpose: Defines the base weights and class synergy modifiers for the Commander Autobattler AI.

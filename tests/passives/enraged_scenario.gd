@@ -1,9 +1,9 @@
-﻿class_name EnragedScenarioTest
+class_name EnragedScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
-## Bible: Enraged — +1 STR per unique debuff or hazard.
+## Bible: Enraged � +1 STR per unique debuff or hazard.
 ## [+] also +1 MOV per debuff/hazard.
 ## Globals: unique debuff/hazard count via CombatSystem stat hooks.
 

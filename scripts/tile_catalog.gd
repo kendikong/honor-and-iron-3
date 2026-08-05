@@ -1,4 +1,4 @@
-class_name TileCatalog
+﻿class_name TileCatalog
 extends RefCounted
 
 ## Metadata for gentle forest v01 atlas tiles (library scene + docs).
@@ -14,234 +14,234 @@ const CORNER_LABELS: PackedStringArray = ["TL", "T", "TR", "L", "R", "BL", "B", 
 
 # Manual tags from tile_registry.md / AutoDecorator usage.
 const GRASS_INTERIOR_IDS: Array[int] = [98, 97]
-# 16×16 tree trunk/base — sample map composes with 80×96 overlay; never random grass fill.
+# 16Ã—16 tree trunk/base â€” sample map composes with 80Ã—96 overlay; never random grass fill.
 const TREE_GROUND_IDS: Array[int] = [29, 30, 31, 47]
-# 16×16 tree canopy fragments — sample overlay layer only; never scatter as pebble/flora.
+# 16Ã—16 tree canopy fragments â€” sample overlay layer only; never scatter as pebble/flora.
 const TREE_CANOPY_OVERLAY_IDS: Array[int] = [11, 12, 13, 14, 15, 27, 28]
 const GRASS_DECOR_IDS: Array[int] = [91, 90]
 const FLOWER_DECOR_IDS: Array[int] = [104, 105, 106]
 const PEBBLE_DECOR_IDS: Array[int] = [88, 89]
 const ROCK_SINGLE_IDS: Array[int] = [52]
 const RUIN_SINGLE_IDS: Array[int] = [107]
-## Forest scatter tiles that block movement (1×1 footprint at the anchor cell).
-## #88 = rock/pebble cluster — small boulder, non-walkable.
+## Forest scatter tiles that block movement (1Ã—1 footprint at the anchor cell).
+## #88 = rock/pebble cluster â€” small boulder, non-walkable.
 const SCATTER_BLOCK_IDS: Array[int] = [88]
 
-## Atlas cells with no visible pixels — editor preview looks blank.
+## Atlas cells with no visible pixels â€” editor preview looks blank.
 const ATLAS_EMPTY_SLOT_IDS: Array[int] = [
 	118, 119, 120, 121, 122, 123, 127, 134, 135, 143,
 	153, 154, 168, 169, 170, 171, 201, 202, 244, 247,
 ]
 
-## Per-tile overrides (any category) — checked before category defaults.
+## Per-tile overrides (any category) â€” checked before category defaults.
 const TILE_USAGE_OVERRIDES: Dictionary = {
-	11: "Tree canopy leaf fragment — sparse pixels; preview can look empty",
-	15: "Tree canopy leaf fragment — sparse pixels; preview can look empty",
-	42: "Weed on grass overlay — not used procedurally (assign grass_decor)",
-	75: "Elevation cliff strip accent — sparse; preview can look empty",
-	91: "Weed/moss overlay — AutoDecorator scatter pool; preview can look empty",
-	95: "Grass tuft edge blend — sparse pixels; preview can look empty",
-	107: "Ruin floor prop — PlayerGrid RUIN stamp; dark pixels on dark preview",
-	148: "Water — small submerged rocks — hand-place (sample map)",
-	164: "Water — deep/shallow transition (open water to north) — hand-place (sample map)",
-	180: "Water — deep interior — hand-place (sample map)",
-	196: "Water — deep/shallow transition (open water to south) — hand-place (sample map)",
-	212: "Water — two medium submerged rocks — hand-place (sample map)",
-	228: "Water — one large submerged rock — hand-place (sample map)",
+	11: "Tree canopy leaf fragment â€” sparse pixels; preview can look empty",
+	15: "Tree canopy leaf fragment â€” sparse pixels; preview can look empty",
+	42: "Weed on grass overlay â€” not used procedurally (assign grass_decor)",
+	75: "Elevation cliff strip accent â€” sparse; preview can look empty",
+	91: "Weed/moss overlay â€” AutoDecorator scatter pool; preview can look empty",
+	95: "Grass tuft edge blend â€” sparse pixels; preview can look empty",
+	107: "Ruin floor prop â€” PlayerGrid RUIN stamp; dark pixels on dark preview",
+	148: "Water â€” small submerged rocks â€” hand-place (sample map)",
+	164: "Water â€” deep/shallow transition (open water to north) â€” hand-place (sample map)",
+	180: "Water â€” deep interior â€” hand-place (sample map)",
+	196: "Water â€” deep/shallow transition (open water to south) â€” hand-place (sample map)",
+	212: "Water â€” two medium submerged rocks â€” hand-place (sample map)",
+	228: "Water â€” one large submerged rock â€” hand-place (sample map)",
 }
 
 const MISC_TILE_USAGE: Dictionary = {
-	6: "Dirt path accent tile (non-wang) — not used",
-	7: "Dirt path accent tile (non-wang) — not used",
-	8: "Dirt path accent tile (non-wang) — not used",
-	9: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	10: "Dirt path accent tile (non-wang) — not used",
-	22: "Dirt path filler (non-wang) — not used",
-	23: "Dirt path filler (non-wang) — not used",
-	24: "Dirt path filler (non-wang) — not used",
-	25: "Dirt path filler (non-wang) — not used",
-	26: "Dirt path filler (non-wang) — not used",
-	38: "Dirt/cliff transition accent — not used",
-	39: "Dirt/cliff transition accent — not used",
-	40: "Dirt/cliff transition accent — not used",
-	41: "Dirt/cliff transition accent — not used",
-	42: "Weed on grass overlay — not used procedurally (assign grass_decor)",
-	43: "Dirt/cliff transition accent — not used",
-	44: "Dirt/cliff transition accent — not used",
-	45: "Dirt/cliff transition accent — not used",
-	46: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	54: "Cliff/rock dirt face fragment — not used",
-	55: "Cliff/rock dirt face fragment — not used",
-	56: "Cliff/rock dirt face fragment — not used",
-	57: "Fallen log set-piece — manual only; do not scatter (tile_registry)",
-	58: "Cliff/rock dirt face fragment — not used",
-	59: "Cliff/rock dirt face fragment — not used",
-	60: "Cliff/rock dirt face fragment — not used",
-	61: "Cliff/rock dirt face fragment — not used",
-	62: "Cliff/rock dirt face fragment — not used",
-	63: "Cliff/rock dirt face fragment — not used",
-	70: "Elevation cliff vertical strip — not used",
-	71: "Elevation cliff vertical strip — not used",
-	72: "Elevation cliff vertical strip — not used",
-	73: "Elevation cliff vertical strip — not used",
-	74: "Large rock set-piece — manual only; do not scatter (tile_registry)",
-	75: "Elevation cliff strip accent — sparse; preview can look empty",
-	76: "Elevation cliff vertical strip — not used",
-	77: "Elevation cliff vertical strip — not used",
-	78: "Elevation cliff vertical strip — not used",
-	79: "Elevation cliff vertical strip — not used",
-	82: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	86: "Grass edge / tuft blend — not used",
-	87: "Grass edge / tuft blend — not used",
-	92: "Grass edge / tuft blend — not used",
-	93: "Grass edge / tuft blend — not used",
-	94: "Grass edge / tuft blend — not used",
-	95: "Grass tuft edge blend — sparse pixels; preview can look empty",
-	102: "Grass fringe under trees — not used",
-	103: "Grass fringe under trees — not used",
-	108: "Small cliff rubble / rock chip — not used",
-	109: "Small cliff rubble / rock chip — not used",
-	110: "Small cliff rubble / rock chip — not used",
-	111: "Small cliff rubble / rock chip — not used",
-	118: "Atlas slot empty — no Mana Seed art (blank preview)",
-	119: "Atlas slot empty — no Mana Seed art (blank preview)",
-	120: "Atlas slot empty — no Mana Seed art (blank preview)",
-	121: "Atlas slot empty — no Mana Seed art (blank preview)",
-	122: "Atlas slot empty — no Mana Seed art (blank preview)",
-	123: "Atlas slot empty — no Mana Seed art (blank preview)",
-	124: "Cliff stair / ledge set-piece fragment — not used",
-	125: "Cliff stair / ledge set-piece fragment — not used",
-	126: "Cliff stair / ledge set-piece fragment — not used",
-	127: "Atlas slot empty — no Mana Seed art (blank preview)",
-	134: "Atlas slot empty — no Mana Seed art (blank preview)",
-	135: "Atlas slot empty — no Mana Seed art (blank preview)",
-	136: "Water shore foam/rim accent (hand-layer) — not used",
-	137: "Water shore foam/rim accent (hand-layer) — not used",
-	138: "Water shore foam/rim accent (hand-layer) — not used",
-	139: "Water shore foam/rim accent (hand-layer) — not used",
-	140: "Water shore foam/rim accent (hand-layer) — not used",
-	141: "Water shore foam/rim accent (hand-layer) — not used",
-	142: "Water shore foam/rim accent (hand-layer) — not used",
-	143: "Atlas slot empty — no Mana Seed art (blank preview)",
-	148: "Water — small submerged rocks — hand-place (sample map)",
-	149: "Water depth gradient tile (hand-layer) — not used",
-	150: "Water depth gradient tile (hand-layer) — not used",
-	151: "Water depth gradient tile (hand-layer) — not used",
-	152: "Water depth gradient tile (hand-layer) — not used",
-	153: "Atlas slot empty — no Mana Seed art (blank preview)",
-	154: "Atlas slot empty — no Mana Seed art (blank preview)",
-	155: "Water depth gradient tile (hand-layer) — not used",
-	156: "Water depth gradient tile (hand-layer) — not used",
-	157: "Water depth gradient tile (hand-layer) — not used",
-	158: "Water depth gradient tile (hand-layer) — not used",
-	159: "Water depth gradient tile (hand-layer) — not used",
-	164: "Water — deep/shallow transition (open water to north) — hand-place (sample map)",
-	165: "Deep navy water interior (hand-painted) — not used",
-	166: "Deep navy water interior (hand-painted) — not used",
-	167: "Deep navy water interior (hand-painted) — not used",
-	168: "Atlas slot empty — no Mana Seed art (blank preview)",
-	169: "Atlas slot empty — no Mana Seed art (blank preview)",
-	170: "Atlas slot empty — no Mana Seed art (blank preview)",
-	171: "Atlas slot empty — no Mana Seed art (blank preview)",
-	172: "Deep navy water interior (hand-painted) — not used",
-	173: "Deep navy water interior (hand-painted) — not used",
-	174: "Deep navy water interior (hand-painted) — not used",
-	175: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	180: "Water — deep interior — hand-place (sample map)",
-	181: "Deep water / dark stream tile (hand-painted) — not used",
-	182: "Deep water / dark stream tile (hand-painted) — not used",
-	183: "Deep water / dark stream tile (hand-painted) — not used",
-	184: "Deep water / dark stream tile (hand-painted) — not used",
-	185: "Deep water / dark stream tile (hand-painted) — not used",
-	186: "Deep water / dark stream tile (hand-painted) — not used",
-	187: "Deep water / dark stream tile (hand-painted) — not used",
-	188: "Deep water / dark stream tile (hand-painted) — not used",
-	189: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	190: "Deep water / dark stream tile (hand-painted) — not used",
-	191: "Deep water / dark stream tile (hand-painted) — not used",
-	192: "Shallow pebble water interior (hand-painted) — not used",
-	193: "Shallow pebble water interior (hand-painted) — not used",
-	194: "Shallow pebble water interior (hand-painted) — not used",
-	195: "Shallow pebble water interior (hand-painted) — not used",
-	196: "Water — deep/shallow transition (open water to south) — hand-place (sample map)",
-	197: "Shallow pebble water interior (hand-painted) — not used",
-	198: "Shallow pebble water interior (hand-painted) — not used",
-	199: "Shallow pebble water interior (hand-painted) — not used",
-	200: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	201: "Atlas slot empty — no Mana Seed art (blank preview)",
-	202: "Atlas slot empty — no Mana Seed art (blank preview)",
-	203: "Shallow pebble water interior (hand-painted) — not used",
-	204: "Shallow pebble water interior (hand-painted) — not used",
-	205: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	206: "Shallow pebble water interior (hand-painted) — not used",
-	207: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	208: "Stream / waterfall approach water tile — not used",
-	209: "Stream / waterfall approach water tile — not used",
-	210: "Stream / waterfall approach water tile — not used",
-	211: "Stream / waterfall approach water tile — not used",
-	212: "Water — two medium submerged rocks — hand-place (sample map)",
-	213: "Stream / waterfall approach water tile — not used",
-	214: "Stream / waterfall approach water tile — not used",
-	215: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	216: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	217: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	218: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	219: "Stream / waterfall approach water tile — not used",
-	220: "Stream / waterfall approach water tile — not used",
-	221: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	222: "Stream / waterfall approach water tile — not used",
-	223: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	224: "Waterfall column / demo cascade tile — not used",
-	225: "Waterfall column / demo cascade tile — not used",
-	226: "Waterfall column / demo cascade tile — not used",
-	227: "Waterfall column / demo cascade tile — not used",
-	228: "Water — one large submerged rock — hand-place (sample map)",
-	229: "Waterfall column / demo cascade tile — not used",
-	230: "Waterfall column / demo cascade tile — not used",
-	231: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	232: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	233: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	234: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	235: "Waterfall column / demo cascade tile — not used",
-	236: "Waterfall column / demo cascade tile — not used",
-	237: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	238: "Waterfall column / demo cascade tile — not used",
-	239: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	240: "Waterfall column / demo cascade tile — not used",
-	241: "Waterfall column / demo cascade tile — not used",
-	242: "Waterfall column / demo cascade tile — not used",
-	243: "Waterfall column / demo cascade tile — not used",
-	244: "Atlas slot empty — no Mana Seed art (blank preview)",
-	245: "Waterfall column / demo cascade tile — not used",
-	246: "Waterfall column / demo cascade tile — not used",
-	247: "Atlas slot empty — no Mana Seed art (blank preview)",
-	248: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	249: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	250: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
-	251: "Waterfall column / demo cascade tile — not used",
-	252: "Waterfall column / demo cascade tile — not used",
-	253: "Waterfall column / demo cascade tile — not used",
-	254: "Waterfall column / demo cascade tile — not used",
-	255: "Phase 0 sample map (SampleMapLoader) — hand-painted only",
+	6: "Dirt path accent tile (non-wang) â€” not used",
+	7: "Dirt path accent tile (non-wang) â€” not used",
+	8: "Dirt path accent tile (non-wang) â€” not used",
+	9: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	10: "Dirt path accent tile (non-wang) â€” not used",
+	22: "Dirt path filler (non-wang) â€” not used",
+	23: "Dirt path filler (non-wang) â€” not used",
+	24: "Dirt path filler (non-wang) â€” not used",
+	25: "Dirt path filler (non-wang) â€” not used",
+	26: "Dirt path filler (non-wang) â€” not used",
+	38: "Dirt/cliff transition accent â€” not used",
+	39: "Dirt/cliff transition accent â€” not used",
+	40: "Dirt/cliff transition accent â€” not used",
+	41: "Dirt/cliff transition accent â€” not used",
+	42: "Weed on grass overlay â€” not used procedurally (assign grass_decor)",
+	43: "Dirt/cliff transition accent â€” not used",
+	44: "Dirt/cliff transition accent â€” not used",
+	45: "Dirt/cliff transition accent â€” not used",
+	46: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	54: "Cliff/rock dirt face fragment â€” not used",
+	55: "Cliff/rock dirt face fragment â€” not used",
+	56: "Cliff/rock dirt face fragment â€” not used",
+	57: "Fallen log set-piece â€” manual only; do not scatter (tile_registry)",
+	58: "Cliff/rock dirt face fragment â€” not used",
+	59: "Cliff/rock dirt face fragment â€” not used",
+	60: "Cliff/rock dirt face fragment â€” not used",
+	61: "Cliff/rock dirt face fragment â€” not used",
+	62: "Cliff/rock dirt face fragment â€” not used",
+	63: "Cliff/rock dirt face fragment â€” not used",
+	70: "Elevation cliff vertical strip â€” not used",
+	71: "Elevation cliff vertical strip â€” not used",
+	72: "Elevation cliff vertical strip â€” not used",
+	73: "Elevation cliff vertical strip â€” not used",
+	74: "Large rock set-piece â€” manual only; do not scatter (tile_registry)",
+	75: "Elevation cliff strip accent â€” sparse; preview can look empty",
+	76: "Elevation cliff vertical strip â€” not used",
+	77: "Elevation cliff vertical strip â€” not used",
+	78: "Elevation cliff vertical strip â€” not used",
+	79: "Elevation cliff vertical strip â€” not used",
+	82: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	86: "Grass edge / tuft blend â€” not used",
+	87: "Grass edge / tuft blend â€” not used",
+	92: "Grass edge / tuft blend â€” not used",
+	93: "Grass edge / tuft blend â€” not used",
+	94: "Grass edge / tuft blend â€” not used",
+	95: "Grass tuft edge blend â€” sparse pixels; preview can look empty",
+	102: "Grass fringe under trees â€” not used",
+	103: "Grass fringe under trees â€” not used",
+	108: "Small cliff rubble / rock chip â€” not used",
+	109: "Small cliff rubble / rock chip â€” not used",
+	110: "Small cliff rubble / rock chip â€” not used",
+	111: "Small cliff rubble / rock chip â€” not used",
+	118: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	119: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	120: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	121: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	122: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	123: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	124: "Cliff stair / ledge set-piece fragment â€” not used",
+	125: "Cliff stair / ledge set-piece fragment â€” not used",
+	126: "Cliff stair / ledge set-piece fragment â€” not used",
+	127: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	134: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	135: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	136: "Water shore foam/rim accent (hand-layer) â€” not used",
+	137: "Water shore foam/rim accent (hand-layer) â€” not used",
+	138: "Water shore foam/rim accent (hand-layer) â€” not used",
+	139: "Water shore foam/rim accent (hand-layer) â€” not used",
+	140: "Water shore foam/rim accent (hand-layer) â€” not used",
+	141: "Water shore foam/rim accent (hand-layer) â€” not used",
+	142: "Water shore foam/rim accent (hand-layer) â€” not used",
+	143: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	148: "Water â€” small submerged rocks â€” hand-place (sample map)",
+	149: "Water depth gradient tile (hand-layer) â€” not used",
+	150: "Water depth gradient tile (hand-layer) â€” not used",
+	151: "Water depth gradient tile (hand-layer) â€” not used",
+	152: "Water depth gradient tile (hand-layer) â€” not used",
+	153: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	154: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	155: "Water depth gradient tile (hand-layer) â€” not used",
+	156: "Water depth gradient tile (hand-layer) â€” not used",
+	157: "Water depth gradient tile (hand-layer) â€” not used",
+	158: "Water depth gradient tile (hand-layer) â€” not used",
+	159: "Water depth gradient tile (hand-layer) â€” not used",
+	164: "Water â€” deep/shallow transition (open water to north) â€” hand-place (sample map)",
+	165: "Deep navy water interior (hand-painted) â€” not used",
+	166: "Deep navy water interior (hand-painted) â€” not used",
+	167: "Deep navy water interior (hand-painted) â€” not used",
+	168: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	169: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	170: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	171: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	172: "Deep navy water interior (hand-painted) â€” not used",
+	173: "Deep navy water interior (hand-painted) â€” not used",
+	174: "Deep navy water interior (hand-painted) â€” not used",
+	175: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	180: "Water â€” deep interior â€” hand-place (sample map)",
+	181: "Deep water / dark stream tile (hand-painted) â€” not used",
+	182: "Deep water / dark stream tile (hand-painted) â€” not used",
+	183: "Deep water / dark stream tile (hand-painted) â€” not used",
+	184: "Deep water / dark stream tile (hand-painted) â€” not used",
+	185: "Deep water / dark stream tile (hand-painted) â€” not used",
+	186: "Deep water / dark stream tile (hand-painted) â€” not used",
+	187: "Deep water / dark stream tile (hand-painted) â€” not used",
+	188: "Deep water / dark stream tile (hand-painted) â€” not used",
+	189: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	190: "Deep water / dark stream tile (hand-painted) â€” not used",
+	191: "Deep water / dark stream tile (hand-painted) â€” not used",
+	192: "Shallow pebble water interior (hand-painted) â€” not used",
+	193: "Shallow pebble water interior (hand-painted) â€” not used",
+	194: "Shallow pebble water interior (hand-painted) â€” not used",
+	195: "Shallow pebble water interior (hand-painted) â€” not used",
+	196: "Water â€” deep/shallow transition (open water to south) â€” hand-place (sample map)",
+	197: "Shallow pebble water interior (hand-painted) â€” not used",
+	198: "Shallow pebble water interior (hand-painted) â€” not used",
+	199: "Shallow pebble water interior (hand-painted) â€” not used",
+	200: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	201: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	202: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	203: "Shallow pebble water interior (hand-painted) â€” not used",
+	204: "Shallow pebble water interior (hand-painted) â€” not used",
+	205: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	206: "Shallow pebble water interior (hand-painted) â€” not used",
+	207: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	208: "Stream / waterfall approach water tile â€” not used",
+	209: "Stream / waterfall approach water tile â€” not used",
+	210: "Stream / waterfall approach water tile â€” not used",
+	211: "Stream / waterfall approach water tile â€” not used",
+	212: "Water â€” two medium submerged rocks â€” hand-place (sample map)",
+	213: "Stream / waterfall approach water tile â€” not used",
+	214: "Stream / waterfall approach water tile â€” not used",
+	215: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	216: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	217: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	218: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	219: "Stream / waterfall approach water tile â€” not used",
+	220: "Stream / waterfall approach water tile â€” not used",
+	221: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	222: "Stream / waterfall approach water tile â€” not used",
+	223: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	224: "Waterfall column / demo cascade tile â€” not used",
+	225: "Waterfall column / demo cascade tile â€” not used",
+	226: "Waterfall column / demo cascade tile â€” not used",
+	227: "Waterfall column / demo cascade tile â€” not used",
+	228: "Water â€” one large submerged rock â€” hand-place (sample map)",
+	229: "Waterfall column / demo cascade tile â€” not used",
+	230: "Waterfall column / demo cascade tile â€” not used",
+	231: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	232: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	233: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	234: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	235: "Waterfall column / demo cascade tile â€” not used",
+	236: "Waterfall column / demo cascade tile â€” not used",
+	237: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	238: "Waterfall column / demo cascade tile â€” not used",
+	239: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	240: "Waterfall column / demo cascade tile â€” not used",
+	241: "Waterfall column / demo cascade tile â€” not used",
+	242: "Waterfall column / demo cascade tile â€” not used",
+	243: "Waterfall column / demo cascade tile â€” not used",
+	244: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	245: "Waterfall column / demo cascade tile â€” not used",
+	246: "Waterfall column / demo cascade tile â€” not used",
+	247: "Atlas slot empty â€” no Mana Seed art (blank preview)",
+	248: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	249: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	250: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
+	251: "Waterfall column / demo cascade tile â€” not used",
+	252: "Waterfall column / demo cascade tile â€” not used",
+	253: "Waterfall column / demo cascade tile â€” not used",
+	254: "Waterfall column / demo cascade tile â€” not used",
+	255: "Phase 0 sample map (SampleMapLoader) â€” hand-painted only",
 }
 
 const PROPS_32_LABELS: PackedStringArray = [
-	"Tree stump (32×32)",
-	"Boulder cluster (32×32)",
-	"Large bush (32×32)",
-	"Tall plant (32×32)",
+	"Tree stump (32Ã—32)",
+	"Boulder cluster (32Ã—32)",
+	"Large bush (32Ã—32)",
+	"Tall plant (32Ã—32)",
 ]
-## Prop movement blocks per atlas column — offset from 32×32 anchor (NW of 2×2 spill).
-## Atlas 3 (tall plant) omitted — walkable.
+## Prop movement blocks per atlas column â€” offset from 32Ã—32 anchor (NW of 2Ã—2 spill).
+## Atlas 3 (tall plant) omitted â€” walkable.
 const PROP_MOVEMENT_BLOCKS: Dictionary = {
-	0: {"offset": Vector2i(0, 0), "size": Vector2i(1, 1)},  # stump — upper-west only
-	1: {"offset": Vector2i(0, 0), "size": Vector2i(1, 1)},  # boulder — upper-west cell
-	2: {"offset": Vector2i(0, 0), "size": Vector2i(1, 2)},  # bush — west column
+	0: {"offset": Vector2i(0, 0), "size": Vector2i(1, 1)},  # stump â€” upper-west only
+	1: {"offset": Vector2i(0, 0), "size": Vector2i(1, 1)},  # boulder â€” upper-west cell
+	2: {"offset": Vector2i(0, 0), "size": Vector2i(1, 2)},  # bush â€” west column
 }
 const PROP_RENDER_FOOTPRINT: Vector2i = Vector2i(2, 2)
 const TREE_80_LABELS: PackedStringArray = [
-	"Large tree A (80×96)",
-	"Large tree B (80×96)",
+	"Large tree A (80Ã—96)",
+	"Large tree B (80Ã—96)",
 ]
 
 
@@ -425,7 +425,7 @@ static func _orientation_for_tile(
 		return text
 	var pattern_key: String = str(pattern["key"])
 	if peering_map.get_canonical(pattern_key) == local_id and peering_map.custom_wang_by_pattern.has(pattern_key):
-		text += " · override"
+		text += " Â· override"
 	return text
 
 
@@ -476,7 +476,7 @@ static func _category_for(local_id: int, wang: Array[int]) -> String:
 
 static func seasonal_sample_suffix(local_id: int) -> String:
 	if SeasonalSampleCatalog.is_featured_forest_tile(local_id):
-		return " · " + SeasonalSampleCatalog.seasonal_use_case_suffix()
+		return " Â· " + SeasonalSampleCatalog.seasonal_use_case_suffix()
 	return ""
 
 
@@ -484,29 +484,29 @@ static func _use_case_for(local_id: int, category: String, wang: Array[int]) -> 
 	if TILE_USAGE_OVERRIDES.has(local_id):
 		return str(TILE_USAGE_OVERRIDES[local_id]) + seasonal_sample_suffix(local_id)
 	if is_atlas_empty_slot(local_id):
-		return "Atlas slot empty — no Mana Seed art (blank preview)"
+		return "Atlas slot empty â€” no Mana Seed art (blank preview)"
 	var seasonal_suffix: String = seasonal_sample_suffix(local_id)
 	match category:
 		"grass_interior":
-			return "GroundLayer grass fill — seeded interior (AutoDecorator)" + seasonal_suffix
+			return "GroundLayer grass fill â€” seeded interior (AutoDecorator)" + seasonal_suffix
 		"grass_decor":
 			if local_id in PEBBLE_DECOR_IDS:
 				return "OverlayLayer pebble scatter" + seasonal_suffix
 			if local_id in FLOWER_DECOR_IDS:
-				return "OverlayLayer flower scatter — never sole ground" + seasonal_suffix
-			return "OverlayLayer weed/moss scatter — never sole ground" + seasonal_suffix
+				return "OverlayLayer flower scatter â€” never sole ground" + seasonal_suffix
+			return "OverlayLayer weed/moss scatter â€” never sole ground" + seasonal_suffix
 		"tree_ground":
-			return "Tree base / trunk — ground under 80×96 overlay" + seasonal_suffix
+			return "Tree base / trunk â€” ground under 80Ã—96 overlay" + seasonal_suffix
 		"tree_canopy":
-			return "Tree canopy leaf fragment — overlay beside 80×96 tree only" + seasonal_suffix
+			return "Tree canopy leaf fragment â€” overlay beside 80Ã—96 tree only" + seasonal_suffix
 		"ruin_single":
-			return "PlayerGrid RUIN — ruin floor prop" + seasonal_suffix
+			return "PlayerGrid RUIN â€” ruin floor prop" + seasonal_suffix
 		"forbidden":
-			return "Do not use procedurally — hand-place / sample map only" + seasonal_suffix
+			return "Do not use procedurally â€” hand-place / sample map only" + seasonal_suffix
 		"misc":
 			return _misc_tile_use_case(local_id) + seasonal_suffix
 	if local_id in ROCK_SINGLE_IDS:
-		return "PlayerGrid ROCK — single tile (elevation art; terrain peer Phase 9)" + seasonal_suffix
+		return "PlayerGrid ROCK â€” single tile (elevation art; terrain peer Phase 9)" + seasonal_suffix
 	if wang.is_empty():
 		return _misc_tile_use_case(local_id) + seasonal_suffix
 	return _wang_use_case(category, wang) + seasonal_suffix
@@ -518,27 +518,27 @@ static func _misc_tile_use_case(local_id: int) -> String:
 
 static func _wang_use_case(category: String, wang: Array[int]) -> String:
 	# Interior fill = every wang corner matches (incl. grass=0 on edges).
-	# Do not use unique non-zero values — shore corners only have water in their mask.
+	# Do not use unique non-zero values â€” shore corners only have water in their mask.
 	if _all_same(wang) and not wang.is_empty() and int(wang[0]) > 0:
 		match int(wang[0]):
 			1:
-				return "Dirt interior — terrain_connect(DIRT) fill"
+				return "Dirt interior â€” terrain_connect(DIRT) fill"
 			2:
-				return "Elevation interior — cliff plateau fill"
+				return "Elevation interior â€” cliff plateau fill"
 			3:
-				return "Water interior — terrain_connect(WATER) deep cell"
+				return "Water interior â€” terrain_connect(WATER) deep cell"
 	if category == "water_wang":
-		return "Water shoreline / corner — terrain_connect(WATER) edge"
+		return "Water shoreline / corner â€” terrain_connect(WATER) edge"
 	if category == "dirt_wang":
-		return "Dirt path edge / corner — terrain_connect(DIRT)"
+		return "Dirt path edge / corner â€” terrain_connect(DIRT)"
 	if category == "elevation_wang":
-		return "Cliff / ledge transition — terrain_connect(ELEVATION) Phase 9"
-	return "Wang transition tile — terrain_connect by dominant terrain"
+		return "Cliff / ledge transition â€” terrain_connect(ELEVATION) Phase 9"
+	return "Wang transition tile â€” terrain_connect by dominant terrain"
 
 
 static func _orientation_for(wang: Array[int]) -> String:
 	if wang.is_empty():
-		return "—"
+		return "â€”"
 	if _all_same(wang):
 		var value: int = wang[0]
 		if value == 0:
@@ -582,7 +582,7 @@ static func describe_forest_tile(local_id: int) -> Dictionary:
 			"id": local_id,
 			"category": "misc",
 			"use_case": "Unknown forest atlas tile",
-			"orientation": "—",
+			"orientation": "â€”",
 		},
 	)
 
@@ -609,7 +609,7 @@ static func describe_source_tile(source_id: int, atlas: Vector2i, local_id: int 
 			var id: int = local_id if local_id >= 0 else atlas.x + atlas.y * ATLAS_COLUMNS
 			var entry: Dictionary = describe_forest_tile(id)
 			return (
-				"Forest [b]#%d[/b] — %s\n%s"
+				"Forest [b]#%d[/b] â€” %s\n%s"
 				% [
 					id,
 					category_title(str(entry["category"])),
@@ -633,18 +633,18 @@ static func describe_overlay_source(source_id: int, atlas: Vector2i) -> String:
 		TileSetFactory.SOURCE_PROPS_32:
 			var idx: int = clampi(atlas.x, 0, PROPS_32_LABELS.size() - 1)
 			return (
-				"32×32 prop [b]%s[/b] (atlas x=%d)\nSpans 2×2 cells from anchor — not a PlayerGrid type"
+				"32Ã—32 prop [b]%s[/b] (atlas x=%d)\nSpans 2Ã—2 cells from anchor â€” not a PlayerGrid type"
 				% [PROPS_32_LABELS[idx], atlas.x]
 			)
 		TileSetFactory.SOURCE_TREES:
 			var tidx: int = clampi(atlas.x, 0, TREE_80_LABELS.size() - 1)
 			return (
-				"80×96 sprite [b]%s[/b] (variant %d)\nAnchor = PlayerGrid TREE cell; spans ~5×6 cells"
+				"80Ã—96 sprite [b]%s[/b] (variant %d)\nAnchor = PlayerGrid TREE cell; spans ~5Ã—6 cells"
 				% [TREE_80_LABELS[tidx], atlas.x]
 			)
 		TileSetFactory.SOURCE_FOREST:
 			var local: int = atlas.x + atlas.y * ATLAS_COLUMNS
 			var entry: Dictionary = describe_forest_tile(local)
-			return "16×16 overlay forest #%d — %s" % [local, str(entry["use_case"])]
+			return "16Ã—16 overlay forest #%d â€” %s" % [local, str(entry["use_case"])]
 		_:
 			return "Overlay source %d (%d,%d)" % [source_id, atlas.x, atlas.y]

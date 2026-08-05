@@ -1,4 +1,4 @@
-class_name GdUnitProperty
+﻿class_name GdUnitProperty
 extends RefCounted
 
 

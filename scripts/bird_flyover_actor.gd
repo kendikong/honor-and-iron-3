@@ -1,7 +1,7 @@
-class_name BirdFlyoverActor
+﻿class_name BirdFlyoverActor
 extends Node2D
 
-## Rare bird crossing — drift archetype with wing flap.
+## Rare bird crossing â€” drift archetype with wing flap.
 
 const TILE_PX: int = 16
 

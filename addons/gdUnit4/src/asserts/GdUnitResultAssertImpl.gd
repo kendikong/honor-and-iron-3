@@ -1,4 +1,4 @@
-extends GdUnitResultAssert
+﻿extends GdUnitResultAssert
 
 var _base: GdUnitAssertImpl
 

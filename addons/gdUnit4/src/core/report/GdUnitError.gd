@@ -1,4 +1,4 @@
-class_name GdUnitError
+﻿class_name GdUnitError
 extends RefCounted
 
 var _message: String

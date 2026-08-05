@@ -1,7 +1,7 @@
-class_name TacticalInputController
+﻿class_name TacticalInputController
 extends Node
 
-## Drag, aim, and grid planning input — delegates H&I semantics to CombatPlanningInput.
+## Drag, aim, and grid planning input â€” delegates H&I semantics to CombatPlanningInput.
 
 var _map_view: TacticalMapView
 var _director: CombatDirector
@@ -50,7 +50,7 @@ func handle_input(event: InputEvent) -> bool:
 		else:
 			if _planning_input.is_drag_armed():
 				_planning_input.try_activate_drag(local)
-			# Hover polling is owned by TacticalMapView._process → on_hover_moved (avoids double sim per motion).
+			# Hover polling is owned by TacticalMapView._process â†’ on_hover_moved (avoids double sim per motion).
 		return (
 			_planning_input.dragging
 			or _planning_input.is_drag_armed()

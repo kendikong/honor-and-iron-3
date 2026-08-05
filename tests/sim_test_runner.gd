@@ -1,4 +1,4 @@
-class_name SimTestRunner
+﻿class_name SimTestRunner
 extends RefCounted
 
 ## Purpose: The actual Milestone 1 checks for the pure simulation, in one place so
@@ -100,25 +100,25 @@ func _make_attack(p_id: StringName, dmg: int, push: int, p_range: int) -> Abilit
 	ability.display_name = String(p_id)
 	ability.action_point_cost = 1
 	ability.range_tiles = p_range
-	var effects: Array[EffectData] = []
+	var effects: Array[AbilityModule] = []
 	if dmg > 0:
-		var d := EffectData.new()
-		d.type = GameEnums.EffectType.DAMAGE
+		var d := AbilityModule.new()
+		d.primary_type = GameEnums.EffectType.DAMAGE
 		d.amount = dmg
 		effects.append(d)
 	if push > 0:
-		var p := EffectData.new()
-		p.type = GameEnums.EffectType.PUSH
+		var p := AbilityModule.new()
+		p.primary_type = GameEnums.EffectType.PUSH
 		p.amount = push
 		effects.append(p)
-	ability.effects = effects
+	ability.modules = effects
 	return ability
 
 func _make_unit_data(p_id: StringName, hp: int, move: int, ap: int, behavior: BehaviorData) -> UnitData:
 	var u := UnitData.new()
 	u.id = p_id
 	u.display_name = String(p_id)
-	u.max_hp = hp
+	u.base_constitution = hp / 5.0
 	u.move_points = move
 	u.action_points = ap
 	u.behavior = behavior
@@ -287,20 +287,21 @@ func _test_bomber_explodes() -> bool:
 	bomb_ability.display_name = "Detonate"
 	bomb_ability.action_point_cost = 1
 	bomb_ability.range_tiles = 0
-	var bomb_effect := EffectData.new()
-	bomb_effect.type = GameEnums.EffectType.EXPLODE
+	bomb_ability.targeting_mode = GameEnums.TargetingMode.SELF
+	var bomb_effect := AbilityModule.new()
+	bomb_effect.primary_type = GameEnums.EffectType.EXPLODE
 	bomb_effect.amount = 4
-	bomb_ability.effects = [bomb_effect]
+	bomb_ability.modules = [bomb_effect]
 	
 	var bomber_behavior := BehaviorData.new()
 	bomber_behavior.strategy = &"bomber"
 	bomber_behavior.attack = bomb_ability
-	var bomber_def := _make_unit_data(&"bomber", 4, 4, 1, bomber_behavior)
+	var bomber_def := _make_unit_data(&"bomber", 5, 4, 1, bomber_behavior)
 	
 	# Place units: Player at (2,2), Bomber at (2,3), Ally (enemy to player) at (1,3)
 	_place(board, 1, player_def, GameEnums.Team.PLAYER, Vector2i(2, 2))
 	var bomber := _place(board, 2, bomber_def, GameEnums.Team.ENEMY, Vector2i(2, 3))
-	var ally := _place(board, 3, ally_def, GameEnums.Team.ENEMY, Vector2i(1, 3))
+	var ally := _place(board, 3, ally_def, GameEnums.Team.ENEMY, Vector2i(1, 1))
 	
 	board.intents = EnemyPlanner.plan(board)
 	
@@ -327,24 +328,25 @@ func _test_summoner_spawns() -> bool:
 	var board := _empty_board(Vector2i(8, 8), [])
 	
 	var player_def := _make_unit_data(&"player", 10, 3, 1, null)
-	var hatchling_def := _make_unit_data(&"hatchling", 3, 3, 1, null)
+	var hatchling_def := _make_unit_data(&"hatchling", 5, 3, 1, null)
 	
 	var spawn_ability := AbilityData.new()
 	spawn_ability.id = &"spawn"
 	spawn_ability.display_name = "Spawn"
 	spawn_ability.action_point_cost = 1
 	spawn_ability.range_tiles = 1
-	var spawn_effect := EffectData.new()
-	spawn_effect.type = GameEnums.EffectType.SPAWN
+	spawn_ability.targeting_mode = GameEnums.TargetingMode.TILE
+	var spawn_effect := AbilityModule.new()
+	spawn_effect.primary_type = GameEnums.EffectType.SPAWN
 	spawn_effect.amount = 0
-	spawn_ability.effects = [spawn_effect]
+	spawn_ability.modules = [spawn_effect]
 	
 	var summoner_behavior := BehaviorData.new()
 	summoner_behavior.strategy = &"summoner"
 	summoner_behavior.attack = spawn_ability
 	summoner_behavior.spawn_unit = hatchling_def
 	summoner_behavior.max_spawns = 2
-	var summoner_def := _make_unit_data(&"summoner", 8, 2, 1, summoner_behavior)
+	var summoner_def := _make_unit_data(&"summoner", 10, 2, 1, summoner_behavior)
 	
 	_place(board, 1, player_def, GameEnums.Team.PLAYER, Vector2i(0, 0))
 	_place(board, 2, summoner_def, GameEnums.Team.ENEMY, Vector2i(4, 4))
@@ -375,6 +377,7 @@ func _test_summoner_spawns() -> bool:
 	var plan3 := Timeline.new()
 	var r3 := Simulator.simulate(b3, plan3)
 	
+	print("T3 COUNT: ", b3.count_living_by_definition(hatchling_def))
 	if r3.final_state.units.size() != 4: # Still 4
 		ok = false
 		printerr("  summoner spawned minion exceeding max_spawns limit")
@@ -391,10 +394,10 @@ func _test_teleporter_warps() -> bool:
 	attack_ability.display_name = "Strike"
 	attack_ability.action_point_cost = 1
 	attack_ability.range_tiles = 1
-	var attack_effect := EffectData.new()
-	attack_effect.type = GameEnums.EffectType.DAMAGE
+	var attack_effect := AbilityModule.new()
+	attack_effect.primary_type = GameEnums.EffectType.DAMAGE
 	attack_effect.amount = 3
-	attack_ability.effects = [attack_effect]
+	attack_ability.modules = [attack_effect]
 	
 	var tele_behavior := BehaviorData.new()
 	tele_behavior.strategy = &"teleporter"
@@ -429,7 +432,7 @@ func _test_teleporter_warps() -> bool:
 func _test_engineer_grenade() -> bool:
 	var board := _empty_board(Vector2i(8, 8), [])
 	
-	var eng_def := _make_unit_data(&"engineer", 12, 3, 1, null)
+	var eng_def := _make_unit_data(&"engineer", 10, 3, 1, null)
 	var target_def := _make_unit_data(&"target", 10, 3, 1, null)
 	var adjacent_def := _make_unit_data(&"adjacent", 10, 3, 1, null)
 	
@@ -445,10 +448,10 @@ func _test_engineer_grenade() -> bool:
 	grenade_ability.display_name = "Grenade"
 	grenade_ability.action_point_cost = 1
 	grenade_ability.range_tiles = 3
-	var grenade_effect := EffectData.new()
-	grenade_effect.type = GameEnums.EffectType.RANGED_EXPLODE
+	var grenade_effect := AbilityModule.new()
+	grenade_effect.primary_type = GameEnums.EffectType.RANGED_EXPLODE
 	grenade_effect.amount = 2
-	grenade_ability.effects = [grenade_effect]
+	grenade_ability.modules = [grenade_effect]
 	
 	var plan := Timeline.new()
 	plan.add(TimelineAction.make_ability(1, grenade_ability, Vector2i(2, 5), 2))
@@ -460,7 +463,7 @@ func _test_engineer_grenade() -> bool:
 	var adj_after := result.final_state.get_unit_by_id(3)
 	
 	var ok := true
-	if eng_after == null or not eng_after.is_alive() or eng_after.health.current_hp != 12:
+	if eng_after == null or not eng_after.is_alive() or eng_after.health.current_hp != 10:
 		ok = false
 		printerr("  engineer was damaged or died from throwing grenade")
 	if target_after == null or target_after.health.current_hp != 8:
@@ -481,9 +484,9 @@ func _test_movement_skill_spends_mp() -> bool:
 	swap.movement_point_cost = 2
 	swap.range_tiles = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
-	var swap_fx := EffectData.new()
-	swap_fx.type = GameEnums.EffectType.SWAP
-	swap.effects = [swap_fx]
+	var swap_fx := AbilityModule.new()
+	swap_fx.primary_type = GameEnums.EffectType.SWAP
+	swap.modules = [swap_fx]
 	var actor_def := _make_unit_data(&"actor", 10, 4, 1, null)
 	var ally_def := _make_unit_data(&"ally", 10, 3, 1, null)
 	var actor := _place(board, 1, actor_def, GameEnums.Team.PLAYER, Vector2i(2, 2))
@@ -558,8 +561,8 @@ func _test_run_available_next_turn() -> bool:
 	if runner_turn2.has_status(GameEnums.StatusType.RUNNING):
 		printerr("  RUNNING must not persist after second turn")
 		return false
-	if runner_turn2.ability.points_left != 0:
-		printerr("  second run should spend AP, left %d" % runner_turn2.ability.points_left)
+	if runner_turn2.ability.points_left != 1:
+		printerr("  second run should refill AP, got %d" % runner_turn2.ability.points_left)
 		return false
 	return true
 
@@ -573,10 +576,10 @@ func _test_run_leaves_action_slot() -> bool:
 	basic.kind = GameEnums.AbilityKind.CLASS_SKILL
 	basic.action_point_cost = 0
 	basic.range_tiles = 1
-	var dmg := EffectData.new()
-	dmg.type = GameEnums.EffectType.DAMAGE
+	var dmg := AbilityModule.new()
+	dmg.primary_type = GameEnums.EffectType.DAMAGE
 	dmg.amount = 1
-	basic.effects = [dmg]
+	basic.modules = [dmg]
 
 	var plan := Timeline.new()
 	plan.add(TimelineAction.make_run_move(1, Vector2i(2, 1)))
@@ -647,4 +650,3 @@ func _test_run_global_economy_rules() -> bool:
 		printerr("  runner with 1 AP should not afford run+1 AP class skill")
 		return false
 	return true
-

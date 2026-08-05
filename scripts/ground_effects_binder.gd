@@ -1,4 +1,4 @@
-class_name GroundEffectsBinder
+﻿class_name GroundEffectsBinder
 extends RefCounted
 
 ## Ground + tree materials for wind and/or water ripple shaders.
@@ -128,7 +128,7 @@ func _rebuild_wind_mask(grid: PlayerGrid) -> void:
 
 
 func _rebuild_water_mask(grid: PlayerGrid) -> void:
-	## Interior water only — shore wang tiles mix grass pixels and are excluded.
+	## Interior water only â€” shore wang tiles mix grass pixels and are excluded.
 	var img: Image = Image.create(grid.width, grid.height, false, Image.FORMAT_RGBA8)
 	for y: int in range(grid.height):
 		for x: int in range(grid.width):

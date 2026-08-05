@@ -1,7 +1,7 @@
-class_name WaterSparkleFrames
+﻿class_name WaterSparkleFrames
 extends RefCounted
 
-## Builds SpriteFrames from gentle water sparkles A v01–v03 (3×3-frame rows).
+## Builds SpriteFrames from gentle water sparkles A v01â€“v03 (3Ã—3-frame rows).
 
 const _C = preload("res://scripts/mana_seed_constants.gd")
 const FRAME_SEC: float = 0.2

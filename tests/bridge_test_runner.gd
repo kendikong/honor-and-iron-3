@@ -1,4 +1,4 @@
-class_name BridgeTestRunner
+﻿class_name BridgeTestRunner
 extends RefCounted
 
 ## Headless smoke tests for bridge layer (Phase 1 expands coverage).
@@ -20,7 +20,7 @@ static func run_all() -> Dictionary:
 	_test_move_facing_from_path(failures)
 	_test_combat_ui_formatters(failures)
 	_test_battle_arena(failures)
-	## Tier 1/2 planning fixture suites removed — legacy, drifted from F5; use Tier 3 gate.
+	## Tier 1/2 planning fixture suites removed â€” legacy, drifted from F5; use Tier 3 gate.
 	return {"passed": failures.is_empty(), "failures": failures}
 
 
@@ -159,7 +159,7 @@ static func _test_spawn_validation_10x7(failures: Array[String]) -> void:
 				continue
 			if skirmish.enemy_spawns.size() != SpawnPlacer.MVP_ENEMY_COUNT:
 				failures.append(
-					"spawn validation: seed=%d preset=%s missing enemy spawns" % [map_seed, preset],
+					"spawn validation: seed=%d preset=%s missing enemy spawns (got %d)" % [map_seed, preset, skirmish.enemy_spawns.size()],
 				)
 				continue
 			var occupied: Dictionary = {}
@@ -301,7 +301,7 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	CombatPlanningPreview.build_preview_paths([move, push], null, paths, splits, pushes)
 	if paths.is_empty():
 		failures.append("CombatPlanningPreview: paths empty without director (expected no crash)")
-	# SWAP uses UNIT_PUSHED (no pusher) — voluntary route must include swap tile before walk tail.
+	# SWAP uses UNIT_PUSHED (no pusher) â€” voluntary route must include swap tile before walk tail.
 	var swap_board := BoardState.new()
 	swap_board.grid_size = Vector2i(8, 8)
 	var knight := UnitState.new()
@@ -322,7 +322,7 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var swap_ab := AbilityData.new()
 	swap_ab.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
 	swap_ab.planner_group = GameEnums.PlannerGroup.PRE_MOVE
-	swap_ab.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap_ab.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	swap_plan.add(TimelineAction.make_ability(1, swap_ab, ally.position, 2, GameEnums.MoveTiming.PRE_ACTION))
 	swap_plan.add(TimelineAction.make_move(1, Vector2i(3, 5), -1, [Vector2i(3, 4)], GameEnums.MoveTiming.PRE_ACTION))
 	var swap_events: Array[SimEvent] = []
@@ -412,10 +412,10 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	en_unit.position = Vector2i(6, 3)
 	en_board.units = [en_unit]
 	var trample_ab := AbilityData.new()
-	var move_eff := EffectData.new()
-	move_eff.type = GameEnums.EffectType.MOVE
+	var move_eff := AbilityModule.new()
+	move_eff.primary_type = GameEnums.EffectType.MOVE
 	move_eff.amount = 2
-	trample_ab.effects = [move_eff]
+	trample_ab.modules = [move_eff]
 	var en_action := TimelineAction.make_ability(
 		1, trample_ab, Vector2i(7, 2), -1, GameEnums.MoveTiming.PRE_ACTION,
 		[Vector2i(7, 3), Vector2i(7, 2)],
@@ -447,7 +447,7 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	if post_origin != Vector2i(1, 0):
 		failures.append("CombatUiFormatters: post-move origin should follow prior plan steps")
 	var move_label: String = CombatUiFormatters.action_symbol_text(board_stub, post_move, plan_unit, plan)
-	if move_label.find("(1,0)→(5,0)") < 0:
+	if move_label.find("(1,0)â†’(5,0)") < 0:
 		failures.append("CombatUiFormatters: move label should show origin and destination")
 	var ghost_move := TimelineAction.make_move(
 		1, Vector2i(5, 6), -1, [], GameEnums.MoveTiming.POST_ACTION,
@@ -457,7 +457,7 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var ghost_label: String = CombatUiFormatters.action_symbol_text(
 		board_stub, ghost_move, ghost_unit, plan,
 	)
-	if ghost_label.find("(1,0)→(5,6)") < 0:
+	if ghost_label.find("(1,0)â†’(5,6)") < 0:
 		failures.append("CombatUiFormatters: ghost post-move label should show origin and destination")
 	var move_only := BoardState.new()
 	move_only.grid_size = Vector2i(8, 8)
@@ -644,7 +644,7 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 	unit.team = GameEnums.Team.PLAYER
 	unit.position = Vector2i(3, 4)
 	unit.facing = GameEnums.Facing.WEST
-	unit.movement.points_max = 5
+	unit.movement.max_points = 5
 	unit.movement.points_left = 5
 	unit.turn_action_used = true
 	board.units = [unit]

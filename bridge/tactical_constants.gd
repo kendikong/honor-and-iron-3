@@ -1,8 +1,8 @@
-class_name TacticalConstants
+﻿class_name TacticalConstants
 extends RefCounted
 
 ## Shared grid + presentation constants for Honor & Iron 3.
-## One mana-seed tile (16×16 px) equals one tactics cell.
+## One mana-seed tile (16Ã—16 px) equals one tactics cell.
 
 const TILE_PX: int = 16
 const CELL: int = TILE_PX
@@ -19,7 +19,7 @@ static func default_character_scale() -> float:
 	return CHARACTER_HEIGHT_PX / float(LPC_FRAME_PX)
 
 
-## Skirmish map size presets (width × height tiles, 2:1 aspect).
+## Skirmish map size presets (width Ã— height tiles, 2:1 aspect).
 const SKIRMISH_PRESETS: Array[Vector2i] = [
 	Vector2i(16, 8),
 	Vector2i(20, 10),

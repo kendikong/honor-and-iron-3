@@ -1,4 +1,4 @@
-class_name GdUnitCommandFileSystemDebugTests
+﻿class_name GdUnitCommandFileSystemDebugTests
 extends GdUnitCommandFileSystem
 
 

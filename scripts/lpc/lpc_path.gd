@@ -1,4 +1,4 @@
-class_name LpcPath
+﻿class_name LpcPath
 extends RefCounted
 
 ## Resolve on-disk LPC sprite paths (palette-recolor PNGs where present).

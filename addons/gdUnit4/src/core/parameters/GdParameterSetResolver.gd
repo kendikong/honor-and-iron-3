@@ -1,4 +1,4 @@
-## Abstract base class for all parameterized test resolvers.
+﻿## Abstract base class for all parameterized test resolvers.
 ## Subclasses resolve the concrete parameter values for each test iteration from
 ## different sources (inline literals, callable, or a property reference).
 ## The base class pre-builds a [ParameterSpec] list from the test function's
@@ -19,7 +19,7 @@ class ParameterSpec:
 	var type: int
 	## Value type hint, for typed arrays or dictionaries
 	var value_type_hint: int
-	## [code]true[/code] when this parameter is [code]_test_parameters[/code] — internal, not a user-supplied test input.
+	## [code]true[/code] when this parameter is [code]_test_parameters[/code] â€” internal, not a user-supplied test input.
 	var is_parameter_set: bool
 	## Human-readable representation used in validation error messages.
 	var declaration: String
@@ -64,7 +64,7 @@ func validate(parameters: Array, index: int) -> GdUnitResult:
 		return GdUnitResult.success("ok")
 
 	if parameters.size() != _parameter_specs.size():
-		# Exclude the _test_parameters value — it is internal, not a user-supplied test input.
+		# Exclude the _test_parameters value â€” it is internal, not a user-supplied test input.
 		var test_values := parameters.slice(0, parameters.size() - 1)
 		return GdUnitResult.error("""
 			The test data set at index (%d) does not match the expected test parameters:
@@ -77,15 +77,15 @@ func validate(parameters: Array, index: int) -> GdUnitResult:
 		var current_type := typeof(parameter_value)
 		var type := spec.type
 		if spec.is_parameter_set:
-			# _test_parameters must always carry an empty Array — anything else is a resolver bug.
+			# _test_parameters must always carry an empty Array â€” anything else is a resolver bug.
 			var test_parameters: Array = parameter_value
 			if typeof(test_parameters) != TYPE_ARRAY or not test_parameters.is_empty():
 				var msg := "GdParameterSetResolver: '%s' must provide an empty Array for the '_test_parameters' parameter but got '%s'." \
-					+ " This is unexpected — please report it as a bug."
+					+ " This is unexpected â€” please report it as a bug."
 				push_error(msg % [get_class(), test_parameters])
 			continue
 
-		# Untyped or Variant parameters accept any value — skip the type check.
+		# Untyped or Variant parameters accept any value â€” skip the type check.
 		if type in [TYPE_NIL, GdObjects.TYPE_VARIANT]:
 			continue
 		# Object-typed parameters accept null.

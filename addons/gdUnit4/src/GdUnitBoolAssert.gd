@@ -1,4 +1,4 @@
-## An Assertion Tool to verify boolean values
+﻿## An Assertion Tool to verify boolean values
 @abstract class_name GdUnitBoolAssert
 extends GdUnitAssert
 

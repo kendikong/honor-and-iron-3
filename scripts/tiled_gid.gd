@@ -1,4 +1,4 @@
-class_name TiledGid
+﻿class_name TiledGid
 extends RefCounted
 
 const FLIP_H: int = 0x80000000
@@ -23,6 +23,6 @@ static func alternative_from_flips(decoded: Dictionary) -> int:
 	if decoded.get("flip_v", false):
 		alt |= TileSetAtlasSource.TRANSFORM_FLIP_V
 	if decoded.get("flip_d", false):
-		# Tiled diagonal flip → Godot transpose (Godot 4.7)
+		# Tiled diagonal flip â†’ Godot transpose (Godot 4.7)
 		alt |= TileSetAtlasSource.TRANSFORM_TRANSPOSE
 	return alt

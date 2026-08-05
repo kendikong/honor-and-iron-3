@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 ## Visual catalog of gentle forest v01 tiles. Open `scenes/tile_library.tscn` and press F6.
 
@@ -68,15 +68,15 @@ func _rebuild_all() -> void:
 func _build_header() -> void:
 	var featured_count: int = SeasonalSampleCatalog.featured_forest_local_ids().size()
 	var title: Label = Label.new()
-	title.text = "Gentle Forest v01 — Tile Library (%d tiles)" % TileCatalog.TILE_COUNT
+	title.text = "Gentle Forest v01 â€” Tile Library (%d tiles)" % TileCatalog.TILE_COUNT
 	title.add_theme_font_size_override("font_size", _font(17, true))
 	title.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95))
 	_list.add_child(title)
 
 	var subtitle: Label = Label.new()
 	subtitle.text = (
-		"Atlas: gentle forest v01.png · 16×16 cells · "
-		+ "%d tiles featured in seasonal samples (spring/summer/autumn/winter) · "
+		"Atlas: gentle forest v01.png Â· 16Ã—16 cells Â· "
+		+ "%d tiles featured in seasonal samples (spring/summer/autumn/winter) Â· "
 		+ "Orientations from terrain_peering_map.tres overrides when saved (else .tsx)"
 		% featured_count
 	)
@@ -99,8 +99,8 @@ func _build_seasonal_samples_section() -> void:
 
 	var section_note: Label = Label.new()
 	section_note.text = (
-		"256×256 composed previews — same layout as the gentle forest sample map. "
-		+ "Palette targets gentle forest v07–v10 (PNGs not on disk; reference only)."
+		"256Ã—256 composed previews â€” same layout as the gentle forest sample map. "
+		+ "Palette targets gentle forest v07â€“v10 (PNGs not on disk; reference only)."
 	)
 	section_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	section_note.add_theme_font_size_override("font_size", _font(10))
@@ -136,7 +136,7 @@ func _make_seasonal_sample_card(season: Dictionary, sample_px: int) -> PanelCont
 	margin.add_child(vbox)
 
 	var label: Label = Label.new()
-	label.text = "%s — %s" % [season["label"], season["palette"]]
+	label.text = "%s â€” %s" % [season["label"], season["palette"]]
 	label.add_theme_font_size_override("font_size", _font(11, true))
 	label.add_theme_color_override("font_color", Color(0.92, 0.92, 0.92))
 	vbox.add_child(label)
@@ -166,7 +166,7 @@ func _add_overlay_featured_section() -> void:
 
 	_list.add_child(_make_separator())
 	var overlay_title: Label = Label.new()
-	overlay_title.text = "Seasonal sample — overlay / composite tiles (%d)" % overlay_entries.size()
+	overlay_title.text = "Seasonal sample â€” overlay / composite tiles (%d)" % overlay_entries.size()
 	overlay_title.add_theme_font_size_override("font_size", _font(13, true))
 	overlay_title.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0))
 	_list.add_child(overlay_title)
@@ -313,7 +313,7 @@ func _tile_id_label(entry: Dictionary) -> String:
 	var local_id: int = int(entry["id"])
 	var text: String = "#%d" % local_id
 	if SeasonalSampleCatalog.is_featured_forest_tile(local_id):
-		text += " ★"
+		text += " â˜…"
 	return text
 
 

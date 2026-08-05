@@ -1,4 +1,4 @@
-## An Assertion Tool to verify dictionary
+﻿## An Assertion Tool to verify dictionary
 @abstract class_name GdUnitDictionaryAssert
 extends GdUnitAssert
 

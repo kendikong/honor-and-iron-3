@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 var _map_card_center: CenterContainer
 
@@ -100,7 +100,7 @@ func _build_skirmish_card() -> Control:
 	vbox.add_child(title)
 
 	var desc := Label.new()
-	desc.text = "Procedural map — configure roster, levels, passives, and skills."
+	desc.text = "Procedural map â€” configure roster, levels, passives, and skills."
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
 	desc.add_theme_font_size_override("font_size", 16)
 	vbox.add_child(desc)
@@ -275,7 +275,7 @@ func _populate_skirmish_preset_rows(
 			parent.add_child(row)
 		var preset: Vector2i = presets[i]
 		var pick := Button.new()
-		pick.text = "%d × %d" % [preset.x, preset.y]
+		pick.text = "%d Ã— %d" % [preset.x, preset.y]
 		pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		pick.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		pick.custom_minimum_size = Vector2(0.0, 72.0)

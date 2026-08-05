@@ -1,4 +1,4 @@
-class_name UnitLevelGrowth
+﻿class_name UnitLevelGrowth
 extends RefCounted
 
 ## Canonical level-up stat distribution for UnitState._recalculate_stats.

@@ -1,4 +1,4 @@
-##
+﻿##
 ## @since GdUnit4 5.1.0
 ##
 ## Represents a test execution session in GdUnit4.[br]

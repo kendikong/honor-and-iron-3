@@ -1,4 +1,4 @@
-## Base interface for fuzz testing.[br]
+﻿## Base interface for fuzz testing.[br]
 ##
 ## Fuzzer is an abstract base class that provides the foundation for creating
 ## custom fuzzers used in automated testing. Fuzz testing (fuzzing) is a software

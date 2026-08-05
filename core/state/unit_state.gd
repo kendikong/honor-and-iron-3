@@ -50,9 +50,11 @@ var current_magic: int = 1
 var current_defense: int = 1
 
 static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vector2i, config: Dictionary = {}) -> UnitState:
+	print("create 1")
 	assert(def != null, "UnitState.create requires a UnitData definition")
 	var unit := UnitState.new()
 	unit.id = p_id
+	print("create 2")
 	
 	if config.has("weapon"):
 		unit.definition = def.duplicate()
@@ -63,6 +65,7 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 	unit.team = p_team
 	unit.position = coord
 	unit.health = HealthComponent.new(def.base_constitution * 5)
+	print("create 3")
 	unit.movement = MovementComponent.new(def.move_points)
 	unit.ability = AbilityComponent.new(def.action_points)
 	
@@ -70,6 +73,7 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 		unit.level = config.level
 	else:
 		unit.level = def.level
+	print("create 4")
 	
 	if config.size() > 0:
 		if config.has("active_abilities"):
@@ -92,6 +96,7 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 		
 	unit._recalculate_stats()
 	unit.health.current_hp = unit.health.max_hp
+	print("create 5")
 	return unit
 
 

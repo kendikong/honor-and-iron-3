@@ -1,7 +1,7 @@
-class_name TacticalPauseMenu
+﻿class_name TacticalPauseMenu
 extends CanvasLayer
 
-## Full-screen pause overlay — resume, settings, compendium, restart turn/battle.
+## Full-screen pause overlay â€” resume, settings, compendium, restart turn/battle.
 
 var _director: CombatDirector
 var _map_view: TacticalMapView

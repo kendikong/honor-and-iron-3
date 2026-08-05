@@ -1,4 +1,4 @@
-class_name GdUnitRunnerConfig
+﻿class_name GdUnitRunnerConfig
 extends Resource
 
 const GdUnitTools := preload("res://addons/gdUnit4/src/core/GdUnitTools.gd")

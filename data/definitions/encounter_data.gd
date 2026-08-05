@@ -1,4 +1,4 @@
-class_name EncounterData
+﻿class_name EncounterData
 extends Resource
 
 ## Purpose: Everything needed to construct one battle's starting BoardState.

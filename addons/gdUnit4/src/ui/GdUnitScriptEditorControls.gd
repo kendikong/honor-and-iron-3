@@ -1,4 +1,4 @@
-# A tool to provide extended script editor functionallity
+﻿# A tool to provide extended script editor functionallity
 class_name GdUnitScriptEditorControls
 extends RefCounted
 
@@ -78,7 +78,7 @@ static func close_open_editor_scripts() -> void:
 # The script will be open with the user-configured editor for the script's language which may be an external editor.
 static func edit_script(script_path: String, line_number := -1) -> void:
 	if Engine.is_editor_hint():
-		# scan() is required — update_file() alone does not refresh the dock for newly created files
+		# scan() is required â€” update_file() alone does not refresh the dock for newly created files
 		var file_system := EditorInterface.get_resource_filesystem()
 		file_system.update_file(script_path)
 		file_system.scan()

@@ -57,6 +57,7 @@ static func simulate(state_in: BoardState, plan: Timeline) -> SimResult:
 
 ## Player portion only (planning validation / projected state).
 static func simulate_player_turn(board: BoardState, plan: Timeline, events: Array[SimEvent]) -> void:
+	print('SIMULATE PLAYER TURN: board=', board)
 	_tick_start_of_turn(board, events, GameEnums.Team.PLAYER)
 	_apply_bucket(board, plan, ActionBucket.PRE_MOVE, events)
 	ResolutionPipeline.resolve_pending_pushes(board, events)

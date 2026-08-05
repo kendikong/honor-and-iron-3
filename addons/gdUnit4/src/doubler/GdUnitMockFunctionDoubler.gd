@@ -1,4 +1,4 @@
-class_name GdUnitMockFunctionDoubler
+﻿class_name GdUnitMockFunctionDoubler
 extends GdFunctionDoubler
 
 

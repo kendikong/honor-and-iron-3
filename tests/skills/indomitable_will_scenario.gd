@@ -28,7 +28,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "indomitable/contract/missing_hp_scaling",
-		indo != null and indo.effects[0].scaling_stat == GameEnums.StatType.MISSING_HP,
+		indo != null and indo.modules[0].scaling_stat == GameEnums.StatType.MISSING_HP,
 	)
 	_KnightQaHarness.assert_true(
 		failures, "indomitable/contract/status",

@@ -1,4 +1,4 @@
-## An Assertion Tool to verify for emitted signals until a waiting time
+﻿## An Assertion Tool to verify for emitted signals until a waiting time
 @abstract class_name GdUnitSignalAssert
 extends GdUnitAssert
 
@@ -36,8 +36,8 @@ extends GdUnitAssert
 ## [br]
 ## [b]Parameters:[/b][br]
 ## [param signal_name]: The signal to monitor. Can be either:[br]
-##   • A [Signal] reference (recommended for type safety)[br]
-##   • A [String] with the signal name
+##   â€¢ A [Signal] reference (recommended for type safety)[br]
+##   â€¢ A [String] with the signal name
 ## [param signal_args]: Optional expected signal arguments.[br]
 ##   When provided, verifies the signal was emitted with exactly these values.[br]
 ## [br]
@@ -78,8 +78,8 @@ extends GdUnitAssert
 ## [br]
 ## [b]Parameters:[/b][br]
 ## [param signal_name]: The signal to monitor. Can be either:[br]
-##   • A [Signal] reference (recommended for type safety)[br]
-##   • A [String] with the signal name
+##   â€¢ A [Signal] reference (recommended for type safety)[br]
+##   â€¢ A [String] with the signal name
 ## [param signal_args]: Optional expected signal arguments.[br]
 ##   When provided, verifies the signal was not emitted with these specific values.[br]
 ##   If omitted, verifies the signal was not emitted at all.[br]
@@ -120,8 +120,8 @@ extends GdUnitAssert
 ## [br]
 ## [b]Parameters:[/b][br]
 ## [param signal_name]: The signal to check. Can be either:[br]
-##   • A [Signal] reference (recommended for type safety)[br]
-##   • A [String] with the signal name
+##   â€¢ A [Signal] reference (recommended for type safety)[br]
+##   â€¢ A [String] with the signal name
 ## [br]
 ## [b]Returns:[/b][br]
 ## [GdUnitSignalAssert] - Returns self for method chaining.[br]

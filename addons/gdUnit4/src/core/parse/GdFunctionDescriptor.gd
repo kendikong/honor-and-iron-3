@@ -1,4 +1,4 @@
-class_name GdFunctionDescriptor
+﻿class_name GdFunctionDescriptor
 extends RefCounted
 
 var _is_virtual: bool

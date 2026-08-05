@@ -1,4 +1,4 @@
-################################################################################
+﻿################################################################################
 # Provides access to a global accessible singleton
 #
 # This is a workarount to the existing auto load singleton because of some bugs

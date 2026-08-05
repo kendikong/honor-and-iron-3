@@ -1,4 +1,4 @@
-class_name AutobattlerMetrics
+﻿class_name AutobattlerMetrics
 extends RefCounted
 
 ## Context weights and context checking

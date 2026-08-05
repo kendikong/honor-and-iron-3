@@ -1,7 +1,7 @@
-class_name WaterBurstDirector
+﻿class_name WaterBurstDirector
 extends RefCounted
 
-## Rare fish-splash preview — brief waterfall foam tile on deep water (Phase 7 director stub).
+## Rare fish-splash preview â€” brief waterfall foam tile on deep water (Phase 7 director stub).
 
 const SOURCE_WATERFALL: int = TileSetFactory.SOURCE_WATERFALL
 const SPLASH_ATLAS: Vector2i = Vector2i(0, 7)

@@ -232,10 +232,10 @@ func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:
 	assert_int(pre_moves.size()).override_failure_message(
 		"walk_swap/click_ally: expected walk + swap pre-moves",
 	).is_equal(2)
-	assert_that(pre_moves[0].type).override_failure_message(
+	assert_that(pre_moves[0].primary_type).override_failure_message(
 		"walk_swap/click_ally: first pre-move must be walk",
 	).is_equal(GameEnums.ActionType.MOVE)
-	assert_that(pre_moves[1].type).override_failure_message(
+	assert_that(pre_moves[1].primary_type).override_failure_message(
 		"walk_swap/click_ally: second pre-move must be swap ability",
 	).is_equal(GameEnums.ActionType.ABILITY)
 	await _wait_for_planning_commit_stage(ctx, &"swap")
@@ -274,13 +274,13 @@ func _journey_walk_then_swap(ctx: Dictionary) -> void:
 			"walk_swap: expected walk + swap pre-moves",
 		).is_equal(2)
 		return
-	assert_that(pre_moves[0].type).override_failure_message(
+	assert_that(pre_moves[0].primary_type).override_failure_message(
 		"walk_swap: first pre-move must be walk",
 	).is_equal(GameEnums.ActionType.MOVE)
 	assert_that(pre_moves[0].target_coord).override_failure_message(
 		"walk_swap: walk destination",
 	).is_equal(_WALK_SWAP_APPROACH)
-	assert_that(pre_moves[1].type).override_failure_message(
+	assert_that(pre_moves[1].primary_type).override_failure_message(
 		"walk_swap: second pre-move must be ability",
 	).is_equal(GameEnums.ActionType.ABILITY)
 	assert_object(pre_moves[1].ability).override_failure_message(
@@ -2253,7 +2253,7 @@ func _pre_target_from_slots(slots: Dictionary) -> Vector2i:
 		if not raw is TimelineAction:
 			continue
 		var step: TimelineAction = raw as TimelineAction
-		if step.type == GameEnums.ActionType.MOVE:
+		if step.primary_type == GameEnums.ActionType.MOVE:
 			return step.target_coord
 	return Vector2i(-999999, -999999)
 
@@ -2392,13 +2392,13 @@ func _assert_commit_ratifies_preview(
 	if not slot_actions.is_empty() and slot_actions[0] is TimelineAction:
 		var slot_act0: TimelineAction = slot_actions[0] as TimelineAction
 		if (
-			slot_act0.type == GameEnums.ActionType.ABILITY
+			slot_act0.primary_type == GameEnums.ActionType.ABILITY
 			and slot_act0.ability != null
 			and slot_act0.ability.is_movement_kind()
 		):
 			for pre_act: TimelineAction in _pre_moves_for_unit(director, unit_id):
 				if (
-					pre_act.type == GameEnums.ActionType.ABILITY
+					pre_act.primary_type == GameEnums.ActionType.ABILITY
 					and pre_act.ability != null
 					and pre_act.ability.id == slot_act0.ability.id
 				):
@@ -2476,7 +2476,7 @@ func _assert_animation_route_matches_preview(
 	var director: CombatDirector = ctx.director as CombatDirector
 	for raw: Variant in director.plan_pre_move.entries:
 		if raw is TimelineAction and (raw as TimelineAction).actor_id == unit_id:
-			if (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
+			if (raw as TimelineAction).primary_type == GameEnums.ActionType.MOVE:
 				movement_commit = true
 	if not movement_commit:
 		return

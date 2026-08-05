@@ -1,4 +1,4 @@
-class_name GdUnitShortcut
+﻿class_name GdUnitShortcut
 extends RefCounted
 
 

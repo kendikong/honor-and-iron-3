@@ -1,4 +1,4 @@
-class_name BoardFactory
+﻿class_name BoardFactory
 extends RefCounted
 
 ## Purpose: Creates BoardState instances from definitions (EncounterData) or
@@ -26,7 +26,7 @@ static func build_from_encounter(data: EncounterData, player_assignments: Dictio
 		if tile != null:
 			tile.definition = data.tile_terrains[coord]
 			
-	# 4. Spawns (Player) — default slot index → player id (P1..P4 co-op)
+	# 4. Spawns (Player) â€” default slot index â†’ player id (P1..P4 co-op)
 	var id_counter = 1
 	for i: int in range(data.player_spawns.size()):
 		var p: UnitPlacement = data.player_spawns[i]

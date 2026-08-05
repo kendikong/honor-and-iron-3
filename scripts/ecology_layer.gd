@@ -1,7 +1,7 @@
-class_name EcologyLayer
+﻿class_name EcologyLayer
 extends Node2D
 
-## Phase 7 ecology channel — ambient particles + sparse actors (opportunism step 4).
+## Phase 7 ecology channel â€” ambient particles + sparse actors (opportunism step 4).
 
 const _Butterfly = preload("res://scripts/butterfly_actor.gd")
 const _Fish = preload("res://scripts/fish_actor.gd")

@@ -1,4 +1,4 @@
-class_name GdUnitObjectInteractionsVerifier
+﻿class_name GdUnitObjectInteractionsVerifier
 
 var expected_interactions: int = -1
 var saved_interactions := Dictionary()

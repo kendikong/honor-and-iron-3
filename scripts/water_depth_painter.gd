@@ -1,12 +1,12 @@
-class_name WaterDepthPainter
+﻿class_name WaterDepthPainter
 extends RefCounted
 
 ## Paints reference water depth using only the six hand-placed Mana Seed tiles
-## identified from the sample map — no other atlas overrides.
+## identified from the sample map â€” no other atlas overrides.
 
 const SOURCE_FOREST: int = TileSetFactory.SOURCE_FOREST
 
-# Allowed water art only — do not substitute other local ids.
+# Allowed water art only â€” do not substitute other local ids.
 const TILE_DEEP: int = 180
 const TILE_TRANS_OPEN_NORTH: int = 164  # shallow/normal water cell to the north
 const TILE_TRANS_OPEN_SOUTH: int = 196  # shallow/normal water cell to the south

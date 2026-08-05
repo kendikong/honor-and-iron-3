@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 extends MarginContainer
 
 @onready var _template_editor :CodeEdit = $VBoxContainer/EdiorLayout/Editor

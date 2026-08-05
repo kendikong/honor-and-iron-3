@@ -1,7 +1,7 @@
-class_name TacticalMapView
+﻿class_name TacticalMapView
 extends Node2D
 
-## Combat map host — mana-seed visuals from a generated skirmish (no dev side panels).
+## Combat map host â€” mana-seed visuals from a generated skirmish (no dev side panels).
 
 const _SparkleSprites = preload("res://scripts/water_sparkle_sprites.gd")
 const _EcologyLayer = preload("res://scripts/ecology_layer.gd")

@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 
 ## Passes SkirmishConfig from BattleSetup into TacticalCombat (scene-tree safe).
 

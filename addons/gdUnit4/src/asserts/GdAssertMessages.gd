@@ -1,11 +1,11 @@
-class_name GdAssertMessages
+﻿class_name GdAssertMessages
 extends Resource
 
 
 const SUB_COLOR :=  Color(1, 0, 0, .15)
 const ADD_COLOR :=  Color(0, 1, 0, .15)
 
-const NO_ORPHAN_DETAILS := "⚠️No details available. Run tests in debug mode to collect details."
+const NO_ORPHAN_DETAILS := "âš ï¸No details available. Run tests in debug mode to collect details."
 
 # Dictionary of control characters and their readable representations
 const CONTROL_CHARS = {

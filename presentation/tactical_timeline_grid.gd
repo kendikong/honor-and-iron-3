@@ -1,7 +1,7 @@
-class_name TacticalTimelineGrid
+﻿class_name TacticalTimelineGrid
 extends VBoxContainer
 
-## Party planning table — up to 4 co-op player slots, pre / action / post columns.
+## Party planning table â€” up to 4 co-op player slots, pre / action / post columns.
 
 const MAX_PARTY_SLOTS: int = 4
 const W_PLAYER: int = 32
@@ -202,7 +202,7 @@ func _add_party_row(
 	var player_col: Color = CombatUiFormatters.player_color(slot) if not is_empty else COLOR_EMPTY
 	_add_body_cell(info, "P%d" % slot, "", player_col, W_PLAYER, false)
 	_add_info_gap(info)
-	var name_text: String = "— open —" if is_empty else unit.definition.display_name
+	var name_text: String = "â€” open â€”" if is_empty else unit.definition.display_name
 	var name_col: Color = COLOR_EMPTY if is_empty else Color.WHITE
 	if is_selected and not is_empty:
 		name_col = Color(1.0, 0.95, 0.55)
@@ -214,15 +214,15 @@ func _add_party_row(
 		var stats_shell: Dictionary = _make_stats_column_shell()
 		info.add_child(stats_shell["root"])
 		var empty_lbl := Label.new()
-		empty_lbl.text = "—"
+		empty_lbl.text = "â€”"
 		empty_lbl.add_theme_font_size_override("font_size", _cell_font_px)
 		empty_lbl.add_theme_color_override("font_color", COLOR_MUTED)
 		empty_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		empty_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		stats_shell["chips"].add_child(empty_lbl)
-		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_PRE, plan_active, STRETCH_PRE)
-		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_ACT, plan_active, STRETCH_ACTION)
-		_add_plan_cell(plan, "—", "", false, COLOR_ACCENT_POST, plan_active, STRETCH_POST)
+		_add_plan_cell(plan, "â€”", "", false, COLOR_ACCENT_PRE, plan_active, STRETCH_PRE)
+		_add_plan_cell(plan, "â€”", "", false, COLOR_ACCENT_ACT, plan_active, STRETCH_ACTION)
+		_add_plan_cell(plan, "â€”", "", false, COLOR_ACCENT_POST, plan_active, STRETCH_POST)
 		row_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return ""
 	var stats_col: Color = Color(0.72, 0.76, 0.82) if is_selected else COLOR_MUTED
@@ -232,7 +232,7 @@ func _add_party_row(
 	if _planning_input != null:
 		ghost_slots = _planning_input.timeline_ghost_slots(unit.id)
 	var warn: String = ""
-	var exhausted_tooltip: String = "Waiting — no further actions this phase" if is_exhausted else ""
+	var exhausted_tooltip: String = "Waiting â€” no further actions this phase" if is_exhausted else ""
 	var plan_board: BoardState = _board
 	if _director != null and _director.base_board != null:
 		plan_board = _director.base_board
@@ -328,7 +328,7 @@ func _append_plan_cell(
 	plan_board: BoardState = null,
 ) -> String:
 	var board: BoardState = plan_board if plan_board != null else _board
-	var text: String = "—"
+	var text: String = "â€”"
 	var tooltip: String = exhausted_tooltip if exhausted else "No action queued"
 	var failed: bool = false
 	var first_warn: String = ""
@@ -350,7 +350,7 @@ func _append_plan_cell(
 						CombatUiFormatters.reason_text(reason),
 					]
 		if not parts.is_empty():
-			text = " → ".join(parts)
+			text = " â†’ ".join(parts)
 			tooltip = "\n".join(tips)
 		elif exhausted:
 			tooltip = exhausted_tooltip
@@ -369,16 +369,16 @@ func _append_plan_cell(
 			ghost_parts.append(symbol)
 			ghost_tips.append(CombatUiFormatters.describe_action(board, ghost_action, timeline))
 		if not ghost_parts.is_empty():
-			ghost_text = " → ".join(ghost_parts)
-			ghost_tooltip = "Pending — click to commit\n" + "\n".join(ghost_tips)
-	if ghost_text != "" and text == "—":
+			ghost_text = " â†’ ".join(ghost_parts)
+			ghost_tooltip = "Pending â€” click to commit\n" + "\n".join(ghost_tips)
+	if ghost_text != "" and text == "â€”":
 		_add_pending_plan_cell(
 			row, ghost_text, ghost_tooltip, accent, plan_active, stretch,
 		)
 		return first_warn
 	if ghost_text == "":
 		var lbl := _add_plan_cell(row, text, tooltip, failed, accent, plan_active, stretch)
-		if text == "—":
+		if text == "â€”":
 			var empty_alpha: float = 0.35 if plan_active else 0.22
 			if exhausted:
 				empty_alpha = 0.28
@@ -396,7 +396,7 @@ func _append_plan_cell(
 	var committed_lbl := _make_plan_text_label(text, tooltip, failed, plan_active)
 	inner.add_child(committed_lbl)
 	var arrow := Label.new()
-	arrow.text = "→"
+	arrow.text = "â†’"
 	arrow.add_theme_font_size_override("font_size", _cell_font_px)
 	arrow.add_theme_color_override("font_color", Color(0.55, 0.62, 0.72, 0.55))
 	arrow.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -534,13 +534,13 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	_add_stat_chip(
 		chips,
 		"%s%d" % [PlanningIcons.STAT_LEVEL, unit.level],
-		"Level — unit experience tier",
+		"Level â€” unit experience tier",
 		col,
 	)
 	_add_stat_chip(
 		chips,
 		"%s%d/%d" % [PlanningIcons.STAT_HP, unit.health.current_hp, unit.health.max_hp],
-		"Health — current / maximum hit points",
+		"Health â€” current / maximum hit points",
 		col,
 	)
 	for stat_type: GameEnums.StatType in [
@@ -556,7 +556,7 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	_add_stat_chip(
 		chips,
 		"%s%d" % [PlanningIcons.STAT_ARMOR, unit.armor],
-		"Armor — absorbs damage before HP",
+		"Armor â€” absorbs damage before HP",
 		col,
 	)
 	var uses_run: bool = (
@@ -575,9 +575,9 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 			unit.movement.max_points,
 		],
 		(
-			"Run — remaining / maximum tiles this turn"
+			"Run â€” remaining / maximum tiles this turn"
 			if uses_run
-			else "Movement — remaining / maximum tiles this turn"
+			else "Movement â€” remaining / maximum tiles this turn"
 		),
 		col,
 	)
@@ -589,7 +589,7 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	_add_stat_chip(
 		chips,
 		"%s%d/%d" % [PlanningIcons.STAT_AP, ap_left, unit.ability.max_points],
-		"Action Points — remaining / maximum per turn",
+		"Action Points â€” remaining / maximum per turn",
 		col,
 	)
 

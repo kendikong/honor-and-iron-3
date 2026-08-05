@@ -1,7 +1,7 @@
-class_name EcologySparseActor
+﻿class_name EcologySparseActor
 extends Node2D
 
-## Base sparse ecology actor — Active / Idle / Transition with stepped motion.
+## Base sparse ecology actor â€” Active / Idle / Transition with stepped motion.
 
 enum State { ACTIVE, IDLE, TRANSITION }
 

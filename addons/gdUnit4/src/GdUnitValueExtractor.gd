@@ -1,4 +1,4 @@
-## This is the base interface for value extraction
+﻿## This is the base interface for value extraction
 class_name GdUnitValueExtractor
 extends RefCounted
 

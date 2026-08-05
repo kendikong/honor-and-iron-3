@@ -1,4 +1,4 @@
-# This class provides Date/Time functionallity to Godot
+﻿# This class provides Date/Time functionallity to Godot
 class_name LocalTime
 extends Resource
 

@@ -1,4 +1,4 @@
-class_name DisplayWindowHelper
+﻿class_name DisplayWindowHelper
 extends RefCounted
 
 ## Applies window size / fullscreen consistently (main menu + in-game options).

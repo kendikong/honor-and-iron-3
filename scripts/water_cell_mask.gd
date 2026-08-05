@@ -1,11 +1,11 @@
-class_name WaterCellMask
+﻿class_name WaterCellMask
 extends RefCounted
 
-## Classifies WATER cells — shore wang sprites mix grass pixels and must not use ground ripple.
+## Classifies WATER cells â€” shore wang sprites mix grass pixels and must not use ground ripple.
 
 const SOURCE_FOREST: int = TileSetFactory.SOURCE_FOREST
 
-## terrain_connect open-water fill only — never wang shore/corner ids (132, 133, …).
+## terrain_connect open-water fill only â€” never wang shore/corner ids (132, 133, â€¦).
 const OPEN_WATER_CONNECT_IDS: Array[int] = [145, 146, 161, 162]
 
 const _DEPTH_PAINT_OUTPUT_IDS: Array[int] = [180, 164, 196, 148, 212, 228]
@@ -27,7 +27,7 @@ static func is_shore_water(grid: PlayerGrid, pos: Vector2i) -> bool:
 	return false
 
 
-## Grid interior — all in-bounds cardinals are water (excludes map-edge shore).
+## Grid interior â€” all in-bounds cardinals are water (excludes map-edge shore).
 static func is_interior_water(grid: PlayerGrid, pos: Vector2i) -> bool:
 	if grid.get_cell(pos) != TileId.Type.WATER:
 		return false

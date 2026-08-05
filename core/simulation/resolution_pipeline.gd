@@ -1,4 +1,4 @@
-class_name ResolutionPipeline
+﻿class_name ResolutionPipeline
 extends RefCounted
 
 ## Purpose: Applies ONE action using the project's fixed combat resolution order.
@@ -34,9 +34,9 @@ static func apply_action(board: BoardState, action: TimelineAction, events: Arra
 				# We will check if it has a damaging/offensive effect
 				var is_offensive = false
 				for effect in action.ability.effects:
-					if effect.type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE, GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL]:
+					if effect.primary_type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE, GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL]:
 						is_offensive = true
-					elif effect.type == GameEnums.EffectType.ADD_STATUS and GameEnums.is_debuff(effect.status_type):
+					elif effect.primary_type == GameEnums.EffectType.ADD_STATUS and GameEnums.is_debuff(effect.status_type):
 						is_offensive = true
 				if is_offensive:
 					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {

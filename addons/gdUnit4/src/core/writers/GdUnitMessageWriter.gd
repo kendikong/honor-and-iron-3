@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 @abstract class_name GdUnitMessageWriter
 extends RefCounted
 ## Base interface class for writing formatted messages to different outputs.[br]

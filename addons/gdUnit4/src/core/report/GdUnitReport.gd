@@ -1,4 +1,4 @@
-class_name GdUnitReport
+﻿class_name GdUnitReport
 extends Resource
 
 # report type

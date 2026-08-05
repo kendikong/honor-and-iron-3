@@ -1,14 +1,14 @@
-class_name TerrainPeeringBridge
+﻿class_name TerrainPeeringBridge
 extends RefCounted
 
-## UI helpers: wang arrays ↔ peering labels ↔ 3×3 neighborhood grids.
+## UI helpers: wang arrays â†” peering labels â†” 3Ã—3 neighborhood grids.
 
 const PEER_SHORT: PackedStringArray = ["TL", "T", "TR", "L", "R", "BL", "B", "BR"]
 const PEER_FULL: PackedStringArray = [
 	"Top-left", "Top", "Top-right", "Left", "Right", "Bottom-left", "Bottom", "Bottom-right",
 ]
 
-# 3×3 grid index → peering bit index (center cell index 4 has no peering slot).
+# 3Ã—3 grid index â†’ peering bit index (center cell index 4 has no peering slot).
 const GRID3_TO_PEER: PackedInt32Array = [0, 1, 2, 3, -1, 4, 5, 6, 7]
 
 const TERRAIN_GRASS: int = -1

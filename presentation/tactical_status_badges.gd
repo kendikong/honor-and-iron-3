@@ -1,7 +1,7 @@
-class_name TacticalStatusBadges
+﻿class_name TacticalStatusBadges
 extends CanvasLayer
 
-## Screen-space unit status badges — outside WorldModulate for crisp text at any zoom.
+## Screen-space unit status badges â€” outside WorldModulate for crisp text at any zoom.
 
 const BADGE_BASE_SIZE: int = 14
 const BADGE_GAP: int = 2

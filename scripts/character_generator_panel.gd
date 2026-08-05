@@ -1,4 +1,4 @@
-class_name CharacterGeneratorPanel
+﻿class_name CharacterGeneratorPanel
 extends CanvasLayer
 
 ## Dedicated dockable panel for the Character Generator.
@@ -126,7 +126,7 @@ func _build_ui() -> void:
 	outer.add_child(scroll)
 
 	# Title
-	_add_section_label(vbox, "⚙  Character Generator")
+	_add_section_label(vbox, "âš™  Character Generator")
 
 	# Seed
 	_add_labeled_spinbox(vbox, "Seed", 0, 99999, _profile.seed,
@@ -134,7 +134,7 @@ func _build_ui() -> void:
 			_profile.seed = int(v); _save_config()
 	)
 	var adv_btn := Button.new()
-	adv_btn.text = "▶  Advanced Filters"
+	adv_btn.text = "â–¶  Advanced Filters"
 	adv_btn.flat = true
 	adv_btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	vbox.add_child(adv_btn)
@@ -145,7 +145,7 @@ func _build_ui() -> void:
 	
 	adv_btn.pressed.connect(func():
 		adv_panel.visible = not adv_panel.visible
-		adv_btn.text = "▼  Advanced Filters" if adv_panel.visible else "▶  Advanced Filters"
+		adv_btn.text = "â–¼  Advanced Filters" if adv_panel.visible else "â–¶  Advanced Filters"
 	)
 	
 	_add_section_label(adv_panel, "Require Native Animations")
@@ -211,18 +211,18 @@ func _build_ui() -> void:
 
 	# Generate button
 	_generate_btn = Button.new()
-	_generate_btn.text = "🎲  Generate"
+	_generate_btn.text = "ðŸŽ²  Generate"
 	_generate_btn.pressed.connect(_on_generate_pressed)
 	vbox.add_child(_generate_btn)
 
 	# Report label
 	_report_label = Label.new()
-	_report_label.text = "—"
+	_report_label.text = "â€”"
 	_report_label.add_theme_font_size_override("font_size", 14)
 	_report_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_report_label)
 
-	# Current Character Parts — rebuilt after each Generate
+	# Current Character Parts â€” rebuilt after each Generate
 	var parts_header_row := HBoxContainer.new()
 	parts_header_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var parts_hdr := Label.new()
@@ -300,7 +300,7 @@ func _build_ui() -> void:
 
 	# Recolor weights (skin / hair / cloth pools from catalog)
 	_color_section_toggle = Button.new()
-	_color_section_toggle.text = "▶  Recolor Weights"
+	_color_section_toggle.text = "â–¶  Recolor Weights"
 	_color_section_toggle.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_color_section_toggle.flat = true
 	_color_section_toggle.pressed.connect(_toggle_color_section)
@@ -323,9 +323,9 @@ func _build_ui() -> void:
 		)
 		_slot_sliders[slot] = sl
 
-	# Item weights — collapsible
+	# Item weights â€” collapsible
 	_item_section_toggle = Button.new()
-	_item_section_toggle.text = "▶  Item Weights"
+	_item_section_toggle.text = "â–¶  Item Weights"
 	_item_section_toggle.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_item_section_toggle.flat = true
 	_item_section_toggle.pressed.connect(_toggle_item_section)
@@ -364,14 +364,14 @@ func _rebuild_item_sliders() -> void:
 func _toggle_item_section() -> void:
 	_item_section_visible = not _item_section_visible
 	_item_section_vbox.visible = _item_section_visible
-	_item_section_toggle.text = ("▼  Item Weights" if _item_section_visible else "▶  Item Weights")
+	_item_section_toggle.text = ("â–¼  Item Weights" if _item_section_visible else "â–¶  Item Weights")
 
 
 func _toggle_color_section() -> void:
 	_color_section_visible = not _color_section_visible
 	_color_section_vbox.visible = _color_section_visible
 	_color_section_toggle.text = (
-		"▼  Recolor Weights" if _color_section_visible else "▶  Recolor Weights"
+		"â–¼  Recolor Weights" if _color_section_visible else "â–¶  Recolor Weights"
 	)
 
 
@@ -453,7 +453,7 @@ func _rebuild_parts_section(report: Dictionary) -> void:
 				_save_config()
 		)
 
-	# One row per drawn part (skip duplicated fg/bg planes — use first occurrence per slot)
+	# One row per drawn part (skip duplicated fg/bg planes â€” use first occurrence per slot)
 	var seen_slots: Dictionary = {}
 	var parts: Variant = report.get("parts", [])
 	if typeof(parts) != TYPE_ARRAY:
@@ -505,7 +505,7 @@ func _add_part_toggle_row(parent: VBoxContainer, item_id: String, weight_key: St
 	var row := HBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
-	# CheckButton — ON = included, OFF = weight zeroed
+	# CheckButton â€” ON = included, OFF = weight zeroed
 	var toggle := CheckButton.new()
 	toggle.button_pressed = current_weight > 0.0
 	toggle.text = ""

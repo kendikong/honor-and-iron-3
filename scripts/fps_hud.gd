@@ -1,7 +1,7 @@
-class_name FpsHud
+﻿class_name FpsHud
 extends CanvasLayer
 
-## Smoothed FPS readout — top-right above the map viewport.
+## Smoothed FPS readout â€” top-right above the map viewport.
 
 var _panel: PanelContainer
 var _label: Label

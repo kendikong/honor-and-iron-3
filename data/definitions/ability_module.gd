@@ -1,8 +1,8 @@
-class_name AbilityModule
+﻿class_name AbilityModule
 extends Resource
 
-## Purpose: One ordered skill step — primary effect + aim + keywords + layers + gate.
-## Responsibilities: Describe a single modular step (ability-data.md §2).
+## Purpose: One ordered skill step â€” primary effect + aim + keywords + layers + gate.
+## Responsibilities: Describe a single modular step (ability-data.md Â§2).
 ## Dependencies: EffectData, AbilityKeyword, AbilityLayer, GameEnums.
 ## Lifecycle: authored on AbilityData.modules / upgraded_modules; immutable at runtime.
 
@@ -16,7 +16,7 @@ extends Resource
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
 @export var spawn_unit_id: StringName = &""
 
-## Motion mode when primary is motion (MOVE/DASH/SWAP/…).
+## Motion mode when primary is motion (MOVE/DASH/SWAP/â€¦).
 @export var motion_mode: GameEnums.MotionMode = GameEnums.MotionMode.NONE
 
 @export var min_range: int = 0
@@ -45,7 +45,7 @@ extends Resource
 @export var bonus_if_adjacent_at_cast: int = 0
 @export var def_debuff_before_damage: int = 0
 
-## Transitional bag for modifier keys not yet typed (ability-data.md §12.9). Prefer typed fields.
+## Transitional bag for modifier keys not yet typed (ability-data.md Â§12.9). Prefer typed fields.
 @export var legacy_modifiers: Dictionary = {}
 
 
@@ -53,15 +53,4 @@ func has_targeting(flag: int) -> bool:
 	return (targeting_flags & flag) != 0
 
 
-func primary_as_effect() -> EffectData:
-	var eff := EffectData.new()
-	eff.type = primary_type
-	eff.amount = amount
-	eff.status_type = status_type
-	eff.status_duration = status_duration
-	eff.scaling_stat = scaling_stat
-	eff.spawn_unit_id = spawn_unit_id
-	eff.bonus_if_adjacent_at_cast = bonus_if_adjacent_at_cast
-	eff.def_debuff_before_damage = def_debuff_before_damage
-	eff.modifiers = legacy_modifiers.duplicate(true)
-	return eff
+

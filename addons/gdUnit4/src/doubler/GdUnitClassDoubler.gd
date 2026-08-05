@@ -1,4 +1,4 @@
-# A class doubler used to mock and spy checked implementations
+﻿# A class doubler used to mock and spy checked implementations
 class_name GdUnitClassDoubler
 extends RefCounted
 

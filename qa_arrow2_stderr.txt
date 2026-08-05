@@ -1,0 +1,61 @@
+SCRIPT ERROR: Invalid call. Nonexistent function 'grid_to_local' in base 'Nil'.
+   at: CombatPlanningInput._facing_from_drop (res://presentation/combat_planning_input.gd:2462)
+   GDScript backtrace (most recent call first):
+       [0] _facing_from_drop (res://presentation/combat_planning_input.gd:2462)
+       [1] _slots_with_facing_for_commit (res://presentation/combat_planning_input.gd:2954)
+       [2] _final_commit_slots_for_click_at_cell (res://presentation/combat_planning_input.gd:2991)
+       [3] _test_hover_click_slot_parity (res://tests/planning_qa_gate_test.gd:1153)
+       [4] run_all (res://tests/planning_qa_gate_test.gd:100)
+       [5] _initialize (res://tests/run_planning_qa_gate.gd:10)
+SCRIPT ERROR: Invalid call. Nonexistent function 'grid_to_local' in base 'Nil'.
+   at: CombatPlanningInput._facing_from_drop (res://presentation/combat_planning_input.gd:2462)
+   GDScript backtrace (most recent call first):
+       [0] _facing_from_drop (res://presentation/combat_planning_input.gd:2462)
+       [1] _slots_with_facing_for_commit (res://presentation/combat_planning_input.gd:2954)
+       [2] _final_commit_slots_for_click_at_cell (res://presentation/combat_planning_input.gd:2991)
+       [3] _compute_hover_action_icon (res://presentation/combat_planning_input.gd:3158)
+       [4] compute_hover_action_icon (res://presentation/combat_planning_input.gd:3123)
+       [5] _test_cursor_equals_slots_on_hover (res://tests/planning_qa_gate_test.gd:1175)
+       [6] run_all (res://tests/planning_qa_gate_test.gd:100)
+       [7] _initialize (res://tests/run_planning_qa_gate.gd:10)
+SCRIPT ERROR: Invalid call. Nonexistent function 'grid_to_local' in base 'Nil'.
+   at: CombatPlanningInput._facing_from_drop (res://presentation/combat_planning_input.gd:2462)
+   GDScript backtrace (most recent call first):
+       [0] _facing_from_drop (res://presentation/combat_planning_input.gd:2462)
+       [1] _slots_with_facing_for_commit (res://presentation/combat_planning_input.gd:2954)
+       [2] _final_commit_slots_for_click_at_cell (res://presentation/combat_planning_input.gd:3001)
+       [3] _compute_hover_action_icon (res://presentation/combat_planning_input.gd:3158)
+       [4] compute_hover_action_icon (res://presentation/combat_planning_input.gd:3123)
+       [5] _test_cursor_equals_slots_on_hover (res://tests/planning_qa_gate_test.gd:1189)
+       [6] run_all (res://tests/planning_qa_gate_test.gd:100)
+       [7] _initialize (res://tests/run_planning_qa_gate.gd:10)
+SCRIPT ERROR: Invalid call. Nonexistent function 'grid_to_local' in base 'Nil'.
+   at: CombatPlanningInput._facing_from_drop (res://presentation/combat_planning_input.gd:2462)
+   GDScript backtrace (most recent call first):
+       [0] _facing_from_drop (res://presentation/combat_planning_input.gd:2462)
+       [1] _slots_with_facing_for_commit (res://presentation/combat_planning_input.gd:2954)
+       [2] _final_commit_slots_for_click_at_cell (res://presentation/combat_planning_input.gd:3001)
+       [3] _compute_hover_action_icon (res://presentation/combat_planning_input.gd:3158)
+       [4] refresh_mouse_cursor (res://presentation/combat_planning_input.gd:3109)
+       [5] on_hover_moved (res://presentation/combat_planning_input.gd:800)
+       [6] _test_action_range_centered_on_live_stand (res://tests/planning_qa_gate_test.gd:1556)
+       [7] run_all (res://tests/planning_qa_gate_test.gd:100)
+       [8] _initialize (res://tests/run_planning_qa_gate.gd:10)
+SCRIPT ERROR: Invalid call. Nonexistent function 'grid_to_local' in base 'Nil'.
+   at: CombatPlanningInput._facing_from_drop (res://presentation/combat_planning_input.gd:2462)
+   GDScript backtrace (most recent call first):
+       [0] _facing_from_drop (res://presentation/combat_planning_input.gd:2462)
+       [1] _slots_with_facing_for_commit (res://presentation/combat_planning_input.gd:2954)
+       [2] _final_commit_slots_for_click_at_cell (res://presentation/combat_planning_input.gd:2991)
+       [3] _compute_hover_action_icon (res://presentation/combat_planning_input.gd:3158)
+       [4] refresh_mouse_cursor (res://presentation/combat_planning_input.gd:3109)
+       [5] on_hover_moved (res://presentation/combat_planning_input.gd:800)
+       [6] _test_enemy_skill_hover_not_movement_route (res://tests/planning_qa_gate_test.gd:1606)
+       [7] run_all (res://tests/planning_qa_gate_test.gd:100)
+       [8] _initialize (res://tests/run_planning_qa_gate.gd:10)
+WARNING: 2 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 16419 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2535)
+ERROR: 21 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

@@ -1,4 +1,4 @@
-class_name Level6MapPanel
+﻿class_name Level6MapPanel
 extends VBoxContainer
 
 signal inspect_requested(title: String, body: String, meta: Dictionary)
@@ -34,7 +34,7 @@ func bind_report(report: MassSimBatchReport) -> void:
 		var dev: float = absf(wr - MassSimConstants.TARGET_PLAYER_WIN_PCT)
 		var color: String = "#7dcea0" if dev < 6.0 else ("#ffb347" if dev < 12.0 else "#ff6b6b")
 		lines.append(
-			"• [%s] Win Rate: [color=%s]%.1f%%[/color] (%d matches)"
+			"â€¢ [%s] Win Rate: [color=%s]%.1f%%[/color] (%d matches)"
 			% [str(tag_id), color, wr, int(rec.get("battles", 0))]
 		)
 	lines.append("")
@@ -48,7 +48,7 @@ func bind_report(report: MassSimBatchReport) -> void:
 			var dev: float = absf(wr - MassSimConstants.TARGET_PLAYER_WIN_PCT)
 			var color: String = "#7dcea0" if dev < 6.0 else ("#ffb347" if dev < 12.0 else "#ff6b6b")
 			lines.append(
-				"• Spawn %s: [color=%s]%.1f%%[/color] WR (%d matches)"
+				"â€¢ Spawn %s: [color=%s]%.1f%%[/color] WR (%d matches)"
 				% [str(quad_id), color, wr, int(rec.get("battles", 0))]
 			)
 	_body.text = "\n".join(lines)

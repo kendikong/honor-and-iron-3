@@ -1,7 +1,7 @@
-class_name PlayerGrid
+﻿class_name PlayerGrid
 extends RefCounted
 
-## Logical terrain grid. Flat Array[int] — Godot 4.7 does not support Array[Array[int]].
+## Logical terrain grid. Flat Array[int] â€” Godot 4.7 does not support Array[Array[int]].
 
 var width: int
 var height: int
@@ -113,7 +113,7 @@ static func tile_extends_grass_phantom(tile_id: int) -> bool:
 			return false
 
 
-## Rows below map bottom: height → 1 … height+2 → 3. Else -1.
+## Rows below map bottom: height â†’ 1 â€¦ height+2 â†’ 3. Else -1.
 static func bottom_phantom_depth(grid: PlayerGrid, oob: Vector2i) -> int:
 	if oob.x < 0 or oob.x >= grid.width or oob.y < grid.height:
 		return -1

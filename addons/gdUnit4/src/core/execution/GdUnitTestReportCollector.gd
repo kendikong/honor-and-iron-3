@@ -1,4 +1,4 @@
-# Collects all reports seperated as warnings, failures and errors
+﻿# Collects all reports seperated as warnings, failures and errors
 class_name GdUnitTestReportCollector
 extends RefCounted
 

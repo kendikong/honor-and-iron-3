@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 
 ## Purpose: Global signal hub for the presentation layer. Managers and the view
 ## communicate ONLY through these signals (constitution: "signals up, never down";
@@ -51,7 +51,7 @@ signal planning_commit_events(events: Array)
 ## Emitted by BoardView once all push/displacement tweens from a batch have finished.
 signal push_animations_complete
 
-## Interface sliders (UI/text scale, panel width) saved live — combat hosts reload + apply.
+## Interface sliders (UI/text scale, panel width) saved live â€” combat hosts reload + apply.
 signal interface_settings_changed()
 
 @warning_ignore_restore("unused_signal")

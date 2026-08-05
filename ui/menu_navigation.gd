@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 
 var _registrations: Array[Dictionary] = []
 
@@ -36,7 +36,7 @@ func try_back(event: InputEvent, on_back: Callable, guard: Callable = Callable()
 		return false
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if guard.is_valid() and not bool(guard.call()):
-			return false  # Guard vetoed — do NOT consume the event either.
+			return false  # Guard vetoed â€” do NOT consume the event either.
 		on_back.call()
 		return true
 	return false

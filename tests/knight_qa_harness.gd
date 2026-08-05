@@ -170,7 +170,7 @@ static func boost_striker(unit: UnitState) -> void:
 
 static func events_have_retaliator_upgrade_push(events: Array, blocker_id: int) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.COLLISION:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.COLLISION:
 			var d: Dictionary = e.data
 			if (
 				int(d.get("pusher_id", -1)) == blocker_id
@@ -183,7 +183,7 @@ static func events_have_retaliator_upgrade_push(events: Array, blocker_id: int) 
 
 static func events_have_collision_for_unit(events: Array, unit_id: int) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.COLLISION:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.COLLISION:
 			if int(e.data.get("unit", -1)) == unit_id:
 				return true
 	return false
@@ -191,7 +191,7 @@ static func events_have_collision_for_unit(events: Array, unit_id: int) -> bool:
 
 static func events_have_chain_collision(events: Array, pushed_id: int, against_id: int) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.COLLISION:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.COLLISION:
 			var d: Dictionary = e.data
 			if int(d.get("unit", -1)) == pushed_id and int(d.get("against_unit", -1)) == against_id:
 				return true
@@ -200,7 +200,7 @@ static func events_have_chain_collision(events: Array, pushed_id: int, against_i
 
 static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_PUSHED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_PUSHED:
 			if int(e.data.get("unit", -1)) == unit_id:
 				return true
 	return false
@@ -264,9 +264,9 @@ static func has_status(unit: UnitState, status_type: GameEnums.StatusType) -> bo
 static func ability_has_effect(ability: AbilityData, effect_type: GameEnums.EffectType, upgraded: bool = false) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
-	for eff: EffectData in effects:
-		if eff != null and eff.type == effect_type:
+	var effects: Array[AbilityModule] = ability.upgraded_modules if upgraded else ability.modules
+	for eff: AbilityModule in effects:
+		if eff != null and eff.primary_type == effect_type:
 			return true
 	return false
 
@@ -278,11 +278,11 @@ static func ability_has_status_effect(
 ) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
-	for eff: EffectData in effects:
+	var effects: Array[AbilityModule] = ability.upgraded_modules if upgraded else ability.modules
+	for eff: AbilityModule in effects:
 		if eff == null:
 			continue
-		if eff.type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF]:
+		if eff.primary_type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF]:
 			if eff.status_type == status_type:
 				return true
 	return false
@@ -469,11 +469,11 @@ static func run_active_smoke(
 			ability_has_status_effect(ability, status_type, false),
 			"base effects must include status %s" % status_type,
 		)
-	if ability.upgraded_effects.size() > 0:
+	if ability.upgraded_modules.size() > 0:
 		assert_true(
 			failures, "%s/upgrade_data" % ability_id,
 			ability.upgrade_description.length() > 0,
-			"upgraded_effects require upgrade_description",
+			"upgraded_modules require upgrade_description",
 		)
 
 
@@ -1147,7 +1147,7 @@ static func run_kinetic_converter(failures: Array[String]) -> void:
 	var knight2: UnitState = result2.final_state.get_unit_by_id(10)
 	var str_amt: int = 0
 	for s: StatusData in knight2.active_statuses if knight2 else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_STR:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_STR:
 			str_amt = s.value
 	assert_true(
 		failures, "kinetic_converter/upgrade/str2",
@@ -1303,7 +1303,7 @@ static func _kinetic_redirection_has_stack_str(unit: UnitState) -> bool:
 	if unit == null:
 		return false
 	for s: StatusData in unit.active_statuses:
-		if s.type == GameEnums.StatusType.STAT_BUFF_STR and s.duration == -1:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_STR and s.duration == -1:
 			return true
 	return false
 
@@ -1316,7 +1316,7 @@ static func _kinetic_redirection_apply_full_block_hit(board: BoardState, unit_id
 	knight.armor = 0
 	var kept: Array[StatusData] = []
 	for s: StatusData in knight.active_statuses:
-		if s.type != GameEnums.StatusType.STAT_BUFF_DEF:
+		if s.primary_type != GameEnums.StatusType.STAT_BUFF_DEF:
 			kept.append(s)
 	knight.active_statuses = kept
 	knight.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 12))
@@ -1335,7 +1335,7 @@ static func _kinetic_redirection_apply_shield_hit(board: BoardState, unit_id: in
 	knight.armor = 10
 	var kept: Array[StatusData] = []
 	for s: StatusData in knight.active_statuses:
-		if s.type != GameEnums.StatusType.STAT_BUFF_DEF:
+		if s.primary_type != GameEnums.StatusType.STAT_BUFF_DEF:
 			kept.append(s)
 	knight.active_statuses = kept
 	knight._recalculate_stats()
@@ -1353,7 +1353,7 @@ static func _kinetic_redirection_apply_partial_hit(board: BoardState, unit_id: i
 	knight.armor = maxi(knight.armor, 5)
 	var has_def_buff := false
 	for s: StatusData in knight.active_statuses:
-		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_DEF:
 			has_def_buff = true
 			break
 	if not has_def_buff:
@@ -1542,7 +1542,7 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 	)
 	var intercept_dur: int = 0
 	for s: StatusData in after.active_statuses if after else []:
-		if s.type == GameEnums.StatusType.INTERCEPT:
+		if s.primary_type == GameEnums.StatusType.INTERCEPT:
 			intercept_dur = s.duration
 	assert_eq_int(
 		failures, "redirect_strike/intercept_duration",
@@ -1632,7 +1632,7 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 	var knight_after_base: UnitState = board_hit.get_unit_by_id(10)
 	var base_def_buff: bool = false
 	for s: StatusData in knight_after_base.active_statuses if knight_after_base else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_DEF:
 			base_def_buff = true
 	assert_true(
 		failures, "redirect_strike/base/no_def_on_intercept",
@@ -1673,7 +1673,7 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 	var redirect_up: AbilityData = ability_on_unit(knight_up, &"knight_redirect_strike")
 	assert_true(
 		failures, "redirect_strike/upgrade/intercept_flag",
-		redirect_up.upgraded_effects[0].amount == 1,
+		redirect_up.upgraded_modules[0].amount == 1,
 		"upgraded redirect strike must mark INTERCEPT with value 1 for [+] DEF",
 	)
 	var plan_up := Timeline.new()
@@ -1684,7 +1684,7 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 	var knight_up_mid: UnitState = board_up_hit.get_unit_by_id(20)
 	var def_after_one: int = 0
 	for s: StatusData in knight_up_mid.active_statuses if knight_up_mid else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_DEF:
 			def_after_one += s.value
 	assert_eq_int(
 		failures, "redirect_strike/upgrade/def_first_hit",
@@ -1695,7 +1695,7 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 	var knight_up_after: UnitState = board_up_hit.get_unit_by_id(20)
 	var def_total: int = 0
 	for s: StatusData in knight_up_after.active_statuses if knight_up_after else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_DEF:
 			def_total += s.value
 	assert_eq_int(
 		failures, "redirect_strike/upgrade/def_two_hits",
@@ -1717,7 +1717,7 @@ static func run_intercept_tactics(failures: Array[String]) -> void:
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	var def_amt: int = 0
 	for s: StatusData in after.active_statuses if after else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_DEF:
 			def_amt = s.value
 	assert_eq_int(
 		failures, "intercept_tactics/def_buff",
@@ -1744,7 +1744,7 @@ static func run_intercept_tactics(failures: Array[String]) -> void:
 	var after2: UnitState = result2.final_state.get_unit_by_id(10)
 	def_amt = 0
 	for s: StatusData in after2.active_statuses if after2 else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_DEF:
 			def_amt = s.value
 	assert_eq_int(
 		failures, "intercept_tactics/upgrade/def3",
@@ -1811,7 +1811,7 @@ static func damage_taken_pierce(board: BoardState, unit_id: int, raw_amount: int
 
 static func events_have_damage_pierce(events: Array, pierce: bool) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.MATH_TELEMETRY:
 			var d: Dictionary = e.data
 			if str(d.get("type", "")) == "damage" and bool(d.get("pierce", false)) == pierce:
 				return true
@@ -1821,7 +1821,7 @@ static func events_have_damage_pierce(events: Array, pierce: bool) -> bool:
 static func events_max_damage_floored(events: Array) -> int:
 	var best: int = 0
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.MATH_TELEMETRY:
 			var d: Dictionary = e.data
 			if str(d.get("type", "")) == "damage":
 				best = maxi(best, int(d.get("floored", 0)))
@@ -1831,7 +1831,7 @@ static func events_max_damage_floored(events: Array) -> int:
 static func events_max_damage_stat_val(events: Array) -> int:
 	var best: int = 0
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.MATH_TELEMETRY:
 			var d: Dictionary = e.data
 			if str(d.get("type", "")) == "damage":
 				best = maxi(best, int(d.get("stat_val", 0)))
@@ -1841,7 +1841,7 @@ static func events_max_damage_stat_val(events: Array) -> int:
 static func events_incoming_damage_to_unit(events: Array, unit_id: int) -> int:
 	var best: int = 0
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
 			var d: Dictionary = e.data
 			if int(d.get("unit", -1)) == unit_id:
 				best = maxi(best, int(d.get("amount", 0)))
@@ -1850,7 +1850,7 @@ static func events_incoming_damage_to_unit(events: Array, unit_id: int) -> int:
 
 static func events_have_damage_base(events: Array, base_power: int) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.MATH_TELEMETRY:
 			var d: Dictionary = e.data
 			if str(d.get("type", "")) == "damage" and int(d.get("base", -1)) == base_power:
 				return true
@@ -1859,7 +1859,7 @@ static func events_have_damage_base(events: Array, base_power: int) -> bool:
 
 static func events_have_status_removed(events: Array, unit_id: int, status_type: GameEnums.StatusType) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.STATUS_REMOVED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.STATUS_REMOVED:
 			var d: Dictionary = e.data
 			if int(d.get("unit", -1)) == unit_id and d.get("status_type", -1) == status_type:
 				return true
@@ -1868,7 +1868,7 @@ static func events_have_status_removed(events: Array, unit_id: int, status_type:
 
 static func events_have_terrain_changed(events: Array, coord: Vector2i) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.TERRAIN_CHANGED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.TERRAIN_CHANGED:
 			var c: Variant = e.data.get("coord", null)
 			if c is Vector2i and c == coord:
 				return true
@@ -1881,7 +1881,7 @@ static func events_have_status_on_unit(
 	status_type: GameEnums.StatusType,
 ) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.STATUS_APPLIED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.STATUS_APPLIED:
 			if int(e.data.get("unit", -1)) == unit_id and e.data.get("status_type") == status_type:
 				return true
 	return false
@@ -1916,7 +1916,7 @@ static func run_phalanx_stance(failures: Array[String]) -> void:
 	var def_amt: int = 0
 	if after0 != null:
 		for s: StatusData in after0.active_statuses:
-			if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+			if s.primary_type == GameEnums.StatusType.STAT_BUFF_DEF:
 				def_amt = s.value
 	assert_true(
 		failures, "phalanx_stance/def_amount",
@@ -1926,7 +1926,7 @@ static func run_phalanx_stance(failures: Array[String]) -> void:
 	var sturdy_before: StatusData = null
 	if after0 != null:
 		for s: StatusData in after0.active_statuses:
-			if s.type == GameEnums.StatusType.STURDY:
+			if s.primary_type == GameEnums.StatusType.STURDY:
 				sturdy_before = s
 	assert_true(
 		failures, "phalanx_stance/sturdy_has_duration",
@@ -2083,7 +2083,7 @@ static func run_taunting_strike(failures: Array[String]) -> void:
 	assert_true(
 		failures, "taunting_strike/upgrade/pull2",
 		ability_has_effect(strike_up, GameEnums.EffectType.PULL, true)
-		and strike_up.upgraded_effects[1].amount == 2,
+		and strike_up.upgraded_modules[1].amount == 2,
 		"upgraded taunting strike must PULL 2",
 	)
 	assert_eq_int(failures, "taunting_strike/upgrade/range", strike_up.upgraded_range_tiles, 3)
@@ -2673,9 +2673,9 @@ static func run_defensive_formation(failures: Array[String]) -> void:
 	var def_amt: int = 0
 	var sturdy_dur: int = 0
 	for s: StatusData in ally.active_statuses if ally else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_DEF:
 			def_amt = s.value
-		if s.type == GameEnums.StatusType.STURDY:
+		if s.primary_type == GameEnums.StatusType.STURDY:
 			sturdy_dur = s.duration
 	assert_eq_int(
 		failures, "defensive_formation/def_amount",
@@ -2834,7 +2834,7 @@ static func run_indomitable_will(failures: Array[String]) -> void:
 	)
 	var indo_duration: int = 0
 	for s: StatusData in after.active_statuses if after else []:
-		if s.type == GameEnums.StatusType.INDOMITABLE_WILL:
+		if s.primary_type == GameEnums.StatusType.INDOMITABLE_WILL:
 			indo_duration = s.duration
 	assert_eq_int(
 		failures, "indomitable_will/duration",
@@ -2857,7 +2857,7 @@ static func run_indomitable_will(failures: Array[String]) -> void:
 	)
 	var base_str: int = 0
 	for s: StatusData in expired.active_statuses if expired else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_STR:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_STR:
 			base_str += s.value
 	assert_eq_int(
 		failures, "indomitable_will/base/no_str_on_expire",
@@ -2879,7 +2879,7 @@ static func run_indomitable_will(failures: Array[String]) -> void:
 	)
 	var base_break_str: int = 0
 	for s: StatusData in broken_base.active_statuses if broken_base else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_STR:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_STR:
 			base_break_str += s.value
 	assert_eq_int(
 		failures, "indomitable_will/base/no_str_on_shield_break",
@@ -2922,7 +2922,7 @@ static func run_indomitable_will(failures: Array[String]) -> void:
 	)
 	var up_str: int = 0
 	for s: StatusData in expired_up.active_statuses if expired_up else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_STR:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_STR:
 			up_str += s.value
 	assert_eq_int(
 		failures, "indomitable_will/upgrade/str_on_expire",
@@ -2944,7 +2944,7 @@ static func run_indomitable_will(failures: Array[String]) -> void:
 	)
 	var break_str: int = 0
 	for s: StatusData in broken.active_statuses if broken else []:
-		if s.type == GameEnums.StatusType.STAT_BUFF_STR:
+		if s.primary_type == GameEnums.StatusType.STAT_BUFF_STR:
 			break_str += s.value
 	assert_eq_int(
 		failures, "indomitable_will/upgrade/shield_break_grants_str",

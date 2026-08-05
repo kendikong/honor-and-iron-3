@@ -41,28 +41,28 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_eq_int(
 		failures, "defensive_formation/contract/def_amount",
-		form.effects[0].amount,
+		form.modules[0].amount,
 		2,
 	)
 	_KnightQaHarness.assert_true(
 		failures, "defensive_formation/contract/upgrade_shield",
 		_KnightQaHarness.ability_has_effect(form, GameEnums.EffectType.ARMOR_UP, true),
 	)
-	for eff: EffectData in form.effects if form else []:
+	for eff: AbilityModule in form.modules if form else []:
 		if eff == null:
 			continue
-		if eff.type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ARMOR_UP]:
+		if eff.primary_type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ARMOR_UP]:
 			_KnightQaHarness.assert_true(
 				failures, "defensive_formation/contract/exclude_caster_base",
-				eff.modifiers.get("exclude_caster", false),
+				eff.legacy_modifiers.get("exclude_caster", false),
 				"base defensive formation buff effects must exclude caster",
 			)
-	for eff_up: EffectData in form.upgraded_effects if form else []:
+	for eff_up: AbilityModule in form.upgraded_modules if form else []:
 		if eff_up == null:
 			continue
-		if eff_up.type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ARMOR_UP]:
+		if eff_up.primary_type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ARMOR_UP]:
 			_KnightQaHarness.assert_true(
 				failures, "defensive_formation/contract/exclude_caster_upgrade",
-				eff_up.modifiers.get("exclude_caster", false),
+				eff_up.legacy_modifiers.get("exclude_caster", false),
 				"upgraded defensive formation buff effects must exclude caster",
 			)

@@ -1,4 +1,4 @@
-# default value provider, simple returns the initial value
+﻿# default value provider, simple returns the initial value
 class_name DefaultValueProvider
 extends ValueProvider
 

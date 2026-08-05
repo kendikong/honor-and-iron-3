@@ -1,9 +1,9 @@
-class_name PlanDependency
+﻿class_name PlanDependency
 extends RefCounted
 
 ## Cancels plans invalidated when a movement skill affects an ally (e.g. Swap).
 ## Premoves (including Swap) apply immediately in projected state; undoing or inserting
-## such a step drops every later entry on the combined timeline — all actors, both teams.
+## such a step drops every later entry on the combined timeline â€” all actors, both teams.
 
 
 static func ally_ids_affected_by_action(

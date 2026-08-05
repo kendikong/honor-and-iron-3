@@ -1,4 +1,4 @@
-class_name AITelemetryHUD
+﻿class_name AITelemetryHUD
 extends Window
 
 var _tree: Tree
@@ -94,7 +94,7 @@ func _on_telemetry_generated(telemetry: Dictionary) -> void:
 		for en in leth.enemies:
 			var n_en = _tree.create_item(n_leth)
 			n_en.set_text(0, "Enemy ID %d (%s)" % [en.id, en.class])
-			n_en.set_text(1, "Δ %.2f" % en.delta)
+			n_en.set_text(1, "Î” %.2f" % en.delta)
 			var tt = "Base (Eff HP: %.1f | Threat: %.2f | Exec: %.2f = %.1f)\n" % [en.b_eff, en.b_threat, en.b_exec, en.b_tot]
 			tt += "Final (Eff HP: %.1f | Threat: %.2f | Exec: %.2f = %.1f)" % [en.f_eff, en.f_threat, en.f_exec, en.f_tot]
 			n_en.set_tooltip_text(0, tt)
@@ -109,7 +109,7 @@ func _on_telemetry_generated(telemetry: Dictionary) -> void:
 		for al in surv.allies:
 			var n_al = _tree.create_item(n_surv)
 			n_al.set_text(0, "Ally ID %d (%s)" % [al.id, al.class])
-			n_al.set_text(1, "Δ %.2f" % al.delta)
+			n_al.set_text(1, "Î” %.2f" % al.delta)
 			var tt = "Base (Val: %.1f | Inc Dmg: %.1f | Post: %.1f)\n" % [al.b_val, al.b_inc, al.b_post]
 			tt += "Final (Val: %.1f | Inc Dmg: %.1f | Post: %.1f)" % [al.f_val, al.f_inc, al.f_post]
 			if al.f_death_pen: tt += "\nDEATH PENALTY APPLIED!"

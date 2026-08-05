@@ -1,4 +1,4 @@
-class_name CharacterGenProfile
+﻿class_name CharacterGenProfile
 extends RefCounted
 
 ## Tunable weights for procedural LPC character generation.
@@ -6,7 +6,7 @@ extends RefCounted
 signal changed
 
 const CONFIG_SECTION: String = "character_gen"
-## Shared with mana-seed-test — Godot user:// is per project name; weights live here instead.
+## Shared with mana-seed-test â€” Godot user:// is per project name; weights live here instead.
 const SHARED_USERDATA_PROJECT: String = "mana-seed-test"
 const CFG_FILE_NAME: String = "character_gen.cfg"
 const _CLASS_LOADOUT_DEFAULTS = preload("res://scripts/lpc/lpc_class_loadout_defaults.gd")

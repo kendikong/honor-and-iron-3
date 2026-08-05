@@ -1,4 +1,4 @@
-class_name TeamVector
+﻿class_name TeamVector
 extends RefCounted
 
 ## Purpose: Represents one candidate bundle of unit actions evaluated by the Commander AI.

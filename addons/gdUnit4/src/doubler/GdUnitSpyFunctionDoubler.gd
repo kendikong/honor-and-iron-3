@@ -1,4 +1,4 @@
-class_name GdUnitSpyFunctionDoubler
+﻿class_name GdUnitSpyFunctionDoubler
 extends GdFunctionDoubler
 
 

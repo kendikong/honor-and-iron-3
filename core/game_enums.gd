@@ -1,4 +1,4 @@
-class_name GameEnums
+﻿class_name GameEnums
 extends RefCounted
 
 ## Purpose: Central home for shared enums so systems compare typed values, never
@@ -165,13 +165,13 @@ enum AbilityKind {
 	UNIVERSAL_WAIT,   ## Exhaust marker (not shown in skill list).
 }
 
-## Timeline column for class-library cards (ability-data.md §1). Replaces AbilityKind for authored skills.
+## Timeline column for class-library cards (ability-data.md Â§1). Replaces AbilityKind for authored skills.
 enum PlannerGroup {
 	ACTION,    ## Action column; AP; consumes action slot; may contain ON_PRE/ON_POST modules.
 	PRE_MOVE,  ## Pre-Move column; MP; basic positioning; no action slot.
 }
 
-## Header cost primary/secondary resource (ability-data.md §1 cost block).
+## Header cost primary/secondary resource (ability-data.md Â§1 cost block).
 enum CostResource {
 	NONE,
 	AP,
@@ -179,20 +179,20 @@ enum CostResource {
 	HP,
 }
 
-## Header cost modifiers (ability-data.md §1).
+## Header cost modifiers (ability-data.md Â§1).
 enum CostModifier {
 	NONE,
 	ZERO_IF_ADJACENT_ENEMIES_GTE_N,
 }
 
-## When a module runs inside an ACTION skill (ability-data.md §2.1).
+## When a module runs inside an ACTION skill (ability-data.md Â§2.1).
 enum ModulePhase {
 	ON_ACTION,
 	ON_PRE,
 	ON_POST,
 }
 
-## Motion destination mode when primary effect is motion (ability-data.md §2.2).
+## Motion destination mode when primary effect is motion (ability-data.md Â§2.2).
 enum MotionMode {
 	NONE,
 	TO_EMPTY_TILE,
@@ -206,21 +206,21 @@ enum MotionMode {
 	ALLY_STEP,
 }
 
-## How a module obtains its aim (ability-data.md §2.5).
+## How a module obtains its aim (ability-data.md Â§2.5).
 enum AimBinding {
 	NEW_AIM,
 	SAME_AS_MODULE_N,
 	RULE_PICK,
 }
 
-## Range measurement origin (ability-data.md §3).
+## Range measurement origin (ability-data.md Â§3).
 enum RangeOrigin {
 	ACTOR,
 	LAST_TARGETED_TILE,
 	LAST_TARGETED_UNIT_TILE,
 }
 
-## Module gate — whether the module runs (ability-data.md §2.7).
+## Module gate â€” whether the module runs (ability-data.md Â§2.7).
 enum ModuleGate {
 	ALWAYS,
 	IF_KILL,
@@ -232,7 +232,7 @@ enum ModuleGate {
 	IF_NO_MOVE_THIS_TURN,
 }
 
-## Layer activation condition (ability-data.md §5).
+## Layer activation condition (ability-data.md Â§5).
 enum LayerCondition {
 	AT_RESOLUTION,
 	WHEN_DAMAGE_DEALT,
@@ -247,7 +247,7 @@ enum LayerCondition {
 	IF_FROM_BEHIND,
 }
 
-## Bundled keyword packages on a motion/damage module (ability-data.md §6).
+## Bundled keyword packages on a motion/damage module (ability-data.md Â§6).
 enum AbilityKeywordId {
 	NONE,
 	TRAMPLE,
@@ -268,7 +268,7 @@ enum TargetingMode {
 	ALLY_OR_SELF,
 }
 
-## Bitmask for ability targeting — editor checkboxes; combine freely.
+## Bitmask for ability targeting â€” editor checkboxes; combine freely.
 enum TargetingFlags {
 	SELF = 1,
 	ALLY = 2,

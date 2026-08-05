@@ -1,4 +1,4 @@
-class_name ClassIconDrawer
+﻿class_name ClassIconDrawer
 extends RefCounted
 
 ## Vector class icons for tactical aim mode (ported from board_view).

@@ -1,4 +1,4 @@
-class_name GdUnitHtmlReporterTestSessionHook
+﻿class_name GdUnitHtmlReporterTestSessionHook
 extends GdUnitBaseReporterTestSessionHook
 
 const GdUnitTools := preload("res://addons/gdUnit4/src/core/GdUnitTools.gd")

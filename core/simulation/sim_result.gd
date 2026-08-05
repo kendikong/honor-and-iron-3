@@ -1,4 +1,4 @@
-class_name SimResult
+﻿class_name SimResult
 extends RefCounted
 
 ## Purpose: The output of one simulate() call: the resulting board plus the

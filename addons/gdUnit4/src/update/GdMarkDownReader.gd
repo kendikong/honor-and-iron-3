@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 extends RefCounted
 
 const GdUnitUpdateClient = preload("res://addons/gdUnit4/src/update/GdUnitUpdateClient.gd")

@@ -193,7 +193,7 @@ static func _phase6_execute(failures: Array[String]) -> void:
 	var result: SimResult = PlanningChecklistHarness.simulate_committed(fix.director)
 	var visited: Array[Vector2i] = [PlanningChecklistHarness.TRAMPLE_START]
 	for ev: SimEvent in result.events:
-		if ev.type != GameEnums.SimEventType.UNIT_MOVED:
+		if ev.primary_type != GameEnums.SimEventType.UNIT_MOVED:
 			continue
 		if int(ev.data.get("actor", -1)) != 1:
 			continue

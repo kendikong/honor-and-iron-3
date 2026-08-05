@@ -1,0 +1,2 @@
+CODE = bruiser_factory.gd / knight_factory.gd etc.   |   LIBRARY = class_library_data.json (what game loads)
+Units: 13   Abilities with diffs: 0   Missing JSON: 0   JSON-only: 0

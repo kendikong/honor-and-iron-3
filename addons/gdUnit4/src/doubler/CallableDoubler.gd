@@ -1,4 +1,4 @@
-## The helper class to allow to double Callable
+﻿## The helper class to allow to double Callable
 ## Is just a wrapper to the original callable with the same function signature.
 ##
 ## Due to interface conflicts between 'Callable' and 'Object',

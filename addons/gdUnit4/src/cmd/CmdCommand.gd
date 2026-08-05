@@ -1,4 +1,4 @@
-class_name CmdCommand
+﻿class_name CmdCommand
 extends RefCounted
 
 var _name: String

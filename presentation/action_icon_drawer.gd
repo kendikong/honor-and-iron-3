@@ -1,4 +1,4 @@
-class_name ActionIconDrawer
+﻿class_name ActionIconDrawer
 extends RefCounted
 
 ## Small vector action icons for planning cursor (screen-stable size via caller scale).

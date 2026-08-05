@@ -1,4 +1,4 @@
-class_name AutobattlerAI
+﻿class_name AutobattlerAI
 extends RefCounted
 
 ## Purpose: Commander AI Pipeline for the Autobattler.

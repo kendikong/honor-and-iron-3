@@ -1,4 +1,4 @@
-class_name MapRenderProvenance
+﻿class_name MapRenderProvenance
 extends RefCounted
 
 ## Records every visual TileMapLayer placement during AutoDecorator / EcologySeeder.
@@ -194,7 +194,7 @@ static func _cell_in_footprint(pos: Vector2i, anchor: Vector2i, footprint: Vecto
 	)
 
 
-## 16×16 forest scatter that y-sorts over the 80×96 canopy — must not draw here.
+## 16Ã—16 forest scatter that y-sorts over the 80Ã—96 canopy â€” must not draw here.
 static func forest_occluded_by_tree_canopy(tree_anchor: Vector2i, cell: Vector2i) -> bool:
 	if cell == tree_anchor:
 		return false

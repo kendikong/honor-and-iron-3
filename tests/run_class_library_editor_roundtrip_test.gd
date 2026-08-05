@@ -1,6 +1,6 @@
 extends SceneTree
 
-## AD-5 / AD-5b BAR: class-library dump dirty-detection + effects→modules + planner callback.
+## AD-5 / AD-5b BAR: class-library dump dirty-detection + effectsâ†’modules + planner callback.
 ## SceneTree + _initialize (not Node --script): autoloads register; body checks run immediately.
 
 
@@ -76,19 +76,19 @@ func _check_dump_dirty_on_planner_and_tags(failures: Array[String]) -> void:
 
 
 func _check_effects_edit_rebuilds_modules(failures: Array[String]) -> void:
-	## Mirrors class_library_editor._resync_modules_from_effects: clear modules → finalize.
+	## Mirrors class_library_editor._resync_modules_from_effects: clear modules â†’ finalize.
 	var charge: AbilityData = _find_ability(&"bruiser", &"bruiser_charge_strike")
 	if charge == null:
 		failures.append("bruiser_charge_strike missing")
 		return
 	charge.finalize_modular()
-	if charge.modules.is_empty() or charge.effects.is_empty():
+	if charge.modules.is_empty() or charge.modules.is_empty():
 		failures.append("charge_strike missing modules/effects before edit")
 		return
 	var before_count: int = charge.modules.size()
-	var dmg: EffectData = null
-	for eff: EffectData in charge.effects:
-		if eff != null and eff.type == GameEnums.EffectType.DAMAGE:
+	var dmg: AbilityModule = null
+	for eff: AbilityModule in charge.modules:
+		if eff != null and eff.primary_type == GameEnums.EffectType.DAMAGE:
 			dmg = eff
 			break
 	if dmg == null:
@@ -104,7 +104,7 @@ func _check_effects_edit_rebuilds_modules(failures: Array[String]) -> void:
 		return
 	if charge.modules.size() != before_count:
 		failures.append(
-			"effects→modules resync changed module count %d → %d"
+			"effectsâ†’modules resync changed module count %d â†’ %d"
 			% [before_count, charge.modules.size()]
 		)
 	var strike: AbilityModule = charge.modules[charge.modules.size() - 1]
@@ -191,7 +191,7 @@ func _check_shape_resync_and_cost_dump(failures: Array[String]) -> void:
 			shape_ok = true
 			break
 	if not shape_ok and not bash.modules.is_empty():
-		## Shape may live on ability header only for some motion modules — still require dump dirty.
+		## Shape may live on ability header only for some motion modules â€” still require dump dirty.
 		pass
 	var dump2: String = ClassLibrarySchema.ability_data_dump(bash)
 	if dump == dump2:
@@ -222,7 +222,7 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 		failures.append("dict roundtrip lost tags")
 	if clone.primary_resource != swap.primary_resource:
 		failures.append("dict roundtrip lost primary_resource")
-	## Unknown tag must not apply (fail-loud — leave tags unchanged).
+	## Unknown tag must not apply (fail-loud â€” leave tags unchanged).
 	var bad := data.duplicate(true)
 	bad["tags"] = ["attack", "totally_fake_tag"]
 	var clone2 := AbilityData.new()
@@ -274,9 +274,9 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 	hp_skill.primary_value = 5
 	hp_skill.action_point_cost = 0
 	hp_skill.tags = [AbilityModuleBridge.TAG_ATTACK]
-	hp_skill.effects = [EffectData.new()]
-	hp_skill.effects[0].type = GameEnums.EffectType.DAMAGE
-	hp_skill.effects[0].amount = 1
+	hp_skill.modules = [AbilityModule.new()]
+	hp_skill.modules[0].primary_type = GameEnums.EffectType.DAMAGE
+	hp_skill.modules[0].amount = 1
 	hp_skill.finalize_modular()
 	var hp_dict: Dictionary = ClassLibrarySchema.ability_to_dict(hp_skill)
 	if int(hp_dict.get("primary_resource", -1)) != int(GameEnums.CostResource.HP):
@@ -356,7 +356,7 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 		failures.append("PRE_MOVE OptionButton must offer only MP")
 	action_ob.free()
 	pre_ob.free()
-	## Planner switch via shared editor callback (AD-5b) — not bare enforce alone.
+	## Planner switch via shared editor callback (AD-5b) â€” not bare enforce alone.
 	var switch_ab := AbilityData.new()
 	switch_ab.planner_group = GameEnums.PlannerGroup.ACTION
 	switch_ab.kind = GameEnums.AbilityKind.CLASS_SKILL
@@ -377,7 +377,7 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 	ClassLibrarySchema.populate_legal_primary_option_button(switch_ob, switch_ab)
 	if switch_ob.item_count != 1 or switch_ob.get_item_id(0) != int(GameEnums.CostResource.MP):
 		failures.append("after apply_planner_group_change OptionButton must offer only MP")
-	## ACTION←PRE_MOVE via same callback: MP → AP; dropdown AP+HP; kind CLASS_SKILL.
+	## ACTIONâ†PRE_MOVE via same callback: MP â†’ AP; dropdown AP+HP; kind CLASS_SKILL.
 	ClassLibrarySchema.apply_planner_group_change(switch_ab, GameEnums.PlannerGroup.ACTION)
 	if switch_ab.planner_group != GameEnums.PlannerGroup.ACTION:
 		failures.append("apply_planner_group_change did not set ACTION")
@@ -388,17 +388,17 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 	ClassLibrarySchema.populate_legal_primary_option_button(switch_ob, switch_ab)
 	if switch_ob.item_count != 2:
 		failures.append("after apply_planner_group_change to ACTION OptionButton want 2 items")
-	## Legal primary preserved: ACTION AP → stays AP (no stomp).
+	## Legal primary preserved: ACTION AP â†’ stays AP (no stomp).
 	switch_ab.primary_resource = GameEnums.CostResource.AP
 	switch_ab.primary_value = 3
 	ClassLibrarySchema.apply_planner_group_change(switch_ab, GameEnums.PlannerGroup.ACTION)
 	if switch_ab.primary_resource != GameEnums.CostResource.AP or switch_ab.primary_value != 3:
 		failures.append("apply_planner_group_change must keep legal AP primary")
-	## Displacement flag follows effects, not column (ACTION + MOVE → is_movement_skill true).
-	var move_eff := EffectData.new()
-	move_eff.type = GameEnums.EffectType.MOVE
+	## Displacement flag follows effects, not column (ACTION + MOVE â†’ is_movement_skill true).
+	var move_eff := AbilityModule.new()
+	move_eff.primary_type = GameEnums.EffectType.MOVE
 	move_eff.amount = 2
-	switch_ab.effects = [move_eff]
+	switch_ab.modules = [move_eff]
 	ClassLibrarySchema.apply_planner_group_change(switch_ab, GameEnums.PlannerGroup.ACTION)
 	if not switch_ab.is_movement_skill:
 		failures.append("ACTION+MOVE must set is_movement_skill via apply_planner_group_change")
@@ -415,9 +415,9 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 	dict_switch.action_point_cost = 0
 	dict_switch.movement_point_cost = 2
 	dict_switch.tags = [AbilityModuleBridge.TAG_ATTACK]
-	dict_switch.effects = [EffectData.new()]
-	dict_switch.effects[0].type = GameEnums.EffectType.DAMAGE
-	dict_switch.effects[0].amount = 1
+	dict_switch.modules = [AbilityModule.new()]
+	dict_switch.modules[0].primary_type = GameEnums.EffectType.DAMAGE
+	dict_switch.modules[0].amount = 1
 	dict_switch.finalize_modular()
 	var dict_payload: Dictionary = ClassLibrarySchema.ability_to_dict(dict_switch)
 	dict_payload["planner_group"] = GameEnums.PlannerGroup.PRE_MOVE
@@ -441,11 +441,11 @@ func _check_dict_roundtrip_modular_header(failures: Array[String]) -> void:
 	if editor_src.find("ClassLibrarySchema.apply_planner_group_change") < 0:
 		failures.append("class_library_editor.gd must call ClassLibrarySchema.apply_planner_group_change")
 	if editor_src.find("enforce_planner_cost_coupling(ability)") >= 0:
-		## Only allowed inside schema apply_planner_group_change — editor must not inline it.
+		## Only allowed inside schema apply_planner_group_change â€” editor must not inline it.
 		var planner_bind_idx: int = editor_src.find("\"planner_group\"")
 		if planner_bind_idx >= 0:
 			var slice: String = editor_src.substr(planner_bind_idx, 400)
 			if slice.find("enforce_planner_cost_coupling") >= 0:
 				failures.append(
-					"planner_group OptionButton must not inline enforce — use apply_planner_group_change"
+					"planner_group OptionButton must not inline enforce â€” use apply_planner_group_change"
 				)

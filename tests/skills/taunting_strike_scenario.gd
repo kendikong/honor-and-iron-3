@@ -23,7 +23,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/damage_amount",
-		strike != null and strike.effects[0].amount == 1,
+		strike != null and strike.modules[0].amount == 1,
 		"taunting strike base DAMAGE must be ATK 1",
 	)
 	_KnightQaHarness.assert_true(
@@ -32,7 +32,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/pull_amount",
-		strike != null and strike.effects[1].amount == 1,
+		strike != null and strike.modules[1].amount == 1,
 		"taunting strike base PULL must be 1",
 	)
 	_KnightQaHarness.assert_true(

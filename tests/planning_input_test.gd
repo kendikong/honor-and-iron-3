@@ -10,7 +10,7 @@ static func run_all(failures: Array[String]) -> void:
 	var probe: CombatDirector = CombatDirector.new()
 	if probe == null:
 		failures.append(
-			"PlanningInputTest: CombatDirector.new() failed — EventBus/autoload not ready",
+			"PlanningInputTest: CombatDirector.new() failed â€” EventBus/autoload not ready",
 		)
 		return
 	var tests: Array[Callable] = [
@@ -76,10 +76,10 @@ static func _bowling_charge_arm_fixture() -> Dictionary:
 	dash.display_name = "Bowling Charge"
 	dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	dash.targeting_flags = AbilityData._targeting_mode_to_flags(dash.targeting_mode)
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
+	var dash_eff := AbilityModule.new()
+	dash_eff.primary_type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	var unit := UnitState.new()
 	unit.id = 1
 	unit.team = GameEnums.Team.PLAYER
@@ -121,7 +121,7 @@ static func _test_undoable_action_director(failures: Array[String]) -> void:
 	if director.unit_has_undoable_action(1):
 		failures.append("PlanningInputTest: empty plan should not be undoable")
 	var move := TimelineAction.new()
-	move.type = GameEnums.ActionType.MOVE
+	move.primary_type = GameEnums.ActionType.MOVE
 	move.actor_id = 1
 	move.target_coord = Vector2i(3, 2)
 	director.plan_pre_move.entries.append(move)
@@ -206,10 +206,10 @@ static func _test_planning_action_range_tiles(failures: Array[String]) -> void:
 	unit.position = Vector2i(3, 3)
 	board.units = [unit]
 	var dash := AbilityData.new()
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
+	var dash_eff := AbilityModule.new()
+	dash_eff.primary_type = GameEnums.EffectType.DASH
 	dash_eff.amount = 2
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	var tiles: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
 		board, unit, dash, unit.position, [],
 	)
@@ -228,18 +228,18 @@ static func _test_planning_action_range_tiles(failures: Array[String]) -> void:
 
 static func _test_offensive_dash_heuristic(failures: Array[String]) -> void:
 	var bulldoze_dash := AbilityData.new()
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
+	var dash_eff := AbilityModule.new()
+	dash_eff.primary_type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
-	var bulldoze_eff := EffectData.new()
-	bulldoze_eff.type = GameEnums.EffectType.BULLDOZE
+	var bulldoze_eff := AbilityModule.new()
+	bulldoze_eff.primary_type = GameEnums.EffectType.BULLDOZE
 	bulldoze_eff.amount = 1
-	bulldoze_dash.effects = [dash_eff, bulldoze_eff]
+	bulldoze_dash.modules = [dash_eff, bulldoze_eff]
 	bulldoze_dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	if not AbilitySystem.ability_is_offensive_dash(bulldoze_dash):
 		failures.append("PlanningInputTest: dash+bulldoze enemy skill should be offensive dash")
 	var mobility_dash := AbilityData.new()
-	mobility_dash.effects = [dash_eff]
+	mobility_dash.modules = [dash_eff]
 	mobility_dash.targeting_mode = GameEnums.TargetingMode.SELF
 	mobility_dash.can_target_self = true
 	if AbilitySystem.ability_is_offensive_dash(mobility_dash):
@@ -253,10 +253,10 @@ static func _test_action_range_auto_run_ap_gate(failures: Array[String]) -> void
 	var skill := AbilityData.new()
 	skill.kind = GameEnums.AbilityKind.CLASS_SKILL
 	skill.action_point_cost = 3
-	var dmg := EffectData.new()
-	dmg.type = GameEnums.EffectType.DAMAGE
+	var dmg := AbilityModule.new()
+	dmg.primary_type = GameEnums.EffectType.DAMAGE
 	dmg.amount = 2
-	skill.effects = [dmg]
+	skill.modules = [dmg]
 	var run_tile := Vector2i(5, 2)
 	if not AbilitySystem.movement_requires_run(board, unit, run_tile, []):
 		failures.append("PlanningInputTest: auto-run AP gate setup tile should require run")
@@ -304,9 +304,9 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 	var dash := AbilityData.new()
 	dash.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
 	dash.planner_group = GameEnums.PlannerGroup.PRE_MOVE
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
-	dash.effects = [dash_eff]
+	var dash_eff := AbilityModule.new()
+	dash_eff.primary_type = GameEnums.EffectType.DASH
+	dash.modules = [dash_eff]
 	var unit := UnitState.new()
 	unit.id = 1
 	var run_only_slots: Dictionary = {
@@ -350,7 +350,7 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	var walk_swap_slots: Dictionary = {
 		"pre": [
 			TimelineAction.make_move(
@@ -524,10 +524,10 @@ static func _test_cursor_omits_unaffordable_run_skill_pair(failures: Array[Strin
 	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	dash.display_name = "Bowling Charge"
 	dash.action_point_cost = 3
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
+	var dash_eff := AbilityModule.new()
+	dash_eff.primary_type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	var unit := UnitState.new()
 	unit.id = 1
 	unit.team = GameEnums.Team.PLAYER
@@ -708,9 +708,9 @@ static func _test_audit_regression_fixes(failures: Array[String]) -> void:
 	var dash := AbilityData.new()
 	dash.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
 	dash.planner_group = GameEnums.PlannerGroup.PRE_MOVE
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
-	dash.effects = [dash_eff]
+	var dash_eff := AbilityModule.new()
+	dash_eff.primary_type = GameEnums.EffectType.DASH
+	dash.modules = [dash_eff]
 	unit.active_abilities = [heal, dash]
 	board.units = [unit]
 	GridSystem.set_occupant(board, unit.position, unit.id)
@@ -762,10 +762,10 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	unit.ability.points_left = 2
 	var dash := AbilityData.new()
 	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
+	var dash_eff := AbilityModule.new()
+	dash_eff.primary_type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	dash.display_name = "Bowling Charge"
 	dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	dash.targeting_flags = AbilityData._targeting_mode_to_flags(dash.targeting_mode)
@@ -890,10 +890,10 @@ static func _test_awaiting_plan_refresh(failures: Array[String]) -> void:
 	var dash := AbilityData.new()
 	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	dash.display_name = "Bowling Charge"
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
+	var dash_eff := AbilityModule.new()
+	dash_eff.primary_type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	unit.active_abilities = [dash]
 	board.units = [unit]
 	GridSystem.set_occupant(board, unit.position, unit.id)
@@ -1045,7 +1045,7 @@ static func _action_from_slots(slots: Dictionary) -> TimelineAction:
 
 
 static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
-	## §2.7 gated-aim: dash-only when gate inactive; stay awaiting until follow-up aimed when gate active.
+	## Â§2.7 gated-aim: dash-only when gate inactive; stay awaiting until follow-up aimed when gate active.
 	var empty_fixture: Dictionary = _violent_collision_planning_fixture(failures)
 	if empty_fixture.is_empty():
 		return
@@ -1180,7 +1180,7 @@ static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
 			failures.append("PlanningInputTest: violent_collision finalized module_coords[0] mismatch")
 		if not finalized.has_module_coord(1) or finalized.get_module_coord(1) != follow_cell:
 			failures.append("PlanningInputTest: violent_collision finalized module_coords[1] mismatch")
-	## §2.7 rule 5 + preview==sim: completed gated plan must preview_commit_valid and resolve to follow-up tile.
+	## Â§2.7 rule 5 + preview==sim: completed gated plan must preview_commit_valid and resolve to follow-up tile.
 	if finalized != null and not finalized.awaiting_target:
 		var valid_reason: String = collide_director.preview_commit_valid(1, [finalized])
 		if valid_reason != "":
@@ -1251,7 +1251,7 @@ static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
 			for ev2: SimEvent in illegal_sim.events:
 				if (
 					ev2 != null
-					and ev2.type == GameEnums.SimEventType.ACTION_FAILED
+					and ev2.primary_type == GameEnums.SimEventType.ACTION_FAILED
 					and String(ev2.data.get("reason", "")) == "gated_followup_invalid_dest"
 				):
 					illegal_failed = true
@@ -1260,7 +1260,7 @@ static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
 				failures.append(
 					"PlanningInputTest: violent_collision illegal follow-up must ACTION_FAILED gated_followup_invalid_dest",
 				)
-			## Missing follow-up on a completed (non-awaiting) collision plan → fail loud.
+			## Missing follow-up on a completed (non-awaiting) collision plan â†’ fail loud.
 			var missing := TimelineAction.make_ability(
 				1, collide_skill, dash_cell, -1, GameEnums.MoveTiming.PRE_ACTION, [],
 			)
@@ -1280,7 +1280,7 @@ static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
 			for ev: SimEvent in miss_sim.events:
 				if (
 					ev != null
-					and ev.type == GameEnums.SimEventType.ACTION_FAILED
+					and ev.primary_type == GameEnums.SimEventType.ACTION_FAILED
 					and String(ev.data.get("reason", "")) == "gated_followup_missing_aim"
 				):
 					miss_failed = true
@@ -1327,9 +1327,9 @@ static func _test_action_range_hidden_after_premove_mp(failures: Array[String]) 
 	swap.action_point_cost = 0
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	var swap_eff := EffectData.new()
-	swap_eff.type = GameEnums.EffectType.SWAP
-	swap.effects = [swap_eff]
+	var swap_eff := AbilityModule.new()
+	swap_eff.primary_type = GameEnums.EffectType.SWAP
+	swap.modules = [swap_eff]
 	if not AbilitySystem.can_show_planning_action_range_after_premove(
 		board, unit, swap, Vector2i(1, 2), false,
 	):
@@ -1354,7 +1354,7 @@ static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String
 	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	bash.action_point_cost = 1
 	bash.range_tiles = 1
-	bash.effects = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
+	bash.modules = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1421,7 +1421,7 @@ static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]
 	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	bash.action_point_cost = 1
 	bash.range_tiles = 1
-	bash.effects = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
+	bash.modules = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1482,7 +1482,7 @@ static func _test_shield_bash_preview_pushes(failures: Array[String]) -> void:
 	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	bash.action_point_cost = 1
 	bash.range_tiles = 1
-	bash.effects = [
+	bash.modules = [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 2),
 	]
@@ -1668,7 +1668,7 @@ static func _test_committed_action_approach_uses_premove_slot(failures: Array[St
 	hook.range_tiles = 3
 	hook.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	hook.targeting_flags = AbilityData._targeting_mode_to_flags(hook.targeting_mode)
-	hook.effects = [
+	hook.modules = [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
 		DataLibrary._effect(GameEnums.EffectType.PULL, 2),
 	]
@@ -1768,10 +1768,10 @@ static func _test_undo_movement_action_preserves_premove(failures: Array[String]
 	trample.action_point_cost = 1
 	trample.movement_point_cost = 2
 	trample.targeting_flags = GameEnums.TargetingFlags.TILE
-	var move_eff := EffectData.new()
-	move_eff.type = GameEnums.EffectType.MOVE
+	var move_eff := AbilityModule.new()
+	move_eff.primary_type = GameEnums.EffectType.MOVE
 	move_eff.amount = 2
-	trample.effects = [move_eff]
+	trample.modules = [move_eff]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1828,13 +1828,13 @@ static func _test_swap_undo_cascades_all_plans_after(failures: Array[String]) ->
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	var bash := AbilityData.new()
 	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	bash.id = &"knight_shield_bash"
 	bash.action_point_cost = 1
 	bash.range_tiles = 1
-	bash.effects = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
+	bash.modules = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1901,7 +1901,7 @@ static func _test_walk_then_swap_commit_appends_skill(failures: Array[String]) -
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1944,9 +1944,9 @@ static func _test_walk_then_swap_commit_appends_skill(failures: Array[String]) -
 			"PlanningInputTest: walk-then-swap expected 2 pre steps got %d" % k1_steps.size(),
 		)
 		return
-	if k1_steps[0].type != GameEnums.ActionType.MOVE:
+	if k1_steps[0].primary_type != GameEnums.ActionType.MOVE:
 		failures.append("PlanningInputTest: walk-then-swap first step must be MOVE")
-	if k1_steps[1].type != GameEnums.ActionType.ABILITY:
+	if k1_steps[1].primary_type != GameEnums.ActionType.ABILITY:
 		failures.append("PlanningInputTest: walk-then-swap second step must be swap ABILITY")
 
 
@@ -1967,7 +1967,7 @@ static func _test_swap_ally_out_of_range_click_parity(failures: Array[String]) -
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -2055,7 +2055,7 @@ static func _test_swap_refresh_updates_live_board(failures: Array[String]) -> vo
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER

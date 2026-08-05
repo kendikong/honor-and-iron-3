@@ -1,4 +1,4 @@
-class_name Level2BalancePanel
+﻿class_name Level2BalancePanel
 extends VBoxContainer
 
 signal inspect_requested(title: String, body: String, meta: Dictionary)
@@ -30,7 +30,7 @@ func _init() -> void:
 	hbox.add_child(tier_vbox)
 
 	var tier_lbl := Label.new()
-	tier_lbl.text = "Algorithmic S–F Tier List"
+	tier_lbl.text = "Algorithmic Sâ€“F Tier List"
 	MassSimTheme.style_muted(tier_lbl)
 	tier_vbox.add_child(tier_lbl)
 
@@ -65,7 +65,7 @@ func bind_report(report: MassSimBatchReport) -> void:
 			tag_text = " [%s]" % ", ".join(tags)
 		item.set_text(
 			0,
-			"%s-Tier: %s (%.1f%% · n=%d)%s"
+			"%s-Tier: %s (%.1f%% Â· n=%d)%s"
 			% [
 				String(row["tier"]),
 				report.class_display_name(row["class_id"]),
@@ -79,13 +79,13 @@ func bind_report(report: MassSimBatchReport) -> void:
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append("[b]Distribution Highlights[/b]")
 	for snippet: Dictionary in report.matchup_snippets:
-		lines.append("• %s — %s" % [snippet["label"], snippet["detail"]])
+		lines.append("â€¢ %s â€” %s" % [snippet["label"], snippet["detail"]])
 	lines.append("")
 	lines.append("[b]Counterplay Index (heuristic)[/b]")
 	if report.tier_rows.size() >= 2:
 		var worst: Dictionary = report.tier_rows[report.tier_rows.size() - 1]
 		lines.append(
-			"• %s flagged — %.1f%% WR, review hard counters."
+			"â€¢ %s flagged â€” %.1f%% WR, review hard counters."
 			% [report.class_display_name(worst["class_id"]), float(worst["win_rate"])]
 		)
 	_detail.text = "\n".join(lines)
@@ -100,7 +100,7 @@ func _on_tier_selected() -> void:
 		var d: Dictionary = row as Dictionary
 		inspect_requested.emit(
 			"Class: %s" % str(d.get("class_id", "")),
-			"Tier %s · Win rate %.1f%% · %d appearances"
+			"Tier %s Â· Win rate %.1f%% Â· %d appearances"
 			% [d.get("tier", "?"), float(d.get("win_rate", 0.0)), int(d.get("appearances", 0))],
 			d,
 		)

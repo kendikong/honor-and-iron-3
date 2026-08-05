@@ -1,4 +1,4 @@
-class_name MassSimTelemetryAccumulator
+﻿class_name MassSimTelemetryAccumulator
 extends RefCounted
 
 const MAX_CELLS := 64

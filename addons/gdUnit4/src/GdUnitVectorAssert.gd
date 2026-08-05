@@ -1,4 +1,4 @@
-## An Assertion Tool to verify Vector values
+﻿## An Assertion Tool to verify Vector values
 @abstract class_name GdUnitVectorAssert
 extends GdUnitAssert
 

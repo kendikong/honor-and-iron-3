@@ -1,4 +1,4 @@
-class_name Level7IntegrityPanel
+﻿class_name Level7IntegrityPanel
 extends VBoxContainer
 
 signal inspect_requested(title: String, body: String, meta: Dictionary)
@@ -29,18 +29,18 @@ func bind_report(report: MassSimBatchReport) -> void:
 
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append("[b]Sample Size & Distribution[/b]")
-	lines.append("• Battles analyzed: %d / %d confidence gate" % [
+	lines.append("â€¢ Battles analyzed: %d / %d confidence gate" % [
 		report.total_battles, MassSimConstants.MIN_SAMPLE_FULL_CONFIDENCE,
 	])
-	lines.append("• Unique classes observed: %d / %d roster" % [
+	lines.append("â€¢ Unique classes observed: %d / %d roster" % [
 		report.unique_classes_seen, report.total_player_classes,
 	])
 	if not report.missing_classes.is_empty():
-		lines.append("• Missing from batch: %s" % ", ".join(report.missing_classes))
-	lines.append("• Meta diversity: %.0f%%" % report.meta_diversity_pct)
-	lines.append("• Integrity score: [b]%.0f / 100[/b]" % report.integrity_score)
+		lines.append("â€¢ Missing from batch: %s" % ", ".join(report.missing_classes))
+	lines.append("â€¢ Meta diversity: %.0f%%" % report.meta_diversity_pct)
+	lines.append("â€¢ Integrity score: [b]%.0f / 100[/b]" % report.integrity_score)
 	for note: String in report.integrity_notes:
-		lines.append("  – %s" % note)
+		lines.append("  â€“ %s" % note)
 	lines.append("")
 	lines.append("[b]Matchup Confidence Intervals (Wilson 95%%)[/b]")
 	for row: Dictionary in report.tier_rows.slice(0, 8):
@@ -48,7 +48,7 @@ func bind_report(report: MassSimBatchReport) -> void:
 		var wins: int = int(round(float(row.get("win_rate", 0.0)) / 100.0 * float(appearances)))
 		var wilson: float = report.wilson_margin(wins, appearances)
 		lines.append(
-			"• %s: %.1f%% ± %.1f%% (n=%d, tier %s)"
+			"â€¢ %s: %.1f%% Â± %.1f%% (n=%d, tier %s)"
 			% [
 				report.class_display_name(row["class_id"]),
 				float(row["win_rate"]),

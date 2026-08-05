@@ -1,7 +1,7 @@
-class_name AutobattlerControlPanel
+﻿class_name AutobattlerControlPanel
 extends CanvasLayer
 
-## Collapsible autobattler controls — small top-right toggle, expands on demand.
+## Collapsible autobattler controls â€” small top-right toggle, expands on demand.
 
 const PANEL_WIDTH: int = 260
 const PANEL_HEIGHT_EXPANDED: float = 196.0
@@ -150,7 +150,7 @@ func _set_collapsed(collapsed: bool) -> void:
 	if _title_label != null:
 		_title_label.visible = not _collapsed
 	if _toggle_btn != null:
-		_toggle_btn.text = "AI" if _collapsed else "▾"
+		_toggle_btn.text = "AI" if _collapsed else "â–¾"
 		_toggle_btn.tooltip_text = "Open autobattler controls" if _collapsed else "Collapse"
 	if _root != null:
 		var height: float = PANEL_HEIGHT_COLLAPSED if _collapsed else PANEL_HEIGHT_EXPANDED

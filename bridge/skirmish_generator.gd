@@ -1,7 +1,7 @@
-class_name SkirmishGenerator
+﻿class_name SkirmishGenerator
 extends RefCounted
 
-## Procedural skirmish map generation — grid, walkability bake, MVP spawns.
+## Procedural skirmish map generation â€” grid, walkability bake, MVP spawns.
 
 class SkirmishConfig:
 	var size_preset: Vector2i = Vector2i(32, 16)

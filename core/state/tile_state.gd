@@ -1,4 +1,4 @@
-class_name TileState
+﻿class_name TileState
 extends RefCounted
 
 ## Purpose: The live state of one grid cell.

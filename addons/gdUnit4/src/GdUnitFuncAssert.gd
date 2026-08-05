@@ -1,4 +1,4 @@
-## An Assertion Tool to verify function callback values
+﻿## An Assertion Tool to verify function callback values
 @abstract class_name GdUnitFuncAssert
 extends GdUnitAssert
 

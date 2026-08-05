@@ -1,4 +1,4 @@
-class_name GridSystem
+﻿class_name GridSystem
 extends RefCounted
 
 ## Purpose: Owns grid queries and occupancy (and nothing else).

@@ -1,4 +1,4 @@
-class_name GdUnitReportWriter
+﻿class_name GdUnitReportWriter
 extends RefCounted
 
 

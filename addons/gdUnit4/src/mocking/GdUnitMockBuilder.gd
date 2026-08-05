@@ -1,4 +1,4 @@
-class_name GdUnitMockBuilder
+﻿class_name GdUnitMockBuilder
 extends GdUnitClassDoubler
 
 const GdUnitTools := preload("res://addons/gdUnit4/src/core/GdUnitTools.gd")

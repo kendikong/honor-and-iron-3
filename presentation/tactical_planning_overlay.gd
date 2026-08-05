@@ -1,4 +1,4 @@
-class_name TacticalPlanningOverlay
+﻿class_name TacticalPlanningOverlay
 extends Node2D
 
 ## Range tints, move route, aim icon, intent arrows, hover tile.
@@ -7,7 +7,7 @@ extends Node2D
 ## - BLUE (_hover_move_tiles): legal pre-move OR post-move destinations (MP budget only).
 ## - RED (_hover_action_range_tiles): selected skill range from projected unit position
 ##   (timeline projection). Phase-2 movement endpoints use dash/move tiles from that
-##   same origin — not cursor-shifted hypothetical stand cells.
+##   same origin â€” not cursor-shifted hypothetical stand cells.
 
 const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
 const _COLOR_ACTION_RANGE := Color(0.92, 0.38, 0.32, 0.20)
@@ -26,7 +26,7 @@ const _COLOR_TARGET := Color(0.98, 0.72, 0.38, 0.85)
 const _COLOR_DRAGPATH := Color(0.98, 0.88, 0.38, 0.95)
 const _COLOR_DANGER := Color(0.9, 0.2, 0.2, 0.2)
 const _COLOR_SELECT_TILE := Color(0.36, 0.62, 0.92, 0.35)
-## Route widths in map-local px (MapRoot scale applies on screen — do not divide by ui_scale).
+## Route widths in map-local px (MapRoot scale applies on screen â€” do not divide by ui_scale).
 const _ROUTE_CORNER_R: float = 5.0
 const _ROUTE_GLOW_W: float = 8.0
 const _ROUTE_OUTLINE_W: float = 5.0
@@ -367,7 +367,7 @@ func restore_committed_display() -> void:
 
 ## Promote the painted live intent to committed display (move-preview intent truth).
 ## Locks the next preview_updated so director refresh cannot replace that picture.
-## Keeps preview_pushes — commit ratifies the full live picture (including forced movement).
+## Keeps preview_pushes â€” commit ratifies the full live picture (including forced movement).
 func promote_live_preview_to_committed() -> void:
 	_committed_preview.copy_from(_live_preview)
 	if _director != null and _director.base_board != null:
@@ -865,7 +865,7 @@ func _flush_hover_recompute() -> void:
 
 func _on_preview_updated(result: SimResult) -> void:
 	## Intent truth: after promote_live_preview_to_committed, do not rebuild ghosts from a
-	## second sim — keep the ratified picture (including preview_board pointer).
+	## second sim â€” keep the ratified picture (including preview_board pointer).
 	if _lock_committed_from_intent:
 		_lock_committed_from_intent = false
 		_has_stashed_committed = false
@@ -1045,7 +1045,7 @@ func _draw_ability_intents() -> void:
 				and AbilitySystem.ability_has_movement_effect(action.ability)
 				and action.waypoints.is_empty()
 			):
-				## Committed action path must not use _pending_move_route_leg — that follows the
+				## Committed action path must not use _pending_move_route_leg â€” that follows the
 				## active move-timing slot (post-move) and falls back to a straight diagonal.
 				if intent_cells.size() <= 2:
 					var path_leg: Array = CombatPlanningPreview.committed_action_route_leg(
@@ -1523,7 +1523,7 @@ func _pending_move_route_leg(unit_id: int, prev: CombatPlanningPreview) -> Array
 	return CombatPlanningPreview.pending_move_route_leg(unit_id, prev, _director, _board)
 
 
-## Live/drag move arrow — same leg slice as commit preview.
+## Live/drag move arrow â€” same leg slice as commit preview.
 func _interaction_move_route(unit_id: int, prev: CombatPlanningPreview, route: Array) -> Array:
 	var leg: Array = _pending_move_route_leg(unit_id, prev)
 	if leg.size() >= 2:
@@ -2095,7 +2095,7 @@ func _facing_toward(from: Vector2i, to: Vector2i) -> int:
 func _proj_unit(unit_id: int) -> UnitState:
 	if unit_id < 0:
 		return null
-	# Match board_view: ranges/selection use committed projection only — never live hover board.
+	# Match board_view: ranges/selection use committed projection only â€” never live hover board.
 	if _director != null and _director.projected_state != null:
 		var proj_u := _director.projected_state.get_unit_by_id(unit_id)
 		if proj_u != null:
@@ -2142,7 +2142,7 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 
 
 ## Action-range anchor: committed projection plus live move-preview stand (intent truth).
-## Phase-2 armed movement skills keep projected stand — dash endpoints come from there.
+## Phase-2 armed movement skills keep projected stand â€” dash endpoints come from there.
 func _intent_stand_origin(unit: UnitState) -> Vector2i:
 	var projected: Vector2i = _proj_origin(unit)
 	if unit == null:
@@ -2172,8 +2172,8 @@ func _selected_ability_data(unit: UnitState, ability_index: int) -> AbilityData:
 func _dash_amount(ability: AbilityData) -> int:
 	if ability == null:
 		return 0
-	for eff: EffectData in ability.effects:
-		if eff.type == GameEnums.EffectType.DASH:
+	for eff: AbilityModule in ability.modules:
+		if eff.primary_type == GameEnums.EffectType.DASH:
 			return eff.amount
 	return 0
 

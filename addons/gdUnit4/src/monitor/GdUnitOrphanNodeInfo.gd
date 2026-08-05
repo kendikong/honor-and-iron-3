@@ -1,4 +1,4 @@
-class_name GdUnitOrphanNodeInfo
+﻿class_name GdUnitOrphanNodeInfo
 extends RefCounted
 
 

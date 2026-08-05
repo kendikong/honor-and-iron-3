@@ -1,7 +1,7 @@
-class_name CharacterSelectionGlow
+﻿class_name CharacterSelectionGlow
 extends Node
 
-## Selection glow — one outline child per LPC layer (dual ring via pixel_sprite_outline.gdshader).
+## Selection glow â€” one outline child per LPC layer (dual ring via pixel_sprite_outline.gdshader).
 ## Main sprite materials are untouched so character colors stay correct.
 
 const _OUTLINE_SHADER: Shader = preload("res://shaders/pixel_sprite_outline.gdshader")

@@ -1,4 +1,4 @@
-class_name SfxPlayer
+﻿class_name SfxPlayer
 extends Node
 
 ## Purpose: Audible feedback for actions so the player can tell inputs registered.

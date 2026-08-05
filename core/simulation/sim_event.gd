@@ -1,4 +1,4 @@
-class_name SimEvent
+﻿class_name SimEvent
 extends RefCounted
 
 ## Purpose: A single, ordered, deterministic record of something the simulation

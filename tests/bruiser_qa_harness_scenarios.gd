@@ -15,9 +15,9 @@ static func run_charge_strike(failures: Array[String]) -> void:
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_charge_strike")
 	H.assert_eq_int(failures, "charge_strike/range", factory_ab.range_tiles, 1)
-	H.assert_eq_int(failures, "charge_strike/move_amount", factory_ab.effects[0].amount, 2)
-	H.assert_eq_int(failures, "charge_strike/dmg_amount", factory_ab.effects[1].amount, 3)
-	H.assert_eq_int(failures, "charge_strike/push_amount", factory_ab.effects[2].amount, 1)
+	H.assert_eq_int(failures, "charge_strike/move_amount", factory_ab.modules[0].amount, 2)
+	H.assert_eq_int(failures, "charge_strike/dmg_amount", factory_ab.modules[1].amount, 3)
+	H.assert_eq_int(failures, "charge_strike/push_amount", factory_ab.modules[2].amount, 1)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_charge_strike"))
 	H.place_dummy(board, 2, Vector2i(3, 3))
@@ -58,15 +58,15 @@ static func run_concussion_blow(failures: Array[String]) -> void:
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
 	H.assert_eq_int(failures, "concussion_blow/range", factory_ab.range_tiles, 1)
-	H.assert_eq_int(failures, "concussion_blow/dmg_amount", factory_ab.effects[0].amount, 2)
-	H.assert_eq_int(failures, "concussion_blow/push_amount", factory_ab.effects[1].amount, 1)
+	H.assert_eq_int(failures, "concussion_blow/dmg_amount", factory_ab.modules[0].amount, 2)
+	H.assert_eq_int(failures, "concussion_blow/push_amount", factory_ab.modules[1].amount, 1)
 	H.assert_true(
 		failures, "concussion_blow/object_stagger_mod",
-		factory_ab.effects[1].modifiers.has("object_collision_stagger"),
+		factory_ab.modules[1].legacy_modifiers.has("object_collision_stagger"),
 	)
 	H.assert_eq_int(
 		failures, "concussion_blow/object_stagger_val",
-		int(factory_ab.effects[1].modifiers["object_collision_stagger"]),
+		int(factory_ab.modules[1].legacy_modifiers["object_collision_stagger"]),
 		1,
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
@@ -131,7 +131,7 @@ static func run_concussion_blow_upgrade(failures: Array[String]) -> void:
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_concussion_blow")
 	H.assert_true(
 		failures, "concussion_blow/upgrade_mod",
-		skill.upgraded_effects[1].modifiers.has("enemy_collision_stagger_both"),
+		skill.upgraded_modules[1].legacy_modifiers.has("enemy_collision_stagger_both"),
 	)
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 2))
@@ -155,7 +155,7 @@ static func run_cleave(failures: Array[String]) -> void:
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_cleave")
 	H.assert_eq_int(failures, "cleave/range", factory_ab.range_tiles, 1)
 	H.assert_eq_int(failures, "cleave/shape", factory_ab.target_shape, GameEnums.TargetShape.ARC)
-	H.assert_eq_int(failures, "cleave/dmg_amount", factory_ab.effects[0].amount, 2)
+	H.assert_eq_int(failures, "cleave/dmg_amount", factory_ab.modules[0].amount, 2)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_cleave"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -221,7 +221,7 @@ static func run_suplex(failures: Array[String]) -> void:
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_suplex")
 	H.assert_eq_int(failures, "suplex/range", factory_ab.range_tiles, 1)
-	H.assert_eq_int(failures, "suplex/dmg_amount", factory_ab.effects[0].amount, 4)
+	H.assert_eq_int(failures, "suplex/dmg_amount", factory_ab.modules[0].amount, 4)
 	H.assert_true(
 		failures, "suplex/not_swap",
 		not H.ability_has_effect(factory_ab, GameEnums.EffectType.SWAP, false),
@@ -280,11 +280,11 @@ static func run_suplex_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_suplex")
 	H.assert_true(
 		failures, "suplex/upgrade/mod",
-		ab.upgraded_effects[0].modifiers.has("bonus_dmg_per_10_hp"),
+		ab.upgraded_modules[0].legacy_modifiers.has("bonus_dmg_per_10_hp"),
 	)
 	H.assert_eq_int(
 		failures, "suplex/upgrade/mod_val",
-		int(ab.upgraded_effects[0].modifiers["bonus_dmg_per_10_hp"]),
+		int(ab.upgraded_modules[0].legacy_modifiers["bonus_dmg_per_10_hp"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -340,10 +340,10 @@ static func run_adrenaline_surge(failures: Array[String]) -> void:
 		[GameEnums.StatusType.STAT_BUFF_STR, GameEnums.StatusType.STAT_BUFF_MOV],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_adrenaline_surge")
-	H.assert_eq_int(failures, "adrenaline_surge/self_cost_amt", factory_ab.effects[0].amount, 5)
+	H.assert_eq_int(failures, "adrenaline_surge/self_cost_amt", factory_ab.modules[0].amount, 5)
 	H.assert_eq_int(
 		failures, "adrenaline_surge/zero_ap_threshold",
-		int(factory_ab.effects[0].modifiers["zero_ap_adjacent_enemies"]),
+		int(factory_ab.modules[0].legacy_modifiers["zero_ap_adjacent_enemies"]),
 		2,
 	)
 	H.assert_eq_int(failures, "adrenaline_surge/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.SELF)
@@ -359,8 +359,8 @@ static func run_adrenaline_surge(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "adrenaline_surge/self_cost", hp_before - after.health.current_hp, 5)
 	H.assert_eq_int(failures, "adrenaline_surge/str", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 1)
 	H.assert_eq_int(failures, "adrenaline_surge/mov", H.status_value(after, GameEnums.StatusType.STAT_BUFF_MOV), 1)
-	for eff: EffectData in ab.effects:
-		if eff != null and eff.type in [
+	for eff: AbilityModule in ab.modules:
+		if eff != null and eff.primary_type in [
 			GameEnums.EffectType.ADD_STATUS_SELF,
 		] and eff.status_type in [
 			GameEnums.StatusType.STAT_BUFF_STR,
@@ -399,7 +399,7 @@ static func run_earthshatter(failures: Array[String]) -> void:
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_earthshatter")
 	H.assert_eq_int(failures, "earthshatter/range", factory_ab.range_tiles, 1)
 	H.assert_eq_int(failures, "earthshatter/shape", factory_ab.target_shape, GameEnums.TargetShape.ARC)
-	H.assert_eq_int(failures, "earthshatter/dmg_amount", factory_ab.effects[0].amount, 2)
+	H.assert_eq_int(failures, "earthshatter/dmg_amount", factory_ab.modules[0].amount, 2)
 	H.assert_true(
 		failures, "earthshatter/destroy_effect",
 		H.ability_has_effect(factory_ab, GameEnums.EffectType.DESTROY_OBSTACLE, false),
@@ -483,7 +483,7 @@ static func run_meat_shield(failures: Array[String]) -> void:
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_meat_shield")
 	H.assert_eq_int(failures, "meat_shield/range", factory_ab.range_tiles, 1)
 	H.assert_eq_int(failures, "meat_shield/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.ALLY_UNIT)
-	H.assert_eq_int(failures, "meat_shield/intercept_duration", factory_ab.effects[1].status_duration, 1)
+	H.assert_eq_int(failures, "meat_shield/intercept_duration", factory_ab.modules[1].status_duration, 1)
 	H.assert_true(
 		failures, "meat_shield/not_teleport",
 		not H.ability_has_effect(factory_ab, GameEnums.EffectType.TELEPORT_CASTER, false),
@@ -636,8 +636,8 @@ static func run_frenzy(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_frenzy")
 	H.assert_eq_int(failures, "frenzy/range", ab.range_tiles, 1)
 	var dmg_count: int = 0
-	for eff: EffectData in ab.effects:
-		if eff != null and eff.type == GameEnums.EffectType.DAMAGE:
+	for eff: AbilityModule in ab.modules:
+		if eff != null and eff.primary_type == GameEnums.EffectType.DAMAGE:
 			dmg_count += 1
 			H.assert_eq_int(failures, "frenzy/dmg_amount", eff.amount, 1)
 	H.assert_eq_int(failures, "frenzy/triple_hit", dmg_count, 3)
@@ -686,8 +686,8 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "guttural_roar/range", ab.range_tiles, 0)
 	H.assert_eq_int(failures, "guttural_roar/aoe", ab.target_shape, GameEnums.TargetShape.AOE_SQUARE)
 	H.assert_eq_int(failures, "guttural_roar/aoe_size", ab.target_shape_size, 2)
-	H.assert_eq_int(failures, "guttural_roar/push_amount", ab.effects[0].amount, 1)
-	H.assert_eq_int(failures, "guttural_roar/def_debuff_amount", ab.effects[1].amount, 2)
+	H.assert_eq_int(failures, "guttural_roar/push_amount", ab.modules[0].amount, 1)
+	H.assert_eq_int(failures, "guttural_roar/def_debuff_amount", ab.modules[1].amount, 2)
 	ab.ensure_targeting_flags_from_mode()
 	H.assert_eq_int(failures, "guttural_roar/self_targeting", ab.targeting_mode, GameEnums.TargetingMode.SELF)
 	H.assert_true(failures, "guttural_roar/self_flags", ab.has_targeting(GameEnums.TargetingFlags.SELF))
@@ -745,8 +745,8 @@ static func run_headbutt(failures: Array[String]) -> void:
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_headbutt")
 	H.assert_eq_int(failures, "headbutt/range", factory_ab.range_tiles, 1)
-	H.assert_eq_int(failures, "headbutt/dmg_amount", factory_ab.effects[0].amount, 3)
-	H.assert_eq_int(failures, "headbutt/self_dmg_amount", factory_ab.effects[1].amount, 1)
+	H.assert_eq_int(failures, "headbutt/dmg_amount", factory_ab.modules[0].amount, 3)
+	H.assert_eq_int(failures, "headbutt/self_dmg_amount", factory_ab.modules[1].amount, 1)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_headbutt"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -799,8 +799,8 @@ static func run_blood_boil(failures: Array[String]) -> void:
 		[GameEnums.StatusType.STAT_BUFF_STR],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_blood_boil")
-	H.assert_eq_int(failures, "blood_boil/hp_cost_amount", factory_ab.effects[0].amount, 5)
-	H.assert_eq_int(failures, "blood_boil/str_amount", factory_ab.effects[1].amount, 3)
+	H.assert_eq_int(failures, "blood_boil/hp_cost_amount", factory_ab.modules[0].amount, 5)
+	H.assert_eq_int(failures, "blood_boil/str_amount", factory_ab.modules[1].amount, 3)
 	H.assert_eq_int(failures, "blood_boil/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.SELF)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_blood_boil"))
@@ -815,7 +815,7 @@ static func run_blood_boil(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "blood_boil/str_value", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 3)
 	var str_status: StatusData = null
 	for st: StatusData in after.active_statuses:
-		if st.type == GameEnums.StatusType.STAT_BUFF_STR:
+		if st.primary_type == GameEnums.StatusType.STAT_BUFF_STR:
 			str_status = st
 			break
 	H.assert_true(failures, "blood_boil/str_status_present", str_status != null)
@@ -829,15 +829,15 @@ static func run_violent_collision(failures: Array[String]) -> void:
 		[GameEnums.EffectType.DASH],
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
-	H.assert_eq_int(failures, "violent_collision/dash_amount", ab.effects[0].amount, 3)
-	H.assert_true(failures, "violent_collision/bulldoze", ab.effects[0].modifiers.has("bulldoze"))
+	H.assert_eq_int(failures, "violent_collision/dash_amount", ab.modules[0].amount, 3)
+	H.assert_true(failures, "violent_collision/bulldoze", ab.modules[0].legacy_modifiers.has("bulldoze"))
 	H.assert_true(
 		failures, "violent_collision/if_collided_gate",
 		AbilitySystem.ability_has_module_gate(ab, GameEnums.ModuleGate.IF_COLLIDED),
 	)
 	H.assert_true(
 		failures, "violent_collision/no_recast_stamp",
-		not ab.effects[0].modifiers.has("violent_collision_recast"),
+		not ab.modules[0].legacy_modifiers.has("violent_collision_recast"),
 	)
 	## Empty dash (no collision) — dash only, no fail.
 	var empty_board: BoardState = H.make_plain_board(Vector2i(8, 6))
@@ -854,7 +854,7 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	)
 	var empty_failed: bool = false
 	for e: Variant in empty_result.events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.ACTION_FAILED:
 			if int(e.data.get("actor", -1)) == 20:
 				empty_failed = true
 				break
@@ -892,7 +892,7 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	var fail_result: SimResult = H.simulate_plan(fail_board, fail_plan)
 	var saw_fail: bool = false
 	for e: Variant in fail_result.events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.ACTION_FAILED:
 			if int(e.data.get("actor", -1)) == 10:
 				saw_fail = true
 				break
@@ -913,7 +913,7 @@ static func run_crimson_whirlwind(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "crimson_whirlwind/range", ab.range_tiles, 0)
 	H.assert_eq_int(failures, "crimson_whirlwind/aoe", ab.target_shape, GameEnums.TargetShape.AOE_SQUARE)
 	H.assert_eq_int(failures, "crimson_whirlwind/aoe_size", ab.target_shape_size, 1)
-	H.assert_eq_int(failures, "crimson_whirlwind/dmg_amount", ab.effects[0].amount, 1)
+	H.assert_eq_int(failures, "crimson_whirlwind/dmg_amount", ab.modules[0].amount, 1)
 	ab.ensure_targeting_flags_from_mode()
 	H.assert_eq_int(failures, "crimson_whirlwind/self_targeting", ab.targeting_mode, GameEnums.TargetingMode.SELF)
 	H.assert_true(failures, "crimson_whirlwind/self_flags", ab.has_targeting(GameEnums.TargetingFlags.SELF))
@@ -959,7 +959,7 @@ static func run_belly_flop(failures: Array[String]) -> void:
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
 	H.assert_eq_int(failures, "belly_flop/range", factory_ab.range_tiles, 2)
-	H.assert_eq_int(failures, "belly_flop/dmg_amount", factory_ab.effects[1].amount, 2)
+	H.assert_eq_int(failures, "belly_flop/dmg_amount", factory_ab.modules[1].amount, 2)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_belly_flop")
 	cfg["passive_flags"] = {"training_unlimited_actions": true}
@@ -976,7 +976,7 @@ static func run_belly_flop(failures: Array[String]) -> void:
 	H.assert_eq_cell(failures, "belly_flop/teleport", result.final_state.get_unit_by_id(1).position, Vector2i(5, 3))
 	var damaged_adjacent := false
 	for e: Variant in result.events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
 			if int(e.data.get("unit", -1)) == 2:
 				damaged_adjacent = true
 				break
@@ -1004,7 +1004,7 @@ static func run_breaching_dash(failures: Array[String]) -> void:
 		[GameEnums.EffectType.DASH, GameEnums.EffectType.DESTROY_OBSTACLE],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_breaching_dash")
-	H.assert_eq_int(failures, "breaching_dash/dash_amount", factory_ab.effects[0].amount, 3)
+	H.assert_eq_int(failures, "breaching_dash/dash_amount", factory_ab.modules[0].amount, 3)
 	H.assert_true(
 		failures, "breaching_dash/destroy_effect",
 		H.ability_has_effect(factory_ab, GameEnums.EffectType.DESTROY_OBSTACLE, false),
@@ -1718,7 +1718,7 @@ static func run_unstoppable_force(failures: Array[String]) -> void:
 	H.assert_true(failures, "unstoppable_force/no_stagger", not H.has_status(bruiser, GameEnums.StatusType.STAGGER))
 	var prevented_stagger: bool = false
 	for e: Variant in result.events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.ACTION_FAILED:
 			if str(e.data.get("reason", "")) == "status_prevented_by_unstoppable_force":
 				prevented_stagger = true
 				break
@@ -1754,7 +1754,7 @@ static func run_unstoppable_force(failures: Array[String]) -> void:
 	)
 	var prevented_root: bool = false
 	for e: Variant in root_result.events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.ACTION_FAILED:
 			if str(e.data.get("reason", "")) == "status_prevented_by_unstoppable_force":
 				prevented_root = true
 				break

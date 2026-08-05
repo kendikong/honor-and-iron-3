@@ -1,4 +1,4 @@
-# It connects to all signals of given emitter and collects received signals and arguments
+﻿# It connects to all signals of given emitter and collects received signals and arguments
 # The collected signals are cleand finally when the emitter is freed.
 class_name GdUnitSignalCollector
 extends RefCounted

@@ -1,9 +1,9 @@
-﻿class_name OverwhelmingBulkScenarioTest
+class_name OverwhelmingBulkScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
-## Bible: Overwhelming Bulk — Current HP > target Max HP grants PIERCE.
+## Bible: Overwhelming Bulk � Current HP > target Max HP grants PIERCE.
 ## [+] attacks also apply PUSH 1.
 ## Globals: PIERCE flag on AbilitySystem DAMAGE path; events_have_damage_pierce.
 

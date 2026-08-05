@@ -1,4 +1,4 @@
-class_name EncounterBuilder
+﻿class_name EncounterBuilder
 extends RefCounted
 
 ## Builds H&I EncounterData from a generated mana-seed map.

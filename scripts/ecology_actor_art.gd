@@ -1,7 +1,7 @@
-class_name EcologyActorArt
+﻿class_name EcologyActorArt
 extends RefCounted
 
-## Procedural 8–12 px ecology actor silhouettes + 2-frame flap loops (nearest).
+## Procedural 8â€“12 px ecology actor silhouettes + 2-frame flap loops (nearest).
 
 static var _cache: Dictionary = {}
 
@@ -56,7 +56,7 @@ static func fish_frames() -> SpriteFrames:
 
 
 static func _build_fish() -> SpriteFrames:
-	# Deep interior water (#180) — dark blue silhouette.
+	# Deep interior water (#180) â€” dark blue silhouette.
 	var silhouette: Color = Color(0.06, 0.13, 0.24, 0.90)
 	var palette: Dictionary = {"b": silhouette}
 	const BODY_W: int = 12
@@ -76,7 +76,7 @@ static func _build_fish() -> SpriteFrames:
 	return frames
 
 
-## Single gentle arch — chunky top-down fish body, not a worm line.
+## Single gentle arch â€” chunky top-down fish body, not a worm line.
 static func _fish_swim_pattern(w: int, h: int, phase: float) -> PackedStringArray:
 	var rows: Array[String] = []
 	for _y: int in range(h):
@@ -185,7 +185,7 @@ static func _build_butterfly(variant: int) -> SpriteFrames:
 	var wing: Color = pack["wing"] as Color
 	var wing_hi: Color = pack["hi"] as Color
 	var wing_tip: Color = pack["tip"] as Color
-	# 6×5 front view — same lobe/tip read, one column tighter than v3.
+	# 6Ã—5 front view â€” same lobe/tip read, one column tighter than v3.
 	var open: PackedStringArray = PackedStringArray([
 		".T..T.",
 		"wAw.wA",

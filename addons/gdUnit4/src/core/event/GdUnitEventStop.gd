@@ -1,4 +1,4 @@
-class_name GdUnitStop
+﻿class_name GdUnitStop
 extends GdUnitEvent
 
 

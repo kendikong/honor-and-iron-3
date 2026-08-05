@@ -1,4 +1,4 @@
-class_name MassSimAbilityText
+﻿class_name MassSimAbilityText
 extends RefCounted
 
 
@@ -10,10 +10,10 @@ static func tooltip_for_ability_id(ability_id: String) -> String:
 		return ability_id.replace("_", " ").capitalize()
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append(
-		"%s — Range %d, AP %d, MOV %d"
+		"%s â€” Range %d, AP %d, MOV %d"
 		% [ab.display_name, ab.range_tiles, ab.action_point_cost, ab.movement_point_cost],
 	)
-	for eff: EffectData in ab.effects:
+	for eff: AbilityModule in ab.modules:
 		var line: String = _effect_summary(eff)
 		if not line.is_empty():
 			lines.append(line)
@@ -61,9 +61,9 @@ static func _find_passive(passive_id: StringName) -> PassiveData:
 	return null
 
 
-static func _effect_summary(eff: EffectData) -> String:
+static func _effect_summary(eff: AbilityModule) -> String:
 	var amount: String = str(eff.amount) if eff.amount != 0 else ""
-	match eff.type:
+	match eff.primary_type:
 		GameEnums.EffectType.DAMAGE:
 			return "Damage %s" % amount
 		GameEnums.EffectType.HEAL:

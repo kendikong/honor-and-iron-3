@@ -1,4 +1,4 @@
-class_name UniversalInspectorPanel
+﻿class_name UniversalInspectorPanel
 extends PanelContainer
 
 signal replay_requested(run_id: int)
@@ -29,7 +29,7 @@ func _init() -> void:
 	details_rich_text.text = (
 		"[color=#8fa3b8]Click KPIs, tier rows, triage warnings, or Ctrl+K entries.[/color]\n\n"
 		+ "[b]Three-Click Rule[/b]\n"
-		+ "Warning → Inspector → Open Replay."
+		+ "Warning â†’ Inspector â†’ Open Replay."
 	)
 	vbox.add_child(details_rich_text)
 	action_row = HBoxContainer.new()

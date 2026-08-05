@@ -1,4 +1,4 @@
-class_name GdUnitHtmlReportWriter
+﻿class_name GdUnitHtmlReportWriter
 extends GdUnitReportWriter
 
 

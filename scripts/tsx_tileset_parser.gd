@@ -1,4 +1,4 @@
-class_name TsxTilesetParser
+﻿class_name TsxTilesetParser
 extends RefCounted
 
 ## Parses Tiled .tsx tileset XML into Godot-friendly metadata.
@@ -45,7 +45,7 @@ static func parse_text(text: String, tsx_path: String = "") -> Dictionary:
 
 
 static func _parse_tile_animations(text: String) -> Dictionary:
-	## tile_id → { "frames": Array[{ "tile_id": int, "duration_ms": int }] }
+	## tile_id â†’ { "frames": Array[{ "tile_id": int, "duration_ms": int }] }
 	var result: Dictionary = {}
 	var tile_regex: RegEx = RegEx.new()
 	tile_regex.compile("<tile\\s+id=\"(\\d+)\">\\s*<animation>([\\s\\S]*?)</animation>")

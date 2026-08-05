@@ -1,4 +1,4 @@
-## The execution context
+﻿## The execution context
 ## It contains all the necessary information about the executed stage, such as memory observers, reports, orphan monitor
 class_name GdUnitExecutionContext
 

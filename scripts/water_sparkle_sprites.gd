@@ -1,9 +1,9 @@
-class_name WaterSparkleSprites
+﻿class_name WaterSparkleSprites
 extends Node2D
 
 const _Frames = preload("res://scripts/water_sparkle_frames.gd")
 
-## Animated sparkle VFX — Mana Seed 3-frame loops (not static TileMap cells).
+## Animated sparkle VFX â€” Mana Seed 3-frame loops (not static TileMap cells).
 
 const TILE_PX: int = 16
 

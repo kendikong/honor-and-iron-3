@@ -1,4 +1,4 @@
-@abstract class_name GdUnitFileAssert
+﻿@abstract class_name GdUnitFileAssert
 extends GdUnitAssert
 
 

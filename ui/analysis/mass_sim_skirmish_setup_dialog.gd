@@ -1,4 +1,4 @@
-class_name MassSimSkirmishSetupDialog
+﻿class_name MassSimSkirmishSetupDialog
 extends Window
 
 signal setup_applied(setup: MassSimSkirmishSetup)
@@ -69,7 +69,7 @@ func _init() -> void:
 func open_with(setup: MassSimSkirmishSetup, epoch_locked: MassSimSkirmishSetup = null) -> void:
 	_fields.load_setup(setup)
 	if epoch_locked != null:
-		_epoch_note.text = "Active epoch locked: %s — change setup then click New Epoch." % epoch_locked.summary_label()
+		_epoch_note.text = "Active epoch locked: %s â€” change setup then click New Epoch." % epoch_locked.summary_label()
 	else:
 		_epoch_note.text = "Edits apply to the next batch. Click New Epoch to start a comparable log."
 	popup_centered(Vector2i(520, 520))

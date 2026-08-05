@@ -1,4 +1,4 @@
-class_name MenuInterfaceApplier
+﻿class_name MenuInterfaceApplier
 extends RefCounted
 
 ## Applies GameSettings interface scale to menu Control trees.

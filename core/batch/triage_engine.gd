@@ -1,4 +1,4 @@
-class_name TriageEngine
+﻿class_name TriageEngine
 extends RefCounted
 
 const _C = preload("res://core/batch/mass_sim_constants.gd")
@@ -38,7 +38,7 @@ static func evaluate_report(report: RefCounted) -> Array[Dictionary]:
 			"Critical Win-Rate Skew",
 			Severity.CRITICAL,
 			98,
-			"Player win rate %.1f%% deviates %.1f%% from 50%% target — likely systemic imbalance."
+			"Player win rate %.1f%% deviates %.1f%% from 50%% target â€” likely systemic imbalance."
 			% [report.player_win_pct, player_dev],
 		))
 	elif player_dev >= _C.WIN_RATE_MAJOR_DEV_PCT:
@@ -55,7 +55,7 @@ static func evaluate_report(report: RefCounted) -> Array[Dictionary]:
 			"Stalled Matches",
 			Severity.MAJOR,
 			88,
-			"%.1f%% of battles timed out — AI may be stalling or damage floor is too low."
+			"%.1f%% of battles timed out â€” AI may be stalling or damage floor is too low."
 			% report.timeout_pct,
 		))
 
@@ -90,7 +90,7 @@ static func evaluate_report(report: RefCounted) -> Array[Dictionary]:
 				"Underperformer: %s" % report.class_display_name(row.get("class_id", "")),
 				Severity.MODERATE,
 				84,
-				"%s sits in F-tier at %.1f%% WR — check synergies and AI trap vectors."
+				"%s sits in F-tier at %.1f%% WR â€” check synergies and AI trap vectors."
 				% [report.class_display_name(row.get("class_id", "")), float(row.get("win_rate", 0.0))],
 			))
 
@@ -100,7 +100,7 @@ static func evaluate_report(report: RefCounted) -> Array[Dictionary]:
 			Severity.MODERATE,
 			80,
 			"Integrity score %.0f / 100. %s"
-			% [report.integrity_score, " · ".join(report.integrity_notes)],
+			% [report.integrity_score, " Â· ".join(report.integrity_notes)],
 		))
 
 	var chaos_values: Array[float] = []
@@ -132,7 +132,7 @@ static func evaluate_report(report: RefCounted) -> Array[Dictionary]:
 					"Chaos Z-Score Outliers",
 					Severity.MODERATE,
 					82,
-					"%d matches (%.1f%%) exceed 2.5σ collision chaos — review push chains or map hazards."
+					"%d matches (%.1f%%) exceed 2.5Ïƒ collision chaos â€” review push chains or map hazards."
 					% [outliers, pct],
 				))
 
@@ -177,7 +177,7 @@ static func generate_health_summary(report: RefCounted, warnings: Array) -> Stri
 			Severity.MAJOR:
 				major_count += 1
 
-	var mvp: String = "—"
+	var mvp: String = "â€”"
 	if not report.tier_rows.is_empty():
 		var top: Dictionary = report.tier_rows[0]
 		mvp = "%s (%.1f%% WR)" % [

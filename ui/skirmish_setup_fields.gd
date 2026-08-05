@@ -1,4 +1,4 @@
-class_name SkirmishSetupFields
+﻿class_name SkirmishSetupFields
 extends VBoxContainer
 
 const _C = preload("res://core/batch/mass_sim_constants.gd")
@@ -21,7 +21,7 @@ func _init() -> void:
 	_player_passives = _add_spin_row("Player passives (random)", 0, _C.SKIRMISH_MAX_PASSIVE_COUNT)
 	_player_skills = _add_spin_row("Player class skills", 0, _C.SKIRMISH_ALL_CLASS_SKILLS_UI)
 	var skills_hint := Label.new()
-	skills_hint.text = "Class skills: 0 = run/move/basic only · 99 = full kit · 1–98 = random pick count"
+	skills_hint.text = "Class skills: 0 = run/move/basic only Â· 99 = full kit Â· 1â€“98 = random pick count"
 	skills_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(skills_hint)
 	_preview = Label.new()

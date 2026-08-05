@@ -1,12 +1,12 @@
-class_name WaterVfxPlacer
+﻿class_name WaterVfxPlacer
 extends RefCounted
 
-## Places Mana Seed water sparkle tiles on VFXLayer — shore foam + deep sparkles.
+## Places Mana Seed water sparkle tiles on VFXLayer â€” shore foam + deep sparkles.
 ## Asset guide: row 0 = full tile, row 1 = diagonal (inside corner), row 2 = quarter (outside).
 
 const SOURCE_SPARKLES: int = TileSetFactory.SOURCE_SPARKLES
 
-# Animated sparkle anchors (atlas coords) — 3-frame loops in gentle water sparkles A v01.
+# Animated sparkle anchors (atlas coords) â€” 3-frame loops in gentle water sparkles A v01.
 const SPARKLE_FULL: Vector2i = Vector2i(0, 0)
 const SPARKLE_DIAG: Vector2i = Vector2i(0, 1)
 const SPARKLE_QUARTER: Vector2i = Vector2i(0, 2)
@@ -50,7 +50,7 @@ func foam_atlas_at(pos: Vector2i) -> Vector2i:
 
 
 func apply(vfx: TileMapLayer, foam_on: bool, sparkles_on: bool) -> void:
-	## Sparkles/foam render via WaterSparkleSprites — clear legacy static tiles only.
+	## Sparkles/foam render via WaterSparkleSprites â€” clear legacy static tiles only.
 	if vfx == null:
 		return
 	_clear_sparkle_source(vfx)

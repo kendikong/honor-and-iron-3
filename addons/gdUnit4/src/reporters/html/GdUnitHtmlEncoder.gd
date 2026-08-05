@@ -1,4 +1,4 @@
-class_name GdUnitHtmlEncoder
+﻿class_name GdUnitHtmlEncoder
 extends RefCounted
 
 

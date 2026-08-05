@@ -1,4 +1,4 @@
-## Represents a single frame in a GDScript call stack.[br]
+﻿## Represents a single frame in a GDScript call stack.[br]
 ## Stores the source file, line number, and function name at the point of capture.
 class_name GdUnitStackTraceElement
 extends RefCounted

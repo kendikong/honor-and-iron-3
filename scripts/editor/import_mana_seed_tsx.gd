@@ -1,9 +1,9 @@
-@tool
+﻿@tool
 extends EditorScript
 
-## Editor utility — bake Mana Seed .tsx terrain metadata into TileSet .tres files.
+## Editor utility â€” bake Mana Seed .tsx terrain metadata into TileSet .tres files.
 ##
-## Run: open this script in the Godot script editor → File → Run (Ctrl+Shift+X).
+## Run: open this script in the Godot script editor â†’ File â†’ Run (Ctrl+Shift+X).
 ## Outputs:
 ##   res://resources/tilesets/gentle_forest_v01.tres   (forest + wang terrains)
 ##   res://resources/tilesets/mana_seed_combined_v01.tres (all v01 sources)
@@ -23,10 +23,10 @@ func _run() -> void:
 	if forest_result.get("tile_set") == null:
 		var parsed: Dictionary = forest_result.get("parsed", {})
 		if parsed.is_empty():
-			push_error("Import failed — could not parse %s" % FOREST_TSX)
+			push_error("Import failed â€” could not parse %s" % FOREST_TSX)
 		else:
 			push_error(
-				"Import failed — parsed %s but could not build atlas (image: %s)"
+				"Import failed â€” parsed %s but could not build atlas (image: %s)"
 				% [FOREST_TSX, str(parsed.get("image_res_path", "?"))]
 			)
 		return
@@ -42,7 +42,7 @@ func _run() -> void:
 	print("\n=== Combined v01 TileSet ===")
 	print("Sources: forest, waterfall, trees, sparkles, 32x32 props")
 	print("Saved: %s" % COMBINED_OUT)
-	print("\nTerrain overrides: scenes/terrain_peering_editor.tscn (F6) — wang patterns + Non-terrain tab")
+	print("\nTerrain overrides: scenes/terrain_peering_editor.tscn (F6) â€” wang patterns + Non-terrain tab")
 	print("Done. Re-open test scene or restart game to use baked resources.")
 
 

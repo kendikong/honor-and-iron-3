@@ -1,4 +1,4 @@
-class_name WindFieldBinder
+﻿class_name WindFieldBinder
 extends RefCounted
 
 ## Wires TileMapLayers to WindBus: runtime materials, participation masks, uniform sync.

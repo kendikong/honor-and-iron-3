@@ -1,7 +1,7 @@
-class_name PixelTextureFactory
+﻿class_name PixelTextureFactory
 extends RefCounted
 
-## Runtime 1–4 px SNES-style rigid particle / actor textures (nearest only).
+## Runtime 1â€“4 px SNES-style rigid particle / actor textures (nearest only).
 
 static var _cache: Dictionary = {}
 

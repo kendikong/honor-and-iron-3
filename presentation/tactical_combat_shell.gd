@@ -1,10 +1,10 @@
-class_name TacticalCombatShell
+﻿class_name TacticalCombatShell
 extends Node
 
 ## Orchestrates tactical combat presentation wiring.
 ## Setup order (mandatory):
 ##   1. Map pipeline + options (map view _ready)
-##   2. shell.setup() — bind listeners before director emits board_changed
+##   2. shell.setup() â€” bind listeners before director emits board_changed
 ##   3. director.start_from_encounter()
 ## Layer z: SidePanels=21, Hud=22, Pause=35, Options=40 (when open)
 

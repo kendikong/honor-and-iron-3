@@ -1,4 +1,4 @@
-class_name GdUnitExpressionRunner
+﻿class_name GdUnitExpressionRunner
 extends RefCounted
 
 const CLASS_TEMPLATE = """

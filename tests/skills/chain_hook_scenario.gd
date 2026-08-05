@@ -1,11 +1,11 @@
-﻿class_name ChainHookScenarioTest
+class_name ChainHookScenarioTest
 extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Chain Hook â€” DAMAGE + PULL 2; [+] VULNERABLE if pulled adjacent.
+## Bible: Chain Hook — DAMAGE + PULL 2; [+] VULNERABLE if pulled adjacent.
 ## Globals: EffectType.DAMAGE, PULL; upgraded PULL_VULNERABLE_ON_ADJACENT.
-## Tier 1: planning harness + sim upgrade assert (Knight QA â€” not planning gate).
+## Tier 1: planning harness + sim upgrade assert (Knight QA — not planning gate).
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -105,7 +105,7 @@ static func _phase4_hover_enemy(failures: Array[String]) -> void:
 		PlanningChecklistHarness.HOOK_ENEMY_POS,
 		PlanningChecklistHarness.HOOK_KNIGHT_START,
 	)
-	# At range 3, preview_approach_tile returns actor.position â€” knight stays at start.
+	# At range 3, preview_approach_tile returns actor.position — knight stays at start.
 	PlanningChecklistHarness.assert_eq_cell(
 		failures, "hook/phase4/ghost_stand",
 		PlanningChecklistHarness.preview_unit_pos(fix, 1), PlanningChecklistHarness.HOOK_KNIGHT_START,

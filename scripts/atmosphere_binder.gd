@@ -1,7 +1,7 @@
-class_name AtmosphereBinder
+﻿class_name AtmosphereBinder
 extends RefCounted
 
-## Wires WeatherBus → CanvasModulate, cloud/mist overlays, participation masks.
+## Wires WeatherBus â†’ CanvasModulate, cloud/mist overlays, participation masks.
 
 const TILE_PX: float = 16.0
 const CLOUD_SHADOW_TINT: Color = Color(0.75, 0.73, 0.82, 1.0)
@@ -136,7 +136,7 @@ func push_cloud_shadow_uniforms(settings: EffectsSettings = null) -> void:
 	_cloud_rect.modulate = Color.WHITE
 
 
-## Retired — cloud shadows resolve in ground_shadow_composite.gdshader.
+## Retired â€” cloud shadows resolve in ground_shadow_composite.gdshader.
 func set_contact_shadow_overlay(_tex: Texture2D, _origin: Vector2, _active: bool) -> void:
 	pass
 

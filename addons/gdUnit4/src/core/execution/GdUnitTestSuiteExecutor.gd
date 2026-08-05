@@ -1,4 +1,4 @@
-## The executor to run a test-suite
+﻿## The executor to run a test-suite
 class_name GdUnitTestSuiteExecutor
 
 

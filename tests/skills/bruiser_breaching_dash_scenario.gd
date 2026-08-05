@@ -1,9 +1,9 @@
-﻿class_name BruiserBreachingDashScenarioTest
+class_name BruiserBreachingDashScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
-## Bible: Breaching Dash — DASH 3 | destroy destructible cover on path.
+## Bible: Breaching Dash � DASH 3 | destroy destructible cover on path.
 ## [+] next attack this turn gains PIERCE.
 ## Globals: EffectType.DASH + DESTROY_OBSTACLE; DASH_LINE targeting.
 

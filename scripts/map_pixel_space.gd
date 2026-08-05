@@ -1,4 +1,4 @@
-class_name MapPixelSpace
+﻿class_name MapPixelSpace
 extends RefCounted
 
 ## Map-root local pixel coordinates for cloud/shadow sampling.
@@ -47,7 +47,7 @@ static func content_top_left_px(ground: TileMapLayer) -> Vector2:
 	return ground.position
 
 
-## Map-root local position → content-relative pixel (shadow bake / shade_at).
+## Map-root local position â†’ content-relative pixel (shadow bake / shade_at).
 static func content_map_px(ground: TileMapLayer, map_root_local: Vector2) -> Vector2:
 	return map_root_local - content_top_left_px(ground)
 

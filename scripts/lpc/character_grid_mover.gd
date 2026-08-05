@@ -1,11 +1,11 @@
-class_name CharacterGridMover
+﻿class_name CharacterGridMover
 extends Node
 
-## Grid-step LPC movement — chains tiles only while a direction is still held.
+## Grid-step LPC movement â€” chains tiles only while a direction is still held.
 
 const TILE_PX: int = 16
 const STEP_SEC: float = 0.16
-## Diagonal cell centers are sqrt(2)× farther — match cardinal world speed.
+## Diagonal cell centers are sqrt(2)Ã— farther â€” match cardinal world speed.
 const DIAGONAL_STEP_SEC: float = STEP_SEC * sqrt(2.0)
 
 const ANIM_UP: StringName = &"walk_up"

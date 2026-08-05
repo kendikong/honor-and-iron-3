@@ -1,4 +1,4 @@
-## A fuzzer that generates random strings with configurable length and character sets.[br]
+﻿## A fuzzer that generates random strings with configurable length and character sets.[br]
 ##
 ## It supports custom character sets defined by patterns or ranges,
 ## making it ideal for testing input validation, text processing, parsers, or any

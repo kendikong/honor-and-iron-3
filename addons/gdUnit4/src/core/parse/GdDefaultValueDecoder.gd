@@ -1,4 +1,4 @@
-# holds all decodings for default values
+﻿# holds all decodings for default values
 class_name GdDefaultValueDecoder
 extends GdUnitSingleton
 

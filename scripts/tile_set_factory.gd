@@ -1,4 +1,4 @@
-class_name TileSetFactory
+﻿class_name TileSetFactory
 extends RefCounted
 
 ## Builds combined TileSet from verified Mana Seed v01 assets (Phase 0).
@@ -34,7 +34,7 @@ static func build_combined_tileset(variant: int = 1) -> TileSet:
 	if tile_set == null:
 		tile_set = ManaSeedTilesetBuilder.build_combined_tileset(v)
 	_apply_forest_peering_map(tile_set)
-	# Baked .tres ships static atlases — always rebuild animated sources from .tsx.
+	# Baked .tres ships static atlases â€” always rebuild animated sources from .tsx.
 	_replace_animated_source(
 		tile_set,
 		SOURCE_SPARKLES,

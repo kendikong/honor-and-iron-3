@@ -1,6 +1,6 @@
-extends Node
+﻿extends Node
 
-## Global Wind Field — CPU targets, smooth interpolation, map-local gust front.
+## Global Wind Field â€” CPU targets, smooth interpolation, map-local gust front.
 ## Shaders never read this node directly; WindFieldBinder pushes uniforms each frame.
 
 signal field_changed
@@ -125,7 +125,7 @@ func _start_gust() -> void:
 	_target_turbulence = 0.62
 
 
-## Phase 7 rare event — sudden heavy gust (AmbientEventDirector).
+## Phase 7 rare event â€” sudden heavy gust (AmbientEventDirector).
 func trigger_heavy_gust() -> void:
 	_start_gust()
 	_gust_time_left = _rng.randf_range(4.5, 7.0)

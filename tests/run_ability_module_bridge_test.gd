@@ -70,7 +70,7 @@ func _check_knight(failures: Array[String]) -> void:
 		return
 	if swap.planner_group != GameEnums.PlannerGroup.PRE_MOVE:
 		failures.append("knight_swap planner_group not PRE_MOVE")
-	if swap.effects.is_empty() or swap.effects[0].type != GameEnums.EffectType.SWAP:
+	if swap.modules.is_empty() or swap.modules[0].primary_type != GameEnums.EffectType.SWAP:
 		failures.append("knight_swap lost SWAP effect after finalize")
 
 
@@ -93,15 +93,15 @@ func _check_violent_collision_modules(failures: Array[String]) -> void:
 		failures.append("violent_collision module[1] gate not IF_COLLIDED")
 	if not AbilitySystem.ability_has_module_gate(vc, GameEnums.ModuleGate.IF_COLLIDED):
 		failures.append("ability_has_module_gate IF_COLLIDED false for violent_collision")
-	if vc.effects.is_empty() or vc.effects[0].modifiers.has("violent_collision_recast"):
+	if vc.modules.is_empty() or vc.modules[0].legacy_modifiers.has("violent_collision_recast"):
 		failures.append(
 			"violent_collision flat effects must not stamp violent_collision_recast (gate is modular)"
 		)
-	if vc.effects.size() != 1:
+	if vc.modules.size() != 1:
 		failures.append(
-			"violent_collision legacy effects should stay 1 DASH (got %d)" % vc.effects.size()
+			"violent_collision legacy effects should stay 1 DASH (got %d)" % vc.modules.size()
 		)
-	if not vc.effects[0].modifiers.has("bulldoze"):
+	if not vc.modules[0].legacy_modifiers.has("bulldoze"):
 		failures.append("violent_collision lost bulldoze modifier")
 	if not AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_COLLIDED, true):
 		failures.append("evaluate_module_gate IF_COLLIDED should pass when collided=true")
@@ -110,7 +110,7 @@ func _check_violent_collision_modules(failures: Array[String]) -> void:
 	if AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_ADJACENT_ENEMY, true):
 		failures.append("unimplemented gates must fail closed")
 	## Factory must not leave anonymous stamp after ensure + finalize.
-	if vc.effects[0].modifiers.has("violent_collision_recast"):
+	if vc.modules[0].legacy_modifiers.has("violent_collision_recast"):
 		failures.append("factory path left violent_collision_recast stamp")
 	## Charge Strike: MOVE module + DAMAGE module with PUSH layer (not three peer modules).
 	var charge: AbilityData = null

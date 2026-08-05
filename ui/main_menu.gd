@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 const _OPTIONS_SCENE: PackedScene = preload("res://scenes/Options.tscn")
 

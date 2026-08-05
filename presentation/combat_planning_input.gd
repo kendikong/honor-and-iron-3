@@ -1,7 +1,7 @@
-class_name CombatPlanningInput
+﻿class_name CombatPlanningInput
 extends RefCounted
 
-## H&I planning semantics ported from board_view — used by TacticalInputController.
+## H&I planning semantics ported from board_view â€” used by TacticalInputController.
 
 
 var force_basic_movement: bool = false
@@ -63,7 +63,7 @@ var _drag_preview_refresh_pending: bool = false
 var _drag_preview_last_flush_usec: int = 0
 var _drag_last_cursor_cell: Vector2i = Vector2i(-999999, -999999)
 var _drag_last_sprite_cell: Vector2i = Vector2i(-999999, -999999)
-## Last painted intent (move-preview truth) — commit ratifies these slots, does not rebuild.
+## Last painted intent (move-preview truth) â€” commit ratifies these slots, does not rebuild.
 var _intent_snapshot_slots: Dictionary = {}
 var _intent_snapshot_key: String = ""
 var _intent_snapshot_valid: bool = false
@@ -485,7 +485,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 	if preview.is_empty():
 		return
 	if _is_invalid_dict(preview):
-		## Do not erase movement intent when the hover cell is still a valid TILE endpoint —
+		## Do not erase movement intent when the hover cell is still a valid TILE endpoint â€”
 		## slot legality is the source of truth, not sim path / failure flags.
 		if _paint_valid_movement_endpoint_intent():
 			return
@@ -734,7 +734,7 @@ func _on_board_changed(board: BoardState) -> void:
 		# Stale stash after drag ended must not restore over a committed plan.
 		if _drag_saved_preview != null:
 			_drag_saved_preview = null
-		# Snap undo/move refresh emits preview_updated in the same flush — skip duplicate danger pass.
+		# Snap undo/move refresh emits preview_updated in the same flush â€” skip duplicate danger pass.
 		if _planning != null and not _director.plan_refresh_snap_units:
 			_planning.mark_danger_dirty()
 		if not _director.plan_refresh_snap_units:
@@ -1422,7 +1422,7 @@ func _restore_hover_preview() -> void:
 
 
 func _clear_hover_drag_route() -> void:
-	## Never wipe the armed/active drag unit — stand-tile release reads `_drag_unit_id`.
+	## Never wipe the armed/active drag unit â€” stand-tile release reads `_drag_unit_id`.
 	if _drag_armed or dragging:
 		return
 	if _drag_route.is_empty() and _drag_unit_id < 0:
@@ -1598,7 +1598,7 @@ func _plan_approach_or_trample_on_enemy(
 const _NO_PREFERRED_APPROACH: Vector2i = Vector2i(-999999, -999999)
 
 
-## Single source for commit cell, waypoints, and approach hint — cursor, preview, and drop must match.
+## Single source for commit cell, waypoints, and approach hint â€” cursor, preview, and drop must match.
 func _drag_route_commits_active() -> bool:
 	return dragging or _drag_route.size() >= 2
 
@@ -1987,7 +1987,7 @@ func _apply_facing_to_slots(
 				and (cells[0] as Vector2i) != (cells[cells.size() - 1] as Vector2i)
 			)
 			if displaces:
-				## Path-based facing in MovementSystem — mouse quadrant must not override travel.
+				## Path-based facing in MovementSystem â€” mouse quadrant must not override travel.
 				move_action.face_dir = -1
 				continue
 			var drop_face: int = _facing_from_drop(local, cell)
@@ -2152,7 +2152,7 @@ func _prefer_approach_over_trample_move(actor: UnitState, enemy: UnitState) -> b
 
 
 func _notify_drag_plan_move_committed(_unit_id: int) -> void:
-	## Premove walk animation is owned by planning_commit_events — do not mark instant.
+	## Premove walk animation is owned by planning_commit_events â€” do not mark instant.
 	pass
 
 
@@ -2171,7 +2171,7 @@ func _unit_move_slot_open(unit_id: int, cell: Vector2i = Vector2i(-999999, -9999
 	return not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
 
 
-## Post-move hover/commit — action column already spent; never re-pair selected skill.
+## Post-move hover/commit â€” action column already spent; never re-pair selected skill.
 ## Exception: committed action with an open pre-move slot still uses enemy/tile approach
 ## commit slots (pre + action), not post-move-only placement.
 func _planning_post_move_only(actor: UnitState, unit_id: int, cell: Vector2i) -> bool:
@@ -2484,7 +2484,7 @@ func _awaiting_module_index_for(unit_id: int) -> int:
 
 
 func _awaiting_invalid_endpoint_reason(actor: UnitState, ability: AbilityData) -> String:
-	## Align planning reject reason with sim fail-loud codes (ability-data.md §2.7 rule 5).
+	## Align planning reject reason with sim fail-loud codes (ability-data.md Â§2.7 rule 5).
 	if actor == null or ability == null or _director == null:
 		return "Invalid target or distance for this ability."
 	var awaiting: TimelineAction = _director.find_awaiting_action(actor.id)
@@ -2691,7 +2691,7 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	return actor != null and AbilitySystem.can_afford_run(actor)
 
 
-## Where red action-range tiles anchor — projected stand plus live move-preview stand (intent truth).
+## Where red action-range tiles anchor â€” projected stand plus live move-preview stand (intent truth).
 func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	if _director == null:
 		return Vector2i(-999999, -999999)
@@ -2733,7 +2733,7 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	return projected
 
 
-## Locked move intent (timeline or painted drag) used for action-range economy — not hover stand.
+## Locked move intent (timeline or painted drag) used for action-range economy â€” not hover stand.
 func _timeline_move_action_for_action_range(unit_id: int) -> TimelineAction:
 	if _director == null or unit_id < 0:
 		return null
@@ -2925,7 +2925,7 @@ func move_intent_destination(unit_id: int) -> Vector2i:
 	return Vector2i(-999, -999)
 
 
-## Single AP read for planning UI — delegates to AbilitySystem.planning_display_ap_left.
+## Single AP read for planning UI â€” delegates to AbilitySystem.planning_display_ap_left.
 func planning_display_ap_left(unit_id: int) -> int:
 	if _director == null or unit_id < 0:
 		return -1
@@ -2964,7 +2964,7 @@ func planning_display_ap_left(unit_id: int) -> int:
 	)
 
 
-## Single MP read for planning UI — projected economy; reject overspend display from live sim.
+## Single MP read for planning UI â€” projected economy; reject overspend display from live sim.
 func planning_display_mp_left(unit_id: int) -> int:
 	if _director == null or unit_id < 0:
 		return -1
@@ -2989,7 +2989,7 @@ func timeline_refresh_key(unit_id: int) -> String:
 	return _intent_snapshot_key
 
 
-## Pending plan columns that differ from committed — for timeline ghost text.
+## Pending plan columns that differ from committed â€” for timeline ghost text.
 func timeline_ghost_slots(unit_id: int) -> Dictionary:
 	var empty: Dictionary = {"pre": [], "action": [], "post": []}
 	if not _hover_intent_ghost_active(unit_id):
@@ -3262,7 +3262,7 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	return unit.position
 
 
-## Pathfinding / drop origin — projected stand, or action end during post-move.
+## Pathfinding / drop origin â€” projected stand, or action end during post-move.
 func _proj_move_origin(unit: UnitState) -> Vector2i:
 	if _director == null or unit == null:
 		return _proj_origin(unit)
@@ -3516,7 +3516,7 @@ func _build_commit_slots_at_cell(
 			slots["invalid"] = "Invalid target."
 		return slots
 
-	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental —
+	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental â€”
 	## do not divert into enemy/ally unit-target commit slots.
 	var awaiting_tile_endpoint: bool = _is_awaiting_movement_endpoint(actor, ability)
 
@@ -3792,7 +3792,7 @@ func _build_enemy_commit_slots(
 		slots["invalid"] = "Invalid target for this skill."
 		return slots
 	## Safety: movement-endpoint awaiting should be handled as a TILE above; if we still
-	## land here, commit via planning_commit_target_unit_id (TILE → -1).
+	## land here, commit via planning_commit_target_unit_id (TILE â†’ -1).
 	if use_skill and _is_awaiting_movement_endpoint(actor, ability):
 		if AbilitySystem.planning_is_valid_awaiting_endpoint(
 			_proj_origin(actor), enemy.position, ability,
@@ -4178,7 +4178,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	if _director == null or _director.board == null or not _director.board.is_in_bounds(cell):
 		return ""
 	if dragging:
-		## F5: drag preview is the unit sprite only — hide planning emoji cursor.
+		## F5: drag preview is the unit sprite only â€” hide planning emoji cursor.
 		return ""
 	var sel_id: int = _director.selected_unit_id
 	if sel_id < 0:

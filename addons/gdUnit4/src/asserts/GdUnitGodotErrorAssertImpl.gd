@@ -1,4 +1,4 @@
-extends GdUnitGodotErrorAssert
+﻿extends GdUnitGodotErrorAssert
 
 var _custom_failure_message := ""
 var _additional_failure_message := ""

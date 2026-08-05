@@ -1,4 +1,4 @@
-class_name GdUnitThreadContext
+﻿class_name GdUnitThreadContext
 extends RefCounted
 
 var _thread: Thread

@@ -1,4 +1,4 @@
-class_name GdUnitCommandHandler
+﻿class_name GdUnitCommandHandler
 extends Object
 
 

@@ -15,13 +15,13 @@ static var _ABILITY_CODE_BRANCHES: Dictionary = {
 
 
 static func manual_keywords() -> Dictionary:
-	## Master Bible — Keyword Terminology Glossary (class_abilities.txt §127–217).
+	## Master Bible â€” Keyword Terminology Glossary (class_abilities.txt Â§127â€“217).
 	## Player-facing tooltips must match this wording (Keyword Parity Mandate).
 	return {
 		# Action & utility
 		"ATK": "Deal physical damage scaling off the skill's base power, weapon might, and your strength. X = Skill Base Power.",
 		"MAG ATK": "Deal magical damage scaling off the skill's base power, weapon might, and your magic. X = Skill Base Power.",
-		"AOE ATK": "MAG/physical area attack — damage hits all units in the listed target shape.",
+		"AOE ATK": "MAG/physical area attack â€” damage hits all units in the listed target shape.",
 		"HEAL": "Restore health equal to Round Down(X * 10% of the target's Max HP).",
 		"MAG HEAL": "Round Down( (X + WPN) * (1 + MAG / 5) * 0.20 + 20% of Target's Max HP ).",
 		"SHIELD": "Gain temporary over-HP equal to Round Down(X * 10% of the target's Max HP). Takes priority over normal HP.",
@@ -51,22 +51,22 @@ static func manual_keywords() -> Dictionary:
 			+ "(caster immune to collision). Sideways push while passing; axial PUSH when landing on the victim."
 		),
 		# Economy
-		"AP": "Action Points — spent on class Active Skills and Run.",
-		"MOV": "Movement Points — spent on basic walks and class Movement Skills.",
+		"AP": "Action Points â€” spent on class Active Skills and Run.",
+		"MOV": "Movement Points â€” spent on basic walks and class Movement Skills.",
 		# Targeting (Manhattan)
 		"RANGE": "Maximum target distance in tiles. Line of sight required unless otherwise specified.",
 		"RANGE 0": "Anchored to the caster's current tile (Self).",
-		"AOE": "Cross-shaped area — expands X tiles from the center.",
+		"AOE": "Cross-shaped area â€” expands X tiles from the center.",
 		"AOE SQUARE": "Square array of tiles (e.g., 2x2, 3x3).",
 		"ARC": "3-tile sweep attack (1x3 or 3x1 perpendicular line).",
 		"CONE": "Directional arc expanding outward from the caster for X tiles.",
 		"SKEWER": "X tiles in one cardinal direction.",
 		"GLOBAL": "Ignores range limits and line of sight.",
 		# Stats (skill-line notation)
-		"DEF": "Defense — reduces incoming physical damage after SHIELD.",
-		"STR": "Strength — scales physical ATK.",
-		"MAG": "Magic — scales MAG ATK and mitigates magical damage.",
-		"WPN": "Weapon Might — added to ability base power in the damage formula.",
+		"DEF": "Defense â€” reduces incoming physical damage after SHIELD.",
+		"STR": "Strength â€” scales physical ATK.",
+		"MAG": "Magic â€” scales MAG ATK and mitigates magical damage.",
+		"WPN": "Weapon Might â€” added to ability base power in the damage formula.",
 	}
 
 
@@ -75,35 +75,35 @@ static func manual_keyword_system(kw: String) -> String:
 	match kw:
 		"ATK":
 			return (
-				"EffectType.DAMAGE → CombatSystem.calculate_scaled_damage(base, scaling_stat) "
+				"EffectType.DAMAGE â†’ CombatSystem.calculate_scaled_damage(base, scaling_stat) "
 				+ "then deal_damage with DEF/MAG mitigation unless PIERCE."
 			)
 		"MAG ATK":
-			return "EffectType.DAMAGE with scaling_stat MAGICAL → MAG scaling path in CombatSystem."
+			return "EffectType.DAMAGE with scaling_stat MAGICAL â†’ MAG scaling path in CombatSystem."
 		"AOE ATK":
 			return "EffectType.RANGED_EXPLODE or shape-gathered DAMAGE hits each unit in target_shape tiles."
 		"HEAL":
-			return "EffectType.HEAL → CombatSystem.heal using scaling_stat and EffectData.amount as base power."
+			return "EffectType.HEAL â†’ CombatSystem.heal using scaling_stat and AbilityModule.amount as base power."
 		"MAG HEAL":
 			return "EffectType.HEAL with MAGICAL scaling_stat; POISON halves final heal amount."
 		"SHIELD":
-			return "EffectType.ARMOR_UP → CombatSystem.add_armor; blocked when target has VULNERABLE."
+			return "EffectType.ARMOR_UP â†’ CombatSystem.add_armor; blocked when target has VULNERABLE."
 		"CLEANSE":
 			return "EffectType.CLEANSE strips debuffs (GameEnums.is_debuff) from target.active_statuses."
 		"PURGE":
 			return "EffectType.PURGE removes buffs and sets target.armor = 0."
 		"MOVE":
-			return "EffectType.MOVE → MovementSystem.execute_move or execute_skill_walk."
+			return "EffectType.MOVE â†’ MovementSystem.execute_move or execute_skill_walk."
 		"PIERCE":
 			return "StatusType.PIERCE on attacker: deal_damage zeroes DEF/MAG mitigation and fortitude."
 		"PUSH":
-			return "EffectType.PUSH → pending_pushes → PhysicsSystem.push; wall/unit block triggers collision damage."
+			return "EffectType.PUSH â†’ pending_pushes â†’ PhysicsSystem.push; wall/unit block triggers collision damage."
 		"PULL":
-			return "EffectType.PULL → PhysicsSystem.push toward caster; same collision rules as PUSH."
+			return "EffectType.PULL â†’ PhysicsSystem.push toward caster; same collision rules as PUSH."
 		"COLLISION":
 			return (
-				"PhysicsSystem._emit_collision → CombatSystem.deal_collision_damage: "
-				+ "base = 1 + floor(excess_push/3) + bonus; scaled by 0.75×(base+WPN)×(1+STR/5)."
+				"PhysicsSystem._emit_collision â†’ CombatSystem.deal_collision_damage: "
+				+ "base = 1 + floor(excess_push/3) + bonus; scaled by 0.75Ã—(base+WPN)Ã—(1+STR/5)."
 			)
 		"COUNTER ATTACK":
 			return "CombatSystem.counter_attack after qualifying hits; uses calculate_scaled_damage with listed base."
@@ -117,9 +117,9 @@ static func manual_keyword_system(kw: String) -> String:
 		"EXPLODE":
 			return "EffectType.EXPLODE damages all units on 4 cardinal neighbors plus caster tile."
 		"SPAWN":
-			return "EffectType.SPAWN creates unit from EffectData.spawn_unit_id on target tile."
+			return "EffectType.SPAWN creates unit from AbilityModule.spawn_unit_id on target tile."
 		"SWAP":
-			return "EffectType.SWAP → PhysicsSystem.swap: exchanges positions, no collision."
+			return "EffectType.SWAP â†’ PhysicsSystem.swap: exchanges positions, no collision."
 		"TELEPORT":
 			return "EffectType.TELEPORT_CASTER moves actor if tile unoccupied and not a wall."
 		"TRAMPLE":
@@ -129,7 +129,7 @@ static func manual_keyword_system(kw: String) -> String:
 			)
 		"BULLDOZE":
 			return (
-				"EffectType.BULLDOZE: resolve_pass_through_tile → apply_trample_contact "
+				"EffectType.BULLDOZE: resolve_pass_through_tile â†’ apply_trample_contact "
 				+ "(collision base X + PUSH X). Works on DASH or path walk without DASH."
 			)
 		"AP":
@@ -178,11 +178,11 @@ static func status_player_tooltip(st: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.STAT_BUFF_ACC:
 			return "ACC +X for the listed duration. X is set by the applying skill."
 		GameEnums.StatusType.STAT_DEBUFF_DEF:
-			return "DEF −X for the listed duration. X is set by the applying skill."
+			return "DEF âˆ’X for the listed duration. X is set by the applying skill."
 		GameEnums.StatusType.STAT_DEBUFF_MOV:
 			return "Target MAX MOVEMENT reduced by X for the listed duration."
 		GameEnums.StatusType.STAT_DEBUFF_ACC:
-			return "ACC −X for the listed duration. X is set by the applying skill."
+			return "ACC âˆ’X for the listed duration. X is set by the applying skill."
 		GameEnums.StatusType.BURN:
 			return "Take exactly X unmitigated damage at the start of the turn. Leaves FIRE terrain if moving."
 		GameEnums.StatusType.BLEED:
@@ -193,7 +193,7 @@ static func status_player_tooltip(st: GameEnums.StatusType) -> String:
 				+ "Healing received is reduced by 50% (rounded down)."
 			)
 		GameEnums.StatusType.WEAKEN:
-			return "Target suffers −2 STR and −2 MAG for the duration."
+			return "Target suffers âˆ’2 STR and âˆ’2 MAG for the duration."
 		GameEnums.StatusType.VULNERABLE:
 			return (
 				"Target loses all Push Mitigation (pushed maximum distance by collisions) "
@@ -262,16 +262,16 @@ static func status_player_tooltip(st: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.INDOMITABLE_WILL:
 			return "Convert missing HP into SHIELD for 2 turns. [+] When SHIELD expires, gain +2 STR."
 		GameEnums.StatusType.RUNNING:
-			return "Run — costs 1 AP, extends movement for this turn's walk without consuming the Action slot."
+			return "Run â€” costs 1 AP, extends movement for this turn's walk without consuming the Action slot."
 		GameEnums.StatusType.ELECTRIFIED:
 			return "Incoming damage gains +1 raw before mitigation."
 		GameEnums.StatusType.WEAK_TRAP:
-			return "Trap marker — triggers when stepped on (skill-defined effect)."
+			return "Trap marker â€” triggers when stepped on (skill-defined effect)."
 		_:
 			return GameEnums.StatusType.keys()[st].capitalize().replace("_", " ")
 
 
-## Master Bible skill lines (class_abilities.txt) — overrides generated effect text when present.
+## Master Bible skill lines (class_abilities.txt) â€” overrides generated effect text when present.
 static func bible_ability_effect_line(ability: AbilityData) -> String:
 	if ability == null:
 		return ""
@@ -311,8 +311,8 @@ static func bible_ability_effect_line(ability: AbilityData) -> String:
 static func bible_ability_targeting_label(ability: AbilityData) -> String:
 	if ability == null:
 		return ""
-	for eff: EffectData in ability.effects:
-		if eff.type == GameEnums.EffectType.DASH:
+	for eff: AbilityModule in ability.modules:
+		if eff.primary_type == GameEnums.EffectType.DASH:
 			return "DASH %d" % eff.amount
 	if ability.range_tiles > 0:
 		return "RANGE %d" % ability.range_tiles
@@ -513,13 +513,13 @@ static func ability_data_dump(ability: AbilityData) -> String:
 		lines.append("--- upgraded_modules (%d) ---" % ability.upgraded_modules.size())
 		for umi: int in ability.upgraded_modules.size():
 			lines.append(_module_dump_line(umi, ability.upgraded_modules[umi]))
-	lines.append("--- effects (%d) ---" % ability.effects.size())
-	for i: int in ability.effects.size():
-		lines.append(_effect_dump_line(i, ability.effects[i]))
-	if not ability.upgraded_effects.is_empty():
-		lines.append("--- upgraded_effects (%d) ---" % ability.upgraded_effects.size())
-		for j: int in ability.upgraded_effects.size():
-			lines.append(_effect_dump_line(j, ability.upgraded_effects[j]))
+	lines.append("--- effects (%d) ---" % ability.modules.size())
+	for i: int in ability.modules.size():
+		lines.append(_effect_dump_line(i, ability.modules[i]))
+	if not ability.upgraded_modules.is_empty():
+		lines.append("--- upgraded_modules (%d) ---" % ability.upgraded_modules.size())
+		for j: int in ability.upgraded_modules.size():
+			lines.append(_effect_dump_line(j, ability.upgraded_modules[j]))
 	return "\n".join(lines)
 
 
@@ -530,14 +530,14 @@ static func _module_dump_line(index: int, mod: AbilityModule) -> String:
 	for kw: AbilityKeyword in mod.keywords:
 		if kw != null:
 			kw_parts.append(GameEnums.AbilityKeywordId.keys()[kw.keyword_id])
-	return "  [%d] %s %s range %d–%d gate %s kw[%s] layers %d" % [
+	return "  [%d] %s %s range %dâ€“%d gate %s kw[%s] layers %d" % [
 		index,
 		GameEnums.ModulePhase.keys()[mod.execution_phase],
 		GameEnums.EffectType.keys()[mod.primary_type],
 		mod.min_range,
 		mod.max_range,
 		GameEnums.ModuleGate.keys()[mod.gate],
-		",".join(kw_parts) if not kw_parts.is_empty() else "—",
+		",".join(kw_parts) if not kw_parts.is_empty() else "â€”",
 		mod.layers.size(),
 	]
 
@@ -551,7 +551,7 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 	if ability.is_movement_kind():
 		parts.append("Economy: spends movement_point_cost (MP); PRE_MOVE timeline bucket; no action slot.")
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
-		parts.append("Economy: PRE_MOVE only — spends 1 AP on move (uses_run); does not consume the Action slot.")
+		parts.append("Economy: PRE_MOVE only â€” spends 1 AP on move (uses_run); does not consume the Action slot.")
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
 		parts.append("Economy: consumes the Action slot; ends planning for this unit.")
 	else:
@@ -561,18 +561,18 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 			GameEnums.TargetShape.keys()[ability.target_shape],
 			ability.target_shape_size,
 		])
-	for eff: EffectData in ability.effects:
+	for eff: AbilityModule in ability.modules:
 		parts.append(_effect_impl_note(eff))
 	if ability.id in _ABILITY_CODE_BRANCHES:
-		parts.append("⚠ CODE BRANCH: %s" % _ABILITY_CODE_BRANCHES[ability.id])
+		parts.append("âš  CODE BRANCH: %s" % _ABILITY_CODE_BRANCHES[ability.id])
 	return "\n".join(parts)
 
 
 static func in_game_ability_bbcode(ability: AbilityData, unit: UnitState = null) -> String:
 	if ability == null:
 		return ""
-	## load() — do not hard-reference CombatUiFormatters here. That class pulls CombatDirector
-	## → EventBus; a static class_name edge made DataLibrary (schema) fail to compile under
+	## load() â€” do not hard-reference CombatUiFormatters here. That class pulls CombatDirector
+	## â†’ EventBus; a static class_name edge made DataLibrary (schema) fail to compile under
 	## headless `--script` before autoloads register (AbilityData BAR runners).
 	var formatters: GDScript = load("res://presentation/combat_ui_formatters.gd") as GDScript
 	formatters.call("configure_body_font", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
@@ -608,8 +608,8 @@ static func targeting_flags_hint(ability: AbilityData) -> String:
 	return " | %s" % dump
 
 
-static func duplicate_effect(src: EffectData) -> EffectData:
-	var e := EffectData.new()
+static func duplicate_effect(src: AbilityModule) -> AbilityModule:
+	var e := AbilityModule.new()
 	e.type = src.type
 	e.amount = src.amount
 	e.status_type = src.status_type
@@ -693,35 +693,35 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.presentation_anim = src.presentation_anim
 	dst.scaling_stat = src.scaling_stat
 	dst.is_movement_skill = AbilityModuleBridge.ability_has_displacement_effect(src)
-	dst.effects.clear()
-	for eff: EffectData in src.effects:
-		dst.effects.append(duplicate_effect(eff))
-	dst.upgraded_effects.clear()
-	for eff: EffectData in src.upgraded_effects:
-		dst.upgraded_effects.append(duplicate_effect(eff))
+	dst.modules.clear()
+	for eff: AbilityModule in src.modules:
+		dst.modules.append(duplicate_effect(eff))
+	dst.upgraded_modules.clear()
+	for eff: AbilityModule in src.upgraded_modules:
+		dst.upgraded_modules.append(duplicate_effect(eff))
 	dst.modules.clear()
 	dst.upgraded_modules.clear()
 	dst.sync_legacy_targeting()
 	dst.finalize_modular()
 
 
-static func _effect_dump_line(index: int, eff: EffectData) -> String:
+static func _effect_dump_line(index: int, eff: AbilityModule) -> String:
 	var base: String = "[%d] %s amount=%d" % [
 		index,
-		GameEnums.EffectType.keys()[eff.type],
+		GameEnums.EffectType.keys()[eff.primary_type],
 		eff.amount,
 	]
 	if eff.scaling_stat != GameEnums.StatType.NONE:
 		base += " scaling_stat=%s" % GameEnums.StatType.keys()[eff.scaling_stat]
-	if eff.type == GameEnums.EffectType.ADD_STATUS or eff.type == GameEnums.EffectType.ADD_STATUS_SELF:
+	if eff.primary_type == GameEnums.EffectType.ADD_STATUS or eff.primary_type == GameEnums.EffectType.ADD_STATUS_SELF:
 		base += " status=%s duration=%d" % [
 			GameEnums.StatusType.keys()[eff.status_type],
 			eff.status_duration,
 		]
-	if eff.bonus_if_adjacent_at_cast != 0:
-		base += " bonus_if_adjacent_at_cast=%d" % eff.bonus_if_adjacent_at_cast
-	if eff.def_debuff_before_damage != 0:
-		base += " def_debuff_before_damage=%d" % eff.def_debuff_before_damage
+	if eff.legacy_modifiers.get("bonus_if_adjacent_at_cast", 0) != 0:
+		base += " bonus_if_adjacent_at_cast=%d" % eff.legacy_modifiers.get("bonus_if_adjacent_at_cast", 0)
+	if eff.legacy_modifiers.get("def_debuff_before_damage", 0) != 0:
+		base += " def_debuff_before_damage=%d" % eff.legacy_modifiers.get("def_debuff_before_damage", 0)
 	if eff.spawn_unit_id != &"":
 		base += " spawn_unit_id=%s" % String(eff.spawn_unit_id)
 	return base
@@ -739,42 +739,42 @@ static func _planning_note(ability: AbilityData) -> String:
 			return "plan_action (class skill or basic attack)."
 
 
-static func _effect_impl_note(eff: EffectData) -> String:
-	match eff.type:
+static func _effect_impl_note(eff: AbilityModule) -> String:
+	match eff.primary_type:
 		GameEnums.EffectType.DAMAGE:
 			var s: String = "DAMAGE: CombatSystem physical/magical formula; ability.scaling_stat selects STR/MAG."
-			if eff.bonus_if_adjacent_at_cast > 0:
-				s += " +%d if target adjacent at cast (data-driven)." % eff.bonus_if_adjacent_at_cast
-			if eff.def_debuff_before_damage > 0:
-				s += " Applies DEF debuff %d before damage (data-driven)." % eff.def_debuff_before_damage
+			if eff.legacy_modifiers.get("bonus_if_adjacent_at_cast", 0) > 0:
+				s += " +%d if target adjacent at cast (data-driven)." % eff.legacy_modifiers.get("bonus_if_adjacent_at_cast", 0)
+			if eff.legacy_modifiers.get("def_debuff_before_damage", 0) > 0:
+				s += " Applies DEF debuff %d before damage (data-driven)." % eff.legacy_modifiers.get("def_debuff_before_damage", 0)
 			return s
 		GameEnums.EffectType.DASH:
 			return "DASH: straight-line path; may combine with TRAMPLE or BULLDOZE on the same ability."
 		GameEnums.EffectType.TRAMPLE:
 			return "TRAMPLE: resolve_pass_through_tile during dash or execute_pass_through_walk; open end tile."
 		GameEnums.EffectType.BULLDOZE:
-			return "BULLDOZE: resolve_pass_through_tile → collision + push; dash or path walk (no DASH required)."
+			return "BULLDOZE: resolve_pass_through_tile â†’ collision + push; dash or path walk (no DASH required)."
 		GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF:
 			return "ADD_STATUS: StatusSystem applies %s for %d turn(s)." % [
 				GameEnums.StatusType.keys()[eff.status_type],
 				eff.status_duration,
 			]
 		GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL:
-			return "%s: DisplacementSystem; collision formula on blocked tiles." % GameEnums.EffectType.keys()[eff.type]
+			return "%s: DisplacementSystem; collision formula on blocked tiles." % GameEnums.EffectType.keys()[eff.primary_type]
 		_:
-			return "%s: resolved by AbilitySystem effect handler." % GameEnums.EffectType.keys()[eff.type]
+			return "%s: resolved by AbilitySystem effect handler." % GameEnums.EffectType.keys()[eff.primary_type]
 
 
 static func _ability_kind_tooltip(k: String) -> String:
 	match k:
 		"CLASS_SKILL":
-			return "Class skill — AP cost, action slot."
+			return "Class skill â€” AP cost, action slot."
 		"MOVEMENT_SKILL":
-			return "Movement skill — MP cost, pre-move only."
+			return "Movement skill â€” MP cost, pre-move only."
 		"UNIVERSAL_RUN":
-			return "Run — AP + extended movement."
+			return "Run â€” AP + extended movement."
 		"UNIVERSAL_WAIT":
-			return "Wait — exhausts unit."
+			return "Wait â€” exhausts unit."
 		_:
 			return k
 
@@ -786,7 +786,7 @@ static func _ability_kind_system(k: String) -> String:
 		"MOVEMENT_SKILL":
 			return "AbilityData.is_movement_kind(); plan_pre_move; AbilitySystem deducts MP."
 		"UNIVERSAL_RUN":
-			return "plan_pre_move (Run); AP spent on MOVE.uses_run — not Action column."
+			return "plan_pre_move (Run); AP spent on MOVE.uses_run â€” not Action column."
 		"UNIVERSAL_WAIT":
 			return "DataLibrary.get_universal_wait(); hidden from skill lists."
 		_:
@@ -848,13 +848,13 @@ static func _effect_type_tooltip(k: String) -> String:
 static func _effect_type_system(k: String) -> String:
 	match k:
 		"DAMAGE":
-			return "AbilitySystem → CombatSystem.calculate_scaled_damage + deal_damage (DEF/MAG, armor, fortitude)."
+			return "AbilitySystem â†’ CombatSystem.calculate_scaled_damage + deal_damage (DEF/MAG, armor, fortitude)."
 		"PUSH", "PULL":
-			return "AbilitySystem queues pending_pushes → PhysicsSystem.push/pull with collision on blocked tiles."
+			return "AbilitySystem queues pending_pushes â†’ PhysicsSystem.push/pull with collision on blocked tiles."
 		"SWAP":
-			return "AbilitySystem → PhysicsSystem.swap: swap grid occupancy, terrain landing on both."
+			return "AbilitySystem â†’ PhysicsSystem.swap: swap grid occupancy, terrain landing on both."
 		"DASH":
-			return "AbilitySystem queues dash pending_pushes → PhysicsSystem.dash along straight line."
+			return "AbilitySystem queues dash pending_pushes â†’ PhysicsSystem.dash along straight line."
 		"MOVE":
 			return "AbilitySystem executes a non-instant skill walk via MovementSystem.execute_skill_walk()."
 		"TRAMPLE":
@@ -862,9 +862,9 @@ static func _effect_type_system(k: String) -> String:
 		"BULLDOZE":
 			return "Paired with movement: dash pending_pushes or execute_skill_walk(); caster collision immune."
 		"HEAL":
-			return "AbilitySystem → CombatSystem.heal with ability scaling_stat."
+			return "AbilitySystem â†’ CombatSystem.heal with ability scaling_stat."
 		"ARMOR_UP":
-			return "AbilitySystem → CombatSystem.add_armor (temporary HP layer)."
+			return "AbilitySystem â†’ CombatSystem.add_armor (temporary HP layer)."
 		"ADD_STATUS", "ADD_STATUS_SELF":
 			return "AbilitySystem appends StatusData to target/actor; UnitState._recalculate_stats on apply."
 		"EXPLODE", "RANGED_EXPLODE":
@@ -876,9 +876,9 @@ static func _effect_type_system(k: String) -> String:
 		"DESTROY_OBSTACLE":
 			return "AbilitySystem deal_damage full HP when target is_construct."
 		"SPAWN":
-			return "AbilitySystem spawns unit from EffectData.spawn_unit_id."
+			return "AbilitySystem spawns unit from AbilityModule.spawn_unit_id."
 		"DAMAGE_SELF":
-			return "AbilitySystem → deal_damage on actor with pierce=true damage type."
+			return "AbilitySystem â†’ deal_damage on actor with pierce=true damage type."
 		"REFUND_AP_ON_CC":
 			return "AbilitySystem refunds 1 AP if target has ROOT or STAGGER at resolve time."
 		_:
@@ -887,22 +887,22 @@ static func _effect_type_system(k: String) -> String:
 
 static func _status_system(st: GameEnums.StatusType) -> String:
 	const DUR: String = (
-		"Duration: StatusData.duration turns; ticks_remaining starts at duration×2+1; "
+		"Duration: StatusData.duration turns; ticks_remaining starts at durationÃ—2+1; "
 		+ "Simulator._tick_statuses decrements twice per full round (after player plan, after enemy turn)."
 	)
 	match st:
 		GameEnums.StatusType.STAT_BUFF_STR:
-			return "UnitState._recalculate_stats: stat_str += status.value (summed). value from EffectData.amount via ADD_STATUS. %s" % DUR
+			return "UnitState._recalculate_stats: stat_str += status.value (summed). value from AbilityModule.amount via ADD_STATUS. %s" % DUR
 		GameEnums.StatusType.STAT_BUFF_MAG:
 			return "UnitState._recalculate_stats: stat_mag += status.value. %s" % DUR
 		GameEnums.StatusType.STAT_BUFF_DEF:
 			return (
-				"UnitState._recalculate_stats: stat_def += status.value → current_defense = max(0, base+wpn+stat_def). "
-				+ "No global amount: EffectData.amount per skill (e.g. Phalanx=5, Defensive Formation=2); Fortify uses scaling_stat DEFENSE → amount+caster DEF. %s"
+				"UnitState._recalculate_stats: stat_def += status.value â†’ current_defense = max(0, base+wpn+stat_def). "
+				+ "No global amount: AbilityModule.amount per skill (e.g. Phalanx=5, Defensive Formation=2); Fortify uses scaling_stat DEFENSE â†’ amount+caster DEF. %s"
 				% DUR
 			)
 		GameEnums.StatusType.STAT_BUFF_MOV, GameEnums.StatusType.STAT_BUFF_MP:
-			return "UnitState._recalculate_stats: stat_mov += status.value → movement.max_points. Rallying Presence appends STAT_BUFF_MP(1, +1|+2) at turn start. %s" % DUR
+			return "UnitState._recalculate_stats: stat_mov += status.value â†’ movement.max_points. Rallying Presence appends STAT_BUFF_MP(1, +1|+2) at turn start. %s" % DUR
 		GameEnums.StatusType.STAT_BUFF_ACC:
 			return "Enum + UI only. Not read in UnitState._recalculate_stats or combat math yet."
 		GameEnums.StatusType.STAT_DEBUFF_DEF:
@@ -938,7 +938,7 @@ static func _status_system(st: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.INVULNERABLE:
 			return "CombatSystem.deal_damage early return; AbilitySystem blocks debuff ADD_STATUS."
 		GameEnums.StatusType.THORNS:
-			return "CombatSystem.deal_damage after hit: if attacker adjacent, reflect floor((hp+armor dmg)×status.amount/100), min 1."
+			return "CombatSystem.deal_damage after hit: if attacker adjacent, reflect floor((hp+armor dmg)Ã—status.amount/100), min 1."
 		GameEnums.StatusType.IRON_GRIP_DEBUFF:
 			return "CombatSystem.get_dynamic_defense: def = ceili(def/2) while active."
 		GameEnums.StatusType.BURN:
@@ -946,13 +946,13 @@ static func _status_system(st: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.BLEED:
 			return "Movement cost 2/tile in overlays; Simulator._tick_end_of_turn: deal_damage status.value (pierce)."
 		GameEnums.StatusType.POISON:
-			return "Turn start: ceili(max_hp×0.10) pierce damage; CombatSystem.heal: final_amount = floori(amount×0.5)."
+			return "Turn start: ceili(max_hpÃ—0.10) pierce damage; CombatSystem.heal: final_amount = floori(amountÃ—0.5)."
 		GameEnums.StatusType.WEAKEN:
 			return "UnitState._recalculate_stats: stat_str -= 2; stat_mag -= 2 (fixed, not status.value)."
 		GameEnums.StatusType.ELECTRIFIED:
 			return "CombatSystem.deal_damage: amount += 1 before mitigation."
 		GameEnums.StatusType.WEAK_TRAP:
-			return "Not referenced in core systems — placeholder status."
+			return "Not referenced in core systems â€” placeholder status."
 		GameEnums.StatusType.FEAR, GameEnums.StatusType.CONFUSION:
 			return "Boss immune (AbilitySystem ADD_STATUS). No enemy AI / player targeting override implemented."
 		GameEnums.StatusType.PIERCE:
@@ -1037,47 +1037,51 @@ static func apply_saved_unit_overrides() -> void:
 	apply_unit_overrides(read_editor_save().get("units", {}))
 
 
-static func effect_to_dict(src: EffectData) -> Dictionary:
+static func effect_to_dict(src: AbilityModule) -> Dictionary:
 	return {
-		"type": src.type,
+		"type": src.primary_type,
 		"amount": src.amount,
 		"status_type": src.status_type,
 		"status_duration": src.status_duration,
 		"scaling_stat": src.scaling_stat,
-		"bonus_if_adjacent_at_cast": src.bonus_if_adjacent_at_cast,
-		"def_debuff_before_damage": src.def_debuff_before_damage,
-		"spawn_unit_id": String(src.spawn_unit_id),
-		"modifiers": src.modifiers.duplicate(),
+		"bonus_if_adjacent_at_cast": src.legacy_modifiers.get("bonus_if_adjacent_at_cast", 0),
+		"def_debuff_before_damage": src.legacy_modifiers.get("def_debuff_before_damage", 0),
+		"spawn_unit_id": String(src.legacy_modifiers.get("spawn_unit_id", &"")),
+		"modifiers": src.legacy_modifiers.duplicate(),
 	}
 
 
-static func apply_effect_dict(dst: EffectData, data: Dictionary) -> void:
+static func apply_effect_dict(dst: AbilityModule, data: Dictionary) -> void:
 	if dst == null or data.is_empty():
 		return
-	dst.type = int(data.get("type", dst.type))
+	dst.primary_type = int(data.get("type", dst.primary_type))
 	dst.amount = int(data.get("amount", dst.amount))
 	dst.status_type = int(data.get("status_type", dst.status_type))
 	dst.status_duration = int(data.get("status_duration", dst.status_duration))
 	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
-	dst.bonus_if_adjacent_at_cast = int(data.get("bonus_if_adjacent_at_cast", dst.bonus_if_adjacent_at_cast))
-	dst.def_debuff_before_damage = int(data.get("def_debuff_before_damage", dst.def_debuff_before_damage))
-	dst.spawn_unit_id = StringName(String(data.get("spawn_unit_id", String(dst.spawn_unit_id))))
-	dst.modifiers = data.get("modifiers", {}).duplicate()
+	
+	dst.legacy_modifiers = data.get("modifiers", {}).duplicate()
+	if data.has("bonus_if_adjacent_at_cast"):
+		dst.legacy_modifiers["bonus_if_adjacent_at_cast"] = int(data.get("bonus_if_adjacent_at_cast", 0))
+	if data.has("def_debuff_before_damage"):
+		dst.legacy_modifiers["def_debuff_before_damage"] = int(data.get("def_debuff_before_damage", 0))
+	if data.has("spawn_unit_id"):
+		dst.legacy_modifiers["spawn_unit_id"] = StringName(String(data.get("spawn_unit_id", "")))
 
 
-static func effects_to_dict_array(effects: Array[EffectData]) -> Array:
+static func effects_to_dict_array(effects: Array[AbilityModule]) -> Array:
 	var out: Array = []
-	for eff: EffectData in effects:
+	for eff: AbilityModule in effects:
 		out.append(effect_to_dict(eff))
 	return out
 
 
-static func effects_from_dict_array(data: Array) -> Array[EffectData]:
-	var out: Array[EffectData] = []
+static func effects_from_dict_array(data: Array) -> Array[AbilityModule]:
+	var out: Array[AbilityModule] = []
 	for entry: Variant in data:
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
-		var eff := EffectData.new()
+		var eff := AbilityModule.new()
 		apply_effect_dict(eff, entry as Dictionary)
 		out.append(eff)
 	return out
@@ -1114,8 +1118,8 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"presentation_anim": src.presentation_anim,
 		"scaling_stat": src.scaling_stat,
 		"is_movement_skill": AbilityModuleBridge.ability_has_displacement_effect(src),
-		"effects": effects_to_dict_array(src.effects),
-		"upgraded_effects": effects_to_dict_array(src.upgraded_effects),
+		"effects": effects_to_dict_array(src.modules),
+		"upgraded_modules": effects_to_dict_array(src.upgraded_modules),
 		"module_count": src.modules.size(),
 		"upgraded_module_count": src.upgraded_modules.size(),
 	}
@@ -1125,7 +1129,7 @@ static func modules_summary_bbcode(ability: AbilityData) -> String:
 	if ability == null:
 		return "[i]no ability[/i]"
 	if ability.modules.is_empty():
-		return "[i]No modules yet — edit Effects (modules rebuild from effects automatically).[/i]"
+		return "[i]No modules yet â€” edit Effects (modules rebuild from effects automatically).[/i]"
 	var lines: PackedStringArray = PackedStringArray()
 	var i: int = 0
 	for mod: AbilityModule in ability.modules:
@@ -1138,9 +1142,9 @@ static func modules_summary_bbcode(ability: AbilityData) -> String:
 		for kw: AbilityKeyword in mod.keywords:
 			if kw != null:
 				kw_parts.append(GameEnums.AbilityKeywordId.keys()[kw.keyword_id])
-		var kw_s: String = (", ".join(kw_parts)) if not kw_parts.is_empty() else "—"
+		var kw_s: String = (", ".join(kw_parts)) if not kw_parts.is_empty() else "â€”"
 		lines.append(
-			"[b]M%d[/b] %s · %s · range %d–%d · gate %s · keywords [%s] · layers %d"
+			"[b]M%d[/b] %s Â· %s Â· range %dâ€“%d Â· gate %s Â· keywords [%s] Â· layers %d"
 			% [i, phase, ptype, mod.min_range, mod.max_range, gate, kw_s, mod.layers.size()]
 		)
 		i += 1
@@ -1150,7 +1154,7 @@ static func modules_summary_bbcode(ability: AbilityData) -> String:
 
 
 static func try_apply_tags(ability: AbilityData, tags: Array[StringName]) -> Dictionary:
-	## Shared editor/schema path for §11 tag reject (fail-loud, not applied).
+	## Shared editor/schema path for Â§11 tag reject (fail-loud, not applied).
 	var validated: Dictionary = AbilityModuleBridge.validate_tag_list(tags)
 	if not bool(validated["ok"]):
 		return {
@@ -1167,7 +1171,7 @@ static func try_apply_primary_resource(
 	ability: AbilityData,
 	primary_resource: GameEnums.CostResource
 ) -> Dictionary:
-	## Shared editor/schema path for §11 planner↔cost (illegal not applied).
+	## Shared editor/schema path for Â§11 plannerâ†”cost (illegal not applied).
 	if ability == null:
 		return {"ok": false, "reason": "null ability"}
 	if not AbilityModuleBridge.is_planner_cost_legal(ability.planner_group, primary_resource):
@@ -1183,7 +1187,7 @@ static func try_apply_primary_resource(
 	return {"ok": true, "reason": ""}
 
 
-## Shared editor/schema path for planner_group OptionButton (AD-5b — BAR must call this, not bare enforce).
+## Shared editor/schema path for planner_group OptionButton (AD-5b â€” BAR must call this, not bare enforce).
 static func apply_planner_group_change(
 	ability: AbilityData,
 	planner_group: GameEnums.PlannerGroup
@@ -1191,7 +1195,7 @@ static func apply_planner_group_change(
 	if ability == null:
 		return
 	ability.planner_group = planner_group
-	## Sole §11 owner: keep primary if still legal; else enforce_planner_cost_coupling.
+	## Sole Â§11 owner: keep primary if still legal; else enforce_planner_cost_coupling.
 	if not AbilityModuleBridge.is_planner_cost_legal(
 		ability.planner_group, ability.primary_resource
 	):
@@ -1199,7 +1203,7 @@ static func apply_planner_group_change(
 	AbilityModuleBridge.sync_legacy_from_header(ability)
 
 
-## Populate an OptionButton with only §11-legal CostResource values (editor + BAR share this).
+## Populate an OptionButton with only Â§11-legal CostResource values (editor + BAR share this).
 static func populate_legal_primary_option_button(ob: OptionButton, ability: AbilityData) -> void:
 	if ob == null or ability == null:
 		return
@@ -1252,7 +1256,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		var tag_result: Dictionary = try_apply_tags(dst, tags_out)
 		if not bool(tag_result["ok"]):
 			push_error(
-				"ClassLibrarySchema.apply_ability_dict: rejected unknown tags [%s] on ability %s — tags not applied"
+				"ClassLibrarySchema.apply_ability_dict: rejected unknown tags [%s] on ability %s â€” tags not applied"
 				% [",".join(tag_result["rejected"] as PackedStringArray), String(dst.id)]
 			)
 	if data.has("primary_resource") or data.has("primary_value"):
@@ -1262,7 +1266,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		var cost_result: Dictionary = try_apply_primary_resource(dst, requested)
 		if not bool(cost_result["ok"]):
 			push_error(
-				"ClassLibrarySchema.apply_ability_dict: %s on %s — cost not applied"
+				"ClassLibrarySchema.apply_ability_dict: %s on %s â€” cost not applied"
 				% [String(cost_result.get("reason", "")), String(dst.id)]
 			)
 			## Fail loud: do not silently rewrite illegal cost; still couple after planner change.
@@ -1308,10 +1312,10 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
 	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
 	if data.has("effects"):
-		dst.effects = effects_from_dict_array(data.get("effects", []))
+		dst.modules = effects_from_dict_array(data.get("effects", []))
 		dst.modules.clear()
-	if data.has("upgraded_effects"):
-		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
+	if data.has("upgraded_modules"):
+		dst.upgraded_modules = effects_from_dict_array(data.get("upgraded_modules", []))
 		dst.upgraded_modules.clear()
 	## Saved JSON sometimes has SELF mode with stale ALLY flags. Prefer self-target authoring.
 	if (

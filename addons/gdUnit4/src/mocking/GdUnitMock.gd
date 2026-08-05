@@ -1,4 +1,4 @@
-class_name GdUnitMock
+﻿class_name GdUnitMock
 extends RefCounted
 
 ## do call the real implementation

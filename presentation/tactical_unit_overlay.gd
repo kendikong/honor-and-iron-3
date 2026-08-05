@@ -1,4 +1,4 @@
-class_name TacticalUnitOverlay
+﻿class_name TacticalUnitOverlay
 extends Node2D
 
 ## Unit tokens + range tint on the mana-seed tactical map (Phase 4 shell).

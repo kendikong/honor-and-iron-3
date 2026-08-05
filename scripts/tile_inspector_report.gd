@@ -1,4 +1,4 @@
-class_name TileInspectorReport
+﻿class_name TileInspectorReport
 extends RefCounted
 
 ## Formats PlayerGrid + render provenance into inspector BBCode (cached per map).
@@ -103,7 +103,7 @@ static func _build_phantom_bbcode_uncached(
 	var parts: PackedStringArray = []
 	parts.append("[b]Phantom cell (%d, %d)[/b]" % [pos.x, pos.y])
 	parts.append(
-		"[color=#88ccff]Off-map extension — visual peering halo only, not in PlayerGrid.[/color]"
+		"[color=#88ccff]Off-map extension â€” visual peering halo only, not in PlayerGrid.[/color]"
 	)
 	parts.append("")
 	parts.append(_section_phantom_logical(pos, render))
@@ -114,15 +114,15 @@ static func _build_phantom_bbcode_uncached(
 
 static func _section_phantom_logical(pos: Vector2i, render: MapRenderProvenance) -> String:
 	var lines: PackedStringArray = []
-	lines.append("[color=#8ec8ff][b]── PlayerGrid (logic) ──[/b][/color]")
-	lines.append("[color=#888]No logical cell — gameplay ignores this coordinate.[/color]")
+	lines.append("[color=#8ec8ff][b]â”€â”€ PlayerGrid (logic) â”€â”€[/b][/color]")
+	lines.append("[color=#888]No logical cell â€” gameplay ignores this coordinate.[/color]")
 	var recorded: Dictionary = render.phantom_at(pos) if render != null else {}
 	if recorded.is_empty():
 		return "\n".join(lines)
 	var logical_type: int = int(recorded.get("logical_type", TileId.Type.GRASS))
 	var extends_from: Vector2i = recorded.get("extends_from", Vector2i.ZERO)
 	lines.append(
-		"[i]Extends in-map (%d, %d) — [b]%s[/b][/i]"
+		"[i]Extends in-map (%d, %d) â€” [b]%s[/b][/i]"
 		% [extends_from.x, extends_from.y, TileId.type_name(logical_type)]
 	)
 	return "\n".join(lines)
@@ -134,7 +134,7 @@ static func _section_phantom_layer(
 	phantom: TileMapLayer,
 ) -> String:
 	var lines: PackedStringArray = []
-	lines.append("[color=#7ec8e8][b]── PhantomLayer ──[/b][/color]")
+	lines.append("[color=#7ec8e8][b]â”€â”€ PhantomLayer â”€â”€[/b][/color]")
 	var recorded: Dictionary = render.phantom_at(pos) if render != null else {}
 	var live: Dictionary = _read_layer_cell(phantom, pos)
 	if recorded.is_empty() and live.is_empty():
@@ -151,16 +151,16 @@ static func _section_phantom_layer(
 static func _section_logical(pos: Vector2i, grid: PlayerGrid, logical: PlayerGridProvenance) -> String:
 	var tile_id: int = grid.get_cell(pos)
 	var lines: PackedStringArray = []
-	lines.append("[color=#8ec8ff][b]── PlayerGrid (logic) ──[/b][/color]")
+	lines.append("[color=#8ec8ff][b]â”€â”€ PlayerGrid (logic) â”€â”€[/b][/color]")
 	lines.append(
-		"[b]%s[/b] — %s"
+		"[b]%s[/b] â€” %s"
 		% [TileId.type_abbrev(tile_id), TileId.type_name(tile_id)]
 	)
 	var steps: Array = logical.get_steps(pos) if logical != null else []
 	if steps.is_empty():
 		if tile_id == TileId.Type.GRASS:
 			lines.append(
-				"[color=#888]Default grass fill — never modified by generator/repair.[/color]"
+				"[color=#888]Default grass fill â€” never modified by generator/repair.[/color]"
 			)
 		else:
 			lines.append("[color=#888]No generator history (manual edit or pre-provenance map).[/color]")
@@ -169,10 +169,10 @@ static func _section_logical(pos: Vector2i, grid: PlayerGrid, logical: PlayerGri
 		for i: int in range(steps.size()):
 			var step: Dictionary = steps[i]
 			var is_last: bool = i == steps.size() - 1
-			var prefix: String = "→ " if is_last else "  · "
+			var prefix: String = "â†’ " if is_last else "  Â· "
 			var type_name: String = TileId.type_name(int(step["type"]))
 			lines.append(
-				"%s[color=#c8c8c8]%s[/color]: %s — %s"
+				"%s[color=#c8c8c8]%s[/color]: %s â€” %s"
 				% [prefix, str(step["step"]), type_name, str(step["detail"])]
 			)
 	return "\n".join(lines)
@@ -184,7 +184,7 @@ static func _section_ground(
 	ground: TileMapLayer,
 ) -> String:
 	var lines: PackedStringArray = []
-	lines.append("[color=#9ad89a][b]── GroundLayer ──[/b][/color]")
+	lines.append("[color=#9ad89a][b]â”€â”€ GroundLayer â”€â”€[/b][/color]")
 	var recorded: Dictionary = render.ground_at(pos) if render != null else {}
 	var live: Dictionary = _read_layer_cell(ground, pos)
 	if recorded.is_empty() and live.is_empty():
@@ -199,7 +199,7 @@ static func _section_ground(
 			for i: int in range(steps.size()):
 				var step: Dictionary = steps[i]
 				lines.append(
-					"  %d. %s — %s"
+					"  %d. %s â€” %s"
 					% [i + 1, str(step["reason"]), str(step["detail"])]
 				)
 	elif not live.is_empty():
@@ -214,7 +214,7 @@ static func _section_overlay(
 	overlay: TileMapLayer,
 ) -> String:
 	var lines: PackedStringArray = []
-	lines.append("[color=#d4b0ff][b]── OverlayLayer ──[/b][/color]")
+	lines.append("[color=#d4b0ff][b]â”€â”€ OverlayLayer â”€â”€[/b][/color]")
 	var entries: Array[Dictionary] = (
 		render.overlay_entries_affecting(pos) if render != null else [] as Array[Dictionary]
 	)
@@ -238,14 +238,14 @@ static func _section_overlay(
 			var anchor: Vector2i = entry["anchor"]
 			var footprint: Vector2i = entry["footprint_cells"]
 			lines.append(
-				"From anchor (%d,%d) — %s (%d×%d)"
+				"From anchor (%d,%d) â€” %s (%dÃ—%d)"
 				% [anchor.x, anchor.y, _overlay_short_label(entry), footprint.x, footprint.y]
 			)
 			lines.append(_format_overlay_anchor(entry, true))
 
 	if not anchors.is_empty():
 		if not spillovers.is_empty():
-			lines.append("[i]16×16 overlay anchor (may be hidden under large sprite):[/i]")
+			lines.append("[i]16Ã—16 overlay anchor (may be hidden under large sprite):[/i]")
 		for entry: Dictionary in anchors:
 			lines.append(_format_overlay_anchor(entry))
 
@@ -261,7 +261,7 @@ static func _section_vfx(
 	vfx: TileMapLayer,
 ) -> String:
 	var lines: PackedStringArray = []
-	lines.append("[color=#80d4f0][b]── VFXLayer ──[/b][/color]")
+	lines.append("[color=#80d4f0][b]â”€â”€ VFXLayer â”€â”€[/b][/color]")
 	var recorded: Dictionary = render.vfx_at(pos) if render != null else {}
 	var live: Dictionary = _read_layer_cell(vfx, pos)
 	if recorded.is_empty() and live.is_empty():
@@ -304,7 +304,7 @@ static func _format_overlay_anchor(entry: Dictionary, indent: bool = false) -> S
 	var atlas: Vector2i = entry["atlas"]
 	var footprint: Vector2i = entry["footprint_cells"]
 	var desc: String = TileCatalog.describe_overlay_source(source_id, atlas)
-	var fp: String = "%d×%d cells" % [footprint.x, footprint.y]
+	var fp: String = "%dÃ—%d cells" % [footprint.x, footprint.y]
 	return (
 		"%s[b]%s[/b] (footprint %s)\n%s[color=#aaa]Reason:[/color] %s\n%s[color=#aaa]Detail:[/color] %s"
 		% [

@@ -1,0 +1,518 @@
+﻿runtest.cmd : ERROR: The remote port number must be between 1 and 65535 (inclusive).
+At C:\Users\Kendy\AppData\Local\Temp\ps-script-dca8d969-1452-490e-a3e5-201b05b0866e.ps1:112 char:49
++ ... nd-iron-3"; & "C:\Users\Kendy\Downloads\honor-and-iron-3\addons\gdUni ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ERROR: The remo...35 (inclusive).:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   at: connect_to_host (core/io/stream_peer_tcp.cpp:69)
+ERROR: Remote Debugger: Unable to connect to host '127.0.0.1:0'.
+   at: create_tcp (core/debugger/remote_debugger_peer.cpp:247)
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+D3D12 12_0 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3080 Ti
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m
+  [38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_planning_bible_multi_knight_session[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+WARNING: LpcAssetPreloader: 488/2645 sprite sheets missing on disk.
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _scan_all (res://scripts/lpc/lpc_asset_preloader.gd:83)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _dry_drag_then_cancel (res://tests/live_planning_scene_test.gd:543)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _assert_red_live (res://tests/live_planning_scene_test.gd:1278)
+   GDScript backtrace (most recent call first):
+       [0] _assert_red_live (res://tests/live_planning_scene_test.gd:1278)
+       [1] _assert_k4_walk_drag_preview (res://tests/live_planning_scene_test.gd:900)
+       [2] _drag_k4_detour_and_run_preview (res://tests/live_planning_scene_test.gd:859)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _k4_preview_snapshot (res://tests/live_planning_scene_test.gd:929)
+   GDScript backtrace (most recent call first):
+       [0] _k4_preview_snapshot (res://tests/live_planning_scene_test.gd:929)
+       [1] _drag_k4_detour_and_run_preview (res://tests/live_planning_scene_test.gd:862)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _assert_k4_run_drag_preview (res://tests/live_planning_scene_test.gd:916)
+   GDScript backtrace (most recent call first):
+       [0] _assert_k4_run_drag_preview (res://tests/live_planning_scene_test.gd:916)
+       [1] _drag_k4_detour_and_run_preview (res://tests/live_planning_scene_test.gd:869)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _k4_preview_snapshot (res://tests/live_planning_scene_test.gd:929)
+   GDScript backtrace (most recent call first):
+       [0] _k4_preview_snapshot (res://tests/live_planning_scene_test.gd:929)
+       [1] _drag_k4_detour_and_run_preview (res://tests/live_planning_scene_test.gd:870)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _audit_surface (res://tests/live_planning_scene_test.gd:743)
+   GDScript backtrace (most recent call first):
+       [0] _audit_surface (res://tests/live_planning_scene_test.gd:743)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted 
+(CombatPlanningInput)'.
+   at: _journey_knight4_run_economy (res://tests/live_planning_scene_test.gd:406)
+   GDScript backtrace (most recent call first):
+       [0] _journey_knight4_run_economy (res://tests/live_planning_scene_test.gd:406)
+       [1] _probe_cell (res://tests/live_planning_scene_test.gd:730)
+       [2] _wait_ability_settle (res://tests/live_planning_scene_test.gd:1129)
+       [3] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+SCRIPT ERROR: Invalid access to property or key 'k4_pos' on a base object of type 'Dictionary'.
+   at: _journey_execute_all_plans (res://tests/live_planning_scene_test.gd:428)
+   GDScript backtrace (most recent call first):
+       [0] _journey_execute_all_plans (res://tests/live_planning_scene_test.gd:428)
+       [1] _wait_until_not_executing (res://tests/live_planning_scene_test.gd:1168)
+       [2] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+  [38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_planning_bible_multi_knight_session[0m[38;2;178;34;34m[1m FAILED[0m[38;2;100;149;237m 26s 240ms[0m
+  [38;2;0;206;209m[1m[4mReport:[0m
+  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_dry_drag_then_cancel' in res://tests/live_planning_scene_test.gd:543[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_assert_red_live' in res://tests/live_planning_scene_test.gd:1278
+	at '_assert_k4_walk_drag_preview' in res://tests/live_planning_scene_test.gd:900
+	at '_drag_k4_detour_and_run_preview' in res://tests/live_planning_scene_test.gd:859[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_k4_preview_snapshot' in res://tests/live_planning_scene_test.gd:929
+	at '_drag_k4_detour_and_run_preview' in res://tests/live_planning_scene_test.gd:862[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_assert_k4_run_drag_preview' in res://tests/live_planning_scene_test.gd:916
+	at '_drag_k4_detour_and_run_preview' in res://tests/live_planning_scene_test.gd:869[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_k4_preview_snapshot' in res://tests/live_planning_scene_test.gd:929
+	at '_drag_k4_detour_and_run_preview' in res://tests/live_planning_scene_test.gd:870[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:743
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid call. Nonexistent function 'action_range_visible_for_hover' in base 'RefCounted (CombatPlanningInput)'.[0m'[0m[38;2;173;216;230m	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:406
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mGodot Runtime Error ![0m
+  '[38;2;30;144;255mInvalid access to property or key 'k4_pos' on a base object of type 'Dictionary'.[0m'[0m[38;2;173;216;230m	at '_journey_execute_all_plans' in res://tests/live_planning_scene_test.gd:428
+	at '_wait_until_not_executing' in res://tests/live_planning_scene_test.gd:1168[0m  [38;2;128;128;128mk3: trample drag must show dash glyph, got ΓÜö∩╕Å[0m[38;2;173;216;230m	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1016[0m  [38;2;128;128;128mk3: trample drag must show dash glyph, got ΓÜö∩╕Å[0m[38;2;173;216;230m	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1016[0m  [38;2;128;128;128mk4/selection: k4 plan must use Run[0m[38;2;173;216;230m	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:699
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:394
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128mk4/selection: k4 display AP after commit[0m[38;2;173;216;230m	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:702
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:394
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128mk4/detour/route_4: drag route expected [(4, 1), (5, 1), (5, 2), (4, 2), (3, 2)] got [(4, 1), (3, 1), (3, 2)][0m[38;2;173;216;230m	at '_assert_drag_route_equals' in res://tests/live_planning_scene_test.gd:1064
+	at '_drag_k4_detour_and_run_preview' in res://tests/live_planning_scene_test.gd:852[0m  [38;2;128;128;128mk4/detour/run_trigger: extension past detour must require Run[0m[38;2;173;216;230m	at '_assert_k4_run_drag_preview' in res://tests/live_planning_scene_test.gd:910
+	at '_drag_k4_detour_and_run_preview' in res://tests/live_planning_scene_test.gd:869[0m  [38;2;128;128;128mk4/detour/run_trigger: Run intent must show 0 display AP[0m[38;2;173;216;230m	at '_assert_k4_run_drag_preview' in res://tests/live_planning_scene_test.gd:913
+	at '_drag_k4_detour_and_run_preview' in res://tests/live_planning_scene_test.gd:869[0m  [38;2;128;128;128mk4/drag: k4 plan must use Run[0m[38;2;173;216;230m	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:699
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:397
+	at '_drag_k4_detour_and_run_preview' in res://tests/live_planning_scene_test.gd:874[0m  [38;2;128;128;128mk4/drag: k4 display AP after commit[0m[38;2;173;216;230m	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:702
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:397
+	at '_drag_k4_detour_and_run_preview' in res://tests/live_planning_scene_test.gd:874[0m  [38;2;128;128;128m[38;2;255;69;0mExpecting:[0m
+ [38;2;30;144;255m0[0m
+ but was
+ [38;2;30;144;255m1[0m[0m[38;2;173;216;230m	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:405
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:730
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1129[0m  [38;2;128;128;128m[38;2;255;69;0mExpecting:[0m
+ '[38;2;30;144;255m(0, 1)[0m'
+ but was
+ '[38;2;30;144;255m(4, 1)[0m'[0m[38;2;173;216;230m	at '_drag_through_cells' in res://tests/live_planning_scene_test.gd:829
+	at '_hover_cell' in res://tests/live_planning_scene_test.gd:714[0m  [38;2;128;128;128m[38;2;255;69;0mExpecting to be greater than:[0m
+ [38;2;30;144;255m0[0m but was [38;2;30;144;255m0[0m[0m[38;2;173;216;230m	at '_journey_scroll_and_undo_smoke' in res://tests/live_planning_scene_test.gd:447
+	at '_drag_between_cells' in res://tests/live_planning_scene_test.gd:809
+	at '_drag_through_cells' in res://tests/live_planning_scene_test.gd:832[0m[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 44 errors | 12 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 26s 257ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 1 test cases | 44 errors | 12 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (1/1)[0m
+[38;2;233;150;122mExecuted test cases : (1/1)[0m
+[38;2;233;150;122mTotal execution time: 26s 257ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_55/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_55/index.html[0m
+[38;2;178;34;34mExit code: 100[0m
+Run dispose test resources
+Run tests ends with 100

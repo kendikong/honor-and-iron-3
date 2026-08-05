@@ -1,4 +1,4 @@
-class_name GdUnitCommandScriptEditorRunTests
+﻿class_name GdUnitCommandScriptEditorRunTests
 extends GdUnitCommandScriptEditor
 
 

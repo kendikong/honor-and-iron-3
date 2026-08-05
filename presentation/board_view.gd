@@ -1,4 +1,4 @@
-class_name BoardView
+﻿class_name BoardView
 extends Node2D
 
 ## Purpose: The combat view + planning UX. Renders the grid, units, ghosts,
@@ -806,7 +806,7 @@ func _on_board_changed(board: BoardState) -> void:
 func _update_intent_label() -> void:
 	if _board == null:
 		return
-	_intent_label.text = "💀 Enemy intent:\n%s" % _summarize_intents(_board)
+	_intent_label.text = "ðŸ’€ Enemy intent:\n%s" % _summarize_intents(_board)
 
 func _on_action_rejected(reason: String) -> void:
 	_sfx.play("invalid")
@@ -934,7 +934,7 @@ func _on_timeline_changed(timeline: Timeline, statuses: PackedStringArray) -> vo
 		var c_name := unit.definition.display_name
 		var class_lbl := _make_table_cell(_timeline_box, c_sym, c_name, row_color, false, bg_color)
 		
-		var stats_text := "🌟%d ❤️%d/%d 🛡️%d 💪%d 🔮%d 🏰%d 👟%d" % [unit.level, unit.health.current_hp, unit.health.max_hp, unit.armor, unit.current_strength, unit.current_magic, unit.current_defense, unit.movement.max_points]
+		var stats_text := "ðŸŒŸ%d â¤ï¸%d/%d ðŸ›¡ï¸%d ðŸ’ª%d ðŸ”®%d ðŸ°%d ðŸ‘Ÿ%d" % [unit.level, unit.health.current_hp, unit.health.max_hp, unit.armor, unit.current_strength, unit.current_magic, unit.current_defense, unit.movement.max_points]
 		var stats_tooltip := "Level: %d, Health: %d/%d, Armor: %d, Strength: %d, Magic: %d, Defense: %d, Move: %d" % [unit.level, unit.health.current_hp, unit.health.max_hp, unit.armor, unit.current_strength, unit.current_magic, unit.current_defense, unit.movement.max_points]
 		var stats_lbl := _make_table_cell(_timeline_box, stats_text, stats_tooltip, dim_color, false, bg_color)
 		
@@ -2009,8 +2009,8 @@ func _draw_unit_token(center: Vector2, body: Color, accent: Color, unit: UnitSta
 	
 	if is_drag_token:
 		if _drag_failed:
-			abbrev = "🚫"
-		# Otherwise keep the class icon — tile highlights show move vs dash intent.
+			abbrev = "ðŸš«"
+		# Otherwise keep the class icon â€” tile highlights show move vs dash intent.
 	
 	var max_move := unit.definition.move_points
 	var points_left := unit.movement.points_left
@@ -2029,7 +2029,7 @@ func _draw_unit_token(center: Vector2, body: Color, accent: Color, unit: UnitSta
 			for action in plan_to_use.entries:
 				if action.actor_id == unit.id and action.type == GameEnums.ActionType.ABILITY:
 					is_skill_queued = true
-					if action.ability != null and action.ability.effects.any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
+					if action.ability != null and action.ability.modules.any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
 						is_attack_queued = true
 	elif not ghost and is_enemy and (CombatDirector.is_planning_phase(_phase)):
 		var is_enemy_targeting := false
@@ -2043,7 +2043,7 @@ func _draw_unit_token(center: Vector2, body: Color, accent: Color, unit: UnitSta
 							var tgt = _board.get_unit_by_id(action.target_unit_id)
 							if tgt != null and not tgt.is_enemy():
 								is_enemy_targeting = true
-								if action.ability != null and action.ability.effects.any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
+								if action.ability != null and action.ability.modules.any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
 									is_enemy_attack = true
 								break
 		if is_enemy_targeting:
@@ -2089,7 +2089,7 @@ func _draw_unit_token(center: Vector2, body: Color, accent: Color, unit: UnitSta
 		draw_arc(center, UNIT_RADIUS + 2.0, 0.0, TAU, 40, Color(COLOR_ENEMY, 0.45), 1.5)
 	var is_status_symbol := is_drag_token and _drag_failed
 	if not is_status_symbol:
-		for s in ["🚫", "🏃", "✨", "⚔️", "💚", "🛡️", "🔄"]:
+		for s in ["ðŸš«", "ðŸƒ", "âœ¨", "âš”ï¸", "ðŸ’š", "ðŸ›¡ï¸", "ðŸ”„"]:
 			if abbrev.contains(s):
 				is_status_symbol = true
 				break
@@ -2389,10 +2389,10 @@ func _draw_health_bar(top_center: Vector2, current: int, predicted: int, max_hp:
 		var icon_y := origin.y - 4.0
 		var icon_x := origin.x - 4.0
 		if armor > 0 or predicted_armor > 0:
-			_draw_centered(Vector2(icon_x, icon_y), "🛡️", Color.WHITE, 10)
+			_draw_centered(Vector2(icon_x, icon_y), "ðŸ›¡ï¸", Color.WHITE, 10)
 			icon_x -= 12.0
 		if fortitude > 0:
-			_draw_centered(Vector2(icon_x, icon_y), "🏰", Color.WHITE, 10)
+			_draw_centered(Vector2(icon_x, icon_y), "ðŸ°", Color.WHITE, 10)
 			icon_x -= 12.0
 
 
@@ -2402,40 +2402,40 @@ func _draw_health_bar(top_center: Vector2, current: int, predicted: int, max_hp:
 		var count := 0
 		
 		for status in active_statuses:
-			var icon = "✨"
+			var icon = "âœ¨"
 			match status.type:
-				GameEnums.StatusType.STAT_BUFF_STR: icon = "💪"
-				GameEnums.StatusType.STAT_BUFF_MAG: icon = "🔮"
-				GameEnums.StatusType.STAT_BUFF_MP: icon = "👟"
-				GameEnums.StatusType.STAT_BUFF_ACC: icon = "🎯"
-				GameEnums.StatusType.STAT_DEBUFF_DEF: icon = "💔"
-				GameEnums.StatusType.STAT_DEBUFF_ACC: icon = "👁️‍🗨️"
-				GameEnums.StatusType.ELECTRIFIED: icon = "⚡"
-				GameEnums.StatusType.WEAK_TRAP: icon = "🪤"
-				GameEnums.StatusType.BURN: icon = "🔥"
-				GameEnums.StatusType.BLEED: icon = "🩸"
-				GameEnums.StatusType.POISON: icon = "🧪"
-				GameEnums.StatusType.WEAKEN: icon = "📉"
-				GameEnums.StatusType.VULNERABLE: icon = "🎯"
-				GameEnums.StatusType.STAGGER: icon = "💫"
-				GameEnums.StatusType.ROOT: icon = "🪢"
-				GameEnums.StatusType.SILENCE: icon = "🤐"
-				GameEnums.StatusType.TAUNT: icon = "🤬"
-				GameEnums.StatusType.BLIND: icon = "🕶️"
-				GameEnums.StatusType.PACIFY: icon = "🕊️"
-				GameEnums.StatusType.FEAR: icon = "😱"
-				GameEnums.StatusType.CONFUSION: icon = "😵"
-				GameEnums.StatusType.PIERCE: icon = "🗡️"
-				GameEnums.StatusType.GHOST: icon = "👻"
-				GameEnums.StatusType.TRAMPLE: icon = "🦏"
-				GameEnums.StatusType.STEALTH: icon = "🥷"
-				GameEnums.StatusType.INTERCEPT: icon = "🛡️"
-				GameEnums.StatusType.MARK: icon = "👁️"
-				GameEnums.StatusType.STURDY: icon = "🧱"
-				GameEnums.StatusType.INVULNERABLE: icon = "⭐"
-				GameEnums.StatusType.AIRBORNE: icon = "🦅"
-				GameEnums.StatusType.CANTO: icon = "🐎"
-				GameEnums.StatusType.POLYMORPH: icon = "🐸"
+				GameEnums.StatusType.STAT_BUFF_STR: icon = "ðŸ’ª"
+				GameEnums.StatusType.STAT_BUFF_MAG: icon = "ðŸ”®"
+				GameEnums.StatusType.STAT_BUFF_MP: icon = "ðŸ‘Ÿ"
+				GameEnums.StatusType.STAT_BUFF_ACC: icon = "ðŸŽ¯"
+				GameEnums.StatusType.STAT_DEBUFF_DEF: icon = "ðŸ’”"
+				GameEnums.StatusType.STAT_DEBUFF_ACC: icon = "ðŸ‘ï¸â€ðŸ—¨ï¸"
+				GameEnums.StatusType.ELECTRIFIED: icon = "âš¡"
+				GameEnums.StatusType.WEAK_TRAP: icon = "ðŸª¤"
+				GameEnums.StatusType.BURN: icon = "ðŸ”¥"
+				GameEnums.StatusType.BLEED: icon = "ðŸ©¸"
+				GameEnums.StatusType.POISON: icon = "ðŸ§ª"
+				GameEnums.StatusType.WEAKEN: icon = "ðŸ“‰"
+				GameEnums.StatusType.VULNERABLE: icon = "ðŸŽ¯"
+				GameEnums.StatusType.STAGGER: icon = "ðŸ’«"
+				GameEnums.StatusType.ROOT: icon = "ðŸª¢"
+				GameEnums.StatusType.SILENCE: icon = "ðŸ¤"
+				GameEnums.StatusType.TAUNT: icon = "ðŸ¤¬"
+				GameEnums.StatusType.BLIND: icon = "ðŸ•¶ï¸"
+				GameEnums.StatusType.PACIFY: icon = "ðŸ•Šï¸"
+				GameEnums.StatusType.FEAR: icon = "ðŸ˜±"
+				GameEnums.StatusType.CONFUSION: icon = "ðŸ˜µ"
+				GameEnums.StatusType.PIERCE: icon = "ðŸ—¡ï¸"
+				GameEnums.StatusType.GHOST: icon = "ðŸ‘»"
+				GameEnums.StatusType.TRAMPLE: icon = "ðŸ¦"
+				GameEnums.StatusType.STEALTH: icon = "ðŸ¥·"
+				GameEnums.StatusType.INTERCEPT: icon = "ðŸ›¡ï¸"
+				GameEnums.StatusType.MARK: icon = "ðŸ‘ï¸"
+				GameEnums.StatusType.STURDY: icon = "ðŸ§±"
+				GameEnums.StatusType.INVULNERABLE: icon = "â­"
+				GameEnums.StatusType.AIRBORNE: icon = "ðŸ¦…"
+				GameEnums.StatusType.CANTO: icon = "ðŸŽ"
+				GameEnums.StatusType.POLYMORPH: icon = "ðŸ¸"
 				
 			var pos := Vector2(start_x + (count % 3) * 12.0, start_y + (count / 3) * 12.0)
 			_draw_centered(pos, icon, Color.WHITE, 10)
@@ -2712,7 +2712,7 @@ func _update_hover_attack_preview() -> void:
 		_hover_predicted_hp[temp_u.id] = temp_u.health.current_hp
 		_hover_predicted_armor[temp_u.id] = temp_u.armor
 
-## Shared live preview for drag and aim — same simulation, paths, intents, and HP.
+## Shared live preview for drag and aim â€” same simulation, paths, intents, and HP.
 func _refresh_live_interaction_preview(
 	unit_id: int,
 	move_coord: Vector2i,
@@ -2862,7 +2862,7 @@ func _update_mouse_cursor() -> void:
 					if _force_basic_movement and hover_unit == null \
 					and _hover_coord != p_unit.position \
 					and _can_basic_move_to(p_unit, _hover_coord):
-						_hover_action_icon = "🏃"
+						_hover_action_icon = "ðŸƒ"
 					else:
 						var valid_aim := false
 						if hover_unit != null:
@@ -2883,11 +2883,11 @@ func _update_mouse_cursor() -> void:
 				else:
 					if hover_unit != null and hover_unit.is_enemy():
 						if _prefer_approach_over_trample_move(p_unit, hover_unit):
-							_hover_action_icon = "⚔️"
+							_hover_action_icon = "âš”ï¸"
 						elif _can_move_to(p_unit, _hover_coord):
-							_hover_action_icon = "🏃"
+							_hover_action_icon = "ðŸƒ"
 						else:
-							_hover_action_icon = "⚔️"
+							_hover_action_icon = "âš”ï¸"
 					elif hover_unit == null and _hover_coord != p_unit.position:
 						var hover_ability := _selected_ability_data(p_unit)
 						var valid_tiles := AbilitySystem.planning_action_range_tiles(_board, p_unit, hover_ability, p_unit.position)
@@ -2895,12 +2895,12 @@ func _update_mouse_cursor() -> void:
 						and AbilitySystem.ability_has_movement_effect(hover_ability) \
 						and _hover_coord in valid_tiles:
 							if _ability_is_offensive_dash(hover_ability):
-								_hover_action_icon = "⚔️"
+								_hover_action_icon = "âš”ï¸"
 							else:
-								_hover_action_icon = "✨"
+								_hover_action_icon = "âœ¨"
 						elif _basic_move_allowed() \
 						and not MovementSystem.find_path(_proj(), p_unit.position, _hover_coord, p_unit.movement.points_left).is_empty():
-							_hover_action_icon = "🏃"
+							_hover_action_icon = "ðŸƒ"
 							
 	if _hover_action_icon != "":
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
@@ -3011,8 +3011,8 @@ func _ability_is_offensive_dash(ability: AbilityData) -> bool:
 func _dash_effect_amount(ability: AbilityData) -> int:
 	if ability == null:
 		return 0
-	for eff in ability.effects:
-		if eff.type == GameEnums.EffectType.DASH:
+	for eff in ability.modules:
+		if eff.primary_type == GameEnums.EffectType.DASH:
 			return eff.amount
 	return 0
 
@@ -3271,7 +3271,7 @@ func _refresh_info() -> void:
 			score_updated = true
 			
 	if not score_updated and _score_lbl != null:
-		_score_lbl.text = "🤖 AI Score: --"
+		_score_lbl.text = "ðŸ¤– AI Score: --"
 		_score_lbl.tooltip_text = "Hover over a valid action tile to see its tactical utility breakdown."
 
 func _format_stat_with_tooltip(unit: UnitState, stat_type: GameEnums.StatType) -> String:
@@ -3340,7 +3340,7 @@ func _format_stat_with_tooltip(unit: UnitState, stat_type: GameEnums.StatType) -
 func _equipment_info(unit: UnitState) -> String:
 	var wpn: WeaponData = unit.definition.equipped_weapon if unit.definition != null else null
 	if wpn == null:
-		return "[font_size=9]🗡️ [b]Equipment:[/b] None[/font_size]"
+		return "[font_size=9]ðŸ—¡ï¸ [b]Equipment:[/b] None[/font_size]"
 	var stat_parts: Array[String] = ["WPN %d" % wpn.might]
 	if wpn.bonus_strength != 0:
 		stat_parts.append("STR %+d" % wpn.bonus_strength)
@@ -3352,10 +3352,10 @@ func _equipment_info(unit: UnitState) -> String:
 		stat_parts.append("HP %+d" % wpn.bonus_max_hp)
 	if wpn.bonus_move != 0:
 		stat_parts.append("MOV %+d" % wpn.bonus_move)
-	var tooltip := "Might %d — added to ability base power in damage formula." % wpn.might
+	var tooltip := "Might %d â€” added to ability base power in damage formula." % wpn.might
 	if stat_parts.size() > 1:
 		tooltip += "\nAlso modifies unit stats when equipped."
-	return "[font_size=9]🗡️ [b]Equipment:[/b] %s  |  [hint=\"%s\"]%s[/hint][/font_size]" % [
+	return "[font_size=9]ðŸ—¡ï¸ [b]Equipment:[/b] %s  |  [hint=\"%s\"]%s[/hint][/font_size]" % [
 		wpn.display_name, tooltip, ", ".join(stat_parts),
 	]
 
@@ -3367,12 +3367,12 @@ func _unit_info(unit: UnitState) -> String:
 	
 	var move_type = GameEnums.MovementType.keys()[unit.definition.movement_type].capitalize()
 	lines.append("[font_size=10]Lv.%d %s  |  Move: %s[/font_size]" % [unit.level, unit.definition.id.capitalize(), move_type])
-	lines.append("[font_size=9][color=#4ADE80][b]❤️ HP: %s/%s[/b][/color]    Facing %s[/font_size]" % [
+	lines.append("[font_size=9][color=#4ADE80][b]â¤ï¸ HP: %s/%s[/b][/color]    Facing %s[/font_size]" % [
 		unit.health.current_hp, unit.health.max_hp,
 		_facing_name(unit.facing),
 	])
 	
-	lines.append("[font_size=9][color=#F1C40F][b][hint=Movement Points]👢 MP:[/hint] %d/%d[/b][/color]    [color=#E74C3C][b][hint=Action Points]⚔️ AP:[/hint] %d/%d[/b][/color][/font_size]" % [
+	lines.append("[font_size=9][color=#F1C40F][b][hint=Movement Points]ðŸ‘¢ MP:[/hint] %d/%d[/b][/color]    [color=#E74C3C][b][hint=Action Points]âš”ï¸ AP:[/hint] %d/%d[/b][/color][/font_size]" % [
 		unit.movement.points_left, unit.movement.max_points,
 		unit.ability.points_left, unit.ability.max_points
 	])
@@ -3381,9 +3381,9 @@ func _unit_info(unit: UnitState) -> String:
 	var mag_fmt = _format_stat_with_tooltip(unit, GameEnums.StatType.MAGICAL)
 	var def_fmt = _format_stat_with_tooltip(unit, GameEnums.StatType.DEFENSE)
 	
-	var stats_str = "[font_size=10]💪 STR: %s  ✨ MAG: %s  🛡️ DEF: %s" % [str_fmt, mag_fmt, def_fmt]
+	var stats_str = "[font_size=10]ðŸ’ª STR: %s  âœ¨ MAG: %s  ðŸ›¡ï¸ DEF: %s" % [str_fmt, mag_fmt, def_fmt]
 	if unit.armor > 0:
-		stats_str += "  [hint=Armor]🪖 ARM:[/hint] %d" % unit.armor
+		stats_str += "  [hint=Armor]ðŸª– ARM:[/hint] %d" % unit.armor
 	stats_str += "[/font_size]"
 	lines.append(stats_str)
 	lines.append(_equipment_info(unit))
@@ -3410,7 +3410,7 @@ func _unit_info(unit: UnitState) -> String:
 			var fort_val := tile.definition.fortitude
 			var sign_str := "+" if fort_val > 0 else ""
 			var terrain_hint := "Reduces incoming damage." if fort_val > 0 else "Increases incoming damage."
-			lines.append("[font_size=10][hint=\"%s\"]🌿 Terrain: %s (%s%d Fortitude)[/hint][/font_size]" % [
+			lines.append("[font_size=10][hint=\"%s\"]ðŸŒ¿ Terrain: %s (%s%d Fortitude)[/hint][/font_size]" % [
 				terrain_hint, tile.definition.display_name, sign_str, fort_val,
 			])
 	if unit.active_statuses.size() > 0:
@@ -3514,7 +3514,7 @@ func _get_status_name(t: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.STAT_DEBUFF_MOV: return "MOV DOWN"
 	return GameEnums.StatusType.keys()[t].capitalize()
 
-func _get_amount_string(eff: EffectData) -> String:
+func _get_amount_string(eff: AbilityModule) -> String:
 	var stat_str = ""
 	if eff.scaling_stat != GameEnums.StatType.NONE:
 		stat_str = "[%s]" % GameEnums.StatType.keys()[eff.scaling_stat]
@@ -3565,7 +3565,7 @@ func _parse_keywords(text: String) -> String:
 		"TRAMPLE": "Pass through enemies for ATK X; no displacement; end on an open tile.",
 		"BULLDOZE": "Pass through enemies with collision base X and PUSH X; caster immune to collision.",
 		"COLLISION": "Collision damage from displacement into walls or units.",
-		"AOE": "Area effect — hits multiple tiles.",
+		"AOE": "Area effect â€” hits multiple tiles.",
 		"RANGE": "Maximum targeting or effect distance in tiles.",
 		"PIERCE": "Attacks ignore armor.",
 		"THORNS": "Reflects damage back to attackers.",
@@ -3574,9 +3574,9 @@ func _parse_keywords(text: String) -> String:
 		"VULNERABLE": "Takes additional damage.",
 		"MOV": "Movement Points available per turn.",
 		"MOVE": "Movement Points available per turn.",
-		"DEF": "Defense — reduces incoming damage.",
-		"STR": "Strength — increases physical damage.",
-		"MAG": "Magic — increases magical damage.",
+		"DEF": "Defense â€” reduces incoming damage.",
+		"STR": "Strength â€” increases physical damage.",
+		"MAG": "Magic â€” increases magical damage.",
 	}
 	var keys: Array = manual.keys()
 	keys.sort_custom(func(a, b): return String(a).length() > String(b).length())
@@ -3624,8 +3624,8 @@ func _ability_upgrade_suffix(ability: AbilityData, unit: UnitState, bbcode: bool
 
 func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> String:
 	var parts: Array[String] = []
-	for effect in ability.effects:
-		match effect.type:
+	for effect in ability.modules:
+		match effect.primary_type:
 			GameEnums.EffectType.DAMAGE: parts.append(_kw_hint("ATK %s" % _get_amount_string(effect), "Reduces target's current HP. Resisted by Armor."))
 			GameEnums.EffectType.PUSH: parts.append(_kw_hint("PUSH %s" % _get_amount_string(effect), "Displaces target away from caster. Collisions deal damage."))
 			GameEnums.EffectType.PULL: parts.append(_kw_hint("PULL %s" % _get_amount_string(effect), "Displaces target towards caster. Collisions deal damage."))
@@ -3634,7 +3634,7 @@ func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> Str
 			GameEnums.EffectType.ARMOR_UP: parts.append(_kw_hint("SHIELD %s" % _get_amount_string(effect), "Grants temporary hit points that absorb damage before HP."))
 			GameEnums.EffectType.EXPLODE: parts.append(_kw_hint("EXPLODE %s" % _get_amount_string(effect), "Deals damage to all units in the 4 adjacent cardinal tiles."))
 			GameEnums.EffectType.RANGED_EXPLODE: parts.append(_kw_hint("AOE ATK %s" % _get_amount_string(effect), "Deals damage to all units within the target shape."))
-			GameEnums.EffectType.SPAWN: parts.append(_kw_hint("SPAWN %s" % str(effect.spawn_unit_id).capitalize(), "Creates a new unit on the target tile."))
+			GameEnums.EffectType.SPAWN: parts.append(_kw_hint("SPAWN %s" % str(effect.legacy_modifiers.get("spawn_unit_id", &"")).capitalize(), "Creates a new unit on the target tile."))
 			GameEnums.EffectType.ADD_STATUS:
 				var dur = "" if effect.status_duration == 1 else " (%d turns)" % effect.status_duration
 				if effect.status_type == GameEnums.StatusType.IRON_GRIP_DEBUFF:
@@ -3684,7 +3684,7 @@ func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> Str
 	if ability.target_shape != GameEnums.TargetShape.SINGLE:
 		var s_name = GameEnums.TargetShape.keys()[ability.target_shape].capitalize().replace("Aoe ", "")
 		shape_str = "%s: %s %d | " % [
-			_kw_hint("AOE", "Area effect — hits multiple tiles in the listed shape."),
+			_kw_hint("AOE", "Area effect â€” hits multiple tiles in the listed shape."),
 			s_name,
 			ability.target_shape_size,
 		]
@@ -3693,8 +3693,8 @@ func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> Str
 
 func _ability_effect_string(ability: AbilityData, unit: UnitState = null) -> String:
 	var parts: Array[String] = []
-	for effect in ability.effects:
-		match effect.type:
+	for effect in ability.modules:
+		match effect.primary_type:
 			GameEnums.EffectType.DAMAGE: parts.append("ATK %s" % _get_amount_string(effect))
 			GameEnums.EffectType.PUSH: parts.append("PUSH %s" % _get_amount_string(effect))
 			GameEnums.EffectType.PULL: parts.append("PULL %s" % _get_amount_string(effect))
@@ -3703,7 +3703,7 @@ func _ability_effect_string(ability: AbilityData, unit: UnitState = null) -> Str
 			GameEnums.EffectType.ARMOR_UP: parts.append("SHIELD %s" % _get_amount_string(effect))
 			GameEnums.EffectType.EXPLODE: parts.append("EXPLODE %s" % _get_amount_string(effect))
 			GameEnums.EffectType.RANGED_EXPLODE: parts.append("AOE ATK %s" % _get_amount_string(effect))
-			GameEnums.EffectType.SPAWN: parts.append("SPAWN %s" % str(effect.spawn_unit_id).capitalize())
+			GameEnums.EffectType.SPAWN: parts.append("SPAWN %s" % str(effect.legacy_modifiers.get("spawn_unit_id", &"")).capitalize())
 			GameEnums.EffectType.ADD_STATUS:
 				var dur = "" if effect.status_duration == 1 else " (%d turns)" % effect.status_duration
 				if effect.status_type == GameEnums.StatusType.IRON_GRIP_DEBUFF:
@@ -3830,7 +3830,7 @@ func _format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, armor_d
 		var base_parts := "1 + %s/3" % _fmt_calc_num(float(excess))
 		if base_bonus > 0:
 			base_parts += " + %d Retaliator" % base_bonus
-		var formula := "%s × (%s + %s) × %s" % [
+		var formula := "%s Ã— (%s + %s) Ã— %s" % [
 			_color(c_mult, "0.75"), _color(c_base, "BASE"), _color(c_wpn, "WPN"), _color(c_stat, "STR mult"),
 		]
 		formula += " - %s" % _color(c_def, "DEF")
@@ -3838,8 +3838,8 @@ func _format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, armor_d
 			formula += " - %s" % _color(c_fort, "FORT")
 		formula += "\n   BASE %s = %s" % [_color(c_base, base_parts), _color(c_base, _fmt_calc_num(raw_base))]
 		if int(floorf(raw_base)) != base:
-			formula += " → %s" % _color(c_base, _fmt_calc_num(float(base)))
-		formula += "\n   %s × (%s + %s) × %s = %s" % [
+			formula += " â†’ %s" % _color(c_base, _fmt_calc_num(float(base)))
+		formula += "\n   %s Ã— (%s + %s) Ã— %s = %s" % [
 			_color(c_mult, "0.75"),
 			_color(c_base, _fmt_calc_num(float(base))),
 			_color(c_wpn, _fmt_calc_num(float(wpn))),
@@ -3851,7 +3851,7 @@ func _format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, armor_d
 			formula += " - %s" % _color(c_fort, _fmt_calc_num(float(fort)))
 		formula += " = %s incoming" % _color(c_final, _fmt_calc_num(float(incoming)))
 		if armor_dmg > 0:
-			formula += "\n   - %s armor → %s HP" % [
+			formula += "\n   - %s armor â†’ %s HP" % [
 				_color(c_def, _fmt_calc_num(float(armor_dmg))),
 				_color(c_final, _fmt_calc_num(float(hp_dmg))),
 			]
@@ -3866,7 +3866,7 @@ func _format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, armor_d
 	var fort: int = m.get("fortitude", m.get("fort", 0))
 	var vuln: bool = m.get("vulnerable", m.get("vuln", false))
 	var elec: bool = m.get("electrified", m.get("elec", false))
-	var formula := "(%s + %s) × %s" % [
+	var formula := "(%s + %s) Ã— %s" % [
 		_color(c_base, "Base"), _color(c_wpn, "WPN"), _color(c_stat, "%s mult" % stat_name),
 	]
 	if vuln or elec:
@@ -3874,7 +3874,7 @@ func _format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, armor_d
 	formula += " - %s" % _color(c_def, "DEF")
 	if fort != 0:
 		formula += " - %s" % _color(c_fort, "FORT")
-	formula += "\n   (%s + %s) × %s = %s" % [
+	formula += "\n   (%s + %s) Ã— %s = %s" % [
 		_color(c_base, _fmt_calc_num(float(base))),
 		_color(c_wpn, _fmt_calc_num(float(wpn))),
 		_color(c_stat, _fmt_calc_num(stat_mult)),
@@ -4049,7 +4049,7 @@ func _build_hud() -> void:
 	hbox.add_child(mid_col)
 
 	var local_hex = _get_player_color(NetworkManager.local_player_id).to_html(false) if NetworkManager != null and NetworkManager.is_multiplayer else _get_player_color(1).to_html(false)
-	_tint(_make_label(mid_col, "👥 Party & Actions:"), local_hex)
+	_tint(_make_label(mid_col, "ðŸ‘¥ Party & Actions:"), local_hex)
 	
 	var plan_scroll = ScrollContainer.new()
 	plan_scroll.custom_minimum_size.y = 180
@@ -4073,7 +4073,7 @@ func _build_hud() -> void:
 	exec_col.alignment = BoxContainer.ALIGNMENT_CENTER
 	hbox.add_child(exec_col)
 	
-	_phase_label = _make_label(exec_col, "⏱️ Phase: PLANNING")
+	_phase_label = _make_label(exec_col, "â±ï¸ Phase: PLANNING")
 	_phase_label.add_theme_font_size_override("font_size", 20)
 	_tint(_phase_label, HEX_PHASE)
 	
@@ -4093,13 +4093,13 @@ func _build_hud() -> void:
 	right_col.custom_minimum_size.x = 280
 	hbox.add_child(right_col)
 
-	_intent_label = _make_label(right_col, "💀 Enemy intent:")
+	_intent_label = _make_label(right_col, "ðŸ’€ Enemy intent:")
 	_tint(_intent_label, HEX_INTENT)
 
 	var score_hbox = HBoxContainer.new()
 	right_col.add_child(score_hbox)
 	
-	_score_lbl = _make_label(score_hbox, "🤖 AI Score: --")
+	_score_lbl = _make_label(score_hbox, "ðŸ¤– AI Score: --")
 	_score_lbl.set_script(preload("res://presentation/rich_tooltip_label.gd"))
 	_score_lbl.tooltip_text = "Hover over a valid action tile to see its tactical utility breakdown."
 	_score_lbl.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -4111,7 +4111,7 @@ func _build_hud() -> void:
 	calc_toggle.toggled.connect(func(toggled_on: bool) -> void:
 		_ai_calc_enabled = toggled_on
 		if not _ai_calc_enabled:
-			_score_lbl.text = "🤖 AI Score: OFF"
+			_score_lbl.text = "ðŸ¤– AI Score: OFF"
 			_score_lbl.tooltip_text = "AI Calculations disabled"
 	)
 	score_hbox.add_child(calc_toggle)
@@ -4270,7 +4270,7 @@ func _build_hud() -> void:
 	log_vbox.add_child(log_header)
 	
 	var log_title := Label.new()
-	log_title.text = "📜 Battle Log"
+	log_title.text = "ðŸ“œ Battle Log"
 	log_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_tint(log_title, local_hex)
 	log_header.add_child(log_title)
@@ -4403,10 +4403,10 @@ func _rebuild_ability_buttons() -> void:
 		btn_vbox.add_child(values_hbox)
 		
 		# AP
-		values_hbox.add_child(_make_icon("🔵", str(ability.action_point_cost), "AP (Action Points required)"))
+		values_hbox.add_child(_make_icon("ðŸ”µ", str(ability.action_point_cost), "AP (Action Points required)"))
 		
 		# Range
-		values_hbox.add_child(_make_icon("🏹", str(ability.range_tiles), "Range (Max target distance)"))
+		values_hbox.add_child(_make_icon("ðŸ¹", str(ability.range_tiles), "Range (Max target distance)"))
 		
 		# Effects (Line 3)
 		var special = RichTextLabel.new()
@@ -4996,7 +4996,7 @@ func _reason_text(code: String) -> String:
 		"unknown_action_type":
 			return "invalid"
 		"target_displaced":
-			return "ally plan cancelled — target moved"
+			return "ally plan cancelled â€” target moved"
 		"cannot_undo_trample":
 			return "cannot undo trample move"
 		_:
@@ -5120,25 +5120,25 @@ func _get_action_autobattler_scores(action: TimelineAction) -> Dictionary:
 
 func _class_symbol(unit: UnitState) -> String:
 	match unit.definition.id:
-		&"knight": return "♞"
-		&"paladin": return "🛡️"
-		&"fighter": return "✊"
-		&"cavalier": return "🧲"
-		&"archer": return "🏹"
-		&"mage": return "✨"
-		&"cleric": return "➕"
-		&"assassin": return "⚔️"
-		&"mercenary": return "🪓"
-		&"gryphon": return "🦅"
-		&"monk": return "📿"
-		&"engineer": return "🔧"
-		&"shaman": return "👁️"
-		&"warden": return "♜"
-		&"swordmaster": return "🗡️"
-		&"charger": return "🔱"
-		&"artillery": return "💣"
-		&"shover": return "↔️"
-	return "👤"
+		&"knight": return "â™ž"
+		&"paladin": return "ðŸ›¡ï¸"
+		&"fighter": return "âœŠ"
+		&"cavalier": return "ðŸ§²"
+		&"archer": return "ðŸ¹"
+		&"mage": return "âœ¨"
+		&"cleric": return "âž•"
+		&"assassin": return "âš”ï¸"
+		&"mercenary": return "ðŸª“"
+		&"gryphon": return "ðŸ¦…"
+		&"monk": return "ðŸ“¿"
+		&"engineer": return "ðŸ”§"
+		&"shaman": return "ðŸ‘ï¸"
+		&"warden": return "â™œ"
+		&"swordmaster": return "ðŸ—¡ï¸"
+		&"charger": return "ðŸ”±"
+		&"artillery": return "ðŸ’£"
+		&"shover": return "â†”ï¸"
+	return "ðŸ‘¤"
 
 func _action_symbol_text(action: TimelineAction, unit: UnitState) -> String:
 	return CombatUiFormatters.action_symbol_text(_board, action, unit)
@@ -5170,7 +5170,7 @@ func _update_score_hud(data: Dictionary) -> void:
 	if _score_lbl == null or not _ai_calc_enabled or data.is_empty():
 		return
 	var val_str := ("+" if data.total > 0.0 else "") + "%.1f" % data.total
-	_score_lbl.text = "🤖 AI Score: %s" % val_str
+	_score_lbl.text = "ðŸ¤– AI Score: %s" % val_str
 	
 	var s: Dictionary = data.scores
 	var w: Variant = data.weights
@@ -5178,13 +5178,13 @@ func _update_score_hud(data: Dictionary) -> void:
 	# Colorize the total score
 	var total_color := "#47D147" if data.total > 0.05 else ("#FF4D4D" if data.total < -0.05 else "#8C8C8C")
 	var breakdown := "[b]Autobattler Utility Score:[/b] [b][color=%s]%.1f[/color][/b]\n" % [total_color, data.total]
-	breakdown += "[i][color=#8C8C8C]Weighted Breakdown (wt × val):[/color][/i]\n"
+	breakdown += "[i][color=#8C8C8C]Weighted Breakdown (wt Ã— val):[/color][/i]\n"
 	
-	breakdown += "- [b]Damage:[/b] %s (%.1f × %s)\n" % [_c_val_unsigned(s.damage * w.w_damage), w.w_damage, _c_val(s.damage)]
-	breakdown += "- [b]Kill:[/b] %s (%.1f × %s)\n" % [_c_val_unsigned(s.kill * w.w_kill), w.w_kill, _c_val(s.kill)]
-	breakdown += "- [b]Team Surv (Net HP):[/b] %s (%.1f × %s)\n" % [_c_val_unsigned(s.team_surv * w.w_team_surv), w.w_team_surv, _c_val(s.team_surv)]
-	breakdown += "- [b]Disruption:[/b] %s (%.1f × %s)\n" % [_c_val_unsigned(s.disrupt * w.w_disrupt), w.w_disrupt, _c_val(s.disrupt)]
-	breakdown += "- [b]Positioning:[/b] %s (%.1f × %s)\n" % [_c_val_unsigned(s.position * w.w_position), w.w_position, _c_val(s.position)]
+	breakdown += "- [b]Damage:[/b] %s (%.1f Ã— %s)\n" % [_c_val_unsigned(s.damage * w.w_damage), w.w_damage, _c_val(s.damage)]
+	breakdown += "- [b]Kill:[/b] %s (%.1f Ã— %s)\n" % [_c_val_unsigned(s.kill * w.w_kill), w.w_kill, _c_val(s.kill)]
+	breakdown += "- [b]Team Surv (Net HP):[/b] %s (%.1f Ã— %s)\n" % [_c_val_unsigned(s.team_surv * w.w_team_surv), w.w_team_surv, _c_val(s.team_surv)]
+	breakdown += "- [b]Disruption:[/b] %s (%.1f Ã— %s)\n" % [_c_val_unsigned(s.disrupt * w.w_disrupt), w.w_disrupt, _c_val(s.disrupt)]
+	breakdown += "- [b]Positioning:[/b] %s (%.1f Ã— %s)\n" % [_c_val_unsigned(s.position * w.w_position), w.w_position, _c_val(s.position)]
 	
 	breakdown += "  * [color=#FFB366]Approach/Retreat:[/color] %s\n" % _c_val(s.get("pos_approach", 0.0))
 	breakdown += "  * [color=#FFB366]Enemy Proximity Danger:[/color] %s\n" % _c_val(s.get("pos_danger", 0.0))

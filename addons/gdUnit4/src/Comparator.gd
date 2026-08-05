@@ -1,4 +1,4 @@
-class_name Comparator
+﻿class_name Comparator
 extends Resource
 
 enum {

@@ -1,4 +1,4 @@
-@abstract class_name GdUnitCommandScriptEditor
+﻿@abstract class_name GdUnitCommandScriptEditor
 extends GdUnitBaseCommand
 
 var _test_session_command: GdUnitCommandTestSession

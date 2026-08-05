@@ -1,4 +1,4 @@
-class_name GdUnitObjectInteractions
+﻿class_name GdUnitObjectInteractions
 extends RefCounted
 
 

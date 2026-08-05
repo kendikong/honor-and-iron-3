@@ -1,9 +1,9 @@
-class_name MassSimInterpretationExport
+﻿class_name MassSimInterpretationExport
 extends RefCounted
 
 const _C = preload("res://core/batch/mass_sim_constants.gd")
 
-## Full post-batch export for agent interpretation — every dashboard statistic, one file.
+## Full post-batch export for agent interpretation â€” every dashboard statistic, one file.
 
 
 static func write_bundle(
@@ -138,7 +138,7 @@ static func to_markdown(bundle: Dictionary) -> String:
 	for row: Variant in (bundle.get("l2_balance", {}) as Dictionary).get("tier_rows", []):
 		if row is Dictionary:
 			var r: Dictionary = row as Dictionary
-			lines.append("- %s [%s]: %.1f%% WR (n=%d) ±%.1f%% Wilson" % [
+			lines.append("- %s [%s]: %.1f%% WR (n=%d) Â±%.1f%% Wilson" % [
 				String(r.get("display_name", r.get("class_id", "?"))),
 				String(r.get("tier", "?")),
 				float(r.get("win_rate", 0)),
@@ -164,7 +164,7 @@ static func to_markdown(bundle: Dictionary) -> String:
 	if ai.is_empty():
 		lines.append("_Run a new batch to populate Commander AI skill meta._")
 	else:
-		lines.append("- Avg utility/turn: %.2f · Holds/turn: %.2f · Skill commits/turn: %.2f" % [
+		lines.append("- Avg utility/turn: %.2f Â· Holds/turn: %.2f Â· Skill commits/turn: %.2f" % [
 			float(ai.get("avg_utility_per_turn", 0)),
 			float(ai.get("holds_per_turn", 0)),
 			float(ai.get("skill_commits_per_turn", 0)),
@@ -172,7 +172,7 @@ static func to_markdown(bundle: Dictionary) -> String:
 	for row: Variant in (skill.get("class_combat_rows", []) as Array).slice(0, 10):
 		if row is Dictionary:
 			var r: Dictionary = row as Dictionary
-			lines.append("- Class %s: dmg/turn %.2f · taken/turn %.2f · AI hold %.0f%%" % [
+			lines.append("- Class %s: dmg/turn %.2f Â· taken/turn %.2f Â· AI hold %.0f%%" % [
 				String(r.get("class_id", "?")),
 				float(r.get("damage_dealt_per_turn", 0)),
 				float(r.get("damage_taken_per_turn", 0)),
@@ -181,7 +181,7 @@ static func to_markdown(bundle: Dictionary) -> String:
 	for row: Variant in (skill.get("skill_rows", []) as Array).slice(0, 15):
 		if row is Dictionary:
 			var s: Dictionary = row as Dictionary
-			lines.append("- %s/%s: uses/turn %.3f · pick %.0f%% · dmg/turn %.2f" % [
+			lines.append("- %s/%s: uses/turn %.3f Â· pick %.0f%% Â· dmg/turn %.2f" % [
 				String(s.get("class_id", "")),
 				String(s.get("display_name", s.get("ability_id", ""))),
 				float(s.get("uses_per_turn", 0)),

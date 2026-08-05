@@ -1,4 +1,4 @@
-## An Assertion Tool to verify Results
+﻿## An Assertion Tool to verify Results
 @abstract class_name GdUnitResultAssert
 extends GdUnitAssert
 

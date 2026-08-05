@@ -1,4 +1,4 @@
-# Myers' Diff Algorithm implementation
+﻿# Myers' Diff Algorithm implementation
 # Based on "An O(ND) Difference Algorithm and Its Variations" by Eugene W. Myers
 class_name GdDiffTool
 extends RefCounted

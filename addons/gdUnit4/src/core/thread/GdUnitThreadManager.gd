@@ -1,4 +1,4 @@
-## A manager to run new thread and crate a ThreadContext shared over the actual test run
+﻿## A manager to run new thread and crate a ThreadContext shared over the actual test run
 class_name GdUnitThreadManager
 extends Object
 

@@ -1,10 +1,10 @@
-ï»¿class_name BruiserEarthshatterScenarioTest
+class_name BruiserEarthshatterScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
-## Bible: Earthshatter â€” RANGE 1 | ARC | ATK 2 | destroy traps/cover in area.
-## [+] buff_per_destroyed_object â€” +1 ATK per destroyed object.
+## Bible: Earthshatter — RANGE 1 | ARC | ATK 2 | destroy traps/cover in area.
+## [+] buff_per_destroyed_object — +1 ATK per destroyed object.
 ## Globals: EffectType.DAMAGE + DESTROY_OBSTACLE + TargetShape.ARC.
 
 

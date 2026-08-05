@@ -1,4 +1,4 @@
-class_name GdUnitHtmlPatterns
+﻿class_name GdUnitHtmlPatterns
 extends RefCounted
 
 const TABLE_RECORD_TESTSUITE = """

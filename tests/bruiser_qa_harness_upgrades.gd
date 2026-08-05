@@ -47,20 +47,20 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_charge_strike")
 	H.assert_true(
 		failures, "charge_strike/upgrade/ghost",
-		ab.upgraded_effects[0].modifiers.has("ghost_move"),
+		ab.upgraded_effects[0].legacy_modifiers.has("ghost_move"),
 	)
 	H.assert_eq_int(
 		failures, "charge_strike/upgrade/ghost_val",
-		int(ab.upgraded_effects[0].modifiers["ghost_move"]),
+		int(ab.upgraded_effects[0].legacy_modifiers["ghost_move"]),
 		1,
 	)
 	H.assert_true(
 		failures, "charge_strike/upgrade/terrain_bonus",
-		ab.upgraded_effects[1].modifiers.has("bonus_dmg_from_terrain"),
+		ab.upgraded_effects[1].legacy_modifiers.has("bonus_dmg_from_terrain"),
 	)
 	H.assert_eq_int(
 		failures, "charge_strike/upgrade/terrain_bonus_val",
-		int(ab.upgraded_effects[1].modifiers["bonus_dmg_from_terrain"]),
+		int(ab.upgraded_effects[1].legacy_modifiers["bonus_dmg_from_terrain"]),
 		2,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -126,11 +126,11 @@ static func run_cleave_upgrade(failures: Array[String]) -> void:
 	)
 	H.assert_true(
 		failures, "cleave/upgrade/weapon_scaled",
-		ab.upgraded_effects[1].modifiers.has("weapon_scaled"),
+		ab.upgraded_effects[1].legacy_modifiers.has("weapon_scaled"),
 	)
 	H.assert_eq_int(
 		failures, "cleave/upgrade/weapon_scaled_val",
-		int(ab.upgraded_effects[1].modifiers["weapon_scaled"]),
+		int(ab.upgraded_effects[1].legacy_modifiers["weapon_scaled"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -185,7 +185,7 @@ static func run_meat_shield_upgrade(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "meat_shield/upgrade/range", skill.upgraded_range_tiles, 3)
 	H.assert_eq_int(
 		failures, "meat_shield/upgrade/intercept_str_mod",
-		int(skill.upgraded_effects[1].modifiers["intercept_grant_str"]),
+		int(skill.upgraded_effects[1].legacy_modifiers["intercept_grant_str"]),
 		2,
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
@@ -219,7 +219,7 @@ static func run_meat_shield_upgrade(failures: Array[String]) -> void:
 	var bruiser_after: UnitState = attack_result.final_state.get_unit_by_id(10)
 	var intercept_str_amount: int = 0
 	for status: StatusData in bruiser_after.active_statuses:
-		if status.type == GameEnums.StatusType.STAT_BUFF_STR and status.duration == 1:
+		if status.primary_type == GameEnums.StatusType.STAT_BUFF_STR and status.duration == 1:
 			intercept_str_amount = maxi(intercept_str_amount, status.value)
 	H.assert_eq_int(
 		failures, "meat_shield/upgrade/intercept_str",
@@ -232,11 +232,11 @@ static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_adrenaline_surge")
 	H.assert_true(
 		failures, "adrenaline_surge/upgrade/mod",
-		ab.upgraded_effects[1].modifiers.has("on_kill_heal_shield"),
+		ab.upgraded_effects[1].legacy_modifiers.has("on_kill_heal_shield"),
 	)
 	H.assert_eq_int(
 		failures, "adrenaline_surge/upgrade/mod_val",
-		int(ab.upgraded_effects[1].modifiers["on_kill_heal_shield"]),
+		int(ab.upgraded_effects[1].legacy_modifiers["on_kill_heal_shield"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -311,11 +311,11 @@ static func run_earthshatter_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_earthshatter")
 	H.assert_true(
 		failures, "earthshatter/upgrade/mod",
-		ab.upgraded_effects[1].modifiers.has("buff_per_destroyed_object"),
+		ab.upgraded_effects[1].legacy_modifiers.has("buff_per_destroyed_object"),
 	)
 	H.assert_eq_int(
 		failures, "earthshatter/upgrade/mod_val",
-		int(ab.upgraded_effects[1].modifiers["buff_per_destroyed_object"]),
+		int(ab.upgraded_effects[1].legacy_modifiers["buff_per_destroyed_object"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -350,11 +350,11 @@ static func run_frenzy_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_frenzy")
 	H.assert_true(
 		failures, "frenzy/upgrade/mod",
-		ab.upgraded_effects[0].modifiers.has("frenzy_on_kill_ap"),
+		ab.upgraded_effects[0].legacy_modifiers.has("frenzy_on_kill_ap"),
 	)
 	H.assert_eq_int(
 		failures, "frenzy/upgrade/mod_val",
-		int(ab.upgraded_effects[0].modifiers["frenzy_on_kill_ap"]),
+		int(ab.upgraded_effects[0].legacy_modifiers["frenzy_on_kill_ap"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -398,20 +398,20 @@ static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_guttural_roar")
 	H.assert_true(
 		failures, "guttural_roar/upgrade/push_mod",
-		ab.upgraded_effects[0].modifiers.has("push_board_items"),
+		ab.upgraded_effects[0].legacy_modifiers.has("push_board_items"),
 	)
 	H.assert_eq_int(
 		failures, "guttural_roar/upgrade/push_mod_val",
-		int(ab.upgraded_effects[0].modifiers["push_board_items"]),
+		int(ab.upgraded_effects[0].legacy_modifiers["push_board_items"]),
 		1,
 	)
 	H.assert_true(
 		failures, "guttural_roar/upgrade/collision_mod",
-		ab.upgraded_effects[0].modifiers.has("item_collision_damage"),
+		ab.upgraded_effects[0].legacy_modifiers.has("item_collision_damage"),
 	)
 	H.assert_eq_int(
 		failures, "guttural_roar/upgrade/collision_mod_val",
-		int(ab.upgraded_effects[0].modifiers["item_collision_damage"]),
+		int(ab.upgraded_effects[0].legacy_modifiers["item_collision_damage"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -489,7 +489,7 @@ static func run_headbutt_upgrade(failures: Array[String]) -> void:
 	var expected_bonus: int = floori(float(bruiser_up.health.max_hp) * 0.1)
 	H.assert_true(
 		failures, "headbutt/upgrade/mod",
-		skill.upgraded_effects[0].modifiers.has("bonus_dmg_pct_max_hp"),
+		skill.upgraded_effects[0].legacy_modifiers.has("bonus_dmg_pct_max_hp"),
 	)
 	## Bible [+] is base-power % Max HP — compare MATH_TELEMETRY base, not scaled HP delta.
 	var base_up: int = int(H.first_damage_math(result.events).get("base", -1))
@@ -531,11 +531,11 @@ static func run_violent_collision_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
 	H.assert_true(
 		failures, "violent_collision/upgrade/stagger_mod",
-		ab.upgraded_effects[0].modifiers.has("stagger_on_collision"),
+		ab.upgraded_effects[0].legacy_modifiers.has("stagger_on_collision"),
 	)
 	H.assert_eq_int(
 		failures, "violent_collision/upgrade/mod_val",
-		int(ab.upgraded_effects[0].modifiers["stagger_on_collision"]),
+		int(ab.upgraded_effects[0].legacy_modifiers["stagger_on_collision"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -562,11 +562,11 @@ static func run_breaching_dash_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_breaching_dash")
 	H.assert_true(
 		failures, "breaching_dash/upgrade/pierce_mod",
-		ab.upgraded_effects[0].modifiers.has("next_attack_pierce"),
+		ab.upgraded_effects[0].legacy_modifiers.has("next_attack_pierce"),
 	)
 	H.assert_eq_int(
 		failures, "breaching_dash/upgrade/mod_val",
-		int(ab.upgraded_effects[0].modifiers["next_attack_pierce"]),
+		int(ab.upgraded_effects[0].legacy_modifiers["next_attack_pierce"]),
 		1,
 	)
 	var base_cfg: Dictionary = {
@@ -758,11 +758,11 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_crimson_whirlwind")
 	H.assert_true(
 		failures, "crimson_whirlwind/upgrade/mod",
-		ab.upgraded_effects[0].modifiers.has("heal_per_target_hit"),
+		ab.upgraded_effects[0].legacy_modifiers.has("heal_per_target_hit"),
 	)
 	H.assert_eq_int(
 		failures, "crimson_whirlwind/upgrade/mod_val",
-		int(ab.upgraded_effects[0].modifiers["heal_per_target_hit"]),
+		int(ab.upgraded_effects[0].legacy_modifiers["heal_per_target_hit"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -796,11 +796,11 @@ static func run_belly_flop_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
 	H.assert_true(
 		failures, "belly_flop/upgrade/push_mod",
-		ab.upgraded_effects[2].modifiers.has("belly_flop_push"),
+		ab.upgraded_effects[2].legacy_modifiers.has("belly_flop_push"),
 	)
 	H.assert_eq_int(
 		failures, "belly_flop/upgrade/mod_val",
-		int(ab.upgraded_effects[2].modifiers["belly_flop_push"]),
+		int(ab.upgraded_effects[2].legacy_modifiers["belly_flop_push"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(

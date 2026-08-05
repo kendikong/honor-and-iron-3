@@ -1,7 +1,7 @@
-class_name FloatingText
+﻿class_name FloatingText
 extends Label
 
-## Screen-space combat floater — crisp HD-2D UI text (not map-scaled world art).
+## Screen-space combat floater â€” crisp HD-2D UI text (not map-scaled world art).
 
 const ACCUMULATION_DURATION: float = 0.45
 ## Target cap height ~= LPC head height on screen at scale 1.0 (before map zoom).

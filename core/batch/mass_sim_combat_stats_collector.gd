@@ -1,4 +1,4 @@
-class_name MassSimCombatStatsCollector
+﻿class_name MassSimCombatStatsCollector
 extends RefCounted
 
 ## Per-battle combat + skill + Commander-AI telemetry for mass sim meta / balance / AI tuning.

@@ -43,11 +43,11 @@ static func ability_has_status_effect(
 ) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
-	for eff: EffectData in effects:
+	var effects: Array[AbilityModule] = ability.upgraded_modules if upgraded else ability.modules
+	for eff: AbilityModule in effects:
 		if eff == null:
 			continue
-		if eff.type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF]:
+		if eff.primary_type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF]:
 			if eff.status_type == status_type:
 				return true
 	return false
@@ -82,11 +82,11 @@ static func run_active_smoke(
 			ability_has_status_effect(ability, status_type, false),
 			"base effects must include status %s" % status_type,
 		)
-	if ability.upgraded_effects.size() > 0:
+	if ability.upgraded_modules.size() > 0:
 		assert_true(
 			failures, "%s/upgrade_data" % ability_id,
 			ability.upgrade_description.length() > 0,
-			"upgraded_effects require upgrade_description",
+			"upgraded_modules require upgrade_description",
 		)
 
 
@@ -134,7 +134,7 @@ static func cast_on_enemy(
 
 static func events_have_type(events: Array, event_type: GameEnums.SimEventType) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == event_type:
+		if e is SimEvent and e.primary_type == event_type:
 			return true
 	return false
 
@@ -293,9 +293,9 @@ static func has_status(unit: UnitState, status_type: GameEnums.StatusType) -> bo
 static func ability_has_effect(ability: AbilityData, effect_type: GameEnums.EffectType, upgraded: bool = false) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
-	for eff: EffectData in effects:
-		if eff != null and eff.type == effect_type:
+	var effects: Array[AbilityModule] = ability.upgraded_modules if upgraded else ability.modules
+	for eff: AbilityModule in effects:
+		if eff != null and eff.primary_type == effect_type:
 			return true
 	return false
 
@@ -330,7 +330,7 @@ static func plan_ability(
 
 static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_PUSHED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_PUSHED:
 			if int(e.data.get("unit", -1)) == unit_id:
 				return true
 	return false
@@ -338,7 +338,7 @@ static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:
 
 static func event_push_distance(events: Array, unit_id: int) -> int:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_PUSHED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_PUSHED:
 			if int(e.data.get("unit", -1)) == unit_id:
 				return int(e.data.get("distance", -1))
 	return -1
@@ -346,7 +346,7 @@ static func event_push_distance(events: Array, unit_id: int) -> int:
 
 static func events_have_unit_damaged_pierce(events: Array, pierce: bool) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
 			if bool(e.data.get("pierce", false)) == pierce:
 				return true
 	return false
@@ -354,7 +354,7 @@ static func events_have_unit_damaged_pierce(events: Array, pierce: bool) -> bool
 
 static func events_have_damage_pierce(events: Array, pierce: bool) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.MATH_TELEMETRY:
 			var d: Dictionary = e.data
 			if str(d.get("type", "")) == "damage" and bool(d.get("pierce", false)) == pierce:
 				return true
@@ -363,7 +363,7 @@ static func events_have_damage_pierce(events: Array, pierce: bool) -> bool:
 
 static func first_damage_math(events: Array) -> Dictionary:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.MATH_TELEMETRY:
 			var d: Dictionary = e.data
 			if str(d.get("type", "")) == "damage":
 				return d
@@ -372,7 +372,7 @@ static func first_damage_math(events: Array) -> Dictionary:
 
 static func events_have_terrain_changed(events: Array, coord: Vector2i) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.TERRAIN_CHANGED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.TERRAIN_CHANGED:
 			if e.data.get("coord", Vector2i(-99, -99)) == coord:
 				return true
 	return false
@@ -381,7 +381,7 @@ static func events_have_terrain_changed(events: Array, coord: Vector2i) -> bool:
 static func count_unit_hp_damage_events(events: Array, unit_id: int) -> int:
 	var count: int = 0
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
 			if int(e.data.get("unit", -1)) != unit_id:
 				continue
 			var hp_dmg: int = int(e.data.get("hp_damaged", e.data.get("amount", 0)))
@@ -393,7 +393,7 @@ static func count_unit_hp_damage_events(events: Array, unit_id: int) -> int:
 static func sum_unit_hp_damage_events(events: Array, unit_id: int) -> int:
 	var total: int = 0
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
 			if int(e.data.get("unit", -1)) != unit_id:
 				continue
 			var hp_dmg: int = int(e.data.get("hp_damaged", e.data.get("amount", 0)))
@@ -405,7 +405,7 @@ static func sum_unit_hp_damage_events(events: Array, unit_id: int) -> int:
 static func sum_unit_incoming_damage_events(events: Array, unit_id: int) -> int:
 	var total: int = 0
 	for e: Variant in events:
-		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
 			if int(e.data.get("unit", -1)) != unit_id:
 				continue
 			total += int(e.data.get("amount", 0))
@@ -449,7 +449,7 @@ static func status_value(unit: UnitState, status_type: GameEnums.StatusType) -> 
 	if unit == null:
 		return 0
 	for status: StatusData in unit.active_statuses:
-		if status.type == status_type:
+		if status.primary_type == status_type:
 			return status.value
 	return 0
 
@@ -561,7 +561,7 @@ static func run_push_through_upgrade(failures: Array[String]) -> void:
 	var push: AbilityData = ability_on_unit(bruiser, &"bruiser_push_through")
 	assert_true(
 		failures, "push_through/upgrade_modifier",
-		push.upgraded_effects[0].modifiers.has("buff_on_push"),
+		push.upgraded_modules[0].legacy_modifiers.has("buff_on_push"),
 	)
 	assert_eq_int(
 		failures, "push_through/upgrade_mp_cost",
@@ -642,7 +642,7 @@ static func run_push_through_upgrade_next_attack(failures: Array[String]) -> voi
 	var result_base: SimResult = simulate_plan(board_base, plan_base)
 	var dmg_base: int = hp_base - unit_hp(result_base.final_state, 11)
 	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
-	var base_cleave_power: int = cleave.effects[0].amount
+	var base_cleave_power: int = cleave.modules[0].amount
 	var expected_delta: int = (
 		CombatSystem.calculate_scaled_damage(bruiser_after, base_cleave_power + 1, GameEnums.StatType.PHYSICAL, board)
 		- CombatSystem.calculate_scaled_damage(bruiser_after, base_cleave_power, GameEnums.StatType.PHYSICAL, board)

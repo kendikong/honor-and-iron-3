@@ -1,4 +1,4 @@
-class_name TestCaseAttribute
+﻿class_name TestCaseAttribute
 extends Resource
 ## Holds configuration and metadata for individual test cases.[br]
 ## [br]

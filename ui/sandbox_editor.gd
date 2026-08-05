@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 const GRID_WIDTH = 17
 const GRID_HEIGHT = 11

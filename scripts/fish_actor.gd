@@ -1,7 +1,7 @@
-class_name FishActor
+﻿class_name FishActor
 extends Node2D
 
-## Top-down thin silhouette — straight cardinal glide; snake wave is sprite-only.
+## Top-down thin silhouette â€” straight cardinal glide; snake wave is sprite-only.
 
 const TILE_PX: int = 16
 const STEP_HZ: float = 10.0

@@ -68,7 +68,7 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 		adjust_swap_intent_actor_pose(temp_board, actions_v as Array, director)
 
 
-## Walk→swap hover: inject approach route when sim path is missing but commit slots include a pre-walk.
+## Walkâ†’swap hover: inject approach route when sim path is missing but commit slots include a pre-walk.
 static func ensure_swap_approach_paths_from_actions(
 	actions: Array,
 	start_board: BoardState,
@@ -186,7 +186,7 @@ static func _swap_approach_cell(
 	)
 
 
-## Walk→swap hover: preview_board sim ends swapped; ghost must stand on the walk leg endpoint.
+## Walkâ†’swap hover: preview_board sim ends swapped; ghost must stand on the walk leg endpoint.
 static func adjust_swap_intent_actor_pose(
 	preview_board: BoardState,
 	actions: Array,
@@ -250,7 +250,7 @@ static func _splice_waypoint_action_leg(
 	return out
 
 
-## Grid cells for a movement-skill intent: origin → waypoints → target_coord (commit-slot truth).
+## Grid cells for a movement-skill intent: origin â†’ waypoints â†’ target_coord (commit-slot truth).
 static func movement_intent_cells(origin: Vector2i, action: TimelineAction) -> Array:
 	var cells: Array = [origin]
 	if action == null:
@@ -282,7 +282,7 @@ static func facing_from_route_leg(leg: Array) -> int:
 	return facing_from_intent_cells(leg)
 
 
-## Facing for a committed plan step — matches arrow leg direction, not end-state unit.facing.
+## Facing for a committed plan step â€” matches arrow leg direction, not end-state unit.facing.
 static func facing_along_planned_action(
 	base_board: BoardState,
 	plan: Timeline,
@@ -304,7 +304,7 @@ static func facing_along_planned_action(
 	return facing_from_intent_cells(movement_intent_cells(origin, action))
 
 
-## Last displacement facing across a unit's ordered plan steps (pre → action → post).
+## Last displacement facing across a unit's ordered plan steps (pre â†’ action â†’ post).
 static func facing_along_last_planned_step(
 	base_board: BoardState,
 	plan: Timeline,
@@ -424,7 +424,7 @@ func ensure_movement_intent_from_actions(
 		if intent.size() < 2:
 			continue
 		var existing: Array = preview_paths.get(action.actor_id, [])
-		## Committed waypoints are intent truth — never keep a same-endpoint sim path with different steps.
+		## Committed waypoints are intent truth â€” never keep a same-endpoint sim path with different steps.
 		if not action.waypoints.is_empty():
 			if (
 				not existing.is_empty()
@@ -454,7 +454,7 @@ func ensure_movement_intent_from_actions(
 			if last_cell is Vector2i and (last_cell as Vector2i) == action.target_coord:
 				origins[action.actor_id] = action.target_coord
 				continue
-			## Committed MOVE slot(s) on plan — never truncate sim path for shorter ability intent.
+			## Committed MOVE slot(s) on plan â€” never truncate sim path for shorter ability intent.
 			if actors_with_committed_move.get(action.actor_id, false) and existing.size() >= 2:
 				origins[action.actor_id] = action.target_coord
 				continue
@@ -562,7 +562,9 @@ static func build_preview_paths(
 	pushes.clear()
 	post_splits.clear()
 	action_splits.clear()
-	var start_board: BoardState = director.base_board if director.base_board != null else director.board
+	var start_board: BoardState = null
+	if director != null:
+		start_board = director.base_board if director.base_board != null else director.board
 	if start_board == null:
 		return
 	var current_positions: Dictionary = {}
@@ -614,7 +616,7 @@ static func build_preview_paths(
 						pid,
 						from_unit.position if from_unit != null else to_pos,
 					)
-					## Voluntary displacement (SWAP): extend route only — not orange push arrows.
+					## Voluntary displacement (SWAP): extend route only â€” not orange push arrows.
 					if not enemy_phase and not d.has("pusher") and paths.has(pid):
 						var route: Array = paths[pid]
 						if route.is_empty():
@@ -654,7 +656,7 @@ func copy_from(other: CombatPlanningPreview) -> void:
 	preview_pushes = other.preview_pushes.duplicate(true)
 
 
-## Committed projection board — never use move-only `director.board` for planning geometry.
+## Committed projection board â€” never use move-only `director.board` for planning geometry.
 static func planning_projection_board(director: CombatDirector, fallback: BoardState) -> BoardState:
 	if director != null and director.projected_state != null:
 		return director.projected_state
@@ -724,7 +726,7 @@ static func committed_move_action(
 	return found
 
 
-## Origin cell for a move leg — turn-start walk for pre, action end for post.
+## Origin cell for a move leg â€” turn-start walk for pre, action end for post.
 static func move_leg_origin_cell(
 	director: CombatDirector,
 	board: BoardState,
@@ -751,7 +753,7 @@ static func move_leg_origin_cell(
 	return Vector2i(-999999, -999999)
 
 
-## Route leg for the current planning move — same slice as overlay arrow drawing.
+## Route leg for the current planning move â€” same slice as overlay arrow drawing.
 static func pending_move_route_leg(
 	unit_id: int,
 	preview: CombatPlanningPreview,
@@ -813,7 +815,7 @@ static func move_route_leg_from_preview(
 
 
 ## True when a committed PRE-MOVE displacement is visually done (sprite on target).
-## Post-move legs always draw: they document action-end → post-dest even after full projection.
+## Post-move legs always draw: they document action-end â†’ post-dest even after full projection.
 ## When visual_cell is set, logical/projected board must not hide arrows before commit walk finishes.
 static func committed_move_already_realized(
 	director: CombatDirector,
@@ -831,7 +833,7 @@ static func committed_move_already_realized(
 	var origin: Vector2i = move_leg_origin_cell(
 		director, board, unit_id, timing, move_action,
 	)
-	## Intentional loop / same-tile-end — origin equals target, path still matters.
+	## Intentional loop / same-tile-end â€” origin equals target, path still matters.
 	if origin == move_action.target_coord:
 		return false
 	var target: Vector2i = move_action.target_coord
@@ -858,7 +860,7 @@ static func _committed_pre_move_satisfied(
 	return GridSystem.manhattan(origin, current) >= GridSystem.manhattan(origin, target)
 
 
-## Frozen committed move leg — preview slice, then plan geometry fallback.
+## Frozen committed move leg â€” preview slice, then plan geometry fallback.
 static func committed_move_route_leg(
 	unit_id: int,
 	preview: CombatPlanningPreview,
@@ -948,7 +950,7 @@ static func _last_route_index(route: Array, cell: Vector2i) -> int:
 	return found
 
 
-## Committed action movement leg — frozen to action.target_coord, not current move-timing slot.
+## Committed action movement leg â€” frozen to action.target_coord, not current move-timing slot.
 static func committed_action_route_leg(
 	unit_id: int,
 	preview: CombatPlanningPreview,
@@ -1007,7 +1009,7 @@ static func destination_cells_from_route(
 	return out
 
 
-## Walk cells from move-preview paths only — never re-pathfind.
+## Walk cells from move-preview paths only â€” never re-pathfind.
 static func planning_animation_cells(
 	unit_id: int,
 	preview: CombatPlanningPreview,
@@ -1031,7 +1033,7 @@ static func planning_animation_cells(
 	return []
 
 
-## Awaiting movement-skill arrow cells. Drag paint is intent truth — never swap to
+## Awaiting movement-skill arrow cells. Drag paint is intent truth â€” never swap to
 ## pathfinder order while the player is still painting toward the hover endpoint.
 static func awaiting_movement_route_cells(
 	origin: Vector2i,

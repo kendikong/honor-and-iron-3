@@ -1,4 +1,4 @@
-class_name MovementComponent
+﻿class_name MovementComponent
 extends RefCounted
 
 ## Purpose: A unit's live movement points for the current turn.

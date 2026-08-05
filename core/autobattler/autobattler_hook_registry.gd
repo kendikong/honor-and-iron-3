@@ -1,4 +1,4 @@
-class_name AutobattlerHookRegistry
+﻿class_name AutobattlerHookRegistry
 extends RefCounted
 
 ## Purpose: Hooks the Autobattler into the game loop (CombatDirector).
@@ -90,7 +90,7 @@ func _on_turn_phase_changed(phase: int) -> void:
 		if board != null and not board.has_living_team(GameEnums.Team.PLAYER):
 			return
 		if _combat_director.get_player_plan().size() == 0:
-			print("[Autobattler] No committable plan — skipping auto-ready")
+			print("[Autobattler] No committable plan â€” skipping auto-ready")
 			return
 		if NetworkManager != null and NetworkManager.is_multiplayer and NetworkManager.multiplayer.has_multiplayer_peer():
 			GlobalTimeline.rpc_set_ready.rpc(true)

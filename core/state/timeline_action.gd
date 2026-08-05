@@ -1,4 +1,4 @@
-class_name TimelineAction
+﻿class_name TimelineAction
 extends RefCounted
 
 ## Purpose: One ordered entry in a plan: either a move or an ability use.
@@ -37,10 +37,10 @@ var irreversible: bool = false
 ## MOVE only: apply universal Run boost immediately before this step resolves.
 var uses_run: bool = false
 
-## ABILITY only: armed for targeting (dash etc.) — shown in plan UI, not simulated until finalized.
+## ABILITY only: armed for targeting (dash etc.) â€” shown in plan UI, not simulated until finalized.
 var awaiting_target: bool = false
 
-## ABILITY only: parallel to modules — per-module aim coords (ability-data.md §2.7).
+## ABILITY only: parallel to modules â€” per-module aim coords (ability-data.md Â§2.7).
 ## Sentinel MODULE_COORD_UNSET = inactive / unset gated slot.
 const MODULE_COORD_UNSET: Vector2i = Vector2i(-9999, -9999)
 var module_coords: Array[Vector2i] = []

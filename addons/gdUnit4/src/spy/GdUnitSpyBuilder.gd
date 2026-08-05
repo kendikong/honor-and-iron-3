@@ -1,4 +1,4 @@
-class_name GdUnitSpyBuilder
+﻿class_name GdUnitSpyBuilder
 extends GdUnitClassDoubler
 
 const GdUnitTools := preload("res://addons/gdUnit4/src/core/GdUnitTools.gd")

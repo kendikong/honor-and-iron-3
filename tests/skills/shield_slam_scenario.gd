@@ -4,7 +4,7 @@ extends RefCounted
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 ## Bible: Shield Slam: DAMAGE + PUSH
-## Globals: DAMAGE, PUSH via AbilitySystem / EffectData
+## Globals: DAMAGE, PUSH via AbilitySystem / AbilityModule
 
 
 static func run_all(failures: Array[String]) -> void:

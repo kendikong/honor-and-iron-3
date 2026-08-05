@@ -1,4 +1,4 @@
-class_name GdUnitCommandInspectorDebugTests
+﻿class_name GdUnitCommandInspectorDebugTests
 extends GdUnitBaseCommand
 
 const  GdUnitInspectorTreeMainPanel := preload("res://addons/gdUnit4/src/ui/parts/GdUnitInspectorTreeMainPanel.gd")

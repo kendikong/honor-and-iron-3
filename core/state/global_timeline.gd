@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 
 signal timeline_updated()
 signal player_ready_changed(player_id: int, is_ready: bool)

@@ -1,4 +1,4 @@
-class_name ManaSeedTilesetBuilder
+﻿class_name ManaSeedTilesetBuilder
 extends RefCounted
 
 ## Builds Godot TileSet resources from Mana Seed .tsx + PNG assets.
@@ -184,7 +184,7 @@ static func _apply_tsx_animations(source: TileSetAtlasSource, parsed: Dictionary
 		var frame_count: int = frames.size()
 		if _animation_is_configured(source, anchor, frame_count):
 			continue
-		# TSX frames are consecutive atlas cells on one row — no separation gap.
+		# TSX frames are consecutive atlas cells on one row â€” no separation gap.
 		source.set_tile_animation_columns(anchor, frame_count)
 		source.set_tile_animation_frames_count(anchor, frame_count)
 		source.set_tile_animation_separation(anchor, Vector2i.ZERO)

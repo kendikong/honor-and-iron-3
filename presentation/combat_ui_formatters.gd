@@ -1,4 +1,4 @@
-class_name CombatUiFormatters
+﻿class_name CombatUiFormatters
 extends RefCounted
 
 ## Shared BBCode formatters for tactical combat (extracted from board_view).
@@ -23,7 +23,7 @@ const PLAYER_COLORS: Array[Color] = [
 	Color(0.92, 0.36, 0.92),
 ]
 
-## Legacy BBCode tier keys → ratio of inspector body font (medium body = 20px design ref).
+## Legacy BBCode tier keys Ã¢â€ â€™ ratio of inspector body font (medium body = 20px design ref).
 const _FONT_TIER_RATIO: Dictionary = {
 	13: 1.0,
 	10: 0.9,
@@ -80,7 +80,7 @@ static func reason_text(code: String) -> String:
 		"unknown_action_type":
 			return "invalid"
 		"target_displaced":
-			return "ally plan cancelled — target moved"
+			return "ally plan cancelled Ã¢â‚¬â€ target moved"
 		"cannot_undo_trample":
 			return "cannot undo trample move"
 		"move_already_planned":
@@ -132,7 +132,7 @@ static func unit_info(
 		% [scaled_font_size(9), PlanningIcons.STAT_HP, unit.health.current_hp, unit.health.max_hp, facing_name(unit.facing)],
 	)
 	var mov_glyph: String = PlanningIcons.move_glyph(move_uses_run)
-	var mov_hint: String = "Run — Movement Points" if move_uses_run else "Movement Points"
+	var mov_hint: String = "Run Ã¢â‚¬â€ Movement Points" if move_uses_run else "Movement Points"
 	lines.append(
 		(
 			"[font_size=%d][color=#F1C40F][b][hint=%s]%s MP:[/hint] %d/%d[/b][/color]"
@@ -192,7 +192,7 @@ static func unit_info(
 			var fort_val: int = tile.definition.fortitude
 			var sign_str: String = "+" if fort_val > 0 else ""
 			lines.append(
-				"[font_size=%d][hint=\"%s\"]🌿 Terrain: %s (%s%d Fortitude)[/hint][/font_size]"
+				"[font_size=%d][hint=\"%s\"]Ã°Å¸Å’Â¿ Terrain: %s (%s%d Fortitude)[/hint][/font_size]"
 				% [
 					scaled_font_size(10),
 					"Reduces incoming damage." if fort_val > 0 else "Increases incoming damage.",
@@ -250,7 +250,7 @@ static func describe_action(
 	plan: Timeline = null,
 ) -> String:
 	if action == null:
-		return "—"
+		return "Ã¢â‚¬â€"
 	var actor: UnitState = board.get_unit_by_id(action.actor_id) if board != null else null
 	var actor_name: String = actor.definition.display_name if actor != null else "unit %d" % action.actor_id
 	match action.type:
@@ -261,10 +261,10 @@ static func describe_action(
 			var dest: Vector2i = action.target_coord
 			if origin.x > -900:
 				if action.uses_run:
-					return "%s run (%d,%d) → (%d,%d)" % [
+					return "%s run (%d,%d) Ã¢â€ â€™ (%d,%d)" % [
 						actor_name, origin.x, origin.y, dest.x, dest.y,
 					]
-				return "%s move (%d,%d) → (%d,%d)" % [
+				return "%s move (%d,%d) Ã¢â€ â€™ (%d,%d)" % [
 					actor_name, origin.x, origin.y, dest.x, dest.y,
 				]
 			if action.uses_run:
@@ -273,7 +273,7 @@ static func describe_action(
 		GameEnums.ActionType.ABILITY:
 			var ability_name: String = action.ability.display_name if action.ability != null else "ability"
 			if action.awaiting_target:
-				return "%s %s — awaiting dash endpoint" % [
+				return "%s %s Ã¢â‚¬â€ awaiting dash endpoint" % [
 					PlanningIcons.awaiting_phase_glyph(action.ability), ability_name,
 				]
 			var target_name: String = actor_name
@@ -291,7 +291,7 @@ static func describe_action(
 				var move_origin: Vector2i = plan_action_origin_cell(board, plan, action, actor)
 				var move_dest: Vector2i = action.target_coord
 				if move_origin.x > -900:
-					return "%s %s (%d,%d) → (%d,%d)" % [
+					return "%s %s (%d,%d) Ã¢â€ â€™ (%d,%d)" % [
 						actor_name, ability_name,
 						move_origin.x, move_origin.y, move_dest.x, move_dest.y,
 					]
@@ -301,25 +301,25 @@ static func describe_action(
 
 static func class_symbol(unit: UnitState) -> String:
 	match unit.definition.id:
-		&"knight": return "♞"
-		&"paladin": return "🛡️"
-		&"fighter": return "✊"
-		&"cavalier": return "🧲"
-		&"archer": return "🏹"
-		&"mage": return "✨"
-		&"cleric": return "➕"
-		&"assassin": return "⚔️"
-		&"mercenary": return "🪓"
-		&"gryphon": return "🦅"
-		&"monk": return "📿"
-		&"engineer": return "🔧"
-		&"shaman": return "👁️"
-		&"warden": return "♜"
-		&"swordmaster": return "🗡️"
-		&"charger": return "🔱"
-		&"artillery": return "💣"
-		&"shover": return "↔️"
-	return "👤"
+		&"knight": return "Ã¢â„¢Å¾"
+		&"paladin": return "Ã°Å¸â€ºÂ¡Ã¯Â¸Â"
+		&"fighter": return "Ã¢Å“Å "
+		&"cavalier": return "Ã°Å¸Â§Â²"
+		&"archer": return "Ã°Å¸ÂÂ¹"
+		&"mage": return "Ã¢Å“Â¨"
+		&"cleric": return "Ã¢Å¾â€¢"
+		&"assassin": return "Ã¢Å¡â€Ã¯Â¸Â"
+		&"mercenary": return "Ã°Å¸Âªâ€œ"
+		&"gryphon": return "Ã°Å¸Â¦â€¦"
+		&"monk": return "Ã°Å¸â€œÂ¿"
+		&"engineer": return "Ã°Å¸â€Â§"
+		&"shaman": return "Ã°Å¸â€˜ÂÃ¯Â¸Â"
+		&"warden": return "Ã¢â„¢Å“"
+		&"swordmaster": return "Ã°Å¸â€”Â¡Ã¯Â¸Â"
+		&"charger": return "Ã°Å¸â€Â±"
+		&"artillery": return "Ã°Å¸â€™Â£"
+		&"shover": return "Ã¢â€ â€Ã¯Â¸Â"
+	return "Ã°Å¸â€˜Â¤"
 
 
 static func action_symbol_text(
@@ -334,7 +334,7 @@ static func action_symbol_text(
 		var dest: Vector2i = action.target_coord
 		var origin: Vector2i = plan_action_origin_cell(board, plan, action, unit)
 		if origin.x > -900:
-			return "%s (%d,%d)→(%d,%d)" % [
+			return "%s (%d,%d)Ã¢â€ â€™(%d,%d)" % [
 				PlanningIcons.move_glyph(action.uses_run),
 				origin.x, origin.y, dest.x, dest.y,
 			]
@@ -350,7 +350,7 @@ static func action_symbol_text(
 			return ""
 		if action.awaiting_target:
 			var pending_name: String = action.ability.display_name if action.ability != null else "Skill"
-			return "%s %s — Awaiting Input" % [
+			return "%s %s Ã¢â‚¬â€ Awaiting Input" % [
 				PlanningIcons.awaiting_phase_glyph(action.ability), pending_name,
 			]
 		var symbol: String = PlanningIcons.ability_glyph(action.ability)
@@ -363,7 +363,7 @@ static func action_symbol_text(
 			var move_origin: Vector2i = plan_action_origin_cell(board, plan, action, unit)
 			var move_dest: Vector2i = action.target_coord
 			if move_origin.x > -900:
-				return "%s %s (%d,%d)→(%d,%d)" % [
+				return "%s %s (%d,%d)Ã¢â€ â€™(%d,%d)" % [
 					symbol, action.ability.display_name,
 					move_origin.x, move_origin.y, move_dest.x, move_dest.y,
 				]
@@ -379,10 +379,10 @@ static func action_symbol_text(
 		if ability_name != "":
 			return "%s %s > %s" % [symbol, ability_name, target_name]
 		return "%s %s" % [symbol, target_name]
-	return "❓"
+	return "Ã¢Ââ€œ"
 
 
-## Grid cell where `action` begins — walk prior plan steps for the same actor.
+## Grid cell where `action` begins Ã¢â‚¬â€ walk prior plan steps for the same actor.
 static func plan_action_origin_cell(
 	board: BoardState,
 	plan: Timeline,
@@ -432,7 +432,7 @@ static func format_unit_plan_timeline(
 	var steps: Array[TimelineAction] = UnitPlanOrder.ordered_steps_for_unit(plan, unit.id)
 	if steps.is_empty():
 		return {
-			"text": "—",
+			"text": "Ã¢â‚¬â€",
 			"tooltip": "No actions queued",
 			"failed": false,
 		}
@@ -450,17 +450,17 @@ static func format_unit_plan_timeline(
 		if reason != "":
 			failed = true
 			tooltip_lines.append(
-				"%d. %s — %s" % [i + 1, detail, reason_text(reason)],
+				"%d. %s Ã¢â‚¬â€ %s" % [i + 1, detail, reason_text(reason)],
 			)
 		else:
 			tooltip_lines.append("%d. %s" % [parts.size(), detail])
 	if parts.is_empty():
 		return {
-			"text": "—",
+			"text": "Ã¢â‚¬â€",
 			"tooltip": "No actions queued",
 			"failed": false,
 		}
-	var arrow: String = " → "
+	var arrow: String = " Ã¢â€ â€™ "
 	return {
 		"text": arrow.join(parts),
 		"tooltip": "\n".join(tooltip_lines),
@@ -468,7 +468,7 @@ static func format_unit_plan_timeline(
 	}
 
 
-## Returns { "line": String, "telemetry": Dictionary } — pass telemetry dict in/out for damage formulas.
+## Returns { "line": String, "telemetry": Dictionary } Ã¢â‚¬â€ pass telemetry dict in/out for damage formulas.
 static func log_line(board: BoardState, event: SimEvent, last_telemetry: Dictionary) -> Dictionary:
 	var d: Dictionary = event.data
 	var telemetry: Dictionary = last_telemetry.duplicate(true)
@@ -614,12 +614,12 @@ static func ability_cost_chip(ability: AbilityData) -> Dictionary:
 		return {
 			"emoji": PlanningIcons.STAT_MOV,
 			"text": str(ability.movement_point_cost),
-			"tooltip": "MOV %d — %s" % [ability.movement_point_cost, _glossary_def("MOV")],
+			"tooltip": "MOV %d Ã¢â‚¬â€ %s" % [ability.movement_point_cost, _glossary_def("MOV")],
 		}
 	return {
 		"emoji": PlanningIcons.STAT_AP,
 		"text": str(ability.action_point_cost),
-		"tooltip": "AP %d — %s" % [ability.action_point_cost, _glossary_def("AP")],
+		"tooltip": "AP %d Ã¢â‚¬â€ %s" % [ability.action_point_cost, _glossary_def("AP")],
 	}
 
 
@@ -644,7 +644,7 @@ static func ability_range_chip(ability: AbilityData, unit: UnitState = null) -> 
 	elif label.begins_with("RANGE "):
 		display_val = label.substr(6)
 	var emoji: String = PlanningIcons.range_chip_glyph(label)
-	return {"emoji": emoji, "text": display_val, "tooltip": "%s — %s" % [label, tooltip]}
+	return {"emoji": emoji, "text": display_val, "tooltip": "%s Ã¢â‚¬â€ %s" % [label, tooltip]}
 
 
 static func _ability_targeting_range_label(ability: AbilityData, unit: UnitState = null) -> String:
@@ -662,8 +662,8 @@ static func _ability_targeting_range_label(ability: AbilityData, unit: UnitState
 static func _dash_effect_amount(ability: AbilityData) -> int:
 	if ability == null:
 		return 0
-	for eff: EffectData in ability.effects:
-		if eff.type == GameEnums.EffectType.DASH:
+	for eff: AbilityModule in ability.modules:
+		if eff.primary_type == GameEnums.EffectType.DASH:
 			return eff.amount
 	return 0
 
@@ -679,21 +679,21 @@ static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -
 	if aoe_label != "" and range_label == "RANGE 0":
 		lines.append("%s | %s" % [range_label, aoe_label])
 	else:
-		lines.append("%s — %s" % [range_label, _targeting_glossary_hint(range_label)])
+		lines.append("%s Ã¢â‚¬â€ %s" % [range_label, _targeting_glossary_hint(range_label)])
 	if ability.is_movement_kind():
 		lines.append(
-			"MOV %d — %s" % [ability.movement_point_cost, _glossary_def("MOV")],
+			"MOV %d Ã¢â‚¬â€ %s" % [ability.movement_point_cost, _glossary_def("MOV")],
 		)
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
 		lines.append(
-			"AP %d — Uses your action slot and extends how far you can move this turn."
+			"AP %d Ã¢â‚¬â€ Uses your action slot and extends how far you can move this turn."
 			% ability.action_point_cost,
 		)
 	else:
-		lines.append("AP %d — %s" % [ability.action_point_cost, _glossary_def("AP")])
+		lines.append("AP %d Ã¢â‚¬â€ %s" % [ability.action_point_cost, _glossary_def("AP")])
 	var dump := ClassLibrarySchema.targeting_flags_dump(ability)
 	if dump != "none":
-		lines.append("Target — %s." % dump)
+		lines.append("Target Ã¢â‚¬â€ %s." % dump)
 	var keyword_lines: PackedStringArray = _ability_keyword_tooltip_lines(ability, unit)
 	if not keyword_lines.is_empty():
 		lines.append("")
@@ -705,7 +705,7 @@ static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -
 		and not ability.upgrade_description.is_empty()
 	):
 		lines.append("")
-		lines.append("Upgrade — %s" % ability.upgrade_description)
+		lines.append("Upgrade Ã¢â‚¬â€ %s" % ability.upgrade_description)
 	return "\n".join(lines)
 
 
@@ -724,7 +724,7 @@ static func _kw_tooltip_line(label: String, definition: String) -> String:
 		
 	if definition.is_empty():
 		return final_label
-	return "%s — %s" % [final_label, definition]
+	return "%s Ã¢â‚¬â€ %s" % [final_label, definition]
 
 
 static func _targeting_glossary_hint(range_label: String) -> String:
@@ -752,7 +752,7 @@ static func _ability_keyword_tooltip_lines(
 				continue
 			lines.append(_kw_tooltip_line(kw, _bible_segment_hint(kw)))
 		return lines
-	for effect: EffectData in ability.effects:
+	for effect: AbilityModule in ability.modules:
 		var line: String = _effect_tooltip_line(effect)
 		if not line.is_empty():
 			lines.append(line)
@@ -767,11 +767,11 @@ static func _ability_keyword_tooltip_lines(
 	return lines
 
 
-static func _effect_tooltip_line(effect: EffectData) -> String:
+static func _effect_tooltip_line(effect: AbilityModule) -> String:
 	if effect == null:
 		return ""
 	var amount: String = _effect_amount_string(effect)
-	match effect.type:
+	match effect.primary_type:
 		GameEnums.EffectType.DAMAGE:
 			return _kw_tooltip_line("ATK %s" % amount, _glossary_def("ATK"))
 		GameEnums.EffectType.HEAL:
@@ -790,7 +790,7 @@ static func _effect_tooltip_line(effect: EffectData) -> String:
 			return _kw_tooltip_line("AOE ATK %s" % amount, _glossary_def("AOE ATK"))
 		GameEnums.EffectType.SPAWN:
 			return _kw_tooltip_line(
-				"SPAWN %s" % str(effect.spawn_unit_id).capitalize(),
+				"SPAWN %s" % str(effect.legacy_modifiers.get("spawn_unit_id", &"")).capitalize(),
 				_glossary_def("SPAWN"),
 			)
 		GameEnums.EffectType.DASH:
@@ -813,7 +813,7 @@ static func _effect_tooltip_line(effect: EffectData) -> String:
 				"Ignores Armor and deals direct damage to the caster.",
 			)
 		GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF:
-			var self_target: bool = effect.type == GameEnums.EffectType.ADD_STATUS_SELF
+			var self_target: bool = effect.primary_type == GameEnums.EffectType.ADD_STATUS_SELF
 			var dur: String = "" if effect.status_duration == 1 else " (%d turns)" % effect.status_duration
 			var label: String = _status_name(effect.status_type)
 			var hint: String = _status_desc(effect.status_type)
@@ -906,7 +906,7 @@ static func _bible_segment_hint(segment: String) -> String:
 	return segment
 
 
-static func _status_bible_label(effect: EffectData, self_target: bool) -> String:
+static func _status_bible_label(effect: AbilityModule, self_target: bool) -> String:
 	if effect == null:
 		return ""
 	var amount_str: String = _effect_amount_string(effect)
@@ -924,11 +924,11 @@ static func _status_bible_label(effect: EffectData, self_target: bool) -> String
 		GameEnums.StatusType.STAT_BUFF_ACC:
 			return "ACC +%s" % amount_str if amount_str not in ["0", ""] else "ACC UP"
 		GameEnums.StatusType.STAT_DEBUFF_DEF:
-			return "DEF −%s" % amount_str if amount_str not in ["0", ""] else "DEF DOWN"
+			return "DEF Ã¢Ë†â€™%s" % amount_str if amount_str not in ["0", ""] else "DEF DOWN"
 		GameEnums.StatusType.STAT_DEBUFF_MOV:
-			return "MAX MOVEMENT −%s" % amount_str if amount_str not in ["0", ""] else "MOV DOWN"
+			return "MAX MOVEMENT Ã¢Ë†â€™%s" % amount_str if amount_str not in ["0", ""] else "MOV DOWN"
 		GameEnums.StatusType.STAT_DEBUFF_ACC:
-			return "ACC −%s" % amount_str if amount_str not in ["0", ""] else "ACC DOWN"
+			return "ACC Ã¢Ë†â€™%s" % amount_str if amount_str not in ["0", ""] else "ACC DOWN"
 		GameEnums.StatusType.IRON_GRIP_DEBUFF:
 			return "DEF halved next turn"
 		GameEnums.StatusType.INTERCEPT:
@@ -944,7 +944,7 @@ static func _status_bible_label(effect: EffectData, self_target: bool) -> String
 
 static func _append_status_effect_part(
 	parts: Array[String],
-	effect: EffectData,
+	effect: AbilityModule,
 	self_target: bool,
 	bbcode: bool,
 ) -> void:
@@ -977,7 +977,7 @@ static func _append_status_effect_part(
 		label.begins_with("Apply ")
 		or label.begins_with("Self ")
 		or label.contains("+")
-		or label.contains("−")
+		or label.contains("Ã¢Ë†â€™")
 		or label.contains("halved")
 		or label.contains("INTERCEPT")
 		or label.contains("Counter ")
@@ -1002,8 +1002,8 @@ static func ability_effect_string(ability: AbilityData, _unit: UnitState = null)
 		header.append(bible_line)
 		return " | ".join(header)
 	var parts: Array[String] = []
-	for effect: EffectData in ability.effects:
-		match effect.type:
+	for effect: AbilityModule in ability.modules:
+		match effect.primary_type:
 			GameEnums.EffectType.DAMAGE:
 				parts.append("ATK %s" % _effect_amount_string(effect))
 			GameEnums.EffectType.HEAL:
@@ -1021,7 +1021,7 @@ static func ability_effect_string(ability: AbilityData, _unit: UnitState = null)
 			GameEnums.EffectType.RANGED_EXPLODE:
 				parts.append("AOE ATK %s" % _effect_amount_string(effect))
 			GameEnums.EffectType.SPAWN:
-				parts.append("SPAWN %s" % str(effect.spawn_unit_id).capitalize())
+				parts.append("SPAWN %s" % str(effect.legacy_modifiers.get("spawn_unit_id", &"")).capitalize())
 			GameEnums.EffectType.ADD_STATUS:
 				_append_status_effect_part(parts, effect, false, false)
 			GameEnums.EffectType.ADD_STATUS_SELF:
@@ -1039,7 +1039,7 @@ static func ability_effect_string(ability: AbilityData, _unit: UnitState = null)
 			GameEnums.EffectType.CLEANSE:
 				parts.append("CLEANSE")
 			_:
-				parts.append(GameEnums.EffectType.keys()[effect.type].capitalize())
+				parts.append(GameEnums.EffectType.keys()[effect.primary_type].capitalize())
 	return " | ".join(parts) if not parts.is_empty() else "No effect"
 
 
@@ -1050,8 +1050,8 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 	if ClassLibrarySchema.bible_ability_effect_line(ability) != "":
 		return _bbcode_from_bible_effect_line(plain)
 	var parts: Array[String] = []
-	for effect: EffectData in ability.effects:
-		match effect.type:
+	for effect: AbilityModule in ability.modules:
+		match effect.primary_type:
 			GameEnums.EffectType.DAMAGE:
 				parts.append(_kw_hint("ATK %s" % _effect_amount_string(effect), _glossary_def("ATK")))
 			GameEnums.EffectType.HEAL:
@@ -1087,7 +1087,7 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 				parts.append(_kw_hint("AOE ATK %s" % _effect_amount_string(effect), _glossary_def("AOE ATK")))
 			GameEnums.EffectType.SPAWN:
 				parts.append(_kw_hint(
-					"SPAWN %s" % str(effect.spawn_unit_id).capitalize(),
+					"SPAWN %s" % str(effect.legacy_modifiers.get("spawn_unit_id", &"")).capitalize(),
 					_glossary_def("SPAWN"),
 				))
 			GameEnums.EffectType.ADD_STATUS:
@@ -1170,7 +1170,7 @@ static func format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, a
 		var base_parts := "1 + %s/3" % _fmt_calc_num(float(excess))
 		if base_bonus > 0:
 			base_parts += " + %d Retaliator" % base_bonus
-		var formula := "%s × (%s + %s) × %s" % [
+		var formula := "%s Ãƒâ€” (%s + %s) Ãƒâ€” %s" % [
 			_damage_formula_color(c_mult, "0.75"),
 			_damage_formula_color(c_base, "BASE"),
 			_damage_formula_color(c_wpn, "WPN"),
@@ -1184,8 +1184,8 @@ static func format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, a
 			_damage_formula_color(c_base, _fmt_calc_num(raw_base)),
 		]
 		if int(floorf(raw_base)) != base:
-			formula += " → %s" % _damage_formula_color(c_base, _fmt_calc_num(float(base)))
-		formula += "\n   %s × (%s + %s) × %s = %s" % [
+			formula += " Ã¢â€ â€™ %s" % _damage_formula_color(c_base, _fmt_calc_num(float(base)))
+		formula += "\n   %s Ãƒâ€” (%s + %s) Ãƒâ€” %s = %s" % [
 			_damage_formula_color(c_mult, "0.75"),
 			_damage_formula_color(c_base, _fmt_calc_num(float(base))),
 			_damage_formula_color(c_wpn, _fmt_calc_num(float(wpn))),
@@ -1200,7 +1200,7 @@ static func format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, a
 			formula += " - %s" % _damage_formula_color(c_fort, _fmt_calc_num(float(fort)))
 		formula += " = %s incoming" % _damage_formula_color(c_final, _fmt_calc_num(float(incoming)))
 		if armor_dmg > 0:
-			formula += "\n   - %s armor → %s HP" % [
+			formula += "\n   - %s armor Ã¢â€ â€™ %s HP" % [
 				_damage_formula_color(c_def, _fmt_calc_num(float(armor_dmg))),
 				_damage_formula_color(c_final, _fmt_calc_num(float(hp_dmg))),
 			]
@@ -1215,7 +1215,7 @@ static func format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, a
 	var fort: int = int(m.get("fortitude", m.get("fort", 0)))
 	var vuln: bool = bool(m.get("vulnerable", m.get("vuln", false)))
 	var elec: bool = bool(m.get("electrified", m.get("elec", false)))
-	var formula := "(%s + %s) × %s" % [
+	var formula := "(%s + %s) Ãƒâ€” %s" % [
 		_damage_formula_color(c_base, "Base"),
 		_damage_formula_color(c_wpn, "WPN"),
 		_damage_formula_color(c_stat, "%s mult" % stat_name),
@@ -1225,7 +1225,7 @@ static func format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, a
 	formula += " - %s" % _damage_formula_color(c_def, "DEF")
 	if fort != 0:
 		formula += " - %s" % _damage_formula_color(c_fort, "FORT")
-	formula += "\n   (%s + %s) × %s = %s" % [
+	formula += "\n   (%s + %s) Ãƒâ€” %s = %s" % [
 		_damage_formula_color(c_base, _fmt_calc_num(float(base))),
 		_damage_formula_color(c_wpn, _fmt_calc_num(float(wpn))),
 		_damage_formula_color(c_stat, _fmt_calc_num(stat_mult)),
@@ -1266,7 +1266,7 @@ static func append_victory_log(log_label: RichTextLabel, victory: bool) -> void:
 	log_label.append_text("[color=#%s][font_size=%d]%s[/font_size]\n" % [hex, scaled_font_size(LOG_FONT_SIZE), text])
 
 
-static func _effect_amount_string(eff: EffectData) -> String:
+static func _effect_amount_string(eff: AbilityModule) -> String:
 	if eff == null:
 		return "0"
 	if eff.scaling_stat != GameEnums.StatType.NONE and eff.amount > 0:
@@ -1451,7 +1451,7 @@ static func _status_source_name(status_type: int) -> String:
 static func _equipment_info(unit: UnitState) -> String:
 	var wpn: WeaponData = unit.definition.equipped_weapon if unit.definition != null else null
 	if wpn == null:
-		return "[font_size=%d]🗡️ [b]Equipment:[/b] None[/font_size]" % scaled_font_size(9)
+		return "[font_size=%d]Ã°Å¸â€”Â¡Ã¯Â¸Â [b]Equipment:[/b] None[/font_size]" % scaled_font_size(9)
 	var stat_parts: Array[String] = ["WPN %d" % wpn.might]
 	if wpn.bonus_strength != 0:
 		stat_parts.append("STR %+d" % wpn.bonus_strength)
@@ -1459,8 +1459,8 @@ static func _equipment_info(unit: UnitState) -> String:
 		stat_parts.append("MAG %+d" % wpn.bonus_magic)
 	if wpn.bonus_defense != 0:
 		stat_parts.append("DEF %+d" % wpn.bonus_defense)
-	var tooltip := "Might %d — added to ability base power in damage formula." % wpn.might
-	return "[font_size=%d]🗡️ [b]Equipment:[/b] %s  |  [hint=\"%s\"]%s[/hint][/font_size]" % [
+	var tooltip := "Might %d Ã¢â‚¬â€ added to ability base power in damage formula." % wpn.might
+	return "[font_size=%d]Ã°Å¸â€”Â¡Ã¯Â¸Â [b]Equipment:[/b] %s  |  [hint=\"%s\"]%s[/hint][/font_size]" % [
 		scaled_font_size(9), wpn.display_name, tooltip, ", ".join(stat_parts),
 	]
 

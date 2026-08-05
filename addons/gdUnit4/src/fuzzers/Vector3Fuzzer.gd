@@ -1,4 +1,4 @@
-## A fuzzer that generates random Vector3 values within a specified box range.[br]
+﻿## A fuzzer that generates random Vector3 values within a specified box range.[br]
 ##
 ## This is particularly useful for testing 3D physics, spatial
 ## positioning, camera systems, particle effects, or any code that processes 3D vectors.[br]

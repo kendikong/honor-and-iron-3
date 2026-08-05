@@ -1,4 +1,4 @@
-## Factory class providing convenient static methods to create various fuzzer instances.[br]
+﻿## Factory class providing convenient static methods to create various fuzzer instances.[br]
 ##
 ## Fuzzers is a utility class that simplifies the creation of different fuzzer types
 ## for testing purposes. It provides static factory methods that create pre-configured

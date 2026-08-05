@@ -1,20 +1,20 @@
-class_name ShadowPalette
+﻿class_name ShadowPalette
 extends RefCounted
 
-## 1D palette LUT for multiply silhouette shadows (bible §3 — no generic black blobs).
+## 1D palette LUT for multiply silhouette shadows (bible Â§3 â€” no generic black blobs).
 
 const _TINT_LUT: Array[Color] = [
 	Color(0.76, 0.72, 0.78, 1.0), # dawn
 	Color(0.74, 0.72, 0.80, 1.0), # day
 	Color(0.72, 0.70, 0.78, 1.0), # dusk
-	Color(0.78, 0.80, 0.90, 1.0), # night — visible multiply, not washed out
+	Color(0.78, 0.80, 0.90, 1.0), # night â€” visible multiply, not washed out
 ]
 
 const _STRENGTH_LUT: Array[float] = [
 	0.94, # dawn
 	1.0,  # day
 	0.94, # dusk
-	0.78, # night — readable contact shadow
+	0.78, # night â€” readable contact shadow
 ]
 
 
@@ -32,7 +32,7 @@ static func shadow_strength(time_phase: float) -> float:
 	return lerpf(_STRENGTH_LUT[idx], _STRENGTH_LUT[next_idx], blend)
 
 
-## Fade multiply shadow into night canvas modulate — shaded grass ≈ unshaded night grass.
+## Fade multiply shadow into night canvas modulate â€” shaded grass â‰ˆ unshaded night grass.
 static func twilight_multiply_tint(
 	time_phase: float,
 	contrast: float,

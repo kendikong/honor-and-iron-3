@@ -1,4 +1,4 @@
-## Guards and tracks test case changes during test discovery and file modifications.[br]
+﻿## Guards and tracks test case changes during test discovery and file modifications.[br]
 ## [br]
 ## This guard maintains a cache of discovered tests to track changes between test runs and during[br]
 ## file modifications. It is optimized for performance using simple but effective test identity checks.[br]

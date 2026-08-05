@@ -1,4 +1,4 @@
-class_name CmdCommandHandler
+﻿class_name CmdCommandHandler
 extends RefCounted
 
 const CB_SINGLE_ARG = 0

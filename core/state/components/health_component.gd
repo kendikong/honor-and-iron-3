@@ -1,4 +1,4 @@
-class_name HealthComponent
+﻿class_name HealthComponent
 extends RefCounted
 
 ## Purpose: A unit's live hit points (capability via composition).

@@ -1,4 +1,4 @@
-class_name AnyClazzArgumentMatcher
+﻿class_name AnyClazzArgumentMatcher
 extends GdUnitArgumentMatcher
 
 var _clazz :Object

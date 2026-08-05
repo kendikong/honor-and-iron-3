@@ -1,4 +1,4 @@
-## An Assertion Tool to verify float values
+﻿## An Assertion Tool to verify float values
 @abstract class_name GdUnitFloatAssert
 extends GdUnitAssert
 

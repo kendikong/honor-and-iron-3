@@ -1,4 +1,4 @@
-class_name TestBattleSession
+﻿class_name TestBattleSession
 extends RefCounted
 
 ## Runtime config for the skill-testing arena.
@@ -15,7 +15,7 @@ var player_class_id: StringName = DEFAULT_PLAYER_CLASS
 var player_level: int = TRAINING_LEVEL
 ## passive_id -> enabled
 var 	passive_enabled: Dictionary = {}
-## ability_id -> enabled (defaults to true — all skills on unless explicitly disabled)
+## ability_id -> enabled (defaults to true â€” all skills on unless explicitly disabled)
 var skill_enabled: Dictionary = {}
 var dummy_coords: Array[Vector2i] = [DEFAULT_DUMMY_CELL]
 var extra_player_coords: Array[Vector2i] = []

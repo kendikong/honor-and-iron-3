@@ -1,4 +1,4 @@
-class_name UnitVisualFactory
+﻿class_name UnitVisualFactory
 extends RefCounted
 
 ## Creates deterministic LPC visuals for tactical units (Phase 5 implementation).

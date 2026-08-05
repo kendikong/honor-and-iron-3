@@ -1,4 +1,4 @@
-class_name MassSimDashboard
+﻿class_name MassSimDashboard
 extends Control
 
 static var instance: MassSimDashboard
@@ -74,7 +74,7 @@ func _build_chrome() -> void:
 	main_split.add_child(left)
 	var header := HBoxContainer.new()
 	left.add_child(header)
-	_add_header_btn(header, "← Menu", func() -> void:
+	_add_header_btn(header, "â† Menu", func() -> void:
 		_save_workspace()
 		get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
 	)
@@ -201,7 +201,7 @@ func _bind_runner() -> void:
 
 func _enqueue_job(label: String, count: int) -> void:
 	_job_queue.append({"label": label, "count": count})
-	queue_list.add_item("%s — %d battles" % [label, count])
+	queue_list.add_item("%s â€” %d battles" % [label, count])
 	status_label.text = "%d job(s) queued" % _job_queue.size()
 
 
@@ -209,7 +209,7 @@ func _start_queue() -> void:
 	if _running_job:
 		return
 	if _job_queue.is_empty():
-		status_label.text = "Queue empty — add a job first."
+		status_label.text = "Queue empty â€” add a job first."
 		return
 	_run_next_job()
 
@@ -263,7 +263,7 @@ func _on_batch_completed(path: String, stats: Dictionary) -> void:
 	inspector.show_replay(_report, int(stats.get("best_performance_id", -1)))
 	MassSimAggregator.save_snapshot(_report)
 	status_label.text = (
-		"Batch done — %d battles · interpretation saved to tests/captures/"
+		"Batch done â€” %d battles Â· interpretation saved to tests/captures/"
 		% _report.total_battles
 	)
 	_run_next_job()
@@ -286,10 +286,10 @@ func _load_saved_results() -> void:
 	_report = MassSimAggregator.build_report(filtered, _log_path, curator)
 	_apply_report()
 	status_label.text = (
-		"%d battles in epoch (%d in file) · %s"
+		"%d battles in epoch (%d in file) Â· %s"
 		% [_report.total_battles, _all_rows.size(), _log_path]
 		if not _report.is_empty()
-		else "No results — queue a batch or Open JSONL"
+		else "No results â€” queue a batch or Open JSONL"
 	)
 
 
@@ -326,7 +326,7 @@ func _update_epoch_banner(mix: Dictionary, epoch_battle_count: int) -> void:
 			"Epoch date: %s" % MassSimRulesEpoch.format_created_at_date(ep),
 		)
 	if _workspace.active_epoch_id == MassSimRulesEpoch.LEGACY_EPOCH_ID:
-		lines.append("Legacy epoch — old battles have no rules tag. Click New Epoch before your next balance change.")
+		lines.append("Legacy epoch â€” old battles have no rules tag. Click New Epoch before your next balance change.")
 	else:
 		lines.append(
 			"Next batch: %s" % MassSimRulesEpoch.detailed_rules_label(_active_skirmish_setup()),
@@ -342,12 +342,12 @@ func _update_epoch_banner(mix: Dictionary, epoch_battle_count: int) -> void:
 			!= MassSimRulesEpoch.fingerprint(locked)
 		):
 			lines.append(
-				"Draft differs from locked epoch — click New Epoch before comparing logs.",
+				"Draft differs from locked epoch â€” click New Epoch before comparing logs.",
 			)
 	if bool(mix.get("is_mixed", false)):
-		lines.append("Warning: this log mixes multiple rule sets — stats are not apples-to-apples.")
+		lines.append("Warning: this log mixes multiple rule sets â€” stats are not apples-to-apples.")
 	if bool(mix.get("fingerprint_mismatch", false)):
-		lines.append("Warning: multiple rule fingerprints in file — start a New Epoch after each change.")
+		lines.append("Warning: multiple rule fingerprints in file â€” start a New Epoch after each change.")
 	if epoch_battle_count < MassSimConstants.MIN_SAMPLE_BASIC:
 		lines.append("Need %d+ battles in this epoch for basic stats (500 for full confidence)." % MassSimConstants.MIN_SAMPLE_BASIC)
 	_epoch_banner.text = "\n".join(lines)
@@ -444,7 +444,7 @@ func _on_new_epoch_confirmed() -> void:
 	_sync_log_path_from_epoch()
 	_save_workspace()
 	_load_saved_results()
-	status_label.text = "New epoch (%s): %s → %s" % [
+	status_label.text = "New epoch (%s): %s â†’ %s" % [
 		MassSimRulesEpoch.format_created_at_date(entry),
 		String(entry.get("label", "")),
 		_log_path,
@@ -468,7 +468,7 @@ func _on_skirmish_setup_applied(setup: MassSimSkirmishSetup) -> void:
 	MassSimSkirmishSetup.save_last(setup)
 	_save_workspace()
 	_update_epoch_banner(MassSimRulesEpoch.analyze_mix(_all_rows), _report.total_battles if _report != null else 0)
-	status_label.text = "Skirmish setup saved — %s (New Epoch to lock)" % setup.summary_label()
+	status_label.text = "Skirmish setup saved â€” %s (New Epoch to lock)" % setup.summary_label()
 
 
 func _rebuild_tag_filter() -> void:
@@ -548,7 +548,7 @@ func _refresh_command_palette() -> void:
 		entries.append({
 			"label": "Class: %s" % _report.class_display_name(row.get("class_id", "")),
 			"title": "Class Tier",
-			"body": "Tier %s · %.1f%% WR" % [row.get("tier", "?"), float(row.get("win_rate", 0.0))],
+			"body": "Tier %s Â· %.1f%% WR" % [row.get("tier", "?"), float(row.get("win_rate", 0.0))],
 			"meta": row,
 		})
 	for tag: Variant in _report.map_tag_records.keys():
@@ -628,7 +628,7 @@ func _export_csv() -> void:
 			]
 		)
 	file.close()
-	status_label.text = "Exported CSV → %s" % export_path
+	status_label.text = "Exported CSV â†’ %s" % export_path
 
 
 func _save_workspace() -> void:
@@ -716,7 +716,7 @@ func _tab_labels() -> PackedStringArray:
 func _truncate(text: String, max_len: int) -> String:
 	if text.length() <= max_len:
 		return text
-	return text.substr(0, max_len) + "…"
+	return text.substr(0, max_len) + "â€¦"
 
 
 func _collect_visible_ui_text(node: Node, budget: int) -> PackedStringArray:

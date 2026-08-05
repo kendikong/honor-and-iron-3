@@ -1,4 +1,4 @@
-class_name DoubledSpyClassSourceClassName
+﻿class_name DoubledSpyClassSourceClassName
 
 const __INSTANCE_ID := "gdunit_doubler_instance_id_{instance_id}"
 

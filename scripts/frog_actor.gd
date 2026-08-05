@@ -1,7 +1,7 @@
-class_name FrogActor
+﻿class_name FrogActor
 extends Node2D
 
-## Shore frog — 6×5 px; hops forward×3 / back×3 with long random idles between.
+## Shore frog â€” 6Ã—5 px; hops forwardÃ—3 / backÃ—3 with long random idles between.
 
 const TILE_PX: int = 16
 const _HOP_DURATION_MIN: float = 0.20

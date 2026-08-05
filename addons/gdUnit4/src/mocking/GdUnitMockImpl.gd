@@ -1,4 +1,4 @@
-class_name DoubledMockClassSourceClassName
+﻿class_name DoubledMockClassSourceClassName
 
 ################################################################################
 # internal mocking stuff

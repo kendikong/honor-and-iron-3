@@ -1,4 +1,4 @@
-class_name _TestCase
+﻿class_name _TestCase
 extends Node
 
 signal completed()

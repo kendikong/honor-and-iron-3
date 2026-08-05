@@ -291,6 +291,6 @@ static func _plan_signature(director: CombatDirector) -> String:
 	for timeline: Timeline in [director.plan_pre_move, director.plan_action, director.plan_post_move]:
 		for entry: TimelineAction in timeline.entries:
 			parts.append(
-				"%s:%s:%s" % [str(entry.type), str(entry.target_coord), str(entry.waypoints)],
+				"%s:%s:%s" % [str(entry.primary_type), str(entry.target_coord), str(entry.waypoints)],
 			)
 	return "|".join(parts)

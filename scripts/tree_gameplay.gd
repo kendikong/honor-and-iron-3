@@ -1,15 +1,15 @@
-class_name TreeGameplay
+﻿class_name TreeGameplay
 extends RefCounted
 
-## Tree trunk blocking + canopy depth — reads TreeLayer / OverlayLayer, not provenance.
+## Tree trunk blocking + canopy depth â€” reads TreeLayer / OverlayLayer, not provenance.
 
 const _C = preload("res://scripts/mana_seed_constants.gd")
 
 const TREE_FOOTPRINT: Vector2i = Vector2i(5, 6)
-## Visual center of 80×96 from NW anchor; trunk foot is 2 cells south of center.
+## Visual center of 80Ã—96 from NW anchor; trunk foot is 2 cells south of center.
 const TREE_CENTER_OFFSET: Vector2i = Vector2i(2, 3)
 const TREE_TRUNK_OFFSET_FROM_CENTER: Vector2i = Vector2i(0, 2)
-## Same as ShadowPlacer — empirical align with Mana Seed tree art (+ shadow bake).
+## Same as ShadowPlacer â€” empirical align with Mana Seed tree art (+ shadow bake).
 const TREE_SHADOW_NUDGE_CELLS: Vector2i = Vector2i(-2, -3)
 const TREE_SPRITE_SIZE: Vector2i = Vector2i(80, 96)
 const TREE_CANOPY_FADE_HEIGHT_PX: int = 72
@@ -67,7 +67,7 @@ static func trunk_block_cells(
 	var foot: Vector2i = trunk_foot_cell(anchor, grid, settings)
 	if foot.x < 0:
 		return []
-	# Single cell at trunk foot row (big 80×96 tree).
+	# Single cell at trunk foot row (big 80Ã—96 tree).
 	var block: Vector2i = foot
 	if grid != null and _in_bounds(grid, block):
 		return [block]
@@ -121,7 +121,7 @@ static func cell_from_world(world_pos: Vector2) -> Vector2i:
 	)
 
 
-## Grid-snapped feet Y for canopy fade — avoids sub-pixel walk tween flicker at boundaries.
+## Grid-snapped feet Y for canopy fade â€” avoids sub-pixel walk tween flicker at boundaries.
 static func character_fade_sort_y(actor: Node2D) -> float:
 	var cell: Vector2i = cell_from_world(actor.position)
 	return (float(cell.y) + 1.0) * float(TILE_PX) - 1.0
@@ -227,7 +227,7 @@ static func character_behind_ground_rocks(
 	return false
 
 
-## Canopy fade only — stricter than depth sort; unit feet must sit inside the upper canopy.
+## Canopy fade only â€” stricter than depth sort; unit feet must sit inside the upper canopy.
 static func canopy_fade_rect(layer: TileMapLayer, anchor: Vector2i) -> Rect2:
 	return _canopy_fade_rect(layer, anchor)
 

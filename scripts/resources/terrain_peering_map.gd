@@ -1,7 +1,7 @@
-class_name TerrainPeeringMap
+﻿class_name TerrainPeeringMap
 extends Resource
 
-## Wang fingerprint key (e.g. `0,0,0,3,0,3,0,0`) → canonical forest atlas tile id.
+## Wang fingerprint key (e.g. `0,0,0,3,0,3,0,0`) â†’ canonical forest atlas tile id.
 
 const DEFAULT_PATH: String = "res://resources/terrain_peering_map.tres"
 

@@ -1,7 +1,7 @@
-class_name SampleMapData
+﻿class_name SampleMapData
 extends RefCounted
 
-## CSV from Assets/Mana Seed/_gentle forest sample map.tmx (17×10).
+## CSV from Assets/Mana Seed/_gentle forest sample map.tmx (17Ã—10).
 
 const WIDTH: int = 17
 const HEIGHT: int = 10

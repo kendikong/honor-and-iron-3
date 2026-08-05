@@ -1,4 +1,4 @@
-## A fuzzer that generates random floating-point values within a specified range.[br]
+﻿## A fuzzer that generates random floating-point values within a specified range.[br]
 ##
 ## This is particularly useful for testing numerical calculations,
 ## physics simulations, shader parameters, or any code that processes floating-point
