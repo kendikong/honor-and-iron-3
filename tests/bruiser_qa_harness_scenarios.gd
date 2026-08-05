@@ -635,12 +635,12 @@ static func run_frenzy(failures: Array[String]) -> void:
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_frenzy")
 	H.assert_eq_int(failures, "frenzy/range", ab.range_tiles, 1)
-	var dmg_count: int = 0
+	var dmg_hits: int = 0
 	for eff: AbilityModule in ab.modules:
 		if eff != null and eff.primary_type == GameEnums.EffectType.DAMAGE:
-			dmg_count += 1
+			dmg_hits += eff.hit_count
 			H.assert_eq_int(failures, "frenzy/dmg_amount", eff.amount, 1)
-	H.assert_eq_int(failures, "frenzy/triple_hit", dmg_count, 3)
+	H.assert_eq_int(failures, "frenzy/triple_hit", dmg_hits, 3)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_frenzy"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -815,7 +815,7 @@ static func run_blood_boil(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "blood_boil/str_value", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 3)
 	var str_status: StatusData = null
 	for st: StatusData in after.active_statuses:
-		if st.primary_type == GameEnums.StatusType.STAT_BUFF_STR:
+		if st.type == GameEnums.StatusType.STAT_BUFF_STR:
 			str_status = st
 			break
 	H.assert_true(failures, "blood_boil/str_status_present", str_status != null)
@@ -854,7 +854,7 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	)
 	var empty_failed: bool = false
 	for e: Variant in empty_result.events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.ACTION_FAILED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
 			if int(e.data.get("actor", -1)) == 20:
 				empty_failed = true
 				break
@@ -892,7 +892,7 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	var fail_result: SimResult = H.simulate_plan(fail_board, fail_plan)
 	var saw_fail: bool = false
 	for e: Variant in fail_result.events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.ACTION_FAILED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
 			if int(e.data.get("actor", -1)) == 10:
 				saw_fail = true
 				break
@@ -976,7 +976,7 @@ static func run_belly_flop(failures: Array[String]) -> void:
 	H.assert_eq_cell(failures, "belly_flop/teleport", result.final_state.get_unit_by_id(1).position, Vector2i(5, 3))
 	var damaged_adjacent := false
 	for e: Variant in result.events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
 			if int(e.data.get("unit", -1)) == 2:
 				damaged_adjacent = true
 				break
@@ -1718,7 +1718,7 @@ static func run_unstoppable_force(failures: Array[String]) -> void:
 	H.assert_true(failures, "unstoppable_force/no_stagger", not H.has_status(bruiser, GameEnums.StatusType.STAGGER))
 	var prevented_stagger: bool = false
 	for e: Variant in result.events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.ACTION_FAILED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
 			if str(e.data.get("reason", "")) == "status_prevented_by_unstoppable_force":
 				prevented_stagger = true
 				break
@@ -1754,7 +1754,7 @@ static func run_unstoppable_force(failures: Array[String]) -> void:
 	)
 	var prevented_root: bool = false
 	for e: Variant in root_result.events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.ACTION_FAILED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
 			if str(e.data.get("reason", "")) == "status_prevented_by_unstoppable_force":
 				prevented_root = true
 				break
@@ -1797,3 +1797,4 @@ static func run_unstoppable_force(failures: Array[String]) -> void:
 		uf_after.armor - armor_col_before,
 		1,
 	)
+

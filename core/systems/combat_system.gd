@@ -1,5 +1,5 @@
-﻿# ==============================================================================
-# ðŸ›‘ WARNING TO AI AGENTS (HONOR & IRON ARCHITECTURE STRICT RULES) ðŸ›‘
+# ==============================================================================
+# 🛑 WARNING TO AI AGENTS (HONOR & IRON ARCHITECTURE STRICT RULES) 🛑
 # ==============================================================================
 # DO NOT BRANCH ON `ability.id` IN THIS FILE. EVER.
 # 
@@ -58,8 +58,8 @@ static func deal_collision_damage(
 	
 	# Apply generic collision damage modifiers from passives
 	for passive: PassiveData in pusher.active_passives:
-		if passive.legacy_modifiers.has("collision_add_def_pct"):
-			var def_pct: float = passive.legacy_modifiers["collision_add_def_pct"]
+		if passive.modifiers.has("collision_add_def_pct"):
+			var def_pct: float = passive.modifiers["collision_add_def_pct"]
 			mult_raw += get_dynamic_defense(board, pusher) * def_pct
 			
 	if pusher.has_passive(&"momentum_of_titan"):
@@ -105,14 +105,14 @@ static func deal_collision_damage(
 		# Target status debuffs
 		var apply_status = -1
 		var status_amount = 1
-		if is_upgraded and passive.legacy_modifiers.has("collision_apply_target_status_upgraded"):
-			apply_status = passive.legacy_modifiers["collision_apply_target_status_upgraded"]
-			if passive.legacy_modifiers.has("collision_apply_target_status_upgraded_amount"):
-				status_amount = passive.legacy_modifiers["collision_apply_target_status_upgraded_amount"]
-		elif passive.legacy_modifiers.has("collision_apply_target_status"):
-			apply_status = passive.legacy_modifiers["collision_apply_target_status"]
-			if passive.legacy_modifiers.has("collision_apply_target_status_amount"):
-				status_amount = passive.legacy_modifiers["collision_apply_target_status_amount"]
+		if is_upgraded and passive.modifiers.has("collision_apply_target_status_upgraded"):
+			apply_status = passive.modifiers["collision_apply_target_status_upgraded"]
+			if passive.modifiers.has("collision_apply_target_status_upgraded_amount"):
+				status_amount = passive.modifiers["collision_apply_target_status_upgraded_amount"]
+		elif passive.modifiers.has("collision_apply_target_status"):
+			apply_status = passive.modifiers["collision_apply_target_status"]
+			if passive.modifiers.has("collision_apply_target_status_amount"):
+				status_amount = passive.modifiers["collision_apply_target_status_amount"]
 			
 		if apply_status >= 0:
 			if not try_resist_crowd_control(victim, apply_status, events):
@@ -120,12 +120,12 @@ static func deal_collision_damage(
 				victim._recalculate_stats()
 			
 		# Shield granting
-		if passive.legacy_modifiers.has("collision_grant_shield_str_def"):
+		if passive.modifiers.has("collision_grant_shield_str_def"):
 			var shield_amt := str_val + get_dynamic_defense(board, pusher)
 			add_armor(board, pusher, shield_amt, events)
 			
 		# Movement refund
-		if is_upgraded and passive.legacy_modifiers.has("collision_refund_mov_if_upgraded"):
+		if is_upgraded and passive.modifiers.has("collision_refund_mov_if_upgraded"):
 			var has_refunded: bool = pusher.passive_flags.get("collision_refunded_this_turn", false)
 			if not has_refunded:
 				pusher.passive_flags["collision_refunded_this_turn"] = true
@@ -188,7 +188,7 @@ static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 	if unit.has_status(GameEnums.StatusType.IRON_GRIP_DEBUFF):
 		for status: StatusData in unit.active_statuses:
 			if status.type == GameEnums.StatusType.IRON_GRIP_DEBUFF:
-				# Bible: DEF halved on the target's next turn â€” not the cast turn.
+				# Bible: DEF halved on the target's next turn — not the cast turn.
 				if status.ticks_remaining <= status.duration * 2:
 					def = ceili(def / 2.0)
 				break
@@ -503,12 +503,6 @@ static func deal_damage(
 		fort = tile.definition.fortitude
 		
 	var mitigation: int = CombatSystem.get_dynamic_defense(board, target)
-	if target.has_passive(&"scar_tissue"):
-		var missing_hp = target.health.max_hp - target.health.current_hp
-		var reduction = maxi(floori(target.health.max_hp / 20.0), floori(missing_hp / 20.0))
-		if target.is_passive_upgraded(&"scar_tissue"):
-			reduction += 1
-		mitigation += reduction
 		
 	if source_type == &"magical":
 		mitigation = target.current_magic
@@ -520,6 +514,13 @@ static func deal_damage(
 	if source_type == &"hazard":
 		mitigation = 0
 		fort = 0
+
+	if target.has_passive(&"scar_tissue"):
+		var missing_hp = target.health.max_hp - target.health.current_hp
+		var reduction = maxi(floori(target.health.max_hp / 20.0), floori(missing_hp / 20.0))
+		if target.is_passive_upgraded(&"scar_tissue"):
+			reduction += 1
+		mitigation += reduction
 		
 	if attacker != null and target.has_passive(&"shield_mastery"):
 		var dir_to_attacker = PhysicsSystem.cardinal_from_to(target.position, attacker.position)
@@ -735,4 +736,5 @@ static func add_armor(board: BoardState, target: UnitState, amount: int, events:
 		"amount": amount,
 		"armor": target.armor,
 	}))
+
 

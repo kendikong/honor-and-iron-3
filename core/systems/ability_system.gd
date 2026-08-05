@@ -111,8 +111,8 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 	if actor == null or board == null:
 		return ap_cost
 	var effects: Array = ability.modules
-	if actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
-		effects = ability.upgraded_effects
+	if actor.is_ability_upgraded(ability.id) and ability.upgraded_modules.size() > 0:
+		effects = ability.upgraded_modules
 	for eff: AbilityModule in effects:
 		if eff != null and eff.legacy_modifiers.has("zero_ap_adjacent_enemies"):
 			var needed: int = int(eff.legacy_modifiers["zero_ap_adjacent_enemies"])
@@ -596,8 +596,8 @@ static func effect_amount(
 	if ability == null:
 		return 0
 	var effects: Array = ability.modules
-	if actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
-		effects = ability.upgraded_effects
+	if actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_modules.size() > 0:
+		effects = ability.upgraded_modules
 	for eff in effects:
 		if eff.primary_type == effect_type:
 			return eff.amount
@@ -708,8 +708,8 @@ static func manhattan_threat_tiles(
 
 static func pass_through_modifiers(ability: AbilityData, actor: UnitState = null) -> Dictionary:
 	var effects: Array = ability.modules if ability != null else []
-	if ability != null and actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
-		effects = ability.upgraded_effects
+	if ability != null and actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_modules.size() > 0:
+		effects = ability.upgraded_modules
 	return pass_through_modifiers_from(effects)
 
 
@@ -1045,7 +1045,7 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 	for eff: AbilityModule in ability.modules:
 		if eff.primary_type in offensive_effects:
 			return true
-	for eff: AbilityModule in ability.upgraded_effects:
+	for eff: AbilityModule in ability.upgraded_modules:
 		if eff.primary_type in offensive_effects:
 			return true
 	return false
@@ -1150,8 +1150,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	}))
 	
 	var effects_to_apply = action.ability.modules
-	if actor.is_ability_upgraded(action.ability.id) and action.ability.upgraded_effects.size() > 0:
-		effects_to_apply = action.ability.upgraded_effects
+	if actor.is_ability_upgraded(action.ability.id) and action.ability.upgraded_modules.size() > 0:
+		effects_to_apply = action.ability.upgraded_modules
 
 	var cast_cc_snapshot: Dictionary = {}
 	if actor != null:
@@ -1389,119 +1389,120 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 
 	match effect.primary_type:
 		GameEnums.EffectType.DAMAGE:
-			var pierce = false
-			if actor.has_passive(&"kinetic_redirection") and actor.is_passive_upgraded(&"kinetic_redirection"):
-				if actor.passive_flags.get("kinetic_redirection_stacks", 0) > 0:
-					pierce = true
+			for _hit_idx in range(effect.hit_count):
+				var pierce = false
+				if actor.has_passive(&"kinetic_redirection") and actor.is_passive_upgraded(&"kinetic_redirection"):
+					if actor.passive_flags.get("kinetic_redirection_stacks", 0) > 0:
+						pierce = true
 					
-			var base_amt := effect.amount
+				var base_amt := effect.amount
 			
-			if effect.legacy_modifiers.has("bonus_dmg_per_10_hp"):
-				base_amt += floori(actor.health.current_hp / 10.0) * effect.legacy_modifiers["bonus_dmg_per_10_hp"]
-			if effect.legacy_modifiers.has("bonus_dmg_pct_max_hp"):
-				base_amt += floori(actor.health.max_hp * float(effect.legacy_modifiers["bonus_dmg_pct_max_hp"]))
-			if effect.legacy_modifiers.has("bonus_dmg_from_terrain") and actor.passive_flags.get("passed_through_terrain", false):
-				base_amt += effect.legacy_modifiers["bonus_dmg_from_terrain"]
+				if effect.legacy_modifiers.has("bonus_dmg_per_10_hp"):
+					base_amt += floori(actor.health.current_hp / 10.0) * effect.legacy_modifiers["bonus_dmg_per_10_hp"]
+				if effect.legacy_modifiers.has("bonus_dmg_pct_max_hp"):
+					base_amt += floori(actor.health.max_hp * float(effect.legacy_modifiers["bonus_dmg_pct_max_hp"]))
+				if effect.legacy_modifiers.has("bonus_dmg_from_terrain") and actor.passive_flags.get("passed_through_terrain", false):
+					base_amt += effect.legacy_modifiers["bonus_dmg_from_terrain"]
 				
-			if actor.has_passive(&"blood_for_blood") and actor.is_passive_upgraded(&"blood_for_blood") and actor.passive_flags.get("damaged_last_turn", false):
-				base_amt += 1
+				if actor.has_passive(&"blood_for_blood") and actor.is_passive_upgraded(&"blood_for_blood") and actor.passive_flags.get("damaged_last_turn", false):
+					base_amt += 1
 				
-			var amount := base_amt
+				var amount := base_amt
 			
-			var wpn := 0
-			if actor.definition != null and actor.definition.equipped_weapon != null:
-				wpn = actor.definition.equipped_weapon.might
+				var wpn := 0
+				if actor.definition != null and actor.definition.equipped_weapon != null:
+					wpn = actor.definition.equipped_weapon.might
 			
-			var stat_val := actor.current_strength
-			var stat_name := "STR"
+				var stat_val := actor.current_strength
+				var stat_name := "STR"
 			
-			if action.ability.scaling_stat == GameEnums.StatType.PHYSICAL:
-				stat_val = CombatSystem.get_dynamic_strength(board, actor)
-			elif action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
-				stat_val = actor.current_magic
-				stat_name = "MAG"
+				if action.ability.scaling_stat == GameEnums.StatType.PHYSICAL:
+					stat_val = CombatSystem.get_dynamic_strength(board, actor)
+				elif action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
+					stat_val = actor.current_magic
+					stat_name = "MAG"
 				
-			if base_amt > 0:
-				var raw = (base_amt + wpn) * (1.0 + stat_val / 5.0)
-				amount = floori(raw)
+				if base_amt > 0:
+					var raw = (base_amt + wpn) * (1.0 + stat_val / 5.0)
+					amount = floori(raw)
 				
-			var dmg_type = &"physical"
-			if action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
-				dmg_type = &"magical"
+				var dmg_type = &"physical"
+				if action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
+					dmg_type = &"magical"
 				
-			var vuln = false
-			var elec = false
-			var backstabbed = false
-			var target_def = 0
-			var fort = 0
+				var vuln = false
+				var elec = false
+				var backstabbed = false
+				var target_def = 0
+				var fort = 0
 			
-			var temp_def_debuff = null
-			if target != null and effect.bonus_if_adjacent_at_cast > 0:
-				if GridSystem.manhattan(actor.position, target.position) == 1:
-					base_amt += effect.bonus_if_adjacent_at_cast
-			if target != null and effect.def_debuff_before_damage > 0:
-				temp_def_debuff = DataLibrary.make_status(
-					GameEnums.StatusType.STAT_DEBUFF_DEF, 1, effect.def_debuff_before_damage,
-				)
-				target.active_statuses.append(temp_def_debuff)
-				target._recalculate_stats()
-				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
-					"unit": target.id,
-					"status_type": GameEnums.StatusType.STAT_DEBUFF_DEF,
-					"duration": 1,
-					"amount": effect.def_debuff_before_damage,
-					"temporary": true,
-				}))
+				var temp_def_debuff = null
+				if target != null and effect.bonus_if_adjacent_at_cast > 0:
+					if GridSystem.manhattan(actor.position, target.position) == 1:
+						base_amt += effect.bonus_if_adjacent_at_cast
+				if target != null and effect.def_debuff_before_damage > 0:
+					temp_def_debuff = DataLibrary.make_status(
+						GameEnums.StatusType.STAT_DEBUFF_DEF, 1, effect.def_debuff_before_damage,
+					)
+					target.active_statuses.append(temp_def_debuff)
+					target._recalculate_stats()
+					events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+						"unit": target.id,
+						"status_type": GameEnums.StatusType.STAT_DEBUFF_DEF,
+						"duration": 1,
+						"amount": effect.def_debuff_before_damage,
+						"temporary": true,
+					}))
 			
-			if target != null:
-				if _is_backstab(actor, target):
-					amount += BACKSTAB_BONUS
-					backstabbed = true
-				target_def = CombatSystem.get_dynamic_defense(board, target)
-				var tile = board.get_tile(target.position)
-				if tile != null and tile.definition != null:
-					fort = tile.definition.fortitude
-				vuln = target.has_status(GameEnums.StatusType.VULNERABLE)
-				elec = target.has_status(GameEnums.StatusType.ELECTRIFIED)
+				if target != null:
+					if _is_backstab(actor, target):
+						amount += BACKSTAB_BONUS
+						backstabbed = true
+					target_def = CombatSystem.get_dynamic_defense(board, target)
+					var tile = board.get_tile(target.position)
+					if tile != null and tile.definition != null:
+						fort = tile.definition.fortitude
+					vuln = target.has_status(GameEnums.StatusType.VULNERABLE)
+					elec = target.has_status(GameEnums.StatusType.ELECTRIFIED)
 
-			if actor.passive_flags.has("breaching_dash_pierce"):
-				pierce = true
-				actor.passive_flags.erase("breaching_dash_pierce")
-			if actor.has_status(GameEnums.StatusType.PIERCE):
-				pierce = true
-			if target != null and actor.has_passive(&"overwhelming_bulk"):
-				if actor.health.current_hp > target.health.max_hp:
+				if actor.passive_flags.has("breaching_dash_pierce"):
 					pierce = true
-					if actor.is_passive_upgraded(&"overwhelming_bulk"):
-						var bulk_dir := PhysicsSystem.cardinal_from_to(actor.position, target.position)
-						board.pending_pushes.append({
-							"type": "push",
-							"target_id": target.id,
-							"dir": bulk_dir,
-							"amount": 1,
-							"actor_id": actor.id,
-							"ability_id": &"overwhelming_bulk",
-						})
+					actor.passive_flags.erase("breaching_dash_pierce")
+				if actor.has_status(GameEnums.StatusType.PIERCE):
+					pierce = true
+				if target != null and actor.has_passive(&"overwhelming_bulk"):
+					if actor.health.current_hp > target.health.max_hp:
+						pierce = true
+						if actor.is_passive_upgraded(&"overwhelming_bulk"):
+							var bulk_dir := PhysicsSystem.cardinal_from_to(actor.position, target.position)
+							board.pending_pushes.append({
+								"type": "push",
+								"target_id": target.id,
+								"dir": bulk_dir,
+								"amount": 1,
+								"actor_id": actor.id,
+								"ability_id": &"overwhelming_bulk",
+							})
 				
-			events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, {
-				"type": "damage",
-				"base": base_amt,
-				"wpn": wpn,
-				"stat_name": stat_name,
-				"stat_val": stat_val,
-				"multiplier_raw": (base_amt + wpn) * (1.0 + stat_val / 5.0),
-				"floored": floori((base_amt + wpn) * (1.0 + stat_val / 5.0)),
-				"backstab": backstabbed,
-				"backstab_bonus": BACKSTAB_BONUS if backstabbed else 0,
-				"final_raw": amount,
-				"target_def": target_def, "fortitude": fort,
-				"vulnerable": vuln, "electrified": elec,
-				"pierce": pierce
-			}))
-			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
-			if temp_def_debuff != null and target != null:
-				target.active_statuses.erase(temp_def_debuff)
-				target._recalculate_stats()
+				events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, {
+					"type": "damage",
+					"base": base_amt,
+					"wpn": wpn,
+					"stat_name": stat_name,
+					"stat_val": stat_val,
+					"multiplier_raw": (base_amt + wpn) * (1.0 + stat_val / 5.0),
+					"floored": floori((base_amt + wpn) * (1.0 + stat_val / 5.0)),
+					"backstab": backstabbed,
+					"backstab_bonus": BACKSTAB_BONUS if backstabbed else 0,
+					"final_raw": amount,
+					"target_def": target_def, "fortitude": fort,
+					"vulnerable": vuln, "electrified": elec,
+					"pierce": pierce
+				}))
+				CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
+				if temp_def_debuff != null and target != null:
+					target.active_statuses.erase(temp_def_debuff)
+					target._recalculate_stats()
 		GameEnums.EffectType.PUSH:
 			if target != null:
 				var is_immune = false
@@ -2021,3 +2022,4 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 				_execute_gated_module_followups(
 					board, actor, ability, module_coords, events,
 				)
+
