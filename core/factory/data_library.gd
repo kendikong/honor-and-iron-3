@@ -277,7 +277,8 @@ static func _ensure_init() -> void:
 	for u in _enemy_units:
 		_all_units_dict[u.id] = u
 
-	ClassLibrarySchema.apply_saved_unit_overrides()
+	if DisplayServer.get_name() != "headless":
+		ClassLibrarySchema.apply_saved_unit_overrides()
 	for u in _player_units:
 		finalize_unit_abilities(u)
 	for u in _enemy_units:
