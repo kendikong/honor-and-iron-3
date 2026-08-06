@@ -696,12 +696,5 @@ func _on_launch_pressed() -> void:
 			BoardFactory.place_configured_unit(board, next_id, u_data, config.team, coord, config)
 			next_id += 1
 			
-	var scene = load("res://scenes/Combat.tscn").instantiate()
-	scene.name = "Combat"
-	get_tree().root.add_child(scene)
-	scene.get_node("CombatDirector").start_from_custom(board)
-	
-	if get_tree().current_scene != null:
-		get_tree().current_scene.queue_free()
-		
-	get_tree().current_scene = scene
+	SkirmishLaunch.set_pending_board(board)
+	get_tree().change_scene_to_file("res://scenes/TacticalCombat.tscn")

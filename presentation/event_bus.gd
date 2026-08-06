@@ -48,7 +48,8 @@ signal phase1_status_changed()
 ## the view should animate move then forced displacement before snapping visuals.
 signal planning_commit_events(events: Array)
 
-## Emitted by BoardView once all push/displacement tweens from a batch have finished.
+## Emitted by the tactical presentation once all push/displacement tweens from
+## a batch have finished.
 signal push_animations_complete
 
 ## Interface sliders (UI/text scale, panel width) saved live â€” combat hosts reload + apply.

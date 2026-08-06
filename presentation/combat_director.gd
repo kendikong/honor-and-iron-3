@@ -9,7 +9,7 @@ extends Node
 ##   gameplay to Simulator and never computes outcomes itself.
 ## Dependencies: Simulator, BoardState, Timeline, TimelineAction, EnemyPlanner,
 ##   EventBus. Builds demo content from data definitions for bootstrap.
-## Lifecycle: lives in Combat.tscn; start() is called once by the view after it has
+## Lifecycle: lives in TacticalCombat.tscn; start() is called once by the shell after it has
 ##   subscribed to EventBus, so no initial signal is missed.
 
 enum Phase {
@@ -1210,11 +1210,14 @@ func preview_waypoints_for_hover(
 		if actor.definition != null
 		else GameEnums.MovementType.WALK
 	)
+	var budget: int = planning_move_budget(actor, board)
+	if ability != null and AbilitySystem.ability_has_movement_effect(ability):
+		budget = AbilitySystem.planning_awaiting_endpoint_range(ability)
 	return MovementSystem.drag_corridor_path(
 		board,
 		actor.position,
 		target,
-		planning_move_budget(actor, board),
+		budget,
 		movement_type,
 		MovementSystem.move_cost_for(actor),
 		actor,

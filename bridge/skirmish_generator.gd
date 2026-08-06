@@ -55,6 +55,48 @@ static func generate(config: SkirmishConfig) -> SkirmishResult:
 	return result
 
 
+static func visual_from_encounter(encounter: EncounterData) -> SkirmishResult:
+	assert(encounter != null, "SkirmishGenerator.visual_from_encounter requires an encounter")
+	var result := SkirmishResult.new()
+	result.grid = PlayerGrid.new(encounter.grid_size.x, encounter.grid_size.y)
+	result.map_seed = 0
+	result.biome_variant = 1
+	result.player_spawns = encounter.player_spawns
+	result.enemy_spawns = encounter.enemy_spawns
+	for y: int in range(encounter.grid_size.y):
+		for x: int in range(encounter.grid_size.x):
+			var cell := Vector2i(x, y)
+			var terrain: TerrainData = encounter.tile_terrains.get(cell, encounter.default_terrain)
+			var tile_id: int = _tile_id_for_terrain(terrain)
+			result.grid.set_cell(cell, tile_id)
+			if terrain != null and terrain.blocks_movement:
+				result.blocked_cells[cell] = true
+	return result
+
+
+static func visual_from_board(board: BoardState) -> SkirmishResult:
+	assert(board != null, "SkirmishGenerator.visual_from_board requires a board")
+	var result := SkirmishResult.new()
+	result.grid = PlayerGrid.new(board.grid_size.x, board.grid_size.y)
+	result.map_seed = 0
+	result.biome_variant = 1
+	for cell: Vector2i in board.tiles:
+		var tile: TileState = board.tiles[cell]
+		var tile_id: int = _tile_id_for_terrain(tile.definition)
+		result.grid.set_cell(cell, tile_id)
+		if tile.definition != null and tile.definition.blocks_movement:
+			result.blocked_cells[cell] = true
+	for unit: UnitState in board.units:
+		var placement := UnitPlacement.new()
+		placement.unit = unit.definition
+		placement.coord = unit.position
+		if unit.team == GameEnums.Team.PLAYER:
+			result.player_spawns.append(placement)
+		else:
+			result.enemy_spawns.append(placement)
+	return result
+
+
 static func generate_encounter(config: SkirmishConfig) -> EncounterData:
 	var skirmish: SkirmishResult = generate(config)
 	return EncounterBuilder.build_from_player_grid(
@@ -63,6 +105,20 @@ static func generate_encounter(config: SkirmishConfig) -> EncounterData:
 		skirmish.player_spawns,
 		skirmish.enemy_spawns,
 	)
+
+
+static func _tile_id_for_terrain(terrain: TerrainData) -> int:
+	if terrain == null:
+		return TileId.Type.GRASS
+	match terrain.id:
+		&"water":
+			return TileId.Type.WATER
+		&"wall", &"castle":
+			return TileId.Type.ROCK
+		&"cracked", &"dirt":
+			return TileId.Type.DIRT
+		_:
+			return TileId.Type.GRASS
 
 
 static func generate_encounter_with_player_unit(

@@ -17,3 +17,14 @@ tests/captures/*.png
 tests/captures/*.json
 tests/captures/*.md
 !tests/captures/README.md
+
+# Generated QA/debug output; keep permanent fixtures under tests/fixtures/
+qa_*.txt
+test_output_*.txt
+*_stdout.txt
+*_stderr.txt
+live_plan_*.log
+drag_debug.log
+godot_error*.txt
+execute*.txt
+**/node_modules/

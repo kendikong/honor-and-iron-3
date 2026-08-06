@@ -53,6 +53,8 @@ var _sparkle_sprites: Node2D
 var _ecology_layer: EcologyLayer
 var _skirmish: SkirmishGenerator.SkirmishResult
 var _encounter: EncounterData
+var _initial_board: BoardState
+var _pending_assignments: Dictionary = {}
 var _biome_variant: int = 1
 var _last_tree_variant_b: bool = false
 var _char_profile: CharacterGenProfile = CharacterGenProfile.new()
@@ -155,6 +157,7 @@ func _ready() -> void:
 	add_child(_fps_hud)
 	_apply_overlay_hud_visibility()
 
+	_load_pending_launch()
 	_load_skirmish()
 	_init_tile_pipeline()
 	_regenerate()
@@ -262,23 +265,63 @@ func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 
 
 func _start_combat() -> void:
-	_combat_shell.start_combat(_encounter)
+	_combat_shell.start_combat(_encounter, _initial_board)
 	_combat_shell.bind_settings(_settings)
 	_sim_presenter.set_game_settings(_settings)
 
 
+func _load_pending_launch() -> void:
+	_encounter = SkirmishLaunch.take_pending_encounter()
+	_pending_assignments = SkirmishLaunch.take_pending_assignments()
+	_initial_board = SkirmishLaunch.take_pending_board()
+
+	if _encounter != null and _initial_board == null:
+		_initial_board = BoardFactory.build_from_encounter(_encounter, _pending_assignments)
+
+
 func _load_skirmish() -> void:
+	if _initial_board != null:
+		_skirmish = SkirmishGenerator.visual_from_board(_initial_board)
+		_player_grid = _skirmish.grid
+		_encounter = _encounter_from_board(_initial_board)
+		_decorator.map_seed = _skirmish.map_seed
+		return
+	if _encounter != null:
+		_skirmish = SkirmishGenerator.visual_from_encounter(_encounter)
+		_player_grid = _skirmish.grid
+		_decorator.map_seed = _skirmish.map_seed
+		return
 	var config: SkirmishGenerator.SkirmishConfig = SkirmishLaunch.take_pending()
 	_biome_variant = config.biome_variant
 	_skirmish = SkirmishGenerator.generate(config)
 	_player_grid = _skirmish.grid
-	_encounter = EncounterBuilder.build_from_player_grid(
-		_skirmish.grid,
-		_skirmish.blocked_cells,
-		_skirmish.player_spawns,
-		_skirmish.enemy_spawns,
-	)
+	if _encounter == null:
+		_encounter = EncounterBuilder.build_from_player_grid(
+			_skirmish.grid,
+			_skirmish.blocked_cells,
+			_skirmish.player_spawns,
+			_skirmish.enemy_spawns,
+		)
 	_decorator.map_seed = _skirmish.map_seed
+
+
+func _encounter_from_board(board: BoardState) -> EncounterData:
+	var encounter := EncounterData.new()
+	encounter.grid_size = board.grid_size
+	encounter.default_terrain = DataLibrary.get_terrain(&"plain")
+	for cell: Vector2i in board.tiles:
+		var tile: TileState = board.tiles[cell]
+		if tile.definition != encounter.default_terrain:
+			encounter.tile_terrains[cell] = tile.definition
+	for unit: UnitState in board.units:
+		var placement := UnitPlacement.new()
+		placement.unit = unit.definition
+		placement.coord = unit.position
+		if unit.team == GameEnums.Team.PLAYER:
+			encounter.player_spawns.append(placement)
+		else:
+			encounter.enemy_spawns.append(placement)
+	return encounter
 
 
 func _init_tile_pipeline() -> void:
@@ -419,7 +462,7 @@ func _regenerate() -> void:
 
 
 func _refine_spawn_positions() -> void:
-	if _encounter == null or _player_grid == null:
+	if _encounter == null or _player_grid == null or _initial_board != null:
 		return
 	SpawnPlacer.refine_encounter_spawns(
 		_player_grid,

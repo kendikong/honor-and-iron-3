@@ -29,7 +29,11 @@ damage. Combat has no RNG.
 3. Make the smallest surgical change; remove an obsolete path when replacing it.
 4. Run the matching QA suite after gameplay, simulation, planning, commit, or
    ability changes. UI-only changes still require a parse/error check.
-5. Report the result briefly, including failures and unverified risks.
+5. Clean up generated QA/debug output before finishing: keep only the compact
+  latest summary and raw logs needed for an active investigation; write raw
+  output to the OS temp directory whenever possible. Do not leave duplicate,
+  numbered, or multi-megabyte logs in the project root.
+6. Report the result briefly, including failures and unverified risks.
 
 ## Canonical references
 
@@ -54,3 +58,15 @@ damage. Combat has no RNG.
 
 Load only the relevant skill: `identity`, `gameplay`, `architecture`,
 `ai-standards`, or `roadmap`. Do not read every skill for a routine task.
+
+## Generated-output hygiene
+
+- Treat `qa_*.txt`, `test_output_*.txt`, `*_stdout.txt`, `*_stderr.txt`,
+  `live_plan_*.log`, `drag_debug.log`, `godot_error*.txt`, and `execute*.txt`
+  as temporary diagnostics unless explicitly designated as a fixture.
+- Never attach or read an entire historical log when a targeted error search or
+  short summary is sufficient.
+- Before a QA, debugging, or commit task is complete, check for newly created
+  root-level logs and remove or archive obsolete output outside the workspace.
+- Preserve only the latest relevant result and the evidence needed to reproduce
+  an unresolved failure. Do not delete logs needed for an active investigation.
