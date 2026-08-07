@@ -1199,6 +1199,15 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			attack_was_used = true
 			break
 	if attack_was_used:
+		var post_attack_move_bonus := 0
+		for effect: EffectData in effects_to_apply:
+			if (
+				effect != null
+				and effect.type == GameEnums.EffectType.MOVE
+				and effect.modifiers.has("post_attack_move")
+			):
+				post_attack_move_bonus += effect.amount
+		actor.movement.points_left += post_attack_move_bonus
 		for passive: PassiveData in actor.active_passives:
 			if passive == null or not passive.modifiers.has("after_attack_move"):
 				continue
