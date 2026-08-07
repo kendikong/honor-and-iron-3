@@ -261,6 +261,596 @@ static func run_push_synergy_smoke(failures: Array[String]) -> void:
 	)
 
 
+static func run_active_execution_matrix(failures: Array[String]) -> void:
+	var active_ids: Array[StringName] = [
+		&"lancer_piercing_charge",
+		&"lancer_sweeping_halberd",
+		&"lancer_vaulting_leap",
+		&"lancer_run_down",
+		&"lancer_rallying_cry",
+		&"lancer_flanking_maneuver",
+		&"lancer_brace",
+		&"lancer_harpoon_toss",
+		&"lancer_glorious_charge",
+		&"lancer_pole_vault",
+		&"lancer_line_breaker",
+		&"lancer_spear_wall",
+		&"lancer_meteor_drop",
+	]
+	for ability_id: StringName in active_ids:
+		var ability := factory_ability(ability_id)
+		assert_true(failures, "%s/executable" % ability_id, ability != null)
+		if ability == null:
+			continue
+		var result := _simulate_active_ability(ability)
+		assert_true(
+			failures,
+			"%s/used" % ability_id,
+			bool(result.get("used", false)),
+			"the modular ability must execute through Simulator",
+		)
+		assert_true(
+			failures,
+			"%s/no_validation_failure" % ability_id,
+			not bool(result.get("validation_failed", false)),
+			"scenario setup must satisfy the authored targeting contract (%s)"
+			% String(result.get("failure_reason", "")),
+		)
+
+
+static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
+	var definition := lancer_unit_data()
+	var board := _plain_board(Vector2i(12, 8))
+	var actor := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(2, 3), {
+		"active_abilities": [ability],
+		"active_passives": [],
+	})
+	var enemy := UnitState.create(
+		2,
+		definition,
+		GameEnums.Team.ENEMY,
+		Vector2i(4, 3),
+		{"active_abilities": [], "active_passives": []},
+	)
+	var ally := UnitState.create(
+		3,
+		definition,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 4),
+		{"active_abilities": [], "active_passives": []},
+	)
+	board.units = [actor, enemy, ally]
+	for unit: UnitState in board.units:
+		GridSystem.set_occupant(board, unit.position, unit.id)
+	var target_coord := enemy.position
+	var target_id := enemy.id
+	if ability.id == &"lancer_flanking_maneuver":
+		target_coord = Vector2i(3, 2)
+		target_id = -1
+	if ability_id_is_movement(ability.id):
+		target_coord = Vector2i(5, 3)
+		target_id = -1
+	if ability.id == &"lancer_rallying_cry" or ability.id == &"lancer_brace":
+		target_coord = actor.position
+		target_id = actor.id
+	if ability.id == &"lancer_glorious_charge":
+		target_coord = enemy.position
+		target_id = ally.id
+	if ability.id == &"lancer_spear_wall":
+		target_coord = Vector2i(4, 3)
+		target_id = -1
+	if ability.id == &"lancer_meteor_drop" or ability.id == &"lancer_pole_vault":
+		target_coord = Vector2i(3, 2)
+		target_id = -1
+	var action := TimelineAction.make_ability(actor.id, ability, target_coord, target_id)
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, _single_action_plan(action), events)
+	var used := false
+	var validation_failed := false
+	var failure_reason := ""
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.ABILITY_USED and event.data.get("ability") == ability.id:
+			used = true
+		if event.type == GameEnums.SimEventType.ACTION_FAILED:
+			validation_failed = true
+			failure_reason = String(event.data.get("reason", "unknown"))
+	return {
+		"used": used,
+		"validation_failed": validation_failed,
+		"failure_reason": failure_reason,
+	}
+
+
+static func ability_id_is_movement(ability_id: StringName) -> bool:
+	return ability_id in [
+		&"lancer_pole_vault",
+		&"lancer_line_breaker",
+	]
+
+
+static func _single_action_plan(action: TimelineAction) -> Timeline:
+	var plan := Timeline.new()
+	plan.add(action)
+	return plan
+
+
+static func run_passive_runtime_smoke(failures: Array[String]) -> void:
+	var definition := lancer_unit_data()
+	var basic := factory_ability(&"lancer_basic")
+	var push := factory_ability(&"lancer_push")
+	var pole_vault := factory_ability(&"lancer_pole_vault")
+	if definition == null or basic == null or push == null or pole_vault == null:
+		return
+
+	var momentum_board := _plain_board(Vector2i(8, 4))
+	var momentum := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(1, 1),
+		[basic],
+		[factory_passive(&"kinetic_charge")],
+	)
+	var momentum_target := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(4, 1), [], []
+	)
+	_add_test_units(momentum_board, [momentum, momentum_target])
+	var momentum_plan := Timeline.new()
+	momentum_plan.add(TimelineAction.make_move(momentum.id, Vector2i(2, 1)))
+	momentum_plan.add(TimelineAction.make_ability(
+		momentum.id, basic, momentum_target.position, momentum_target.id
+	))
+	var momentum_events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(momentum_board, momentum_plan, momentum_events)
+	var momentum_damage := _first_damage_event(momentum_events)
+	assert_true(
+		failures,
+		"passive/kinetic_charge",
+		int(momentum_damage.get("stat_val", 0)) >= momentum.current_strength + 1,
+		"Kinetic Charge must add one STR per continuous tile (stat=%d current=%d tiles=%d)"
+		% [
+			int(momentum_damage.get("stat_val", 0)),
+			momentum.current_strength,
+			momentum.continuous_straight_tiles_this_turn,
+		],
+	)
+
+	var unstoppable_board := _plain_board(Vector2i(9, 4))
+	var unstoppable := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(1, 1),
+		[basic],
+		[factory_passive(&"unstoppable_mass")],
+	)
+	var unstoppable_target := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(6, 1), [], []
+	)
+	_add_test_units(unstoppable_board, [unstoppable, unstoppable_target])
+	var unstoppable_plan := Timeline.new()
+	unstoppable_plan.add(TimelineAction.make_move(unstoppable.id, Vector2i(4, 1)))
+	unstoppable_plan.add(TimelineAction.make_ability(
+		unstoppable.id, basic, unstoppable_target.position, unstoppable_target.id
+	))
+	var unstoppable_events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(unstoppable_board, unstoppable_plan, unstoppable_events)
+	assert_true(
+		failures,
+		"passive/unstoppable_mass",
+		bool(_first_damage_event(unstoppable_events).get("pierce", false)),
+		"maximum movement must grant PIERCE",
+	)
+
+	var canto_board := _plain_board(Vector2i(5, 3))
+	var canto := _make_test_unit(
+		definition, 1, GameEnums.Team.PLAYER, Vector2i(1, 1), [], [factory_passive(&"canto")]
+	)
+	_add_test_units(canto_board, [canto])
+	var canto_events: Array[SimEvent] = []
+	MovementSystem.execute_move(
+		canto_board,
+		TimelineAction.make_move(canto.id, Vector2i(2, 1)),
+		canto_events,
+	)
+	assert_true(
+		failures,
+		"passive/canto",
+		canto.has_status(GameEnums.StatusType.CANTO),
+		"standard movement must grant CANTO",
+	)
+
+	var frontline_board := _plain_board(Vector2i(9, 4))
+	var frontline := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(1, 1),
+		[],
+		[factory_passive(&"frontline_defense")],
+	)
+	var ranged_enemy := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(6, 1), [], []
+	)
+	_add_test_units(frontline_board, [frontline, ranged_enemy])
+	var frontline_events: Array[SimEvent] = []
+	MovementSystem.execute_move(
+		frontline_board,
+		TimelineAction.make_move(frontline.id, Vector2i(4, 1)),
+		frontline_events,
+	)
+	var frontline_hp := frontline.health.current_hp
+	CombatSystem.deal_damage(
+		frontline_board,
+		frontline,
+		99,
+		frontline_events,
+		&"physical",
+		false,
+		false,
+		ranged_enemy,
+		"QA ranged hit",
+	)
+	assert_true(
+		failures,
+		"passive/frontline_defense",
+		frontline.health.current_hp == frontline_hp
+		and CombatSystem.get_dynamic_defense(frontline_board, frontline) >= frontline.current_defense + 1,
+		"moving three tiles must grant defense and ranged immunity",
+	)
+
+	var flanking_board := _plain_board(Vector2i(6, 4))
+	var flanker := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 2),
+		[basic],
+		[factory_passive(&"flanking_strike")],
+	)
+	var flanking_target := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(3, 2), [], []
+	)
+	flanking_target.facing = GameEnums.Facing.NORTH
+	_add_test_units(flanking_board, [flanker, flanking_target])
+	var flank_events: Array[SimEvent] = []
+	AbilitySystem.execute(
+		flanking_board,
+		TimelineAction.make_ability(flanker.id, basic, flanking_target.position, flanking_target.id),
+		flank_events,
+	)
+	assert_true(
+		failures,
+		"passive/flanking_strike",
+		flanking_target.health.current_hp < flanking_target.health.max_hp,
+		"side attacks must ignore defense",
+	)
+
+	var plunging_board := _plain_board(Vector2i(6, 4))
+	var plunging := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 2),
+		[basic],
+		[factory_passive(&"plunging_attack")],
+	)
+	var plunging_target := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(3, 2), [], []
+	)
+	_add_test_units(plunging_board, [plunging, plunging_target])
+	plunging.passive_flags["jumped_or_teleported_this_turn"] = true
+	var plunge_events: Array[SimEvent] = []
+	AbilitySystem.execute(
+		plunging_board,
+		TimelineAction.make_ability(plunging.id, basic, plunging_target.position, plunging_target.id),
+		plunge_events,
+	)
+	assert_true(
+		failures,
+		"passive/plunging_attack",
+		int(_first_damage_event(plunge_events).get("base", 0)) >= 4,
+		"jump context must grant +3 ATK to the next basic attack",
+	)
+
+	var crash_board := _plain_board(Vector2i(8, 5))
+	var crasher := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(1, 2),
+		[pole_vault],
+		[factory_passive(&"crashing_impact")],
+	)
+	var crash_enemy := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(4, 2), [], []
+	)
+	_add_test_units(crash_board, [crasher, crash_enemy])
+	var crash_events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(
+		crash_board,
+		_single_action_plan(TimelineAction.make_ability(crasher.id, pole_vault, Vector2i(3, 2))),
+		crash_events,
+	)
+	assert_true(
+		failures,
+		"passive/crashing_impact",
+		crash_enemy.position != Vector2i(4, 2),
+		"jump landing must push adjacent enemies",
+	)
+
+	var pole_board := _plain_board(Vector2i(6, 4))
+	var trap := TerrainData.new()
+	trap.id = &"trap"
+	trap.hazard_damage = 5
+	pole_board.set_tile_terrain(Vector2i(3, 2), trap)
+	var planter := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 2),
+		[push],
+		[factory_passive(&"pole_plant")],
+	)
+	_add_test_units(pole_board, [planter])
+	Simulator.simulate_player_turn(
+		pole_board,
+		_single_action_plan(TimelineAction.make_ability(planter.id, push, Vector2i(3, 2))),
+		[],
+	)
+	assert_true(
+		failures,
+		"passive/pole_plant",
+		pole_board.get_tile(Vector2i(3, 2)).definition.id == &"plain"
+		and planter.armor == 2,
+		"0-AP Push must destroy traps and grant SHIELD 2",
+	)
+
+	var spear_board := _plain_board(Vector2i(6, 4))
+	var spearman := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 2),
+		[basic],
+		[factory_passive(&"spear_drop")],
+	)
+	var spearman_target := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(3, 2), [], []
+	)
+	_add_test_units(spear_board, [spearman, spearman_target])
+	spearman.passive_flags["vaulted_target_id"] = spearman_target.id
+	AbilitySystem.execute(
+		spear_board,
+		TimelineAction.make_ability(spearman.id, basic, spearman_target.position, spearman_target.id),
+		[],
+	)
+	assert_true(
+		failures,
+		"passive/spear_drop",
+		spearman_target.has_status(GameEnums.StatusType.BLEED),
+		"attacking a vaulted target must apply weapon-scaled BLEED",
+	)
+
+	var spring_board := _plain_board(Vector2i(6, 4))
+	var springer := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 2),
+		[],
+		[factory_passive(&"springboard")],
+	)
+	var slain := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(3, 2), [], []
+	)
+	slain.health.current_hp = 1
+	_add_test_units(spring_board, [springer, slain])
+	CombatSystem.deal_damage(
+		spring_board,
+		slain,
+		99,
+		[],
+		&"true",
+		true,
+		false,
+		springer,
+		"QA kill",
+	)
+	var spring_events: Array[SimEvent] = []
+	MovementSystem.execute_move(
+		spring_board,
+		TimelineAction.make_free_reaction_move(springer.id, Vector2i(3, 2)),
+		spring_events,
+	)
+	assert_true(
+		failures,
+		"passive/springboard",
+		springer.position == Vector2i(3, 2) and springer.movement.max_points == 4,
+		"kill reaction must vault into the defeated enemy's space for free",
+	)
+
+	var tip_board := _plain_board(Vector2i(7, 4))
+	var tipper := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 2),
+		[basic],
+		[factory_passive(&"sweet_spot")],
+	)
+	var tip_target := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(4, 2), [], []
+	)
+	_add_test_units(tip_board, [tipper, tip_target])
+	var tip_events: Array[SimEvent] = []
+	AbilitySystem.execute(
+		tip_board,
+		TimelineAction.make_ability(tipper.id, basic, tip_target.position, tip_target.id),
+		tip_events,
+	)
+	assert_true(
+		failures,
+		"passive/sweet_spot",
+		int(_first_damage_event(tip_events).get("base", 0)) >= 3,
+		"exact Range 2 attacks must gain +2 ATK",
+	)
+
+	var reach_board := _plain_board(Vector2i(7, 4))
+	var reacher := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 2),
+		[basic],
+		[factory_passive(&"reach_advantage")],
+	)
+	var retaliator := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(4, 2), [], []
+	)
+	retaliator.active_statuses.append(
+		DataLibrary.make_status(GameEnums.StatusType.RETALIATION_PROTOCOL, 1, 0)
+	)
+	_add_test_units(reach_board, [reacher, retaliator])
+	var reach_events: Array[SimEvent] = []
+	AbilitySystem.execute(
+		reach_board,
+		TimelineAction.make_ability(reacher.id, basic, retaliator.position, retaliator.id),
+		reach_events,
+	)
+	assert_true(
+		failures,
+		"passive/reach_advantage",
+		not _events_have_label(reach_events, "Retaliation Protocol"),
+		"Range 2 melee attacks must suppress retaliation",
+	)
+
+	var disengage_board := _plain_board(Vector2i(7, 4))
+	var disengager := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 2),
+		[basic],
+		[factory_passive(&"disengage")],
+	)
+	var disengage_target := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(3, 2), [], []
+	)
+	_add_test_units(disengage_board, [disengager, disengage_target])
+	AbilitySystem.execute(
+		disengage_board,
+		TimelineAction.make_ability(
+			disengager.id,
+			basic,
+			disengage_target.position,
+			disengage_target.id,
+		),
+		[],
+	)
+	assert_true(
+		failures,
+		"passive/disengage",
+		disengager.position == Vector2i(1, 2),
+		"Range 1 attacks must push the Lancer away before damage",
+	)
+
+	var zone_board := _plain_board(Vector2i(9, 4))
+	var watcher := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 2),
+		[basic],
+		[factory_passive(&"zone_of_control")],
+	)
+	var zoned_enemy := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(6, 2), [], []
+	)
+	_add_test_units(zone_board, [watcher, zoned_enemy])
+	MovementSystem.execute_move(
+		zone_board,
+		TimelineAction.make_move(zoned_enemy.id, Vector2i(4, 2)),
+		[],
+	)
+	assert_true(
+		failures,
+		"passive/zone_of_control",
+		watcher.passive_flags.get("zone_attack_used_this_round", false),
+		"ending an enemy move at Range 2 must trigger one basic attack",
+	)
+
+	var leverage_board := _plain_board(Vector2i(7, 4))
+	var leverager := _make_test_unit(
+		definition,
+		1,
+		GameEnums.Team.PLAYER,
+		Vector2i(2, 2),
+		[push],
+		[factory_passive(&"leverage")],
+		[&"leverage"],
+	)
+	var leverage_ally := _make_test_unit(
+		definition, 2, GameEnums.Team.PLAYER, Vector2i(3, 2), [], []
+	)
+	_add_test_units(leverage_board, [leverager, leverage_ally])
+	var leverage_events: Array[SimEvent] = []
+	AbilitySystem.execute(
+		leverage_board,
+		TimelineAction.make_ability(leverager.id, push, leverage_ally.position, leverage_ally.id),
+		leverage_events,
+	)
+	AbilitySystem.resolve_pending_pushes(leverage_board, leverage_events)
+	assert_true(
+		failures,
+		"passive/leverage",
+		leverager.passive_flags.get("next_attack_pierce", false)
+		and leverager.armor == 1,
+		"0-AP Push must prime PIERCE and upgraded SHIELD",
+	)
+
+
+static func _make_test_unit(
+	definition: UnitData,
+	unit_id: int,
+	team: GameEnums.Team,
+	position: Vector2i,
+	abilities: Array,
+	passives: Array,
+	upgraded_passives: Array = [],
+) -> UnitState:
+	return UnitState.create(unit_id, definition, team, position, {
+		"active_abilities": abilities,
+		"active_passives": passives,
+		"upgraded_passives": upgraded_passives,
+	})
+
+
+static func _add_test_units(board: BoardState, units: Array) -> void:
+	board.units.clear()
+	for unit: UnitState in units:
+		board.units.append(unit)
+		GridSystem.set_occupant(board, unit.position, unit.id)
+
+
+static func _first_damage_event(events: Array[SimEvent]) -> Dictionary:
+	for event: SimEvent in events:
+		if (
+			event.type == GameEnums.SimEventType.MATH_TELEMETRY
+			and event.data.get("type", "") == "damage"
+		):
+			return event.data
+	return {}
+
+
+static func _events_have_label(events: Array[SimEvent], label: String) -> bool:
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.COUNTER_ATTACK:
+			if String(event.data.get("source_label", "")) == label:
+				return true
+	return false
+
+
 static func _simulate_basic_damage(distance: int) -> int:
 	var definition := lancer_unit_data()
 	var basic := factory_ability(&"lancer_basic")

@@ -40,6 +40,9 @@ var uses_run: bool = false
 ## ABILITY only: armed for targeting (dash etc.) — shown in plan UI, not simulated until finalized.
 var awaiting_target: bool = false
 
+## Optional passive reaction; resolves for free in the action bucket.
+var is_free_reaction: bool = false
+
 
 func is_simulatable() -> bool:
 	return not awaiting_target
@@ -122,6 +125,22 @@ static func make_ability(
 	action.waypoints = p_waypoints
 	return action
 
+
+static func make_free_reaction_move(
+	p_actor_id: int,
+	p_target_coord: Vector2i,
+) -> TimelineAction:
+	var action := make_move(
+		p_actor_id,
+		p_target_coord,
+		-1,
+		[],
+		GameEnums.MoveTiming.POST_ACTION,
+	)
+	action.is_free_reaction = true
+	return action
+
+
 func clone() -> TimelineAction:
 	var copy := TimelineAction.new()
 	copy.actor_id = actor_id
@@ -135,4 +154,5 @@ func clone() -> TimelineAction:
 	copy.irreversible = irreversible
 	copy.uses_run = uses_run
 	copy.awaiting_target = awaiting_target
+	copy.is_free_reaction = is_free_reaction
 	return copy

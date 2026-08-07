@@ -181,6 +181,22 @@ static func resolve_pass_through_tile(
 		return occupant == null or occupant.id == mover.id
 	if trample_atk > 0:
 		trample_hit_ids[occupant.id] = true
+		var passed_count: int = int(mover.passive_flags.get("line_breaker_passed", 0))
+		var pass_bonus := 0
+		var source_ability := mover.get_ability_by_id(ability_id)
+		if source_ability != null:
+			var source_effects: Array = (
+				source_ability.upgraded_effects
+				if mover.is_ability_upgraded(ability_id)
+				else source_ability.effects
+			)
+			for source_effect: EffectData in source_effects:
+				if source_effect != null and source_effect.modifiers.has("bonus_per_enemy_passed"):
+					pass_bonus = int(source_effect.modifiers["bonus_per_enemy_passed"])
+					break
+		trample_atk += pass_bonus * (passed_count + 1)
+		if pass_bonus > 0:
+			mover.passive_flags["line_breaker_passed"] = passed_count + 1
 		var label := source_label if source_label != "" else "Trample"
 		var scaled_atk := CombatSystem.calculate_scaled_damage(
 			mover, trample_atk, GameEnums.StatType.PHYSICAL, board
@@ -243,10 +259,12 @@ static func dash(
 	if source_ability != null:
 		source_effects = source_ability.upgraded_effects if pusher.is_ability_upgraded(ability_id) else source_ability.effects
 	var create_trampled := false
+	var line_breaker := false
 	for source_effect: EffectData in source_effects:
 		if source_effect != null and source_effect.modifiers.has("create_trampled_terrain"):
 			create_trampled = true
-			break
+		if source_effect != null and source_effect.modifiers.has("line_breaker"):
+			line_breaker = true
 
 	for step_i in range(distance):
 		var step_emit_start: int = events.size()
@@ -259,7 +277,7 @@ static func dash(
 			break
 
 		var occupant := board.get_unit_at(next)
-		if occupant != null and _cannot_be_displaced(occupant):
+		if occupant != null and _cannot_be_displaced(occupant) and not line_breaker:
 			if not use_trample_atk and not use_bulldoze:
 				_emit_collision(board, unit, occupant, next, distance, traveled, events, pusher, ability_id)
 			tag_dash_hit_step(events, step_emit_start, step_i)
@@ -355,6 +373,7 @@ static func dash(
 	for status in unit.active_statuses:
 		if status.type == GameEnums.StatusType.BLEED:
 			CombatSystem.deal_damage(board, unit, 3 * traveled, events, &"bleed", false, false, null, "Bleed (dash)", 3 * traveled)
+	unit.record_movement(path, 0, from)
 	
 	var anim: int = GameEnums.PresentationAnim.SUPER_RUN
 	if ability_id != &"":
@@ -453,6 +472,26 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 						pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
 						pusher._recalculate_stats()
 						break
+				if ability.movement_point_cost == 0:
+					for passive: PassiveData in pusher.active_passives:
+						if passive == null or not passive.modifiers.has("push_next_attack_pierce"):
+							continue
+						pusher.passive_flags["next_attack_pierce"] = true
+						if passive.modifiers.has("push_mov"):
+							pusher.movement.points_left = mini(
+								pusher.movement.max_points,
+								pusher.movement.points_left + int(passive.modifiers["push_mov"]),
+							)
+						if (
+							pusher.is_passive_upgraded(passive.id)
+							and passive.modifiers.has("upgraded_push_shield")
+						):
+							CombatSystem.add_armor(
+								board,
+								pusher,
+								int(passive.modifiers["upgraded_push_shield"]),
+								events,
+							)
 				
 		var pushed_data: Dictionary = {
 			"unit": target.id,

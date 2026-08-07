@@ -24,6 +24,11 @@ The Tier 1 suite checks:
   `PhysicsSystem`.
 - Push-based upgrades resolve their conditional Charge, Sweeping Halberd, and
   Pole Vault displacement bonuses through the shared simulator path.
+- The executable active-skill matrix resolves all 13 non-Push skills through
+  `Simulator`, including paired Glorious Charge targeting and empty-tile jump
+  validation.
+- The passive runtime matrix exercises all 15 passives through the shared
+  movement, combat, physics, terrain, and reaction paths.
 
 The registry contains one row for each Bible factory id:
 
@@ -34,8 +39,8 @@ The registry contains one row for each Bible factory id:
 | **Total** | **29** |
 
 The shared scenario file is `tests/lancer_class_scenario.gd`; the registry
-retains the source path for each Bible row so the matrix stays auditable while
-the common contract remains single-source.
+retains the source path for each Bible row, while the executable matrices in
+`tests/lancer_qa_harness.gd` keep behavior checks on the same simulator path.
 
 ## Required follow-up
 

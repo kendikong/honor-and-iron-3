@@ -138,6 +138,24 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team: GameEnums.Team) -> void:
 	for unit in board.units:
 		if unit.is_alive() and unit.team == team:
+			var next_move_bonus: int = int(
+				unit.passive_flags.get("next_turn_max_move_bonus", 0)
+			)
+			if next_move_bonus > 0:
+				unit.active_statuses.append(
+					DataLibrary.make_status(
+						GameEnums.StatusType.STAT_BUFF_MOV,
+						1,
+						next_move_bonus,
+					)
+				)
+				if unit.passive_flags.get("next_turn_trample", false):
+					unit.active_statuses.append(
+						DataLibrary.make_status(GameEnums.StatusType.TRAMPLE, 1, 0)
+					)
+				unit.passive_flags.erase("next_turn_max_move_bonus")
+				unit.passive_flags.erase("next_turn_trample")
+				unit._recalculate_stats(board)
 			if unit.has_status(GameEnums.StatusType.STAGGER):
 				unit.ability.points_left = maxi(0, unit.ability.points_left - 1)
 			for status in unit.active_statuses:

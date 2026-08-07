@@ -177,6 +177,15 @@ static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 		if unit.has_passive(&"adrenaline_junkie") and unit.is_passive_upgraded(&"adrenaline_junkie"):
 			var missing_pct = (unit.health.max_hp - unit.health.current_hp) / float(unit.health.max_hp)
 			def += floori(missing_pct / 0.20)
+		for passive: PassiveData in unit.active_passives:
+			if (
+				passive != null
+				and passive.modifiers.has("moved_tiles_def_threshold")
+				and unit.movement_points_spent_this_turn >= int(
+					passive.modifiers["moved_tiles_def_threshold"]
+				)
+			):
+				def += int(passive.modifiers.get("moved_tiles_def", 0))
 		
 	if unit.has_passive(&"bulwark"):
 		var bonus = adjacent_units
@@ -249,6 +258,12 @@ static func get_dynamic_strength(board: BoardState, unit: UnitState) -> int:
 				if occ != null and occ.is_alive() and occ.team != unit.team:
 					adj_enemies += 1
 		str_val += adj_enemies
+	for passive: PassiveData in unit.active_passives:
+		if passive != null and passive.modifiers.has("straight_line_str_per_tile"):
+			str_val += unit.continuous_straight_tiles_this_turn * int(
+				passive.modifiers["straight_line_str_per_tile"]
+			)
+	str_val += int(unit.passive_flags.get("paired_strength_bonus", 0))
 		
 	return str_val
 
@@ -442,6 +457,27 @@ static func deal_damage(
 ) -> void:
 	if target == null:
 		return
+	if attacker != null and GridSystem.manhattan(target.position, attacker.position) > 1:
+		for passive: PassiveData in target.active_passives:
+			if (
+				passive != null
+				and passive.modifiers.has("moved_tiles_ranged_immunity")
+				and target.movement_points_spent_this_turn >= int(
+					passive.modifiers.get("moved_tiles_def_threshold", 0)
+				)
+			):
+				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
+					"unit": target.id,
+					"amount": 0,
+					"hp": target.health.current_hp,
+					"armor": target.armor,
+					"hp_damaged": 0,
+					"armor_damaged": 0,
+					"damage_type": source_type,
+					"source_label": source_label,
+					"ranged_immune": true,
+				}))
+				return
 	if amount <= 0:
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
 			"unit": target.id,
@@ -537,6 +573,11 @@ static func deal_damage(
 		fort = tile.definition.fortitude
 		
 	var mitigation: int = CombatSystem.get_dynamic_defense(board, target)
+	if attacker != null:
+		mitigation = maxi(
+			0,
+			mitigation - int(attacker.passive_flags.get("attack_ignore_def", 0)),
+		)
 	if target.has_passive(&"scar_tissue"):
 		var missing_hp = target.health.max_hp - target.health.current_hp
 		var reduction = maxi(floori(target.health.max_hp / 20.0), floori(missing_hp / 20.0))
@@ -689,6 +730,7 @@ static func deal_damage(
 		if (
 			target.has_status(GameEnums.StatusType.RETALIATION_PROTOCOL)
 			and attacker != null
+			and not attacker.passive_flags.get("suppress_melee_counter", false)
 		):
 			var has_infinite_range := target.has_status(GameEnums.StatusType.RETALIATION_INFINITE_RANGE)
 			if has_infinite_range or GridSystem.manhattan(target.position, attacker.position) == 1:
@@ -706,6 +748,11 @@ static func deal_damage(
 			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 99, 2))
 			
 	if was_alive and not target.is_alive():
+		if attacker != null and attacker.is_alive():
+			for passive: PassiveData in attacker.active_passives:
+				if passive != null and passive.modifiers.has("kill_vault"):
+					attacker.passive_flags["springboard_pending_coord"] = target.position
+					break
 		GridSystem.set_occupant(board, target.position, -1)
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DIED, {
 			"unit": target.id,
@@ -715,6 +762,20 @@ static func deal_damage(
 			if attacker.passive_flags.has("adrenaline_surge_active"):
 				heal(board, attacker, 1, events)
 				add_armor(board, attacker, 2, events)
+			if attacker.passive_flags.has("on_kill_max_move"):
+				var move_bonus: int = int(attacker.passive_flags["on_kill_max_move"])
+				attacker.movement.max_points += move_bonus
+				attacker.movement.points_left += move_bonus
+				attacker.passive_flags.erase("on_kill_max_move")
+			if attacker.passive_flags.has("paired_ally_id"):
+				var paired_ally := board.get_unit_by_id(
+					int(attacker.passive_flags["paired_ally_id"])
+				)
+				if paired_ally != null and paired_ally.is_alive():
+					paired_ally.ability.points_left += 1
+					attacker.ability.points_left += 1
+				attacker.passive_flags.erase("paired_ally_id")
+				attacker.passive_flags.erase("paired_strength_bonus")
 			if attacker.passive_flags.get("frenzy_on_kill_ap", false) and source_label == "Frenzy":
 				attacker.ability.points_left += 1
 
@@ -727,6 +788,11 @@ static func try_resist_crowd_control(
 ) -> bool:
 	if target == null or not target.is_alive():
 		return false
+	if (
+		status_type == GameEnums.StatusType.ROOT
+		and target.passive_flags.get("root_immune_this_turn", false)
+	):
+		return true
 	if not target.has_passive(&"unstoppable_force"):
 		return false
 	if status_type != GameEnums.StatusType.STAGGER and status_type != GameEnums.StatusType.ROOT:

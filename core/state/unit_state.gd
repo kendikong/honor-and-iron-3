@@ -26,6 +26,10 @@ var turn_action_used: bool = false
 var pre_move_used_this_turn: bool = false
 ## Extra MP granted by universal Run this turn only (not a status effect).
 var run_boost_amount: int = 0
+var turn_start_movement_points: int = 0
+var movement_points_spent_this_turn: int = 0
+var continuous_straight_tiles_this_turn: int = 0
+var continuous_straight_direction: Vector2i = Vector2i.ZERO
 
 var armor: int = 0
 
@@ -92,6 +96,7 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 		
 	unit._recalculate_stats()
 	unit.health.current_hp = unit.health.max_hp
+	unit.turn_start_movement_points = unit.movement.max_points
 	return unit
 
 
@@ -248,10 +253,52 @@ func can_use_action_slot() -> bool:
 func is_boss() -> bool:
 	return definition != null and definition.is_boss
 
+
+func record_movement(
+	route: Array[Vector2i],
+	spent: int,
+	start: Vector2i = Vector2i(-1, -1),
+) -> void:
+	if route.is_empty():
+		return
+	movement_points_spent_this_turn += maxi(0, spent)
+	var route_direction := Vector2i.ZERO
+	var previous := start if start.x >= 0 and start.y >= 0 else position
+	for step: Vector2i in route:
+		var direction := step - previous
+		if absi(direction.x) + absi(direction.y) != 1:
+			continuous_straight_tiles_this_turn = 0
+			continuous_straight_direction = Vector2i.ZERO
+			return
+		if route_direction == Vector2i.ZERO:
+			route_direction = direction
+		elif route_direction != direction:
+			continuous_straight_tiles_this_turn = 0
+			continuous_straight_direction = Vector2i.ZERO
+			return
+		previous = step
+	if continuous_straight_direction == route_direction:
+		continuous_straight_tiles_this_turn += route.size()
+	else:
+		continuous_straight_direction = route_direction
+		continuous_straight_tiles_this_turn = route.size()
+
+
+func moved_max_movement_this_turn() -> bool:
+	return (
+		turn_start_movement_points > 0
+		and movement_points_spent_this_turn >= turn_start_movement_points
+	)
+
+
 func reset_for_turn() -> void:
 	_strip_legacy_running_status()
 	clear_run_boost()
 	movement.reset()
+	turn_start_movement_points = movement.max_points
+	movement_points_spent_this_turn = 0
+	continuous_straight_tiles_this_turn = 0
+	continuous_straight_direction = Vector2i.ZERO
 	ability.reset()
 	turn_action_used = false
 	pre_move_used_this_turn = false
@@ -262,6 +309,19 @@ func reset_for_turn() -> void:
 	passive_flags.erase("meat_shield_intercept_str")
 	passive_flags.erase("violent_collision_recast_used")
 	passive_flags.erase("push_used_this_turn")
+	passive_flags.erase("jumped_or_teleported_this_turn")
+	passive_flags.erase("plunging_attack_consumed")
+	passive_flags.erase("suppress_melee_counter")
+	passive_flags.erase("next_attack_pierce")
+	passive_flags.erase("root_immune_this_turn")
+	passive_flags.erase("vaulted_target_id")
+	passive_flags.erase("frontline_shield_granted")
+	passive_flags.erase("zone_attack_used_this_round")
+	passive_flags.erase("springboard_pending_coord")
+	passive_flags.erase("springboard_ap_used")
+	for key: Variant in passive_flags.keys():
+		if String(key).begins_with("ability_used_once:"):
+			passive_flags.erase(key)
 
 func clone() -> UnitState:
 	var copy := UnitState.new()
@@ -277,6 +337,10 @@ func clone() -> UnitState:
 	copy.turn_action_used = turn_action_used
 	copy.pre_move_used_this_turn = pre_move_used_this_turn
 	copy.run_boost_amount = run_boost_amount
+	copy.turn_start_movement_points = turn_start_movement_points
+	copy.movement_points_spent_this_turn = movement_points_spent_this_turn
+	copy.continuous_straight_tiles_this_turn = continuous_straight_tiles_this_turn
+	copy.continuous_straight_direction = continuous_straight_direction
 	copy.armor = armor
 	copy.level = level
 	copy.scrap = scrap

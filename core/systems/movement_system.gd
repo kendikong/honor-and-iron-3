@@ -370,8 +370,10 @@ static func execute_skill_walk(
 	)
 	if walk_steps < 0:
 		walk_steps = ability.range_tiles
-	var path: Array[Vector2i] = resolve_move_path(
-		board, unit, goal, waypoints, walk_steps, ability
+	var path: Array[Vector2i] = (
+		_l_shape_path(board, unit.position, goal, walk_steps, unit, ability)
+		if _has_modifier(effects, &"l_shape_move")
+		else resolve_move_path(board, unit, goal, waypoints, walk_steps, ability)
 	)
 	var from := unit.position
 	GridSystem.set_occupant(board, unit.position, -1)
@@ -430,6 +432,8 @@ static func execute_skill_walk(
 		if board.get_unit_at(restore_coord) == null:
 			GridSystem.set_occupant(board, restore_coord, restore_unit_id)
 	GridSystem.set_occupant(board, unit.position, unit.id)
+	unit.record_movement(path, route_mp_cost(board, path, unit), from)
+	_apply_movement_passives(board, unit, events)
 	if path.size() >= 1:
 		var prev_pos: Vector2i = from if path.size() == 1 else path[path.size() - 2]
 		unit.facing = PhysicsSystem.facing_from_vector(unit.position - prev_pos)
@@ -446,12 +450,105 @@ static func execute_skill_walk(
 	TerrainSystem.apply_landing(board, unit, events)
 
 
+static func _has_modifier(effects: Array, key: StringName) -> bool:
+	for effect: EffectData in effects:
+		if effect != null and effect.modifiers.has(key):
+			return true
+	return false
+
+
+static func _l_shape_path(
+	board: BoardState,
+	start: Vector2i,
+	goal: Vector2i,
+	budget: int,
+	unit: UnitState,
+	ability: AbilityData,
+) -> Array[Vector2i]:
+	if start == goal:
+		return []
+	var candidates: Array[Array] = []
+	var corner_a := Vector2i(goal.x, start.y)
+	var corner_b := Vector2i(start.x, goal.y)
+	candidates.append(_axis_path(start, corner_a, goal))
+	candidates.append(_axis_path(start, corner_b, goal))
+	for candidate: Array in candidates:
+		var typed_candidate: Array[Vector2i] = []
+		for step: Vector2i in candidate:
+			typed_candidate.append(step)
+		if (
+			not typed_candidate.is_empty()
+			and _is_legal_walk(board, start, typed_candidate, budget, 1, unit, ability)
+		):
+			return typed_candidate
+	return resolve_move_path(board, unit, goal, [], budget, ability, start)
+
+
+static func _axis_path(start: Vector2i, corner: Vector2i, goal: Vector2i) -> Array[Vector2i]:
+	var path: Array[Vector2i] = []
+	var current := start
+	while current.x != corner.x:
+		current.x += signi(corner.x - current.x)
+		path.append(current)
+	while current.y != goal.y:
+		current.y += signi(goal.y - current.y)
+		path.append(current)
+	return path
+
+
+static func _execute_free_reaction_move(
+	board: BoardState,
+	unit: UnitState,
+	action: TimelineAction,
+	events: Array[SimEvent],
+) -> void:
+	var pending_coord: Vector2i = unit.passive_flags.get(
+		"springboard_pending_coord",
+		Vector2i(-1, -1),
+	)
+	if (
+		pending_coord != action.target_coord
+		or not board.is_in_bounds(action.target_coord)
+		or board.get_unit_at(action.target_coord) != null
+		or not GridSystem.is_passable(board, action.target_coord)
+	):
+		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+			"actor": unit.id,
+			"reason": "invalid_free_reaction",
+		}))
+		return
+	var from := unit.position
+	GridSystem.set_occupant(board, from, -1)
+	unit.position = action.target_coord
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	unit.movement.max_points += 1
+	unit.movement.points_left += 1
+	if (
+		unit.is_passive_upgraded(&"springboard")
+		and not unit.passive_flags.get("springboard_ap_used", false)
+	):
+		unit.ability.points_left += 1
+		unit.passive_flags["springboard_ap_used"] = true
+	unit.passive_flags.erase("springboard_pending_coord")
+	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+		"actor": unit.id,
+		"from": from,
+		"to": unit.position,
+		"steps": 1,
+		"springboard": true,
+	}))
+	TerrainSystem.apply_landing(board, unit, events)
+
+
 static func execute_move(board: BoardState, action: TimelineAction, events: Array[SimEvent]) -> void:
 	var unit := board.get_unit_by_id(action.actor_id)
 	if unit == null or not unit.is_alive():
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 			"actor": action.actor_id, "reason": "no_actor",
 		}))
+		return
+	if action.is_free_reaction:
+		_execute_free_reaction_move(board, unit, action, events)
 		return
 		
 	if unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STAGGER):
@@ -514,6 +611,8 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		}))
 		if action.move_timing == GameEnums.MoveTiming.PRE_ACTION:
 			unit.pre_move_used_this_turn = true
+		_apply_canto_keyword(unit)
+		_resolve_zone_of_control(board, unit, events)
 		TerrainSystem.apply_landing(board, unit, events)
 		return
 
@@ -583,6 +682,8 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 	for step_coord: Vector2i in path:
 		mp_spent += step_mp_cost(board, step_coord, unit)
 	unit.movement.points_left -= mp_spent
+	unit.record_movement(path, mp_spent, from)
+	_apply_movement_passives(board, unit, events)
 	GridSystem.set_occupant(board, unit.position, unit.id)
 
 	# Face the direction of the final step (used for flanking/backstab), unless the
@@ -608,6 +709,103 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 	}))
 	if action.move_timing == GameEnums.MoveTiming.PRE_ACTION:
 		unit.pre_move_used_this_turn = true
+	_apply_canto_keyword(unit)
+	_resolve_zone_of_control(board, unit, events)
+
+
+static func _apply_canto_keyword(unit: UnitState) -> void:
+	if unit == null or not unit.has_passive(&"canto"):
+		return
+	for status: StatusData in unit.active_statuses:
+		if status.type == GameEnums.StatusType.CANTO:
+			return
+	unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.CANTO, 1, 0))
+
+
+static func _apply_movement_passives(
+	board: BoardState,
+	unit: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	for passive: PassiveData in unit.active_passives:
+		if (
+			passive != null
+			and passive.modifiers.has("max_move_root_immunity")
+			and unit.moved_max_movement_this_turn()
+		):
+			unit.passive_flags["root_immune_this_turn"] = true
+		if (
+			passive == null
+			or not passive.modifiers.has("moved_tiles_def_threshold")
+			or not unit.is_passive_upgraded(passive.id)
+			or not passive.modifiers.has("upgraded_shield")
+			or unit.passive_flags.get("frontline_shield_granted", false)
+			or unit.movement_points_spent_this_turn < int(
+				passive.modifiers["moved_tiles_def_threshold"]
+			)
+		):
+			continue
+		unit.passive_flags["frontline_shield_granted"] = true
+		CombatSystem.add_armor(
+			board,
+			unit,
+			int(passive.modifiers["upgraded_shield"]),
+			events,
+		)
+
+
+static func _resolve_zone_of_control(
+	board: BoardState,
+	moved_unit: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if moved_unit == null or moved_unit.team != GameEnums.Team.ENEMY:
+		return
+	for watcher: UnitState in board.units:
+		if (
+			watcher == null
+			or not watcher.is_alive()
+			or watcher.team == moved_unit.team
+			or watcher.passive_flags.get("zone_attack_used_this_round", false)
+			or not _has_passive_modifier(watcher, &"enemy_end_range_two_attack")
+			or GridSystem.manhattan(watcher.position, moved_unit.position) != 2
+		):
+			continue
+		var basic := _basic_attack(watcher)
+		if basic == null:
+			continue
+		watcher.passive_flags["zone_attack_used_this_round"] = true
+		if watcher.is_passive_upgraded(&"zone_of_control"):
+			watcher.passive_flags["next_attack_pierce"] = true
+		var ap_before := watcher.ability.points_left
+		var action_used_before := watcher.turn_action_used
+		var reaction := TimelineAction.make_ability(
+			watcher.id,
+			basic,
+			moved_unit.position,
+			moved_unit.id,
+		)
+		AbilitySystem.execute(board, reaction, events)
+		watcher.ability.points_left = ap_before
+		watcher.turn_action_used = action_used_before
+		break
+
+
+static func _has_passive_modifier(unit: UnitState, key: StringName) -> bool:
+	for passive: PassiveData in unit.active_passives:
+		if passive != null and passive.modifiers.has(key):
+			return true
+	return false
+
+
+static func _basic_attack(unit: UnitState) -> AbilityData:
+	if unit == null or unit.definition == null:
+		return null
+	for ability: AbilityData in unit.definition.abilities:
+		if DataLibrary.is_basic_ability(ability.id):
+			return ability
+	return null
+
 
 static func _is_contiguous_cardinal_route(start: Vector2i, route: Array[Vector2i]) -> bool:
 	if route.is_empty():

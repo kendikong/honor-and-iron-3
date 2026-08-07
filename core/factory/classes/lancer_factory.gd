@@ -432,10 +432,13 @@ static func _self_area_status(
 	module.legacy_modifiers["next_turn"] = true
 	var upgraded := _clone_modules([module])
 	upgraded[0].legacy_modifiers = upgrade_modifiers.duplicate(true)
-	return _ability(
+	var ability := _ability(
 		id, name, 1, [module], GameEnums.TargetingFlags.ALLY,
 		[AbilityModuleBridge.TAG_POSITIONING], description, upgraded,
 	)
+	ability.targeting_flags |= GameEnums.TargetingFlags.SELF
+	ability.sync_legacy_targeting()
+	return ability
 
 
 static func _flanking_maneuver() -> AbilityData:
@@ -461,7 +464,8 @@ static func _flanking_maneuver() -> AbilityData:
 
 static func _glorious_charge() -> AbilityData:
 	var module := _module(
-		GameEnums.EffectType.DASH, 4, 1, 4, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.EffectType.DASH, 4, 1, 4,
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
@@ -470,12 +474,19 @@ static func _glorious_charge() -> AbilityData:
 	var upgraded := _clone_modules([module])
 	upgraded[0].legacy_modifiers["paired_ally_charge"] = true
 	upgraded[0].legacy_modifiers["on_kill_both_ap"] = 1
-	return _ability(
+	var ability := _ability(
 		&"lancer_glorious_charge", "Glorious Charge", 1, [module],
-		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		"On Kill: both the Lancer and the allied charger gain +1 AP.", upgraded,
 	)
+	ability.targeting_flags = (
+		GameEnums.TargetingFlags.ALLY
+		| GameEnums.TargetingFlags.ENEMY
+		| GameEnums.TargetingFlags.TILE
+	)
+	ability.sync_legacy_targeting()
+	return ability
 
 
 static func _pole_vault() -> AbilityData:
@@ -484,7 +495,9 @@ static func _pole_vault() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.VAULT_OVER,
 	)
+	module.legacy_modifiers["vault_over"] = true
 	var upgraded := _clone_modules([module])
+	upgraded[0].legacy_modifiers["vault_over"] = true
 	upgraded[0].legacy_modifiers["landing_adjacent_push_if_push_used"] = 1
 	upgraded[0].legacy_modifiers["landing_adjacent_push_stagger"] = true
 	return _ability(
