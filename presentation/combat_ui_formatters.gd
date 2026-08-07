@@ -399,10 +399,13 @@ static func plan_action_origin_cell(
 	var origin: Vector2i = unit.position
 	if plan == null:
 		return origin
+	var action_in_plan: bool = plan.entries.has(action)
 	for act: TimelineAction in plan.entries:
 		if act == action:
 			break
 		if act.actor_id != action.actor_id:
+			continue
+		if not action_in_plan and act.move_timing >= action.move_timing:
 			continue
 		origin = _plan_step_end_cell(origin, act)
 	return origin
@@ -1226,9 +1229,9 @@ static func format_damage_telemetry(m: Dictionary, incoming: int, hp_dmg: int, a
 	if fort != 0:
 		formula += " - %s" % _damage_formula_color(c_fort, "FORT")
 	formula += "\n   (%s + %s) × %s = %s" % [
-		_damage_formula_color(c_base, _fmt_calc_num(float(base))),
-		_damage_formula_color(c_wpn, _fmt_calc_num(float(wpn))),
-		_damage_formula_color(c_stat, _fmt_calc_num(stat_mult)),
+		_fmt_calc_num(float(base)),
+		_fmt_calc_num(float(wpn)),
+		_fmt_calc_num(stat_mult),
 		_damage_formula_color(c_final, _fmt_calc_num(mult_raw)),
 	]
 	if vuln:

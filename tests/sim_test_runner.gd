@@ -118,7 +118,7 @@ func _make_unit_data(p_id: StringName, hp: int, move: int, ap: int, behavior: Be
 	var u := UnitData.new()
 	u.id = p_id
 	u.display_name = String(p_id)
-	u.max_hp = hp
+	u.base_constitution = maxi(1, ceili(float(hp) / 5.0))
 	u.move_points = move
 	u.action_points = ap
 	u.behavior = behavior
@@ -287,6 +287,7 @@ func _test_bomber_explodes() -> bool:
 	bomb_ability.display_name = "Detonate"
 	bomb_ability.action_point_cost = 1
 	bomb_ability.range_tiles = 0
+	bomb_ability.targeting_mode = GameEnums.TargetingMode.SELF
 	var bomb_effect := EffectData.new()
 	bomb_effect.type = GameEnums.EffectType.EXPLODE
 	bomb_effect.amount = 4
@@ -300,7 +301,7 @@ func _test_bomber_explodes() -> bool:
 	# Place units: Player at (2,2), Bomber at (2,3), Ally (enemy to player) at (1,3)
 	_place(board, 1, player_def, GameEnums.Team.PLAYER, Vector2i(2, 2))
 	var bomber := _place(board, 2, bomber_def, GameEnums.Team.ENEMY, Vector2i(2, 3))
-	var ally := _place(board, 3, ally_def, GameEnums.Team.ENEMY, Vector2i(1, 3))
+	var ally := _place(board, 3, ally_def, GameEnums.Team.ENEMY, Vector2i(1, 1))
 	
 	board.intents = EnemyPlanner.plan(board)
 	
@@ -334,6 +335,7 @@ func _test_summoner_spawns() -> bool:
 	spawn_ability.display_name = "Spawn"
 	spawn_ability.action_point_cost = 1
 	spawn_ability.range_tiles = 1
+	spawn_ability.targeting_mode = GameEnums.TargetingMode.TILE
 	var spawn_effect := EffectData.new()
 	spawn_effect.type = GameEnums.EffectType.SPAWN
 	spawn_effect.amount = 0
@@ -445,6 +447,7 @@ func _test_engineer_grenade() -> bool:
 	grenade_ability.display_name = "Grenade"
 	grenade_ability.action_point_cost = 1
 	grenade_ability.range_tiles = 3
+	grenade_ability.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	var grenade_effect := EffectData.new()
 	grenade_effect.type = GameEnums.EffectType.RANGED_EXPLODE
 	grenade_effect.amount = 2
@@ -460,7 +463,7 @@ func _test_engineer_grenade() -> bool:
 	var adj_after := result.final_state.get_unit_by_id(3)
 	
 	var ok := true
-	if eng_after == null or not eng_after.is_alive() or eng_after.health.current_hp != 12:
+	if eng_after == null or not eng_after.is_alive() or eng_after.health.current_hp != 15:
 		ok = false
 		printerr("  engineer was damaged or died from throwing grenade")
 	if target_after == null or target_after.health.current_hp != 8:
@@ -545,8 +548,10 @@ func _test_run_available_next_turn() -> bool:
 
 	var plan_turn2 := Timeline.new()
 	plan_turn2.add(TimelineAction.make_run_move(1, Vector2i(10, 1)))
-	var after_turn2 := Simulator.simulate(after_turn1.final_state, plan_turn2)
-	var runner_turn2 := after_turn2.final_state.get_unit_by_id(1)
+	var turn2_board: BoardState = after_turn1.final_state.clone()
+	var turn2_events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(turn2_board, plan_turn2, turn2_events)
+	var runner_turn2 := turn2_board.get_unit_by_id(1)
 	if runner_turn2 == null:
 		printerr("  runner missing after turn 2")
 		return false

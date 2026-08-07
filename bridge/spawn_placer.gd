@@ -389,6 +389,21 @@ static func _pick_band_spawns(
 			scatter,
 		)
 		if fallback.x < 0:
+			fallback = _find_band_spawn(
+				grid,
+				prefer,
+				x_min,
+				x_max_exclusive,
+				y_min,
+				y_max,
+				used,
+				trees,
+				overlay,
+				settings,
+				scatter,
+				false,
+			)
+		if fallback.x < 0:
 			break
 		picked.append(fallback)
 		used[fallback] = true
@@ -475,6 +490,7 @@ static func _find_band_spawn(
 	overlay: TileMapLayer,
 	settings: EffectsSettings,
 	scatter: TileMapLayer,
+	enforce_gap: bool = true,
 ) -> Vector2i:
 	var max_radius: int = maxi(grid.width, grid.height)
 	for radius: int in range(0, max_radius + 1):
@@ -493,7 +509,7 @@ static func _find_band_spawn(
 					continue
 				if TreeGameplay.spawn_cell_occluded_by_tree(cell, trees, settings):
 					continue
-				if not _has_spawn_gap(cell, used.keys()):
+				if enforce_gap and not _has_spawn_gap(cell, used.keys()):
 					continue
 				return cell
 	return Vector2i(-1, -1)

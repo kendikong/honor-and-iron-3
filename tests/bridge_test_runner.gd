@@ -276,13 +276,16 @@ static func _test_combat_intent_state(failures: Array[String]) -> void:
 	board.intents = [intent]
 	state.set_board(board)
 	state.set_selection(1)
+	state.flush_recompute()
 	if not state.intent_units.has(2):
 		failures.append("CombatIntentState: enemy targeting selected player not visible")
 	state.set_selection(-1)
 	state.set_timeline_hover(2)
+	state.flush_recompute()
 	if not state.intent_units.has(2):
 		failures.append("CombatIntentState: timeline hover should show enemy intent")
 	state.clear_timeline_hover()
+	state.flush_recompute()
 	if state.intent_units.has(2):
 		failures.append("CombatIntentState: clear timeline hover should remove highlight when nothing else selected")
 
@@ -318,14 +321,23 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var swap_director := CombatDirector.new()
 	swap_director.base_board = swap_board
 	swap_director.board = swap_board
+	var swap_execution_board: BoardState = swap_board.clone()
 	var swap_plan := Timeline.new()
 	var swap_ab := AbilityData.new()
 	swap_ab.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
 	swap_ab.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	swap_plan.add(TimelineAction.make_ability(1, swap_ab, ally.position, 2, GameEnums.MoveTiming.PRE_ACTION))
-	swap_plan.add(TimelineAction.make_move(1, Vector2i(3, 5), -1, [Vector2i(3, 4)], GameEnums.MoveTiming.PRE_ACTION))
+	swap_plan.add(
+		TimelineAction.make_move(
+			1,
+			Vector2i(3, 5),
+			-1,
+			[Vector2i(3, 4), Vector2i(3, 5)],
+			GameEnums.MoveTiming.PRE_ACTION,
+		)
+	)
 	var swap_events: Array[SimEvent] = []
-	Simulator.simulate_player_turn(swap_board, swap_plan, swap_events)
+	Simulator.simulate_player_turn(swap_execution_board, swap_plan, swap_events)
 	var swap_paths: Dictionary = {}
 	var swap_splits: Dictionary = {}
 	var swap_pushes: Dictionary = {}
@@ -374,7 +386,12 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	director_stub.board = board_stub
 	director_stub.base_board = board_stub
 	director_stub.plan_action = Timeline.new()
-	var trample := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1)
+	var trample_ability := AbilityData.new()
+	var trample_move := EffectData.new()
+	trample_move.type = GameEnums.EffectType.MOVE
+	trample_move.amount = 1
+	trample_ability.effects = [trample_move]
+	var trample := TimelineAction.make_ability(1, trample_ability, Vector2i(2, 0), -1)
 	director_stub.plan_action.entries.append(trample)
 	preview.preview_post_splits[1] = 3
 	var post_leg: Array = CombatPlanningPreview.move_route_leg_from_preview(
@@ -394,7 +411,9 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		failures.append("CombatPlanningPreview: post move leg must ignore stale post_split vs action end")
 	var intent_preview := CombatPlanningPreview.new()
 	intent_preview.preview_paths[1] = l_path.duplicate()
-	var trample_action := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1)
+	var trample_action := TimelineAction.make_ability(
+		1, trample_ability, Vector2i(2, 0), -1,
+	)
 	intent_preview.ensure_movement_intent_from_actions([trample_action], board_stub)
 	var kept: Array = intent_preview.preview_paths.get(1, [])
 	if kept.size() != 4:
@@ -484,7 +503,7 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	)
 	director_stub.plan_action = Timeline.new()
 	director_stub.plan_action.entries.append(
-		TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1),
+		TimelineAction.make_ability(1, trample_ability, Vector2i(2, 0), -1),
 	)
 	var idle_origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(
 		director_stub, move_only, 1,
@@ -514,7 +533,9 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 		TimelineAction.make_move(1, Vector2i(1, 0), -1, [], GameEnums.MoveTiming.PRE_ACTION),
 	)
 	director_stub.plan_action = Timeline.new()
-	var trample_after_pre := TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1)
+	var trample_after_pre := TimelineAction.make_ability(
+		1, trample_ability, Vector2i(2, 0), -1,
+	)
 	director_stub.plan_action.entries.append(trample_after_pre)
 	preview.preview_paths[1] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0)]
 	var committed_pre: Array = CombatPlanningPreview.committed_move_route_leg(
@@ -595,10 +616,11 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	board_stub.units = [plan_unit]
 	director_stub.projected_state = board_stub
 	director_stub.plan_pre_move = Timeline.new()
-	director_stub.plan_action = Timeline.new()
-	director_stub.plan_action.entries.append(
-		TimelineAction.make_ability(1, AbilityData.new(), Vector2i(2, 0), -1),
+	director_stub.plan_pre_move.entries.append(
+		TimelineAction.make_move(1, Vector2i(1, 0), -1, [], GameEnums.MoveTiming.PRE_ACTION),
 	)
+	director_stub.plan_action = Timeline.new()
+	director_stub.plan_action.entries.append(trample_after_pre)
 	director_stub.plan_post_move = Timeline.new()
 	director_stub.plan_post_move.entries.append(
 		TimelineAction.make_move(
@@ -643,7 +665,7 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 	unit.team = GameEnums.Team.PLAYER
 	unit.position = Vector2i(3, 4)
 	unit.facing = GameEnums.Facing.WEST
-	unit.movement.points_max = 5
+	unit.movement.max_points = 5
 	unit.movement.points_left = 5
 	unit.turn_action_used = true
 	board.units = [unit]
@@ -705,7 +727,8 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 			"CombatPlanningPreview: last planned step should be trample west after pre-move",
 		)
 	var anim_route: Array = [
-		Vector2i(0, 0), Vector2i(0, 1), Vector2i(0, 2), Vector2i(0, 3), Vector2i(0, 5),
+		Vector2i(0, 0), Vector2i(0, 1), Vector2i(0, 2),
+		Vector2i(0, 3), Vector2i(0, 4), Vector2i(0, 5),
 	]
 	var anim_preview := CombatPlanningPreview.new()
 	anim_preview.preview_paths[1] = anim_route
@@ -716,8 +739,9 @@ static func _test_move_facing_from_path(failures: Array[String]) -> void:
 		failures.append(
 			"CombatPlanningPreview: planning_animation_cells must use full route for catch-up",
 		)
-	var path_board := BoardState.new()
-	path_board.grid_size = Vector2i(12, 12)
+	var path_board: BoardState = BoardFactory.build_empty(
+		Vector2i(12, 12), DataLibrary.get_terrain(&"plain"),
+	)
 	var walker := UnitState.new()
 	walker.id = 1
 	walker.team = GameEnums.Team.PLAYER

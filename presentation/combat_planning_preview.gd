@@ -562,17 +562,18 @@ static func build_preview_paths(
 	pushes.clear()
 	post_splits.clear()
 	action_splits.clear()
-	var start_board: BoardState = director.base_board if director.base_board != null else director.board
-	if start_board == null:
-		return
+	var start_board: BoardState = null
+	if director != null:
+		start_board = director.base_board if director.base_board != null else director.board
 	var current_positions: Dictionary = {}
 	var post_move_marked: Dictionary = {}
-	for unit: UnitState in start_board.units:
-		paths[unit.id] = [unit.position]
-		splits[unit.id] = 1
-		post_splits[unit.id] = 1
-		pushes[unit.id] = []
-		current_positions[unit.id] = unit.position
+	if start_board != null:
+		for unit: UnitState in start_board.units:
+			paths[unit.id] = [unit.position]
+			splits[unit.id] = 1
+			post_splits[unit.id] = 1
+			pushes[unit.id] = []
+			current_positions[unit.id] = unit.position
 	var enemy_phase: bool = false
 	for event: Variant in events:
 		if not event is SimEvent:
@@ -587,6 +588,11 @@ static func build_preview_paths(
 					action_splits[id] = maxi(0, (paths[id] as Array).size() - 1)
 			GameEnums.SimEventType.UNIT_MOVED:
 				var id: int = int(d.get("actor", -1))
+				if not paths.has(id):
+					paths[id] = []
+					splits[id] = 0
+					post_splits[id] = 0
+					pushes[id] = []
 				if paths.has(id):
 					var path: Array = d.get("path", [])
 					var move_timing: int = int(
@@ -609,7 +615,9 @@ static func build_preview_paths(
 				var pid: int = int(d.get("unit", -1))
 				var to_pos: Vector2i = d.get("to", Vector2i.ZERO)
 				if pushes.has(pid):
-					var from_unit := start_board.get_unit_by_id(pid)
+					var from_unit: UnitState = (
+						start_board.get_unit_by_id(pid) if start_board != null else null
+					)
 					var from_pos: Vector2i = current_positions.get(
 						pid,
 						from_unit.position if from_unit != null else to_pos,
@@ -760,6 +768,12 @@ static func pending_move_route_leg(
 ) -> Array:
 	if preview == null or director == null:
 		return []
+	if (
+		director.base_board == null
+		and director.board == null
+		and director.projected_state == null
+	):
+		return preview.preview_paths.get(unit_id, []).duplicate()
 	var timing: int = director.get_planning_move_timing(unit_id)
 	if timing < 0:
 		return []
@@ -832,15 +846,38 @@ static func committed_move_already_realized(
 		director, board, unit_id, timing, move_action,
 	)
 	## Intentional loop / same-tile-end — origin equals target, path still matters.
-	if origin == move_action.target_coord:
-		return false
 	var target: Vector2i = move_action.target_coord
+	if (
+		_route_leg.size() >= 3
+		and _route_leg[0] is Vector2i
+		and _route_leg[_route_leg.size() - 1] is Vector2i
+		and (_route_leg[0] as Vector2i) == target
+		and (_route_leg[_route_leg.size() - 1] as Vector2i) == target
+	):
+		return false
+	if origin == target:
+		if (
+			_route_leg.size() < 2
+			or not _route_leg[0] is Vector2i
+			or (_route_leg[0] as Vector2i) == target
+		):
+			return false
+		var loop_live_unit: UnitState = board.get_unit_by_id(unit_id) if board != null else null
+		return loop_live_unit != null and loop_live_unit.position == target
 	if visual_cell != INVALID_VISUAL_CELL:
 		if director.is_planning_move_instant(unit_id):
 			return true
 		return visual_cell == target
 	if board != null:
 		var live_unit: UnitState = board.get_unit_by_id(unit_id)
+		if (
+			live_unit != null
+			and not _route_leg.is_empty()
+			and _route_leg[0] is Vector2i
+			and live_unit.position == target
+			and (_route_leg[0] as Vector2i) != target
+		):
+			return true
 		if live_unit != null and _committed_pre_move_satisfied(origin, live_unit.position, target):
 			return true
 	return false

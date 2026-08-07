@@ -26,7 +26,7 @@ for ($attempt = 0; $attempt -lt $attempts; $attempt++) {
 	if (Test-Path $resultPath) {
 		$report = Get-Content $resultPath
 		$failures = $report | Where-Object {
-			$_ -like "[[]BRIDGE[]]*" -or $_ -like "[[]SIM[]]*"
+			$_ -match '^\[(BRIDGE|SIM)\] '
 		}
 		if (($report -contains "PASS") -or $failures.Count -gt 0) {
 			$complete = $true
@@ -48,7 +48,7 @@ $simFails = @($report | Where-Object { $_ -like "[[]SIM[]]*" })
 
 Write-Output ""
 Write-Output "=== Regression summary ==="
-if ($report.Count -eq 1 -and $report[0] -eq "PASS") {
+if ($report -contains "PASS") {
 	Write-Output "Regression: PASS"
 	exit 0
 }

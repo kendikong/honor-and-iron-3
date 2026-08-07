@@ -1109,7 +1109,13 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		if target == actor:
 			if effect.modifiers.get("exclude_caster", false):
 				return
-			if not friendly and not effect.type in [GameEnums.EffectType.ADD_STATUS_SELF, GameEnums.EffectType.DAMAGE_SELF, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
+			if not friendly and not effect.type in [
+				GameEnums.EffectType.ADD_STATUS_SELF,
+				GameEnums.EffectType.DAMAGE_SELF,
+				GameEnums.EffectType.EXPLODE,
+				GameEnums.EffectType.TELEPORT_CASTER,
+				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
+			]:
 				return
 		elif actor != null:
 			if hostile and target.team == actor.team and not effect.modifiers.has("allow_friendly_target"):

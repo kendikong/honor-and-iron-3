@@ -182,6 +182,12 @@ func find_free_cell_near(board: BoardState, preferred: Vector2i) -> Vector2i:
 
 
 func try_add_dummy_at(board: BoardState, coord: Vector2i) -> Dictionary:
+	if coord == DEFAULT_PLAYER_CELL:
+		return {
+			"ok": false,
+			"coord": coord,
+			"reason": "Primary player slot is occupied",
+		}
 	var target: Vector2i = find_free_cell_near(board, coord)
 	if target.x < 0:
 		return {"ok": false, "coord": coord, "reason": "No free cell for training dummy"}

@@ -20,7 +20,7 @@ static func run_all() -> Dictionary:
 static func _test_build_board_unit_counts(failures: Array[String]) -> void:
 	var session := TestBattleSession.new()
 	var board: BoardState = TestBattleEncounterBuilder.build_board(session)
-	if board.width != TestBattleSession.MAP_SIZE.x or board.height != TestBattleSession.MAP_SIZE.y:
+	if board.grid_size != TestBattleSession.MAP_SIZE:
 		failures.append("Training board size mismatch")
 	var players: int = 0
 	var enemies: int = 0

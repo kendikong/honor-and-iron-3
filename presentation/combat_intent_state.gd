@@ -97,6 +97,12 @@ func recompute() -> void:
 	call_deferred("_flush_recompute")
 
 
+## Flush a pending recompute for synchronous callers such as headless checks.
+func flush_recompute() -> void:
+	_recompute_pending = false
+	_recompute_now()
+
+
 func _flush_recompute() -> void:
 	_recompute_pending = false
 	_recompute_now()

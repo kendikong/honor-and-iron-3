@@ -500,7 +500,11 @@ func _clear_unit_post_moves_from_plan(unit_id: int) -> void:
 func _get_planning_state(_target_timing: int = 1) -> BoardState:
 	if projected_state != null:
 		return projected_state.clone()
-	return base_board.clone()
+	if base_board != null:
+		return base_board.clone()
+	if board != null:
+		return board.clone()
+	return null
 
 
 func get_planning_move_timing(unit_id: int) -> int:
@@ -510,7 +514,14 @@ func get_planning_move_timing(unit_id: int) -> int:
 func _get_move_timing(unit_id: int) -> int:
 	if unit_has_wait_planned(unit_id):
 		return -1
-	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else board.get_unit_by_id(unit_id)
+	var planning_board: BoardState = (
+		projected_state
+		if projected_state != null
+		else board if board != null else base_board
+	)
+	if planning_board == null:
+		return -1
+	var p_unit := planning_board.get_unit_by_id(unit_id)
 	if p_unit == null:
 		return -1
 	if p_unit.has_used_turn_action():
@@ -2902,7 +2913,10 @@ func _timeline_actions_same_commit(a: TimelineAction, b: TimelineAction) -> bool
 
 
 func _build_live_planning_board() -> BoardState:
-	var live: BoardState = base_board.clone()
+	var source: BoardState = base_board if base_board != null else board
+	if source == null:
+		return null
+	var live: BoardState = source.clone()
 	for action: TimelineAction in plan_pre_move.entries:
 		if action.awaiting_target:
 			continue
