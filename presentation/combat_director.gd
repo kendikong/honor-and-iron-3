@@ -376,7 +376,7 @@ func _clear_unit_class_actions_from_plan(unit_id: int) -> void:
 func find_awaiting_action(unit_id: int) -> TimelineAction:
 	if unit_id < 0:
 		return null
-	for action: TimelineAction in plan_action.entries:
+	for action: TimelineAction in get_player_plan().entries:
 		if action.actor_id != unit_id or not action.awaiting_target:
 			continue
 		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
@@ -409,16 +409,17 @@ func set_awaiting_action(unit_id: int, ability: AbilityData) -> void:
 func clear_awaiting_action(unit_id: int) -> void:
 	if unit_id < 0:
 		return
-	var kept: Array[TimelineAction] = []
 	var removed: bool = false
-	for action: TimelineAction in plan_action.entries:
-		if action.actor_id == unit_id and action.awaiting_target:
-			removed = true
-			continue
-		kept.append(action)
+	for plan: Timeline in _all_plans():
+		var kept: Array[TimelineAction] = []
+		for action: TimelineAction in plan.entries:
+			if action.actor_id == unit_id and action.awaiting_target:
+				removed = true
+				continue
+			kept.append(action)
+		plan.entries = kept
 	if not removed:
 		return
-	plan_action.entries = kept
 	plan_affected_unit_ids = [unit_id]
 	_refresh_plan()
 
@@ -433,7 +434,7 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 		var action: TimelineAction = raw as TimelineAction
 		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
 			continue
-		if awaiting.ability != action.ability:
+		if awaiting.ability.id != action.ability.id:
 			return false
 		awaiting.target_coord = action.target_coord
 		awaiting.target_unit_id = action.target_unit_id
@@ -1075,10 +1076,14 @@ func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 				strip_act = true
 	var combined := Timeline.new()
 	for a: TimelineAction in plan_pre_move.entries:
+		if _preview_replaces_awaiting(unit_id, a, new_actions):
+			continue
 		if a.actor_id == unit_id and strip_pre and a.type == GameEnums.ActionType.MOVE:
 			continue
 		combined.add(a)
 	for a: TimelineAction in plan_action.entries:
+		if _preview_replaces_awaiting(unit_id, a, new_actions):
+			continue
 		if a.actor_id == unit_id and strip_act:
 			continue
 		combined.add(a)
@@ -1087,6 +1092,8 @@ func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 	for uid_var: Variant in wait_ids:
 		combined.add(_make_wait_action(int(uid_var)))
 	for a: TimelineAction in plan_post_move.entries:
+		if _preview_replaces_awaiting(unit_id, a, new_actions):
+			continue
 		if a.actor_id == unit_id and strip_post and a.type == GameEnums.ActionType.MOVE:
 			continue
 		combined.add(a)
@@ -1096,6 +1103,28 @@ func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 	## Intent truth: preview must already omit ally plans that commit would cancel.
 	_preview_strip_ally_cancels_for_new_actions(combined, new_actions)
 	return combined
+
+
+func _preview_replaces_awaiting(
+	unit_id: int,
+	existing: TimelineAction,
+	new_actions: Array,
+) -> bool:
+	if (
+		existing == null
+		or existing.actor_id != unit_id
+		or not existing.awaiting_target
+		or existing.ability == null
+	):
+		return false
+	for raw: Variant in new_actions:
+		if (
+			raw is TimelineAction
+			and (raw as TimelineAction).ability != null
+			and (raw as TimelineAction).ability.id == existing.ability.id
+		):
+			return true
+	return false
 
 
 func _preview_strip_ally_cancels_for_new_actions(combined: Timeline, new_actions: Array) -> void:

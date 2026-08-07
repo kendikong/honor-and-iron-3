@@ -2441,9 +2441,14 @@ func _awaiting_flow_selected(actor: UnitState, ability: AbilityData) -> bool:
 
 ## True while an armed awaiting skill is choosing a movement/dash tile endpoint.
 func _is_awaiting_movement_endpoint(actor: UnitState, ability: AbilityData) -> bool:
-	if not awaiting_targeting_active():
+	var armed_action := (
+		_director.find_awaiting_action(actor.id)
+		if _director != null and actor != null
+		else null
+	)
+	if not awaiting_targeting_active() and armed_action == null:
 		return false
-	if not _awaiting_flow_selected(actor, ability):
+	if not _awaiting_flow_selected(actor, ability) and armed_action == null:
 		return false
 	return (
 		AbilitySystem.planning_awaiting_phase(ability)
@@ -3399,7 +3404,12 @@ func _build_commit_slots_at_cell(
 			unit_id, GameEnums.MoveTiming.POST_ACTION,
 		)
 	)
-	if selected_phase_action_exhausted(unit_id) and not can_offer_springboard:
+	var has_awaiting_action := _director.find_awaiting_action(unit_id) != null
+	if (
+		selected_phase_action_exhausted(unit_id)
+		and not can_offer_springboard
+		and not has_awaiting_action
+	):
 		slots["invalid"] = "Action already exhausted this phase."
 		return slots
 	var move_timing: int = _move_slot_timing_for_commit(unit_id, actor, cell)
@@ -3412,12 +3422,12 @@ func _build_commit_slots_at_cell(
 	):
 		return slots
 
-	if cell == actor.position:
+	if cell == actor.position and not has_awaiting_action:
 		return _build_self_tile_commit_slots(
 			slots, actor, unit_id, ability_index, ability, face_dir,
 		)
 
-	if _planning_post_move_only(actor, unit_id, cell):
+	if _planning_post_move_only(actor, unit_id, cell) and not has_awaiting_action:
 		if (
 			_basic_move_allowed()
 			and _unit_move_slot_open(unit_id, cell)
@@ -3472,13 +3482,22 @@ func _build_commit_slots_at_cell(
 				_proj(), actor, cell, effective_waypoints, ability,
 			)
 
-		if _awaiting_flow_selected(actor, ability):
-			if awaiting_targeting_active():
+		if (
+			has_awaiting_action
+			or (awaiting_targeting_active() and _awaiting_flow_selected(actor, ability))
+		):
+			if awaiting_targeting_active() or has_awaiting_action:
+				var awaiting_origin := _proj_origin(actor)
+				if _director.base_board != null:
+					var base_actor := _director.base_board.get_unit_by_id(actor.id)
+					if base_actor != null:
+						awaiting_origin = base_actor.position
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
-					_proj_origin(actor), cell, ability,
+					awaiting_origin, cell, ability,
 				):
+					var occupant_id := hover_unit.id if hover_unit != null else -1
 					var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
-						ability, -1,
+						ability, occupant_id,
 					)
 					if AbilitySystem.ability_has_modifier(
 						ability, &"paired_ally_charge", actor
@@ -3500,6 +3519,24 @@ func _build_commit_slots_at_cell(
 				slots["invalid"] = "Invalid target or distance for this ability."
 				return slots
 		else:
+			if (
+				ability.has_targeting(GameEnums.TargetingFlags.TILE)
+				and AbilitySystem.ability_has_movement_effect(ability)
+				and AbilitySystem.planning_is_valid_awaiting_endpoint(
+					_proj_origin(actor), cell, ability,
+				)
+			):
+				slots["action"].append(
+					TimelineAction.make_ability(
+						unit_id,
+						ability,
+						cell,
+						-1,
+						GameEnums.MoveTiming.PRE_ACTION,
+						effective_waypoints,
+					),
+				)
+				return slots
 			if AbilitySystem.can_target_self(actor, ability):
 				if AbilitySystem.is_run_ability(ability):
 					if _drop_allows_move_tile(cell, legal_move_tiles, actor):
@@ -3982,7 +4019,10 @@ func _final_commit_slots_for_click_at_cell(
 		return _empty_commit_slots()
 	if not _director.board.is_in_bounds(cell):
 		return {"invalid": "Out of bounds."}
-	if selected_phase_action_exhausted(unit_id):
+	if (
+		selected_phase_action_exhausted(unit_id)
+		and _director.find_awaiting_action(unit_id) == null
+	):
 		return _empty_commit_slots()
 	var unit_at: UnitState = _unit_at_input_cell(cell)
 	if unit_at != null and not unit_at.is_enemy() and unit_at.is_alive():
@@ -4047,7 +4087,10 @@ func _final_commit_slots_for_drop_at_cell(
 		return _empty_commit_slots()
 	if not _director.board.is_in_bounds(cell):
 		return _empty_commit_slots()
-	if selected_phase_action_exhausted(unit_id):
+	if (
+		selected_phase_action_exhausted(unit_id)
+		and _director.find_awaiting_action(unit_id) == null
+	):
 		return _empty_commit_slots()
 	var dropped_on: UnitState = _unit_at_input_cell(cell)
 	if dropped_on != null and dropped_on.id != unit_id:

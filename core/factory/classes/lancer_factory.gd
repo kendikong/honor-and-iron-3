@@ -426,8 +426,9 @@ static func _self_area_status(
 	upgrade_modifiers: Dictionary,
 ) -> AbilityData:
 	var module := _status_module(
-		GameEnums.EffectType.ADD_STATUS, status_type, 1, amount, 0, radius,
-		GameEnums.TargetingFlags.ALLY, GameEnums.TargetShape.AOE_CROSS, radius,
+		GameEnums.EffectType.ADD_STATUS, status_type, 1, amount, 0, 0,
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetShape.AOE_CROSS, radius,
 	)
 	module.legacy_modifiers["next_turn"] = true
 	var upgraded := _clone_modules([module])
@@ -448,6 +449,7 @@ static func _flanking_maneuver() -> AbilityData:
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	module.legacy_modifiers["l_shape_move"] = true
+	module.targeting_flags = GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY
 	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
 	strike.modifiers["damage_multiplier"] = 2
 	strike.modifiers["side_attack_only"] = true

@@ -224,7 +224,6 @@ static func _prefer_authored_targeting_mode(ability: AbilityData) -> void:
 	## source of truth while mode is a legacy mirror — do not clobber those.
 	if (
 		ability.targeting_mode == GameEnums.TargetingMode.SELF
-		or ability.can_target_self
 	):
 		ability.targeting_flags = GameEnums.TargetingFlags.SELF
 		ability.targeting_mode = GameEnums.TargetingMode.SELF
