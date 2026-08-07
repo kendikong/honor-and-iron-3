@@ -319,6 +319,7 @@ func reset_for_turn() -> void:
 	passive_flags.erase("zone_attack_used_this_round")
 	passive_flags.erase("springboard_pending_coord")
 	passive_flags.erase("springboard_ap_used")
+	passive_flags.erase("line_breaker_passed")
 	for key: Variant in passive_flags.keys():
 		if String(key).begins_with("ability_used_once:"):
 			passive_flags.erase(key)

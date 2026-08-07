@@ -16,6 +16,9 @@ The Tier 1 suite checks:
 - Exactly 14 authored abilities (Push plus 13 active skills) and 15 passives.
 - Every ability has non-empty base and `[+]` `AbilityModule` profiles.
 - The module bridge compiles each profile to the expected primary effect.
+- Shared keyword geometry is checked directly: `AOE X` is a cardinal cross,
+  `AOE XxX` uses the square footprint, and `ARC` is a three-tile perpendicular
+  sweep for both horizontal and vertical aim.
 - Polearm Mastery gives every extended-reach Lancer attack a 70% Range 1
   damage multiplier while preserving full damage at Range 2.
 - Every passive is registered with promotion ownership in data, not an
@@ -29,6 +32,9 @@ The Tier 1 suite checks:
   validation.
 - The passive runtime matrix exercises all 15 passives through the shared
   movement, combat, physics, terrain, and reaction paths.
+- Canto preserves remaining movement after an ability instead of refilling it.
+- Flanking Maneuver requires a legal L-shaped route and only doubles side attacks.
+- Turn-limited Line Breaker state is cleared at turn reset.
 
 The registry contains one row for each Bible factory id:
 

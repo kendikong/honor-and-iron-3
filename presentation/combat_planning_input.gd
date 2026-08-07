@@ -3314,6 +3314,31 @@ func _append_move_to_commit_slots(
 	slots[col].append(move)
 
 
+func _append_springboard_reaction_to_commit_slots(
+	slots: Dictionary,
+	unit_id: int,
+	actor: UnitState,
+	cell: Vector2i,
+	ability_index: int,
+) -> bool:
+	if (
+		ability_index >= 0
+		or actor == null
+		or _director == null
+		or _director.unit_has_move_planned_at_timing(
+			unit_id, GameEnums.MoveTiming.POST_ACTION,
+		)
+	):
+		return false
+	var pending_variant: Variant = actor.passive_flags.get("springboard_pending_coord", null)
+	if not pending_variant is Vector2i or pending_variant != cell:
+		return false
+	slots["post"].append(
+		TimelineAction.make_free_reaction_move(unit_id, cell),
+	)
+	return true
+
+
 func _maybe_append_premove_action_pair(
 	slots: Dictionary,
 	unit_id: int,
@@ -3367,13 +3392,25 @@ func _build_commit_slots_at_cell(
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null or actor.is_enemy() or not actor.is_alive():
 		return slots
-	if selected_phase_action_exhausted(unit_id):
+	var can_offer_springboard := (
+		_director.selected_ability_index < 0
+		and actor.passive_flags.has("springboard_pending_coord")
+		and not _director.unit_has_move_planned_at_timing(
+			unit_id, GameEnums.MoveTiming.POST_ACTION,
+		)
+	)
+	if selected_phase_action_exhausted(unit_id) and not can_offer_springboard:
 		slots["invalid"] = "Action already exhausted this phase."
 		return slots
 	var move_timing: int = _move_slot_timing_for_commit(unit_id, actor, cell)
 	var ability_index: int = _director.selected_ability_index
 	var ability: AbilityData = _selected_ability_data(actor)
 	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
+
+	if _append_springboard_reaction_to_commit_slots(
+		slots, unit_id, actor, cell, ability_index,
+	):
+		return slots
 
 	if cell == actor.position:
 		return _build_self_tile_commit_slots(
@@ -3396,7 +3433,15 @@ func _build_commit_slots_at_cell(
 	## do not divert into enemy/ally unit-target commit slots.
 	var awaiting_tile_endpoint: bool = _is_awaiting_movement_endpoint(actor, ability)
 
-	if hover_unit != null and hover_unit.is_enemy() and not awaiting_tile_endpoint:
+	var targeted_move_attack: bool = (
+		ability != null
+		and AbilitySystem.ability_has_modifier(
+			ability, &"target_after_move_adjacent", actor,
+		)
+	)
+	if hover_unit != null and hover_unit.is_enemy() and (
+		not awaiting_tile_endpoint or targeted_move_attack
+	):
 		return _build_enemy_commit_slots(
 			slots, actor, unit_id, cell, hover_unit, ability, ability_index,
 			legal_move_tiles, waypoints, preferred_approach,
@@ -3432,11 +3477,22 @@ func _build_commit_slots_at_cell(
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
 					_proj_origin(actor), cell, ability,
 				):
+					var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
+						ability, -1,
+					)
+					if AbilitySystem.ability_has_modifier(
+						ability, &"paired_ally_charge", actor
+					):
+						var awaiting_charge := _director.find_awaiting_action(unit_id)
+						if awaiting_charge == null or awaiting_charge.target_unit_id < 0:
+							slots["invalid"] = "Select an allied charger first."
+							return slots
+						committed_target_id = awaiting_charge.target_unit_id
 					slots["action"].append(TimelineAction.make_ability(
 						unit_id,
 						ability,
 						cell,
-						AbilitySystem.planning_commit_target_unit_id(ability, -1),
+						committed_target_id,
 						GameEnums.MoveTiming.PRE_ACTION,
 						effective_waypoints,
 					))
@@ -3576,7 +3632,14 @@ func _build_ally_commit_slots(
 		slots["invalid"] = "Invalid target for this skill."
 		return slots
 	if AbilitySystem.ability_has_modifier(ability, &"paired_ally_charge", actor):
-		slots["invalid"] = "Select an enemy for the paired charge."
+		if _director.find_awaiting_action(unit_id) != null:
+			slots["invalid"] = "Select an enemy for the paired charge."
+			return slots
+		var awaiting_charge := TimelineAction.make_ability_awaiting(
+			unit_id, ability, actor.position,
+		)
+		awaiting_charge.target_unit_id = ally.id
+		slots["action"].append(awaiting_charge)
 		return slots
 	if not ability.is_movement_kind():
 		if _can_target_unit_with_selected_ability(actor, ally):
@@ -3677,18 +3740,55 @@ func _build_enemy_commit_slots(
 	if use_skill and not AbilitySystem.target_passes_mode(actor, ability, enemy):
 		slots["invalid"] = "Invalid target for this skill."
 		return slots
-	## Safety: movement-endpoint awaiting should be handled as a TILE above; if we still
-	## land here, commit via planning_commit_target_unit_id (TILE → -1).
+	if use_skill and AbilitySystem.ability_has_modifier(
+		ability, &"target_after_move_adjacent", actor,
+	):
+		var endpoint := MovementSystem.l_shape_attack_endpoint(
+			_proj(), actor, enemy, ability,
+		)
+		if endpoint.x < 0:
+			slots["invalid"] = "No legal L-shaped side-attack endpoint."
+			return slots
+		var l_path := MovementSystem._l_shape_path(
+			_proj(),
+			_proj_origin(actor),
+			endpoint,
+			AbilitySystem.effect_amount(ability, GameEnums.EffectType.MOVE, actor),
+			actor,
+			ability,
+		)
+		slots["action"].append(
+			TimelineAction.make_ability(
+				unit_id,
+				ability,
+				endpoint,
+				enemy.id,
+				GameEnums.MoveTiming.PRE_ACTION,
+				l_path,
+			),
+		)
+		return slots
+	## Paired charges preserve the selected ally in the awaiting action while the
+	## second click supplies the enemy destination.
 	if use_skill and _is_awaiting_movement_endpoint(actor, ability):
 		if AbilitySystem.planning_is_valid_awaiting_endpoint(
 			_proj_origin(actor), enemy.position, ability,
 		):
+			var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
+				ability, enemy.id,
+			)
+			if AbilitySystem.ability_has_modifier(ability, &"paired_ally_charge", actor):
+				var awaiting_charge := _director.find_awaiting_action(unit_id)
+				if awaiting_charge == null or awaiting_charge.target_unit_id < 0:
+					slots["invalid"] = "Select an allied charger first."
+					return slots
+				committed_target_id = awaiting_charge.target_unit_id
 			slots["action"].append(
 				TimelineAction.make_ability(
 					unit_id,
 					ability,
 					enemy.position,
-					AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
+					committed_target_id,
 					GameEnums.MoveTiming.PRE_ACTION,
 					effective_waypoints,
 				),
@@ -3703,11 +3803,11 @@ func _build_enemy_commit_slots(
 	if use_skill and _in_ability_range(actor, enemy):
 		var committed_target_id := AbilitySystem.planning_commit_target_unit_id(ability, enemy.id)
 		if AbilitySystem.ability_has_modifier(ability, &"paired_ally_charge", actor):
-			var paired_ally := AbilitySystem.planning_paired_ally(_proj(), actor, ability)
-			if paired_ally == null:
-				slots["invalid"] = "Paired charge requires an allied charger."
+			var awaiting_charge := _director.find_awaiting_action(unit_id)
+			if awaiting_charge == null or awaiting_charge.target_unit_id < 0:
+				slots["invalid"] = "Select an allied charger first."
 				return slots
-			committed_target_id = paired_ally.id
+			committed_target_id = awaiting_charge.target_unit_id
 		slots["action"].append(
 			TimelineAction.make_ability(
 				unit_id,

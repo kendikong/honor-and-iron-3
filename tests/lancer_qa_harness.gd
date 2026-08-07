@@ -117,6 +117,80 @@ static func run_data_contract(failures: Array[String]) -> void:
 				"promotion ownership must remain data, not a simulation branch",
 			)
 
+
+static func run_shape_contract_smoke(failures: Array[String]) -> void:
+	var rally := factory_ability(&"lancer_rallying_cry")
+	var sweep := factory_ability(&"lancer_sweeping_halberd")
+	var meteor := factory_ability(&"lancer_meteor_drop")
+	var spear_wall := factory_ability(&"lancer_spear_wall")
+	assert_true(
+		failures,
+		"shape/rally",
+		rally != null
+		and rally.target_shape == GameEnums.TargetShape.AOE_CROSS
+		and rally.target_shape_size == 2,
+		"Bible AOE 2 must be a two-tile cross",
+	)
+	assert_true(
+		failures,
+		"shape/meteor",
+		meteor != null
+		and meteor.target_shape == GameEnums.TargetShape.AOE_CROSS
+		and meteor.target_shape_size == 1,
+		"adjacent landing damage must use the cardinal cross",
+	)
+	assert_true(
+		failures,
+		"shape/arc_data",
+		sweep != null
+		and sweep.target_shape == GameEnums.TargetShape.ARC
+		and spear_wall != null
+		and spear_wall.target_shape == GameEnums.TargetShape.ARC,
+		"ARC abilities must retain the shared ARC shape",
+	)
+
+	var center := Vector2i(4, 4)
+	var cross := GridSystem.get_affected_tiles(
+		null, center, center, GameEnums.TargetShape.AOE_CROSS, 2,
+	)
+	assert_eq_int(failures, "shape/cross_size", cross.size(), 9)
+	assert_true(
+		failures,
+		"shape/cross_footprint",
+		cross.has(center + Vector2i(0, -2))
+		and cross.has(center + Vector2i(0, 2))
+		and cross.has(center + Vector2i(-2, 0))
+		and cross.has(center + Vector2i(2, 0))
+		and not cross.has(center + Vector2i(1, 1)),
+		"AOE X must expand cardinally, not diagonally",
+	)
+
+	var horizontal_arc := GridSystem.get_affected_tiles(
+		null, center, center + Vector2i(2, 0), GameEnums.TargetShape.ARC, 1,
+	)
+	assert_eq_int(failures, "shape/arc_horizontal_size", horizontal_arc.size(), 3)
+	assert_true(
+		failures,
+		"shape/arc_horizontal_footprint",
+		horizontal_arc.has(center + Vector2i(2, 0))
+		and horizontal_arc.has(center + Vector2i(2, -1))
+		and horizontal_arc.has(center + Vector2i(2, 1)),
+		"horizontal ARC must be perpendicular to attack direction",
+	)
+
+	var vertical_arc := GridSystem.get_affected_tiles(
+		null, center, center + Vector2i(0, 2), GameEnums.TargetShape.ARC, 1,
+	)
+	assert_true(
+		failures,
+		"shape/arc_vertical_footprint",
+		vertical_arc.has(center + Vector2i(0, 2))
+		and vertical_arc.has(center + Vector2i(-1, 2))
+		and vertical_arc.has(center + Vector2i(1, 2)),
+		"vertical ARC must be perpendicular to attack direction",
+	)
+
+
 static func run_push_smoke(failures: Array[String]) -> void:
 	var definition := lancer_unit_data()
 	if definition == null:
@@ -312,6 +386,9 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 		Vector2i(4, 3),
 		{"active_abilities": [], "active_passives": []},
 	)
+	if ability.id == &"lancer_flanking_maneuver":
+		enemy.position = Vector2i(4, 4)
+		enemy.facing = GameEnums.Facing.NORTH
 	var ally := UnitState.create(
 		3,
 		definition,
@@ -324,12 +401,12 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 		GridSystem.set_occupant(board, unit.position, unit.id)
 	var target_coord := enemy.position
 	var target_id := enemy.id
-	if ability.id == &"lancer_flanking_maneuver":
-		target_coord = Vector2i(3, 2)
-		target_id = -1
 	if ability_id_is_movement(ability.id):
 		target_coord = Vector2i(5, 3)
 		target_id = -1
+	if ability.id == &"lancer_flanking_maneuver":
+		target_coord = Vector2i(3, 4)
+		target_id = enemy.id
 	if ability.id == &"lancer_rallying_cry" or ability.id == &"lancer_brace":
 		target_coord = actor.position
 		target_id = actor.id
@@ -443,10 +520,14 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 	)
 
 	var canto_board := _plain_board(Vector2i(5, 3))
+	var canto_basic := factory_ability(&"lancer_basic")
 	var canto := _make_test_unit(
-		definition, 1, GameEnums.Team.PLAYER, Vector2i(1, 1), [], [factory_passive(&"canto")]
+		definition, 1, GameEnums.Team.PLAYER, Vector2i(1, 1), [canto_basic], [factory_passive(&"canto")]
 	)
-	_add_test_units(canto_board, [canto])
+	var canto_target := _make_test_unit(
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(3, 1), [], []
+	)
+	_add_test_units(canto_board, [canto, canto_target])
 	var canto_events: Array[SimEvent] = []
 	MovementSystem.execute_move(
 		canto_board,
@@ -458,6 +539,20 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 		"passive/canto",
 		canto.has_status(GameEnums.StatusType.CANTO),
 		"standard movement must grant CANTO",
+	)
+	var canto_attack_events: Array[SimEvent] = []
+	AbilitySystem.execute(
+		canto_board,
+		TimelineAction.make_ability(
+			canto.id, canto_basic, canto_target.position, canto_target.id,
+		),
+		canto_attack_events,
+	)
+	assert_eq_int(
+		failures,
+		"passive/canto_no_refund",
+		canto.movement.points_left,
+		2,
 	)
 
 	var frontline_board := _plain_board(Vector2i(9, 4))

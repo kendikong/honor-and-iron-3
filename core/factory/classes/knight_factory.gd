@@ -96,7 +96,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var seismic_stomp = DataLibrary._make_ability(&"knight_seismic_stomp", "Seismic Stomp", 0, [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
 		DataLibrary._effect(GameEnums.EffectType.PURGE, 0)
-	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.AOE_SQUARE, 1)
+	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.AOE_CROSS, 1)
 	seismic_stomp.upgrade_description = "Create CRACKED terrain."
 	seismic_stomp.upgraded_effects = DataLibrary._duplicate_effects(seismic_stomp.effects)
 	seismic_stomp.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.CHANGE_TERRAIN, 0))
@@ -184,7 +184,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var defensive_formation = DataLibrary._make_ability(&"knight_defensive_formation", "Defensive Formation", 0, [
 		DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1),
 		DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)
-	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_DIAMOND, 3)
+	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_CROSS, 3)
 	defensive_formation.effects[0].amount = 2
 	defensive_formation.effects[0].modifiers["exclude_caster"] = true
 	defensive_formation.effects[1].modifiers["exclude_caster"] = true

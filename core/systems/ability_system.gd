@@ -77,6 +77,13 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		)
 	):
 		return false
+	if _ability_has_modifier(actor, ability, &"target_after_move_adjacent"):
+		if (
+			target_unit == null
+			or target_unit.team == actor.team
+			or GridSystem.manhattan(action.target_coord, target_unit.position) != 1
+		):
+			return false
 
 	if dist > 1:
 		var tile = board.get_tile(action.target_coord)
@@ -100,6 +107,28 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		
 	var is_dash := ability_has_dash(ability)
 	var is_move := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
+	var validation_effects: Array = ability.effects
+	if actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
+		validation_effects = ability.upgraded_effects
+	var requires_l_shape := false
+	for validation_effect: EffectData in validation_effects:
+		if validation_effect != null and validation_effect.modifiers.has("l_shape_move"):
+			requires_l_shape = true
+			break
+	if requires_l_shape and action.target_coord != actor.position:
+		var l_shape_budget: int = effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+		if (
+			l_shape_budget <= 0
+			or MovementSystem._l_shape_path(
+				board,
+				actor.position,
+				action.target_coord,
+				l_shape_budget,
+				actor,
+				ability,
+			).is_empty()
+		):
+			return false
 	
 	if is_dash:
 		var delta := action.target_coord - actor.position
@@ -191,6 +220,8 @@ static func _target_allowed(
 ) -> bool:
 	if ability == null or actor == null:
 		return false
+	if not _target_shape_is_valid(actor, ability, target_coord):
+		return false
 	ability.ensure_targeting_flags_from_mode()
 	if target != null:
 		if target.id == actor.id and ability.has_targeting(GameEnums.TargetingFlags.SELF):
@@ -206,6 +237,25 @@ static func _target_allowed(
 	if ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
 		return true
 	return false
+
+
+static func _target_shape_is_valid(
+	actor: UnitState,
+	ability: AbilityData,
+	target_coord: Vector2i,
+) -> bool:
+	if actor == null or ability == null:
+		return false
+	var shape := ability.target_shape
+	if actor.is_ability_upgraded(ability.id) and ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE:
+		shape = ability.upgraded_target_shape
+	if shape in [
+		GameEnums.TargetShape.ARC,
+		GameEnums.TargetShape.CONE,
+		GameEnums.TargetShape.LINE,
+	]:
+		return PhysicsSystem.cardinal_from_to(actor.position, target_coord) != Vector2i.ZERO
+	return true
 
 
 static func can_target_self(_actor: UnitState, ability: AbilityData) -> bool:
@@ -377,35 +427,6 @@ static func ability_has_modifier(
 	actor: UnitState = null,
 ) -> bool:
 	return _ability_has_modifier(actor, ability, key)
-
-
-static func planning_paired_ally(
-	board: BoardState,
-	actor: UnitState,
-	ability: AbilityData,
-) -> UnitState:
-	if board == null or actor == null or ability == null:
-		return null
-	var candidates: Array[UnitState] = []
-	for unit: UnitState in board.units:
-		if (
-			unit != null
-			and unit.is_alive()
-			and unit.team == actor.team
-			and unit.id != actor.id
-			and GridSystem.manhattan(actor.position, unit.position) <= ability.range_tiles
-		):
-			candidates.append(unit)
-	if candidates.is_empty():
-		return null
-	candidates.sort_custom(func(a: UnitState, b: UnitState) -> bool:
-		var a_dist := GridSystem.manhattan(actor.position, a.position)
-		var b_dist := GridSystem.manhattan(actor.position, b.position)
-		if a_dist != b_dist:
-			return a_dist < b_dist
-		return a.id < b.id
-	)
-	return candidates[0]
 
 
 static func ability_has_swap_effect(ability: AbilityData) -> bool:
@@ -1074,6 +1095,24 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 						board, hit_unit, item_dmg, events, &"true", true, false, actor,
 						action.ability.display_name, item_dmg,
 					)
+		if effect.modifiers.has("target_after_move_adjacent"):
+			var adjacent_target := board.get_unit_by_id(action.target_unit_id)
+			if (
+				adjacent_target != null
+				and adjacent_target.is_alive()
+				and adjacent_target.team != actor.team
+				and GridSystem.manhattan(actor.position, adjacent_target.position) == 1
+			):
+				_apply_effect_to_tile(
+					board,
+					actor,
+					action,
+					effect,
+					events,
+					adjacent_target.position,
+					adjacent_target,
+				)
+			continue
 			
 		for tile_coord in affected_tiles:
 			var target_unit := board.get_unit_at(tile_coord)
@@ -1126,8 +1165,6 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 					actor.active_statuses.erase(status)
 				actor._recalculate_stats()
 
-	if ability.is_class_kind():
-		apply_canto_move_refund(actor)
 	if actor != null:
 		actor.passive_flags.erase("paired_strength_bonus")
 		actor.passive_flags.erase("on_kill_max_move")
@@ -1150,20 +1187,6 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: B
 		_:
 			pass
 
-
-static func apply_canto_move_refund(actor: UnitState) -> void:
-	if actor == null:
-		return
-	if actor.has_passive(&"canto") or actor.has_status(GameEnums.StatusType.CANTO):
-		actor.movement.points_left = actor.movement.max_points
-		var has_canto_status := false
-		for status: StatusData in actor.active_statuses:
-			if status.type == GameEnums.StatusType.CANTO:
-				has_canto_status = true
-				break
-		if not has_canto_status:
-			actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.CANTO, 1, 0))
-		actor._recalculate_stats()
 
 static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: TimelineAction, effect: EffectData, events: Array[SimEvent], tile_coord: Vector2i, target: UnitState) -> void:
 	if target != null and actor != target and actor != null:
@@ -1219,6 +1242,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 	match effect.type:
 		GameEnums.EffectType.DAMAGE:
 			if target != null:
+				if (
+					effect.modifiers.has("side_attack_only")
+					and not _is_side_attack(actor, target)
+				):
+					return
 				_apply_range_one_attack_passives(board, actor, target, events)
 			actor.passive_flags.erase("attack_ignore_def")
 			var pierce = false
@@ -2084,7 +2112,16 @@ static func _prepare_paired_charge(
 static func _resolve_target_coord(board: BoardState, action: TimelineAction) -> Vector2i:
 	if (
 		action.ability != null
-		and _ability_has_modifier(board.get_unit_by_id(action.actor_id), action.ability, &"paired_ally_charge")
+		and (
+			_ability_has_modifier(
+				board.get_unit_by_id(action.actor_id), action.ability, &"paired_ally_charge",
+			)
+			or _ability_has_modifier(
+				board.get_unit_by_id(action.actor_id),
+				action.ability,
+				&"target_after_move_adjacent",
+			)
+		)
 	):
 		return action.target_coord
 	if action.target_unit_id >= 0:

@@ -427,7 +427,7 @@ static func _self_area_status(
 ) -> AbilityData:
 	var module := _status_module(
 		GameEnums.EffectType.ADD_STATUS, status_type, 1, amount, 0, radius,
-		GameEnums.TargetingFlags.ALLY, GameEnums.TargetShape.AOE_SQUARE, radius * 2 + 1,
+		GameEnums.TargetingFlags.ALLY, GameEnums.TargetShape.AOE_CROSS, radius,
 	)
 	module.legacy_modifiers["next_turn"] = true
 	var upgraded := _clone_modules([module])
@@ -450,13 +450,15 @@ static func _flanking_maneuver() -> AbilityData:
 	module.legacy_modifiers["l_shape_move"] = true
 	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
 	strike.modifiers["damage_multiplier"] = 2
+	strike.modifiers["side_attack_only"] = true
+	strike.modifiers["target_after_move_adjacent"] = true
 	module.layers.append(_layer(strike))
 	var upgraded := _clone_modules([module])
 	upgraded[0].legacy_modifiers["l_shape_move"] = true
 	upgraded[0].legacy_modifiers["ghost_move"] = 1
 	return _ability(
 		&"lancer_flanking_maneuver", "Flanking Maneuver", 1, [module],
-		GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		"Gain GHOST during MOVE.", upgraded,
 	)
@@ -550,7 +552,7 @@ static func _spear_wall() -> AbilityData:
 static func _meteor_drop() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.TELEPORT_CASTER, 2, 1, 2, GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.NONE,
+		GameEnums.TargetShape.AOE_CROSS, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)))

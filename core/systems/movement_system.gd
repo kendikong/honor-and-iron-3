@@ -375,6 +375,16 @@ static func execute_skill_walk(
 		if _has_modifier(effects, &"l_shape_move")
 		else resolve_move_path(board, unit, goal, waypoints, walk_steps, ability)
 	)
+	if (
+		_has_modifier(effects, &"l_shape_move")
+		and goal != unit.position
+		and path.is_empty()
+	):
+		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+			"actor": unit.id,
+			"reason": "no_l_shape_path",
+		}))
+		return
 	var from := unit.position
 	GridSystem.set_occupant(board, unit.position, -1)
 	var trample_hit_ids: Dictionary = {}
@@ -465,7 +475,7 @@ static func _l_shape_path(
 	unit: UnitState,
 	ability: AbilityData,
 ) -> Array[Vector2i]:
-	if start == goal:
+	if start == goal or start.x == goal.x or start.y == goal.y:
 		return []
 	var candidates: Array[Array] = []
 	var corner_a := Vector2i(goal.x, start.y)
@@ -481,17 +491,54 @@ static func _l_shape_path(
 			and _is_legal_walk(board, start, typed_candidate, budget, 1, unit, ability)
 		):
 			return typed_candidate
-	return resolve_move_path(board, unit, goal, [], budget, ability, start)
+	return []
+
+
+static func l_shape_attack_endpoint(
+	board: BoardState,
+	unit: UnitState,
+	target: UnitState,
+	ability: AbilityData,
+) -> Vector2i:
+	if board == null or unit == null or target == null or ability == null:
+		return Vector2i(-1, -1)
+	var move_budget: int = AbilitySystem.effect_amount(
+		ability, GameEnums.EffectType.MOVE, unit,
+	)
+	if move_budget <= 0:
+		return Vector2i(-1, -1)
+	for dir: Vector2i in GridSystem.DIRECTIONS:
+		var endpoint := target.position - dir
+		if (
+			not board.is_in_bounds(endpoint)
+			or board.get_unit_at(endpoint) != null
+			or not GridSystem.is_passable(board, endpoint)
+			or PhysicsSystem.cardinal_from_to(target.position, endpoint) == Vector2i.ZERO
+		):
+			continue
+		var target_side := PhysicsSystem.cardinal_from_to(target.position, endpoint)
+		var target_facing := PhysicsSystem.facing_to_vector(target.facing)
+		if target_side.x * target_facing.x + target_side.y * target_facing.y != 0:
+			continue
+		if not _l_shape_path(board, unit.position, endpoint, move_budget, unit, ability).is_empty():
+			return endpoint
+	return Vector2i(-1, -1)
 
 
 static func _axis_path(start: Vector2i, corner: Vector2i, goal: Vector2i) -> Array[Vector2i]:
 	var path: Array[Vector2i] = []
 	var current := start
 	while current.x != corner.x:
-		current.x += signi(corner.x - current.x)
+		current = Vector2i(
+			current.x + signi(corner.x - current.x),
+			current.y,
+		)
 		path.append(current)
 	while current.y != goal.y:
-		current.y += signi(goal.y - current.y)
+		current = Vector2i(
+			current.x,
+			current.y + signi(goal.y - current.y),
+		)
 		path.append(current)
 	return path
 
