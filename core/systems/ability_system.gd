@@ -371,6 +371,43 @@ static func _ability_has_modifier(
 	return false
 
 
+static func ability_has_modifier(
+	ability: AbilityData,
+	key: StringName,
+	actor: UnitState = null,
+) -> bool:
+	return _ability_has_modifier(actor, ability, key)
+
+
+static func planning_paired_ally(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+) -> UnitState:
+	if board == null or actor == null or ability == null:
+		return null
+	var candidates: Array[UnitState] = []
+	for unit: UnitState in board.units:
+		if (
+			unit != null
+			and unit.is_alive()
+			and unit.team == actor.team
+			and unit.id != actor.id
+			and GridSystem.manhattan(actor.position, unit.position) <= ability.range_tiles
+		):
+			candidates.append(unit)
+	if candidates.is_empty():
+		return null
+	candidates.sort_custom(func(a: UnitState, b: UnitState) -> bool:
+		var a_dist := GridSystem.manhattan(actor.position, a.position)
+		var b_dist := GridSystem.manhattan(actor.position, b.position)
+		if a_dist != b_dist:
+			return a_dist < b_dist
+		return a.id < b.id
+	)
+	return candidates[0]
+
+
 static func ability_has_swap_effect(ability: AbilityData) -> bool:
 	if ability == null:
 		return false

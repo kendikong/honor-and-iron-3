@@ -3575,6 +3575,9 @@ func _build_ally_commit_slots(
 	if not AbilitySystem.target_passes_mode(actor, ability, ally):
 		slots["invalid"] = "Invalid target for this skill."
 		return slots
+	if AbilitySystem.ability_has_modifier(ability, &"paired_ally_charge", actor):
+		slots["invalid"] = "Select an enemy for the paired charge."
+		return slots
 	if not ability.is_movement_kind():
 		if _can_target_unit_with_selected_ability(actor, ally):
 			slots["action"].append(
@@ -3698,12 +3701,19 @@ func _build_enemy_commit_slots(
 			slots["invalid"] = "Invalid endpoint for this skill."
 			return slots
 	if use_skill and _in_ability_range(actor, enemy):
+		var committed_target_id := AbilitySystem.planning_commit_target_unit_id(ability, enemy.id)
+		if AbilitySystem.ability_has_modifier(ability, &"paired_ally_charge", actor):
+			var paired_ally := AbilitySystem.planning_paired_ally(_proj(), actor, ability)
+			if paired_ally == null:
+				slots["invalid"] = "Paired charge requires an allied charger."
+				return slots
+			committed_target_id = paired_ally.id
 		slots["action"].append(
 			TimelineAction.make_ability(
 				unit_id,
 				ability,
 				enemy.position,
-				AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
+				committed_target_id,
 				GameEnums.MoveTiming.PRE_ACTION,
 				effective_waypoints,
 			),
