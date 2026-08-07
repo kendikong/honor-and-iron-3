@@ -18,11 +18,13 @@ edit surgically, QA automatically.
 The **absolute engineering rules** in `.cursor/rules/` still apply and are **not**
 relaxed by this file:
 
+- `auto-commit-absolute.mdc` — **commit every edit turn**; full playable backup; overrides "only commit when asked."
 - `global-systems-first.mdc` — every edit uses the canonical global system; warn before any exception.
 - `no-bandaid-fixes.mdc` — no shortcuts; fix the actual cause.
 - `move-preview-intent-truth.mdc` — preview == execution; commit ratifies intent.
 - `qa-after-gameplay-changes.mdc` — run the matching headless suite after gameplay edits.
 - `owner-facing-brevity.mdc` — plain-language replies; no code dumps unless asked.
+- `local-cloud-sync.mdc` — push to `origin` every 3 commits, session end, and before Cloud handoff.
 
 This file only changes **how the agent works** (usage discipline, workflow, model
 choice) to fit Roo Code + DeepSeek. It does **not** change what "correct" means.
@@ -96,7 +98,9 @@ Roo Code has built-in modes. Use them to enforce discipline without re-inventing
    numbered plan (files, functions, concrete changes, acceptance criteria).
 2. **Code** — implement the approved plan with targeted edits.
 3. **QA** — run the matching headless suite (see `qa-after-gameplay-changes.mdc`).
-4. **Report** — short owner-facing summary + Changelog.
+4. **Commit** — per `auto-commit-absolute.mdc`: if dirty before edits, commit first;
+   after any file changes, `git add` + full-backup commit before ending the turn.
+5. **Report** — short owner-facing summary + Changelog (include commit hash when committed).
 
 For **micro fixes** (≤5 lines, one file, no new logic), you may skip the Architect
 step and go straight to Code — but still state what you're changing and why.
@@ -153,4 +157,5 @@ tight — this is where detail lives, so the owner-facing prose can stay short.
 - Abilities are data (`.tres` / Resources), not hardcoded engine branches.
 - Static typing and explicit return types in all GDScript.
 - Fail loudly (assert); do not silently swallow invalid state.
-- Every commit is a full backup — self-contained, exact copy of the working game.
+- **Auto-commit every edit turn** — see `auto-commit-absolute.mdc`; never leave hours of
+  work uncommitted. Every commit is a full backup of the playable project.

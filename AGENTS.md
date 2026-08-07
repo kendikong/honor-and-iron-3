@@ -29,11 +29,15 @@ damage. Combat has no RNG.
 3. Make the smallest surgical change; remove an obsolete path when replacing it.
 4. Run the matching QA suite after gameplay, simulation, planning, commit, or
    ability changes. UI-only changes still require a parse/error check.
-5. Clean up generated QA/debug output before finishing: keep only the compact
+5. **Commit every edit turn** — `.cursor/rules/auto-commit-absolute.mdc` (absolute):
+   if the repo is dirty before edits, commit a full backup first; after any file
+   change, `git add` + commit the entire playable project before ending the turn.
+   Do not wait for the owner to say "commit." Push per `local-cloud-sync.mdc`.
+6. Clean up generated QA/debug output before finishing: keep only the compact
   latest summary and raw logs needed for an active investigation; write raw
   output to the OS temp directory whenever possible. Do not leave duplicate,
   numbered, or multi-megabyte logs in the project root.
-6. Report the result briefly, including failures and unverified risks.
+7. Report the result briefly, including failures and unverified risks.
 
 ## Canonical references
 

@@ -26,10 +26,11 @@
 
 ## Git safety
 
-- A commit must be a complete playable backup, not a partial source snapshot.
-- Check status before staging; stage only intended files and required dependencies.
+- **Auto-commit every edit turn** — `.cursor/rules/auto-commit-absolute.mdc` (absolute;
+  overrides "only commit when asked"). Full playable backup each commit.
+- Check status before staging; stage all game-needed files for full-backup commits.
 - Do not reset or revert without warning that uncommitted work will be lost.
-- Follow the detailed workflow in `docs/GIT_WORKFLOW.md`.
+- Push per `.cursor/rules/local-cloud-sync.mdc` and `docs/GIT_WORKFLOW.md`.
 
 ## Detailed rules
 
