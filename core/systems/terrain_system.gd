@@ -24,6 +24,12 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 	var tile := board.get_tile(coord)
 	if tile == null or tile.definition == null:
 		return
+	if (
+		unit.has_passive(&"lightfoot")
+		and unit.is_passive_upgraded(&"lightfoot")
+		and tile.definition.is_trap
+	):
+		return
 	if tile.definition.is_chasm:
 		var is_flying = (unit.definition != null and unit.definition.movement_type == GameEnums.MovementType.FLY) or unit.has_status(GameEnums.StatusType.AIRBORNE) or unit.has_status(GameEnums.StatusType.GHOST)
 		if is_flying:
@@ -37,8 +43,6 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 		return
 
 	var dmg := tile.definition.hazard_damage
-	if dmg <= 0:
-		return
 		
 	if unit.has_passive(&"juggernaut") and tile.definition.id == &"trap":
 		# Destroy the trap
@@ -55,19 +59,87 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 	if unit.has_status(GameEnums.StatusType.AIRBORNE) or unit.has_status(GameEnums.StatusType.GHOST):
 		return # Airborne and Ghost ignore hazard damage
 		
-	# Damage + any resulting death flow through CombatSystem so HP stays
-	# single-sourced and the event log reads move -> land -> hazard -> death.
-	CombatSystem.deal_damage(board, unit, dmg, events, &"hazard", false, false, null, tile.definition.display_name, dmg)
+	# Damage + entry payload flow through the shared terrain/combat stages.
+	if dmg > 0:
+		CombatSystem.deal_damage(
+			board, unit, dmg, events, &"hazard", false, false, null,
+			tile.definition.display_name, dmg,
+		)
+	if not unit.is_alive():
+		return
+	var payload: Dictionary = board.terrain_payloads.get(coord, {})
+	if payload.get("crossing_weapon_damage", false):
+		var weapon_damage := 0
+		if payload.get("weapon_damage_owner", -1) >= 0:
+			var owner := board.get_unit_by_id(int(payload["weapon_damage_owner"]))
+			if owner != null and owner.definition != null and owner.definition.equipped_weapon != null:
+				weapon_damage = owner.definition.equipped_weapon.might
+		if weapon_damage > 0:
+			CombatSystem.deal_damage(
+				board, unit, weapon_damage, events, &"true", true, false, null,
+				tile.definition.display_name, weapon_damage,
+			)
+			if not unit.is_alive():
+				return
+	if payload.get("crossing_blind", false):
+		unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLIND, 1))
+	if payload.get("created_area_weapon_damage", false):
+		var weapon_damage := 0
+		var damage_owner := board.get_unit_by_id(int(payload.get("weapon_damage_owner", -1)))
+		if (
+			damage_owner != null
+			and damage_owner.definition != null
+			and damage_owner.definition.equipped_weapon != null
+		):
+			weapon_damage = damage_owner.definition.equipped_weapon.might
+		if weapon_damage > 0:
+			CombatSystem.deal_damage(
+				board, unit, weapon_damage, events, &"true", true, false, null,
+				tile.definition.display_name, weapon_damage,
+			)
+			if not unit.is_alive():
+				return
 	if (
-		unit.is_alive()
-		and tile.definition.entry_status_duration > 0
+		payload.get("created_area_root", false)
+		or payload.get("created_difficult_terrain_root", false)
+	):
+		if not unit.has_status(GameEnums.StatusType.ROOT):
+			unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.ROOT, 1))
+	if payload.get("created_area_poison", false):
+		unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
+	if payload.get("trap_vulnerable", false):
+		unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.VULNERABLE, 1))
+	var trap_bonus := int(payload.get("trap_damage_bonus", 0))
+	if trap_bonus > 0:
+		CombatSystem.deal_damage(
+			board, unit, trap_bonus, events, &"true", true, false, null,
+			tile.definition.display_name, trap_bonus,
+		)
+		if not unit.is_alive():
+			return
+	var bleed_amount := tile.definition.entry_bleed_amount
+	if payload.get("trap_bleed_weapon", false):
+		bleed_amount = 0
+		if unit.definition != null and unit.definition.equipped_weapon != null:
+			bleed_amount = unit.definition.equipped_weapon.might
+	if payload.get("trap_def_debuff", 0) is int:
+		var def_down := int(payload.get("trap_def_debuff", 0))
+		if def_down > 0:
+			unit.active_statuses.append(DataLibrary.make_status(
+				GameEnums.StatusType.STAT_DEBUFF_DEF, 1, def_down,
+			))
+	if payload.get("created_difficult_terrain_remove_fear", false):
+		for i: int in range(unit.active_statuses.size() - 1, -1, -1):
+			if unit.active_statuses[i].type == GameEnums.StatusType.FEAR:
+				unit.active_statuses.remove_at(i)
+	if (
+		tile.definition.entry_status_duration > 0
 		and not CombatSystem.try_resist_crowd_control(unit, tile.definition.entry_status, events)
 	):
 		unit.active_statuses.append(StatusData.new(
 			tile.definition.entry_status,
 			tile.definition.entry_status_duration,
 		))
-		unit._recalculate_stats(board)
 		events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
 			"unit": unit.id,
 			"status_type": tile.definition.entry_status,
@@ -75,6 +147,28 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 			"amount": 0,
 			"terrain": tile.definition.id,
 		}))
+	if bleed_amount > 0:
+		unit.active_statuses.append(StatusData.new(
+			GameEnums.StatusType.BLEED,
+			1,
+			bleed_amount,
+		))
+		events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+			"unit": unit.id,
+			"status_type": GameEnums.StatusType.BLEED,
+			"duration": 1,
+			"amount": bleed_amount,
+			"terrain": tile.definition.id,
+		}))
+	if tile.definition.entry_vulnerable:
+		unit.active_statuses.append(StatusData.new(GameEnums.StatusType.VULNERABLE, 1))
+	if tile.definition.entry_move_penalty > 0:
+		unit.active_statuses.append(StatusData.new(
+			GameEnums.StatusType.STAT_DEBUFF_MOV,
+			1,
+			tile.definition.entry_move_penalty,
+		))
+	unit._recalculate_stats(board)
 
 static func _snap_boss_to_valid_tile(board: BoardState, unit: UnitState, events: Array[SimEvent]) -> void:
 	if not unit.is_alive():

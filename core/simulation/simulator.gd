@@ -131,6 +131,8 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 				unit.active_statuses.append(
 					DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 99, 2),
 				)
+			if not unit.has_status(GameEnums.StatusType.MARK):
+				unit.passive_flags.erase("marked_no_stealth_teleport")
 			if to_remove.size() > 0 or indomitable_will_expired:
 				unit._recalculate_stats(board)
 
@@ -229,4 +231,5 @@ static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> voi
 			}))
 		board.temporary_terrain_turns.erase(coord)
 		board.temporary_terrain_previous.erase(coord)
+		board.terrain_payloads.erase(coord)
 

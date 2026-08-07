@@ -2,6 +2,7 @@ class_name DataLibrary
 extends RefCounted
 
 const LancerFactoryScript := preload("res://core/factory/classes/lancer_factory.gd")
+const ArcherFactoryScript := preload("res://core/factory/classes/archer_factory.gd")
 
 ## Purpose: A hardcoded central registry of all Units, Terrain, Abilities, and Maps.
 ## This simulates loading .tres files from disk until the actual asset pipeline
@@ -169,10 +170,7 @@ static func _ensure_init() -> void:
 	var lancer: UnitData = LancerFactoryScript.build(basic_lance)
 
 	# 5. ARCHER (BOW)
-	var p_archer = _make_passive(&"eagle_eye", "Eagle Eye", "Increased range/accuracy.")
-	var archer_snipe := _make_ability(&"archer_snipe", "Snipe", 5, [_effect(GameEnums.EffectType.DAMAGE, 3)], 1, GameEnums.StatType.PHYSICAL)
-	var archer_shove := _make_ability(&"archer_shove", "Repelling Shot", 2, [_effect(GameEnums.EffectType.PUSH, 1)], 0)
-	var archer := _make_unit_data(&"archer", "Archer", 3, 3, 1, [archer_snipe, archer_shove], null, GameEnums.MovementType.WALK, 3, 0, 2, basic_bow, [p_archer])
+	var archer: UnitData = ArcherFactoryScript.build(basic_bow)
 
 	# 6. MAGE (MAGIC)
 	var p_mage = _make_passive(&"focus", "Focus", "More magic damage.")
@@ -768,6 +766,7 @@ static func _castle() -> TerrainData:
 	t.id = &"castle"
 	t.display_name = "Castle"
 	t.fortitude = 2
+	t.elevated = true
 	return t
 
 static func _hazard(p_id: StringName, p_name: String, damage: int, is_pit: bool) -> TerrainData:
@@ -777,6 +776,7 @@ static func _hazard(p_id: StringName, p_name: String, damage: int, is_pit: bool)
 	t.hazard_damage = damage
 	t.blocks_movement = is_pit
 	t.stops_displacement = false
+	t.is_trap = p_id == &"trap"
 	return t
 
 static func _fire() -> TerrainData:
@@ -829,6 +829,27 @@ static func _trampled() -> TerrainData:
 	t.mp_cost_per_tile = 2
 	return t
 
+static func _bear_trap() -> TerrainData:
+	var t := _hazard(&"bear_trap", "Bear Trap", 3, false)
+	t.is_trap = true
+	t.entry_status = GameEnums.StatusType.ROOT
+	t.entry_status_duration = 1
+	return t
+
+static func _caltrop_trap() -> TerrainData:
+	var t := _hazard(&"caltrop_trap", "Caltrop Trap", 0, false)
+	t.is_trap = true
+	t.entry_status = GameEnums.StatusType.ROOT
+	t.entry_status_duration = 1
+	t.entry_bleed_amount = 1
+	return t
+
+static func _suppressing_fire() -> TerrainData:
+	var t := _hazard(&"suppressing_fire", "Suppressing Fire", 0, false)
+	t.entry_status_duration = 1
+	t.entry_move_penalty = 1
+	return t
+
 static func _spear_wall() -> TerrainData:
 	var t := _hazard(&"spear_wall", "Spear Wall", 2, false)
 	t.entry_status = GameEnums.StatusType.ROOT
@@ -857,6 +878,9 @@ static func get_terrain(id: StringName) -> TerrainData:
 		_cached_terrains[&"frozen"] = _frozen()
 		_cached_terrains[&"cracked"] = _cracked()
 		_cached_terrains[&"trampled"] = _trampled()
+		_cached_terrains[&"bear_trap"] = _bear_trap()
+		_cached_terrains[&"caltrop_trap"] = _caltrop_trap()
+		_cached_terrains[&"suppressing_fire"] = _suppressing_fire()
 		_cached_terrains[&"spear_wall"] = _spear_wall()
 		_cached_terrains[&"smoke"] = _smoke()
 		_cached_terrains[&"pit"] = _hazard(&"pit", "Pit", 6, true)

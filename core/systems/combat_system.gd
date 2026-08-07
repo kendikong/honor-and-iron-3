@@ -644,6 +644,7 @@ static func deal_damage(
 		target._recalculate_stats()
 	
 	if hp_dmg > 0:
+		target.passive_flags["exact_lethal_damage"] = hp_dmg == target.health.current_hp
 		target.health.current_hp = maxi(0, target.health.current_hp - hp_dmg)
 		
 		# Root and Pacify break instantly on damage
@@ -759,6 +760,42 @@ static func deal_damage(
 		}))
 		
 		if attacker != null and attacker.is_alive():
+			if target.passive_flags.get("exact_lethal_damage", false):
+				for passive: PassiveData in attacker.active_passives:
+					if passive == null or not passive.modifiers.has("exact_lethal_followup_damage"):
+						continue
+					var followup_power := int(passive.modifiers["exact_lethal_followup_damage"])
+					if attacker.is_passive_upgraded(passive.id):
+						followup_power = int(
+							passive.modifiers.get(
+								"upgraded_exact_lethal_followup_damage",
+								followup_power,
+							)
+						)
+					var nearest: UnitState = null
+					var nearest_distance := 1_000_000
+					for candidate: UnitState in board.units:
+						if (
+							candidate == null
+							or not candidate.is_alive()
+							or candidate.team == attacker.team
+							or candidate.id == target.id
+						):
+							continue
+						var candidate_distance := GridSystem.manhattan(target.position, candidate.position)
+						if candidate_distance < nearest_distance:
+							nearest = candidate
+							nearest_distance = candidate_distance
+					if nearest != null:
+						var followup_raw := calculate_scaled_damage(
+							attacker, followup_power, GameEnums.StatType.PHYSICAL, board,
+						)
+						deal_damage(
+							board, nearest, followup_raw, events, &"physical",
+							false, false, attacker, "Barrage", followup_raw,
+						)
+					break
+			target.passive_flags.erase("exact_lethal_damage")
 			if attacker.passive_flags.has("adrenaline_surge_active"):
 				heal(board, attacker, 1, events)
 				add_armor(board, attacker, 2, events)

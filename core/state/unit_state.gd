@@ -317,6 +317,8 @@ func reset_for_turn() -> void:
 	passive_flags.erase("vaulted_target_id")
 	passive_flags.erase("frontline_shield_granted")
 	passive_flags.erase("zone_attack_used_this_round")
+	passive_flags.erase("overwatch_used")
+	passive_flags.erase("corpse_move_empowered")
 	passive_flags.erase("springboard_pending_coord")
 	passive_flags.erase("springboard_ap_used")
 	passive_flags.erase("line_breaker_passed")
@@ -361,11 +363,27 @@ func clone() -> UnitState:
 	return copy
 
 func get_ability_range(ability_data: AbilityData) -> int:
+	if ability_data == null:
+		return 0
 	if has_status(GameEnums.StatusType.BLIND):
 		return 1
+	var authored_range := ability_data.range_tiles
+	if (
+		ability_data != null
+		and (
+			ability_data.has_tag(AbilityModuleBridge.TAG_ATTACK)
+			or DataLibrary.is_basic_ability(ability_data.id)
+		)
+		and movement_points_spent_this_turn == 0
+		and is_passive_upgraded(&"lightfoot")
+	):
+		for passive: PassiveData in active_passives:
+			if passive != null and passive.modifiers.has("zero_move_attack_range"):
+				authored_range += int(passive.modifiers["zero_move_attack_range"])
+				break
 	if is_ability_upgraded(ability_data.id) and ability_data.upgraded_range_tiles != -1:
 		return ability_data.upgraded_range_tiles
-	return ability_data.range_tiles
+	return authored_range
 
 func get_ability_by_id(ability_id: StringName) -> AbilityData:
 	if DataLibrary.is_universal_run(ability_id):

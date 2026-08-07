@@ -580,6 +580,35 @@ static func _emit_collision(
 			if not CombatSystem.try_resist_crowd_control(blocker, GameEnums.StatusType.STAGGER, events):
 				blocker.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
 				blocker._recalculate_stats()
+		if (
+			pusher != null
+			and blocker.team != pusher.team
+			and pusher.get_ability_by_id(ability_id) != null
+		):
+			var collision_ability := pusher.get_ability_by_id(ability_id)
+			var collision_effects: Array = (
+				collision_ability.upgraded_effects
+				if pusher.is_ability_upgraded(ability_id)
+				else collision_ability.effects
+			)
+			var collision_pierce := false
+			var collision_power := 0
+			for eff: EffectData in collision_effects:
+				if eff == null:
+					continue
+				if eff.modifiers.has("push_collision_pierce"):
+					collision_pierce = true
+				if eff.modifiers.has("push_collision_damage"):
+					collision_power = int(eff.modifiers["push_collision_damage"])
+			if collision_power > 0:
+				var collision_raw := CombatSystem.calculate_scaled_damage(
+					pusher, collision_power, GameEnums.StatType.PHYSICAL, board,
+				)
+				CombatSystem.deal_damage(
+					board, blocker, collision_raw, events, &"physical",
+					collision_pierce, false, pusher, collision_ability.display_name,
+					collision_raw,
+				)
 			
 		if blocker.has_passive(&"collision_retaliator") and blocker.team != target.team:
 			if target.id != collision_immune_id:

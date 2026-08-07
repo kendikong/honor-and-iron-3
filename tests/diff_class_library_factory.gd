@@ -3,6 +3,7 @@ extends SceneTree
 ## One-shot: factory-coded abilities vs class_library_data.json overrides.
 ## Run: godot --headless --path . --script res://tests/diff_class_library_factory.gd
 const LancerFactoryScript := preload("res://core/factory/classes/lancer_factory.gd")
+const ArcherFactoryScript := preload("res://core/factory/classes/archer_factory.gd")
 
 const EFFECT_NAMES: PackedStringArray = [
 	"DAMAGE", "PUSH", "PULL", "SWAP", "HEAL", "ARMOR_UP", "EXPLODE", "SPAWN",
@@ -112,10 +113,7 @@ static func _build_factory_units() -> Dictionary:
 
 
 static func _archer(bow: WeaponData) -> UnitData:
-	var p := DataLibrary._make_passive(&"eagle_eye", "Eagle Eye", "Increased range/accuracy.")
-	var snipe := DataLibrary._make_ability(&"archer_snipe", "Snipe", 5, [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3)], 1, GameEnums.StatType.PHYSICAL)
-	var shove := DataLibrary._make_ability(&"archer_shove", "Repelling Shot", 2, [DataLibrary._effect(GameEnums.EffectType.PUSH, 1)], 0)
-	return DataLibrary._make_unit_data(&"archer", "Archer", 3, 3, 1, [snipe, shove], null, GameEnums.MovementType.WALK, 3, 0, 2, bow, [p])
+	return ArcherFactoryScript.build(bow)
 
 
 static func _mage(staff: WeaponData) -> UnitData:

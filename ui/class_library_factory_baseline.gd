@@ -3,6 +3,7 @@ extends RefCounted
 
 ## Fresh player units from code factories — no class_library_data.json overrides.
 const LancerFactoryScript := preload("res://core/factory/classes/lancer_factory.gd")
+const ArcherFactoryScript := preload("res://core/factory/classes/archer_factory.gd")
 
 
 static func build_all_player_units() -> Dictionary:
@@ -40,10 +41,7 @@ static func collect_unit_overrides() -> Dictionary:
 
 
 static func _archer(bow: WeaponData) -> UnitData:
-	var p := DataLibrary._make_passive(&"eagle_eye", "Eagle Eye", "Increased range/accuracy.")
-	var snipe := DataLibrary._make_ability(&"archer_snipe", "Snipe", 5, [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3)], 1, GameEnums.StatType.PHYSICAL)
-	var shove := DataLibrary._make_ability(&"archer_shove", "Repelling Shot", 2, [DataLibrary._effect(GameEnums.EffectType.PUSH, 1)], 0)
-	return DataLibrary._make_unit_data(&"archer", "Archer", 3, 3, 1, [snipe, shove], null, GameEnums.MovementType.WALK, 3, 0, 2, bow, [p])
+	return ArcherFactoryScript.build(bow)
 
 
 static func _mage(staff: WeaponData) -> UnitData:

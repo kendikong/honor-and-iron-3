@@ -217,6 +217,17 @@ static func step_mp_cost(board: BoardState, coord: Vector2i, unit: UnitState) ->
 	var tile: TileState = board.get_tile(coord)
 	if tile != null and tile.definition != null:
 		terrain_cost = maxi(1, tile.definition.mp_cost_per_tile)
+		if board != null and board.terrain_payloads.has(coord):
+			terrain_cost += int(
+				(board.terrain_payloads[coord] as Dictionary).get(
+					"created_difficult_terrain_extra_mp", 0,
+				)
+			)
+		if unit != null and unit.has_passive(&"lightfoot"):
+			for passive: PassiveData in unit.active_passives:
+				if passive != null and passive.modifiers.has("ignore_difficult_terrain"):
+					terrain_cost = 1
+					break
 	return unit_cost * terrain_cost
 
 
@@ -728,6 +739,16 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 	var mp_spent: int = 0
 	for step_coord: Vector2i in path:
 		mp_spent += step_mp_cost(board, step_coord, unit)
+		for corpse: UnitState in board.units:
+			if (
+				corpse != null
+				and corpse.team != unit.team
+				and not corpse.is_alive()
+				and corpse.position == step_coord
+				and unit.has_passive(&"fletching_hoarder")
+			):
+				unit.passive_flags["corpse_move_empowered"] = true
+				break
 	unit.movement.points_left -= mp_spent
 	unit.record_movement(path, mp_spent, from)
 	_apply_movement_passives(board, unit, events)
@@ -836,13 +857,101 @@ static func _resolve_zone_of_control(
 		watcher.ability.points_left = ap_before
 		watcher.turn_action_used = action_used_before
 		break
-
-
+	for watcher: UnitState in board.units:
+		if (
+			watcher == null
+			or not watcher.is_alive()
+			or watcher.team == moved_unit.team
+			or not _has_passive_modifier(watcher, &"zone_entry_range")
+			or GridSystem.manhattan(watcher.position, moved_unit.position)
+				> _passive_modifier_value(watcher, &"zone_entry_range")
+		):
+			continue
+		var zone_damage := _passive_modifier_value(watcher, &"zone_entry_damage")
+		if watcher.is_passive_upgraded(&"zone_control"):
+			zone_damage = maxi(
+				zone_damage,
+				_passive_modifier_value(watcher, &"upgraded_zone_entry_damage"),
+			)
+		if zone_damage > 0:
+			CombatSystem.deal_damage(
+				board,
+				moved_unit,
+				zone_damage,
+				events,
+				&"true",
+				true,
+				false,
+				watcher,
+				"Zone Control",
+				zone_damage,
+			)
+		var push_dir := PhysicsSystem.cardinal_from_to(watcher.position, moved_unit.position)
+		var push_amount := _passive_modifier_value(watcher, &"zone_entry_push")
+		if push_dir != Vector2i.ZERO and moved_unit.is_alive() and push_amount > 0:
+			PhysicsSystem.push(board, moved_unit, push_dir, push_amount, events, watcher)
+	for watcher: UnitState in board.units:
+		if (
+			watcher == null
+			or not watcher.is_alive()
+			or watcher.team == moved_unit.team
+			or watcher.passive_flags.get("overwatch_used", false)
+			or not _has_passive_modifier(watcher, &"planning_unused_ap_reaction")
+			or watcher.ability.points_left < watcher.ability.max_points
+			or not _line_of_sight(board, watcher.position, moved_unit.position)
+		):
+			continue
+		var overwatch_raw := CombatSystem.calculate_scaled_damage(
+			watcher, 1, GameEnums.StatType.PHYSICAL, board,
+		)
+		CombatSystem.deal_damage(
+			board,
+			moved_unit,
+			overwatch_raw,
+			events,
+			&"physical",
+			false,
+			false,
+			watcher,
+			"Overwatch",
+			overwatch_raw,
+		)
+		watcher.passive_flags["overwatch_used"] = true
 static func _has_passive_modifier(unit: UnitState, key: StringName) -> bool:
+	if unit == null:
+		return false
 	for passive: PassiveData in unit.active_passives:
 		if passive != null and passive.modifiers.has(key):
 			return true
 	return false
+
+
+static func _passive_modifier_value(unit: UnitState, key: StringName) -> int:
+	if unit == null:
+		return 0
+	for passive: PassiveData in unit.active_passives:
+		if passive == null or not passive.modifiers.has(key):
+			continue
+		var value := int(passive.modifiers[key])
+		if (
+			unit.is_passive_upgraded(passive.id)
+			and passive.modifiers.has("upgraded_%s" % key)
+		):
+			value = int(passive.modifiers["upgraded_%s" % key])
+		return value
+	return 0
+
+
+static func _line_of_sight(board: BoardState, from: Vector2i, to: Vector2i) -> bool:
+	if from.x != to.x and from.y != to.y:
+		return false
+	var direction := PhysicsSystem.cardinal_from_to(from, to)
+	var current := from + direction
+	while current != to:
+		if GridSystem.is_wall(board, current):
+			return false
+		current += direction
+	return true
 
 
 static func _basic_attack(unit: UnitState) -> AbilityData:

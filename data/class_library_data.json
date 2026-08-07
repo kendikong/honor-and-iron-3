@@ -3,9 +3,9 @@
 	"last_unit": "knight",
 	"ui_scale": 1.2,
 	"units": {
-		"archer": {
+		"archer_legacy_placeholder": {
 			"abilities": {
-				"archer_shove": {
+				"archer_repelling_shot": {
 					"action_point_cost": 0,
 					"can_target_self": false,
 					"display_name": "Repelling Shot",
@@ -26,7 +26,7 @@
 					"kind": 0,
 					"movement_point_cost": 0,
 					"presentation_anim": 0,
-					"presentation_key": "archer_shove",
+					"presentation_key": "archer_repelling_shot",
 					"range_tiles": 2,
 					"scaling_stat": 0,
 					"target_shape": 0,
@@ -41,10 +41,10 @@
 					"upgraded_target_shape_size": -1,
 					"uses_per_combat": -1
 				},
-				"archer_snipe": {
+				"archer_power_shot": {
 					"action_point_cost": 1,
 					"can_target_self": false,
-					"display_name": "Snipe",
+					"display_name": "Power Shot",
 					"effects": [
 						{
 							"amount": 3,
@@ -62,7 +62,7 @@
 					"kind": 0,
 					"movement_point_cost": 0,
 					"presentation_anim": 0,
-					"presentation_key": "archer_snipe",
+					"presentation_key": "archer_power_shot",
 					"range_tiles": 5,
 					"scaling_stat": 1,
 					"target_shape": 0,
@@ -80,17 +80,17 @@
 			},
 			"action_points": 1,
 			"base_constitution": 3,
-			"base_defense": 2,
-			"base_magic": 0,
-			"base_strength": 3,
+			"base_defense": 1,
+			"base_magic": 1,
+			"base_strength": 4,
 			"display_name": "Archer",
 			"level": 1,
 			"move_points": 3,
 			"movement_type": 0,
 			"passives": {
-				"eagle_eye": {
+				"lightfoot": {
 					"description": "Increased range/accuracy.",
-					"display_name": "Eagle Eye",
+					"display_name": "Lightfoot",
 					"upgraded_description": ""
 				}
 			},
