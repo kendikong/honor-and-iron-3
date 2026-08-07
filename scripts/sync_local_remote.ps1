@@ -21,7 +21,7 @@ if ([string]::IsNullOrWhiteSpace($Branch)) {
 	$Branch = Get-CurrentBranch
 }
 
-Write-Output "=== Local ↔ remote sync ($Mode) ==="
+Write-Output "=== Local to remote sync ($Mode) ==="
 Write-Output "Repo: $projectRoot"
 Write-Output "Branch: $Branch  Remote: $Remote"
 
@@ -42,7 +42,8 @@ if ($aheadBehind) {
 Write-Output "Ahead of remote: $ahead"
 Write-Output "Behind remote:   $behind"
 if ($status) {
-	Write-Output "Working tree: DIRTY ($(($status | Measure-Object).Count) paths)"
+	$statusCount = ($status | Measure-Object).Count
+	Write-Output ("Working tree: DIRTY ({0} paths)" -f $statusCount)
 } else {
 	Write-Output "Working tree: CLEAN"
 }
@@ -56,39 +57,39 @@ switch ($Mode) {
 	}
 	"Pull" {
 		if ($status) {
-			Write-Output "[FAIL] Dirty working tree — commit or stash before pull."
+			Write-Output "[FAIL] Dirty working tree - commit or stash before pull."
 			exit 2
 		}
 		git pull --ff-only $Remote $Branch
 		if ($LASTEXITCODE -ne 0) {
-			Write-Output "[FAIL] pull --ff-only failed — resolve diverged history manually."
+			Write-Output "[FAIL] pull --ff-only failed - resolve diverged history manually."
 			exit 1
 		}
-		Write-Output "Pull OK — local matches ${Remote}/${Branch}"
+		Write-Output "Pull OK - local matches ${Remote}/${Branch}"
 		exit 0
 	}
 	"Push" {
 		# Allow push with only ignored/untracked junk; refuse if tracked files are modified/uncommitted.
 		$trackedDirty = git status --porcelain --untracked-files=no
 		if ($trackedDirty) {
-			Write-Output "[FAIL] Tracked files uncommitted — commit full backup before push (Cloud must see complete game)."
+			Write-Output "[FAIL] Tracked files uncommitted - commit full backup before push (Cloud must see complete game)."
 			$trackedDirty | Select-Object -First 20 | ForEach-Object { Write-Output $_ }
 			exit 2
 		}
 		if ($behind -gt 0) {
-			Write-Output "[FAIL] Local behind remote by $behind — run -Mode Pull first."
+			Write-Output "[FAIL] Local behind remote by $behind - run -Mode Pull first."
 			exit 1
 		}
 		if ($ahead -eq 0) {
-			Write-Output "Nothing to push — already up to date."
+			Write-Output "Nothing to push - already up to date."
 			exit 0
 		}
 		git push $Remote $Branch
 		if ($LASTEXITCODE -ne 0) {
-			Write-Output "[FAIL] git push failed — check auth / remote permissions."
+			Write-Output "[FAIL] git push failed - check auth / remote permissions."
 			exit 1
 		}
-		Write-Output "Push OK — ${ahead} commit(s) on ${Remote}/${Branch}"
+		Write-Output "Push OK - ${ahead} commit(s) on ${Remote}/${Branch}"
 		exit 0
 	}
 }
