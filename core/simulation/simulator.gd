@@ -195,4 +195,20 @@ static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> voi
 					CombatSystem.deal_damage(
 						board, unit, status.value, events, &"bleed", true, false, null, "Bleed", status.value,
 					)
+	var expired_terrain: Array[Vector2i] = []
+	for coord: Vector2i in board.temporary_terrain_turns.keys():
+		board.temporary_terrain_turns[coord] = int(board.temporary_terrain_turns[coord]) - 1
+		if int(board.temporary_terrain_turns[coord]) <= 0:
+			expired_terrain.append(coord)
+	for coord: Vector2i in expired_terrain:
+		var previous: TerrainData = board.temporary_terrain_previous.get(coord, null)
+		if previous != null:
+			board.set_tile_terrain(coord, previous)
+			events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
+				"coord": coord,
+				"terrain": previous.id,
+				"temporary_expired": true,
+			}))
+		board.temporary_terrain_turns.erase(coord)
+		board.temporary_terrain_previous.erase(coord)
 

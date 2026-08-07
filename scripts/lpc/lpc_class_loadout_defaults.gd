@@ -41,7 +41,7 @@ static func build() -> Dictionary:
 				"armour": 0.7,
 			},
 		},
-		"cavalier": {
+		"lancer": {
 			"forced_items": {
 				"weapon": "weapon_polearm_spear",
 				"armour": "torso_armour_legion",

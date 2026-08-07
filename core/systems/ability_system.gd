@@ -1112,7 +1112,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if not friendly and not effect.type in [GameEnums.EffectType.ADD_STATUS_SELF, GameEnums.EffectType.DAMAGE_SELF, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
 				return
 		elif actor != null:
-			if hostile and target.team == actor.team:
+			if hostile and target.team == actor.team and not effect.modifiers.has("allow_friendly_target"):
 				return
 			if friendly and target.team != actor.team:
 				return
@@ -1132,6 +1132,17 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				base_amt += floori(actor.health.max_hp * float(effect.modifiers["bonus_dmg_pct_max_hp"]))
 			if effect.modifiers.has("bonus_dmg_from_terrain") and actor.passive_flags.get("passed_through_terrain", false):
 				base_amt += effect.modifiers["bonus_dmg_from_terrain"]
+			if effect.modifiers.has("damage_multiplier"):
+				base_amt *= int(effect.modifiers["damage_multiplier"])
+			if (
+				effect.modifiers.has("bonus_atk_vs_fear_or_lower_movement")
+				and target != null
+				and (
+					target.has_status(GameEnums.StatusType.FEAR)
+					or target.movement.max_points < actor.movement.max_points
+				)
+			):
+				base_amt += int(effect.modifiers["bonus_atk_vs_fear_or_lower_movement"])
 				
 			if actor.has_passive(&"blood_for_blood") and actor.is_passive_upgraded(&"blood_for_blood") and actor.passive_flags.get("damaged_last_turn", false):
 				base_amt += 1
@@ -1193,11 +1204,15 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					fort = tile.definition.fortitude
 				vuln = target.has_status(GameEnums.StatusType.VULNERABLE)
 				elec = target.has_status(GameEnums.StatusType.ELECTRIFIED)
+				if effect.modifiers.has("target_def_set"):
+					target_def = int(effect.modifiers["target_def_set"])
 
 			if actor.passive_flags.has("breaching_dash_pierce"):
 				pierce = true
 				actor.passive_flags.erase("breaching_dash_pierce")
 			if actor.has_status(GameEnums.StatusType.PIERCE):
+				pierce = true
+			if effect.modifiers.has("target_def_set"):
 				pierce = true
 			if target != null and actor.has_passive(&"overwhelming_bulk"):
 				if actor.health.current_hp > target.health.max_hp:
@@ -1213,6 +1228,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							"ability_id": &"overwhelming_bulk",
 						})
 				
+			if (
+				effect.modifiers.has("polearm_mastery_range_two")
+				and target != null
+				and GridSystem.manhattan(actor.position, target.position) == 2
+			):
+				actor.passive_flags["suppress_melee_counter"] = true
 			events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, {
 				"type": "damage",
 				"base": base_amt,
@@ -1229,6 +1250,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				"pierce": pierce
 			}))
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
+			actor.passive_flags.erase("suppress_melee_counter")
 			if temp_def_debuff != null and target != null:
 				target.active_statuses.erase(temp_def_debuff)
 				target._recalculate_stats()
@@ -1559,6 +1581,23 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
 						"coord": tile_coord, "terrain": terrain_id
 					}))
+		GameEnums.EffectType.CREATE_HAZARD:
+			var terrain_id: StringName = effect.modifiers.get("terrain_id", &"spear_wall")
+			var terrain := DataLibrary.get_terrain(terrain_id)
+			if terrain != null:
+				if not board.temporary_terrain_previous.has(tile_coord):
+					var current_tile := board.get_tile(tile_coord)
+					if current_tile != null:
+						board.temporary_terrain_previous[tile_coord] = current_tile.definition
+				board.set_tile_terrain(tile_coord, terrain)
+				board.temporary_terrain_turns[tile_coord] = int(
+					effect.modifiers.get("hazard_duration", 1)
+				)
+				events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
+					"coord": tile_coord,
+					"terrain": terrain_id,
+					"temporary_turns": board.temporary_terrain_turns[tile_coord],
+				}))
 		GameEnums.EffectType.REFUND_AP_ON_CC:
 			if target != null and actor != null:
 				var snap: Variant = actor.passive_flags.get("__cast_cc_snapshot", null)
@@ -1577,6 +1616,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				return
 			var status := StatusData.new(effect.status_type, effect.status_duration, effect.amount)
 			actor.active_statuses.append(status)
+			if effect.modifiers.has("brace_attacker_stagger"):
+				actor.passive_flags["braced_attacker_stagger"] = true
 			actor._recalculate_stats()
 			events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
 				"unit": actor.id,

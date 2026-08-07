@@ -304,7 +304,7 @@ static func class_symbol(unit: UnitState) -> String:
 		&"knight": return "♞"
 		&"paladin": return "🛡️"
 		&"fighter": return "✊"
-		&"cavalier": return "🧲"
+		&"lancer": return "🧲"
 		&"archer": return "🏹"
 		&"mage": return "✨"
 		&"cleric": return "➕"

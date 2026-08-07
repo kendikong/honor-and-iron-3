@@ -236,6 +236,17 @@ static func dash(
 	var path: Array[Vector2i] = []
 	var trample_hit_ids: Dictionary = {}
 	var trampled_restore: Dictionary = {}
+	var source_ability: AbilityData = null
+	if pusher != null and ability_id != &"":
+		source_ability = pusher.get_ability_by_id(ability_id)
+	var source_effects: Array = []
+	if source_ability != null:
+		source_effects = source_ability.upgraded_effects if pusher.is_ability_upgraded(ability_id) else source_ability.effects
+	var create_trampled := false
+	for source_effect: EffectData in source_effects:
+		if source_effect != null and source_effect.modifiers.has("create_trampled_terrain"):
+			create_trampled = true
+			break
 
 	for step_i in range(distance):
 		var step_emit_start: int = events.size()
@@ -286,6 +297,14 @@ static func dash(
 		unit.position = next
 		traveled += 1
 		path.append(next)
+		if create_trampled:
+			var trampled := DataLibrary.get_terrain(&"trampled")
+			if trampled != null:
+				board.set_tile_terrain(prev, trampled)
+				events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
+					"coord": prev,
+					"terrain": &"trampled",
+				}))
 
 		var at_next := board.get_unit_at(next)
 		if at_next == null:

@@ -16,6 +16,8 @@ var intents: Array[Intent] = []
 var items: Array[Vector2i] = []
 var turn_index: int = 0
 var pending_pushes: Array[Dictionary] = []
+var temporary_terrain_turns: Dictionary = {}
+var temporary_terrain_previous: Dictionary = {}
 
 func get_tile(coord: Vector2i) -> TileState:
 	return tiles.get(coord, null)
@@ -87,4 +89,6 @@ func clone() -> BoardState:
 	for intent in intents:
 		copy.intents.append(intent.clone())
 	copy.pending_pushes = pending_pushes.duplicate(true)
+	copy.temporary_terrain_turns = temporary_terrain_turns.duplicate(true)
+	copy.temporary_terrain_previous = temporary_terrain_previous.duplicate(true)
 	return copy

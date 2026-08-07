@@ -455,6 +455,40 @@ static func deal_damage(
 		}))
 		return
 		
+	if (
+		attacker != null
+		and source_type == &"physical"
+		and GridSystem.manhattan(target.position, attacker.position) == 1
+		and target.has_status(GameEnums.StatusType.BRACED)
+	):
+		var brace_power := 2
+		for status: StatusData in target.active_statuses:
+			if status.type == GameEnums.StatusType.BRACED and status.value > 0:
+				brace_power = status.value
+				break
+		for i: int in range(target.active_statuses.size() - 1, -1, -1):
+			if target.active_statuses[i].type == GameEnums.StatusType.BRACED:
+				target.active_statuses.remove_at(i)
+		target._recalculate_stats()
+		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
+			"unit": target.id,
+			"amount": 0,
+			"hp": target.health.current_hp,
+			"armor": target.armor,
+			"hp_damaged": 0,
+			"armor_damaged": 0,
+			"damage_type": source_type,
+			"source_label": source_label,
+			"braced": true,
+		}))
+		counter_attack(board, target, attacker, brace_power, events, "Brace")
+		if target.passive_flags.get("braced_attacker_stagger", false):
+			if not try_resist_crowd_control(attacker, GameEnums.StatusType.STAGGER, events):
+				attacker.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+				attacker._recalculate_stats()
+			target.passive_flags.erase("braced_attacker_stagger")
+		return
+
 	var was_alive := target.is_alive()
 		
 	if target.has_status(GameEnums.StatusType.INVULNERABLE):
@@ -652,7 +686,11 @@ static func deal_damage(
 				append_flat_damage_telemetry(board, attacker, reflect, events)
 				deal_damage_raw(board, target, attacker, reflect, GameEnums.StatType.PHYSICAL, events, "Thorns")
 				
-		if target.has_status(GameEnums.StatusType.RETALIATION_PROTOCOL) and attacker != null:
+		if (
+			target.has_status(GameEnums.StatusType.RETALIATION_PROTOCOL)
+			and attacker != null
+			and not attacker.passive_flags.get("suppress_melee_counter", false)
+		):
 			var has_infinite_range := target.has_status(GameEnums.StatusType.RETALIATION_INFINITE_RANGE)
 			if has_infinite_range or GridSystem.manhattan(target.position, attacker.position) == 1:
 				var retal_dmg := calculate_scaled_damage(target, 2, GameEnums.StatType.PHYSICAL, board)

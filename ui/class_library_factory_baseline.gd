@@ -2,6 +2,7 @@ class_name ClassLibraryFactoryBaseline
 extends RefCounted
 
 ## Fresh player units from code factories — no class_library_data.json overrides.
+const LancerFactoryScript := preload("res://core/factory/classes/lancer_factory.gd")
 
 
 static func build_all_player_units() -> Dictionary:
@@ -15,7 +16,7 @@ static func build_all_player_units() -> Dictionary:
 	return {
 		"knight": KnightFactory.build(axe),
 		"bruiser": BruiserFactory.build(axe),
-		"cavalier": CavalierFactory.build(lance),
+		"lancer": LancerFactoryScript.build(lance),
 		"archer": _archer(bow),
 		"mage": _mage(staff),
 		"cleric": _cleric(staff),

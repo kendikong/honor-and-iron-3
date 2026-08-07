@@ -80,6 +80,7 @@ enum EffectType {
 	PUSH_CHAIN_COLLISION, ## Modifier: PUSH causes chain collisions (Bowling Charge).
 	MOVE_INTO_AND_PUSH, ## Caster moves to target tile; target is pushed away in the same direction.
 	THROW_BEHIND, ## Target is picked up and placed in the empty tile directly behind the caster.
+	CREATE_HAZARD, ## Create a temporary hazard line/area from the authored module.
 }
 
 ## Types of temporary statuses that can be applied to units.
@@ -129,11 +130,12 @@ enum StatusType {
 	INDOMITABLE_WILL_UPGRADED, ## Same as INDOMITABLE_WILL, but grants +2 STR on expiration or shield break.
 	THORNS,
 	IRON_GRIP_DEBUFF,
+	BRACED, ## Negates the next incoming melee attack and retaliates.
 }
 
 static func is_buff(status: StatusType) -> bool:
 	match status:
-		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RUNNING, StatusType.RETALIATION_PROTOCOL, StatusType.RETALIATION_INFINITE_RANGE, StatusType.INDOMITABLE_WILL, StatusType.INDOMITABLE_WILL_UPGRADED, StatusType.THORNS:
+		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RUNNING, StatusType.RETALIATION_PROTOCOL, StatusType.RETALIATION_INFINITE_RANGE, StatusType.INDOMITABLE_WILL, StatusType.INDOMITABLE_WILL_UPGRADED, StatusType.THORNS, StatusType.BRACED:
 			return true
 	return false
 

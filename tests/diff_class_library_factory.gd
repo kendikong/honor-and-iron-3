@@ -2,6 +2,7 @@ extends SceneTree
 
 ## One-shot: factory-coded abilities vs class_library_data.json overrides.
 ## Run: godot --headless --path . --script res://tests/diff_class_library_factory.gd
+const LancerFactoryScript := preload("res://core/factory/classes/lancer_factory.gd")
 
 const EFFECT_NAMES: PackedStringArray = [
 	"DAMAGE", "PUSH", "PULL", "SWAP", "HEAL", "ARMOR_UP", "EXPLODE", "SPAWN",
@@ -96,7 +97,7 @@ static func _build_factory_units() -> Dictionary:
 	return {
 		"knight": KnightFactory.build(axe),
 		"bruiser": BruiserFactory.build(axe),
-		"cavalier": CavalierFactory.build(lance),
+		"lancer": LancerFactoryScript.build(lance),
 		"archer": _archer(bow),
 		"mage": _mage(staff),
 		"cleric": _cleric(staff),

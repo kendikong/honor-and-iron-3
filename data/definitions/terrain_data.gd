@@ -30,3 +30,7 @@ extends Resource
 ## Movement points spent to enter this tile (plain = 1). Cracked earth uses 2 per Bible.
 @export var mp_cost_per_tile: int = 1
 
+## Optional temporary hazard payload for authored hazard lines/areas.
+@export var entry_status: GameEnums.StatusType = GameEnums.StatusType.ROOT
+@export var entry_status_duration: int = 0
+

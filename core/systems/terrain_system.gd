@@ -58,6 +58,23 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 	# Damage + any resulting death flow through CombatSystem so HP stays
 	# single-sourced and the event log reads move -> land -> hazard -> death.
 	CombatSystem.deal_damage(board, unit, dmg, events, &"hazard", false, false, null, tile.definition.display_name, dmg)
+	if (
+		unit.is_alive()
+		and tile.definition.entry_status_duration > 0
+		and not CombatSystem.try_resist_crowd_control(unit, tile.definition.entry_status, events)
+	):
+		unit.active_statuses.append(StatusData.new(
+			tile.definition.entry_status,
+			tile.definition.entry_status_duration,
+		))
+		unit._recalculate_stats(board)
+		events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+			"unit": unit.id,
+			"status_type": tile.definition.entry_status,
+			"duration": tile.definition.entry_status_duration,
+			"amount": 0,
+			"terrain": tile.definition.id,
+		}))
 
 static func _snap_boss_to_valid_tile(board: BoardState, unit: UnitState, events: Array[SimEvent]) -> void:
 	if not unit.is_alive():

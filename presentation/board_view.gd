@@ -2220,7 +2220,7 @@ func _draw_class_icon(c: Vector2, class_id: StringName, color: Color) -> void:
 			draw_rect(Rect2(c.x - 2, c.y - 7, 3, 4), color, true)
 			draw_rect(Rect2(c.x + 2, c.y - 6, 3, 3), color, true)
 			draw_rect(Rect2(c.x + 4, c.y - 2, 3, 4), color, true)
-		&"cavalier":
+		&"lancer":
 			draw_arc(c + Vector2(0, -1), 6.0, PI, TAU, 16, color, 3.0)
 			draw_line(c + Vector2(-6, -1), c + Vector2(-6, 6), color, 3.0)
 			draw_line(c + Vector2(6, -1), c + Vector2(6, 6), color, 3.0)
@@ -5123,7 +5123,7 @@ func _class_symbol(unit: UnitState) -> String:
 		&"knight": return "♞"
 		&"paladin": return "🛡️"
 		&"fighter": return "✊"
-		&"cavalier": return "🧲"
+		&"lancer": return "🧲"
 		&"archer": return "🏹"
 		&"mage": return "✨"
 		&"cleric": return "➕"

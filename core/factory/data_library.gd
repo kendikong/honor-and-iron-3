@@ -1,6 +1,8 @@
 class_name DataLibrary
 extends RefCounted
 
+const LancerFactoryScript := preload("res://core/factory/classes/lancer_factory.gd")
+
 ## Purpose: A hardcoded central registry of all Units, Terrain, Abilities, and Maps.
 ## This simulates loading .tres files from disk until the actual asset pipeline
 ## and resource authoring is set up in the editor.
@@ -19,6 +21,7 @@ static func reset_cache() -> void:
 	_enemy_units.clear()
 	_all_units_dict.clear()
 	_maps.clear()
+	_cached_terrains.clear()
 	_universal_run = null
 	_universal_wait = null
 
@@ -162,8 +165,8 @@ static func _ensure_init() -> void:
 	# 3. BRUISER (AXE)
 	var fighter := BruiserFactory.build(basic_axe)
 
-	# 4. CAVALIER (LANCE)
-	var cavalier := CavalierFactory.build(basic_lance)
+	# 4. LANCER (LANCE)
+	var lancer: UnitData = LancerFactoryScript.build(basic_lance)
 
 	# 5. ARCHER (BOW)
 	var p_archer = _make_passive(&"eagle_eye", "Eagle Eye", "Increased range/accuracy.")
@@ -220,7 +223,7 @@ static func _ensure_init() -> void:
 	var shaman := _make_unit_data(&"shaman", "Shaman", 3, 3, 1, [shaman_ward, shaman_shove], null, GameEnums.MovementType.WALK, 0, 4, 2, basic_staff, [p_shaman])
 
 	_player_units = [
-		knight, paladin, fighter, cavalier, archer, mage, cleric,
+		knight, paladin, fighter, lancer, archer, mage, cleric,
 		assassin, mercenary, gryphon, monk, engineer, shaman
 	]
 	for u in _player_units:
@@ -623,8 +626,8 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 		&"bruiser":
 			id = &"bruiser_basic"
 			display_name = "Wild Swing"
-		&"cavalier":
-			id = &"cavalier_basic"
+		&"lancer":
+			id = &"lancer_basic"
 			display_name = "Lance Thrust"
 			rng = 2
 		&"archer":
@@ -663,6 +666,8 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 			display_name = "Spirit Nudge"
 			rng = 2
 			stat = GameEnums.StatType.MAGICAL
+	if class_id == &"lancer":
+		effects[0].modifiers["polearm_mastery_range_two"] = true
 	var ab: AbilityData = _make_ability(id, display_name, rng, effects, 0, stat)
 	if effects[0].type == GameEnums.EffectType.HEAL:
 		ab.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
@@ -817,6 +822,19 @@ static func _cracked() -> TerrainData:
 	# Becomes pit if hit again
 	return t
 
+static func _trampled() -> TerrainData:
+	var t := TerrainData.new()
+	t.id = &"trampled"
+	t.display_name = "Trampled Ground"
+	t.mp_cost_per_tile = 2
+	return t
+
+static func _spear_wall() -> TerrainData:
+	var t := _hazard(&"spear_wall", "Spear Wall", 2, false)
+	t.entry_status = GameEnums.StatusType.ROOT
+	t.entry_status_duration = 1
+	return t
+
 static func _smoke() -> TerrainData:
 	var t := TerrainData.new()
 	t.id = &"smoke"
@@ -838,6 +856,8 @@ static func get_terrain(id: StringName) -> TerrainData:
 		_cached_terrains[&"steam"] = _steam()
 		_cached_terrains[&"frozen"] = _frozen()
 		_cached_terrains[&"cracked"] = _cracked()
+		_cached_terrains[&"trampled"] = _trampled()
+		_cached_terrains[&"spear_wall"] = _spear_wall()
 		_cached_terrains[&"smoke"] = _smoke()
 		_cached_terrains[&"pit"] = _hazard(&"pit", "Pit", 6, true)
 		_cached_terrains[&"spikes"] = _hazard(&"spikes", "Spikes", 2, false)

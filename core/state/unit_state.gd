@@ -183,6 +183,9 @@ func _recalculate_stats(board: BoardState = null) -> void:
 		current_magic = 0
 		movement.max_points = 1
 		movement.points_left = mini(movement.points_left, 1)
+	elif has_status(GameEnums.StatusType.BRACED):
+		movement.max_points = 0
+		movement.points_left = 0
 	else:
 		movement.max_points = definition.move_points + w_mov + stat_mov
 		if run_boost_amount > 0:

@@ -1,0 +1,37 @@
+﻿=== Lancer QA gate (class validation - NOT planning QA) ===
+Spec: docs/LANCER_QA_GATE.md
+Rows: 29
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] lancer_qa_tier1
+[LANCER_QA] push (lancer_push)
+[LANCER_QA] piercing_charge (lancer_piercing_charge)
+[LANCER_QA] sweeping_halberd (lancer_sweeping_halberd)
+[LANCER_QA] vaulting_leap (lancer_vaulting_leap)
+[LANCER_QA] run_down (lancer_run_down)
+[LANCER_QA] rallying_cry (lancer_rallying_cry)
+[LANCER_QA] flanking_maneuver (lancer_flanking_maneuver)
+[LANCER_QA] brace (lancer_brace)
+[LANCER_QA] harpoon_toss (lancer_harpoon_toss)
+[LANCER_QA] glorious_charge (lancer_glorious_charge)
+[LANCER_QA] pole_vault (lancer_pole_vault)
+[LANCER_QA] line_breaker (lancer_line_breaker)
+[LANCER_QA] spear_wall (lancer_spear_wall)
+[LANCER_QA] meteor_drop (lancer_meteor_drop)
+[LANCER_QA] kinetic_charge (kinetic_charge)
+[LANCER_QA] unstoppable_mass (unstoppable_mass)
+[LANCER_QA] canto (canto)
+[LANCER_QA] frontline_defense (frontline_defense)
+[LANCER_QA] flanking_strike (flanking_strike)
+[LANCER_QA] plunging_attack (plunging_attack)
+[LANCER_QA] crashing_impact (crashing_impact)
+[LANCER_QA] pole_plant (pole_plant)
+[LANCER_QA] spear_drop (spear_drop)
+[LANCER_QA] springboard (springboard)
+[LANCER_QA] sweet_spot (sweet_spot)
+[LANCER_QA] reach_advantage (reach_advantage)
+[LANCER_QA] disengage (disengage)
+[LANCER_QA] zone_of_control (zone_of_control)
+[LANCER_QA] leverage (leverage)
+[PASS] Lancer QA Tier 1 scenarios
+[PASS] Lancer QA gate: 29 Bible rows + modular bridge smoke
