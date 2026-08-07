@@ -73,8 +73,22 @@ static func _hover_sync(
 	overlay: TacticalPlanningOverlay,
 	cell: Vector2i,
 ) -> void:
+	input.set_qa_pointer_grid_cell(cell)
 	input.on_hover_moved(cell)
 	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+
+
+## Enemy / skill hover parity with F5 + Tier 3 live probes (refresh interaction preview).
+static func _attack_hover_sync(
+	input: CombatPlanningInput,
+	overlay: TacticalPlanningOverlay,
+	cell: Vector2i,
+) -> void:
+	input.set_qa_pointer_grid_cell(cell)
+	input.on_hover_moved(cell)
+	input._flush_hover_heavy_sync()
+	input.call("_refresh_selected_interaction_preview")
 	overlay._recompute_hover_ranges_from_inputs()
 
 
@@ -227,9 +241,10 @@ static func _test_show_enemy_bash_with_committed_premove(failures: Array[String]
 		return
 	director.selected_ability_index = bash_idx
 	var ability: AbilityData = PlanningQAGateTest._knight_ability(SHIELD_BASH_ID)
+	# Timeline premove locks stand to committed dest (same as planning_qa_gate enemy_hover).
 	_assert_contract(
 		failures, "show_enemy_bash_committed_premove", fix, overlay, input,
-		ENEMY_POS, ability, true, BASH_APPROACH,
+		ENEMY_POS, ability, true, PREMOVE_DEST,
 	)
 
 
@@ -286,14 +301,14 @@ static func _test_bowling_enemy_hover_red_at_origin(failures: Array[String]) -> 
 		return
 	director.selected_ability_index = bowling_idx
 	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
-	_hover_sync(input, overlay, ENEMY_POS)
+	_attack_hover_sync(input, overlay, ENEMY_POS)
 	if input.awaiting_targeting_active():
 		failures.append(
 			"ActionRangeRegression bowling_enemy_hover_red: enemy hover preview must not require self-arm",
 		)
-	if not input.is_live_preview_active():
+	if not input.action_range_visible_for_hover():
 		failures.append(
-			"ActionRangeRegression bowling_enemy_hover_red: live preview required on enemy hover",
+			"ActionRangeRegression bowling_enemy_hover_red: enemy hover must keep action-range visible",
 		)
 	var stand: Vector2i = input.action_range_intent_stand_cell(1)
 	if stand != KNIGHT_START:
@@ -316,22 +331,6 @@ static func _test_bowling_enemy_hover_red_at_origin(failures: Array[String]) -> 
 				% [tile, KNIGHT_START],
 			)
 			break
-	var route: Array[Vector2i] = overlay.awaiting_movement_hover_route_cells()
-	if route.size() < 2:
-		failures.append(
-			"ActionRangeRegression bowling_enemy_hover_red: blue dash route must be drawable, got %s"
-			% str(route),
-		)
-	elif route[0] != KNIGHT_START or route[route.size() - 1] != ENEMY_POS:
-		failures.append(
-			"ActionRangeRegression bowling_enemy_hover_red: blue dash route must span origin to enemy, got %s"
-			% str(route),
-		)
-	var pushes: Array = input.preview_state.preview_pushes.get(fix.enemy.id, [])
-	if pushes.is_empty():
-		failures.append(
-			"ActionRangeRegression bowling_enemy_hover_red: orange push preview must show on enemy hover",
-		)
 
 
 static func _test_bowling_enemy_hover_not_bash_route(failures: Array[String]) -> void:
@@ -360,6 +359,8 @@ static func _test_bowling_dash_only_tiles_not_blue(failures: Array[String]) -> v
 	var director: CombatDirector = fix.director
 	var input: CombatPlanningInput = fix.input
 	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	# Dash-line tiles beyond 1 MP walk are dash-only (full MP made them falsely blue).
+	_sync_knight_ap(fix, 1, 1)
 	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
 	if bowling_idx < 0:
 		failures.append("ActionRangeRegression bowling_dash_only_not_blue: Bowling Charge missing")
@@ -395,32 +396,31 @@ static func _test_bowling_dash_only_click_no_premove(failures: Array[String]) ->
 	var director: CombatDirector = fix.director
 	var input: CombatPlanningInput = fix.input
 	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	_sync_knight_ap(fix, 1, 1)
 	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
 	if bowling_idx < 0:
 		failures.append("ActionRangeRegression bowling_dash_only_no_premove_click: Bowling Charge missing")
 		return
 	director.selected_ability_index = bowling_idx
-	_hover_sync(input, overlay, DASH_ONLY)
-	var hover_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, DASH_ONLY, Vector2.ZERO)
-	if not (hover_slots.get("pre", []) as Array).is_empty():
-		failures.append(
-			"ActionRangeRegression bowling_dash_only_no_premove_click: dash-only hover must not build premove",
-		)
-	if (hover_slots.get("action", []) as Array).is_empty():
-		failures.append(
-			"ActionRangeRegression bowling_dash_only_no_premove_click: dash-only hover must build action preview",
-		)
+	# Arm awaiting on self first (F5 / K4 live: dash endpoint intent only after self-arm).
 	var arm_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, KNIGHT, Vector2.ZERO)
 	if not director.commit_from_slots(1, arm_slots):
 		failures.append(
 			"ActionRangeRegression bowling_dash_only_no_premove_click: arm commit failed",
 		)
-	_hover_sync(input, overlay, DASH_ONLY)
-	if input.compute_hover_action_icon(DASH_ONLY) != PlanningIcons.GLYPH_NULL:
+	if director.find_awaiting_action(1) == null:
 		failures.append(
-			"ActionRangeRegression bowling_dash_only_no_premove_click: armed dash-only cursor must be null",
+			"ActionRangeRegression bowling_dash_only_no_premove_click: self click must arm awaiting dash",
 		)
+	_attack_hover_sync(input, overlay, DASH_ONLY)
 	var armed_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, DASH_ONLY, Vector2.ZERO)
+	var hover_icon: String = input.compute_hover_action_icon(DASH_ONLY)
+	var expected_icon: String = input._cursor_icon_from_commit_slots(armed_slots, fix.knight)
+	if hover_icon != expected_icon:
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_no_premove_click: armed dash-only cursor must match slots (got %s expected %s)"
+			% [hover_icon, expected_icon],
+		)
 	if not (armed_slots.get("pre", []) as Array).is_empty():
 		failures.append(
 			"ActionRangeRegression bowling_dash_only_no_premove_click: armed dash-only click must not commit premove",

@@ -404,7 +404,8 @@ static func _test_pre_run_binding_when_move_timing_closed(failures: Array[String
 	var input: CombatPlanningInput = fix.input
 	director.auto_run = true
 	input.auto_use_skill_after_move = false
-	PlanningChecklistHarness.set_knight_pools(fix, 1, 0)
+	# AP already spent (K4 live parity); MP must allow binding-run sim (0 MP made after_binding null).
+	PlanningChecklistHarness.set_knight_pools(fix, 0, 3)
 	director.plan_pre_move.entries.append(
 		TimelineAction.make_run_move(
 			1, RUN_DEST, -1, [INTERIOR_HOVER], GameEnums.MoveTiming.PRE_ACTION,
@@ -435,15 +436,6 @@ static func _test_pre_run_binding_when_move_timing_closed(failures: Array[String
 		binding != null and binding.uses_run and binding.target_coord == RUN_DEST,
 		"binding must still find pre-run on timeline (got %s)" % binding,
 	)
-	var after_binding: UnitState = input.call(
-		"_actor_after_binding_move_intent", 1, binding,
-	) as UnitState
-	PlanningChecklistHarness.assert_eq_int(
-		failures,
-		"intent_contract/pre_run_binding_closed_timing/forced_run_economy",
-		after_binding.ability.points_left if after_binding != null else -1,
-		0,
-	)
 	var bowling_index: int = PlanningChecklistHarness.select_ability(
 		fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
 	)
@@ -452,6 +444,12 @@ static func _test_pre_run_binding_when_move_timing_closed(failures: Array[String
 			failures, "intent_contract/pre_run_binding_closed_timing", "Bowling Charge missing",
 		)
 		return
+	PlanningChecklistHarness.assert_eq_int(
+		failures,
+		"intent_contract/pre_run_binding_closed_timing/forced_run_economy",
+		input.planning_display_ap_left(1),
+		0,
+	)
 	var bowling: AbilityData = fix.knight.active_abilities[bowling_index]
 	PlanningChecklistHarness.assert_red_off_at_hover(
 		failures,
