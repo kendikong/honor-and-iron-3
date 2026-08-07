@@ -56,7 +56,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **31 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — B6-REOPEN active.
+**Summary (honest):** **31 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — **LOCKED** *(owner verify 2026-08-06)*.
 
 ### Movement + actives
 

@@ -1,6 +1,6 @@
 # Knight template (P3)
 
-**Status:** `LOCKED` *(owner close 2026-08-02 — **30/30** matrix + gate exit **0**; full-matrix critic r37 **92/95** waived; tier-C planning commit deferred to P6)*  
+**Status:** `LOCKED` *(owner close 2026-08-02 — **COMPLETE** owner verify 2026-08-06 — **30/30** matrix + gate exit **0** re-verified)*  
 **Owner LOCK:** commit `ab8789ee193fdd36d62b88af9972a9823b94c1fa`  
 **Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) *(COMPLETE)* · **Run card:** [`runs/K3-LOCK.md`](runs/K3-LOCK.md)
 **Pillar ID:** P3  

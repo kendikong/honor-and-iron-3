@@ -1,27 +1,30 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** Bruiser template LOCK (P6 / B6-LOCK) — P3 Knight **LOCKED** per owner 2026-08-02  
+**Current phase:** P3 Knight + P6 Bruiser **COMPLETE** (owner verify 2026-08-06) — next: P4 roguelike worksheet / P8 presentation  
 **Active plan:** `docs/design/` pillar specs + [`verification-matrix.md`](docs/design/verification-matrix.md)  
 **Combat reference:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed; P2 done for now)  
-**Last updated:** 2026-08-02  
+**Last updated:** 2026-08-06  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
 ---
 
-## P6 — Bruiser template LOCK (B6-LOCK) — ACTIVE
+## P6 — Bruiser template LOCK (B6-LOCK) — COMPLETE ✅
 
-**Started:** 2026-08-02 — gauntlet infrastructure cloned from P3 Knight pipeline
+**Closed:** owner verify 2026-08-06 — `bruiser-template.md` → **`LOCKED`** — gate **31/31 PASS** + `run_bruiser_qa_gate.ps1` exit **0** (re-verified this session)
 
-### Deliverables (setup)
-- [x] `docs/BRUISER_QA_GATE.md` — 31-row honest matrix (all `PLANNED`)
+### Deliverables
+- [x] `docs/BRUISER_QA_GATE.md` — 31-row matrix (all `PASS`)
 - [x] `scripts/run_bruiser_qa_gate.ps1`
 - [x] `tests/bruiser_qa_harness.gd`, `bruiser_scenario_registry.gd`, `bruiser_qa_runner.gd`, `BruiserQaGate.tscn`
 - [x] `docs/design/bruiser-template.md`, `UNATTENDED_RUN.md` (B6-LOCK), `runs/B6-LOCK.md`
-- [ ] 31/31 matrix PASS + `bruiser-template.md` → **LOCKED**
+- [x] 31/31 matrix PASS + `bruiser-template.md` → **LOCKED**
+- [x] Meta-critic full-matrix **96/95** (`docs/bruiser_meta_critic_manifest.json`)
+
+**Audit result:** **PASS** (machine gate + matrix; owner sign-off 2026-08-06)
 
 ---
 
-**Closed:** owner LOCK 2026-08-02 — `knight-template.md` → **`LOCKED`** — commit `ab8789ee193fdd36d62b88af9972a9823b94c1fa`
+## P3 — Knight template LOCK (K3-LOCK) — COMPLETE ✅
 
 ### Deliverables
 - [x] 30/30 Knight matrix rows meta-critic `PASS` (`docs/knight_meta_critic_manifest.json`)
