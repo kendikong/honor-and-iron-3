@@ -1,4 +1,4 @@
-=== Bruiser QA gate (class validation - NOT planning QA) ===
+﻿=== Bruiser QA gate (class validation - NOT planning QA) ===
 Spec: docs/BRUISER_QA_GATE.md
 
 === Matrix summary (from docs/BRUISER_QA_GATE.md) ===
@@ -10,6 +10,7 @@ PLANNED/other: 0
 
 === Tier 1: headless skill scenarios (harness) ===
 Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
 [SUITE] bruiser_qa_tier1
 [BRUISER_QA] push_through (bruiser_push_through)
 [BRUISER_QA] charge_strike (bruiser_charge_strike)
