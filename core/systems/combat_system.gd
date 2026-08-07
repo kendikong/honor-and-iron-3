@@ -689,7 +689,6 @@ static func deal_damage(
 		if (
 			target.has_status(GameEnums.StatusType.RETALIATION_PROTOCOL)
 			and attacker != null
-			and not attacker.passive_flags.get("suppress_melee_counter", false)
 		):
 			var has_infinite_range := target.has_status(GameEnums.StatusType.RETALIATION_INFINITE_RANGE)
 			if has_infinite_range or GridSystem.manhattan(target.position, attacker.position) == 1:

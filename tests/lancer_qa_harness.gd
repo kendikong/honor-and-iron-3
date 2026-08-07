@@ -144,6 +144,164 @@ static func run_push_smoke(failures: Array[String]) -> void:
 		"Push must resolve through PhysicsSystem after the modular ability compiles",
 	)
 
+
+static func run_polearm_reach_smoke(failures: Array[String]) -> void:
+	var basic := factory_ability(&"lancer_basic")
+	assert_true(failures, "polearm_mastery/basic_registered", basic != null)
+	if basic == null:
+		return
+	assert_eq_int(failures, "polearm_mastery/basic_range", basic.range_tiles, 2)
+	assert_true(
+		failures,
+		"polearm_mastery/basic_modifier",
+		is_equal_approx(
+			float(basic.effects[0].modifiers.get("range_one_damage_multiplier", 0.0)),
+			0.7,
+		),
+		"basic Lance must carry the 30% Range 1 penalty",
+	)
+
+	var definition := lancer_unit_data()
+	if definition == null:
+		return
+	for ability: AbilityData in definition.abilities:
+		if ability == null or not ability.tags.has(AbilityModuleBridge.TAG_ATTACK):
+			continue
+		for effect: EffectData in ability.effects:
+			if effect == null or effect.type != GameEnums.EffectType.DAMAGE:
+				continue
+			assert_true(
+				failures,
+				"%s/range_one_modifier" % ability.id,
+				is_equal_approx(
+					float(effect.modifiers.get("range_one_damage_multiplier", 0.0)),
+					0.7,
+				),
+				"every extended-reach Lancer attack must use Polearm Mastery",
+			)
+
+	var damage_at_one := _simulate_basic_damage(1)
+	var damage_at_two := _simulate_basic_damage(2)
+	assert_true(
+		failures,
+		"polearm_mastery/damage_order",
+		damage_at_one < damage_at_two,
+		"Range 1 damage must be weaker than Range 2 damage",
+	)
+	assert_true(
+		failures,
+		"polearm_mastery/damage_ratio",
+		damage_at_one == floori(damage_at_two * 0.7),
+		"Range 1 damage must be exactly 70% of the unpenalized result",
+	)
+
+
+static func run_push_synergy_smoke(failures: Array[String]) -> void:
+	var definition := lancer_unit_data()
+	if definition == null:
+		return
+	var charge := factory_ability(&"lancer_piercing_charge")
+	var sweep := factory_ability(&"lancer_sweeping_halberd")
+	var vault := factory_ability(&"lancer_pole_vault")
+	assert_true(
+		failures,
+		"push_synergy/charge_modifier",
+		charge != null and _has_modifier(
+			charge.upgraded_effects, GameEnums.EffectType.PUSH, "push_bonus_if_push_used"
+		),
+		"Piercing Charge [+] must gain PUSH 3 after Push",
+	)
+	assert_true(
+		failures,
+		"push_synergy/sweep_modifier",
+		sweep != null and _has_modifier(
+			sweep.upgraded_effects, GameEnums.EffectType.PULL, "pull_bonus_if_push_used"
+		),
+		"Sweeping Halberd [+] must gain PULL 2 after Push",
+	)
+	assert_true(
+		failures,
+		"push_synergy/vault_modifier",
+		vault != null and _has_modifier(
+			vault.upgraded_effects, GameEnums.EffectType.TELEPORT_CASTER,
+			"landing_adjacent_push_if_push_used",
+		),
+		"Pole Vault [+] must require Push before its landing displacement",
+	)
+	if charge == null or sweep == null or vault == null:
+		return
+
+	var board := _plain_board(Vector2i(8, 5))
+	var actor := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(1, 2), {
+		"active_abilities": [charge, sweep, vault],
+		"active_passives": [],
+		"upgraded_abilities": [charge.id, sweep.id, vault.id],
+	})
+	actor.passive_flags["push_used_this_turn"] = true
+	var landing_enemy := UnitState.create(
+		2, definition, GameEnums.Team.ENEMY, Vector2i(4, 3), {
+			"active_abilities": [],
+			"active_passives": [],
+		}
+	)
+	board.units = [actor, landing_enemy]
+	GridSystem.set_occupant(board, actor.position, actor.id)
+	GridSystem.set_occupant(board, landing_enemy.position, landing_enemy.id)
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(
+		actor.id, vault, Vector2i(4, 2), -1
+	))
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	assert_true(
+		failures,
+		"push_synergy/vault_sim",
+		landing_enemy.position == Vector2i(4, 4),
+		"Pole Vault [+] must push adjacent enemies after Push",
+	)
+
+
+static func _simulate_basic_damage(distance: int) -> int:
+	var definition := lancer_unit_data()
+	var basic := factory_ability(&"lancer_basic")
+	var board := _plain_board(Vector2i(7, 4))
+	var actor := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(1, 1), {
+		"active_abilities": [basic],
+		"active_passives": [],
+	})
+	var target := UnitState.create(
+		2, definition, GameEnums.Team.ENEMY, Vector2i(1 + distance, 1), {
+			"active_abilities": [],
+			"active_passives": [],
+		}
+	)
+	board.units = [actor, target]
+	GridSystem.set_occupant(board, actor.position, actor.id)
+	GridSystem.set_occupant(board, target.position, target.id)
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(actor.id, basic, target.position, target.id))
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	for event: SimEvent in events:
+		if (
+			event.type == GameEnums.SimEventType.MATH_TELEMETRY
+			and event.data.get("type", "") == "damage"
+		):
+			return int(event.data.get("final_raw", 0))
+	return target.health.max_hp - target.health.current_hp
+
+
+static func _has_modifier(
+	effects: Array[EffectData],
+	effect_type: GameEnums.EffectType,
+	modifier_key: String,
+) -> bool:
+	for effect: EffectData in effects:
+		if effect != null and effect.type == effect_type and effect.modifiers.has(modifier_key):
+			return true
+	return false
+
+
 static func _plain_board(size: Vector2i) -> BoardState:
 	var board := BoardState.new()
 	board.grid_size = size

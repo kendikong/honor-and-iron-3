@@ -1204,6 +1204,13 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if _is_backstab(actor, target):
 					amount += BACKSTAB_BONUS
 					backstabbed = true
+				if (
+					GridSystem.manhattan(actor.position, target.position) == 1
+					and effect.modifiers.has("range_one_damage_multiplier")
+				):
+					amount = floori(
+						amount * float(effect.modifiers["range_one_damage_multiplier"])
+					)
 				target_def = CombatSystem.get_dynamic_defense(board, target)
 				var tile = board.get_tile(target.position)
 				if tile != null and tile.definition != null:
@@ -1234,12 +1241,6 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							"ability_id": &"overwhelming_bulk",
 						})
 				
-			if (
-				effect.modifiers.has("polearm_mastery_range_two")
-				and target != null
-				and GridSystem.manhattan(actor.position, target.position) == 2
-			):
-				actor.passive_flags["suppress_melee_counter"] = true
 			events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, {
 				"type": "damage",
 				"base": base_amt,
@@ -1251,12 +1252,14 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				"backstab": backstabbed,
 				"backstab_bonus": BACKSTAB_BONUS if backstabbed else 0,
 				"final_raw": amount,
+				"range_one_damage_multiplier": effect.modifiers.get(
+					"range_one_damage_multiplier", 1.0
+				),
 				"target_def": target_def, "fortitude": fort,
 				"vulnerable": vuln, "electrified": elec,
 				"pierce": pierce
 			}))
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
-			actor.passive_flags.erase("suppress_melee_counter")
 			if temp_def_debuff != null and target != null:
 				target.active_statuses.erase(temp_def_debuff)
 				target._recalculate_stats()
@@ -1278,7 +1281,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"type": "push",
 						"target_id": target.id,
 						"dir": dir,
-						"amount": effect.amount,
+						"amount": effect.amount + _push_synergy_bonus(
+							actor, effect, "push_bonus_if_push_used"
+						),
 						"actor_id": actor.id,
 						"ability_id": action.ability.id
 					}
@@ -1320,7 +1325,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"type": "pull",
 						"target_id": target.id,
 						"dir": dir,
-						"amount": effect.amount,
+						"amount": effect.amount + _push_synergy_bonus(
+							actor, effect, "pull_bonus_if_push_used"
+						),
 						"actor_id": actor.id,
 						"ability_id": action.ability.id
 					}
@@ -1576,6 +1583,26 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 					"unit": actor.id, "to": actor.position
 				}))
+				if actor.passive_flags.get("push_used_this_turn", false):
+					var landing_push: int = int(
+						effect.modifiers.get("landing_adjacent_push_if_push_used", 0)
+					)
+					if landing_push > 0:
+						for dir: Vector2i in GridSystem.DIRECTIONS:
+							var adjacent := board.get_unit_at(actor.position + dir)
+							if adjacent == null or adjacent.team == actor.team:
+								continue
+							board.pending_pushes.append({
+								"type": "push",
+								"target_id": adjacent.id,
+								"dir": dir,
+								"amount": landing_push,
+								"actor_id": actor.id,
+								"ability_id": action.ability.id,
+								"stagger_on_collision": effect.modifiers.get(
+									"landing_adjacent_push_stagger", false
+								),
+							})
 		GameEnums.EffectType.CHANGE_TERRAIN:
 			# Amount parameter can be used to select terrain type, for now just hardcode cracked
 			var terrain_id = &"cracked"
@@ -1636,6 +1663,15 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				board, actor, effect.amount, events, &"true", true, false, actor,
 				"%s (self)" % action.ability.display_name, effect.amount
 			)
+
+
+static func _push_synergy_bonus(actor: UnitState, effect: EffectData, modifier_key: StringName) -> int:
+	if actor == null or effect == null:
+		return 0
+	if not actor.passive_flags.get("push_used_this_turn", false):
+		return 0
+	return int(effect.modifiers.get(modifier_key, 0))
+
 
 static func _apply_running_boost(actor: UnitState, events: Array[SimEvent]) -> void:
 	if actor.has_run_boost():

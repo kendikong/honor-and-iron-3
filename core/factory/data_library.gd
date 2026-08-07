@@ -667,7 +667,7 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 			rng = 2
 			stat = GameEnums.StatType.MAGICAL
 	if class_id == &"lancer":
-		effects[0].modifiers["polearm_mastery_range_two"] = true
+		effects[0].modifiers["range_one_damage_multiplier"] = 0.7
 	var ab: AbilityData = _make_ability(id, display_name, rng, effects, 0, stat)
 	if effects[0].type == GameEnums.EffectType.HEAL:
 		ab.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT

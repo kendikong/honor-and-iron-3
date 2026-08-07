@@ -439,6 +439,8 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 			break
 
 	if traveled > 0:
+		if pusher != null:
+			pusher.passive_flags["push_used_this_turn"] = true
 		for status in target.active_statuses:
 			if status.type == GameEnums.StatusType.BLEED:
 				CombatSystem.deal_damage(board, target, 3 * traveled, events, &"bleed", false, false, null, "Bleed (push)", 3 * traveled)

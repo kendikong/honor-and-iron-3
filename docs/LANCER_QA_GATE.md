@@ -16,10 +16,14 @@ The Tier 1 suite checks:
 - Exactly 14 authored abilities (Push plus 13 active skills) and 15 passives.
 - Every ability has non-empty base and `[+]` `AbilityModule` profiles.
 - The module bridge compiles each profile to the expected primary effect.
+- Polearm Mastery gives every extended-reach Lancer attack a 70% Range 1
+  damage multiplier while preserving full damage at Range 2.
 - Every passive is registered with promotion ownership in data, not an
   ability-id branch.
 - The modular Push effect resolves through `Simulator` → `AbilitySystem` →
   `PhysicsSystem`.
+- Push-based upgrades resolve their conditional Charge, Sweeping Halberd, and
+  Pole Vault displacement bonuses through the shared simulator path.
 
 The registry contains one row for each Bible factory id:
 

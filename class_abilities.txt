@@ -1033,7 +1033,7 @@ Active Skills & Upgrades
 Core Identity: Mid-Range Melee DPS. Grounded polearm specialist. Uses RANGE 2 attacks, linear physics, and momentum to pierce enemy lines.
 | CON 5 | MOV 3 | STR 4 | DEF 3 | MAG 1 |
 
-Innate Trait: Polearm Mastery — All basic attacks have a Range of 2. Attacking a melee enemy at exactly Range 2 prevents them from triggering standard melee counter-attacks.
+Innate Trait: Polearm Mastery — All basic attacks have a Range of 2. All extended-reach melee attacks deal 30% less damage when used at Range 1.
 Movement Skill: Push (Cost: 0 MOV) — Select an adjacent unit. Apply PUSH 1 to them.
 ↳ [+] Upgrade: Limit once per turn. Pushing a unit grants you +1 STR for your next attack this turn.
 
@@ -1079,9 +1079,9 @@ Passives
 
 Active Skills & Upgrades
 
-(The Cavalier / The Skystriker) Piercing Charge: DASH 3 | ATK 2 (RANGE 2) | PUSH 2 [+] Create TRAMPLED terrain behind you (MOVE cost x2).
+(The Cavalier / The Skystriker) Piercing Charge: DASH 3 | ATK 2 (RANGE 2) | PUSH 2 [+] Create TRAMPLED terrain behind you (MOVE cost x2). If you used Push earlier this turn, PUSH 3 instead.
 
-(The Halberdier / The Skystriker) Sweeping Halberd: RANGE 2 | ARC | ATK 2 | PULL 1 [+] Enemy collision on PULL applies STAGGER.
+(The Halberdier / The Skystriker) Sweeping Halberd: RANGE 2 | ARC | ATK 2 | PULL 1 [+] Enemy collision on PULL applies STAGGER. If you used Push earlier this turn, PULL 2 instead.
 
 (The Skystriker / The Cavalier) Vaulting Leap: RANGE 2 | ATK 2 | Target DEF = 0 (1 turn). [+] Armor explodes: ATK 1 (AOE 1 around target).
 
@@ -1097,7 +1097,7 @@ Active Skills & Upgrades
 
 (The Cavalier / The Skystriker) Glorious Charge: RANGE 4 (Ally) | SELF and Ally MOVE to enemy | Combined STR ATK. [+] On Kill: Both gain +1 AP.
 
-(The Skystriker / The Halberdier) Pole Vault: RANGE 3 | Jump over an obstacle or enemy to an empty tile. [+] Landing applies PUSH 1 to adjacent enemies.
+(The Skystriker / The Halberdier) Pole Vault: RANGE 3 | Jump over an obstacle or enemy to an empty tile. [+] If you used Push earlier this turn, landing applies PUSH 1 to adjacent enemies; collisions from those pushes apply STAGGER.
 
 (The Cavalier / The Halberdier) Line Breaker: DASH 4 | Pass through all enemies. Deal ATK 2 to each. [+] ATK +1 for each enemy passed through this turn.
 

@@ -111,16 +111,16 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	# Shared / promoted actives.
 	def.abilities.append(_charge_skill(
 		&"lancer_piercing_charge", "Piercing Charge", 3, 2, 2,
-		"Create TRAMPLED terrain behind you (MOVE cost x2).",
+		"Create TRAMPLED terrain behind you (MOVE cost x2). If Push was used earlier this turn, PUSH 3 instead.",
 		{"create_trampled_terrain": true},
 	))
 	def.abilities.append(_attack_with_layer(
 		&"lancer_sweeping_halberd", "Sweeping Halberd", 2, GameEnums.TargetShape.ARC,
 		2, GameEnums.EffectType.PULL, 1,
-		"Sweeping Halberd's PULL collision applies STAGGER.",
+		"Sweeping Halberd's PULL collision applies STAGGER. If Push was used earlier this turn, PULL 2 instead.",
 		{},
 		GameEnums.StatusType.STAT_BUFF_STR,
-		{"stagger_on_collision": true},
+		{"stagger_on_collision": true, "pull_bonus_if_push_used": 1},
 	))
 	def.abilities.append(_attack_with_layer(
 		&"lancer_vaulting_leap", "Vaulting Leap", 2, GameEnums.TargetShape.SINGLE,
@@ -162,8 +162,28 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	def.abilities.append(_spear_wall())
 	def.abilities.append(_meteor_drop())
 
+	_apply_polearm_reach_modifiers(def)
 	DataLibrary.finalize_unit_abilities(def)
 	return def
+
+
+static func _apply_polearm_reach_modifiers(definition: UnitData) -> void:
+	for ability: AbilityData in definition.abilities:
+		if ability == null or not ability.tags.has(AbilityModuleBridge.TAG_ATTACK):
+			continue
+		_apply_polearm_reach_to_modules(ability.modules)
+		_apply_polearm_reach_to_modules(ability.upgraded_modules)
+
+
+static func _apply_polearm_reach_to_modules(modules: Array[AbilityModule]) -> void:
+	for module: AbilityModule in modules:
+		if module == null or module.max_range <= 1:
+			continue
+		if module.primary_type == GameEnums.EffectType.DAMAGE:
+			module.legacy_modifiers["range_one_damage_multiplier"] = 0.7
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.effect != null and layer.effect.type == GameEnums.EffectType.DAMAGE:
+				layer.effect.modifiers["range_one_damage_multiplier"] = 0.7
 
 
 static func _passive(
@@ -365,6 +385,9 @@ static func _charge_skill(
 	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, push_amount)))
 	var upgraded := _clone_modules([module])
 	upgraded[0].legacy_modifiers = upgrade_modifiers.duplicate(true)
+	for layer: AbilityLayer in upgraded[0].layers:
+		if layer != null and layer.effect != null and layer.effect.type == GameEnums.EffectType.PUSH:
+			layer.effect.modifiers["push_bonus_if_push_used"] = 1
 	return _ability(
 		id, name, 1, [module], GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
@@ -462,12 +485,14 @@ static func _pole_vault() -> AbilityData:
 		GameEnums.MotionMode.VAULT_OVER,
 	)
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["landing_adjacent_push"] = 1
+	upgraded[0].legacy_modifiers["landing_adjacent_push_if_push_used"] = 1
+	upgraded[0].legacy_modifiers["landing_adjacent_push_stagger"] = true
 	return _ability(
 		&"lancer_pole_vault", "Pole Vault", 1, [module],
 		GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_MOVEMENT, AbilityModuleBridge.TAG_POSITIONING],
-		"Landing applies PUSH 1 to adjacent enemies.", upgraded,
+		"If Push was used earlier this turn, landing applies PUSH 1 to adjacent enemies; collisions STAGGER.",
+		upgraded,
 	)
 
 
