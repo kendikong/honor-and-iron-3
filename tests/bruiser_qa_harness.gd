@@ -1,7 +1,7 @@
 class_name BruiserQaHarness
 extends RefCounted
 
-## Bruiser class QA harness — separate from planning QA (`run_planning_qa_gate.ps1`).
+## Bruiser class QA harness â€” separate from planning QA (`run_planning_qa_gate.ps1`).
 ## Builds headless boards, runs Simulator, asserts Bible outcomes via global systems.
 
 const BRUISER_DEF_ID: StringName = &"bruiser"
@@ -43,11 +43,11 @@ static func ability_has_status_effect(
 ) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
-	for eff: EffectData in effects:
+	var effects: Array[AbilityModule] = ability.upgraded_modules if upgraded else ability.modules
+	for eff: AbilityModule in effects:
 		if eff == null:
 			continue
-		if eff.type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF]:
+		if eff.primary_type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF]:
 			if eff.status_type == status_type:
 				return true
 	return false
@@ -82,11 +82,11 @@ static func run_active_smoke(
 			ability_has_status_effect(ability, status_type, false),
 			"base effects must include status %s" % status_type,
 		)
-	if ability.upgraded_effects.size() > 0:
+	if ability.upgraded_modules.size() > 0:
 		assert_true(
 			failures, "%s/upgrade_data" % ability_id,
 			ability.upgrade_description.length() > 0,
-			"upgraded_effects require upgrade_description",
+			"upgraded_modules require upgrade_description",
 		)
 
 
@@ -293,9 +293,9 @@ static func has_status(unit: UnitState, status_type: GameEnums.StatusType) -> bo
 static func ability_has_effect(ability: AbilityData, effect_type: GameEnums.EffectType, upgraded: bool = false) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
-	for eff: EffectData in effects:
-		if eff != null and eff.type == effect_type:
+	var effects: Array[AbilityModule] = ability.upgraded_modules if upgraded else ability.modules
+	for eff: AbilityModule in effects:
+		if eff != null and eff.primary_type == effect_type:
 			return true
 	return false
 
@@ -316,8 +316,16 @@ static func plan_ability(
 	target: Vector2i,
 	target_unit_id: int = -1,
 	timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION,
+	module_coords: Array[Vector2i] = [],
 ) -> TimelineAction:
-	return TimelineAction.make_ability(actor_id, ability, target, target_unit_id, timing)
+	var action: TimelineAction = TimelineAction.make_ability(
+		actor_id, ability, target, target_unit_id, timing,
+	)
+	if not module_coords.is_empty():
+		action.module_coords = module_coords.duplicate()
+	elif target != Vector2i.ZERO:
+		action.module_coords = [target]
+	return action
 
 
 static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:
@@ -488,6 +496,9 @@ static func run_push_through_base(failures: Array[String]) -> void:
 	var e_after: UnitState = result.final_state.get_unit_by_id(2)
 	assert_eq_cell(failures, "push_through/bruiser_pos", b_after.position, Vector2i(3, 4))
 	assert_eq_cell(failures, "push_through/enemy_pos", e_after.position, Vector2i(3, 5))
+	for e in result.events:
+		if e is SimEvent:
+			print("EVENT: ", e.primary_type, " ", e.data)
 	assert_true(
 		failures, "push_through/pushed_event",
 		events_have_unit_pushed(result.events, 2),
@@ -553,7 +564,7 @@ static func run_push_through_upgrade(failures: Array[String]) -> void:
 	var push: AbilityData = ability_on_unit(bruiser, &"bruiser_push_through")
 	assert_true(
 		failures, "push_through/upgrade_modifier",
-		push.upgraded_effects[0].modifiers.has("buff_on_push"),
+		push.upgraded_modules[0].legacy_modifiers.has("buff_on_push"),
 	)
 	assert_eq_int(
 		failures, "push_through/upgrade_mp_cost",
@@ -634,7 +645,7 @@ static func run_push_through_upgrade_next_attack(failures: Array[String]) -> voi
 	var result_base: SimResult = simulate_plan(board_base, plan_base)
 	var dmg_base: int = hp_base - unit_hp(result_base.final_state, 11)
 	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
-	var base_cleave_power: int = cleave.effects[0].amount
+	var base_cleave_power: int = cleave.modules[0].amount
 	var expected_delta: int = (
 		CombatSystem.calculate_scaled_damage(bruiser_after, base_cleave_power + 1, GameEnums.StatType.PHYSICAL, board)
 		- CombatSystem.calculate_scaled_damage(bruiser_after, base_cleave_power, GameEnums.StatType.PHYSICAL, board)

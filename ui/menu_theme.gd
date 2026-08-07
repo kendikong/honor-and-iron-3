@@ -1,4 +1,4 @@
-class_name MenuTheme
+﻿class_name MenuTheme
 extends RefCounted
 
 ## Shared colors + panel style for main menu, pause, and settings overlays.

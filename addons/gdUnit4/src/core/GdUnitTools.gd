@@ -1,4 +1,4 @@
-extends RefCounted
+﻿extends RefCounted
 
 
 static var _richtext_normalize: RegEx

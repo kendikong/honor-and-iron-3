@@ -46,7 +46,7 @@ func _init() -> void:
 			diff_count += 1
 			lines.append("")
 			lines.append("=" .repeat(88))
-			lines.append("%s — %s" % [factory_dict.get("display_name", ab_id), ab_id])
+			lines.append("%s â€” %s" % [factory_dict.get("display_name", ab_id), ab_id])
 			lines.append("=" .repeat(88))
 			lines.append(_pad_right("FIELD", COL) + " | " + _pad_right("CODE (factory)", COL) + " | " + "LIBRARY (json)")
 			lines.append("-" .repeat(88))
@@ -190,7 +190,7 @@ static func _values_equal(a: Variant, b: Variant) -> bool:
 
 static func _pad_right(text: String, width: int) -> String:
 	if text.length() >= width:
-		return text.substr(0, width - 1) + "…"
+		return text.substr(0, width - 1) + "â€¦"
 	return text + " ".repeat(width - text.length())
 
 
@@ -205,8 +205,8 @@ static func _diff_ability_rows(factory: Dictionary, json: Dictionary) -> Array:
 	for key: String in scalar_keys:
 		if not json.has(key) and not factory.has(key):
 			continue
-		var f: Variant = factory.get(key, "—")
-		var j: Variant = json.get(key, "—")
+		var f: Variant = factory.get(key, "â€”")
+		var j: Variant = json.get(key, "â€”")
 		if not _values_equal(f, j):
 			out.append({"field": key, "factory": str(f), "json": str(j)})
 	var fe: String = _effects_summary(factory.get("effects", []))

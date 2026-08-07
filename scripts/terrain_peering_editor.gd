@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 ## Wang-pattern terrain editor with peering diagram + live Godot preview. F6 on this scene.
 
@@ -131,7 +131,7 @@ func _coverage_line() -> String:
 	var stats: Dictionary = TerrainPeeringPatterns.coverage_stats(_map)
 	var assigned: int = _map.tile_category_by_id.size()
 	return (
-		"%d patterns · %d customized · %d non-wang · %d assigned · P/N · %s"
+		"%d patterns Â· %d customized Â· %d non-wang Â· %d assigned Â· P/N Â· %s"
 		% [
 			int(stats["pattern_count"]),
 			int(stats["customized"]),
@@ -201,7 +201,7 @@ func _refresh_center_panel() -> void:
 	if _selected_pattern_key.is_empty():
 		_big_preview.texture = null
 		_meta_label.text = "Select a pattern from the left list."
-		_match_label.text = "—"
+		_match_label.text = "â€”"
 		return
 
 	var pattern: Dictionary = TerrainPeeringPatterns.get_pattern(_selected_pattern_key)
@@ -214,7 +214,7 @@ func _refresh_center_panel() -> void:
 	)
 	_big_preview.texture = TileCatalog.make_atlas_texture(canonical)
 	_meta_label.text = (
-		"Canonical #%d · %s · %s"
+		"Canonical #%d Â· %s Â· %s"
 		% [canonical, str(pattern.get("shape", "")), TerrainPeeringBridge.orientation_label(wang)]
 	)
 
@@ -246,7 +246,7 @@ func _build_neighborhood_grid() -> void:
 		return
 	for grid_i: int in range(9):
 		var terrain: int = int(_neighborhood[grid_i])
-		var short: String = "·" if grid_i == 4 else TerrainPeeringBridge.PEER_SHORT[
+		var short: String = "Â·" if grid_i == 4 else TerrainPeeringBridge.PEER_SHORT[
 			TerrainPeeringBridge.GRID3_TO_PEER[grid_i]
 		]
 		var cell: PanelContainer = _make_neighborhood_cell(
@@ -299,7 +299,7 @@ func _make_neighborhood_cell(
 		vbox.add_child(tex)
 	else:
 		var empty: Label = Label.new()
-		empty.text = "—"
+		empty.text = "â€”"
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		empty.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -398,11 +398,11 @@ func _run_live_preview(pattern: Dictionary, expected_id: int) -> void:
 		_last_region_ids.append(int(id))
 	if bool(result.get("match", false)):
 		_match_label.add_theme_color_override("font_color", Color(0.45, 0.9, 0.55))
-		_match_label.text = "Match — Godot picked #%d as expected." % int(result["picked_id"])
+		_match_label.text = "Match â€” Godot picked #%d as expected." % int(result["picked_id"])
 	else:
 		_match_label.add_theme_color_override("font_color", Color(0.95, 0.55, 0.4))
 		_match_label.text = (
-			"Mismatch — Godot picked #%d, expected #%d. Try another canonical or edit peering."
+			"Mismatch â€” Godot picked #%d, expected #%d. Try another canonical or edit peering."
 			% [int(result["picked_id"]), int(result["expected_id"])]
 		)
 
@@ -508,7 +508,7 @@ func _on_view_non_terrain() -> void:
 	_selected_pattern_key = ""
 	_selected_non_terrain_id = -1
 	_apply_split_ratio()
-	_hint.text = "Click a tile → choose category in center → Save."
+	_hint.text = "Click a tile â†’ choose category in center â†’ Save."
 	_refresh_ui()
 
 
@@ -543,7 +543,7 @@ func _set_pattern_inspector_visible(visible: bool) -> void:
 
 
 func _refresh_non_terrain_center() -> void:
-	_match_label.text = "—"
+	_match_label.text = "â€”"
 	if _selected_non_terrain_id < 0:
 		_big_preview.texture = null
 		_meta_label.text = "Select a non-wang tile from the list on the right."
@@ -557,7 +557,7 @@ func _refresh_non_terrain_center() -> void:
 	_big_preview.texture = TileCatalog.make_atlas_texture(tile_id)
 	var override_note: String = " (saved override)" if _map.is_tile_category_overridden(tile_id) else ""
 	_meta_label.text = (
-		"Tile #%d · %s%s\n%s"
+		"Tile #%d Â· %s%s\n%s"
 		% [
 			tile_id,
 			str(entry.get("category", "misc")),
@@ -630,7 +630,7 @@ func _rebuild_pattern_list() -> void:
 		return
 
 	_pattern_header.text = TerrainPeeringPatterns.terrain_title(_filter_terrain)
-	_add_section_label("Click a pattern · P / N to step · center panel = live Godot preview")
+	_add_section_label("Click a pattern Â· P / N to step Â· center panel = live Godot preview")
 
 	var last_shape: String = ""
 	for pattern: Dictionary in _filtered_patterns():
@@ -645,10 +645,10 @@ func _add_section_label(text: String) -> void:
 	var label: Label = Label.new()
 	label.text = text
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.add_theme_font_size_override("font_size", _font(11, not text.contains("·")))
+	label.add_theme_font_size_override("font_size", _font(11, not text.contains("Â·")))
 	label.add_theme_color_override(
 		"font_color",
-		Color(0.65, 0.72, 0.85) if text.contains("·") else Color(0.8, 0.86, 0.95),
+		Color(0.65, 0.72, 0.85) if text.contains("Â·") else Color(0.8, 0.86, 0.95),
 	)
 	_pattern_list.add_child(label)
 
@@ -682,7 +682,7 @@ func _make_pattern_row(pattern: Dictionary) -> PanelContainer:
 	hbox.add_child(_label("#%d" % canonical, _col(48.0), true))
 	var meta: String = "edited" if customized else "tsx"
 	if variant_count > 1:
-		meta += " · ×%d" % variant_count
+		meta += " Â· Ã—%d" % variant_count
 	hbox.add_child(_label(meta, _col(72.0)))
 
 	return row
@@ -708,7 +708,7 @@ func _rebuild_tile_list() -> void:
 
 	var pattern: Dictionary = TerrainPeeringPatterns.get_pattern(_selected_pattern_key)
 	var canonical: int = _map.get_canonical(_selected_pattern_key)
-	_add_tile_header("Candidates — canonical #%d" % canonical)
+	_add_tile_header("Candidates â€” canonical #%d" % canonical)
 
 	for tile_id: Variant in pattern["candidates"]:
 		var id: int = int(tile_id)
@@ -719,7 +719,7 @@ func _rebuild_tile_list() -> void:
 
 func _build_non_terrain_list() -> void:
 	_ensure_entry_cache()
-	_add_tile_header("Non-wang tiles — click to assign category")
+	_add_tile_header("Non-wang tiles â€” click to assign category")
 	_add_info_row(
 		"Wang/terrain tiles use the Patterns tab. Here: grass fill, decor, tree bases, ruins, etc."
 	)
@@ -898,7 +898,7 @@ func _preview(tile_id: int) -> Control:
 	bg.add_child(checker)
 	if TileCatalog.is_atlas_empty_slot(tile_id):
 		var empty: Label = Label.new()
-		empty.text = "∅"
+		empty.text = "âˆ…"
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		empty.custom_minimum_size = Vector2(preview_px, preview_px)

@@ -1,4 +1,4 @@
-class_name AbilityComponent
+﻿class_name AbilityComponent
 extends RefCounted
 
 ## Purpose: A unit's live action points for the current turn.

@@ -1,4 +1,4 @@
-## Provides editor theme colors sourced from [EditorSettings].
+﻿## Provides editor theme colors sourced from [EditorSettings].
 ## Add this node to the scene tree so it auto-refreshes colors when the
 ## editor theme changes ([constant EditorSettings.NOTIFICATION_EDITOR_SETTINGS_CHANGED]).
 @tool

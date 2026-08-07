@@ -1,6 +1,6 @@
-extends Node
+﻿extends Node
 
-## Sky / atmosphere composition — time-of-day tint, mist, humidity, ripple multiplier.
+## Sky / atmosphere composition â€” time-of-day tint, mist, humidity, ripple multiplier.
 ## Phase 4 WindBus coupling deferred; drift vectors are internal until wind re-enabled.
 
 signal state_changed
@@ -27,7 +27,7 @@ const CLOUD_DRIFT_DIRS: Array[Vector2] = [
 ]
 
 ## Normalized direction from the sun toward the ground (+x east, +y south/down).
-## Legacy preset dirs — debug lock only; runtime uses LA solar model below.
+## Legacy preset dirs â€” debug lock only; runtime uses LA solar model below.
 const SUN_LIGHT_DIRS: Array[Vector2] = [
 	Vector2(0.97, 0.24),
 	Vector2(0.06, 0.998),
@@ -35,7 +35,7 @@ const SUN_LIGHT_DIRS: Array[Vector2] = [
 	Vector2(-0.12, -0.93),
 ]
 
-## Los Angeles (~34°N) sundial model — azimuth + elevation from clock time.
+## Los Angeles (~34Â°N) sundial model â€” azimuth + elevation from clock time.
 const LA_LATITUDE_DEG: float = 34.05
 const LA_DECLINATION_DEG: float = 14.0
 const SOLAR_NOON_CLOCK_MIN: int = 12 * 60 + 30
@@ -43,7 +43,7 @@ const HORIZON_EPSILON_RAD: float = 0.0087
 ## Elevation band (above horizon) where shadows become visible / hide.
 const TWILIGHT_FADE_ELEVATION_DEG: float = 40.0
 const TWILIGHT_FADE_ELEVATION_RAD: float = deg_to_rad(TWILIGHT_FADE_ELEVATION_DEG)
-## Game-clock minutes for evening dusk→night and mirrored morning night→dawn ramps.
+## Game-clock minutes for evening duskâ†’night and mirrored morning nightâ†’dawn ramps.
 const TWILIGHT_PRESET_RAMP_MIN: float = 450.0
 const NIGHT_TO_DUSK_START_MIN: float = 180.0    # 3:00 AM
 const DUSK_TO_DAY_START_MIN: float = 420.0      # 7:00 AM
@@ -58,12 +58,12 @@ const ATMOSPHERE_PRESENCE_POWER: float = 1.45
 const SHADOW_FULL_CONTRAST_BELOW_NOON_DEG: float = 22.0
 ## < 1.0 = dimmer longer at dawn/dusk before reaching peak daytime contrast.
 const SHADOW_CONTRAST_EASE_POWER: float = 1.25
-## Summer-narrow shadow arc: compress solar west-east sweep toward NW-NE (±60° from north).
+## Summer-narrow shadow arc: compress solar west-east sweep toward NW-NE (Â±60Â° from north).
 const SHADOW_ARC_HALF_SPAN_DEG: float = 60.0
-## Peak midday: floor cot so contact shadow reach ≈ this × caster height (slightly under 1:1).
+## Peak midday: floor cot so contact shadow reach â‰ˆ this Ã— caster height (slightly under 1:1).
 const NOON_SHADOW_HEIGHT_RATIO: float = 1.0
 
-## Shadow / atmosphere tuning — defaults match legacy consts; overridden by EffectsSettings.
+## Shadow / atmosphere tuning â€” defaults match legacy consts; overridden by EffectsSettings.
 var tune_twilight_fade_deg: float = TWILIGHT_FADE_ELEVATION_DEG
 var tune_preset_ramp_min: float = TWILIGHT_PRESET_RAMP_MIN
 var tune_night_to_dusk_start_min: float = NIGHT_TO_DUSK_START_MIN
@@ -97,7 +97,7 @@ var cloud_drift_offset: Vector2 = Vector2.ZERO
 var _biome_modulate: Color = Color.WHITE
 var _biome_mist_floor: float = 0.06
 
-## Discrete clock — 5 min steps while sun is up, 10 min at night (same real sec/tick → longer day).
+## Discrete clock â€” 5 min steps while sun is up, 10 min at night (same real sec/tick â†’ longer day).
 var _cycle_offset_minutes: float = 360.0
 var _clock_step_accum: float = 0.0
 var _preset_blend: float = 0.0
@@ -108,7 +108,7 @@ var _drift_hold: float = 24.0
 var _emit_accum: float = 0.0
 var _last_emit_signature: int = -1
 
-## Shadow debug — sun lock/override for oblique bakes only (world clock keeps running).
+## Shadow debug â€” sun lock/override for oblique bakes only (world clock keeps running).
 var shadow_lock_sun_angle: bool = false
 var _shadow_sun_override: Vector2 = Vector2.ZERO
 var _shadow_sun_override_active: bool = false
@@ -121,11 +121,11 @@ const CYCLE_DURATION_SEC: float = 96.0
 const CLOCK_START_MINUTES: int = 5 * 60 + 30
 const CLOCK_STEP_MINUTES_NIGHT: int = 10
 const CLOCK_STEP_MINUTES_DAY: int = 5
-## Real seconds per tick — unchanged from legacy 10-min uniform day (96s / 144 steps).
+## Real seconds per tick â€” unchanged from legacy 10-min uniform day (96s / 144 steps).
 const CLOCK_STEP_INTERVAL_SEC: float = CYCLE_DURATION_SEC / 144.0
-## Skip-night button target — 5:00 AM (just before dawn preset at 6:00).
+## Skip-night button target â€” 5:00 AM (just before dawn preset at 6:00).
 const DAWN_SKIP_CLOCK_MIN: int = 5 * 60
-## Skip-to-dusk button target — 4:00 PM (start of evening dusk→night ramp).
+## Skip-to-dusk button target â€” 4:00 PM (start of evening duskâ†’night ramp).
 const DUSK_SKIP_CLOCK_MIN: int = 16 * 60
 
 
@@ -328,13 +328,13 @@ func clock_preset_window_label(clock_min_f: float = -1.0) -> String:
 	var day_dusk_end: float = _tune_day_to_dusk_end_min()
 	var dusk_night_end: float = _tune_dusk_to_night_end_min()
 	if clock_min_f >= tune_night_to_dusk_start_min and clock_min_f < tune_dusk_to_day_start_min:
-		return "night→dawn twilight"
+		return "nightâ†’dawn twilight"
 	if clock_min_f >= tune_dusk_to_day_start_min and clock_min_f < dusk_day_end:
-		return "dawn→day (morning)"
+		return "dawnâ†’day (morning)"
 	if clock_min_f >= tune_day_to_dusk_start_min and clock_min_f < day_dusk_end:
-		return "day→dusk (afternoon)"
+		return "dayâ†’dusk (afternoon)"
 	if clock_min_f >= tune_dusk_to_night_start_min and clock_min_f < dusk_night_end:
-		return "dusk→night (evening)"
+		return "duskâ†’night (evening)"
 	if clock_min_f >= dusk_day_end and clock_min_f < tune_day_to_dusk_start_min:
 		return "day (hold)"
 	if clock_min_f >= day_dusk_end and clock_min_f < tune_dusk_to_night_start_min:
@@ -399,7 +399,7 @@ func _smoothstep(edge0: float, edge1: float, x: float) -> float:
 	return t * t * (3.0 - 2.0 * t)
 
 
-## 0 at/below horizon, 1 in the twilight visibility band — gentle spawn / hide gate.
+## 0 at/below horizon, 1 in the twilight visibility band â€” gentle spawn / hide gate.
 func shadow_presence_factor(clock_min_f: float = -1.0) -> float:
 	if clock_min_f < 0.0:
 		clock_min_f = clock_minutes_float()
@@ -413,7 +413,7 @@ func shadow_presence_factor(clock_min_f: float = -1.0) -> float:
 	return pow(_smoothstep(0.0, 1.0, t), tune_shadow_contrast_ease)
 
 
-## 0 at horizon, 1 only near peak daytime elevation — drives contrast / strength / tint.
+## 0 at horizon, 1 only near peak daytime elevation â€” drives contrast / strength / tint.
 func shadow_contrast_factor(clock_min_f: float = -1.0) -> float:
 	if clock_min_f < 0.0:
 		clock_min_f = clock_minutes_float()
@@ -497,18 +497,18 @@ func shadow_sun_signature() -> int:
 	return shadow_sundial_signature()
 
 
-## Quantized sundial state for rebake triggers (~0.25° azimuth steps).
+## Quantized sundial state for rebake triggers (~0.25Â° azimuth steps).
 func shadow_sundial_signature() -> int:
 	return shadow_rebake_signature(1.0)
 
 
-## Coarser quantization at low contrast — dawn/dusk long shadows are expensive to rebake.
+## Coarser quantization at low contrast â€” dawn/dusk long shadows are expensive to rebake.
 func shadow_rebake_signature(contrast: float = 1.0) -> int:
 	var s: Dictionary = shadow_sundial()
 	if not s.visible:
 		return 0
 	var c: float = clampf(contrast, 0.0, 1.0)
-	# Twilight: tie rebakes to HUD clock steps — smooth cot/az spams full-map composites.
+	# Twilight: tie rebakes to HUD clock steps â€” smooth cot/az spams full-map composites.
 	if c < 0.75:
 		var m_f: float = clock_minutes_float()
 		var el_q: int = int(floor(rad_to_deg(solar_elevation_rad_f(m_f)) * 0.25))
@@ -527,7 +527,7 @@ func _noon_shadow_cot() -> float:
 	return cos(noon_el) / maxf(sin(noon_el), 0.001)
 
 
-## Shrink solar shadow sweep (west↔east) toward summer NW↔NE without changing spin direction.
+## Shrink solar shadow sweep (westâ†”east) toward summer NWâ†”NE without changing spin direction.
 func _narrow_shadow_dir(sun_az: float) -> Vector2:
 	var sun_horiz: Vector2 = Vector2(sin(sun_az), -cos(sun_az))
 	if sun_horiz.length_squared() < 0.0001:
@@ -540,8 +540,8 @@ func _narrow_shadow_dir(sun_az: float) -> Vector2:
 	return Vector2(sin(compressed), -cos(compressed))
 
 
-## LA sundial — single source for shadow direction and length.
-## Map +x east, +y south. Solar azimuth, narrowed arc (NW→N→NE vs full W→N→E).
+## LA sundial â€” single source for shadow direction and length.
+## Map +x east, +y south. Solar azimuth, narrowed arc (NWâ†’Nâ†’NE vs full Wâ†’Nâ†’E).
 ## dir: unit ground cast; cot: cot(elevation); length_px = height_px * cot * mult.
 func shadow_sundial(clock_min_f: float = -1.0) -> Dictionary:
 	if shadow_lock_sun_angle and not _shadow_sun_override_active:

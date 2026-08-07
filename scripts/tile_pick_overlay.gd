@@ -1,4 +1,4 @@
-class_name TilePickOverlay
+﻿class_name TilePickOverlay
 extends CanvasLayer
 
 ## Hover highlight + click-to-lock. Uses map_root canvas transform + top-left grid math.

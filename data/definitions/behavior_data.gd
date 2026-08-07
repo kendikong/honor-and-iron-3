@@ -1,4 +1,4 @@
-class_name BehaviorData
+﻿class_name BehaviorData
 extends Resource
 
 ## Purpose: Describes how an enemy decides its intent during planning.

@@ -1,4 +1,4 @@
-class_name CharacterRoller
+﻿class_name CharacterRoller
 extends RefCounted
 
 ## Seeded weighted random picks from LpcCatalog + CharacterGenProfile.
@@ -230,7 +230,7 @@ static func roll(
 	_warn_missing_required_slots(catalog, recipe, seed)
 	if not recipe.selections.has("head"):
 		push_warning(
-			"LPC roll: no head in recipe (body=%s seed=%d) — face will be invisible"
+			"LPC roll: no head in recipe (body=%s seed=%d) â€” face will be invisible"
 			% [recipe.body_type, seed]
 		)
 	return recipe

@@ -1,4 +1,4 @@
-class_name SmartReplayCurator
+﻿class_name SmartReplayCurator
 extends RefCounted
 
 ## Purpose: Evaluates a batch of telemetry results and extracts the 5 key replays

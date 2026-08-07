@@ -1,4 +1,4 @@
-## The main class for all GdUnit test suites[br]
+﻿## The main class for all GdUnit test suites[br]
 ## This class is the main class to implement your unit tests[br]
 ## You have to extend and implement your test cases as described[br]
 ## e.g MyTests.gd [br]
@@ -99,7 +99,7 @@ func error_as_string(error_number: int) -> String:
 func auto_free(obj: Variant) -> Variant:
 	var execution_context := GdUnitThreadManager.get_current_context().get_execution_context()
 
-	# If the execution context is null, we are not in the execution call stack, so we mark the object as “queued free.”
+	# If the execution context is null, we are not in the execution call stack, so we mark the object as â€œqueued free.â€
 	if execution_context == null:
 		if obj is Node:
 			@warning_ignore("unsafe_method_access")

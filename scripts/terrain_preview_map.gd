@@ -1,7 +1,7 @@
-class_name TerrainPreviewMap
+﻿class_name TerrainPreviewMap
 extends Node2D
 
-## Live Godot terrain_connect preview — shows which atlas tile the engine actually picks.
+## Live Godot terrain_connect preview â€” shows which atlas tile the engine actually picks.
 
 const GRID_RADIUS: int = 3
 const TILE_PX: int = 16

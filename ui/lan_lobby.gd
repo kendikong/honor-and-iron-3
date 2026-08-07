@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 func _ready() -> void:
 	$VBoxContainer/HostButton.pressed.connect(_on_host_pressed)

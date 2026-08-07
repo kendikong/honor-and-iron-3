@@ -1,4 +1,4 @@
-class_name TimelineRow
+﻿class_name TimelineRow
 extends HBoxContainer
 
 ## Purpose: One draggable entry in the plan list. Carries its own index and a drop

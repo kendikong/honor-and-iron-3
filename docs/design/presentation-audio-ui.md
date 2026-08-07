@@ -49,7 +49,7 @@ Inventory screens, wire SFX events, align HUD with tactical path — extend pari
 
 - Full AAA UI redesign without mockups
 - Music composition (human gate)
-- Sandbox editor (Phase 15)
+- Additional tactical developer tools (optional future phase)
 
 ## Human-only worksheet
 

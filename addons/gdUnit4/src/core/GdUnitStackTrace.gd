@@ -1,4 +1,4 @@
-## Captures and holds the test-side call stack at the point of an assertion failure.[br]
+﻿## Captures and holds the test-side call stack at the point of an assertion failure.[br]
 ## Internal gdUnit4 frames are filtered out, leaving only user and test script frames.
 class_name GdUnitStackTrace
 extends RefCounted

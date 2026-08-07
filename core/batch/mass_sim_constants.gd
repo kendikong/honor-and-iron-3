@@ -1,4 +1,4 @@
-class_name MassSimConstants
+﻿class_name MassSimConstants
 extends RefCounted
 
 ## Target goals and sample thresholds from Mass Simulation Dashboard Specification.

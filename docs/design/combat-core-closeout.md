@@ -62,14 +62,14 @@ ARTIFACT: this file, lint stdout, docs/TACTICAL_COMBAT_PARITY_PLAN.md link-only 
 
 | Input | Output | Consumer |
 |-------|--------|----------|
-| `board_view.gd` (reference) | Shared formatters/intent state | Tactical stack |
+| Removed legacy BoardView | Shared formatters/intent state | Tactical stack |
 | QA scripts | PASS/FAIL | Phase close |
 
 ## Exit criteria
 
 - [ ] Phase 14 exit criteria in parity plan checked
 - [ ] `IMPLEMENTATION_STATUS.md` Phase 9 FAIL documented; Phase 10+ progress rows
-- [ ] No SP reliance on `board_view.gd`
+- [x] No SP or multiplayer reliance on the removed BoardView path
 
 ## Doc polish scorecard
 

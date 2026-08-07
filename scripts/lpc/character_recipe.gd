@@ -1,7 +1,7 @@
-class_name CharacterRecipe
+﻿class_name CharacterRecipe
 extends RefCounted
 
-## Rolled LPC layer picks — one item per type_name slot.
+## Rolled LPC layer picks â€” one item per type_name slot.
 
 var body_type: String = "male"
 var selections: Dictionary = {}  # type_name -> { id, z_pos, path_prefix, recolor_kind, recolor, variant, palette_base? }

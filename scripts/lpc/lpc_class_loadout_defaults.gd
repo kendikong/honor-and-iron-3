@@ -1,4 +1,4 @@
-extends RefCounted
+﻿extends RefCounted
 
 ## Default per-class LPC visual overrides. Constants live on LpcConstants for parser safety.
 

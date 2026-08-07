@@ -1,4 +1,4 @@
-class_name Level1SummaryPanel
+﻿class_name Level1SummaryPanel
 extends VBoxContainer
 
 signal inspect_requested(title: String, body: String, meta: Dictionary)
@@ -103,7 +103,7 @@ func bind_report(report: MassSimBatchReport, warnings: Array, workspace: MassSim
 		],
 	))
 
-	var mvp_name: String = "—"
+	var mvp_name: String = "â€”"
 	var mvp_wr: float = 0.0
 	if not report.tier_rows.is_empty():
 		mvp_name = report.class_display_name(report.tier_rows[0]["class_id"])
@@ -188,7 +188,7 @@ func _format_timeline_sparkline(report: MassSimBatchReport) -> String:
 	var parts: PackedStringArray = PackedStringArray()
 	for entry: Dictionary in report.timeline_entries.slice(-6):
 		parts.append("%.0f%%" % float(entry.get("player_win_pct", 0)))
-	return "[b]WR trend:[/b] " + " → ".join(parts)
+	return "[b]WR trend:[/b] " + " â†’ ".join(parts)
 
 
 func _turn_histogram_ascii(report: MassSimBatchReport) -> String:
@@ -204,7 +204,7 @@ func _turn_histogram_ascii(report: MassSimBatchReport) -> String:
 		if count <= 0:
 			continue
 		var bars: int = clampi(int(float(count) / float(max_count) * 12.0), 1, 12)
-		lines.append("%2d | %s (%d)" % [turns, "█".repeat(bars), count])
+		lines.append("%2d | %s (%d)" % [turns, "â–ˆ".repeat(bars), count])
 	return "\n".join(lines) if not lines.is_empty() else "No turn data"
 
 

@@ -1,9 +1,9 @@
-class_name FallingLeafActor
+﻿class_name FallingLeafActor
 extends EcologySparseActor
 
 const _Spring = preload("res://scripts/second_order_spring.gd")
 
-## Flutter / drift — falls from tree anchor, settles on ground via spring snap.
+## Flutter / drift â€” falls from tree anchor, settles on ground via spring snap.
 
 var _start_px: Vector2 = Vector2.ZERO
 var _ground_px: Vector2 = Vector2.ZERO

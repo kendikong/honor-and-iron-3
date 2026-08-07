@@ -1,7 +1,7 @@
-class_name Walkability
+﻿class_name Walkability
 extends RefCounted
 
-## Tactics walk rules — Phase 10 bridge from PlayerGrid logical IDs to movement.
+## Tactics walk rules â€” Phase 10 bridge from PlayerGrid logical IDs to movement.
 
 static func is_in_bounds(grid: PlayerGrid, cell: Vector2i) -> bool:
 	return (

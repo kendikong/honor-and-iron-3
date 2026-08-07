@@ -1,4 +1,4 @@
-class_name GdUnitSignals
+﻿class_name GdUnitSignals
 extends RefCounted
 ## Singleton class that handles GdUnit's signal communication.[br]
 ## [br]

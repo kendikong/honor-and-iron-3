@@ -1,4 +1,4 @@
-class_name MassSimUnitConfig
+﻿class_name MassSimUnitConfig
 extends RefCounted
 
 

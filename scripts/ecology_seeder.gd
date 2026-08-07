@@ -1,4 +1,4 @@
-class_name EcologySeeder
+﻿class_name EcologySeeder
 extends RefCounted
 
 ## Opportunism registry (Phase 3 stub). Full 6-step loop deferred to Phase 9.
@@ -6,12 +6,12 @@ extends RefCounted
 const SOURCE_FOREST: int = TileSetFactory.SOURCE_FOREST
 const SOURCE_TREES: int = TileSetFactory.SOURCE_TREES
 
-# TileIDs that trigger opportunism steps 1–2 when present on PlayerGrid.
+# TileIDs that trigger opportunism steps 1â€“2 when present on PlayerGrid.
 const OPPORTUNISM_TILES: Dictionary = {
 	TileId.Type.TREE: true,
 }
 
-# Moss / base decor at tree foot (16×16 forest overlay decor).
+# Moss / base decor at tree foot (16Ã—16 forest overlay decor).
 const _MOSS_VARIANTS: Array[int] = [91, 90]
 const _MOSS_CHANCE: float = 0.72
 
@@ -20,7 +20,7 @@ static func triggers_opportunism(tile_id: int) -> bool:
 	return OPPORTUNISM_TILES.get(tile_id, false)
 
 
-# 80×96 tree atlas column — 0 = Large tree A (baked ground shadow), 1 = Large tree B.
+# 80Ã—96 tree atlas column â€” 0 = Large tree A (baked ground shadow), 1 = Large tree B.
 const TREE_ATLAS_A: int = 0
 const TREE_ATLAS_B: int = 1
 
@@ -47,7 +47,7 @@ static func apply_tree_stub(
 		atlas,
 		MapRenderProvenance.footprint_for_source(SOURCE_TREES),
 		"ecology_tree",
-		"MapGenerator TREE anchor — %s"
+		"MapGenerator TREE anchor â€” %s"
 		% TileCatalog.TREE_80_LABELS[clampi(atlas_x, 0, TileCatalog.TREE_80_LABELS.size() - 1)],
 	)
 
@@ -81,7 +81,7 @@ static func apply_tree_surroundings(
 			atlas,
 			MapRenderProvenance.footprint_for_source(SOURCE_FOREST),
 			"ecology_moss",
-			"Tree foot moss — neighbor of TREE at (%d,%d) · #%d %s"
+			"Tree foot moss â€” neighbor of TREE at (%d,%d) Â· #%d %s"
 			% [pos.x, pos.y, moss_id, str(entry["use_case"])],
 		)
 
@@ -97,7 +97,7 @@ static func _in_bounds(grid: PlayerGrid, pos: Vector2i) -> bool:
 	return pos.x >= 0 and pos.y >= 0 and pos.x < grid.width and pos.y < grid.height
 
 
-## Opportunism step 4 — tree + flora ecology weights, shore firefly anchors.
+## Opportunism step 4 â€” tree + flora ecology weights, shore firefly anchors.
 static func build_ecology_hints(
 	grid: PlayerGrid,
 	tree_cells: Array[Vector2i],

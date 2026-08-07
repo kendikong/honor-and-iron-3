@@ -1,4 +1,4 @@
-class_name GrassPetalPatch
+﻿class_name GrassPetalPatch
 extends Node2D
 
 ## Flat midtone base + synced Pixel Pete blades (shared frame + speed).

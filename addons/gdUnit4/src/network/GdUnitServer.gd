@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 extends Node
 
 var _client_id: int

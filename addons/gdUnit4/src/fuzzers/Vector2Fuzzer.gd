@@ -1,4 +1,4 @@
-## A fuzzer that generates random Vector2 values within a specified rectangular range.[br]
+﻿## A fuzzer that generates random Vector2 values within a specified rectangular range.[br]
 ##
 ## This is particularly useful for testing 2D physics, movement
 ## systems, UI positioning, sprite coordinates, or any code that processes 2D vectors.[br]

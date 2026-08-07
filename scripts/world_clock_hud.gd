@@ -1,7 +1,7 @@
-class_name WorldClockHud
+﻿class_name WorldClockHud
 extends CanvasLayer
 
-## In-game clock — top center above the map.
+## In-game clock â€” top center above the map.
 
 var _panel: PanelContainer
 var _label: Label
@@ -66,14 +66,14 @@ func _build_ui() -> void:
 	vbox.add_child(skip_row)
 
 	_skip_night_button = Button.new()
-	_skip_night_button.text = "Skip night → 5 AM"
+	_skip_night_button.text = "Skip night â†’ 5 AM"
 	_skip_night_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_skip_night_button.add_theme_font_size_override("font_size", 13)
 	_skip_night_button.pressed.connect(_on_skip_night_pressed)
 	skip_row.add_child(_skip_night_button)
 
 	_skip_dusk_button = Button.new()
-	_skip_dusk_button.text = "Skip to dusk → 4 PM"
+	_skip_dusk_button.text = "Skip to dusk â†’ 4 PM"
 	_skip_dusk_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_skip_dusk_button.add_theme_font_size_override("font_size", 13)
 	_skip_dusk_button.pressed.connect(_on_skip_dusk_pressed)

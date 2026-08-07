@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 class_name GdUnitRichTextMessageWriter
 extends GdUnitMessageWriter
 ## A message writer implementation using [RichTextLabel] for the test report UI.[br]

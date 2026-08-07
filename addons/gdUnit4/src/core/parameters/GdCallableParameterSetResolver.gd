@@ -1,4 +1,4 @@
-class_name GdCallableParameterSetResolver
+﻿class_name GdCallableParameterSetResolver
 extends GdParameterSetResolver
 
 

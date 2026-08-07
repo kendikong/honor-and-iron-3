@@ -1,4 +1,4 @@
-﻿class_name ScarTissueScenarioTest
+class_name ScarTissueScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")

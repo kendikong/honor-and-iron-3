@@ -1,0 +1,2745 @@
+[
+	{
+		"action": {},
+		"blue_tiles": [
+			"5,4",
+			"5,3",
+			"6,4",
+			"5,5",
+			"4,4",
+			"5,2",
+			"6,3",
+			"7,4",
+			"6,5",
+			"5,6",
+			"3,4",
+			"5,1",
+			"6,2",
+			"4,2",
+			"7,3",
+			"3,3",
+			"8,4",
+			"6,6",
+			"5,7",
+			"4,6",
+			"3,5",
+			"2,4",
+			"5,0",
+			"6,1",
+			"7,2",
+			"3,2",
+			"8,3",
+			"2,3",
+			"9,4",
+			"8,5",
+			"7,6",
+			"6,7",
+			"5,8",
+			"4,7",
+			"3,6",
+			"2,5",
+			"1,4"
+		],
+		"cursor_icon": "ðŸ’¨",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "k3/phase1/stand",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {},
+		"blue_tiles": [
+			"5,4",
+			"5,3",
+			"6,4",
+			"5,5",
+			"4,4",
+			"5,2",
+			"6,3",
+			"7,4",
+			"6,5",
+			"5,6",
+			"3,4",
+			"5,1",
+			"6,2",
+			"4,2",
+			"7,3",
+			"3,3",
+			"8,4",
+			"6,6",
+			"5,7",
+			"4,6",
+			"3,5",
+			"2,4",
+			"5,0",
+			"6,1",
+			"7,2",
+			"3,2",
+			"8,3",
+			"2,3",
+			"9,4",
+			"8,5",
+			"7,6",
+			"6,7",
+			"5,8",
+			"4,7",
+			"3,6",
+			"2,5",
+			"1,4"
+		],
+		"cursor_icon": "ðŸ’¨",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "k3/selection/arm/hover",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {},
+		"blue_tiles": [
+			"5,4",
+			"5,3",
+			"6,4",
+			"5,5",
+			"4,4",
+			"5,2",
+			"6,3",
+			"7,4",
+			"6,5",
+			"5,6",
+			"3,4",
+			"5,1",
+			"6,2",
+			"4,2",
+			"7,3",
+			"3,3",
+			"8,4",
+			"6,6",
+			"5,7",
+			"4,6",
+			"3,5",
+			"2,4",
+			"5,0",
+			"6,1",
+			"7,2",
+			"3,2",
+			"8,3",
+			"2,3",
+			"9,4",
+			"8,5",
+			"7,6",
+			"6,7",
+			"5,8",
+			"4,7",
+			"3,6",
+			"2,5",
+			"1,4"
+		],
+		"cursor_icon": "ðŸ’¨",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "k3/selection/arm/press",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "k3/selection/arm/settled",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "k3/phase2/awaiting_armed",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "âš”ï¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,4",
+		"label": "k3/hover/east",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "âš”ï¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/hover/end",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "âš”ï¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,4",
+		"label": "tap/approach/motion_002",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "tap/approach/motion_003",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "tap/hover",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "tap/press",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "tap/settled",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "âš”ï¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/selection/pre_tap",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "âš”ï¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/selection/release/hover",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "â¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/selection/release/press",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "â¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/selection/release/settled",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "â¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/selection/committed",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {},
+		"blue_tiles": [
+			"5,4",
+			"5,3",
+			"6,4",
+			"5,5",
+			"4,4",
+			"5,2",
+			"6,3",
+			"7,4",
+			"6,5",
+			"5,6",
+			"3,4",
+			"5,1",
+			"6,2",
+			"4,2",
+			"7,3",
+			"3,3",
+			"8,4",
+			"6,6",
+			"5,7",
+			"4,6",
+			"3,5",
+			"2,4",
+			"5,0",
+			"6,1",
+			"7,2",
+			"3,2",
+			"8,3",
+			"2,3",
+			"9,4",
+			"8,5",
+			"7,6",
+			"6,7",
+			"5,8",
+			"4,7",
+			"3,6",
+			"2,5",
+			"1,4"
+		],
+		"cursor_icon": "ðŸ‘Ÿ/ðŸ’¨",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "tap/approach/motion_001",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"6,1",
+			"5,2",
+			"6,2",
+			"7,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"7,3",
+			"8,3",
+			"5,4",
+			"6,4",
+			"7,4",
+			"6,5"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {},
+		"blue_tiles": [
+			"5,4",
+			"5,3",
+			"6,4",
+			"5,5",
+			"4,4",
+			"5,2",
+			"6,3",
+			"7,4",
+			"6,5",
+			"5,6",
+			"3,4",
+			"5,1",
+			"6,2",
+			"4,2",
+			"7,3",
+			"3,3",
+			"8,4",
+			"6,6",
+			"5,7",
+			"4,6",
+			"3,5",
+			"2,4",
+			"5,0",
+			"6,1",
+			"7,2",
+			"3,2",
+			"8,3",
+			"2,3",
+			"9,4",
+			"8,5",
+			"7,6",
+			"6,7",
+			"5,8",
+			"4,7",
+			"3,6",
+			"2,5",
+			"1,4"
+		],
+		"cursor_icon": "ðŸ‘Ÿ/ðŸ’¨",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,4",
+		"label": "tap/approach/motion_002",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"6,2",
+			"5,3",
+			"6,3",
+			"7,3",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"8,4",
+			"5,5",
+			"6,5",
+			"7,5",
+			"6,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {},
+		"blue_tiles": [
+			"5,4",
+			"5,3",
+			"6,4",
+			"5,5",
+			"4,4",
+			"5,2",
+			"6,3",
+			"7,4",
+			"6,5",
+			"5,6",
+			"3,4",
+			"5,1",
+			"6,2",
+			"4,2",
+			"7,3",
+			"3,3",
+			"8,4",
+			"6,6",
+			"5,7",
+			"4,6",
+			"3,5",
+			"2,4",
+			"5,0",
+			"6,1",
+			"7,2",
+			"3,2",
+			"8,3",
+			"2,3",
+			"9,4",
+			"8,5",
+			"7,6",
+			"6,7",
+			"5,8",
+			"4,7",
+			"3,6",
+			"2,5",
+			"1,4"
+		],
+		"cursor_icon": "ðŸ’¨",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "tap/approach/motion_003",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {},
+		"blue_tiles": [
+			"5,4",
+			"5,3",
+			"6,4",
+			"5,5",
+			"4,4",
+			"5,2",
+			"6,3",
+			"7,4",
+			"6,5",
+			"5,6",
+			"3,4",
+			"5,1",
+			"6,2",
+			"4,2",
+			"7,3",
+			"3,3",
+			"8,4",
+			"6,6",
+			"5,7",
+			"4,6",
+			"3,5",
+			"2,4",
+			"5,0",
+			"6,1",
+			"7,2",
+			"3,2",
+			"8,3",
+			"2,3",
+			"9,4",
+			"8,5",
+			"7,6",
+			"6,7",
+			"5,8",
+			"4,7",
+			"3,6",
+			"2,5",
+			"1,4"
+		],
+		"cursor_icon": "ðŸ’¨",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "tap/hover",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {},
+		"blue_tiles": [
+			"5,4",
+			"5,3",
+			"6,4",
+			"5,5",
+			"4,4",
+			"5,2",
+			"6,3",
+			"7,4",
+			"6,5",
+			"5,6",
+			"3,4",
+			"5,1",
+			"6,2",
+			"4,2",
+			"7,3",
+			"3,3",
+			"8,4",
+			"6,6",
+			"5,7",
+			"4,6",
+			"3,5",
+			"2,4",
+			"5,0",
+			"6,1",
+			"7,2",
+			"3,2",
+			"8,3",
+			"2,3",
+			"9,4",
+			"8,5",
+			"7,6",
+			"6,7",
+			"5,8",
+			"4,7",
+			"3,6",
+			"2,5",
+			"1,4"
+		],
+		"cursor_icon": "ðŸ’¨",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "tap/press",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "tap/settled",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "5,4",
+		"label": "k3/press",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"5,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"3,4",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"4,5",
+			"5,5",
+			"6,5",
+			"5,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [
+			"5,4",
+			"6,4"
+		],
+		"dragging": true,
+		"hover": "6,4",
+		"label": "k3/step_1",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"6,2",
+			"5,3",
+			"6,3",
+			"7,3",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"8,4",
+			"5,5",
+			"6,5",
+			"7,5",
+			"6,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [
+			"5,4",
+			"6,4"
+		],
+		"dragging": true,
+		"hover": "6,4",
+		"label": "k3/step_1",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"6,2",
+			"5,3",
+			"6,3",
+			"7,3",
+			"4,4",
+			"5,4",
+			"6,4",
+			"7,4",
+			"8,4",
+			"5,5",
+			"6,5",
+			"7,5",
+			"6,6"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [
+			"5,4",
+			"6,4",
+			"6,3"
+		],
+		"dragging": true,
+		"hover": "6,3",
+		"label": "k3/step_2",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"6,1",
+			"5,2",
+			"6,2",
+			"7,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"7,3",
+			"8,3",
+			"5,4",
+			"6,4",
+			"7,4",
+			"6,5"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "5,4",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": []
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [
+			"5,4",
+			"6,4",
+			"6,3"
+		],
+		"dragging": true,
+		"hover": "6,3",
+		"label": "k3/step_2",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 1,
+			"facing": 1,
+			"id": 3,
+			"mp": 3,
+			"position": "5,4"
+		},
+		"red_tiles": [
+			"6,1",
+			"5,2",
+			"6,2",
+			"7,2",
+			"4,3",
+			"5,3",
+			"6,3",
+			"7,3",
+			"8,3",
+			"5,4",
+			"6,4",
+			"7,4",
+			"6,5"
+		],
+		"selected_ability_index": 15,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "â¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/release",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "â¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/drag/committed",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "â¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/drag/post_commit",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "â¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/post/stand",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "ðŸ‘Ÿ",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "7,3",
+		"label": "k3/post/hover_east",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "ðŸ‘Ÿ",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "8,2",
+		"label": "k3/post/hover_dest",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3",
+				"8,2"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "â¸",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "6,3",
+		"label": "k3/post/press",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "",
+		"drag_route": [
+			"6,3",
+			"7,3"
+		],
+		"dragging": true,
+		"hover": "7,3",
+		"label": "k3/post/step_1",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "",
+		"drag_route": [
+			"6,3",
+			"7,3"
+		],
+		"dragging": true,
+		"hover": "7,3",
+		"label": "k3/post/step_1",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "",
+		"drag_route": [
+			"6,3",
+			"7,3",
+			"8,3"
+		],
+		"dragging": true,
+		"hover": "8,3",
+		"label": "k3/post/step_2",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "",
+		"drag_route": [
+			"6,3",
+			"7,3",
+			"8,3"
+		],
+		"dragging": true,
+		"hover": "8,3",
+		"label": "k3/post/step_2",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "",
+		"drag_route": [
+			"6,3",
+			"7,3",
+			"8,3",
+			"8,2"
+		],
+		"dragging": true,
+		"hover": "8,2",
+		"label": "k3/post/step_3",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3",
+				"8,2"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [
+			"6,3",
+			"6,2",
+			"7,3",
+			"6,4",
+			"5,3",
+			"6,1",
+			"7,2",
+			"5,2",
+			"8,3",
+			"7,4",
+			"6,5",
+			"5,4",
+			"6,0",
+			"7,1",
+			"5,1",
+			"8,2",
+			"4,2",
+			"9,3",
+			"8,4",
+			"6,6",
+			"5,5",
+			"4,4"
+		],
+		"cursor_icon": "",
+		"drag_route": [
+			"6,3",
+			"7,3",
+			"8,3",
+			"8,2"
+		],
+		"dragging": true,
+		"hover": "8,2",
+		"label": "k3/post/step_3",
+		"phase": 0,
+		"post_move": {},
+		"pre_move": {},
+		"preview_paths": {
+			"1": [
+				"4,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3",
+				"8,2"
+			],
+			"4": [
+				"4,1"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 3,
+			"position": "6,3"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "8,2",
+		"label": "k3/post/release",
+		"phase": 0,
+		"post_move": {
+			"ability": "",
+			"target": "8,2",
+			"type": 0,
+			"uses_run": false,
+			"waypoints": [
+				"7,3",
+				"8,3",
+				"8,2"
+			]
+		},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 0,
+			"position": "8,2"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	},
+	{
+		"action": {
+			"ability": "knight_trampling_advance",
+			"target": "6,3",
+			"type": 1,
+			"uses_run": false,
+			"waypoints": [
+				"6,4",
+				"6,3"
+			]
+		},
+		"blue_tiles": [],
+		"cursor_icon": "",
+		"drag_route": [],
+		"dragging": false,
+		"hover": "8,2",
+		"label": "k3/post/after_commit",
+		"phase": 0,
+		"post_move": {
+			"ability": "",
+			"target": "8,2",
+			"type": 0,
+			"uses_run": false,
+			"waypoints": [
+				"7,3",
+				"8,3",
+				"8,2"
+			]
+		},
+		"pre_move": {},
+		"preview_paths": {},
+		"projected_unit": {
+			"ap": 0,
+			"facing": 0,
+			"id": 3,
+			"mp": 0,
+			"position": "8,2"
+		},
+		"red_tiles": [],
+		"selected_ability_index": -1,
+		"selected_unit": 3
+	}
+]

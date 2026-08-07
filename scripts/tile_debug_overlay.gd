@@ -1,4 +1,4 @@
-class_name TileDebugOverlay
+﻿class_name TileDebugOverlay
 extends CanvasLayer
 
 ## Dev overlay: logical TileId (colored text) + ground atlas id on dark badge. Toggle with **L**.
@@ -227,7 +227,7 @@ func _build_legend() -> void:
 		vbox.add_child(_make_legend_row(int(row[0]), str(row[1]), str(row[2])))
 
 	var footnote: Label = Label.new()
-	footnote.text = "# = ground atlas · ~ = phantom · use side panel"
+	footnote.text = "# = ground atlas Â· ~ = phantom Â· use side panel"
 	footnote.add_theme_font_size_override("font_size", 9)
 	footnote.add_theme_color_override("font_color", Color(0.82, 0.82, 0.82))
 	vbox.add_child(footnote)

@@ -1,8 +1,8 @@
-class_name UnitPlanOrder
+﻿class_name UnitPlanOrder
 extends RefCounted
 
 ## Resolves each unit's planned actions in **simulation execution order**
-## (pre-move/face → abilities → post-move/face). UI and planning input use this
+## (pre-move/face â†’ abilities â†’ post-move/face). UI and planning input use this
 ## so future bonus moves, AP refunds, and extra action grants can extend the
 ## step list without rewriting the timeline grid.
 

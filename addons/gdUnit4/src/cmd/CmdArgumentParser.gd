@@ -1,4 +1,4 @@
-class_name CmdArgumentParser
+﻿class_name CmdArgumentParser
 extends RefCounted
 
 var _options :CmdOptions

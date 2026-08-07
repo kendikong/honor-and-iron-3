@@ -1,7 +1,7 @@
-class_name AmbientEventDirector
+﻿class_name AmbientEventDirector
 extends RefCounted
 
-## Seeded rare events — bird, fish splash, heavy gust (bible §3 #9).
+## Seeded rare events â€” bird, fish splash, heavy gust (bible Â§3 #9).
 
 const _C = preload("res://scripts/mana_seed_constants.gd")
 

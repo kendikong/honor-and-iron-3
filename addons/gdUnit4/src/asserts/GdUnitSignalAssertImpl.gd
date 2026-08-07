@@ -1,4 +1,4 @@
-extends GdUnitSignalAssert
+﻿extends GdUnitSignalAssert
 
 const DEFAULT_TIMEOUT := 2000
 

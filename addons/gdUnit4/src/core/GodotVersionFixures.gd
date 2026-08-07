@@ -1,4 +1,4 @@
-## This service class contains helpers to wrap Godot functions and handle them carefully depending on the current Godot version
+﻿## This service class contains helpers to wrap Godot functions and handle them carefully depending on the current Godot version
 class_name GodotVersionFixures
 extends RefCounted
 

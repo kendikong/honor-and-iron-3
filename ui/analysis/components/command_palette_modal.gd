@@ -1,4 +1,4 @@
-class_name CommandPaletteModal
+﻿class_name CommandPaletteModal
 extends PopupPanel
 
 signal item_selected(title: String, body: String, meta: Dictionary)

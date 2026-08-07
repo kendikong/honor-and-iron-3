@@ -1,4 +1,4 @@
-## A fuzzer that generates random integer values with optional even/odd constraints.[br]
+﻿## A fuzzer that generates random integer values with optional even/odd constraints.[br]
 ##
 ## It supports three modes: normal (any integer), even-only,
 ## and odd-only generation. This is useful for testing array indices, loop counters,

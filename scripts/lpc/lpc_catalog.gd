@@ -1,4 +1,4 @@
-class_name LpcCatalog
+﻿class_name LpcCatalog
 extends RefCounted
 
 ## Curated LPC item metadata for Godot runtime rolling.
@@ -13,7 +13,7 @@ var slots: Dictionary = {}
 static func load_from_disk(path: String = LpcConstants.CATALOG_PATH) -> LpcCatalog:
 	var catalog: LpcCatalog = LpcCatalog.new()
 	if not FileAccess.file_exists(path):
-		push_error("LPC catalog missing: %s — run tools/build_lpc_catalog.py" % path)
+		push_error("LPC catalog missing: %s â€” run tools/build_lpc_catalog.py" % path)
 		return catalog
 	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
 	var data: Variant = JSON.parse_string(file.get_as_text())

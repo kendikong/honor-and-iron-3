@@ -1,7 +1,7 @@
-class_name TacticalCombatHud
+﻿class_name TacticalCombatHud
 extends CanvasLayer
 
-## Bottom combat HUD — phase, timeline summary, execute / undo (Phase 4 shell).
+## Bottom combat HUD â€” phase, timeline summary, execute / undo (Phase 4 shell).
 
 var _director: CombatDirector
 var _map_view: TacticalMapView

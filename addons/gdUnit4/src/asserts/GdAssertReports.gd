@@ -1,4 +1,4 @@
-class_name GdAssertReports
+﻿class_name GdAssertReports
 extends RefCounted
 
 const LAST_ERROR = "last_assert_error_message"

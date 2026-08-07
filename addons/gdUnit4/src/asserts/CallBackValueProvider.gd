@@ -1,4 +1,4 @@
-# a value provider unsing a callback to get `next` value from a certain function
+﻿# a value provider unsing a callback to get `next` value from a certain function
 class_name CallBackValueProvider
 extends ValueProvider
 

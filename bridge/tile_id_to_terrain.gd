@@ -1,4 +1,4 @@
-class_name TileIdToTerrain
+﻿class_name TileIdToTerrain
 extends RefCounted
 
 ## Maps mana-seed PlayerGrid TileId values to H&I TerrainData definitions.

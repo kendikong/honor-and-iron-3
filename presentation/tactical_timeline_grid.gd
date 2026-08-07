@@ -1,7 +1,7 @@
-class_name TacticalTimelineGrid
+﻿class_name TacticalTimelineGrid
 extends VBoxContainer
 
-## Party planning table — up to 4 co-op player slots, pre / action / post columns.
+## Party planning table â€” up to 4 co-op player slots, pre / action / post columns.
 
 const MAX_PARTY_SLOTS: int = 4
 const W_PLAYER: int = 32
@@ -371,11 +371,11 @@ func _append_plan_cell(
 		if not ghost_parts.is_empty():
 			ghost_text = " → ".join(ghost_parts)
 			ghost_tooltip = "Pending — click to commit\n" + "\n".join(ghost_tips)
-	if ghost_text != "" and text == "—":
-		_add_pending_plan_cell(
-			row, ghost_text, ghost_tooltip, accent, plan_active, stretch,
-		)
-		return first_warn
+		if ghost_text != "" and text == "—":
+			_add_pending_plan_cell(
+				row, ghost_text, ghost_tooltip, accent, plan_active, stretch,
+			)
+			return first_warn
 	if ghost_text == "":
 		var lbl := _add_plan_cell(row, text, tooltip, failed, accent, plan_active, stretch)
 		if text == "—":
@@ -534,13 +534,13 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	_add_stat_chip(
 		chips,
 		"%s%d" % [PlanningIcons.STAT_LEVEL, unit.level],
-		"Level — unit experience tier",
+		"Level â€” unit experience tier",
 		col,
 	)
 	_add_stat_chip(
 		chips,
 		"%s%d/%d" % [PlanningIcons.STAT_HP, unit.health.current_hp, unit.health.max_hp],
-		"Health — current / maximum hit points",
+		"Health â€” current / maximum hit points",
 		col,
 	)
 	for stat_type: GameEnums.StatType in [
@@ -556,7 +556,7 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	_add_stat_chip(
 		chips,
 		"%s%d" % [PlanningIcons.STAT_ARMOR, unit.armor],
-		"Armor — absorbs damage before HP",
+		"Armor â€” absorbs damage before HP",
 		col,
 	)
 	var uses_run: bool = (
@@ -575,9 +575,9 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 			unit.movement.max_points,
 		],
 		(
-			"Run — remaining / maximum tiles this turn"
+			"Run â€” remaining / maximum tiles this turn"
 			if uses_run
-			else "Movement — remaining / maximum tiles this turn"
+			else "Movement â€” remaining / maximum tiles this turn"
 		),
 		col,
 	)
@@ -589,7 +589,7 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	_add_stat_chip(
 		chips,
 		"%s%d/%d" % [PlanningIcons.STAT_AP, ap_left, unit.ability.max_points],
-		"Action Points — remaining / maximum per turn",
+		"Action Points â€” remaining / maximum per turn",
 		col,
 	)
 

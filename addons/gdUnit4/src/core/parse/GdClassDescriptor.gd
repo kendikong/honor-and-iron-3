@@ -1,4 +1,4 @@
-class_name GdClassDescriptor
+﻿class_name GdClassDescriptor
 extends RefCounted
 
 

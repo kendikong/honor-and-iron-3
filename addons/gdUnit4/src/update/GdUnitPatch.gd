@@ -1,4 +1,4 @@
-class_name GdUnitPatch
+﻿class_name GdUnitPatch
 extends RefCounted
 
 const PATCH_VERSION = "patch_version"

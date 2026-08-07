@@ -1,7 +1,7 @@
-class_name CharacterActor
+﻿class_name CharacterActor
 extends Node2D
 
-## Layered LPC walk/idle preview — reuses sprite nodes; shares cached SpriteFrames.
+## Layered LPC walk/idle preview â€” reuses sprite nodes; shares cached SpriteFrames.
 
 const _C = preload("res://scripts/lpc/lpc_constants.gd")
 const _ContactShadow = preload("res://scripts/lpc/character_contact_shadow.gd")
@@ -52,7 +52,7 @@ var _shadow_rebuild_scheduled: bool = false
 var _oblique_modulate_stamp: int = -1
 var _oblique_cloud_stamp: int = -1
 var _oblique_modulate_pos_px: Vector2i = Vector2i(999999, 999999)
-## Per-layer self_modulate — parent modulate does not reach LPC recolor shader output reliably.
+## Per-layer self_modulate â€” parent modulate does not reach LPC recolor shader output reliably.
 const _EXHAUSTED_LAYER_MODULATE := Color(0.28, 0.28, 0.32, 1.0)
 const _EXHAUSTED_SHADOW_TINT := Color(0.40, 0.40, 0.44, 1.0)
 const _SPELL_FLASH_COLOR := Color(3.2, 3.2, 3.2, 1.0)

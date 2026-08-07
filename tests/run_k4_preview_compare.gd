@@ -77,7 +77,7 @@ func _main() -> void:
 	_push_mouse_button(MOUSE_BUTTON_LEFT, false)
 	await _wait_frames(20)
 	_log_snapshot("after_commit", _RUN_TRIGGER)
-	print("Done — compare PNGs in reports/k4_preview/ then close the window.")
+	print("Done â€” compare PNGs in reports/k4_preview/ then close the window.")
 	await get_tree().create_timer(4.0).timeout
 	get_tree().quit()
 

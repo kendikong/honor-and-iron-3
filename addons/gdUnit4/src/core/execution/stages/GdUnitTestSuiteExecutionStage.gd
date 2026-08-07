@@ -1,4 +1,4 @@
-## The test suite main execution stage.[br]
+﻿## The test suite main execution stage.[br]
 class_name GdUnitTestSuiteExecutionStage
 extends IGdUnitExecutionStage
 

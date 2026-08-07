@@ -1,4 +1,4 @@
-class_name TreeCanopyFader
+﻿class_name TreeCanopyFader
 extends Node2D
 
 ## Swaps opaque tree tiles for semi-transparent sprites when units stand behind them.
@@ -77,7 +77,7 @@ func _ensure_tree_anchor_cache() -> void:
 	_tree_anchors_dirty = false
 
 
-## Faded trees are erased from TileMapLayer — must keep checking their anchors until restore.
+## Faded trees are erased from TileMapLayer â€” must keep checking their anchors until restore.
 func _all_check_anchors() -> Array[Vector2i]:
 	_ensure_tree_anchor_cache()
 	var seen: Dictionary = {}

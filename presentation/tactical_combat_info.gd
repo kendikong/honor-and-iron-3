@@ -1,7 +1,7 @@
-class_name TacticalCombatInfo
+﻿class_name TacticalCombatInfo
 extends RefCounted
 
-## Deprecated alias — use CombatUiFormatters.
+## Deprecated alias â€” use CombatUiFormatters.
 
 const HEX_DIM: String = CombatUiFormatters.HEX_DIM
 const HEX_TILE: String = CombatUiFormatters.HEX_TILE

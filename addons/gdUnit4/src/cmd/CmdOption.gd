@@ -1,4 +1,4 @@
-class_name CmdOption
+﻿class_name CmdOption
 extends RefCounted
 
 

@@ -1,4 +1,4 @@
-class_name MassSimBatchReport
+﻿class_name MassSimBatchReport
 extends RefCounted
 
 const MIN_SAMPLE_FULL_CONFIDENCE := 500
@@ -88,7 +88,7 @@ func sample_gate_label(metric_name: String) -> String:
 
 func format_pct_delta(current: float, previous: float, suffix: String = "%") -> String:
 	if previous < 0.0:
-		return "— (no prior snapshot)"
+		return "â€” (no prior snapshot)"
 	var delta: float = current - previous
 	var sign: String = "+" if delta >= 0.0 else ""
 	return "%s%.1f%s vs last batch" % [sign, delta, suffix]

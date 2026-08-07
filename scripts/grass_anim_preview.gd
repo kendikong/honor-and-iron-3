@@ -1,6 +1,6 @@
-extends Control
+﻿extends Control
 
-## Side-by-side grass comparison — F6 this scene. Not wired into test_map.
+## Side-by-side grass comparison â€” F6 this scene. Not wired into test_map.
 
 const _PetalPatch = preload("res://scripts/grass_petal_patch.gd")
 
@@ -11,15 +11,15 @@ const CELL_PX: int = TILE_PX * ZOOM
 const _ROWS: Array[Dictionary] = [
 	{
 		"tile_id": 97,
-		"static_label": "Grass #97 — Mana Seed reference (static)",
-		"anim_label": "3-line blades — top half sways, base planted",
+		"static_label": "Grass #97 â€” Mana Seed reference (static)",
+		"anim_label": "3-line blades â€” top half sways, base planted",
 		"variant": 0,
 		"seed": 9701,
 	},
 	{
 		"tile_id": 98,
-		"static_label": "Grass #98 — Mana Seed reference (static)",
-		"anim_label": "V-shape blades — top half sways, base planted",
+		"static_label": "Grass #98 â€” Mana Seed reference (static)",
+		"anim_label": "V-shape blades â€” top half sways, base planted",
 		"variant": 1,
 		"seed": 9801,
 	},

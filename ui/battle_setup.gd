@@ -1,4 +1,4 @@
-extends Control
+﻿extends Control
 
 var _map_card_center: CenterContainer
 
@@ -30,9 +30,6 @@ func _ready() -> void:
 		grid.add_child(card)
 
 	grid.add_child(_build_skirmish_card())
-	
-	var custom_card := _build_custom_card()
-	grid.add_child(custom_card)
 	
 	if NetworkManager != null and NetworkManager.is_multiplayer and not multiplayer.is_server():
 		# Clients don't choose the map. Hide grid, show waiting label.
@@ -100,7 +97,7 @@ func _build_skirmish_card() -> Control:
 	vbox.add_child(title)
 
 	var desc := Label.new()
-	desc.text = "Procedural map — configure roster, levels, passives, and skills."
+	desc.text = "Procedural map â€” configure roster, levels, passives, and skills."
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
 	desc.add_theme_font_size_override("font_size", 16)
 	vbox.add_child(desc)
@@ -275,7 +272,7 @@ func _populate_skirmish_preset_rows(
 			parent.add_child(row)
 		var preset: Vector2i = presets[i]
 		var pick := Button.new()
-		pick.text = "%d × %d" % [preset.x, preset.y]
+		pick.text = "%d Ã— %d" % [preset.x, preset.y]
 		pick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		pick.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		pick.custom_minimum_size = Vector2(0.0, 72.0)
@@ -339,40 +336,6 @@ func _launch_skirmish(size_preset: Vector2i, setup: MassSimSkirmishSetup) -> voi
 	SettingsManager.persist_window_placement()
 	get_tree().change_scene_to_file("res://scenes/TacticalCombat.tscn")
 
-
-func _build_custom_card() -> Control:
-	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(300, 200)
-	btn.pressed.connect(_launch_custom)
-	
-	var vbox := VBoxContainer.new()
-	vbox.anchor_right = 1.0
-	vbox.anchor_bottom = 1.0
-	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	btn.add_child(vbox)
-	
-	var color := ColorRect.new()
-	color.custom_minimum_size = Vector2(0, 100)
-	color.color = Color(0.2, 0.2, 0.2)
-	color.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.add_child(color)
-	
-	var title := Label.new()
-	title.text = "Custom Sandbox"
-	title.add_theme_font_size_override("font_size", 24)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(title)
-	
-	var desc := Label.new()
-	desc.text = "A randomized sandbox map. (A full visual map editor will be added in the future!)"
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
-	desc.add_theme_font_size_override("font_size", 16)
-	vbox.add_child(desc)
-	
-	return btn
-
-func _launch_custom() -> void:
-	get_tree().change_scene_to_file("res://scenes/SandboxEditor.tscn")
 
 func _launch_map(map: MapData, index: int) -> void:
 	if NetworkManager != null and NetworkManager.is_multiplayer:
@@ -460,9 +423,5 @@ func rpc_start_battle(map_index: int, assignments_json: String) -> void:
 		_do_launch(maps[map_index], parsed)
 
 func _do_launch(map: MapData, assignments: Dictionary) -> void:
-	var scene = load("res://scenes/Combat.tscn").instantiate()
-	scene.name = "Combat"
-	get_tree().root.add_child(scene)
-	scene.get_node("CombatDirector").start_from_encounter(map.encounter, assignments)
-	get_tree().current_scene.queue_free()
-	get_tree().current_scene = scene
+	SkirmishLaunch.set_pending_encounter(map.encounter, assignments)
+	get_tree().change_scene_to_file("res://scenes/TacticalCombat.tscn")

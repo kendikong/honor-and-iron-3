@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="x-ua-compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>GdUnit4 Testsuite</title>
+	<link rel="stylesheet" href="../css/styles.css">
+	<link href="../css/breadcrumb.css" rel="stylesheet" type="text/css" />
+
+	<script src="https://code.jquery.com/jquery-3.6.4.js"></script>
+	<script>
+		$(document).ready(function () {
+			var report_view = $('#report_area').find('.report-column')
+
+			$('#report-table tr').click(function () {
+				var report = $(this).find('.report-column').html();
+				report_view.html(report)
+				$('.selected').removeClass('selected');
+				$(this).addClass('selected');
+			});
+		});
+	</script>
+</head>
+
+<body>
+	<header>
+		<div class="logo">
+			<img src="../css/logo.png" alt="GdUnit4 Logo">
+			<span>GdUnit4</span>
+		</div>
+		<div class="report-container">
+			<h1>Testsuite Report</h1>
+			<div>
+				<span class="label">res://tests/live_planning_scene_test.gd</span>
+			</div>
+			<div class="summary">
+				<div class="summary-item">
+					<span class="label">Tests</span>
+					<span class="value">2</span>
+				</div>
+				<div class="summary-item">
+					<span class="label">Skipped</span>
+					<span class="value">0</span>
+				</div>
+				<div class="summary-item">
+					<span class="label">Flaky</span>
+					<span class="value">0</span>
+				</div>
+				<div class="summary-item">
+					<span class="label">Failures</span>
+					<span class="value">37</span>
+				</div>
+				<div class="summary-item">
+					<span class="label">Orphans</span>
+					<span class="value">0</span>
+				</div>
+				<div class="summary-item">
+					<span class="label">Duration</span>
+					<span class="value">1min 22s 77ms</span>
+				</div>
+				<div class="success-rate">
+					<div class="check-icon status-failed">✓</div>
+					<div class="rate-text">
+						<span class="label">Success Rate</span>
+						<span class="value">0%</span>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="breadcrumb">
+			<a href="../index.html"><span>All</span></a>
+			<a href="../path/tests.html"><span>tests</span></a>
+			<a class="active" href="#"><span>live_planning_scene_test</span></a>
+		</div>
+	</header>
+
+	<main>
+		<div class="tab-report-grid">
+			<div class="grid-item tab">
+				<table id="report-table">
+					<thead>
+						<tr>
+							<th>Testcase</th>
+							<th>Result</th>
+							<th>Skipped</th>
+							<th>Orphans</th>
+							<th>Duration</th>
+							<th class="report-column">Report</th>
+						</tr>
+					</thead>
+					<tbody>
+						
+								<tr class="testcase-group">
+									<td>test_live_planning_bible_multi_knight_session</td>
+									<td><span class="status status-failed">FAILED</span></td>
+									<td>0</td>
+									<td>0</td>
+									<td>1min 22s 33ms</td>
+									<td class="report-column">
+										<pre>
+k3/hover/end: preview path must not be empty at (6, 3)
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1337
+	at &#39;_probe_cell&#39; in res://tests/live_planning_scene_test.gd:1310
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3/hover/end: preview path empty (expected end (6, 3))
+	at &#39;_assert_preview_path_ends&#39; in res://tests/live_planning_scene_test.gd:1953
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1345
+	at &#39;_probe_cell&#39; in res://tests/live_planning_scene_test.gd:1310
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3/hover/end: preview ghost missing at (6, 3); path=[] slots={ &quot;pre&quot;: [], &quot;action&quot;: [], &quot;post&quot;: [], &quot;invalid&quot;: &quot;Invalid target or distance for this ability.&quot; } approach=n/a preview_board=&lt;null&gt;
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1358
+	at &#39;_preview_unit&#39; in res://tests/live_planning_scene_test.gd:1995
+k3/selection/pre_tap: preview path must not be empty at (6, 3)
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1337
+	at &#39;_probe_cell&#39; in res://tests/live_planning_scene_test.gd:1310
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3/selection/pre_tap: preview path expected [(5, 4), (6, 4), (6, 3)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(5, 4):(1, 4):[(4, 4), (3, 4), (2, 4), (1, 4)]]; plan=[1:(5, 4):[]:-1]
+	at &#39;_assert_preview_path_equals&#39; in res://tests/live_planning_scene_test.gd:1895
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1341
+	at &#39;_probe_cell&#39; in res://tests/live_planning_scene_test.gd:1310
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3/selection/pre_tap: preview ghost missing at (6, 3); path=[] slots={ &quot;pre&quot;: [], &quot;action&quot;: [], &quot;post&quot;: [], &quot;invalid&quot;: &quot;Invalid target or distance for this ability.&quot; } approach=n/a preview_board=&lt;null&gt;
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1358
+	at &#39;_preview_unit&#39; in res://tests/live_planning_scene_test.gd:1995
+k3/selection/release: commit must not run when preview slots are invalid
+	at &#39;_assert_commit_ratifies_preview&#39; in res://tests/live_planning_scene_test.gd:2349
+	at &#39;_tap_cell&#39; in res://tests/live_planning_scene_test.gd:899
+k3/selection: trample target
+	at &#39;_assert_k3_trample_committed&#39; in res://tests/live_planning_scene_test.gd:1107
+	at &#39;_journey_knight3_trampling_advance&#39; in res://tests/live_planning_scene_test.gd:664
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3/selection: trample spends AP
+	at &#39;_assert_k3_trample_committed&#39; in res://tests/live_planning_scene_test.gd:1110
+	at &#39;_journey_knight3_trampling_advance&#39; in res://tests/live_planning_scene_test.gd:664
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3: endpoint paint failed at step 2
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1819
+	at &#39;_hop_drag_to_cell&#39; in res://tests/live_planning_scene_test.gd:1284
+k3/preview_path_2: preview path expected [(5, 4), (6, 4), (6, 3)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(5, 4):(1, 4):[(4, 4), (3, 4), (2, 4), (1, 4)]]; plan=[1:(5, 4):[]:-1]
+	at &#39;_assert_preview_path_equals&#39; in res://tests/live_planning_scene_test.gd:1895
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1823
+k3/release: commit must not run when preview slots are invalid
+	at &#39;_assert_commit_ratifies_preview&#39; in res://tests/live_planning_scene_test.gd:2349
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1846
+k3/drag: trample waypoints
+	at &#39;_assert_k3_trample_committed&#39; in res://tests/live_planning_scene_test.gd:1100
+	at &#39;_journey_knight3_trampling_advance&#39; in res://tests/live_planning_scene_test.gd:670
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1846
+k3/drag: trample end position
+	at &#39;_assert_k3_trample_committed&#39; in res://tests/live_planning_scene_test.gd:1103
+	at &#39;_journey_knight3_trampling_advance&#39; in res://tests/live_planning_scene_test.gd:670
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1846
+k3/drag: trample spends AP
+	at &#39;_assert_k3_trample_committed&#39; in res://tests/live_planning_scene_test.gd:1110
+	at &#39;_journey_knight3_trampling_advance&#39; in res://tests/live_planning_scene_test.gd:670
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1846
+k3/drag/post_commit/red: action-range gate expected false got true
+	at &#39;_assert_red_live&#39; in res://tests/live_planning_scene_test.gd:2753
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1392
+	at &#39;_probe_cell&#39; in res://tests/live_planning_scene_test.gd:1310
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3/drag/post_commit/red: overlay red expected false got true
+	at &#39;_assert_red_live&#39; in res://tests/live_planning_scene_test.gd:2756
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1392
+	at &#39;_probe_cell&#39; in res://tests/live_planning_scene_test.gd:1310
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3/post/hover_east: preview path expected [(5, 4), (6, 4), (6, 3), (7, 3)] got [(5, 4), (6, 4), (7, 4), (7, 3)]; events=[0:(5, 4):(7, 3):[(6, 4), (7, 4), (7, 3)]]; plan=[]
+	at &#39;_assert_preview_path_equals&#39; in res://tests/live_planning_scene_test.gd:1895
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1341
+	at &#39;_probe_cell&#39; in res://tests/live_planning_scene_test.gd:1310
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3/post/hover_dest: preview path must not be empty at (8, 2)
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1337
+	at &#39;_probe_cell&#39; in res://tests/live_planning_scene_test.gd:1310
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3/post/hover_dest: preview path empty (expected end (8, 2))
+	at &#39;_assert_preview_path_ends&#39; in res://tests/live_planning_scene_test.gd:1953
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1345
+	at &#39;_probe_cell&#39; in res://tests/live_planning_scene_test.gd:1310
+	at &#39;_wait_ability_settle&#39; in res://tests/live_planning_scene_test.gd:1979
+k3/post/hover_dest: preview ghost missing at (8, 2); path=[] slots={ &quot;pre&quot;: [], &quot;action&quot;: [], &quot;post&quot;: [], &quot;invalid&quot;: &quot;No valid actions generated.&quot; } approach=n/a preview_board=&lt;null&gt;
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1358
+	at &#39;_preview_unit&#39; in res://tests/live_planning_scene_test.gd:1995
+k3/post/hover_dest: icon must contain ðŸ‘Ÿ, got âˆ…
+	at &#39;_audit_surface&#39; in res://tests/live_planning_scene_test.gd:1373
+	at &#39;_preview_unit&#39; in res://tests/live_planning_scene_test.gd:1995
+k3/post/step_1: drag must be armed before hop to (7, 3)
+	at &#39;_hop_drag_to_cell&#39; in res://tests/live_planning_scene_test.gd:1269
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1787
+k3/post/drag_route_1: drag route expected [(6, 3), (7, 3)] got []
+	at &#39;_assert_drag_route_equals&#39; in res://tests/live_planning_scene_test.gd:1879
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1805
+k3/post/preview_path_1: preview path expected [(5, 4), (6, 4), (6, 3), (7, 3)] got []; events=[6:(-999, -999):(-999, -999):[]]; plan=[0:(6, 3):[(6, 4), (6, 3)]:-1]
+	at &#39;_assert_preview_path_equals&#39; in res://tests/live_planning_scene_test.gd:1895
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1811
+k3/post: post drag must show blue move tiles
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1814
+k3/post/step_2: drag must be armed before hop to (8, 3)
+	at &#39;_hop_drag_to_cell&#39; in res://tests/live_planning_scene_test.gd:1269
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1787
+k3/post/drag_route_2: drag route expected [(6, 3), (7, 3), (8, 3)] got []
+	at &#39;_assert_drag_route_equals&#39; in res://tests/live_planning_scene_test.gd:1879
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1805
+k3/post/preview_path_2: preview path expected [(5, 4), (6, 4), (6, 3), (7, 3), (8, 3)] got []; events=[6:(-999, -999):(-999, -999):[]]; plan=[0:(6, 3):[(6, 4), (6, 3)]:-1]
+	at &#39;_assert_preview_path_equals&#39; in res://tests/live_planning_scene_test.gd:1895
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1811
+k3/post: post drag must show blue move tiles
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1814
+k3/post/step_3: drag must be armed before hop to (8, 2)
+	at &#39;_hop_drag_to_cell&#39; in res://tests/live_planning_scene_test.gd:1269
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1787
+k3/post/drag_route_3: drag route expected [(6, 3), (7, 3), (8, 3), (8, 2)] got []
+	at &#39;_assert_drag_route_equals&#39; in res://tests/live_planning_scene_test.gd:1879
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1805
+k3/post/preview_path_3: preview path expected [(5, 4), (6, 4), (6, 3), (7, 3), (8, 3), (8, 2)] got []; events=[6:(-999, -999):(-999, -999):[]]; plan=[0:(6, 3):[(6, 4), (6, 3)]:-1]
+	at &#39;_assert_preview_path_equals&#39; in res://tests/live_planning_scene_test.gd:1895
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1811
+k3/post: post drag must show blue move tiles
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1814
+k3/post/release: commit must not run when preview slots are invalid
+	at &#39;_assert_commit_ratifies_preview&#39; in res://tests/live_planning_scene_test.gd:2349
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1846
+k3/post: post-move missing
+	at &#39;_assert_k3_post_move_committed&#39; in res://tests/live_planning_scene_test.gd:1118
+	at &#39;_journey_knight3_trampling_advance&#39; in res://tests/live_planning_scene_test.gd:708
+	at &#39;_drag_through_cells_with_route_checks&#39; in res://tests/live_planning_scene_test.gd:1846
+Expecting:
+ &#39;(8, 2)&#39;
+ but was
+ &#39;(6, 3)&#39;
+	at &#39;_journey_execute_all_plans&#39; in res://tests/live_planning_scene_test.gd:785
+	at &#39;test_live_planning_bible_multi_knight_session&#39; in res://tests/live_planning_scene_test.gd:104
+	at &#39;_journey_knight4_run_economy&#39; in res://tests/live_planning_scene_test.gd:760
+	at &#39;_k4_preview_snapshot&#39; in res://tests/live_planning_scene_test.gd:1765
+
+										</pre>
+									</td>
+								</tr>
+
+					</tbody>
+				</table>
+			</div>
+			<div id="report_area" class="grid-item tab">
+				<h4>Failure Report</h4>
+				<div class="report-column"></div>
+			</div>
+		</div>
+	</main>
+
+	<footer>
+		<p>Generated by <a href="https://github.com/MikeSchulze/gdUnit4">GdUnit4</a> at 2026-08-06 00:59:58</p>
+		<div class="status-legend">
+			<span class="status-legend-item">
+				<span class="status-box status-skipped"></span> Skipped
+			</span>
+			<span class="status-legend-item">
+				<span class="status-box status-passed"></span> Passed
+			</span>
+			<span class="status-legend-item">
+				<span class="status-box status-flaky"></span> Flaky
+			</span>
+			<span class="status-legend-item">
+				<span class="status-box status-warning"></span> Warning
+			</span>
+			<span class="status-legend-item">
+				<span class="status-box status-failed"></span> Failed
+			</span>
+			<span class="status-legend-item">
+				<span class="status-box status-error"></span> Error
+			</span>
+		</div>
+	</footer>
+</body>
+
+<script>
+	function groupTableRows() {
+		const table = document.getElementById('report-table');
+		const rows = table.querySelectorAll('tbody tr');
+
+		let previousTestCase = '';
+		let groupStartIndex = 0;
+		let groupColorToggle = true; // Toggle between two colors
+
+		rows.forEach((row, index) => {
+			const testCaseName = row.cells[0].textContent.trim();
+
+			if (testCaseName !== previousTestCase) {
+				// Close the previous group
+				if (index > 0 && groupStartIndex !== index - 1) {
+					// Apply background color to the group
+					const groupClass = groupColorToggle ? 'group-bg-1' : 'group-bg-2';
+					for (let i = groupStartIndex; i <= index - 1; i++) {
+						rows[i].classList.add(groupClass);
+					}
+
+					// Toggle background color for the next group
+					groupColorToggle = !groupColorToggle;
+				}
+
+				// Start a new group
+				groupStartIndex = index;
+			}
+
+			previousTestCase = testCaseName;
+		});
+
+		// Handle the last group
+		if (groupStartIndex !== rows.length - 1) {
+			// Apply background color to the last group
+			const groupClass = groupColorToggle ? 'group-bg-1' : 'group-bg-2';
+			for (let i = groupStartIndex; i < rows.length; i++) {
+				rows[i].classList.add(groupClass);
+			}
+		}
+	}
+
+	// Call the function to group table rows after the DOM loads
+	document.addEventListener('DOMContentLoaded', groupTableRows);
+</script>
+
+</html>

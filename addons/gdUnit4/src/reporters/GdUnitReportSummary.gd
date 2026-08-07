@@ -1,4 +1,4 @@
-class_name GdUnitReportSummary
+﻿class_name GdUnitReportSummary
 extends RefCounted
 
 var _resource_path: String

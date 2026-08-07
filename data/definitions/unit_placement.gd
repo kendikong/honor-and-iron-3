@@ -1,4 +1,4 @@
-class_name UnitPlacement
+﻿class_name UnitPlacement
 extends Resource
 
 ## Purpose: Pairs a unit template with where it starts on the board.

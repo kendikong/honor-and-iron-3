@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 extends Control
 
 ## Will be emitted when the test index counter is changed

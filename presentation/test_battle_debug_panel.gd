@@ -1,7 +1,7 @@
-class_name TestBattleDebugPanel
+﻿class_name TestBattleDebugPanel
 extends CanvasLayer
 
-## Training-mode debug controls — class swap, level, passives, skills, dummy management.
+## Training-mode debug controls â€” class swap, level, passives, skills, dummy management.
 
 const PANEL_WIDTH: int = 340
 const PANEL_HEIGHT_EXPANDED: float = 440.0
@@ -87,7 +87,7 @@ func _build_ui() -> void:
 	header.add_child(title)
 
 	_collapse_btn = Button.new()
-	_collapse_btn.text = "▲"
+	_collapse_btn.text = "â–²"
 	_collapse_btn.tooltip_text = "Collapse debug panel"
 	_collapse_btn.custom_minimum_size = Vector2(28.0, 24.0)
 	_collapse_btn.pressed.connect(_on_collapse_pressed)
@@ -104,7 +104,7 @@ func _build_ui() -> void:
 	body.add_theme_constant_override("separation", 8)
 	_body_scroll.add_child(body)
 
-	_add_label(body, "10×10 grass — real combat pipeline")
+	_add_label(body, "10Ã—10 grass â€” real combat pipeline")
 
 	_status_label = Label.new()
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -318,7 +318,7 @@ func _set_collapsed(collapsed: bool) -> void:
 	if _body_scroll != null:
 		_body_scroll.visible = not _collapsed
 	if _collapse_btn != null:
-		_collapse_btn.text = "▼" if _collapsed else "▲"
+		_collapse_btn.text = "â–¼" if _collapsed else "â–²"
 		_collapse_btn.tooltip_text = "Expand debug panel" if _collapsed else "Collapse debug panel"
 	if _root != null:
 		_root.offset_top = -PANEL_HEIGHT_COLLAPSED if _collapsed else -PANEL_HEIGHT_EXPANDED

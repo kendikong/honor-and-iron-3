@@ -1,4 +1,4 @@
-﻿class_name LastStandScenarioTest
+class_name LastStandScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")

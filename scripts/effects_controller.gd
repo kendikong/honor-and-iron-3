@@ -1,4 +1,4 @@
-class_name EffectsController
+﻿class_name EffectsController
 extends RefCounted
 
 const _SparkleSprites = preload("res://scripts/water_sparkle_sprites.gd")
@@ -324,7 +324,7 @@ func _ensure_shadow_draw_order() -> void:
 	_shadow_sprites.z_index = _C.Z_SHADOW
 	if _map_root == null or _trees == null:
 		return
-	# z=1: above grass, below OverlayLayer casters and TreeLayer — casters paint over own shadow.
+	# z=1: above grass, below OverlayLayer casters and TreeLayer â€” casters paint over own shadow.
 	var tree_idx: int = _trees.get_index()
 	if tree_idx >= 0 and _shadow_sprites.get_parent() == _map_root:
 		_map_root.move_child(_shadow_sprites, tree_idx)

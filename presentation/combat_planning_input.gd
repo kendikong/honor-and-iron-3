@@ -1,7 +1,7 @@
 class_name CombatPlanningInput
 extends RefCounted
 
-## H&I planning semantics ported from board_view — used by TacticalInputController.
+## H&I planning semantics ported from board_view â€” used by TacticalInputController.
 
 
 var force_basic_movement: bool = false
@@ -63,7 +63,7 @@ var _drag_preview_refresh_pending: bool = false
 var _drag_preview_last_flush_usec: int = 0
 var _drag_last_cursor_cell: Vector2i = Vector2i(-999999, -999999)
 var _drag_last_sprite_cell: Vector2i = Vector2i(-999999, -999999)
-## Last painted intent (move-preview truth) — commit ratifies these slots, does not rebuild.
+## Last painted intent (move-preview truth) â€” commit ratifies these slots, does not rebuild.
 var _intent_snapshot_slots: Dictionary = {}
 var _intent_snapshot_key: String = ""
 var _intent_snapshot_valid: bool = false
@@ -485,7 +485,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 	if preview.is_empty():
 		return
 	if _is_invalid_dict(preview):
-		## Do not erase movement intent when the hover cell is still a valid TILE endpoint —
+		## Do not erase movement intent when the hover cell is still a valid TILE endpoint â€”
 		## slot legality is the source of truth, not sim path / failure flags.
 		if _paint_valid_movement_endpoint_intent():
 			return
@@ -553,13 +553,17 @@ func _paint_valid_movement_endpoint_intent() -> bool:
 	if not _director.board.is_in_bounds(cell):
 		return false
 	var origin: Vector2i = _proj_origin(actor)
-	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability):
+	if not _planning_valid_awaiting_cell(actor, ability, cell, origin):
 		return false
 	var route_wps: Array[Vector2i] = _route_waypoints()
+	var mod_idx: int = _awaiting_module_index_for(unit_id)
 	var action: TimelineAction = TimelineAction.make_ability(
 		unit_id, ability, cell, AbilitySystem.planning_commit_target_unit_id(ability, -1),
 		GameEnums.MoveTiming.PRE_ACTION, route_wps,
 	)
+	while action.module_coords.size() <= mod_idx:
+		action.module_coords.append(TimelineAction.MODULE_COORD_UNSET)
+	action.module_coords[mod_idx] = cell
 	var base: BoardState = (
 		_director.base_board.clone() if _director.base_board != null else _director.board.clone()
 	)
@@ -730,7 +734,7 @@ func _on_board_changed(board: BoardState) -> void:
 		# Stale stash after drag ended must not restore over a committed plan.
 		if _drag_saved_preview != null:
 			_drag_saved_preview = null
-		# Snap undo/move refresh emits preview_updated in the same flush — skip duplicate danger pass.
+		# Snap undo/move refresh emits preview_updated in the same flush â€” skip duplicate danger pass.
 		if _planning != null and not _director.plan_refresh_snap_units:
 			_planning.mark_danger_dirty()
 		if not _director.plan_refresh_snap_units:
@@ -980,6 +984,9 @@ func invalidate_hover_preview_cache() -> void:
 func on_hover_moved(cell: Vector2i) -> void:
 	if _director == null or _director.board == null:
 		return
+	## Live QA pins a grid cell; map hover poll must not wipe it via HUD OOB (-999).
+	if _qa_pointer_grid_override and not _director.board.is_in_bounds(cell):
+		cell = _qa_pointer_grid_cell
 	if not dragging:
 		_sync_intent_skill_mode()
 		if _intent_state != null:
@@ -1075,7 +1082,15 @@ func _flush_hover_heavy_sync() -> void:
 
 
 func _run_hover_heavy_refresh() -> void:
-	if _director == null or _director.board == null or not _is_planning() or dragging:
+	## Armed press (pre-drag) must keep `_drag_unit_id` for stand-tile release commits
+	## (awaiting arm / Wait / self-target). Hover restore must not run until drag starts or cancels.
+	if (
+		_director == null
+		or _director.board == null
+		or not _is_planning()
+		or dragging
+		or _drag_armed
+	):
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	_hover_heavy_last_flush_usec = Time.get_ticks_usec()
@@ -1291,7 +1306,7 @@ func _ally_skill_preview_slots(p_unit: UnitState, cell: Vector2i) -> Dictionary:
 
 
 func _refresh_selected_interaction_preview() -> void:
-	if dragging or _director == null or _director.board == null:
+	if dragging or _drag_armed or _director == null or _director.board == null:
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	if _should_restore_stand_hover_preview(cell):
@@ -1407,6 +1422,9 @@ func _restore_hover_preview() -> void:
 
 
 func _clear_hover_drag_route() -> void:
+	## Never wipe the armed/active drag unit â€” stand-tile release reads `_drag_unit_id`.
+	if _drag_armed or dragging:
+		return
 	if _drag_route.is_empty() and _drag_unit_id < 0:
 		return
 	_drag_route.clear()
@@ -1580,7 +1598,7 @@ func _plan_approach_or_trample_on_enemy(
 const _NO_PREFERRED_APPROACH: Vector2i = Vector2i(-999999, -999999)
 
 
-## Single source for commit cell, waypoints, and approach hint — cursor, preview, and drop must match.
+## Single source for commit cell, waypoints, and approach hint â€” cursor, preview, and drop must match.
 func _drag_route_commits_active() -> bool:
 	return dragging or _drag_route.size() >= 2
 
@@ -1904,6 +1922,11 @@ func clear_qa_pointer_override() -> void:
 	_qa_pointer_grid_cell = Vector2i.ZERO
 
 
+## True while live Tier 3 / harness pins pointer to a grid cell (ignore HUD OOB polls).
+func has_qa_pointer_override() -> bool:
+	return _qa_pointer_grid_override or _qa_pointer_override
+
+
 ## Hover poll owner: respects QA grid override so live tests can hop tiles without sweep.
 func pointer_grid_cell() -> Vector2i:
 	return _pointer_grid_cell()
@@ -1964,7 +1987,7 @@ func _apply_facing_to_slots(
 				and (cells[0] as Vector2i) != (cells[cells.size() - 1] as Vector2i)
 			)
 			if displaces:
-				## Path-based facing in MovementSystem — mouse quadrant must not override travel.
+				## Path-based facing in MovementSystem â€” mouse quadrant must not override travel.
 				move_action.face_dir = -1
 				continue
 			var drop_face: int = _facing_from_drop(local, cell)
@@ -2054,6 +2077,8 @@ func _preview_from_commit_slots_at_cell(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
 	_apply_facing_to_slots(slots, _mouse_local_for_facing(), cell, unit_id)
+	if unit_id == 2:
+		print("DEBUG _preview_from_commit_slots_at_cell: ", slots)
 	if _is_invalid_dict(slots):
 		_clear_intent_snapshot()
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
@@ -2129,7 +2154,7 @@ func _prefer_approach_over_trample_move(actor: UnitState, enemy: UnitState) -> b
 
 
 func _notify_drag_plan_move_committed(_unit_id: int) -> void:
-	## Premove walk animation is owned by planning_commit_events — do not mark instant.
+	## Premove walk animation is owned by planning_commit_events â€” do not mark instant.
 	pass
 
 
@@ -2148,7 +2173,7 @@ func _unit_move_slot_open(unit_id: int, cell: Vector2i = Vector2i(-999999, -9999
 	return not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
 
 
-## Post-move hover/commit — action column already spent; never re-pair selected skill.
+## Post-move hover/commit â€” action column already spent; never re-pair selected skill.
 ## Exception: committed action with an open pre-move slot still uses enemy/tile approach
 ## commit slots (pre + action), not post-move-only placement.
 func _planning_post_move_only(actor: UnitState, unit_id: int, cell: Vector2i) -> bool:
@@ -2451,6 +2476,107 @@ func _is_awaiting_movement_endpoint(actor: UnitState, ability: AbilityData) -> b
 	)
 
 
+func _awaiting_module_index_for(unit_id: int) -> int:
+	if _director == null or unit_id < 0:
+		return 0
+	var awaiting: TimelineAction = _director.find_awaiting_action(unit_id)
+	if awaiting == null or awaiting.awaiting_module_index < 0:
+		return 0
+	return awaiting.awaiting_module_index
+
+
+func _awaiting_invalid_endpoint_reason(actor: UnitState, ability: AbilityData) -> String:
+	## Align planning reject reason with sim fail-loud codes (ability-data.md Â§2.7 rule 5).
+	if actor == null or ability == null or _director == null:
+		return "Invalid target or distance for this ability."
+	var awaiting: TimelineAction = _director.find_awaiting_action(actor.id)
+	if awaiting == null:
+		return "Invalid target or distance for this ability."
+	var mod_idx: int = (
+		awaiting.awaiting_module_index if awaiting.awaiting_module_index >= 0 else 0
+	)
+	var modules: Array[AbilityModule] = AbilitySystem.modules_for_actor(actor, ability)
+	if mod_idx >= 0 and mod_idx < modules.size():
+		var mod: AbilityModule = modules[mod_idx]
+		if mod != null and mod.gate == GameEnums.ModuleGate.IF_COLLIDED:
+			return "gated_followup_invalid_dest"
+	return "Invalid target or distance for this ability."
+
+
+func _planning_valid_awaiting_cell(
+	actor: UnitState,
+	ability: AbilityData,
+	cell: Vector2i,
+	origin: Vector2i = Vector2i(-999999, -999999),
+) -> bool:
+	if actor == null or ability == null:
+		return false
+	var awaiting: TimelineAction = (
+		_director.find_awaiting_action(actor.id) if _director != null else null
+	)
+	if awaiting != null and awaiting.awaiting_module_index >= 0:
+		var mod_idx: int = awaiting.awaiting_module_index
+		var aim_origin: Vector2i = origin
+		if aim_origin.x == -999999:
+			aim_origin = AbilitySystem.planning_awaiting_origin_for_action(_proj(), actor, awaiting)
+		return AbilitySystem.planning_is_valid_module_endpoint(
+			_proj(), aim_origin, cell, ability, actor, mod_idx,
+		)
+	if origin.x == -999999:
+		origin = _proj_origin(actor)
+	return AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability)
+
+
+func _append_awaiting_ability_slot(
+	slots: Dictionary,
+	unit_id: int,
+	ability: AbilityData,
+	cell: Vector2i,
+	waypoints: Array[Vector2i],
+) -> void:
+	var mod_idx: int = _awaiting_module_index_for(unit_id)
+	var module_coords_buf: Array[Vector2i] = []
+	var plan_awaiting: TimelineAction = (
+		_director.find_awaiting_action(unit_id) if _director != null else null
+	)
+	if plan_awaiting != null:
+		for i: int in range(mod_idx):
+			if plan_awaiting.has_module_coord(i):
+				while module_coords_buf.size() <= i:
+					module_coords_buf.append(TimelineAction.MODULE_COORD_UNSET)
+				module_coords_buf[i] = plan_awaiting.get_module_coord(i)
+	while module_coords_buf.size() <= mod_idx:
+		module_coords_buf.append(TimelineAction.MODULE_COORD_UNSET)
+	module_coords_buf[mod_idx] = cell
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null and _director != null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	var next_idx: int = AbilitySystem.planning_next_awaiting_module_index(
+		_proj(), actor, ability, mod_idx, module_coords_buf,
+	)
+	var target_cell: Vector2i = cell
+	var final_waypoints: Array[Vector2i] = waypoints.duplicate()
+	if next_idx < 0 and mod_idx > 0 and module_coords_buf[0] != TimelineAction.MODULE_COORD_UNSET:
+		target_cell = module_coords_buf[0]
+		if final_waypoints.is_empty():
+			final_waypoints.append(module_coords_buf[0])
+			if module_coords_buf[mod_idx] != TimelineAction.MODULE_COORD_UNSET:
+				final_waypoints.append(module_coords_buf[mod_idx])
+	var action: TimelineAction = TimelineAction.make_ability(
+		unit_id,
+		ability,
+		target_cell,
+		AbilitySystem.planning_commit_target_unit_id(ability, -1),
+		GameEnums.MoveTiming.PRE_ACTION,
+		final_waypoints,
+	)
+	action.module_coords = module_coords_buf.duplicate()
+	if next_idx >= 0:
+		action.awaiting_target = true
+		action.awaiting_module_index = next_idx
+	slots["action"].append(action)
+
+
 func _drag_had_movement() -> bool:
 	if _drag_route.is_empty():
 		return false
@@ -2567,7 +2693,7 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	return actor != null and AbilitySystem.can_afford_run(actor)
 
 
-## Where red action-range tiles anchor — projected stand plus live move-preview stand (intent truth).
+## Where red action-range tiles anchor â€” projected stand plus live move-preview stand (intent truth).
 func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	if _director == null:
 		return Vector2i(-999999, -999999)
@@ -2609,7 +2735,7 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	return projected
 
 
-## Locked move intent (timeline or painted drag) used for action-range economy — not hover stand.
+## Locked move intent (timeline or painted drag) used for action-range economy â€” not hover stand.
 func _timeline_move_action_for_action_range(unit_id: int) -> TimelineAction:
 	if _director == null or unit_id < 0:
 		return null
@@ -2801,7 +2927,7 @@ func move_intent_destination(unit_id: int) -> Vector2i:
 	return Vector2i(-999, -999)
 
 
-## Single AP read for planning UI — delegates to AbilitySystem.planning_display_ap_left.
+## Single AP read for planning UI â€” delegates to AbilitySystem.planning_display_ap_left.
 func planning_display_ap_left(unit_id: int) -> int:
 	if _director == null or unit_id < 0:
 		return -1
@@ -2840,7 +2966,7 @@ func planning_display_ap_left(unit_id: int) -> int:
 	)
 
 
-## Single MP read for planning UI — projected economy; reject overspend display from live sim.
+## Single MP read for planning UI â€” projected economy; reject overspend display from live sim.
 func planning_display_mp_left(unit_id: int) -> int:
 	if _director == null or unit_id < 0:
 		return -1
@@ -2865,7 +2991,7 @@ func timeline_refresh_key(unit_id: int) -> String:
 	return _intent_snapshot_key
 
 
-## Pending plan columns that differ from committed — for timeline ghost text.
+## Pending plan columns that differ from committed â€” for timeline ghost text.
 func timeline_ghost_slots(unit_id: int) -> Dictionary:
 	var empty: Dictionary = {"pre": [], "action": [], "post": []}
 	if not _hover_intent_ghost_active(unit_id):
@@ -3138,7 +3264,7 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	return unit.position
 
 
-## Pathfinding / drop origin — projected stand, or action end during post-move.
+## Pathfinding / drop origin â€” projected stand, or action end during post-move.
 func _proj_move_origin(unit: UnitState) -> Vector2i:
 	if _director == null or unit == null:
 		return _proj_origin(unit)
@@ -3392,7 +3518,7 @@ func _build_commit_slots_at_cell(
 			slots["invalid"] = "Invalid target."
 		return slots
 
-	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental —
+	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental â€”
 	## do not divert into enemy/ally unit-target commit slots.
 	var awaiting_tile_endpoint: bool = _is_awaiting_movement_endpoint(actor, ability)
 
@@ -3429,19 +3555,12 @@ func _build_commit_slots_at_cell(
 
 		if _awaiting_flow_selected(actor, ability):
 			if awaiting_targeting_active():
-				if AbilitySystem.planning_is_valid_awaiting_endpoint(
-					_proj_origin(actor), cell, ability,
-				):
-					slots["action"].append(TimelineAction.make_ability(
-						unit_id,
-						ability,
-						cell,
-						AbilitySystem.planning_commit_target_unit_id(ability, -1),
-						GameEnums.MoveTiming.PRE_ACTION,
-						effective_waypoints,
-					))
+				if _planning_valid_awaiting_cell(actor, ability, cell):
+					_append_awaiting_ability_slot(
+						slots, unit_id, ability, cell, effective_waypoints,
+					)
 					return slots
-				slots["invalid"] = "Invalid target or distance for this ability."
+				slots["invalid"] = _awaiting_invalid_endpoint_reason(actor, ability)
 				return slots
 		else:
 			if AbilitySystem.can_target_self(actor, ability):
@@ -3675,7 +3794,7 @@ func _build_enemy_commit_slots(
 		slots["invalid"] = "Invalid target for this skill."
 		return slots
 	## Safety: movement-endpoint awaiting should be handled as a TILE above; if we still
-	## land here, commit via planning_commit_target_unit_id (TILE → -1).
+	## land here, commit via planning_commit_target_unit_id (TILE â†’ -1).
 	if use_skill and _is_awaiting_movement_endpoint(actor, ability):
 		if AbilitySystem.planning_is_valid_awaiting_endpoint(
 			_proj_origin(actor), enemy.position, ability,
@@ -3734,7 +3853,7 @@ func _build_enemy_commit_slots(
 		slots["invalid"] = "Enemy is not attackable from legal move tiles."
 		return slots
 	if use_skill:
-		if AbilitySystem.is_movement_skill(ability):
+		if ability.is_movement_kind():
 			slots["invalid"] = "Cannot pair this action with a pre-move."
 			return slots
 		var approach_hint: Vector2i = cell
@@ -3820,6 +3939,9 @@ func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 	if _slots_are_wait_only(actions):
 		slots["_preview_validated"] = true
 		return slots
+	if _slots_contain_incomplete_awaiting_ability(actions):
+		slots["_preview_validated"] = true
+		return slots
 	var error_reason: String = _director.preview_commit_valid(unit_id, actions) if _director != null else ""
 	if error_reason != "":
 		slots["invalid"] = error_reason
@@ -3837,6 +3959,13 @@ func _slots_are_wait_only(actions: Array[TimelineAction]) -> bool:
 		and action.ability != null
 		and action.ability.is_universal_wait()
 	)
+
+
+func _slots_contain_incomplete_awaiting_ability(actions: Array[TimelineAction]) -> bool:
+	for action: TimelineAction in actions:
+		if action.type == GameEnums.ActionType.ABILITY and action.awaiting_target:
+			return true
+	return false
 
 
 func _composite_cursors_enabled() -> bool:
@@ -4051,7 +4180,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	if _director == null or _director.board == null or not _director.board.is_in_bounds(cell):
 		return ""
 	if dragging:
-		## F5: drag preview is the unit sprite only — hide planning emoji cursor.
+		## F5: drag preview is the unit sprite only â€” hide planning emoji cursor.
 		return ""
 	var sel_id: int = _director.selected_unit_id
 	if sel_id < 0:

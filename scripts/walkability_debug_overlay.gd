@@ -1,7 +1,7 @@
-class_name WalkabilityDebugOverlay
+﻿class_name WalkabilityDebugOverlay
 extends CanvasLayer
 
-## Dev overlay — blocked tiles + prop visual vs block spill. Toggle **K**.
+## Dev overlay â€” blocked tiles + prop visual vs block spill. Toggle **K**.
 
 const TILE_PX: int = 16
 const _C = preload("res://scripts/mana_seed_constants.gd")
@@ -190,15 +190,15 @@ func _build_legend(blocked_count: int) -> void:
 	var box: VBoxContainer = VBoxContainer.new()
 	panel.add_child(box)
 	var title: Label = Label.new()
-	title.text = "Walkability (K) — %d blocked cells" % blocked_count
+	title.text = "Walkability (K) â€” %d blocked cells" % blocked_count
 	title.add_theme_font_size_override("font_size", 12)
 	box.add_child(title)
 	for line: String in [
-		"Blue — logical tile (water/rock/ruin)",
-		"Red — big tree trunk foot (1 cell)",
-		"Green fill — prop 2×2 visual, walkable",
-		"Green border — walkable prop spill edge",
-		"Magenta — prop movement block only",
+		"Blue â€” logical tile (water/rock/ruin)",
+		"Red â€” big tree trunk foot (1 cell)",
+		"Green fill â€” prop 2Ã—2 visual, walkable",
+		"Green border â€” walkable prop spill edge",
+		"Magenta â€” prop movement block only",
 	]:
 		var row: Label = Label.new()
 		row.text = line

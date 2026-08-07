@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 extends MarginContainer
 
 #signal request_completed(response)

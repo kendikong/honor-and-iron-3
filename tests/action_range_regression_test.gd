@@ -1,7 +1,7 @@
 class_name ActionRangeRegressionTest
 extends RefCounted
 
-## Regression matrix — red action-range tiles (owner bugs from manual QA).
+## Regression matrix â€” red action-range tiles (owner bugs from manual QA).
 ##
 ## Contract (every case asserts as many layers as apply):
 ##   1. action_range_visible_for_hover() matches expect_show
@@ -473,7 +473,7 @@ static func _test_hide_auto_run_consumes_skill_ap(failures: Array[String]) -> vo
 
 
 ## Owner-report regression: F5 click commit path (not bare commit_from_slots).
-## Shield Bash + auto-run, run icon on timeline, 0 AP, mouse still on destination — no red.
+## Shield Bash + auto-run, run icon on timeline, 0 AP, mouse still on destination â€” no red.
 static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[String]) -> void:
 	var base_fix: Dictionary = PlanningDragE2EHarness._planning_fixture(KNIGHT_START, ENEMY_POS)
 	var fix: Dictionary = PlanningDragE2EHarness.wire_fixture(base_fix)
@@ -522,7 +522,7 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 			% run_glyph,
 		)
 		return
-	## F5 path: paint live preview → commit → promote (not bare commit_from_slots).
+	## F5 path: paint live preview â†’ commit â†’ promote (not bare commit_from_slots).
 	input.call("_paint_intent_slots_before_commit", 1, slots)
 	if not director.commit_from_slots(1, slots):
 		failures.append(

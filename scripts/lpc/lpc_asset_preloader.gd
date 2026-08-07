@@ -1,9 +1,9 @@
-class_name LpcAssetPreloader
+﻿class_name LpcAssetPreloader
 extends Node
 
 ## Deferred validator/cache for LPC sprite-sheet paths.
 ## Scans all paths derived from lpc_catalog.json on the first idle frame after start()
-## and caches which ones exist on disk — prevents repeated FileAccess probes
+## and caches which ones exist on disk â€” prevents repeated FileAccess probes
 ## during character generation. Note: runs on the main thread (deferred, not threaded);
 ## for very large catalogs this may stall one frame. Use is_ready() to poll completion.
 

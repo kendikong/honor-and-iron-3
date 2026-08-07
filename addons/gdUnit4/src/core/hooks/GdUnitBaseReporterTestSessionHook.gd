@@ -1,4 +1,4 @@
-class_name GdUnitBaseReporterTestSessionHook
+﻿class_name GdUnitBaseReporterTestSessionHook
 extends GdUnitTestSessionHook
 
 

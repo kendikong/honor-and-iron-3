@@ -1,4 +1,4 @@
-class_name MassSimSkirmishSetup
+﻿class_name MassSimSkirmishSetup
 extends RefCounted
 
 const _C = preload("res://core/batch/mass_sim_constants.gd")
@@ -102,6 +102,6 @@ func skill_count_label() -> String:
 
 func summary_label() -> String:
 	return (
-		"%d vs %d · player L%d (%d passives, %s) · enemy L%d"
+		"%d vs %d Â· player L%d (%d passives, %s) Â· enemy L%d"
 		% [player_count, enemy_count, player_level, player_passive_count, skill_count_label(), enemy_level]
 	)

@@ -1,4 +1,4 @@
-class_name GdUnitSessionClose
+﻿class_name GdUnitSessionClose
 extends GdUnitEvent
 
 

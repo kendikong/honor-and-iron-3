@@ -1,10 +1,10 @@
-class_name ShadowPlacer
+﻿class_name ShadowPlacer
 extends RefCounted
 
-## Oblique contact shadows — LA sundial projection, unified ground shadow resolve (max of map / feet / cloud).
+## Oblique contact shadows â€” LA sundial projection, unified ground shadow resolve (max of map / feet / cloud).
 ##
 ## Sundial: ground_offset = height_above_foot * cot(elevation) * dir(azimuth)
-## Tree A (atlas x=0) has baked PNG shadow — skip procedural. Tree B / rocks / props bake.
+## Tree A (atlas x=0) has baked PNG shadow â€” skip procedural. Tree B / rocks / props bake.
 
 const _BAKE_FAIL: Dictionary = {}
 
@@ -26,19 +26,19 @@ const _PROFILES: Dictionary = {
 }
 
 const _PROPS_32_FOOTPRINT: Vector2i = Vector2i(2, 2)
-## Only forest scatter #88 gets oblique shadows — low 1×1 decor pebble cluster.
+## Only forest scatter #88 gets oblique shadows â€” low 1Ã—1 decor pebble cluster.
 const _SCATTER_PEBBLE_SHADOW_ID: int = 88
 const _PEBBLE_88_SHADOW_HEIGHT_MULT: float = 0.28
 ## Scatter tiles share a cell with ground; baked offset lands one tile low without this.
 const _PEBBLE_88_SHADOW_NUDGE: Vector2 = Vector2(0.0, -float(TILE_PX))
 ## Guard against sunset cot blow-up allocating gigapixel shadow atlases.
 const _MAX_SHADOW_AXIS: int = 2048
-## One-pixel 3×3 box blur on baked alpha — very slight edge soften, still on pixel grid.
+## One-pixel 3Ã—3 box blur on baked alpha â€” very slight edge soften, still on pixel grid.
 const _SHADOW_EDGE_SOFTEN_RADIUS: int = 1
 const _SHADOW_BAKE_CACHE_TAG: String = "solid2"
 const _SHADOW_BAKE_CACHE_TAG_PERF: String = "perf_solid4"
 const _PERF_RASTER_STRIDE: int = 2
-## Legacy defaults — runtime values come from EffectsSettings / ShadowTuning.
+## Legacy defaults â€” runtime values come from EffectsSettings / ShadowTuning.
 const TWILIGHT_LOFI_VISIBILITY: float = 0.08
 const TWILIGHT_THROTTLE_RAMP_END: float = 0.40
 
@@ -86,7 +86,7 @@ static var _active_shadow_root: Node2D
 
 const ACTOR_SHADOW_BAND_COUNT: int = 3
 const ACTOR_SHADOW_MAJORITY_RATIO: float = 0.5
-## Foot column only — ground multiply samples one pixel under the actor; lateral offsets
+## Foot column only â€” ground multiply samples one pixel under the actor; lateral offsets
 ## pulled tree/cloud mask from neighboring tiles (several-tile false darkening).
 const ACTOR_SHADOW_BAND_X: Array = [0.0]
 ## Vertical bands from actor foot (y=0): lower legs, torso, head/hair.
@@ -182,7 +182,7 @@ static func apply(
 	sync_cycle(shadow_root, settings)
 
 
-## Grass-only / prop-free maps — ground multiply + unit feet, no static caster layers.
+## Grass-only / prop-free maps â€” ground multiply + unit feet, no static caster layers.
 ## Must not clear_immediate: process_frame may call apply every frame when layer cache is empty.
 static func _apply_empty_caster_map_shadow(shadow_root: Node2D, settings: EffectsSettings = null) -> void:
 	_shadow_layer_cache.clear()
@@ -227,7 +227,7 @@ static func sync_cycle(shadow_root: Node2D, settings: EffectsSettings = null) ->
 	var entering_geometry: bool = is_present and not geometry_blocked and _last_shadow_geometry_lo_fi
 	var bake_sig: int = _cycle_bake_signature(settings, contrast)
 	var sun_changed: bool = bake_sig != _last_bake_signature
-	## Dawn: no children after night clear — must bake fresh morning sun geometry (not dusk leftovers).
+	## Dawn: no children after night clear â€” must bake fresh morning sun geometry (not dusk leftovers).
 	var need_first_bake: bool = (
 		shadow_root != null
 		and is_present
@@ -270,7 +270,7 @@ static func sync_cycle(shadow_root: Node2D, settings: EffectsSettings = null) ->
 			clear_bake_cache()
 		shadow_root.visible = false
 		return
-	# Dusk fade band: keep ground layer, shader fades out — cancel only expensive rebakes.
+	# Dusk fade band: keep ground layer, shader fades out â€” cancel only expensive rebakes.
 	if geometry_blocked and _has_ground_shadow_rect(shadow_root):
 		_async_pending = {}
 	var need_rebake: bool = (
@@ -303,7 +303,7 @@ static func sync_cycle(shadow_root: Node2D, settings: EffectsSettings = null) ->
 	_sync_ground_shadow_uniforms(settings, shadow_root)
 
 
-## LPC actor contact shadow — CPU bake; GPU max-merge via ground shader foot slots.
+## LPC actor contact shadow â€” CPU bake; GPU max-merge via ground shader foot slots.
 static func sync_actor_contact_shadow(
 	sprite: Sprite2D,
 	caster: Image,
@@ -553,7 +553,7 @@ static func _build_unit_foot_gpu_slot(actor: Node2D, shadow_root: Node2D) -> Dic
 static func _foot_slot_map_rect(actor: Node2D, sprite: Sprite2D, image: Image) -> Vector4:
 	if actor == null or sprite == null or image == null or image.is_empty():
 		return Vector4.ZERO
-	# MapRoot-local pixels — actor.scale only (not global_scale; MapRoot zoom is on the canvas).
+	# MapRoot-local pixels â€” actor.scale only (not global_scale; MapRoot zoom is on the canvas).
 	var actor_scale: Vector2 = actor.scale
 	var origin: Vector2 = actor.position + sprite.position * actor_scale
 	return Vector4(
@@ -882,7 +882,7 @@ static func _foot_pixel_on_shadow_root(foot_root: Vector2) -> Vector2i:
 
 static func _foot_map_origin_snapped(foot_root: Vector2, bake_offset: Vector2) -> Vector2:
 	var foot_px: Vector2i = _foot_pixel_on_shadow_root(foot_root)
-	# Tile foot anchor (matches CharacterGridMover) — no sub-tile tween drift.
+	# Tile foot anchor (matches CharacterGridMover) â€” no sub-tile tween drift.
 	var foot_anchor: Vector2 = Vector2(
 		float(foot_px.x) * float(TILE_PX) + float(TILE_PX) * 0.5,
 		float(foot_px.y) * float(TILE_PX),
@@ -1849,7 +1849,7 @@ static func _hybrid_twilight_lod_enabled(settings: EffectsSettings = null) -> bo
 	)
 
 
-## Perf bake LOD (axis cap, stride, cot clamp, twilight throttle) — full perf mode or hybrid twilight.
+## Perf bake LOD (axis cap, stride, cot clamp, twilight throttle) â€” full perf mode or hybrid twilight.
 static func _bake_lod_active(settings: EffectsSettings, contrast: float) -> bool:
 	if _is_perf_mode(settings):
 		return true
@@ -2265,7 +2265,7 @@ static func map_oblique_overlay() -> Dictionary:
 	return _map_oblique_overlay
 
 
-## Body receive + tree sampling — excludes unit feet (those render only on GroundShadows).
+## Body receive + tree sampling â€” excludes unit feet (those render only on GroundShadows).
 static func sample_map_oblique_alpha_at(
 	map_px: Vector2,
 	_settings: EffectsSettings = null,
@@ -2373,7 +2373,7 @@ static func actor_oblique_band_modulates(
 	return bands
 
 
-## Legacy single-tint path — darkest band that passed majority gate.
+## Legacy single-tint path â€” darkest band that passed majority gate.
 static func actor_oblique_modulate(actor: Node2D, settings: EffectsSettings = null) -> Color:
 	var bands: Array[Color] = actor_oblique_band_modulates(actor, settings)
 	var darkest: Color = Color.WHITE
@@ -2501,7 +2501,7 @@ static func sync_shadow_material(mat: ShaderMaterial, settings: EffectsSettings 
 	mat.set_shader_parameter("shadow_strength", params["shadow_strength"])
 
 
-## Rebake one moving actor silhouette — foot_world is foot contact in shadow-root space.
+## Rebake one moving actor silhouette â€” foot_world is foot contact in shadow-root space.
 static func rebake_actor_shadow(
 	caster_source: Image,
 	foot_center_tex: Vector2,

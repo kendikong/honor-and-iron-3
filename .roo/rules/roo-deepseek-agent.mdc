@@ -1,0 +1,161 @@
+---
+description: Roo Code + DeepSeek agent rules — usage-efficient, quality-first; always on
+alwaysApply: true
+---
+
+# Roo Code + DeepSeek Agent Rules (ALWAYS ON)
+
+This file governs the **Roo Code** agent running on **DeepSeek** models in VS Code.
+It replaces the Cursor/Composer-specific sections of `AGENTS.md` for this setup.
+
+**Why these rules exist:** DeepSeek is cheap per token, but **not free** — and every
+token spent on redundant reads, wandering plans, or re-explaining architecture is
+wasted. The goal is **minimum tokens for maximum quality**: read narrowly, plan once,
+edit surgically, QA automatically.
+
+## Relationship to existing rules
+
+The **absolute engineering rules** in `.cursor/rules/` still apply and are **not**
+relaxed by this file:
+
+- `auto-commit-absolute.mdc` — **commit every edit turn**; full playable backup; overrides "only commit when asked."
+- `global-systems-first.mdc` — every edit uses the canonical global system; warn before any exception.
+- `no-bandaid-fixes.mdc` — no shortcuts; fix the actual cause.
+- `move-preview-intent-truth.mdc` — preview == execution; commit ratifies intent.
+- `qa-after-gameplay-changes.mdc` — run the matching headless suite after gameplay edits.
+- `owner-facing-brevity.mdc` — plain-language replies; no code dumps unless asked.
+- `local-cloud-sync.mdc` — push to `origin` every 3 commits, session end, and before Cloud handoff.
+
+This file only changes **how the agent works** (usage discipline, workflow, model
+choice) to fit Roo Code + DeepSeek. It does **not** change what "correct" means.
+
+## Model choice (DeepSeek tiers)
+
+DeepSeek is cheap, so the Cursor "quota survival" model-selection rule is relaxed —
+**but** quality still matters. Use the cheapest model that can do the job correctly.
+Two axes: **Flash vs Pro** (capability ceiling) and **med vs high** (reasoning budget).
+
+| Task | Model + effort | Why |
+|------|----------------|-----|
+| Read-only Q&A, grep, audits, reviews | Flash med | No edit risk; cheapest turn |
+| Micro fix (≤5 lines, one file) | Flash med | Surgical, no deep reasoning |
+| Small–medium fix (≤60 lines, ≤2 files) | Flash med | Scoped; Flash handles it |
+| Medium multi-file (2–3 files, ≤120 lines) | Flash high | More context juggling; high keeps it coherent |
+| Tricky bug in combat/preview/commit (≤2 files) | Flash high | Needs careful reasoning, stays scoped |
+| Full class / phase from Master Bible | Pro med | Needs capability; med enough for a planned rollout |
+| New subsystem / manager / sim resolution-order | Pro high | Highest blast radius; capability + deep reasoning |
+| Co-op networking / broad determinism refactor | Pro high | High risk; strongest reasoning |
+| Ambiguous / under-specified request | Pro med | Better at inferring intent / asking right questions |
+
+**Rule:** default to **Flash med** for anything ≤2 files / ≤60 lines. Escalate to
+**Flash high** for tricky scoped logic, **Pro med** for big well-planned rollouts, and
+**Pro high** only for new subsystems / sim resolution-order / high-blast-radius work.
+Do not open a Pro chat for a 10-line fix.
+
+### Model-fit warning (mandatory)
+
+At the **start of every task**, the agent must check whether the **currently selected
+model** matches the recommended tier for the task. If it does **not**, the agent must
+**warn the owner in the first sentence** of its reply, before doing any work:
+
+- **Format:** `⚠ Model fit: <current model> is <overkill|underpowered> for this task — recommend <recommended tier>.`
+- **Overkill example:** a Pro high chat asked to fix a 5-line `.tres` value → warn "Pro high is overkill; Flash med suffices."
+- **Underpowered example:** a Flash med chat asked to implement a new sim resolution-order change → warn "Flash med is underpowered; recommend Pro high."
+- **Do not silently proceed** on a mismatched model. Warn first, then either proceed if the owner confirms, or stop and let the owner switch.
+- **Owner override:** if the owner explicitly chose the model, note the override and proceed without re-warning on every turn.
+
+## Usage discipline (the core of this file)
+
+DeepSeek is cheap, but **token waste still costs time and context**. Follow these to
+keep every turn lean:
+
+1. **Grep / narrow read first.** Open only the file(s) and line ranges you need. Never
+   full-repo reads. Use `file_search` / `grep_search` before `read_file`.
+2. **Read large meaningful chunks** when you do read — one big read beats five small ones.
+3. **Plan once, then execute.** Do not re-derive the plan mid-turn. If the plan is
+   wrong, stop and re-plan rather than patching repeatedly.
+4. **No exploratory loops.** If blocked after one read pass, ask a focused question —
+   do not brute-force with 10+ tool calls.
+5. **No subagents** unless the owner explicitly asks. Each subagent doubles token cost.
+6. **Do not re-paste** long rule/skill text into responses — the rules are already in
+   context. Reference them by name.
+7. **Bundle scope.** One scoped deliverable per prompt. Do not expand scope mid-turn
+   without a new plan and approval.
+8. **Targeted edits only.** Use surgical replacements, never full-file rewrites. If a
+   change would replace >50% of a file, stop and ask to rescope.
+
+## Workflow (Roo Code modes)
+
+Roo Code has built-in modes. Use them to enforce discipline without re-inventing it:
+
+- **Architect mode** — for planning, design, and multi-file changes. Produces a plan,
+  no edits.
+- **Code mode** — for implementing an approved plan with surgical edits.
+- **Debug mode** — for diagnosing failures; read-only until the cause is found.
+
+**Recommended flow for any non-trivial change:**
+1. **Architect** — understand the request, name the global system, produce a tight
+   numbered plan (files, functions, concrete changes, acceptance criteria).
+2. **Code** — implement the approved plan with targeted edits.
+3. **QA** — run the matching headless suite (see `qa-after-gameplay-changes.mdc`).
+4. **Commit** — per `auto-commit-absolute.mdc`: if dirty before edits, commit first;
+   after any file changes, `git add` + full-backup commit before ending the turn.
+5. **Report** — short owner-facing summary + Changelog (include commit hash when committed).
+
+For **micro fixes** (≤5 lines, one file, no new logic), you may skip the Architect
+step and go straight to Code — but still state what you're changing and why.
+
+## Permission gate
+
+The Cursor "ask permission before every edit" rule is **relaxed** here because Roo
+Code's mode system already gates edits (Architect can't edit). However:
+
+- **Always state the plan** before editing in a new task or a new scope.
+- **Never silently expand scope** beyond what was agreed.
+- For **gameplay-system changes**, the QA gate is mandatory regardless of permission
+  flow — do not end the turn without running the suite.
+
+## Changelog (required after edits, plans, and reviews)
+
+Every turn with edits, a plan, or a review ends with a **Changelog** section. Keep it
+tight — this is where detail lives, so the owner-facing prose can stay short.
+
+```
+## Changelog
+
+### Global systems
+- **Global system used:** (canonical owner — required every edit/plan/review turn)
+- **Heuristics added:** `none` OR each heuristic named (only after the audit in `global-systems-first.mdc` passes)
+- **Why (not) heuristic:** one brief sentence — mandatory
+
+### Added
+- `path/to/file.gd` — (what was added and why)
+
+### Changed
+- `path/to/file.gd` (function `_foo`)
+  - **Before:** `old behavior`
+  - **After:** `new behavior`
+  - **Why:** (one line, if not obvious)
+
+### Removed
+- `path/to/file.gd` — **Was:** `...` → **Now:** (gone / replaced by X)
+
+### Notes
+- (follow-ups, risks, things not done)
+```
+
+**Rules:**
+- **### Global systems** is mandatory — never omit **Heuristics added** or **Why (not) heuristic**.
+- `none` without a substantive Why line is invalid.
+- Use empty sections as `- (none)`.
+- Never write vague entries ("updated file", "fixed bug") — state the concrete delta.
+- For plans/reviews (no edits yet), Changelog lists **proposed** Before → After.
+
+## Honor & Iron reminders (unchanged)
+
+- Simulation never references Nodes; preview and execution share `Simulator.simulate(state, timeline)`.
+- Abilities are data (`.tres` / Resources), not hardcoded engine branches.
+- Static typing and explicit return types in all GDScript.
+- Fail loudly (assert); do not silently swallow invalid state.
+- **Auto-commit every edit turn** — see `auto-commit-absolute.mdc`; never leave hours of
+  work uncommitted. Every commit is a full backup of the playable project.

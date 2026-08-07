@@ -1,4 +1,4 @@
-# GdUnit Monitoring Base Class
+﻿# GdUnit Monitoring Base Class
 class_name GdUnitMonitor
 extends RefCounted
 

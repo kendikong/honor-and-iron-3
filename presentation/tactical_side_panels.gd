@@ -1,7 +1,7 @@
-class_name TacticalSidePanels
+﻿class_name TacticalSidePanels
 extends CanvasLayer
 
-## Left/right combat panels — unit info, tile info, skills, intents, battle log.
+## Left/right combat panels â€” unit info, tile info, skills, intents, battle log.
 
 const COLOR_SELECT: Color = Color(0.98, 0.86, 0.32, 0.95)
 const COLOR_SKILL_DISABLED: Color = Color(0.55, 0.55, 0.55, 0.85)
@@ -823,7 +823,7 @@ func _rebuild_ability_buttons() -> void:
 	if _board == null or _selected_id < 0:
 		_skill_ui_lock = false
 		return
-	## Affordability uses committed plan only — live hover must not grey sibling skills.
+	## Affordability uses committed plan only â€” live hover must not grey sibling skills.
 	var unit := _committed_plan_unit(_selected_id)
 	if unit == null:
 		unit = _board.get_unit_by_id(_selected_id)
@@ -954,7 +954,7 @@ func _bbcode_plain_length(bbcode: String) -> int:
 	return plain.length()
 
 
-## Unit after committed plan only — never live hover (avoids greying skills on preview spend).
+## Unit after committed plan only â€” never live hover (avoids greying skills on preview spend).
 func _committed_plan_unit(unit_id: int) -> UnitState:
 	if _director == null or unit_id < 0:
 		return null

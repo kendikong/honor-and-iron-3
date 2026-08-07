@@ -1,4 +1,4 @@
-class_name MapCameraController
+﻿class_name MapCameraController
 extends RefCounted
 
 ## Session camera for tactical and sandbox maps.

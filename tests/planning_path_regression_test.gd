@@ -39,14 +39,15 @@ static func _test_painted_skill_path_is_preview_and_execution_truth(
 	var trample := AbilityData.new()
 	trample.id = &"test_trample"
 	trample.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	trample.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	trample.movement_point_cost = 2
 	trample.range_tiles = 2
 	trample.targeting_mode = GameEnums.TargetingMode.TILE
 	trample.targeting_flags = AbilityData._targeting_mode_to_flags(trample.targeting_mode)
-	var move_effect := EffectData.new()
+	var move_effect := AbilityModule.new()
 	move_effect.type = GameEnums.EffectType.MOVE
 	move_effect.amount = 2
-	trample.effects = [move_effect]
+	trample.modules = [move_effect]
 
 	var waypoints: Array[Vector2i] = [Vector2i(7, 3), Vector2i(7, 2)]
 	var action := TimelineAction.make_ability(
@@ -68,3 +69,4 @@ static func _test_painted_skill_path_is_preview_and_execution_truth(
 		failures.append(
 			"PlanningPathRegression: MovementSystem must preserve committed waypoint order",
 		)
+

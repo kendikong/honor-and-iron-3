@@ -3,7 +3,7 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Indomitable Will — SELF | Convert all missing HP into SHIELD for 2 turns. [+] When SHIELD expires, gain +2 STR.
+## Bible: Indomitable Will â€” SELF | Convert all missing HP into SHIELD for 2 turns. [+] When SHIELD expires, gain +2 STR.
 ## Globals: ARMOR_UP(MISSING_HP scaling) + INDOMITABLE_WILL status via AbilitySystem; expiry in Simulator._tick_statuses; shield-break in CombatSystem.deal_damage.
 
 
@@ -28,7 +28,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "indomitable/contract/missing_hp_scaling",
-		indo != null and indo.effects[0].scaling_stat == GameEnums.StatType.MISSING_HP,
+		indo != null and indo.modules[0].scaling_stat == GameEnums.StatType.MISSING_HP,
 	)
 	_KnightQaHarness.assert_true(
 		failures, "indomitable/contract/status",
@@ -38,6 +38,6 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "indomitable/contract/upgrade_status",
-		indo != null and indo.upgraded_effects.size() > 0
-		and indo.upgraded_effects[1].status_type == GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED,
+		indo != null and indo.upgraded_modules.size() > 1
+		and indo.upgraded_modules[1].status_type == GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED,
 	)

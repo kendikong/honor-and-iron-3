@@ -1,4 +1,4 @@
-class_name GdBuiltinConstants
+﻿class_name GdBuiltinConstants
 extends RefCounted
 
 

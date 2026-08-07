@@ -1,4 +1,4 @@
-﻿class_name CellularRegenerationScenarioTest
+class_name CellularRegenerationScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")

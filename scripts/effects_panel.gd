@@ -1,7 +1,7 @@
-class_name EffectsPanel
+﻿class_name EffectsPanel
 extends CanvasLayer
 
-## Left panel — toggle living-environment systems on and off.
+## Left panel â€” toggle living-environment systems on and off.
 
 const PANEL_WIDTH: int = 405
 
@@ -116,7 +116,7 @@ func _build_ui() -> void:
 	vbox.add_child(effects_title)
 
 	var hint: Label = Label.new()
-	hint.text = "Toggle living systems · saved automatically"
+	hint.text = "Toggle living systems Â· saved automatically"
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_font_size_override("font_size", 15)
 	hint.add_theme_color_override("font_color", Color(0.72, 0.74, 0.82))
@@ -173,7 +173,7 @@ func _build_ui() -> void:
 		"shadow_hybrid_twilight_lod",
 		"Hybrid twilight LOD (perf bake at dusk/dawn, quality by day)",
 	)
-	_add_toggle(vbox, "shadow_edge_soften", "Shadow edge softening (3×3 blur)")
+	_add_toggle(vbox, "shadow_edge_soften", "Shadow edge softening (3Ã—3 blur)")
 	_add_toggle(vbox, "tree_variant_b", "Large tree B (procedural shadow)")
 	_add_toggle(
 		vbox,
@@ -222,8 +222,8 @@ func _process(delta: float) -> void:
 func _add_hotkeys_hint(parent: VBoxContainer) -> void:
 	var label: Label = Label.new()
 	label.text = (
-		"Keys: WASD move · G regen · R seed · T center · [ ] size · P biome · E export grid · "
-		+ "C character · L labels · K walkability · J shadow hit · B boredom atmo · water test in panel · O options"
+		"Keys: WASD move Â· G regen Â· R seed Â· T center Â· [ ] size Â· P biome Â· E export grid Â· "
+		+ "C character Â· L labels Â· K walkability Â· J shadow hit Â· B boredom atmo Â· water test in panel Â· O options"
 	)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size", 13)
@@ -262,7 +262,7 @@ func _add_toggle(
 func _add_cloud_tuning_sliders(parent: VBoxContainer) -> void:
 	_add_section(parent, "Cloud tuning")
 	var hint: Label = Label.new()
-	hint.text = "Cloud field tuning · live while dragging · saved on release"
+	hint.text = "Cloud field tuning Â· live while dragging Â· saved on release"
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_font_size_override("font_size", 13)
 	hint.add_theme_color_override("font_color", Color(0.66, 0.70, 0.80))
@@ -364,7 +364,7 @@ func _add_shadow_tuning_sliders(parent: VBoxContainer) -> void:
 	parent.add_child(HSeparator.new())
 	_add_section(parent, "Shadow twilight tuning")
 	var hint: Label = Label.new()
-	hint.text = "Map + player share these values · live while dragging · saved on release"
+	hint.text = "Map + player share these values Â· live while dragging Â· saved on release"
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_font_size_override("font_size", 13)
 	hint.add_theme_color_override("font_color", Color(0.66, 0.70, 0.80))

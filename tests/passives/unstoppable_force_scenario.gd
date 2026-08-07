@@ -1,4 +1,4 @@
-﻿class_name UnstoppableForceScenarioTest
+class_name UnstoppableForceScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")

@@ -1,4 +1,4 @@
-class_name MassBattleRunner
+﻿class_name MassBattleRunner
 extends Node
 
 signal batch_progress(completed: int, total: int)

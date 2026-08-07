@@ -1,4 +1,4 @@
-## An Assertion Tool to verify String values
+﻿## An Assertion Tool to verify String values
 @abstract class_name GdUnitStringAssert
 extends GdUnitAssert
 

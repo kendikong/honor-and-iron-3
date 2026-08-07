@@ -1,4 +1,4 @@
-class_name ClassLibraryEditorScreen
+﻿class_name ClassLibraryEditorScreen
 extends Control
 
 const PREVIEW_VIEWPORT_SIZE: Vector2i = Vector2i(1280, 720)
@@ -137,7 +137,7 @@ func _build_layout() -> void:
 	_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_SUCCESS)
 	top_bar.add_child(_save_status)
 	var hint := Label.new()
-	hint.text = "Live edits · Save persists skills & glossary · Reset Factories = code defaults"
+	hint.text = "Live edits Â· Save persists skills & glossary Â· Reset Factories = code defaults"
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hint.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
@@ -476,7 +476,7 @@ func _add_scale_controls(parent: HBoxContainer) -> void:
 	scale_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
 	scale_box.add_child(scale_lbl)
 	var minus := Button.new()
-	minus.text = "−"
+	minus.text = "âˆ’"
 	_style_toolbar_button(minus)
 	minus.custom_minimum_size = Vector2(ClassLibraryTheme.px(28), ClassLibraryTheme.px(28))
 	minus.pressed.connect(func() -> void: _bump_ui_scale(-ClassLibraryTheme.USER_SCALE_STEP))
@@ -559,11 +559,11 @@ func _add_color_key(parent: VBoxContainer) -> void:
 	key_hdr.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
 	parent.add_child(key_hdr)
 	for spec: Array in [
-		[ClassLibraryTheme.ACCENT_OVERRIDE_SAVED, "Gold — saved library override"],
-		[ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED, "Orange — unsaved edit"],
-		[ClassLibraryTheme.ACCENT_INGAME, "Yellow — in-game preview"],
-		[ClassLibraryTheme.ACCENT_DATA, "Blue — data column"],
-		[ClassLibraryTheme.ACCENT_IMPL, "Teal — implementation"],
+		[ClassLibraryTheme.ACCENT_OVERRIDE_SAVED, "Gold â€” saved library override"],
+		[ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED, "Orange â€” unsaved edit"],
+		[ClassLibraryTheme.ACCENT_INGAME, "Yellow â€” in-game preview"],
+		[ClassLibraryTheme.ACCENT_DATA, "Blue â€” data column"],
+		[ClassLibraryTheme.ACCENT_IMPL, "Teal â€” implementation"],
 	]:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
@@ -1403,9 +1403,6 @@ func _refresh_passive_preview(passive: PassiveData, preview: RichTextLabel) -> v
 func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) -> void:
 	_field_tracks.erase(ability.id)
 	ability.ensure_targeting_flags_from_mode()
-	if ability.modules.is_empty() and not ability.effects.is_empty():
-		ability.finalize_modular()
-	ability.is_movement_skill = ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
@@ -1414,60 +1411,64 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	var planner_row := _bind_enum(
 		grid, "planner_group", GameEnums.PlannerGroup, ability.planner_group,
 		func(v: int) -> void:
-			ability.planner_group = v
-			ability.kind = AbilityModuleBridge.kind_from_planner_group(v as GameEnums.PlannerGroup, ability.kind)
-			ability.is_movement_skill = v == GameEnums.PlannerGroup.PRE_MOVE
-			if v == GameEnums.PlannerGroup.PRE_MOVE:
-				ability.primary_resource = GameEnums.CostResource.MP
-				ability.primary_value = ability.movement_point_cost
-			elif ability.kind == GameEnums.AbilityKind.CLASS_SKILL:
-				ability.primary_resource = GameEnums.CostResource.AP
-				ability.primary_value = ability.action_point_cost
+			## Same path BAR exercises (ClassLibrarySchema.apply_planner_group_change).
+			ClassLibrarySchema.apply_planner_group_change(
+				ability, v as GameEnums.PlannerGroup
+			)
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
+	var tags_warn := Label.new()
+	tags_warn.visible = false
+	tags_warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tags_warn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
+	tags_warn.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
 	var tags_row := _bind_string(grid, "tags", _tags_to_csv(ability.tags), func(v: String) -> void:
-		ability.tags = _tags_from_csv(v)
+		var tag_result: Dictionary = ClassLibrarySchema.try_apply_tags(ability, _tags_from_csv(v))
+		if not bool(tag_result["ok"]):
+			var rejected: PackedStringArray = tag_result["rejected"] as PackedStringArray
+			tags_warn.text = "Rejected unknown tags (not applied): %s" % ",".join(rejected)
+			tags_warn.visible = true
+			return
+		tags_warn.text = ""
+		tags_warn.visible = false
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "tags", tags_row)
-	var ap_row := _bind_int(grid, "AP", ability.action_point_cost, func(v: int) -> void:
-		ability.action_point_cost = v
-		if ability.planner_group == GameEnums.PlannerGroup.ACTION:
-			ability.primary_resource = GameEnums.CostResource.AP
-			ability.primary_value = v
+	if tags_row.size() >= 2 and tags_row[1] is LineEdit:
+		(tags_row[1] as LineEdit).tooltip_text = (
+			"Canonical only: attack, movement, positioning, spell, heal â€” unknown ids rejected"
+		)
+	parent.add_child(tags_warn)
+	## Cost block (ability-data.md Â§1) â€” the only economy authoring surface.
+	var cost_warn := Label.new()
+	cost_warn.visible = false
+	cost_warn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	cost_warn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
+	cost_warn.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
+	var primary_res_row := _bind_legal_primary_resource(grid, ability, cost_warn)
+	_track_ability_field(ability, "primary_resource", primary_res_row)
+	var primary_val_row := _bind_int(grid, "primary_value", ability.primary_value, func(v: int) -> void:
+		ability.primary_value = v
+		AbilityModuleBridge.sync_legacy_from_header(ability)
 		_refresh_ability_ui(ability)
 	)
-	_track_ability_field(ability, "action_point_cost", ap_row)
-	var mp_row := _bind_int(grid, "MP", ability.movement_point_cost, func(v: int) -> void:
-		ability.movement_point_cost = v
-		if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
-			ability.primary_resource = GameEnums.CostResource.MP
-			ability.primary_value = v
+	_track_ability_field(ability, "primary_value", primary_val_row)
+	var cost_mod_row := _bind_enum(
+		grid, "cost_modifier", GameEnums.CostModifier, ability.cost_modifier,
+		func(v: int) -> void:
+			ability.cost_modifier = v as GameEnums.CostModifier
+			AbilityModuleBridge.sync_legacy_from_header(ability)
+			_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "cost_modifier", cost_mod_row)
+	var cost_mod_n_row := _bind_int(grid, "cost_modifier_n", ability.cost_modifier_n, func(v: int) -> void:
+		ability.cost_modifier_n = v
+		AbilityModuleBridge.sync_legacy_from_header(ability)
 		_refresh_ability_ui(ability)
 	)
-	_track_ability_field(ability, "movement_point_cost", mp_row)
-	var range_row := _bind_int(grid, "Range", ability.range_tiles, func(v: int) -> void:
-		ability.range_tiles = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "range_tiles", range_row)
-	_bind_targeting_flags(parent, ability)
-	var shape_row := _bind_enum(grid, "Shape", GameEnums.TargetShape, ability.target_shape, func(v: int) -> void:
-		ability.target_shape = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "target_shape", shape_row)
-	var shape_size_row := _bind_int(grid, "Shape Size", ability.target_shape_size, func(v: int) -> void:
-		ability.target_shape_size = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "target_shape_size", shape_size_row)
-	var scaling_row := _bind_enum(grid, "Scaling", GameEnums.StatType, ability.scaling_stat, func(v: int) -> void:
-		ability.scaling_stat = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "scaling_stat", scaling_row)
+	_track_ability_field(ability, "cost_modifier_n", cost_mod_n_row)
+	parent.add_child(cost_warn)
 	var uses_row := _bind_int(grid, "Uses/Combat", ability.uses_per_combat, func(v: int) -> void: ability.uses_per_combat = v)
 	_track_ability_field(ability, "uses_per_combat", uses_row)
 	var present_key_row := _bind_string(grid, "Present Key", String(ability.presentation_key), func(v: String) -> void:
@@ -1478,64 +1479,29 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		ability.presentation_anim = v
 	)
 	_track_ability_field(ability, "presentation_anim", present_anim_row)
-	var upg_range_row := _bind_int(grid, "Upg Range", ability.upgraded_range_tiles, func(v: int) -> void:
-		ability.upgraded_range_tiles = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "upgraded_range_tiles", upg_range_row)
-	var upg_shape_row := _bind_enum(grid, "Upg Shape", GameEnums.TargetShape, ability.upgraded_target_shape, func(v: int) -> void:
-		ability.upgraded_target_shape = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "upgraded_target_shape", upg_shape_row)
-	var upg_size_row := _bind_int(grid, "Upg Size", ability.upgraded_target_shape_size, func(v: int) -> void:
-		ability.upgraded_target_shape_size = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "upgraded_target_shape_size", upg_size_row)
-	var upg_mp_row := _bind_int(grid, "Upg MP", ability.upgraded_movement_point_cost, func(v: int) -> void:
-		ability.upgraded_movement_point_cost = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "upgraded_movement_point_cost", upg_mp_row)
-	var kind_row := _bind_enum(grid, "kind (legacy)", GameEnums.AbilityKind, ability.kind, func(v: int) -> void:
-		ability.kind = v
-		ability.planner_group = AbilityModuleBridge.planner_group_from_kind(v as GameEnums.AbilityKind)
-		ability.is_movement_skill = v == GameEnums.AbilityKind.MOVEMENT_SKILL
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "kind", kind_row)
+	## kind is synced from planner_group and is not an authoring control.
+	grid.add_child(_field_label("kind (synced)"))
+	var kind_lbl := Label.new()
+	kind_lbl.text = GameEnums.AbilityKind.keys()[ability.kind]
+	kind_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+	kind_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	kind_lbl.tooltip_text = "Derived from planner_group (not editable)"
+	grid.add_child(kind_lbl)
 	var upgrade_edit := _bind_multiline(parent, "Upgrade Text", ability.upgrade_description, func(v: String) -> void:
 		ability.upgrade_description = v
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "upgrade_description", [upgrade_edit])
-	# Grey out fields that don't apply to this ability configuration dynamically.
-	var grey_cb := func() -> void:
-		var is_action: bool = ability.planner_group == GameEnums.PlannerGroup.ACTION and ability.is_class_kind()
-		var is_pre_move: bool = ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
-		var has_pass_through: bool = AbilitySystem.has_pass_through_effects(ability)
-		var has_dash: bool = AbilitySystem.ability_has_dash(ability)
-		var is_displacement: bool = has_pass_through or has_dash
-		var has_dmg_or_heal: bool = (
-			AbilitySystem.effect_amount(ability, GameEnums.EffectType.DAMAGE) != 0
-			or AbilitySystem.effect_amount(ability, GameEnums.EffectType.HEAL) != 0
-		)
-		var has_upg_range: bool = ability.upgraded_range_tiles != -1
-		_grey_row(ap_row, not is_action)
-		_grey_row(mp_row, not is_pre_move)
-		_grey_row(shape_row, is_displacement)
-		_grey_row(shape_size_row, is_displacement)
-		_grey_row(scaling_row, not has_dmg_or_heal)
-		_grey_row(upg_range_row, not has_upg_range)
-		_grey_row(upg_shape_row, is_displacement or not has_upg_range)
-		_grey_row(upg_size_row, is_displacement or not has_upg_range)
-	
 	if not _ability_ui.has(ability):
 		_ability_ui[ability] = {}
-	_ability_ui[ability]["greying_cb"] = grey_cb
-	grey_cb.call()
-	_add_subsection_label(parent, "Modules (bible)", ClassLibraryTheme.ACCENT_DATA)
+	_ability_ui[ability]["kind_lbl"] = kind_lbl
+	_ability_ui[ability]["tags_warn"] = tags_warn
+	_ability_ui[ability]["cost_warn"] = cost_warn
+	if tags_row.size() >= 2:
+		_ability_ui[ability]["tags_edit"] = tags_row[1]
+	if primary_res_row.size() >= 2:
+		_ability_ui[ability]["primary_res_edit"] = primary_res_row[1]
+	_add_subsection_label(parent, "Modules", ClassLibraryTheme.ACCENT_DATA)
 	var modules_preview := RichTextLabel.new()
 	modules_preview.bbcode_enabled = true
 	modules_preview.fit_content = true
@@ -1543,237 +1509,261 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	modules_preview.text = ClassLibrarySchema.modules_summary_bbcode(ability)
 	parent.add_child(modules_preview)
 	_ability_ui[ability]["modules_preview"] = modules_preview
-	_add_subsection_label(parent, "Effects (legacy flat — compiled from modules)", ClassLibraryTheme.ACCENT_DATA)
-	var eff_box := VBoxContainer.new()
-	eff_box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
-	parent.add_child(eff_box)
-	_rebuild_effects_editor(eff_box, ability, ability.effects, false)
-	var add_eff := Button.new()
-	add_eff.text = "+ Effect (rebuilds modules)"
-	_style_toolbar_button(add_eff)
-	add_eff.pressed.connect(func() -> void:
-		var e := EffectData.new()
-		e.type = GameEnums.EffectType.DAMAGE
-		e.amount = 1
-		ability.effects.append(e)
-		_resync_modules_from_effects(ability)
-		_rebuild_effects_editor(eff_box, ability, ability.effects, false)
-		_refresh_ability_ui(ability)
-	)
-	parent.add_child(add_eff)
-	_add_subsection_label(parent, "Upgraded Effects", ClassLibraryTheme.ACCENT_INGAME)
-	var up_box := VBoxContainer.new()
-	parent.add_child(up_box)
-	_rebuild_effects_editor(up_box, ability, ability.upgraded_effects, true)
-	var add_up := Button.new()
-	add_up.text = "+ Upgraded Effect"
-	_style_toolbar_button(add_up)
-	add_up.pressed.connect(func() -> void:
-		ability.upgraded_effects.append(EffectData.new())
-		_resync_modules_from_effects(ability)
-		_rebuild_effects_editor(up_box, ability, ability.upgraded_effects, true)
-		_refresh_ability_ui(ability)
-	)
-	parent.add_child(add_up)
+	var modules_box := VBoxContainer.new()
+	modules_box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
+	parent.add_child(modules_box)
+	_rebuild_modules_editor(modules_box, ability, ability.modules, false)
+	_add_subsection_label(parent, "Upgraded Modules", ClassLibraryTheme.ACCENT_INGAME)
+	var upgraded_box := VBoxContainer.new()
+	upgraded_box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
+	parent.add_child(upgraded_box)
+	_rebuild_modules_editor(upgraded_box, ability, ability.upgraded_modules, true)
 
 
-## Effects remain the editable surface during migration; modules are derived (one authoring path).
-func _resync_modules_from_effects(ability: AbilityData) -> void:
+func _on_modules_edited(ability: AbilityData) -> void:
 	if ability == null:
 		return
-	ability.modules.clear()
-	ability.upgraded_modules.clear()
-	ability.finalize_modular()
-
-
-func _on_effects_edited(ability: AbilityData) -> void:
-	_resync_modules_from_effects(ability)
+	AbilityModuleBridge.sync_legacy_from_header(ability)
 	_refresh_ability_ui(ability)
 
 
-func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effects: Array[EffectData], upgraded: bool) -> void:
-	var cb_key := "upgraded_effect_greying_cbs" if upgraded else "base_effect_greying_cbs"
-	if _ability_ui.has(ability):
-		_ability_ui[ability][cb_key] = []
+func _rebuild_modules_editor(parent: VBoxContainer, ability: AbilityData, modules: Array[AbilityModule], upgraded: bool) -> void:
 	for c: Node in parent.get_children():
 		c.queue_free()
 	var accent: Color = ClassLibraryTheme.ACCENT_INGAME if upgraded else ClassLibraryTheme.ACCENT_DATA
-	for i: int in effects.size():
-		var eff: EffectData = effects[i]
-		var eff_panel := PanelContainer.new()
-		eff_panel.add_theme_stylebox_override("panel", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_BASE, accent, 1, 4, ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM)))
-		parent.add_child(eff_panel)
-		var ev := VBoxContainer.new()
-		eff_panel.add_child(ev)
-		var row := HBoxContainer.new()
-		ev.add_child(row)
-		var idx_lbl := Label.new()
-		idx_lbl.text = "Effect %d" % i
-		idx_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		idx_lbl.add_theme_color_override("font_color", accent)
-		row.add_child(idx_lbl)
-		var rm := Button.new()
-		rm.text = "×"
-		_style_toolbar_button(rm)
-		rm.pressed.connect(func() -> void:
-			var pos: int = effects.find(eff)
-			if pos >= 0:
-				effects.remove_at(pos)
-			_resync_modules_from_effects(ability)
-			_rebuild_effects_editor(parent, ability, effects, upgraded)
-			_refresh_ability_ui(ability)
+	for i: int in modules.size():
+		var module: AbilityModule = modules[i]
+		var module_panel := PanelContainer.new()
+		module_panel.add_theme_stylebox_override("panel", ClassLibraryTheme.panel_style(ClassLibraryTheme.BG_BASE, accent, 1, 4, ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM)))
+		parent.add_child(module_panel)
+		var module_box := VBoxContainer.new()
+		module_panel.add_child(module_box)
+		var header := HBoxContainer.new()
+		module_box.add_child(header)
+		var title := Label.new()
+		title.text = "Module %d" % i
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		title.add_theme_color_override("font_color", accent)
+		header.add_child(title)
+		var remove := Button.new()
+		remove.text = "×"
+		_style_toolbar_button(remove)
+		remove.pressed.connect(func() -> void:
+			var index: int = modules.find(module)
+			if index >= 0:
+				modules.remove_at(index)
+			_rebuild_modules_editor(parent, ability, modules, upgraded)
+			_on_modules_edited(ability)
 		)
-		row.add_child(rm)
-		var g := GridContainer.new()
-		g.columns = 2
-		g.add_theme_constant_override("v_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
-		ev.add_child(g)
-		_bind_enum(g, "Type", GameEnums.EffectType, eff.type, func(v: int) -> void:
-			eff.type = v
-			_on_effects_edited(ability)
-		)
-		var eff_amount_row := _bind_int(g, "Amount", eff.amount, func(v: int) -> void:
-			eff.amount = v
-			_on_effects_edited(ability)
-		)
-		var eff_scale_row := _bind_enum(g, "Scale Stat", GameEnums.StatType, eff.scaling_stat, func(v: int) -> void:
-			eff.scaling_stat = v
-			_on_effects_edited(ability)
-		)
-		var eff_status_row := _bind_enum(g, "Status", GameEnums.StatusType, eff.status_type, func(v: int) -> void:
-			eff.status_type = v
-			_on_effects_edited(ability)
-		)
-		var eff_dur_row := _bind_int(g, "Duration", eff.status_duration, func(v: int) -> void:
-			eff.status_duration = v
-			_on_effects_edited(ability)
-		)
-		var eff_adj_row := _bind_int(g, "Adj Bonus", eff.bonus_if_adjacent_at_cast, func(v: int) -> void:
-			eff.bonus_if_adjacent_at_cast = v
-			_on_effects_edited(ability)
-		)
-		var eff_def_row := _bind_int(g, "DEF Debuff", eff.def_debuff_before_damage, func(v: int) -> void:
-			eff.def_debuff_before_damage = v
-			_on_effects_edited(ability)
-		)
-		var eff_spawn_row := _bind_string(g, "Spawn ID", String(eff.spawn_unit_id), func(v: String) -> void:
-			eff.spawn_unit_id = StringName(v)
-			_on_effects_edited(ability)
-		)
-		
-		var mods_header := Label.new()
-		mods_header.text = "Modifiers (Data Flags)"
-		mods_header.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
-		mods_header.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
-		ev.add_child(mods_header)
-		
-		var mods_container := VBoxContainer.new()
-		mods_container.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
-		ev.add_child(mods_container)
-		
-		for mod_key: String in eff.modifiers.keys():
-			var mod_row := HBoxContainer.new()
-			mods_container.add_child(mod_row)
-			var key_edit := LineEdit.new()
-			key_edit.text = mod_key
-			key_edit.expand_to_text_length = true
-			key_edit.custom_minimum_size.x = ClassLibraryTheme.px(140)
-			key_edit.tooltip_text = "Modifier Key (e.g. ghost_move)"
-			mod_row.add_child(key_edit)
-			var val_spin := SpinBox.new()
-			val_spin.min_value = -9999
-			val_spin.max_value = 9999
-			val_spin.step = 0.1
-			val_spin.value = float(eff.modifiers[mod_key])
-			val_spin.tooltip_text = "Modifier Value"
-			mod_row.add_child(val_spin)
-			var apply_btn := Button.new()
-			apply_btn.text = "Set"
-			apply_btn.tooltip_text = "Apply key/value change"
-			_style_toolbar_button(apply_btn)
-			mod_row.add_child(apply_btn)
-			var del_btn := Button.new()
-			del_btn.text = "×"
-			del_btn.tooltip_text = "Delete modifier"
-			_style_toolbar_button(del_btn)
-			mod_row.add_child(del_btn)
-			
-			apply_btn.pressed.connect(func() -> void:
-				var new_key: String = key_edit.text.strip_edges()
-				if new_key != mod_key:
-					eff.modifiers.erase(mod_key)
-				eff.modifiers[new_key] = val_spin.value
-				_resync_modules_from_effects(ability)
-				_rebuild_effects_editor(parent, ability, effects, upgraded)
-				_refresh_ability_ui(ability)
-			)
-			del_btn.pressed.connect(func() -> void:
-				eff.modifiers.erase(mod_key)
-				_resync_modules_from_effects(ability)
-				_rebuild_effects_editor(parent, ability, effects, upgraded)
-				_refresh_ability_ui(ability)
-			)
-			
-		var add_mod_btn := Button.new()
-		add_mod_btn.text = "+ Add Modifier"
-		add_mod_btn.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		_style_toolbar_button(add_mod_btn)
-		add_mod_btn.pressed.connect(func() -> void:
-			eff.modifiers["new_modifier"] = 0.0
-			_resync_modules_from_effects(ability)
-			_rebuild_effects_editor(parent, ability, effects, upgraded)
-			_refresh_ability_ui(ability)
-		)
-		mods_container.add_child(add_mod_btn)
+		header.add_child(remove)
+		_build_module_form(module_box, module, ability, true)
+	var add := Button.new()
+	add.text = "+ Add Module"
+	_style_toolbar_button(add)
+	add.pressed.connect(func() -> void:
+		var module := AbilityModule.new()
+		module.primary_type = GameEnums.EffectType.DAMAGE
+		module.max_range = 1
+		module.targeting_flags = GameEnums.TargetingFlags.ENEMY
+		modules.append(module)
+		_rebuild_modules_editor(parent, ability, modules, upgraded)
+		_on_modules_edited(ability)
+	)
+	parent.add_child(add)
+	_track_ability_field(ability, "upgraded_modules" if upgraded else "modules", _collect_module_editor_controls(parent))
 
-		# Grey out effect fields that don't apply to this effect type dynamically.
-		var eff_grey_cb := func() -> void:
-			var is_status_eff: bool = eff.type in [
-				GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF,
-				GameEnums.EffectType.REMOVE_STATUS,
-			]
-			var is_dmg_eff: bool = eff.type == GameEnums.EffectType.DAMAGE
-			var has_scale: bool = eff.type in [
-				GameEnums.EffectType.DAMAGE, GameEnums.EffectType.HEAL,
-				GameEnums.EffectType.ARMOR_UP, GameEnums.EffectType.TRAMPLE,
-			]
-			var is_spawn_eff: bool = eff.type == GameEnums.EffectType.SPAWN
-			var is_movement: bool = eff.type in [
-				GameEnums.EffectType.DASH, GameEnums.EffectType.MOVE,
-				GameEnums.EffectType.TELEPORT_CASTER,
-			]
-			
-			var amt_lbl: Label = eff_amount_row[0]
-			if is_movement:
-				amt_lbl.text = "Distance (Tiles)"
-				idx_lbl.text = "Effect %d - 🏃 Movement" % i
-			elif is_status_eff:
-				amt_lbl.text = "Stacks / Lvl"
-				idx_lbl.text = "Effect %d" % i
-			elif eff.type == GameEnums.EffectType.DAMAGE or eff.type == GameEnums.EffectType.TRAMPLE:
-				amt_lbl.text = "Base Damage"
-				idx_lbl.text = "Effect %d" % i
+
+func _build_module_form(parent: VBoxContainer, module: AbilityModule, ability: AbilityData, allow_layers: bool) -> void:
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("v_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
+	parent.add_child(grid)
+	_bind_enum(grid, "Phase", GameEnums.ModulePhase, module.execution_phase, func(v: int) -> void:
+		module.execution_phase = v
+		_on_modules_edited(ability)
+	)
+	_bind_enum(grid, "Primary Effect", GameEnums.EffectType, module.primary_type, func(v: int) -> void:
+		module.primary_type = v
+		_on_modules_edited(ability)
+	)
+	_bind_int(grid, "Amount", module.amount, func(v: int) -> void:
+		module.amount = v
+		_on_modules_edited(ability)
+	)
+	_bind_enum(grid, "Scaling", GameEnums.StatType, module.scaling_stat, func(v: int) -> void:
+		module.scaling_stat = v
+		_on_modules_edited(ability)
+	)
+	if _module_uses_status(module):
+		_bind_enum(grid, "Status", GameEnums.StatusType, module.status_type, func(v: int) -> void:
+			module.status_type = v as GameEnums.StatusType
+			_on_modules_edited(ability)
+		)
+		_bind_int(grid, "Status Duration", module.status_duration, func(v: int) -> void:
+			module.status_duration = maxi(v, 1)
+			_on_modules_edited(ability)
+		)
+	if module.primary_type == GameEnums.EffectType.SPAWN:
+		_bind_string(grid, "Spawn Unit ID", String(module.spawn_unit_id), func(v: String) -> void:
+			module.spawn_unit_id = StringName(v)
+			_on_modules_edited(ability)
+		)
+	if _module_uses_motion(module):
+		_bind_enum(grid, "Motion Mode", GameEnums.MotionMode, module.motion_mode, func(v: int) -> void:
+			module.motion_mode = v as GameEnums.MotionMode
+			_on_modules_edited(ability)
+		)
+	_bind_int(grid, "Min Range", module.min_range, func(v: int) -> void:
+		module.min_range = maxi(v, 0)
+		_on_modules_edited(ability)
+	)
+	_bind_int(grid, "Max Range", module.max_range, func(v: int) -> void:
+		module.max_range = maxi(v, module.min_range)
+		_on_modules_edited(ability)
+	)
+	_bind_bool(grid, "Requires LOS", module.requires_los, func(v: bool) -> void:
+		module.requires_los = v
+		_on_modules_edited(ability)
+	)
+	_bind_enum(grid, "Range Origin", GameEnums.RangeOrigin, module.range_origin, func(v: int) -> void:
+		module.range_origin = v
+		_on_modules_edited(ability)
+	)
+	_bind_enum(grid, "Target Shape", GameEnums.TargetShape, module.target_shape, func(v: int) -> void:
+		module.target_shape = v
+		_on_modules_edited(ability)
+	)
+	_bind_int(grid, "Shape Size", module.target_shape_size, func(v: int) -> void:
+		module.target_shape_size = maxi(v, 1)
+		_on_modules_edited(ability)
+	)
+	_bind_enum(grid, "Aim Binding", GameEnums.AimBinding, module.aim_binding, func(v: int) -> void:
+		module.aim_binding = v
+		_on_modules_edited(ability)
+	)
+	_bind_int(grid, "Aim Module Index", module.aim_module_index, func(v: int) -> void:
+		module.aim_module_index = maxi(v, 0)
+		_on_modules_edited(ability)
+	)
+	_bind_enum(grid, "Gate", GameEnums.ModuleGate, module.gate, func(v: int) -> void:
+		module.gate = v
+		_on_modules_edited(ability)
+	)
+	_bind_int(grid, "Hit Count", module.hit_count, func(v: int) -> void:
+		module.hit_count = maxi(v, 1)
+		_on_modules_edited(ability)
+	)
+	_bind_enum(grid, "Presentation Anim", GameEnums.PresentationAnim, module.presentation_anim, func(v: int) -> void:
+		module.presentation_anim = v
+		_on_modules_edited(ability)
+	)
+	_bind_int(grid, "Adjacent Bonus", module.bonus_if_adjacent_at_cast, func(v: int) -> void:
+		module.bonus_if_adjacent_at_cast = v
+		_on_modules_edited(ability)
+	)
+	_bind_int(grid, "DEF Debuff", module.def_debuff_before_damage, func(v: int) -> void:
+		module.def_debuff_before_damage = v
+		_on_modules_edited(ability)
+	)
+	_add_module_targeting(parent, module, ability)
+	_add_module_keywords(parent, module, ability)
+	if allow_layers:
+		_add_module_layers(parent, module, ability)
+
+
+func _module_uses_status(module: AbilityModule) -> bool:
+	return module.primary_type == GameEnums.EffectType.ADD_STATUS or module.primary_type == GameEnums.EffectType.ADD_STATUS_SELF
+
+
+func _module_uses_motion(module: AbilityModule) -> bool:
+	return module.primary_type in [
+		GameEnums.EffectType.MOVE,
+		GameEnums.EffectType.DASH,
+		GameEnums.EffectType.SWAP,
+		GameEnums.EffectType.TELEPORT_CASTER,
+		GameEnums.EffectType.MOVE_INTO_AND_PUSH,
+		GameEnums.EffectType.THROW_BEHIND,
+	]
+
+
+func _add_module_targeting(parent: VBoxContainer, module: AbilityModule, ability: AbilityData) -> void:
+	_add_subsection_label(parent, "Module Targeting", ClassLibraryTheme.ACCENT_DATA)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
+	parent.add_child(row)
+	for spec: Array in [
+		[GameEnums.TargetingFlags.SELF, "Self"],
+		[GameEnums.TargetingFlags.ALLY, "Ally"],
+		[GameEnums.TargetingFlags.ENEMY, "Enemy"],
+		[GameEnums.TargetingFlags.TILE, "Tile"],
+		[GameEnums.TargetingFlags.DASH_LINE, "Dash line"],
+	]:
+		var check := CheckBox.new()
+		check.text = String(spec[1])
+		check.button_pressed = module.has_targeting(int(spec[0]))
+		check.toggled.connect(func(enabled: bool) -> void:
+			if enabled:
+				module.targeting_flags |= int(spec[0])
 			else:
-				amt_lbl.text = "Amount"
-				idx_lbl.text = "Effect %d" % i
-				
-			_grey_row(eff_scale_row, not has_scale)
-			_grey_row(eff_status_row, not is_status_eff)
-			_grey_row(eff_dur_row, not is_status_eff)
-			_grey_row(eff_adj_row, not is_dmg_eff)
-			_grey_row(eff_def_row, not is_dmg_eff)
-			_grey_row(eff_spawn_row, not is_spawn_eff)
-		
-		
-		if _ability_ui.has(ability):
-			var inner_cb_key := "upgraded_effect_greying_cbs" if upgraded else "base_effect_greying_cbs"
-			var cbs: Array = _ability_ui[ability].get(inner_cb_key, [])
-			cbs.append(eff_grey_cb)
-			_ability_ui[ability][inner_cb_key] = cbs
-		eff_grey_cb.call()
+				module.targeting_flags &= ~int(spec[0])
+			_on_modules_edited(ability)
+		)
+		row.add_child(check)
 
-	var field_key := "upgraded_effects" if upgraded else "effects"
-	_track_ability_field(ability, field_key, _collect_effect_editor_controls(parent))
+
+func _add_module_keywords(parent: VBoxContainer, module: AbilityModule, ability: AbilityData) -> void:
+	_add_subsection_label(parent, "Keywords", ClassLibraryTheme.ACCENT_DATA)
+	var box := VBoxContainer.new()
+	parent.add_child(box)
+	for keyword: AbilityKeyword in module.keywords:
+		var row := HBoxContainer.new()
+		box.add_child(row)
+		_bind_enum_inline(row, "", GameEnums.AbilityKeywordId, keyword.keyword_id, func(v: int) -> void: keyword.keyword_id = v; _on_modules_edited(ability))
+		_bind_int_inline(row, "Amount", keyword.amount, func(v: int) -> void: keyword.amount = v; _on_modules_edited(ability))
+		_bind_int_inline(row, "Push", keyword.push_amount, func(v: int) -> void: keyword.push_amount = v; _on_modules_edited(ability))
+		_bind_bool_inline(row, "Emit Effect", keyword.emit_as_effect, func(v: bool) -> void: keyword.emit_as_effect = v; _on_modules_edited(ability))
+		var remove := Button.new()
+		remove.text = "×"
+		_style_toolbar_button(remove)
+		remove.pressed.connect(func() -> void: module.keywords.erase(keyword); _rebuild_ability_detail_panes(ability))
+		row.add_child(remove)
+	var add := Button.new()
+	add.text = "+ Add Keyword"
+	_style_toolbar_button(add)
+	add.pressed.connect(func() -> void: module.keywords.append(AbilityKeyword.new()); _rebuild_ability_detail_panes(ability))
+	box.add_child(add)
+
+
+func _add_module_layers(parent: VBoxContainer, module: AbilityModule, ability: AbilityData) -> void:
+	_add_subsection_label(parent, "Layers", ClassLibraryTheme.ACCENT_DATA)
+	var box := VBoxContainer.new()
+	parent.add_child(box)
+	for layer: AbilityLayer in module.layers:
+		var panel := PanelContainer.new()
+		box.add_child(panel)
+		var layer_box := VBoxContainer.new()
+		panel.add_child(layer_box)
+		var row := HBoxContainer.new()
+		layer_box.add_child(row)
+		_bind_enum_inline(row, "Condition", GameEnums.LayerCondition, layer.condition, func(v: int) -> void: layer.condition = v; _on_modules_edited(ability))
+		var remove := Button.new()
+		remove.text = "×"
+		_style_toolbar_button(remove)
+		remove.pressed.connect(func() -> void: module.layers.erase(layer); _rebuild_ability_detail_panes(ability))
+		row.add_child(remove)
+		if layer.module == null:
+			layer.module = AbilityModule.new()
+		_build_module_form(layer_box, layer.module, ability, false)
+	var add := Button.new()
+	add.text = "+ Add Layer"
+	_style_toolbar_button(add)
+	add.pressed.connect(func() -> void:
+		var layer := AbilityLayer.new()
+		layer.module = AbilityModule.new()
+		module.layers.append(layer)
+		_rebuild_ability_detail_panes(ability)
+	)
+	box.add_child(add)
 
 
 func _tags_to_csv(tags: Array[StringName]) -> String:
@@ -1797,19 +1787,21 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 		return
 	var refs: Dictionary = _ability_ui[ability]
 	
-	if refs.has("greying_cb"):
-		var cb: Callable = refs["greying_cb"]
-		if cb.is_valid():
-			cb.call()
-	for cb_key in ["base_effect_greying_cbs", "upgraded_effect_greying_cbs"]:
-		if refs.has(cb_key):
-			for cb: Callable in refs.get(cb_key, []):
-				if cb.is_valid():
-					cb.call()
 	var modules_preview: RichTextLabel = refs.get("modules_preview")
 	if modules_preview != null:
 		modules_preview.text = ClassLibrarySchema.modules_summary_bbcode(ability)
-				
+	var kind_lbl: Label = refs.get("kind_lbl")
+	if kind_lbl != null:
+		kind_lbl.text = GameEnums.AbilityKind.keys()[ability.kind]
+	var tags_edit: Control = refs.get("tags_edit")
+	if tags_edit is LineEdit:
+		var want_tags: String = _tags_to_csv(ability.tags)
+		if (tags_edit as LineEdit).text != want_tags:
+			(tags_edit as LineEdit).text = want_tags
+	var primary_res_edit: Control = refs.get("primary_res_edit")
+	if primary_res_edit is OptionButton:
+		_fill_legal_primary_options(primary_res_edit as OptionButton, ability)
+
 	var preview: RichTextLabel = refs.get("preview")
 	if preview != null:
 		preview.text = _ability_effect_preview_bbcode(ability)
@@ -1821,7 +1813,7 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 		var type_str := "ACTION"
 		if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 			type_str = "PRE_MOVE (basic positioning)"
-		elif AbilitySystem.is_movement_skill(ability):
+		elif ability.has_tag(AbilityModuleBridge.TAG_MOVEMENT) or AbilitySystem.ability_has_movement_effect(ability):
 			type_str = "ACTION + movement"
 		sub_lbl.text = String(ability.id) + " | " + type_str
 	var cost_val: Label = refs.get("cost_val")
@@ -1952,18 +1944,18 @@ func _refresh_ability_field_colors(ability: AbilityData) -> void:
 		_apply_field_track_color(controls, _ability_field_state(ability, field))
 
 
-func _collect_effect_editor_controls(parent: VBoxContainer) -> Array[Control]:
+func _collect_module_editor_controls(parent: VBoxContainer) -> Array[Control]:
 	var out: Array[Control] = []
 	for child: Node in parent.get_children():
-		_collect_controls_recursive(child, out)
+		_collect_module_controls_recursive(child, out)
 	return out
 
 
-func _collect_controls_recursive(node: Node, out: Array[Control]) -> void:
+func _collect_module_controls_recursive(node: Node, out: Array[Control]) -> void:
 	if node is SpinBox or node is OptionButton or node is LineEdit or node is TextEdit or node is CheckBox:
 		out.append(node as Control)
 	for child: Node in node.get_children():
-		_collect_controls_recursive(child, out)
+		_collect_module_controls_recursive(child, out)
 
 
 func _reset_ability_to_default(ability: AbilityData) -> void:
@@ -2196,6 +2188,38 @@ func _add_subsection_label(parent: Control, text: String, accent: Color) -> void
 
 # --- Widget bindings ---
 
+## Â§11: only offer legal CostResource values for the current planner_group.
+func _bind_legal_primary_resource(
+	parent: GridContainer,
+	ability: AbilityData,
+	cost_warn: Label
+) -> Array[Control]:
+	var lbl := _field_label("primary_resource")
+	parent.add_child(lbl)
+	var ob := OptionButton.new()
+	ob.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ob.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	_fill_legal_primary_options(ob, ability)
+	ob.item_selected.connect(func(idx: int) -> void:
+		var next: GameEnums.CostResource = ob.get_item_id(idx) as GameEnums.CostResource
+		var result: Dictionary = ClassLibrarySchema.try_apply_primary_resource(ability, next)
+		if not bool(result["ok"]):
+			cost_warn.text = "%s (not applied)" % String(result.get("reason", "illegal cost"))
+			cost_warn.visible = true
+			_fill_legal_primary_options(ob, ability)
+			return
+		cost_warn.text = ""
+		cost_warn.visible = false
+		_refresh_ability_ui(ability)
+	)
+	parent.add_child(ob)
+	return [lbl, ob]
+
+
+func _fill_legal_primary_options(ob: OptionButton, ability: AbilityData) -> void:
+	ClassLibrarySchema.populate_legal_primary_option_button(ob, ability)
+
+
 func _bind_int(parent: GridContainer, label: String, value: int, setter: Callable) -> Array[Control]:
 	var lbl := _field_label(label)
 	parent.add_child(lbl)
@@ -2210,6 +2234,22 @@ func _bind_int(parent: GridContainer, label: String, value: int, setter: Callabl
 	return [lbl, spin]
 
 
+func _bind_int_inline(parent: Control, label: String, value: int, setter: Callable) -> SpinBox:
+	if not label.is_empty():
+		var lbl := Label.new()
+		lbl.text = label
+		lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+		parent.add_child(lbl)
+	var spin := SpinBox.new()
+	spin.min_value = -999
+	spin.max_value = 9999
+	spin.value = value
+	spin.custom_minimum_size.x = ClassLibraryTheme.px(72)
+	spin.value_changed.connect(func(v: float) -> void: setter.call(int(v)))
+	parent.add_child(spin)
+	return spin
+
+
 func _bind_bool(parent: GridContainer, label: String, value: bool, setter: Callable) -> void:
 	parent.add_child(_field_label(label))
 	var chk := CheckBox.new()
@@ -2219,34 +2259,13 @@ func _bind_bool(parent: GridContainer, label: String, value: bool, setter: Calla
 	parent.add_child(chk)
 
 
-func _bind_targeting_flags(parent: VBoxContainer, ability: AbilityData) -> void:
-	_add_subsection_label(parent, "Targeting", ClassLibraryTheme.ACCENT_DATA)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
-	parent.add_child(row)
-	var specs: Array = [
-		[GameEnums.TargetingFlags.SELF, "Self"],
-		[GameEnums.TargetingFlags.ALLY, "Ally"],
-		[GameEnums.TargetingFlags.ENEMY, "Enemy"],
-		[GameEnums.TargetingFlags.TILE, "Tile"],
-		[GameEnums.TargetingFlags.DASH_LINE, "Dash line"],
-	]
-	var checks: Array[Control] = []
-	for spec: Array in specs:
-		var flag: int = int(spec[0])
-		var label: String = String(spec[1])
-		var chk := CheckBox.new()
-		chk.text = label
-		chk.button_pressed = ability.has_targeting(flag)
-		chk.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
-		chk.toggled.connect(func(enabled: bool) -> void:
-			ability.set_targeting_flag(flag, enabled)
-			_refresh_ability_ui(ability)
-		)
-		row.add_child(chk)
-		checks.append(chk)
-	_track_ability_field(ability, "targeting_flags", checks)
-	_track_ability_field(ability, "targeting_mode", checks)
+func _bind_bool_inline(parent: Control, label: String, value: bool, setter: Callable) -> CheckBox:
+	var chk := CheckBox.new()
+	chk.text = label
+	chk.button_pressed = value
+	chk.toggled.connect(func(v: bool) -> void: setter.call(v))
+	parent.add_child(chk)
+	return chk
 
 
 func _bind_string(parent: GridContainer, label: String, value: String, setter: Callable) -> Array[Control]:
@@ -2282,6 +2301,22 @@ func _bind_enum(parent: GridContainer, label: String, enum_obj: Variant, current
 	opt.item_selected.connect(func(idx: int) -> void: setter.call(idx))
 	parent.add_child(opt)
 	return [lbl, opt]
+
+
+func _bind_enum_inline(parent: Control, label: String, enum_obj: Variant, current: int, setter: Callable) -> OptionButton:
+	if not label.is_empty():
+		var lbl := Label.new()
+		lbl.text = label
+		lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+		parent.add_child(lbl)
+	var opt := OptionButton.new()
+	var keys: PackedStringArray = enum_obj.keys()
+	for i: int in keys.size():
+		opt.add_item(keys[i], i)
+	opt.select(current)
+	opt.item_selected.connect(func(idx: int) -> void: setter.call(idx))
+	parent.add_child(opt)
+	return opt
 
 
 func _bind_multiline(parent: Control, label: String, value: String, setter: Callable) -> TextEdit:

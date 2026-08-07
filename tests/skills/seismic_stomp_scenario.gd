@@ -3,7 +3,7 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Seismic Stomp — RANGE 0 AOE 1 ATK 2 PURGE all enemies; [+] CRACKED terrain (MOVE cost ×2 via TerrainData.mp_cost_per_tile).
+## Bible: Seismic Stomp â€” RANGE 0 AOE 1 ATK 2 PURGE all enemies; [+] CRACKED terrain (MOVE cost Ã—2 via TerrainData.mp_cost_per_tile).
 ## Globals: EffectType.DAMAGE, PURGE, CHANGE_TERRAIN via AbilitySystem.
 
 
@@ -23,7 +23,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "seismic/contract/damage_amount",
-		stomp != null and stomp.effects[0].amount == 2,
+		stomp != null and stomp.modules[0].amount == 2,
 		"seismic stomp base DAMAGE must be ATK 2",
 	)
 	_KnightQaHarness.assert_true(

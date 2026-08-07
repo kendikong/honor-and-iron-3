@@ -1,8 +1,8 @@
-class_name LpcConstants
+﻿class_name LpcConstants
 extends RefCounted
 
-## LPC universal sheet layout (64×64 frames). Matches chargen.js row order.
-## Sprites load from _lpc_sparse/ via Image.load — never under res:// (no Godot import).
+## LPC universal sheet layout (64Ã—64 frames). Matches chargen.js row order.
+## Sprites load from _lpc_sparse/ via Image.load â€” never under res:// (no Godot import).
 
 const SPARSE_DIR: String = "_lpc_sparse"
 const SPRITESHEETS_DIR: String = "spritesheets"
@@ -70,9 +70,9 @@ const ACTIONS: Dictionary = {
 	"halfslash": [[0, 1, 2, 3, 4, 5], 12.0, DIRS],
 }
 
-## Spellcast timing (frames [0..6] @ 8 fps — see ACTIONS["spellcast"]).
+## Spellcast timing (frames [0..6] @ 8 fps â€” see ACTIONS["spellcast"]).
 ## Frame 3 = arms extended / release pose (SFX + target flash sync here).
-## Frames 4–6 = arms down @ SPELLCAST_TAIL_SPEED_SCALE (half duration vs base fps).
+## Frames 4â€“6 = arms down @ SPELLCAST_TAIL_SPEED_SCALE (half duration vs base fps).
 const SPELLCAST_FPS: float = 8.0
 const SPELLCAST_FRAME_COUNT: int = 7
 const SPELLCAST_RELEASE_FRAME: int = 3
@@ -127,7 +127,7 @@ static func sheet_path(path_prefix: String, anim: String, _recolor: String, vari
 	var rel: String = path_prefix.trim_prefix("/")
 	var base: String = spritesheet_root().path_join(rel).path_join(anim)
 	
-	# Variant items (tunic, hat, …) ship walk/{color}.png on disk.
+	# Variant items (tunic, hat, â€¦) ship walk/{color}.png on disk.
 	if variant != "":
 		var variant_path: String = base.path_join(variant) + ".png"
 		if FileAccess.file_exists(variant_path):
@@ -150,7 +150,7 @@ static func sheet_path(path_prefix: String, anim: String, _recolor: String, vari
 		return attack_base_path
 		
 	# ULPC palette layers use a single walk.png; recolor is GPU-side (lpc_palette_recolor.gdshader).
-	# Never probe walk/{skin|hair|cloth}.png — missing files spam Image.load errors.
+	# Never probe walk/{skin|hair|cloth}.png â€” missing files spam Image.load errors.
 	return base_path
 
 

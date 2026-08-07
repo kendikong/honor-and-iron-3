@@ -1,4 +1,4 @@
-class_name MovementSystem
+﻿class_name MovementSystem
 extends RefCounted
 
 ## Purpose: Owns point-based unit movement and pathfinding.
@@ -74,7 +74,7 @@ static func find_path(
 	if start == goal:
 		return empty
 
-	# Teleporters skip pathfinding entirely — warp to any unoccupied, in-bounds tile.
+	# Teleporters skip pathfinding entirely â€” warp to any unoccupied, in-bounds tile.
 	if movement_type == GameEnums.MovementType.TELEPORT:
 		if GridSystem.is_in_bounds(board, goal) and not GridSystem.is_occupied(board, goal):
 			return [goal]
@@ -140,7 +140,7 @@ static func find_path(
 	path = trimmed
 		
 	# A unit cannot end its movement on an occupied tile (e.g. an ally).
-	# Backtrack until we find an empty tile — but allow ending on an enemy tile
+	# Backtrack until we find an empty tile â€” but allow ending on an enemy tile
 	# if the ability grants pass-through movement (TRAMPLE/BULLDOZE pushes them aside).
 	while path.size() > 0 and GridSystem.is_occupied(board, path[path.size() - 1]):
 		var end_occ := board.get_unit_at(path[path.size() - 1])
@@ -265,7 +265,7 @@ static func resolve_move_path(
 	if not waypoints.is_empty():
 		if _is_legal_walk(board, start, waypoints, max_steps, move_cost, unit, ability):
 			return waypoints.duplicate()
-		## Committed waypoints are intent truth — never silently re-pathfind.
+		## Committed waypoints are intent truth â€” never silently re-pathfind.
 		if (
 			_is_contiguous_cardinal_route(start, waypoints)
 			and waypoints[waypoints.size() - 1] == target_coord
@@ -315,7 +315,7 @@ static func _is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState
 			return false # Allied units block transit; only explicit pass-through may enter occupants
 	return true
 
-## Shared trample check — used by pathfinding, move execution, and UI.
+## Shared trample check â€” used by pathfinding, move execution, and UI.
 static func has_trample(unit: UnitState) -> bool:
 	if unit == null:
 		return false
@@ -357,7 +357,7 @@ static func execute_skill_walk(
 	var trample_push: int = int(mods.get("push", 0))
 	var has_move := false
 	for eff in effects:
-		if eff.type == GameEnums.EffectType.MOVE:
+		if eff.primary_type == GameEnums.EffectType.MOVE:
 			has_move = true
 			break
 	if trample_atk <= 0 and bulldoze <= 0 and not has_move:
@@ -486,7 +486,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 
 	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
 
-	# Teleporters warp directly — no path walking, no MP cost.
+	# Teleporters warp directly â€” no path walking, no MP cost.
 	if mt == GameEnums.MovementType.TELEPORT:
 		var dest := action.target_coord
 		if not GridSystem.is_in_bounds(board, dest) or GridSystem.is_occupied(board, dest):

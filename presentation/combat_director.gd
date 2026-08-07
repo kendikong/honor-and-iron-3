@@ -9,7 +9,7 @@ extends Node
 ##   gameplay to Simulator and never computes outcomes itself.
 ## Dependencies: Simulator, BoardState, Timeline, TimelineAction, EnemyPlanner,
 ##   EventBus. Builds demo content from data definitions for bootstrap.
-## Lifecycle: lives in Combat.tscn; start() is called once by the view after it has
+## Lifecycle: lives in TacticalCombat.tscn; start() is called once by the shell after it has
 ##   subscribed to EventBus, so no initial signal is missed.
 
 enum Phase {
@@ -51,15 +51,15 @@ var _commit_animate_actor_ids: Dictionary = {}
 var initial_board: BoardState
 ## Snapshot at the start of the current player turn (planning).
 var turn_start_board: BoardState
-## Incremented on every successful _refresh_plan — cheap cache-bust for hover previews.
+## Incremented on every successful _refresh_plan â€” cheap cache-bust for hover previews.
 var plan_revision: int = 0
-## Units whose plan was removed this refresh — forces visual resync (e.g. undo during walk).
+## Units whose plan was removed this refresh â€” forces visual resync (e.g. undo during walk).
 var plan_affected_unit_ids: Array[int] = []
 ## When true, Run is hidden from the skill list and applied automatically for out-of-range moves.
 var auto_run: bool = false
 ## Drag-drop move commits snap instantly; selection/hover commits walk/run on plan.
 var _instant_planning_move_units: Dictionary = {}
-## Hidden exhaustion slot (Master Bible § Universal Wait) — not in plan_action.
+## Hidden exhaustion slot (Master Bible Â§ Universal Wait) â€” not in plan_action.
 var _wait_unit_ids: Dictionary = {}
 var _plan_refresh_emit_pending: bool = false
 var _pending_refresh_board: BoardState
@@ -82,7 +82,7 @@ var _skip_committed_premove_visuals: bool = false
 var _execute_premove_skip_actions: Array[TimelineAction] = []
 var _refresh_plan_queued: bool = false
 var _cached_wait_marker_ghost_events: Array[SimEvent] = []
-## Move-preview paths frozen at commit time — commit anim must match hover/drag preview exactly.
+## Move-preview paths frozen at commit time â€” commit anim must match hover/drag preview exactly.
 var _commit_intent_preview_paths: Dictionary = {}
 ## Autobattler batches rpc_plan_move commits; one parallel planning walk plays at batch end.
 var _autobattler_plan_batch: bool = false
@@ -399,7 +399,7 @@ func set_awaiting_action(unit_id: int, ability: AbilityData) -> void:
 		return
 	_clear_unit_class_actions_from_plan(unit_id)
 	var action: TimelineAction = TimelineAction.make_ability_awaiting(
-		unit_id, ability, actor.position,
+		unit_id, ability, actor.position, [], 0,
 	)
 	plan_action.entries.append(action)
 	plan_affected_unit_ids = [unit_id]
@@ -435,11 +435,34 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			continue
 		if awaiting.ability != action.ability:
 			return false
+		var actor: UnitState = (
+			projected_state.get_unit_by_id(unit_id)
+			if projected_state != null
+			else board.get_unit_by_id(unit_id)
+		)
+		if actor == null:
+			actor = board.get_unit_by_id(unit_id)
+		var mod_idx: int = awaiting.awaiting_module_index if awaiting.awaiting_module_index >= 0 else 0
+		while awaiting.module_coords.size() <= mod_idx:
+			awaiting.module_coords.append(TimelineAction.MODULE_COORD_UNSET)
+		if not action.module_coords.is_empty() and action.has_module_coord(mod_idx):
+			awaiting.module_coords[mod_idx] = action.get_module_coord(mod_idx)
+		else:
+			awaiting.module_coords[mod_idx] = action.target_coord
 		awaiting.target_coord = action.target_coord
 		awaiting.target_unit_id = action.target_unit_id
 		awaiting.waypoints = action.waypoints.duplicate()
 		awaiting.face_dir = action.face_dir
+		var plan_board: BoardState = projected_state if projected_state != null else board
+		var next_idx: int = AbilitySystem.planning_next_awaiting_module_index(
+			plan_board, actor, awaiting.ability, mod_idx, awaiting.module_coords,
+		)
+		if next_idx >= 0:
+			awaiting.awaiting_module_index = next_idx
+			awaiting.awaiting_target = true
+			return true
 		awaiting.awaiting_target = false
+		awaiting.awaiting_module_index = -1
 		return true
 	return false
 
@@ -510,7 +533,12 @@ func get_planning_move_timing(unit_id: int) -> int:
 func _get_move_timing(unit_id: int) -> int:
 	if unit_has_wait_planned(unit_id):
 		return -1
-	var p_unit := projected_state.get_unit_by_id(unit_id) if projected_state != null else board.get_unit_by_id(unit_id)
+	var b: BoardState = projected_state if projected_state != null else board
+	if b == null:
+		b = base_board
+	if b == null:
+		return -1
+	var p_unit := b.get_unit_by_id(unit_id)
 	if p_unit == null:
 		return -1
 	if p_unit.has_used_turn_action():
@@ -1182,11 +1210,14 @@ func preview_waypoints_for_hover(
 		if actor.definition != null
 		else GameEnums.MovementType.WALK
 	)
+	var budget: int = planning_move_budget(actor, board)
+	if ability != null and AbilitySystem.ability_has_movement_effect(ability):
+		budget = AbilitySystem.planning_awaiting_endpoint_range(ability)
 	return MovementSystem.drag_corridor_path(
 		board,
 		actor.position,
 		target,
-		planning_move_budget(actor, board),
+		budget,
 		movement_type,
 		MovementSystem.move_cost_for(actor),
 		actor,
@@ -1816,9 +1847,9 @@ func _play_events(events: Array[SimEvent]) -> void:
 		EventBus.sim_event.emit(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
 		await _play_batched_segment(enemy_events, run_id)
 
-## Plays a list of events in ordered phases: pre-moves (simultaneous) → attacks
-## (sequential) → post-moves (simultaneous) → forced movement (simultaneous).
-## Dash ability blocks are peeled out and played with move → pass-through hits → pushes.
+## Plays a list of events in ordered phases: pre-moves (simultaneous) â†’ attacks
+## (sequential) â†’ post-moves (simultaneous) â†’ forced movement (simultaneous).
+## Dash ability blocks are peeled out and played with move â†’ pass-through hits â†’ pushes.
 func _play_batched_segment(events: Array[SimEvent], run_id: int) -> void:
 	if events.is_empty() or run_id != _run_id:
 		return
@@ -2140,7 +2171,7 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 		if run_id != _run_id:
 			return
 	
-	# --- Forced movement — all pushes/collisions at the same time ---
+	# --- Forced movement â€” all pushes/collisions at the same time ---
 	if not push_events.is_empty():
 		for e in push_events:
 			if run_id != _run_id: return
@@ -2238,7 +2269,7 @@ func _play_move_batch(move_events: Array[SimEvent], run_id: int) -> void:
 		max_path_len = max(max_path_len, (e.data.get("path", []) as Array).size())
 
 	if trample_step_events.is_empty():
-		# No trample hits — just wait for the whole walk to finish.
+		# No trample hits â€” just wait for the whole walk to finish.
 		await get_tree().create_timer(max(1, max_path_len) * MOVE_STEP_TIME + 0.05).timeout
 		return
 
@@ -2345,7 +2376,7 @@ func unit_has_undoable_action(unit_id: int) -> bool:
 func _begin_undo_plan_refresh(unit_id: int) -> void:
 	plan_affected_unit_ids = [unit_id]
 	plan_refresh_snap_units = true
-	# Undo must refresh red action-range tiles immediately — do not defer overlay.
+	# Undo must refresh red action-range tiles immediately â€” do not defer overlay.
 	plan_refresh_defer_overlay = false
 	plan_refresh_light_overlay = true
 	_pending_planning_commit_events.clear()
@@ -2699,7 +2730,7 @@ func _build_ghost_events(sim: BoardState, timeline: Timeline, intents: Array[Int
 	return evs
 
 
-## Enemy ghost tail only — player phase already applied on `sim` (e.g. projected_state).
+## Enemy ghost tail only â€” player phase already applied on `sim` (e.g. projected_state).
 func _build_enemy_ghost_events(sim: BoardState, intents: Array[Intent]) -> Array[SimEvent]:
 	var evs: Array[SimEvent] = []
 	evs.append(SimEvent.make(GameEnums.SimEventType.ENEMY_PHASE_BEGAN, {}))
@@ -2902,7 +2933,10 @@ func _timeline_actions_same_commit(a: TimelineAction, b: TimelineAction) -> bool
 
 
 func _build_live_planning_board() -> BoardState:
-	var live: BoardState = base_board.clone()
+	var b := base_board if base_board != null else board
+	if b == null:
+		return null
+	var live: BoardState = b.clone()
 	for action: TimelineAction in plan_pre_move.entries:
 		if action.awaiting_target:
 			continue
@@ -2912,7 +2946,7 @@ func _build_live_planning_board() -> BoardState:
 	return live
 
 
-## Committed premove positions only — never action-phase preview displacement.
+## Committed premove positions only â€” never action-phase preview displacement.
 func live_planning_board() -> BoardState:
 	return _build_live_planning_board()
 
@@ -3091,3 +3125,5 @@ func _set_phase(new_phase: Phase) -> void:
 func _build_demo_encounter() -> BoardState:
 	var map = DataLibrary.get_all_maps()[0]
 	return BoardFactory.build_from_encounter(map.encounter)
+
+

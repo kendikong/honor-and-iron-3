@@ -1,4 +1,4 @@
-## Small helper tool to work with Godot Arrays
+﻿## Small helper tool to work with Godot Arrays
 class_name GdArrayTools
 extends RefCounted
 

@@ -1,4 +1,4 @@
-class_name TileInspectorPanel
+﻿class_name TileInspectorPanel
 extends CanvasLayer
 
 ## Side panel: full provenance for the hovered / clicked map cell.
@@ -152,7 +152,7 @@ func _build_ui() -> void:
 	vbox.add_child(title)
 
 	_hint = Label.new()
-	_hint.text = "Hover a cell · click to lock · Esc or Clear to unlock"
+	_hint.text = "Hover a cell Â· click to lock Â· Esc or Clear to unlock"
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint.add_theme_font_size_override("font_size", 17)
 	_hint.add_theme_color_override("font_color", Color(0.72, 0.74, 0.82))

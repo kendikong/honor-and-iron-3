@@ -1,4 +1,4 @@
-class_name Level5AIPanel
+﻿class_name Level5AIPanel
 extends VBoxContainer
 
 signal inspect_requested(title: String, body: String, meta: Dictionary)
@@ -50,12 +50,12 @@ func bind_report(report: MassSimBatchReport) -> void:
 		var total_util: float = float(tel.get("total", tel.get("final_utility", 0.0)))
 		sample_text = (
 			"Latest sample (run %s, turn %s):\n"
-			+ "Final_Utility: [b]%.1f[/b] — keys: %s"
+			+ "Final_Utility: [b]%.1f[/b] â€” keys: %s"
 		) % [str(sample.get("run_id", "?")), str(sample.get("turn", "?")), total_util, str(tel.keys())]
 
 	_body.text = (
 		"[b]Match Victory Delta[/b]\n"
-		+ "• Winners generated [color=#7dcea0]%+.0f%%[/color] more collision pressure (heuristic)\n\n"
+		+ "â€¢ Winners generated [color=#7dcea0]%+.0f%%[/color] more collision pressure (heuristic)\n\n"
 		+ "[b]Live Utility Inspector Snapshot[/b]\n%s"
 	) % [
 		delta_pct,

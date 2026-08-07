@@ -1,4 +1,4 @@
-class_name TileId
+﻿class_name TileId
 extends RefCounted
 
 enum Type {

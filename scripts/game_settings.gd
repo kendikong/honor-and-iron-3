@@ -1,4 +1,4 @@
-class_name GameSettings
+﻿class_name GameSettings
 extends RefCounted
 
 ## Persisted display preferences (user://game_settings.cfg).
@@ -30,7 +30,7 @@ const WINDOW_MODE_LABELS: PackedStringArray = [
 
 const MAP_ZOOM_LABELS: PackedStringArray = [
 	"Fit map to window",
-	"Fixed reference (1280×720 base)",
+	"Fixed reference (1280Ã—720 base)",
 ]
 
 const TEXT_SIZE_LABELS: PackedStringArray = ["Small", "Medium", "Large"]
@@ -62,7 +62,7 @@ var planning_force_basic: bool = false
 var planning_auto_run: bool = false
 var planning_danger_area: bool = false
 var planning_auto_use_skill_after_move: bool = true
-## Experimental — visual preview only (sim + commit unchanged).
+## Experimental â€” visual preview only (sim + commit unchanged).
 var preview_show_planning_cursor: bool = true
 var preview_show_range_overlays: bool = true
 var preview_show_routes: bool = true
@@ -319,13 +319,13 @@ func format_resolution_status(window: Window, preset_index: int) -> String:
 	if window_mode == DisplayServer.WINDOW_MODE_WINDOWED:
 		var idx: int = clampi(preset_index, 0, RESOLUTION_PRESETS.size() - 1)
 		var res: Vector2i = RESOLUTION_PRESETS[idx]
-		return "Window size: %d × %d" % [res.x, res.y]
+		return "Window size: %d Ã— %d" % [res.x, res.y]
 	var screen_id: int = screen_index
 	if window != null:
 		screen_id = window.current_screen
 	screen_id = _validated_screen_index(screen_id)
 	var monitor_size: Vector2i = DisplayServer.screen_get_size(screen_id)
-	return "Using monitor: %d × %d" % [monitor_size.x, monitor_size.y]
+	return "Using monitor: %d Ã— %d" % [monitor_size.x, monitor_size.y]
 
 
 func inspector_body_font() -> int:

@@ -1,4 +1,4 @@
-# Preloads all GdUnit assertions
+﻿# Preloads all GdUnit assertions
 class_name GdUnitAssertions
 extends RefCounted
 

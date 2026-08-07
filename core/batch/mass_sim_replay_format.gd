@@ -1,4 +1,4 @@
-class_name MassSimReplayFormat
+﻿class_name MassSimReplayFormat
 extends RefCounted
 
 
@@ -8,12 +8,12 @@ static func format_run(report: MassSimBatchReport, run_id: int) -> String:
 		return "[color=#ff6b6b]Run #%d not found in loaded batch.[/color]" % run_id
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append("[b]Replay Run #%d[/b]" % run_id)
-	lines.append("Winner: %s · Turns: %d · Reason: %s" % [
+	lines.append("Winner: %s Â· Turns: %d Â· Reason: %s" % [
 		_team_name(int(row.get("winner", -1))),
 		int(row.get("turns_taken", 0)),
 		String(row.get("completion_reason", "?")),
 	])
-	lines.append("Map: %s · Tags: %s" % [
+	lines.append("Map: %s Â· Tags: %s" % [
 		String(row.get("map_layout_id", "?")),
 		str(row.get("map_tags", [])),
 	])
@@ -25,13 +25,13 @@ static func format_run(report: MassSimBatchReport, run_id: int) -> String:
 	lines.append("Classes E: %s" % str(row.get("enemy_classes", [])))
 	lines.append("")
 	lines.append("[b]Combat Telemetry[/b]")
-	lines.append("Collisions: %d · Chains: %d · Hazards: %d · Whiffs: %d" % [
+	lines.append("Collisions: %d Â· Chains: %d Â· Hazards: %d Â· Whiffs: %d" % [
 		int(row.get("wall_collisions", 0)),
 		int(row.get("chain_collisions", 0)),
 		int(row.get("hazard_landings", 0)),
 		int(row.get("execution_whiffs", 0)),
 	])
-	lines.append("Assisted Dmg: %d · Shields: %d · Overkill: %d" % [
+	lines.append("Assisted Dmg: %d Â· Shields: %d Â· Overkill: %d" % [
 		int(row.get("assisted_damage", 0)),
 		int(row.get("assisted_shields", 0)),
 		int(row.get("overkill_damage", 0)),
@@ -45,13 +45,13 @@ static func format_run(report: MassSimBatchReport, run_id: int) -> String:
 		lines.append("[b]AI Utility (last turn)[/b]")
 		var last: Dictionary = ai_rows[ai_rows.size() - 1] as Dictionary
 		var tel: Dictionary = last.get("telemetry", last) as Dictionary
-		lines.append("Turn %s · Utility keys: %s" % [str(last.get("turn", "?")), str(tel.keys())])
+		lines.append("Turn %s Â· Utility keys: %s" % [str(last.get("turn", "?")), str(tel.keys())])
 		if tel.has("total"):
 			lines.append("Final_Utility: [b]%.2f[/b]" % float(tel["total"]))
 		for key: Variant in tel.keys():
 			if str(key) == "total":
 				continue
-			lines.append("  • %s: %s" % [str(key), str(tel[key])])
+			lines.append("  â€¢ %s: %s" % [str(key), str(tel[key])])
 	return "\n".join(lines)
 
 

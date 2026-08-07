@@ -1,4 +1,4 @@
-class_name GdUnitTestSuiteReport
+﻿class_name GdUnitTestSuiteReport
 extends GdUnitReportSummary
 
 var _time_stamp: int

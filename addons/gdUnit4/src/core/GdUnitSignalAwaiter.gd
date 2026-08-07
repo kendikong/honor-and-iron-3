@@ -1,4 +1,4 @@
-class_name GdUnitSignalAwaiter
+﻿class_name GdUnitSignalAwaiter
 extends RefCounted
 
 signal signal_emitted(action :Variant)

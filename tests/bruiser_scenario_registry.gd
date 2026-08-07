@@ -1,7 +1,7 @@
 class_name BruiserScenarioRegistry
 extends RefCounted
 
-## Authoritative Bruiser factory-id → scenario runner map (P6 — not planning QA).
+## Authoritative Bruiser factory-id â†’ scenario runner map (P6 â€” not planning QA).
 
 
 static func all_entries() -> Array[Dictionary]:

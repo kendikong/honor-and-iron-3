@@ -1,4 +1,4 @@
-class_name AnalysisDashboard
+﻿class_name AnalysisDashboard
 extends Control
 
 ## Purpose: UI dashboard to view mass simulation results.

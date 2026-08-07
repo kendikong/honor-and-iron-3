@@ -1,4 +1,4 @@
-class_name StatusData
+﻿class_name StatusData
 extends RefCounted
 
 ## Represents a temporary status effect on a unit.

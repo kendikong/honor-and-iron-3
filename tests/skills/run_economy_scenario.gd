@@ -1,7 +1,7 @@
 class_name RunEconomyScenarioTest
 extends RefCounted
 
-## Run / AP economy checklist — walk keeps AP, run spends AP, skill red hides at 0 AP.
+## Run / AP economy checklist â€” walk keeps AP, run spends AP, skill red hides at 0 AP.
 
 
 static func run_all(failures: Array[String]) -> void:

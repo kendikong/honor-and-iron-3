@@ -1,4 +1,4 @@
-## Factory that selects and constructs the correct [GdParameterSetResolver] for a
+﻿## Factory that selects and constructs the correct [GdParameterSetResolver] for a
 ## parameterized test function based on how the [code]_test_parameters[/code] default
 ## value is expressed: inline array literals, a callable, or a property reference.
 class_name GdParameterSetResolverFactory

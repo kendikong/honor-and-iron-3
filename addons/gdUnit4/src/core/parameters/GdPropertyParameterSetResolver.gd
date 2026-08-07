@@ -1,4 +1,4 @@
-class_name GdPropertyParameterSetResolver
+﻿class_name GdPropertyParameterSetResolver
 extends GdParameterSetResolver
 
 var _parameters: Array[Array]

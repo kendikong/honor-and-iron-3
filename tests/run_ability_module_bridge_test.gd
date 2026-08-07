@@ -1,14 +1,10 @@
-extends Node
+extends SceneTree
 
 ## Headless smoke: modular finalize preserves Knight/Bruiser effect fingerprints.
-## Extends Node so project autoloads (EventBus) are registered before DataLibrary compiles.
+## SceneTree + body checks (not Node --script): autoloads register before DataLibrary compiles.
 
 
-func _ready() -> void:
-	call_deferred("_run")
-
-
-func _run() -> void:
+func _initialize() -> void:
 	var failures: Array[String] = []
 	DataLibrary.reset_cache()
 	_check_bruiser(failures)
@@ -16,12 +12,12 @@ func _run() -> void:
 	_check_violent_collision_modules(failures)
 	if failures.is_empty():
 		print("ABILITY_MODULE_BRIDGE_TEST: PASS")
-		get_tree().quit(0)
+		quit(0)
 	else:
 		print("ABILITY_MODULE_BRIDGE_TEST: FAIL")
 		for f: String in failures:
 			printerr("  [FAIL] %s" % f)
-		get_tree().quit(1)
+		quit(1)
 
 
 func _check_bruiser(failures: Array[String]) -> void:
@@ -32,14 +28,14 @@ func _check_bruiser(failures: Array[String]) -> void:
 	for ab: AbilityData in bruiser.abilities:
 		if ab == null:
 			continue
-		if ab.modules.is_empty() and not ab.effects.is_empty():
-			failures.append("%s has effects but empty modules" % String(ab.id))
+		if ab.modules.is_empty():
+			failures.append("%s must have non-empty modules after factory finalize" % String(ab.id))
 		if ab.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 			if ab.primary_resource != GameEnums.CostResource.MP:
 				failures.append("%s PRE_MOVE primary_resource not MP" % String(ab.id))
 			if not ab.has_tag(AbilityModuleBridge.TAG_POSITIONING):
 				failures.append("%s PRE_MOVE missing positioning tag" % String(ab.id))
-		elif ab.kind == GameEnums.AbilityKind.CLASS_SKILL:
+		elif ab.planner_group == GameEnums.PlannerGroup.ACTION:
 			if ab.primary_resource != GameEnums.CostResource.AP:
 				failures.append("%s ACTION primary_resource not AP" % String(ab.id))
 
@@ -51,15 +47,26 @@ func _check_knight(failures: Array[String]) -> void:
 		return
 	var swap: AbilityData = null
 	for ab: AbilityData in knight.abilities:
-		if ab != null and ab.id == &"knight_swap":
+		if ab == null:
+			continue
+		if ab.modules.is_empty():
+			failures.append("%s must have non-empty modules after factory finalize" % String(ab.id))
+		if ab.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
+			if ab.primary_resource != GameEnums.CostResource.MP:
+				failures.append("%s PRE_MOVE primary_resource not MP" % String(ab.id))
+			if not ab.has_tag(AbilityModuleBridge.TAG_POSITIONING):
+				failures.append("%s PRE_MOVE missing positioning tag" % String(ab.id))
+		elif ab.planner_group == GameEnums.PlannerGroup.ACTION:
+			if ab.primary_resource != GameEnums.CostResource.AP:
+				failures.append("%s ACTION primary_resource not AP" % String(ab.id))
+		if ab.id == &"knight_swap":
 			swap = ab
-			break
 	if swap == null:
 		failures.append("knight_swap missing")
 		return
 	if swap.planner_group != GameEnums.PlannerGroup.PRE_MOVE:
 		failures.append("knight_swap planner_group not PRE_MOVE")
-	if swap.effects.is_empty() or swap.effects[0].type != GameEnums.EffectType.SWAP:
+	if swap.modules.is_empty() or swap.modules[0].primary_type != GameEnums.EffectType.SWAP:
 		failures.append("knight_swap lost SWAP effect after finalize")
 
 
@@ -80,14 +87,27 @@ func _check_violent_collision_modules(failures: Array[String]) -> void:
 		return
 	if vc.modules[1].gate != GameEnums.ModuleGate.IF_COLLIDED:
 		failures.append("violent_collision module[1] gate not IF_COLLIDED")
-	if vc.effects.is_empty() or not vc.effects[0].modifiers.has("violent_collision_recast"):
-		failures.append("violent_collision legacy effects lost violent_collision_recast")
-	if vc.effects.size() != 1:
+	if not AbilitySystem.ability_has_module_gate(vc, GameEnums.ModuleGate.IF_COLLIDED):
+		failures.append("ability_has_module_gate IF_COLLIDED false for violent_collision")
+	if vc.modules.is_empty() or vc.modules[0].legacy_modifiers.has("violent_collision_recast"):
 		failures.append(
-			"violent_collision legacy effects should stay 1 DASH (got %d)" % vc.effects.size()
+			"violent_collision flat effects must not stamp violent_collision_recast (gate is modular)"
 		)
-	if not vc.effects[0].modifiers.has("bulldoze"):
+	if vc.modules.size() != 2:
+		failures.append(
+			"violent_collision modular profile should contain DASH + gated MOVE (got %d)" % vc.modules.size()
+		)
+	if not vc.modules[0].legacy_modifiers.has("bulldoze"):
 		failures.append("violent_collision lost bulldoze modifier")
+	if not AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_COLLIDED, true):
+		failures.append("evaluate_module_gate IF_COLLIDED should pass when collided=true")
+	if AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_COLLIDED, false):
+		failures.append("evaluate_module_gate IF_COLLIDED should fail when collided=false")
+	if AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_ADJACENT_ENEMY, true):
+		failures.append("unimplemented gates must fail closed")
+	## Factory must not leave anonymous stamp after ensure + finalize.
+	if vc.modules[0].legacy_modifiers.has("violent_collision_recast"):
+		failures.append("factory path left violent_collision_recast stamp")
 	## Charge Strike: MOVE module + DAMAGE module with PUSH layer (not three peer modules).
 	var charge: AbilityData = null
 	for ab2: AbilityData in bruiser.abilities:

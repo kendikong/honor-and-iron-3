@@ -1,4 +1,4 @@
-class_name MapData
+﻿class_name MapData
 extends Resource
 
 ## Purpose: Associates a human-readable name, description, and an optional

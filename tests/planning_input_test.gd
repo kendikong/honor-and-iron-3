@@ -7,6 +7,12 @@ static func run_all(failures: Array[String]) -> void:
 	## Ability economy, action-range, displacement, and range-approach parity live in
 	## the production-fixture suites run by PlanningQaGate: skill scenarios,
 	## action-range regression, trample E2E, and the checklist gate.
+	var probe: CombatDirector = CombatDirector.new()
+	if probe == null:
+		failures.append(
+			"PlanningInputTest: CombatDirector.new() failed Ã¢â‚¬â€ EventBus/autoload not ready",
+		)
+		return
 	var tests: Array[Callable] = [
 		_test_force_basic_flag,
 		_test_undoable_action_director,
@@ -24,6 +30,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_awaiting_plan_refresh,
 		_test_dash_arm_survives_plan_refresh,
 		_test_dash_self_click_blocks_false_wait,
+		_test_violent_collision_gated_aim,
 		_test_hover_cursor_matches_click_commit_slots,
 		_test_planning_display_mp_left,
 		_test_undo_movement_action_preserves_premove,
@@ -38,8 +45,15 @@ static func run_all(failures: Array[String]) -> void:
 		PlanningDragE2EHarness.cleanup_all()
 
 
-static func _new_director() -> CombatDirector:
-	return CombatDirector.new()
+static func _new_director(failures: Array[String] = []) -> CombatDirector:
+	var director: CombatDirector = CombatDirector.new()
+	if director == null:
+		if not failures.is_empty():
+			failures.append(
+				"PlanningInputTest: CombatDirector.new() returned null (script/autoload broken)",
+			)
+		return null
+	return director
 
 
 static func _register_fixture(input: CombatPlanningInput, director: CombatDirector) -> void:
@@ -62,10 +76,10 @@ static func _bowling_charge_arm_fixture() -> Dictionary:
 	dash.display_name = "Bowling Charge"
 	dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	dash.targeting_flags = AbilityData._targeting_mode_to_flags(dash.targeting_mode)
-	var dash_eff := EffectData.new()
-	dash_eff.type = GameEnums.EffectType.DASH
+	var dash_eff := AbilityModule.new()
+	dash_eff.primary_type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	var unit := UnitState.new()
 	unit.id = 1
 	unit.team = GameEnums.Team.PLAYER
@@ -192,10 +206,10 @@ static func _test_planning_action_range_tiles(failures: Array[String]) -> void:
 	unit.position = Vector2i(3, 3)
 	board.units = [unit]
 	var dash := AbilityData.new()
-	var dash_eff := EffectData.new()
+	var dash_eff := AbilityModule.new()
 	dash_eff.type = GameEnums.EffectType.DASH
 	dash_eff.amount = 2
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	var tiles: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
 		board, unit, dash, unit.position, [],
 	)
@@ -214,18 +228,18 @@ static func _test_planning_action_range_tiles(failures: Array[String]) -> void:
 
 static func _test_offensive_dash_heuristic(failures: Array[String]) -> void:
 	var bulldoze_dash := AbilityData.new()
-	var dash_eff := EffectData.new()
+	var dash_eff := AbilityModule.new()
 	dash_eff.type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
-	var bulldoze_eff := EffectData.new()
+	var bulldoze_eff := AbilityModule.new()
 	bulldoze_eff.type = GameEnums.EffectType.BULLDOZE
 	bulldoze_eff.amount = 1
-	bulldoze_dash.effects = [dash_eff, bulldoze_eff]
+	bulldoze_dash.modules = [dash_eff, bulldoze_eff]
 	bulldoze_dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	if not AbilitySystem.ability_is_offensive_dash(bulldoze_dash):
 		failures.append("PlanningInputTest: dash+bulldoze enemy skill should be offensive dash")
 	var mobility_dash := AbilityData.new()
-	mobility_dash.effects = [dash_eff]
+	mobility_dash.modules = [dash_eff]
 	mobility_dash.targeting_mode = GameEnums.TargetingMode.SELF
 	mobility_dash.can_target_self = true
 	if AbilitySystem.ability_is_offensive_dash(mobility_dash):
@@ -239,10 +253,10 @@ static func _test_action_range_auto_run_ap_gate(failures: Array[String]) -> void
 	var skill := AbilityData.new()
 	skill.kind = GameEnums.AbilityKind.CLASS_SKILL
 	skill.action_point_cost = 3
-	var dmg := EffectData.new()
+	var dmg := AbilityModule.new()
 	dmg.type = GameEnums.EffectType.DAMAGE
 	dmg.amount = 2
-	skill.effects = [dmg]
+	skill.modules = [dmg]
 	var run_tile := Vector2i(5, 2)
 	if not AbilitySystem.movement_requires_run(board, unit, run_tile, []):
 		failures.append("PlanningInputTest: auto-run AP gate setup tile should require run")
@@ -289,9 +303,10 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 	input.auto_use_skill_after_move = true
 	var dash := AbilityData.new()
 	dash.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
-	var dash_eff := EffectData.new()
+	dash.planner_group = GameEnums.PlannerGroup.PRE_MOVE
+	var dash_eff := AbilityModule.new()
 	dash_eff.type = GameEnums.EffectType.DASH
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	var unit := UnitState.new()
 	unit.id = 1
 	var run_only_slots: Dictionary = {
@@ -330,11 +345,12 @@ static func _test_cursor_matches_commit_slots(failures: Array[String]) -> void:
 		)
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.id = &"knight_swap"
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	var walk_swap_slots: Dictionary = {
 		"pre": [
 			TimelineAction.make_move(
@@ -508,10 +524,10 @@ static func _test_cursor_omits_unaffordable_run_skill_pair(failures: Array[Strin
 	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	dash.display_name = "Bowling Charge"
 	dash.action_point_cost = 3
-	var dash_eff := EffectData.new()
+	var dash_eff := AbilityModule.new()
 	dash_eff.type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	var unit := UnitState.new()
 	unit.id = 1
 	unit.team = GameEnums.Team.PLAYER
@@ -691,9 +707,10 @@ static func _test_audit_regression_fixes(failures: Array[String]) -> void:
 	heal.targeting_flags = AbilityData._targeting_mode_to_flags(heal.targeting_mode)
 	var dash := AbilityData.new()
 	dash.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
-	var dash_eff := EffectData.new()
+	dash.planner_group = GameEnums.PlannerGroup.PRE_MOVE
+	var dash_eff := AbilityModule.new()
 	dash_eff.type = GameEnums.EffectType.DASH
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	unit.active_abilities = [heal, dash]
 	board.units = [unit]
 	GridSystem.set_occupant(board, unit.position, unit.id)
@@ -745,10 +762,10 @@ static func _test_auto_skill_after_move_arms_dash(failures: Array[String]) -> vo
 	unit.ability.points_left = 2
 	var dash := AbilityData.new()
 	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
-	var dash_eff := EffectData.new()
+	var dash_eff := AbilityModule.new()
 	dash_eff.type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	dash.display_name = "Bowling Charge"
 	dash.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	dash.targeting_flags = AbilityData._targeting_mode_to_flags(dash.targeting_mode)
@@ -873,10 +890,10 @@ static func _test_awaiting_plan_refresh(failures: Array[String]) -> void:
 	var dash := AbilityData.new()
 	dash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	dash.display_name = "Bowling Charge"
-	var dash_eff := EffectData.new()
+	var dash_eff := AbilityModule.new()
 	dash_eff.type = GameEnums.EffectType.DASH
 	dash_eff.amount = 3
-	dash.effects = [dash_eff]
+	dash.modules = [dash_eff]
 	unit.active_abilities = [dash]
 	board.units = [unit]
 	GridSystem.set_occupant(board, unit.position, unit.id)
@@ -935,6 +952,9 @@ static func _test_dash_self_click_blocks_false_wait(failures: Array[String]) -> 
 	var director: CombatDirector = fixture["director"] as CombatDirector
 	var unit: UnitState = fixture["unit"] as UnitState
 	var dash: AbilityData = fixture["dash"] as AbilityData
+	if input == null or director == null:
+		failures.append("PlanningInputTest: bowling charge fixture missing input/director")
+		return
 	if not AbilitySystem.planning_arms_on_self_tile(unit, dash):
 		failures.append("PlanningInputTest: bowling charge should arm awaiting flow on self click")
 	var dash_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
@@ -945,6 +965,330 @@ static func _test_dash_self_click_blocks_false_wait(failures: Array[String]) -> 
 		failures.append("PlanningInputTest: dash self click must arm awaiting action")
 	if director.unit_has_wait_planned(1):
 		failures.append("PlanningInputTest: dash self click must not plan wait")
+
+
+static func _violent_collision_planning_fixture(
+	failures: Array[String],
+	enemy_pos: Vector2i = Vector2i(-9999, -9999),
+) -> Dictionary:
+	var board: BoardState = BruiserQaHarness.make_plain_board(Vector2i(8, 6))
+	BruiserQaHarness.place_bruiser(
+		board,
+		1,
+		Vector2i(2, 3),
+		BruiserQaHarness.bruiser_with_ability(&"bruiser_violent_collision"),
+	)
+	if enemy_pos.x != -9999:
+		BruiserQaHarness.place_dummy(board, 2, enemy_pos)
+	var input := CombatPlanningInput.new()
+	var director := _new_director(failures)
+	if director == null:
+		return {}
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	var unit: UnitState = BruiserQaHarness.unit_on_board(board, 1)
+	var vc_idx: int = BruiserQaHarness.ability_index(unit, &"bruiser_violent_collision")
+	if vc_idx < 0:
+		failures.append("PlanningInputTest: violent_collision missing on bruiser fixture")
+		return {}
+	director.selected_ability_index = vc_idx
+	input._director = director
+	_register_fixture(input, director)
+	return {
+		"input": input,
+		"director": director,
+		"board": board,
+		"unit": unit,
+		"vc_idx": vc_idx,
+	}
+
+
+static func _arm_violent_collision_awaiting(
+	failures: Array[String],
+	fixture: Dictionary,
+) -> bool:
+	var input: CombatPlanningInput = fixture.get("input") as CombatPlanningInput
+	var director: CombatDirector = fixture.get("director") as CombatDirector
+	var unit: UnitState = fixture.get("unit") as UnitState
+	if input == null or director == null or unit == null:
+		failures.append("PlanningInputTest: violent_collision fixture incomplete")
+		return false
+	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append("PlanningInputTest: violent_collision self click must arm awaiting")
+		return false
+	if not input.awaiting_targeting_active():
+		failures.append("PlanningInputTest: violent_collision must enter awaiting after arm")
+		return false
+	return true
+
+
+static func _slots_invalid(slots: Dictionary) -> bool:
+	if not slots.has("invalid"):
+		return false
+	var v: Variant = slots["invalid"]
+	if typeof(v) == TYPE_BOOL:
+		return v
+	if typeof(v) == TYPE_STRING:
+		return v != ""
+	return false
+
+
+static func _action_from_slots(slots: Dictionary) -> TimelineAction:
+	var actions: Array = slots.get("action", []) as Array
+	if actions.is_empty():
+		return null
+	return actions[0] as TimelineAction
+
+
+static func _test_violent_collision_gated_aim(failures: Array[String]) -> void:
+	## Ã‚Â§2.7 gated-aim: dash-only when gate inactive; stay awaiting until follow-up aimed when gate active.
+	var empty_fixture: Dictionary = _violent_collision_planning_fixture(failures)
+	if empty_fixture.is_empty():
+		return
+	if not _arm_violent_collision_awaiting(failures, empty_fixture):
+		return
+	var empty_input: CombatPlanningInput = empty_fixture["input"] as CombatPlanningInput
+	var empty_director: CombatDirector = empty_fixture["director"] as CombatDirector
+	var empty_board: BoardState = empty_fixture["board"] as BoardState
+	var empty_unit: UnitState = empty_fixture["unit"] as UnitState
+	var empty_skill: AbilityData = BruiserQaHarness.ability_on_unit(
+		empty_unit, &"bruiser_violent_collision",
+	)
+	var dash_only_cell := Vector2i(4, 3)
+	var empty_build: Dictionary = empty_input._build_commit_slots_at_cell(1, dash_only_cell)
+	if _slots_invalid(empty_build):
+		failures.append(
+			"PlanningInputTest: violent_collision empty dash build invalid: %s" % empty_build["invalid"],
+		)
+	var empty_preview: Dictionary = empty_input._final_commit_slots_for_interaction(1, dash_only_cell)
+	var empty_action: TimelineAction = _action_from_slots(empty_preview)
+	if empty_action == null:
+		failures.append("PlanningInputTest: violent_collision empty-line dash must build preview action")
+		return
+	if empty_action.awaiting_target:
+		failures.append(
+			"PlanningInputTest: violent_collision dash without collision must not stay awaiting",
+		)
+	if empty_action.has_module_coord(1):
+		failures.append(
+			"PlanningInputTest: violent_collision empty dash must not require module 1 coord",
+		)
+	if not AbilitySystem.planning_gated_followup_active(
+		empty_board, empty_unit, empty_skill, dash_only_cell,
+	):
+		pass
+	else:
+		failures.append("PlanningInputTest: violent_collision empty-line fixture should not predict collision")
+	if _slots_invalid(empty_preview):
+		failures.append(
+			"PlanningInputTest: violent_collision empty dash preview invalid: %s" % empty_preview["invalid"],
+		)
+	if not empty_director.commit_from_slots(1, empty_preview):
+		failures.append("PlanningInputTest: violent_collision empty dash commit must succeed")
+		return
+	if empty_director.find_awaiting_action(1) != null:
+		failures.append("PlanningInputTest: violent_collision empty dash must finalize (not awaiting)")
+	var committed: TimelineAction = empty_director.plan_action.entries[0] as TimelineAction
+	if committed == null or committed.awaiting_target:
+		failures.append("PlanningInputTest: violent_collision committed dash must be simulatable")
+	if committed != null and committed.has_module_coord(1):
+		failures.append("PlanningInputTest: violent_collision dash-only commit must omit module 1")
+	## Collision path: first dash aim stays awaiting; second MOVE aim finalizes with module_coords parity.
+	var collide_fixture: Dictionary = _violent_collision_planning_fixture(
+		failures, Vector2i(4, 3),
+	)
+	if collide_fixture.is_empty():
+		return
+	if not _arm_violent_collision_awaiting(failures, collide_fixture):
+		return
+	var collide_input: CombatPlanningInput = collide_fixture["input"] as CombatPlanningInput
+	var collide_director: CombatDirector = collide_fixture["director"] as CombatDirector
+	var collide_board: BoardState = collide_fixture["board"] as BoardState
+	var collide_unit: UnitState = collide_fixture["unit"] as UnitState
+	var collide_skill: AbilityData = BruiserQaHarness.ability_on_unit(
+		collide_unit, &"bruiser_violent_collision",
+	)
+	var dash_cell := Vector2i(5, 3)
+	if not AbilitySystem.planning_gated_followup_active(
+		collide_board, collide_unit, collide_skill, dash_cell,
+	):
+		failures.append("PlanningInputTest: violent_collision collision fixture must predict gated follow-up")
+	var dash_preview: Dictionary = collide_input._final_commit_slots_for_interaction(1, dash_cell)
+	var dash_action: TimelineAction = _action_from_slots(dash_preview)
+	if dash_action == null:
+		failures.append("PlanningInputTest: violent_collision collision dash must build preview action")
+		return
+	if not dash_action.awaiting_target:
+		failures.append(
+			"PlanningInputTest: violent_collision collision dash preview must stay awaiting for module 1",
+		)
+	if dash_action.awaiting_module_index != 1:
+		failures.append(
+			"PlanningInputTest: violent_collision collision dash preview awaiting_module_index expected 1 got %d"
+			% dash_action.awaiting_module_index,
+		)
+	if _slots_invalid(dash_preview):
+		failures.append(
+			"PlanningInputTest: violent_collision collision dash preview must not be invalid: %s"
+			% dash_preview["invalid"],
+		)
+	if not collide_director.commit_from_slots(1, dash_preview):
+		failures.append("PlanningInputTest: violent_collision collision dash commit must arm module 1")
+		return
+	var plan_awaiting: TimelineAction = collide_director.find_awaiting_action(1)
+	if plan_awaiting == null or not plan_awaiting.awaiting_target:
+		failures.append("PlanningInputTest: violent_collision must remain awaiting after collision dash")
+	if plan_awaiting != null and plan_awaiting.awaiting_module_index != 1:
+		failures.append(
+			"PlanningInputTest: violent_collision plan awaiting_module_index expected 1 got %d"
+			% (plan_awaiting.awaiting_module_index if plan_awaiting != null else -1),
+		)
+	var follow_cell := Vector2i(6, 3)
+	var follow_preview: Dictionary = collide_input._final_commit_slots_for_interaction(1, follow_cell)
+	var follow_action: TimelineAction = _action_from_slots(follow_preview)
+	if follow_action == null:
+		failures.append("PlanningInputTest: violent_collision follow-up MOVE must build preview action")
+		return
+	if _slots_invalid(follow_preview):
+		failures.append(
+			"PlanningInputTest: violent_collision follow-up preview invalid: %s" % follow_preview["invalid"],
+		)
+	if follow_action.awaiting_target:
+		failures.append("PlanningInputTest: violent_collision follow-up preview must finalize (not awaiting)")
+	if not follow_action.has_module_coord(1) or follow_action.get_module_coord(1) != follow_cell:
+		failures.append("PlanningInputTest: violent_collision follow-up preview must set module_coords[1]")
+	var dash_click: Dictionary = collide_input._final_commit_slots_for_click_at_cell(1, follow_cell, Vector2.ZERO)
+	if _slots_invalid(dash_click):
+		failures.append(
+			"PlanningInputTest: violent_collision click commit slots invalid: %s" % dash_click["invalid"],
+		)
+	var click_action: TimelineAction = _action_from_slots(dash_click)
+	if click_action == null or click_action.get_module_coord(1) != follow_action.get_module_coord(1):
+		failures.append("PlanningInputTest: violent_collision preview/commit module_coords[1] mismatch")
+	if not collide_director.commit_from_slots(1, follow_preview):
+		failures.append("PlanningInputTest: violent_collision follow-up commit must succeed")
+		return
+	var finalized: TimelineAction = collide_director.plan_action.entries[0] as TimelineAction
+	if finalized == null or finalized.awaiting_target:
+		failures.append("PlanningInputTest: violent_collision must finalize after follow-up aim")
+	if finalized != null:
+		if not finalized.has_module_coord(0) or finalized.get_module_coord(0) != dash_cell:
+			failures.append("PlanningInputTest: violent_collision finalized module_coords[0] mismatch")
+		if not finalized.has_module_coord(1) or finalized.get_module_coord(1) != follow_cell:
+			failures.append("PlanningInputTest: violent_collision finalized module_coords[1] mismatch")
+	## Ã‚Â§2.7 rule 5 + preview==sim: completed gated plan must preview_commit_valid and resolve to follow-up tile.
+	if finalized != null and not finalized.awaiting_target:
+		var valid_reason: String = collide_director.preview_commit_valid(1, [finalized])
+		if valid_reason != "":
+			failures.append(
+				"PlanningInputTest: violent_collision finalized plan preview_commit_valid failed: %s"
+				% valid_reason,
+			)
+		var sim_plan := Timeline.new()
+		sim_plan.add(finalized.clone())
+		var sim_result: SimResult = Simulator.simulate(collide_board.clone(), sim_plan)
+		var sim_bruiser: UnitState = sim_result.final_state.get_unit_by_id(1)
+		if sim_bruiser == null or sim_bruiser.position != follow_cell:
+			failures.append(
+				"PlanningInputTest: violent_collision sim end expected %s got %s"
+				% [
+					str(follow_cell),
+					str(sim_bruiser.position if sim_bruiser != null else Vector2i.ZERO),
+				],
+			)
+	## Invalid follow-up aim (out of MOVE 2 range) must fail loud at planning.
+	var bad_fixture: Dictionary = _violent_collision_planning_fixture(
+		failures, Vector2i(4, 3),
+	)
+	if not bad_fixture.is_empty() and _arm_violent_collision_awaiting(failures, bad_fixture):
+		var bad_input: CombatPlanningInput = bad_fixture["input"] as CombatPlanningInput
+		var bad_director: CombatDirector = bad_fixture["director"] as CombatDirector
+		var bad_dash_preview: Dictionary = bad_input._final_commit_slots_for_interaction(1, dash_cell)
+		if not bad_director.commit_from_slots(1, bad_dash_preview):
+			failures.append(
+				"PlanningInputTest: violent_collision bad-path setup must arm module 1 awaiting",
+			)
+		else:
+			var bad_follow := Vector2i(7, 5) ## in-bounds (8x6); Manhattan 4 from post-dash (~5,3) > MOVE 2
+			var bad_slots: Dictionary = bad_input._final_commit_slots_for_interaction(1, bad_follow)
+			if not _slots_invalid(bad_slots):
+				failures.append(
+					"PlanningInputTest: violent_collision out-of-range follow-up must mark slots invalid",
+				)
+			else:
+				var inv: Variant = bad_slots.get("invalid", "")
+				var inv_str: String = str(inv) if typeof(inv) != TYPE_BOOL else "invalid"
+				if inv_str != "gated_followup_invalid_dest":
+					failures.append(
+						"PlanningInputTest: violent_collision invalid follow-up reason expected gated_followup_invalid_dest got %s"
+						% inv_str,
+					)
+			if bad_director.commit_from_slots(1, bad_slots):
+				failures.append(
+					"PlanningInputTest: violent_collision commit_from_slots must reject out-of-range follow-up",
+				)
+			## Force a completed action with illegal dest through preview_commit_valid / sim.
+			var illegal := TimelineAction.make_ability(
+				1, collide_skill, dash_cell, -1, GameEnums.MoveTiming.PRE_ACTION, [],
+			)
+			illegal.module_coords = [dash_cell, bad_follow]
+			illegal.awaiting_target = false
+			var illegal_reason: String = bad_director.preview_commit_valid(1, [illegal])
+			if illegal_reason == "":
+				failures.append(
+					"PlanningInputTest: violent_collision illegal follow-up dest must fail preview_commit_valid",
+				)
+			var illegal_plan := Timeline.new()
+			illegal_plan.add(illegal)
+			var illegal_sim: SimResult = Simulator.simulate(
+				(bad_fixture["board"] as BoardState).clone(), illegal_plan,
+			)
+			var illegal_failed: bool = false
+			for ev2: SimEvent in illegal_sim.events:
+				if (
+					ev2 != null
+					and ev2.type == GameEnums.SimEventType.ACTION_FAILED
+					and String(ev2.data.get("reason", "")) == "gated_followup_invalid_dest"
+				):
+					illegal_failed = true
+					break
+			if not illegal_failed:
+				failures.append(
+					"PlanningInputTest: violent_collision illegal follow-up must ACTION_FAILED gated_followup_invalid_dest",
+				)
+			## Missing follow-up on a completed (non-awaiting) collision plan Ã¢â€ â€™ fail loud.
+			var missing := TimelineAction.make_ability(
+				1, collide_skill, dash_cell, -1, GameEnums.MoveTiming.PRE_ACTION, [],
+			)
+			missing.module_coords = [dash_cell]
+			missing.awaiting_target = false
+			var miss_reason: String = bad_director.preview_commit_valid(1, [missing])
+			if miss_reason == "":
+				failures.append(
+					"PlanningInputTest: violent_collision missing module_coords[1] must fail preview_commit_valid",
+				)
+			var miss_plan := Timeline.new()
+			miss_plan.add(missing)
+			var miss_sim: SimResult = Simulator.simulate(
+				(bad_fixture["board"] as BoardState).clone(), miss_plan,
+			)
+			var miss_failed: bool = false
+			for ev: SimEvent in miss_sim.events:
+				if (
+					ev != null
+					and ev.type == GameEnums.SimEventType.ACTION_FAILED
+					and String(ev.data.get("reason", "")) == "gated_followup_missing_aim"
+				):
+					miss_failed = true
+					break
+			if not miss_failed:
+				failures.append(
+					"PlanningInputTest: violent_collision missing follow-up must ACTION_FAILED gated_followup_missing_aim",
+				)
 
 
 static func _plain_board_with_unit(
@@ -978,13 +1322,14 @@ static func _test_action_range_hidden_after_premove_mp(failures: Array[String]) 
 	var unit: UnitState = setup["unit"] as UnitState
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.movement_point_cost = 1
 	swap.action_point_cost = 0
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	var swap_eff := EffectData.new()
+	var swap_eff := AbilityModule.new()
 	swap_eff.type = GameEnums.EffectType.SWAP
-	swap.effects = [swap_eff]
+	swap.modules = [swap_eff]
 	if not AbilitySystem.can_show_planning_action_range_after_premove(
 		board, unit, swap, Vector2i(1, 2), false,
 	):
@@ -1009,7 +1354,7 @@ static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String
 	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	bash.action_point_cost = 1
 	bash.range_tiles = 1
-	bash.effects = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
+	bash.modules = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1076,7 +1421,7 @@ static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]
 	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	bash.action_point_cost = 1
 	bash.range_tiles = 1
-	bash.effects = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
+	bash.modules = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1137,7 +1482,7 @@ static func _test_shield_bash_preview_pushes(failures: Array[String]) -> void:
 	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	bash.action_point_cost = 1
 	bash.range_tiles = 1
-	bash.effects = [
+	bash.modules = [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
 		DataLibrary._effect(GameEnums.EffectType.PUSH, 2),
 	]
@@ -1323,7 +1668,7 @@ static func _test_committed_action_approach_uses_premove_slot(failures: Array[St
 	hook.range_tiles = 3
 	hook.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	hook.targeting_flags = AbilityData._targeting_mode_to_flags(hook.targeting_mode)
-	hook.effects = [
+	hook.modules = [
 		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
 		DataLibrary._effect(GameEnums.EffectType.PULL, 2),
 	]
@@ -1418,14 +1763,15 @@ static func _test_undo_movement_action_preserves_premove(failures: Array[String]
 			board.set_tile_terrain(Vector2i(x, y), plain)
 	var trample := AbilityData.new()
 	trample.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	trample.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	trample.id = &"knight_trampling_advance"
 	trample.action_point_cost = 1
 	trample.movement_point_cost = 2
 	trample.targeting_flags = GameEnums.TargetingFlags.TILE
-	var move_eff := EffectData.new()
+	var move_eff := AbilityModule.new()
 	move_eff.type = GameEnums.EffectType.MOVE
 	move_eff.amount = 2
-	trample.effects = [move_eff]
+	trample.modules = [move_eff]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1477,17 +1823,18 @@ static func _test_swap_undo_cascades_all_plans_after(failures: Array[String]) ->
 			board.set_tile_terrain(Vector2i(x, y), plain)
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.id = &"knight_swap"
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	var bash := AbilityData.new()
 	bash.kind = GameEnums.AbilityKind.CLASS_SKILL
 	bash.id = &"knight_shield_bash"
 	bash.action_point_cost = 1
 	bash.range_tiles = 1
-	bash.effects = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
+	bash.modules = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1549,11 +1896,12 @@ static func _test_walk_then_swap_commit_appends_skill(failures: Array[String]) -
 			board.set_tile_terrain(Vector2i(x, y), plain)
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.id = &"knight_swap"
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1614,11 +1962,12 @@ static func _test_swap_ally_out_of_range_click_parity(failures: Array[String]) -
 			board.set_tile_terrain(Vector2i(x, y), plain)
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.id = &"knight_swap"
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1701,11 +2050,12 @@ static func _test_swap_refresh_updates_live_board(failures: Array[String]) -> vo
 			board.set_tile_terrain(Vector2i(x, y), plain)
 	var swap := AbilityData.new()
 	swap.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	swap.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	swap.id = &"knight_swap"
 	swap.movement_point_cost = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	swap.targeting_flags = AbilityData._targeting_mode_to_flags(swap.targeting_mode)
-	swap.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	swap.modules = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
 	var knight := UnitState.new()
 	knight.id = 1
 	knight.team = GameEnums.Team.PLAYER
@@ -1761,3 +2111,4 @@ static func _test_ability_scroll_clears_hover_preview_cache(failures: Array[Stri
 		failures.append(
 			"PlanningInputTest: ability change must invalidate hover preview cache",
 		)
+

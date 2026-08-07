@@ -1,0 +1,2153 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.2 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+ALSA lib confmisc.c:855:(parse_card) cannot find card '0'
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_card_inum returned error: No such file or directory
+ALSA lib confmisc.c:422:(snd_func_concat) error evaluating strings
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_concat returned error: No such file or directory
+ALSA lib confmisc.c:1342:(snd_func_refer) error evaluating name
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_refer returned error: No such file or directory
+ALSA lib conf.c:5731:(snd_config_expand) Evaluate error: No such file or directory
+ALSA lib pcm.c:2721:(snd_pcm_open_noupdate) Unknown PCM default
+ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
+   at: init_output_device (drivers/alsa/audio_driver_alsa.cpp:97)
+WARNING: All audio drivers failed, falling back to the dummy driver.
+     at: initialize (servers/audio/audio_server.cpp:258)
+
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/shadow_tuning.gd:329)
+WARNING: The local variable "strength" is shadowing an already-declared function at line 132 in the current class.
+     at: GDScript::reload (res://scripts/cloud_tuning.gd:95)
+WARNING: The local variable "scale_tiles" is shadowing an already-declared function at line 150 in the current class.
+     at: GDScript::reload (res://scripts/cloud_tuning.gd:96)
+WARNING: The local variable "mask_steps" is shadowing an already-declared function at line 146 in the current class.
+     at: GDScript::reload (res://scripts/cloud_tuning.gd:99)
+WARNING: The local variable "shape_mix" is shadowing an already-declared function at line 154 in the current class.
+     at: GDScript::reload (res://scripts/cloud_tuning.gd:100)
+WARNING: The local variable "shape_scale" is shadowing an already-declared function at line 158 in the current class.
+     at: GDScript::reload (res://scripts/cloud_tuning.gd:101)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://autoload/weather_bus.gd:624)
+WARNING: The parameter "sun_dir" is never used in the function "shadow_cast_direction_pixels_for_sun()". If this is intended, prefix it with an underscore: "_sun_dir".
+     at: GDScript::reload (res://autoload/weather_bus.gd:691)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/display_window_helper.gd:26)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/display_window_helper.gd:34)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/display_window_helper.gd:37)
+WARNING: The local function parameter "owner" is shadowing an already-declared property in the base class "Node".
+     at: GDScript::reload (res://ui/menu_navigation.gd:9)
+WARNING: The local function parameter "owner" is shadowing an already-declared property in the base class "Node".
+     at: GDScript::reload (res://ui/menu_navigation.gd:15)
+WARNING: The local function parameter "owner" is shadowing an already-declared property in the base class "Node".
+     at: GDScript::reload (res://ui/menu_navigation.gd:20)
+WARNING: The local variable "owner" is shadowing an already-declared property in the base class "Node".
+     at: GDScript::reload (res://ui/menu_navigation.gd:27)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://data/definitions/ability_data.gd:75)
+WARNING: The parameter "board" is never used in the function "heal()". If this is intended, prefix it with an underscore: "_board".
+     at: GDScript::reload (res://core/systems/combat_system.gd:706)
+WARNING: The parameter "board" is never used in the function "add_armor()". If this is intended, prefix it with an underscore: "_board".
+     at: GDScript::reload (res://core/systems/combat_system.gd:727)
+WARNING: The local variable "immune_id" is declared but never used in the block. If this is intended, prefix it with an underscore: "_immune_id".
+     at: GDScript::reload (res://core/systems/physics_system.gd:235)
+WARNING: The parameter "board" is never used in the function "get_affected_tiles()". If this is intended, prefix it with an underscore: "_board".
+     at: GDScript::reload (res://core/systems/grid_system.gd:70)
+WARNING: The parameter "move_cost" is never used in the function "get_reachable_tiles()". If this is intended, prefix it with an underscore: "_move_cost".
+     at: GDScript::reload (res://core/systems/movement_system.gd:18)
+WARNING: The parameter "move_cost" is never used in the function "find_path()". If this is intended, prefix it with an underscore: "_move_cost".
+     at: GDScript::reload (res://core/systems/movement_system.gd:70)
+WARNING: The local variable "move_cost" is declared but never used in the block. If this is intended, prefix it with an underscore: "_move_cost".
+     at: GDScript::reload (res://core/systems/movement_system.gd:365)
+WARNING: The local variable "mt" is declared but never used in the block. If this is intended, prefix it with an underscore: "_mt".
+     at: GDScript::reload (res://core/systems/movement_system.gd:366)
+WARNING: The variable "from" is declared below in the parent block.
+     at: GDScript::reload (res://core/systems/movement_system.gd:497)
+WARNING: The variable "points_before" is declared below in the parent block.
+     at: GDScript::reload (res://core/systems/movement_system.gd:498)
+WARNING: The parameter "move_cost" is never used in the function "_is_legal_walk()". If this is intended, prefix it with an underscore: "_move_cost".
+     at: GDScript::reload (res://core/systems/movement_system.gd:630)
+WARNING: The parameter "board" is never used in the function "planning_awaiting_origin_for_action()". If this is intended, prefix it with an underscore: "_board".
+     at: GDScript::reload (res://core/systems/ability_system.gd:456)
+WARNING: The parameter "board" is never used in the function "can_plan()". If this is intended, prefix it with an underscore: "_board".
+     at: GDScript::reload (res://core/systems/ability_system.gd:945)
+WARNING: The local variable "dash_steps" is shadowing an already-declared function at line 629 in the current class.
+     at: GDScript::reload (res://core/systems/ability_system.gd:1780)
+WARNING: The parameter "k" is never used in the function "_targeting_mode_system()". If this is intended, prefix it with an underscore: "_k".
+     at: GDScript::reload (res://ui/class_library_schema.gd:816)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1057)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1059)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1061)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1210)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1274)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1277)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1281)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1286)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1287)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1383)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://ui/class_library_schema.gd:1388)
+WARNING: The local variable "c_turret" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_turret".
+     at: GDScript::reload (res://core/factory/data_library.gd:137)
+WARNING: The local variable "c_tesla" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_tesla".
+     at: GDScript::reload (res://core/factory/data_library.gd:138)
+WARNING: The local variable "c_mine" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_mine".
+     at: GDScript::reload (res://core/factory/data_library.gd:139)
+WARNING: The local variable "c_voodoo" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_voodoo".
+     at: GDScript::reload (res://core/factory/data_library.gd:140)
+WARNING: The local variable "c_bone" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_bone".
+     at: GDScript::reload (res://core/factory/data_library.gd:141)
+WARNING: The local variable "c_obsidian" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_obsidian".
+     at: GDScript::reload (res://core/factory/data_library.gd:142)
+WARNING: The local variable "c_hammer" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_hammer".
+     at: GDScript::reload (res://core/factory/data_library.gd:143)
+WARNING: The function parameter "abs" has the same name as a built-in function.
+     at: GDScript::reload (res://core/factory/data_library.gd:678)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://core/progression/unit_level_growth.gd:16)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/mana_seed_terrain_peering.gd:60)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/mana_seed_terrain_peering.gd:98)
+WARNING: The parameter "terrain_set" is never used in the function "_suppress_wang_variants()". If this is intended, prefix it with an underscore: "_terrain_set".
+     at: GDScript::reload (res://scripts/mana_seed_terrain_peering.gd:116)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/mana_seed_terrain_peering.gd:125)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/mana_seed_tileset_builder.gd:148)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/mana_seed_tileset_builder.gd:181)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/mana_seed_tileset_builder.gd:223)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/mana_seed_tileset_builder.gd:224)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/tile_set_factory.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/tile_set_factory.gd:122)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/tile_set_factory.gd:124)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/tile_set_factory.gd:126)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/tile_catalog.gd:385)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/player_grid.gd:37)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/player_grid.gd:57)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/player_grid.gd:82)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/map_generator.gd:64)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/map_generator.gd:137)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/map_generator.gd:137)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/map_generator.gd:192)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/map_generator.gd:232)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/map_generator.gd:452)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/map_generator.gd:453)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/map_generator.gd:654)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/map_generator.gd:735)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/map_generator.gd:736)
+WARNING: The parameter "grid" is never used in the function "_tree_edge_density_cap()". If this is intended, prefix it with an underscore: "_grid".
+     at: GDScript::reload (res://scripts/map_generator.gd:741)
+WARNING: The local function parameter "batch_seed" is shadowing an already-declared function at line 7 in the current class.
+     at: GDScript::reload (res://core/batch/mass_sim_seed.gd:11)
+WARNING: The local function parameter "battle_seed" is shadowing an already-declared function at line 11 in the current class.
+     at: GDScript::reload (res://core/batch/mass_sim_seed.gd:15)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://bridge/spawn_placer.gd:15)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://bridge/spawn_placer.gd:27)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://bridge/spawn_placer.gd:31)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://bridge/spawn_placer.gd:35)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://bridge/spawn_placer.gd:39)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://bridge/spawn_placer.gd:43)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://bridge/spawn_placer.gd:43)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://bridge/spawn_placer.gd:47)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://bridge/spawn_placer.gd:47)
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+WARNING: The local function parameter "scale" is shadowing an already-declared property in the base class "CanvasLayer".
+     at: GDScript::reload (res://presentation/tactical_planning_cursor.gd:28)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The class variable "_foot_drift_cache" is declared but never used in the class.
+     at: GDScript::reload (res://scripts/shadow_placer.gd:70)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/shadow_placer.gd:389)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "shadow_root" is never used in the function "_build_unit_foot_gpu_slot()". If this is intended, prefix it with an underscore: "_shadow_root".
+     at: GDScript::reload (res://scripts/shadow_placer.gd:525)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/shadow_placer.gd:1176)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "provenance" is never used in the function "_collect_shadow_layer_profile()". If this is intended, prefix it with an underscore: "_provenance".
+     at: GDScript::reload (res://scripts/shadow_placer.gd:1424)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "label" is never used in the function "_collect_shadow_layer_profile()". If this is intended, prefix it with an underscore: "_label".
+     at: GDScript::reload (res://scripts/shadow_placer.gd:1425)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "settings" is never used in the function "_collect_shadow_layer_profile()". If this is intended, prefix it with an underscore: "_settings".
+     at: GDScript::reload (res://scripts/shadow_placer.gd:1426)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "w" is never used in the function "_sample_shadow_at_land()". If this is intended, prefix it with an underscore: "_w".
+     at: GDScript::reload (res://scripts/shadow_placer.gd:1790)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "h" is never used in the function "_sample_shadow_at_land()". If this is intended, prefix it with an underscore: "_h".
+     at: GDScript::reload (res://scripts/shadow_placer.gd:1791)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "edge_soften" is never used in the function "_bake_raster_stride()". If this is intended, prefix it with an underscore: "_edge_soften".
+     at: GDScript::reload (res://scripts/shadow_placer.gd:1878)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/shadow_placer.gd:1951)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/shadow_placer.gd:1951)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/shadow_placer.gd:2149)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The class variable "_material_cache" is declared but never used in the class.
+     at: GDScript::reload (res://scripts/lpc/lpc_palette_store.gd:29)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "recolor_kind" is never used in the function "get_recolor_material()". If this is intended, prefix it with an underscore: "_recolor_kind".
+     at: GDScript::reload (res://scripts/lpc/lpc_palette_store.gd:48)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "target_name" is never used in the function "get_recolor_material()". If this is intended, prefix it with an underscore: "_target_name".
+     at: GDScript::reload (res://scripts/lpc/lpc_palette_store.gd:49)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "palette_base" is never used in the function "get_recolor_material()". If this is intended, prefix it with an underscore: "_palette_base".
+     at: GDScript::reload (res://scripts/lpc/lpc_palette_store.gd:50)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "action_str" is declared but never used in the block. If this is intended, prefix it with an underscore: "_action_str".
+     at: GDScript::reload (res://scripts/lpc/lpc_sheet_frames.gd:56)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "z_pos" is never used in the function "add_layer()". If this is intended, prefix it with an underscore: "_z_pos".
+     at: GDScript::reload (res://scripts/lpc/character_actor.gd:140)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "visible" is shadowing an already-declared property in the base class "CanvasItem".
+     at: GDScript::reload (res://scripts/lpc/character_actor.gd:182)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "recolor_kind" is never used in the function "_apply_recolor_material()". If this is intended, prefix it with an underscore: "_recolor_kind".
+     at: GDScript::reload (res://scripts/lpc/character_actor.gd:864)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "recolor" is never used in the function "_apply_recolor_material()". If this is intended, prefix it with an underscore: "_recolor".
+     at: GDScript::reload (res://scripts/lpc/character_actor.gd:865)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "palette_base" is never used in the function "_apply_recolor_material()". If this is intended, prefix it with an underscore: "_palette_base".
+     at: GDScript::reload (res://scripts/lpc/character_actor.gd:866)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/lpc/character_gen_profile.gd:14)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://presentation/sfx_player.gd:189)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "base" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_ui_formatters.gd:1160)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "wpn" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_ui_formatters.gd:1161)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "stat_val" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_ui_formatters.gd:1162)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "t_def" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_ui_formatters.gd:1165)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "fort" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_ui_formatters.gd:1166)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "mult_raw" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_ui_formatters.gd:1167)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "stat_mult" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_ui_formatters.gd:1168)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "formula" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_ui_formatters.gd:1173)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "preview_paths" is shadowing an already-declared variable at line 11 in the current class.
+     at: GDScript::reload (res://presentation/combat_planning_preview.gd:75)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "preview_splits" is shadowing an already-declared variable at line 12 in the current class.
+     at: GDScript::reload (res://presentation/combat_planning_preview.gd:76)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "action_splits" is shadowing an already-declared variable at line 14 in the current class.
+     at: GDScript::reload (res://presentation/combat_planning_preview.gd:77)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "preview_board" is shadowing an already-declared variable at line 16 in the current class.
+     at: GDScript::reload (res://presentation/combat_planning_preview.gd:191)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "existing" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_planning_preview.gd:349)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "action_splits" is shadowing an already-declared variable at line 14 in the current class.
+     at: GDScript::reload (res://presentation/combat_planning_preview.gd:558)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "board" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_planning_preview.gd:692)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "start_idx" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_planning_preview.gd:788)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "end_idx" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_planning_preview.gd:791)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "local" is never used in the function "_begin_drag()". If this is intended, prefix it with an underscore: "_local".
+     at: GDScript::reload (res://presentation/combat_planning_input.gd:668)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "actor" is never used in the function "_move_slot_timing_for_commit()". If this is intended, prefix it with an underscore: "_actor".
+     at: GDScript::reload (res://presentation/combat_planning_input.gd:2227)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "move_origin" is declared but never used in the block. If this is intended, prefix it with an underscore: "_move_origin".
+     at: GDScript::reload (res://presentation/combat_planning_input.gd:2277)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "legal_move_tiles" is never used in the function "_build_ally_commit_slots()". If this is intended, prefix it with an underscore: "_legal_move_tiles".
+     at: GDScript::reload (res://presentation/combat_planning_input.gd:3667)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "live_origin" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_planning_input.gd:3700)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "params" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_planning_input.gd:3993)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "params" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_planning_input.gd:4004)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "params" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_planning_input.gd:4015)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "params" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_planning_input.gd:4056)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/butterfly_actor.gd:21)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/fish_actor.gd:26)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/frog_actor.gd:38)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/falling_leaf_actor.gd:17)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/pixel_texture_factory.gd:15)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/pixel_texture_factory.gd:16)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "name" is shadowing an already-declared property in the base class "Node".
+     at: GDScript::reload (res://scripts/ecology_ambient_particles.gd:101)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "foam_on" is never used in the function "apply()". If this is intended, prefix it with an underscore: "_foam_on".
+     at: GDScript::reload (res://scripts/water_vfx_placer.gd:52)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "sparkles_on" is never used in the function "apply()". If this is intended, prefix it with an underscore: "_sparkles_on".
+     at: GDScript::reload (res://scripts/water_vfx_placer.gd:52)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/bird_flyover_actor.gd:13)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "settings" is shadowing an already-declared variable at line 10 in the current class.
+     at: GDScript::reload (res://scripts/effects_controller.gd:194)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "settings" is shadowing an already-declared variable at line 10 in the current class.
+     at: GDScript::reload (res://scripts/effects_controller.gd:210)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "settings" is shadowing an already-declared variable at line 10 in the current class.
+     at: GDScript::reload (res://scripts/effects_controller.gd:224)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/lpc/character_roller.gd:28)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+     at: GDScript::reload (res://scripts/lpc/character_roller.gd:242)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "roll" is shadowing an already-declared function at line 25 in the current class.
+     at: GDScript::reload (res://scripts/lpc/character_roller.gd:266)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "roll" is shadowing an already-declared function at line 25 in the current class.
+     at: GDScript::reload (res://scripts/lpc/character_roller.gd:420)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "scale" is shadowing an already-declared property in the base class "Node2D".
+     at: GDScript::reload (res://presentation/tactical_unit_layer.gd:309)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://presentation/tactical_unit_layer.gd:805)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Values of the ternary operator are not mutually compatible.
+     at: GDScript::reload (res://presentation/tactical_unit_layer.gd:1055)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://presentation/tactical_unit_layer.gd:1199)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://presentation/tactical_unit_layer.gd:1201)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://presentation/tactical_unit_layer.gd:1420)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://presentation/tactical_unit_layer.gd:1642)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+     at: GDScript::reload (res://presentation/tactical_unit_layer.gd:1686)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "scale" is shadowing an already-declared property in the base class "Node2D".
+     at: GDScript::reload (res://presentation/tactical_unit_layer.gd:2507)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "snapped" has the same name as a built-in function.
+     at: GDScript::reload (res://presentation/tactical_unit_layer.gd:2523)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "projected_state" is shadowing an already-declared variable at line 47 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:114)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "projected_state" is shadowing an already-declared variable at line 47 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:127)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "projected_state" is shadowing an already-declared variable at line 47 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:144)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "plan_to_use" is declared but never used in the block. If this is intended, prefix it with an underscore: "_plan_to_use".
+     at: GDScript::reload (res://presentation/combat_director.gd:652)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "move_action" is shadowing an already-declared function at line 1688 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:663)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "max_steps" is declared but never used in the block. If this is intended, prefix it with an underscore: "_max_steps".
+     at: GDScript::reload (res://presentation/combat_director.gd:676)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "after_actor" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_director.gd:688)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "attack_action" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_director.gd:689)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "board" is shadowing an already-declared variable at line 36 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:730)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "board" is shadowing an already-declared variable at line 36 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:745)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "board" is shadowing an already-declared variable at line 36 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:1195)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "plan_board" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/combat_director.gd:1416)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "move_action" is shadowing an already-declared function at line 1688 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:1448)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "move_action" is shadowing an already-declared function at line 1688 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:1501)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "plan_to_use" is declared but never used in the block. If this is intended, prefix it with an underscore: "_plan_to_use".
+     at: GDScript::reload (res://presentation/combat_director.gd:1520)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "plan_to_use" is declared but never used in the block. If this is intended, prefix it with an underscore: "_plan_to_use".
+     at: GDScript::reload (res://presentation/combat_director.gd:1563)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "start" is shadowing an already-declared function at line 163 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:1856)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "start" is shadowing an already-declared function at line 163 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:1874)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Reassigning lambda capture does not modify the outer local variable "_done".
+     at: GDScript::reload (res://presentation/combat_director.gd:2064)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "move_action" is shadowing an already-declared function at line 1688 in the current class.
+     at: GDScript::reload (res://presentation/combat_director.gd:2820)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "selected_id" is never used in the function "apply_preview_state()". If this is intended, prefix it with an underscore: "_selected_id".
+     at: GDScript::reload (res://presentation/tactical_planning_overlay.gd:386)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "route" is never used in the function "_interaction_move_route()". If this is intended, prefix it with an underscore: "_route".
+     at: GDScript::reload (res://presentation/tactical_planning_overlay.gd:1527)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The variable "best" is declared below in the parent block.
+     at: GDScript::reload (res://presentation/tactical_planning_overlay.gd:2219)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "name" is shadowing an already-declared property in the base class "Node".
+     at: GDScript::reload (res://ui/compendium.gd:132)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local function parameter "scale" is shadowing an already-declared property in the base class "CanvasLayer".
+     at: GDScript::reload (res://presentation/tactical_status_badges.gd:34)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://presentation/tactical_status_badges.gd:57)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/water_depth_painter.gd:45)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "grid" is never used in the function "_pick_tile()". If this is intended, prefix it with an underscore: "_grid".
+     at: GDScript::reload (res://scripts/water_depth_painter.gd:58)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "rng" is never used in the function "apply_tree_stub()". If this is intended, prefix it with an underscore: "_rng".
+     at: GDScript::reload (res://scripts/ecology_seeder.gd:35)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/ecology_seeder.gd:73)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "grid" is never used in the function "_build_tree_ecology_hints()". If this is intended, prefix it with an underscore: "_grid".
+     at: GDScript::reload (res://scripts/ecology_seeder.gd:183)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/auto_decorator.gd:214)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/auto_decorator.gd:601)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/auto_decorator.gd:627)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+     at: GDScript::reload (res://scripts/auto_decorator.gd:714)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "base" is never used in the function "_calc_positioning()". If this is intended, prefix it with an underscore: "_base".
+     at: GDScript::reload (res://core/autobattler/autobattler_metrics.gd:232)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "base" is never used in the function "_calc_potential()". If this is intended, prefix it with an underscore: "_base".
+     at: GDScript::reload (res://core/autobattler/autobattler_metrics.gd:292)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "base" is never used in the function "_calc_penalties()". If this is intended, prefix it with an underscore: "_base".
+     at: GDScript::reload (res://core/autobattler/autobattler_metrics.gd:316)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "final" is never used in the function "_calc_penalties()". If this is intended, prefix it with an underscore: "_final".
+     at: GDScript::reload (res://core/autobattler/autobattler_metrics.gd:316)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "A" is never used in the function "_calc_penalties()". If this is intended, prefix it with an underscore: "_A".
+     at: GDScript::reload (res://core/autobattler/autobattler_metrics.gd:316)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "timeout" is never used in the function "test_live_planning_bible_multi_knight_session()". If this is intended, prefix it with an underscore: "_timeout".
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:92)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:95)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:104)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "timeout" is never used in the function "test_live_swap_session()". If this is intended, prefix it with an underscore: "_timeout".
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:108)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:112)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:135)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:184)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:203)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:323)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:442)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "overlay" is declared but never used in the block. If this is intended, prefix it with an underscore: "_overlay".
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:450)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "input" is declared but never used in the block. If this is intended, prefix it with an underscore: "_input".
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:721)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:804)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:888)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:891)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:977)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:986)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:987)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:996)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1025)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "bowling" is never used in the function "_assert_k4_run_committed()". If this is intended, prefix it with an underscore: "_bowling".
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1148)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "unit_id" is never used in the function "_reposition_mouse_to_unit()". If this is intended, prefix it with an underscore: "_unit_id".
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1184)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1193)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1220)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1225)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1253)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "before" is shadowing an already-declared function at line 61 in the base class "GdUnitTestSuite".
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1465)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1537)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1550)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1575)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1578)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The local variable "input" is declared but never used in the block. If this is intended, prefix it with an underscore: "_input".
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1597)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1601)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1619)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1622)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1625)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1628)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1633)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: The parameter "bowling" is never used in the function "_assert_k4_run_loop_preview()". If this is intended, prefix it with an underscore: "_bowling".
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1682)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1749)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1764)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1771)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1787)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1796)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:1805)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Values of the ternary operator are not mutually compatible.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:2383)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: "await" keyword is unnecessary because the expression isn't a coroutine nor a signal.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:2547)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+WARNING: Values of the ternary operator are not mutually compatible.
+     at: GDScript::reload (res://tests/live_planning_scene_test.gd:2616)
+     GDScript backtrace (most recent call first):
+         [0] load_with_disabled_warnings (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:225)
+         [1] _load_is_test_suite (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:129)
+         [2] scan (res://addons/gdUnit4/src/core/GdUnitTestSuiteScanner.gd:50)
+         [3] discover_tests (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:406)
+         [4] init_gd_unit (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:381)
+         [5] init_runner (res://addons/gdUnit4/src/core/runners/GdUnitTestCIRunner.gd:117)
+         [6] _process (res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd:120)
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m
+  [38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_planning_bible_multi_knight_session[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:3 - ext_resource, invalid UID: uid://dluabcko7kwat - using text path instead: res://Assets/Mana Seed/gentle animations/gentle waterfall A v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:4 - ext_resource, invalid UID: uid://cdrn638w3mipg - using text path instead: res://Assets/Mana Seed/gentle sheets/gentle forest v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:5 - ext_resource, invalid UID: uid://byqowha12scwl - using text path instead: res://Assets/Mana Seed/gentle sheets/gentle trees 80x96 v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:6 - ext_resource, invalid UID: uid://s8ana077elfc - using text path instead: res://Assets/Mana Seed/gentle animations/gentle water sparkles A v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:7 - ext_resource, invalid UID: uid://dv7x01vwg2gpx - using text path instead: res://Assets/Mana Seed/gentle sheets/gentle 32x32 v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: LPC palette: no mapping for skin roll 'light' (resolved 'light', base 'lpcr.ivory')
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _warn_missing_target (res://scripts/lpc/lpc_palette_store.gd:294)
+         [1] apply_recolor_to_image (res://scripts/lpc/lpc_palette_store.gd:73)
+         [2] _load_nearest_texture (res://scripts/lpc/lpc_sheet_frames.gd:213)
+         [3] _ensure_idle (res://scripts/lpc/lpc_sheet_frames.gd:115)
+         [4] ensure_animation (res://scripts/lpc/lpc_sheet_frames.gd:72)
+         [5] _apply_motion_state (res://scripts/lpc/character_actor.gd:877)
+         [6] add_layer (res://scripts/lpc/character_actor.gd:172)
+         [7] apply (res://scripts/lpc/character_composer.gd:58)
+         [8] apply_recipe (res://scripts/lpc/character_actor.gd:838)
+         [9] _ensure_actor (res://presentation/tactical_unit_layer.gd:1011)
+         [10] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [11] _on_board_changed (res://presentation/tactical_unit_layer.gd:332)
+         [12] _init_combat (res://presentation/combat_director.gd:196)
+         [13] start_from_custom (res://presentation/combat_director.gd:177)
+         [14] start_combat (res://presentation/tactical_combat_shell.gd:105)
+         [15] _start_combat (res://presentation/test_battle_map_view.gd:43)
+         [16] _ready (res://presentation/tactical_map_view.gd:162)
+         [17] _ready (res://presentation/test_battle_map_view.gd:12)
+         [18] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [19] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [20] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [21] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [22] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [23] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [24] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [25] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [26] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [27] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [28] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [29] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: LpcAssetPreloader: 488/2645 sprite sheets missing on disk.
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _scan_all (res://scripts/lpc/lpc_asset_preloader.gd:83)
+WARNING: LPC palette: no mapping for skin roll 'blue' (resolved 'blue', base 'lpcr.ivory')
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _warn_missing_target (res://scripts/lpc/lpc_palette_store.gd:294)
+         [1] apply_recolor_to_image (res://scripts/lpc/lpc_palette_store.gd:73)
+         [2] _load_nearest_texture (res://scripts/lpc/lpc_sheet_frames.gd:213)
+         [3] _ensure_idle (res://scripts/lpc/lpc_sheet_frames.gd:115)
+         [4] ensure_animation (res://scripts/lpc/lpc_sheet_frames.gd:72)
+         [5] _apply_motion_state (res://scripts/lpc/character_actor.gd:877)
+         [6] add_layer (res://scripts/lpc/character_actor.gd:172)
+         [7] apply (res://scripts/lpc/character_composer.gd:58)
+         [8] apply_recipe (res://scripts/lpc/character_actor.gd:838)
+         [9] _ensure_actor (res://presentation/tactical_unit_layer.gd:1011)
+         [10] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [11] _on_board_changed (res://presentation/tactical_unit_layer.gd:332)
+         [12] _init_combat (res://presentation/combat_director.gd:196)
+         [13] start_from_custom (res://presentation/combat_director.gd:177)
+         [14] apply_training_board (res://presentation/test_battle_map_view.gd:66)
+         [15] _boot_multi_knight_session (res://tests/live_planning_scene_test.gd:320)
+         [16] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:98)
+         [17] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+WARNING: LPC class loadout: item 'torso_armour_plate' incompatible with body=muscular for class 'knight'
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _apply_class_forced_items (res://scripts/lpc/character_roller.gd:384)
+         [1] roll (res://scripts/lpc/character_roller.gd:219)
+         [2] roll_recipe_for_unit (res://bridge/unit_visual_factory.gd:31)
+         [3] _ensure_actor (res://presentation/tactical_unit_layer.gd:1008)
+         [4] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [5] _on_board_changed (res://presentation/tactical_unit_layer.gd:332)
+         [6] _init_combat (res://presentation/combat_director.gd:196)
+         [7] start_from_custom (res://presentation/combat_director.gd:177)
+         [8] apply_training_board (res://presentation/test_battle_map_view.gd:66)
+         [9] _boot_multi_knight_session (res://tests/live_planning_scene_test.gd:320)
+         [10] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:98)
+         [11] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+WARNING: LPC class loadout: item 'legs_armour' incompatible with body=muscular for class 'knight'
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _apply_class_forced_items (res://scripts/lpc/character_roller.gd:384)
+         [1] roll (res://scripts/lpc/character_roller.gd:219)
+         [2] roll_recipe_for_unit (res://bridge/unit_visual_factory.gd:31)
+         [3] _ensure_actor (res://presentation/tactical_unit_layer.gd:1008)
+         [4] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [5] _on_board_changed (res://presentation/tactical_unit_layer.gd:332)
+         [6] _init_combat (res://presentation/combat_director.gd:196)
+         [7] start_from_custom (res://presentation/combat_director.gd:177)
+         [8] apply_training_board (res://presentation/test_battle_map_view.gd:66)
+         [9] _boot_multi_knight_session (res://tests/live_planning_scene_test.gd:320)
+         [10] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:98)
+         [11] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+WARNING: LPC class loadout: item 'torso_armour_plate' incompatible with body=muscular for class 'knight'
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _apply_class_forced_items (res://scripts/lpc/character_roller.gd:384)
+         [1] roll (res://scripts/lpc/character_roller.gd:219)
+         [2] roll_recipe_for_unit (res://bridge/unit_visual_factory.gd:31)
+         [3] _ensure_actor (res://presentation/tactical_unit_layer.gd:1008)
+         [4] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [5] rebuild_all_actor_visuals (res://presentation/tactical_unit_layer.gd:821)
+         [6] apply_training_board (res://presentation/test_battle_map_view.gd:68)
+         [7] _boot_multi_knight_session (res://tests/live_planning_scene_test.gd:320)
+         [8] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:98)
+         [9] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+WARNING: LPC class loadout: item 'legs_armour' incompatible with body=muscular for class 'knight'
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _apply_class_forced_items (res://scripts/lpc/character_roller.gd:384)
+         [1] roll (res://scripts/lpc/character_roller.gd:219)
+         [2] roll_recipe_for_unit (res://bridge/unit_visual_factory.gd:31)
+         [3] _ensure_actor (res://presentation/tactical_unit_layer.gd:1008)
+         [4] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [5] rebuild_all_actor_visuals (res://presentation/tactical_unit_layer.gd:821)
+         [6] apply_training_board (res://presentation/test_battle_map_view.gd:68)
+         [7] _boot_multi_knight_session (res://tests/live_planning_scene_test.gd:320)
+         [8] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:98)
+         [9] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+[K4-SNAPSHOT] walk_loop_end | stand=(4, 2) requires_run=false display_ap=1 red_gate=true overlay_red=true
+[K4-SNAPSHOT] saved res://reports/k4_preview/k4_walk_loop_end.png
+[K4-SNAPSHOT] run_trigger | stand=(3, 2) requires_run=true display_ap=0 red_gate=false overlay_red=false
+[K4-COMPARE] F5 auto_run paint at run end: requires_run=true display_ap=0 red_gate=false overlay_red=false
+[K4-SNAPSHOT] saved res://reports/k4_preview/k4_run_trigger.png
+[K4-SNAPSHOT] after_commit | stand=(3, 2) requires_run=true display_ap=0 red_gate=false overlay_red=false
+[K4-SNAPSHOT] saved res://reports/k4_preview/k4_after_commit.png
+[LIVE-PLANNING-TRACE] 105 transitions -> res://reports/live_planning_trace/trace.json
+  [38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_planning_bible_multi_knight_session[0m[38;2;178;34;34m[1m FAILED[0m[38;2;100;149;237m 34s 5ms[0m
+  [38;2;0;206;209m[1m[4mReport:[0m
+  [38;2;128;128;128mk1/phase2/walk: preview path empty (expected end (5, 5))[0m[38;2;173;216;230m	at '_assert_preview_path_ends' in res://tests/live_planning_scene_test.gd:1914
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1316
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1281
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128mk1/phase2/walk: preview ghost missing at (5, 5); path=[] slots={ "pre": [<RefCounted#-9223370209849495729>], "action": [], "post": [], "invalid": false, "_preview_validated": true } approach=n/a preview_board=<null>[0m[38;2;173;216;230m	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1329
+	at '_preview_unit' in res://tests/live_planning_scene_test.gd:1956[0m  [38;2;128;128;128mk2/drag/step_1: drag paint must be active at (4, 3)[0m[38;2;173;216;230m	at '_hop_drag_to_cell' in res://tests/live_planning_scene_test.gd:1247
+	at '_drag_through_cells' in res://tests/live_planning_scene_test.gd:1540[0m  [38;2;128;128;128mk2/drag/step_1: planning cursor icon must stay hidden during drag (F5 parity)[0m[38;2;173;216;230m	at '_hop_drag_to_cell' in res://tests/live_planning_scene_test.gd:1250
+	at '_drag_through_cells' in res://tests/live_planning_scene_test.gd:1540[0m  [38;2;128;128;128mk2/drag/release: committed action missing for preview target unit 6[0m[38;2;173;216;230m	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2369
+	at '_drag_through_cells' in res://tests/live_planning_scene_test.gd:1553[0m  [38;2;128;128;128mk2/drag: hook spends AP[0m[38;2;173;216;230m	at '_assert_k2_hook_committed' in res://tests/live_planning_scene_test.gd:1072
+	at '_journey_knight2_chain_hook' in res://tests/live_planning_scene_test.gd:596
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128mk2/drag: hook must pull west[0m[38;2;173;216;230m	at '_assert_k2_hook_committed' in res://tests/live_planning_scene_test.gd:1079
+	at '_journey_knight2_chain_hook' in res://tests/live_planning_scene_test.gd:596
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128mpreview/commit parity diverged: k2/selection != k2/drag[0m[38;2;173;216;230m	at '_assert_mode_commit_parity' in res://tests/live_planning_scene_test.gd:2573
+	at '_journey_knight2_chain_hook' in res://tests/live_planning_scene_test.gd:599
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128m[38;2;255;69;0mExpecting:[0m
+ [38;2;30;144;255m0[0m
+ but was
+ [38;2;30;144;255m1[0m[0m[38;2;173;216;230m	at '_journey_knight2_chain_hook' in res://tests/live_planning_scene_test.gd:601
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128m[38;2;255;69;0mExpecting:[0m '[38;2;30;144;255mtrue[0m' but is '[38;2;30;144;255mfalse[0m'[0m[38;2;173;216;230m	at '_journey_knight2_chain_hook' in res://tests/live_planning_scene_test.gd:604
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128mk4/selection/step_1/path: preview path expected [(4, 1), (5, 1)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(4, 1):(0, 1):[(3, 1), (2, 1), (1, 1), (0, 1)]]; plan=[][0m[38;2;173;216;230m	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1856
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1572
+	at '_sweep_mouse_to_cell' in res://tests/live_planning_scene_test.gd:1226[0m  [38;2;128;128;128mk4/selection/step_2/path: preview path expected [(4, 1), (5, 1), (5, 2)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(4, 1):(0, 1):[(3, 1), (2, 1), (1, 1), (0, 1)]]; plan=[][0m[38;2;173;216;230m	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1856
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1572
+	at '_sweep_mouse_to_cell' in res://tests/live_planning_scene_test.gd:1226[0m  [38;2;128;128;128mk4/selection/step_3/path: preview path expected [(4, 1), (5, 1), (5, 2), (4, 2)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(4, 1):(0, 1):[(3, 1), (2, 1), (1, 1), (0, 1)]]; plan=[][0m[38;2;173;216;230m	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1856
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1572
+	at '_sweep_mouse_to_cell' in res://tests/live_planning_scene_test.gd:1226[0m  [38;2;128;128;128mk4/selection/step_3/walk_loop: walk detour must keep skill AP at stand (4, 2)[0m[38;2;173;216;230m	at '_assert_k4_walk_loop_preview' in res://tests/live_planning_scene_test.gd:1667
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1575
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128mk4/selection/step_4/path: preview path expected [(4, 1), (5, 1), (5, 2), (4, 2), (3, 2)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(4, 1):(0, 1):[(3, 1), (2, 1), (1, 1), (0, 1)]]; plan=[][0m[38;2;173;216;230m	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1856
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1572
+	at '_sweep_mouse_to_cell' in res://tests/live_planning_scene_test.gd:1226[0m  [38;2;128;128;128mk4/selection/step_4/run_trigger: extension past detour must require Run[0m[38;2;173;216;230m	at '_assert_k4_run_loop_preview' in res://tests/live_planning_scene_test.gd:1686
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1578
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128mk4/selection/step_4/run_trigger: Run intent must show 0 display AP[0m[38;2;173;216;230m	at '_assert_k4_run_loop_preview' in res://tests/live_planning_scene_test.gd:1689
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1578
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128mk4/selection/step_4/run_trigger: Run trigger must hide action-range gate[0m[38;2;173;216;230m	at '_assert_k4_run_loop_preview' in res://tests/live_planning_scene_test.gd:1692
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1578
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128mk4/selection/step_4/run_trigger: Run trigger must hide action-range red[0m[38;2;173;216;230m	at '_assert_k4_run_loop_preview' in res://tests/live_planning_scene_test.gd:1695
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1578
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940[0m  [38;2;128;128;128mk4/selection: k4 pre-move must use Run after detour[0m[38;2;173;216;230m	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:1165
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:739
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+	at 'await_planning_commit_sequence' in res://presentation/tactical_unit_layer.gd:289[0m  [38;2;128;128;128mk4/selection: k4 pre-move waypoints must match painted detour[0m[38;2;173;216;230m	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:1169
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:739
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+	at 'await_planning_commit_sequence' in res://presentation/tactical_unit_layer.gd:289[0m  [38;2;128;128;128mk4/selection: k4 plan must use Run[0m[38;2;173;216;230m	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:1172
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:739
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+	at 'await_planning_commit_sequence' in res://presentation/tactical_unit_layer.gd:289[0m  [38;2;128;128;128mpreview/commit parity diverged: k4/selection != k4/drag[0m[38;2;173;216;230m	at '_assert_mode_commit_parity' in res://tests/live_planning_scene_test.gd:2573
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:748
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1635[0m[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 23 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 34s 29ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 1 test cases | 0 errors | 23 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (1/1)[0m
+[38;2;233;150;122mExecuted test cases : (1/1)[0m
+[38;2;233;150;122mTotal execution time: 34s 29ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file:///workspace/reports/report_3/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file:///workspace/reports/report_3/index.html[0m
+[38;2;178;34;34mExit code: 100[0m
+Run dispose test resources

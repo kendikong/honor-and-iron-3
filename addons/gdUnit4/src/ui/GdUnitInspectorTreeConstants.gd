@@ -1,4 +1,4 @@
-class_name GdUnitInspectorTreeConstants
+﻿class_name GdUnitInspectorTreeConstants
 extends RefCounted
 
 

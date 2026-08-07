@@ -1,7 +1,7 @@
-class_name TacticalSimPresenter
+﻿class_name TacticalSimPresenter
 extends Node
 
-## Execution feedback for TacticalCombat — overlay sync, LPC playback, floating damage.
+## Execution feedback for TacticalCombat â€” overlay sync, LPC playback, floating damage.
 
 var _overlay: TacticalUnitOverlay
 var _unit_layer: TacticalUnitLayer

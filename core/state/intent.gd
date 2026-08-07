@@ -1,4 +1,4 @@
-class_name Intent
+﻿class_name Intent
 extends RefCounted
 
 ## Purpose: One enemy's locked plan for the turn, made public to the players

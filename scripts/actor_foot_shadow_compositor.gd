@@ -1,4 +1,4 @@
-class_name ActorFootShadowCompositor
+﻿class_name ActorFootShadowCompositor
 extends Node2D
 
 ## Parent for cluster-composited actor foot shadows (max-alpha, single multiply per cluster).

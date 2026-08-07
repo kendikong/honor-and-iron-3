@@ -1,4 +1,4 @@
-class_name ManaSeedTerrainPeering
+﻿class_name ManaSeedTerrainPeering
 extends RefCounted
 
 ## Applies Tiled corner-wang metadata to Godot TileData terrain + peering bits.
@@ -10,7 +10,7 @@ const TERRAIN_DIRT: int = _C.TERRAIN_DIRT
 const TERRAIN_ELEVATION: int = _C.TERRAIN_ELEVATION
 const TERRAIN_WATER: int = _C.TERRAIN_WATER
 
-# Tiled corner wang order: TL, T, TR, L, R, BL, B, BR → Godot 4.7 CellNeighbor.
+# Tiled corner wang order: TL, T, TR, L, R, BL, B, BR â†’ Godot 4.7 CellNeighbor.
 const TILED_CORNER_TO_GODOT: Array[int] = [
 	11, # CELL_NEIGHBOR_TOP_LEFT_CORNER
 	12, # CELL_NEIGHBOR_TOP_SIDE

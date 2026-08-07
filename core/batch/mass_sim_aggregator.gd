@@ -1,4 +1,4 @@
-class_name MassSimAggregator
+﻿class_name MassSimAggregator
 extends RefCounted
 
 const _C = preload("res://core/batch/mass_sim_constants.gd")
@@ -302,7 +302,7 @@ static func _build_matchup_snippets(report: RefCounted) -> Array[Dictionary]:
 	})
 	out.append({
 		"label": "%s struggles" % report.class_display_name(worst["class_id"]),
-		"detail": "WR %.1f%% — review counters" % float(worst["win_rate"]),
+		"detail": "WR %.1f%% â€” review counters" % float(worst["win_rate"]),
 	})
 	return out
 

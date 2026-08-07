@@ -1,10 +1,10 @@
-class_name PlayerGridRepair
+﻿class_name PlayerGridRepair
 extends RefCounted
 
 ## Normalizes PlayerGrid so terrain bodies are paintable (Phase 3).
-## Primary: thin water/dirt → grass, grass pockets → water (incl. map-edge water pockets).
-## Post: water/dirt without a 2×2 corner block → flip the fewest grass cells needed to
-##       complete one 2×2 (cheapest corner only — never bulk neighborhoods, never water→grass).
+## Primary: thin water/dirt â†’ grass, grass pockets â†’ water (incl. map-edge water pockets).
+## Post: water/dirt without a 2Ã—2 corner block â†’ flip the fewest grass cells needed to
+##       complete one 2Ã—2 (cheapest corner only â€” never bulk neighborhoods, never waterâ†’grass).
 ## Post (corner cardinals): single L-corners only (#132/#133 handled after terrain_connect).
 ## Off-map cells count as matching terrain (hidden map extension).
 
@@ -13,7 +13,7 @@ const MAX_PASSES: int = 64
 ## Water wang shore tiles that require all four cardinal neighbors to be water on PlayerGrid.
 const WATER_DOUBLE_CORNER_ATLAS_IDS: Array[int] = [132, 133]
 
-## TL offsets for each 2×2 where `pos` is BR, BL, TR, or TL respectively.
+## TL offsets for each 2Ã—2 where `pos` is BR, BL, TR, or TL respectively.
 const _CORNER_TOP_LEFT_OFFSETS: Array[Vector2i] = [
 	Vector2i(-1, -1),
 	Vector2i(0, -1),
@@ -48,7 +48,7 @@ static func _primary_pass(grid: PlayerGrid, provenance: PlayerGridProvenance) ->
 				pos,
 				"repair_primary",
 				int(change["tile"]),
-				"PlayerGridRepair primary: %s → %s"
+				"PlayerGridRepair primary: %s â†’ %s"
 				% [TileId.type_name(int(change["from"])), TileId.type_name(int(change["tile"]))],
 			)
 	return not changes.is_empty()
@@ -111,7 +111,7 @@ static func _post_terrain_corner_cardinals_pass(
 	return not changes.is_empty()
 
 
-## After terrain_connect: any cell painted #132/#133 → flip cardinal grass on PlayerGrid to water.
+## After terrain_connect: any cell painted #132/#133 â†’ flip cardinal grass on PlayerGrid to water.
 static func repair_painted_water_double_corners(
 	grid: PlayerGrid,
 	ground: TileMapLayer,
@@ -198,7 +198,7 @@ static func _apply_corner_cardinal_changes(
 				change_pos,
 				"repair_corner_cardinals",
 				to_type,
-				"PlayerGridRepair corner cardinals: %s → %s (%s)"
+				"PlayerGridRepair corner cardinals: %s â†’ %s (%s)"
 				% [TileId.type_name(from_type), TileId.type_name(to_type), str(change["detail"])],
 			)
 
@@ -223,7 +223,7 @@ static func _repair_grass_primary(grid: PlayerGrid, pos: Vector2i) -> int:
 	return TileId.Type.GRASS
 
 
-## Map-edge grass with no in-bounds land neighbor — only water (or void) beside it.
+## Map-edge grass with no in-bounds land neighbor â€” only water (or void) beside it.
 ## No wang art for this case; extend water so terrain_connect can paint a shore.
 static func _is_water_trapped_edge_grass(grid: PlayerGrid, pos: Vector2i) -> bool:
 	var touches_map_edge: bool = false
@@ -249,7 +249,7 @@ static func _repair_dirt_primary(grid: PlayerGrid, pos: Vector2i) -> int:
 	return TileId.Type.DIRT
 
 
-## Pick the single corner 2×2 that needs the fewest grass→terrain flips; queue only those.
+## Pick the single corner 2Ã—2 that needs the fewest grassâ†’terrain flips; queue only those.
 static func _collect_minimal_2x2_widen(
 	grid: PlayerGrid,
 	pos: Vector2i,
@@ -282,7 +282,7 @@ static func _cheapest_grass_to_complete_2x2(
 	return best
 
 
-## Grass cells in this 2×2 that must flip to `tile_id`. Empty if block impossible or already full.
+## Grass cells in this 2Ã—2 that must flip to `tile_id`. Empty if block impossible or already full.
 static func _grass_cells_to_complete_block(
 	grid: PlayerGrid,
 	top_left: Vector2i,
@@ -362,7 +362,7 @@ static func _apply_unique_changes(
 				change_pos,
 				"repair_2x2",
 				to_type,
-				"PlayerGridRepair 2×2 widen: %s → %s"
+				"PlayerGridRepair 2Ã—2 widen: %s â†’ %s"
 				% [TileId.type_name(from_type), TileId.type_name(to_type)],
 			)
 

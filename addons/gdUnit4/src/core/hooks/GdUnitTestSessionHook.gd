@@ -1,4 +1,4 @@
-## @since GdUnit4 5.1.0
+﻿## @since GdUnit4 5.1.0
 ##
 ## Base class for creating custom test session hooks in GdUnit4.[br]
 ## [br]

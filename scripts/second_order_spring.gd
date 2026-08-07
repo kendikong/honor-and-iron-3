@@ -1,7 +1,7 @@
-class_name SecondOrderSpring
+﻿class_name SecondOrderSpring
 extends RefCounted
 
-## Translation-only second-order dynamics — integer pixel snap (bible §3 #8).
+## Translation-only second-order dynamics â€” integer pixel snap (bible Â§3 #8).
 
 var frequency: float = 2.4
 var damping: float = 0.72

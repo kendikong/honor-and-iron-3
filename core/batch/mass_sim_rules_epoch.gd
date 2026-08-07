@@ -1,4 +1,4 @@
-class_name MassSimRulesEpoch
+﻿class_name MassSimRulesEpoch
 extends RefCounted
 
 const _C = preload("res://core/batch/mass_sim_constants.gd")
@@ -31,7 +31,7 @@ static func fingerprint_label(setup: MassSimSkirmishSetup = null) -> String:
 
 static func detailed_rules_label(setup: MassSimSkirmishSetup = null) -> String:
 	var s: MassSimSkirmishSetup = setup if setup != null else MassSimSkirmishSetup.defaults()
-	return "%s · rules rev %s" % [s.summary_label(), _C.RULES_REVISION]
+	return "%s Â· rules rev %s" % [s.summary_label(), _C.RULES_REVISION]
 
 
 static func setup_from_epoch(ep: Dictionary) -> MassSimSkirmishSetup:
@@ -106,7 +106,7 @@ static func ensure_default_epoch(workspace: MassSimWorkspace) -> void:
 		"fingerprint": "",
 		"created_at": Time.get_unix_time_from_system(),
 		"archived": true,
-		"note": "Battles run before epoch tracking — not comparable to new epochs.",
+		"note": "Battles run before epoch tracking â€” not comparable to new epochs.",
 	}
 	workspace.epochs.append(ep)
 	if workspace.active_epoch_id.is_empty():
@@ -189,7 +189,7 @@ static func display_label(ep: Dictionary, active: bool = false) -> String:
 	var label: String = String(ep.get("label", ep.get("id", "Epoch")))
 	var date_text: String = format_created_at_date(ep)
 	var suffix: String = " (active)" if active else ""
-	return "%s — %s%s" % [date_text, label, suffix]
+	return "%s â€” %s%s" % [date_text, label, suffix]
 
 
 static func _parse_created_at_from_epoch_id(epoch_id: String) -> int:

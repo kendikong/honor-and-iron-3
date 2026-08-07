@@ -1,4 +1,4 @@
-## Captures and restores all in-memory [ProjectSettings] values around a single
+﻿## Captures and restores all in-memory [ProjectSettings] values around a single
 ## stage of test execution.[br]
 ## Each [GdUnitExecutionContext] owns one instance. Suite-level and test-level
 ## isolation are achieved by the two separate contexts rather than by stacking:[br]

@@ -1,4 +1,4 @@
-class_name TimelineAction
+﻿class_name TimelineAction
 extends RefCounted
 
 ## Purpose: One ordered entry in a plan: either a move or an ability use.
@@ -37,8 +37,28 @@ var irreversible: bool = false
 ## MOVE only: apply universal Run boost immediately before this step resolves.
 var uses_run: bool = false
 
-## ABILITY only: armed for targeting (dash etc.) — shown in plan UI, not simulated until finalized.
+## ABILITY only: armed for targeting (dash etc.) â€” shown in plan UI, not simulated until finalized.
 var awaiting_target: bool = false
+
+## ABILITY only: parallel to modules â€” per-module aim coords (ability-data.md Â§2.7).
+## Sentinel MODULE_COORD_UNSET = inactive / unset gated slot.
+const MODULE_COORD_UNSET: Vector2i = Vector2i(-9999, -9999)
+var module_coords: Array[Vector2i] = []
+
+## ABILITY only: which module index is being aimed during multi-phase awaiting (-1 = unset).
+var awaiting_module_index: int = -1
+
+
+func has_module_coord(index: int) -> bool:
+	if index < 0 or index >= module_coords.size():
+		return false
+	return module_coords[index] != MODULE_COORD_UNSET
+
+
+func get_module_coord(index: int) -> Vector2i:
+	if has_module_coord(index):
+		return module_coords[index]
+	return MODULE_COORD_UNSET
 
 
 func is_simulatable() -> bool:
@@ -98,9 +118,11 @@ static func make_ability_awaiting(
 	p_ability: AbilityData,
 	p_origin: Vector2i,
 	p_waypoints: Array[Vector2i] = [],
+	p_awaiting_module_index: int = 0,
 ) -> TimelineAction:
 	var action := make_ability(p_actor_id, p_ability, p_origin, -1, GameEnums.MoveTiming.PRE_ACTION, p_waypoints)
 	action.awaiting_target = true
+	action.awaiting_module_index = p_awaiting_module_index
 	return action
 
 
@@ -135,4 +157,6 @@ func clone() -> TimelineAction:
 	copy.irreversible = irreversible
 	copy.uses_run = uses_run
 	copy.awaiting_target = awaiting_target
+	copy.module_coords = module_coords.duplicate()
+	copy.awaiting_module_index = awaiting_module_index
 	return copy

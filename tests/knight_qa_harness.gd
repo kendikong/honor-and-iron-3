@@ -1,7 +1,7 @@
 class_name KnightQaHarness
 extends RefCounted
 
-## Knight class QA harness — separate from planning QA (`run_planning_qa_gate.ps1`).
+## Knight class QA harness â€” separate from planning QA (`run_planning_qa_gate.ps1`).
 ## Builds headless boards, runs Simulator, asserts Bible outcomes via global systems.
 
 const KNIGHT_DEF_ID: StringName = &"knight"
@@ -264,9 +264,9 @@ static func has_status(unit: UnitState, status_type: GameEnums.StatusType) -> bo
 static func ability_has_effect(ability: AbilityData, effect_type: GameEnums.EffectType, upgraded: bool = false) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
-	for eff: EffectData in effects:
-		if eff != null and eff.type == effect_type:
+	var effects: Array[AbilityModule] = ability.upgraded_modules if upgraded else ability.modules
+	for eff: AbilityModule in effects:
+		if eff != null and eff.primary_type == effect_type:
 			return true
 	return false
 
@@ -278,11 +278,11 @@ static func ability_has_status_effect(
 ) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
-	for eff: EffectData in effects:
+	var effects: Array[AbilityModule] = ability.upgraded_modules if upgraded else ability.modules
+	for eff: AbilityModule in effects:
 		if eff == null:
 			continue
-		if eff.type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF]:
+		if eff.primary_type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF]:
 			if eff.status_type == status_type:
 				return true
 	return false
@@ -379,7 +379,7 @@ static func run_planning_select_smoke(
 	)
 
 
-## Planning commit smoke: select → hover → hover/click parity → commit_no_jump (preview==commit).
+## Planning commit smoke: select â†’ hover â†’ hover/click parity â†’ commit_no_jump (preview==commit).
 static func run_planning_commit_smoke(
 	failures: Array[String],
 	ability_id: StringName,
@@ -469,11 +469,11 @@ static func run_active_smoke(
 			ability_has_status_effect(ability, status_type, false),
 			"base effects must include status %s" % status_type,
 		)
-	if ability.upgraded_effects.size() > 0:
+	if ability.upgraded_modules.size() > 0:
 		assert_true(
 			failures, "%s/upgrade_data" % ability_id,
 			ability.upgrade_description.length() > 0,
-			"upgraded_effects require upgrade_description",
+			"upgraded_modules require upgrade_description",
 		)
 
 
@@ -1673,7 +1673,7 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 	var redirect_up: AbilityData = ability_on_unit(knight_up, &"knight_redirect_strike")
 	assert_true(
 		failures, "redirect_strike/upgrade/intercept_flag",
-		redirect_up.upgraded_effects[0].amount == 1,
+		redirect_up.upgraded_modules[0].amount == 1,
 		"upgraded redirect strike must mark INTERCEPT with value 1 for [+] DEF",
 	)
 	var plan_up := Timeline.new()
@@ -2083,7 +2083,7 @@ static func run_taunting_strike(failures: Array[String]) -> void:
 	assert_true(
 		failures, "taunting_strike/upgrade/pull2",
 		ability_has_effect(strike_up, GameEnums.EffectType.PULL, true)
-		and strike_up.upgraded_effects[1].amount == 2,
+		and strike_up.upgraded_modules[1].amount == 2,
 		"upgraded taunting strike must PULL 2",
 	)
 	assert_eq_int(failures, "taunting_strike/upgrade/range", strike_up.upgraded_range_tiles, 3)
@@ -2305,7 +2305,7 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 	assert_true(
 		failures, "seismic_stomp/cracked/reachable",
 		can_reach_cracked and cannot_reach_past,
-		"cracked tile must cost 2 MP — budget 2 reaches cracked only, not tile beyond",
+		"cracked tile must cost 2 MP â€” budget 2 reaches cracked only, not tile beyond",
 	)
 	var path_cracked: Array[Vector2i] = MovementSystem.find_path(
 		board_path, Vector2i(4, 3), Vector2i(5, 3), 2,
@@ -3068,3 +3068,4 @@ static func run_living_barricade(failures: Array[String]) -> void:
 		ally_exposed != null and ally_exposed.health.current_hp < hp_exposed_before,
 		"ally not behind knight facing must not be protected from ranged fire",
 	)
+

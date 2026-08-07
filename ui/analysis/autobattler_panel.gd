@@ -1,4 +1,4 @@
-class_name AutobattlerPanel
+﻿class_name AutobattlerPanel
 extends Control
 
 var _label: RichTextLabel

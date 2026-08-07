@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 ## The base test runner implementation.[br]
 ## [br]
 ## This class provides the core functionality to execute test suites with following features:[br]

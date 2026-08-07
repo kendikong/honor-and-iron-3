@@ -1,4 +1,4 @@
-class_name Timeline
+﻿class_name Timeline
 extends RefCounted
 
 ## Purpose: The ordered list of planned player actions for a turn ("the heart of

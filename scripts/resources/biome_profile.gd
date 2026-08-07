@@ -1,7 +1,7 @@
-class_name BiomeProfile
+﻿class_name BiomeProfile
 extends Resource
 
-## Data-driven biome palette — separate PNG per variant (v01–v03 on disk).
+## Data-driven biome palette â€” separate PNG per variant (v01â€“v03 on disk).
 ## Future seasonal bundles may use atlas_y_offset instead of tileset_variant.
 
 @export var display_name: String = "Rabite Forest"

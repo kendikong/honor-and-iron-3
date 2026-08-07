@@ -1,0 +1,241 @@
+static func execute(board: BoardState, action: TimelineAction, events: Array[SimEvent]) -> void:
+	if not can_use(board, action):
+		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+			"actor": action.actor_id, "reason": "cannot_use_ability",
+		}))
+		return
+
+	var actor := board.get_unit_by_id(action.actor_id)
+	var ability := action.ability
+	
+	if actor != null:
+		actor.passive_flags.erase("passed_through_terrain")
+		actor.passive_flags.erase("module_gate_collided")
+		
+	_spend_ability_cost(actor, ability, board)
+	if not actor.has_unlimited_training_actions() and ability.consumes_action_slot():
+		actor.turn_action_used = true
+
+	if DataLibrary.is_universal_wait(ability.id):
+		actor.turn_action_used = true
+		return
+
+	var target_coord := _resolve_target_coord(board, action)
+
+	var will_skill_walk := false
+	if target_coord != actor.position:
+		var is_move_check := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
+		will_skill_walk = (
+			(has_pass_through_effects(ability) or is_move_check)
+			and not ability_has_dash(ability)
+		)
+
+	if target_coord != actor.position and not will_skill_walk:
+		var new_facing := PhysicsSystem.facing_from_vector(
+			PhysicsSystem.cardinal_from_to(actor.position, target_coord),
+		)
+		if actor.facing != new_facing:
+			actor.facing = new_facing
+			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_FACED, {"unit": actor.id, "facing": actor.facing}))
+	var shape = action.ability.target_shape
+	var shape_size = action.ability.target_shape_size
+	if actor != null and actor.is_ability_upgraded(action.ability.id):
+		if action.ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE or action.ability.upgraded_target_shape_size != -1:
+			shape = action.ability.upgraded_target_shape if action.ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE else shape
+			shape_size = action.ability.upgraded_target_shape_size if action.ability.upgraded_target_shape_size != -1 else shape_size
+			
+	var affected_tiles := GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
+	
+	var pres_anim: int = action.ability.presentation_anim
+	if pres_anim == GameEnums.PresentationAnim.AUTO:
+		if effect_amount(action.ability, GameEnums.EffectType.DASH) > 0:
+			pres_anim = GameEnums.PresentationAnim.SUPER_RUN
+		elif effect_amount(action.ability, GameEnums.EffectType.BULLDOZE) > 0:
+			pres_anim = GameEnums.PresentationAnim.RUN
+		elif effect_amount(action.ability, GameEnums.EffectType.MOVE) > 0:
+			pres_anim = GameEnums.PresentationAnim.WALK
+			
+	events.append(SimEvent.make(GameEnums.SimEventType.ABILITY_USED, {
+		"actor": action.actor_id,
+		"ability": action.ability.id,
+		"ability_name": action.ability.display_name,
+		"target_coord": target_coord,
+		"target_unit": action.target_unit_id,
+		"presentation_anim": pres_anim,
+	}))
+	
+	var modules_to_apply = modules_for_actor(actor, ability)
+	var phases = [GameEnums.ModulePhase.ON_PRE, GameEnums.ModulePhase.ON_ACTION, GameEnums.ModulePhase.ON_POST]
+
+	var cast_cc_snapshot: Dictionary = {}
+	if actor != null:
+		for unit in board.units:
+			if unit != null and unit.is_alive():
+				cast_cc_snapshot[unit.id] = (
+					unit.has_status(GameEnums.StatusType.ROOT)
+					or unit.has_status(GameEnums.StatusType.STAGGER)
+				)
+		actor.passive_flags["__cast_cc_snapshot"] = cast_cc_snapshot
+
+	var targets_hit_count = 0
+	var objects_destroyed_count = 0
+	var heal_per_target_hit = false
+	var buff_per_object = false
+
+	for phase in phases:
+		for mod_idx in range(modules_to_apply.size()):
+			var module: AbilityModule = modules_to_apply[mod_idx]
+			if module.execution_phase != phase:
+				continue
+			
+			var gate_passed = evaluate_module_gate(
+				module.gate,
+				actor.passive_flags.get("module_gate_collided", false),
+				actor.passive_flags.get("module_gate_killed", false),
+				actor.passive_flags.get("module_gate_damage", false)
+			)
+			if not gate_passed:
+				continue
+				
+			var mod_target_coord = target_coord
+			if action.has_module_coord(mod_idx):
+				var mod_coord = action.get_module_coord(mod_idx)
+				if mod_coord != TimelineAction.MODULE_COORD_UNSET:
+					mod_target_coord = mod_coord
+			
+			if module.heal_per_target_hit: heal_per_target_hit = true
+			if module.buff_per_destroyed_object: buff_per_object = true
+			if module.next_attack_pierce:
+				actor.passive_flags["breaching_dash_pierce"] = true
+			if module.on_kill_heal_shield:
+				actor.passive_flags["adrenaline_surge_active"] = true
+			if module.intercept_grant_str > 0:
+				actor.passive_flags["meat_shield_intercept_str"] = module.intercept_grant_str
+			if module.frenzy_on_kill_ap:
+				actor.passive_flags["frenzy_on_kill_ap"] = true
+
+			if module.primary_type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
+				_apply_effect_to_tile(board, actor, action, module, events, mod_target_coord, board.get_unit_at(mod_target_coord))
+				affected_tiles = GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
+				continue
+				
+			if module.primary_type == GameEnums.EffectType.MOVE:
+				var ghost_status = null
+				if module.ghost_move:
+					ghost_status = DataLibrary.make_status(GameEnums.StatusType.GHOST, 1, 1)
+					actor.active_statuses.append(ghost_status)
+					actor._recalculate_stats()
+				
+				var walk_steps = module.amount
+				if walk_steps <= 0: walk_steps = ability.range_tiles
+				var applying_modules: Array[AbilityModule] = [module]
+				MovementSystem.execute_skill_walk(
+					board, actor, mod_target_coord, action.waypoints, ability, events, applying_modules, walk_steps
+				)
+				
+				if ghost_status != null:
+					actor.active_statuses.erase(ghost_status)
+					actor._recalculate_stats()
+				affected_tiles = GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
+				continue
+
+			if module.belly_flop_push:
+				for dir in GridSystem.DIRECTIONS:
+					var adj_coord = actor.position + dir
+					var adj_unit = board.get_unit_at(adj_coord)
+					_apply_effect_to_tile(board, actor, action, module, events, adj_coord, adj_unit)
+				continue
+
+			if module.damage_adjacent_on_landing:
+				for dir in GridSystem.DIRECTIONS:
+					var adj_coord = actor.position + dir
+					var adj_unit = board.get_unit_at(adj_coord)
+					if adj_unit != null and adj_unit != actor and adj_unit.is_alive() and adj_unit.team != actor.team:
+						_apply_effect_to_tile(board, actor, action, module, events, adj_coord, adj_unit)
+				continue
+
+			if module.push_board_items:
+				for tile_coord in affected_tiles:
+					var item_idx: int = board.items.find(tile_coord)
+					if item_idx < 0:
+						continue
+					var push_dir: Vector2i = PhysicsSystem.cardinal_from_to(actor.position, tile_coord)
+					if push_dir == Vector2i.ZERO:
+						continue
+					var dest: Vector2i = tile_coord + push_dir
+					if not GridSystem.is_in_bounds(board, dest) or GridSystem.is_wall(board, dest):
+						continue
+					var hit_unit: UnitState = board.get_unit_at(dest)
+					board.items[item_idx] = dest
+					if (
+						hit_unit != null
+						and hit_unit.is_alive()
+						and hit_unit.team != actor.team
+						and module.item_collision_damage > 0
+					):
+						var item_dmg: int = module.item_collision_damage
+						CombatSystem.deal_damage(
+							board, hit_unit, item_dmg, events, &"true", true, false, actor,
+							action.ability.display_name, item_dmg,
+						)
+				continue
+				
+			if module.buff_per_destroyed_object:
+				for tile_coord in affected_tiles:
+					var construct_unit = board.get_unit_at(tile_coord)
+					if construct_unit != null and construct_unit.definition.is_construct:
+						objects_destroyed_count += 1
+
+			for tile_coord in affected_tiles:
+				var target_unit := board.get_unit_at(tile_coord)
+				if action.target_unit_id >= 0:
+					var pinned_target := board.get_unit_by_id(action.target_unit_id)
+					if pinned_target != null and pinned_target.position == tile_coord:
+						target_unit = pinned_target
+				
+				if module.primary_type == GameEnums.EffectType.DAMAGE and target_unit != null and target_unit != actor and target_unit.is_alive() and module.heal_per_target_hit:
+					targets_hit_count += 1
+					
+				_apply_effect_to_tile(board, actor, action, module, events, tile_coord, target_unit)
+
+	if heal_per_target_hit and targets_hit_count > 0:
+		CombatSystem.heal(board, actor, targets_hit_count, events)
+	if buff_per_object and objects_destroyed_count > 0:
+		actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 999, objects_destroyed_count))
+		actor._recalculate_stats()
+
+	if actor != null and actor.is_alive() and actor.has_passive(&"intercept_tactics"):
+		var is_redirect = false
+		for module in modules_to_apply:
+			if module.primary_type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF] \
+					and module.status_type in [GameEnums.StatusType.INTERCEPT, GameEnums.StatusType.TAUNT]:
+				is_redirect = true
+				break
+		if is_redirect:
+			var def_bonus = 3 if actor.is_passive_upgraded(&"intercept_tactics") else 2
+			actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, def_bonus))
+			actor._recalculate_stats()
+			
+	if actor != null:
+		actor.passive_flags.erase("__cast_cc_snapshot")
+
+	if actor != null and actor.is_alive() and actor.has_passive(&"kinetic_redirection"):
+		var is_attack = false
+		for module in modules_to_apply:
+			if module.primary_type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]:
+				is_attack = true
+				break
+		if is_attack:
+			var stacks = actor.passive_flags.get("kinetic_redirection_stacks", 0)
+			if stacks > 0:
+				actor.passive_flags["kinetic_redirection_stacks"] = 0
+				var to_remove = []
+				for status in actor.active_statuses:
+					if status.type == GameEnums.StatusType.STAT_BUFF_STR and status.duration == -1:
+						to_remove.append(status)
+				for status in to_remove:
+					actor.active_statuses.erase(status)
+				actor._recalculate_stats()
+
+	if ability.is_class_kind():
+		apply_canto_move_refund(actor)

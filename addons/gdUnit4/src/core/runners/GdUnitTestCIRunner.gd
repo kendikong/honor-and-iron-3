@@ -1,4 +1,4 @@
-#warning-ignore-all:return_value_discarded
+﻿#warning-ignore-all:return_value_discarded
 class_name GdUnitTestCIRunner
 extends "res://addons/gdUnit4/src/core/runners/GdUnitTestSessionRunner.gd"
 ## Command line test runner implementation.[br]

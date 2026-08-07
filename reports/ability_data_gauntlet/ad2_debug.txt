@@ -1,0 +1,13 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[AD2_DEBUG] start
+[AD2_DEBUG] DataLibrary loaded
+[AD2_DEBUG] cache reset
+[AD2_DEBUG] bruiser=():<Resource#-9223371949546142117>
+[AD2_DEBUG] modules=2
+[AD2_DEBUG] mod[0] type=15 gate=0 kws=1
+[AD2_DEBUG] mod[1] type=22 gate=3 kws=0
+[AD2_DEBUG] effects=1
+[AD2_DEBUG] eff type=15 mods={ "bulldoze": 1, "push": 1 }
+[AD2_DEBUG] should_ensure=false
+[AD2_DEBUG] has_gate=true

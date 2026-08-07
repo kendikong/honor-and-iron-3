@@ -1,7 +1,7 @@
-class_name MassSimSeed
+﻿class_name MassSimSeed
 extends RefCounted
 
-## Deterministic per-battle seeds for mass sim (thread-safe — no ticks in workers).
+## Deterministic per-battle seeds for mass sim (thread-safe â€” no ticks in workers).
 
 
 static func batch_seed(fingerprint: String = "") -> int:

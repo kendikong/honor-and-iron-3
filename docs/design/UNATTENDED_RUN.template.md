@@ -13,7 +13,7 @@ The lead agent must **not** ask the owner questions during the run. It stops onl
 |-------|-------|
 | **CHUNK_ID** | *(e.g. `knight-fortify-2026-08-02`)* |
 | **GOAL** | *(one scoped outcome)* |
-| **BAR** | *(exact PASS criteria — commands, not vibes)* |
+| **BAR** | *(exact PASS criteria — commands, not vibes. Behavior-freeze goals **must** include Tier 3 live `live_planning_scene_test` / `run_planning_qa_gate`)* |
 | **Started (UTC)** | — |
 
 ---

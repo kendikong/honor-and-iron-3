@@ -1,4 +1,4 @@
-class_name GdUnitResult
+﻿class_name GdUnitResult
 extends RefCounted
 
 enum {

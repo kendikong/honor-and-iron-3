@@ -1,8 +1,8 @@
-class_name SeasonalSampleCatalog
+﻿class_name SeasonalSampleCatalog
 extends RefCounted
 
 ## Seasonal reference maps under Assets/Mana Seed/tilesets/.
-## Same composition as the gentle forest sample map; palette = v07–v10 (PNGs not on disk).
+## Same composition as the gentle forest sample map; palette = v07â€“v10 (PNGs not on disk).
 
 const ASSET_ROOT: String = "res://Assets/Mana Seed/tilesets/"
 
@@ -191,4 +191,4 @@ static func _overlay_label(source_id: int, atlas: Vector2i) -> String:
 
 static func _overlay_use_case(source_id: int, atlas: Vector2i) -> String:
 	var base: String = TileCatalog.describe_overlay_source(source_id, atlas)
-	return "%s · %s" % [base, seasonal_use_case_suffix()]
+	return "%s Â· %s" % [base, seasonal_use_case_suffix()]

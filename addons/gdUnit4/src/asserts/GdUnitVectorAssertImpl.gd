@@ -1,4 +1,4 @@
-extends GdUnitVectorAssert
+﻿extends GdUnitVectorAssert
 
 var _base: GdUnitAssertImpl
 var _current_type: int

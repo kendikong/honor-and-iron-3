@@ -1,4 +1,4 @@
-class_name TacticalUnitLayer
+﻿class_name TacticalUnitLayer
 extends Node2D
 
 ## LPC unit sprites on the tactical grid (Phase 5).
@@ -234,7 +234,7 @@ func is_sprites_active() -> bool:
 
 
 func reset_planning_walk_origins_for_moves(events: Array) -> void:
-	## Autobattler batch only — kill in-flight tweens before parallel commit walks.
+	## Autobattler batch only â€” kill in-flight tweens before parallel commit walks.
 	## Player commits must not call this; walk starts from current sprite cell via
 	## _animate_planning_commit_move (preview == commit, no origin reset).
 	var reset_ids: Dictionary = {}
@@ -746,7 +746,7 @@ func apply_sim_event(event: SimEvent) -> void:
 		and _is_planning_phase()
 		and _should_animate_planning_commit_move(int(event.data.get("actor", -1)), event)
 	):
-		# Selection premove: owned by planning_commit_events → _animate_planning_commit_move.
+		# Selection premove: owned by planning_commit_events â†’ _animate_planning_commit_move.
 		return
 	match event.type:
 		GameEnums.SimEventType.UNIT_MOVED:
@@ -927,11 +927,11 @@ func _event_ability_has_pull(event: SimEvent) -> bool:
 	for ability: AbilityData in actor.active_abilities:
 		if ability.id != ability_id:
 			continue
-		var effects: Array[EffectData] = ability.effects
-		if actor.is_ability_upgraded(ability_id) and ability.upgraded_effects.size() > 0:
-			effects = ability.upgraded_effects
-		for effect: EffectData in effects:
-			if effect.type == GameEnums.EffectType.PULL:
+		var effects: Array[AbilityModule] = ability.modules
+		if actor.is_ability_upgraded(ability_id) and ability.upgraded_modules.size() > 0:
+			effects = ability.upgraded_modules
+		for effect: AbilityModule in effects:
+			if effect.primary_type == GameEnums.EffectType.PULL:
 				return true
 		return false
 	return false
@@ -2051,7 +2051,7 @@ func _facing_toward_queued_action(unit_id: int) -> int:
 				continue
 			if action.ability.is_movement_kind() or action.ability.is_universal_run() or action.ability.is_universal_wait():
 				continue
-			# CLASS_SKILL movement (e.g. Trampling Advance) — path facing, not attack aim.
+			# CLASS_SKILL movement (e.g. Trampling Advance) â€” path facing, not attack aim.
 			if AbilitySystem.ability_has_movement_effect(action.ability):
 				continue
 			var target_coord: Vector2i = action.target_coord
@@ -2283,7 +2283,7 @@ func _proj_unit(unit_id: int) -> UnitState:
 
 
 func _status_badge(status_type: int) -> Dictionary:
-	## Sharp 2-letter badges — no emoji (emoji at tiny sizes blurs unreadably).
+	## Sharp 2-letter badges â€” no emoji (emoji at tiny sizes blurs unreadably).
 	match status_type:
 		GameEnums.StatusType.STAT_BUFF_STR:
 			return {"abbr": "S+", "bg": Color(0.22, 0.55, 0.28), "fg": Color(0.92, 1.0, 0.92)}

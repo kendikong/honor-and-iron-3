@@ -1,4 +1,4 @@
-extends CharacterGeneratorPanel
+﻿extends CharacterGeneratorPanel
 
 const CATALOG_PATH: String = "res://resources/character/lpc_catalog.json"
 const _CLASS_LOADOUTS = preload("res://scripts/lpc/lpc_class_loadout_defaults.gd")
@@ -21,7 +21,7 @@ func _ready() -> void:
 			
 	# Add a global save button at the top
 	var save_btn := Button.new()
-	save_btn.text = "💾 Save Master Catalog"
+	save_btn.text = "ðŸ’¾ Save Master Catalog"
 	save_btn.add_theme_font_size_override("font_size", 16)
 	save_btn.custom_minimum_size.y = 40
 	save_btn.pressed.connect(_save_catalog)
@@ -224,7 +224,7 @@ func _inject_advanced_panel(wrapper: Container, top_row: Container, item_dict: D
 	wrapper.add_child(adv_panel)
 
 	var edit_btn := Button.new()
-	edit_btn.text = "⚙"
+	edit_btn.text = "âš™"
 	edit_btn.flat = true
 	edit_btn.pressed.connect(func():
 		adv_panel.visible = not adv_panel.visible
@@ -334,7 +334,7 @@ func _rebuild_item_sliders() -> void:
 			
 			if not categories.has(cat_name):
 				var btn := Button.new()
-				btn.text = "▼  " + cat_name.capitalize()
+				btn.text = "â–¼  " + cat_name.capitalize()
 				btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 				btn.flat = true
 				_item_section_vbox.add_child(btn)
@@ -347,7 +347,7 @@ func _rebuild_item_sliders() -> void:
 				categories[cat_name] = cvbox
 				btn.pressed.connect(func(v=cvbox, b=btn, n=cat_name):
 					v.visible = not v.visible
-					b.text = ("▼  " if v.visible else "▶  ") + n.capitalize()
+					b.text = ("â–¼  " if v.visible else "â–¶  ") + n.capitalize()
 				)
 				
 			var category_vbox: VBoxContainer = categories[cat_name]
@@ -410,8 +410,8 @@ func _on_search_changed(query: String) -> void:
 				btn.visible = any_visible
 				if not q.is_empty() and any_visible:
 					category_vbox.visible = true
-					var n = btn.text.replace("▶  ", "").replace("▼  ", "")
-					btn.text = "▼  " + n
+					var n = btn.text.replace("â–¶  ", "").replace("â–¼  ", "")
+					btn.text = "â–¼  " + n
 
 
 func _on_recipe_applied(report: Dictionary) -> void:
@@ -481,7 +481,7 @@ func _build_class_loadout_section(parent: VBoxContainer) -> void:
 	preview_row.add_child(preview_lbl)
 	_preview_class_opt = OptionButton.new()
 	_preview_class_opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_preview_class_opt.add_item("(Random — no class)")
+	_preview_class_opt.add_item("(Random â€” no class)")
 	_preview_class_opt.set_item_metadata(0, "")
 	for class_id: String in LpcConstants.LPC_PLAYER_CLASS_IDS:
 		_preview_class_opt.add_item(class_id.capitalize())

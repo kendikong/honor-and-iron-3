@@ -3,7 +3,7 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Taunting Strike — RANGE 2 ATK 1 PULL 1 TAUNT; [+] RANGE 3 AOE 3x3 PULL 2 all enemies.
+## Bible: Taunting Strike â€” RANGE 2 ATK 1 PULL 1 TAUNT; [+] RANGE 3 AOE 3x3 PULL 2 all enemies.
 ## Globals: EffectType.DAMAGE, PULL, ADD_STATUS(TAUNT) via AbilitySystem.
 
 
@@ -23,7 +23,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/damage_amount",
-		strike != null and strike.effects[0].amount == 1,
+		strike != null and strike.modules[0].amount == 1,
 		"taunting strike base DAMAGE must be ATK 1",
 	)
 	_KnightQaHarness.assert_true(
@@ -32,7 +32,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/pull_amount",
-		strike != null and strike.effects[1].amount == 1,
+		strike != null and strike.modules[1].amount == 1,
 		"taunting strike base PULL must be 1",
 	)
 	_KnightQaHarness.assert_true(
@@ -56,5 +56,5 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/upgrade_pull2",
-		strike != null and strike.upgraded_effects[1].amount == 2,
+		strike != null and strike.upgraded_modules[1].amount == 2,
 	)

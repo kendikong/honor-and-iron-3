@@ -1,4 +1,4 @@
-## A tuple implementation for GdUnit4 test assertions and value extraction.
+﻿## A tuple implementation for GdUnit4 test assertions and value extraction.
 ## @tutorial(GdUnit4 Array Assertions): https://mikeschulze.github.io/gdUnit4/latest/testing/assert-array/#extractv
 ## @tutorial(GdUnit4 Testing Framework): https://mikeschulze.github.io/gdUnit4/
 ## [br]

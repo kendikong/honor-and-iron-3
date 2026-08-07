@@ -1,4 +1,4 @@
-extends Label
+﻿extends Label
 
 func _make_custom_tooltip(for_text: String) -> Control:
 	var rtol := RichTextLabel.new()

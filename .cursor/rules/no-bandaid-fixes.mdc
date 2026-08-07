@@ -32,7 +32,7 @@ A change is a **bandaid** if it:
 - New global bools that only one feature uses (unless user approves the exception in chat)
 - “Temporary” TODO patches committed as final behavior
 - Copy-paste of the same 5+ lines into a second file instead of a shared helper at the correct layer
-- Restoring legacy files (`board_view.gd`) as the live fix while tactical path stays broken
+- Restoring removed legacy board code as the live fix while the tactical path stays broken
 
 ## Before every implementation turn (self-check)
 

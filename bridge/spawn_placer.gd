@@ -1,4 +1,4 @@
-class_name SpawnPlacer
+﻿class_name SpawnPlacer
 extends RefCounted
 
 ## Deterministic spawn placement for random skirmishes.

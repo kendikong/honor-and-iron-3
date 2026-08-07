@@ -1,4 +1,4 @@
-class_name GdUnitContextMenuItem
+﻿class_name GdUnitContextMenuItem
 
 
 var command_id: String:

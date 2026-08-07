@@ -1,4 +1,4 @@
-class_name RPCClientDisconnect
+﻿class_name RPCClientDisconnect
 extends RPC
 
 var _client_id: int

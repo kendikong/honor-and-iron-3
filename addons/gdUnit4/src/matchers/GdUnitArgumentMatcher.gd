@@ -1,4 +1,4 @@
-## The base class of all argument matchers
+﻿## The base class of all argument matchers
 class_name GdUnitArgumentMatcher
 extends RefCounted
 

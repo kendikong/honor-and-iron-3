@@ -1,4 +1,4 @@
-extends GdUnitFuncAssert
+﻿extends GdUnitFuncAssert
 
 
 const GdUnitTools := preload("res://addons/gdUnit4/src/core/GdUnitTools.gd")

@@ -1,4 +1,4 @@
-class_name RPCMessage
+﻿class_name RPCMessage
 extends RPC
 
 var _message: String

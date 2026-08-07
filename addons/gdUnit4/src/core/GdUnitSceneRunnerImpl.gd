@@ -1,4 +1,4 @@
-# This class provides a runner for scense to simulate interactions like keyboard or mouse
+﻿# This class provides a runner for scense to simulate interactions like keyboard or mouse
 class_name GdUnitSceneRunnerImpl
 extends GdUnitSceneRunner
 

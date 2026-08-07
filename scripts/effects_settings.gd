@@ -1,4 +1,4 @@
-class_name EffectsSettings
+﻿class_name EffectsSettings
 extends RefCounted
 
 ## Persisted on/off toggles for living-environment systems.
@@ -7,15 +7,15 @@ signal changed
 
 const CONFIG_PATH: String = "user://game_settings.cfg"
 
-# Phase 4 — Wind & Grass (GPU)
+# Phase 4 â€” Wind & Grass (GPU)
 var wind_field: bool = false
 
-# Phase 5 — Sky, Light, Atmosphere
+# Phase 5 â€” Sky, Light, Atmosphere
 var time_light: bool = true
 var cloud_shadows: bool = true
 var mist: bool = false
 
-## Cloud shadow field tuning — GPU + CPU share CloudTuning.
+## Cloud shadow field tuning â€” GPU + CPU share CloudTuning.
 var cloud_shadow_strength: float = CloudTuning.STRENGTH_DEFAULT
 var cloud_scale_tiles: float = CloudTuning.SCALE_TILES_DEFAULT
 var cloud_coverage: float = CloudTuning.COVERAGE_DEFAULT
@@ -24,25 +24,25 @@ var cloud_mask_steps: float = CloudTuning.MASK_STEPS_DEFAULT
 var cloud_shape_mix: float = CloudTuning.SHAPE_MIX_DEFAULT
 var cloud_shape_scale: float = CloudTuning.SHAPE_SCALE_DEFAULT
 
-# Phase 9 — Composites & pixel-height shadows (each deliverable = one toggle)
+# Phase 9 â€” Composites & pixel-height shadows (each deliverable = one toggle)
 var oblique_contact_shadows: bool = true
 var tree_variant_b: bool = true
 
-# Debug — freeze WeatherBus clock/sun; cloud drift keeps running independently.
+# Debug â€” freeze WeatherBus clock/sun; cloud drift keeps running independently.
 var shadow_freeze_time: bool = false
 var shadow_cycle_sun_angle: bool = false
 var shadow_cycle_length: bool = false
 var shadow_cycle_tint_strength: bool = false
 var shadow_disable_tree_nudge: bool = false
 var shadow_disable_caster_punch: bool = true
-## Experiment — low-res bake, no twilight throttle, linear filter (performance over pixel fidelity).
+## Experiment â€” low-res bake, no twilight throttle, linear filter (performance over pixel fidelity).
 var shadow_perf_mode: bool = false
 ## Quality shader + full-res bake by day; perf LOD bake + throttle when contrast is low (dawn/dusk).
 var shadow_hybrid_twilight_lod: bool = true
-## 3×3 box blur on baked shadow alpha after binarize (off = hard pixel edges).
+## 3Ã—3 box blur on baked shadow alpha after binarize (off = hard pixel edges).
 var shadow_edge_soften: bool = false
 
-## Shadow twilight / timing / perf scalars — map + player share WeatherBus + ShadowPalette path.
+## Shadow twilight / timing / perf scalars â€” map + player share WeatherBus + ShadowPalette path.
 var shadow_twilight_fade_deg: float = ShadowTuning.TWILIGHT_FADE_DEG_DEFAULT
 var shadow_contrast_ease: float = ShadowTuning.CONTRAST_EASE_DEFAULT
 var shadow_full_contrast_below_noon_deg: float = ShadowTuning.FULL_CONTRAST_BELOW_NOON_DEFAULT
@@ -81,18 +81,18 @@ const SHADOW_DEBUG_KEYS: PackedStringArray = [
 	"shadow_edge_soften",
 ]
 
-# Phase 6 — Water Channel
+# Phase 6 â€” Water Channel
 var water_ripples: bool = true
 var shoreline_foam: bool = true
 var water_sparkles: bool = true
 var fish_splash: bool = true
 
-# Phase 7 — Ecology & Rare Events
+# Phase 7 â€” Ecology & Rare Events
 var ambient_particles: bool = true
 var ecology_actors: bool = true
 var rare_events: bool = true
 
-# Phase 8 — Biome / Palette Swap
+# Phase 8 â€” Biome / Palette Swap
 var biome_variant: int = 1
 
 var sandbox_character_scale: float = 2.0

@@ -1,4 +1,4 @@
-﻿class_name BruiserAdrenalineSurgeScenarioTest
+class_name BruiserAdrenalineSurgeScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")

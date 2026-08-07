@@ -1,4 +1,4 @@
-class_name GdUnitTestSessionHookService
+﻿class_name GdUnitTestSessionHookService
 extends Object
 
 

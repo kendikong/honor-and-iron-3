@@ -1,4 +1,4 @@
-class_name TerrainData
+﻿class_name TerrainData
 extends Resource
 
 ## Purpose: Static description of one kind of tile.

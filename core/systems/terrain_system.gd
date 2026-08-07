@@ -1,4 +1,4 @@
-class_name TerrainSystem
+﻿class_name TerrainSystem
 extends RefCounted
 
 ## Purpose: Owns tile-triggered terrain effects (and nothing else). This is the

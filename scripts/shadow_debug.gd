@@ -1,4 +1,4 @@
-class_name ShadowDebug
+﻿class_name ShadowDebug
 extends RefCounted
 
 ## Shadow sun + length follow Time & light by default.

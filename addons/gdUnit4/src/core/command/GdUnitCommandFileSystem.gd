@@ -1,4 +1,4 @@
-@abstract class_name GdUnitCommandFileSystem
+﻿@abstract class_name GdUnitCommandFileSystem
 extends GdUnitBaseCommand
 
 

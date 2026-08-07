@@ -1,6 +1,6 @@
-extends RefCounted
+﻿extends RefCounted
 
-## Shared TileSet source / terrain indices. Preload this script — do not use class_name.
+## Shared TileSet source / terrain indices. Preload this script â€” do not use class_name.
 ## Example: const C = preload("res://scripts/mana_seed_constants.gd")
 
 const SOURCE_FOREST: int = 0
@@ -39,7 +39,7 @@ const GID_TREES_START: int = 317
 const GID_SPARKLES_START: int = 319
 const GID_PROPS_START: int = 328
 
-## MapRoot draw order (bottom → top). Contact shadows darken ground; rocks/props above shadow.
+## MapRoot draw order (bottom â†’ top). Contact shadows darken ground; rocks/props above shadow.
 const Z_GROUND: int = 0
 const Z_UNDER_TREE: int = 1
 const Z_SHADOW: int = 1

@@ -1,4 +1,4 @@
-class_name GdUnitTestSuiteDefaultTemplate
+﻿class_name GdUnitTestSuiteDefaultTemplate
 extends RefCounted
 
 

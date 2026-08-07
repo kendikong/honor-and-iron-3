@@ -1,4 +1,4 @@
-## A fuzzer that generates random boolean values for testing.[br]
+﻿## A fuzzer that generates random boolean values for testing.[br]
 ##
 ## This is useful for testing code paths that
 ## depend on boolean conditions, flags, or toggle states.[br]

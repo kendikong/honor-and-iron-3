@@ -1,4 +1,4 @@
-## An Assertion Tool to verify array values
+﻿## An Assertion Tool to verify array values
 @abstract class_name GdUnitArrayAssert
 extends GdUnitAssert
 

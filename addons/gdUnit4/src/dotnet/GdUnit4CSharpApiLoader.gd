@@ -1,4 +1,4 @@
-## GdUnit4CSharpApiLoader
+﻿## GdUnit4CSharpApiLoader
 ##
 ## A bridge class that handles communication between GDScript and C# for the GdUnit4 testing framework.
 ## This loader acts as a compatibility layer to safely access the .NET API and ensure that calls

@@ -1,4 +1,4 @@
-## An Assertion Tool to verify Object values
+﻿## An Assertion Tool to verify Object values
 @abstract class_name GdUnitObjectAssert
 extends GdUnitAssert
 
@@ -42,9 +42,9 @@ extends GdUnitAssert
 ## Verifies the current object is a valid instance (e.g. has not been freed from memory).[br]
 ## [codeblock]
 ## var node := Node.new()
-## assert_object(node).is_valid()  # passes — node is alive
+## assert_object(node).is_valid()  # passes â€” node is alive
 ## node.free()
-## assert_object(node).is_valid()  # fails  — node has been freed
+## assert_object(node).is_valid()  # fails  â€” node has been freed
 ## [/codeblock]
 @abstract func is_valid() -> GdUnitObjectAssert
 

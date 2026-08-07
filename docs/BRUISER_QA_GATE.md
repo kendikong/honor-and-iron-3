@@ -40,7 +40,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 |--------------|--------------|----------------|
 | **Suplex:** behind caster placement | `SWAP` | `THROW_BEHIND` (`bruiser_suplex`) |
 | **Meat Shield:** swap with ally | `TELEPORT` | `SWAP` + `INTERCEPT` |
-| **Violent Collision:** dash + recast on hit | single `MOVE` | `DASH` + `violent_collision_recast` modifier |
+| **Violent Collision:** dash + recast on hit | single `MOVE` | `DASH` + `ModuleGate.IF_COLLIDED` (modules; runtime gate) |
 | **Push Through:** move into occupied tile | `SWAP` | `MOVE_INTO_AND_PUSH` |
 
 ---

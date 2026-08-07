@@ -1,4 +1,4 @@
-class_name GdUnitEventTestDiscoverEnd
+﻿class_name GdUnitEventTestDiscoverEnd
 extends GdUnitEvent
 
 

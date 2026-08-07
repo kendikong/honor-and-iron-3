@@ -1,4 +1,4 @@
-class_name SimulationTelemetry
+﻿class_name SimulationTelemetry
 extends RefCounted
 
 ## Purpose: Aggregates the 7 levels of telemetry for a single simulated battle.

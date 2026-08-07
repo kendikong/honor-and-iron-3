@@ -1,0 +1,408 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.2 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+ALSA lib confmisc.c:855:(parse_card) cannot find card '0'
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_card_inum returned error: No such file or directory
+ALSA lib confmisc.c:422:(snd_func_concat) error evaluating strings
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_concat returned error: No such file or directory
+ALSA lib confmisc.c:1342:(snd_func_refer) error evaluating name
+ALSA lib conf.c:5208:(_snd_config_evaluate) function snd_func_refer returned error: No such file or directory
+ALSA lib conf.c:5731:(snd_config_expand) Evaluate error: No such file or directory
+ALSA lib pcm.c:2721:(snd_pcm_open_noupdate) Unknown PCM default
+ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
+   at: init_output_device (drivers/alsa/audio_driver_alsa.cpp:97)
+WARNING: All audio drivers failed, falling back to the dummy driver.
+     at: initialize (servers/audio/audio_server.cpp:258)
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m
+  [38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_planning_bible_multi_knight_session[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:3 - ext_resource, invalid UID: uid://dluabcko7kwat - using text path instead: res://Assets/Mana Seed/gentle animations/gentle waterfall A v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:4 - ext_resource, invalid UID: uid://cdrn638w3mipg - using text path instead: res://Assets/Mana Seed/gentle sheets/gentle forest v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:5 - ext_resource, invalid UID: uid://byqowha12scwl - using text path instead: res://Assets/Mana Seed/gentle sheets/gentle trees 80x96 v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:6 - ext_resource, invalid UID: uid://s8ana077elfc - using text path instead: res://Assets/Mana Seed/gentle animations/gentle water sparkles A v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:7 - ext_resource, invalid UID: uid://dv7x01vwg2gpx - using text path instead: res://Assets/Mana Seed/gentle sheets/gentle 32x32 v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: LPC palette: no mapping for skin roll 'light' (resolved 'light', base 'lpcr.ivory')
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _warn_missing_target (res://scripts/lpc/lpc_palette_store.gd:294)
+         [1] apply_recolor_to_image (res://scripts/lpc/lpc_palette_store.gd:73)
+         [2] _load_nearest_texture (res://scripts/lpc/lpc_sheet_frames.gd:213)
+         [3] _ensure_idle (res://scripts/lpc/lpc_sheet_frames.gd:115)
+         [4] ensure_animation (res://scripts/lpc/lpc_sheet_frames.gd:72)
+         [5] _apply_motion_state (res://scripts/lpc/character_actor.gd:877)
+         [6] add_layer (res://scripts/lpc/character_actor.gd:172)
+         [7] apply (res://scripts/lpc/character_composer.gd:58)
+         [8] apply_recipe (res://scripts/lpc/character_actor.gd:838)
+         [9] _ensure_actor (res://presentation/tactical_unit_layer.gd:1011)
+         [10] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [11] _on_board_changed (res://presentation/tactical_unit_layer.gd:332)
+         [12] _init_combat (res://presentation/combat_director.gd:196)
+         [13] start_from_custom (res://presentation/combat_director.gd:177)
+         [14] start_combat (res://presentation/tactical_combat_shell.gd:105)
+         [15] _start_combat (res://presentation/test_battle_map_view.gd:43)
+         [16] _ready (res://presentation/tactical_map_view.gd:162)
+         [17] _ready (res://presentation/test_battle_map_view.gd:12)
+         [18] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [19] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [20] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:93)
+         [21] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [22] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [23] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [24] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [25] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [26] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [27] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [28] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [29] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+WARNING: LpcAssetPreloader: 488/2645 sprite sheets missing on disk.
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _scan_all (res://scripts/lpc/lpc_asset_preloader.gd:83)
+WARNING: LPC palette: no mapping for skin roll 'blue' (resolved 'blue', base 'lpcr.ivory')
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _warn_missing_target (res://scripts/lpc/lpc_palette_store.gd:294)
+         [1] apply_recolor_to_image (res://scripts/lpc/lpc_palette_store.gd:73)
+         [2] _load_nearest_texture (res://scripts/lpc/lpc_sheet_frames.gd:213)
+         [3] _ensure_idle (res://scripts/lpc/lpc_sheet_frames.gd:115)
+         [4] ensure_animation (res://scripts/lpc/lpc_sheet_frames.gd:72)
+         [5] _apply_motion_state (res://scripts/lpc/character_actor.gd:877)
+         [6] add_layer (res://scripts/lpc/character_actor.gd:172)
+         [7] apply (res://scripts/lpc/character_composer.gd:58)
+         [8] apply_recipe (res://scripts/lpc/character_actor.gd:838)
+         [9] _ensure_actor (res://presentation/tactical_unit_layer.gd:1011)
+         [10] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [11] _on_board_changed (res://presentation/tactical_unit_layer.gd:332)
+         [12] _init_combat (res://presentation/combat_director.gd:196)
+         [13] start_from_custom (res://presentation/combat_director.gd:177)
+         [14] apply_training_board (res://presentation/test_battle_map_view.gd:66)
+         [15] _boot_multi_knight_session (res://tests/live_planning_scene_test.gd:320)
+         [16] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:98)
+         [17] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+WARNING: LPC class loadout: item 'torso_armour_plate' incompatible with body=muscular for class 'knight'
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _apply_class_forced_items (res://scripts/lpc/character_roller.gd:384)
+         [1] roll (res://scripts/lpc/character_roller.gd:219)
+         [2] roll_recipe_for_unit (res://bridge/unit_visual_factory.gd:31)
+         [3] _ensure_actor (res://presentation/tactical_unit_layer.gd:1008)
+         [4] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [5] _on_board_changed (res://presentation/tactical_unit_layer.gd:332)
+         [6] _init_combat (res://presentation/combat_director.gd:196)
+         [7] start_from_custom (res://presentation/combat_director.gd:177)
+         [8] apply_training_board (res://presentation/test_battle_map_view.gd:66)
+         [9] _boot_multi_knight_session (res://tests/live_planning_scene_test.gd:320)
+         [10] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:98)
+         [11] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+WARNING: LPC class loadout: item 'legs_armour' incompatible with body=muscular for class 'knight'
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _apply_class_forced_items (res://scripts/lpc/character_roller.gd:384)
+         [1] roll (res://scripts/lpc/character_roller.gd:219)
+         [2] roll_recipe_for_unit (res://bridge/unit_visual_factory.gd:31)
+         [3] _ensure_actor (res://presentation/tactical_unit_layer.gd:1008)
+         [4] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [5] _on_board_changed (res://presentation/tactical_unit_layer.gd:332)
+         [6] _init_combat (res://presentation/combat_director.gd:196)
+         [7] start_from_custom (res://presentation/combat_director.gd:177)
+         [8] apply_training_board (res://presentation/test_battle_map_view.gd:66)
+         [9] _boot_multi_knight_session (res://tests/live_planning_scene_test.gd:320)
+         [10] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:98)
+         [11] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+WARNING: LPC class loadout: item 'torso_armour_plate' incompatible with body=muscular for class 'knight'
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _apply_class_forced_items (res://scripts/lpc/character_roller.gd:384)
+         [1] roll (res://scripts/lpc/character_roller.gd:219)
+         [2] roll_recipe_for_unit (res://bridge/unit_visual_factory.gd:31)
+         [3] _ensure_actor (res://presentation/tactical_unit_layer.gd:1008)
+         [4] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [5] rebuild_all_actor_visuals (res://presentation/tactical_unit_layer.gd:821)
+         [6] apply_training_board (res://presentation/test_battle_map_view.gd:68)
+         [7] _boot_multi_knight_session (res://tests/live_planning_scene_test.gd:320)
+         [8] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:98)
+         [9] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+WARNING: LPC class loadout: item 'legs_armour' incompatible with body=muscular for class 'knight'
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _apply_class_forced_items (res://scripts/lpc/character_roller.gd:384)
+         [1] roll (res://scripts/lpc/character_roller.gd:219)
+         [2] roll_recipe_for_unit (res://bridge/unit_visual_factory.gd:31)
+         [3] _ensure_actor (res://presentation/tactical_unit_layer.gd:1008)
+         [4] _sync_actors (res://presentation/tactical_unit_layer.gd:879)
+         [5] rebuild_all_actor_visuals (res://presentation/tactical_unit_layer.gd:821)
+         [6] apply_training_board (res://presentation/test_battle_map_view.gd:68)
+         [7] _boot_multi_knight_session (res://tests/live_planning_scene_test.gd:320)
+         [8] test_live_planning_bible_multi_knight_session (res://tests/live_planning_scene_test.gd:98)
+         [9] simulate_frames (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:420)
+[K4-SNAPSHOT] walk_loop_end | stand=(4, 2) requires_run=false display_ap=1 red_gate=true overlay_red=true
+[K4-SNAPSHOT] saved res://reports/k4_preview/k4_walk_loop_end.png
+[K4-SNAPSHOT] run_trigger | stand=(3, 2) requires_run=true display_ap=0 red_gate=false overlay_red=false
+[K4-COMPARE] F5 auto_run paint at run end: requires_run=true display_ap=0 red_gate=false overlay_red=false
+[K4-SNAPSHOT] saved res://reports/k4_preview/k4_run_trigger.png
+[K4-SNAPSHOT] after_commit | stand=(3, 2) requires_run=true display_ap=0 red_gate=false overlay_red=false
+[K4-SNAPSHOT] saved res://reports/k4_preview/k4_after_commit.png
+[LIVE-PLANNING-TRACE] 107 transitions -> res://reports/live_planning_trace/trace.json
+  [38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_planning_bible_multi_knight_session[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 33s 89ms[0m
+[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_swap_session[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:3 - ext_resource, invalid UID: uid://dluabcko7kwat - using text path instead: res://Assets/Mana Seed/gentle animations/gentle waterfall A v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_swap_session (res://tests/live_planning_scene_test.gd:110)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+         [16] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [17] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:33)
+         [18] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [19] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+         [20] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [21] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseAfterStage.gd:26)
+         [22] gc (res://addons/gdUnit4/src/core/execution/GdUnitExecutionContext.gd:298)
+         [23] gc (res://addons/gdUnit4/src/core/execution/GdUnitMemoryObserver.gd:129)
+         [24] free_instance (res://addons/gdUnit4/src/core/GdUnitTools.gd:56)
+         [25] await_input_processed (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:116)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:4 - ext_resource, invalid UID: uid://cdrn638w3mipg - using text path instead: res://Assets/Mana Seed/gentle sheets/gentle forest v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_swap_session (res://tests/live_planning_scene_test.gd:110)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+         [16] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [17] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:33)
+         [18] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [19] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+         [20] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [21] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseAfterStage.gd:26)
+         [22] gc (res://addons/gdUnit4/src/core/execution/GdUnitExecutionContext.gd:298)
+         [23] gc (res://addons/gdUnit4/src/core/execution/GdUnitMemoryObserver.gd:129)
+         [24] free_instance (res://addons/gdUnit4/src/core/GdUnitTools.gd:56)
+         [25] await_input_processed (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:116)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:5 - ext_resource, invalid UID: uid://byqowha12scwl - using text path instead: res://Assets/Mana Seed/gentle sheets/gentle trees 80x96 v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_swap_session (res://tests/live_planning_scene_test.gd:110)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+         [16] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [17] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:33)
+         [18] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [19] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+         [20] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [21] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseAfterStage.gd:26)
+         [22] gc (res://addons/gdUnit4/src/core/execution/GdUnitExecutionContext.gd:298)
+         [23] gc (res://addons/gdUnit4/src/core/execution/GdUnitMemoryObserver.gd:129)
+         [24] free_instance (res://addons/gdUnit4/src/core/GdUnitTools.gd:56)
+         [25] await_input_processed (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:116)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:6 - ext_resource, invalid UID: uid://s8ana077elfc - using text path instead: res://Assets/Mana Seed/gentle animations/gentle water sparkles A v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_swap_session (res://tests/live_planning_scene_test.gd:110)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+         [16] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [17] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:33)
+         [18] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [19] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+         [20] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [21] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseAfterStage.gd:26)
+         [22] gc (res://addons/gdUnit4/src/core/execution/GdUnitExecutionContext.gd:298)
+         [23] gc (res://addons/gdUnit4/src/core/execution/GdUnitMemoryObserver.gd:129)
+         [24] free_instance (res://addons/gdUnit4/src/core/GdUnitTools.gd:56)
+         [25] await_input_processed (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:116)
+WARNING: res://resources/tilesets/mana_seed_combined_v01.tres:7 - ext_resource, invalid UID: uid://dv7x01vwg2gpx - using text path instead: res://Assets/Mana Seed/gentle sheets/gentle 32x32 v01.png
+     at: load (scene/resources/resource_format_text.cpp:501)
+     GDScript backtrace (most recent call first):
+         [0] build_combined_tileset (res://scripts/tile_set_factory.gd:31)
+         [1] _init_tile_pipeline (res://presentation/tactical_map_view.gd:288)
+         [2] _ready (res://presentation/tactical_map_view.gd:159)
+         [3] _ready (res://presentation/test_battle_map_view.gd:12)
+         [4] _init (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:74)
+         [5] scene_runner (res://addons/gdUnit4/src/GdUnitTestSuite.gd:248)
+         [6] test_live_swap_session (res://tests/live_planning_scene_test.gd:110)
+         [7] _execute_test_case (res://addons/gdUnit4/src/core/_TestCase.gd:79)
+         [8] execute (res://addons/gdUnit4/src/core/_TestCase.gd:40)
+         [9] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleTestStage.gd:10)
+         [10] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [11] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:17)
+         [12] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [13] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:25)
+         [14] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [15] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestSuiteExecutionStage.gd:35)
+         [16] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [17] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseExecutionStage.gd:33)
+         [18] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [19] _execute (res://addons/gdUnit4/src/core/execution/stages/single/GdUnitTestCaseSingleExecutionStage.gd:28)
+         [20] execute (res://addons/gdUnit4/src/core/execution/stages/IGdUnitExecutionStage.gd:19)
+         [21] _execute (res://addons/gdUnit4/src/core/execution/stages/GdUnitTestCaseAfterStage.gd:26)
+         [22] gc (res://addons/gdUnit4/src/core/execution/GdUnitExecutionContext.gd:298)
+         [23] gc (res://addons/gdUnit4/src/core/execution/GdUnitMemoryObserver.gd:129)
+         [24] free_instance (res://addons/gdUnit4/src/core/GdUnitTools.gd:56)
+         [25] await_input_processed (res://addons/gdUnit4/src/core/GdUnitSceneRunnerImpl.gd:116)
+WARNING: LpcAssetPreloader: 488/2645 sprite sheets missing on disk.
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] _scan_all (res://scripts/lpc/lpc_asset_preloader.gd:83)
+  [38;2;250;235;215mres://tests/live_planning_scene_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_swap_session[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 9s 802ms[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 2 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 42s 916ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 2 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (1/1)[0m
+[38;2;233;150;122mExecuted test cases : (2/2)[0m
+[38;2;233;150;122mTotal execution time: 42s 916ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file:///workspace/reports/report_11/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file:///workspace/reports/report_11/index.html[0m
+[38;2;233;150;122mExit code: 0[0m
+Run dispose test resources

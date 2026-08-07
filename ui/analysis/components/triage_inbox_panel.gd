@@ -1,4 +1,4 @@
-class_name TriageInboxPanel
+﻿class_name TriageInboxPanel
 extends PanelContainer
 
 signal inspect_requested(title: String, body: String, meta: Dictionary)
@@ -29,7 +29,7 @@ func populate(warnings: Array, workspace: MassSimWorkspace = null) -> void:
 		child.queue_free()
 	if warnings.is_empty():
 		var empty := Label.new()
-		empty.text = "No warnings — batch looks healthy."
+		empty.text = "No warnings â€” batch looks healthy."
 		MassSimTheme.style_muted(empty)
 		warnings_list.add_child(empty)
 		return

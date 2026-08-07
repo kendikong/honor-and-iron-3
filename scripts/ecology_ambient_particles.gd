@@ -1,7 +1,7 @@
-class_name EcologyAmbientParticles
+﻿class_name EcologyAmbientParticles
 extends Node2D
 
-## GPUParticles2D — peak-bright motes that shrink and dim over life, scattered full map.
+## GPUParticles2D â€” peak-bright motes that shrink and dim over life, scattered full map.
 
 const TILE_PX: int = 16
 

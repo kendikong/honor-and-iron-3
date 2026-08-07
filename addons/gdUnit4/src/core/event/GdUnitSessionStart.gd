@@ -1,4 +1,4 @@
-class_name GdUnitSessionStart
+﻿class_name GdUnitSessionStart
 extends GdUnitEvent
 
 

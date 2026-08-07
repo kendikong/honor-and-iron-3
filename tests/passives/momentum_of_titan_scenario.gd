@@ -1,4 +1,4 @@
-﻿class_name MomentumOfTitanScenarioTest
+class_name MomentumOfTitanScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")

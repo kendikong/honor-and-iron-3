@@ -1,4 +1,4 @@
-class_name ChainedArgumentMatcher
+﻿class_name ChainedArgumentMatcher
 extends GdUnitArgumentMatcher
 
 var _matchers :Array

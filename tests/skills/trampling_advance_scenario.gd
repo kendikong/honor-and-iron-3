@@ -3,9 +3,9 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Trampling Advance â€” MOVE + TRAMPLE + PUSH on tile target.
+## Bible: Trampling Advance Ã¢â‚¬â€ MOVE + TRAMPLE + PUSH on tile target.
 ## Globals: EffectType.MOVE, TRAMPLE, PUSH via AbilitySystem.
-## Tier 1: planning E2E harness (Knight QA â€” not planning gate).
+## Tier 1: planning E2E harness (Knight QA Ã¢â‚¬â€ not planning gate).
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -243,3 +243,4 @@ static func _phase7_premove_then_trample(failures: Array[String]) -> void:
 		failures, "trample/phase7/committed", action != null,
 		"trample must remain committed after second drag",
 	)
+

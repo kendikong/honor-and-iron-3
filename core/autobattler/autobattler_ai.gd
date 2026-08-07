@@ -1,4 +1,4 @@
-class_name AutobattlerAI
+﻿class_name AutobattlerAI
 extends RefCounted
 
 ## Purpose: Commander AI Pipeline for the Autobattler.
@@ -167,9 +167,9 @@ func _build_vectors(board: BoardState, units: Array[UnitState], unit_candidates:
 		if ab_idx != null and target_id != null and projected_hp.has(target_id):
 			var ab = u.active_abilities[ab_idx]
 			var dmg = 0.0
-			for ef in ab.effects:
-				if ef.type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]:
-					dmg += float(ef.amount)
+			for module: AbilityModule in ab.modules:
+				if module.primary_type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]:
+					dmg += float(module.amount)
 			if dmg > 0.0:
 				next_hp = projected_hp.duplicate()
 				next_hp[target_id] -= dmg
@@ -232,10 +232,10 @@ func _generate_legal_actions(board: BoardState, unit: UnitState) -> Array:
 				
 				var is_harmful = false
 				var is_helpful = false
-				for ef in ability.effects:
-					if ef.type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]:
+				for module: AbilityModule in ability.modules:
+					if module.primary_type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]:
 						is_harmful = true
-					elif ef.type in [GameEnums.EffectType.HEAL, GameEnums.EffectType.ARMOR_UP]:
+					elif module.primary_type in [GameEnums.EffectType.HEAL, GameEnums.EffectType.ARMOR_UP]:
 						is_helpful = true
 						
 				for target in board.units:

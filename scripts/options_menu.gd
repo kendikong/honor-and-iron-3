@@ -1,7 +1,7 @@
-class_name OptionsMenu
+﻿class_name OptionsMenu
 extends CanvasLayer
 
-## In-game settings overlay — **O** to toggle. Hosts the same OptionsScreen as the main menu.
+## In-game settings overlay â€” **O** to toggle. Hosts the same OptionsScreen as the main menu.
 
 const _OPTIONS_SCENE: PackedScene = preload("res://scenes/Options.tscn")
 

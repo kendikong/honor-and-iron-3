@@ -1,4 +1,4 @@
-class_name GdUnitFunctionDoublerBuilder
+﻿class_name GdUnitFunctionDoublerBuilder
 extends RefCounted
 
 const TYPE_VOID = GdObjects.TYPE_VOID

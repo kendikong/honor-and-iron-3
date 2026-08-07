@@ -1,4 +1,4 @@
-class_name GdUnitTask
+﻿class_name GdUnitTask
 extends RefCounted
 
 const TASK_NAME = "task_name"

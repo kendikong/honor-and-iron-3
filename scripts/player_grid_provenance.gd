@@ -1,4 +1,4 @@
-class_name PlayerGridProvenance
+﻿class_name PlayerGridProvenance
 extends RefCounted
 
 ## Per-cell history of why each PlayerGrid logical type exists (generator + repair).

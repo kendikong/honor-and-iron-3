@@ -1,4 +1,4 @@
-## The test suite shutdown hook implementation.[br]
+﻿## The test suite shutdown hook implementation.[br]
 ## It executes the 'after()' block from the test-suite.
 class_name GdUnitTestSuiteAfterStage
 extends IGdUnitExecutionStage

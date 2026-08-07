@@ -1,4 +1,4 @@
-## An assertion tool to verify for Godot runtime errors like assert() and push notifications like push_error().
+﻿## An assertion tool to verify for Godot runtime errors like assert() and push notifications like push_error().
 @abstract class_name GdUnitGodotErrorAssert
 extends GdUnitAssert
 

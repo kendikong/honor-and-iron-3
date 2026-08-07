@@ -1,4 +1,4 @@
-class_name CharacterComposer
+﻿class_name CharacterComposer
 extends RefCounted
 
 ## Build layered LPC sprites on a CharacterActor from a CharacterRecipe.

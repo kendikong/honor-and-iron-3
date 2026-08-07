@@ -1,7 +1,7 @@
-class_name FireflyActor
+﻿class_name FireflyActor
 extends EcologySparseActor
 
-## Random wandering near water — density varies with swarm boost.
+## Random wandering near water â€” density varies with swarm boost.
 
 var _home: Vector2 = Vector2.ZERO
 var _wander_target: Vector2 = Vector2.ZERO

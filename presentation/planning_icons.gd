@@ -1,4 +1,4 @@
-class_name PlanningIcons
+﻿class_name PlanningIcons
 extends RefCounted
 
 ## Canonical emoji glyphs for planning UI: timeline, unit info, stats column, skill chips, cursor.
@@ -129,12 +129,12 @@ static func ability_glyph(ability: AbilityData) -> String:
 	if AbilitySystem.ability_has_movement_effect(ability):
 		return GLYPH_DASH
 	if ability.is_movement_kind():
-		for eff: EffectData in ability.effects:
-			if eff.type == GameEnums.EffectType.SWAP:
+		for eff: AbilityModule in ability.modules:
+			if eff.primary_type == GameEnums.EffectType.SWAP:
 				return GLYPH_SWAP
 		return GLYPH_WALK
-	for eff: EffectData in ability.effects:
-		match eff.type:
+	for eff: AbilityModule in ability.modules:
+		match eff.primary_type:
 			GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE:
 				return GLYPH_ATTACK
 			GameEnums.EffectType.HEAL:

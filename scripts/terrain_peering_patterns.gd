@@ -1,7 +1,7 @@
-class_name TerrainPeeringPatterns
+﻿class_name TerrainPeeringPatterns
 extends RefCounted
 
-## Full Tiled wang fingerprints from gentle forest v01.tsx — the real terrain-matching keys.
+## Full Tiled wang fingerprints from gentle forest v01.tsx â€” the real terrain-matching keys.
 
 const _C = preload("res://scripts/mana_seed_constants.gd")
 
@@ -24,12 +24,12 @@ const NON_TERRAIN_CATEGORIES: PackedStringArray = [
 ]
 
 const CATEGORY_TITLES: Dictionary = {
-	"grass_interior": "Grass interior — AutoDecorator fill (no terrain slot)",
-	"grass_decor": "Overlay scatter — never terrain_connect",
-	"tree_ground": "Tree trunk / base — sample-map composition",
-	"ruin_single": "Ruin floor — PlayerGrid RUIN stamp",
+	"grass_interior": "Grass interior â€” AutoDecorator fill (no terrain slot)",
+	"grass_decor": "Overlay scatter â€” never terrain_connect",
+	"tree_ground": "Tree trunk / base â€” sample-map composition",
+	"ruin_single": "Ruin floor â€” PlayerGrid RUIN stamp",
 	"forbidden": "Do not use procedurally",
-	"misc": "Misc — unassigned (usage note per tile)",
+	"misc": "Misc â€” unassigned (usage note per tile)",
 }
 
 

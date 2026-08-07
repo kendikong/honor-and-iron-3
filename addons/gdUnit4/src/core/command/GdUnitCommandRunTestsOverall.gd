@@ -1,4 +1,4 @@
-class_name GdUnitCommandRunTestsOverall
+﻿class_name GdUnitCommandRunTestsOverall
 extends GdUnitBaseCommand
 
 const ID := "Run Tests Overall"

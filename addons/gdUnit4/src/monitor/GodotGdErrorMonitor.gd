@@ -1,4 +1,4 @@
-class_name GodotGdErrorMonitor
+﻿class_name GodotGdErrorMonitor
 extends GdUnitMonitor
 
 

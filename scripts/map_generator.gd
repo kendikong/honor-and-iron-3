@@ -1,7 +1,7 @@
-class_name MapGenerator
+﻿class_name MapGenerator
 extends RefCounted
 
-## Seeded procedural PlayerGrid — few large water bodies grown to water_ratio, then smoothed.
+## Seeded procedural PlayerGrid â€” few large water bodies grown to water_ratio, then smoothed.
 
 const ASPECT_W: int = 2
 const ASPECT_H: int = 1
@@ -21,26 +21,26 @@ var tree_count: int = -1
 ## When tree_count < 0, target ~this fraction of map cells at the **rim** (max density).
 ## Center receives less via linear edge bias; hard-capped by tree_min_spacing.
 var tree_density: float = 0.022
-## Minimum Chebyshev gap between tree anchors — 3 ⇒ at least 2 grass cells between trunks.
+## Minimum Chebyshev gap between tree anchors â€” 3 â‡’ at least 2 grass cells between trunks.
 var tree_min_spacing: int = 3
 ## Linear edge bias: scatter accept weight at map center (1.0 = rim / tree_density max).
 var tree_edge_center_weight: float = 0.14
-## Few lake/pond seeds — bodies grow outward until water_ratio is met.
+## Few lake/pond seeds â€” bodies grow outward until water_ratio is met.
 var water_body_seed_count: int = 3
 ## Few wandering 2-wide dirt trails (not scatter patches).
 var dirt_path_count: int = 3
 var dirt_path_min_steps: int = 14
 var dirt_path_max_steps: int = 26
-## Inner 50%×50% band kept sparse — lakes grow on the rim for central movement lanes.
+## Inner 50%Ã—50% band kept sparse â€” lakes grow on the rim for central movement lanes.
 var water_avoid_center_half: bool = true
-## Lateral lake spread (~1.6 ≈ +60% vs baseline 1.0; same water_ratio).
+## Lateral lake spread (~1.6 â‰ˆ +60% vs baseline 1.0; same water_ratio).
 var water_spread_scale: float = 1.6
 ## Skirmish / bridge: use width & height exactly (no snap_widescreen).
 var force_custom_size: bool = false
 
 const _MIN_SIZE: int = 16
 const _MAX_SIZE: int = 32
-## Grass + shore checks use this cell relative to the TREE anchor (NW of 5×6 sprite).
+## Grass + shore checks use this cell relative to the TREE anchor (NW of 5Ã—6 sprite).
 const _TREE_PLACEMENT_CHECK_OFFSET: Vector2i = Vector2i(0, 2)
 
 
@@ -94,7 +94,7 @@ func generate(provenance: PlayerGridProvenance = null) -> PlayerGrid:
 	return grid
 
 
-## Phase 4 Boredom Test — 16×16 GRASS + DIRT only (no WATER/TREE).
+## Phase 4 Boredom Test â€” 16Ã—16 GRASS + DIRT only (no WATER/TREE).
 func generate_boredom_wind(provenance: PlayerGridProvenance = null) -> PlayerGrid:
 	var w: int = 16
 	var h: int = 16
@@ -111,7 +111,7 @@ func generate_boredom_wind(provenance: PlayerGridProvenance = null) -> PlayerGri
 	return grid
 
 
-## Phase 5 Boredom Test — 16×16 GRASS + scattered RUIN (no WATER/TREE).
+## Phase 5 Boredom Test â€” 16Ã—16 GRASS + scattered RUIN (no WATER/TREE).
 func generate_boredom_atmosphere(provenance: PlayerGridProvenance = null) -> PlayerGrid:
 	var w: int = 16
 	var h: int = 16
@@ -125,7 +125,7 @@ func generate_boredom_atmosphere(provenance: PlayerGridProvenance = null) -> Pla
 	return grid
 
 
-## Phase 6 Boredom Test — 16×16 GRASS + central WATER pond (no TREE/RUIN/DIRT).
+## Phase 6 Boredom Test â€” 16Ã—16 GRASS + central WATER pond (no TREE/RUIN/DIRT).
 func generate_boredom_water(provenance: PlayerGridProvenance = null) -> PlayerGrid:
 	var w: int = 16
 	var h: int = 16
@@ -145,7 +145,7 @@ func generate_boredom_water(provenance: PlayerGridProvenance = null) -> PlayerGr
 						pos,
 						"boredom_water_pond",
 						TileId.Type.WATER,
-						"Phase 6 Boredom Test — central pond cell",
+						"Phase 6 Boredom Test â€” central pond cell",
 					)
 	PlayerGridRepair.repair(grid, provenance)
 	return grid
@@ -204,7 +204,7 @@ func _grow_water_bodies(grid: PlayerGrid, rng: RandomNumberGenerator, provenance
 				pos,
 				"water_body_seed",
 				TileId.Type.WATER,
-				"Water body seed %d/%d — rim-biased lake start" % [seeds.size(), seed_target],
+				"Water body seed %d/%d â€” rim-biased lake start" % [seeds.size(), seed_target],
 			)
 	if seeds.is_empty():
 		var fallback: Vector2i = _pick_edge_fallback_seed(grid, rng, margin)
@@ -264,7 +264,7 @@ func _grow_water_body_step(
 			pick,
 			"water_body_grow",
 			TileId.Type.WATER,
-			"Water body %s grow — expand lake toward ratio %.2f"
+			"Water body %s grow â€” expand lake toward ratio %.2f"
 			% [body_label, water_ratio],
 		)
 	return true
@@ -325,7 +325,7 @@ func _smooth_pass(
 						pos,
 						"ca_smooth_%d" % pass_num,
 						after,
-						"%d water neighbors in 3×3 — CA smooth pass %d"
+						"%d water neighbors in 3Ã—3 â€” CA smooth pass %d"
 						% [water_neighbors, pass_num],
 					)
 	return next
@@ -344,7 +344,7 @@ func _adjust_water_ratio(grid: PlayerGrid, rng: RandomNumberGenerator, provenanc
 				seed_pos,
 				"water_ratio_seed",
 				TileId.Type.WATER,
-				"Forced water seed — map had 0 water but target > 0",
+				"Forced water seed â€” map had 0 water but target > 0",
 			)
 		current = 1
 
@@ -360,7 +360,7 @@ func _adjust_water_ratio(grid: PlayerGrid, rng: RandomNumberGenerator, provenanc
 				seed_pos,
 				"water_ratio_seed",
 				TileId.Type.GRASS,
-				"Forced grass seed — map was all water",
+				"Forced grass seed â€” map was all water",
 			)
 		current = total_cells - 1
 
@@ -692,7 +692,7 @@ func _stamp_dirt_path_brush(
 				pos,
 				"dirt_path",
 				TileId.Type.DIRT,
-				"Dirt path %d step %d — 2-wide trail brush" % [path_idx, step_idx],
+				"Dirt path %d step %d â€” 2-wide trail brush" % [path_idx, step_idx],
 			)
 	return painted
 
@@ -737,13 +737,13 @@ func _tree_scatter_target(grid: PlayerGrid) -> int:
 	return clampi(by_density, 0, slots)
 
 
-## Rim density ceiling from spacing — spacing 3 ⇒ ~0.056 (below Chebyshev packing 1/9).
+## Rim density ceiling from spacing â€” spacing 3 â‡’ ~0.056 (below Chebyshev packing 1/9).
 func _tree_edge_density_cap(grid: PlayerGrid) -> float:
 	var spacing: int = maxi(tree_min_spacing, 2)
 	return 1.0 / float(spacing * spacing) * 0.5
 
 
-## 0 at map center → 1 at rim (linear). Used for tree scatter accept weight.
+## 0 at map center â†’ 1 at rim (linear). Used for tree scatter accept weight.
 func _tree_edge_scatter_weight(grid: PlayerGrid, pos: Vector2i) -> float:
 	var edge: float = _water_edge_weight(grid, pos)
 	return lerpf(clampf(tree_edge_center_weight, 0.0, 1.0), 1.0, edge)
@@ -804,7 +804,7 @@ func _tree_placement_check_ok(grid: PlayerGrid, check: Vector2i) -> bool:
 	return not _has_water_neighbor(grid, owner)
 
 
-## 5×6 footprint rows below the map need grass phantom columns on the bottom row.
+## 5Ã—6 footprint rows below the map need grass phantom columns on the bottom row.
 func _tree_footprint_fits_south_phantom(grid: PlayerGrid, anchor: Vector2i) -> bool:
 	const FOOTPRINT: Vector2i = Vector2i(5, 6)
 	var south_last: int = anchor.y + FOOTPRINT.y - 1

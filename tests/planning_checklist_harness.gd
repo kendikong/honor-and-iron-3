@@ -3,7 +3,7 @@ extends RefCounted
 
 ## Shared harness for 7-phase planning skill checklist scenarios.
 ## Asserts production layers: blue/red overlay, live preview, slots, cursor, economy, sim.
-## Commit path: paint → commit_from_slots → promote → deferred flush (F5 parity).
+## Commit path: paint â†’ commit_from_slots â†’ promote â†’ deferred flush (F5 parity).
 
 const KNIGHT_START := Vector2i(4, 5)
 const ENEMY_POS := Vector2i(7, 5)

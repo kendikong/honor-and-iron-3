@@ -52,6 +52,7 @@ static func _test_live_board_at_pre_target_projection_past(failures: Array[Strin
 	director.plan_action = Timeline.new()
 	var trample := AbilityData.new()
 	trample.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	trample.planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	director.plan_action.entries.append(
 		TimelineAction.make_ability(1, trample, Vector2i(7, 1), -1),
 	)

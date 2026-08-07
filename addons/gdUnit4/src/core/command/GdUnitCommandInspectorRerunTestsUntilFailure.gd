@@ -1,4 +1,4 @@
-class_name GdUnitCommandInspectorRerunTestsUntilFailure
+﻿class_name GdUnitCommandInspectorRerunTestsUntilFailure
 extends GdUnitBaseCommand
 
 

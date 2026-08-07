@@ -1,4 +1,4 @@
-## Collects GDScript parse errors.[br]
+﻿## Collects GDScript parse errors.[br]
 ## [br]
 ## Installed via [method OS.add_logger] so it intercepts [constant ErrorType.ERROR_TYPE_SCRIPT]
 ## entries without triggering Godot's interactive CLI debugger.[br]

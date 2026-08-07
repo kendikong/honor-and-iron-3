@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 extends Control
 
 const GdUnitUpdateClient = preload("res://addons/gdUnit4/src/update/GdUnitUpdateClient.gd")

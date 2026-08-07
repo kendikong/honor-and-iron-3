@@ -1,4 +1,4 @@
-class_name GdUnitTestCaseReport
+﻿class_name GdUnitTestCaseReport
 extends GdUnitReportSummary
 
 

@@ -1,7 +1,7 @@
-class_name CatalogUiScale
+﻿class_name CatalogUiScale
 extends RefCounted
 
-## Scales catalog / editor UI from a 1280×720 design baseline when the window grows.
+## Scales catalog / editor UI from a 1280Ã—720 design baseline when the window grows.
 
 const DESIGN_SIZE: Vector2 = Vector2(1280.0, 720.0)
 const MIN_SCALE: float = 1.0
@@ -14,7 +14,7 @@ static func factor(viewport_size: Vector2) -> float:
 	var sx: float = viewport_size.x / DESIGN_SIZE.x
 	var sy: float = viewport_size.y / DESIGN_SIZE.y
 	var raw: float = minf(sx, sy)
-	# Quarter-step quantization — avoids rebuilding lists every pixel while dragging resize.
+	# Quarter-step quantization â€” avoids rebuilding lists every pixel while dragging resize.
 	var stepped: float = floor(raw * 4.0) / 4.0
 	return clampf(stepped, MIN_SCALE, MAX_SCALE)
 

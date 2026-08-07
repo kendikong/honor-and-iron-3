@@ -1,4 +1,4 @@
-## An Assertion Tool to verify integer values
+﻿## An Assertion Tool to verify integer values
 @abstract class_name GdUnitIntAssert
 extends GdUnitAssert
 

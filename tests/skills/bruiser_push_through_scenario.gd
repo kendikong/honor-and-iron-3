@@ -3,7 +3,7 @@ extends RefCounted
 
 const _BruiserQaHarness := preload("res://tests/bruiser_qa_harness.gd")
 
-## Bible: Push Through — move into adjacent occupied tile, PUSH target 1 forward; [+] cost 1 MOV + STR on push.
+## Bible: Push Through â€” move into adjacent occupied tile, PUSH target 1 forward; [+] cost 1 MOV + STR on push.
 ## Globals: EffectType.MOVE_INTO_AND_PUSH; upgraded_movement_point_cost; buff_on_push modifier in PhysicsSystem.
 
 

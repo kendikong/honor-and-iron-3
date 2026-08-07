@@ -1,7 +1,7 @@
-class_name TacticalMapView
+﻿class_name TacticalMapView
 extends Node2D
 
-## Combat map host — mana-seed visuals from a generated skirmish (no dev side panels).
+## Combat map host â€” mana-seed visuals from a generated skirmish (no dev side panels).
 
 const _SparkleSprites = preload("res://scripts/water_sparkle_sprites.gd")
 const _EcologyLayer = preload("res://scripts/ecology_layer.gd")
@@ -53,6 +53,7 @@ var _sparkle_sprites: Node2D
 var _ecology_layer: EcologyLayer
 var _skirmish: SkirmishGenerator.SkirmishResult
 var _encounter: EncounterData
+var _pending_assignments: Dictionary = {}
 var _biome_variant: int = 1
 var _last_tree_variant_b: bool = false
 var _char_profile: CharacterGenProfile = CharacterGenProfile.new()
@@ -155,6 +156,7 @@ func _ready() -> void:
 	add_child(_fps_hud)
 	_apply_overlay_hud_visibility()
 
+	_load_pending_launch()
 	_load_skirmish()
 	_init_tile_pipeline()
 	_regenerate()
@@ -262,22 +264,33 @@ func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 
 
 func _start_combat() -> void:
-	_combat_shell.start_combat(_encounter)
+	_combat_shell.start_combat(_encounter, null, _pending_assignments)
 	_combat_shell.bind_settings(_settings)
 	_sim_presenter.set_game_settings(_settings)
 
 
+func _load_pending_launch() -> void:
+	_encounter = SkirmishLaunch.take_pending_encounter()
+	_pending_assignments = SkirmishLaunch.take_pending_assignments()
+
+
 func _load_skirmish() -> void:
+	if _encounter != null:
+		_skirmish = SkirmishGenerator.visual_from_encounter(_encounter)
+		_player_grid = _skirmish.grid
+		_decorator.map_seed = _skirmish.map_seed
+		return
 	var config: SkirmishGenerator.SkirmishConfig = SkirmishLaunch.take_pending()
 	_biome_variant = config.biome_variant
 	_skirmish = SkirmishGenerator.generate(config)
 	_player_grid = _skirmish.grid
-	_encounter = EncounterBuilder.build_from_player_grid(
-		_skirmish.grid,
-		_skirmish.blocked_cells,
-		_skirmish.player_spawns,
-		_skirmish.enemy_spawns,
-	)
+	if _encounter == null:
+		_encounter = EncounterBuilder.build_from_player_grid(
+			_skirmish.grid,
+			_skirmish.blocked_cells,
+			_skirmish.player_spawns,
+			_skirmish.enemy_spawns,
+		)
 	_decorator.map_seed = _skirmish.map_seed
 
 
@@ -497,16 +510,20 @@ func _sync_overlay_huds(map_origin: Vector2, map_size: Vector2) -> void:
 func _update_hover_coord() -> void:
 	if _director == null or _director.board == null:
 		return
-	var hc: Control = get_viewport().gui_get_hovered_control()
-	if hc != null and _hover_blocked_by_ui(hc):
-		var blocked_cell := Vector2i(-999, -999)
-		if _last_polled_hover_cell != blocked_cell:
-			_last_polled_hover_cell = blocked_cell
-			if _planning_input != null:
-				_planning_input.on_hover_moved(blocked_cell)
-			elif _side_panels != null:
-				_side_panels.set_hover_coord(blocked_cell)
-		return
+	var qa_override: bool = (
+		_planning_input != null and _planning_input.has_qa_pointer_override()
+	)
+	if not qa_override:
+		var hc: Control = get_viewport().gui_get_hovered_control()
+		if hc != null and _hover_blocked_by_ui(hc):
+			var blocked_cell := Vector2i(-999, -999)
+			if _last_polled_hover_cell != blocked_cell:
+				_last_polled_hover_cell = blocked_cell
+				if _planning_input != null:
+					_planning_input.on_hover_moved(blocked_cell)
+				elif _side_panels != null:
+					_side_panels.set_hover_coord(blocked_cell)
+			return
 	var cell: Vector2i
 	if _planning_input != null:
 		cell = _planning_input.pointer_grid_cell()

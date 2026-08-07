@@ -1,4 +1,4 @@
-## The memory watcher for objects that have been registered and are released when 'gc' is called.
+﻿## The memory watcher for objects that have been registered and are released when 'gc' is called.
 class_name GdUnitMemoryObserver
 extends RefCounted
 

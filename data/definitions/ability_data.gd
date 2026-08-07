@@ -1,7 +1,7 @@
-class_name AbilityData
+﻿class_name AbilityData
 extends Resource
 
-## Purpose: A data-driven ability — header + ordered modules (ability-data.md).
+## Purpose: A data-driven ability â€” header + ordered modules (ability-data.md).
 ## Responsibilities: Describe planner column, cost, tags, presentation, and modules.
 ## Legacy flat effects[] are compiled from modules for AbilitySystem during migration.
 ## Dependencies: EffectData, AbilityModule, AbilityModuleBridge.
@@ -10,13 +10,13 @@ extends Resource
 @export var id: StringName = &""
 @export var display_name: String = ""
 
-## Timeline column for class-library cards (ability-data.md §1). Source of truth when set.
+## Timeline column for class-library cards (ability-data.md Â§1). Source of truth when set.
 @export var planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION
 
 ## Classification tags: attack, movement, positioning, spell, heal (multi-tag OK).
 @export var tags: Array[StringName] = []
 
-## Cost block (ability-data.md §1).
+## Cost block (ability-data.md Â§1).
 @export var primary_resource: GameEnums.CostResource = GameEnums.CostResource.NONE
 @export var primary_value: int = 1
 @export var cost_modifier: GameEnums.CostModifier = GameEnums.CostModifier.NONE
@@ -28,7 +28,7 @@ extends Resource
 @export var modules: Array[AbilityModule] = []
 @export var upgraded_modules: Array[AbilityModule] = []
 
-## Economy / timeline classification — legacy mirror of planner_group (+ UNIVERSAL_*).
+## Economy / timeline classification â€” legacy mirror of planner_group (+ UNIVERSAL_*).
 @export var kind: GameEnums.AbilityKind = GameEnums.AbilityKind.CLASS_SKILL
 
 ## Action points consumed when used (CLASS_SKILL only; Run AP is spent on MOVE via uses_run).
@@ -133,12 +133,6 @@ func _targeting_flags_to_mode() -> int:
 @export var upgraded_target_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
 @export var upgraded_target_shape_size: int = -1
 
-## Ordered list of effects — compiled from modules for legacy AbilitySystem readers.
-@export var effects: Array[EffectData] = []
-
-## Effects applied to the target if this ability is upgraded (compiled from upgraded_modules).
-@export var upgraded_effects: Array[EffectData] = []
-
 ## Description of what the upgrade does.
 @export var upgrade_description: String = ""
 
@@ -149,17 +143,17 @@ func _targeting_flags_to_mode() -> int:
 ## The simulation never loads or plays anything; it only forwards this string.
 @export var presentation_key: StringName = &""
 
-## Presentation anim override; AUTO uses tags + module rules (ability-data.md §7).
+## Presentation anim override; AUTO uses tags + module rules (ability-data.md Â§7).
 @export var presentation_anim: GameEnums.PresentationAnim = GameEnums.PresentationAnim.AUTO
 
 ## Determines which stat (STR/MAG/NONE) scales the damage of this ability (legacy; prefer per-module).
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
 
-## Legacy mirror of planner_group == PRE_MOVE (synced; not authored separately).
+## Legacy mirror of displacement effects (synced from effects[]; not planner_group).
 @export var is_movement_skill: bool = false
 
 
-## Infer modules from flat effects when needed; compile modules → effects; sync kind/cost mirrors.
+## Deprecated stub for transitional migration.
 func finalize_modular() -> void:
 	AbilityModuleBridge.finalize_ability(self)
 
@@ -177,10 +171,8 @@ func has_tag(tag: StringName) -> bool:
 
 
 func is_movement_kind() -> bool:
-	## Prefer planner_group when synced; kind remains authoritative for UNIVERSAL_* and pre-finalize.
-	if planner_group == GameEnums.PlannerGroup.PRE_MOVE and kind == GameEnums.AbilityKind.MOVEMENT_SKILL:
-		return true
-	return kind == GameEnums.AbilityKind.MOVEMENT_SKILL
+	## Column ownership: planner_group only (ability-data.md Â§14.12). kind is a mirror.
+	return planner_group == GameEnums.PlannerGroup.PRE_MOVE
 
 
 func is_pre_move_kind() -> bool:
@@ -196,8 +188,14 @@ func is_universal_wait() -> bool:
 
 
 func is_class_kind() -> bool:
-	return kind == GameEnums.AbilityKind.CLASS_SKILL
+	## Prefer ACTION planner column; UNIVERSAL_* stay kind-identified system actions.
+	if is_universal_run() or is_universal_wait():
+		return false
+	return planner_group == GameEnums.PlannerGroup.ACTION
 
 
 func consumes_action_slot() -> bool:
-	return kind == GameEnums.AbilityKind.CLASS_SKILL
+	## ACTION-column cards consume the action slot; PRE_MOVE and universals do not.
+	if is_universal_run() or is_universal_wait():
+		return false
+	return planner_group == GameEnums.PlannerGroup.ACTION

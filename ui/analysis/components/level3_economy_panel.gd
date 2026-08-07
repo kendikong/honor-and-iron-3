@@ -1,10 +1,10 @@
-class_name Level3EconomyPanel
+﻿class_name Level3EconomyPanel
 extends VBoxContainer
 
 signal inspect_requested(title: String, body: String, meta: Dictionary)
 
 const _TIP_USES := "Average times this skill fires per unit-turn (alive turn for that class)."
-const _TIP_PICK := "Player Commander AI only: uses ÷ turns skill was legal (capped 100%)."
+const _TIP_PICK := "Player Commander AI only: uses Ã· turns skill was legal (capped 100%)."
 const _TIP_DMG := "Damage credited to this skill per unit-turn."
 const _TIP_HEAL := "Healing credited to this skill per unit-turn."
 const _TIP_KILL := "Kills credited to this skill per unit-turn."
@@ -141,7 +141,7 @@ func _add_class_combat_sections(report: MassSimBatchReport) -> void:
 	if rows.is_empty():
 		var root := _class_tree.get_root()
 		var empty := _class_tree.create_item(root)
-		empty.set_text(0, "No class combat data — run a new batch after this update.")
+		empty.set_text(0, "No class combat data â€” run a new batch after this update.")
 		return
 	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return report.class_display_name(String(a.get("class_id", ""))) < report.class_display_name(String(b.get("class_id", "")))
@@ -178,13 +178,13 @@ func _add_class_combat_row(
 		var wr: float = float(row.get("win_rate_pct", 0.0))
 		item.set_text(1, "%.1f%%" % wr)
 		var wr_label: String = "player" if team == GameEnums.Team.PLAYER else "enemy"
-		item.set_tooltip_text(1, "%d %s wins when class on roster ÷ %d appearances (%.1f%%)." % [
+		item.set_tooltip_text(1, "%d %s wins when class on roster Ã· %d appearances (%.1f%%)." % [
 			roster_wins, wr_label, roster_apps, wr,
 		])
 		_color_metric(item, 1, wr, float(team_avgs.get("win_rate_pct", 0.0)), _TOL_WIN_RATE)
 	else:
-		item.set_text(1, "—")
-		item.set_tooltip_text(1, "No sample — class never appeared on a roster in this batch.")
+		item.set_text(1, "â€”")
+		item.set_tooltip_text(1, "No sample â€” class never appeared on a roster in this batch.")
 		_color_no_sample(item, 1)
 	if has_sample:
 		var hp_pt: float = float(row.get("hp_damage_taken_per_turn", 0.0))
@@ -197,8 +197,8 @@ func _add_class_combat_row(
 		_color_metric(item, 3, mit_pt, float(team_avgs.get("damage_mitigated_per_turn", 0.0)), _TOL_MITIGATED)
 	else:
 		for col: int in [2, 3]:
-			item.set_text(col, "—")
-			item.set_tooltip_text(col, "No sample — class did not appear in this batch.")
+			item.set_text(col, "â€”")
+			item.set_tooltip_text(col, "No sample â€” class did not appear in this batch.")
 			_color_no_sample(item, col)
 	if lifespan_samples > 0:
 		var survival: float = float(row.get("avg_survival_turns", 0.0))
@@ -206,8 +206,8 @@ func _add_class_combat_row(
 		item.set_tooltip_text(4, "%d total turns alive over %d unit instances." % [lifespan_sum, lifespan_samples])
 		_color_metric(item, 4, survival, float(team_avgs.get("avg_survival_turns", 0.0)), _TOL_SURVIVAL)
 	else:
-		item.set_text(4, "—")
-		item.set_tooltip_text(4, "No sample — run a new batch to collect survival telemetry.")
+		item.set_text(4, "â€”")
+		item.set_tooltip_text(4, "No sample â€” run a new batch to collect survival telemetry.")
 		_color_no_sample(item, 4)
 	if end_hp_samples > 0:
 		var end_hp: float = float(row.get("avg_end_hp_pct", 0.0))
@@ -215,8 +215,8 @@ func _add_class_combat_row(
 		item.set_tooltip_text(5, "%.1f%% average end HP across %d unit instances (0%% if dead)." % [end_hp, end_hp_samples])
 		_color_metric(item, 5, end_hp, float(team_avgs.get("avg_end_hp_pct", 0.0)), _TOL_END_HP)
 	else:
-		item.set_text(5, "—")
-		item.set_tooltip_text(5, "No sample — run a new batch to collect end-of-battle HP telemetry.")
+		item.set_text(5, "â€”")
+		item.set_tooltip_text(5, "No sample â€” run a new batch to collect end-of-battle HP telemetry.")
 		_color_no_sample(item, 5)
 
 
@@ -252,7 +252,7 @@ func _add_commander_section(report: MassSimBatchReport) -> void:
 	hdr.set_custom_color(0, _COLOR_HEADER)
 	if report.ai_commander_meta.is_empty():
 		var empty := _tree.create_item(hdr)
-		empty.set_text(0, "No AI meta — run a new batch after this update.")
+		empty.set_text(0, "No AI meta â€” run a new batch after this update.")
 		return
 	var ai: Dictionary = report.ai_commander_meta
 	var sample_turns: int = int(ai.get("sample_turns", 0))
@@ -315,7 +315,7 @@ func _add_team_block(
 	)
 	if class_keys.is_empty():
 		var empty := _tree.create_item(team_hdr)
-		empty.set_text(0, "(no skill telemetry — run a new batch)")
+		empty.set_text(0, "(no skill telemetry â€” run a new batch)")
 		return
 	for ck: Variant in class_keys:
 		var bucket: Dictionary = by_team_class[ck] as Dictionary
@@ -362,22 +362,22 @@ func _add_skill_row(
 		item.set_tooltip_text(1, "%d uses over %d class unit-turns.\n%s" % [uses, unit_turns, _TIP_USES])
 		_color_metric(item, 1, uses_pt, float(class_avgs.get("uses_per_turn", 0.0)), _TOL_USES)
 	else:
-		item.set_text(1, "—")
-		item.set_tooltip_text(1, "No sample — skill never appeared on a roster in this batch.")
+		item.set_text(1, "â€”")
+		item.set_tooltip_text(1, "No sample â€” skill never appeared on a roster in this batch.")
 		_color_no_sample(item, 1)
 	if has_pick:
 		var pick: float = float(row.get("pick_rate_when_legal_pct", 0.0))
 		item.set_text(2, "%.0f%%" % pick)
-		item.set_tooltip_text(2, "%d uses when legal ÷ %d turns legal (%.0f%%).\n%s" % [uses, legal, pick, _TIP_PICK])
+		item.set_tooltip_text(2, "%d uses when legal Ã· %d turns legal (%.0f%%).\n%s" % [uses, legal, pick, _TIP_PICK])
 		_color_metric(item, 2, pick, float(class_avgs.get("pick_rate_when_legal_pct", 0.0)), _TOL_PICK)
 	else:
-		item.set_text(2, "—")
+		item.set_text(2, "â€”")
 		if team != GameEnums.Team.PLAYER:
 			item.set_tooltip_text(2, "Pick% only tracked for player Commander AI skills.")
 		elif not has_roster:
-			item.set_tooltip_text(2, "No sample — skill was not on any roster in this batch.")
+			item.set_tooltip_text(2, "No sample â€” skill was not on any roster in this batch.")
 		else:
-			item.set_tooltip_text(2, "No sample — skill was never a legal Commander option in this batch.")
+			item.set_tooltip_text(2, "No sample â€” skill was never a legal Commander option in this batch.")
 		_color_no_sample(item, 2)
 	if has_roster:
 		var dmg_pt: float = float(row.get("damage_per_turn", 0.0))
@@ -394,8 +394,8 @@ func _add_skill_row(
 		_color_metric(item, 5, kill_pt, float(class_avgs.get("kills_per_turn", 0.0)), _TOL_KILL)
 	else:
 		for col: int in [3, 4, 5]:
-			item.set_text(col, "—")
-			item.set_tooltip_text(col, "No sample — skill never appeared on a roster in this batch.")
+			item.set_text(col, "â€”")
+			item.set_tooltip_text(col, "No sample â€” skill never appeared on a roster in this batch.")
 			_color_no_sample(item, col)
 	var notes: PackedStringArray = PackedStringArray()
 	if int(row.get("action_failed", 0)) > 0:
@@ -408,11 +408,11 @@ func _add_skill_row(
 func _add_passive_section(report: MassSimBatchReport) -> void:
 	var root := _tree.get_root()
 	var hdr := _tree.create_item(root)
-	hdr.set_text(0, "PASSIVES (random assignment · player WR)")
+	hdr.set_text(0, "PASSIVES (random assignment Â· player WR)")
 	hdr.set_custom_color(0, _COLOR_HEADER)
 	if report.passive_meta_rows.is_empty():
 		var empty := _tree.create_item(hdr)
-		empty.set_text(0, "No passive data — run a new batch (roster_meta required).")
+		empty.set_text(0, "No passive data â€” run a new batch (roster_meta required).")
 		return
 	for row: Dictionary in report.passive_meta_rows:
 		var item := _tree.create_item(hdr)
@@ -428,21 +428,21 @@ func _add_passive_section(report: MassSimBatchReport) -> void:
 			item.set_text(1, "%d units" % appearances)
 			item.set_tooltip_text(1, "Appeared on %d player roster slots in this batch." % appearances)
 			item.set_text(2, "%.1f%% WR" % wr)
-			item.set_tooltip_text(2, "%d wins with this passive ÷ %d appearances (%.1f%%).\n%s" % [
+			item.set_tooltip_text(2, "%d wins with this passive Ã· %d appearances (%.1f%%).\n%s" % [
 				wins, appearances, wr, _TIP_PASSIVE_WR,
 			])
 			_color_metric(item, 2, wr, report.player_win_pct, 8.0)
 		else:
-			item.set_text(1, "—")
-			item.set_tooltip_text(1, "No sample — passive never rolled onto a roster in this batch.")
-			item.set_text(2, "—")
-			item.set_tooltip_text(2, "No sample — passive never rolled onto a roster in this batch.")
+			item.set_text(1, "â€”")
+			item.set_tooltip_text(1, "No sample â€” passive never rolled onto a roster in this batch.")
+			item.set_text(2, "â€”")
+			item.set_tooltip_text(2, "No sample â€” passive never rolled onto a roster in this batch.")
 			_color_no_sample(item, 1)
 			_color_no_sample(item, 2)
 		var classes: Dictionary = row.get("classes", {}) as Dictionary
 		var class_bits: PackedStringArray = PackedStringArray()
 		for cid: Variant in classes.keys():
-			class_bits.append("%s×%d" % [report.class_display_name(str(cid)), int(classes[cid])])
+			class_bits.append("%sÃ—%d" % [report.class_display_name(str(cid)), int(classes[cid])])
 		item.set_text(6, ", ".join(class_bits))
 
 
@@ -460,19 +460,19 @@ func _add_economy_section(report: MassSimBatchReport) -> void:
 		{
 			"label": "Assisted damage / turn",
 			"value": "%.2f" % float(eco.get("assisted_damage_per_turn", 0.0)),
-			"tip": "%d total assisted damage ÷ %d sim turns." % [int(eco.get("total_assisted_damage", 0)), turns],
+			"tip": "%d total assisted damage Ã· %d sim turns." % [int(eco.get("total_assisted_damage", 0)), turns],
 			"skip_color": true,
 		},
 		{
 			"label": "Shields / turn",
 			"value": "%.2f" % float(eco.get("assisted_shields_per_turn", 0.0)),
-			"tip": "%d total shields granted ÷ %d sim turns." % [int(eco.get("total_assisted_shields", 0)), turns],
+			"tip": "%d total shields granted Ã· %d sim turns." % [int(eco.get("total_assisted_shields", 0)), turns],
 			"skip_color": true,
 		},
 		{
 			"label": "Overkill / turn",
 			"value": "%.2f" % float(eco.get("overkill_per_turn", 0.0)),
-			"tip": "%d total overkill damage ÷ %d sim turns." % [int(eco.get("total_overkill", 0)), turns],
+			"tip": "%d total overkill damage Ã· %d sim turns." % [int(eco.get("total_overkill", 0)), turns],
 			"metric": float(eco.get("overkill_per_turn", 0.0)),
 			"target": 0.0,
 			"tolerance": 0.5,
@@ -481,7 +481,7 @@ func _add_economy_section(report: MassSimBatchReport) -> void:
 		{
 			"label": "Floated AP / turn",
 			"value": "%.2f" % float(eco.get("floated_ap_per_turn", 0.0)),
-			"tip": "%d total unused AP banked ÷ %d sim turns." % [int(eco.get("total_floated_ap", 0)), turns],
+			"tip": "%d total unused AP banked Ã· %d sim turns." % [int(eco.get("total_floated_ap", 0)), turns],
 			"metric": float(eco.get("floated_ap_per_turn", 0.0)),
 			"target": 0.0,
 			"tolerance": 0.15,
@@ -490,7 +490,7 @@ func _add_economy_section(report: MassSimBatchReport) -> void:
 		{
 			"label": "Whiff battles",
 			"value": "%.1f%%" % float(eco.get("whiff_battle_pct", 0.0)),
-			"tip": "%d battles with whiffs ÷ %d battles (%.1f%%)." % [
+			"tip": "%d battles with whiffs Ã· %d battles (%.1f%%)." % [
 				int(eco.get("battles_with_whiffs", 0)), battles, float(eco.get("whiff_battle_pct", 0.0)),
 			],
 			"metric": float(eco.get("whiff_battle_pct", 0.0)),

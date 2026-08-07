@@ -1,4 +1,4 @@
-class_name GdUnitFileAccess
+﻿class_name GdUnitFileAccess
 extends RefCounted
 
 const GDUNIT_TEMP := "user://tmp"

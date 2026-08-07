@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 # Make this a global accessible by name "NetworkManager" in autoloads
 
 signal peer_connected(id: int)

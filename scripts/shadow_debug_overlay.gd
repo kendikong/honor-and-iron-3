@@ -1,7 +1,7 @@
-class_name ShadowDebugOverlay
+﻿class_name ShadowDebugOverlay
 extends CanvasLayer
 
-## Dev overlay — GPU per-pixel cloud shade bake (same shader as ground). Toggle **J**.
+## Dev overlay â€” GPU per-pixel cloud shade bake (same shader as ground). Toggle **J**.
 
 const TILE_PX: int = 16
 const REFRESH_INTERVAL_SEC: float = 0.4
@@ -204,11 +204,11 @@ func _build_legend_shell() -> void:
 
 
 func _update_legend(cloud_count: int, bake_ready: bool) -> void:
-	var ready_line: String = "GPU bake ready" if bake_ready else "GPU bake pending…"
+	var ready_line: String = "GPU bake ready" if bake_ready else "GPU bake pendingâ€¦"
 	var lines: PackedStringArray = PackedStringArray([
-		"Cloud shadow debug (J) — GPU per-pixel bake",
-		"Red = shade >= %.2f (%d px) · %s" % [CLOUD_SHADE_GATE, cloud_count, ready_line],
-		"Updates ~%.1fs · yellow foot = actor · orange = sprite/tile mismatch" % REFRESH_INTERVAL_SEC,
+		"Cloud shadow debug (J) â€” GPU per-pixel bake",
+		"Red = shade >= %.2f (%d px) Â· %s" % [CLOUD_SHADE_GATE, cloud_count, ready_line],
+		"Updates ~%.1fs Â· yellow foot = actor Â· orange = sprite/tile mismatch" % REFRESH_INTERVAL_SEC,
 	])
 	_legend_body.text = "\n".join(lines)
 

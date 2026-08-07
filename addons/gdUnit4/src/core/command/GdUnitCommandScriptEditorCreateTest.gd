@@ -1,4 +1,4 @@
-class_name GdUnitCommandScriptEditorCreateTest
+﻿class_name GdUnitCommandScriptEditorCreateTest
 extends GdUnitBaseCommand
 
 

@@ -1,4 +1,4 @@
-class_name GdUnitTestResourceLoader
+﻿class_name GdUnitTestResourceLoader
 extends RefCounted
 
 const GdUnitTools := preload("res://addons/gdUnit4/src/core/GdUnitTools.gd")

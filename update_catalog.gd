@@ -1,4 +1,4 @@
-extends SceneTree
+﻿extends SceneTree
 
 func _init():
 	var file = FileAccess.open("res://resources/character/lpc_catalog.json", FileAccess.READ)

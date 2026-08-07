@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 extends EditorContextMenuPlugin
 
 var _context_menus: Array[GdUnitContextMenuItem] = []

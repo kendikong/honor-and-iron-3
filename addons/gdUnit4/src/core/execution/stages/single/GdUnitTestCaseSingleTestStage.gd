@@ -1,4 +1,4 @@
-## The single test case execution stage.[br]
+﻿## The single test case execution stage.[br]
 class_name GdUnitTestCaseSingleTestStage
 extends IGdUnitExecutionStage
 

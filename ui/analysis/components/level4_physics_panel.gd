@@ -1,4 +1,4 @@
-class_name Level4PhysicsPanel
+﻿class_name Level4PhysicsPanel
 extends VBoxContainer
 
 signal inspect_requested(title: String, body: String, meta: Dictionary)
@@ -28,11 +28,11 @@ func bind_report(report: MassSimBatchReport) -> void:
 	) / float(maxi(report.total_battles, 1))
 	_body.text = (
 		"[b]Collision Analytics[/b]\n"
-		+ "• Wall Collisions: %d\n"
-		+ "• Chain Collisions: %d\n"
-		+ "• Hazard Landings: %d\n"
-		+ "• Friendly Fire Incidents: %d\n"
-		+ "• Avg Chaos Score / match: %.1f\n\n"
+		+ "â€¢ Wall Collisions: %d\n"
+		+ "â€¢ Chain Collisions: %d\n"
+		+ "â€¢ Hazard Landings: %d\n"
+		+ "â€¢ Friendly Fire Incidents: %d\n"
+		+ "â€¢ Avg Chaos Score / match: %.1f\n\n"
 		+ "[b]Collision Heatmap (aggregate)[/b]\n"
 		+ "%s"
 	) % [
@@ -59,5 +59,5 @@ func _build_heatmap_ascii(report: MassSimBatchReport) -> String:
 	for key: Variant in keys.slice(0, 12):
 		var hits: int = int(report.collision_heatmap[key])
 		var bars: int = clampi(int(float(hits) / float(max_hits) * 14.0), 1, 14)
-		lines.append("%s | %s (%d)" % [str(key), "█".repeat(bars), hits])
+		lines.append("%s | %s (%d)" % [str(key), "â–ˆ".repeat(bars), hits])
 	return "\n".join(lines)

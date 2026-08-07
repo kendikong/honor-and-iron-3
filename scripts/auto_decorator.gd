@@ -1,7 +1,7 @@
-class_name AutoDecorator
+﻿class_name AutoDecorator
 extends RefCounted
 
-## Reads PlayerGrid → writes TileMapLayer cells. Sole owner of tile cell placement.
+## Reads PlayerGrid â†’ writes TileMapLayer cells. Sole owner of tile cell placement.
 
 const SOURCE_FOREST: int = TileSetFactory.SOURCE_FOREST
 const SOURCE_PROPS_32: int = TileSetFactory.SOURCE_PROPS_32
@@ -11,18 +11,18 @@ const TERRAIN_SET: int = TileSetFactory.TERRAIN_SET
 const TERRAIN_DIRT: int = TileSetFactory.TERRAIN_DIRT
 const TERRAIN_WATER: int = TileSetFactory.TERRAIN_WATER
 
-# Opaque grass base — interior tiles only (no Wang dirt/elevation/water assignment).
+# Opaque grass base â€” interior tiles only (no Wang dirt/elevation/water assignment).
 const _GRASS_BASE_VARIANTS: Array[int] = [98, 97]
-# 16×16 forest scatter on OverlayLayer.
+# 16Ã—16 forest scatter on OverlayLayer.
 const _PEBBLE_VARIANTS: Array[int] = [88, 89]
 const _FLORA_VARIANTS: Array[int] = [91, 90, 104, 105, 106]
-## Rare weed/flower patches — only when a flora scatter roll already succeeded.
+## Rare weed/flower patches â€” only when a flora scatter roll already succeeded.
 const _FLORA_CLUSTER_CHANCE: float = 0.06
 const _FLORA_CLUSTER_SIZE_MIN: int = 2
 const _FLORA_CLUSTER_SIZE_MAX: int = 5
-# 32×32 environmental props (stump, boulder, bush, plant) — not farm crops.
+# 32Ã—32 environmental props (stump, boulder, bush, plant) â€” not farm crops.
 const _PROPS_32_ATLAS_X: Array[int] = [0, 1, 2, 3]
-## Extra grass cells to keep clear around each 80×96 tree (canopy overshoot + prop spill).
+## Extra grass cells to keep clear around each 80Ã—96 tree (canopy overshoot + prop spill).
 const _TREE_SCATTER_MARGIN: int = 1
 
 const _ROCK_TILE: int = 52
@@ -38,13 +38,13 @@ var logical_provenance: PlayerGridProvenance = null
 var ecology_hints: Dictionary = {}
 
 var _ground: TileMapLayer
-## Pebbles/flora — sparse overlay art above grass (never replaces grass cells).
+## Pebbles/flora â€” sparse overlay art above grass (never replaces grass cells).
 var _scatter: TileMapLayer
 var _overlay: TileMapLayer
 var _trees: TileMapLayer
 var _vfx: TileMapLayer
 var _shadow_sprites: Node2D
-## Visual-only OOB extension ring — not in PlayerGrid, not used for gameplay queries.
+## Visual-only OOB extension ring â€” not in PlayerGrid, not used for gameplay queries.
 var _phantom: TileMapLayer
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
@@ -114,14 +114,14 @@ func regenerate(grid: PlayerGrid) -> void:
 						pos,
 						_ROCK_TILE,
 						"player_grid_rock",
-						"PlayerGrid ROCK — single-tile elevation art #52",
+						"PlayerGrid ROCK â€” single-tile elevation art #52",
 					)
 				TileId.Type.RUIN:
 					_set_ground(
 						pos,
 						_RUIN_TILE,
 						"player_grid_ruin",
-						"PlayerGrid RUIN — ruin floor prop #107",
+						"PlayerGrid RUIN â€” ruin floor prop #107",
 					)
 				TileId.Type.TREE:
 					tree_cells.append(pos)
@@ -150,7 +150,7 @@ func regenerate(grid: PlayerGrid) -> void:
 
 	_fill_deferred_grass_interiors(grid)
 
-	# Ground/water painting may flip PlayerGrid cells — stabilize before any overlay/props.
+	# Ground/water painting may flip PlayerGrid cells â€” stabilize before any overlay/props.
 	PlayerGridRepair.repair(grid, logical_provenance)
 
 	for pos: Vector2i in tree_cells:
@@ -179,7 +179,7 @@ func _paint_grass_base(pos: Vector2i) -> void:
 	)
 
 
-## After terrain_connect — fill only grass/tree cells Godot did not assign wang tiles to.
+## After terrain_connect â€” fill only grass/tree cells Godot did not assign wang tiles to.
 func _fill_deferred_grass_interiors(grid: PlayerGrid) -> void:
 	for y: int in range(grid.height):
 		for x: int in range(grid.width):
@@ -194,7 +194,7 @@ func _fill_deferred_grass_interiors(grid: PlayerGrid) -> void:
 
 ## Paint one-cell OOB extensions matching each edge cell's logical type, then erase after connect.
 ## Water/dirt phantoms use terrain_connect; grass/tree/rock/ruin use opaque grass #97.
-## Returns oob_pos → { tile_id, extends_from }.
+## Returns oob_pos â†’ { tile_id, extends_from }.
 func _paint_edge_phantoms(grid: PlayerGrid) -> Dictionary:
 	var phantom_info: Dictionary = _collect_edge_phantom_types(grid)
 	var grass_oob: Array[Vector2i] = []
@@ -243,7 +243,7 @@ func _commit_edge_phantoms_visible(phantom_info: Dictionary) -> void:
 				logical_type,
 				extends_from,
 				"edge_phantom",
-				"Hidden map extension from (%d,%d) %s — peering only, not PlayerGrid"
+				"Hidden map extension from (%d,%d) %s â€” peering only, not PlayerGrid"
 				% [
 					extends_from.x,
 					extends_from.y,
@@ -268,7 +268,7 @@ func _terrain_connect_in_map(cells: Array[Vector2i], terrain: int) -> void:
 			SOURCE_FOREST,
 			atlas,
 			reason,
-			"Godot peering picked #%d — %s · %s"
+			"Godot peering picked #%d â€” %s Â· %s"
 			% [local_id, TileCatalog.category_title(str(entry["category"])), str(entry["orientation"])],
 		)
 
@@ -457,7 +457,7 @@ func _try_scatter_at(grid: PlayerGrid, pos: Vector2i, scatter_blocked: Dictionar
 			pos,
 			_PEBBLE_VARIANTS,
 			"scatter_pebble",
-			"Decoration scatter — pebble pool (~30%% of hits)",
+			"Decoration scatter â€” pebble pool (~30%% of hits)",
 		)
 	else:
 		if _rng.randf() < _FLORA_CLUSTER_CHANCE:
@@ -467,7 +467,7 @@ func _try_scatter_at(grid: PlayerGrid, pos: Vector2i, scatter_blocked: Dictionar
 				pos,
 				_FLORA_VARIANTS,
 				"scatter_flora",
-				"Decoration scatter — weed/flower pool (~58%% of hits)",
+				"Decoration scatter â€” weed/flower pool (~58%% of hits)",
 			)
 
 
@@ -523,7 +523,7 @@ func _scatter_flora_cluster(
 			origin,
 			_FLORA_VARIANTS,
 			"scatter_flora",
-			"Decoration scatter — weed/flower pool (~58%% of hits)",
+			"Decoration scatter â€” weed/flower pool (~58%% of hits)",
 		)
 
 
@@ -609,7 +609,7 @@ func _place_forest_overlay(
 		atlas,
 		MapRenderProvenance.footprint_for_source(SOURCE_FOREST),
 		reason,
-		"%s · forest #%d — %s" % [detail_prefix, local_id, str(entry["use_case"])],
+		"%s Â· forest #%d â€” %s" % [detail_prefix, local_id, str(entry["use_case"])],
 	)
 
 
@@ -620,7 +620,7 @@ func _place_forest_ground_scatter(
 	detail_prefix: String,
 ) -> void:
 	## Pebbles / flora on ScatterLayer (z=0, above grass) so shadows darken them
-	## without replacing grass — sparse overlay tiles must not erase grass underneath.
+	## without replacing grass â€” sparse overlay tiles must not erase grass underneath.
 	var local_id: int = _pick_scatter_safe_variant(variants)
 	if local_id < 0:
 		return
@@ -635,7 +635,7 @@ func _place_forest_ground_scatter(
 		atlas,
 		Vector2i.ONE,
 		reason,
-		"%s · forest #%d — %s" % [detail_prefix, local_id, str(entry["use_case"])],
+		"%s Â· forest #%d â€” %s" % [detail_prefix, local_id, str(entry["use_case"])],
 	)
 
 
@@ -668,7 +668,7 @@ func _place_props_32(pos: Vector2i) -> void:
 		pos,
 		atlas_x,
 		"scatter_props_32",
-		"Decoration scatter — 32×32 prop pool (~12%% of hits) · %s"
+		"Decoration scatter â€” 32Ã—32 prop pool (~12%% of hits) Â· %s"
 		% TileCatalog.PROPS_32_LABELS[clampi(atlas_x, 0, TileCatalog.PROPS_32_LABELS.size() - 1)],
 	)
 

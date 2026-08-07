@@ -1,0 +1,44 @@
+{
+  "customInstructions": {
+    "global": "Read .roo/rules/roo-deepseek-agent.mdc and .agents/AGENTS.md before starting. Follow the usage discipline, workflow, and Changelog format in the Roo rules. The absolute engineering rules in .cursor/rules/ (auto-commit-absolute, global-systems-first, no-bandaid-fixes, move-preview-intent-truth, qa-after-gameplay-changes, owner-facing-brevity, local-cloud-sync) always apply."
+  },
+  "modes": {
+    "architect": {
+      "name": "Architect",
+      "description": "Plan and design changes. Produces a tight numbered plan (files, functions, concrete changes, acceptance criteria). Never edits files.",
+      "allowedTools": [
+        "read",
+        "grep",
+        "search",
+        "list",
+        "ask_user"
+      ]
+    },
+    "code": {
+      "name": "Code",
+      "description": "Implement an approved plan with surgical, targeted edits. Follows global-systems-first and no-bandaid-fixes.",
+      "allowedTools": [
+        "read",
+        "grep",
+        "search",
+        "list",
+        "edit",
+        "write",
+        "run_terminal",
+        "ask_user"
+      ]
+    },
+    "debug": {
+      "name": "Debug",
+      "description": "Diagnose failures. Read-only until the root cause is found, then propose a fix.",
+      "allowedTools": [
+        "read",
+        "grep",
+        "search",
+        "list",
+        "run_terminal",
+        "ask_user"
+      ]
+    }
+  }
+}

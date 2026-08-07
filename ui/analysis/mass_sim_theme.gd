@@ -1,4 +1,4 @@
-class_name MassSimTheme
+﻿class_name MassSimTheme
 extends RefCounted
 
 ## Dark analytics styling aligned with MenuTheme.

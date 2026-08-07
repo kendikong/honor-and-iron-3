@@ -1,7 +1,7 @@
-class_name MassSimBoardBuilder
+﻿class_name MassSimBoardBuilder
 extends RefCounted
 
-## Procedural skirmish boards for mass simulation — varied map tags per bible L6.
+## Procedural skirmish boards for mass simulation â€” varied map tags per bible L6.
 
 
 static func build_skirmish(map_seed: int) -> Dictionary:

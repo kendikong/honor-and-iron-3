@@ -1,4 +1,4 @@
-class_name CommanderContext
+﻿class_name CommanderContext
 extends RefCounted
 
 ## Purpose: Carries the dynamic context weights (the "Mood") computed at the start

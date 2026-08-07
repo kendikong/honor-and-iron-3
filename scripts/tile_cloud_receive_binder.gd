@@ -1,7 +1,7 @@
-class_name TileCloudReceiveBinder
+﻿class_name TileCloudReceiveBinder
 extends RefCounted
 
-## GPU cloud receive on TreeLayer / OverlayLayer — tints tile albedo, no multiply stack.
+## GPU cloud receive on TreeLayer / OverlayLayer â€” tints tile albedo, no multiply stack.
 
 const TILE_PX: float = 16.0
 const _CLOUD_SHADER: Shader = preload("res://shaders/tilemap_cloud_receive.gdshader")

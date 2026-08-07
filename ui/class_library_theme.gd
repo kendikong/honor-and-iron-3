@@ -1,4 +1,4 @@
-class_name ClassLibraryTheme
+﻿class_name ClassLibraryTheme
 extends RefCounted
 
 ## Visual design tokens for the Class Library Editor.

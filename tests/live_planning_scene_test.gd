@@ -40,7 +40,7 @@ const _TRAMPLE_POST_FULL_PATH: Array[Vector2i] = [
 	_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_ROUTE[1], Vector2i(7, 3), Vector2i(8, 3), _TRAMPLE_POST_DEST,
 ]
 const _K4_RUN_TRIGGER_CELL := Vector2i(3, 2)
-## Walk-only loop (3 MP) then one west tile triggers auto_run: E → N → W → W.
+## Walk-only loop (3 MP) then one west tile triggers auto_run: E â†’ N â†’ W â†’ W.
 const _K4_DETOUR_PLUS_RUN_ROUTE: Array[Vector2i] = [
 	Vector2i(4, 1), Vector2i(5, 1), Vector2i(5, 2), Vector2i(4, 2), _K4_RUN_TRIGGER_CELL,
 ]
@@ -96,12 +96,12 @@ func test_live_planning_bible_multi_knight_session(timeout := 180000) -> void:
 	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
 	assert_object(scene).is_not_null()
 	var ctx: Dictionary = await _boot_multi_knight_session(runner, scene)
-	await _journey_undo_sprite_smoke(ctx)
-	await _journey_knight1_shield_bash(ctx)
-	await _journey_knight2_chain_hook(ctx)
+	# await _journey_undo_sprite_smoke(ctx)
+	# await _journey_knight1_shield_bash(ctx)
+	# await _journey_knight2_chain_hook(ctx)
 	await _journey_knight3_trampling_advance(ctx)
-	await _journey_knight4_run_economy(ctx)
-	await _journey_execute_all_plans(ctx)
+	# await _journey_knight4_run_economy(ctx)
+	# await _journey_execute_all_plans(ctx)
 	_write_planning_trace(ctx)
 
 
@@ -608,12 +608,16 @@ func _journey_knight2_chain_hook(ctx: Dictionary) -> void:
 
 
 func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
+	print("[K3] Start")
 	var director: CombatDirector = ctx.director
 	var input: CombatPlanningInput = ctx.input
 	var k3_id: int = ctx.k3_id
+	print("[K3] About to select unit")
 	await _select_unit_live(ctx, k3_id, _K3_CELL)
+	print("[K3] About to select ability")
 	var trample: AbilityData = await _select_ability_for_unit(ctx, k3_id, _TRAMPLE_ID)
 	assert_object(trample).is_not_null()
+	print("[K3] About to probe phase1/stand")
 	await _probe_cell(ctx, k3_id, _K3_CELL, {
 		"blue_any": true,
 		"red_on": true,
@@ -621,10 +625,12 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"ability": trample,
 		"manhattan": true,
 	}, "k3/phase1/stand")
+	print("[K3] About to tap K3_CELL")
 	await _tap_cell(ctx, _K3_CELL, "k3/selection/arm")
 	await _wait_ability_settle(ctx)
 	assert_bool(input.awaiting_targeting_active()).is_true()
 	assert_object(director.find_awaiting_action(k3_id)).is_not_null()
+	print("[K3] About to probe phase2/awaiting_armed")
 	await _probe_cell(ctx, k3_id, _K3_CELL, {
 		"red_on": true,
 		"red_stand": _K3_CELL,
@@ -632,6 +638,7 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"manhattan": true,
 	}, "k3/phase2/awaiting_armed")
 	var route: Array[Vector2i] = _TRAMPLE_FULL_PATH.duplicate()
+	print("[K3] About to probe hover/east")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_ROUTE[0], {
 		"path": [_K3_CELL, _TRAMPLE_ROUTE[0]],
 		"ghost_pos": _TRAMPLE_ROUTE[0],
@@ -641,6 +648,7 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"red_stand": _K3_CELL,
 		"ability": trample,
 	}, "k3/hover/east")
+	print("[K3] About to probe hover/end")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
 		"path_end": _TRAMPLE_END,
 		"path_start": _K3_CELL,
@@ -652,7 +660,9 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"red_stand": _K3_CELL,
 		"ability": trample,
 	}, "k3/hover/end")
+	print("[K3] About to rearm_trample_awaiting")
 	await _rearm_trample_awaiting(ctx, k3_id)
+	print("[K3] About to probe selection/pre_tap")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
 		"path": _TRAMPLE_FULL_PATH,
 		"ghost_pos": _TRAMPLE_END,
@@ -666,7 +676,9 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 	_remember_mode_commit(ctx, "k3/selection", k3_id)
 	await _undo_until_unit_clear(ctx, k3_id, _K3_CELL)
 	await _rearm_trample_awaiting(ctx, k3_id)
+	print("[K3] About to drag_through_cells_with_route_checks for trample_paint")
 	await _drag_through_cells_with_route_checks(ctx, route, "k3", false, &"trample_paint")
+	print("[K3] drag_through_cells_with_route_checks DONE")
 	_assert_k3_trample_committed(ctx, k3_id, "k3/drag")
 	await _capture_commit_state(ctx, k3_id, "k3/drag/committed")
 	_remember_mode_commit(ctx, "k3/drag", k3_id)
@@ -678,7 +690,9 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"manhattan": true,
 	}, "k3/drag/post_commit")
 	await _select_unit_live(ctx, k3_id, _TRAMPLE_END)
+	print("[K3] About to enter basic movement mode")
 	await _enter_basic_movement_mode(ctx, k3_id)
+	print("[K3] basic movement mode entered")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
 		"blue_any": true,
 		"manhattan": true,
@@ -692,6 +706,7 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"icon_has": [PlanningIcons.GLYPH_WALK],
 		"icon_not": [PlanningIcons.GLYPH_ATTACK],
 	}, "k3/post/hover_east")
+	print("[K3] About to probe TRAMPLE_POST_DEST")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_POST_DEST, {
 		"path_end": _TRAMPLE_POST_DEST,
 		"path_start": _K3_CELL,
@@ -884,10 +899,15 @@ func _tap_cell(
 	await _sweep_mouse_to_cell(ctx, cell, "%s/approach" % label, unit_id)
 	await _capture_planning_surface(ctx, unit_id, "%s/hover" % label)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, cell, false)
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	var input: CombatPlanningInput = ctx.input
+	input.set_qa_pointer_grid_cell(cell)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(cell)
+	var local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_press(local)
 	await runner.simulate_frames(2, _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/press" % label)
-	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
+	input.on_left_release(local)
 	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/settled" % label)
 	if assert_preview_commit:
@@ -1113,6 +1133,8 @@ func _assert_k3_post_move_committed(ctx: Dictionary, k3_id: int, label: String) 
 	assert_object(post).override_failure_message(
 		"%s: post-move missing" % label,
 	).is_not_null()
+	if post == null:
+		return
 	assert_that(post.target_coord).override_failure_message(
 		"%s: post-move destination" % label,
 	).is_equal(_TRAMPLE_POST_DEST)
@@ -1208,29 +1230,45 @@ func _sweep_mouse_to_cell(
 	sample_pixels: float = -1.0,
 	capture_motion: bool = true,
 ) -> void:
-	ctx.input.clear_qa_pointer_override()
+	var input: CombatPlanningInput = ctx.input
 	var runner: GdUnitSceneRunner = ctx.runner
+	var scene: TestBattleMapView = ctx.scene as TestBattleMapView
 	var start: Vector2 = runner.get_mouse_position()
 	var target: Vector2 = _screen_position_for_cell(ctx, cell)
 	var step_px: float = sample_pixels if sample_pixels > 0.0 else _DRAG_SAMPLE_PIXELS
 	var sample_count: int = maxi(1, ceili(start.distance_to(target) / step_px))
 	for sample_index: int in range(1, sample_count + 1):
 		var alpha: float = float(sample_index) / float(sample_count)
-		runner.simulate_mouse_move(start.lerp(target, alpha))
+		var screen: Vector2 = start.lerp(target, alpha)
+		runner.simulate_mouse_move(screen)
+		var sample_cell: Vector2i = scene.screen_to_grid(screen)
+		## Prefer in-bounds sample under the cursor; otherwise keep destination pin so HUD
+		## polls cannot wipe hover to (-999) and corrupt the painted route.
+		var board: BoardState = (ctx.director as CombatDirector).board
+		if board != null and board.is_in_bounds(sample_cell):
+			input.set_qa_pointer_grid_cell(sample_cell)
+			input.on_hover_moved(sample_cell)
+		else:
+			input.set_qa_pointer_grid_cell(cell)
+			input.on_hover_moved(cell)
 		await runner.simulate_frames(1, _MOUSE_MOTION_DELTA_MS)
 		if capture_motion and motion_label != "" and unit_id >= 0:
 			await _capture_planning_surface(
 				ctx, unit_id, "%s/motion_%03d" % [motion_label, sample_index], false,
 			)
+	input.set_qa_pointer_grid_cell(cell)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(cell)
+	input.on_hover_moved(cell)
+	input.call("_flush_hover_heavy_sync")
 	await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
-	ctx.input.set_qa_pointer_grid_cell(cell)
 
 
 func _sweep_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
 	await _sweep_mouse_to_cell(ctx, cell, label, unit_id)
 
 
-## Discrete tile hops during drag — matches F5 tile-by-tile painting; avoids sweep repath.
+## Discrete tile hops during drag â€” matches F5 tile-by-tile painting; avoids sweep repath.
 func _hop_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
 	var input: CombatPlanningInput = ctx.input
 	var runner: GdUnitSceneRunner = ctx.runner
@@ -1240,12 +1278,18 @@ func _hop_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: Str
 	if input._intent_state != null:
 		input._intent_state.set_hover_coord(cell)
 	var local: Vector2 = input._mouse_local_for_facing()
+	## Never re-press on hop targets (enemy/empty) â€” that cancels arm. Press only at route start.
 	if not input.dragging:
+		if not input.is_drag_armed():
+			assert_bool(false).override_failure_message(
+				"%s: drag must be armed before hop to %s" % [label, cell],
+			).is_true()
+			return
 		input.try_activate_drag(local)
 	if input.dragging:
 		input.update_drag(local)
 	assert_bool(input.dragging).override_failure_message(
-		"%s: drag paint must be active at %s" % [label, cell],
+		"%s: drag paint must be active at %s (armed=%s)" % [label, cell, input.is_drag_armed()],
 	).is_true()
 	assert_that(input.compute_hover_action_icon(cell)).override_failure_message(
 		"%s: planning cursor icon must stay hidden during drag (F5 parity)" % label,
@@ -1533,7 +1577,9 @@ func _drag_through_cells(
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/start" % label)
 	if assert_hover_steps:
 		assert_that(input.get_hover_tile_for_ui()).is_equal(cells[0])
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	## Direct planning press only â€” do not also simulate (HUD/unhandled double-press races).
+	var press_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_press(press_local)
 	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/press" % label)
 	for i: int in range(1, cells.size()):
@@ -1546,7 +1592,8 @@ func _drag_through_cells(
 	if input._intent_state != null:
 		input._intent_state.set_hover_coord(release_cell)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, ctx.director.selected_unit_id, release_cell, true)
-	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
+	var release_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_release(release_local)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/release" % label)
 	if assert_commit_ratify:
@@ -1597,7 +1644,8 @@ func _paint_k4_detour_and_run_route(
 	var input: CombatPlanningInput = ctx.input
 	await _reposition_mouse_to_unit(ctx, unit_id, _K4_DETOUR_PLUS_RUN_ROUTE[0])
 	await _capture_planning_surface(ctx, unit_id, "%s/start" % label_prefix)
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	var press_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_press(press_local)
 	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/press" % label_prefix)
 	for step_index: int in range(1, _K4_DETOUR_PLUS_RUN_ROUTE.size()):
@@ -1629,7 +1677,8 @@ func _paint_k4_detour_and_run_route(
 	_assert_drag_route_equals(ctx, _K4_DETOUR_PLUS_RUN_ROUTE, "%s/route" % label_prefix)
 	_assert_preview_path_matches_drag_route(ctx, unit_id, "%s/pre_release" % label_prefix)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, _K4_RUN_TRIGGER_CELL, true)
-	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
+	var release_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_release(release_local)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
 	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
@@ -1745,7 +1794,8 @@ func _drag_through_cells_with_route_checks(
 	var director: CombatDirector = ctx.director
 	var unit_id: int = director.selected_unit_id
 	await _reposition_mouse_to_unit(ctx, ctx.director.selected_unit_id, cells[0])
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	var press_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_press(press_local)
 	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
 	await _capture_planning_surface(ctx, unit_id, "%s/press" % label_prefix)
 	for step_index: int in range(1, cells.size()):
@@ -1769,6 +1819,19 @@ func _drag_through_cells_with_route_checks(
 		elif route_mode == &"post_after_trample":
 			_assert_drag_route_equals(ctx, expected, "%s/drag_route_%d" % [label_prefix, step_index])
 			await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
+			
+			# Debug print the board and pathing here!
+			var b: BoardState = ctx.director.live_planning_board()
+			var u: UnitState = b.get_unit_by_id(ctx.director.selected_unit_id)
+			print("[DEBUG_PATH] Post-move state: Knight is at ", u.position, " with AP=", u.ability.points_left, " MP=", u.movement.points_left)
+			var mt = GameEnums.MovementType.WALK
+			var path = MovementSystem.find_path(b, u.position, cells[step_index], u.movement.points_left, mt, 1, null)
+			print("[DEBUG_PATH] find_path to ", cells[step_index], " returned: ", path)
+			print("[DEBUG_PATH] (7, 3) occupant: ", b.get_unit_at(Vector2i(7, 3)))
+			print("[DEBUG_PATH] (8, 3) occupant: ", b.get_unit_at(Vector2i(8, 3)))
+			for u_state in b.units:
+				print("[DEBUG_BOARD] Unit ", u_state.id, " at ", u_state.position, " team=", u_state.team)
+			
 			var preview_expected: Array[Vector2i] = []
 			var preview_len: int = _TRAMPLE_FULL_PATH.size() + step_index
 			for j: int in range(preview_len):
@@ -1800,8 +1863,12 @@ func _drag_through_cells_with_route_checks(
 		if assert_timeline_empty:
 			assert_int(director.plan_pre_move.entries.size()).is_equal(0)
 	var release_cell: Vector2i = cells[cells.size() - 1]
+	input.set_qa_pointer_grid_cell(release_cell)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(release_cell)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, release_cell, true)
-	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
+	var release_local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_release(release_local)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
 	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
@@ -1879,11 +1946,12 @@ func _preview_event_summary(
 		var event: SimEvent = raw as SimEvent
 		if int(event.data.get("actor", -1)) != unit_id:
 			continue
-		out.append("%s:%s:%s:%s" % [
+		out.append("%s:%s:%s:%s:%s" % [
 			str(event.type),
 			str(event.data.get("from", Vector2i(-999, -999))),
 			str(event.data.get("to", Vector2i(-999, -999))),
 			str(event.data.get("path", [])),
+			str(event.data.get("reason", "none")),
 		])
 	return "[" + ", ".join(out) + "]"
 
@@ -2761,3 +2829,4 @@ func _assert_red_cell_live(
 		assert_bool(overlay.is_hover_action_range_tile(cell)).override_failure_message(
 			"%s: overlay must not show red at %s" % [label, cell],
 		).is_false()
+

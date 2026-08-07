@@ -1,7 +1,7 @@
-class_name TacticalPlanningCursor
+﻿class_name TacticalPlanningCursor
 extends CanvasLayer
 
-## Screen-space planning cursor icons — outside WorldModulate so emoji stay crisp.
+## Screen-space planning cursor icons â€” outside WorldModulate so emoji stay crisp.
 
 const BASE_ICON_SIZE: int = 36
 const ICON_OFFSET: Vector2 = Vector2(12.0, 12.0)
@@ -50,7 +50,7 @@ func _on_draw() -> void:
 	if composite.size() > 1:
 		_draw_composite_row(_drawer, center, composite)
 		return
-	var color: Color = Color(1.0, 0.52, 0.52, 1.0) if _icon == "∅" else Color(1.0, 1.0, 1.0, 1.0)
+	var color: Color = Color(1.0, 0.52, 0.52, 1.0) if _icon == PlanningIcons.GLYPH_NULL else Color(1.0, 1.0, 1.0, 1.0)
 	_draw_centered(_drawer, center, _icon, color, _font_size)
 
 
@@ -96,10 +96,10 @@ static func _composite_icon_parts(icon: String) -> PackedStringArray:
 				if not trimmed.is_empty():
 					parts.append(trimmed)
 			return parts
-	if icon == "👟⚔️":
-		return PackedStringArray(["👟", "⚔️"])
-	if icon == "🏃⚔️":
-		return PackedStringArray(["🏃", "⚔️"])
+	if icon == PlanningIcons.GLYPH_WALK + PlanningIcons.GLYPH_ATTACK:
+		return PackedStringArray([PlanningIcons.GLYPH_WALK, PlanningIcons.GLYPH_ATTACK])
+	if icon == PlanningIcons.GLYPH_RUN + PlanningIcons.GLYPH_ATTACK:
+		return PackedStringArray([PlanningIcons.GLYPH_RUN, PlanningIcons.GLYPH_ATTACK])
 	return PackedStringArray()
 
 

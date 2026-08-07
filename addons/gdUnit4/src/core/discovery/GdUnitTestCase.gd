@@ -1,4 +1,4 @@
-## GdUnitTestCase
+﻿## GdUnitTestCase
 ## A class representing a single test case in GdUnit4.
 ## This class is used as a data container to hold all relevant information about a test case,
 ## including its location, dependencies, and metadata for test discovery and execution.

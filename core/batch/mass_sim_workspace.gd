@@ -1,4 +1,4 @@
-class_name MassSimWorkspace
+﻿class_name MassSimWorkspace
 extends RefCounted
 
 const _C = preload("res://core/batch/mass_sim_constants.gd")

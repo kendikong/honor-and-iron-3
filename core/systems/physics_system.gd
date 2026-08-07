@@ -1,5 +1,5 @@
 # ==============================================================================
-# 🛑 WARNING TO AI AGENTS (HONOR & IRON ARCHITECTURE STRICT RULES) 🛑
+# ðŸ›‘ WARNING TO AI AGENTS (HONOR & IRON ARCHITECTURE STRICT RULES) ðŸ›‘
 # ==============================================================================
 # DO NOT BRANCH ON `ability.id` IN THIS FILE. EVER.
 # 
@@ -58,7 +58,7 @@ static func facing_from_vector(v: Vector2i) -> GameEnums.Facing:
 		return GameEnums.Facing.NORTH
 	return GameEnums.Facing.SOUTH
 
-## Counter-clockwise 90° from a cardinal dash direction (left of forward).
+## Counter-clockwise 90Â° from a cardinal dash direction (left of forward).
 static func left_of_direction(direction: Vector2i) -> Vector2i:
 	return Vector2i(-direction.y, direction.x)
 
@@ -426,9 +426,11 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 		if pusher != null and ability_id != &"":
 			var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 			if ability != null:
-				var effects: Array = ability.upgraded_effects if pusher.is_ability_upgraded(ability_id) else ability.effects
-				for eff: EffectData in effects:
-					if eff != null and eff.modifiers.has("buff_on_push"):
+				var effects: Array = ability.upgraded_modules if pusher.is_ability_upgraded(ability_id) else ability.modules
+				print("PUSH ABILITY: ", ability_id, " UPGRADED: ", pusher.is_ability_upgraded(ability_id), " EFFECTS: ", effects.size())
+				for eff: AbilityModule in effects:
+					print("EFF: ", eff.primary_type, " MODS: ", eff.legacy_modifiers)
+					if eff != null and eff.legacy_modifiers.get("buff_on_push", 0) > 0:
 						pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
 						pusher._recalculate_stats()
 						break
@@ -480,26 +482,27 @@ static func _emit_collision(
 	var object_collision_stagger = false
 	var enemy_collision_stagger_both = false
 	var stagger_on_collision = false
-	var violent_collision_recast = false
 	
 	if ability_id != &"" and pusher != null:
 		var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 		if ability != null:
-			var effects = ability.effects
+			## Native gate: IF_COLLIDED follow-up MOVE is resolved inline via module_coords (AD-3).
+			if (
+				AbilitySystem.ability_has_module_gate(
+					ability, GameEnums.ModuleGate.IF_COLLIDED, pusher
+				)
+				and AbilitySystem.evaluate_module_gate(GameEnums.ModuleGate.IF_COLLIDED, true)
+			):
+				pusher.passive_flags["module_gate_collided"] = true
+			var effects = ability.modules
 			if pusher.is_ability_upgraded(ability_id):
-				effects = ability.upgraded_effects
+				effects = ability.upgraded_modules
 			for eff in effects:
-				if eff.modifiers.has("object_collision_stagger"): object_collision_stagger = true
-				if eff.modifiers.has("enemy_collision_stagger_both"): enemy_collision_stagger_both = true
-				if eff.modifiers.has("stagger_on_collision"): stagger_on_collision = true
-				if eff.modifiers.has("violent_collision_recast"): violent_collision_recast = true
+				if eff.legacy_modifiers.get("object_collision_stagger", false): object_collision_stagger = true
+				if eff.legacy_modifiers.get("enemy_collision_stagger_both", false): enemy_collision_stagger_both = true
+				if eff.legacy_modifiers.get("stagger_on_collision", false): stagger_on_collision = true
 
 	if pusher != null and pusher != target:
-		if violent_collision_recast and not pusher.passive_flags.get("violent_collision_recast_used", false):
-			pusher.passive_flags["violent_collision_recast_used"] = true
-			pusher.ability.points_left += 1
-			pusher.turn_action_used = false
-			
 		var stun_on_hit = stagger_on_collision
 		if events.size() > 0 and not stun_on_hit:
 			for e in events:

@@ -1,7 +1,7 @@
-class_name ReadabilityEnforcer
+﻿class_name ReadabilityEnforcer
 extends RefCounted
 
-## High-attention cap — bible §4D (max 5 per screen).
+## High-attention cap â€” bible Â§4D (max 5 per screen).
 
 const MAX_HIGH_ATTENTION: int = 5
 

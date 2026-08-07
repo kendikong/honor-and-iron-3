@@ -1,10 +1,10 @@
-class_name TacticalCombatShell
+﻿class_name TacticalCombatShell
 extends Node
 
 ## Orchestrates tactical combat presentation wiring.
 ## Setup order (mandatory):
 ##   1. Map pipeline + options (map view _ready)
-##   2. shell.setup() — bind listeners before director emits board_changed
+##   2. shell.setup() â€” bind listeners before director emits board_changed
 ##   3. director.start_from_encounter()
 ## Layer z: SidePanels=21, Hud=22, Pause=35, Options=40 (when open)
 
@@ -82,7 +82,11 @@ func _apply_ui_settings() -> void:
 		_planning_overlay.apply_settings(_settings)
 
 
-func start_combat(encounter: EncounterData, initial_board: BoardState = null) -> void:
+func start_combat(
+	encounter: EncounterData,
+	initial_board: BoardState = null,
+	player_assignments: Dictionary = {},
+) -> void:
 	_unit_layer.setup(_map_view, _director, _char_profile)
 	_unit_layer.bind_sfx(_sfx)
 	_unit_overlay.setup(_map_view, _director, _unit_layer)
@@ -104,7 +108,7 @@ func start_combat(encounter: EncounterData, initial_board: BoardState = null) ->
 	if initial_board != null:
 		_director.start_from_custom(initial_board)
 	else:
-		_director.start_from_encounter(encounter)
+		_director.start_from_encounter(encounter, player_assignments)
 	_combat_hud.setup(
 		_director,
 		_map_view,

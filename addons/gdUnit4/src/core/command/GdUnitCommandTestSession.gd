@@ -1,4 +1,4 @@
-class_name GdUnitCommandTestSession
+﻿class_name GdUnitCommandTestSession
 extends GdUnitBaseCommand
 
 

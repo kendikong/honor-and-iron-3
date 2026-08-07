@@ -1,4 +1,4 @@
-class_name UnitData
+﻿class_name UnitData
 extends Resource
 
 ## Purpose: Stat/ability template for a unit. This is NOT live state; current HP,

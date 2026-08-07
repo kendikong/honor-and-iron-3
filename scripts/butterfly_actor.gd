@@ -1,7 +1,7 @@
-class_name ButterflyActor
+﻿class_name ButterflyActor
 extends EcologySparseActor
 
-## Flutter on scatter_flora — spawns on flower tile; drifts ≤1 cell, returns to land.
+## Flutter on scatter_flora â€” spawns on flower tile; drifts â‰¤1 cell, returns to land.
 
 const _DRIFT_OFFSETS: Array[Vector2i] = [
 	Vector2i.ZERO,

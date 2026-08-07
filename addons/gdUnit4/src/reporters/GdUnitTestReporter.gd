@@ -1,4 +1,4 @@
-class_name GdUnitTestReporter
+﻿class_name GdUnitTestReporter
 extends RefCounted
 
 

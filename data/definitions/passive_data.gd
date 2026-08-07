@@ -1,4 +1,4 @@
-class_name PassiveData
+﻿class_name PassiveData
 extends Resource
 
 ## Purpose: A data-driven passive ability. Modifies unit behavior or stats passively.

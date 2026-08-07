@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 
 signal session_created(type: String, data: String)
 signal ice_candidate_created(media: String, index: int, name: String)

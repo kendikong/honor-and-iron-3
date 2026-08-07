@@ -1,7 +1,7 @@
-class_name CloudTuning
+﻿class_name CloudTuning
 extends RefCounted
 
-## Persisted cloud-shadow scalars → GPU field + CPU body receive (shared math).
+## Persisted cloud-shadow scalars â†’ GPU field + CPU body receive (shared math).
 
 const STRENGTH_MIN: float = 0.15
 const STRENGTH_MAX: float = 1.0
@@ -184,7 +184,7 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "cloud_scale_tiles",
-			"label": "Patch size (tiles across — higher = larger clouds)",
+			"label": "Patch size (tiles across â€” higher = larger clouds)",
 			"min": SCALE_TILES_MIN,
 			"max": SCALE_TILES_MAX,
 			"step": 1.0,
@@ -220,7 +220,7 @@ static func panel_slider_specs() -> Array[Dictionary]:
 		{
 			"kind": "slider",
 			"key": "cloud_shape_mix",
-			"label": "Shape blend (layer mix — changes blob character)",
+			"label": "Shape blend (layer mix â€” changes blob character)",
 			"min": SHAPE_MIX_MIN,
 			"max": SHAPE_MIX_MAX,
 			"step": 0.01,

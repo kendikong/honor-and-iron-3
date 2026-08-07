@@ -1,7 +1,7 @@
-class_name CharacterWeightManager
+﻿class_name CharacterWeightManager
 extends RefCounted
 
-## Provides weighted‑random selection based on user‑defined slot and item weights.
+## Provides weightedâ€‘random selection based on userâ€‘defined slot and item weights.
 
 static func get_weight(item_id: String, slot_name: String, profile: CharacterGenProfile) -> float:
 	var slot_w: float = profile.slot_weights.get(slot_name, 1.0)
@@ -76,7 +76,7 @@ static func pick_item(
 	for w: float in weights:
 		total += w
 	if total <= 0.0:
-		# All weights zeroed — return empty (user explicitly excluded all compatible items).
+		# All weights zeroed â€” return empty (user explicitly excluded all compatible items).
 		return {}
 	var roll: float = rng.randf() * total
 	for i: int in range(compatible.size()):

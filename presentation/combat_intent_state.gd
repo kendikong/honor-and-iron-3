@@ -1,4 +1,4 @@
-class_name CombatIntentState
+﻿class_name CombatIntentState
 extends RefCounted
 
 ## Single owner for enemy-intent visibility, hover coord, and timeline hover highlight.

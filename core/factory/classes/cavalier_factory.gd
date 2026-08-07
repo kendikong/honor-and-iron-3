@@ -1,4 +1,4 @@
-class_name CavalierFactory
+﻿class_name CavalierFactory
 extends RefCounted
 
 static func build(basic_lance: WeaponData) -> UnitData:
@@ -15,10 +15,10 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	
 	# Movement Skill (Push)
 	var push := DataLibrary._make_movement_ability(&"cavalier_push", "Push", 0, [
-		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
+		DataLibrary._module(GameEnums.EffectType.PUSH, 1)
 	], 0, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
 	push.upgrade_description = "Limit once per turn. Pushing unit grants +1 STR for next attack."
-	push.upgraded_effects = DataLibrary._duplicate_effects(push.effects)
+	push.upgraded_modules = DataLibrary._duplicate_modules(push.modules)
 	def.abilities.append(push)
 	
 	# Passives
@@ -42,103 +42,103 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	
 	# Actives
 	var piercing_charge = DataLibrary._make_ability(&"cavalier_piercing_charge", "Piercing Charge", 3, [
-		DataLibrary._effect(GameEnums.EffectType.DASH, 3),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
-		DataLibrary._effect(GameEnums.EffectType.PUSH, 2)
+		DataLibrary._module(GameEnums.EffectType.DASH, 3),
+		DataLibrary._module(GameEnums.EffectType.DAMAGE, 2),
+		DataLibrary._module(GameEnums.EffectType.PUSH, 2)
 	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.SINGLE, 2)
 	piercing_charge.upgrade_description = "Create TRAMPLED terrain behind you (MOVE cost x2)."
-	piercing_charge.upgraded_effects = DataLibrary._duplicate_effects(piercing_charge.effects)
+	piercing_charge.upgraded_modules = DataLibrary._duplicate_modules(piercing_charge.modules)
 	def.abilities.append(piercing_charge)
 
 	var sweeping_halberd = DataLibrary._make_ability(&"cavalier_sweeping_halberd", "Sweeping Halberd", 2, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
-		DataLibrary._effect(GameEnums.EffectType.PULL, 1)
+		DataLibrary._module(GameEnums.EffectType.DAMAGE, 2),
+		DataLibrary._module(GameEnums.EffectType.PULL, 1)
 	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.ARC, 2)
 	sweeping_halberd.upgrade_description = "Enemy collision on PULL applies STAGGER."
-	sweeping_halberd.upgraded_effects = DataLibrary._duplicate_effects(sweeping_halberd.effects)
+	sweeping_halberd.upgraded_modules = DataLibrary._duplicate_modules(sweeping_halberd.modules)
 	def.abilities.append(sweeping_halberd)
 
 	var vaulting_leap = DataLibrary._make_ability(&"cavalier_vaulting_leap", "Vaulting Leap", 2, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
-		DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1) # Sets DEF=0 logically
+		DataLibrary._module(GameEnums.EffectType.DAMAGE, 2),
+		DataLibrary._status_module(GameEnums.StatusType.STAT_BUFF_DEF, 1) # Sets DEF=0 logically
 	], 1, GameEnums.StatType.PHYSICAL)
 	vaulting_leap.upgrade_description = "Armor explodes: ATK 1 (AOE 1 around target)."
-	vaulting_leap.upgraded_effects = DataLibrary._duplicate_effects(vaulting_leap.effects)
+	vaulting_leap.upgraded_modules = DataLibrary._duplicate_modules(vaulting_leap.modules)
 	def.abilities.append(vaulting_leap)
 
 	var run_down = DataLibrary._make_ability(&"cavalier_run_down", "Run Down", 2, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3)
+		DataLibrary._module(GameEnums.EffectType.DAMAGE, 3)
 	], 1, GameEnums.StatType.PHYSICAL)
 	run_down.upgrade_description = "On Kill: Gain MAX MOVEMENT +2."
-	run_down.upgraded_effects = DataLibrary._duplicate_effects(run_down.effects)
+	run_down.upgraded_modules = DataLibrary._duplicate_modules(run_down.modules)
 	def.abilities.append(run_down)
 
 	var rallying_cry = DataLibrary._make_ability(&"cavalier_rallying_cry", "Rallying Cry", 0, [
-		DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_MOV, 1)
+		DataLibrary._status_module(GameEnums.StatusType.STAT_BUFF_MOV, 1)
 	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_SQUARE, 2)
 	rallying_cry.upgrade_description = "Allies gain TRAMPLE (1 turn)."
-	rallying_cry.upgraded_effects = DataLibrary._duplicate_effects(rallying_cry.effects)
+	rallying_cry.upgraded_modules = DataLibrary._duplicate_modules(rallying_cry.modules)
 	def.abilities.append(rallying_cry)
 
 	var flanking_maneuver = DataLibrary._make_ability(&"cavalier_flanking_maneuver", "Flanking Maneuver", 2, [ # L-Shape MOVE
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
+		DataLibrary._module(GameEnums.EffectType.DAMAGE, 2)
 	], 1, GameEnums.StatType.PHYSICAL)
 	flanking_maneuver.upgrade_description = "Gain GHOST during MOVE."
-	flanking_maneuver.upgraded_effects = DataLibrary._duplicate_effects(flanking_maneuver.effects)
+	flanking_maneuver.upgraded_modules = DataLibrary._duplicate_modules(flanking_maneuver.modules)
 	def.abilities.append(flanking_maneuver)
 
 	var brace = DataLibrary._make_ability(&"cavalier_brace", "Brace", 0, [
-		DataLibrary._status_effect_self(GameEnums.StatusType.STURDY, 1) # Negate next melee
+		DataLibrary._status_module_self(GameEnums.StatusType.STURDY, 1) # Negate next melee
 	], 1)
 	brace.upgrade_description = "Attacker suffers STAGGER."
-	brace.upgraded_effects = DataLibrary._duplicate_effects(brace.effects)
+	brace.upgraded_modules = DataLibrary._duplicate_modules(brace.modules)
 	def.abilities.append(brace)
 
 	var harpoon_toss = DataLibrary._make_ability(&"cavalier_harpoon_toss", "Harpoon Toss", 4, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
-		DataLibrary._effect(GameEnums.EffectType.PULL, 3)
+		DataLibrary._module(GameEnums.EffectType.DAMAGE, 1),
+		DataLibrary._module(GameEnums.EffectType.PULL, 3)
 	], 1, GameEnums.StatType.PHYSICAL)
 	harpoon_toss.upgrade_description = "If SELF ROOT or target heavier, PULL SELF to target."
-	harpoon_toss.upgraded_effects = DataLibrary._duplicate_effects(harpoon_toss.effects)
+	harpoon_toss.upgraded_modules = DataLibrary._duplicate_modules(harpoon_toss.modules)
 	def.abilities.append(harpoon_toss)
 
 	var glorious_charge = DataLibrary._make_ability(&"cavalier_glorious_charge", "Glorious Charge", 4, [
-		DataLibrary._effect(GameEnums.EffectType.DASH, 4),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
+		DataLibrary._module(GameEnums.EffectType.DASH, 4),
+		DataLibrary._module(GameEnums.EffectType.DAMAGE, 2)
 	], 1, GameEnums.StatType.PHYSICAL)
 	glorious_charge.upgrade_description = "On Kill: Both gain +1 AP."
-	glorious_charge.upgraded_effects = DataLibrary._duplicate_effects(glorious_charge.effects)
+	glorious_charge.upgraded_modules = DataLibrary._duplicate_modules(glorious_charge.modules)
 	def.abilities.append(glorious_charge)
 
 	var pole_vault = DataLibrary._make_ability(&"cavalier_pole_vault", "Pole Vault", 3, [
-		DataLibrary._effect(GameEnums.EffectType.TELEPORT_CASTER, 3)
+		DataLibrary._module(GameEnums.EffectType.TELEPORT_CASTER, 3)
 	], 1, GameEnums.StatType.NONE)
 	pole_vault.upgrade_description = "Landing applies PUSH 1 to adjacent enemies."
-	pole_vault.upgraded_effects = DataLibrary._duplicate_effects(pole_vault.effects)
+	pole_vault.upgraded_modules = DataLibrary._duplicate_modules(pole_vault.modules)
 	def.abilities.append(pole_vault)
 
 	var line_breaker = DataLibrary._make_ability(&"cavalier_line_breaker", "Line Breaker", 4, [
-		DataLibrary._effect(GameEnums.EffectType.DASH, 4),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
+		DataLibrary._module(GameEnums.EffectType.DASH, 4),
+		DataLibrary._module(GameEnums.EffectType.DAMAGE, 2)
 	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.LINE, 4)
 	line_breaker.upgrade_description = "ATK +1 for each enemy passed through this turn."
-	line_breaker.upgraded_effects = DataLibrary._duplicate_effects(line_breaker.effects)
+	line_breaker.upgraded_modules = DataLibrary._duplicate_modules(line_breaker.modules)
 	def.abilities.append(line_breaker)
 
 	var spear_wall = DataLibrary._make_ability(&"cavalier_spear_wall", "Spear Wall", 2, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
-		DataLibrary._status_effect(GameEnums.StatusType.ROOT, 1)
+		DataLibrary._module(GameEnums.EffectType.DAMAGE, 2),
+		DataLibrary._status_module(GameEnums.StatusType.ROOT, 1)
 	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.ARC, 2)
 	spear_wall.upgrade_description = "Hazard lasts 2 turns."
-	spear_wall.upgraded_effects = DataLibrary._duplicate_effects(spear_wall.effects)
+	spear_wall.upgraded_modules = DataLibrary._duplicate_modules(spear_wall.modules)
 	def.abilities.append(spear_wall)
 
 	var meteor_drop = DataLibrary._make_ability(&"cavalier_meteor_drop", "Meteor Drop", 2, [
-		DataLibrary._effect(GameEnums.EffectType.TELEPORT_CASTER, 2),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
+		DataLibrary._module(GameEnums.EffectType.TELEPORT_CASTER, 2),
+		DataLibrary._module(GameEnums.EffectType.DAMAGE, 2)
 	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.AOE_SQUARE, 1)
 	meteor_drop.upgrade_description = "Targets hit suffer VULNERABLE."
-	meteor_drop.upgraded_effects = DataLibrary._duplicate_effects(meteor_drop.effects)
+	meteor_drop.upgraded_modules = DataLibrary._duplicate_modules(meteor_drop.modules)
 	def.abilities.append(meteor_drop)
 
 	DataLibrary.finalize_unit_abilities(def)

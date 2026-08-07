@@ -144,6 +144,8 @@ Before scoring work quality, the critic must judge whether **inspection infrastr
 - **ADEQUATE** — BAR + artifacts (+ reference images when visual) can judge the piece; proceed to rubric.
 - **INADEQUATE** — critic cannot properly verify GOAL (missing test, no capture path, no vision reference, doc lint gap, PixelForge/manifest chain missing, BAR misaligned with GOAL).
 
+**Behavior-freeze / skill refactor example:** GOAL claims identical gameplay or working skills, but BAR is only bridge / scenario / planning-input harnesses — **no Tier 3 live** (`live_planning_scene_test` via `run_planning_qa_gate`) PASS artifact → **INADEQUATE**. Scenario green while live planning fails is a **false STOP** (AbilityData 2026-08-03 lesson).
+
 When **INADEQUATE**:
 
 1. **RESULT: FAIL** (even if partial BAR passed).
@@ -435,7 +437,7 @@ Do **not** default to Cloud/Automation for K3-LOCK until `run_knight_qa_gate.ps1
 | “LGTM” without running bar commands | False PASS (Phase 9 lesson) |
 | Owner pastes “continue” every round manually | Works but not unattended — use `/loop` (§5.4) instead |
 | Open-ended “improve the game” overnight | Scope explosion |
-| Fixing `board_view.gd` when tactical path is canonical | Wrong owner — see parity plan |
+| Fixing the removed legacy board path when tactical path is canonical | Wrong owner — use the tactical presentation modules |
 | `Heuristics added: none` without audit | Rule violation — critic should catch |
 
 ---

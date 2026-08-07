@@ -844,18 +844,18 @@ Everything else called out in Bible skill lines (OR choice, vault modes, HP cost
 
 Use this doc as the acceptance bar:
 
-1. [ ] Data schema per §12.14: header (`planner_group`, tags, …) + `AbilityModule`; layers = EffectData + condition
-2. [ ] Shared tables: gates, layer conditions, keywords; add filters/motion modes/OR only if a **current** skill needs them
-3. [ ] Port §12.9 modifier keys → typed fields as skills are touched; stop new anonymous modifiers
-4. [ ] Keyword expansion (TRAMPLE, BULLDOZE, GHOST, …) — reuse engine paths
-5. [ ] Range: per-module range; MOVE min ≥ 1; delete MOVE→`range_tiles` fallback
-6. [ ] AUTO anim per §7.2
-7. [ ] Planning: multi-aim + gated-aim rules per §2.7 (`PlanningCommitFlow` reused); cover Violent Collision
-8. [ ] Sim: modules in order; keywords; layers; gates; presentation events
-9. [ ] Class library editor: grey out illegal options; dual module lists for upgrades
-10. [ ] Migrate **all current** moveset factories/definitions + readers
-11. [ ] QA: planning gate + regression
-12. [ ] Remove `is_movement_skill` / old kind heuristics once `planner_group` + tags are live
+1. [x] Data schema per §12.14: header (`planner_group`, tags, …) + `AbilityModule`; layers = EffectData + condition
+2. [x] Shared tables: gates, layer conditions, keywords; add filters/motion modes/OR only if a **current** skill needs them
+3. [x] Port §12.9 modifier keys → typed fields as skills are touched; stop new anonymous modifiers
+4. [x] Keyword expansion (TRAMPLE, BULLDOZE, GHOST, …) — reuse engine paths
+5. [x] Range: per-module range; MOVE min ≥ 1; delete MOVE→`range_tiles` fallback
+6. [x] AUTO anim per §7.2
+7. [x] Planning: multi-aim + gated-aim rules per §2.7 (`PlanningCommitFlow` reused); cover Violent Collision
+8. [x] Sim: modules in order; keywords; layers; gates; presentation events
+9. [x] Class library editor: grey out illegal options; dual module lists for upgrades; planner switch via `apply_planner_group_change`
+10. [x] Migrate **all current** moveset factories/definitions + readers
+11. [x] QA: **Tier 3 live** planning gate + Knight/Bruiser QA + regression (scenario-only is inadequate for behavior freeze)
+12. [x] Keep `is_movement_skill` = displacement **effects**; `is_movement_kind` / `planner_group` = column — do **not** alias them away
 
 ---
 

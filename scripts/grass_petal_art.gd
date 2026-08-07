@@ -1,7 +1,7 @@
-class_name GrassPetalArt
+﻿class_name GrassPetalArt
 extends RefCounted
 
-## Pixel Pete 3-line blades — graduated bend: bottom 3 rows still, then +1 / +2 px.
+## Pixel Pete 3-line blades â€” graduated bend: bottom 3 rows still, then +1 / +2 px.
 
 enum Variant { THREE_LINE, V_SHAPE }
 
@@ -9,7 +9,7 @@ const TILE_PX: int = 16
 const ANIM_FPS: float = 1.5
 const SWAY_PAD_PX: int = 2
 const _SWAY_DIRECTIONS: Array[int] = [0, 1, 0, -1]
-## rows_from_bottom (0 = bottom) → px at full sway. 6-row blades after +1 height.
+## rows_from_bottom (0 = bottom) â†’ px at full sway. 6-row blades after +1 height.
 const _SWAY_PX_FROM_BOTTOM: Array[int] = [0, 0, 0, 1, 2, 2]
 
 static var _cache: Dictionary = {}
@@ -109,7 +109,7 @@ static func _sway_frames_graduated(
 
 
 ## Sway table (rows from bottom on 6-row blade):
-## 1st–3rd still | 4th +1 px | 5th +2 px | 6th tip +2 px
+## 1stâ€“3rd still | 4th +1 px | 5th +2 px | 6th tip +2 px
 static func _composite_graduated(
 	rows: PackedStringArray,
 	palette: Dictionary,

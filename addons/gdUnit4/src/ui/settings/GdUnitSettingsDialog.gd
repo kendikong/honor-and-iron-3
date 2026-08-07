@@ -1,4 +1,4 @@
-@tool
+﻿@tool
 extends Window
 
 const EAXAMPLE_URL := "https://github.com/MikeSchulze/gdUnit4-examples/archive/refs/heads/master.zip"

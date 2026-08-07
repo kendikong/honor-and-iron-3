@@ -3,9 +3,9 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Shield Bash â€” DAMAGE 1 + PUSH 2; [+] STAGGER if push collides with wall/enemy.
+## Bible: Shield Bash Ã¢â‚¬â€ DAMAGE 1 + PUSH 2; [+] STAGGER if push collides with wall/enemy.
 ## Globals: EffectType.DAMAGE, PUSH; upgraded PUSH_STAGGER_ON_COLLISION via AbilitySystem.
-## Tier 1: 7-phase planning harness + sim upgrade collision assert (Knight QA â€” not planning gate).
+## Tier 1: 7-phase planning harness + sim upgrade collision assert (Knight QA Ã¢â‚¬â€ not planning gate).
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -110,7 +110,7 @@ static func _phase2_hover_empty(failures: Array[String]) -> void:
 	PlanningChecklistHarness.assert_cursor_contains(
 		failures, "bash/phase2/cursor_walk", fix, walk_slots, PlanningIcons.GLYPH_WALK,
 	)
-	# Run-required hover with 0 MP â€” red off (run eats only AP).
+	# Run-required hover with 0 MP Ã¢â‚¬â€ red off (run eats only AP).
 	PlanningChecklistHarness.set_knight_pools(fix, 1, 0)
 	var run_tile: Vector2i = PlanningChecklistHarness.find_run_hover_tile(fix.board, fix.knight)
 	if run_tile.x <= -900000:

@@ -1,4 +1,4 @@
-class_name GdUnitEvent
+﻿class_name GdUnitEvent
 extends Resource
 
 const WARNINGS = "warnings"

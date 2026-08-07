@@ -1,4 +1,4 @@
-## Base interface of all GdUnit asserts
+﻿## Base interface of all GdUnit asserts
 @abstract class_name GdUnitAssert
 extends RefCounted
 

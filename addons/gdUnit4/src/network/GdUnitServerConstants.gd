@@ -1,4 +1,4 @@
-class_name GdUnitServerConstants
+﻿class_name GdUnitServerConstants
 extends RefCounted
 
 const DEFAULT_SERVER_START_RETRY_TIMES :int = 5

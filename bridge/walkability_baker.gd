@@ -1,4 +1,4 @@
-class_name WalkabilityBaker
+﻿class_name WalkabilityBaker
 extends RefCounted
 
 ## Bakes render-aware walkability into a tactics passability grid at encounter load.

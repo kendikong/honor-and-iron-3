@@ -1,4 +1,4 @@
-﻿class_name ColossalMassScenarioTest
+class_name ColossalMassScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")

@@ -1,4 +1,4 @@
-class_name WeaponData
+﻿class_name WeaponData
 extends Resource
 
 ## Purpose: A data-driven placeholder for the weapon/gear system.

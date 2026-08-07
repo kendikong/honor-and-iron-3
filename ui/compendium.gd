@@ -1,4 +1,4 @@
-class_name CompendiumScreen
+﻿class_name CompendiumScreen
 extends Control
 
 var _selected_unit: UnitData
@@ -149,7 +149,7 @@ func _add_formula_entry(vbox: VBoxContainer, name: String, formula: String) -> v
 func _get_manual_keywords() -> Dictionary:
 	return {
 		"AOE ATK": "Deals damage to all units within the target shape.",
-		"AOE": "Area effect — hits multiple tiles.",
+		"AOE": "Area effect â€” hits multiple tiles.",
 		"AP": "Action Points consumed to use an ability.",
 		"ATK": "Reduces target HP. Armor absorbs damage before HP.",
 		"CLEANSE": "Removes all negative status effects from the target.",
@@ -170,10 +170,10 @@ func _get_manual_keywords() -> Dictionary:
 		"SWAP": "Caster and target exchange tile positions.",
 		"TELEPORT": "Moves instantly, ignoring pathing constraints.",
 		"TRAMPLE": "Pass through enemy tiles; PUSH 1 when passing through or stopping on them.",
-		"WPN": "Weapon Might — added to ability base power in the damage formula.",
-		"DEF": "Defense — reduces incoming physical damage.",
-		"STR": "Strength — increases physical attack power.",
-		"MAG": "Magic — increases magical attack power and mitigates magical damage.",
+		"WPN": "Weapon Might â€” added to ability base power in the damage formula.",
+		"DEF": "Defense â€” reduces incoming physical damage.",
+		"STR": "Strength â€” increases physical attack power.",
+		"MAG": "Magic â€” increases magical attack power and mitigates magical damage.",
 	}
 
 func _select_glossary() -> void:
@@ -205,12 +205,12 @@ func _select_formulas() -> void:
 		return
 	_add_detail_title(vbox, "Formulas")
 	_add_detail_subtitle(vbox, "Core Stats")
-	_add_formula_entry(vbox, "Max HP", "Max HP = CON × 5 (+ weapon HP bonus)")
+	_add_formula_entry(vbox, "Max HP", "Max HP = CON Ã— 5 (+ weapon HP bonus)")
 	_add_detail_subtitle(vbox, "Damage")
 	_add_formula_entry(
 		vbox,
 		"Physical / Magical ATK",
-		"Raw = floor((Base + WPN) × (1 + STAT / 5))\nSTAT = STR for physical, MAG for magical."
+		"Raw = floor((Base + WPN) Ã— (1 + STAT / 5))\nSTAT = STR for physical, MAG for magical."
 	)
 	_add_formula_entry(
 		vbox,
@@ -220,7 +220,7 @@ func _select_formulas() -> void:
 	_add_formula_entry(
 		vbox,
 		"Incoming Damage",
-		"Incoming = max(0, Raw − Mitigation − Fortitude)\nArmor absorbs Incoming before HP is reduced."
+		"Incoming = max(0, Raw âˆ’ Mitigation âˆ’ Fortitude)\nArmor absorbs Incoming before HP is reduced."
 	)
 	_add_formula_entry(vbox, "Backstab", "Raw + 2 when attacking from directly behind the target's facing.")
 	_add_formula_entry(vbox, "Electrified", "Raw + 1 while the target has ELECTRIFIED.")
@@ -229,7 +229,7 @@ func _select_formulas() -> void:
 	_add_formula_entry(
 		vbox,
 		"Collision Damage",
-		"BASE = 1 + floor(excess_push / 3) + bonus\nRaw = floor(0.75 × (BASE + WPN) × (1 + STR / 5))\nexcess_push = push distance minus tiles actually moved."
+		"BASE = 1 + floor(excess_push / 3) + bonus\nRaw = floor(0.75 Ã— (BASE + WPN) Ã— (1 + STR / 5))\nexcess_push = push distance minus tiles actually moved."
 	)
 	_add_formula_entry(
 		vbox,
@@ -241,18 +241,18 @@ func _select_formulas() -> void:
 	_add_formula_entry(
 		vbox,
 		"MAG-Scaled Heal",
-		"floor((Base + WPN) × (1 + MAG / 5) × 0.20 + Max HP × 0.20)"
+		"floor((Base + WPN) Ã— (1 + MAG / 5) Ã— 0.20 + Max HP Ã— 0.20)"
 	)
-	_add_formula_entry(vbox, "% Max HP Heal", "floor(Base × 0.1 × Max HP)")
+	_add_formula_entry(vbox, "% Max HP Heal", "floor(Base Ã— 0.1 Ã— Max HP)")
 	_add_formula_entry(vbox, "Poison Penalty", "Healing received is reduced by 50% (rounded down).")
 	_add_detail_subtitle(vbox, "Shield (Armor)")
 	_add_formula_entry(vbox, "Flat Shield", "Adds the listed amount to armor.")
-	_add_formula_entry(vbox, "% Max HP Shield", "floor(Base × 0.1 × Max HP)")
+	_add_formula_entry(vbox, "% Max HP Shield", "floor(Base Ã— 0.1 Ã— Max HP)")
 	_add_formula_entry(vbox, "DEF Shield", "floor(Base + DEF)")
-	_add_formula_entry(vbox, "Missing HP Shield", "floor(Base + (Max HP − Current HP))")
+	_add_formula_entry(vbox, "Missing HP Shield", "floor(Base + (Max HP âˆ’ Current HP))")
 	_add_detail_subtitle(vbox, "Damage Over Time")
 	_add_formula_entry(vbox, "Burn", "X unmitigated damage at start of turn (X = status value).")
-	_add_formula_entry(vbox, "Poison", "ceil(Max HP × 10%) unmitigated damage at start of turn. Blocks healing.")
+	_add_formula_entry(vbox, "Poison", "ceil(Max HP Ã— 10%) unmitigated damage at start of turn. Blocks healing.")
 	_add_formula_entry(vbox, "Bleed", "X unmitigated damage whenever the unit moves (X = status value).")
 
 func _select_unit(unit: UnitData) -> void:
@@ -389,7 +389,7 @@ func _add_ability_panel(parent: Control, ab: AbilityData) -> void:
 	a_title.text = "[font_size=24]%s ([hint=The maximum distance in tiles this ability can target.]Range[/hint]: %d, [hint=Action Points consumed by this ability.]AP[/hint]: %d)%s[/font_size]" % [ab.display_name, ab.range_tiles, ab.action_point_cost, scaling_text]
 	a_vbox.add_child(a_title)
 	
-	for eff in ab.effects:
+	for eff in ab.modules:
 		var e_lbl := RichTextLabel.new()
 		e_lbl.bbcode_enabled = true
 		e_lbl.fit_content = true
@@ -454,7 +454,7 @@ func _get_status_name(t: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.STAT_DEBUFF_MOV: return "MOV DOWN"
 	return GameEnums.StatusType.keys()[t].capitalize()
 
-func _get_amount_string(eff: EffectData) -> String:
+func _get_amount_string(eff: AbilityModule) -> String:
 	var stat_str = ""
 	if eff.scaling_stat != GameEnums.StatType.NONE:
 		stat_str = "[%s]" % GameEnums.StatType.keys()[eff.scaling_stat]
@@ -472,8 +472,8 @@ func _kw(word: String) -> String:
 		return "[color=#FBBF24]%s %s[/color]" % [icon, word]
 	return "[color=#FBBF24]%s[/color]" % word
 
-func _effect_to_string(eff: EffectData) -> String:
-	match eff.type:
+func _effect_to_string(eff: AbilityModule) -> String:
+	match eff.primary_type:
 		GameEnums.EffectType.DAMAGE: return "[hint=\"Reduces target's current HP. Resisted by Armor.\"]%s[/hint] %s" % [_kw("ATK"), _get_amount_string(eff)]
 		GameEnums.EffectType.HEAL: return "[hint=\"Restores target's current HP.\"]%s[/hint] %s" % [_kw("HEAL"), _get_amount_string(eff)]
 		GameEnums.EffectType.PUSH: return "[hint=\"Displaces target away from caster. Collisions deal damage.\"]%s[/hint] %s" % [_kw("PUSH"), _get_amount_string(eff)]

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-06" name="report_323" tests="2" failures="0" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_planning_scene_test" package="tests" timestamp="2026-08-06T09:01:58" hostname="localhost" tests="2" failures="0" errors="0" skipped="0" flaky="0" time="46.389">
+		<testcase name="test_live_planning_bible_multi_knight_session" classname="live_planning_scene_test" time="19.282">
+		</testcase>
+		<testcase name="test_live_swap_session" classname="live_planning_scene_test" time="27.080">
+		</testcase>
+	</testsuite>
+</testsuites>

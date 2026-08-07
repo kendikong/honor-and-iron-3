@@ -1,4 +1,4 @@
-class_name GdUnitCommandStopTestSession
+﻿class_name GdUnitCommandStopTestSession
 extends GdUnitBaseCommand
 
 const ID := "Stop Test Session"

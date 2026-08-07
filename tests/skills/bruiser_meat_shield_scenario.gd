@@ -1,4 +1,4 @@
-﻿class_name BruiserMeatShieldScenarioTest
+class_name BruiserMeatShieldScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")

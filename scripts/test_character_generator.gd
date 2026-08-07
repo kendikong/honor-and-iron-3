@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 
 ## Unit tests for Phase 11 Character Generator.
 ## Run headless:  godot --headless -s scripts/test_character_generator.gd
@@ -115,10 +115,10 @@ func _test_weight_manager_get_weight() -> void:
 	p.set_slot_weight("hair", 0.5)
 	p.set_item_weight("hair_long", 0.6)
 	var w: float = CharacterWeightManager.get_weight("hair_long", "hair", p)
-	# slot(0.5) * item(0.6) = 0.3 → clamped to 0.3
-	_assert(is_equal_approx(w, 0.3), "get_weight multiplies slot × item (0.5×0.6=0.3)")
+	# slot(0.5) * item(0.6) = 0.3 â†’ clamped to 0.3
+	_assert(is_equal_approx(w, 0.3), "get_weight multiplies slot Ã— item (0.5Ã—0.6=0.3)")
 
-	# Unknown id/slot defaults to 1.0 each → result is 1.0 (clamped)
+	# Unknown id/slot defaults to 1.0 each â†’ result is 1.0 (clamped)
 	var w2: float = CharacterWeightManager.get_weight("unknown_id", "unknown_slot", p)
 	_assert(is_equal_approx(w2, 1.0), "unknown ids default to 1.0")
 

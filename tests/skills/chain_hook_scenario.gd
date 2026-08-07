@@ -1,4 +1,4 @@
-﻿class_name ChainHookScenarioTest
+class_name ChainHookScenarioTest
 extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")

@@ -70,21 +70,25 @@ func add_unit(unit: UnitState) -> void:
 func count_living_by_definition(def: UnitData) -> int:
 	var count := 0
 	for unit in units:
+		print("Comparing ", unit.definition.id, " to ", def.id, " | alive: ", unit.is_alive(), " hp: ", unit.health.current_hp if unit.health else -1)
 		if unit.is_alive() and unit.definition == def:
 			count += 1
 	return count
 
 func clone() -> BoardState:
+	print("clone start")
 	var copy := BoardState.new()
 	copy.grid_size = grid_size
 	copy.turn_index = turn_index
 	# Dictionary preserves insertion order in Godot 4, so cloning is deterministic.
 	for key in tiles:
 		copy.tiles[key] = (tiles[key] as TileState).clone()
+		print("cloned tile ", key)
 	for unit in units:
 		copy.units.append(unit.clone())
 	copy.items = items.duplicate()
 	for intent in intents:
 		copy.intents.append(intent.clone())
 	copy.pending_pushes = pending_pushes.duplicate(true)
+	print("clone end")
 	return copy
