@@ -1,8 +1,8 @@
 class_name QaPlanningMapStub
 extends Node2D
 
-## Headless map stub for drag-drop E2E (grid ↔ screen). Assigned via set("_map_view", …).
-## Mouse position is injected on CombatPlanningInput.set_qa_pointer_screen_pos — do not
+## Headless map stub for drag-drop E2E (grid â†” screen). Assigned via set("_map_view", â€¦).
+## Mouse position is injected on CombatPlanningInput.set_qa_pointer_screen_pos â€” do not
 ## override Node2D.get_viewport / get_local_mouse_position (engine will not call them).
 
 var _mock_screen_mouse: Vector2 = Vector2.ZERO

@@ -3,7 +3,7 @@ extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
-## Bible: Blood for Blood — if damaged last turn, attacks apply BLEED X (WPN).
+## Bible: Blood for Blood â€” if damaged last turn, attacks apply BLEED X (WPN).
 ## [+] attacks also gain ATK +1.
 ## Globals: damaged_last_turn passive flag + BLEED on attack.
 

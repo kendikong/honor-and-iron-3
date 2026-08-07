@@ -1,7 +1,7 @@
 class_name PlanningDragE2ETest
 extends RefCounted
 
-## Production drag-drop E2E — exercises on_left_release, stash lifecycle, board_changed, undo.
+## Production drag-drop E2E â€” exercises on_left_release, stash lifecycle, board_changed, undo.
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -291,6 +291,7 @@ static func _plan_signature(director: CombatDirector) -> String:
 	for timeline: Timeline in [director.plan_pre_move, director.plan_action, director.plan_post_move]:
 		for entry: TimelineAction in timeline.entries:
 			parts.append(
-				"%s:%s:%s" % [str(entry.primary_type), str(entry.target_coord), str(entry.waypoints)],
+				"%s:%s:%s" % [str(entry.type), str(entry.target_coord), str(entry.waypoints)],
 			)
 	return "|".join(parts)
+

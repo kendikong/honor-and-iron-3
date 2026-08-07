@@ -1,6 +1,6 @@
 extends Node
 
-## LEGACY Tier 1/2 — headless fixture contracts (DISABLED from QA gate).
+## LEGACY Tier 1/2 â€” headless fixture contracts (DISABLED from QA gate).
 ##
 ## Not part of run_planning_qa_gate.ps1 unless -IncludeLegacyTier12. Use Tier 3:
 ##   .\scripts\run_planning_scene_acceptance.ps1

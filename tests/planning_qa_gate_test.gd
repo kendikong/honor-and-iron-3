@@ -2,7 +2,7 @@ class_name PlanningQAGateTest
 extends RefCounted
 
 ## Automated mirror of the owner's manual planning QA checklist (Skill Arena / TestBattle).
-## Asserts production planning, preview, commit-slot, cursor, and sim APIs — not pixel draw.
+## Asserts production planning, preview, commit-slot, cursor, and sim APIs â€” not pixel draw.
 
 const KNIGHT_START := Vector2i(4, 5)
 const ENEMY_POS := Vector2i(7, 5)
@@ -2020,7 +2020,7 @@ static func _test_approach_bash_slots_preview_keeps_push(failures: Array[String]
 	var preview: CombatPlanningPreview = _preview_from_dict(director, preview_dict)
 	if _enemy_push_destination(preview, 2).x < -900000:
 		failures.append(
-			"PlanningQAGate approach bash push: slots→preview must keep push arrows after approach move",
+			"PlanningQAGate approach bash push: slotsâ†’preview must keep push arrows after approach move",
 		)
 
 

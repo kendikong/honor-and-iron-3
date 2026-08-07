@@ -23,7 +23,7 @@ const PLAYER_COLORS: Array[Color] = [
 	Color(0.92, 0.36, 0.92),
 ]
 
-## Legacy BBCode tier keys Ã¢â€ â€™ ratio of inspector body font (medium body = 20px design ref).
+	## Legacy BBCode tier keys map to ratios of the inspector body font.
 const _FONT_TIER_RATIO: Dictionary = {
 	13: 1.0,
 	10: 0.9,
@@ -80,7 +80,7 @@ static func reason_text(code: String) -> String:
 		"unknown_action_type":
 			return "invalid"
 		"target_displaced":
-			return "ally plan cancelled Ã¢â‚¬â€ target moved"
+			return "ally plan cancelled — target moved"
 		"cannot_undo_trample":
 			return "cannot undo trample move"
 		"move_already_planned":
@@ -132,7 +132,7 @@ static func unit_info(
 		% [scaled_font_size(9), PlanningIcons.STAT_HP, unit.health.current_hp, unit.health.max_hp, facing_name(unit.facing)],
 	)
 	var mov_glyph: String = PlanningIcons.move_glyph(move_uses_run)
-	var mov_hint: String = "Run Ã¢â‚¬â€ Movement Points" if move_uses_run else "Movement Points"
+	var mov_hint: String = "Run — Movement Points" if move_uses_run else "Movement Points"
 	lines.append(
 		(
 			"[font_size=%d][color=#F1C40F][b][hint=%s]%s MP:[/hint] %d/%d[/b][/color]"
@@ -192,7 +192,7 @@ static func unit_info(
 			var fort_val: int = tile.definition.fortitude
 			var sign_str: String = "+" if fort_val > 0 else ""
 			lines.append(
-				"[font_size=%d][hint=\"%s\"]Ã°Å¸Å’Â¿ Terrain: %s (%s%d Fortitude)[/hint][/font_size]"
+				"[font_size=%d][hint=\"%s\"]🌿 Terrain: %s (%s%d Fortitude)[/hint][/font_size]"
 				% [
 					scaled_font_size(10),
 					"Reduces incoming damage." if fort_val > 0 else "Increases incoming damage.",
@@ -250,7 +250,7 @@ static func describe_action(
 	plan: Timeline = null,
 ) -> String:
 	if action == null:
-		return "Ã¢â‚¬â€"
+		return "—"
 	var actor: UnitState = board.get_unit_by_id(action.actor_id) if board != null else null
 	var actor_name: String = actor.definition.display_name if actor != null else "unit %d" % action.actor_id
 	match action.type:
@@ -261,10 +261,10 @@ static func describe_action(
 			var dest: Vector2i = action.target_coord
 			if origin.x > -900:
 				if action.uses_run:
-					return "%s run (%d,%d) Ã¢â€ â€™ (%d,%d)" % [
+					return "%s run (%d,%d) → (%d,%d)" % [
 						actor_name, origin.x, origin.y, dest.x, dest.y,
 					]
-				return "%s move (%d,%d) Ã¢â€ â€™ (%d,%d)" % [
+				return "%s move (%d,%d) → (%d,%d)" % [
 					actor_name, origin.x, origin.y, dest.x, dest.y,
 				]
 			if action.uses_run:
@@ -273,7 +273,7 @@ static func describe_action(
 		GameEnums.ActionType.ABILITY:
 			var ability_name: String = action.ability.display_name if action.ability != null else "ability"
 			if action.awaiting_target:
-				return "%s %s Ã¢â‚¬â€ awaiting dash endpoint" % [
+				return "%s %s — awaiting dash endpoint" % [
 					PlanningIcons.awaiting_phase_glyph(action.ability), ability_name,
 				]
 			var target_name: String = actor_name
@@ -291,7 +291,7 @@ static func describe_action(
 				var move_origin: Vector2i = plan_action_origin_cell(board, plan, action, actor)
 				var move_dest: Vector2i = action.target_coord
 				if move_origin.x > -900:
-					return "%s %s (%d,%d) Ã¢â€ â€™ (%d,%d)" % [
+					return "%s %s (%d,%d) → (%d,%d)" % [
 						actor_name, ability_name,
 						move_origin.x, move_origin.y, move_dest.x, move_dest.y,
 					]
@@ -301,25 +301,25 @@ static func describe_action(
 
 static func class_symbol(unit: UnitState) -> String:
 	match unit.definition.id:
-		&"knight": return "Ã¢â„¢Å¾"
-		&"paladin": return "Ã°Å¸â€ºÂ¡Ã¯Â¸Â"
-		&"fighter": return "Ã¢Å“Å "
-		&"cavalier": return "Ã°Å¸Â§Â²"
-		&"archer": return "Ã°Å¸ÂÂ¹"
-		&"mage": return "Ã¢Å“Â¨"
-		&"cleric": return "Ã¢Å¾â€¢"
-		&"assassin": return "Ã¢Å¡â€Ã¯Â¸Â"
-		&"mercenary": return "Ã°Å¸Âªâ€œ"
-		&"gryphon": return "Ã°Å¸Â¦â€¦"
-		&"monk": return "Ã°Å¸â€œÂ¿"
-		&"engineer": return "Ã°Å¸â€Â§"
-		&"shaman": return "Ã°Å¸â€˜ÂÃ¯Â¸Â"
-		&"warden": return "Ã¢â„¢Å“"
-		&"swordmaster": return "Ã°Å¸â€”Â¡Ã¯Â¸Â"
-		&"charger": return "Ã°Å¸â€Â±"
-		&"artillery": return "Ã°Å¸â€™Â£"
-		&"shover": return "Ã¢â€ â€Ã¯Â¸Â"
-	return "Ã°Å¸â€˜Â¤"
+		&"knight": return "♞"
+		&"paladin": return "🛡️"
+		&"fighter": return "⚔"
+		&"cavalier": return "🐴"
+		&"archer": return "🏹"
+		&"mage": return "✨"
+		&"cleric": return "➕"
+		&"assassin": return "⚔️"
+		&"mercenary": return "🪓"
+		&"gryphon": return "🦅"
+		&"monk": return "📿"
+		&"engineer": return "🔧"
+		&"shaman": return "👁️"
+		&"warden": return "♜"
+		&"swordmaster": return "🗡️"
+		&"charger": return "🔱"
+		&"artillery": return "💣"
+		&"shover": return "↔️"
+	return "👤"
 
 
 static func action_symbol_text(
@@ -334,7 +334,7 @@ static func action_symbol_text(
 		var dest: Vector2i = action.target_coord
 		var origin: Vector2i = plan_action_origin_cell(board, plan, action, unit)
 		if origin.x > -900:
-			return "%s (%d,%d)Ã¢â€ â€™(%d,%d)" % [
+			return "%s (%d,%d)→(%d,%d)" % [
 				PlanningIcons.move_glyph(action.uses_run),
 				origin.x, origin.y, dest.x, dest.y,
 			]
@@ -350,7 +350,7 @@ static func action_symbol_text(
 			return ""
 		if action.awaiting_target:
 			var pending_name: String = action.ability.display_name if action.ability != null else "Skill"
-			return "%s %s Ã¢â‚¬â€ Awaiting Input" % [
+			return "%s %s — Awaiting Input" % [
 				PlanningIcons.awaiting_phase_glyph(action.ability), pending_name,
 			]
 		var symbol: String = PlanningIcons.ability_glyph(action.ability)
@@ -363,7 +363,7 @@ static func action_symbol_text(
 			var move_origin: Vector2i = plan_action_origin_cell(board, plan, action, unit)
 			var move_dest: Vector2i = action.target_coord
 			if move_origin.x > -900:
-				return "%s %s (%d,%d)Ã¢â€ â€™(%d,%d)" % [
+				return "%s %s (%d,%d)→(%d,%d)" % [
 					symbol, action.ability.display_name,
 					move_origin.x, move_origin.y, move_dest.x, move_dest.y,
 				]
@@ -379,10 +379,10 @@ static func action_symbol_text(
 		if ability_name != "":
 			return "%s %s > %s" % [symbol, ability_name, target_name]
 		return "%s %s" % [symbol, target_name]
-	return "Ã¢Ââ€œ"
+	return "❓"
 
 
-## Grid cell where `action` begins Ã¢â‚¬â€ walk prior plan steps for the same actor.
+	## Grid cell where `action` begins — walk prior plan steps for the same actor.
 static func plan_action_origin_cell(
 	board: BoardState,
 	plan: Timeline,
@@ -432,7 +432,7 @@ static func format_unit_plan_timeline(
 	var steps: Array[TimelineAction] = UnitPlanOrder.ordered_steps_for_unit(plan, unit.id)
 	if steps.is_empty():
 		return {
-			"text": "Ã¢â‚¬â€",
+			"text": "—",
 			"tooltip": "No actions queued",
 			"failed": false,
 		}
@@ -450,17 +450,17 @@ static func format_unit_plan_timeline(
 		if reason != "":
 			failed = true
 			tooltip_lines.append(
-				"%d. %s Ã¢â‚¬â€ %s" % [i + 1, detail, reason_text(reason)],
+				"%d. %s — %s" % [i + 1, detail, reason_text(reason)],
 			)
 		else:
 			tooltip_lines.append("%d. %s" % [parts.size(), detail])
 	if parts.is_empty():
 		return {
-			"text": "Ã¢â‚¬â€",
+			"text": "—",
 			"tooltip": "No actions queued",
 			"failed": false,
 		}
-	var arrow: String = " Ã¢â€ â€™ "
+	var arrow: String = " → "
 	return {
 		"text": arrow.join(parts),
 		"tooltip": "\n".join(tooltip_lines),
@@ -614,12 +614,12 @@ static func ability_cost_chip(ability: AbilityData) -> Dictionary:
 		return {
 			"emoji": PlanningIcons.STAT_MOV,
 			"text": str(ability.movement_point_cost),
-			"tooltip": "MOV %d Ã¢â‚¬â€ %s" % [ability.movement_point_cost, _glossary_def("MOV")],
+			"tooltip": "MOV %d — %s" % [ability.movement_point_cost, _glossary_def("MOV")],
 		}
 	return {
 		"emoji": PlanningIcons.STAT_AP,
 		"text": str(ability.action_point_cost),
-		"tooltip": "AP %d Ã¢â‚¬â€ %s" % [ability.action_point_cost, _glossary_def("AP")],
+		"tooltip": "AP %d — %s" % [ability.action_point_cost, _glossary_def("AP")],
 	}
 
 
@@ -644,7 +644,7 @@ static func ability_range_chip(ability: AbilityData, unit: UnitState = null) -> 
 	elif label.begins_with("RANGE "):
 		display_val = label.substr(6)
 	var emoji: String = PlanningIcons.range_chip_glyph(label)
-	return {"emoji": emoji, "text": display_val, "tooltip": "%s Ã¢â‚¬â€ %s" % [label, tooltip]}
+	return {"emoji": emoji, "text": display_val, "tooltip": "%s — %s" % [label, tooltip]}
 
 
 static func _ability_targeting_range_label(ability: AbilityData, unit: UnitState = null) -> String:
@@ -679,21 +679,21 @@ static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -
 	if aoe_label != "" and range_label == "RANGE 0":
 		lines.append("%s | %s" % [range_label, aoe_label])
 	else:
-		lines.append("%s Ã¢â‚¬â€ %s" % [range_label, _targeting_glossary_hint(range_label)])
+		lines.append("%s — %s" % [range_label, _targeting_glossary_hint(range_label)])
 	if ability.is_movement_kind():
 		lines.append(
-			"MOV %d Ã¢â‚¬â€ %s" % [ability.movement_point_cost, _glossary_def("MOV")],
+			"MOV %d — %s" % [ability.movement_point_cost, _glossary_def("MOV")],
 		)
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
 		lines.append(
-			"AP %d Ã¢â‚¬â€ Uses your action slot and extends how far you can move this turn."
+			"AP %d — Uses your action slot and extends how far you can move this turn."
 			% ability.action_point_cost,
 		)
 	else:
-		lines.append("AP %d Ã¢â‚¬â€ %s" % [ability.action_point_cost, _glossary_def("AP")])
+		lines.append("AP %d — %s" % [ability.action_point_cost, _glossary_def("AP")])
 	var dump := ClassLibrarySchema.targeting_flags_dump(ability)
 	if dump != "none":
-		lines.append("Target Ã¢â‚¬â€ %s." % dump)
+		lines.append("Target — %s." % dump)
 	var keyword_lines: PackedStringArray = _ability_keyword_tooltip_lines(ability, unit)
 	if not keyword_lines.is_empty():
 		lines.append("")
@@ -705,7 +705,7 @@ static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -
 		and not ability.upgrade_description.is_empty()
 	):
 		lines.append("")
-		lines.append("Upgrade Ã¢â‚¬â€ %s" % ability.upgrade_description)
+		lines.append("Upgrade — %s" % ability.upgrade_description)
 	return "\n".join(lines)
 
 
@@ -724,7 +724,7 @@ static func _kw_tooltip_line(label: String, definition: String) -> String:
 		
 	if definition.is_empty():
 		return final_label
-	return "%s Ã¢â‚¬â€ %s" % [final_label, definition]
+	return "%s — %s" % [final_label, definition]
 
 
 static func _targeting_glossary_hint(range_label: String) -> String:

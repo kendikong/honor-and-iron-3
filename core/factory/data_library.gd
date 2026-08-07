@@ -479,6 +479,11 @@ static func _make_ability(p_id: StringName, p_name: String, p_range: int, effect
 	ability.scaling_stat = stat
 	ability.target_shape = shape
 	ability.target_shape_size = shape_size
+	## Propagate range/shape to first module so finalize_modular() bridge sync is correct.
+	if not effects.is_empty() and effects[0] != null:
+		effects[0].max_range = p_range
+		effects[0].target_shape = shape
+		effects[0].target_shape_size = shape_size
 	_configure_ability_targeting(ability)
 	if is_basic_ability(p_id):
 		ability.action_point_cost = 0

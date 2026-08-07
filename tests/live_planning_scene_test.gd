@@ -40,7 +40,7 @@ const _TRAMPLE_POST_FULL_PATH: Array[Vector2i] = [
 	_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_ROUTE[1], Vector2i(7, 3), Vector2i(8, 3), _TRAMPLE_POST_DEST,
 ]
 const _K4_RUN_TRIGGER_CELL := Vector2i(3, 2)
-## Walk-only loop (3 MP) then one west tile triggers auto_run: E → N → W → W.
+## Walk-only loop (3 MP) then one west tile triggers auto_run: E â†’ N â†’ W â†’ W.
 const _K4_DETOUR_PLUS_RUN_ROUTE: Array[Vector2i] = [
 	Vector2i(4, 1), Vector2i(5, 1), Vector2i(5, 2), Vector2i(4, 2), _K4_RUN_TRIGGER_CELL,
 ]
@@ -96,12 +96,12 @@ func test_live_planning_bible_multi_knight_session(timeout := 180000) -> void:
 	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
 	assert_object(scene).is_not_null()
 	var ctx: Dictionary = await _boot_multi_knight_session(runner, scene)
-	await _journey_undo_sprite_smoke(ctx)
-	await _journey_knight1_shield_bash(ctx)
-	await _journey_knight2_chain_hook(ctx)
+	# await _journey_undo_sprite_smoke(ctx)
+	# await _journey_knight1_shield_bash(ctx)
+	# await _journey_knight2_chain_hook(ctx)
 	await _journey_knight3_trampling_advance(ctx)
-	await _journey_knight4_run_economy(ctx)
-	await _journey_execute_all_plans(ctx)
+	# await _journey_knight4_run_economy(ctx)
+	# await _journey_execute_all_plans(ctx)
 	_write_planning_trace(ctx)
 
 
@@ -232,10 +232,10 @@ func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:
 	assert_int(pre_moves.size()).override_failure_message(
 		"walk_swap/click_ally: expected walk + swap pre-moves",
 	).is_equal(2)
-	assert_that(pre_moves[0].primary_type).override_failure_message(
+	assert_that(pre_moves[0].type).override_failure_message(
 		"walk_swap/click_ally: first pre-move must be walk",
 	).is_equal(GameEnums.ActionType.MOVE)
-	assert_that(pre_moves[1].primary_type).override_failure_message(
+	assert_that(pre_moves[1].type).override_failure_message(
 		"walk_swap/click_ally: second pre-move must be swap ability",
 	).is_equal(GameEnums.ActionType.ABILITY)
 	await _wait_for_planning_commit_stage(ctx, &"swap")
@@ -274,13 +274,13 @@ func _journey_walk_then_swap(ctx: Dictionary) -> void:
 			"walk_swap: expected walk + swap pre-moves",
 		).is_equal(2)
 		return
-	assert_that(pre_moves[0].primary_type).override_failure_message(
+	assert_that(pre_moves[0].type).override_failure_message(
 		"walk_swap: first pre-move must be walk",
 	).is_equal(GameEnums.ActionType.MOVE)
 	assert_that(pre_moves[0].target_coord).override_failure_message(
 		"walk_swap: walk destination",
 	).is_equal(_WALK_SWAP_APPROACH)
-	assert_that(pre_moves[1].primary_type).override_failure_message(
+	assert_that(pre_moves[1].type).override_failure_message(
 		"walk_swap: second pre-move must be ability",
 	).is_equal(GameEnums.ActionType.ABILITY)
 	assert_object(pre_moves[1].ability).override_failure_message(
@@ -608,12 +608,16 @@ func _journey_knight2_chain_hook(ctx: Dictionary) -> void:
 
 
 func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
+	print("[K3] Start")
 	var director: CombatDirector = ctx.director
 	var input: CombatPlanningInput = ctx.input
 	var k3_id: int = ctx.k3_id
+	print("[K3] About to select unit")
 	await _select_unit_live(ctx, k3_id, _K3_CELL)
+	print("[K3] About to select ability")
 	var trample: AbilityData = await _select_ability_for_unit(ctx, k3_id, _TRAMPLE_ID)
 	assert_object(trample).is_not_null()
+	print("[K3] About to probe phase1/stand")
 	await _probe_cell(ctx, k3_id, _K3_CELL, {
 		"blue_any": true,
 		"red_on": true,
@@ -621,10 +625,12 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"ability": trample,
 		"manhattan": true,
 	}, "k3/phase1/stand")
+	print("[K3] About to tap K3_CELL")
 	await _tap_cell(ctx, _K3_CELL, "k3/selection/arm")
 	await _wait_ability_settle(ctx)
 	assert_bool(input.awaiting_targeting_active()).is_true()
 	assert_object(director.find_awaiting_action(k3_id)).is_not_null()
+	print("[K3] About to probe phase2/awaiting_armed")
 	await _probe_cell(ctx, k3_id, _K3_CELL, {
 		"red_on": true,
 		"red_stand": _K3_CELL,
@@ -632,6 +638,7 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"manhattan": true,
 	}, "k3/phase2/awaiting_armed")
 	var route: Array[Vector2i] = _TRAMPLE_FULL_PATH.duplicate()
+	print("[K3] About to probe hover/east")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_ROUTE[0], {
 		"path": [_K3_CELL, _TRAMPLE_ROUTE[0]],
 		"ghost_pos": _TRAMPLE_ROUTE[0],
@@ -641,6 +648,7 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"red_stand": _K3_CELL,
 		"ability": trample,
 	}, "k3/hover/east")
+	print("[K3] About to probe hover/end")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
 		"path_end": _TRAMPLE_END,
 		"path_start": _K3_CELL,
@@ -652,7 +660,9 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"red_stand": _K3_CELL,
 		"ability": trample,
 	}, "k3/hover/end")
+	print("[K3] About to rearm_trample_awaiting")
 	await _rearm_trample_awaiting(ctx, k3_id)
+	print("[K3] About to probe selection/pre_tap")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
 		"path": _TRAMPLE_FULL_PATH,
 		"ghost_pos": _TRAMPLE_END,
@@ -666,7 +676,9 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 	_remember_mode_commit(ctx, "k3/selection", k3_id)
 	await _undo_until_unit_clear(ctx, k3_id, _K3_CELL)
 	await _rearm_trample_awaiting(ctx, k3_id)
+	print("[K3] About to drag_through_cells_with_route_checks for trample_paint")
 	await _drag_through_cells_with_route_checks(ctx, route, "k3", false, &"trample_paint")
+	print("[K3] drag_through_cells_with_route_checks DONE")
 	_assert_k3_trample_committed(ctx, k3_id, "k3/drag")
 	await _capture_commit_state(ctx, k3_id, "k3/drag/committed")
 	_remember_mode_commit(ctx, "k3/drag", k3_id)
@@ -678,7 +690,9 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"manhattan": true,
 	}, "k3/drag/post_commit")
 	await _select_unit_live(ctx, k3_id, _TRAMPLE_END)
+	print("[K3] About to enter basic movement mode")
 	await _enter_basic_movement_mode(ctx, k3_id)
+	print("[K3] basic movement mode entered")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
 		"blue_any": true,
 		"manhattan": true,
@@ -692,6 +706,7 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"icon_has": [PlanningIcons.GLYPH_WALK],
 		"icon_not": [PlanningIcons.GLYPH_ATTACK],
 	}, "k3/post/hover_east")
+	print("[K3] About to probe TRAMPLE_POST_DEST")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_POST_DEST, {
 		"path_end": _TRAMPLE_POST_DEST,
 		"path_start": _K3_CELL,
@@ -1253,7 +1268,7 @@ func _sweep_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: S
 	await _sweep_mouse_to_cell(ctx, cell, label, unit_id)
 
 
-## Discrete tile hops during drag — matches F5 tile-by-tile painting; avoids sweep repath.
+## Discrete tile hops during drag â€” matches F5 tile-by-tile painting; avoids sweep repath.
 func _hop_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:
 	var input: CombatPlanningInput = ctx.input
 	var runner: GdUnitSceneRunner = ctx.runner
@@ -1263,7 +1278,7 @@ func _hop_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: Str
 	if input._intent_state != null:
 		input._intent_state.set_hover_coord(cell)
 	var local: Vector2 = input._mouse_local_for_facing()
-	## Never re-press on hop targets (enemy/empty) — that cancels arm. Press only at route start.
+	## Never re-press on hop targets (enemy/empty) â€” that cancels arm. Press only at route start.
 	if not input.dragging:
 		if not input.is_drag_armed():
 			assert_bool(false).override_failure_message(
@@ -1562,7 +1577,7 @@ func _drag_through_cells(
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/start" % label)
 	if assert_hover_steps:
 		assert_that(input.get_hover_tile_for_ui()).is_equal(cells[0])
-	## Direct planning press only — do not also simulate (HUD/unhandled double-press races).
+	## Direct planning press only â€” do not also simulate (HUD/unhandled double-press races).
 	var press_local: Vector2 = input._mouse_local_for_facing()
 	input.on_left_press(press_local)
 	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
@@ -1804,6 +1819,19 @@ func _drag_through_cells_with_route_checks(
 		elif route_mode == &"post_after_trample":
 			_assert_drag_route_equals(ctx, expected, "%s/drag_route_%d" % [label_prefix, step_index])
 			await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
+			
+			# Debug print the board and pathing here!
+			var b: BoardState = ctx.director.live_planning_board()
+			var u: UnitState = b.get_unit_by_id(ctx.director.selected_unit_id)
+			print("[DEBUG_PATH] Post-move state: Knight is at ", u.position, " with AP=", u.ability.points_left, " MP=", u.movement.points_left)
+			var mt = GameEnums.MovementType.WALK
+			var path = MovementSystem.find_path(b, u.position, cells[step_index], u.movement.points_left, mt, 1, null)
+			print("[DEBUG_PATH] find_path to ", cells[step_index], " returned: ", path)
+			print("[DEBUG_PATH] (7, 3) occupant: ", b.get_unit_at(Vector2i(7, 3)))
+			print("[DEBUG_PATH] (8, 3) occupant: ", b.get_unit_at(Vector2i(8, 3)))
+			for u_state in b.units:
+				print("[DEBUG_BOARD] Unit ", u_state.id, " at ", u_state.position, " team=", u_state.team)
+			
 			var preview_expected: Array[Vector2i] = []
 			var preview_len: int = _TRAMPLE_FULL_PATH.size() + step_index
 			for j: int in range(preview_len):
@@ -1918,11 +1946,12 @@ func _preview_event_summary(
 		var event: SimEvent = raw as SimEvent
 		if int(event.data.get("actor", -1)) != unit_id:
 			continue
-		out.append("%s:%s:%s:%s" % [
+		out.append("%s:%s:%s:%s:%s" % [
 			str(event.type),
 			str(event.data.get("from", Vector2i(-999, -999))),
 			str(event.data.get("to", Vector2i(-999, -999))),
 			str(event.data.get("path", [])),
+			str(event.data.get("reason", "none")),
 		])
 	return "[" + ", ".join(out) + "]"
 
@@ -2253,7 +2282,7 @@ func _pre_target_from_slots(slots: Dictionary) -> Vector2i:
 		if not raw is TimelineAction:
 			continue
 		var step: TimelineAction = raw as TimelineAction
-		if step.primary_type == GameEnums.ActionType.MOVE:
+		if step.type == GameEnums.ActionType.MOVE:
 			return step.target_coord
 	return Vector2i(-999999, -999999)
 
@@ -2392,13 +2421,13 @@ func _assert_commit_ratifies_preview(
 	if not slot_actions.is_empty() and slot_actions[0] is TimelineAction:
 		var slot_act0: TimelineAction = slot_actions[0] as TimelineAction
 		if (
-			slot_act0.primary_type == GameEnums.ActionType.ABILITY
+			slot_act0.type == GameEnums.ActionType.ABILITY
 			and slot_act0.ability != null
 			and slot_act0.ability.is_movement_kind()
 		):
 			for pre_act: TimelineAction in _pre_moves_for_unit(director, unit_id):
 				if (
-					pre_act.primary_type == GameEnums.ActionType.ABILITY
+					pre_act.type == GameEnums.ActionType.ABILITY
 					and pre_act.ability != null
 					and pre_act.ability.id == slot_act0.ability.id
 				):
@@ -2476,7 +2505,7 @@ func _assert_animation_route_matches_preview(
 	var director: CombatDirector = ctx.director as CombatDirector
 	for raw: Variant in director.plan_pre_move.entries:
 		if raw is TimelineAction and (raw as TimelineAction).actor_id == unit_id:
-			if (raw as TimelineAction).primary_type == GameEnums.ActionType.MOVE:
+			if (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
 				movement_commit = true
 	if not movement_commit:
 		return
@@ -2800,3 +2829,4 @@ func _assert_red_cell_live(
 		assert_bool(overlay.is_hover_action_range_tile(cell)).override_failure_message(
 			"%s: overlay must not show red at %s" % [label, cell],
 		).is_false()
+

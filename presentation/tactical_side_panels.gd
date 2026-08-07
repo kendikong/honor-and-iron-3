@@ -431,7 +431,7 @@ func _refresh_wait_button() -> void:
 	_wait_btn.text = "Waiting" if waiting else "Wait"
 	if waiting:
 		_wait_btn.disabled = false
-		_wait_btn.tooltip_text = "Cancel wait â€” restore action planning for this unit."
+		_wait_btn.tooltip_text = "Cancel wait — restore action planning for this unit."
 		return
 	_wait_btn.tooltip_text = "Turn modifier: skip Action and Post-Move for this unit."
 	_wait_btn.disabled = not _can_enable_wait()
@@ -750,7 +750,7 @@ func _append_hover_action_hint() -> void:
 				hov.y,
 			]
 	elif _planning_input.dragging:
-		hint = "\n[color=#%s][i]Dragging â€” tile (%d,%d)[/i][/color]" % [
+		hint = "\n[color=#%s][i]Dragging — tile (%d,%d)[/i][/color]" % [
 			CombatUiFormatters.HEX_DIM,
 			hov.x,
 			hov.y,
@@ -774,7 +774,7 @@ func _refresh_intent_label() -> void:
 			if not live.is_empty():
 				intent_list = live
 	var body: String = CombatUiFormatters.summarize_intents(_board, _phase, _intent_units, intent_list)
-	_intent_label.text = "ðŸ’€ Enemy intent:\n%s" % body
+	_intent_label.text = "💀 Enemy intent:\n%s" % body
 
 
 func _refresh_ability_buttons_if_dirty() -> void:

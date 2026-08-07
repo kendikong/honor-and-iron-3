@@ -40,28 +40,28 @@ static func compute_context(board: BoardState, profile: AIProfile, A: float) -> 
 static func _is_support(unit: UnitState) -> bool:
 	if unit.definition == null or unit.active_abilities.is_empty(): return false
 	var has_dmg = false
-	for ab in unit.active_abilities:
-		for ef in ab.effects:
-			if ef.type == GameEnums.EffectType.HEAL or ef.type == GameEnums.EffectType.ARMOR_UP: return true
-			if ef.type == GameEnums.EffectType.DAMAGE: has_dmg = true
+	for ab: AbilityData in unit.active_abilities:
+		for module: AbilityModule in ab.modules:
+			if module.primary_type == GameEnums.EffectType.HEAL or module.primary_type == GameEnums.EffectType.ARMOR_UP: return true
+			if module.primary_type == GameEnums.EffectType.DAMAGE: has_dmg = true
 	return not has_dmg
 
 static func _has_damage_ability(unit: UnitState) -> bool:
 	if unit.definition == null or unit.active_abilities.is_empty(): return false
-	for ab in unit.active_abilities:
-		for ef in ab.effects:
-			if ef.type == GameEnums.EffectType.DAMAGE or ef.type == GameEnums.EffectType.EXPLODE or ef.type == GameEnums.EffectType.RANGED_EXPLODE:
+	for ab: AbilityData in unit.active_abilities:
+		for module: AbilityModule in ab.modules:
+			if module.primary_type == GameEnums.EffectType.DAMAGE or module.primary_type == GameEnums.EffectType.EXPLODE or module.primary_type == GameEnums.EffectType.RANGED_EXPLODE:
 				return true
 	return false
 
 static func _max_ability_damage(unit: UnitState) -> int:
 	var max_dmg = 0
 	if unit.definition != null and not unit.active_abilities.is_empty():
-		for ab in unit.active_abilities:
-			for ef in ab.effects:
-				if ef.type == GameEnums.EffectType.DAMAGE or ef.type == GameEnums.EffectType.EXPLODE or ef.type == GameEnums.EffectType.RANGED_EXPLODE:
-					if ef.amount > max_dmg:
-						max_dmg = ef.amount
+		for ab: AbilityData in unit.active_abilities:
+			for module: AbilityModule in ab.modules:
+				if module.primary_type == GameEnums.EffectType.DAMAGE or module.primary_type == GameEnums.EffectType.EXPLODE or module.primary_type == GameEnums.EffectType.RANGED_EXPLODE:
+					if module.amount > max_dmg:
+						max_dmg = module.amount
 	if max_dmg == 0:
 		max_dmg = maxi(unit.current_strength, unit.current_magic)
 	return max_dmg
@@ -207,9 +207,9 @@ static func _ally_surv_dict(state: BoardState, u: UnitState, profile: AIProfile)
 			if act.type == GameEnums.ActionType.ABILITY and act.target_unit_id == u.id:
 				var e = state.get_unit_by_id(intent.enemy_id)
 				if e and e.definition:
-					for ab in e.active_abilities:
-						for ef in ab.effects:
-							if ef.type == GameEnums.EffectType.DAMAGE: inc += float(ef.amount)
+					for ab: AbilityData in e.active_abilities:
+						for module: AbilityModule in ab.modules:
+							if module.primary_type == GameEnums.EffectType.DAMAGE: inc += float(module.amount)
 	var post = maxf(0.0, val - inc)
 	var death_pen = false
 	if post <= 0: 
@@ -325,9 +325,9 @@ static func _calc_penalties(base: BoardState, final: BoardState, vector: TeamVec
 			
 			var is_disp = false
 			var is_dmg = false
-			for ef in act.ability.effects:
-				if ef.type in [GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL, GameEnums.EffectType.SWAP]: is_disp = true
-				if ef.type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]: is_dmg = true
+			for module: AbilityModule in act.ability.modules:
+				if module.primary_type in [GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL, GameEnums.EffectType.SWAP]: is_disp = true
+				if module.primary_type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]: is_dmg = true
 			if is_disp and not is_dmg and pos_score < 2.0:
 				disp_pen += profile.penalty_displacement_loop
 				
@@ -383,9 +383,9 @@ static func score_fast_pass(board: BoardState, unit: UnitState, action: Dictiona
 		var ab = unit.active_abilities[action.ability_index]
 		var hp = 0.0
 		var dmg = 0.0
-		for ef in ab.effects:
-			if ef.type == GameEnums.EffectType.DAMAGE: dmg += float(ef.amount)
-			if ef.type == GameEnums.EffectType.HEAL: hp += float(ef.amount)
+		for module: AbilityModule in ab.modules:
+			if module.primary_type == GameEnums.EffectType.DAMAGE: dmg += float(module.amount)
+			if module.primary_type == GameEnums.EffectType.HEAL: hp += float(module.amount)
 			
 		score += dmg * profile.search_damage_weight * (A + 0.5)
 		score += hp * profile.search_healing_weight * (1.5 - A)

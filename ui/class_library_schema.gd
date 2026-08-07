@@ -489,37 +489,23 @@ static func ability_data_dump(ability: AbilityData) -> String:
 	lines.append("kind: %s" % GameEnums.AbilityKind.keys()[ability.kind])
 	lines.append("action_point_cost: %d" % ability.action_point_cost)
 	lines.append("movement_point_cost: %d" % ability.movement_point_cost)
-	lines.append("range_tiles: %d" % ability.range_tiles)
+	lines.append("range_tiles (module mirror): %d" % ability.range_tiles)
 	lines.append("targeting_flags: %s" % targeting_flags_dump(ability))
-	lines.append("target_shape: %s" % GameEnums.TargetShape.keys()[ability.target_shape])
-	lines.append("target_shape_size: %d" % ability.target_shape_size)
+	lines.append("target_shape (module mirror): %s" % GameEnums.TargetShape.keys()[ability.target_shape])
+	lines.append("target_shape_size (module mirror): %d" % ability.target_shape_size)
 	lines.append("scaling_stat: %s" % GameEnums.StatType.keys()[ability.scaling_stat])
 	lines.append("uses_per_combat: %d" % ability.uses_per_combat)
 	lines.append("presentation_key: %s" % String(ability.presentation_key))
 	lines.append("presentation_anim: %s" % GameEnums.PresentationAnim.keys()[ability.presentation_anim])
-	if ability.upgraded_range_tiles >= 0:
-		lines.append("upgraded_range_tiles: %d" % ability.upgraded_range_tiles)
-	if ability.upgraded_target_shape_size >= 1:
-		lines.append("upgraded_target_shape: %s size %d" % [
-			GameEnums.TargetShape.keys()[ability.upgraded_target_shape],
-			ability.upgraded_target_shape_size,
-		])
 	if not ability.upgrade_description.is_empty():
 		lines.append("upgrade_description: %s" % ability.upgrade_description)
 	lines.append("--- modules (%d) ---" % ability.modules.size())
 	for mi: int in ability.modules.size():
-		lines.append(_module_dump_line(mi, ability.modules[mi]))
+		lines.append(_module_dump_detail(mi, ability.modules[mi]))
 	if not ability.upgraded_modules.is_empty():
 		lines.append("--- upgraded_modules (%d) ---" % ability.upgraded_modules.size())
 		for umi: int in ability.upgraded_modules.size():
 			lines.append(_module_dump_line(umi, ability.upgraded_modules[umi]))
-	lines.append("--- effects (%d) ---" % ability.modules.size())
-	for i: int in ability.modules.size():
-		lines.append(_effect_dump_line(i, ability.modules[i]))
-	if not ability.upgraded_modules.is_empty():
-		lines.append("--- upgraded_modules (%d) ---" % ability.upgraded_modules.size())
-		for j: int in ability.upgraded_modules.size():
-			lines.append(_effect_dump_line(j, ability.upgraded_modules[j]))
 	return "\n".join(lines)
 
 
@@ -530,7 +516,7 @@ static func _module_dump_line(index: int, mod: AbilityModule) -> String:
 	for kw: AbilityKeyword in mod.keywords:
 		if kw != null:
 			kw_parts.append(GameEnums.AbilityKeywordId.keys()[kw.keyword_id])
-	return "  [%d] %s %s range %dâ€“%d gate %s kw[%s] layers %d" % [
+	return "  [%d] %s %s range %d–%d gate %s kw[%s] layers %d" % [
 		index,
 		GameEnums.ModulePhase.keys()[mod.execution_phase],
 		GameEnums.EffectType.keys()[mod.primary_type],
@@ -562,7 +548,7 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 			ability.target_shape_size,
 		])
 	for eff: AbilityModule in ability.modules:
-		parts.append(_effect_impl_note(eff))
+		parts.append(_module_impl_note(eff))
 	if ability.id in _ABILITY_CODE_BRANCHES:
 		parts.append("âš  CODE BRANCH: %s" % _ABILITY_CODE_BRANCHES[ability.id])
 	return "\n".join(parts)
@@ -608,17 +594,50 @@ static func targeting_flags_hint(ability: AbilityData) -> String:
 	return " | %s" % dump
 
 
-static func duplicate_effect(src: AbilityModule) -> AbilityModule:
-	var e := AbilityModule.new()
-	e.type = src.type
-	e.amount = src.amount
-	e.status_type = src.status_type
-	e.status_duration = src.status_duration
-	e.scaling_stat = src.scaling_stat
-	e.bonus_if_adjacent_at_cast = src.bonus_if_adjacent_at_cast
-	e.def_debuff_before_damage = src.def_debuff_before_damage
-	e.spawn_unit_id = src.spawn_unit_id
-	return e
+static func duplicate_module(src: AbilityModule) -> AbilityModule:
+	if src == null:
+		return null
+	var dst := AbilityModule.new()
+	dst.execution_phase = src.execution_phase
+	dst.primary_type = src.primary_type
+	dst.amount = src.amount
+	dst.status_type = src.status_type
+	dst.status_duration = src.status_duration
+	dst.scaling_stat = src.scaling_stat
+	dst.spawn_unit_id = src.spawn_unit_id
+	dst.motion_mode = src.motion_mode
+	dst.min_range = src.min_range
+	dst.max_range = src.max_range
+	dst.requires_los = src.requires_los
+	dst.range_origin = src.range_origin
+	dst.target_shape = src.target_shape
+	dst.target_shape_size = src.target_shape_size
+	dst.aim_binding = src.aim_binding
+	dst.aim_module_index = src.aim_module_index
+	dst.targeting_flags = src.targeting_flags
+	dst.gate = src.gate
+	dst.hit_count = src.hit_count
+	dst.presentation_anim = src.presentation_anim
+	dst.bonus_if_adjacent_at_cast = src.bonus_if_adjacent_at_cast
+	dst.def_debuff_before_damage = src.def_debuff_before_damage
+	dst.legacy_modifiers = src.legacy_modifiers.duplicate(true)
+	for keyword: AbilityKeyword in src.keywords:
+		if keyword == null:
+			continue
+		var keyword_copy := AbilityKeyword.new()
+		keyword_copy.keyword_id = keyword.keyword_id
+		keyword_copy.amount = keyword.amount
+		keyword_copy.push_amount = keyword.push_amount
+		keyword_copy.emit_as_effect = keyword.emit_as_effect
+		dst.keywords.append(keyword_copy)
+	for layer: AbilityLayer in src.layers:
+		if layer == null:
+			continue
+		var layer_copy := AbilityLayer.new()
+		layer_copy.condition = layer.condition
+		layer_copy.module = duplicate_module(layer.module)
+		dst.layers.append(layer_copy)
+	return dst
 
 
 static func ability_field_signature(ability: AbilityData, field: String) -> String:
@@ -676,6 +695,8 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.primary_value = src.primary_value
 	dst.cost_modifier = src.cost_modifier
 	dst.cost_modifier_n = src.cost_modifier_n
+	dst.secondary_resource = src.secondary_resource
+	dst.secondary_value = src.secondary_value
 	dst.action_point_cost = src.action_point_cost
 	dst.movement_point_cost = src.movement_point_cost
 	dst.range_tiles = src.range_tiles
@@ -695,17 +716,15 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.is_movement_skill = AbilityModuleBridge.ability_has_displacement_effect(src)
 	dst.modules.clear()
 	for eff: AbilityModule in src.modules:
-		dst.modules.append(duplicate_effect(eff))
+		dst.modules.append(duplicate_module(eff))
 	dst.upgraded_modules.clear()
 	for eff: AbilityModule in src.upgraded_modules:
-		dst.upgraded_modules.append(duplicate_effect(eff))
-	dst.modules.clear()
-	dst.upgraded_modules.clear()
+		dst.upgraded_modules.append(duplicate_module(eff))
 	dst.sync_legacy_targeting()
 	dst.finalize_modular()
 
 
-static func _effect_dump_line(index: int, eff: AbilityModule) -> String:
+static func _module_dump_detail(index: int, eff: AbilityModule) -> String:
 	var base: String = "[%d] %s amount=%d" % [
 		index,
 		GameEnums.EffectType.keys()[eff.primary_type],
@@ -718,10 +737,10 @@ static func _effect_dump_line(index: int, eff: AbilityModule) -> String:
 			GameEnums.StatusType.keys()[eff.status_type],
 			eff.status_duration,
 		]
-	if eff.legacy_modifiers.get("bonus_if_adjacent_at_cast", 0) != 0:
-		base += " bonus_if_adjacent_at_cast=%d" % eff.legacy_modifiers.get("bonus_if_adjacent_at_cast", 0)
-	if eff.legacy_modifiers.get("def_debuff_before_damage", 0) != 0:
-		base += " def_debuff_before_damage=%d" % eff.legacy_modifiers.get("def_debuff_before_damage", 0)
+	if eff.bonus_if_adjacent_at_cast != 0:
+		base += " bonus_if_adjacent_at_cast=%d" % eff.bonus_if_adjacent_at_cast
+	if eff.def_debuff_before_damage != 0:
+		base += " def_debuff_before_damage=%d" % eff.def_debuff_before_damage
 	if eff.spawn_unit_id != &"":
 		base += " spawn_unit_id=%s" % String(eff.spawn_unit_id)
 	return base
@@ -739,14 +758,14 @@ static func _planning_note(ability: AbilityData) -> String:
 			return "plan_action (class skill or basic attack)."
 
 
-static func _effect_impl_note(eff: AbilityModule) -> String:
+static func _module_impl_note(eff: AbilityModule) -> String:
 	match eff.primary_type:
 		GameEnums.EffectType.DAMAGE:
 			var s: String = "DAMAGE: CombatSystem physical/magical formula; ability.scaling_stat selects STR/MAG."
-			if eff.legacy_modifiers.get("bonus_if_adjacent_at_cast", 0) > 0:
-				s += " +%d if target adjacent at cast (data-driven)." % eff.legacy_modifiers.get("bonus_if_adjacent_at_cast", 0)
-			if eff.legacy_modifiers.get("def_debuff_before_damage", 0) > 0:
-				s += " Applies DEF debuff %d before damage (data-driven)." % eff.legacy_modifiers.get("def_debuff_before_damage", 0)
+			if eff.bonus_if_adjacent_at_cast > 0:
+				s += " +%d if target adjacent at cast (data-driven)." % eff.bonus_if_adjacent_at_cast
+			if eff.def_debuff_before_damage > 0:
+				s += " Applies DEF debuff %d before damage (data-driven)." % eff.def_debuff_before_damage
 			return s
 		GameEnums.EffectType.DASH:
 			return "DASH: straight-line path; may combine with TRAMPLE or BULLDOZE on the same ability."
@@ -1037,53 +1056,115 @@ static func apply_saved_unit_overrides() -> void:
 	apply_unit_overrides(read_editor_save().get("units", {}))
 
 
-static func effect_to_dict(src: AbilityModule) -> Dictionary:
+static func module_to_dict(src: AbilityModule) -> Dictionary:
+	if src == null:
+		return {}
+	var keywords: Array = []
+	for keyword: AbilityKeyword in src.keywords:
+		if keyword == null:
+			continue
+		keywords.append({
+			"keyword_id": keyword.keyword_id,
+			"amount": keyword.amount,
+			"push_amount": keyword.push_amount,
+			"emit_as_effect": keyword.emit_as_effect,
+		})
+	var layers: Array = []
+	for layer: AbilityLayer in src.layers:
+		if layer == null:
+			continue
+		layers.append({
+			"condition": layer.condition,
+			"module": module_to_dict(layer.module),
+		})
 	return {
-		"type": src.primary_type,
+		"execution_phase": src.execution_phase,
+		"primary_type": src.primary_type,
 		"amount": src.amount,
 		"status_type": src.status_type,
 		"status_duration": src.status_duration,
 		"scaling_stat": src.scaling_stat,
-		"bonus_if_adjacent_at_cast": src.legacy_modifiers.get("bonus_if_adjacent_at_cast", 0),
-		"def_debuff_before_damage": src.legacy_modifiers.get("def_debuff_before_damage", 0),
-		"spawn_unit_id": String(src.legacy_modifiers.get("spawn_unit_id", &"")),
-		"modifiers": src.legacy_modifiers.duplicate(),
+		"spawn_unit_id": String(src.spawn_unit_id),
+		"motion_mode": src.motion_mode,
+		"min_range": src.min_range,
+		"max_range": src.max_range,
+		"requires_los": src.requires_los,
+		"range_origin": src.range_origin,
+		"target_shape": src.target_shape,
+		"target_shape_size": src.target_shape_size,
+		"aim_binding": src.aim_binding,
+		"aim_module_index": src.aim_module_index,
+		"targeting_flags": src.targeting_flags,
+		"gate": src.gate,
+		"hit_count": src.hit_count,
+		"presentation_anim": src.presentation_anim,
+		"bonus_if_adjacent_at_cast": src.bonus_if_adjacent_at_cast,
+		"def_debuff_before_damage": src.def_debuff_before_damage,
+		"legacy_modifiers": src.legacy_modifiers.duplicate(true),
+		"keywords": keywords,
+		"layers": layers,
 	}
 
 
-static func apply_effect_dict(dst: AbilityModule, data: Dictionary) -> void:
-	if dst == null or data.is_empty():
-		return
-	dst.primary_type = int(data.get("type", dst.primary_type))
-	dst.amount = int(data.get("amount", dst.amount))
-	dst.status_type = int(data.get("status_type", dst.status_type))
-	dst.status_duration = int(data.get("status_duration", dst.status_duration))
-	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
-	
-	dst.legacy_modifiers = data.get("modifiers", {}).duplicate()
-	if data.has("bonus_if_adjacent_at_cast"):
-		dst.legacy_modifiers["bonus_if_adjacent_at_cast"] = int(data.get("bonus_if_adjacent_at_cast", 0))
-	if data.has("def_debuff_before_damage"):
-		dst.legacy_modifiers["def_debuff_before_damage"] = int(data.get("def_debuff_before_damage", 0))
-	if data.has("spawn_unit_id"):
-		dst.legacy_modifiers["spawn_unit_id"] = StringName(String(data.get("spawn_unit_id", "")))
+static func module_from_dict(data: Dictionary) -> AbilityModule:
+	var module := AbilityModule.new()
+	module.execution_phase = int(data.get("execution_phase", module.execution_phase)) as GameEnums.ModulePhase
+	module.primary_type = int(data.get("primary_type", data.get("type", module.primary_type))) as GameEnums.EffectType
+	module.amount = int(data.get("amount", module.amount))
+	module.status_type = int(data.get("status_type", module.status_type)) as GameEnums.StatusType
+	module.status_duration = int(data.get("status_duration", module.status_duration))
+	module.scaling_stat = int(data.get("scaling_stat", module.scaling_stat)) as GameEnums.StatType
+	module.spawn_unit_id = StringName(String(data.get("spawn_unit_id", "")))
+	module.motion_mode = int(data.get("motion_mode", module.motion_mode)) as GameEnums.MotionMode
+	module.min_range = int(data.get("min_range", module.min_range))
+	module.max_range = int(data.get("max_range", module.max_range))
+	module.requires_los = bool(data.get("requires_los", module.requires_los))
+	module.range_origin = int(data.get("range_origin", module.range_origin)) as GameEnums.RangeOrigin
+	module.target_shape = int(data.get("target_shape", module.target_shape)) as GameEnums.TargetShape
+	module.target_shape_size = int(data.get("target_shape_size", module.target_shape_size))
+	module.aim_binding = int(data.get("aim_binding", module.aim_binding)) as GameEnums.AimBinding
+	module.aim_module_index = int(data.get("aim_module_index", module.aim_module_index))
+	module.targeting_flags = int(data.get("targeting_flags", module.targeting_flags))
+	module.gate = int(data.get("gate", module.gate)) as GameEnums.ModuleGate
+	module.hit_count = int(data.get("hit_count", module.hit_count))
+	module.presentation_anim = int(data.get("presentation_anim", module.presentation_anim)) as GameEnums.PresentationAnim
+	module.bonus_if_adjacent_at_cast = int(data.get("bonus_if_adjacent_at_cast", module.bonus_if_adjacent_at_cast))
+	module.def_debuff_before_damage = int(data.get("def_debuff_before_damage", module.def_debuff_before_damage))
+	module.legacy_modifiers = data.get("legacy_modifiers", data.get("modifiers", {})).duplicate(true)
+	for keyword_data: Variant in data.get("keywords", []):
+		if keyword_data is not Dictionary:
+			continue
+		var keyword := AbilityKeyword.new()
+		keyword.keyword_id = int(keyword_data.get("keyword_id", keyword.keyword_id)) as GameEnums.AbilityKeywordId
+		keyword.amount = int(keyword_data.get("amount", keyword.amount))
+		keyword.push_amount = int(keyword_data.get("push_amount", keyword.push_amount))
+		keyword.emit_as_effect = bool(keyword_data.get("emit_as_effect", keyword.emit_as_effect))
+		module.keywords.append(keyword)
+	for layer_data: Variant in data.get("layers", []):
+		if layer_data is not Dictionary:
+			continue
+		var layer := AbilityLayer.new()
+		layer.condition = int(layer_data.get("condition", layer.condition)) as GameEnums.LayerCondition
+		var layer_module: Variant = layer_data.get("module", {})
+		if layer_module is Dictionary:
+			layer.module = module_from_dict(layer_module as Dictionary)
+		module.layers.append(layer)
+	return module
 
 
-static func effects_to_dict_array(effects: Array[AbilityModule]) -> Array:
+static func modules_to_dict_array(modules: Array[AbilityModule]) -> Array:
 	var out: Array = []
-	for eff: AbilityModule in effects:
-		out.append(effect_to_dict(eff))
+	for module: AbilityModule in modules:
+		out.append(module_to_dict(module))
 	return out
 
 
-static func effects_from_dict_array(data: Array) -> Array[AbilityModule]:
+static func modules_from_dict_array(data: Array) -> Array[AbilityModule]:
 	var out: Array[AbilityModule] = []
 	for entry: Variant in data:
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
-		var eff := AbilityModule.new()
-		apply_effect_dict(eff, entry as Dictionary)
-		out.append(eff)
+		out.append(module_from_dict(entry as Dictionary))
 	return out
 
 
@@ -1099,27 +1180,17 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"primary_value": src.primary_value,
 		"cost_modifier": src.cost_modifier,
 		"cost_modifier_n": src.cost_modifier_n,
+		"secondary_resource": src.secondary_resource,
+		"secondary_value": src.secondary_value,
 		"kind": src.kind,
-		"action_point_cost": src.action_point_cost,
-		"movement_point_cost": src.movement_point_cost,
-		"range_tiles": src.range_tiles,
-		"targeting_mode": src.targeting_mode,
-		"targeting_flags": src.targeting_flags,
-		"can_target_self": src.can_target_self,
-		"target_shape": src.target_shape,
-		"target_shape_size": src.target_shape_size,
-		"upgraded_range_tiles": src.upgraded_range_tiles,
-		"upgraded_movement_point_cost": src.upgraded_movement_point_cost,
-		"upgraded_target_shape": src.upgraded_target_shape,
-		"upgraded_target_shape_size": src.upgraded_target_shape_size,
 		"upgrade_description": src.upgrade_description,
 		"uses_per_combat": src.uses_per_combat,
 		"presentation_key": String(src.presentation_key),
 		"presentation_anim": src.presentation_anim,
 		"scaling_stat": src.scaling_stat,
 		"is_movement_skill": AbilityModuleBridge.ability_has_displacement_effect(src),
-		"effects": effects_to_dict_array(src.modules),
-		"upgraded_modules": effects_to_dict_array(src.upgraded_modules),
+		"modules": modules_to_dict_array(src.modules),
+		"upgraded_modules": modules_to_dict_array(src.upgraded_modules),
 		"module_count": src.modules.size(),
 		"upgraded_module_count": src.upgraded_modules.size(),
 	}
@@ -1129,7 +1200,7 @@ static func modules_summary_bbcode(ability: AbilityData) -> String:
 	if ability == null:
 		return "[i]no ability[/i]"
 	if ability.modules.is_empty():
-		return "[i]No modules yet â€” edit Effects (modules rebuild from effects automatically).[/i]"
+		return "[i]No modules yet — add a module below.[/i]"
 	var lines: PackedStringArray = PackedStringArray()
 	var i: int = 0
 	for mod: AbilityModule in ability.modules:
@@ -1282,51 +1353,57 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		dst.cost_modifier_n = int(data.get("cost_modifier_n", dst.cost_modifier_n))
 	AbilityModuleBridge.sync_legacy_from_header(dst)
 	## Legacy AP/MP mirrors: only apply from dict when they match the coupled primary resource.
-	if data.has("action_point_cost"):
-		var ap_v: int = int(data.get("action_point_cost", dst.action_point_cost))
-		if dst.primary_resource == GameEnums.CostResource.AP:
-			dst.action_point_cost = ap_v
-			dst.primary_value = ap_v
-		else:
-			dst.action_point_cost = ap_v
-	if data.has("movement_point_cost"):
-		var mp_v: int = int(data.get("movement_point_cost", dst.movement_point_cost))
-		if dst.primary_resource == GameEnums.CostResource.MP:
-			dst.movement_point_cost = mp_v
-			dst.primary_value = mp_v
-		else:
-			dst.movement_point_cost = mp_v
-	dst.range_tiles = int(data.get("range_tiles", dst.range_tiles))
-	dst.targeting_mode = int(data.get("targeting_mode", dst.targeting_mode))
-	dst.targeting_flags = int(data.get("targeting_flags", dst.targeting_flags))
-	dst.can_target_self = bool(data.get("can_target_self", dst.can_target_self))
-	dst.target_shape = int(data.get("target_shape", dst.target_shape))
-	dst.target_shape_size = int(data.get("target_shape_size", dst.target_shape_size))
-	dst.upgraded_range_tiles = int(data.get("upgraded_range_tiles", dst.upgraded_range_tiles))
-	dst.upgraded_movement_point_cost = int(data.get("upgraded_movement_point_cost", dst.upgraded_movement_point_cost))
-	dst.upgraded_target_shape = int(data.get("upgraded_target_shape", dst.upgraded_target_shape))
-	dst.upgraded_target_shape_size = int(data.get("upgraded_target_shape_size", dst.upgraded_target_shape_size))
+	## Legacy scalar mirrors are intentionally ignored on load. Modules and the
+	## header cost block are the only editor-authored sources of truth.
 	dst.upgrade_description = String(data.get("upgrade_description", dst.upgrade_description))
 	dst.uses_per_combat = int(data.get("uses_per_combat", dst.uses_per_combat))
 	dst.presentation_key = StringName(String(data.get("presentation_key", String(dst.presentation_key))))
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
 	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
-	if data.has("effects"):
-		dst.modules = effects_from_dict_array(data.get("effects", []))
-		dst.modules.clear()
+	if data.has("secondary_resource"):
+		dst.secondary_resource = int(data.get("secondary_resource", dst.secondary_resource)) as GameEnums.CostResource
+	if data.has("secondary_value"):
+		dst.secondary_value = int(data.get("secondary_value", dst.secondary_value))
+	if data.has("modules"):
+		dst.modules = modules_from_dict_array(data.get("modules", []))
+	elif data.has("effects"):
+		## Migrate the existing class-library file once into module-owned fields.
+		dst.modules = modules_from_dict_array(data.get("effects", []))
+		_migrate_legacy_ability_header_to_modules(dst, data, dst.modules)
 	if data.has("upgraded_modules"):
-		dst.upgraded_modules = effects_from_dict_array(data.get("upgraded_modules", []))
-		dst.upgraded_modules.clear()
-	## Saved JSON sometimes has SELF mode with stale ALLY flags. Prefer self-target authoring.
-	if (
-		bool(data.get("can_target_self", false))
-		or int(data.get("targeting_mode", -1)) == GameEnums.TargetingMode.SELF
-	):
-		dst.targeting_flags = GameEnums.TargetingFlags.SELF
-		dst.targeting_mode = GameEnums.TargetingMode.SELF
-		dst.can_target_self = true
+		dst.upgraded_modules = modules_from_dict_array(data.get("upgraded_modules", []))
+	elif data.has("upgraded_effects"):
+		dst.upgraded_modules = modules_from_dict_array(data.get("upgraded_effects", []))
+		_migrate_legacy_ability_header_to_modules(dst, data, dst.upgraded_modules, true)
 	dst.sync_legacy_targeting()
 	dst.finalize_modular()
+
+
+static func _migrate_legacy_ability_header_to_modules(
+	ability: AbilityData,
+	data: Dictionary,
+	modules: Array[AbilityModule],
+	upgraded: bool = false,
+) -> void:
+	if ability == null or modules.is_empty() or modules[0] == null:
+		return
+	var primary: AbilityModule = modules[0]
+	if not upgraded and data.has("action_point_cost") and ability.primary_resource == GameEnums.CostResource.AP:
+		ability.primary_value = int(data.get("action_point_cost", ability.primary_value))
+	if not upgraded and data.has("movement_point_cost") and ability.primary_resource == GameEnums.CostResource.MP:
+		ability.primary_value = int(data.get("movement_point_cost", ability.primary_value))
+	var range_key: String = "upgraded_range_tiles" if upgraded else "range_tiles"
+	var shape_key: String = "upgraded_target_shape" if upgraded else "target_shape"
+	var size_key: String = "upgraded_target_shape_size" if upgraded else "target_shape_size"
+	var range_value: int = int(data.get(range_key, primary.max_range))
+	if range_value >= 0:
+		primary.max_range = range_value
+	primary.target_shape = int(data.get(shape_key, primary.target_shape)) as GameEnums.TargetShape
+	var size_value: int = int(data.get(size_key, primary.target_shape_size))
+	if size_value > 0:
+		primary.target_shape_size = size_value
+	if not upgraded and data.has("targeting_flags"):
+		primary.targeting_flags = int(data.get("targeting_flags", primary.targeting_flags))
 
 
 static func passive_to_dict(src: PassiveData) -> Dictionary:

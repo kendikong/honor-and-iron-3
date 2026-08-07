@@ -31,9 +31,6 @@ func _ready() -> void:
 
 	grid.add_child(_build_skirmish_card())
 	
-	var custom_card := _build_custom_card()
-	grid.add_child(custom_card)
-	
 	if NetworkManager != null and NetworkManager.is_multiplayer and not multiplayer.is_server():
 		# Clients don't choose the map. Hide grid, show waiting label.
 		grid.visible = false
@@ -339,40 +336,6 @@ func _launch_skirmish(size_preset: Vector2i, setup: MassSimSkirmishSetup) -> voi
 	SettingsManager.persist_window_placement()
 	get_tree().change_scene_to_file("res://scenes/TacticalCombat.tscn")
 
-
-func _build_custom_card() -> Control:
-	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(300, 200)
-	btn.pressed.connect(_launch_custom)
-	
-	var vbox := VBoxContainer.new()
-	vbox.anchor_right = 1.0
-	vbox.anchor_bottom = 1.0
-	vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	btn.add_child(vbox)
-	
-	var color := ColorRect.new()
-	color.custom_minimum_size = Vector2(0, 100)
-	color.color = Color(0.2, 0.2, 0.2)
-	color.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vbox.add_child(color)
-	
-	var title := Label.new()
-	title.text = "Custom Sandbox"
-	title.add_theme_font_size_override("font_size", 24)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(title)
-	
-	var desc := Label.new()
-	desc.text = "A randomized sandbox map. (A full visual map editor will be added in the future!)"
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
-	desc.add_theme_font_size_override("font_size", 16)
-	vbox.add_child(desc)
-	
-	return btn
-
-func _launch_custom() -> void:
-	get_tree().change_scene_to_file("res://scenes/SandboxEditor.tscn")
 
 func _launch_map(map: MapData, index: int) -> void:
 	if NetworkManager != null and NetworkManager.is_multiplayer:

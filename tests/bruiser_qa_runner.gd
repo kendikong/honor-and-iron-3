@@ -6,7 +6,7 @@ const _HARNESS := preload("res://tests/bruiser_qa_harness.gd")
 const _UPGRADES := preload("res://tests/bruiser_qa_harness_upgrades.gd")
 const _DRAG := preload("res://tests/planning_drag_e2e_harness.gd")
 
-## Tier 1 Bruiser class QA runner — invokes registry scenarios (NOT planning QA).
+## Tier 1 Bruiser class QA runner â€” invokes registry scenarios (NOT planning QA).
 
 
 static func run_all(failures: Array[String]) -> void:

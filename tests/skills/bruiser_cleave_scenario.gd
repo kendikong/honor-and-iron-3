@@ -3,7 +3,7 @@ extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
-## Bible: Cleave — RANGE 1 | ARC | ATK 2; [+] Apply BLEED X (WPN) to all targets.
+## Bible: Cleave â€” RANGE 1 | ARC | ATK 2; [+] Apply BLEED X (WPN) to all targets.
 ## Globals: EffectType.DAMAGE + TargetShape.ARC; upgrade ADD_STATUS BLEED + weapon_scaled modifier.
 
 

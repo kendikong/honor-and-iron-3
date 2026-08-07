@@ -26,17 +26,24 @@ static func sanitize_tags(tags: Array[StringName]) -> Array[StringName]:
 	return clean
 
 static func validate_tag_list(tags: Array[StringName]) -> Dictionary:
-	var result := {"valid": true, "errors": [] as Array[String]}
+	var rejected := PackedStringArray()
+	var errors: Array[String] = []
 	var seen: Dictionary = {}
 	for t: StringName in tags:
 		if not is_canonical_tag(t):
-			result.valid = false
-			result.errors.append("Invalid tag: " + str(t))
+			if not rejected.has(String(t)):
+				rejected.append(String(t))
+			errors.append("Invalid tag: " + str(t))
 		if seen.has(t):
-			result.valid = false
-			result.errors.append("Duplicate tag: " + str(t))
+			errors.append("Duplicate tag: " + str(t))
 		seen[t] = true
-	return result
+	return {
+		"ok": errors.is_empty(),
+		"valid": errors.is_empty(),
+		"errors": errors,
+		"tags": sanitize_tags(tags),
+		"rejected": rejected,
+	}
 
 static func planner_group_from_kind(kind: GameEnums.AbilityKind) -> GameEnums.PlannerGroup:
 	match kind:
@@ -95,9 +102,9 @@ static func is_planner_cost_legal(
 ) -> bool:
 	match planner:
 		GameEnums.PlannerGroup.PRE_MOVE:
-			return res == GameEnums.CostResource.MP or res == GameEnums.CostResource.NONE
+			return res == GameEnums.CostResource.MP
 		GameEnums.PlannerGroup.ACTION:
-			return res == GameEnums.CostResource.AP or res == GameEnums.CostResource.NONE
+			return res == GameEnums.CostResource.AP or res == GameEnums.CostResource.HP
 	return false
 
 static func legal_primary_resources(
@@ -105,9 +112,9 @@ static func legal_primary_resources(
 ) -> Array[GameEnums.CostResource]:
 	match planner:
 		GameEnums.PlannerGroup.PRE_MOVE:
-			return [GameEnums.CostResource.MP, GameEnums.CostResource.NONE]
+			return [GameEnums.CostResource.MP]
 		GameEnums.PlannerGroup.ACTION:
-			return [GameEnums.CostResource.AP, GameEnums.CostResource.NONE]
+			return [GameEnums.CostResource.AP, GameEnums.CostResource.HP]
 	return [GameEnums.CostResource.NONE]
 
 static func enforce_planner_cost_coupling(ability: AbilityData) -> void:
@@ -153,14 +160,32 @@ static func _append_if_collided_move_if_missing(modules: Array[AbilityModule]) -
 static func finalize_ability(ability: AbilityData) -> void:
 	if ability == null:
 		return
-	_prefer_authored_targeting_mode(ability)
+	## Modules are authoritative for range, shape, and per-module targeting.
+	## Header mirrors remain synchronized for runtime consumers that still read
+	## the compatibility fields; finalization never rewrites module authoring.
+	_inherit_header_targeting_to_unspecified_modules(ability)
 	if not ability.modules.is_empty():
 		_apply_module_range_to_ability(ability, ability.modules)
+		var primary: AbilityModule = ability.modules[0]
+		if primary != null and primary.targeting_flags != 0:
+			ability.targeting_flags = primary.targeting_flags
+			ability.sync_legacy_targeting()
+	else:
+		_prefer_authored_targeting_mode(ability)
 	if _should_ensure_if_collided_followup(ability):
 		ensure_if_collided_followup_move(ability)
 		_apply_module_range_to_ability(ability, ability.modules)
 	sync_legacy_from_header(ability)
-	_prefer_authored_targeting_mode(ability)
+
+static func _inherit_header_targeting_to_unspecified_modules(ability: AbilityData) -> void:
+	if ability == null or ability.targeting_flags == 0:
+		return
+	for module: AbilityModule in ability.modules:
+		if module != null and module.targeting_flags == 0:
+			module.targeting_flags = ability.targeting_flags
+	for module: AbilityModule in ability.upgraded_modules:
+		if module != null and module.targeting_flags == 0:
+			module.targeting_flags = ability.targeting_flags
 
 static func _should_ensure_if_collided_followup(ability: AbilityData) -> bool:
 	if ability == null:
@@ -184,17 +209,16 @@ static func _has_violent_collision_dash_package(ability: AbilityData) -> bool:
 	if mod != null and mod.primary_type == GameEnums.EffectType.DASH:
 		if mod.legacy_modifiers.has("violent_collision_recast"):
 			return true
-		if mod.bulldoze > 0 and mod.push > 0:
-			return true
 		if mod.legacy_modifiers.has("bulldoze") and mod.legacy_modifiers.has("push"):
 			return true
 	return false
 
 static func _prefer_authored_targeting_mode(ability: AbilityData) -> void:
-	if ability.targeting_flags != 0:
-		ability.sync_legacy_targeting()
-	else:
-		ability.ensure_targeting_flags_from_mode()
+	## targeting_mode is the authoritative source when explicitly set by the factory.
+	## Derive targeting_flags from it rather than the reverse, so factory overrides
+	## (e.g. targeting_mode = SELF) survive finalize_modular().
+	ability.targeting_flags = AbilityData._targeting_mode_to_flags(ability.targeting_mode)
+	ability.sync_legacy_targeting()
 
 static func _apply_module_range_to_ability(ability: AbilityData, modules: Array[AbilityModule]) -> void:
 	if modules.is_empty() or modules[0] == null:
@@ -203,4 +227,7 @@ static func _apply_module_range_to_ability(ability: AbilityData, modules: Array[
 	ability.range_tiles = primary_mod.max_range
 	ability.target_shape = primary_mod.target_shape
 	ability.target_shape_size = primary_mod.target_shape_size
-	ability.targeting_flags = primary_mod.targeting_flags
+	## Only overwrite targeting_flags if the module actually declares them;
+	## self-target abilities set targeting_flags on the ability header, not per-module.
+	if primary_mod.targeting_flags != 0:
+		ability.targeting_flags = primary_mod.targeting_flags

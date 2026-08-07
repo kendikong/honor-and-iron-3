@@ -3,7 +3,7 @@ extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
-## Bible: Adrenaline Junkie — +MOV/+STR per 10% missing HP.
+## Bible: Adrenaline Junkie â€” +MOV/+STR per 10% missing HP.
 ## [+] +DEF per 20% missing HP.
 ## Globals: missing-HP stat scaling via _recalculate_stats.
 

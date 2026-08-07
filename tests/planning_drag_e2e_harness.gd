@@ -1,7 +1,7 @@
 class_name PlanningDragE2EHarness
 extends RefCounted
 
-## Production-path drag E2E helpers: _begin_drag → update_drag → on_left_release → flush.
+## Production-path drag E2E helpers: _begin_drag â†’ update_drag â†’ on_left_release â†’ flush.
 
 const KNIGHT_START := Vector2i(4, 5)
 const ENEMY_POS := Vector2i(7, 5)

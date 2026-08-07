@@ -1,7 +1,7 @@
 class_name KnightScenarioRegistry
 extends RefCounted
 
-## Authoritative Knight factory-id → scenario runner map (P3 — not planning QA).
+## Authoritative Knight factory-id â†’ scenario runner map (P3 â€” not planning QA).
 ## Uses runtime load() + script.call to avoid Callable(static) invalidity in headless --script.
 
 

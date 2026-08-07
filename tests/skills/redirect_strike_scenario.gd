@@ -3,7 +3,7 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Redirect Strike — SELF INTERCEPT (50% adjacent-ally damage, rounded down); [+] DEF +2 per redirected hit.
+## Bible: Redirect Strike â€” SELF INTERCEPT (50% adjacent-ally damage, rounded down); [+] DEF +2 per redirected hit.
 ## Globals: ADD_STATUS_SELF(INTERCEPT) via AbilitySystem; split in CombatSystem.deal_damage.
 
 
@@ -40,6 +40,6 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "redirect/contract/upgrade_intercept_value",
-		redirect != null and redirect.upgraded_effects[0].amount == 1,
+		redirect != null and redirect.upgraded_modules[0].amount == 1,
 		"upgraded INTERCEPT effect amount must be 1 for [+] DEF tracking",
 	)

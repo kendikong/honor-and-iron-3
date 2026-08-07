@@ -19,6 +19,13 @@ func _init(director) -> void:
 func set_unit_layer(layer: TacticalUnitLayer) -> void:
 	_unit_layer = layer
 
+
+func set_aggressiveness(value: float) -> void:
+	if _ai_instance == null:
+		return
+	_ai_instance.aggressiveness = clampf(value, 0.0, 1.0)
+
+
 func set_active(active: bool, auto_commit: bool = true) -> void:
 	_active = active
 	_auto_commit = auto_commit

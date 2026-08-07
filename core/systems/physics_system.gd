@@ -427,7 +427,9 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 			var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 			if ability != null:
 				var effects: Array = ability.upgraded_modules if pusher.is_ability_upgraded(ability_id) else ability.modules
+				print("PUSH ABILITY: ", ability_id, " UPGRADED: ", pusher.is_ability_upgraded(ability_id), " EFFECTS: ", effects.size())
 				for eff: AbilityModule in effects:
+					print("EFF: ", eff.primary_type, " MODS: ", eff.legacy_modifiers)
 					if eff != null and eff.legacy_modifiers.get("buff_on_push", 0) > 0:
 						pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
 						pusher._recalculate_stats()

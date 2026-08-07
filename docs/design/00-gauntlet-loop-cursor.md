@@ -437,7 +437,7 @@ Do **not** default to Cloud/Automation for K3-LOCK until `run_knight_qa_gate.ps1
 | “LGTM” without running bar commands | False PASS (Phase 9 lesson) |
 | Owner pastes “continue” every round manually | Works but not unattended — use `/loop` (§5.4) instead |
 | Open-ended “improve the game” overnight | Scope explosion |
-| Fixing `board_view.gd` when tactical path is canonical | Wrong owner — see parity plan |
+| Fixing the removed legacy board path when tactical path is canonical | Wrong owner — use the tactical presentation modules |
 | `Heuristics added: none` without audit | Rule violation — critic should catch |
 
 ---

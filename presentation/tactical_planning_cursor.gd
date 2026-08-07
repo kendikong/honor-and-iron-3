@@ -50,7 +50,7 @@ func _on_draw() -> void:
 	if composite.size() > 1:
 		_draw_composite_row(_drawer, center, composite)
 		return
-	var color: Color = Color(1.0, 0.52, 0.52, 1.0) if _icon == "âˆ…" else Color(1.0, 1.0, 1.0, 1.0)
+	var color: Color = Color(1.0, 0.52, 0.52, 1.0) if _icon == PlanningIcons.GLYPH_NULL else Color(1.0, 1.0, 1.0, 1.0)
 	_draw_centered(_drawer, center, _icon, color, _font_size)
 
 
@@ -96,10 +96,10 @@ static func _composite_icon_parts(icon: String) -> PackedStringArray:
 				if not trimmed.is_empty():
 					parts.append(trimmed)
 			return parts
-	if icon == "ðŸ‘Ÿâš”ï¸":
-		return PackedStringArray(["ðŸ‘Ÿ", "âš”ï¸"])
-	if icon == "ðŸƒâš”ï¸":
-		return PackedStringArray(["ðŸƒ", "âš”ï¸"])
+	if icon == PlanningIcons.GLYPH_WALK + PlanningIcons.GLYPH_ATTACK:
+		return PackedStringArray([PlanningIcons.GLYPH_WALK, PlanningIcons.GLYPH_ATTACK])
+	if icon == PlanningIcons.GLYPH_RUN + PlanningIcons.GLYPH_ATTACK:
+		return PackedStringArray([PlanningIcons.GLYPH_RUN, PlanningIcons.GLYPH_ATTACK])
 	return PackedStringArray()
 
 

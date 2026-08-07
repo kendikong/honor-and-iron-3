@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-05" name="report_311" tests="2" failures="37" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_planning_scene_test" package="tests" timestamp="2026-08-05T07:06:36" hostname="localhost" tests="2" failures="37" errors="0" skipped="0" flaky="0" time="79.276">
+		<testcase name="test_live_planning_bible_multi_knight_session" classname="live_planning_scene_test" time="79.232">
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1337" type="FAILURE">
+<![CDATA[
+k3/hover/end: preview path must not be empty at (6, 3)
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1337
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1310
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1953" type="FAILURE">
+<![CDATA[
+k3/hover/end: preview path empty (expected end (6, 3))
+	at '_assert_preview_path_ends' in res://tests/live_planning_scene_test.gd:1953
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1345
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1310
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1358" type="FAILURE">
+<![CDATA[
+k3/hover/end: preview ghost missing at (6, 3); path=[] slots={ "pre": [], "action": [], "post": [], "invalid": "Invalid target or distance for this ability." } approach=n/a preview_board=<null>
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1358
+	at '_preview_unit' in res://tests/live_planning_scene_test.gd:1995
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1337" type="FAILURE">
+<![CDATA[
+k3/selection/pre_tap: preview path must not be empty at (6, 3)
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1337
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1310
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1895" type="FAILURE">
+<![CDATA[
+k3/selection/pre_tap: preview path expected [(5, 4), (6, 4), (6, 3)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(5, 4):(1, 4):[(4, 4), (3, 4), (2, 4), (1, 4)]]; plan=[1:(5, 4):[]:-1]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1895
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1341
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1310
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1358" type="FAILURE">
+<![CDATA[
+k3/selection/pre_tap: preview ghost missing at (6, 3); path=[] slots={ "pre": [], "action": [], "post": [], "invalid": "Invalid target or distance for this ability." } approach=n/a preview_board=<null>
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1358
+	at '_preview_unit' in res://tests/live_planning_scene_test.gd:1995
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2349" type="FAILURE">
+<![CDATA[
+k3/selection/release: commit must not run when preview slots are invalid
+	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2349
+	at '_tap_cell' in res://tests/live_planning_scene_test.gd:899
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1107" type="FAILURE">
+<![CDATA[
+k3/selection: trample target
+	at '_assert_k3_trample_committed' in res://tests/live_planning_scene_test.gd:1107
+	at '_journey_knight3_trampling_advance' in res://tests/live_planning_scene_test.gd:664
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1110" type="FAILURE">
+<![CDATA[
+k3/selection: trample spends AP
+	at '_assert_k3_trample_committed' in res://tests/live_planning_scene_test.gd:1110
+	at '_journey_knight3_trampling_advance' in res://tests/live_planning_scene_test.gd:664
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1819" type="FAILURE">
+<![CDATA[
+k3: endpoint paint failed at step 2
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1819
+	at '_hop_drag_to_cell' in res://tests/live_planning_scene_test.gd:1284
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1895" type="FAILURE">
+<![CDATA[
+k3/preview_path_2: preview path expected [(5, 4), (6, 4), (6, 3)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(5, 4):(1, 4):[(4, 4), (3, 4), (2, 4), (1, 4)]]; plan=[1:(5, 4):[]:-1]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1895
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1823
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2349" type="FAILURE">
+<![CDATA[
+k3/release: commit must not run when preview slots are invalid
+	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2349
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1846
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1100" type="FAILURE">
+<![CDATA[
+k3/drag: trample waypoints
+	at '_assert_k3_trample_committed' in res://tests/live_planning_scene_test.gd:1100
+	at '_journey_knight3_trampling_advance' in res://tests/live_planning_scene_test.gd:670
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1846
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1103" type="FAILURE">
+<![CDATA[
+k3/drag: trample end position
+	at '_assert_k3_trample_committed' in res://tests/live_planning_scene_test.gd:1103
+	at '_journey_knight3_trampling_advance' in res://tests/live_planning_scene_test.gd:670
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1846
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1110" type="FAILURE">
+<![CDATA[
+k3/drag: trample spends AP
+	at '_assert_k3_trample_committed' in res://tests/live_planning_scene_test.gd:1110
+	at '_journey_knight3_trampling_advance' in res://tests/live_planning_scene_test.gd:670
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1846
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2753" type="FAILURE">
+<![CDATA[
+k3/drag/post_commit/red: action-range gate expected false got true
+	at '_assert_red_live' in res://tests/live_planning_scene_test.gd:2753
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1392
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1310
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2756" type="FAILURE">
+<![CDATA[
+k3/drag/post_commit/red: overlay red expected false got true
+	at '_assert_red_live' in res://tests/live_planning_scene_test.gd:2756
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1392
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1310
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1895" type="FAILURE">
+<![CDATA[
+k3/post/hover_east: preview path expected [(5, 4), (6, 4), (6, 3), (7, 3)] got [(5, 4), (6, 4), (7, 4), (7, 3)]; events=[0:(5, 4):(7, 3):[(6, 4), (7, 4), (7, 3)]]; plan=[]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1895
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1341
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1310
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1337" type="FAILURE">
+<![CDATA[
+k3/post/hover_dest: preview path must not be empty at (8, 2)
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1337
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1310
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1953" type="FAILURE">
+<![CDATA[
+k3/post/hover_dest: preview path empty (expected end (8, 2))
+	at '_assert_preview_path_ends' in res://tests/live_planning_scene_test.gd:1953
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1345
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1310
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1979
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1358" type="FAILURE">
+<![CDATA[
+k3/post/hover_dest: preview ghost missing at (8, 2); path=[] slots={ "pre": [], "action": [], "post": [], "invalid": "No valid actions generated." } approach=n/a preview_board=<null>
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1358
+	at '_preview_unit' in res://tests/live_planning_scene_test.gd:1995
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1373" type="FAILURE">
+<![CDATA[
+k3/post/hover_dest: icon must contain ðŸ‘Ÿ, got âˆ…
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1373
+	at '_preview_unit' in res://tests/live_planning_scene_test.gd:1995
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1269" type="FAILURE">
+<![CDATA[
+k3/post/step_1: drag must be armed before hop to (7, 3)
+	at '_hop_drag_to_cell' in res://tests/live_planning_scene_test.gd:1269
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1787
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1879" type="FAILURE">
+<![CDATA[
+k3/post/drag_route_1: drag route expected [(6, 3), (7, 3)] got []
+	at '_assert_drag_route_equals' in res://tests/live_planning_scene_test.gd:1879
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1805
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1895" type="FAILURE">
+<![CDATA[
+k3/post/preview_path_1: preview path expected [(5, 4), (6, 4), (6, 3), (7, 3)] got []; events=[6:(-999, -999):(-999, -999):[]]; plan=[0:(6, 3):[(6, 4), (6, 3)]:-1]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1895
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1811
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1814" type="FAILURE">
+<![CDATA[
+k3/post: post drag must show blue move tiles
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1814
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1269" type="FAILURE">
+<![CDATA[
+k3/post/step_2: drag must be armed before hop to (8, 3)
+	at '_hop_drag_to_cell' in res://tests/live_planning_scene_test.gd:1269
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1787
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1879" type="FAILURE">
+<![CDATA[
+k3/post/drag_route_2: drag route expected [(6, 3), (7, 3), (8, 3)] got []
+	at '_assert_drag_route_equals' in res://tests/live_planning_scene_test.gd:1879
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1805
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1895" type="FAILURE">
+<![CDATA[
+k3/post/preview_path_2: preview path expected [(5, 4), (6, 4), (6, 3), (7, 3), (8, 3)] got []; events=[6:(-999, -999):(-999, -999):[]]; plan=[0:(6, 3):[(6, 4), (6, 3)]:-1]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1895
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1811
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1814" type="FAILURE">
+<![CDATA[
+k3/post: post drag must show blue move tiles
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1814
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1269" type="FAILURE">
+<![CDATA[
+k3/post/step_3: drag must be armed before hop to (8, 2)
+	at '_hop_drag_to_cell' in res://tests/live_planning_scene_test.gd:1269
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1787
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1879" type="FAILURE">
+<![CDATA[
+k3/post/drag_route_3: drag route expected [(6, 3), (7, 3), (8, 3), (8, 2)] got []
+	at '_assert_drag_route_equals' in res://tests/live_planning_scene_test.gd:1879
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1805
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1895" type="FAILURE">
+<![CDATA[
+k3/post/preview_path_3: preview path expected [(5, 4), (6, 4), (6, 3), (7, 3), (8, 3), (8, 2)] got []; events=[6:(-999, -999):(-999, -999):[]]; plan=[0:(6, 3):[(6, 4), (6, 3)]:-1]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1895
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1811
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1814" type="FAILURE">
+<![CDATA[
+k3/post: post drag must show blue move tiles
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1814
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2349" type="FAILURE">
+<![CDATA[
+k3/post/release: commit must not run when preview slots are invalid
+	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2349
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1846
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1118" type="FAILURE">
+<![CDATA[
+k3/post: post-move missing
+	at '_assert_k3_post_move_committed' in res://tests/live_planning_scene_test.gd:1118
+	at '_journey_knight3_trampling_advance' in res://tests/live_planning_scene_test.gd:708
+	at '_drag_through_cells_with_route_checks' in res://tests/live_planning_scene_test.gd:1846
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:785" type="FAILURE">
+<![CDATA[
+Expecting:
+ '(8, 2)'
+ but was
+ '(6, 3)'
+	at '_journey_execute_all_plans' in res://tests/live_planning_scene_test.gd:785
+	at 'test_live_planning_bible_multi_knight_session' in res://tests/live_planning_scene_test.gd:104
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:760
+	at '_k4_preview_snapshot' in res://tests/live_planning_scene_test.gd:1765
+]]>
+			</failure>
+		</testcase>
+	</testsuite>
+</testsuites>

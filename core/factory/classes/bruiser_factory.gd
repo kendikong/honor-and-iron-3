@@ -57,13 +57,13 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var charge_atk = DataLibrary._module(GameEnums.EffectType.DAMAGE, 3)
 	charge_atk.execution_phase = GameEnums.ModulePhase.ON_ACTION
 	var charge_push = DataLibrary._module(GameEnums.EffectType.PUSH, 1)
-	charge_push.execution_phase = GameEnums.ModulePhase.ON_ACTION
-	charge_push.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	charge_push.aim_module_index = 1
+	var charge_push_layer := AbilityLayer.new()
+	charge_push_layer.condition = GameEnums.LayerCondition.WHEN_DAMAGE_DEALT
+	charge_push_layer.module = charge_push
+	charge_atk.layers.append(charge_push_layer)
 	var charge_strike = DataLibrary._make_ability(&"bruiser_charge_strike", "Charge Strike", 1, [
 		charge_move,
-		charge_atk,
-		charge_push
+		charge_atk
 	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.SINGLE, 1)
 	charge_strike.upgrade_description = "Gain GHOST during MOVE. Gain ATK +2 if passing through terrain."
 	charge_strike.upgraded_modules = DataLibrary._duplicate_modules(charge_strike.modules)

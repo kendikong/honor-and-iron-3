@@ -1,7 +1,7 @@
 class_name BruiserQaHarness
 extends RefCounted
 
-## Bruiser class QA harness — separate from planning QA (`run_planning_qa_gate.ps1`).
+## Bruiser class QA harness â€” separate from planning QA (`run_planning_qa_gate.ps1`).
 ## Builds headless boards, runs Simulator, asserts Bible outcomes via global systems.
 
 const BRUISER_DEF_ID: StringName = &"bruiser"
@@ -134,7 +134,7 @@ static func cast_on_enemy(
 
 static func events_have_type(events: Array, event_type: GameEnums.SimEventType) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.primary_type == event_type:
+		if e is SimEvent and e.type == event_type:
 			return true
 	return false
 
@@ -330,7 +330,7 @@ static func plan_ability(
 
 static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_PUSHED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_PUSHED:
 			if int(e.data.get("unit", -1)) == unit_id:
 				return true
 	return false
@@ -338,7 +338,7 @@ static func events_have_unit_pushed(events: Array, unit_id: int) -> bool:
 
 static func event_push_distance(events: Array, unit_id: int) -> int:
 	for e: Variant in events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_PUSHED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_PUSHED:
 			if int(e.data.get("unit", -1)) == unit_id:
 				return int(e.data.get("distance", -1))
 	return -1
@@ -346,7 +346,7 @@ static func event_push_distance(events: Array, unit_id: int) -> int:
 
 static func events_have_unit_damaged_pierce(events: Array, pierce: bool) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
 			if bool(e.data.get("pierce", false)) == pierce:
 				return true
 	return false
@@ -354,7 +354,7 @@ static func events_have_unit_damaged_pierce(events: Array, pierce: bool) -> bool
 
 static func events_have_damage_pierce(events: Array, pierce: bool) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.MATH_TELEMETRY:
+		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
 			var d: Dictionary = e.data
 			if str(d.get("type", "")) == "damage" and bool(d.get("pierce", false)) == pierce:
 				return true
@@ -363,7 +363,7 @@ static func events_have_damage_pierce(events: Array, pierce: bool) -> bool:
 
 static func first_damage_math(events: Array) -> Dictionary:
 	for e: Variant in events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.MATH_TELEMETRY:
+		if e is SimEvent and e.type == GameEnums.SimEventType.MATH_TELEMETRY:
 			var d: Dictionary = e.data
 			if str(d.get("type", "")) == "damage":
 				return d
@@ -372,7 +372,7 @@ static func first_damage_math(events: Array) -> Dictionary:
 
 static func events_have_terrain_changed(events: Array, coord: Vector2i) -> bool:
 	for e: Variant in events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.TERRAIN_CHANGED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.TERRAIN_CHANGED:
 			if e.data.get("coord", Vector2i(-99, -99)) == coord:
 				return true
 	return false
@@ -381,7 +381,7 @@ static func events_have_terrain_changed(events: Array, coord: Vector2i) -> bool:
 static func count_unit_hp_damage_events(events: Array, unit_id: int) -> int:
 	var count: int = 0
 	for e: Variant in events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
 			if int(e.data.get("unit", -1)) != unit_id:
 				continue
 			var hp_dmg: int = int(e.data.get("hp_damaged", e.data.get("amount", 0)))
@@ -393,7 +393,7 @@ static func count_unit_hp_damage_events(events: Array, unit_id: int) -> int:
 static func sum_unit_hp_damage_events(events: Array, unit_id: int) -> int:
 	var total: int = 0
 	for e: Variant in events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
 			if int(e.data.get("unit", -1)) != unit_id:
 				continue
 			var hp_dmg: int = int(e.data.get("hp_damaged", e.data.get("amount", 0)))
@@ -405,7 +405,7 @@ static func sum_unit_hp_damage_events(events: Array, unit_id: int) -> int:
 static func sum_unit_incoming_damage_events(events: Array, unit_id: int) -> int:
 	var total: int = 0
 	for e: Variant in events:
-		if e is SimEvent and e.primary_type == GameEnums.SimEventType.UNIT_DAMAGED:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
 			if int(e.data.get("unit", -1)) != unit_id:
 				continue
 			total += int(e.data.get("amount", 0))
@@ -449,7 +449,7 @@ static func status_value(unit: UnitState, status_type: GameEnums.StatusType) -> 
 	if unit == null:
 		return 0
 	for status: StatusData in unit.active_statuses:
-		if status.primary_type == status_type:
+		if status.type == status_type:
 			return status.value
 	return 0
 
@@ -496,6 +496,9 @@ static func run_push_through_base(failures: Array[String]) -> void:
 	var e_after: UnitState = result.final_state.get_unit_by_id(2)
 	assert_eq_cell(failures, "push_through/bruiser_pos", b_after.position, Vector2i(3, 4))
 	assert_eq_cell(failures, "push_through/enemy_pos", e_after.position, Vector2i(3, 5))
+	for e in result.events:
+		if e is SimEvent:
+			print("EVENT: ", e.primary_type, " ", e.data)
 	assert_true(
 		failures, "push_through/pushed_event",
 		events_have_unit_pushed(result.events, 2),

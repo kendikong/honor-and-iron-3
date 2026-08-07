@@ -3,7 +3,7 @@ extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
-## Bible: Unstoppable Force — immune STAGGER/ROOT; resist grants SHIELD 1.
+## Bible: Unstoppable Force â€” immune STAGGER/ROOT; resist grants SHIELD 1.
 ## [+] resist grants SHIELD 2 instead.
 ## Globals: status_prevented_by_unstoppable_force + armor on resist.
 

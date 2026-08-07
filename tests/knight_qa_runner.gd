@@ -5,7 +5,7 @@ const _REGISTRY := preload("res://tests/knight_scenario_registry.gd")
 const _HARNESS := preload("res://tests/knight_qa_harness.gd")
 const _DRAG := preload("res://tests/planning_drag_e2e_harness.gd")
 
-## Tier 1 Knight class QA runner — invokes registry scenarios (NOT planning QA).
+## Tier 1 Knight class QA runner â€” invokes registry scenarios (NOT planning QA).
 
 
 static func run_all(failures: Array[String]) -> void:

@@ -3,7 +3,7 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Kinetic Armor — incoming damage reduced by flat 1 if SHIELD active; [+] reduced by 2 instead.
+## Bible: Kinetic Armor â€” incoming damage reduced by flat 1 if SHIELD active; [+] reduced by 2 instead.
 ## Globals: CombatSystem.deal_damage passive hook when target.armor > 0.
 
 

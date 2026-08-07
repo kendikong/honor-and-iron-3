@@ -74,7 +74,7 @@ Players: left third, near vertical center. Enemies: right third.
 | **3 — Tactical combat scene shell** | First playable combat **scene**: living map visuals (sky, effects, TileMapLayers) without dev side panels; BattleSetup launches Random Skirmish. Proves the merged world **looks** right and camera works on large maps. |
 | **4 — Simulation integration** | Hook `CombatDirector`, timeline HUD, planning/commit loop on generated encounters. Proves preview == execution in the real scene. |
 | **5 — Unit sprites & health bars** | LPC unit visuals on the tactical grid: scale, y-sort, foot anchor, HP bars. Proves units read correctly on the mana-seed map. |
-| **6 — Planning input & animations** | Split legacy `board_view.gd`; drag-to-move, aim mode, class icons, overlay z-order. Proves a full Knight turn is playable on the new map. |
+| **6 — Planning input & animations** | Tactical drag-to-move, aim mode, class icons, and overlay z-order. Proves a full Knight turn is playable on the new map. |
 | **7 — UI consolidation** | Move effects/dev tools to ESC → Options only; toggles stop ecology CPU when off. Proves combat screen stays clean. |
 | **8 — Knight MVP** | Victory/defeat, sfx, all presets playtested, compendium link. Proves shippable single-player skirmish loop. |
 | **9+ — Post-MVP** | More classes, co-op networking, autobattler on `EncounterBuilder`. |
@@ -116,7 +116,7 @@ Players: left third, near vertical center. Enemies: right third.
 - **Audit 5:** y-sort vs trees; foot anchor; scale bounds
 
 ### Phase 6 — Planning input & animations ✅
-- Split `board_view.gd` → input overlay + unit layer
+- Completed decomposition: input overlay + unit layer now live in the tactical presentation modules
 - Drag: LPC walk/slash/spellcast (no emoji cursors)
 - Aim: vector class icon, rescaled
 - **Audit 6:** full Knight turn playable; overlay z-order
@@ -179,9 +179,9 @@ See **`docs/TACTICAL_COMBAT_PARITY_PLAN.md`** and **`IMPLEMENTATION_STATUS.md`**
 
 ---
 
-## `board_view.gd` Decomposition (Phase 6)
+## Tactical presentation decomposition (completed)
 
-| New module | Responsibility |
+| Module | Responsibility |
 |------------|----------------|
 | `tactical_map_view.gd` | MapRoot, effects, camera |
 | `tactical_planning_overlay.gd` | Range tints, ghosts, arrows |
@@ -190,7 +190,8 @@ See **`docs/TACTICAL_COMBAT_PARITY_PLAN.md`** and **`IMPLEMENTATION_STATUS.md`**
 | `tactical_input_controller.gd` | Drag, aim, grid pick |
 | `class_icon_drawer.gd` | Vector icons for aim mode |
 
-**Delete:** `_draw_tiles()` and procedural terrain (~1500 lines).
+The former monolithic board renderer and its legacy scene were removed after
+the tactical presentation modules became canonical.
 
 ---
 

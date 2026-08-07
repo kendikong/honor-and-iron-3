@@ -33,10 +33,10 @@ static func apply_action(board: BoardState, action: TimelineAction, events: Arra
 				# Pacify blocks all offensive skills or basic attacks (damage, explode, push, etc.)
 				# We will check if it has a damaging/offensive effect
 				var is_offensive = false
-				for effect in action.ability.effects:
-					if effect.primary_type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE, GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL]:
+				for module: AbilityModule in action.ability.modules:
+					if module.primary_type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE, GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL]:
 						is_offensive = true
-					elif effect.primary_type == GameEnums.EffectType.ADD_STATUS and GameEnums.is_debuff(effect.status_type):
+					elif module.primary_type == GameEnums.EffectType.ADD_STATUS and GameEnums.is_debuff(module.status_type):
 						is_offensive = true
 				if is_offensive:
 					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {

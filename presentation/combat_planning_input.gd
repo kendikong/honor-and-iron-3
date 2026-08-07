@@ -1,4 +1,4 @@
-﻿class_name CombatPlanningInput
+class_name CombatPlanningInput
 extends RefCounted
 
 ## H&I planning semantics ported from board_view â€” used by TacticalInputController.
@@ -2077,6 +2077,8 @@ func _preview_from_commit_slots_at_cell(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
 	_apply_facing_to_slots(slots, _mouse_local_for_facing(), cell, unit_id)
+	if unit_id == 2:
+		print("DEBUG _preview_from_commit_slots_at_cell: ", slots)
 	if _is_invalid_dict(slots):
 		_clear_intent_snapshot()
 		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}

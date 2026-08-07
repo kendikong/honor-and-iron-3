@@ -3,7 +3,8 @@
 **Status:** ACTIVE — supersedes the failed Phase 9 slice (2026-07-16)  
 **Scope:** Make `TacticalCombat.tscn` the **single** SP skirmish combat path with **H&I planning fidelity** preserved unless explicitly deferred below.  
 **Authority:** `ROADMAP.md` (unchanged) · `sandbox_map_system.md` · `.agents/AGENTS.md` · `.cursor/rules/phase-audit.mdc`  
-**Reference implementation:** `presentation/board_view.gd` (behavior source of truth — do not duplicate fragments ad hoc)
+**Reference implementation:** the tactical presentation modules and
+`CombatDirector` (the removed BoardView path is not a valid implementation source)
 
 ---
 
@@ -28,7 +29,7 @@ Phase 9 added UI **shells** without H&I **behavior**, duplicated state across fi
 | No sim → Node | Presentation never decides outcomes |
 | Extend, don't duplicate | Port from `board_view` into shared modules; delete copy-paste |
 | H&I planning UX | Force basic move, approach/trample, skill-at-coord, dash-at-coord are **MVP**, not post-MVP |
-| One combat path (SP) | Skirmish must not depend on `Combat.tscn` / `board_view.gd` |
+| One combat path | All map and skirmish launches use `TacticalCombat.tscn` |
 | Pixel integrity | Nearest filter, quantized overlay motion, compositor gates on visual phases |
 | Feature toggles | Living effects remain behind `EffectsSettings` + Options (already wired) |
 
@@ -55,7 +56,7 @@ TacticalCombat.tscn
 └── SfxPlayer
 ```
 
-**Deleted when Phase 14 passes:** tactical reliance on `board_view.gd` for SP skirmish (legacy scene may remain for MP until Phase 15).
+**Completed:** the legacy BoardView scene, script, and sandbox path were removed.
 
 ---
 
@@ -70,7 +71,7 @@ These are **out of scope** until Phase 15+. Do not half-implement them in earlie
 | Sandbox HP/status/map-editor in pause | Phase 15 |
 | Danger area overlay | Phase 15 |
 | Additional classes beyond Knight MVP | Phase 16+ |
-| `Combat.tscn` removal for multiplayer map launch | Phase 15 |
+| Multiplayer map launch through `TacticalCombat.tscn` | Completed |
 
 ---
 
@@ -186,7 +187,7 @@ Each phase below ends with a **mandatory full audit** block. **No phase closes w
 | K1 | Select knight → Force Basic Move ON → click reachable tile → move planned | |
 | K2 | Force Basic Move OFF → skill selected → click tile in range → ability planned (not move) | |
 | K3 | Bowling Charge: dash to empty tile in line → dash planned | |
-| K4 | Trample: drag through enemy → approach/trample plan matches `Combat.tscn` | |
+| K4 | Trample: drag through enemy → approach/trample plan matches tactical execution | |
 | K5 | Drop on enemy with move route → move + attack queued | |
 | K6 | RMB with queued actions → undoes; RMB with none → deselects | |
 | K7 | Drag cancel restores previous preview (no stale ghosts) | |
@@ -200,7 +201,7 @@ Each phase below ends with a **mandatory full audit** block. **No phase closes w
 ### B. Correct coding
 - Input controller calls **only** `CombatDirector` RPCs / public methods — no local damage/move resolution
 - Preview uses `preview_drag` / `preview_updated` — not ad-hoc board mutation
-- Compare plan output: same seed + same clicks on `Combat.tscn` vs `TacticalCombat.tscn` → identical `plan_phase_1` entries (headless or logged)
+- Compare plan output: same seed + same clicks on the tactical path → identical `plan_phase_1` entries
 
 ### C. Consistency
 - Force basic move state lives in one place (input controller or shell); overlay/panels read it for display only
@@ -242,7 +243,7 @@ Each phase below ends with a **mandatory full audit** block. **No phase closes w
 
 - [ ] Hover enemy: equipment, passives, stat tooltips, status hints visible
 - [ ] Battle log shows: move, push, collision, ability, damage w/ formula, death, face, enemy phase
-- [ ] Skill buttons show effect BBCode matching `Combat.tscn` tooltips
+- [ ] Skill buttons show effect BBCode matching tactical tooltips
 - [ ] Blue reachable tiles + red threat tiles on hover during planning
 - [ ] Preview arrows for queued moves/attacks visible
 - [ ] Intent text, intent arrows, intent rings **always agree** (Phase 10 state owner)
@@ -307,7 +308,7 @@ Each phase below ends with a **mandatory full audit** block. **No phase closes w
 
 ### A–D pillars (standard)
 ### Execution path audit (MANDATORY)
-- [ ] `EventBus.sim_event` order matches `Combat.tscn` for same plan (spot-check 3 scenarios)
+- [ ] `EventBus.sim_event` order matches the tactical simulation for the same plan (spot-check 3 scenarios)
 - [ ] `push_animations_complete` fires before director proceeds (no snap pops)
 
 ### Manual F5
@@ -323,7 +324,7 @@ Each phase below ends with a **mandatory full audit** block. **No phase closes w
 
 ## Purpose
 
-Re-close what Phase 8 claimed, but on **`TacticalCombat.tscn` only**. Phase 8 remains valid for legacy path until Phase 15.
+Re-close what Phase 8 claimed on **`TacticalCombat.tscn` only**. The legacy path has been removed.
 
 ## Deliverables
 
@@ -377,7 +378,7 @@ This is the **strictest** audit in the plan. Treat as release gate.
 
 ---
 
-# Phase 15 — Multiplayer, dev tools, legacy path (optional)
+# Phase 15 — Multiplayer and tactical developer tools (optional)
 
 Only start after Phase 14 tag exists.
 
@@ -389,10 +390,10 @@ Only start after Phase 14 tag exists.
 | 15.2 | Chat panel + fade |
 | 15.3 | Per-player Clear |
 | 15.4 | Multiplayer ownership gate on input |
-| 15.5 | Sandbox overrides in pause |
+| 15.5 | Tactical developer overrides in pause |
 | 15.6 | Danger area toggle + draw |
 | 15.7 | Autobattler hooks + AI telemetry HUD |
-| 15.8 | `battle_setup._do_launch` → `TacticalCombat.tscn` OR parallel maintenance doc |
+| 15.8 | Reserved for future tactical launch extensions |
 
 ## Full audit gate (Phase 15)
 - MP local 2-client test script documented
@@ -440,7 +441,7 @@ Copy this checklist into `IMPLEMENTATION_STATUS.md` for **each** phase close.
 | **Issues** | Numbered list HIGH/MED/LOW |
 
 ## 3. H&I fidelity check (Phases 11–14)
-- [ ] Compared behavior to `board_view.gd` for phase scope — not "looks similar"
+- [ ] Compared behavior to the canonical tactical modules for phase scope — not "looks similar"
 - [ ] Knight scenarios K* executed and logged
 
 ## 4. Visual compositor gates (Phases 12–14)

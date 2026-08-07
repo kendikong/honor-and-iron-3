@@ -74,29 +74,6 @@ static func visual_from_encounter(encounter: EncounterData) -> SkirmishResult:
 	return result
 
 
-static func visual_from_board(board: BoardState) -> SkirmishResult:
-	assert(board != null, "SkirmishGenerator.visual_from_board requires a board")
-	var result := SkirmishResult.new()
-	result.grid = PlayerGrid.new(board.grid_size.x, board.grid_size.y)
-	result.map_seed = 0
-	result.biome_variant = 1
-	for cell: Vector2i in board.tiles:
-		var tile: TileState = board.tiles[cell]
-		var tile_id: int = _tile_id_for_terrain(tile.definition)
-		result.grid.set_cell(cell, tile_id)
-		if tile.definition != null and tile.definition.blocks_movement:
-			result.blocked_cells[cell] = true
-	for unit: UnitState in board.units:
-		var placement := UnitPlacement.new()
-		placement.unit = unit.definition
-		placement.coord = unit.position
-		if unit.team == GameEnums.Team.PLAYER:
-			result.player_spawns.append(placement)
-		else:
-			result.enemy_spawns.append(placement)
-	return result
-
-
 static func generate_encounter(config: SkirmishConfig) -> EncounterData:
 	var skirmish: SkirmishResult = generate(config)
 	return EncounterBuilder.build_from_player_grid(

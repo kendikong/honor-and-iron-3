@@ -698,7 +698,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 | 4 | Side panel layout broken API + no resize handler | **HIGH** | Open → Phase 10 |
 | 5 | `IMPLEMENTATION_STATUS` marked 9A–9D PASS incorrectly | **HIGH** | Fixed — this block |
 | 6 | Rich inspector / battle log / preview overlays not ported | **MED** | Open → Phase 12 |
-| 7 | Dual combat path (`Combat.tscn` vs `TacticalCombat.tscn`) | **MED** | Open → Phase 14–15 |
+| 7 | Dual combat path | **CLOSED** | Legacy BoardView path removed; TacticalCombat is canonical |
 
 **Final issue count:** 7 (5 HIGH) — **FAIL** (superseded by Phases 10–14)  
 **Next:** Phase 15 per `docs/TACTICAL_COMBAT_PARITY_PLAN.md`
@@ -733,7 +733,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 | Pillar | Result | Notes |
 |--------|--------|-------|
 | Completeness | **PASS** | All 10.1–10.13 on disk |
-| Correct coding | **PASS** | Grep: one `_recompute_intent_units` in tactical path (`CombatIntentState`); no `MovementSystem._` in `presentation/` except legacy `board_view.gd` |
+| Correct coding | **PASS** | Grep: one `_recompute_intent_units` in tactical path (`CombatIntentState`) |
 | Consistency | **PASS** | Shell header documents setup order + z layers |
 | Issues | **PASS** | 0 HIGH open |
 
@@ -812,7 +812,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 |---|-------|----------|--------|
 | 1 | `_drag_hover_icon` returned `∅` when `drag_preview_failed` even if commit slots valid — cursor disagreed with commit | **High** | **Fixed** — removed preview-flag gate; `slots.invalid` only |
 | 2 | `_update_drag_sprite` picks SPELL/ATTACK/RUN anim from preview heuristics, not commit slots (drag ghost ≠ tile cursor, still a prediction path) | Med | Deferred — visual anim slice; tile cursor is slot-based |
-| 3 | `board_view.gd` (`Combat.tscn`) retains legacy emoji cursor heuristics; not used by TestBattle/TacticalCombat | Med | Deferred — Phase 11 K-path / legacy scene |
+| 3 | Legacy BoardView emoji cursor heuristics | **CLOSED** | Removed with the legacy BoardView path |
 
 **Final issue count:** 2 (deferred Med)  
 **Audit result:** **PASS** — slot-only tile cursor on TestBattle path; #2–#3 deferred
@@ -897,7 +897,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| 1 | `sim_event` order spot-check vs `Combat.tscn` | LOW | Deferred — manual 3-scenario compare |
+| 1 | `sim_event` order spot-check on tactical path | LOW | Deferred — manual 3-scenario compare |
 
 **Final issue count:** 1 LOW — **PASS**
 
@@ -914,7 +914,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 | All 7 skirmish presets in bridge tests | Done — `_test_skirmish_all_presets` |
 | System audit (intent, input, formatters) | Done — Phases 10–13 audits iteration 2 |
 | Bridge tests: intent + planning + formatters | Done — iteration 2 |
-| MP map launch still `Combat.tscn` | Deferred Phase 15 (documented) |
+| Multiplayer map launch uses `TacticalCombat.tscn` | Done |
 
 ### Phase 14 audit (iteration 1)
 
@@ -927,7 +927,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| 1 | MP `_do_launch` still uses `Combat.tscn` | LOW | Deferred — Phase 15 |
+| 1 | MP `_do_launch` uses the tactical scene | CLOSED | Migrated through `SkirmishLaunch` |
 
 **Final issue count:** 1 LOW — **PASS**  
 **Tag:** `phase-14` — gap-closure commit `a251a3627`
@@ -1100,7 +1100,7 @@ Phases 1–5: data model, sim economy, `plan_action` timeline, planning validati
 
 | # | Issue | Severity | Status |
 |---|-------|----------|--------|
-| 1 | `board_view.gd` still parallel planning stack (legacy scene) | Med | Deferred — tactical stack is canonical; board_view not main scene |
+| 1 | Legacy BoardView parallel planning stack | CLOSED | Removed after tactical migration |
 | 2 | Godot F5 playtest not run this session (swap MP, Wait exhaust, timeline columns) | Med | Deferred — user F5 |
 
 **Final issue count:** 2  

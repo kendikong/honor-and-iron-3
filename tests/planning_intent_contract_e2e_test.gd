@@ -94,7 +94,7 @@ static func _test_bowling_run_click_hides_red_across_refreshes(failures: Array[S
 
 
 ## F5 parity: paint waypoints through center walk tiles (1 MP walk + Run finish),
-## commit from painted hover slots, select Bowling Charge — red must stay off at 0 AP.
+## commit from painted hover slots, select Bowling Charge â€” red must stay off at 0 AP.
 static func _test_bowling_waypoint_run_center_hides_red(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
 	var director: CombatDirector = fix.director
@@ -186,7 +186,7 @@ static func _test_bowling_waypoint_run_center_hides_red(failures: Array[String])
 
 
 ## Painted waypoint Run in live preview (not committed): Bowling selected, hover interior
-## walk tile in the start diamond — red must stay off (AP consumed by queued Run intent).
+## walk tile in the start diamond â€” red must stay off (AP consumed by queued Run intent).
 static func _test_painted_run_preview_interior_walk_hides_red(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
 	var director: CombatDirector = fix.director
@@ -279,7 +279,7 @@ static func _test_painted_run_preview_interior_walk_hides_red(failures: Array[St
 
 
 ## F5 screenshot parity: committed Run to (3,4) through waypoint (4,4), Bowling selected,
-## 0 AP — red must stay off when hovering interior blue tiles (not only map edge).
+## 0 AP â€” red must stay off when hovering interior blue tiles (not only map edge).
 static func _test_committed_run_center_blue_hover_hides_red(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
 	var director: CombatDirector = fix.director
@@ -395,7 +395,7 @@ static func _test_committed_run_center_blue_hover_hides_red(failures: Array[Stri
 
 
 ## Regression: pre-run on timeline but get_planning_move_timing() == -1 (action spent, no canto).
-## Old code only checked the open timing slot → hover walk sim showed red at 0 AP after Run.
+## Old code only checked the open timing slot â†’ hover walk sim showed red at 0 AP after Run.
 static func _test_pre_run_binding_when_move_timing_closed(failures: Array[String]) -> void:
 	const RUN_DEST := Vector2i(3, 4)
 	const INTERIOR_HOVER := Vector2i(4, 4)
@@ -514,7 +514,7 @@ static func _test_red_hidden_when_projected_ap_zero(failures: Array[String]) -> 
 	)
 
 
-## F5 screenshot parity: committed center Run, Bowling, display AP 0 → no red (gate + overlay).
+## F5 screenshot parity: committed center Run, Bowling, display AP 0 â†’ no red (gate + overlay).
 static func _test_f5_display_ap_zero_implies_no_red(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
 	var input: CombatPlanningInput = fix.input

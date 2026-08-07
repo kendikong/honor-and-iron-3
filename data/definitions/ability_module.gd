@@ -1,4 +1,4 @@
-﻿class_name AbilityModule
+class_name AbilityModule
 extends Resource
 
 ## Purpose: One ordered skill step â€” primary effect + aim + keywords + layers + gate.
@@ -37,6 +37,7 @@ extends Resource
 @export var keywords: Array[AbilityKeyword] = []
 @export var layers: Array[AbilityLayer] = []
 @export var gate: GameEnums.ModuleGate = GameEnums.ModuleGate.ALWAYS
+@export var hit_count: int = 1
 
 ## Optional per-module anim override; AUTO inherits skill header.
 @export var presentation_anim: GameEnums.PresentationAnim = GameEnums.PresentationAnim.AUTO

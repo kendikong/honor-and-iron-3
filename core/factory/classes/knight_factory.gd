@@ -1,4 +1,4 @@
-﻿class_name KnightFactory
+class_name KnightFactory
 extends RefCounted
 
 static func build(basic_axe: WeaponData) -> UnitData:
@@ -175,10 +175,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._module(GameEnums.EffectType.DAMAGE, 2),
 		DataLibrary._module(GameEnums.EffectType.PUSH, 2)
 	], 1, GameEnums.StatType.PHYSICAL)
-	shield_slam.modules[0].legacy_modifiers["bonus_if_adjacent_at_cast"] = 2
+	shield_slam.modules[0].bonus_if_adjacent_at_cast = 2
 	shield_slam.upgrade_description = "Target DEF -1 before damage."
 	shield_slam.upgraded_modules = DataLibrary._duplicate_modules(shield_slam.modules)
-	shield_slam.upgraded_modules[0].legacy_modifiers["def_debuff_before_damage"] = 1
+	shield_slam.upgraded_modules[0].def_debuff_before_damage = 1
 	def.abilities.append(shield_slam)
 
 	var defensive_formation = DataLibrary._make_ability(&"knight_defensive_formation", "Defensive Formation", 0, [
@@ -210,11 +210,12 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
 	trampling_advance.targeting_flags = GameEnums.TargetingFlags.TILE
 	trampling_advance.targeting_mode = GameEnums.TargetingMode.TILE
-	trampling_advance.movement_point_cost = 2
+	trampling_advance.movement_point_cost = 0
 	trampling_advance.presentation_anim = GameEnums.PresentationAnim.RUN
 	trampling_advance.sync_legacy_targeting()
 	trampling_advance.upgrade_description = ""
 	var trample_upgraded: Array[AbilityModule] = [
+		DataLibrary._module(GameEnums.EffectType.MOVE, 2),
 		DataLibrary._module(GameEnums.EffectType.TRAMPLE, 2),
 		DataLibrary._module(GameEnums.EffectType.PUSH, 1),
 	]

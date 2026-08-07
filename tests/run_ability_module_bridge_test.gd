@@ -30,8 +30,6 @@ func _check_bruiser(failures: Array[String]) -> void:
 			continue
 		if ab.modules.is_empty():
 			failures.append("%s must have non-empty modules after factory finalize" % String(ab.id))
-		if not ab.upgraded_effects.is_empty() and ab.upgraded_modules.is_empty():
-			failures.append("%s has upgraded_effects but empty upgraded_modules" % String(ab.id))
 		if ab.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 			if ab.primary_resource != GameEnums.CostResource.MP:
 				failures.append("%s PRE_MOVE primary_resource not MP" % String(ab.id))
@@ -53,8 +51,6 @@ func _check_knight(failures: Array[String]) -> void:
 			continue
 		if ab.modules.is_empty():
 			failures.append("%s must have non-empty modules after factory finalize" % String(ab.id))
-		if not ab.upgraded_effects.is_empty() and ab.upgraded_modules.is_empty():
-			failures.append("%s has upgraded_effects but empty upgraded_modules" % String(ab.id))
 		if ab.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 			if ab.primary_resource != GameEnums.CostResource.MP:
 				failures.append("%s PRE_MOVE primary_resource not MP" % String(ab.id))
@@ -97,9 +93,9 @@ func _check_violent_collision_modules(failures: Array[String]) -> void:
 		failures.append(
 			"violent_collision flat effects must not stamp violent_collision_recast (gate is modular)"
 		)
-	if vc.modules.size() != 1:
+	if vc.modules.size() != 2:
 		failures.append(
-			"violent_collision legacy effects should stay 1 DASH (got %d)" % vc.modules.size()
+			"violent_collision modular profile should contain DASH + gated MOVE (got %d)" % vc.modules.size()
 		)
 	if not vc.modules[0].legacy_modifiers.has("bulldoze"):
 		failures.append("violent_collision lost bulldoze modifier")

@@ -184,8 +184,8 @@ func _on_phase_pressed() -> void:
 func _on_aggro_changed(value: float) -> void:
 	if _aggro_label != null:
 		_aggro_label.text = "Aggro %.2f" % value
-	if _hook != null and _hook._ai_instance != null:
-		_hook._ai_instance.aggressiveness = value
+	if _hook != null:
+		_hook.set_aggressiveness(value)
 
 
 func _panel_style() -> StyleBoxFlat:

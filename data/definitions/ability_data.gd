@@ -155,7 +155,7 @@ func _targeting_flags_to_mode() -> int:
 
 ## Deprecated stub for transitional migration.
 func finalize_modular() -> void:
-	pass
+	AbilityModuleBridge.finalize_ability(self)
 
 
 func has_modules() -> bool:

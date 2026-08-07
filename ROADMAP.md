@@ -35,7 +35,7 @@ Phases ship visible progress with explicit exit criteria. **No phase closes** un
 | Item | Status | Superseded by |
 |------|--------|----------------|
 | `IMPLEMENTATION_STATUS` Phase 9 | ❌ **FAIL** (false PASS) | Parity Ph 10–14 |
-| Legacy `Combat.tscn` SP path | Deferred | `TacticalCombat.tscn` (Ph 14) |
+| Legacy BoardView combat path | Removed | `TacticalCombat.tscn` is canonical |
 
 ### Active — use design suite (not this file’s §0–10 bodies)
 
@@ -689,4 +689,4 @@ flowchart TD
 - Phase 4 wind: re-enable via Effects panel (`wind_field` toggle)
 - v04–v10 seasonal PNGs: blocked until assets acquired
 - Full pixel-height shadow Z 0/1/2 (Phase 9 waived)
-- MP `Combat.tscn` → tactical path (Parity Phase 15)
+- Multiplayer map launch → tactical path (completed)

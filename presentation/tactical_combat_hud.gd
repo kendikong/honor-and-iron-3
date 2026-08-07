@@ -164,7 +164,7 @@ func _build_ui() -> void:
 	root.add_child(top_row)
 
 	var back := Button.new()
-	back.text = "â† Battle Setup"
+	back.text = "← Battle Setup"
 	back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/BattleSetup.tscn"))
 	top_row.add_child(back)
 
@@ -225,7 +225,7 @@ func _build_ui() -> void:
 	phase_sidebar.add_child(phase_rule)
 
 	var hint := Label.new()
-	hint.text = "Drag to move\nScroll = ability\nA = aim Â· Esc = pause"
+	hint.text = "Drag to move\nScroll = ability\nA = aim · Esc = pause"
 	hint.autowrap_mode = TextServer.AUTOWRAP_OFF
 	hint.add_theme_font_size_override("font_size", 9)
 	hint.add_theme_color_override("font_color", Color(0.58, 0.62, 0.70))
@@ -347,8 +347,8 @@ func _on_victory_restart_pressed() -> void:
 func _on_phase_changed(phase: int) -> void:
 	var names: Dictionary = {
 		CombatDirector.Phase.PLANNING: "PLANNING",
-		CombatDirector.Phase.EXECUTING: "EXECUTINGâ€¦",
-		CombatDirector.Phase.ENEMY_TURN: "ENEMY TURNâ€¦",
+		CombatDirector.Phase.EXECUTING: "EXECUTING…",
+		CombatDirector.Phase.ENEMY_TURN: "ENEMY TURN…",
 		CombatDirector.Phase.VICTORY: "VICTORY",
 		CombatDirector.Phase.DEFEAT: "DEFEAT",
 	}
