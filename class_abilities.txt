@@ -1034,7 +1034,7 @@ Core Identity: Mid-Range Melee DPS. Grounded polearm specialist. Uses RANGE 2 at
 | CON 5 | MOV 3 | STR 4 | DEF 3 | MAG 1 |
 
 Innate Trait: Polearm Mastery — All basic attacks have a Range of 2. All extended-reach melee attacks deal 30% less damage when used at Range 1.
-Movement Skill: Push (Cost: 0 MOV) — Select an adjacent unit. Apply PUSH 1 to them.
+Movement Skill: Push (Cost: 0 MOV) — Select an adjacent ally. Apply PUSH 1 to them.
 ↳ [+] Upgrade: Limit once per turn. Pushing a unit grants you +1 STR for your next attack this turn.
 
 Advanced Classes (Promotion Boosts)
