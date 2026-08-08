@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://aoefootprintqagate"]
+[gd_scene format=3 uid="uid://dc63n07vfl1ri"]
 
 [ext_resource type="Script" path="res://tests/run_aoe_footprint_contract.gd" id="1"]
 
