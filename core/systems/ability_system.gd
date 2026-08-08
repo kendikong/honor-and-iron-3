@@ -228,12 +228,54 @@ static func _apply_healing_passive_modifiers(
 	healer: UnitState,
 	target: UnitState,
 	healing_delivered: int,
+	requested_healing: int,
 	events: Array[SimEvent],
 ) -> void:
 	if healer == null or target == null:
 		return
 	if healer.team != target.team or healer.id == target.id:
 		return
+	if healer.passive_flags.get("prayer_next_heal", false) and healing_delivered > 0:
+		var doubled := target.health.current_hp
+		CombatSystem.heal(board, target, healing_delivered, events)
+		healing_delivered += target.health.current_hp - doubled
+		healer.passive_flags.erase("prayer_next_heal")
+		if healer.passive_flags.get("prayer_next_heal_cleanse", false):
+			var cleanse_effect := DataLibrary._effect(GameEnums.EffectType.CLEANSE, 0)
+			_apply_effect_to_tile(
+				board,
+				healer,
+				TimelineAction.make_ability(healer.id, DataLibrary.get_universal_wait(), target.position, target.id),
+				cleanse_effect,
+				events,
+				target.position,
+				target,
+			)
+			healer.passive_flags.erase("prayer_next_heal_cleanse")
+	var overheal := maxi(0, requested_healing - healing_delivered)
+	for passive: PassiveData in healer.active_passives:
+		if passive == null or not passive.modifiers.has("overheal_shield"):
+			continue
+		if overheal > 0:
+			CombatSystem.add_armor(board, target, overheal, events)
+			if passive.modifiers.get("overheal_self_cost", false):
+				CombatSystem.deal_damage(
+					board,
+					healer,
+					overheal,
+					events,
+					&"true",
+					true,
+					false,
+					healer,
+					"Blood Donation",
+					overheal,
+				)
+			if healer.is_passive_upgraded(passive.id):
+				healer.active_statuses.append(
+					DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1)
+				)
+		break
 	for passive: PassiveData in healer.active_passives:
 		if passive == null or not passive.modifiers.has("selfless_siphon"):
 			continue
@@ -2121,6 +2163,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					actor,
 					target,
 					target.health.current_hp - hp_before,
+					heal_amount,
 					events,
 				)
 		GameEnums.EffectType.ARMOR_UP:

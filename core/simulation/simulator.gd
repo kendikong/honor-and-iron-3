@@ -291,8 +291,23 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> void:
 	for unit in board.units:
 		if unit.is_alive():
+			if unit.passive_flags.get("next_turn_move_zero", false):
+				unit.movement.points_left = 0
+				unit.passive_flags.erase("next_turn_move_zero")
+			if unit.passive_flags.get("next_turn_root_immune", false):
+				unit.passive_flags["root_immune_this_turn"] = true
+				unit.passive_flags.erase("next_turn_root_immune")
 			var took_dmg: bool = unit.passive_flags.get("damaged_this_turn", false)
 			unit.passive_flags["damaged_last_turn"] = took_dmg
+			for passive: PassiveData in unit.active_passives:
+				if passive == null or not passive.modifiers.has("prayer_next_heal_multiplier"):
+					continue
+				if not unit.passive_flags.get("attacked_this_turn", false):
+					unit.passive_flags["prayer_next_heal"] = true
+					if unit.is_passive_upgraded(passive.id):
+						unit.passive_flags["prayer_next_heal_cleanse"] = true
+				break
+			unit.passive_flags.erase("attacked_this_turn")
 			unit.passive_flags["damaged_this_turn"] = false
 			
 			for status in unit.active_statuses:

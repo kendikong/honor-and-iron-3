@@ -741,6 +741,7 @@ static func deal_damage(
 		"damage_type": source_type,
 		"source_label": source_label,
 	}))
+	_apply_cleric_damage_reactions(board, target, attacker, source_type, events)
 
 	if target.has_passive(&"thrill_of_pain"):
 		target.passive_flags["thrill_active"] = true
@@ -947,6 +948,115 @@ static func try_resist_crowd_control(
 		"reason": "status_prevented_by_unstoppable_force",
 	}))
 	return true
+
+
+static func _apply_cleric_damage_reactions(
+	board: BoardState,
+	target: UnitState,
+	attacker: UnitState,
+	source_type: StringName,
+	events: Array[SimEvent],
+) -> void:
+	if target == null or not target.is_alive():
+		return
+	if target.passive_flags.get("cleric_damage_reactions", false):
+		return
+	target.passive_flags["cleric_damage_reactions"] = true
+	for passive: PassiveData in target.active_passives:
+		if passive == null:
+			continue
+		if passive.modifiers.has("hit_adjacent_pulse"):
+			var pulse := int(passive.modifiers["hit_adjacent_pulse"])
+			if target.is_passive_upgraded(passive.id):
+				pulse = int(passive.modifiers.get("upgraded_hit_adjacent_pulse", pulse))
+			for direction: Vector2i in GridSystem.DIRECTIONS:
+				var adjacent := board.get_unit_at(target.position + direction)
+				if adjacent != null and adjacent.team != target.team:
+					deal_damage(
+						board,
+						adjacent,
+						pulse,
+						events,
+						&"magical",
+						false,
+						false,
+						target,
+						"Martyr's Blood",
+						pulse,
+					)
+		if (
+			attacker != null
+			and attacker.team != target.team
+			and passive.modifiers.has("melee_attacker_pulse")
+			and GridSystem.manhattan(target.position, attacker.position) == 1
+		):
+			var pulse := int(passive.modifiers["melee_attacker_pulse"])
+			var push_amount := int(passive.modifiers.get("melee_attacker_push", 0))
+			if target.is_passive_upgraded(passive.id):
+				push_amount = int(passive.modifiers.get("upgraded_melee_attacker_push", push_amount))
+			deal_damage(board, attacker, pulse, events, &"magical", false, true, target, "Retribution", pulse)
+			if push_amount > 0 and attacker.is_alive():
+				PhysicsSystem.push(
+					board,
+					attacker,
+					PhysicsSystem.cardinal_from_to(target.position, attacker.position),
+					push_amount,
+					events,
+					target,
+				)
+		if passive.modifiers.has("ally_damaged_str") and attacker != null and attacker.team != target.team:
+			var strength_bonus := int(passive.modifiers["ally_damaged_str"])
+			target.active_statuses.append(
+				DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, strength_bonus)
+			)
+			if target.is_passive_upgraded(passive.id):
+				target.active_statuses.append(DataLibrary.make_status(
+					GameEnums.StatusType.STAT_BUFF_DEF,
+					1,
+					int(passive.modifiers.get("upgraded_ally_damaged_def", 0)),
+				))
+			target._recalculate_stats(board)
+	for source: UnitState in board.units:
+		if (
+			source == null
+			or source.team != target.team
+			or attacker == null
+			or attacker.team == source.team
+			or not source.is_alive()
+			or GridSystem.manhattan(source.position, target.position)
+				> int(_cleric_modifier(source, "ally_hit_retribution_range", 0))
+		):
+			continue
+		for passive: PassiveData in source.active_passives:
+			if passive == null or not passive.modifiers.has("ally_hit_retribution_range"):
+				continue
+			var retaliation := int(passive.modifiers.get("ally_hit_retribution_damage", 1))
+			if source.is_passive_upgraded(passive.id):
+				retaliation = int(passive.modifiers.get(
+					"upgraded_ally_hit_retribution_damage",
+					retaliation,
+				))
+			deal_damage(
+				board,
+				attacker,
+				retaliation,
+				events,
+				&"magical",
+				false,
+				true,
+				source,
+				"Divine Retribution",
+				retaliation,
+			)
+			break
+	target.passive_flags.erase("cleric_damage_reactions")
+
+
+static func _cleric_modifier(unit: UnitState, key: String, default_value: int) -> int:
+	for passive: PassiveData in unit.active_passives:
+		if passive != null and passive.modifiers.has(key):
+			return int(passive.modifiers[key])
+	return default_value
 
 
 static func heal(board: BoardState, target: UnitState, amount: int, events: Array[SimEvent]) -> void:
