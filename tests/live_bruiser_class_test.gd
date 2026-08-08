@@ -169,7 +169,13 @@ func test_cleave_premove_overlay_exact_blast(timeout := 120000) -> void:
 	_director.select_ability(_ability_index(actor, run_ab))
 	await runner.simulate_frames(2, _DELTA_MS)
 	var move_slots := await _commit_live_click(runner, actor_id, Vector2i(6, 5))
-	assert_bool(_slots_invalid(move_slots)).is_false()
+	assert_bool(_slots_invalid(move_slots)).override_failure_message(
+		"cleave_premove: Run premove invalid=%s slots=%s plan=%s"
+		% [str(move_slots.get("invalid", false)), _slots_debug(move_slots), _plan_debug()],
+	).is_false()
+	assert_that(_pre_move_target(move_slots)).override_failure_message(
+		"cleave_premove: Run premove target drifted; slots=%s" % _slots_debug(move_slots),
+	).is_equal(Vector2i(6, 5))
 	var cleave: AbilityData = _ability_by_id(actor, &"bruiser_cleave")
 	assert_object(cleave).is_not_null()
 	_director.select_unit(actor_id)
@@ -177,6 +183,33 @@ func test_cleave_premove_overlay_exact_blast(timeout := 120000) -> void:
 	await _OVERLAY_QA.assert_live_overlay_parity(
 		self, runner, _overlay, _input, _director, actor_id, cleave, Vector2i(7, 5), &"cleave_premove",
 	)
+	var first_slots: Dictionary = _input._final_commit_slots_for_click_at_cell(
+		actor_id, Vector2i(7, 5), Vector2.ZERO,
+	)
+	assert_bool(_slots_invalid(first_slots)).override_failure_message(
+		"cleave_premove: target hover invalid=%s slots=%s plan=%s"
+		% [str(first_slots.get("invalid", false)), _slots_debug(first_slots), _plan_debug()],
+	).is_false()
+	var first_action: TimelineAction = _first_slot_action(first_slots)
+	assert_object(first_action).is_not_null()
+	if first_action != null:
+		assert_bool(first_action.awaiting_target).override_failure_message(
+			"cleave_premove: first target click must arm Cleave; action=%s slots=%s"
+			% [_action_debug(first_action), _slots_debug(first_slots)],
+		).is_true()
+	var armed_slots: Dictionary = await _commit_live_click(runner, actor_id, Vector2i(7, 5))
+	assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
+		"cleave_premove: first target click must leave awaiting; plan=%s slots=%s"
+		% [_plan_debug(), _slots_debug(armed_slots)],
+	).is_true()
+	var final_slots: Dictionary = await _commit_live_click(runner, actor_id, Vector2i(7, 5))
+	assert_bool(_slots_invalid(final_slots)).override_failure_message(
+		"cleave_premove: final target invalid=%s slots=%s plan=%s"
+		% [str(final_slots.get("invalid", false)), _slots_debug(final_slots), _plan_debug()],
+	).is_false()
+	assert_bool(not _plan_has_awaiting(actor_id)).override_failure_message(
+		"cleave_premove: final target must clear awaiting; plan=%s" % _plan_debug(),
+	).is_true()
 
 
 func test_cleave_tile_aim_hits_arc_without_center_enemy(timeout := 120000) -> void:
@@ -214,9 +247,22 @@ func test_cleave_tile_aim_hits_arc_without_center_enemy(timeout := 120000) -> vo
 		self, runner, _overlay, _input, _director, actor_id, cleave, Vector2i(5, 5), &"cleave_tile_aim",
 	)
 	var slots := await _commit_live_click(runner, actor_id, Vector2i(5, 5))
-	if _slots_invalid(slots) or _plan_has_awaiting(actor_id):
-		slots = await _commit_live_click(runner, actor_id, Vector2i(5, 5))
-	assert_bool(_slots_invalid(slots)).is_false()
+	assert_bool(_slots_invalid(slots)).override_failure_message(
+		"cleave_tile_aim: first target invalid=%s slots=%s plan=%s"
+		% [str(slots.get("invalid", false)), _slots_debug(slots), _plan_debug()],
+	).is_false()
+	assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
+		"cleave_tile_aim: first target must arm awaiting; plan=%s slots=%s"
+		% [_plan_debug(), _slots_debug(slots)],
+	).is_true()
+	slots = await _commit_live_click(runner, actor_id, Vector2i(5, 5))
+	assert_bool(_slots_invalid(slots)).override_failure_message(
+		"cleave_tile_aim: final target invalid=%s slots=%s plan=%s"
+		% [str(slots.get("invalid", false)), _slots_debug(slots), _plan_debug()],
+	).is_false()
+	assert_bool(not _plan_has_awaiting(actor_id)).override_failure_message(
+		"cleave_tile_aim: final target must clear awaiting; plan=%s" % _plan_debug(),
+	).is_true()
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	var hit_north := false
 	var hit_south := false
@@ -304,14 +350,65 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		await _OVERLAY_QA.assert_live_overlay_parity(
 			self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
 		)
+		var preview_slots: Dictionary = _input._final_commit_slots_for_click_at_cell(
+			actor_id, _case_target_cell(skill_id), Vector2.ZERO,
+		)
+		assert_bool(_slots_invalid(preview_slots)).override_failure_message(
+			"%s: hover slots invalid=%s slots=%s plan=%s"
+			% [_scenario_diagnostic(skill_id), str(preview_slots.get("invalid", false)),
+				_slots_debug(preview_slots), _plan_debug()],
+		).is_false()
+		var preview_action: TimelineAction = _first_slot_action(preview_slots)
+		assert_object(preview_action).override_failure_message(
+			"%s: hover slots must contain an action; slots=%s"
+			% [_scenario_diagnostic(skill_id), _slots_debug(preview_slots)],
+		).is_not_null()
+		var preview_icon: String = _input._cursor_icon_from_commit_slots(preview_slots, actor)
+		assert_bool(preview_icon != PlanningIcons.GLYPH_NULL).override_failure_message(
+			"%s: hover cursor must not be null; icon=%s slots=%s"
+			% [_scenario_diagnostic(skill_id), preview_icon, _slots_debug(preview_slots)],
+		).is_true()
+		var is_target_pick: bool = (
+			ability.has_targeting(GameEnums.TargetingFlags.TILE)
+			and not AbilitySystem.ability_has_movement_effect(ability)
+		)
+		if is_target_pick:
+			assert_int(AbilitySystem.planning_awaiting_phase(ability)).override_failure_message(
+				"%s: non-movement TILE skill must use TARGET_PICK"
+				% _scenario_diagnostic(skill_id),
+			).is_equal(GameEnums.PlanningAwaitingPhase.TARGET_PICK)
+			assert_bool(preview_action.awaiting_target).override_failure_message(
+				"%s: first hover/click must arm awaiting target; action=%s slots=%s"
+				% [_scenario_diagnostic(skill_id), _action_debug(preview_action), _slots_debug(preview_slots)],
+			).is_true()
 		var slots: Dictionary = await _commit_live_click(
 			runner, actor_id, _case_target_cell(skill_id),
 		)
-		if _slots_debug(slots).contains(":awaiting") or _plan_has_awaiting(actor_id):
+		if is_target_pick:
+			assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
+				"%s: first click must leave an awaiting action; plan=%s slots=%s"
+				% [_scenario_diagnostic(skill_id), _plan_debug(), _slots_debug(slots)],
+			).is_true()
+			slots = await _commit_live_click(runner, actor_id, _case_target_cell(skill_id))
+			var committed: TimelineAction = _committed_action_for_ability(actor_id, skill_id)
+			assert_object(committed).override_failure_message(
+				"%s: second click must finalize ability; plan=%s"
+				% [_scenario_diagnostic(skill_id), _plan_debug()],
+			).is_not_null()
+			if committed != null:
+				assert_bool(not committed.awaiting_target).override_failure_message(
+					"%s: finalized action remains awaiting; action=%s"
+					% [_scenario_diagnostic(skill_id), _action_debug(committed)],
+				).is_true()
+				assert_that(committed.target_coord).override_failure_message(
+					"%s: committed target differs from hover; action=%s"
+					% [_scenario_diagnostic(skill_id), _action_debug(committed)],
+				).is_equal(_case_target_cell(skill_id))
+		elif _slots_debug(slots).contains(":awaiting") or _plan_has_awaiting(actor_id):
 			slots = await _commit_live_click(runner, actor_id, _case_target_cell(skill_id))
 		assert_bool(_slots_invalid(slots)).override_failure_message(
 			"%s: live preview/commit slots rejected a Bible-valid target: %s"
-			% [skill_id, _slots_debug(slots)],
+			% [_scenario_diagnostic(skill_id), _slots_debug(slots)],
 		).is_false()
 		assert_bool(_plan_has_committed_skill(skill_id, actor_id)).override_failure_message(
 			"%s: live commit did not write the selected skill; plan=%s"
@@ -559,6 +656,61 @@ func _slots_debug(slots: Dictionary) -> String:
 				label += ":awaiting"
 			ids.append("%s=%s" % [column, label])
 	return ",".join(ids)
+
+
+func _first_slot_action(slots: Dictionary) -> TimelineAction:
+	for column: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(column, []):
+			if raw is TimelineAction:
+				return raw as TimelineAction
+	return null
+
+
+func _pre_move_target(slots: Dictionary) -> Vector2i:
+	for raw: Variant in slots.get("pre", []):
+		if raw is TimelineAction:
+			var action: TimelineAction = raw as TimelineAction
+			if action.type == GameEnums.ActionType.MOVE:
+				return action.target_coord
+	return Vector2i(-999999, -999999)
+
+
+func _committed_action_for_ability(actor_id: int, ability_id: StringName) -> TimelineAction:
+	for action: TimelineAction in _director.get_player_plan().entries:
+		if (
+			action.actor_id == actor_id
+			and action.type == GameEnums.ActionType.ABILITY
+			and action.ability != null
+			and action.ability.id == ability_id
+			and not action.awaiting_target
+		):
+			return action
+	return null
+
+
+func _action_debug(action: TimelineAction) -> String:
+	if action == null:
+		return "<null>"
+	return "type=%s ability=%s target=%s unit=%d awaiting=%s waypoints=%s" % [
+		str(action.type),
+		str(action.ability.id) if action.ability != null else "<none>",
+		str(action.target_coord),
+		action.target_unit_id,
+		str(action.awaiting_target),
+		str(action.waypoints),
+	]
+
+
+func _scenario_diagnostic(skill_id: StringName) -> String:
+	var actor_id: int = _unit_id_at(_director.board, _case_actor_cell(skill_id))
+	var actor: UnitState = _director.board.get_unit_by_id(actor_id)
+	return "%s actor=%d pos=%s target=%s plan=%s" % [
+		str(skill_id),
+		actor_id,
+		str(actor.position) if actor != null else "<missing>",
+		str(_case_target_cell(skill_id)),
+		_plan_debug(),
+	]
 
 
 func _ability_by_id(unit: UnitState, skill_id: StringName) -> AbilityData:
