@@ -295,6 +295,28 @@ static func _apply_healing_passive_modifiers(
 	for passive: PassiveData in healer.active_passives:
 		if passive == null:
 			continue
+		if passive.modifiers.has("full_health_heal_pulse") and target.health.current_hp >= target.health.max_hp:
+			if not healer.passive_flags.get("divine_overflow_processing", false):
+				healer.passive_flags["divine_overflow_processing"] = true
+				var pulse := int(passive.modifiers["full_health_heal_pulse"])
+				if healer.is_passive_upgraded(passive.id):
+					pulse = int(passive.modifiers.get("upgraded_full_health_heal_pulse", pulse))
+				for direction: Vector2i in GridSystem.DIRECTIONS:
+					var adjacent := board.get_unit_at(target.position + direction)
+					if adjacent != null and adjacent.team != healer.team:
+						CombatSystem.deal_damage(
+							board,
+							adjacent,
+							pulse,
+							events,
+							&"magical",
+							false,
+							false,
+							healer,
+							"Divine Overflow",
+							pulse,
+						)
+				healer.passive_flags.erase("divine_overflow_processing")
 		if passive.modifiers.has("adjacent_enemy_heal"):
 			var adjacent_enemies := 0
 			for direction: Vector2i in GridSystem.DIRECTIONS:
@@ -363,6 +385,21 @@ static func purge_unit(target: UnitState, events: Array[SimEvent]) -> void:
 			}))
 	target.armor = 0
 	target._recalculate_stats()
+
+
+static func cleanse_unit(target: UnitState, events: Array[SimEvent]) -> int:
+	if target == null:
+		return 0
+	var removed_count := 0
+	for index: int in range(target.active_statuses.size() - 1, -1, -1):
+		if GameEnums.is_debuff(target.active_statuses[index].type):
+			var removed: StatusData = target.active_statuses.pop_at(index)
+			removed_count += 1
+			events.append(SimEvent.make(GameEnums.SimEventType.STATUS_REMOVED, {
+				"unit": target.id, "status_type": removed.type,
+			}))
+	target._recalculate_stats()
+	return removed_count
 
 
 static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
@@ -2322,6 +2359,25 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					"duration": effect.status_duration,
 					"amount": effect.amount,
 				}))
+				if effect.status_type in [GameEnums.StatusType.POISON, GameEnums.StatusType.BLEED]:
+					for passive: PassiveData in target.active_passives:
+						if passive == null or not passive.modifiers.has("dot_heal"):
+							continue
+						CombatSystem.heal(
+							board,
+							target,
+							int(passive.modifiers["dot_heal"]),
+							events,
+						)
+						target.active_statuses.append(DataLibrary.make_status(
+							GameEnums.StatusType.STAT_BUFF_MAG,
+							1,
+							int(passive.modifiers.get("dot_mag", 1)),
+						))
+						if passive.modifiers.get("upgraded_dot_cleanse", false) and target.is_passive_upgraded(passive.id):
+							AbilitySystem.cleanse_unit(target, events)
+						target._recalculate_stats(board)
+						break
 				if effect.modifiers.has("grant_ap"):
 					target.ability.points_left = mini(
 						target.ability.max_points,
@@ -2389,15 +2445,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							)
 		GameEnums.EffectType.CLEANSE:
 			if target != null:
-				var removed_count := 0
-				var new_statuses: Array[StatusData] = []
-				for status in target.active_statuses:
-					if not GameEnums.is_debuff(status.type):
-						new_statuses.append(status)
-					else:
-						removed_count += 1
-				target.active_statuses = new_statuses
-				target._recalculate_stats()
+				var removed_count := cleanse_unit(target, events)
 				if effect.modifiers.has("ally_str_per_debuff") and removed_count > 0:
 					target.active_statuses.append(DataLibrary.make_status(
 						GameEnums.StatusType.STAT_BUFF_STR,
@@ -2405,9 +2453,6 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						removed_count * int(effect.modifiers["ally_str_per_debuff"]),
 					))
 					target._recalculate_stats()
-				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_REMOVED, {
-					"unit": target.id, "reason": "cleanse"
-				}))
 		GameEnums.EffectType.PURGE:
 			if target != null:
 				purge_unit(target, events)
