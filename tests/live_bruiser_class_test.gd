@@ -286,6 +286,9 @@ func _assert_arc_overlay_matches(
 	if proj_actor == null:
 		proj_actor = actor
 	stand = proj_actor.position
+	var intent_stand: Vector2i = _input.action_range_intent_stand_cell(actor_id)
+	if intent_stand.x > -900:
+		stand = intent_stand
 	var expected: Array[Vector2i] = AbilitySystem.planning_blast_tiles_at_target(
 		plan_board, proj_actor, ability, stand, target_cell,
 	)
@@ -301,6 +304,9 @@ func _assert_arc_overlay_matches(
 		assert_bool(expected.has(tile)).override_failure_message(
 			"%s: overlay red tile %s outside ARC blast %s" % [label, tile, expected],
 		).is_true()
+	assert_int(overlay_tiles.size()).override_failure_message(
+		"%s: ARC overlay must be exactly %d red tiles, got %s" % [label, expected.size(), overlay_tiles],
+	).is_equal(expected.size())
 
 
 func _assert_contract(ability: AbilityData, case: Dictionary) -> void:

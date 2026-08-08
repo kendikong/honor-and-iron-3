@@ -869,12 +869,13 @@ static func planning_blast_tiles_at_target(
 			shape_size = ability.upgraded_target_shape_size
 	if ability.range_tiles <= 0:
 		return GridSystem.get_affected_tiles(board, origin, origin, shape, shape_size)
-	if GridSystem.manhattan(unit.position, target) > unit.get_ability_range(ability):
+	var cast_origin: Vector2i = origin
+	if GridSystem.manhattan(cast_origin, target) > unit.get_ability_range(ability):
 		return empty
 	var probe: TimelineAction = TimelineAction.make_ability(unit.id, ability, target, -1)
 	if not can_use(board, probe):
 		return empty
-	return GridSystem.get_affected_tiles(board, unit.position, target, shape, shape_size)
+	return GridSystem.get_affected_tiles(board, cast_origin, target, shape, shape_size)
 
 
 static func _single_coord(cell: Vector2i) -> Array[Vector2i]:

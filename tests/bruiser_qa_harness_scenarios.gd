@@ -210,7 +210,7 @@ static func run_cleave(failures: Array[String]) -> void:
 	var expected_arc: int = H.damage_dealt_to_unit(arc_board, 11, scaled_arc, arc_bruiser)
 	H.assert_eq_int(failures, "cleave/arc_center_dmg", center_dmg, expected_arc)
 	H.assert_eq_int(failures, "cleave/arc_perp_dmg", perp_dmg, expected_arc)
-	H.	assert_eq_int(failures, "cleave/arc_outside", H.unit_hp(arc_result.final_state, 13), hp_outside)
+	H.assert_eq_int(failures, "cleave/arc_outside", H.unit_hp(arc_result.final_state, 13), hp_outside)
 	H.assert_grid_footprint_excludes(
 		failures,
 		"cleave/grid_arc",

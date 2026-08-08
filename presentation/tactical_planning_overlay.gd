@@ -777,19 +777,25 @@ func recompute_hover_ranges(
 		):
 			queue_redraw()
 			return
-		_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
-			unit, action_range_origin, ability_index,
-		)
-		if ability != null and _board.is_in_bounds(_hover_coord):
+		var blast_tiles: Array[Vector2i] = []
+		if (
+			ability != null
+			and ability.target_shape != GameEnums.TargetShape.SINGLE
+			and _board.is_in_bounds(_hover_coord)
+		):
 			var plan_board: BoardState = _board
 			if _director.projected_state != null:
 				plan_board = _director.projected_state
 			var blast_actor: UnitState = p_unit if p_unit != null else unit
-			var blast_tiles: Array[Vector2i] = AbilitySystem.planning_blast_tiles_at_target(
+			blast_tiles = AbilitySystem.planning_blast_tiles_at_target(
 				plan_board, blast_actor, ability, action_range_origin, _hover_coord,
 			)
-			if not blast_tiles.is_empty():
-				_hover_action_range_tiles = blast_tiles
+		if not blast_tiles.is_empty():
+			_hover_action_range_tiles = blast_tiles
+		else:
+			_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
+				unit, action_range_origin, ability_index,
+			)
 	else:
 		_populate_action_range_tiles(unit, action_range_origin, ability_index)
 	queue_redraw()
