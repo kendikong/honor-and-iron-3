@@ -567,6 +567,36 @@ static func deal_damage(
 			0,
 			amount - int(target.passive_flags.get("life_link_damage_reduction", 0)),
 		)
+	if (
+		source_type == &"magical"
+		and target.passive_flags.has("magic_chain_partner_id")
+		and not target.passive_flags.get("magic_chain_processing", false)
+	):
+		var partner := board.get_unit_by_id(
+			int(target.passive_flags["magic_chain_partner_id"])
+		)
+		if partner != null and partner.is_alive():
+			target.passive_flags["magic_chain_processing"] = true
+			partner.passive_flags["magic_chain_processing"] = true
+			deal_damage(
+				board,
+				partner,
+				1,
+				events,
+				&"magical",
+				false,
+				true,
+				attacker,
+				"Martyr's Chains",
+				1,
+			)
+			if target.passive_flags.get("magic_chain_blind", false) and partner.is_alive():
+				partner.active_statuses.append(DataLibrary.make_status(
+					GameEnums.StatusType.BLIND,
+					1,
+				))
+			target.passive_flags.erase("magic_chain_processing")
+			partner.passive_flags.erase("magic_chain_processing")
 
 	if not is_intercepted and source_type != &"hazard":
 		for dir in GridSystem.DIRECTIONS:
@@ -597,6 +627,13 @@ static func deal_damage(
 							CombatSystem.deal_damage(
 								board, ally, intercept_amount, events, source_type, pierce, true, attacker, source_label, intercept_amount
 							)
+							if (
+								ally.passive_flags.get("counterattack_on_intercept", false)
+								and attacker != null
+								and attacker.is_alive()
+							):
+								counter_attack(board, ally, attacker, 1, events, "Shield of Faith")
+								ally.passive_flags.erase("counterattack_on_intercept")
 						break # Only one interceptor triggers
 
 	var fort := 0
@@ -962,6 +999,14 @@ static func _apply_cleric_damage_reactions(
 	if target.passive_flags.get("cleric_damage_reactions", false):
 		return
 	target.passive_flags["cleric_damage_reactions"] = true
+	if (
+		target.passive_flags.get("counterattack_melee", false)
+		and attacker != null
+		and attacker.is_alive()
+		and GridSystem.manhattan(target.position, attacker.position) == 1
+	):
+		counter_attack(board, target, attacker, 1, events, "Prayer of Fortitude")
+		target.passive_flags.erase("counterattack_melee")
 	for passive: PassiveData in target.active_passives:
 		if passive == null:
 			continue
@@ -1004,18 +1049,6 @@ static func _apply_cleric_damage_reactions(
 					events,
 					target,
 				)
-		if passive.modifiers.has("ally_damaged_str") and attacker != null and attacker.team != target.team:
-			var strength_bonus := int(passive.modifiers["ally_damaged_str"])
-			target.active_statuses.append(
-				DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, strength_bonus)
-			)
-			if target.is_passive_upgraded(passive.id):
-				target.active_statuses.append(DataLibrary.make_status(
-					GameEnums.StatusType.STAT_BUFF_DEF,
-					1,
-					int(passive.modifiers.get("upgraded_ally_damaged_def", 0)),
-				))
-			target._recalculate_stats(board)
 	for source: UnitState in board.units:
 		if (
 			source == null
@@ -1049,6 +1082,31 @@ static func _apply_cleric_damage_reactions(
 				retaliation,
 			)
 			break
+	for source: UnitState in board.units:
+		if (
+			source == null
+			or source.team != target.team
+			or attacker == null
+			or attacker.team == source.team
+			or not source.is_alive()
+		):
+			continue
+		for passive: PassiveData in source.active_passives:
+			if passive == null or not passive.modifiers.has("ally_damaged_str"):
+				continue
+			target.active_statuses.append(DataLibrary.make_status(
+				GameEnums.StatusType.STAT_BUFF_STR,
+				1,
+				int(passive.modifiers["ally_damaged_str"]),
+			))
+			if source.is_passive_upgraded(passive.id):
+				target.active_statuses.append(DataLibrary.make_status(
+					GameEnums.StatusType.STAT_BUFF_DEF,
+					1,
+					int(passive.modifiers.get("upgraded_ally_damaged_def", 0)),
+				))
+			break
+	target._recalculate_stats(board)
 	target.passive_flags.erase("cleric_damage_reactions")
 
 

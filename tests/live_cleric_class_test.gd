@@ -77,6 +77,24 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		).is_true()
 		director.flush_plan_refresh_signals_if_pending()
 		await runner.simulate_frames(2, 16)
+		var result := Simulator.simulate(director.base_board, director.get_player_plan())
+		var used := false
+		for event: SimEvent in result.events:
+			if (
+				event.type == GameEnums.SimEventType.ACTION_FAILED
+				and int(event.data.get("actor", -1)) == actor_id
+			):
+				assert_that("").override_failure_message(
+					"%s: execution rejected committed intent: %s" % [item.id, event.data]
+				).is_equal("never")
+			if (
+				event.type == GameEnums.SimEventType.ABILITY_USED
+				and event.data.get("ability", &"") == item.id
+			):
+				used = true
+		assert_bool(used).override_failure_message(
+			"%s: committed ability did not resolve" % item.id
+		).is_true()
 
 
 func _player_coords(item: Dictionary) -> Array[Vector2i]:
@@ -97,7 +115,10 @@ func _enemy_target(item: Dictionary) -> Array[Vector2i]:
 		&"cleric_smite", &"cleric_blinding_ray", &"cleric_holy_wrath",
 		&"cleric_martyrs_chains",
 	]:
-		return [item.target]
+		var result: Array[Vector2i] = [item.target]
+		if item.id == &"cleric_martyrs_chains":
+			result.append(item.target + Vector2i(0, 1))
+		return result
 	return []
 
 

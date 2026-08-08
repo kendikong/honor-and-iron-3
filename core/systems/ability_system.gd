@@ -330,12 +330,18 @@ static func _apply_healing_passive_modifiers(
 				CombatSystem.heal(board, target, bonus, events)
 		if passive.modifiers.has("heal_ally_str"):
 			var strength_bonus := int(passive.modifiers["heal_ally_str"])
+			var strength_duration := 1
 			if target.health.current_hp >= target.health.max_hp:
 				strength_bonus = int(passive.modifiers.get("heal_full_str", strength_bonus))
 			if healer.is_passive_upgraded(passive.id):
 				strength_bonus = int(passive.modifiers.get("upgraded_heal_ally_str", strength_bonus))
+				strength_duration = int(passive.modifiers.get("upgraded_heal_ally_duration", 1))
 			target.active_statuses.append(
-				DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, strength_bonus)
+				DataLibrary.make_status(
+					GameEnums.StatusType.STAT_BUFF_STR,
+					strength_duration,
+					strength_bonus,
+				)
 			)
 		if passive.modifiers.has("heal_def"):
 			var defense_bonus := int(passive.modifiers["heal_def"])
@@ -357,6 +363,8 @@ static func _apply_damage_effect_modifiers(
 	target: UnitState,
 	effect: EffectData,
 	events: Array[SimEvent],
+	target_hp_before: int = 0,
+	target_armor_before: int = 0,
 ) -> void:
 	if board == null or actor == null or target == null or not target.is_alive():
 		return
@@ -372,6 +380,34 @@ static func _apply_damage_effect_modifiers(
 			events,
 			actor,
 		)
+	if effect.modifiers.has("shield_closest_ally_pct_damage"):
+		var damage_dealt := maxi(
+			0,
+			target_hp_before
+			+ target_armor_before
+			- target.health.current_hp
+			- target.armor,
+		)
+		var closest_ally: UnitState = null
+		var closest_distance := 999
+		for candidate: UnitState in board.units:
+			if (
+				candidate == null
+				or not candidate.is_alive()
+				or candidate.team != actor.team
+			):
+				continue
+			var distance := GridSystem.manhattan(candidate.position, target.position)
+			if distance < closest_distance:
+				closest_distance = distance
+				closest_ally = candidate
+		if closest_ally != null and damage_dealt > 0:
+			CombatSystem.add_armor(
+				board,
+				closest_ally,
+				floori(damage_dealt * float(effect.modifiers["shield_closest_ally_pct_damage"])),
+				events,
+			)
 
 
 static func purge_unit(target: UnitState, events: Array[SimEvent]) -> void:
@@ -402,6 +438,56 @@ static func cleanse_unit(target: UnitState, events: Array[SimEvent]) -> int:
 	return removed_count
 
 
+static func _first_empty_adjacent_cell(board: BoardState, center: Vector2i) -> Vector2i:
+	for direction: Vector2i in GridSystem.DIRECTIONS:
+		var candidate := center + direction
+		if (
+			GridSystem.is_in_bounds(board, candidate)
+			and not GridSystem.is_occupied(board, candidate)
+			and not GridSystem.is_wall(board, candidate)
+		):
+			return candidate
+	return Vector2i(-1, -1)
+
+
+static func _link_enemy_pair(
+	board: BoardState,
+	actor: UnitState,
+	target: UnitState,
+	effect: EffectData,
+	events: Array[SimEvent],
+) -> void:
+	var partner: UnitState = null
+	var partner_distance := 999
+	for candidate: UnitState in board.units:
+		if (
+			candidate == null
+			or candidate.id == target.id
+			or not candidate.is_alive()
+			or candidate.team == actor.team
+		):
+			continue
+		var distance := GridSystem.manhattan(actor.position, candidate.position)
+		if distance < partner_distance:
+			partner = candidate
+			partner_distance = distance
+	if partner == null:
+		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+			"actor": actor.id, "reason": "martyrs_chains_missing_second_enemy",
+		}))
+		return
+	target.passive_flags["magic_chain_partner_id"] = partner.id
+	partner.passive_flags["magic_chain_partner_id"] = target.id
+	var blind: bool = bool(effect.modifiers.get("link_blind", false))
+	target.passive_flags["magic_chain_blind"] = blind
+	partner.passive_flags["magic_chain_blind"] = blind
+	events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+		"unit": target.id,
+		"partner": partner.id,
+		"link": "martyrs_chains",
+	}))
+
+
 static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
 	if ability == null or actor == null:
 		return false
@@ -411,7 +497,7 @@ static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, bo
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
 			if _ability_has_modifier(actor, ability, &"cost_all_movement"):
-				return actor.movement.points_left >= actor.movement.max_points
+				return actor.movement.points_left > 0
 			return actor.movement.points_left >= movement_point_cost(actor, ability)
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			if actor.has_run_boost():
@@ -1895,8 +1981,18 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				"vulnerable": vuln, "electrified": elec,
 				"pierce": pierce
 			}))
+			var target_hp_before := target.health.current_hp if target != null else 0
+			var target_armor_before := target.armor if target != null else 0
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
-			_apply_damage_effect_modifiers(board, actor, target, effect, events)
+			_apply_damage_effect_modifiers(
+				board,
+				actor,
+				target,
+				effect,
+				events,
+				target_hp_before,
+				target_armor_before,
+			)
 			if (
 				target != null
 				and target.is_alive()
@@ -2170,6 +2266,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							* float(effect.modifiers["revive_percent_max_hp"])
 						),
 					)
+					target.passive_flags["revived_next_turn"] = true
 					if effect.modifiers.has("revive_shield"):
 						CombatSystem.add_armor(
 							board,
@@ -2312,6 +2409,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				}))
 		GameEnums.EffectType.ADD_STATUS:
 			if target != null:
+				if effect.modifiers.has("link_two_enemies"):
+					_link_enemy_pair(board, actor, target, effect, events)
+					return
 				if (
 					target.passive_flags.get("full_health_debuff_immunity", false)
 					and GameEnums.is_debuff(effect.status_type)
@@ -2376,13 +2476,14 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						))
 						if passive.modifiers.get("upgraded_dot_cleanse", false) and target.is_passive_upgraded(passive.id):
 							AbilitySystem.cleanse_unit(target, events)
+						else:
+							for index: int in range(target.active_statuses.size() - 1, -1, -1):
+								if target.active_statuses[index].type == effect.status_type:
+									target.active_statuses.remove_at(index)
 						target._recalculate_stats(board)
 						break
 				if effect.modifiers.has("grant_ap"):
-					target.ability.points_left = mini(
-						target.ability.max_points,
-						target.ability.points_left + int(effect.modifiers["grant_ap"]),
-					)
+					target.ability.points_left += int(effect.modifiers["grant_ap"])
 				if effect.modifiers.has("life_link"):
 					target.passive_flags["life_link_source_id"] = actor.id
 					target.passive_flags["life_link_damage_reduction"] = 3
@@ -2512,12 +2613,25 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					action.ability.display_name, target.health.current_hp
 				)
 		GameEnums.EffectType.TELEPORT_CASTER:
-			if not GridSystem.is_occupied(board, tile_coord) and not GridSystem.is_wall(board, tile_coord):
+			var destination := tile_coord
+			if effect.modifiers.has("warp_adjacent_to_target"):
+				if target == null:
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "guardian_step_missing_ally",
+					}))
+					return
+				destination = _first_empty_adjacent_cell(board, target.position)
+				if destination == Vector2i(-1, -1):
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "guardian_step_no_landing",
+					}))
+					return
+			if not GridSystem.is_occupied(board, destination) and not GridSystem.is_wall(board, destination):
 				if effect.modifiers.has("vault_over"):
-					var vault_dir := PhysicsSystem.straight_line_dir(actor.position, tile_coord)
+					var vault_dir := PhysicsSystem.straight_line_dir(actor.position, destination)
 					var vault_distance := PhysicsSystem.straight_line_distance(
 						actor.position,
-						tile_coord,
+						destination,
 					)
 					for step_index: int in range(1, vault_distance):
 						var vaulted := board.get_unit_at(actor.position + vault_dir * step_index)
@@ -2525,11 +2639,13 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							actor.passive_flags["vaulted_target_id"] = vaulted.id
 							break
 				GridSystem.set_occupant(board, actor.position, -1)
-				actor.position = tile_coord
+				actor.position = destination
 				GridSystem.set_occupant(board, actor.position, actor.id)
 				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 					"unit": actor.id, "to": actor.position
 				}))
+				if effect.modifiers.has("cleanse_target"):
+					cleanse_unit(target, events)
 				if actor.passive_flags.get("push_used_this_turn", false):
 					var landing_push: int = int(
 						effect.modifiers.get("landing_adjacent_push_if_push_used", 0)
@@ -2631,6 +2747,18 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							passive.modifiers["caltrop_damage_bonus"]
 						)
 				board.terrain_payloads[tile_coord] = terrain_payload
+				var standing_unit := board.get_unit_at(tile_coord)
+				if (
+					standing_unit != null
+					and standing_unit.team == actor.team
+					and terrain_payload.get("sanctuary", false)
+				):
+					standing_unit.active_statuses.append(DataLibrary.make_status(
+						GameEnums.StatusType.STEALTH, 1
+					))
+					standing_unit.active_statuses.append(DataLibrary.make_status(
+						GameEnums.StatusType.INVULNERABLE, 1
+					))
 				events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
 					"coord": tile_coord,
 					"terrain": terrain_id,

@@ -20,6 +20,14 @@ static func run_all(failures: Array[String]) -> void:
 		and _passive(definition, &"selfless_siphon") != null)
 	_assert(failures, "cleric/passives", definition.passives.size() == 15)
 	_assert(failures, "cleric/abilities", definition.abilities.size() == 16)
+	_assert(failures, "cleric/promotion_stats",
+		definition.promotion_stat_bonuses.get("paladin", {}).get("constitution", 0) == 2
+		and definition.promotion_stat_bonuses.get("paladin", {}).get("defense", 0) == 2
+		and definition.promotion_stat_bonuses.get("paladin", {}).get("movement", 0) == 3
+		and definition.promotion_stat_bonuses.get("seraph", {}).get("magic", 0) == 6
+		and definition.promotion_stat_bonuses.get("seraph", {}).get("movement", 0) == 2
+		and definition.promotion_stat_bonuses.get("zealot", {}).get("magic", 0) == 4
+		and definition.promotion_stat_bonuses.get("zealot", {}).get("strength", 0) == 4)
 
 	var expected: Array[StringName] = [
 		&"cleric_guardian_step", &"cleric_holy_light", &"cleric_smite",
@@ -36,7 +44,9 @@ static func run_all(failures: Array[String]) -> void:
 	var guardian := _ability(definition, &"cleric_guardian_step")
 	_assert(failures, "guardian_step/all_mov",
 		guardian != null and guardian.movement_point_cost == 0
-		and guardian.effects[0].modifiers.get("cost_all_movement", false))
+		and guardian.effects[0].modifiers.get("cost_all_movement", false)
+		and guardian.effects[0].modifiers.get("warp_adjacent_to_target", false)
+		and guardian.upgraded_effects[0].modifiers.get("cleanse_target", false))
 	var holy_light := _ability(definition, &"cleric_holy_light")
 	_assert(failures, "holy_light/mag_heal",
 		holy_light != null and holy_light.effects[0].type == GameEnums.EffectType.HEAL

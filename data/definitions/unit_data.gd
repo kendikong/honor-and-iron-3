@@ -35,6 +35,8 @@ extends Resource
 @export var base_strength: int = 1
 @export var base_magic: int = 1
 @export var base_defense: int = 1
+## Promotion-specific stat bonuses, keyed by promotion id.
+@export var promotion_stat_bonuses: Dictionary = {}
 
 ## Which stat receives 75% of level-up growth (PHYSICAL=STR, MAGICAL=MAG, DEFENSE=DEF, MAX_HP=CON).
 ## Remaining 25% spreads to secondary stats (see UnitLevelGrowth).

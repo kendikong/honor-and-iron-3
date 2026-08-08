@@ -49,6 +49,7 @@ var upgraded_abilities: Array[StringName] = []
 var passive_flags: Dictionary = {}
 
 var level: int = 1
+var promotion_id: StringName = &""
 var current_strength: int = 1
 var current_magic: int = 1
 var current_defense: int = 1
@@ -66,8 +67,17 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 		
 	unit.team = p_team
 	unit.position = coord
-	unit.health = HealthComponent.new(def.base_constitution * 5)
-	unit.movement = MovementComponent.new(def.move_points)
+	unit.promotion_id = StringName(config.get("promotion_id", &""))
+	var promotion_bonuses: Dictionary = def.promotion_stat_bonuses.get(
+		unit.promotion_id,
+		{},
+	)
+	unit.health = HealthComponent.new(
+		(def.base_constitution + int(promotion_bonuses.get("constitution", 0))) * 5
+	)
+	unit.movement = MovementComponent.new(
+		def.move_points + int(promotion_bonuses.get("movement", 0))
+	)
 	unit.ability = AbilityComponent.new(def.action_points)
 	
 	if config.has("level"):
@@ -145,6 +155,15 @@ func _recalculate_stats(board: BoardState = null) -> void:
 	var base_mag: int = definition.base_magic + int(growth.mag)
 	var base_def: int = definition.base_defense + int(growth.def)
 	var level_con: int = int(growth.con)
+	var promotion_bonuses: Dictionary = definition.promotion_stat_bonuses.get(
+		promotion_id,
+		{},
+	)
+	base_str += int(promotion_bonuses.get("strength", 0))
+	base_mag += int(promotion_bonuses.get("magic", 0))
+	base_def += int(promotion_bonuses.get("defense", 0))
+	var promotion_con := int(promotion_bonuses.get("constitution", 0))
+	var promotion_mov := int(promotion_bonuses.get("movement", 0))
 
 	var stat_str := 0
 	var stat_mag := 0
@@ -169,7 +188,11 @@ func _recalculate_stats(board: BoardState = null) -> void:
 				stat_str -= 2
 				stat_mag -= 2
 				
-	health.max_hp = (definition.base_constitution + level_con) * 5 + w_hp
+	health.max_hp = (
+		definition.base_constitution
+		+ level_con
+		+ promotion_con
+	) * 5 + w_hp
 	
 	if has_passive(&"adrenaline_junkie"):
 		var missing_pct = (health.max_hp - health.current_hp) / float(health.max_hp)
@@ -216,7 +239,7 @@ func _recalculate_stats(board: BoardState = null) -> void:
 		movement.max_points = 0
 		movement.points_left = 0
 	else:
-		movement.max_points = definition.move_points + w_mov + stat_mov
+		movement.max_points = definition.move_points + promotion_mov + w_mov + stat_mov
 		if run_boost_amount > 0:
 			movement.max_points += run_boost_amount
 
@@ -370,6 +393,7 @@ func clone() -> UnitState:
 	copy.continuous_straight_direction = continuous_straight_direction
 	copy.armor = armor
 	copy.level = level
+	copy.promotion_id = promotion_id
 	copy.scrap = scrap
 	copy.ability_uses = ability_uses.duplicate()
 	copy.active_statuses = []

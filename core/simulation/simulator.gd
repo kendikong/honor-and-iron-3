@@ -145,6 +145,13 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 		if unit.is_alive() and unit.team == team:
 			if unit.health.current_hp < unit.health.max_hp:
 				unit.passive_flags.erase("full_health_debuff_immunity")
+			if unit.passive_flags.get("next_turn_move_zero", false):
+				unit.movement.points_left = 0
+				unit.passive_flags.erase("next_turn_move_zero")
+			if unit.passive_flags.get("revived_next_turn", false):
+				unit.ability.reset()
+				unit.movement.points_left = unit.movement.max_points
+				unit.passive_flags.erase("revived_next_turn")
 			var next_move_bonus: int = int(
 				unit.passive_flags.get("next_turn_max_move_bonus", 0)
 			)
@@ -165,6 +172,20 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 				unit._recalculate_stats(board)
 			if unit.has_status(GameEnums.StatusType.STAGGER):
 				unit.ability.points_left = maxi(0, unit.ability.points_left - 1)
+			var zone_payload: Dictionary = board.terrain_payloads.get(unit.position, {})
+			var zone_owner := board.get_unit_by_id(int(zone_payload.get("terrain_owner_id", -1)))
+			if zone_owner != null and unit.team == zone_owner.team:
+				if zone_payload.get("sanctuary", false):
+					if not unit.has_status(GameEnums.StatusType.STEALTH):
+						unit.active_statuses.append(DataLibrary.make_status(
+							GameEnums.StatusType.STEALTH, 1
+						))
+					if not unit.has_status(GameEnums.StatusType.INVULNERABLE):
+						unit.active_statuses.append(DataLibrary.make_status(
+							GameEnums.StatusType.INVULNERABLE, 1
+						))
+				if zone_payload.get("holy_ground_zone", false):
+					CombatSystem.heal(board, unit, 1, events)
 			for status in unit.active_statuses:
 				if status.type == GameEnums.StatusType.BURN:
 					CombatSystem.deal_damage(
@@ -291,9 +312,6 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> void:
 	for unit in board.units:
 		if unit.is_alive():
-			if unit.passive_flags.get("next_turn_move_zero", false):
-				unit.movement.points_left = 0
-				unit.passive_flags.erase("next_turn_move_zero")
 			if unit.passive_flags.get("next_turn_root_immune", false):
 				unit.passive_flags["root_immune_this_turn"] = true
 				unit.passive_flags.erase("next_turn_root_immune")
@@ -309,6 +327,8 @@ static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> voi
 				break
 			unit.passive_flags.erase("attacked_this_turn")
 			unit.passive_flags["damaged_this_turn"] = false
+			unit.passive_flags.erase("magic_chain_partner_id")
+			unit.passive_flags.erase("magic_chain_blind")
 			
 			for status in unit.active_statuses:
 				if status.type == GameEnums.StatusType.BLEED:
