@@ -17,7 +17,7 @@
 | **Owner QA sign-off** | **NOT PASS** — revoked with all non-Knight classes |
 | **LOCK** | **NO** — pending Knight-bar redo (Tier 2 live + overlay/AOE footprints) |
 | **Matrix** | 31 rows historically marked `PASS` — **suspended** until re-verified per `class-qa-knight-bar.mdc` |
-| **Gap** | No `run_bruiser_live_qa.ps1` / live overlay tile asserts |
+| **Gap** | Owner manual sign-off + arc-AOE live overlay depth (cleave/earthshatter) still optional |
 
 ---
 
@@ -26,7 +26,7 @@
 | Tier | Runner | Gate status |
 |------|--------|-------------|
 | **1 — Headless scenarios** | `.\scripts\run_bruiser_qa_gate.ps1` | **NOT PASS** (owner sign-off) — re-verify after live + overlay work |
-| **2 — Live Bruiser acceptance** | `PLANNED — tests/live_bruiser_class_test.gd` | **NOT PASS** — required for owner sign-off |
+| **2 — Live Bruiser acceptance** | `.\scripts\run_bruiser_live_qa.ps1` → `tests/live_bruiser_class_test.gd` | **PASS** (automated) — 16 actives + self-AOE overlay; owner sign-off still pending |
 | **Manual** | `docs/PLANNING_SKILL_QA_CHECKLIST.md` per ability | Required for feel/pixels Tier 1 cannot see |
 
 **Only Tier 1+2 matrix `PASS` + owner row in `CLASS_QA_SIGNOFF.md` blocks Bruiser LOCK.**

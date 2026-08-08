@@ -47,4 +47,7 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 --- Tier 1 harness: PASS ---
 
 === Bruiser QA gate summary ===
-[PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS.
+
+=== Tier 2: live Bruiser acceptance ===
+--- Tier 2 live: PASS ---
+[PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.

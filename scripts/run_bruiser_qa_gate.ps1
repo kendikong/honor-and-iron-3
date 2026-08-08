@@ -173,7 +173,21 @@ if (-not $matrixPassValid) {
 	Exit-Gate 3
 }
 if ($passRows.Count -eq $requiredFactoryIds.Count) {
-	Write-GateLine "[PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS."
+	Write-GateLine ""
+	Write-GateLine "=== Tier 2: live Bruiser acceptance ==="
+	$liveScript = Join-Path $PSScriptRoot "run_bruiser_live_qa.ps1"
+	if (-not (Test-Path $liveScript)) {
+		Write-GateLine "[FAIL] Missing Tier 2 runner: $liveScript"
+		Exit-Gate 4
+	}
+	& $liveScript -GodotPath $GodotPath
+	$liveExit = $LASTEXITCODE
+	if ($liveExit -ne 0) {
+		Write-GateLine "[FAIL] Tier 2 live Bruiser QA exit $liveExit"
+		Exit-Gate $liveExit
+	}
+	Write-GateLine "--- Tier 2 live: PASS ---"
+	Write-GateLine "[PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS."
 	Exit-Gate 0
 }
 
