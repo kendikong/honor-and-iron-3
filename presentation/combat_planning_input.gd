@@ -3556,6 +3556,17 @@ func _build_commit_slots_at_cell(
 				slots["invalid"] = "Invalid target or distance for this ability."
 				return slots
 		else:
+			## Painted hover/drag route is pre-move intent while the class skill stays armed (K4 detour).
+			if (
+				not effective_waypoints.is_empty()
+				and _basic_move_allowed()
+				and _unit_move_slot_open(unit_id, cell)
+				and _drop_allows_move_tile(cell, legal_move_tiles, actor)
+				and move_timing >= 0
+				and not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
+			):
+				_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
+				return slots
 			if (
 				ability.has_targeting(GameEnums.TargetingFlags.TILE)
 				and AbilitySystem.ability_has_movement_effect(ability)
