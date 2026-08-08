@@ -33,6 +33,18 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		and ability_has_teleport(ability)
 	):
 		return false
+	if (
+		_is_spell(ability)
+		and actor.passive_flags.get("mana_shield_active", false)
+		and not actor.passive_flags.get("mana_shield_casting", false)
+	):
+		return false
+	if (
+		_is_spell(ability)
+		and actor.passive_flags.get("mana_shield_casting", false)
+		and actor.armor <= 0
+	):
+		return false
 	if _ability_has_modifier(actor, ability, &"limit_once_per_turn") and actor.passive_flags.get(
 		"ability_used_once:%s" % ability.id, false
 	):
@@ -65,6 +77,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		and _passive_has_modifier(actor, &"elevation_range")
 	):
 		max_range += 1
+	if _is_spell(ability):
+		max_range += int(actor.passive_flags.get("mage_spell_range_bonus", 0))
 	if ability_has_dash(ability):
 		max_range = maxi(max_range, dash_steps(ability))
 	var move_steps_for_range: int = (
@@ -121,7 +135,11 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			if effect.type == GameEnums.EffectType.DAMAGE or effect.type == GameEnums.EffectType.EXPLODE or effect.type == GameEnums.EffectType.RANGED_EXPLODE:
 				return false
 
-	if ability.consumes_action_slot() and not actor.can_use_action_slot():
+	if (
+		ability.consumes_action_slot()
+		and not actor.can_use_action_slot()
+		and not actor.passive_flags.get("__mage_wild_magic_repeat", false)
+	):
 		return false
 
 	var has_displacement := has_displacement_effects(ability)
@@ -188,6 +206,16 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 	var ap_cost := ability.action_point_cost
 	if actor == null or board == null:
 		return ap_cost
+	if (
+		_is_spell(ability)
+		and actor.passive_flags.get("mana_shield_casting", false)
+	):
+		return 0
+	if (
+		_is_spell(ability)
+		and actor.passive_flags.get("mana_well_next_spell", false)
+	):
+		return 0
 	var effects: Array = ability.effects
 	if actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
 		effects = ability.upgraded_effects
@@ -491,6 +519,8 @@ static func _link_enemy_pair(
 static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
 	if ability == null or actor == null:
 		return false
+	if actor.passive_flags.get("__mage_wild_magic_repeat", false):
+		return true
 		
 	var ap_cost = get_action_point_cost(actor, ability, board)
 			
@@ -1093,6 +1123,18 @@ static func ability_planning_selectable(actor: UnitState, ability: AbilityData, 
 static func can_plan(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
 	if actor == null or ability == null:
 		return false
+	if (
+		_is_spell(ability)
+		and actor.passive_flags.get("mana_shield_active", false)
+		and not actor.passive_flags.get("mana_shield_casting", false)
+	):
+		return false
+	if (
+		_is_spell(ability)
+		and actor.passive_flags.get("mana_shield_casting", false)
+		and actor.armor <= 0
+	):
+		return false
 	if not _has_resource_for_ability(actor, ability):
 		return false
 	if actor.has_status(GameEnums.StatusType.STAGGER) or actor.has_status(GameEnums.StatusType.SILENCE):
@@ -1240,14 +1282,20 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var actor := board.get_unit_by_id(action.actor_id)
 	var ability := action.ability
+	var wild_magic_repeat := bool(actor.passive_flags.get("__mage_wild_magic_repeat", false))
 	
 	if actor != null:
 		actor.passive_flags.erase("passed_through_terrain")
 		
-	_spend_ability_cost(actor, ability, board)
-	if _ability_has_modifier(actor, ability, &"limit_once_per_turn"):
+	if not wild_magic_repeat:
+		_spend_ability_cost(actor, ability, board)
+	if not wild_magic_repeat and _ability_has_modifier(actor, ability, &"limit_once_per_turn"):
 		actor.passive_flags["ability_used_once:%s" % ability.id] = true
-	if not actor.has_unlimited_training_actions() and ability.consumes_action_slot():
+	if (
+		not wild_magic_repeat
+		and not actor.has_unlimited_training_actions()
+		and ability.consumes_action_slot()
+	):
 		actor.turn_action_used = true
 
 	if DataLibrary.is_universal_wait(ability.id):
@@ -1271,12 +1319,16 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		if actor.facing != new_facing:
 			actor.facing = new_facing
 			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_FACED, {"unit": actor.id, "facing": actor.facing}))
+	if _is_spell(action.ability) and not wild_magic_repeat:
+		_begin_spellcast(board, actor, action, events)
 	var shape = action.ability.target_shape
 	var shape_size = action.ability.target_shape_size
 	if actor != null and actor.is_ability_upgraded(action.ability.id):
 		if action.ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE or action.ability.upgraded_target_shape_size != -1:
 			shape = action.ability.upgraded_target_shape if action.ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE else shape
 			shape_size = action.ability.upgraded_target_shape_size if action.ability.upgraded_target_shape_size != -1 else shape_size
+	if _is_spell(action.ability) and shape != GameEnums.TargetShape.SINGLE:
+		shape_size += int(actor.passive_flags.get("mage_spell_shape_bonus", 0))
 			
 	var affected_tiles := GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
 	
@@ -1377,6 +1429,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	for eff in effects_to_apply:
 		if eff.modifiers.has("heal_per_target_hit"): heal_per_target_hit = true
 		if eff.modifiers.has("buff_per_destroyed_object"): buff_per_object = true
+		if eff.modifiers.has("destroy_corpse_on_kill"):
+			actor.passive_flags["destroy_corpse_on_kill"] = true
 		if eff.modifiers.has("next_attack_pierce"):
 			actor.passive_flags["breaching_dash_pierce"] = true
 		if eff.modifiers.has("on_kill_heal_shield"):
@@ -1469,6 +1523,14 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				var pinned_target := board.get_unit_by_id(action.target_unit_id)
 				if pinned_target != null and pinned_target.position == tile_coord:
 					target_unit = pinned_target
+			if effect.modifiers.get("delayed_next_turn", false):
+				board.delayed_effects.append({
+					"actor_id": actor.id,
+					"ability": action.ability,
+					"effect": effect.duplicate(true),
+					"coord": tile_coord,
+				})
+				continue
 			
 			if effect.type == GameEnums.EffectType.DAMAGE and target_unit != null and target_unit != actor and target_unit.is_alive() and heal_per_target_hit:
 				targets_hit_count += 1
@@ -1530,6 +1592,21 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			
 	if actor != null:
 		actor.passive_flags.erase("__cast_cc_snapshot")
+		if _is_spell(action.ability):
+			_finish_spellcast(board, actor, action, events)
+			if (
+				not wild_magic_repeat
+				and actor.passive_flags.get("__mage_wild_magic_pending", false)
+			):
+				actor.passive_flags.erase("__mage_wild_magic_pending")
+				actor.passive_flags["__mage_wild_magic_repeat"] = true
+				execute(board, action, events)
+				actor.passive_flags.erase("__mage_wild_magic_repeat")
+				actor.passive_flags.erase("mage_spell_magic_bonus")
+			elif wild_magic_repeat:
+				actor.passive_flags.erase("mage_spell_magic_bonus")
+			if not actor.passive_flags.get("__mage_wild_magic_repeat", false):
+				actor.passive_flags.erase("mage_spell_in_progress")
 
 	if actor != null and actor.is_alive() and actor.has_passive(&"kinetic_redirection"):
 		var is_attack = false
@@ -1553,6 +1630,46 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		actor.passive_flags.erase("paired_strength_bonus")
 		actor.passive_flags.erase("on_kill_max_move")
 		actor.passive_flags.erase("paired_ally_id")
+		actor.passive_flags.erase("destroy_corpse_on_kill")
+		actor.passive_flags.erase("mage_spell_pierce")
+		actor.passive_flags.erase("mage_spell_range_bonus")
+		actor.passive_flags.erase("mage_spell_shape_bonus")
+
+
+static func execute_delayed_effect(
+	board: BoardState,
+	delayed: Dictionary,
+	events: Array[SimEvent],
+) -> void:
+	var actor := board.get_unit_by_id(int(delayed.get("actor_id", -1)))
+	var ability: AbilityData = delayed.get("ability", null)
+	var effect: EffectData = delayed.get("effect", null)
+	if actor == null or ability == null or effect == null:
+		return
+	var coord: Vector2i = delayed.get("coord", actor.position)
+	var action := TimelineAction.make_ability(actor.id, ability, coord)
+	_apply_effect_to_tile(
+		board,
+		actor,
+		action,
+		effect,
+		events,
+		coord,
+		board.get_unit_at(coord),
+	)
+	if effect.modifiers.get("create_crater", false):
+		var crater := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 0)
+		crater.modifiers["terrain_id"] = &"crater"
+		crater.modifiers["hazard_duration"] = 2
+		_apply_effect_to_tile(
+			board,
+			actor,
+			action,
+			crater,
+			events,
+			coord,
+			board.get_unit_at(coord),
+		)
 
 
 static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> void:
@@ -1560,6 +1677,12 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: B
 		return
 		
 	var ap_cost = get_action_point_cost(actor, ability, board)
+	if _is_spell(ability) and actor.passive_flags.get("mana_shield_casting", false):
+		actor.armor = maxi(0, actor.armor - 1)
+		return
+	if _is_spell(ability) and actor.passive_flags.get("mana_well_next_spell", false):
+		actor.passive_flags.erase("mana_well_next_spell")
+		actor.passive_flags.erase("mana_well_magic_bonus")
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
@@ -1642,7 +1765,28 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					pierce = true
 					
 			var base_amt := effect.amount
+			var reaction_tile := board.get_tile(tile_coord)
+			if (
+				reaction_tile != null
+				and reaction_tile.definition != null
+				and effect.modifiers.has("reaction_terrain")
+				and reaction_tile.definition.id == effect.modifiers["reaction_terrain"]
+			):
+				base_amt = int(effect.modifiers.get("reaction_damage", 2))
 			var kinetic_energy_bonus := int(actor.passive_flags.get("kinetic_energy", 0))
+			if actor.passive_flags.get("mage_spell_pierce", false):
+				pierce = true
+			if target != null and target.has_status(GameEnums.StatusType.ROOT):
+				for passive: PassiveData in actor.active_passives:
+					if passive == null or not passive.modifiers.has("gravity_anchor"):
+						continue
+					var anchor_bonus := int(passive.modifiers["gravity_anchor"])
+					if actor.is_passive_upgraded(passive.id):
+						anchor_bonus = int(
+							passive.modifiers.get("upgraded_gravity_anchor", anchor_bonus)
+						)
+					base_amt += anchor_bonus
+					break
 			if kinetic_energy_bonus > 0:
 				base_amt += kinetic_energy_bonus
 				actor.passive_flags.erase("kinetic_energy")
@@ -1761,7 +1905,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if action.ability.scaling_stat == GameEnums.StatType.PHYSICAL:
 				stat_val = CombatSystem.get_dynamic_strength(board, actor)
 			elif action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
-				stat_val = actor.current_magic
+				stat_val = actor.current_magic + int(
+					actor.passive_flags.get("mage_spell_magic_bonus", 0)
+				)
 				stat_name = "MAG"
 				
 			if base_amt > 0:
@@ -1983,7 +2129,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			}))
 			var target_hp_before := target.health.current_hp if target != null else 0
 			var target_armor_before := target.armor if target != null else 0
+			if effect.modifiers.has("ignore_target_magic_pct"):
+				actor.passive_flags["mage_target_magic_ignore_pct"] = float(
+					effect.modifiers["ignore_target_magic_pct"]
+				)
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
+			actor.passive_flags.erase("mage_target_magic_ignore_pct")
 			_apply_damage_effect_modifiers(
 				board,
 				actor,
@@ -1993,6 +2144,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				target_hp_before,
 				target_armor_before,
 			)
+			if effect.modifiers.has("bounce_count") and target != null:
+				_resolve_chain_lightning(board, actor, target, effect, events)
+			if effect.modifiers.has("repeat_hits") and target != null:
+				_resolve_repeat_hits(board, actor, target, effect, events)
 			if (
 				target != null
 				and target.is_alive()
@@ -2303,6 +2458,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		GameEnums.EffectType.ARMOR_UP:
 			if target != null:
 				var shield_amount = effect.amount
+				if effect.modifiers.has("mana_shield"):
+					shield_amount = actor.current_magic
+					actor.passive_flags["mana_shield_active"] = true
+					if effect.modifiers.get("mana_shield_casting", false):
+						actor.passive_flags["mana_shield_casting"] = true
 				if effect.scaling_stat == GameEnums.StatType.MAX_HP:
 					shield_amount = floori(effect.amount * 0.1 * target.health.max_hp)
 				elif effect.scaling_stat == GameEnums.StatType.DEFENSE:
@@ -2440,6 +2600,17 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					stat_val = effect.amount + actor.current_defense
 				if effect.modifiers.has("target_def_set"):
 					stat_val = target.current_defense
+				if effect.modifiers.get("utility_only", false):
+					if effect.modifiers.has("grant_ap"):
+						target.ability.points_left = mini(
+							target.ability.max_points,
+							target.ability.points_left + int(effect.modifiers["grant_ap"]),
+						)
+					if effect.modifiers.has("cooldown_reduction"):
+						target.passive_flags["cooldown_reduction"] = int(
+							target.passive_flags.get("cooldown_reduction", 0)
+						) + int(effect.modifiers["cooldown_reduction"])
+					return
 				var delayed_move := effect.modifiers.has("next_turn") or effect.modifiers.has(
 					"next_turn_max_move"
 				)
@@ -2697,6 +2868,14 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 		GameEnums.EffectType.CREATE_HAZARD:
 			var terrain_id: StringName = effect.modifiers.get("terrain_id", &"spear_wall")
+			var previous_tile := board.get_tile(tile_coord)
+			if (
+				previous_tile != null
+				and previous_tile.definition != null
+				and effect.modifiers.has("reaction_terrain")
+				and previous_tile.definition.id == effect.modifiers["reaction_terrain"]
+			):
+				terrain_id = &"steam"
 			var terrain := DataLibrary.get_terrain(terrain_id)
 			if terrain != null:
 				if not board.temporary_terrain_previous.has(tile_coord):
@@ -2704,16 +2883,54 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					if current_tile != null:
 						board.temporary_terrain_previous[tile_coord] = current_tile.definition
 				board.set_tile_terrain(tile_coord, terrain)
-				board.temporary_terrain_turns[tile_coord] = int(
-					effect.modifiers.get("hazard_duration", 1)
-				)
+				var duration := int(effect.modifiers.get("hazard_duration", 1))
+				for passive: PassiveData in actor.active_passives:
+					if passive == null or not passive.modifiers.has("lasting_terrain_duration"):
+						continue
+					duration += int(passive.modifiers["lasting_terrain_duration"])
+					break
+				board.temporary_terrain_turns[tile_coord] = duration
 				var terrain_payload := effect.modifiers.duplicate(true)
+				for passive: PassiveData in actor.active_passives:
+					if passive == null or not passive.modifiers.has("lasting_terrain_damage"):
+						continue
+					var hazard_bonus := int(passive.modifiers["lasting_terrain_damage"])
+					if actor.is_passive_upgraded(passive.id):
+						hazard_bonus = int(
+							passive.modifiers.get("upgraded_lasting_terrain_damage", hazard_bonus)
+						)
+					terrain_payload["hazard_damage_bonus"] = hazard_bonus
+					break
+				 
+				for passive: PassiveData in actor.active_passives:
+					if passive == null or not passive.modifiers.has("feedback_magic"):
+						continue
+					actor.active_statuses.append(DataLibrary.make_status(
+						GameEnums.StatusType.STAT_BUFF_MAG,
+						1,
+						int(passive.modifiers["feedback_magic"]),
+					))
+					CombatSystem.add_armor(
+						board,
+						actor,
+						int(passive.modifiers.get(
+							"upgraded_feedback_shield"
+							if actor.is_passive_upgraded(passive.id)
+							else "feedback_shield",
+							1,
+						)),
+						events,
+					)
+					actor._recalculate_stats(board)
+					break
 				if (
 					terrain_payload.get("crossing_weapon_damage", false)
 					or terrain_payload.get("created_area_weapon_damage", false)
 				):
 					terrain_payload["weapon_damage_owner"] = actor.id
 				if terrain_payload.get("sanctuary", false) or terrain_payload.get("holy_ground", false):
+					terrain_payload["terrain_owner_id"] = actor.id
+				if terrain_payload.get("elemental_surface", false):
 					terrain_payload["terrain_owner_id"] = actor.id
 				for passive: PassiveData in actor.active_passives:
 					if passive == null:
@@ -2750,6 +2967,31 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				var standing_unit := board.get_unit_at(tile_coord)
 				if (
 					standing_unit != null
+					and standing_unit.team != actor.team
+					and terrain_id in [&"fire", &"frozen"]
+				):
+					for passive: PassiveData in actor.active_passives:
+						if passive == null or not passive.modifiers.has("elementalist"):
+							continue
+						var weapon_damage := 0
+						if actor.definition != null and actor.definition.equipped_weapon != null:
+							weapon_damage = actor.definition.equipped_weapon.might
+						if actor.is_passive_upgraded(passive.id) and weapon_damage > 0:
+							CombatSystem.deal_damage(
+								board,
+								standing_unit,
+								weapon_damage,
+								events,
+								&"true",
+								true,
+								false,
+								actor,
+								"Elementalist",
+								weapon_damage,
+							)
+						break
+				if (
+					standing_unit != null
 					and standing_unit.team == actor.team
 					and terrain_payload.get("sanctuary", false)
 				):
@@ -2772,6 +3014,15 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					actor.ability.points_left = mini(actor.ability.max_points, actor.ability.points_left + 1)
 
 		GameEnums.EffectType.ADD_STATUS_SELF:
+			if effect.modifiers.get("utility_only", false):
+				if effect.modifiers.has("elemental_surge"):
+					actor.passive_flags["elemental_surge_ready"] = true
+				if effect.modifiers.has("elemental_surge_ap"):
+					actor.ability.points_left = mini(
+						actor.ability.max_points,
+						actor.ability.points_left + int(effect.modifiers["elemental_surge_ap"]),
+					)
+				return
 			if actor.has_status(GameEnums.StatusType.INVULNERABLE) and GameEnums.is_debuff(effect.status_type):
 				events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 					"actor": actor.id, "reason": "status_prevented_by_invulnerable",
@@ -2900,6 +3151,255 @@ static func _passive_has_modifier(actor: UnitState, key: StringName) -> bool:
 		if passive != null and passive.modifiers.has(key):
 			return true
 	return false
+
+
+static func _is_spell(ability: AbilityData) -> bool:
+	return ability != null and ability.tags.has(AbilityModuleBridge.TAG_SPELL)
+
+
+static func _begin_spellcast(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	events: Array[SimEvent],
+) -> void:
+	if actor == null or action == null:
+		return
+	actor.passive_flags["mage_spell_cast_this_turn"] = true
+	actor.passive_flags["mage_spell_in_progress"] = true
+	var target := board.get_unit_by_id(action.target_unit_id)
+	if target == null:
+		target = board.get_unit_at(action.target_coord)
+	for passive: PassiveData in actor.active_passives:
+		if passive == null:
+			continue
+		if passive.modifiers.has("arcane_overchannel_max"):
+			var max_stacks := int(passive.modifiers["arcane_overchannel_max"])
+			var stacks := mini(
+				max_stacks,
+				int(actor.passive_flags.get("arcane_overchannel_stacks", 0)) + 1,
+			)
+			actor.passive_flags["arcane_overchannel_stacks"] = stacks
+			if (
+				stacks >= max_stacks
+				and not actor.passive_flags.get("arcane_overchannel_refunded", false)
+			):
+				actor.ability.points_left = mini(
+					actor.ability.max_points,
+					actor.ability.points_left + int(
+						passive.modifiers.get("arcane_overchannel_refund_ap", 0)
+					),
+				)
+				actor.passive_flags["arcane_overchannel_refunded"] = true
+				CombatSystem.add_armor(
+					board,
+					actor,
+					int(passive.modifiers.get("arcane_overchannel_shield", 0)),
+					events,
+				)
+			break
+	if _passive_has_modifier(actor, &"arcane_overdrive_hp_pct"):
+		var cost := maxi(
+			0,
+			floori(actor.health.current_hp * float(
+				_get_passive_value(actor, &"arcane_overdrive_hp_pct")
+			)),
+		)
+		if cost > 0:
+			CombatSystem.deal_damage(
+				board,
+				actor,
+				cost,
+				events,
+				&"true",
+				true,
+				false,
+				actor,
+				"Arcane Overdrive",
+				cost,
+			)
+	if actor.passive_flags.get("elemental_surge_ready", false):
+		actor.passive_flags["mage_spell_range_bonus"] = 2
+		actor.passive_flags["mage_spell_shape_bonus"] = 2
+		actor.passive_flags.erase("elemental_surge_ready")
+	for passive: PassiveData in actor.active_passives:
+		if passive == null:
+			continue
+		if passive.modifiers.has("arcane_mastery_radius"):
+			actor.passive_flags["mage_spell_shape_bonus"] = int(
+				actor.passive_flags.get("mage_spell_shape_bonus", 0)
+			) + int(passive.modifiers["arcane_mastery_radius"])
+			if actor.is_passive_upgraded(passive.id):
+				actor.passive_flags["mage_spell_pierce"] = true
+		if passive.modifiers.has("wild_magic") and target != null:
+			var tile := board.get_tile(target.position)
+			if tile != null and tile.definition != null and tile.definition.hazard_damage > 0:
+				actor.passive_flags["__mage_wild_magic_pending"] = true
+				if actor.is_passive_upgraded(passive.id):
+					actor.passive_flags["mage_spell_magic_bonus"] = int(
+						passive.modifiers.get("upgraded_wild_magic_magic", 0)
+					)
+
+
+static func _finish_spellcast(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	events: Array[SimEvent],
+) -> void:
+	if actor == null or action == null:
+		return
+	var target := board.get_unit_by_id(action.target_unit_id)
+	if target == null:
+		target = board.get_unit_at(action.target_coord)
+	if target != null and target.team == actor.team and target.id != actor.id:
+		for passive: PassiveData in actor.active_passives:
+			if passive == null or not passive.modifiers.has("arcane_attunement"):
+				continue
+			target.active_statuses.append(DataLibrary.make_status(
+				GameEnums.StatusType.STAT_BUFF_DEF,
+				1,
+				int(passive.modifiers.get("arcane_attunement_def", 1)),
+			))
+			target.active_statuses.append(DataLibrary.make_status(
+				GameEnums.StatusType.STAT_BUFF_STR,
+				1,
+				int(passive.modifiers.get("arcane_attunement_str", 1)),
+			))
+			if actor.is_passive_upgraded(passive.id):
+				target.active_statuses.append(DataLibrary.make_status(
+					GameEnums.StatusType.STAT_BUFF_MOV,
+					1,
+					int(passive.modifiers.get("upgraded_arcane_attunement_mov", 1)),
+				))
+			target._recalculate_stats(board)
+			break
+	actor._recalculate_stats(board)
+
+
+static func _resolve_chain_lightning(
+	board: BoardState,
+	actor: UnitState,
+	origin: UnitState,
+	effect: EffectData,
+	events: Array[SimEvent],
+) -> void:
+	var struck: Dictionary = {origin.id: true}
+	var current := origin
+	var bounce_count := int(effect.modifiers.get("bounce_count", 0))
+	for _bounce: int in range(bounce_count):
+		var next_target: UnitState = null
+		var next_distance := 1_000_000
+		for candidate: UnitState in board.units:
+			if (
+				candidate == null
+				or not candidate.is_alive()
+				or candidate.team == actor.team
+				or struck.has(candidate.id)
+				or GridSystem.manhattan(current.position, candidate.position)
+					> int(effect.modifiers.get("bounce_range", 2))
+			):
+				continue
+			var distance := GridSystem.manhattan(current.position, candidate.position)
+			if distance < next_distance or (
+				distance == next_distance and candidate.id < next_target.id
+			):
+				next_target = candidate
+				next_distance = distance
+		if next_target == null:
+			break
+		struck[next_target.id] = true
+		var raw := CombatSystem.calculate_scaled_damage(
+			actor,
+			effect.amount,
+			GameEnums.StatType.MAGICAL,
+			board,
+		)
+		CombatSystem.deal_damage_raw(
+			board,
+			actor,
+			next_target,
+			raw,
+			GameEnums.StatType.MAGICAL,
+			events,
+			"Chain Lightning",
+			effect.amount,
+		)
+		current = next_target
+	if effect.modifiers.get("strike_all_surface", false):
+		for candidate: UnitState in board.units:
+			if (
+				candidate == null
+				or not candidate.is_alive()
+				or candidate.team == actor.team
+				or struck.has(candidate.id)
+			):
+				continue
+			var tile := board.get_tile(candidate.position)
+			if (
+				tile == null
+				or tile.definition == null
+				or tile.definition.id not in [&"water", &"frozen"]
+			):
+				continue
+			struck[candidate.id] = true
+			var raw := CombatSystem.calculate_scaled_damage(
+				actor,
+				effect.amount,
+				GameEnums.StatType.MAGICAL,
+				board,
+			)
+			CombatSystem.deal_damage_raw(
+				board,
+				actor,
+				candidate,
+				raw,
+				GameEnums.StatType.MAGICAL,
+				events,
+				"Chain Lightning",
+				effect.amount,
+			)
+
+
+static func _resolve_repeat_hits(
+	board: BoardState,
+	actor: UnitState,
+	target: UnitState,
+	effect: EffectData,
+	events: Array[SimEvent],
+) -> void:
+	var hit_count := int(effect.modifiers.get("repeat_hits", 1))
+	for _hit: int in range(1, hit_count):
+		var raw := CombatSystem.calculate_scaled_damage(
+			actor,
+			effect.amount,
+			GameEnums.StatType.MAGICAL,
+			board,
+		)
+		if effect.modifiers.has("ignore_target_magic_pct"):
+			actor.passive_flags["mage_target_magic_ignore_pct"] = float(
+				effect.modifiers["ignore_target_magic_pct"]
+			)
+		CombatSystem.deal_damage_raw(
+			board,
+			actor,
+			target,
+			raw,
+			GameEnums.StatType.MAGICAL,
+			events,
+			"Arcane Barrage",
+			effect.amount,
+		)
+		actor.passive_flags.erase("mage_target_magic_ignore_pct")
+
+
+static func _get_passive_value(actor: UnitState, key: StringName) -> float:
+	if actor == null:
+		return 0.0
+	for passive: PassiveData in actor.active_passives:
+		if passive != null and passive.modifiers.has(key):
+			return float(passive.modifiers[key])
+	return 0.0
 
 
 static func _target_has_movement_penalty(target: UnitState) -> bool:

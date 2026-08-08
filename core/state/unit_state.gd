@@ -222,6 +222,34 @@ func _recalculate_stats(board: BoardState = null) -> void:
 				if source.is_passive_upgraded(passive.id):
 					stat_def += int(passive.modifiers.get("upgraded_aura_def", 0))
 
+	for passive: PassiveData in active_passives:
+		if passive == null:
+			continue
+		var magic_bonus := int(passive.modifiers.get("arcane_overdrive_magic", 0))
+		if is_passive_upgraded(passive.id):
+			magic_bonus = int(passive.modifiers.get(
+				"upgraded_arcane_overdrive_magic",
+				magic_bonus,
+			))
+		stat_mag += magic_bonus
+		stat_mag += int(passive.modifiers.get("overload_magic", 0))
+		if is_passive_upgraded(passive.id):
+			stat_mag += int(passive.modifiers.get("upgraded_overload_magic", 0))
+		if passive.modifiers.has("arcane_overchannel_magic"):
+			stat_mag += int(passive.modifiers["arcane_overchannel_magic"]) * int(
+				passive_flags.get("arcane_overchannel_stacks", 0)
+			)
+		if board != null and passive.modifiers.has("elemental_master_magic"):
+			var elemental_tiles := 0
+			for tile: TileState in board.tiles.values():
+				if tile == null or tile.definition == null:
+					continue
+				if tile.definition.id in [&"fire", &"frozen", &"water", &"steam", &"oil"]:
+					elemental_tiles += 1
+			stat_mag += elemental_tiles * int(passive.modifiers["elemental_master_magic"])
+		if passive.modifiers.has("mana_well_magic"):
+			stat_mag += int(passive_flags.get("mana_well_magic_bonus", 0))
+
 	current_strength = maxi(0, base_str + w_str + stat_str)
 	current_magic = maxi(0, base_mag + w_mag + stat_mag)
 	current_defense = maxi(0, base_def + w_def + stat_def)

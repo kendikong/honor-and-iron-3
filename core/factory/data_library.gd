@@ -4,6 +4,7 @@ extends RefCounted
 const LancerFactoryScript := preload("res://core/factory/classes/lancer_factory.gd")
 const ArcherFactoryScript := preload("res://core/factory/classes/archer_factory.gd")
 const ClericFactoryScript := preload("res://core/factory/classes/cleric_factory.gd")
+const MageFactoryScript := preload("res://core/factory/classes/mage_factory.gd")
 
 ## Purpose: A hardcoded central registry of all Units, Terrain, Abilities, and Maps.
 ## This simulates loading .tres files from disk until the actual asset pipeline
@@ -174,10 +175,7 @@ static func _ensure_init() -> void:
 	var archer: UnitData = ArcherFactoryScript.build(basic_bow)
 
 	# 6. MAGE (MAGIC)
-	var p_mage = _make_passive(&"focus", "Focus", "More magic damage.")
-	var mage_fireball := _make_ability(&"mage_fireball", "Fireball", 3, [_effect(GameEnums.EffectType.DAMAGE, 3)], 1, GameEnums.StatType.MAGICAL)
-	var mage_swap := _make_movement_ability(&"mage_swap", "Phase Swap", 2, [_effect(GameEnums.EffectType.SWAP, 0)], 2)
-	var mage := _make_unit_data(&"mage", "Mage", 2, 3, 1, [mage_fireball, mage_swap], null, GameEnums.MovementType.WALK, 0, 5, 1, basic_staff, [p_mage])
+	var mage: UnitData = MageFactoryScript.build(basic_staff)
 
 	# 7. CLERIC (STAFF)
 	var cleric: UnitData = ClericFactoryScript.build(basic_staff)
@@ -839,6 +837,15 @@ static func _cracked() -> TerrainData:
 	# Becomes pit if hit again
 	return t
 
+
+static func _arcane_trail() -> TerrainData:
+	return _hazard(&"arcane_trail", "Arcane Trail", 1, false)
+
+
+static func _crater() -> TerrainData:
+	return _hazard(&"crater", "Crater", 1, false)
+
+
 static func _trampled() -> TerrainData:
 	var t := TerrainData.new()
 	t.id = &"trampled"
@@ -904,6 +911,8 @@ static func get_terrain(id: StringName) -> TerrainData:
 		_cached_terrains[&"steam"] = _steam()
 		_cached_terrains[&"frozen"] = _frozen()
 		_cached_terrains[&"cracked"] = _cracked()
+		_cached_terrains[&"arcane_trail"] = _arcane_trail()
+		_cached_terrains[&"crater"] = _crater()
 		_cached_terrains[&"trampled"] = _trampled()
 		_cached_terrains[&"bear_trap"] = _bear_trap()
 		_cached_terrains[&"caltrop_trap"] = _caltrop_trap()

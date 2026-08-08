@@ -19,6 +19,7 @@ var pending_pushes: Array[Dictionary] = []
 var temporary_terrain_turns: Dictionary = {}
 var temporary_terrain_previous: Dictionary = {}
 var terrain_payloads: Dictionary = {}
+var delayed_effects: Array[Dictionary] = []
 
 func get_tile(coord: Vector2i) -> TileState:
 	return tiles.get(coord, null)
@@ -93,4 +94,5 @@ func clone() -> BoardState:
 	copy.temporary_terrain_turns = temporary_terrain_turns.duplicate(true)
 	copy.temporary_terrain_previous = temporary_terrain_previous.duplicate(true)
 	copy.terrain_payloads = terrain_payloads.duplicate(true)
+	copy.delayed_effects = delayed_effects.duplicate(true)
 	return copy

@@ -840,6 +840,42 @@ static func _resolve_zone_of_control(
 			watcher == null
 			or not watcher.is_alive()
 			or watcher.team == moved_unit.team
+			or GridSystem.manhattan(watcher.position, moved_unit.position) != 1
+		):
+			continue
+		for passive: PassiveData in watcher.active_passives:
+			if passive == null or not passive.modifiers.has("arcane_tether"):
+				continue
+			var tether_damage := int(passive.modifiers["arcane_tether"])
+			if watcher.is_passive_upgraded(passive.id):
+				tether_damage = int(passive.modifiers.get("upgraded_arcane_tether", tether_damage))
+			var raw := CombatSystem.calculate_scaled_damage(
+				watcher,
+				tether_damage,
+				GameEnums.StatType.MAGICAL,
+				board,
+			)
+			CombatSystem.deal_damage_raw(
+				board,
+				watcher,
+				moved_unit,
+				raw,
+				GameEnums.StatType.MAGICAL,
+				events,
+				"Arcane Tether",
+				tether_damage,
+			)
+			if moved_unit.is_alive() and not moved_unit.has_status(GameEnums.StatusType.ROOT):
+				moved_unit.active_statuses.append(
+					DataLibrary.make_status(GameEnums.StatusType.ROOT, 1)
+				)
+				moved_unit._recalculate_stats(board)
+			break
+	for watcher: UnitState in board.units:
+		if (
+			watcher == null
+			or not watcher.is_alive()
+			or watcher.team == moved_unit.team
 			or watcher.passive_flags.get("zone_attack_used_this_round", false)
 			or not _has_passive_modifier(watcher, &"enemy_end_range_two_attack")
 			or GridSystem.manhattan(watcher.position, moved_unit.position) != 2

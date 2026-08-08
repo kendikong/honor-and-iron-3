@@ -203,10 +203,21 @@ static func _terrain(id: StringName, duration: int = 1) -> EffectData:
 	return effect
 
 
+static func _spawn_effect(spawn_id: StringName) -> EffectData:
+	var effect := DataLibrary._effect(GameEnums.EffectType.SPAWN, 0)
+	effect.spawn_unit_id = spawn_id
+	return effect
+
+
 static func _fireball() -> AbilityData:
+	var fire_effect := _terrain(&"fire")
+	var fire_effects: Array[EffectData] = [
+		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3),
+		fire_effect,
+	]
 	var ability := _spell(
 		&"mage_fireball", "Fireball", 4,
-		[DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3), _terrain(&"fire")],
+		fire_effects,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.AOE_SQUARE,
 		1,
@@ -216,6 +227,8 @@ static func _fireball() -> AbilityData:
 	upgraded[1].modifiers["reaction_frozen_to_steam"] = true
 	upgraded[1].modifiers["terrain_id"] = &"steam"
 	upgraded[1].modifiers["reaction_terrain"] = &"frozen"
+	upgraded[0].modifiers["reaction_terrain"] = &"frozen"
+	upgraded[0].modifiers["reaction_damage"] = 2
 	ability.upgraded_target_shape = GameEnums.TargetShape.AOE_SQUARE
 	ability.upgraded_target_shape_size = 3
 	return _upgrade(ability, upgraded, "On FROZEN, create STEAM (AOE 3x3) with MAG ATK 2 splash.")
@@ -235,6 +248,8 @@ static func _ice_shard() -> AbilityData:
 	upgraded[2].modifiers["reaction_fire_to_steam"] = true
 	upgraded[2].modifiers["terrain_id"] = &"steam"
 	upgraded[2].modifiers["reaction_terrain"] = &"fire"
+	upgraded[0].modifiers["reaction_terrain"] = &"fire"
+	upgraded[0].modifiers["reaction_damage"] = 2
 	ability.upgraded_target_shape = GameEnums.TargetShape.AOE_SQUARE
 	ability.upgraded_target_shape_size = 3
 	return _upgrade(ability, upgraded, "On FIRE, create STEAM (AOE 3x3) with MAG ATK 2 splash.")
@@ -316,6 +331,7 @@ static func _time_warp() -> AbilityData:
 		DataLibrary._effect(GameEnums.EffectType.ADD_STATUS, 1)],
 		GameEnums.TargetingFlags.ALLY,
 	)
+	ability.effects[1].modifiers["utility_only"] = true
 	ability.effects[1].modifiers["grant_ap"] = 1
 	ability.effects[1].modifiers["cooldown_reduction"] = 1
 	var upgraded := DataLibrary._duplicate_effects(ability.effects)
@@ -369,6 +385,7 @@ static func _elemental_surge() -> AbilityData:
 		[DataLibrary._effect(GameEnums.EffectType.ADD_STATUS_SELF, 1)],
 		GameEnums.TargetingFlags.SELF,
 	)
+	ability.effects[0].modifiers["utility_only"] = true
 	ability.effects[0].modifiers["elemental_surge"] = true
 	var upgraded := DataLibrary._duplicate_effects(ability.effects)
 	upgraded[0].modifiers["elemental_surge"] = true
@@ -379,7 +396,7 @@ static func _elemental_surge() -> AbilityData:
 static func _earth_spike() -> AbilityData:
 	var ability := _spell(
 		&"mage_earth_spike", "Earth Spike", 4,
-		[_spawn_effect(&"mage_earth_spike_construct")],
+		[_spawn_effect(&"obsidian_wall")],
 		GameEnums.TargetingFlags.TILE,
 	)
 	ability.effects[0].modifiers["construct_hp_pct"] = 0.50

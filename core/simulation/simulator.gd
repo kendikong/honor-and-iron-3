@@ -58,6 +58,7 @@ static func simulate(state_in: BoardState, plan: Timeline) -> SimResult:
 ## Player portion only (planning validation / projected state).
 static func simulate_player_turn(board: BoardState, plan: Timeline, events: Array[SimEvent]) -> void:
 	_tick_start_of_turn(board, events, GameEnums.Team.PLAYER)
+	_resolve_delayed_effects(board, events)
 	_apply_bucket(board, plan, ActionBucket.PRE_MOVE, events)
 	ResolutionPipeline.resolve_pending_pushes(board, events)
 	_apply_bucket(board, plan, ActionBucket.ACTION, events)
@@ -143,6 +144,19 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team: GameEnums.Team) -> void:
 	for unit in board.units:
 		if unit.is_alive() and unit.team == team:
+			unit.passive_flags.erase("mage_ap_refunded")
+			for passive: PassiveData in unit.active_passives:
+				if passive == null or not passive.modifiers.has("overload_tick_damage"):
+					continue
+				var overload_damage := int(passive.modifiers["overload_tick_damage"])
+				unit.health.current_hp = maxi(1, unit.health.current_hp - overload_damage)
+				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
+					"unit": unit.id,
+					"amount": overload_damage,
+					"hp": unit.health.current_hp,
+					"source_label": "Overload",
+				}))
+				break
 			if unit.health.current_hp < unit.health.max_hp:
 				unit.passive_flags.erase("full_health_debuff_immunity")
 			if unit.passive_flags.get("next_turn_move_zero", false):
@@ -312,6 +326,40 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> void:
 	for unit in board.units:
 		if unit.is_alive():
+			if unit.passive_flags.get("mage_spell_cast_this_turn", false) == false:
+				unit.passive_flags.erase("arcane_overchannel_stacks")
+			unit.passive_flags.erase("mage_spell_cast_this_turn")
+			var surface_payload: Dictionary = board.terrain_payloads.get(unit.position, {})
+			var surface_owner := board.get_unit_by_id(int(surface_payload.get("terrain_owner_id", -1)))
+			if surface_owner != null and surface_owner.id == unit.id:
+				for passive: PassiveData in unit.active_passives:
+					if passive == null or not passive.modifiers.has("surface_syphoner"):
+						continue
+					CombatSystem.heal(board, unit, int(passive.modifiers.get("surface_syphoner_heal", 1)), events)
+					if unit.is_passive_upgraded(passive.id):
+						CombatSystem.add_armor(
+							board,
+							unit,
+							int(passive.modifiers.get("surface_syphoner_shield", 1)),
+							events,
+						)
+					else:
+						AbilitySystem.cleanse_unit(unit, events)
+					break
+			for passive: PassiveData in unit.active_passives:
+				if passive == null or not passive.modifiers.has("mana_well"):
+					continue
+				var tile := board.get_tile(unit.position)
+				if tile != null and tile.definition != null and tile.definition.id in [
+					&"fire", &"frozen", &"water", &"steam", &"oil"
+				]:
+					unit.passive_flags["mana_well_next_spell"] = true
+					if unit.is_passive_upgraded(passive.id):
+						unit.passive_flags["mana_well_magic_bonus"] = int(
+							passive.modifiers.get("mana_well_magic", 1)
+						)
+					unit._recalculate_stats(board)
+				break
 			if unit.passive_flags.get("next_turn_root_immune", false):
 				unit.passive_flags["root_immune_this_turn"] = true
 				unit.passive_flags.erase("next_turn_root_immune")
@@ -352,4 +400,13 @@ static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> voi
 		board.temporary_terrain_turns.erase(coord)
 		board.temporary_terrain_previous.erase(coord)
 		board.terrain_payloads.erase(coord)
+
+
+static func _resolve_delayed_effects(board: BoardState, events: Array[SimEvent]) -> void:
+	if board.delayed_effects.is_empty():
+		return
+	var delayed := board.delayed_effects.duplicate(true)
+	board.delayed_effects.clear()
+	for entry: Dictionary in delayed:
+		AbilitySystem.execute_delayed_effect(board, entry, events)
 

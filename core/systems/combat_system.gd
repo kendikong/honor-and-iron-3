@@ -666,8 +666,14 @@ static func deal_damage(
 			mitigation += 4 if target.is_passive_upgraded(&"collision_retaliator") else 2
 		
 	if source_type == &"magical":
+		var target_magic := target.current_magic
+		if attacker != null:
+			target_magic = floori(
+				target_magic
+				* (1.0 - float(attacker.passive_flags.get("mage_target_magic_ignore_pct", 0.0)))
+			)
 		mitigation = floori(
-			(get_dynamic_defense(board, target) + target.current_magic) / 2.0
+			(get_dynamic_defense(board, target) + target_magic) / 2.0
 		)
 		
 	if pierce:
@@ -734,7 +740,16 @@ static func deal_damage(
 		return
 		
 	var old_armor = target.armor
-	var armor_dmg := mini(target.armor, incoming)
+	var shieldable := incoming
+	if source_type == &"physical":
+		for passive: PassiveData in target.active_passives:
+			if passive == null or not passive.modifiers.has("arcane_overdrive_shield_bypass"):
+				continue
+			shieldable = floori(
+				incoming * (1.0 - float(passive.modifiers["arcane_overdrive_shield_bypass"]))
+			)
+			break
+	var armor_dmg := mini(target.armor, shieldable)
 	target.armor -= armor_dmg
 	var hp_dmg := incoming - armor_dmg
 	
@@ -779,6 +794,7 @@ static func deal_damage(
 		"source_label": source_label,
 	}))
 	_apply_cleric_damage_reactions(board, target, attacker, source_type, events)
+	_apply_generic_damage_passives(board, target, attacker, source_type, events)
 
 	if target.has_passive(&"thrill_of_pain"):
 		target.passive_flags["thrill_active"] = true
@@ -904,6 +920,33 @@ static func deal_damage(
 		}))
 		
 		if attacker != null and attacker.is_alive():
+			if attacker.passive_flags.get("mage_spell_in_progress", false):
+				for passive: PassiveData in attacker.active_passives:
+					if passive == null or not passive.modifiers.has("mana_siphon"):
+						continue
+					if not attacker.passive_flags.get("mage_ap_refunded", false):
+						attacker.ability.points_left = mini(
+							attacker.ability.max_points,
+							attacker.ability.points_left + 1,
+						)
+						attacker.passive_flags["mage_ap_refunded"] = true
+					else:
+						heal(board, attacker, attacker.current_magic, events)
+						var max_stacks := int(passive.modifiers.get("arcane_overchannel_max", 3))
+						attacker.passive_flags["arcane_overchannel_stacks"] = mini(
+							max_stacks,
+							int(attacker.passive_flags.get("arcane_overchannel_stacks", 0)) + 1,
+						)
+					if attacker.is_passive_upgraded(passive.id):
+						heal(
+							board,
+							attacker,
+							int(passive.modifiers.get("mana_siphon_heal", 1)),
+							events,
+						)
+					break
+			if attacker.passive_flags.get("destroy_corpse_on_kill", false):
+				target.passive_flags["corpse_destroyed"] = true
 			if target.passive_flags.get("exact_lethal_damage", false):
 				for passive: PassiveData in attacker.active_passives:
 					if passive == null or not passive.modifiers.has("exact_lethal_followup_damage"):
@@ -985,6 +1028,44 @@ static func try_resist_crowd_control(
 		"reason": "status_prevented_by_unstoppable_force",
 	}))
 	return true
+
+
+static func _apply_generic_damage_passives(
+	board: BoardState,
+	target: UnitState,
+	attacker: UnitState,
+	source_type: StringName,
+	events: Array[SimEvent],
+) -> void:
+	if target == null or not target.is_alive():
+		return
+	for passive: PassiveData in target.active_passives:
+		if passive == null or not passive.modifiers.has("mana_leak"):
+			continue
+		var pulse := int(passive.modifiers["mana_leak"])
+		if target.is_passive_upgraded(passive.id):
+			pulse = int(passive.modifiers.get("upgraded_mana_leak", pulse))
+		for direction: Vector2i in GridSystem.DIRECTIONS:
+			var adjacent := board.get_unit_at(target.position + direction)
+			if adjacent == null or adjacent.team == target.team or not adjacent.is_alive():
+				continue
+			var raw := calculate_scaled_damage(
+				target,
+				pulse,
+				GameEnums.StatType.MAGICAL,
+				board,
+			)
+			deal_damage_raw(
+				board,
+				target,
+				adjacent,
+				raw,
+				GameEnums.StatType.MAGICAL,
+				events,
+				"Mana Leak",
+				pulse,
+			)
+		break
 
 
 static func _apply_cleric_damage_reactions(

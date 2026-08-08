@@ -43,6 +43,8 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 		return
 
 	var dmg := tile.definition.hazard_damage
+	var terrain_payload: Dictionary = board.terrain_payloads.get(coord, {})
+	dmg += int(terrain_payload.get("hazard_damage_bonus", 0))
 		
 	if unit.has_passive(&"juggernaut") and tile.definition.id == &"trap":
 		# Destroy the trap
