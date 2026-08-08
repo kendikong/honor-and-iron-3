@@ -68,6 +68,30 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 	if not unit.is_alive():
 		return
 	var payload: Dictionary = board.terrain_payloads.get(coord, {})
+	var terrain_owner := board.get_unit_by_id(int(payload.get("terrain_owner_id", -1)))
+	if payload.get("sanctuary", false) and terrain_owner != null:
+		if unit.team == terrain_owner.team:
+			unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STEALTH, 1))
+			unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.INVULNERABLE, 1))
+		elif payload.get("sanctuary_enemy_push", 0) > 0:
+			PhysicsSystem.push(
+				board,
+				unit,
+				PhysicsSystem.cardinal_from_to(terrain_owner.position, unit.position),
+				int(payload["sanctuary_enemy_push"]),
+				events,
+				terrain_owner,
+			)
+	if payload.get("holy_ground", false) and terrain_owner != null and unit.team != terrain_owner.team:
+		CombatSystem.deal_damage(
+			board, unit, 1, events, &"magical", false, false,
+			terrain_owner, "Holy Ground", 1,
+		)
+		var def_down := int(payload.get("holy_ground_def_down", 0))
+		if def_down > 0:
+			unit.active_statuses.append(DataLibrary.make_status(
+				GameEnums.StatusType.STAT_DEBUFF_DEF, 1, def_down,
+			))
 	if payload.get("crossing_weapon_damage", false):
 		var weapon_damage := 0
 		if payload.get("weapon_damage_owner", -1) >= 0:

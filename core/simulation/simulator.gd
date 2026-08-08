@@ -133,6 +133,9 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 				)
 			if not unit.has_status(GameEnums.StatusType.MARK):
 				unit.passive_flags.erase("marked_no_stealth_teleport")
+			if not unit.has_status(GameEnums.StatusType.INTERCEPT):
+				unit.passive_flags.erase("life_link_source_id")
+				unit.passive_flags.erase("life_link_damage_reduction")
 			if to_remove.size() > 0 or indomitable_will_expired:
 				unit._recalculate_stats(board)
 
@@ -140,6 +143,8 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team: GameEnums.Team) -> void:
 	for unit in board.units:
 		if unit.is_alive() and unit.team == team:
+			if unit.health.current_hp < unit.health.max_hp:
+				unit.passive_flags.erase("full_health_debuff_immunity")
 			var next_move_bonus: int = int(
 				unit.passive_flags.get("next_turn_max_move_bonus", 0)
 			)
@@ -238,6 +243,49 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 					unit._recalculate_stats(board)
 				elif adj_enemies >= 1:
 					CombatSystem.heal(board, unit, regeneration, events)
+
+			for passive: PassiveData in unit.active_passives:
+				if passive == null or not passive.modifiers.has("holy_ground_tick"):
+					continue
+				for dir: Vector2i in GridSystem.DIRECTIONS:
+					var adjacent := board.get_unit_at(unit.position + dir)
+					if adjacent == null or not adjacent.is_alive():
+						continue
+					if adjacent.team == unit.team:
+						CombatSystem.heal(board, adjacent, 1, events)
+					else:
+						AbilitySystem.purge_unit(adjacent, events)
+						if unit.is_passive_upgraded(passive.id):
+							adjacent.active_statuses.append(
+								DataLibrary.make_status(GameEnums.StatusType.BLIND, 1)
+							)
+				break
+			for source: UnitState in board.units:
+				if source == null or source.team != unit.team:
+					continue
+				for passive: PassiveData in source.active_passives:
+					if (
+						passive == null
+						or not passive.modifiers.has("full_health_def")
+						or unit.health.current_hp < unit.health.max_hp
+					):
+						continue
+					var full_health_def := int(passive.modifiers["full_health_def"])
+					var full_health_status := DataLibrary.make_status(
+						GameEnums.StatusType.STAT_BUFF_DEF,
+						1,
+						full_health_def,
+					)
+					unit.active_statuses.append(full_health_status)
+					unit.passive_flags["full_health_debuff_immunity"] = true
+					if source.is_passive_upgraded(passive.id):
+						unit.active_statuses.append(DataLibrary.make_status(
+							GameEnums.StatusType.STAT_BUFF_MAG,
+							1,
+							int(passive.modifiers.get("upgraded_full_health_mag", 0)),
+						))
+					unit._recalculate_stats(board)
+					break
 
 
 static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> void:

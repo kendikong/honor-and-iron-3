@@ -3,6 +3,7 @@ extends RefCounted
 
 const LancerFactoryScript := preload("res://core/factory/classes/lancer_factory.gd")
 const ArcherFactoryScript := preload("res://core/factory/classes/archer_factory.gd")
+const ClericFactoryScript := preload("res://core/factory/classes/cleric_factory.gd")
 
 ## Purpose: A hardcoded central registry of all Units, Terrain, Abilities, and Maps.
 ## This simulates loading .tres files from disk until the actual asset pipeline
@@ -179,10 +180,7 @@ static func _ensure_init() -> void:
 	var mage := _make_unit_data(&"mage", "Mage", 2, 3, 1, [mage_fireball, mage_swap], null, GameEnums.MovementType.WALK, 0, 5, 1, basic_staff, [p_mage])
 
 	# 7. CLERIC (STAFF)
-	var p_cleric = _make_passive(&"blessing", "Blessing", "Heals adjacent allies.")
-	var cleric_blessing := _make_ability(&"cleric_blessing", "Divine Shield", 2, [_effect(GameEnums.EffectType.ARMOR_UP, 2)], 1)
-	var cleric_pull := _make_movement_ability(&"cleric_pull", "Rescue Pull", 2, [_effect(GameEnums.EffectType.PULL, 1)], 2)
-	var cleric := _make_unit_data(&"cleric", "Cleric", 3, 3, 1, [cleric_blessing, cleric_pull], null, GameEnums.MovementType.WALK, 0, 3, 2, basic_staff, [p_cleric])
+	var cleric: UnitData = ClericFactoryScript.build(basic_staff)
 
 	# 8. ASSASSIN
 	var p_assassin = _make_passive(&"lethal", "Lethal", "Backstabs do extra damage.")
@@ -277,6 +275,25 @@ static func _ensure_init() -> void:
 		_all_units_dict[u.id] = u
 	for u in _enemy_units:
 		_all_units_dict[u.id] = u
+
+	var cleric_holy_hammer := _make_unit_data(
+		&"cleric_holy_hammer",
+		"Holy Hammer",
+		1,
+		0,
+		1,
+		[],
+		null,
+		GameEnums.MovementType.WALK,
+		0,
+		0,
+		0,
+		basic_sword,
+		[],
+	)
+	cleric_holy_hammer.is_construct = true
+	cleric_holy_hammer.construct_scaling_percent = 25.0
+	_all_units_dict[cleric_holy_hammer.id] = cleric_holy_hammer
 
 	ClassLibrarySchema.apply_saved_unit_overrides()
 	for u in _player_units:
@@ -856,6 +873,16 @@ static func _spear_wall() -> TerrainData:
 	t.entry_status_duration = 1
 	return t
 
+static func _sanctuary() -> TerrainData:
+	var t := _hazard(&"sanctuary", "Sanctuary", 0, false)
+	t.display_name = "Sanctuary"
+	return t
+
+static func _holy_ground() -> TerrainData:
+	var t := _hazard(&"holy_ground", "Holy Ground", 0, false)
+	t.display_name = "Holy Ground"
+	return t
+
 static func _smoke() -> TerrainData:
 	var t := TerrainData.new()
 	t.id = &"smoke"
@@ -882,6 +909,8 @@ static func get_terrain(id: StringName) -> TerrainData:
 		_cached_terrains[&"caltrop_trap"] = _caltrop_trap()
 		_cached_terrains[&"suppressing_fire"] = _suppressing_fire()
 		_cached_terrains[&"spear_wall"] = _spear_wall()
+		_cached_terrains[&"sanctuary"] = _sanctuary()
+		_cached_terrains[&"holy_ground"] = _holy_ground()
 		_cached_terrains[&"smoke"] = _smoke()
 		_cached_terrains[&"pit"] = _hazard(&"pit", "Pit", 6, true)
 		_cached_terrains[&"spikes"] = _hazard(&"spikes", "Spikes", 2, false)

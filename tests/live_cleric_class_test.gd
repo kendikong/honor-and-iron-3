@@ -1,0 +1,129 @@
+## Tier 2 live Cleric acceptance.
+## Every revised Cleric ability is selected and committed through the live
+## TacticalCombat preview/slot pipeline.
+extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
+
+const _CASES: Array[Dictionary] = [
+	{"id": &"cleric_guardian_step", "actor": Vector2i(2, 2), "target": Vector2i(3, 2)},
+	{"id": &"cleric_holy_light", "actor": Vector2i(4, 2), "target": Vector2i(3, 2)},
+	{"id": &"cleric_smite", "actor": Vector2i(2, 5), "target": Vector2i(4, 5)},
+	{"id": &"cleric_cleansing_aura", "actor": Vector2i(5, 5), "target": Vector2i(5, 5)},
+	{"id": &"cleric_sanctuary", "actor": Vector2i(8, 2), "target": Vector2i(7, 2)},
+	{"id": &"cleric_blinding_ray", "actor": Vector2i(2, 8), "target": Vector2i(4, 8)},
+	{"id": &"cleric_divine_hammer", "actor": Vector2i(5, 8), "target": Vector2i(6, 8)},
+	{"id": &"cleric_life_link", "actor": Vector2i(8, 8), "target": Vector2i(7, 8)},
+	{"id": &"cleric_prayer_of_fortitude", "actor": Vector2i(4, 5), "target": Vector2i(4, 4)},
+	{"id": &"cleric_resurrection", "actor": Vector2i(6, 6), "target": Vector2i(6, 5)},
+	{"id": &"cleric_consecrate_ground", "actor": Vector2i(7, 7), "target": Vector2i(7, 7)},
+	{"id": &"cleric_holy_wrath", "actor": Vector2i(8, 5), "target": Vector2i(7, 5)},
+	{"id": &"cleric_divine_guidance", "actor": Vector2i(3, 7), "target": Vector2i(3, 6)},
+	{"id": &"cleric_shield_of_faith", "actor": Vector2i(5, 3), "target": Vector2i(5, 2)},
+	{"id": &"cleric_martyrs_chains", "actor": Vector2i(7, 3), "target": Vector2i(7, 5)},
+]
+
+
+func test_live_cleric_every_skill(timeout := 240000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	runner.move_window_to_foreground()
+	await runner.simulate_frames(8, 16)
+	var scene := runner.scene() as TestBattleMapView
+	assert_object(scene).is_not_null()
+	if scene == null:
+		return
+	var session: TestBattleSession = scene.get_session()
+	for item: Dictionary in _CASES:
+		session.reset_defaults()
+		session.player_class_id = &"cleric"
+		session.player_level = TestBattleSession.TRAINING_LEVEL
+		session.passive_enabled.clear()
+		session.skill_enabled.clear()
+		session.set_all_passives_enabled(&"cleric", true)
+		session.set_all_skills_enabled(&"cleric", true)
+		session.extra_player_coords = _player_coords(item)
+		session.dummy_coords = _enemy_target(item)
+		session.unkillable_dummies = true
+		session.infinite_player_ap = true
+		scene.apply_training_board()
+		await runner.simulate_frames(8, 16)
+		var director := scene.get_node("CombatDirector") as CombatDirector
+		var shell := scene.get_node("CombatShell") as TacticalCombatShell
+		var input: CombatPlanningInput = shell.planning_input
+		var actor_id := _unit_id_at(director.base_board, item.actor)
+		assert_int(actor_id).override_failure_message(
+			"%s: missing live Cleric actor" % item.id
+		).is_greater(0)
+		if actor_id < 0:
+			continue
+		var actor := director.board.get_unit_by_id(actor_id)
+		var ability := _ability_by_id(actor, item.id)
+		assert_object(ability).override_failure_message(
+			"%s: missing live Cleric ability" % item.id
+		).is_not_null()
+		if ability == null:
+			continue
+		director.select_unit(actor_id)
+		director.select_ability(_ability_index(actor, ability))
+		await runner.simulate_frames(2, 16)
+		input._intent_state.set_hover_coord(item.target)
+		var slots: Dictionary = input._build_commit_slots_at_cell(actor_id, item.target)
+		assert_bool(_slots_invalid(slots)).override_failure_message(
+			"%s: live preview rejected target %s" % [item.id, item.target]
+		).is_false()
+		if _slots_invalid(slots):
+			continue
+		input.call("_paint_intent_slots_before_commit", actor_id, slots)
+		assert_bool(director.commit_from_slots(actor_id, slots)).override_failure_message(
+			"%s: live commit rejected slots" % item.id
+		).is_true()
+		director.flush_plan_refresh_signals_if_pending()
+		await runner.simulate_frames(2, 16)
+
+
+func _player_coords(item: Dictionary) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	if item.actor != Vector2i(4, 5):
+		result.append(item.actor)
+	if item.id in [
+		&"cleric_guardian_step", &"cleric_holy_light", &"cleric_life_link",
+		&"cleric_prayer_of_fortitude", &"cleric_resurrection",
+		&"cleric_divine_guidance", &"cleric_shield_of_faith",
+	] and item.target not in result:
+		result.append(item.target)
+	return result
+
+
+func _enemy_target(item: Dictionary) -> Array[Vector2i]:
+	if item.id in [
+		&"cleric_smite", &"cleric_blinding_ray", &"cleric_holy_wrath",
+		&"cleric_martyrs_chains",
+	]:
+		return [item.target]
+	return []
+
+
+func _ability_by_id(unit: UnitState, ability_id: StringName) -> AbilityData:
+	if unit == null:
+		return null
+	for ability: AbilityData in unit.active_abilities:
+		if ability != null and ability.id == ability_id:
+			return ability
+	return null
+
+
+func _ability_index(unit: UnitState, ability: AbilityData) -> int:
+	for index: int in range(unit.active_abilities.size()):
+		if unit.active_abilities[index] == ability:
+			return index
+	return -1
+
+
+func _unit_id_at(board: BoardState, cell: Vector2i) -> int:
+	for unit: UnitState in board.units:
+		if unit != null and unit.position == cell:
+			return unit.id
+	return -1
+
+
+func _slots_invalid(slots: Dictionary) -> bool:
+	var invalid: Variant = slots.get("invalid", false)
+	return invalid is String or invalid == true

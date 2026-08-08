@@ -223,6 +223,106 @@ static func movement_point_cost(actor: UnitState, ability: AbilityData) -> int:
 	return ability.movement_point_cost
 
 
+static func _apply_healing_passive_modifiers(
+	board: BoardState,
+	healer: UnitState,
+	target: UnitState,
+	healing_delivered: int,
+	events: Array[SimEvent],
+) -> void:
+	if healer == null or target == null:
+		return
+	if healer.team != target.team or healer.id == target.id:
+		return
+	for passive: PassiveData in healer.active_passives:
+		if passive == null or not passive.modifiers.has("selfless_siphon"):
+			continue
+		if healing_delivered <= 0:
+			break
+		var ratio := float(passive.modifiers.get("self_heal_pct", 0.25))
+		if healer.is_passive_upgraded(passive.id):
+			ratio = float(passive.modifiers.get("upgraded_self_heal_pct", ratio))
+		var self_heal := floori(healing_delivered * ratio)
+		if self_heal <= 0:
+			continue
+		if healer.is_passive_upgraded(passive.id) and healer.health.current_hp >= healer.health.max_hp:
+			CombatSystem.add_armor(board, healer, self_heal, events)
+		else:
+			CombatSystem.heal(board, healer, self_heal, events)
+		break
+	for passive: PassiveData in healer.active_passives:
+		if passive == null:
+			continue
+		if passive.modifiers.has("adjacent_enemy_heal"):
+			var adjacent_enemies := 0
+			for direction: Vector2i in GridSystem.DIRECTIONS:
+				var adjacent := board.get_unit_at(healer.position + direction)
+				if adjacent != null and adjacent.team != healer.team:
+					adjacent_enemies += 1
+			if adjacent_enemies > 0:
+				var bonus := int(passive.modifiers["adjacent_enemy_heal"])
+				if healer.is_passive_upgraded(passive.id):
+					bonus = int(passive.modifiers.get("upgraded_adjacent_enemy_heal", bonus))
+				CombatSystem.heal(board, target, bonus, events)
+		if passive.modifiers.has("heal_ally_str"):
+			var strength_bonus := int(passive.modifiers["heal_ally_str"])
+			if target.health.current_hp >= target.health.max_hp:
+				strength_bonus = int(passive.modifiers.get("heal_full_str", strength_bonus))
+			if healer.is_passive_upgraded(passive.id):
+				strength_bonus = int(passive.modifiers.get("upgraded_heal_ally_str", strength_bonus))
+			target.active_statuses.append(
+				DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, strength_bonus)
+			)
+		if passive.modifiers.has("heal_def"):
+			var defense_bonus := int(passive.modifiers["heal_def"])
+			if healer.is_passive_upgraded(passive.id):
+				defense_bonus = int(passive.modifiers.get("upgraded_heal_def", defense_bonus))
+			healer.active_statuses.append(
+				DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, defense_bonus)
+			)
+			target.active_statuses.append(
+				DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, defense_bonus)
+			)
+	healer._recalculate_stats(board)
+	target._recalculate_stats(board)
+
+
+static func _apply_damage_effect_modifiers(
+	board: BoardState,
+	actor: UnitState,
+	target: UnitState,
+	effect: EffectData,
+	events: Array[SimEvent],
+) -> void:
+	if board == null or actor == null or target == null or not target.is_alive():
+		return
+	if effect.modifiers.get("stagger_if_debuffed", false) and _target_has_debuff(target):
+		target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+		target._recalculate_stats(board)
+	if effect.modifiers.has("push"):
+		PhysicsSystem.push(
+			board,
+			target,
+			PhysicsSystem.cardinal_from_to(actor.position, target.position),
+			int(effect.modifiers["push"]),
+			events,
+			actor,
+		)
+
+
+static func purge_unit(target: UnitState, events: Array[SimEvent]) -> void:
+	if target == null:
+		return
+	for index: int in range(target.active_statuses.size() - 1, -1, -1):
+		if GameEnums.is_buff(target.active_statuses[index].type):
+			var removed: StatusData = target.active_statuses.pop_at(index)
+			events.append(SimEvent.make(GameEnums.SimEventType.STATUS_REMOVED, {
+				"unit": target.id, "status_type": removed.type,
+			}))
+	target.armor = 0
+	target._recalculate_stats()
+
+
 static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
 	if ability == null or actor == null:
 		return false
@@ -231,6 +331,8 @@ static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, bo
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
+			if _ability_has_modifier(actor, ability, &"cost_all_movement"):
+				return actor.movement.points_left >= actor.movement.max_points
 			return actor.movement.points_left >= movement_point_cost(actor, ability)
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			if actor.has_run_boost():
@@ -1296,7 +1398,10 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: B
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
-			actor.movement.points_left -= movement_point_cost(actor, ability)
+			if _ability_has_modifier(actor, ability, &"cost_all_movement"):
+				actor.movement.points_left = 0
+			else:
+				actor.movement.points_left -= movement_point_cost(actor, ability)
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			actor.ability.points_left -= ap_cost
 		GameEnums.AbilityKind.CLASS_SKILL:
@@ -1712,6 +1817,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				"pierce": pierce
 			}))
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
+			_apply_damage_effect_modifiers(board, actor, target, effect, events)
 			if (
 				target != null
 				and target.is_alive()
@@ -1970,6 +2076,34 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 		GameEnums.EffectType.HEAL:
 			if target != null:
+				if effect.modifiers.has("revive_percent_max_hp") and not target.is_alive():
+					var self_cost := int(effect.modifiers.get("spend_self_hp", 0))
+					if actor.health.current_hp <= self_cost:
+						events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+							"actor": actor.id, "reason": "insufficient_resurrection_hp",
+						}))
+						return
+					actor.health.current_hp -= self_cost
+					target.health.current_hp = maxi(
+						1,
+						floori(
+							target.health.max_hp
+							* float(effect.modifiers["revive_percent_max_hp"])
+						),
+					)
+					if effect.modifiers.has("revive_shield"):
+						CombatSystem.add_armor(
+							board,
+							target,
+							int(effect.modifiers["revive_shield"]),
+							events,
+						)
+					events.append(SimEvent.make(GameEnums.SimEventType.UNIT_HEALED, {
+						"unit": target.id,
+						"amount": target.health.current_hp,
+						"revived": true,
+					}))
+					return
 				var heal_amount := effect.amount
 				if action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
 					var wpn := 0
@@ -1980,7 +2114,15 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				elif effect.scaling_stat == GameEnums.StatType.MAX_HP:
 					var raw = effect.amount * 0.1 * target.health.max_hp
 					heal_amount = floori(raw)
+				var hp_before := target.health.current_hp
 				CombatSystem.heal(board, target, heal_amount, events)
+				_apply_healing_passive_modifiers(
+					board,
+					actor,
+					target,
+					target.health.current_hp - hp_before,
+					events,
+				)
 		GameEnums.EffectType.ARMOR_UP:
 			if target != null:
 				var shield_amount = effect.amount
@@ -2090,6 +2232,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				}))
 		GameEnums.EffectType.ADD_STATUS:
 			if target != null:
+				if (
+					target.passive_flags.get("full_health_debuff_immunity", false)
+					and GameEnums.is_debuff(effect.status_type)
+				):
+					return
 				if target.has_status(GameEnums.StatusType.INVULNERABLE) and GameEnums.is_debuff(effect.status_type):
 					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 						"actor": target.id, "reason": "status_prevented_by_invulnerable",
@@ -2132,6 +2279,22 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					"duration": effect.status_duration,
 					"amount": effect.amount,
 				}))
+				if effect.modifiers.has("grant_ap"):
+					target.ability.points_left = mini(
+						target.ability.max_points,
+						target.ability.points_left + int(effect.modifiers["grant_ap"]),
+					)
+				if effect.modifiers.has("life_link"):
+					target.passive_flags["life_link_source_id"] = actor.id
+					target.passive_flags["life_link_damage_reduction"] = 3
+				if effect.modifiers.has("self_move_zero_next_turn"):
+					actor.passive_flags["next_turn_move_zero"] = true
+				if effect.modifiers.has("self_root_immune_next_turn"):
+					actor.passive_flags["next_turn_root_immune"] = true
+				if effect.modifiers.has("counterattack_melee"):
+					target.passive_flags["counterattack_melee"] = true
+				if effect.modifiers.has("counterattack_on_intercept"):
+					target.passive_flags["counterattack_on_intercept"] = true
 				if effect.modifiers.has("upgraded_trample"):
 					target.active_statuses.append(
 						DataLibrary.make_status(GameEnums.StatusType.TRAMPLE, 1, 0)
@@ -2183,25 +2346,28 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							)
 		GameEnums.EffectType.CLEANSE:
 			if target != null:
+				var removed_count := 0
 				var new_statuses: Array[StatusData] = []
 				for status in target.active_statuses:
 					if not GameEnums.is_debuff(status.type):
 						new_statuses.append(status)
+					else:
+						removed_count += 1
 				target.active_statuses = new_statuses
 				target._recalculate_stats()
+				if effect.modifiers.has("ally_str_per_debuff") and removed_count > 0:
+					target.active_statuses.append(DataLibrary.make_status(
+						GameEnums.StatusType.STAT_BUFF_STR,
+						1,
+						removed_count * int(effect.modifiers["ally_str_per_debuff"]),
+					))
+					target._recalculate_stats()
 				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_REMOVED, {
 					"unit": target.id, "reason": "cleanse"
 				}))
 		GameEnums.EffectType.PURGE:
 			if target != null:
-				for i in range(target.active_statuses.size() - 1, -1, -1):
-					if GameEnums.is_buff(target.active_statuses[i].type):
-						var removed = target.active_statuses.pop_at(i)
-						events.append(SimEvent.make(GameEnums.SimEventType.STATUS_REMOVED, {
-							"unit": target.id, "status_type": removed.type
-						}))
-				target.armor = 0
-				target._recalculate_stats()
+				purge_unit(target, events)
 		GameEnums.EffectType.DASH:
 			var dir := PhysicsSystem.straight_line_dir(actor.position, action.target_coord)
 			var dash_steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
@@ -2343,6 +2509,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					or terrain_payload.get("created_area_weapon_damage", false)
 				):
 					terrain_payload["weapon_damage_owner"] = actor.id
+				if terrain_payload.get("sanctuary", false) or terrain_payload.get("holy_ground", false):
+					terrain_payload["terrain_owner_id"] = actor.id
 				for passive: PassiveData in actor.active_passives:
 					if passive == null:
 						continue

@@ -555,6 +555,19 @@ static func deal_damage(
 	if telemetry_base >= 0:
 		append_flat_damage_telemetry(board, target, telemetry_base, events, pierce or source_type == &"true")
 		
+	var life_link_source := board.get_unit_by_id(
+		int(target.passive_flags.get("life_link_source_id", -1))
+	)
+	if (
+		life_link_source != null
+		and life_link_source.is_alive()
+		and life_link_source.team == target.team
+	):
+		amount = maxi(
+			0,
+			amount - int(target.passive_flags.get("life_link_damage_reduction", 0)),
+		)
+
 	if not is_intercepted and source_type != &"hazard":
 		for dir in GridSystem.DIRECTIONS:
 			var adj = target.position + dir
@@ -803,6 +816,43 @@ static func deal_damage(
 		target.passive_flags["bastion_used"] = true
 		if target.is_passive_upgraded(&"indestructible_bastion"):
 			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 99, 2))
+
+	if target.health.current_hp <= 0:
+		for rescuer: UnitState in board.units:
+			if (
+				rescuer == null
+				or not rescuer.is_alive()
+				or rescuer.team != target.team
+				or rescuer.id == target.id
+				or rescuer.passive_flags.get("divine_intervention_used", false)
+			):
+				continue
+			var save_passive: PassiveData = null
+			for passive: PassiveData in rescuer.active_passives:
+				if passive != null and passive.modifiers.has("lethal_ally_save"):
+					save_passive = passive
+					break
+			if save_passive == null:
+				continue
+			var rescue_cell := Vector2i(-1, -1)
+			for direction: Vector2i in GridSystem.DIRECTIONS:
+				var candidate := rescuer.position + direction
+				if GridSystem.is_passable(board, candidate) and not GridSystem.is_occupied(board, candidate):
+					rescue_cell = candidate
+					break
+			if rescue_cell == Vector2i(-1, -1):
+				continue
+			GridSystem.set_occupant(board, target.position, -1)
+			target.position = rescue_cell
+			GridSystem.set_occupant(board, rescue_cell, target.id)
+			target.health.current_hp = 1
+			rescuer.passive_flags["divine_intervention_used"] = true
+			if rescuer.is_passive_upgraded(save_passive.id):
+				target.armor += int(save_passive.modifiers.get("upgraded_lethal_ally_shield", 0))
+			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_HEALED, {
+				"unit": target.id, "amount": 1, "divine_intervention": true,
+			}))
+			break
 			
 	if was_alive and not target.is_alive():
 		if attacker != null and attacker.is_alive():

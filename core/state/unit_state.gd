@@ -178,6 +178,27 @@ func _recalculate_stats(board: BoardState = null) -> void:
 	if is_passive_upgraded(&"enraged"):
 		stat_mov += CombatSystem.count_enraged_debuff_hazard_sources(board, self)
 
+	if board != null:
+		for source: UnitState in board.units:
+			if (
+				source == null
+				or not source.is_alive()
+				or source.team != team
+			):
+				continue
+			for passive: PassiveData in source.active_passives:
+				if (
+					passive == null
+					or not passive.modifiers.has("aura_range")
+					or GridSystem.manhattan(source.position, position)
+						> int(passive.modifiers["aura_range"])
+				):
+					continue
+				stat_mag += int(passive.modifiers.get("aura_mag", 0))
+				stat_str += int(passive.modifiers.get("aura_str", 0))
+				if source.is_passive_upgraded(passive.id):
+					stat_def += int(passive.modifiers.get("upgraded_aura_def", 0))
+
 	current_strength = maxi(0, base_str + w_str + stat_str)
 	current_magic = maxi(0, base_mag + w_mag + stat_mag)
 	current_defense = maxi(0, base_def + w_def + stat_def)
