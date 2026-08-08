@@ -572,7 +572,10 @@ func _ability_by_id(unit: UnitState, skill_id: StringName) -> AbilityData:
 
 func _ability_index(unit: UnitState, ability: AbilityData) -> int:
 	for index: int in range(unit.active_abilities.size()):
-		if unit.active_abilities[index] == ability:
+		var candidate: AbilityData = unit.active_abilities[index]
+		if candidate == ability or (
+			candidate != null and ability != null and candidate.id == ability.id
+		):
 			return index
 	return -1
 

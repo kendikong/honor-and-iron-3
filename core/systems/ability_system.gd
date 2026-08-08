@@ -693,13 +693,18 @@ static func planning_auto_arms_after_premove(actor: UnitState, ability: AbilityD
 static func planning_awaiting_phase(ability: AbilityData) -> int:
 	if ability == null:
 		return GameEnums.PlanningAwaitingPhase.GENERIC
-	if ability_has_movement_effect(ability) or ability.has_targeting(GameEnums.TargetingFlags.TILE):
+	if ability_has_movement_effect(ability):
 		return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	if ability.has_targeting(GameEnums.TargetingFlags.TILE):
+		return GameEnums.PlanningAwaitingPhase.TARGET_PICK
 	return GameEnums.PlanningAwaitingPhase.GENERIC
 
 
 static func planning_awaiting_endpoint_range(ability: AbilityData) -> int:
-	if planning_awaiting_phase(ability) == GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
+	if planning_awaiting_phase(ability) in [
+		GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT,
+		GameEnums.PlanningAwaitingPhase.TARGET_PICK,
+	]:
 		var ds := dash_steps(ability)
 		if ds > 0:
 			return ds

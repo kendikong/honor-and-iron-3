@@ -2073,6 +2073,11 @@ func _draw_move_ghosts() -> void:
 		return
 	if _planning_input != null and not _planning_input.awaiting_targeting_active():
 		return
+	if (
+		AbilitySystem.planning_awaiting_phase(ability)
+		!= GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	):
+		return
 	var origin: Vector2i = _proj_origin(unit)
 	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, _hover_coord, ability):
 		return

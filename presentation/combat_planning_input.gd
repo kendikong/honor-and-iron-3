@@ -1360,6 +1360,16 @@ func _refresh_selected_interaction_preview() -> void:
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 			_refresh_click_target_highlight()
 			return
+	var tile_target_ability: AbilityData = _selected_ability_data(p_unit)
+	if (
+		tile_target_ability != null
+		and tile_target_ability.has_targeting(GameEnums.TargetingFlags.TILE)
+		and not AbilitySystem.ability_has_movement_effect(tile_target_ability)
+		and _in_ability_range_of_coord(p_unit, cell)
+	):
+		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
+		_refresh_click_target_highlight()
+		return
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
 		var target_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
@@ -3459,7 +3469,16 @@ func _build_commit_slots_at_cell(
 	):
 		return slots
 
-	if cell == actor.position:
+	var awaiting_action: TimelineAction = (
+		_director.find_awaiting_action(unit_id) if has_awaiting_action else null
+	)
+	if (
+		cell == actor.position
+		and (
+			awaiting_action == null
+			or awaiting_action.target_coord == actor.position
+		)
+	):
 		return _build_self_tile_commit_slots(
 			slots, actor, unit_id, ability_index, ability, face_dir,
 		)
@@ -3479,6 +3498,11 @@ func _build_commit_slots_at_cell(
 	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental —
 	## do not divert into enemy/ally unit-target commit slots.
 	var awaiting_tile_endpoint: bool = _is_awaiting_movement_endpoint(actor, ability)
+	var awaiting_target_pick: bool = (
+		ability != null
+		and _awaiting_flow_selected(actor, ability)
+		and not AbilitySystem.ability_has_movement_effect(ability)
+	)
 
 	var targeted_move_attack: bool = (
 		ability != null
@@ -3487,7 +3511,7 @@ func _build_commit_slots_at_cell(
 		)
 	)
 	if hover_unit != null and hover_unit.is_enemy() and (
-		not awaiting_tile_endpoint or targeted_move_attack
+		(not awaiting_tile_endpoint and not awaiting_target_pick) or targeted_move_attack
 	):
 		return _build_enemy_commit_slots(
 			slots, actor, unit_id, cell, hover_unit, ability, ability_index,
@@ -3521,7 +3545,12 @@ func _build_commit_slots_at_cell(
 
 		if (
 			has_awaiting_action
-			or (awaiting_targeting_active() and _awaiting_flow_selected(actor, ability))
+			or (
+				awaiting_targeting_active()
+				and _awaiting_flow_selected(actor, ability)
+				and AbilitySystem.planning_awaiting_phase(ability)
+					== GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+			)
 		):
 			if awaiting_targeting_active() or has_awaiting_action:
 				var awaiting_origin := _proj_origin(actor)
@@ -3566,6 +3595,10 @@ func _build_commit_slots_at_cell(
 				and not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
 			):
 				_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
+				if not AbilitySystem.ability_has_movement_effect(ability):
+					_maybe_append_premove_action_pair(
+						slots, unit_id, actor, cell, ability, effective_waypoints,
+					)
 				return slots
 			if (
 				ability.has_targeting(GameEnums.TargetingFlags.TILE)
@@ -3607,6 +3640,13 @@ func _build_commit_slots_at_cell(
 					)
 					return slots
 			if hover_unit != null and _in_ability_range(actor, hover_unit):
+				if awaiting_target_pick:
+					slots["action"].append(
+						TimelineAction.make_ability_awaiting(
+							unit_id, ability, actor.position, effective_waypoints,
+						),
+					)
+					return slots
 				slots["action"].append(
 					TimelineAction.make_ability(
 						unit_id,
@@ -3620,6 +3660,13 @@ func _build_commit_slots_at_cell(
 				return slots
 			if hover_unit == null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
 				if _in_ability_range_of_coord(actor, cell):
+					if awaiting_target_pick:
+						slots["action"].append(
+							TimelineAction.make_ability_awaiting(
+								unit_id, ability, actor.position, effective_waypoints,
+							),
+						)
+						return slots
 					var board: BoardState = _proj()
 					if AbilitySystem.has_pass_through_effects(ability) and not AbilitySystem.ability_has_movement_effect(ability):
 						var path: Array[Vector2i] = MovementSystem.find_path(board, actor.position, cell, ability.range_tiles)
