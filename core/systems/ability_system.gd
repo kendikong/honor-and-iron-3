@@ -1426,11 +1426,18 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var targets_hit_count = 0
 	var objects_destroyed_count = 0
 	
+	for effect: EffectData in effects_to_apply:
+		if effect.modifiers.get("pull_surfaces", false):
+			_pull_surfaces_to_center(board, action.target_coord, affected_tiles, events)
+			break
+
 	for eff in effects_to_apply:
 		if eff.modifiers.has("heal_per_target_hit"): heal_per_target_hit = true
 		if eff.modifiers.has("buff_per_destroyed_object"): buff_per_object = true
 		if eff.modifiers.has("destroy_corpse_on_kill"):
 			actor.passive_flags["destroy_corpse_on_kill"] = true
+		if eff.modifiers.has("kill_grant_ap"):
+			actor.passive_flags["kill_grant_ap"] = int(eff.modifiers["kill_grant_ap"])
 		if eff.modifiers.has("next_attack_pierce"):
 			actor.passive_flags["breaching_dash_pierce"] = true
 		if eff.modifiers.has("on_kill_heal_shield"):
@@ -1452,7 +1459,10 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		if effect.type == GameEnums.EffectType.TELEPORT_CASTER:
 			actor.passive_flags["jumped_or_teleported_this_turn"] = true
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
+			var departure_tile: Vector2i = actor.position
 			_apply_effect_to_tile(board, actor, action, effect, events, target_coord, board.get_unit_at(target_coord))
+			if effect.modifiers.get("leave_elemental_surface", false):
+				_create_elemental_surface(board, actor, action, events, departure_tile)
 			if effect.type == GameEnums.EffectType.DASH:
 				resolve_pending_pushes(board, events)
 				if effect.modifiers.has("paired_ally_charge"):
@@ -1631,6 +1641,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		actor.passive_flags.erase("on_kill_max_move")
 		actor.passive_flags.erase("paired_ally_id")
 		actor.passive_flags.erase("destroy_corpse_on_kill")
+		actor.passive_flags.erase("kill_grant_ap")
 		actor.passive_flags.erase("mage_spell_pierce")
 		actor.passive_flags.erase("mage_spell_range_bonus")
 		actor.passive_flags.erase("mage_spell_shape_bonus")
@@ -1670,6 +1681,75 @@ static func execute_delayed_effect(
 			coord,
 			board.get_unit_at(coord),
 		)
+
+
+static func _create_elemental_surface(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	events: Array[SimEvent],
+	coord: Vector2i,
+) -> void:
+	var surface := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 0)
+	surface.modifiers["terrain_id"] = &"fire"
+	surface.modifiers["hazard_duration"] = 1
+	surface.modifiers["elemental_surface"] = true
+	_apply_effect_to_tile(
+		board,
+		actor,
+		action,
+		surface,
+		events,
+		coord,
+		board.get_unit_at(coord),
+	)
+
+
+static func _pull_surfaces_to_center(
+	board: BoardState,
+	center: Vector2i,
+	affected_tiles: Array[Vector2i],
+	events: Array[SimEvent],
+) -> void:
+	for coord: Vector2i in affected_tiles:
+		if coord == center:
+			continue
+		var tile := board.get_tile(coord)
+		if tile == null or tile.definition == null:
+			continue
+		if (
+			tile.definition.hazard_damage <= 0
+			and not board.terrain_payloads.has(coord)
+			and tile.definition.id not in [&"water", &"frozen", &"fire", &"steam"]
+		):
+			continue
+		var center_tile := board.get_tile(center)
+		if center_tile == null:
+			return
+		var previous: TerrainData = board.temporary_terrain_previous.get(
+			coord,
+			DataLibrary.get_terrain(&"plain"),
+		)
+		var payload: Dictionary = board.terrain_payloads.get(coord, {}).duplicate(true)
+		var surface_definition: TerrainData = tile.definition
+		board.set_tile_terrain(coord, previous)
+		board.set_tile_terrain(center, surface_definition)
+		board.terrain_payloads.erase(coord)
+		if not payload.is_empty():
+			board.terrain_payloads[center] = payload
+		board.temporary_terrain_previous.erase(coord)
+		board.temporary_terrain_previous[center] = previous
+		events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
+			"coord": coord,
+			"terrain": previous.id,
+			"pulled_to": center,
+		}))
+		events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
+			"coord": center,
+			"terrain": surface_definition.id,
+			"pulled_from": coord,
+		}))
+		return
 
 
 static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> void:
@@ -2547,6 +2627,32 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					"unit": construct_id,
 					"coord": coord,
 				}))
+				if effect.modifiers.get("creation_adjacent_damage", false):
+					var adjacent_damage := int(effect.modifiers["creation_adjacent_damage"])
+					for direction: Vector2i in GridSystem.DIRECTIONS:
+						var adjacent := board.get_unit_at(coord + direction)
+						if (
+							adjacent == null
+							or not adjacent.is_alive()
+							or adjacent.team == actor.team
+						):
+							continue
+						var raw := CombatSystem.calculate_scaled_damage(
+							actor,
+							adjacent_damage,
+							GameEnums.StatType.MAGICAL,
+							board,
+						)
+						CombatSystem.deal_damage_raw(
+							board,
+							actor,
+							adjacent,
+							raw,
+							GameEnums.StatType.MAGICAL,
+							events,
+							action.ability.display_name,
+							adjacent_damage,
+						)
 			else:
 				# Summoner: create a minion at target_coord from behavior.spawn_unit.
 				if actor.definition == null or actor.definition.behavior == null:
@@ -2623,6 +2729,15 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				else:
 					var status := StatusData.new(effect.status_type, effect.status_duration, stat_val)
 					target.active_statuses.append(status)
+					if (
+						effect.modifiers.get("apply_weaken_enemy", false)
+						and target.team != actor.team
+					):
+						target.active_statuses.append(DataLibrary.make_status(
+							GameEnums.StatusType.WEAKEN,
+							effect.status_duration,
+							1,
+						))
 					target._recalculate_stats()
 				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
 					"unit": target.id,

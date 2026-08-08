@@ -1172,3 +1172,38 @@ Phases 1–5: data model, sim economy, `plan_action` timeline, planning validati
 | Cold commit paints before write | PASS |
 | Post-commit overlay does not second-interpret | PASS |
 | Ally/displacement cancels visible in preview | PASS |
+
+---
+
+## Mage class rollout — QA LOCK (2026-08-08)
+
+### Deliverables
+- [x] `MageFactory` registered as the sole Mage data source.
+- [x] Bible constitution, innate Arcane Overchannel, Blink, 15 promotion passives, 15 active skills, and all `[+]` definitions.
+- [x] Shared `AbilitySystem`, `CombatSystem`, `MovementSystem`, `Simulator`, terrain, delayed-effect, and AP/MP paths extended without Mage-specific resolution branches.
+- [x] `tests/mage_qa_gate.gd` + `tests/MageQaGate.tscn` — factory, upgrade contracts, skill resolution, and passive trigger coverage.
+- [x] `tests/live_mage_class_test.gd` — all 16 authored abilities through TestBattle preview/commit, base and upgraded variants.
+- [x] `docs/MAGE_QA_GATE.md`, `scripts/run_mage_qa_gate.ps1`, and `scripts/run_mage_live_qa.ps1`.
+
+### Mage Audit (iteration 1 — 2026-08-08)
+
+| Pillar | Result | Notes |
+|---|---|---|
+| Completeness | PASS | 16 active/reposition rows, 15 passive rows, 3 promotion packages, and upgrade contracts are present and exercised. |
+| Correct coding | PASS | Shared data/effect consumers remain deterministic and headless; lint and full simulation regression pass. |
+| Inconsistencies | PASS | Factory, DataLibrary, preview/commit, and Simulator use the same authored ability data; no new per-ability production branch was added. |
+| Issues | PASS | Two low/medium follow-ups are explicitly recorded below. |
+
+| # | Issue | Severity | Status |
+|---|---|---|---|
+| 1 | Existing K4 Run/detour scenario fails the shared Tier 3 planning gate with 26 preview/commit failures; Mage live QA is independent and passes. | Med | Deferred — P8 planning follow-up |
+| 2 | Manual F5 visual feel/performance review remains owner-side; headless live QA does not replace pixel/animation inspection. | Low | Deferred — owner F5 |
+
+### QA results
+- `scripts/run_mage_qa_gate.ps1`: **PASS** — 32 factory rows plus active skill/passive resolution.
+- `scripts/run_mage_live_qa.ps1`: **PASS** — 16 authored abilities, base and `[+]` preview/commit cases.
+- `scripts/run_regression_tests.ps1`: **PASS** — deterministic sim/bridge regression.
+- `scripts/run_planning_qa_gate.ps1`: **FAIL** — pre-existing K4 Run/detour failures listed above.
+
+**Final issue count:** 2  
+**Audit result:** **PASS** (Mage-specific gate passes; shared K4 planning blocker remains explicitly deferred)

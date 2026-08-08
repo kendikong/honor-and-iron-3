@@ -947,6 +947,15 @@ static func deal_damage(
 					break
 			if attacker.passive_flags.get("destroy_corpse_on_kill", false):
 				target.passive_flags["corpse_destroyed"] = true
+			if (
+				attacker.passive_flags.has("kill_grant_ap")
+				and not attacker.passive_flags.get("mage_ap_refunded", false)
+			):
+				attacker.ability.points_left = mini(
+					attacker.ability.max_points,
+					attacker.ability.points_left + int(attacker.passive_flags["kill_grant_ap"]),
+				)
+				attacker.passive_flags["mage_ap_refunded"] = true
 			if target.passive_flags.get("exact_lethal_damage", false):
 				for passive: PassiveData in attacker.active_passives:
 					if passive == null or not passive.modifiers.has("exact_lethal_followup_damage"):

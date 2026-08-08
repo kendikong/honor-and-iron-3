@@ -87,6 +87,7 @@ func _check_factory_matrix(failures: Array[String]) -> void:
 			"factory/upgrade/%s" % ability_id,
 			not ability.upgraded_effects.is_empty() and not ability.upgrade_description.is_empty(),
 		)
+		_check_upgrade_contract(failures, ability)
 	for row: Dictionary in PASSIVE_ROWS:
 		var passive := _passive(mage, row.id)
 		_assert(failures, "factory/passive/%s" % row.id, passive != null)
@@ -169,6 +170,45 @@ func _check_core_passive_triggers(failures: Array[String]) -> void:
 	var move_result := _player_turn(tether_board, move)
 	var moved_enemy := move_result.final_state.get_unit_by_id(enemy.id)
 	_assert(failures, "passive/arcane_tether_root", moved_enemy.has_status(GameEnums.StatusType.ROOT))
+
+
+func _check_upgrade_contract(failures: Array[String], ability: AbilityData) -> void:
+	var effects := ability.upgraded_effects
+	match ability.id:
+		&"mage_blink":
+			_assert(failures, "upgrade/mage_blink/surface", effects[0].modifiers.get("leave_elemental_surface", false))
+		&"mage_fireball":
+			_assert(failures, "upgrade/mage_fireball/steam", effects[0].modifiers.get("reaction_terrain", &"") == &"frozen")
+			_assert(failures, "upgrade/mage_fireball/aoe", ability.upgraded_target_shape_size == 3)
+		&"mage_ice_shard":
+			_assert(failures, "upgrade/mage_ice_shard/steam", effects[0].modifiers.get("reaction_terrain", &"") == &"fire")
+			_assert(failures, "upgrade/mage_ice_shard/aoe", ability.upgraded_target_shape_size == 3)
+		&"mage_chain_lightning":
+			_assert(failures, "upgrade/mage_chain_lightning/surface", effects[0].modifiers.get("strike_all_surface", false))
+		&"mage_arcane_push":
+			_assert(failures, "upgrade/mage_arcane_push/trail", effects[2].modifiers.get("arcane_trail", false))
+		&"mage_teleport":
+			_assert(failures, "upgrade/mage_teleport/shield", effects[1].type == GameEnums.EffectType.ARMOR_UP)
+		&"mage_meteor":
+			_assert(failures, "upgrade/mage_meteor/crater", effects[0].modifiers.get("create_crater", false))
+		&"mage_black_hole":
+			_assert(failures, "upgrade/mage_black_hole/surfaces", effects[0].modifiers.get("pull_surfaces", false))
+		&"mage_time_warp":
+			_assert(failures, "upgrade/mage_time_warp/cooldown", effects[1].modifiers.get("cooldown_reduction", 0) == 1)
+		&"mage_mana_shield":
+			_assert(failures, "upgrade/mage_mana_shield/casting", effects[0].modifiers.get("mana_shield_casting", false))
+		&"mage_disintegrate":
+			_assert(failures, "upgrade/mage_disintegrate/ap", effects[0].modifiers.get("kill_grant_ap", 0) == 1)
+		&"mage_gravity_well":
+			_assert(failures, "upgrade/mage_gravity_well/blind", effects.size() == 2 and effects[1].status_type == GameEnums.StatusType.BLIND)
+		&"mage_elemental_surge":
+			_assert(failures, "upgrade/mage_elemental_surge/ap", effects[0].modifiers.get("elemental_surge_ap", 0) == 1)
+		&"mage_earth_spike":
+			_assert(failures, "upgrade/mage_earth_spike/adjacent_damage", effects[0].modifiers.get("creation_adjacent_damage", 0) == 1)
+		&"mage_density_shift":
+			_assert(failures, "upgrade/mage_density_shift/weaken", effects[0].modifiers.get("apply_weaken_enemy", false))
+		&"mage_arcane_barrage":
+			_assert(failures, "upgrade/mage_arcane_barrage/pierce", effects[0].modifiers.get("ignore_target_magic_pct", 0.0) == 0.25)
 
 
 func _plain_board(size: Vector2i) -> BoardState:

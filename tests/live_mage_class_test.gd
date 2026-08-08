@@ -42,6 +42,7 @@ func test_live_mage_every_skill(timeout := 300000) -> void:
 		return
 	for case: Dictionary in _CASES:
 		await _run_case(runner, case)
+		await _run_upgrade_case(runner, case)
 
 
 func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
@@ -83,6 +84,58 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	).is_false()
 	assert_bool(_plan_has_ability(case.id)).override_failure_message(
 		"%s: commit did not ratify the preview intent" % case.id,
+	).is_true()
+	var result: SimResult = Simulator.simulate(
+		_director.base_board,
+		_director.get_player_plan(),
+	)
+	_assert_no_action_failure(result.events, actor_id, case.id)
+	_assert_observation(result, case, actor_id)
+
+
+func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
+	var session: TestBattleSession = _scene.get_session()
+	session.reset_defaults()
+	session.player_class_id = &"mage"
+	session.player_level = TestBattleSession.TRAINING_LEVEL
+	session.passive_enabled.clear()
+	session.skill_enabled.clear()
+	session.set_all_passives_enabled(&"mage", true)
+	session.set_all_skills_enabled(&"mage", true)
+	session.extra_player_coords = [_ALLY_CELL]
+	session.dummy_coords = [_ENEMY_CELL, Vector2i(7, 5)]
+	session.unkillable_dummies = true
+	session.infinite_player_ap = true
+	_scene.apply_training_board()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_director = _scene.get_node("CombatDirector") as CombatDirector
+	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
+	_input = shell.planning_input
+	_director.auto_run = false
+	var actor_id := _unit_id_at(_director.base_board, _ACTOR_CELL)
+	assert_int(actor_id).override_failure_message(
+		"%s [+]: Mage actor missing from TestBattle" % case.id,
+	).is_greater(-1)
+	if actor_id < 0:
+		return
+	var base_actor: UnitState = _director.base_board.get_unit_by_id(actor_id)
+	base_actor.upgraded_abilities.append(case.id)
+	_director.call("_refresh_plan")
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	var actor := _director.board.get_unit_by_id(actor_id)
+	var ability := _ability_by_id(actor, case.id)
+	_assert_contract(ability, case)
+	if ability == null:
+		return
+	_director.select_unit(actor_id)
+	_director.select_ability(_ability_index(actor, ability))
+	await runner.simulate_frames(3, _DELTA_MS)
+	var slots := await _commit_click(runner, actor_id, case.target)
+	assert_bool(_slots_invalid(slots)).override_failure_message(
+		"%s [+]: valid live target rejected by commit slots: %s" % [case.id, slots],
+	).is_false()
+	assert_bool(_plan_has_ability(case.id)).override_failure_message(
+		"%s [+]: commit did not ratify the preview intent" % case.id,
 	).is_true()
 	var result: SimResult = Simulator.simulate(
 		_director.base_board,

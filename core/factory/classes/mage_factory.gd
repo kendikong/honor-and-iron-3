@@ -333,7 +333,6 @@ static func _time_warp() -> AbilityData:
 	)
 	ability.effects[1].modifiers["utility_only"] = true
 	ability.effects[1].modifiers["grant_ap"] = 1
-	ability.effects[1].modifiers["cooldown_reduction"] = 1
 	var upgraded := DataLibrary._duplicate_effects(ability.effects)
 	upgraded[1].modifiers["cooldown_reduction"] = 1
 	return _upgrade(ability, upgraded, "Target ally cooldowns -1.")
