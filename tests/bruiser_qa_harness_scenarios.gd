@@ -156,6 +156,14 @@ static func run_cleave(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "cleave/range", factory_ab.range_tiles, 1)
 	H.assert_eq_int(failures, "cleave/shape", factory_ab.target_shape, GameEnums.TargetShape.ARC)
 	H.assert_eq_int(failures, "cleave/dmg_amount", factory_ab.effects[0].amount, 2)
+	var probe_board: BoardState = H.make_plain_board(Vector2i(6, 6))
+	H.place_bruiser(probe_board, 99, Vector2i(2, 2), H.bruiser_with_ability(&"bruiser_cleave"))
+	var probe_unit: UnitState = H.unit_on_board(probe_board, 99)
+	H.assert_true(
+		failures, "cleave/tile_aim",
+		AbilitySystem.shaped_ranged_skill_allows_tile_aim(probe_unit, factory_ab),
+		"Cleave ARC must allow tile aim (blast centers on hovered cell)",
+	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_cleave"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -221,6 +229,31 @@ static func run_cleave(failures: Array[String]) -> void:
 		1,
 		Vector2i(5, 3),
 	)
+	var tile_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_bruiser(tile_board, 20, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_cleave"))
+	H.place_dummy(tile_board, 21, Vector2i(4, 4))
+	H.place_dummy(tile_board, 22, Vector2i(4, 2))
+	var tile_bruiser: UnitState = H.unit_on_board(tile_board, 20)
+	var hp_north: int = H.unit_hp(tile_board, 21)
+	var hp_south: int = H.unit_hp(tile_board, 22)
+	var tile_skill: AbilityData = H.ability_on_unit(tile_bruiser, &"bruiser_cleave")
+	var tile_action: TimelineAction = TimelineAction.make_ability(20, tile_skill, Vector2i(4, 3), -1)
+	H.assert_true(
+		failures, "cleave/tile_aim/can_use",
+		AbilitySystem.can_use(tile_board, tile_action),
+		"empty ARC center tile must be a legal Cleave target",
+	)
+	var tile_plan := Timeline.new()
+	tile_plan.add(tile_action)
+	var tile_result: SimResult = H.simulate_plan(tile_board, tile_plan)
+	var north_dmg: int = hp_north - H.unit_hp(tile_result.final_state, 21)
+	var south_dmg: int = hp_south - H.unit_hp(tile_result.final_state, 22)
+	var scaled_tile: int = CombatSystem.calculate_scaled_damage(
+		tile_bruiser, 2, GameEnums.StatType.PHYSICAL, tile_board,
+	)
+	var expected_tile: int = H.damage_dealt_to_unit(tile_board, 21, scaled_tile, tile_bruiser)
+	H.assert_eq_int(failures, "cleave/tile_aim/north_dmg", north_dmg, expected_tile)
+	H.assert_eq_int(failures, "cleave/tile_aim/south_dmg", south_dmg, expected_tile)
 
 
 static func run_suplex(failures: Array[String]) -> void:

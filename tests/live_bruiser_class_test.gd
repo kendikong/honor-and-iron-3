@@ -179,6 +179,55 @@ func test_cleave_premove_overlay_exact_blast(timeout := 120000) -> void:
 	)
 
 
+func test_cleave_tile_aim_hits_arc_without_center_enemy(timeout := 120000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	runner.move_window_to_foreground()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_scene = runner.scene() as TestBattleMapView
+	var session: TestBattleSession = _scene.get_session()
+	session.reset_defaults()
+	session.player_class_id = &"bruiser"
+	session.skill_enabled.clear()
+	session.set_all_skills_enabled(&"bruiser", false)
+	session.skill_enabled[&"bruiser_cleave"] = true
+	session.extra_player_coords = []
+	session.dummy_coords = [Vector2i(5, 4), Vector2i(5, 6)]
+	session.unkillable_dummies = true
+	session.infinite_player_ap = true
+	_scene.apply_training_board()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_director = _scene.get_node("CombatDirector") as CombatDirector
+	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
+	_input = shell.planning_input
+	_overlay = _scene.get_node("WorldModulate/MapRoot/PlanningOverlay") as TacticalPlanningOverlay
+	_director.auto_run = false
+	var actor_id := _unit_id_at(_director.base_board, Vector2i(4, 5))
+	var actor := _director.board.get_unit_by_id(actor_id)
+	var cleave: AbilityData = _ability_by_id(actor, &"bruiser_cleave")
+	assert_object(cleave).is_not_null()
+	_director.select_unit(actor_id)
+	_director.select_ability(_ability_index(actor, cleave))
+	await _OVERLAY_QA.assert_live_overlay_parity(
+		self, runner, _overlay, _input, _director, actor_id, cleave, Vector2i(5, 5), &"cleave_tile_aim",
+	)
+	var slots := await _commit_live_click(runner, actor_id, Vector2i(5, 5))
+	assert_bool(_slots_invalid(slots)).is_false()
+	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
+	var hit_north := false
+	var hit_south := false
+	for event: SimEvent in result.events:
+		if event.type != GameEnums.SimEventType.UNIT_DAMAGED:
+			continue
+		var victim: int = int(event.data.get("unit", -1))
+		if victim == _unit_id_at(_director.base_board, Vector2i(5, 4)):
+			hit_north = true
+		if victim == _unit_id_at(_director.base_board, Vector2i(5, 6)):
+			hit_south = true
+	assert_bool(hit_north and hit_south).override_failure_message(
+		"Cleave tile-aim must damage both ARC neighbors when center tile is empty",
+	).is_true()
+
+
 func _cache_factory_abilities() -> void:
 	_factory_abilities.clear()
 	var def: UnitData = DataLibrary.get_unit(&"bruiser")
