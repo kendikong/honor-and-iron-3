@@ -4,7 +4,9 @@
 
 **End state (Lancer LOCK):** 100% matrix rows **PASS** + `run_lancer_qa_gate.ps1` PASS + `run_lancer_live_qa.ps1` PASS.
 
-**Authority:** [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) · [`_CLASS_QA_GATE_TEMPLATE.md`](_CLASS_QA_GATE_TEMPLATE.md) · [`.cursor/rules/class-qa-knight-bar.mdc`](../.cursor/rules/class-qa-knight-bar.mdc)
+**Authority:** [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) · [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md) · [`_CLASS_QA_GATE_TEMPLATE.md`](_CLASS_QA_GATE_TEMPLATE.md) · [`.cursor/rules/class-qa-knight-bar.mdc`](../.cursor/rules/class-qa-knight-bar.mdc)
+
+**Owner QA sign-off:** **NOT PASS**
 
 ---
 
@@ -12,6 +14,7 @@
 
 | Field | Value |
 |-------|-------|
+| **Owner sign-off** | **NOT PASS** |
 | **LOCK** | **NO** |
 | **Summary** | **0 / 29** meta-critic `PASS` · **29** `HARNESS_ONLY` · **0** `PLANNED` |
 | **What runs today** | `tests/lancer_class_scenario.gd` → `lancer_qa_harness.gd` (data contract, shape smoke, push/polearm matrices) + `tests/live_lancer_class_test.gd` |

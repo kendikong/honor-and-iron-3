@@ -1,30 +1,40 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** P3 Knight + P6 Bruiser **COMPLETE** (owner verify 2026-08-06) — next: P4 roguelike worksheet / P8 presentation  
+**Current phase:** P3 Knight QA **PASS** · P6+ classes **implementation in progress, QA NOT PASS** — see [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md)  
 **Active plan:** `docs/design/` pillar specs + [`verification-matrix.md`](docs/design/verification-matrix.md)  
 **Combat reference:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed; P2 done for now)  
-**Last updated:** 2026-08-06  
+**Last updated:** 2026-08-08  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
 ---
 
-## P6 — Bruiser template LOCK (B6-LOCK) — COMPLETE ✅
+## Class QA owner sign-off (authoritative)
 
-**Closed:** owner verify 2026-08-06 — `bruiser-template.md` → **`LOCKED`** — gate **31/31 PASS** + `run_bruiser_qa_gate.ps1` exit **0** (re-verified this session)
+**Only Knight is PASS.** All other classes are **NOT PASS** until QA is redone to the Knight bar.
 
-### Deliverables
-- [x] `docs/BRUISER_QA_GATE.md` — 31-row matrix (all `PASS`)
-- [x] `scripts/run_bruiser_qa_gate.ps1`
-- [x] `tests/bruiser_qa_harness.gd`, `bruiser_scenario_registry.gd`, `bruiser_qa_runner.gd`, `BruiserQaGate.tscn`
-- [x] `docs/design/bruiser-template.md`, `UNATTENDED_RUN.md` (B6-LOCK), `runs/B6-LOCK.md`
-- [x] 31/31 matrix PASS + `bruiser-template.md` → **LOCKED**
-- [x] Meta-critic full-matrix **96/95** (`docs/bruiser_meta_critic_manifest.json`)
-
-**Audit result:** **PASS** (machine gate + matrix; owner sign-off 2026-08-06)
+| Class | Owner QA | Gate |
+|-------|----------|------|
+| Knight | **PASS** | [`KNIGHT_QA_GATE.md`](docs/KNIGHT_QA_GATE.md) |
+| Bruiser, Archer, Lancer, Mage, Cleric | **NOT PASS** | [`CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md) |
 
 ---
 
-## P3 — Knight template LOCK (K3-LOCK) — COMPLETE ✅
+## P6 — Bruiser — implementation complete, **QA NOT PASS** (sign-off revoked 2026-08-08)
+
+**Was:** B6-LOCK owner verify 2026-08-06 — **revoked.** Per owner: only Knight passes; Bruiser must be **redone** (Tier 2 live + overlay/AOE footprint asserts per `class-qa-knight-bar.mdc`).
+
+### Deliverables (implementation — kept)
+- [x] `docs/BRUISER_QA_GATE.md` — 31-row matrix (historical `PASS` claims — **sign-off suspended**)
+- [x] `scripts/run_bruiser_qa_gate.ps1`
+- [x] `tests/bruiser_qa_harness.gd`, `bruiser_scenario_registry.gd`, `bruiser_qa_runner.gd`, `BruiserQaGate.tscn`
+- [x] `docs/design/bruiser-template.md`, `UNATTENDED_RUN.md` (B6-LOCK), `runs/B6-LOCK.md`
+- [x] 31/31 matrix historical PASS + `bruiser-template.md` was **LOCKED** — **QA sign-off revoked** pending Knight-bar redo
+
+**Audit result:** Implementation **PASS** · **Owner QA sign-off: NOT PASS** (see `CLASS_QA_SIGNOFF.md`)
+
+---
+
+## P3 — Knight template LOCK (K3-LOCK) — **QA PASS** (only class) ✅
 
 ### Deliverables
 - [x] 30/30 Knight matrix rows meta-critic `PASS` (`docs/knight_meta_critic_manifest.json`)
@@ -1175,9 +1185,15 @@ Phases 1–5: data model, sim economy, `plan_action` timeline, planning validati
 
 ---
 
-## Mage class rollout — implementation complete, QA **not LOCK** (2026-08-08)
+## Archer / Lancer / Cleric — **Owner QA: NOT PASS**
 
-**Owner sign-off:** Factory/sim implementation is largely done; **QA depth is `HARNESS_ONLY`** until matrix matches [`docs/KNIGHT_QA_GATE.md`](docs/KNIGHT_QA_GATE.md). See [`docs/MAGE_QA_GATE.md`](docs/MAGE_QA_GATE.md) · [`.cursor/rules/class-qa-knight-bar.mdc`](.cursor/rules/class-qa-knight-bar.mdc).
+Implementation exists (factories, harness, live tests). **No owner sign-off** — harness-only. See [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md) and per-class gate docs.
+
+---
+
+## Mage — implementation complete, **Owner QA: NOT PASS** (2026-08-08)
+
+**Owner sign-off:** Factory/sim implementation is largely done; **QA depth is `HARNESS_ONLY`** until matrix matches [`docs/KNIGHT_QA_GATE.md`](docs/KNIGHT_QA_GATE.md). See [`docs/MAGE_QA_GATE.md`](docs/MAGE_QA_GATE.md) · [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md).
 
 ### Deliverables
 - [x] `MageFactory` registered as the sole Mage data source.
@@ -1201,11 +1217,11 @@ Phases 1–5: data model, sim economy, `plan_action` timeline, planning validati
 | 1 | Existing K4 Run/detour scenario fails the shared Tier 3 planning gate with 26 preview/commit failures; Mage live QA is independent and passes. | Med | Deferred — P8 planning follow-up |
 | 2 | Manual F5 visual feel/performance review remains owner-side; headless live QA does not replace pixel/animation inspection. | Low | Deferred — owner F5 |
 
-### QA results
-- `scripts/run_mage_qa_gate.ps1`: **PASS** — 32 factory rows plus active skill/passive resolution.
-- `scripts/run_mage_live_qa.ps1`: **PASS** — 16 authored abilities, base and `[+]` preview/commit cases.
+### QA results (machine only — **not owner sign-off**)
+- `scripts/run_mage_qa_gate.ps1`: harness **PASS** — not Knight-bar sign-off
+- `scripts/run_mage_live_qa.ps1`: smoke **PASS** — not Knight-bar sign-off
 - `scripts/run_regression_tests.ps1`: **PASS** — deterministic sim/bridge regression.
 - `scripts/run_planning_qa_gate.ps1`: **FAIL** — pre-existing K4 Run/detour failures listed above.
 
 **Final issue count:** 2 (+ **QA depth:** 32/32 matrix rows `HARNESS_ONLY` — not Knight LOCK)  
-**Audit result:** **PASS** (implementation) · **QA LOCK: NO** (harness-only; upgrade per `class-qa-knight-bar.mdc`)
+**Audit result:** **PASS** (implementation) · **Owner QA sign-off: NOT PASS** · **QA LOCK: NO**

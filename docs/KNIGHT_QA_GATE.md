@@ -4,6 +4,8 @@
 
 **End state (Knight LOCK):** 100% coverage matrix rows **PASS** (meta-critic approved) + `run_knight_qa_gate.ps1` PASS + meta-critic **≥ 88** on full matrix — then P6 clones this gate per class.
 
+**Owner QA sign-off:** **PASS** — the **only** class with owner sign-off. All others: [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md).
+
 **Runner:** `scripts/run_knight_qa_gate.ps1` — mirrors planning gate structure; **does not** invoke or modify `run_planning_qa_gate.ps1`.
 
 ---

@@ -4,7 +4,9 @@
 
 **End state (Archer LOCK):** 100% matrix rows **PASS** (meta-critic approved) + `run_archer_qa_gate.ps1` PASS + `run_archer_live_qa.ps1` PASS.
 
-**Authority:** [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) · [`_CLASS_QA_GATE_TEMPLATE.md`](_CLASS_QA_GATE_TEMPLATE.md) · [`.cursor/rules/class-qa-knight-bar.mdc`](../.cursor/rules/class-qa-knight-bar.mdc)
+**Authority:** [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) · [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md) · [`_CLASS_QA_GATE_TEMPLATE.md`](_CLASS_QA_GATE_TEMPLATE.md) · [`.cursor/rules/class-qa-knight-bar.mdc`](../.cursor/rules/class-qa-knight-bar.mdc)
+
+**Owner QA sign-off:** **NOT PASS** — see [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md).
 
 ---
 
@@ -12,6 +14,7 @@
 
 | Field | Value |
 |-------|-------|
+| **Owner sign-off** | **NOT PASS** |
 | **LOCK** | **NO** |
 | **Summary** | **0 / 31** meta-critic `PASS` · **31** `HARNESS_ONLY` · **0** `PLANNED` |
 | **What runs today** | Monolithic `tests/archer_class_scenario.gd` → `archer_qa_harness.gd` (data contract, shape metadata smoke, “ability used” matrix) + `tests/live_archer_class_test.gd` (metadata + one commit per skill) |

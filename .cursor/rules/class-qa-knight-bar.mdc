@@ -17,7 +17,7 @@ alwaysApply: true
 
 Any turn that **implements, fixes, or claims complete** a **class** (factory, skills, passives, class scenarios, `docs/<CLASS>_QA_GATE.md`, `run_<class>_qa_gate.ps1`, `live_<class>_class_test.gd`).
 
-**Knight (P3) and Bruiser (P6 B6-LOCK)** already meet this bar. **All other classes** are **`HARNESS_ONLY`** until upgraded — see their gate docs.
+**Knight (P3) only** has **owner QA PASS** — see [`docs/CLASS_QA_SIGNOFF.md`](../docs/CLASS_QA_SIGNOFF.md). **All other classes** (including Bruiser) are **`NOT PASS`** until redone to this bar.
 
 ---
 
@@ -80,4 +80,4 @@ Shared geometry owner: `GridSystem.get_affected_tiles` — **no** per-skill over
 3. Copy `run_knight_qa_gate.ps1` pattern → `run_<class>_qa_gate.ps1`
 4. One `tests/skills/<id>_scenario.gd` per active; `tests/passives/<id>_scenario.gd` per passive
 5. `run_<class>_live_qa.ps1` → `tests/live_<class>_class_test.gd`
-6. Do **not** mark LOCK until matrix matches Knight/Bruiser standard
+6. Do **not** mark LOCK until matrix matches Knight standard **and** [`docs/CLASS_QA_SIGNOFF.md`](../docs/CLASS_QA_SIGNOFF.md) row is **PASS**

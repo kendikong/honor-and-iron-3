@@ -6,7 +6,7 @@
 
 ## Goal
 
-Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, cloning **P3 Knight QA depth** (not a monolithic harness). **Reference LOCK:** Knight P3 · Bruiser B6-LOCK. **Active implementations without LOCK:** Archer, Lancer, Mage (`HARNESS_ONLY` — see their gate docs).
+Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, cloning **P3 Knight QA depth**. **Only Knight has owner QA PASS** — see [`CLASS_QA_SIGNOFF.md`](../CLASS_QA_SIGNOFF.md). Bruiser, Archer, Lancer, Mage, Cleric: **NOT PASS** until redone.
 
 ## Quality bar
 

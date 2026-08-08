@@ -4,7 +4,9 @@
 
 **End state (Mage LOCK):** 100% matrix rows **PASS** + `run_mage_qa_gate.ps1` PASS + `run_mage_live_qa.ps1` PASS.
 
-**Authority:** [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) · [`_CLASS_QA_GATE_TEMPLATE.md`](_CLASS_QA_GATE_TEMPLATE.md) · [`.cursor/rules/class-qa-knight-bar.mdc`](../.cursor/rules/class-qa-knight-bar.mdc)
+**Authority:** [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) · [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md) · [`_CLASS_QA_GATE_TEMPLATE.md`](_CLASS_QA_GATE_TEMPLATE.md) · [`.cursor/rules/class-qa-knight-bar.mdc`](../.cursor/rules/class-qa-knight-bar.mdc)
+
+**Owner QA sign-off:** **NOT PASS**
 
 ---
 
@@ -12,6 +14,7 @@
 
 | Field | Value |
 |-------|-------|
+| **Owner sign-off** | **NOT PASS** |
 | **LOCK** | **NO** — **do not** treat `IMPLEMENTATION_STATUS.md` “Mage QA LOCK” as owner sign-off |
 | **Summary** | **0 / 32** meta-critic `PASS` · **32** `HARNESS_ONLY` · **0** `PLANNED` |
 | **Implementation** | Factory + sim paths largely complete |

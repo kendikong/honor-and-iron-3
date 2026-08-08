@@ -6,7 +6,18 @@
 
 **Runner:** `scripts/run_bruiser_qa_gate.ps1` — cloned from Knight gate; **does not** invoke or modify `run_planning_qa_gate.ps1`. Each run writes **`qa_bruiser_gate_canonical.txt`** (authoritative stdout snapshot for gauntlet-critic BAR).
 
-**P3 clone authority:** [`docs/design/knight-template.md`](design/knight-template.md) · [`docs/KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global systems fidelity
+**P3 clone authority:** [`docs/design/knight-template.md`](design/knight-template.md) · [`docs/KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) · [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md)
+
+---
+
+## Gate status (honest — 2026-08-08)
+
+| Field | Value |
+|-------|-------|
+| **Owner QA sign-off** | **NOT PASS** — revoked with all non-Knight classes |
+| **LOCK** | **NO** — pending Knight-bar redo (Tier 2 live + overlay/AOE footprints) |
+| **Matrix** | 31 rows historically marked `PASS` — **suspended** until re-verified per `class-qa-knight-bar.mdc` |
+| **Gap** | No `run_bruiser_live_qa.ps1` / live overlay tile asserts |
 
 ---
 
@@ -14,11 +25,11 @@
 
 | Tier | Runner | Gate status |
 |------|--------|-------------|
-| **1 — Headless scenarios** | `.\scripts\run_bruiser_qa_gate.ps1` (wraps `BruiserQaGate.tscn`) | **Required** — per-ability/passive scenarios via harness + sim |
-| **2 — Live Bruiser acceptance** | `PLANNED — tests/live_bruiser_class_test.gd` | Optional until Tier 1 complete |
+| **1 — Headless scenarios** | `.\scripts\run_bruiser_qa_gate.ps1` | **NOT PASS** (owner sign-off) — re-verify after live + overlay work |
+| **2 — Live Bruiser acceptance** | `PLANNED — tests/live_bruiser_class_test.gd` | **NOT PASS** — required for owner sign-off |
 | **Manual** | `docs/PLANNING_SKILL_QA_CHECKLIST.md` per ability | Required for feel/pixels Tier 1 cannot see |
 
-**Only Tier 1 blocks Bruiser LOCK.**
+**Only Tier 1+2 matrix `PASS` + owner row in `CLASS_QA_SIGNOFF.md` blocks Bruiser LOCK.**
 
 ---
 
@@ -56,7 +67,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **31 / 31** factory rows meta-critic `PASS` · **0** `HARNESS_ONLY` · **0** `PLANNED` · **Manifest:** `docs/bruiser_meta_critic_manifest.json` — **LOCKED** *(owner verify 2026-08-06)*.
+**Summary (honest):** Historical **31/31** matrix `PASS` — **owner sign-off NOT PASS (2026-08-08)**. Re-verify all rows + add Tier 2 live before promoting in [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md).
 
 ### Movement + actives
 

@@ -40,7 +40,7 @@ Any edit under these paths (or equivalent behavior owners):
 |--------|-----|
 | Any class factory or per-class scenario change | `.\scripts\run_<class>_qa_gate.ps1` **and** `.\scripts\run_<class>_live_qa.ps1` |
 | Changelog | Matrix counts: `PASS` / `HARNESS_ONLY` / `PLANNED` from `docs/<CLASS>_QA_GATE.md` |
-| Claim **class LOCK** | Forbidden unless matrix 100% `PASS` (Knight/Bruiser bar) |
+| Claim **class LOCK** or **owner QA PASS** | Forbidden unless row is **PASS** in [`docs/CLASS_QA_SIGNOFF.md`](../docs/CLASS_QA_SIGNOFF.md) (Knight only today) |
 
 **Headless harness green alone is not class QA PASS.** Planning QA does not substitute for class gates.
 
