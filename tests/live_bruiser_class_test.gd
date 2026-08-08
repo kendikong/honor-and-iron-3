@@ -205,12 +205,17 @@ func test_cleave_tile_aim_hits_arc_without_center_enemy(timeout := 120000) -> vo
 	var actor := _director.board.get_unit_by_id(actor_id)
 	var cleave: AbilityData = _ability_by_id(actor, &"bruiser_cleave")
 	assert_object(cleave).is_not_null()
+	assert_int(cleave.targeting_flags).is_equal(
+		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
+	)
 	_director.select_unit(actor_id)
 	_director.select_ability(_ability_index(actor, cleave))
 	await _OVERLAY_QA.assert_live_overlay_parity(
 		self, runner, _overlay, _input, _director, actor_id, cleave, Vector2i(5, 5), &"cleave_tile_aim",
 	)
 	var slots := await _commit_live_click(runner, actor_id, Vector2i(5, 5))
+	if _slots_invalid(slots) or _plan_has_awaiting(actor_id):
+		slots = await _commit_live_click(runner, actor_id, Vector2i(5, 5))
 	assert_bool(_slots_invalid(slots)).is_false()
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	var hit_north := false

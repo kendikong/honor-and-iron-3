@@ -549,7 +549,36 @@ static func _configure_ability_targeting(ability: AbilityData) -> void:
 	elif not has_offense:
 		ability.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
 	ability.targeting_flags = AbilityData._targeting_mode_to_flags(ability.targeting_mode)
+	_sync_shaped_tile_targeting_flags(ability)
 	ability.sync_legacy_targeting()
+
+
+## Ranged blast/arc/line skills use the TILE awaiting-input pipeline (Volley / Piercing Shot pattern).
+static func _sync_shaped_tile_targeting_flags(ability: AbilityData) -> void:
+	if ability == null or ability.is_movement_kind():
+		return
+	if ability.has_targeting(GameEnums.TargetingFlags.TILE):
+		return
+	if ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
+		return
+	var shaped_base := (
+		ability.range_tiles > 0
+		and ability.target_shape != GameEnums.TargetShape.SINGLE
+	)
+	var upg_range := ability.range_tiles
+	if ability.upgraded_range_tiles >= 0:
+		upg_range = ability.upgraded_range_tiles
+	var shaped_upg := (
+		upg_range > 0
+		and ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE
+	)
+	if not shaped_base and not shaped_upg:
+		return
+	if ability.has_targeting(GameEnums.TargetingFlags.ENEMY):
+		ability.targeting_flags |= GameEnums.TargetingFlags.TILE
+	elif ability.has_targeting(GameEnums.TargetingFlags.ALLY):
+		ability.targeting_flags |= GameEnums.TargetingFlags.TILE
+
 
 static func _make_movement_ability(
 	p_id: StringName,
@@ -585,6 +614,8 @@ static func finalize_unit_abilities(unit: UnitData) -> void:
 	for ability: AbilityData in unit.abilities:
 		if ability != null:
 			ability.finalize_modular()
+			_sync_shaped_tile_targeting_flags(ability)
+			ability.sync_legacy_targeting()
 
 
 static func _finalize_behavior_abilities(unit: UnitData) -> void:

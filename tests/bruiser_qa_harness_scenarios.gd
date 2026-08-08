@@ -156,13 +156,11 @@ static func run_cleave(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "cleave/range", factory_ab.range_tiles, 1)
 	H.assert_eq_int(failures, "cleave/shape", factory_ab.target_shape, GameEnums.TargetShape.ARC)
 	H.assert_eq_int(failures, "cleave/dmg_amount", factory_ab.effects[0].amount, 2)
-	var probe_board: BoardState = H.make_plain_board(Vector2i(6, 6))
-	H.place_bruiser(probe_board, 99, Vector2i(2, 2), H.bruiser_with_ability(&"bruiser_cleave"))
-	var probe_unit: UnitState = H.unit_on_board(probe_board, 99)
 	H.assert_true(
-		failures, "cleave/tile_aim",
-		AbilitySystem.shaped_ranged_skill_allows_tile_aim(probe_unit, factory_ab),
-		"Cleave ARC must allow tile aim (blast centers on hovered cell)",
+		failures, "cleave/tile_flags",
+		factory_ab.has_targeting(GameEnums.TargetingFlags.TILE)
+		and factory_ab.has_targeting(GameEnums.TargetingFlags.ENEMY),
+		"Cleave ARC must use TILE|ENEMY awaiting-input targeting (Volley pattern)",
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_cleave"))

@@ -560,7 +560,7 @@ static func _target_allowed(
 			return true
 	if target_coord == actor.position:
 		return ability.has_targeting(GameEnums.TargetingFlags.SELF)
-	if ability_allows_tile_targeting(actor, ability):
+	if ability.has_targeting(GameEnums.TargetingFlags.TILE):
 		return true
 	if ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
 		return true
@@ -845,36 +845,6 @@ static func planning_threat_tiles(
 		return GridSystem.get_affected_tiles(board, origin, origin, shape, shape_size)
 	var sources: Array[Vector2i] = alternate_origins if not alternate_origins.is_empty() else _single_coord(origin)
 	return manhattan_threat_tiles(board, sources, eff_range)
-
-
-## Effective blast shape for this actor (upgrade-aware).
-static func ability_effective_target_shape(actor: UnitState, ability: AbilityData) -> GameEnums.TargetShape:
-	if ability == null:
-		return GameEnums.TargetShape.SINGLE
-	var shape: GameEnums.TargetShape = ability.target_shape
-	if actor != null and actor.is_ability_upgraded(ability.id):
-		if ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE:
-			shape = ability.upgraded_target_shape
-	return shape
-
-
-## Shaped ranged skills may aim at any in-range tile (blast centers on the cell, not a unit).
-static func shaped_ranged_skill_allows_tile_aim(actor: UnitState, ability: AbilityData) -> bool:
-	if actor == null or ability == null or ability.is_movement_kind():
-		return false
-	if ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
-		return false
-	if actor.get_ability_range(ability) <= 0:
-		return false
-	return ability_effective_target_shape(actor, ability) != GameEnums.TargetShape.SINGLE
-
-
-static func ability_allows_tile_targeting(actor: UnitState, ability: AbilityData) -> bool:
-	if ability == null:
-		return false
-	if ability.has_targeting(GameEnums.TargetingFlags.TILE):
-		return true
-	return shaped_ranged_skill_allows_tile_aim(actor, ability)
 
 
 ## Blast footprint at hover for shaped skills (ARC/AOE). Empty when hover is not a legal target.

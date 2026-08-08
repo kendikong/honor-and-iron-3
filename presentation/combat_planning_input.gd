@@ -3618,7 +3618,7 @@ func _build_commit_slots_at_cell(
 					),
 				)
 				return slots
-			if hover_unit == null and AbilitySystem.ability_allows_tile_targeting(actor, ability):
+			if hover_unit == null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
 				if _in_ability_range_of_coord(actor, cell):
 					var board: BoardState = _proj()
 					if AbilitySystem.has_pass_through_effects(ability) and not AbilitySystem.ability_has_movement_effect(ability):
