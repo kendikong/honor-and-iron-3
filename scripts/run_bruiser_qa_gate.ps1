@@ -136,6 +136,16 @@ if (-not (Test-Path $GodotPath)) {
 	Exit-Gate 0
 }
 
+Write-GateLine "=== AOE footprint contract (all classes) ==="
+$aoeGate = Join-Path $PSScriptRoot "run_aoe_footprint_qa_gate.ps1"
+& $aoeGate -GodotPath $GodotPath
+if ($LASTEXITCODE -ne 0) {
+	Write-GateLine "[FAIL] AOE footprint contract gate exit $LASTEXITCODE"
+	Exit-Gate 5
+}
+Write-GateLine "--- AOE footprint contract: PASS ---"
+Write-GateLine ""
+
 Write-GateLine "=== Tier 1: headless skill scenarios (harness) ==="
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-bruiser-qa.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-bruiser-qa.stderr.log"

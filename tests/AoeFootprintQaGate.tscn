@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://aoefootprintqagate"]
+
+[ext_resource type="Script" path="res://tests/run_aoe_footprint_contract.gd" id="1"]
+
+[node name="AoeFootprintQaGate" type="Node"]
+script = ExtResource("1")

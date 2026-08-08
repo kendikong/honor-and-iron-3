@@ -3,6 +3,8 @@
 ## TacticalCombat preview/slot pipeline.
 extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
+const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
+
 const _CASES: Array[Dictionary] = [
 	{"id": &"cleric_guardian_step", "actor": Vector2i(2, 2), "target": Vector2i(3, 2)},
 	{"id": &"cleric_holy_light", "actor": Vector2i(4, 2), "target": Vector2i(3, 2)},
@@ -48,6 +50,9 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		var director := scene.get_node("CombatDirector") as CombatDirector
 		var shell := scene.get_node("CombatShell") as TacticalCombatShell
 		var input: CombatPlanningInput = shell.planning_input
+		var overlay: TacticalPlanningOverlay = scene.get_node(
+			"WorldModulate/MapRoot/PlanningOverlay",
+		) as TacticalPlanningOverlay
 		var actor_id := _unit_id_at(director.base_board, item.actor)
 		assert_int(actor_id).override_failure_message(
 			"%s: missing live Cleric actor" % item.id
@@ -64,6 +69,12 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		director.select_unit(actor_id)
 		director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(2, 16)
+		var target_cell: Vector2i = item.target
+		if ability.range_tiles <= 0:
+			target_cell = actor.position
+		await _OVERLAY_QA.assert_live_overlay_parity(
+			self, runner, overlay, input, director, actor_id, ability, target_cell, item.id,
+		)
 		input._intent_state.set_hover_coord(item.target)
 		var slots: Dictionary = input._build_commit_slots_at_cell(actor_id, item.target)
 		assert_bool(_slots_invalid(slots)).override_failure_message(

@@ -616,20 +616,13 @@ static func assert_grid_footprint_excludes(
 	size: int,
 	outside: Vector2i,
 ) -> void:
-	var tiles: Array[Vector2i] = GridSystem.get_affected_tiles(board, origin, target, shape, size)
-	assert_true(
-		failures, "%s/inside" % tag,
-		tiles.has(target),
-		"GridSystem footprint must include target cell",
-	)
-	assert_true(
-		failures, "%s/outside" % tag,
-		not tiles.has(outside),
-		"GridSystem footprint must exclude outside cell %s" % outside,
+	AoeFootprintQaHarness.assert_footprint_excludes(
+		failures, tag, board, origin, target, shape, size, outside,
 	)
 
 
 static func run_shape_geometry(failures: Array[String]) -> void:
+	AoeFootprintQaHarness.run_geometry_contracts(failures)
 	var cleave := factory_ability(&"bruiser_cleave")
 	var earthshatter := factory_ability(&"bruiser_earthshatter")
 	assert_true(
@@ -639,18 +632,6 @@ static func run_shape_geometry(failures: Array[String]) -> void:
 		and earthshatter != null
 		and earthshatter.target_shape == GameEnums.TargetShape.ARC,
 		"Bruiser ARC actives must retain shared ARC shape",
-	)
-	var center := Vector2i(4, 4)
-	var horizontal_arc := GridSystem.get_affected_tiles(
-		null, center, center + Vector2i(2, 0), GameEnums.TargetShape.ARC, 1,
-	)
-	assert_eq_int(failures, "shape/arc_horizontal_size", horizontal_arc.size(), 3)
-	assert_true(
-		failures, "shape/arc_horizontal_footprint",
-		horizontal_arc.has(center + Vector2i(2, 0))
-		and horizontal_arc.has(center + Vector2i(2, -1))
-		and horizontal_arc.has(center + Vector2i(2, 1)),
-		"horizontal ARC must be perpendicular to attack direction",
 	)
 
 

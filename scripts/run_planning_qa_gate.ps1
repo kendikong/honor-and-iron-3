@@ -49,6 +49,15 @@ if ($IncludeLegacyTier12) {
 }
 
 Write-Output ""
+Write-Output "=== AOE footprint contract (geometry + scenario/live audits) ==="
+$aoeGate = Join-Path $PSScriptRoot "run_aoe_footprint_qa_gate.ps1"
+& $aoeGate -GodotPath $GodotPath
+if ($LASTEXITCODE -ne 0) {
+	Write-Output "--- AOE footprint contract: FAIL ---"
+	exit 1
+}
+Write-Output "--- AOE footprint contract: PASS ---"
+Write-Output ""
 Write-Output "=== Tier 3: TestBattle scene acceptance (GdUnit4) ==="
 Write-Output "Note: run_planning_qa_gate.ps1 is Tier 3 only. Do not also run run_planning_scene_acceptance.ps1 in the same QA turn."
 $sceneGate = Join-Path $PSScriptRoot "run_planning_scene_acceptance.ps1"

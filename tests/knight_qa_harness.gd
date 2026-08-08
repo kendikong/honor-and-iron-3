@@ -2101,6 +2101,12 @@ static func run_taunting_strike(failures: Array[String]) -> void:
 		and strike_up.upgraded_target_shape_size == 1,
 		"upgraded taunting strike must be AOE 3x3",
 	)
+	AoeFootprintQaHarness.assert_footprint_excludes(
+		failures, "taunting_strike/upgrade/footprint",
+		board2, Vector2i(5, 5), Vector2i(7, 5),
+		strike_up.upgraded_target_shape, strike_up.upgraded_target_shape_size,
+		Vector2i(10, 10),
+	)
 	var plan2 := Timeline.new()
 	plan2.add(plan_ability(10, strike_up, Vector2i(7, 5), 11))
 	var result2: SimResult = simulate_player_turn(board2, plan2)
@@ -2131,6 +2137,12 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		failures, "seismic_stomp/aoe_damage",
 		enemy != null and enemy.health.current_hp < hp_before,
 		"seismic stomp AOE must damage adjacent enemy",
+	)
+	AoeFootprintQaHarness.assert_footprint_excludes(
+		failures, "seismic_stomp/footprint",
+		board, Vector2i(4, 4), Vector2i(4, 4),
+		stomp.target_shape, stomp.target_shape_size,
+		Vector2i(6, 6),
 	)
 	assert_true(
 		failures, "seismic_stomp/damage_atk2",
@@ -2647,6 +2659,12 @@ static func run_defensive_formation(failures: Array[String]) -> void:
 	})
 	var knight: UnitState = unit_on_board(board, 1)
 	var form: AbilityData = ability_on_unit(knight, &"knight_defensive_formation")
+	AoeFootprintQaHarness.assert_footprint_excludes(
+		failures, "defensive_formation/footprint",
+		board, knight.position, knight.position,
+		form.target_shape, form.target_shape_size,
+		Vector2i(4, 8),
+	)
 	var cast_action: TimelineAction = plan_ability(1, form, knight.position, knight.id)
 	assert_true(
 		failures, "defensive_formation/ability_system/can_use",

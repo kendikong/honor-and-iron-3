@@ -61,6 +61,8 @@ For any skill with `target_shape` ≠ `SINGLE` or Bible `AOE` / `ARC` / `LINE` /
 
 Shared geometry owner: `GridSystem.get_affected_tiles` — **no** per-skill overlay branches.
 
+**Automated enforcement:** `.\scripts\run_aoe_footprint_qa_gate.ps1` (also wired into class + planning gates). Fails if shaped scenario rows lack sim footprint proof, live class tests lack exact overlay parity, or premove ARC regression is missing.
+
 ---
 
 ## Agent workflow (every class turn)

@@ -7,6 +7,7 @@ const _ACTOR_CELL := Vector2i(4, 5)
 const _ALLY_CELL := Vector2i(3, 5)
 const _ENEMY_CELL := Vector2i(6, 5)
 const _TILE_CELL := Vector2i(4, 4)
+const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{"id": &"mage_blink", "target": _TILE_CELL, "kind": &"movement", "effect": GameEnums.EffectType.TELEPORT_CASTER},
@@ -30,6 +31,7 @@ const _CASES: Array[Dictionary] = [
 var _scene: TestBattleMapView
 var _director: CombatDirector
 var _input: CombatPlanningInput
+var _overlay: TacticalPlanningOverlay
 
 
 func test_live_mage_every_skill(timeout := 300000) -> void:
@@ -63,6 +65,9 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	_director = _scene.get_node("CombatDirector") as CombatDirector
 	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
 	_input = shell.planning_input
+	_overlay = _scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
 	_director.auto_run = false
 	var actor_id := _unit_id_at(_director.base_board, _ACTOR_CELL)
 	assert_int(actor_id).override_failure_message(
@@ -78,6 +83,12 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	_director.select_unit(actor_id)
 	_director.select_ability(_ability_index(actor, ability))
 	await runner.simulate_frames(3, _DELTA_MS)
+	var target_cell: Vector2i = case.target
+	if ability.range_tiles <= 0:
+		target_cell = actor.position
+	await _OVERLAY_QA.assert_live_overlay_parity(
+		self, runner, _overlay, _input, _director, actor_id, ability, target_cell, case.id,
+	)
 	var slots := await _commit_click(runner, actor_id, case.target)
 	assert_bool(_slots_invalid(slots)).override_failure_message(
 		"%s: valid live target rejected by commit slots: %s" % [case.id, slots],
@@ -111,6 +122,9 @@ func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	_director = _scene.get_node("CombatDirector") as CombatDirector
 	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
 	_input = shell.planning_input
+	_overlay = _scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
 	_director.auto_run = false
 	var actor_id := _unit_id_at(_director.base_board, _ACTOR_CELL)
 	assert_int(actor_id).override_failure_message(
@@ -130,6 +144,12 @@ func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	_director.select_unit(actor_id)
 	_director.select_ability(_ability_index(actor, ability))
 	await runner.simulate_frames(3, _DELTA_MS)
+	var target_cell: Vector2i = case.target
+	if ability.range_tiles <= 0:
+		target_cell = actor.position
+	await _OVERLAY_QA.assert_live_overlay_parity(
+		self, runner, _overlay, _input, _director, actor_id, ability, target_cell, case.id,
+	)
 	var slots := await _commit_click(runner, actor_id, case.target)
 	assert_bool(_slots_invalid(slots)).override_failure_message(
 		"%s [+]: valid live target rejected by commit slots: %s" % [case.id, slots],

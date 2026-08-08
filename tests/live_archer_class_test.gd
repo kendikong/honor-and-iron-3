@@ -7,6 +7,7 @@ extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 const _ACTOR_CELL := Vector2i(4, 5)
 const _SETTLE_FRAMES := 8
 const _DELTA_MS := 16
+const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{"id": &"archer_basic", "range": 2, "flags": GameEnums.TargetingFlags.ENEMY,
@@ -85,6 +86,7 @@ const _BATCHES: Array[Array] = [
 var _scene: TestBattleMapView
 var _director: CombatDirector
 var _input: CombatPlanningInput
+var _overlay: TacticalPlanningOverlay
 
 
 func test_live_archer_every_skill(timeout := 240000) -> void:
@@ -117,6 +119,9 @@ func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
 	_director = _scene.get_node("CombatDirector") as CombatDirector
 	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
 	_input = shell.planning_input
+	_overlay = _scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
 	_director.auto_run = false
 	for skill_id: StringName in skill_ids:
 		var case := _case(skill_id)
@@ -134,6 +139,9 @@ func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
 		_director.select_unit(actor_id)
 		_director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(2, _DELTA_MS)
+		await _OVERLAY_QA.assert_live_overlay_parity(
+			self, runner, _overlay, _input, _director, actor_id, ability, case.target, skill_id,
+		)
 		var slots := await _commit_live_click(
 			runner,
 			actor_id,

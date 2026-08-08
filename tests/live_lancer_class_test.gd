@@ -15,6 +15,7 @@ const _PUSH_EXTRA_PLAYERS: Array[Vector2i] = [
 ]
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
+const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{
@@ -315,6 +316,7 @@ const _CASE_ALLIES: Dictionary = {
 var _scene: TestBattleMapView
 var _director: CombatDirector
 var _input: CombatPlanningInput
+var _overlay: TacticalPlanningOverlay
 var _batch_base_board: BoardState
 var _batch_actor_ids: Dictionary = {}
 var _batch_target_ids: Dictionary = {}
@@ -352,6 +354,9 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 	_director = _scene.get_node("CombatDirector") as CombatDirector
 	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
 	_input = shell.planning_input
+	_overlay = _scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
 	_director.auto_run = false
 	for unit: UnitState in _director.base_board.units:
 		if unit.definition != null and unit.definition.id == &"training_dummy":
@@ -389,6 +394,12 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		assert_that(selected_ability.id).override_failure_message(
 			"%s: selected ability mismatch (got %s)" % [skill_id, selected_ability.id],
 		).is_equal(skill_id)
+		var target_cell := _case_target_cell(skill_id)
+		if ability.range_tiles <= 0:
+			target_cell = actor.position
+		await _OVERLAY_QA.assert_live_overlay_parity(
+			self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
+		)
 		var slots: Dictionary
 		if skill_id == &"lancer_glorious_charge":
 			slots = await _commit_glorious_charge(runner, actor_id, case)

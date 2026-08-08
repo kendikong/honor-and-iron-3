@@ -1,28 +1,29 @@
 ## Tier 2 live Bruiser acceptance.
 ##
 ## Each movement skill and active uses its own actor cell per batch, commits through
-## preview slots, and resolves via Simulator. Self AOE skills assert overlay red tiles
-## match AbilitySystem.planning_action_range_tiles (Bible blast footprint at stand).
+## preview slots, and resolves via Simulator. Shaped skills assert overlay red tiles
+## match AbilitySystem blast footprint (exact set + count) via AoeFootprintQaHarness.
 extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
+const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{"id": &"bruiser_push_through", "observation": &"displacement", "upgrade_keys": [&"buff_on_push"]},
 	{"id": &"bruiser_charge_strike", "observation": &"movement_damage", "upgrade_keys": [&"ghost_move", &"bonus_dmg_from_terrain"]},
 	{"id": &"bruiser_concussion_blow", "observation": &"damage_displacement", "upgrade_keys": [&"enemy_collision_stagger_both"]},
-	{"id": &"bruiser_cleave", "observation": &"damage", "upgrade_keys": [&"weapon_scaled"], "assert_arc_overlay": true},
+	{"id": &"bruiser_cleave", "observation": &"damage", "upgrade_keys": [&"weapon_scaled"]},
 	{"id": &"bruiser_suplex", "observation": &"damage_displacement", "upgrade_keys": [&"bonus_dmg_per_10_hp"]},
 	{"id": &"bruiser_adrenaline_surge", "observation": &"self_buff", "upgrade_keys": [&"on_kill_heal_shield"]},
-	{"id": &"bruiser_earthshatter", "observation": &"damage", "upgrade_keys": [&"buff_per_destroyed_object"], "assert_arc_overlay": true},
+	{"id": &"bruiser_earthshatter", "observation": &"damage", "upgrade_keys": [&"buff_per_destroyed_object"]},
 	{"id": &"bruiser_meat_shield", "observation": &"swap", "upgrade_keys": [&"intercept_grant_str"]},
 	{"id": &"bruiser_frenzy", "observation": &"damage", "upgrade_keys": [&"frenzy_on_kill_ap"]},
-	{"id": &"bruiser_guttural_roar", "observation": &"aoe_displacement", "upgrade_keys": [&"push_board_items", &"item_collision_damage"], "assert_self_aoe_overlay": true},
+	{"id": &"bruiser_guttural_roar", "observation": &"aoe_displacement", "upgrade_keys": [&"push_board_items", &"item_collision_damage"]},
 	{"id": &"bruiser_headbutt", "observation": &"damage_status", "upgrade_keys": [&"bonus_dmg_pct_max_hp"]},
 	{"id": &"bruiser_blood_boil", "observation": &"self_buff", "upgrade_keys": []},
 	{"id": &"bruiser_violent_collision", "observation": &"movement", "upgrade_keys": [&"stagger_on_collision"]},
-	{"id": &"bruiser_crimson_whirlwind", "observation": &"aoe_damage", "upgrade_keys": [&"heal_per_target_hit"], "assert_self_aoe_overlay": true},
+	{"id": &"bruiser_crimson_whirlwind", "observation": &"aoe_damage", "upgrade_keys": [&"heal_per_target_hit"]},
 	{"id": &"bruiser_belly_flop", "observation": &"movement", "upgrade_keys": [&"belly_flop_push"]},
 	{"id": &"bruiser_breaching_dash", "observation": &"movement", "upgrade_keys": [&"next_attack_pierce"]},
 ]
@@ -124,6 +125,60 @@ func test_live_bruiser_every_skill(timeout := 300000) -> void:
 		await _run_live_batch(runner, batch)
 
 
+func test_cleave_premove_overlay_exact_blast(timeout := 120000) -> void:
+	## Regression: premove + ARC must show blast tiles only (never range bubble + blast = 4 reds).
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	runner.move_window_to_foreground()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_scene = runner.scene() as TestBattleMapView
+	assert_object(_scene).is_not_null()
+	if _scene == null:
+		return
+	var session: TestBattleSession = _scene.get_session()
+	session.reset_defaults()
+	session.player_class_id = &"bruiser"
+	session.player_level = TestBattleSession.TRAINING_LEVEL
+	session.set_all_passives_enabled(&"bruiser", false)
+	session.set_all_skills_enabled(&"bruiser", false)
+	session.skill_enabled[&"bruiser_cleave"] = true
+	session.extra_player_coords = []
+	session.dummy_coords = [Vector2i(7, 5)]
+	session.unkillable_dummies = true
+	session.infinite_player_ap = true
+	_scene.apply_training_board()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_director = _scene.get_node("CombatDirector") as CombatDirector
+	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
+	_input = shell.planning_input
+	_overlay = _scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	_director.auto_run = false
+	var actor_id := _unit_id_at(_director.base_board, Vector2i(4, 5))
+	assert_int(actor_id).is_greater(0)
+	var actor := _director.board.get_unit_by_id(actor_id)
+	var run_ab: AbilityData = null
+	for ab: AbilityData in actor.active_abilities:
+		if ab != null and ab.id == &"universal_run":
+			run_ab = ab
+			break
+	if run_ab == null:
+		run_ab = DataLibrary.get_universal_run()
+	assert_object(run_ab).is_not_null()
+	_director.select_unit(actor_id)
+	_director.select_ability(_ability_index(actor, run_ab))
+	await runner.simulate_frames(2, _DELTA_MS)
+	var move_slots := await _commit_live_click(runner, actor_id, Vector2i(6, 5))
+	assert_bool(_slots_invalid(move_slots)).is_false()
+	var cleave: AbilityData = _ability_by_id(actor, &"bruiser_cleave")
+	assert_object(cleave).is_not_null()
+	_director.select_unit(actor_id)
+	_director.select_ability(_ability_index(actor, cleave))
+	await _OVERLAY_QA.assert_live_overlay_parity(
+		self, runner, _overlay, _input, _director, actor_id, cleave, Vector2i(7, 5), &"cleave_premove",
+	)
+
+
 func _cache_factory_abilities() -> void:
 	_factory_abilities.clear()
 	var def: UnitData = DataLibrary.get_unit(&"bruiser")
@@ -189,14 +244,12 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		_director.select_unit(actor_id)
 		_director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(3, _DELTA_MS)
-		if bool(case.get("assert_self_aoe_overlay", false)):
-			await _assert_self_aoe_overlay_matches(
-				runner, actor_id, ability, skill_id,
-			)
-		if bool(case.get("assert_arc_overlay", false)):
-			await _assert_arc_overlay_matches(
-				runner, actor_id, ability, skill_id, _case_target_cell(skill_id),
-			)
+		var target_cell: Vector2i = _case_target_cell(skill_id)
+		if ability.range_tiles <= 0:
+			target_cell = actor.position
+		await _OVERLAY_QA.assert_live_overlay_parity(
+			self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
+		)
 		var slots: Dictionary = await _commit_live_click(
 			runner, actor_id, _case_target_cell(skill_id),
 		)
@@ -217,96 +270,6 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		var actor_id := _unit_id_at(_director.base_board, _case_actor_cell(skill_id))
 		_assert_no_actor_failure(result.events, actor_id, skill_id)
 		_assert_live_observation(result, case, actor_id)
-
-
-func _assert_self_aoe_overlay_matches(
-	runner: GdUnitSceneRunner,
-	actor_id: int,
-	ability: AbilityData,
-	label: StringName,
-) -> void:
-	_director.select_unit(actor_id)
-	var actor := _director.board.get_unit_by_id(actor_id)
-	if actor == null:
-		return
-	var stand: Vector2i = actor.position
-	_input.set_qa_pointer_grid_cell(stand)
-	if _input._intent_state != null:
-		_input._intent_state.set_hover_coord(stand)
-	_overlay.recompute_hover_ranges(false, _director.selected_ability_index, false, -1)
-	_director.flush_plan_refresh_signals_if_pending()
-	await runner.simulate_frames(3, _DELTA_MS)
-	var plan_board: BoardState = _director.board
-	if _director.projected_state != null:
-		plan_board = _director.projected_state
-	var expected: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
-		plan_board, actor, ability, stand, [],
-	)
-	var overlay_tiles: Array[Vector2i] = _overlay.get_hover_action_range_tiles()
-	for tile: Vector2i in expected:
-		assert_bool(_overlay.is_hover_action_range_tile(tile)).override_failure_message(
-			"%s: overlay missing self-AOE tile %s" % [label, tile],
-		).is_true()
-	for tile: Vector2i in overlay_tiles:
-		assert_bool(expected.has(tile)).override_failure_message(
-			"%s: overlay red tile %s outside self-AOE footprint %s" % [label, tile, expected],
-		).is_true()
-
-
-func _attack_hover_sync(runner: GdUnitSceneRunner, cell: Vector2i) -> void:
-	_input.set_qa_pointer_grid_cell(cell)
-	if _input._intent_state != null:
-		_input._intent_state.set_hover_coord(cell)
-	_overlay.set_hover_coord(cell, false)
-	_input.on_hover_moved(cell)
-	_input._flush_hover_heavy_sync()
-	_input.call("_refresh_selected_interaction_preview")
-	_overlay._recompute_hover_ranges_from_inputs()
-	_director.flush_plan_refresh_signals_if_pending()
-	await runner.simulate_frames(3, _DELTA_MS)
-
-
-func _assert_arc_overlay_matches(
-	runner: GdUnitSceneRunner,
-	actor_id: int,
-	ability: AbilityData,
-	label: StringName,
-	target_cell: Vector2i,
-) -> void:
-	_director.select_unit(actor_id)
-	var actor := _director.board.get_unit_by_id(actor_id)
-	if actor == null:
-		return
-	var stand: Vector2i = actor.position
-	await _attack_hover_sync(runner, target_cell)
-	var plan_board: BoardState = _director.board
-	if _director.projected_state != null:
-		plan_board = _director.projected_state
-	var proj_actor := plan_board.get_unit_by_id(actor_id)
-	if proj_actor == null:
-		proj_actor = actor
-	stand = proj_actor.position
-	var intent_stand: Vector2i = _input.action_range_intent_stand_cell(actor_id)
-	if intent_stand.x > -900:
-		stand = intent_stand
-	var expected: Array[Vector2i] = AbilitySystem.planning_blast_tiles_at_target(
-		plan_board, proj_actor, ability, stand, target_cell,
-	)
-	assert_bool(not expected.is_empty()).override_failure_message(
-		"%s: ARC blast footprint empty at hover %s from stand %s" % [label, target_cell, stand],
-	).is_true()
-	var overlay_tiles: Array[Vector2i] = _overlay.get_hover_action_range_tiles()
-	for tile: Vector2i in expected:
-		assert_bool(_overlay.is_hover_action_range_tile(tile)).override_failure_message(
-			"%s: overlay missing ARC blast tile %s" % [label, tile],
-		).is_true()
-	for tile: Vector2i in overlay_tiles:
-		assert_bool(expected.has(tile)).override_failure_message(
-			"%s: overlay red tile %s outside ARC blast %s" % [label, tile, expected],
-		).is_true()
-	assert_int(overlay_tiles.size()).override_failure_message(
-		"%s: ARC overlay must be exactly %d red tiles, got %s" % [label, expected.size(), overlay_tiles],
-	).is_equal(expected.size())
 
 
 func _assert_contract(ability: AbilityData, case: Dictionary) -> void:
