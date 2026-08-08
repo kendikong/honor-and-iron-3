@@ -3561,10 +3561,6 @@ func _build_commit_slots_at_cell(
 		):
 			if awaiting_targeting_active() or has_awaiting_action:
 				var awaiting_origin := _proj_origin(actor)
-				if _director.base_board != null:
-					var base_actor := _director.base_board.get_unit_by_id(actor.id)
-					if base_actor != null:
-						awaiting_origin = base_actor.position
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
 					awaiting_origin, cell, ability,
 				):

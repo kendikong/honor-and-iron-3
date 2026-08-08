@@ -204,11 +204,11 @@ static func audit_premove_arc_regression(failures: Array[String]) -> void:
 		_assert_fail(failures, "audit/premove", "missing live Bruiser test for premove ARC regression")
 		return
 	var source: String = FileAccess.get_file_as_string(BRUISER_LIVE)
-	if not source.contains("test_cleave_premove_overlay_exact_blast"):
+	if not source.contains("_run_cleave_premove_overlay_scenario"):
 		_assert_fail(
 			failures,
 			"audit/premove",
-			"live Bruiser must include test_cleave_premove_overlay_exact_blast (range+blast stack guard)",
+			"live Bruiser must include _run_cleave_premove_overlay_scenario (range+blast stack guard)",
 		)
 
 
