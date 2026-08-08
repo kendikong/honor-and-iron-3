@@ -6,15 +6,24 @@
 
 ## Goal
 
-Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, cloning P3 pipeline. **Active:** Bruiser B6-LOCK (`docs/design/bruiser-template.md`, `scripts/run_bruiser_qa_gate.ps1`).
+Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, cloning **P3 Knight QA depth** (not a monolithic harness). **Reference LOCK:** Knight P3 · Bruiser B6-LOCK. **Active implementations without LOCK:** Archer, Lancer, Mage (`HARNESS_ONLY` — see their gate docs).
 
 ## Quality bar
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Per class | `PLANNED — scripts/run_<class>_qa_gate.ps1` (clone P3 Knight gate) | Balance taste |
-| Per-class skills | `tests/run_skill_scenarios_only.gd` pattern per class | `docs/PLANNING_SKILL_QA_CHECKLIST.md` |
+| Per class | `docs/<CLASS>_QA_GATE.md` from [`_CLASS_QA_GATE_TEMPLATE.md`](../_CLASS_QA_GATE_TEMPLATE.md) + `run_<class>_qa_gate.ps1` + `run_<class>_live_qa.ps1` | Balance taste |
+| Per-class skills | **One** `tests/skills/<id>_scenario.gd` per active (Knight model) — **forbidden:** harness-only sole coverage | `docs/PLANNING_SKILL_QA_CHECKLIST.md` |
+| Class LOCK | Matrix **100% `PASS`** per [`KNIGHT_QA_GATE.md`](../KNIGHT_QA_GATE.md); meta-critic ≥ 88 | Owner defers only explicit `N/A` rows |
 | Optional balance | `tests/run_mass_sim_test.gd` | `tests/captures/mass_sim_interpretation.json` review |
+
+## Forbidden (`.cursor/rules/class-qa-knight-bar.mdc`)
+
+- Monolithic `*_class_scenario.gd` as **only** coverage for a shipped class
+- Gate doc stub without full matrix + three tiers
+- `IMPLEMENTATION_STATUS` “QA LOCK” while matrix rows are `HARNESS_ONLY`
+- Metadata-only / `ABILITY_USED`-only asserts for AOE skills
+- Planning QA PASS as class sign-off
 
 ## Non-goals
 

@@ -1,0 +1,83 @@
+---
+description: ABSOLUTE — every class must meet Knight QA depth before LOCK; owner must not re-explain thorough QA
+alwaysApply: true
+---
+
+# Class QA — Knight Bar (ABSOLUTE — ALWAYS ON)
+
+**The owner must not have to repeat:** class QA must be thorough enough that **green gate = no hand-testing every skill in F5.**
+
+**Authoritative template:** `docs/KNIGHT_QA_GATE.md` (P3 LOCK) · **Clone scaffold:** `docs/_CLASS_QA_GATE_TEMPLATE.md` · **Process:** `docs/design/class-rollout.md` · **Planning overlay bar:** `docs/PLANNING_SKILL_QA_CHECKLIST.md`
+
+**Parent:** `.cursor/rules/qa-after-gameplay-changes.mdc` (which suite to run) · **Complements:** `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/skill-global-rules.mdc`, `.cursor/rules/move-preview-intent-truth.mdc`
+
+---
+
+## When this rule applies
+
+Any turn that **implements, fixes, or claims complete** a **class** (factory, skills, passives, class scenarios, `docs/<CLASS>_QA_GATE.md`, `run_<class>_qa_gate.ps1`, `live_<class>_class_test.gd`).
+
+**Knight (P3) and Bruiser (P6 B6-LOCK)** already meet this bar. **All other classes** are **`HARNESS_ONLY`** until upgraded — see their gate docs.
+
+---
+
+## Definition: class LOCK (non-negotiable)
+
+A class is **LOCK** only when **all** are true:
+
+1. **`docs/<CLASS>_QA_GATE.md`** — full Knight-shaped doc: three tiers, meta-critic contract, global systems fidelity (Rules A/B), **coverage matrix** with every `*_factory.gd` id.
+2. **Matrix:** **100% rows `PASS`** (meta-critic approved) · **0** `HARNESS_ONLY` · **0** undocumented `PLANNED` (except owner `N/A` with target phase).
+3. **One scenario file per factory row** — `tests/skills/<id>_scenario.gd` or `tests/passives/<id>_scenario.gd` — each with Bible header + named global effect + base + `[+]` when factory has `upgraded_effects`.
+4. **Tier 1 gate** — `.\scripts\run_<class>_qa_gate.ps1` PASS on matrix rows, not on a monolithic harness smoke alone.
+5. **Tier 2 live** — `.\scripts\run_<class>_live_qa.ps1` PASS with preview/commit + **overlay tile sets** + slots + sim parity (checklist § Automated layers).
+6. **`IMPLEMENTATION_STATUS.md`** — records LOCK hash; **must not** say "QA LOCK" while matrix has `HARNESS_ONLY` rows.
+
+**Planning QA PASS is not class LOCK.** Forbidden: changing `live_planning_scene_test.gd` for class coverage.
+
+---
+
+## Forbidden shallow patterns (instant `HARNESS_ONLY` / not LOCK)
+
+| Pattern | Why it fails Knight bar |
+|---------|-------------------------|
+| Single `*_class_scenario.gd` / harness as **only** coverage | No per-row Bible proof; one green script hides weak skills |
+| Assert `ability.target_shape` / metadata only | Does not prove tiles hit or red overlay correct |
+| `GridSystem.get_affected_tiles` smoke **disconnected** from ability under test | Proves enum math, not this skill at this hover |
+| Sim/live: `ABILITY_USED` or any single `UNIT_DAMAGED` | Does not prove footprint, multi-target, or wrong-tile exclusion |
+| Live: contract asserts only; no `overlay.get_hover_action_range_tiles()` vs blast at hover | Violates `PLANNING_SKILL_QA_CHECKLIST.md` |
+| Red tiles compared to `planning_action_range_tiles()` only for AOE | Range bubble ≠ Bible blast; self-referential pass |
+| Gate doc &lt; Knight structure (no matrix, no meta-critic, no tier table) | Owner cannot trust PASS |
+| Mark class complete in status while matrix is `HARNESS_ONLY` | False sign-off |
+
+---
+
+## Required asserts (AOE / shapes / ranged)
+
+For any skill with `target_shape` ≠ `SINGLE` or Bible `AOE` / `ARC` / `LINE` / `CONE`:
+
+1. **Sim:** place units **in** and **out** of `GridSystem.get_affected_tiles(origin, target, shape, size)`; assert damage/status/terrain only on expected coords.
+2. **Live / planning:** at scripted hover, `overlay.get_hover_action_range_tiles()` (or dedicated blast layer when implemented) must match **Bible footprint at cursor**, not Manhattan range bubble alone.
+3. **Commit:** preview slots + `Simulator.simulate` agree on `target_coord` and affected tile set.
+
+Shared geometry owner: `GridSystem.get_affected_tiles` — **no** per-skill overlay branches.
+
+---
+
+## Agent workflow (every class turn)
+
+1. Read `docs/<CLASS>_QA_GATE.md` matrix — know which rows are `HARNESS_ONLY`.
+2. New class: start from `docs/_CLASS_QA_GATE_TEMPLATE.md` (not a blank stub).
+3. Per skill wave: add scenario file → register → promote row `HARNESS_ONLY` → `PASS` only after meta-critic adequacy.
+4. Changelog **Class QA** line: matrix `PASS` / `HARNESS_ONLY` / `PLANNED` counts; suites run; **do not** claim LOCK unless 100% `PASS`.
+5. Run **both** `run_<class>_qa_gate.ps1` and `run_<class>_live_qa.ps1` when class factory/scenarios/live tests change.
+
+---
+
+## P6 clone checklist (mandatory for new classes)
+
+1. Copy `docs/_CLASS_QA_GATE_TEMPLATE.md` → `docs/<CLASS>_QA_GATE.md`
+2. Fill matrix from `<class>_factory.gd` + `class_abilities.txt` — honest `PLANNED` / `HARNESS_ONLY`
+3. Copy `run_knight_qa_gate.ps1` pattern → `run_<class>_qa_gate.ps1`
+4. One `tests/skills/<id>_scenario.gd` per active; `tests/passives/<id>_scenario.gd` per passive
+5. `run_<class>_live_qa.ps1` → `tests/live_<class>_class_test.gd`
+6. Do **not** mark LOCK until matrix matches Knight/Bruiser standard

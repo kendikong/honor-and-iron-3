@@ -1175,7 +1175,9 @@ Phases 1–5: data model, sim economy, `plan_action` timeline, planning validati
 
 ---
 
-## Mage class rollout — QA LOCK (2026-08-08)
+## Mage class rollout — implementation complete, QA **not LOCK** (2026-08-08)
+
+**Owner sign-off:** Factory/sim implementation is largely done; **QA depth is `HARNESS_ONLY`** until matrix matches [`docs/KNIGHT_QA_GATE.md`](docs/KNIGHT_QA_GATE.md). See [`docs/MAGE_QA_GATE.md`](docs/MAGE_QA_GATE.md) · [`.cursor/rules/class-qa-knight-bar.mdc`](.cursor/rules/class-qa-knight-bar.mdc).
 
 ### Deliverables
 - [x] `MageFactory` registered as the sole Mage data source.
@@ -1205,5 +1207,5 @@ Phases 1–5: data model, sim economy, `plan_action` timeline, planning validati
 - `scripts/run_regression_tests.ps1`: **PASS** — deterministic sim/bridge regression.
 - `scripts/run_planning_qa_gate.ps1`: **FAIL** — pre-existing K4 Run/detour failures listed above.
 
-**Final issue count:** 2  
-**Audit result:** **PASS** (Mage-specific gate passes; shared K4 planning blocker remains explicitly deferred)
+**Final issue count:** 2 (+ **QA depth:** 32/32 matrix rows `HARNESS_ONLY` — not Knight LOCK)  
+**Audit result:** **PASS** (implementation) · **QA LOCK: NO** (harness-only; upgrade per `class-qa-knight-bar.mdc`)
