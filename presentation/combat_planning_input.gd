@@ -995,7 +995,6 @@ func on_hover_moved(cell: Vector2i) -> void:
 		not dragging
 		and _director.board.is_in_bounds(cell)
 		and _director.selected_unit_id >= 0
-		and planning_cell_changed
 	):
 		var p_unit := _proj_unit(_director.selected_unit_id)
 		if p_unit != null:
@@ -1013,12 +1012,20 @@ func on_hover_moved(cell: Vector2i) -> void:
 					p_unit.id, GameEnums.MoveTiming.POST_ACTION,
 				)
 			)
+			var should_extend_route: bool = planning_cell_changed
+			if (
+				not should_extend_route
+				and ((not move_already_planned and _basic_move_allowed()) or is_awaiting_move)
+			):
+				if _drag_route_commits_active() and _drag_unit_id == p_unit.id and _can_move_to(p_unit, cell):
+					should_extend_route = not _drag_route.is_empty() and cell != _drag_route.back()
 			if (not move_already_planned and _basic_move_allowed()) or is_awaiting_move:
-				if _drag_route.is_empty() or _drag_unit_id != p_unit.id:
-					_drag_unit_id = p_unit.id
-					_drag_route = [_proj_move_origin(p_unit)]
-					_drag_last_free = _drag_route[0]
-				_extend_drag_route(cell)
+				if should_extend_route:
+					if _drag_route.is_empty() or _drag_unit_id != p_unit.id:
+						_drag_unit_id = p_unit.id
+						_drag_route = [_proj_move_origin(p_unit)]
+						_drag_last_free = _drag_route[0]
+					_extend_drag_route(cell)
 	if not _director.board.is_in_bounds(cell):
 		_flush_hover_heavy_sync()
 		return
@@ -1236,6 +1243,17 @@ func _should_restore_stand_hover_preview(cell: Vector2i) -> bool:
 		return true
 	if selected_phase_action_exhausted():
 		return true
+	if (
+		_drag_route_commits_active()
+		and _drag_unit_id == p_unit.id
+		and _unit_move_slot_open(p_unit.id)
+		and (
+			_drag_route.has(cell)
+			or (not _drag_route.is_empty() and cell == _drag_route.back())
+			or _can_move_to(p_unit, cell)
+		)
+	):
+		return false
 	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
 		return false
 	if not _ally_skill_preview_slots(p_unit, cell).is_empty():
@@ -1313,7 +1331,11 @@ func _refresh_selected_interaction_preview() -> void:
 		and _drag_unit_id == p_unit.id
 		and _unit_move_slot_open(p_unit.id)
 		and _director.board.is_in_bounds(cell)
-		and (cell == _drag_route_stand_cell() or _drag_route.has(cell))
+		and (
+			cell == _drag_route_stand_cell()
+			or _drag_route.has(cell)
+			or _can_move_to(p_unit, cell)
+		)
 	):
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, _route_waypoints())
 		_refresh_click_target_highlight()
@@ -1360,13 +1382,10 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 		var selected_ability := _selected_ability_data(p_unit)
 		if selected_ability != null and AbilitySystem.planning_allows_paired_premove(selected_ability):
 			return _can_move_to(p_unit, cell)
-		if (
-			_drag_route_commits_active()
-			and _drag_unit_id == p_unit.id
-			and not _drag_route.is_empty()
-			and (cell == _drag_route.back() or _drag_route.has(cell))
-		):
-			return true
+		if _drag_route_commits_active() and _drag_unit_id == p_unit.id:
+			if not _drag_route.is_empty() and (cell == _drag_route.back() or _drag_route.has(cell)):
+				return true
+			return _can_move_to(p_unit, cell)
 		return false
 	return _can_move_to(p_unit, cell)
 
