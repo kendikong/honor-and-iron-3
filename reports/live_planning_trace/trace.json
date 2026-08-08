@@ -560,10 +560,10 @@
 			"1,6",
 			"0,5"
 		],
-		"cursor_icon": "",
+		"cursor_icon": "∅",
 		"drag_route": [],
 		"dragging": false,
-		"hover": "-999,-999",
+		"hover": "9,9",
 		"label": "k1/hover_edges/off_blue/click/hover",
 		"phase": 0,
 		"post_move": {},
@@ -623,10 +623,10 @@
 			"1,6",
 			"0,5"
 		],
-		"cursor_icon": "",
+		"cursor_icon": "∅",
 		"drag_route": [],
 		"dragging": false,
-		"hover": "-999,-999",
+		"hover": "9,9",
 		"label": "k1/hover_edges/off_blue/click/press",
 		"phase": 0,
 		"post_move": {},
@@ -686,10 +686,10 @@
 			"1,6",
 			"0,5"
 		],
-		"cursor_icon": "",
+		"cursor_icon": "∅",
 		"drag_route": [],
 		"dragging": false,
-		"hover": "-999,-999",
+		"hover": "9,9",
 		"label": "k1/hover_edges/off_blue/click/settled",
 		"phase": 0,
 		"post_move": {},
@@ -2872,7 +2872,7 @@
 			"waypoints": []
 		},
 		"blue_tiles": [],
-		"cursor_icon": "∅",
+		"cursor_icon": "",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "5,4",
@@ -2915,7 +2915,7 @@
 			"waypoints": []
 		},
 		"blue_tiles": [],
-		"cursor_icon": "∅",
+		"cursor_icon": "",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "5,4",
@@ -3154,7 +3154,7 @@
 			"waypoints": []
 		},
 		"blue_tiles": [],
-		"cursor_icon": "∅",
+		"cursor_icon": "",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "5,4",
@@ -3197,7 +3197,7 @@
 			"waypoints": []
 		},
 		"blue_tiles": [],
-		"cursor_icon": "∅",
+		"cursor_icon": "",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "5,4",
@@ -3240,7 +3240,7 @@
 			"waypoints": []
 		},
 		"blue_tiles": [],
-		"cursor_icon": "∅",
+		"cursor_icon": "",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "5,4",
@@ -3283,7 +3283,7 @@
 			"waypoints": []
 		},
 		"blue_tiles": [],
-		"cursor_icon": "∅",
+		"cursor_icon": "",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "5,4",
@@ -3659,7 +3659,7 @@
 			"2,5",
 			"1,4"
 		],
-		"cursor_icon": "⚔️",
+		"cursor_icon": "👟",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "6,3",
@@ -3758,7 +3758,7 @@
 			"2,5",
 			"1,4"
 		],
-		"cursor_icon": "⚔️",
+		"cursor_icon": "👟",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "6,4",
@@ -4051,7 +4051,7 @@
 			"waypoints": []
 		},
 		"blue_tiles": [],
-		"cursor_icon": "∅",
+		"cursor_icon": "",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "5,4",
@@ -4094,7 +4094,7 @@
 			"waypoints": []
 		},
 		"blue_tiles": [],
-		"cursor_icon": "∅",
+		"cursor_icon": "",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "5,4",
@@ -5607,7 +5607,7 @@
 			"1,2",
 			"0,1"
 		],
-		"cursor_icon": "⚔️",
+		"cursor_icon": "👟",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "5,1",
@@ -5700,7 +5700,7 @@
 			"1,2",
 			"0,1"
 		],
-		"cursor_icon": "∅",
+		"cursor_icon": "👟",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "5,2",
@@ -5708,7 +5708,35 @@
 		"phase": 0,
 		"post_move": {},
 		"pre_move": {},
-		"preview_paths": {},
+		"preview_paths": {
+			"1": [
+				"4,5",
+				"5,5",
+				"6,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3",
+				"8,2"
+			],
+			"4": [
+				"4,1",
+				"5,1",
+				"5,2"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
 		"projected_unit": {
 			"ap": 1,
 			"facing": 1,
@@ -5767,7 +5795,7 @@
 			"1,2",
 			"0,1"
 		],
-		"cursor_icon": "⚔️",
+		"cursor_icon": "👟",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "4,2",
@@ -5863,7 +5891,7 @@
 			"1,2",
 			"0,1"
 		],
-		"cursor_icon": "∅",
+		"cursor_icon": "🏃",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "3,2",
@@ -5871,7 +5899,37 @@
 		"phase": 0,
 		"post_move": {},
 		"pre_move": {},
-		"preview_paths": {},
+		"preview_paths": {
+			"1": [
+				"4,5",
+				"5,5",
+				"6,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3",
+				"8,2"
+			],
+			"4": [
+				"4,1",
+				"5,1",
+				"5,2",
+				"4,2",
+				"3,2"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
 		"projected_unit": {
 			"ap": 1,
 			"facing": 1,
@@ -5879,19 +5937,7 @@
 			"mp": 3,
 			"position": "4,1"
 		},
-		"red_tiles": [
-			"3,1",
-			"3,0",
-			"4,2",
-			"5,2",
-			"6,2",
-			"3,3",
-			"3,4",
-			"3,5",
-			"2,2",
-			"1,2",
-			"0,2"
-		],
+		"red_tiles": [],
 		"selected_ability_index": 7,
 		"selected_unit": 4
 	},
@@ -5930,7 +5976,7 @@
 			"1,2",
 			"0,1"
 		],
-		"cursor_icon": "∅",
+		"cursor_icon": "🏃",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "3,2",
@@ -5938,7 +5984,37 @@
 		"phase": 0,
 		"post_move": {},
 		"pre_move": {},
-		"preview_paths": {},
+		"preview_paths": {
+			"1": [
+				"4,5",
+				"5,5",
+				"6,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3",
+				"8,2"
+			],
+			"4": [
+				"4,1",
+				"5,1",
+				"5,2",
+				"4,2",
+				"3,2"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
 		"projected_unit": {
 			"ap": 1,
 			"facing": 1,
@@ -5946,220 +6022,109 @@
 			"mp": 3,
 			"position": "4,1"
 		},
-		"red_tiles": [
-			"3,1",
-			"3,0",
-			"4,2",
-			"5,2",
-			"6,2",
-			"3,3",
-			"3,4",
-			"3,5",
-			"2,2",
-			"1,2",
-			"0,2"
-		],
+		"red_tiles": [],
 		"selected_ability_index": 7,
 		"selected_unit": 4
 	},
 	{
 		"action": {},
-		"blue_tiles": [
-			"4,1",
-			"4,0",
-			"5,1",
-			"4,2",
-			"3,1",
-			"5,0",
-			"3,0",
-			"6,1",
-			"5,2",
-			"4,3",
-			"3,2",
-			"2,1",
-			"6,0",
-			"2,0",
-			"7,1",
-			"6,2",
-			"5,3",
-			"4,4",
-			"3,3",
-			"2,2",
-			"1,1",
-			"7,0",
-			"1,0",
-			"8,1",
-			"7,2",
-			"6,3",
-			"5,4",
-			"4,5",
-			"3,4",
-			"1,2",
-			"0,1"
-		],
-		"cursor_icon": "∅",
+		"blue_tiles": [],
+		"cursor_icon": "⏸",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "3,2",
 		"label": "k4/selection/release/press",
 		"phase": 0,
 		"post_move": {},
-		"pre_move": {},
+		"pre_move": {
+			"ability": "",
+			"target": "3,2",
+			"type": 0,
+			"uses_run": true,
+			"waypoints": [
+				"5,1",
+				"5,2",
+				"4,2",
+				"3,2"
+			]
+		},
 		"preview_paths": {},
 		"projected_unit": {
-			"ap": 1,
-			"facing": 1,
+			"ap": 0,
+			"facing": 3,
 			"id": 4,
-			"mp": 3,
-			"position": "4,1"
+			"mp": 0,
+			"position": "3,2"
 		},
-		"red_tiles": [
-			"3,1",
-			"3,0",
-			"4,2",
-			"5,2",
-			"6,2",
-			"3,3",
-			"3,4",
-			"3,5",
-			"2,2",
-			"1,2",
-			"0,2"
-		],
+		"red_tiles": [],
 		"selected_ability_index": 7,
 		"selected_unit": 4
 	},
 	{
 		"action": {},
-		"blue_tiles": [
-			"4,1",
-			"4,0",
-			"5,1",
-			"4,2",
-			"3,1",
-			"5,0",
-			"3,0",
-			"6,1",
-			"5,2",
-			"4,3",
-			"3,2",
-			"2,1",
-			"6,0",
-			"2,0",
-			"7,1",
-			"6,2",
-			"5,3",
-			"4,4",
-			"3,3",
-			"2,2",
-			"1,1",
-			"7,0",
-			"1,0",
-			"8,1",
-			"7,2",
-			"6,3",
-			"5,4",
-			"4,5",
-			"3,4",
-			"1,2",
-			"0,1"
-		],
-		"cursor_icon": "∅",
+		"blue_tiles": [],
+		"cursor_icon": "⏸",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "3,2",
 		"label": "k4/selection/release/settled",
 		"phase": 0,
 		"post_move": {},
-		"pre_move": {},
+		"pre_move": {
+			"ability": "",
+			"target": "3,2",
+			"type": 0,
+			"uses_run": true,
+			"waypoints": [
+				"5,1",
+				"5,2",
+				"4,2",
+				"3,2"
+			]
+		},
 		"preview_paths": {},
 		"projected_unit": {
-			"ap": 1,
-			"facing": 1,
+			"ap": 0,
+			"facing": 3,
 			"id": 4,
-			"mp": 3,
-			"position": "4,1"
+			"mp": 0,
+			"position": "3,2"
 		},
-		"red_tiles": [
-			"3,1",
-			"3,0",
-			"4,2",
-			"5,2",
-			"6,2",
-			"3,3",
-			"3,4",
-			"3,5",
-			"2,2",
-			"1,2",
-			"0,2"
-		],
+		"red_tiles": [],
 		"selected_ability_index": 7,
 		"selected_unit": 4
 	},
 	{
 		"action": {},
-		"blue_tiles": [
-			"4,1",
-			"4,0",
-			"5,1",
-			"4,2",
-			"3,1",
-			"5,0",
-			"3,0",
-			"6,1",
-			"5,2",
-			"4,3",
-			"3,2",
-			"2,1",
-			"6,0",
-			"2,0",
-			"7,1",
-			"6,2",
-			"5,3",
-			"4,4",
-			"3,3",
-			"2,2",
-			"1,1",
-			"7,0",
-			"1,0",
-			"8,1",
-			"7,2",
-			"6,3",
-			"5,4",
-			"4,5",
-			"3,4",
-			"1,2",
-			"0,1"
-		],
-		"cursor_icon": "∅",
+		"blue_tiles": [],
+		"cursor_icon": "⏸",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "3,2",
 		"label": "k4/selection/committed",
 		"phase": 0,
 		"post_move": {},
-		"pre_move": {},
+		"pre_move": {
+			"ability": "",
+			"target": "3,2",
+			"type": 0,
+			"uses_run": true,
+			"waypoints": [
+				"5,1",
+				"5,2",
+				"4,2",
+				"3,2"
+			]
+		},
 		"preview_paths": {},
 		"projected_unit": {
-			"ap": 1,
-			"facing": 1,
+			"ap": 0,
+			"facing": 3,
 			"id": 4,
-			"mp": 3,
-			"position": "4,1"
+			"mp": 0,
+			"position": "3,2"
 		},
-		"red_tiles": [
-			"3,1",
-			"3,0",
-			"4,2",
-			"5,2",
-			"6,2",
-			"3,3",
-			"3,4",
-			"3,5",
-			"2,2",
-			"1,2",
-			"0,2"
-		],
+		"red_tiles": [],
 		"selected_ability_index": 7,
 		"selected_unit": 4
 	},
@@ -6534,7 +6499,35 @@
 		"phase": 0,
 		"post_move": {},
 		"pre_move": {},
-		"preview_paths": {},
+		"preview_paths": {
+			"1": [
+				"4,5",
+				"5,5",
+				"6,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3",
+				"8,2"
+			],
+			"4": [
+				"4,1",
+				"5,1",
+				"5,2"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
 		"projected_unit": {
 			"ap": 1,
 			"facing": 1,
@@ -6543,16 +6536,17 @@
 			"position": "4,1"
 		},
 		"red_tiles": [
+			"5,1",
 			"5,0",
-			"6,1",
-			"7,1",
-			"8,1",
-			"5,2",
+			"6,2",
+			"7,2",
+			"8,2",
 			"5,3",
 			"5,4",
-			"4,1",
-			"3,1",
-			"2,1"
+			"5,5",
+			"4,2",
+			"3,2",
+			"2,2"
 		],
 		"selected_ability_index": 7,
 		"selected_unit": 4
@@ -6604,7 +6598,35 @@
 		"phase": 0,
 		"post_move": {},
 		"pre_move": {},
-		"preview_paths": {},
+		"preview_paths": {
+			"1": [
+				"4,5",
+				"5,5",
+				"6,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3",
+				"8,2"
+			],
+			"4": [
+				"4,1",
+				"5,1",
+				"5,2"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
 		"projected_unit": {
 			"ap": 1,
 			"facing": 1,
@@ -6613,16 +6635,17 @@
 			"position": "4,1"
 		},
 		"red_tiles": [
+			"5,1",
 			"5,0",
-			"6,1",
-			"7,1",
-			"8,1",
-			"5,2",
+			"6,2",
+			"7,2",
+			"8,2",
 			"5,3",
 			"5,4",
-			"4,1",
-			"3,1",
-			"2,1"
+			"5,5",
+			"4,2",
+			"3,2",
+			"2,2"
 		],
 		"selected_ability_index": 7,
 		"selected_unit": 4
@@ -6878,7 +6901,37 @@
 		"phase": 0,
 		"post_move": {},
 		"pre_move": {},
-		"preview_paths": {},
+		"preview_paths": {
+			"1": [
+				"4,5",
+				"5,5",
+				"6,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3",
+				"8,2"
+			],
+			"4": [
+				"4,1",
+				"5,1",
+				"5,2",
+				"4,2",
+				"3,2"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
 		"projected_unit": {
 			"ap": 1,
 			"facing": 1,
@@ -6886,19 +6939,7 @@
 			"mp": 3,
 			"position": "4,1"
 		},
-		"red_tiles": [
-			"4,1",
-			"4,0",
-			"5,2",
-			"6,2",
-			"7,2",
-			"4,3",
-			"4,4",
-			"4,5",
-			"3,2",
-			"2,2",
-			"1,2"
-		],
+		"red_tiles": [],
 		"selected_ability_index": 7,
 		"selected_unit": 4
 	},
@@ -6951,7 +6992,37 @@
 		"phase": 0,
 		"post_move": {},
 		"pre_move": {},
-		"preview_paths": {},
+		"preview_paths": {
+			"1": [
+				"4,5",
+				"5,5",
+				"6,5"
+			],
+			"2": [
+				"1,3"
+			],
+			"3": [
+				"5,4",
+				"6,4",
+				"6,3",
+				"7,3",
+				"8,3",
+				"8,2"
+			],
+			"4": [
+				"4,1",
+				"5,1",
+				"5,2",
+				"4,2",
+				"3,2"
+			],
+			"5": [
+				"7,5"
+			],
+			"6": [
+				"4,3"
+			]
+		},
 		"projected_unit": {
 			"ap": 1,
 			"facing": 1,
@@ -6959,153 +7030,75 @@
 			"mp": 3,
 			"position": "4,1"
 		},
-		"red_tiles": [
-			"4,1",
-			"4,0",
-			"5,2",
-			"6,2",
-			"7,2",
-			"4,3",
-			"4,4",
-			"4,5",
-			"3,2",
-			"2,2",
-			"1,2"
-		],
+		"red_tiles": [],
 		"selected_ability_index": 7,
 		"selected_unit": 4
 	},
 	{
 		"action": {},
-		"blue_tiles": [
-			"4,1",
-			"4,0",
-			"5,1",
-			"4,2",
-			"3,1",
-			"5,0",
-			"3,0",
-			"6,1",
-			"5,2",
-			"4,3",
-			"3,2",
-			"2,1",
-			"6,0",
-			"2,0",
-			"7,1",
-			"6,2",
-			"5,3",
-			"4,4",
-			"3,3",
-			"2,2",
-			"1,1",
-			"7,0",
-			"1,0",
-			"8,1",
-			"7,2",
-			"6,3",
-			"5,4",
-			"4,5",
-			"3,4",
-			"1,2",
-			"0,1"
-		],
-		"cursor_icon": "∅",
+		"blue_tiles": [],
+		"cursor_icon": "⏸",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "3,2",
 		"label": "k4/drag/release",
 		"phase": 0,
 		"post_move": {},
-		"pre_move": {},
+		"pre_move": {
+			"ability": "",
+			"target": "3,2",
+			"type": 0,
+			"uses_run": true,
+			"waypoints": [
+				"5,1",
+				"5,2",
+				"4,2",
+				"3,2"
+			]
+		},
 		"preview_paths": {},
 		"projected_unit": {
-			"ap": 1,
-			"facing": 1,
+			"ap": 0,
+			"facing": 3,
 			"id": 4,
-			"mp": 3,
-			"position": "4,1"
+			"mp": 0,
+			"position": "3,2"
 		},
-		"red_tiles": [
-			"3,1",
-			"3,0",
-			"4,2",
-			"5,2",
-			"6,2",
-			"3,3",
-			"3,4",
-			"3,5",
-			"2,2",
-			"1,2",
-			"0,2"
-		],
+		"red_tiles": [],
 		"selected_ability_index": 7,
 		"selected_unit": 4
 	},
 	{
 		"action": {},
-		"blue_tiles": [
-			"4,1",
-			"4,0",
-			"5,1",
-			"4,2",
-			"3,1",
-			"5,0",
-			"3,0",
-			"6,1",
-			"5,2",
-			"4,3",
-			"3,2",
-			"2,1",
-			"6,0",
-			"2,0",
-			"7,1",
-			"6,2",
-			"5,3",
-			"4,4",
-			"3,3",
-			"2,2",
-			"1,1",
-			"7,0",
-			"1,0",
-			"8,1",
-			"7,2",
-			"6,3",
-			"5,4",
-			"4,5",
-			"3,4",
-			"1,2",
-			"0,1"
-		],
-		"cursor_icon": "∅",
+		"blue_tiles": [],
+		"cursor_icon": "⏸",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "3,2",
 		"label": "k4/drag/committed",
 		"phase": 0,
 		"post_move": {},
-		"pre_move": {},
+		"pre_move": {
+			"ability": "",
+			"target": "3,2",
+			"type": 0,
+			"uses_run": true,
+			"waypoints": [
+				"5,1",
+				"5,2",
+				"4,2",
+				"3,2"
+			]
+		},
 		"preview_paths": {},
 		"projected_unit": {
-			"ap": 1,
-			"facing": 1,
+			"ap": 0,
+			"facing": 3,
 			"id": 4,
-			"mp": 3,
-			"position": "4,1"
+			"mp": 0,
+			"position": "3,2"
 		},
-		"red_tiles": [
-			"3,1",
-			"3,0",
-			"4,2",
-			"5,2",
-			"6,2",
-			"3,3",
-			"3,4",
-			"3,5",
-			"2,2",
-			"1,2",
-			"0,2"
-		],
+		"red_tiles": [],
 		"selected_ability_index": 7,
 		"selected_unit": 4
 	},
@@ -7113,13 +7106,24 @@
 		"drag": {
 			"action": {},
 			"post_move": {},
-			"pre_move": {},
+			"pre_move": {
+				"ability": "",
+				"target": "3,2",
+				"type": 0,
+				"uses_run": true,
+				"waypoints": [
+					"5,1",
+					"5,2",
+					"4,2",
+					"3,2"
+				]
+			},
 			"projected_unit": {
-				"ap": 1,
-				"facing": 1,
+				"ap": 0,
+				"facing": 3,
 				"id": 4,
-				"mp": 3,
-				"position": "4,1"
+				"mp": 0,
+				"position": "3,2"
 			}
 		},
 		"exact_match": true,
@@ -7127,80 +7131,58 @@
 		"selection": {
 			"action": {},
 			"post_move": {},
-			"pre_move": {},
+			"pre_move": {
+				"ability": "",
+				"target": "3,2",
+				"type": 0,
+				"uses_run": true,
+				"waypoints": [
+					"5,1",
+					"5,2",
+					"4,2",
+					"3,2"
+				]
+			},
 			"projected_unit": {
-				"ap": 1,
-				"facing": 1,
+				"ap": 0,
+				"facing": 3,
 				"id": 4,
-				"mp": 3,
-				"position": "4,1"
+				"mp": 0,
+				"position": "3,2"
 			}
 		}
 	},
 	{
 		"action": {},
-		"blue_tiles": [
-			"4,1",
-			"4,0",
-			"5,1",
-			"4,2",
-			"3,1",
-			"5,0",
-			"3,0",
-			"6,1",
-			"5,2",
-			"4,3",
-			"3,2",
-			"2,1",
-			"6,0",
-			"2,0",
-			"7,1",
-			"6,2",
-			"5,3",
-			"4,4",
-			"3,3",
-			"2,2",
-			"1,1",
-			"7,0",
-			"1,0",
-			"8,1",
-			"7,2",
-			"6,3",
-			"5,4",
-			"4,5",
-			"3,4",
-			"1,2",
-			"0,1"
-		],
-		"cursor_icon": "∅",
+		"blue_tiles": [],
+		"cursor_icon": "⏸",
 		"drag_route": [],
 		"dragging": false,
 		"hover": "3,2",
 		"label": "k4/drag/post_commit",
 		"phase": 0,
 		"post_move": {},
-		"pre_move": {},
+		"pre_move": {
+			"ability": "",
+			"target": "3,2",
+			"type": 0,
+			"uses_run": true,
+			"waypoints": [
+				"5,1",
+				"5,2",
+				"4,2",
+				"3,2"
+			]
+		},
 		"preview_paths": {},
 		"projected_unit": {
-			"ap": 1,
-			"facing": 1,
+			"ap": 0,
+			"facing": 3,
 			"id": 4,
-			"mp": 3,
-			"position": "4,1"
+			"mp": 0,
+			"position": "3,2"
 		},
-		"red_tiles": [
-			"3,1",
-			"3,0",
-			"4,2",
-			"5,2",
-			"6,2",
-			"3,3",
-			"3,4",
-			"3,5",
-			"2,2",
-			"1,2",
-			"0,2"
-		],
+		"red_tiles": [],
 		"selected_ability_index": 7,
 		"selected_unit": 4
 	},
@@ -7210,7 +7192,7 @@
 		"k1_pos": "6,5",
 		"k2_pos": "1,3",
 		"k3_pos": "8,2",
-		"k4_pos": "4,1",
+		"k4_pos": "3,2",
 		"label": "execute/sim_final"
 	}
 ]

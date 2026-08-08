@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-08" name="report_401" tests="2" failures="1" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_planning_scene_test" package="tests" timestamp="2026-08-08T17:50:40" hostname="localhost" tests="2" failures="1" errors="0" skipped="0" flaky="0" time="20.252">
+		<testcase name="test_live_planning_bible_multi_knight_session" classname="live_planning_scene_test" time="20.225">
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2315" type="FAILURE">
+<![CDATA[
+tap: commit must not run when preview slots are invalid
+	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2315
+	at '_tap_cell' in res://tests/live_planning_scene_test.gd:894
+]]>
+			</failure>
+		</testcase>
+	</testsuite>
+</testsuites>
