@@ -3,6 +3,8 @@ extends Node
 ## Headless smoke: modular finalize preserves Knight/Bruiser effect fingerprints.
 ## Extends Node so project autoloads (EventBus) are registered before DataLibrary compiles.
 
+const AbilityModuleRuntimeTest = preload("res://tests/ability_module_runtime_test.gd")
+
 
 func _ready() -> void:
 	call_deferred("_run")
@@ -14,8 +16,7 @@ func _run() -> void:
 	_check_bruiser(failures)
 	_check_knight(failures)
 	_check_violent_collision_modules(failures)
-	_check_native_module_runtime(failures)
-	_check_active_upgrade_and_module_order(failures)
+	AbilityModuleRuntimeTest.run_all(failures)
 	if failures.is_empty():
 		print("ABILITY_MODULE_BRIDGE_TEST: PASS")
 		get_tree().quit(0)

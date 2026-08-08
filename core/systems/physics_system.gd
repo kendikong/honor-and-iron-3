@@ -24,29 +24,6 @@ extends RefCounted
 ##   SimEvent.
 ## Lifecycle: stateless; only static functions.
 
-static func _active_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
-	if ability == null:
-		return []
-	var modules: Array[AbilityModule] = ability.get_active_modules(
-		actor != null and actor.is_ability_upgraded(ability.id)
-	)
-	if not modules.is_empty():
-		return AbilityModuleBridge.compile_modules_for_runtime(modules)
-	return ability.upgraded_effects if actor != null and actor.is_ability_upgraded(ability.id) else ability.effects
-
-
-static func _has_collision_recast_module(actor: UnitState, ability: AbilityData) -> bool:
-	if actor == null or ability == null:
-		return false
-	for module: AbilityModule in ability.get_active_modules(actor.is_ability_upgraded(ability.id)):
-		if (
-			module != null
-			and module.gate == GameEnums.ModuleGate.IF_COLLIDED
-			and module.primary_type == GameEnums.EffectType.MOVE
-		):
-			return true
-	return false
-
 ## Cardinal direction from one tile toward another (dominant axis wins; ties
 ## resolve to the horizontal axis for determinism).
 static func cardinal_from_to(from: Vector2i, to: Vector2i) -> Vector2i:
@@ -208,7 +185,7 @@ static func resolve_pass_through_tile(
 		var pass_bonus := 0
 		var source_ability := mover.get_ability_by_id(ability_id)
 		if source_ability != null:
-			var source_effects: Array[EffectData] = _active_effects_for(mover, source_ability)
+			var source_effects: Array[EffectData] = AbilitySystem.active_effects_for(mover, source_ability)
 			for source_effect: EffectData in source_effects:
 				if source_effect != null and source_effect.modifiers.has("bonus_per_enemy_passed"):
 					pass_bonus = int(source_effect.modifiers["bonus_per_enemy_passed"])
@@ -276,7 +253,7 @@ static func dash(
 		source_ability = pusher.get_ability_by_id(ability_id)
 	var source_effects: Array[EffectData] = []
 	if source_ability != null:
-		source_effects = _active_effects_for(pusher, source_ability)
+		source_effects = AbilitySystem.active_effects_for(pusher, source_ability)
 	var create_trampled := false
 	var line_breaker := false
 	for source_effect: EffectData in source_effects:
@@ -485,7 +462,7 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 		if pusher != null and ability_id != &"":
 			var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 			if ability != null:
-				var effects: Array = ability.upgraded_effects if pusher.is_ability_upgraded(ability_id) else ability.effects
+				var effects: Array[EffectData] = AbilitySystem.active_effects_for(pusher, ability)
 				for eff: EffectData in effects:
 					if eff != null and eff.modifiers.has("buff_on_push"):
 						pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
@@ -559,23 +536,16 @@ static func _emit_collision(
 	var object_collision_stagger = false
 	var enemy_collision_stagger_both = false
 	var stagger_on_collision = false
-	var violent_collision_recast = false
 	
 	if ability_id != &"" and pusher != null:
 		var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 		if ability != null:
-			for eff: EffectData in _active_effects_for(pusher, ability):
+			for eff: EffectData in AbilitySystem.active_effects_for(pusher, ability):
 				if eff.modifiers.has("object_collision_stagger"): object_collision_stagger = true
 				if eff.modifiers.has("enemy_collision_stagger_both"): enemy_collision_stagger_both = true
 				if eff.modifiers.has("stagger_on_collision"): stagger_on_collision = true
-			violent_collision_recast = _has_collision_recast_module(pusher, ability)
 
 	if pusher != null and pusher != target:
-		if violent_collision_recast and not pusher.passive_flags.get("violent_collision_recast_used", false):
-			pusher.passive_flags["violent_collision_recast_used"] = true
-			pusher.ability.points_left += 1
-			pusher.turn_action_used = false
-			
 		var stun_on_hit = stagger_on_collision
 		if events.size() > 0 and not stun_on_hit:
 			for e in events:
@@ -602,7 +572,7 @@ static func _emit_collision(
 			and pusher.get_ability_by_id(ability_id) != null
 		):
 			var collision_ability := pusher.get_ability_by_id(ability_id)
-			var collision_effects: Array[EffectData] = _active_effects_for(pusher, collision_ability)
+			var collision_effects: Array[EffectData] = AbilitySystem.active_effects_for(pusher, collision_ability)
 			var collision_pierce := false
 			var collision_power := 0
 			for eff: EffectData in collision_effects:

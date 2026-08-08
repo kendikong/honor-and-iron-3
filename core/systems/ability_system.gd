@@ -59,6 +59,41 @@ static func active_motion_max_range(actor: UnitState, ability: AbilityData) -> i
 	return module.max_range if module != null else 0
 
 
+static func active_motion_range_valid(actor: UnitState, ability: AbilityData) -> bool:
+	var module: AbilityModule = active_motion_module(actor, ability)
+	return module != null and module.min_range >= 1 and module.max_range >= module.min_range
+
+
+static func active_profile_is_offensive(actor: UnitState, ability: AbilityData) -> bool:
+	for module: AbilityModule in active_modules_for(actor, ability):
+		if module == null:
+			continue
+		if _effect_is_offensive(module.primary_type, module.status_type):
+			return true
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.effect != null and _effect_is_offensive(
+				layer.effect.type,
+				layer.effect.status_type,
+			):
+				return true
+	return false
+
+
+static func _effect_is_offensive(
+	effect_type: GameEnums.EffectType,
+	status_type: GameEnums.StatusType,
+) -> bool:
+	if effect_type in [
+		GameEnums.EffectType.DAMAGE,
+		GameEnums.EffectType.PUSH,
+		GameEnums.EffectType.PULL,
+		GameEnums.EffectType.EXPLODE,
+		GameEnums.EffectType.RANGED_EXPLODE,
+	]:
+		return true
+	return effect_type == GameEnums.EffectType.ADD_STATUS and GameEnums.is_debuff(status_type)
+
+
 static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	var actor := board.get_unit_by_id(action.actor_id)
 	if actor == null or not actor.is_alive():
@@ -106,7 +141,13 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
 			return false
 		dist = PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
-	var max_range: int = actor.get_ability_range(ability)
+	var motion_module: AbilityModule = active_motion_module(actor, ability)
+	var has_authored_modules: bool = not active_modules_for(actor, ability).is_empty()
+	var max_range: int = (
+		active_motion_max_range(actor, ability)
+		if motion_module != null
+		else actor.get_ability_range(ability)
+	)
 	var actor_tile := board.get_tile(actor.position)
 	if (
 		actor_tile != null
@@ -117,16 +158,14 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		max_range += 1
 	if _is_spell(ability):
 		max_range += int(actor.passive_flags.get("mage_spell_range_bonus", 0))
-	if ability_has_dash(ability, actor):
-		max_range = maxi(max_range, active_motion_max_range(actor, ability))
-	var move_steps_for_range: int = (
-		0
-		if ability_has_post_attack_move(ability, actor)
-		else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
-	)
-	if move_steps_for_range > 0:
-		max_range = maxi(max_range, move_steps_for_range)
-	max_range = maxi(max_range, active_motion_max_range(actor, ability))
+	if motion_module == null and not has_authored_modules:
+		var legacy_move_range: int = (
+			0
+			if ability_has_post_attack_move(ability, actor)
+			else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+		)
+		if legacy_move_range > 0:
+			max_range = maxi(max_range, legacy_move_range)
 	if dist > max_range:
 		return false
 	if dist == 0 and actor.get_ability_range(ability) > 0 and not can_target_self(actor, ability):
@@ -169,10 +208,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	if actor.has_status(GameEnums.StatusType.STAGGER) or actor.has_status(GameEnums.StatusType.SILENCE):
 		return false
 
-	if actor.has_status(GameEnums.StatusType.PACIFY) and ability_uses_attack_animation(ability):
-		for effect: EffectData in active_effects_for(actor, ability):
-			if effect.type == GameEnums.EffectType.DAMAGE or effect.type == GameEnums.EffectType.EXPLODE or effect.type == GameEnums.EffectType.RANGED_EXPLODE:
-				return false
+	if actor.has_status(GameEnums.StatusType.PACIFY) and active_profile_is_offensive(actor, ability):
+		return false
 
 	if (
 		ability.consumes_action_slot()
@@ -185,7 +222,14 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		
 	var is_dash := ability_has_dash(ability, actor)
 	var is_move := (
-		effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
+		(
+			(motion_module != null and motion_module.primary_type == GameEnums.EffectType.MOVE)
+			or (
+				motion_module == null
+				and not has_authored_modules
+				and effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
+			)
+		)
 		and not ability_has_post_attack_move(ability, actor)
 	)
 	var validation_effects: Array[EffectData] = active_effects_for(actor, ability)
@@ -195,7 +239,11 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			requires_l_shape = true
 			break
 	if requires_l_shape and action.target_coord != actor.position:
-		var l_shape_budget: int = effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+		var l_shape_budget: int = (
+			active_motion_max_range(actor, ability)
+			if has_authored_modules
+			else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+		)
 		if (
 			l_shape_budget <= 0
 			or MovementSystem._l_shape_path(
@@ -218,17 +266,31 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		var steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
 		var dash_min: int = active_motion_min_range(actor, ability)
 		var dash_max: int = active_motion_max_range(actor, ability)
-		if steps < maxi(1, dash_min) or (dash_max > 0 and steps > dash_max):
+		if has_authored_modules and not active_motion_range_valid(actor, ability):
+			return false
+		if steps < (dash_min if has_authored_modules else 1) or (
+			dash_max > 0 and steps > dash_max
+		):
 			return false
 
 	if is_move or (has_pass_through_effects(ability, actor) and not is_dash):
 		if action.target_coord != actor.position:
-			var walk_min: int = active_motion_min_range(actor, ability)
-			var walk_steps: int = active_motion_max_range(actor, ability)
+			var walk_min: int = (
+				active_motion_min_range(actor, ability)
+				if has_authored_modules
+				else 1
+			)
+			var walk_steps: int = (
+				active_motion_max_range(actor, ability)
+				if has_authored_modules
+				else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+			)
 			if walk_steps <= 0:
 				return false
 			var walk_distance: int = GridSystem.manhattan(actor.position, action.target_coord)
-			if walk_distance < maxi(1, walk_min) or walk_distance > walk_steps:
+			if has_authored_modules and not active_motion_range_valid(actor, ability):
+				return false
+			if walk_distance < walk_min or walk_distance > walk_steps:
 				return false
 				
 	if is_move or is_dash:
@@ -737,18 +799,18 @@ static func planning_awaiting_phase(ability: AbilityData) -> int:
 	return GameEnums.PlanningAwaitingPhase.GENERIC
 
 
-static func planning_awaiting_endpoint_range(ability: AbilityData) -> int:
+static func planning_awaiting_endpoint_range(
+	ability: AbilityData,
+	actor: UnitState = null,
+) -> int:
 	if planning_awaiting_phase(ability) in [
 		GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT,
 		GameEnums.PlanningAwaitingPhase.TARGET_PICK,
 	]:
-		var ds := dash_steps(ability)
-		if ds > 0:
-			return ds
-		var ws := effect_amount(ability, GameEnums.EffectType.MOVE)
-		if ws > 0:
-			return ws
-		return ability.range_tiles
+		var module: AbilityModule = active_motion_module(actor, ability)
+		if module == null or module.min_range < 1 or module.max_range < module.min_range:
+			return 0
+		return module.max_range
 	return 0
 
 
@@ -756,18 +818,19 @@ static func planning_is_valid_awaiting_endpoint(
 	origin: Vector2i,
 	coord: Vector2i,
 	ability: AbilityData,
+	actor: UnitState = null,
 ) -> bool:
-	var max_range: int = planning_awaiting_endpoint_range(ability)
-	if max_range <= 0:
+	var module: AbilityModule = active_motion_module(actor, ability)
+	if module == null or module.min_range < 1 or module.max_range < module.min_range:
 		return false
 	if coord == origin:
 		return false
-	if ability_has_dash(ability):
+	if module.primary_type == GameEnums.EffectType.DASH:
 		var delta: Vector2i = coord - origin
 		if delta.x != 0 and delta.y != 0:
 			return false
 	var dist: int = GridSystem.manhattan(origin, coord)
-	return dist >= 1 and dist <= max_range
+	return dist >= module.min_range and dist <= module.max_range
 
 
 ## TILE-aim abilities commit a cell; occupant id is incidental (sim resolves via target_coord).
@@ -840,6 +903,11 @@ static func has_displacement_effects(ability: AbilityData, actor: UnitState = nu
 
 
 static func dash_steps(ability: AbilityData, actor: UnitState = null) -> int:
+	var module: AbilityModule = active_motion_module(actor, ability)
+	if module != null:
+		return module.max_range
+	if ability != null and not ability.modules.is_empty():
+		return 0
 	return effect_amount(ability, GameEnums.EffectType.DASH, actor)
 
 
@@ -1334,6 +1402,47 @@ static func ability_is_offensive_dash(ability: AbilityData) -> bool:
 ## Extra damage when striking a target from the tile behind its facing.
 const BACKSTAB_BONUS: int = 2
 
+
+static func _append_module_effects(
+	module: AbilityModule,
+	effects: Array[EffectData],
+	effect_modules: Array[AbilityModule],
+) -> void:
+	if module == null:
+		return
+	var compiled: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(module)
+	for effect: EffectData in compiled:
+		effects.append(effect)
+		effect_modules.append(module)
+
+
+static func _module_gate_passes(
+	module: AbilityModule,
+	actor: UnitState,
+	events: Array[SimEvent],
+	event_start: int,
+) -> bool:
+	if module == null:
+		return false
+	match module.gate:
+		GameEnums.ModuleGate.ALWAYS:
+			return true
+		GameEnums.ModuleGate.IF_COLLIDED:
+			if actor == null:
+				return false
+			for event_index: int in range(event_start, events.size()):
+				var event: SimEvent = events[event_index]
+				if (
+					event != null
+					and event.type == GameEnums.SimEventType.COLLISION
+					and int(event.data.get("pusher_id", -1)) == actor.id
+				):
+					return true
+			return false
+		_:
+			return false
+
+
 static func execute(board: BoardState, action: TimelineAction, events: Array[SimEvent]) -> void:
 	if not can_use(board, action):
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
@@ -1367,7 +1476,10 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var will_skill_walk := false
 	if target_coord != actor.position:
-		var is_move_check := effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
+		var is_move_check := (
+			active_motion_module(actor, ability) != null
+			and active_motion_module(actor, ability).primary_type == GameEnums.EffectType.MOVE
+		)
 		will_skill_walk = (
 			(has_pass_through_effects(ability, actor) or is_move_check)
 			and not ability_has_dash(ability, actor)
@@ -1395,11 +1507,11 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	
 	var pres_anim: int = action.ability.presentation_anim
 	if pres_anim == GameEnums.PresentationAnim.AUTO:
-		if effect_amount(action.ability, GameEnums.EffectType.DASH, actor) > 0:
+		if ability_has_dash(action.ability, actor):
 			pres_anim = GameEnums.PresentationAnim.SUPER_RUN
-		elif effect_amount(action.ability, GameEnums.EffectType.BULLDOZE, actor) > 0:
+		elif has_pass_through_effects(action.ability, actor):
 			pres_anim = GameEnums.PresentationAnim.RUN
-		elif effect_amount(action.ability, GameEnums.EffectType.MOVE, actor) > 0:
+		elif ability_has_movement_effect(action.ability, actor):
 			pres_anim = GameEnums.PresentationAnim.WALK
 			
 	events.append(SimEvent.make(GameEnums.SimEventType.ABILITY_USED, {
@@ -1412,11 +1524,21 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	}))
 	
 	var runtime_modules: Array[AbilityModule] = active_modules_for(actor, action.ability)
-	var effects_to_apply: Array[EffectData] = (
-		AbilityModuleBridge.compile_modules_for_runtime(runtime_modules)
-		if not runtime_modules.is_empty()
-		else active_effects_for(actor, action.ability)
-	)
+	var all_runtime_effects: Array[EffectData] = active_effects_for(actor, action.ability)
+	var effects_to_apply: Array[EffectData] = []
+	var effect_modules: Array[AbilityModule] = []
+	var module_cursor: int = 0
+	var module_event_start: int = events.size()
+	if runtime_modules.is_empty():
+		effects_to_apply = all_runtime_effects
+	else:
+		while module_cursor < runtime_modules.size():
+			var first_module: AbilityModule = runtime_modules[module_cursor]
+			module_cursor += 1
+			if not _module_gate_passes(first_module, actor, events, module_event_start):
+				continue
+			_append_module_effects(first_module, effects_to_apply, effect_modules)
+			break
 	if actor.movement_points_spent_this_turn == 0:
 		for passive: PassiveData in actor.active_passives:
 			if passive == null or not passive.modifiers.has("vantage_anchor"):
@@ -1454,13 +1576,35 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		actor.passive_flags["__cast_cc_snapshot"] = cast_cc_snapshot
 
 	var is_move := (
-		effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
+		(
+			(
+				active_motion_module(actor, ability) != null
+				and active_motion_module(actor, ability).primary_type == GameEnums.EffectType.MOVE
+			)
+			or (
+				active_motion_module(actor, ability) == null
+				and active_modules_for(actor, ability).is_empty()
+				and effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
+			)
+		)
 		and not ability_has_post_attack_move(ability, actor)
 	)
 	if (has_pass_through_effects(ability, actor) or is_move) and not ability_has_dash(ability, actor) and target_coord != actor.position:
-		var walk_steps: int = active_motion_max_range(actor, ability)
-		if walk_steps <= 0:
-			walk_steps = effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+		var motion_module: AbilityModule = active_motion_module(actor, ability)
+		var walk_steps: int = (
+			active_motion_max_range(actor, ability)
+			if motion_module != null
+			else (
+				effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+				if active_modules_for(actor, ability).is_empty()
+				else 0
+			)
+		)
+		if motion_module != null and not active_motion_range_valid(actor, ability):
+			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+				"actor": actor.id, "reason": "invalid_motion_module_range",
+			}))
+			return
 		if walk_steps <= 0:
 			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 				"actor": actor.id, "reason": "missing_motion_module_range",
@@ -1468,7 +1612,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			return
 			
 		var has_ghost = false
-		for eff in effects_to_apply:
+		for eff: EffectData in all_runtime_effects:
 			if eff.type == GameEnums.EffectType.MOVE and eff.modifiers.has("ghost_move"):
 				has_ghost = true
 				break
@@ -1495,12 +1639,12 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var targets_hit_count = 0
 	var objects_destroyed_count = 0
 	
-	for effect: EffectData in effects_to_apply:
+	for effect: EffectData in all_runtime_effects:
 		if effect.modifiers.get("pull_surfaces", false):
 			_pull_surfaces_to_center(board, action.target_coord, affected_tiles, events)
 			break
 
-	for eff in effects_to_apply:
+	for eff: EffectData in all_runtime_effects:
 		if eff.modifiers.has("heal_per_target_hit"): heal_per_target_hit = true
 		if eff.modifiers.has("buff_per_destroyed_object"): buff_per_object = true
 		if eff.modifiers.has("destroy_corpse_on_kill"):
@@ -1524,7 +1668,54 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			if construct_unit != null and construct_unit.definition.is_construct:
 				objects_destroyed_count += 1
 
-	for effect in effects_to_apply:
+	var effect_index: int = 0
+	var current_module_end: int = effects_to_apply.size()
+	while effect_index < effects_to_apply.size() or module_cursor < runtime_modules.size():
+		if effect_index >= current_module_end:
+			var queued_next_module := false
+			while module_cursor < runtime_modules.size():
+				var next_module: AbilityModule = runtime_modules[module_cursor]
+				module_cursor += 1
+				if not _module_gate_passes(next_module, actor, events, module_event_start):
+					continue
+				_append_module_effects(next_module, effects_to_apply, effect_modules)
+				current_module_end = effects_to_apply.size()
+				queued_next_module = true
+				break
+			if not queued_next_module:
+				break
+		var effect: EffectData = effects_to_apply[effect_index]
+		var effect_module: AbilityModule = (
+			effect_modules[effect_index]
+			if effect_index < effect_modules.size()
+			else null
+		)
+		if (
+			effect_module != null
+			and effect_module.gate != GameEnums.ModuleGate.ALWAYS
+			and effect.type == GameEnums.EffectType.MOVE
+		):
+			if effect_module.min_range < 1 or effect_module.max_range < effect_module.min_range:
+				events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+					"actor": actor.id, "reason": "invalid_gated_motion_module_range",
+				}))
+			else:
+				var gated_effects: Array[EffectData] = [effect]
+				MovementSystem.execute_skill_walk(
+					board,
+					actor,
+					target_coord,
+					action.waypoints,
+					ability,
+					events,
+					gated_effects,
+					effect_module.max_range,
+				)
+				affected_tiles = GridSystem.get_affected_tiles(
+					board, actor.position, target_coord, shape, shape_size,
+				)
+			effect_index += 1
+			continue
 		if effect.type == GameEnums.EffectType.TELEPORT_CASTER:
 			actor.passive_flags["jumped_or_teleported_this_turn"] = true
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
@@ -1536,6 +1727,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				resolve_pending_pushes(board, events)
 				if effect.modifiers.has("paired_ally_charge"):
 					_prepare_paired_charge(board, actor, action, events)
+			effect_index += 1
 			continue
 			
 		if effect.modifiers.has("belly_flop_push"):
@@ -1543,6 +1735,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				var adj_coord = actor.position + dir
 				var adj_unit = board.get_unit_at(adj_coord)
 				_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
+			effect_index += 1
 			continue
 
 		if effect.modifiers.has("damage_adjacent_on_landing"):
@@ -1551,6 +1744,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				var adj_unit: UnitState = board.get_unit_at(adj_coord)
 				if adj_unit != null and adj_unit != actor and adj_unit.is_alive() and adj_unit.team != actor.team:
 					_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
+			effect_index += 1
 			continue
 
 		if effect.modifiers.has("push_board_items"):
@@ -1594,6 +1788,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 					adjacent_target.position,
 					adjacent_target,
 				)
+			effect_index += 1
 			continue
 			
 		for tile_coord in affected_tiles:
@@ -1615,7 +1810,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				targets_hit_count += 1
 				
 			_apply_effect_to_tile(board, actor, action, effect, events, tile_coord, target_unit)
-			
+		effect_index += 1
+
 	if heal_per_target_hit and targets_hit_count > 0:
 		CombatSystem.heal(board, actor, targets_hit_count, events)
 	if buff_per_object and objects_destroyed_count > 0:
