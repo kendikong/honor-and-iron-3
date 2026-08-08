@@ -112,7 +112,7 @@ var _batch_target_ids: Dictionary = {}
 var _factory_abilities: Dictionary = {}
 
 
-func test_live_bruiser_every_skill(timeout := 300000) -> void:
+func _legacy_live_bruiser_batch(timeout := 300000) -> void:
 	_cache_factory_abilities()
 	var runner := scene_runner("res://scenes/TestBattle.tscn")
 	runner.move_window_to_foreground()
@@ -123,6 +123,70 @@ func test_live_bruiser_every_skill(timeout := 300000) -> void:
 		return
 	for batch: Dictionary in _BATCHES:
 		await _run_live_batch(runner, batch)
+
+
+func test_bruiser_push_through_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_push_through")
+
+
+func test_bruiser_charge_strike_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_charge_strike")
+
+
+func test_bruiser_concussion_blow_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_concussion_blow")
+
+
+func test_bruiser_cleave_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_cleave")
+
+
+func test_bruiser_suplex_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_suplex")
+
+
+func test_bruiser_adrenaline_surge_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_adrenaline_surge")
+
+
+func test_bruiser_earthshatter_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_earthshatter")
+
+
+func test_bruiser_meat_shield_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_meat_shield")
+
+
+func test_bruiser_frenzy_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_frenzy")
+
+
+func test_bruiser_guttural_roar_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_guttural_roar")
+
+
+func test_bruiser_headbutt_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_headbutt")
+
+
+func test_bruiser_blood_boil_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_blood_boil")
+
+
+func test_bruiser_violent_collision_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_violent_collision")
+
+
+func test_bruiser_crimson_whirlwind_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_crimson_whirlwind")
+
+
+func test_bruiser_belly_flop_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_belly_flop")
+
+
+func test_bruiser_breaching_dash_scenario(timeout := 120000) -> void:
+	await _run_named_skill_scenario(&"bruiser_breaching_dash")
 
 
 func test_cleave_premove_overlay_exact_blast(timeout := 120000) -> void:
@@ -180,35 +244,38 @@ func test_cleave_premove_overlay_exact_blast(timeout := 120000) -> void:
 	assert_object(cleave).is_not_null()
 	_director.select_unit(actor_id)
 	_director.select_ability(_ability_index(actor, cleave))
+	var arm_slots: Dictionary = await _commit_live_click(runner, actor_id, Vector2i(6, 5))
+	assert_bool(_slots_invalid(arm_slots)).override_failure_message(
+		"cleave_premove: self arm invalid=%s slots=%s plan=%s"
+		% [str(arm_slots.get("invalid", false)), _slots_debug(arm_slots), _plan_debug()],
+	).is_false()
+	assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
+		"cleave_premove: self click must arm Cleave after premove; plan=%s slots=%s"
+		% [
+			_plan_debug(),
+			_slots_debug(arm_slots),
+		],
+	).is_true()
+	print("TRACE test after arm plan=%s" % _plan_debug())
 	await _OVERLAY_QA.assert_live_overlay_parity(
 		self, runner, _overlay, _input, _director, actor_id, cleave, Vector2i(7, 5), &"cleave_premove",
 	)
-	var first_slots: Dictionary = _input._final_commit_slots_for_click_at_cell(
-		actor_id, Vector2i(7, 5), Vector2.ZERO,
+	print("TRACE test after overlay plan=%s" % _plan_debug())
+	var target_slots: Dictionary = _input._build_commit_slots_at_cell(
+		actor_id, Vector2i(7, 5),
 	)
-	assert_bool(_slots_invalid(first_slots)).override_failure_message(
-		"cleave_premove: target hover invalid=%s slots=%s plan=%s"
-		% [str(first_slots.get("invalid", false)), _slots_debug(first_slots), _plan_debug()],
+	assert_bool(_slots_invalid(target_slots)).override_failure_message(
+		"cleave_premove: armed target hover invalid=%s slots=%s plan=%s"
+		% [str(target_slots.get("invalid", false)), _slots_debug(target_slots), _plan_debug()],
 	).is_false()
-	var first_action: TimelineAction = _first_slot_action(first_slots)
-	assert_object(first_action).is_not_null()
-	if first_action != null:
-		assert_bool(first_action.awaiting_target).override_failure_message(
-			"cleave_premove: first target click must arm Cleave; action=%s slots=%s"
-			% [_action_debug(first_action), _slots_debug(first_slots)],
-		).is_true()
-	var armed_slots: Dictionary = await _commit_live_click(runner, actor_id, Vector2i(7, 5))
-	assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
-		"cleave_premove: first target click must leave awaiting; plan=%s slots=%s"
-		% [_plan_debug(), _slots_debug(armed_slots)],
-	).is_true()
 	var final_slots: Dictionary = await _commit_live_click(runner, actor_id, Vector2i(7, 5))
 	assert_bool(_slots_invalid(final_slots)).override_failure_message(
 		"cleave_premove: final target invalid=%s slots=%s plan=%s"
 		% [str(final_slots.get("invalid", false)), _slots_debug(final_slots), _plan_debug()],
 	).is_false()
 	assert_bool(not _plan_has_awaiting(actor_id)).override_failure_message(
-		"cleave_premove: final target must clear awaiting; plan=%s" % _plan_debug(),
+		"cleave_premove: final target must clear awaiting; plan=%s target_slots=%s final_slots=%s"
+		% [_plan_debug(), _slots_debug(target_slots), _slots_debug(final_slots)],
 	).is_true()
 
 
@@ -277,6 +344,38 @@ func test_cleave_tile_aim_hits_arc_without_center_enemy(timeout := 120000) -> vo
 	assert_bool(hit_north and hit_south).override_failure_message(
 		"Cleave tile-aim must damage both ARC neighbors when center tile is empty",
 	).is_true()
+
+
+func _run_named_skill_scenario(skill_id: StringName) -> void:
+	_cache_factory_abilities()
+	var source_batch: Dictionary = _batch_for_skill(skill_id)
+	assert_bool(not source_batch.is_empty()).override_failure_message(
+		"%s: no dedicated fixture batch exists" % skill_id,
+	).is_true()
+	if source_batch.is_empty():
+		return
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	runner.move_window_to_foreground()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_scene = runner.scene() as TestBattleMapView
+	assert_object(_scene).override_failure_message(
+		"%s: TestBattle scene failed to boot" % skill_id,
+	).is_not_null()
+	if _scene == null:
+		return
+	await _run_live_batch(runner, {
+		"extra_players": source_batch.extra_players,
+		"dummies": source_batch.dummies,
+		"skills": [skill_id],
+	})
+
+
+func _batch_for_skill(skill_id: StringName) -> Dictionary:
+	for batch: Dictionary in _BATCHES:
+		for listed_skill: StringName in batch.skills:
+			if listed_skill == skill_id:
+				return batch
+	return {}
 
 
 func _cache_factory_abilities() -> void:

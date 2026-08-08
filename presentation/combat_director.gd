@@ -409,6 +409,7 @@ func set_awaiting_action(unit_id: int, ability: AbilityData) -> void:
 func clear_awaiting_action(unit_id: int) -> void:
 	if unit_id < 0:
 		return
+	print("TRACE clear awaiting unit=%d" % unit_id)
 	var removed: bool = false
 	for plan: Timeline in _all_plans():
 		var kept: Array[TimelineAction] = []

@@ -3498,11 +3498,12 @@ func _build_commit_slots_at_cell(
 	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental —
 	## do not divert into enemy/ally unit-target commit slots.
 	var awaiting_tile_endpoint: bool = _is_awaiting_movement_endpoint(actor, ability)
-	var awaiting_target_pick: bool = (
+	var target_pick_skill: bool = (
 		ability != null
 		and _awaiting_flow_selected(actor, ability)
 		and not AbilitySystem.ability_has_movement_effect(ability)
 	)
+	var awaiting_target_pick: bool = target_pick_skill and has_awaiting_action
 
 	var targeted_move_attack: bool = (
 		ability != null
@@ -3511,14 +3512,20 @@ func _build_commit_slots_at_cell(
 		)
 	)
 	if hover_unit != null and hover_unit.is_enemy() and (
-		(not awaiting_tile_endpoint and not awaiting_target_pick) or targeted_move_attack
+		(not awaiting_tile_endpoint and not target_pick_skill) or targeted_move_attack
 	):
 		return _build_enemy_commit_slots(
 			slots, actor, unit_id, cell, hover_unit, ability, ability_index,
 			legal_move_tiles, waypoints, preferred_approach,
 		)
 
-	if hover_unit != null and hover_unit.is_alive() and not hover_unit.is_enemy() and not awaiting_tile_endpoint:
+	if (
+		hover_unit != null
+		and hover_unit.is_alive()
+		and not hover_unit.is_enemy()
+		and not awaiting_tile_endpoint
+		and not target_pick_skill
+	):
 		if (
 			ability_index >= 0
 			and ability != null
@@ -3640,7 +3647,7 @@ func _build_commit_slots_at_cell(
 					)
 					return slots
 			if hover_unit != null and _in_ability_range(actor, hover_unit):
-				if awaiting_target_pick:
+				if target_pick_skill and not has_awaiting_action:
 					slots["action"].append(
 						TimelineAction.make_ability_awaiting(
 							unit_id, ability, actor.position, effective_waypoints,
@@ -3660,7 +3667,7 @@ func _build_commit_slots_at_cell(
 				return slots
 			if hover_unit == null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
 				if _in_ability_range_of_coord(actor, cell):
-					if awaiting_target_pick:
+					if target_pick_skill and not has_awaiting_action:
 						slots["action"].append(
 							TimelineAction.make_ability_awaiting(
 								unit_id, ability, actor.position, effective_waypoints,
