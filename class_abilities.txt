@@ -1,1184 +1,659 @@
 Tactical RPG Class Design Document (Gloomhaven Syntax)
-
 Game Concept, Core Mechanics & Scaling Philosophy
-
 Genre & Engine: A tactical, grid-based RPG focused on deterministic math, positional physics (push/pull collisions, traps), and tight, puzzle-like combat encounters.
-
-Skill & Passive Design Criteria:
-
+Skill & Passive Design Criteria
 When designing or balancing any Active Skill or Passive ability, it MUST meet the following five criteria:
-
 Adherence to Core Pillars: It must strictly follow Zero RNG, Perfect Information, Deterministic Math, and the Universal Scaling Mandate.
-
 Player Engagement (Fun Factor): Mechanics must be inherently interesting, satisfying to execute, and create fun "Aha!" tactical moments for the player.
-
 Build Synergy: Every skill and passive must directly synergize with the core identity of one or more Advanced Class builds.
-
 Universal Utility & Balance: Abilities must remain useful and mathematically viable across the early, mid, and end game. Highly niche skills that only function in rare, highly specific scenarios are strictly prohibited.
-
 Thematic Consistency: Passives and active skills MUST perfectly fit the narrative fantasy and physical reality of the build/class. Gritty, physical classes should never cast magic or cleanse debuffs. Heavy, armored classes should not dodge or leap. Every mechanic must make logical, in-world sense.
-
 Global Rules First (Skill Implementation Mandate): Every skill MUST follow the game's global rules and shared systems as much as possible — economy columns, targeting modes, effect types, timeline behavior, preview/simulation path, and data-driven authoring. Do NOT invent per-skill engine branches, hidden timeline slots, or one-off validation unless the Master Bible explicitly requires it. If a skill truly cannot be expressed without a NEW global rule or system exception, STOP and warn the project owner BEFORE implementing: state what breaks, what new rule you propose, and ask whether it is acceptable. Do not ship silent exceptions.
-
-Scaling, Constitution & HP Design Philosophy:
-
+Scaling, Constitution & HP Design Philosophy
 Constitution Stat (CON) & HP Calculation: Base HP is strictly derived from the Constitution (CON) stat, where 1 CON = 5 HP. Direct static HP values are deprecated. This tightly couples survivability to a core stat and enforces predictable scaling logic.
-
-Keyword Parity Mandate: All in-game ability descriptors, UI labels, and Tooltips must strictly emulate the mechanical keywords established in this Master Bible (e.g., ATK X, HEAL X, PUSH X, Apply TAUNT, AOE Cross 3). Conversational English descriptions are forbidden.
-
+Keyword Parity Mandate: All in-game ability descriptors, UI labels, and Tooltips must strictly emulate the mechanical keywords established in this Master Bible (e.g., ATK X, HEAL X, PUSH X, Apply TAUNT, AOE Cross 3). Conversational English descriptions are forbidden unless explicitly providing required spatial or mechanical clarity.
 CRITICAL AI INSTRUCTION: The HP stat must remain a highly rewarding investment for the player. When designing or tweaking movesets, adhere to the following strict mathematical rules:
-
 The Universal Scaling Mandate: All sources of damage, damage mitigation, healing, and shielding MUST scale reasonably as the game progresses. Do not create static "deal 2 damage" or "reduce damage by 1" mechanics. Every value must tie into a stat multiplier (STR/MAG/DEF), a Max HP percentage, Weapon Might (WPN), or an escalating 'X' variable.
-
 The Flat Cost Exception: Fixed numbers are strictly reserved for deliberate economic costs. For example, a Bruiser spending 5 HP for a buff feels risky at Level 1, but becomes a rewarding, trivial cost at Level 10. Do not convert self-damage to percentages.
-
 Do NOT use percentage-based damage for DoTs, Hazards, or Self-Damage. Flat damage punishes low-HP units and rewards high-HP tanks for their stat investment.
-
 The Tank-Buster Exception (POISON): POISON is the sole deliberate exception to the flat-damage rule, dealing percentage-based Max HP damage to explicitly counter massive health pools.
-
 Status Effects & Hazards Scale via the "X" Variable. (e.g., An Act 1 Goblin applies BURN 2. An Act 3 Dragon applies BURN 5). Player-applied hazards scale off their WPN or MAG stats.
-
-Utility & Defenses MUST use Percentages. SHIELD X and the health pools of Summons/Constructs scale off Max HP. This allows HP to moonlight as a scaling "Magic/Utility" stat for builders and supports.
-
+Utility & Defenses MUST use Percentages. SHIELD X and the health pools of Summons/Constructs scale off Max HP (or higher of CON/MAG for magic construct classes). This allows HP to moonlight as a scaling "Magic/Utility" stat for builders and supports.
 Heals Are Underpowered: Healing should never trivialize tactical errors. Passive heals are strictly capped at 10% (HEAL 1) or 20% (HEAL 2), pushing players to rely on proactive mitigation (SHIELD, positioning) over infinite sustain.
-
-Boss CC Immunity: Bosses are inherently immune to Hard Crowd Control (STAGGER, PACIFY, FEAR, CONFUSION, POLYMORPH, ROOT, and SILENCE). Bosses also cannot be instantly killed by Chasms; instead, they snap to the nearest valid tile and suffer 5 unmitigated damage.
-
+Boss CC Immunity & Hard CC Fallbacks: Bosses are inherently immune to Hard Crowd Control (STAGGER, PACIFY, FEAR, CONFUSION, ROOT, and SILENCE). Bosses also cannot be instantly killed by Chasms; instead, they snap to the nearest valid tile and suffer 5 unmitigated damage. Every skill that applies Hard CC MUST contain an explicit Fallback Clause when targeting CC-immune Bosses so player AP is never wasted. Note: WITHER is a Soft CC debuff and affects Bosses at 25% damage output reduction instead of 50%.
 Max HP Buff Expiration: Reductions in Max HP from expiring temporary buffs reduce Current HP to 1 instead of causing death. Intentionally harmful effects kill normally.
-
-The 1-Phase Simultaneous Turn System:
-
+The 1-Phase Simultaneous Turn System
 Combat uses a single, streamlined planning phase for the player, followed by an execution phase, and then the Enemy Turn.
-
-Action Economy: 1 AP is gained at the start of the turn (varies for advanced classes). Executing a standard basic attack costs 0 AP. Active Skills cost 1 AP unless explicitly stated otherwise. Class Movement Skills cost MOV (see each class's Movement Skill line) — never AP. Run costs 1 AP and does not consume the Action slot by itself; pairing Run with a walk is a Pre-Move action.
-
+Action Economy: 1 AP is gained at the start of the turn (varies for advanced classes). Executing a standard basic attack costs 0 AP. Active Skills cost 1 AP unless explicitly stated otherwise. Class Reposition Skills cost MOV (see each class's Reposition Skill line) — never AP. Active Movement Skills cost AP or MOV depending on skill text. Run costs 1 AP and does not consume the Action slot by itself; pairing Run with a walk is a Pre-Move action.
 The 1-Input Turn: During the planning phase, a player may plot a sequence to move up to their Max MOV and perform exactly 1 Skill (or basic attack).
-
-Movement Timing: Movement can be plotted to occur entirely before the action, OR entirely after the action. Standard movement cannot be split.
-
+Movement Timing: Movement can be plotted to occur entirely before the action, OR entirely after the action. Standard movement cannot be split unless modified by an Innate Trait or skill effect.
 Phase Execution & Physics: When the player ends their planning phase, all planned actions execute mathematically simultaneously. The animation sequence resolves as:
-
-Pre-action movements.
-
-Skill actions/attacks (HP reduced to 0 does not remove entity yet).
-
+Pre-action movements and Reposition Skills.
+Skill actions/attacks (HP reduced to 0 does not remove entity yet; 0 HP entities remain targetable and interactive until step 5).
 Post-action movements (and CANTO movements).
-
 Forced movement (PUSH/PULL) vectors are added together and resolved last.
-
 Death cleanup (0 HP entities removed).
-
+Simultaneous Kill Resolution (Highest Damage + Tie-Breakers): If multiple actions reduce a unit's HP to 0 during the same turn execution, kill credit and all associated "On Kill" passive triggers are awarded deterministically to a single unit using the following hierarchy:
+Highest Damage: The unit that dealt the single largest amount of damage to the target during that phase gets the kill credit.
+Proximity: If damage is tied, the attacking unit closest in Manhattan distance to the target at the time of execution receives the kill credit.
+Grid Order: If distance is also tied, the unit closest to board origin (Tile 0,0) receives the kill credit.
+Note: The planning UI's ghost preview explicitly indicates which unit is slated to receive kill credit.
+Physics & Elevation Matrix (Airborne vs Grounded): Forced movement (PUSH/PULL) respects vertical elevation state (AIRBORNE vs Grounded):
+An AIRBORNE unit ignores ground hazards, traps, Chasms, and collisions with grounded entities while moving.
+Collisions only occur between entities sharing the same physical plane (Grounded vs Grounded, or AIRBORNE vs AIRBORNE).
+Pushing an AIRBORNE unit over a Chasm does not execute a drop unless the AIRBORNE status expires mid-movement.
 Dynamic Intents: All queued actions are fully cancelable until execution. Enemy intents dynamically update in real-time on the UI in response to every player's plotted action.
-
 Universal Action Economy & Planning Timeline (Authoritative Rules)
-
 Resource Types:
-- Movement Points (MOV / MP): Spent only on movement — basic tile walks, class Movement Skills, and any ability whose cost is listed as MOV.
-- Action Points (AP): Spent only on class Active Skills and Run. Basic Attack costs 0 AP.
-
+Movement Points (MOV / MP): Spent only on movement — basic tile walks, class Reposition Skills, and any ability whose cost is listed as MOV.
+Action Points (AP): Spent only on class Active Skills and Run. Basic Attack costs 0 AP.
 Ability Classification (every ability in the game belongs to exactly one category):
-1. Class Active Skill — Costs AP (unless explicitly 0 AP). Consumes the unit's one Action for the turn. Appears in the Action timeline column. Includes Basic Attack (0 AP).
-2. Class Movement Skill — Costs MOV (not AP). Does NOT consume the Action slot. Appears in the Pre-Move timeline column. Always granted per class; never part of the rolled skill pool. When a Movement Skill targets a unit, it may only target an ally (never an enemy).
-3. Universal Run — Not a class skill. Costs 1 AP and extends movement for that turn's walk (see Run). Treated as a movement-category action in planning (Pre-Move column), not an Action-slot skill.
-4. Universal Wait — Not a skill and not shown in the skill list. Invoked via the Wait control / double-click unit row. Forcibly exhausts the unit for the turn (no Action, no Post-Move / CANTO) even if movement remains. Stored in a hidden exhaustion slot (not displayed as a fourth timeline column).
-
+Class Active Skill — Costs AP (unless explicitly 0 AP). Consumes the unit's one Action for the turn. Appears in the Action timeline column. Includes Basic Attack (0 AP) and Active Movement Skills (Dashes, Charges, Pounces).
+Class Reposition Skill — Costs MOV (not AP). Does NOT consume the Action slot. Appears in the Pre-Move timeline column. Always granted per class; never part of the rolled skill pool. When a Reposition Skill targets a unit, it may only target an ally (never an enemy).
+Universal Run — Not a class skill. Costs 1 AP and extends movement for that turn's walk (see Run). Treated as a movement-category action in planning (Pre-Move column), not an Action-slot skill.
+Universal Wait — Not a skill and not shown in the skill list. Invoked via the Wait control / double-click unit row. Forcibly exhausts the unit for the turn (no Action, no Post-Move / CANTO) even if movement remains. Stored in a hidden exhaustion slot (not displayed as a fourth timeline column).
 Planning Timeline Columns (displayed):
-- Pre-Move: Basic walks (drag path), Run-boosted walks, and class Movement Skills — in committed order (e.g. Move(3,1) → Swap(ally)).
-- Action: Class Active Skills and Basic Attack (0 AP).
-- Post-Move: Remaining movement after the Action (including CANTO refunds).
-
+Pre-Move: Basic walks (drag path), Run-boosted walks, and class Reposition Skills — in committed order (e.g. Move(3,1) -> Swap(ally)).
+Action: Class Active Skills and Basic Attack (0 AP).
+Post-Move: Remaining movement after the Action (including CANTO refunds).
 Pre-Move Commit & Cancel:
-- Pre-Move steps apply immediately during planning (live board + ghost preview) and are individually cancelable.
-- Canceling a Movement Skill that moved/swapped an ally also cancels any of that ally's planned actions that depended on the new positions after that step.
-
+Pre-Move steps apply immediately during planning (live board + ghost preview) and are individually cancelable.
+Canceling a Reposition Skill that moved/swapped an ally also cancels any of that ally's planned actions that depended on the new positions after that step.
 Targeting Data (skill list must show):
-- Each ability declares targeting mode (Self, Ally, Enemy, Tile, etc.), MOV or AP cost, range, and effect keywords — players must not infer behavior from effect-type heuristics.
-
+Each ability declares targeting mode (Self, Ally, Enemy, Tile, etc.), MOV or AP cost, range, and effect keywords — players must not infer behavior from effect-type heuristics.
 Conditional Damage (data-driven, not per-skill code):
-- Shield Slam: ATK 2 | PUSH 2 | If target was already adjacent at cast, gain ATK +2. [+] Target DEF is reduced by 1 before damage is calculated.
-- Phalanx Stance [+]: Grants RETALIATION_INFINITE_RANGE for Retaliation Protocol this turn (counter range becomes map-wide while both effects apply).
-
+Shield Slam: ATK 2 | PUSH 2 | If target was already adjacent at cast, gain ATK +2. Target DEF is reduced by 1 before damage is calculated.
+Phalanx Stance: Grants RETALIATION_INFINITE_RANGE for Retaliation Protocol this turn (counter range becomes map-wide while both effects apply).
 Combat Math, Enemy Scaling & TTK Philosophy
-
 The Core Formulas
-
-Raw Physical Damage: (Skill Base Power (ATK X) + WPN) * (1 + STR / 5)
-
-Raw Magical Damage: (MAG ATK + WPN) * (1 + MAG / 5)
-
-Effective Weapon Damage (Weaknesses): STR + (WPN x 3) (Multipliers only apply to the weapon's Might).
-
-Final Damage: Max(0, Raw Damage - Enemy DEF or MAG)
-
-Multi-Hit Mitigation: Enemy DEF/MAG mitigates each individual hit of a multi-hit attack separately according to its unique property.
-
-The "Weaker" Rounding Rule: Whenever fractional math occurs (like a 50% reduction or multiplier), always round in the direction that makes the outcome weaker for the caster/player. (e.g., Round down your damage output, healing, and summon health. Round up the enemy's remaining armor).
-
+Raw Physical Damage = (Skill Base Power (ATK X) + WPN) * (1 + STR / 5)
+Raw Magical Damage = (MAG ATK + WPN) * (1 + MAG / 5)
+Effective Weapon Damage (Weaknesses) = STR + (WPN * 3)
+Final Physical Damage = Max(0, Raw Physical Damage - Enemy DEF)
+Final Magical Damage = Max(0, Raw Magical Damage - Floor((Enemy DEF + Enemy MAG) / 2))
+Multi-Hit Mitigation: Enemy defenses mitigate each individual hit of a multi-hit attack separately according to its unique property.
+The "Weaker" Rounding Rule: Whenever fractional math occurs (like a 50% reduction or multiplier), always round in the direction that makes the outcome weaker for the caster/player (e.g., Round down your damage output, healing, and summon health. Round up the enemy's remaining armor).
 Symmetrical Enemy Design
-Enemies are constructed using the exact same stat ratio rules as player classes. (Note: MAG serves as both Magical Attack power and Magical Defense).
-
+Enemies are constructed using the exact same stat ratio rules as player classes.
 Standard Grunts: Mirror the "Mercenary" class (Moderate HP, Low DEF).
-
 Tank Enemies: Mirror the "Knight" class (Moderate HP, High DEF).
-
 Percentage-Based Global Scaling
-To increase difficulty across acts, stages, or "Hard Modes," we never hand-tune individual enemy stats. Instead, we apply a Global Percentage Multiplier to their base Level 1 symmetrical stats. (e.g., Act 2 uses a 300% multiplier on base stats).
-
+To increase difficulty across acts, stages, or "Hard Modes," we never hand-tune individual enemy stats. Instead, we apply a Global Percentage Multiplier to their base Level 1 symmetrical stats (e.g., Act 2 uses a 300% multiplier on base stats).
 Keyword Terminology Glossary
-
 Action & Utility Keywords
-
-ATK X: Deal physical damage scaling off the skill's base power, weapon might, and your strength. X = Skill Base Power.
-
-MAG ATK X: Deal magical damage scaling off the skill's base power, weapon might, and your magic. X = Skill Base Power.
-
-HEAL X: Restore health equal to Round Down(X * 10% of the target's Max HP).
-
-MAG HEAL X: Round Down( (X + WPN) * (1 + MAG / 5) * 0.20 + 20% of Target's Max HP ). Used strictly by dedicated support classes to scale healing off both their MAG stat and the target's HP.
-
-SHIELD X: Gain temporary over-HP equal to Round Down(X * 10% of the target's Max HP). Takes priority over normal HP.
-
+ATK X: Deal physical damage scaling off the skill's base power, weapon might, and your strength (X = Skill Base Power).
+MAG ATK X: Deal magical damage scaling off the skill's base power, weapon might, and your magic (X = Skill Base Power).
+HEAL X: Restore health equal to Floor(X * 10% of target's Max HP).
+MAG HEAL X: Restore health equal to Floor((X + WPN) * (1 + MAG / 5) * 0.20 + 20% of Target's Max HP). Used strictly by dedicated support classes to scale healing off both their MAG stat and the target's HP.
+SHIELD X: Gain temporary over-HP equal to Floor(X * 10% of target's Max HP). Takes priority over normal HP.
 Targeting Keywords (Manhattan Distance)
-
 RANGE X: Maximum target distance in tiles. Line of sight required unless otherwise specified.
-
 RANGE 0: Anchored to the caster's current tile (Self).
-
 MOVE X: Move up to X tiles.
-
 AOE XxX: A square array of tiles (e.g., 2x2, 3x3).
-
 AOE X: Cross-shaped, expands X tiles from the center.
-
 ARC: 3-tile sweep attack (1x3 or 3x1 perpendicular line).
-
 CONE X: A directional arc expanding outward from the caster for X tiles.
-
 SKEWER X: X tiles in one cardinal direction.
-
 DASH X: Move X tiles in one cardinal direction.
-
 GLOBAL: Ignores range limits and line of sight.
-
 Status Effects & Mechanics (The Flat "X" Scaling)
-
 BURN X: Take exactly X unmitigated damage at the start of the turn. Leaves FIRE terrain if moving.
-
 BLEED X: Take exactly X unmitigated damage at the end of the turn. Moving costs +1 MOV per tile.
-
 POISON: Take unmitigated damage equal to 10% of Max HP (rounded up) at the start of the turn. Healing received is reduced by 50% (rounded down).
-
 WEAKEN: Target suffers -2 STR and -2 MAG for the duration.
-
-VULNERABLE: Target loses all Push Mitigation (they are pushed the maximum distance by all collisions next turn) and cannot gain SHIELD.
-
+VULNERABLE: Target loses all Push Mitigation (pushed maximum distance by all collisions next turn) and cannot gain SHIELD.
 STAGGER: Target's Action Points (AP) are reduced by 1 for their next turn.
-
-ROOT: Target's MOVEMENT becomes 0. Effect breaks instantly if the target takes any damage. They can still attack if in range.
-
+ROOT: Target's MOVEMENT becomes 0. Effect breaks instantly if target takes any damage. Can still attack if in range.
 SILENCE: Cannot cast Active Skills. Can only use standard Movement and basic physical attacks.
-
 TAUNT: Target is forced to target the Taunter with their next offensive action.
-
 BLIND: Target's maximum RANGE is reduced to 1.
-
-PACIFY: Target cannot use any offensive skills or basic attacks for the duration. Breaks instantly on damage.
-
-FEAR: Target must spend their entire MOVEMENT running directly away from the source on their next turn.
-
-CONFUSION: Target is forced to target the nearest unit (friend or foe) other than the caster.
-
-PIERCE: This attack ignores the target's DEF and MAG entirely.
-
+PACIFY: Target cannot use offensive skills or basic attacks for duration. Breaks instantly on damage.
+FEAR: Target must spend entire MOVEMENT running directly away from source on next turn.
+CONFUSION: Target is forced to target nearest unit (friend or foe) other than caster.
+WITHER: Target's total damage output is reduced by 50% (rounded down), maximum MOVEMENT is reduced by -2 MOV, and target cannot gain SHIELD or positive buffs for the duration. Against Bosses, the damage output reduction is reduced to 25%.
+PIERCE: Attack ignores target's defensive mitigations entirely.
 GHOST: Unit can move through enemy-occupied tiles and traps/hazards without penalty (intangible).
-
-TRAMPLE: Unit can move through enemy tiles. Dependent on the skill text, movement through an enemy triggers the effect, treated as a "hit" on the enemy.
-
+TRAMPLE: Unit can move through enemy tiles. Dependent on skill text, movement through an enemy triggers effect as a "hit".
 STEALTH: Unit cannot be targeted by ranged attacks or skills (Range > 1).
-
 INTERCEPT: Redirect a percentage of incoming damage from an adjacent ally to this unit.
-
-MARK: Target takes extra damage from specific sources or grants bonuses to attackers hitting them.
-
+MARK: Target takes extra damage from specific sources or grants bonuses to attackers.
 CLEANSE: Instantly remove all negative debuffs and status effects.
-
 PURGE: Instantly remove all positive buffs and shields.
-
 STURDY: Immune to PUSH and PULL effects.
-
 INVULNERABLE: Immune to all damage, debuffs, and positional manipulation.
-
 AIRBORNE: Standard movement ignores all ground hazards, traps, difficult terrain, and Chasms.
-
-CANTO: After executing a Skill or basic attack, your Max MOV is fully refunded, allowing you to move again this turn.
-
-POLYMORPH: Target is transformed into a harmless creature (0 Base ATK, 1 MOV) for the duration. Cannot use Active Skills. Bosses are immune.
-
-PUSH/PULL COLLISIONS: If pushed into an obstacle or unit, the pushed unit deals collision damage but "bounces" back to its original tile without either entity changing tiles. If two units are pushed into the exact same destination tile simultaneously, both suffer collision damage, bounce back, and stop one tile early.
-
+CANTO: After executing a Skill or basic attack, Max MOV is fully refunded for remaining movement.
+PUSH/PULL COLLISIONS: If pushed into an obstacle or unit, pushed unit deals collision damage but "bounces" back to original tile without either entity changing tiles. If two units are pushed into exact same destination tile simultaneously, both suffer collision damage, bounce back, and stop 1 tile early.
 Summon & Obstacle Scaling Rules
-
-To ensure board-control classes remain viable in the late game, destructible entities dynamically scale with the caster's Max HP upon creation (minimum 1 HP). All constructs are inherently STURDY. If stated as "once per turn", they act simultaneously at the very end of the Player Execution Phase, right before the Enemy Turn begins.
-
-Construct Turret (Engineer): HP equals Round Down(50% of Caster's Max HP).
-
-Tesla Barricade (Engineer): HP equals Round Down(150% of Caster's Max HP).
-
-Magnetic Mine (Engineer): HP equals Round Down(25% of Caster's Max HP).
-
-Voodoo Totems (Shaman): HP equals Round Down(50% of Caster's Max HP).
-
-Bone Barricade (Shaman): HP equals Round Down(50% of Caster's Max HP).
-
-Obsidian Wall (Mage): HP equals Round Down(50% of Caster's Max HP).
-
-Divine Hammer (Cleric): HP equals Round Down(10% of Caster's Max HP).
-
+To ensure board-control classes remain viable in the late game, destructible entities dynamically scale with the caster's Max HP (or higher of CON/MAG) upon creation (minimum 1 HP). All constructs are inherently STURDY. If stated as "once per turn", they act simultaneously at the very end of the Player Execution Phase, right before the Enemy Turn begins.
+Construct Turret (Engineer): HP equals Floor(50% of Caster's Max HP).
+Turret Syndrome Mini-Turret (Engineer): HP equals Floor(25% of Caster's Max HP).
+Tesla Barricade (Engineer): HP equals Floor(150% of Caster's Max HP).
+Magnetic Mine (Engineer): HP equals Floor(25% of Caster's Max HP).
+Voodoo Totems (Shaman): HP equals Floor(50% of Caster's Max HP).
+Bone Barricade (Shaman): HP equals Floor(50% of Caster's Max HP).
+Obsidian Wall (Mage): HP equals Floor(50% of Caster's Max HP).
+Divine Hammer (Cleric): HP equals Floor(25% of Caster's Max HP).
 1. Knight
-
 Core Identity: Tank-Strong, High DEF, Low Mobility. The ultimate shield. Focuses on total damage absorption, shielding, and becoming an indestructible bastion.
 | CON 6 | MOV 2 | STR 4 | DEF 5 | MAG 2 |
-
-Movement Skill: Swap (Cost: 1 MOV) — Select an adjacent ally. Swap positions with them.
-↳ [+] Upgrade: The Knight immediately gains +2 DEF and SHIELD 2 for the rest of the turn.
-
+Innate Trait: Bastion Front
+Base Mechanic: The Knight takes 0 collision damage when pushed or knocked into walls, obstacles, or units. Additionally, all incoming physical damage originating directly from the 180-degree frontal arc (3 frontal tiles relative to facing direction) is reduced by an extra +2 DEF.
+Upgrade: Frontal damage mitigation increased by an additional +2 DEF (total +4 DEF from front). Taking collision damage grants the Knight SHIELD 2 for 1 turn.
+Reposition Skill: Swap (Cost: 1 MOV) — Select an adjacent ally. Swap positions with them.
+Upgrade: The Knight immediately gains +2 DEF and SHIELD 2 for the rest of the turn.
 Advanced Classes (Promotion Boosts)
-
 The Sentinel: (+4 DEF, +4 CON, 0 MOV) Maximize damage mitigation and true invulnerability.
-
 The Juggernaut: (+4 STR, +4 DEF, 0 MOV) Maximize retaliation damage by pulling enemies into you.
-
 The Cataphract: (+2 CON, +2 DEF, +2 MOV) Gains a heavy draft horse. Focuses on rushing to project ally buffs and intercepting damage.
-
 Passives
-
-(The Juggernaut) Collision Retaliator: When an enemy collides with you, they suffer ATK 2. You take 0 damage from collisions. [+] The enemy is also PUSHED 1 tile after the collision.
-
-(The Juggernaut) Thorny Carapace: When an enemy hits you in melee, they reflect 50% damage back (rounded down) and are PUSHED 1 tile. [+] Reflects 100% damage instead.
-
-(The Juggernaut) Concussive Shatter: Enemy collision suffers extra damage equal to 50% of your DEF, and target loses -1 DEF. [+] Target also suffers VULNERABLE.
-
-(The Juggernaut) Stand Ground: Cannot be PUSHED or PULLED. Enemies attempting to do so suffer ATK 1. [+] Enemies attempting to push/pull you suffer ATK 2 instead.
-
-(The Juggernaut) Kinetic Momentum: Causing an enemy to suffer collision damage grants SHIELD equal to your STR + DEF for 1 turn. [+] Also refunds 1 MOV point on your first collision each turn.
-
-(The Sentinel) Indestructible Bastion: If taking lethal damage, survive at 1 HP and gain SHIELD equal to your DEF (Once per combat). [+] Gain +2 STR for the rest of combat when this trigger.
-
-(The Sentinel) Shield Mastery: When you take damage from the front, gain SHIELD 2. [+] Gain SHIELD 3 instead.
-
-(The Sentinel) Kinetic Armor: Incoming damage is reduced by a flat 1 if any SHIELD is active. [+] Incoming damage is reduced by 2 instead.
-
-(The Sentinel) Kinetic Converter: When Hit, gain STR +1 and MOVE +1 for next turn. [+] Gain STR +2 instead.
-
-(The Sentinel) Kinetic Redirection: Whenever you successfully mitigate enemy damage using your DEF or SHIELD, your next attack this combat gains +1 STR (Stacks up to +3). Stacks reset to 0 after you declare an attack. [+] Next attack also gains PIERCE.
-
-(The Cataphract) Bulwark: Gain +1 DEF for every adjacent enemy or ally. [+] Also gain +1 STR per adjacent enemy.
-
-(The Cataphract) Living Barricade: Allies directly behind you are immune to ranged attacks. [+] Allies directly behind you also gain +1 DEF.
-
-(The Cataphract) Shield Wall: Adjacent allies gain +1 DEF and immunity to PULL. [+] Range of aura increases to 2 tiles.
-
-(The Cataphract) Rallying Presence: Allies who start their turn adjacent to you gain +1 MOVEMENT for that turn. [+] Movement bonus increases to +2.
-
-(The Cataphract) Intercept Tactics: When using a skill to redirect damage, gain +2 DEF. [+] Gain +3 DEF instead.
-
+(The Juggernaut) Kinetic Dissipation: When pushed or knocked into an obstacle or unit, absorb kinetic momentum to gain SHIELD equal to your DEF and trigger a 1-tile radial shockwave dealing physical damage equal to DEF to adjacent enemies. Upgrade: The enemy is also PUSHED 1 tile after collision.
+(The Juggernaut) Thorny Carapace: When an enemy hits you in melee, they reflect 50% damage back (rounded down) and are PUSHED 1 tile. Upgrade: Reflects 100% damage instead.
+(The Juggernaut) Concussive Shatter: Enemy collision suffers extra damage equal to 50% of your DEF, and target loses DEF equal to your WPN. Upgrade: Target also suffers VULNERABLE.
+(The Juggernaut) Stand Ground: Cannot be PUSHED or PULLED. Enemies attempting to do so suffer ATK 1. Upgrade: Enemies attempting to push/pull you suffer ATK 2 instead.
+(The Juggernaut) Kinetic Momentum: Causing an enemy to suffer collision damage grants SHIELD equal to your STR + DEF for 1 turn. Upgrade: Also refunds 1 MOV point on your first collision each turn.
+(The Sentinel) Indestructible Bastion: If taking lethal damage, survive at 1 HP and gain SHIELD equal to your DEF (Once per combat). Upgrade: Gain +2 STR for the rest of combat when this triggers.
+(The Sentinel) Phalanx Deflection: When mitigating frontal damage with DEF or SHIELD, store 50% of the mitigated damage as Kinetic Energy (capped at 2 * DEF). Your next active melee skill or counter-attack consumes all stored energy to deal bonus physical damage equal to the stored amount and apply PUSH 1. Upgrade: Capped at 3 * DEF.
+(The Sentinel) Kinetic Armor: Incoming damage is reduced by Floor(DEF / 2) if any SHIELD is active. Upgrade: Incoming damage is reduced by Floor(DEF / 2) + 1 instead.
+(The Sentinel) Kinetic Converter: When Hit, gain +1 STR and +1 MOV for next turn. Upgrade: Gain +2 STR instead.
+(The Sentinel) Kinetic Redirection: Whenever you successfully mitigate enemy damage using your DEF or SHIELD, your next attack this combat gains +1 STR (Stacks up to +3). Stacks reset to 0 after declaring an attack. Upgrade: Next attack also gains PIERCE.
+(The Cataphract) Bulwark: Gain +1 DEF for every adjacent enemy or ally. Upgrade: Also gain +1 STR per adjacent enemy.
+(The Cataphract) Living Barricade: Allies directly behind you are immune to ranged attacks. Upgrade: Allies directly behind you also gain +1 DEF.
+(The Cataphract) Shield Wall: Adjacent allies gain +1 DEF and immunity to PULL. Upgrade: Range of aura increases to 2 tiles.
+(The Cataphract) Rallying Presence: Allies who start their turn adjacent to you gain +1 MOV for that turn. Upgrade: Movement bonus increases to +2.
+(The Cataphract) Intercept Tactics: When using a skill to redirect damage, gain +2 DEF. Upgrade: Gain +3 DEF instead.
 Active Skills & Upgrades
-
-(The Juggernaut) Shield Bash: RANGE 1 | ATK 1 | PUSH 2 [+] Apply STAGGER if target collides with a wall or enemy.
-
-(The Sentinel) Phalanx Stance: SELF | DEF +5 | Gain STURDY until next turn. [+] Gain infinite RANGE for "Retaliation Protocol" this turn.
-
-(The Juggernaut / The Cataphract) Taunting Strike: RANGE 2 | ATK 1 | PULL 1 | Apply TAUNT. [+] RANGE 3 | AOE 3x3 | PULL 2 all enemies.
-
-(The Cataphract) Seismic Stomp: RANGE 0 | AOE 1 | ATK 2 | PURGE all enemies. [+] Create CRACKED terrain (MOVE cost x2).
-
-(The Cataphract / The Sentinel) Fortify: RANGE 3 | Target Ally gains DEF +X (X = your current DEF) for 1 turn. [+] Target gains THORNS 50% (Reflects half damage back to attacker, rounded down).
-
-(The Juggernaut) Bowling Charge: DASH 3 | On collision: ATK 3, PUSH 2. [+] Target collision with another enemy: ATK 3 to both units.
-
-(The Sentinel / The Juggernaut) Iron Grip: RANGE 1 | Apply ROOT. Target DEF halved next turn (rounded up). [+] Refund 1 AP if target already has ROOT or STAGGER.
-
-(The Cataphract / The Sentinel) Redirect Strike: RANGE 2 | Apply INTERCEPT (Take 50% damage dealt to adjacent ally this turn, rounded down). [+] Gain DEF +2 for every redirected hit.
-
-(The Sentinel) Indomitable Will: SELF | Convert all missing HP into SHIELD for 2 turns. [+] When SHIELD expires, gain +2 STR.
-
-(The Juggernaut) Retaliation Protocol: SELF | Until next turn, when hit in melee, counter-attack for ATK 2. [+] Counter-attacks apply PUSH 1.
-
-(The Sentinel) Shield Slam: RANGE 1 | ATK 2 | PUSH 2 | If target was already adjacent, gain ATK +2. [+] Target DEF is reduced by 1 before damage is calculated.
-
-(The Cataphract / The Sentinel) Defensive Formation: RANGE 0 | AOE 3 | Allies in range gain +2 DEF and become immune to PUSH/PULL for 1 turn. [+] Allies also gain SHIELD 2.
-
-(The Juggernaut) Chain Hook: RANGE 3 | ATK 1 | PULL 2. [+] Target suffers VULNERABLE if pulled adjacent.
-
-(The Cataphract) Trampling Advance: MOVE 2 | ATK 2 | PUSH 1. [+] Gain SHIELD 1 per tile moved.
-
+(The Juggernaut) Shield Bash: RANGE 1 | ATK 1 | PUSH 2 Upgrade: Apply STAGGER if target collides with a wall or enemy. (Boss Fallback: If immune to STAGGER, deal +WPN bonus damage on collision).
+(The Sentinel) Phalanx Stance: SELF | DEF +5 | Gain STURDY until next turn. Upgrade: Gain infinite RANGE for "Retaliation Protocol" this turn.
+(The Juggernaut / The Cataphract) Taunting Strike: RANGE 2 | ATK 1 | PULL 1 | Apply TAUNT. Upgrade: RANGE 3 | AOE 3x3 | PULL 2 all enemies.
+(The Cataphract) Seismic Stomp: RANGE 0 | AOE 1 | ATK 2 | PURGE all enemies. Upgrade: Create CRACKED terrain (MOVE cost x2).
+(The Cataphract / The Sentinel) Fortify: RANGE 3 | Target Ally gains DEF + X (X = Max(0, your DEF)) for 1 turn. Upgrade: Target gains THORNS 50% (Reflects half damage back to attacker, rounded down).
+(The Juggernaut) Bowling Charge: DASH 3 | On collision: ATK 3, PUSH 2. Upgrade: Target collision with another enemy: ATK 3 to both units.
+(The Sentinel / The Juggernaut) Iron Grip: RANGE 1 | Apply ROOT. Target DEF halved next turn (rounded up). Upgrade: Refund 1 AP if target already has ROOT or STAGGER.
+(The Cataphract / The Sentinel) Redirect Strike: RANGE 2 | Apply INTERCEPT (Take 50% damage dealt to adjacent ally this turn, rounded down). Upgrade: Gain +2 DEF for every redirected hit.
+(The Sentinel) Indomitable Will: SELF | Convert all missing HP into SHIELD for 2 turns. Upgrade: When SHIELD expires, gain +2 STR.
+(The Juggernaut) Retaliation Protocol: SELF | Until next turn, when hit in melee, counter-attack for ATK 2. Upgrade: Counter-attacks apply PUSH 1.
+(The Sentinel) Shield Slam: RANGE 1 | ATK 2 | PUSH 2 | If target was already adjacent, gain ATK +2. Upgrade: Target DEF is reduced by 1 before damage is calculated.
+(The Cataphract / The Sentinel) Defensive Formation: RANGE 0 | AOE 3 | Allies in range gain +2 DEF and become immune to PUSH/PULL for 1 turn. Upgrade: Allies also gain SHIELD 2.
+(The Juggernaut) Chain Hook: RANGE 3 | ATK 1 | PULL 2. Upgrade: Target suffers VULNERABLE if pulled adjacent.
+(The Cataphract) Trampling Advance: MOVE 2 | ATK 2 | PUSH 1. Upgrade: Gain SHIELD 1 per tile moved.
 2. Bruiser
-
 Core Identity: Tanky Melee-Strong, High HP. Dynamic HP management. Can play as a low-HP berserker or a high-HP behemoth that uses their mass as a weapon.
 | CON 7 | MOV 3 | STR 4 | DEF 2 | MAG 1 |
-
-Movement Skill: Push Through (Cost: 2 MOV) — Move into an adjacent tile occupied by a unit, pushing them 1 tile forward.
-↳ [+] Upgrade: Cost reduced to 1 MOV. Pushing a unit grants the Bruiser +1 STR for their next attack this turn.
-
+Innate Trait: Sanguine Regeneration
+Base Mechanic: At the start of every turn during resolution, the Bruiser automatically restores health equal to Floor(5% of Max HP).
+Upgrade: Turn-start regeneration increases to Floor(10% of Max HP). If the Bruiser is already at Max HP when this triggers, the excess healing is converted directly into temporary SHIELD.
+Reposition Skill: Push Through (Cost: 2 MOV) — Move into an adjacent tile occupied by a unit, pushing them 1 tile forward.
+Upgrade: Cost reduced to 1 MOV. Pushing a unit grants the Bruiser +1 STR for their next attack this turn.
 Advanced Classes (Promotion Boosts)
-
 The Bloodrager: (+4 STR, +4 CON, 0 MOV) Low HP management with high STR buffs and self-healing.
-
-The Behemoth: (+6 CON, +2 DEF, 0 MOV) High HP scaling. Uses their massive health pool and body weight to crush targets and pierce defenses.
-
+The Behemoth: (+6 CON, +2 DEF, 0 MOV) High HP scaling. Uses massive health pool and body weight to crush targets and pierce defenses.
 The Siegebreaker: (+4 STR, +2 CON, +2 MOV) High momentum. Discards defensive gear to sprint at top speed and shatter enemy lines.
-
 Passives
-
-(The Bloodrager) Cellular Regeneration: HEAL 1 if adjacent to 1 or more enemies at the start of your turn. [+] Also gain +1 STR if adjacent to 2 or more enemies.
-
-(The Bloodrager) Blood for Blood: If damaged last turn, your attacks apply BLEED X (where X = your WPN). [+] Attacks also gain ATK +1.
-
-(The Bloodrager) Adrenaline Junkie: Gain MOVE +1 and STR +1 per 10% missing HP. [+] Also gain +1 DEF for every 20% missing HP.
-
-(The Bloodrager) Enraged: Gain +1 STR for every unique debuff or hazard you are currently suffering from/standing in. [+] Also gain +1 MOV per debuff/hazard.
-
-(The Bloodrager) Last Stand: When HP is < 25%, gain +2 STR and +2 DEF. [+] Gain +3 STR and +3 DEF instead.
-
-(The Behemoth) Colossal Mass: Gain +1 STR for every 15 Max HP you possess. [+] Gain +1 STR for every 10 Max HP instead.
-
-(The Behemoth) Overwhelming Bulk: If your Current HP is greater than your target's Max HP, your physical attacks gain PIERCE. [+] Attacks also apply PUSH 1.
-
-(The Behemoth) Thrill of Pain: Whenever you suffer damage (from an enemy, interception, or self-inflicted costs), your NEXT attack gains ATK +2 and applies PUSH 1. [+] Next attack gains ATK +3 instead.
-
-(The Behemoth) Momentum of the Titan: When you PUSH an enemy, they suffer additional collision damage equal to Round Down(10% of your Max HP). [+] Damage increases to 20% of your Max HP.
-
-(The Behemoth) Scar Tissue: Reduce all incoming physical damage by 1 for every 20 Max HP you possess (rounded down), OR for every 20 points of missing HP you currently have (rounded down). [+] Reduce damage by an additional 1.
-
-(The Siegebreaker) Momentum Transfer: Upon applying PUSH collision to an enemy, HEAL 1. [+] HEAL 1 and gain +1 STR.
-
-(The Siegebreaker) Crowd Breaker: Gain +1 STR for every enemy adjacent to you. Your attacks gain splash damage (ATK 1). [+] Splash damage increases to ATK 2.
-
-(The Siegebreaker) Juggernaut: Moving over traps destroys them instantly for 0 damage. [+] Destroying a trap grants SHIELD 1.
-
-(The Siegebreaker) Battering Ram: Any skill that applies PUSH pushes the target 1 additional tile. [+] Pushed enemies colliding with walls suffer STAGGER.
-
-(The Siegebreaker) Unstoppable Force: Immune to STAGGER and ROOT. Resisting these grants SHIELD 1. [+] Resisting these grants SHIELD 2 instead.
-
+(The Bloodrager) Reactive Adrenaline: Starting your turn adjacent to 1+ enemies converts your turn-start Sanguine Regeneration heal into instant SHIELD equal to the heal amount instead, AND grants +1 STR for every adjacent enemy (max +3 STR). Upgrade: Also grants +1 DEF per adjacent enemy.
+(The Bloodrager) Blood for Blood: If damaged last turn, attacks apply BLEED X (X = your WPN). Upgrade: Attacks also gain ATK +1.
+(The Bloodrager) Adrenaline Junkie: Gain +1 MOV and +1 STR per 10% missing HP. Upgrade: Gain +1 DEF per 20% missing HP.
+(The Bloodrager) Enraged: Gain +1 STR for every unique debuff or hazard suffering from/standing in. Upgrade: Gain +1 MOV per debuff/hazard.
+(The Bloodrager) Last Stand: When HP < 25%, gain +2 STR and +2 DEF. Upgrade: Gain +3 STR and +3 DEF instead.
+(The Behemoth) Colossal Mass: Gain +1 STR for every 15 Max HP. Upgrade: Gain +1 STR for every 10 Max HP instead.
+(The Behemoth) Overwhelming Bulk: If Current HP > Target's Max HP, physical attacks gain PIERCE. Upgrade: Attacks also apply PUSH 1.
+(The Behemoth) Thrill of Pain: Whenever suffering damage, NEXT attack gains ATK +2 and applies PUSH 1. Upgrade: Next attack gains ATK +3 instead.
+(The Behemoth) Momentum of the Titan: When you PUSH an enemy, they suffer additional collision damage equal to Floor(10% of Max HP). Upgrade: Damage increases to 20% of Max HP.
+(The Behemoth) Scar Tissue: Reduce incoming physical damage by 1 for every 20 Max HP (rounded down) OR 20 points missing HP, capped at Floor(Max HP / 10). Upgrade: Reduce by additional 1.
+(The Siegebreaker) Momentum Transfer: Upon applying PUSH collision to an enemy, HEAL 1. Upgrade: HEAL 1 and gain +1 STR.
+(The Siegebreaker) Crowd Breaker: Gain +1 STR for every adjacent enemy. Attacks gain splash damage (ATK 1). Upgrade: Splash damage increases to ATK 2.
+(The Siegebreaker) Juggernaut: Moving over traps destroys them instantly for 0 damage. Upgrade: Destroying a trap grants SHIELD 1.
+(The Siegebreaker) Battering Ram: Any skill applying PUSH pushes target 1 additional tile. Upgrade: Pushed enemies colliding with walls suffer STAGGER.
+(The Siegebreaker) Unstoppable Force: Immune to STAGGER and ROOT. Resisting grants SHIELD 1. Upgrade: Resisting grants SHIELD 2 instead.
 Active Skills & Upgrades
-
-(The Siegebreaker) Charge Strike: MOVE 2 | ATK 3 | PUSH 1 [+] Gain GHOST during MOVE. Gain ATK +2 if passing through terrain.
-
-(The Siegebreaker) Concussion Blow: RANGE 1 | ATK 2 | PUSH 1 | Object collision applies STAGGER. [+] Enemy collision applies STAGGER to both units.
-
-(The Bloodrager) Cleave: RANGE 1 | ARC | ATK 2 [+] Apply BLEED X (where X = your WPN) to all targets.
-
-(The Behemoth) Suplex: RANGE 1 | ATK 4 | MOVE target to empty tile directly behind you. [+] Gain ATK +1 for every 10 Current HP you possess.
-
-(The Bloodrager) Adrenaline Surge: SELF | Spend 5 HP. Gain +1 MOV and +1 STR for 1 turn. This skill costs 0 AP if you are currently adjacent to 2 or more enemies. [+] On Kill: HEAL 1 and gain SHIELD 2.
-
-(The Siegebreaker / The Behemoth) Earthshatter: RANGE 1 | ARC | ATK 2 | Destroy all traps/cover in area. [+] Gain ATK +1 per destroyed object.
-
-(The Behemoth) Meat Shield: RANGE 1 (Ally) | Swap positions. Gain INTERCEPT 50% this turn. [+] RANGE 3. Gain STR +2 per interception.
-
-(The Bloodrager) Frenzy: RANGE 1 | ATK 1 (3 times). [+] On Kill: Gain 1 AP.
-
-(The Behemoth / The Siegebreaker) Guttural Roar: RANGE 0 | AOE 2 | PUSH 1 | Target DEF -2. [+] PUSH 1 all items/coins/scrap. Item collision: ATK 1.
-
-(The Behemoth) Headbutt: RANGE 1 | ATK 3 | SELF and Target suffer 1 Damage and STAGGER. [+] Deal bonus damage equal to Round Down(10% of your Max HP).
-
-(The Bloodrager) Blood Boil: SELF | Spend 5 HP to gain STR +3 for 1 turn. [+] Spend 10 HP to gain STR +5 instead.
-
-(The Siegebreaker) Violent Collision: MOVE 3 | If you collide with an enemy, perform a second MOVE 2. [+] Collisions apply STAGGER (1 turn).
-
-(The Bloodrager) Crimson Whirlwind: RANGE 0 | AOE 3x3 | ATK 1. [+] HEAL 1 for every target successfully hit.
-
-(The Behemoth) Belly Flop: RANGE 2 | ATK 2. Jump to an empty tile. [+] Landing applies PUSH 1 to all adjacent enemies.
-
-(The Siegebreaker) Breaching Dash: DASH 3 | Instantly destroy all destructible cover passed through. [+] Your next attack this turn gains PIERCE.
-
+(The Siegebreaker) Charge Strike: MOVE 2 | ATK 3 | PUSH 1 Upgrade: Gain GHOST during MOVE. Gain ATK +2 if passing through terrain.
+(The Siegebreaker) Concussion Blow: RANGE 1 | ATK 2 | PUSH 1 | Object collision applies STAGGER. Upgrade: Enemy collision applies STAGGER to both units.
+(The Bloodrager) Cleave: RANGE 1 | ARC | ATK 2 Upgrade: Apply BLEED X (X = your WPN) to all targets.
+(The Behemoth) Suplex: RANGE 1 | ATK 4 | MOVE target to empty tile directly behind you. Upgrade: Gain ATK +1 for every 10 Current HP.
+(The Bloodrager) Adrenaline Surge: SELF | Spend 5 HP. Gain +1 MOV and +1 STR for 1 turn. Costs 0 AP if adjacent to 2+ enemies. Upgrade: On Kill: HEAL 1 and gain SHIELD 2.
+(The Siegebreaker / The Behemoth) Earthshatter: RANGE 1 | ARC | ATK 2 | Destroy all traps/cover in area. Upgrade: Gain ATK +1 per destroyed object.
+(The Behemoth) Meat Shield: RANGE 1 (Ally) | Swap positions. Gain INTERCEPT 50% this turn. Upgrade: RANGE 3. Gain +2 STR per interception.
+(The Bloodrager) Frenzy: RANGE 1 | ATK 1 (3 times). Upgrade: On Kill: Gain 1 AP.
+(The Behemoth / The Siegebreaker) Guttural Roar: RANGE 0 | AOE 2 | PUSH 1 | Target DEF -2. Upgrade: PUSH 1 all items/coins/scrap. Item/scrap collision deals Floor(STR / 2) damage and applies VULNERABLE.
+(The Behemoth) Headbutt: RANGE 1 | ATK 3 | SELF and Target suffer 1 Damage and STAGGER. Upgrade: Deal bonus damage equal to Floor(10% of Max HP).
+(The Bloodrager) Blood Boil: SELF | Spend 5 HP to gain +3 STR for 1 turn. Upgrade: Spend 10 HP to gain +5 STR instead.
+(The Siegebreaker) Violent Collision: MOVE 3 | On enemy collision, perform second MOVE 2. Upgrade: Collisions apply STAGGER (1 turn).
+(The Bloodrager) Crimson Whirlwind: RANGE 0 | AOE 3x3 | ATK 1. Upgrade: HEAL 1 for every target successfully hit.
+(The Behemoth) Belly Flop: RANGE 2 | ATK 2. Jump to empty tile. Upgrade: Landing applies PUSH 1 to adjacent enemies.
+(The Siegebreaker) Breaching Dash: DASH 3 | Instantly destroy all destructible cover passed through. Upgrade: Next attack this turn gains PIERCE.
 3. Mercenary
-
 Core Identity: Balanced Melee DPS. A disciplined combatant, versatile in both offense and defense.
 | CON 5 | MOV 3 | STR 4 | DEF 3 | MAG 2 |
-
-Movement Skill: Pullback (Cost: 2 MOV) — You move 1 tile directly backward. The adjacent unit in front of you moves 1 tile backward with you.
-↳ [+] Upgrade: Cost reduced to 1 MOV. If you pull an enemy, they suffer -2 DEF for the rest of the turn.
-
+Innate Trait: Predatory Momentum
+Base Mechanic: Basic attacks executed against targets below 50% HP cost 0 AP and grant an immediate free 1 tile move. Additionally, whenever the Mercenary deals damage to any enemy unit, they gain +1 STR and +1 MOV on the following turn.
+Upgrade: Low-HP execution threshold increases to < 75% HP. The turn-following bonus increases to +2 STR and +2 MOV.
+Reposition Skill: Pullback (Cost: 2 MOV) — You move 1 tile directly backward. The adjacent unit in front of you moves 1 tile backward with you.
+Upgrade: Cost reduced to 1 MOV. If you pull an enemy, they suffer -2 DEF for the rest of the turn.
 Advanced Classes (Promotion Boosts)
-
 The Swordmaster: (+4 STR, +2 DEF, +2 CON, 0 MOV) Combo-focused build setting up and finishing high-value targets.
-
 The Blade Dancer: (+4 STR, +2 CON, +2 MOV) Discards medium armor for lightweight weaving and evasion.
-
-The Headhunter: (+6 STR, +2 DEF, +2 MOV) Driven by predatory adrenaline. Focus on finisher skills to eliminate low HP targets efficiently.
-
+The Headhunter: (+6 STR, +2 DEF, +2 MOV) Driven by predatory adrenaline. Focus on finisher skills to eliminate low HP targets.
 Passives
-
-(The Swordmaster) Calculated Strike: If you use an active MOVEMENT skill (like Pullback, Dash, or Flank & Run) before attacking this turn, your attack gains +1 STR, and you gain +1 DEF until the end of the round. [+] Also gain +1 AP if you kill the target.
-
-(The Swordmaster) Weapon Master: If STR > enemy DEF, your attacks ignore 50% remaining DEF (rounded down). [+] Ignores 100% of remaining DEF.
-
-(The Swordmaster) Dual Wield Momentum: Whenever you spend AP to cast an Active Skill, you may immediately execute a standard basic attack (ATK 1) against the same target for 0 AP. [+] The basic attack ignores 50% DEF.
-
-(The Swordmaster) Precision Edge: Attacks against targets with full HP gain ATK +2 and apply BLEED X (X = your WPN). [+] Gains ATK +3 instead.
-
-(The Swordmaster) Duelist's Focus: +1 Accuracy and +1 STR if attacking an enemy that has not yet acted. [+] Also applies BLIND.
-
-(The Blade Dancer) Tactical Versatility: Whenever you cast an Active Skill, your next Basic Attack this turn gains +2 Damage and allows you to immediately MOVE 1 tile (this movement does not consume your MOV stat). [+] The Basic Attack also ignores 50% of the target's DEF (rounded down).
-
-(The Blade Dancer) Swift Feet: Gain +1 MOVE for every adjacent enemy. You ignore Zones of Control. [+] You also ignore movement penalties from difficult terrain.
-
-(The Blade Dancer) Hit and Run: After dealing damage, you may immediately MOVE 1 tile. [+] May MOVE 2 tiles instead of 1.
-
-(The Blade Dancer) Evasive: If you moved at least 3 tiles this turn, gain +1 DEF and immunity to ROOT. [+] Also gain immunity to PULL and slow effects.
-
-(The Blade Dancer) Flanking Maneuver: Gain +1 STR and PIERCE if no allies are adjacent to you when you attack. [+] Gain +2 STR instead.
-
-(The Headhunter) Dirty Fighting: Attacks deal +2 Damage vs targets with STAGGER, ROOT, or POISON. [+] Deal +3 Damage instead.
-
-(The Headhunter) Executioner: Attacks against targets below 50% HP gain ATK +2 and ignore DEF. [+] Threshold increased to targets below 75% HP.
-
-(The Headhunter) Blood Scent: Gain +1 MOVEMENT if your destination is closer to an enemy with less than 50% HP. [+] Gain +2 MOVEMENT instead.
-
-(The Headhunter) Ruthless: Upon kill, your next attack gains ATK +2 and refunds 1 AP. [+] Next attack gains ATK +3 instead.
-
-(The Headhunter) Coup de Grace: Upon killing with a basic attack, HEAL 1 and gain +1 MOVE. [+] Apply FEAR to the nearest enemy within Range 2.
-
+(The Swordmaster) Calculated Strike: Using active MOVEMENT skill before attacking grants +1 STR and +1 DEF until round end. Upgrade: Also gain +1 AP on target kill.
+(The Swordmaster) Weapon Master: If STR > Enemy DEF, attacks ignore 50% remaining DEF (rounded down). Upgrade: Ignores 100% remaining DEF.
+(The Swordmaster) Dual Wield Momentum: When spending AP to cast Active Skill, may execute basic attack (ATK 1) for 0 AP against same target. Upgrade: Basic attack ignores 50% DEF.
+(The Swordmaster) Precision Edge: Attacks against targets with full HP gain ATK +2 and apply BLEED X (X = WPN). Upgrade: Gain ATK +3 instead.
+(The Swordmaster) Duelist's Focus: Attacks against enemies that have not yet acted deal +2 Damage and apply BLIND. Upgrade: Target also suffers WEAKEN.
+(The Blade Dancer) Tactical Versatility: Casting Active Skill grants next Basic Attack +2 Damage and immediate free MOVE 1. Upgrade: Basic Attack ignores 50% DEF.
+(The Blade Dancer) Swift Feet: Gain +1 MOV per adjacent enemy. Ignore Zones of Control. Upgrade: Ignore difficult terrain penalties.
+(The Blade Dancer) Hit and Run: After dealing damage, may immediately MOVE 1. Upgrade: May MOVE 2 instead.
+(The Blade Dancer) Evasive: If moving 3+ tiles this turn, gain +1 DEF and immunity to ROOT. Upgrade: Gain immunity to PULL and slow.
+(The Blade Dancer) Flanking Maneuver: Gain +1 STR and PIERCE if no allies adjacent when attacking. Upgrade: Gain +2 STR instead.
+(The Headhunter) Dirty Fighting: Attacks deal +2 Damage vs targets with STAGGER, ROOT, or POISON. Upgrade: Deal +3 Damage instead.
+(The Headhunter) Executioner: Attacks vs targets < 50% HP gain ATK +2 and ignore DEF. Upgrade: Threshold increased to < 75% HP.
+(The Headhunter) Blood Scent: Gain +1 MOV if destination is closer to enemy < 50% HP. Upgrade: Gain +2 MOV instead.
+(The Headhunter) Ruthless: On kill, next attack gains ATK +2 and refunds 1 AP. Upgrade: Next attack gains ATK +3 instead.
+(The Headhunter) Coup de Grace: On basic attack kill, HEAL 1 and gain +1 MOV. Upgrade: Apply FEAR to nearest enemy in RANGE 2.
 Active Skills & Upgrades
-
-(The Blade Dancer) Swift Strike: RANGE 2 | MOVE to target | ATK 2 [+] Gain 1 AP if target is already damaged.
-
-(The Swordmaster / The Headhunter) Defense Strike: RANGE 1 | ATK 1 | Gain DEF +2 [+] Target loses all Push Mitigation (Pushed maximum distance) and cannot gain SHIELD.
-
-(The Swordmaster / The Blade Dancer) Blade Storm: RANGE 1 | ATK 2 | If target is adjacent to an ally, gain ATK +2. [+] Apply BLEED X (X = your WPN).
-
-(The Blade Dancer / The Headhunter) Caltrop Toss: RANGE 2 | ATK 1 | Create CALTROPS on target tile. (CALTROPS apply BLEED X and ROOT when stepped on). [+] CALTROPS gain ATK +2.
-
-(The Headhunter / The Swordmaster) Feint: SELF | Next attack gains PIERCE. [+] Target DEF -1 permanently.
-
-(The Swordmaster) Riposte Strike: RANGE 1 | ATK 2 | If target attacked you last turn, gain ATK +2 and apply STAGGER. [+] Target DEF -2.
-
-(The Headhunter) Sever: RANGE 1 | ATK 2 | On Kill: All Allies HEAL 1. [+] On Kill: All Allies HEAL 1 and gain SHIELD 1.
-
-(The Blade Dancer) Second Wind: SELF | HEAL 1 | Gain 1 AP. [+] Next skill costs 0 AP.
-
-(The Blade Dancer) Tactical Retreat: MOVE 3 (Backwards) | Create SMOKE on start tile. [+] Gain GHOST during MOVE.
-
-(The Headhunter) Executioner's Blade: RANGE 1 | ATK 5 | Target must be <30% HP. [+] Threshold 50% HP. On Kill: Gain 1 AP.
-
-(The Swordmaster) Precision Strike: RANGE 1 | ATK 4 | If target has not acted yet, ignore 50% DEF (rounded down). [+] If target has not acted yet, ignore 100% DEF.
-
-(The Headhunter / The Blade Dancer) Flank & Run: MOVE 2 | If ending adjacent to an enemy, gain ATK +2 on next attack. [+] Gain GHOST during MOVE.
-
-(The Headhunter) Hamstring: RANGE 1 | ATK 2 | Target MAX MOVEMENT becomes 1. [+] Deal ATK +2 if target is suffering from BLEED.
-
-(The Blade Dancer) Acrobatic Vault: RANGE 2 | ATK 1 | Jump directly over the target to the opposite empty tile. [+] Attack gains PIERCE.
-
-(The Swordmaster) Duelist's Challenge: RANGE 3 | Apply TAUNT and MARK to target. [+] While target is marked, you gain +2 DEF against their attacks.
-
+(The Blade Dancer) Swift Strike: RANGE 2 | MOVE to target | ATK 2 Upgrade: Gain 1 AP if target is damaged.
+(The Swordmaster / The Headhunter) Defense Strike: RANGE 1 | ATK 1 | Gain DEF +2 Upgrade: Target loses Push Mitigation and cannot gain SHIELD.
+(The Swordmaster / The Blade Dancer) Blade Storm: RANGE 1 | ATK 2 | If target adjacent to ally, gain ATK +2. Upgrade: Apply BLEED X (X = WPN).
+(The Blade Dancer / The Headhunter) Caltrop Toss: RANGE 2 | ATK 1 | Create CALTROPS on target tile. Upgrade: CALTROPS gain ATK +2.
+(The Headhunter / The Swordmaster) Feint: SELF | Next attack gains PIERCE and +1 STR. Upgrade: Target loses 25% of total DEF for 2 turns (rounded up).
+(The Swordmaster) Riposte Strike: RANGE 1 | ATK 2 | If target attacked you last turn, gain ATK +2 and apply STAGGER. Upgrade: Target DEF -2.
+(The Headhunter) Sever: RANGE 1 | ATK 2 | On Kill: All Allies HEAL 1. Upgrade: On Kill: All Allies HEAL 1 and gain SHIELD 1.
+(The Blade Dancer) Second Wind: SELF | HEAL 1 | Gain 1 AP. Upgrade: Next skill costs 0 AP.
+(The Blade Dancer) Tactical Retreat: MOVE 3 (Backwards) | Create SMOKE on start tile. Upgrade: Gain GHOST during MOVE.
+(The Headhunter) Executioner's Blade: RANGE 1 | ATK 5 | Target must be < 30% HP. Upgrade: Threshold 50% HP. On Kill: Gain 1 AP.
+(The Swordmaster) Precision Strike: RANGE 1 | ATK 4 | If target hasn't acted, ignore 50% DEF. Upgrade: If target hasn't acted, ignore 100% DEF.
+(The Headhunter / The Blade Dancer) Flank & Run: MOVE 2 | If ending adjacent to enemy, gain ATK +2 on next attack. Upgrade: Gain GHOST during MOVE.
+(The Headhunter) Hamstring: RANGE 1 | ATK 2 | Target MAX MOVEMENT = 1. Upgrade: Deal ATK +2 if target has BLEED.
+(The Blade Dancer) Acrobatic Vault: RANGE 2 | ATK 1 | Jump over target to opposite empty tile. Upgrade: Attack gains PIERCE.
+(The Swordmaster) Duelist's Challenge: RANGE 3 | Apply TAUNT and MARK to target. Upgrade: Gain +2 DEF against marked target.
 4. Rogue
-
 Core Identity: High Mobility, Flanking Melee DPS. Positional puzzle solver. High single-target damage.
 | CON 4 | MOV 5 | STR 4 | DEF 2 | MAG 1 |
-
-Innate Trait: Pass — Your standard movement permanently possesses the GHOST keyword.
-↳ [+] Upgrade: Moving directly through an enemy unit counts as a perfect setup—your next attack against them this turn completely ignores their DEF.
-
+Innate Trait: Pass
+Base Mechanic: Standard tile movement permanently possesses the GHOST keyword (can freely walk through enemy-occupied tiles and traps without stopping or triggering Zone of Control).
+Upgrade: Moving directly through an enemy unit counts as a setup; your next attack against them this turn completely ignores their DEF.
+Reposition Skill: Slip Past (Cost: 1 MOV) — Move through an adjacent unit to the empty tile directly behind them.
+Upgrade: Reduces target's DEF by -1 for 1 turn after slipping past.
 Advanced Classes (Promotion Boosts)
-
-The Assassin: (+4 STR, +2 CON, +2 MOV) Uses shadow magic to slip past terrain friction. Focus on teleportation.
-
-The Ninja: (+2 STR, +3 MOV) Vaults obstacles and wall-runs. High-speed elemental assassin specializing in clones.
-
-The Saboteur: (+4 STR, +2 CON, +2 MOV) Injects alchemical stimulants to artificially boost sprint speed. Utilizes confusion.
-
+The Assassin: (+4 STR, +2 CON, +2 MOV) Shadow magic mobility. Focus on teleportation.
+The Ninja: (+2 STR, +3 MOV) Vaults obstacles and wall-runs. High-speed elemental assassin with clones.
+The Saboteur: (+4 STR, +2 CON, +2 MOV) Alchemical stimulants for sprint speed and confusion field control.
 Passives
-
-(The Assassin) Backstab: Attacks originating directly behind an enemy ignore all DEF. [+] Attack also applies BLEED X (X = your WPN).
-
-(The Assassin) Blink Mastery: After using a Teleport skill, your next attack gains ATK +3. [+] Next attack gains ATK +4 instead.
-
-(The Assassin) Lethal Position: Gain +1 STR and +1 RANGE per tile you are away from starting position this turn. [+] Also gain +1 DEF per tile moved.
-
-(The Assassin) Shadow Strike: Teleporting adjacent to an enemy applies MARK and ROOT. [+] Also applies SILENCE.
-
-(The Assassin) Killing Intent: If you end your turn adjacent to a target with < 50% HP, gain 1 AP next turn. [+] Threshold increased to < 75% HP.
-
-(The Ninja) Shadow Clone: On Kill: Leave Decoy on tile. Decoy applies TAUNT (1 turn). [+] Decoy explodes on death, dealing ATK 2 to adjacent enemies.
-
-(The Ninja) Phase Shift: When you use a Teleport skill, gain STEALTH until your next attack. [+] First attack out of STEALTH ignores DEF.
-
-(The Ninja) Blink Strike: Basic attacks can be performed at Range 2. If used at Range 2, you teleport to the target. [+] Range increased to 3 tiles.
-
-(The Ninja) Shadow Meld: While in SMOKE, skills gain MAG ATK +2 and cost 0 AP to cast (Once per turn). [+] Skills gain MAG ATK +3 instead.
-
-(The Ninja) Ghost Step: Your movement always has GHOST. Moving through an enemy applies BLIND. [+] Also applies POISON to the enemy.
-
-(The Saboteur) Miasma Spreader: When you attack a unit with a debuff, spread it to ALL adjacent enemies. [+] Spreads to ALL enemies within RANGE 2.
-
-(The Saboteur) Panic Cascade: Whenever you apply ANY Debuff (Confusion, Blind, Poison, Silence, Mark) to an enemy, all other enemies adjacent to them suffer -1 DEF for the turn (Does not stack if multiple debuffs are applied simultaneously). [+] Confused enemies also suffer -1 DEF.
-
-(The Saboteur) Debuff Overload: Enemies take +1 unmitigated damage for every unique debuff they have at the start of their turn. [+] Take +2 unmitigated damage per debuff instead.
-
-(The Saboteur) Mind Static: Enemies within Range 2 suffer -1 DEF and cannot gain SHIELD. [+] Range increased to 3 tiles and enemies suffer -2 DEF.
-
-(The Saboteur) Board Scrambler: After dealing damage, swap positions of the target and the enemy with the Highest HP within Range 3. [+] Target also suffers ROOT after swapping.
-
+(The Assassin) Backstab: Attacks originating directly behind enemy ignore DEF. Upgrade: Apply BLEED X (X = WPN).
+(The Assassin) Blink Mastery: After Teleport skill, next attack gains ATK +3. Upgrade: Next attack gains ATK +4 instead.
+(The Assassin) Lethal Position: Gain +1 STR and +1 RANGE per tile moved from start tile. Upgrade: Gain +1 DEF per tile moved.
+(The Assassin) Shadow Strike: Teleporting adjacent to enemy applies MARK and ROOT. Upgrade: Also applies SILENCE.
+(The Assassin) Killing Intent: End turn adjacent to target < 50% HP -> gain 1 AP next turn. Upgrade: Threshold < 75% HP.
+(The Ninja) Shadow Clone: On Kill: Leave Decoy on tile applying TAUNT (1 turn). Upgrade: Decoy explodes on death (ATK 2 AOE).
+(The Ninja) Phase Shift: Teleporting grants STEALTH until next attack. Upgrade: First attack out of STEALTH ignores DEF.
+(The Ninja) Blink Strike: Basic attacks can target RANGE 2 (teleports to target). Upgrade: Range increased to RANGE 3.
+(The Ninja) Shadow Meld: While in SMOKE, skills gain MAG ATK +2 and cost 0 AP (1/turn). Upgrade: Skills gain MAG ATK +3.
+(The Ninja) Shadow Slip: Moving directly through an enemy tile applies BLIND and MARK. Attacking a MARKED target within the same turn refunds 1 MOV and deals bonus physical damage equal to your WPN. Upgrade: Also applies POISON.
+(The Saboteur) Miasma Spreader: Attacking debuffed unit spreads debuffs to adjacent enemies. Upgrade: Spreads to RANGE 2.
+(The Saboteur) Panic Cascade: Applying ANY Debuff causes target to take +2 extra damage per active debuff for the turn. Upgrade: Confused enemies take +3 extra damage per active debuff.
+(The Saboteur) Debuff Overload: Enemies take +1 unmitigated damage per unique debuff at turn start. Upgrade: +2 unmitigated damage instead.
+(The Saboteur) Mind Static: Enemies in RANGE 2 suffer -25% DEF and cannot gain SHIELD. Upgrade: RANGE 3 and -50% DEF.
+(The Saboteur) Board Scrambler: After damage, swap target with highest HP enemy in RANGE 3. Upgrade: Target also suffers ROOT.
 Active Skills & Upgrades
-
-(The Assassin / The Ninja) Shadow Step: RANGE 4 | Teleport adjacent to target enemy. [+] Teleport behind enemy: STR +1 this turn.
-
-(The Assassin / The Saboteur) Kidney Strike: RANGE 1 | ATK 2 | Target MAX MOVEMENT = 1 (2 turns). [+] From behind: Apply ROOT.
-
-(The Ninja / The Saboteur) Smoke Bomb: SELF | Create SMOKE (AOE 3x3) | Inside SMOKE: Gain STEALTH. [+] Allies inside SMOKE HEAL 1 per turn.
-
-(The Ninja / The Assassin) Evasive Strike: MOVE 2 | ATK 1 | Gain DEF +1. [+] MOVE 3 | ATK 2 | Gain DEF +2.
-
-(The Saboteur / The Ninja) Grappling Hook: RANGE 4 | PULL SELF to target OR PULL target to SELF. [+] Target trap collision damage x2.
-
-(The Saboteur / The Assassin) Switcheroo: RANGE 3 | Swap position with target enemy. [+] Target inherits all attacks aimed at you this turn.
-
-(The Assassin) Blindside: RANGE 1 | ATK 2 | If target has not acted yet, apply STAGGER. [+] If target is STAGGERNED, gain ATK +2.
-
-(The Ninja / The Assassin) Throat Slit: RANGE 1 | ATK 3 | Apply SILENCE. [+] On Kill: Spread SILENCE to adjacent enemy.
-
-(The Saboteur / The Ninja) Amnesia Dust: RANGE 2 | ATK 0 | Apply BLIND. Target must have not acted yet this round. [+] Also applies POISON.
-
-(The Assassin / The Saboteur) Death Mark: RANGE 5 | Apply MARK. [+] On Kill: Refresh Death Mark on a new target for 0 AP.
-
-(The Assassin / The Saboteur) Lethal Flourish: RANGE 1 | ATK 3 | If target has any debuff, gain ATK +2. [+] On Kill: Gain 1 AP.
-
-(The Ninja / The Saboteur) Shadow Swap: RANGE 3 | Swap position with an ally. [+] Gain +1 DEF for 1 turn after swap.
-
-(The Saboteur / The Ninja) Kidnap: RANGE 1 | Swap position with target | PUSH target 2 tiles. [+] If target collides with another enemy, both are STAGGERned.
-
-(The Ninja) Shuriken Volley: CONE 3 | ATK 1 | Applies BLEED X (X = your WPN) to all targets. [+] Gains PIERCE vs targets with BLIND.
-
-(The Saboteur) Poison Flask: RANGE 3 | ATK 1 | Create POISON hazard (AOE 1). [+] Hazard also applies BLIND on entry.
-
+(The Assassin / The Ninja) Shadow Step: RANGE 4 | Teleport adjacent to target enemy. Upgrade: Teleport behind: STR +1 this turn.
+(The Assassin / The Saboteur) Kidney Strike: RANGE 1 | ATK 2 | Target suffers -2 MOV for 2 turns. Upgrade: From behind: Apply ROOT.
+(The Ninja / The Saboteur) Smoke Bomb: SELF | Create SMOKE field (AOE 3x3, Duration: 2 turns). Units inside SMOKE gain STEALTH against attackers outside. Upgrade: Allies inside HEAL 1/turn.
+(The Ninja / The Assassin) Evasive Strike: MOVE 2 | ATK 1 | Gain DEF +1. Upgrade: MOVE 3 | ATK 2 | Gain DEF +2.
+(The Saboteur / The Ninja) Grappling Hook: RANGE 4 | PULL SELF to target OR PULL target to SELF. Upgrade: Target trap collision damage x2.
+(The Saboteur / The Assassin) Switcheroo: RANGE 3 | Swap position with target enemy. Upgrade: Target inherits incoming attacks aimed at you.
+(The Assassin) Blindside: RANGE 1 | ATK 2 | If target has not acted yet, apply STAGGER. Upgrade: If target is STAGGERED, gain ATK +2.
+(The Ninja / The Assassin) Throat Slit: RANGE 1 | ATK 3 | Apply SILENCE. Upgrade: On Kill: Spread SILENCE to adjacent enemy.
+(The Saboteur / The Ninja) Amnesia Dust: RANGE 2 | ATK 0 | Apply BLIND to target that has not acted yet this round. Target also suffers CONFUSION on their next turn. Upgrade: Also applies POISON.
+(The Assassin / The Saboteur) Death Mark: RANGE 5 | Apply MARK. Upgrade: On Kill: Refresh Death Mark for 0 AP.
+(The Assassin / The Saboteur) Lethal Flourish: RANGE 1 | ATK 3 | If target debuffed, gain ATK +2. Upgrade: On Kill: Gain 1 AP.
+(The Ninja / The Saboteur) Shadow Swap: RANGE 3 | Swap position with ally. Upgrade: Gain +1 DEF for 1 turn after swap.
+(The Saboteur / The Ninja) Kidnap: RANGE 1 | Swap position with target | PUSH 2 target. Upgrade: Target collision applies STAGGER to both.
+(The Ninja) Shuriken Volley: CONE 3 | ATK 1 | Apply BLEED X (X = WPN). Upgrade: Gain PIERCE vs targets with BLIND.
+(The Saboteur) Poison Flask: RANGE 3 | ATK 1 | Create POISON hazard (AOE 1). Upgrade: Hazard applies BLIND on entry.
 5. Monk
-
-Core Identity: Melee Magic/Physical Hybrid. Agile brawler and elemental striker. Needs to get their hands dirty to trigger environmental combos.
+Core Identity: Melee Magic/Physical Hybrid. Agile brawler and elemental striker. Trigger environmental combos.
 | CON 5 | MOV 3 | STR 3 | DEF 2 | MAG 4 |
-
-Movement Skill: Leap (Cost: 2 MOV) — Jump directly over a 1-tile obstacle, gap, trap, or unit to the empty tile immediately behind it.
-↳ [+] Upgrade: Maximum jump range increased to 3 tiles. If you land on an elemental surface (Fire/Water/Oil), your next attack this turn absorbs that element.
-
+Innate Trait: Way of the Weaver
+Base Mechanic: Dealing physical damage empowers your next magic skill with MAG ATK +2 and PIERCE. Dealing magical damage empowers your next physical skill with ATK +2 and PUSH 1.
+Upgrade: Triggering a stat weave also grants SHIELD 1.
+Reposition Skill: Leap (Cost: 2 MOV) — Jump directly over a 1-tile obstacle, gap, trap, or unit to empty tile behind it.
+Upgrade: Max range increased to 3. Landing on elemental surface absorbs that element for next attack.
 Advanced Classes (Promotion Boosts)
-
-The Avatar: (+6 MAG, +2 CON, 0 MOV) Turns the Monk into a frontline elemental catalyst.
-
-The Mystic: (+4 STR, +4 MAG, 0 MOV) A true hybrid build that requires balancing physical and magical stats.
-
-The Windwalker: (+4 STR, +2 DEF, +2 MOV) Channels air currents to hover an inch off the ground. Evasive positional manipulator.
-
+The Avatar: (+6 MAG, +2 CON, 0 MOV) Frontline elemental catalyst.
+The Mystic: (+4 STR, +4 MAG, 0 MOV) True hybrid build balancing physical and magical stats.
+The Windwalker: (+4 STR, +2 DEF, +2 MOV) Hovering, evasive positional manipulator.
 Passives
-
-(The Avatar) Elemental Attunement: Whenever you attack an enemy standing on an elemental surface, your attack gains PIERCE. [+] Attack also applies BURN X or BLEED X (where X = your MAG) depending on surface.
-
-(The Avatar) Chakra Burn: If you hit an enemy standing on a hazard, they immediately suffer BURN X (where X = your MAG). [+] Also apply BLIND.
-
-(The Avatar) Elemental Harmony: Attacks gain ATK +1 for every adjacent elemental tile. [+] Gain ATK +2 per adjacent elemental tile instead.
-
-(The Avatar) Catalyst: Gain +1 MAG and +1 DEF while on any elemental surface. [+] Also gain +1 MOV.
-
-(The Avatar) Elemental Shield: Whenever you create a new terrain surface, gain +1 DEF for the turn. [+] Gain +2 DEF instead.
-
-(The Mystic) Way of the Weaver: After dealing Physical damage, your next Magical attack gains PIERCE and +2 Damage. After dealing Magical damage, your next Physical attack gains +2 Damage and applies PUSH 1. [+] Triggering either empowerment also grants you SHIELD 1.
-
-(The Mystic) Mind over Matter: Physical attacks scale off STR or MAG, whichever is higher. [+] Also gain +1 DEF if STR and MAG are equal.
-
-(The Mystic) Inner Peace: If you spend 0 MOV during your turn, your attack this turn gains PIERCE. [+] Attack also gains ATK +2.
-
-(The Mystic) Zen Defense: +1 MAG for every empty tile adjacent. If 4 tiles are empty, gain SHIELD 1. [+] SHIELD 2 if 4 tiles are empty.
-
-(The Mystic) Perfect Form: If you took 0 damage last turn, gain +1 STR and +1 MOVE this turn. [+] Gain +2 STR and +2 MOVE instead.
-
-(The Windwalker) Vaulting Strike: Your standard movement allows you to vault directly over a single enemy unit. If you attack the enemy you just vaulted over this turn, gain ATK +2. [+] Gain ATK +3 instead.
-
-(The Windwalker) Flowing Ki: Moving through or jumping over an enemy grants +1 MAG this turn. [+] Also gain +1 STR this turn.
-
-(The Windwalker) Evasive Acrobat: Gain GHOST. Moving through enemy tiles applies CONFUSION to them. [+] Moving through enemies also applies BLIND.
-
-(The Windwalker) Momentum Transfer: Gain +1 STR for every 2 tiles you moved before attacking this turn. [+] Gain +1 STR for every 1 tile moved instead.
-
-(The Windwalker) Light Step: Ignore difficult terrain/traps. Ending turn on a trap disarms it. [+] Ending turn on a trap grants SHIELD 1.
-
+(The Avatar) Elemental Attunement: Attacking enemy on elemental surface grants PIERCE. Upgrade: Apply BURN X or BLEED X (X = MAG).
+(The Avatar) Chakra Burn: Hitting enemy on hazard applies BURN X (X = MAG). Upgrade: Also apply BLIND.
+(The Avatar) Elemental Harmony: Gain ATK +1 per adjacent elemental tile. Upgrade: Gain ATK +2 per tile instead.
+(The Avatar) Catalyst: Gain +1 MAG and +1 DEF while on elemental surface. Upgrade: Also gain +1 MOV.
+(The Avatar) Elemental Shield: Creating terrain surface grants +1 DEF for turn. Upgrade: Gain +2 DEF instead.
+(The Mystic) Weaver's Resonance: Consuming a Weave empowerment stack triggers a 1-tile elemental shockwave around you, dealing physical or magical damage equal to Floor((STR + MAG) / 2) and granting SHIELD 1. Upgrade: Shockwave applies WEAKEN.
+(The Mystic) Mind over Matter: Physical attacks scale off higher of STR or MAG. Upgrade: Gain +1 DEF if STR == MAG.
+(The Mystic) Inner Peace: Spending 0 MOV grants PIERCE on attack this turn. Upgrade: Attack also gains ATK +2.
+(The Mystic) Zen Defense: +1 MAG per empty adjacent tile. If 4 empty, gain SHIELD 1. Upgrade: SHIELD 2 if 4 empty.
+(The Mystic) Perfect Form: Taking 0 damage last turn grants +1 STR and +1 MOVE. Upgrade: +2 STR and +2 MOVE instead.
+(The Windwalker) Vaulting Strike: Vault over single enemy unit. Attacking them this turn grants ATK +2. Upgrade: Gain ATK +3.
+(The Windwalker) Flowing Ki: Moving through or jumping over enemy grants +1 MAG this turn. Upgrade: Gain +1 STR as well.
+(The Windwalker) Evasive Acrobat: Gain GHOST. Moving through enemy tiles applies CONFUSION. Upgrade: Also applies BLIND.
+(The Windwalker) Momentum Transfer: Gain +1 STR for every 2 tiles moved before attacking. Upgrade: +1 STR per 1 tile moved.
+(The Windwalker) Light Step: Ignore difficult terrain/traps. Ending turn on trap disarms it. Upgrade: Ending on trap grants SHIELD 1.
 Active Skills & Upgrades
-
-(The Avatar) Scorching Kick: RANGE 1 | ATK 2 | Target tile becomes FIRE terrain. (If target is on OIL, instantly ignites). [+] If target already has BURN, deal MAG ATK 2 splash damage.
-
-(The Avatar / The Mystic) Thunder Palm: RANGE 1 | MAG ATK 3 | If target is on WATER or FROZEN, chain 50% damage to all other enemies on the same surface (rounded down). [+] If target is standing on WATER or FROZEN terrain, apply STAGGER.
-
-(The Mystic / The Windwalker) Yin-Yang Flurry: RANGE 1 | Deal ATK 1, then immediately deal MAG ATK 1. [+] If the first hit deals 0 damage, the second hit gains PIERCE.
-
-(The Mystic / The Avatar) Chakra Shift: SELF | Swap your current STR and MAG stats for 2 turns. [+] Trigger a MAG ATK 1 (AOE 2) burst upon swapping.
-
-(The Windwalker / The Mystic) Phase Throw: RANGE 1 | Swap your position with the target enemy. [+] Apply ROOT to the target after swapping.
-
-(The Windwalker / The Avatar) Flying Crane Kick: DASH 3 | ATK 2. [+] If you dash over a hazard (Fire/Water), absorb it, clear the tile, and add its element to the attack.
-
-(The Mystic) Spirit Palm: RANGE 2 | MAG ATK 2 | PUSH 1 | If this pushes target into a wall/unit, trigger an ATK 2 (Physical) splash to all adjacent enemies around target. [+] The physical splash also applies WEAKEN.
-
-(The Mystic / The Avatar) Soul Punch: RANGE 1 | ATK 3 | (Targets MAG instead of DEF). [+] Permanently steal 1 MAG from target.
-
-(The Windwalker / The Mystic) Hundred Fists: RANGE 1 | ATK 4 | SELF DEF = 0 until next turn. [+] Gain ATK +1 for each status effect on the target.
-
-(The Avatar / The Mystic) Mantra of Peace: RANGE 0 | AOE 2 | Apply WEAKEN for 1 turn. Effect breaks instantly if target takes damage. [+] Allies in radius HEAL 1.
-
-(The Avatar / The Mystic) Inner Fire: SELF (2 turns) | Physical attacks deal MAG ATK 1 SPLASH. [+] SPLASH creates FIRE terrain.
-
-(The Windwalker / The Mystic) Void Step: RANGE 3 | Teleport to an empty tile adjacent to an ally. [+] Landed tile grants +2 MAG for 1 turn.
-
-(The Windwalker) Cyclone Sweep: RANGE 1 | ARC | PUSH 2 all targets. [+] Gain +1 MOV for every enemy pushed.
-
-(The Windwalker) Updraft: SELF | Gain AIRBORNE and +1 MOV for 2 turns. [+] Passing over an enemy while Airborne applies BLIND to them.
-
-(The Avatar) Geyser Strike: RANGE 2 | MAG ATK 2 | PUSH 1 | Creates WATER terrain. [+] Push distance increased to 2 if target is already on WATER.
-
+(The Avatar) Scorching Kick: RANGE 1 | ATK 2 | Target tile becomes FIRE terrain. Upgrade: If target burning, deal MAG ATK 2 splash.
+(The Avatar / The Mystic) Thunder Palm: RANGE 1 | MAG ATK 3 | On WATER/FROZEN: chain 50% damage to all units on surface. Upgrade: Apply STAGGER.
+(The Mystic / The Windwalker) Yin-Yang Flurry: RANGE 1 | Deal ATK 1, then MAG ATK 1. Upgrade: If first hit 0 damage, second hit gains PIERCE.
+(The Mystic / The Avatar) Chakra Shift: SELF | Swap current STR and MAG stats for 2 turns. Upgrade: Trigger MAG ATK 1 (AOE 2) burst.
+(The Windwalker / The Mystic) Phase Throw: RANGE 1 | Swap position with target enemy. Upgrade: Apply ROOT after swapping.
+(The Windwalker / The Avatar) Flying Crane Kick: DASH 3 | ATK 2. Upgrade: Dashing over hazard absorbs element into attack.
+(The Mystic) Spirit Palm: RANGE 2 | MAG ATK 2 | PUSH 1 | Collision triggers ATK 2 physical splash. Upgrade: Splash applies WEAKEN.
+(The Mystic / The Avatar) Soul Punch: RANGE 1 | ATK 3 | (Targets MAG instead of DEF). Upgrade: Permanently steal 1 MAG from target.
+(The Windwalker / The Mystic) Hundred Fists: RANGE 1 | ATK 4 | Caster loses 2 MOV on following turn. Upgrade: Gain ATK +1 per target status effect.
+(The Avatar / The Mystic) Mantra of Peace: RANGE 0 | AOE 2 | Apply WEAKEN for 1 turn (does not break on DoT/hazard damage). Upgrade: Allies in radius HEAL 1.
+(The Avatar / The Mystic) Inner Fire: SELF (2 turns) | Physical attacks deal MAG ATK 1 SPLASH. Upgrade: SPLASH creates FIRE terrain.
+(The Windwalker / The Mystic) Void Step: RANGE 3 | Teleport to empty tile adjacent to ally. Upgrade: Landed tile grants +2 MAG for 1 turn.
+(The Windwalker) Cyclone Sweep: RANGE 1 | ARC | PUSH 2 all targets. Upgrade: Gain +1 MOV per enemy pushed.
+(The Windwalker) Updraft: SELF | Gain AIRBORNE and +1 MOV for 2 turns. Upgrade: Passing over enemy applies BLIND.
+(The Avatar) Geyser Strike: RANGE 2 | MAG ATK 2 | PUSH 1 | Creates WATER terrain. Upgrade: PUSH 2 if target on WATER.
 6. Beast Rider
-
-Core Identity: Fast Flanking Melee. Rides their grounded beast companion (wolf/raptor) to fight in tandem. High ground mobility and pursuit tactics.
+Core Identity: Fast Flanking Melee. Rides grounded beast companion. High mobility and pursuit tactics.
 | CON 5 | MOV 4 | STR 3 | DEF 2 | MAG 2 |
-
-Movement Skill: Reposition (Cost: 2 MOV) — Select an adjacent unit. Move them to the empty tile directly on the opposite side of you.
-↳ [+] Upgrade: Range increased to 2. The mount can now snatch an ally or enemy from 2 tiles away.
-
+Innate Trait: Gallop
+Base Mechanic: Standard movement points (MOV) can be split freely before AND after executing a Skill or basic attack (e.g., Move 2 tiles -> Attack -> Move 2 tiles).
+Upgrade: Executing movement both before and after taking an Action grants +1 STR to the attack and +1 DEF during the post-action move.
+Reposition Skill: Reposition (Cost: 2 MOV) — Move adjacent unit to empty tile directly on opposite side of you.
+Upgrade: Range increased to 2 tiles.
 Advanced Classes (Promotion Boosts)
-
-The Griffin Rider: (+4 STR, +2 CON, +2 MOV) Gains AIRBORNE trait. The aerial predator focused strictly on isolating targets, vertical abduction, and dropping enemies into hazards.
-
-The Wyvern Lord: (+4 STR, +2 DEF, +2 CON, 0 MOV) Gains AIRBORNE trait. Heavy dive-bomber utilizing sheer physical force. (Armor prevents movement boost).
-
-The Apex Predator: (+4 STR, +3 MOV) Stays grounded. Strips barding to sprint at maximum speed. Focuses on bleed and hunting low-HP targets.
-
+The Griffin Rider: (+4 STR, +2 CON, +2 MOV) Gains AIRBORNE. Aerial predator isolating targets and dropping enemies into hazards.
+The Wyvern Lord: (+4 STR, +2 DEF, +2 CON, 0 MOV) Gains AIRBORNE. Heavy dive-bomber using physical force.
+The Apex Predator: (+4 STR, +3 MOV) Grounded sprinter focusing on bleed and hunting low-HP targets.
 Passives
-
-(The Griffin Rider) Isolation Tactics: Attacks against enemies with no adjacent allies gain +2 STR. [+] Gain ATK +1 per 1 tile moved this turn.
-
-(The Griffin Rider) Terminal Velocity: Whenever an enemy suffers collision damage from being Dropped, PUSHED, or PULLED into an obstacle or unit, they suffer an additional unmitigated damage equal to your WPN and gain VULNERABLE. [+] Dropping an enemy also applies STAGGER.
-
-(The Griffin Rider) Snatch & Grab: You can now initiate grappling/dragging skills from RANGE 2. [+] Range increased to 3 tiles.
-
-(The Griffin Rider) Safe Landing: Take 0 damage from hazards upon landing. Creates a 3x3 AOE PUSH 1 shockwave when landing from a jump/drop. [+] Shockwave is PUSH 2 instead.
-
-(The Griffin Rider) Aerial Superiority: You gain +2 DEF against melee attacks originating from grounded enemies. [+] You also gain immunity to ROOT from grounded sources.
-
-(The Wyvern Lord) Mount Resilience: Incoming Ranged damage is reduced by a flat 2. [+] Incoming Ranged damage is reduced by 3 instead.
-
-(The Wyvern Lord) Beast's Instinct: If an enemy misses or deals 0 damage, gain +1 STR and +1 AP. [+] Also gain SHIELD 1.
-
-(The Wyvern Lord) Territorial: Enemies that enter a tile adjacent to you suffer ATK 1. [+] Suffer ATK 2 instead.
-
-(The Wyvern Lord) Intimidating Presence: Enemies within Range 2 suffer -1 DEF and -1 MOVE permanently. [+] Range increased to 3 tiles.
-
-(The Wyvern Lord) Dive Bomber: If you move 4 or more tiles before attacking, your attack gains ATK +2. [+] Requires only 3 tiles moved to trigger.
-
-(The Apex Predator) Pack Hunter: When you attack an isolated enemy, your mount automatically follows up with a free ATK 1 bite. This bite ignores 50% of the target's DEF (rounded down). [+] The mount's follow-up bite deals ATK 2 instead.
-
-(The Apex Predator) Blood Scent: Gain +1 MOVE and PIERCE when moving towards an enemy with BLEED. [+] Gain +2 MOVE instead.
-
-(The Apex Predator) Vantage Striker: Ignore difficult terrain. Gain +1 STR if attacking an enemy in difficult terrain/hazards, OR if attacking from a higher elevation (including AIRBORNE). [+] Gain +2 STR instead.
-
-(The Apex Predator) Predatory Drive: Attacks against enemies suffering from BLEED, OR enemies that have no adjacent allies, apply an additional stack of BLEED X (X = your WPN). [+] Attack also applies POISON.
-
-(The Apex Predator) Furious Charge: If you moved in a straight line for 3+ tiles, your next attack applies PUSH 1. [+] Applies PUSH 2 instead.
-
+(The Griffin Rider) Isolation Tactics: Attacks vs isolated enemies gain +2 STR. Upgrade: Gain ATK +1 per 1 tile moved this turn.
+(The Griffin Rider) Terminal Velocity: Collision from Drop/PUSH/PULL deals +WPN unmitigated damage + VULNERABLE. Upgrade: Drop applies STAGGER.
+(The Griffin Rider) Snatch & Grab: Initiate grappling/dragging skills from RANGE 2. Upgrade: Range increased to RANGE 3.
+(The Griffin Rider) Safe Landing: 0 hazard damage landing. Creates 3x3 AOE PUSH 1 shockwave on land. Upgrade: Shockwave PUSH 2.
+(The Griffin Rider) Aerial Superiority: Gain +2 DEF vs grounded melee attacks. Upgrade: Immunity to grounded ROOT.
+(The Wyvern Lord) Mount Resilience: Incoming Ranged damage reduced by Floor(DEF / 2) + 1. Upgrade: Reduced by Floor(DEF / 2) + 2 instead.
+(The Wyvern Lord) Beast's Instinct: Enemy miss or 0 damage -> gain +1 STR and +1 AP. Upgrade: Also gain SHIELD 1.
+(The Wyvern Lord) Territorial: Enemy entering adjacent tile suffers ATK 1. Upgrade: Suffer ATK 2 instead.
+(The Wyvern Lord) Intimidating Presence: Enemies in RANGE 2 suffer -1 DEF and -1 MOVE permanently. Upgrade: Range RANGE 3.
+(The Wyvern Lord) Dive Bomber: Moving 4+ tiles before attack grants ATK +2. Upgrade: Requires 3+ tiles moved.
+(The Apex Predator) Pack Hunter: Attack isolated enemy -> mount follow-up ATK 1 bite (ignores 50% DEF). Upgrade: Follow-up ATK 2.
+(The Apex Predator) Blood Scent: Gain +1 MOVE and PIERCE moving toward BLEEDing enemy. Upgrade: +2 MOVE.
+(The Apex Predator) Vantage Striker: Ignore difficult terrain. +1 STR attacking in hazards or higher elevation. Upgrade: +2 STR.
+(The Apex Predator) Predatory Drive: Attacks vs BLEEDing/isolated enemies apply BLEED X (X = WPN). Upgrade: Applies POISON.
+(The Apex Predator) Furious Charge: Moving straight 3+ tiles applies PUSH 1 on next attack. Upgrade: Applies PUSH 2.
 Active Skills & Upgrades
-
-(The Griffin Rider / The Apex Predator) Pounce: MOVE 3 | ATK 3 | Must land on an empty tile adjacent to target. [+] Landing applies PUSH 1 to the target.
-
-(The Griffin Rider / The Wyvern Lord) Feral Drag: RANGE 1 | Pick up adjacent enemy (Max Size: Medium). Target moves with you for remaining MOVEMENT. [+] Incoming damage is redirected to the dragged enemy.
-
-(The Griffin Rider / The Apex Predator) Maul (Sub-skill): ATK 2 to dragged enemy, then drop them in an adjacent tile. [+] Drop on trap: Trap effectiveness 200%.
-
-(The Wyvern Lord / The Apex Predator) Bestial Roar: CONE 3 | PUSH 2 | Apply FEAR. Target must be suffering from at least 1 other Debuff. [+] Apply DEF -1 to all targets in cone.
-
-(The Wyvern Lord / The Apex Predator) Raking Claws: RANGE 1 | ARC | ATK 2 | Apply BLEED X (X = your WPN). [+] PULL 1 before ATK.
-
-(The Wyvern Lord) Rest & Recover: SELF | Consume all MOVEMENT | HEAL 1, DEF +5 for 1 turn. [+] CLEANSE all debuffs on use.
-
-(The Wyvern Lord / The Griffin Rider) Intimidate: RANGE 0 | AOE 2 | Apply STAGGER to enemies with lower HP than you. [+] PURGE buffs from enemies.
-
-(The Griffin Rider) Fetch: RANGE 4 (Item/Corpse) | Move target item/corpse to a tile adjacent to you. [+] Can pull light allies 2 tiles towards you.
-
-(The Apex Predator / The Wyvern Lord) Savage Bite: RANGE 1 | ATK 4 | Target must have BLEED or POISON. [+] On Kill: Gain SHIELD 2.
-
-(The Apex Predator) Run Down: DASH 3 | ATK 2 | If passing adjacent to an enemy, PUSH them 1 tile. [+] If you PUSH an enemy during this move, apply BLEED X (X = your WPN) to them.
-
-(The Apex Predator / The Wyvern Lord) Thrash: RANGE 1 | ATK 1 (Hits 3 times). [+] Each hit applies BLEED X (X = your WPN).
-
-(The Wyvern Lord) Defensive Posture: SELF | Mount shields you. Gain INTERCEPT 50% and +2 DEF for 1 turn. [+] If hit, PUSH attacker 2 tiles.
-
-(The Griffin Rider) Airlift: RANGE 1 | Pick up an adjacent ally. Drop them in any empty tile adjacent to you at the end of the Player Execution Phase. [+] Ally gains +1 STR on their next attack.
-
-(The Wyvern Lord) Tail Swipe: RANGE 0 | AOE 3x3 | ATK 1 | PUSH 2. [+] If target collides with a wall, apply STAGGER.
-
-(The Apex Predator) Meteor Drop: RANGE 2 | Jump to target empty tile | Deal ATK 2 to all adjacent units upon landing. [+] Targets hit suffer VULNERABLE.
-
+(The Griffin Rider / The Apex Predator) Pounce: MOVE 3 | ATK 3 | Land adjacent to target. Upgrade: Landing applies PUSH 1.
+(The Griffin Rider / The Wyvern Lord) Feral Drag: RANGE 1 | Target CON must be <= your STR. Drag target for remaining MOVEMENT. Upgrade: Incoming damage redirected to target.
+(The Griffin Rider / The Apex Predator) Maul (Sub-skill): ATK 2 to dragged enemy, drop adjacent. Upgrade: Drop on trap: 200% trap damage.
+(The Wyvern Lord / The Apex Predator) Bestial Roar: CONE 3 | PUSH 2 | Apply FEAR (target must be debuffed). Upgrade: Apply DEF -1 in cone.
+(The Wyvern Lord / The Apex Predator) Raking Claws: RANGE 1 | ARC | ATK 2 | Apply BLEED X (X = WPN). Upgrade: PULL 1 before ATK.
+(The Wyvern Lord) Rest & Recover: SELF | Costs 1 AP and consumes remaining MOV | HEAL 1, DEF +5 for 1 turn. Upgrade: CLEANSE all debuffs.
+(The Wyvern Lord / The Griffin Rider) Intimidate: RANGE 0 | AOE 2 | Apply STAGGER to enemies with lower HP. Upgrade: PURGE buffs.
+(The Griffin Rider) Fetch: RANGE 4 (Item/Corpse) | Move target item/corpse adjacent to you. Upgrade: Pull light allies 2 tiles.
+(The Apex Predator / The Wyvern Lord) Savage Bite: RANGE 1 | ATK 4 | Target must have BLEED/POISON. Upgrade: On Kill: SHIELD 2.
+(The Apex Predator) Run Down: DASH 3 | ATK 2 | Passing adjacent applies PUSH 1. Upgrade: Pushing applies BLEED X (X = WPN).
+(The Apex Predator / The Wyvern Lord) Thrash: RANGE 1 | ATK 1 (3 hits). Upgrade: Each hit applies BLEED X (X = WPN).
+(The Wyvern Lord) Defensive Posture: SELF | INTERCEPT 50% and +2 DEF for 1 turn. Upgrade: If hit, PUSH 2 attacker.
+(The Griffin Rider) Airlift: RANGE 1 | Pick up adjacent ally at Step 1. Drop in empty tile at Step 3 (Post-Action Phase). Upgrade: Ally gains +1 STR on next attack.
+(The Wyvern Lord) Tail Swipe: RANGE 0 | AOE 3x3 | ATK 1 | PUSH 2. Upgrade: Wall collision applies STAGGER.
+(The Apex Predator) Meteor Drop: RANGE 2 | Jump to tile | ATK 2 adjacent on land. Upgrade: Targets hit suffer VULNERABLE.
 7. Mage
-
 Core Identity: Magical Ranged DPS. Environmental chain reactions. Devastating AOE.
 | CON 3 | MOV 3 | STR 1 | DEF 1 | MAG 5 |
-
-Movement Skill: Blink (Cost: 3 MOV) — Teleport up to 2 tiles away. Ignores obstacles, traps, and enemy Zones of Control.
-↳ [+] Upgrade: Maximum range increased to 3. You can now leave a 1-tile elemental surface (Fire, Ice, or Water) of your choice on the tile you teleported away from.
-
+Innate Trait: Arcane Overchannel
+Base Mechanic: Executing any spell grants 1 stack of Arcane Overchannel (max 3). Each stack increases MAG ATK by +1. Stacks are maintained across turns, but decay to 0 if a turn passes without the Mage casting an active spell.
+Upgrade: Reaching maximum (3) stacks instantly refunds 1 AP (1/turn) and grants the Mage SHIELD 2.
+Reposition Skill: Blink (Cost: 3 MOV) — Teleport up to 2 tiles away. Ignores obstacles, traps, and enemy ZOC.
+Upgrade: Max range increased to 3. Leave 1-tile elemental surface on departure tile.
 Advanced Classes (Promotion Boosts)
-
 The Geomancer: (+4 MAG, +4 CON, 0 MOV) Create and chain elemental terrains.
-
 The Archmage: (+8 MAG, 0 MOV) Maximize MAG for massive AOE burst damage.
-
-The Graviturge: (+4 MAG, +2 DEF, +2 MOV) Alters their own gravity for weightless, rapid drift. Focus on field manipulation.
-
+The Graviturge: (+4 MAG, +2 DEF, +2 MOV) Gravity manipulation and field drift control.
 Passives
-
-(The Geomancer) Elementalist: Fire leaves FIRE. Ice leaves FROZEN. Lightning strikes ALL units on Water/Ice. [+] Enemies standing on newly created terrain instantly suffer unmitigated damage equal to your WPN.
-
-(The Geomancer) Feedback: Creating terrain grants +1 MAG and SHIELD 1 for 1 turn. [+] Gain SHIELD 2 instead.
-
-(The Geomancer) Elemental Master: +1 MAG for every elemental tile on the map. [+] Also gain +1 DEF if 3+ elemental tiles are on the map.
-
-(The Geomancer) Lasting Terrain: Surfaces last 1 extra turn and deal +1 extra hazard damage. [+] Deal +2 extra hazard damage instead.
-
-(The Geomancer) Surface Syphoner: HEAL 1 and CLEANSE if ending turn on your created surface. [+] HEAL 1 and gain SHIELD 1 instead.
-
-(The Archmage) Mana Leak: When damaged: MAG ATK 1 to adjacent tiles. [+] Deals MAG ATK 2 instead.
-
-(The Archmage) Arcane Overdrive: Gain +3 MAG, but your DEF becomes 0 and you cannot gain SHIELD. [+] Gain +4 MAG, suffer -6 Max HP instead.
-
-(The Archmage) Mana Well: If you end your turn standing on an elemental surface, your next spell costs 0 AP. [+] Also gain +1 MAG for your next turn.
-
-(The Archmage) Mana Siphon: Killing an enemy with a spell restores 1 AP. [+] Also HEAL 1 on kill.
-
-(The Archmage) Overload: Gain +2 MAG, but take 1 Dmg per turn (cannot drop below 1 HP). [+] Gain +3 MAG instead.
-
-(The Graviturge) Wild Magic: Targeting an enemy standing on a hazard casts the spell twice. [+] The second cast gains +1 MAG.
-
-(The Graviturge) Arcane Tether: Enemy moving adjacent suffers MAG ATK 1 and ROOT. [+] Enemy suffers MAG ATK 2 instead.
-
-(The Graviturge) Arcane Mastery: Your AOE spells have +1 radius. [+] AOE spells also gain PIERCE.
-
-(The Graviturge) Arcane Attunement: Casting a spell on an ally grants them +1 DEF and +1 STR for 1 turn. [+] Ally also gains +1 MOV.
-
-(The Graviturge) Gravity Anchor: Enemies suffering from ROOT take +1 damage from your spells. [+] ROOTED enemies take +2 damage instead.
-
+(The Geomancer) Elementalist: Fire leaves FIRE. Ice leaves FROZEN. Lightning hits ALL on Water/Ice. Upgrade: Enemies on new terrain take WPN unmitigated damage.
+(The Geomancer) Feedback: Creating terrain grants +1 MAG and SHIELD 1 for 1 turn. Upgrade: Gain SHIELD 2 instead.
+(The Geomancer) Elemental Master: +1 MAG per elemental tile on map. Upgrade: Gain +1 DEF if 3+ elemental tiles.
+(The Geomancer) Lasting Terrain: Surfaces last 1 extra turn and deal +1 hazard damage. Upgrade: Deal +2 hazard damage instead.
+(The Geomancer) Surface Syphoner: HEAL 1 and CLEANSE if ending turn on created surface. Upgrade: HEAL 1 and SHIELD 1.
+(The Archmage) Mana Leak: When damaged: MAG ATK 1 to adjacent tiles. Upgrade: Deals MAG ATK 2 instead.
+(The Archmage) Arcane Overdrive: Gain +3 MAG. Every spell cast consumes 5% Current HP. Incoming physical damage bypasses 50% of SHIELD to hit health directly. Upgrade: Gain +4 MAG, consumes 5% Current HP per spell cast.
+(The Archmage) Mana Well: Ending turn on elemental surface -> next spell costs 0 AP. Upgrade: Also gain +1 MAG next turn.
+(The Archmage) Mana Siphon: Killing an enemy with a spell restores 1 AP (subject to the global 1 AP refund cap per turn). If the 1 AP refund limit for the turn has already been reached, restores health equal to MAG and grants +1 stack of Arcane Overchannel. Upgrade: Also HEAL 1 on kill.
+(The Archmage) Overload: Gain +2 MAG, take 1 Dmg/turn (cannot drop below 1 HP). Upgrade: Gain +3 MAG instead.
+(The Graviturge) Wild Magic: Targeting enemy on hazard casts spell twice (second cast 0 AP). Upgrade: Second cast gains +1 MAG.
+(The Graviturge) Arcane Tether: Enemy moving adjacent suffers MAG ATK 1 and ROOT. Upgrade: MAG ATK 2 instead.
+(The Graviturge) Arcane Mastery: AOE spells have +1 radius. Upgrade: AOE spells gain PIERCE.
+(The Graviturge) Arcane Attunement: Casting spell on ally grants +1 DEF and +1 STR for 1 turn. Upgrade: Ally gains +1 MOV.
+(The Graviturge) Gravity Anchor: Enemies suffering ROOT take +1 damage from spells. Upgrade: Take +2 damage instead.
 Active Skills & Upgrades
-
-(The Geomancer / The Archmage) Fireball: RANGE 4 | AOE 1 | MAG ATK 3 | Create FIRE terrain. [+] On FROZEN terrain: Create STEAM (AOE 3x3) and deal MAG ATK 2 SPLASH.
-
-(The Geomancer / The Graviturge) Ice Shard: RANGE 4 | MAG ATK 2 | Target MAX MOVEMENT = 1 | Create FROZEN terrain. [+] On FIRE terrain: Create STEAM (AOE 3x3) and deal MAG ATK 2 SPLASH.
-
-(The Geomancer / The Archmage) Chain Lightning: RANGE 4 | MAG ATK 2 | Bounce to 2 nearest enemies within RANGE 2. [+] On WATER/FROZEN terrain: Strike ALL units on that terrain.
-
-(The Graviturge / The Geomancer) Arcane Push: RANGE 3 | MAG ATK 1 | PUSH 3 [+] Leaves Arcane Trail (MAG ATK 1 to units crossing).
-
-(The Graviturge / The Archmage) Teleport: RANGE 4 | MOVE instantly to visible empty tile. Ends turn. [+] No longer ends turn.
-
-(The Archmage) Meteor: RANGE 5 | AOE 2 | MAG ATK 5 | Delay 1 turn. [+] Impact creates CRATER terrain (Difficult terrain, applies BURN X).
-
-(The Graviturge / The Geomancer) Black Hole: RANGE 4 | AOE 2 | PULL 2 all units to center. [+] Pulls hazards/surfaces to center tile.
-
-(The Archmage / The Graviturge) Time Warp: RANGE 3 | Target Ally gains 1 AP. | Spend 4 HP. [+] Target Ally also gains Cooldowns -1.
-
-(The Archmage) Mana Shield: SELF | Convert MAG to SHIELD. Cannot cast spells. [+] Can cast spells (Cost: 1 SHIELD per spell).
-
-(The Archmage) Disintegrate: RANGE 3 | MAG ATK 6 | On Kill: Destroy corpse. [+] On Kill: Gain 1 AP.
-
-(The Graviturge) Gravity Well: RANGE 4 | AOE 2 | All units in range are ROOTED for 1 turn. [+] Also applies BLIND.
-
-(The Geomancer / The Archmage) Elemental Surge: SELF | The next spell cast has +2 Range and +2 AOE. [+] Also grants +1 AP.
-
-(The Geomancer) Earth Spike: RANGE 4 | Summon Obstacle (HP equals Round Down(50% of Max HP)). [+] Obstacle deals MAG ATK 1 to adjacent enemies upon creation.
-
-(The Graviturge) Density Shift: RANGE 3 | Target loses all Push Mitigation (Push distance doubled) or gains STURDY for 2 turns. [+] If target is an enemy, also apply WEAKEN.
-
-(The Archmage) Arcane Barrage: RANGE 4 | MAG ATK 1 (Hits 3 times). [+] Each hit ignores 1 MAG RES.
-
+(The Geomancer / The Archmage) Fireball: RANGE 4 | AOE 1 | MAG ATK 3 | Create FIRE terrain. Upgrade: On FROZEN: Create STEAM (AOE 3x3), MAG ATK 2 splash.
+(The Geomancer / The Graviturge) Ice Shard: RANGE 4 | MAG ATK 2 | Target MAX MOVEMENT = 1 | FROZEN terrain. Upgrade: On FIRE: STEAM (AOE 3x3), MAG ATK 2 splash.
+(The Geomancer / The Archmage) Chain Lightning: RANGE 4 | MAG ATK 2 | Bounce to 2 nearest in RANGE 2. Upgrade: On WATER/FROZEN: Strike ALL on surface.
+(The Graviturge / The Geomancer) Arcane Push: RANGE 3 | MAG ATK 1 | PUSH 3 Upgrade: Leaves Arcane Trail (MAG ATK 1 to units crossing).
+(The Graviturge / The Archmage) Teleport: RANGE 4 | Teleport to a visible empty tile. Upgrade: Gain SHIELD 1 upon landing.
+(The Archmage) Meteor: RANGE 5 | AOE 2 | MAG ATK 5 | Impact occurs at Step 1 of execution on the following turn. Upgrade: Impact creates CRATER terrain (applies BURN X).
+(The Graviturge / The Geomancer) Black Hole: RANGE 4 | AOE 2 | PULL 2 all units to center. Upgrade: Pulls hazards/surfaces to center.
+(The Archmage / The Graviturge) Time Warp: RANGE 3 | Target Ally gains 1 AP | Spend 4 HP. Upgrade: Target Ally Cooldowns -1.
+(The Archmage) Mana Shield: SELF | Convert MAG to SHIELD. Cannot cast spells. Upgrade: Can cast spells (Cost: 1 SHIELD/spell).
+(The Archmage) Disintegrate: RANGE 3 | MAG ATK 6 | On Kill: Destroy corpse. Upgrade: On Kill: Gain 1 AP.
+(The Graviturge) Gravity Well: RANGE 4 | AOE 2 | All units in range ROOTED 1 turn. Upgrade: Also applies BLIND.
+(The Geomancer / The Archmage) Elemental Surge: SELF | Next spell cast +2 Range and +2 AOE. Upgrade: Grants +1 AP.
+(The Geomancer) Earth Spike: RANGE 4 | Summon Obstacle (Floor(50% Max HP)). Upgrade: Obstacle deals MAG ATK 1 adjacent on creation.
+(The Graviturge) Density Shift: RANGE 3 | Target Push Mitigation doubled OR gain STURDY 2 turns. Upgrade: Apply WEAKEN to enemies.
+(The Archmage) Arcane Barrage: RANGE 4 | MAG ATK 1 (Hits 3 times). Upgrade: Each hit ignores 25% of target's MAG.
 8. Archer
-
 Core Identity: Ranged DPS. Master of suppression, line-of-sight dominance, and pinning enemies down.
 | CON 3 | MOV 3 | STR 4 | DEF 1 | MAG 1 |
-
-Innate Trait: Lightfoot — Your standard movement completely ignores movement penalties from difficult terrain.
-↳ [+] Upgrade: You permanently ignore all Traps. Additionally, if you spend 0 MOV during your turn, you gain +1 RANGE and +1 STR on your attack.
-
+Innate Trait: Steady Aim
+Base Mechanic: The Archer can spend MOV equal to their Max MOV during planning (standing still and using no tile movement) to automatically trigger Steady Aim: granting +1 RANGE and +1 STR to all attacks executed that turn (operates automatically in planning, similar to Auto-Run).
+Upgrade: Spending Max MOV grants +2 RANGE, +2 STR, and attacks gain PIERCE.
+Reposition Skill: Sidestep (Cost: 1 MOV) — Move 1 tile in any cardinal direction without altering facing direction or triggering ZOC.
+Upgrade: Sidestepping grants +1 STR to your next ranged attack this turn.
 Advanced Classes (Promotion Boosts)
-
-The Sniper: (+6 STR, +2 MOV) Sprints to vantage points. Focus on absolute line-of-sight dominance and piercing shots.
-
+The Sniper: (+6 STR, +2 MOV) Vantage point sprinter. Focus on LOS dominance and piercing shots.
 The Trapper: (+4 STR, +4 DEF, 0 MOV) Area denier utilizing traps and difficult terrain.
-
-The Nomad: (+2 STR, +2 CON, +3 MOV) Mounts a swift horse to act as light cavalry. Focuses on galloping around flanks, marking targets, and pelt the frontline.
-
+The Nomad: (+2 STR, +2 CON, +3 MOV) Mounted light cavalry flanking and marking targets.
 Passives
-
-(The Sniper) Overwatch: If you end the planning phase without spending your AP, the first enemy to move within your Line of Sight during the Enemy Turn automatically suffers an ATK 1 attack.
-
-(The Sniper) High Ground: Attacking from elevation grants +1 RANGE and ignores 50% of the target's DEF (rounded down).
-
-(The Sniper) Patient Hunter: If you spend 0 MOV during your turn, your attack gains +1 STR.
-
-(The Sniper) True Sight: Your attacks ignore cover bonuses and STEALTH.
-
-(The Sniper) Piercing Momentum: If your attack travels 4 or more tiles before hitting the target, it gains PIERCE.
-
-(The Trapper) Camouflage: If you spend 0 MOV during your turn, gain STEALTH (Range > 3) until your next turn. [+] Next attack out of STEALTH gains +2 STR.
-
-(The Trapper) Area Denial: Traps, Hazard Lines, and Difficult Terrain you create apply ROOT and deal additional unmitigated damage equal to your WPN. [+] Traps also apply POISON.
-
-(The Trapper) Caltrop Expert: Using a skill to place Caltrops reduces its AP cost to 0. [+] Caltrops gain ATK +2 instead.
-
-(The Trapper) Zone Control: Enemies entering RANGE 3 suffer 1 unmitigated Damage and are PUSHED 1 tile back. [+] Suffer 2 unmitigated damage instead.
-
-(The Trapper) Sticky Mud: Difficult terrain you create costs +1 MOVE and removes FEAR. [+] Also applies ROOT.
-
-(The Nomad) Fletching Hoarder: MOVE over enemy corpse: Empower next attack (ATK +2). [+] Empower next attack ATK +3 instead.
-
-(The Nomad) Prey Sighted: Attacks against enemies suffering from any Movement penalty (ROOT, reduced MOV, or difficult terrain) gain +2 STR and ignore 2 DEF. [+] Ignore 4 DEF instead.
-
-(The Nomad) Barrage: If your attack deals exact lethal damage, immediately deal ATK 1 to the next nearest enemy. [+] Deal ATK 2 instead.
-
-(The Nomad) Target Painter: Attacks against enemies suffering from Debuffs gain +2 STR. [+] Attacks gain PIERCE vs Debuffed units.
-
-(The Nomad) Rapid Fire: After attacking, gain +1 MOVE. [+] Gain +2 MOVE instead.
-
+(The Sniper) Overwatch: End planning phase with unspent AP -> pre-plots a cone reaction zone. First enemy entering LOS during resolution suffers a basic attack scaling off WPN.
+(The Sniper) High Ground: Attacking from elevation grants +1 RANGE and ignores 50% DEF.
+(The Sniper) Vantage Anchor: Triggering Steady Aim grants STURDY (immune to PUSH/PULL) until your next turn and grants STEALTH against enemies further than 3 tiles away. Upgrade: Also grants +1 STR while Anchored.
+(The Sniper) True Sight: Attacks ignore cover bonuses and STEALTH.
+(The Sniper) Piercing Momentum: Attack traveling 4+ tiles before hit gains PIERCE.
+(The Trapper) Camouflage: Spending 0 MOV grants STEALTH (Range > 3). Upgrade: Next attack out of STEALTH +2 STR.
+(The Trapper) Area Denial: Traps/Hazards created apply ROOT and +WPN unmitigated damage. Upgrade: Traps apply POISON.
+(The Trapper) Caltrop Expert: Placing Caltrops costs 0 AP. Upgrade: Caltrops gain ATK +2.
+(The Trapper) Zone Control: Enemies entering RANGE 3 suffer 1 unmitigated Dmg and PUSH 1. Upgrade: Suffer 2 unmitigated Dmg.
+(The Trapper) Sticky Mud: Created difficult terrain costs +1 MOVE and removes FEAR. Upgrade: Applies ROOT.
+(The Nomad) Fletching Hoarder: Moving over corpse empowers next attack (ATK +2). Upgrade: Empower ATK +3.
+(The Nomad) Prey Sighted: Attacks vs targets with Movement penalties gain +2 STR and ignore 25% DEF. Upgrade: Ignore 50% DEF.
+(The Nomad) Barrage: Attack dealing exact lethal damage deals ATK 1 to next nearest enemy. Upgrade: Deal ATK 2.
+(The Nomad) Target Painter: Attacks vs debuffed enemies gain +2 STR. Upgrade: Attacks gain PIERCE vs debuffed.
+(The Nomad) Rapid Fire: After attacking, gain +1 MOVE. Upgrade: Gain +2 MOVE instead.
 Active Skills & Upgrades
-
-(The Sniper) Power Shot: RANGE 5 | ATK 3 | PUSH 1 [+] Enemy collision: Apply PIERCE, ATK 2 to second enemy.
-
-(The Trapper / The Nomad) Volley: RANGE 4 | AOE 3x3 | ATK 1 [+] Area becomes difficult terrain (MOVE cost x2).
-
-(The Trapper / The Sniper) Pinning Arrow: RANGE 4 | ATK 1 | Apply ROOT. The ROOT effect breaks instantly if the target takes any damage. [+] If target is PUSHED while Rooted: Apply BLEED X (X = your WPN).
-
-(The Sniper / The Nomad) Piercing Shot: SKEWER 4 | ATK 2 | Apply PIERCE. [+] Arrow bounces off walls at 45-degree angle.
-
-(The Nomad / The Trapper) Toxic Spore Arrow: RANGE 5 | ATK 1 | Apply POISON. [+] Spread POISON to all adjacent enemies on hit.
-
-(The Nomad / The Sniper) Grapple Arrow: RANGE 4 | Shoot wall/obstacle: PULL SELF adjacent. [+] Pass through enemy: ATK 2.
-
-(The Trapper / The Nomad) Explosive Arrow: RANGE 4 | AOE 1 | ATK 2 | Destroy terrain. [+] Ignite flammable terrain/oil.
-
-(The Nomad / The Sniper) Hunter's Mark: RANGE 5 | Apply MARK. Allies gain RANGE +1, PIERCE vs target. [+] Target cannot gain STEALTH or Teleport.
-
-(The Nomad / The Trapper) Repelling Shot: RANGE 2 | ATK 1 | PUSH 3 [+] On Ally: ATK 0, PUSH 3.
-
-(The Trapper) Bear Trap: RANGE 3 | Place Trap: ATK 3 and ROOT. [+] Enemy trapped suffers VULNERABLE.
-
-(The Sniper) Suppressing Fire: RANGE X | ARC | Create a Hazard Line (1 turn). Enemies crossing this line during the Enemy Turn suffer unmitigated damage equal to your WPN and lose 1 MOVEMENT for the turn. [+] Enemies crossing the line also suffer BLIND.
-
-(The Trapper) Caltrop Trap: RANGE 3 | Place trap that applies ROOT and BLEED X (X = your WPN). [+] Trap also applies -2 DEF.
-
-(The Nomad) Parting Shot: RANGE 3 | ATK 2 | You may immediately MOVE 2 tiles after attacking. [+] Gain GHOST during this movement.
-
-(The Sniper) Scout's Eye: RANGE 5 | Strip STEALTH and PURGE buffs from target. [+] Target suffers VULNERABLE.
-
+(The Sniper) Power Shot: RANGE 5 | ATK 3 | PUSH 1 Upgrade: Enemy collision: PIERCE, ATK 2 to second enemy.
+(The Trapper / The Nomad) Volley: RANGE 4 | AOE 3x3 | ATK 1 Upgrade: Area becomes difficult terrain (MOVE cost * 2).
+(The Trapper / The Sniper) Pinning Arrow: RANGE 4 | ATK 1 | Apply ROOT (breaks on damage). Upgrade: Pushing Rooted target applies BLEED X (X = WPN).
+(The Sniper / The Nomad) Piercing Shot: SKEWER 4 | ATK 2 | Apply PIERCE. Upgrade: Bounces off walls at 45-degree angle.
+(The Nomad / The Trapper) Toxic Spore Arrow: RANGE 5 | ATK 1 | Apply POISON. Upgrade: Spread POISON to adjacent on hit.
+(The Nomad / The Sniper) Grapple Arrow: RANGE 4 | Shoot wall/obstacle: PULL SELF adjacent. Upgrade: Pass through enemy: ATK 2.
+(The Trapper / The Nomad) Explosive Arrow: RANGE 4 | AOE 1 | ATK 2 | Destroy terrain. Upgrade: Ignite flammable terrain/oil.
+(The Nomad / The Sniper) Hunter's Mark: RANGE 5 | Apply MARK. Allies gain +1 RANGE, PIERCE vs target. Upgrade: Target cannot STEALTH/Teleport.
+(The Nomad / The Trapper) Repelling Shot: RANGE 2 | ATK 1 | PUSH 3 Upgrade: On Ally: ATK 0, PUSH 3.
+(The Trapper) Bear Trap: RANGE 3 | Place Trap: ATK 3 and ROOT. Upgrade: Trapped enemy suffers VULNERABLE.
+(The Sniper) Suppressing Fire: RANGE 4 | ARC | Create Hazard Line (1 turn). Enemies crossing this line during resolution suffer unmitigated damage equal to your WPN and lose -1 MOV. Upgrade: Crossing applies BLIND.
+(The Trapper) Caltrop Trap: RANGE 3 | Place trap applying ROOT and BLEED X (X = WPN). Upgrade: Trap applies -2 DEF.
+(The Nomad) Parting Shot: RANGE 3 | ATK 2 | May immediately MOVE 2 after attack. Upgrade: Gain GHOST during movement.
+(The Sniper) Scout's Eye: RANGE 5 | Strip STEALTH and PURGE buffs from target. Upgrade: Target suffers VULNERABLE.
 9. Cleric
-
 Core Identity: Healer and Holy Magic. Mitigation and hostile pacifying zones.
 | CON 4 | MOV 3 | STR 1 | DEF 1 | MAG 4 |
-
-Movement Skill: Guardian Step (Cost: All MOV) — Warps to an adjacent tile next to an ally within 5 spaces.
-↳ [+] Upgrade: Range becomes GLOBAL. Upon arrival, the target ally is immediately CLEANSED.
-
+Innate Trait: Selfless Siphon
+Base Mechanic: Whenever the Cleric applies any healing skill (HEAL or MAG HEAL) to an ally, the Cleric automatically restores health to self equal to 25% of the total healing delivered (rounded down).
+Upgrade: Self-healing percentage increases to 50%. If the Cleric is already at Max HP, self-healing converts directly into SHIELD.
+Reposition Skill: Guardian Step (Cost: All MOV) — Warps adjacent to ally within 5 spaces.
+Upgrade: Range becomes GLOBAL. Target ally immediately CLEANSED.
 Advanced Classes (Promotion Boosts)
-
-The Paladin: (+2 CON, +2 DEF, +3 MOV) Mounts an armored warhorse to act as a frontline emergency responder. Balances damage mitigation and point-blank heals.
-
-The Seraph: (+6 MAG, +2 MOV) Channels pure holy energy to manifest ethereal wings for gliding. Focus on utility, crowd control, and cleansing.
-
-The Zealot: (+4 MAG, +4 STR, 0 MOV) Focus on retaliation mechanics and punishing enemy aggression.
-
+The Paladin: (+2 CON, +2 DEF, +3 MOV) Mounted warhorse frontline emergency responder.
+The Seraph: (+6 MAG, +2 MOV) Ethereal winged gliding support focusing on utility and cleansing.
+The Zealot: (+4 MAG, +4 STR, 0 MOV) Retaliation mechanics and punishing enemy aggression.
 Passives
-
-(The Paladin) Blood Donation: Can Overheal allies (grants SHIELD). Every 1 point of SHIELD granted drains 1 HP from you. [+] Excess SHIELD granted also grants the ally +1 STR.
-
-(The Paladin) Sacred Shield: Allies at full health gain +2 DEF and immunity to debuffs. [+] Also gain +1 MAG.
-
-(The Paladin) Divine Blessing: Healing an ally grants them +1 STR for 1 turn. If they are already at Max HP, they gain +2 STR instead. [+] Gain +2 STR for 2 turns instead.
-
-(The Paladin) Frontline Medic: Healing skills restore +1 additional HP if you are adjacent to an enemy. [+] Restore +2 additional HP instead.
-
-(The Paladin) Armor of Faith: When you heal an ally, you both gain +1 DEF for 1 turn. [+] You both gain +2 DEF instead.
-
-(The Seraph) Divine Overflow: Whenever you apply a HEAL or MAG HEAL skill to an ally who is already at their Max HP, you trigger a MAG ATK 1 pulse that hits all enemies adjacent to them. [+] Pulse deals MAG ATK 2 instead.
-
-(The Seraph) Divine Intervention: Once per combat: Ally taking lethal damage survives at 1 HP and teleports adjacent to you. [+] Ally also gains SHIELD 2 upon teleporting.
-
-(The Seraph) Holy Ground: Every turn, HEAL 1 adjacent allies and PURGE adjacent enemies. [+] HEAL 1 to allies, and also apply BLIND to enemies.
-
-(The Seraph) Prayer: If you haven't attacked this turn, your next heal is doubled. [+] Next heal also grants CLEANSE.
-
-(The Seraph) Purity: Whenever you would suffer Poison/Bleed, instead HEAL 2 and gain +1 MAG. [+] HEAL 2 and CLEANSE.
-
-(The Zealot) Martyr's Blood: When Hit: Deal MAG ATK 1 to adjacent enemies. [+] Deal MAG ATK 2 to adjacent enemies instead.
-
-(The Zealot) Divine Retribution: Enemies dealing damage to an ally within Range 3 suffer MAG ATK 1. [+] Suffer MAG ATK 2 instead.
-
-(The Zealot) Holy Radiance: Allies within RANGE 2 gain +1 MAG and +1 STR. [+] Allies also gain +1 DEF.
-
-(The Zealot) Retribution: Melee attackers suffer MAG ATK 1 and are PUSHED 1 tile. [+] PUSH 2 instead.
-
-(The Zealot) Zealous Protection: Allies damaged by an enemy gain +1 STR for 1 turn. [+] Ally also gains +1 DEF.
-
+(The Paladin) Blood Donation: Overheal grants SHIELD (drains equal HP from self). Upgrade: Excess SHIELD grants +1 STR.
+(The Paladin) Sacred Shield: Allies at full health gain +2 DEF and debuff immunity. Upgrade: Gain +1 MAG.
+(The Paladin) Divine Blessing: Healing ally grants +1 STR for 1 turn (+2 STR if at Max HP). Upgrade: +2 STR for 2 turns.
+(The Paladin) Frontline Medic: Healing skills restore +1 HP if adjacent to enemy. Upgrade: Restore +2 HP instead.
+(The Paladin) Armor of Faith: Healing ally grants both +1 DEF for 1 turn. Upgrade: Both gain +2 DEF.
+(The Seraph) Divine Overflow: HEAL on ally at Max HP -> MAG ATK 1 pulse to adjacent enemies. Upgrade: Pulse MAG ATK 2.
+(The Seraph) Divine Intervention: Once per combat: ally taking lethal survives at 1 HP and teleports to you. Upgrade: Ally gains SHIELD 2.
+(The Seraph) Holy Ground: Every turn: HEAL 1 adjacent allies, PURGE adjacent enemies. Upgrade: Apply BLIND to enemies.
+(The Seraph) Prayer: Not attacking this turn doubles next heal. Upgrade: Next heal grants CLEANSE.
+(The Seraph) Purity: Suffering Poison/Bleed instead triggers HEAL 2 and +1 MAG. Upgrade: HEAL 2 and CLEANSE.
+(The Zealot) Martyr's Blood: When Hit: MAG ATK 1 to adjacent enemies. Upgrade: MAG ATK 2 to adjacent enemies.
+(The Zealot) Divine Retribution: Enemy damaging ally in RANGE 3 suffers MAG ATK 1. Upgrade: Suffer MAG ATK 2.
+(The Zealot) Holy Radiance: Allies in RANGE 2 gain +1 MAG and +1 STR. Upgrade: Allies gain +1 DEF.
+(The Zealot) Retribution: Melee attackers suffer MAG ATK 1 and PUSH 1. Upgrade: PUSH 2 instead.
+(The Zealot) Zealous Protection: Allies damaged by enemy gain +1 STR for 1 turn. Upgrade: Gain +1 DEF.
 Active Skills & Upgrades
-
-(The Seraph / The Paladin) Holy Light: RANGE 3 | MAG HEAL 3 [+] Target enemy: MAG ATK 4.
-
-(The Paladin / The Zealot) Smite: RANGE 3 | MAG ATK 2 [+] Closest Ally to target restores HP equal to damage dealt.
-
-(The Seraph / The Paladin) Cleansing Aura: RANGE 0 | AOE 2 | CLEANSE allies, PURGE enemies. [+] Ally gains STR +1 per debuff Cleansed.
-
-(The Seraph / The Zealot) Sanctuary: RANGE 2 | Create 1-tile SANCTUARY (Allies untargetable) for 2 turns. [+] Enemies entering are PUSH 1.
-
-(The Seraph / The Zealot) Blinding Ray: SKEWER 4 | MAG ATK 1 | Apply BLIND. [+] Target gains CONFUSION.
-
-(The Zealot / The Paladin) Divine Hammer: RANGE 2 | Summon Obstacle (HP equals Round Down(10% of Max HP)) | MAG ATK 2, PUSH 1. [+] Obstacle projects HOLY AURA passive.
-
-(The Paladin / The Zealot) Life Link: RANGE 3 | Link SELF and Ally. Whenever the Ally takes damage, reduce it by 3. You suffer 2 unmitigated damage. [+] You no longer suffer the self-damage.
-
-(The Paladin / The Seraph) Prayer of Fortitude: RANGE 3 | Target Ally gains DEF +3, STURDY. [+] Ally counterattacks in melee (RETALIATION).
-
-(The Paladin / The Seraph) Resurrection: RANGE 1 | Revive Ally (10% HP). SELF spends 10 HP. [+] Ally gains SHIELD 2 upon revival.
-
-(The Zealot / The Seraph) Consecrate Ground: RANGE 0 | AOE 2 | Create HOLY GROUND (Allies MAG HEAL 1, Enemies MAG ATK 1 on move). [+] Enemies standing on HOLY GROUND also suffer -1 DEF.
-
-(The Zealot / The Paladin) Holy Wrath: RANGE 3 | MAG ATK 3 | If target has a debuff, apply STAGGER. [+] Also applies PUSH 2.
-
-(The Zealot / The Seraph) Divine Guidance: RANGE 3 | Target Ally gains 1 AP. | SELF MOVEMENT = 0 next turn. [+] SELF is no longer rooted next turn.
-
-(The Paladin) Shield of Faith: RANGE 2 | Target Ally gains SHIELD 3 and INTERCEPT 50%. [+] Target Ally counter-attacks with ATK 1 when intercepting.
-
-(The Zealot) Martyr's Chains: RANGE 3 | Link two enemies. When one takes Holy/Magic damage, the other suffers MAG ATK 1. [+] Linked enemies also suffer BLIND.
-
+(The Seraph / The Paladin) Holy Light: RANGE 3 | MAG HEAL 3 Upgrade: Target enemy: MAG ATK 4.
+(The Paladin / The Zealot) Smite: RANGE 3 | MAG ATK 2 Upgrade: Closest Ally to target gains SHIELD equal to 50% of damage dealt.
+(The Seraph / The Paladin) Cleansing Aura: RANGE 0 | AOE 2 | CLEANSE allies, PURGE enemies. Upgrade: Ally STR +1 per debuff Cleansed.
+(The Seraph / The Zealot) Sanctuary: RANGE 2 | Create a 1-tile SANCTUARY zone for 2 turns. Allies standing on SANCTUARY gain STEALTH and INVULNERABLE. Upgrade: Enemies entering PUSH 1.
+(The Seraph / The Zealot) Blinding Ray: SKEWER 4 | MAG ATK 1 | Apply BLIND. Upgrade: Target gains CONFUSION.
+(The Zealot / The Paladin) Divine Hammer: RANGE 2 | Summon Obstacle (Floor(25% Caster Max HP)) | MAG ATK 2, PUSH 1. Upgrade: Obstacle projects HOLY AURA.
+(The Paladin / The Zealot) Life Link: RANGE 3 | Link SELF and Ally. Ally damage reduced by 3; suffer 2 self-damage. Upgrade: No self-damage.
+(The Paladin / The Seraph) Prayer of Fortitude: RANGE 3 | Target Ally gains DEF +3, STURDY. Upgrade: Ally counterattacks in melee.
+(The Paladin / The Seraph) Resurrection: RANGE 1 | Revive Ally (10% HP). Spend 10 HP. Ally acts on subsequent turn. Upgrade: Ally gains SHIELD 2.
+(The Zealot / The Seraph) Consecrate Ground: RANGE 0 | AOE 2 | Create HOLY GROUND (MAG HEAL 1 allies starting turn inside, MAG ATK 1 enemies moving inside). Upgrade: Enemies lose -1 DEF.
+(The Zealot / The Paladin) Holy Wrath: RANGE 3 | MAG ATK 3 | If target debuffed, apply STAGGER. Upgrade: Applies PUSH 2.
+(The Zealot / The Seraph) Divine Guidance: RANGE 3 | Target Ally gains 1 AP | SELF MOVEMENT = 0 next turn. Upgrade: SELF not rooted next turn.
+(The Paladin) Shield of Faith: RANGE 2 | Target Ally gains SHIELD 3 and INTERCEPT 50%. Upgrade: Counter-attack ATK 1 on intercept.
+(The Zealot) Martyr's Chains: RANGE 3 | Link two enemies. Taking Magic dmg -> other suffers MAG ATK 1. Upgrade: Applies BLIND.
 10. Shaman
-
 Core Identity: Debuff / Buffer Support. Master of voodoo physics.
 | CON 3 | MOV 3 | STR 1 | DEF 1 | MAG 4 |
-
-Movement Skill: Usher (Cost: 2 MOV) — You do not move. Select an ally within range 2. They immediately move 1 tile into an empty adjacent space.
-↳ [+] Upgrade: Usher range increased to 4. You can now use Usher to instantly move your active Totems 2 tiles.
-
+Innate Trait: Hexing Presence
+Base Mechanic: All enemies within RANGE 2 of the Shaman or any active Totem suffer -2 STR, -2 MAG (reducing enemy damage output) and -2 DEF (making enemies easier to kill). Affected enemies cannot gain SHIELD.
+Upgrade: Aura radius increases to RANGE 3 and affected enemies lose -1 MOV.
+Reposition Skill: Usher (Cost: 2 MOV) — You do not move. Select ally within RANGE 2. They move 1 tile into empty space.
+Upgrade: Usher range increased to RANGE 4. Can move active Totems 2 tiles.
 Advanced Classes (Promotion Boosts)
-
 The Spirit Caller: (+4 CON, +4 DEF, 0 MOV) Deploy multiple totems to buff allies.
-
-The Bloodweaver: (+4 MAG, +4 CON, 0 MOV) Chain enemies together to share damage and suffering.
-
-The Soulwalker: (+6 MAG, +2 MOV) Steps halfway into the spirit realm for eerie, gliding speed. Focuses on permanent stat debuffs.
-
+The Bloodweaver: (+4 MAG, +4 CON, 0 MOV) Chain enemies together to share damage.
+The Soulwalker: (+6 MAG, +2 MOV) Spirit realm gliding speed and permanent stat debuffs.
 Passives
-
-(The Spirit Caller) Echoing Spirits: Totems pulse twice per turn. Whenever an enemy takes damage from a Hazard or Debuff, your next attack gains +1 MAG. [+] Totems also gain +2 HP.
-
-(The Spirit Caller) Spiritual Offering: Whenever you Summon a Totem OR cast a skill using HP instead of AP, you instantly gain SHIELD 1. [+] Gain SHIELD 2 instead.
-
-(The Spirit Caller) Spiritual Guardian: Your Totems, your Linked Allies, and your Ancestral Ghost project a +1 DEF aura to all adjacent allies. [+] Aura grants +2 DEF instead.
-
-(The Spirit Caller) Voodoo Curse: Enemies adjacent to your totems suffer -1 DEF. [+] Suffer -2 DEF instead.
-
-(The Spirit Caller) Voodoo Conduit: The maximum Range or Area of Effect for all your Totems, Voodoo Links, and Debuff Skills is increased by 1 tile. [+] Increased by 2 tiles instead.
-
-(The Bloodweaver) Voodoo Doll: When Hit, the closest debuffed enemy suffers unmitigated damage equal to your WPN. [+] Enemy suffers unmitigated damage equal to WPN x 2 instead.
-
-(The Bloodweaver) Spirit Link: Linked enemies take unmitigated damage equal to your WPN When Hit. [+] Linked enemies take unmitigated damage equal to WPN x 2 instead.
-
-(The Bloodweaver) Pain Sharing: Enemies connected by your links take +1 Damage from all sources. [+] Linked enemies take +2 Damage instead.
-
-(The Bloodweaver) Sympathetic Magic: When a linked ally is healed, you HEAL 1 and gain +1 MAG. [+] HEAL 1 and gain +2 MAG instead.
-
-(The Bloodweaver) Chain Reaction: Applying PUSH to a linked enemy applies PUSH 1 to all other linked enemies. [+] Applies PUSH 2 to all linked enemies instead.
-
-(The Soulwalker) Soul Collector: On Kill: Drop Soul Orb. Collect for MAG +1, Max HP +1 (Capped at +3 per combat). [+] Capped at +5 per combat instead.
-
-(The Soulwalker) Hexing Touch: Melee attackers suffer permanent STR -1 and DEF -1. [+] Attackers also suffer -1 MOV.
-
-(The Soulwalker) Ritual Sacrifice: Once per turn: cast skill using 3 HP instead of AP. [+] Cast skill using 1 HP instead.
-
-(The Soulwalker) Soul Burn: Debuffed enemies take +1 damage from all sources and have -1 MOVE. [+] Take +2 damage instead.
-
-(The Soulwalker) Soul Weaver: Healing a unit deterministically removes their oldest debuff and applies it to nearest enemy. [+] Healing deterministically applies the debuff to the 2 nearest enemies.
-
+(The Spirit Caller) Echoing Spirits: Totems pulse twice/turn. Enemy taking hazard/debuff damage -> next attack +1 MAG. Upgrade: Totems +2 HP.
+(The Spirit Caller) Spiritual Offering: Summoning Totem or using HP for skill grants SHIELD 1. Upgrade: Gain SHIELD 2.
+(The Spirit Caller) Spiritual Guardian: Totems, Linked Allies, and Ghost project +1 DEF aura to adjacent. Upgrade: Aura +2 DEF.
+(The Spirit Caller) Miasma Resonance: Enemies inside a Hexing Presence aura take +1 extra damage per tick from all status effect DoTs (BURN, BLEED, POISON) AND suffer -1 MOV. Upgrade: DoT extra damage increases to +2.
+(The Spirit Caller) Voodoo Conduit: Max Range/AOE for Totems, Links, and Debuffs increased by +1 tile. Upgrade: +2 tiles.
+(The Bloodweaver) Voodoo Doll: When Hit, closest debuffed enemy suffers WPN unmitigated damage. Upgrade: WPN * 2 damage.
+(The Bloodweaver) Spirit Link: Linked enemies take WPN unmitigated damage When Hit. Upgrade: WPN * 2 damage.
+(The Bloodweaver) Pain Sharing: Linked enemies take +1 Damage from all sources. Upgrade: +2 Damage instead.
+(The Bloodweaver) Sympathetic Magic: Linked ally healed -> HEAL 1 and +1 MAG. Upgrade: HEAL 1 and +2 MAG.
+(The Bloodweaver) Chain Reaction: Applying PUSH to linked enemy applies PUSH 1 to all linked. Upgrade: PUSH 2 to all linked.
+(The Soulwalker) Soul Collector: On Kill: Drop Soul Orb (MAG +1, Max HP +1, cap +3/combat). Collected automatically when any ally enters tile. Upgrade: Cap +5/combat.
+(The Soulwalker) Hexing Touch: Melee attackers suffer permanent STR -1 and DEF -1. Upgrade: Attackers -1 MOV.
+(The Soulwalker) Ritual Sacrifice: 1/turn: cast skill using 3 HP instead of AP. Upgrade: Cast using 1 HP.
+(The Soulwalker) Soul Burn: Debuffed enemies take +1 damage and -1 MOVE. Upgrade: +2 damage.
+(The Soulwalker) Soul Weaver: Healing unit removes oldest debuff, applies to nearest enemy. Upgrade: Applies to 2 nearest enemies.
 Active Skills & Upgrades
-
-(The Soulwalker / The Bloodweaver) Curse of Weakness: RANGE 4 | Target STR -2, DEF -2 (3 turns). [+] Target Push Mitigation = 0 (Pushed maximum distance).
-
-(The Spirit Caller / The Bloodweaver) Healing Totem: RANGE 2 | Summon Totem | AOE 2 pulse: MAG HEAL 1. [+] Pulse applies CLEANSE.
-
-(The Spirit Caller / The Soulwalker) Flame Totem: RANGE 2 | Summon Totem | AOE 2 pulse: MAG ATK 1. [+] Pulse creates FIRE terrain.
-
-(The Bloodweaver / The Spirit Caller) Bloodlust: RANGE 3 | Ally gains "BLOODLUST" (STR +2, DEF -2, MOV +1, SUFFER 2 unmitigated damage/turn). [+] Ally attacks apply BLEED X (X = your MAG).
-
-(The Soulwalker / The Bloodweaver) Hex: RANGE 3 | Apply POLYMORPH (1 turn). Target's Current HP must be lower than your Max HP. Bosses are immune. [+] Target is also inflicted with VULNERABLE upon transforming.
-
-(The Bloodweaver / The Soulwalker) Voodoo Link: RANGE 3 | Link 2 enemies. When one takes damage, the other suffers unmitigated damage equal to your WPN. [+] Shared PUSH effects.
-
-(The Soulwalker / The Bloodweaver) Terrify: RANGE 2 | Apply FEAR. Target must be suffering from at least 1 other debuff. [+] Also strips all SHIELD from the target.
-
-(The Bloodweaver / The Soulwalker) Miasma: RANGE 3 | MAG ATK 1 | Apply POISON. [+] POISON spreads to adjacent enemies on PUSH collision.
-
-(The Spirit Caller / The Bloodweaver) Bone Spear: SKEWER 4 | ATK 2 | Create BONE BARRICADE (HP equals Round Down(50% of Max HP)). [+] Barricade acts as Lightning Rod for Casters.
-
-(The Soulwalker) Ancestral Spirit: RANGE 1 (Ally Corpse) | Summon 1-HP Ghost Ally (1 turn). [+] Ghost Ally uses [+] upgraded skills.
-
-(The Spirit Caller) Totem Guard: RANGE 2 | Summon Totem. Adjacent allies reduce incoming Ranged damage by 2. [+] Adjacent allies also gain +1 DEF against melee attacks.
-
-(The Bloodweaver / The Soulwalker) Sympathetic Bond: RANGE 3 | Link an Ally and an Enemy. Whenever the Ally receives a HEAL, the Enemy suffers unmitigated damage equal to your WPN. [+] Whenever the Enemy takes damage, the linked Ally HEALS 1.
-
-(The Spirit Caller) Earthbind Totem: RANGE 2 | Summon Totem | AOE 2 pulse: Apply ROOT to all enemies. [+] Pulse also applies WEAKEN.
-
-(The Soulwalker) Soul Siphon: RANGE 3 | MAG ATK 1. Deals +1 Damage for each debuff on the target. [+] You HEAL 1 for each debuff on the target.
-
-(The Bloodweaver) Pain Spike: RANGE 3 | ATK 2 | If target is linked, deal ATK 1 to all other linked enemies. [+] Linked enemies also suffer BLIND.
-
+(The Soulwalker / The Bloodweaver) Curse of Weakness: RANGE 4 | Target STR -2, DEF -2 (3 turns). Upgrade: Target Push Mitigation = 0.
+(The Spirit Caller / The Bloodweaver) Healing Totem: RANGE 2 | Summon Totem | AOE 2 pulse: MAG HEAL 1. Upgrade: Pulse applies CLEANSE.
+(The Spirit Caller / The Soulwalker) Flame Totem: RANGE 2 | Summon Totem | AOE 2 pulse: MAG ATK 1. Upgrade: Pulse creates FIRE terrain.
+(The Bloodweaver / The Spirit Caller) Bloodlust: RANGE 3 | Ally gains BLOODLUST (STR +2, DEF -2, MOV +1, spend 2 HP/turn). Upgrade: Attacks apply BLEED X.
+(The Soulwalker / The Bloodweaver) Hex: RANGE 3 | Apply WITHER (1 turn). Target Current HP < Max HP. Against Bosses, damage output reduction is 25%. Upgrade: Target is also inflicted with VULNERABLE upon being Withered.
+(The Bloodweaver / The Soulwalker) Voodoo Link: RANGE 3 | Link 2 enemies. Shared damage equal to WPN. Upgrade: Shared PUSH effects.
+(The Soulwalker / The Bloodweaver) Terrify: RANGE 2 | Apply FEAR (target must be debuffed). Upgrade: Boss Fallback: If target is immune to FEAR, strip all SHIELD and apply VULNERABLE.
+(The Bloodweaver / The Soulwalker) Miasma: RANGE 3 | MAG ATK 1 | Apply POISON. Upgrade: POISON spreads on PUSH collision.
+(The Spirit Caller / The Bloodweaver) Bone Spear: SKEWER 4 | ATK 2 | Create BONE BARRICADE on furthest empty tile along line (Floor(50% Max HP)). Upgrade: Barricade acts as Lightning Rod.
+(The Soulwalker) Ancestral Spirit: RANGE 1 (Ally Corpse) | Summon 1-HP Ghost Ally (1 turn) that echoes your next cast. Upgrade: Ghost Ally uses upgraded skills.
+(The Spirit Caller) Totem Guard: RANGE 2 | Summon Totem. Adjacent allies reduce Ranged damage by 2. Upgrade: Gain +1 DEF vs melee.
+(The Bloodweaver / The Soulwalker) Sympathetic Bond: RANGE 3 | Link Ally and Enemy. Ally HEAL -> Enemy suffers WPN damage. Upgrade: Enemy damage -> Ally HEAL 1.
+(The Spirit Caller) Earthbind Totem: RANGE 2 | Summon Totem | AOE 2 pulse: Apply ROOT to enemies. Upgrade: Pulse applies WEAKEN.
+(The Soulwalker) Soul Siphon: RANGE 3 | MAG ATK 1. Deals +1 Damage per target debuff. Upgrade: HEAL 1 per debuff.
+(The Bloodweaver) Pain Spike: RANGE 3 | ATK 2 | If target linked, deal ATK 1 to linked enemies. Upgrade: Linked enemies suffer BLIND.
 11. Lancer
-
-Core Identity: Mid-Range Melee DPS. Grounded polearm specialist. Uses RANGE 2 attacks, linear physics, and momentum to pierce enemy lines.
+Core Identity: Mid-Range Melee DPS. Grounded polearm specialist. Uses RANGE 2 attacks, linear physics, and momentum.
 | CON 5 | MOV 3 | STR 4 | DEF 3 | MAG 1 |
-
-Innate Trait: Polearm Mastery — All basic attacks have a Range of 2. All extended-reach melee attacks deal 30% less damage when used at Range 1.
-Movement Skill: Push (Cost: 0 MOV) — Select an adjacent ally. Apply PUSH 1 to them.
-↳ [+] Upgrade: Limit once per turn. Pushing a unit grants you +1 STR for your next attack this turn.
-
+Innate Trait: Polearm Mastery
+Base Mechanic: All basic attacks have a base range of RANGE 2. Extended-reach attacks deal 30% less damage when used at point-blank RANGE 1.
+Upgrade: Attacking an enemy from exactly RANGE 2 grants +1 STR and ignores 2 DEF.
+Reposition Skill: Push (Cost: 0 MOV) — Select adjacent ally. Apply PUSH 1 to them.
+Upgrade: Limit 1/turn. Pushing unit grants +1 STR on next attack.
 Advanced Classes (Promotion Boosts)
-
-The Cavalier: (+2 STR, +2 CON, +3 MOV) Mounts a light warhorse. Focuses on straight-line momentum, gaining extreme damage by crashing through the enemy formation.
-
-The Skystriker: (+4 STR, +2 CON, +2 MOV) Weaponizing the Z-Axis. Vaults over the frontline to strike the backline squishies, using gravity as raw damage.
-
-The Halberdier: (+4 STR, +4 DEF, 0 MOV) The ultimate spatial puzzle. They care zero about momentum, focusing strictly on "Tipper" mechanics and holding the perfect Range 2 distance.
-
+The Cavalier: (+2 STR, +2 CON, +3 MOV) Light warhorse straight-line momentum build.
+The Skystriker: (+4 STR, +2 CON, +2 MOV) Weaponized Z-Axis vaulting over frontlines.
+The Halberdier: (+4 STR, +4 DEF, 0 MOV) Tipper mechanics and RANGE 2 spatial control.
 Passives
-
-(The Cavalier) Kinetic Charge: You gain +1 STR for every tile moved in a continuous straight line before attacking this turn.
-
-(The Cavalier) Unstoppable Mass: If you move your maximum MOVEMENT before attacking, your attack gains PIERCE and you gain immunity to ROOT for 1 turn.
-
-(The Cavalier) Canto: Your standard movement gains the CANTO keyword.
-
-(The Cavalier) Frontline Defense: Gain +1 DEF and immunity to Ranged attacks if moved 3+ tiles. [+] Also gain SHIELD 1.
-
-(The Cavalier) Flanking Strike: Attacks originating from the side of an enemy ignore 2 DEF. [+] Ignores 4 DEF instead.
-
-(The Skystriker) Plunging Attack: If you use an active skill that costs AP to jump or teleport, your next basic attack this turn gains +3 ATK. [+] The attack also gains PIERCE.
-
-(The Skystriker) Crashing Impact: Landing from a jump creates a physical shockwave, applying PUSH 1 to all adjacent enemies. [+] Enemies pushed into walls, obstacles, or other units suffer STAGGER.
-
-(The Skystriker) Pole-Plant: Your 0-AP Push can now be used on destructible obstacles and traps (not just units). Pushing a trap destroys it and grants you SHIELD 2. [+] The trap's destruction also deals 2 unmitigated damage to adjacent enemies.
-
-(The Skystriker) Spear Drop: If you attack an enemy that you specifically vaulted over earlier this turn, your attack ignores 2 DEF and applies BLEED X (where X = your WPN). [+] The attack ignores 4 DEF instead.
-
-(The Skystriker) Springboard: On Kill: You may immediately vault into the defeated enemy's space for 0 AP before their corpse is removed. If you do, gain +1 MOV upon landing. [+] Also gain 1 AP upon landing (Limit once per turn).
-
-(The Halberdier) Sweet Spot: Attacks originating from exactly RANGE 2 gain +2 ATK and ignore 2 DEF. [+] Ignore 4 DEF instead.
-
-(The Halberdier) Reach Advantage: When attacking a melee unit from exactly RANGE 2, they are physically prevented from triggering standard counter-attacks or Retaliation. [+] Target also suffers -1 DEF.
-
-(The Halberdier) Disengage: If forced to attack an enemy at RANGE 1, your attack automatically applies PUSH 1 to yourself before damage is calculated (re-establishing your Range 2 sweet spot). [+] Also applies PUSH 1 to the enemy.
-
-(The Halberdier) Zone of Control: If an enemy ends their movement exactly 2 tiles away from you during the Enemy Turn, they automatically suffer a basic attack (Limit once per round). [+] This automatic attack gains PIERCE.
-
-(The Halberdier) Leverage: If you use your 0-AP Push skill on a unit, your next attack this turn gains PIERCE and you gain +1 MOV. [+] Also gain SHIELD 1.
-
+(The Cavalier) Kinetic Charge: Gain +1 STR per tile moved in continuous straight line before attacking.
+(The Cavalier) Unstoppable Mass: Moving max MOVEMENT before attack grants PIERCE and 1-turn ROOT immunity.
+(The Cavalier) Canto: Standard movement gains CANTO keyword.
+(The Cavalier) Frontline Defense: Gain +1 DEF and Ranged attack immunity if moved 3+ tiles. Upgrade: Gain SHIELD 1.
+(The Cavalier) Flanking Strike: Attacks from side ignore 2 DEF. Upgrade: Ignore 4 DEF.
+(The Skystriker) Plunging Attack: AP jump/teleport skill grants next basic attack ATK +3. Upgrade: Attack gains PIERCE.
+(The Skystriker) Crashing Impact: Landing from jump creates PUSH 1 shockwave adjacent. Upgrade: Collision applies STAGGER.
+(The Skystriker) Pole-Plant: 0-AP Push can target traps/obstacles. Pushing trap destroys it -> SHIELD 2. Upgrade: Destruction deals 2 Dmg.
+(The Skystriker) Spear Drop: Attacking vaulted enemy ignores 2 DEF and applies BLEED X (X = WPN). Upgrade: Ignore 4 DEF.
+(The Skystriker) Springboard: On Kill: vault into defeated space for 0 AP before corpse removal. Upgrade: Gain +1 AP on land.
+(The Halberdier) Pivot Leverage: Attacks executed from exactly RANGE 2 apply PUSH 1 and reduce the target's movement by -2 MOV on their next turn. If the target collides with a wall or obstacle during this push, apply STAGGER. Upgrade: Ignore 4 DEF.
+(The Halberdier) Reach Advantage: Attacking melee unit from RANGE 2 prevents Retaliation. Upgrade: Target loses DEF equal to Lancer's WPN.
+(The Halberdier) Disengage: Attacking at RANGE 1 automatically applies PUSH 1 to self. Upgrade: Also applies PUSH 1 to enemy.
+(The Halberdier) Zone of Control: Enemy ending move exactly 2 tiles away suffers basic attack during Step 2 (Action Phase) (1/round). Upgrade: Attack gains PIERCE.
+(The Halberdier) Leverage: 0-AP Push grants next attack PIERCE and +1 MOV. Upgrade: Gain SHIELD 1.
 Active Skills & Upgrades
-
-(The Cavalier / The Skystriker) Piercing Charge: DASH 3 | ATK 2 (RANGE 2) | PUSH 2 [+] Create TRAMPLED terrain behind you (MOVE cost x2). If you used Push earlier this turn, PUSH 3 instead.
-
-(The Halberdier / The Skystriker) Sweeping Halberd: RANGE 2 | ARC | ATK 2 | PULL 1 [+] Enemy collision on PULL applies STAGGER. If you used Push earlier this turn, PULL 2 instead.
-
-(The Skystriker / The Cavalier) Vaulting Leap: RANGE 2 | ATK 2 | Target DEF = 0 (1 turn). [+] Armor explodes: ATK 1 (AOE 1 around target).
-
-(The Halberdier / The Cavalier) Run Down: RANGE 2 | ATK 3 | Deal ATK +2 vs targets with FEAR or lower MOVEMENT. [+] On Kill: Gain MAX MOVEMENT +2.
-
-(The Cavalier / The Halberdier) Rallying Cry: RANGE 0 | AOE 2 | Allies gain MAX MOVEMENT +1 next turn. [+] Allies gain TRAMPLE (1 turn).
-
-(The Skystriker / The Cavalier) Flanking Maneuver: MOVE (L-Shape) | Side attack: Damage x2. [+] Gain GHOST during MOVE.
-
-(The Halberdier / The Skystriker) Brace: SELF | MOVEMENT = 0 this turn. Next incoming melee attack is negated, attacker suffers ATK 2. [+] Attacker suffers STAGGER.
-
-(The Skystriker / The Halberdier) Harpoon Toss: RANGE 4 | ATK 1 | PULL target adjacent. [+] If SELF has ROOT, or target is heavier, PULL SELF to target.
-
-(The Cavalier / The Skystriker) Glorious Charge: RANGE 4 (Ally) | SELF and Ally MOVE to enemy | Combined STR ATK. [+] On Kill: Both gain +1 AP.
-
-(The Skystriker / The Halberdier) Pole Vault: RANGE 3 | Jump over an obstacle or enemy to an empty tile. [+] If you used Push earlier this turn, landing applies PUSH 1 to adjacent enemies; collisions from those pushes apply STAGGER.
-
-(The Cavalier / The Halberdier) Line Breaker: DASH 4 | Pass through all enemies. Deal ATK 2 to each. [+] ATK +1 for each enemy passed through this turn.
-
-(The Halberdier / The Cavalier) Spear Wall: RANGE 2 | ARC | Create a hazard line. Enemies crossing suffer ATK 2 and ROOT. [+] Hazard line lasts for 2 turns instead of 1.
-
-(The Skystriker) Meteor Drop: RANGE 2 | Jump to target empty tile | Deal ATK 2 to all adjacent units upon landing. [+] Targets hit suffer VULNERABLE.
-
+(The Cavalier / The Skystriker) Piercing Charge: DASH 3 | ATK 2 (RANGE 2) | PUSH 2 Upgrade: Create TRAMPLED terrain behind you.
+(The Halberdier / The Skystriker) Sweeping Halberd: RANGE 2 | ARC | ATK 2 | PULL 1 Upgrade: PULL collision applies STAGGER.
+(The Skystriker / The Cavalier) Vaulting Leap: RANGE 2 | ATK 2 | Target DEF = 0 (1 turn). Upgrade: Armor explodes (ATK 1 AOE).
+(The Halberdier / The Cavalier) Run Down: RANGE 2 | ATK 3 | ATK +2 vs FEAR or lower MOV. Upgrade: On Kill: +2 Max MOV.
+(The Cavalier / The Halberdier) Rallying Cry: RANGE 0 | AOE 2 | Allies gain +1 Max MOV next turn. Upgrade: Allies gain TRAMPLE.
+(The Skystriker / The Cavalier) Flanking Maneuver: MOVE (L-Shape) | Side attack deals 2 * Damage. Upgrade: Gain GHOST.
+(The Halberdier / The Cavalier) Brace: SELF | MOVEMENT = 0. Negate next melee hit, attacker suffers ATK 2. Upgrade: Attacker suffers STAGGER.
+(The Skystriker / The Halberdier) Harpoon Toss: RANGE 4 | ATK 1 | PULL target adjacent. Upgrade: If self ROOTED, PULL SELF.
+(The Cavalier / The Skystriker) Glorious Charge: RANGE 4 (Ally) | SELF + Ally MOVE to enemy -> combined attack. Upgrade: On Kill: Both +1 AP.
+(The Skystriker / The Halberdier) Pole Vault: RANGE 3 | Jump over obstacle/enemy. Upgrade: Landing applies PUSH 1 adjacent.
+(The Cavalier / The Halberdier) Line Breaker: DASH 4 | Pass through enemies dealing ATK 2 each. Upgrade: ATK +1 per enemy passed.
+(The Halberdier / The Cavalier) Spear Wall: RANGE 2 | ARC | Hazard line. Crossing suffers ATK 2 and ROOT. Upgrade: Lasts 2 turns.
+(The Skystriker) Meteor Drop: RANGE 2 | Jump to tile | ATK 2 adjacent on land. Upgrade: Targets hit suffer VULNERABLE.
 12. Engineer
-
-Core Identity: Ranged Utility DPS. Master of board state. Turns grid into a Rube Goldberg machine.
+Core Identity: Ranged Utility DPS. Master of board state. Grid manipulation and constructs.
 | CON 4 | MOV 3 | STR 3 | DEF 3 | MAG 1 |
-
-Movement Skill: Recall (Cost: 3 MOV) — Instantly teleport from anywhere on the map to an empty tile adjacent to one of your active Constructs.
-↳ [+] Upgrade: No longer consumes all MOV (Costs exactly 3 MOV). Arriving adjacent to a Construct instantly grants it "Overclock", causing it to immediately fire/trigger its effect for free.
-
+Innate Trait: Blueprint Tread
+Base Mechanic: The Engineer treats friendly Constructs and Turrets as passable tiles (GHOST through friendly constructs). Ending a turn adjacent to a friendly Construct automatically repairs it for 1 HP.
+Upgrade: Passing through a friendly Construct grants both the Engineer and the Construct SHIELD 1.
+Reposition Skill: Recall (Cost: 3 MOV) — Teleport to empty tile adjacent to active Construct.
+Upgrade: Costs 3 MOV. Arrival grants Construct "Overclock" (triggers effect immediately).
 Advanced Classes (Promotion Boosts)
-
-The Siegecrafter: (+4 DEF, +4 CON, 0 MOV) Maximize construct durability and static defense.
-
-The Demolitionist: (+4 STR, +4 CON, 0 MOV) Focus on aggressive chain reactions and weaponizing your own constructs.
-
-The Mechanist: (+4 CON, +2 DEF, +2 MOV) Builds pneumatic, steam-powered exo-suit braces for their legs to stride faster. Focus on repair and overclocking.
-
+The Siegecrafter: (+4 DEF, +4 CON, 0 MOV) Construct durability and static defense.
+The Demolitionist: (+4 STR, +4 CON, 0 MOV) Explosive chain reactions and weaponizing constructs.
+The Mechanist: (+4 CON, +2 DEF, +2 MOV) Pneumatic exo-suit legs for mobility, repair, and overclocking.
 Passives
-
-(The Siegecrafter) Turret Syndrome: End turn without moving: Spawn 1-HP mini-turret adjacent. [+] Turret has 3 HP instead of 1.
-
-(The Siegecrafter) Automation: Turrets deal +1 damage and gain +1 Range. [+] Turrets gain ATK +2 instead.
-
-(The Siegecrafter) Master Builder: You can have one additional construct active at a time. [+] You can have two additional constructs active.
-
-(The Siegecrafter) Reinforced Constructs: Constructs gain +2 HP and innate 1 DEF. [+] Constructs gain +3 HP and innate 2 DEF instead.
-
-(The Siegecrafter) Shield Generator: Allies standing adjacent to your active turrets gain +1 DEF. [+] Allies also gain immunity to PULL.
-
-(The Demolitionist) Blast Shielding: Immune to explosion damage from your own bombs, traps, and detonated constructs. [+] If an explosion hits 3 or more enemies, gain +1 AP (Once per turn).
-
-(The Demolitionist) Explosive Expert: Bombs/traps deal +1 damage to mechanical units and ignore DEF. [+] Explosions gain ATK +2 instead.
-
-(The Demolitionist) Chain Reaction: Whenever one of your constructs, bombs, or mines detonates, it automatically triggers Manual Detonation on all other friendly explosive devices and constructs within Range 2. [+] Trigger range increased to 3.
-
-(The Demolitionist) Shrapnel: Whenever your devices detonate, they apply BLEED X (where X = your WPN) and PUSH 1 to all targets hit. [+] Also applies BLIND.
-
-(The Demolitionist) Expanded Blast: The Area of Effect for all explosive skills, mines, and detonated constructs is increased by 1 tile. [+] Explosions also completely destroy traps and cover.
-
-(The Mechanist) Scrap Mechanic: Whenever an enemy dies within RANGE 3 of you or a friendly construct, generate 1 Scrap. Collecting Scrap upgrades construct HP. [+] Generates 2 Scrap instead.
-
-(The Mechanist) Recycling Protocol: When a friendly construct is destroyed, gain 2 Scrap and +1 AP (Once per turn). [+] Gain 3 Scrap instead.
-
-(The Mechanist) Overclock: Constructs act twice per turn. Constructs suffer 1 Damage/turn. [+] Constructs suffer 0 Damage/turn instead.
-
-(The Mechanist) Field Repairs: Repair adjacent constructs for 1 HP. Removes any debuffs on them. [+] Repair for 2 HP instead.
-
-(The Mechanist) Field Technician: Repair constructs from RANGE 2. Repairs grant them +1 STR for next attack. [+] Repairs grant +2 STR instead.
-
+(The Siegecrafter) Turret Syndrome: End turn without moving -> spawn mini-turret adjacent (Floor(25% Caster Max HP)). Upgrade: Turret gains +50% Max HP.
+(The Siegecrafter) Automation: Turrets gain ATK +1 and RANGE +1. Upgrade: Turrets gain ATK +2.
+(The Siegecrafter) Master Builder: +1 active construct limit. Upgrade: +2 active construct limit.
+(The Siegecrafter) Reinforced Constructs: Constructs gain +25% Max HP and inherit 50% of your DEF. Upgrade: Constructs gain +50% Max HP and inherit 100% of your DEF.
+(The Siegecrafter) Shield Generator: Allies adjacent to turrets gain +1 DEF. Upgrade: Immunity to PULL.
+(The Demolitionist) Blast Shielding: Immune to own explosion damage. Upgrade: Explosion hitting 3+ enemies grants +1 AP (1/turn).
+(The Demolitionist) Explosive Expert: Explosives deal +1 dmg to mechanicals and ignore DEF. Upgrade: Explosions gain ATK +2.
+(The Demolitionist) Chain Reaction: Construct detonation triggers Manual Detonation on friendly explosives in RANGE 2. Upgrade: RANGE 3.
+(The Demolitionist) Shrapnel: Device detonations apply BLEED X (X = WPN) and PUSH 1. Upgrade: Also applies BLIND.
+(The Demolitionist) Expanded Blast: Explosion AOE increased by +1 tile. Upgrade: Explosions destroy traps/cover.
+(The Mechanist) Scrap Mechanic: Enemy dying in RANGE 3 drops Scrap (upgrades construct HP). Upgrade: Drops 2 Scrap.
+(The Mechanist) Recycling Protocol: Friendly construct destroyed -> gain 2 Scrap and +1 AP (1/turn). Upgrade: Gain 3 Scrap.
+(The Mechanist) Overclock: Constructs act twice/turn, take 1 Dmg/turn. Upgrade: Suffer 0 Dmg/turn.
+(The Mechanist) Overclocked Maintenance: Spending 1 MOV adjacent to a construct repairs it for 2 HP, CLEANSES all debuffs, and grants both the Engineer and the construct SHIELD equal to Floor(Max HP / 10). Upgrade: Repair amount increased to 4 HP.
+(The Mechanist) Field Technician: Repair constructs from RANGE 2 (grants +1 STR on next attack). Upgrade: Grants +2 STR.
 Active Skills & Upgrades
-
-(The Mechanist / The Demolitionist) Dismantle: RANGE 1 | ATK 3 | Target loses 1 DEF for the rest of the turn. [+] On Hit: Generate 1 Scrap.
-
-(The Demolitionist / The Siegecrafter) Sludge Bomb: RANGE 3 | AOE 3x3 | ATK 1 | Create OIL (Costs x2 MOVE. Instantly ignites into FIRE if exposed to fire damage). [+] FIRE ignites entire OIL area.
-
-(The Siegecrafter / The Mechanist) Construct Turret: RANGE 2 | Summon Turret (ATK 1/turn to nearest). [+] On destruction (by enemy or Detonation), deals ATK 2 to adjacent units.
-
-(The Demolitionist / The Siegecrafter) Frag Bomb: RANGE 3 | AOE 3x3 | ATK 2 | Ignites OIL terrain. [+] Refund 1 AP if it destroys a construct (yours or enemy).
-
-(The Demolitionist / The Siegecrafter) Magnetic Mine: RANGE 3 | Place Mine: PULL 2 then ATK 2 (Explode). [+] PULL includes Scrap/Coins. ATK +1 per item absorbed.
-
-(The Siegecrafter / The Mechanist) Tesla Barricade: RANGE 1 | Build Wall. [+] Can be targeted by Manual Detonation. Detonating it applies STAGGER to adjacent enemies.
-
-(The Mechanist / The Demolitionist) Flak Cannon: RANGE 1 | ARC | ATK 2 | PUSH 1. [+] Consume 1 Scrap to gain ATK +2 and apply BLEED X (X = your WPN).
-
-(The Mechanist / The Siegecrafter) Wrench Smack: RANGE 1 | ATK 2. If target is a Construct: HEAL 2, remove debuffs, and grant OVERCLOCK instead of damage. [+] Construct also gains +1 STR for its next attack, or can be targeted by Manual Detonation.
-
-(The Siegecrafter / The Demolitionist) EMP Grenade: RANGE 4 | AOE 2x2 | PURGE all buffs, Apply SILENCE, and instantly destroy all Standard enemy constructs in area (Deals unmitigated damage equal to WPN x 3 to Mechanical Bosses). [+] Friendly constructs HEAL 10, gain OVERCLOCK.
-
-(The Siegecrafter / The Demolitionist) Rocket Launcher: GLOBAL | AOE 3x3 | ATK 4 | Destroy all cover/traps in area. Delay 1 turn. [+] Sacrifice 1 Construct to fire instantly (No delay).
-
-(The Mechanist / The Siegecrafter) Scrap Shield: RANGE 2 | Consume all Scrap. Target Ally gains SHIELD equal to 2x consumed Scrap. [+] When the SHIELD is completely depleted by enemy damage, it explodes dealing unmitigated damage equal to your WPN and PUSH 1 to adjacent enemies.
-
-(The Demolitionist / The Mechanist) Manual Detonation: RANGE 3 | 0 AP | Detonate a target friendly construct/mine. It deals ATK 2 to adjacent enemies. [+] Refund 1 Scrap on detonation.
-
-(The Mechanist) Overdrive Injection: RANGE 1 | Target Construct gains +2 STR and OVERCLOCK, but suffers 2 unmitigated damage. [+] Refund 1 Scrap if the Construct dies this turn.
-
-(The Siegecrafter / The Demolitionist) Barbed Wire: RANGE 3 | ARC | Create 3-tile Wall. Enemies moving through suffer BLEED X and ROOT. [+] Barricade grants +1 DEF to allies standing adjacent.
+(The Mechanist / The Demolitionist) Dismantle: RANGE 1 | ATK 3 | Target loses 25% DEF for turn. Upgrade: On Hit: Generate 1 Scrap.
+(The Demolitionist / The Siegecrafter) Sludge Bomb: RANGE 3 | AOE 3x3 | ATK 1 | Create OIL terrain. Upgrade: Fire ignites entire OIL area.
+(The Siegecrafter / The Mechanist) Construct Turret: RANGE 2 | Summon Turret (ATK 1/turn). Upgrade: On death: deals ATK 2 adjacent.
+(The Demolitionist / The Siegecrafter) Frag Bomb: RANGE 3 | AOE 3x3 | ATK 2 | Ignites OIL. Upgrade: Refund 1 AP on construct destruction.
+(The Demolitionist / The Siegecrafter) Magnetic Mine: RANGE 3 | Place Mine: PULL 2 then ATK 2 (Explode). Upgrade: Absorbs items/scrap.
+(The Siegecrafter / The Mechanist) Tesla Barricade: RANGE 1 | Build Wall (Floor(150% Caster Max HP)). Upgrade: Manual Detonation target (applies STAGGER).
+(The Mechanist / The Demolitionist) Flak Cannon: RANGE 1 | ARC | ATK 2 | PUSH 1. Upgrade: Consume 1 Scrap: ATK +2, BLEED X.
+(The Mechanist / The Siegecrafter) Wrench Smack: RANGE 1 | ATK 2. Construct target: HEAL 2, remove debuffs, grant OVERCLOCK. Upgrade: +1 STR.
+(The Siegecrafter / The Demolitionist) EMP Grenade: RANGE 4 | AOE 2x2 | PURGE all buffs, Apply SILENCE, and instantly destroy all Standard enemy constructs in area (Deals unmitigated damage equal to 3 * WPN to Mechanical Bosses). Upgrade: Friendly constructs HEAL 10, gain OVERCLOCK.
+(The Siegecrafter / The Demolitionist) Rocket Launcher: GLOBAL | AOE 3x3 | ATK 4 | Destroy cover/traps. Exhaust caster at start of next turn. Upgrade: Sacrifice construct to fire instantly.
+(The Mechanist / The Siegecrafter) Scrap Shield: RANGE 2 | Consume Scrap -> Target Ally gains SHIELD equal to 2 * Scrap. Upgrade: Depletion explodes (WPN dmg, PUSH 1).
+(The Demolitionist / The Mechanist) Manual Detonation: RANGE 3 | 0 AP | Detonate friendly construct/mine (ATK 2 adjacent). Upgrade: Refund 1 Scrap.
+(The Mechanist) Overdrive Injection: RANGE 1 | Construct gains +2 STR and OVERCLOCK, suffers 2 unmitigated Dmg. Upgrade: Refund 1 Scrap on death.
+(The Siegecrafter / The Demolitionist) Barbed Wire: RANGE 3 | ARC | Create 3-tile Wall (BLEED X, ROOT). Upgrade: Wall grants +1 DEF adjacent.
