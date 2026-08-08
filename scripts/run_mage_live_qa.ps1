@@ -32,5 +32,5 @@ if ($process.ExitCode -ne 0 -or $failures.Count -gt 0) {
 	Write-Output "[FAIL] Mage live QA"
 	exit 1
 }
-Write-Output "[PASS] Mage live QA: all 16 authored abilities through preview/commit"
+Write-Output "[PASS] Mage live QA: all 16 base and [+] abilities through preview/commit"
 exit 0
