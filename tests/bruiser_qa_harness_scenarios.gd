@@ -210,7 +210,17 @@ static func run_cleave(failures: Array[String]) -> void:
 	var expected_arc: int = H.damage_dealt_to_unit(arc_board, 11, scaled_arc, arc_bruiser)
 	H.assert_eq_int(failures, "cleave/arc_center_dmg", center_dmg, expected_arc)
 	H.assert_eq_int(failures, "cleave/arc_perp_dmg", perp_dmg, expected_arc)
-	H.assert_eq_int(failures, "cleave/arc_outside", H.unit_hp(arc_result.final_state, 13), hp_outside)
+	H.	assert_eq_int(failures, "cleave/arc_outside", H.unit_hp(arc_result.final_state, 13), hp_outside)
+	H.assert_grid_footprint_excludes(
+		failures,
+		"cleave/grid_arc",
+		arc_board,
+		Vector2i(3, 3),
+		Vector2i(4, 3),
+		GameEnums.TargetShape.ARC,
+		1,
+		Vector2i(5, 3),
+	)
 
 
 static func run_suplex(failures: Array[String]) -> void:
@@ -452,6 +462,16 @@ static func run_earthshatter(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "earthshatter/arc_center_dmg", center_dmg, expected_arc)
 	H.assert_eq_int(failures, "earthshatter/arc_perp_dmg", perp_dmg, expected_arc)
 	H.assert_eq_int(failures, "earthshatter/arc_outside", H.unit_hp(arc_result.final_state, 23), hp_outside)
+	H.assert_grid_footprint_excludes(
+		failures,
+		"earthshatter/grid_arc",
+		arc_board,
+		Vector2i(3, 3),
+		Vector2i(4, 3),
+		GameEnums.TargetShape.ARC,
+		1,
+		Vector2i(5, 3),
+	)
 	var destroy_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(destroy_board, 10, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_earthshatter"))
 	var construct_def: UnitData = DataLibrary.get_unit(&"construct_turret")
@@ -736,6 +756,16 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 		"AOE must PUSH or DEF-debuff multiple adjacent enemies from caster anchor",
 	)
 
+	var roar_footprint: Array[Vector2i] = GridSystem.get_affected_tiles(
+		null, Vector2i(3, 3), Vector2i(3, 3), GameEnums.TargetShape.AOE_CROSS, 2,
+	)
+	H.assert_true(
+		failures, "guttural_roar/grid_outside",
+		not roar_footprint.has(Vector2i(6, 3)),
+		"AOE_CROSS 2 footprint must exclude distant tiles",
+	)
+
+
 static func run_headbutt(failures: Array[String]) -> void:
 	## Bible: Headbutt — RANGE 1 | ATK 3 | mutual 1 dmg + STAGGER; [+] bonus % Max HP damage.
 	H.run_active_smoke(
@@ -932,6 +962,14 @@ static func run_crimson_whirlwind(failures: Array[String]) -> void:
 		failures, "crimson_whirlwind/multi_hit",
 		H.unit_hp(result.final_state, 2) < hp2 and H.unit_hp(result.final_state, 3) < hp3,
 		"AOE must damage multiple adjacent enemies",
+	)
+	var whirl_footprint: Array[Vector2i] = GridSystem.get_affected_tiles(
+		null, Vector2i(3, 3), Vector2i(3, 3), GameEnums.TargetShape.AOE_SQUARE, 1,
+	)
+	H.assert_true(
+		failures, "crimson_whirlwind/grid_outside",
+		not whirl_footprint.has(Vector2i(6, 6)),
+		"AOE_SQUARE 3x3 footprint must exclude distant tiles",
 	)
 
 

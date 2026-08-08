@@ -81,6 +81,7 @@ var _action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_proj_key: int = -1
 var _cached_hover_awaiting_targeting: bool = false
+var _cached_hover_coord: Vector2i = Vector2i(-999, -999)
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -227,6 +228,7 @@ func _invalidate_hover_cache() -> void:
 	_cached_hover_ability = -1
 	_cached_hover_proj_key = -1
 	_cached_hover_awaiting_targeting = false
+	_cached_hover_coord = Vector2i(-999, -999)
 
 
 func _planning_action_range_tiles_for_unit(
@@ -413,8 +415,8 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 	if coord == _hover_coord:
 		return
 	_hover_coord = coord
+	_invalidate_hover_cache()
 	if _director != null and _director.selected_unit_id < 0:
-		_invalidate_hover_cache()
 		_recompute_hover_ranges_from_inputs()
 	if _planning_input == null:
 		_update_hover_action_icon()
@@ -706,6 +708,7 @@ func recompute_hover_ranges(
 		and _cached_hover_force == cache_force
 		and _cached_hover_proj_key == proj_key
 		and _cached_hover_awaiting_targeting == cache_awaiting_targeting
+		and _cached_hover_coord == _hover_coord
 	):
 		return
 	_cached_hover_unit_id = unit.id
@@ -715,6 +718,7 @@ func recompute_hover_ranges(
 	_cached_hover_force = cache_force
 	_cached_hover_proj_key = proj_key
 	_cached_hover_awaiting_targeting = cache_awaiting_targeting
+	_cached_hover_coord = _hover_coord
 	_hover_move_tiles.clear()
 	_hover_action_range_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):
@@ -776,6 +780,16 @@ func recompute_hover_ranges(
 		_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
 			unit, action_range_origin, ability_index,
 		)
+		if ability != null and _board.is_in_bounds(_hover_coord):
+			var plan_board: BoardState = _board
+			if _director.projected_state != null:
+				plan_board = _director.projected_state
+			var blast_actor: UnitState = p_unit if p_unit != null else unit
+			var blast_tiles: Array[Vector2i] = AbilitySystem.planning_blast_tiles_at_target(
+				plan_board, blast_actor, ability, action_range_origin, _hover_coord,
+			)
+			if not blast_tiles.is_empty():
+				_hover_action_range_tiles = blast_tiles
 	else:
 		_populate_action_range_tiles(unit, action_range_origin, ability_index)
 	queue_redraw()

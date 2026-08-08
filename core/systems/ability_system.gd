@@ -847,6 +847,36 @@ static func planning_threat_tiles(
 	return manhattan_threat_tiles(board, sources, eff_range)
 
 
+## Blast footprint at hover for shaped skills (ARC/AOE). Empty when hover is not a legal target.
+static func planning_blast_tiles_at_target(
+	board: BoardState,
+	unit: UnitState,
+	ability: AbilityData,
+	origin: Vector2i,
+	target: Vector2i,
+) -> Array[Vector2i]:
+	var empty: Array[Vector2i] = []
+	if board == null or unit == null or ability == null or not board.is_in_bounds(target):
+		return empty
+	var shape: GameEnums.TargetShape = ability.target_shape
+	var shape_size: int = ability.target_shape_size
+	if shape == GameEnums.TargetShape.SINGLE:
+		return empty
+	if unit.is_ability_upgraded(ability.id):
+		if ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE:
+			shape = ability.upgraded_target_shape
+		if ability.upgraded_target_shape_size >= 0:
+			shape_size = ability.upgraded_target_shape_size
+	if ability.range_tiles <= 0:
+		return GridSystem.get_affected_tiles(board, origin, origin, shape, shape_size)
+	if GridSystem.manhattan(unit.position, target) > unit.get_ability_range(ability):
+		return empty
+	var probe: TimelineAction = TimelineAction.make_ability(unit.id, ability, target, -1)
+	if not can_use(board, probe):
+		return empty
+	return GridSystem.get_affected_tiles(board, unit.position, target, shape, shape_size)
+
+
 static func _single_coord(cell: Vector2i) -> Array[Vector2i]:
 	var out: Array[Vector2i] = []
 	out.append(cell)

@@ -10,6 +10,7 @@ const _DRAG := preload("res://tests/planning_drag_e2e_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
+	_HARNESS.run_shape_geometry(failures)
 	for entry: Dictionary in _REGISTRY.all_entries():
 		var name: String = String(entry.get("name", "?"))
 		var factory_id: StringName = entry.get("factory_id", &"") as StringName

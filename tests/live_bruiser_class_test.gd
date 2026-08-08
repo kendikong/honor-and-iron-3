@@ -12,10 +12,10 @@ const _CASES: Array[Dictionary] = [
 	{"id": &"bruiser_push_through", "observation": &"displacement", "upgrade_keys": [&"buff_on_push"]},
 	{"id": &"bruiser_charge_strike", "observation": &"movement_damage", "upgrade_keys": [&"ghost_move", &"bonus_dmg_from_terrain"]},
 	{"id": &"bruiser_concussion_blow", "observation": &"damage_displacement", "upgrade_keys": [&"enemy_collision_stagger_both"]},
-	{"id": &"bruiser_cleave", "observation": &"damage", "upgrade_keys": [&"weapon_scaled"]},
+	{"id": &"bruiser_cleave", "observation": &"damage", "upgrade_keys": [&"weapon_scaled"], "assert_arc_overlay": true},
 	{"id": &"bruiser_suplex", "observation": &"damage_displacement", "upgrade_keys": [&"bonus_dmg_per_10_hp"]},
 	{"id": &"bruiser_adrenaline_surge", "observation": &"self_buff", "upgrade_keys": [&"on_kill_heal_shield"]},
-	{"id": &"bruiser_earthshatter", "observation": &"damage", "upgrade_keys": [&"buff_per_destroyed_object"]},
+	{"id": &"bruiser_earthshatter", "observation": &"damage", "upgrade_keys": [&"buff_per_destroyed_object"], "assert_arc_overlay": true},
 	{"id": &"bruiser_meat_shield", "observation": &"swap", "upgrade_keys": [&"intercept_grant_str"]},
 	{"id": &"bruiser_frenzy", "observation": &"damage", "upgrade_keys": [&"frenzy_on_kill_ap"]},
 	{"id": &"bruiser_guttural_roar", "observation": &"aoe_displacement", "upgrade_keys": [&"push_board_items", &"item_collision_damage"], "assert_self_aoe_overlay": true},
@@ -35,7 +35,7 @@ const _BATCHES: Array[Dictionary] = [
 	},
 	{
 		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(7, 8), Vector2i(8, 8)],
-		"dummies": [Vector2i(5, 5), Vector2i(4, 2), Vector2i(4, 8)],
+		"dummies": [Vector2i(5, 5), Vector2i(4, 2), Vector2i(4, 8), Vector2i(3, 8)],
 		"skills": [&"bruiser_suplex", &"bruiser_adrenaline_surge", &"bruiser_earthshatter", &"bruiser_meat_shield"],
 	},
 	{
@@ -91,7 +91,7 @@ const _CASE_TARGETS: Dictionary = {
 	&"bruiser_cleave": Vector2i(7, 8),
 	&"bruiser_suplex": Vector2i(5, 5),
 	&"bruiser_adrenaline_surge": Vector2i(2, 2),
-	&"bruiser_earthshatter": Vector2i(4, 8),
+	&"bruiser_earthshatter": Vector2i(3, 8),
 	&"bruiser_meat_shield": Vector2i(7, 8),
 	&"bruiser_frenzy": Vector2i(5, 5),
 	&"bruiser_guttural_roar": Vector2i(2, 2),
@@ -193,6 +193,10 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 			await _assert_self_aoe_overlay_matches(
 				runner, actor_id, ability, skill_id,
 			)
+		if bool(case.get("assert_arc_overlay", false)):
+			await _assert_arc_overlay_matches(
+				runner, actor_id, ability, skill_id, _case_target_cell(skill_id),
+			)
 		var slots: Dictionary = await _commit_live_click(
 			runner, actor_id, _case_target_cell(skill_id),
 		)
@@ -246,6 +250,56 @@ func _assert_self_aoe_overlay_matches(
 	for tile: Vector2i in overlay_tiles:
 		assert_bool(expected.has(tile)).override_failure_message(
 			"%s: overlay red tile %s outside self-AOE footprint %s" % [label, tile, expected],
+		).is_true()
+
+
+func _attack_hover_sync(runner: GdUnitSceneRunner, cell: Vector2i) -> void:
+	_input.set_qa_pointer_grid_cell(cell)
+	if _input._intent_state != null:
+		_input._intent_state.set_hover_coord(cell)
+	_overlay.set_hover_coord(cell, false)
+	_input.on_hover_moved(cell)
+	_input._flush_hover_heavy_sync()
+	_input.call("_refresh_selected_interaction_preview")
+	_overlay._recompute_hover_ranges_from_inputs()
+	_director.flush_plan_refresh_signals_if_pending()
+	await runner.simulate_frames(3, _DELTA_MS)
+
+
+func _assert_arc_overlay_matches(
+	runner: GdUnitSceneRunner,
+	actor_id: int,
+	ability: AbilityData,
+	label: StringName,
+	target_cell: Vector2i,
+) -> void:
+	_director.select_unit(actor_id)
+	var actor := _director.board.get_unit_by_id(actor_id)
+	if actor == null:
+		return
+	var stand: Vector2i = actor.position
+	await _attack_hover_sync(runner, target_cell)
+	var plan_board: BoardState = _director.board
+	if _director.projected_state != null:
+		plan_board = _director.projected_state
+	var proj_actor := plan_board.get_unit_by_id(actor_id)
+	if proj_actor == null:
+		proj_actor = actor
+	stand = proj_actor.position
+	var expected: Array[Vector2i] = AbilitySystem.planning_blast_tiles_at_target(
+		plan_board, proj_actor, ability, stand, target_cell,
+	)
+	assert_bool(not expected.is_empty()).override_failure_message(
+		"%s: ARC blast footprint empty at hover %s from stand %s" % [label, target_cell, stand],
+	).is_true()
+	var overlay_tiles: Array[Vector2i] = _overlay.get_hover_action_range_tiles()
+	for tile: Vector2i in expected:
+		assert_bool(_overlay.is_hover_action_range_tile(tile)).override_failure_message(
+			"%s: overlay missing ARC blast tile %s" % [label, tile],
+		).is_true()
+	for tile: Vector2i in overlay_tiles:
+		assert_bool(expected.has(tile)).override_failure_message(
+			"%s: overlay red tile %s outside ARC blast %s" % [label, tile, expected],
 		).is_true()
 
 

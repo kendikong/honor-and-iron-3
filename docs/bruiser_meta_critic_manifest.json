@@ -2,11 +2,11 @@
   "piece": "B6-REOPEN",
   "pass_threshold": 95,
   "per_row_threshold": 88,
-  "last_critic_round": 2,
-  "last_score": 96,
-  "last_result": "PASS",
+  "last_critic_round": 4,
+  "last_score": 87,
+  "last_result": "FAIL",
   "last_row_promoted": "unstoppable_force",
-  "notes": "B6-REOPEN LOCKED. Full-matrix gauntlet-critic 96/100. 31/31 per-row PASS. STOP_CONDITION_MET yes.",
+  "notes": "Gauntlet round 4: 87/100 FAIL (threshold 88). Tier 1+2 automated PASS on disk; manifest row scores 89-91 are historical B6-REOPEN — fresh critic re-grade required for LOCK ≥95.",
   "approved_rows": [
     {
       "factory_id": "bruiser_push_through",

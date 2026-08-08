@@ -14,10 +14,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Owner QA sign-off** | **NOT PASS** — revoked with all non-Knight classes |
-| **LOCK** | **NO** — pending Knight-bar redo (Tier 2 live + overlay/AOE footprints) |
-| **Matrix** | 31 rows historically marked `PASS` — **suspended** until re-verified per `class-qa-knight-bar.mdc` |
-| **Gap** | Owner manual sign-off + arc-AOE live overlay depth (cleave/earthshatter) still optional |
+| **Owner QA sign-off** | **NOT PASS** — [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md); automated Tier 1+2 green |
+| **LOCK** | **NO** — pending owner manual + gauntlet-critic re-approval on current artifacts |
+| **Matrix** | **31/31 `PASS`** — Tier 1 headless scenarios + registry |
+| **Gap** | Owner manual feel/pixels; passives have no Tier 2 live path (Knight same) |
 
 ---
 
@@ -25,11 +25,11 @@
 
 | Tier | Runner | Gate status |
 |------|--------|-------------|
-| **1 — Headless scenarios** | `.\scripts\run_bruiser_qa_gate.ps1` | **NOT PASS** (owner sign-off) — re-verify after live + overlay work |
-| **2 — Live Bruiser acceptance** | `.\scripts\run_bruiser_live_qa.ps1` → `tests/live_bruiser_class_test.gd` | **PASS** (automated) — 16 actives + self-AOE overlay; owner sign-off still pending |
+| **1 — Headless scenarios** | `.\scripts\run_bruiser_qa_gate.ps1` | **PASS** (automated) — 31/31 matrix + `GridSystem.get_affected_tiles` geometry on ARC/AOE |
+| **2 — Live Bruiser acceptance** | `.\scripts\run_bruiser_live_qa.ps1` → `tests/live_bruiser_class_test.gd` | **PASS** (automated) — 16 actives; self-AOE + ARC blast overlay at hover |
 | **Manual** | `docs/PLANNING_SKILL_QA_CHECKLIST.md` per ability | Required for feel/pixels Tier 1 cannot see |
 
-**Only Tier 1+2 matrix `PASS` + owner row in `CLASS_QA_SIGNOFF.md` blocks Bruiser LOCK.**
+**Only Tier 1+2 matrix `PASS` + owner row in `CLASS_QA_SIGNOFF.md` + gauntlet-critic ≥88 blocks Bruiser LOCK.**
 
 ---
 
@@ -41,9 +41,29 @@ Same contract as [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Meta-critic — jud
 
 ---
 
-## Global systems fidelity (mandatory — clone from P3)
+## Global systems fidelity (mandatory — implementation + QA)
 
-Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global systems fidelity (Rules A/B, QA enforcement, keyword table).
+**Parent rules:** `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/skill-global-rules.mdc`. Same contract as [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global systems fidelity.
+
+### Rule A — Prefer shared global systems (reduce heuristics)
+
+| Layer | Use (not reinvent) |
+|-------|---------------------|
+| **Actives** | `EffectType` / `EffectData` in factory data · `AbilitySystem` · timeline · AP/MP · targeting modes |
+| **Passives** | Shared passive trigger hooks — data-driven meta on `PassiveData` |
+| **Planning** | Commit slots · `Simulator` — one truth path; overlay blast via `AbilitySystem.planning_blast_tiles_at_target` → `GridSystem.get_affected_tiles` |
+| **QA** | Assert through production resolution — **no** parallel test-only skill logic or per-id branches |
+
+### Rule B — Bible-exact keywords only
+
+Map Bible text to a global keyword **only when semantics match exactly**. **Authority order:** `class_abilities.txt` → `EffectType` / factory data.
+
+### QA + meta-critic enforcement
+
+1. Scenario header cites Bible clause **and** names global effect(s) or passive trigger.
+2. Asserts verify outcome through shared resolution (sim events, board positions, status stacks).
+3. **Meta-critic FAIL (`implementation`)** when wrong effect type or per-skill production branch.
+4. **Meta-critic FAIL (`qa_test`)** when scenario omits named global effect/trigger or live ARC/AOE lacks `get_affected_tiles` / overlay footprint parity.
 
 **Bruiser-specific reminders:**
 
@@ -67,7 +87,7 @@ Copy **verbatim** from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global system
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** Historical **31/31** matrix `PASS` — **owner sign-off NOT PASS (2026-08-08)**. Re-verify all rows + add Tier 2 live before promoting in [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md).
+**Summary (honest):** **31/31** matrix `PASS` (Tier 1 automated). **Owner sign-off NOT PASS** until manual + gauntlet-critic on current gate stdout.
 
 ### Movement + actives
 
@@ -124,12 +144,12 @@ Same as [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Scenario contract — cite B
 
 ---
 
-## Gauntlet handoff stub (B6-doc — spec critic)
+## Gauntlet handoff stub (current)
 
 ```text
-GOAL: P6 Bruiser pillar — gate doc + meta-critic contract + honest 31-row matrix
-BAR: lint PASS; Test-Path docs/BRUISER_QA_GATE.md, core/factory/classes/bruiser_factory.gd, scripts/run_bruiser_qa_gate.ps1; matrix lists all factory ids PLANNED
-PASS_THRESHOLD: 88
-RULES: skill-global-rules.mdc, global-systems-first.mdc, knight-template.md (P3 clone), KNIGHT_QA_GATE.md § Global systems fidelity
-ARTIFACT: this file, docs/design/bruiser-template.md, bruiser_factory.gd, lint stdout
+GOAL: Bruiser Knight-bar — 31/31 matrix PASS + Tier 1+2 automated green + gauntlet-critic ≥88
+BAR: qa_bruiser_gate_canonical.txt Tier 1+2 PASS; live_bruiser_class_test.gd ARC/self-AOE overlay; headless get_affected_tiles on ARC/AOE actives
+PASS_THRESHOLD: 88 (LOCK target 95 + owner sign-off)
+RULES: skill-global-rules.mdc, global-systems-first.mdc, class-qa-knight-bar.mdc
+ARTIFACT: docs/BRUISER_QA_GATE.md, qa_bruiser_gate_canonical.txt, docs/bruiser_meta_critic_manifest.json
 ```
