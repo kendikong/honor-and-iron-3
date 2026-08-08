@@ -224,7 +224,6 @@ func _journey_bruiser_breaching_dash(runner: GdUnitSceneRunner) -> void:
 
 
 func _run_skill_journey(runner: GdUnitSceneRunner, skill_id: StringName) -> void:
-	var case: Dictionary = _case_by_id(skill_id)
 	var source_batch: Dictionary = _batch_for_skill(skill_id)
 	assert_bool(not source_batch.is_empty()).override_failure_message(
 		"%s: no dedicated fixture batch exists" % skill_id,
@@ -236,14 +235,6 @@ func _run_skill_journey(runner: GdUnitSceneRunner, skill_id: StringName) -> void
 		"dummies": source_batch.dummies,
 		"skills": [skill_id],
 	})
-	var factory_ability: AbilityData = _factory_ability(case.id)
-	if factory_ability != null and factory_ability.range_tiles > 0:
-		await _run_live_batch(runner, {
-			"extra_players": source_batch.extra_players,
-			"dummies": source_batch.dummies,
-			"skills": [skill_id],
-			"drag_mode": true,
-		})
 
 
 func _run_cleave_premove_overlay_scenario(runner: GdUnitSceneRunner) -> void:
@@ -336,7 +327,7 @@ func _run_cleave_tile_aim_scenario(runner: GdUnitSceneRunner) -> void:
 	session.set_all_skills_enabled(&"bruiser", false)
 	session.skill_enabled[&"bruiser_cleave"] = true
 	session.extra_player_coords = []
-	session.dummy_coords = [Vector2i(5, 4), Vector2i(5, 6)]
+	session.dummy_coords = [Vector2i(5, 4), Vector2i(5, 6), Vector2i(6, 5)]
 	session.unkillable_dummies = true
 	session.infinite_player_ap = true
 	_scene.apply_training_board()
@@ -379,6 +370,7 @@ func _run_cleave_tile_aim_scenario(runner: GdUnitSceneRunner) -> void:
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	var hit_north := false
 	var hit_south := false
+	var hit_outside := false
 	for event: SimEvent in result.events:
 		if event.type != GameEnums.SimEventType.UNIT_DAMAGED:
 			continue
@@ -387,8 +379,13 @@ func _run_cleave_tile_aim_scenario(runner: GdUnitSceneRunner) -> void:
 			hit_north = true
 		if victim == _unit_id_at(_director.base_board, Vector2i(5, 6)):
 			hit_south = true
+		if victim == _unit_id_at(_director.base_board, Vector2i(6, 5)):
+			hit_outside = true
 	assert_bool(hit_north and hit_south).override_failure_message(
 		"Cleave tile-aim must damage both ARC neighbors when center tile is empty",
+	).is_true()
+	assert_bool(not hit_outside).override_failure_message(
+		"Cleave tile-aim must not damage the diagonal/outside dummy",
 	).is_true()
 
 
@@ -415,7 +412,6 @@ func _factory_ability(skill_id: StringName) -> AbilityData:
 
 
 func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
-	var drag_mode: bool = bool(batch.get("drag_mode", false))
 	var session: TestBattleSession = _scene.get_session()
 	session.reset_defaults()
 	session.player_class_id = &"bruiser"
@@ -438,6 +434,16 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		"WorldModulate/MapRoot/PlanningOverlay",
 	) as TacticalPlanningOverlay
 	_director.auto_run = false
+	if batch.skills.has(&"bruiser_violent_collision"):
+		var wall: TerrainData = DataLibrary.get_terrain(&"wall")
+		assert_object(wall).override_failure_message(
+			"violent_collision: live recast fixture requires a wall terrain",
+		).is_not_null()
+		if wall != null:
+			_director.base_board.set_tile_terrain(Vector2i(5, 3), wall)
+			_director.board.set_tile_terrain(Vector2i(5, 3), wall)
+			_director.base_board.set_tile_terrain(Vector2i(4, 4), wall)
+			_director.board.set_tile_terrain(Vector2i(4, 4), wall)
 	for unit: UnitState in _director.base_board.units:
 		if unit.definition != null and unit.definition.id == &"training_dummy":
 			unit.health.current_hp = 10000
@@ -559,35 +565,15 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 				% [_scenario_diagnostic(skill_id), _action_debug(preview_action)],
 			).is_true()
 		var slots: Dictionary
-		var drag_finalized: bool = false
-		if drag_mode:
-			if is_awaiting_skill:
-				slots = await _commit_live_click(
-					runner, actor_id, arm_cell,
-				)
-				assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
-					"%s: drag journey must arm awaiting before drag finalize; plan=%s"
-					% [_scenario_diagnostic(skill_id), _plan_debug()],
-				).is_true()
-				slots = await _commit_live_drag(
-					runner, actor_id, _case_target_cell(skill_id),
-				)
-			else:
-				slots = await _commit_live_drag(
-					runner, actor_id, _case_target_cell(skill_id),
-				)
-			drag_finalized = true
-		else:
-			slots = await _commit_live_click(
-				runner, actor_id, arm_cell if is_awaiting_skill else _case_target_cell(skill_id),
-			)
+		slots = await _commit_live_click(
+			runner, actor_id, arm_cell if is_awaiting_skill else _case_target_cell(skill_id),
+		)
 		if is_awaiting_skill:
-			if not drag_finalized:
-				assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
-					"%s: first click must leave an awaiting action; plan=%s slots=%s"
-					% [_scenario_diagnostic(skill_id), _plan_debug(), _slots_debug(slots)],
-				).is_true()
-				slots = await _commit_live_click(runner, actor_id, _case_target_cell(skill_id))
+			assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
+				"%s: first click must leave an awaiting action; plan=%s slots=%s"
+				% [_scenario_diagnostic(skill_id), _plan_debug(), _slots_debug(slots)],
+			).is_true()
+			slots = await _commit_live_click(runner, actor_id, _case_target_cell(skill_id))
 			var committed: TimelineAction = _committed_action_for_ability(actor_id, skill_id)
 			assert_object(committed).override_failure_message(
 				"%s: second click must finalize ability; plan=%s"
@@ -612,20 +598,14 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 			"%s: live commit did not write the selected skill; plan=%s"
 			% [skill_id, _plan_debug()],
 		).is_true()
-		if not drag_mode:
-			await _undo_and_recommit_skill(
-				runner, actor_id, skill_id, is_awaiting_skill, arm_cell,
-			)
-
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	for skill_id: StringName in batch.skills:
 		var case := _case_by_id(skill_id)
 		var actor_id := _unit_id_at(_director.base_board, _case_actor_cell(skill_id))
-		if not drag_mode:
-			_assert_no_actor_failure(result.events, actor_id, skill_id)
-			_assert_live_observation(result, case, actor_id)
-			_assert_skill_event_bar(result, skill_id, actor_id)
-			_assert_skill_specific_outcome(result, skill_id, actor_id)
+		_assert_no_actor_failure(result.events, actor_id, skill_id)
+		_assert_live_observation(result, case, actor_id)
+		_assert_skill_event_bar(result, skill_id, actor_id)
+		_assert_skill_specific_outcome(result, skill_id, actor_id)
 
 
 func _assert_contract(ability: AbilityData, case: Dictionary) -> void:
@@ -740,7 +720,22 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 	).is_not_null()
 	if final_actor == null:
 		return
+	var base_actor: UnitState = _director.base_board.get_unit_by_id(actor_id)
+	var ability: AbilityData = _ability_by_id(base_actor, skill_id)
+	if ability != null and ability.target_shape != GameEnums.TargetShape.SINGLE:
+		_assert_live_shaped_targets(result, skill_id, actor_id, ability)
 	match skill_id:
+		&"bruiser_push_through", &"bruiser_charge_strike", &"bruiser_concussion_blow":
+			var pushed_id: int = int(_batch_target_ids.get(skill_id, -1))
+			var pushed_before: UnitState = _director.base_board.get_unit_by_id(pushed_id)
+			var pushed_after: UnitState = final_state.get_unit_by_id(pushed_id)
+			assert_object(pushed_before).is_not_null()
+			assert_object(pushed_after).is_not_null()
+			if pushed_before != null and pushed_after != null:
+				assert_that(pushed_after.position).override_failure_message(
+					"%s: pushed target must land exactly one tile east; before=%s after=%s"
+					% [skill_id, pushed_before.position, pushed_after.position],
+				).is_equal(pushed_before.position + Vector2i.RIGHT)
 		&"bruiser_suplex":
 			var target_id: int = int(_batch_target_ids.get(skill_id, -1))
 			var target: UnitState = final_state.get_unit_by_id(target_id)
@@ -753,10 +748,36 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 			var collision_id: int = _unit_id_at(_director.base_board, Vector2i(4, 3))
 			var collision_target: UnitState = final_state.get_unit_by_id(collision_id)
 			assert_object(collision_target).is_not_null()
-			if collision_target != null:
-				assert_bool(collision_target.position != Vector2i(4, 3)).override_failure_message(
-					"violent_collision: bulldoze must move the dummy in the dash corridor",
-				).is_true()
+			var collision_seen: bool = false
+			for event: SimEvent in result.events:
+				if (
+					event.type == GameEnums.SimEventType.COLLISION
+					and int(event.data.get("unit", -1)) == collision_id
+				):
+					collision_seen = true
+					break
+			assert_bool(collision_seen).override_failure_message(
+				"violent_collision: live dash must resolve a collision against the corridor dummy",
+			).is_true()
+			assert_bool(
+				ability != null
+				and not ability.effects.is_empty()
+				and ability.effects[0].modifiers.has("violent_collision_recast"),
+			).override_failure_message(
+				"violent_collision: live selected ability must carry the recast collision rule",
+			).is_true()
+			var projection_board: BoardState = _director.base_board.clone()
+			var projection_events: Array[SimEvent] = []
+			Simulator.simulate_player_turn(
+				projection_board, _director.get_player_plan(), projection_events,
+			)
+			var projected_actor: UnitState = projection_board.get_unit_by_id(actor_id)
+			assert_bool(
+				projected_actor != null
+				and projected_actor.passive_flags.get("violent_collision_recast_used", false),
+			).override_failure_message(
+				"violent_collision: player-phase simulation must expose the recast before turn reset",
+			).is_true()
 		&"bruiser_belly_flop":
 			assert_that(final_actor.position).override_failure_message(
 				"belly_flop: final actor position must be the TELEPORT landing tile",
@@ -776,6 +797,144 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 				assert_that(ally.position).override_failure_message(
 					"meat_shield: ally must swap with the Bruiser",
 				).is_equal(_case_actor_cell(skill_id))
+			assert_bool(final_actor.has_status(GameEnums.StatusType.INTERCEPT)).override_failure_message(
+				"meat_shield: committed swap must grant INTERCEPT to the Bruiser",
+			).is_true()
+		&"bruiser_frenzy":
+			var frenzy_target_id: int = int(_batch_target_ids.get(skill_id, -1))
+			assert_int(_count_damage_events(result.events, actor_id, frenzy_target_id)).override_failure_message(
+				"frenzy: exactly three hits must land on the selected target",
+			).is_equal(3)
+		&"bruiser_adrenaline_surge":
+			assert_int(_self_damage_total(result.events, actor_id)).override_failure_message(
+				"adrenaline_surge: self-cost must be exactly 5 HP",
+			).is_equal(5)
+			assert_int(_status_value(final_actor, GameEnums.StatusType.STAT_BUFF_STR)).is_equal(1)
+			assert_int(_status_value(final_actor, GameEnums.StatusType.STAT_BUFF_MOV)).is_equal(1)
+		&"bruiser_blood_boil":
+			assert_int(_self_damage_total(result.events, actor_id)).override_failure_message(
+				"blood_boil: self-cost must be exactly 5 HP",
+			).is_equal(5)
+			assert_int(_status_value(final_actor, GameEnums.StatusType.STAT_BUFF_STR)).is_equal(3)
+		&"bruiser_headbutt":
+			var headbutt_target_id: int = int(_batch_target_ids.get(skill_id, -1))
+			var headbutt_target: UnitState = final_state.get_unit_by_id(headbutt_target_id)
+			assert_object(headbutt_target).is_not_null()
+			if headbutt_target != null:
+				assert_bool(final_actor.has_status(GameEnums.StatusType.STAGGER)).override_failure_message(
+					"headbutt: caster must receive mutual STAGGER",
+				).is_true()
+				assert_bool(headbutt_target.has_status(GameEnums.StatusType.STAGGER)).override_failure_message(
+					"headbutt: selected target must receive mutual STAGGER",
+				).is_true()
+		&"bruiser_breaching_dash":
+			assert_bool(final_actor.position == _case_target_cell(skill_id)).override_failure_message(
+				"breaching_dash: actor must land on the committed dash endpoint",
+			).is_true()
+
+
+func _assert_live_shaped_targets(
+	result: SimResult,
+	skill_id: StringName,
+	actor_id: int,
+	ability: AbilityData,
+) -> void:
+	var base_actor: UnitState = _director.base_board.get_unit_by_id(actor_id)
+	if base_actor == null:
+		return
+	var target_cell: Vector2i = _case_target_cell(skill_id)
+	var footprint: Array = []
+	if ability.range_tiles <= 0:
+		footprint = GridSystem.get_affected_tiles(
+			_director.base_board, base_actor.position, base_actor.position,
+			ability.target_shape, ability.target_shape_size,
+		)
+	else:
+		footprint = AbilitySystem.planning_blast_tiles_at_target(
+			_director.base_board, base_actor, ability, base_actor.position, target_cell,
+		)
+	assert_bool(not footprint.is_empty()).override_failure_message(
+		"%s: live exact footprint must not be empty" % skill_id,
+	).is_true()
+	var expected_ids: Array[int] = []
+	for unit: UnitState in _director.base_board.units:
+		if unit.team == GameEnums.Team.ENEMY and footprint.has(unit.position):
+			expected_ids.append(unit.id)
+	var expects_damage: bool = false
+	for effect: EffectData in ability.effects:
+		if effect != null and effect.type == GameEnums.EffectType.DAMAGE:
+			expects_damage = true
+			break
+	var actual_ids: Dictionary = {}
+	if expects_damage:
+		for unit: UnitState in _director.base_board.units:
+			if unit.team != GameEnums.Team.ENEMY:
+				continue
+			var after: UnitState = result.final_state.get_unit_by_id(unit.id)
+			if after != null and after.health.current_hp < unit.health.current_hp:
+				actual_ids[unit.id] = true
+		for expected_id: int in expected_ids:
+			assert_bool(actual_ids.has(expected_id)).override_failure_message(
+				"%s: expected footprint victim %d was not damaged; expected=%s actual=%s"
+				% [skill_id, expected_id, str(expected_ids), str(actual_ids.keys())],
+			).is_true()
+	else:
+		for expected_id: int in expected_ids:
+			var affected: UnitState = result.final_state.get_unit_by_id(expected_id)
+			assert_bool(
+				affected != null
+				and _status_value(affected, GameEnums.StatusType.STAT_DEBUFF_DEF) == 2,
+			).override_failure_message(
+				"%s: expected footprint victim %d lacks DEF -2; expected=%s"
+				% [skill_id, expected_id, str(expected_ids)],
+			).is_true()
+	for unit: UnitState in _director.base_board.units:
+		if unit.team != GameEnums.Team.ENEMY or expected_ids.has(unit.id):
+			continue
+		var outside_after: UnitState = result.final_state.get_unit_by_id(unit.id)
+		assert_object(outside_after).is_not_null()
+		if outside_after != null:
+			assert_int(outside_after.health.current_hp).override_failure_message(
+				"%s: outside-footprint unit %d was damaged" % [skill_id, unit.id],
+			).is_equal(unit.health.current_hp)
+
+
+func _count_damage_events(events: Array[SimEvent], actor_id: int, target_id: int) -> int:
+	var count: int = 0
+	for event: SimEvent in events:
+		if (
+			event.type == GameEnums.SimEventType.UNIT_DAMAGED
+			and int(event.data.get("source", event.data.get("actor", -1))) == actor_id
+			and int(event.data.get("unit", event.data.get("target", -1))) == target_id
+		):
+			count += 1
+		elif (
+			event.type == GameEnums.SimEventType.MATH_TELEMETRY
+			and event.data.get("type", "") == "damage"
+			and int(event.data.get("actor_id", -1)) == actor_id
+		):
+			count += 1
+	return count
+
+
+func _self_damage_total(events: Array[SimEvent], actor_id: int) -> int:
+	var total: int = 0
+	for event: SimEvent in events:
+		if (
+			event.type == GameEnums.SimEventType.UNIT_DAMAGED
+			and int(event.data.get("target", event.data.get("unit", -1))) == actor_id
+		):
+			total += int(event.data.get("amount", 0))
+	return total
+
+
+func _status_value(unit: UnitState, status_type: GameEnums.StatusType) -> int:
+	if unit == null:
+		return 0
+	for status: StatusData in unit.active_statuses:
+		if status.type == status_type:
+			return status.value
+	return 0
 
 
 func _assert_no_actor_failure(events: Array[SimEvent], actor_id: int, skill_id: StringName) -> void:
@@ -800,15 +959,9 @@ func _assert_live_observation(result: SimResult, case: Dictionary, actor_id: int
 		):
 			used = true
 			break
-	if not used:
-		var actor_after := result.final_state.get_unit_by_id(actor_id)
-		used = (
-			actor_after != null
-			and actor_after.position == _case_target_cell(case.id)
-			and case.observation in [&"movement", &"movement_damage"]
-		)
 	assert_bool(used).override_failure_message(
-		"%s: committed skill never resolved; plan=%s" % [case.id, _plan_debug()],
+		"%s: committed skill never emitted ABILITY_USED; plan=%s events=%s"
+		% [case.id, _plan_debug(), str(events)],
 	).is_true()
 
 	var observation: StringName = case.observation
@@ -867,37 +1020,6 @@ func _assert_live_observation(result: SimResult, case: Dictionary, actor_id: int
 		).is_true()
 
 
-func _undo_and_recommit_skill(
-	runner: GdUnitSceneRunner,
-	actor_id: int,
-	skill_id: StringName,
-	is_target_pick: bool,
-	arm_cell: Vector2i,
-) -> void:
-	_director.rpc_remove_last_for_unit(actor_id)
-	_director.flush_plan_refresh_signals_if_pending()
-	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
-	assert_bool(not _plan_has_committed_skill(skill_id, actor_id)).override_failure_message(
-		"%s: undo must remove the committed skill; plan=%s"
-		% [_scenario_diagnostic(skill_id), _plan_debug()],
-	).is_true()
-	var slots: Dictionary = await _commit_live_click(runner, actor_id, arm_cell)
-	if is_target_pick:
-		assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
-			"%s: recommit must re-arm target selection; plan=%s slots=%s"
-			% [_scenario_diagnostic(skill_id), _plan_debug(), _slots_debug(slots)],
-		).is_true()
-		slots = await _commit_live_click(runner, actor_id, _case_target_cell(skill_id))
-	assert_bool(_slots_invalid(slots)).override_failure_message(
-		"%s: recommit slots invalid=%s slots=%s"
-		% [_scenario_diagnostic(skill_id), str(slots.get("invalid", false)), _slots_debug(slots)],
-	).is_false()
-	assert_bool(_plan_has_committed_skill(skill_id, actor_id)).override_failure_message(
-		"%s: recommit must restore the selected skill; plan=%s"
-		% [_scenario_diagnostic(skill_id), _plan_debug()],
-	).is_true()
-
-
 func _commit_live_click(
 	runner: GdUnitSceneRunner,
 	unit_id: int,
@@ -925,43 +1047,6 @@ func _commit_live_click(
 	_director.flush_plan_refresh_signals_if_pending()
 	_input.clear_qa_pointer_override()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
-	_assert_committed_slots_match_preview(unit_id, slots)
-	return slots
-
-
-func _commit_live_drag(
-	runner: GdUnitSceneRunner,
-	unit_id: int,
-	cell: Vector2i,
-) -> Dictionary:
-	_director.select_unit(unit_id)
-	var actor: UnitState = _director.board.get_unit_by_id(unit_id)
-	assert_object(actor).is_not_null()
-	if actor == null:
-		return {"invalid": "actor_missing"}
-	_input.clear_qa_pointer_override()
-	_input.set_qa_pointer_grid_cell(actor.position)
-	_input.on_hover_moved(actor.position)
-	var local: Vector2 = _scene.grid_to_local(actor.position)
-	_input.on_left_press(local)
-	await runner.simulate_frames(3, _DELTA_MS)
-	_input.set_qa_pointer_grid_cell(cell)
-	_input.try_activate_drag(_scene.grid_to_local(cell))
-	await runner.simulate_frames(2, _DELTA_MS)
-	local = _scene.grid_to_local(cell)
-	_input.update_drag(local)
-	await runner.simulate_frames(2, _DELTA_MS)
-	var slots: Dictionary = _input._final_commit_slots_for_drop_at_cell(
-		unit_id, cell, Vector2.ZERO, _input._snapshot_drag_legal_move_tiles(),
-	)
-	if _slots_invalid(slots):
-		_input.on_left_release(local)
-		_input.clear_qa_pointer_override()
-		return slots
-	_input.on_left_release(local)
-	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
-	_director.flush_plan_refresh_signals_if_pending()
-	_input.clear_qa_pointer_override()
 	_assert_committed_slots_match_preview(unit_id, slots)
 	return slots
 
