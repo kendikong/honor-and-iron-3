@@ -82,8 +82,15 @@ static func active_targeting_flags(
 ) -> int:
 	var module: AbilityModule = active_module_for_index(actor, ability, module_index)
 	if module != null:
-		return module.targeting_flags
-	return ability.targeting_flags if ability != null else 0
+		if module.targeting_flags != 0:
+			return module.targeting_flags
+		if ability != null and ability.targeting_flags != 0:
+			return ability.targeting_flags
+	if ability == null:
+		return 0
+	if ability.targeting_flags != 0:
+		return ability.targeting_flags
+	return AbilityData._targeting_mode_to_flags(ability.targeting_mode)
 
 
 static func active_target_shape(

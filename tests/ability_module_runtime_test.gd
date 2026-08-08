@@ -7,6 +7,7 @@ extends RefCounted
 static func run_all(failures: Array[String]) -> void:
 	_test_module_only_execution(failures)
 	_test_upgraded_module_profile(failures)
+	_test_legacy_flat_targeting_compatibility(failures)
 	_test_motion_range_legality(failures)
 	_test_if_collided_follow_up(failures)
 
@@ -67,6 +68,33 @@ static func _test_upgraded_module_profile(failures: Array[String]) -> void:
 	var effects: Array[EffectData] = AbilitySystem.active_effects_for(actor, ability)
 	if effects.size() != 1 or effects[0].amount != 7:
 		failures.append("upgraded module profile did not compile its authored amount")
+
+
+static func _test_legacy_flat_targeting_compatibility(failures: Array[String]) -> void:
+	var board: BoardState = _plain_board(Vector2i(8, 4))
+	var actor: UnitState = _unit(1, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
+	var target: UnitState = _unit(2, GameEnums.Team.ENEMY, Vector2i(3, 1), 20)
+	board.units = [actor, target]
+	_place(board, actor)
+	_place(board, target)
+
+	var ability: AbilityData = _ability(&"runtime_legacy_flat", 0)
+	ability.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+	ability.range_tiles = 3
+	var damage: EffectData = EffectData.new()
+	damage.type = GameEnums.EffectType.DAMAGE
+	damage.amount = 4
+	ability.effects = [damage]
+	var events: Array[SimEvent] = []
+	AbilitySystem.execute(
+		board,
+		TimelineAction.make_ability(actor.id, ability, target.position, target.id),
+		events,
+	)
+	if target.health.current_hp != 16:
+		failures.append(
+			"legacy flat targeting mode did not resolve DAMAGE (HP %d)" % target.health.current_hp
+		)
 
 
 static func _test_motion_range_legality(failures: Array[String]) -> void:

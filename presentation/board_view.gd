@@ -487,7 +487,10 @@ func _on_left_press(local: Vector2) -> void:
 				if target != null:
 					valid_target = AbilitySystem.target_passes_mode(actor, ability, target)
 				else:
-					valid_target = ability.has_targeting(GameEnums.TargetingFlags.TILE) or AbilitySystem.ability_has_movement_effect(ability)
+					valid_target = (
+						AbilitySystem.active_targeting_flags(actor, ability)
+						& GameEnums.TargetingFlags.TILE
+					) != 0 or AbilitySystem.ability_has_movement_effect(ability, actor)
 
 				if valid_target:
 					if target != null:
@@ -1604,7 +1607,7 @@ func _draw_ability_range() -> void:
 		return
 	var ability := _selected_ability_data(actor)
 	if _ability_has_dash(ability):
-		for coord in _dash_threat_tiles(_proj_origin(actor), _dash_effect_amount(ability)):
+		for coord in _dash_threat_tiles(_proj_origin(actor), _dash_effect_amount(ability, actor)):
 			_draw_tile_tint(coord, COLOR_TARGET)
 		return
 	var self_aoe := _self_aoe_threat_tiles(actor, ability, _proj_origin(actor))
@@ -2029,7 +2032,7 @@ func _draw_unit_token(center: Vector2, body: Color, accent: Color, unit: UnitSta
 			for action in plan_to_use.entries:
 				if action.actor_id == unit.id and action.type == GameEnums.ActionType.ABILITY:
 					is_skill_queued = true
-					if action.ability != null and action.ability.effects.any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
+					if action.ability != null and AbilitySystem.active_effects_for(unit, action.ability).any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
 						is_attack_queued = true
 	elif not ghost and is_enemy and (CombatDirector.is_planning_phase(_phase)):
 		var is_enemy_targeting := false
@@ -2043,7 +2046,7 @@ func _draw_unit_token(center: Vector2, body: Color, accent: Color, unit: UnitSta
 							var tgt = _board.get_unit_by_id(action.target_unit_id)
 							if tgt != null and not tgt.is_enemy():
 								is_enemy_targeting = true
-								if action.ability != null and action.ability.effects.any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
+								if action.ability != null and AbilitySystem.active_effects_for(unit, action.ability).any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
 									is_enemy_attack = true
 								break
 		if is_enemy_targeting:
@@ -2846,7 +2849,7 @@ func _update_mouse_cursor() -> void:
 			if drag_unit != null and not drag_unit.is_enemy() \
 			and _hover_coord == drag_unit.position:
 				var ability := _selected_ability_data(drag_unit)
-				if ability != null and ability.range_tiles == 0:
+				if ability != null and AbilitySystem.active_range_tiles(drag_unit, ability) == 0:
 					_hover_action_icon = _ability_action_icon(ability)
 		if _hover_action_icon != "":
 			Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
@@ -2873,7 +2876,10 @@ func _update_mouse_cursor() -> void:
 								valid_aim = AbilitySystem.target_passes_mode(p_unit, _selected_ability_data(p_unit), hover_unit)
 						elif _selected_ability >= 0 and _selected_ability < p_unit.active_abilities.size():
 							var aim_ability: AbilityData = p_unit.active_abilities[_selected_ability]
-							if aim_ability.has_targeting(GameEnums.TargetingFlags.TILE) or AbilitySystem.ability_has_movement_effect(aim_ability):
+							if (
+								AbilitySystem.active_targeting_flags(p_unit, aim_ability)
+								& GameEnums.TargetingFlags.TILE
+							) != 0 or AbilitySystem.ability_has_movement_effect(aim_ability, p_unit):
 								valid_aim = _hover_coord in _hover_threat_tiles
 								
 						if valid_aim:
@@ -3008,27 +3014,23 @@ func _drag_self_skill_intent(release_local: Vector2) -> bool:
 func _ability_is_offensive_dash(ability: AbilityData) -> bool:
 	return AbilitySystem.ability_is_offensive_dash(ability)
 
-func _dash_effect_amount(ability: AbilityData) -> int:
+func _dash_effect_amount(ability: AbilityData, actor: UnitState = null) -> int:
 	if ability == null:
 		return 0
-	for eff in ability.effects:
+	for eff: EffectData in AbilitySystem.active_effects_for(actor, ability):
 		if eff.type == GameEnums.EffectType.DASH:
 			return eff.amount
 	return 0
 
 func _resolved_ability_shape(ability: AbilityData, unit: UnitState) -> Dictionary:
-	var shape := ability.target_shape
-	var shape_size := ability.target_shape_size
-	if unit != null and unit.is_ability_upgraded(ability.id):
-		if ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE:
-			shape = ability.upgraded_target_shape
-		if ability.upgraded_target_shape_size >= 0:
-			shape_size = ability.upgraded_target_shape_size
-	return {"shape": shape, "size": shape_size}
+	return {
+		"shape": AbilitySystem.active_target_shape(unit, ability),
+		"size": AbilitySystem.active_target_shape_size(unit, ability),
+	}
 
 func _self_aoe_threat_tiles(unit: UnitState, ability: AbilityData, center: Vector2i) -> Array[Vector2i]:
 	var tiles: Array[Vector2i] = []
-	if ability == null or _board == null or ability.range_tiles != 0:
+	if ability == null or _board == null or AbilitySystem.active_range_tiles(unit, ability) != 0:
 		return tiles
 	var resolved := _resolved_ability_shape(ability, unit)
 	if resolved["shape"] == GameEnums.TargetShape.SINGLE:
@@ -3087,7 +3089,9 @@ func _try_plan_skill_at_coord(unit: UnitState, coord: Vector2i, local: Vector2) 
 	if actor == null:
 		actor = unit
 	if _ability_has_dash(ability):
-		if not _is_valid_dash_target(_proj_origin(actor), coord, ability.range_tiles):
+		if not _is_valid_dash_target(
+			_proj_origin(actor), coord, AbilitySystem.active_range_tiles(actor, ability),
+		):
 			return false
 		var wp: Array[Vector2i] = []
 		if _planning_input != null:
@@ -3147,15 +3151,15 @@ func _should_use_dash_on_input(ability: AbilityData) -> bool:
 func _unit_attack_range(unit: UnitState) -> int:
 	if unit.is_enemy():
 		if unit.definition.behavior != null and unit.definition.behavior.attack != null:
-			return unit.definition.behavior.attack.range_tiles
+			return AbilitySystem.active_range_tiles(unit, unit.definition.behavior.attack)
 		return 1
 		
 	if unit.id == _selected_id and _selected_ability >= 0 and _selected_ability < unit.active_abilities.size():
-		return unit.active_abilities[_selected_ability].range_tiles
+		return AbilitySystem.active_range_tiles(unit, unit.active_abilities[_selected_ability])
 		
 	var best := 0
 	for ability in unit.active_abilities:
-		best = maxi(best, ability.range_tiles)
+		best = maxi(best, AbilitySystem.active_range_tiles(unit, ability))
 	return best
 
 ## Decide which enemy intents to surface: those acting on the selected unit, plus the
@@ -3248,7 +3252,7 @@ func _refresh_info() -> void:
 							var valid_tiles := AbilitySystem.planning_action_range_tiles(start_board, p_actor if p_actor != null else actor, ability, dash_origin)
 							if _hover_coord in valid_tiles:
 								action = TimelineAction.make_ability(actor.id, ability, _hover_coord, -1, _move_timing_bucket())
-						elif GridSystem.manhattan(actor.position, _hover_coord) <= ability.range_tiles:
+						elif GridSystem.manhattan(actor.position, _hover_coord) <= AbilitySystem.active_range_tiles(actor, ability):
 							var target_unit := start_board.get_unit_at(_hover_coord)
 							var target_id := target_unit.id if target_unit != null else -1
 							action = TimelineAction.make_ability(actor.id, ability, _hover_coord, target_id, _move_timing_bucket())
@@ -3391,7 +3395,7 @@ func _unit_info(unit: UnitState) -> String:
 	if unit.is_enemy():
 		if unit.definition.behavior != null and unit.definition.behavior.attack != null:
 			var att = unit.definition.behavior.attack
-			lines.append("Attack: [hint=\"%s\"]%s[/hint]" % [_ability_desc(att), att.display_name])
+			lines.append("Attack: [hint=\"%s\"]%s[/hint]" % [_ability_desc(att, unit), att.display_name])
 	else:
 		var names: Array[String] = []
 		for ability in unit.active_abilities:
@@ -3624,7 +3628,7 @@ func _ability_upgrade_suffix(ability: AbilityData, unit: UnitState, bbcode: bool
 
 func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> String:
 	var parts: Array[String] = []
-	for effect in ability.effects:
+	for effect: EffectData in AbilitySystem.active_effects_for(unit, ability):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE: parts.append(_kw_hint("ATK %s" % _get_amount_string(effect), "Reduces target's current HP. Resisted by Armor."))
 			GameEnums.EffectType.PUSH: parts.append(_kw_hint("PUSH %s" % _get_amount_string(effect), "Displaces target away from caster. Collisions deal damage."))
@@ -3681,19 +3685,20 @@ func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> Str
 	var body := " | ".join(parts) if not parts.is_empty() else "No effect"
 	
 	var shape_str = ""
-	if ability.target_shape != GameEnums.TargetShape.SINGLE:
-		var s_name = GameEnums.TargetShape.keys()[ability.target_shape].capitalize().replace("Aoe ", "")
+	var resolved_shape := _resolved_ability_shape(ability, unit)
+	if resolved_shape["shape"] != GameEnums.TargetShape.SINGLE:
+		var s_name = GameEnums.TargetShape.keys()[resolved_shape["shape"]].capitalize().replace("Aoe ", "")
 		shape_str = "%s: %s %d | " % [
 			_kw_hint("AOE", "Area effect — hits multiple tiles in the listed shape."),
 			s_name,
-			ability.target_shape_size,
+			resolved_shape["size"],
 		]
 		
 	return "%s%s%s" % [shape_str, body, _ability_upgrade_suffix(ability, unit, true)]
 
 func _ability_effect_string(ability: AbilityData, unit: UnitState = null) -> String:
 	var parts: Array[String] = []
-	for effect in ability.effects:
+	for effect: EffectData in AbilitySystem.active_effects_for(unit, ability):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE: parts.append("ATK %s" % _get_amount_string(effect))
 			GameEnums.EffectType.PUSH: parts.append("PUSH %s" % _get_amount_string(effect))
@@ -3726,14 +3731,20 @@ func _ability_effect_string(ability: AbilityData, unit: UnitState = null) -> Str
 	var body := " | ".join(parts) if not parts.is_empty() else "No effect"
 	
 	var shape_str = ""
-	if ability.target_shape != GameEnums.TargetShape.SINGLE:
-		var s_name = GameEnums.TargetShape.keys()[ability.target_shape].capitalize().replace("Aoe ", "")
-		shape_str = "AOE: %s %d | " % [s_name, ability.target_shape_size]
+	var resolved_shape := _resolved_ability_shape(ability, unit)
+	if resolved_shape["shape"] != GameEnums.TargetShape.SINGLE:
+		var s_name = GameEnums.TargetShape.keys()[resolved_shape["shape"]].capitalize().replace("Aoe ", "")
+		shape_str = "AOE: %s %d | " % [s_name, resolved_shape["size"]]
 		
 	return "%s%s%s" % [shape_str, body, _ability_upgrade_suffix(ability, unit, false)]
 
 func _ability_desc(ability: AbilityData, unit: UnitState = null) -> String:
-	return "%s (RANGE %d | AP %d | %s)" % [ability.display_name, ability.range_tiles, ability.action_point_cost, _ability_effect_string(ability, unit)]
+	return "%s (RANGE %d | AP %d | %s)" % [
+		ability.display_name,
+		AbilitySystem.active_range_tiles(unit, ability),
+		ability.action_point_cost,
+		_ability_effect_string(ability, unit),
+	]
 
 func _ability_hover_text() -> String:
 	var unit := _board.get_unit_by_id(_selected_id)
@@ -4406,7 +4417,11 @@ func _rebuild_ability_buttons() -> void:
 		values_hbox.add_child(_make_icon("🔵", str(ability.action_point_cost), "AP (Action Points required)"))
 		
 		# Range
-		values_hbox.add_child(_make_icon("🏹", str(ability.range_tiles), "Range (Max target distance)"))
+		values_hbox.add_child(_make_icon(
+			"🏹",
+			str(AbilitySystem.active_range_tiles(unit, ability)),
+			"Range (Max target distance)",
+		))
 		
 		# Effects (Line 3)
 		var special = RichTextLabel.new()
@@ -4836,7 +4851,7 @@ func _ability_range(actor: UnitState) -> int:
 	var abilities := actor.active_abilities
 	if _selected_ability < 0 or _selected_ability >= abilities.size():
 		return -1
-	return abilities[_selected_ability].range_tiles
+	return AbilitySystem.active_range_tiles(actor, abilities[_selected_ability])
 
 func _play_attack_lunge(unit_id: int, anim_dir: Vector2) -> void:
 	if not _visual.has(unit_id):
