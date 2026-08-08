@@ -3459,7 +3459,7 @@ func _build_commit_slots_at_cell(
 	):
 		return slots
 
-	if cell == actor.position and not has_awaiting_action:
+	if cell == actor.position:
 		return _build_self_tile_commit_slots(
 			slots, actor, unit_id, ability_index, ability, face_dir,
 		)
