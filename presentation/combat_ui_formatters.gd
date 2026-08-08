@@ -596,7 +596,7 @@ static func ability_desc(ability: AbilityData, unit: UnitState = null) -> String
 		cost_label = "AP %d (extends movement)" % ability.action_point_cost
 	else:
 		cost_label = "AP %d" % ability.action_point_cost
-	var target_hint: String = ClassLibrarySchema.targeting_flags_hint(ability)
+	var target_hint: String = _targeting_flags_hint(ability, unit)
 	var range_label: String = _ability_targeting_range_label(ability, unit)
 	var aoe_label: String = ClassLibrarySchema.bible_ability_aoe_label(ability)
 	if aoe_label != "" and range_label == "RANGE 0":
@@ -656,19 +656,28 @@ static func _ability_targeting_range_label(ability: AbilityData, unit: UnitState
 	var bible_label: String = ClassLibrarySchema.bible_ability_targeting_label(ability)
 	if bible_label != "":
 		return bible_label
-	var rng: int = ability.range_tiles
-	if unit != null:
-		rng = unit.get_ability_range(ability)
+	var rng: int = AbilitySystem.active_range_tiles(unit, ability)
 	return "RANGE %d" % rng
 
 
 static func _dash_effect_amount(ability: AbilityData) -> int:
-	if ability == null:
-		return 0
-	for eff: EffectData in ability.effects:
-		if eff.type == GameEnums.EffectType.DASH:
-			return eff.amount
-	return 0
+	return AbilitySystem.effect_amount(ability, GameEnums.EffectType.DASH)
+
+
+static func _targeting_flags_hint(ability: AbilityData, unit: UnitState = null) -> String:
+	var flags: int = AbilitySystem.active_targeting_flags(unit, ability)
+	var labels: PackedStringArray = []
+	if (flags & GameEnums.TargetingFlags.SELF) != 0:
+		labels.append("Self")
+	if (flags & GameEnums.TargetingFlags.ALLY) != 0:
+		labels.append("Ally")
+	if (flags & GameEnums.TargetingFlags.ENEMY) != 0:
+		labels.append("Enemy")
+	if (flags & GameEnums.TargetingFlags.TILE) != 0:
+		labels.append("Tile")
+	if (flags & GameEnums.TargetingFlags.DASH_LINE) != 0:
+		labels.append("Dash line")
+	return "" if labels.is_empty() else " | %s" % ", ".join(labels)
 
 
 static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -> String:
@@ -694,7 +703,7 @@ static func ability_tooltip_text(ability: AbilityData, unit: UnitState = null) -
 		)
 	else:
 		lines.append("AP %d — %s" % [ability.action_point_cost, _glossary_def("AP")])
-	var dump := ClassLibrarySchema.targeting_flags_dump(ability)
+	var dump: String = _targeting_flags_hint(ability, unit).trim_prefix(" | ")
 	if dump != "none":
 		lines.append("Target — %s." % dump)
 	var keyword_lines: PackedStringArray = _ability_keyword_tooltip_lines(ability, unit)
@@ -744,7 +753,7 @@ static func _targeting_glossary_hint(range_label: String) -> String:
 
 static func _ability_keyword_tooltip_lines(
 	ability: AbilityData,
-	_unit: UnitState = null,
+	unit: UnitState = null,
 ) -> PackedStringArray:
 	var lines: PackedStringArray = []
 	var bible_line: String = ClassLibrarySchema.bible_ability_effect_line(ability)
@@ -755,16 +764,17 @@ static func _ability_keyword_tooltip_lines(
 				continue
 			lines.append(_kw_tooltip_line(kw, _bible_segment_hint(kw)))
 		return lines
-	for effect: EffectData in ability.effects:
+	for effect: EffectData in AbilitySystem.active_effects_for(unit, ability):
 		var line: String = _effect_tooltip_line(effect)
 		if not line.is_empty():
 			lines.append(line)
-	if ability.target_shape != GameEnums.TargetShape.SINGLE:
-		var shape_name: String = GameEnums.TargetShape.keys()[ability.target_shape].capitalize().replace(
+	var target_shape: GameEnums.TargetShape = AbilitySystem.active_target_shape(unit, ability)
+	if target_shape != GameEnums.TargetShape.SINGLE:
+		var shape_name: String = GameEnums.TargetShape.keys()[target_shape].capitalize().replace(
 			"Aoe ", "",
 		)
 		lines.append(_kw_tooltip_line(
-			"AOE %s %d" % [shape_name, ability.target_shape_size],
+			"AOE %s %d" % [shape_name, AbilitySystem.active_target_shape_size(unit, ability)],
 			_glossary_def("AOE"),
 		))
 	return lines
@@ -993,7 +1003,7 @@ static func _append_status_effect_part(
 		parts.append("%s%s%s" % [prefix, label, dur])
 
 
-static func ability_effect_string(ability: AbilityData, _unit: UnitState = null) -> String:
+static func ability_effect_string(ability: AbilityData, unit: UnitState = null) -> String:
 	if ability == null:
 		return ""
 	var bible_line: String = ClassLibrarySchema.bible_ability_effect_line(ability)
@@ -1005,7 +1015,7 @@ static func ability_effect_string(ability: AbilityData, _unit: UnitState = null)
 		header.append(bible_line)
 		return " | ".join(header)
 	var parts: Array[String] = []
-	for effect: EffectData in ability.effects:
+	for effect: EffectData in AbilitySystem.active_effects_for(unit, ability):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE:
 				parts.append("ATK %s" % _effect_amount_string(effect))
@@ -1053,7 +1063,7 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 	if ClassLibrarySchema.bible_ability_effect_line(ability) != "":
 		return _bbcode_from_bible_effect_line(plain)
 	var parts: Array[String] = []
-	for effect: EffectData in ability.effects:
+	for effect: EffectData in AbilitySystem.active_effects_for(unit, ability):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE:
 				parts.append(_kw_hint("ATK %s" % _effect_amount_string(effect), _glossary_def("ATK")))
@@ -1113,12 +1123,13 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 			_:
 				parts.append(_effect_amount_string(effect))
 	var body: String = " | ".join(parts) if not parts.is_empty() else "No effect"
-	if ability.target_shape != GameEnums.TargetShape.SINGLE:
-		var shape_name: String = GameEnums.TargetShape.keys()[ability.target_shape].capitalize().replace("Aoe ", "")
+	var target_shape: GameEnums.TargetShape = AbilitySystem.active_target_shape(unit, ability)
+	if target_shape != GameEnums.TargetShape.SINGLE:
+		var shape_name: String = GameEnums.TargetShape.keys()[target_shape].capitalize().replace("Aoe ", "")
 		var shape: String = "%s: %s %d | " % [
 			_kw_hint("AOE", _glossary_def("AOE")),
 			shape_name,
-			ability.target_shape_size,
+			AbilitySystem.active_target_shape_size(unit, ability),
 		]
 		return shape + body
 	return body

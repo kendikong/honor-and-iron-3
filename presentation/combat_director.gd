@@ -647,7 +647,7 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 		return
 	var index := clampi(ability_index, 0, actor.active_abilities.size() - 1)
 	var ability: AbilityData = actor.active_abilities[index]
-	var rng: int = ability.range_tiles
+	var rng: int = AbilitySystem.active_range_tiles(actor, ability)
 
 	var move_action: TimelineAction = null
 	if GridSystem.manhattan(actor.position, target.position) > rng:
@@ -710,7 +710,7 @@ func preview_approach_tile(
 		return actor.position
 	var index: int = clampi(ability_index, 0, actor.active_abilities.size() - 1)
 	var ability: AbilityData = actor.active_abilities[index]
-	var rng: int = actor.get_ability_range(ability)
+	var rng: int = AbilitySystem.active_range_tiles(actor, ability)
 	if GridSystem.manhattan(actor.position, target.position) <= rng:
 		return actor.position
 	return _find_approach_tile(plan_board, actor, target.position, rng, preferred_tile)
@@ -749,7 +749,10 @@ func make_planning_move_action(
 func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> String:
 	if unit_id < 0 or actions.is_empty():
 		return "invalid"
-	var combined: Timeline = _build_preview_plan(unit_id, actions)
+	var preview_actions: Array[TimelineAction] = []
+	for action: TimelineAction in actions:
+		preview_actions.append(AbilitySystem.planning_preview_action(action))
+	var combined: Timeline = _build_preview_plan(unit_id, preview_actions)
 	var trial: BoardState = base_board.clone()
 	var ev: Array[SimEvent] = []
 	Simulator.simulate_player_turn(trial, combined, ev)
@@ -1202,7 +1205,10 @@ func preview_actions(unit_id: int, actions: Array[TimelineAction]) -> Dictionary
 	var empty: BoardState = base_board.clone() if base_board != null else BoardState.new()
 	if unit_id < 0 or actions.is_empty():
 		return {"intents": [], "events": [], "temp_board": empty, "actions": []}
-	var res: Dictionary = _preview_from_plan(_build_preview_plan(unit_id, actions))
+	var preview_actions: Array[TimelineAction] = []
+	for action: TimelineAction in actions:
+		preview_actions.append(AbilitySystem.planning_preview_action(action))
+	var res: Dictionary = _preview_from_plan(_build_preview_plan(unit_id, preview_actions))
 	## Carry commit-slot actions so preview can ratify movement intent geometry.
 	res["actions"] = actions
 	return res
@@ -1262,7 +1268,7 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 		if actor != null and target != null and not actor.active_abilities.is_empty():
 			var index := clampi(selected_ability_index, 0, actor.active_abilities.size() - 1)
 			var ability: AbilityData = actor.active_abilities[index]
-			var rng: int = actor.get_ability_range(ability)
+			var rng: int = AbilitySystem.active_range_tiles(actor, ability)
 			var self_after_move: bool = (
 				attack_target_id == unit_id
 				and coord != actor.position

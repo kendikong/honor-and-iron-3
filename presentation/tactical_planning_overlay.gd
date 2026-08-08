@@ -243,6 +243,12 @@ func _planning_action_range_tiles_for_unit(
 	var plan_board: BoardState = _board
 	if _director != null and _director.projected_state != null:
 		plan_board = _director.projected_state
+	if _director != null:
+		var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
+		if awaiting != null and awaiting.awaiting_module_index >= 0:
+			return AbilitySystem.planning_module_range_tiles(
+				plan_board, awaiting, awaiting.awaiting_module_index,
+			)
 	return AbilitySystem.planning_action_range_tiles(plan_board, actor, ability, origin, [])
 
 
@@ -780,7 +786,9 @@ func recompute_hover_ranges(
 		var blast_tiles: Array[Vector2i] = []
 		if (
 			ability != null
-			and ability.target_shape != GameEnums.TargetShape.SINGLE
+			and AbilitySystem.active_target_shape(
+				p_unit if p_unit != null else unit, ability,
+			) != GameEnums.TargetShape.SINGLE
 			and _board.is_in_bounds(_hover_coord)
 		):
 			var plan_board: BoardState = _board
@@ -2195,12 +2203,7 @@ func _selected_ability_data(unit: UnitState, ability_index: int) -> AbilityData:
 
 
 func _dash_amount(ability: AbilityData) -> int:
-	if ability == null:
-		return 0
-	for eff: EffectData in ability.effects:
-		if eff.type == GameEnums.EffectType.DASH:
-			return eff.amount
-	return 0
+	return AbilitySystem.effect_amount(ability, GameEnums.EffectType.DASH)
 
 
 func _dash_threat_tiles(origin: Vector2i, steps: int) -> Array[Vector2i]:
@@ -2235,19 +2238,19 @@ func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:
 	if unit.id == _director.selected_unit_id and selected_ability >= 0:
 		var ability: AbilityData = _selected_ability_data(unit, selected_ability)
 		if ability != null:
-			return unit.get_ability_range(ability)
+			return AbilitySystem.active_range_tiles(unit, ability)
 	if unit.is_enemy():
 		if unit.definition != null and unit.definition.behavior != null:
 			var att: AbilityData = unit.definition.behavior.attack
 			if att != null:
-				return att.range_tiles
+				return AbilitySystem.active_range_tiles(unit, att)
 		var best: int = 0
 		for ability: AbilityData in unit.active_abilities:
-			best = maxi(best, unit.get_ability_range(ability))
+			best = maxi(best, AbilitySystem.active_range_tiles(unit, ability))
 		return best if best > 0 else 1
 	var best: int = 0
 	for ability: AbilityData in unit.active_abilities:
-		best = maxi(best, unit.get_ability_range(ability))
+		best = maxi(best, AbilitySystem.active_range_tiles(unit, ability))
 	return best
 
 
@@ -2269,7 +2272,7 @@ func _populate_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ab
 	if rng <= 0:
 		if unit.id == _director.selected_unit_id and selected_ability >= 0:
 			var sel_ability: AbilityData = _selected_ability_data(unit, selected_ability)
-			if sel_ability != null and unit.get_ability_range(sel_ability) == 0:
+			if sel_ability != null and AbilitySystem.active_range_tiles(unit, sel_ability) == 0:
 				var self_tile: Array[Vector2i] = []
 				self_tile.append(origin)
 				_hover_action_range_tiles = self_tile

@@ -700,8 +700,11 @@ func _collect_planned_ability_enemy_targets(
 	var ability: AbilityData = action.ability
 	if ability == null:
 		return
-	ability.ensure_targeting_flags_from_mode()
-	if not ability.has_targeting(GameEnums.TargetingFlags.ENEMY):
+	var actor: UnitState = board.get_unit_by_id(action.actor_id)
+	if (
+		AbilitySystem.active_targeting_flags(actor, ability)
+		& GameEnums.TargetingFlags.ENEMY
+	) == 0:
 		return
 	if action.target_unit_id >= 0:
 		var tgt := board.get_unit_by_id(action.target_unit_id)
@@ -711,8 +714,8 @@ func _collect_planned_ability_enemy_targets(
 			_append_target_id(out, seen, tgt.id)
 		return
 	var target_coord: Vector2i = action.target_coord
-	var shape: int = ability.target_shape
-	var shape_size: int = ability.target_shape_size
+	var shape: GameEnums.TargetShape = AbilitySystem.active_target_shape(actor, ability)
+	var shape_size: int = AbilitySystem.active_target_shape_size(actor, ability)
 	var affected: Array[Vector2i] = GridSystem.get_affected_tiles(
 		board, origin, target_coord, shape, shape_size,
 	)
@@ -927,10 +930,7 @@ func _event_ability_has_pull(event: SimEvent) -> bool:
 	for ability: AbilityData in actor.active_abilities:
 		if ability.id != ability_id:
 			continue
-		var effects: Array[EffectData] = ability.effects
-		if actor.is_ability_upgraded(ability_id) and ability.upgraded_effects.size() > 0:
-			effects = ability.upgraded_effects
-		for effect: EffectData in effects:
+		for effect: EffectData in AbilitySystem.active_effects_for(actor, ability):
 			if effect.type == GameEnums.EffectType.PULL:
 				return true
 		return false
@@ -1879,13 +1879,8 @@ func _ability_affected_unit_ids_from_event(event: SimEvent, ability: AbilityData
 	var target_coord: Vector2i = event.data.get("target_coord", actor.position)
 	if target_coord == Vector2i.ZERO:
 		target_coord = actor.position
-	var shape: int = ability.target_shape
-	var shape_size: int = ability.target_shape_size
-	if actor.is_ability_upgraded(ability.id):
-		if ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE:
-			shape = ability.upgraded_target_shape
-		if ability.upgraded_target_shape_size >= 0:
-			shape_size = ability.upgraded_target_shape_size
+	var shape: GameEnums.TargetShape = AbilitySystem.active_target_shape(actor, ability)
+	var shape_size: int = AbilitySystem.active_target_shape_size(actor, ability)
 	var affected: Array[Vector2i] = GridSystem.get_affected_tiles(
 		_board, actor.position, target_coord, shape, shape_size,
 	)

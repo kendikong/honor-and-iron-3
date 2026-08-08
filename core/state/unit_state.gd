@@ -443,7 +443,14 @@ func get_ability_range(ability_data: AbilityData) -> int:
 		return 0
 	if has_status(GameEnums.StatusType.BLIND):
 		return 1
-	var authored_range: int = ability_data.get_active_card_range(is_ability_upgraded(ability_data.id))
+	var active_modules: Array[AbilityModule] = ability_data.get_active_modules(
+		is_ability_upgraded(ability_data.id),
+	)
+	var authored_range: int = (
+		active_modules[0].max_range
+		if not active_modules.is_empty()
+		else ability_data.get_active_card_range(is_ability_upgraded(ability_data.id))
+	)
 	if (
 		ability_data != null
 		and (

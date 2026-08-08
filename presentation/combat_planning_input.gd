@@ -1363,7 +1363,10 @@ func _refresh_selected_interaction_preview() -> void:
 	var tile_target_ability: AbilityData = _selected_ability_data(p_unit)
 	if (
 		tile_target_ability != null
-		and tile_target_ability.has_targeting(GameEnums.TargetingFlags.TILE)
+		and (
+			AbilitySystem.active_targeting_flags(p_unit, tile_target_ability)
+			& GameEnums.TargetingFlags.TILE
+		) != 0
 		and not AbilitySystem.ability_has_movement_effect(tile_target_ability)
 		and _in_ability_range_of_coord(p_unit, cell)
 	):
@@ -2299,7 +2302,7 @@ func _drag_max_steps(unit: UnitState) -> int:
 			if _awaiting_flow_selected(unit, ability) and not awaiting_targeting_active():
 				pass
 			else:
-				max_steps = ability.range_tiles
+				max_steps = AbilitySystem.active_range_tiles(unit, ability)
 	return max_steps
 
 
@@ -3028,7 +3031,7 @@ func _ability_range(actor: UnitState) -> int:
 	var idx: int = _director.selected_ability_index
 	if idx < 0 or idx >= abilities.size():
 		return -1
-	return abilities[idx].range_tiles
+	return AbilitySystem.active_range_tiles(actor, abilities[idx])
 
 
 func _in_ability_range(actor: UnitState, target: UnitState) -> bool:
@@ -3150,7 +3153,7 @@ func _enemy_attackable_from_legal_tiles(
 	var ability := _selected_ability_data(actor)
 	var rng: int = 1
 	if ability != null:
-		rng = actor.get_ability_range(ability)
+		rng = AbilitySystem.active_range_tiles(actor, ability)
 	elif _director.selected_ability_index >= 0:
 		return false
 	var origin: Vector2i = _proj_origin(actor)
@@ -3473,6 +3476,17 @@ func _build_commit_slots_at_cell(
 		_director.find_awaiting_action(unit_id) if has_awaiting_action else null
 	)
 	if (
+		awaiting_action != null
+		and awaiting_action.awaiting_module_index >= 0
+		and (cell != actor.position or awaiting_action.awaiting_module_index > 0)
+	):
+		if _append_module_awaiting_target(
+			slots, actor, awaiting_action, cell, hover_unit, waypoints,
+		):
+			return slots
+		if slots.has("invalid"):
+			return slots
+	if (
 		cell == actor.position
 		and (
 			awaiting_action == null
@@ -3604,7 +3618,10 @@ func _build_commit_slots_at_cell(
 					)
 				return slots
 			if (
-				ability.has_targeting(GameEnums.TargetingFlags.TILE)
+				(
+					AbilitySystem.active_targeting_flags(actor, ability)
+					& GameEnums.TargetingFlags.TILE
+				) != 0
 				and AbilitySystem.ability_has_movement_effect(ability)
 				and AbilitySystem.planning_is_valid_awaiting_endpoint(
 					_proj_origin(actor), cell, ability,
@@ -3661,7 +3678,13 @@ func _build_commit_slots_at_cell(
 					),
 				)
 				return slots
-			if hover_unit == null and ability.has_targeting(GameEnums.TargetingFlags.TILE):
+			if (
+				hover_unit == null
+				and (
+					AbilitySystem.active_targeting_flags(actor, ability)
+					& GameEnums.TargetingFlags.TILE
+				) != 0
+			):
 				if _in_ability_range_of_coord(actor, cell):
 					if target_pick_skill and not has_awaiting_action:
 						slots["action"].append(
@@ -3672,7 +3695,12 @@ func _build_commit_slots_at_cell(
 						return slots
 					var board: BoardState = _proj()
 					if AbilitySystem.has_pass_through_effects(ability) and not AbilitySystem.ability_has_movement_effect(ability):
-						var path: Array[Vector2i] = MovementSystem.find_path(board, actor.position, cell, ability.range_tiles)
+						var path: Array[Vector2i] = MovementSystem.find_path(
+							board,
+							actor.position,
+							cell,
+							AbilitySystem.active_range_tiles(actor, ability),
+						)
 						if path.is_empty():
 							slots["invalid"] = "No valid path to target tile."
 							return slots
@@ -4052,6 +4080,38 @@ func _actions_from_slots(slots: Dictionary) -> Array[TimelineAction]:
 	return out
 
 
+func _append_module_awaiting_target(
+	slots: Dictionary,
+	actor: UnitState,
+	awaiting_action: TimelineAction,
+	cell: Vector2i,
+	hover_unit: UnitState,
+	waypoints: Array[Vector2i],
+) -> bool:
+	var module_index: int = awaiting_action.awaiting_module_index
+	var target_unit_id: int = hover_unit.id if hover_unit != null else -1
+	var targeting_flags: int = AbilitySystem.active_targeting_flags(
+		actor, awaiting_action.ability, module_index,
+	)
+	if (targeting_flags & GameEnums.TargetingFlags.TILE) != 0:
+		target_unit_id = -1
+	if not AbilitySystem.planning_module_target_valid(
+		_proj(), awaiting_action, module_index, cell, target_unit_id,
+	):
+		slots["invalid"] = "Invalid target or distance for this ability."
+		return false
+	var committed: TimelineAction = awaiting_action.clone()
+	AbilitySystem.set_module_target(committed, module_index, cell, target_unit_id)
+	committed.awaiting_target = false
+	committed.awaiting_module_index = -1
+	if module_index == 0:
+		committed.target_coord = cell
+		committed.target_unit_id = target_unit_id
+		committed.waypoints = waypoints.duplicate()
+	slots["action"].append(committed)
+	return true
+
+
 func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 	if _is_invalid_dict(slots):
 		return slots
@@ -4065,6 +4125,8 @@ func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 	if _slots_are_wait_only(actions):
 		slots["_preview_validated"] = true
 		return slots
+	for action: TimelineAction in actions:
+		AbilitySystem.prepare_planning_action(_proj(), action)
 	var error_reason: String = _director.preview_commit_valid(unit_id, actions) if _director != null else ""
 	if error_reason != "":
 		slots["invalid"] = error_reason
@@ -4344,7 +4406,7 @@ func _resolve_hover_unit_at(cell: Vector2i) -> UnitState:
 func _attack_range_for(actor: UnitState) -> int:
 	var ability: AbilityData = _selected_ability_data(actor)
 	if ability != null:
-		return actor.get_ability_range(ability)
+		return AbilitySystem.active_range_tiles(actor, ability)
 	if _director != null and _director.selected_ability_index >= 0:
 		return -1
 	return 1

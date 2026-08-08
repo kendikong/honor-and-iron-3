@@ -22,6 +22,13 @@ var ability: AbilityData
 ## Optional explicit target unit. -1 means resolve by target_coord at run time.
 var target_unit_id: int = -1
 
+## Ordered module aims for modular abilities. Index 0 mirrors target_coord /
+## target_unit_id; SAME_AS_MODULE_N resolves through the referenced index.
+var module_target_coords: Array[Vector2i] = []
+var module_target_unit_ids: Array[int] = []
+## Module index currently awaiting a NEW_AIM. -1 means the primary action is ready.
+var awaiting_module_index: int = -1
+
 ## Desired final facing (GameEnums.Facing). -1 = derive from movement direction.
 ## Used by MOVE (override facing after moving) and FACE (turn in place).
 var face_dir: int = -1
@@ -149,6 +156,9 @@ func clone() -> TimelineAction:
 	copy.target_coord = target_coord
 	copy.ability = ability  # shared immutable definition
 	copy.target_unit_id = target_unit_id
+	copy.module_target_coords = module_target_coords.duplicate()
+	copy.module_target_unit_ids = module_target_unit_ids.duplicate()
+	copy.awaiting_module_index = awaiting_module_index
 	copy.face_dir = face_dir
 	copy.waypoints = waypoints.duplicate()
 	copy.irreversible = irreversible
