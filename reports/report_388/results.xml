@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-08" name="report_388" tests="2" failures="26" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_planning_scene_test" package="tests" timestamp="2026-08-08T09:18:50" hostname="localhost" tests="2" failures="26" errors="0" skipped="0" flaky="0" time="19.463">
+		<testcase name="test_live_planning_bible_multi_knight_session" classname="live_planning_scene_test" time="19.417">
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2310" type="FAILURE">
+<![CDATA[
+tap: commit must not run when preview slots are invalid
+	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2310
+	at '_tap_cell' in res://tests/live_planning_scene_test.gd:894
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1856" type="FAILURE">
+<![CDATA[
+k4/selection/step_2/path: preview path expected [(4, 1), (5, 1), (5, 2)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(4, 1):(0, 1):[(3, 1), (2, 1), (1, 1), (0, 1)]]; plan=[]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1856
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1572
+	at '_sweep_mouse_to_cell' in res://tests/live_planning_scene_test.gd:1226
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1667" type="FAILURE">
+<![CDATA[
+k4/selection/step_3/walk_loop: walk detour must keep skill AP at stand (4, 2)
+	at '_assert_k4_walk_loop_preview' in res://tests/live_planning_scene_test.gd:1667
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1575
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1856" type="FAILURE">
+<![CDATA[
+k4/selection/step_4/path: preview path expected [(4, 1), (5, 1), (5, 2), (4, 2), (3, 2)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(4, 1):(0, 1):[(3, 1), (2, 1), (1, 1), (0, 1)]]; plan=[]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1856
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1572
+	at '_sweep_mouse_to_cell' in res://tests/live_planning_scene_test.gd:1226
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1686" type="FAILURE">
+<![CDATA[
+k4/selection/step_4/run_trigger: extension past detour must require Run
+	at '_assert_k4_run_loop_preview' in res://tests/live_planning_scene_test.gd:1686
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1578
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1692" type="FAILURE">
+<![CDATA[
+k4/selection/step_4/run_trigger: Run trigger must hide action-range gate
+	at '_assert_k4_run_loop_preview' in res://tests/live_planning_scene_test.gd:1692
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1578
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1695" type="FAILURE">
+<![CDATA[
+k4/selection/step_4/run_trigger: Run trigger must hide action-range red
+	at '_assert_k4_run_loop_preview' in res://tests/live_planning_scene_test.gd:1695
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1578
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2310" type="FAILURE">
+<![CDATA[
+k4/selection/release: commit must not run when preview slots are invalid
+	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2310
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1582
+	at '_tap_cell' in res://tests/live_planning_scene_test.gd:893
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2378" type="FAILURE">
+<![CDATA[
+k4/selection/release: committed action missing for preview slots
+	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2378
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1582
+	at '_tap_cell' in res://tests/live_planning_scene_test.gd:893
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1584" type="FAILURE">
+<![CDATA[
+k4/selection: selection mode must not leave a drag route
+	at '_select_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1584
+	at '_tap_cell' in res://tests/live_planning_scene_test.gd:893
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1154" type="FAILURE">
+<![CDATA[
+k4/selection: k4 destination
+	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:1154
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:739
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1158" type="FAILURE">
+<![CDATA[
+k4/selection: k4 must commit pre-move
+	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:1158
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:739
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1172" type="FAILURE">
+<![CDATA[
+k4/selection: k4 plan must use Run
+	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:1172
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:739
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1856" type="FAILURE">
+<![CDATA[
+k4/drag/preview_path_2: preview path expected [(4, 1), (5, 1), (5, 2)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(4, 1):(0, 1):[(3, 1), (2, 1), (1, 1), (0, 1)]]; plan=[]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1856
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1612
+	at '_hop_drag_to_cell' in res://tests/live_planning_scene_test.gd:1255
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1667" type="FAILURE">
+<![CDATA[
+k4/drag/walk_loop_end: walk detour must keep skill AP at stand (4, 2)
+	at '_assert_k4_walk_loop_preview' in res://tests/live_planning_scene_test.gd:1667
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1619
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1856" type="FAILURE">
+<![CDATA[
+k4/drag/preview_path_4: preview path expected [(4, 1), (5, 1), (5, 2), (4, 2), (3, 2)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(4, 1):(0, 1):[(3, 1), (2, 1), (1, 1), (0, 1)]]; plan=[]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1856
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1612
+	at '_hop_drag_to_cell' in res://tests/live_planning_scene_test.gd:1255
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1692" type="FAILURE">
+<![CDATA[
+k4/drag/run_trigger: Run trigger must hide action-range gate
+	at '_assert_k4_run_loop_preview' in res://tests/live_planning_scene_test.gd:1692
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1625
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1695" type="FAILURE">
+<![CDATA[
+k4/drag/run_trigger: Run trigger must hide action-range red
+	at '_assert_k4_run_loop_preview' in res://tests/live_planning_scene_test.gd:1695
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1625
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1856" type="FAILURE">
+<![CDATA[
+k4/drag/pre_release: preview path expected [(4, 1), (5, 1), (5, 2), (4, 2), (3, 2)] got []; events=[0:(-999, -999):(-999, -999):[], 0:(4, 1):(0, 1):[(3, 1), (2, 1), (1, 1), (0, 1)]]; plan=[]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1856
+	at '_assert_preview_path_matches_drag_route' in res://tests/live_planning_scene_test.gd:1653
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1630
+	at '_k4_preview_snapshot' in res://tests/live_planning_scene_test.gd:1731
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2310" type="FAILURE">
+<![CDATA[
+k4/drag/release: commit must not run when preview slots are invalid
+	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2310
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1635
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2378" type="FAILURE">
+<![CDATA[
+k4/drag/release: committed action missing for preview slots
+	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2378
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1635
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1154" type="FAILURE">
+<![CDATA[
+k4/drag: k4 destination
+	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:1154
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:745
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1635
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1158" type="FAILURE">
+<![CDATA[
+k4/drag: k4 must commit pre-move
+	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:1158
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:745
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1635
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1172" type="FAILURE">
+<![CDATA[
+k4/drag: k4 plan must use Run
+	at '_assert_k4_run_committed' in res://tests/live_planning_scene_test.gd:1172
+	at '_journey_knight4_run_economy' in res://tests/live_planning_scene_test.gd:745
+	at '_paint_k4_detour_and_run_route' in res://tests/live_planning_scene_test.gd:1635
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2714" type="FAILURE">
+<![CDATA[
+k4/drag/post_commit/red: action-range gate expected false got true
+	at '_assert_red_live' in res://tests/live_planning_scene_test.gd:2714
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1363
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1281
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2717" type="FAILURE">
+<![CDATA[
+k4/drag/post_commit/red: overlay red expected false got true
+	at '_assert_red_live' in res://tests/live_planning_scene_test.gd:2717
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1363
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1281
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:1940
+]]>
+			</failure>
+		</testcase>
+	</testsuite>
+</testsuites>
