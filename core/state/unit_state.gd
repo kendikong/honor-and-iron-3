@@ -443,7 +443,7 @@ func get_ability_range(ability_data: AbilityData) -> int:
 		return 0
 	if has_status(GameEnums.StatusType.BLIND):
 		return 1
-	var authored_range := ability_data.range_tiles
+	var authored_range: int = ability_data.get_active_card_range(is_ability_upgraded(ability_data.id))
 	if (
 		ability_data != null
 		and (
@@ -466,8 +466,6 @@ func get_ability_range(ability_data: AbilityData) -> int:
 			if range_bonus > 0:
 				authored_range += range_bonus
 				break
-	if is_ability_upgraded(ability_data.id) and ability_data.upgraded_range_tiles != -1:
-		return ability_data.upgraded_range_tiles
 	return authored_range
 
 func get_ability_by_id(ability_id: StringName) -> AbilityData:

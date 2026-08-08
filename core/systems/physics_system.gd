@@ -24,6 +24,29 @@ extends RefCounted
 ##   SimEvent.
 ## Lifecycle: stateless; only static functions.
 
+static func _active_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
+	if ability == null:
+		return []
+	var modules: Array[AbilityModule] = ability.get_active_modules(
+		actor != null and actor.is_ability_upgraded(ability.id)
+	)
+	if not modules.is_empty():
+		return AbilityModuleBridge.compile_modules_for_runtime(modules)
+	return ability.upgraded_effects if actor != null and actor.is_ability_upgraded(ability.id) else ability.effects
+
+
+static func _has_collision_recast_module(actor: UnitState, ability: AbilityData) -> bool:
+	if actor == null or ability == null:
+		return false
+	for module: AbilityModule in ability.get_active_modules(actor.is_ability_upgraded(ability.id)):
+		if (
+			module != null
+			and module.gate == GameEnums.ModuleGate.IF_COLLIDED
+			and module.primary_type == GameEnums.EffectType.MOVE
+		):
+			return true
+	return false
+
 ## Cardinal direction from one tile toward another (dominant axis wins; ties
 ## resolve to the horizontal axis for determinism).
 static func cardinal_from_to(from: Vector2i, to: Vector2i) -> Vector2i:
@@ -185,11 +208,7 @@ static func resolve_pass_through_tile(
 		var pass_bonus := 0
 		var source_ability := mover.get_ability_by_id(ability_id)
 		if source_ability != null:
-			var source_effects: Array = (
-				source_ability.upgraded_effects
-				if mover.is_ability_upgraded(ability_id)
-				else source_ability.effects
-			)
+			var source_effects: Array[EffectData] = _active_effects_for(mover, source_ability)
 			for source_effect: EffectData in source_effects:
 				if source_effect != null and source_effect.modifiers.has("bonus_per_enemy_passed"):
 					pass_bonus = int(source_effect.modifiers["bonus_per_enemy_passed"])
@@ -255,9 +274,9 @@ static func dash(
 	var source_ability: AbilityData = null
 	if pusher != null and ability_id != &"":
 		source_ability = pusher.get_ability_by_id(ability_id)
-	var source_effects: Array = []
+	var source_effects: Array[EffectData] = []
 	if source_ability != null:
-		source_effects = source_ability.upgraded_effects if pusher.is_ability_upgraded(ability_id) else source_ability.effects
+		source_effects = _active_effects_for(pusher, source_ability)
 	var create_trampled := false
 	var line_breaker := false
 	for source_effect: EffectData in source_effects:
@@ -545,14 +564,11 @@ static func _emit_collision(
 	if ability_id != &"" and pusher != null:
 		var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 		if ability != null:
-			var effects = ability.effects
-			if pusher.is_ability_upgraded(ability_id):
-				effects = ability.upgraded_effects
-			for eff in effects:
+			for eff: EffectData in _active_effects_for(pusher, ability):
 				if eff.modifiers.has("object_collision_stagger"): object_collision_stagger = true
 				if eff.modifiers.has("enemy_collision_stagger_both"): enemy_collision_stagger_both = true
 				if eff.modifiers.has("stagger_on_collision"): stagger_on_collision = true
-				if eff.modifiers.has("violent_collision_recast"): violent_collision_recast = true
+			violent_collision_recast = _has_collision_recast_module(pusher, ability)
 
 	if pusher != null and pusher != target:
 		if violent_collision_recast and not pusher.passive_flags.get("violent_collision_recast_used", false):
@@ -586,11 +602,7 @@ static func _emit_collision(
 			and pusher.get_ability_by_id(ability_id) != null
 		):
 			var collision_ability := pusher.get_ability_by_id(ability_id)
-			var collision_effects: Array = (
-				collision_ability.upgraded_effects
-				if pusher.is_ability_upgraded(ability_id)
-				else collision_ability.effects
-			)
+			var collision_effects: Array[EffectData] = _active_effects_for(pusher, collision_ability)
 			var collision_pierce := false
 			var collision_power := 0
 			for eff: EffectData in collision_effects:

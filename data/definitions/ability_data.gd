@@ -3,7 +3,7 @@ extends Resource
 
 ## Purpose: A data-driven ability — header + ordered modules (ability-data.md).
 ## Responsibilities: Describe planner column, cost, tags, presentation, and modules.
-## Legacy flat effects[] are compiled from modules for AbilitySystem during migration.
+## Legacy flat effects[] are compiled from modules for readers not yet migrated.
 ## Dependencies: EffectData, AbilityModule, AbilityModuleBridge.
 ## Lifecycle: immutable definition shared by all units that own it.
 
@@ -162,6 +162,41 @@ func _targeting_flags_to_mode() -> int:
 ## Infer modules from flat effects when needed; compile modules → effects; sync kind/cost mirrors.
 func finalize_modular() -> void:
 	AbilityModuleBridge.finalize_ability(self)
+
+
+## Returns the one authored module profile active for this ability state.
+## Upgraded profiles are complete replacements, not scalar patches over base modules.
+func get_active_modules(upgraded: bool = false) -> Array[AbilityModule]:
+	if upgraded and not upgraded_modules.is_empty():
+		return upgraded_modules
+	return modules
+
+
+## Returns the card-facing range from the first non-motion NEW_AIM module.
+## Motion distance belongs to active_motion_module(), never this legacy card range.
+func get_active_card_range(upgraded: bool = false) -> int:
+	for module: AbilityModule in get_active_modules(upgraded):
+		if (
+			module != null
+			and module.aim_binding == GameEnums.AimBinding.NEW_AIM
+			and not AbilityModuleBridge.is_motion_type(module.primary_type)
+		):
+			return module.max_range
+	if upgraded and upgraded_modules.is_empty() and upgraded_range_tiles >= 0:
+		return upgraded_range_tiles
+	return range_tiles
+
+
+## Returns the active motion module, including its authored min/max distance.
+func get_active_motion_module(upgraded: bool = false) -> AbilityModule:
+	for module: AbilityModule in get_active_modules(upgraded):
+		if (
+			module != null
+			and AbilityModuleBridge.is_motion_type(module.primary_type)
+			and module.gate == GameEnums.ModuleGate.ALWAYS
+		):
+			return module
+	return null
 
 
 func has_modules() -> bool:

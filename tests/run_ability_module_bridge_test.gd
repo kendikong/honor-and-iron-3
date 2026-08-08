@@ -14,6 +14,8 @@ func _run() -> void:
 	_check_bruiser(failures)
 	_check_knight(failures)
 	_check_violent_collision_modules(failures)
+	_check_native_module_runtime(failures)
+	_check_active_upgrade_and_module_order(failures)
 	if failures.is_empty():
 		print("ABILITY_MODULE_BRIDGE_TEST: PASS")
 		get_tree().quit(0)
@@ -78,6 +80,10 @@ func _check_violent_collision_modules(failures: Array[String]) -> void:
 	if vc.modules.size() < 2:
 		failures.append("violent_collision should have DASH + gated MOVE modules")
 		return
+	if vc.modules[0].primary_type != GameEnums.EffectType.DASH:
+		failures.append("violent_collision module[0] should be DASH")
+	if vc.modules[1].primary_type != GameEnums.EffectType.MOVE:
+		failures.append("violent_collision module[1] should be MOVE")
 	if vc.modules[1].gate != GameEnums.ModuleGate.IF_COLLIDED:
 		failures.append("violent_collision module[1] gate not IF_COLLIDED")
 	if vc.effects.is_empty() or not vc.effects[0].modifiers.has("violent_collision_recast"):
@@ -98,5 +104,90 @@ func _check_violent_collision_modules(failures: Array[String]) -> void:
 		failures.append("bruiser_charge_strike missing")
 	elif charge.modules.size() < 2:
 		failures.append("charge_strike should be MOVE module + strike module")
+	elif charge.modules[0].primary_type != GameEnums.EffectType.MOVE \
+			or charge.modules[1].primary_type != GameEnums.EffectType.DAMAGE:
+		failures.append("charge_strike module order should be MOVE then DAMAGE")
 	elif charge.modules[1].layers.is_empty():
 		failures.append("charge_strike strike module should have PUSH layer")
+
+
+func _plain_board(size: Vector2i) -> BoardState:
+	var terrain := TerrainData.new()
+	terrain.id = &"plain"
+	terrain.blocks_movement = false
+	var board := BoardState.new()
+	board.grid_size = size
+	for y: int in range(size.y):
+		for x: int in range(size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, terrain)
+	return board
+
+
+func _check_native_module_runtime(failures: Array[String]) -> void:
+	var board := _plain_board(Vector2i(8, 4))
+	var actor := UnitState.new()
+	actor.id = 1
+	actor.team = GameEnums.Team.PLAYER
+	actor.position = Vector2i(1, 1)
+	actor.health = HealthComponent.new(20)
+	actor.ability = AbilityComponent.new(1)
+	var target := UnitState.new()
+	target.id = 2
+	target.team = GameEnums.Team.ENEMY
+	target.position = Vector2i(3, 1)
+	target.health = HealthComponent.new(20)
+	board.units = [actor, target]
+	GridSystem.set_occupant(board, actor.position, actor.id)
+	GridSystem.set_occupant(board, target.position, target.id)
+
+	var ability := AbilityData.new()
+	ability.id = &"module_only_damage"
+	ability.kind = GameEnums.AbilityKind.CLASS_SKILL
+	ability.action_point_cost = 1
+	ability.range_tiles = 3
+	ability.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+	var damage := AbilityModule.new()
+	damage.primary_type = GameEnums.EffectType.DAMAGE
+	damage.amount = 4
+	damage.min_range = 1
+	damage.max_range = 3
+	damage.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	ability.modules = [damage]
+	ability.effects = []
+	var action := TimelineAction.make_ability(actor.id, ability, target.position, target.id)
+	var events: Array[SimEvent] = []
+	AbilitySystem.execute(board, action, events)
+	if target.health.current_hp != 16:
+		failures.append(
+			"module-only runtime should apply DAMAGE 4 (HP %d)" % target.health.current_hp
+		)
+	if not ability.effects.is_empty():
+		failures.append("module-only fixture must keep effects[] empty")
+
+
+func _check_active_upgrade_and_module_order(failures: Array[String]) -> void:
+	var ability := AbilityData.new()
+	ability.id = &"module_profile_fixture"
+	var base_damage := AbilityModule.new()
+	base_damage.primary_type = GameEnums.EffectType.DAMAGE
+	base_damage.amount = 2
+	var base_push := AbilityModule.new()
+	base_push.primary_type = GameEnums.EffectType.PUSH
+	base_push.amount = 1
+	var upgraded_damage := AbilityModule.new()
+	upgraded_damage.primary_type = GameEnums.EffectType.DAMAGE
+	upgraded_damage.amount = 5
+	ability.modules = [base_damage, base_push]
+	ability.upgraded_modules = [upgraded_damage]
+	var actor := UnitState.new()
+	actor.id = 7
+	actor.upgraded_abilities = [ability.id]
+	var active_effects := AbilitySystem.active_effects_for(actor, ability)
+	if active_effects.size() != 1 or active_effects[0].amount != 5:
+		failures.append("active upgraded module profile was not selected")
+	var ordered_effects := AbilitySystem.active_effects_for(UnitState.new(), ability)
+	if ordered_effects.size() != 2 \
+			or ordered_effects[0].type != GameEnums.EffectType.DAMAGE \
+			or ordered_effects[1].type != GameEnums.EffectType.PUSH:
+		failures.append("module runtime did not preserve ordered primary effects")

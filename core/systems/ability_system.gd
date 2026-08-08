@@ -21,6 +21,44 @@ extends RefCounted
 ##   CombatSystem, PhysicsSystem, SimEvent, GameEnums.
 ## Lifecycle: stateless; only static functions.
 
+## Canonical active profile for all runtime readers.
+static func active_modules_for(actor: UnitState, ability: AbilityData) -> Array[AbilityModule]:
+	if ability == null:
+		return []
+	var upgraded: bool = actor != null and actor.is_ability_upgraded(ability.id)
+	return ability.get_active_modules(upgraded)
+
+
+## Runtime effect view compiled from the active module profile.
+## Flat effects remain a compatibility fallback for unmigrated abilities only.
+static func active_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
+	if ability == null:
+		return []
+	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
+	if not modules.is_empty():
+		return AbilityModuleBridge.compile_modules_for_runtime(modules)
+	if actor != null and actor.is_ability_upgraded(ability.id) and not ability.upgraded_effects.is_empty():
+		return ability.upgraded_effects
+	return ability.effects
+
+
+static func active_motion_module(actor: UnitState, ability: AbilityData) -> AbilityModule:
+	if ability == null:
+		return null
+	var upgraded: bool = actor != null and actor.is_ability_upgraded(ability.id)
+	return ability.get_active_motion_module(upgraded)
+
+
+static func active_motion_min_range(actor: UnitState, ability: AbilityData) -> int:
+	var module: AbilityModule = active_motion_module(actor, ability)
+	return module.min_range if module != null else 0
+
+
+static func active_motion_max_range(actor: UnitState, ability: AbilityData) -> int:
+	var module: AbilityModule = active_motion_module(actor, ability)
+	return module.max_range if module != null else 0
+
+
 static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	var actor := board.get_unit_by_id(action.actor_id)
 	if actor == null or not actor.is_alive():
@@ -30,7 +68,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		return false
 	if (
 		actor.passive_flags.get("marked_no_stealth_teleport", false)
-		and ability_has_teleport(ability)
+		and ability_has_teleport(ability, actor)
 	):
 		return false
 	if (
@@ -57,14 +95,14 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			or paired_ally.team != actor.team
 			or paired_enemy == null
 			or paired_enemy.team == actor.team
-			or GridSystem.manhattan(actor.position, paired_ally.position) > ability.range_tiles
-			or GridSystem.manhattan(actor.position, paired_enemy.position) > ability.range_tiles
+			or GridSystem.manhattan(actor.position, paired_ally.position) > actor.get_ability_range(ability)
+			or GridSystem.manhattan(actor.position, paired_enemy.position) > actor.get_ability_range(ability)
 		):
 			return false
 	if not _has_resource_for_ability(actor, ability):
 		return false
 	var dist := GridSystem.manhattan(actor.position, action.target_coord)
-	if ability_has_dash(ability):
+	if ability_has_dash(ability, actor):
 		if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
 			return false
 		dist = PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
@@ -79,15 +117,16 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		max_range += 1
 	if _is_spell(ability):
 		max_range += int(actor.passive_flags.get("mage_spell_range_bonus", 0))
-	if ability_has_dash(ability):
-		max_range = maxi(max_range, dash_steps(ability))
+	if ability_has_dash(ability, actor):
+		max_range = maxi(max_range, active_motion_max_range(actor, ability))
 	var move_steps_for_range: int = (
 		0
-		if ability_has_post_attack_move(ability)
+		if ability_has_post_attack_move(ability, actor)
 		else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
 	)
 	if move_steps_for_range > 0:
 		max_range = maxi(max_range, move_steps_for_range)
+	max_range = maxi(max_range, active_motion_max_range(actor, ability))
 	if dist > max_range:
 		return false
 	if dist == 0 and actor.get_ability_range(ability) > 0 and not can_target_self(actor, ability):
@@ -131,7 +170,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		return false
 
 	if actor.has_status(GameEnums.StatusType.PACIFY) and ability_uses_attack_animation(ability):
-		for effect in ability.effects:
+		for effect: EffectData in active_effects_for(actor, ability):
 			if effect.type == GameEnums.EffectType.DAMAGE or effect.type == GameEnums.EffectType.EXPLODE or effect.type == GameEnums.EffectType.RANGED_EXPLODE:
 				return false
 
@@ -142,16 +181,14 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	):
 		return false
 
-	var has_displacement := has_displacement_effects(ability)
+	var has_displacement := has_displacement_effects(ability, actor)
 		
-	var is_dash := ability_has_dash(ability)
+	var is_dash := ability_has_dash(ability, actor)
 	var is_move := (
-		effect_amount(ability, GameEnums.EffectType.MOVE) > 0
-		and not ability_has_post_attack_move(ability)
+		effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
+		and not ability_has_post_attack_move(ability, actor)
 	)
-	var validation_effects: Array = ability.effects
-	if actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
-		validation_effects = ability.upgraded_effects
+	var validation_effects: Array[EffectData] = active_effects_for(actor, ability)
 	var requires_l_shape := false
 	for validation_effect: EffectData in validation_effects:
 		if validation_effect != null and validation_effect.modifiers.has("l_shape_move"):
@@ -179,20 +216,23 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
 			return false
 		var steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
-		var dash_amount := effect_amount(ability, GameEnums.EffectType.DASH)
-		if steps < 1 or steps > dash_amount:
+		var dash_min: int = active_motion_min_range(actor, ability)
+		var dash_max: int = active_motion_max_range(actor, ability)
+		if steps < maxi(1, dash_min) or (dash_max > 0 and steps > dash_max):
 			return false
 
-	if is_move or (has_pass_through_effects(ability) and not is_dash):
+	if is_move or (has_pass_through_effects(ability, actor) and not is_dash):
 		if action.target_coord != actor.position:
-			var walk_steps: int = effect_amount(ability, GameEnums.EffectType.MOVE)
+			var walk_min: int = active_motion_min_range(actor, ability)
+			var walk_steps: int = active_motion_max_range(actor, ability)
 			if walk_steps <= 0:
-				walk_steps = ability.range_tiles
-			if GridSystem.manhattan(actor.position, action.target_coord) > walk_steps:
+				return false
+			var walk_distance: int = GridSystem.manhattan(actor.position, action.target_coord)
+			if walk_distance < maxi(1, walk_min) or walk_distance > walk_steps:
 				return false
 				
 	if is_move or is_dash:
-		if not has_displacement and not has_pass_through_effects(ability):
+		if not has_displacement and not has_pass_through_effects(ability, actor):
 			var end_unit := board.get_unit_at(action.target_coord)
 			if end_unit != null and end_unit.id != actor.id:
 				return false
@@ -216,10 +256,7 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 		and actor.passive_flags.get("mana_well_next_spell", false)
 	):
 		return 0
-	var effects: Array = ability.effects
-	if actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
-		effects = ability.upgraded_effects
-	for eff: EffectData in effects:
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff != null and eff.modifiers.has("zero_ap_adjacent_enemies"):
 			var needed: int = int(eff.modifiers["zero_ap_adjacent_enemies"])
 			var adj_enemies := 0
@@ -600,19 +637,19 @@ static func target_passes_mode(actor: UnitState, ability: AbilityData, target: U
 	return _target_allowed(actor, ability, target, coord)
 
 
-static func ability_has_dash(ability: AbilityData) -> bool:
+static func ability_has_dash(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	for eff in ability.effects:
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff.type == GameEnums.EffectType.DASH:
 			return true
 	return false
 
 
-static func ability_has_movement_effect(ability: AbilityData) -> bool:
+static func ability_has_movement_effect(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	for eff in ability.effects:
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff.type in [
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.TELEPORT_CASTER,
@@ -624,10 +661,10 @@ static func ability_has_movement_effect(ability: AbilityData) -> bool:
 	return false
 
 
-static func ability_has_post_attack_move(ability: AbilityData) -> bool:
+static func ability_has_post_attack_move(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	for eff: EffectData in ability.effects:
+	for eff: EffectData in active_effects_for(actor, ability):
 		if (
 			eff != null
 			and eff.type == GameEnums.EffectType.MOVE
@@ -637,19 +674,19 @@ static func ability_has_post_attack_move(ability: AbilityData) -> bool:
 	return false
 
 
-static func ability_has_teleport(ability: AbilityData) -> bool:
+static func ability_has_teleport(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	for eff: EffectData in ability.effects:
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff != null and eff.type == GameEnums.EffectType.TELEPORT_CASTER:
 			return true
 	return false
 
 
-static func is_movement_skill(ability: AbilityData) -> bool:
+static func is_movement_skill(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	for eff in ability.effects:
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff.type in [
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.MOVE,
@@ -752,10 +789,7 @@ static func effect_amount(
 ) -> int:
 	if ability == null:
 		return 0
-	var effects: Array = ability.effects
-	if actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
-		effects = ability.upgraded_effects
-	for eff in effects:
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff.type == effect_type:
 			return eff.amount
 	return 0
@@ -768,10 +802,7 @@ static func _ability_has_modifier(
 ) -> bool:
 	if ability == null:
 		return false
-	var effects: Array = ability.effects
-	if actor != null and actor.is_ability_upgraded(ability.id) and not ability.upgraded_effects.is_empty():
-		effects = ability.upgraded_effects
-	for effect: EffectData in effects:
+	for effect: EffectData in active_effects_for(actor, ability):
 		if effect != null and effect.modifiers.has(key):
 			return true
 	return false
@@ -785,31 +816,31 @@ static func ability_has_modifier(
 	return _ability_has_modifier(actor, ability, key)
 
 
-static func ability_has_swap_effect(ability: AbilityData) -> bool:
+static func ability_has_swap_effect(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	for eff: EffectData in ability.effects:
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff.type == GameEnums.EffectType.SWAP:
 			return true
 	return false
 
 
-static func has_pass_through_effects(ability: AbilityData) -> bool:
+static func has_pass_through_effects(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	return has_pass_through_effects_from(ability.effects)
+	return has_pass_through_effects_from(active_effects_for(actor, ability))
 
 
-static func has_displacement_effects(ability: AbilityData) -> bool:
-	return effect_amount(ability, GameEnums.EffectType.PUSH) > 0 \
-		or effect_amount(ability, GameEnums.EffectType.PULL) > 0 \
-		or ability_has_swap_effect(ability) \
-		or effect_amount(ability, GameEnums.EffectType.BULLDOZE) > 0 \
-		or _ability_has_modifier(null, ability, &"paired_ally_charge")
+static func has_displacement_effects(ability: AbilityData, actor: UnitState = null) -> bool:
+	return effect_amount(ability, GameEnums.EffectType.PUSH, actor) > 0 \
+		or effect_amount(ability, GameEnums.EffectType.PULL, actor) > 0 \
+		or ability_has_swap_effect(ability, actor) \
+		or effect_amount(ability, GameEnums.EffectType.BULLDOZE, actor) > 0 \
+		or _ability_has_modifier(actor, ability, &"paired_ally_charge")
 
 
-static func dash_steps(ability: AbilityData) -> int:
-	return effect_amount(ability, GameEnums.EffectType.DASH)
+static func dash_steps(ability: AbilityData, actor: UnitState = null) -> int:
+	return effect_amount(ability, GameEnums.EffectType.DASH, actor)
 
 
 ## Single planning-preview entry point: action range tiles from `origin` (cursor-shifted during pre/post-move).
@@ -872,7 +903,7 @@ static func planning_blast_tiles_at_target(
 			shape = ability.upgraded_target_shape
 		if ability.upgraded_target_shape_size >= 0:
 			shape_size = ability.upgraded_target_shape_size
-	if ability.range_tiles <= 0:
+	if unit.get_ability_range(ability) <= 0:
 		return GridSystem.get_affected_tiles(board, origin, origin, shape, shape_size)
 	var cast_origin: Vector2i = origin
 	if GridSystem.manhattan(cast_origin, target) > unit.get_ability_range(ability):
@@ -920,10 +951,7 @@ static func manhattan_threat_tiles(
 
 
 static func pass_through_modifiers(ability: AbilityData, actor: UnitState = null) -> Dictionary:
-	var effects: Array = ability.effects if ability != null else []
-	if ability != null and actor != null and actor.is_ability_upgraded(ability.id) and ability.upgraded_effects.size() > 0:
-		effects = ability.upgraded_effects
-	return pass_through_modifiers_from(effects)
+	return pass_through_modifiers_from(active_effects_for(actor, ability))
 
 
 static func pass_through_modifiers_from(effects: Array) -> Dictionary:
@@ -1238,7 +1266,7 @@ static func planning_allows_paired_premove(ability: AbilityData) -> bool:
 	return ability.is_movement_kind()
 
 
-static func ability_uses_attack_animation(ability: AbilityData) -> bool:
+static func ability_uses_attack_animation(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
 	if ability.presentation_anim == GameEnums.PresentationAnim.ATTACK:
@@ -1268,10 +1296,7 @@ static func ability_uses_attack_animation(ability: AbilityData) -> bool:
 		GameEnums.EffectType.EXPLODE,
 		GameEnums.EffectType.RANGED_EXPLODE,
 	]
-	for eff: EffectData in ability.effects:
-		if eff.type in offensive_effects:
-			return true
-	for eff: EffectData in ability.upgraded_effects:
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff.type in offensive_effects:
 			return true
 	return false
@@ -1342,10 +1367,10 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var will_skill_walk := false
 	if target_coord != actor.position:
-		var is_move_check := effect_amount(ability, GameEnums.EffectType.MOVE) > 0
+		var is_move_check := effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
 		will_skill_walk = (
-			(has_pass_through_effects(ability) or is_move_check)
-			and not ability_has_dash(ability)
+			(has_pass_through_effects(ability, actor) or is_move_check)
+			and not ability_has_dash(ability, actor)
 		)
 
 	if target_coord != actor.position and not will_skill_walk:
@@ -1370,11 +1395,11 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	
 	var pres_anim: int = action.ability.presentation_anim
 	if pres_anim == GameEnums.PresentationAnim.AUTO:
-		if effect_amount(action.ability, GameEnums.EffectType.DASH) > 0:
+		if effect_amount(action.ability, GameEnums.EffectType.DASH, actor) > 0:
 			pres_anim = GameEnums.PresentationAnim.SUPER_RUN
-		elif effect_amount(action.ability, GameEnums.EffectType.BULLDOZE) > 0:
+		elif effect_amount(action.ability, GameEnums.EffectType.BULLDOZE, actor) > 0:
 			pres_anim = GameEnums.PresentationAnim.RUN
-		elif effect_amount(action.ability, GameEnums.EffectType.MOVE) > 0:
+		elif effect_amount(action.ability, GameEnums.EffectType.MOVE, actor) > 0:
 			pres_anim = GameEnums.PresentationAnim.WALK
 			
 	events.append(SimEvent.make(GameEnums.SimEventType.ABILITY_USED, {
@@ -1386,9 +1411,12 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		"presentation_anim": pres_anim,
 	}))
 	
-	var effects_to_apply = action.ability.effects
-	if actor.is_ability_upgraded(action.ability.id) and action.ability.upgraded_effects.size() > 0:
-		effects_to_apply = action.ability.upgraded_effects
+	var runtime_modules: Array[AbilityModule] = active_modules_for(actor, action.ability)
+	var effects_to_apply: Array[EffectData] = (
+		AbilityModuleBridge.compile_modules_for_runtime(runtime_modules)
+		if not runtime_modules.is_empty()
+		else active_effects_for(actor, action.ability)
+	)
 	if actor.movement_points_spent_this_turn == 0:
 		for passive: PassiveData in actor.active_passives:
 			if passive == null or not passive.modifiers.has("vantage_anchor"):
@@ -1427,12 +1455,17 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var is_move := (
 		effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
-		and not ability_has_post_attack_move(ability)
+		and not ability_has_post_attack_move(ability, actor)
 	)
-	if (has_pass_through_effects(ability) or is_move) and not ability_has_dash(ability) and target_coord != actor.position:
-		var walk_steps: int = effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+	if (has_pass_through_effects(ability, actor) or is_move) and not ability_has_dash(ability, actor) and target_coord != actor.position:
+		var walk_steps: int = active_motion_max_range(actor, ability)
 		if walk_steps <= 0:
-			walk_steps = ability.range_tiles
+			walk_steps = effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+		if walk_steps <= 0:
+			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+				"actor": actor.id, "reason": "missing_motion_module_range",
+			}))
+			return
 			
 		var has_ghost = false
 		for eff in effects_to_apply:
@@ -2895,11 +2928,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				var trample_atk: int = int(mods.get("trample_atk", 0))
 				var bulldoze: int = int(mods.get("bulldoze", 0))
 				var push_amt: int = int(mods.get("push", 0))
-				for candidate: EffectData in (
-					action.ability.upgraded_effects
-					if actor.is_ability_upgraded(action.ability.id)
-					else action.ability.effects
-				):
+				for candidate: EffectData in active_effects_for(actor, action.ability):
 					if candidate != null and candidate.type == GameEnums.EffectType.PUSH:
 						push_amt += _push_synergy_bonus(
 							actor,
@@ -2907,7 +2936,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							&"push_bonus_if_push_used",
 						)
 						if trample_atk <= 0:
-							for damage_effect: EffectData in action.ability.effects:
+							for damage_effect: EffectData in active_effects_for(actor, action.ability):
 								if damage_effect != null and damage_effect.type == GameEnums.EffectType.DAMAGE:
 									trample_atk = damage_effect.amount
 									break
@@ -2922,7 +2951,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if bulldoze > 0:
 					pending["bulldoze"] = bulldoze
 					pending["caster_collision_immune"] = true
-				if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0:
+				if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION, actor) > 0:
 					pending["bowling_upgrade"] = true
 				board.pending_pushes.append(pending)
 		GameEnums.EffectType.TRAMPLE, GameEnums.EffectType.BULLDOZE:
@@ -3239,12 +3268,7 @@ static func _prepare_paired_charge(
 	if ally == null or enemy == null or not ally.is_alive():
 		return
 	actor.passive_flags["paired_strength_bonus"] = ally.current_strength
-	var effects: Array = (
-		action.ability.upgraded_effects
-		if actor.is_ability_upgraded(action.ability.id)
-		else action.ability.effects
-	)
-	for effect: EffectData in effects:
+	for effect: EffectData in active_effects_for(actor, action.ability):
 		if effect != null and effect.modifiers.has("on_kill_both_ap"):
 			actor.passive_flags["paired_ally_id"] = ally.id
 			break

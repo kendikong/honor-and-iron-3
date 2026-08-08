@@ -78,6 +78,48 @@ static func sync_legacy_from_header(ability: AbilityData) -> void:
 		_ensure_zero_ap_modifier_on_effects(ability)
 
 
+## Expand one module without applying its resolution gate.
+## The caller owns gate timing; this preserves module order and layer order.
+static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData]:
+	var out: Array[EffectData] = []
+	if module == null:
+		return out
+	var primary: EffectData = module.primary_as_effect()
+	_apply_keywords_to_effect(primary, module)
+	out.append(primary)
+	for kw: AbilityKeyword in module.keywords:
+		if kw == null or not kw.emit_as_effect:
+			continue
+		if kw.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE:
+			var trample_eff := EffectData.new()
+			trample_eff.type = GameEnums.EffectType.TRAMPLE
+			trample_eff.amount = kw.amount
+			out.append(trample_eff)
+		elif kw.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
+			var bulldoze_eff := EffectData.new()
+			bulldoze_eff.type = GameEnums.EffectType.BULLDOZE
+			bulldoze_eff.amount = kw.amount
+			out.append(bulldoze_eff)
+	for layer: AbilityLayer in module.layers:
+		if layer == null or layer.effect == null:
+			continue
+		var layer_eff: EffectData = _duplicate_effect(layer.effect)
+		_apply_layer_condition_to_effect(layer_eff, layer.condition)
+		out.append(layer_eff)
+	return out
+
+
+## Runtime compatibility list: only modules whose gate is active before execution.
+## IF_COLLIDED is resolved by PhysicsSystem from the active module profile.
+static func compile_modules_for_runtime(modules: Array[AbilityModule]) -> Array[EffectData]:
+	var out: Array[EffectData] = []
+	for module: AbilityModule in modules:
+		if module == null or module.gate != GameEnums.ModuleGate.ALWAYS:
+			continue
+		out.append_array(compile_module_to_effects(module))
+	return out
+
+
 static func compile_modules_to_effects(modules: Array[AbilityModule]) -> Array[EffectData]:
 	var out: Array[EffectData] = []
 	var has_collided_gate := false
@@ -90,28 +132,7 @@ static func compile_modules_to_effects(modules: Array[AbilityModule]) -> Array[E
 		if mod.gate == GameEnums.ModuleGate.IF_COLLIDED:
 			has_collided_gate = true
 			continue
-		var primary: EffectData = mod.primary_as_effect()
-		_apply_keywords_to_effect(primary, mod)
-		out.append(primary)
-		for kw: AbilityKeyword in mod.keywords:
-			if kw == null or not kw.emit_as_effect:
-				continue
-			if kw.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE:
-				var trample_eff := EffectData.new()
-				trample_eff.type = GameEnums.EffectType.TRAMPLE
-				trample_eff.amount = kw.amount
-				out.append(trample_eff)
-			elif kw.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
-				var bulldoze_eff := EffectData.new()
-				bulldoze_eff.type = GameEnums.EffectType.BULLDOZE
-				bulldoze_eff.amount = kw.amount
-				out.append(bulldoze_eff)
-		for layer: AbilityLayer in mod.layers:
-			if layer == null or layer.effect == null:
-				continue
-			var layer_eff: EffectData = _duplicate_effect(layer.effect)
-			_apply_layer_condition_to_effect(layer_eff, layer.condition)
-			out.append(layer_eff)
+		out.append_array(compile_module_to_effects(mod))
 	if has_collided_gate and not out.is_empty():
 		var stamp: EffectData = out[0]
 		if stamp != null:
@@ -136,18 +157,18 @@ static func infer_modules_from_effects(
 		if (
 			not modules.is_empty()
 			and _is_pass_through_type(eff.type)
-			and _is_motion_type(modules[modules.size() - 1].primary_type)
+			and is_motion_type(modules[modules.size() - 1].primary_type)
 		):
 			_merge_pass_through_into_motion(modules[modules.size() - 1], eff)
 			continue
-		if modules.is_empty() or _is_motion_type(eff.type):
+		if modules.is_empty() or is_motion_type(eff.type):
 			var mod: AbilityModule = _module_from_primary_effect(eff, ability)
 			if not modules.is_empty():
 				mod.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
 				mod.aim_module_index = 0
 			modules.append(mod)
 			continue
-		if _is_motion_type(modules[modules.size() - 1].primary_type):
+		if is_motion_type(modules[modules.size() - 1].primary_type):
 			## Strike / utility after skill-owned motion — new module, shared aim.
 			var after_move: AbilityModule = _module_from_primary_effect(eff, ability)
 			after_move.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
@@ -230,13 +251,14 @@ static func _prefer_authored_targeting_mode(ability: AbilityData) -> void:
 
 
 static func _apply_module_range_to_ability(ability: AbilityData, modules: Array[AbilityModule]) -> void:
-	## Ability-level range_tiles = max of module max_range for legacy readers (attack/self).
-	## Motion-only max stays on motion modules; do not overwrite with MOVE length when a later
-	## damage module has a different range — use the first NEW_AIM module's max as card range.
+	## Keep the legacy card range on non-motion aims. Motion distance remains on modules.
 	for mod: AbilityModule in modules:
 		if mod == null:
 			continue
-		if mod.aim_binding == GameEnums.AimBinding.NEW_AIM:
+		if (
+			mod.aim_binding == GameEnums.AimBinding.NEW_AIM
+			and not is_motion_type(mod.primary_type)
+		):
 			ability.range_tiles = mod.max_range
 			ability.target_shape = mod.target_shape
 			ability.target_shape_size = mod.target_shape_size
@@ -276,7 +298,7 @@ static func _infer_tags(ability: AbilityData) -> Array[StringName]:
 	return tags
 
 
-static func _is_motion_type(t: GameEnums.EffectType) -> bool:
+static func is_motion_type(t: GameEnums.EffectType) -> bool:
 	return (
 		t == GameEnums.EffectType.MOVE
 		or t == GameEnums.EffectType.DASH
@@ -302,8 +324,13 @@ static func _module_from_primary_effect(eff: EffectData, ability: AbilityData) -
 	mod.bonus_if_adjacent_at_cast = eff.bonus_if_adjacent_at_cast
 	mod.def_debuff_before_damage = eff.def_debuff_before_damage
 	mod.legacy_modifiers = eff.modifiers.duplicate(true)
-	mod.min_range = 0 if ability.range_tiles == 0 else (1 if _is_motion_type(eff.type) else 0)
-	mod.max_range = ability.range_tiles
+	var is_motion: bool = is_motion_type(eff.type)
+	mod.min_range = 1 if is_motion else 0
+	mod.max_range = (
+		eff.amount
+		if is_motion and eff.amount > 0
+		else ability.range_tiles
+	)
 	mod.target_shape = ability.target_shape
 	mod.target_shape_size = ability.target_shape_size
 	mod.targeting_flags = ability.targeting_flags

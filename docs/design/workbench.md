@@ -47,6 +47,11 @@ STOP_CONDITION_MET: no
 
 ---
 
+### AD-2 implementation note
+
+- `PhysicsSystem._emit_collision` now detects Violent Collision's active `IF_COLLIDED` MOVE module; the compiled `violent_collision_recast` modifier remains only as compatibility output for unmigrated readers.
+- AD-3 remains required for the planning/preview path to expose and ratify the gated follow-up aim from module slots. AD-2 does not claim that planning behavior is complete.
+
 ## STOP_ON
 
 `STOP_CONDITION_MET: no`  
