@@ -32,14 +32,23 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(push_through)
 	
 	# Passives
-	def.passives.append(DataLibrary._make_passive(&"cellular_regeneration", "Cellular Regeneration", "HEAL 1 if adjacent to 1+ enemies at turn start.", "[+] Also gain +1 STR if adjacent to 2+ enemies."))
+	def.innate_passives.append(DataLibrary._make_passive(&"cellular_regeneration", "Sanguine Regeneration", "At the start of every turn, restore 5% of Max HP.", "[+] Restore 10%; at full HP convert the excess into SHIELD.", {
+		"sanguine_regeneration": true,
+	}))
+	def.passives.append(DataLibrary._make_passive(&"reactive_adrenaline", "Reactive Adrenaline", "Starting adjacent to enemies converts Sanguine Regeneration into SHIELD and grants +1 STR per adjacent enemy, up to +3.", "[+] Also gain +1 DEF per adjacent enemy.", {
+		"reactive_adrenaline": true,
+		"adjacent_enemy_str_cap": 3,
+		"upgraded_adjacent_enemy_def": 1,
+	}))
 	def.passives.append(DataLibrary._make_passive(&"blood_for_blood", "Blood for Blood", "If damaged last turn, attacks apply BLEED X (X = WPN).", "[+] Attacks also gain ATK +1."))
 	def.passives.append(DataLibrary._make_passive(&"adrenaline_junkie", "Adrenaline Junkie", "Gain MOVE +1 and STR +1 per 10% missing HP.", "[+] Also gain +1 DEF for every 20% missing HP."))
 	def.passives.append(DataLibrary._make_passive(&"enraged", "Enraged", "Gain +1 STR per unique debuff/hazard.", "[+] Also gain +1 MOV per debuff/hazard."))
 	def.passives.append(DataLibrary._make_passive(&"last_stand", "Last Stand", "When HP < 25%, gain +2 STR and +2 DEF.", "[+] Gain +3 STR and +3 DEF instead."))
 	
 	def.passives.append(DataLibrary._make_passive(&"colossal_mass", "Colossal Mass", "Gain +1 STR for every 15 Max HP.", "[+] Gain +1 STR for every 10 Max HP instead."))
-	def.passives.append(DataLibrary._make_passive(&"overwhelming_bulk", "Overwhelming Bulk", "If Current HP > target Max HP, attacks gain PIERCE.", "[+] Attacks also apply PUSH 1."))
+	def.passives.append(DataLibrary._make_passive(&"overwhelming_bulk", "Overwhelming Bulk", "If Current HP > target Max HP, physical attacks gain PIERCE.", "[+] Attacks also apply PUSH 1.", {
+		"overwhelming_bulk": true,
+	}))
 	def.passives.append(DataLibrary._make_passive(&"thrill_of_pain", "Thrill of Pain", "Damage taken adds ATK +2 and PUSH 1 to NEXT attack.", "[+] Next attack gains ATK +3 instead."))
 	def.passives.append(DataLibrary._make_passive(&"momentum_of_titan", "Momentum of the Titan", "PUSH collision adds damage = 10% Max HP.", "[+] Damage increases to 20% Max HP."))
 	def.passives.append(DataLibrary._make_passive(&"scar_tissue", "Scar Tissue", "Reduce physical damage by 1 per 20 Max HP or missing HP.", "[+] Reduce damage by additional 1."))

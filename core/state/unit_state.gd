@@ -76,19 +76,21 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 		unit.level = def.level
 	
 	if config.size() > 0:
+		unit.active_passives.assign(def.innate_passives)
 		if config.has("active_abilities"):
 			unit.active_abilities.assign(config.active_abilities)
 		if config.has("active_passives"):
-			unit.active_passives.assign(config.active_passives)
+			unit.active_passives.append_array(config.active_passives)
 		if config.has("upgraded_abilities"):
 			unit.upgraded_abilities.assign(config.upgraded_abilities)
 		if config.has("upgraded_passives"):
 			unit.upgraded_passives.assign(config.upgraded_passives)
 	else:
+		unit.active_passives = def.innate_passives.duplicate()
 		if p_team == GameEnums.Team.PLAYER and not def.is_construct:
-			_roll_starting_passives(unit, def.passives)
+			unit.active_passives.append_array(_roll_starting_passives(def.passives))
 		else:
-			unit.active_passives = def.passives.duplicate()
+			unit.active_passives.append_array(def.passives)
 		if p_team == GameEnums.Team.PLAYER and not def.is_construct:
 			unit.active_abilities = DataLibrary.build_player_active_abilities(def, unit.level)
 		else:
@@ -100,16 +102,17 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 	return unit
 
 
-static func _roll_starting_passives(unit: UnitState, pool: Array[PassiveData]) -> void:
-	unit.active_passives.clear()
+static func _roll_starting_passives(pool: Array[PassiveData]) -> Array[PassiveData]:
+	var selected: Array[PassiveData] = []
 	if pool.is_empty():
-		return
+		return selected
 	var remaining: Array[PassiveData] = pool.duplicate()
 	var count: int = mini(2, remaining.size())
 	for _i: int in range(count):
 		var idx: int = randi() % remaining.size()
-		unit.active_passives.append(remaining[idx])
+		selected.append(remaining[idx])
 		remaining.remove_at(idx)
+	return selected
 
 
 func is_ability_upgraded(ability_id: StringName) -> bool:
@@ -117,7 +120,7 @@ func is_ability_upgraded(ability_id: StringName) -> bool:
 
 func has_passive(passive_id: StringName) -> bool:
 	for p in active_passives:
-		if p.id == passive_id:
+		if p != null and p.id == passive_id:
 			return true
 	return false
 
@@ -375,11 +378,20 @@ func get_ability_range(ability_data: AbilityData) -> int:
 			or DataLibrary.is_basic_ability(ability_data.id)
 		)
 		and movement_points_spent_this_turn == 0
-		and is_passive_upgraded(&"lightfoot")
 	):
 		for passive: PassiveData in active_passives:
-			if passive != null and passive.modifiers.has("zero_move_attack_range"):
-				authored_range += int(passive.modifiers["zero_move_attack_range"])
+			if passive == null:
+				continue
+			var range_bonus := int(passive.modifiers.get("zero_move_attack_range", 0))
+			if passive.modifiers.has("steady_aim_range"):
+				range_bonus = int(passive.modifiers["steady_aim_range"])
+				if (
+					is_passive_upgraded(passive.id)
+					and passive.modifiers.has("upgraded_steady_aim_range")
+				):
+					range_bonus = int(passive.modifiers["upgraded_steady_aim_range"])
+			if range_bonus > 0:
+				authored_range += range_bonus
 				break
 	if is_ability_upgraded(ability_data.id) and ability_data.upgraded_range_tiles != -1:
 		return ability_data.upgraded_range_tiles

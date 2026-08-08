@@ -53,7 +53,7 @@ static func factory_passive(passive_id: StringName) -> PassiveData:
 	var def: UnitData = knight_unit_data()
 	if def == null:
 		return null
-	for p: PassiveData in def.passives:
+	for p: PassiveData in def.innate_passives + def.passives:
 		if p != null and p.id == passive_id:
 			return p
 	return null
@@ -650,7 +650,7 @@ static func run_hook_base_sim(failures: Array[String]) -> void:
 static func run_collision_retaliator_upgrade(failures: Array[String]) -> void:
 	## Collision Retaliator [+]: victim also PUSHED 1 after collision.
 	var board: BoardState = make_plain_board(Vector2i(10, 5))
-	var cfg: Dictionary = with_single_passive(&"collision_retaliator", true)
+	var cfg: Dictionary = with_single_passive(&"kinetic_dissipation", true)
 	place_knight(board, 1, Vector2i(3, 2), cfg)
 	place_dummy(board, 2, Vector2i(4, 2))
 	place_player_basher(board, 3, Vector2i(6, 2))
@@ -661,9 +661,9 @@ static func run_collision_retaliator_upgrade(failures: Array[String]) -> void:
 	var result: SimResult = simulate_player_turn(board, plan)
 	var victim: UnitState = result.final_state.get_unit_by_id(2)
 	assert_true(
-		failures, "collision_retaliator/upgrade/push",
+		failures, "kinetic_dissipation/upgrade/push",
 		events_have_retaliator_upgrade_push(result.events, 1),
-		"upgraded retaliator must trigger bonus PUSH on collision",
+		"upgraded Kinetic Dissipation must PUSH the collision victim",
 	)
 
 
@@ -755,38 +755,46 @@ static func run_thorny_carapace(failures: Array[String]) -> void:
 
 
 static func run_shield_mastery(failures: Array[String]) -> void:
-	## Shield Mastery: front-arc hit grants SHIELD 2.
+	## Phalanx Deflection: front mitigation stores Kinetic Energy.
 	var board: BoardState = make_plain_board(Vector2i(8, 5))
 	var cfg: Dictionary = with_single_passive(&"shield_mastery", false)
 	place_knight(board, 1, Vector2i(3, 2), cfg)
 	unit_on_board(board, 1).facing = GameEnums.Facing.EAST
+	assert_true(
+		failures,
+		"phalanx_deflection/registered_runtime",
+		unit_on_board(board, 1).has_passive(&"shield_mastery"),
+		"Phalanx Deflection must be active during the mitigation test",
+	)
 	place_enemy_basher(board, 2, Vector2i(4, 2))
+	boost_striker(unit_on_board(board, 2))
 	var bash: AbilityData = ability_on_unit(unit_on_board(board, 2), &"knight_shield_bash")
-	var armor_before: int = unit_on_board(board, 1).armor
 	var plan := Timeline.new()
 	plan.add(plan_ability(2, bash, Vector2i(3, 2), 1))
 	var result: SimResult = simulate_player_turn(board, plan)
 	var knight: UnitState = result.final_state.get_unit_by_id(1)
 	assert_true(
-		failures, "shield_mastery/shield",
-		knight != null and knight.armor > armor_before,
-		"front-arc hit must grant SHIELD via Shield Mastery",
+		failures, "phalanx_deflection/energy",
+		knight != null and int(knight.passive_flags.get("kinetic_energy", 0)) > 0,
+		"front-arc mitigation must store Kinetic Energy",
 	)
 	var cfg_up: Dictionary = with_single_passive(&"shield_mastery", true)
 	var board2: BoardState = make_plain_board(Vector2i(8, 5))
 	place_knight(board2, 10, Vector2i(3, 2), cfg_up)
 	unit_on_board(board2, 10).facing = GameEnums.Facing.EAST
 	place_enemy_basher(board2, 11, Vector2i(4, 2))
+	boost_striker(unit_on_board(board2, 11))
 	var bash2: AbilityData = ability_on_unit(unit_on_board(board2, 11), &"knight_shield_bash")
-	var armor_before2: int = unit_on_board(board2, 10).armor
 	var plan2 := Timeline.new()
 	plan2.add(plan_ability(11, bash2, Vector2i(3, 2), 10))
 	var result2: SimResult = simulate_player_turn(board2, plan2)
 	var knight2: UnitState = result2.final_state.get_unit_by_id(10)
 	assert_true(
-		failures, "shield_mastery/upgrade/shield3",
-		knight2 != null and knight2.armor >= armor_before2 + 3,
-		"upgraded shield mastery must grant SHIELD 3 on front-arc hit",
+		failures, "phalanx_deflection/upgrade/cap",
+		knight2 != null
+		and int(knight2.passive_flags.get("kinetic_energy", 0)) > 0
+		and int(knight2.passive_flags.get("kinetic_energy", 0)) <= knight2.current_defense * 3,
+		"upgraded Phalanx Deflection must use the 3 * DEF energy cap",
 	)
 
 

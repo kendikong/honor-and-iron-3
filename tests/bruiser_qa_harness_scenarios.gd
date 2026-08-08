@@ -684,7 +684,7 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_guttural_roar")
 	H.assert_eq_int(failures, "guttural_roar/range", ab.range_tiles, 0)
-	H.assert_eq_int(failures, "guttural_roar/aoe", ab.target_shape, GameEnums.TargetShape.AOE_SQUARE)
+	H.assert_eq_int(failures, "guttural_roar/aoe", ab.target_shape, GameEnums.TargetShape.AOE_CROSS)
 	H.assert_eq_int(failures, "guttural_roar/aoe_size", ab.target_shape_size, 2)
 	H.assert_eq_int(failures, "guttural_roar/push_amount", ab.effects[0].amount, 1)
 	H.assert_eq_int(failures, "guttural_roar/def_debuff_amount", ab.effects[1].amount, 2)
@@ -1024,32 +1024,27 @@ static func run_breaching_dash(failures: Array[String]) -> void:
 
 
 static func run_cellular_regeneration(failures: Array[String]) -> void:
-	## Bible: Cellular Regeneration — HEAL 1 at turn start if 1+ adjacent enemies; [+] STR if 2+.
+	## Bible: Sanguine Regeneration + Reactive Adrenaline.
 	H.assert_passive_registered(failures, &"cellular_regeneration")
+	H.assert_passive_registered(failures, &"reactive_adrenaline")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
-	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"cellular_regeneration", false))
+	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"reactive_adrenaline", true))
 	H.place_dummy(board, 2, Vector2i(4, 3))
+	H.place_dummy(board, 3, Vector2i(3, 4))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	bruiser.health.current_hp = bruiser.health.max_hp - 2
 	var hp: int = bruiser.health.current_hp
 	var plan := Timeline.new()
 	var result: SimResult = H.simulate_plan(board, plan)
-	var neg_board: BoardState = H.make_plain_board(Vector2i(8, 8))
-	H.place_bruiser(neg_board, 10, Vector2i(3, 3), {})
-	H.place_dummy(neg_board, 11, Vector2i(4, 3))
-	var neg_bruiser: UnitState = H.unit_on_board(neg_board, 10)
-	neg_bruiser.health.current_hp = neg_bruiser.health.max_hp - 2
-	var neg_hp: int = neg_bruiser.health.current_hp
-	var neg_result: SimResult = H.simulate_plan(neg_board, Timeline.new())
-	H.assert_eq_int(
-		failures, "cellular_regeneration/no_passive",
-		H.unit_hp(neg_result.final_state, 10),
-		neg_hp,
-	)
 	H.assert_true(
 		failures, "cellular_regeneration/heal",
 		H.unit_hp(result.final_state, 1) == hp + 1,
-		"adjacent enemy at turn start must HEAL exactly 1",
+		"5% Sanguine Regeneration must heal at turn start",
+	)
+	H.assert_true(
+		failures, "reactive_adrenaline/strength",
+		H.has_status(result.final_state.get_unit_by_id(1), GameEnums.StatusType.STAT_BUFF_STR),
+		"adjacent enemies must grant Reactive Adrenaline STR",
 	)
 
 
@@ -1531,7 +1526,7 @@ static func run_momentum_transfer(failures: Array[String]) -> void:
 	H.assert_eq_int(
 		failures, "momentum_transfer/heal",
 		H.unit_hp(result.final_state, 1),
-		hp + 1,
+		hp + 2,
 	)
 	var plain_board: BoardState = H.make_plain_board(Vector2i(10, 8), [Vector2i(5, 3)])
 	var plain_cfg: Dictionary = {
@@ -1550,7 +1545,7 @@ static func run_momentum_transfer(failures: Array[String]) -> void:
 	H.assert_eq_int(
 		failures, "momentum_transfer/plain_no_heal",
 		H.unit_hp(plain_result.final_state, 20),
-		plain_hp,
+		plain_hp + 1,
 	)
 
 

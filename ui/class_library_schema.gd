@@ -1214,6 +1214,11 @@ static func unit_to_dict(src: UnitData) -> Dictionary:
 		if passive == null or passive.id == &"":
 			continue
 		passives[String(passive.id)] = passive_to_dict(passive)
+	var innate_passives: Dictionary = {}
+	for passive: PassiveData in src.innate_passives:
+		if passive == null or passive.id == &"":
+			continue
+		innate_passives[String(passive.id)] = passive_to_dict(passive)
 	return {
 		"display_name": src.display_name,
 		"base_constitution": src.base_constitution,
@@ -1228,6 +1233,7 @@ static func unit_to_dict(src: UnitData) -> Dictionary:
 		"weapon": weapon_to_dict(src.equipped_weapon),
 		"abilities": abilities,
 		"passives": passives,
+		"innate_passives": innate_passives,
 	}
 
 
@@ -1268,3 +1274,13 @@ static func apply_unit_dict(dst: UnitData, data: Dictionary) -> void:
 				var passive_payload: Variant = (passives_data as Dictionary)[passive_key]
 				if typeof(passive_payload) == TYPE_DICTIONARY:
 					apply_passive_dict(passive, passive_payload as Dictionary)
+	var innate_data: Variant = data.get("innate_passives", {})
+	if typeof(innate_data) == TYPE_DICTIONARY:
+		for passive: PassiveData in dst.innate_passives:
+			if passive == null:
+				continue
+			var innate_key := String(passive.id)
+			if (innate_data as Dictionary).has(innate_key):
+				var innate_payload: Variant = (innate_data as Dictionary)[innate_key]
+				if typeof(innate_payload) == TYPE_DICTIONARY:
+					apply_passive_dict(passive, innate_payload as Dictionary)

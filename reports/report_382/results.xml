@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-07" name="report_382" tests="1" failures="1" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_archer_class_test" package="tests" timestamp="2026-08-07T15:49:59" hostname="localhost" tests="1" failures="1" errors="0" skipped="0" flaky="0" time="9.442">
+		<testcase name="test_live_archer_every_skill" classname="live_archer_class_test" time="9.430">
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:169" type="FAILURE">
+<![CDATA[
+Expecting: 'true' but is 'false'
+	at '_assert_contract' in res://tests/live_archer_class_test.gd:169
+	at '_run_live_batch' in res://tests/live_archer_class_test.gd:131
+]]>
+			</failure>
+		</testcase>
+	</testsuite>
+</testsuites>

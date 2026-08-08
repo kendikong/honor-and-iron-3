@@ -298,8 +298,10 @@ static func append_damage_telemetry(
 		stat_val = get_dynamic_strength(board, attacker) if attacker != null else 0
 	var mult_raw := (base_power + wpn) * (1.0 + stat_val / 5.0)
 	var target_def := get_dynamic_defense(board, target)
-	if stat_type == GameEnums.StatType.MAGICAL:
-		target_def = target.current_magic
+	if stat_type == GameEnums.StatType.MAGICAL and target != null:
+		target_def = floori(
+			(get_dynamic_defense(board, target) + target.current_magic) / 2.0
+		)
 	var fort := 0
 	var tile := board.get_tile(target.position)
 	if tile != null and tile.definition != null:
@@ -418,21 +420,38 @@ static func deal_damage_raw(
 		pierce = true
 		attacker.passive_flags.erase("breaching_dash_pierce")
 	
-	if attacker != null and target != null and attacker.has_passive(&"overwhelming_bulk"):
-		if attacker.health.current_hp > target.health.max_hp:
-			pierce = true
-			if attacker.is_passive_upgraded(&"overwhelming_bulk"):
-				var dir := PhysicsSystem.cardinal_from_to(attacker.position, target.position)
-				board.pending_pushes.append({
-					"type": "push",
-					"target_id": target.id,
-					"dir": dir,
-					"amount": 1,
-					"actor_id": attacker.id,
-					"ability_id": &"overwhelming_bulk"
-				})
-				
+	pierce = apply_attack_passive_modifiers(board, attacker, target, pierce)
 	deal_damage(board, target, raw_amount, events, dmg_type, pierce, false, attacker, source_label)
+
+
+static func apply_attack_passive_modifiers(
+	board: BoardState,
+	attacker: UnitState,
+	target: UnitState,
+	pierce: bool,
+) -> bool:
+	if attacker == null or target == null:
+		return pierce
+	for passive: PassiveData in attacker.active_passives:
+		if (
+			passive == null
+			or not passive.modifiers.has("overwhelming_bulk")
+			or attacker.health.current_hp <= target.health.max_hp
+		):
+			continue
+		pierce = true
+		if attacker.is_passive_upgraded(passive.id):
+			board.pending_pushes.append({
+				"type": "push",
+				"target_id": target.id,
+				"dir": PhysicsSystem.cardinal_from_to(attacker.position, target.position),
+				"amount": 1,
+				"actor_id": attacker.id,
+				"ability_id": passive.id,
+			})
+		break
+	return pierce
+
 
 static func _apply_kinetic_redirection_stack(target: UnitState) -> void:
 	if target == null or not target.has_passive(&"kinetic_redirection"):
@@ -584,9 +603,22 @@ static func deal_damage(
 		if target.is_passive_upgraded(&"scar_tissue"):
 			reduction += 1
 		mitigation += reduction
+
+	if (
+		source_type == &"physical"
+		and attacker != null
+		and target.has_passive(&"collision_retaliator")
+		and GridSystem.manhattan(target.position, attacker.position) <= 3
+	):
+		var attacker_vector := attacker.position - target.position
+		var front_vector := PhysicsSystem.facing_to_vector(target.facing)
+		if front_vector.x * attacker_vector.x + front_vector.y * attacker_vector.y > 0:
+			mitigation += 4 if target.is_passive_upgraded(&"collision_retaliator") else 2
 		
 	if source_type == &"magical":
-		mitigation = target.current_magic
+		mitigation = floori(
+			(get_dynamic_defense(board, target) + target.current_magic) / 2.0
+		)
 		
 	if pierce:
 		mitigation = 0
@@ -596,18 +628,42 @@ static func deal_damage(
 		mitigation = 0
 		fort = 0
 		
-	if attacker != null and target.has_passive(&"shield_mastery"):
-		var dir_to_attacker = PhysicsSystem.cardinal_from_to(target.position, attacker.position)
-		if PhysicsSystem.facing_to_vector(target.facing) == dir_to_attacker:
-			var shield_amt = 3 if target.is_passive_upgraded(&"shield_mastery") else 2
-			target.armor += shield_amt
-
 	if source_type != &"hazard" and target.has_passive(&"kinetic_armor") and target.armor > 0:
 		amount -= 2 if target.is_passive_upgraded(&"kinetic_armor") else 1
 		amount = maxi(0, amount)
 
 	var incoming := maxi(0, amount - fort - mitigation)
 	var mitigated_amount = amount - incoming
+	var phalanx_passive: PassiveData = null
+	for passive: PassiveData in target.active_passives:
+		if passive != null and passive.modifiers.has("phalanx_deflection"):
+			phalanx_passive = passive
+			break
+	if (
+		source_type == &"physical"
+		and attacker != null
+		and phalanx_passive != null
+		and GridSystem.manhattan(target.position, attacker.position) <= 3
+	):
+		var attacker_vector := attacker.position - target.position
+		var front_vector := PhysicsSystem.facing_to_vector(target.facing)
+		if front_vector.x * attacker_vector.x + front_vector.y * attacker_vector.y > 0:
+			var energy_cap_multiplier := int(
+				phalanx_passive.modifiers.get("kinetic_energy_cap_def_multiplier", 2)
+			)
+			if target.is_passive_upgraded(phalanx_passive.id):
+				energy_cap_multiplier = int(
+					phalanx_passive.modifiers.get(
+						"upgraded_kinetic_energy_cap_def_multiplier",
+						energy_cap_multiplier,
+					)
+				)
+			var energy_cap := target.current_defense * energy_cap_multiplier
+			var energy_gain := floori(mitigated_amount * 0.5)
+			target.passive_flags["kinetic_energy"] = mini(
+				energy_cap,
+				int(target.passive_flags.get("kinetic_energy", 0)) + energy_gain,
+			)
 	if incoming <= 0:
 		if (
 			source_type != &"hazard"

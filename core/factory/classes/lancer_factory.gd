@@ -19,6 +19,14 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	def.base_magic = 1
 	def.equipped_weapon = basic_lance
 
+	def.innate_passives.append(_passive(
+		&"polearm_mastery",
+		"Polearm Mastery",
+		"Basic attacks have RANGE 2. Extended-reach attacks deal 30% less damage at RANGE 1.",
+		"Attacks from exactly RANGE 2 gain +1 STR and ignore 2 DEF.",
+		{"polearm_mastery": true, "range_two_strength": 1, "range_two_ignore_def": 2},
+	))
+
 	var push := _make_movement(
 		&"lancer_push",
 		"Push",
@@ -83,16 +91,17 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		"upgraded_kill_vault_ap": 1}))
 
 	# Halberdier passives.
-	def.passives.append(_passive(&"sweet_spot", "Sweet Spot",
-		"Attacks originating from exactly RANGE 2 gain +2 ATK and ignore 2 DEF.",
-		"Attacks originating from exactly RANGE 2 gain +2 ATK and ignore 4 DEF.",
-		{"promotion": &"halberdier", "range_two_bonus_atk": 2, "range_two_ignore_def": 2,
-		"upgraded_range_two_ignore_def": 4}))
+	def.passives.append(_passive(&"sweet_spot", "Pivot Leverage",
+		"Attacks from exactly RANGE 2 apply PUSH 1 and reduce the target's MOV by 2. Wall or obstacle collision applies STAGGER.",
+		"Ignore 4 DEF.",
+		{"promotion": &"halberdier", "range_two_push": 1,
+		"range_two_movement_penalty": 2, "range_two_stagger_on_collision": true,
+		"range_two_ignore_def": 0, "upgraded_range_two_ignore_def": 4}))
 	def.passives.append(_passive(&"reach_advantage", "Reach Advantage",
 		"When attacking a melee unit from exactly RANGE 2, they cannot trigger standard counter-attacks or Retaliation.",
-		"When attacking a melee unit from exactly RANGE 2, they cannot trigger standard counter-attacks or Retaliation and suffer -1 DEF.",
+		"When attacking a melee unit from exactly RANGE 2, they cannot trigger standard counter-attacks or Retaliation.",
 		{"promotion": &"halberdier", "range_two_counter_immunity": true,
-		"upgraded_range_two_def_debuff": 1}))
+		"upgraded_range_two_def_debuff_weapon": true}))
 	def.passives.append(_passive(&"disengage", "Disengage",
 		"If forced to attack at RANGE 1, PUSH yourself 1 before damage.",
 		"If forced to attack at RANGE 1, PUSH yourself 1 before damage, then PUSH the enemy 1.",

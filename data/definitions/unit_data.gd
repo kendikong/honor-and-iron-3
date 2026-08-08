@@ -41,6 +41,8 @@ extends Resource
 @export var preferred_stat: GameEnums.StatType = GameEnums.StatType.PHYSICAL
 
 @export var passives: Array[PassiveData] = []
+## Always-active class trait. Unlike the promotion passive pool, this is never rolled.
+@export var innate_passives: Array[PassiveData] = []
 @export var equipped_weapon: WeaponData
 
 ## If null, the unit is player-controlled. If set, EnemyPlanner drives it.

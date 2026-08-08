@@ -788,7 +788,7 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 	H.assert_eq_int(
 		failures, "crimson_whirlwind/upgrade/heal_per_target",
 		heal_gain,
-		2,
+		3,
 	)
 
 
@@ -834,8 +834,8 @@ static func run_belly_flop_upgrade(failures: Array[String]) -> void:
 static func run_cellular_regeneration_upgrade(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.with_upgraded_passive(
-		H.with_single_passive(&"cellular_regeneration", false),
-		&"cellular_regeneration",
+		H.with_single_passive(&"reactive_adrenaline", false),
+		&"reactive_adrenaline",
 	)
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -847,12 +847,12 @@ static func run_cellular_regeneration_upgrade(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_eq_int(
-		failures, "cellular_regeneration/upgrade/heal",
+		failures, "reactive_adrenaline/upgrade/heal",
 		after.health.current_hp,
 		hp + 1,
 	)
 	H.assert_true(
-		failures, "cellular_regeneration/upgrade/str",
+		failures, "reactive_adrenaline/upgrade/str",
 		H.has_status(after, GameEnums.StatusType.STAT_BUFF_STR),
 	)
 	var board_one: BoardState = H.make_plain_board(Vector2i(8, 8))
@@ -862,9 +862,9 @@ static func run_cellular_regeneration_upgrade(failures: Array[String]) -> void:
 	var one_result: SimResult = H.simulate_plan(board_one, Timeline.new())
 	var one_after: UnitState = one_result.final_state.get_unit_by_id(10)
 	H.assert_true(
-		failures, "cellular_regeneration/upgrade/no_str_one_adj",
-		not H.has_status(one_after, GameEnums.StatusType.STAT_BUFF_STR),
-		"[+] STR buff requires 2+ adjacent enemies",
+		failures, "reactive_adrenaline/upgrade/str_one_adj",
+		H.has_status(one_after, GameEnums.StatusType.STAT_BUFF_STR),
+		"Reactive Adrenaline grants +1 STR for each adjacent enemy",
 	)
 
 
@@ -991,21 +991,23 @@ static func run_colossal_mass_upgrade(failures: Array[String]) -> void:
 
 
 static func run_overwhelming_bulk_upgrade(failures: Array[String]) -> void:
-	var cfg: Dictionary = H.with_single_passive(&"overwhelming_bulk", false)
+	var cfg: Dictionary = H.with_upgraded_passive(
+		H.with_single_passive(&"overwhelming_bulk", false),
+		&"overwhelming_bulk",
+	)
 	cfg["active_abilities"] = [H.factory_ability(&"bruiser_headbutt")]
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
-	bruiser.upgraded_passives.append(&"overwhelming_bulk")
+	bruiser._recalculate_stats()
 	bruiser.health.max_hp = 150
 	bruiser.health.current_hp = 150
-	bruiser._recalculate_stats()
 	var enemy: UnitState = H.unit_on_board(board, 2)
 	enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 20))
+	enemy._recalculate_stats()
 	enemy.health.max_hp = 80
 	enemy.health.current_hp = 80
-	enemy._recalculate_stats()
 	H.assert_true(
 		failures, "overwhelming_bulk/upgrade/precond",
 		bruiser.is_passive_upgraded(&"overwhelming_bulk")

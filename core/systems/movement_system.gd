@@ -567,8 +567,11 @@ static func _execute_free_reaction_move(
 	if (
 		pending_coord != action.target_coord
 		or not board.is_in_bounds(action.target_coord)
-		or board.get_unit_at(action.target_coord) != null
-		or not GridSystem.is_passable(board, action.target_coord)
+		or (
+			board.get_unit_at(action.target_coord) != null
+			and board.get_unit_at(action.target_coord).is_alive()
+		)
+		or GridSystem.is_wall(board, action.target_coord)
 	):
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 			"actor": unit.id,
@@ -579,8 +582,11 @@ static func _execute_free_reaction_move(
 	GridSystem.set_occupant(board, from, -1)
 	unit.position = action.target_coord
 	GridSystem.set_occupant(board, unit.position, unit.id)
-	unit.movement.max_points += 1
-	unit.movement.points_left += 1
+	unit.active_statuses.append(
+		DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_MOV, 1, 1)
+	)
+	unit._recalculate_stats(board)
+	unit.movement.points_left = mini(unit.movement.max_points, unit.movement.points_left + 1)
 	if (
 		unit.is_passive_upgraded(&"springboard")
 		and not unit.passive_flags.get("springboard_ap_used", false)

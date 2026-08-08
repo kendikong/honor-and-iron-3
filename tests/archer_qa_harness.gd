@@ -34,7 +34,7 @@ static func factory_passive(passive_id: StringName) -> PassiveData:
 	var definition := archer_unit_data()
 	if definition == null:
 		return null
-	for passive: PassiveData in definition.passives:
+	for passive: PassiveData in definition.innate_passives + definition.passives:
 		if passive != null and passive.id == passive_id:
 			return passive
 	return null
@@ -51,8 +51,9 @@ static func run_data_contract(failures: Array[String]) -> void:
 		and definition.base_strength == 4
 		and definition.base_defense == 1
 		and definition.base_magic == 1)
-	assert_true(failures, "archer/skills", definition.abilities.size() == 15)
-	assert_true(failures, "archer/passives", definition.passives.size() == 16)
+	assert_true(failures, "archer/skills", definition.abilities.size() == 16)
+	assert_true(failures, "archer/innate", definition.innate_passives.size() == 1)
+	assert_true(failures, "archer/passives", definition.passives.size() == 15)
 
 	var expected_skills: Dictionary = {
 		&"archer_power_shot": [GameEnums.EffectType.DAMAGE, 3, 5, GameEnums.TargetShape.SINGLE],
@@ -253,15 +254,15 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 	var basic := DataLibrary._make_class_basic_attack(&"archer")
 	var board := _plain_board(Vector2i(10, 6))
 	board.set_tile_terrain(Vector2i(2, 2), DataLibrary.get_terrain(&"trampled"))
-	var lightfoot := _make_unit(
+	var steady_aim := _make_unit(
 		definition, 1, GameEnums.Team.PLAYER, Vector2i(1, 2), [basic],
 		[factory_passive(&"lightfoot")],
 	)
 	assert_true(
 		failures,
-		"passive/lightfoot",
-		MovementSystem.step_mp_cost(board, Vector2i(2, 2), lightfoot) == 1,
-		"Lightfoot must ignore difficult-terrain movement cost",
+		"passive/steady_aim",
+		steady_aim.get_ability_range(basic) == 2,
+		"Steady Aim must extend attacks while no movement is spent",
 	)
 
 	var patient_board := _plain_board(Vector2i(8, 4))
@@ -279,12 +280,12 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 		TimelineAction.make_ability(patient.id, basic, patient_target.position, patient_target.id),
 		patient_events,
 	)
-	var telemetry := _first_telemetry(patient_events)
 	assert_true(
 		failures,
-		"passive/patient_hunter",
-		int(telemetry.get("base", 0)) >= 2,
-		"zero-MOV attacks must gain +1 STR power",
+		"passive/vantage_anchor",
+		patient.has_status(GameEnums.StatusType.STURDY)
+		and patient.has_status(GameEnums.StatusType.STEALTH),
+		"Vantage Anchor must grant STURDY and STEALTH after Steady Aim triggers",
 	)
 
 	var zone_board := _plain_board(Vector2i(8, 4))

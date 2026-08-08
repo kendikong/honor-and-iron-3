@@ -18,14 +18,29 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	def.base_magic = 1
 	def.equipped_weapon = basic_bow
 
+	var sidestep := DataLibrary._make_movement_ability(
+		&"archer_sidestep",
+		"Sidestep",
+		1,
+		[DataLibrary._effect(GameEnums.EffectType.MOVE, 1)],
+		1,
+	)
+	sidestep.effects[0].modifiers["preserve_facing"] = true
+	sidestep.effects[0].modifiers["ignore_zoc"] = true
+	sidestep.upgrade_description = "Your next ranged attack gains +1 STR."
+	sidestep.upgraded_effects = DataLibrary._duplicate_effects(sidestep.effects)
+	sidestep.upgraded_effects[0].modifiers["next_ranged_attack_strength"] = 1
+	def.abilities.append(sidestep)
+
 	# Innate trait.
-	def.passives.append(_passive(
+	def.innate_passives.append(_passive(
 		&"lightfoot",
-		"Lightfoot",
-		"Standard movement ignores difficult terrain movement penalties.",
-		"Permanently ignores Traps. If you spend 0 MOV, your attack gains +1 RANGE and +1 STR.",
-		{"ignore_difficult_terrain": true, "ignore_traps_upgraded": true,
-		"zero_move_attack_range": 1, "upgraded_zero_move_attack_strength": 1},
+		"Steady Aim",
+		"Spend MOV equal to Max MOV while standing still to gain +1 RANGE and +1 STR for attacks this turn.",
+		"Gain +2 RANGE, +2 STR, and PIERCE instead.",
+		{"steady_aim": true, "steady_aim_range": 1, "steady_aim_strength": 1,
+		"upgraded_steady_aim_range": 2, "upgraded_steady_aim_strength": 2,
+		"upgraded_steady_aim_pierce": true},
 	))
 
 	# Sniper passives.
@@ -45,10 +60,11 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	))
 	def.passives.append(_passive(
 		&"patient_hunter",
-		"Patient Hunter",
-		"If you spend 0 MOV, your attack gains +1 STR.",
-		"If you spend 0 MOV, your attack gains +1 STR.",
-		{"zero_move_attack_strength": 1},
+		"Vantage Anchor",
+		"Triggering Steady Aim grants STURDY and STEALTH against enemies further than 3 tiles away until your next turn.",
+		"While Anchored, also gain +1 STR.",
+		{"vantage_anchor": true, "vantage_anchor_sturdy": true,
+		"vantage_anchor_stealth_range": 3, "upgraded_vantage_anchor_strength": 1},
 	))
 	def.passives.append(_passive(
 		&"true_sight",

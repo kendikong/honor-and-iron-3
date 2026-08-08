@@ -1034,6 +1034,31 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var effects_to_apply = action.ability.effects
 	if actor.is_ability_upgraded(action.ability.id) and action.ability.upgraded_effects.size() > 0:
 		effects_to_apply = action.ability.upgraded_effects
+	if actor.movement_points_spent_this_turn == 0:
+		for passive: PassiveData in actor.active_passives:
+			if passive == null or not passive.modifiers.has("vantage_anchor"):
+				continue
+			actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STURDY, 1))
+			actor.active_statuses.append(
+				DataLibrary.make_status(
+					GameEnums.StatusType.STEALTH,
+					1,
+					int(passive.modifiers.get("vantage_anchor_stealth_range", 3)),
+				)
+			)
+			if (
+				actor.is_passive_upgraded(passive.id)
+				and passive.modifiers.has("upgraded_vantage_anchor_strength")
+			):
+				actor.active_statuses.append(
+					DataLibrary.make_status(
+						GameEnums.StatusType.STAT_BUFF_STR,
+						1,
+						int(passive.modifiers["upgraded_vantage_anchor_strength"]),
+					)
+				)
+			actor._recalculate_stats(board)
+			break
 
 	var cast_cc_snapshot: Dictionary = {}
 	if actor != null:
@@ -1347,6 +1372,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					pierce = true
 					
 			var base_amt := effect.amount
+			var kinetic_energy_bonus := int(actor.passive_flags.get("kinetic_energy", 0))
+			if kinetic_energy_bonus > 0:
+				base_amt += kinetic_energy_bonus
+				actor.passive_flags.erase("kinetic_energy")
+				actor.passive_flags["kinetic_energy_push"] = true
 			if (
 				target != null
 				and target.team == actor.team
@@ -1376,6 +1406,22 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						and passive.modifiers.has("upgraded_zero_move_attack_strength")
 					):
 						base_amt += int(passive.modifiers["upgraded_zero_move_attack_strength"])
+					var steady_aim_strength := int(
+						passive.modifiers.get("steady_aim_strength", 0)
+					)
+					if (
+						actor.is_passive_upgraded(passive.id)
+						and passive.modifiers.has("upgraded_steady_aim_strength")
+					):
+						steady_aim_strength = int(
+							passive.modifiers["upgraded_steady_aim_strength"]
+						)
+					base_amt += steady_aim_strength
+					if (
+						actor.is_passive_upgraded(passive.id)
+						and passive.modifiers.get("upgraded_steady_aim_pierce", false)
+					):
+						pierce = true
 				if actor.passive_flags.get("corpse_move_empowered", false):
 					var corpse_bonus := int(passive.modifiers.get("corpse_move_attack_bonus", 0))
 					if actor.is_passive_upgraded(passive.id):
@@ -1401,6 +1447,13 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					and passive.modifiers.has("range_two_bonus_atk")
 				):
 					base_amt += int(passive.modifiers["range_two_bonus_atk"])
+				if (
+					target != null
+					and GridSystem.manhattan(actor.position, target.position) == 2
+					and actor.is_passive_upgraded(passive.id)
+					and passive.modifiers.has("range_two_strength")
+				):
+					base_amt += int(passive.modifiers["range_two_strength"])
 				if (
 					not actor.passive_flags.get("plunging_attack_consumed", false)
 					and actor.passive_flags.get("jumped_or_teleported_this_turn", false)
@@ -1485,6 +1538,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						amount * float(effect.modifiers["range_one_damage_multiplier"])
 					)
 				target_def = CombatSystem.get_dynamic_defense(board, target)
+				if action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
+					target_def = floori(
+						(target_def + target.current_magic) / 2.0
+					)
 				var tile = board.get_tile(target.position)
 				if tile != null and tile.definition != null:
 					fort = tile.definition.fortitude
@@ -1565,6 +1622,17 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					if (
 						GridSystem.manhattan(actor.position, target.position) == 2
 						and actor.is_passive_upgraded(passive.id)
+						and passive.modifiers.has("polearm_mastery")
+					):
+						var polearm_ignore := int(passive.modifiers.get("range_two_ignore_def", 2))
+						actor.passive_flags["attack_ignore_def"] = maxi(
+							int(actor.passive_flags.get("attack_ignore_def", 0)),
+							polearm_ignore,
+						)
+						target_def = maxi(0, target_def - polearm_ignore)
+					if (
+						GridSystem.manhattan(actor.position, target.position) == 2
+						and actor.is_passive_upgraded(passive.id)
 						and passive.modifiers.has("range_two_def_debuff")
 					):
 						var debuff := int(passive.modifiers["range_two_def_debuff"])
@@ -1622,20 +1690,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				pierce = true
 			if effect.modifiers.has("target_def_set"):
 				pierce = true
-			if target != null and actor.has_passive(&"overwhelming_bulk"):
-				if actor.health.current_hp > target.health.max_hp:
-					pierce = true
-					if actor.is_passive_upgraded(&"overwhelming_bulk"):
-						var bulk_dir := PhysicsSystem.cardinal_from_to(actor.position, target.position)
-						board.pending_pushes.append({
-							"type": "push",
-							"target_id": target.id,
-							"dir": bulk_dir,
-							"amount": 1,
-							"actor_id": actor.id,
-							"ability_id": &"overwhelming_bulk",
-						})
-				
+			pierce = CombatSystem.apply_attack_passive_modifiers(
+				board, actor, target, pierce
+			)
 			events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, {
 				"type": "damage",
 				"base": base_amt,
@@ -1655,6 +1712,39 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				"pierce": pierce
 			}))
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
+			if (
+				target != null
+				and target.is_alive()
+				and actor.passive_flags.get("kinetic_energy_push", false)
+			):
+				actor.passive_flags.erase("kinetic_energy_push")
+				PhysicsSystem.push(board, target, PhysicsSystem.cardinal_from_to(actor.position, target.position), 1, events, actor)
+			for passive: PassiveData in actor.active_passives:
+				if (
+					target != null
+					and passive != null
+					and passive.modifiers.has("range_two_push")
+					and GridSystem.manhattan(actor.position, target.position) == 2
+					and target.is_alive()
+				):
+					PhysicsSystem.push(
+						board,
+						target,
+						PhysicsSystem.cardinal_from_to(actor.position, target.position),
+						int(passive.modifiers["range_two_push"]),
+						events,
+						actor,
+					)
+					if passive.modifiers.get("range_two_movement_penalty", 0) > 0:
+						target.active_statuses.append(
+							DataLibrary.make_status(
+								GameEnums.StatusType.STAT_DEBUFF_MOV,
+								1,
+								int(passive.modifiers["range_two_movement_penalty"]),
+							)
+						)
+						target._recalculate_stats(board)
+					break
 			if effect.modifiers.has("destroy_terrain"):
 				var replacement := DataLibrary.get_terrain(&"plain")
 				if (

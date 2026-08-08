@@ -39,7 +39,7 @@ static func factory_passive(passive_id: StringName) -> PassiveData:
 	var definition := lancer_unit_data()
 	if definition == null:
 		return null
-	for passive: PassiveData in definition.passives:
+	for passive: PassiveData in definition.innate_passives + definition.passives:
 		if passive != null and passive.id == passive_id:
 			return passive
 	return null
@@ -56,6 +56,7 @@ static func run_data_contract(failures: Array[String]) -> void:
 	assert_eq_int(failures, "lancer/defense", definition.base_defense, 3)
 	assert_eq_int(failures, "lancer/magic", definition.base_magic, 1)
 	assert_eq_int(failures, "lancer/skills", definition.abilities.size(), 15)
+	assert_eq_int(failures, "lancer/innate", definition.innate_passives.size(), 1)
 	assert_eq_int(failures, "lancer/passives", definition.passives.size(), 15)
 
 	var expected_skills: Dictionary = {
@@ -195,6 +196,13 @@ static func run_push_smoke(failures: Array[String]) -> void:
 	var definition := lancer_unit_data()
 	if definition == null:
 		return
+	var polearm := factory_passive(&"polearm_mastery")
+	assert_true(
+		failures,
+		"polearm_mastery/innate",
+		polearm != null and definition.innate_passives.has(polearm),
+		"Polearm Mastery must be an always-active innate trait",
+	)
 	var push := factory_ability(&"lancer_push")
 	var board := _plain_board(Vector2i(6, 4))
 	var actor := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(1, 1), {
@@ -752,6 +760,12 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 		springer,
 		"QA kill",
 	)
+	assert_true(
+		failures,
+		"springboard/pending",
+		springer.passive_flags.get("springboard_pending_coord", Vector2i(-1, -1)) == Vector2i(3, 2),
+		"kill must prime the defeated tile for the free vault",
+	)
 	var spring_events: Array[SimEvent] = []
 	MovementSystem.execute_move(
 		spring_board,
@@ -786,9 +800,10 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 	)
 	assert_true(
 		failures,
-		"passive/sweet_spot",
-		int(_first_damage_event(tip_events).get("base", 0)) >= 3,
-		"exact Range 2 attacks must gain +2 ATK",
+		"passive/pivot_leverage",
+		tip_target.position == Vector2i(5, 2)
+		and tip_target.has_status(GameEnums.StatusType.STAT_DEBUFF_MOV),
+		"exact Range 2 attacks must PUSH 1 and reduce target MOV by 2",
 	)
 
 	var reach_board := _plain_board(Vector2i(7, 4))

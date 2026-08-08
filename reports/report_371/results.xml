@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-07" name="report_371" tests="1" failures="24" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_lancer_class_test" package="tests" timestamp="2026-08-07T07:45:20" hostname="localhost" tests="1" failures="24" errors="0" skipped="0" flaky="0" time="9.461">
+		<testcase name="test_live_lancer_every_skill" classname="live_lancer_class_test" time="9.434">
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:594" type="FAILURE">
+<![CDATA[
+live commit_from_slots must accept the preview slots: action=lancer_piercing_charge
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:594
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:399
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:406" type="FAILURE">
+<![CDATA[
+lancer_piercing_charge: live commit did not write the selected ability; slots=action=lancer_piercing_charge plan=lancer_push@1,0@4,lancer_basic@3,lancer_piercing_charge@4:awaiting
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:406
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:481" type="FAILURE">
+<![CDATA[
+lancer_piercing_charge: committed skill never resolved as ABILITY_USED; plan=lancer_push@1,0@4,lancer_basic@3,lancer_piercing_charge@4:awaiting
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:481
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:502" type="FAILURE">
+<![CDATA[
+lancer_sweeping_halberd: expected PUSH/PULL displacement was not observed
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:502
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:594" type="FAILURE">
+<![CDATA[
+live commit_from_slots must accept the preview slots: action=lancer_pole_vault
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:594
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:399
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:406" type="FAILURE">
+<![CDATA[
+lancer_pole_vault: live commit did not write the selected ability; slots=action=lancer_pole_vault plan=0@3,lancer_brace@1,lancer_harpoon_toss@2,lancer_pole_vault@3:awaiting
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:406
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:502" type="FAILURE">
+<![CDATA[
+lancer_harpoon_toss: expected PUSH/PULL displacement was not observed
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:502
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+	at '_commit_glorious_charge' in res://tests/live_lancer_class_test.gd:550
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:481" type="FAILURE">
+<![CDATA[
+lancer_pole_vault: committed skill never resolved as ABILITY_USED; plan=0@3,lancer_brace@1,lancer_harpoon_toss@2,lancer_pole_vault@3:awaiting,lancer_glorious_charge@4
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:481
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+	at '_commit_glorious_charge' in res://tests/live_lancer_class_test.gd:550
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:406" type="FAILURE">
+<![CDATA[
+lancer_line_breaker: live commit did not write the selected ability; slots=action=lancer_line_breaker:awaiting plan=0@1,lancer_line_breaker@1:awaiting
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:406
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:594" type="FAILURE">
+<![CDATA[
+live commit_from_slots must accept the preview slots: action=lancer_spear_wall
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:594
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:399
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:406" type="FAILURE">
+<![CDATA[
+lancer_spear_wall: live commit did not write the selected ability; slots=action=lancer_spear_wall plan=0@1,0@2,lancer_line_breaker@1:awaiting,lancer_spear_wall@2:awaiting
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:406
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:594" type="FAILURE">
+<![CDATA[
+live commit_from_slots must accept the preview slots: action=lancer_meteor_drop
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:594
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:399
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:406" type="FAILURE">
+<![CDATA[
+lancer_meteor_drop: live commit did not write the selected ability; slots=action=lancer_meteor_drop plan=0@1,0@2,0@3,lancer_line_breaker@1:awaiting,lancer_spear_wall@2:awaiting,lancer_meteor_drop@3:awaiting
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:406
+	at '_commit_live_click' in res://tests/live_lancer_class_test.gd:601
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:402" type="FAILURE">
+<![CDATA[
+lancer_flanking_maneuver: live preview/commit slots rejected a Bible-valid target: { "pre": [], "action": [<RefCounted#-9223363995619025915>], "post": [], "invalid": "cannot_use_ability" }
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:402
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:406" type="FAILURE">
+<![CDATA[
+lancer_flanking_maneuver: live commit did not write the selected ability; slots=action=lancer_flanking_maneuver plan=0@1,0@2,0@3,lancer_line_breaker@1:awaiting,lancer_spear_wall@2:awaiting,lancer_meteor_drop@3:awaiting
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:406
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:481" type="FAILURE">
+<![CDATA[
+lancer_line_breaker: committed skill never resolved as ABILITY_USED; plan=0@1,0@2,0@3,lancer_line_breaker@1:awaiting,lancer_spear_wall@2:awaiting,lancer_meteor_drop@3:awaiting
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:481
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:488" type="FAILURE">
+<![CDATA[
+lancer_line_breaker: expected damage was not observed in Simulator telemetry
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:488
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:481" type="FAILURE">
+<![CDATA[
+lancer_spear_wall: committed skill never resolved as ABILITY_USED; plan=0@1,0@2,0@3,lancer_line_breaker@1:awaiting,lancer_spear_wall@2:awaiting,lancer_meteor_drop@3:awaiting
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:481
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:524" type="FAILURE">
+<![CDATA[
+lancer_spear_wall: expected spear-wall terrain was not created
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:524
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:481" type="FAILURE">
+<![CDATA[
+lancer_meteor_drop: committed skill never resolved as ABILITY_USED; plan=0@1,0@2,0@3,lancer_line_breaker@1:awaiting,lancer_spear_wall@2:awaiting,lancer_meteor_drop@3:awaiting
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:481
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:488" type="FAILURE">
+<![CDATA[
+lancer_meteor_drop: expected damage was not observed in Simulator telemetry
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:488
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:481" type="FAILURE">
+<![CDATA[
+lancer_flanking_maneuver: committed skill never resolved as ABILITY_USED; plan=0@1,0@2,0@3,lancer_line_breaker@1:awaiting,lancer_spear_wall@2:awaiting,lancer_meteor_drop@3:awaiting
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:481
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:488" type="FAILURE">
+<![CDATA[
+lancer_flanking_maneuver: expected damage was not observed in Simulator telemetry
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:488
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_lancer_class_test.gd:492" type="FAILURE">
+<![CDATA[
+lancer_flanking_maneuver: expected movement was not observed
+	at '_assert_live_observation' in res://tests/live_lancer_class_test.gd:492
+	at '_run_live_batch' in res://tests/live_lancer_class_test.gd:416
+]]>
+			</failure>
+		</testcase>
+	</testsuite>
+</testsuites>

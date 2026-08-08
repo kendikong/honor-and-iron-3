@@ -153,7 +153,7 @@ static func factory_passive(passive_id: StringName) -> PassiveData:
 	var def: UnitData = bruiser_unit_data()
 	if def == null:
 		return null
-	for p: PassiveData in def.passives:
+	for p: PassiveData in def.innate_passives + def.passives:
 		if p != null and p.id == passive_id:
 			return p
 	return null

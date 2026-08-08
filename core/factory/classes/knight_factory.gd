@@ -6,7 +6,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.id = &"knight"
 	def.display_name = "Knight"
 	def.base_constitution = 6
-	def.move_points = 3
+	def.move_points = 2
 	def.action_points = 1
 	def.base_strength = 4
 	def.base_defense = 5
@@ -28,7 +28,17 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(swap)
 	
 	# Passives
-	def.passives.append(DataLibrary._make_passive(&"collision_retaliator", "Collision Retaliator", "Enemy collision suffers ATK 2. Knight takes 0 collision damage.", "[+] PUSH 1."))
+	def.innate_passives.append(DataLibrary._make_passive(&"collision_retaliator", "Bastion Front", "Take 0 collision damage. Physical damage from the frontal arc within 3 tiles gains +2 DEF mitigation.", "[+] Frontal mitigation increases to +4 DEF and collision grants SHIELD 2.", {
+		"collision_retaliator": true,
+		"bastion_front": true,
+		"bastion_front_def": 2,
+		"upgraded_bastion_front_def": 4,
+	}))
+	def.passives.append(DataLibrary._make_passive(&"kinetic_dissipation", "Kinetic Dissipation", "When pushed or knocked into an obstacle or unit, gain SHIELD equal to DEF and trigger a 1-tile shockwave dealing physical damage equal to DEF.", "[+] The enemy is also PUSHED 1 tile.", {
+		"collision_grant_shield_def": true,
+		"collision_shockwave_damage_def": true,
+		"collision_shockwave_radius": 1,
+	}))
 	def.passives.append(DataLibrary._make_passive(&"thorny_carapace", "Thorny Carapace", "Melee hit reflects 50% damage (rounded down) & PUSH 1.", "[+] Reflects 100% damage instead."))
 	
 	def.passives.append(DataLibrary._make_passive(&"concussive_shatter", "Concussive Shatter", "Enemy collision suffers extra damage equal to 50% of your DEF, and target loses -1 DEF.", "[+] Target also suffers VULNERABLE.", {
@@ -45,7 +55,12 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.passives.append(DataLibrary._make_passive(&"stand_ground", "Stand Ground", "Immune to PUSH/PULL. Enemy attempts trigger COUNTER ATTACK 1.", "[+] COUNTER ATTACK 2 instead."))
 	
 	def.passives.append(DataLibrary._make_passive(&"indestructible_bastion", "Indestructible Bastion", "Lethal damage -> 1 HP + SHIELD = DEF (Once).", "[+] Gain +2 STR for combat."))
-	def.passives.append(DataLibrary._make_passive(&"shield_mastery", "Shield Mastery", "Damage from front -> gain SHIELD 2.", "[+] Gain SHIELD 3."))
+	def.passives.append(DataLibrary._make_passive(&"shield_mastery", "Phalanx Deflection", "When mitigating frontal damage with DEF or SHIELD, store 50% of mitigated damage as Kinetic Energy, capped at 2 * DEF.", "[+] Cap increases to 3 * DEF.", {
+		"phalanx_deflection": true,
+		"kinetic_energy_mitigation_pct": 0.5,
+		"kinetic_energy_cap_def_multiplier": 2,
+		"upgraded_kinetic_energy_cap_def_multiplier": 3,
+	}))
 	def.passives.append(DataLibrary._make_passive(&"kinetic_armor", "Kinetic Armor", "Incoming damage reduced by flat 1 if SHIELD active.", "[+] Reduced by 2."))
 	def.passives.append(DataLibrary._make_passive(&"kinetic_converter", "Kinetic Converter", "When hit, gain STR +1 and MOVE +1 for next turn.", "[+] Gain STR +2."))
 	def.passives.append(DataLibrary._make_passive(&"kinetic_redirection", "Kinetic Redirection", "Mitigating damage adds +1 STR to next attack (Stacks to +3).", "[+] Next attack gains PIERCE."))

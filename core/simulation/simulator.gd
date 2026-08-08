@@ -196,11 +196,48 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 					var adj_unit = board.get_unit_at(unit.position + dir)
 					if adj_unit != null and adj_unit.team != unit.team:
 						adj_enemies += 1
-				if adj_enemies >= 1:
-					CombatSystem.heal(board, unit, 1, events)
-				if adj_enemies >= 2 and unit.is_passive_upgraded(&"cellular_regeneration"):
-					unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+				var regeneration := 1
+				var sanguine_regeneration := false
+				var reactive_adrenaline := unit.has_passive(&"reactive_adrenaline")
+				var upgraded_def_per_enemy := 0
+				for passive: PassiveData in unit.active_passives:
+					if passive == null:
+						continue
+					if passive.modifiers.has("sanguine_regeneration"):
+						sanguine_regeneration = true
+						regeneration = floori(unit.health.max_hp * 0.05)
+						if unit.is_passive_upgraded(passive.id):
+							regeneration = floori(unit.health.max_hp * 0.10)
+					if not passive.modifiers.has("reactive_adrenaline"):
+						continue
+					if unit.is_passive_upgraded(passive.id):
+						upgraded_def_per_enemy = int(
+							passive.modifiers.get("upgraded_adjacent_enemy_def", 0)
+						)
+					break
+				if sanguine_regeneration and adj_enemies == 0:
+					CombatSystem.heal(board, unit, regeneration, events)
+				elif adj_enemies >= 1 and reactive_adrenaline:
+					if unit.health.current_hp >= unit.health.max_hp:
+						unit.armor += regeneration if sanguine_regeneration else 0
+					else:
+						CombatSystem.heal(board, unit, regeneration, events)
+					var adjacent_str := mini(adj_enemies, 3)
+					if adjacent_str > 0:
+						unit.active_statuses.append(
+							DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, adjacent_str)
+						)
+					if upgraded_def_per_enemy > 0:
+						unit.active_statuses.append(
+							DataLibrary.make_status(
+								GameEnums.StatusType.STAT_BUFF_DEF,
+								1,
+								adj_enemies * upgraded_def_per_enemy,
+							)
+						)
 					unit._recalculate_stats(board)
+				elif adj_enemies >= 1:
+					CombatSystem.heal(board, unit, regeneration, events)
 
 
 static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> void:
