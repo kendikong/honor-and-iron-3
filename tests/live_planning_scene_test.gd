@@ -1223,7 +1223,12 @@ func _sweep_mouse_to_cell(
 				ctx, unit_id, "%s/motion_%03d" % [motion_label, sample_index], false,
 			)
 	await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
-	ctx.input.set_qa_pointer_grid_cell(cell)
+	var input: CombatPlanningInput = ctx.input
+	var director: CombatDirector = ctx.director
+	input.set_qa_pointer_grid_cell(cell)
+	input.on_hover_moved(cell)
+	director.flush_plan_refresh_signals_if_pending()
+	input._flush_hover_heavy_sync()
 
 
 func _sweep_drag_to_cell(ctx: Dictionary, unit_id: int, cell: Vector2i, label: String) -> void:

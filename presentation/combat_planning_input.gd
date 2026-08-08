@@ -1307,6 +1307,17 @@ func _refresh_selected_interaction_preview() -> void:
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, ally.id, [])
 		_refresh_click_target_highlight()
 		return
+	## K4 / auto_run: selection-hover painted route is pre-move intent while class skill stays armed.
+	if (
+		_drag_route_commits_active()
+		and _drag_unit_id == p_unit.id
+		and _unit_move_slot_open(p_unit.id)
+		and _director.board.is_in_bounds(cell)
+		and (cell == _drag_route_stand_cell() or _drag_route.has(cell))
+	):
+		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, _route_waypoints())
+		_refresh_click_target_highlight()
+		return
 	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 		_refresh_click_target_highlight()
@@ -1349,6 +1360,13 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 		var selected_ability := _selected_ability_data(p_unit)
 		if selected_ability != null and AbilitySystem.planning_allows_paired_premove(selected_ability):
 			return _can_move_to(p_unit, cell)
+		if (
+			_drag_route_commits_active()
+			and _drag_unit_id == p_unit.id
+			and not _drag_route.is_empty()
+			and (cell == _drag_route.back() or _drag_route.has(cell))
+		):
+			return true
 		return false
 	return _can_move_to(p_unit, cell)
 
