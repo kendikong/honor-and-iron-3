@@ -121,20 +121,25 @@ Write-Output "--- AOE footprint contract: PASS ---"
 Write-Output ""
 
 Write-Output "=== Tier 1: headless skill scenarios (harness) ==="
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-knight-qa.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-knight-qa.stderr.log"
 $process = Start-Process -FilePath $GodotPath `
 	-ArgumentList "--headless --path `"$projectRoot`" res://tests/KnightQaGate.tscn" `
 	-RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath `
-	-Wait `
 	-PassThru
+$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Knight Tier 1 harness"
+if ($exitCode -eq 130) {
+	Write-Output "[CANCEL] Knight Tier 1 harness stopped by ESC."
+	exit 130
+}
 Get-Content $stdoutPath
 Get-Content $stderrPath
 
 $testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
 $scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })
-$harnessPass = ($process.ExitCode -eq 0) -and ($testFailures.Count -eq 0) -and ($scriptErrors.Count -eq 0)
+$harnessPass = ($exitCode -eq 0) -and ($testFailures.Count -eq 0) -and ($scriptErrors.Count -eq 0)
 
 if ($harnessPass) {
 	Write-Output "--- Tier 1 harness: PASS ---"

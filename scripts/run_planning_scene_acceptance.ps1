@@ -37,8 +37,11 @@ $process = Start-GodotOnCursorMonitor `
 	-WorkingDirectory $projectRoot `
 	-RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath
-$process.WaitForExit()
-$exitCode = $process.ExitCode
+$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Tier 3 TestBattle acceptance"
+if ($exitCode -eq 130) {
+	Write-Output "[CANCEL] Tier 3 TestBattle acceptance stopped by ESC."
+	exit 130
+}
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
 if (Test-Path $stderrPath) { Get-Content $stderrPath }
 

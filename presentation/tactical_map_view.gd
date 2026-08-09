@@ -377,6 +377,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE:
+			if _qa_perf_mode or OS.has_environment("LIVE_QA_PROFILE"):
+				get_tree().quit(130)
+				get_viewport().set_input_as_handled()
+				return
 			_pause_menu.open()
 			get_viewport().set_input_as_handled()
 		elif event.keycode == KEY_O:

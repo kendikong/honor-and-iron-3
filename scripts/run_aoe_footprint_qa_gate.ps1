@@ -10,20 +10,25 @@ if (-not (Test-Path $GodotPath)) {
 }
 
 Write-Output "=== AOE footprint QA gate (geometry + scenario/live audits) ==="
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-aoe-footprint.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-aoe-footprint.stderr.log"
 $process = Start-Process -FilePath $GodotPath `
 	-ArgumentList "--headless --path `"$projectRoot`" res://tests/AoeFootprintQaGate.tscn" `
 	-RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath `
-	-Wait `
 	-PassThru
+$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "AOE footprint gate"
+if ($exitCode -eq 130) {
+	Write-Output "[CANCEL] AOE footprint gate stopped by ESC."
+	exit 130
+}
 Get-Content $stdoutPath
 Get-Content $stderrPath
 
 $testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
 $scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })
-$pass = ($process.ExitCode -eq 0) -and ($testFailures.Count -eq 0) -and ($scriptErrors.Count -eq 0)
+$pass = ($exitCode -eq 0) -and ($testFailures.Count -eq 0) -and ($scriptErrors.Count -eq 0)
 
 if ($pass) {
 	Write-Output "--- AOE footprint gate: PASS ---"

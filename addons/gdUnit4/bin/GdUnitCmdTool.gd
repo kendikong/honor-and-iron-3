@@ -9,6 +9,9 @@ func _initialize() -> void:
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MINIMIZED)
 	_cli_runner = GdUnitTestCIRunner.new()
 	root.add_child(_cli_runner)
+	var esc_stop: Node = load("res://tests/qa_esc_force_stop.gd").new()
+	esc_stop.name = "QaEscForceStop"
+	root.add_child(esc_stop)
 
 
 # do not use print statements on _finalize it results in random crashes

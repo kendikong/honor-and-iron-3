@@ -43,6 +43,13 @@ public static class QaWindowPlacement {
 	[DllImport("user32.dll")]
 	private static extern bool ShowWindow(IntPtr window, int command);
 
+	[DllImport("user32.dll")]
+	private static extern short GetAsyncKeyState(int vKey);
+
+	public static bool IsEscapePressed() {
+		return (GetAsyncKeyState(0x1B) & 0x8000) != 0;
+	}
+
 	public static int[] WorkAreaForWindow(IntPtr window) {
 		IntPtr monitor = MonitorFromWindow(window, 2);
 		if (monitor == IntPtr.Zero) {
@@ -127,4 +134,63 @@ function Start-GodotOnCursorMonitor {
 		Start-Sleep -Milliseconds 50
 	}
 	return $process
+}
+
+
+function Test-EscKeyPressed {
+	if ([QaWindowPlacement]::IsEscapePressed()) {
+		return $true
+	}
+	try {
+		if ([Console]::KeyAvailable) {
+			$key = [Console]::ReadKey($true)
+			if ($key.Key -eq 'Escape') {
+				return $true
+			}
+		}
+	} catch {
+		# Non-interactive hosts may not expose Console.KeyAvailable.
+	}
+	return $false
+}
+
+
+function Stop-GodotProcessTree {
+	param(
+		[System.Diagnostics.Process]$Process
+	)
+	if ($null -eq $Process) {
+		return
+	}
+	try {
+		if (-not $Process.HasExited) {
+			$Process.Kill($true)
+		}
+	} catch {
+		try {
+			Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+		} catch {
+			# Process may already be gone.
+		}
+	}
+}
+
+
+function Wait-GodotProcessWithEscCancel {
+	param(
+		[Parameter(Mandatory = $true)]
+		[System.Diagnostics.Process]$Process,
+		[string]$Label = "Godot test"
+	)
+	Write-Output "[QA] $Label running — press ESC to force-stop."
+	while (-not $Process.HasExited) {
+		if (Test-EscKeyPressed) {
+			Write-Output "[CANCEL] ESC pressed — force-stopping $Label."
+			Stop-GodotProcessTree -Process $Process
+			return 130
+		}
+		Start-Sleep -Milliseconds 50
+	}
+	$Process.Refresh()
+	return $Process.ExitCode
 }

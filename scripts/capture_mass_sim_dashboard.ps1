@@ -21,9 +21,24 @@ if ($Headless) {
 	$godotArgs = @("--headless") + $godotArgs
 }
 
-& $GodotPath @godotArgs
-if ($LASTEXITCODE -ne 0) {
-	exit $LASTEXITCODE
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
+$stdoutPath = Join-Path $env:TEMP "honor-and-iron-mass-sim.stdout.log"
+$stderrPath = Join-Path $env:TEMP "honor-and-iron-mass-sim.stderr.log"
+$process = Start-Process -FilePath $GodotPath `
+	-ArgumentList $godotArgs `
+	-WorkingDirectory $projectRoot `
+	-RedirectStandardOutput $stdoutPath `
+	-RedirectStandardError $stderrPath `
+	-PassThru -NoNewWindow
+$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Mass sim dashboard capture"
+if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
+if (Test-Path $stderrPath) { Get-Content $stderrPath }
+if ($exitCode -eq 130) {
+	Write-Output "[CANCEL] Mass sim capture stopped by ESC."
+	exit 130
+}
+if ($exitCode -ne 0) {
+	exit $exitCode
 }
 
 if (-not (Test-Path $jsonPath)) {

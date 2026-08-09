@@ -8,11 +8,18 @@ Set-Location $root
 function Invoke-QaGate {
 	$outFile = Join-Path $env:TEMP ("qa_gate_{0}.txt" -f [guid]::NewGuid().ToString("N"))
 	$errFile = "$outFile.err"
+	. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 	$p = Start-Process -FilePath $GodotPath `
 		-ArgumentList @("--headless", "--path", $root, "res://tests/PlanningQaGate.tscn") `
-		-Wait -PassThru `
+		-PassThru `
 		-RedirectStandardOutput $outFile `
 		-RedirectStandardError $errFile
+	$exitCode = Wait-GodotProcessWithEscCancel -Process $p -Label "Planning QA mutation gate"
+	if ($exitCode -eq 130) {
+		if (Test-Path $outFile) { Remove-Item $outFile -Force -ErrorAction SilentlyContinue }
+		if (Test-Path $errFile) { Remove-Item $errFile -Force -ErrorAction SilentlyContinue }
+		return @{ ExitCode = 130; Fails = @("[CANCEL] ESC"); Count = 0; Output = "[CANCEL] ESC" }
+	}
 	$all = ""
 	if (Test-Path $outFile) {
 		$raw = Get-Content $outFile -Raw
@@ -25,7 +32,7 @@ function Invoke-QaGate {
 		Remove-Item $errFile -Force -ErrorAction SilentlyContinue
 	}
 	$fails = @([regex]::Matches($all, '\[FAIL\][^\r\n]*') | ForEach-Object { $_.Value })
-	return @{ ExitCode = $p.ExitCode; Fails = $fails; Count = $fails.Count; Output = $all }
+	return @{ ExitCode = $exitCode; Fails = $fails; Count = $fails.Count; Output = $all }
 }
 
 function Normalize-Newlines([string]$text) {

@@ -16,7 +16,22 @@ if (Test-Path $resultPath) {
 }
 
 Write-Output "=== Sim/bridge regression (headless) ==="
-& $GodotPath --headless --path $projectRoot --script res://tests/regression_test.gd
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
+$stdoutPath = Join-Path $env:TEMP "honor-and-iron-regression.stdout.log"
+$stderrPath = Join-Path $env:TEMP "honor-and-iron-regression.stderr.log"
+$process = Start-Process -FilePath $GodotPath `
+	-ArgumentList @("--headless", "--path", $projectRoot, "--script", "res://tests/regression_test.gd") `
+	-WorkingDirectory $projectRoot `
+	-RedirectStandardOutput $stdoutPath `
+	-RedirectStandardError $stderrPath `
+	-PassThru -NoNewWindow
+$regressionExit = Wait-GodotProcessWithEscCancel -Process $process -Label "Regression suite"
+if ($regressionExit -eq 130) {
+	Write-Output "[CANCEL] Regression suite stopped by ESC."
+	exit 130
+}
+if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
+if (Test-Path $stderrPath) { Get-Content $stderrPath }
 
 $report = @()
 $complete = $false

@@ -13,14 +13,19 @@ if (-not (Test-Path $GodotPath)) {
 $tier12Label = "DISABLED (legacy - not gate-blocking)"
 if ($IncludeLegacyTier12) {
 	Write-Output "=== Tier 1/2: planning contracts (headless, legacy - informational only) ==="
+	. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 	$stdoutPath = Join-Path $env:TEMP "honor-and-iron-planning-qa.stdout.log"
 	$stderrPath = Join-Path $env:TEMP "honor-and-iron-planning-qa.stderr.log"
 	$process = Start-Process -FilePath $GodotPath `
 		-ArgumentList "--headless --path `"$projectRoot`" res://tests/PlanningQaGate.tscn" `
 		-RedirectStandardOutput $stdoutPath `
 		-RedirectStandardError $stderrPath `
-		-Wait `
 		-PassThru
+	$legacyExit = Wait-GodotProcessWithEscCancel -Process $process -Label "Planning Tier 1/2 legacy"
+	if ($legacyExit -eq 130) {
+		Write-Output "[CANCEL] Planning Tier 1/2 legacy stopped by ESC."
+		exit 130
+	}
 	Get-Content $stdoutPath
 	Get-Content $stderrPath
 
@@ -31,7 +36,7 @@ if ($IncludeLegacyTier12) {
 			Where-Object { $_.Line -notmatch 'resources still in use' } |
 			ForEach-Object { $_.Line }
 	)
-	$legacyPass = ($process.ExitCode -eq 0) -and ($testFailures.Count -eq 0) -and ($scriptErrors.Count -eq 0) -and ($runtimeErrors.Count -eq 0)
+	$legacyPass = ($legacyExit -eq 0) -and ($testFailures.Count -eq 0) -and ($scriptErrors.Count -eq 0) -and ($runtimeErrors.Count -eq 0)
 	if ($legacyPass) {
 		Write-Output "--- Tier 1/2 (legacy): PASS ---"
 		$tier12Label = "PASS (legacy informational)"
@@ -74,6 +79,9 @@ $tier3Incomplete = $false
 if ($sceneExit -eq 2) {
 	$tier3Incomplete = $true
 	Write-Output "--- Tier 3: INCOMPLETE ---"
+} elseif ($sceneExit -eq 130) {
+	Write-Output "--- Tier 3: CANCELLED (ESC) ---"
+	exit 130
 } elseif ($sceneExit -eq 0) {
 	$tier3Pass = $true
 	Write-Output "--- Tier 3: PASS ---"

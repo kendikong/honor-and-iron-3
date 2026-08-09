@@ -23,18 +23,24 @@ $godotArgs = @(
 )
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-archer-live.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-archer-live.stderr.log"
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $process = Start-Process -FilePath $GodotPath `
 	-ArgumentList $godotArgs `
 	-WorkingDirectory $projectRoot `
 	-RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath `
-	-Wait -PassThru -NoNewWindow
+	-PassThru -NoNewWindow
+$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Archer live QA"
+if ($exitCode -eq 130) {
+	Write-Output "[CANCEL] Archer live QA stopped by ESC."
+	exit 130
+}
 $output = @()
 $output += Get-Content $stdoutPath
 $output += Get-Content $stderrPath
 $output | ForEach-Object { Write-Output $_ }
-if ($process.ExitCode -ne 0) {
-	Write-Output "[FAIL] Archer live QA: Godot exit code $($process.ExitCode)"
+if ($exitCode -ne 0) {
+	Write-Output "[FAIL] Archer live QA: Godot exit code $exitCode"
 	exit 1
 }
 $failures = @(

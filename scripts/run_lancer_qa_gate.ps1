@@ -37,15 +37,21 @@ if (-not (Test-Path $GodotPath)) {
 
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-lancer-qa.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-lancer-qa.stderr.log"
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $process = Start-Process -FilePath $GodotPath `
 	-ArgumentList "--headless --path `"$projectRoot`" res://tests/LancerQaGate.tscn" `
 	-RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath `
-	-Wait -PassThru
+	-PassThru
+$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Lancer QA gate"
+if ($exitCode -eq 130) {
+	Log "[CANCEL] Lancer QA gate stopped by ESC."
+	Finish 130
+}
 Get-Content $stdoutPath | ForEach-Object { Log $_ }
 Get-Content $stderrPath | ForEach-Object { Log $_ }
 $failures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]|SCRIPT ERROR:' -ErrorAction SilentlyContinue)
-if ($process.ExitCode -ne 0 -or $failures.Count -gt 0) {
+if ($exitCode -ne 0 -or $failures.Count -gt 0) {
 	Log "[FAIL] Lancer Tier 1 scenarios"
 	Finish 1
 }

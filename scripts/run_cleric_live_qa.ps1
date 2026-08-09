@@ -17,9 +17,15 @@ $stdoutPath = Join-Path $env:TEMP "honor-and-iron-cleric-live.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-cleric-live.stderr.log"
 $godotArgs = @("--path", $projectRoot, "--headless", "-s", "-d",
 	$cmdTool, "-a", $suite, "--ignoreHeadlessMode")
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $process = Start-Process -FilePath $GodotPath -ArgumentList $godotArgs `
 	-WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `
-	-RedirectStandardError $stderrPath -Wait -PassThru -NoNewWindow
+	-RedirectStandardError $stderrPath -PassThru -NoNewWindow
+$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Cleric live QA"
+if ($exitCode -eq 130) {
+	Write-Output "[CANCEL] Cleric live QA stopped by ESC."
+	exit 130
+}
 $output = @()
 $output += Get-Content $stdoutPath
 $output += Get-Content $stderrPath
@@ -28,7 +34,7 @@ $failures = @(
 	Select-String -Path $stdoutPath, $stderrPath -Pattern 'FAILED|^\[FAIL\]|SCRIPT ERROR:' |
 		ForEach-Object { $_.Line }
 )
-if ($process.ExitCode -ne 0 -or $failures.Count -gt 0) {
+if ($exitCode -ne 0 -or $failures.Count -gt 0) {
 	Write-Output "[FAIL] Cleric live QA"
 	exit 1
 }

@@ -33,13 +33,18 @@ $godotArgs = @(
 )
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-swap-tier3.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-swap-tier3.stderr.log"
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $process = Start-Process -FilePath $GodotPath `
 	-ArgumentList $godotArgs `
 	-WorkingDirectory $projectRoot `
 	-RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath `
-	-Wait -PassThru -NoNewWindow
-$exitCode = $process.ExitCode
+	-PassThru -NoNewWindow
+$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Swap planning acceptance"
+if ($exitCode -eq 130) {
+	Write-Output "[CANCEL] Swap planning acceptance stopped by ESC."
+	exit 130
+}
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
 if (Test-Path $stderrPath) { Get-Content $stderrPath }
 
