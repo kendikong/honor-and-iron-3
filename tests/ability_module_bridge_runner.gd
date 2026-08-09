@@ -18,6 +18,14 @@ static func run_all() -> Dictionary:
 	print("ABILITY_MODULE_CHECK: violent_collision_module_shape START")
 	_check_violent_collision_modules(failures)
 	_report_check("violent_collision_module_shape", failures, check_failures)
+	check_failures = failures.size()
+	print("ABILITY_MODULE_CHECK: trampling_advance_module_shape START")
+	_check_trampling_advance_modules(failures)
+	_report_check("trampling_advance_module_shape", failures, check_failures)
+	check_failures = failures.size()
+	print("ABILITY_MODULE_CHECK: infer_motion_push_layer START")
+	_check_infer_motion_push_layer(failures)
+	_report_check("infer_motion_push_layer", failures, check_failures)
 	_run_script_check(
 		"res://tests/ability_module_runtime_test.gd",
 		"run_all",
@@ -162,3 +170,74 @@ static func _check_violent_collision_modules(failures: Array[String]) -> void:
 		failures.append("charge_strike module order should be MOVE then DAMAGE")
 	elif charge.modules[1].layers.is_empty():
 		failures.append("charge_strike strike module should have PUSH layer")
+
+
+static func _check_trampling_advance_modules(failures: Array[String]) -> void:
+	var knight: UnitData = DataLibrary.get_unit(&"knight")
+	if knight == null:
+		failures.append("knight missing for trampling_advance check")
+		return
+	var trample: AbilityData = null
+	for ab: AbilityData in knight.abilities:
+		if ab != null and ab.id == &"knight_trampling_advance":
+			trample = ab
+			break
+	if trample == null:
+		failures.append("knight_trampling_advance missing")
+		return
+	if trample.modules.size() != 1:
+		failures.append(
+			"trampling_advance should be 1 motion module + PUSH layer (got %d modules)"
+			% trample.modules.size(),
+		)
+		return
+	var motion: AbilityModule = trample.modules[0]
+	if motion.primary_type != GameEnums.EffectType.MOVE:
+		failures.append("trampling_advance module[0] should be MOVE primary")
+	if motion.motion_mode != GameEnums.MotionMode.INTO_OCCUPIED_PUSH:
+		failures.append("trampling_advance motion_mode should be INTO_OCCUPIED_PUSH")
+	var has_trample_kw: bool = false
+	for keyword: AbilityKeyword in motion.keywords:
+		if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE:
+			has_trample_kw = true
+	if not has_trample_kw:
+		failures.append("trampling_advance missing TRAMPLE keyword on motion module")
+	var has_push_layer: bool = false
+	for layer: AbilityLayer in motion.layers:
+		if layer != null and layer.effect != null and layer.effect.type == GameEnums.EffectType.PUSH:
+			has_push_layer = true
+	if not has_push_layer:
+		failures.append("trampling_advance missing PUSH layer on motion module")
+
+
+static func _check_infer_motion_push_layer(failures: Array[String]) -> void:
+	var move_eff := EffectData.new()
+	move_eff.type = GameEnums.EffectType.MOVE
+	move_eff.amount = 2
+	var push_eff := EffectData.new()
+	push_eff.type = GameEnums.EffectType.PUSH
+	push_eff.amount = 1
+	var damage_eff := EffectData.new()
+	damage_eff.type = GameEnums.EffectType.DAMAGE
+	damage_eff.amount = 3
+	var trample_proxy := AbilityData.new()
+	var trample_modules: Array[AbilityModule] = AbilityModuleBridge.infer_modules_from_effects(
+		[move_eff, push_eff], trample_proxy,
+	)
+	if trample_modules.size() != 1:
+		failures.append(
+			"infer MOVE+PUSH should be one module (got %d)" % trample_modules.size(),
+		)
+	elif trample_modules[0].layers.is_empty() \
+			or trample_modules[0].layers[0].effect.type != GameEnums.EffectType.PUSH:
+		failures.append("infer MOVE+PUSH should attach PUSH as motion layer")
+	var charge_proxy := AbilityData.new()
+	var charge_modules: Array[AbilityModule] = AbilityModuleBridge.infer_modules_from_effects(
+		[move_eff.duplicate(true), damage_eff], charge_proxy,
+	)
+	if charge_modules.size() != 2:
+		failures.append(
+			"infer MOVE+DAMAGE should stay two modules (got %d)" % charge_modules.size(),
+		)
+	elif charge_modules[1].primary_type != GameEnums.EffectType.DAMAGE:
+		failures.append("infer MOVE+DAMAGE second module should be DAMAGE strike")

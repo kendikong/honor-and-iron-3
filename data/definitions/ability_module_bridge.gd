@@ -497,7 +497,8 @@ static func infer_modules_from_effects(
 		return modules
 	## Bible mapping (ability-data.md §2 / §5 / §6), compile-stable:
 	## - Motion primary → module; TRAMPLE/BULLDOZE EffectTypes → keywords on that motion.
-	## - After a motion module, the next non-keyword effect starts a new module (move then strike).
+	## - Motion add-ons (Trampling PUSH, Bowling chain, collision riders) → layers on that motion.
+	## - After a motion module, the next strike (e.g. DAMAGE) starts a new module (move then attack).
 	## - Same-aim extras on a non-motion module → layers (AT_RESOLUTION unless modifiers say otherwise).
 	for eff: EffectData in effects:
 		if eff == null:
@@ -517,7 +518,13 @@ static func infer_modules_from_effects(
 			modules.append(mod)
 			continue
 		if is_motion_type(modules[modules.size() - 1].primary_type):
-			## Strike / utility after skill-owned motion — new module, shared aim.
+			if _layers_on_motion_module(eff):
+				var motion_layer := AbilityLayer.new()
+				motion_layer.effect = _duplicate_effect(eff)
+				motion_layer.condition = _infer_layer_condition(eff)
+				modules[modules.size() - 1].layers.append(motion_layer)
+				continue
+			## Strike after reposition — new module, shared aim (move then attack).
 			var after_move: AbilityModule = _module_from_primary_effect(eff, ability)
 			after_move.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
 			after_move.aim_module_index = 0
@@ -726,6 +733,18 @@ static func _merge_pass_through_into_motion(motion: AbilityModule, eff: EffectDa
 	motion.keywords.append(kw)
 	for key: Variant in eff.modifiers.keys():
 		motion.legacy_modifiers[key] = eff.modifiers[key]
+
+
+## Bible §6: extras on a motion module (Trampling PUSH, Bowling [+] chain) are layers — not a second module.
+static func _layers_on_motion_module(eff: EffectData) -> bool:
+	if eff == null:
+		return false
+	return eff.type in [
+		GameEnums.EffectType.PUSH,
+		GameEnums.EffectType.PUSH_CHAIN_COLLISION,
+		GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION,
+		GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT,
+	]
 
 
 static func _infer_layer_condition(eff: EffectData) -> GameEnums.LayerCondition:

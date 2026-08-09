@@ -1,7 +1,7 @@
 extends SceneTree
 
 const KEEP_LIBRARY_ABILITIES: Dictionary = {
-	"knight": ["knight_bowling_charge", "knight_trampling_advance"],
+	"knight": ["knight_bowling_charge"],
 }
 
 
