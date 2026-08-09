@@ -318,6 +318,12 @@ Checked at **this module’s resolution time**, using the board **after earlier 
 
 This is the Violent Collision rule (DASH + BULLDOZE, then MOVE if collided).
 
+**Typed metadata queries are not execution.** `AbilitySystem.ability_has_effect()`
+is an ungated presentation/metadata scan of the active typed module profile. It may
+report an effect on a gated follow-up so UI and authoring checks can describe the
+full profile, but it never activates that module, changes its aim, or bypasses its
+gate. Execution remains owned by the ordered module runtime and its gate checks.
+
 ---
 
 ## 3. Range origin

@@ -6,6 +6,7 @@ extends RefCounted
 
 static func run_all(failures: Array[String]) -> void:
 	_test_module_only_execution(failures)
+	_test_base_multi_module_compatibility_order(failures)
 	_test_upgraded_module_profile(failures)
 	_test_legacy_flat_targeting_compatibility(failures)
 	_test_motion_range_legality(failures)
@@ -55,6 +56,33 @@ static func _test_module_only_execution(failures: Array[String]) -> void:
 	var compatibility_view: Array[EffectData] = AbilitySystem.compatibility_effects_for(actor, ability)
 	if compatibility_view.size() != 1 or compatibility_view[0].amount != 4:
 		failures.append("module-only runtime compatibility view did not derive from modules")
+
+
+static func _test_base_multi_module_compatibility_order(failures: Array[String]) -> void:
+	var ability: AbilityData = _ability(&"runtime_base_multi_module_order", GameEnums.TargetingFlags.ENEMY)
+	var damage: AbilityModule = AbilityModule.new()
+	damage.primary_type = GameEnums.EffectType.DAMAGE
+	damage.amount = 3
+	damage.min_range = 1
+	damage.max_range = 3
+	damage.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	var push: AbilityModule = AbilityModule.new()
+	push.primary_type = GameEnums.EffectType.PUSH
+	push.amount = 2
+	push.min_range = 1
+	push.max_range = 3
+	push.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	ability.modules = [damage, push]
+	ability.effects = []
+	var compatibility_view: Array[EffectData] = AbilitySystem.compatibility_effects_for(null, ability)
+	if (
+		compatibility_view.size() != 2
+		or compatibility_view[0].type != GameEnums.EffectType.DAMAGE
+		or compatibility_view[0].amount != 3
+		or compatibility_view[1].type != GameEnums.EffectType.PUSH
+		or compatibility_view[1].amount != 2
+	):
+		failures.append("base multi-module compatibility order changed DAMAGE + PUSH")
 
 
 static func _test_upgraded_module_profile(failures: Array[String]) -> void:
@@ -167,6 +195,8 @@ static func _test_if_collided_follow_up(failures: Array[String]) -> void:
 
 	if AbilitySystem._module_gate_passes(follow_up, actor, [], 0):
 		failures.append("IF_COLLIDED gate passed without a collision event")
+	if not AbilitySystem.ability_has_effect(ability, GameEnums.EffectType.MOVE, actor):
+		failures.append("typed metadata scan did not see gated MOVE module")
 	var compatibility_view: Array[EffectData] = AbilitySystem.compatibility_effects_for(actor, ability)
 	if (
 		compatibility_view.size() != 1

@@ -4,6 +4,9 @@ extends Node
 ## Extends Node so project autoloads (EventBus) are registered before DataLibrary compiles.
 
 const AbilityModuleRuntimeTest = preload("res://tests/ability_module_runtime_test.gd")
+const AbilityModuleReaderBoundaryTest = preload(
+	"res://tests/ability_module_reader_boundary_test.gd"
+)
 
 
 func _ready() -> void:
@@ -17,6 +20,7 @@ func _run() -> void:
 	_check_knight(failures)
 	_check_violent_collision_modules(failures)
 	AbilityModuleRuntimeTest.run_all(failures)
+	AbilityModuleReaderBoundaryTest.run_all(failures)
 	if failures.is_empty():
 		print("ABILITY_MODULE_BRIDGE_TEST: PASS")
 		get_tree().quit(0)

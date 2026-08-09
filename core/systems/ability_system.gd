@@ -40,14 +40,18 @@ static func compatibility_effects_for(
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
 	if not modules.is_empty():
 		return AbilityModuleBridge.compile_modules_for_runtime(modules)
+	return _legacy_flat_effects_for(actor, ability)
+
+
+static func _legacy_flat_effects_for(
+	actor: UnitState,
+	ability: AbilityData,
+) -> Array[EffectData]:
+	if ability == null:
+		return []
 	if actor != null and actor.is_ability_upgraded(ability.id) and not ability.upgraded_effects.is_empty():
 		return ability.upgraded_effects
 	return ability.effects
-
-
-## Kept for external/unmigrated readers during the modular migration.
-static func active_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
-	return compatibility_effects_for(actor, ability)
 
 
 ## Internal legacy fallback. Modular callers must use active_modules_for().
@@ -55,7 +59,7 @@ static func legacy_effects_for(actor: UnitState, ability: AbilityData) -> Array[
 	if not active_modules_for(actor, ability).is_empty():
 		push_error("legacy_effects_for() cannot serve an authored modular profile")
 		return []
-	return compatibility_effects_for(actor, ability)
+	return _legacy_flat_effects_for(actor, ability)
 
 
 static func active_motion_module(actor: UnitState, ability: AbilityData) -> AbilityModule:
@@ -1233,6 +1237,8 @@ static func ability_has_effect(
 	effect_type: GameEnums.EffectType,
 	actor: UnitState = null,
 ) -> bool:
+	## Presentation/metadata query only. This ungated scan reports authored typed
+	## effects, including gated modules; it never executes or bypasses module gates.
 	if ability == null:
 		return false
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
