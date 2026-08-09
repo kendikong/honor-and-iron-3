@@ -9,7 +9,7 @@ if (-not (Test-Path $GodotPath)) {
 	Write-Error "Godot not found at: $GodotPath"
 }
 
-Write-Output "=== T3 mimic headless (action_range + intent_contract - NOT Tier 3 LIVE) ==="
+Write-Output "=== Fixture Parity Suite (headless — NOT Tier 3 LIVE) ==="
 
 . (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-t3-mimic.stdout.log"
@@ -31,8 +31,8 @@ if (Test-Path $stderrPath) { Get-Content $stderrPath }
 $testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
 $scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })
 if ($exitCode -ne 0 -or $testFailures.Count -gt 0 -or $scriptErrors.Count -gt 0) {
-	Write-Output "[FAIL] T3 mimic headless (exit $exitCode, $($testFailures.Count) fails)"
+	Write-Output "[FAIL] Fixture Parity Suite (exit $exitCode, $($testFailures.Count) fails)"
 	exit 1
 }
-Write-Output "[PASS] T3 mimic headless"
+	Write-Output "[PASS] Fixture Parity Suite"
 exit 0
