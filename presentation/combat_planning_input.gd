@@ -295,8 +295,14 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 		if selected_phase_action_exhausted(released_unit_id):
 			_play_sfx("invalid")
 			return false
+		var enemy_params: Dictionary = _commit_interaction_params(cell, dropped_on.id)
 		return _plan_approach_or_trample_on_enemy(
-			released_unit_id, dropped_on, local, cell, [], legal_move_tiles,
+			released_unit_id,
+			dropped_on,
+			local,
+			enemy_params.preferred,
+			enemy_params.waypoints,
+			enemy_params.legal_move_tiles,
 		)
 	if cell == _proj_origin(actor):
 		if _drag_unit_was_selected:
