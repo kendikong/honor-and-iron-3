@@ -714,7 +714,7 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 		for raw: Variant in layer_data as Array:
 			if raw is Dictionary:
 				dst.layers.append(layer_from_dict(raw as Dictionary))
-	AbilityModuleBridge.normalize_module_status_fields(dst)
+	AbilityModuleBridge.normalize_module_authoring_fields(dst)
 
 
 static func modules_from_dict_array(data: Array) -> Array[AbilityModule]:
@@ -1174,7 +1174,7 @@ static func apply_effect_dict(dst: EffectData, data: Dictionary) -> void:
 	dst.def_debuff_before_damage = int(data.get("def_debuff_before_damage", dst.def_debuff_before_damage))
 	dst.spawn_unit_id = StringName(String(data.get("spawn_unit_id", String(dst.spawn_unit_id))))
 	dst.modifiers = data.get("modifiers", {}).duplicate()
-	AbilityModuleBridge.normalize_effect_status_fields(dst)
+	AbilityModuleBridge.normalize_effect_authoring_fields(dst)
 
 
 static func effects_to_dict_array(effects: Array[EffectData]) -> Array:

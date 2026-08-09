@@ -1412,6 +1412,9 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	_field_tracks.erase(ability.id)
 	_normalize_editor_modules(ability)
 	ability.finalize_modular()
+	if not _ability_ui.has(ability):
+		_ability_ui[ability] = {}
+	_ability_ui[ability]["module_grey_cbs"] = []
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
@@ -1583,7 +1586,41 @@ func _normalize_editor_modules(ability: AbilityData) -> void:
 			module.max_range = module.min_range
 		if module.primary_type == GameEnums.EffectType.SWAP:
 			module.target_shape = GameEnums.TargetShape.SINGLE
-		AbilityModuleBridge.normalize_module_status_fields(module)
+		AbilityModuleBridge.normalize_module_authoring_fields(module)
+
+
+func _module_field_grey_state(module: AbilityModule) -> Dictionary:
+	return {
+		"scaling": not GameEnums.effect_type_uses_module_scaling(module.primary_type),
+		"motion_mode": not AbilityModuleBridge.is_motion_type(module.primary_type),
+		"adjacent_bonus": module.primary_type != GameEnums.EffectType.DAMAGE,
+		"def_debuff": module.primary_type != GameEnums.EffectType.DAMAGE,
+		"aim_module": module.aim_binding != GameEnums.AimBinding.SAME_AS_MODULE_N,
+		"shape": module.primary_type == GameEnums.EffectType.SWAP,
+		"shape_size": module.target_shape == GameEnums.TargetShape.SINGLE,
+	}
+
+
+func _apply_module_field_greying(
+	module: AbilityModule,
+	rows: Dictionary,
+) -> void:
+	var grey: Dictionary = _module_field_grey_state(module)
+	_grey_row(rows.get("scaling", []), bool(grey.get("scaling", false)))
+	_grey_row(rows.get("motion_mode", []), bool(grey.get("motion_mode", false)))
+	_grey_row(rows.get("adjacent_bonus", []), bool(grey.get("adjacent_bonus", false)))
+	_grey_row(rows.get("def_debuff", []), bool(grey.get("def_debuff", false)))
+	_grey_row(rows.get("aim_module", []), bool(grey.get("aim_module", false)))
+	_grey_row(rows.get("shape", []), bool(grey.get("shape", false)))
+	_grey_row(rows.get("shape_size", []), bool(grey.get("shape_size", false)))
+
+
+func _refresh_module_field_greying(ability: AbilityData) -> void:
+	if not _ability_ui.has(ability):
+		return
+	for cb: Callable in _ability_ui[ability].get("module_grey_cbs", []):
+		if cb.is_valid():
+			cb.call()
 
 
 func _module_min_range(module: AbilityModule) -> int:
@@ -1661,13 +1698,17 @@ func _build_module_fields(
 	grid.add_theme_constant_override("v_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
 	parent.add_child(grid)
 	var changed := func() -> void: _on_module_field_edited(ability)
+	var rebuild_detail := func() -> void:
+		_normalize_editor_modules(ability)
+		ability.finalize_modular()
+		_rebuild_ability_detail_panes(ability)
 	_bind_enum(grid, "Phase", GameEnums.ModulePhase, module.execution_phase, func(v: int) -> void:
 		module.execution_phase = v
 		changed.call()
 	)
 	_bind_enum(grid, "Primary", GameEnums.EffectType, module.primary_type, func(v: int) -> void:
 		module.primary_type = v
-		changed.call()
+		rebuild_detail.call()
 	)
 	_bind_int(grid, "Amount", module.amount, func(v: int) -> void:
 		module.amount = v
@@ -1682,11 +1723,12 @@ func _build_module_fields(
 			module.status_duration = v
 			changed.call()
 		)
-	_bind_enum(grid, "Scaling", GameEnums.StatType, module.scaling_stat, func(v: int) -> void:
+	var grey_rows: Dictionary = {}
+	grey_rows["scaling"] = _bind_enum(grid, "Scaling", GameEnums.StatType, module.scaling_stat, func(v: int) -> void:
 		module.scaling_stat = v
 		changed.call()
 	)
-	_bind_enum(grid, "Motion Mode", GameEnums.MotionMode, module.motion_mode, func(v: int) -> void:
+	grey_rows["motion_mode"] = _bind_enum(grid, "Motion Mode", GameEnums.MotionMode, module.motion_mode, func(v: int) -> void:
 		module.motion_mode = v
 		changed.call()
 	)
@@ -1715,20 +1757,22 @@ func _build_module_fields(
 			else:
 				module.target_shape = v
 			changed.call()
+			_refresh_module_field_greying(ability)
 	)
-	_grey_row(shape_row, module.primary_type == GameEnums.EffectType.SWAP)
+	grey_rows["shape"] = shape_row
 	var shape_size_setter := func(v: int) -> void:
 		module.target_shape_size = v
 		changed.call()
 	var shape_size_row := _bind_int(
 		grid, "Shape Size", module.target_shape_size, shape_size_setter, 1
 	)
-	_grey_row(shape_size_row, module.target_shape == GameEnums.TargetShape.SINGLE)
+	grey_rows["shape_size"] = shape_size_row
 	_bind_enum(grid, "Aim Binding", GameEnums.AimBinding, module.aim_binding, func(v: int) -> void:
 		module.aim_binding = v
 		changed.call()
+		_refresh_module_field_greying(ability)
 	)
-	_bind_int(grid, "Aim Module", module.aim_module_index, func(v: int) -> void:
+	grey_rows["aim_module"] = _bind_int(grid, "Aim Module", module.aim_module_index, func(v: int) -> void:
 		module.aim_module_index = v
 		changed.call()
 	)
@@ -1740,14 +1784,18 @@ func _build_module_fields(
 		module.presentation_anim = v
 		changed.call()
 	)
-	_bind_int(grid, "Adjacent Bonus", module.bonus_if_adjacent_at_cast, func(v: int) -> void:
+	grey_rows["adjacent_bonus"] = _bind_int(grid, "Adjacent Bonus", module.bonus_if_adjacent_at_cast, func(v: int) -> void:
 		module.bonus_if_adjacent_at_cast = v
 		changed.call()
 	)
-	_bind_int(grid, "DEF Debuff", module.def_debuff_before_damage, func(v: int) -> void:
+	grey_rows["def_debuff"] = _bind_int(grid, "DEF Debuff", module.def_debuff_before_damage, func(v: int) -> void:
 		module.def_debuff_before_damage = v
 		changed.call()
 	)
+	var module_grey_cb := func() -> void:
+		_apply_module_field_greying(module, grey_rows)
+	_ability_ui[ability]["module_grey_cbs"].append(module_grey_cb)
+	module_grey_cb.call()
 	_add_module_targeting_flags(parent, ability, module)
 	_add_module_keywords_editor(parent, ability, module)
 	_add_module_layers_editor(parent, ability, module)
@@ -1853,16 +1901,47 @@ func _add_module_layers_editor(
 		)
 		_bind_enum(grid, "Layer Type", GameEnums.EffectType, layer.effect.type, func(v: int) -> void:
 			layer.effect.type = v
-			_on_module_field_edited(ability)
+			AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)
+			_rebuild_ability_detail_panes(ability)
 		)
 		_bind_int(grid, "Layer Amount", layer.effect.amount, func(v: int) -> void:
 			layer.effect.amount = v
 			_on_module_field_edited(ability)
 		)
-		_bind_enum(grid, "Layer Scaling", GameEnums.StatType, layer.effect.scaling_stat, func(v: int) -> void:
-			layer.effect.scaling_stat = v
-			_on_module_field_edited(ability)
+		var layer_grey_rows: Dictionary = {}
+		if GameEnums.effect_type_applies_status(layer.effect.type):
+			layer_grey_rows["status"] = _bind_enum(
+				grid,
+				"Layer Status",
+				GameEnums.StatusType,
+				layer.effect.status_type,
+				func(v: int) -> void:
+					layer.effect.status_type = v
+					_on_module_field_edited(ability)
+			)
+			layer_grey_rows["duration"] = _bind_int(
+				grid,
+				"Layer Duration",
+				layer.effect.status_duration,
+				func(v: int) -> void:
+					layer.effect.status_duration = v
+					_on_module_field_edited(ability)
+			)
+		layer_grey_rows["scaling"] = _bind_enum(
+			grid,
+			"Layer Scaling",
+			GameEnums.StatType,
+			layer.effect.scaling_stat,
+			func(v: int) -> void:
+				layer.effect.scaling_stat = v
+				_on_module_field_edited(ability)
 		)
+		var layer_grey_cb := func() -> void:
+			_grey_row(
+				layer_grey_rows.get("scaling", []),
+				not GameEnums.effect_type_uses_module_scaling(layer.effect.type),
+			)
+		layer_grey_cb.call()
 		var remove := Button.new()
 		remove.text = "Remove Layer"
 		remove.pressed.connect(func() -> void:
@@ -1922,6 +2001,7 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 		var cb: Callable = refs["greying_cb"]
 		if cb.is_valid():
 			cb.call()
+	_refresh_module_field_greying(ability)
 	var modules_preview: RichTextLabel = refs.get("modules_preview")
 	if modules_preview != null:
 		modules_preview.text = ClassLibrarySchema.modules_summary_bbcode(ability)

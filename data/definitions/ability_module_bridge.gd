@@ -38,6 +38,30 @@ static func normalize_module_status_fields(module: AbilityModule) -> void:
 			normalize_effect_status_fields(layer.effect)
 
 
+static func normalize_effect_authoring_fields(effect: EffectData) -> void:
+	normalize_effect_status_fields(effect)
+	if not GameEnums.effect_type_uses_module_scaling(effect.type):
+		effect.scaling_stat = GameEnums.StatType.NONE
+
+
+static func normalize_module_authoring_fields(module: AbilityModule) -> void:
+	if module == null:
+		return
+	normalize_module_status_fields(module)
+	if not GameEnums.effect_type_uses_module_scaling(module.primary_type):
+		module.scaling_stat = GameEnums.StatType.NONE
+	if not is_motion_type(module.primary_type):
+		module.motion_mode = GameEnums.MotionMode.NONE
+	if module.primary_type != GameEnums.EffectType.DAMAGE:
+		module.bonus_if_adjacent_at_cast = 0
+		module.def_debuff_before_damage = 0
+	if module.aim_binding != GameEnums.AimBinding.SAME_AS_MODULE_N:
+		module.aim_module_index = 0
+	for layer: AbilityLayer in module.layers:
+		if layer != null and layer.effect != null:
+			normalize_effect_authoring_fields(layer.effect)
+
+
 static func validate_modules(modules: Array[AbilityModule]) -> Array[String]:
 	var errors: Array[String] = []
 	for index: int in modules.size():
@@ -527,9 +551,9 @@ static func finalize_ability(ability: AbilityData) -> void:
 		upgraded_proxy.effects = ability.upgraded_effects
 		ability.upgraded_modules = infer_modules_from_effects(ability.upgraded_effects, upgraded_proxy)
 	for module: AbilityModule in ability.modules:
-		normalize_module_status_fields(module)
+		normalize_module_authoring_fields(module)
 	for module: AbilityModule in ability.upgraded_modules:
-		normalize_module_status_fields(module)
+		normalize_module_authoring_fields(module)
 	if not ability.modules.is_empty():
 		## Authoritative modules: compile to flat effects for legacy readers.
 		## Exception: keep violent_collision_recast on primary until native gate runtime.
@@ -659,7 +683,7 @@ static func _module_from_primary_effect(eff: EffectData, ability: AbilityData) -
 	mod.gate = GameEnums.ModuleGate.ALWAYS
 	mod.keywords = _keywords_from_effect(eff)
 	_strip_promoted_modifier_keys(mod)
-	normalize_module_status_fields(mod)
+	normalize_module_authoring_fields(mod)
 	return mod
 
 

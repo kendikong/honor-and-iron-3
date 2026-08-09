@@ -38,8 +38,17 @@ static func _assert_non_status_modules_clear_status_type(failures: Array[String]
 	var compiled: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(damage_module)
 	if compiled.is_empty():
 		failures.append("DAMAGE module compile produced no effects")
-	elif compiled[0].status_type != GameEnums.StatusType.NONE:
+	el	if compiled[0].status_type != GameEnums.StatusType.NONE:
 		failures.append("DAMAGE compiled effect should not carry a status_type")
+	var move_module := AbilityModule.new()
+	move_module.primary_type = GameEnums.EffectType.MOVE
+	move_module.scaling_stat = GameEnums.StatType.PHYSICAL
+	move_module.motion_mode = GameEnums.MotionMode.TO_EMPTY_TILE
+	AbilityModuleBridge.normalize_module_authoring_fields(move_module)
+	if move_module.scaling_stat != GameEnums.StatType.NONE:
+		failures.append("MOVE module scaling_stat should normalize to NONE")
+	if move_module.motion_mode != GameEnums.MotionMode.TO_EMPTY_TILE:
+		failures.append("MOVE module motion_mode should remain authored")
 
 
 static func _assert_saved_abilities_are_module_first(failures: Array[String]) -> void:
