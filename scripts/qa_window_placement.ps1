@@ -182,10 +182,10 @@ function Wait-GodotProcessWithEscCancel {
 		[System.Diagnostics.Process]$Process,
 		[string]$Label = "Godot test"
 	)
-	Write-Output "[QA] $Label running - press ESC to force-stop."
+	Write-Host "[QA] $Label running - press ESC to force-stop."
 	while (-not $Process.HasExited) {
 		if (Test-EscKeyPressed) {
-			Write-Output "[CANCEL] ESC pressed - force-stopping $Label."
+			Write-Host "[CANCEL] ESC pressed - force-stopping $Label."
 			Stop-GodotProcessTree -Process $Process
 			return 130
 		}
