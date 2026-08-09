@@ -99,6 +99,10 @@ static func commit_universal_run(
 	return slots
 
 
+static func default_premove_run_cell(actor_cell: Vector2i, target_cell: Vector2i) -> Vector2i:
+	return _HARNESS.default_premove_run_cell(actor_cell, target_cell)
+
+
 static func default_postmove_cell(actor_cell: Vector2i, target_cell: Vector2i) -> Vector2i:
 	if actor_cell == target_cell:
 		return actor_cell + Vector2i(-1, 0)

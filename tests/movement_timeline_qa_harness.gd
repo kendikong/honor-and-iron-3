@@ -14,6 +14,7 @@ const _TIMELINE_PROOF_MARKERS: Array[String] = [
 	"run_planning_commit_smoke",
 	"run_planning_ally_smoke",
 	"run_planning_awaiting_smoke",
+	"run_planning_premove_proof",
 	"PlanningSmokeRegistry.run_for_factory_id",
 	"plan_pre_move",
 	"plan_post_move",
@@ -55,6 +56,73 @@ static func action_movement_needs_pre_or_post_leg(ability: AbilityData) -> bool:
 	if ability.is_pre_move_planner():
 		return false
 	return AbilitySystem.ability_has_movement_effect(ability)
+
+
+static func default_premove_run_cell(actor_pos: Vector2i, toward: Vector2i) -> Vector2i:
+	if actor_pos == toward:
+		return actor_pos + Vector2i(1, 0)
+	var delta: Vector2i = toward - actor_pos
+	var step := Vector2i(
+		0 if delta.x == 0 else int(signf(float(delta.x))),
+		0 if delta.y == 0 else int(signf(float(delta.y))),
+	)
+	return actor_pos + step
+
+
+static func resolve_premove_run_cell(
+	ability: AbilityData,
+	actor_pos: Vector2i,
+	commit_cell: Vector2i,
+	explicit: Vector2i = Vector2i(-999999, -999999),
+) -> Vector2i:
+	if explicit.x > -999000:
+		return explicit
+	if not action_movement_needs_pre_or_post_leg(ability):
+		return Vector2i(-999999, -999999)
+	return default_premove_run_cell(actor_pos, commit_cell)
+
+
+static func commit_run_premove_headless(
+	failures: Array[String],
+	fix: Dictionary,
+	ability: AbilityData,
+	premove_cell: Vector2i,
+	tag: String,
+) -> void:
+	if premove_cell.x <= -999000:
+		return
+	if not action_movement_needs_pre_or_post_leg(ability):
+		return
+	var director: CombatDirector = fix.director as CombatDirector
+	var unit_id: int = director.selected_unit_id
+	if has_pre_or_post_leg(director, unit_id):
+		return
+	var unit: UnitState = fix.board.get_unit_by_id(unit_id)
+	var run_idx: int = -1
+	if unit != null:
+		for i: int in range(unit.active_abilities.size()):
+			var ab: AbilityData = unit.active_abilities[i] as AbilityData
+			if ab != null and ab.is_universal_run():
+				run_idx = i
+				break
+	_PLANNING_CHECKLIST.assert_true(
+		failures,
+		"%s/planning/run_select" % tag,
+		run_idx >= 0,
+		"universal Run must be on unit for movement timeline QA",
+	)
+	if run_idx < 0:
+		return
+	director.select_unit(unit_id)
+	director.select_ability(run_idx)
+	var slots: Dictionary = _PLANNING_CHECKLIST.commit_production(fix, premove_cell)
+	_PLANNING_CHECKLIST.assert_true(
+		failures,
+		"%s/planning/premove_run" % tag,
+		not _PLANNING_CHECKLIST._slots_invalid(slots),
+		"movement skill QA requires a pre-move Run leg at %s" % premove_cell,
+	)
+	_PLANNING_CHECKLIST.flush_planning(fix)
 
 
 static func has_pre_or_post_leg(director: CombatDirector, unit_id: int) -> bool:

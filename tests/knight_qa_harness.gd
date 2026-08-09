@@ -386,6 +386,9 @@ static func run_planning_select_smoke(
 	)
 
 
+const _MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
+
+
 ## Planning commit smoke: select → hover → hover/click parity → commit_no_jump (preview==commit).
 static func run_planning_commit_smoke(
 	failures: Array[String],
@@ -396,9 +399,11 @@ static func run_planning_commit_smoke(
 	ally_pos: Vector2i = Vector2i(-1, -1),
 	enemy_pos: Vector2i = Vector2i(-999999, -999999),
 	verify_no_jump: bool = true,
+	premove_cell: Vector2i = Vector2i(-999999, -999999),
 ) -> void:
 	PlanningDragE2EHarness.cleanup_all()
 	var fix: Dictionary
+	var actor_pos: Vector2i = PlanningChecklistHarness.KNIGHT_START
 	if use_ally_fixture and ally_pos.x >= 0:
 		fix = wire_planning_board_with_ally(ally_pos)
 	elif enemy_pos.x > -999000:
@@ -407,7 +412,15 @@ static func run_planning_commit_smoke(
 		)
 	else:
 		fix = PlanningChecklistHarness.wire_bash_board()
+		actor_pos = Vector2i(3, 3)
 	fix.director.auto_run = true
+	var ability: AbilityData = factory_ability(ability_id)
+	var resolved_premove: Vector2i = _MovementTimeline.resolve_premove_run_cell(
+		ability, actor_pos, commit_cell, premove_cell,
+	)
+	_MovementTimeline.commit_run_premove_headless(
+		failures, fix, ability, resolved_premove, tag,
+	)
 	var idx: int = PlanningChecklistHarness.select_ability(fix, ability_id)
 	assert_true(
 		failures, "%s/planning/select" % tag,
@@ -416,7 +429,7 @@ static func run_planning_commit_smoke(
 	)
 	if idx < 0:
 		return
-	var ability: AbilityData = fix.knight.active_abilities[idx]
+	ability = fix.knight.active_abilities[idx] as AbilityData
 	assert_true(
 		failures, "%s/planning/ability_id" % tag,
 		ability != null and ability.id == ability_id,

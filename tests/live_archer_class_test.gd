@@ -143,7 +143,7 @@ func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
 			_input,
 			actor_id,
 			ability,
-			_MOVEMENT_QA.default_postmove_cell(case.actor, case.target),
+			_MOVEMENT_QA.default_premove_run_cell(case.actor, case.target),
 		)
 		_director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(2, _DELTA_MS)

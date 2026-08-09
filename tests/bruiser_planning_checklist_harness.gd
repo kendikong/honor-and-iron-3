@@ -28,7 +28,8 @@ static func wire_board(
 	var bruiser: UnitState = UnitState.create(1, def, GameEnums.Team.PLAYER, bruiser_pos, cfg)
 	if cfg.is_empty():
 		bruiser.active_abilities = _Harness.build_training_kit(def)
-	bruiser.movement.points_left = bruiser.movement.max_points
+	bruiser.movement.points_left = maxi(bruiser.movement.max_points, 8)
+	bruiser.movement.max_points = maxi(bruiser.movement.max_points, 8)
 	bruiser.ability.points_left = 1
 	bruiser.ability.max_points = 1
 	var units: Array[UnitState] = [bruiser]

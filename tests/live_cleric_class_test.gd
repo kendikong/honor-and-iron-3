@@ -74,7 +74,7 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 			input,
 			actor_id,
 			ability,
-			_MOVEMENT_QA.default_postmove_cell(item.actor, item.target),
+			_MOVEMENT_QA.default_premove_run_cell(item.actor, item.target),
 		)
 		director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(2, 16)

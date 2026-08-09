@@ -4,6 +4,7 @@ extends RefCounted
 ## Per-active planning commit smoke cells — Knight Tier B parity (click path, no drag/undo).
 
 const _Harness := preload("res://tests/bruiser_qa_harness.gd")
+const _MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
 
 
 static func run_for_factory_id(failures: Array[String], factory_id: StringName) -> void:
@@ -14,16 +15,35 @@ static func run_for_factory_id(failures: Array[String], factory_id: StringName) 
 	var tag: String = String(entry.get("tag", factory_id))
 	var bruiser_pos: Vector2i = entry.get("bruiser_pos", Vector2i.ZERO)
 	var enemy_pos: Vector2i = entry.get("enemy_pos", Vector2i(-1, -1))
+	var commit_cell: Vector2i = entry.get("commit_cell", Vector2i.ZERO)
+	var ability: AbilityData = _Harness.factory_ability(factory_id)
+	var premove_cell: Vector2i = _MovementTimeline.resolve_premove_run_cell(
+		ability,
+		bruiser_pos,
+		commit_cell,
+		entry.get("premove_cell", Vector2i(-999999, -999999)),
+	)
 	if mode == "awaiting":
+		if premove_cell.x > -999000:
+			_Harness.run_planning_premove_proof(
+				failures,
+				factory_id,
+				tag,
+				bruiser_pos,
+				commit_cell,
+				premove_cell,
+				enemy_pos,
+			)
 		_Harness.run_planning_awaiting_smoke(
 			failures,
 			factory_id,
 			tag,
 			bruiser_pos,
 			entry.get("arm_cell", bruiser_pos),
-			entry.get("commit_cell", Vector2i.ZERO),
+			commit_cell,
 			enemy_pos,
 			bool(entry.get("verify_no_jump", true)),
+			entry.get("wall_cells", []),
 		)
 	elif mode == "ally":
 		_Harness.run_planning_ally_smoke(
@@ -39,11 +59,11 @@ static func run_for_factory_id(failures: Array[String], factory_id: StringName) 
 			failures,
 			factory_id,
 			tag,
-			entry.get("commit_cell", Vector2i.ZERO),
+			commit_cell,
 			bruiser_pos,
 			enemy_pos,
 			bool(entry.get("verify_no_jump", true)),
-			entry.get("premove_cell", Vector2i(-999999, -999999)),
+			premove_cell,
 		)
 
 
@@ -139,9 +159,9 @@ static func _entries() -> Dictionary:
 			"tag": "violent_collision",
 			"mode": "awaiting",
 			"bruiser_pos": Vector2i(1, 3),
-			"enemy_pos": Vector2i(4, 3),
+			"enemy_pos": Vector2i(-1, -1),
 			"arm_cell": Vector2i(1, 3),
-			"commit_cell": Vector2i(5, 3),
+			"commit_cell": Vector2i(4, 3),
 			"verify_no_jump": false,
 			"premove_cell": Vector2i(2, 3),
 		},

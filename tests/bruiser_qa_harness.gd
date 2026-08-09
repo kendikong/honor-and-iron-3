@@ -752,6 +752,17 @@ static func events_actor_moved(events: Array, actor_id: int) -> bool:
 const _MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
 
 
+static func _apply_wall_cells(fix: Dictionary, wall_cells: Array) -> void:
+	if wall_cells.is_empty():
+		return
+	for raw: Variant in wall_cells:
+		var coord: Vector2i = raw as Vector2i
+		set_tile_terrain(fix.board, coord, &"wall")
+		set_tile_terrain(fix.director.base_board, coord, &"wall")
+		if fix.director.projected_state != null:
+			set_tile_terrain(fix.director.projected_state, coord, &"wall")
+
+
 static func _commit_run_premove_if_needed(
 	failures: Array[String],
 	fix: Dictionary,
@@ -759,30 +770,7 @@ static func _commit_run_premove_if_needed(
 	premove_cell: Vector2i,
 	tag: String,
 ) -> void:
-	if premove_cell.x <= -999000:
-		return
-	if not _MovementTimeline.action_movement_needs_pre_or_post_leg(ability):
-		return
-	if _MovementTimeline.has_pre_or_post_leg(fix.director, fix.bruiser.id):
-		return
-	var run_idx: int = -1
-	for i: int in range(fix.bruiser.active_abilities.size()):
-		var ab: AbilityData = fix.bruiser.active_abilities[i] as AbilityData
-		if ab != null and ab.is_universal_run():
-			run_idx = i
-			break
-	assert_true(failures, "%s/planning/run_select" % tag, run_idx >= 0)
-	if run_idx < 0:
-		return
-	fix.director.select_unit(fix.bruiser.id)
-	fix.director.select_ability(run_idx)
-	var slots: Dictionary = PlanningChecklistHarness.commit_production(fix, premove_cell)
-	assert_true(
-		failures,
-		"%s/planning/premove_run" % tag,
-		not PlanningChecklistHarness._slots_invalid(slots),
-		"movement skill QA requires a pre-move Run leg at %s" % premove_cell,
-	)
+	_MovementTimeline.commit_run_premove_headless(failures, fix, ability, premove_cell, tag)
 
 
 ## Planning commit smoke: select → hover → hover/click parity → commit_no_jump (Knight Tier B).
@@ -809,7 +797,10 @@ static func run_planning_commit_smoke(
 		if ab != null and ab.id == ability_id:
 			ability = ab
 			break
-	_commit_run_premove_if_needed(failures, fix, ability, premove_cell, tag)
+	var resolved_premove: Vector2i = _MovementTimeline.resolve_premove_run_cell(
+		ability, bruiser_pos, commit_cell, premove_cell,
+	)
+	_commit_run_premove_if_needed(failures, fix, ability, resolved_premove, tag)
 	var idx: int = PlanningChecklistHarness.select_ability(fix, ability_id)
 	assert_true(
 		failures, "%s/planning/select" % tag,
@@ -849,6 +840,38 @@ static func run_planning_commit_smoke(
 		)
 
 
+static func run_planning_premove_proof(
+	failures: Array[String],
+	ability_id: StringName,
+	tag: String,
+	bruiser_pos: Vector2i,
+	commit_cell: Vector2i,
+	premove_cell: Vector2i,
+	enemy_pos: Vector2i = Vector2i(-1, -1),
+) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = _PlanningFixture.wire_board(
+		bruiser_pos, enemy_pos, Vector2i(-1, -1), ability_id,
+	)
+	fix.director.auto_run = true
+	var ability: AbilityData = null
+	for ab: AbilityData in fix.bruiser.active_abilities:
+		if ab != null and ab.id == ability_id:
+			ability = ab
+			break
+	var resolved_premove: Vector2i = _MovementTimeline.resolve_premove_run_cell(
+		ability, bruiser_pos, commit_cell, premove_cell,
+	)
+	_commit_run_premove_if_needed(failures, fix, ability, resolved_premove, tag)
+	_MovementTimeline.assert_pre_or_post_leg_if_needed(
+		failures,
+		"%s/planning/premove_leg" % tag,
+		fix.director,
+		fix.bruiser.id,
+		ability,
+	)
+
+
 static func run_planning_awaiting_smoke(
 	failures: Array[String],
 	ability_id: StringName,
@@ -858,11 +881,13 @@ static func run_planning_awaiting_smoke(
 	commit_cell: Vector2i,
 	enemy_pos: Vector2i = Vector2i(-1, -1),
 	verify_no_jump: bool = true,
+	wall_cells: Array = [],
 ) -> void:
 	PlanningDragE2EHarness.cleanup_all()
 	var fix: Dictionary = _PlanningFixture.wire_board(
 		bruiser_pos, enemy_pos, Vector2i(-1, -1), ability_id,
 	)
+	_apply_wall_cells(fix, wall_cells)
 	fix.director.auto_run = true
 	var idx: int = PlanningChecklistHarness.select_ability(fix, ability_id)
 	assert_true(failures, "%s/planning/select" % tag, idx >= 0)
@@ -892,9 +917,30 @@ static func run_planning_awaiting_smoke(
 			failures, "%s/planning/no_jump" % tag, fix, commit_cell,
 		)
 	else:
-		PlanningChecklistHarness.assert_planning_timeline_after_commit(
-			failures, "%s/planning/timeline_columns" % tag, fix, commit_cell,
+		var unit_id: int = fix.director.selected_unit_id
+		var ability: AbilityData = null
+		var unit: UnitState = fix.board.get_unit_by_id(unit_id)
+		if (
+			unit != null
+			and fix.director.selected_ability_index >= 0
+			and fix.director.selected_ability_index < unit.active_abilities.size()
+		):
+			ability = unit.active_abilities[fix.director.selected_ability_index]
+		var final_slots: Dictionary = PlanningChecklistHarness.commit_production(fix, commit_cell)
+		assert_true(
+			failures, "%s/planning/timeline_columns" % tag,
+			not PlanningChecklistHarness._slots_invalid(final_slots),
+			"commit must succeed",
 		)
+		if ability != null:
+			PlanningChecklistHarness.assert_skill_timeline_columns(
+				failures,
+				"%s/planning/timeline_columns" % tag,
+				fix.director,
+				unit_id,
+				ability,
+				{},
+			)
 
 
 static func run_planning_ally_smoke(

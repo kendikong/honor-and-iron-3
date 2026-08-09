@@ -88,7 +88,7 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 			_input,
 			actor_id,
 			ability,
-			_MOVEMENT_QA.default_postmove_cell(_ACTOR_CELL, case.target),
+			_MOVEMENT_QA.default_premove_run_cell(_ACTOR_CELL, case.target),
 		)
 		_director.select_ability(_ability_index(actor, ability))
 	await runner.simulate_frames(3, _DELTA_MS)
@@ -169,7 +169,7 @@ func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 			_input,
 			actor_id,
 			ability,
-			_MOVEMENT_QA.default_postmove_cell(_ACTOR_CELL, case.target),
+			_MOVEMENT_QA.default_premove_run_cell(_ACTOR_CELL, case.target),
 		)
 		_director.select_ability(_ability_index(actor, ability))
 	await runner.simulate_frames(3, _DELTA_MS)

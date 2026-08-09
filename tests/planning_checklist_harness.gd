@@ -899,6 +899,7 @@ static func skill_timeline_column_failures(
 static func assert_planning_timeline_after_commit(
 	failures: Array[String], label: String, fix: Dictionary, cell: Vector2i,
 ) -> void:
+	const MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
 	var unit_id: int = fix.director.selected_unit_id
 	var unit: UnitState = fix.board.get_unit_by_id(unit_id)
 	var ability: AbilityData = null
@@ -912,7 +913,10 @@ static func assert_planning_timeline_after_commit(
 		return
 	var slots: Dictionary = commit_production(fix, cell)
 	assert_true(failures, label, not _slots_invalid(slots), "commit must succeed")
-	assert_skill_timeline_columns(failures, label, fix.director, unit_id, ability, slots)
+	assert_skill_timeline_columns(failures, label, fix.director, unit_id, ability, {})
+	MovementTimeline.assert_pre_or_post_leg_if_needed(
+		failures, label, fix.director, unit_id, ability,
+	)
 
 
 static func assert_slots_match_preview_commit(

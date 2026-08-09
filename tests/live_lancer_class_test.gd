@@ -383,6 +383,7 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		if ability == null:
 			continue
 		_director.select_unit(actor_id)
+		var target_cell := _case_target_cell(skill_id)
 		await _MOVEMENT_QA.commit_premove_run_if_needed(
 			self,
 			runner,
@@ -390,7 +391,7 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 			_input,
 			actor_id,
 			ability,
-			_MOVEMENT_QA.default_postmove_cell(_case_actor_cell(skill_id), target_cell),
+			_MOVEMENT_QA.default_premove_run_cell(_case_actor_cell(skill_id), target_cell),
 		)
 		_director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(3, _DELTA_MS)
@@ -403,7 +404,6 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		assert_that(selected_ability.id).override_failure_message(
 			"%s: selected ability mismatch (got %s)" % [skill_id, selected_ability.id],
 		).is_equal(skill_id)
-		var target_cell := _case_target_cell(skill_id)
 		if ability.range_tiles <= 0:
 			target_cell = actor.position
 		await _OVERLAY_QA.assert_live_overlay_parity(
