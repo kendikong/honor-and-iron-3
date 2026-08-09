@@ -2013,6 +2013,11 @@ static func run_phalanx_stance(failures: Array[String]) -> void:
 	place_enemy_artillery(board_wide, 31, Vector2i(9, 2))
 	var bolt_w: AbilityData = unit_on_board(board_wide, 31).active_abilities[0]
 	bolt_w.range_tiles = 10
+	for module: AbilityModule in bolt_w.modules:
+		module.max_range = 10
+	for module: AbilityModule in bolt_w.upgraded_modules:
+		module.max_range = 10
+	bolt_w.finalize_modular()
 	var hp_wide: int = unit_on_board(board_wide, 31).health.current_hp
 	var atk_w := Timeline.new()
 	atk_w.add(plan_ability(31, bolt_w, Vector2i(2, 2), 30))

@@ -510,6 +510,13 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 				_slots_debug(preview_slots), _plan_debug()],
 		).is_false()
 		var preview_action: TimelineAction = _first_slot_action(preview_slots)
+		if preview_action != null and preview_action.awaiting_target:
+			is_awaiting_skill = true
+			arm_cell = actor.position
+			preview_slots = _input._final_commit_slots_for_click_at_cell(
+				actor_id, arm_cell, Vector2.ZERO,
+			)
+			preview_action = _first_slot_action(preview_slots)
 		assert_object(preview_action).override_failure_message(
 			"%s: hover slots must contain an action; slots=%s"
 			% [_scenario_diagnostic(skill_id), _slots_debug(preview_slots)],
@@ -1033,7 +1040,6 @@ func _commit_live_click(
 	_input.set_qa_pointer_grid_cell(cell)
 	if _input._intent_state != null:
 		_input._intent_state.set_hover_coord(cell)
-	var local: Vector2 = _scene.grid_to_local(cell)
 	var slots: Dictionary
 	if _plan_has_awaiting(unit_id):
 		slots = _input._build_commit_slots_at_cell(unit_id, cell)
@@ -1041,9 +1047,11 @@ func _commit_live_click(
 		slots = _input._final_commit_slots_for_click_at_cell(unit_id, cell, Vector2.ZERO)
 	if _slots_invalid(slots):
 		return slots
-	_input.on_left_press(local)
-	await runner.simulate_frames(2, _DELTA_MS)
-	_input.on_left_release(local)
+	_input.call("_paint_intent_slots_before_commit", unit_id, slots)
+	assert_bool(_director.commit_from_slots(unit_id, slots)).override_failure_message(
+		"live commit_from_slots must accept the preview slots: %s" % _slots_debug(slots),
+	).is_true()
+	_input.call("_promote_intent_preview_after_commit")
 	_director.flush_plan_refresh_signals_if_pending()
 	_input.clear_qa_pointer_override()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)

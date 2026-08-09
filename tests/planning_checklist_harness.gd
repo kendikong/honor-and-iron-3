@@ -605,13 +605,22 @@ static func build_orthogonal_route(origin: Vector2i, dest: Vector2i) -> Array[Ve
 
 
 static func set_knight_pools(fix: Dictionary, ap_left: int, mp_left: int) -> void:
-	fix.knight.ability.points_left = ap_left
-	fix.knight.ability.max_points = maxi(ap_left, fix.knight.ability.max_points)
-	fix.knight.movement.points_left = mp_left
-	var proj: UnitState = projected_unit(fix, 1)
-	if proj != null and proj.id == fix.knight.id:
-		proj.ability.points_left = ap_left
-		proj.movement.points_left = mp_left
+	var director: CombatDirector = fix.director
+	var boards: Array[BoardState] = [
+		director.base_board,
+		director.board,
+		director.projected_state,
+	]
+	for board: BoardState in boards:
+		if board == null:
+			continue
+		var knight: UnitState = board.get_unit_by_id(fix.knight.id)
+		if knight == null:
+			continue
+		knight.ability.points_left = ap_left
+		knight.ability.max_points = maxi(ap_left, knight.ability.max_points)
+		knight.movement.points_left = mp_left
+		knight.movement.max_points = maxi(mp_left, knight.movement.max_points)
 
 
 static func assert_fail(failures: Array[String], label: String, detail: String) -> void:

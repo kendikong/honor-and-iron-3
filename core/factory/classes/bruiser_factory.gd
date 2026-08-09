@@ -61,7 +61,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	
 	# Actives
 	var charge_move := DataLibrary._module(
-		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
+		GameEnums.EffectType.MOVE, 2, 1, 2,
+		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
@@ -157,7 +158,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(adrenaline_surge)
 
 	var earthshatter_module := DataLibrary._module(
-		GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.EffectType.DAMAGE, 2, 1, 1,
+		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.ARC, 1, GameEnums.StatType.PHYSICAL,
 	)
 	earthshatter_module.layers = [

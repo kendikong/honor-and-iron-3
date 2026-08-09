@@ -77,6 +77,11 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		)
 		input._intent_state.set_hover_coord(item.target)
 		var slots: Dictionary = input._build_commit_slots_at_cell(actor_id, item.target)
+		var first_action: TimelineAction = _first_slot_action(slots)
+		if first_action != null and first_action.awaiting_target:
+			slots = input._final_commit_slots_for_click_at_cell(
+				actor_id, actor.position, Vector2.ZERO,
+			)
 		assert_bool(_slots_invalid(slots)).override_failure_message(
 			"%s: live preview rejected target %s" % [item.id, item.target]
 		).is_false()
@@ -86,6 +91,19 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		assert_bool(director.commit_from_slots(actor_id, slots)).override_failure_message(
 			"%s: live commit rejected slots" % item.id
 		).is_true()
+		if director.find_awaiting_action(actor_id) != null:
+			slots = input._final_commit_slots_for_click_at_cell(
+				actor_id, item.target, Vector2.ZERO,
+			)
+			assert_bool(_slots_invalid(slots)).override_failure_message(
+				"%s: live target-finalization rejected target %s" % [item.id, item.target]
+			).is_false()
+			if _slots_invalid(slots):
+				continue
+			input.call("_paint_intent_slots_before_commit", actor_id, slots)
+			assert_bool(director.commit_from_slots(actor_id, slots)).override_failure_message(
+				"%s: live target-finalization rejected slots" % item.id
+			).is_true()
 		director.flush_plan_refresh_signals_if_pending()
 		await runner.simulate_frames(2, 16)
 		var result := Simulator.simulate(director.base_board, director.get_player_plan())
@@ -159,3 +177,11 @@ func _unit_id_at(board: BoardState, cell: Vector2i) -> int:
 func _slots_invalid(slots: Dictionary) -> bool:
 	var invalid: Variant = slots.get("invalid", false)
 	return invalid is String or invalid == true
+
+
+func _first_slot_action(slots: Dictionary) -> TimelineAction:
+	for column: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(column, []):
+			if raw is TimelineAction:
+				return raw as TimelineAction
+	return null

@@ -315,6 +315,8 @@ static func planning_module_target_valid(
 		distance = PhysicsSystem.straight_line_distance(origin, target_coord)
 	if distance < module.min_range or distance > module.max_range:
 		return false
+	if module.has_targeting(GameEnums.TargetingFlags.TILE):
+		return true
 	if target_coord == origin:
 		return module.has_targeting(GameEnums.TargetingFlags.SELF)
 	var target: UnitState = (
@@ -1802,7 +1804,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		actor.passive_flags.erase("passed_through_terrain")
 		
 	if not wild_magic_repeat:
-		_spend_ability_cost(actor, ability, board)
+		_spend_ability_cost(actor, ability, board, events)
 	if not wild_magic_repeat and _ability_has_modifier(actor, ability, &"limit_once_per_turn"):
 		actor.passive_flags["ability_used_once:%s" % ability.id] = true
 	if (
@@ -2380,7 +2382,12 @@ static func _pull_surfaces_to_center(
 		return
 
 
-static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> void:
+static func _spend_ability_cost(
+	actor: UnitState,
+	ability: AbilityData,
+	board: BoardState = null,
+	events: Array[SimEvent] = [],
+) -> void:
 	if actor == null or ability == null:
 		return
 		
@@ -2398,6 +2405,15 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: B
 		hp_cost = ability.get_active_secondary_value(actor.is_ability_upgraded(ability.id))
 	if hp_cost > 0:
 		actor.health.current_hp -= hp_cost
+		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
+			"actor": actor.id,
+			"source": actor.id,
+			"target": actor.id,
+			"unit": actor.id,
+			"amount": hp_cost,
+			"hp": actor.health.current_hp,
+			"source_label": "Ability Cost",
+		}))
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:

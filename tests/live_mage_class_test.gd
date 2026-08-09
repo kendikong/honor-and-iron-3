@@ -242,15 +242,31 @@ func _commit_click(runner: GdUnitSceneRunner, actor_id: int, cell: Vector2i) -> 
 	_input.set_qa_pointer_grid_cell(cell)
 	if _input._intent_state != null:
 		_input._intent_state.set_hover_coord(cell)
-	var slots: Dictionary
-	if _director.find_awaiting_action(actor_id) != null:
-		slots = _input._build_commit_slots_at_cell(actor_id, cell)
-	else:
-		slots = _input._final_commit_slots_for_click_at_cell(actor_id, cell, Vector2.ZERO)
+	var actor: UnitState = _director.board.get_unit_by_id(actor_id)
+	var ability: AbilityData = CombatDirector.resolve_selected_ability(
+		actor, _director.selected_ability_index,
+	)
+	var should_arm: bool = (
+		_director.find_awaiting_action(actor_id) == null
+		and actor != null
+		and ability != null
+		and AbilitySystem.planning_commit_flow(actor, ability)
+			== GameEnums.PlanningCommitFlow.AWAITING_TARGET
+	)
+	var first_cell: Vector2i = actor.position if should_arm else cell
+	var slots: Dictionary = _input._final_commit_slots_for_click_at_cell(
+		actor_id, first_cell, Vector2.ZERO,
+	)
 	if _slots_invalid(slots):
 		return slots
 	_input.call("_paint_intent_slots_before_commit", actor_id, slots)
 	assert_bool(_director.commit_from_slots(actor_id, slots)).is_true()
+	if _director.find_awaiting_action(actor_id) != null:
+		slots = _input._build_commit_slots_at_cell(actor_id, cell)
+		if _slots_invalid(slots):
+			return slots
+		_input.call("_paint_intent_slots_before_commit", actor_id, slots)
+		assert_bool(_director.commit_from_slots(actor_id, slots)).is_true()
 	_input.call("_promote_intent_preview_after_commit")
 	_director.flush_plan_refresh_signals_if_pending()
 	_input.clear_qa_pointer_override()
