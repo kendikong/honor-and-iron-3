@@ -1069,9 +1069,13 @@ const EDITOR_OVERRIDES_PATH: String = "res://data/class_library_data.json"
 
 
 static func read_editor_save() -> Dictionary:
-	if not FileAccess.file_exists(EDITOR_OVERRIDES_PATH):
+	return read_editor_save_from_path(EDITOR_OVERRIDES_PATH)
+
+
+static func read_editor_save_from_path(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
 		return {}
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(EDITOR_OVERRIDES_PATH))
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if typeof(parsed) == TYPE_DICTIONARY:
 		return migrate_editor_save_to_modules(parsed as Dictionary)
 	return {}

@@ -4,6 +4,7 @@ extends RefCounted
 const EDITOR_PATH: String = "res://ui/class_library_editor.gd"
 const SCHEMA_PATH: String = "res://ui/class_library_schema.gd"
 const OVERRIDES_PATH: String = "res://data/class_library_data.json"
+const LEGACY_FIXTURE_PATH: String = "user://class_library_legacy_read_test.json"
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -23,6 +24,7 @@ static func run_all(failures: Array[String]) -> void:
 	if not schema_source.contains("return migrate_editor_save_to_modules(parsed as Dictionary)"):
 		failures.append("class library save reader bypasses module migration")
 	_assert_saved_abilities_are_module_first(failures)
+	_assert_runtime_legacy_read_migrates(failures)
 
 
 static func _assert_saved_abilities_are_module_first(failures: Array[String]) -> void:
@@ -57,3 +59,40 @@ static func _assert_saved_abilities_are_module_first(failures: Array[String]) ->
 			]:
 				if ability_data.has(legacy_key):
 					failures.append("%s/%s emitted legacy key %s" % [unit_key, ability_key, legacy_key])
+
+
+static func _assert_runtime_legacy_read_migrates(failures: Array[String]) -> void:
+	var legacy_payload: Dictionary = {
+		"units": {
+			"legacy_fixture": {
+				"abilities": {
+					"legacy_strike": {
+						"display_name": "Legacy Strike",
+						"effects": [{
+							"type": GameEnums.EffectType.DAMAGE,
+							"amount": 3,
+						}],
+						"kind": GameEnums.AbilityKind.CLASS_SKILL,
+						"range_tiles": 2,
+						"targeting_flags": GameEnums.TargetingFlags.ENEMY,
+						"targeting_mode": GameEnums.TargetingMode.ENEMY_UNIT,
+					},
+				},
+			},
+		},
+	}
+	var file := FileAccess.open(LEGACY_FIXTURE_PATH, FileAccess.WRITE)
+	if file == null:
+		failures.append("could not create runtime legacy read fixture")
+		return
+	file.store_string(JSON.stringify(legacy_payload))
+	file.close()
+	var migrated: Dictionary = ClassLibrarySchema.read_editor_save_from_path(LEGACY_FIXTURE_PATH)
+	var ability_data: Dictionary = (
+		((migrated.get("units", {}) as Dictionary).get("legacy_fixture", {}) as Dictionary)
+		.get("abilities", {})
+		.get("legacy_strike", {})
+	)
+	if not ability_data.has("modules") or ability_data.has("effects") or ability_data.has("kind"):
+		failures.append("runtime legacy read did not return module-first payload")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(LEGACY_FIXTURE_PATH))
