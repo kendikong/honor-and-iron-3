@@ -24,6 +24,27 @@ const SHIELD_BASH_ID: StringName = &"knight_shield_bash"
 const CHAIN_HOOK_ID: StringName = &"knight_chain_hook"
 const TRAMPLE_ID: StringName = &"knight_trampling_advance"
 const BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
+const KNIGHT_SWAP_ID: StringName = &"knight_swap"
+const K2_CELL := HOOK_KNIGHT_START
+const K3_CELL := TRAMPLE_START
+const K4_CELL := K4_START
+const E_BASH_CELL := ENEMY_POS
+const E_HOOK_CELL := HOOK_ENEMY_POS
+const SWAP_ALLY_CELL := Vector2i(4, 4)
+const SWAP_PREMOVE_ROUTE: Array[Vector2i] = [Vector2i(3, 4), Vector2i(3, 5)]
+const SWAP_PREMOVE_DEST := Vector2i(3, 5)
+const WALK_SWAP_ALLY_CELL := Vector2i(2, 4)
+const WALK_SWAP_APPROACH := Vector2i(3, 4)
+const OFF_BLUE_CELL := Vector2i(9, 9)
+const OFF_MAP_HOVER := Vector2i(-999, -999)
+const TRAMPLE_POST_DEST := Vector2i(8, 2)
+const TRAMPLE_POST_ROUTE: Array[Vector2i] = [
+	TRAMPLE_END, Vector2i(7, 3), Vector2i(8, 3), TRAMPLE_POST_DEST,
+]
+const TRAMPLE_FULL_PATH: Array[Vector2i] = [
+	TRAMPLE_START, TRAMPLE_ROUTE[0], TRAMPLE_ROUTE[1],
+]
+const K1_BASH_ROUTE: Array[Vector2i] = [KNIGHT_START, BASH_HOVER_WALK, BASH_APPROACH]
 
 
 static func wire_bash_board_minimal() -> Dictionary:
@@ -120,6 +141,15 @@ static func hover(fix: Dictionary, cell: Vector2i) -> void:
 		overlay._recompute_hover_ranges_from_inputs()
 
 
+static func hover_off_map(fix: Dictionary) -> void:
+	var input: CombatPlanningInput = fix.input
+	input.clear_qa_pointer_override()
+	input.on_hover_moved(OFF_MAP_HOVER)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(OFF_MAP_HOVER)
+	flush_planning(fix)
+
+
 static func refresh_attack_hover(fix: Dictionary, cell: Vector2i) -> void:
 	hover(fix, cell)
 	var input: CombatPlanningInput = fix.input
@@ -138,7 +168,11 @@ static func slots_for_hover(fix: Dictionary, cell: Vector2i) -> Dictionary:
 	var empty_wps: Array[Vector2i] = []
 	var empty_legal: Array[Vector2i] = []
 	return fix.input._final_commit_slots_for_interaction(
-		1, cell, empty_wps, empty_legal, Vector2i(-999999, -999999),
+		fix.director.selected_unit_id,
+		cell,
+		empty_wps,
+		empty_legal,
+		Vector2i(-999999, -999999),
 	)
 
 
@@ -186,8 +220,9 @@ static func commit_paint_promote_only(fix: Dictionary, cell: Vector2i) -> bool:
 	var slots: Dictionary = slots_for_click(fix, cell)
 	if _slots_invalid(slots):
 		return false
-	fix.input.call("_paint_intent_slots_before_commit", 1, slots)
-	if not fix.director.commit_from_slots(1, slots):
+	var unit_id: int = fix.director.selected_unit_id
+	fix.input.call("_paint_intent_slots_before_commit", unit_id, slots)
+	if not fix.director.commit_from_slots(unit_id, slots):
 		return false
 	fix.input.call("_promote_intent_preview_after_commit")
 	return true
@@ -256,8 +291,9 @@ static func commit_production(fix: Dictionary, cell: Vector2i) -> Dictionary:
 	var slots: Dictionary = slots_for_click(fix, cell)
 	if _slots_invalid(slots):
 		return slots
-	input.call("_paint_intent_slots_before_commit", 1, slots)
-	if not director.commit_from_slots(1, slots):
+	var unit_id: int = director.selected_unit_id
+	input.call("_paint_intent_slots_before_commit", unit_id, slots)
+	if not director.commit_from_slots(unit_id, slots):
 		slots["invalid"] = "commit_from_slots_failed"
 		return slots
 	input.call("_promote_intent_preview_after_commit")
@@ -270,8 +306,9 @@ static func commit_slots_production(fix: Dictionary, slots: Dictionary) -> bool:
 	var director: CombatDirector = fix.director
 	if _slots_invalid(slots):
 		return false
-	input.call("_paint_intent_slots_before_commit", 1, slots)
-	if not director.commit_from_slots(1, slots):
+	var unit_id: int = director.selected_unit_id
+	input.call("_paint_intent_slots_before_commit", unit_id, slots)
+	if not director.commit_from_slots(unit_id, slots):
 		return false
 	input.call("_promote_intent_preview_after_commit")
 	flush_planning(fix)
@@ -465,7 +502,7 @@ static func slots_for_painted_hover(fix: Dictionary, dest: Vector2i) -> Dictiona
 	var input: CombatPlanningInput = fix.input
 	var params: Dictionary = input._commit_interaction_params(dest, -1)
 	return input._final_commit_slots_for_interaction(
-		1,
+		fix.director.selected_unit_id,
 		params.cell as Vector2i,
 		params.waypoints as Array[Vector2i],
 		params.legal_move_tiles as Array[Vector2i],
@@ -672,11 +709,14 @@ static func assert_red_contract(
 	ability: AbilityData,
 	expect_show: bool,
 	expect_stand: Vector2i = Vector2i(-999999, -999999),
+	unit_id: int = -1,
 ) -> void:
+	var uid: int = unit_id if unit_id > 0 else fix.director.selected_unit_id
+	var unit: UnitState = fix.board.get_unit_by_id(uid)
 	var input: CombatPlanningInput = fix.input
 	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
 	var visible: bool = input.action_range_visible_for_hover()
-	var stand: Vector2i = input.action_range_intent_stand_cell(1)
+	var stand: Vector2i = input.action_range_intent_stand_cell(uid)
 	var has_red: bool = not collect_red_tiles(fix).is_empty()
 	assert_true(
 		failures, label,
@@ -690,9 +730,9 @@ static func assert_red_contract(
 	)
 	if expect_stand.x > -900000:
 		assert_eq_cell(failures, label, stand, expect_stand)
-	if expect_show and ability != null:
+	if expect_show and ability != null and unit != null:
 		var range_tiles: Array[Vector2i] = expected_red_tiles(
-			fix.board, fix.knight, ability, stand,
+			fix.board, unit, ability, stand,
 		)
 		var anchored: bool = false
 		for tile: Vector2i in range_tiles:
@@ -835,7 +875,9 @@ static func drop_slots_for_cell(fix: Dictionary, cell: Vector2i) -> Dictionary:
 	var legal_moves: Array[Vector2i] = []
 	if input._drag_route_commits_active():
 		legal_moves = input._snapshot_drag_legal_move_tiles()
-	return input._final_commit_slots_for_drop_at_cell(1, cell, Vector2.ZERO, legal_moves)
+	return input._final_commit_slots_for_drop_at_cell(
+		fix.director.selected_unit_id, cell, Vector2.ZERO, legal_moves,
+	)
 
 
 static func hover_route(fix: Dictionary, route: Array[Vector2i]) -> void:
@@ -851,7 +893,8 @@ static func commit_painted_drop_on_cell(
 	clear_drag_state(fix)
 	var input: CombatPlanningInput = fix.input
 	var dest: Vector2i = route[route.size() - 1]
-	TramplingAdvanceE2ETest._paint_drag_route(input, fix.knight, route, dest)
+	var unit: UnitState = fix.board.get_unit_by_id(fix.director.selected_unit_id)
+	TramplingAdvanceE2ETest._paint_drag_route(input, unit, route, dest)
 	hover(fix, drop_cell)
 	var slots: Dictionary = drop_slots_for_cell(fix, drop_cell)
 	if _slots_invalid(slots):
@@ -940,3 +983,202 @@ static func _slots_invalid(slots: Dictionary) -> bool:
 	if flag is String:
 		return not (flag as String).is_empty()
 	return bool(flag)
+
+
+static func _commit_unit_id(fix: Dictionary) -> int:
+	return fix.director.selected_unit_id
+
+
+static func _training_knight(id: int, pos: Vector2i) -> UnitState:
+	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
+	var knight: UnitState = UnitState.create(id, knight_def, GameEnums.Team.PLAYER, pos)
+	knight.active_abilities = DataLibrary.build_training_abilities(knight_def)
+	knight.movement.points_left = knight.movement.max_points
+	knight.ability.points_left = 1
+	knight.ability.max_points = 1
+	return knight
+
+
+static func wire_bible_board() -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
+	var dummy_def: UnitData = DataLibrary.get_training_dummy()
+	assert(dummy_def != null, "wire_bible_board: training dummy missing")
+	var units: Array[UnitState] = [
+		_training_knight(1, KNIGHT_START),
+		_training_knight(2, K2_CELL),
+		_training_knight(3, K3_CELL),
+		_training_knight(4, K4_CELL),
+		UnitState.create(5, dummy_def, GameEnums.Team.ENEMY, E_BASH_CELL),
+		UnitState.create(6, dummy_def, GameEnums.Team.ENEMY, E_HOOK_CELL),
+	]
+	var fix: Dictionary = _wire_multi_fixture(units, 1)
+	fix["k1_id"] = 1
+	fix["k2_id"] = 2
+	fix["k3_id"] = 3
+	fix["k4_id"] = 4
+	fix["e_bash_id"] = 5
+	fix["e_hook_id"] = 6
+	return fix
+
+
+static func wire_swap_board(ally_cell: Vector2i) -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
+	var units: Array[UnitState] = [
+		_training_knight(1, KNIGHT_START),
+		_training_knight(2, ally_cell),
+	]
+	var fix: Dictionary = _wire_multi_fixture(units, 1)
+	fix["k1_id"] = 1
+	fix["ally_id"] = 2
+	fix["ally_cell"] = ally_cell
+	var k1: UnitState = fix.board.get_unit_by_id(1)
+	fix["start_k1_mp"] = k1.movement.points_left if k1 != null else 0
+	return fix
+
+
+static func _wire_multi_fixture(units: Array[UnitState], selected_id: int) -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var board: BoardState = PlanningDragE2EHarness._plain_board(Vector2i(12, 12), units)
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.turn_start_board = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = selected_id
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var core: Dictionary = {
+		"input": input,
+		"director": director,
+		"board": board,
+		"knight": board.get_unit_by_id(selected_id),
+	}
+	return PlanningDragE2EHarness.wire_fixture(core)
+
+
+static func select_unit(fix: Dictionary, unit_id: int, stand_cell: Vector2i = Vector2i(-999999, -999999)) -> void:
+	var director: CombatDirector = fix.director
+	director.select_unit(unit_id)
+	fix["knight"] = fix.board.get_unit_by_id(unit_id)
+	if stand_cell.x > -900000:
+		hover(fix, stand_cell)
+	flush_planning(fix)
+
+
+static func select_ability_for_unit(
+	fix: Dictionary, unit_id: int, ability_id: StringName,
+) -> int:
+	select_unit(fix, unit_id)
+	return select_ability(fix, ability_id)
+
+
+static func set_unit_pools(fix: Dictionary, unit_id: int, ap_left: int, mp_left: int) -> void:
+	var director: CombatDirector = fix.director
+	var boards: Array[BoardState] = [
+		director.base_board,
+		director.board,
+		director.projected_state,
+	]
+	for board: BoardState in boards:
+		if board == null:
+			continue
+		var unit: UnitState = board.get_unit_by_id(unit_id)
+		if unit == null:
+			continue
+		unit.ability.points_left = ap_left
+		unit.ability.max_points = maxi(ap_left, unit.ability.max_points)
+		unit.movement.points_left = mp_left
+		unit.movement.max_points = maxi(mp_left, unit.movement.max_points)
+
+
+static func enter_basic_movement(fix: Dictionary) -> void:
+	fix.director.selected_ability_index = -1
+	fix.input.force_basic_movement = true
+	fix.input.auto_use_skill_after_move = false
+	flush_planning(fix)
+
+
+static func arm_trample_awaiting(fix: Dictionary, unit_id: int) -> bool:
+	var unit: UnitState = fix.board.get_unit_by_id(unit_id)
+	if unit == null:
+		return false
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var empty_wps: Array[Vector2i] = []
+	var empty_legal: Array[Vector2i] = []
+	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(
+		unit_id,
+		unit.position,
+		empty_wps,
+		empty_legal,
+		Vector2i(-999999, -999999),
+	)
+	if _slots_invalid(arm_slots):
+		return false
+	input.call("_paint_intent_slots_before_commit", unit_id, arm_slots)
+	if not director.commit_from_slots(unit_id, arm_slots):
+		return false
+	input.call("_promote_intent_preview_after_commit")
+	flush_planning(fix)
+	return input.awaiting_targeting_active()
+
+
+static func pre_moves_for_unit(director: CombatDirector, unit_id: int) -> Array[TimelineAction]:
+	var out: Array[TimelineAction] = []
+	for raw: Variant in director.plan_pre_move.entries:
+		var action: TimelineAction = raw as TimelineAction
+		if action != null and action.actor_id == unit_id:
+			out.append(action)
+	return out
+
+
+static func assert_enemy_live_unchanged(
+	failures: Array[String],
+	label: String,
+	fix: Dictionary,
+	enemy_id: int,
+	turn_start_cell: Vector2i,
+) -> void:
+	var live: UnitState = fix.director.board.get_unit_by_id(enemy_id)
+	if live == null:
+		assert_fail(failures, label, "live enemy %d missing" % enemy_id)
+		return
+	assert_eq_cell(failures, label, live.position, turn_start_cell)
+
+
+static func assert_swap_board_layers(
+	failures: Array[String],
+	label: String,
+	fix: Dictionary,
+	k1_id: int,
+	ally_id: int,
+	k1_pos: Vector2i,
+	ally_pos: Vector2i,
+	expected_mp: int = -1,
+	expected_pre_count: int = -1,
+) -> void:
+	var director: CombatDirector = fix.director
+	var board_k1: UnitState = director.board.get_unit_by_id(k1_id)
+	var board_ally: UnitState = director.board.get_unit_by_id(ally_id)
+	if board_k1 == null or board_ally == null:
+		assert_fail(failures, label, "live board units missing")
+		return
+	assert_eq_cell(failures, "%s/k1_board" % label, board_k1.position, k1_pos)
+	assert_eq_cell(failures, "%s/ally_board" % label, board_ally.position, ally_pos)
+	var proj_k1: UnitState = projected_unit(fix, k1_id)
+	var proj_ally: UnitState = projected_unit(fix, ally_id)
+	assert_eq_cell(failures, "%s/k1_proj" % label, proj_k1.position, k1_pos)
+	assert_eq_cell(failures, "%s/ally_proj" % label, proj_ally.position, ally_pos)
+	if expected_mp >= 0:
+		assert_eq_int(failures, "%s/k1_mp" % label, proj_k1.movement.points_left, expected_mp)
+	if expected_pre_count >= 0:
+		assert_eq_int(
+			failures,
+			"%s/pre_count" % label,
+			pre_moves_for_unit(director, k1_id).size(),
+			expected_pre_count,
+		)

@@ -1,8 +1,9 @@
 extends Node
 
 const _JourneysTest := preload("res://tests/planning_t3_mimic_journeys_test.gd")
+const _BibleFixtureTest := preload("res://tests/planning_bible_fixture_test.gd")
 
-## Headless T3-mimic only: action_range_regression + planning_intent_contract_e2e.
+## Fixture Parity Suite (headless): action_range + intent_contract + journeys + bible session.
 ## Not Tier 3 LIVE — fixture board, not TestBattle.
 
 func _ready() -> void:
@@ -17,8 +18,10 @@ func _run() -> void:
 	PlanningIntentContractE2ETest.run_all(failures)
 	print("[SUITE] t3_mimic_journeys")
 	_JourneysTest.run_all(failures)
+	print("[SUITE] bible_fixture")
+	_BibleFixtureTest.run_all(failures)
 	if failures.is_empty():
-		print("[PASS] T3 mimic headless (action_range + intent_contract + journeys)")
+		print("[PASS] Fixture Parity Suite (action_range + intent + journeys + bible)")
 	else:
 		for failure: String in failures:
 			printerr("[FAIL] %s" % failure)
