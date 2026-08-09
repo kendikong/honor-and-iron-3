@@ -19,24 +19,27 @@ if (-not (Test-Path (Join-Path $projectRoot "tests\live_planning_scene_test.gd")
 
 $env:LIVE_QA_PROFILE = "fast"
 Write-Output "[Tier 3] LIVE_QA_PROFILE=fast (swap test excluded; use run_swap_planning_acceptance.ps1 explicitly)."
+Write-Output "[Tier 3] Headless GdUnit (no Godot window)."
 
 # GdUnitCmdTool only accepts -a/-i/etc. --godot_binary is runtest.cmd-only (stripped before invoke).
 $godotArgs = @(
 	"--path", $projectRoot,
+	"--headless",
 	"-s", "-d",
 	$cmdTool,
 	"-a", $suite,
-	"-i", $swapTest
+	"-i", $swapTest,
+	"--ignoreHeadlessMode"
 )
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-tier3.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-tier3.stderr.log"
 . (Join-Path $PSScriptRoot "qa_window_placement.ps1")
-$process = Start-GodotOnCursorMonitor `
-	-GodotPath $GodotPath `
+$process = Start-Process -FilePath $GodotPath `
 	-ArgumentList $godotArgs `
 	-WorkingDirectory $projectRoot `
 	-RedirectStandardOutput $stdoutPath `
-	-RedirectStandardError $stderrPath
+	-RedirectStandardError $stderrPath `
+	-PassThru -NoNewWindow
 $exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Tier 3 TestBattle acceptance"
 if ($exitCode -eq 130) {
 	Write-Output "[CANCEL] Tier 3 TestBattle acceptance stopped by ESC."

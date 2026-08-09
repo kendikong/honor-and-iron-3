@@ -21,15 +21,17 @@ if (-not (Test-Path (Join-Path $projectRoot "tests\live_planning_scene_test.gd")
 $env:LIVE_QA_PROFILE = "fast"
 Write-Output "[Swap Tier 3] LIVE_QA_PROFILE=fast - running test_live_swap_session only (bible test ignored)."
 Write-Output "[Swap Tier 3] Do not run run_planning_qa_gate.ps1 while iterating swap fixes. Use this script until PASS."
+Write-Output "[Swap Tier 3] Headless GdUnit (no Godot window)."
 
 $godotArgs = @(
 	"--path", $projectRoot,
+	"--headless",
 	"-s", "-d",
-	"--remote-debug", "tcp://127.0.0.1:0",
 	$cmdTool,
 	"-a", $suite,
 	"-i", $bibleTest,
-	"-c"
+	"-c",
+	"--ignoreHeadlessMode"
 )
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-swap-tier3.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-swap-tier3.stderr.log"
