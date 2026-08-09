@@ -1765,7 +1765,6 @@ func _build_module_fields(
 			module.spawn_unit_id = StringName(v)
 			changed.call()
 		)
-	var grey_rows: Dictionary = {}
 	grey_rows["scaling"] = _bind_enum(grid, "Scaling", GameEnums.StatType, module.scaling_stat, func(v: int) -> void:
 		module.scaling_stat = v
 		changed.call()

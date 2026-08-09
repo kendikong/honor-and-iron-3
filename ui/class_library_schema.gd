@@ -5,6 +5,7 @@ extends RefCounted
 ## ability data dumps, and simulation implementation notes.
 
 const KW_COLOR: String = "#FBBF24"
+const _ModuleAuthoringRules := preload("res://data/definitions/module_authoring_rules.gd")
 
 static var _ABILITY_CODE_BRANCHES: Dictionary = {
 	&"knight_defensive_formation": "Defensive Formation: AOE diamond 3; ADD_STATUS DEF+STURDY on allies via exclude_caster modifier in AbilitySystem.",
@@ -625,7 +626,11 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	return layer
 
 
-static func module_to_dict(src: AbilityModule) -> Dictionary:
+static func module_to_dict(
+	src: AbilityModule,
+	planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION,
+	module_index: int = 0,
+) -> Dictionary:
 	if src == null:
 		return {}
 	var keywords: Array = []
@@ -635,15 +640,8 @@ static func module_to_dict(src: AbilityModule) -> Dictionary:
 	for layer: AbilityLayer in src.layers:
 		layers.append(layer_to_dict(layer))
 	var out := {
-		"execution_phase": src.execution_phase,
 		"primary_type": src.primary_type,
 		"amount": src.amount,
-		"min_range": src.min_range,
-		"max_range": src.max_range,
-		"requires_los": src.requires_los,
-		"range_origin": src.range_origin,
-		"target_shape": src.target_shape,
-		"target_shape_size": src.target_shape_size,
 		"aim_binding": src.aim_binding,
 		"targeting_flags": src.targeting_flags,
 		"keywords": keywords,
@@ -652,6 +650,19 @@ static func module_to_dict(src: AbilityModule) -> Dictionary:
 		"presentation_anim": src.presentation_anim,
 		"legacy_modifiers": src.legacy_modifiers.duplicate(true),
 	}
+	if _ModuleAuthoringRules.module_uses_phase(planner_group):
+		out["execution_phase"] = src.execution_phase
+	if _ModuleAuthoringRules.module_uses_range(src):
+		out["min_range"] = src.min_range
+		out["max_range"] = src.max_range
+	if _ModuleAuthoringRules.module_uses_los(src):
+		out["requires_los"] = src.requires_los
+	if _ModuleAuthoringRules.module_uses_range_origin(src, module_index):
+		out["range_origin"] = src.range_origin
+	if _ModuleAuthoringRules.module_uses_shape(src):
+		out["target_shape"] = src.target_shape
+		if _ModuleAuthoringRules.module_uses_shape_size(src):
+			out["target_shape_size"] = src.target_shape_size
 	if GameEnums.effect_type_uses_module_scaling(src.primary_type):
 		out["scaling_stat"] = src.scaling_stat
 	if GameEnums.effect_type_applies_status(src.primary_type):
@@ -674,10 +685,13 @@ static func module_to_dict(src: AbilityModule) -> Dictionary:
 	return out
 
 
-static func modules_to_dict_array(modules: Array[AbilityModule]) -> Array:
+static func modules_to_dict_array(
+	modules: Array[AbilityModule],
+	planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION,
+) -> Array:
 	var out: Array = []
-	for module: AbilityModule in modules:
-		out.append(module_to_dict(module))
+	for index: int in modules.size():
+		out.append(module_to_dict(modules[index], planner_group, index))
 	return out
 
 
@@ -809,10 +823,12 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.uses_per_combat = src.uses_per_combat
 	dst.presentation_key = src.presentation_key
 	dst.presentation_anim = src.presentation_anim
-	dst.modules = modules_from_dict_array(modules_to_dict_array(src.modules))
+	dst.modules = modules_from_dict_array(modules_to_dict_array(src.modules, src.planner_group))
 	dst.upgraded_modules = modules_from_dict_array(
-		modules_to_dict_array(src.upgraded_modules)
+		modules_to_dict_array(src.upgraded_modules, src.planner_group)
 	)
+	_normalize_modules_for_ability(dst.modules, dst.planner_group)
+	_normalize_modules_for_ability(dst.upgraded_modules, dst.planner_group)
 	if src.is_universal_run() or src.is_universal_wait():
 		dst.kind = src.kind
 	dst.finalize_modular()
@@ -1243,8 +1259,8 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"uses_per_combat": src.uses_per_combat,
 		"presentation_key": String(src.presentation_key),
 		"presentation_anim": src.presentation_anim,
-		"modules": modules_to_dict_array(src.modules),
-		"upgraded_modules": modules_to_dict_array(src.upgraded_modules),
+		"modules": modules_to_dict_array(src.modules, src.planner_group),
+		"upgraded_modules": modules_to_dict_array(src.upgraded_modules, src.planner_group),
 		"module_count": src.modules.size(),
 		"upgraded_module_count": src.upgraded_modules.size(),
 	}

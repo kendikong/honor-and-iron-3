@@ -3,9 +3,20 @@ extends RefCounted
 
 const ModuleAuthoringRules = preload("res://data/definitions/module_authoring_rules.gd")
 
+static func _test_pre_move_forces_on_action_phase(failures: Array[String]) -> void:
+	var module := AbilityModule.new()
+	module.execution_phase = GameEnums.ModulePhase.ON_PRE
+	AbilityModuleBridge.normalize_module_authoring_fields(
+		module, GameEnums.PlannerGroup.PRE_MOVE, 0
+	)
+	if module.execution_phase != GameEnums.ModulePhase.ON_ACTION:
+		failures.append("PRE_MOVE should force execution_phase ON_ACTION on normalize")
+
+
 static func run_all(failures: Array[String]) -> void:
 	_test_move_clears_scaling_and_los(failures)
 	_test_pre_move_excludes_phase_options(failures)
+	_test_pre_move_forces_on_action_phase(failures)
 	_test_self_status_clears_range(failures)
 	_test_invalid_gate_reset(failures)
 	_test_layer_condition_filter(failures)
