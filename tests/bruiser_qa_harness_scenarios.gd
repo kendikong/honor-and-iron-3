@@ -29,8 +29,13 @@ static func run_charge_strike(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
 	var enemy: UnitState = result.final_state.get_unit_by_id(2)
-	H.assert_eq_cell(failures, "charge_strike/bruiser_pos", bruiser_after.position, Vector2i(1, 3))
+	H.assert_eq_cell(failures, "charge_strike/bruiser_pos", bruiser_after.position, Vector2i(2, 3))
 	H.assert_eq_cell(failures, "charge_strike/enemy_pos", enemy.position, Vector2i(4, 3))
+	H.assert_true(
+		failures, "charge_strike/moved",
+		H.events_actor_moved(result.events, 1),
+		"Charge Strike must MOVE toward target before ATK",
+	)
 	var enemy_damage: int = hp - enemy.health.current_hp
 	var scaled_raw: int = CombatSystem.calculate_scaled_damage(
 		bruiser_before, 3, GameEnums.StatType.PHYSICAL, board,
@@ -1017,14 +1022,14 @@ static func run_belly_flop(failures: Array[String]) -> void:
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
 	H.assert_eq_int(failures, "belly_flop/range", factory_ab.range_tiles, 2)
+	H.assert_eq_int(failures, "belly_flop/ap_cost", factory_ab.action_point_cost, 1)
 	H.assert_eq_int(failures, "belly_flop/dmg_amount", factory_ab.effects[1].amount, 2)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_belly_flop")
 	cfg["passive_flags"] = {"training_unlimited_actions": true}
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	var bruiser_ap: UnitState = H.unit_on_board(board, 1)
-	bruiser_ap.ability.max_points = 2
-	bruiser_ap.ability.points_left = 2
+	bruiser_ap.ability.points_left = 1
 	H.place_dummy(board, 2, Vector2i(5, 4))
 	var hp: int = H.unit_hp(board, 2)
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_belly_flop")

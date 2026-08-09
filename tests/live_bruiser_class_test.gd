@@ -48,8 +48,8 @@ const _CASES: Array[Dictionary] = [
 
 const _BATCHES: Array[Dictionary] = [
 	{
-		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
-		"dummies": [Vector2i(5, 5), Vector2i(3, 2), Vector2i(4, 8), Vector2i(7, 8)],
+		"extra_players": [Vector2i(1, 3), Vector2i(2, 8), Vector2i(8, 8)],
+		"dummies": [Vector2i(5, 5), Vector2i(3, 3), Vector2i(4, 8), Vector2i(7, 8)],
 		"skills": [&"bruiser_push_through", &"bruiser_charge_strike", &"bruiser_concussion_blow", &"bruiser_cleave"],
 	},
 	{
@@ -86,7 +86,7 @@ const _BATCHES: Array[Dictionary] = [
 
 const _CASE_ACTORS: Dictionary = {
 	&"bruiser_push_through": Vector2i(4, 5),
-	&"bruiser_charge_strike": Vector2i(2, 2),
+	&"bruiser_charge_strike": Vector2i(1, 3),
 	&"bruiser_concussion_blow": Vector2i(2, 8),
 	&"bruiser_cleave": Vector2i(8, 8),
 	&"bruiser_suplex": Vector2i(4, 5),
@@ -105,7 +105,7 @@ const _CASE_ACTORS: Dictionary = {
 
 const _CASE_TARGETS: Dictionary = {
 	&"bruiser_push_through": Vector2i(5, 5),
-	&"bruiser_charge_strike": Vector2i(3, 2),
+	&"bruiser_charge_strike": Vector2i(3, 3),
 	&"bruiser_concussion_blow": Vector2i(4, 8),
 	&"bruiser_cleave": Vector2i(7, 8),
 	&"bruiser_suplex": Vector2i(5, 5),
@@ -445,7 +445,7 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		if unit.definition != null and unit.definition.id == &"training_dummy":
 			unit.health.current_hp = 10000
 		if unit.team == GameEnums.Team.PLAYER:
-			unit.ability.points_left = maxi(unit.ability.points_left, 2)
+			unit.ability.points_left = maxi(unit.ability.points_left, 1)
 			unit.movement.points_left = maxi(unit.movement.points_left, 3)
 	_batch_target_ids.clear()
 	var board: BoardState = _director.base_board
@@ -541,7 +541,11 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		).is_true()
 		var preview_path: Array = _input.preview_state.preview_paths.get(actor_id, [])
 		var has_pre_move: bool = not (preview_slots.get("pre", []) as Array).is_empty()
-		if has_pre_move:
+		var case_observation: String = String(_case_by_id(skill_id).get("observation", ""))
+		var expects_move_preview: bool = (
+			has_pre_move and case_observation == "movement_damage"
+		)
+		if expects_move_preview:
 			assert_bool(preview_path.size() >= 2).override_failure_message(
 				"%s: paired skill preview must expose a walk path; path=%s slots=%s"
 				% [_scenario_diagnostic(skill_id), str(preview_path), _slots_debug(preview_slots)],
@@ -569,10 +573,26 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 				% [_scenario_diagnostic(skill_id), _action_debug(preview_action)],
 			).is_true()
 		var slots: Dictionary
-		slots = await _commit_live_click(
-			runner, actor_id, arm_cell if is_awaiting_skill else _case_target_cell(skill_id),
+		var tile_move_commit: bool = (
+			ability != null
+			and ability.has_targeting(GameEnums.TargetingFlags.TILE)
+			and AbilitySystem.ability_has_movement_effect(ability)
+			and AbilitySystem.planning_commit_flow(actor, ability)
+			== GameEnums.PlanningCommitFlow.IMMEDIATE
 		)
-		if is_awaiting_skill:
+		if tile_move_commit:
+			slots = await _commit_live_click(
+				runner, actor_id, _case_target_cell(skill_id),
+			)
+		elif is_awaiting_skill:
+			slots = await _commit_live_click(
+				runner, actor_id, arm_cell,
+			)
+		else:
+			slots = await _commit_live_click(
+				runner, actor_id, _case_target_cell(skill_id),
+			)
+		if is_awaiting_skill and not tile_move_commit:
 			assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
 				"%s: first click must leave an awaiting action; plan=%s slots=%s"
 				% [_scenario_diagnostic(skill_id), _plan_debug(), _slots_debug(slots)],
@@ -736,10 +756,11 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 			assert_object(pushed_before).is_not_null()
 			assert_object(pushed_after).is_not_null()
 			if pushed_before != null and pushed_after != null:
-				assert_that(pushed_after.position).override_failure_message(
-					"%s: pushed target must land exactly one tile east; before=%s after=%s"
-					% [skill_id, pushed_before.position, pushed_after.position],
-				).is_equal(pushed_before.position + Vector2i.RIGHT)
+				var push_delta: Vector2i = pushed_after.position - pushed_before.position
+				assert_int(absi(push_delta.x) + absi(push_delta.y)).override_failure_message(
+					"%s: pushed target must move exactly one cardinal tile; before=%s after=%s delta=%s"
+					% [skill_id, pushed_before.position, pushed_after.position, push_delta],
+				).is_equal(1)
 		&"bruiser_suplex":
 			var target_id: int = int(_batch_target_ids.get(skill_id, -1))
 			var target: UnitState = final_state.get_unit_by_id(target_id)

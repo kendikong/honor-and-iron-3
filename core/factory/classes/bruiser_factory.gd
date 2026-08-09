@@ -324,10 +324,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	belly_upgraded[1].layers = [DataLibrary._layer(belly_push)]
 	var belly_flop := DataLibrary._make_modular_ability(
 		&"bruiser_belly_flop", "Belly Flop", [belly_teleport, belly_damage],
-		belly_upgraded, 2, GameEnums.PlannerGroup.ACTION,
+		belly_upgraded, 1, GameEnums.PlannerGroup.ACTION,
 		GameEnums.CostResource.AP, [], "Landing applies PUSH 1 to all adjacent enemies.",
 		GameEnums.TargetingFlags.TILE,
 	)
+	belly_flop.range_tiles = 2
 	def.abilities.append(belly_flop)
 
 	var breach_module := DataLibrary._module(

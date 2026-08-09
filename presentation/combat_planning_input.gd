@@ -2506,6 +2506,25 @@ func _is_awaiting_movement_endpoint(actor: UnitState, ability: AbilityData) -> b
 	)
 
 
+func _movement_skill_commits_tile_endpoint(
+	actor: UnitState,
+	ability: AbilityData,
+	cell: Vector2i,
+) -> bool:
+	if actor == null or ability == null:
+		return false
+	if (
+		AbilitySystem.active_targeting_flags(actor, ability)
+		& GameEnums.TargetingFlags.TILE
+	) == 0:
+		return false
+	if not AbilitySystem.ability_has_movement_effect(ability, actor):
+		return false
+	return AbilitySystem.planning_is_valid_awaiting_endpoint(
+		_proj_origin(actor), cell, ability, actor,
+	)
+
+
 func _drag_had_movement() -> bool:
 	if _drag_route.is_empty():
 		return false
@@ -3031,7 +3050,7 @@ func _ability_range(actor: UnitState) -> int:
 	var idx: int = _director.selected_ability_index
 	if idx < 0 or idx >= abilities.size():
 		return -1
-	return AbilitySystem.active_range_tiles(actor, abilities[idx])
+	return AbilitySystem.planning_max_target_distance(actor, abilities[idx])
 
 
 func _in_ability_range(actor: UnitState, target: UnitState) -> bool:
@@ -3576,7 +3595,7 @@ func _build_commit_slots_at_cell(
 			if awaiting_targeting_active() or has_awaiting_action:
 				var awaiting_origin := _proj_origin(actor)
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
-					awaiting_origin, cell, ability,
+					awaiting_origin, cell, ability, actor,
 				):
 					var occupant_id := hover_unit.id if hover_unit != null else -1
 					var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
@@ -3602,31 +3621,7 @@ func _build_commit_slots_at_cell(
 				slots["invalid"] = "Invalid target or distance for this ability."
 				return slots
 		else:
-			## Painted hover/drag route is pre-move intent while the class skill stays armed (K4 detour).
-			if (
-				not effective_waypoints.is_empty()
-				and _basic_move_allowed()
-				and _unit_move_slot_open(unit_id, cell)
-				and _drop_allows_move_tile(cell, legal_move_tiles, actor)
-				and move_timing >= 0
-				and not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
-			):
-				_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
-				if not AbilitySystem.ability_has_movement_effect(ability):
-					_maybe_append_premove_action_pair(
-						slots, unit_id, actor, cell, ability, effective_waypoints,
-					)
-				return slots
-			if (
-				(
-					AbilitySystem.active_targeting_flags(actor, ability)
-					& GameEnums.TargetingFlags.TILE
-				) != 0
-				and AbilitySystem.ability_has_movement_effect(ability)
-				and AbilitySystem.planning_is_valid_awaiting_endpoint(
-					_proj_origin(actor), cell, ability,
-				)
-			):
+			if _movement_skill_commits_tile_endpoint(actor, ability, cell):
 				slots["action"].append(
 					TimelineAction.make_ability(
 						unit_id,
@@ -3637,6 +3632,22 @@ func _build_commit_slots_at_cell(
 						effective_waypoints,
 					),
 				)
+				return slots
+			## Painted hover/drag route is pre-move intent while the class skill stays armed (K4 detour).
+			if (
+				not effective_waypoints.is_empty()
+				and _basic_move_allowed()
+				and _unit_move_slot_open(unit_id, cell)
+				and _drop_allows_move_tile(cell, legal_move_tiles, actor)
+				and move_timing >= 0
+				and not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
+				and not _movement_skill_commits_tile_endpoint(actor, ability, cell)
+			):
+				_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
+				if not AbilitySystem.ability_has_movement_effect(ability):
+					_maybe_append_premove_action_pair(
+						slots, unit_id, actor, cell, ability, effective_waypoints,
+					)
 				return slots
 			if AbilitySystem.can_target_self(actor, ability):
 				if AbilitySystem.is_run_ability(ability):
@@ -3928,6 +3939,39 @@ func _build_enemy_commit_slots(
 				enemy.id,
 				GameEnums.MoveTiming.PRE_ACTION,
 				l_path,
+			),
+		)
+		return slots
+	if (
+		use_skill
+		and AbilitySystem.ability_has_movement_effect(ability)
+		and not AbilitySystem.ability_has_modifier(ability, &"target_after_move_adjacent", actor)
+		and not _in_ability_range(actor, enemy)
+		and GridSystem.manhattan(_proj_origin(actor), enemy.position)
+			<= AbilitySystem.planning_max_target_distance(actor, ability)
+	):
+		var charge_endpoint: Vector2i = MovementSystem.adjacent_attack_endpoint(
+			_proj(), actor, enemy, ability,
+		)
+		if charge_endpoint.x < 0:
+			slots["invalid"] = "No legal charge endpoint for this target."
+			return slots
+		var charge_path: Array[Vector2i] = MovementSystem.resolve_move_path(
+			_proj(),
+			actor,
+			charge_endpoint,
+			effective_waypoints,
+			AbilitySystem.effect_amount(ability, GameEnums.EffectType.MOVE, actor),
+			ability,
+		)
+		slots["action"].append(
+			TimelineAction.make_ability(
+				unit_id,
+				ability,
+				charge_endpoint,
+				enemy.id,
+				GameEnums.MoveTiming.PRE_ACTION,
+				charge_path,
 			),
 		)
 		return slots
