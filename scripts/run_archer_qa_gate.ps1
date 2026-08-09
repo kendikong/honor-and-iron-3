@@ -29,10 +29,8 @@ $output = @()
 $output += Get-Content $stdoutPath
 $output += Get-Content $stderrPath
 $output | Set-Content -Path $logPath -Encoding utf8
-$failures = @(
-	Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]|SCRIPT ERROR:' -ErrorAction SilentlyContinue
-)
-if ($exitCode -ne 0 -or $failures.Count -gt 0) {
+$harnessPass = Test-GodotQaHarnessSucceeded -ExitCode $exitCode -LogPaths @($stdoutPath, $stderrPath)
+if (-not $harnessPass) {
 	$output | ForEach-Object { Write-Output $_ }
 	exit 1
 }

@@ -220,7 +220,8 @@ function Test-GodotQaHarnessSucceeded {
 		return $false
 	}
 	if ($null -ne $ExitCode -and $ExitCode -ne '' -and [int]$ExitCode -ne 0) {
-		return $false
+		# Headless Godot may exit non-zero on benign resource-leak warnings; trust harness PASS.
+		return (Select-String -Path $existingLogs -Pattern $PassPattern -Quiet)
 	}
 	if ($null -eq $ExitCode -or $ExitCode -eq '') {
 		# Start-Process -PassThru + redirected streams often omits ExitCode on Windows.

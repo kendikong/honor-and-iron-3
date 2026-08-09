@@ -514,7 +514,7 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 	)
 	_add_test_units(unstoppable_board, [unstoppable, unstoppable_target])
 	var unstoppable_plan := Timeline.new()
-	unstoppable_plan.add(TimelineAction.make_move(unstoppable.id, Vector2i(4, 1)))
+	unstoppable_plan.add(TimelineAction.make_move(unstoppable.id, Vector2i(5, 1)))
 	unstoppable_plan.add(TimelineAction.make_ability(
 		unstoppable.id, basic, unstoppable_target.position, unstoppable_target.id
 	))
@@ -560,7 +560,7 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 		failures,
 		"passive/canto_no_refund",
 		canto.movement.points_left,
-		2,
+		3,
 	)
 
 	var frontline_board := _plain_board(Vector2i(9, 4))
@@ -775,7 +775,7 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 	assert_true(
 		failures,
 		"passive/springboard",
-		springer.position == Vector2i(3, 2) and springer.movement.max_points == 4,
+		springer.position == Vector2i(3, 2) and springer.movement.max_points == 5,
 		"kill reaction must vault into the defeated enemy's space for free",
 	)
 

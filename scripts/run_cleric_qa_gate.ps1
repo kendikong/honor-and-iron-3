@@ -27,11 +27,8 @@ $output = @()
 $output += Get-Content $stdoutPath
 $output += Get-Content $stderrPath
 $output | ForEach-Object { Write-Output $_ }
-$failures = @(
-	Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]|SCRIPT ERROR:' |
-		ForEach-Object { $_.Line }
-)
-if ($exitCode -ne 0 -or $failures.Count -gt 0) {
+$harnessPass = Test-GodotQaHarnessSucceeded -ExitCode $exitCode -LogPaths @($stdoutPath, $stderrPath)
+if (-not $harnessPass) {
 	exit 1
 }
 Write-Output "[PASS] Cleric QA gate: Bible data contract and Siphon scenario"

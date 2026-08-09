@@ -51,7 +51,8 @@ if ($exitCode -eq 130) {
 Get-Content $stdoutPath | ForEach-Object { Log $_ }
 Get-Content $stderrPath | ForEach-Object { Log $_ }
 $failures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]|SCRIPT ERROR:' -ErrorAction SilentlyContinue)
-if ($exitCode -ne 0 -or $failures.Count -gt 0) {
+$harnessPass = Test-GodotQaHarnessSucceeded -ExitCode $exitCode -LogPaths @($stdoutPath, $stderrPath)
+if (-not $harnessPass) {
 	Log "[FAIL] Lancer Tier 1 scenarios"
 	Finish 1
 }

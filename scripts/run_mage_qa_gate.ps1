@@ -26,11 +26,8 @@ $output = @()
 $output += Get-Content $stdoutPath
 $output += Get-Content $stderrPath
 $output | ForEach-Object { Write-Output $_ }
-$scriptErrors = @(
-	Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:|Compile Error:|^\[FAIL\]' |
-		ForEach-Object { $_.Line }
-)
-if ($exitCode -ne 0 -or $scriptErrors.Count -gt 0) {
+$harnessPass = Test-GodotQaHarnessSucceeded -ExitCode $exitCode -LogPaths @($stdoutPath, $stderrPath)
+if (-not $harnessPass) {
 	Write-Output "[FAIL] Mage QA gate"
 	exit 1
 }

@@ -969,28 +969,60 @@ static func committed_plan_action_end_cell(
 ) -> Vector2i:
 	if director == null:
 		return Vector2i(-999999, -999999)
+	var walked_end: Vector2i = _walk_committed_plan_action_end_cell(director, board, unit_id)
+	if _plan_has_post_move_for_unit(director, unit_id):
+		return walked_end
 	var plan_board: BoardState = planning_projection_board(director, board)
 	if plan_board != null:
 		var projected: UnitState = plan_board.get_unit_by_id(unit_id)
 		if projected != null:
 			return projected.position
+	return walked_end
+
+
+static func _plan_has_post_move_for_unit(director: CombatDirector, unit_id: int) -> bool:
+	if director == null:
+		return false
+	var plan: Timeline = director.get_player_plan()
+	if plan == null:
+		return false
+	for act: TimelineAction in plan.entries:
+		if (
+			act.actor_id == unit_id
+			and act.type == GameEnums.ActionType.MOVE
+			and act.move_timing == GameEnums.MoveTiming.POST_ACTION
+		):
+			return true
+	return false
+
+
+static func _walk_committed_plan_action_end_cell(
+	director: CombatDirector,
+	board: BoardState,
+	unit_id: int,
+) -> Vector2i:
 	var origin: Vector2i = Vector2i(-999999, -999999)
-	if board != null:
+	var start_board: BoardState = director.base_board if director.base_board != null else board
+	if start_board != null:
+		var start_unit: UnitState = start_board.get_unit_by_id(unit_id)
+		if start_unit != null:
+			origin = start_unit.position
+	if origin.x <= -900000 and board != null:
 		var fallback_unit: UnitState = board.get_unit_by_id(unit_id)
 		if fallback_unit != null:
 			origin = fallback_unit.position
 	var plan: Timeline = director.get_player_plan()
-	if plan != null:
-		for act: TimelineAction in plan.entries:
-			if act.actor_id != unit_id:
+	if plan == null:
+		return origin
+	for act: TimelineAction in plan.entries:
+		if act.actor_id != unit_id:
+			continue
+		if act.type == GameEnums.ActionType.MOVE:
+			if act.move_timing == GameEnums.MoveTiming.POST_ACTION:
 				continue
-			if (
-				act.type == GameEnums.ActionType.MOVE
-				and act.move_timing == GameEnums.MoveTiming.PRE_ACTION
-			):
-				origin = act.target_coord
-			elif act.type == GameEnums.ActionType.ABILITY and not act.awaiting_target:
-				origin = _plan_step_end_cell_for_action_end(origin, act)
+			origin = act.target_coord
+		elif act.type == GameEnums.ActionType.ABILITY and not act.awaiting_target:
+			origin = _plan_step_end_cell_for_action_end(origin, act)
 	return origin
 
 
