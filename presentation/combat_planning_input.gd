@@ -1401,6 +1401,12 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 		var selected_ability := _selected_ability_data(p_unit)
 		if selected_ability != null and AbilitySystem.planning_allows_paired_premove(selected_ability):
 			return _can_move_to(p_unit, cell)
+		if (
+			selected_ability != null
+			and _awaiting_flow_selected(p_unit, selected_ability)
+			and not _is_awaiting_movement_endpoint(p_unit, selected_ability)
+		):
+			return _can_move_to(p_unit, cell)
 		if _drag_route_commits_active() and _drag_unit_id == p_unit.id:
 			if not _drag_route.is_empty() and (cell == _drag_route.back() or _drag_route.has(cell)):
 				return true
@@ -2517,6 +2523,8 @@ func _movement_skill_commits_tile_endpoint(
 	ability: AbilityData,
 	cell: Vector2i,
 ) -> bool:
+	if not _is_awaiting_movement_endpoint(actor, ability):
+		return false
 	if actor == null or ability == null:
 		return false
 	if (
@@ -3584,7 +3592,11 @@ func _build_commit_slots_at_cell(
 			var painted: Array[Vector2i] = _route_waypoints()
 			if not painted.is_empty() and painted.back() == cell:
 				effective_waypoints = painted
-		if effective_waypoints.is_empty() and AbilitySystem.ability_has_movement_effect(ability):
+		if (
+			effective_waypoints.is_empty()
+			and AbilitySystem.ability_has_movement_effect(ability)
+			and _is_awaiting_movement_endpoint(actor, ability)
+		):
 			effective_waypoints = _director.preview_waypoints_for_hover(
 				_proj(), actor, cell, effective_waypoints, ability,
 			)
@@ -3627,18 +3639,6 @@ func _build_commit_slots_at_cell(
 				slots["invalid"] = "Invalid target or distance for this ability."
 				return slots
 		else:
-			if _movement_skill_commits_tile_endpoint(actor, ability, cell):
-				slots["action"].append(
-					TimelineAction.make_ability(
-						unit_id,
-						ability,
-						cell,
-						-1,
-						GameEnums.MoveTiming.PRE_ACTION,
-						effective_waypoints,
-					),
-				)
-				return slots
 			## Painted hover/drag route is pre-move intent while the class skill stays armed (K4 detour).
 			if (
 				not effective_waypoints.is_empty()

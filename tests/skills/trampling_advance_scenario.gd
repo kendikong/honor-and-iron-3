@@ -12,6 +12,7 @@ static func run_all(failures: Array[String]) -> void:
 	PlanningDragE2EHarness.cleanup_all()
 	_sim_contract(failures)
 	_phase1_select(failures)
+	_phase2_hover_empty_unarmed(failures)
 	_phase2_3_arm_and_paint(failures)
 	_phase4_hover_end(failures)
 	_phase5_commit(failures)
@@ -105,6 +106,51 @@ static func _phase1_select(failures: Array[String]) -> void:
 		"Trample must not be MOVEMENT_SKILL (Bible: class active)",
 	)
 	PlanningChecklistHarness.assert_eq_int(failures, "trample/phase1/ap_pool", fix.unit.ability.points_left, 1)
+
+
+static func _phase2_hover_empty_unarmed(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningChecklistHarness.wire_trample_board()
+	fix.director.auto_run = true
+	if PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.TRAMPLE_ID) < 0:
+		PlanningChecklistHarness.assert_fail(failures, "trample/phase2_unarmed", "Trampling Advance missing")
+		return
+	if fix.input.awaiting_targeting_active():
+		PlanningChecklistHarness.assert_fail(
+			failures, "trample/phase2_unarmed",
+			"selecting trample must not enter awaiting until self-tile arm",
+		)
+		return
+	var hover_walk: Vector2i = PlanningChecklistHarness.TRAMPLE_ROUTE[0]
+	PlanningChecklistHarness.hover(fix, hover_walk)
+	PlanningChecklistHarness.assert_eq_cell(
+		failures, "trample/phase2_unarmed/ghost_walk",
+		PlanningChecklistHarness.preview_unit_pos(fix, 1), hover_walk,
+	)
+	var path: Array[Vector2i] = PlanningChecklistHarness.preview_path(fix, 1)
+	PlanningChecklistHarness.assert_true(
+		failures, "trample/phase2_unarmed/path_walk",
+		path.size() >= 2
+		and path[0] == PlanningChecklistHarness.TRAMPLE_START
+		and path[-1] == hover_walk,
+		"path must be %s -> %s, got %s"
+		% [PlanningChecklistHarness.TRAMPLE_START, hover_walk, path],
+	)
+	var walk_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, hover_walk)
+	var pre_moves: Array = walk_slots.get("pre", []) as Array
+	var actions: Array = walk_slots.get("action", []) as Array
+	PlanningChecklistHarness.assert_true(
+		failures, "trample/phase2_unarmed/pre_move",
+		not pre_moves.is_empty(),
+		"unarmed empty-tile hover must populate pre-move, got slots=%s" % str(walk_slots),
+	)
+	PlanningChecklistHarness.assert_true(
+		failures, "trample/phase2_unarmed/no_action",
+		actions.is_empty(),
+		"unarmed empty-tile hover must not commit trample to action, got slots=%s" % str(walk_slots),
+	)
+	PlanningChecklistHarness.assert_cursor_contains(
+		failures, "trample/phase2_unarmed/cursor_walk", fix, walk_slots, PlanningIcons.GLYPH_WALK,
+	)
 
 
 static func _phase2_3_arm_and_paint(failures: Array[String]) -> void:

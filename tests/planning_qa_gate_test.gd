@@ -30,6 +30,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_chain_hook_awaiting_targeting_segment,
 		_test_chain_hook_pull_toward_player,
 		_test_trampling_premove_then_arm_commit_flow,
+		_test_trampling_unarmed_empty_hover_is_premove,
 		# Integrity extensions (headless-only; beyond manual checklist)
 		_test_hover_slots_are_deterministic,
 		_test_commit_plan_matches_hover_slots,
@@ -99,6 +100,7 @@ static func run_all(failures: Array[String]) -> void:
 		"hook_segment",
 		"hook_pull",
 		"trample_flow",
+		"trample_unarmed_hover",
 		"hover_deterministic",
 		"commit_matches_hover",
 		"undo_keeps_premove",
@@ -1011,6 +1013,45 @@ static func _test_trampling_premove_then_arm_commit_flow(failures: Array[String]
 		failures.append(
 			"PlanningQAGate Trampling 2C: preview path %s expected %s"
 			% [str(path), str(expected_path)],
+		)
+
+
+static func _test_trampling_unarmed_empty_hover_is_premove(failures: Array[String]) -> void:
+	var fix: Dictionary = TramplingAdvanceE2ETest._knight_fixture(PlanningChecklistHarness.TRAMPLE_START)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if fix.trample_idx < 0:
+		failures.append("PlanningQAGate Trampling unarmed hover: missing Trampling Advance")
+		return
+	director.auto_run = true
+	director.selected_ability_index = fix.trample_idx
+	if input.awaiting_targeting_active():
+		failures.append(
+			"PlanningQAGate Trampling unarmed hover: select must not arm awaiting yet",
+		)
+		return
+	var hover_walk: Vector2i = PlanningChecklistHarness.TRAMPLE_ROUTE[0]
+	var slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, hover_walk)
+	if bool(slots.get("invalid", false)):
+		failures.append(
+			"PlanningQAGate Trampling unarmed hover: slots invalid %s" % str(slots),
+		)
+		return
+	var pre_moves: Array = slots.get("pre", []) as Array
+	var actions: Array = slots.get("action", []) as Array
+	if pre_moves.is_empty():
+		failures.append(
+			"PlanningQAGate Trampling unarmed hover: expected pre-move on empty tile",
+		)
+	if not actions.is_empty():
+		failures.append(
+			"PlanningQAGate Trampling unarmed hover: action must stay empty before arm",
+		)
+	var pre: TimelineAction = pre_moves[0] as TimelineAction if not pre_moves.is_empty() else null
+	if pre != null and pre.target_coord != hover_walk:
+		failures.append(
+			"PlanningQAGate Trampling unarmed hover: pre-move dest %s expected %s"
+			% [str(pre.target_coord), str(hover_walk)],
 		)
 
 
