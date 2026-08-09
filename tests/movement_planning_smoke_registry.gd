@@ -59,6 +59,8 @@ static func _entries() -> Dictionary:
 			"commit_cell": Vector2i(3, 3),
 			"verify_no_jump": false,
 			"premove_cell": Vector2i(2, 3),
+			"postmove_cell": Vector2i(1, 3),
+			"assert_skill_modules": true,
 		},
 		&"bruiser_violent_collision": {
 			"class_id": &"bruiser",

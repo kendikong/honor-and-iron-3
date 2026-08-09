@@ -38,6 +38,44 @@ static func wire_walk_fixture() -> Dictionary:
 	return wire_drag_fixture(KNIGHT_START, Vector2i(-1, -1))
 
 
+static func wire_dual_knight_fixture(
+	k1_pos: Vector2i = KNIGHT_START,
+	k2_pos: Vector2i = Vector2i(2, 3),
+) -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
+	var k1: UnitState = UnitState.create(1, knight_def, GameEnums.Team.PLAYER, k1_pos)
+	var k2: UnitState = UnitState.create(3, knight_def, GameEnums.Team.PLAYER, k2_pos)
+	k1.active_abilities = DataLibrary.build_training_abilities(knight_def)
+	k2.active_abilities = DataLibrary.build_training_abilities(knight_def)
+	k1.movement.points_left = k1.movement.max_points
+	k2.movement.points_left = k2.movement.max_points
+	k1.ability.points_left = 1
+	k2.ability.points_left = 1
+	var units: Array[UnitState] = [k1, k2]
+	var board := _plain_board(Vector2i(12, 12), units)
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.turn_start_board = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var fix: Dictionary = {
+		"input": input,
+		"director": director,
+		"board": board,
+		"knight": k1,
+		"k2": k2,
+	}
+	return wire_fixture(fix)
+
+
 static func wire_bash_fixture() -> Dictionary:
 	return wire_drag_fixture(KNIGHT_START, ENEMY_POS)
 

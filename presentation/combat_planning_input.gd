@@ -173,27 +173,6 @@ func on_left_press(local: Vector2) -> void:
 		if NetworkManager != null and NetworkManager.is_multiplayer:
 			if unit.controlling_player_id != NetworkManager.local_player_id:
 				return
-		if _director.selected_unit_id >= 0 and unit.id != _director.selected_unit_id:
-			var caster := _proj_unit(_director.selected_unit_id)
-			if caster != null:
-				if not force_basic_movement and _director.selected_ability_index >= 0:
-					var ability: AbilityData = _selected_ability_data(caster)
-					if ability != null and AbilitySystem.target_passes_mode(caster, ability, unit):
-						if selected_phase_action_exhausted(_director.selected_unit_id):
-							_play_sfx("invalid")
-						elif _commit_at_interaction_cell(
-							_director.selected_unit_id, cell, local, unit.id,
-						):
-							return
-						else:
-							_play_sfx("invalid")
-						return
-				if _can_target_unit_with_selected_ability(caster, unit):
-					if selected_phase_action_exhausted(_director.selected_unit_id):
-						_play_sfx("invalid")
-					else:
-						_commit_at_interaction_cell(_director.selected_unit_id, cell, local, unit.id)
-					return
 		if aiming and unit.id == _director.selected_unit_id:
 			if not _commit_at_interaction_cell(_director.selected_unit_id, cell, local):
 				_play_sfx("invalid")
@@ -203,8 +182,6 @@ func on_left_press(local: Vector2) -> void:
 			cancel_aim()
 		var was_selected: bool = unit.id == _director.selected_unit_id
 		_arm_drag(unit, local, was_selected)
-		if not was_selected:
-			_director.select_unit(unit.id)
 		return
 	if aiming:
 		var actor := _proj_unit(_director.selected_unit_id)
@@ -238,7 +215,8 @@ func on_left_press(local: Vector2) -> void:
 
 func on_left_release(local: Vector2) -> void:
 	if _drag_armed and not dragging:
-		_process_unit_drop(local, false)
+		if not _try_click_through_drag_armed(local):
+			_process_unit_drop(local, false)
 		_cancel_drag_armed()
 		return
 	if not dragging:
@@ -257,6 +235,37 @@ func on_left_release(local: Vector2) -> void:
 	var snap_back: bool = had_movement and not committed
 	_drag_unit_id = -1
 	_end_drag_interaction(false, snap_back)
+
+
+func _try_click_through_drag_armed(local: Vector2) -> bool:
+	if _director == null or _director.board == null:
+		return false
+	var cell: Vector2i = _pointer_grid_cell()
+	var clicked_id: int = _drag_unit_id
+	if clicked_id < 0:
+		return false
+	var clicked_unit: UnitState = _director.board.get_unit_by_id(clicked_id)
+	if clicked_unit == null:
+		return false
+	var caster_id: int = _director.selected_unit_id
+	if caster_id >= 0 and clicked_id != caster_id and not force_basic_movement:
+		if _director.selected_ability_index >= 0:
+			var caster: UnitState = _proj_unit(caster_id)
+			if caster != null:
+				var ability: AbilityData = _selected_ability_data(caster)
+				if ability != null and AbilitySystem.target_passes_mode(caster, ability, clicked_unit):
+					if selected_phase_action_exhausted(caster_id):
+						_play_sfx("invalid")
+						return true
+					return _commit_at_interaction_cell(caster_id, cell, local, clicked_id)
+				if _can_target_unit_with_selected_ability(caster, clicked_unit):
+					if selected_phase_action_exhausted(caster_id):
+						_play_sfx("invalid")
+						return true
+					return _commit_at_interaction_cell(caster_id, cell, local, clicked_id)
+	if clicked_id != caster_id:
+		_director.select_unit(clicked_id)
+	return false
 
 
 func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:

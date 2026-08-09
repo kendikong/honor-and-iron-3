@@ -127,6 +127,53 @@ static func commit_run_premove_headless(
 	assert_move_preview_origin(failures, tag, fix, unit_id, ability)
 
 
+static func commit_run_postmove_headless(
+	failures: Array[String],
+	fix: Dictionary,
+	ability: AbilityData,
+	postmove_cell: Vector2i,
+	tag: String,
+) -> void:
+	if postmove_cell.x <= -999000:
+		return
+	if not action_movement_needs_pre_or_post_leg(ability):
+		return
+	var director: CombatDirector = fix.director as CombatDirector
+	var unit_id: int = director.selected_unit_id
+	var unit: UnitState = fix.board.get_unit_by_id(unit_id)
+	var run_idx: int = -1
+	if unit != null:
+		for i: int in range(unit.active_abilities.size()):
+			var ab: AbilityData = unit.active_abilities[i] as AbilityData
+			if ab != null and ab.is_universal_run():
+				run_idx = i
+				break
+	_PLANNING_CHECKLIST.assert_true(
+		failures,
+		"%s/planning/post_run_select" % tag,
+		run_idx >= 0,
+		"universal Run must be on unit for post-move timeline QA",
+	)
+	if run_idx < 0:
+		return
+	director.select_unit(unit_id)
+	director.select_ability(run_idx)
+	var slots: Dictionary = _PLANNING_CHECKLIST.commit_production(fix, postmove_cell)
+	_PLANNING_CHECKLIST.assert_true(
+		failures,
+		"%s/planning/postmove_run" % tag,
+		not _PLANNING_CHECKLIST._slots_invalid(slots),
+		"movement skill QA requires a post-move Run leg at %s" % postmove_cell,
+	)
+	_PLANNING_CHECKLIST.flush_planning(fix)
+	_PLANNING_CHECKLIST.assert_true(
+		failures,
+		"%s/planning/postmove_leg" % tag,
+		not _timeline_actions_for_unit(director.plan_post_move, unit_id).is_empty(),
+		"post-move timeline must include a Run leg after skill commit",
+	)
+
+
 static func latest_stand_cell(director: CombatDirector, unit_id: int) -> Vector2i:
 	if director == null or unit_id < 0:
 		return Vector2i(-999999, -999999)

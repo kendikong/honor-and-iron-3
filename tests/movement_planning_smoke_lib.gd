@@ -7,6 +7,7 @@ const _Fixture := preload("res://tests/class_planning_checklist_harness.gd")
 const _Checklist := preload("res://tests/planning_checklist_harness.gd")
 const _Drag := preload("res://tests/planning_drag_e2e_harness.gd")
 const _MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
+const _BruiserHarness := preload("res://tests/bruiser_qa_harness.gd")
 
 
 static func run_entry(failures: Array[String], entry: Dictionary) -> void:
@@ -53,6 +54,8 @@ static func run_entry(failures: Array[String], entry: Dictionary) -> void:
 				bool(entry.get("verify_no_jump", true)),
 				entry.get("premove_cell", Vector2i(-999999, -999999)),
 				entry.get("ally_pos", Vector2i(-1, -1)),
+				entry.get("postmove_cell", Vector2i(-999999, -999999)),
+				bool(entry.get("assert_skill_modules", false)),
 			)
 
 
@@ -67,6 +70,8 @@ static func run_commit_smoke(
 	verify_no_jump: bool = true,
 	premove_cell: Vector2i = Vector2i(-999999, -999999),
 	ally_pos: Vector2i = Vector2i(-1, -1),
+	postmove_cell: Vector2i = Vector2i(-999999, -999999),
+	assert_skill_modules: bool = false,
 ) -> void:
 	_Drag.cleanup_all()
 	var enemy: Vector2i = enemy_pos if enemy_pos.x > -999000 else Vector2i(-1, -1)
@@ -115,6 +120,14 @@ static func run_commit_smoke(
 	else:
 		_Checklist.assert_planning_timeline_after_commit(
 			failures, "%s/planning/timeline_columns" % tag, fix, commit_cell,
+		)
+	if postmove_cell.x > -999000:
+		_MovementTimeline.commit_run_postmove_headless(
+			failures, fix, ability, postmove_cell, tag,
+		)
+	if assert_skill_modules:
+		_assert_charge_strike_modules(
+			failures, fix, tag, commit_cell, postmove_cell,
 		)
 
 
@@ -300,3 +313,71 @@ static func _assert_true(
 
 static func _fail(failures: Array[String], tag: String, message: String) -> void:
 	failures.append("%s: %s" % [tag, message])
+
+
+static func _assert_charge_strike_modules(
+	failures: Array[String],
+	fix: Dictionary,
+	tag: String,
+	skill_target: Vector2i,
+	postmove_cell: Vector2i,
+) -> void:
+	const ENEMY_ID := 2
+	var director: CombatDirector = fix.director as CombatDirector
+	var unit_id: int = director.selected_unit_id
+	var action_entries: Array = director.plan_action.entries
+	_assert_true(
+		failures,
+		"%s/modules/action_committed" % tag,
+		not action_entries.is_empty(),
+		"Charge Strike must commit an ACTION timeline entry",
+	)
+	if not action_entries.is_empty():
+		var action: TimelineAction = action_entries[0] as TimelineAction
+		_assert_true(
+			failures,
+			"%s/modules/target" % tag,
+			action != null and action.target_coord == skill_target,
+			"Charge Strike action target must be %s" % skill_target,
+		)
+	var start_board: BoardState = director.turn_start_board
+	if start_board == null:
+		start_board = fix.board as BoardState
+	var enemy_hp_before: int = _BruiserHarness.unit_hp(start_board, ENEMY_ID)
+	var result: SimResult = _Checklist.simulate_committed(director)
+	var bruiser: UnitState = result.final_state.get_unit_by_id(unit_id)
+	var enemy_unit: UnitState = result.final_state.get_unit_by_id(ENEMY_ID)
+	_assert_true(
+		failures,
+		"%s/modules/moved" % tag,
+		_BruiserHarness.events_actor_moved(result.events, unit_id),
+		"Charge Strike MOVE module must relocate the bruiser",
+	)
+	_assert_true(
+		failures,
+		"%s/modules/pushed" % tag,
+		_BruiserHarness.event_push_distance(result.events, ENEMY_ID) >= 1,
+		"Charge Strike PUSH module must displace the enemy",
+	)
+	var dmg: int = enemy_hp_before - _BruiserHarness.unit_hp(result.final_state, ENEMY_ID)
+	_assert_true(
+		failures,
+		"%s/modules/damage" % tag,
+		dmg > 0,
+		"Charge Strike DAMAGE module must reduce enemy HP (dealt %d)" % dmg,
+	)
+	var expected_bruiser_pos: Vector2i = (
+		postmove_cell if postmove_cell.x > -999000 else Vector2i(2, 3)
+	)
+	_Checklist.assert_eq_cell(
+		failures,
+		"%s/modules/final_pos" % tag,
+		bruiser.position if bruiser != null else Vector2i(-999999, -999999),
+		expected_bruiser_pos,
+	)
+	_Checklist.assert_eq_cell(
+		failures,
+		"%s/modules/enemy_pos" % tag,
+		enemy_unit.position if enemy_unit != null else Vector2i(-999999, -999999),
+		Vector2i(4, 3),
+	)

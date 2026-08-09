@@ -5,7 +5,7 @@ const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
 ## Bible: Charge Strike — MOVE 2 | ATK 3 | PUSH 1; [+] GHOST during MOVE, ATK +2 through terrain.
 ## Globals: EffectType.MOVE + DAMAGE + PUSH; ghost_move / bonus_dmg_from_terrain modifiers on upgrade.
-## Tier 1: sim proves charge movement; planning smoke via bruier_qa_runner registry.
+## Tier 1: sim proves MOVE + DAMAGE + PUSH; planning smoke proves premove + skill + postmove modules.
 
 
 static func run_all(failures: Array[String]) -> void:
