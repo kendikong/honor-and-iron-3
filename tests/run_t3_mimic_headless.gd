@@ -1,5 +1,7 @@
 extends Node
 
+const _JourneysTest := preload("res://tests/planning_t3_mimic_journeys_test.gd")
+
 ## Headless T3-mimic only: action_range_regression + planning_intent_contract_e2e.
 ## Not Tier 3 LIVE — fixture board, not TestBattle.
 
@@ -13,8 +15,10 @@ func _run() -> void:
 	ActionRangeRegressionTest.run_all(failures)
 	print("[SUITE] intent_contract_e2e")
 	PlanningIntentContractE2ETest.run_all(failures)
+	print("[SUITE] t3_mimic_journeys")
+	_JourneysTest.run_all(failures)
 	if failures.is_empty():
-		print("[PASS] T3 mimic headless (action_range + intent_contract)")
+		print("[PASS] T3 mimic headless (action_range + intent_contract + journeys)")
 	else:
 		for failure: String in failures:
 			printerr("[FAIL] %s" % failure)

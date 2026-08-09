@@ -8,6 +8,12 @@ extends RefCounted
 const KNIGHT_START := Vector2i(4, 5)
 const ENEMY_POS := Vector2i(7, 5)
 const BASH_APPROACH := Vector2i(6, 5)
+const BASH_HOVER_WALK := Vector2i(5, 5)
+const K4_START := Vector2i(4, 1)
+const K4_RUN_TRIGGER := Vector2i(3, 2)
+const K4_DETOUR_PLUS_RUN_ROUTE: Array[Vector2i] = [
+	K4_START, Vector2i(5, 1), Vector2i(5, 2), Vector2i(4, 2), K4_RUN_TRIGGER,
+]
 const HOOK_KNIGHT_START := Vector2i(1, 3)
 const HOOK_ENEMY_POS := Vector2i(4, 3)
 const TRAMPLE_START := Vector2i(5, 4)
@@ -53,6 +59,17 @@ static func wire_trample_board() -> Dictionary:
 	fix["unit"] = fix.knight
 	fix["trample_idx"] = trample_idx
 	return PlanningDragE2EHarness.wire_fixture(fix)
+
+
+static func wire_k4_board() -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = PlanningDragE2EHarness.wire_fixture(
+		PlanningDragE2EHarness._planning_fixture(K4_START, ENEMY_POS),
+	)
+	fix.director.auto_run = true
+	fix.input.auto_use_skill_after_move = false
+	fix.input.force_basic_movement = false
+	return fix
 
 
 static func ability_index(unit: UnitState, ability_id: StringName) -> int:
@@ -802,6 +819,118 @@ static func assert_ability_kind_class(
 		ability != null and ability.kind == GameEnums.AbilityKind.CLASS_SKILL,
 		"ability must be CLASS_SKILL (got kind %d)" % (ability.kind if ability else -1),
 	)
+
+
+static func clear_drag_state(fix: Dictionary) -> void:
+	var input: CombatPlanningInput = fix.input
+	input.dragging = false
+	input._drag_route.clear()
+	input._drag_unit_id = -1
+	input._drag_last_free = Vector2i(-999999, -999999)
+	input._drag_unit_was_selected = false
+
+
+static func drop_slots_for_cell(fix: Dictionary, cell: Vector2i) -> Dictionary:
+	var input: CombatPlanningInput = fix.input
+	var legal_moves: Array[Vector2i] = []
+	if input._drag_route_commits_active():
+		legal_moves = input._snapshot_drag_legal_move_tiles()
+	return input._final_commit_slots_for_drop_at_cell(1, cell, Vector2.ZERO, legal_moves)
+
+
+static func hover_route(fix: Dictionary, route: Array[Vector2i]) -> void:
+	for cell: Vector2i in route:
+		hover(fix, cell)
+
+
+static func commit_painted_drop_on_cell(
+	fix: Dictionary,
+	route: Array[Vector2i],
+	drop_cell: Vector2i,
+) -> bool:
+	clear_drag_state(fix)
+	var input: CombatPlanningInput = fix.input
+	var dest: Vector2i = route[route.size() - 1]
+	TramplingAdvanceE2ETest._paint_drag_route(input, fix.knight, route, dest)
+	hover(fix, drop_cell)
+	var slots: Dictionary = drop_slots_for_cell(fix, drop_cell)
+	if _slots_invalid(slots):
+		clear_drag_state(fix)
+		return false
+	var ok: bool = commit_slots_production(fix, slots)
+	clear_drag_state(fix)
+	return ok
+
+
+static func committed_pre_move(director: CombatDirector, unit_id: int) -> TimelineAction:
+	return _timeline_action_for_unit(director, unit_id, director.plan_pre_move.entries)
+
+
+static func committed_action(director: CombatDirector, unit_id: int) -> TimelineAction:
+	return _timeline_action_for_unit(director, unit_id, director.plan_action.entries)
+
+
+static func committed_post_move(director: CombatDirector, unit_id: int) -> TimelineAction:
+	return _timeline_action_for_unit(director, unit_id, director.plan_post_move.entries)
+
+
+static func _timeline_action_for_unit(
+	director: CombatDirector,
+	unit_id: int,
+	entries: Array,
+) -> TimelineAction:
+	for raw: Variant in entries:
+		var action: TimelineAction = raw as TimelineAction
+		if action != null and action.actor_id == unit_id:
+			return action
+	return null
+
+
+static func action_surface(action: TimelineAction) -> Dictionary:
+	if action == null:
+		return {}
+	return {
+		"type": action.type,
+		"target": action.target_coord,
+		"waypoints": action.waypoints.duplicate(),
+		"uses_run": action.uses_run,
+		"ability": action.ability.id if action.ability != null else &"",
+	}
+
+
+static func mode_commit_surface(fix: Dictionary, unit_id: int = 1) -> Dictionary:
+	var projected: UnitState = projected_unit(fix, unit_id)
+	var director: CombatDirector = fix.director
+	return {
+		"projected_unit": {
+			"position": projected.position,
+			"ap": projected.ability.points_left,
+			"mp": projected.movement.points_left,
+		},
+		"pre_move": action_surface(committed_pre_move(director, unit_id)),
+		"action": action_surface(committed_action(director, unit_id)),
+		"post_move": action_surface(committed_post_move(director, unit_id)),
+	}
+
+
+static func assert_mode_commit_parity(
+	failures: Array[String],
+	selection_key: String,
+	selection_surface: Dictionary,
+	drag_key: String,
+	drag_surface: Dictionary,
+) -> void:
+	if selection_surface != drag_surface:
+		assert_fail(
+			failures,
+			"t3_mimic/%s_vs_%s" % [selection_key, drag_key],
+			"preview/commit parity diverged: %s != %s (sel=%s drag=%s)"
+			% [selection_key, drag_key, str(selection_surface), str(drag_surface)],
+		)
+
+
+static func slots_invalid(slots: Dictionary) -> bool:
+	return _slots_invalid(slots)
 
 
 static func _slots_invalid(slots: Dictionary) -> bool:
