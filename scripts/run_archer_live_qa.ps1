@@ -15,10 +15,11 @@ if (-not (Test-Path $GodotPath)) {
 $env:LIVE_QA_PROFILE = "fast"
 $godotArgs = @(
 	"--path", $projectRoot,
+	"--headless",
 	"-s", "-d",
-	"--remote-debug", "tcp://127.0.0.1:0",
 	$cmdTool,
-	"-a", $suite
+	"-a", $suite,
+	"--ignoreHeadlessMode"
 )
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-archer-live.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-archer-live.stderr.log"
@@ -32,6 +33,10 @@ $output = @()
 $output += Get-Content $stdoutPath
 $output += Get-Content $stderrPath
 $output | ForEach-Object { Write-Output $_ }
+if ($process.ExitCode -ne 0) {
+	Write-Output "[FAIL] Archer live QA: Godot exit code $($process.ExitCode)"
+	exit 1
+}
 $failures = @(
 	Select-String -Path $stdoutPath, $stderrPath -Pattern 'FAILED|^\[FAIL\]|SCRIPT ERROR:' |
 		ForEach-Object { $_.Line }

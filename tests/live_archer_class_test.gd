@@ -91,7 +91,6 @@ var _overlay: TacticalPlanningOverlay
 
 func test_live_archer_every_skill(timeout := 240000) -> void:
 	var runner := scene_runner("res://scenes/TestBattle.tscn")
-	runner.move_window_to_foreground()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	_scene = runner.scene() as TestBattleMapView
 	assert_object(_scene).is_not_null()
