@@ -1,6 +1,7 @@
 param(
 	[string]$GodotPath = "C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64.exe",
-	[switch]$IncludeLegacyTier12
+	[switch]$IncludeLegacyTier12,
+	[switch]$LiveTier3
 )
 
 $ErrorActionPreference = "Stop"
@@ -36,7 +37,9 @@ if ($IncludeLegacyTier12) {
 			Where-Object { $_.Line -notmatch 'resources still in use' } |
 			ForEach-Object { $_.Line }
 	)
-	$legacyPass = ($legacyExit -eq 0) -and ($testFailures.Count -eq 0) -and ($scriptErrors.Count -eq 0) -and ($runtimeErrors.Count -eq 0)
+	$legacyPass = (
+		Test-GodotQaHarnessSucceeded -ExitCode $legacyExit -LogPaths @($stdoutPath, $stderrPath)
+	) -and ($runtimeErrors.Count -eq 0)
 	if ($legacyPass) {
 		Write-Output "--- Tier 1/2 (legacy): PASS ---"
 		$tier12Label = "PASS (legacy informational)"
@@ -63,43 +66,69 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Output "--- AOE footprint contract: PASS ---"
 Write-Output ""
-Write-Output "=== Tier 3: TestBattle scene acceptance (GdUnit4) ==="
-Write-Output "Note: run_planning_qa_gate.ps1 is Tier 3 only. Do not also run run_planning_scene_acceptance.ps1 in the same QA turn."
-$sceneGate = Join-Path $PSScriptRoot "run_planning_scene_acceptance.ps1"
-if (-not (Test-Path $sceneGate)) {
-	Write-Error "[INCOMPLETE] Tier 3 runner missing: $sceneGate"
-	exit 2
-}
 
-& $sceneGate -GodotPath $GodotPath
-$sceneExit = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } else { 1 }
-
-$tier3Pass = $false
-$tier3Incomplete = $false
-if ($sceneExit -eq 2) {
-	$tier3Incomplete = $true
-	Write-Output "--- Tier 3: INCOMPLETE ---"
-} elseif ($sceneExit -eq 130) {
-	Write-Output "--- Tier 3: CANCELLED (ESC) ---"
-	exit 130
-} elseif ($sceneExit -eq 0) {
-	$tier3Pass = $true
-	Write-Output "--- Tier 3: PASS ---"
+if ($LiveTier3) {
+	Write-Output "=== Tier 3: TestBattle scene acceptance (GdUnit4 LIVE) ==="
+	Write-Output "Note: default gate uses headless fixture suites; -LiveTier3 opts into F5-parity live runner."
+	$sceneGate = Join-Path $PSScriptRoot "run_planning_scene_acceptance.ps1"
+	if (-not (Test-Path $sceneGate)) {
+		Write-Error "[INCOMPLETE] Tier 3 live runner missing: $sceneGate"
+		exit 2
+	}
+	& $sceneGate -GodotPath $GodotPath
+	$sceneExit = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } else { 1 }
+	$tier3Pass = $false
+	$tier3Incomplete = $false
+	if ($sceneExit -eq 2) {
+		$tier3Incomplete = $true
+		Write-Output "--- Tier 3 LIVE: INCOMPLETE ---"
+	} elseif ($sceneExit -eq 130) {
+		Write-Output "--- Tier 3 LIVE: CANCELLED (ESC) ---"
+		exit 130
+	} elseif ($sceneExit -eq 0) {
+		$tier3Pass = $true
+		Write-Output "--- Tier 3 LIVE: PASS ---"
+	} else {
+		Write-Output "--- Tier 3 LIVE: FAIL (exit $sceneExit) ---"
+	}
+	$tier3Label = if ($tier3Incomplete) { "INCOMPLETE (live)" } elseif ($tier3Pass) { "PASS (live)" } else { "FAIL (live)" }
 } else {
-	Write-Output "--- Tier 3: FAIL (exit $sceneExit) ---"
+	Write-Output "=== Tier 3: headless fixture suites (PlanningQaGate + T3 mimic) ==="
+	Write-Output "Use -LiveTier3 for GdUnit TestBattle acceptance (owner F5 parity)."
+	$headlessGate = Join-Path $PSScriptRoot "run_planning_headless_contracts.ps1"
+	$mimicGate = Join-Path $PSScriptRoot "run_t3_mimic_headless.ps1"
+	if (-not (Test-Path $headlessGate)) {
+		Write-Error "[INCOMPLETE] Headless planning contracts runner missing: $headlessGate"
+		exit 2
+	}
+	if (-not (Test-Path $mimicGate)) {
+		Write-Error "[INCOMPLETE] T3 mimic headless runner missing: $mimicGate"
+		exit 2
+	}
+	& $headlessGate -GodotPath $GodotPath
+	if ($LASTEXITCODE -ne 0) {
+		Write-Output "--- Tier 3 headless contracts: FAIL ---"
+		exit 1
+	}
+	Write-Output "--- Tier 3 headless contracts: PASS ---"
+	Write-Output ""
+	& $mimicGate -GodotPath $GodotPath
+	if ($LASTEXITCODE -ne 0) {
+		Write-Output "--- Tier 3 fixture parity: FAIL ---"
+		exit 1
+	}
+	Write-Output "--- Tier 3 fixture parity: PASS ---"
+	$tier3Pass = $true
+	$tier3Label = "PASS (headless fixtures)"
 }
 
 Write-Output ""
 Write-Output "=== Planning QA gate summary ==="
 Write-Output ("Tier 1/2: {0}" -f $tier12Label)
-$tier3Label = if ($tier3Incomplete) { "INCOMPLETE" } elseif ($tier3Pass) { "PASS" } else { "FAIL" }
 Write-Output ("Tier 3:   {0}" -f $tier3Label)
 
-if ($tier3Incomplete) {
-	exit 2
-}
 if (-not $tier3Pass) {
 	exit 1
 }
-Write-Output "[PASS] Planning QA gate: Tier 3 TestBattle acceptance."
+Write-Output "[PASS] Planning QA gate."
 exit 0

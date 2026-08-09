@@ -138,6 +138,8 @@ func is_passive_upgraded(passive_id: StringName) -> bool:
 	return upgraded_passives.has(passive_id)
 
 func _recalculate_stats(board: BoardState = null) -> void:
+	if definition == null:
+		return
 	var w_str := 0
 	var w_mag := 0
 	var w_def := 0

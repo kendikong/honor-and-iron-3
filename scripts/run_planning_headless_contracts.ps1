@@ -32,7 +32,7 @@ if (Test-Path $stderrPath) { Get-Content $stderrPath }
 
 $testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
 $scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })
-if ($exitCode -ne 0 -or $testFailures.Count -gt 0 -or $scriptErrors.Count -gt 0) {
+if (-not (Test-GodotQaHarnessSucceeded -ExitCode $exitCode -LogPaths @($stdoutPath, $stderrPath))) {
 	Write-Output "[FAIL] Planning headless contracts (exit $exitCode, $($testFailures.Count) fails)"
 	exit 1
 }

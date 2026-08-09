@@ -1638,7 +1638,7 @@ static func _test_click_drop_drag_bash_enemy_parity(failures: Array[String]) -> 
 	if _slots_invalid(click_slots):
 		failures.append("PlanningQAGate click/drop drag bash: selection slots invalid")
 		return
-	var route: Array[Vector2i] = [KNIGHT_START, BASH_APPROACH]
+	var route: Array[Vector2i] = [KNIGHT_START, Vector2i(5, 5), BASH_APPROACH]
 	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.knight, route, BASH_APPROACH)
 	var drop_slots: Dictionary = _drop_slots_at(fix.input, 1, ENEMY_POS)
 	if _slots_invalid(drop_slots):

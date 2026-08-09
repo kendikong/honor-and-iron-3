@@ -1680,9 +1680,40 @@ func _commit_interaction_params(
 					legal_moves = _snapshot_drag_legal_move_tiles()
 					if _drag_route_stand_cell() != commit_cell:
 						preferred = _drag_route_stand_cell()
+			elif target.is_enemy():
+				var actor: UnitState = _proj_unit(_director.selected_unit_id)
+				var ability: AbilityData = _selected_ability_data(actor)
+				if (
+					actor != null
+					and ability != null
+					and not AbilitySystem.is_movement_skill(ability)
+					and _director.selected_ability_index >= 0
+				):
+					var board: BoardState = _proj()
+					var approach: Vector2i = _director.preview_approach_tile(
+						_director.selected_unit_id,
+						target.id,
+						_director.selected_ability_index,
+						target.position,
+					)
+					if approach != actor.position:
+						waypoints = _director.preview_waypoints_for_hover(
+							board, actor, approach, [], ability,
+						)
 	elif _drag_route_commits_active():
 		waypoints = _route_waypoints()
 		legal_moves = _snapshot_drag_legal_move_tiles()
+	else:
+		var actor: UnitState = _proj_unit(_director.selected_unit_id)
+		var ability: AbilityData = _selected_ability_data(actor)
+		if (
+			actor != null
+			and ability != null
+			and _movement_skill_commits_tile_endpoint(actor, ability, hover_cell)
+		):
+			waypoints = _director.preview_waypoints_for_hover(
+				_proj(), actor, hover_cell, [], ability,
+			)
 	var face_dir: int = -1
 	if _map_view != null:
 		face_dir = _facing_from_drop(_mouse_local_for_facing(), hover_cell)
@@ -4121,6 +4152,12 @@ func _build_enemy_commit_slots(
 			var approach_path: Array[Vector2i] = []
 			if _enemy_hover_respects_painted_route(actor, enemy, ability, waypoints):
 				approach_path = waypoints.duplicate()
+			elif not waypoints.is_empty():
+				approach_path = waypoints.duplicate()
+			else:
+				approach_path = _director.preview_waypoints_for_hover(
+					board, actor, approach, [], ability,
+				)
 			slots["pre"].append(
 				_director.make_planning_move_action(
 					unit_id,

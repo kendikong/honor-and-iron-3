@@ -5,6 +5,7 @@ extends RefCounted
 ## Builds headless boards, runs Simulator, asserts Bible outcomes via global systems.
 
 const BRUISER_DEF_ID: StringName = &"bruiser"
+const _PlanningFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
 
 
 static func assert_fail(failures: Array[String], tag: String, message: String) -> void:
@@ -672,4 +673,145 @@ static func run_push_through_upgrade_next_attack(failures: Array[String]) -> voi
 		failures, "push_through/upgrade_str_attack_delta",
 		dmg_buffed - dmg_base,
 		expected_delta,
+	)
+
+
+static func events_actor_moved(events: Array, actor_id: int) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_MOVED:
+			var moved_id: int = int(e.data.get("actor", e.data.get("unit", -1)))
+			if moved_id == actor_id:
+				return true
+	return false
+
+
+## Planning commit smoke: select → hover → hover/click parity → commit_no_jump (Knight Tier B).
+static func run_planning_commit_smoke(
+	failures: Array[String],
+	ability_id: StringName,
+	tag: String,
+	commit_cell: Vector2i,
+	bruiser_pos: Vector2i,
+	enemy_pos: Vector2i = Vector2i(-999999, -999999),
+	verify_no_jump: bool = true,
+) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = _PlanningFixture.wire_board(
+		bruiser_pos,
+		enemy_pos if enemy_pos.x > -999000 else Vector2i(-1, -1),
+		Vector2i(-1, -1),
+		ability_id,
+	)
+	fix.director.auto_run = true
+	var idx: int = PlanningChecklistHarness.select_ability(fix, ability_id)
+	assert_true(
+		failures, "%s/planning/select" % tag,
+		idx >= 0,
+		"%s must be selectable on Bruiser planning fixture" % ability_id,
+	)
+	if idx < 0:
+		return
+	var ability: AbilityData = fix.bruiser.active_abilities[idx]
+	assert_true(
+		failures, "%s/planning/ability_id" % tag,
+		ability != null and ability.id == ability_id,
+	)
+	assert_true(
+		failures, "%s/planning/overlay" % tag,
+		fix.get("overlay") != null,
+		"planning overlay must wire after ability select",
+	)
+	PlanningChecklistHarness.hover(fix, commit_cell)
+	var hover_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, commit_cell)
+	if PlanningChecklistHarness._slots_invalid(hover_slots):
+		assert_true(
+			failures, "%s/planning/valid_slots" % tag,
+			false,
+			"invalid commit slots at %s for %s" % [commit_cell, ability_id],
+		)
+		return
+	PlanningChecklistHarness.assert_slots_match_preview_commit(
+		failures, "%s/planning/hover_click_parity" % tag, fix, commit_cell,
+	)
+	if verify_no_jump:
+		PlanningChecklistHarness.assert_commit_no_jump(
+			failures, "%s/planning/no_jump" % tag, fix, commit_cell,
+		)
+
+
+static func run_planning_awaiting_smoke(
+	failures: Array[String],
+	ability_id: StringName,
+	tag: String,
+	bruiser_pos: Vector2i,
+	arm_cell: Vector2i,
+	commit_cell: Vector2i,
+	enemy_pos: Vector2i = Vector2i(-1, -1),
+	verify_no_jump: bool = true,
+) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = _PlanningFixture.wire_board(
+		bruiser_pos, enemy_pos, Vector2i(-1, -1), ability_id,
+	)
+	fix.director.auto_run = true
+	var idx: int = PlanningChecklistHarness.select_ability(fix, ability_id)
+	assert_true(failures, "%s/planning/select" % tag, idx >= 0)
+	if idx < 0:
+		return
+	var arm_slots: Dictionary = PlanningChecklistHarness.commit_production(fix, arm_cell)
+	assert_true(
+		failures, "%s/planning/arm" % tag,
+		not PlanningChecklistHarness._slots_invalid(arm_slots),
+		"first click must arm awaiting flow at %s" % arm_cell,
+	)
+	PlanningChecklistHarness.flush_planning(fix)
+	PlanningChecklistHarness.hover(fix, commit_cell)
+	var hover_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, commit_cell)
+	if PlanningChecklistHarness._slots_invalid(hover_slots):
+		assert_true(
+			failures, "%s/planning/valid_slots" % tag,
+			false,
+			"invalid commit slots at %s for awaiting finalize" % commit_cell,
+		)
+		return
+	PlanningChecklistHarness.assert_slots_match_preview_commit(
+		failures, "%s/planning/hover_click_parity" % tag, fix, commit_cell,
+	)
+	if verify_no_jump:
+		PlanningChecklistHarness.assert_commit_no_jump(
+			failures, "%s/planning/no_jump" % tag, fix, commit_cell,
+		)
+
+
+static func run_planning_ally_smoke(
+	failures: Array[String],
+	ability_id: StringName,
+	tag: String,
+	bruiser_pos: Vector2i,
+	ally_pos: Vector2i,
+	commit_cell: Vector2i,
+) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = _PlanningFixture.wire_board(
+		bruiser_pos, Vector2i(-1, -1), ally_pos, ability_id,
+	)
+	fix.director.auto_run = true
+	var idx: int = PlanningChecklistHarness.select_ability(fix, ability_id)
+	assert_true(failures, "%s/planning/select" % tag, idx >= 0)
+	if idx < 0:
+		return
+	PlanningChecklistHarness.hover(fix, commit_cell)
+	var hover_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, commit_cell)
+	if PlanningChecklistHarness._slots_invalid(hover_slots):
+		assert_true(
+			failures, "%s/planning/valid_slots" % tag,
+			false,
+			"invalid ally commit slots at %s" % commit_cell,
+		)
+		return
+	PlanningChecklistHarness.assert_slots_match_preview_commit(
+		failures, "%s/planning/hover_click_parity" % tag, fix, commit_cell,
+	)
+	PlanningChecklistHarness.assert_commit_no_jump(
+		failures, "%s/planning/no_jump" % tag, fix, commit_cell,
 	)

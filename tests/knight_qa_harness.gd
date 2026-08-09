@@ -46,7 +46,14 @@ static func library_ability_range_tiles(ability_id: StringName) -> int:
 	var knight: Dictionary = save.get("units", {}).get("knight", {})
 	var abilities: Dictionary = knight.get("abilities", {})
 	var ab_data: Dictionary = abilities.get(String(ability_id), {})
-	return int(ab_data.get("range_tiles", -1))
+	if ab_data.has("range_tiles"):
+		return int(ab_data.get("range_tiles", -1))
+	var modules: Variant = ab_data.get("modules", [])
+	if modules is Array and not (modules as Array).is_empty():
+		var first: Variant = (modules as Array)[0]
+		if first is Dictionary:
+			return int((first as Dictionary).get("max_range", -1))
+	return -1
 
 
 static func factory_passive(passive_id: StringName) -> PassiveData:

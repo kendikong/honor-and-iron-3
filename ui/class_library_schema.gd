@@ -1259,6 +1259,7 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"uses_per_combat": src.uses_per_combat,
 		"presentation_key": String(src.presentation_key),
 		"presentation_anim": src.presentation_anim,
+		"range_tiles": src.range_tiles,
 		"modules": modules_to_dict_array(src.modules, src.planner_group),
 		"upgraded_modules": modules_to_dict_array(src.upgraded_modules, src.planner_group),
 		"module_count": src.modules.size(),
@@ -1315,6 +1316,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.uses_per_combat = int(data.get("uses_per_combat", dst.uses_per_combat))
 	dst.presentation_key = StringName(String(data.get("presentation_key", String(dst.presentation_key))))
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
+	var authored_range_tiles: int = int(data.get("range_tiles", -1))
 	var module_data: Variant = data.get("modules", null)
 	var use_legacy_base: bool = (
 		not (module_data is Array)
@@ -1348,6 +1350,8 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	elif use_legacy_upgrade and data.has("upgraded_effects"):
 		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
 	dst.finalize_modular()
+	if authored_range_tiles >= 0:
+		dst.range_tiles = authored_range_tiles
 
 
 static func _canonical_tags_from_variant(value: Variant) -> Array[StringName]:

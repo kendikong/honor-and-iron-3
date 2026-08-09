@@ -176,6 +176,60 @@ function Stop-GodotProcessTree {
 }
 
 
+function Test-GdUnitCmdSucceeded {
+	param(
+		$ExitCode,
+		[Parameter(Mandatory = $true)]
+		[string[]]$LogPaths
+	)
+	if ($ExitCode -eq 130) {
+		return $false
+	}
+	$existingLogs = @($LogPaths | Where-Object { $_ -and (Test-Path $_) })
+	if ($existingLogs.Count -eq 0) {
+		return $false
+	}
+	$summary = Select-String -Path $existingLogs -Pattern 'Overall Summary:' | Select-Object -Last 1
+	if ($null -ne $summary -and $summary.Line -match '\|\s*(\d+)\s+errors\s*\|\s*(\d+)\s+failures\s*\|') {
+		return ([int]$Matches[1] -eq 0) -and ([int]$Matches[2] -eq 0)
+	}
+	return Test-GodotQaHarnessSucceeded -ExitCode $ExitCode -LogPaths $existingLogs
+}
+
+
+function Test-GodotQaHarnessSucceeded {
+	param(
+		$ExitCode,
+		[Parameter(Mandatory = $true)]
+		[string[]]$LogPaths,
+		[string]$PassPattern = '^\[PASS\]'
+	)
+	$existingLogs = @($LogPaths | Where-Object { $_ -and (Test-Path $_) })
+	$testFailures = @(
+		Select-String -Path $existingLogs -Pattern '^\[FAIL\]' -ErrorAction SilentlyContinue |
+			ForEach-Object { $_.Line }
+	)
+	$scriptErrors = @(
+		Select-String -Path $existingLogs -Pattern 'SCRIPT ERROR:' -ErrorAction SilentlyContinue |
+			ForEach-Object { $_.Line }
+	)
+	if ($ExitCode -eq 130) {
+		return $false
+	}
+	if ($testFailures.Count -gt 0 -or $scriptErrors.Count -gt 0) {
+		return $false
+	}
+	if ($null -ne $ExitCode -and $ExitCode -ne '' -and [int]$ExitCode -ne 0) {
+		return $false
+	}
+	if ($null -eq $ExitCode -or $ExitCode -eq '') {
+		# Start-Process -PassThru + redirected streams often omits ExitCode on Windows.
+		return (Select-String -Path $existingLogs -Pattern $PassPattern -Quiet)
+	}
+	return $true
+}
+
+
 function Wait-GodotProcessWithEscCancel {
 	param(
 		[Parameter(Mandatory = $true)]
@@ -192,5 +246,9 @@ function Wait-GodotProcessWithEscCancel {
 		Start-Sleep -Milliseconds 50
 	}
 	$Process.Refresh()
-	return $Process.ExitCode
+	$rawExit = $Process.ExitCode
+	if ($null -eq $rawExit -or [string]::IsNullOrEmpty([string]$rawExit)) {
+		return $null
+	}
+	return [int]$rawExit
 }

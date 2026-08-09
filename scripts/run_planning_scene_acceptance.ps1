@@ -46,13 +46,13 @@ if ($exitCode -eq 130) {
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
 if (Test-Path $stderrPath) { Get-Content $stderrPath }
 
-if ($null -eq $exitCode) {
-	Write-Output "[INCOMPLETE] Tier 3 TestBattle acceptance: Godot exit code unavailable."
-	exit 2
+if (Test-GdUnitCmdSucceeded -ExitCode $exitCode -LogPaths @($stdoutPath, $stderrPath)) {
+	Write-Output "[PASS] Tier 3 TestBattle scene acceptance"
+	exit 0
 }
-if ($exitCode -ne 0) {
+if ($null -eq $exitCode -or $exitCode -eq '') {
+	Write-Output "[FAIL] Tier 3 TestBattle scene acceptance (GdUnit failures or incomplete; exit code unavailable)"
+} else {
 	Write-Output "[FAIL] Tier 3 TestBattle scene acceptance (exit $exitCode)"
-	exit $exitCode
 }
-Write-Output "[PASS] Tier 3 TestBattle scene acceptance"
-exit 0
+exit 1

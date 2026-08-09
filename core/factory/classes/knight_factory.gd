@@ -216,6 +216,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.CostResource.AP, [], "Gain DEF +2 per redirected hit.",
 		GameEnums.TargetingFlags.SELF,
 	)
+	redirect_strike.range_tiles = 2
 	def.abilities.append(redirect_strike)
 	
 	var indomitable_module := DataLibrary._module(
@@ -327,4 +328,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(trampling_advance)
 
 	DataLibrary.finalize_unit_abilities(def)
+	for ability: AbilityData in def.abilities:
+		if ability != null and ability.id == &"knight_redirect_strike":
+			ability.range_tiles = 2
 	return def
