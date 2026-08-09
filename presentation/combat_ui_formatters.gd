@@ -696,9 +696,15 @@ static func ability_skill_row_background(ability: AbilityData, selected: bool) -
 	)
 	if selected:
 		if is_premove:
-			return base.lerp(Color(0.22, 0.48, 0.78, 1.0), 0.38)
+			return base.lerp(Color(0.18, 0.52, 0.88, 1.0), 0.62)
 		return base.lerp(Color(0.98, 0.86, 0.32, 0.95), 0.28)
 	return base
+
+
+static func ability_skill_row_select_font_color(ability: AbilityData) -> Color:
+	if ability != null and ability.is_pre_move_planner():
+		return Color(0.70, 0.92, 1.0, 1.0)
+	return Color(0.98, 0.86, 0.32, 0.95)
 
 
 static func _ability_module_line_bbcode(module: AbilityModule) -> String:

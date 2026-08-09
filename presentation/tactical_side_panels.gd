@@ -580,9 +580,11 @@ func _update_skill_selection_highlight() -> void:
 		if unit != null and index >= 0 and index < unit.active_abilities.size():
 			ability = unit.active_abilities[index] as AbilityData
 		if ability != null:
+			var is_selected: bool = index == _selected_ability
 			_apply_skill_row_panel_style(
-				row_panel, ability, index == _selected_ability, usable,
+				row_panel, ability, is_selected, usable,
 			)
+			_apply_skill_row_name_color(row_btn, ability, is_selected)
 
 
 func _skill_list_row_for_ability_index(ability_index: int) -> int:
@@ -904,7 +906,10 @@ func _rebuild_ability_buttons() -> void:
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(10))
 		if selected_row:
-			name_lbl.add_theme_color_override("font_color", COLOR_SELECT)
+			name_lbl.add_theme_color_override(
+				"font_color",
+				CombatUiFormatters.ability_skill_row_select_font_color(ability),
+			)
 		header_hbox.add_child(name_lbl)
 		var cost_chip: Dictionary = layout.get("cost", {})
 		header_hbox.add_child(_make_skill_icon(
@@ -973,8 +978,10 @@ func _apply_skill_row_panel_style(
 	var style := StyleBoxFlat.new()
 	style.bg_color = bg
 	if ability != null and ability.is_pre_move_planner():
-		style.border_color = Color(0.20, 0.50, 0.82, 0.85)
-		style.set_border_width_all(1)
+		style.border_color = (
+			Color(0.45, 0.78, 1.0, 0.95) if selected else Color(0.20, 0.50, 0.82, 0.85)
+		)
+		style.set_border_width_all(2 if selected else 1)
 	else:
 		style.border_color = Color(0.32, 0.32, 0.36, 0.55)
 		style.set_border_width_all(1)
@@ -984,6 +991,31 @@ func _apply_skill_row_panel_style(
 	style.content_margin_top = 4
 	style.content_margin_bottom = 4
 	panel.add_theme_stylebox_override("panel", style)
+
+
+func _apply_skill_row_name_color(
+	row_btn: Button,
+	ability: AbilityData,
+	selected: bool,
+) -> void:
+	if row_btn == null or row_btn.get_child_count() == 0:
+		return
+	var btn_vbox := row_btn.get_child(0) as VBoxContainer
+	if btn_vbox == null or btn_vbox.get_child_count() == 0:
+		return
+	var header_hbox := btn_vbox.get_child(0) as HBoxContainer
+	if header_hbox == null or header_hbox.get_child_count() == 0:
+		return
+	var name_lbl := header_hbox.get_child(0) as Label
+	if name_lbl == null:
+		return
+	if selected:
+		name_lbl.add_theme_color_override(
+			"font_color",
+			CombatUiFormatters.ability_skill_row_select_font_color(ability),
+		)
+	else:
+		name_lbl.remove_theme_color_override("font_color")
 
 
 func _make_skill_icon(emoji: String, val: String, tip: String) -> Control:
