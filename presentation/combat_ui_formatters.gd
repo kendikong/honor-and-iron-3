@@ -815,10 +815,7 @@ static func _effect_tooltip_line(effect: EffectData) -> String:
 		GameEnums.EffectType.TELEPORT_CASTER:
 			return _kw_tooltip_line("TELEPORT", _glossary_def("TELEPORT"))
 		GameEnums.EffectType.MOVE_INTO_AND_PUSH:
-			return _kw_tooltip_line(
-				"MOVE into occupied ally | PUSH %s" % amount,
-				"Move into an adjacent ally-occupied tile and push them forward.",
-			)
+			return _kw_tooltip_line("PUSH THROUGH", _glossary_def("PUSH THROUGH"))
 		GameEnums.EffectType.DESTROY_OBSTACLE:
 			return _kw_tooltip_line("DESTROY OBSTACLE", _glossary_def("DESTROY OBSTACLE"))
 		GameEnums.EffectType.CLEANSE:
@@ -912,6 +909,8 @@ static func _bible_segment_hint(segment: String) -> String:
 		return _glossary_def("TRAMPLE")
 	if segment.begins_with("BULLDOZE "):
 		return _glossary_def("BULLDOZE")
+	if segment == "PUSH THROUGH":
+		return _glossary_def("PUSH THROUGH")
 	if segment == "MOVE into occupied ally":
 		return "Move into an adjacent tile occupied by an ally, then enter that tile."
 	if segment.begins_with("DEF +"):
@@ -1059,7 +1058,7 @@ static func ability_effect_string(ability: AbilityData, unit: UnitState = null) 
 			GameEnums.EffectType.CLEANSE:
 				parts.append("CLEANSE")
 			GameEnums.EffectType.MOVE_INTO_AND_PUSH:
-				parts.append("MOVE into occupied ally | PUSH %s" % _effect_amount_string(effect))
+				parts.append("PUSH THROUGH")
 			_:
 				parts.append(GameEnums.EffectType.keys()[effect.type].capitalize())
 	return " | ".join(parts) if not parts.is_empty() else "No effect"
@@ -1122,6 +1121,8 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 				parts.append(_kw_hint("CLEANSE", _glossary_def("CLEANSE")))
 			GameEnums.EffectType.TELEPORT_CASTER:
 				parts.append(_kw_hint("TELEPORT", _glossary_def("TELEPORT")))
+			GameEnums.EffectType.MOVE_INTO_AND_PUSH:
+				parts.append(_kw_hint("PUSH THROUGH", _glossary_def("PUSH THROUGH")))
 			GameEnums.EffectType.DESTROY_OBSTACLE:
 				parts.append(_kw_hint("DESTROY OBSTACLE", _glossary_def("DESTROY OBSTACLE")))
 			GameEnums.EffectType.DAMAGE_SELF:

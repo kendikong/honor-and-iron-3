@@ -2501,20 +2501,20 @@
 							"presentation_anim": 0,
 							"primary_type": 26,
 							"target_shape": 0,
-							"targeting_flags": 4
-						}
-					],
-					"planner_group": 1,
-					"presentation_anim": 3,
-					"presentation_key": "bruiser_push_through",
-					"primary_resource": 2,
-					"primary_value": 2,
-					"secondary_resource": 0,
-					"secondary_value": 0,
-					"tags": [
-						"positioning"
-					],
-					"upgrade_description": "Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack.",
+					"targeting_flags": 2
+				}
+			],
+			"planner_group": 1,
+			"presentation_anim": 3,
+			"presentation_key": "bruiser_push_through",
+			"primary_resource": 2,
+			"primary_value": 2,
+			"secondary_resource": 0,
+			"secondary_value": 0,
+			"tags": [
+				"positioning"
+			],
+			"upgrade_description": "Cost reduced to 1 MOV. Pushing a unit grants +1 STR for your next attack this turn.",
 					"upgraded_module_count": 1,
 					"upgraded_modules": [
 						{
@@ -2532,7 +2532,7 @@
 							"presentation_anim": 0,
 							"primary_type": 26,
 							"target_shape": 0,
-							"targeting_flags": 4
+							"targeting_flags": 2
 						}
 					],
 					"upgraded_primary_value": 1,

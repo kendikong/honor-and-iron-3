@@ -65,6 +65,7 @@ static func keyword_icon(keyword: String) -> String:
 		"SPAWN": return "🥚"
 		"TELEPORT": return "🌀"
 		"TRAMPLE", "BULLDOZE": return "🦏"
+		"PUSH THROUGH": return GLYPH_DASH
 		"WPN": return "🗡️"
 		"DESTROY OBSTACLE": return "🔨"
 		"ELECTRIFIED": return "⚡"

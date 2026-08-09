@@ -817,6 +817,11 @@ func _ability_effect_preview_bbcode(ability: AbilityData) -> String:
 	CombatUiFormatters.configure_body_font(ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	var body_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY)
 	var body: String = CombatUiFormatters.ability_effect_bbcode(ability, _preview_unit())
+	if not ability.upgrade_description.is_empty():
+		body += "\n[color=#%s][+] %s[/color]" % [
+			ClassLibraryTheme.TEXT_DIM.to_html(false),
+			ability.upgrade_description,
+		]
 	return "[font_size=%d]%s[/font_size]" % [body_px, body]
 
 

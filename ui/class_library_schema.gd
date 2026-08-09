@@ -47,6 +47,9 @@ static func manual_keywords() -> Dictionary:
 			"Pass-through movement: deal ATK X to each enemy moved through without displacing them. "
 			+ "Caster must end on an open tile."
 		),
+		"PUSH THROUGH": (
+			"Move into an adjacent tile occupied by an ally, pushing them 1 tile forward."
+		),
 		"BULLDOZE": (
 			"Pass-through movement: collision damage with base X and PUSH X on enemies moved through "
 			+ "(caster immune to collision). Sideways push while passing; axial PUSH when landing on the victim."
@@ -306,7 +309,7 @@ static func bible_ability_effect_line(ability: AbilityData) -> String:
 		&"knight_swap":
 			return "SWAP"
 		&"bruiser_push_through":
-			return "MOVE into occupied ally | PUSH 1"
+			return "PUSH THROUGH"
 		_:
 			return ""
 
