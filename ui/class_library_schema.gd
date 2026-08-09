@@ -391,6 +391,8 @@ static func enum_definitions() -> Array[Dictionary]:
 			"system": _effect_type_system(k),
 		})
 	for k: String in GameEnums.StatusType.keys():
+		if k == "NONE":
+			continue
 		var st: GameEnums.StatusType = GameEnums.StatusType[k]
 		out.append({
 			"category": "StatusType",
@@ -632,12 +634,10 @@ static func module_to_dict(src: AbilityModule) -> Dictionary:
 	var layers: Array = []
 	for layer: AbilityLayer in src.layers:
 		layers.append(layer_to_dict(layer))
-	return {
+	var out := {
 		"execution_phase": src.execution_phase,
 		"primary_type": src.primary_type,
 		"amount": src.amount,
-		"status_type": src.status_type,
-		"status_duration": src.status_duration,
 		"scaling_stat": src.scaling_stat,
 		"spawn_unit_id": String(src.spawn_unit_id),
 		"motion_mode": src.motion_mode,
@@ -658,6 +658,10 @@ static func module_to_dict(src: AbilityModule) -> Dictionary:
 		"def_debuff_before_damage": src.def_debuff_before_damage,
 		"legacy_modifiers": src.legacy_modifiers.duplicate(true),
 	}
+	if GameEnums.effect_type_applies_status(src.primary_type):
+		out["status_type"] = src.status_type
+		out["status_duration"] = src.status_duration
+	return out
 
 
 static func modules_to_dict_array(modules: Array[AbilityModule]) -> Array:
@@ -710,6 +714,7 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 		for raw: Variant in layer_data as Array:
 			if raw is Dictionary:
 				dst.layers.append(layer_from_dict(raw as Dictionary))
+	AbilityModuleBridge.normalize_module_status_fields(dst)
 
 
 static func modules_from_dict_array(data: Array) -> Array[AbilityModule]:
@@ -1142,17 +1147,19 @@ static func apply_saved_unit_overrides() -> void:
 
 
 static func effect_to_dict(src: EffectData) -> Dictionary:
-	return {
+	var out := {
 		"type": src.type,
 		"amount": src.amount,
-		"status_type": src.status_type,
-		"status_duration": src.status_duration,
 		"scaling_stat": src.scaling_stat,
 		"bonus_if_adjacent_at_cast": src.bonus_if_adjacent_at_cast,
 		"def_debuff_before_damage": src.def_debuff_before_damage,
 		"spawn_unit_id": String(src.spawn_unit_id),
 		"modifiers": src.modifiers.duplicate(),
 	}
+	if GameEnums.effect_type_applies_status(src.type):
+		out["status_type"] = src.status_type
+		out["status_duration"] = src.status_duration
+	return out
 
 
 static func apply_effect_dict(dst: EffectData, data: Dictionary) -> void:
@@ -1167,6 +1174,7 @@ static func apply_effect_dict(dst: EffectData, data: Dictionary) -> void:
 	dst.def_debuff_before_damage = int(data.get("def_debuff_before_damage", dst.def_debuff_before_damage))
 	dst.spawn_unit_id = StringName(String(data.get("spawn_unit_id", String(dst.spawn_unit_id))))
 	dst.modifiers = data.get("modifiers", {}).duplicate()
+	AbilityModuleBridge.normalize_effect_status_fields(dst)
 
 
 static func effects_to_dict_array(effects: Array[EffectData]) -> Array:

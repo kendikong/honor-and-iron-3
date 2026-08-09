@@ -12,8 +12,8 @@ extends Resource
 ## Generic magnitude: damage amount, push distance, etc. Meaning depends on type.
 @export var amount: int = 0
 
-## Used only for ADD_STATUS effects.
-@export var status_type: GameEnums.StatusType
+## Used only for ADD_STATUS / ADD_STATUS_SELF effects.
+@export var status_type: GameEnums.StatusType = GameEnums.StatusType.NONE
 @export var status_duration: int = 1
 
 ## Optional: scale the effect amount based on a caster's stat (e.g. DEF, MISSING_HP).

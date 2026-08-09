@@ -1583,6 +1583,7 @@ func _normalize_editor_modules(ability: AbilityData) -> void:
 			module.max_range = module.min_range
 		if module.primary_type == GameEnums.EffectType.SWAP:
 			module.target_shape = GameEnums.TargetShape.SINGLE
+		AbilityModuleBridge.normalize_module_status_fields(module)
 
 
 func _module_min_range(module: AbilityModule) -> int:
@@ -1672,14 +1673,15 @@ func _build_module_fields(
 		module.amount = v
 		changed.call()
 	)
-	_bind_enum(grid, "Status", GameEnums.StatusType, module.status_type, func(v: int) -> void:
-		module.status_type = v
-		changed.call()
-	)
-	_bind_int(grid, "Duration", module.status_duration, func(v: int) -> void:
-		module.status_duration = v
-		changed.call()
-	)
+	if GameEnums.effect_type_applies_status(module.primary_type):
+		_bind_enum(grid, "Status", GameEnums.StatusType, module.status_type, func(v: int) -> void:
+			module.status_type = v
+			changed.call()
+		)
+		_bind_int(grid, "Duration", module.status_duration, func(v: int) -> void:
+			module.status_duration = v
+			changed.call()
+		)
 	_bind_enum(grid, "Scaling", GameEnums.StatType, module.scaling_stat, func(v: int) -> void:
 		module.scaling_stat = v
 		changed.call()
@@ -2123,6 +2125,8 @@ func _select_glossary() -> void:
 		if def_entry.get("category") == "StatusType":
 			status_defs[def_entry.get("name")] = def_entry
 	for k: String in GameEnums.StatusType.keys():
+		if k == "NONE":
+			continue
 		var st: GameEnums.StatusType = GameEnums.StatusType[k]
 		var display_name: String = CombatUiFormatters._status_name(st)
 		var tooltip: String = CombatUiFormatters._status_desc(st)

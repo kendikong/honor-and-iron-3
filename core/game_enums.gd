@@ -131,7 +131,16 @@ enum StatusType {
 	THORNS,
 	IRON_GRIP_DEBUFF,
 	BRACED, ## Negates the next incoming melee attack and retaliates.
+	## Sentinel for modules/effects whose primary is not ADD_STATUS / ADD_STATUS_SELF.
+	NONE,
 }
+
+static func effect_type_applies_status(effect_type: EffectType) -> bool:
+	return (
+		effect_type == EffectType.ADD_STATUS
+		or effect_type == EffectType.ADD_STATUS_SELF
+	)
+
 
 static func is_buff(status: StatusType) -> bool:
 	match status:

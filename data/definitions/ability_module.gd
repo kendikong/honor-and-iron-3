@@ -11,7 +11,7 @@ extends Resource
 ## Primary combat primitive for this step.
 @export var primary_type: GameEnums.EffectType = GameEnums.EffectType.DAMAGE
 @export var amount: int = 0
-@export var status_type: GameEnums.StatusType = GameEnums.StatusType.STAT_BUFF_STR
+@export var status_type: GameEnums.StatusType = GameEnums.StatusType.NONE
 @export var status_duration: int = 1
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
 @export var spawn_unit_id: StringName = &""
@@ -57,8 +57,11 @@ func primary_as_effect() -> EffectData:
 	var eff := EffectData.new()
 	eff.type = primary_type
 	eff.amount = amount
-	eff.status_type = status_type
-	eff.status_duration = status_duration
+	if GameEnums.effect_type_applies_status(primary_type):
+		eff.status_type = status_type
+		eff.status_duration = status_duration
+	else:
+		eff.status_type = GameEnums.StatusType.NONE
 	eff.scaling_stat = scaling_stat
 	eff.spawn_unit_id = spawn_unit_id
 	eff.bonus_if_adjacent_at_cast = bonus_if_adjacent_at_cast

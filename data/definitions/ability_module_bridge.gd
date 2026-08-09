@@ -17,6 +17,27 @@ const TAG_SPELL := &"spell"
 const TAG_HEAL := &"heal"
 
 
+static func normalize_effect_status_fields(effect: EffectData) -> void:
+	if effect == null:
+		return
+	if not GameEnums.effect_type_applies_status(effect.type):
+		effect.status_type = GameEnums.StatusType.NONE
+	elif effect.status_type == GameEnums.StatusType.NONE:
+		effect.status_type = GameEnums.StatusType.STAT_BUFF_STR
+
+
+static func normalize_module_status_fields(module: AbilityModule) -> void:
+	if module == null:
+		return
+	if not GameEnums.effect_type_applies_status(module.primary_type):
+		module.status_type = GameEnums.StatusType.NONE
+	elif module.status_type == GameEnums.StatusType.NONE:
+		module.status_type = GameEnums.StatusType.STAT_BUFF_STR
+	for layer: AbilityLayer in module.layers:
+		if layer != null and layer.effect != null:
+			normalize_effect_status_fields(layer.effect)
+
+
 static func validate_modules(modules: Array[AbilityModule]) -> Array[String]:
 	var errors: Array[String] = []
 	for index: int in modules.size():
@@ -505,6 +526,10 @@ static func finalize_ability(ability: AbilityData) -> void:
 		upgraded_proxy.targeting_flags = ability.targeting_flags
 		upgraded_proxy.effects = ability.upgraded_effects
 		ability.upgraded_modules = infer_modules_from_effects(ability.upgraded_effects, upgraded_proxy)
+	for module: AbilityModule in ability.modules:
+		normalize_module_status_fields(module)
+	for module: AbilityModule in ability.upgraded_modules:
+		normalize_module_status_fields(module)
 	if not ability.modules.is_empty():
 		## Authoritative modules: compile to flat effects for legacy readers.
 		## Exception: keep violent_collision_recast on primary until native gate runtime.
@@ -634,6 +659,7 @@ static func _module_from_primary_effect(eff: EffectData, ability: AbilityData) -
 	mod.gate = GameEnums.ModuleGate.ALWAYS
 	mod.keywords = _keywords_from_effect(eff)
 	_strip_promoted_modifier_keys(mod)
+	normalize_module_status_fields(mod)
 	return mod
 
 

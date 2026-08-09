@@ -25,6 +25,21 @@ static func run_all(failures: Array[String]) -> void:
 		failures.append("class library save reader bypasses module migration")
 	_assert_saved_abilities_are_module_first(failures)
 	_assert_runtime_legacy_read_migrates(failures)
+	_assert_non_status_modules_clear_status_type(failures)
+
+
+static func _assert_non_status_modules_clear_status_type(failures: Array[String]) -> void:
+	var damage_module := AbilityModule.new()
+	damage_module.primary_type = GameEnums.EffectType.DAMAGE
+	damage_module.status_type = GameEnums.StatusType.STAT_BUFF_STR
+	AbilityModuleBridge.normalize_module_status_fields(damage_module)
+	if damage_module.status_type != GameEnums.StatusType.NONE:
+		failures.append("DAMAGE module status_type should normalize to NONE")
+	var compiled: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(damage_module)
+	if compiled.is_empty():
+		failures.append("DAMAGE module compile produced no effects")
+	elif compiled[0].status_type != GameEnums.StatusType.NONE:
+		failures.append("DAMAGE compiled effect should not carry a status_type")
 
 
 static func _assert_saved_abilities_are_module_first(failures: Array[String]) -> void:
