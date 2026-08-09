@@ -50,6 +50,8 @@ static func manual_keywords() -> Dictionary:
 		"PUSH THROUGH": (
 			"Move into an adjacent tile occupied by an ally, pushing them 1 tile forward."
 		),
+		"THROW BEHIND": "Move target to the empty tile directly behind the caster.",
+		"CREATE HAZARD": "Place a hazard or trap on the target tile(s).",
 		"BULLDOZE": (
 			"Pass-through movement: collision damage with base X and PUSH X on enemies moved through "
 			+ "(caster immune to collision). Sideways push while passing; axial PUSH when landing on the victim."

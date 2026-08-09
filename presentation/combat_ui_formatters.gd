@@ -853,6 +853,23 @@ static func _effect_tooltip_line(effect: EffectData) -> String:
 						hint = "Decreases Accuracy (ACC) by %s." % amount_str
 			var prefix: String = "Self " if self_target else "Apply "
 			return _kw_tooltip_line("%s%s%s" % [prefix, label, dur], hint)
+		GameEnums.EffectType.MOVE:
+			return _kw_tooltip_line("MOVE %s" % amount, _glossary_def("MOVE"))
+		GameEnums.EffectType.CREATE_HAZARD:
+			return _kw_tooltip_line(_hazard_create_label(effect), _glossary_def("CREATE HAZARD"))
+		GameEnums.EffectType.THROW_BEHIND:
+			return _kw_tooltip_line("THROW BEHIND", _glossary_def("THROW BEHIND"))
+		GameEnums.EffectType.CHANGE_TERRAIN:
+			return _kw_tooltip_line(_terrain_change_label(effect), "Change the terrain of affected tiles.")
+		GameEnums.EffectType.REFUND_AP_ON_CC, \
+		GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, \
+		GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, \
+		GameEnums.EffectType.PUSH_CHAIN_COLLISION, \
+		GameEnums.EffectType.REMOVE_STATUS:
+			var mod_label: String = _modifier_effect_label(effect.type)
+			if mod_label.is_empty():
+				return ""
+			return _kw_tooltip_line(mod_label, mod_label + ".")
 		_:
 			return ""
 
@@ -911,6 +928,10 @@ static func _bible_segment_hint(segment: String) -> String:
 		return _glossary_def("BULLDOZE")
 	if segment == "PUSH THROUGH":
 		return _glossary_def("PUSH THROUGH")
+	if segment.begins_with("CREATE "):
+		return _glossary_def("CREATE HAZARD")
+	if segment == "THROW BEHIND":
+		return _glossary_def("THROW BEHIND")
 	if segment == "MOVE into occupied ally":
 		return "Move into an adjacent tile occupied by an ally, then enter that tile."
 	if segment.begins_with("DEF +"):
@@ -1059,6 +1080,26 @@ static func ability_effect_string(ability: AbilityData, unit: UnitState = null) 
 				parts.append("CLEANSE")
 			GameEnums.EffectType.MOVE_INTO_AND_PUSH:
 				parts.append("PUSH THROUGH")
+			GameEnums.EffectType.TELEPORT_CASTER:
+				parts.append("TELEPORT")
+			GameEnums.EffectType.DESTROY_OBSTACLE:
+				parts.append("DESTROY OBSTACLE")
+			GameEnums.EffectType.DAMAGE_SELF:
+				parts.append("Self ATK %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.CREATE_HAZARD:
+				parts.append(_hazard_create_label(effect))
+			GameEnums.EffectType.THROW_BEHIND:
+				parts.append("THROW BEHIND")
+			GameEnums.EffectType.CHANGE_TERRAIN:
+				parts.append(_terrain_change_label(effect))
+			GameEnums.EffectType.REFUND_AP_ON_CC, \
+			GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, \
+			GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, \
+			GameEnums.EffectType.PUSH_CHAIN_COLLISION, \
+			GameEnums.EffectType.REMOVE_STATUS:
+				var mod_label: String = _modifier_effect_label(effect.type)
+				if not mod_label.is_empty():
+					parts.append(mod_label)
 			_:
 				parts.append(GameEnums.EffectType.keys()[effect.type].capitalize())
 	return " | ".join(parts) if not parts.is_empty() else "No effect"
@@ -1130,6 +1171,23 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 					"Self ATK %s" % _effect_amount_string(effect),
 					"Ignores Armor and deals direct damage to the caster.",
 				))
+			GameEnums.EffectType.CREATE_HAZARD:
+				parts.append(_kw_hint(_hazard_create_label(effect), _glossary_def("CREATE HAZARD")))
+			GameEnums.EffectType.THROW_BEHIND:
+				parts.append(_kw_hint("THROW BEHIND", _glossary_def("THROW BEHIND")))
+			GameEnums.EffectType.CHANGE_TERRAIN:
+				parts.append(_kw_hint(
+					_terrain_change_label(effect),
+					"Change the terrain of affected tiles.",
+				))
+			GameEnums.EffectType.REFUND_AP_ON_CC, \
+			GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, \
+			GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, \
+			GameEnums.EffectType.PUSH_CHAIN_COLLISION, \
+			GameEnums.EffectType.REMOVE_STATUS:
+				var mod_label: String = _modifier_effect_label(effect.type)
+				if not mod_label.is_empty():
+					parts.append(_kw_hint(mod_label, mod_label + "."))
 			_:
 				parts.append(_effect_amount_string(effect))
 	var body: String = " | ".join(parts) if not parts.is_empty() else "No effect"
@@ -1298,6 +1356,43 @@ static func _effect_amount_string(eff: EffectData) -> String:
 	if eff.scaling_stat != GameEnums.StatType.NONE:
 		return GameEnums.StatType.keys()[eff.scaling_stat]
 	return str(eff.amount)
+
+
+static func _hazard_create_label(effect: EffectData) -> String:
+	if effect == null:
+		return "CREATE HAZARD"
+	var terrain_id: String = String(effect.modifiers.get("terrain_id", ""))
+	if not terrain_id.is_empty():
+		return "CREATE %s" % terrain_id.replace("_", " ").to_upper()
+	var amount: String = _effect_amount_string(effect)
+	if amount != "0" and amount != "":
+		return "CREATE HAZARD %s" % amount
+	return "CREATE HAZARD"
+
+
+static func _terrain_change_label(effect: EffectData) -> String:
+	if effect == null:
+		return "CHANGE TERRAIN"
+	var terrain_id: String = String(effect.modifiers.get("terrain_id", ""))
+	if not terrain_id.is_empty():
+		return "CREATE %s" % terrain_id.replace("_", " ").to_upper()
+	return "CREATE CRACKED terrain"
+
+
+static func _modifier_effect_label(effect_type: GameEnums.EffectType) -> String:
+	match effect_type:
+		GameEnums.EffectType.REFUND_AP_ON_CC:
+			return "REFUND AP on CC"
+		GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION:
+			return "PUSH STAGGER on collision"
+		GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT:
+			return "PULL VULNERABLE if adjacent"
+		GameEnums.EffectType.PUSH_CHAIN_COLLISION:
+			return "PUSH CHAIN on collision"
+		GameEnums.EffectType.REMOVE_STATUS:
+			return "REMOVE STATUS"
+		_:
+			return ""
 
 
 static func _fmt_calc_num(value: float) -> String:
