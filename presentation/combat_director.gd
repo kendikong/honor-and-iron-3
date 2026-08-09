@@ -1802,6 +1802,14 @@ func execute_turn() -> void:
 	plan_action.clear()
 	plan_post_move.clear()
 	_wait_unit_ids.clear()
+	## Drop any deferred commit preview from the prior planning phase so post-execute
+	## refresh cannot resurrect orange push/pull arrows from the executed plan.
+	plan_refresh_defer_overlay = false
+	_plan_refresh_emit_pending = false
+	_pending_planning_commit_events.clear()
+	_pending_refresh_board = null
+	_pending_refresh_plan = null
+	_pending_refresh_preview = null
 	if _check_end_state():
 		return
 	selected_unit_id = -1

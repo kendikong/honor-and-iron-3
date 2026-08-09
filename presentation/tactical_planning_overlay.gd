@@ -129,8 +129,11 @@ func setup(
 		queue_redraw(),
 	)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
+		var was_planning: bool = CombatDirector.is_planning_phase(_phase)
 		_phase = phase
 		var planning: bool = CombatDirector.is_planning_phase(phase)
+		if was_planning and not planning:
+			_clear_forced_movement_intent_cache()
 		if not planning and _planning_input != null:
 			_planning_input.clear_interaction_preview()
 		_invalidate_hover_cache()
@@ -370,6 +373,15 @@ func restore_committed_display() -> void:
 			_committed_preview.predicted_armor,
 		)
 	live_preview_changed.emit()
+	queue_redraw()
+
+
+## Executed plan displacement hints must not survive into execute / next planning turn.
+func _clear_forced_movement_intent_cache() -> void:
+	_committed_preview.preview_pushes.clear()
+	_live_preview.preview_pushes.clear()
+	_deferred_preview_pending = false
+	_deferred_preview_result = null
 	queue_redraw()
 
 
@@ -1473,6 +1485,8 @@ func _draw_preview_arrows() -> void:
 func _draw_forced_movement_arrows() -> void:
 	if _board == null:
 		return
+	if not _should_draw_forced_movement_arrows():
+		return
 	var sources: Array[CombatPlanningPreview] = []
 	if _live_preview.preview_board != null:
 		sources.append(_live_preview)
@@ -1807,6 +1821,18 @@ func _draw_line_arrowhead(tip: Vector2, dir: Vector2, color: Color, line_w: floa
 
 func _forced_movement_intent_color(_pushed_unit: UnitState = null) -> Color:
 	return Color(_COLOR_TARGET.r, _COLOR_TARGET.g, _COLOR_TARGET.b, 0.95)
+
+
+func _should_draw_forced_movement_arrows() -> bool:
+	if _director == null:
+		return true
+	var plan: Timeline = _director.get_player_plan()
+	var has_plan: bool = plan != null and not plan.entries.is_empty()
+	if has_plan:
+		return true
+	if _planning_input != null and _planning_input.is_live_preview_active():
+		return true
+	return false
 
 
 func _is_push_preview_segment(
