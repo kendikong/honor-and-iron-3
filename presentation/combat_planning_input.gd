@@ -589,9 +589,22 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 	if not actions_v is Array or (actions_v as Array).is_empty():
 		return
 	var start_board: BoardState = (
-		_director.base_board if _director != null and _director.base_board != null else _director.board
+		_director.live_planning_board()
+		if _director != null
+		else null
 	)
+	if start_board == null and _director != null:
+		start_board = (
+			_director.base_board if _director.base_board != null else _director.board
+		)
 	preview_state.ensure_movement_intent_from_actions(actions_v as Array, start_board, {}, _director)
+	if _director != null and _director.selected_unit_id >= 0:
+		CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
+			_director,
+			preview_state,
+			_director.selected_unit_id,
+			start_board,
+		)
 	CombatPlanningPreview.ensure_swap_approach_paths_from_actions(
 		actions_v as Array,
 		start_board,

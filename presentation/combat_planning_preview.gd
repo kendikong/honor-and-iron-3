@@ -323,6 +323,42 @@ static func facing_along_last_planned_step(
 	return last_facing
 
 
+## Seed move-leg origins from latest committed stand (live board / post-action end), not turn-start.
+static func _seed_movement_origins(
+	director: CombatDirector,
+	start_board: BoardState,
+) -> Dictionary:
+	var origins: Dictionary = {}
+	if start_board == null:
+		return origins
+	if director != null:
+		for unit: UnitState in start_board.units:
+			var stand: Vector2i = planning_latest_stand_cell(director, start_board, unit.id)
+			if stand.x <= -900000:
+				var live: BoardState = director.live_planning_board()
+				var live_unit: UnitState = live.get_unit_by_id(unit.id) if live != null else null
+				stand = live_unit.position if live_unit != null else unit.position
+			origins[unit.id] = stand
+	else:
+		for unit: UnitState in start_board.units:
+			origins[unit.id] = unit.position
+	return origins
+
+
+## Pathfinding board for the next move leg (pre = live premove board, post = projected action end).
+static func _path_board_for_unit(
+	director: CombatDirector,
+	start_board: BoardState,
+	unit_id: int,
+) -> BoardState:
+	if director == null:
+		return start_board
+	if director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION:
+		return planning_projection_board(director, start_board)
+	var live: BoardState = director.live_planning_board()
+	return live if live != null else start_board
+
+
 ## Keep preview_paths aligned with movement abilities in `actions` when sim path is missing/short.
 func ensure_movement_intent_from_actions(
 	actions: Array,
@@ -332,11 +368,9 @@ func ensure_movement_intent_from_actions(
 ) -> void:
 	if start_board == null or actions.is_empty():
 		return
-	var origins: Dictionary = {}
+	var origins: Dictionary = _seed_movement_origins(director, start_board)
 	var move_actors: Dictionary = {}
 	var movement_intents: Dictionary = {}
-	for unit: UnitState in start_board.units:
-		origins[unit.id] = unit.position
 	for raw: Variant in actions:
 		if not raw is TimelineAction:
 			continue
@@ -348,15 +382,14 @@ func ensure_movement_intent_from_actions(
 				movement_intents[action.actor_id] = movement_intent_cells(move_origin_from_plan, action)
 			var existing: Array = preview_paths.get(action.actor_id, [])
 			var move_origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
-			if not existing.is_empty() and existing.back() is Vector2i:
-				move_origin = existing.back() as Vector2i
+			var path_board: BoardState = _path_board_for_unit(director, start_board, action.actor_id)
 			if existing.size() < 2:
 				var route_cells: Array = movement_intent_cells(move_origin, action)
-				if route_cells.size() < 2 and start_board != null:
-					var actor: UnitState = start_board.get_unit_by_id(action.actor_id)
+				if route_cells.size() < 2 and path_board != null:
+					var actor: UnitState = path_board.get_unit_by_id(action.actor_id)
 					var budget: int = actor.movement.points_left if actor != null else 999
 					var found: Array[Vector2i] = MovementSystem.find_path(
-						start_board, move_origin, action.target_coord, budget,
+						path_board, move_origin, action.target_coord, budget,
 					)
 					if not found.is_empty():
 						route_cells = [move_origin]
@@ -381,13 +414,16 @@ func ensure_movement_intent_from_actions(
 					preview_splits[action.actor_id] = planned_route.size()
 					origins[action.actor_id] = action.target_coord
 					continue
-				var walker: UnitState = start_board.get_unit_by_id(action.actor_id)
-				var walk_origin: Vector2i = walker.position if walker != null else approach
+				var swap_board: BoardState = _path_board_for_unit(director, start_board, action.actor_id)
+				var walker: UnitState = swap_board.get_unit_by_id(action.actor_id)
+				var walk_origin: Vector2i = origins.get(action.actor_id, approach) as Vector2i
+				if walker != null and walk_origin.x <= -900000:
+					walk_origin = walker.position
 				var route_cells: Array = [walk_origin]
 				if approach != walk_origin:
 					var budget: int = walker.movement.points_left if walker != null else 999
 					var found: Array[Vector2i] = MovementSystem.find_path(
-						start_board, walk_origin, approach, budget,
+						swap_board, walk_origin, approach, budget,
 					)
 					if not found.is_empty():
 						route_cells.append_array(found)
@@ -400,13 +436,16 @@ func ensure_movement_intent_from_actions(
 				var inferred: Vector2i = _swap_approach_cell(director, start_board, action)
 				if inferred.x > -900000:
 					approach = inferred
-					var walker2: UnitState = start_board.get_unit_by_id(action.actor_id)
-					var walk_origin2: Vector2i = walker2.position if walker2 != null else approach
+					var swap_board2: BoardState = _path_board_for_unit(director, start_board, action.actor_id)
+					var walker2: UnitState = swap_board2.get_unit_by_id(action.actor_id)
+					var walk_origin2: Vector2i = origins.get(action.actor_id, approach) as Vector2i
+					if walker2 != null and walk_origin2.x <= -900000:
+						walk_origin2 = walker2.position
 					var route2: Array = [walk_origin2]
 					if approach != walk_origin2:
 						var budget2: int = walker2.movement.points_left if walker2 != null else 999
 						var found2: Array[Vector2i] = MovementSystem.find_path(
-							start_board, walk_origin2, approach, budget2,
+							swap_board2, walk_origin2, approach, budget2,
 						)
 						if not found2.is_empty():
 							route2.append_array(found2)
@@ -468,7 +507,11 @@ func ensure_movement_intent_from_actions(
 		origins[action.actor_id] = action.target_coord
 
 
-func ensure_movement_intent_from_plan(plan: Timeline, start_board: BoardState) -> void:
+func ensure_movement_intent_from_plan(
+	plan: Timeline,
+	start_board: BoardState,
+	director: CombatDirector = null,
+) -> void:
 	if plan == null:
 		return
 	var actors_with_committed_move: Dictionary = {}
@@ -478,7 +521,7 @@ func ensure_movement_intent_from_plan(plan: Timeline, start_board: BoardState) -
 	var actions: Array = []
 	for entry: TimelineAction in plan.entries:
 		actions.append(entry)
-	ensure_movement_intent_from_actions(actions, start_board, actors_with_committed_move)
+	ensure_movement_intent_from_actions(actions, start_board, actors_with_committed_move, director)
 
 
 static func apply_movement_result(
@@ -555,7 +598,7 @@ static func from_sim_result(
 				preview.predicted_armor[unit.id] = 0
 				preview.predicted_ap[unit.id] = 0
 	if director != null:
-		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
+		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board, director)
 	return preview
 
 
