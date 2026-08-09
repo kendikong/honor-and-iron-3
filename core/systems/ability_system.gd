@@ -566,10 +566,24 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	return true
 
 
+static func _adjacent_enemy_count(board: BoardState, actor: UnitState) -> int:
+	if board == null or actor == null:
+		return 0
+	var count: int = 0
+	for direction: Vector2i in GridSystem.DIRECTIONS:
+		var unit := board.get_unit_at(actor.position + direction)
+		if unit != null and unit.team != actor.team:
+			count += 1
+	return count
+
+
 static func get_action_point_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> int:
 	if ability == null:
 		return 0
-	var ap_cost := ability.action_point_cost
+	var ap_cost: int = ability.action_point_cost
+	if actor != null and actor.is_ability_upgraded(ability.id):
+		ap_cost = ability.get_active_primary_value(true) \
+			if ability.primary_resource == GameEnums.CostResource.AP else ap_cost
 	if actor == null or board == null:
 		return ap_cost
 	if (
@@ -580,6 +594,11 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 	if (
 		_is_spell(ability)
 		and actor.passive_flags.get("mana_well_next_spell", false)
+	):
+		return 0
+	if (
+		ability.cost_modifier == GameEnums.CostModifier.ZERO_IF_ADJACENT_ENEMIES_GTE_N
+		and _adjacent_enemy_count(board, actor) >= ability.cost_modifier_n
 	):
 		return 0
 	for eff: EffectData in active_effects_for(actor, ability):
@@ -605,12 +624,10 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 static func movement_point_cost(actor: UnitState, ability: AbilityData) -> int:
 	if ability == null:
 		return 0
-	if (
-		actor != null
-		and actor.is_ability_upgraded(ability.id)
-		and ability.upgraded_movement_point_cost >= 0
-	):
-		return ability.upgraded_movement_point_cost
+	if actor != null and actor.is_ability_upgraded(ability.id):
+		return ability.get_active_primary_value(true) \
+			if ability.primary_resource == GameEnums.CostResource.MP \
+			else ability.movement_point_cost
 	return ability.movement_point_cost
 
 
@@ -886,6 +903,13 @@ static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, bo
 		return true
 		
 	var ap_cost = get_action_point_cost(actor, ability, board)
+	var hp_cost: int = 0
+	if ability.primary_resource == GameEnums.CostResource.HP:
+		hp_cost = ability.get_active_primary_value(actor.is_ability_upgraded(ability.id))
+	elif ability.secondary_resource == GameEnums.CostResource.HP:
+		hp_cost = ability.get_active_secondary_value(actor.is_ability_upgraded(ability.id))
+	if hp_cost > 0 and actor.health.current_hp <= hp_cost:
+		return false
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
@@ -1994,6 +2018,10 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				module_cursor += 1
 				if not _module_gate_passes(next_module, actor, events, module_event_start):
 					continue
+				if next_module.gate == GameEnums.ModuleGate.IF_COLLIDED:
+					actor.passive_flags["violent_collision_recast_used"] = true
+					actor.ability.points_left += 1
+					actor.turn_action_used = false
 				_append_module_effects(next_module, effects_to_apply, effect_modules)
 				current_module_end = effects_to_apply.size()
 				queued_next_module = true
@@ -2361,6 +2389,13 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: B
 	if _is_spell(ability) and actor.passive_flags.get("mana_well_next_spell", false):
 		actor.passive_flags.erase("mana_well_next_spell")
 		actor.passive_flags.erase("mana_well_magic_bonus")
+	var hp_cost: int = 0
+	if ability.primary_resource == GameEnums.CostResource.HP:
+		hp_cost = ability.get_active_primary_value(actor.is_ability_upgraded(ability.id))
+	elif ability.secondary_resource == GameEnums.CostResource.HP:
+		hp_cost = ability.get_active_secondary_value(actor.is_ability_upgraded(ability.id))
+	if hp_cost > 0:
+		actor.health.current_hp -= hp_cost
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:

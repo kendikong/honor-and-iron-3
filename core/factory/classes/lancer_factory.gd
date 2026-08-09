@@ -291,6 +291,9 @@ static func _ability(
 	ability.modules = modules
 	ability.upgraded_modules = upgraded_modules
 	ability.presentation_key = id
+	for module: AbilityModule in modules:
+		if module != null:
+			ability.range_tiles = maxi(ability.range_tiles, module.max_range)
 	ability.sync_legacy_targeting()
 	return ability
 

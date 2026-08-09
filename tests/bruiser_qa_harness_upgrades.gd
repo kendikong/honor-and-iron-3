@@ -182,7 +182,7 @@ static func run_meat_shield_upgrade(failures: Array[String]) -> void:
 		&"bruiser_meat_shield",
 	)
 	var skill: AbilityData = H.factory_ability(&"bruiser_meat_shield")
-	H.assert_eq_int(failures, "meat_shield/upgrade/range", skill.upgraded_range_tiles, 3)
+	H.assert_eq_int(failures, "meat_shield/upgrade/range", skill.upgraded_modules[0].max_range, 3)
 	H.assert_eq_int(
 		failures, "meat_shield/upgrade/intercept_str_mod",
 		int(skill.upgraded_effects[1].modifiers["intercept_grant_str"]),
@@ -232,11 +232,11 @@ static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_adrenaline_surge")
 	H.assert_true(
 		failures, "adrenaline_surge/upgrade/mod",
-		ab.upgraded_effects[1].modifiers.has("on_kill_heal_shield"),
+		ab.upgraded_modules[0].legacy_modifiers.has("on_kill_heal_shield"),
 	)
 	H.assert_eq_int(
 		failures, "adrenaline_surge/upgrade/mod_val",
-		int(ab.upgraded_effects[1].modifiers["on_kill_heal_shield"]),
+		int(ab.upgraded_modules[0].legacy_modifiers["on_kill_heal_shield"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -508,8 +508,8 @@ static func run_headbutt_upgrade(failures: Array[String]) -> void:
 
 static func run_blood_boil_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_blood_boil")
-	H.assert_eq_int(failures, "blood_boil/upgrade/hp_cost", ab.upgraded_effects[0].amount, 10)
-	H.assert_eq_int(failures, "blood_boil/upgrade/str", ab.upgraded_effects[1].amount, 5)
+	H.assert_eq_int(failures, "blood_boil/upgrade/hp_cost", ab.upgraded_secondary_value, 10)
+	H.assert_eq_int(failures, "blood_boil/upgrade/str", ab.upgraded_modules[0].amount, 5)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_blood_boil"),
 		&"bruiser_blood_boil",
@@ -531,11 +531,11 @@ static func run_violent_collision_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
 	H.assert_true(
 		failures, "violent_collision/upgrade/stagger_mod",
-		ab.upgraded_effects[0].modifiers.has("stagger_on_collision"),
+		ab.upgraded_modules[0].layers[0].effect.modifiers.has("stagger_on_collision"),
 	)
 	H.assert_eq_int(
 		failures, "violent_collision/upgrade/mod_val",
-		int(ab.upgraded_effects[0].modifiers["stagger_on_collision"]),
+		int(ab.upgraded_modules[0].layers[0].effect.modifiers["stagger_on_collision"]),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(

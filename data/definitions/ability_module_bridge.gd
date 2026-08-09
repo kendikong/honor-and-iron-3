@@ -113,10 +113,18 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 ## IF_COLLIDED is resolved by PhysicsSystem from the active module profile.
 static func compile_modules_for_runtime(modules: Array[AbilityModule]) -> Array[EffectData]:
 	var out: Array[EffectData] = []
+	var has_collided_gate := false
 	for module: AbilityModule in modules:
-		if module == null or module.gate != GameEnums.ModuleGate.ALWAYS:
+		if module == null:
+			continue
+		if module.gate == GameEnums.ModuleGate.IF_COLLIDED:
+			has_collided_gate = true
+			continue
+		if module.gate != GameEnums.ModuleGate.ALWAYS:
 			continue
 		out.append_array(compile_module_to_effects(module))
+	if has_collided_gate and not out.is_empty():
+		out[0].modifiers["violent_collision_recast"] = 1
 	return out
 
 
@@ -138,6 +146,55 @@ static func compile_modules_to_effects(modules: Array[AbilityModule]) -> Array[E
 		if stamp != null:
 			stamp.modifiers["violent_collision_recast"] = 1
 	return out
+
+
+static func _copy_effect_to_module(effect: EffectData, module: AbilityModule) -> void:
+	if effect == null or module == null:
+		return
+	module.amount = effect.amount
+	module.status_type = effect.status_type
+	module.status_duration = effect.status_duration
+	module.scaling_stat = effect.scaling_stat
+	module.spawn_unit_id = effect.spawn_unit_id
+	module.bonus_if_adjacent_at_cast = effect.bonus_if_adjacent_at_cast
+	module.def_debuff_before_damage = effect.def_debuff_before_damage
+	module.legacy_modifiers = effect.modifiers.duplicate(true)
+
+
+static func _copy_effect_to_effect(source: EffectData, target: EffectData) -> void:
+	if source == null or target == null:
+		return
+	target.amount = source.amount
+	target.status_type = source.status_type
+	target.status_duration = source.status_duration
+	target.scaling_stat = source.scaling_stat
+	target.spawn_unit_id = source.spawn_unit_id
+	target.bonus_if_adjacent_at_cast = source.bonus_if_adjacent_at_cast
+	target.def_debuff_before_damage = source.def_debuff_before_damage
+	target.modifiers = source.modifiers.duplicate(true)
+
+
+static func _sync_modules_from_generated_effects(ability: AbilityData) -> void:
+	if ability == null or ability.modules.is_empty():
+		return
+	var cursor: int = 0
+	for module: AbilityModule in ability.modules:
+		if module == null or module.gate != GameEnums.ModuleGate.ALWAYS:
+			continue
+		if cursor >= ability.effects.size():
+			return
+		_copy_effect_to_module(ability.effects[cursor], module)
+		cursor += 1
+		for keyword: AbilityKeyword in module.keywords:
+			if keyword != null and keyword.emit_as_effect:
+				cursor += 1
+		for layer: AbilityLayer in module.layers:
+			if layer == null or layer.effect == null:
+				continue
+			if cursor >= ability.effects.size():
+				return
+			_copy_effect_to_effect(ability.effects[cursor], layer.effect)
+			cursor += 1
 
 
 static func infer_modules_from_effects(
@@ -227,6 +284,7 @@ static func finalize_ability(ability: AbilityData) -> void:
 	if not ability.modules.is_empty():
 		## Authoritative modules: compile to flat effects for legacy readers.
 		## Exception: keep violent_collision_recast on primary until native gate runtime.
+		_sync_modules_from_generated_effects(ability)
 		var compiled: Array[EffectData] = compile_modules_to_effects(ability.modules)
 		if not compiled.is_empty():
 			ability.effects = compiled

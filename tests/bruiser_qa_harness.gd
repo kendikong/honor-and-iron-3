@@ -27,7 +27,7 @@ static func assert_eq_cell(failures: Array[String], tag: String, got: Vector2i, 
 
 
 static func bruiser_unit_data() -> UnitData:
-	var template: UnitData = DataLibrary.get_unit(BRUISER_DEF_ID)
+	var template: UnitData = FactoryTestHelpers.build_unit(BRUISER_DEF_ID)
 	if template == null:
 		return null
 	var weapon: WeaponData = template.equipped_weapon
@@ -556,7 +556,7 @@ static func run_push_through_upgrade(failures: Array[String]) -> void:
 		push.upgraded_effects[0].modifiers.has("buff_on_push"),
 	)
 	assert_eq_int(
-		failures, "push_through/upgrade_mp_cost",
+		failures, "push_through/upgrade_header_cost",
 		AbilitySystem.movement_point_cost(bruiser, push),
 		1,
 	)

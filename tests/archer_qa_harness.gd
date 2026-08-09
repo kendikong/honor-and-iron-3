@@ -17,7 +17,7 @@ static func assert_true(
 
 
 static func archer_unit_data() -> UnitData:
-	return DataLibrary.get_unit(ARCHER_ID)
+	return FactoryTestHelpers.build_unit(ARCHER_ID)
 
 
 static func factory_ability(ability_id: StringName) -> AbilityData:

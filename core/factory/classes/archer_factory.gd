@@ -18,18 +18,21 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	def.base_magic = 1
 	def.equipped_weapon = basic_bow
 
-	var sidestep := DataLibrary._make_movement_ability(
-		&"archer_sidestep",
-		"Sidestep",
-		1,
-		[DataLibrary._effect(GameEnums.EffectType.MOVE, 1)],
-		1,
+	var sidestep_module := DataLibrary._module(
+		GameEnums.EffectType.MOVE, 1, 1, 1, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	sidestep.effects[0].modifiers["preserve_facing"] = true
-	sidestep.effects[0].modifiers["ignore_zoc"] = true
-	sidestep.upgrade_description = "Your next ranged attack gains +1 STR."
-	sidestep.upgraded_effects = DataLibrary._duplicate_effects(sidestep.effects)
-	sidestep.upgraded_effects[0].modifiers["next_ranged_attack_strength"] = 1
+	sidestep_module.legacy_modifiers["preserve_facing"] = true
+	sidestep_module.legacy_modifiers["ignore_zoc"] = true
+	var sidestep_upgraded := DataLibrary._duplicate_modules([sidestep_module])
+	sidestep_upgraded[0].legacy_modifiers["next_ranged_attack_strength"] = 1
+	var sidestep := DataLibrary._make_modular_ability(
+		&"archer_sidestep", "Sidestep", [sidestep_module],
+		sidestep_upgraded, 1, GameEnums.PlannerGroup.PRE_MOVE,
+		GameEnums.CostResource.MP, [AbilityModuleBridge.TAG_POSITIONING],
+		"Your next ranged attack gains +1 STR.", GameEnums.TargetingFlags.TILE,
+	)
 	def.abilities.append(sidestep)
 
 	# Innate trait.

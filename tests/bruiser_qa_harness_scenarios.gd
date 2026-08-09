@@ -377,14 +377,18 @@ static func run_adrenaline_surge(failures: Array[String]) -> void:
 	## Bible: Adrenaline Surge — SELF | spend 5 HP | +1 MOV +1 STR 1 turn; 0 AP if 2+ adjacent enemies.
 	H.run_active_smoke(
 		failures, &"bruiser_adrenaline_surge", "SELF | spend 5 HP | +1 MOV +1 STR",
-		[GameEnums.EffectType.DAMAGE_SELF],
+		[],
 		[GameEnums.StatusType.STAT_BUFF_STR, GameEnums.StatusType.STAT_BUFF_MOV],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_adrenaline_surge")
-	H.assert_eq_int(failures, "adrenaline_surge/self_cost_amt", factory_ab.effects[0].amount, 5)
+	H.assert_eq_int(failures, "adrenaline_surge/header_hp_cost", factory_ab.secondary_value, 5)
+	H.assert_eq_int(
+		failures, "adrenaline_surge/header_hp_resource",
+		factory_ab.secondary_resource, GameEnums.CostResource.HP,
+	)
 	H.assert_eq_int(
 		failures, "adrenaline_surge/zero_ap_threshold",
-		int(factory_ab.effects[0].modifiers["zero_ap_adjacent_enemies"]),
+		factory_ab.cost_modifier_n,
 		2,
 	)
 	H.assert_eq_int(failures, "adrenaline_surge/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.SELF)
@@ -856,12 +860,13 @@ static func run_blood_boil(failures: Array[String]) -> void:
 	## Bible: Blood Boil — SELF | spend 5 HP for STR +3; [+] spend 10 HP for STR +5.
 	H.run_active_smoke(
 		failures, &"bruiser_blood_boil", "SELF | 5 HP for STR +3",
-		[GameEnums.EffectType.DAMAGE_SELF],
+		[],
 		[GameEnums.StatusType.STAT_BUFF_STR],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_blood_boil")
-	H.assert_eq_int(failures, "blood_boil/hp_cost_amount", factory_ab.effects[0].amount, 5)
-	H.assert_eq_int(failures, "blood_boil/str_amount", factory_ab.effects[1].amount, 3)
+	H.assert_eq_int(failures, "blood_boil/header_hp_cost", factory_ab.secondary_value, 5)
+	H.assert_eq_int(failures, "blood_boil/header_hp_resource", factory_ab.secondary_resource, GameEnums.CostResource.HP)
+	H.assert_eq_int(failures, "blood_boil/str_amount", factory_ab.modules[0].amount, 3)
 	H.assert_eq_int(failures, "blood_boil/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.SELF)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_blood_boil"))

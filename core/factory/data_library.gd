@@ -479,6 +479,154 @@ static func _status_effect_self(type: GameEnums.StatusType, duration: int, value
 static func make_status(type: GameEnums.StatusType, duration: int, value: int = 0) -> StatusData:
 	return StatusData.new(type, duration, value)
 
+
+static func _module(
+	primary_type: GameEnums.EffectType,
+	amount: int,
+	min_range: int,
+	max_range: int,
+	targeting_flags: int,
+	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
+	shape_size: int = 1,
+	scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE,
+	motion_mode: GameEnums.MotionMode = GameEnums.MotionMode.NONE,
+) -> AbilityModule:
+	var module := AbilityModule.new()
+	module.primary_type = primary_type
+	module.amount = amount
+	module.min_range = min_range
+	module.max_range = max_range
+	module.targeting_flags = targeting_flags
+	module.target_shape = shape
+	module.target_shape_size = shape_size
+	module.scaling_stat = scaling_stat
+	module.motion_mode = motion_mode
+	return module
+
+
+static func _layer(
+	effect: EffectData,
+	condition: GameEnums.LayerCondition = GameEnums.LayerCondition.AT_RESOLUTION,
+) -> AbilityLayer:
+	var layer := AbilityLayer.new()
+	layer.effect = effect
+	layer.condition = condition
+	return layer
+
+
+static func _keyword(
+	keyword_id: GameEnums.AbilityKeywordId,
+	amount: int = 0,
+	push_amount: int = 0,
+	emit_as_effect: bool = false,
+) -> AbilityKeyword:
+	var keyword := AbilityKeyword.new()
+	keyword.keyword_id = keyword_id
+	keyword.amount = amount
+	keyword.push_amount = push_amount
+	keyword.emit_as_effect = emit_as_effect
+	return keyword
+
+
+static func _duplicate_modules(source: Array[AbilityModule]) -> Array[AbilityModule]:
+	var result: Array[AbilityModule] = []
+	for module: AbilityModule in source:
+		result.append(module.duplicate(true) as AbilityModule)
+	return result
+
+
+static func _flags_to_targeting_mode(flags: int) -> GameEnums.TargetingMode:
+	if (flags & GameEnums.TargetingFlags.DASH_LINE) != 0:
+		return GameEnums.TargetingMode.DASH_LINE
+	if (flags & GameEnums.TargetingFlags.TILE) != 0:
+		return GameEnums.TargetingMode.TILE
+	if (flags & GameEnums.TargetingFlags.SELF) != 0 and (
+		flags & (GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.ALLY)
+	) == 0:
+		return GameEnums.TargetingMode.SELF
+	if (flags & GameEnums.TargetingFlags.ALLY) != 0:
+		return GameEnums.TargetingMode.ALLY_UNIT
+	if (flags & GameEnums.TargetingFlags.ENEMY) != 0:
+		return GameEnums.TargetingMode.ENEMY_UNIT
+	return GameEnums.TargetingMode.TILE
+
+
+static func _make_modular_ability(
+	p_id: StringName,
+	p_name: String,
+	modules: Array[AbilityModule],
+	upgraded_modules: Array[AbilityModule],
+	primary_value: int = 1,
+	planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION,
+	primary_resource: GameEnums.CostResource = GameEnums.CostResource.AP,
+	tags: Array[StringName] = [],
+	upgrade_description: String = "",
+	targeting_flags: int = GameEnums.TargetingFlags.ENEMY,
+	secondary_resource: GameEnums.CostResource = GameEnums.CostResource.NONE,
+	secondary_value: int = 0,
+	cost_modifier: GameEnums.CostModifier = GameEnums.CostModifier.NONE,
+	cost_modifier_n: int = 0,
+	upgraded_primary_value: int = -1,
+	upgraded_secondary_value: int = -1,
+) -> AbilityData:
+	var ability := AbilityData.new()
+	ability.id = p_id
+	ability.display_name = p_name
+	ability.kind = (
+		GameEnums.AbilityKind.MOVEMENT_SKILL
+		if planner_group == GameEnums.PlannerGroup.PRE_MOVE
+		else GameEnums.AbilityKind.CLASS_SKILL
+	)
+	ability.planner_group = planner_group
+	ability.primary_resource = primary_resource
+	ability.primary_value = primary_value
+	ability.upgraded_primary_value = upgraded_primary_value
+	ability.secondary_resource = secondary_resource
+	ability.secondary_value = secondary_value
+	ability.upgraded_secondary_value = upgraded_secondary_value
+	ability.cost_modifier = cost_modifier
+	ability.cost_modifier_n = cost_modifier_n
+	ability.action_point_cost = primary_value if primary_resource == GameEnums.CostResource.AP else 0
+	ability.movement_point_cost = primary_value if primary_resource == GameEnums.CostResource.MP else 0
+	ability.is_movement_skill = planner_group == GameEnums.PlannerGroup.PRE_MOVE
+	ability.modules = modules
+	ability.upgraded_modules = upgraded_modules
+	ability.tags = tags
+	ability.upgrade_description = upgrade_description
+	ability.targeting_flags = targeting_flags
+	ability.targeting_mode = _flags_to_targeting_mode(targeting_flags)
+	var first_motion_range: int = -1
+	var authored_new_aim: bool = false
+	for module: AbilityModule in modules:
+		if module == null:
+			continue
+		if not AbilityModuleBridge.is_motion_type(module.primary_type):
+			if module.aim_binding == GameEnums.AimBinding.NEW_AIM:
+				authored_new_aim = true
+				ability.range_tiles = module.max_range
+				ability.target_shape = module.target_shape
+				ability.target_shape_size = module.target_shape_size
+				break
+		elif first_motion_range < 0:
+			first_motion_range = module.max_range
+	if not authored_new_aim and first_motion_range >= 0:
+		ability.range_tiles = first_motion_range
+	if ability.target_shape != GameEnums.TargetShape.SINGLE and (
+		(targeting_flags & GameEnums.TargetingFlags.ENEMY) != 0
+		or (targeting_flags & GameEnums.TargetingFlags.ALLY) != 0
+	):
+		ability.targeting_flags |= GameEnums.TargetingFlags.TILE
+	ability.presentation_key = p_id
+	ability.presentation_anim = (
+		GameEnums.PresentationAnim.WALK
+		if planner_group == GameEnums.PlannerGroup.PRE_MOVE
+		else GameEnums.PresentationAnim.AUTO
+	)
+	ability.effects = AbilityModuleBridge.compile_modules_to_effects(ability.modules)
+	ability.sync_legacy_targeting()
+	return ability
+
+
 static func _make_ability(p_id: StringName, p_name: String, p_range: int, effects: Array[EffectData], ap_cost: int = 1, stat: GameEnums.StatType = GameEnums.StatType.NONE, shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE, shape_size: int = 1) -> AbilityData:
 	var ability := AbilityData.new()
 	ability.id = p_id
@@ -712,11 +860,34 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 			stat = GameEnums.StatType.MAGICAL
 	if class_id == &"lancer":
 		effects[0].modifiers["range_one_damage_multiplier"] = 0.7
-	var ab: AbilityData = _make_ability(id, display_name, rng, effects, 0, stat)
-	if effects[0].type == GameEnums.EffectType.HEAL:
-		ab.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
-	else:
-		ab.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+	var targeting_flags: int = (
+		GameEnums.TargetingFlags.ALLY
+		if effects[0].type == GameEnums.EffectType.HEAL
+		else GameEnums.TargetingFlags.ENEMY
+	)
+	var module := _module(
+		effects[0].type,
+		effects[0].amount,
+		1 if rng > 0 else 0,
+		rng,
+		targeting_flags,
+		GameEnums.TargetShape.SINGLE,
+		1,
+		stat,
+	)
+	module.legacy_modifiers = effects[0].modifiers.duplicate(true)
+	var ab: AbilityData = _make_modular_ability(
+		id,
+		display_name,
+		[module],
+		_duplicate_modules([module]),
+		0,
+		GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP,
+		[],
+		"",
+		targeting_flags,
+	)
 	return ab
 
 static func _ensure_player_basic_attack(unit: UnitData) -> void:

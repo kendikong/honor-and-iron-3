@@ -33,23 +33,22 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		"arcane_overchannel_shield": 2, "promotion": &"core"},
 	))
 
-	var blink := DataLibrary._make_movement_ability(
-		&"mage_blink",
-		"Blink",
-		2,
-		[DataLibrary._effect(GameEnums.EffectType.TELEPORT_CASTER, 0)],
-		3,
-		GameEnums.StatType.NONE,
-		GameEnums.TargetShape.SINGLE,
-		1,
-		GameEnums.TargetingMode.TILE,
+	var blink_module := DataLibrary._module(
+		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 2, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	blink.upgraded_range_tiles = 3
-	blink.effects[0].modifiers["blink"] = true
-	var blink_upgrade := DataLibrary._duplicate_effects(blink.effects)
-	blink_upgrade[0].modifiers["leave_elemental_surface"] = true
-	blink.upgraded_effects = blink_upgrade
-	blink.upgrade_description = "Range becomes 3; leave an elemental surface on departure."
+	blink_module.legacy_modifiers["blink"] = true
+	var blink_upgraded := DataLibrary._duplicate_modules([blink_module])
+	blink_upgraded[0].max_range = 3
+	blink_upgraded[0].legacy_modifiers["leave_elemental_surface"] = true
+	var blink := DataLibrary._make_modular_ability(
+		&"mage_blink", "Blink", [blink_module], blink_upgraded, 3,
+		GameEnums.PlannerGroup.PRE_MOVE, GameEnums.CostResource.MP,
+		[AbilityModuleBridge.TAG_POSITIONING],
+		"Range becomes 3; leave an elemental surface on departure.",
+		GameEnums.TargetingFlags.TILE,
+	)
 	definition.abilities.append(blink)
 
 	# Geomancer passives.
@@ -175,12 +174,17 @@ static func _spell(
 	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
 	shape_size: int = 1,
 ) -> AbilityData:
-	var ability := DataLibrary._make_ability(
-		id, name, range_tiles, effects, 1, GameEnums.StatType.MAGICAL, shape, shape_size,
+	var proxy := AbilityData.new()
+	proxy.range_tiles = range_tiles
+	proxy.target_shape = shape
+	proxy.target_shape_size = shape_size
+	proxy.targeting_flags = targeting_flags
+	var modules := AbilityModuleBridge.infer_modules_from_effects(effects, proxy)
+	var ability := DataLibrary._make_modular_ability(
+		id, name, modules, DataLibrary._duplicate_modules(modules), 1,
+		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP,
+		[AbilityModuleBridge.TAG_SPELL], "", targeting_flags,
 	)
-	ability.targeting_flags = targeting_flags
-	ability.sync_legacy_targeting()
-	ability.tags = [AbilityModuleBridge.TAG_SPELL]
 	ability.presentation_anim = GameEnums.PresentationAnim.SPELL
 	return ability
 
@@ -190,7 +194,7 @@ static func _upgrade(
 	effects: Array[EffectData],
 	description: String,
 ) -> AbilityData:
-	ability.upgraded_effects = effects
+	ability.upgraded_modules = AbilityModuleBridge.infer_modules_from_effects(effects, ability)
 	ability.upgrade_description = description
 	return ability
 
@@ -229,9 +233,10 @@ static func _fireball() -> AbilityData:
 	upgraded[1].modifiers["reaction_terrain"] = &"frozen"
 	upgraded[0].modifiers["reaction_terrain"] = &"frozen"
 	upgraded[0].modifiers["reaction_damage"] = 2
-	ability.upgraded_target_shape = GameEnums.TargetShape.AOE_SQUARE
-	ability.upgraded_target_shape_size = 3
-	return _upgrade(ability, upgraded, "On FROZEN, create STEAM (AOE 3x3) with MAG ATK 2 splash.")
+	var upgraded_ability := _upgrade(ability, upgraded, "On FROZEN, create STEAM (AOE 3x3) with MAG ATK 2 splash.")
+	upgraded_ability.upgraded_modules[0].target_shape = GameEnums.TargetShape.AOE_SQUARE
+	upgraded_ability.upgraded_modules[0].target_shape_size = 3
+	return upgraded_ability
 
 
 static func _ice_shard() -> AbilityData:
@@ -250,9 +255,10 @@ static func _ice_shard() -> AbilityData:
 	upgraded[2].modifiers["reaction_terrain"] = &"fire"
 	upgraded[0].modifiers["reaction_terrain"] = &"fire"
 	upgraded[0].modifiers["reaction_damage"] = 2
-	ability.upgraded_target_shape = GameEnums.TargetShape.AOE_SQUARE
-	ability.upgraded_target_shape_size = 3
-	return _upgrade(ability, upgraded, "On FIRE, create STEAM (AOE 3x3) with MAG ATK 2 splash.")
+	var upgraded_ability := _upgrade(ability, upgraded, "On FIRE, create STEAM (AOE 3x3) with MAG ATK 2 splash.")
+	upgraded_ability.upgraded_modules[0].target_shape = GameEnums.TargetShape.AOE_SQUARE
+	upgraded_ability.upgraded_modules[0].target_shape_size = 3
+	return upgraded_ability
 
 
 static func _chain_lightning() -> AbilityData:

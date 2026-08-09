@@ -32,23 +32,22 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		"upgraded_self_heal_pct": 0.5, "self_heal_overheal_shield": true},
 	))
 
-	var guardian_step := DataLibrary._make_movement_ability(
-		&"cleric_guardian_step",
-		"Guardian Step",
-		5,
-		[DataLibrary._effect(GameEnums.EffectType.TELEPORT_CASTER, 0)],
-		0,
-		GameEnums.StatType.NONE,
-		GameEnums.TargetShape.SINGLE,
-		1,
-		GameEnums.TargetingMode.ALLY_UNIT,
+	var guardian_module := DataLibrary._module(
+		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 5, GameEnums.TargetingFlags.ALLY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.ADJACENT_TO_TARGET,
 	)
-	guardian_step.effects[0].modifiers["cost_all_movement"] = true
-	guardian_step.effects[0].modifiers["warp_adjacent_to_target"] = true
-	guardian_step.upgrade_description = "GLOBAL range; cleanse the target ally."
-	guardian_step.upgraded_range_tiles = 999
-	guardian_step.upgraded_effects = DataLibrary._duplicate_effects(guardian_step.effects)
-	guardian_step.upgraded_effects[0].modifiers["cleanse_target"] = true
+	guardian_module.legacy_modifiers["cost_all_movement"] = true
+	guardian_module.legacy_modifiers["warp_adjacent_to_target"] = true
+	var guardian_upgraded := DataLibrary._duplicate_modules([guardian_module])
+	guardian_upgraded[0].max_range = 999
+	guardian_upgraded[0].legacy_modifiers["cleanse_target"] = true
+	var guardian_step := DataLibrary._make_modular_ability(
+		&"cleric_guardian_step", "Guardian Step", [guardian_module],
+		guardian_upgraded, 0, GameEnums.PlannerGroup.PRE_MOVE,
+		GameEnums.CostResource.MP, [AbilityModuleBridge.TAG_POSITIONING],
+		"GLOBAL range; cleanse the target ally.", GameEnums.TargetingFlags.ALLY,
+	)
 	def.abilities.append(guardian_step)
 
 	# Paladin passives.
@@ -159,17 +158,29 @@ static func _ability(
 	shape_size: int = 1,
 	scaling_stat: GameEnums.StatType = GameEnums.StatType.MAGICAL,
 ) -> AbilityData:
-	var ability := DataLibrary._make_ability(
-		id, name, range_tiles, effects, 1, scaling_stat, shape, shape_size,
+	var proxy := AbilityData.new()
+	proxy.range_tiles = range_tiles
+	proxy.target_shape = shape
+	proxy.target_shape_size = shape_size
+	proxy.targeting_flags = targeting_flags
+	var modules := AbilityModuleBridge.infer_modules_from_effects(effects, proxy)
+	for module: AbilityModule in modules:
+		if module.primary_type in [
+			GameEnums.EffectType.DAMAGE,
+			GameEnums.EffectType.HEAL,
+		]:
+			module.scaling_stat = scaling_stat
+	var ability := DataLibrary._make_modular_ability(
+		id, name, modules, DataLibrary._duplicate_modules(modules), 1,
+		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
+		"", targeting_flags,
 	)
-	ability.targeting_flags = targeting_flags
-	ability.sync_legacy_targeting()
 	return ability
 
 
 static func _upgrade(ability: AbilityData, effects: Array[EffectData], description: String) -> AbilityData:
 	ability.upgrade_description = description
-	ability.upgraded_effects = effects
+	ability.upgraded_modules = AbilityModuleBridge.infer_modules_from_effects(effects, ability)
 	return ability
 
 

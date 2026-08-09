@@ -19,10 +19,13 @@ extends Resource
 ## Cost block (ability-data.md §1).
 @export var primary_resource: GameEnums.CostResource = GameEnums.CostResource.NONE
 @export var primary_value: int = 1
+## Optional replacement for the header primary cost when the ability is upgraded.
+@export var upgraded_primary_value: int = -1
 @export var cost_modifier: GameEnums.CostModifier = GameEnums.CostModifier.NONE
 @export var cost_modifier_n: int = 0
 @export var secondary_resource: GameEnums.CostResource = GameEnums.CostResource.NONE
 @export var secondary_value: int = 0
+@export var upgraded_secondary_value: int = -1
 
 ## Ordered modular steps (source of truth when non-empty after finalize).
 @export var modules: Array[AbilityModule] = []
@@ -111,14 +114,14 @@ func _targeting_flags_to_mode() -> int:
 		return GameEnums.TargetingMode.ALLY_UNIT
 	if f == (GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.ALLY):
 		return GameEnums.TargetingMode.ALLY_OR_SELF
+	if has_targeting(GameEnums.TargetingFlags.TILE):
+		return GameEnums.TargetingMode.TILE
 	if f == GameEnums.TargetingFlags.ENEMY:
 		return GameEnums.TargetingMode.ENEMY_UNIT
 	if (f & unit_mask) == unit_mask:
 		return GameEnums.TargetingMode.ANY_UNIT
 	if has_targeting(GameEnums.TargetingFlags.DASH_LINE):
 		return GameEnums.TargetingMode.DASH_LINE
-	if has_targeting(GameEnums.TargetingFlags.TILE):
-		return GameEnums.TargetingMode.TILE
 	return GameEnums.TargetingMode.ENEMY_UNIT
 
 ## The geometric shape of the affected area (legacy mirror of primary aim module).
@@ -170,6 +173,18 @@ func get_active_modules(upgraded: bool = false) -> Array[AbilityModule]:
 	if upgraded and not upgraded_modules.is_empty():
 		return upgraded_modules
 	return modules
+
+
+func get_active_primary_value(upgraded: bool = false) -> int:
+	if upgraded and upgraded_primary_value >= 0:
+		return upgraded_primary_value
+	return primary_value
+
+
+func get_active_secondary_value(upgraded: bool = false) -> int:
+	if upgraded and upgraded_secondary_value >= 0:
+		return upgraded_secondary_value
+	return secondary_value
 
 
 ## Returns the card-facing range from the first non-motion NEW_AIM module.

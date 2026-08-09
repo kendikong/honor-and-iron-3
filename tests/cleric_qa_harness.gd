@@ -5,7 +5,7 @@ const _H := preload("res://tests/bruiser_qa_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	var definition: UnitData = DataLibrary.get_unit(&"cleric")
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"cleric")
 	_assert(failures, "cleric/factory", definition != null)
 	if definition == null:
 		return

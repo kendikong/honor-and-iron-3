@@ -15,16 +15,22 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.equipped_weapon = basic_axe
 	
 	# Movement Skill (Swap) — Master Bible; always granted, not part of roll pool.
-	var swap := DataLibrary._make_movement_ability(&"knight_swap", "Swap", 1, [
-		DataLibrary._effect(GameEnums.EffectType.SWAP, 0)
-	], 1)
-	swap.upgrade_description = "Gain +2 DEF and SHIELD 2 for the rest of the turn."
-	var swap_upgraded = swap.effects.duplicate()
-	var def_buff = DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1)
-	def_buff.amount = 2
-	swap_upgraded.append(def_buff)
-	swap_upgraded.append(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 2))
-	swap.upgraded_effects = swap_upgraded
+	var swap_module := DataLibrary._module(
+		GameEnums.EffectType.SWAP, 0, 1, 1, GameEnums.TargetingFlags.ALLY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.TO_TARGET_UNIT,
+	)
+	var swap_upgraded := DataLibrary._duplicate_modules([swap_module])
+	swap_upgraded[0].layers = [
+		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2)),
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 2)),
+	]
+	var swap := DataLibrary._make_modular_ability(
+		&"knight_swap", "Swap", [swap_module], swap_upgraded, 1,
+		GameEnums.PlannerGroup.PRE_MOVE, GameEnums.CostResource.MP,
+		[AbilityModuleBridge.TAG_POSITIONING], "Gain +2 DEF and SHIELD 2 for the rest of the turn.",
+		GameEnums.TargetingFlags.ALLY,
+	)
 	def.abilities.append(swap)
 	
 	# Passives
@@ -72,168 +78,252 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.passives.append(DataLibrary._make_passive(&"intercept_tactics", "Intercept Tactics", "Using a redirect skill grants +2 DEF.", "[+] +3 DEF."))
 	
 	# Actives
-	var shield_bash = DataLibrary._make_ability(&"knight_shield_bash", "Shield Bash", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
-		DataLibrary._effect(GameEnums.EffectType.PUSH, 2)
-	], 1, GameEnums.StatType.PHYSICAL)
-	shield_bash.upgrade_description = "Apply STAGGER if collides with wall/enemy."
-	shield_bash.upgraded_effects = DataLibrary._duplicate_effects(shield_bash.effects)
-	shield_bash.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, 1))
+	var shield_bash_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	shield_bash_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2))]
+	var shield_bash_upgraded := DataLibrary._duplicate_modules([shield_bash_module])
+	shield_bash_upgraded[0].layers.append(
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, 1))
+	)
+	var shield_bash := DataLibrary._make_modular_ability(
+		&"knight_shield_bash", "Shield Bash", [shield_bash_module],
+		shield_bash_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Apply STAGGER if collides with wall/enemy.",
+		GameEnums.TargetingFlags.ENEMY,
+	)
 	def.abilities.append(shield_bash)
 
-	var phalanx_stance = DataLibrary._make_ability(&"knight_phalanx_stance", "Phalanx Stance", 0, [
-		DataLibrary._status_effect_self(GameEnums.StatusType.STURDY, 1),
-		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1)
-	], 1)
-	phalanx_stance.effects[1].amount = 5
-	phalanx_stance.can_target_self = true
-	phalanx_stance.targeting_mode = GameEnums.TargetingMode.SELF
-	phalanx_stance.upgrade_description = "Infinite RANGE for Retaliation Protocol."
-	phalanx_stance.upgraded_effects = DataLibrary._duplicate_effects(phalanx_stance.effects)
-	phalanx_stance.upgraded_effects.append(
-		DataLibrary._status_effect_self(GameEnums.StatusType.RETALIATION_INFINITE_RANGE, 1)
+	var phalanx_stance_module := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS_SELF, 0, 0, 0, GameEnums.TargetingFlags.SELF,
+	)
+	phalanx_stance_module.status_type = GameEnums.StatusType.STURDY
+	phalanx_stance_module.layers = [
+		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1, 5)),
+	]
+	var phalanx_stance_upgraded := DataLibrary._duplicate_modules([phalanx_stance_module])
+	phalanx_stance_upgraded[0].layers.append(
+		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.RETALIATION_INFINITE_RANGE, 1))
+	)
+	var phalanx_stance := DataLibrary._make_modular_ability(
+		&"knight_phalanx_stance", "Phalanx Stance", [phalanx_stance_module],
+		phalanx_stance_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Infinite RANGE for Retaliation Protocol.",
+		GameEnums.TargetingFlags.SELF,
 	)
 	def.abilities.append(phalanx_stance)
 
-	var taunting_strike = DataLibrary._make_ability(&"knight_taunting_strike", "Taunting Strike", 2, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
-		DataLibrary._effect(GameEnums.EffectType.PULL, 1),
-		DataLibrary._status_effect(GameEnums.StatusType.TAUNT, 1)
-	], 1, GameEnums.StatType.PHYSICAL)
-	taunting_strike.upgrade_description = "RANGE 3 | AOE 3x3 | PULL 2 all."
-	taunting_strike.upgraded_range_tiles = 3
-	taunting_strike.upgraded_target_shape = GameEnums.TargetShape.AOE_SQUARE
-	taunting_strike.upgraded_target_shape_size = 1
-	taunting_strike.upgraded_effects = DataLibrary._duplicate_effects(taunting_strike.effects)
-	taunting_strike.upgraded_effects[1].amount = 2
+	var taunting_strike_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 1, 1, 2, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	taunting_strike_module.layers = [
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PULL, 1)),
+		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.TAUNT, 1)),
+	]
+	var taunting_strike_upgraded := DataLibrary._duplicate_modules([taunting_strike_module])
+	taunting_strike_upgraded[0].max_range = 3
+	taunting_strike_upgraded[0].target_shape = GameEnums.TargetShape.AOE_SQUARE
+	taunting_strike_upgraded[0].target_shape_size = 1
+	taunting_strike_upgraded[0].layers[0].effect.amount = 2
+	var taunting_strike := DataLibrary._make_modular_ability(
+		&"knight_taunting_strike", "Taunting Strike", [taunting_strike_module],
+		taunting_strike_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "RANGE 3 | AOE 3x3 | PULL 2 all.",
+		GameEnums.TargetingFlags.ENEMY,
+	)
 	def.abilities.append(taunting_strike)
 
-	var seismic_stomp = DataLibrary._make_ability(&"knight_seismic_stomp", "Seismic Stomp", 0, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
-		DataLibrary._effect(GameEnums.EffectType.PURGE, 0)
-	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.AOE_CROSS, 1)
-	seismic_stomp.upgrade_description = "Create CRACKED terrain."
-	seismic_stomp.upgraded_effects = DataLibrary._duplicate_effects(seismic_stomp.effects)
-	seismic_stomp.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.CHANGE_TERRAIN, 0))
+	var seismic_stomp_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 2, 0, 0, GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	seismic_stomp_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PURGE, 0))]
+	var seismic_stomp_upgraded := DataLibrary._duplicate_modules([seismic_stomp_module])
+	seismic_stomp_upgraded[0].layers.append(
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.CHANGE_TERRAIN, 0))
+	)
+	var seismic_stomp := DataLibrary._make_modular_ability(
+		&"knight_seismic_stomp", "Seismic Stomp", [seismic_stomp_module],
+		seismic_stomp_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Create CRACKED terrain.",
+		GameEnums.TargetingFlags.SELF,
+	)
 	def.abilities.append(seismic_stomp)
 
-	var fortify = DataLibrary._make_ability(&"knight_fortify", "Fortify", 3, [
-		DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1)
-	], 1)
-	fortify.effects[0].scaling_stat = GameEnums.StatType.DEFENSE
-	fortify.upgrade_description = "Ally gains THORNS 50%."
-	fortify.upgraded_effects = DataLibrary._duplicate_effects(fortify.effects)
-	var thorns = DataLibrary._status_effect(GameEnums.StatusType.THORNS, 1)
-	thorns.amount = 50
-	fortify.upgraded_effects.append(thorns)
+	var fortify_module := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.DEFENSE,
+	)
+	fortify_module.status_type = GameEnums.StatusType.STAT_BUFF_DEF
+	var fortify_upgraded := DataLibrary._duplicate_modules([fortify_module])
+	var thorns := DataLibrary._status_effect(GameEnums.StatusType.THORNS, 1, 50)
+	fortify_upgraded[0].layers = [DataLibrary._layer(thorns)]
+	var fortify := DataLibrary._make_modular_ability(
+		&"knight_fortify", "Fortify", [fortify_module], fortify_upgraded, 1,
+		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
+		"Ally gains THORNS 50%.", GameEnums.TargetingFlags.ALLY,
+	)
 	def.abilities.append(fortify)
 
-	var bowling_charge = DataLibrary._make_ability(&"knight_bowling_charge", "Bowling Charge", 3, [
-		DataLibrary._effect(GameEnums.EffectType.DASH, 3),
-		DataLibrary._effect(GameEnums.EffectType.BULLDOZE, 1),
-	], 1)
-	bowling_charge.effects[0].scaling_stat = GameEnums.StatType.PHYSICAL
-	bowling_charge.targeting_mode = GameEnums.TargetingMode.DASH_LINE
-	bowling_charge.targeting_flags = GameEnums.TargetingFlags.TILE
-	bowling_charge.sync_legacy_targeting()
-	bowling_charge.upgrade_description = ""
-	bowling_charge.upgraded_effects = DataLibrary._duplicate_effects(bowling_charge.effects)
-	bowling_charge.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH_CHAIN_COLLISION, 1))
+	var bowling_module := DataLibrary._module(
+		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+		GameEnums.MotionMode.VAULT_OVER,
+	)
+	bowling_module.keywords = [
+		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 0, true),
+	]
+	var bowling_upgraded := DataLibrary._duplicate_modules([bowling_module])
+	bowling_upgraded[0].layers = [
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH_CHAIN_COLLISION, 1)),
+	]
+	var bowling_charge := DataLibrary._make_modular_ability(
+		&"knight_bowling_charge", "Bowling Charge", [bowling_module],
+		bowling_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "", GameEnums.TargetingFlags.DASH_LINE,
+	)
 	def.abilities.append(bowling_charge)
 
-	var iron_grip = DataLibrary._make_ability(&"knight_iron_grip", "Iron Grip", 1, [
-		DataLibrary._status_effect(GameEnums.StatusType.ROOT, 1),
-		DataLibrary._status_effect(GameEnums.StatusType.IRON_GRIP_DEBUFF, 1)
-	], 1)
-	iron_grip.upgrade_description = "Refund 1 AP if already ROOT/STAGGER."
-	iron_grip.upgraded_effects = DataLibrary._duplicate_effects(iron_grip.effects)
-	iron_grip.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.REFUND_AP_ON_CC, 0))
+	var iron_grip_module := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
+	)
+	iron_grip_module.status_type = GameEnums.StatusType.ROOT
+	iron_grip_module.layers = [
+		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.IRON_GRIP_DEBUFF, 1)),
+	]
+	var iron_grip_upgraded := DataLibrary._duplicate_modules([iron_grip_module])
+	iron_grip_upgraded[0].layers.append(
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.REFUND_AP_ON_CC, 0))
+	)
+	var iron_grip := DataLibrary._make_modular_ability(
+		&"knight_iron_grip", "Iron Grip", [iron_grip_module], iron_grip_upgraded,
+		1, GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
+		"Refund 1 AP if already ROOT/STAGGER.", GameEnums.TargetingFlags.ENEMY,
+	)
 	def.abilities.append(iron_grip)
 
-	var redirect_strike = DataLibrary._make_ability(&"knight_redirect_strike", "Redirect Strike", 2, [
-		DataLibrary._status_effect_self(GameEnums.StatusType.INTERCEPT, 1)
-	], 1)
-	redirect_strike.upgrade_description = "Gain DEF +2 per redirected hit."
-	redirect_strike.upgraded_effects = DataLibrary._duplicate_effects(redirect_strike.effects)
-	redirect_strike.upgraded_effects[0].amount = 1
-	redirect_strike.can_target_self = true
-	redirect_strike.targeting_mode = GameEnums.TargetingMode.SELF
+	var redirect_module := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS_SELF, 0, 1, 2, GameEnums.TargetingFlags.SELF,
+	)
+	redirect_module.status_type = GameEnums.StatusType.INTERCEPT
+	var redirect_upgraded := DataLibrary._duplicate_modules([redirect_module])
+	redirect_upgraded[0].amount = 1
+	var redirect_strike := DataLibrary._make_modular_ability(
+		&"knight_redirect_strike", "Redirect Strike", [redirect_module],
+		redirect_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Gain DEF +2 per redirected hit.",
+		GameEnums.TargetingFlags.SELF,
+	)
 	def.abilities.append(redirect_strike)
 	
-	var indomitable_will = DataLibrary._make_ability(&"knight_indomitable_will", "Indomitable Will", 0, [
-		DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 0),
-		DataLibrary._status_effect_self(GameEnums.StatusType.INDOMITABLE_WILL, 2)
-	], 1)
-	indomitable_will.effects[0].scaling_stat = GameEnums.StatType.MISSING_HP
-	indomitable_will.upgrade_description = "When expires, gain +2 STR."
-	var indo_up: Array[EffectData] = [
-		DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 0),
-		DataLibrary._status_effect_self(GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED, 2)
+	var indomitable_module := DataLibrary._module(
+		GameEnums.EffectType.ARMOR_UP, 0, 0, 0, GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MISSING_HP,
+	)
+	indomitable_module.layers = [
+		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.INDOMITABLE_WILL, 2)),
 	]
-	indomitable_will.upgraded_effects = indo_up
-	indomitable_will.upgraded_effects[0].scaling_stat = GameEnums.StatType.MISSING_HP
-	indomitable_will.can_target_self = true
-	indomitable_will.targeting_mode = GameEnums.TargetingMode.SELF
+	var indomitable_upgraded := DataLibrary._duplicate_modules([indomitable_module])
+	indomitable_upgraded[0].layers = [
+		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED, 2)),
+	]
+	var indomitable_will := DataLibrary._make_modular_ability(
+		&"knight_indomitable_will", "Indomitable Will", [indomitable_module],
+		indomitable_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "When expires, gain +2 STR.",
+		GameEnums.TargetingFlags.SELF,
+	)
 	def.abilities.append(indomitable_will)
 
-	var retaliation_protocol = DataLibrary._make_ability(&"knight_retaliation_protocol", "Retaliation Protocol", 0, [
-		DataLibrary._status_effect_self(GameEnums.StatusType.RETALIATION_PROTOCOL, 1)
-	], 1)
-	retaliation_protocol.upgrade_description = "Counter-attacks apply PUSH 1."
-	retaliation_protocol.upgraded_effects = DataLibrary._duplicate_effects(retaliation_protocol.effects)
-	retaliation_protocol.upgraded_effects[0].amount = 1
-	retaliation_protocol.can_target_self = true
-	retaliation_protocol.targeting_mode = GameEnums.TargetingMode.SELF
+	var retaliation_module := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS_SELF, 0, 0, 0, GameEnums.TargetingFlags.SELF,
+	)
+	retaliation_module.status_type = GameEnums.StatusType.RETALIATION_PROTOCOL
+	var retaliation_upgraded := DataLibrary._duplicate_modules([retaliation_module])
+	retaliation_upgraded[0].amount = 1
+	var retaliation_protocol := DataLibrary._make_modular_ability(
+		&"knight_retaliation_protocol", "Retaliation Protocol", [retaliation_module],
+		retaliation_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Counter-attacks apply PUSH 1.",
+		GameEnums.TargetingFlags.SELF,
+	)
 	def.abilities.append(retaliation_protocol)
 
-	var shield_slam = DataLibrary._make_ability(&"knight_shield_slam", "Shield Slam", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
-		DataLibrary._effect(GameEnums.EffectType.PUSH, 2)
-	], 1, GameEnums.StatType.PHYSICAL)
-	shield_slam.effects[0].bonus_if_adjacent_at_cast = 2
-	shield_slam.upgrade_description = "Target DEF -1 before damage."
-	shield_slam.upgraded_effects = DataLibrary._duplicate_effects(shield_slam.effects)
-	shield_slam.upgraded_effects[0].def_debuff_before_damage = 1
+	var shield_slam_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	shield_slam_module.bonus_if_adjacent_at_cast = 2
+	shield_slam_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2))]
+	var shield_slam_upgraded := DataLibrary._duplicate_modules([shield_slam_module])
+	shield_slam_upgraded[0].def_debuff_before_damage = 1
+	var shield_slam := DataLibrary._make_modular_ability(
+		&"knight_shield_slam", "Shield Slam", [shield_slam_module],
+		shield_slam_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Target DEF -1 before damage.",
+		GameEnums.TargetingFlags.ENEMY,
+	)
 	def.abilities.append(shield_slam)
 
-	var defensive_formation = DataLibrary._make_ability(&"knight_defensive_formation", "Defensive Formation", 0, [
-		DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1),
-		DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)
-	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_CROSS, 3)
-	defensive_formation.effects[0].amount = 2
-	defensive_formation.effects[0].modifiers["exclude_caster"] = true
-	defensive_formation.effects[1].modifiers["exclude_caster"] = true
-	defensive_formation.upgrade_description = "Allies gain SHIELD 2."
-	defensive_formation.upgraded_effects = DataLibrary._duplicate_effects(defensive_formation.effects)
-	defensive_formation.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 2))
-	defensive_formation.upgraded_effects[2].modifiers["exclude_caster"] = true
+	var defensive_module := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 2, 0, 0,
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetShape.AOE_DIAMOND, 3,
+	)
+	defensive_module.status_type = GameEnums.StatusType.STAT_BUFF_DEF
+	defensive_module.legacy_modifiers["exclude_caster"] = true
+	defensive_module.layers = [
+		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)),
+	]
+	defensive_module.layers[0].effect.modifiers["exclude_caster"] = true
+	var defensive_upgraded := DataLibrary._duplicate_modules([defensive_module])
+	defensive_upgraded[0].layers.append(DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 2)))
+	defensive_upgraded[0].layers[1].effect.modifiers["exclude_caster"] = true
+	var defensive_formation := DataLibrary._make_modular_ability(
+		&"knight_defensive_formation", "Defensive Formation", [defensive_module],
+		defensive_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Allies gain SHIELD 2.",
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.SELF,
+	)
 	def.abilities.append(defensive_formation)
 
-	var chain_hook = DataLibrary._make_ability(&"knight_chain_hook", "Chain Hook", 3, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
-		DataLibrary._effect(GameEnums.EffectType.PULL, 2)
-	], 1, GameEnums.StatType.PHYSICAL)
-	chain_hook.upgrade_description = "Target suffers VULNERABLE if pulled adjacent."
-	chain_hook.upgraded_effects = DataLibrary._duplicate_effects(chain_hook.effects)
-	chain_hook.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, 1))
+	var chain_hook_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 1, 1, 3, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	chain_hook_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PULL, 2))]
+	var chain_hook_upgraded := DataLibrary._duplicate_modules([chain_hook_module])
+	chain_hook_upgraded[0].layers.append(
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, 1))
+	)
+	var chain_hook := DataLibrary._make_modular_ability(
+		&"knight_chain_hook", "Chain Hook", [chain_hook_module],
+		chain_hook_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Target suffers VULNERABLE if pulled adjacent.",
+		GameEnums.TargetingFlags.ENEMY,
+	)
 	def.abilities.append(chain_hook)
 	
-	var trampling_advance = DataLibrary._make_ability(&"knight_trampling_advance", "Trampling Advance", 2, [
-		DataLibrary._effect(GameEnums.EffectType.MOVE, 2),
-		DataLibrary._effect(GameEnums.EffectType.TRAMPLE, 2),
-		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
-	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.SINGLE, 1)
-	trampling_advance.targeting_flags = GameEnums.TargetingFlags.TILE
-	trampling_advance.targeting_mode = GameEnums.TargetingMode.TILE
-	trampling_advance.movement_point_cost = 2
-	trampling_advance.presentation_anim = GameEnums.PresentationAnim.RUN
-	trampling_advance.sync_legacy_targeting()
-	trampling_advance.upgrade_description = ""
-	var trample_upgraded: Array[EffectData] = [
-		DataLibrary._effect(GameEnums.EffectType.TRAMPLE, 2),
-		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
+	var trample_module := DataLibrary._module(
+		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.INTO_OCCUPIED_PUSH,
+	)
+	trample_module.keywords = [
+		DataLibrary._keyword(GameEnums.AbilityKeywordId.TRAMPLE, 2, 0, true),
 	]
-	trampling_advance.upgraded_effects = trample_upgraded
+	trample_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
+	var trample_upgraded := DataLibrary._duplicate_modules([trample_module])
+	trample_upgraded[0].layers.append(
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 1), GameEnums.LayerCondition.PER_TILE_MOVED)
+	)
+	var trampling_advance := DataLibrary._make_modular_ability(
+		&"knight_trampling_advance", "Trampling Advance", [trample_module],
+		trample_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "", GameEnums.TargetingFlags.TILE,
+	)
 	def.abilities.append(trampling_advance)
 
 	DataLibrary.finalize_unit_abilities(def)

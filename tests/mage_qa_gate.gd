@@ -59,7 +59,7 @@ func _run() -> void:
 
 
 func _check_factory_matrix(failures: Array[String]) -> void:
-	var mage: UnitData = DataLibrary.get_unit(&"mage")
+	var mage: UnitData = FactoryTestHelpers.build_unit(&"mage")
 	_assert(failures, "factory/mage_registered", mage != null)
 	if mage == null:
 		return
@@ -179,10 +179,10 @@ func _check_upgrade_contract(failures: Array[String], ability: AbilityData) -> v
 			_assert(failures, "upgrade/mage_blink/surface", effects[0].modifiers.get("leave_elemental_surface", false))
 		&"mage_fireball":
 			_assert(failures, "upgrade/mage_fireball/steam", effects[0].modifiers.get("reaction_terrain", &"") == &"frozen")
-			_assert(failures, "upgrade/mage_fireball/aoe", ability.upgraded_target_shape_size == 3)
+			_assert(failures, "upgrade/mage_fireball/aoe", ability.upgraded_modules[0].target_shape_size == 3)
 		&"mage_ice_shard":
 			_assert(failures, "upgrade/mage_ice_shard/steam", effects[0].modifiers.get("reaction_terrain", &"") == &"fire")
-			_assert(failures, "upgrade/mage_ice_shard/aoe", ability.upgraded_target_shape_size == 3)
+			_assert(failures, "upgrade/mage_ice_shard/aoe", ability.upgraded_modules[0].target_shape_size == 3)
 		&"mage_chain_lightning":
 			_assert(failures, "upgrade/mage_chain_lightning/surface", effects[0].modifiers.get("strike_all_surface", false))
 		&"mage_arcane_push":
@@ -223,7 +223,7 @@ func _plain_board(size: Vector2i) -> BoardState:
 
 
 func _place_mage(board: BoardState, unit_id: int, coord: Vector2i, ability_id: StringName) -> UnitState:
-	var mage: UnitData = DataLibrary.get_unit(&"mage")
+	var mage: UnitData = FactoryTestHelpers.build_unit(&"mage")
 	var config := {
 		"active_abilities": [DataLibrary.get_universal_run(), _ability(mage, ability_id)],
 		"active_passives": [],
@@ -237,7 +237,7 @@ func _place_mage(board: BoardState, unit_id: int, coord: Vector2i, ability_id: S
 
 
 func _place_mage_ally(board: BoardState, unit_id: int, coord: Vector2i) -> UnitState:
-	var mage: UnitData = DataLibrary.get_unit(&"mage")
+	var mage: UnitData = FactoryTestHelpers.build_unit(&"mage")
 	var unit := UnitState.create(unit_id, mage, GameEnums.Team.PLAYER, coord)
 	board.add_unit(unit)
 	GridSystem.set_occupant(board, coord, unit_id)
@@ -259,7 +259,7 @@ func _place_dummy(board: BoardState, unit_id: int, coord: Vector2i) -> UnitState
 func _place_enemy_mage(board: BoardState, unit_id: int, coord: Vector2i) -> UnitState:
 	var enemy := UnitState.create(
 		unit_id,
-		DataLibrary.get_unit(&"mage"),
+		FactoryTestHelpers.build_unit(&"mage"),
 		GameEnums.Team.ENEMY,
 		coord,
 	)

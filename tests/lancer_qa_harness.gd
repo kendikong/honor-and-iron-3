@@ -24,7 +24,7 @@ static func assert_eq_int(failures: Array[String], tag: String, got: int, expect
 		assert_fail(failures, tag, "expected %d got %d" % [expected, got])
 
 static func lancer_unit_data() -> UnitData:
-	return DataLibrary.get_unit(LANCER_ID)
+	return FactoryTestHelpers.build_unit(LANCER_ID)
 
 static func factory_ability(ability_id: StringName) -> AbilityData:
 	var definition := lancer_unit_data()

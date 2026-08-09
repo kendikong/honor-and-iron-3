@@ -14,21 +14,21 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.equipped_weapon = basic_axe
 	
 	# Movement Skill (Push Through)
-	var push_through := DataLibrary._make_movement_ability(
-		&"bruiser_push_through",
-		"Push Through",
-		1,
-		[DataLibrary._effect(GameEnums.EffectType.MOVE_INTO_AND_PUSH, 1)],
-		2,
-		GameEnums.StatType.NONE,
-		GameEnums.TargetShape.SINGLE,
-		1,
-		GameEnums.TargetingMode.ENEMY_UNIT,
+	var push_module := DataLibrary._module(
+		GameEnums.EffectType.MOVE_INTO_AND_PUSH, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.INTO_OCCUPIED_PUSH,
 	)
-	push_through.upgrade_description = "Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack."
-	push_through.upgraded_movement_point_cost = 1
-	push_through.upgraded_effects = DataLibrary._duplicate_effects(push_through.effects)
-	push_through.upgraded_effects[0].modifiers["buff_on_push"] = 1
+	var push_upgraded := DataLibrary._duplicate_modules([push_module])
+	push_upgraded[0].legacy_modifiers["buff_on_push"] = 1
+	var push_through := DataLibrary._make_modular_ability(
+		&"bruiser_push_through", "Push Through", [push_module], push_upgraded,
+		2, GameEnums.PlannerGroup.PRE_MOVE, GameEnums.CostResource.MP,
+		[AbilityModuleBridge.TAG_POSITIONING],
+		"Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack.",
+		GameEnums.TargetingFlags.ENEMY, GameEnums.CostResource.NONE, 0,
+		GameEnums.CostModifier.NONE, 0, 1,
+	)
 	def.abilities.append(push_through)
 	
 	# Passives
@@ -60,168 +60,289 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.passives.append(DataLibrary._make_passive(&"unstoppable_force", "Unstoppable Force", "Immune to STAGGER/ROOT. Resisting grants SHIELD 1.", "[+] Resisting grants SHIELD 2."))
 	
 	# Actives
-	var charge_strike = DataLibrary._make_ability(&"bruiser_charge_strike", "Charge Strike", 1, [
-		DataLibrary._effect(GameEnums.EffectType.MOVE, 2),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3),
-		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
-	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.SINGLE, 1)
-	charge_strike.upgrade_description = "Gain GHOST during MOVE. Gain ATK +2 if passing through terrain."
-	charge_strike.upgraded_effects = DataLibrary._duplicate_effects(charge_strike.effects)
-	charge_strike.upgraded_effects[0].modifiers["ghost_move"] = 1
-	charge_strike.upgraded_effects[1].modifiers["bonus_dmg_from_terrain"] = 2
+	var charge_move := DataLibrary._module(
+		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.TO_EMPTY_TILE,
+	)
+	var charge_attack := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	charge_attack.execution_phase = GameEnums.ModulePhase.ON_ACTION
+	charge_attack.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
+	charge_attack.aim_module_index = 0
+	charge_attack.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
+	var charge_upgraded := DataLibrary._duplicate_modules([charge_move, charge_attack])
+	charge_upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
+	charge_upgraded[1].legacy_modifiers["bonus_dmg_from_terrain"] = 2
+	charge_upgraded[1].layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
+	var charge_strike := DataLibrary._make_modular_ability(
+		&"bruiser_charge_strike", "Charge Strike", [charge_move, charge_attack],
+		charge_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [],
+		"Gain GHOST during MOVE. Gain ATK +2 if passing through terrain.",
+		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
+	)
+	charge_strike.range_tiles = 1
 	def.abilities.append(charge_strike)
 
-	var concussion_blow = DataLibrary._make_ability(&"bruiser_concussion_blow", "Concussion Blow", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
-		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
-	], 1, GameEnums.StatType.PHYSICAL)
-	concussion_blow.effects[1].modifiers["object_collision_stagger"] = 1
-	concussion_blow.upgrade_description = "Enemy collision applies STAGGER to both units."
-	concussion_blow.upgraded_effects = DataLibrary._duplicate_effects(concussion_blow.effects)
-	concussion_blow.upgraded_effects[1].modifiers["enemy_collision_stagger_both"] = 1
+	var concussion_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	var concussion_push := DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
+	concussion_push.modifiers["object_collision_stagger"] = 1
+	concussion_module.layers = [DataLibrary._layer(concussion_push)]
+	var concussion_upgraded := DataLibrary._duplicate_modules([concussion_module])
+	var upgraded_concussion_push := DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
+	upgraded_concussion_push.modifiers["enemy_collision_stagger_both"] = 1
+	concussion_upgraded[0].layers = [DataLibrary._layer(upgraded_concussion_push)]
+	var concussion_blow := DataLibrary._make_modular_ability(
+		&"bruiser_concussion_blow", "Concussion Blow", [concussion_module],
+		concussion_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Enemy collision applies STAGGER to both units.",
+		GameEnums.TargetingFlags.ENEMY,
+	)
 	def.abilities.append(concussion_blow)
 
-	var cleave = DataLibrary._make_ability(&"bruiser_cleave", "Cleave", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
-	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.ARC, 1)
-	cleave.upgrade_description = "Apply BLEED X (where X = your WPN) to all targets."
-	cleave.upgraded_effects = DataLibrary._duplicate_effects(cleave.effects)
-	var bleed_eff = DataLibrary._status_effect(GameEnums.StatusType.BLEED, 2)
+	var cleave_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 2, 1, 1,
+		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.ARC, 1, GameEnums.StatType.PHYSICAL,
+	)
+	var cleave_upgraded := DataLibrary._duplicate_modules([cleave_module])
+	var bleed_eff := DataLibrary._status_effect(GameEnums.StatusType.BLEED, 2)
 	bleed_eff.modifiers["weapon_scaled"] = 1
-	cleave.upgraded_effects.append(bleed_eff)
+	cleave_upgraded[0].layers = [DataLibrary._layer(bleed_eff)]
+	var cleave := DataLibrary._make_modular_ability(
+		&"bruiser_cleave", "Cleave", [cleave_module], cleave_upgraded, 1,
+		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP,
+		[], "Apply BLEED X (where X = your WPN) to all targets.",
+		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
+	)
 	def.abilities.append(cleave)
 
-	var suplex = DataLibrary._make_ability(&"bruiser_suplex", "Suplex", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 4),
-		DataLibrary._effect(GameEnums.EffectType.THROW_BEHIND, 0)
-	], 1, GameEnums.StatType.PHYSICAL)
-	suplex.upgrade_description = "Gain ATK +1 for every 10 Current HP you possess."
-	suplex.upgraded_effects = DataLibrary._duplicate_effects(suplex.effects)
-	suplex.upgraded_effects[0].modifiers["bonus_dmg_per_10_hp"] = 1
+	var suplex_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 4, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	suplex_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.THROW_BEHIND, 0))]
+	var suplex_upgraded := DataLibrary._duplicate_modules([suplex_module])
+	suplex_upgraded[0].legacy_modifiers["bonus_dmg_per_10_hp"] = 1
+	var suplex := DataLibrary._make_modular_ability(
+		&"bruiser_suplex", "Suplex", [suplex_module], suplex_upgraded, 1,
+		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP,
+		[], "Gain ATK +1 for every 10 Current HP you possess.",
+		GameEnums.TargetingFlags.ENEMY,
+	)
 	def.abilities.append(suplex)
 
-	var adrenaline_surge = DataLibrary._make_ability(&"bruiser_adrenaline_surge", "Adrenaline Surge", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 5),
-		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_STR, 1, 1),
-		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_MOV, 1, 1)
-	], 1)
-	adrenaline_surge.upgrade_description = "On Kill: HEAL 1 and gain SHIELD 2."
-	adrenaline_surge.targeting_mode = GameEnums.TargetingMode.SELF
-	adrenaline_surge.targeting_flags = GameEnums.TargetingFlags.SELF
-	adrenaline_surge.effects[0].modifiers["zero_ap_adjacent_enemies"] = 2
-	adrenaline_surge.upgraded_effects = DataLibrary._duplicate_effects(adrenaline_surge.effects)
-	adrenaline_surge.upgraded_effects[1].modifiers["on_kill_heal_shield"] = 1
+	var adrenaline_module := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS_SELF, 1, 0, 0, GameEnums.TargetingFlags.SELF,
+	)
+	adrenaline_module.status_type = GameEnums.StatusType.STAT_BUFF_STR
+	adrenaline_module.layers = [
+		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_MOV, 1, 1)),
+	]
+	var adrenaline_upgraded := DataLibrary._duplicate_modules([adrenaline_module])
+	adrenaline_upgraded[0].legacy_modifiers["on_kill_heal_shield"] = 1
+	var adrenaline_surge := DataLibrary._make_modular_ability(
+		&"bruiser_adrenaline_surge", "Adrenaline Surge", [adrenaline_module],
+		adrenaline_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "On Kill: HEAL 1 and gain SHIELD 2.",
+		GameEnums.TargetingFlags.SELF, GameEnums.CostResource.HP, 5,
+		GameEnums.CostModifier.ZERO_IF_ADJACENT_ENEMIES_GTE_N, 2,
+	)
 	def.abilities.append(adrenaline_surge)
 
-	var earthshatter = DataLibrary._make_ability(&"bruiser_earthshatter", "Earthshatter", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
-		DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0)
-	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.ARC, 1)
-	earthshatter.upgrade_description = "Gain ATK +1 per destroyed object."
-	earthshatter.upgraded_effects = DataLibrary._duplicate_effects(earthshatter.effects)
-	earthshatter.upgraded_effects[1].modifiers["buff_per_destroyed_object"] = 1
+	var earthshatter_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.ARC, 1, GameEnums.StatType.PHYSICAL,
+	)
+	earthshatter_module.layers = [
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0)),
+	]
+	var earthshatter_upgraded := DataLibrary._duplicate_modules([earthshatter_module])
+	earthshatter_upgraded[0].layers[0].effect.modifiers["buff_per_destroyed_object"] = 1
+	var earthshatter := DataLibrary._make_modular_ability(
+		&"bruiser_earthshatter", "Earthshatter", [earthshatter_module],
+		earthshatter_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Gain ATK +1 per destroyed object.",
+		GameEnums.TargetingFlags.ENEMY,
+	)
 	def.abilities.append(earthshatter)
 
-	var meat_shield = DataLibrary._make_ability(&"bruiser_meat_shield", "Meat Shield", 1, [
-		DataLibrary._effect(GameEnums.EffectType.SWAP, 0),
-		DataLibrary._status_effect_self(GameEnums.StatusType.INTERCEPT, 1)
-	], 1)
-	meat_shield.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
-	meat_shield.targeting_flags = GameEnums.TargetingFlags.ALLY
-	meat_shield.upgrade_description = "RANGE 3. Gain STR +2 per interception."
-	meat_shield.upgraded_range_tiles = 3
-	meat_shield.upgraded_effects = DataLibrary._duplicate_effects(meat_shield.effects)
-	meat_shield.upgraded_effects[1].modifiers["intercept_grant_str"] = 2
+	var meat_module := DataLibrary._module(
+		GameEnums.EffectType.SWAP, 0, 1, 1, GameEnums.TargetingFlags.ALLY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.TO_TARGET_UNIT,
+	)
+	meat_module.layers = [
+		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.INTERCEPT, 1)),
+	]
+	var meat_upgraded := DataLibrary._duplicate_modules([meat_module])
+	meat_upgraded[0].max_range = 3
+	meat_upgraded[0].layers[0].effect.modifiers["intercept_grant_str"] = 2
+	var meat_shield := DataLibrary._make_modular_ability(
+		&"bruiser_meat_shield", "Meat Shield", [meat_module], meat_upgraded, 1,
+		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP,
+		[], "RANGE 3. Gain STR +2 per interception.", GameEnums.TargetingFlags.ALLY,
+	)
 	def.abilities.append(meat_shield)
 
-	var frenzy = DataLibrary._make_ability(&"bruiser_frenzy", "Frenzy", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
-	], 1, GameEnums.StatType.PHYSICAL)
-	frenzy.upgrade_description = "On Kill: Gain 1 AP."
-	frenzy.upgraded_effects = DataLibrary._duplicate_effects(frenzy.effects)
-	for eff in frenzy.upgraded_effects:
-		eff.modifiers["frenzy_on_kill_ap"] = 1
+	var frenzy_modules: Array[AbilityModule] = []
+	for _i: int in range(3):
+		var hit := DataLibrary._module(
+			GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
+			GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+		)
+		if not frenzy_modules.is_empty():
+			hit.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
+			hit.aim_module_index = 0
+		frenzy_modules.append(hit)
+	var frenzy_upgraded := DataLibrary._duplicate_modules(frenzy_modules)
+	for hit: AbilityModule in frenzy_upgraded:
+		hit.legacy_modifiers["frenzy_on_kill_ap"] = 1
+	var frenzy := DataLibrary._make_modular_ability(
+		&"bruiser_frenzy", "Frenzy", frenzy_modules, frenzy_upgraded, 1,
+		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
+		"On Kill: Gain 1 AP.", GameEnums.TargetingFlags.ENEMY,
+	)
 	def.abilities.append(frenzy)
 
-	var guttural_roar = DataLibrary._make_ability(&"bruiser_guttural_roar", "Guttural Roar", 0, [
-		DataLibrary._effect(GameEnums.EffectType.PUSH, 1),
-		DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 2)
-	], 1, GameEnums.StatType.NONE, GameEnums.TargetShape.AOE_CROSS, 2)
-	guttural_roar.upgrade_description = "PUSH 1 all items/coins/scrap. Item collision: ATK 1."
-	guttural_roar.upgraded_effects = DataLibrary._duplicate_effects(guttural_roar.effects)
-	guttural_roar.upgraded_effects[0].modifiers["push_board_items"] = 1
-	guttural_roar.upgraded_effects[0].modifiers["item_collision_damage"] = 1
+	var roar_module := DataLibrary._module(
+		GameEnums.EffectType.PUSH, 1, 0, 0, GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetShape.AOE_CROSS, 2,
+	)
+	roar_module.layers = [
+		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 2)),
+	]
+	var roar_upgraded := DataLibrary._duplicate_modules([roar_module])
+	roar_upgraded[0].legacy_modifiers["push_board_items"] = 1
+	roar_upgraded[0].legacy_modifiers["item_collision_damage"] = 1
+	var guttural_roar := DataLibrary._make_modular_ability(
+		&"bruiser_guttural_roar", "Guttural Roar", [roar_module], roar_upgraded,
+		1, GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
+		"PUSH 1 all items/coins/scrap. Item collision: ATK 1.",
+		GameEnums.TargetingFlags.SELF,
+	)
 	def.abilities.append(guttural_roar)
 
-	var headbutt = DataLibrary._make_ability(&"bruiser_headbutt", "Headbutt", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 1),
-		DataLibrary._status_effect(GameEnums.StatusType.STAGGER, 1),
-		DataLibrary._status_effect_self(GameEnums.StatusType.STAGGER, 1)
-	], 1, GameEnums.StatType.PHYSICAL)
-	headbutt.upgrade_description = "Deal bonus damage equal to 10% of your Max HP."
-	headbutt.upgraded_effects = DataLibrary._duplicate_effects(headbutt.effects)
-	headbutt.upgraded_effects[0].modifiers["bonus_dmg_pct_max_hp"] = 0.1
+	var headbutt_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	headbutt_module.layers = [
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 1)),
+		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.STAGGER, 1)),
+		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.STAGGER, 1)),
+	]
+	var headbutt_upgraded := DataLibrary._duplicate_modules([headbutt_module])
+	headbutt_upgraded[0].legacy_modifiers["bonus_dmg_pct_max_hp"] = 0.1
+	var headbutt := DataLibrary._make_modular_ability(
+		&"bruiser_headbutt", "Headbutt", [headbutt_module], headbutt_upgraded,
+		1, GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
+		"Deal bonus damage equal to 10% of your Max HP.", GameEnums.TargetingFlags.ENEMY,
+	)
 	def.abilities.append(headbutt)
 
-	var blood_boil = DataLibrary._make_ability(&"bruiser_blood_boil", "Blood Boil", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 5),
-		DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_STR, 1)
-	], 1)
-	blood_boil.effects[1].amount = 3
-	blood_boil.targeting_mode = GameEnums.TargetingMode.SELF
-	blood_boil.targeting_flags = GameEnums.TargetingFlags.SELF
-	blood_boil.upgrade_description = "Spend 10 HP to gain STR +5 instead."
-	blood_boil.upgraded_effects = DataLibrary._duplicate_effects(blood_boil.effects)
-	blood_boil.upgraded_effects[0].amount = 10
-	blood_boil.upgraded_effects[1].amount = 5
+	var blood_module := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS_SELF, 3, 0, 0, GameEnums.TargetingFlags.SELF,
+	)
+	blood_module.status_type = GameEnums.StatusType.STAT_BUFF_STR
+	var blood_upgraded := DataLibrary._duplicate_modules([blood_module])
+	blood_upgraded[0].amount = 5
+	var blood_boil := DataLibrary._make_modular_ability(
+		&"bruiser_blood_boil", "Blood Boil", [blood_module], blood_upgraded,
+		1, GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
+		"Spend 10 HP to gain STR +5 instead.", GameEnums.TargetingFlags.SELF,
+		GameEnums.CostResource.HP, 5, GameEnums.CostModifier.NONE, 0, -1, 10,
+	)
 	def.abilities.append(blood_boil)
 
-	var violent_collision = DataLibrary._make_ability(&"bruiser_violent_collision", "Violent Collision", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DASH, 3)
-	], 1, GameEnums.StatType.NONE)
-	violent_collision.effects[0].modifiers["bulldoze"] = 1
-	violent_collision.effects[0].modifiers["push"] = 1
-	violent_collision.effects[0].modifiers["violent_collision_recast"] = 1
-	violent_collision.targeting_mode = GameEnums.TargetingMode.DASH_LINE
-	violent_collision.targeting_flags = GameEnums.TargetingFlags.DASH_LINE
-	violent_collision.upgrade_description = "Collisions apply STAGGER (1 turn)."
-	violent_collision.upgraded_effects = DataLibrary._duplicate_effects(violent_collision.effects)
-	violent_collision.upgraded_effects[0].modifiers["stagger_on_collision"] = 1
+	var collision_dash := DataLibrary._module(
+		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.INTO_OCCUPIED_PUSH,
+	)
+	collision_dash.keywords = [
+		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 1, false),
+	]
+	collision_dash.legacy_modifiers["violent_collision_recast"] = 1
+	var collision_recast := DataLibrary._module(
+		GameEnums.EffectType.MOVE, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.TO_EMPTY_TILE,
+	)
+	collision_recast.gate = GameEnums.ModuleGate.IF_COLLIDED
+	var collision_upgraded := DataLibrary._duplicate_modules([collision_dash, collision_recast])
+	var collision_stagger := DataLibrary._effect(GameEnums.EffectType.PUSH, 0)
+	collision_stagger.modifiers["stagger_on_collision"] = 1
+	collision_upgraded[0].layers = [
+		DataLibrary._layer(collision_stagger, GameEnums.LayerCondition.ON_COLLISION),
+	]
+	var violent_collision := DataLibrary._make_modular_ability(
+		&"bruiser_violent_collision", "Violent Collision",
+		[collision_dash, collision_recast], collision_upgraded, 1,
+		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
+		"Collisions apply STAGGER (1 turn).", GameEnums.TargetingFlags.DASH_LINE,
+	)
 	def.abilities.append(violent_collision)
 
-	var crimson_whirlwind = DataLibrary._make_ability(&"bruiser_crimson_whirlwind", "Crimson Whirlwind", 0, [
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
-	], 1, GameEnums.StatType.PHYSICAL, GameEnums.TargetShape.AOE_SQUARE, 1)
-	crimson_whirlwind.upgrade_description = "HEAL 1 for every target successfully hit."
-	crimson_whirlwind.upgraded_effects = DataLibrary._duplicate_effects(crimson_whirlwind.effects)
-	crimson_whirlwind.upgraded_effects[0].modifiers["heal_per_target_hit"] = 1
+	var whirlwind_module := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 1, 0, 0, GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	var whirlwind_upgraded := DataLibrary._duplicate_modules([whirlwind_module])
+	whirlwind_upgraded[0].legacy_modifiers["heal_per_target_hit"] = 1
+	var crimson_whirlwind := DataLibrary._make_modular_ability(
+		&"bruiser_crimson_whirlwind", "Crimson Whirlwind", [whirlwind_module],
+		whirlwind_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "HEAL 1 for every target successfully hit.",
+		GameEnums.TargetingFlags.SELF,
+	)
 	def.abilities.append(crimson_whirlwind)
 
-	var belly_flop = DataLibrary._make_ability(&"bruiser_belly_flop", "Belly Flop", 2, [
-		DataLibrary._effect(GameEnums.EffectType.TELEPORT_CASTER, 0),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
-	], 2, GameEnums.StatType.PHYSICAL)
-	belly_flop.effects[1].modifiers["damage_adjacent_on_landing"] = 1
-	belly_flop.upgrade_description = "Landing applies PUSH 1 to all adjacent enemies."
-	belly_flop.targeting_mode = GameEnums.TargetingMode.TILE
-	belly_flop.targeting_flags = GameEnums.TargetingFlags.TILE
-	belly_flop.upgraded_effects = DataLibrary._duplicate_effects(belly_flop.effects)
-	belly_flop.upgraded_effects.append(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))
-	belly_flop.upgraded_effects[2].modifiers["belly_flop_push"] = 1
+	var belly_teleport := DataLibrary._module(
+		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 2, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.TO_EMPTY_TILE,
+	)
+	var belly_damage := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 2, 0, 0, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	belly_damage.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
+	belly_damage.aim_module_index = 0
+	belly_damage.legacy_modifiers["damage_adjacent_on_landing"] = 1
+	var belly_upgraded := DataLibrary._duplicate_modules([belly_teleport, belly_damage])
+	var belly_push := DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
+	belly_push.modifiers["belly_flop_push"] = 1
+	belly_upgraded[1].layers = [DataLibrary._layer(belly_push)]
+	var belly_flop := DataLibrary._make_modular_ability(
+		&"bruiser_belly_flop", "Belly Flop", [belly_teleport, belly_damage],
+		belly_upgraded, 2, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Landing applies PUSH 1 to all adjacent enemies.",
+		GameEnums.TargetingFlags.TILE,
+	)
 	def.abilities.append(belly_flop)
 
-	var breaching_dash = DataLibrary._make_ability(&"bruiser_breaching_dash", "Breaching Dash", 1, [
-		DataLibrary._effect(GameEnums.EffectType.DASH, 3),
-		DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0)
-	], 1, GameEnums.StatType.PHYSICAL)
-	breaching_dash.upgrade_description = "Your next attack this turn gains PIERCE."
-	breaching_dash.targeting_mode = GameEnums.TargetingMode.DASH_LINE
-	breaching_dash.targeting_flags = GameEnums.TargetingFlags.DASH_LINE
-	breaching_dash.upgraded_effects = DataLibrary._duplicate_effects(breaching_dash.effects)
-	breaching_dash.upgraded_effects[0].modifiers["next_attack_pierce"] = 1
+	var breach_module := DataLibrary._module(
+		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+		GameEnums.MotionMode.TO_EMPTY_TILE,
+	)
+	breach_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0))]
+	var breach_upgraded := DataLibrary._duplicate_modules([breach_module])
+	breach_upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.PIERCE)]
+	breach_upgraded[0].legacy_modifiers["next_attack_pierce"] = 1
+	var breaching_dash := DataLibrary._make_modular_ability(
+		&"bruiser_breaching_dash", "Breaching Dash", [breach_module],
+		breach_upgraded, 1, GameEnums.PlannerGroup.ACTION,
+		GameEnums.CostResource.AP, [], "Your next attack this turn gains PIERCE.",
+		GameEnums.TargetingFlags.DASH_LINE,
+	)
 	def.abilities.append(breaching_dash)
 
 	DataLibrary.finalize_unit_abilities(def)

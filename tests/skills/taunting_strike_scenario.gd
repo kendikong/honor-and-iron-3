@@ -46,13 +46,13 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/upgrade_range",
-		strike != null and strike.upgraded_range_tiles == 3,
+		strike != null and strike.upgraded_modules[0].max_range == 3,
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/upgrade_aoe",
 		strike != null
-		and strike.upgraded_target_shape == GameEnums.TargetShape.AOE_SQUARE
-		and strike.upgraded_target_shape_size == 1,
+		and strike.upgraded_modules[0].target_shape == GameEnums.TargetShape.AOE_SQUARE
+		and strike.upgraded_modules[0].target_shape_size == 1,
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/upgrade_pull2",

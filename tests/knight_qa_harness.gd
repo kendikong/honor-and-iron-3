@@ -28,7 +28,7 @@ static func assert_eq_cell(failures: Array[String], tag: String, got: Vector2i, 
 
 
 static func knight_unit_data() -> UnitData:
-	return DataLibrary.get_unit(KNIGHT_DEF_ID)
+	return FactoryTestHelpers.build_unit(KNIGHT_DEF_ID)
 
 
 static func factory_ability(ability_id: StringName) -> AbilityData:
@@ -2094,17 +2094,20 @@ static func run_taunting_strike(failures: Array[String]) -> void:
 		and strike_up.upgraded_effects[1].amount == 2,
 		"upgraded taunting strike must PULL 2",
 	)
-	assert_eq_int(failures, "taunting_strike/upgrade/range", strike_up.upgraded_range_tiles, 3)
+	assert_eq_int(
+		failures, "taunting_strike/upgrade/range",
+		strike_up.upgraded_modules[0].max_range, 3,
+	)
 	assert_true(
 		failures, "taunting_strike/upgrade/aoe_shape",
-		strike_up.upgraded_target_shape == GameEnums.TargetShape.AOE_SQUARE
-		and strike_up.upgraded_target_shape_size == 1,
+		strike_up.upgraded_modules[0].target_shape == GameEnums.TargetShape.AOE_SQUARE
+		and strike_up.upgraded_modules[0].target_shape_size == 1,
 		"upgraded taunting strike must be AOE 3x3",
 	)
 	AoeFootprintQaHarness.assert_footprint_excludes(
 		failures, "taunting_strike/upgrade/footprint",
 		board2, Vector2i(5, 5), Vector2i(7, 5),
-		strike_up.upgraded_target_shape, strike_up.upgraded_target_shape_size,
+		strike_up.upgraded_modules[0].target_shape, strike_up.upgraded_modules[0].target_shape_size,
 		Vector2i(10, 10),
 	)
 	var plan2 := Timeline.new()
