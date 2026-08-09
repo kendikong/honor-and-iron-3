@@ -80,20 +80,20 @@ static func build_player_active_abilities_seeded(
 		return def.abilities.duplicate()
 	var out: Array[AbilityData] = []
 	var basic_attack: AbilityData = null
-	var movement_skill: AbilityData = null
+	var reposition_skills: Array[AbilityData] = []
 	var class_abilities: Array[AbilityData] = []
 	for ab: AbilityData in def.abilities:
 		if is_basic_ability(ab.id):
 			basic_attack = ab
-		elif ab.is_movement_kind():
-			movement_skill = ab
+		elif ab.is_pre_move_planner():
+			reposition_skills.append(ab)
 		else:
 			class_abilities.append(ab)
 	if basic_attack == null:
 		basic_attack = _make_class_basic_attack(def.id)
 	out.append(get_universal_run())
-	if movement_skill != null:
-		out.append(movement_skill)
+	out.append_array(reposition_skills)
+	out.append(basic_attack)
 	var pick_count: int = class_skill_count
 	if pick_count < 0 or pick_count >= class_abilities.size():
 		out.append_array(class_abilities)
@@ -105,7 +105,6 @@ static func build_player_active_abilities_seeded(
 			var idx: int = rng.randi() % pool.size()
 			out.append(pool[idx])
 			pool.remove_at(idx)
-	out.append(basic_attack)
 	return out
 
 

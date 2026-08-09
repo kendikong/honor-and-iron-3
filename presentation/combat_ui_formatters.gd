@@ -702,21 +702,12 @@ static func _ability_module_line_bbcode(module: AbilityModule) -> String:
 	if module == null:
 		return ""
 	var parts: Array[String] = []
-	if _module_line_includes_range_prefix(module):
-		var range_part: String = _module_range_prefix_bbcode(module)
-		if range_part != "":
-			parts.append(range_part)
+	var range_aoe: String = _module_range_and_aoe_prefix_bbcode(module)
+	if range_aoe != "":
+		parts.append(range_aoe)
 	var primary: String = _module_primary_bbcode(module)
 	if primary != "":
 		parts.append(primary)
-	if module.target_shape != GameEnums.TargetShape.SINGLE:
-		var shape_name: String = GameEnums.TargetShape.keys()[module.target_shape].capitalize().replace(
-			"Aoe ", "",
-		)
-		parts.append(_kw_hint(
-			"AOE %s %d" % [shape_name, module.target_shape_size],
-			_glossary_def("AOE"),
-		))
 	for keyword: AbilityKeyword in module.keywords:
 		if keyword == null or not keyword.emit_as_effect:
 			continue
@@ -730,6 +721,27 @@ static func _ability_module_line_bbcode(module: AbilityModule) -> String:
 		if layer_part != "":
 			parts.append(layer_part)
 	return " | ".join(parts)
+
+
+static func _module_range_and_aoe_prefix_bbcode(module: AbilityModule) -> String:
+	if module == null:
+		return ""
+	var chunks: PackedStringArray = PackedStringArray()
+	if _module_line_includes_range_prefix(module):
+		var range_part: String = _module_range_prefix_bbcode(module)
+		if range_part != "":
+			chunks.append(range_part)
+	if module.target_shape != GameEnums.TargetShape.SINGLE:
+		var shape_name: String = GameEnums.TargetShape.keys()[module.target_shape].capitalize().replace(
+			"Aoe ", "",
+		)
+		chunks.append(_kw_hint(
+			"AOE %s %d" % [shape_name, module.target_shape_size],
+			_glossary_def("AOE"),
+		))
+	if chunks.is_empty():
+		return ""
+	return " ".join(chunks)
 
 
 static func _module_line_includes_range_prefix(module: AbilityModule) -> bool:
