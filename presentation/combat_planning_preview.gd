@@ -489,6 +489,12 @@ static func apply_movement_result(
 ) -> void:
 	if preview == null or result == null or result.final_state == null:
 		return
+	var painted_paths: Dictionary = preview.preview_paths.duplicate(true)
+	var painted_actors: Dictionary = {}
+	for actor_id: Variant in painted_paths.keys():
+		var route: Variant = painted_paths[actor_id]
+		if route is Array and (route as Array).size() >= 2:
+			painted_actors[int(actor_id)] = true
 	preview.preview_board = result.final_state
 	build_preview_paths(
 		result.events,
@@ -499,6 +505,11 @@ static func apply_movement_result(
 		preview.preview_post_splits,
 		preview.action_splits,
 	)
+	for actor_id: Variant in painted_paths.keys():
+		var route: Variant = painted_paths[actor_id]
+		if route is Array and (route as Array).size() >= 2:
+			preview.preview_paths[actor_id] = (route as Array).duplicate()
+			preview.preview_splits[actor_id] = (route as Array).size()
 	if base_board != null:
 		for unit: UnitState in base_board.units:
 			var pv := result.final_state.get_unit_by_id(unit.id)
@@ -510,7 +521,7 @@ static func apply_movement_result(
 				preview.predicted_hp[unit.id] = 0
 				preview.predicted_armor[unit.id] = 0
 				preview.predicted_ap[unit.id] = 0
-	if director != null:
+	if director != null and painted_actors.is_empty():
 		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
 
 

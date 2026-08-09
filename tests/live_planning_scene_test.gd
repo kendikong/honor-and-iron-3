@@ -12,6 +12,8 @@ const _BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
 const _SWAP_ID: StringName = &"knight_swap"
 
 const _K1_CELL := Vector2i(4, 5)
+const _K1_BASH_PAINT_ROUTE: Array[Vector2i] = [_K1_CELL, _HOVER_WALK, _BASH_APPROACH]
+const _K1_BASH_PREMOVE_WAYPOINTS: Array[Vector2i] = [_HOVER_WALK, _BASH_APPROACH]
 const _SWAP_ALLY_CELL := Vector2i(4, 4)
 ## After swap knight stands here; L-route west then north around ally at (4,5).
 const _SWAP_PREMOVE_ROUTE: Array[Vector2i] = [Vector2i(3, 4), Vector2i(3, 5)]
@@ -522,20 +524,23 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 	await _wait_ability_settle(ctx)
 	_assert_k1_bash_committed(ctx, k1_id, "k1/selection")
 	await _undo_until_unit_clear(ctx, k1_id, _K1_CELL)
-	await _drag_release_at(ctx, [_K1_CELL, _BASH_APPROACH], _E_BASH_CELL, "k1/drag")
+	var waypoint_pre_intent: Dictionary = await _drag_k1_bash_via_waypoints(ctx, "k1/waypoint")
 	await _wait_ability_settle(ctx)
-	_assert_k1_bash_committed(ctx, k1_id, "k1/drag")
-	await _capture_commit_state(ctx, k1_id, "k1/drag/committed")
-	_remember_mode_commit(ctx, "k1/drag", k1_id)
-	_assert_mode_commit_parity(ctx, "k1/selection", "k1/drag")
+	_assert_k1_bash_committed(ctx, k1_id, "k1/waypoint")
+	await _capture_commit_state(ctx, k1_id, "k1/waypoint/committed")
+	_remember_mode_commit(ctx, "k1/waypoint", k1_id)
+	_assert_mode_commit_parity(ctx, "k1/selection", "k1/waypoint")
+	await _assert_committed_display_ratifies_pre_commit(
+		ctx, k1_id, waypoint_pre_intent, "k1/waypoint",
+	)
 	await _probe_cell(ctx, k1_id, _BASH_APPROACH, {
 		"red_on": false,
 		"red_stand": _BASH_APPROACH,
 		"ability": bash,
 		"manhattan": true,
-	}, "k1/drag/post_commit")
+	}, "k1/waypoint/post_commit")
 	_assert_enemy_live_unchanged_during_planning(
-		ctx, e_bash_id, _E_BASH_CELL, "k1/drag/post_commit",
+		ctx, e_bash_id, _E_BASH_CELL, "k1/waypoint/post_commit",
 	)
 	ctx.expect["k1_pos"] = _BASH_APPROACH
 	var bashed: UnitState = director.projected_state.get_unit_by_id(e_bash_id)
@@ -1055,6 +1060,110 @@ func _assert_k1_bash_committed(ctx: Dictionary, k1_id: int, label: String) -> vo
 	assert_that(bash_pre.target_coord).override_failure_message(
 		"%s: bash pre-move dest" % label,
 	).is_equal(_BASH_APPROACH)
+	if label.contains("waypoint"):
+		assert_that(bash_pre.waypoints).override_failure_message(
+			"%s: bash pre-move waypoints must ratify painted route" % label,
+		).is_equal(_K1_BASH_PREMOVE_WAYPOINTS)
+
+
+func _drag_k1_bash_via_waypoints(ctx: Dictionary, label_prefix: String) -> Dictionary:
+	var runner: GdUnitSceneRunner = ctx.runner
+	var input: CombatPlanningInput = ctx.input
+	var k1_id: int = ctx.k1_id
+	var route: Array[Vector2i] = _K1_BASH_PAINT_ROUTE.duplicate()
+	await _reposition_mouse_to_unit(ctx, k1_id, route[0])
+	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	await runner.simulate_frames(3, _MOUSE_MOTION_DELTA_MS)
+	await _capture_planning_surface(ctx, k1_id, "%s/press" % label_prefix)
+	for step_index: int in range(1, route.size()):
+		var cell: Vector2i = route[step_index]
+		await _hop_drag_to_cell(ctx, k1_id, cell, "%s/step_%d" % [label_prefix, step_index])
+		var expected_route: Array[Vector2i] = route.slice(0, step_index + 1)
+		_assert_drag_route_equals(ctx, expected_route, "%s/drag_route_%d" % [label_prefix, step_index])
+		await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
+		_assert_preview_path_equals(
+			ctx, k1_id, expected_route, "%s/preview_path_%d" % [label_prefix, step_index],
+		)
+		await _capture_planning_surface(ctx, k1_id, "%s/step_%d" % [label_prefix, step_index])
+	await _hop_drag_to_cell(ctx, k1_id, _E_BASH_CELL, "%s/hover_enemy" % label_prefix)
+	await _capture_planning_surface(ctx, k1_id, "%s/pre_release" % label_prefix)
+	_assert_preview_path_equals(
+		ctx,
+		k1_id,
+		route,
+		"%s/pre_release/path" % label_prefix,
+	)
+	var pre_intent: Dictionary = _capture_preview_intent(ctx, k1_id, _E_BASH_CELL, true)
+	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
+	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
+	await _capture_planning_surface(ctx, k1_id, "%s/release" % label_prefix)
+	_assert_commit_ratifies_preview(ctx, k1_id, pre_intent, "%s/release" % label_prefix)
+	return pre_intent
+
+
+func _assert_committed_display_ratifies_pre_commit(
+	ctx: Dictionary,
+	unit_id: int,
+	pre_intent: Dictionary,
+	label: String,
+) -> void:
+	var overlay: TacticalPlanningOverlay = ctx.overlay
+	var pre_preview_path: Array = pre_intent.get("preview_path", [])
+	var committed: CombatPlanningPreview = overlay.get_committed_preview()
+	var committed_path: Array = committed.preview_paths.get(unit_id, [])
+	if not pre_preview_path.is_empty():
+		assert_that(committed_path).override_failure_message(
+			"%s: committed display path must ratify pre-commit move preview (%s vs %s)" % [
+				label,
+				str(committed_path),
+				str(pre_preview_path),
+			],
+		).is_equal(pre_preview_path)
+	var pre_slots: Dictionary = pre_intent.get("slots", {}) as Dictionary
+	var pre_target: Vector2i = _pre_target_from_slots(pre_slots)
+	var projected: UnitState = ctx.director.projected_state.get_unit_by_id(unit_id)
+	if projected != null and pre_target.x > -900000:
+		assert_that(projected.position).override_failure_message(
+			"%s: projected stand must ratify pre-commit pre-move target" % label,
+		).is_equal(pre_target)
+
+
+func _assert_move_preview_pre_post_commit_parity(
+	ctx: Dictionary,
+	unit_id: int,
+	hover_cell: Vector2i,
+	pre_intent: Dictionary,
+	label: String,
+) -> void:
+	var input: CombatPlanningInput = ctx.input
+	var director: CombatDirector = ctx.director
+	director.flush_plan_refresh_signals_if_pending()
+	await _sweep_mouse_to_cell(ctx, hover_cell, "%s/post_commit_hover" % label, unit_id)
+	var pre_preview_path: Array = pre_intent.get("preview_path", [])
+	var post_preview_path: Array[Vector2i] = _preview_path(input, unit_id)
+	if not pre_preview_path.is_empty():
+		assert_that(post_preview_path).override_failure_message(
+			"%s: post-commit move preview path must match pre-commit (%s vs %s)" % [
+				label,
+				str(post_preview_path),
+				str(pre_preview_path),
+			],
+		).is_equal(pre_preview_path)
+	var pre_slots: Dictionary = pre_intent.get("slots", {}) as Dictionary
+	var post_slots: Dictionary = _commit_slots_for_interaction(ctx, unit_id, hover_cell, false)
+	assert_that(_intent_slot_signature(post_slots)).override_failure_message(
+		"%s: post-commit hover slots must match pre-commit preview slots (%s vs %s)" % [
+			label,
+			_intent_slot_signature(post_slots),
+			_intent_slot_signature(pre_slots),
+		],
+	).is_equal(_intent_slot_signature(pre_slots))
+	var projected: UnitState = director.projected_state.get_unit_by_id(unit_id)
+	var pre_target: Vector2i = _pre_target_from_slots(pre_slots)
+	if projected != null and pre_target.x > -900000:
+		assert_that(projected.position).override_failure_message(
+			"%s: projected stand must ratify pre-commit pre-move target" % label,
+		).is_equal(pre_target)
 
 
 func _assert_k2_hook_committed(
