@@ -2582,9 +2582,8 @@ func _refresh_plan_snap_turn_start(plan: Timeline, player_events: Array[SimEvent
 	sync_selected_ability_if_invalid()
 
 	var preview_board: BoardState = projected_state.clone()
-	var ghost_evs: Array[SimEvent] = _turn_start_enemy_ghost_events.duplicate()
-	if ghost_evs.is_empty():
-		ghost_evs = _build_enemy_ghost_events(preview_board, intents)
+	## Always apply enemy ghosts on preview_board — cached events alone do not mutate final_state.
+	var ghost_evs: Array[SimEvent] = _build_enemy_ghost_events(preview_board, intents)
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = _preview_events_for_overlay(player_events, ghost_evs)
 	var statuses := PackedStringArray()
@@ -2615,14 +2614,11 @@ func _refresh_plan_wait_marker_only(plan: Timeline) -> void:
 	projected_state.intents = base_board.intents
 	plan_revision += 1
 	sync_selected_ability_if_invalid()
-	var ghost_evs: Array[SimEvent]
-	if not _cached_wait_marker_ghost_events.is_empty():
-		ghost_evs = _cached_wait_marker_ghost_events
-	else:
-		var preview_board: BoardState = projected_state.clone()
-		ghost_evs = _build_ghost_events(preview_board, plan, intents)
+	var preview_board: BoardState = projected_state.clone()
+	var ghost_evs: Array[SimEvent] = _build_ghost_events(preview_board, plan, intents)
+	if _cached_wait_marker_ghost_events.is_empty():
 		_cached_wait_marker_ghost_events = ghost_evs.duplicate()
-	var sim_res := SimResult.new(projected_state.clone())
+	var sim_res := SimResult.new(preview_board)
 	sim_res.events = _preview_events_for_overlay([], ghost_evs)
 	var statuses := PackedStringArray()
 	statuses.resize(maxi(plan.size(), 1))

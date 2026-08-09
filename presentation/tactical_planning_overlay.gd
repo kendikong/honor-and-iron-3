@@ -367,13 +367,18 @@ func restore_committed_display() -> void:
 	_live_preview.preview_pushes.clear()
 	_attack_target_id = -1
 	_preview_board = _committed_preview.preview_board
-	if _unit_layer != null:
-		_unit_layer.set_predicted_stats(
-			_committed_preview.predicted_hp,
-			_committed_preview.predicted_armor,
-		)
+	_push_predicted_stats_to_unit_layer(_committed_preview)
 	live_preview_changed.emit()
 	queue_redraw()
+
+
+## HP/armor preview on unit bars — always during planning; independent of ghost toggles.
+func _push_predicted_stats_to_unit_layer(preview: CombatPlanningPreview) -> void:
+	if _unit_layer == null or preview == null:
+		return
+	if not CombatDirector.is_planning_phase(_phase):
+		return
+	_unit_layer.set_predicted_stats(preview.predicted_hp, preview.predicted_armor)
 
 
 ## Executed plan displacement hints must not survive into execute / next planning turn.
@@ -405,8 +410,7 @@ func apply_preview_state(
 ) -> void:
 	_live_preview.copy_from(state)
 	_attack_target_id = attack_target_id
-	if _preview_live_ghosts_enabled() and _unit_layer != null:
-		_unit_layer.set_predicted_stats(state.predicted_hp, state.predicted_armor)
+	_push_predicted_stats_to_unit_layer(state)
 	live_preview_changed.emit()
 	queue_redraw()
 
@@ -933,32 +937,19 @@ func _flush_deferred_preview_updated() -> void:
 
 func _apply_committed_preview_update(result: SimResult, light_refresh: bool = false) -> void:
 	set_preview_board(result.final_state)
-	if light_refresh:
-		if _director != null and _board != null:
-			_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
-			_preview_board = _committed_preview.preview_board
-		_has_stashed_committed = false
-		# Undo snap: red action-range tiles must track projected stand immediately.
-		_invalidate_hover_cache()
-		_recompute_hover_ranges_from_inputs()
-		queue_redraw()
-		return
-	_invalidate_hover_cache()
 	if _director != null and _board != null:
 		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
 		_preview_board = _committed_preview.preview_board
 	_has_stashed_committed = false
-	_schedule_hover_recompute()
+	if light_refresh:
+		# Undo snap: red action-range tiles must track projected stand immediately.
+		_invalidate_hover_cache()
+		_recompute_hover_ranges_from_inputs()
+	else:
+		_invalidate_hover_cache()
+		_schedule_hover_recompute()
 	if _planning_input == null or not _planning_input.is_live_preview_active():
-		if (
-			_unit_layer != null
-			and not _unit_layer.has_planning_move_tweens()
-			and not _unit_layer.is_planning_commit_sequence_active()
-		):
-			_unit_layer.set_predicted_stats(
-				_committed_preview.predicted_hp,
-				_committed_preview.predicted_armor,
-			)
+		_push_predicted_stats_to_unit_layer(_committed_preview)
 		live_preview_changed.emit()
 	queue_redraw()
 
