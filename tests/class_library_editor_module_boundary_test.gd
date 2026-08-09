@@ -2,6 +2,7 @@ class_name ClassLibraryEditorModuleBoundaryTest
 extends RefCounted
 
 const EDITOR_PATH: String = "res://ui/class_library_editor.gd"
+const SCHEMA_PATH: String = "res://ui/class_library_schema.gd"
 const OVERRIDES_PATH: String = "res://data/class_library_data.json"
 
 
@@ -18,6 +19,9 @@ static func run_all(failures: Array[String]) -> void:
 	]:
 		if source.contains(forbidden):
 			failures.append("class library editor still writes legacy field: %s" % forbidden)
+	var schema_source: String = FileAccess.get_file_as_string(SCHEMA_PATH)
+	if not schema_source.contains("return migrate_editor_save_to_modules(parsed as Dictionary)"):
+		failures.append("class library save reader bypasses module migration")
 	_assert_saved_abilities_are_module_first(failures)
 
 

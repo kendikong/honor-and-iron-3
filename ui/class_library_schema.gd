@@ -1073,7 +1073,7 @@ static func read_editor_save() -> Dictionary:
 		return {}
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(EDITOR_OVERRIDES_PATH))
 	if typeof(parsed) == TYPE_DICTIONARY:
-		return parsed
+		return migrate_editor_save_to_modules(parsed as Dictionary)
 	return {}
 
 
