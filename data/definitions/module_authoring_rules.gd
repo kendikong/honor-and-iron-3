@@ -163,10 +163,10 @@ static func normalize_module_context_fields(
 		module.max_range = 0
 		module.requires_los = false
 		module.range_origin = GameEnums.RangeOrigin.ACTOR
-	elif not module_uses_range_origin(module, module_index):
-		module.range_origin = GameEnums.RangeOrigin.ACTOR
 	elif not module_uses_los(module):
 		module.requires_los = false
+	if module_uses_range(module) and not module_uses_range_origin(module, module_index):
+		module.range_origin = GameEnums.RangeOrigin.ACTOR
 	normalize_module_targeting_flags(module)
 	for keyword: AbilityKeyword in module.keywords:
 		if keyword == null:
