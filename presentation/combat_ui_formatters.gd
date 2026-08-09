@@ -774,12 +774,9 @@ static func _module_effect_bbcode_part(effect: EffectData) -> String:
 		return ""
 	match effect.type:
 		GameEnums.EffectType.DAMAGE:
-			var atk_label: String = "ATK %s" % _effect_amount_string(effect)
-			var hint: String = _glossary_def("ATK")
-			if effect.scaling_stat != GameEnums.StatType.NONE:
-				hint += " + %s" % GameEnums.StatType.keys()[effect.scaling_stat]
+			var atk_label: String = _damage_atk_label(effect)
 			return "[hint=\"%s\"][color=#FBBF24]%s %s[/color][/hint]" % [
-				hint,
+				_damage_atk_hint(effect),
 				PlanningIcons.GLYPH_ATTACK,
 				atk_label,
 			]
@@ -804,7 +801,10 @@ static func _module_effect_bbcode_part(effect: EffectData) -> String:
 		GameEnums.EffectType.EXPLODE:
 			return _kw_hint("EXPLODE %s" % _effect_amount_string(effect), _glossary_def("EXPLODE"))
 		GameEnums.EffectType.RANGED_EXPLODE:
-			return _kw_hint("AOE ATK %s" % _effect_amount_string(effect), _glossary_def("AOE ATK"))
+			return _kw_hint(
+				_damage_atk_label(effect, "AOE ATK"),
+				_glossary_def("AOE ATK"),
+			)
 		GameEnums.EffectType.SPAWN:
 			return _kw_hint(
 				"SPAWN %s" % str(effect.spawn_unit_id).capitalize(),
@@ -830,7 +830,7 @@ static func _module_effect_bbcode_part(effect: EffectData) -> String:
 			return _kw_hint("DESTROY OBSTACLE", _glossary_def("DESTROY OBSTACLE"))
 		GameEnums.EffectType.DAMAGE_SELF:
 			return _kw_hint(
-				"Self ATK %s" % _effect_amount_string(effect),
+				_damage_atk_label(effect, "Self ATK"),
 				"Ignores Armor and deals direct damage to the caster.",
 			)
 		GameEnums.EffectType.CREATE_HAZARD:
@@ -1008,7 +1008,7 @@ static func _effect_tooltip_line(effect: EffectData) -> String:
 	var amount: String = _effect_amount_string(effect)
 	match effect.type:
 		GameEnums.EffectType.DAMAGE:
-			return _kw_tooltip_line("ATK %s" % amount, _glossary_def("ATK"))
+			return _kw_tooltip_line(_damage_atk_label(effect), _damage_atk_hint(effect))
 		GameEnums.EffectType.HEAL:
 			return _kw_tooltip_line("HEAL %s" % amount, _glossary_def("HEAL"))
 		GameEnums.EffectType.PUSH:
@@ -1022,7 +1022,10 @@ static func _effect_tooltip_line(effect: EffectData) -> String:
 		GameEnums.EffectType.EXPLODE:
 			return _kw_tooltip_line("EXPLODE %s" % amount, _glossary_def("EXPLODE"))
 		GameEnums.EffectType.RANGED_EXPLODE:
-			return _kw_tooltip_line("AOE ATK %s" % amount, _glossary_def("AOE ATK"))
+			return _kw_tooltip_line(
+				_damage_atk_label(effect, "AOE ATK"),
+				_glossary_def("AOE ATK"),
+			)
 		GameEnums.EffectType.SPAWN:
 			return _kw_tooltip_line(
 				"SPAWN %s" % str(effect.spawn_unit_id).capitalize(),
@@ -1046,7 +1049,7 @@ static func _effect_tooltip_line(effect: EffectData) -> String:
 			return _kw_tooltip_line("PURGE", _glossary_def("PURGE"))
 		GameEnums.EffectType.DAMAGE_SELF:
 			return _kw_tooltip_line(
-				"Self ATK %s" % amount,
+				_damage_atk_label(effect, "Self ATK"),
 				"Ignores Armor and deals direct damage to the caster.",
 			)
 		GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF:
@@ -1267,7 +1270,7 @@ static func ability_effect_string(ability: AbilityData, unit: UnitState = null) 
 	for effect: EffectData in AbilitySystem.compatibility_effects_for(unit, ability):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE:
-				parts.append("ATK %s" % _effect_amount_string(effect))
+				parts.append(_damage_atk_label(effect))
 			GameEnums.EffectType.HEAL:
 				parts.append("HEAL %s" % _effect_amount_string(effect))
 			GameEnums.EffectType.PUSH:
@@ -1281,7 +1284,7 @@ static func ability_effect_string(ability: AbilityData, unit: UnitState = null) 
 			GameEnums.EffectType.EXPLODE:
 				parts.append("EXPLODE %s" % _effect_amount_string(effect))
 			GameEnums.EffectType.RANGED_EXPLODE:
-				parts.append("AOE ATK %s" % _effect_amount_string(effect))
+				parts.append(_damage_atk_label(effect, "AOE ATK"))
 			GameEnums.EffectType.SPAWN:
 				parts.append("SPAWN %s" % str(effect.spawn_unit_id).capitalize())
 			GameEnums.EffectType.ADD_STATUS:
@@ -1307,7 +1310,7 @@ static func ability_effect_string(ability: AbilityData, unit: UnitState = null) 
 			GameEnums.EffectType.DESTROY_OBSTACLE:
 				parts.append("DESTROY OBSTACLE")
 			GameEnums.EffectType.DAMAGE_SELF:
-				parts.append("Self ATK %s" % _effect_amount_string(effect))
+				parts.append(_damage_atk_label(effect, "Self ATK"))
 			GameEnums.EffectType.CREATE_HAZARD:
 				parts.append(_hazard_create_label(effect))
 			GameEnums.EffectType.THROW_BEHIND:
@@ -1337,7 +1340,7 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 	for effect: EffectData in AbilitySystem.compatibility_effects_for(unit, ability):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE:
-				parts.append(_kw_hint("ATK %s" % _effect_amount_string(effect), _glossary_def("ATK")))
+				parts.append(_kw_hint(_damage_atk_label(effect), _damage_atk_hint(effect)))
 			GameEnums.EffectType.HEAL:
 				parts.append(_kw_hint("HEAL %s" % _effect_amount_string(effect), _glossary_def("HEAL")))
 			GameEnums.EffectType.PUSH:
@@ -1368,7 +1371,10 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 			GameEnums.EffectType.EXPLODE:
 				parts.append(_kw_hint("EXPLODE %s" % _effect_amount_string(effect), _glossary_def("EXPLODE")))
 			GameEnums.EffectType.RANGED_EXPLODE:
-				parts.append(_kw_hint("AOE ATK %s" % _effect_amount_string(effect), _glossary_def("AOE ATK")))
+				parts.append(_kw_hint(
+					_damage_atk_label(effect, "AOE ATK"),
+					_glossary_def("AOE ATK"),
+				))
 			GameEnums.EffectType.SPAWN:
 				parts.append(_kw_hint(
 					"SPAWN %s" % str(effect.spawn_unit_id).capitalize(),
@@ -1390,7 +1396,7 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 				parts.append(_kw_hint("DESTROY OBSTACLE", _glossary_def("DESTROY OBSTACLE")))
 			GameEnums.EffectType.DAMAGE_SELF:
 				parts.append(_kw_hint(
-					"Self ATK %s" % _effect_amount_string(effect),
+					_damage_atk_label(effect, "Self ATK"),
 					"Ignores Armor and deals direct damage to the caster.",
 				))
 			GameEnums.EffectType.CREATE_HAZARD:
@@ -1578,6 +1584,24 @@ static func _effect_amount_string(eff: EffectData) -> String:
 	if eff.scaling_stat != GameEnums.StatType.NONE:
 		return GameEnums.StatType.keys()[eff.scaling_stat]
 	return str(eff.amount)
+
+
+## Player-facing attack label: physical is plain ATK; magical is MAG ATK (no +PHYSICAL suffix).
+static func _damage_atk_label(effect: EffectData, prefix: String = "ATK") -> String:
+	if effect == null:
+		return "%s 0" % prefix
+	var amount: String = str(effect.amount)
+	if effect.scaling_stat == GameEnums.StatType.MAGICAL:
+		if prefix == "ATK":
+			return "MAG ATK %s" % amount
+		return "%s MAG ATK %s" % [prefix, amount]
+	return "%s %s" % [prefix, amount]
+
+
+static func _damage_atk_hint(effect: EffectData) -> String:
+	if effect != null and effect.scaling_stat == GameEnums.StatType.MAGICAL:
+		return _glossary_def("MAG ATK")
+	return _glossary_def("ATK")
 
 
 static func _hazard_create_label(effect: EffectData) -> String:
