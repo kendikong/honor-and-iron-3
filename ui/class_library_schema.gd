@@ -311,19 +311,26 @@ static func bible_ability_effect_line(ability: AbilityData) -> String:
 static func bible_ability_targeting_label(ability: AbilityData) -> String:
 	if ability == null:
 		return ""
-	for eff: EffectData in ability.effects:
-		if eff.type == GameEnums.EffectType.DASH:
-			return "DASH %d" % eff.amount
-	if ability.range_tiles > 0:
-		return "RANGE %d" % ability.range_tiles
-	if ability.targeting_mode == GameEnums.TargetingMode.SELF and ability.range_tiles == 0:
-		if ability.target_shape != GameEnums.TargetShape.SINGLE:
+	for module: AbilityModule in ability.get_active_modules():
+		if module == null:
+			continue
+		if module.primary_type == GameEnums.EffectType.DASH:
+			return "DASH %d" % module.amount
+		if (
+			module.aim_binding == GameEnums.AimBinding.NEW_AIM
+			and not AbilityModuleBridge.is_motion_type(module.primary_type)
+			and module.max_range > 0
+		):
+			return "RANGE %d" % module.max_range
+	if ability.targeting_mode == GameEnums.TargetingMode.SELF:
+		var self_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
+		for module: AbilityModule in ability.get_active_modules():
+			if module != null and module.aim_binding == GameEnums.AimBinding.NEW_AIM:
+				self_shape = module.target_shape
+				break
+		if self_shape != GameEnums.TargetShape.SINGLE:
 			return "RANGE 0"
 		return "SELF"
-	if ability.range_tiles == 0 and ability.target_shape != GameEnums.TargetShape.SINGLE:
-		return "RANGE 0"
-	if ability.range_tiles >= 0:
-		return "RANGE %d" % ability.range_tiles
 	return ""
 
 
@@ -470,35 +477,27 @@ static func ability_data_dump(ability: AbilityData) -> String:
 	if ability == null:
 		return ""
 	var lines: Array[String] = []
+	var tag_names := PackedStringArray()
+	for tag: StringName in ability.tags:
+		tag_names.append(String(tag))
 	lines.append("id: %s" % String(ability.id))
 	lines.append("display_name: %s" % ability.display_name)
-	lines.append("kind: %s" % GameEnums.AbilityKind.keys()[ability.kind])
-	lines.append("action_point_cost: %d" % ability.action_point_cost)
-	lines.append("movement_point_cost: %d" % ability.movement_point_cost)
-	lines.append("range_tiles: %d" % ability.range_tiles)
+	lines.append("planner_group: %s" % GameEnums.PlannerGroup.keys()[ability.planner_group])
+	lines.append("tags: %s" % ", ".join(tag_names))
+	lines.append("primary_resource: %s" % GameEnums.CostResource.keys()[ability.primary_resource])
+	lines.append("primary_value: %d" % ability.primary_value)
 	lines.append("targeting_flags: %s" % targeting_flags_dump(ability))
-	lines.append("target_shape: %s" % GameEnums.TargetShape.keys()[ability.target_shape])
-	lines.append("target_shape_size: %d" % ability.target_shape_size)
-	lines.append("scaling_stat: %s" % GameEnums.StatType.keys()[ability.scaling_stat])
 	lines.append("uses_per_combat: %d" % ability.uses_per_combat)
 	lines.append("presentation_key: %s" % String(ability.presentation_key))
 	lines.append("presentation_anim: %s" % GameEnums.PresentationAnim.keys()[ability.presentation_anim])
-	if ability.upgraded_range_tiles >= 0:
-		lines.append("upgraded_range_tiles: %d" % ability.upgraded_range_tiles)
-	if ability.upgraded_target_shape_size >= 1:
-		lines.append("upgraded_target_shape: %s size %d" % [
-			GameEnums.TargetShape.keys()[ability.upgraded_target_shape],
-			ability.upgraded_target_shape_size,
-		])
 	if not ability.upgrade_description.is_empty():
 		lines.append("upgrade_description: %s" % ability.upgrade_description)
-	lines.append("--- effects (%d) ---" % ability.effects.size())
-	for i: int in ability.effects.size():
-		lines.append(_effect_dump_line(i, ability.effects[i]))
-	if not ability.upgraded_effects.is_empty():
-		lines.append("--- upgraded_effects (%d) ---" % ability.upgraded_effects.size())
-		for j: int in ability.upgraded_effects.size():
-			lines.append(_effect_dump_line(j, ability.upgraded_effects[j]))
+	lines.append("--- modules (%d) ---" % ability.modules.size())
+	lines.append(modules_summary_bbcode(ability))
+	if not ability.upgraded_modules.is_empty():
+		lines.append("--- upgraded_modules (%d) ---" % ability.upgraded_modules.size())
+		for i: int in ability.upgraded_modules.size():
+			lines.append(_module_dump_line(i, ability.upgraded_modules[i]))
 	return "\n".join(lines)
 
 
@@ -521,8 +520,9 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 			GameEnums.TargetShape.keys()[ability.target_shape],
 			ability.target_shape_size,
 		])
-	for eff: EffectData in ability.effects:
-		parts.append(_effect_impl_note(eff))
+	for module: AbilityModule in ability.get_active_modules():
+		if module != null:
+			parts.append(_module_impl_note(module))
 	if ability.id in _ABILITY_CODE_BRANCHES:
 		parts.append("⚠ CODE BRANCH: %s" % _ABILITY_CODE_BRANCHES[ability.id])
 	return "\n".join(parts)
@@ -806,28 +806,6 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.finalize_modular()
 
 
-static func _effect_dump_line(index: int, eff: EffectData) -> String:
-	var base: String = "[%d] %s amount=%d" % [
-		index,
-		GameEnums.EffectType.keys()[eff.type],
-		eff.amount,
-	]
-	if eff.scaling_stat != GameEnums.StatType.NONE:
-		base += " scaling_stat=%s" % GameEnums.StatType.keys()[eff.scaling_stat]
-	if eff.type == GameEnums.EffectType.ADD_STATUS or eff.type == GameEnums.EffectType.ADD_STATUS_SELF:
-		base += " status=%s duration=%d" % [
-			GameEnums.StatusType.keys()[eff.status_type],
-			eff.status_duration,
-		]
-	if eff.bonus_if_adjacent_at_cast != 0:
-		base += " bonus_if_adjacent_at_cast=%d" % eff.bonus_if_adjacent_at_cast
-	if eff.def_debuff_before_damage != 0:
-		base += " def_debuff_before_damage=%d" % eff.def_debuff_before_damage
-	if eff.spawn_unit_id != &"":
-		base += " spawn_unit_id=%s" % String(eff.spawn_unit_id)
-	return base
-
-
 static func _planning_note(ability: AbilityData) -> String:
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
@@ -838,32 +816,6 @@ static func _planning_note(ability: AbilityData) -> String:
 			return "plan_action (Wait); blocks further planning when set."
 		_:
 			return "plan_action (class skill or basic attack)."
-
-
-static func _effect_impl_note(eff: EffectData) -> String:
-	match eff.type:
-		GameEnums.EffectType.DAMAGE:
-			var s: String = "DAMAGE: CombatSystem physical/magical formula; ability.scaling_stat selects STR/MAG."
-			if eff.bonus_if_adjacent_at_cast > 0:
-				s += " +%d if target adjacent at cast (data-driven)." % eff.bonus_if_adjacent_at_cast
-			if eff.def_debuff_before_damage > 0:
-				s += " Applies DEF debuff %d before damage (data-driven)." % eff.def_debuff_before_damage
-			return s
-		GameEnums.EffectType.DASH:
-			return "DASH: straight-line path; may combine with TRAMPLE or BULLDOZE on the same ability."
-		GameEnums.EffectType.TRAMPLE:
-			return "TRAMPLE: resolve_pass_through_tile during dash or execute_pass_through_walk; open end tile."
-		GameEnums.EffectType.BULLDOZE:
-			return "BULLDOZE: resolve_pass_through_tile → collision + push; dash or path walk (no DASH required)."
-		GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF:
-			return "ADD_STATUS: StatusSystem applies %s for %d turn(s)." % [
-				GameEnums.StatusType.keys()[eff.status_type],
-				eff.status_duration,
-			]
-		GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL:
-			return "%s: DisplacementSystem; collision formula on blocked tiles." % GameEnums.EffectType.keys()[eff.type]
-		_:
-			return "%s: resolved by AbilitySystem effect handler." % GameEnums.EffectType.keys()[eff.type]
 
 
 static func _ability_kind_tooltip(k: String) -> String:
@@ -892,6 +844,40 @@ static func _ability_kind_system(k: String) -> String:
 			return "DataLibrary.get_universal_wait(); hidden from skill lists."
 		_:
 			return ""
+
+
+static func _module_dump_line(index: int, module: AbilityModule) -> String:
+	if module == null:
+		return "[%d] <null module>" % index
+	var line := "[%d] %s amount=%d range=%d-%d shape=%s" % [
+		index,
+		GameEnums.EffectType.keys()[module.primary_type],
+		module.amount,
+		module.min_range,
+		module.max_range,
+		GameEnums.TargetShape.keys()[module.target_shape],
+	]
+	if not module.keywords.is_empty():
+		line += " keywords=%d" % module.keywords.size()
+	if not module.layers.is_empty():
+		line += " layers=%d" % module.layers.size()
+	if module.gate != GameEnums.ModuleGate.ALWAYS:
+		line += " gate=%s" % GameEnums.ModuleGate.keys()[module.gate]
+	return line
+
+
+static func _module_impl_note(module: AbilityModule) -> String:
+	var note := "MODULE %s: range %d-%d, phase %s." % [
+		GameEnums.EffectType.keys()[module.primary_type],
+		module.min_range,
+		module.max_range,
+		GameEnums.ModulePhase.keys()[module.execution_phase],
+	]
+	if not module.keywords.is_empty():
+		note += " %d keyword(s)." % module.keywords.size()
+	if not module.layers.is_empty():
+		note += " %d layer(s)." % module.layers.size()
+	return note
 
 
 static func _targeting_mode_tooltip(k: String) -> String:
