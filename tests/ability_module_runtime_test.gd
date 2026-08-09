@@ -7,7 +7,13 @@ extends RefCounted
 static func run_all(failures: Array[String]) -> void:
 	_test_module_only_execution(failures)
 	_test_base_multi_module_compatibility_order(failures)
+	var native_order_failures: int = failures.size()
+	print("ABILITY_MODULE_SCENARIO: native_multi_module_execute_order START")
 	_test_base_multi_module_native_execute_order(failures)
+	print(
+		"ABILITY_MODULE_SCENARIO: native_multi_module_execute_order %s"
+		% ("PASS" if failures.size() == native_order_failures else "FAIL")
+	)
 	_test_upgraded_module_profile(failures)
 	_test_legacy_flat_targeting_compatibility(failures)
 	_test_motion_range_legality(failures)
