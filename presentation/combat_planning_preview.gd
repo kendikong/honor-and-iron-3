@@ -680,6 +680,20 @@ static func planning_projection_board(director: CombatDirector, fallback: BoardS
 	return fallback
 
 
+## Canonical stand cell for the next move preview leg (pre = live board, post = action end).
+static func planning_latest_stand_cell(
+	director: CombatDirector,
+	fallback_board: BoardState,
+	unit_id: int,
+) -> Vector2i:
+	if director == null or unit_id < 0:
+		return Vector2i(-999999, -999999)
+	var timing: int = director.get_planning_move_timing(unit_id)
+	if timing < 0:
+		timing = GameEnums.MoveTiming.PRE_ACTION
+	return planning_move_origin_cell_for_timing(director, fallback_board, unit_id, timing)
+
+
 ## Where the active planning move starts (projected stand, or action end for post-move).
 static func planning_move_origin_cell(
 	director: CombatDirector,
@@ -956,11 +970,15 @@ static func committed_plan_action_end_cell(
 	if director == null:
 		return Vector2i(-999999, -999999)
 	var plan_board: BoardState = planning_projection_board(director, board)
-	var origin: Vector2i = Vector2i(-999999, -999999)
 	if plan_board != null:
-		var live: UnitState = plan_board.get_unit_by_id(unit_id)
-		if live != null:
-			origin = live.position
+		var projected: UnitState = plan_board.get_unit_by_id(unit_id)
+		if projected != null:
+			return projected.position
+	var origin: Vector2i = Vector2i(-999999, -999999)
+	if board != null:
+		var fallback_unit: UnitState = board.get_unit_by_id(unit_id)
+		if fallback_unit != null:
+			origin = fallback_unit.position
 	var plan: Timeline = director.get_player_plan()
 	if plan != null:
 		for act: TimelineAction in plan.entries:
@@ -972,19 +990,95 @@ static func committed_plan_action_end_cell(
 			):
 				origin = act.target_coord
 			elif act.type == GameEnums.ActionType.ABILITY and not act.awaiting_target:
-				if (
-					act.ability != null
-					and (
-						act.ability.is_movement_kind()
-						or AbilitySystem.ability_has_movement_effect(act.ability)
-					)
-				):
-					return act.target_coord
-	if plan_board != null:
-		var projected: UnitState = plan_board.get_unit_by_id(unit_id)
-		if projected != null:
-			return projected.position
+				origin = _plan_step_end_cell_for_action_end(origin, act)
 	return origin
+
+
+static func _plan_step_end_cell_for_action_end(origin: Vector2i, act: TimelineAction) -> Vector2i:
+	if act == null:
+		return origin
+	if act.type == GameEnums.ActionType.MOVE:
+		return act.target_coord
+	if act.type != GameEnums.ActionType.ABILITY or act.awaiting_target:
+		return origin
+	if act.ability == null:
+		return origin
+	if act.ability.is_movement_kind() or AbilitySystem.ability_has_movement_effect(act.ability):
+		return act.target_coord
+	return origin
+
+
+static func _plan_pre_move_contains_action(director: CombatDirector, action: TimelineAction) -> bool:
+	if director == null or action == null:
+		return false
+	for act: TimelineAction in director.plan_pre_move.entries:
+		if act == action:
+			return true
+		if (
+			act.actor_id == action.actor_id
+			and act.type == action.type
+			and act.target_coord == action.target_coord
+			and act.ability == action.ability
+		):
+			return true
+	return false
+
+
+## True when a committed pre-move displacement skill already applied on the live planning board.
+static func premove_displacement_realized(
+	director: CombatDirector,
+	action: TimelineAction,
+	live_board: BoardState = null,
+) -> bool:
+	if director == null or action == null or action.ability == null:
+		return false
+	if action.type != GameEnums.ActionType.ABILITY or not action.ability.is_movement_kind():
+		return false
+	if not _plan_pre_move_contains_action(director, action):
+		return false
+	var board: BoardState = live_board
+	if board == null:
+		board = director.live_planning_board()
+	if board == null:
+		return false
+	var unit: UnitState = board.get_unit_by_id(action.actor_id)
+	if unit == null:
+		return false
+	if unit.position == action.target_coord:
+		return true
+	var turn_start: BoardState = director.base_board if director.base_board != null else director.board
+	if turn_start == null:
+		return false
+	var start_unit: UnitState = turn_start.get_unit_by_id(action.actor_id)
+	if start_unit == null:
+		return false
+	return unit.position != start_unit.position
+
+
+## After a committed pre-move, drop stale route prefix so the next leg starts at latest stand.
+static func anchor_preview_paths_to_latest_stand(
+	director: CombatDirector,
+	preview: CombatPlanningPreview,
+	unit_id: int,
+	fallback_board: BoardState = null,
+) -> void:
+	if director == null or preview == null or unit_id < 0:
+		return
+	var stand: Vector2i = planning_latest_stand_cell(director, fallback_board, unit_id)
+	if stand.x <= -900000:
+		return
+	var route: Array = preview.preview_paths.get(unit_id, [])
+	if route.is_empty():
+		preview.preview_paths[unit_id] = [stand]
+	else:
+		var start_idx: int = _last_route_index(route, stand)
+		if start_idx >= 0:
+			preview.preview_paths[unit_id] = route.slice(start_idx)
+		else:
+			preview.preview_paths[unit_id] = [stand]
+	var anchored: Array = preview.preview_paths.get(unit_id, [])
+	preview.preview_splits[unit_id] = anchored.size()
+	preview.preview_post_splits[unit_id] = anchored.size()
 
 
 ## Last index of `cell` in a preview route (handles revisits / stale post_split).

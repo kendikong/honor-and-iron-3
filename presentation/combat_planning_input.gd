@@ -1990,15 +1990,36 @@ func _promote_intent_preview_after_commit() -> void:
 	_suppress_post_commit_hover_refresh = true
 	if _planning == null:
 		return
+	var unit_id: int = _director.selected_unit_id if _director != null else -1
+	var fallback_board: BoardState = _proj() if _director != null else null
+	if unit_id >= 0 and _director != null:
+		CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
+			_director, preview_state, unit_id, fallback_board,
+		)
 	## Always re-apply input preview_state before promote. commit_from_slots may refresh
 	## the overlay and clear live pushes; preview_state remains the intent picture.
 	if preview_state.preview_board != null:
 		_planning.apply_preview_state(
 			preview_state,
-			_director.selected_unit_id if _director != null else -1,
+			unit_id,
 			_hover_attack_target_id(),
 		)
 	_planning.promote_live_preview_to_committed()
+	if unit_id >= 0 and _director != null:
+		CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
+			_director,
+			_planning.get_committed_preview(),
+			unit_id,
+			fallback_board,
+		)
+	var committed: CombatPlanningPreview = _planning.get_committed_preview()
+	preview_state.preview_paths = committed.preview_paths.duplicate(true)
+	preview_state.preview_splits = committed.preview_splits.duplicate()
+	preview_state.preview_post_splits = committed.preview_post_splits.duplicate()
+	preview_state.preview_pushes = committed.preview_pushes.duplicate(true)
+	preview_state.preview_board = committed.preview_board
+	preview_state.clear_interaction()
+	_sync_intent_live_board()
 
 
 func _intent_snapshot_key_for(
@@ -3374,7 +3395,7 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 func _proj_move_origin(unit: UnitState) -> Vector2i:
 	if _director == null or unit == null:
 		return _proj_origin(unit)
-	return CombatPlanningPreview.planning_move_origin_cell(_director, _proj(), unit.id)
+	return CombatPlanningPreview.planning_latest_stand_cell(_director, _proj(), unit.id)
 
 
 func _planning_drag_origin(unit_id: int) -> Vector2i:

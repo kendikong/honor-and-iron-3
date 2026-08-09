@@ -40,6 +40,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_premove_reposition_applies_live_board,
 		_test_push_through_premove_moves_both_units,
 		_test_push_through_repaths_off_expensive_walk,
+		_test_move_preview_origin_premove_and_postmove,
 		_test_shield_bash_full_approach_push_preview,
 		_test_committed_hook_approach_uses_premove,
 		_test_out_of_range_hover_is_invalid,
@@ -117,6 +118,7 @@ static func run_all(failures: Array[String]) -> void:
 		"premove_live_board",
 		"push_through_live_both",
 		"push_through_repath",
+		"move_preview_origin",
 		"bash_full_approach_push",
 		"hook_committed_premove",
 		"out_of_range_invalid",
@@ -1273,6 +1275,17 @@ static func _test_premove_reposition_applies_live_board(failures: Array[String])
 		)
 	if director.plan_pre_move.entries.is_empty():
 		failures.append("PlanningQAGate premove live: push must stay in pre-move timeline")
+	var live_actor: UnitState = director.board.get_unit_by_id(actor.id)
+	if live_actor == null:
+		failures.append("PlanningQAGate premove live: actor missing from live board after push")
+		return
+	_assert_move_preview_origin_contract(
+		failures,
+		"lancer push live",
+		director,
+		actor.id,
+		live_actor.position,
+	)
 
 
 static func _test_push_through_premove_moves_both_units(failures: Array[String]) -> void:
@@ -1328,6 +1341,137 @@ static func _test_push_through_premove_moves_both_units(failures: Array[String])
 		failures.append(
 			"PlanningQAGate push_through live: ally must be pushed west (got %s)"
 			% str(live_ally.position),
+		)
+	_assert_move_preview_origin_contract(
+		failures,
+		"push_through live",
+		director,
+		actor.id,
+		Vector2i(3, 5),
+	)
+	if not CombatPlanningPreview.premove_displacement_realized(director, push_action):
+		failures.append(
+			"PlanningQAGate push_through live: premove displacement must be realized on live board",
+		)
+	var committed_preview := CombatPlanningPreview.new()
+	committed_preview.preview_paths[actor.id] = [Vector2i(4, 5), Vector2i(3, 5)]
+	CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
+		director, committed_preview, actor.id, director.board,
+	)
+	var anchored: Array = committed_preview.preview_paths.get(actor.id, [])
+	if anchored.is_empty() or anchored[0] != Vector2i(3, 5):
+		failures.append(
+			"PlanningQAGate push_through live: anchored preview must start at latest stand (got %s)"
+			% str(anchored),
+		)
+
+
+static func _test_move_preview_origin_premove_and_postmove(failures: Array[String]) -> void:
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
+	var knight: UnitState = UnitState.create(1, knight_def, GameEnums.Team.PLAYER, Vector2i(0, 2), {
+		"active_abilities": knight_def.abilities.duplicate(),
+	})
+	knight.movement.points_left = 4
+	var enemy_def: UnitData = DataLibrary.get_unit(&"charger")
+	var enemy: UnitState = UnitState.create(2, enemy_def, GameEnums.Team.ENEMY, Vector2i(4, 2))
+	var board := _plain_board(Vector2i(8, 6), [knight, enemy])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = knight.id
+	var pre_walk := TimelineAction.make_move(
+		knight.id, Vector2i(2, 2), -1, [Vector2i(1, 2), Vector2i(2, 2)],
+		GameEnums.MoveTiming.PRE_ACTION,
+	)
+	var bash: AbilityData = null
+	for ability: AbilityData in knight.active_abilities:
+		if ability != null and ability.id == SHIELD_BASH_ID:
+			bash = ability
+			break
+	if bash == null:
+		failures.append("PlanningQAGate move_preview_origin: shield bash missing")
+		return
+	var bash_action := TimelineAction.make_ability(
+		knight.id, bash, Vector2i(3, 2), enemy.id,
+	)
+	var slots: Dictionary = {
+		"pre": [pre_walk],
+		"action": [bash_action],
+		"post": [],
+		"_preview_validated": true,
+	}
+	if not director.commit_from_slots(knight.id, slots):
+		failures.append("PlanningQAGate move_preview_origin: premove+action commit rejected")
+		return
+	_assert_move_preview_origin_contract(
+		failures,
+		"walk+bash committed",
+		director,
+		knight.id,
+		Vector2i(2, 2),
+		Vector2i(2, 2),
+	)
+	var post_move := TimelineAction.make_move(
+		knight.id, Vector2i(1, 2), -1, [], GameEnums.MoveTiming.POST_ACTION,
+	)
+	var post_slots: Dictionary = {
+		"pre": [],
+		"action": [],
+		"post": [post_move],
+		"_preview_validated": true,
+	}
+	if not director.commit_from_slots(knight.id, post_slots):
+		failures.append("PlanningQAGate move_preview_origin: post-move commit rejected")
+		return
+	var preview := CombatPlanningPreview.new()
+	preview.preview_paths[knight.id] = [Vector2i(2, 2), Vector2i(1, 2)]
+	preview.preview_splits[knight.id] = 2
+	var post_leg: Array = CombatPlanningPreview.move_route_leg_from_preview(
+		knight.id,
+		preview,
+		director,
+		director.board,
+		GameEnums.MoveTiming.POST_ACTION,
+		true,
+	)
+	if post_leg.size() < 2 or post_leg[0] != Vector2i(2, 2):
+		failures.append(
+			"PlanningQAGate move_preview_origin: post-move leg must start at action end %s (got %s)"
+			% [Vector2i(2, 2), post_leg],
+		)
+
+
+static func _assert_move_preview_origin_contract(
+	failures: Array[String],
+	label: String,
+	director: CombatDirector,
+	unit_id: int,
+	expected_pre_stand: Vector2i,
+	expected_post_stand: Vector2i = Vector2i(-999999, -999999),
+) -> void:
+	var board: BoardState = director.board if director.board != null else director.base_board
+	var pre_origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell_for_timing(
+		director, board, unit_id, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	if pre_origin != expected_pre_stand:
+		failures.append(
+			"PlanningQAGate %s: pre-move origin must be %s (got %s)"
+			% [label, expected_pre_stand, pre_origin],
+		)
+	if expected_post_stand.x <= -900000:
+		return
+	var post_origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell_for_timing(
+		director, board, unit_id, GameEnums.MoveTiming.POST_ACTION,
+	)
+	if post_origin != expected_post_stand:
+		failures.append(
+			"PlanningQAGate %s: post-move origin must be %s (got %s)"
+			% [label, expected_post_stand, post_origin],
 		)
 
 

@@ -1056,6 +1056,8 @@ func _draw_ability_intents() -> void:
 				continue
 			if action.awaiting_target:
 				continue
+			if CombatPlanningPreview.premove_displacement_realized(_director, action, _board):
+				continue
 			var base_board: BoardState = _director.base_board if _director.base_board != null else _board
 			var actor := base_board.get_unit_by_id(action.actor_id)
 			if actor == null:
@@ -1607,7 +1609,9 @@ func _draw_interaction_overlay() -> void:
 		sel_ability != null and AbilitySystem.can_target_self(actor, sel_ability)
 	)
 	if attack_target_id >= 0 and not self_target_skill:
-		var origin: Vector2i = actor.position
+		var origin: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+			_director, _board, actor.id,
+		)
 		var target_coord: Vector2i = _hover_coord
 		# Targeting dotted arrow = aim at current enemy tile; forced push uses orange only.
 		var target_unit: UnitState = null
@@ -2190,7 +2194,7 @@ func _draw_facing_wedge(center: Vector2, facing: int, color: Color) -> void:
 func _proj_origin(unit: UnitState) -> Vector2i:
 	if unit == null or _director == null:
 		return Vector2i(-999999, -999999)
-	return CombatPlanningPreview.planning_move_origin_cell(_director, _board, unit.id)
+	return CombatPlanningPreview.planning_latest_stand_cell(_director, _board, unit.id)
 
 
 ## Action-range anchor: committed projection plus live move-preview stand (intent truth).
