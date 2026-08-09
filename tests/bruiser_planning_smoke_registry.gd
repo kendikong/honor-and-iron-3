@@ -43,6 +43,7 @@ static func run_for_factory_id(failures: Array[String], factory_id: StringName) 
 			bruiser_pos,
 			enemy_pos,
 			bool(entry.get("verify_no_jump", true)),
+			entry.get("premove_cell", Vector2i(-999999, -999999)),
 		)
 
 
@@ -62,6 +63,7 @@ static func _entries() -> Dictionary:
 			"enemy_pos": Vector2i(3, 3),
 			"commit_cell": Vector2i(3, 3),
 			"verify_no_jump": false,
+			"premove_cell": Vector2i(2, 3),
 		},
 		&"bruiser_concussion_blow": {
 			"tag": "concussion_blow",
@@ -136,11 +138,12 @@ static func _entries() -> Dictionary:
 		&"bruiser_violent_collision": {
 			"tag": "violent_collision",
 			"mode": "awaiting",
-			"bruiser_pos": Vector2i(2, 3),
+			"bruiser_pos": Vector2i(1, 3),
 			"enemy_pos": Vector2i(4, 3),
-			"arm_cell": Vector2i(2, 3),
+			"arm_cell": Vector2i(1, 3),
 			"commit_cell": Vector2i(5, 3),
 			"verify_no_jump": false,
+			"premove_cell": Vector2i(2, 3),
 		},
 		&"bruiser_crimson_whirlwind": {
 			"tag": "crimson_whirlwind",
@@ -152,18 +155,20 @@ static func _entries() -> Dictionary:
 		&"bruiser_belly_flop": {
 			"tag": "belly_flop",
 			"mode": "click",
-			"bruiser_pos": Vector2i(3, 3),
+			"bruiser_pos": Vector2i(2, 3),
 			"enemy_pos": Vector2i(5, 4),
 			"commit_cell": Vector2i(5, 3),
 			"verify_no_jump": false,
+			"premove_cell": Vector2i(3, 3),
 		},
 		&"bruiser_breaching_dash": {
 			"tag": "breaching_dash",
 			"mode": "awaiting",
-			"bruiser_pos": Vector2i(4, 3),
+			"bruiser_pos": Vector2i(3, 3),
 			"enemy_pos": Vector2i(-1, -1),
-			"arm_cell": Vector2i(4, 3),
+			"arm_cell": Vector2i(3, 3),
 			"commit_cell": Vector2i(5, 3),
 			"verify_no_jump": false,
+			"premove_cell": Vector2i(4, 3),
 		},
 	}

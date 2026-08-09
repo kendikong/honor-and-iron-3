@@ -8,6 +8,7 @@ const _ACTOR_CELL := Vector2i(4, 5)
 const _SETTLE_FRAMES := 8
 const _DELTA_MS := 16
 const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{"id": &"archer_basic", "range": 1, "flags": GameEnums.TargetingFlags.ENEMY,
@@ -135,6 +136,15 @@ func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
 		if ability == null:
 			continue
 		_director.select_unit(actor_id)
+		await _MOVEMENT_QA.commit_premove_run_if_needed(
+			self,
+			runner,
+			_director,
+			_input,
+			actor_id,
+			ability,
+			_MOVEMENT_QA.default_postmove_cell(case.actor, case.target),
+		)
 		_director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(2, _DELTA_MS)
 		await _OVERLAY_QA.assert_live_overlay_parity(
@@ -153,6 +163,9 @@ func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
 		assert_bool(_plan_has_ability(skill_id)).override_failure_message(
 			"%s: commit did not write the ability; plan=%s" % [skill_id, _plan_debug()],
 		).is_true()
+		_MOVEMENT_QA.assert_committed(
+			self, skill_id, _director, actor_id, ability, slots,
+		)
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	for skill_id: StringName in skill_ids:
 		var case := _case(skill_id)

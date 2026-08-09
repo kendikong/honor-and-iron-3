@@ -16,6 +16,7 @@ const _PUSH_EXTRA_PLAYERS: Array[Vector2i] = [
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
 const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{
@@ -382,6 +383,15 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		if ability == null:
 			continue
 		_director.select_unit(actor_id)
+		await _MOVEMENT_QA.commit_premove_run_if_needed(
+			self,
+			runner,
+			_director,
+			_input,
+			actor_id,
+			ability,
+			_MOVEMENT_QA.default_postmove_cell(_case_actor_cell(skill_id), target_cell),
+		)
 		_director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(3, _DELTA_MS)
 		var selected_ability := CombatDirector.resolve_selected_ability(
@@ -419,6 +429,9 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 			"%s: live commit did not write the selected ability; slots=%s plan=%s"
 			% [skill_id, _slots_debug(slots), _plan_debug()],
 		).is_true()
+		_MOVEMENT_QA.assert_committed(
+			self, skill_id, _director, actor_id, ability, slots,
+		)
 
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	for skill_id: StringName in batch.skills:

@@ -8,6 +8,7 @@ const _ALLY_CELL := Vector2i(3, 5)
 const _ENEMY_CELL := Vector2i(6, 5)
 const _TILE_CELL := Vector2i(4, 4)
 const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{"id": &"mage_blink", "target": _TILE_CELL, "kind": &"movement", "effect": GameEnums.EffectType.TELEPORT_CASTER},
@@ -79,8 +80,17 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	_assert_contract(ability, case)
 	if ability == null:
 		return
-	_director.select_unit(actor_id)
-	_director.select_ability(_ability_index(actor, ability))
+		_director.select_unit(actor_id)
+		await _MOVEMENT_QA.commit_premove_run_if_needed(
+			self,
+			runner,
+			_director,
+			_input,
+			actor_id,
+			ability,
+			_MOVEMENT_QA.default_postmove_cell(_ACTOR_CELL, case.target),
+		)
+		_director.select_ability(_ability_index(actor, ability))
 	await runner.simulate_frames(3, _DELTA_MS)
 	var target_cell: Vector2i = case.target
 	if ability.range_tiles <= 0:
@@ -95,6 +105,18 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	assert_bool(_plan_has_ability(case.id)).override_failure_message(
 		"%s: commit did not ratify the preview intent" % case.id,
 	).is_true()
+	await _MOVEMENT_QA.commit_premove_run_if_needed(
+		self,
+		runner,
+		_director,
+		_input,
+		actor_id,
+		ability,
+		Vector2i(-999999, -999999),
+	)
+	_MOVEMENT_QA.assert_committed(
+		self, case.id, _director, actor_id, ability, slots,
+	)
 	var result: SimResult = Simulator.simulate(
 		_director.base_board,
 		_director.get_player_plan(),
@@ -139,8 +161,17 @@ func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	_assert_contract(ability, case)
 	if ability == null:
 		return
-	_director.select_unit(actor_id)
-	_director.select_ability(_ability_index(actor, ability))
+		_director.select_unit(actor_id)
+		await _MOVEMENT_QA.commit_premove_run_if_needed(
+			self,
+			runner,
+			_director,
+			_input,
+			actor_id,
+			ability,
+			_MOVEMENT_QA.default_postmove_cell(_ACTOR_CELL, case.target),
+		)
+		_director.select_ability(_ability_index(actor, ability))
 	await runner.simulate_frames(3, _DELTA_MS)
 	var target_cell: Vector2i = case.target
 	if ability.range_tiles <= 0:
@@ -155,6 +186,18 @@ func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	assert_bool(_plan_has_ability(case.id)).override_failure_message(
 		"%s [+]: commit did not ratify the preview intent" % case.id,
 	).is_true()
+	await _MOVEMENT_QA.commit_premove_run_if_needed(
+		self,
+		runner,
+		_director,
+		_input,
+		actor_id,
+		ability,
+		Vector2i(-999999, -999999),
+	)
+	_MOVEMENT_QA.assert_committed(
+		self, case.id, _director, actor_id, ability, slots,
+	)
 	var result: SimResult = Simulator.simulate(
 		_director.base_board,
 		_director.get_player_plan(),

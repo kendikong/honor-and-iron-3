@@ -3,6 +3,7 @@ extends Node
 ## Gate: AOE footprint contract — geometry, scenario audit, live overlay audit, premove guard.
 
 const _HARNESS := preload("res://tests/aoe_footprint_qa_harness.gd")
+const _MOVEMENT := preload("res://tests/movement_timeline_qa_harness.gd")
 
 
 func _ready() -> void:
@@ -16,6 +17,8 @@ func _run() -> void:
 	_HARNESS.audit_scenario_registries(failures)
 	_HARNESS.audit_live_class_tests(failures)
 	_HARNESS.audit_premove_arc_regression(failures)
+	_MOVEMENT.audit_scenario_registries(failures)
+	_MOVEMENT.audit_live_class_tests(failures)
 	if failures.is_empty():
 		print("[PASS] AOE footprint contract")
 	else:

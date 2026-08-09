@@ -8,6 +8,7 @@ extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
 const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
 const _LIVE_EVENT_BARS: Dictionary = {
 	&"bruiser_push_through": {"damage": 0, "moves": 1, "pushes": 1, "self_damage": 0},
 	&"bruiser_charge_strike": {"damage": 1, "moves": 1, "pushes": 1, "self_damage": 0},
@@ -97,8 +98,15 @@ const _CASE_ACTORS: Dictionary = {
 	&"bruiser_guttural_roar": Vector2i(2, 2),
 	&"bruiser_headbutt": Vector2i(2, 8),
 	&"bruiser_blood_boil": Vector2i(8, 8),
-	&"bruiser_violent_collision": Vector2i(2, 3),
+	&"bruiser_violent_collision": Vector2i(1, 3),
 	&"bruiser_crimson_whirlwind": Vector2i(4, 5),
+	&"bruiser_belly_flop": Vector2i(2, 3),
+	&"bruiser_breaching_dash": Vector2i(3, 3),
+}
+
+const _CASE_PREMOVE_RUN: Dictionary = {
+	&"bruiser_charge_strike": Vector2i(2, 3),
+	&"bruiser_violent_collision": Vector2i(2, 3),
 	&"bruiser_belly_flop": Vector2i(3, 3),
 	&"bruiser_breaching_dash": Vector2i(4, 3),
 }
@@ -431,6 +439,11 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		"WorldModulate/MapRoot/PlanningOverlay",
 	) as TacticalPlanningOverlay
 	_director.auto_run = false
+	for listed_skill: StringName in batch.skills:
+		var listed_case := _case_by_id(listed_skill)
+		if String(listed_case.get("observation", "")) == "movement_damage":
+			_director.auto_run = true
+			break
 	if batch.skills.has(&"bruiser_violent_collision"):
 		var wall: TerrainData = DataLibrary.get_terrain(&"wall")
 		assert_object(wall).override_failure_message(
@@ -475,6 +488,15 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		if ability == null:
 			continue
 		_director.select_unit(actor_id)
+		await _MOVEMENT_QA.commit_premove_run_if_needed(
+			self,
+			runner,
+			_director,
+			_input,
+			actor_id,
+			ability,
+			_CASE_PREMOVE_RUN.get(skill_id, Vector2i(-999999, -999999)),
+		)
 		_director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 		assert_int(_director.selected_unit_id).override_failure_message(
@@ -624,18 +646,9 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		).is_true()
 		var committed_ability: AbilityData = _factory_ability(skill_id)
 		if committed_ability != null:
-			var timeline_failures: Array[String] = (
-				PlanningChecklistHarness.skill_timeline_column_failures(
-					String(skill_id),
-					_director,
-					actor_id,
-					committed_ability,
-				)
+			_MOVEMENT_QA.assert_committed(
+				self, skill_id, _director, actor_id, committed_ability, slots,
 			)
-			assert_bool(timeline_failures.is_empty()).override_failure_message(
-				"%s: timeline column contract failed: %s"
-				% [skill_id, ", ".join(timeline_failures)],
-			).is_true()
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	for skill_id: StringName in batch.skills:
 		var case := _case_by_id(skill_id)

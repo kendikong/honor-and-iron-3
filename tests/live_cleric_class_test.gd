@@ -4,6 +4,7 @@
 extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
 const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{"id": &"cleric_guardian_step", "actor": Vector2i(2, 2), "target": Vector2i(3, 2)},
@@ -66,6 +67,15 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		if ability == null:
 			continue
 		director.select_unit(actor_id)
+		await _MOVEMENT_QA.commit_premove_run_if_needed(
+			self,
+			runner,
+			director,
+			input,
+			actor_id,
+			ability,
+			_MOVEMENT_QA.default_postmove_cell(item.actor, item.target),
+		)
 		director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(2, 16)
 		var target_cell: Vector2i = item.target
@@ -103,6 +113,9 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 			assert_bool(director.commit_from_slots(actor_id, slots)).override_failure_message(
 				"%s: live target-finalization rejected slots" % item.id
 			).is_true()
+		_MOVEMENT_QA.assert_committed(
+			self, item.id, director, actor_id, ability, slots,
+		)
 		director.flush_plan_refresh_signals_if_pending()
 		await runner.simulate_frames(2, 16)
 		var result := Simulator.simulate(director.base_board, director.get_player_plan())

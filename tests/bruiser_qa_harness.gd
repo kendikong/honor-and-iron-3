@@ -749,6 +749,42 @@ static func events_actor_moved(events: Array, actor_id: int) -> bool:
 	return false
 
 
+const _MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
+
+
+static func _commit_run_premove_if_needed(
+	failures: Array[String],
+	fix: Dictionary,
+	ability: AbilityData,
+	premove_cell: Vector2i,
+	tag: String,
+) -> void:
+	if premove_cell.x <= -999000:
+		return
+	if not _MovementTimeline.action_movement_needs_pre_or_post_leg(ability):
+		return
+	if _MovementTimeline.has_pre_or_post_leg(fix.director, fix.bruiser.id):
+		return
+	var run_idx: int = -1
+	for i: int in range(fix.bruiser.active_abilities.size()):
+		var ab: AbilityData = fix.bruiser.active_abilities[i] as AbilityData
+		if ab != null and ab.is_universal_run():
+			run_idx = i
+			break
+	assert_true(failures, "%s/planning/run_select" % tag, run_idx >= 0)
+	if run_idx < 0:
+		return
+	fix.director.select_unit(fix.bruiser.id)
+	fix.director.select_ability(run_idx)
+	var slots: Dictionary = PlanningChecklistHarness.commit_production(fix, premove_cell)
+	assert_true(
+		failures,
+		"%s/planning/premove_run" % tag,
+		not PlanningChecklistHarness._slots_invalid(slots),
+		"movement skill QA requires a pre-move Run leg at %s" % premove_cell,
+	)
+
+
 ## Planning commit smoke: select → hover → hover/click parity → commit_no_jump (Knight Tier B).
 static func run_planning_commit_smoke(
 	failures: Array[String],
@@ -758,6 +794,7 @@ static func run_planning_commit_smoke(
 	bruiser_pos: Vector2i,
 	enemy_pos: Vector2i = Vector2i(-999999, -999999),
 	verify_no_jump: bool = true,
+	premove_cell: Vector2i = Vector2i(-999999, -999999),
 ) -> void:
 	PlanningDragE2EHarness.cleanup_all()
 	var fix: Dictionary = _PlanningFixture.wire_board(
@@ -775,7 +812,6 @@ static func run_planning_commit_smoke(
 	)
 	if idx < 0:
 		return
-	var ability: AbilityData = fix.bruiser.active_abilities[idx]
 	assert_true(
 		failures, "%s/planning/ability_id" % tag,
 		ability != null and ability.id == ability_id,
