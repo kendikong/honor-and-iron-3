@@ -38,7 +38,7 @@ static func _assert_non_status_modules_clear_status_type(failures: Array[String]
 	var compiled: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(damage_module)
 	if compiled.is_empty():
 		failures.append("DAMAGE module compile produced no effects")
-	el	if compiled[0].status_type != GameEnums.StatusType.NONE:
+	elif compiled[0].status_type != GameEnums.StatusType.NONE:
 		failures.append("DAMAGE compiled effect should not carry a status_type")
 	var move_module := AbilityModule.new()
 	move_module.primary_type = GameEnums.EffectType.MOVE

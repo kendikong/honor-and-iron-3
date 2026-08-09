@@ -727,6 +727,16 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	AbilityModuleBridge.normalize_module_authoring_fields(dst)
 
 
+static func _normalize_modules_for_ability(
+	modules: Array[AbilityModule],
+	planner_group: GameEnums.PlannerGroup,
+) -> void:
+	for index: int in range(modules.size()):
+		var module: AbilityModule = modules[index]
+		if module != null:
+			AbilityModuleBridge.normalize_module_authoring_fields(module, planner_group, index)
+
+
 static func modules_from_dict_array(data: Array) -> Array[AbilityModule]:
 	var out: Array[AbilityModule] = []
 	for entry: Variant in data:
@@ -1301,6 +1311,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 			push_error("Ability JSON rejected base module profile: %s" % "; ".join(base_errors))
 			return
 		dst.modules = parsed_modules
+		_normalize_modules_for_ability(dst.modules, dst.planner_group)
 	else:
 		_apply_legacy_ability_migration(dst, data)
 	var upgraded_module_data: Variant = data.get("upgraded_modules", null)
@@ -1317,6 +1328,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 			push_error("Ability JSON rejected upgraded module profile: %s" % "; ".join(upgrade_errors))
 			return
 		dst.upgraded_modules = parsed_upgraded_modules
+		_normalize_modules_for_ability(dst.upgraded_modules, dst.planner_group)
 	elif use_legacy_upgrade and data.has("upgraded_effects"):
 		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
 	dst.finalize_modular()

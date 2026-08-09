@@ -1,6 +1,7 @@
 class_name ModuleAuthoringRulesTest
 extends RefCounted
 
+const ModuleAuthoringRules = preload("res://data/definitions/module_authoring_rules.gd")
 
 static func run_all(failures: Array[String]) -> void:
 	_test_move_clears_scaling_and_los(failures)
