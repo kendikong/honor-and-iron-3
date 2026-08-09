@@ -62,9 +62,19 @@ func primary_as_effect() -> EffectData:
 		eff.status_duration = status_duration
 	else:
 		eff.status_type = GameEnums.StatusType.NONE
-	eff.scaling_stat = scaling_stat
-	eff.spawn_unit_id = spawn_unit_id
-	eff.bonus_if_adjacent_at_cast = bonus_if_adjacent_at_cast
-	eff.def_debuff_before_damage = def_debuff_before_damage
+	if GameEnums.effect_type_uses_module_scaling(primary_type):
+		eff.scaling_stat = scaling_stat
+	else:
+		eff.scaling_stat = GameEnums.StatType.NONE
+	if GameEnums.effect_type_uses_spawn_unit(primary_type):
+		eff.spawn_unit_id = spawn_unit_id
+	else:
+		eff.spawn_unit_id = &""
+	if primary_type == GameEnums.EffectType.DAMAGE:
+		eff.bonus_if_adjacent_at_cast = bonus_if_adjacent_at_cast
+		eff.def_debuff_before_damage = def_debuff_before_damage
+	else:
+		eff.bonus_if_adjacent_at_cast = 0
+		eff.def_debuff_before_damage = 0
 	eff.modifiers = legacy_modifiers.duplicate(true)
 	return eff

@@ -7,6 +7,7 @@ const AbilityModuleRuntimeTest = preload("res://tests/ability_module_runtime_tes
 const AbilityModuleReaderBoundaryTest = preload(
 	"res://tests/ability_module_reader_boundary_test.gd"
 )
+const ModuleAuthoringRulesTest = preload("res://tests/module_authoring_rules_test.gd")
 const ClassLibraryEditorModuleBoundaryTest = preload(
 	"res://tests/class_library_editor_module_boundary_test.gd"
 )
@@ -32,6 +33,10 @@ func _run() -> void:
 	_check_violent_collision_modules(failures)
 	_report_check("violent_collision_module_shape", failures, check_failures)
 	AbilityModuleRuntimeTest.run_all(failures)
+	check_failures = failures.size()
+	print("ABILITY_MODULE_CHECK: module_authoring_rules START")
+	ModuleAuthoringRulesTest.run_all(failures)
+	_report_check("module_authoring_rules", failures, check_failures)
 	check_failures = failures.size()
 	print("ABILITY_MODULE_CHECK: class_editor_module_boundary START")
 	ClassLibraryEditorModuleBoundaryTest.run_all(failures)

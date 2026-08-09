@@ -32,7 +32,7 @@ static func _assert_non_status_modules_clear_status_type(failures: Array[String]
 	var damage_module := AbilityModule.new()
 	damage_module.primary_type = GameEnums.EffectType.DAMAGE
 	damage_module.status_type = GameEnums.StatusType.STAT_BUFF_STR
-	AbilityModuleBridge.normalize_module_status_fields(damage_module)
+	AbilityModuleBridge.normalize_module_authoring_fields(damage_module)
 	if damage_module.status_type != GameEnums.StatusType.NONE:
 		failures.append("DAMAGE module status_type should normalize to NONE")
 	var compiled: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(damage_module)

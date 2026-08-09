@@ -9,6 +9,7 @@ const CANONICAL_ABILITY_TAGS: Array[StringName] = [
 	AbilityModuleBridge.TAG_SPELL,
 	AbilityModuleBridge.TAG_HEAL,
 ]
+const ModuleAuthoringRules = preload("res://data/definitions/module_authoring_rules.gd")
 
 static var _restore_unit_id: StringName = &""
 
@@ -1429,7 +1430,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			else:
 				ability.primary_resource = GameEnums.CostResource.AP
 			ability.finalize_modular()
-			_refresh_ability_ui(ability)
+			_rebuild_ability_detail_panes(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
 	var tags_row := _bind_string(grid, "tags", _tags_to_csv(ability.tags), func(v: String) -> void:
@@ -1574,7 +1575,8 @@ func _new_module_for_ability(ability: AbilityData) -> AbilityModule:
 
 
 func _normalize_editor_modules(ability: AbilityData) -> void:
-	for module: AbilityModule in ability.modules + ability.upgraded_modules:
+	for index: int in ability.modules.size():
+		var module: AbilityModule = ability.modules[index]
 		if module == null:
 			continue
 		if (
@@ -1586,33 +1588,54 @@ func _normalize_editor_modules(ability: AbilityData) -> void:
 			module.max_range = module.min_range
 		if module.primary_type == GameEnums.EffectType.SWAP:
 			module.target_shape = GameEnums.TargetShape.SINGLE
-		AbilityModuleBridge.normalize_module_authoring_fields(module)
-
-
-func _module_field_grey_state(module: AbilityModule) -> Dictionary:
-	return {
-		"scaling": not GameEnums.effect_type_uses_module_scaling(module.primary_type),
-		"motion_mode": not AbilityModuleBridge.is_motion_type(module.primary_type),
-		"adjacent_bonus": module.primary_type != GameEnums.EffectType.DAMAGE,
-		"def_debuff": module.primary_type != GameEnums.EffectType.DAMAGE,
-		"aim_module": module.aim_binding != GameEnums.AimBinding.SAME_AS_MODULE_N,
-		"shape": module.primary_type == GameEnums.EffectType.SWAP,
-		"shape_size": module.target_shape == GameEnums.TargetShape.SINGLE,
-	}
+		AbilityModuleBridge.normalize_module_authoring_fields(
+			module, ability.planner_group, index
+		)
+	for index: int in ability.upgraded_modules.size():
+		var upgraded_module: AbilityModule = ability.upgraded_modules[index]
+		if upgraded_module == null:
+			continue
+		if (
+			upgraded_module.primary_type == GameEnums.EffectType.MOVE
+			or upgraded_module.primary_type == GameEnums.EffectType.DASH
+		):
+			upgraded_module.min_range = maxi(1, upgraded_module.min_range)
+		if upgraded_module.max_range < upgraded_module.min_range:
+			upgraded_module.max_range = upgraded_module.min_range
+		if upgraded_module.primary_type == GameEnums.EffectType.SWAP:
+			upgraded_module.target_shape = GameEnums.TargetShape.SINGLE
+		AbilityModuleBridge.normalize_module_authoring_fields(
+			upgraded_module, ability.planner_group, index
+		)
 
 
 func _apply_module_field_greying(
 	module: AbilityModule,
 	rows: Dictionary,
+	ability: AbilityData,
+	module_index: int,
 ) -> void:
-	var grey: Dictionary = _module_field_grey_state(module)
-	_grey_row(rows.get("scaling", []), bool(grey.get("scaling", false)))
-	_grey_row(rows.get("motion_mode", []), bool(grey.get("motion_mode", false)))
-	_grey_row(rows.get("adjacent_bonus", []), bool(grey.get("adjacent_bonus", false)))
-	_grey_row(rows.get("def_debuff", []), bool(grey.get("def_debuff", false)))
-	_grey_row(rows.get("aim_module", []), bool(grey.get("aim_module", false)))
-	_grey_row(rows.get("shape", []), bool(grey.get("shape", false)))
-	_grey_row(rows.get("shape_size", []), bool(grey.get("shape_size", false)))
+	_grey_row(rows.get("phase", []), not ModuleAuthoringRules.module_uses_phase(ability.planner_group))
+	_grey_row(
+		rows.get("scaling", []),
+		not GameEnums.effect_type_uses_module_scaling(module.primary_type),
+	)
+	_grey_row(
+		rows.get("motion_mode", []),
+		not ModuleAuthoringRules.module_uses_motion_mode(module.primary_type),
+	)
+	_grey_row(rows.get("min_range", []), not ModuleAuthoringRules.module_uses_range(module))
+	_grey_row(rows.get("max_range", []), not ModuleAuthoringRules.module_uses_range(module))
+	_grey_row(rows.get("requires_los", []), not ModuleAuthoringRules.module_uses_los(module))
+	_grey_row(
+		rows.get("range_origin", []),
+		not ModuleAuthoringRules.module_uses_range_origin(module, module_index),
+	)
+	_grey_row(rows.get("adjacent_bonus", []), module.primary_type != GameEnums.EffectType.DAMAGE)
+	_grey_row(rows.get("def_debuff", []), module.primary_type != GameEnums.EffectType.DAMAGE)
+	_grey_row(rows.get("aim_module", []), module.aim_binding != GameEnums.AimBinding.SAME_AS_MODULE_N)
+	_grey_row(rows.get("shape", []), not ModuleAuthoringRules.module_uses_shape(module))
+	_grey_row(rows.get("shape_size", []), not ModuleAuthoringRules.module_uses_shape_size(module))
 
 
 func _refresh_module_field_greying(ability: AbilityData) -> void:
@@ -1682,7 +1705,7 @@ func _rebuild_modules_editor(
 			_on_modules_edited(ability, parent, upgraded)
 		)
 		header.add_child(remove)
-		_build_module_fields(panel, ability, module, modules, upgraded)
+		_build_module_fields(panel, ability, module, modules, upgraded, index)
 
 
 func _build_module_fields(
@@ -1691,6 +1714,7 @@ func _build_module_fields(
 	module: AbilityModule,
 	modules: Array[AbilityModule],
 	upgraded: bool,
+	module_index: int,
 ) -> void:
 	_normalize_editor_modules(ability)
 	var grid := GridContainer.new()
@@ -1702,9 +1726,16 @@ func _build_module_fields(
 		_normalize_editor_modules(ability)
 		ability.finalize_modular()
 		_rebuild_ability_detail_panes(ability)
-	_bind_enum(grid, "Phase", GameEnums.ModulePhase, module.execution_phase, func(v: int) -> void:
-		module.execution_phase = v
-		changed.call()
+	var grey_rows: Dictionary = {}
+	grey_rows["phase"] = _bind_enum_excluding(
+		grid,
+		"Phase",
+		GameEnums.ModulePhase,
+		module.execution_phase,
+		func(v: int) -> void:
+			module.execution_phase = v
+			changed.call(),
+		ModuleAuthoringRules.excluded_module_phases(ability.planner_group),
 	)
 	_bind_enum(grid, "Primary", GameEnums.EffectType, module.primary_type, func(v: int) -> void:
 		module.primary_type = v
@@ -1746,18 +1777,18 @@ func _build_module_fields(
 	var min_range_setter := func(v: int) -> void:
 		module.min_range = v
 		changed.call()
-	_bind_int(
+	grey_rows["min_range"] = _bind_int(
 		grid, "Min Range", module.min_range, min_range_setter, _module_min_range(module)
 	)
-	_bind_int(grid, "Max Range", module.max_range, func(v: int) -> void:
+	grey_rows["max_range"] = _bind_int(grid, "Max Range", module.max_range, func(v: int) -> void:
 		module.max_range = v
 		changed.call()
 	)
-	_bind_bool(grid, "Requires LOS", module.requires_los, func(v: bool) -> void:
+	grey_rows["requires_los"] = _bind_bool(grid, "Requires LOS", module.requires_los, func(v: bool) -> void:
 		module.requires_los = v
 		changed.call()
 	)
-	_bind_enum(grid, "Range Origin", GameEnums.RangeOrigin, module.range_origin, func(v: int) -> void:
+	grey_rows["range_origin"] = _bind_enum(grid, "Range Origin", GameEnums.RangeOrigin, module.range_origin, func(v: int) -> void:
 		module.range_origin = v
 		changed.call()
 	)
@@ -1787,9 +1818,15 @@ func _build_module_fields(
 		module.aim_module_index = v
 		changed.call()
 	)
-	_bind_enum(grid, "Gate", GameEnums.ModuleGate, module.gate, func(v: int) -> void:
-		module.gate = v
-		changed.call()
+	grey_rows["gate"] = _bind_enum_excluding(
+		grid,
+		"Gate",
+		GameEnums.ModuleGate,
+		module.gate,
+		func(v: int) -> void:
+			module.gate = v
+			changed.call(),
+		ModuleAuthoringRules.excluded_module_gates(module),
 	)
 	_bind_enum(grid, "Presentation", GameEnums.PresentationAnim, module.presentation_anim, func(v: int) -> void:
 		module.presentation_anim = v
@@ -1804,7 +1841,7 @@ func _build_module_fields(
 		changed.call()
 	)
 	var module_grey_cb := func() -> void:
-		_apply_module_field_greying(module, grey_rows)
+		_apply_module_field_greying(module, grey_rows, ability, module_index)
 	_ability_ui[ability]["module_grey_cbs"].append(module_grey_cb)
 	module_grey_cb.call()
 	_add_module_targeting_flags(parent, ability, module)
@@ -1832,10 +1869,7 @@ func _add_module_targeting_flags(
 		var check := CheckBox.new()
 		check.text = String(spec[1])
 		check.button_pressed = module.has_targeting(flag)
-		var dash_greyed: bool = (
-			flag == GameEnums.TargetingFlags.DASH_LINE
-			and module.primary_type != GameEnums.EffectType.DASH
-		)
+		var dash_greyed: bool = not ModuleAuthoringRules.targeting_flag_applies(module, flag)
 		check.disabled = dash_greyed
 		check.modulate.a = 0.35 if dash_greyed else 1.0
 		check.toggled.connect(func(enabled: bool) -> void:
@@ -1866,7 +1900,7 @@ func _add_module_keywords_editor(
 			_on_module_field_edited(ability)
 			_refresh_module_field_greying(ability)
 		)
-		_bind_int(grid, "Amount", keyword.amount, func(v: int) -> void:
+		var amount_row := _bind_int(grid, "Amount", keyword.amount, func(v: int) -> void:
 			keyword.amount = v
 			_on_module_field_edited(ability)
 		)
@@ -1874,7 +1908,7 @@ func _add_module_keywords_editor(
 			keyword.push_amount = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Emit Legacy Effect", keyword.emit_as_effect, func(v: bool) -> void:
+		var emit_row := _bind_bool(grid, "Emit Legacy Effect", keyword.emit_as_effect, func(v: bool) -> void:
 			keyword.emit_as_effect = v
 			_on_module_field_edited(ability)
 		)
@@ -1888,7 +1922,15 @@ func _add_module_keywords_editor(
 		var keyword_grey_cb := func() -> void:
 			_grey_row(
 				push_row,
-				not GameEnums.keyword_uses_push_amount(keyword.keyword_id),
+				not ModuleAuthoringRules.keyword_uses_push_amount(keyword.keyword_id),
+			)
+			_grey_row(
+				amount_row,
+				not ModuleAuthoringRules.keyword_uses_amount(keyword.keyword_id),
+			)
+			_grey_row(
+				emit_row,
+				not ModuleAuthoringRules.keyword_uses_emit_as_effect(keyword.keyword_id),
 			)
 		_ability_ui[ability]["module_grey_cbs"].append(keyword_grey_cb)
 		keyword_grey_cb.call()
@@ -1916,9 +1958,15 @@ func _add_module_layers_editor(
 		var grid := GridContainer.new()
 		grid.columns = 2
 		box.add_child(grid)
-		_bind_enum(grid, "Layer %d Condition" % index, GameEnums.LayerCondition, layer.condition, func(v: int) -> void:
-			layer.condition = v
-			_on_module_field_edited(ability)
+		_bind_enum_excluding(
+			grid,
+			"Layer %d Condition" % index,
+			GameEnums.LayerCondition,
+			layer.condition,
+			func(v: int) -> void:
+				layer.condition = v
+				_on_module_field_edited(ability),
+			ModuleAuthoringRules.excluded_layer_conditions(module),
 		)
 		_bind_enum(grid, "Layer Type", GameEnums.EffectType, layer.effect.type, func(v: int) -> void:
 			layer.effect.type = v
@@ -2459,13 +2507,15 @@ func _bind_int(
 	return [lbl, spin]
 
 
-func _bind_bool(parent: GridContainer, label: String, value: bool, setter: Callable) -> void:
-	parent.add_child(_field_label(label))
+func _bind_bool(parent: GridContainer, label: String, value: bool, setter: Callable) -> Array[Control]:
+	var lbl := _field_label(label)
+	parent.add_child(lbl)
 	var chk := CheckBox.new()
 	chk.button_pressed = value
 	chk.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	chk.toggled.connect(func(v: bool) -> void: setter.call(v))
 	parent.add_child(chk)
+	return [lbl, chk]
 
 
 func _bind_string(parent: GridContainer, label: String, value: String, setter: Callable) -> Array[Control]:

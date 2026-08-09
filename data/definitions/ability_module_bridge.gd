@@ -16,6 +16,8 @@ const TAG_POSITIONING := &"positioning"
 const TAG_SPELL := &"spell"
 const TAG_HEAL := &"heal"
 
+const _ModuleAuthoringRules := preload("res://data/definitions/module_authoring_rules.gd")
+
 
 static func normalize_effect_status_fields(effect: EffectData) -> void:
 	if effect == null:
@@ -49,7 +51,11 @@ static func normalize_effect_authoring_fields(effect: EffectData) -> void:
 		effect.spawn_unit_id = &""
 
 
-static func normalize_module_authoring_fields(module: AbilityModule) -> void:
+static func normalize_module_authoring_fields(
+	module: AbilityModule,
+	planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION,
+	module_index: int = 0,
+) -> void:
 	if module == null:
 		return
 	normalize_module_status_fields(module)
@@ -66,12 +72,16 @@ static func normalize_module_authoring_fields(module: AbilityModule) -> void:
 		module.spawn_unit_id = &""
 	if module.target_shape == GameEnums.TargetShape.SINGLE:
 		module.target_shape_size = 1
-	for keyword: AbilityKeyword in module.keywords:
-		if keyword != null and not GameEnums.keyword_uses_push_amount(keyword.keyword_id):
-			keyword.push_amount = 0
+	_ModuleAuthoringRules.normalize_module_context_fields(module, planner_group, module_index)
 	for layer: AbilityLayer in module.layers:
-		if layer != null and layer.effect != null:
+		if layer == null:
+			continue
+		if layer.effect != null:
 			normalize_effect_authoring_fields(layer.effect)
+		for key: String in _ModuleAuthoringRules.excluded_layer_conditions(module):
+			if layer.condition == GameEnums.LayerCondition[key]:
+				layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+				break
 
 
 static func validate_modules(modules: Array[AbilityModule]) -> Array[String]:
@@ -562,10 +572,16 @@ static func finalize_ability(ability: AbilityData) -> void:
 		upgraded_proxy.targeting_flags = ability.targeting_flags
 		upgraded_proxy.effects = ability.upgraded_effects
 		ability.upgraded_modules = infer_modules_from_effects(ability.upgraded_effects, upgraded_proxy)
-	for module: AbilityModule in ability.modules:
-		normalize_module_authoring_fields(module)
-	for module: AbilityModule in ability.upgraded_modules:
-		normalize_module_authoring_fields(module)
+	for index: int in ability.modules.size():
+		var module: AbilityModule = ability.modules[index]
+		if module != null:
+			normalize_module_authoring_fields(module, ability.planner_group, index)
+	for index: int in ability.upgraded_modules.size():
+		var upgraded_module: AbilityModule = ability.upgraded_modules[index]
+		if upgraded_module != null:
+			normalize_module_authoring_fields(
+				upgraded_module, ability.planner_group, index
+			)
 	if not ability.modules.is_empty():
 		## Authoritative modules: compile to flat effects for legacy readers.
 		## Exception: keep violent_collision_recast on primary until native gate runtime.
