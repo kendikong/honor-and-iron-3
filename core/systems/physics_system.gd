@@ -185,11 +185,11 @@ static func resolve_pass_through_tile(
 		var pass_bonus := 0
 		var source_ability := mover.get_ability_by_id(ability_id)
 		if source_ability != null:
-			var source_effects: Array[EffectData] = AbilitySystem.active_effects_for(mover, source_ability)
-			for source_effect: EffectData in source_effects:
-				if source_effect != null and source_effect.modifiers.has("bonus_per_enemy_passed"):
-					pass_bonus = int(source_effect.modifiers["bonus_per_enemy_passed"])
-					break
+			pass_bonus = _ability_modifier_value(
+				mover,
+				source_ability,
+				&"bonus_per_enemy_passed",
+			)
 		trample_atk += pass_bonus * (passed_count + 1)
 		if pass_bonus > 0:
 			mover.passive_flags["line_breaker_passed"] = passed_count + 1
@@ -251,16 +251,19 @@ static func dash(
 	var source_ability: AbilityData = null
 	if pusher != null and ability_id != &"":
 		source_ability = pusher.get_ability_by_id(ability_id)
-	var source_effects: Array[EffectData] = []
+	var create_trampled: bool = false
+	var line_breaker: bool = false
 	if source_ability != null:
-		source_effects = AbilitySystem.active_effects_for(pusher, source_ability)
-	var create_trampled := false
-	var line_breaker := false
-	for source_effect: EffectData in source_effects:
-		if source_effect != null and source_effect.modifiers.has("create_trampled_terrain"):
-			create_trampled = true
-		if source_effect != null and source_effect.modifiers.has("line_breaker"):
-			line_breaker = true
+		create_trampled = AbilitySystem.ability_has_modifier(
+			source_ability,
+			&"create_trampled_terrain",
+			pusher,
+		)
+		line_breaker = AbilitySystem.ability_has_modifier(
+			source_ability,
+			&"line_breaker",
+			pusher,
+		)
 
 	for step_i in range(distance):
 		var step_emit_start: int = events.size()
@@ -462,12 +465,9 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 		if pusher != null and ability_id != &"":
 			var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 			if ability != null:
-				var effects: Array[EffectData] = AbilitySystem.active_effects_for(pusher, ability)
-				for eff: EffectData in effects:
-					if eff != null and eff.modifiers.has("buff_on_push"):
-						pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
-						pusher._recalculate_stats()
-						break
+				if AbilitySystem.ability_has_modifier(ability, &"buff_on_push", pusher):
+					pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
+					pusher._recalculate_stats()
 				if ability.movement_point_cost == 0:
 					for passive: PassiveData in pusher.active_passives:
 						if passive == null or not passive.modifiers.has("push_next_attack_pierce"):
@@ -540,10 +540,21 @@ static func _emit_collision(
 	if ability_id != &"" and pusher != null:
 		var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 		if ability != null:
-			for eff: EffectData in AbilitySystem.active_effects_for(pusher, ability):
-				if eff.modifiers.has("object_collision_stagger"): object_collision_stagger = true
-				if eff.modifiers.has("enemy_collision_stagger_both"): enemy_collision_stagger_both = true
-				if eff.modifiers.has("stagger_on_collision"): stagger_on_collision = true
+			object_collision_stagger = AbilitySystem.ability_has_modifier(
+				ability,
+				&"object_collision_stagger",
+				pusher,
+			)
+			enemy_collision_stagger_both = AbilitySystem.ability_has_modifier(
+				ability,
+				&"enemy_collision_stagger_both",
+				pusher,
+			)
+			stagger_on_collision = AbilitySystem.ability_has_modifier(
+				ability,
+				&"stagger_on_collision",
+				pusher,
+			)
 
 	if pusher != null and pusher != target:
 		var stun_on_hit = stagger_on_collision
@@ -572,16 +583,16 @@ static func _emit_collision(
 			and pusher.get_ability_by_id(ability_id) != null
 		):
 			var collision_ability := pusher.get_ability_by_id(ability_id)
-			var collision_effects: Array[EffectData] = AbilitySystem.active_effects_for(pusher, collision_ability)
-			var collision_pierce := false
-			var collision_power := 0
-			for eff: EffectData in collision_effects:
-				if eff == null:
-					continue
-				if eff.modifiers.has("push_collision_pierce"):
-					collision_pierce = true
-				if eff.modifiers.has("push_collision_damage"):
-					collision_power = int(eff.modifiers["push_collision_damage"])
+			var collision_pierce: bool = AbilitySystem.ability_has_modifier(
+				collision_ability,
+				&"push_collision_pierce",
+				pusher,
+			)
+			var collision_power: int = _ability_modifier_value(
+				pusher,
+				collision_ability,
+				&"push_collision_damage",
+			)
 			if collision_power > 0:
 				var collision_raw := CombatSystem.calculate_scaled_damage(
 					pusher, collision_power, GameEnums.StatType.PHYSICAL, board,
@@ -660,6 +671,24 @@ static func _emit_collision(
 			
 	for i: int in range(start_idx, events.size()):
 		events[i].data["is_collision_side_effect"] = true
+
+
+static func _ability_modifier_value(
+	actor: UnitState,
+	ability: AbilityData,
+	key: StringName,
+	default_value: int = 0,
+) -> int:
+	if actor == null or ability == null:
+		return default_value
+	var modules: Array[AbilityModule] = AbilitySystem.active_modules_for(actor, ability)
+	if not modules.is_empty():
+		return AbilityModuleBridge.modules_modifier_value(modules, key, default_value)
+	for effect: EffectData in AbilitySystem.active_effects_for(actor, ability):
+		var key_text: String = String(key)
+		if effect != null and effect.modifiers.has(key_text):
+			return int(effect.modifiers[key_text])
+	return default_value
 
 
 ## Swap two units' positions. Used by the SWAP effect; deals no collision damage.

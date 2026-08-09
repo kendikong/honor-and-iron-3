@@ -31,7 +31,10 @@ static func _test_module_only_execution(failures: Array[String]) -> void:
 	damage.max_range = 3
 	damage.targeting_flags = GameEnums.TargetingFlags.ENEMY
 	ability.modules = [damage]
-	ability.effects = []
+	var stale_legacy_effect: EffectData = EffectData.new()
+	stale_legacy_effect.type = GameEnums.EffectType.DAMAGE
+	stale_legacy_effect.amount = 99
+	ability.effects = [stale_legacy_effect]
 	var events: Array[SimEvent] = []
 	AbilitySystem.execute(
 		board,
@@ -43,8 +46,11 @@ static func _test_module_only_execution(failures: Array[String]) -> void:
 			"module-only runtime did not apply authored DAMAGE (HP %d, effects %d, events %d)"
 			% [target.health.current_hp, AbilitySystem.active_effects_for(actor, ability).size(), events.size()]
 		)
-	if not ability.effects.is_empty():
-		failures.append("module-only runtime fixture was populated with compatibility effects")
+	if ability.effects.size() != 1 or ability.effects[0].amount != 99:
+		failures.append("module-only runtime fixture mutated its legacy compatibility cache")
+	var compatibility_view: Array[EffectData] = AbilitySystem.active_effects_for(actor, ability)
+	if compatibility_view.size() != 1 or compatibility_view[0].amount != 4:
+		failures.append("module-only runtime compatibility view did not derive from modules")
 
 
 static func _test_upgraded_module_profile(failures: Array[String]) -> void:
@@ -154,6 +160,9 @@ static func _test_if_collided_follow_up(failures: Array[String]) -> void:
 	follow_up.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
 	ability.modules = [dash, follow_up]
 	ability.effects = []
+
+	if AbilitySystem._module_gate_passes(follow_up, actor, [], 0):
+		failures.append("IF_COLLIDED gate passed without a collision event")
 
 	var events: Array[SimEvent] = []
 	AbilitySystem.execute(

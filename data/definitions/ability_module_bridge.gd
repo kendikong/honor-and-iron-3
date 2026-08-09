@@ -51,6 +51,182 @@ static func validate_modules(modules: Array[AbilityModule]) -> Array[String]:
 	return errors
 
 
+## Typed runtime queries for module-owned behavior.
+## These keep AbilitySystem/PhysicsSystem from treating the transitional
+## effects[] cache as a second source of active decisions.
+static func module_has_effect(module: AbilityModule, effect_type: GameEnums.EffectType) -> bool:
+	if module == null:
+		return false
+	if module.primary_type == effect_type:
+		return true
+	for keyword: AbilityKeyword in module.keywords:
+		if keyword == null:
+			continue
+		if (
+			keyword.emit_as_effect
+			and keyword.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE
+			and effect_type == GameEnums.EffectType.TRAMPLE
+		):
+			return true
+		if (
+			keyword.emit_as_effect
+			and keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE
+			and effect_type == GameEnums.EffectType.BULLDOZE
+		):
+			return true
+	for layer: AbilityLayer in module.layers:
+		if layer != null and layer.effect != null and layer.effect.type == effect_type:
+			return true
+	return false
+
+
+static func module_effect_amount(module: AbilityModule, effect_type: GameEnums.EffectType) -> int:
+	if module == null:
+		return 0
+	if module.primary_type == effect_type:
+		return module.amount
+	for keyword: AbilityKeyword in module.keywords:
+		if keyword == null or not keyword.emit_as_effect:
+			continue
+		if (
+			keyword.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE
+			and effect_type == GameEnums.EffectType.TRAMPLE
+		):
+			return keyword.amount
+		if (
+			keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE
+			and effect_type == GameEnums.EffectType.BULLDOZE
+		):
+			return keyword.amount
+	for layer: AbilityLayer in module.layers:
+		if layer != null and layer.effect != null and layer.effect.type == effect_type:
+			return layer.effect.amount
+	return 0
+
+
+static func module_has_modifier(module: AbilityModule, key: StringName) -> bool:
+	if module == null:
+		return false
+	var key_text: String = String(key)
+	if module.legacy_modifiers.has(key_text):
+		return true
+	for layer: AbilityLayer in module.layers:
+		if layer != null and layer.effect != null and layer.effect.modifiers.has(key_text):
+			return true
+	for keyword: AbilityKeyword in module.keywords:
+		if keyword == null:
+			continue
+		match key:
+			&"bulldoze":
+				if keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
+					return true
+			&"push":
+				if keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE and keyword.push_amount != 0:
+					return true
+			&"ghost_move":
+				if keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
+					return true
+			&"next_attack_pierce":
+				if keyword.keyword_id == GameEnums.AbilityKeywordId.PIERCE:
+					return true
+			_:
+				pass
+	return false
+
+
+static func module_modifier_value(module: AbilityModule, key: StringName, default_value: int = 0) -> int:
+	if module == null:
+		return default_value
+	var key_text: String = String(key)
+	if module.legacy_modifiers.has(key_text):
+		return int(module.legacy_modifiers[key_text])
+	for layer: AbilityLayer in module.layers:
+		if layer != null and layer.effect != null and layer.effect.modifiers.has(key_text):
+			return int(layer.effect.modifiers[key_text])
+	for keyword: AbilityKeyword in module.keywords:
+		if keyword == null:
+			continue
+		match key:
+			&"bulldoze":
+				if keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
+					return keyword.amount
+			&"push":
+				if keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
+					return keyword.push_amount
+			&"ghost_move":
+				if keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
+					return 1
+			&"next_attack_pierce":
+				if keyword.keyword_id == GameEnums.AbilityKeywordId.PIERCE:
+					return 1
+			_:
+				pass
+	return default_value
+
+
+static func modules_have_effect(
+	modules: Array[AbilityModule],
+	effect_type: GameEnums.EffectType,
+) -> bool:
+	for module: AbilityModule in modules:
+		if module_has_effect(module, effect_type):
+			return true
+	return false
+
+
+static func modules_have_modifier(modules: Array[AbilityModule], key: StringName) -> bool:
+	for module: AbilityModule in modules:
+		if module_has_modifier(module, key):
+			return true
+	return false
+
+
+static func modules_modifier_value(
+	modules: Array[AbilityModule],
+	key: StringName,
+	default_value: int = 0,
+) -> int:
+	for module: AbilityModule in modules:
+		if module_has_modifier(module, key):
+			return module_modifier_value(module, key, default_value)
+	return default_value
+
+
+static func pass_through_modifiers_from_modules(modules: Array[AbilityModule]) -> Dictionary:
+	var trample_atk: int = 0
+	var bulldoze: int = 0
+	var push: int = 0
+	for module: AbilityModule in modules:
+		if module == null:
+			continue
+		if module.primary_type == GameEnums.EffectType.TRAMPLE:
+			trample_atk = module.amount
+		elif module.primary_type == GameEnums.EffectType.BULLDOZE:
+			bulldoze = module.amount
+		for keyword: AbilityKeyword in module.keywords:
+			if keyword == null:
+				continue
+			if keyword.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE:
+				trample_atk = keyword.amount
+			elif keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
+				bulldoze = keyword.amount
+				push = keyword.push_amount
+		bulldoze = maxi(bulldoze, module_modifier_value(module, &"bulldoze", 0))
+		push = maxi(push, module_modifier_value(module, &"push", 0))
+		for layer: AbilityLayer in module.layers:
+			if (
+				layer != null
+				and layer.effect != null
+				and layer.effect.type == GameEnums.EffectType.PUSH
+			):
+				push = maxi(push, layer.effect.amount)
+	return {
+		"trample_atk": trample_atk,
+		"bulldoze": bulldoze,
+		"push": push,
+	}
+
+
 static func planner_group_from_kind(kind: GameEnums.AbilityKind) -> GameEnums.PlannerGroup:
 	match kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
@@ -144,8 +320,9 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 	return out
 
 
-## Runtime compatibility list: only modules whose gate is active before execution.
-## IF_COLLIDED is resolved by PhysicsSystem from the active module profile.
+## Compatibility list: only unconditional modules are exposed before execution.
+## AbilitySystem resolves module gates from ordered simulation events; this list
+## must never decide whether a gated module runs.
 static func compile_modules_for_runtime(modules: Array[AbilityModule]) -> Array[EffectData]:
 	var out: Array[EffectData] = []
 	var has_collided_gate := false
