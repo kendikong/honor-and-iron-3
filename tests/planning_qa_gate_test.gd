@@ -1289,46 +1289,36 @@ static func _test_premove_reposition_applies_live_board(failures: Array[String])
 
 
 static func _test_push_through_premove_moves_both_units(failures: Array[String]) -> void:
-	var director := CombatDirector.new()
-	director.plan_pre_move = Timeline.new()
-	director.plan_action = Timeline.new()
-	director.plan_post_move = Timeline.new()
-	var bruiser_def: UnitData = DataLibrary.get_unit(&"bruiser")
-	if bruiser_def == null:
-		failures.append("PlanningQAGate push_through live: bruiser definition missing")
+	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
+	const Checklist := preload("res://tests/planning_checklist_harness.gd")
+	const MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = BruiserFixture.wire_board(
+		Vector2i(4, 5), Vector2i(-1, -1), Vector2i(3, 5), &"bruiser_push_through",
+	)
+	fix.director.auto_run = true
+	var ally_commit: Vector2i = Vector2i(3, 5)
+	var idx: int = Checklist.select_ability(fix, &"bruiser_push_through")
+	if idx < 0:
+		failures.append("PlanningQAGate push_through live: ability not selectable")
 		return
-	var push: AbilityData = null
-	for ability: AbilityData in bruiser_def.abilities:
-		if ability != null and ability.id == &"bruiser_push_through":
-			push = ability
-			break
-	if push == null:
-		failures.append("PlanningQAGate push_through live: ability missing")
+	Checklist.hover(fix, ally_commit)
+	var hover_slots: Dictionary = Checklist.slots_for_hover(fix, ally_commit)
+	if Checklist._slots_invalid(hover_slots):
+		failures.append("PlanningQAGate push_through live: invalid hover slots at ally")
 		return
-	var actor := UnitState.create(1, bruiser_def, GameEnums.Team.PLAYER, Vector2i(4, 5), {
-		"active_abilities": [push],
-	})
-	var ally_def: UnitData = DataLibrary.get_unit(&"knight")
-	var ally := UnitState.create(2, ally_def, GameEnums.Team.PLAYER, Vector2i(3, 5), {
-		"active_abilities": [],
-	})
-	var board := _plain_board(Vector2i(8, 8), [actor, ally])
-	director.board = board
-	director.base_board = board.clone()
-	director.projected_state = board.clone()
-	director.phase = CombatDirector.Phase.PLANNING
-	var push_action := TimelineAction.make_ability(actor.id, push, ally.position, ally.id)
-	var slots: Dictionary = {
-		"pre": [push_action],
-		"action": [],
-		"post": [],
-		"_preview_validated": true,
-	}
-	if not director.commit_from_slots(actor.id, slots):
-		failures.append("PlanningQAGate push_through live: commit rejected")
+	Checklist.assert_slots_match_preview_commit(
+		failures, "push_through live/hover_click", fix, ally_commit,
+	)
+	var slots: Dictionary = Checklist.commit_production(fix, ally_commit)
+	if Checklist._slots_invalid(slots):
+		failures.append("PlanningQAGate push_through live: production commit rejected")
 		return
-	var live_actor: UnitState = director.board.get_unit_by_id(actor.id)
-	var live_ally: UnitState = director.board.get_unit_by_id(ally.id)
+	var live_actor: UnitState = fix.director.board.get_unit_by_id(fix.bruiser.id)
+	var ally: UnitState = fix.get("ally", null) as UnitState
+	var live_ally: UnitState = (
+		fix.director.board.get_unit_by_id(ally.id) if ally != null else null
+	)
 	if live_actor == null or live_ally == null:
 		failures.append("PlanningQAGate push_through live: missing units on live board")
 		return
@@ -1342,27 +1332,20 @@ static func _test_push_through_premove_moves_both_units(failures: Array[String])
 			"PlanningQAGate push_through live: ally must be pushed west (got %s)"
 			% str(live_ally.position),
 		)
-	_assert_move_preview_origin_contract(
-		failures,
-		"push_through live",
-		director,
-		actor.id,
-		Vector2i(3, 5),
+	var push: AbilityData = fix.bruiser.active_abilities[idx] as AbilityData
+	MovementTimeline.assert_move_preview_origin(
+		failures, "push_through live", fix, fix.bruiser.id, push,
 	)
-	if not CombatPlanningPreview.premove_displacement_realized(director, push_action):
+	var pre_moves: Array = slots.get("pre", [])
+	if pre_moves.is_empty():
+		failures.append("PlanningQAGate push_through live: premove column empty after commit")
+		return
+	var push_action: TimelineAction = pre_moves[0] as TimelineAction
+	if push_action == null or not CombatPlanningPreview.premove_displacement_realized(
+		fix.director, push_action,
+	):
 		failures.append(
 			"PlanningQAGate push_through live: premove displacement must be realized on live board",
-		)
-	var committed_preview := CombatPlanningPreview.new()
-	committed_preview.preview_paths[actor.id] = [Vector2i(4, 5), Vector2i(3, 5)]
-	CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
-		director, committed_preview, actor.id, director.board,
-	)
-	var anchored: Array = committed_preview.preview_paths.get(actor.id, [])
-	if anchored.is_empty() or anchored[0] != Vector2i(3, 5):
-		failures.append(
-			"PlanningQAGate push_through live: anchored preview must start at latest stand (got %s)"
-			% str(anchored),
 		)
 
 

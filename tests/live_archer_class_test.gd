@@ -144,6 +144,7 @@ func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
 			actor_id,
 			ability,
 			_MOVEMENT_QA.default_premove_run_cell(case.actor, case.target),
+			_overlay,
 		)
 		_director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(2, _DELTA_MS)
@@ -163,8 +164,8 @@ func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
 		assert_bool(_plan_has_ability(skill_id)).override_failure_message(
 			"%s: commit did not write the ability; plan=%s" % [skill_id, _plan_debug()],
 		).is_true()
-		_MOVEMENT_QA.assert_committed(
-			self, skill_id, _director, actor_id, ability, slots,
+		await _MOVEMENT_QA.assert_committed(
+			self, skill_id, _director, actor_id, ability, slots, _input, _overlay, runner,
 		)
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	for skill_id: StringName in skill_ids:

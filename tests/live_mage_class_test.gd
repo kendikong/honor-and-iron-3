@@ -113,9 +113,10 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 		actor_id,
 		ability,
 		Vector2i(-999999, -999999),
+		_overlay,
 	)
-	_MOVEMENT_QA.assert_committed(
-		self, case.id, _director, actor_id, ability, slots,
+	await _MOVEMENT_QA.assert_committed(
+		self, case.id, _director, actor_id, ability, slots, _input, _overlay, runner,
 	)
 	var result: SimResult = Simulator.simulate(
 		_director.base_board,
@@ -194,9 +195,10 @@ func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 		actor_id,
 		ability,
 		Vector2i(-999999, -999999),
+		_overlay,
 	)
-	_MOVEMENT_QA.assert_committed(
-		self, case.id, _director, actor_id, ability, slots,
+	await _MOVEMENT_QA.assert_committed(
+		self, case.id, _director, actor_id, ability, slots, _input, _overlay, runner,
 	)
 	var result: SimResult = Simulator.simulate(
 		_director.base_board,

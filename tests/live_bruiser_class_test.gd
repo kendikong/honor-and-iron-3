@@ -496,6 +496,7 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 			actor_id,
 			ability,
 			_CASE_PREMOVE_RUN.get(skill_id, Vector2i(-999999, -999999)),
+			_overlay,
 		)
 		_director.select_ability(_ability_index(actor, ability))
 		await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
@@ -646,8 +647,16 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		).is_true()
 		var committed_ability: AbilityData = _factory_ability(skill_id)
 		if committed_ability != null:
-			_MOVEMENT_QA.assert_committed(
-				self, skill_id, _director, actor_id, committed_ability, slots,
+			await _MOVEMENT_QA.assert_committed(
+				self,
+				skill_id,
+				_director,
+				actor_id,
+				committed_ability,
+				slots,
+				_input,
+				_overlay,
+				runner,
 			)
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	for skill_id: StringName in batch.skills:

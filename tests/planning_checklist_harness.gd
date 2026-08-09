@@ -917,6 +917,9 @@ static func assert_planning_timeline_after_commit(
 	MovementTimeline.assert_pre_or_post_leg_if_needed(
 		failures, label, fix.director, unit_id, ability,
 	)
+	MovementTimeline.assert_move_preview_origin(
+		failures, label, fix, unit_id, ability,
+	)
 
 
 static func assert_slots_match_preview_commit(
@@ -958,6 +961,11 @@ static func assert_commit_no_jump(
 	)
 	hover(fix, cell)
 	assert_eq_cell(failures, label, preview_unit_pos(fix, 1), before_ghost)
+	const MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
+	if ability != null:
+		MovementTimeline.assert_move_preview_origin(
+			failures, label, fix, unit_id, ability,
+		)
 
 
 static func assert_sim_matches_preview(

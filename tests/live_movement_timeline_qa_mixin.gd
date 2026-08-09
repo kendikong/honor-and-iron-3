@@ -15,6 +15,9 @@ static func assert_committed(
 	actor_id: int,
 	ability: AbilityData,
 	slots: Dictionary = {},
+	input: CombatPlanningInput = null,
+	overlay: TacticalPlanningOverlay = null,
+	runner: GdUnitSceneRunner = null,
 ) -> void:
 	if ability == null:
 		return
@@ -25,6 +28,49 @@ static func assert_committed(
 	test_suite.assert_bool(failures.is_empty()).override_failure_message(
 		"%s: movement timeline QA failed: %s" % [skill_id, ", ".join(failures)],
 	).is_true()
+	if input != null:
+		await assert_move_preview_origin_live(
+			test_suite,
+			runner,
+			director,
+			input,
+			overlay,
+			actor_id,
+			ability,
+			Vector2i(-999999, -999999),
+			skill_id,
+		)
+
+
+static func assert_move_preview_origin_live(
+	test_suite: GdUnitTestSuite,
+	runner: GdUnitSceneRunner,
+	director: CombatDirector,
+	input: CombatPlanningInput,
+	overlay: TacticalPlanningOverlay,
+	actor_id: int,
+	ability: AbilityData,
+	hover_cell: Vector2i = Vector2i(-999999, -999999),
+	skill_id: StringName = &"",
+) -> void:
+	if ability == null or not _HARNESS.ability_requires_movement_timeline_qa(ability):
+		return
+	var failures: Array[String] = []
+	var fix: Dictionary = {
+		"director": director,
+		"input": input,
+		"overlay": overlay,
+		"board": director.board if director != null else null,
+	}
+	var label: String = String(skill_id) if skill_id != &"" else String(ability.id)
+	_HARNESS.assert_move_preview_origin(
+		failures, label, fix, actor_id, ability, hover_cell,
+	)
+	test_suite.assert_bool(failures.is_empty()).override_failure_message(
+		"%s: move preview origin QA failed: %s" % [label, ", ".join(failures)],
+	).is_true()
+	if runner != null:
+		await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 
 
 static func commit_premove_run_if_needed(
@@ -35,6 +81,7 @@ static func commit_premove_run_if_needed(
 	actor_id: int,
 	ability: AbilityData,
 	premove_cell: Vector2i,
+	overlay: TacticalPlanningOverlay = null,
 ) -> void:
 	if not _HARNESS.action_movement_needs_pre_or_post_leg(ability):
 		return
@@ -49,6 +96,9 @@ static func commit_premove_run_if_needed(
 		return
 	await commit_universal_run(
 		test_suite, runner, director, input, actor_id, premove_cell,
+	)
+	await assert_premove_run_preview_origin_live(
+		test_suite, runner, director, input, overlay, actor_id, ability,
 	)
 
 
@@ -97,6 +147,29 @@ static func commit_universal_run(
 	input.clear_qa_pointer_override()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	return slots
+
+
+static func assert_premove_run_preview_origin_live(
+	test_suite: GdUnitTestSuite,
+	runner: GdUnitSceneRunner,
+	director: CombatDirector,
+	input: CombatPlanningInput,
+	overlay: TacticalPlanningOverlay,
+	actor_id: int,
+	ability: AbilityData,
+	skill_id: StringName = &"",
+) -> void:
+	await assert_move_preview_origin_live(
+		test_suite,
+		runner,
+		director,
+		input,
+		overlay,
+		actor_id,
+		ability,
+		Vector2i(-999999, -999999),
+		skill_id,
+	)
 
 
 static func default_premove_run_cell(actor_cell: Vector2i, target_cell: Vector2i) -> Vector2i:
