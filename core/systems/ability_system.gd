@@ -92,6 +92,13 @@ static func motion_requires_occupied_target(actor: UnitState, ability: AbilityDa
 	)
 
 
+static func ability_has_into_occupied_push_effect(
+	ability: AbilityData,
+	actor: UnitState = null,
+) -> bool:
+	return motion_requires_occupied_target(actor, ability)
+
+
 static func _occupied_push_target_valid(
 	board: BoardState,
 	actor: UnitState,

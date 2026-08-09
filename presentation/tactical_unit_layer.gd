@@ -439,7 +439,10 @@ func _drain_planning_commit_queue() -> void:
 				if _director != null and push_unit_id >= 0:
 					_director.mark_planning_move_instant(push_unit_id)
 		GameEnums.SimEventType.ABILITY_USED:
-			if event.data.get("planning_swap_presentation", false):
+			if (
+				event.data.get("planning_swap_presentation", false)
+				or event.data.get("planning_displacement_presentation", false)
+			):
 				_planning_commit_stage = &"swap"
 				var swap_tree := get_tree()
 				if swap_tree != null:

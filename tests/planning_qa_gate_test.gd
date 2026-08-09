@@ -38,6 +38,8 @@ static func run_all(failures: Array[String]) -> void:
 		_test_commit_plan_matches_hover_slots,
 		_test_undo_action_keeps_premove,
 		_test_premove_reposition_applies_live_board,
+		_test_push_through_premove_moves_both_units,
+		_test_push_through_repaths_off_expensive_walk,
 		_test_shield_bash_full_approach_push_preview,
 		_test_committed_hook_approach_uses_premove,
 		_test_out_of_range_hover_is_invalid,
@@ -113,6 +115,8 @@ static func run_all(failures: Array[String]) -> void:
 		"commit_matches_hover",
 		"undo_keeps_premove",
 		"premove_live_board",
+		"push_through_live_both",
+		"push_through_repath",
 		"bash_full_approach_push",
 		"hook_committed_premove",
 		"out_of_range_invalid",
@@ -1269,6 +1273,114 @@ static func _test_premove_reposition_applies_live_board(failures: Array[String])
 		)
 	if director.plan_pre_move.entries.is_empty():
 		failures.append("PlanningQAGate premove live: push must stay in pre-move timeline")
+
+
+static func _test_push_through_premove_moves_both_units(failures: Array[String]) -> void:
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var bruiser_def: UnitData = DataLibrary.get_unit(&"bruiser")
+	if bruiser_def == null:
+		failures.append("PlanningQAGate push_through live: bruiser definition missing")
+		return
+	var push: AbilityData = null
+	for ability: AbilityData in bruiser_def.abilities:
+		if ability != null and ability.id == &"bruiser_push_through":
+			push = ability
+			break
+	if push == null:
+		failures.append("PlanningQAGate push_through live: ability missing")
+		return
+	var actor := UnitState.create(1, bruiser_def, GameEnums.Team.PLAYER, Vector2i(4, 5), {
+		"active_abilities": [push],
+	})
+	var ally_def: UnitData = DataLibrary.get_unit(&"knight")
+	var ally := UnitState.create(2, ally_def, GameEnums.Team.PLAYER, Vector2i(3, 5), {
+		"active_abilities": [],
+	})
+	var board := _plain_board(Vector2i(8, 8), [actor, ally])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	var push_action := TimelineAction.make_ability(actor.id, push, ally.position, ally.id)
+	var slots: Dictionary = {
+		"pre": [push_action],
+		"action": [],
+		"post": [],
+		"_preview_validated": true,
+	}
+	if not director.commit_from_slots(actor.id, slots):
+		failures.append("PlanningQAGate push_through live: commit rejected")
+		return
+	var live_actor: UnitState = director.board.get_unit_by_id(actor.id)
+	var live_ally: UnitState = director.board.get_unit_by_id(ally.id)
+	if live_actor == null or live_ally == null:
+		failures.append("PlanningQAGate push_through live: missing units on live board")
+		return
+	if live_actor.position != Vector2i(3, 5):
+		failures.append(
+			"PlanningQAGate push_through live: bruiser must occupy ally tile (got %s)"
+			% str(live_actor.position),
+		)
+	if live_ally.position != Vector2i(2, 5):
+		failures.append(
+			"PlanningQAGate push_through live: ally must be pushed west (got %s)"
+			% str(live_ally.position),
+		)
+
+
+static func _test_push_through_repaths_off_expensive_walk(failures: Array[String]) -> void:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var bruiser_def: UnitData = DataLibrary.get_unit(&"bruiser")
+	var push: AbilityData = null
+	for ability: AbilityData in bruiser_def.abilities:
+		if ability != null and ability.id == &"bruiser_push_through":
+			push = ability
+			break
+	if push == null:
+		failures.append("PlanningQAGate push_through repath: ability missing")
+		return
+	var actor := UnitState.create(1, bruiser_def, GameEnums.Team.PLAYER, Vector2i(4, 5), {
+		"active_abilities": [push],
+	})
+	actor.movement.points_left = 2
+	var ally := UnitState.create(2, DataLibrary.get_unit(&"knight"), GameEnums.Team.PLAYER, Vector2i(3, 5), {
+		"active_abilities": [],
+	})
+	var board := _plain_board(Vector2i(8, 8), [actor, ally])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	input._director = director
+	var expensive_route: Array[Vector2i] = [Vector2i(4, 4), Vector2i(3, 4)]
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		1, Vector2i(3, 5), expensive_route,
+	)
+	if bool(slots.get("invalid", false)):
+		failures.append(
+			"PlanningQAGate push_through repath: ally hover must repath off expensive walk (invalid=%s)"
+			% str(slots.get("invalid", "")),
+		)
+		return
+	var pre_moves: Array = slots.get("pre", [])
+	if pre_moves.is_empty():
+		failures.append("PlanningQAGate push_through repath: expected premove push through on ally")
+		return
+	var pre_action: TimelineAction = pre_moves[0] as TimelineAction
+	if pre_action == null or pre_action.ability == null or pre_action.ability.id != &"bruiser_push_through":
+		failures.append("PlanningQAGate push_through repath: premove must be push through on ally")
+		return
+	if not pre_action.waypoints.is_empty():
+		failures.append("PlanningQAGate push_through repath: repathed premove must drop painted walk")
 
 
 static func _test_shield_bash_full_approach_push_preview(failures: Array[String]) -> void:

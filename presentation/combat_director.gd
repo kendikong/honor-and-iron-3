@@ -978,7 +978,10 @@ func mark_planning_move_instant(unit_id: int) -> void:
 func _register_planning_swap_presentation(action: TimelineAction) -> void:
 	if action == null or action.ability == null:
 		return
-	if not AbilitySystem.ability_has_swap_effect(action.ability):
+	if not (
+		AbilitySystem.ability_has_swap_effect(action.ability)
+		or AbilitySystem.ability_has_into_occupied_push_effect(action.ability)
+	):
 		return
 	var resolved: TimelineAction = _find_plan_swap_action(action.actor_id, action.ability)
 	if resolved != null:
@@ -1004,7 +1007,10 @@ func _find_plan_swap_action(actor_id: int, ability: AbilityData = null) -> Timel
 				continue
 			if entry.type != GameEnums.ActionType.ABILITY or entry.ability == null:
 				continue
-			if not AbilitySystem.ability_has_swap_effect(entry.ability):
+			if not (
+				AbilitySystem.ability_has_swap_effect(entry.ability)
+				or AbilitySystem.ability_has_into_occupied_push_effect(entry.ability)
+			):
 				continue
 			if ability != null and entry.ability != ability:
 				continue
@@ -2529,7 +2535,11 @@ func _refresh_plan_core() -> void:
 
 	if not _swap_planning_presentations.is_empty():
 		for swap_action: TimelineAction in _swap_planning_presentations:
-			_prepend_swap_walk_commit_anims(swap_action, plan_to_run, anim_events)
+			if (
+				swap_action.ability != null
+				and AbilitySystem.ability_has_swap_effect(swap_action.ability)
+			):
+				_prepend_swap_walk_commit_anims(swap_action, plan_to_run, anim_events)
 	if not anim_events.is_empty():
 		for event: SimEvent in anim_events:
 			_pending_planning_commit_events.append(event)
@@ -2920,6 +2930,10 @@ func _make_planning_swap_ability_event(action: TimelineAction, plan: Timeline) -
 	var target_before: UnitState = before.get_unit_by_id(action.target_unit_id)
 	var actor_after: UnitState = after.get_unit_by_id(action.actor_id)
 	var target_after: UnitState = after.get_unit_by_id(action.target_unit_id)
+	var displacement_presentation: bool = (
+		AbilitySystem.ability_has_swap_effect(action.ability)
+		or AbilitySystem.ability_has_into_occupied_push_effect(action.ability)
+	)
 	return SimEvent.make(GameEnums.SimEventType.ABILITY_USED, {
 		"actor": action.actor_id,
 		"ability": action.ability.id,
@@ -2931,7 +2945,8 @@ func _make_planning_swap_ability_event(action: TimelineAction, plan: Timeline) -
 		"actor_to": actor_after.position if actor_after != null else action.target_coord,
 		"target_from": target_before.position if target_before != null else action.target_coord,
 		"target_to": target_after.position if target_after != null else action.target_coord,
-		"planning_swap_presentation": true,
+		"planning_swap_presentation": AbilitySystem.ability_has_swap_effect(action.ability),
+		"planning_displacement_presentation": displacement_presentation,
 	})
 
 
@@ -3079,7 +3094,10 @@ func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
 	if action.type == GameEnums.ActionType.MOVE:
 		return true
 	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
-		if AbilitySystem.ability_has_swap_effect(action.ability):
+		if (
+			AbilitySystem.ability_has_swap_effect(action.ability)
+			or AbilitySystem.ability_has_into_occupied_push_effect(action.ability)
+		):
 			return false
 		if action.ability.is_movement_kind():
 			return true

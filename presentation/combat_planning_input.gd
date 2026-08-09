@@ -1775,24 +1775,50 @@ func _final_commit_slots_for_interaction(
 	)
 	_strip_unaffordable_premove_pairs(slots, unit_id, cell, waypoints)
 	_reject_orphan_skill_premove(slots, unit_id, cell)
-	var hover_enemy: UnitState = _resolve_hover_unit_at(cell)
-	if (
-		hover_enemy != null
-		and hover_enemy.is_enemy()
-		and not waypoints.is_empty()
-		and (slots.get("action", []) as Array).is_empty()
-		and not (slots.get("pre", []) as Array).is_empty()
-	):
+	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
+	if hover_unit != null and not waypoints.is_empty():
 		var actor := _proj_unit(unit_id)
 		var ability := _selected_ability_data(actor)
-		if actor != null and not _enemy_hover_respects_painted_route(
-			actor, hover_enemy, ability, waypoints,
+		var needs_repath := false
+		if (
+			hover_unit.is_enemy()
+			and (slots.get("action", []) as Array).is_empty()
+			and not (slots.get("pre", []) as Array).is_empty()
 		):
+			needs_repath = (
+				actor != null
+				and not _enemy_hover_respects_painted_route(actor, hover_unit, ability, waypoints)
+			)
+		elif (
+			not hover_unit.is_enemy()
+			and hover_unit.id != unit_id
+			and actor != null
+			and ability != null
+			and AbilitySystem.planning_allows_paired_premove(ability)
+		):
+			var stand_cell: Vector2i = waypoints.back() if not waypoints.is_empty() else cell
+			needs_repath = not _ally_hover_respects_painted_route(
+				actor, hover_unit, ability, waypoints, stand_cell,
+			)
+		if needs_repath:
+			var preferred: Vector2i = (
+				hover_unit.position if hover_unit.is_enemy() else preferred_approach
+			)
 			slots = _build_commit_slots_at_cell(
-				unit_id, cell, [], legal_move_tiles, hover_enemy.position, face_dir,
+				unit_id, cell, [], legal_move_tiles, preferred, face_dir,
 			)
 			_strip_unaffordable_premove_pairs(slots, unit_id, cell, [])
-	return _finalize_commit_slots(slots, unit_id)
+	slots = _finalize_commit_slots(slots, unit_id)
+	if _is_invalid_dict(slots) and not waypoints.is_empty():
+		var preferred: Vector2i = preferred_approach
+		if hover_unit != null and hover_unit.is_enemy():
+			preferred = hover_unit.position
+		slots = _build_commit_slots_at_cell(
+			unit_id, cell, [], legal_move_tiles, preferred, face_dir,
+		)
+		_strip_unaffordable_premove_pairs(slots, unit_id, cell, [])
+		slots = _finalize_commit_slots(slots, unit_id)
+	return slots
 
 
 func _strip_unaffordable_premove_pairs(
@@ -3467,7 +3493,34 @@ func _enemy_hover_respects_painted_route(
 ) -> bool:
 	if actor == null or enemy == null or route_waypoints.is_empty():
 		return false
-	return _can_pair_run_move_with_ability(actor, enemy.position, route_waypoints, ability)
+	if not _can_pair_run_move_with_ability(actor, enemy.position, route_waypoints, ability):
+		return false
+	if _director == null:
+		return true
+	var slots: Dictionary = _empty_commit_slots()
+	var timing: int = GameEnums.MoveTiming.PRE_ACTION
+	slots["pre"].append(
+		_director.make_planning_move_action(
+			actor.id,
+			route_waypoints.back(),
+			_proj(),
+			actor,
+			route_waypoints,
+			timing,
+		),
+	)
+	if ability != null and not AbilitySystem.is_movement_skill(ability):
+		slots["action"].append(
+			TimelineAction.make_ability(
+				actor.id,
+				ability,
+				enemy.position,
+				AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
+				timing,
+				route_waypoints,
+			),
+		)
+	return _director.preview_commit_valid(actor.id, _actions_from_slots(slots)) == ""
 
 
 func _append_move_to_commit_slots(
@@ -3927,16 +3980,22 @@ func _ally_hover_respects_painted_route(
 		return false
 	if not AbilitySystem.target_passes_mode(actor, ability, ally):
 		return false
-	var move_action: TimelineAction = TimelineAction.make_move(
-		actor.id, stand_cell, -1, route_waypoints, GameEnums.MoveTiming.PRE_ACTION,
-	)
-	var after_move: UnitState = _actor_after_binding_move_intent(actor.id, move_action)
-	if after_move == null:
-		return false
-	var rng := _ability_range(actor)
-	if rng < 0:
-		return false
-	return GridSystem.manhattan(after_move.position, ally.position) <= rng
+	var slots: Dictionary = _empty_commit_slots()
+	if stand_cell != _proj_move_origin(actor):
+		slots["pre"].append(
+			_director.make_planning_move_action(
+				actor.id,
+				stand_cell,
+				_proj(),
+				actor,
+				route_waypoints,
+				GameEnums.MoveTiming.PRE_ACTION,
+			),
+		)
+	_append_movement_skill_to_premove_slots(slots, actor.id, ability, ally, [])
+	if _director == null:
+		return true
+	return _director.preview_commit_valid(actor.id, _actions_from_slots(slots)) == ""
 
 
 func _append_movement_skill_to_premove_slots(
