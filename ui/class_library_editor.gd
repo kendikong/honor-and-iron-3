@@ -2,6 +2,13 @@ class_name ClassLibraryEditorScreen
 extends Control
 
 const PREVIEW_VIEWPORT_SIZE: Vector2i = Vector2i(1280, 720)
+const CANONICAL_ABILITY_TAGS: Array[StringName] = [
+	AbilityModuleBridge.TAG_ATTACK,
+	AbilityModuleBridge.TAG_MOVEMENT,
+	AbilityModuleBridge.TAG_POSITIONING,
+	AbilityModuleBridge.TAG_SPELL,
+	AbilityModuleBridge.TAG_HEAL,
+]
 
 static var _restore_unit_id: StringName = &""
 
@@ -1403,6 +1410,7 @@ func _refresh_passive_preview(passive: PassiveData, preview: RichTextLabel) -> v
 
 func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) -> void:
 	_field_tracks.erase(ability.id)
+	_normalize_editor_modules(ability)
 	ability.finalize_modular()
 	ability.is_movement_skill = ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
 	var grid := GridContainer.new()
@@ -1418,14 +1426,14 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			ability.is_movement_skill = v == GameEnums.PlannerGroup.PRE_MOVE
 			if v == GameEnums.PlannerGroup.PRE_MOVE:
 				ability.primary_resource = GameEnums.CostResource.MP
-			elif ability.kind == GameEnums.AbilityKind.CLASS_SKILL:
+			else:
 				ability.primary_resource = GameEnums.CostResource.AP
 			ability.finalize_modular()
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
 	var tags_row := _bind_string(grid, "tags", _tags_to_csv(ability.tags), func(v: String) -> void:
-		ability.tags = _tags_from_csv(v)
+		ability.tags = _validated_tags_from_csv(v)
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "tags", tags_row)
@@ -1435,7 +1443,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			ability.primary_resource = v as GameEnums.CostResource
 			if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 				ability.primary_resource = GameEnums.CostResource.MP
-			elif ability.primary_resource == GameEnums.CostResource.NONE:
+			else:
 				ability.primary_resource = GameEnums.CostResource.AP
 			ability.finalize_modular()
 			_refresh_ability_ui(ability)
@@ -1553,13 +1561,40 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 
 func _new_module_for_ability(ability: AbilityData) -> AbilityModule:
 	var module := AbilityModule.new()
-	var authored_modules: Array[AbilityModule] = ability.get_active_modules()
-	if not authored_modules.is_empty() and authored_modules.back() != null:
-		module = authored_modules.back().duplicate(true) as AbilityModule
-		return module
 	module.primary_type = GameEnums.EffectType.DAMAGE
 	module.amount = 1
+	module.min_range = 1
+	module.max_range = 1
+	module.targeting_flags = (
+		GameEnums.TargetingFlags.TILE
+		if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
+		else GameEnums.TargetingFlags.ENEMY
+	)
 	return module
+
+
+func _normalize_editor_modules(ability: AbilityData) -> void:
+	for module: AbilityModule in ability.modules + ability.upgraded_modules:
+		if module == null:
+			continue
+		if (
+			module.primary_type == GameEnums.EffectType.MOVE
+			or module.primary_type == GameEnums.EffectType.DASH
+		):
+			module.min_range = maxi(1, module.min_range)
+		if module.max_range < module.min_range:
+			module.max_range = module.min_range
+		if module.primary_type == GameEnums.EffectType.SWAP:
+			module.target_shape = GameEnums.TargetShape.SINGLE
+
+
+func _module_min_range(module: AbilityModule) -> int:
+	if (
+		module.primary_type == GameEnums.EffectType.MOVE
+		or module.primary_type == GameEnums.EffectType.DASH
+	):
+		return 1
+	return 0
 
 
 func _on_modules_edited(
@@ -1575,12 +1610,14 @@ func _on_modules_edited(
 			ability.upgraded_effects.clear()
 		else:
 			ability.effects.clear()
+	_normalize_editor_modules(ability)
 	ability.finalize_modular()
 	_rebuild_modules_editor(parent, ability, modules, upgraded)
 	_refresh_ability_ui(ability)
 
 
 func _on_module_field_edited(ability: AbilityData) -> void:
+	_normalize_editor_modules(ability)
 	ability.finalize_modular()
 	_refresh_ability_ui(ability)
 
@@ -1623,6 +1660,7 @@ func _build_module_fields(
 	modules: Array[AbilityModule],
 	upgraded: bool,
 ) -> void:
+	_normalize_editor_modules(ability)
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("v_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
@@ -1656,9 +1694,11 @@ func _build_module_fields(
 		module.motion_mode = v
 		changed.call()
 	)
-	_bind_int(grid, "Min Range", module.min_range, func(v: int) -> void:
-		module.min_range = v
-		changed.call()
+	_bind_int(
+		grid, "Min Range", module.min_range, func(v: int) -> void:
+			module.min_range = v
+			changed.call()
+		_module_min_range(module),
 	)
 	_bind_int(grid, "Max Range", module.max_range, func(v: int) -> void:
 		module.max_range = v
@@ -1672,10 +1712,15 @@ func _build_module_fields(
 		module.range_origin = v
 		changed.call()
 	)
-	_bind_enum(grid, "Shape", GameEnums.TargetShape, module.target_shape, func(v: int) -> void:
-		module.target_shape = v
-		changed.call()
+	var shape_row := _bind_enum(
+		grid, "Shape", GameEnums.TargetShape, module.target_shape, func(v: int) -> void:
+			if module.primary_type == GameEnums.EffectType.SWAP:
+				module.target_shape = GameEnums.TargetShape.SINGLE
+			else:
+				module.target_shape = v
+			changed.call()
 	)
+	_grey_row(shape_row, module.primary_type == GameEnums.EffectType.SWAP)
 	_bind_int(grid, "Shape Size", module.target_shape_size, func(v: int) -> void:
 		module.target_shape_size = v
 		changed.call()
@@ -1851,6 +1896,20 @@ func _tags_from_csv(text: String) -> Array[StringName]:
 	return out
 
 
+func _validated_tags_from_csv(text: String) -> Array[StringName]:
+	var accepted: Array[StringName] = []
+	var rejected: Array[StringName] = []
+	for tag: StringName in _tags_from_csv(text):
+		if CANONICAL_ABILITY_TAGS.has(tag):
+			if not accepted.has(tag):
+				accepted.append(tag)
+		else:
+			rejected.append(tag)
+	if not rejected.is_empty():
+		push_error("Ability editor rejected unknown tags: %s" % ", ".join(rejected))
+	return accepted
+
+
 func _refresh_ability_ui(ability: AbilityData) -> void:
 	if not _ability_ui.has(ability):
 		return
@@ -1860,11 +1919,6 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 		var cb: Callable = refs["greying_cb"]
 		if cb.is_valid():
 			cb.call()
-	for cb_key in ["base_effect_greying_cbs", "upgraded_effect_greying_cbs"]:
-		if refs.has(cb_key):
-			for cb: Callable in refs.get(cb_key, []):
-				if cb.is_valid():
-					cb.call()
 	var modules_preview: RichTextLabel = refs.get("modules_preview")
 	if modules_preview != null:
 		modules_preview.text = ClassLibrarySchema.modules_summary_bbcode(ability)
@@ -2255,12 +2309,19 @@ func _add_subsection_label(parent: Control, text: String, accent: Color) -> void
 
 # --- Widget bindings ---
 
-func _bind_int(parent: GridContainer, label: String, value: int, setter: Callable) -> Array[Control]:
+func _bind_int(
+	parent: GridContainer,
+	label: String,
+	value: int,
+	setter: Callable,
+	min_value: int = -999,
+	max_value: int = 9999,
+) -> Array[Control]:
 	var lbl := _field_label(label)
 	parent.add_child(lbl)
 	var spin := SpinBox.new()
-	spin.min_value = -999
-	spin.max_value = 9999
+	spin.min_value = min_value
+	spin.max_value = max_value
 	spin.value = value
 	spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spin.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))

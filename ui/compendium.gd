@@ -398,14 +398,23 @@ func _add_ability_panel(parent: Control, ab: AbilityData) -> void:
 	a_title.text = (
 		"[font_size=24]%s ([hint=The maximum distance of the authored aim.]Range[/hint]: %d, "
 		+ "[hint=The header cost paid once per use.]%s[/hint]: %d)%s[/font_size]"
-	) % [ab.display_name, ab.get_active_card_range(), resource_name, ab.primary_value, scaling_text]
+	) % [ab.display_name, _module_display_range(ab), resource_name, ab.primary_value, scaling_text]
 	a_vbox.add_child(a_title)
 	
-	var modules := RichTextLabel.new()
-	modules.bbcode_enabled = true
-	modules.fit_content = true
-	modules.text = ClassLibrarySchema.modules_summary_bbcode(ab)
-	a_vbox.add_child(modules)
+	var effect_line := RichTextLabel.new()
+	effect_line.bbcode_enabled = true
+	effect_line.fit_content = true
+	effect_line.text = CombatUiFormatters.ability_effect_bbcode(ab)
+	a_vbox.add_child(effect_line)
+
+
+func _module_display_range(ability: AbilityData) -> int:
+	var display_range: int = 0
+	for module: AbilityModule in ability.get_active_modules():
+		if module == null or module.aim_binding != GameEnums.AimBinding.NEW_AIM:
+			continue
+		display_range = maxi(display_range, module.max_range)
+	return display_range
 
 func _get_status_desc(t: GameEnums.StatusType) -> String:
 	match t:

@@ -11,6 +11,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_motion_range_legality(failures)
 	_test_if_collided_follow_up(failures)
 	_test_schema_module_round_trip(failures)
+	_test_legacy_json_import_round_trip(failures)
 
 
 static func _test_module_only_execution(failures: Array[String]) -> void:
@@ -204,7 +205,24 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	module.max_range = 4
 	module.targeting_flags = GameEnums.TargetingFlags.ENEMY
 	module.target_shape = GameEnums.TargetShape.SINGLE
+	var keyword: AbilityKeyword = AbilityKeyword.new()
+	keyword.keyword_id = GameEnums.AbilityKeywordId.PIERCE
+	keyword.amount = 1
+	module.keywords = [keyword]
+	var layer: AbilityLayer = AbilityLayer.new()
+	layer.effect = EffectData.new()
+	layer.effect.type = GameEnums.EffectType.DAMAGE
+	layer.effect.amount = 1
+	module.layers = [layer]
 	authored.modules = [module]
+	var upgraded_module: AbilityModule = module.duplicate(true) as AbilityModule
+	upgraded_module.amount = 5
+	authored.upgraded_modules = [upgraded_module]
+	authored.upgraded_primary_value = 4
+	authored.secondary_resource = GameEnums.CostResource.HP
+	authored.secondary_value = 2
+	authored.cost_modifier = GameEnums.CostModifier.ZERO_IF_ADJACENT_ENEMIES_GTE_N
+	authored.cost_modifier_n = 2
 	authored.finalize_modular()
 	var payload: Dictionary = ClassLibrarySchema.ability_to_dict(authored)
 	for legacy_key: String in [
@@ -224,10 +242,49 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 		or restored.tags != authored.tags
 		or restored_module.primary_type != module.primary_type
 		or restored_module.amount != module.amount
+		or restored_module.min_range != module.min_range
 		or restored_module.max_range != module.max_range
 		or restored_module.targeting_flags != module.targeting_flags
+		or restored_module.keywords.size() != 1
+		or restored_module.layers.size() != 1
+		or restored.upgraded_modules.size() != 1
+		or restored.upgraded_modules[0].amount != upgraded_module.amount
+		or restored.upgraded_primary_value != authored.upgraded_primary_value
+		or restored.secondary_resource != authored.secondary_resource
+		or restored.secondary_value != authored.secondary_value
+		or restored.cost_modifier != authored.cost_modifier
+		or restored.cost_modifier_n != authored.cost_modifier_n
 	):
 		failures.append("module-first JSON round trip changed header or module data")
+	var player_text: String = CombatUiFormatters.ability_effect_bbcode(authored)
+	if player_text.find("PUSH") < 0:
+		failures.append("module-first player-facing formatter lost PUSH text")
+
+
+static func _test_legacy_json_import_round_trip(failures: Array[String]) -> void:
+	var legacy_effect: EffectData = EffectData.new()
+	legacy_effect.type = GameEnums.EffectType.DAMAGE
+	legacy_effect.amount = 6
+	var legacy_payload: Dictionary = {
+		"display_name": "Legacy Strike",
+		"kind": GameEnums.AbilityKind.CLASS_SKILL,
+		"action_point_cost": 1,
+		"range_tiles": 3,
+		"targeting_mode": GameEnums.TargetingMode.ENEMY_UNIT,
+		"effects": ClassLibrarySchema.effects_to_dict_array([legacy_effect]),
+	}
+	var imported: AbilityData = AbilityData.new()
+	ClassLibrarySchema.apply_ability_dict(imported, legacy_payload)
+	if imported.modules.size() != 1 or imported.effects.size() != 1:
+		failures.append("legacy effects-only JSON did not infer a modular profile")
+	elif imported.modules[0].primary_type != GameEnums.EffectType.DAMAGE:
+		failures.append("legacy effects-only JSON inferred the wrong module effect")
+	var hybrid_payload: Dictionary = legacy_payload.duplicate(true)
+	hybrid_payload["modules"] = []
+	var hybrid: AbilityData = AbilityData.new()
+	ClassLibrarySchema.apply_ability_dict(hybrid, hybrid_payload)
+	if hybrid.modules.size() != 1 or hybrid.modules[0].amount != 6:
+		failures.append("hybrid empty-modules JSON dropped legacy effects")
 
 
 static func _ability(id: StringName, targeting_flags: int) -> AbilityData:

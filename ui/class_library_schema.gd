@@ -1236,14 +1236,22 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.presentation_key = StringName(String(data.get("presentation_key", String(dst.presentation_key))))
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
 	var module_data: Variant = data.get("modules", null)
-	if module_data is Array:
+	var use_legacy_base: bool = (
+		not (module_data is Array)
+		or ((module_data as Array).is_empty() and data.has("effects"))
+	)
+	if not use_legacy_base:
 		dst.modules = modules_from_dict_array(module_data as Array)
 	else:
 		_apply_legacy_ability_payload(dst, data)
 	var upgraded_module_data: Variant = data.get("upgraded_modules", null)
-	if upgraded_module_data is Array:
+	var use_legacy_upgrade: bool = (
+		not (upgraded_module_data is Array)
+		or ((upgraded_module_data as Array).is_empty() and data.has("upgraded_effects"))
+	)
+	if not use_legacy_upgrade:
 		dst.upgraded_modules = modules_from_dict_array(upgraded_module_data as Array)
-	elif data.has("upgraded_effects"):
+	elif use_legacy_base and data.has("upgraded_effects"):
 		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
 	dst.finalize_modular()
 
