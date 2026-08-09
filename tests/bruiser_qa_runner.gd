@@ -1,25 +1,27 @@
-class_name BruiserQaRunner
-extends RefCounted
+extends SceneTree
 
-const _REGISTRY := preload("res://tests/bruiser_scenario_registry.gd")
-const _HARNESS := preload("res://tests/bruiser_qa_harness.gd")
-const _UPGRADES := preload("res://tests/bruiser_qa_harness_upgrades.gd")
-const _DRAG := preload("res://tests/planning_drag_e2e_harness.gd")
-const _PLANNING := preload("res://tests/bruiser_planning_smoke_registry.gd")
-
-## Tier 1 Bruiser class QA runner — invokes registry scenarios (NOT planning QA).
+## Bruiser QA Tier 1 headless CLI / Run Script entry.
+## Run: godot --headless --path <repo> --script res://tests/bruiser_qa_runner.gd
+## Scene gate (F5): res://tests/BruiserQaGate.tscn → bruiser_qa_gate_host.gd
+## Scenario library: res://tests/bruiser_qa_runner_lib.gd
 
 
-static func run_all(failures: Array[String]) -> void:
-	_HARNESS.run_shape_geometry(failures)
-	for entry: Dictionary in _REGISTRY.all_entries():
-		var name: String = String(entry.get("name", "?"))
-		var factory_id: StringName = entry.get("factory_id", &"") as StringName
-		var script_path: String = String(entry.get("script_path", ""))
-		print("[BRUISER_QA] %s (%s)" % [name, factory_id])
-		if not _REGISTRY.run_scenario(script_path, failures):
-			_HARNESS.assert_fail(failures, "registry/%s" % name, "failed to load or run scenario script")
-			continue
-		_UPGRADES.run_upgrade_for(name, failures)
-		_PLANNING.run_for_factory_id(failures, factory_id)
-		_DRAG.cleanup_all()
+func _initialize() -> void:
+	var failures: Array[String] = []
+	var drag: GDScript = load("res://tests/planning_drag_e2e_harness.gd") as GDScript
+	var runner: GDScript = load("res://tests/bruiser_qa_runner_lib.gd") as GDScript
+	var host := Node.new()
+	host.name = "BruiserQaGateHost"
+	root.add_child(host)
+	drag.set_host(host)
+	print("[SUITE] bruiser_qa_tier1")
+	runner.run_all(failures)
+	drag.cleanup_all()
+	drag.set_host(null)
+	host.queue_free()
+	if failures.is_empty():
+		print("[PASS] Bruiser QA Tier 1 scenarios")
+	else:
+		for failure: String in failures:
+			printerr("[FAIL] %s" % failure)
+	quit(0 if failures.is_empty() else 1)
