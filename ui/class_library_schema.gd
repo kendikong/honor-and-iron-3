@@ -311,9 +311,11 @@ static func bible_ability_effect_line(ability: AbilityData) -> String:
 static func bible_ability_targeting_label(ability: AbilityData) -> String:
 	if ability == null:
 		return ""
+	var authored_flags: int = 0
 	for module: AbilityModule in ability.get_active_modules():
 		if module == null:
 			continue
+		authored_flags |= module.targeting_flags
 		if module.primary_type == GameEnums.EffectType.DASH:
 			return "DASH %d" % module.amount
 		if (
@@ -322,7 +324,7 @@ static func bible_ability_targeting_label(ability: AbilityData) -> String:
 			and module.max_range > 0
 		):
 			return "RANGE %d" % module.max_range
-	if ability.targeting_mode == GameEnums.TargetingMode.SELF:
+	if authored_flags & GameEnums.TargetingFlags.SELF:
 		var self_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
 		for module: AbilityModule in ability.get_active_modules():
 			if module != null and module.aim_binding == GameEnums.AimBinding.NEW_AIM:
@@ -507,18 +509,19 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 	var parts: Array[String] = []
 	parts.append("Planning: %s" % _planning_note(ability))
 	parts.append("Targeting: AbilitySystem.target_passes_mode via targeting_flags bitmask.")
-	if ability.is_movement_kind():
-		parts.append("Economy: spends movement_point_cost (MP); PRE_MOVE timeline bucket; no action slot.")
+	if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
+		parts.append("Economy: spends %s (%d); PRE_MOVE timeline bucket; no action slot." % [
+			GameEnums.CostResource.keys()[ability.primary_resource],
+			ability.primary_value,
+		])
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
 		parts.append("Economy: PRE_MOVE only — spends 1 AP on move (uses_run); does not consume the Action slot.")
 	elif ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
 		parts.append("Economy: consumes the Action slot; ends planning for this unit.")
 	else:
-		parts.append("Economy: spends action_point_cost (AP); ACTION timeline bucket; consumes action slot.")
-	if ability.target_shape != GameEnums.TargetShape.SINGLE:
-		parts.append("Shape: hits tiles in %s (size %d), not only the selected tile." % [
-			GameEnums.TargetShape.keys()[ability.target_shape],
-			ability.target_shape_size,
+		parts.append("Economy: spends %s (%d); ACTION timeline bucket; consumes action slot." % [
+			GameEnums.CostResource.keys()[ability.primary_resource],
+			ability.primary_value,
 		])
 	for module: AbilityModule in ability.get_active_modules():
 		if module != null:
@@ -540,17 +543,20 @@ static func in_game_ability_bbcode(ability: AbilityData, unit: UnitState = null)
 static func targeting_flags_dump(ability: AbilityData) -> String:
 	if ability == null:
 		return "none"
-	ability.ensure_targeting_flags_from_mode()
+	var authored_flags: int = 0
+	for module: AbilityModule in ability.get_active_modules():
+		if module != null:
+			authored_flags |= module.targeting_flags
 	var labels: PackedStringArray = []
-	if ability.has_targeting(GameEnums.TargetingFlags.SELF):
+	if authored_flags & GameEnums.TargetingFlags.SELF:
 		labels.append("Self")
-	if ability.has_targeting(GameEnums.TargetingFlags.ALLY):
+	if authored_flags & GameEnums.TargetingFlags.ALLY:
 		labels.append("Ally")
-	if ability.has_targeting(GameEnums.TargetingFlags.ENEMY):
+	if authored_flags & GameEnums.TargetingFlags.ENEMY:
 		labels.append("Enemy")
-	if ability.has_targeting(GameEnums.TargetingFlags.TILE):
+	if authored_flags & GameEnums.TargetingFlags.TILE:
 		labels.append("Tile")
-	if ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
+	if authored_flags & GameEnums.TargetingFlags.DASH_LINE:
 		labels.append("Dash line")
 	if labels.is_empty():
 		return "none"
@@ -764,7 +770,6 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 		return
 	dst.id = src.id
 	dst.display_name = src.display_name
-	dst.kind = src.kind
 	dst.planner_group = src.planner_group
 	dst.tags = src.tags.duplicate()
 	dst.primary_resource = src.primary_resource
@@ -775,47 +780,27 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.secondary_resource = src.secondary_resource
 	dst.secondary_value = src.secondary_value
 	dst.upgraded_secondary_value = src.upgraded_secondary_value
-	dst.action_point_cost = src.action_point_cost
-	dst.movement_point_cost = src.movement_point_cost
-	dst.range_tiles = src.range_tiles
-	dst.targeting_mode = src.targeting_mode
-	dst.targeting_flags = src.targeting_flags
-	dst.can_target_self = src.can_target_self
-	dst.target_shape = src.target_shape
-	dst.target_shape_size = src.target_shape_size
-	dst.upgraded_range_tiles = src.upgraded_range_tiles
-	dst.upgraded_target_shape = src.upgraded_target_shape
-	dst.upgraded_target_shape_size = src.upgraded_target_shape_size
 	dst.upgrade_description = src.upgrade_description
 	dst.uses_per_combat = src.uses_per_combat
 	dst.presentation_key = src.presentation_key
 	dst.presentation_anim = src.presentation_anim
-	dst.scaling_stat = src.scaling_stat
-	dst.is_movement_skill = src.planner_group == GameEnums.PlannerGroup.PRE_MOVE
 	dst.modules = modules_from_dict_array(modules_to_dict_array(src.modules))
 	dst.upgraded_modules = modules_from_dict_array(
 		modules_to_dict_array(src.upgraded_modules)
 	)
-	dst.effects.clear()
-	for eff: EffectData in src.effects:
-		dst.effects.append(duplicate_effect(eff))
-	dst.upgraded_effects.clear()
-	for eff: EffectData in src.upgraded_effects:
-		dst.upgraded_effects.append(duplicate_effect(eff))
+	dst.kind = src.kind
 	dst.sync_legacy_targeting()
 	dst.finalize_modular()
 
 
 static func _planning_note(ability: AbilityData) -> String:
-	match ability.kind:
-		GameEnums.AbilityKind.MOVEMENT_SKILL:
-			return "plan_pre_move; ally-only when targeting_mode=ALLY_UNIT."
-		GameEnums.AbilityKind.UNIVERSAL_RUN:
-			return "plan_pre_move (Run)."
-		GameEnums.AbilityKind.UNIVERSAL_WAIT:
-			return "plan_action (Wait); blocks further planning when set."
-		_:
-			return "plan_action (class skill or basic attack)."
+	if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
+		return "plan_pre_move; module targeting flags define the legal aim."
+	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
+		return "plan_pre_move (Run)."
+	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+		return "plan_action (Wait); blocks further planning when set."
+	return "plan_action (class skill or basic attack)."
 
 
 static func _ability_kind_tooltip(k: String) -> String:
@@ -1186,29 +1171,12 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"secondary_resource": src.secondary_resource,
 		"secondary_value": src.secondary_value,
 		"upgraded_secondary_value": src.upgraded_secondary_value,
-		"kind": src.kind,
-		"action_point_cost": src.action_point_cost,
-		"movement_point_cost": src.movement_point_cost,
-		"range_tiles": src.range_tiles,
-		"targeting_mode": src.targeting_mode,
-		"targeting_flags": src.targeting_flags,
-		"can_target_self": src.can_target_self,
-		"target_shape": src.target_shape,
-		"target_shape_size": src.target_shape_size,
-		"upgraded_range_tiles": src.upgraded_range_tiles,
-		"upgraded_movement_point_cost": src.upgraded_movement_point_cost,
-		"upgraded_target_shape": src.upgraded_target_shape,
-		"upgraded_target_shape_size": src.upgraded_target_shape_size,
 		"upgrade_description": src.upgrade_description,
 		"uses_per_combat": src.uses_per_combat,
 		"presentation_key": String(src.presentation_key),
 		"presentation_anim": src.presentation_anim,
-		"scaling_stat": src.scaling_stat,
-		"is_movement_skill": src.is_movement_skill,
 		"modules": modules_to_dict_array(src.modules),
 		"upgraded_modules": modules_to_dict_array(src.upgraded_modules),
-		"effects": effects_to_dict_array(src.effects),
-		"upgraded_effects": effects_to_dict_array(src.upgraded_effects),
 		"module_count": src.modules.size(),
 		"upgraded_module_count": src.upgraded_modules.size(),
 	}
@@ -1218,7 +1186,7 @@ static func modules_summary_bbcode(ability: AbilityData) -> String:
 	if ability == null:
 		return "[i]no ability[/i]"
 	if ability.modules.is_empty():
-		return "[i]No modules yet — edit Effects (modules rebuild from effects automatically).[/i]"
+		return "[i]No modules authored yet — add a module to define this ability.[/i]"
 	var lines: PackedStringArray = PackedStringArray()
 	var i: int = 0
 	for mod: AbilityModule in ability.modules:
@@ -1246,11 +1214,8 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	if dst == null or data.is_empty():
 		return
 	dst.display_name = String(data.get("display_name", dst.display_name))
-	dst.kind = int(data.get("kind", dst.kind))
 	if data.has("planner_group"):
 		dst.planner_group = int(data.get("planner_group", dst.planner_group))
-	else:
-		dst.planner_group = AbilityModuleBridge.planner_group_from_kind(dst.kind as GameEnums.AbilityKind)
 	if data.has("tags"):
 		var tags_v: Variant = data.get("tags", [])
 		var tags_out: Array[StringName] = []
@@ -1266,41 +1231,64 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.secondary_resource = int(data.get("secondary_resource", dst.secondary_resource)) as GameEnums.CostResource
 	dst.secondary_value = int(data.get("secondary_value", dst.secondary_value))
 	dst.upgraded_secondary_value = int(data.get("upgraded_secondary_value", dst.upgraded_secondary_value))
-	dst.action_point_cost = int(data.get("action_point_cost", dst.action_point_cost))
-	dst.movement_point_cost = int(data.get("movement_point_cost", dst.movement_point_cost))
-	dst.range_tiles = int(data.get("range_tiles", dst.range_tiles))
-	dst.targeting_mode = int(data.get("targeting_mode", dst.targeting_mode))
-	dst.targeting_flags = int(data.get("targeting_flags", dst.targeting_flags))
-	dst.can_target_self = bool(data.get("can_target_self", dst.can_target_self))
-	dst.target_shape = int(data.get("target_shape", dst.target_shape))
-	dst.target_shape_size = int(data.get("target_shape_size", dst.target_shape_size))
-	dst.upgraded_range_tiles = int(data.get("upgraded_range_tiles", dst.upgraded_range_tiles))
-	dst.upgraded_movement_point_cost = int(data.get("upgraded_movement_point_cost", dst.upgraded_movement_point_cost))
-	dst.upgraded_target_shape = int(data.get("upgraded_target_shape", dst.upgraded_target_shape))
-	dst.upgraded_target_shape_size = int(data.get("upgraded_target_shape_size", dst.upgraded_target_shape_size))
 	dst.upgrade_description = String(data.get("upgrade_description", dst.upgrade_description))
 	dst.uses_per_combat = int(data.get("uses_per_combat", dst.uses_per_combat))
 	dst.presentation_key = StringName(String(data.get("presentation_key", String(dst.presentation_key))))
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
-	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
-	dst.is_movement_skill = bool(data.get("is_movement_skill", dst.planner_group == GameEnums.PlannerGroup.PRE_MOVE))
-	var has_modular_profile: bool = data.has("modules")
-	if has_modular_profile:
-		var module_data: Variant = data.get("modules", [])
-		dst.modules = modules_from_dict_array(module_data as Array if module_data is Array else [])
-		dst.effects.clear()
-	elif data.has("effects"):
-		dst.effects = effects_from_dict_array(data.get("effects", []))
-	var has_upgraded_modular_profile: bool = data.has("upgraded_modules")
-	if has_upgraded_modular_profile:
-		var upgraded_module_data: Variant = data.get("upgraded_modules", [])
-		dst.upgraded_modules = modules_from_dict_array(
-			upgraded_module_data as Array if upgraded_module_data is Array else []
-		)
-		dst.upgraded_effects.clear()
+	var module_data: Variant = data.get("modules", null)
+	if module_data is Array:
+		dst.modules = modules_from_dict_array(module_data as Array)
+	else:
+		_apply_legacy_ability_payload(dst, data)
+	var upgraded_module_data: Variant = data.get("upgraded_modules", null)
+	if upgraded_module_data is Array:
+		dst.upgraded_modules = modules_from_dict_array(upgraded_module_data as Array)
 	elif data.has("upgraded_effects"):
 		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
-	## Saved JSON sometimes has SELF mode with stale ALLY flags. Prefer self-target authoring.
+	dst.finalize_modular()
+
+
+static func _apply_legacy_ability_payload(dst: AbilityData, data: Dictionary) -> void:
+	## One-way import for pre-module editor saves. New saves never emit this shape.
+	if data.has("kind"):
+		dst.kind = int(data.get("kind", dst.kind)) as GameEnums.AbilityKind
+		dst.planner_group = AbilityModuleBridge.planner_group_from_kind(dst.kind)
+	if data.has("action_point_cost"):
+		dst.action_point_cost = int(data.get("action_point_cost", dst.action_point_cost))
+	if data.has("movement_point_cost"):
+		dst.movement_point_cost = int(data.get("movement_point_cost", dst.movement_point_cost))
+	if data.has("range_tiles"):
+		dst.range_tiles = int(data.get("range_tiles", dst.range_tiles))
+	if data.has("targeting_mode"):
+		dst.targeting_mode = int(data.get("targeting_mode", dst.targeting_mode))
+	if data.has("targeting_flags"):
+		dst.targeting_flags = int(data.get("targeting_flags", dst.targeting_flags))
+	if data.has("can_target_self"):
+		dst.can_target_self = bool(data.get("can_target_self", dst.can_target_self))
+	if data.has("target_shape"):
+		dst.target_shape = int(data.get("target_shape", dst.target_shape))
+	if data.has("target_shape_size"):
+		dst.target_shape_size = int(data.get("target_shape_size", dst.target_shape_size))
+	if data.has("upgraded_range_tiles"):
+		dst.upgraded_range_tiles = int(data.get("upgraded_range_tiles", dst.upgraded_range_tiles))
+	if data.has("upgraded_movement_point_cost"):
+		dst.upgraded_movement_point_cost = int(
+			data.get("upgraded_movement_point_cost", dst.upgraded_movement_point_cost)
+		)
+	if data.has("upgraded_target_shape"):
+		dst.upgraded_target_shape = int(data.get("upgraded_target_shape", dst.upgraded_target_shape))
+	if data.has("upgraded_target_shape_size"):
+		dst.upgraded_target_shape_size = int(
+			data.get("upgraded_target_shape_size", dst.upgraded_target_shape_size)
+		)
+	if data.has("scaling_stat"):
+		dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
+	if data.has("is_movement_skill"):
+		dst.is_movement_skill = bool(data.get("is_movement_skill", dst.is_movement_skill))
+	if data.has("effects"):
+		dst.effects = effects_from_dict_array(data.get("effects", []))
+	if data.has("upgraded_effects"):
+		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
 	if (
 		bool(data.get("can_target_self", false))
 		or int(data.get("targeting_mode", -1)) == GameEnums.TargetingMode.SELF
@@ -1308,8 +1296,6 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		dst.targeting_flags = GameEnums.TargetingFlags.SELF
 		dst.targeting_mode = GameEnums.TargetingMode.SELF
 		dst.can_target_self = true
-	dst.sync_legacy_targeting()
-	dst.finalize_modular()
 
 
 static func passive_to_dict(src: PassiveData) -> Dictionary:

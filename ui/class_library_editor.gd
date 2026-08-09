@@ -1403,9 +1403,7 @@ func _refresh_passive_preview(passive: PassiveData, preview: RichTextLabel) -> v
 
 func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) -> void:
 	_field_tracks.erase(ability.id)
-	ability.ensure_targeting_flags_from_mode()
-	if ability.modules.is_empty() and not ability.effects.is_empty():
-		ability.finalize_modular()
+	ability.finalize_modular()
 	ability.is_movement_skill = ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -1420,10 +1418,9 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			ability.is_movement_skill = v == GameEnums.PlannerGroup.PRE_MOVE
 			if v == GameEnums.PlannerGroup.PRE_MOVE:
 				ability.primary_resource = GameEnums.CostResource.MP
-				ability.primary_value = ability.movement_point_cost
 			elif ability.kind == GameEnums.AbilityKind.CLASS_SKILL:
 				ability.primary_resource = GameEnums.CostResource.AP
-				ability.primary_value = ability.action_point_cost
+			ability.finalize_modular()
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
@@ -1432,106 +1429,85 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "tags", tags_row)
-	var ap_row := _bind_int(grid, "AP", ability.action_point_cost, func(v: int) -> void:
-		ability.action_point_cost = v
-		if ability.planner_group == GameEnums.PlannerGroup.ACTION:
-			ability.primary_resource = GameEnums.CostResource.AP
-			ability.primary_value = v
+	var resource_row := _bind_enum(
+		grid, "Primary Resource", GameEnums.CostResource, ability.primary_resource,
+		func(v: int) -> void:
+			ability.primary_resource = v as GameEnums.CostResource
+			if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
+				ability.primary_resource = GameEnums.CostResource.MP
+			elif ability.primary_resource == GameEnums.CostResource.NONE:
+				ability.primary_resource = GameEnums.CostResource.AP
+			ability.finalize_modular()
+			_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "primary_resource", resource_row)
+	var primary_value_row := _bind_int(grid, "Primary Cost", ability.primary_value, func(v: int) -> void:
+		ability.primary_value = maxi(0, v)
+		ability.finalize_modular()
 		_refresh_ability_ui(ability)
 	)
-	_track_ability_field(ability, "action_point_cost", ap_row)
-	var mp_row := _bind_int(grid, "MP", ability.movement_point_cost, func(v: int) -> void:
-		ability.movement_point_cost = v
-		if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
-			ability.primary_resource = GameEnums.CostResource.MP
-			ability.primary_value = v
+	_track_ability_field(ability, "primary_value", primary_value_row)
+	var secondary_resource_row := _bind_enum(
+		grid, "Secondary Resource", GameEnums.CostResource, ability.secondary_resource,
+		func(v: int) -> void:
+			ability.secondary_resource = v as GameEnums.CostResource
+			ability.finalize_modular()
+			_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "secondary_resource", secondary_resource_row)
+	var secondary_value_row := _bind_int(
+		grid, "Secondary Cost", ability.secondary_value, func(v: int) -> void:
+			ability.secondary_value = maxi(0, v)
+			ability.finalize_modular()
+			_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "secondary_value", secondary_value_row)
+	var cost_modifier_row := _bind_enum(
+		grid, "Cost Modifier", GameEnums.CostModifier, ability.cost_modifier,
+		func(v: int) -> void:
+			ability.cost_modifier = v as GameEnums.CostModifier
+			ability.finalize_modular()
+			_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "cost_modifier", cost_modifier_row)
+	var cost_modifier_n_row := _bind_int(
+		grid, "Cost Modifier N", ability.cost_modifier_n, func(v: int) -> void:
+			ability.cost_modifier_n = maxi(0, v)
+			ability.finalize_modular()
+			_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "cost_modifier_n", cost_modifier_n_row)
+	var uses_row := _bind_int(grid, "Uses/Combat", ability.uses_per_combat, func(v: int) -> void:
+		ability.uses_per_combat = v
 		_refresh_ability_ui(ability)
 	)
-	_track_ability_field(ability, "movement_point_cost", mp_row)
-	var range_row := _bind_int(grid, "Range", ability.range_tiles, func(v: int) -> void:
-		ability.range_tiles = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "range_tiles", range_row)
-	_bind_targeting_flags(parent, ability)
-	var shape_row := _bind_enum(grid, "Shape", GameEnums.TargetShape, ability.target_shape, func(v: int) -> void:
-		ability.target_shape = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "target_shape", shape_row)
-	var shape_size_row := _bind_int(grid, "Shape Size", ability.target_shape_size, func(v: int) -> void:
-		ability.target_shape_size = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "target_shape_size", shape_size_row)
-	var scaling_row := _bind_enum(grid, "Scaling", GameEnums.StatType, ability.scaling_stat, func(v: int) -> void:
-		ability.scaling_stat = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "scaling_stat", scaling_row)
-	var uses_row := _bind_int(grid, "Uses/Combat", ability.uses_per_combat, func(v: int) -> void: ability.uses_per_combat = v)
 	_track_ability_field(ability, "uses_per_combat", uses_row)
-	var present_key_row := _bind_string(grid, "Present Key", String(ability.presentation_key), func(v: String) -> void:
-		ability.presentation_key = StringName(v)
+	var present_key_row := _bind_string(
+		grid, "Present Key", String(ability.presentation_key), func(v: String) -> void:
+			ability.presentation_key = StringName(v)
+			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "presentation_key", present_key_row)
-	var present_anim_row := _bind_enum(grid, "Present Anim", GameEnums.PresentationAnim, ability.presentation_anim, func(v: int) -> void:
-		ability.presentation_anim = v
+	var present_anim_row := _bind_enum(
+		grid, "Present Anim", GameEnums.PresentationAnim, ability.presentation_anim,
+		func(v: int) -> void:
+			ability.presentation_anim = v as GameEnums.PresentationAnim
+			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "presentation_anim", present_anim_row)
-	var upg_range_row := _bind_int(grid, "Upg Range", ability.upgraded_range_tiles, func(v: int) -> void:
-		ability.upgraded_range_tiles = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "upgraded_range_tiles", upg_range_row)
-	var upg_shape_row := _bind_enum(grid, "Upg Shape", GameEnums.TargetShape, ability.upgraded_target_shape, func(v: int) -> void:
-		ability.upgraded_target_shape = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "upgraded_target_shape", upg_shape_row)
-	var upg_size_row := _bind_int(grid, "Upg Size", ability.upgraded_target_shape_size, func(v: int) -> void:
-		ability.upgraded_target_shape_size = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "upgraded_target_shape_size", upg_size_row)
-	var upg_mp_row := _bind_int(grid, "Upg MP", ability.upgraded_movement_point_cost, func(v: int) -> void:
-		ability.upgraded_movement_point_cost = v
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "upgraded_movement_point_cost", upg_mp_row)
-	var kind_row := _bind_enum(grid, "kind (legacy)", GameEnums.AbilityKind, ability.kind, func(v: int) -> void:
-		ability.kind = v
-		ability.planner_group = AbilityModuleBridge.planner_group_from_kind(v as GameEnums.AbilityKind)
-		ability.is_movement_skill = v == GameEnums.AbilityKind.MOVEMENT_SKILL
-		_refresh_ability_ui(ability)
-	)
-	_track_ability_field(ability, "kind", kind_row)
-	var upgrade_edit := _bind_multiline(parent, "Upgrade Text", ability.upgrade_description, func(v: String) -> void:
-		ability.upgrade_description = v
-		_refresh_ability_ui(ability)
+	var upgrade_edit := _bind_multiline(
+		parent, "Upgrade Text", ability.upgrade_description, func(v: String) -> void:
+			ability.upgrade_description = v
+			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "upgrade_description", [upgrade_edit])
-	# Grey out fields that don't apply to this ability configuration dynamically.
 	var grey_cb := func() -> void:
-		var is_action: bool = ability.planner_group == GameEnums.PlannerGroup.ACTION and ability.is_class_kind()
 		var is_pre_move: bool = ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
-		var has_pass_through: bool = AbilitySystem.has_pass_through_effects(ability)
-		var has_dash: bool = AbilitySystem.ability_has_dash(ability)
-		var is_displacement: bool = has_pass_through or has_dash
-		var has_dmg_or_heal: bool = (
-			AbilitySystem.effect_amount(ability, GameEnums.EffectType.DAMAGE) != 0
-			or AbilitySystem.effect_amount(ability, GameEnums.EffectType.HEAL) != 0
-		)
-		var has_upg_range: bool = ability.upgraded_range_tiles != -1
-		_grey_row(ap_row, not is_action)
-		_grey_row(mp_row, not is_pre_move)
-		_grey_row(shape_row, is_displacement)
-		_grey_row(shape_size_row, is_displacement)
-		_grey_row(scaling_row, not has_dmg_or_heal)
-		_grey_row(upg_range_row, not has_upg_range)
-		_grey_row(upg_shape_row, is_displacement or not has_upg_range)
-		_grey_row(upg_size_row, is_displacement or not has_upg_range)
-	
+		_grey_row(resource_row, is_pre_move)
+		_grey_row(primary_value_row, false)
+		_grey_row(secondary_resource_row, false)
+		_grey_row(secondary_value_row, ability.secondary_resource == GameEnums.CostResource.NONE)
+		_grey_row(cost_modifier_n_row, ability.cost_modifier == GameEnums.CostModifier.NONE)
 	if not _ability_ui.has(ability):
 		_ability_ui[ability] = {}
 	_ability_ui[ability]["greying_cb"] = grey_cb
@@ -1577,13 +1553,12 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 
 func _new_module_for_ability(ability: AbilityData) -> AbilityModule:
 	var module := AbilityModule.new()
+	var authored_modules: Array[AbilityModule] = ability.get_active_modules()
+	if not authored_modules.is_empty() and authored_modules.back() != null:
+		module = authored_modules.back().duplicate(true) as AbilityModule
+		return module
 	module.primary_type = GameEnums.EffectType.DAMAGE
 	module.amount = 1
-	module.max_range = maxi(1, ability.range_tiles)
-	module.targeting_flags = ability.targeting_flags
-	module.target_shape = ability.target_shape
-	module.target_shape_size = ability.target_shape_size
-	module.scaling_stat = ability.scaling_stat
 	return module
 
 
@@ -2301,36 +2276,6 @@ func _bind_bool(parent: GridContainer, label: String, value: bool, setter: Calla
 	chk.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	chk.toggled.connect(func(v: bool) -> void: setter.call(v))
 	parent.add_child(chk)
-
-
-func _bind_targeting_flags(parent: VBoxContainer, ability: AbilityData) -> void:
-	_add_subsection_label(parent, "Targeting", ClassLibraryTheme.ACCENT_DATA)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
-	parent.add_child(row)
-	var specs: Array = [
-		[GameEnums.TargetingFlags.SELF, "Self"],
-		[GameEnums.TargetingFlags.ALLY, "Ally"],
-		[GameEnums.TargetingFlags.ENEMY, "Enemy"],
-		[GameEnums.TargetingFlags.TILE, "Tile"],
-		[GameEnums.TargetingFlags.DASH_LINE, "Dash line"],
-	]
-	var checks: Array[Control] = []
-	for spec: Array in specs:
-		var flag: int = int(spec[0])
-		var label: String = String(spec[1])
-		var chk := CheckBox.new()
-		chk.text = label
-		chk.button_pressed = ability.has_targeting(flag)
-		chk.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
-		chk.toggled.connect(func(enabled: bool) -> void:
-			ability.set_targeting_flag(flag, enabled)
-			_refresh_ability_ui(ability)
-		)
-		row.add_child(chk)
-		checks.append(chk)
-	_track_ability_field(ability, "targeting_flags", checks)
-	_track_ability_field(ability, "targeting_mode", checks)
 
 
 func _bind_string(parent: GridContainer, label: String, value: String, setter: Callable) -> Array[Control]:

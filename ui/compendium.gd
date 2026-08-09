@@ -378,23 +378,34 @@ func _add_ability_panel(parent: Control, ab: AbilityData) -> void:
 	var a_vbox := VBoxContainer.new()
 	a_box.add_child(a_vbox)
 	
+	ab.finalize_modular()
 	var scaling_text := ""
-	match ab.scaling_stat:
-		GameEnums.StatType.PHYSICAL: scaling_text = " [STR]"
-		GameEnums.StatType.MAGICAL: scaling_text = " [MAG]"
+	for module: AbilityModule in ab.get_active_modules():
+		if module == null:
+			continue
+		match module.scaling_stat:
+			GameEnums.StatType.PHYSICAL:
+				scaling_text = " [STR]"
+			GameEnums.StatType.MAGICAL:
+				scaling_text = " [MAG]"
+		if not scaling_text.is_empty():
+			break
+	var resource_name: String = GameEnums.CostResource.keys()[ab.primary_resource]
 	
 	var a_title := RichTextLabel.new()
 	a_title.bbcode_enabled = true
 	a_title.fit_content = true
-	a_title.text = "[font_size=24]%s ([hint=The maximum distance in tiles this ability can target.]Range[/hint]: %d, [hint=Action Points consumed by this ability.]AP[/hint]: %d)%s[/font_size]" % [ab.display_name, ab.range_tiles, ab.action_point_cost, scaling_text]
+	a_title.text = (
+		"[font_size=24]%s ([hint=The maximum distance of the authored aim.]Range[/hint]: %d, "
+		+ "[hint=The header cost paid once per use.]%s[/hint]: %d)%s[/font_size]"
+	) % [ab.display_name, ab.get_active_card_range(), resource_name, ab.primary_value, scaling_text]
 	a_vbox.add_child(a_title)
 	
-	for eff in ab.effects:
-		var e_lbl := RichTextLabel.new()
-		e_lbl.bbcode_enabled = true
-		e_lbl.fit_content = true
-		e_lbl.text = "  - " + _effect_to_string(eff)
-		a_vbox.add_child(e_lbl)
+	var modules := RichTextLabel.new()
+	modules.bbcode_enabled = true
+	modules.fit_content = true
+	modules.text = ClassLibrarySchema.modules_summary_bbcode(ab)
+	a_vbox.add_child(modules)
 
 func _get_status_desc(t: GameEnums.StatusType) -> String:
 	match t:
@@ -454,72 +465,11 @@ func _get_status_name(t: GameEnums.StatusType) -> String:
 		GameEnums.StatusType.STAT_DEBUFF_MOV: return "MOV DOWN"
 	return GameEnums.StatusType.keys()[t].capitalize()
 
-func _get_amount_string(eff: EffectData) -> String:
-	var stat_str = ""
-	if eff.scaling_stat != GameEnums.StatType.NONE:
-		stat_str = "[%s]" % GameEnums.StatType.keys()[eff.scaling_stat]
-	
-	if eff.amount == 0 and stat_str != "":
-		return stat_str
-	elif eff.amount > 0 and stat_str != "":
-		return "%d + %s" % [eff.amount, stat_str]
-	else:
-		return str(eff.amount)
-
 func _kw(word: String) -> String:
 	var icon := PlanningIcons.keyword_icon(word)
 	if icon != "":
 		return "[color=#FBBF24]%s %s[/color]" % [icon, word]
 	return "[color=#FBBF24]%s[/color]" % word
-
-func _effect_to_string(eff: EffectData) -> String:
-	match eff.type:
-		GameEnums.EffectType.DAMAGE: return "[hint=\"Reduces target's current HP. Resisted by Armor.\"]%s[/hint] %s" % [_kw("ATK"), _get_amount_string(eff)]
-		GameEnums.EffectType.HEAL: return "[hint=\"Restores target's current HP.\"]%s[/hint] %s" % [_kw("HEAL"), _get_amount_string(eff)]
-		GameEnums.EffectType.PUSH: return "[hint=\"Displaces target away from caster. Collisions deal damage.\"]%s[/hint] %s" % [_kw("PUSH"), _get_amount_string(eff)]
-		GameEnums.EffectType.PULL: return "[hint=\"Displaces target towards caster. Collisions deal damage.\"]%s[/hint] %s" % [_kw("PULL"), _get_amount_string(eff)]
-		GameEnums.EffectType.SWAP: return "[hint=\"Caster and target exchange tile positions.\"]%s[/hint]" % _kw("SWAP")
-		GameEnums.EffectType.ARMOR_UP: return "[hint=\"Grants temporary hit points that absorb damage before HP.\"]%s[/hint] %s" % [_kw("SHIELD"), _get_amount_string(eff)]
-		GameEnums.EffectType.EXPLODE: return "[hint=\"Deals damage to all units in the 4 adjacent cardinal tiles.\"]%s[/hint] %s" % [_kw("EXPLODE"), _get_amount_string(eff)]
-		GameEnums.EffectType.RANGED_EXPLODE: return "[hint=\"Deals damage to all units within the target shape.\"]%s[/hint] %s" % [_kw("AOE ATK"), _get_amount_string(eff)]
-		GameEnums.EffectType.SPAWN: return "[hint=\"Creates a new unit on the target tile.\"]%s[/hint] %s" % [_kw("SPAWN"), str(eff.spawn_unit_id).capitalize()]
-		GameEnums.EffectType.ADD_STATUS: 
-			var dur = "" if eff.status_duration == 1 else " (%d turns)" % eff.status_duration
-			var hint = _get_status_desc(eff.status_type)
-			var amount_str = _get_amount_string(eff)
-			if amount_str != "0" and amount_str != "":
-				match eff.status_type:
-					GameEnums.StatusType.STAT_BUFF_STR: hint = "Increases Strength (STR) by %s." % amount_str
-					GameEnums.StatusType.STAT_BUFF_MAG: hint = "Increases Magic (MAG) by %s." % amount_str
-					GameEnums.StatusType.STAT_BUFF_DEF: hint = "Increases Defense (DEF) by %s." % amount_str
-					GameEnums.StatusType.STAT_BUFF_MOV: hint = "Increases Movement Points (MP) by %s." % amount_str
-					GameEnums.StatusType.STAT_BUFF_ACC: hint = "Increases Accuracy (ACC) by %s." % amount_str
-					GameEnums.StatusType.STAT_DEBUFF_DEF: hint = "Decreases Defense (DEF) by %s." % amount_str
-					GameEnums.StatusType.STAT_DEBUFF_MOV: hint = "Decreases Movement Points (MP) by %s." % amount_str
-					GameEnums.StatusType.STAT_DEBUFF_ACC: hint = "Decreases Accuracy (ACC) by %s." % amount_str
-			return "Apply [hint=\"%s\"]%s[/hint]%s" % [hint, _kw(_get_status_name(eff.status_type)), dur]
-		GameEnums.EffectType.ADD_STATUS_SELF:
-			var dur = "" if eff.status_duration == 1 else " (%d turns)" % eff.status_duration
-			var hint = _get_status_desc(eff.status_type)
-			var amount_str = _get_amount_string(eff)
-			if amount_str != "0" and amount_str != "":
-				match eff.status_type:
-					GameEnums.StatusType.STAT_BUFF_STR: hint = "Increases Strength (STR) by %s." % amount_str
-					GameEnums.StatusType.STAT_BUFF_MAG: hint = "Increases Magic (MAG) by %s." % amount_str
-					GameEnums.StatusType.STAT_BUFF_DEF: hint = "Increases Defense (DEF) by %s." % amount_str
-					GameEnums.StatusType.STAT_BUFF_MOV: hint = "Increases Movement Points (MP) by %s." % amount_str
-					GameEnums.StatusType.STAT_BUFF_ACC: hint = "Increases Accuracy (ACC) by %s." % amount_str
-					GameEnums.StatusType.STAT_DEBUFF_DEF: hint = "Decreases Defense (DEF) by %s." % amount_str
-					GameEnums.StatusType.STAT_DEBUFF_MOV: hint = "Decreases Movement Points (MP) by %s." % amount_str
-					GameEnums.StatusType.STAT_DEBUFF_ACC: hint = "Decreases Accuracy (ACC) by %s." % amount_str
-			return "Self [hint=\"%s\"]%s[/hint]%s" % [hint, _kw(_get_status_name(eff.status_type)), dur]
-		GameEnums.EffectType.DAMAGE_SELF: return "Self [hint=\"Ignores Armor and deals direct damage to caster.\"]%s[/hint] %s" % [_kw("ATK"), _get_amount_string(eff)]
-		GameEnums.EffectType.CLEANSE: return "[hint=\"Removes all negative status effects from target.\"]%s[/hint]" % _kw("CLEANSE")
-		GameEnums.EffectType.PURGE: return "[hint=\"Removes all positive buffs and shields from target.\"]%s[/hint]" % _kw("PURGE")
-		GameEnums.EffectType.DASH: return "[hint=\"Caster moves in a straight line until blocked, applying effects to units collided with.\"]%s[/hint]" % _kw("DASH")
-		GameEnums.EffectType.DESTROY_OBSTACLE: return "[hint=\"Instantly removes a wall, trap, or destructible terrain.\"]%s[/hint]" % _kw("DESTROY OBSTACLE")
-		GameEnums.EffectType.TELEPORT_CASTER: return "[hint=\"Instantly moves caster to the target tile, ignoring pathing constraints.\"]%s[/hint]" % _kw("TELEPORT")
-	return "Unknown Effect"
 
 func _highlight_counter_attack_keywords(text: String) -> String:
 	var rx := RegEx.new()

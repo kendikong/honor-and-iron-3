@@ -10,6 +10,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_legacy_flat_targeting_compatibility(failures)
 	_test_motion_range_legality(failures)
 	_test_if_collided_follow_up(failures)
+	_test_schema_module_round_trip(failures)
 
 
 static func _test_module_only_execution(failures: Array[String]) -> void:
@@ -187,6 +188,46 @@ static func _test_if_collided_follow_up(failures: Array[String]) -> void:
 				follow_up.gate, follow_effects[0].type if not follow_effects.is_empty() else -1, gate_passes,
 			]
 		)
+
+
+static func _test_schema_module_round_trip(failures: Array[String]) -> void:
+	var authored: AbilityData = AbilityData.new()
+	authored.id = &"schema_round_trip"
+	authored.planner_group = GameEnums.PlannerGroup.ACTION
+	authored.primary_resource = GameEnums.CostResource.AP
+	authored.primary_value = 2
+	authored.tags = [&"positioning", &"control"]
+	var module: AbilityModule = AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.PUSH
+	module.amount = 2
+	module.min_range = 1
+	module.max_range = 4
+	module.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	module.target_shape = GameEnums.TargetShape.SINGLE
+	authored.modules = [module]
+	authored.finalize_modular()
+	var payload: Dictionary = ClassLibrarySchema.ability_to_dict(authored)
+	for legacy_key: String in [
+		"effects", "upgraded_effects", "range_tiles", "targeting_mode",
+		"targeting_flags", "target_shape", "action_point_cost", "movement_point_cost",
+	]:
+		if payload.has(legacy_key):
+			failures.append("module-first ability JSON emitted legacy key %s" % legacy_key)
+	var restored: AbilityData = AbilityData.new()
+	ClassLibrarySchema.apply_ability_dict(restored, payload)
+	if restored.modules.size() != 1:
+		failures.append("module-first JSON round trip lost authored module")
+		return
+	var restored_module: AbilityModule = restored.modules[0]
+	if (
+		restored.primary_value != authored.primary_value
+		or restored.tags != authored.tags
+		or restored_module.primary_type != module.primary_type
+		or restored_module.amount != module.amount
+		or restored_module.max_range != module.max_range
+		or restored_module.targeting_flags != module.targeting_flags
+	):
+		failures.append("module-first JSON round trip changed header or module data")
 
 
 static func _ability(id: StringName, targeting_flags: int) -> AbilityData:
