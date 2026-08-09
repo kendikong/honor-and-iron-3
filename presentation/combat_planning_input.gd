@@ -4318,8 +4318,15 @@ func _final_commit_slots_for_drop_at_cell(
 				params.preferred,
 				int(params.get("face_dir", -1)),
 			)
+		var enemy_drop_params: Dictionary = _commit_interaction_params(cell, dropped_on.id)
 		return _slots_with_facing_for_commit(
-			unit_id, dropped_on.position, local, [], legal_move_tiles, cell,
+			unit_id,
+			enemy_drop_params.cell,
+			local,
+			enemy_drop_params.waypoints,
+			enemy_drop_params.legal_move_tiles,
+			enemy_drop_params.preferred,
+			int(enemy_drop_params.get("face_dir", -1)),
 		)
 	var params: Dictionary = _commit_interaction_params(cell, -1)
 	return _slots_with_facing_for_commit(
