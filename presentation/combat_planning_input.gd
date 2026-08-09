@@ -1531,6 +1531,7 @@ func _apply_hover_preview_dict(res: Dictionary) -> void:
 	if _is_invalid_dict(res):
 		if _paint_valid_movement_endpoint_intent():
 			return
+		_clear_hover_preview()
 		return
 	preview_state.apply_result(res, _director)
 	_ensure_live_movement_intent_from_preview_actions(res)
@@ -1738,6 +1739,7 @@ func _final_commit_slots_for_interaction(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
 	)
 	_strip_unaffordable_premove_pairs(slots, unit_id, cell, waypoints)
+	_reject_orphan_skill_premove(slots, unit_id, cell)
 	var hover_enemy: UnitState = _resolve_hover_unit_at(cell)
 	if (
 		hover_enemy != null
@@ -1775,6 +1777,7 @@ func _strip_unaffordable_premove_pairs(
 	if actor == null:
 		return
 	var kept: Array = []
+	var stripped_pair: bool = false
 	for raw: Variant in actions:
 		if raw is TimelineAction:
 			var action: TimelineAction = raw as TimelineAction
@@ -1783,9 +1786,43 @@ func _strip_unaffordable_premove_pairs(
 				and action.ability != null
 				and not _can_pair_run_move_with_ability(actor, cell, waypoints, action.ability)
 			):
+				stripped_pair = true
 				continue
 		kept.append(raw)
 	slots["action"] = kept
+	if stripped_pair and kept.is_empty():
+		var had_premove: bool = (
+			not (slots.get("pre", []) as Array).is_empty()
+			or not (slots.get("post", []) as Array).is_empty()
+		)
+		if had_premove:
+			slots["pre"] = []
+			slots["post"] = []
+			if not _is_invalid_dict(slots):
+				slots["invalid"] = "Not enough AP to run and use this skill."
+
+
+func _reject_orphan_skill_premove(slots: Dictionary, unit_id: int, cell: Vector2i) -> void:
+	if _is_invalid_dict(slots):
+		return
+	if not (slots.get("action", []) as Array).is_empty():
+		return
+	if (slots.get("pre", []) as Array).is_empty() and (slots.get("post", []) as Array).is_empty():
+		return
+	if _director == null or _director.selected_ability_index < 0:
+		return
+	var actor := _proj_unit(unit_id)
+	if actor == null:
+		return
+	var ability := _selected_ability_data(actor)
+	if ability == null or AbilitySystem.is_movement_skill(ability):
+		return
+	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
+	if hover_unit == null or not hover_unit.is_enemy():
+		return
+	slots["pre"] = []
+	slots["post"] = []
+	slots["invalid"] = "Not enough AP to run and use this skill."
 
 
 func _commit_at_interaction_cell(
@@ -4158,6 +4195,12 @@ func _build_enemy_commit_slots(
 				approach_path = _director.preview_waypoints_for_hover(
 					board, actor, approach, [], ability,
 				)
+			var needs_run: bool = AbilitySystem.movement_requires_run(
+				board, actor, approach, approach_path,
+			)
+			if needs_run and not AbilitySystem.can_afford_run_for_commit(actor, ability):
+				slots["invalid"] = "Not enough AP to run and use this skill."
+				return slots
 			slots["pre"].append(
 				_director.make_planning_move_action(
 					unit_id,
@@ -4168,20 +4211,16 @@ func _build_enemy_commit_slots(
 					GameEnums.MoveTiming.PRE_ACTION,
 				),
 			)
-			if (
-				not AbilitySystem.movement_requires_run(board, actor, approach, approach_path)
-				or AbilitySystem.can_afford_run_for_commit(actor, ability)
-			):
-				slots["action"].append(
-					TimelineAction.make_ability(
-						unit_id,
-						ability,
-						enemy.position,
-						AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
-						GameEnums.MoveTiming.PRE_ACTION,
-						approach_path,
-					),
-				)
+			slots["action"].append(
+				TimelineAction.make_ability(
+					unit_id,
+					ability,
+					enemy.position,
+					AbilitySystem.planning_commit_target_unit_id(ability, enemy.id),
+					GameEnums.MoveTiming.PRE_ACTION,
+					approach_path,
+				),
+			)
 			return slots
 		slots["action"].append(
 			TimelineAction.make_ability(
