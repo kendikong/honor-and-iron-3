@@ -712,6 +712,14 @@ func preview_approach_tile(
 	var ability: AbilityData = actor.active_abilities[index]
 	var rng: int = AbilitySystem.active_range_tiles(actor, ability)
 	if GridSystem.manhattan(actor.position, target.position) <= rng:
+		# Already in range: attack from here unless preferred is a reachable lateral
+		# detour (same or farther from target than current stand — not a step-in closer).
+		if (
+			_is_attack_tile(plan_board, actor, preferred_tile, target.position, rng)
+			and GridSystem.manhattan(preferred_tile, target.position)
+			>= GridSystem.manhattan(actor.position, target.position)
+		):
+			return preferred_tile
 		return actor.position
 	return _find_approach_tile(plan_board, actor, target.position, rng, preferred_tile)
 
