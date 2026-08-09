@@ -16,11 +16,23 @@ func _ready() -> void:
 func _run() -> void:
 	var failures: Array[String] = []
 	DataLibrary.reset_cache()
+	var check_failures: int = failures.size()
+	print("ABILITY_MODULE_CHECK: bruiser_module_fingerprints START")
 	_check_bruiser(failures)
+	_report_check("bruiser_module_fingerprints", failures, check_failures)
+	check_failures = failures.size()
+	print("ABILITY_MODULE_CHECK: knight_module_fingerprints START")
 	_check_knight(failures)
+	_report_check("knight_module_fingerprints", failures, check_failures)
+	check_failures = failures.size()
+	print("ABILITY_MODULE_CHECK: violent_collision_module_shape START")
 	_check_violent_collision_modules(failures)
+	_report_check("violent_collision_module_shape", failures, check_failures)
 	AbilityModuleRuntimeTest.run_all(failures)
+	check_failures = failures.size()
+	print("ABILITY_MODULE_CHECK: compatibility_reader_boundary START")
 	AbilityModuleReaderBoundaryTest.run_all(failures)
+	_report_check("compatibility_reader_boundary", failures, check_failures)
 	if failures.is_empty():
 		print("ABILITY_MODULE_BRIDGE_TEST: PASS")
 		get_tree().quit(0)
@@ -29,6 +41,11 @@ func _run() -> void:
 		for f: String in failures:
 			printerr("  [FAIL] %s" % f)
 		get_tree().quit(1)
+
+
+func _report_check(label: String, failures: Array[String], before: int) -> void:
+	var result: String = "PASS" if failures.size() == before else "FAIL"
+	print("ABILITY_MODULE_CHECK: %s %s" % [label, result])
 
 
 func _check_bruiser(failures: Array[String]) -> void:

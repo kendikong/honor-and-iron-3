@@ -5,22 +5,46 @@ extends RefCounted
 ## modules and intentionally empty compatibility effects.
 
 static func run_all(failures: Array[String]) -> void:
+	var scenario_failures: int = failures.size()
+	print("ABILITY_MODULE_SCENARIO: module_only_execution START")
 	_test_module_only_execution(failures)
+	_report_scenario("module_only_execution", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: base_multi_module_compatibility_order START")
 	_test_base_multi_module_compatibility_order(failures)
-	var native_order_failures: int = failures.size()
+	_report_scenario("base_multi_module_compatibility_order", failures, scenario_failures)
+	scenario_failures = failures.size()
 	print("ABILITY_MODULE_SCENARIO: native_multi_module_execute_order START")
 	_test_base_multi_module_native_execute_order(failures)
-	print(
-		"ABILITY_MODULE_SCENARIO: native_multi_module_execute_order %s"
-		% ("PASS" if failures.size() == native_order_failures else "FAIL")
-	)
+	_report_scenario("native_multi_module_execute_order", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: upgraded_module_profile START")
 	_test_upgraded_module_profile(failures)
+	_report_scenario("upgraded_module_profile", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: legacy_flat_targeting_compatibility START")
 	_test_legacy_flat_targeting_compatibility(failures)
+	_report_scenario("legacy_flat_targeting_compatibility", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: motion_range_legality START")
 	_test_motion_range_legality(failures)
+	_report_scenario("motion_range_legality", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: if_collided_follow_up START")
 	_test_if_collided_follow_up(failures)
+	_report_scenario("if_collided_follow_up", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: schema_module_round_trip START")
 	_test_schema_module_round_trip(failures)
+	_report_scenario("schema_module_round_trip", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: legacy_json_import_round_trip START")
 	_test_legacy_json_import_round_trip(failures)
+	_report_scenario("legacy_json_import_round_trip", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: modular_base_legacy_upgrade_import START")
 	_test_modular_base_legacy_upgrade_import(failures)
+	_report_scenario("modular_base_legacy_upgrade_import", failures, scenario_failures)
 
 
 static func _test_module_only_execution(failures: Array[String]) -> void:
@@ -485,6 +509,11 @@ static func _plain_board(size: Vector2i) -> BoardState:
 
 static func _place(board: BoardState, unit: UnitState) -> void:
 	GridSystem.set_occupant(board, unit.position, unit.id)
+
+
+static func _report_scenario(label: String, failures: Array[String], before: int) -> void:
+	var result: String = "PASS" if failures.size() == before else "FAIL"
+	print("ABILITY_MODULE_SCENARIO: %s %s" % [label, result])
 
 
 static func _event_types(events: Array[SimEvent]) -> Array[String]:
