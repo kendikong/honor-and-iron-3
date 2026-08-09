@@ -223,8 +223,8 @@ func on_left_press(local: Vector2) -> void:
 			if selected_phase_action_exhausted(sel.id):
 				_director.select_unit(unit.id)
 			else:
-				_plan_approach_or_trample_on_enemy(
-					_director.selected_unit_id, unit, local, unit.position,
+				_commit_at_interaction_cell(
+					_director.selected_unit_id, cell, local, unit.id,
 				)
 		else:
 			_director.select_unit(unit.id)

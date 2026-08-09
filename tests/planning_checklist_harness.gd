@@ -45,6 +45,7 @@ const TRAMPLE_FULL_PATH: Array[Vector2i] = [
 	TRAMPLE_START, TRAMPLE_ROUTE[0], TRAMPLE_ROUTE[1],
 ]
 const K1_BASH_ROUTE: Array[Vector2i] = [KNIGHT_START, BASH_HOVER_WALK, BASH_APPROACH]
+const K1_BASH_WAYPOINTS: Array[Vector2i] = [BASH_HOVER_WALK, BASH_APPROACH]
 
 
 static func wire_bash_board_minimal() -> Dictionary:
@@ -903,6 +904,35 @@ static func commit_painted_drop_on_cell(
 	var ok: bool = commit_slots_production(fix, slots)
 	clear_drag_state(fix)
 	return ok
+
+
+## F5 parity: paint route with mouse, then left-click enemy (not drag-drop).
+static func commit_painted_click_on_cell(
+	fix: Dictionary,
+	route: Array[Vector2i],
+	click_cell: Vector2i,
+) -> bool:
+	clear_drag_state(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.board.get_unit_by_id(director.selected_unit_id)
+	if unit == null:
+		return false
+	var dest: Vector2i = route[route.size() - 1]
+	TramplingAdvanceE2ETest._paint_drag_route(input, unit, route, dest)
+	hover(fix, click_cell)
+	var target_id: int = -1
+	var occ: UnitState = fix.board.get_unit_at(click_cell)
+	if occ != null and occ.is_enemy():
+		target_id = occ.id
+	if not input._commit_at_interaction_cell(
+		director.selected_unit_id, click_cell, Vector2.ZERO, target_id,
+	):
+		clear_drag_state(fix)
+		return false
+	flush_planning(fix)
+	clear_drag_state(fix)
+	return true
 
 
 static func committed_pre_move(director: CombatDirector, unit_id: int) -> TimelineAction:

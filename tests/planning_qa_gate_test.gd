@@ -55,6 +55,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_click_drop_commit_sim_walk,
 		_test_click_drop_drag_walk_sim_parity,
 		_test_click_drop_drag_bash_enemy_parity,
+		_test_k1_painted_route_enemy_click_keeps_waypoints,
 		_test_drag_drop_commit_undo_clears_plan,
 		_test_cursor_equals_slots_on_hover,
 		_test_bash_commit_sim_push,
@@ -123,6 +124,7 @@ static func run_all(failures: Array[String]) -> void:
 		"click_drop_sim_walk",
 		"click_drop_drag_walk_sim",
 		"click_drop_drag_bash",
+		"k1_painted_click_waypoints",
 		"drag_drop_undo",
 		"cursor_equals_slots",
 		"bash_commit_sim",
@@ -1649,6 +1651,63 @@ static func _test_click_drop_drag_bash_enemy_parity(failures: Array[String]) -> 
 			"PlanningQAGate click/drop drag bash: selection vs painted-drop differ %s vs %s"
 			% [_intent_slot_signature(click_slots), _intent_slot_signature(drop_slots)],
 		)
+
+
+static func _test_k1_painted_route_enemy_click_keeps_waypoints(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	_wire_click_drop_context(fix)
+	if _bash_img1_ready(fix) < 0:
+		failures.append("PlanningQAGate k1_painted_click_waypoints: Shield Bash missing")
+		return
+	var route: Array[Vector2i] = PlanningChecklistHarness.K1_BASH_ROUTE
+	_clear_drag_state(fix.input)
+	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.knight, route, BASH_APPROACH)
+	PlanningChecklistHarness.hover(fix, ENEMY_POS)
+	var preview_slots: Dictionary = _commit_slots_at(fix.input, 1, ENEMY_POS)
+	if _slots_invalid(preview_slots):
+		failures.append("PlanningQAGate k1_painted_click_waypoints: painted enemy hover slots invalid")
+		return
+	var preview_pre: TimelineAction = (preview_slots.get("pre", []) as Array).front() as TimelineAction
+	if preview_pre == null or preview_pre.waypoints != PlanningChecklistHarness.K1_BASH_WAYPOINTS:
+		failures.append(
+			"PlanningQAGate k1_painted_click_waypoints: hover pre waypoints %s expected %s"
+			% [str(preview_pre.waypoints if preview_pre != null else null), PlanningChecklistHarness.K1_BASH_WAYPOINTS],
+		)
+	if not PlanningChecklistHarness.commit_painted_click_on_cell(fix, route, ENEMY_POS):
+		failures.append("PlanningQAGate k1_painted_click_waypoints: enemy click commit failed")
+		return
+	var committed_pre: TimelineAction = PlanningChecklistHarness.committed_pre_move(fix.director, 1)
+	if committed_pre == null or committed_pre.waypoints != PlanningChecklistHarness.K1_BASH_WAYPOINTS:
+		failures.append(
+			"PlanningQAGate k1_painted_click_waypoints: committed pre waypoints %s expected %s"
+			% [str(committed_pre.waypoints if committed_pre != null else null), PlanningChecklistHarness.K1_BASH_WAYPOINTS],
+		)
+	if _intent_slot_signature(preview_slots) != _intent_slot_signature_from_timeline(fix.director, 1):
+		failures.append(
+			"PlanningQAGate k1_painted_click_waypoints: committed timeline must match hover preview slots",
+		)
+
+
+static func _intent_slot_signature_from_timeline(director: CombatDirector, unit_id: int) -> String:
+	var slots: Dictionary = {
+		"pre": [],
+		"action": [],
+		"post": [],
+	}
+	for col: String in ["pre", "action", "post"]:
+		var entries: Array = []
+		match col:
+			"pre":
+				entries = director.plan_pre_move.entries
+			"action":
+				entries = director.plan_action.entries
+			"post":
+				entries = director.plan_post_move.entries
+		for raw: Variant in entries:
+			var action: TimelineAction = raw as TimelineAction
+			if action != null and action.actor_id == unit_id:
+				slots[col].append(action)
+	return _intent_slot_signature(slots)
 
 
 static func _test_drag_drop_commit_undo_clears_plan(failures: Array[String]) -> void:

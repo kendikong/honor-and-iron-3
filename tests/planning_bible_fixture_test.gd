@@ -86,13 +86,21 @@ static func _journey_k1_bash(
 		}, "bible/k1/enemy_hover",
 	)
 
-	if not PlanningChecklistHarness.commit_painted_drop_on_cell(
+	if not PlanningChecklistHarness.commit_painted_click_on_cell(
 		fix,
 		PlanningChecklistHarness.K1_BASH_ROUTE,
 		PlanningChecklistHarness.ENEMY_POS,
 	):
-		PlanningChecklistHarness.assert_fail(failures, "bible/k1/commit", "waypoint bash commit failed")
+		PlanningChecklistHarness.assert_fail(failures, "bible/k1/commit", "waypoint bash click commit failed")
 		return
+	var committed_pre: TimelineAction = PlanningChecklistHarness.committed_pre_move(fix.director, k1_id)
+	if committed_pre == null or committed_pre.waypoints != PlanningChecklistHarness.K1_BASH_WAYPOINTS:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"bible/k1/commit",
+			"bash pre-move waypoints must ratify painted route %s, got %s"
+			% [PlanningChecklistHarness.K1_BASH_WAYPOINTS, committed_pre.waypoints if committed_pre != null else null],
+		)
 
 	PlanningChecklistHarness.assert_red_contract(
 		failures,

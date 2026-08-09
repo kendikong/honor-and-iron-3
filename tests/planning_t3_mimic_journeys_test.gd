@@ -18,6 +18,7 @@ const _K1_BASH_WAYPOINTS: Array[Vector2i] = [
 static func run_all(failures: Array[String]) -> void:
 	_test_undo_drag_premove_clears(failures)
 	_test_k1_bash_tap_vs_waypoint_drag_parity(failures)
+	_test_k1_bash_painted_route_click_waypoints(failures)
 	_test_k1_bash_post_commit_red_off_tap_and_waypoint(failures)
 	_test_k2_hook_tap_vs_drag_parity(failures)
 	_test_k3_trample_tap_vs_drag_parity(failures)
@@ -103,6 +104,26 @@ static func _test_k1_bash_tap_vs_waypoint_drag_parity(failures: Array[String]) -
 			failures,
 			"t3_mimic/k1_bash/waypoint",
 			"waypoint pre-move expected %s got %s" % [_K1_BASH_WAYPOINTS, pre.waypoints],
+		)
+
+
+static func _test_k1_bash_painted_route_click_waypoints(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	_setup_k1_bash(fix)
+	if not PlanningChecklistHarness.commit_painted_click_on_cell(
+		fix, _K1_BASH_ROUTE, PlanningChecklistHarness.ENEMY_POS,
+	):
+		PlanningChecklistHarness.assert_fail(
+			failures, "t3_mimic/k1_bash/click_waypoint", "painted enemy click commit failed",
+		)
+		return
+	var pre: TimelineAction = PlanningChecklistHarness.committed_pre_move(fix.director, 1)
+	if pre == null or pre.waypoints != _K1_BASH_WAYPOINTS:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"t3_mimic/k1_bash/click_waypoint",
+			"click commit pre-move expected %s got %s"
+			% [_K1_BASH_WAYPOINTS, pre.waypoints if pre != null else null],
 		)
 
 
