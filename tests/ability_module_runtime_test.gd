@@ -45,6 +45,10 @@ static func run_all(failures: Array[String]) -> void:
 	print("ABILITY_MODULE_SCENARIO: modular_base_legacy_upgrade_import START")
 	_test_modular_base_legacy_upgrade_import(failures)
 	_report_scenario("modular_base_legacy_upgrade_import", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: module_profile_clear_projection START")
+	_test_module_profile_clear_projection(failures)
+	_report_scenario("module_profile_clear_projection", failures, scenario_failures)
 
 
 static func _test_module_only_execution(failures: Array[String]) -> void:
@@ -458,6 +462,28 @@ static func _test_modular_base_legacy_upgrade_import(failures: Array[String]) ->
 	ClassLibrarySchema.apply_ability_dict(imported, payload)
 	if imported.upgraded_modules.size() != 1 or imported.upgraded_modules[0].amount != 9:
 		failures.append("modular base plus legacy upgraded_effects lost upgrade profile")
+
+
+static func _test_module_profile_clear_projection(failures: Array[String]) -> void:
+	var ability: AbilityData = _ability(&"runtime_module_profile_clear", GameEnums.TargetingFlags.ENEMY)
+	var module: AbilityModule = AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.DAMAGE
+	module.amount = 4
+	module.max_range = 2
+	module.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	ability.modules = [module]
+	ability.upgraded_modules = [module]
+	ability.finalize_modular()
+	AbilityModuleBridge.clear_module_profile(ability, false)
+	AbilityModuleBridge.clear_module_profile(ability, true)
+	ability.finalize_modular()
+	if (
+		not ability.modules.is_empty()
+		or not ability.upgraded_modules.is_empty()
+		or not ability.effects.is_empty()
+		or not ability.upgraded_effects.is_empty()
+	):
+		failures.append("clearing authored module profiles left stale compatibility data")
 
 
 static func _ability(id: StringName, targeting_flags: int) -> AbilityData:

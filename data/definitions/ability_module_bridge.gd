@@ -361,6 +361,17 @@ static func compile_modules_to_effects(modules: Array[AbilityModule]) -> Array[E
 	return out
 
 
+static func clear_module_profile(ability: AbilityData, upgraded: bool) -> void:
+	if ability == null:
+		return
+	if upgraded:
+		ability.upgraded_modules.clear()
+		ability.upgraded_effects.clear()
+	else:
+		ability.modules.clear()
+		ability.effects.clear()
+
+
 static func _copy_effect_to_module(effect: EffectData, module: AbilityModule) -> void:
 	if effect == null or module == null:
 		return

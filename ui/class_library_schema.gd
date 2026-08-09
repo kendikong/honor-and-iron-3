@@ -788,8 +788,8 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.upgraded_modules = modules_from_dict_array(
 		modules_to_dict_array(src.upgraded_modules)
 	)
-	dst.kind = src.kind
-	dst.sync_legacy_targeting()
+	if src.is_universal_run() or src.is_universal_wait():
+		dst.kind = src.kind
 	dst.finalize_modular()
 
 
@@ -1244,7 +1244,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 			return
 		dst.modules = parsed_modules
 	else:
-		_apply_legacy_ability_payload(dst, data)
+		_apply_legacy_ability_migration(dst, data)
 	var upgraded_module_data: Variant = data.get("upgraded_modules", null)
 	var use_legacy_upgrade: bool = (
 		not (upgraded_module_data is Array)
@@ -1284,8 +1284,8 @@ static func _canonical_tags_from_variant(value: Variant) -> Array[StringName]:
 	return tags_out
 
 
-static func _apply_legacy_ability_payload(dst: AbilityData, data: Dictionary) -> void:
-	## One-way import for pre-module editor saves. New saves never emit this shape.
+static func _apply_legacy_ability_migration(dst: AbilityData, data: Dictionary) -> void:
+	## One-way migration for pre-module editor saves. New saves never emit this shape.
 	if data.has("kind"):
 		dst.kind = int(data.get("kind", dst.kind)) as GameEnums.AbilityKind
 		dst.planner_group = AbilityModuleBridge.planner_group_from_kind(dst.kind)

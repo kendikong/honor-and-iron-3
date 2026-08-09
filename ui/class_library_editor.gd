@@ -1412,7 +1412,6 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	_field_tracks.erase(ability.id)
 	_normalize_editor_modules(ability)
 	ability.finalize_modular()
-	ability.is_movement_skill = ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
@@ -1422,8 +1421,6 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		grid, "planner_group", GameEnums.PlannerGroup, ability.planner_group,
 		func(v: int) -> void:
 			ability.planner_group = v
-			ability.kind = AbilityModuleBridge.kind_from_planner_group(v as GameEnums.PlannerGroup, ability.kind)
-			ability.is_movement_skill = v == GameEnums.PlannerGroup.PRE_MOVE
 			if v == GameEnums.PlannerGroup.PRE_MOVE:
 				ability.primary_resource = GameEnums.CostResource.MP
 			else:
@@ -1606,10 +1603,7 @@ func _on_modules_edited(
 		ability.upgraded_modules if upgraded else ability.modules
 	)
 	if modules.is_empty():
-		if upgraded:
-			ability.upgraded_effects.clear()
-		else:
-			ability.effects.clear()
+		AbilityModuleBridge.clear_module_profile(ability, upgraded)
 	_normalize_editor_modules(ability)
 	ability.finalize_modular()
 	_rebuild_modules_editor(parent, ability, modules, upgraded)
