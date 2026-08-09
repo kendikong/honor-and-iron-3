@@ -1,6 +1,8 @@
 extends Node
 
 
+const _MOVEMENT_SMOKE := preload("res://tests/movement_planning_smoke_registry.gd")
+
 const ABILITY_IDS: Array[StringName] = [
 	&"mage_blink",
 	&"mage_fireball",
@@ -48,6 +50,7 @@ func _run() -> void:
 	_check_factory_matrix(failures)
 	_check_live_skill_resolution(failures)
 	_check_core_passive_triggers(failures)
+	_MOVEMENT_SMOKE.run_all_for_class(failures, &"mage")
 	for failure: String in failures:
 		print("[FAIL] %s" % failure)
 	if failures.is_empty():

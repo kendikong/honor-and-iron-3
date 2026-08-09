@@ -4,6 +4,7 @@ extends RefCounted
 const _REGISTRY := preload("res://tests/knight_scenario_registry.gd")
 const _HARNESS := preload("res://tests/knight_qa_harness.gd")
 const _DRAG := preload("res://tests/planning_drag_e2e_harness.gd")
+const _MOVEMENT_SMOKE := preload("res://tests/movement_planning_smoke_registry.gd")
 
 ## Tier 1 Knight class QA runner — invokes registry scenarios (NOT planning QA).
 
@@ -24,3 +25,4 @@ static func run_all(failures: Array[String]) -> void:
 		_HARNESS.assert_fail(failures, "registry/run_economy", "failed to load or run economy scenario")
 	else:
 		_DRAG.cleanup_all()
+	_MOVEMENT_SMOKE.run_all_for_class(failures, &"knight")

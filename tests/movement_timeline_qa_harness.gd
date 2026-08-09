@@ -4,6 +4,7 @@ extends RefCounted
 ## Movement skills must prove PRE-MOVE or POST-MOVE timeline legs in QA (not action column only).
 
 const _PLANNING_CHECKLIST := preload("res://tests/planning_checklist_harness.gd")
+const _MovementSmokeRegistry := preload("res://tests/movement_planning_smoke_registry.gd")
 
 const _TIMELINE_LEG_MARKERS: Array[String] = [
 	"assert_pre_or_post_leg_if_needed(",
@@ -20,7 +21,8 @@ const _PREVIEW_ORIGIN_MARKERS: Array[String] = [
 	"assert_move_preview_origin_live(",
 	"run_planning_commit_smoke(",
 	"run_planning_ally_smoke(",
-	"BruiserPlanningSmokeRegistry.run_for_factory_id(",
+	"MovementPlanningSmokeRegistry.run_for_factory_id(",
+	"MovementPlanningSmokeRegistry.run_all_for_class(",
 ]
 
 const _SCENARIO_REGISTRIES: Array[GDScript] = [
@@ -362,24 +364,25 @@ static func audit_scenario_registries(failures: Array[String]) -> void:
 			var ability: AbilityData = AoeFootprintQaHarness.find_ability_by_id(factory_id)
 			if ability == null or not ability_requires_movement_timeline_qa(ability):
 				continue
+			if _MovementSmokeRegistry.has_entry(factory_id):
+				continue
 			if _live_class_covers_movement_skill(factory_id):
 				continue
-			if not _registry_runner_covers_planning(registry):
-				if action_movement_needs_pre_or_post_leg(ability):
-					if not _scenario_chain_has_timeline_leg_proof(script_path):
-						_assert_fail(
-							failures,
-							"audit/movement/%s/timeline_leg" % factory_id,
-							"movement skill scenario %s lacks PRE/POST-MOVE Run leg QA"
-							% script_path,
-						)
-				if not _scenario_chain_has_preview_origin_proof(script_path):
+			if action_movement_needs_pre_or_post_leg(ability):
+				if not _scenario_chain_has_timeline_leg_proof(script_path):
 					_assert_fail(
 						failures,
-						"audit/movement/%s/preview_origin" % factory_id,
-						"movement skill scenario %s lacks move-preview-origin QA after commit"
+						"audit/movement/%s/timeline_leg" % factory_id,
+						"movement skill scenario %s lacks PRE/POST-MOVE Run leg QA"
 						% script_path,
 					)
+			if not _scenario_chain_has_preview_origin_proof(script_path):
+				_assert_fail(
+					failures,
+					"audit/movement/%s/preview_origin" % factory_id,
+					"movement skill scenario %s lacks move-preview-origin QA after commit"
+					% script_path,
+				)
 
 
 static func audit_live_class_tests(failures: Array[String]) -> void:
@@ -492,8 +495,8 @@ static func _live_class_covers_movement_skill(factory_id: StringName) -> bool:
 	return false
 
 
-static func _registry_runner_covers_planning(registry: GDScript) -> bool:
-	return registry == preload("res://tests/bruiser_scenario_registry.gd")
+static func _registry_runner_covers_planning(factory_id: StringName) -> bool:
+	return _MovementSmokeRegistry.has_entry(factory_id)
 
 
 static func _assert_fail(failures: Array[String], label: String, detail: String) -> void:

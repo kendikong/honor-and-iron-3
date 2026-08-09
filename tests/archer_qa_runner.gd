@@ -2,6 +2,7 @@ class_name ArcherQaRunner
 extends RefCounted
 
 const _REGISTRY := preload("res://tests/archer_scenario_registry.gd")
+const _MOVEMENT_SMOKE := preload("res://tests/movement_planning_smoke_registry.gd")
 
 static func run_all(failures: Array[String]) -> void:
 	var ran_paths: Dictionary = {}
@@ -14,3 +15,4 @@ static func run_all(failures: Array[String]) -> void:
 		ran_paths[script_path] = true
 		if not _REGISTRY.run_scenario(script_path, failures):
 			failures.append("registry/%s: failed to load or run scenario" % name)
+	_MOVEMENT_SMOKE.run_all_for_class(failures, &"archer")
