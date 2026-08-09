@@ -466,7 +466,7 @@ static func execute_skill_walk(
 		"path": path,
 		"is_pass_through_walk": true,
 		"ability_id": ability_id,
-		"presentation_anim": ability.presentation_anim,
+		"presentation_anim": AbilitySystem.resolve_presentation_anim(ability, unit),
 	}))
 	TerrainSystem.apply_landing(board, unit, events)
 
@@ -534,6 +534,42 @@ static func l_shape_attack_endpoint(
 		if not _l_shape_path(board, unit.position, endpoint, move_budget, unit, ability).is_empty():
 			return endpoint
 	return Vector2i(-1, -1)
+
+
+## Reachable empty tile adjacent to target for MOVE-then-attack skills (Charge Strike, etc.).
+static func adjacent_attack_endpoint(
+	board: BoardState,
+	unit: UnitState,
+	target: UnitState,
+	ability: AbilityData,
+) -> Vector2i:
+	if board == null or unit == null or target == null or ability == null:
+		return Vector2i(-1, -1)
+	var move_budget: int = AbilitySystem.effect_amount(
+		ability, GameEnums.EffectType.MOVE, unit,
+	)
+	if move_budget <= 0:
+		return Vector2i(-1, -1)
+	var best := Vector2i(-1, -1)
+	var best_dist: int = 999999
+	for dir: Vector2i in GridSystem.DIRECTIONS:
+		var endpoint := target.position - dir
+		if (
+			not board.is_in_bounds(endpoint)
+			or board.get_unit_at(endpoint) != null
+			or not GridSystem.is_passable(board, endpoint)
+		):
+			continue
+		var path: Array[Vector2i] = resolve_move_path(
+			board, unit, endpoint, [], move_budget, ability,
+		)
+		if path.is_empty():
+			continue
+		var dist: int = GridSystem.manhattan(unit.position, endpoint)
+		if dist < best_dist:
+			best_dist = dist
+			best = endpoint
+	return best
 
 
 static func _axis_path(start: Vector2i, corner: Vector2i, goal: Vector2i) -> Array[Vector2i]:

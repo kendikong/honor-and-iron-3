@@ -944,11 +944,7 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 					return
 	for i: int in range(actions.size()):
 		target_plans[i].add(actions[i])
-		if (
-			actions[i].type == GameEnums.ActionType.MOVE
-			and not _autobattler_plan_batch
-			and _move_commits_with_planning_anim(actions[i])
-		):
+		if not _autobattler_plan_batch and _move_commits_with_planning_anim(actions[i]):
 			_commit_animate_actor_ids[actions[i].actor_id] = true
 		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null:
 			if actions[i].ability.is_movement_kind():
@@ -2445,25 +2441,24 @@ func _refresh_plan_core() -> void:
 				action.irreversible = true
 				if _cancel_plans_for_displacement(action.actor_id, pre_board, move_ev):
 					any_cancelled = true
-			if (
-				action.type == GameEnums.ActionType.MOVE
-				and _commit_animate_actor_ids.has(action.actor_id)
-				and _move_commits_with_planning_anim(action as TimelineAction)
-			):
-				var before_action: BoardState = _board_before_planning_action(
-					action as TimelineAction, plan_to_run,
+		if (
+			_commit_animate_actor_ids.has(action.actor_id)
+			and _move_commits_with_planning_anim(action as TimelineAction)
+		):
+			var before_action: BoardState = _board_before_planning_action(
+				action as TimelineAction, plan_to_run,
+			)
+			var scratch: BoardState = before_action.clone()
+			var commit_ev: Array[SimEvent] = []
+			ResolutionPipeline.apply_action(scratch, action as TimelineAction, commit_ev)
+			ResolutionPipeline.resolve_pending_pushes(scratch, commit_ev)
+			for move_event: SimEvent in _extract_commit_anim_events(commit_ev):
+				if move_event.type != GameEnums.SimEventType.UNIT_MOVED:
+					continue
+				_finalize_planning_commit_move_event(
+					move_event, action as TimelineAction, before_action,
 				)
-				var scratch: BoardState = before_action.clone()
-				var commit_ev: Array[SimEvent] = []
-				ResolutionPipeline.apply_action(scratch, action as TimelineAction, commit_ev)
-				ResolutionPipeline.resolve_pending_pushes(scratch, commit_ev)
-				for move_event: SimEvent in _extract_commit_anim_events(commit_ev):
-					if move_event.type != GameEnums.SimEventType.UNIT_MOVED:
-						continue
-					_finalize_planning_commit_move_event(
-						move_event, action as TimelineAction, before_action,
-					)
-					anim_events.append(move_event)
+				anim_events.append(move_event)
 			
 		var reason := ""
 		for e in events:
@@ -2696,7 +2691,7 @@ func _collect_all_planning_move_anim_events() -> Array[SimEvent]:
 		return []
 	var anim_events: Array[SimEvent] = []
 	for action: TimelineAction in plan_to_run.entries:
-		if action.awaiting_target or action.type != GameEnums.ActionType.MOVE:
+		if action.awaiting_target:
 			continue
 		if not _move_commits_with_planning_anim(action):
 			continue
@@ -3019,14 +3014,25 @@ func _finalize_planning_commit_move_event(
 	move_event.data["path"] = path_cells
 	move_event.data["planning_commit_move"] = true
 	move_event.data["move_timing"] = action.move_timing
+	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
+		move_event.data["presentation_anim"] = AbilitySystem.resolve_presentation_anim(
+			action.ability, actor,
+		)
 
 
 func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
-	## Only pre-action (pre-move) walks animate on planning commit. Post-move and
-	## action-phase displacement stay preview-only until Execute.
-	if action == null or action.type != GameEnums.ActionType.MOVE:
+	## Pre-move walks and movement skills (trample, skill-walk) animate on planning
+	## commit. Post-move legs stay preview-only until Execute.
+	if action == null or action.move_timing == GameEnums.MoveTiming.POST_ACTION:
 		return false
-	return action.move_timing != GameEnums.MoveTiming.POST_ACTION
+	if action.type == GameEnums.ActionType.MOVE:
+		return true
+	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
+		return (
+			AbilitySystem.has_pass_through_effects(action.ability)
+			or AbilitySystem.ability_has_movement_effect(action.ability)
+		)
+	return false
 
 
 func _filter_committed_premove_visual_events(events: Array[SimEvent]) -> Array[SimEvent]:

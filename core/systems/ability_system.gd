@@ -160,6 +160,24 @@ static func active_range_tiles(
 	return actor.get_ability_range(ability) if actor != null else ability.range_tiles
 
 
+## Planning + can_use: authored range extended by MOVE steps or DASH length.
+static func planning_max_target_distance(actor: UnitState, ability: AbilityData) -> int:
+	if ability == null:
+		return 0
+	var max_range: int = actor.get_ability_range(ability) if actor != null else ability.range_tiles
+	if actor != null:
+		if ability_has_dash(ability, actor):
+			max_range = maxi(max_range, dash_steps(ability, actor))
+		var move_steps: int = (
+			0
+			if ability_has_post_attack_move(ability, actor)
+			else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
+		)
+		if move_steps > 0:
+			max_range = maxi(max_range, move_steps)
+	return max_range
+
+
 static func planning_new_aim_indices(
 	actor: UnitState,
 	ability: AbilityData,
@@ -1286,6 +1304,21 @@ static func ability_has_swap_effect(ability: AbilityData, actor: UnitState = nul
 	return false
 
 
+static func resolve_presentation_anim(ability: AbilityData, actor: UnitState = null) -> int:
+	if ability == null:
+		return GameEnums.PresentationAnim.WALK
+	var pres_anim: int = ability.presentation_anim
+	if pres_anim != GameEnums.PresentationAnim.AUTO:
+		return pres_anim
+	if ability_has_dash(ability, actor):
+		return GameEnums.PresentationAnim.SUPER_RUN
+	if has_pass_through_effects(ability, actor):
+		return GameEnums.PresentationAnim.RUN
+	if ability_has_movement_effect(ability, actor):
+		return GameEnums.PresentationAnim.WALK
+	return GameEnums.PresentationAnim.WALK
+
+
 static func has_pass_through_effects(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
@@ -1958,15 +1991,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			
 	var affected_tiles := GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
 	
-	var pres_anim: int = action.ability.presentation_anim
-	if pres_anim == GameEnums.PresentationAnim.AUTO:
-		if ability_has_dash(action.ability, actor):
-			pres_anim = GameEnums.PresentationAnim.SUPER_RUN
-		elif has_pass_through_effects(action.ability, actor):
-			pres_anim = GameEnums.PresentationAnim.RUN
-		elif ability_has_movement_effect(action.ability, actor):
-			pres_anim = GameEnums.PresentationAnim.WALK
-			
+	var pres_anim: int = resolve_presentation_anim(action.ability, actor)
 	events.append(SimEvent.make(GameEnums.SimEventType.ABILITY_USED, {
 		"actor": action.actor_id,
 		"ability": action.ability.id,
@@ -2077,9 +2102,29 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			ghost_status = DataLibrary.make_status(GameEnums.StatusType.GHOST, 1, 1)
 			actor.active_statuses.append(ghost_status)
 			actor._recalculate_stats()
+
+		var walk_goal: Vector2i = target_coord
+		var goal_unit: UnitState = board.get_unit_at(walk_goal)
+		if (
+			goal_unit != null
+			and goal_unit.team != actor.team
+			and not actor.has_status(GameEnums.StatusType.GHOST)
+			and not MovementSystem.can_pass_through_enemy(actor, ability)
+		):
+			var attack_target: UnitState = (
+				board.get_unit_by_id(action.target_unit_id)
+				if action.target_unit_id >= 0
+				else goal_unit
+			)
+			if attack_target != null:
+				var endpoint: Vector2i = MovementSystem.adjacent_attack_endpoint(
+					board, actor, attack_target, ability,
+				)
+				if endpoint.x >= 0:
+					walk_goal = endpoint
 			
 		MovementSystem.execute_skill_walk(
-			board, actor, target_coord, action.waypoints, ability, events, effects_to_apply, walk_steps
+			board, actor, walk_goal, action.waypoints, ability, events, effects_to_apply, walk_steps
 		)
 		
 		if ghost_status != null:

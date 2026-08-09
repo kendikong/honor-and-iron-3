@@ -261,6 +261,13 @@ static func _phase6_execute(failures: Array[String]) -> void:
 			continue
 		if int(ev.data.get("actor", -1)) != 1:
 			continue
+		PlanningChecklistHarness.assert_eq(
+			failures,
+			"trample/phase6/presentation_anim",
+			int(ev.data.get("presentation_anim", GameEnums.PresentationAnim.AUTO)),
+			GameEnums.PresentationAnim.RUN,
+			"trample UNIT_MOVED must resolve AUTO to RUN for walk tween",
+		)
 		var path_v: Variant = ev.data.get("path", [])
 		if path_v is Array and not (path_v as Array).is_empty():
 			for step: Variant in path_v:
