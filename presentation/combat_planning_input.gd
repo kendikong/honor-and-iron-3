@@ -3654,6 +3654,29 @@ func _build_commit_slots_at_cell(
 					_maybe_append_premove_action_pair(
 						slots, unit_id, actor, cell, ability, effective_waypoints,
 					)
+				elif not _is_awaiting_movement_endpoint(actor, ability):
+					_maybe_append_premove_action_pair(
+						slots, unit_id, actor, cell, ability, effective_waypoints,
+					)
+				return slots
+			if (
+				hover_unit == null
+				and AbilitySystem.ability_has_movement_effect(ability, actor)
+				and not _is_awaiting_movement_endpoint(actor, ability)
+				and _basic_move_allowed()
+				and _unit_move_slot_open(unit_id, cell)
+				and _drop_allows_move_tile(cell, legal_move_tiles, actor)
+			):
+				var walk_waypoints: Array[Vector2i] = waypoints
+				if walk_waypoints.is_empty():
+					walk_waypoints = _director.preview_waypoints_for_hover(
+						_proj(), actor, cell, walk_waypoints, null,
+					)
+				if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
+					_append_move_to_commit_slots(slots, unit_id, cell, walk_waypoints, actor)
+				_maybe_append_premove_action_pair(
+					slots, unit_id, actor, cell, ability, walk_waypoints,
+				)
 				return slots
 			if AbilitySystem.can_target_self(actor, ability):
 				if AbilitySystem.is_run_ability(ability):
@@ -3703,28 +3726,52 @@ func _build_commit_slots_at_cell(
 				) != 0
 			):
 				if _in_ability_range_of_coord(actor, cell):
-					if target_pick_skill and not has_awaiting_action:
+					if AbilitySystem.ability_has_movement_effect(ability, actor):
+						if _is_awaiting_movement_endpoint(actor, ability):
+							var board: BoardState = _proj()
+							if AbilitySystem.has_pass_through_effects(ability):
+								var path: Array[Vector2i] = MovementSystem.find_path(
+									board,
+									_proj_origin(actor),
+									cell,
+									AbilitySystem.active_range_tiles(actor, ability),
+								)
+								if path.is_empty():
+									slots["invalid"] = "No valid path to target tile."
+									return slots
+							slots["action"].append(
+								TimelineAction.make_ability(
+									unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION,
+									effective_waypoints,
+								),
+							)
+							return slots
+					else:
+						if target_pick_skill and not has_awaiting_action:
+							slots["action"].append(
+								TimelineAction.make_ability_awaiting(
+									unit_id, ability, actor.position, effective_waypoints,
+								),
+							)
+							return slots
+						var board_nm: BoardState = _proj()
+						if AbilitySystem.has_pass_through_effects(ability):
+							var path_nm: Array[Vector2i] = MovementSystem.find_path(
+								board_nm,
+								actor.position,
+								cell,
+								AbilitySystem.active_range_tiles(actor, ability),
+							)
+							if path_nm.is_empty():
+								slots["invalid"] = "No valid path to target tile."
+								return slots
 						slots["action"].append(
-							TimelineAction.make_ability_awaiting(
-								unit_id, ability, actor.position, effective_waypoints,
+							TimelineAction.make_ability(
+								unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION,
+								effective_waypoints,
 							),
 						)
 						return slots
-					var board: BoardState = _proj()
-					if AbilitySystem.has_pass_through_effects(ability) and not AbilitySystem.ability_has_movement_effect(ability):
-						var path: Array[Vector2i] = MovementSystem.find_path(
-							board,
-							actor.position,
-							cell,
-							AbilitySystem.active_range_tiles(actor, ability),
-						)
-						if path.is_empty():
-							slots["invalid"] = "No valid path to target tile."
-							return slots
-					slots["action"].append(
-						TimelineAction.make_ability(unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION, effective_waypoints),
-					)
-					return slots
 
 	if (
 		_basic_move_allowed()

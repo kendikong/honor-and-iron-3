@@ -1031,6 +1031,29 @@ static func _test_trampling_unarmed_empty_hover_is_premove(failures: Array[Strin
 		)
 		return
 	var hover_walk: Vector2i = PlanningChecklistHarness.TRAMPLE_ROUTE[0]
+	var in_range_endpoint: Vector2i = Vector2i(4, 4)
+	var in_range_slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, in_range_endpoint)
+	if bool(in_range_slots.get("invalid", false)):
+		failures.append(
+			"PlanningQAGate Trampling unarmed hover: in-range endpoint slots invalid %s"
+			% str(in_range_slots),
+		)
+		return
+	var in_range_pre: Array = in_range_slots.get("pre", []) as Array
+	var in_range_actions: Array = in_range_slots.get("action", []) as Array
+	if in_range_pre.is_empty():
+		failures.append(
+			"PlanningQAGate Trampling unarmed hover: in-range endpoint must populate pre-move",
+		)
+	for raw_action: Variant in in_range_actions:
+		if raw_action is TimelineAction:
+			var committed: TimelineAction = raw_action as TimelineAction
+			if committed.awaiting_target:
+				continue
+			if committed.ability != null and committed.ability.id == TRAMPLE_ID:
+				failures.append(
+					"PlanningQAGate Trampling unarmed hover: in-range tile must not commit trample action",
+				)
 	var slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, hover_walk)
 	if bool(slots.get("invalid", false)):
 		failures.append(

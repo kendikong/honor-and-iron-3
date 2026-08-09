@@ -121,6 +121,24 @@ static func _phase2_hover_empty_unarmed(failures: Array[String]) -> void:
 		)
 		return
 	var hover_walk: Vector2i = PlanningChecklistHarness.TRAMPLE_ROUTE[0]
+	var in_range_endpoint: Vector2i = Vector2i(4, 4)
+	PlanningChecklistHarness.hover(fix, in_range_endpoint)
+	var in_range_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, in_range_endpoint)
+	PlanningChecklistHarness.assert_true(
+		failures, "trample/phase2_unarmed/in_range_pre",
+		not (in_range_slots.get("pre", []) as Array).is_empty(),
+		"in-range trample endpoint hover must still be pre-move before arm, got %s"
+		% str(in_range_slots),
+	)
+	PlanningChecklistHarness.assert_true(
+		failures, "trample/phase2_unarmed/in_range_no_committed_action",
+		(in_range_slots.get("action", []) as Array).is_empty()
+		or (
+			(in_range_slots.get("action", []) as Array)[0] is TimelineAction
+			and ((in_range_slots.get("action", []) as Array)[0] as TimelineAction).awaiting_target
+		),
+		"in-range hover must not commit trample action before arm, got %s" % str(in_range_slots),
+	)
 	PlanningChecklistHarness.hover(fix, hover_walk)
 	PlanningChecklistHarness.assert_eq_cell(
 		failures, "trample/phase2_unarmed/ghost_walk",
