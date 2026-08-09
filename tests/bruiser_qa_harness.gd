@@ -804,6 +804,12 @@ static func run_planning_commit_smoke(
 		ability_id,
 	)
 	fix.director.auto_run = true
+	var ability: AbilityData = null
+	for ab: AbilityData in fix.bruiser.active_abilities:
+		if ab != null and ab.id == ability_id:
+			ability = ab
+			break
+	_commit_run_premove_if_needed(failures, fix, ability, premove_cell, tag)
 	var idx: int = PlanningChecklistHarness.select_ability(fix, ability_id)
 	assert_true(
 		failures, "%s/planning/select" % tag,
