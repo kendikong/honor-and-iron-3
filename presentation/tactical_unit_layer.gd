@@ -425,6 +425,19 @@ func _drain_planning_commit_queue() -> void:
 					var to_cell: Vector2i = event.data["to"]
 					if _actor_grid_cell(unit_id) != to_cell:
 						_position_actor(unit_id, to_cell)
+		GameEnums.SimEventType.UNIT_PUSHED:
+			if bool(event.data.get("planning_commit_push", false)):
+				_planning_commit_stage = &"push"
+				var push_unit_id: int = int(event.data.get("unit", -1))
+				_animate_push(event)
+				if _move_tweens.has(push_unit_id):
+					await await_planning_move_tweens_for_actor(push_unit_id)
+				elif event.data.get("to") is Vector2i:
+					var push_to: Vector2i = event.data["to"]
+					if push_unit_id >= 0 and _actor_grid_cell(push_unit_id) != push_to:
+						_position_actor(push_unit_id, push_to)
+				if _director != null and push_unit_id >= 0:
+					_director.mark_planning_move_instant(push_unit_id)
 		GameEnums.SimEventType.ABILITY_USED:
 			if event.data.get("planning_swap_presentation", false):
 				_planning_commit_stage = &"swap"

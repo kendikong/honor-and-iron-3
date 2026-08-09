@@ -37,6 +37,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_hover_slots_are_deterministic,
 		_test_commit_plan_matches_hover_slots,
 		_test_undo_action_keeps_premove,
+		_test_premove_reposition_applies_live_board,
 		_test_shield_bash_full_approach_push_preview,
 		_test_committed_hook_approach_uses_premove,
 		_test_out_of_range_hover_is_invalid,
@@ -111,6 +112,7 @@ static func run_all(failures: Array[String]) -> void:
 		"hover_deterministic",
 		"commit_matches_hover",
 		"undo_keeps_premove",
+		"premove_live_board",
 		"bash_full_approach_push",
 		"hook_committed_premove",
 		"out_of_range_invalid",
@@ -1215,6 +1217,58 @@ static func _test_undo_action_keeps_premove(failures: Array[String]) -> void:
 		failures.append("PlanningQAGate integrity: undo must remove action column entry")
 	if director.plan_pre_move.entries.is_empty():
 		failures.append("PlanningQAGate integrity: undo must not remove paired pre-move walk")
+
+
+static func _test_premove_reposition_applies_live_board(failures: Array[String]) -> void:
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var lancer_def: UnitData = DataLibrary.get_unit(&"lancer")
+	if lancer_def == null:
+		failures.append("PlanningQAGate premove live: lancer definition missing")
+		return
+	var push: AbilityData = null
+	for ability: AbilityData in lancer_def.abilities:
+		if ability != null and ability.id == &"lancer_push":
+			push = ability
+			break
+	if push == null:
+		failures.append("PlanningQAGate premove live: lancer_push missing")
+		return
+	var actor := UnitState.create(1, lancer_def, GameEnums.Team.PLAYER, Vector2i(1, 1), {
+		"active_abilities": [push],
+	})
+	var ally_def: UnitData = DataLibrary.get_unit(&"knight")
+	var ally := UnitState.create(2, ally_def, GameEnums.Team.PLAYER, Vector2i(2, 1), {
+		"active_abilities": [],
+	})
+	var board := _plain_board(Vector2i(6, 4), [actor, ally])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	var push_action := TimelineAction.make_ability(actor.id, push, ally.position, ally.id)
+	var slots: Dictionary = {
+		"pre": [push_action],
+		"action": [],
+		"post": [],
+		"_preview_validated": true,
+	}
+	if not director.commit_from_slots(actor.id, slots):
+		failures.append("PlanningQAGate premove live: lancer push commit rejected")
+		return
+	var live_ally: UnitState = director.board.get_unit_by_id(ally.id)
+	if live_ally == null:
+		failures.append("PlanningQAGate premove live: ally missing from live board after push")
+		return
+	if live_ally.position != Vector2i(3, 1):
+		failures.append(
+			"PlanningQAGate premove live: ally must move on live board during planning (got %s)"
+			% str(live_ally.position),
+		)
+	if director.plan_pre_move.entries.is_empty():
+		failures.append("PlanningQAGate premove live: push must stay in pre-move timeline")
 
 
 static func _test_shield_bash_full_approach_push_preview(failures: Array[String]) -> void:

@@ -957,6 +957,9 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null:
 			if actions[i].ability.is_movement_kind():
 				_cancel_ally_plans_after_movement_step(actions[i])
+				for ally_id: int in PlanDependency.ally_ids_affected_by_action(board, actions[i]):
+					if ally_id not in plan_affected_unit_ids:
+						plan_affected_unit_ids.append(ally_id)
 			_register_planning_swap_presentation(actions[i])
 	for actor_id: int in new_actors:
 		if actor_id not in plan_affected_unit_ids:
@@ -2458,6 +2461,22 @@ func _refresh_plan_core() -> void:
 				if _cancel_plans_for_displacement(action.actor_id, pre_board, move_ev):
 					any_cancelled = true
 		if (
+			action.type == GameEnums.ActionType.ABILITY
+			and action.ability != null
+			and action.ability.is_movement_kind()
+		):
+			var pre_board: BoardState = _board_before_planning_action(
+				action as TimelineAction, plan_to_run,
+			)
+			var ability_scratch: BoardState = pre_board.clone()
+			var ability_ev: Array[SimEvent] = []
+			ResolutionPipeline.apply_action(ability_scratch, action as TimelineAction, ability_ev)
+			ResolutionPipeline.resolve_pending_pushes(ability_scratch, ability_ev)
+			if _move_has_commit_side_effects(ability_ev):
+				action.irreversible = true
+				if _cancel_plans_for_displacement(action.actor_id, pre_board, ability_ev):
+					any_cancelled = true
+		if (
 			_commit_animate_actor_ids.has(action.actor_id)
 			and _move_commits_with_planning_anim(action as TimelineAction)
 		):
@@ -2469,12 +2488,15 @@ func _refresh_plan_core() -> void:
 			ResolutionPipeline.apply_action(scratch, action as TimelineAction, commit_ev)
 			ResolutionPipeline.resolve_pending_pushes(scratch, commit_ev)
 			for move_event: SimEvent in _extract_commit_anim_events(commit_ev):
-				if move_event.type != GameEnums.SimEventType.UNIT_MOVED:
-					continue
-				_finalize_planning_commit_move_event(
-					move_event, action as TimelineAction, before_action,
-				)
-				anim_events.append(move_event)
+				match move_event.type:
+					GameEnums.SimEventType.UNIT_MOVED:
+						_finalize_planning_commit_move_event(
+							move_event, action as TimelineAction, before_action,
+						)
+						anim_events.append(move_event)
+					GameEnums.SimEventType.UNIT_PUSHED:
+						_finalize_planning_commit_push_event(move_event, before_action)
+						anim_events.append(move_event)
 			
 		var reason := ""
 		for e in events:
@@ -3032,14 +3054,35 @@ func _finalize_planning_commit_move_event(
 		)
 
 
+func _finalize_planning_commit_push_event(
+	push_event: SimEvent,
+	before_board: BoardState,
+) -> void:
+	if push_event == null or before_board == null:
+		return
+	var unit_id: int = int(push_event.data.get("unit", -1))
+	if unit_id < 0:
+		return
+	var unit: UnitState = before_board.get_unit_by_id(unit_id)
+	if unit == null:
+		return
+	if not push_event.data.has("from"):
+		push_event.data["from"] = unit.position
+	push_event.data["planning_commit_push"] = true
+
+
 func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
-	## Pre-move walks and movement skills (trample, skill-walk) animate on planning
-	## commit. Post-move legs stay preview-only until Execute.
+	## Pre-move walks and reposition skills animate on planning commit.
+	## Post-move legs and action-phase displacement stay preview-only until Execute.
 	if action == null or action.move_timing == GameEnums.MoveTiming.POST_ACTION:
 		return false
 	if action.type == GameEnums.ActionType.MOVE:
 		return true
 	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
+		if AbilitySystem.ability_has_swap_effect(action.ability):
+			return false
+		if action.ability.is_movement_kind():
+			return true
 		return (
 			AbilitySystem.has_pass_through_effects(action.ability)
 			or AbilitySystem.ability_has_movement_effect(action.ability)
