@@ -10,7 +10,7 @@ const _DELTA_MS := 16
 const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
-	{"id": &"archer_basic", "range": 2, "flags": GameEnums.TargetingFlags.ENEMY,
+	{"id": &"archer_basic", "range": 1, "flags": GameEnums.TargetingFlags.ENEMY,
 		"shape": GameEnums.TargetShape.SINGLE, "size": 1, "type": GameEnums.EffectType.DAMAGE,
 		"amount": 1, "kind": &"enemy", "actor": Vector2i(4, 5), "target": Vector2i(6, 5),
 		"observe": &"damage"},
@@ -167,14 +167,20 @@ func _assert_contract(ability: AbilityData, case: Dictionary) -> void:
 	).is_not_null()
 	if ability == null:
 		return
-	assert_int(ability.range_tiles).is_equal(int(case.range))
-	assert_int(ability.targeting_flags).is_equal(int(case.flags))
-	assert_that(ability.target_shape).is_equal(case.shape)
-	assert_int(ability.target_shape_size).is_equal(int(case.size))
-	assert_that(ability.effects[0].type).is_equal(case.type)
-	assert_int(ability.effects[0].amount).is_equal(int(case.amount))
+	var module := AbilitySystem.active_module_for_index(null, ability, 0)
+	assert_object(module).override_failure_message(
+		"%s: missing authored primary module" % case.id,
+	).is_not_null()
+	if module == null:
+		return
+	assert_int(module.max_range).is_equal(int(case.range))
+	assert_int(AbilitySystem.active_targeting_flags(null, ability)).is_equal(int(case.flags))
+	assert_that(module.target_shape).is_equal(case.shape)
+	assert_int(module.target_shape_size).is_equal(int(case.size))
+	assert_that(module.primary_type).is_equal(case.type)
+	assert_int(module.amount).is_equal(int(case.amount))
 	if case.id != &"archer_basic":
-		assert_bool(not ability.upgraded_effects.is_empty()).is_true()
+		assert_bool(not ability.upgraded_modules.is_empty()).is_true()
 
 
 func _assert_live_result(result: SimResult, case: Dictionary, actor_id: int) -> void:
@@ -224,7 +230,27 @@ func _commit_live_click(
 		_director.select_ability(_ability_index(actor, awaiting.ability))
 	_input.set_qa_pointer_grid_cell(cell)
 	_input._intent_state.set_hover_coord(cell)
+	var actor := _director.board.get_unit_by_id(unit_id)
+	var ability := CombatDirector.resolve_selected_ability(
+		actor, _director.selected_ability_index,
+	)
+	var should_arm := (
+		_director.find_awaiting_action(unit_id) == null
+		and actor != null
+		and ability != null
+		and AbilitySystem.planning_commit_flow(actor, ability)
+			== GameEnums.PlanningCommitFlow.AWAITING_TARGET
+	)
 	var slots: Dictionary
+	if should_arm:
+		slots = _input._final_commit_slots_for_click_at_cell(
+			unit_id, actor.position, Vector2.ZERO,
+		)
+		if _slots_invalid(slots):
+			return slots
+		_input.call("_paint_intent_slots_before_commit", unit_id, slots)
+		assert_bool(_director.commit_from_slots(unit_id, slots)).is_true()
+		await runner.simulate_frames(2, _DELTA_MS)
 	if _plan_has_awaiting(unit_id):
 		slots = _input._build_commit_slots_at_cell(unit_id, cell)
 	else:
