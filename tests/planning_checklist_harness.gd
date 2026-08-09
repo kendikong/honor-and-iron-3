@@ -803,6 +803,118 @@ static func assert_cursor_is(
 		assert_fail(failures, label, "cursor expected %s got %s" % [glyph, icon])
 
 
+static func assert_skill_timeline_columns(
+	failures: Array[String],
+	label: String,
+	director: CombatDirector,
+	unit_id: int,
+	ability: AbilityData,
+	slots: Dictionary = {},
+) -> void:
+	if director == null or ability == null or unit_id < 0:
+		return
+	var pre: TimelineAction = committed_pre_move(director, unit_id)
+	var action: TimelineAction = committed_action(director, unit_id)
+	var post: TimelineAction = committed_post_move(director, unit_id)
+	if ability.is_pre_move_planner():
+		assert_true(
+			failures,
+			"%s/premove_column" % label,
+			pre != null
+			and pre.type == GameEnums.ActionType.ABILITY
+			and pre.ability != null
+			and pre.ability.id == ability.id,
+			"PRE_MOVE skill must land in the pre-move timeline column",
+		)
+		assert_true(
+			failures,
+			"%s/not_action_column" % label,
+			action == null or action.ability == null or action.ability.id != ability.id,
+			"PRE_MOVE skill must not land in the action column",
+		)
+	else:
+		assert_true(
+			failures,
+			"%s/action_column" % label,
+			action != null
+			and action.type == GameEnums.ActionType.ABILITY
+			and action.ability != null
+			and action.ability.id == ability.id,
+			"ACTION skill must land in the action timeline column",
+		)
+		assert_true(
+			failures,
+			"%s/not_premove_column" % label,
+			pre == null or pre.ability == null or pre.ability.id != ability.id,
+			"ACTION skill must not land in the pre-move column",
+		)
+	if slots.is_empty():
+		return
+	var slot_pre: Array = slots.get("pre", [])
+	var slot_action: Array = slots.get("action", [])
+	var slot_post: Array = slots.get("post", [])
+	assert_true(
+		failures,
+		"%s/slot_pre_matches_timeline" % label,
+		slot_pre.size() == _slot_actions_for_unit(director.plan_pre_move, unit_id).size(),
+		"committed pre-move slots must match plan_pre_move",
+	)
+	assert_true(
+		failures,
+		"%s/slot_action_matches_timeline" % label,
+		slot_action.size() == _slot_actions_for_unit(director.plan_action, unit_id).size(),
+		"committed action slots must match plan_action",
+	)
+	assert_true(
+		failures,
+		"%s/slot_post_matches_timeline" % label,
+		slot_post.size() == _slot_actions_for_unit(director.plan_post_move, unit_id).size(),
+		"committed post-move slots must match plan_post_move",
+	)
+
+
+static func _slot_actions_for_unit(timeline: Timeline, unit_id: int) -> Array:
+	var out: Array = []
+	if timeline == null:
+		return out
+	for raw: Variant in timeline.entries:
+		var action: TimelineAction = raw as TimelineAction
+		if action != null and action.actor_id == unit_id:
+			out.append(action)
+	return out
+
+
+static func skill_timeline_column_failures(
+	label: String,
+	director: CombatDirector,
+	unit_id: int,
+	ability: AbilityData,
+	slots: Dictionary = {},
+) -> Array[String]:
+	var failures: Array[String] = []
+	assert_skill_timeline_columns(failures, label, director, unit_id, ability, slots)
+	return failures
+
+
+static func assert_planning_timeline_after_commit(
+	failures: Array[String], label: String, fix: Dictionary, cell: Vector2i,
+) -> void:
+	var unit_id: int = fix.director.selected_unit_id
+	var unit: UnitState = fix.board.get_unit_by_id(unit_id)
+	var ability: AbilityData = null
+	if (
+		unit != null
+		and fix.director.selected_ability_index >= 0
+		and fix.director.selected_ability_index < unit.active_abilities.size()
+	):
+		ability = unit.active_abilities[fix.director.selected_ability_index]
+	if ability == null:
+		return
+	var slots: Dictionary = commit_production(fix, cell)
+	assert_true(failures, label, not _slots_invalid(slots), "commit must succeed")
+	assert_skill_timeline_columns(failures, label, fix.director, unit_id, ability, slots)
+
+
 static func assert_slots_match_preview_commit(
 	failures: Array[String], label: String, fix: Dictionary, cell: Vector2i,
 ) -> void:
@@ -824,6 +936,17 @@ static func assert_commit_no_jump(
 	var before_ghost: Vector2i = preview_unit_pos(fix, 1)
 	var slots: Dictionary = commit_production(fix, cell)
 	assert_true(failures, label, not _slots_invalid(slots), "commit must succeed")
+	var unit_id: int = fix.director.selected_unit_id
+	var unit: UnitState = fix.board.get_unit_by_id(unit_id)
+	var ability: AbilityData = null
+	if (
+		unit != null
+		and fix.director.selected_ability_index >= 0
+		and fix.director.selected_ability_index < unit.active_abilities.size()
+	):
+		ability = unit.active_abilities[fix.director.selected_ability_index]
+	if ability != null:
+		assert_skill_timeline_columns(failures, label, fix.director, unit_id, ability, slots)
 	assert_true(
 		failures, label,
 		PlanningQAGateTest._intent_slot_signature(slots) == before_sig,

@@ -687,14 +687,17 @@ static func ability_skill_module_lines_bbcode(
 	return lines
 
 
-static func ability_skill_row_background(planner_group: int, selected: bool) -> Color:
+static func ability_skill_row_background(ability: AbilityData, selected: bool) -> Color:
+	var is_premove: bool = ability != null and ability.is_pre_move_planner()
 	var base: Color = (
-		Color(0.12, 0.18, 0.30, 0.96)
-		if planner_group == GameEnums.PlannerGroup.PRE_MOVE
-		else Color(0.20, 0.17, 0.15, 0.96)
+		Color(0.05, 0.22, 0.42, 1.0)
+		if is_premove
+		else Color(0.16, 0.16, 0.19, 1.0)
 	)
 	if selected:
-		return base.lerp(Color(0.98, 0.86, 0.32, 0.95), 0.22)
+		if is_premove:
+			return base.lerp(Color(0.22, 0.48, 0.78, 1.0), 0.38)
+		return base.lerp(Color(0.98, 0.86, 0.32, 0.95), 0.28)
 	return base
 
 

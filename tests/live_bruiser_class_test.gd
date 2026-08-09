@@ -622,6 +622,20 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 			"%s: live commit did not write the selected skill; plan=%s"
 			% [skill_id, _plan_debug()],
 		).is_true()
+		var committed_ability: AbilityData = _factory_ability(skill_id)
+		if committed_ability != null:
+			var timeline_failures: Array[String] = (
+				PlanningChecklistHarness.skill_timeline_column_failures(
+					String(skill_id),
+					_director,
+					actor_id,
+					committed_ability,
+				)
+			)
+			assert_bool(timeline_failures.is_empty()).override_failure_message(
+				"%s: timeline column contract failed: %s"
+				% [skill_id, ", ".join(timeline_failures)],
+			).is_true()
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	for skill_id: StringName in batch.skills:
 		var case := _case_by_id(skill_id)

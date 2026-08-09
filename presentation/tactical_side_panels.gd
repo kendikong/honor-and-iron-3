@@ -561,17 +561,28 @@ func _schedule_info_refresh() -> void:
 func _update_skill_selection_highlight() -> void:
 	if _skill_list == null:
 		return
+	var unit := _committed_plan_unit(_selected_id)
+	if unit == null:
+		unit = _board.get_unit_by_id(_selected_id)
 	for c: Node in _skill_list.get_children():
-		var row_btn := c as Button
+		var row_panel := c as PanelContainer
+		if row_panel == null or row_panel.get_child_count() == 0:
+			continue
+		var row_btn := row_panel.get_child(0) as Button
 		if row_btn == null:
 			continue
 		var index: int = int(row_btn.get_meta(&"ability_index", -1))
 		if index < 0:
 			continue
 		var usable: bool = not row_btn.disabled
-		row_btn.modulate = COLOR_SELECT if index == _selected_ability else (
-			Color.WHITE if usable else COLOR_SKILL_DISABLED
-		)
+		row_btn.modulate = Color.WHITE if usable else COLOR_SKILL_DISABLED
+		var ability: AbilityData = null
+		if unit != null and index >= 0 and index < unit.active_abilities.size():
+			ability = unit.active_abilities[index] as AbilityData
+		if ability != null:
+			_apply_skill_row_panel_style(
+				row_panel, ability, index == _selected_ability, usable,
+			)
 
 
 func _skill_list_row_for_ability_index(ability_index: int) -> int:
@@ -618,8 +629,8 @@ func _ensure_skill_visible_by_index(row: int) -> void:
 	var count: int = _skill_list.get_child_count()
 	if row < 0 or row >= count:
 		return
-	var btn: Control = _skill_list.get_child(row) as Control
-	if btn == null or not is_instance_valid(btn):
+	var row_ctrl: Control = _skill_list.get_child(row) as Control
+	if row_ctrl == null or not is_instance_valid(row_ctrl):
 		return
 	var bar: VScrollBar = _skill_scroll.get_v_scroll_bar()
 	if row == 0:
@@ -628,7 +639,7 @@ func _ensure_skill_visible_by_index(row: int) -> void:
 	if row == count - 1 and bar != null:
 		_skill_scroll.scroll_vertical = int(bar.max_value)
 		return
-	_skill_scroll.ensure_control_visible(btn)
+	_skill_scroll.ensure_control_visible(row_ctrl)
 
 
 func get_log_label() -> RichTextLabel:
@@ -852,17 +863,33 @@ func _rebuild_ability_buttons() -> void:
 		if _planning_input != null and _planning_input.auto_run and ability.is_universal_run():
 			continue
 		var index: int = i
+		var row_panel := PanelContainer.new()
+		row_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row_panel.mouse_filter = Control.MOUSE_FILTER_PASS
+		var selected_row: bool = index == _selected_ability
+		var usable: bool = AbilitySystem.ability_planning_selectable(unit, ability, _board)
+		_apply_skill_row_panel_style(row_panel, ability, selected_row, usable)
 		var row_btn := Button.new()
 		row_btn.set_meta(&"ability_index", index)
-		var usable: bool = AbilitySystem.ability_planning_selectable(unit, ability, _board)
 		row_btn.disabled = not usable
+		row_btn.flat = true
+		row_btn.focus_mode = Control.FOCUS_NONE
+		row_btn.mouse_filter = Control.MOUSE_FILTER_STOP
 		row_btn.modulate = Color.WHITE if usable else COLOR_SKILL_DISABLED
+		row_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row_btn.pressed.connect(func() -> void:
 			if _director != null and usable:
 				_director.select_ability(index)
 		)
-		var selected_row: bool = index == _selected_ability
-		_apply_skill_row_style(row_btn, ability.planner_group, selected_row, usable)
+		var transparent := StyleBoxFlat.new()
+		transparent.bg_color = Color(0, 0, 0, 0)
+		transparent.set_content_margin_all(0)
+		row_btn.add_theme_stylebox_override("normal", transparent)
+		row_btn.add_theme_stylebox_override("hover", transparent)
+		row_btn.add_theme_stylebox_override("pressed", transparent)
+		row_btn.add_theme_stylebox_override("disabled", transparent)
+		row_btn.add_theme_stylebox_override("focus", transparent)
+		row_panel.add_child(row_btn)
 		var btn_vbox := VBoxContainer.new()
 		btn_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn_vbox.add_theme_constant_override("separation", 2)
@@ -901,7 +928,7 @@ func _rebuild_ability_buttons() -> void:
 		var header_h: float = float(CombatUiFormatters.scaled_font_size(10)) * 1.6
 		var module_h: float = float(module_line_count) * float(effect_px) * 1.35
 		row_btn.custom_minimum_size.y = header_h + module_h + 10.0
-		_skill_list.add_child(row_btn)
+		_skill_list.add_child(row_panel)
 
 	_skill_ui_lock = false
 	_refresh_wait_button()
@@ -934,27 +961,29 @@ func _is_unit_action_exhausted() -> bool:
 	return not unit.can_use_action_slot()
 
 
-func _apply_skill_row_style(
-	row_btn: Button,
-	planner_group: int,
+func _apply_skill_row_panel_style(
+	panel: PanelContainer,
+	ability: AbilityData,
 	selected: bool,
 	usable: bool,
 ) -> void:
-	var bg: Color = CombatUiFormatters.ability_skill_row_background(planner_group, selected)
+	var bg: Color = CombatUiFormatters.ability_skill_row_background(ability, selected)
 	if not usable:
 		bg = bg.lerp(COLOR_SKILL_DISABLED, 0.45)
 	var style := StyleBoxFlat.new()
 	style.bg_color = bg
-	style.set_corner_radius_all(3)
+	if ability != null and ability.is_pre_move_planner():
+		style.border_color = Color(0.20, 0.50, 0.82, 0.85)
+		style.set_border_width_all(1)
+	else:
+		style.border_color = Color(0.32, 0.32, 0.36, 0.55)
+		style.set_border_width_all(1)
+	style.set_corner_radius_all(4)
 	style.content_margin_left = 6
 	style.content_margin_right = 6
 	style.content_margin_top = 4
 	style.content_margin_bottom = 4
-	row_btn.add_theme_stylebox_override("normal", style)
-	row_btn.add_theme_stylebox_override("hover", style)
-	row_btn.add_theme_stylebox_override("pressed", style)
-	row_btn.add_theme_stylebox_override("disabled", style)
-	row_btn.add_theme_stylebox_override("focus", style)
+	panel.add_theme_stylebox_override("panel", style)
 
 
 func _make_skill_icon(emoji: String, val: String, tip: String) -> Control:

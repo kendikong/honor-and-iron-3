@@ -801,6 +801,10 @@ static func run_planning_commit_smoke(
 		PlanningChecklistHarness.assert_commit_no_jump(
 			failures, "%s/planning/no_jump" % tag, fix, commit_cell,
 		)
+	else:
+		PlanningChecklistHarness.assert_planning_timeline_after_commit(
+			failures, "%s/planning/timeline_columns" % tag, fix, commit_cell,
+		)
 
 
 static func run_planning_awaiting_smoke(
@@ -844,6 +848,10 @@ static func run_planning_awaiting_smoke(
 	if verify_no_jump:
 		PlanningChecklistHarness.assert_commit_no_jump(
 			failures, "%s/planning/no_jump" % tag, fix, commit_cell,
+		)
+	else:
+		PlanningChecklistHarness.assert_planning_timeline_after_commit(
+			failures, "%s/planning/timeline_columns" % tag, fix, commit_cell,
 		)
 
 
