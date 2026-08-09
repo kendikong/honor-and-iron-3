@@ -30,12 +30,14 @@ $godotArgs = @(
 )
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-tier3.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-tier3.stderr.log"
-$process = Start-Process -FilePath $GodotPath `
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
+$process = Start-GodotOnCursorMonitor `
+	-GodotPath $GodotPath `
 	-ArgumentList $godotArgs `
 	-WorkingDirectory $projectRoot `
 	-RedirectStandardOutput $stdoutPath `
-	-RedirectStandardError $stderrPath `
-	-Wait -PassThru -NoNewWindow
+	-RedirectStandardError $stderrPath
+$process.WaitForExit()
 $exitCode = $process.ExitCode
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
 if (Test-Path $stderrPath) { Get-Content $stderrPath }
