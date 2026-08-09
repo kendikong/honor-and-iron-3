@@ -51,7 +51,7 @@ static func run_data_contract(failures: Array[String]) -> void:
 		return
 	assert_true(failures, "lancer/name", definition.display_name == "Lancer")
 	assert_eq_int(failures, "lancer/constitution", definition.base_constitution, 5)
-	assert_eq_int(failures, "lancer/movement", definition.move_points, 3)
+	assert_eq_int(failures, "lancer/movement", definition.move_points, 4)
 	assert_eq_int(failures, "lancer/strength", definition.base_strength, 4)
 	assert_eq_int(failures, "lancer/defense", definition.base_defense, 3)
 	assert_eq_int(failures, "lancer/magic", definition.base_magic, 1)

@@ -11,7 +11,7 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	def.id = &"archer"
 	def.display_name = "Archer"
 	def.base_constitution = 3
-	def.move_points = 3
+	def.move_points = 4
 	def.action_points = 1
 	def.base_strength = 4
 	def.base_defense = 1

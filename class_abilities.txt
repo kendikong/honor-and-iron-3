@@ -135,9 +135,10 @@ Voodoo Totems (Shaman): HP equals Floor(50% of Caster's Max HP).
 Bone Barricade (Shaman): HP equals Floor(50% of Caster's Max HP).
 Obsidian Wall (Mage): HP equals Floor(50% of Caster's Max HP).
 Divine Hammer (Cleric): HP equals Floor(25% of Caster's Max HP).
+
 1. Knight
 Core Identity: Tank-Strong, High DEF, Low Mobility. The ultimate shield. Focuses on total damage absorption, shielding, and becoming an indestructible bastion.
-| CON 6 | MOV 2 | STR 4 | DEF 5 | MAG 2 |
+| CON 6 | MOV 4 | STR 4 | DEF 5 | MAG 2 |
 Innate Trait: Bastion Front
 Base Mechanic: The Knight takes 0 collision damage when pushed or knocked into walls, obstacles, or units. Additionally, all incoming physical damage originating directly from the 180-degree frontal arc (3 frontal tiles relative to facing direction) is reduced by an extra +2 DEF.
 Upgrade: Frontal damage mitigation increased by an additional +2 DEF (total +4 DEF from front). Taking collision damage grants the Knight SHIELD 2 for 1 turn.
@@ -178,6 +179,7 @@ Active Skills & Upgrades
 (The Cataphract / The Sentinel) Defensive Formation: RANGE 0 | AOE 3 | Allies in range gain +2 DEF and become immune to PUSH/PULL for 1 turn. Upgrade: Allies also gain SHIELD 2.
 (The Juggernaut) Chain Hook: RANGE 3 | ATK 1 | PULL 2. Upgrade: Target suffers VULNERABLE if pulled adjacent.
 (The Cataphract) Trampling Advance: MOVE 2 | ATK 2 | PUSH 1. Upgrade: Gain SHIELD 1 per tile moved.
+
 2. Bruiser
 Core Identity: Tanky Melee-Strong, High HP. Dynamic HP management. Can play as a low-HP berserker or a high-HP behemoth that uses their mass as a weapon.
 | CON 7 | MOV 3 | STR 4 | DEF 2 | MAG 1 |
@@ -222,9 +224,10 @@ Active Skills & Upgrades
 (The Bloodrager) Crimson Whirlwind: RANGE 0 | AOE 3x3 | ATK 1. Upgrade: HEAL 1 for every target successfully hit.
 (The Behemoth) Belly Flop: RANGE 2 | ATK 2. Jump to empty tile. Upgrade: Landing applies PUSH 1 to adjacent enemies.
 (The Siegebreaker) Breaching Dash: DASH 3 | Instantly destroy all destructible cover passed through. Upgrade: Next attack this turn gains PIERCE.
+
 3. Mercenary
 Core Identity: Balanced Melee DPS. A disciplined combatant, versatile in both offense and defense.
-| CON 5 | MOV 3 | STR 4 | DEF 3 | MAG 2 |
+| CON 5 | MOV 4 | STR 4 | DEF 3 | MAG 2 |
 Innate Trait: Predatory Momentum
 Base Mechanic: Basic attacks executed against targets below 50% HP cost 0 AP and grant an immediate free 1 tile move. Additionally, whenever the Mercenary deals damage to any enemy unit, they gain +1 STR and +1 MOV on the following turn.
 Upgrade: Low-HP execution threshold increases to < 75% HP. The turn-following bonus increases to +2 STR and +2 MOV.
@@ -266,6 +269,7 @@ Active Skills & Upgrades
 (The Headhunter) Hamstring: RANGE 1 | ATK 2 | Target MAX MOVEMENT = 1. Upgrade: Deal ATK +2 if target has BLEED.
 (The Blade Dancer) Acrobatic Vault: RANGE 2 | ATK 1 | Jump over target to opposite empty tile. Upgrade: Attack gains PIERCE.
 (The Swordmaster) Duelist's Challenge: RANGE 3 | Apply TAUNT and MARK to target. Upgrade: Gain +2 DEF against marked target.
+
 4. Rogue
 Core Identity: High Mobility, Flanking Melee DPS. Positional puzzle solver. High single-target damage.
 | CON 4 | MOV 5 | STR 4 | DEF 2 | MAG 1 |
@@ -310,9 +314,10 @@ Active Skills & Upgrades
 (The Saboteur / The Ninja) Kidnap: RANGE 1 | Swap position with target | PUSH 2 target. Upgrade: Target collision applies STAGGER to both.
 (The Ninja) Shuriken Volley: CONE 3 | ATK 1 | Apply BLEED X (X = WPN). Upgrade: Gain PIERCE vs targets with BLIND.
 (The Saboteur) Poison Flask: RANGE 3 | ATK 1 | Create POISON hazard (AOE 1). Upgrade: Hazard applies BLIND on entry.
+
 5. Monk
 Core Identity: Melee Magic/Physical Hybrid. Agile brawler and elemental striker. Trigger environmental combos.
-| CON 5 | MOV 3 | STR 3 | DEF 2 | MAG 4 |
+| CON 5 | MOV 4 | STR 3 | DEF 2 | MAG 4 |
 Innate Trait: Way of the Weaver
 Base Mechanic: Dealing physical damage empowers your next magic skill with MAG ATK +2 and PIERCE. Dealing magical damage empowers your next physical skill with ATK +2 and PUSH 1.
 Upgrade: Triggering a stat weave also grants SHIELD 1.
@@ -354,6 +359,7 @@ Active Skills & Upgrades
 (The Windwalker) Cyclone Sweep: RANGE 1 | ARC | PUSH 2 all targets. Upgrade: Gain +1 MOV per enemy pushed.
 (The Windwalker) Updraft: SELF | Gain AIRBORNE and +1 MOV for 2 turns. Upgrade: Passing over enemy applies BLIND.
 (The Avatar) Geyser Strike: RANGE 2 | MAG ATK 2 | PUSH 1 | Creates WATER terrain. Upgrade: PUSH 2 if target on WATER.
+
 6. Beast Rider
 Core Identity: Fast Flanking Melee. Rides grounded beast companion. High mobility and pursuit tactics.
 | CON 5 | MOV 4 | STR 3 | DEF 2 | MAG 2 |
@@ -398,9 +404,10 @@ Active Skills & Upgrades
 (The Griffin Rider) Airlift: RANGE 1 | Pick up adjacent ally at Step 1. Drop in empty tile at Step 3 (Post-Action Phase). Upgrade: Ally gains +1 STR on next attack.
 (The Wyvern Lord) Tail Swipe: RANGE 0 | AOE 3x3 | ATK 1 | PUSH 2. Upgrade: Wall collision applies STAGGER.
 (The Apex Predator) Meteor Drop: RANGE 2 | Jump to tile | ATK 2 adjacent on land. Upgrade: Targets hit suffer VULNERABLE.
+
 7. Mage
 Core Identity: Magical Ranged DPS. Environmental chain reactions. Devastating AOE.
-| CON 3 | MOV 3 | STR 1 | DEF 1 | MAG 5 |
+| CON 3 | MOV 4 | STR 1 | DEF 1 | MAG 5 |
 Innate Trait: Arcane Overchannel
 Base Mechanic: Executing any spell grants 1 stack of Arcane Overchannel (max 3). Each stack increases MAG ATK by +1. Stacks are maintained across turns, but decay to 0 if a turn passes without the Mage casting an active spell.
 Upgrade: Reaching maximum (3) stacks instantly refunds 1 AP (1/turn) and grants the Mage SHIELD 2.
@@ -442,9 +449,10 @@ Active Skills & Upgrades
 (The Geomancer) Earth Spike: RANGE 4 | Summon Obstacle (Floor(50% Max HP)). Upgrade: Obstacle deals MAG ATK 1 adjacent on creation.
 (The Graviturge) Density Shift: RANGE 3 | Target Push Mitigation doubled OR gain STURDY 2 turns. Upgrade: Apply WEAKEN to enemies.
 (The Archmage) Arcane Barrage: RANGE 4 | MAG ATK 1 (Hits 3 times). Upgrade: Each hit ignores 25% of target's MAG.
+
 8. Archer
 Core Identity: Ranged DPS. Master of suppression, line-of-sight dominance, and pinning enemies down.
-| CON 3 | MOV 3 | STR 4 | DEF 1 | MAG 1 |
+| CON 3 | MOV 4 | STR 4 | DEF 1 | MAG 1 |
 Innate Trait: Steady Aim
 Base Mechanic: The Archer can spend MOV equal to their Max MOV during planning (standing still and using no tile movement) to automatically trigger Steady Aim: granting +1 RANGE and +1 STR to all attacks executed that turn (operates automatically in planning, similar to Auto-Run).
 Upgrade: Spending Max MOV grants +2 RANGE, +2 STR, and attacks gain PIERCE.
@@ -485,6 +493,7 @@ Active Skills & Upgrades
 (The Trapper) Caltrop Trap: RANGE 3 | Place trap applying ROOT and BLEED X (X = WPN). Upgrade: Trap applies -2 DEF.
 (The Nomad) Parting Shot: RANGE 3 | ATK 2 | May immediately MOVE 2 after attack. Upgrade: Gain GHOST during movement.
 (The Sniper) Scout's Eye: RANGE 5 | Strip STEALTH and PURGE buffs from target. Upgrade: Target suffers VULNERABLE.
+
 9. Cleric
 Core Identity: Healer and Holy Magic. Mitigation and hostile pacifying zones.
 | CON 4 | MOV 3 | STR 1 | DEF 1 | MAG 4 |
@@ -528,6 +537,7 @@ Active Skills & Upgrades
 (The Zealot / The Seraph) Divine Guidance: RANGE 3 | Target Ally gains 1 AP | SELF MOVEMENT = 0 next turn. Upgrade: SELF not rooted next turn.
 (The Paladin) Shield of Faith: RANGE 2 | Target Ally gains SHIELD 3 and INTERCEPT 50%. Upgrade: Counter-attack ATK 1 on intercept.
 (The Zealot) Martyr's Chains: RANGE 3 | Link two enemies. Taking Magic dmg -> other suffers MAG ATK 1. Upgrade: Applies BLIND.
+
 10. Shaman
 Core Identity: Debuff / Buffer Support. Master of voodoo physics.
 | CON 3 | MOV 3 | STR 1 | DEF 1 | MAG 4 |
@@ -572,6 +582,7 @@ Active Skills & Upgrades
 (The Spirit Caller) Earthbind Totem: RANGE 2 | Summon Totem | AOE 2 pulse: Apply ROOT to enemies. Upgrade: Pulse applies WEAKEN.
 (The Soulwalker) Soul Siphon: RANGE 3 | MAG ATK 1. Deals +1 Damage per target debuff. Upgrade: HEAL 1 per debuff.
 (The Bloodweaver) Pain Spike: RANGE 3 | ATK 2 | If target linked, deal ATK 1 to linked enemies. Upgrade: Linked enemies suffer BLIND.
+
 11. Lancer
 Core Identity: Mid-Range Melee DPS. Grounded polearm specialist. Uses RANGE 2 attacks, linear physics, and momentum.
 | CON 5 | MOV 3 | STR 4 | DEF 3 | MAG 1 |
@@ -614,6 +625,7 @@ Active Skills & Upgrades
 (The Cavalier / The Halberdier) Line Breaker: DASH 4 | Pass through enemies dealing ATK 2 each. Upgrade: ATK +1 per enemy passed.
 (The Halberdier / The Cavalier) Spear Wall: RANGE 2 | ARC | Hazard line. Crossing suffers ATK 2 and ROOT. Upgrade: Lasts 2 turns.
 (The Skystriker) Meteor Drop: RANGE 2 | Jump to tile | ATK 2 adjacent on land. Upgrade: Targets hit suffer VULNERABLE.
+
 12. Engineer
 Core Identity: Ranged Utility DPS. Master of board state. Grid manipulation and constructs.
 | CON 4 | MOV 3 | STR 3 | DEF 3 | MAG 1 |

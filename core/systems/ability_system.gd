@@ -84,6 +84,42 @@ static func active_motion_range_valid(actor: UnitState, ability: AbilityData) ->
 	return module != null and module.min_range >= 1 and module.max_range >= module.min_range
 
 
+static func motion_requires_occupied_target(actor: UnitState, ability: AbilityData) -> bool:
+	var module: AbilityModule = active_motion_module(actor, ability)
+	return (
+		module != null
+		and module.primary_type == GameEnums.EffectType.MOVE_INTO_AND_PUSH
+	)
+
+
+static func _occupied_push_target_valid(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	target_coord: Vector2i,
+) -> bool:
+	if board == null or actor == null or ability == null:
+		return false
+	if target_coord == actor.position:
+		return false
+	var occupant: UnitState = board.get_unit_at(target_coord)
+	if occupant == null or occupant.id == actor.id:
+		return false
+	if not _target_allowed(actor, ability, occupant, target_coord):
+		return false
+	var push_dir: Vector2i = PhysicsSystem.cardinal_from_to(actor.position, target_coord)
+	if push_dir == Vector2i.ZERO:
+		return false
+	var behind_coord: Vector2i = target_coord + push_dir
+	if not board.is_in_bounds(behind_coord):
+		return false
+	if GridSystem.is_wall(board, behind_coord):
+		return false
+	if GridSystem.is_occupied(board, behind_coord):
+		return false
+	return true
+
+
 static func active_module_for_index(
 	actor: UnitState,
 	ability: AbilityData,
@@ -599,6 +635,10 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			var end_unit := board.get_unit_at(action.target_coord)
 			if end_unit != null and end_unit.id != actor.id:
 				return false
+
+	if motion_requires_occupied_target(actor, ability):
+		if not _occupied_push_target_valid(board, actor, ability, action.target_coord):
+			return false
 
 	return true
 
@@ -1431,11 +1471,28 @@ static func planning_threat_tiles(
 	var tiles: Array[Vector2i] = manhattan_threat_tiles(board, sources, eff_range)
 	var motion_module: AbilityModule = active_motion_module(unit, ability)
 	if motion_module == null or motion_module.min_range <= 0:
+		if motion_requires_occupied_target(unit, ability):
+			tiles = tiles.filter(
+				func(cell: Vector2i) -> bool:
+					var probe: TimelineAction = TimelineAction.make_ability(
+						unit.id, ability, cell, -1,
+					)
+					return can_use(board, probe)
+			)
 		return tiles
-	return tiles.filter(
+	var filtered: Array[Vector2i] = tiles.filter(
 		func(cell: Vector2i) -> bool:
 			return GridSystem.manhattan(origin, cell) >= motion_module.min_range
 	)
+	if motion_requires_occupied_target(unit, ability):
+		filtered = filtered.filter(
+			func(cell: Vector2i) -> bool:
+				var probe: TimelineAction = TimelineAction.make_ability(
+					unit.id, ability, cell, -1,
+				)
+				return can_use(board, probe)
+		)
+	return filtered
 
 
 ## Blast footprint at hover for shaped skills (ARC/AOE). Empty when hover is not a legal target.

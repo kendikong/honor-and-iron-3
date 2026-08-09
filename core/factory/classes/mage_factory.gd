@@ -10,7 +10,7 @@ static func build(basic_staff: WeaponData) -> UnitData:
 	definition.id = &"mage"
 	definition.display_name = "Mage"
 	definition.base_constitution = 3
-	definition.move_points = 3
+	definition.move_points = 4
 	definition.action_points = 1
 	definition.base_strength = 1
 	definition.base_defense = 1

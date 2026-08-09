@@ -283,6 +283,8 @@ static func _journey_k4_run(
 	var bowling_idx: int = PlanningChecklistHarness.select_ability_for_unit(
 		fix, k4_id, PlanningChecklistHarness.BOWLING_CHARGE_ID,
 	)
+	## Detour+run bible: 3 walk steps to (4,2); 4th to run trigger needs Run (class MOV is 4).
+	PlanningChecklistHarness.set_unit_pools(fix, k4_id, 1, 3)
 	var bowling: AbilityData = null
 	if bowling_idx >= 0:
 		bowling = fix.board.get_unit_by_id(k4_id).active_abilities[bowling_idx]

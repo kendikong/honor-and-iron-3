@@ -64,7 +64,7 @@ func _check_factory_matrix(failures: Array[String]) -> void:
 	if mage == null:
 		return
 	_assert(failures, "factory/base_constitution", mage.base_constitution == 3)
-	_assert(failures, "factory/base_movement", mage.move_points == 3)
+	_assert(failures, "factory/base_movement", mage.move_points == 4)
 	_assert(failures, "factory/base_magic", mage.base_magic == 5)
 	_assert(failures, "factory/innate_count", mage.innate_passives.size() == 1)
 	_assert(failures, "factory/active_count", mage.abilities.size() == 17)

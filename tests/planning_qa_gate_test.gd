@@ -87,6 +87,8 @@ static func run_all(failures: Array[String]) -> void:
 		_test_class_skill_player_turn_spends_ap,
 		_test_bash_promote_locks_committed_ghost,
 		_test_hook_in_range_approach_tile_is_actor_position,
+		_test_hook_in_range_ignores_stale_drag_route,
+		_test_hook_out_of_range_enemy_hover_invalid,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -158,6 +160,8 @@ static func run_all(failures: Array[String]) -> void:
 		"class_skill_player_turn_ap",
 		"bash_promote_ghost",
 		"hook_in_range_approach",
+		"hook_in_range_no_stale_drag",
+		"hook_out_of_range_null",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -2688,3 +2692,63 @@ static func _test_hook_in_range_approach_tile_is_actor_position(failures: Array[
 		failures, "PlanningQAGate hook_in_range_approach", fix, 2, hook_idx,
 		HOOK_ENEMY, HOOK_KNIGHT,
 	)
+
+
+static func _test_hook_in_range_ignores_stale_drag_route(failures: Array[String]) -> void:
+	const HOOK_KNIGHT := Vector2i(1, 3)
+	const HOOK_ENEMY := Vector2i(4, 3)
+	var fix: Dictionary = _planning_fixture(HOOK_KNIGHT, HOOK_ENEMY)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var hook_idx: int = _ability_index(fix.knight, CHAIN_HOOK_ID)
+	if hook_idx < 0:
+		failures.append("PlanningQAGate hook_in_range_no_stale_drag: Chain Hook missing")
+		return
+	director.selected_ability_index = hook_idx
+	TramplingAdvanceE2ETest._paint_drag_route(
+		input, fix.knight, [HOOK_KNIGHT, Vector2i(2, 3)], Vector2i(2, 3),
+	)
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		1, HOOK_ENEMY, input._route_waypoints(), [], HOOK_ENEMY,
+	)
+	if _slots_invalid(slots):
+		failures.append("PlanningQAGate hook_in_range_no_stale_drag: in-range hook hover must stay valid")
+		return
+	var pre: Array = slots.get("pre", []) as Array
+	var action: Array = slots.get("action", []) as Array
+	if not pre.is_empty():
+		failures.append(
+			"PlanningQAGate hook_in_range_no_stale_drag: in-range hook must not add pre-move for stale drag route",
+		)
+	if action.is_empty():
+		failures.append(
+			"PlanningQAGate hook_in_range_no_stale_drag: in-range hook must still build action slot",
+		)
+
+
+static func _test_hook_out_of_range_enemy_hover_invalid(failures: Array[String]) -> void:
+	const HOOK_KNIGHT := Vector2i(1, 3)
+	const HOOK_ENEMY := Vector2i(8, 3)
+	var fix: Dictionary = _planning_fixture(HOOK_KNIGHT, HOOK_ENEMY)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var hook_idx: int = _ability_index(fix.knight, CHAIN_HOOK_ID)
+	if hook_idx < 0:
+		failures.append("PlanningQAGate hook_out_of_range_null: Chain Hook missing")
+		return
+	director.selected_ability_index = hook_idx
+	fix.knight.movement.points_left = 3
+	var proj: UnitState = director.projected_state.get_unit_by_id(1)
+	if proj != null:
+		proj.movement.points_left = 3
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		1, HOOK_ENEMY, [], [], HOOK_ENEMY,
+	)
+	if not _slots_invalid(slots):
+		failures.append("PlanningQAGate hook_out_of_range_null: unreachable enemy hover must be invalid")
+	var icon: String = input._cursor_icon_from_commit_slots(slots, fix.knight)
+	if icon != PlanningIcons.GLYPH_NULL:
+		failures.append(
+			"PlanningQAGate hook_out_of_range_null: unreachable enemy hover must show null icon, got %s"
+			% icon,
+		)

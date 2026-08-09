@@ -607,6 +607,33 @@ static func run_push_through_non_adjacent(failures: Array[String]) -> void:
 	)
 
 
+static func run_push_through_empty_tile(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	place_bruiser(board, 1, Vector2i(3, 3), {
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(&"bruiser_push_through"),
+		],
+	})
+	place_dummy(board, 2, Vector2i(3, 5))
+	var push: AbilityData = ability_on_unit(unit_on_board(board, 1), &"bruiser_push_through")
+	var probe: TimelineAction = TimelineAction.make_ability(1, push, Vector2i(3, 4), 2)
+	assert_true(
+		failures, "push_through/empty_tile_illegal",
+		not AbilitySystem.can_use(board, probe),
+		"Push Through must require an occupied adjacent tile",
+	)
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, push, Vector2i(3, 4), 2, GameEnums.MoveTiming.PRE_ACTION))
+	var result: SimResult = simulate_plan(board, plan)
+	var b_after: UnitState = result.final_state.get_unit_by_id(1)
+	assert_eq_cell(failures, "push_through/empty_tile_bruiser", b_after.position, Vector2i(3, 3))
+	assert_true(
+		failures, "push_through/empty_tile_no_push",
+		not events_have_unit_pushed(result.events, 2),
+	)
+
+
 static func assert_grid_footprint_excludes(
 	failures: Array[String],
 	tag: String,

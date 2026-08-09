@@ -202,9 +202,9 @@ func on_left_press(local: Vector2) -> void:
 		if aiming:
 			cancel_aim()
 		var was_selected: bool = unit.id == _director.selected_unit_id
+		_arm_drag(unit, local, was_selected)
 		if not was_selected:
 			_director.select_unit(unit.id)
-		_arm_drag(unit, local, was_selected)
 		return
 	if aiming:
 		var actor := _proj_unit(_director.selected_unit_id)
@@ -671,6 +671,8 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	if selected_phase_action_exhausted(unit.id):
 		_play_sfx("invalid")
 		return
+	if _director != null and _director.selected_unit_id != unit.id:
+		_director.select_unit(unit.id)
 	_invalidate_planning_hover_cache()
 	_clear_drag_preview_cache()
 	_stash_committed_preview()
@@ -794,8 +796,9 @@ func _on_selection_changed(unit_id: int) -> void:
 		if _planning != null:
 			_planning._recompute_hover_ranges_from_inputs()
 		return
-	_drag_route.clear()
-	_drag_unit_id = unit_id
+	if not dragging and not _drag_armed:
+		_drag_route.clear()
+		_drag_unit_id = unit_id
 	_play_sfx("select")
 	call_deferred("_finish_selection_changed")
 
@@ -854,7 +857,13 @@ func _on_ability_selected(index: int) -> void:
 
 
 func _resync_hover_after_ability_change() -> void:
-	if not _is_planning() or dragging or _intent_state == null or _director.board == null:
+	if (
+		not _is_planning()
+		or dragging
+		or _drag_armed
+		or _intent_state == null
+		or _director.board == null
+	):
 		return
 	var hover: Vector2i = _intent_state.hover_coord
 	if not _director.board.is_in_bounds(hover):
@@ -1018,20 +1027,31 @@ func on_hover_moved(cell: Vector2i) -> void:
 					p_unit.id, GameEnums.MoveTiming.POST_ACTION,
 				)
 			)
+			var movement_skill_unarmed: bool = _blocks_unarmed_hover_paint(p_unit, ability)
+			var allow_hover_paint: bool = is_awaiting_move or dragging or (
+				not move_already_planned and _basic_move_allowed() and not movement_skill_unarmed
+			)
 			var should_extend_route: bool = planning_cell_changed
 			if (
 				not should_extend_route
-				and ((not move_already_planned and _basic_move_allowed()) or is_awaiting_move)
+				and allow_hover_paint
+				and _drag_route_commits_active()
+				and _drag_unit_id == p_unit.id
+				and _can_move_to(p_unit, cell)
 			):
-				if _drag_route_commits_active() and _drag_unit_id == p_unit.id and _can_move_to(p_unit, cell):
-					should_extend_route = not _drag_route.is_empty() and cell != _drag_route.back()
-			if (not move_already_planned and _basic_move_allowed()) or is_awaiting_move:
+				should_extend_route = not _drag_route.is_empty() and cell != _drag_route.back()
+			if allow_hover_paint:
 				if should_extend_route:
 					if _drag_route.is_empty() or _drag_unit_id != p_unit.id:
 						_drag_unit_id = p_unit.id
 						_drag_route = [_proj_move_origin(p_unit)]
 						_drag_last_free = _drag_route[0]
 					_extend_drag_route(cell)
+			elif (
+				_drag_route.size() >= 2
+				and _drag_unit_id == p_unit.id
+			):
+				_clear_hover_drag_route()
 	if not _director.board.is_in_bounds(cell):
 		_flush_hover_heavy_sync()
 		return
@@ -2575,6 +2595,21 @@ func clear_awaiting_targeting() -> void:
 	_request_planning_selection_refresh()
 
 
+## TILE movement skills (e.g. Trampling Advance) use single-tile premove until self-armed;
+## dash-line skills (Bowling Charge / K4) keep corridor hover paint while unarmed.
+func _blocks_unarmed_hover_paint(actor: UnitState, ability: AbilityData) -> bool:
+	if ability == null or actor == null:
+		return false
+	if _is_awaiting_movement_endpoint(actor, ability) or awaiting_targeting_active():
+		return false
+	if not AbilitySystem.ability_has_movement_effect(ability, actor):
+		return false
+	return (
+		AbilitySystem.active_targeting_flags(actor, ability)
+		& GameEnums.TargetingFlags.TILE
+	) != 0
+
+
 func _awaiting_flow_selected(actor: UnitState, ability: AbilityData) -> bool:
 	return (
 		ability != null
@@ -3670,8 +3705,9 @@ func _build_commit_slots_at_cell(
 			return slots
 
 	if ability_index >= 0 and ability != null and not force_basic_movement:
+		var movement_skill_unarmed: bool = _blocks_unarmed_hover_paint(actor, ability)
 		var effective_waypoints: Array[Vector2i] = waypoints
-		if effective_waypoints.is_empty():
+		if effective_waypoints.is_empty() and not movement_skill_unarmed and _drag_route_commits_active():
 			var painted: Array[Vector2i] = _route_waypoints()
 			if not painted.is_empty() and painted.back() == cell:
 				effective_waypoints = painted

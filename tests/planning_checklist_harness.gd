@@ -91,6 +91,8 @@ static func wire_k4_board() -> Dictionary:
 	fix.director.auto_run = true
 	fix.input.auto_use_skill_after_move = false
 	fix.input.force_basic_movement = false
+	## Bible K4 run trigger: detour fits in 3 walk steps; 4th step needs Run (class MOV is 4).
+	set_unit_pools(fix, fix.director.selected_unit_id, 1, 3)
 	return fix
 
 

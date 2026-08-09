@@ -59,7 +59,7 @@ static func _phase1_select(failures: Array[String]) -> void:
 	)
 	PlanningChecklistHarness.assert_eq_int(
 		failures, "bash/phase1/mp",
-		fix.knight.movement.points_left, 3,
+		fix.knight.movement.points_left, fix.knight.movement.max_points,
 	)
 	PlanningChecklistHarness.assert_true(
 		failures, "bash/phase1/timeline_empty",

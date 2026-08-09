@@ -11,5 +11,6 @@ static func run_all(failures: Array[String]) -> void:
 	_BruiserQaHarness.run_push_through_base(failures)
 	_BruiserQaHarness.run_push_through_non_adjacent(failures)
 	_BruiserQaHarness.run_push_through_blocked(failures)
+	_BruiserQaHarness.run_push_through_empty_tile(failures)
 	_BruiserQaHarness.run_push_through_upgrade(failures)
 	_BruiserQaHarness.run_push_through_upgrade_next_attack(failures)

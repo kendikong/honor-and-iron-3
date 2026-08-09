@@ -47,7 +47,7 @@ static func run_data_contract(failures: Array[String]) -> void:
 		return
 	assert_true(failures, "archer/name", definition.display_name == "Archer")
 	assert_true(failures, "archer/stats", definition.base_constitution == 3
-		and definition.move_points == 3
+		and definition.move_points == 4
 		and definition.base_strength == 4
 		and definition.base_defense == 1
 		and definition.base_magic == 1)

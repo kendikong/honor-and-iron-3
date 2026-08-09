@@ -29,7 +29,8 @@ static func _walk_adjacent_keeps_ap(failures: Array[String]) -> void:
 	)
 	PlanningChecklistHarness.assert_eq_int(
 		failures, "run_economy/walk_mp",
-		PlanningChecklistHarness.projected_unit(fix, 1).movement.points_left, 2,
+		PlanningChecklistHarness.projected_unit(fix, 1).movement.points_left,
+		fix.knight.movement.max_points - 1,
 	)
 
 

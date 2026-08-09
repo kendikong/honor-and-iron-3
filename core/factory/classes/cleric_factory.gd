@@ -10,7 +10,7 @@ static func build(basic_staff: WeaponData) -> UnitData:
 	def.id = &"cleric"
 	def.display_name = "Cleric"
 	def.base_constitution = 4
-	def.move_points = 3
+	def.move_points = 4
 	def.action_points = 1
 	def.base_strength = 1
 	def.base_defense = 1
