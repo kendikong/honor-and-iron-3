@@ -690,16 +690,14 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 	await _probe_cell(ctx, k3_id, Vector2i(7, 3), {
 		"blue_has": [Vector2i(7, 3)],
 		"ghost_pos": Vector2i(7, 3),
-		"path": [_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_END, Vector2i(7, 3)],
+		"path": [_TRAMPLE_END, Vector2i(7, 3)],
 		"manhattan": true,
 		"preview_nonempty": true,
 		"icon_has": [PlanningIcons.GLYPH_WALK],
 		"icon_not": [PlanningIcons.GLYPH_ATTACK],
 	}, "k3/post/hover_east")
 	await _probe_cell(ctx, k3_id, _TRAMPLE_POST_DEST, {
-		"path_end": _TRAMPLE_POST_DEST,
-		"path_start": _K3_CELL,
-		"path_min_size": 6,
+		"path": _TRAMPLE_POST_ROUTE,
 		"ghost_pos": _TRAMPLE_POST_DEST,
 		"manhattan": true,
 		"preview_nonempty": true,
@@ -1882,12 +1880,8 @@ func _drag_through_cells_with_route_checks(
 		elif route_mode == &"post_after_trample":
 			_assert_drag_route_equals(ctx, expected, "%s/drag_route_%d" % [label_prefix, step_index])
 			await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
-			var preview_expected: Array[Vector2i] = []
-			var preview_len: int = _TRAMPLE_FULL_PATH.size() + step_index
-			for j: int in range(preview_len):
-				preview_expected.append(_TRAMPLE_POST_FULL_PATH[j])
 			_assert_preview_path_equals(
-				ctx, unit_id, preview_expected, "%s/preview_path_%d" % [label_prefix, step_index],
+				ctx, unit_id, expected, "%s/preview_path_%d" % [label_prefix, step_index],
 			)
 			assert_bool(_overlay_has_blue_tile(ctx.overlay, ctx.board)).override_failure_message(
 				"%s: post drag must show blue move tiles" % label_prefix,

@@ -200,6 +200,11 @@ static func assert_move_preview_origin(
 			"missing latest stand for unit %d" % unit_id,
 		)
 		return
+	if director.get_planning_move_timing(unit_id) < 0:
+		return
+	var board_unit: UnitState = director.board.get_unit_by_id(unit_id) if director.board != null else null
+	if board_unit != null and board_unit.movement.points_left <= 0:
+		return
 	ensure_move_preview_hover_mode(fix, unit_id)
 	var board: BoardState = director.board if director.board != null else director.base_board
 	var cells_to_try: Array[Vector2i] = _hover_cells_for_move_preview(

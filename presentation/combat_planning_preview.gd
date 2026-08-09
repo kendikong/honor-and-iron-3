@@ -197,6 +197,7 @@ static func adjust_swap_intent_actor_pose(
 	var actor_id: int = -1
 	var walk_dest: Vector2i = Vector2i(-999999, -999999)
 	var has_swap: bool = false
+	var swap_action: TimelineAction = null
 	for raw: Variant in actions:
 		if not raw is TimelineAction:
 			continue
@@ -210,14 +211,21 @@ static func adjust_swap_intent_actor_pose(
 			and AbilitySystem.ability_has_swap_effect(action.ability)
 		):
 			has_swap = true
+			swap_action = action
 			if actor_id < 0:
 				actor_id = action.actor_id
-			if walk_dest.x < -900000:
-				var approach_board: BoardState = preview_board
-				if director != null and director.base_board != null:
-					approach_board = director.base_board
-				walk_dest = _swap_approach_cell(director, approach_board, action)
-	if not has_swap or actor_id < 0 or walk_dest.x < -900000:
+			if walk_dest.x < -900000 and preview_board.is_in_bounds(action.target_coord):
+				var ally: UnitState = preview_board.get_unit_at(action.target_coord)
+				if ally != null and ally.id != actor_id:
+					walk_dest = action.target_coord
+	if not has_swap or actor_id < 0:
+		return
+	if walk_dest.x < -900000 and swap_action != null:
+		var approach_board: BoardState = preview_board
+		if director != null and director.base_board != null:
+			approach_board = director.base_board
+		walk_dest = _swap_approach_cell(director, approach_board, swap_action)
+	if walk_dest.x <= -900000:
 		return
 	var actor: UnitState = preview_board.get_unit_by_id(actor_id)
 	if actor != null and actor.position != walk_dest:
@@ -598,7 +606,7 @@ static func from_sim_result(
 				preview.predicted_armor[unit.id] = 0
 				preview.predicted_ap[unit.id] = 0
 	if director != null:
-		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board, director)
+		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
 	return preview
 
 

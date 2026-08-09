@@ -39,6 +39,7 @@ static func run_entry(failures: Array[String], entry: Dictionary) -> void:
 				bool(entry.get("verify_no_jump", true)),
 				entry.get("premove_cell", Vector2i(-999999, -999999)),
 				entry.get("wall_cells", []),
+				entry.get("drag_route", []),
 			)
 		_:
 			run_commit_smoke(
@@ -163,6 +164,7 @@ static func run_awaiting_smoke(
 	verify_no_jump: bool = true,
 	premove_cell: Vector2i = Vector2i(-999999, -999999),
 	wall_cells: Array = [],
+	drag_route: Array = [],
 ) -> void:
 	_Drag.cleanup_all()
 	var fix: Dictionary = _Fixture.wire_board(
@@ -184,15 +186,46 @@ static func run_awaiting_smoke(
 	_assert_true(failures, "%s/planning/select" % tag, idx >= 0)
 	if idx < 0:
 		return
-	var arm_slots: Dictionary = _Checklist.commit_production(fix, arm_cell)
+	var director: CombatDirector = fix.director as CombatDirector
+	var unit_id: int = director.selected_unit_id if director != null else -1
+	var stand: Vector2i = _MovementTimeline.latest_stand_cell(director, unit_id)
+	if stand.x > -900000:
+		arm_cell = stand
+	_Checklist.hover(fix, arm_cell)
+	_Checklist.flush_planning(fix)
+	var input: CombatPlanningInput = fix.input as CombatPlanningInput
+	if input != null and not input.awaiting_targeting_active():
+		var arm_slots: Dictionary = _Checklist.slots_for_hover(fix, arm_cell)
+		if _Checklist._slots_invalid(arm_slots):
+			_fail(
+				failures, "%s/planning/arm" % tag,
+				"first click must arm awaiting flow at %s" % arm_cell,
+			)
+			return
+		if not _Checklist.commit_slots_production(fix, arm_slots):
+			_fail(
+				failures, "%s/planning/arm" % tag,
+				"awaiting arm commit failed at %s" % arm_cell,
+			)
+			return
+		_Checklist.flush_planning(fix)
 	_assert_true(
 		failures, "%s/planning/arm" % tag,
-		not _Checklist._slots_invalid(arm_slots),
-		"first click must arm awaiting flow at %s" % arm_cell,
+		input != null and input.awaiting_targeting_active(),
+		"awaiting flow must be active after arm at %s" % arm_cell,
 	)
-	_Checklist.flush_planning(fix)
-	_Checklist.hover(fix, commit_cell)
-	var hover_slots: Dictionary = _Checklist.slots_for_hover(fix, commit_cell)
+	if input == null or not input.awaiting_targeting_active():
+		return
+	if not drag_route.is_empty():
+		_paint_drag_route(fix, drag_route, commit_cell)
+	else:
+		_Checklist.flush_planning(fix)
+		_Checklist.hover(fix, commit_cell)
+	var hover_slots: Dictionary = (
+		_Checklist.slots_for_painted_hover(fix, commit_cell)
+		if not drag_route.is_empty()
+		else _Checklist.slots_for_hover(fix, commit_cell)
+	)
 	if _Checklist._slots_invalid(hover_slots):
 		_fail(
 			failures, "%s/planning/valid_slots" % tag,
@@ -210,6 +243,24 @@ static func run_awaiting_smoke(
 		_Checklist.assert_planning_timeline_after_commit(
 			failures, "%s/planning/timeline_columns" % tag, fix, commit_cell,
 		)
+
+
+static func _paint_drag_route(fix: Dictionary, route: Array, dest: Vector2i) -> void:
+	var input: CombatPlanningInput = fix.input as CombatPlanningInput
+	var director: CombatDirector = fix.director as CombatDirector
+	if input == null or director == null:
+		return
+	var unit_id: int = director.selected_unit_id
+	input._drag_unit_id = unit_id
+	input._drag_unit_was_selected = true
+	var wps: Array[Vector2i] = []
+	for raw: Variant in route:
+		wps.append(raw as Vector2i)
+	input._drag_route = wps
+	input._drag_last_free = dest
+	input.dragging = true
+	_Checklist.hover(fix, dest)
+	_Checklist.flush_planning(fix)
 
 
 static func _ability_on_actor(fix: Dictionary, ability_id: StringName) -> AbilityData:

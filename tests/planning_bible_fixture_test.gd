@@ -247,14 +247,7 @@ static func _journey_k3_trample(
 	PlanningChecklistHarness.select_unit(fix, k3_id, PlanningChecklistHarness.TRAMPLE_END)
 	_Probe.probe_cell(
 		failures, fix, k3_id, PlanningChecklistHarness.TRAMPLE_POST_DEST, {
-			"path": [
-				PlanningChecklistHarness.K3_CELL,
-				PlanningChecklistHarness.TRAMPLE_ROUTE[0],
-				PlanningChecklistHarness.TRAMPLE_ROUTE[1],
-				Vector2i(7, 3),
-				Vector2i(8, 3),
-				PlanningChecklistHarness.TRAMPLE_POST_DEST,
-			],
+			"path": PlanningChecklistHarness.TRAMPLE_POST_ROUTE,
 			"ghost_pos": PlanningChecklistHarness.TRAMPLE_POST_DEST,
 			"manhattan": true,
 			"preview_nonempty": true,

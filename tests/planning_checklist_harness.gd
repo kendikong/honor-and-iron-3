@@ -960,7 +960,18 @@ static func assert_commit_no_jump(
 		"committed slots must match pre-commit preview signature",
 	)
 	hover(fix, cell)
-	assert_eq_cell(failures, label, preview_unit_pos(fix, 1), before_ghost)
+	var after_ghost: Vector2i = preview_unit_pos(fix, 1)
+	if (
+		ability != null
+		and AbilitySystem.ability_has_swap_effect(ability)
+		and fix.director != null
+	):
+		var stand: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+			fix.director, fix.director.board, unit_id,
+		)
+		assert_eq_cell(failures, label, after_ghost, stand)
+	else:
+		assert_eq_cell(failures, label, after_ghost, before_ghost)
 	const MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
 	if ability != null:
 		MovementTimeline.assert_move_preview_origin(
