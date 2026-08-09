@@ -1086,6 +1086,34 @@ static func write_editor_save(data: Dictionary) -> bool:
 	return true
 
 
+static func migrate_editor_save_to_modules(data: Dictionary) -> Dictionary:
+	var migrated: Dictionary = data.duplicate(true)
+	var units_value: Variant = migrated.get("units", {})
+	if not units_value is Dictionary:
+		return migrated
+	var units: Dictionary = units_value
+	for unit_key: Variant in units.keys():
+		var unit_value: Variant = units[unit_key]
+		if not unit_value is Dictionary:
+			continue
+		var unit_data: Dictionary = unit_value
+		var abilities_value: Variant = unit_data.get("abilities", {})
+		if not abilities_value is Dictionary:
+			continue
+		var normalized_abilities: Dictionary = {}
+		for ability_key: Variant in (abilities_value as Dictionary).keys():
+			var payload: Variant = (abilities_value as Dictionary)[ability_key]
+			if not payload is Dictionary:
+				continue
+			var ability := AbilityData.new()
+			apply_ability_dict(ability, payload as Dictionary)
+			normalized_abilities[ability_key] = ability_to_dict(ability)
+		unit_data["abilities"] = normalized_abilities
+		units[unit_key] = unit_data
+	migrated["units"] = units
+	return migrated
+
+
 static func collect_player_unit_overrides() -> Dictionary:
 	var units: Dictionary = {}
 	for unit: UnitData in DataLibrary.get_all_player_units():

@@ -5,88 +5,116 @@
 	"units": {
 		"archer_legacy_placeholder": {
 			"abilities": {
-				"archer_repelling_shot": {
-					"action_point_cost": 0,
-					"can_target_self": false,
-					"display_name": "Repelling Shot",
-					"effects": [
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
-						}
-					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
-					"presentation_anim": 0,
-					"presentation_key": "archer_repelling_shot",
-					"range_tiles": 2,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
-					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
-					"uses_per_combat": -1
-				},
 				"archer_power_shot": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Power Shot",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 5,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "archer_power_shot",
-					"range_tiles": 5,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
+					"uses_per_combat": -1
+				},
+				"archer_repelling_shot": {
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
+					"display_name": "Repelling Shot",
+					"module_count": 1,
+					"modules": [
+						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 1,
+							"range_origin": 0,
+							"requires_los": true,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
+						}
+					],
+					"planner_group": 0,
+					"presentation_anim": 0,
+					"presentation_key": "archer_repelling_shot",
+					"primary_resource": 1,
+					"primary_value": 0,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
+					"upgrade_description": "",
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 3,
-			"base_defense": 1,
-			"base_magic": 1,
-			"base_strength": 4,
+			"action_points": 1.0,
+			"base_constitution": 3.0,
+			"base_defense": 1.0,
+			"base_magic": 1.0,
+			"base_strength": 4.0,
 			"display_name": "Archer",
-			"level": 1,
-			"move_points": 3,
-			"movement_type": 0,
+			"level": 1.0,
+			"move_points": 3.0,
+			"movement_type": 0.0,
 			"passives": {
 				"lightfoot": {
 					"description": "Increased range/accuracy.",
@@ -94,101 +122,129 @@
 					"upgraded_description": ""
 				}
 			},
-			"preferred_stat": 1,
+			"preferred_stat": 1.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Iron Bow",
-				"might": 4
+				"might": 4.0
 			}
 		},
 		"assassin": {
 			"abilities": {
 				"assassin_execute": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Assassinate",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "assassin_execute",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"assassin_swap": {
-					"action_point_cost": 0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Shadow Swap",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 1,
+							"motion_mode": 2,
+							"presentation_anim": 0,
+							"primary_type": 3,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 3
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": true,
-					"kind": 1,
-					"movement_point_cost": 1,
+					"planner_group": 1,
 					"presentation_anim": 3,
 					"presentation_key": "assassin_swap",
-					"range_tiles": 1,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 2,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"positioning"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 3,
-			"base_defense": 1,
-			"base_magic": 0,
-			"base_strength": 4,
+			"action_points": 1.0,
+			"base_constitution": 3.0,
+			"base_defense": 1.0,
+			"base_magic": 0.0,
+			"base_strength": 4.0,
 			"display_name": "Assassin",
-			"level": 1,
-			"move_points": 4,
-			"movement_type": 0,
+			"level": 1.0,
+			"move_points": 4.0,
+			"movement_type": 0.0,
 			"passives": {
 				"lethal": {
 					"description": "Backstabs do extra damage.",
@@ -196,1248 +252,2012 @@
 					"upgraded_description": ""
 				}
 			},
-			"preferred_stat": 1,
+			"preferred_stat": 1.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Iron Sword",
-				"might": 4
+				"might": 4.0
 			}
 		},
 		"bruiser": {
 			"abilities": {
 				"bruiser_adrenaline_surge": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 1,
+					"cost_modifier_n": 2,
 					"display_name": "Adrenaline Surge",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 5,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"zero_ap_adjacent_enemies": 2
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 9
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 5,
+										"type": 9
+									}
+								}
+							],
+							"legacy_modifiers": {
+								"zero_ap_adjacent_enemies": 2.0
 							},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 11,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 11
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 9
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 5,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_adrenaline_surge",
-					"range_tiles": 1,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 1,
-					"targeting_mode": 0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "On Kill: HEAL 1 and gain SHIELD 2.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 5,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"zero_ap_adjacent_enemies": 2
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 5,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"on_kill_heal_shield": 1.0
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 9
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 5,
+										"type": 9
+									}
+								}
+							],
+							"legacy_modifiers": {
+								"zero_ap_adjacent_enemies": 2.0
 							},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 11,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 11
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"on_kill_heal_shield": 1
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 9
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 5,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_belly_flop": {
-					"action_point_cost": 2,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Belly Flop",
-					"effects": [
+					"module_count": 2,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 17,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 17
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						},
 						{
+							"aim_binding": 1,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"damage_adjacent_on_landing": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {
+								"damage_adjacent_on_landing": 1.0
 							},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_belly_flop",
-					"range_tiles": 2,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 8,
-					"targeting_mode": 4,
+					"primary_resource": 1,
+					"primary_value": 2,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack",
+						"movement"
+					],
 					"upgrade_description": "Landing applies PUSH 1 to all adjacent enemies.",
-					"upgraded_effects": [
+					"upgraded_module_count": 2,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 17,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 17
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						},
 						{
+							"aim_binding": 1,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"damage_adjacent_on_landing": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 6,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"belly_flop_push": 1.0
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								}
+							],
+							"legacy_modifiers": {
+								"damage_adjacent_on_landing": 1.0
 							},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"belly_flop_push": 1
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_blood_boil": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Blood Boil",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 5,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 3,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 9
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 11,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 11
-						},
-						{
-							"amount": 3,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_blood_boil",
-					"range_tiles": 1,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 1,
-					"targeting_mode": 0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "Spend 10 HP to gain STR +5 instead.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 10,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 5,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 9
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 11,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 11
-						},
-						{
-							"amount": 5,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_breaching_dash": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Breaching Dash",
-					"effects": [
+					"module_count": 2,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 15,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 15
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 16
 						},
 						{
+							"aim_binding": 1,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 16,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 16
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 16
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_breaching_dash",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 16,
-					"targeting_mode": 5,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"movement"
+					],
 					"upgrade_description": "Your next attack this turn gains PIERCE.",
-					"upgraded_effects": [
+					"upgraded_module_count": 2,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"next_attack_pierce": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {
+								"next_attack_pierce": 1.0
 							},
+							"max_range": 3,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 15,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 15
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 16
 						},
 						{
+							"aim_binding": 1,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 16,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 16
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 16
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_charge_strike": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Charge Strike",
-					"effects": [
+					"module_count": 2,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 22,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 22
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						},
 						{
+							"aim_binding": 1,
+							"aim_module_index": 0,
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_charge_strike",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack",
+						"movement"
+					],
 					"upgrade_description": "Gain GHOST during MOVE. Gain ATK +2 if passing through terrain.",
-					"upgraded_effects": [
+					"upgraded_module_count": 2,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"ghost_move": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [
+								{
+									"amount": 0,
+									"emit_as_effect": false,
+									"keyword_id": 3,
+									"push_amount": 0
+								}
+							],
+							"layers": [],
+							"legacy_modifiers": {
+								"ghost_move": 1.0
 							},
+							"max_range": 2,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 22,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 22
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						},
 						{
+							"aim_binding": 1,
+							"aim_module_index": 0,
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"bonus_dmg_from_terrain": 2
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								}
+							],
+							"legacy_modifiers": {
+								"bonus_dmg_from_terrain": 2.0
 							},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_cleave": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Cleave",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
+							"target_shape": 3,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_cleave",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 3,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "Apply BLEED X (where X = your WPN) to all targets.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"weapon_scaled": 1.0
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 2,
+										"status_type": 12,
+										"type": 8
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"weapon_scaled": 1
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 2,
-							"status_type": 12,
-							"type": 8
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_concussion_blow": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Concussion Blow",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 3,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"object_collision_stagger": 1.0
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"object_collision_stagger": 1
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_concussion_blow",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "Enemy collision applies STAGGER to both units.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 3,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"enemy_collision_stagger_both": 1.0,
+											"object_collision_stagger": 1.0
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"enemy_collision_stagger_both": 1,
-								"object_collision_stagger": 1
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_crimson_whirlwind": {
-					"action_point_cost": 1,
-					"can_target_self": true,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Crimson Whirlwind",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
+							"target_shape": 1,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_crimson_whirlwind",
-					"range_tiles": 0,
-					"scaling_stat": 1,
-					"target_shape": 1,
-					"target_shape_size": 1,
-					"targeting_flags": 1,
-					"targeting_mode": 0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "HEAL 1 for every target successfully hit.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"heal_per_target_hit": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {
+								"heal_per_target_hit": 1.0
 							},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_earthshatter": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Earthshatter",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 16
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 16
+							"target_shape": 3,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_earthshatter",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 3,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "Gain ATK +1 per destroyed object.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"buff_per_destroyed_object": 1.0
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 16
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"buff_per_destroyed_object": 1
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 16
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_frenzy": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Frenzy",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 0
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 0
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_frenzy",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "On Kill: Gain 1 AP.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"frenzy_on_kill_ap": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 5,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"frenzy_on_kill_ap": 1.0
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 0
+									}
+								},
+								{
+									"condition": 5,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"frenzy_on_kill_ap": 1.0
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 0
+									}
+								}
+							],
+							"legacy_modifiers": {
+								"frenzy_on_kill_ap": 1.0
 							},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"frenzy_on_kill_ap": 1
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"frenzy_on_kill_ap": 1
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 0
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_guttural_roar": {
-					"action_point_cost": 1,
-					"can_target_self": true,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Guttural Roar",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 6,
+										"type": 8
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 1,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 1
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 6,
-							"type": 8
+							"target_shape": 1,
+							"target_shape_size": 2,
+							"targeting_flags": 1
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_guttural_roar",
-					"range_tiles": 0,
-					"scaling_stat": 0,
-					"target_shape": 1,
-					"target_shape_size": 2,
-					"targeting_flags": 1,
-					"targeting_mode": 0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "PUSH 1 all items/coins/scrap. Item collision: ATK 1.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"item_collision_damage": 1,
-								"push_board_items": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 6,
+										"type": 8
+									}
+								}
+							],
+							"legacy_modifiers": {
+								"item_collision_damage": 1.0,
+								"push_board_items": 1.0
 							},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 1,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 1
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 6,
-							"type": 8
+							"target_shape": 0,
+							"target_shape_size": 2,
+							"targeting_flags": 1
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_headbutt": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Headbutt",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 11
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 16,
+										"type": 8
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 16,
+										"type": 9
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 11
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 16,
-							"type": 8
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 16,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_headbutt",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "Deal bonus damage equal to 10% of your Max HP.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 11
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 16,
+										"type": 8
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 16,
+										"type": 9
+									}
+								}
+							],
+							"legacy_modifiers": {
 								"bonus_dmg_pct_max_hp": 0.1
 							},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 11
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 16,
-							"type": 8
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 16,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_meat_shield": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Meat Shield",
-					"effects": [
+					"module_count": 2,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 1,
+							"motion_mode": 2,
+							"presentation_anim": 0,
+							"primary_type": 3,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 3
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						},
 						{
+							"aim_binding": 1,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 9,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 28,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_meat_shield",
-					"range_tiles": 1,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "RANGE 3. Gain STR +2 per interception.",
-					"upgraded_effects": [
+					"upgraded_module_count": 2,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 1,
+							"motion_mode": 2,
+							"presentation_anim": 0,
+							"primary_type": 3,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 3
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						},
 						{
+							"aim_binding": 1,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"intercept_grant_str": 2
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {
+								"intercept_grant_str": 2.0
 							},
+							"max_range": 3,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 9,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 28,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": 3,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_push_through": {
-					"action_point_cost": 0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Push Through",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 1,
+							"motion_mode": 6,
+							"presentation_anim": 0,
+							"primary_type": 26,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 26
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": true,
-					"kind": 1,
-					"movement_point_cost": 2,
+					"planner_group": 1,
 					"presentation_anim": 3,
 					"presentation_key": "bruiser_push_through",
-					"range_tiles": 1,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 2,
+					"primary_value": 2,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"positioning",
+						"movement"
+					],
 					"upgrade_description": "Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"buff_on_push": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {
+								"buff_on_push": 1.0
 							},
+							"max_range": 1,
+							"min_range": 1,
+							"motion_mode": 6,
+							"presentation_anim": 0,
+							"primary_type": 26,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 26
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": 1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_suplex": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Suplex",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 4,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 27
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 27
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_suplex",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "Gain ATK +1 for every 10 Current HP you possess.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 4,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"bonus_dmg_per_10_hp": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 27
+									}
+								}
+							],
+							"legacy_modifiers": {
+								"bonus_dmg_per_10_hp": 1.0
 							},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 27
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"bruiser_violent_collision": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Violent Collision",
-					"effects": [
+					"module_count": 2,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"bulldoze": 1,
-								"push": 1,
-								"violent_collision_recast": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [
+								{
+									"amount": 1,
+									"emit_as_effect": false,
+									"keyword_id": 2,
+									"push_amount": 1
+								}
+							],
+							"layers": [],
+							"legacy_modifiers": {
+								"bulldoze": 1.0,
+								"push": 1.0,
+								"violent_collision_recast": 1.0
 							},
+							"max_range": 3,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 15,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 15
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 16
+						},
+						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"execution_phase": 0,
+							"gate": 3,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 22,
+							"range_origin": 0,
+							"requires_los": true,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "bruiser_violent_collision",
-					"range_tiles": 1,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 16,
-					"targeting_mode": 5,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"movement"
+					],
 					"upgrade_description": "Collisions apply STAGGER (1 turn).",
-					"upgraded_effects": [
+					"upgraded_module_count": 2,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 3,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"bulldoze": 1,
-								"push": 1,
-								"stagger_on_collision": 1,
-								"violent_collision_recast": 1
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [
+								{
+									"amount": 1,
+									"emit_as_effect": false,
+									"keyword_id": 2,
+									"push_amount": 1
+								}
+							],
+							"layers": [],
+							"legacy_modifiers": {
+								"bulldoze": 1.0,
+								"push": 1.0,
+								"stagger_on_collision": 1.0,
+								"violent_collision_recast": 1.0
 							},
+							"max_range": 3,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 15,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 15
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 16
+						},
+						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
+							"amount": 0,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"execution_phase": 0,
+							"gate": 3,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 22,
+							"range_origin": 0,
+							"requires_los": true,
+							"scaling_stat": 0,
+							"spawn_unit_id": "",
+							"status_duration": 1,
+							"status_type": 0,
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 7,
-			"base_defense": 2,
-			"base_magic": 1,
-			"base_strength": 4,
+			"action_points": 1.0,
+			"base_constitution": 7.0,
+			"base_defense": 2.0,
+			"base_magic": 1.0,
+			"base_strength": 4.0,
 			"display_name": "Bruiser",
-			"level": 1,
-			"move_points": 3,
-			"movement_type": 0,
+			"level": 1.0,
+			"move_points": 3.0,
+			"movement_type": 0.0,
 			"passives": {
 				"adrenaline_junkie": {
 					"description": "Gain MOVE +1 and STR +1 per 10% missing HP.",
@@ -1515,102 +2335,129 @@
 					"upgraded_description": "[+] Resisting grants SHIELD 2."
 				}
 			},
-			"preferred_stat": 1,
+			"preferred_stat": 1.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Iron Axe",
-				"might": 4
+				"might": 4.0
 			}
 		},
-
 		"cleric": {
 			"abilities": {
 				"cleric_blessing": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Divine Shield",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 5,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 5
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "cleric_blessing",
-					"range_tiles": 2,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"cleric_pull": {
-					"action_point_cost": 0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Rescue Pull",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 2,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 2
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": true,
-					"kind": 1,
-					"movement_point_cost": 2,
+					"planner_group": 1,
 					"presentation_anim": 3,
 					"presentation_key": "cleric_pull",
-					"range_tiles": 2,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 2,
+					"primary_value": 2,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"positioning"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 4,
-			"base_defense": 1,
-			"base_magic": 4,
-			"base_strength": 1,
+			"action_points": 1.0,
+			"base_constitution": 4.0,
+			"base_defense": 1.0,
+			"base_magic": 4.0,
+			"base_strength": 1.0,
 			"display_name": "Cleric",
-			"level": 1,
-			"move_points": 3,
-			"movement_type": 0,
+			"level": 1.0,
+			"move_points": 3.0,
+			"movement_type": 0.0,
 			"passives": {
 				"blessing": {
 					"description": "Heals adjacent allies.",
@@ -1618,101 +2465,129 @@
 					"upgraded_description": ""
 				}
 			},
-			"preferred_stat": 1,
+			"preferred_stat": 1.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Wooden Staff",
-				"might": 4
+				"might": 4.0
 			}
 		},
 		"engineer": {
 			"abilities": {
 				"eng_grenade": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Grenade",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 12,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 12
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "eng_grenade",
-					"range_tiles": 3,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"eng_pull": {
-					"action_point_cost": 0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Grappling Hook",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 2,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 2
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "eng_pull",
-					"range_tiles": 3,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 0,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 3,
-			"base_defense": 3,
-			"base_magic": 0,
-			"base_strength": 2,
+			"action_points": 1.0,
+			"base_constitution": 3.0,
+			"base_defense": 3.0,
+			"base_magic": 0.0,
+			"base_strength": 2.0,
 			"display_name": "Engineer",
-			"level": 1,
-			"move_points": 3,
-			"movement_type": 0,
+			"level": 1.0,
+			"move_points": 3.0,
+			"movement_type": 0.0,
 			"passives": {
 				"shrapnel": {
 					"description": "Explosions deal more damage.",
@@ -1720,101 +2595,129 @@
 					"upgraded_description": ""
 				}
 			},
-			"preferred_stat": 1,
+			"preferred_stat": 1.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Flintlock",
-				"might": 4
+				"might": 4.0
 			}
 		},
 		"gryphon": {
 			"abilities": {
 				"gryphon_shove": {
-					"action_point_cost": 0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Wing Buffet",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 1,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": true,
-					"kind": 1,
-					"movement_point_cost": 2,
+					"planner_group": 1,
 					"presentation_anim": 3,
 					"presentation_key": "gryphon_shove",
-					"range_tiles": 2,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 2,
+					"primary_value": 2,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"positioning"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"gryphon_swoop": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Swoop Attack",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "gryphon_swoop",
-					"range_tiles": 2,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 4,
-			"base_defense": 2,
-			"base_magic": 0,
-			"base_strength": 3,
+			"action_points": 1.0,
+			"base_constitution": 4.0,
+			"base_defense": 2.0,
+			"base_magic": 0.0,
+			"base_strength": 3.0,
 			"display_name": "Gryphon Rider",
-			"level": 1,
-			"move_points": 5,
-			"movement_type": 1,
+			"level": 1.0,
+			"move_points": 5.0,
+			"movement_type": 1.0,
 			"passives": {
 				"air_superiority": {
 					"description": "Evades ground attacks.",
@@ -1822,1144 +2725,1729 @@
 					"upgraded_description": ""
 				}
 			},
-			"preferred_stat": 1,
+			"preferred_stat": 1.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Iron Lance",
-				"might": 4
+				"might": 4.0
 			}
 		},
 		"knight": {
 			"abilities": {
 				"knight_bowling_charge": {
-					"action_point_cost": 1.0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Bowling Charge",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
-							"amount": 3.0,
-							"bonus_if_adjacent_at_cast": 0.0,
-							"def_debuff_before_damage": 0.0,
-							"modifiers": {},
-							"scaling_stat": 1.0,
+							"aim_binding": 0,
+							"aim_module_index": 0,
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [
+								{
+									"amount": 1,
+									"emit_as_effect": true,
+									"keyword_id": 2,
+									"push_amount": 0
+								}
+							],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 15,
+							"range_origin": 0,
+							"requires_los": true,
+							"scaling_stat": 1,
 							"spawn_unit_id": "",
-							"status_duration": 1.0,
-							"status_type": 0.0,
-							"type": 15.0
-						},
-						{
-							"amount": 1.0,
-							"bonus_if_adjacent_at_cast": 0.0,
-							"def_debuff_before_damage": 0.0,
-							"modifiers": {},
-							"scaling_stat": 0.0,
-							"spawn_unit_id": "",
-							"status_duration": 1.0,
-							"status_type": 0.0,
-							"type": 21.0
+							"status_duration": 1,
+							"status_type": 0,
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0.0,
-					"movement_point_cost": 0.0,
-					"presentation_anim": 0.0,
+					"planner_group": 0,
+					"presentation_anim": 0,
 					"presentation_key": "knight_bowling_charge",
-					"range_tiles": 3.0,
-					"scaling_stat": 0.0,
-					"target_shape": 0.0,
-					"target_shape_size": 1.0,
-					"targeting_flags": 8.0,
-					"targeting_mode": 4.0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack",
+						"movement"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [
+					"upgraded_module_count": 2,
+					"upgraded_modules": [
 						{
-							"amount": 3.0,
-							"bonus_if_adjacent_at_cast": 0.0,
-							"def_debuff_before_damage": 0.0,
-							"modifiers": {},
-							"scaling_stat": 1.0,
+							"aim_binding": 0,
+							"aim_module_index": 0,
+							"amount": 3,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [
+								{
+									"amount": 1,
+									"emit_as_effect": true,
+									"keyword_id": 2,
+									"push_amount": 0
+								}
+							],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 15,
+							"range_origin": 0,
+							"requires_los": true,
+							"scaling_stat": 1,
 							"spawn_unit_id": "",
-							"status_duration": 1.0,
-							"status_type": 0.0,
-							"type": 15.0
+							"status_duration": 1,
+							"status_type": 0,
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						},
 						{
-							"amount": 1.0,
-							"bonus_if_adjacent_at_cast": 0.0,
-							"def_debuff_before_damage": 0.0,
-							"modifiers": {},
-							"scaling_stat": 0.0,
+							"aim_binding": 1,
+							"aim_module_index": 0,
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 25,
+							"range_origin": 0,
+							"requires_los": true,
+							"scaling_stat": 0,
 							"spawn_unit_id": "",
-							"status_duration": 1.0,
-							"status_type": 0.0,
-							"type": 21.0
-						},
-						{
-							"amount": 1.0,
-							"bonus_if_adjacent_at_cast": 0.0,
-							"def_debuff_before_damage": 0.0,
-							"modifiers": {},
-							"scaling_stat": 0.0,
-							"spawn_unit_id": "",
-							"status_duration": 1.0,
-							"status_type": 0.0,
-							"type": 25.0
+							"status_duration": 1,
+							"status_type": 0,
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						}
 					],
-					"upgraded_movement_point_cost": -1.0,
-					"upgraded_range_tiles": -1.0,
-					"upgraded_target_shape": 0.0,
-					"upgraded_target_shape_size": -1.0,
-					"uses_per_combat": -1.0
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
+					"uses_per_combat": -1
 				},
 				"knight_chain_hook": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Chain Hook",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 2
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 2
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_chain_hook",
-					"range_tiles": 3,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "Target suffers VULNERABLE if pulled adjacent.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 2
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 24
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 2
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 24
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_defensive_formation": {
-					"action_point_cost": 1,
-					"can_target_self": true,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Defensive Formation",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"exclude_caster": true
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 30,
+										"type": 8
+									}
+								}
+							],
+							"legacy_modifiers": {
 								"exclude_caster": true
 							},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 8,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 4,
-							"type": 8
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"exclude_caster": true
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 30,
-							"type": 8
+							"target_shape": 6,
+							"target_shape_size": 3,
+							"targeting_flags": 1
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_defensive_formation",
-					"range_tiles": 0,
-					"scaling_stat": 0,
-					"target_shape": 6,
-					"target_shape_size": 3,
-					"targeting_flags": 1,
-					"targeting_mode": 0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "Allies gain SHIELD 2.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"exclude_caster": true
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 30,
+										"type": 8
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {
+											"exclude_caster": true
+										},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 5
+									}
+								}
+							],
+							"legacy_modifiers": {
 								"exclude_caster": true
 							},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 8,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 4,
-							"type": 8
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"exclude_caster": true
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 30,
-							"type": 8
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {
-								"exclude_caster": true
-							},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 5
+							"target_shape": 0,
+							"target_shape_size": 3,
+							"targeting_flags": 1
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_fortify": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Fortify",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 8,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 3,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 4,
-							"type": 8
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_fortify",
-					"range_tiles": 3,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "Ally gains THORNS 50%.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 50,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 40,
+										"type": 8
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 8,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 3,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 4,
-							"type": 8
-						},
-						{
-							"amount": 50,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 40,
-							"type": 8
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_indomitable_will": {
-					"action_point_cost": 1,
-					"can_target_self": true,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Indomitable Will",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 2,
+										"status_type": 38,
+										"type": 9
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 5,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 5,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 5
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 2,
-							"status_type": 38,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_indomitable_will",
-					"range_tiles": 0,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "When expires, gain +2 STR.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 2,
+										"status_type": 39,
+										"type": 9
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 5,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 5,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 5
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 2,
-							"status_type": 39,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_iron_grip": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Iron Grip",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 41,
+										"type": 8
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 8,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 17,
-							"type": 8
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 41,
-							"type": 8
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_iron_grip",
-					"range_tiles": 1,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "Refund 1 AP if already ROOT/STAGGER.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 41,
+										"type": 8
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 19
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 8,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 17,
-							"type": 8
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 41,
-							"type": 8
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 19
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_phalanx_stance": {
-					"action_point_cost": 1,
-					"can_target_self": true,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Phalanx Stance",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 5,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 4,
+										"type": 9
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 9,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 30,
-							"type": 9
-						},
-						{
-							"amount": 5,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 4,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_phalanx_stance",
-					"range_tiles": 0,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 1,
-					"targeting_mode": 0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "Infinite RANGE for Retaliation Protocol.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 5,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 4,
+										"type": 9
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 37,
+										"type": 9
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 9,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 30,
-							"type": 9
-						},
-						{
-							"amount": 5,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 4,
-							"type": 9
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 37,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_redirect_strike": {
-					"action_point_cost": 1,
-					"can_target_self": true,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Redirect Strike",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 9,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 28,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_redirect_strike",
-					"range_tiles": 2,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "Gain DEF +2 per redirected hit.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 9,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 28,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_retaliation_protocol": {
-					"action_point_cost": 1,
-					"can_target_self": true,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Retaliation Protocol",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 9,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 36,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_retaliation_protocol",
-					"range_tiles": 0,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 1,
-					"targeting_mode": 0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "Counter-attacks apply PUSH 1.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 9,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 36,
-							"type": 9
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_seismic_stomp": {
-					"action_point_cost": 1,
-					"can_target_self": true,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Seismic Stomp",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 14
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 14
+							"target_shape": 1,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_seismic_stomp",
-					"range_tiles": 0,
-					"scaling_stat": 1,
-					"target_shape": 1,
-					"target_shape_size": 1,
-					"targeting_flags": 1,
-					"targeting_mode": 0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "Create CRACKED terrain.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 14
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 18
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 0,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 14
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 18
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 1
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_shield_bash": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Shield Bash",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_shield_bash",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "Apply STAGGER if collides with wall/enemy.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 23
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 23
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_shield_slam": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Shield Slam",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 2,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_shield_slam",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "Target DEF -1 before damage.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 2,
 							"def_debuff_before_damage": 1,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_swap": {
-					"action_point_cost": 0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Swap",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 1,
+							"motion_mode": 2,
+							"presentation_anim": 0,
+							"primary_type": 3,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 3
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": true,
-					"kind": 1,
-					"movement_point_cost": 1,
+					"planner_group": 1,
 					"presentation_anim": 3,
 					"presentation_key": "knight_swap",
-					"range_tiles": 1,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 2,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"positioning"
+					],
 					"upgrade_description": "Gain +2 DEF and SHIELD 2 for the rest of the turn.",
-					"upgraded_effects": [
+					"upgraded_module_count": 2,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 1,
+							"motion_mode": 2,
+							"presentation_anim": 0,
+							"primary_type": 3,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 3
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						},
 						{
+							"aim_binding": 1,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 5
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 9,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 4,
-							"type": 9
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 5
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_taunting_strike": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Taunting Strike",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 2
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 19,
+										"type": 8
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 2
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 19,
-							"type": 8
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "knight_taunting_strike",
-					"range_tiles": 2,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "RANGE 3 | AOE 3x3 | PULL 2 all.",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 2
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 19,
+										"type": 8
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 2,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 2
-						},
-						{
-							"amount": 0,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 19,
-							"type": 8
+							"target_shape": 1,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": 3,
-					"upgraded_target_shape": 1,
-					"upgraded_target_shape_size": 1,
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"knight_trampling_advance": {
-					"action_point_cost": 1.0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Trampling Advance",
-					"effects": [
+					"module_count": 2,
+					"modules": [
 						{
-							"amount": 2.0,
-							"bonus_if_adjacent_at_cast": 0.0,
-							"def_debuff_before_damage": 0.0,
-							"modifiers": {},
-							"scaling_stat": 0.0,
+							"aim_binding": 0,
+							"aim_module_index": 0,
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [
+								{
+									"amount": 2,
+									"emit_as_effect": true,
+									"keyword_id": 1,
+									"push_amount": 0
+								}
+							],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 1,
+							"motion_mode": 1,
+							"presentation_anim": 0,
+							"primary_type": 22,
+							"range_origin": 0,
+							"requires_los": true,
+							"scaling_stat": 0,
 							"spawn_unit_id": "",
-							"status_duration": 1.0,
-							"status_type": 0.0,
-							"type": 22.0
+							"status_duration": 1,
+							"status_type": 0,
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						},
 						{
-							"amount": 2.0,
-							"bonus_if_adjacent_at_cast": 0.0,
-							"def_debuff_before_damage": 0.0,
-							"modifiers": {},
-							"scaling_stat": 0.0,
+							"aim_binding": 1,
+							"aim_module_index": 0,
+							"amount": 1,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 1,
+							"range_origin": 0,
+							"requires_los": true,
+							"scaling_stat": 0,
 							"spawn_unit_id": "",
-							"status_duration": 1.0,
-							"status_type": 0.0,
-							"type": 20.0
-						},
-						{
-							"amount": 1.0,
-							"bonus_if_adjacent_at_cast": 0.0,
-							"def_debuff_before_damage": 0.0,
-							"modifiers": {},
-							"scaling_stat": 0.0,
-							"spawn_unit_id": "",
-							"status_duration": 1.0,
-							"status_type": 0.0,
-							"type": 1.0
+							"status_duration": 1,
+							"status_type": 0,
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0.0,
-					"movement_point_cost": 2.0,
-					"presentation_anim": 4.0,
+					"planner_group": 0,
+					"presentation_anim": 4,
 					"presentation_key": "knight_trampling_advance",
-					"range_tiles": 2.0,
-					"scaling_stat": 0.0,
-					"target_shape": 0.0,
-					"target_shape_size": 1.0,
-					"targeting_flags": 8.0,
-					"targeting_mode": 4.0,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack",
+						"movement"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [
+					"upgraded_module_count": 1,
+					"upgraded_modules": [
 						{
-							"amount": 2.0,
-							"bonus_if_adjacent_at_cast": 0.0,
-							"def_debuff_before_damage": 0.0,
-							"modifiers": {},
-							"scaling_stat": 0.0,
+							"aim_binding": 0,
+							"aim_module_index": 0,
+							"amount": 2,
+							"bonus_if_adjacent_at_cast": 0,
+							"def_debuff_before_damage": 0,
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [
+								{
+									"amount": 2,
+									"emit_as_effect": false,
+									"keyword_id": 1,
+									"push_amount": 0
+								}
+							],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 20,
+							"range_origin": 0,
+							"requires_los": true,
+							"scaling_stat": 0,
 							"spawn_unit_id": "",
-							"status_duration": 1.0,
-							"status_type": 0.0,
-							"type": 20.0
-						},
-						{
-							"amount": 1.0,
-							"bonus_if_adjacent_at_cast": 0.0,
-							"def_debuff_before_damage": 0.0,
-							"modifiers": {},
-							"scaling_stat": 0.0,
-							"spawn_unit_id": "",
-							"status_duration": 1.0,
-							"status_type": 0.0,
-							"type": 1.0
+							"status_duration": 1,
+							"status_type": 0,
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 8
 						}
 					],
-					"upgraded_movement_point_cost": -1.0,
-					"upgraded_range_tiles": -1.0,
-					"upgraded_target_shape": 0.0,
-					"upgraded_target_shape_size": -1.0,
-					"uses_per_combat": -1.0
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
+					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 6,
-			"base_defense": 5,
-			"base_magic": 2,
-			"base_strength": 4,
+			"action_points": 1.0,
+			"base_constitution": 6.0,
+			"base_defense": 5.0,
+			"base_magic": 2.0,
+			"base_strength": 4.0,
 			"display_name": "Knight",
-			"level": 1,
-			"move_points": 3,
-			"movement_type": 0,
+			"level": 1.0,
+			"move_points": 3.0,
+			"movement_type": 0.0,
 			"passives": {
 				"bulwark": {
 					"description": "Gain +1 DEF per adjacent unit.",
@@ -3037,101 +4525,129 @@
 					"upgraded_description": "[+] Reflects 100% damage instead."
 				}
 			},
-			"preferred_stat": 3,
+			"preferred_stat": 3.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Iron Axe",
-				"might": 4
+				"might": 4.0
 			}
 		},
 		"mercenary": {
 			"abilities": {
 				"merc_kick": {
-					"action_point_cost": 0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Boot Kick",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 1,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": true,
-					"kind": 1,
-					"movement_point_cost": 1,
+					"planner_group": 1,
 					"presentation_anim": 3,
 					"presentation_key": "merc_kick",
-					"range_tiles": 1,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 2,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"positioning"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"merc_rend": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Rend",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "merc_rend",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 4,
-			"base_defense": 3,
-			"base_magic": 0,
-			"base_strength": 4,
+			"action_points": 1.0,
+			"base_constitution": 4.0,
+			"base_defense": 3.0,
+			"base_magic": 0.0,
+			"base_strength": 4.0,
 			"display_name": "Mercenary",
-			"level": 1,
-			"move_points": 4,
-			"movement_type": 0,
+			"level": 1.0,
+			"move_points": 4.0,
+			"movement_type": 0.0,
 			"passives": {
 				"veteran": {
 					"description": "Reliable criticals.",
@@ -3139,112 +4655,144 @@
 					"upgraded_description": ""
 				}
 			},
-			"preferred_stat": 1,
+			"preferred_stat": 1.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Iron Sword",
-				"might": 4
+				"might": 4.0
 			}
 		},
 		"monk": {
 			"abilities": {
 				"monk_palm": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Palm Strike",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"bonus_if_adjacent_at_cast": 0,
+										"def_debuff_before_damage": 0,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"spawn_unit_id": "",
+										"status_duration": 1,
+										"status_type": 0,
+										"type": 1
+									}
+								}
+							],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 0,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 0
-						},
-						{
-							"amount": 1,
-							"bonus_if_adjacent_at_cast": 0,
-							"def_debuff_before_damage": 0,
-							"modifiers": {},
-							"scaling_stat": 0,
-							"spawn_unit_id": "",
-							"status_duration": 1,
-							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "monk_palm",
-					"range_tiles": 1,
-					"scaling_stat": 1,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"attack"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"monk_swap": {
-					"action_point_cost": 0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Vault Swap",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 1,
+							"motion_mode": 2,
+							"presentation_anim": 0,
+							"primary_type": 3,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 3
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": true,
-					"kind": 1,
-					"movement_point_cost": 1,
+					"planner_group": 1,
 					"presentation_anim": 3,
 					"presentation_key": "monk_swap",
-					"range_tiles": 1,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 2,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"positioning"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 4,
-			"base_defense": 3,
-			"base_magic": 1,
-			"base_strength": 3,
+			"action_points": 1.0,
+			"base_constitution": 4.0,
+			"base_defense": 3.0,
+			"base_magic": 1.0,
+			"base_strength": 3.0,
 			"display_name": "Monk",
-			"level": 1,
-			"move_points": 4,
-			"movement_type": 0,
+			"level": 1.0,
+			"move_points": 4.0,
+			"movement_type": 0.0,
 			"passives": {
 				"flurry": {
 					"description": "Multiple quick attacks.",
@@ -3252,101 +4800,129 @@
 					"upgraded_description": ""
 				}
 			},
-			"preferred_stat": 1,
+			"preferred_stat": 1.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Hand Wraps",
-				"might": 4
+				"might": 4.0
 			}
 		},
 		"paladin": {
 			"abilities": {
 				"paladin_heal": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Lay on Hands",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 1,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 4,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 4
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "paladin_heal",
-					"range_tiles": 1,
-					"scaling_stat": 2,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"heal"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"paladin_swap": {
-					"action_point_cost": 0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Holy Swap",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 0,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 1,
+							"motion_mode": 2,
+							"presentation_anim": 0,
+							"primary_type": 3,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 3
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": true,
-					"kind": 1,
-					"movement_point_cost": 1,
+					"planner_group": 1,
 					"presentation_anim": 3,
 					"presentation_key": "paladin_swap",
-					"range_tiles": 2,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 2,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"positioning"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 5,
-			"base_defense": 4,
-			"base_magic": 2,
-			"base_strength": 3,
+			"action_points": 1.0,
+			"base_constitution": 5.0,
+			"base_defense": 4.0,
+			"base_magic": 2.0,
+			"base_strength": 3.0,
 			"display_name": "Paladin",
-			"level": 1,
-			"move_points": 3,
-			"movement_type": 0,
+			"level": 1.0,
+			"move_points": 3.0,
+			"movement_type": 0.0,
 			"passives": {
 				"holy_shield": {
 					"description": "Resists magic.",
@@ -3354,101 +4930,129 @@
 					"upgraded_description": ""
 				}
 			},
-			"preferred_stat": 1,
+			"preferred_stat": 1.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Iron Sword",
-				"might": 4
+				"might": 4.0
 			}
 		},
 		"shaman": {
 			"abilities": {
 				"shaman_shove": {
-					"action_point_cost": 0,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Gale Force",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 1,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 1,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 1
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 4
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "shaman_shove",
-					"range_tiles": 2,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 4,
-					"targeting_mode": 2,
+					"primary_resource": 1,
+					"primary_value": 0,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				},
 				"shaman_ward": {
-					"action_point_cost": 1,
-					"can_target_self": false,
+					"cost_modifier": 0,
+					"cost_modifier_n": 0,
 					"display_name": "Earth Ward",
-					"effects": [
+					"module_count": 1,
+					"modules": [
 						{
+							"aim_binding": 0,
+							"aim_module_index": 0,
 							"amount": 2,
 							"bonus_if_adjacent_at_cast": 0,
 							"def_debuff_before_damage": 0,
-							"modifiers": {},
+							"execution_phase": 0,
+							"gate": 0,
+							"keywords": [],
+							"layers": [],
+							"legacy_modifiers": {},
+							"max_range": 3,
+							"min_range": 0,
+							"motion_mode": 0,
+							"presentation_anim": 0,
+							"primary_type": 5,
+							"range_origin": 0,
+							"requires_los": true,
 							"scaling_stat": 0,
 							"spawn_unit_id": "",
 							"status_duration": 1,
 							"status_type": 0,
-							"type": 5
+							"target_shape": 0,
+							"target_shape_size": 1,
+							"targeting_flags": 2
 						}
 					],
-					"is_movement_skill": false,
-					"kind": 0,
-					"movement_point_cost": 0,
+					"planner_group": 0,
 					"presentation_anim": 0,
 					"presentation_key": "shaman_ward",
-					"range_tiles": 3,
-					"scaling_stat": 0,
-					"target_shape": 0,
-					"target_shape_size": 1,
-					"targeting_flags": 2,
-					"targeting_mode": 1,
+					"primary_resource": 1,
+					"primary_value": 1,
+					"secondary_resource": 0,
+					"secondary_value": 0,
+					"tags": [
+						"spell"
+					],
 					"upgrade_description": "",
-					"upgraded_effects": [],
-					"upgraded_movement_point_cost": -1,
-					"upgraded_range_tiles": -1,
-					"upgraded_target_shape": 0,
-					"upgraded_target_shape_size": -1,
+					"upgraded_module_count": 0,
+					"upgraded_modules": [],
+					"upgraded_primary_value": -1,
+					"upgraded_secondary_value": -1,
 					"uses_per_combat": -1
 				}
 			},
-			"action_points": 1,
-			"base_constitution": 3,
-			"base_defense": 2,
-			"base_magic": 4,
-			"base_strength": 0,
+			"action_points": 1.0,
+			"base_constitution": 3.0,
+			"base_defense": 2.0,
+			"base_magic": 4.0,
+			"base_strength": 0.0,
 			"display_name": "Shaman",
-			"level": 1,
-			"move_points": 3,
-			"movement_type": 0,
+			"level": 1.0,
+			"move_points": 3.0,
+			"movement_type": 0.0,
 			"passives": {
 				"curse": {
 					"description": "Enemies take more damage.",
@@ -3456,15 +5060,15 @@
 					"upgraded_description": ""
 				}
 			},
-			"preferred_stat": 1,
+			"preferred_stat": 1.0,
 			"weapon": {
-				"bonus_defense": 0,
-				"bonus_magic": 0,
-				"bonus_max_hp": 0,
-				"bonus_move": 0,
-				"bonus_strength": 0,
+				"bonus_defense": 0.0,
+				"bonus_magic": 0.0,
+				"bonus_max_hp": 0.0,
+				"bonus_move": 0.0,
+				"bonus_strength": 0.0,
 				"display_name": "Wooden Staff",
-				"might": 4
+				"might": 4.0
 			}
 		}
 	}
