@@ -148,194 +148,299 @@ static func _passive(
 	return DataLibrary._make_passive(id, name, description, upgrade_description, modifiers)
 
 
+static func _layer(
+	effect: EffectData,
+	condition: GameEnums.LayerCondition = GameEnums.LayerCondition.AT_RESOLUTION,
+) -> AbilityLayer:
+	var layer := AbilityLayer.new()
+	layer.effect = effect
+	layer.condition = condition
+	return layer
+
+
 static func _ability(
 	id: StringName,
 	name: String,
-	range_tiles: int,
-	effects: Array[EffectData],
+	modules: Array[AbilityModule],
+	upgraded_modules: Array[AbilityModule],
 	targeting_flags: int,
-	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
-	shape_size: int = 1,
-	scaling_stat: GameEnums.StatType = GameEnums.StatType.MAGICAL,
+	description: String,
 ) -> AbilityData:
-	var proxy := AbilityData.new()
-	proxy.range_tiles = range_tiles
-	proxy.target_shape = shape
-	proxy.target_shape_size = shape_size
-	proxy.targeting_flags = targeting_flags
-	var modules := AbilityModuleBridge.infer_modules_from_effects(effects, proxy)
-	for module: AbilityModule in modules:
-		if module.primary_type in [
-			GameEnums.EffectType.DAMAGE,
-			GameEnums.EffectType.HEAL,
-		]:
-			module.scaling_stat = scaling_stat
-	var ability := DataLibrary._make_modular_ability(
-		id, name, modules, DataLibrary._duplicate_modules(modules), 1,
+	return DataLibrary._make_modular_ability(
+		id, name, modules, upgraded_modules, 1,
 		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
-		"", targeting_flags,
+		description, targeting_flags,
 	)
-	return ability
-
-
-static func _upgrade(ability: AbilityData, effects: Array[EffectData], description: String) -> AbilityData:
-	ability.upgrade_description = description
-	ability.upgraded_modules = AbilityModuleBridge.infer_modules_from_effects(effects, ability)
-	return ability
 
 
 static func _holy_light() -> AbilityData:
-	var ability := _ability(
-		&"cleric_holy_light", "Holy Light", 3,
-		[DataLibrary._effect(GameEnums.EffectType.HEAL, 3)],
+	var base := DataLibrary._module(
+		GameEnums.EffectType.HEAL, 3, 1, 3,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	ability.effects[0].modifiers["mag_heal"] = true
-	var upgraded: Array[EffectData] = [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 4)]
-	upgraded[0].scaling_stat = GameEnums.StatType.MAGICAL
-	return _upgrade(ability, upgraded, "Target enemies instead for MAG ATK 4.")
+	base.legacy_modifiers["mag_heal"] = true
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 4, 1, 3, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
+	)
+	return _ability(
+		&"cleric_holy_light", "Holy Light", [base], [upgraded],
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
+		"Target enemies instead for MAG ATK 4.",
+	)
 
 
 static func _smite() -> AbilityData:
-	var ability := _ability(&"cleric_smite", "Smite", 3,
-		[DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)], GameEnums.TargetingFlags.ENEMY)
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[0].modifiers["shield_closest_ally_pct_damage"] = 0.5
-	return _upgrade(ability, upgraded, "Closest ally to target gains SHIELD equal to 50% of damage dealt.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 2, 1, 3, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
+	)
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 2, 1, 3, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
+	)
+	upgraded.legacy_modifiers["shield_closest_ally_pct_damage"] = 0.5
+	return _ability(
+		&"cleric_smite", "Smite", [base], [upgraded],
+		GameEnums.TargetingFlags.ENEMY,
+		"Closest ally to target gains SHIELD equal to 50% of damage dealt.",
+	)
 
 
 static func _cleansing_aura() -> AbilityData:
-	var ability := _ability(&"cleric_cleansing_aura", "Cleansing Aura", 0,
-		[DataLibrary._effect(GameEnums.EffectType.CLEANSE, 0),
-		DataLibrary._effect(GameEnums.EffectType.PURGE, 0)],
-		GameEnums.TargetingFlags.SELF, GameEnums.TargetShape.AOE_CROSS, 2)
-	ability.can_target_self = true
-	ability.targeting_mode = GameEnums.TargetingMode.SELF
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[0].modifiers["ally_str_per_debuff"] = 1
-	return _upgrade(ability, upgraded, "Allies gain +1 STR per debuff cleansed.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.CLEANSE, 0, 0, 0, GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetShape.AOE_CROSS, 2,
+	)
+	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PURGE, 0)))
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.CLEANSE, 0, 0, 0, GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetShape.AOE_CROSS, 2,
+	)
+	upgraded.legacy_modifiers["ally_str_per_debuff"] = 1
+	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PURGE, 0)))
+	return _ability(
+		&"cleric_cleansing_aura", "Cleansing Aura", [base], [upgraded],
+		GameEnums.TargetingFlags.SELF,
+		"Allies gain +1 STR per debuff cleansed.",
+	)
 
 
 static func _sanctuary() -> AbilityData:
-	var ability := _ability(&"cleric_sanctuary", "Sanctuary", 2,
-		[DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 1)],
-		GameEnums.TargetingFlags.TILE)
-	ability.effects[0].modifiers["terrain_id"] = &"sanctuary"
-	ability.effects[0].modifiers["hazard_duration"] = 2
-	ability.effects[0].modifiers["sanctuary"] = true
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[0].modifiers["sanctuary_enemy_push"] = 1
-	return _upgrade(ability, upgraded, "Enemies entering PUSH 1.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.CREATE_HAZARD, 1, 1, 2, GameEnums.TargetingFlags.TILE,
+	)
+	base.legacy_modifiers["terrain_id"] = &"sanctuary"
+	base.legacy_modifiers["hazard_duration"] = 2
+	base.legacy_modifiers["sanctuary"] = true
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.CREATE_HAZARD, 1, 1, 2, GameEnums.TargetingFlags.TILE,
+	)
+	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
+	upgraded.legacy_modifiers["sanctuary_enemy_push"] = 1
+	return _ability(
+		&"cleric_sanctuary", "Sanctuary", [base], [upgraded],
+		GameEnums.TargetingFlags.TILE,
+		"Enemies entering PUSH 1.",
+	)
 
 
 static func _blinding_ray() -> AbilityData:
-	var ability := _ability(&"cleric_blinding_ray", "Blinding Ray", 4,
-		[DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1),
-		DataLibrary._status_effect(GameEnums.StatusType.BLIND, 1)],
-		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.LINE, 4)
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[1].status_type = GameEnums.StatusType.CONFUSION
-	return _upgrade(ability, upgraded, "Target also gains CONFUSION.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 1, 1, 4, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.LINE, 4, GameEnums.StatType.MAGICAL,
+	)
+	base.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.BLIND, 1)))
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 1, 1, 4, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.LINE, 4, GameEnums.StatType.MAGICAL,
+	)
+	upgraded.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.CONFUSION, 1)))
+	return _ability(
+		&"cleric_blinding_ray", "Blinding Ray", [base], [upgraded],
+		GameEnums.TargetingFlags.TILE,
+		"Target also gains CONFUSION.",
+	)
 
 
 static func _divine_hammer() -> AbilityData:
-	var ability := _ability(&"cleric_divine_hammer", "Divine Hammer", 2,
-		[DataLibrary._effect(GameEnums.EffectType.SPAWN, 0),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2),
-		DataLibrary._effect(GameEnums.EffectType.PUSH, 1)],
-		GameEnums.TargetingFlags.TILE)
-	ability.effects[0].spawn_unit_id = &"cleric_holy_hammer"
-	ability.effects[0].modifiers["construct_hp_pct"] = 0.25
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[0].modifiers["holy_aura"] = true
-	return _upgrade(ability, upgraded, "The summoned obstacle projects HOLY AURA.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.SPAWN, 0, 1, 2, GameEnums.TargetingFlags.TILE,
+	)
+	base.spawn_unit_id = &"cleric_holy_hammer"
+	base.legacy_modifiers["construct_hp_pct"] = 0.25
+	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)))
+	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1)))
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.SPAWN, 0, 1, 2, GameEnums.TargetingFlags.TILE,
+	)
+	upgraded.spawn_unit_id = &"cleric_holy_hammer"
+	upgraded.legacy_modifiers["construct_hp_pct"] = 0.25
+	upgraded.legacy_modifiers["holy_aura"] = true
+	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)))
+	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1)))
+	return _ability(
+		&"cleric_divine_hammer", "Divine Hammer", [base], [upgraded],
+		GameEnums.TargetingFlags.TILE,
+		"The summoned obstacle projects HOLY AURA.",
+	)
 
 
 static func _life_link() -> AbilityData:
-	var ability := _ability(&"cleric_life_link", "Life Link", 3,
-		[DataLibrary._status_effect(GameEnums.StatusType.INTERCEPT, 1),
-		DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 2)],
-		GameEnums.TargetingFlags.ALLY)
-	ability.effects[0].modifiers["life_link"] = true
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[1].amount = 0
-	return _upgrade(ability, upgraded, "Linked ally takes no self-damage.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
+	)
+	base.status_type = GameEnums.StatusType.INTERCEPT
+	base.status_duration = 1
+	base.legacy_modifiers["life_link"] = true
+	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 2)))
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
+	)
+	upgraded.status_type = GameEnums.StatusType.INTERCEPT
+	upgraded.status_duration = 1
+	upgraded.legacy_modifiers["life_link"] = true
+	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 0)))
+	return _ability(
+		&"cleric_life_link", "Life Link", [base], [upgraded],
+		GameEnums.TargetingFlags.ALLY,
+		"Linked ally takes no self-damage.",
+	)
 
 
 static func _prayer_of_fortitude() -> AbilityData:
-	var ability := _ability(&"cleric_prayer_of_fortitude", "Prayer of Fortitude", 3,
-		[DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_DEF, 1),
-		DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)],
-		GameEnums.TargetingFlags.ALLY)
-	ability.effects[0].amount = 3
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[1].modifiers["counterattack_melee"] = true
-	return _upgrade(ability, upgraded, "Ally counterattacks in melee.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 3, 1, 3, GameEnums.TargetingFlags.ALLY,
+	)
+	base.status_type = GameEnums.StatusType.STAT_BUFF_DEF
+	base.status_duration = 1
+	base.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)))
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 3, 1, 3, GameEnums.TargetingFlags.ALLY,
+	)
+	upgraded.status_type = GameEnums.StatusType.STAT_BUFF_DEF
+	upgraded.status_duration = 1
+	var sturdy := DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)
+	sturdy.modifiers["counterattack_melee"] = true
+	upgraded.layers.append(_layer(sturdy))
+	return _ability(
+		&"cleric_prayer_of_fortitude", "Prayer of Fortitude", [base], [upgraded],
+		GameEnums.TargetingFlags.ALLY,
+		"Ally counterattacks in melee.",
+	)
 
 
 static func _resurrection() -> AbilityData:
-	var ability := _ability(&"cleric_resurrection", "Resurrection", 1,
-		[DataLibrary._effect(GameEnums.EffectType.HEAL, 10)],
-		GameEnums.TargetingFlags.ALLY)
-	ability.effects[0].modifiers["revive_percent_max_hp"] = 0.10
-	ability.effects[0].modifiers["spend_self_hp"] = 10
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[0].modifiers["revive_shield"] = 2
-	return _upgrade(ability, upgraded, "Revived ally gains SHIELD 2.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.HEAL, 10, 1, 1, GameEnums.TargetingFlags.ALLY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
+	)
+	base.legacy_modifiers["revive_percent_max_hp"] = 0.10
+	base.legacy_modifiers["spend_self_hp"] = 10
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.HEAL, 10, 1, 1, GameEnums.TargetingFlags.ALLY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
+	)
+	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
+	upgraded.legacy_modifiers["revive_shield"] = 2
+	return _ability(
+		&"cleric_resurrection", "Resurrection", [base], [upgraded],
+		GameEnums.TargetingFlags.ALLY,
+		"Revived ally gains SHIELD 2.",
+	)
 
 
 static func _consecrate_ground() -> AbilityData:
-	var ability := _ability(&"cleric_consecrate_ground", "Consecrate Ground", 0,
-		[DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 1)],
-		GameEnums.TargetingFlags.SELF, GameEnums.TargetShape.AOE_CROSS, 2)
-	ability.can_target_self = true
-	ability.targeting_mode = GameEnums.TargetingMode.SELF
-	ability.effects[0].modifiers["terrain_id"] = &"holy_ground"
-	ability.effects[0].modifiers["hazard_duration"] = 2
-	ability.effects[0].modifiers["holy_ground"] = true
-	ability.effects[0].modifiers["holy_ground_zone"] = true
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[0].modifiers["holy_ground_def_down"] = 1
-	return _upgrade(ability, upgraded, "Enemies lose 1 DEF.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.CREATE_HAZARD, 1, 0, 0, GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetShape.AOE_CROSS, 2,
+	)
+	base.legacy_modifiers["terrain_id"] = &"holy_ground"
+	base.legacy_modifiers["hazard_duration"] = 2
+	base.legacy_modifiers["holy_ground"] = true
+	base.legacy_modifiers["holy_ground_zone"] = true
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.CREATE_HAZARD, 1, 0, 0, GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetShape.AOE_CROSS, 2,
+	)
+	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
+	upgraded.legacy_modifiers["holy_ground_def_down"] = 1
+	return _ability(
+		&"cleric_consecrate_ground", "Consecrate Ground", [base], [upgraded],
+		GameEnums.TargetingFlags.SELF,
+		"Enemies lose 1 DEF.",
+	)
 
 
 static func _holy_wrath() -> AbilityData:
-	var ability := _ability(&"cleric_holy_wrath", "Holy Wrath", 3,
-		[DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3)],
-		GameEnums.TargetingFlags.ENEMY)
-	ability.effects[0].modifiers["stagger_if_debuffed"] = true
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[0].modifiers["push"] = 2
-	return _upgrade(ability, upgraded, "If target is debuffed, apply STAGGER and PUSH 2.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 3, 1, 3, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
+	)
+	base.legacy_modifiers["stagger_if_debuffed"] = true
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 3, 1, 3, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
+	)
+	upgraded.legacy_modifiers["stagger_if_debuffed"] = true
+	upgraded.legacy_modifiers["push"] = 2
+	return _ability(
+		&"cleric_holy_wrath", "Holy Wrath", [base], [upgraded],
+		GameEnums.TargetingFlags.ENEMY,
+		"If target is debuffed, apply STAGGER and PUSH 2.",
+	)
 
 
 static func _divine_guidance() -> AbilityData:
-	var ability := _ability(&"cleric_divine_guidance", "Divine Guidance", 3,
-		[DataLibrary._effect(GameEnums.EffectType.ADD_STATUS, 1)],
-		GameEnums.TargetingFlags.ALLY)
-	ability.effects[0].modifiers["grant_ap"] = 1
-	ability.effects[0].modifiers["self_move_zero_next_turn"] = true
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[0].modifiers["self_root_immune_next_turn"] = true
-	return _upgrade(ability, upgraded, "Self is not ROOTED next turn.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
+	)
+	base.legacy_modifiers["grant_ap"] = 1
+	base.legacy_modifiers["self_move_zero_next_turn"] = true
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
+	)
+	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
+	upgraded.legacy_modifiers["self_root_immune_next_turn"] = true
+	return _ability(
+		&"cleric_divine_guidance", "Divine Guidance", [base], [upgraded],
+		GameEnums.TargetingFlags.ALLY,
+		"Self is not ROOTED next turn.",
+	)
 
 
 static func _shield_of_faith() -> AbilityData:
-	var ability := _ability(&"cleric_shield_of_faith", "Shield of Faith", 2,
-		[DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 3),
-		DataLibrary._status_effect(GameEnums.StatusType.INTERCEPT, 1)],
-		GameEnums.TargetingFlags.ALLY)
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[1].modifiers["counterattack_on_intercept"] = true
-	return _upgrade(ability, upgraded, "Counter-attack ATK 1 on intercept.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.ARMOR_UP, 3, 1, 2, GameEnums.TargetingFlags.ALLY,
+	)
+	base.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.INTERCEPT, 1)))
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.ARMOR_UP, 3, 1, 2, GameEnums.TargetingFlags.ALLY,
+	)
+	var intercept := DataLibrary._status_effect(GameEnums.StatusType.INTERCEPT, 1)
+	intercept.modifiers["counterattack_on_intercept"] = true
+	upgraded.layers.append(_layer(intercept))
+	return _ability(
+		&"cleric_shield_of_faith", "Shield of Faith", [base], [upgraded],
+		GameEnums.TargetingFlags.ALLY,
+		"Counter-attack ATK 1 on intercept.",
+	)
 
 
 static func _martyrs_chains() -> AbilityData:
-	var ability := _ability(&"cleric_martyrs_chains", "Martyr's Chains", 3,
-		[DataLibrary._effect(GameEnums.EffectType.ADD_STATUS, 1)],
-		GameEnums.TargetingFlags.ENEMY)
-	ability.effects[0].modifiers["link_two_enemies"] = true
-	ability.effects[0].modifiers["magic_link_damage"] = 1
-	var upgraded := DataLibrary._duplicate_effects(ability.effects)
-	upgraded[0].modifiers["link_blind"] = true
-	return _upgrade(ability, upgraded, "Linked enemies also suffer BLIND when the link triggers.")
+	var base := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ENEMY,
+	)
+	base.legacy_modifiers["link_two_enemies"] = true
+	base.legacy_modifiers["magic_link_damage"] = 1
+	var upgraded := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ENEMY,
+	)
+	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
+	upgraded.legacy_modifiers["link_blind"] = true
+	return _ability(
+		&"cleric_martyrs_chains", "Martyr's Chains", [base], [upgraded],
+		GameEnums.TargetingFlags.ENEMY,
+		"Linked enemies also suffer BLIND when the link triggers.",
+	)

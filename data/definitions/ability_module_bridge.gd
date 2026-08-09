@@ -310,9 +310,12 @@ static func _prefer_authored_targeting_mode(ability: AbilityData) -> void:
 
 static func _apply_module_range_to_ability(ability: AbilityData, modules: Array[AbilityModule]) -> void:
 	## Keep the legacy card range on non-motion aims. Motion distance remains on modules.
+	var first_module: AbilityModule = null
 	for mod: AbilityModule in modules:
 		if mod == null:
 			continue
+		if first_module == null:
+			first_module = mod
 		if (
 			mod.aim_binding == GameEnums.AimBinding.NEW_AIM
 			and not is_motion_type(mod.primary_type)
@@ -323,6 +326,17 @@ static func _apply_module_range_to_ability(ability: AbilityData, modules: Array[
 			if mod.targeting_flags != 0:
 				ability.targeting_flags = mod.targeting_flags
 			return
+	## A motion-owned landing footprint (e.g. Meteor Drop) is still the
+	## ability's authored card shape when no later non-motion aim exists.
+	if (
+		first_module != null
+		and is_motion_type(first_module.primary_type)
+		and first_module.target_shape != GameEnums.TargetShape.SINGLE
+	):
+		ability.target_shape = first_module.target_shape
+		ability.target_shape_size = first_module.target_shape_size
+		if first_module.targeting_flags != 0:
+			ability.targeting_flags = first_module.targeting_flags
 
 
 static func _infer_tags(ability: AbilityData) -> Array[StringName]:

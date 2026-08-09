@@ -293,7 +293,6 @@ static func _ensure_init() -> void:
 	cleric_holy_hammer.construct_scaling_percent = 25.0
 	_all_units_dict[cleric_holy_hammer.id] = cleric_holy_hammer
 
-	ClassLibrarySchema.apply_saved_unit_overrides()
 	for u in _player_units:
 		finalize_unit_abilities(u)
 	for u in _enemy_units:
@@ -624,6 +623,10 @@ static func _make_modular_ability(
 	)
 	ability.effects = AbilityModuleBridge.compile_modules_to_effects(ability.modules)
 	ability.sync_legacy_targeting()
+	for module: AbilityModule in modules:
+		if module != null and module.scaling_stat != GameEnums.StatType.NONE:
+			ability.scaling_stat = module.scaling_stat
+			break
 	return ability
 
 
@@ -884,7 +887,7 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 		0,
 		GameEnums.PlannerGroup.ACTION,
 		GameEnums.CostResource.AP,
-		[],
+		[AbilityModuleBridge.TAG_ATTACK],
 		"",
 		targeting_flags,
 	)

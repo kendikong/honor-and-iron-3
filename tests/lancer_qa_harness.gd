@@ -200,7 +200,7 @@ static func run_push_smoke(failures: Array[String]) -> void:
 	assert_true(
 		failures,
 		"polearm_mastery/innate",
-		polearm != null and definition.innate_passives.has(polearm),
+		polearm != null and _has_passive_id(definition.innate_passives, polearm.id),
 		"Polearm Mastery must be an always-active innate trait",
 	)
 	var push := factory_ability(&"lancer_push")
@@ -951,6 +951,13 @@ static func _first_damage_event(events: Array[SimEvent]) -> Dictionary:
 		):
 			return event.data
 	return {}
+
+
+static func _has_passive_id(passives: Array[PassiveData], passive_id: StringName) -> bool:
+	for passive: PassiveData in passives:
+		if passive != null and passive.id == passive_id:
+			return true
+	return false
 
 
 static func _events_have_label(events: Array[SimEvent], label: String) -> bool:

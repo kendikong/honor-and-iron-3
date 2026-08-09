@@ -131,6 +131,8 @@ static func active_range_tiles(
 	module_index: int = 0,
 ) -> int:
 	var module: AbilityModule = active_module_for_index(actor, ability, module_index)
+	if actor != null and module_index == 0:
+		return actor.get_ability_range(ability)
 	if module != null:
 		return module.max_range
 	if ability == null:
@@ -2478,6 +2480,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					pierce = true
 					
 			var base_amt := effect.amount
+			var temporary_strength_bonus := 0
 			var reaction_tile := board.get_tile(tile_coord)
 			if (
 				reaction_tile != null
@@ -2523,7 +2526,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if passive == null:
 					continue
 				if passive.modifiers.has("straight_line_str_per_tile"):
-					base_amt += actor.continuous_straight_tiles_this_turn * int(
+					temporary_strength_bonus += actor.continuous_straight_tiles_this_turn * int(
 						passive.modifiers["straight_line_str_per_tile"]
 					)
 				if actor.movement_points_spent_this_turn == 0:
@@ -2622,6 +2625,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					actor.passive_flags.get("mage_spell_magic_bonus", 0)
 				)
 				stat_name = "MAG"
+			stat_val += temporary_strength_bonus
 				
 			if base_amt > 0:
 				var raw = (base_amt + wpn) * (1.0 + stat_val / 5.0)

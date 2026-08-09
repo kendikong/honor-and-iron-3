@@ -80,6 +80,7 @@ func _ready() -> void:
 		MenuNavigation.register(self, _on_back_pressed, _preview_allows_back)
 	_load_overrides()
 	_build_layout()
+	ClassLibrarySchema.apply_saved_unit_overrides()
 	DataLibrary.get_all_player_units()
 	_factory_abilities = ClassLibrarySchema.snapshot_factory_abilities()
 	_saved_abilities = ClassLibrarySchema.snapshot_ability_map_from_units(DataLibrary.get_all_player_units())
