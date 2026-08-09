@@ -8,6 +8,9 @@ PLANNED/other: 0
 
 === Meta-critic manifest (31 approved, threshold 95) ===
 
+=== AOE footprint contract (all classes) ===
+--- AOE footprint contract: PASS ---
+
 === Tier 1: headless skill scenarios (harness) ===
 Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 

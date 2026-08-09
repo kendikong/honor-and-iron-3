@@ -16,7 +16,7 @@
 |-------|-------|
 | **Owner QA sign-off** | **NOT PASS** — [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md); automated Tier 1+2 green |
 | **LOCK** | **NO** — pending owner manual + gauntlet-critic re-approval on current artifacts |
-| **Matrix** | **31/31 `PASS`** — Tier 1 headless scenarios + registry |
+| **Matrix** | **31/31** scenarios + planning smoke on actives — Charge Strike sim now asserts MOVE |
 | **Gap** | Owner manual feel/pixels; passives have no Tier 2 live path (Knight same) |
 
 ---
@@ -87,7 +87,17 @@ Map Bible text to a global keyword **only when semantics match exactly**. **Auth
 | `PASS` | Meta-critic approved — Bible clause + base + `[+]` when data has `upgraded_effects` |
 | `N/A` | Owner deferral with target phase |
 
-**Summary (honest):** **31/31** matrix `PASS` (Tier 1 automated). **Owner sign-off NOT PASS** until manual + gauntlet-critic on current gate stdout.
+**Summary (honest):** Tier 1 sim + **planning commit smoke** on all 16 actives (Knight Tier B — click path, no drag/undo).
+
+### Planning coverage tiers (Knight-bar clone — no drag/undo)
+
+| Tier | Meaning | Bruiser actives |
+|------|---------|-----------------|
+| **B — commit smoke** | `run_planning_commit_smoke` — select, hover, slot parity, no preview jump | Most actives |
+| **B — awaiting smoke** | Two-click arm + target | violent_collision, breaching_dash |
+| **B — ally smoke** | Ally-target commit | meat_shield |
+
+Registry: `tests/bruiser_planning_smoke_registry.gd` via `bruiser_qa_runner.gd`.
 
 ### Movement + actives
 
@@ -107,7 +117,7 @@ Map Bible text to a global keyword **only when semantics match exactly**. **Auth
 | `bruiser_blood_boil` | Active | `tests/skills/bruiser_blood_boil_scenario.gd` | PASS | SELF HP → STR; `[+]` 10 HP → STR +5 |
 | `bruiser_violent_collision` | Active | `tests/skills/bruiser_violent_collision_scenario.gd` | PASS | DASH bulldoze + recast; `[+]` STAGGER on collision |
 | `bruiser_crimson_whirlwind` | Active | `tests/skills/bruiser_crimson_whirlwind_scenario.gd` | PASS | AOE DAMAGE; `[+]` heal per hit |
-| `bruiser_belly_flop` | Active | `tests/skills/bruiser_belly_flop_scenario.gd` | PASS | TELEPORT_CASTER + DAMAGE; `[+]` landing PUSH |
+| `bruiser_belly_flop` | Active | `tests/skills/bruiser_belly_flop_scenario.gd` | PASS | 1 AP (Bible default); RANGE 2 TELEPORT + ATK 2; `[+]` landing PUSH |
 | `bruiser_breaching_dash` | Active | `tests/skills/bruiser_breaching_dash_scenario.gd` | PASS | DASH + destroy cover; `[+]` next attack PIERCE |
 
 ### Passives (trigger-based)
