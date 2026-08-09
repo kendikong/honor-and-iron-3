@@ -26,6 +26,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_shield_bash_push_away_from_player,
 		_test_shield_bash_enemy_lands_at_push_destination,
 		_test_shield_bash_enemy_hover_composite_cursor,
+		_test_shield_bash_adjacent_painted_approach_hover,
 		_test_shield_bash_hover_change_clears_stale_approach,
 		_test_chain_hook_awaiting_targeting_segment,
 		_test_chain_hook_pull_toward_player,
@@ -97,6 +98,7 @@ static func run_all(failures: Array[String]) -> void:
 		"bash_push",
 		"bash_threat",
 		"bash_cursor",
+		"bash_adjacent_painted",
 		"bash_stale",
 		"hook_segment",
 		"hook_pull",
@@ -861,6 +863,46 @@ static func _test_shield_bash_enemy_hover_composite_cursor(failures: Array[Strin
 		failures.append(
 			"PlanningQAGate Shield Bash 2A cursor: enemy hover must composite walk+attack, got %s"
 			% icon,
+		)
+
+
+static func _test_shield_bash_adjacent_painted_approach_hover(failures: Array[String]) -> void:
+	var knight_pos := Vector2i(6, 7)
+	var enemy_pos := Vector2i(7, 7)
+	var north_approach := Vector2i(7, 6)
+	var fix: Dictionary = _planning_fixture(knight_pos, enemy_pos)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate bash_adjacent_painted_approach: Shield Bash missing")
+		return
+	director.selected_ability_index = bash_idx
+	var route: Array[Vector2i] = [knight_pos, Vector2i(6, 6), north_approach]
+	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.knight, route, north_approach)
+	var slots: Dictionary = input._final_commit_slots_for_interaction(
+		1, enemy_pos, input._route_waypoints(), [], enemy_pos,
+	)
+	if _slots_invalid(slots):
+		failures.append("PlanningQAGate bash_adjacent_painted_approach: enemy hover slots invalid")
+		return
+	var pre: Array = slots.get("pre", []) as Array
+	var action: Array = slots.get("action", []) as Array
+	if pre.is_empty() or action.is_empty():
+		failures.append(
+			"PlanningQAGate bash_adjacent_painted_approach: must pair pre-move + bash when painted stand differs from current tile",
+		)
+		return
+	var move_step: TimelineAction = pre[0] as TimelineAction
+	if move_step == null or move_step.target_coord != north_approach:
+		failures.append(
+			"PlanningQAGate bash_adjacent_painted_approach: pre-move must end at painted stand %s, got %s"
+			% [north_approach, move_step.target_coord if move_step != null else null],
+		)
+	var icon: String = input._cursor_icon_from_commit_slots(slots, fix.knight)
+	if icon.find(PlanningIcons.GLYPH_ATTACK) < 0:
+		failures.append(
+			"PlanningQAGate bash_adjacent_painted_approach: cursor must include attack glyph, got %s" % icon,
 		)
 
 

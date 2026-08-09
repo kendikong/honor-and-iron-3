@@ -3420,6 +3420,71 @@ func _enemy_hover_respects_painted_route(
 	return _can_pair_run_move_with_ability(actor, enemy.position, route_waypoints, ability)
 
 
+func _painted_stand_valid_for_enemy_skill(
+	actor: UnitState,
+	enemy: UnitState,
+	ability: AbilityData,
+	stand: Vector2i,
+) -> bool:
+	if actor == null or enemy == null or ability == null:
+		return false
+	var rng: int = AbilitySystem.active_range_tiles(actor, ability)
+	if rng < 0:
+		return false
+	return GridSystem.manhattan(stand, enemy.position) <= rng
+
+
+func _enemy_hover_approach_tile(
+	actor: UnitState,
+	enemy: UnitState,
+	ability: AbilityData,
+	unit_id: int,
+	waypoints: Array[Vector2i],
+	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
+) -> Vector2i:
+	if actor == null or enemy == null or _director == null:
+		return _proj_origin(actor)
+	var approach_hint: Vector2i = enemy.position
+	if preferred_approach != _NO_PREFERRED_APPROACH:
+		approach_hint = preferred_approach
+	if _drag_route_commits_active() and unit_id == _drag_unit_id:
+		var stand: Vector2i = _drag_route_stand_cell()
+		if (
+			stand != _proj_origin(actor)
+			and _painted_stand_valid_for_enemy_skill(actor, enemy, ability, stand)
+		):
+			return stand
+	if not waypoints.is_empty() and _enemy_hover_respects_painted_route(
+		actor, enemy, ability, waypoints,
+	):
+		var painted_stand: Vector2i = waypoints.back()
+		if _painted_stand_valid_for_enemy_skill(actor, enemy, ability, painted_stand):
+			return painted_stand
+	return _director.preview_approach_tile(
+		unit_id, enemy.id, _director.selected_ability_index, approach_hint,
+	)
+
+
+func _enemy_hover_needs_approach_move(
+	actor: UnitState,
+	enemy: UnitState,
+	ability: AbilityData,
+	unit_id: int,
+	waypoints: Array[Vector2i],
+	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
+) -> bool:
+	if actor == null or enemy == null or ability == null or _director == null:
+		return false
+	if AbilitySystem.is_movement_skill(ability):
+		return false
+	var approach: Vector2i = _enemy_hover_approach_tile(
+		actor, enemy, ability, unit_id, waypoints, preferred_approach,
+	)
+	if approach == _proj_origin(actor):
+		return false
+	return _unit_move_slot_open(unit_id, approach)
+
+
 func _append_move_to_commit_slots(
 	slots: Dictionary,
 	unit_id: int,
@@ -4129,24 +4194,27 @@ func _build_enemy_commit_slots(
 			slots["invalid"] = "Invalid endpoint for this skill."
 			return slots
 	if use_skill and _in_ability_range(actor, enemy):
-		var committed_target_id := AbilitySystem.planning_commit_target_unit_id(ability, enemy.id)
-		if AbilitySystem.ability_has_modifier(ability, &"paired_ally_charge", actor):
-			var awaiting_charge := _director.find_awaiting_action(unit_id)
-			if awaiting_charge == null or awaiting_charge.target_unit_id < 0:
-				slots["invalid"] = "Select an allied charger first."
-				return slots
-			committed_target_id = awaiting_charge.target_unit_id
-		slots["action"].append(
-			TimelineAction.make_ability(
-				unit_id,
-				ability,
-				enemy.position,
-				committed_target_id,
-				GameEnums.MoveTiming.PRE_ACTION,
-				effective_waypoints,
-			),
-		)
-		return slots
+		if not _enemy_hover_needs_approach_move(
+			actor, enemy, ability, unit_id, effective_waypoints, preferred_approach,
+		):
+			var committed_target_id := AbilitySystem.planning_commit_target_unit_id(ability, enemy.id)
+			if AbilitySystem.ability_has_modifier(ability, &"paired_ally_charge", actor):
+				var awaiting_charge := _director.find_awaiting_action(unit_id)
+				if awaiting_charge == null or awaiting_charge.target_unit_id < 0:
+					slots["invalid"] = "Select an allied charger first."
+					return slots
+				committed_target_id = awaiting_charge.target_unit_id
+			slots["action"].append(
+				TimelineAction.make_ability(
+					unit_id,
+					ability,
+					enemy.position,
+					committed_target_id,
+					GameEnums.MoveTiming.PRE_ACTION,
+					effective_waypoints,
+				),
+			)
+			return slots
 	if not use_skill and _in_attack_range_from(_proj_origin(actor), enemy, actor):
 		var basic: AbilityData = actor.active_abilities[0] if not actor.active_abilities.is_empty() else null
 		if basic != null:
@@ -4178,8 +4246,8 @@ func _build_enemy_commit_slots(
 		var approach_hint: Vector2i = cell
 		if preferred_approach != _NO_PREFERRED_APPROACH:
 			approach_hint = preferred_approach
-		var approach: Vector2i = _director.preview_approach_tile(
-			unit_id, enemy.id, ability_index, approach_hint,
+		var approach: Vector2i = _enemy_hover_approach_tile(
+			actor, enemy, ability, unit_id, effective_waypoints, approach_hint,
 		)
 		if approach == actor.position and not _in_ability_range(actor, enemy):
 			slots["invalid"] = "Target is out of range."
