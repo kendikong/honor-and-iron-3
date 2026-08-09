@@ -7,6 +7,7 @@ extends RefCounted
 static func run_all(failures: Array[String]) -> void:
 	_test_module_only_execution(failures)
 	_test_base_multi_module_compatibility_order(failures)
+	_test_base_multi_module_native_execute_order(failures)
 	_test_upgraded_module_profile(failures)
 	_test_legacy_flat_targeting_compatibility(failures)
 	_test_motion_range_legality(failures)
@@ -83,6 +84,70 @@ static func _test_base_multi_module_compatibility_order(failures: Array[String])
 		or compatibility_view[1].amount != 2
 	):
 		failures.append("base multi-module compatibility order changed DAMAGE + PUSH")
+
+
+static func _test_base_multi_module_native_execute_order(failures: Array[String]) -> void:
+	var board: BoardState = _plain_board(Vector2i(8, 4))
+	var actor: UnitState = _unit(1, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
+	var target: UnitState = _unit(2, GameEnums.Team.ENEMY, Vector2i(3, 1), 20)
+	board.units = [actor, target]
+	_place(board, actor)
+	_place(board, target)
+
+	var ability: AbilityData = _ability(&"runtime_native_multi_module_order", GameEnums.TargetingFlags.ENEMY)
+	var damage: AbilityModule = AbilityModule.new()
+	damage.primary_type = GameEnums.EffectType.DAMAGE
+	damage.amount = 3
+	damage.min_range = 1
+	damage.max_range = 3
+	damage.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	var push: AbilityModule = AbilityModule.new()
+	push.primary_type = GameEnums.EffectType.PUSH
+	push.amount = 2
+	push.min_range = 1
+	push.max_range = 3
+	push.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	push.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
+	push.aim_module_index = 0
+	ability.modules = [damage, push]
+	ability.effects = []
+
+	var events: Array[SimEvent] = []
+	AbilitySystem.execute(
+		board,
+		TimelineAction.make_ability(actor.id, ability, target.position, target.id),
+		events,
+	)
+	AbilitySystem.resolve_pending_pushes(board, events)
+
+	var damage_event_index: int = -1
+	var push_event_index: int = -1
+	for index: int in events.size():
+		var event: SimEvent = events[index]
+		if event == null:
+			continue
+		if (
+			damage_event_index < 0
+			and event.type == GameEnums.SimEventType.UNIT_DAMAGED
+			and int(event.data.get("unit", -1)) == target.id
+		):
+			damage_event_index = index
+		if (
+			push_event_index < 0
+			and event.type == GameEnums.SimEventType.UNIT_PUSHED
+			and int(event.data.get("unit", -1)) == target.id
+		):
+			push_event_index = index
+	if damage_event_index < 0 or push_event_index < 0 or damage_event_index >= push_event_index:
+		failures.append(
+			"native multi-module execute did not order DAMAGE before PUSH (events %s)"
+			% _event_types(events)
+		)
+	if target.health.current_hp != 17 or target.position != Vector2i(5, 1):
+		failures.append(
+			"native multi-module execute produced HP %d at %s, expected HP 17 at (5, 1)"
+			% [target.health.current_hp, target.position]
+		)
 
 
 static func _test_upgraded_module_profile(failures: Array[String]) -> void:
@@ -414,3 +479,10 @@ static func _plain_board(size: Vector2i) -> BoardState:
 
 static func _place(board: BoardState, unit: UnitState) -> void:
 	GridSystem.set_occupant(board, unit.position, unit.id)
+
+
+static func _event_types(events: Array[SimEvent]) -> Array[String]:
+	var types: Array[String] = []
+	for event: SimEvent in events:
+		types.append(str(event.type) if event != null else "null")
+	return types
