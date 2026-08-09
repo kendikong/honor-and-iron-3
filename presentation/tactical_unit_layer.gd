@@ -930,10 +930,7 @@ func _event_ability_has_pull(event: SimEvent) -> bool:
 	for ability: AbilityData in actor.active_abilities:
 		if ability.id != ability_id:
 			continue
-		for effect: EffectData in AbilitySystem.active_effects_for(actor, ability):
-			if effect.type == GameEnums.EffectType.PULL:
-				return true
-		return false
+		return AbilitySystem.ability_has_effect(ability, GameEnums.EffectType.PULL, actor)
 	return false
 
 

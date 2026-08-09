@@ -129,20 +129,21 @@ static func ability_glyph(ability: AbilityData) -> String:
 	if AbilitySystem.ability_has_movement_effect(ability):
 		return GLYPH_DASH
 	if ability.is_movement_kind():
-		for eff: EffectData in AbilitySystem.active_effects_for(null, ability):
-			if eff.type == GameEnums.EffectType.SWAP:
-				return GLYPH_SWAP
+		if AbilitySystem.ability_has_effect(ability, GameEnums.EffectType.SWAP):
+			return GLYPH_SWAP
 		return GLYPH_WALK
-	for eff: EffectData in AbilitySystem.active_effects_for(null, ability):
-		match eff.type:
-			GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE:
-				return GLYPH_ATTACK
-			GameEnums.EffectType.HEAL:
-				return GLYPH_HEAL
-			GameEnums.EffectType.ARMOR_UP:
-				return GLYPH_ARMOR_UP
-			GameEnums.EffectType.SWAP:
-				return GLYPH_SWAP
+	if (
+		AbilitySystem.ability_has_effect(ability, GameEnums.EffectType.DAMAGE)
+		or AbilitySystem.ability_has_effect(ability, GameEnums.EffectType.EXPLODE)
+		or AbilitySystem.ability_has_effect(ability, GameEnums.EffectType.RANGED_EXPLODE)
+	):
+		return GLYPH_ATTACK
+	if AbilitySystem.ability_has_effect(ability, GameEnums.EffectType.HEAL):
+		return GLYPH_HEAL
+	if AbilitySystem.ability_has_effect(ability, GameEnums.EffectType.ARMOR_UP):
+		return GLYPH_ARMOR_UP
+	if AbilitySystem.ability_has_effect(ability, GameEnums.EffectType.SWAP):
+		return GLYPH_SWAP
 	return GLYPH_SKILL
 
 

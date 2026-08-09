@@ -113,8 +113,8 @@ static func _test_module_only_empty_compatibility_effects(failures: Array[String
 		actor.id, ability, target.position, target.id,
 	)
 	AbilitySystem.prepare_planning_action(board, action)
-	if AbilitySystem.active_effects_for(actor, ability).is_empty() or action.awaiting_target:
-		failures.append("module-only planning ignored authored effects with empty flat compatibility data")
+	if AbilitySystem.active_modules_for(actor, ability).is_empty() or action.awaiting_target:
+		failures.append("module-only planning ignored authored modules with empty flat compatibility data")
 
 
 static func _ability(id: StringName, targeting_flags: int) -> AbilityData:

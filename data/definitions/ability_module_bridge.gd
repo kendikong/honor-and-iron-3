@@ -2,8 +2,9 @@ class_name AbilityModuleBridge
 extends RefCounted
 
 ## Purpose: Compile modular AbilityModule lists ↔ legacy flat EffectData lists.
-## Responsibilities: One-way authoring bridge so AbilitySystem can keep reading effects[]
-## while factories/editor author modules (ability-data.md §12.15).
+## Responsibilities: One-way authoring/compatibility bridge while factories and the
+## editor author modules (ability-data.md §12.15). Native runtime decisions stay
+## on typed module queries and ordered module execution.
 ## Dependencies: AbilityData, AbilityModule, AbilityLayer, AbilityKeyword, EffectData, GameEnums.
 ## Lifecycle: static helpers; no instance state.
 
@@ -320,9 +321,9 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 	return out
 
 
-## Compatibility list: only unconditional modules are exposed before execution.
-## AbilitySystem resolves module gates from ordered simulation events; this list
-## must never decide whether a gated module runs.
+## Compatibility list: only unconditional modules are exposed for unmigrated
+## EffectData readers. AbilitySystem resolves module gates from ordered simulation
+## events; this list must never decide whether a gated module runs.
 static func compile_modules_for_runtime(modules: Array[AbilityModule]) -> Array[EffectData]:
 	var out: Array[EffectData] = []
 	var has_collided_gate := false

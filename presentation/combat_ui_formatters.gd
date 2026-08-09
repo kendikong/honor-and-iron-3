@@ -764,7 +764,7 @@ static func _ability_keyword_tooltip_lines(
 				continue
 			lines.append(_kw_tooltip_line(kw, _bible_segment_hint(kw)))
 		return lines
-	for effect: EffectData in AbilitySystem.active_effects_for(unit, ability):
+	for effect: EffectData in AbilitySystem.compatibility_effects_for(unit, ability):
 		var line: String = _effect_tooltip_line(effect)
 		if not line.is_empty():
 			lines.append(line)
@@ -1015,7 +1015,7 @@ static func ability_effect_string(ability: AbilityData, unit: UnitState = null) 
 		header.append(bible_line)
 		return " | ".join(header)
 	var parts: Array[String] = []
-	for effect: EffectData in AbilitySystem.active_effects_for(unit, ability):
+	for effect: EffectData in AbilitySystem.compatibility_effects_for(unit, ability):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE:
 				parts.append("ATK %s" % _effect_amount_string(effect))
@@ -1063,7 +1063,7 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 	if ClassLibrarySchema.bible_ability_effect_line(ability) != "":
 		return _bbcode_from_bible_effect_line(plain)
 	var parts: Array[String] = []
-	for effect: EffectData in AbilitySystem.active_effects_for(unit, ability):
+	for effect: EffectData in AbilitySystem.compatibility_effects_for(unit, ability):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE:
 				parts.append(_kw_hint("ATK %s" % _effect_amount_string(effect), _glossary_def("ATK")))

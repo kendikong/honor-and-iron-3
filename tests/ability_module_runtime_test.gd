@@ -44,11 +44,15 @@ static func _test_module_only_execution(failures: Array[String]) -> void:
 	if target.health.current_hp != 16:
 		failures.append(
 			"module-only runtime did not apply authored DAMAGE (HP %d, effects %d, events %d)"
-			% [target.health.current_hp, AbilitySystem.active_effects_for(actor, ability).size(), events.size()]
+			% [
+				target.health.current_hp,
+				AbilitySystem.compatibility_effects_for(actor, ability).size(),
+				events.size(),
+			]
 		)
 	if ability.effects.size() != 1 or ability.effects[0].amount != 99:
 		failures.append("module-only runtime fixture mutated its legacy compatibility cache")
-	var compatibility_view: Array[EffectData] = AbilitySystem.active_effects_for(actor, ability)
+	var compatibility_view: Array[EffectData] = AbilitySystem.compatibility_effects_for(actor, ability)
 	if compatibility_view.size() != 1 or compatibility_view[0].amount != 4:
 		failures.append("module-only runtime compatibility view did not derive from modules")
 
@@ -74,7 +78,7 @@ static func _test_upgraded_module_profile(failures: Array[String]) -> void:
 	var active: Array[AbilityModule] = AbilitySystem.active_modules_for(actor, ability)
 	if active.size() != 1 or active[0] != upgraded:
 		failures.append("upgraded module profile was not selected as a complete replacement")
-	var effects: Array[EffectData] = AbilitySystem.active_effects_for(actor, ability)
+	var effects: Array[EffectData] = AbilitySystem.compatibility_effects_for(actor, ability)
 	if effects.size() != 1 or effects[0].amount != 7:
 		failures.append("upgraded module profile did not compile its authored amount")
 
@@ -163,6 +167,13 @@ static func _test_if_collided_follow_up(failures: Array[String]) -> void:
 
 	if AbilitySystem._module_gate_passes(follow_up, actor, [], 0):
 		failures.append("IF_COLLIDED gate passed without a collision event")
+	var compatibility_view: Array[EffectData] = AbilitySystem.compatibility_effects_for(actor, ability)
+	if (
+		compatibility_view.size() != 1
+		or compatibility_view[0].type != GameEnums.EffectType.DASH
+		or not compatibility_view[0].modifiers.has("violent_collision_recast")
+	):
+		failures.append("compatibility view did not stay gated-stripped for IF_COLLIDED")
 
 	var events: Array[SimEvent] = []
 	AbilitySystem.execute(

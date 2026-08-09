@@ -29,9 +29,12 @@ static func active_modules_for(actor: UnitState, ability: AbilityData) -> Array[
 	return ability.get_active_modules(upgraded)
 
 
-## Transitional compatibility view for readers that still consume EffectData.
-## Runtime decisions must use active_modules_for() and module-owned queries.
-static func active_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
+## Transitional compatibility API for unmigrated EffectData readers.
+## This compiler is never a modular runtime decision owner.
+static func compatibility_effects_for(
+	actor: UnitState,
+	ability: AbilityData,
+) -> Array[EffectData]:
 	if ability == null:
 		return []
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
@@ -40,6 +43,19 @@ static func active_effects_for(actor: UnitState, ability: AbilityData) -> Array[
 	if actor != null and actor.is_ability_upgraded(ability.id) and not ability.upgraded_effects.is_empty():
 		return ability.upgraded_effects
 	return ability.effects
+
+
+## Kept for external/unmigrated readers during the modular migration.
+static func active_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
+	return compatibility_effects_for(actor, ability)
+
+
+## Internal legacy fallback. Modular callers must use active_modules_for().
+static func legacy_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
+	if not active_modules_for(actor, ability).is_empty():
+		push_error("legacy_effects_for() cannot serve an authored modular profile")
+		return []
+	return compatibility_effects_for(actor, ability)
 
 
 static func active_motion_module(actor: UnitState, ability: AbilityData) -> AbilityModule:
@@ -614,7 +630,7 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 		if adj_enemies >= needed:
 			return 0
 	if active_modules_for(actor, ability).is_empty():
-		for eff: EffectData in active_effects_for(actor, ability):
+		for eff: EffectData in legacy_effects_for(actor, ability):
 			if (
 				eff != null
 				and eff.type == GameEnums.EffectType.CREATE_HAZARD
@@ -1003,7 +1019,7 @@ static func ability_has_dash(ability: AbilityData, actor: UnitState = null) -> b
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
 	if not modules.is_empty():
 		return AbilityModuleBridge.modules_have_effect(modules, GameEnums.EffectType.DASH)
-	for eff: EffectData in active_effects_for(actor, ability):
+	for eff: EffectData in legacy_effects_for(actor, ability):
 		if eff.type == GameEnums.EffectType.DASH:
 			return true
 	return false
@@ -1029,7 +1045,7 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 			):
 				return true
 		return false
-	for eff: EffectData in active_effects_for(actor, ability):
+	for eff: EffectData in legacy_effects_for(actor, ability):
 		if eff.type in [
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.TELEPORT_CASTER,
@@ -1054,7 +1070,7 @@ static func ability_has_post_attack_move(ability: AbilityData, actor: UnitState 
 			):
 				return true
 		return false
-	for eff: EffectData in active_effects_for(actor, ability):
+	for eff: EffectData in legacy_effects_for(actor, ability):
 		if (
 			eff != null
 			and eff.type == GameEnums.EffectType.MOVE
@@ -1073,7 +1089,7 @@ static func ability_has_teleport(ability: AbilityData, actor: UnitState = null) 
 			modules,
 			GameEnums.EffectType.TELEPORT_CASTER,
 		)
-	for eff: EffectData in active_effects_for(actor, ability):
+	for eff: EffectData in legacy_effects_for(actor, ability):
 		if eff != null and eff.type == GameEnums.EffectType.TELEPORT_CASTER:
 			return true
 	return false
@@ -1093,7 +1109,7 @@ static func is_movement_skill(ability: AbilityData, actor: UnitState = null) -> 
 			]:
 				return true
 		return false
-	for eff: EffectData in active_effects_for(actor, ability):
+	for eff: EffectData in legacy_effects_for(actor, ability):
 		if eff.type in [
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.MOVE,
@@ -1206,10 +1222,26 @@ static func effect_amount(
 			if AbilityModuleBridge.module_has_effect(module, effect_type):
 				return AbilityModuleBridge.module_effect_amount(module, effect_type)
 		return 0
-	for eff: EffectData in active_effects_for(actor, ability):
+	for eff: EffectData in legacy_effects_for(actor, ability):
 		if eff.type == effect_type:
 			return eff.amount
 	return 0
+
+
+static func ability_has_effect(
+	ability: AbilityData,
+	effect_type: GameEnums.EffectType,
+	actor: UnitState = null,
+) -> bool:
+	if ability == null:
+		return false
+	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
+	if not modules.is_empty():
+		return AbilityModuleBridge.modules_have_effect(modules, effect_type)
+	for effect: EffectData in legacy_effects_for(actor, ability):
+		if effect != null and effect.type == effect_type:
+			return true
+	return false
 
 
 static func _ability_has_modifier(
@@ -1222,7 +1254,7 @@ static func _ability_has_modifier(
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
 	if not modules.is_empty():
 		return AbilityModuleBridge.modules_have_modifier(modules, key)
-	for effect: EffectData in active_effects_for(actor, ability):
+	for effect: EffectData in legacy_effects_for(actor, ability):
 		if effect != null and effect.modifiers.has(key):
 			return true
 	return false
@@ -1242,7 +1274,7 @@ static func ability_has_swap_effect(ability: AbilityData, actor: UnitState = nul
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
 	if not modules.is_empty():
 		return AbilityModuleBridge.modules_have_effect(modules, GameEnums.EffectType.SWAP)
-	for eff: EffectData in active_effects_for(actor, ability):
+	for eff: EffectData in legacy_effects_for(actor, ability):
 		if eff.type == GameEnums.EffectType.SWAP:
 			return true
 	return false
@@ -1258,7 +1290,7 @@ static func has_pass_through_effects(ability: AbilityData, actor: UnitState = nu
 			int(module_mods.get("trample_atk", 0)) > 0
 			or int(module_mods.get("bulldoze", 0)) > 0
 		)
-	return has_pass_through_effects_from(active_effects_for(actor, ability))
+	return has_pass_through_effects_from(legacy_effects_for(actor, ability))
 
 
 static func has_displacement_effects(ability: AbilityData, actor: UnitState = null) -> bool:
@@ -1434,7 +1466,7 @@ static func pass_through_modifiers(ability: AbilityData, actor: UnitState = null
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
 	if not modules.is_empty():
 		return AbilityModuleBridge.pass_through_modifiers_from_modules(modules)
-	return pass_through_modifiers_from(active_effects_for(actor, ability))
+	return pass_through_modifiers_from(legacy_effects_for(actor, ability))
 
 
 static func pass_through_modifiers_from(effects: Array) -> Dictionary:
@@ -1781,7 +1813,7 @@ static func ability_uses_attack_animation(ability: AbilityData, actor: UnitState
 	]
 	if not active_modules_for(actor, ability).is_empty():
 		return active_profile_is_offensive(actor, ability)
-	for eff: EffectData in active_effects_for(actor, ability):
+	for eff: EffectData in legacy_effects_for(actor, ability):
 		if eff.type in offensive_effects:
 			return true
 	return false
@@ -1941,7 +1973,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var runtime_modules: Array[AbilityModule] = active_modules_for(actor, action.ability)
 	var legacy_runtime_effects: Array[EffectData] = []
 	if runtime_modules.is_empty():
-		legacy_runtime_effects = active_effects_for(actor, action.ability)
+		legacy_runtime_effects = legacy_effects_for(actor, action.ability)
 	var effects_to_apply: Array[EffectData] = []
 	var effect_modules: Array[AbilityModule] = []
 	var module_cursor: int = 0
@@ -3634,7 +3666,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							actor,
 						)
 				else:
-					for candidate: EffectData in active_effects_for(actor, action.ability):
+					for candidate: EffectData in legacy_effects_for(actor, action.ability):
 						if candidate != null and candidate.type == GameEnums.EffectType.PUSH:
 							push_amt += _push_synergy_bonus(
 								actor,
@@ -3642,7 +3674,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 								&"push_bonus_if_push_used",
 							)
 							if trample_atk <= 0:
-								for damage_effect: EffectData in active_effects_for(actor, action.ability):
+								for damage_effect: EffectData in legacy_effects_for(actor, action.ability):
 									if damage_effect != null and damage_effect.type == GameEnums.EffectType.DAMAGE:
 										trample_atk = damage_effect.amount
 										break

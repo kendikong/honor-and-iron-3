@@ -2032,7 +2032,14 @@ func _draw_unit_token(center: Vector2, body: Color, accent: Color, unit: UnitSta
 			for action in plan_to_use.entries:
 				if action.actor_id == unit.id and action.type == GameEnums.ActionType.ABILITY:
 					is_skill_queued = true
-					if action.ability != null and AbilitySystem.active_effects_for(unit, action.ability).any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
+						if (
+							action.ability != null
+							and AbilitySystem.ability_has_effect(
+								action.ability,
+								GameEnums.EffectType.DAMAGE,
+								unit,
+							)
+						):
 						is_attack_queued = true
 	elif not ghost and is_enemy and (CombatDirector.is_planning_phase(_phase)):
 		var is_enemy_targeting := false
@@ -2046,7 +2053,14 @@ func _draw_unit_token(center: Vector2, body: Color, accent: Color, unit: UnitSta
 							var tgt = _board.get_unit_by_id(action.target_unit_id)
 							if tgt != null and not tgt.is_enemy():
 								is_enemy_targeting = true
-								if action.ability != null and AbilitySystem.active_effects_for(unit, action.ability).any(func(e): return e.type == GameEnums.EffectType.DAMAGE):
+								if (
+									action.ability != null
+									and AbilitySystem.ability_has_effect(
+										action.ability,
+										GameEnums.EffectType.DAMAGE,
+										unit,
+									)
+								):
 									is_enemy_attack = true
 								break
 		if is_enemy_targeting:
@@ -3015,12 +3029,7 @@ func _ability_is_offensive_dash(ability: AbilityData) -> bool:
 	return AbilitySystem.ability_is_offensive_dash(ability)
 
 func _dash_effect_amount(ability: AbilityData, actor: UnitState = null) -> int:
-	if ability == null:
-		return 0
-	for eff: EffectData in AbilitySystem.active_effects_for(actor, ability):
-		if eff.type == GameEnums.EffectType.DASH:
-			return eff.amount
-	return 0
+	return AbilitySystem.effect_amount(ability, GameEnums.EffectType.DASH, actor)
 
 func _resolved_ability_shape(ability: AbilityData, unit: UnitState) -> Dictionary:
 	return {
@@ -3628,7 +3637,7 @@ func _ability_upgrade_suffix(ability: AbilityData, unit: UnitState, bbcode: bool
 
 func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> String:
 	var parts: Array[String] = []
-	for effect: EffectData in AbilitySystem.active_effects_for(unit, ability):
+	for effect: EffectData in AbilitySystem.compatibility_effects_for(unit, ability):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE: parts.append(_kw_hint("ATK %s" % _get_amount_string(effect), "Reduces target's current HP. Resisted by Armor."))
 			GameEnums.EffectType.PUSH: parts.append(_kw_hint("PUSH %s" % _get_amount_string(effect), "Displaces target away from caster. Collisions deal damage."))
@@ -3698,7 +3707,7 @@ func _ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) -> Str
 
 func _ability_effect_string(ability: AbilityData, unit: UnitState = null) -> String:
 	var parts: Array[String] = []
-	for effect: EffectData in AbilitySystem.active_effects_for(unit, ability):
+	for effect: EffectData in AbilitySystem.compatibility_effects_for(unit, ability):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE: parts.append("ATK %s" % _get_amount_string(effect))
 			GameEnums.EffectType.PUSH: parts.append("PUSH %s" % _get_amount_string(effect))
