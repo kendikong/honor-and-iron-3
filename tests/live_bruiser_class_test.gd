@@ -249,7 +249,6 @@ func _run_cleave_premove_overlay_scenario(runner: GdUnitSceneRunner) -> void:
 	session.extra_player_coords = []
 	session.dummy_coords = [Vector2i(7, 5)]
 	session.unkillable_dummies = true
-	session.infinite_player_ap = true
 	_scene.apply_training_board()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	_director = _scene.get_node("CombatDirector") as CombatDirector
@@ -329,7 +328,6 @@ func _run_cleave_tile_aim_scenario(runner: GdUnitSceneRunner) -> void:
 	session.extra_player_coords = []
 	session.dummy_coords = [Vector2i(5, 4), Vector2i(5, 6), Vector2i(6, 5)]
 	session.unkillable_dummies = true
-	session.infinite_player_ap = true
 	_scene.apply_training_board()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	_director = _scene.get_node("CombatDirector") as CombatDirector
@@ -423,7 +421,6 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 	session.extra_player_coords = _vector2i_array(batch.extra_players)
 	session.dummy_coords = _vector2i_array(batch.dummies)
 	session.unkillable_dummies = true
-	session.infinite_player_ap = true
 	_scene.apply_training_board()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 

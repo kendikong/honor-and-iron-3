@@ -59,7 +59,6 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	session.extra_player_coords = [_ALLY_CELL]
 	session.dummy_coords = [_ENEMY_CELL, Vector2i(7, 5)]
 	session.unkillable_dummies = true
-	session.infinite_player_ap = true
 	_scene.apply_training_board()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	_director = _scene.get_node("CombatDirector") as CombatDirector
@@ -116,7 +115,6 @@ func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	session.extra_player_coords = [_ALLY_CELL]
 	session.dummy_coords = [_ENEMY_CELL, Vector2i(7, 5)]
 	session.unkillable_dummies = true
-	session.infinite_player_ap = true
 	_scene.apply_training_board()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	_director = _scene.get_node("CombatDirector") as CombatDirector

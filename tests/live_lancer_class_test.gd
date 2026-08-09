@@ -347,7 +347,6 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 	session.extra_player_coords = _vector2i_array(batch.extra_players)
 	session.dummy_coords = _vector2i_array(batch.dummies)
 	session.unkillable_dummies = true
-	session.infinite_player_ap = true
 	_scene.apply_training_board()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 

@@ -5,6 +5,7 @@ param(
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $suite = "res://tests/live_planning_scene_test.gd"
+$swapTest = "live_planning_scene_test.gd:test_live_swap_session"
 $cmdTool = "res://addons/gdUnit4/bin/GdUnitCmdTool.gd"
 
 if (-not (Test-Path $GodotPath)) {
@@ -17,7 +18,7 @@ if (-not (Test-Path (Join-Path $projectRoot "tests\live_planning_scene_test.gd")
 }
 
 $env:LIVE_QA_PROFILE = "fast"
-Write-Output "[Tier 3] LIVE_QA_PROFILE=fast (set LIVE_QA_PROFILE=full for legacy PNG + selection/drag parity on all knights)."
+Write-Output "[Tier 3] LIVE_QA_PROFILE=fast (swap test excluded; use run_swap_planning_acceptance.ps1 explicitly)."
 
 # GdUnitCmdTool only accepts -a/-i/etc. --godot_binary is runtest.cmd-only (stripped before invoke).
 $godotArgs = @(
@@ -25,7 +26,8 @@ $godotArgs = @(
 	"-s", "-d",
 	"--remote-debug", "tcp://127.0.0.1:0",
 	$cmdTool,
-	"-a", $suite
+	"-a", $suite,
+	"-i", $swapTest
 )
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-tier3.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-tier3.stderr.log"

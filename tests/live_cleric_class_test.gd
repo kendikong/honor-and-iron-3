@@ -44,7 +44,6 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		session.extra_player_coords = _player_coords(item)
 		session.dummy_coords = _enemy_target(item)
 		session.unkillable_dummies = true
-		session.infinite_player_ap = true
 		scene.apply_training_board()
 		await runner.simulate_frames(8, 16)
 		var director := scene.get_node("CombatDirector") as CombatDirector

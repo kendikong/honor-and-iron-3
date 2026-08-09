@@ -113,7 +113,6 @@ func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
 	session.extra_player_coords = _extra_players(skill_ids)
 	session.dummy_coords = _dummies(skill_ids)
 	session.unkillable_dummies = true
-	session.infinite_player_ap = true
 	_scene.apply_training_board()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	_director = _scene.get_node("CombatDirector") as CombatDirector
