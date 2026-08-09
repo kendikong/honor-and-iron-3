@@ -1604,13 +1604,18 @@ func _draw_interaction_overlay() -> void:
 			var draw_move_line: bool = _interaction_move_hover_active(actor.id)
 			# Skill targeting on enemy: draw pre-move approach leg (solid), not only dotted target arrow.
 			if not draw_move_line and _resolve_overlay_attack_target_id() >= 0:
-				draw_move_line = true
+				var hover_ability := _selected_ability_data(actor, _director.selected_ability_index)
+				if hover_ability == null or not AbilitySystem.can_target_self(actor, hover_ability):
+					draw_move_line = true
 			if draw_move_line:
 				_draw_route_line(draw_route, p_col, true, true)
 	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
 	var route_col := Color(p_col.r, p_col.g, p_col.b, 0.95)
 	var attack_target_id: int = _resolve_overlay_attack_target_id()
-	if attack_target_id >= 0:
+	var self_target_skill: bool = (
+		sel_ability != null and AbilitySystem.can_target_self(actor, sel_ability)
+	)
+	if attack_target_id >= 0 and not self_target_skill:
 		var origin: Vector2i = actor.position
 		var target_coord: Vector2i = _hover_coord
 		# Targeting dotted arrow = aim at current enemy tile; forced push uses orange only.

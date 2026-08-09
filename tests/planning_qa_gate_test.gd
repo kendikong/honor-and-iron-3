@@ -8,6 +8,7 @@ const KNIGHT_START := Vector2i(4, 5)
 const ENEMY_POS := Vector2i(7, 5)
 const BASH_APPROACH := Vector2i(6, 5)
 const SHIELD_BASH_ID: StringName = &"knight_shield_bash"
+const PHALANX_STANCE_ID: StringName = &"knight_phalanx_stance"
 const CHAIN_HOOK_ID: StringName = &"knight_chain_hook"
 const TRAMPLE_ID: StringName = &"knight_trampling_advance"
 const BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
@@ -78,6 +79,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_action_range_shows_on_enemy_hover,
 		_test_action_range_follows_cursor_on_move_hover,
 		_test_enemy_skill_hover_not_movement_route,
+		_test_self_skill_move_hover_no_attack_target,
 		_test_enemy_bash_approach_move_leg,
 		_test_bash_targeting_uses_pre_push_enemy_cell,
 		_test_hook_pull_preview_keeps_attack_target,
@@ -148,6 +150,7 @@ static func run_all(failures: Array[String]) -> void:
 		"action_range_enemy_hover",
 		"action_range_move_hover_follows_cursor",
 		"enemy_hover_not_move_route",
+		"self_skill_move_no_target_arrow",
 		"bash_enemy_approach_leg",
 		"bash_target_pre_push_cell",
 		"hook_pull_attack_target",
@@ -2505,6 +2508,29 @@ static func _test_enemy_skill_hover_not_movement_route(failures: Array[String]) 
 	if input.hover_attack_target_id() != fix.enemy.id:
 		failures.append(
 			"PlanningQAGate enemy_hover_not_move_route: enemy hover must resolve attack target id",
+		)
+
+
+static func _test_self_skill_move_hover_no_attack_target(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var phalanx_idx: int = _ability_index(fix.knight, PHALANX_STANCE_ID)
+	if phalanx_idx < 0:
+		failures.append("PlanningQAGate self_skill_move_no_target_arrow: Phalanx Stance missing")
+		return
+	director.selected_ability_index = phalanx_idx
+	var dest: Vector2i = Vector2i(5, 5)
+	TramplingAdvanceE2ETest._paint_drag_route(fix.input, fix.knight, [KNIGHT_START, dest], dest)
+	var intent := CombatIntentState.new()
+	intent.bind(director)
+	intent.set_hover_coord(dest)
+	input._intent_state = intent
+	input._update_hover_attack_preview()
+	if input.hover_attack_target_id() >= 0:
+		failures.append(
+			"PlanningQAGate self_skill_move_no_target_arrow: move+self hover must not expose attack target id (got %d)"
+			% input.hover_attack_target_id(),
 		)
 
 

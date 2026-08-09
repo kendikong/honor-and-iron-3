@@ -1582,7 +1582,14 @@ func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> i
 	if _skill_interaction_active() or aiming:
 		if hover_unit.id == p_unit.id:
 			var ability := _selected_ability_data(p_unit)
-			return p_unit.id if AbilitySystem.can_target_self(p_unit, ability) else -1
+			if ability == null or not AbilitySystem.can_target_self(p_unit, ability):
+				return -1
+			var hover_cell: Vector2i = (
+				_intent_state.hover_coord if _intent_state != null else hover_unit.position
+			)
+			if hover_cell != _proj_origin(p_unit):
+				return -1
+			return p_unit.id
 		if hover_unit.is_enemy():
 			var ability := _selected_ability_data(p_unit)
 			if ability == null or _awaiting_flow_selected(p_unit, ability):
