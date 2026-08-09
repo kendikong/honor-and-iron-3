@@ -50,11 +50,10 @@ static func _entries() -> Dictionary:
 	return {
 		&"bruiser_push_through": {
 			"tag": "push_through",
-			"mode": "click",
+			"mode": "ally",
 			"bruiser_pos": Vector2i(4, 5),
-			"enemy_pos": Vector2i(5, 5),
+			"ally_pos": Vector2i(5, 5),
 			"commit_cell": Vector2i(5, 5),
-			"verify_no_jump": false,
 		},
 		&"bruiser_charge_strike": {
 			"tag": "charge_strike",

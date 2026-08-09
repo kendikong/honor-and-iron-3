@@ -186,7 +186,7 @@ Core Identity: Tanky Melee-Strong, High HP. Dynamic HP management. Can play as a
 Innate Trait: Sanguine Regeneration
 Base Mechanic: At the start of every turn during resolution, the Bruiser automatically restores health equal to Floor(5% of Max HP).
 Upgrade: Turn-start regeneration increases to Floor(10% of Max HP). If the Bruiser is already at Max HP when this triggers, the excess healing is converted directly into temporary SHIELD.
-Reposition Skill: Push Through (Cost: 2 MOV) — Move into an adjacent tile occupied by a unit, pushing them 1 tile forward.
+Reposition Skill: Push Through (Cost: 2 MOV) — Move into an adjacent tile occupied by an ally, pushing them 1 tile forward.
 Upgrade: Cost reduced to 1 MOV. Pushing a unit grants the Bruiser +1 STR for their next attack this turn.
 Advanced Classes (Promotion Boosts)
 The Bloodrager: (+4 STR, +4 CON, 0 MOV) Low HP management with high STR buffs and self-healing.

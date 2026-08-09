@@ -305,6 +305,8 @@ static func bible_ability_effect_line(ability: AbilityData) -> String:
 			return "ATK 1 | PULL 2"
 		&"knight_swap":
 			return "SWAP"
+		&"bruiser_push_through":
+			return "MOVE into occupied ally | PUSH 1"
 		_:
 			return ""
 

@@ -237,6 +237,13 @@ static func place_dummy(board: BoardState, unit_id: int, pos: Vector2i, config: 
 	return place_unit(board, unit_id, def, GameEnums.Team.ENEMY, pos, config)
 
 
+static func place_ally(board: BoardState, unit_id: int, pos: Vector2i, config: Dictionary = {}) -> UnitState:
+	var def: UnitData = DataLibrary.get_training_dummy()
+	if def == null:
+		def = bruiser_unit_data()
+	return place_unit(board, unit_id, def, GameEnums.Team.PLAYER, pos, config)
+
+
 static func with_upgraded_ability(config: Dictionary, ability_id: StringName) -> Dictionary:
 	var cfg: Dictionary = config.duplicate(true)
 	var ups: Array = cfg.get("upgraded_abilities", []) as Array
@@ -469,9 +476,14 @@ static func run_push_through_base(failures: Array[String]) -> void:
 		],
 	}
 	place_bruiser(board, 1, Vector2i(3, 3), cfg)
-	place_dummy(board, 2, Vector2i(3, 4))
+	place_ally(board, 2, Vector2i(3, 4))
 	var bruiser: UnitState = unit_on_board(board, 1)
 	var push: AbilityData = ability_on_unit(bruiser, &"bruiser_push_through")
+	assert_true(
+		failures, "push_through/ally_targeting",
+		push.has_targeting(GameEnums.TargetingFlags.ALLY),
+		"Reposition Push Through must target allies per Bible global rule",
+	)
 	assert_true(
 		failures, "push_through/effect",
 		ability_has_effect(push, GameEnums.EffectType.MOVE_INTO_AND_PUSH, false),
@@ -488,7 +500,7 @@ static func run_push_through_base(failures: Array[String]) -> void:
 	var b_after: UnitState = result.final_state.get_unit_by_id(1)
 	var e_after: UnitState = result.final_state.get_unit_by_id(2)
 	assert_eq_cell(failures, "push_through/bruiser_pos", b_after.position, Vector2i(3, 4))
-	assert_eq_cell(failures, "push_through/enemy_pos", e_after.position, Vector2i(3, 5))
+	assert_eq_cell(failures, "push_through/ally_pos", e_after.position, Vector2i(3, 5))
 	assert_true(
 		failures, "push_through/pushed_event",
 		events_have_unit_pushed(result.events, 2),
@@ -519,7 +531,7 @@ static func run_push_through_blocked(failures: Array[String]) -> void:
 		],
 	}, &"bruiser_push_through")
 	place_bruiser(board, 1, Vector2i(3, 3), cfg)
-	place_dummy(board, 2, Vector2i(3, 4))
+	place_ally(board, 2, Vector2i(3, 4))
 	var push: AbilityData = ability_on_unit(unit_on_board(board, 1), &"bruiser_push_through")
 	var plan := Timeline.new()
 	plan.add(plan_ability(1, push, Vector2i(3, 4), 2, GameEnums.MoveTiming.PRE_ACTION))
@@ -527,7 +539,7 @@ static func run_push_through_blocked(failures: Array[String]) -> void:
 	var b_after: UnitState = result.final_state.get_unit_by_id(1)
 	var e_after: UnitState = result.final_state.get_unit_by_id(2)
 	assert_eq_cell(failures, "push_through/blocked_bruiser_pos", b_after.position, Vector2i(3, 3))
-	assert_eq_cell(failures, "push_through/blocked_enemy_pos", e_after.position, Vector2i(3, 4))
+	assert_eq_cell(failures, "push_through/blocked_ally_pos", e_after.position, Vector2i(3, 4))
 	assert_true(
 		failures, "push_through/blocked_no_push_event",
 		not events_have_unit_pushed(result.events, 2),
@@ -549,7 +561,7 @@ static func run_push_through_upgrade(failures: Array[String]) -> void:
 		],
 	}, &"bruiser_push_through")
 	place_bruiser(board, 1, Vector2i(3, 3), cfg)
-	place_dummy(board, 2, Vector2i(3, 4))
+	place_ally(board, 2, Vector2i(3, 4))
 	var bruiser: UnitState = unit_on_board(board, 1)
 	var push: AbilityData = ability_on_unit(bruiser, &"bruiser_push_through")
 	assert_true(
@@ -591,7 +603,7 @@ static func run_push_through_non_adjacent(failures: Array[String]) -> void:
 			factory_ability(&"bruiser_push_through"),
 		],
 	})
-	place_dummy(board, 2, Vector2i(3, 5))
+	place_ally(board, 2, Vector2i(3, 5))
 	var push: AbilityData = ability_on_unit(unit_on_board(board, 1), &"bruiser_push_through")
 	var plan := Timeline.new()
 	plan.add(plan_ability(1, push, Vector2i(3, 5), 2, GameEnums.MoveTiming.PRE_ACTION))
@@ -599,7 +611,7 @@ static func run_push_through_non_adjacent(failures: Array[String]) -> void:
 	var b_after: UnitState = result.final_state.get_unit_by_id(1)
 	var e_after: UnitState = result.final_state.get_unit_by_id(2)
 	assert_eq_cell(failures, "push_through/non_adjacent_bruiser", b_after.position, Vector2i(3, 3))
-	assert_eq_cell(failures, "push_through/non_adjacent_enemy", e_after.position, Vector2i(3, 5))
+	assert_eq_cell(failures, "push_through/non_adjacent_ally", e_after.position, Vector2i(3, 5))
 	assert_true(
 		failures, "push_through/non_adjacent_no_push",
 		not events_have_unit_pushed(result.events, 2),
@@ -615,7 +627,6 @@ static func run_push_through_empty_tile(failures: Array[String]) -> void:
 			factory_ability(&"bruiser_push_through"),
 		],
 	})
-	place_dummy(board, 2, Vector2i(3, 5))
 	var push: AbilityData = ability_on_unit(unit_on_board(board, 1), &"bruiser_push_through")
 	var probe: TimelineAction = TimelineAction.make_ability(1, push, Vector2i(3, 4), 2)
 	assert_true(
@@ -631,6 +642,24 @@ static func run_push_through_empty_tile(failures: Array[String]) -> void:
 	assert_true(
 		failures, "push_through/empty_tile_no_push",
 		not events_have_unit_pushed(result.events, 2),
+	)
+
+
+static func run_push_through_rejects_enemy(failures: Array[String]) -> void:
+	var board: BoardState = make_plain_board(Vector2i(8, 8))
+	place_bruiser(board, 1, Vector2i(3, 3), {
+		"active_abilities": [
+			DataLibrary.get_universal_run(),
+			factory_ability(&"bruiser_push_through"),
+		],
+	})
+	place_dummy(board, 2, Vector2i(3, 4))
+	var push: AbilityData = ability_on_unit(unit_on_board(board, 1), &"bruiser_push_through")
+	var probe: TimelineAction = TimelineAction.make_ability(1, push, Vector2i(3, 4), 2)
+	assert_true(
+		failures, "push_through/rejects_enemy",
+		not AbilitySystem.can_use(board, probe),
+		"Push Through must not target enemies per Bible global reposition rule",
 	)
 
 
@@ -674,28 +703,36 @@ static func run_push_through_upgrade_next_attack(failures: Array[String]) -> voi
 	}, &"bruiser_push_through")
 	var board: BoardState = make_plain_board(Vector2i(8, 8))
 	place_bruiser(board, 1, Vector2i(3, 3), cfg)
-	place_dummy(board, 2, Vector2i(3, 4))
-	var hp_enemy: int = unit_hp(board, 2)
+	place_ally(board, 2, Vector2i(3, 4))
+	place_dummy(board, 3, Vector2i(4, 4))
+	var hp_enemy: int = unit_hp(board, 3)
 	var push: AbilityData = ability_on_unit(unit_on_board(board, 1), &"bruiser_push_through")
 	var plan := Timeline.new()
 	plan.add(plan_ability(1, push, Vector2i(3, 4), 2, GameEnums.MoveTiming.PRE_ACTION))
-	plan.add(plan_ability(1, cleave, Vector2i(3, 5), 2))
+	plan.add(plan_ability(1, cleave, Vector2i(4, 4), 3))
 	var result: SimResult = simulate_plan(board, plan)
-	var dmg_buffed: int = hp_enemy - unit_hp(result.final_state, 2)
+	var dmg_buffed: int = hp_enemy - unit_hp(result.final_state, 3)
 	var board_base: BoardState = make_plain_board(Vector2i(8, 8))
-	place_bruiser(board_base, 10, Vector2i(3, 3), {"active_abilities": [DataLibrary.get_universal_run(), cleave]})
-	place_dummy(board_base, 11, Vector2i(3, 4))
+	place_bruiser(board_base, 10, Vector2i(3, 4), {"active_abilities": [DataLibrary.get_universal_run(), cleave]})
+	place_dummy(board_base, 11, Vector2i(4, 4))
 	var hp_base: int = unit_hp(board_base, 11)
 	var plan_base := Timeline.new()
-	plan_base.add(plan_ability(10, cleave, Vector2i(3, 4), 11))
+	plan_base.add(plan_ability(10, cleave, Vector2i(4, 4), 11))
 	var result_base: SimResult = simulate_plan(board_base, plan_base)
 	var dmg_base: int = hp_base - unit_hp(result_base.final_state, 11)
 	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
 	var base_cleave_power: int = cleave.effects[0].amount
-	var expected_delta: int = (
-		CombatSystem.calculate_scaled_damage(bruiser_after, base_cleave_power + 1, GameEnums.StatType.PHYSICAL, board)
-		- CombatSystem.calculate_scaled_damage(bruiser_after, base_cleave_power, GameEnums.StatType.PHYSICAL, board)
+	var str_val: int = CombatSystem.get_dynamic_strength(result.final_state, bruiser_after)
+	var wpn: int = 0
+	if bruiser_after.definition != null and bruiser_after.definition.equipped_weapon != null:
+		wpn = bruiser_after.definition.equipped_weapon.might
+	var dmg_with_str: int = CombatSystem.calculate_scaled_damage(
+		bruiser_after, base_cleave_power, GameEnums.StatType.PHYSICAL, result.final_state,
 	)
+	var dmg_without_str: int = floori(
+		(base_cleave_power + wpn) * (1.0 + float(str_val - 1) / 5.0),
+	)
+	var expected_delta: int = dmg_with_str - dmg_without_str
 	assert_eq_int(
 		failures, "push_through/upgrade_str_attack_delta",
 		dmg_buffed - dmg_base,

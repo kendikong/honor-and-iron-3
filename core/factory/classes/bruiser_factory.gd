@@ -15,7 +15,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	
 	# Movement Skill (Push Through)
 	var push_module := DataLibrary._module(
-		GameEnums.EffectType.MOVE_INTO_AND_PUSH, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.EffectType.MOVE_INTO_AND_PUSH, 1, 1, 1, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.INTO_OCCUPIED_PUSH,
 	)
@@ -25,8 +25,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		&"bruiser_push_through", "Push Through", [push_module], push_upgraded,
 		2, GameEnums.PlannerGroup.PRE_MOVE, GameEnums.CostResource.MP,
 		[AbilityModuleBridge.TAG_POSITIONING],
-		"Cost reduced to 1 MOV. Pushing unit grants +1 STR for next attack.",
-		GameEnums.TargetingFlags.ENEMY, GameEnums.CostResource.NONE, 0,
+		"Cost reduced to 1 MOV. Pushing a unit grants +1 STR for your next attack this turn.",
+		GameEnums.TargetingFlags.ALLY, GameEnums.CostResource.NONE, 0,
 		GameEnums.CostModifier.NONE, 0, 1,
 	)
 	def.abilities.append(push_through)

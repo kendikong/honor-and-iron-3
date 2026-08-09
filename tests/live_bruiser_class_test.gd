@@ -48,8 +48,8 @@ const _CASES: Array[Dictionary] = [
 
 const _BATCHES: Array[Dictionary] = [
 	{
-		"extra_players": [Vector2i(1, 3), Vector2i(2, 8), Vector2i(8, 8)],
-		"dummies": [Vector2i(5, 5), Vector2i(3, 3), Vector2i(4, 8), Vector2i(7, 8)],
+		"extra_players": [Vector2i(1, 3), Vector2i(2, 8), Vector2i(8, 8), Vector2i(5, 5)],
+		"dummies": [Vector2i(3, 3), Vector2i(4, 8), Vector2i(7, 8)],
 		"skills": [&"bruiser_push_through", &"bruiser_charge_strike", &"bruiser_concussion_blow", &"bruiser_cleave"],
 	},
 	{
