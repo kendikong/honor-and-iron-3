@@ -638,9 +638,6 @@ static func module_to_dict(src: AbilityModule) -> Dictionary:
 		"execution_phase": src.execution_phase,
 		"primary_type": src.primary_type,
 		"amount": src.amount,
-		"scaling_stat": src.scaling_stat,
-		"spawn_unit_id": String(src.spawn_unit_id),
-		"motion_mode": src.motion_mode,
 		"min_range": src.min_range,
 		"max_range": src.max_range,
 		"requires_los": src.requires_los,
@@ -648,19 +645,32 @@ static func module_to_dict(src: AbilityModule) -> Dictionary:
 		"target_shape": src.target_shape,
 		"target_shape_size": src.target_shape_size,
 		"aim_binding": src.aim_binding,
-		"aim_module_index": src.aim_module_index,
 		"targeting_flags": src.targeting_flags,
 		"keywords": keywords,
 		"layers": layers,
 		"gate": src.gate,
 		"presentation_anim": src.presentation_anim,
-		"bonus_if_adjacent_at_cast": src.bonus_if_adjacent_at_cast,
-		"def_debuff_before_damage": src.def_debuff_before_damage,
 		"legacy_modifiers": src.legacy_modifiers.duplicate(true),
 	}
+	if GameEnums.effect_type_uses_module_scaling(src.primary_type):
+		out["scaling_stat"] = src.scaling_stat
 	if GameEnums.effect_type_applies_status(src.primary_type):
 		out["status_type"] = src.status_type
 		out["status_duration"] = src.status_duration
+	if AbilityModuleBridge.is_motion_type(src.primary_type):
+		out["motion_mode"] = src.motion_mode
+	if src.primary_type == GameEnums.EffectType.DAMAGE:
+		if src.bonus_if_adjacent_at_cast != 0:
+			out["bonus_if_adjacent_at_cast"] = src.bonus_if_adjacent_at_cast
+		if src.def_debuff_before_damage != 0:
+			out["def_debuff_before_damage"] = src.def_debuff_before_damage
+	if (
+		GameEnums.effect_type_uses_spawn_unit(src.primary_type)
+		and src.spawn_unit_id != StringName()
+	):
+		out["spawn_unit_id"] = String(src.spawn_unit_id)
+	if src.aim_binding == GameEnums.AimBinding.SAME_AS_MODULE_N:
+		out["aim_module_index"] = src.aim_module_index
 	return out
 
 
@@ -1150,15 +1160,23 @@ static func effect_to_dict(src: EffectData) -> Dictionary:
 	var out := {
 		"type": src.type,
 		"amount": src.amount,
-		"scaling_stat": src.scaling_stat,
-		"bonus_if_adjacent_at_cast": src.bonus_if_adjacent_at_cast,
-		"def_debuff_before_damage": src.def_debuff_before_damage,
-		"spawn_unit_id": String(src.spawn_unit_id),
 		"modifiers": src.modifiers.duplicate(),
 	}
+	if GameEnums.effect_type_uses_module_scaling(src.type):
+		out["scaling_stat"] = src.scaling_stat
 	if GameEnums.effect_type_applies_status(src.type):
 		out["status_type"] = src.status_type
 		out["status_duration"] = src.status_duration
+	if src.type == GameEnums.EffectType.DAMAGE:
+		if src.bonus_if_adjacent_at_cast != 0:
+			out["bonus_if_adjacent_at_cast"] = src.bonus_if_adjacent_at_cast
+		if src.def_debuff_before_damage != 0:
+			out["def_debuff_before_damage"] = src.def_debuff_before_damage
+	if (
+		GameEnums.effect_type_uses_spawn_unit(src.type)
+		and src.spawn_unit_id != StringName()
+	):
+		out["spawn_unit_id"] = String(src.spawn_unit_id)
 	return out
 
 

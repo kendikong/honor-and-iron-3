@@ -42,6 +42,11 @@ static func normalize_effect_authoring_fields(effect: EffectData) -> void:
 	normalize_effect_status_fields(effect)
 	if not GameEnums.effect_type_uses_module_scaling(effect.type):
 		effect.scaling_stat = GameEnums.StatType.NONE
+	if effect.type != GameEnums.EffectType.DAMAGE:
+		effect.bonus_if_adjacent_at_cast = 0
+		effect.def_debuff_before_damage = 0
+	if not GameEnums.effect_type_uses_spawn_unit(effect.type):
+		effect.spawn_unit_id = &""
 
 
 static func normalize_module_authoring_fields(module: AbilityModule) -> void:
@@ -57,6 +62,13 @@ static func normalize_module_authoring_fields(module: AbilityModule) -> void:
 		module.def_debuff_before_damage = 0
 	if module.aim_binding != GameEnums.AimBinding.SAME_AS_MODULE_N:
 		module.aim_module_index = 0
+	if not GameEnums.effect_type_uses_spawn_unit(module.primary_type):
+		module.spawn_unit_id = &""
+	if module.target_shape == GameEnums.TargetShape.SINGLE:
+		module.target_shape_size = 1
+	for keyword: AbilityKeyword in module.keywords:
+		if keyword != null and not GameEnums.keyword_uses_push_amount(keyword.keyword_id):
+			keyword.push_amount = 0
 	for layer: AbilityLayer in module.layers:
 		if layer != null and layer.effect != null:
 			normalize_effect_authoring_fields(layer.effect)

@@ -153,6 +153,14 @@ static func effect_type_uses_module_scaling(effect_type: EffectType) -> bool:
 	]
 
 
+static func effect_type_uses_spawn_unit(effect_type: EffectType) -> bool:
+	return effect_type == EffectType.SPAWN
+
+
+static func keyword_uses_push_amount(keyword_id: AbilityKeywordId) -> bool:
+	return keyword_id == AbilityKeywordId.BULLDOZE
+
+
 static func is_buff(status: StatusType) -> bool:
 	match status:
 		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RUNNING, StatusType.RETALIATION_PROTOCOL, StatusType.RETALIATION_INFINITE_RANGE, StatusType.INDOMITABLE_WILL, StatusType.INDOMITABLE_WILL_UPGRADED, StatusType.THORNS, StatusType.BRACED:

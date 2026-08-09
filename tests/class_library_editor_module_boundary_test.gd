@@ -49,6 +49,12 @@ static func _assert_non_status_modules_clear_status_type(failures: Array[String]
 		failures.append("MOVE module scaling_stat should normalize to NONE")
 	if move_module.motion_mode != GameEnums.MotionMode.TO_EMPTY_TILE:
 		failures.append("MOVE module motion_mode should remain authored")
+	var spawn_layer := EffectData.new()
+	spawn_layer.type = GameEnums.EffectType.PUSH
+	spawn_layer.spawn_unit_id = &"dummy"
+	AbilityModuleBridge.normalize_effect_authoring_fields(spawn_layer)
+	if spawn_layer.spawn_unit_id != StringName():
+		failures.append("non-SPAWN effect should clear spawn_unit_id on normalize")
 
 
 static func _assert_saved_abilities_are_module_first(failures: Array[String]) -> void:

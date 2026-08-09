@@ -1715,12 +1715,23 @@ func _build_module_fields(
 		changed.call()
 	)
 	if GameEnums.effect_type_applies_status(module.primary_type):
-		_bind_enum(grid, "Status", GameEnums.StatusType, module.status_type, func(v: int) -> void:
-			module.status_type = v
-			changed.call()
+		_bind_enum_excluding(
+			grid,
+			"Status",
+			GameEnums.StatusType,
+			module.status_type,
+			func(v: int) -> void:
+				module.status_type = v
+				changed.call(),
+			PackedStringArray(["NONE"]),
 		)
 		_bind_int(grid, "Duration", module.status_duration, func(v: int) -> void:
 			module.status_duration = v
+			changed.call()
+		)
+	if GameEnums.effect_type_uses_spawn_unit(module.primary_type):
+		_bind_string(grid, "Spawn Unit Id", String(module.spawn_unit_id), func(v: String) -> void:
+			module.spawn_unit_id = StringName(v)
 			changed.call()
 		)
 	var grey_rows: Dictionary = {}
@@ -1821,10 +1832,12 @@ func _add_module_targeting_flags(
 		var check := CheckBox.new()
 		check.text = String(spec[1])
 		check.button_pressed = module.has_targeting(flag)
-		check.disabled = (
+		var dash_greyed: bool = (
 			flag == GameEnums.TargetingFlags.DASH_LINE
 			and module.primary_type != GameEnums.EffectType.DASH
 		)
+		check.disabled = dash_greyed
+		check.modulate.a = 0.35 if dash_greyed else 1.0
 		check.toggled.connect(func(enabled: bool) -> void:
 			if enabled:
 				module.targeting_flags |= flag
@@ -1851,12 +1864,13 @@ func _add_module_keywords_editor(
 		_bind_enum(grid, "Keyword %d" % index, GameEnums.AbilityKeywordId, keyword.keyword_id, func(v: int) -> void:
 			keyword.keyword_id = v
 			_on_module_field_edited(ability)
+			_refresh_module_field_greying(ability)
 		)
 		_bind_int(grid, "Amount", keyword.amount, func(v: int) -> void:
 			keyword.amount = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Push Amount", keyword.push_amount, func(v: int) -> void:
+		var push_row := _bind_int(grid, "Push Amount", keyword.push_amount, func(v: int) -> void:
 			keyword.push_amount = v
 			_on_module_field_edited(ability)
 		)
@@ -1871,6 +1885,13 @@ func _add_module_keywords_editor(
 			_rebuild_ability_detail_panes(ability)
 		)
 		box.add_child(remove)
+		var keyword_grey_cb := func() -> void:
+			_grey_row(
+				push_row,
+				not GameEnums.keyword_uses_push_amount(keyword.keyword_id),
+			)
+		_ability_ui[ability]["module_grey_cbs"].append(keyword_grey_cb)
+		keyword_grey_cb.call()
 	var add := Button.new()
 	add.text = "+ Keyword"
 	add.pressed.connect(func() -> void:
@@ -1910,14 +1931,15 @@ func _add_module_layers_editor(
 		)
 		var layer_grey_rows: Dictionary = {}
 		if GameEnums.effect_type_applies_status(layer.effect.type):
-			layer_grey_rows["status"] = _bind_enum(
+			layer_grey_rows["status"] = _bind_enum_excluding(
 				grid,
 				"Layer Status",
 				GameEnums.StatusType,
 				layer.effect.status_type,
 				func(v: int) -> void:
 					layer.effect.status_type = v
-					_on_module_field_edited(ability)
+					_on_module_field_edited(ability),
+				PackedStringArray(["NONE"]),
 			)
 			layer_grey_rows["duration"] = _bind_int(
 				grid,
@@ -1926,6 +1948,11 @@ func _add_module_layers_editor(
 				func(v: int) -> void:
 					layer.effect.status_duration = v
 					_on_module_field_edited(ability)
+			)
+		if GameEnums.effect_type_uses_spawn_unit(layer.effect.type):
+			_bind_string(grid, "Layer Spawn Id", String(layer.effect.spawn_unit_id), func(v: String) -> void:
+				layer.effect.spawn_unit_id = StringName(v)
+				_on_module_field_edited(ability)
 			)
 		layer_grey_rows["scaling"] = _bind_enum(
 			grid,
@@ -1936,6 +1963,23 @@ func _add_module_layers_editor(
 				layer.effect.scaling_stat = v
 				_on_module_field_edited(ability)
 		)
+		if layer.effect.type == GameEnums.EffectType.DAMAGE:
+			layer_grey_rows["adjacent_bonus"] = _bind_int(
+				grid,
+				"Layer Adjacent Bonus",
+				layer.effect.bonus_if_adjacent_at_cast,
+				func(v: int) -> void:
+					layer.effect.bonus_if_adjacent_at_cast = v
+					_on_module_field_edited(ability)
+			)
+			layer_grey_rows["def_debuff"] = _bind_int(
+				grid,
+				"Layer DEF Debuff",
+				layer.effect.def_debuff_before_damage,
+				func(v: int) -> void:
+					layer.effect.def_debuff_before_damage = v
+					_on_module_field_edited(ability)
+			)
 		var layer_grey_cb := func() -> void:
 			_grey_row(
 				layer_grey_rows.get("scaling", []),
@@ -2446,15 +2490,35 @@ func _bind_string_stacked(parent: VBoxContainer, label: String, value: String, s
 
 
 func _bind_enum(parent: GridContainer, label: String, enum_obj: Variant, current: int, setter: Callable) -> Array[Control]:
+	return _bind_enum_excluding(parent, label, enum_obj, current, setter, PackedStringArray())
+
+
+func _bind_enum_excluding(
+	parent: GridContainer,
+	label: String,
+	enum_obj: Variant,
+	current: int,
+	setter: Callable,
+	exclude: PackedStringArray,
+) -> Array[Control]:
 	var lbl := _field_label(label)
 	parent.add_child(lbl)
 	var opt := OptionButton.new()
 	var keys: PackedStringArray = enum_obj.keys()
+	var enum_values: Array[int] = []
 	for i: int in keys.size():
-		opt.add_item(keys[i], i)
-	opt.selected = current
+		if exclude.has(keys[i]):
+			continue
+		enum_values.append(i)
+		opt.add_item(keys[i], enum_values.size() - 1)
+	var selected: int = enum_values.find(current)
+	if selected < 0:
+		selected = 0
+		if not enum_values.is_empty():
+			setter.call(enum_values[0])
+	opt.selected = selected
 	opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	opt.item_selected.connect(func(idx: int) -> void: setter.call(idx))
+	opt.item_selected.connect(func(idx: int) -> void: setter.call(enum_values[idx]))
 	parent.add_child(opt)
 	return [lbl, opt]
 
