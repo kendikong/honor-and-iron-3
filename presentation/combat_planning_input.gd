@@ -24,6 +24,10 @@ var dragging: bool = false
 var aiming: bool = false
 var _drag_armed: bool = false
 var _drag_press_local: Vector2 = Vector2.ZERO
+var _drag_saved_force_basic: bool = false
+var _drag_force_basic_active: bool = false
+var _drag_drop_finishing: bool = false
+var _drag_survive_board_cancel: bool = false
 
 const _DRAG_THRESHOLD_PX: float = 6.0
 const _ABILITY_SCROLL_SETTLE_SEC: float = 0.075
@@ -222,19 +226,21 @@ func on_left_release(local: Vector2) -> void:
 	if not dragging:
 		return
 	var had_movement: bool = _drag_had_movement()
+	_drag_drop_finishing = true
+	dragging = false
 	var board: BoardState = _director.board
 	var cell: Vector2i = _pointer_grid_cell()
 	var actor := board.get_unit_by_id(_drag_unit_id) if board != null else null
 	if actor == null or board == null or not board.is_in_bounds(cell):
-		dragging = false
 		_drag_unit_id = -1
 		_end_drag_interaction(true, had_movement)
+		_drag_drop_finishing = false
 		return
 	var committed: bool = _process_unit_drop(local, had_movement)
-	dragging = false
 	var snap_back: bool = had_movement and not committed
 	_drag_unit_id = -1
 	_end_drag_interaction(false, snap_back)
+	_drag_drop_finishing = false
 
 
 func _try_click_through_drag_armed(local: Vector2) -> bool:
@@ -694,7 +700,18 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 		_play_sfx("invalid")
 		return
 	if _director != null and _director.selected_unit_id != unit.id:
+		_drag_survive_board_cancel = true
 		_director.select_unit(unit.id)
+	if not _drag_force_basic_active:
+		_drag_saved_force_basic = force_basic_movement
+		_drag_force_basic_active = true
+		var keep_skill_drag: bool = (
+			was_already_selected
+			and _director.selected_ability_index >= 0
+			and auto_use_skill_after_move
+		)
+		if not keep_skill_drag:
+			force_basic_movement = true
 	_invalidate_planning_hover_cache()
 	_clear_drag_preview_cache()
 	_stash_committed_preview()
@@ -712,7 +729,15 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	_planning.begin_drag_sprite(unit.id)
 
 
+func _restore_drag_force_basic() -> void:
+	if not _drag_force_basic_active:
+		return
+	force_basic_movement = _drag_saved_force_basic
+	_drag_force_basic_active = false
+
+
 func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> void:
+	_restore_drag_force_basic()
 	_invalidate_planning_hover_cache()
 	_clear_drag_preview_cache()
 	_drag_route.clear()
@@ -765,6 +790,23 @@ func _on_board_changed(board: BoardState) -> void:
 			_planning.mark_danger_dirty()
 		if not _director.plan_refresh_snap_units:
 			_schedule_plan_refresh_followup()
+		return
+	if _drag_survive_board_cancel:
+		_drag_survive_board_cancel = false
+		_invalidate_planning_hover_cache()
+		if _planning != null:
+			_planning._recompute_hover_ranges_from_inputs()
+		_schedule_plan_refresh_followup()
+		return
+	var preserve_drag_session: bool = (
+		_drag_armed
+		or (dragging and force_basic_movement and not _drag_drop_finishing)
+	)
+	if preserve_drag_session:
+		_invalidate_planning_hover_cache()
+		if _planning != null:
+			_planning._recompute_hover_ranges_from_inputs()
+		_schedule_plan_refresh_followup()
 		return
 	if aiming:
 		cancel_aim()

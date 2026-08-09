@@ -9,6 +9,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_release_walk_commit_undo,
 		_test_release_matches_click_plan,
 		_test_press_drag_unselected_unit,
+		_test_press_drag_without_any_selection,
 		_test_right_click_undo_after_release,
 		_test_board_changed_clears_stale_stash_not_plan,
 		_test_board_changed_during_active_drag_restores_preview,
@@ -22,6 +23,7 @@ static func run_all(failures: Array[String]) -> void:
 		"release_walk_undo",
 		"release_click_parity",
 		"press_drag_unselected_unit",
+		"press_drag_without_any_selection",
 		"right_click_undo",
 		"board_changed_stale_stash",
 		"board_changed_active_drag",
@@ -152,6 +154,58 @@ static func _test_press_drag_unselected_unit(failures: Array[String]) -> void:
 		)
 
 
+static func _test_press_drag_without_any_selection(failures: Array[String]) -> void:
+	var k2_pos := Vector2i(2, 3)
+	var dest := Vector2i(3, 3)
+	var fix: Dictionary = PlanningDragE2EHarness.wire_dual_knight_fixture(
+		PlanningDragE2EHarness.KNIGHT_START, k2_pos,
+	)
+	PlanningDragE2EHarness.prepare_basic_walk(fix)
+	fix.director.select_unit(-1)
+	var map_stub: QaPlanningMapStub = fix.map_stub as QaPlanningMapStub
+	var input: CombatPlanningInput = fix.input as CombatPlanningInput
+	input.set_qa_pointer_grid_cell(k2_pos)
+	var press_local: Vector2 = map_stub.grid_to_local(k2_pos)
+	input.on_left_press(press_local)
+	if input._drag_unit_id != 3:
+		failures.append(
+			"DragE2E press_drag_without_any_selection: press must arm drag (got id %d)"
+			% input._drag_unit_id,
+		)
+		return
+	input.try_activate_drag(press_local + Vector2(12.0, 0.0))
+	if not input.dragging:
+		failures.append(
+			"DragE2E press_drag_without_any_selection: motion must start drag with no prior selection",
+		)
+		return
+	if fix.director.selected_unit_id != 3:
+		failures.append(
+			"DragE2E press_drag_without_any_selection: drag must select unit 3 (got %d)"
+			% fix.director.selected_unit_id,
+		)
+	input.set_qa_pointer_grid_cell(dest)
+	input.update_drag(map_stub.grid_to_local(dest))
+	PlanningDragE2EHarness.emit_board_changed(fix)
+	fix.director.flush_plan_refresh_signals_if_pending()
+	if not input.dragging:
+		failures.append(
+			"DragE2E press_drag_without_any_selection: board_changed must not cancel cross-select drag",
+		)
+		return
+	PlanningDragE2EHarness.release_at(fix, dest)
+	var k2_planned: bool = false
+	for raw: Variant in fix.director.plan_pre_move.entries:
+		var step: TimelineAction = raw as TimelineAction
+		if step != null and step.actor_id == 3:
+			k2_planned = true
+			break
+	if not k2_planned:
+		failures.append(
+			"DragE2E press_drag_without_any_selection: release must commit pre-move for dragged unit",
+		)
+
+
 static func _test_right_click_undo_after_release(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningDragE2EHarness.wire_walk_fixture()
 	PlanningDragE2EHarness.prepare_basic_walk(fix)
@@ -209,11 +263,14 @@ static func _test_board_changed_during_active_drag_restores_preview(failures: Ar
 		return
 	PlanningDragE2EHarness.emit_board_changed(fix)
 	fix.director.flush_plan_refresh_signals_if_pending()
-	if fix.input.dragging:
-		failures.append("DragE2E board_changed_active_drag: board_changed must end drag")
-	if fix.input._drag_saved_preview != null:
+	if not fix.input.dragging:
 		failures.append(
-			"DragE2E board_changed_active_drag: restored preview must clear stash after restore",
+			"DragE2E board_changed_active_drag: board_changed must not cancel an active drag",
+		)
+	PlanningDragE2EHarness.release_at(fix, dest)
+	if fix.director.plan_pre_move.size() == 0:
+		failures.append(
+			"DragE2E board_changed_active_drag: drag must still commit after board_changed",
 		)
 
 

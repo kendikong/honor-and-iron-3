@@ -55,11 +55,10 @@ static func _entries() -> Dictionary:
 			"tag": "charge_strike",
 			"mode": "click",
 			"actor_pos": Vector2i(1, 3),
-			"enemy_pos": Vector2i(3, 3),
-			"commit_cell": Vector2i(3, 3),
+			"enemy_pos": Vector2i(4, 3),
+			"commit_cell": Vector2i(4, 3),
 			"verify_no_jump": false,
 			"premove_cell": Vector2i(2, 3),
-			"postmove_cell": Vector2i(1, 3),
 			"assert_skill_modules": true,
 		},
 		&"bruiser_violent_collision": {

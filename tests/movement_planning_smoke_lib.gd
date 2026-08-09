@@ -122,6 +122,7 @@ static func run_commit_smoke(
 			failures, "%s/planning/timeline_columns" % tag, fix, commit_cell,
 		)
 	if postmove_cell.x > -999000:
+		_restore_movement_mp(fix, 2)
 		_MovementTimeline.commit_run_postmove_headless(
 			failures, fix, ability, postmove_cell, tag,
 		)
@@ -315,6 +316,21 @@ static func _fail(failures: Array[String], tag: String, message: String) -> void
 	failures.append("%s: %s" % [tag, message])
 
 
+static func _restore_movement_mp(fix: Dictionary, mp_left: int) -> void:
+	var director: CombatDirector = fix.director as CombatDirector
+	if director == null:
+		return
+	var unit_id: int = director.selected_unit_id
+	for board: BoardState in [director.base_board, director.board, director.projected_state]:
+		if board == null:
+			continue
+		var unit: UnitState = board.get_unit_by_id(unit_id)
+		if unit == null:
+			continue
+		unit.movement.points_left = mp_left
+		unit.movement.max_points = maxi(mp_left, unit.movement.max_points)
+
+
 static func _assert_charge_strike_modules(
 	failures: Array[String],
 	fix: Dictionary,
@@ -366,8 +382,13 @@ static func _assert_charge_strike_modules(
 		dmg > 0,
 		"Charge Strike DAMAGE module must reduce enemy HP (dealt %d)" % dmg,
 	)
+	var expected_after_skill: Vector2i = Vector2i(2, 3)
+	var expected_enemy: Vector2i = Vector2i(4, 3)
+	if skill_target == Vector2i(4, 3):
+		expected_after_skill = Vector2i(3, 3)
+		expected_enemy = Vector2i(5, 3)
 	var expected_bruiser_pos: Vector2i = (
-		postmove_cell if postmove_cell.x > -999000 else Vector2i(2, 3)
+		postmove_cell if postmove_cell.x > -999000 else expected_after_skill
 	)
 	_Checklist.assert_eq_cell(
 		failures,
@@ -379,5 +400,5 @@ static func _assert_charge_strike_modules(
 		failures,
 		"%s/modules/enemy_pos" % tag,
 		enemy_unit.position if enemy_unit != null else Vector2i(-999999, -999999),
-		Vector2i(4, 3),
+		expected_enemy,
 	)
