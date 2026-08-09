@@ -650,6 +650,228 @@ static func ability_range_chip(ability: AbilityData, unit: UnitState = null) -> 
 	return {"emoji": emoji, "text": display_val, "tooltip": "%s — %s" % [label, tooltip]}
 
 
+## In-game skill list: header cost + one bbcode line per authored module (layers on same line).
+static func ability_skill_list_layout(ability: AbilityData, unit: UnitState = null) -> Dictionary:
+	if ability == null:
+		return {
+			"title": "",
+			"cost": ability_cost_chip(null),
+			"module_lines": PackedStringArray(),
+			"planner_group": GameEnums.PlannerGroup.ACTION,
+		}
+	return {
+		"title": ability.display_name,
+		"cost": ability_cost_chip(ability),
+		"module_lines": ability_skill_module_lines_bbcode(ability, unit),
+		"planner_group": ability.planner_group,
+	}
+
+
+static func ability_skill_module_lines_bbcode(
+	ability: AbilityData,
+	unit: UnitState = null,
+) -> PackedStringArray:
+	var lines: PackedStringArray = PackedStringArray()
+	if ability == null:
+		return lines
+	var modules: Array[AbilityModule] = AbilitySystem.active_modules_for(unit, ability)
+	if modules.is_empty():
+		var fallback: String = ability_effect_bbcode(ability, unit)
+		if fallback != "":
+			lines.append(fallback)
+		return lines
+	for module: AbilityModule in modules:
+		var line: String = _ability_module_line_bbcode(module)
+		if line != "":
+			lines.append(line)
+	return lines
+
+
+static func ability_skill_row_background(planner_group: int, selected: bool) -> Color:
+	var base: Color = (
+		Color(0.12, 0.18, 0.30, 0.96)
+		if planner_group == GameEnums.PlannerGroup.PRE_MOVE
+		else Color(0.20, 0.17, 0.15, 0.96)
+	)
+	if selected:
+		return base.lerp(Color(0.98, 0.86, 0.32, 0.95), 0.22)
+	return base
+
+
+static func _ability_module_line_bbcode(module: AbilityModule) -> String:
+	if module == null:
+		return ""
+	var parts: Array[String] = []
+	if _module_line_includes_range_prefix(module):
+		var range_part: String = _module_range_prefix_bbcode(module)
+		if range_part != "":
+			parts.append(range_part)
+	var primary: String = _module_primary_bbcode(module)
+	if primary != "":
+		parts.append(primary)
+	if module.target_shape != GameEnums.TargetShape.SINGLE:
+		var shape_name: String = GameEnums.TargetShape.keys()[module.target_shape].capitalize().replace(
+			"Aoe ", "",
+		)
+		parts.append(_kw_hint(
+			"AOE %s %d" % [shape_name, module.target_shape_size],
+			_glossary_def("AOE"),
+		))
+	for keyword: AbilityKeyword in module.keywords:
+		if keyword == null or not keyword.emit_as_effect:
+			continue
+		var kw_label: String = _keyword_emit_label(keyword)
+		if kw_label != "":
+			parts.append(_kw_hint(kw_label, kw_label + "."))
+	for layer: AbilityLayer in module.layers:
+		if layer == null or layer.effect == null:
+			continue
+		var layer_part: String = _module_effect_bbcode_part(layer.effect)
+		if layer_part != "":
+			parts.append(layer_part)
+	return " | ".join(parts)
+
+
+static func _module_line_includes_range_prefix(module: AbilityModule) -> bool:
+	if module == null:
+		return false
+	if (module.targeting_flags & GameEnums.TargetingFlags.SELF) != 0 and module.max_range <= 0:
+		return false
+	if module.primary_type == GameEnums.EffectType.MOVE:
+		return false
+	if module.primary_type == GameEnums.EffectType.DASH:
+		return false
+	return module.max_range > 0 or module.min_range > 0
+
+
+static func _module_range_prefix_bbcode(module: AbilityModule) -> String:
+	var range_val: String = ""
+	if module.min_range > 0 and module.min_range != module.max_range:
+		range_val = "%d-%d" % [module.min_range, module.max_range]
+	elif module.max_range > 0:
+		range_val = str(module.max_range)
+	elif module.min_range > 0:
+		range_val = str(module.min_range)
+	if range_val == "":
+		return ""
+	var label: String = "RANGE %s" % range_val
+	var glyph: String = PlanningIcons.GLYPH_RANGE
+	return "[hint=\"%s — %s\"][color=#FBBF24]%s %s[/color][/hint]" % [
+		label,
+		_glossary_def("RANGE"),
+		glyph,
+		range_val,
+	]
+
+
+static func _module_primary_bbcode(module: AbilityModule) -> String:
+	var effect: EffectData = module.primary_as_effect()
+	return _module_effect_bbcode_part(effect)
+
+
+static func _module_effect_bbcode_part(effect: EffectData) -> String:
+	if effect == null:
+		return ""
+	match effect.type:
+		GameEnums.EffectType.DAMAGE:
+			var atk_label: String = "ATK %s" % _effect_amount_string(effect)
+			var hint: String = _glossary_def("ATK")
+			if effect.scaling_stat != GameEnums.StatType.NONE:
+				hint += " + %s" % GameEnums.StatType.keys()[effect.scaling_stat]
+			return "[hint=\"%s\"][color=#FBBF24]%s %s[/color][/hint]" % [
+				hint,
+				PlanningIcons.GLYPH_ATTACK,
+				atk_label,
+			]
+		GameEnums.EffectType.HEAL:
+			return _kw_hint("HEAL %s" % _effect_amount_string(effect), _glossary_def("HEAL"))
+		GameEnums.EffectType.PUSH:
+			return _kw_hint("PUSH %s" % _effect_amount_string(effect), _glossary_def("PUSH"))
+		GameEnums.EffectType.PULL:
+			return _kw_hint("PULL %s" % _effect_amount_string(effect), _glossary_def("PULL"))
+		GameEnums.EffectType.SWAP:
+			return _kw_hint("SWAP", _glossary_def("SWAP"))
+		GameEnums.EffectType.MOVE:
+			return _kw_hint("MOVE %s" % _effect_amount_string(effect), _glossary_def("MOVE"))
+		GameEnums.EffectType.DASH:
+			return _kw_hint("DASH %s" % _effect_amount_string(effect), _glossary_def("DASH"))
+		GameEnums.EffectType.TRAMPLE:
+			return _kw_hint("TRAMPLE %s" % _effect_amount_string(effect), _glossary_def("TRAMPLE"))
+		GameEnums.EffectType.BULLDOZE:
+			return _kw_hint("BULLDOZE %s" % _effect_amount_string(effect), _glossary_def("BULLDOZE"))
+		GameEnums.EffectType.ARMOR_UP:
+			return _kw_hint("SHIELD %s" % _effect_amount_string(effect), _glossary_def("SHIELD"))
+		GameEnums.EffectType.EXPLODE:
+			return _kw_hint("EXPLODE %s" % _effect_amount_string(effect), _glossary_def("EXPLODE"))
+		GameEnums.EffectType.RANGED_EXPLODE:
+			return _kw_hint("AOE ATK %s" % _effect_amount_string(effect), _glossary_def("AOE ATK"))
+		GameEnums.EffectType.SPAWN:
+			return _kw_hint(
+				"SPAWN %s" % str(effect.spawn_unit_id).capitalize(),
+				_glossary_def("SPAWN"),
+			)
+		GameEnums.EffectType.ADD_STATUS:
+			var status_parts: Array[String] = []
+			_append_status_effect_part(status_parts, effect, false, true)
+			return status_parts[0] if not status_parts.is_empty() else ""
+		GameEnums.EffectType.ADD_STATUS_SELF:
+			var self_parts: Array[String] = []
+			_append_status_effect_part(self_parts, effect, true, true)
+			return self_parts[0] if not self_parts.is_empty() else ""
+		GameEnums.EffectType.PURGE:
+			return _kw_hint("PURGE", _glossary_def("PURGE"))
+		GameEnums.EffectType.CLEANSE:
+			return _kw_hint("CLEANSE", _glossary_def("CLEANSE"))
+		GameEnums.EffectType.TELEPORT_CASTER:
+			return _kw_hint("TELEPORT", _glossary_def("TELEPORT"))
+		GameEnums.EffectType.MOVE_INTO_AND_PUSH:
+			return _kw_hint("PUSH THROUGH", _glossary_def("PUSH THROUGH"))
+		GameEnums.EffectType.DESTROY_OBSTACLE:
+			return _kw_hint("DESTROY OBSTACLE", _glossary_def("DESTROY OBSTACLE"))
+		GameEnums.EffectType.DAMAGE_SELF:
+			return _kw_hint(
+				"Self ATK %s" % _effect_amount_string(effect),
+				"Ignores Armor and deals direct damage to the caster.",
+			)
+		GameEnums.EffectType.CREATE_HAZARD:
+			return _kw_hint(_hazard_create_label(effect), _glossary_def("CREATE HAZARD"))
+		GameEnums.EffectType.THROW_BEHIND:
+			return _kw_hint("THROW BEHIND", _glossary_def("THROW BEHIND"))
+		GameEnums.EffectType.CHANGE_TERRAIN:
+			return _kw_hint(
+				_terrain_change_label(effect),
+				"Change the terrain of affected tiles.",
+			)
+		GameEnums.EffectType.REFUND_AP_ON_CC, \
+		GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, \
+		GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, \
+		GameEnums.EffectType.PUSH_CHAIN_COLLISION, \
+		GameEnums.EffectType.REMOVE_STATUS:
+			var mod_label: String = _modifier_effect_label(effect.type)
+			if mod_label.is_empty():
+				return ""
+			return _kw_hint(mod_label, mod_label + ".")
+		_:
+			return _kw_hint(
+				GameEnums.EffectType.keys()[effect.type].capitalize(),
+				GameEnums.EffectType.keys()[effect.type].capitalize(),
+			)
+
+
+static func _keyword_emit_label(keyword: AbilityKeyword) -> String:
+	if keyword == null:
+		return ""
+	match keyword.keyword_id:
+		GameEnums.AbilityKeywordId.TRAMPLE:
+			return "TRAMPLE"
+		GameEnums.AbilityKeywordId.BULLDOZE:
+			return "BULLDOZE"
+		GameEnums.AbilityKeywordId.GHOST:
+			return "GHOST"
+		_:
+			return ""
+
+
 static func _ability_targeting_range_label(ability: AbilityData, unit: UnitState = null) -> String:
 	if ability == null:
 		return "RANGE 0"

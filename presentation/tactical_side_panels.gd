@@ -5,6 +5,8 @@ extends CanvasLayer
 
 const COLOR_SELECT: Color = Color(0.98, 0.86, 0.32, 0.95)
 const COLOR_SKILL_DISABLED: Color = Color(0.55, 0.55, 0.55, 0.85)
+const COLOR_SKILL_PREMOVE_BG: Color = Color(0.12, 0.18, 0.30, 0.96)
+const COLOR_SKILL_ACTION_BG: Color = Color(0.20, 0.17, 0.15, 0.96)
 const LOG_FONT_SIZE: int = 10
 const _SKILL_UI_SETTLE_SEC: float = 0.075
 
@@ -854,44 +856,51 @@ func _rebuild_ability_buttons() -> void:
 		row_btn.set_meta(&"ability_index", index)
 		var usable: bool = AbilitySystem.ability_planning_selectable(unit, ability, _board)
 		row_btn.disabled = not usable
-		row_btn.modulate = COLOR_SELECT if index == _selected_ability else (
-			Color.WHITE if usable else COLOR_SKILL_DISABLED
-		)
+		row_btn.modulate = Color.WHITE if usable else COLOR_SKILL_DISABLED
 		row_btn.pressed.connect(func() -> void:
 			if _director != null and usable:
 				_director.select_ability(index)
 		)
+		var selected_row: bool = index == _selected_ability
+		_apply_skill_row_style(row_btn, ability.planner_group, selected_row, usable)
 		var btn_vbox := VBoxContainer.new()
 		btn_vbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn_vbox.add_theme_constant_override("separation", 2)
 		row_btn.add_child(btn_vbox)
+		var layout: Dictionary = CombatUiFormatters.ability_skill_list_layout(ability, unit)
+		var header_hbox := HBoxContainer.new()
+		header_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		header_hbox.add_theme_constant_override("separation", 8)
+		btn_vbox.add_child(header_hbox)
 		var name_lbl := Label.new()
-		name_lbl.text = ability.display_name
+		name_lbl.text = String(layout.get("title", ability.display_name)).to_upper()
+		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		name_lbl.add_theme_font_size_override("font_size", CombatUiFormatters.scaled_font_size(10))
-		btn_vbox.add_child(name_lbl)
-		var values_hbox := HBoxContainer.new()
-		values_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		values_hbox.add_theme_constant_override("separation", 16)
-		btn_vbox.add_child(values_hbox)
-		var cost_chip: Dictionary = CombatUiFormatters.ability_cost_chip(ability)
-		values_hbox.add_child(_make_skill_icon(cost_chip.emoji, cost_chip.text, cost_chip.tooltip))
-		var range_chip: Dictionary = CombatUiFormatters.ability_range_chip(ability, unit)
-		values_hbox.add_child(_make_skill_icon(range_chip.emoji, range_chip.text, range_chip.tooltip))
-		var effect_lbl := RichTextLabel.new()
-		effect_lbl.bbcode_enabled = true
-		effect_lbl.fit_content = true
-		effect_lbl.scroll_active = false
-		effect_lbl.mouse_filter = Control.MOUSE_FILTER_PASS
-		effect_lbl.custom_minimum_size.x = float(maxi(120, _panel_width - 48))
+		if selected_row:
+			name_lbl.add_theme_color_override("font_color", COLOR_SELECT)
+		header_hbox.add_child(name_lbl)
+		var cost_chip: Dictionary = layout.get("cost", {})
+		header_hbox.add_child(_make_skill_icon(
+			String(cost_chip.get("emoji", "")),
+			String(cost_chip.get("text", "")),
+			String(cost_chip.get("tooltip", "")),
+		))
+		var module_lines: PackedStringArray = layout.get("module_lines", PackedStringArray())
 		var effect_px: int = CombatUiFormatters.scaled_font_size(9)
-		effect_lbl.add_theme_font_size_override("normal_font_size", effect_px)
-		var eff_bbcode: String = CombatUiFormatters.ability_effect_bbcode(ability, unit)
-		effect_lbl.text = "[font_size=%d]%s[/font_size]" % [effect_px, eff_bbcode]
-		btn_vbox.add_child(effect_lbl)
-		var plain_len: int = _bbcode_plain_length(eff_bbcode)
-		var text_lines: int = 1 + int(plain_len / 38.0)
-		var base_h: float = float(CombatUiFormatters.scaled_font_size(10)) * 4.5
-		row_btn.custom_minimum_size.y = base_h + float(text_lines * effect_px)
+		var module_line_count: int = maxi(module_lines.size(), 1)
+		for line_bbcode: String in module_lines:
+			var module_lbl := RichTextLabel.new()
+			module_lbl.bbcode_enabled = true
+			module_lbl.fit_content = true
+			module_lbl.scroll_active = false
+			module_lbl.mouse_filter = Control.MOUSE_FILTER_PASS
+			module_lbl.custom_minimum_size.x = float(maxi(120, _panel_width - 48))
+			module_lbl.add_theme_font_size_override("normal_font_size", effect_px)
+			module_lbl.text = "[font_size=%d]%s[/font_size]" % [effect_px, line_bbcode]
+			btn_vbox.add_child(module_lbl)
+		var header_h: float = float(CombatUiFormatters.scaled_font_size(10)) * 1.6
+		var module_h: float = float(module_line_count) * float(effect_px) * 1.35
+		row_btn.custom_minimum_size.y = header_h + module_h + 10.0
 		_skill_list.add_child(row_btn)
 
 	_skill_ui_lock = false
@@ -923,6 +932,29 @@ func _is_unit_action_exhausted() -> bool:
 	if unit == null:
 		return true
 	return not unit.can_use_action_slot()
+
+
+func _apply_skill_row_style(
+	row_btn: Button,
+	planner_group: int,
+	selected: bool,
+	usable: bool,
+) -> void:
+	var bg: Color = CombatUiFormatters.ability_skill_row_background(planner_group, selected)
+	if not usable:
+		bg = bg.lerp(COLOR_SKILL_DISABLED, 0.45)
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg
+	style.set_corner_radius_all(3)
+	style.content_margin_left = 6
+	style.content_margin_right = 6
+	style.content_margin_top = 4
+	style.content_margin_bottom = 4
+	row_btn.add_theme_stylebox_override("normal", style)
+	row_btn.add_theme_stylebox_override("hover", style)
+	row_btn.add_theme_stylebox_override("pressed", style)
+	row_btn.add_theme_stylebox_override("disabled", style)
+	row_btn.add_theme_stylebox_override("focus", style)
 
 
 func _make_skill_icon(emoji: String, val: String, tip: String) -> Control:
