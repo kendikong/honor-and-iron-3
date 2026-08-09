@@ -574,7 +574,146 @@ static func duplicate_effect(src: EffectData) -> EffectData:
 	e.bonus_if_adjacent_at_cast = src.bonus_if_adjacent_at_cast
 	e.def_debuff_before_damage = src.def_debuff_before_damage
 	e.spawn_unit_id = src.spawn_unit_id
+	e.modifiers = src.modifiers.duplicate(true)
 	return e
+
+
+static func keyword_to_dict(src: AbilityKeyword) -> Dictionary:
+	if src == null:
+		return {}
+	return {
+		"keyword_id": src.keyword_id,
+		"amount": src.amount,
+		"push_amount": src.push_amount,
+		"emit_as_effect": src.emit_as_effect,
+	}
+
+
+static func keyword_from_dict(data: Dictionary) -> AbilityKeyword:
+	var keyword := AbilityKeyword.new()
+	keyword.keyword_id = int(data.get("keyword_id", keyword.keyword_id))
+	keyword.amount = int(data.get("amount", keyword.amount))
+	keyword.push_amount = int(data.get("push_amount", keyword.push_amount))
+	keyword.emit_as_effect = bool(data.get("emit_as_effect", keyword.emit_as_effect))
+	return keyword
+
+
+static func layer_to_dict(src: AbilityLayer) -> Dictionary:
+	if src == null:
+		return {}
+	return {
+		"condition": src.condition,
+		"effect": effect_to_dict(src.effect) if src.effect != null else {},
+	}
+
+
+static func layer_from_dict(data: Dictionary) -> AbilityLayer:
+	var layer := AbilityLayer.new()
+	layer.condition = int(data.get("condition", layer.condition))
+	var effect_data: Variant = data.get("effect", {})
+	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
+		layer.effect = EffectData.new()
+		apply_effect_dict(layer.effect, effect_data as Dictionary)
+	return layer
+
+
+static func module_to_dict(src: AbilityModule) -> Dictionary:
+	if src == null:
+		return {}
+	var keywords: Array = []
+	for keyword: AbilityKeyword in src.keywords:
+		keywords.append(keyword_to_dict(keyword))
+	var layers: Array = []
+	for layer: AbilityLayer in src.layers:
+		layers.append(layer_to_dict(layer))
+	return {
+		"execution_phase": src.execution_phase,
+		"primary_type": src.primary_type,
+		"amount": src.amount,
+		"status_type": src.status_type,
+		"status_duration": src.status_duration,
+		"scaling_stat": src.scaling_stat,
+		"spawn_unit_id": String(src.spawn_unit_id),
+		"motion_mode": src.motion_mode,
+		"min_range": src.min_range,
+		"max_range": src.max_range,
+		"requires_los": src.requires_los,
+		"range_origin": src.range_origin,
+		"target_shape": src.target_shape,
+		"target_shape_size": src.target_shape_size,
+		"aim_binding": src.aim_binding,
+		"aim_module_index": src.aim_module_index,
+		"targeting_flags": src.targeting_flags,
+		"keywords": keywords,
+		"layers": layers,
+		"gate": src.gate,
+		"presentation_anim": src.presentation_anim,
+		"bonus_if_adjacent_at_cast": src.bonus_if_adjacent_at_cast,
+		"def_debuff_before_damage": src.def_debuff_before_damage,
+		"legacy_modifiers": src.legacy_modifiers.duplicate(true),
+	}
+
+
+static func modules_to_dict_array(modules: Array[AbilityModule]) -> Array:
+	var out: Array = []
+	for module: AbilityModule in modules:
+		out.append(module_to_dict(module))
+	return out
+
+
+static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
+	if dst == null or data.is_empty():
+		return
+	dst.execution_phase = int(data.get("execution_phase", dst.execution_phase))
+	dst.primary_type = int(data.get("primary_type", dst.primary_type))
+	dst.amount = int(data.get("amount", dst.amount))
+	dst.status_type = int(data.get("status_type", dst.status_type))
+	dst.status_duration = int(data.get("status_duration", dst.status_duration))
+	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
+	dst.spawn_unit_id = StringName(String(data.get("spawn_unit_id", String(dst.spawn_unit_id))))
+	dst.motion_mode = int(data.get("motion_mode", dst.motion_mode))
+	dst.min_range = int(data.get("min_range", dst.min_range))
+	dst.max_range = int(data.get("max_range", dst.max_range))
+	dst.requires_los = bool(data.get("requires_los", dst.requires_los))
+	dst.range_origin = int(data.get("range_origin", dst.range_origin))
+	dst.target_shape = int(data.get("target_shape", dst.target_shape))
+	dst.target_shape_size = int(data.get("target_shape_size", dst.target_shape_size))
+	dst.aim_binding = int(data.get("aim_binding", dst.aim_binding))
+	dst.aim_module_index = int(data.get("aim_module_index", dst.aim_module_index))
+	dst.targeting_flags = int(data.get("targeting_flags", dst.targeting_flags))
+	dst.gate = int(data.get("gate", dst.gate))
+	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
+	dst.bonus_if_adjacent_at_cast = int(
+		data.get("bonus_if_adjacent_at_cast", dst.bonus_if_adjacent_at_cast)
+	)
+	dst.def_debuff_before_damage = int(
+		data.get("def_debuff_before_damage", dst.def_debuff_before_damage)
+	)
+	var modifiers: Variant = data.get("legacy_modifiers", dst.legacy_modifiers)
+	if modifiers is Dictionary:
+		dst.legacy_modifiers = (modifiers as Dictionary).duplicate(true)
+	dst.keywords.clear()
+	var keyword_data: Variant = data.get("keywords", [])
+	if keyword_data is Array:
+		for raw: Variant in keyword_data as Array:
+			if raw is Dictionary:
+				dst.keywords.append(keyword_from_dict(raw as Dictionary))
+	dst.layers.clear()
+	var layer_data: Variant = data.get("layers", [])
+	if layer_data is Array:
+		for raw: Variant in layer_data as Array:
+			if raw is Dictionary:
+				dst.layers.append(layer_from_dict(raw as Dictionary))
+
+
+static func modules_from_dict_array(data: Array) -> Array[AbilityModule]:
+	var out: Array[AbilityModule] = []
+	for entry: Variant in data:
+		if entry is Dictionary:
+			var module := AbilityModule.new()
+			apply_module_dict(module, entry as Dictionary)
+			out.append(module)
+	return out
 
 
 static func ability_field_signature(ability: AbilityData, field: String) -> String:
@@ -630,8 +769,12 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.tags = src.tags.duplicate()
 	dst.primary_resource = src.primary_resource
 	dst.primary_value = src.primary_value
+	dst.upgraded_primary_value = src.upgraded_primary_value
 	dst.cost_modifier = src.cost_modifier
 	dst.cost_modifier_n = src.cost_modifier_n
+	dst.secondary_resource = src.secondary_resource
+	dst.secondary_value = src.secondary_value
+	dst.upgraded_secondary_value = src.upgraded_secondary_value
 	dst.action_point_cost = src.action_point_cost
 	dst.movement_point_cost = src.movement_point_cost
 	dst.range_tiles = src.range_tiles
@@ -649,14 +792,16 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.presentation_anim = src.presentation_anim
 	dst.scaling_stat = src.scaling_stat
 	dst.is_movement_skill = src.planner_group == GameEnums.PlannerGroup.PRE_MOVE
+	dst.modules = modules_from_dict_array(modules_to_dict_array(src.modules))
+	dst.upgraded_modules = modules_from_dict_array(
+		modules_to_dict_array(src.upgraded_modules)
+	)
 	dst.effects.clear()
 	for eff: EffectData in src.effects:
 		dst.effects.append(duplicate_effect(eff))
 	dst.upgraded_effects.clear()
 	for eff: EffectData in src.upgraded_effects:
 		dst.upgraded_effects.append(duplicate_effect(eff))
-	dst.modules.clear()
-	dst.upgraded_modules.clear()
 	dst.sync_legacy_targeting()
 	dst.finalize_modular()
 
@@ -1049,8 +1194,12 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"tags": tag_strs,
 		"primary_resource": src.primary_resource,
 		"primary_value": src.primary_value,
+		"upgraded_primary_value": src.upgraded_primary_value,
 		"cost_modifier": src.cost_modifier,
 		"cost_modifier_n": src.cost_modifier_n,
+		"secondary_resource": src.secondary_resource,
+		"secondary_value": src.secondary_value,
+		"upgraded_secondary_value": src.upgraded_secondary_value,
 		"kind": src.kind,
 		"action_point_cost": src.action_point_cost,
 		"movement_point_cost": src.movement_point_cost,
@@ -1070,6 +1219,8 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"presentation_anim": src.presentation_anim,
 		"scaling_stat": src.scaling_stat,
 		"is_movement_skill": src.is_movement_skill,
+		"modules": modules_to_dict_array(src.modules),
+		"upgraded_modules": modules_to_dict_array(src.upgraded_modules),
 		"effects": effects_to_dict_array(src.effects),
 		"upgraded_effects": effects_to_dict_array(src.upgraded_effects),
 		"module_count": src.modules.size(),
@@ -1123,8 +1274,12 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		dst.tags = tags_out
 	dst.primary_resource = int(data.get("primary_resource", dst.primary_resource)) as GameEnums.CostResource
 	dst.primary_value = int(data.get("primary_value", dst.primary_value))
+	dst.upgraded_primary_value = int(data.get("upgraded_primary_value", dst.upgraded_primary_value))
 	dst.cost_modifier = int(data.get("cost_modifier", dst.cost_modifier)) as GameEnums.CostModifier
 	dst.cost_modifier_n = int(data.get("cost_modifier_n", dst.cost_modifier_n))
+	dst.secondary_resource = int(data.get("secondary_resource", dst.secondary_resource)) as GameEnums.CostResource
+	dst.secondary_value = int(data.get("secondary_value", dst.secondary_value))
+	dst.upgraded_secondary_value = int(data.get("upgraded_secondary_value", dst.upgraded_secondary_value))
 	dst.action_point_cost = int(data.get("action_point_cost", dst.action_point_cost))
 	dst.movement_point_cost = int(data.get("movement_point_cost", dst.movement_point_cost))
 	dst.range_tiles = int(data.get("range_tiles", dst.range_tiles))
@@ -1143,12 +1298,22 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
 	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
 	dst.is_movement_skill = bool(data.get("is_movement_skill", dst.planner_group == GameEnums.PlannerGroup.PRE_MOVE))
-	if data.has("effects"):
+	var has_modular_profile: bool = data.has("modules")
+	if has_modular_profile:
+		var module_data: Variant = data.get("modules", [])
+		dst.modules = modules_from_dict_array(module_data as Array if module_data is Array else [])
+		dst.effects.clear()
+	elif data.has("effects"):
 		dst.effects = effects_from_dict_array(data.get("effects", []))
-		dst.modules.clear()
-	if data.has("upgraded_effects"):
+	var has_upgraded_modular_profile: bool = data.has("upgraded_modules")
+	if has_upgraded_modular_profile:
+		var upgraded_module_data: Variant = data.get("upgraded_modules", [])
+		dst.upgraded_modules = modules_from_dict_array(
+			upgraded_module_data as Array if upgraded_module_data is Array else []
+		)
+		dst.upgraded_effects.clear()
+	elif data.has("upgraded_effects"):
 		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
-		dst.upgraded_modules.clear()
 	## Saved JSON sometimes has SELF mode with stale ALLY flags. Prefer self-target authoring.
 	if (
 		bool(data.get("can_target_self", false))

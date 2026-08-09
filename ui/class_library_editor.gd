@@ -1536,7 +1536,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		_ability_ui[ability] = {}
 	_ability_ui[ability]["greying_cb"] = grey_cb
 	grey_cb.call()
-	_add_subsection_label(parent, "Modules (bible)", ClassLibraryTheme.ACCENT_DATA)
+	_add_subsection_label(parent, "Modules (authoritative)", ClassLibraryTheme.ACCENT_DATA)
 	var modules_preview := RichTextLabel.new()
 	modules_preview.bbcode_enabled = true
 	modules_preview.fit_content = true
@@ -1544,52 +1544,320 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	modules_preview.text = ClassLibrarySchema.modules_summary_bbcode(ability)
 	parent.add_child(modules_preview)
 	_ability_ui[ability]["modules_preview"] = modules_preview
-	_add_subsection_label(parent, "Effects (legacy flat — compiled from modules)", ClassLibraryTheme.ACCENT_DATA)
-	var eff_box := VBoxContainer.new()
-	eff_box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
-	parent.add_child(eff_box)
-	_rebuild_effects_editor(eff_box, ability, ability.effects, false)
-	var add_eff := Button.new()
-	add_eff.text = "+ Effect (rebuilds modules)"
-	_style_toolbar_button(add_eff)
-	add_eff.pressed.connect(func() -> void:
-		var e := EffectData.new()
-		e.type = GameEnums.EffectType.DAMAGE
-		e.amount = 1
-		ability.effects.append(e)
-		_resync_modules_from_effects(ability)
-		_rebuild_effects_editor(eff_box, ability, ability.effects, false)
-		_refresh_ability_ui(ability)
+	var module_box := VBoxContainer.new()
+	module_box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
+	parent.add_child(module_box)
+	_rebuild_modules_editor(module_box, ability, ability.modules, false)
+	var add_module := Button.new()
+	add_module.text = "+ Module"
+	_style_toolbar_button(add_module)
+	add_module.pressed.connect(func() -> void:
+		ability.modules.append(_new_module_for_ability(ability))
+		_on_modules_edited(ability, module_box, false)
 	)
-	parent.add_child(add_eff)
-	_add_subsection_label(parent, "Upgraded Effects", ClassLibraryTheme.ACCENT_INGAME)
-	var up_box := VBoxContainer.new()
-	parent.add_child(up_box)
-	_rebuild_effects_editor(up_box, ability, ability.upgraded_effects, true)
-	var add_up := Button.new()
-	add_up.text = "+ Upgraded Effect"
-	_style_toolbar_button(add_up)
-	add_up.pressed.connect(func() -> void:
-		ability.upgraded_effects.append(EffectData.new())
-		_resync_modules_from_effects(ability)
-		_rebuild_effects_editor(up_box, ability, ability.upgraded_effects, true)
-		_refresh_ability_ui(ability)
+	parent.add_child(add_module)
+	_add_subsection_label(parent, "Upgraded Modules (full replacement)", ClassLibraryTheme.ACCENT_INGAME)
+	var upgraded_module_box := VBoxContainer.new()
+	upgraded_module_box.add_theme_constant_override(
+		"separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS)
 	)
-	parent.add_child(add_up)
+	parent.add_child(upgraded_module_box)
+	_rebuild_modules_editor(
+		upgraded_module_box, ability, ability.upgraded_modules, true
+	)
+	var add_upgraded_module := Button.new()
+	add_upgraded_module.text = "+ Upgraded Module"
+	_style_toolbar_button(add_upgraded_module)
+	add_upgraded_module.pressed.connect(func() -> void:
+		ability.upgraded_modules.append(_new_module_for_ability(ability))
+		_on_modules_edited(ability, upgraded_module_box, true)
+	)
+	parent.add_child(add_upgraded_module)
 
 
-## Effects remain the editable surface during migration; modules are derived (one authoring path).
-func _resync_modules_from_effects(ability: AbilityData) -> void:
-	if ability == null:
-		return
-	ability.modules.clear()
-	ability.upgraded_modules.clear()
+func _new_module_for_ability(ability: AbilityData) -> AbilityModule:
+	var module := AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.DAMAGE
+	module.amount = 1
+	module.max_range = maxi(1, ability.range_tiles)
+	module.targeting_flags = ability.targeting_flags
+	module.target_shape = ability.target_shape
+	module.target_shape_size = ability.target_shape_size
+	module.scaling_stat = ability.scaling_stat
+	return module
+
+
+func _on_modules_edited(
+	ability: AbilityData,
+	parent: VBoxContainer,
+	upgraded: bool,
+) -> void:
+	var modules: Array[AbilityModule] = (
+		ability.upgraded_modules if upgraded else ability.modules
+	)
+	if modules.is_empty():
+		if upgraded:
+			ability.upgraded_effects.clear()
+		else:
+			ability.effects.clear()
 	ability.finalize_modular()
-
-
-func _on_effects_edited(ability: AbilityData) -> void:
-	_resync_modules_from_effects(ability)
+	_rebuild_modules_editor(parent, ability, modules, upgraded)
 	_refresh_ability_ui(ability)
+
+
+func _on_module_field_edited(ability: AbilityData) -> void:
+	ability.finalize_modular()
+	_refresh_ability_ui(ability)
+
+
+func _rebuild_modules_editor(
+	parent: VBoxContainer,
+	ability: AbilityData,
+	modules: Array[AbilityModule],
+	upgraded: bool,
+) -> void:
+	for child: Node in parent.get_children():
+		child.queue_free()
+	for index: int in modules.size():
+		var module: AbilityModule = modules[index]
+		if module == null:
+			continue
+		var panel := VBoxContainer.new()
+		parent.add_child(panel)
+		var header := HBoxContainer.new()
+		panel.add_child(header)
+		var title := Label.new()
+		title.text = "Module %d" % index
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		header.add_child(title)
+		var remove := Button.new()
+		remove.text = "Remove"
+		_style_toolbar_button(remove)
+		remove.pressed.connect(func() -> void:
+			modules.remove_at(index)
+			_on_modules_edited(ability, parent, upgraded)
+		)
+		header.add_child(remove)
+		_build_module_fields(panel, ability, module, modules, upgraded)
+
+
+func _build_module_fields(
+	parent: VBoxContainer,
+	ability: AbilityData,
+	module: AbilityModule,
+	modules: Array[AbilityModule],
+	upgraded: bool,
+) -> void:
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("v_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
+	parent.add_child(grid)
+	var changed := func() -> void: _on_module_field_edited(ability)
+	_bind_enum(grid, "Phase", GameEnums.ModulePhase, module.execution_phase, func(v: int) -> void:
+		module.execution_phase = v
+		changed.call()
+	)
+	_bind_enum(grid, "Primary", GameEnums.EffectType, module.primary_type, func(v: int) -> void:
+		module.primary_type = v
+		changed.call()
+	)
+	_bind_int(grid, "Amount", module.amount, func(v: int) -> void:
+		module.amount = v
+		changed.call()
+	)
+	_bind_enum(grid, "Status", GameEnums.StatusType, module.status_type, func(v: int) -> void:
+		module.status_type = v
+		changed.call()
+	)
+	_bind_int(grid, "Duration", module.status_duration, func(v: int) -> void:
+		module.status_duration = v
+		changed.call()
+	)
+	_bind_enum(grid, "Scaling", GameEnums.StatType, module.scaling_stat, func(v: int) -> void:
+		module.scaling_stat = v
+		changed.call()
+	)
+	_bind_enum(grid, "Motion Mode", GameEnums.MotionMode, module.motion_mode, func(v: int) -> void:
+		module.motion_mode = v
+		changed.call()
+	)
+	_bind_int(grid, "Min Range", module.min_range, func(v: int) -> void:
+		module.min_range = v
+		changed.call()
+	)
+	_bind_int(grid, "Max Range", module.max_range, func(v: int) -> void:
+		module.max_range = v
+		changed.call()
+	)
+	_bind_bool(grid, "Requires LOS", module.requires_los, func(v: bool) -> void:
+		module.requires_los = v
+		changed.call()
+	)
+	_bind_enum(grid, "Range Origin", GameEnums.RangeOrigin, module.range_origin, func(v: int) -> void:
+		module.range_origin = v
+		changed.call()
+	)
+	_bind_enum(grid, "Shape", GameEnums.TargetShape, module.target_shape, func(v: int) -> void:
+		module.target_shape = v
+		changed.call()
+	)
+	_bind_int(grid, "Shape Size", module.target_shape_size, func(v: int) -> void:
+		module.target_shape_size = v
+		changed.call()
+	)
+	_bind_enum(grid, "Aim Binding", GameEnums.AimBinding, module.aim_binding, func(v: int) -> void:
+		module.aim_binding = v
+		changed.call()
+	)
+	_bind_int(grid, "Aim Module", module.aim_module_index, func(v: int) -> void:
+		module.aim_module_index = v
+		changed.call()
+	)
+	_bind_enum(grid, "Gate", GameEnums.ModuleGate, module.gate, func(v: int) -> void:
+		module.gate = v
+		changed.call()
+	)
+	_bind_enum(grid, "Presentation", GameEnums.PresentationAnim, module.presentation_anim, func(v: int) -> void:
+		module.presentation_anim = v
+		changed.call()
+	)
+	_bind_int(grid, "Adjacent Bonus", module.bonus_if_adjacent_at_cast, func(v: int) -> void:
+		module.bonus_if_adjacent_at_cast = v
+		changed.call()
+	)
+	_bind_int(grid, "DEF Debuff", module.def_debuff_before_damage, func(v: int) -> void:
+		module.def_debuff_before_damage = v
+		changed.call()
+	)
+	_add_module_targeting_flags(parent, ability, module)
+	_add_module_keywords_editor(parent, ability, module)
+	_add_module_layers_editor(parent, ability, module)
+
+
+func _add_module_targeting_flags(
+	parent: VBoxContainer,
+	ability: AbilityData,
+	module: AbilityModule,
+) -> void:
+	_add_subsection_label(parent, "Module Targeting", ClassLibraryTheme.ACCENT_DATA)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
+	parent.add_child(row)
+	for spec: Array in [
+		[GameEnums.TargetingFlags.SELF, "Self"],
+		[GameEnums.TargetingFlags.ALLY, "Ally"],
+		[GameEnums.TargetingFlags.ENEMY, "Enemy"],
+		[GameEnums.TargetingFlags.TILE, "Tile"],
+		[GameEnums.TargetingFlags.DASH_LINE, "Dash line"],
+	]:
+		var flag: int = int(spec[0])
+		var check := CheckBox.new()
+		check.text = String(spec[1])
+		check.button_pressed = module.has_targeting(flag)
+		check.toggled.connect(func(enabled: bool) -> void:
+			if enabled:
+				module.targeting_flags |= flag
+			else:
+				module.targeting_flags &= ~flag
+			_on_module_field_edited(ability)
+		)
+		row.add_child(check)
+
+
+func _add_module_keywords_editor(
+	parent: VBoxContainer,
+	ability: AbilityData,
+	module: AbilityModule,
+) -> void:
+	_add_subsection_label(parent, "Keywords", ClassLibraryTheme.ACCENT_DATA)
+	var box := VBoxContainer.new()
+	parent.add_child(box)
+	for index: int in module.keywords.size():
+		var keyword: AbilityKeyword = module.keywords[index]
+		var grid := GridContainer.new()
+		grid.columns = 2
+		box.add_child(grid)
+		_bind_enum(grid, "Keyword %d" % index, GameEnums.AbilityKeywordId, keyword.keyword_id, func(v: int) -> void:
+			keyword.keyword_id = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Amount", keyword.amount, func(v: int) -> void:
+			keyword.amount = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Push Amount", keyword.push_amount, func(v: int) -> void:
+			keyword.push_amount = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Emit Legacy Effect", keyword.emit_as_effect, func(v: bool) -> void:
+			keyword.emit_as_effect = v
+			_on_module_field_edited(ability)
+		)
+		var remove := Button.new()
+		remove.text = "Remove Keyword"
+		remove.pressed.connect(func() -> void:
+			module.keywords.remove_at(index)
+			_rebuild_ability_detail_panes(ability)
+		)
+		box.add_child(remove)
+	var add := Button.new()
+	add.text = "+ Keyword"
+	add.pressed.connect(func() -> void:
+		module.keywords.append(AbilityKeyword.new())
+		_rebuild_ability_detail_panes(ability)
+	)
+	box.add_child(add)
+
+
+func _add_module_layers_editor(
+	parent: VBoxContainer,
+	ability: AbilityData,
+	module: AbilityModule,
+) -> void:
+	_add_subsection_label(parent, "Layers", ClassLibraryTheme.ACCENT_DATA)
+	var box := VBoxContainer.new()
+	parent.add_child(box)
+	for index: int in module.layers.size():
+		var layer: AbilityLayer = module.layers[index]
+		if layer.effect == null:
+			layer.effect = EffectData.new()
+		var grid := GridContainer.new()
+		grid.columns = 2
+		box.add_child(grid)
+		_bind_enum(grid, "Layer %d Condition" % index, GameEnums.LayerCondition, layer.condition, func(v: int) -> void:
+			layer.condition = v
+			_on_module_field_edited(ability)
+		)
+		_bind_enum(grid, "Layer Type", GameEnums.EffectType, layer.effect.type, func(v: int) -> void:
+			layer.effect.type = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Layer Amount", layer.effect.amount, func(v: int) -> void:
+			layer.effect.amount = v
+			_on_module_field_edited(ability)
+		)
+		_bind_enum(grid, "Layer Scaling", GameEnums.StatType, layer.effect.scaling_stat, func(v: int) -> void:
+			layer.effect.scaling_stat = v
+			_on_module_field_edited(ability)
+		)
+		var remove := Button.new()
+		remove.text = "Remove Layer"
+		remove.pressed.connect(func() -> void:
+			module.layers.remove_at(index)
+			_rebuild_ability_detail_panes(ability)
+		)
+		box.add_child(remove)
+	var add := Button.new()
+	add.text = "+ Layer"
+	add.pressed.connect(func() -> void:
+		var layer := AbilityLayer.new()
+		layer.effect = EffectData.new()
+		layer.effect.type = GameEnums.EffectType.DAMAGE
+		layer.effect.amount = 1
+		module.layers.append(layer)
+		_rebuild_ability_detail_panes(ability)
+	)
+	box.add_child(add)
 
 
 func _rebuild_effects_editor(parent: VBoxContainer, ability: AbilityData, effects: Array[EffectData], upgraded: bool) -> void:
