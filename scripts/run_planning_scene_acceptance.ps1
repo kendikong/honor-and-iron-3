@@ -24,7 +24,6 @@ Write-Output "[Tier 3] LIVE_QA_PROFILE=fast (swap test excluded; use run_swap_pl
 $godotArgs = @(
 	"--path", $projectRoot,
 	"-s", "-d",
-	"--remote-debug", "tcp://127.0.0.1:0",
 	$cmdTool,
 	"-a", $suite,
 	"-i", $swapTest

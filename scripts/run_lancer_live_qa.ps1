@@ -15,10 +15,11 @@ if (-not (Test-Path $GodotPath)) {
 $env:LIVE_QA_PROFILE = "fast"
 $godotArgs = @(
 	"--path", $projectRoot,
+	"--headless",
 	"-s", "-d",
-	"--remote-debug", "tcp://127.0.0.1:0",
 	$cmdTool,
-	"-a", $suite
+	"-a", $suite,
+	"--ignoreHeadlessMode"
 )
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-lancer-live.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-lancer-live.stderr.log"

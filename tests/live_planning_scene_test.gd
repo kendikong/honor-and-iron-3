@@ -303,7 +303,6 @@ func _journey_walk_then_swap(ctx: Dictionary) -> void:
 
 func _ensure_live_test_window(runner: GdUnitSceneRunner) -> void:
 	## GdUnit CLI starts minimized; restore project viewport size so mouse coords match F5.
-	runner.move_window_to_foreground()
 	var target_w: int = int(ProjectSettings.get_setting("display/window/size/viewport_width", 1920))
 	var target_h: int = int(ProjectSettings.get_setting("display/window/size/viewport_height", 1080))
 	var screen: Vector2i = DisplayServer.screen_get_size()

@@ -15,8 +15,8 @@ if (-not (Test-Path $GodotPath)) {
 $env:LIVE_QA_PROFILE = "fast"
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-cleric-live.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-cleric-live.stderr.log"
-$godotArgs = @("--path", $projectRoot, "-s", "-d", "--remote-debug", "tcp://127.0.0.1:0",
-	$cmdTool, "-a", $suite)
+$godotArgs = @("--path", $projectRoot, "--headless", "-s", "-d",
+	$cmdTool, "-a", $suite, "--ignoreHeadlessMode")
 $process = Start-Process -FilePath $GodotPath -ArgumentList $godotArgs `
 	-WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath -Wait -PassThru -NoNewWindow
@@ -28,7 +28,7 @@ $failures = @(
 	Select-String -Path $stdoutPath, $stderrPath -Pattern 'FAILED|^\[FAIL\]|SCRIPT ERROR:' |
 		ForEach-Object { $_.Line }
 )
-if ($failures.Count -gt 0) {
+if ($process.ExitCode -ne 0 -or $failures.Count -gt 0) {
 	Write-Output "[FAIL] Cleric live QA"
 	exit 1
 }

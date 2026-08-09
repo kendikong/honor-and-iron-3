@@ -15,8 +15,8 @@ if (-not (Test-Path $GodotPath)) {
 $env:LIVE_QA_PROFILE = "fast"
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-mage-live.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-mage-live.stderr.log"
-$godotArgs = @("--path", $projectRoot, "-s", "-d", "--remote-debug", "tcp://127.0.0.1:0",
-	$cmdTool, "-a", $suite)
+$godotArgs = @("--path", $projectRoot, "--headless", "-s", "-d",
+	$cmdTool, "-a", $suite, "--ignoreHeadlessMode")
 $process = Start-Process -FilePath $GodotPath -ArgumentList $godotArgs `
 	-WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath -Wait -PassThru -NoNewWindow
