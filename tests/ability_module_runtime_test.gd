@@ -12,6 +12,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_if_collided_follow_up(failures)
 	_test_schema_module_round_trip(failures)
 	_test_legacy_json_import_round_trip(failures)
+	_test_modular_base_legacy_upgrade_import(failures)
 
 
 static func _test_module_only_execution(failures: Array[String]) -> void:
@@ -197,7 +198,7 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	authored.planner_group = GameEnums.PlannerGroup.ACTION
 	authored.primary_resource = GameEnums.CostResource.AP
 	authored.primary_value = 2
-	authored.tags = [&"positioning", &"control"]
+	authored.tags = [&"positioning", &"attack"]
 	var module: AbilityModule = AbilityModule.new()
 	module.primary_type = GameEnums.EffectType.PUSH
 	module.amount = 2
@@ -259,6 +260,12 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	var player_text: String = CombatUiFormatters.ability_effect_bbcode(authored)
 	if player_text.find("PUSH") < 0:
 		failures.append("module-first player-facing formatter lost PUSH text")
+	var unknown_tag_payload: Dictionary = payload.duplicate(true)
+	unknown_tag_payload["tags"] = ["attack", "control"]
+	var unknown_tag_result: AbilityData = AbilityData.new()
+	ClassLibrarySchema.apply_ability_dict(unknown_tag_result, unknown_tag_payload)
+	if unknown_tag_result.tags.has(&"control"):
+		failures.append("module-first JSON retained an unknown tag")
 
 
 static func _test_legacy_json_import_round_trip(failures: Array[String]) -> void:
@@ -285,6 +292,27 @@ static func _test_legacy_json_import_round_trip(failures: Array[String]) -> void
 	ClassLibrarySchema.apply_ability_dict(hybrid, hybrid_payload)
 	if hybrid.modules.size() != 1 or hybrid.modules[0].amount != 6:
 		failures.append("hybrid empty-modules JSON dropped legacy effects")
+
+
+static func _test_modular_base_legacy_upgrade_import(failures: Array[String]) -> void:
+	var base_module: AbilityModule = AbilityModule.new()
+	base_module.primary_type = GameEnums.EffectType.DAMAGE
+	base_module.amount = 2
+	base_module.max_range = 3
+	base_module.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	var base: AbilityData = AbilityData.new()
+	base.modules = [base_module]
+	base.finalize_modular()
+	var upgraded_effect: EffectData = EffectData.new()
+	upgraded_effect.type = GameEnums.EffectType.DAMAGE
+	upgraded_effect.amount = 9
+	var payload: Dictionary = ClassLibrarySchema.ability_to_dict(base)
+	payload.erase("upgraded_modules")
+	payload["upgraded_effects"] = ClassLibrarySchema.effects_to_dict_array([upgraded_effect])
+	var imported: AbilityData = AbilityData.new()
+	ClassLibrarySchema.apply_ability_dict(imported, payload)
+	if imported.upgraded_modules.size() != 1 or imported.upgraded_modules[0].amount != 9:
+		failures.append("modular base plus legacy upgraded_effects lost upgrade profile")
 
 
 static func _ability(id: StringName, targeting_flags: int) -> AbilityData:

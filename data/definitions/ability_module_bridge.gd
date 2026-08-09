@@ -16,6 +16,41 @@ const TAG_SPELL := &"spell"
 const TAG_HEAL := &"heal"
 
 
+static func validate_modules(modules: Array[AbilityModule]) -> Array[String]:
+	var errors: Array[String] = []
+	for index: int in modules.size():
+		var module: AbilityModule = modules[index]
+		if module == null:
+			errors.append("module %d is null" % index)
+			continue
+		if (
+			(module.primary_type == GameEnums.EffectType.MOVE
+			or module.primary_type == GameEnums.EffectType.DASH)
+			and module.min_range < 1
+		):
+			errors.append("module %d MOVE/DASH min_range must be >= 1" % index)
+		if module.max_range < module.min_range:
+			errors.append("module %d max_range is below min_range" % index)
+		if (
+			module.targeting_flags & GameEnums.TargetingFlags.DASH_LINE
+			and module.primary_type != GameEnums.EffectType.DASH
+		):
+			errors.append("module %d DASH_LINE requires a DASH primary" % index)
+		if module.primary_type == GameEnums.EffectType.SWAP and module.target_shape != GameEnums.TargetShape.SINGLE:
+			errors.append("module %d SWAP requires SINGLE shape" % index)
+		if (
+			module.target_shape == GameEnums.TargetShape.SINGLE
+			and module.target_shape_size != 1
+		):
+			errors.append("module %d SINGLE shape requires size 1" % index)
+		if (
+			module.target_shape != GameEnums.TargetShape.SINGLE
+			and module.target_shape_size < 1
+		):
+			errors.append("module %d shaped target requires size >= 1" % index)
+	return errors
+
+
 static func planner_group_from_kind(kind: GameEnums.AbilityKind) -> GameEnums.PlannerGroup:
 	match kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:

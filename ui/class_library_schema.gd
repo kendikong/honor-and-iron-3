@@ -1218,11 +1218,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		dst.planner_group = int(data.get("planner_group", dst.planner_group))
 	if data.has("tags"):
 		var tags_v: Variant = data.get("tags", [])
-		var tags_out: Array[StringName] = []
-		if tags_v is Array:
-			for t: Variant in tags_v as Array:
-				tags_out.append(StringName(String(t)))
-		dst.tags = tags_out
+		dst.tags = _canonical_tags_from_variant(tags_v)
 	dst.primary_resource = int(data.get("primary_resource", dst.primary_resource)) as GameEnums.CostResource
 	dst.primary_value = int(data.get("primary_value", dst.primary_value))
 	dst.upgraded_primary_value = int(data.get("upgraded_primary_value", dst.upgraded_primary_value))
@@ -1241,7 +1237,12 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		or ((module_data as Array).is_empty() and data.has("effects"))
 	)
 	if not use_legacy_base:
-		dst.modules = modules_from_dict_array(module_data as Array)
+		var parsed_modules: Array[AbilityModule] = modules_from_dict_array(module_data as Array)
+		var base_errors: Array[String] = AbilityModuleBridge.validate_modules(parsed_modules)
+		if not base_errors.is_empty():
+			push_error("Ability JSON rejected base module profile: %s" % "; ".join(base_errors))
+			return
+		dst.modules = parsed_modules
 	else:
 		_apply_legacy_ability_payload(dst, data)
 	var upgraded_module_data: Variant = data.get("upgraded_modules", null)
@@ -1250,10 +1251,37 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		or ((upgraded_module_data as Array).is_empty() and data.has("upgraded_effects"))
 	)
 	if not use_legacy_upgrade:
-		dst.upgraded_modules = modules_from_dict_array(upgraded_module_data as Array)
-	elif use_legacy_base and data.has("upgraded_effects"):
+		var parsed_upgraded_modules: Array[AbilityModule] = modules_from_dict_array(
+			upgraded_module_data as Array
+		)
+		var upgrade_errors: Array[String] = AbilityModuleBridge.validate_modules(parsed_upgraded_modules)
+		if not upgrade_errors.is_empty():
+			push_error("Ability JSON rejected upgraded module profile: %s" % "; ".join(upgrade_errors))
+			return
+		dst.upgraded_modules = parsed_upgraded_modules
+	elif use_legacy_upgrade and data.has("upgraded_effects"):
 		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
 	dst.finalize_modular()
+
+
+static func _canonical_tags_from_variant(value: Variant) -> Array[StringName]:
+	var allowed: Array[StringName] = [
+		AbilityModuleBridge.TAG_ATTACK,
+		AbilityModuleBridge.TAG_MOVEMENT,
+		AbilityModuleBridge.TAG_POSITIONING,
+		AbilityModuleBridge.TAG_SPELL,
+		AbilityModuleBridge.TAG_HEAL,
+	]
+	var tags_out: Array[StringName] = []
+	if value is Array:
+		for tag_value: Variant in value as Array:
+			var tag: StringName = StringName(String(tag_value))
+			if allowed.has(tag):
+				if not tags_out.has(tag):
+					tags_out.append(tag)
+			else:
+				push_warning("Ability JSON rejected unknown tag: %s" % String(tag))
+	return tags_out
 
 
 static func _apply_legacy_ability_payload(dst: AbilityData, data: Dictionary) -> void:

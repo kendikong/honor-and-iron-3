@@ -1694,11 +1694,11 @@ func _build_module_fields(
 		module.motion_mode = v
 		changed.call()
 	)
+	var min_range_setter := func(v: int) -> void:
+		module.min_range = v
+		changed.call()
 	_bind_int(
-		grid, "Min Range", module.min_range, func(v: int) -> void:
-			module.min_range = v
-			changed.call()
-		_module_min_range(module),
+		grid, "Min Range", module.min_range, min_range_setter, _module_min_range(module)
 	)
 	_bind_int(grid, "Max Range", module.max_range, func(v: int) -> void:
 		module.max_range = v
@@ -1721,10 +1721,13 @@ func _build_module_fields(
 			changed.call()
 	)
 	_grey_row(shape_row, module.primary_type == GameEnums.EffectType.SWAP)
-	_bind_int(grid, "Shape Size", module.target_shape_size, func(v: int) -> void:
+	var shape_size_setter := func(v: int) -> void:
 		module.target_shape_size = v
 		changed.call()
+	var shape_size_row := _bind_int(
+		grid, "Shape Size", module.target_shape_size, shape_size_setter, 1
 	)
+	_grey_row(shape_size_row, module.target_shape == GameEnums.TargetShape.SINGLE)
 	_bind_enum(grid, "Aim Binding", GameEnums.AimBinding, module.aim_binding, func(v: int) -> void:
 		module.aim_binding = v
 		changed.call()
@@ -1774,6 +1777,10 @@ func _add_module_targeting_flags(
 		var check := CheckBox.new()
 		check.text = String(spec[1])
 		check.button_pressed = module.has_targeting(flag)
+		check.disabled = (
+			flag == GameEnums.TargetingFlags.DASH_LINE
+			and module.primary_type != GameEnums.EffectType.DASH
+		)
 		check.toggled.connect(func(enabled: bool) -> void:
 			if enabled:
 				module.targeting_flags |= flag

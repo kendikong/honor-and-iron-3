@@ -414,6 +414,10 @@ func _module_display_range(ability: AbilityData) -> int:
 		if module == null or module.aim_binding != GameEnums.AimBinding.NEW_AIM:
 			continue
 		display_range = maxi(display_range, module.max_range)
+	if display_range == 0:
+		for module: AbilityModule in ability.get_active_modules():
+			if module != null:
+				display_range = maxi(display_range, module.max_range)
 	return display_range
 
 func _get_status_desc(t: GameEnums.StatusType) -> String:
