@@ -13,6 +13,8 @@
 
 **Why this bible exists:** Class QA must catch skills that **look fine in automated tests but fail in F5** — wrong damage, wrong tiles, broken move preview, commit that jumps away from what the player saw. Every factory row, **including rows already marked PASS**, must be written or re-audited to this bar. A green gate script exit code is not enough if the scenario only checks metadata, `ABILITY_USED`, or a Manhattan range bubble. **Regression rule:** if a skill breaks tomorrow, the matching scenario or live case must fail before manual play finds it.
 
+**Fail policy:** When any class QA test fails (`run_<class>_qa_gate.ps1`, `run_<class>_live_qa.ps1`, shallow-contract check, or a scenario `[FAIL]` line), **fix it in the same turn** — do not defer, do not hand-wave as pre-existing, do not mark the task complete with a red gate. A failing test is a broken skill or broken proof; both must be repaired before moving on.
+
 | If this is green… | You can trust… | You still cannot trust… |
 |-------------------|----------------|------------------------|
 | **`run_<class>_qa_gate.ps1` PASS** | Every factory row has a scenario file; manifest aligned; headless runner did not crash; movement smoke ran | Every skill is fully proven — rows can still be `HARNESS_ONLY` mislabeled `PASS`; scenarios that pass shallow regex but fail TestBattle or show wrong red/blue tiles |
@@ -532,4 +534,4 @@ ARTIFACT: docs/CLASS_QA_BIBLE.md, tests/skills/shield_bash_scenario.gd, tests/sk
 
 ---
 
-*Version: 2026-08-09 rev 5 — owner-intent bar: regression defense, red/blue tiles, anti-shallow PASS. Knight instance: `KNIGHT_QA_GATE.md`. Shallow contract: `qa_gate_matrix_helpers.ps1`.*
+*Version: 2026-08-09 rev 6 — fail policy: fix red tests same turn. Knight instance: `KNIGHT_QA_GATE.md`. Shallow contract: `qa_gate_matrix_helpers.ps1`.*
