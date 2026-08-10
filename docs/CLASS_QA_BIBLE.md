@@ -339,7 +339,8 @@ Green live with shallow headless is **FAIL** under this bible.
 | Thin delegate + Layer B/C contract | `Test-ScenarioContractShallow` — see §8.2 (sim + commit proof required) | **Shipped** |
 | AOE shaped rows | `run_aoe_footprint_qa_gate.ps1` | **Shipped** |
 | Layer A FULL per module | `assert_module_editor_fidelity` in harness | **Per-class rollout** |
-| Active with PRE/POST modules but no premove/postmove Layer C | Detect `ON_PRE`/`ON_POST` modules without `movement_planning_smoke` or premove path | **PLANNED** (doc ban today — §13) |
+| Active with PRE/POST modules but no premove/postmove Layer C | `Get-FactoryPlanningFlags` + blue/premove/postmove proof in §8.2 | **Shipped** |
+| Blue move tiles when factory has MOVE/PRE_MOVE | `Get-FactoryPlanningFlags` + `Test-TextHasBlueTileProof` | **Shipped** |
 
 Gate **must** call shipped helpers before Godot runner. Rows failing shallow contract cannot be matrix `PASS`.
 
@@ -357,10 +358,13 @@ A matrix **`PASS`** row **fails** the gate when its scenario file (or named dele
 | `ABILITY_USED` present without sim/outcome proof | **FAIL** |
 | `## Data/Sim delegate:` header unparseable or harness function metadata-only (no sim/outcome in body) | **FAIL** |
 | Passive missing sim trigger/outcome proof | **FAIL** |
+| Factory `PlannerGroup.PRE_MOVE` or `ModulePhase.ON_PRE` without premove planning proof in scenario or delegate | **FAIL** |
+| Factory `ModulePhase.ON_POST` or ACTION+MOVE module without postmove planning proof | **FAIL** |
+| Factory MOVE/PRE_MOVE skill without blue move-tile proof (`collect_blue_tiles`, `movement_planning_smoke`, `assert_move_preview_origin`) | **FAIL** |
 
-**Delegate path:** Header `## Data/Sim delegate: tests/foo.gd::run_bar` — gate reads `run_bar` body and requires Layer B proof there. Scenario may still need local Layer C unless delegate includes planning proof.
+**Delegate path:** Header `## Data/Sim delegate: tests/foo.gd::run_bar` — gate reads `run_bar` body for Layer B and movement planning proof.
 
-**Not yet machine-gated (doc ban + meta-critic):** PRE/POST module without premove/postmove path; blue move-tile assert on every MOVE skill; FULL Layer A per editor field.
+**Not yet machine-gated:** FULL Layer A per editor field (`assert_module_editor_fidelity` rollout).
 
 **Exception:** matrix row marked `HARNESS_ONLY` or `PLANNED` — not checked until promoted to `PASS`.
 
@@ -540,4 +544,4 @@ ARTIFACT: docs/CLASS_QA_BIBLE.md, tests/skills/shield_bash_scenario.gd, tests/sk
 
 ---
 
-*Version: 2026-08-09 rev 8 — Tier C intent E2E in §8.2; LEGACY wording aligned. Knight instance: `KNIGHT_QA_GATE.md`.*
+*Version: 2026-08-09 rev 9 — blue move-tile + PRE/POST factory detection shipped in gate helper.*

@@ -96,17 +96,70 @@ function Get-DelegateHarnessBody {
 
 function Test-TextHasLayerBProof {
 	param([string]$Text)
+	$pattern = 'Simulator\.|AbilitySystem\.|simulate_player_turn|simulate_plan|SimResult|run_sim_|_sim_base|run_bash_|run_single_passive|final_state\.|unit_hp|assert_.*dmg|assert_.*damage|get_unit_by_id'
+	return ($Text -match $pattern)
+}
+
+function Test-TextHasBlueTileProof {
+	param([string]$Text)
 	return (
-		$Text -match 'Simulator\.|AbilitySystem\.|simulate_player_turn|simulate_plan|SimResult|run_sim_|_sim_base|run_bash_|run_single_passive|final_state\.|unit_hp\(|assert_.*dmg|assert_.*damage|get_unit_by_id'
+		$Text -match 'collect_blue_tiles|blue_move|blue_tiles|movement_planning_smoke|assert_move_preview_origin|run_premove|_phase3_pathing|_phase7|wire_board'
 	)
+}
+
+function Test-TextHasPremoveProof {
+	param([string]$Text)
+	return (
+		$Text -match 'movement_planning_smoke|run_premove|premove_planner|premove|_phase7|ModulePhase\.ON_PRE|assert_move_preview_origin'
+	)
+}
+
+function Test-TextHasPostmoveProof {
+	param([string]$Text)
+	return (
+		$Text -match 'postmove|ON_POST|assert_move_preview_origin|movement_planning_smoke|_run_postmove'
+	)
+}
+
+function Get-FactoryPlanningFlags {
+	param(
+		[string]$ProjectRoot,
+		[string]$FactoryId
+	)
+	$none = @{
+		NeedsBlue = $false
+		NeedsPremove = $false
+		NeedsPostmove = $false
+	}
+	if ([string]::IsNullOrWhiteSpace($FactoryId)) { return $none }
+	$class = ($FactoryId -split '_')[0]
+	$factoryPath = Join-Path $ProjectRoot ("core\factory\classes\${class}_factory.gd")
+	if (-not (Test-Path $factoryPath)) { return $none }
+	$text = Get-Content -Path $factoryPath -Raw
+	$escaped = [regex]::Escape($FactoryId)
+	$match = [regex]::Match($text, "(?ms)(.{0,2000})&`"$escaped`"\s*,[^\)]*\)")
+	if (-not $match.Success) { return $none }
+	$snippet = $match.Groups[1].Value + $match.Value
+	$isPreMove = $snippet -match 'PlannerGroup\.PRE_MOVE'
+	$hasOnPre = $snippet -match 'ModulePhase\.ON_PRE'
+	$hasOnPost = $snippet -match 'ModulePhase\.ON_POST'
+	$hasMoveEffect = $snippet -match 'EffectType\.(MOVE|MOVE_INTO_AND_PUSH|DASH)\b'
+	$isAction = $snippet -match 'PlannerGroup\.ACTION'
+	return @{
+		NeedsBlue = ($isPreMove -or $hasMoveEffect -or $hasOnPre)
+		NeedsPremove = ($isPreMove -or $hasOnPre)
+		NeedsPostmove = ($hasOnPost -or ($isAction -and $hasMoveEffect))
+	}
 }
 
 function Test-TextHasLayerCCommitProof {
 	param([string]$Text)
+	$commitPattern = 'assert_commit_no_jump|assert_slots_match_preview_commit|run_planning_commit_smoke|movement_planning_smoke|assert_red_contract|assert_move_preview|assert_committed_ghost|wire_board'
+	$intentPattern = 'PlanningIntentContractE2ETest|run_planning_select_smoke|_planning_bowling|planning intent E2E'
 	return (
-		$Text -match 'assert_commit_no_jump|assert_slots_match_preview_commit|run_planning_commit_smoke|movement_planning_smoke|assert_red_contract|assert_move_preview|assert_committed_ghost|wire_board\s*\('
-		-or ($Text -match '_phase[1-9]' -and $Text -match 'PlanningChecklistHarness')
-		-or $Text -match 'PlanningIntentContractE2ETest|run_planning_select_smoke|_planning_bowling|planning intent E2E'
+		($Text -match $commitPattern) -or
+		(($Text -match '_phase[1-9]') -and ($Text -match 'PlanningChecklistHarness')) -or
+		($Text -match $intentPattern)
 	)
 }
 
@@ -114,7 +167,8 @@ function Test-ScenarioContractShallow {
 	param(
 		[string]$ScenarioRelPath,
 		[string]$FullPath,
-		[string]$ProjectRoot = ''
+		[string]$ProjectRoot = '',
+		[string]$FactoryId = ''
 	)
 	$errors = @()
 	if (-not (Test-Path $FullPath)) {
@@ -130,6 +184,12 @@ function Test-ScenarioContractShallow {
 		$delegateInfo = Get-DelegateHarnessBody -ProjectRoot $ProjectRoot -ScenarioText $text
 	}
 	$delegateBody = if ($null -ne $delegateInfo) { $delegateInfo.Body } else { '' }
+	$planningText = $text + "`n" + $delegateBody
+	$factoryFlags = if ($ProjectRoot -ne '' -and $FactoryId -ne '') {
+		Get-FactoryPlanningFlags -ProjectRoot $ProjectRoot -FactoryId $FactoryId
+	} else {
+		@{ NeedsBlue = $false; NeedsPremove = $false; NeedsPostmove = $false }
+	}
 	$hasLayerBLocal = Test-TextHasLayerBProof -Text $text
 	$hasLayerBDelegate = Test-TextHasLayerBProof -Text $delegateBody
 	$hasLayerB = $hasLayerBLocal -or $hasLayerBDelegate
@@ -170,7 +230,16 @@ function Test-ScenarioContractShallow {
 		$errors += "${ScenarioRelPath}: missing Layer B sim/outcome proof (local or delegate harness)"
 	}
 	if ($isSkill -and -not $hasLayerC) {
-		$errors += "${ScenarioRelPath}: missing Layer C planning commit proof (assert_commit_no_jump, assert_slots_match_preview_commit, movement_planning_smoke, or Tier A phases)"
+		$errors += "${ScenarioRelPath}: missing Layer C planning commit proof (assert_commit_no_jump, assert_slots_match_preview_commit, movement_planning_smoke, Tier A phases, or Tier C intent E2E)"
+	}
+	if ($isSkill -and $factoryFlags.NeedsBlue -and -not (Test-TextHasBlueTileProof -Text $planningText)) {
+		$errors += "${ScenarioRelPath}: factory requires blue move-tile proof (collect_blue_tiles, movement_planning_smoke, or assert_move_preview_origin)"
+	}
+	if ($isSkill -and $factoryFlags.NeedsPremove -and -not (Test-TextHasPremoveProof -Text $planningText)) {
+		$errors += "${ScenarioRelPath}: factory PRE_MOVE/ON_PRE requires premove planning proof"
+	}
+	if ($isSkill -and $factoryFlags.NeedsPostmove -and -not (Test-TextHasPostmoveProof -Text $planningText)) {
+		$errors += "${ScenarioRelPath}: factory ON_POST/MOVE+skill requires postmove planning proof"
 	}
 	if ($isPassive -and -not $hasLayerB) {
 		$errors += "${ScenarioRelPath}: passive missing sim trigger/outcome proof"
@@ -195,7 +264,10 @@ function Test-PassRowScenarioContracts {
 		if (-not $pathMatch.Success) { continue }
 		$rel = $pathMatch.Groups[1].Value
 		$full = Join-Path $ProjectRoot ($rel -replace '/', '\')
-		$errors += Test-ScenarioContractShallow -ScenarioRelPath $rel -FullPath $full -ProjectRoot $ProjectRoot
+		$factoryId = ''
+		$idMatch = [regex]::Match($line, '`\s*([a-z][a-z0-9_]*)\s*`')
+		if ($idMatch.Success) { $factoryId = $idMatch.Groups[1].Value }
+		$errors += Test-ScenarioContractShallow -ScenarioRelPath $rel -FullPath $full -ProjectRoot $ProjectRoot -FactoryId $factoryId
 	}
 	return $errors
 }
