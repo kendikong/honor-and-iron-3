@@ -6,7 +6,7 @@
 
 **Runner:** `scripts/run_<class>_qa_gate.ps1` — **does not** invoke or modify `run_planning_qa_gate.ps1`.
 
-**Clone authority:** [`docs/KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) · [`.cursor/rules/class-qa-knight-bar.mdc`](../.cursor/rules/class-qa-knight-bar.mdc)
+**Clone authority:** [`docs/CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md) (universal spec) · [`docs/KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) (reference instance) · [`.cursor/rules/class-qa-knight-bar.mdc`](../.cursor/rules/class-qa-knight-bar.mdc)
 
 ---
 
