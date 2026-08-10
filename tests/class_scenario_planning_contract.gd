@@ -1,0 +1,158 @@
+class_name ClassScenarioPlanningContract
+extends RefCounted
+
+## Tier B planning + movement smoke entry for per-row class scenarios (CLASS_QA_BIBLE.md §3 Layer C).
+
+const _Fixture := preload("res://tests/class_planning_checklist_harness.gd")
+const _Checklist := preload("res://tests/planning_checklist_harness.gd")
+const _MovementRegistry := preload("res://tests/movement_planning_smoke_registry.gd")
+const _AoeHarness := preload("res://tests/aoe_footprint_qa_harness.gd")
+
+
+static func run_for_factory(failures: Array[String], factory_id: StringName) -> void:
+	if _MovementRegistry.has_entry(factory_id):
+		_MovementRegistry.run_for_factory_id(failures, factory_id)
+		return
+	var class_id: StringName = _class_id_from_factory(factory_id)
+	if class_id == &"":
+		return
+	run_tier_b_commit_smoke(failures, class_id, factory_id)
+
+
+static func run_tier_b_commit_smoke(
+	failures: Array[String],
+	class_id: StringName,
+	factory_id: StringName,
+) -> void:
+	var ability: AbilityData = _AoeHarness.find_ability_by_id(factory_id)
+	if ability == null:
+		_Checklist.assert_fail(
+			failures, "%s/planning/missing_ability" % factory_id,
+			"ability not found for planning contract",
+		)
+		return
+	var layout: Dictionary = _layout_for(factory_id, ability)
+	var actor_pos: Vector2i = layout.actor_pos
+	var enemy_pos: Vector2i = layout.enemy_pos
+	var ally_pos: Vector2i = layout.ally_pos
+	var commit_cell: Vector2i = layout.commit_cell
+	var verify_no_jump: bool = layout.verify_no_jump
+	var select_only: bool = layout.get("select_only", false)
+	var fix: Dictionary = _Fixture.wire_board(
+		class_id, actor_pos, enemy_pos, ally_pos, factory_id,
+	)
+	if fix.is_empty():
+		_Checklist.assert_fail(failures, "%s/planning/wire" % factory_id, "fixture wire failed")
+		return
+	fix.director.auto_run = true
+	var idx: int = _Checklist.select_ability(fix, factory_id)
+	_Checklist.assert_true(
+		failures, "%s/planning/select" % factory_id,
+		idx >= 0, "%s must be selectable" % factory_id,
+	)
+	if idx < 0:
+		return
+	var blue: Array[Vector2i] = _Checklist.collect_blue_tiles(fix)
+	_Checklist.assert_true(
+		failures, "%s/planning/blue_tiles" % factory_id,
+		not blue.is_empty(), "blue move tiles must show after ability select",
+	)
+	if select_only:
+		return
+	_Checklist.hover(fix, commit_cell)
+	var hover_slots: Dictionary = _Checklist.slots_for_hover(fix, commit_cell)
+	if _Checklist._slots_invalid(hover_slots):
+		_Checklist.assert_fail(
+			failures, "%s/planning/invalid_slots" % factory_id,
+			"no valid commit slots at %s" % commit_cell,
+		)
+		return
+	_Checklist.assert_slots_match_preview_commit(
+		failures, "%s/planning/hover_click_parity" % factory_id, fix, commit_cell,
+	)
+	if verify_no_jump:
+		_Checklist.assert_commit_no_jump(
+			failures, "%s/planning/no_jump" % factory_id, fix, commit_cell,
+		)
+
+
+static func _layout_for(factory_id: StringName, ability: AbilityData) -> Dictionary:
+	var actor_pos: Vector2i = Vector2i(2, 3)
+	var enemy_pos: Vector2i = Vector2i(5, 3)
+	var ally_pos: Vector2i = Vector2i(-1, -1)
+	var commit_cell: Vector2i = enemy_pos
+	var verify_no_jump: bool = true
+	var select_only: bool = false
+	match factory_id:
+		&"bruiser_meat_shield", &"archer_repelling_shot":
+			ally_pos = Vector2i(3, 3)
+			commit_cell = ally_pos
+			enemy_pos = Vector2i(6, 3)
+			verify_no_jump = false
+		&"bruiser_cleave", &"bruiser_earthshatter":
+			actor_pos = Vector2i(3, 3)
+			enemy_pos = Vector2i(4, 3)
+			commit_cell = Vector2i(4, 3)
+		&"lancer_sweeping_halberd":
+			actor_pos = Vector2i(3, 3)
+			enemy_pos = Vector2i(4, 3)
+			commit_cell = Vector2i(4, 3)
+		&"mage_time_warp":
+			ally_pos = Vector2i(3, 3)
+			commit_cell = ally_pos
+			enemy_pos = Vector2i(-1, -1)
+		&"mage_density_shift":
+			actor_pos = Vector2i(2, 3)
+			enemy_pos = Vector2i(5, 3)
+			commit_cell = Vector2i(4, 3)
+			verify_no_jump = false
+		&"cleric_holy_light", &"cleric_life_link", &"cleric_prayer_of_fortitude":
+			ally_pos = Vector2i(3, 3)
+			commit_cell = ally_pos
+		&"cleric_resurrection":
+			ally_pos = Vector2i(3, 3)
+			commit_cell = ally_pos
+			verify_no_jump = false
+		&"cleric_divine_guidance", &"cleric_shield_of_faith":
+			ally_pos = Vector2i(3, 3)
+			commit_cell = ally_pos
+		&"cleric_martyrs_chains":
+			actor_pos = Vector2i(2, 3)
+			enemy_pos = Vector2i(5, 3)
+			commit_cell = Vector2i(5, 3)
+			select_only = true
+		_:
+			if ability.targeting_flags & GameEnums.TargetingFlags.SELF:
+				commit_cell = actor_pos
+			elif ability.targeting_flags & GameEnums.TargetingFlags.ALLY:
+				ally_pos = Vector2i(3, 3)
+				commit_cell = ally_pos
+			elif ability.targeting_flags & GameEnums.TargetingFlags.TILE:
+				if ability.target_shape != GameEnums.TargetShape.SINGLE:
+					actor_pos = Vector2i(3, 3)
+					enemy_pos = Vector2i(4, 3)
+					commit_cell = Vector2i(4, 3)
+				else:
+					commit_cell = Vector2i(4, 3)
+					if ability.targeting_flags & GameEnums.TargetingFlags.ENEMY:
+						enemy_pos = commit_cell
+	if enemy_pos.x < 0:
+		enemy_pos = Vector2i(-1, -1)
+	if ally_pos.x < 0:
+		ally_pos = Vector2i(-1, -1)
+	return {
+		"actor_pos": actor_pos,
+		"enemy_pos": enemy_pos,
+		"ally_pos": ally_pos,
+		"commit_cell": commit_cell,
+		"verify_no_jump": verify_no_jump,
+		"select_only": select_only,
+	}
+
+
+static func _class_id_from_factory(factory_id: StringName) -> StringName:
+	var text := String(factory_id)
+	for prefix: String in ["bruiser", "archer", "lancer", "mage", "cleric", "knight"]:
+		if text.begins_with(prefix + "_") or text == prefix:
+			return StringName(prefix)
+	return &""

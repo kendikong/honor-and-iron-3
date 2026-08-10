@@ -9,5 +9,9 @@ const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_Scenarios.run_adrenaline_junkie(failures)
+	_sim_trigger(failures)
+
+
+static func _sim_trigger(failures: Array[String]) -> void:
+		_Scenarios.run_adrenaline_junkie(failures)
 

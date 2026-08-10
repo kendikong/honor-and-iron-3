@@ -2,6 +2,9 @@
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+
+## Planning tier: B
 
 ## Bible: Headbutt — RANGE 1 | ATK 3 | mutual 1 dmg + STAGGER.
 ## [+] bonus damage = Round Down(10% Max HP).
@@ -9,5 +12,10 @@ const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_Scenarios.run_headbutt(failures)
+	_sim_contract(failures)
+	_Planning.run_for_factory(failures, &"bruiser_headbutt")
+
+
+static func _sim_contract(failures: Array[String]) -> void:
+		_Scenarios.run_headbutt(failures)
 

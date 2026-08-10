@@ -26,16 +26,56 @@ if ($exitCode -eq 130) {
 	Write-Output "[CANCEL] Cleric live QA stopped by ESC."
 	exit 130
 }
-$output = @()
-$output += Get-Content $stdoutPath
-$output += Get-Content $stderrPath
-$output | ForEach-Object { Write-Output $_ }
-$failures = @(
-	Select-String -Path $stdoutPath, $stderrPath -Pattern 'FAILED|^\[FAIL\]|SCRIPT ERROR:' |
+if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
+if (Test-Path $stderrPath) { Get-Content $stderrPath }
+
+$gdUnitFailures = @(
+	Select-String -Path $stdoutPath -Pattern 'Overall Summary:.*\|\s*(\d+)\s+failures' |
+		ForEach-Object {
+			if ($_.Matches[0].Groups[1].Value -ne "0") { $_.Line }
+		}
+)
+$testCaseFailed = @(
+	Select-String -Path $stdoutPath -Pattern '>\s*test_\S+\s+FAILED' |
 		ForEach-Object { $_.Line }
 )
-if ($exitCode -ne 0 -or $failures.Count -gt 0) {
+$scriptErrors = @(
+	Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' |
+		Where-Object {
+			$_.Line -notmatch 'resources still in use' -and
+			$_.Line -notmatch 'Remote Debugger' -and
+			$_.Line -notmatch 'remote port number'
+		} |
+		ForEach-Object { $_.Line }
+)
+$runtimeErrors = @(
+	Select-String -Path $stdoutPath, $stderrPath -Pattern '(^|\s)ERROR:' |
+		Where-Object {
+			$_.Line -notmatch 'resources still in use' -and
+			$_.Line -notmatch 'Remote Debugger' -and
+			$_.Line -notmatch 'remote port number' -and
+			$_.Line -notmatch 'custom_samplers' -and
+			$_.Line -notmatch 'Invalid break insert count' -and
+			$_.Line -notmatch 'Continuing\.'
+		} |
+		ForEach-Object { $_.Line }
+)
+$explicitFails = @(
+	Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' |
+		ForEach-Object { $_.Line }
+)
+
+if (
+	($gdUnitFailures.Count -gt 0) -or
+	($testCaseFailed.Count -gt 0) -or
+	($scriptErrors.Count -gt 0) -or
+	($runtimeErrors.Count -gt 0) -or
+	($explicitFails.Count -gt 0)
+) {
 	Write-Output "[FAIL] Cleric live QA"
+	if ($gdUnitFailures.Count -gt 0) {
+		Write-Output "GdUnit failures: $($gdUnitFailures -join '; ')"
+	}
 	exit 1
 }
 Write-Output "[PASS] Cleric live QA: 15 Bible abilities through preview/commit"

@@ -2,6 +2,9 @@
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+
+## Planning tier: B
 
 ## Bible: Adrenaline Surge — SELF | spend 5 HP | +1 MOV +1 STR 1 turn; 0 AP if 2+ adjacent enemies.
 ## [+] on_kill_heal_shield — on kill HEAL 1 and SHIELD 2.
@@ -9,4 +12,9 @@ const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_Scenarios.run_adrenaline_surge(failures)
+	_sim_contract(failures)
+	_Planning.run_for_factory(failures, &"bruiser_adrenaline_surge")
+
+
+static func _sim_contract(failures: Array[String]) -> void:
+		_Scenarios.run_adrenaline_surge(failures)

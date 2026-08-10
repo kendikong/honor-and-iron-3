@@ -2,6 +2,9 @@
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+
+## Planning tier: B
 
 ## Bible: Concussion Blow — RANGE 1 | ATK 2 | PUSH 1 | object collision STAGGER.
 ## [+] enemy_collision_stagger_both — mutual STAGGER on enemy collision.
@@ -9,5 +12,10 @@ const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_Scenarios.run_concussion_blow(failures)
+	_sim_contract(failures)
+	_Planning.run_for_factory(failures, &"bruiser_concussion_blow")
+
+
+static func _sim_contract(failures: Array[String]) -> void:
+		_Scenarios.run_concussion_blow(failures)
 

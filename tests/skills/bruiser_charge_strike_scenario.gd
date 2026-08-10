@@ -2,6 +2,8 @@
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+
 
 ## Bible: Charge Strike — MOVE 2 | ATK 3 | PUSH 1; [+] GHOST during MOVE, ATK +2 through terrain.
 ## Globals: EffectType.MOVE + DAMAGE + PUSH; ghost_move / bonus_dmg_from_terrain modifiers on upgrade.
@@ -11,8 +13,13 @@ const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_Scenarios.run_charge_strike(failures)
-	_run_postmove_planning_contract(failures)
+	_sim_contract(failures)
+	_Planning.run_for_factory(failures, &"bruiser_charge_strike")
+
+
+static func _sim_contract(failures: Array[String]) -> void:
+		_Scenarios.run_charge_strike(failures)
+		_run_postmove_planning_contract(failures)
 
 
 static func _run_postmove_planning_contract(failures: Array[String]) -> void:

@@ -70,7 +70,7 @@ const _BATCHES: Array[Dictionary] = [
 	},
 	{
 		"extra_players": [Vector2i(1, 3)],
-		"dummies": [Vector2i(4, 3)],
+		"dummies": [Vector2i(3, 3)],
 		"skills": [&"bruiser_violent_collision"],
 	},
 	{
@@ -809,7 +809,7 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 					"suplex: target must land behind caster, not merely be displaced",
 				).is_equal(Vector2i(3, 5))
 		&"bruiser_violent_collision":
-			var collision_id: int = _unit_id_at(_director.base_board, Vector2i(4, 3))
+			var collision_id: int = _unit_id_at(_director.base_board, Vector2i(3, 3))
 			var collision_target: UnitState = final_state.get_unit_by_id(collision_id)
 			assert_object(collision_target).is_not_null()
 			var collision_seen: bool = false
@@ -1097,6 +1097,8 @@ func _commit_live_click(
 	_input.set_qa_pointer_grid_cell(cell)
 	if _input._intent_state != null:
 		_input._intent_state.set_hover_coord(cell)
+	_input.on_hover_moved(cell)
+	_input._flush_hover_heavy_sync()
 	var slots: Dictionary
 	if _plan_has_awaiting(unit_id):
 		slots = _input._build_commit_slots_at_cell(unit_id, cell)

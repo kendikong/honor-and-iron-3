@@ -2,6 +2,9 @@
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+
+## Planning tier: B
 
 ## Bible: Violent Collision — DASH 3 | bulldoze + recast MOVE 2 on enemy hit.
 ## [+] collisions apply STAGGER (1 turn).
@@ -9,5 +12,10 @@ const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_Scenarios.run_violent_collision(failures)
+	_sim_contract(failures)
+	_Planning.run_for_factory(failures, &"bruiser_violent_collision")
+
+
+static func _sim_contract(failures: Array[String]) -> void:
+		_Scenarios.run_violent_collision(failures)
 

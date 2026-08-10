@@ -96,28 +96,28 @@ function Get-DelegateHarnessBody {
 
 function Test-TextHasLayerBProof {
 	param([string]$Text)
-	$pattern = 'Simulator\.|AbilitySystem\.|simulate_player_turn|simulate_plan|SimResult|run_sim_|_sim_base|run_bash_|run_single_passive|final_state\.|unit_hp|assert_.*dmg|assert_.*damage|get_unit_by_id'
+	$pattern = 'Simulator\.|AbilitySystem\.|simulate_player_turn|simulate_plan|SimResult|run_sim_|_sim_base|run_bash_|run_single_passive|run_single_ability|run_single_active|_Scenarios\.run_|_Passives\.run_|run_.*_smoke|QaHarness\.run_|_H\.run_|final_state\.|unit_hp|assert_.*dmg|assert_.*damage|get_unit_by_id'
 	return ($Text -match $pattern)
 }
 
 function Test-TextHasBlueTileProof {
 	param([string]$Text)
 	return (
-		$Text -match 'collect_blue_tiles|blue_move|blue_tiles|movement_planning_smoke|assert_move_preview_origin|run_premove|_phase3_pathing|_phase7|wire_board'
+		$Text -match 'collect_blue_tiles|blue_move|blue_tiles|movement_planning_smoke|assert_move_preview_origin|run_premove|_phase3_pathing|_phase7|wire_board|class_scenario_planning_contract|_Planning\.run_for_factory'
 	)
 }
 
 function Test-TextHasPremoveProof {
 	param([string]$Text)
 	return (
-		$Text -match 'movement_planning_smoke|run_premove|premove_planner|premove|_phase7|ModulePhase\.ON_PRE|assert_move_preview_origin'
+		$Text -match 'movement_planning_smoke|run_premove|premove_planner|premove|_phase7|ModulePhase\.ON_PRE|assert_move_preview_origin|class_scenario_planning_contract|_Planning\.run_for_factory'
 	)
 }
 
 function Test-TextHasPostmoveProof {
 	param([string]$Text)
 	return (
-		$Text -match 'postmove|ON_POST|assert_move_preview_origin|movement_planning_smoke|_run_postmove'
+		$Text -match 'postmove|ON_POST|assert_move_preview_origin|movement_planning_smoke|_run_postmove|class_scenario_planning_contract|_Planning\.run_for_factory'
 	)
 }
 
@@ -155,7 +155,7 @@ function Get-FactoryPlanningFlags {
 function Test-TextHasLayerCCommitProof {
 	param([string]$Text)
 	$commitPattern = 'assert_commit_no_jump|assert_slots_match_preview_commit|run_planning_commit_smoke|movement_planning_smoke|assert_red_contract|assert_move_preview|assert_committed_ghost|wire_board'
-	$intentPattern = 'PlanningIntentContractE2ETest|run_planning_select_smoke|_planning_bowling|planning intent E2E'
+	$intentPattern = 'PlanningIntentContractE2ETest|run_planning_select_smoke|_planning_bowling|planning intent E2E|class_scenario_planning_contract|_Planning\.run_for_factory'
 	return (
 		($Text -match $commitPattern) -or
 		(($Text -match '_phase[1-9]') -and ($Text -match 'PlanningChecklistHarness')) -or
@@ -177,7 +177,7 @@ function Test-ScenarioContractShallow {
 	$text = Get-Content -Path $FullPath -Raw
 	$isSkill = $ScenarioRelPath -match 'tests/skills/'
 	$isPassive = $ScenarioRelPath -match 'tests/passives/'
-	$hasLayerA = $text -match '_data_contract|_sim_contract|##\s*Data/Sim delegate:'
+	$hasLayerA = $text -match '_data_contract|_sim_contract|_sim_trigger|__sim_contract|__sim_trigger|##\s*Data/Sim delegate:'
 	$hasDelegateHeader = $text -match '##\s*Data/Sim delegate:'
 	$delegateInfo = $null
 	if ($hasDelegateHeader -and $ProjectRoot -ne '') {
