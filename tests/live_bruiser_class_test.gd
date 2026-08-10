@@ -69,17 +69,17 @@ const _BATCHES: Array[Dictionary] = [
 		"skills": [&"bruiser_crimson_whirlwind"],
 	},
 	{
-		"extra_players": [Vector2i(2, 3)],
+		"extra_players": [Vector2i(1, 3)],
 		"dummies": [Vector2i(4, 3)],
 		"skills": [&"bruiser_violent_collision"],
 	},
 	{
-		"extra_players": [Vector2i(3, 3)],
+		"extra_players": [Vector2i(2, 3)],
 		"dummies": [Vector2i(5, 4)],
 		"skills": [&"bruiser_belly_flop"],
 	},
 	{
-		"extra_players": [Vector2i(4, 3)],
+		"extra_players": [Vector2i(3, 3)],
 		"dummies": [],
 		"skills": [&"bruiser_breaching_dash"],
 	},
@@ -520,7 +520,10 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 			AbilitySystem.planning_commit_flow(actor, ability)
 			== GameEnums.PlanningCommitFlow.AWAITING_TARGET
 		)
-		var arm_cell: Vector2i = actor.position if is_awaiting_skill else _case_target_cell(skill_id)
+		var stand_cell: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+			_director, _director.board, actor_id,
+		)
+		var arm_cell: Vector2i = stand_cell if is_awaiting_skill else _case_target_cell(skill_id)
 		var preview_slots: Dictionary = _input._final_commit_slots_for_click_at_cell(
 			actor_id, arm_cell, Vector2.ZERO,
 		)
@@ -532,7 +535,7 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		var preview_action: TimelineAction = _first_slot_action(preview_slots)
 		if preview_action != null and preview_action.awaiting_target:
 			is_awaiting_skill = true
-			arm_cell = actor.position
+			arm_cell = stand_cell
 			preview_slots = _input._final_commit_slots_for_click_at_cell(
 				actor_id, arm_cell, Vector2.ZERO,
 			)

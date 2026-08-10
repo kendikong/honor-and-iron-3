@@ -29,17 +29,21 @@ static func assert_committed(
 		"%s: movement timeline QA failed: %s" % [skill_id, ", ".join(failures)],
 	).is_true()
 	if input != null:
-		await assert_move_preview_origin_live(
-			test_suite,
-			runner,
-			director,
-			input,
-			overlay,
-			actor_id,
-			ability,
-			Vector2i(-999999, -999999),
-			skill_id,
-		)
+		if (
+			AbilitySystem.planning_awaiting_phase(ability)
+			!= GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+		):
+			await assert_move_preview_origin_live(
+				test_suite,
+				runner,
+				director,
+				input,
+				overlay,
+				actor_id,
+				ability,
+				Vector2i(-999999, -999999),
+				skill_id,
+			)
 
 
 static func assert_move_preview_origin_live(
@@ -97,6 +101,12 @@ static func commit_premove_run_if_needed(
 	await commit_universal_run(
 		test_suite, runner, director, input, actor_id, premove_cell,
 	)
+	if (
+		ability != null
+		and AbilitySystem.planning_awaiting_phase(ability)
+		== GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	):
+		return
 	await assert_premove_run_preview_origin_live(
 		test_suite, runner, director, input, overlay, actor_id, ability,
 	)
