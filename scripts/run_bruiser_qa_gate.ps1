@@ -120,6 +120,20 @@ if ($unapprovedPass.Count -gt 0) {
 
 Write-GateLine ""
 
+. (Join-Path $PSScriptRoot "qa_gate_matrix_helpers.ps1")
+$scenarioMissing = Test-MatrixScenarioFiles -ProjectRoot $projectRoot -MatrixDocPath $matrixDoc -RequiredFactoryIds $requiredFactoryIds
+if ($scenarioMissing.Count -gt 0) {
+	Write-GateLine "[FAIL] PASS matrix rows missing scenario files:"
+	$scenarioMissing | ForEach-Object { Write-GateLine "  $_" }
+	Exit-Gate 3
+}
+$manifestErrors = Test-ManifestScore -ManifestPath $manifestPath
+if ($manifestErrors.Count -gt 0) {
+	Write-GateLine "[FAIL] Meta-critic manifest gate:"
+	$manifestErrors | ForEach-Object { Write-GateLine "  $_" }
+	Exit-Gate 3
+}
+
 if ($passRows.Count -lt $requiredFactoryIds.Count) {
 	Write-GateLine "[INCOMPLETE] Bruiser LOCK requires all factory rows PASS (meta-critic approved)."
 	if ($harnessRows.Count -gt 0) {

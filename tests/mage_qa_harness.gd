@@ -121,6 +121,10 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 		"live/%s/used" % ability_id,
 		_events_have_ability(result.events, ability_id),
 	)
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var ability_data := _ability(mage_def, ability_id)
+	if ability_data != null:
+		_check_upgrade_contract(failures, ability_data)
 
 
 static func run_arcane_overchannel(failures: Array[String]) -> void:

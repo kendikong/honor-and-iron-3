@@ -1,10 +1,10 @@
 ﻿extends RefCounted
 
-## Bible: sweet_spot — Lancer factory row via shared Simulator harness.
-## Globals: AbilitySystem / Simulator (Rule A).
+## Bible: sweet_spot — Lancer passive trigger via Simulator (Rule A).
+## Globals: PassiveData pipeline + shared combat resolution.
 
 const _H := preload("res://tests/lancer_qa_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
-	_H.run_passive_runtime_smoke(failures)
+	_H.run_single_passive(&"sweet_spot", failures)

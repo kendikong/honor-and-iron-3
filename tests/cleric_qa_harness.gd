@@ -87,11 +87,89 @@ static func run_ability_row(ability_id: StringName, failures: Array[String]) -> 
 		_assert(failures, "holy_light/mag_heal",
 			holy_light != null and holy_light.effects[0].type == GameEnums.EffectType.HEAL
 			and holy_light.effects[0].modifiers.get("mag_heal", false))
+		_sim_ability_used(failures, ability_id, holy_light)
+	else:
+		var ability := _ability(definition, ability_id)
+		if ability != null:
+			_sim_ability_used(failures, ability_id, ability)
 
 
 static func run_passive_row(passive_id: StringName, failures: Array[String]) -> void:
 	var definition: UnitData = FactoryTestHelpers.build_unit(&"cleric")
-	_assert(failures, "passive/%s" % passive_id, _passive(definition, passive_id) != null)
+	var passive := _passive(definition, passive_id)
+	_assert(failures, "passive/%s" % passive_id, passive != null)
+	if passive == null:
+		return
+	_assert(
+		failures,
+		"passive/%s/promotion" % passive_id,
+		passive.modifiers.has("promotion"),
+	)
+	if not passive.upgraded_description.is_empty():
+		_assert(
+			failures,
+			"passive/%s/upgraded_description" % passive_id,
+			passive.upgraded_description.length() > 0,
+		)
+
+
+static func _sim_ability_used(
+	failures: Array[String],
+	ability_id: StringName,
+	ability: AbilityData,
+) -> void:
+	if ability == null:
+		return
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"cleric")
+	var board := _H.make_plain_board(Vector2i(10, 8))
+	var cleric := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(2, 3), {
+		"active_abilities": [ability],
+		"active_passives": [],
+	})
+	var ally := UnitState.create(2, definition, GameEnums.Team.PLAYER, Vector2i(3, 3), {})
+	var enemy := UnitState.create(
+		3,
+		DataLibrary.get_training_dummy(),
+		GameEnums.Team.ENEMY,
+		Vector2i(5, 3),
+	)
+	board.units.append(cleric)
+	board.units.append(ally)
+	board.units.append(enemy)
+	for unit: UnitState in board.units:
+		GridSystem.set_occupant(board, unit.position, unit.id)
+	var target_coord := Vector2i(4, 3)
+	var target_id := -1
+	if ability.targeting_flags & GameEnums.TargetingFlags.TILE:
+		target_coord = Vector2i(4, 3)
+		target_id = -1
+	elif ability.targeting_flags & GameEnums.TargetingFlags.ALLY:
+		target_coord = ally.position
+		target_id = ally.id
+	elif ability.targeting_flags & GameEnums.TargetingFlags.ENEMY:
+		target_coord = enemy.position
+		target_id = enemy.id
+	elif ability.targeting_flags & GameEnums.TargetingFlags.SELF:
+		target_coord = cleric.position
+		target_id = cleric.id
+	var action := TimelineAction.make_ability(cleric.id, ability, target_coord, target_id)
+	_assert(
+		failures,
+		"sim/%s/can_use" % ability_id,
+		AbilitySystem.can_use(board, action),
+	)
+	if not AbilitySystem.can_use(board, action):
+		return
+	var plan := Timeline.new()
+	plan.add(action)
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	var used := false
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.ABILITY_USED and event.data.get("ability") == ability_id:
+			used = true
+			break
+	_assert(failures, "sim/%s/used" % ability_id, used)
 
 
 static func run_selfless_siphon(failures: Array[String]) -> void:
