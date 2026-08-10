@@ -4,7 +4,7 @@
 
 **Scope:** **Class validation** — every Knight **active skill**, **movement skill**, and **passive** in `core/factory/classes/knight_factory.gd` behaves per `class_abilities.txt` § Knight. **Not** gameplay-core planning/UI (see `[PLANNING_QA_GATE.md](PLANNING_QA_GATE.md)`).
 
-**End state (Knight instance):** 100% matrix rows **PASS** (meta-critic approved) + `run_knight_qa_gate.ps1` PASS + manifest ≥ 88. **CLASS LOCK** (new classes): see [`CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md) §10.1 — includes live QA + owner sign-off. Knight owner sign-off predates live runner (**LEGACY PASS** rows).
+**End state (Knight instance):** 100% matrix rows **PASS** (meta-critic approved) + `run_knight_qa_gate.ps1` PASS + manifest ≥ 88 + §8.2 contract. **CLASS LOCK:** see [`CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md) §10.1 — live QA + owner sign-off. Owner sign-off predates live runner; rows failing §8.2 must be `HARNESS_ONLY` until re-audited.
 
 **Owner QA sign-off:** **PASS** — the **only** class with owner sign-off. All others: `[CLASS_QA_SIGNOFF.md](CLASS_QA_SIGNOFF.md)`.
 

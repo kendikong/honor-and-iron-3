@@ -22,7 +22,7 @@
 | **`run_<class>_live_qa.ps1` PASS** | Scripted TestBattle cases: preview, overlay, commit, sim parity for included actives | Every matrix row — live is breadth sample; **headless per-row scenarios are completeness** |
 | **`CLASS_QA_SIGNOFF` PASS** | Owner accepted class LOCK | — |
 
-**LEGACY PASS:** Knight owner sign-off predates some bible rules; existing Knight matrix PASS rows are grandfathered until re-audited — not the template for new classes.
+**LEGACY PASS:** Knight **owner sign-off** predates live runner and some bible rules — that does **not** exempt matrix rows from §8.2. Rows that fail shallow contract must be **`HARNESS_ONLY`** until re-audited, even on Knight. LEGACY means sign-off timing only, not shallow coverage.
 
 **One sentence:** Headless per-row scenarios are the **completeness** owner; live is the **depth spot-check** on the real scene; F5 is still for feel.
 
@@ -336,29 +336,33 @@ Green live with shallow headless is **FAIL** under this bible.
 |-------|--------|--------|
 | Scenario file exists for each `PASS` row | `Test-MatrixScenarioFiles` | **Shipped** (`qa_gate_matrix_helpers.ps1`) |
 | Manifest score / approval | `Test-ManifestScore` | **Shipped** |
-| Thin delegate ban | `Test-ScenarioContractShallow` — see §8.2 | **Shipped** |
+| Thin delegate + Layer B/C contract | `Test-ScenarioContractShallow` — see §8.2 (sim + commit proof required) | **Shipped** |
 | AOE shaped rows | `run_aoe_footprint_qa_gate.ps1` | **Shipped** |
 | Layer A FULL per module | `assert_module_editor_fidelity` in harness | **Per-class rollout** |
 | Active with PRE/POST modules but no premove/postmove Layer C | Detect `ON_PRE`/`ON_POST` modules without `movement_planning_smoke` or premove path | **PLANNED** (doc ban today — §13) |
 
 Gate **must** call shipped helpers before Godot runner. Rows failing shallow contract cannot be matrix `PASS`.
 
-### 8.2 Thin delegate detection (`Test-ScenarioContractShallow`)
+### 8.2 Scenario contract (`Test-ScenarioContractShallow`)
 
-A scenario file **fails** gate when:
+A matrix **`PASS`** row **fails** the gate when its scenario file (or named delegate harness function) lacks required proof:
 
-| Condition | Example |
-|-----------|---------|
-| `run_all` is only `_H.run_ability_row` / `run_single_ability` **without** header delegate **and** without local Layer A/B | Cleric smite anti-pattern |
-| `factory_passive(...) != null` without `Simulator` / `AbilitySystem` | Overwatch metadata anti-pattern |
-| Active missing Layer A: no `_data_contract` / `_sim_contract` / `## Data/Sim delegate:` in header | — |
-| Active missing Layer C: no `_planning_proof`, `_phase`, `PlanningChecklistHarness`, `ClassPlanningChecklistHarness`, or `run_planning_commit_smoke` | — |
-| Passive missing sim: no `Simulator`, `AbilitySystem`, `run_single_passive`, or `_Scenarios.run_*` to harness with trigger | — |
-| Header claims delegate but harness function is metadata-only | Fail at meta-critic |
+| Condition | Gate behavior |
+|-----------|---------------|
+| `run_all` only calls `run_ability_row` / `run_single_ability` without delegate header and without local Layer A | **FAIL** |
+| `factory_passive(...) != null` without sim/outcome proof | **FAIL** |
+| Active missing Layer A: no `_data_contract` / `_sim_contract` / `## Data/Sim delegate:` | **FAIL** |
+| Active missing Layer B: no `Simulator` / `simulate_plan` / `SimResult` / HP or damage outcome assert in scenario **or** delegate harness body | **FAIL** |
+| Active missing Layer C commit proof: no `assert_commit_no_jump`, `assert_slots_match_preview_commit`, `movement_planning_smoke`, Tier A `_phase` + `PlanningChecklistHarness`, or `wire_board` planning fixture | **FAIL** |
+| `ABILITY_USED` present without sim/outcome proof | **FAIL** |
+| `## Data/Sim delegate:` header unparseable or harness function metadata-only (no sim/outcome in body) | **FAIL** |
+| Passive missing sim trigger/outcome proof | **FAIL** |
 
-**Layer A in file OR delegated:** Shallow check passes Layer A when scenario contains `_data_contract` / `_sim_contract` **or** header line `## Data/Sim delegate:` pointing at harness function that implements Layer A+B (reviewed at meta-critic).
+**Delegate path:** Header `## Data/Sim delegate: tests/foo.gd::run_bar` — gate reads `run_bar` body and requires Layer B proof there. Scenario may still need local Layer C unless delegate includes planning proof.
 
-**Exception:** matrix row marked `HARNESS_ONLY` or `PLANNED` — not checked for PASS promotion.
+**Not yet machine-gated (doc ban + meta-critic):** PRE/POST module without premove/postmove path; blue move-tile assert on every MOVE skill; FULL Layer A per editor field.
+
+**Exception:** matrix row marked `HARNESS_ONLY` or `PLANNED` — not checked until promoted to `PASS`.
 
 ---
 
@@ -430,7 +434,7 @@ Score each matrix row before `PASS`:
 
 **Class LOCK (all classes, including Knight going forward):** 100% rows `PASS` (or documented `N/A`) + `run_<class>_qa_gate.ps1` exit 0 + `run_<class>_live_qa.ps1` exit 0 + manifest ≥ 88 + owner sign-off in `docs/CLASS_QA_SIGNOFF.md`.
 
-**Knight today:** Owner sign-off PASS predates live runner; Knight matrix rows may be **LEGACY PASS** until re-audited against §8.2. New classes and Knight re-audits use **CLASS LOCK** above.
+**Knight today:** Owner sign-off predates live runner; Knight matrix rows that fail §8.2 must downgrade to **`HARNESS_ONLY`** until re-audited — sign-off does not override shallow contract.
 
 ---
 
@@ -536,4 +540,4 @@ ARTIFACT: docs/CLASS_QA_BIBLE.md, tests/skills/shield_bash_scenario.gd, tests/sk
 
 ---
 
-*Version: 2026-08-09 rev 6 — fail policy: fix red tests same turn. Knight instance: `KNIGHT_QA_GATE.md`. Shallow contract: `qa_gate_matrix_helpers.ps1`.*
+*Version: 2026-08-09 rev 7 — §8.2 enforces Layer B sim + Layer C commit proof; delegate harness body checked. Knight instance: `KNIGHT_QA_GATE.md`.*
