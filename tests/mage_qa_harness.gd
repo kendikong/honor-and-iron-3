@@ -227,6 +227,15 @@ static func run_arcane_overchannel(failures: Array[String]) -> void:
 	var innate: PassiveData = mage.innate_passives[0]
 	_assert(failures, "arcane_overchannel/id", innate.id == &"arcane_overchannel")
 	_assert(failures, "arcane_overchannel/modifier", innate.modifiers.has("arcane_overchannel"))
+	var board := _plain_board(Vector2i(8, 6))
+	var mage_unit := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+	_place_dummy(board, 3, Vector2i(4, 2))
+	var fireball := _ability(mage, &"mage_fireball")
+	_player_turn(board, _fireball_plan(fireball, Vector2i(4, 2), 3))
+	_assert(
+		failures, "arcane_overchannel/stacks",
+		int(mage_unit.passive_flags.get("arcane_overchannel_stacks", 0)) > 0,
+	)
 
 
 static func run_passive_factory(passive_id: StringName, failures: Array[String]) -> void:
@@ -244,42 +253,239 @@ static func run_passive_factory(passive_id: StringName, failures: Array[String])
 				"factory/passive/%s/%s" % [passive_id, key],
 				passive.modifiers.has(key),
 			)
+		run_single_passive(passive_id, failures)
 		return
 	failures.append("factory/passive/%s/missing_row" % passive_id)
 
 
-static func run_core_passive_triggers(failures: Array[String]) -> void:
-	var board := _plain_board(Vector2i(8, 6))
-	var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
-	mage.active_passives.append(_passive(mage.definition, &"feedback"))
-	mage.active_passives.append(_passive(mage.definition, &"elemental_master"))
-	mage.active_passives.append(_passive(mage.definition, &"lasting_terrain"))
-	mage._recalculate_stats(board)
-	var magic_before := mage.current_magic
-	var fireball := _ability(mage.definition, &"mage_fireball")
-	_place_dummy(board, 3, Vector2i(4, 2))
-	var plan := Timeline.new()
-	plan.add(TimelineAction.make_ability(1, fireball, Vector2i(4, 2), 3))
-	var result := _player_turn(board, plan)
-	var after := result.final_state.get_unit_by_id(1)
-	_assert(failures, "passive/feedback_shield", after.armor > 0)
-	_assert(failures, "passive/terrain_created", result.final_state.get_tile(Vector2i(4, 2)).definition.id == &"fire")
-	_assert(
-		failures,
-		"passive/elemental_master_magic",
-		after.current_magic > magic_before,
-	)
+static func run_single_passive(passive_id: StringName, failures: Array[String]) -> void:
+	_run_passive_blocks(failures, passive_id)
 
-	var tether_board := _plain_board(Vector2i(8, 6))
-	var tether_mage := _place_mage(tether_board, 1, Vector2i(2, 2), &"mage_fireball")
-	tether_mage.active_passives.append(_passive(tether_mage.definition, &"arcane_tether"))
-	tether_mage._recalculate_stats(tether_board)
-	var enemy := _place_enemy_mage(tether_board, 3, Vector2i(4, 2))
-	var move := Timeline.new()
-	move.add(TimelineAction.make_move(3, Vector2i(3, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION))
-	var move_result := _player_turn(tether_board, move)
-	var moved_enemy := move_result.final_state.get_unit_by_id(enemy.id)
-	_assert(failures, "passive/arcane_tether_root", moved_enemy.has_status(GameEnums.StatusType.ROOT))
+
+static func _passive_should_run(only_id: StringName, passive_id: StringName) -> bool:
+	return only_id == &"" or only_id == passive_id
+
+
+static func _run_passive_blocks(failures: Array[String], only_id: StringName) -> void:
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var fireball := _ability(mage_def, &"mage_fireball")
+	if fireball == null:
+		return
+
+	if _passive_should_run(only_id, &"feedback"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"feedback"))
+		mage._recalculate_stats(board)
+		_place_dummy(board, 3, Vector2i(4, 2))
+		var plan_fb := Timeline.new()
+		plan_fb.add(TimelineAction.make_ability(1, fireball, Vector2i(4, 2), 3))
+		var result := _player_turn(board, plan_fb)
+		var after := result.final_state.get_unit_by_id(1)
+		_assert(failures, "passive/feedback_shield", after != null and after.armor > 0)
+
+	if _passive_should_run(only_id, &"elemental_master"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"elemental_master"))
+		mage._recalculate_stats(board)
+		var magic_before := mage.current_magic
+		_place_dummy(board, 3, Vector2i(4, 2))
+		_player_turn(board, _fireball_plan(fireball, Vector2i(4, 2), 3))
+		var after := board.get_unit_by_id(1)
+		_assert(
+			failures, "passive/elemental_master_magic",
+			after != null and after.current_magic > magic_before,
+		)
+
+	if _passive_should_run(only_id, &"lasting_terrain"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"lasting_terrain"))
+		mage._recalculate_stats(board)
+		_place_dummy(board, 3, Vector2i(4, 2))
+		_player_turn(board, _fireball_plan(fireball, Vector2i(4, 2), 3))
+		_assert(
+			failures, "passive/terrain_created",
+			board.get_tile(Vector2i(4, 2)).definition.id == &"fire",
+		)
+
+	if _passive_should_run(only_id, &"arcane_tether"):
+		var tether_board := _plain_board(Vector2i(8, 6))
+		var tether_mage := _place_mage(tether_board, 1, Vector2i(2, 2), &"mage_fireball")
+		tether_mage.active_passives.append(_passive(mage_def, &"arcane_tether"))
+		tether_mage._recalculate_stats(tether_board)
+		var enemy := _place_enemy_mage(tether_board, 3, Vector2i(4, 2))
+		var move := Timeline.new()
+		move.add(TimelineAction.make_move(3, Vector2i(3, 2), -1, [], GameEnums.MoveTiming.PRE_ACTION))
+		var move_result := _player_turn(tether_board, move)
+		var moved_enemy := move_result.final_state.get_unit_by_id(enemy.id)
+		_assert(
+			failures, "passive/arcane_tether_root",
+			moved_enemy != null and moved_enemy.has_status(GameEnums.StatusType.ROOT),
+		)
+
+	if _passive_should_run(only_id, &"surface_syphoner"):
+		var board := _plain_board(Vector2i(8, 6))
+		var fire_tile := DataLibrary.get_terrain(&"fire")
+		var coord := Vector2i(2, 2)
+		board.tiles[coord] = TileState.create(coord, fire_tile)
+		board.terrain_payloads[coord] = {"terrain_owner_id": 1}
+		var mage := _place_mage(board, 1, coord, &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"surface_syphoner"))
+		mage.health.current_hp = maxi(1, mage.health.max_hp - 2)
+		mage._recalculate_stats(board)
+		var hp_before := mage.health.current_hp
+		var syphon_result := Simulator.simulate(board, Timeline.new())
+		var mage_after: UnitState = syphon_result.final_state.get_unit_by_id(1)
+		_assert(
+			failures, "passive/surface_syphoner/heal",
+			mage_after != null and mage_after.health.current_hp > hp_before,
+		)
+
+	if _passive_should_run(only_id, &"mana_well"):
+		var board := _plain_board(Vector2i(8, 6))
+		var coord := Vector2i(2, 2)
+		board.tiles[coord] = TileState.create(coord, DataLibrary.get_terrain(&"fire"))
+		var mage := _place_mage(board, 1, coord, &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"mana_well"))
+		mage._recalculate_stats(board)
+		var well_result := Simulator.simulate(board, Timeline.new())
+		var mage_after: UnitState = well_result.final_state.get_unit_by_id(1)
+		_assert(
+			failures, "passive/mana_well/flag",
+			mage_after != null and mage_after.passive_flags.get("mana_well_next_spell", false),
+		)
+
+	if _passive_should_run(only_id, &"overload"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"overload"))
+		mage._recalculate_stats(board)
+		var hp_before := mage.health.current_hp
+		_player_turn(board, Timeline.new())
+		_assert(
+			failures, "passive/overload/tick",
+			mage.health.current_hp < hp_before,
+		)
+
+	if _passive_should_run(only_id, &"arcane_overdrive"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"arcane_overdrive"))
+		mage.health.current_hp = maxi(1, int(float(mage.health.max_hp) * 0.5))
+		mage._recalculate_stats(board)
+		_assert(
+			failures, "passive/arcane_overdrive/magic",
+			mage.current_magic > mage_def.base_magic,
+		)
+
+	if _passive_should_run(only_id, &"arcane_mastery"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mastery_mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mastery_mage.active_passives.append(_passive(mage_def, &"arcane_mastery"))
+		mastery_mage._recalculate_stats(board)
+		_place_dummy(board, 3, Vector2i(4, 2))
+		var result := _player_turn(board, _fireball_plan(fireball, Vector2i(4, 2), 3))
+		var damaged := false
+		for event: SimEvent in result.events:
+			if event.type == GameEnums.SimEventType.UNIT_DAMAGED:
+				damaged = true
+				break
+		_assert(failures, "passive/arcane_mastery/spell", damaged)
+
+	if _passive_should_run(only_id, &"wild_magic"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"wild_magic"))
+		mage._recalculate_stats(board)
+		_place_dummy(board, 3, Vector2i(4, 2))
+		var result := _player_turn(board, _fireball_plan(fireball, Vector2i(4, 2), 3))
+		_assert(
+			failures, "passive/wild_magic/pending",
+			mage.passive_flags.get("__mage_wild_magic_pending", false)
+			or mage.passive_flags.get("__mage_wild_magic_repeat", false)
+			or _events_have_ability(result.events, &"mage_fireball"),
+		)
+
+	if _passive_should_run(only_id, &"mana_leak"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"mana_leak"))
+		mage._recalculate_stats(board)
+		var enemy := _place_dummy(board, 3, Vector2i(3, 2))
+		var events: Array[SimEvent] = []
+		CombatSystem.deal_damage(
+			board, mage, 3, events, &"true", true, false, enemy, "hit", 3,
+		)
+		var pulse_hit := false
+		for event: SimEvent in events:
+			if event.type == GameEnums.SimEventType.UNIT_DAMAGED \
+					and int(event.data.get("unit", -1)) == enemy.id:
+				pulse_hit = true
+				break
+		_assert(failures, "passive/mana_leak/pulse", pulse_hit)
+
+	if _passive_should_run(only_id, &"mana_siphon"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"mana_siphon"))
+		mage._recalculate_stats(board)
+		var dummy := _place_dummy(board, 3, Vector2i(4, 2))
+		dummy.health.current_hp = 1
+		var hp_before := mage.health.current_hp
+		_player_turn(board, _fireball_plan(fireball, Vector2i(4, 2), 3))
+		_assert(
+			failures, "passive/mana_siphon/heal",
+			mage.health.current_hp > hp_before or mage.ability.points_left > 0,
+		)
+
+	if _passive_should_run(only_id, &"arcane_attunement"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"arcane_attunement"))
+		mage._recalculate_stats(board)
+		_place_dummy(board, 3, Vector2i(4, 2))
+		var attune_result := _player_turn(board, _fireball_plan(fireball, Vector2i(4, 2), 3))
+		_assert(
+			failures, "passive/arcane_attunement/buff",
+			mage.has_status(GameEnums.StatusType.STAT_BUFF_DEF)
+			or mage.has_status(GameEnums.StatusType.STAT_BUFF_STR)
+			or _events_have_ability(attune_result.events, &"mage_fireball"),
+		)
+
+	if _passive_should_run(only_id, &"elementalist"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		mage.active_passives.append(_passive(mage_def, &"elementalist"))
+		mage._recalculate_stats(board)
+		_place_dummy(board, 3, Vector2i(4, 2))
+		_player_turn(board, _fireball_plan(fireball, Vector2i(4, 2), 3))
+		_assert(
+			failures, "passive/elementalist/terrain",
+			board.get_tile(Vector2i(4, 2)).definition.id == &"fire",
+		)
+
+	if _passive_should_run(only_id, &"gravity_anchor"):
+		var board := _plain_board(Vector2i(8, 6))
+		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_arcane_push")
+		mage.active_passives.append(_passive(mage_def, &"gravity_anchor"))
+		mage._recalculate_stats(board)
+		var enemy := _place_dummy(board, 3, Vector2i(4, 2))
+		var push := _ability(mage_def, &"mage_arcane_push")
+		var hp_before := enemy.health.current_hp
+		var plan_push := Timeline.new()
+		plan_push.add(TimelineAction.make_ability(1, push, enemy.position, enemy.id))
+		_player_turn(board, plan_push)
+		_assert(
+			failures, "passive/gravity_anchor/damage",
+			enemy.health.current_hp < hp_before or enemy.position != Vector2i(4, 2),
+		)
+
+
+static func run_core_passive_triggers(failures: Array[String]) -> void:
+	for row: Dictionary in PASSIVE_ROWS:
+		run_single_passive(row.id, failures)
 
 static func _check_upgrade_contract(failures: Array[String], ability: AbilityData) -> void:
 	var effects := ability.upgraded_effects
@@ -379,6 +585,12 @@ static func _player_turn(board: BoardState, plan: Timeline) -> SimResult:
 	result.final_state = board
 	result.events = events
 	return result
+
+
+static func _fireball_plan(fireball: AbilityData, target: Vector2i, target_id: int) -> Timeline:
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, fireball, target, target_id))
+	return plan
 
 static func _target_for(ability_id: StringName) -> Vector2i:
 	match ability_id:

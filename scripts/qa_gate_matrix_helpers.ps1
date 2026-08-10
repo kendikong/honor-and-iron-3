@@ -166,7 +166,7 @@ function Expand-NestedHarnessBodies {
 	)
 	if ($Depth -gt 4 -or [string]::IsNullOrWhiteSpace($Body)) { return $Body }
 	$expanded = $Body
-	$nested = [regex]::Matches($Body, '\b(_sim_[A-Za-z0-9_]+|_assert_[A-Za-z0-9_]+|_run_passive_blocks|_simulate_active_ability)\s*\(')
+	$nested = [regex]::Matches($Body, '\b(_sim_[A-Za-z0-9_]+|_sim_basic_attack_with_passive|_assert_[A-Za-z0-9_]+|_run_passive_blocks|run_single_passive|_simulate_active_ability)\s*\(')
 	foreach ($n in $nested) {
 		$fname = $n.Groups[1].Value
 		$nestedBody = Get-FuncBodyFromGdFile -FullPath $FullPath -FuncName $fname
@@ -179,15 +179,22 @@ function Expand-NestedHarnessBodies {
 
 function Test-TextHasOutcomeProof {
 	param([string]$Text)
-	$pattern = 'unit_hp|health\.current_hp|dmg_dealt|damage_dealt|enemy_damage|UNIT_DAMAGED|UNIT_HEALED|has_status|get_affected_tiles|assert_sim_footprint|assert_grid_footprint|footprint|simulate_plan|final_state\.get_unit|AbilitySystem\.execute|get_ability_range|outcome/|_assert_live_outcome|_assert_cleric_outcome|ClassScenarioSimOutcome|get_dynamic_strength|aoe_hits|outside_excluded'
+	$pattern = 'unit_hp|health\.current_hp|dmg_dealt|damage_dealt|enemy_damage|UNIT_DAMAGED|UNIT_HEALED|has_status|get_affected_tiles|assert_sim_footprint|assert_grid_footprint|footprint|simulate_plan|final_state\.get_unit|AbilitySystem\.execute|get_ability_range|outcome/|_assert_live_outcome|_assert_cleric_outcome|ClassScenarioSimOutcome|get_dynamic_strength|aoe_hits|outside_excluded|with_upgraded_ability|is_ability_upgraded|upgrade/profile'
 	return ($Text -match $pattern)
 }
 
 function Test-TextHasPassiveOutcomeProof {
 	param([string]$Text)
+	if (Test-TextHasOutcomeProof -Text $Text) { return $true }
+	if ($Text -match '_sim_basic_attack_with_passive') { return $false }
+	# Metadata-only factory checks are not passive outcome proof (CLASS_QA_BIBLE §3 Layer B).
+	if ($Text -match 'modifiers\.has\(|modifiers\.get\(|passive/\S+/promotion|factory/passive') {
+		if (-not ($Text -match 'Simulator\.|simulate_player_turn|AbilitySystem\.(execute|can_use)|CombatSystem\.|MovementSystem\.|UNIT_DAMAGED|UNIT_HEALED|health\.current_hp|has_status|passive_flags|_recalculate_stats|get_ability_range|terrain_payloads')) {
+			return $false
+		}
+	}
 	return (
-		(Test-TextHasOutcomeProof -Text $Text) -or
-		($Text -match 'modifiers\.has\(|modifiers\.get\(|AbilitySystem\.|Simulator\.|has_status|get_ability_range')
+		$Text -match 'Simulator\.|simulate_player_turn|AbilitySystem\.(execute|can_use)|CombatSystem\.|MovementSystem\.|UNIT_DAMAGED|UNIT_HEALED|health\.current_hp|has_status|passive_flags|get_ability_range|terrain_payloads|final_state\.get_unit'
 	)
 }
 

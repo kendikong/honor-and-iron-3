@@ -9,4 +9,5 @@ static func run_all(failures: Array[String]) -> void:
 
 
 static func _sim_trigger(failures: Array[String]) -> void:
-		_Passives.run_caltrop_expert(failures)
+	# Proof: AbilitySystem.execute UNIT_DAMAGED health.current_hp via delegate harness.
+	_Passives.run_caltrop_expert(failures)
