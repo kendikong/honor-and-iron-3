@@ -940,8 +940,10 @@ func _resync_hover_after_ability_change() -> void:
 func _schedule_ability_settled_refresh() -> void:
 	_ability_scroll_settle_generation += 1
 	var gen: int = _ability_scroll_settle_generation
-	var tree: SceneTree = _map_view.get_tree() if _map_view != null else null
-	if tree == null or _map_view == null or not _map_view.is_inside_tree():
+	var tree: SceneTree = null
+	if _map_view != null and _map_view.is_inside_tree():
+		tree = _map_view.get_tree()
+	if tree == null:
 		_run_ability_settled_refresh()
 		return
 	tree.create_timer(_ABILITY_SCROLL_SETTLE_SEC).timeout.connect(
@@ -1153,6 +1155,9 @@ func _begin_hover_heavy_throttled_flush() -> void:
 		_hover_heavy_throttle_gen += 1
 		var gen: int = _hover_heavy_throttle_gen
 		var wait_sec: float = maxf(_HOVER_HEAVY_MIN_INTERVAL_SEC - elapsed_sec, 0.001)
+		if _map_view == null or not _map_view.is_inside_tree():
+			_run_hover_heavy_refresh()
+			return
 		_map_view.get_tree().create_timer(wait_sec).timeout.connect(
 			func() -> void:
 				if gen != _hover_heavy_throttle_gen:
