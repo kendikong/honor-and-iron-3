@@ -450,6 +450,8 @@ Score each matrix row before `PASS`:
 .\scripts\run_planning_qa_gate.ps1
 ```
 
+**On FAIL:** Stop. Fix the skill or the scenario. Re-run the same suite until PASS. Same-turn fix is mandatory — see §0 fail policy.
+
 ---
 
 ## 12. New class checklist
