@@ -129,6 +129,12 @@ if ($manifestErrors.Count -gt 0) {
 	$manifestErrors | ForEach-Object { Write-GateLine "  $_" }
 	Exit-Gate 3
 }
+$contractErrors = Test-PassRowScenarioContracts -ProjectRoot $projectRoot -MatrixDocPath $matrixDoc
+if ($contractErrors.Count -gt 0) {
+	Write-GateLine "[FAIL] PASS scenario contract shallow (CLASS_QA_BIBLE.md ss8.2):"
+	$contractErrors | ForEach-Object { Write-GateLine "  $_" }
+	Exit-Gate 3
+}
 
 if ($passRows.Count -lt $requiredFactoryIds.Count) {
 	Write-GateLine "[INCOMPLETE] Cleric LOCK requires all factory rows PASS (meta-critic approved)."

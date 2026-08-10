@@ -8,7 +8,7 @@ $matrixDoc = Join-Path $projectRoot "docs\KNIGHT_QA_GATE.md"
 $manifestPath = Join-Path $projectRoot "docs\knight_meta_critic_manifest.json"
 
 Write-Output "=== Knight QA gate (class validation - NOT planning QA) ==="
-Write-Output "Spec: docs/KNIGHT_QA_GATE.md"
+Write-Output "Spec: docs/CLASS_QA_BIBLE.md (instance: docs/KNIGHT_QA_GATE.md)"
 Write-Output ""
 
 # Expected factory rows that must reach PASS before LOCK (from knight_factory.gd)
@@ -92,6 +92,26 @@ if ($unapprovedPass.Count -gt 0) {
 }
 
 Write-Output ""
+
+. (Join-Path $PSScriptRoot "qa_gate_matrix_helpers.ps1")
+$scenarioMissing = Test-MatrixScenarioFiles -ProjectRoot $projectRoot -MatrixDocPath $matrixDoc -RequiredFactoryIds $requiredFactoryIds
+if ($scenarioMissing.Count -gt 0) {
+	Write-Output "[FAIL] PASS matrix rows missing scenario files:"
+	$scenarioMissing | ForEach-Object { Write-Output "  $_" }
+	exit 3
+}
+$manifestErrors = Test-ManifestScore -ManifestPath $manifestPath
+if ($manifestErrors.Count -gt 0) {
+	Write-Output "[FAIL] Meta-critic manifest gate:"
+	$manifestErrors | ForEach-Object { Write-Output "  $_" }
+	exit 3
+}
+$contractErrors = Test-PassRowScenarioContracts -ProjectRoot $projectRoot -MatrixDocPath $matrixDoc
+if ($contractErrors.Count -gt 0) {
+	Write-Output "[FAIL] PASS scenario contract shallow (CLASS_QA_BIBLE.md ss8.2):"
+	$contractErrors | ForEach-Object { Write-Output "  $_" }
+	exit 3
+}
 
 if ($passRows.Count -lt $requiredFactoryIds.Count) {
 	Write-Output "[INCOMPLETE] Knight LOCK requires all factory rows PASS (meta-critic approved)."

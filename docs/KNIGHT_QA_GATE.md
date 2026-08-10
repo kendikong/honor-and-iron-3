@@ -1,10 +1,10 @@
 # Knight QA Gate
 
-**Universal spec:** [`docs/CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md) — all classes clone this; this file is the **Knight instance** only.
+**Universal spec:** [`docs/CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md) — **read this first**; all classes implement this bible. This file is the **Knight instance** (matrix + tiers) only.
 
 **Scope:** **Class validation** — every Knight **active skill**, **movement skill**, and **passive** in `core/factory/classes/knight_factory.gd` behaves per `class_abilities.txt` § Knight. **Not** gameplay-core planning/UI (see `[PLANNING_QA_GATE.md](PLANNING_QA_GATE.md)`).
 
-**End state (Knight LOCK):** 100% coverage matrix rows **PASS** (meta-critic approved) + `run_knight_qa_gate.ps1` PASS + meta-critic **≥ 88** on full matrix — then P6 clones this gate per class.
+**End state (Knight instance):** 100% matrix rows **PASS** (meta-critic approved) + `run_knight_qa_gate.ps1` PASS + manifest ≥ 88. **CLASS LOCK** (new classes): see [`CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md) §10.1 — includes live QA + owner sign-off. Knight owner sign-off predates live runner (**LEGACY PASS** rows).
 
 **Owner QA sign-off:** **PASS** — the **only** class with owner sign-off. All others: `[CLASS_QA_SIGNOFF.md](CLASS_QA_SIGNOFF.md)`.
 
@@ -20,11 +20,11 @@
 | Tier                           | Runner                                                                                | Gate status                                                    |
 | ------------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | **1 — Headless scenarios**     | `.\scripts\run_knight_qa_gate.ps1` (wraps `run_skill_scenarios_only.gd`)              | **Required** — per-ability/passive scenarios via harness + sim |
-| **2 — Live Knight acceptance** | `PLANNED — tests/live_knight_class_test.gd` (GdUnit4, TestBattle, multi-knight board) | Optional until Tier 1 complete; F5-class journeys              |
+| **2 — Live Knight acceptance** | `.\scripts\run_knight_live_qa.ps1` when added; until then Bruiser-pattern live optional | **Required for owner LOCK** per [`CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md) §10 — depth bar |
 | **Manual**                     | `docs/PLANNING_SKILL_QA_CHECKLIST.md` per ability                                     | Required for feel/pixels Tier 1 cannot see                     |
 
 
-**Only Tier 1 blocks Knight LOCK.** Tier 2 packs multiple promotion loadouts on one large board (owner optimization — see §Fixture strategy).
+**Only Tier 1 blocks day-to-day Knight matrix work.** **CLASS LOCK** per [`CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md) §10.1 also requires live QA + owner sign-off for new classes; Knight owner sign-off (2026-08) predates live runner — Knight rows may be **LEGACY PASS** until re-audited.
 
 ---
 
