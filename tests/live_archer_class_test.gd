@@ -11,6 +11,10 @@ const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
 const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
+	{"id": &"archer_sidestep", "range": 1, "flags": GameEnums.TargetingFlags.TILE,
+		"shape": GameEnums.TargetShape.SINGLE, "size": 1, "type": GameEnums.EffectType.MOVE,
+		"amount": 1, "kind": &"tile", "actor": Vector2i(1, 5), "target": Vector2i(0, 5),
+		"observe": &"movement"},
 	{"id": &"archer_basic", "range": 1, "flags": GameEnums.TargetingFlags.ENEMY,
 		"shape": GameEnums.TargetShape.SINGLE, "size": 1, "type": GameEnums.EffectType.DAMAGE,
 		"amount": 1, "kind": &"enemy", "actor": Vector2i(4, 5), "target": Vector2i(6, 5),
@@ -53,8 +57,8 @@ const _CASES: Array[Dictionary] = [
 	{"id": &"archer_repelling_shot", "range": 2,
 		"flags": GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 		"shape": GameEnums.TargetShape.SINGLE, "size": 1, "type": GameEnums.EffectType.DAMAGE,
-		"amount": 1, "kind": &"ally", "actor": Vector2i(2, 2), "target": Vector2i(3, 2),
-		"observe": &"displacement"},
+		"amount": 1, "kind": &"enemy", "actor": Vector2i(2, 4), "target": Vector2i(5, 4),
+		"observe": &"damage"},
 	{"id": &"archer_bear_trap", "range": 3, "flags": GameEnums.TargetingFlags.TILE,
 		"shape": GameEnums.TargetShape.SINGLE, "size": 1, "type": GameEnums.EffectType.CREATE_HAZARD,
 		"amount": 3, "kind": &"tile", "actor": Vector2i(2, 8), "target": Vector2i(5, 8),
@@ -82,6 +86,7 @@ const _BATCHES: Array[Array] = [
 	[&"archer_piercing_shot", &"archer_toxic_spore_arrow", &"archer_grapple_arrow", &"archer_explosive_arrow"],
 	[&"archer_hunters_mark", &"archer_repelling_shot", &"archer_bear_trap", &"archer_suppressing_fire"],
 	[&"archer_caltrop_trap", &"archer_parting_shot", &"archer_scouts_eye"],
+	[&"archer_sidestep"],
 ]
 
 var _scene: TestBattleMapView
@@ -221,11 +226,27 @@ func _assert_live_result(result: SimResult, case: Dictionary, actor_id: int) -> 
 			observed = true
 		if case.observe == &"displacement" and event.type == GameEnums.SimEventType.UNIT_PUSHED:
 			observed = true
+		if (
+			case.observe == &"displacement"
+			and event.type == GameEnums.SimEventType.UNIT_MOVED
+			and int(event.data.get("unit", -1)) != actor_id
+		):
+			observed = true
+		if (
+			case.observe == &"movement"
+			and event.type == GameEnums.SimEventType.UNIT_MOVED
+			and int(event.data.get("unit", -1)) == actor_id
+		):
+			observed = true
 	if case.observe == &"ability":
 		observed = used
 	assert_bool(used).override_failure_message(
 		"%s: committed skill never resolved; plan=%s" % [case.id, _plan_debug()],
 	).is_true()
+	if case.observe == &"movement":
+		var final_actor: UnitState = result.final_state.get_unit_by_id(actor_id)
+		if final_actor != null and final_actor.position == case.target:
+			observed = true
 	assert_bool(observed).override_failure_message(
 		"%s: authored effect was not observed in live simulation" % case.id,
 	).is_true()
@@ -293,7 +314,7 @@ func _extra_players(skill_ids: Array) -> Array[Vector2i]:
 		if position != _ACTOR_CELL:
 			result.append(position)
 		if skill_id == &"archer_repelling_shot":
-			result.append(Vector2i(3, 2))
+			continue
 	if result.size() < 3:
 		result.append(Vector2i(2, 8))
 	return result

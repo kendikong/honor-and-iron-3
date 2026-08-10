@@ -198,9 +198,25 @@ static func run_suppressing_fire(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "suppressing_fire/shape", ab.target_shape, GameEnums.TargetShape.ARC)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_archer(board, 1, Vector2i(2, 3), H.archer_with_ability(&"archer_suppressing_fire"))
+	H.place_dummy(board, 2, Vector2i(5, 3))
+	H.place_dummy(board, 3, Vector2i(5, 4))
 	var skill: AbilityData = H.ability_on_unit(board.get_unit_by_id(1), &"archer_suppressing_fire")
+	var target: Vector2i = Vector2i(5, 3)
+	var footprint: Array[Vector2i] = GridSystem.get_affected_tiles(
+		board, Vector2i(2, 3), target, GameEnums.TargetShape.ARC, skill.target_shape_size,
+	)
+	H.assert_true(
+		failures, "suppressing_fire/footprint_in",
+		footprint.has(Vector2i(5, 3)),
+		"ARC footprint must include aim tile",
+	)
+	H.assert_true(
+		failures, "suppressing_fire/footprint_excludes_far",
+		not footprint.has(Vector2i(8, 3)),
+		"ARC footprint must not include tiles beyond authored sweep",
+	)
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
+	plan.add(H.plan_ability(1, skill, target, -1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(
 		failures, "suppressing_fire/used",
