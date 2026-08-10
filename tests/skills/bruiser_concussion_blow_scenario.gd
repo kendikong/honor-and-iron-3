@@ -1,13 +1,14 @@
-﻿class_name BruiserConcussionBlowScenarioTest
+class_name BruiserConcussionBlowScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
 ## Planning tier: B
 
-## Bible: Concussion Blow — RANGE 1 | ATK 2 | PUSH 1 | object collision STAGGER.
-## [+] enemy_collision_stagger_both — mutual STAGGER on enemy collision.
+## Bible: Concussion Blow - RANGE 1 | ATK 2 | PUSH 1 | object collision STAGGER.
+## [+] enemy_collision_stagger_both - mutual STAGGER on enemy collision.
 ## Globals: EffectType.DAMAGE + PUSH; object_collision_stagger / enemy_collision_stagger_both modifiers.
 
 
@@ -18,4 +19,8 @@ static func run_all(failures: Array[String]) -> void:
 
 static func _sim_contract(failures: Array[String]) -> void:
 		_Scenarios.run_concussion_blow(failures)
+		_sim_upgrade(failures)
 
+
+static func _sim_upgrade(failures: Array[String]) -> void:
+	_Upgrades.run_for_factory(failures, &"bruiser_concussion_blow")

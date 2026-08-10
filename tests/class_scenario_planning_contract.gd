@@ -60,6 +60,8 @@ static func run_tier_b_commit_smoke(
 	if select_only:
 		return
 	_Checklist.hover(fix, commit_cell)
+	if _AoeHarness.ability_requires_footprint_qa(ability):
+		_assert_shaped_footprint(failures, factory_id, fix, ability, commit_cell)
 	var hover_slots: Dictionary = _Checklist.slots_for_hover(fix, commit_cell)
 	if _Checklist._slots_invalid(hover_slots):
 		_Checklist.assert_fail(
@@ -148,6 +150,28 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 		"verify_no_jump": verify_no_jump,
 		"select_only": select_only,
 	}
+
+
+static func _assert_shaped_footprint(
+	failures: Array[String],
+	factory_id: StringName,
+	fix: Dictionary,
+	ability: AbilityData,
+	hover_cell: Vector2i,
+) -> void:
+	var actor: UnitState = _Checklist.projected_unit(fix, 1)
+	if actor == null:
+		return
+	var origin: Vector2i = actor.position
+	var board: BoardState = fix.board
+	var blast: Array[Vector2i] = GridSystem.get_affected_tiles(
+		board, origin, hover_cell, ability.target_shape, ability.target_shape_size,
+	)
+	_Checklist.assert_true(
+		failures, "%s/planning/footprint_tiles" % factory_id,
+		not blast.is_empty(),
+		"shaped ability must have blast footprint at hover",
+	)
 
 
 static func _class_id_from_factory(factory_id: StringName) -> StringName:

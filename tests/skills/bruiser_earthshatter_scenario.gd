@@ -1,13 +1,14 @@
-﻿class_name BruiserEarthshatterScenarioTest
+class_name BruiserEarthshatterScenarioTest
 extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
 ## Planning tier: B
 
-## Bible: Earthshatter — RANGE 1 | ARC | ATK 2 | destroy traps/cover in area.
-## [+] buff_per_destroyed_object — +1 ATK per destroyed object.
+## Bible: Earthshatter - RANGE 1 | ARC | ATK 2 | destroy traps/cover in area.
+## [+] buff_per_destroyed_object - +1 ATK per destroyed object.
 ## Globals: EffectType.DAMAGE + DESTROY_OBSTACLE + TargetShape.ARC.
 
 
@@ -18,3 +19,7 @@ static func run_all(failures: Array[String]) -> void:
 
 static func _sim_contract(failures: Array[String]) -> void:
 		_Scenarios.run_earthshatter(failures)
+		_sim_upgrade(failures)
+
+static func _sim_upgrade(failures: Array[String]) -> void:
+	_Upgrades.run_for_factory(failures, &"bruiser_earthshatter")

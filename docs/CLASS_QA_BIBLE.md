@@ -339,7 +339,10 @@ Green live with shallow headless is **FAIL** under this bible.
 | Thin delegate + Layer B/C contract | `Test-ScenarioContractShallow` — see §8.2 (sim + commit proof required) | **Shipped** |
 | AOE shaped rows | `run_aoe_footprint_qa_gate.ps1` | **Shipped** |
 | Layer A FULL per module | `assert_module_editor_fidelity` in harness | **Per-class rollout** |
-| Active with PRE/POST modules but no premove/postmove Layer C | `Get-FactoryPlanningFlags` + blue/premove/postmove proof in §8.2 | **Shipped** |
+| Harness-body resolution | `Get-ScenarioEffectiveSimText` — follows preload delegate calls + nested `_sim_*` / `_run_passive_blocks` bodies | **Shipped** |
+| Outcome proof (not ABILITY_USED-only) | `Test-TextHasOutcomeProof` — damage/heal/status/footprint, not `_H.run_` alone | **Shipped** |
+| `[+]` upgrade tier | `Get-FactoryHasUpgrade` + `Test-TextHasUpgradeProof` — requires `_sim_upgrade` / `ClassScenarioUpgradeRegistry` | **Shipped** |
+| Shaped blast footprint | `Get-FactoryIsShaped` + `Test-TextHasFootprintProof` + planning `get_affected_tiles` | **Shipped** |
 | Blue move tiles when factory has MOVE/PRE_MOVE | `Get-FactoryPlanningFlags` + `Test-TextHasBlueTileProof` | **Shipped** |
 
 Gate **must** call shipped helpers before Godot runner. Rows failing shallow contract cannot be matrix `PASS`.

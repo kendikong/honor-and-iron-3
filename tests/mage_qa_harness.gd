@@ -113,6 +113,12 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 	)
 	if ability == null or not AbilitySystem.can_use(board, action):
 		return
+	var hp_before: int = -1
+	var actor_pos_before: Vector2i = mage.position
+	if target_id > 0:
+		var target_unit: UnitState = board.get_unit_by_id(target_id)
+		if target_unit != null:
+			hp_before = target_unit.health.current_hp
 	var plan := Timeline.new()
 	plan.add(action)
 	var result := _player_turn(board, plan)
@@ -121,10 +127,96 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 		"live/%s/used" % ability_id,
 		_events_have_ability(result.events, ability_id),
 	)
+	_assert_live_outcome(
+		failures, "live/%s" % ability_id, ability, result.events, hp_before, actor_pos_before, result.final_state, target_id,
+	)
 	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
 	var ability_data := _ability(mage_def, ability_id)
 	if ability_data != null:
 		_check_upgrade_contract(failures, ability_data)
+
+
+static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String]) -> void:
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var ability := _ability(mage_def, ability_id)
+	if ability == null or ability.upgraded_effects.is_empty():
+		return
+	_check_upgrade_contract(failures, ability)
+	var board := _plain_board(Vector2i(10, 8))
+	var mage := _place_mage(board, 1, Vector2i(2, 3), ability_id)
+	mage.upgraded_abilities.append(ability_id)
+	var target_coord := _target_for(ability_id)
+	var target_id := -1
+	if ability_id not in [&"mage_blink", &"mage_teleport", &"mage_mana_shield", &"mage_elemental_surge", &"mage_time_warp"]:
+		_place_dummy(board, 3, target_coord)
+		target_id = 3
+	var resolved := _ability(mage.definition, ability_id)
+	var action := TimelineAction.make_ability(1, resolved, target_coord, target_id)
+	if not AbilitySystem.can_use(board, action):
+		return
+	if ability_id in [&"mage_meteor", &"mage_black_hole", &"mage_gravity_well"]:
+		return
+	var hp_before: int = -1
+	if target_id > 0:
+		var target_unit: UnitState = board.get_unit_by_id(target_id)
+		if target_unit != null:
+			hp_before = target_unit.health.current_hp
+	var plan := Timeline.new()
+	plan.add(action)
+	var result := _player_turn(board, plan)
+	_assert_live_outcome(
+		failures, "upgrade/%s" % ability_id, resolved, result.events, hp_before, mage.position, result.final_state, target_id,
+	)
+
+
+static func _assert_live_outcome(
+	failures: Array[String],
+	prefix: String,
+	ability: AbilityData,
+	events: Array[SimEvent],
+	hp_before: int,
+	actor_pos_before: Vector2i,
+	final_board: BoardState,
+	target_id: int = -1,
+) -> void:
+	if ability == null:
+		return
+	var has_damage := false
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.UNIT_DAMAGED:
+			has_damage = true
+			break
+	var hp_after: int = hp_before
+	if target_id > 0:
+		var tu: UnitState = final_board.get_unit_by_id(target_id)
+		if tu != null:
+			hp_after = tu.health.current_hp
+	for effect: EffectData in ability.effects:
+		match effect.type:
+			GameEnums.EffectType.DAMAGE:
+				if hp_before <= 0 and not has_damage:
+					continue
+				_assert(
+					failures, "%s/outcome/damage" % prefix,
+					has_damage or (hp_before > 0 and hp_after < hp_before),
+				)
+			GameEnums.EffectType.HEAL, GameEnums.EffectType.ARMOR_UP:
+				_assert(failures, "%s/outcome/buff" % prefix, not events.is_empty())
+			GameEnums.EffectType.MOVE, GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER:
+				if ability.id in [&"mage_blink", &"mage_teleport"]:
+					continue
+				var actor: UnitState = final_board.get_unit_by_id(1)
+				_assert(
+					failures, "%s/outcome/move" % prefix,
+					actor != null and actor.position != actor_pos_before,
+				)
+			GameEnums.EffectType.CHANGE_TERRAIN, GameEnums.EffectType.CREATE_HAZARD:
+				for event: SimEvent in events:
+					if event.type == GameEnums.SimEventType.TERRAIN_CHANGED:
+						return
+				_assert(failures, "%s/outcome/terrain" % prefix, false)
+			_:
+				pass
 
 
 static func run_arcane_overchannel(failures: Array[String]) -> void:

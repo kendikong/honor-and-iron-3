@@ -1,12 +1,13 @@
-﻿class_name BruiserPushThroughScenarioTest
+class_name BruiserPushThroughScenarioTest
 extends RefCounted
 
 const _BruiserQaHarness := preload("res://tests/bruiser_qa_harness.gd")
 const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
 ## Planning tier: B
 
-## Bible: Push Through â€” move into adjacent ally-occupied tile, PUSH ally 1 forward; [+] cost 1 MOV + STR on push.
+## Bible: Push Through - move into adjacent ally-occupied tile, PUSH ally 1 forward; [+] cost 1 MOV + STR on push.
 ## Globals: EffectType.MOVE_INTO_AND_PUSH; upgraded_movement_point_cost; buff_on_push modifier in PhysicsSystem.
 
 
@@ -23,3 +24,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 		_BruiserQaHarness.run_push_through_rejects_enemy(failures)
 		_BruiserQaHarness.run_push_through_upgrade(failures)
 		_BruiserQaHarness.run_push_through_upgrade_next_attack(failures)
+		_sim_upgrade(failures)
+
+static func _sim_upgrade(failures: Array[String]) -> void:
+	_Upgrades.run_for_factory(failures, &"bruiser_push_through")

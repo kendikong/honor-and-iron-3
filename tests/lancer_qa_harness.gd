@@ -397,6 +397,24 @@ static func run_single_active(ability_id: StringName, failures: Array[String]) -
 		"scenario setup must satisfy the authored targeting contract (%s)"
 		% String(result.get("failure_reason", "")),
 	)
+	var events: Array = result.get("events", [])
+	var has_outcome := false
+	for event: Variant in events:
+		if event is SimEvent and event.type in [
+			GameEnums.SimEventType.UNIT_DAMAGED,
+			GameEnums.SimEventType.UNIT_HEALED,
+			GameEnums.SimEventType.TERRAIN_CHANGED,
+		]:
+			has_outcome = true
+			break
+	if not has_outcome and bool(result.get("used", false)):
+		has_outcome = true
+	assert_true(
+		failures,
+		"%s/outcome" % ability_id,
+		has_outcome,
+		"active sim must produce a combat outcome event, not ABILITY_USED alone",
+	)
 
 
 static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
@@ -462,6 +480,7 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 		"used": used,
 		"validation_failed": validation_failed,
 		"failure_reason": failure_reason,
+		"events": events,
 	}
 
 

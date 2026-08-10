@@ -3,7 +3,7 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Defensive Formation — RANGE 0 | AOE 3 | Allies in range +2 DEF and immune PUSH/PULL 1 turn. [+] Allies also gain SHIELD 2.
+## Bible: Defensive Formation - RANGE 0 | AOE 3 | Allies in range +2 DEF and immune PUSH/PULL 1 turn. [+] Allies also gain SHIELD 2.
 ## Globals: ADD_STATUS(STAT_BUFF_DEF), ADD_STATUS(STURDY); upgraded ARMOR_UP via AbilitySystem.
 
 

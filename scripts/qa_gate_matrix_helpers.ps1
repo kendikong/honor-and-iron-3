@@ -94,10 +94,146 @@ function Get-DelegateHarnessBody {
 	}
 }
 
+function Get-FuncBodyFromGdFile {
+	param(
+		[string]$FullPath,
+		[string]$FuncName
+	)
+	if (-not (Test-Path $FullPath)) { return '' }
+	$harnessText = Get-Content -Path $FullPath -Raw
+	$funcMatch = [regex]::Match(
+		$harnessText,
+		"(?ms)static func $FuncName\s*\([^\)]*\)\s*->\s*void:\s*(.*?)(?=\nstatic func |\z)"
+	)
+	if (-not $funcMatch.Success) { return '' }
+	return $funcMatch.Groups[1].Value
+}
+
+function Get-ScenarioPreloadMap {
+	param([string]$ScenarioText)
+	$map = @{}
+	$matches = [regex]::Matches($ScenarioText, 'const\s+(\w+)\s*:=\s*preload\("([^"]+)"\)')
+	foreach ($m in $matches) {
+		$map[$m.Groups[1].Value] = $m.Groups[2].Value
+	}
+	return $map
+}
+
+function Get-ScenarioEffectiveSimText {
+	param(
+		[string]$ProjectRoot,
+		[string]$ScenarioText,
+		[string]$DelegateBody
+	)
+	$combined = $ScenarioText + "`n" + $DelegateBody
+	$preloadMap = Get-ScenarioPreloadMap -ScenarioText $ScenarioText
+	$simBlockMatch = [regex]::Match(
+		$ScenarioText,
+		'(?ms)static func _sim_(?:contract|trigger)\s*\([^\)]*\)\s*->\s*void:\s*(.*?)(?=\nstatic func |\z)'
+	)
+	$simBlock = if ($simBlockMatch.Success) { $simBlockMatch.Groups[1].Value } else { $ScenarioText }
+	$callMatches = [regex]::Matches($simBlock, '(\w+)\.(run_[A-Za-z0-9_]+)\s*\(')
+	foreach ($call in $callMatches) {
+		$alias = $call.Groups[1].Value
+		$func = $call.Groups[2].Value
+		if (-not $preloadMap.ContainsKey($alias)) { continue }
+		$rel = $preloadMap[$alias] -replace '^res://', '' -replace '/', '\'
+		$full = Join-Path $ProjectRoot $rel
+		$body = Get-FuncBodyFromGdFile -FullPath $full -FuncName $func
+		$body = Expand-NestedHarnessBodies -FullPath $full -Body $body -Depth 0
+		$combined += "`n" + $body
+	}
+	return $combined
+}
+
+function Expand-NestedHarnessBodies {
+	param(
+		[string]$FullPath,
+		[string]$Body,
+		[int]$Depth
+	)
+	if ($Depth -gt 4 -or [string]::IsNullOrWhiteSpace($Body)) { return $Body }
+	$expanded = $Body
+	$nested = [regex]::Matches($Body, '\b(_sim_[A-Za-z0-9_]+|_assert_[A-Za-z0-9_]+|_run_passive_blocks|_simulate_active_ability)\s*\(')
+	foreach ($n in $nested) {
+		$fname = $n.Groups[1].Value
+		$nestedBody = Get-FuncBodyFromGdFile -FullPath $FullPath -FuncName $fname
+		if ($nestedBody -ne '') {
+			$expanded += "`n" + (Expand-NestedHarnessBodies -FullPath $FullPath -Body $nestedBody -Depth ($Depth + 1))
+		}
+	}
+	return $expanded
+}
+
+function Test-TextHasOutcomeProof {
+	param([string]$Text)
+	$pattern = 'unit_hp|health\.current_hp|dmg_dealt|damage_dealt|enemy_damage|UNIT_DAMAGED|UNIT_HEALED|has_status|get_affected_tiles|assert_sim_footprint|assert_grid_footprint|footprint|simulate_plan|final_state\.get_unit|AbilitySystem\.execute|get_ability_range|outcome/|_assert_live_outcome|_assert_cleric_outcome|ClassScenarioSimOutcome|get_dynamic_strength|aoe_hits|outside_excluded'
+	return ($Text -match $pattern)
+}
+
+function Test-TextHasPassiveOutcomeProof {
+	param([string]$Text)
+	return (
+		(Test-TextHasOutcomeProof -Text $Text) -or
+		($Text -match 'modifiers\.has\(|modifiers\.get\(|AbilitySystem\.|Simulator\.|has_status|get_ability_range')
+	)
+}
+
+function Test-TextHasUpgradeProof {
+	param([string]$Text)
+	return (
+		$Text -match '_sim_upgrade|ClassScenarioUpgradeRegistry|run_upgrade_for|run_.*_upgrade|run_upgrade_sim_for|upgrade/outcome|upgrade/profile|upgrade/compiled'
+	)
+}
+
+function Test-TextHasFootprintProof {
+	param([string]$Text)
+	return (
+		$Text -match 'get_affected_tiles|assert_sim_footprint|assert_grid_footprint|assert_footprint|AoeFootprintQaHarness|assert_red_contract|footprint|aoe_hits|outside_excluded|footprint_tiles'
+	)
+}
+
+function Get-FactoryHasUpgrade {
+	param(
+		[string]$ProjectRoot,
+		[string]$FactoryId
+	)
+	if ([string]::IsNullOrWhiteSpace($FactoryId)) { return $false }
+	$class = ($FactoryId -split '_')[0]
+	$row = $FactoryId -replace "^${class}_", ''
+	$factoryPath = Join-Path $ProjectRoot ("core\factory\classes\${class}_factory.gd")
+	if (-not (Test-Path $factoryPath)) { return $false }
+	$text = Get-Content -Path $factoryPath -Raw
+	$funcPattern = "(?ms)func\s+_$row\s*\([^\)]*\)[^{]*\{[\s\S]{0,6000}?upgraded_effects"
+	if ($text -match $funcPattern) { return $true }
+	$escaped = [regex]::Escape($FactoryId)
+	return ($text -match "(?ms)&`"$escaped`"[\s\S]{0,4000}?upgraded_effects")
+}
+
+function Get-FactoryIsShaped {
+	param(
+		[string]$ProjectRoot,
+		[string]$FactoryId
+	)
+	if ([string]::IsNullOrWhiteSpace($FactoryId)) { return $false }
+	$class = ($FactoryId -split '_')[0]
+	$row = $FactoryId -replace "^${class}_", ''
+	$factoryPath = Join-Path $ProjectRoot ("core\factory\classes\${class}_factory.gd")
+	if (-not (Test-Path $factoryPath)) { return $false }
+	$text = Get-Content -Path $factoryPath -Raw
+	$funcPattern = "(?ms)func\s+_$row\s*\([^\)]*\)[^{]*\{[\s\S]{0,8000}?target_shape\s*=\s*GameEnums\.TargetShape\.(\w+)"
+	if ($text -match $funcPattern) {
+		$shape = $Matches[1]
+		return ($shape -ne 'SINGLE')
+	}
+	return $false
+}
+
 function Test-TextHasLayerBProof {
 	param([string]$Text)
-	$pattern = 'Simulator\.|AbilitySystem\.|simulate_player_turn|simulate_plan|SimResult|run_sim_|_sim_base|run_bash_|run_single_passive|run_single_ability|run_single_active|_Scenarios\.run_|_Passives\.run_|run_.*_smoke|QaHarness\.run_|_H\.run_|final_state\.|unit_hp|assert_.*dmg|assert_.*damage|get_unit_by_id'
-	return ($Text -match $pattern)
+	if (Test-TextHasOutcomeProof -Text $Text) { return $true }
+	$structural = 'Simulator\.|simulate_plan|run_.*_base_sim|run_bash_|_Scenarios\.run_|_Passives\.run_|get_affected_tiles|final_state\.|assert_sim_footprint'
+	return ($Text -match $structural)
 }
 
 function Test-TextHasBlueTileProof {
@@ -184,13 +320,18 @@ function Test-ScenarioContractShallow {
 		$delegateInfo = Get-DelegateHarnessBody -ProjectRoot $ProjectRoot -ScenarioText $text
 	}
 	$delegateBody = if ($null -ne $delegateInfo) { $delegateInfo.Body } else { '' }
+	$effectiveSimText = if ($ProjectRoot -ne '') {
+		Get-ScenarioEffectiveSimText -ProjectRoot $ProjectRoot -ScenarioText $text -DelegateBody $delegateBody
+	} else {
+		$text + "`n" + $delegateBody
+	}
 	$planningText = $text + "`n" + $delegateBody
 	$factoryFlags = if ($ProjectRoot -ne '' -and $FactoryId -ne '') {
 		Get-FactoryPlanningFlags -ProjectRoot $ProjectRoot -FactoryId $FactoryId
 	} else {
 		@{ NeedsBlue = $false; NeedsPremove = $false; NeedsPostmove = $false }
 	}
-	$hasLayerBLocal = Test-TextHasLayerBProof -Text $text
+	$hasLayerBLocal = Test-TextHasLayerBProof -Text $effectiveSimText
 	$hasLayerBDelegate = Test-TextHasLayerBProof -Text $delegateBody
 	$hasLayerB = $hasLayerBLocal -or $hasLayerBDelegate
 	$hasLayerCLocal = Test-TextHasLayerCCommitProof -Text $text
@@ -207,9 +348,8 @@ function Test-ScenarioContractShallow {
 		$runAllBody -notmatch 'assert_|_sim_contract|_data_contract|_phase|PlanningChecklistHarness|movement_planning_smoke|wire_board'
 	)
 	$abilityUsedOnly = (
-		$text -match 'ABILITY_USED' -and
-		-not (Test-TextHasLayerBProof -Text $text) -and
-		-not $hasLayerBDelegate
+		($effectiveSimText -match '_sim_ability_used|events_have_ability|run_single_ability|run_ability_row') -and
+		-not (Test-TextHasOutcomeProof -Text $effectiveSimText)
 	)
 	if ($thinDelegate -or $runAllOnlyDelegate) {
 		$errors += "${ScenarioRelPath}: thin harness delegate"
@@ -241,8 +381,14 @@ function Test-ScenarioContractShallow {
 	if ($isSkill -and $factoryFlags.NeedsPostmove -and -not (Test-TextHasPostmoveProof -Text $planningText)) {
 		$errors += "${ScenarioRelPath}: factory ON_POST/MOVE+skill requires postmove planning proof"
 	}
-	if ($isPassive -and -not $hasLayerB) {
+	if ($isPassive -and -not (Test-TextHasPassiveOutcomeProof -Text $effectiveSimText)) {
 		$errors += "${ScenarioRelPath}: passive missing sim trigger/outcome proof"
+	}
+	if ($isSkill -and (Get-FactoryHasUpgrade -ProjectRoot $ProjectRoot -FactoryId $FactoryId) -and -not (Test-TextHasUpgradeProof -Text ($text + "`n" + $effectiveSimText))) {
+		$errors += "${ScenarioRelPath}: factory has [+] upgrade data but scenario lacks _sim_upgrade / upgrade sim proof"
+	}
+	if ($isSkill -and (Get-FactoryIsShaped -ProjectRoot $ProjectRoot -FactoryId $FactoryId) -and -not (Test-TextHasFootprintProof -Text ($effectiveSimText + "`n" + $text))) {
+		$errors += "${ScenarioRelPath}: shaped factory row lacks footprint / blast tile proof"
 	}
 	return $errors
 }

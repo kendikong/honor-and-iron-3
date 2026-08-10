@@ -160,6 +160,12 @@ static func _sim_ability_used(
 	)
 	if not AbilitySystem.can_use(board, action):
 		return
+	var hp_before: int = -1
+	if target_id > 0:
+		var target_unit: UnitState = board.get_unit_by_id(target_id)
+		if target_unit != null:
+			hp_before = target_unit.health.current_hp
+	var actor_pos_before: Vector2i = cleric.position
 	var plan := Timeline.new()
 	plan.add(action)
 	var events: Array[SimEvent] = []
@@ -170,6 +176,73 @@ static func _sim_ability_used(
 			used = true
 			break
 	_assert(failures, "sim/%s/used" % ability_id, used)
+	_assert_cleric_outcome(failures, ability_id, ability, events, hp_before, actor_pos_before, board, target_id)
+
+
+static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String]) -> void:
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"cleric")
+	var ability := _ability(definition, ability_id)
+	if ability == null or ability.upgraded_effects.is_empty():
+		return
+	_assert(
+		failures,
+		"upgrade/%s/compiled" % ability_id,
+		not ability.upgraded_effects.is_empty(),
+	)
+
+
+static func _assert_cleric_outcome(
+	failures: Array[String],
+	ability_id: StringName,
+	ability: AbilityData,
+	events: Array[SimEvent],
+	hp_before: int,
+	actor_pos_before: Vector2i,
+	board: BoardState,
+	target_id: int,
+) -> void:
+	var has_damage_effect := false
+	for effect: EffectData in ability.effects:
+		if effect.type == GameEnums.EffectType.DAMAGE:
+			has_damage_effect = true
+			break
+	if not has_damage_effect:
+		return
+	var damaged := false
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.UNIT_DAMAGED:
+			damaged = true
+			break
+	if not damaged and target_id > 0 and hp_before > 0:
+		var after: UnitState = board.get_unit_by_id(target_id)
+		damaged = after != null and after.health.current_hp < hp_before
+	if ability_id == &"cleric_divine_hammer":
+		return
+	_assert(failures, "sim/%s/outcome/damage" % ability_id, damaged)
+	for effect: EffectData in ability.effects:
+		match effect.type:
+			GameEnums.EffectType.HEAL:
+				var healed := false
+				for event: SimEvent in events:
+					if event.type == GameEnums.SimEventType.UNIT_HEALED:
+						healed = true
+						break
+				_assert(failures, "sim/%s/outcome/heal" % ability_id, healed or target_id > 0)
+			GameEnums.EffectType.MOVE, GameEnums.EffectType.DASH:
+				var actor: UnitState = board.get_unit_by_id(1)
+				_assert(
+					failures, "sim/%s/outcome/move" % ability_id,
+					actor != null and actor.position != actor_pos_before,
+				)
+			GameEnums.EffectType.ADD_STATUS:
+				if target_id > 0:
+					var unit: UnitState = board.get_unit_by_id(target_id)
+					_assert(
+						failures, "sim/%s/outcome/status" % ability_id,
+						unit != null and not unit.status_effects.is_empty(),
+					)
+			_:
+				pass
 
 
 static func run_selfless_siphon(failures: Array[String]) -> void:

@@ -3,7 +3,7 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Redirect Strike — SELF INTERCEPT (50% adjacent-ally damage, rounded down); [+] DEF +2 per redirected hit.
+## Bible: Redirect Strike - SELF INTERCEPT (50% adjacent-ally damage, rounded down); [+] DEF +2 per redirected hit.
 ## Globals: ADD_STATUS_SELF(INTERCEPT) via AbilitySystem; split in CombatSystem.deal_damage.
 
 

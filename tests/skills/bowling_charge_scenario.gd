@@ -3,9 +3,9 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Bowling Charge — DASH 3 | collision ATK/PUSH via BULLDOZE | [+] PUSH_CHAIN_COLLISION.
+## Bible: Bowling Charge - DASH 3 | collision ATK/PUSH via BULLDOZE | [+] PUSH_CHAIN_COLLISION.
 ## Globals: DASH, BULLDOZE, PUSH_CHAIN_COLLISION via AbilitySystem / PhysicsSystem.
-## Tier 1: sim contract + bowling planning intent E2E (Knight QA — not planning gate).
+## Tier 1: sim contract + bowling planning intent E2E (Knight QA - not planning gate).
 
 
 static func run_all(failures: Array[String]) -> void:
