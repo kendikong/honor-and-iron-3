@@ -67,6 +67,9 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		if ability == null:
 			continue
 		director.select_unit(actor_id)
+		actor.ability.points_left = maxi(actor.ability.points_left, 1)
+		actor.movement.points_left = maxi(actor.movement.points_left, 3)
+		director.auto_run = item.id == &"cleric_guardian_step"
 		await _MOVEMENT_QA.commit_premove_run_if_needed(
 			self,
 			runner,

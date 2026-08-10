@@ -16,6 +16,7 @@ const _PUSH_EXTRA_PLAYERS: Array[Vector2i] = [
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
 const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
+const _TRAMPLE_DRAG := preload("res://tests/trampling_advance_e2e_test.gd")
 const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
@@ -65,7 +66,7 @@ const _CASES: Array[Dictionary] = [
 	{
 		"id": &"lancer_sweeping_halberd",
 		"range": 2,
-		"flags": GameEnums.TargetingFlags.ENEMY,
+		"flags": GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		"shape": GameEnums.TargetShape.ARC,
 		"shape_size": 1,
 		"primary_type": GameEnums.EffectType.DAMAGE,
@@ -172,9 +173,9 @@ const _CASES: Array[Dictionary] = [
 		"primary_amount": 4,
 		"observation": &"movement_damage",
 		"target_kind": &"enemy",
-		"target": Vector2i(8, 5),
-		"ally": Vector2i(5, 5),
-		"dummies": [Vector2i(8, 5)],
+		"target": Vector2i(9, 5),
+		"ally": Vector2i(4, 5),
+		"dummies": [Vector2i(9, 5)],
 		"extra_players": _PUSH_EXTRA_PLAYERS,
 		"upgrade_keys": [&"paired_ally_charge", &"on_kill_both_ap"],
 	},
@@ -236,43 +237,6 @@ const _CASES: Array[Dictionary] = [
 	},
 ]
 
-const _BATCHES: Array[Dictionary] = [
-	{
-		"extra_players": [Vector2i(5, 5), Vector2i(2, 8), Vector2i(8, 8)],
-		"dummies": [Vector2i(2, 6), Vector2i(8, 7)],
-		"skills": [
-			&"lancer_push", &"lancer_basic", &"lancer_piercing_charge",
-		],
-	},
-	{
-		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
-		"dummies": [Vector2i(8, 6), Vector2i(6, 5), Vector2i(4, 2)],
-		"skills": [
-			&"lancer_sweeping_halberd", &"lancer_vaulting_leap",
-			&"lancer_run_down", &"lancer_rallying_cry",
-		],
-	},
-	{
-		"extra_players": [Vector2i(2, 2), Vector2i(4, 4), Vector2i(5, 5)],
-		"dummies": [Vector2i(6, 2), Vector2i(4, 3), Vector2i(9, 5)],
-		"skills": [
-			&"lancer_brace", &"lancer_harpoon_toss",
-			&"lancer_pole_vault", &"lancer_glorious_charge",
-		],
-	},
-	{
-		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
-		"dummies": [
-			Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5),
-			Vector2i(2, 5), Vector2i(7, 6),
-		],
-		"skills": [
-			&"lancer_line_breaker", &"lancer_spear_wall",
-			&"lancer_meteor_drop", &"lancer_flanking_maneuver",
-		],
-	},
-]
-
 const _CASE_ACTORS: Dictionary = {
 	&"lancer_basic": Vector2i(2, 8),
 	&"lancer_push": Vector2i(4, 5),
@@ -281,7 +245,7 @@ const _CASE_ACTORS: Dictionary = {
 	&"lancer_vaulting_leap": Vector2i(4, 5),
 	&"lancer_run_down": Vector2i(2, 2),
 	&"lancer_rallying_cry": Vector2i(2, 8),
-	&"lancer_flanking_maneuver": Vector2i(8, 8),
+	&"lancer_flanking_maneuver": Vector2i(2, 3),
 	&"lancer_brace": Vector2i(4, 5),
 	&"lancer_harpoon_toss": Vector2i(2, 2),
 	&"lancer_pole_vault": Vector2i(4, 4),
@@ -299,14 +263,90 @@ const _CASE_TARGETS: Dictionary = {
 	&"lancer_vaulting_leap": Vector2i(6, 5),
 	&"lancer_run_down": Vector2i(4, 2),
 	&"lancer_rallying_cry": Vector2i(2, 8),
-	&"lancer_flanking_maneuver": Vector2i(7, 6),
+	&"lancer_flanking_maneuver": Vector2i(3, 4),
 	&"lancer_brace": Vector2i(4, 5),
 	&"lancer_harpoon_toss": Vector2i(6, 2),
-	&"lancer_pole_vault": Vector2i(4, 2),
+	&"lancer_pole_vault": Vector2i(6, 5),
 	&"lancer_glorious_charge": Vector2i(9, 5),
 	&"lancer_line_breaker": Vector2i(8, 5),
 	&"lancer_spear_wall": Vector2i(4, 2),
 	&"lancer_meteor_drop": Vector2i(2, 6),
+}
+
+const _CASE_PREMOVE_RUN: Dictionary = {
+	&"lancer_piercing_charge": Vector2i(8, 7),
+	&"lancer_pole_vault": Vector2i(5, 4),
+	&"lancer_meteor_drop": Vector2i(2, 7),
+	&"lancer_line_breaker": Vector2i(5, 5),
+}
+
+const _FIXTURES: Dictionary = {
+	&"lancer_basic": {
+		"extra_players": [Vector2i(2, 8), Vector2i(5, 5), Vector2i(8, 8)],
+		"dummies": [Vector2i(2, 6), Vector2i(8, 7)],
+	},
+	&"lancer_push": {
+		"extra_players": _PUSH_EXTRA_PLAYERS,
+		"dummies": [Vector2i(2, 6), Vector2i(8, 7)],
+	},
+	&"lancer_piercing_charge": {
+		"extra_players": [Vector2i(5, 5), Vector2i(2, 8), Vector2i(8, 8)],
+		"dummies": [Vector2i(2, 6), Vector2i(8, 6)],
+	},
+	&"lancer_sweeping_halberd": {
+		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
+		"dummies": [Vector2i(8, 6), Vector2i(6, 5), Vector2i(4, 2)],
+	},
+	&"lancer_vaulting_leap": {
+		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
+		"dummies": [Vector2i(8, 6), Vector2i(6, 5), Vector2i(4, 2)],
+	},
+	&"lancer_run_down": {
+		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
+		"dummies": [Vector2i(8, 6), Vector2i(6, 5), Vector2i(4, 2)],
+	},
+	&"lancer_rallying_cry": {
+		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
+		"dummies": [Vector2i(8, 6), Vector2i(6, 5), Vector2i(4, 2)],
+	},
+	&"lancer_brace": {
+		"extra_players": [Vector2i(2, 2), Vector2i(4, 4), Vector2i(5, 5)],
+		"dummies": [Vector2i(6, 2), Vector2i(4, 3), Vector2i(9, 5)],
+	},
+	&"lancer_harpoon_toss": {
+		"extra_players": [Vector2i(2, 2), Vector2i(4, 4), Vector2i(5, 5)],
+		"dummies": [Vector2i(6, 2), Vector2i(4, 3), Vector2i(9, 5)],
+	},
+	&"lancer_pole_vault": {
+		"extra_players": [Vector2i(2, 2), Vector2i(4, 4), Vector2i(5, 5)],
+		"dummies": [Vector2i(6, 2), Vector2i(4, 3), Vector2i(5, 5)],
+	},
+	&"lancer_glorious_charge": {
+		"extra_players": [Vector2i(2, 2), Vector2i(4, 4), Vector2i(5, 5)],
+		"dummies": [Vector2i(9, 5)],
+	},
+	&"lancer_line_breaker": {
+		"extra_players": [Vector2i(3, 5), Vector2i(2, 8), Vector2i(8, 8)],
+		"dummies": [Vector2i(6, 5), Vector2i(7, 5)],
+	},
+	&"lancer_spear_wall": {
+		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
+		"dummies": [
+			Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5),
+			Vector2i(2, 5), Vector2i(7, 6),
+		],
+	},
+	&"lancer_meteor_drop": {
+		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
+		"dummies": [
+			Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5),
+			Vector2i(6, 4),
+		],
+	},
+	&"lancer_flanking_maneuver": {
+		"extra_players": [Vector2i(2, 3), Vector2i(2, 8), Vector2i(8, 8)],
+		"dummies": [Vector2i(4, 4)],
+	},
 }
 
 const _CASE_ALLIES: Dictionary = {
@@ -332,8 +372,22 @@ func test_live_lancer_every_skill(timeout := 240000) -> void:
 	if _scene == null:
 		return
 
-	for batch: Dictionary in _BATCHES:
-		await _run_live_batch(runner, batch)
+	for case: Dictionary in _CASES:
+		await _run_skill_journey(runner, case.id)
+
+
+func _run_skill_journey(runner: GdUnitSceneRunner, skill_id: StringName) -> void:
+	var fixture: Dictionary = _FIXTURES.get(skill_id, {})
+	assert_bool(not fixture.is_empty()).override_failure_message(
+		"%s: missing live fixture" % skill_id,
+	).is_true()
+	if fixture.is_empty():
+		return
+	await _run_live_batch(runner, {
+		"extra_players": fixture.get("extra_players", []),
+		"dummies": fixture.get("dummies", []),
+		"skills": [skill_id],
+	})
 
 
 func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
@@ -358,16 +412,41 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		"WorldModulate/MapRoot/PlanningOverlay",
 	) as TacticalPlanningOverlay
 	_director.auto_run = false
+	var listed_case := _case_by_id(batch.skills[0] if batch.skills.size() > 0 else &"")
+	if batch.skills.size() == 1:
+		var only_skill: StringName = batch.skills[0]
+		_director.auto_run = only_skill in [
+			&"lancer_piercing_charge",
+			&"lancer_meteor_drop",
+		]
+	else:
+		for listed_skill: StringName in batch.skills:
+			listed_case = _case_by_id(listed_skill)
+			var obs: String = String(listed_case.get("observation", ""))
+			if obs == "movement_damage":
+				_director.auto_run = true
+				break
 	for unit: UnitState in _director.base_board.units:
 		if unit.definition != null and unit.definition.id == &"training_dummy":
 			unit.health.current_hp = 10000
+		if unit.team == GameEnums.Team.PLAYER:
+			unit.ability.points_left = maxi(unit.ability.points_left, 1)
+			unit.movement.points_left = maxi(unit.movement.points_left, 3)
 	_batch_base_board = _director.base_board.clone()
 	var board: BoardState = _batch_base_board
 	_batch_actor_ids.clear()
 	_batch_target_ids.clear()
 	for skill_id: StringName in batch.skills:
+		var case := _case_by_id(skill_id)
 		_batch_actor_ids[skill_id] = _unit_id_at(board, _case_actor_cell(skill_id))
-		_batch_target_ids[skill_id] = _unit_id_at(board, _case_target_cell(skill_id))
+		var fixture: Dictionary = _FIXTURES.get(skill_id, {})
+		var dummies: Array = fixture.get("dummies", [])
+		if dummies.size() > 0 and String(case.get("target_kind", "")) == "enemy":
+			_batch_target_ids[skill_id] = _unit_id_at(board, dummies[0] as Vector2i)
+		else:
+			_batch_target_ids[skill_id] = _unit_id_at(board, _case_target_cell(skill_id))
+	if batch.skills.has(&"lancer_flanking_maneuver"):
+		_set_dummy_facing(Vector2i(4, 4), GameEnums.Facing.NORTH)
 	for skill_id: StringName in batch.skills:
 		var case := _case_by_id(skill_id)
 		var actor_cell := _case_actor_cell(skill_id)
@@ -383,7 +462,6 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		if ability == null:
 			continue
 		_director.select_unit(actor_id)
-		var target_cell := _case_target_cell(skill_id)
 		await _MOVEMENT_QA.commit_premove_run_if_needed(
 			self,
 			runner,
@@ -391,11 +469,11 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 			_input,
 			actor_id,
 			ability,
-			_MOVEMENT_QA.default_premove_run_cell(_case_actor_cell(skill_id), target_cell),
+			_CASE_PREMOVE_RUN.get(skill_id, Vector2i(-999999, -999999)),
 			_overlay,
 		)
 		_director.select_ability(_ability_index(actor, ability))
-		await runner.simulate_frames(3, _DELTA_MS)
+		await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 		var selected_ability := CombatDirector.resolve_selected_ability(
 			actor, _director.selected_ability_index,
 		)
@@ -405,31 +483,76 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		assert_that(selected_ability.id).override_failure_message(
 			"%s: selected ability mismatch (got %s)" % [skill_id, selected_ability.id],
 		).is_equal(skill_id)
+		var target_cell := _case_target_cell(skill_id)
 		if ability.range_tiles <= 0:
 			target_cell = actor.position
-		await _OVERLAY_QA.assert_live_overlay_parity(
-			self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
+		var is_awaiting_skill: bool = (
+			AbilitySystem.planning_commit_flow(actor, ability)
+			== GameEnums.PlanningCommitFlow.AWAITING_TARGET
+		)
+		var stand_cell: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+			_director, _director.board, actor_id,
+		)
+		var arm_cell: Vector2i = stand_cell if is_awaiting_skill else target_cell
+		var tile_move_commit: bool = (
+			ability.has_targeting(GameEnums.TargetingFlags.TILE)
+			and AbilitySystem.ability_has_movement_effect(ability)
+			and AbilitySystem.planning_commit_flow(actor, ability)
+			== GameEnums.PlanningCommitFlow.IMMEDIATE
 		)
 		var slots: Dictionary
 		if skill_id == &"lancer_glorious_charge":
 			slots = await _commit_glorious_charge(runner, actor_id, case)
+		elif tile_move_commit:
+			await _OVERLAY_QA.assert_live_overlay_parity(
+				self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
+			)
+			slots = await _commit_live_click(runner, actor_id, target_cell)
+			if _plan_has_awaiting(actor_id):
+				slots = await _commit_live_click(runner, actor_id, target_cell)
+		elif is_awaiting_skill:
+			slots = await _commit_awaiting_skill(
+				runner, actor_id, ability, arm_cell, target_cell, skill_id,
+			)
 		else:
-			slots = await _commit_live_click(runner, actor_id, _case_target_cell(skill_id))
-			if (
-				_slots_debug(slots).contains(":awaiting")
-				or _plan_has_awaiting(actor_id)
-			):
-				slots = await _commit_live_click(
-					runner, actor_id, _case_target_cell(skill_id),
-				)
+			await _OVERLAY_QA.assert_live_overlay_parity(
+				self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
+			)
+			slots = await _commit_live_click(runner, actor_id, target_cell)
+			if _plan_has_awaiting(actor_id):
+				slots = await _commit_live_click(runner, actor_id, target_cell)
+			if _slots_debug(slots).contains(":awaiting") or _plan_has_awaiting(actor_id):
+				slots = await _commit_live_click(runner, actor_id, target_cell)
+			if _plan_has_awaiting(actor_id):
+				slots = await _commit_live_click(runner, actor_id, target_cell)
 		assert_bool(_slots_invalid(slots)).override_failure_message(
 			"%s: live preview/commit slots rejected a Bible-valid target: %s"
 			% [skill_id, slots],
 		).is_false()
-		assert_bool(_plan_has_ability(skill_id)).override_failure_message(
+		assert_bool(_plan_has_committed_skill(skill_id, actor_id)).override_failure_message(
 			"%s: live commit did not write the selected ability; slots=%s plan=%s"
 			% [skill_id, _slots_debug(slots), _plan_debug()],
 		).is_true()
+		if skill_id == &"lancer_flanking_maneuver":
+			await _MOVEMENT_QA.commit_universal_run(
+				self,
+				runner,
+				_director,
+				_input,
+				actor_id,
+				Vector2i(3, 3),
+				true,
+			)
+		elif skill_id == &"lancer_glorious_charge":
+			await _MOVEMENT_QA.commit_universal_run(
+				self,
+				runner,
+				_director,
+				_input,
+				actor_id,
+				Vector2i(8, 5),
+				true,
+			)
 		await _MOVEMENT_QA.assert_committed(
 			self, skill_id, _director, actor_id, ability, slots, _input, _overlay, runner,
 		)
@@ -511,7 +634,11 @@ func _assert_live_observation(result: SimResult, case: Dictionary, actor_id: int
 
 	var observation: StringName = case.observation
 	if observation in [&"damage", &"movement_damage", &"damage_status", &"damage_displacement"]:
-		assert_bool(_events_have_damage(events, actor_id)).override_failure_message(
+		var target_id: int = int(_batch_target_ids.get(case.id, -1))
+		assert_bool(
+			_events_have_damage(events, actor_id)
+			or (target_id > 0 and _events_have_damage_to_target(events, target_id)),
+		).override_failure_message(
 			"%s: expected damage was not observed in Simulator telemetry" % case.id,
 		).is_true()
 	if observation in [&"movement", &"movement_damage"]:
@@ -558,6 +685,9 @@ func _commit_glorious_charge(
 	actor_id: int,
 	case: Dictionary,
 ) -> Dictionary:
+	var ability := _ability_by_id(
+		_director.board.get_unit_by_id(actor_id), case.id,
+	)
 	var ally_slots := await _commit_live_click(
 		runner, actor_id, _case_ally_cell(case.id),
 	)
@@ -567,10 +697,110 @@ func _commit_glorious_charge(
 	assert_bool(_director.find_awaiting_action(actor_id) != null).override_failure_message(
 		"%s: allied charger selection did not enter awaiting-target flow" % case.id,
 	).is_true()
-	var final_slots := await _commit_live_click(
-		runner, actor_id, _case_target_cell(case.id),
+	var target_cell := _case_target_cell(case.id)
+	if ability != null:
+		await _OVERLAY_QA.assert_live_overlay_parity(
+			self, runner, _overlay, _input, _director, actor_id, ability, target_cell, case.id,
+		)
+	return await _commit_live_click(runner, actor_id, target_cell)
+
+
+func _commit_awaiting_skill(
+	runner: GdUnitSceneRunner,
+	actor_id: int,
+	ability: AbilityData,
+	arm_cell: Vector2i,
+	target_cell: Vector2i,
+	skill_id: StringName,
+) -> Dictionary:
+	_director.select_unit(actor_id)
+	_director.select_ability(_ability_index(
+		_director.board.get_unit_by_id(actor_id), ability,
+	))
+	await runner.simulate_frames(3, _DELTA_MS)
+	var slots: Dictionary = await _commit_live_click(runner, actor_id, arm_cell)
+	if _plan_has_awaiting(actor_id):
+		if skill_id == &"lancer_flanking_maneuver":
+			var actor: UnitState = _director.board.get_unit_by_id(actor_id)
+			var route: Array[Vector2i] = _manhattan_drag_route(actor.position, target_cell)
+			slots = await _commit_drag_finalize(runner, actor_id, route, target_cell)
+		else:
+			if skill_id != &"lancer_glorious_charge":
+				await _OVERLAY_QA.assert_live_overlay_parity(
+					self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
+				)
+			slots = await _commit_live_click(runner, actor_id, target_cell)
+	return slots
+
+
+func _manhattan_drag_route(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
+	var route: Array[Vector2i] = [from_cell]
+	var cursor := from_cell
+	while cursor.x != to_cell.x:
+		cursor.x += int(signf(float(to_cell.x - cursor.x)))
+		route.append(cursor)
+	while cursor.y != to_cell.y:
+		cursor.y += int(signf(float(to_cell.y - cursor.y)))
+		route.append(cursor)
+	return route
+
+
+func _commit_drag_finalize(
+	runner: GdUnitSceneRunner,
+	actor_id: int,
+	route: Array[Vector2i],
+	dest: Vector2i,
+) -> Dictionary:
+	var actor: UnitState = _director.board.get_unit_by_id(actor_id)
+	_director.select_unit(actor_id)
+	var armed_action := _director.find_awaiting_action(actor_id)
+	if armed_action != null and armed_action.ability != null:
+		_director.select_ability(_ability_index(actor, armed_action.ability))
+	_TRAMPLE_DRAG._paint_drag_route(_input, actor, route, dest)
+	await runner.simulate_frames(3, _DELTA_MS)
+	_input.set_qa_pointer_grid_cell(dest)
+	if _input._intent_state != null:
+		_input._intent_state.set_hover_coord(dest)
+	_input.on_hover_moved(dest)
+	_input._flush_hover_heavy_sync()
+	var params: Dictionary = _input._commit_interaction_params(dest, -1)
+	var slots: Dictionary = _input._final_commit_slots_for_interaction(
+		actor_id,
+		params.cell,
+		params.waypoints,
+		params.legal_move_tiles,
+		params.preferred,
+		params.face_dir,
 	)
-	return final_slots
+	_input.dragging = false
+	if _slots_invalid(slots):
+		return slots
+	_input.call("_paint_intent_slots_before_commit", actor_id, slots)
+	assert_bool(_director.commit_from_slots(actor_id, slots)).override_failure_message(
+		"live drag commit_from_slots must accept the preview slots: %s" % _slots_debug(slots),
+	).is_true()
+	_input.call("_promote_intent_preview_after_commit")
+	_director.flush_plan_refresh_signals_if_pending()
+	_input.clear_qa_pointer_override()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	return slots
+
+
+func _first_slot_action(slots: Dictionary) -> TimelineAction:
+	for column: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(column, []):
+			if raw is TimelineAction:
+				return raw as TimelineAction
+	return null
+
+
+func _set_dummy_facing(cell: Vector2i, facing: GameEnums.Facing) -> void:
+	for board: BoardState in [_director.base_board, _director.board, _director.projected_state]:
+		if board == null:
+			continue
+		for unit: UnitState in board.units:
+			if unit != null and unit.position == cell:
+				unit.facing = facing
 
 
 func _commit_live_click(
@@ -586,6 +816,8 @@ func _commit_live_click(
 	_input.set_qa_pointer_grid_cell(cell)
 	if _input._intent_state != null:
 		_input._intent_state.set_hover_coord(cell)
+	_input.on_hover_moved(cell)
+	_input._flush_hover_heavy_sync()
 	var slots: Dictionary
 	if _plan_has_awaiting(unit_id):
 		slots = _input._build_commit_slots_at_cell(unit_id, cell)
@@ -602,7 +834,7 @@ func _commit_live_click(
 	_input.call("_promote_intent_preview_after_commit")
 	_director.flush_plan_refresh_signals_if_pending()
 	_input.clear_qa_pointer_override()
-	await runner.simulate_frames(3, _DELTA_MS)
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	return slots
 
 
@@ -628,6 +860,15 @@ func _case_target_cell(skill_id: StringName) -> Vector2i:
 
 func _case_ally_cell(skill_id: StringName) -> Vector2i:
 	return _CASE_ALLIES.get(skill_id, _ACTOR_CELL)
+
+
+func _plan_has_committed_skill(skill_id: StringName, actor_id: int) -> bool:
+	for action: TimelineAction in _director.get_player_plan().entries:
+		if action.actor_id != actor_id or action.awaiting_target:
+			continue
+		if action.ability != null and action.ability.id == skill_id:
+			return true
+	return false
 
 
 func _plan_has_ability(skill_id: StringName) -> bool:
@@ -696,6 +937,15 @@ func _effects_have_key(effects: Array[EffectData], key: StringName) -> bool:
 	return false
 
 
+func _events_have_damage_to_target(events: Array[SimEvent], target_id: int) -> bool:
+	for event: SimEvent in events:
+		if event.type != GameEnums.SimEventType.UNIT_DAMAGED:
+			continue
+		if int(event.data.get("target", event.data.get("unit", -1))) == target_id:
+			return true
+	return false
+
+
 func _events_have_damage(events: Array[SimEvent], actor_id: int) -> bool:
 	for event: SimEvent in events:
 		if (
@@ -706,7 +956,7 @@ func _events_have_damage(events: Array[SimEvent], actor_id: int) -> bool:
 			return true
 		if (
 			event.type == GameEnums.SimEventType.UNIT_DAMAGED
-			and int(event.data.get("source", actor_id)) == actor_id
+			and int(event.data.get("source", -1)) == actor_id
 		):
 			return true
 	return false

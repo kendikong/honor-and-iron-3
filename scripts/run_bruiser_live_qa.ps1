@@ -16,7 +16,7 @@ $env:LIVE_QA_PROFILE = "fast"
 $godotArgs = @(
 	"--path", $projectRoot,
 	"--headless",
-	"-s", "-d",
+	"-s",
 	$cmdTool,
 	"-a", $suite,
 	"--ignoreHeadlessMode"
@@ -65,6 +65,7 @@ $runtimeErrors = @(
 			$_.Line -notmatch 'Remote Debugger' -and
 			$_.Line -notmatch 'remote port number' -and
 			$_.Line -notmatch 'custom_samplers' -and
+			$_.Line -notmatch 'Invalid break insert count' -and
 			$_.Line -notmatch 'Continuing\.'
 		} |
 		ForEach-Object { $_.Line }

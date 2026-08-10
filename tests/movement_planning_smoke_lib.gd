@@ -56,6 +56,7 @@ static func run_entry(failures: Array[String], entry: Dictionary) -> void:
 				String(entry.get("module_assert", "")),
 				entry.get("ally_pos", Vector2i(-1, -1)),
 				bool(entry.get("arm_on_ally", false)),
+				entry.get("postmove_cell", Vector2i(-999999, -999999)),
 			)
 		_:
 			run_commit_smoke(
@@ -273,6 +274,7 @@ static func run_awaiting_smoke(
 	module_assert: String = "",
 	ally_pos: Vector2i = Vector2i(-1, -1),
 	arm_on_ally: bool = false,
+	postmove_cell: Vector2i = Vector2i(-999999, -999999),
 ) -> void:
 	_Drag.cleanup_all()
 	var fix: Dictionary = _Fixture.wire_board(
@@ -287,6 +289,8 @@ static func run_awaiting_smoke(
 	var resolved_premove: Vector2i = _MovementTimeline.resolve_premove_run_cell(
 		ability, actor_pos, commit_cell, premove_cell,
 	)
+	if arm_on_ally or not drag_route.is_empty():
+		resolved_premove = Vector2i(-999999, -999999)
 	_MovementTimeline.commit_run_premove_headless(
 		failures, fix, ability, resolved_premove, tag,
 	)
@@ -339,7 +343,8 @@ static func run_awaiting_smoke(
 	if _Checklist._slots_invalid(hover_slots):
 		_fail(
 			failures, "%s/planning/valid_slots" % tag,
-			"invalid commit slots at %s for awaiting finalize" % commit_cell,
+			"invalid commit slots at %s for awaiting finalize (%s)"
+			% [commit_cell, str(hover_slots.get("invalid", "unknown"))],
 		)
 		return
 	_Checklist.assert_slots_match_preview_commit(
@@ -350,8 +355,44 @@ static func run_awaiting_smoke(
 			failures, "%s/planning/no_jump" % tag, fix, commit_cell,
 		)
 	else:
-		_Checklist.assert_planning_timeline_after_commit(
-			failures, "%s/planning/timeline_columns" % tag, fix, commit_cell,
+		if not drag_route.is_empty():
+			var finalize_slots: Dictionary = _Checklist.slots_for_painted_hover(
+				fix, commit_cell,
+			)
+			_assert_true(
+				failures,
+				"%s/planning/timeline_columns" % tag,
+				not _Checklist._slots_invalid(finalize_slots),
+				"commit must succeed",
+			)
+			if _Checklist._slots_invalid(finalize_slots):
+				return
+			_assert_true(
+				failures,
+				"%s/planning/timeline_columns" % tag,
+				_Checklist.commit_slots_production(fix, finalize_slots),
+				"commit production failed (%s)" % str(finalize_slots.get("invalid", "")),
+			)
+			_Checklist.flush_planning(fix)
+			_Checklist.assert_skill_timeline_columns(
+				failures,
+				"%s/planning/timeline_columns" % tag,
+				fix.director,
+				unit_id,
+				ability,
+				{},
+			)
+		else:
+			_Checklist.assert_planning_timeline_after_commit(
+				failures, "%s/planning/timeline_columns" % tag, fix, commit_cell,
+			)
+	if postmove_cell.x > -999000:
+		_MovementTimeline.commit_run_postmove_headless(
+			failures, fix, ability, postmove_cell, tag,
+		)
+	if not verify_no_jump:
+		_MovementTimeline.assert_pre_or_post_leg_if_needed(
+			failures, "%s/planning/timeline_columns" % tag, fix.director, unit_id, ability,
 		)
 	_dispatch_module_assert(
 		failures, fix, tag, module_assert, commit_cell,

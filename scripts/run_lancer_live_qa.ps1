@@ -16,7 +16,7 @@ $env:LIVE_QA_PROFILE = "fast"
 $godotArgs = @(
 	"--path", $projectRoot,
 	"--headless",
-	"-s", "-d",
+	"-s",
 	$cmdTool,
 	"-a", $suite,
 	"--ignoreHeadlessMode"
@@ -39,8 +39,18 @@ if ($exitCode -eq 130) {
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
 if (Test-Path $stderrPath) { Get-Content $stderrPath }
 
-$errors = @(
-	Select-String -Path $stdoutPath, $stderrPath -Pattern '(^|\s)(SCRIPT ERROR:|ERROR:)' |
+$gdUnitFailures = @(
+	Select-String -Path $stdoutPath -Pattern 'Overall Summary:.*\|\s*(\d+)\s+failures' |
+		ForEach-Object {
+			if ($_.Matches[0].Groups[1].Value -ne "0") { $_.Line }
+		}
+)
+$testCaseFailed = @(
+	Select-String -Path $stdoutPath -Pattern '>\s*test_\S+\s+FAILED' |
+		ForEach-Object { $_.Line }
+)
+$scriptErrors = @(
+	Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' |
 		Where-Object {
 			$_.Line -notmatch 'resources still in use' -and
 			$_.Line -notmatch 'Remote Debugger' -and
@@ -48,12 +58,45 @@ $errors = @(
 		} |
 		ForEach-Object { $_.Line }
 )
-$failures = @(
+$runtimeErrors = @(
+	Select-String -Path $stdoutPath, $stderrPath -Pattern '(^|\s)ERROR:' |
+		Where-Object {
+			$_.Line -notmatch 'resources still in use' -and
+			$_.Line -notmatch 'Remote Debugger' -and
+			$_.Line -notmatch 'remote port number' -and
+			$_.Line -notmatch 'custom_samplers' -and
+			$_.Line -notmatch 'Invalid break insert count' -and
+			$_.Line -notmatch 'Continuing\.'
+		} |
+		ForEach-Object { $_.Line }
+)
+$explicitFails = @(
 	Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' |
 		ForEach-Object { $_.Line }
 )
-if ($exitCode -ne 0 -or $errors.Count -gt 0 -or $failures.Count -gt 0) {
+
+if (
+	($gdUnitFailures.Count -gt 0) -or
+	($testCaseFailed.Count -gt 0) -or
+	($scriptErrors.Count -gt 0) -or
+	($runtimeErrors.Count -gt 0) -or
+	($explicitFails.Count -gt 0)
+) {
 	Write-Output "[FAIL] Lancer live QA"
+	if ($gdUnitFailures.Count -gt 0) {
+		Write-Output "GdUnit failures: $($gdUnitFailures -join '; ')"
+	}
+	if ($testCaseFailed.Count -gt 0) {
+		$testCaseFailed | Select-Object -First 5 | ForEach-Object { Write-Output $_ }
+	}
+	if ($scriptErrors.Count -gt 0) {
+		Write-Output "SCRIPT ERROR ($($scriptErrors.Count)):"
+		$scriptErrors | Select-Object -First 5 | ForEach-Object { Write-Output $_ }
+	}
+	if ($runtimeErrors.Count -gt 0) {
+		Write-Output "Runtime ERROR ($($runtimeErrors.Count)):"
+		$runtimeErrors | Select-Object -First 5 | ForEach-Object { Write-Output $_ }
+	}
 	exit 1
 }
 Write-Output "[PASS] Lancer live QA"

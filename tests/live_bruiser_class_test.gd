@@ -124,7 +124,7 @@ const _CASE_TARGETS: Dictionary = {
 	&"bruiser_guttural_roar": Vector2i(2, 2),
 	&"bruiser_headbutt": Vector2i(3, 8),
 	&"bruiser_blood_boil": Vector2i(8, 8),
-	&"bruiser_violent_collision": Vector2i(5, 3),
+	&"bruiser_violent_collision": Vector2i(4, 3),
 	&"bruiser_crimson_whirlwind": Vector2i(4, 5),
 	&"bruiser_belly_flop": Vector2i(5, 3),
 	&"bruiser_breaching_dash": Vector2i(5, 3),
@@ -1163,7 +1163,11 @@ func _case_target_cell(skill_id: StringName) -> Vector2i:
 
 func _slots_invalid(slots: Dictionary) -> bool:
 	var invalid: Variant = slots.get("invalid", false)
-	return invalid is String or invalid == true
+	if invalid is bool:
+		return invalid
+	if invalid is String:
+		return not (invalid as String).is_empty()
+	return bool(invalid)
 
 
 func _plan_has_committed_skill(skill_id: StringName, actor_id: int) -> bool:

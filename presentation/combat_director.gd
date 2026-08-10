@@ -428,20 +428,30 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 	var awaiting: TimelineAction = find_awaiting_action(unit_id)
 	if awaiting == null:
 		return false
-	for raw: Variant in slots.get("action", []):
-		if not raw is TimelineAction:
-			continue
-		var action: TimelineAction = raw as TimelineAction
-		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
-			continue
-		if awaiting.ability.id != action.ability.id:
-			return false
-		awaiting.target_coord = action.target_coord
-		awaiting.target_unit_id = action.target_unit_id
-		awaiting.waypoints = action.waypoints.duplicate()
-		awaiting.face_dir = action.face_dir
-		awaiting.awaiting_target = false
-		return true
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var action: TimelineAction = raw as TimelineAction
+			if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+				continue
+			if awaiting.ability.id != action.ability.id:
+				continue
+			var armed_target_unit_id: int = awaiting.target_unit_id
+			awaiting.target_coord = action.target_coord
+			awaiting.target_unit_id = action.target_unit_id
+			if (
+				awaiting.target_unit_id < 0
+				and armed_target_unit_id >= 0
+				and AbilitySystem.ability_has_modifier(
+					action.ability, &"paired_ally_charge",
+				)
+			):
+				awaiting.target_unit_id = armed_target_unit_id
+			awaiting.waypoints = action.waypoints.duplicate()
+			awaiting.face_dir = action.face_dir
+			awaiting.awaiting_target = false
+			return true
 	return false
 
 
@@ -757,11 +767,52 @@ func make_planning_move_action(
 func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> String:
 	if unit_id < 0 or actions.is_empty():
 		return "invalid"
+	var awaiting: TimelineAction = find_awaiting_action(unit_id)
 	var preview_actions: Array[TimelineAction] = []
 	for action: TimelineAction in actions:
-		preview_actions.append(AbilitySystem.planning_preview_action(action))
-	var combined: Timeline = _build_preview_plan(unit_id, preview_actions)
+		var sim_action: TimelineAction = action
+		if (
+			awaiting != null
+			and action.type == GameEnums.ActionType.ABILITY
+			and action.ability != null
+			and awaiting.ability != null
+			and awaiting.ability.id == action.ability.id
+			and not action.awaiting_target
+		):
+			sim_action = awaiting.clone()
+			sim_action.target_coord = action.target_coord
+			sim_action.target_unit_id = action.target_unit_id
+			if (
+				sim_action.target_unit_id < 0
+				and awaiting.target_unit_id >= 0
+				and AbilitySystem.ability_has_modifier(
+					sim_action.ability, &"paired_ally_charge",
+				)
+			):
+				sim_action.target_unit_id = awaiting.target_unit_id
+			sim_action.waypoints = action.waypoints.duplicate()
+			sim_action.face_dir = action.face_dir
+			sim_action.awaiting_target = false
+			sim_action.awaiting_module_index = -1
+		preview_actions.append(AbilitySystem.planning_preview_action(sim_action))
 	var trial: BoardState = base_board.clone()
+	var combined: Timeline
+	if awaiting != null:
+		combined = Timeline.new()
+		for pre_action: TimelineAction in plan_pre_move.entries:
+			if (
+				pre_action.actor_id == unit_id
+				and pre_action.type == GameEnums.ActionType.MOVE
+				and pre_action.move_timing == GameEnums.MoveTiming.PRE_ACTION
+				and not pre_action.awaiting_target
+			):
+				var bootstrap_ev: Array[SimEvent] = []
+				ResolutionPipeline.apply_action(trial, pre_action, bootstrap_ev)
+				ResolutionPipeline.resolve_pending_pushes(trial, bootstrap_ev)
+		for sim_action: TimelineAction in preview_actions:
+			combined.add(sim_action)
+	else:
+		combined = _build_preview_plan(unit_id, preview_actions)
 	var ev: Array[SimEvent] = []
 	Simulator.simulate_player_turn(trial, combined, ev)
 	for e: SimEvent in ev:
@@ -793,13 +844,29 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 	if unit_has_wait_planned(unit_id):
 		EventBus.action_rejected.emit("no_actions_left")
 		return false
+	var has_pre_move: bool = not (slots.get("pre", []) as Array).is_empty()
+	var has_action: bool = not (slots.get("action", []) as Array).is_empty()
+	var has_post_move: bool = not (slots.get("post", []) as Array).is_empty()
+	if find_awaiting_action(unit_id) != null and (has_pre_move or has_action or has_post_move):
+		if _try_finalize_awaiting_from_slots(unit_id, slots):
+			var swap_entry: TimelineAction = _find_plan_swap_action(unit_id)
+			if swap_entry != null:
+				_register_planning_swap_presentation(swap_entry)
+			if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
+				if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
+					return false
+				_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+				for raw: Variant in slots.get("pre", []):
+					if raw is TimelineAction:
+						_try_add(raw as TimelineAction, plan_pre_move)
+			plan_affected_unit_ids = [unit_id]
+			_refresh_plan()
+			return true
 	if slots.get("_preview_validated", false) != true:
 		var reason := preview_commit_valid(unit_id, actions)
 		if reason != "":
 			EventBus.action_rejected.emit(reason)
 			return false
-	var has_pre_move: bool = not (slots.get("pre", []) as Array).is_empty()
-	var has_action: bool = not (slots.get("action", []) as Array).is_empty()
 	if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
 		if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
 			return false
@@ -822,6 +889,20 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 		_clear_unit_wait(unit_id)
 		_clear_unit_class_actions_from_plan(unit_id)
 		_clear_unit_post_moves_from_plan(unit_id)
+	elif find_awaiting_action(unit_id) != null and _try_finalize_awaiting_from_slots(unit_id, slots):
+		var swap_entry: TimelineAction = _find_plan_swap_action(unit_id)
+		if swap_entry != null:
+			_register_planning_swap_presentation(swap_entry)
+		if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
+			if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
+				return false
+			_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
+			for raw: Variant in slots.get("pre", []):
+				if raw is TimelineAction:
+					_try_add(raw as TimelineAction, plan_pre_move)
+		plan_affected_unit_ids = [unit_id]
+		_refresh_plan()
+		return true
 	_try_add_multiple(actions, plans)
 	return true
 

@@ -8,6 +8,11 @@ const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
 
 
+static func _slots_invalid(slots: Dictionary) -> bool:
+	var invalid: Variant = slots.get("invalid", false)
+	return invalid is String or invalid == true
+
+
 static func assert_committed(
 	test_suite: GdUnitTestSuite,
 	skill_id: StringName,
@@ -119,34 +124,41 @@ static func commit_universal_run(
 	input: CombatPlanningInput,
 	actor_id: int,
 	dest: Vector2i,
+	use_basic_move: bool = false,
 ) -> Dictionary:
 	director.select_unit(actor_id)
 	var actor: UnitState = director.board.get_unit_by_id(actor_id)
-	var run_idx: int = -1
-	for i: int in range(actor.active_abilities.size()):
-		var ab: AbilityData = actor.active_abilities[i] as AbilityData
-		if ab != null and ab.is_universal_run():
-			run_idx = i
-			break
-	if run_idx < 0:
-		var run_ab: AbilityData = DataLibrary.get_universal_run()
-		test_suite.assert_object(run_ab).override_failure_message(
-			"universal Run missing for movement timeline QA leg",
-		).is_not_null()
-		return {"invalid": true}
-	director.select_ability(run_idx)
+	if use_basic_move:
+		director.select_ability(-1)
+	else:
+		var run_idx: int = -1
+		for i: int in range(actor.active_abilities.size()):
+			var ab: AbilityData = actor.active_abilities[i] as AbilityData
+			if ab != null and ab.is_universal_run():
+				run_idx = i
+				break
+		if run_idx < 0:
+			var run_ab: AbilityData = DataLibrary.get_universal_run()
+			test_suite.assert_object(run_ab).override_failure_message(
+				"universal Run missing for movement timeline QA leg",
+			).is_not_null()
+			return {"invalid": true}
+		director.select_ability(run_idx)
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	director.select_unit(actor_id)
+	input.force_basic_movement = use_basic_move
+	input.auto_use_skill_after_move = false
 	input.set_qa_pointer_grid_cell(dest)
 	if input._intent_state != null:
 		input._intent_state.set_hover_coord(dest)
 	var slots: Dictionary = input._final_commit_slots_for_click_at_cell(
 		actor_id, dest, Vector2.ZERO,
 	)
-	test_suite.assert_bool(not bool(slots.get("invalid", false))).override_failure_message(
+	input.force_basic_movement = false
+	test_suite.assert_bool(not _slots_invalid(slots)).override_failure_message(
 		"movement timeline Run leg invalid at %s: %s" % [dest, str(slots)],
 	).is_true()
-	if bool(slots.get("invalid", false)):
+	if _slots_invalid(slots):
 		return slots
 	input.call("_paint_intent_slots_before_commit", actor_id, slots)
 	test_suite.assert_bool(director.commit_from_slots(actor_id, slots)).override_failure_message(

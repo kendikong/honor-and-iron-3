@@ -474,13 +474,14 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	if _ability_has_modifier(actor, ability, &"paired_ally_charge"):
 		var paired_ally := board.get_unit_by_id(action.target_unit_id)
 		var paired_enemy := board.get_unit_at(action.target_coord)
+		var paired_range: int = planning_max_target_distance(actor, ability)
 		if (
 			paired_ally == null
 			or paired_ally.team != actor.team
 			or paired_enemy == null
 			or paired_enemy.team == actor.team
-			or GridSystem.manhattan(actor.position, paired_ally.position) > active_range_tiles(actor, ability)
-			or GridSystem.manhattan(actor.position, paired_enemy.position) > active_range_tiles(actor, ability)
+			or GridSystem.manhattan(actor.position, paired_ally.position) > paired_range
+			or GridSystem.manhattan(actor.position, paired_enemy.position) > paired_range
 		):
 			return false
 	if not _has_resource_for_ability(actor, ability):
@@ -524,6 +525,23 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		target_unit = board.get_unit_by_id(action.target_unit_id)
 	else:
 		target_unit = board.get_unit_at(action.target_coord)
+	if (
+		target_unit == null
+		and _ability_has_modifier(actor, ability, &"target_after_move_adjacent")
+	):
+		for dir: Vector2i in GridSystem.DIRECTIONS:
+			var adj: Vector2i = action.target_coord + dir
+			if not board.is_in_bounds(adj):
+				continue
+			var adj_unit: UnitState = board.get_unit_at(adj)
+			if (
+				adj_unit != null
+				and adj_unit.is_enemy()
+				and adj_unit.is_alive()
+				and target_passes_mode(actor, ability, adj_unit)
+			):
+				target_unit = adj_unit
+				break
 	if (
 		not _target_allowed(actor, ability, target_unit, action.target_coord)
 		and not _can_push_destructible_target(
@@ -2393,6 +2411,20 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 					)
 		if effect.modifiers.has("target_after_move_adjacent"):
 			var adjacent_target := board.get_unit_by_id(action.target_unit_id)
+			if adjacent_target == null:
+				for dir: Vector2i in GridSystem.DIRECTIONS:
+					var adj: Vector2i = actor.position + dir
+					if not board.is_in_bounds(adj):
+						continue
+					var adj_unit: UnitState = board.get_unit_at(adj)
+					if (
+						adj_unit != null
+						and adj_unit.is_enemy()
+						and adj_unit.is_alive()
+						and target_passes_mode(actor, action.ability, adj_unit)
+					):
+						adjacent_target = adj_unit
+						break
 			if (
 				adjacent_target != null
 				and adjacent_target.is_alive()

@@ -573,7 +573,7 @@ func _paint_valid_movement_endpoint_intent() -> bool:
 	)
 	if not _director.board.is_in_bounds(cell):
 		return false
-	var origin: Vector2i = _proj_origin(actor)
+	var origin: Vector2i = _awaiting_endpoint_origin(actor)
 	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability):
 		return false
 	var route_wps: Array[Vector2i] = _route_waypoints()
@@ -1874,6 +1874,13 @@ func _final_commit_slots_for_interaction(
 			_strip_unaffordable_premove_pairs(slots, unit_id, cell, [])
 	slots = _finalize_commit_slots(slots, unit_id)
 	if _is_invalid_dict(slots) and not waypoints.is_empty():
+		var actor := _proj_unit(unit_id)
+		var ability := _selected_ability_data(actor)
+		if (
+			ability != null
+			and AbilitySystem.ability_has_modifier(ability, &"l_shape_move", actor)
+		):
+			return slots
 		var preferred: Vector2i = preferred_approach
 		if hover_unit != null and hover_unit.is_enemy():
 			preferred = hover_unit.position
@@ -2731,6 +2738,29 @@ func _awaiting_flow_selected(actor: UnitState, ability: AbilityData) -> bool:
 
 
 ## True while an armed awaiting skill is choosing a movement/dash tile endpoint.
+func _enemy_adjacent_to_attack_tile(
+	actor: UnitState,
+	ability: AbilityData,
+	cell: Vector2i,
+) -> int:
+	var board: BoardState = _proj()
+	if board == null or actor == null or ability == null:
+		return -1
+	for dir: Vector2i in GridSystem.DIRECTIONS:
+		var adj: Vector2i = cell + dir
+		if not board.is_in_bounds(adj):
+			continue
+		var unit: UnitState = board.get_unit_at(adj)
+		if (
+			unit != null
+			and unit.is_enemy()
+			and unit.is_alive()
+			and AbilitySystem.target_passes_mode(actor, ability, unit)
+		):
+			return unit.id
+	return -1
+
+
 func _is_awaiting_movement_endpoint(actor: UnitState, ability: AbilityData) -> bool:
 	var armed_action := (
 		_director.find_awaiting_action(actor.id)
@@ -2764,7 +2794,7 @@ func _movement_skill_commits_tile_endpoint(
 	if not AbilitySystem.ability_has_movement_effect(ability, actor):
 		return false
 	return AbilitySystem.planning_is_valid_awaiting_endpoint(
-		_proj_origin(actor), cell, ability, actor,
+		_awaiting_endpoint_origin(actor), cell, ability, actor,
 	)
 
 
@@ -3485,6 +3515,18 @@ func _proj_move_origin(unit: UnitState) -> Vector2i:
 	return CombatPlanningPreview.planning_latest_stand_cell(_director, _proj(), unit.id)
 
 
+func _awaiting_endpoint_origin(actor: UnitState) -> Vector2i:
+	if _director != null and actor != null:
+		var pre_move: TimelineAction = CombatPlanningPreview.committed_move_action(
+			_director.plan_pre_move,
+			actor.id,
+			GameEnums.MoveTiming.PRE_ACTION,
+		)
+		if pre_move != null:
+			return pre_move.target_coord
+	return _proj_move_origin(actor)
+
+
 func _planning_drag_origin(unit_id: int) -> Vector2i:
 	var unit: UnitState = _proj_unit(unit_id)
 	if unit == null:
@@ -3897,7 +3939,7 @@ func _build_commit_slots_at_cell(
 			)
 		):
 			if awaiting_targeting_active() or has_awaiting_action:
-				var awaiting_origin := _proj_origin(actor)
+				var awaiting_origin := _awaiting_endpoint_origin(actor)
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
 					awaiting_origin, cell, ability, actor,
 				):
@@ -3905,6 +3947,15 @@ func _build_commit_slots_at_cell(
 					var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
 						ability, occupant_id,
 					)
+					if AbilitySystem.ability_has_modifier(
+						ability, &"target_after_move_adjacent", actor,
+					):
+						if hover_unit != null and hover_unit.is_enemy():
+							committed_target_id = hover_unit.id
+						else:
+							committed_target_id = _enemy_adjacent_to_attack_tile(
+								actor, ability, cell,
+							)
 					if AbilitySystem.ability_has_modifier(
 						ability, &"paired_ally_charge", actor
 					):
@@ -4166,7 +4217,7 @@ func _build_ally_commit_slots(
 			unit_id, ability, actor.position,
 		)
 		awaiting_charge.target_unit_id = ally.id
-		slots["action"].append(awaiting_charge)
+		slots[_ability_plan_column(ability)].append(awaiting_charge)
 		return slots
 	if not ability.is_movement_kind():
 		if _can_target_unit_with_selected_ability(actor, ally):
@@ -5064,10 +5115,10 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			and _awaiting_flow_selected(actor, endpoint_ability)
 			and awaiting_targeting_active()
 			and AbilitySystem.planning_is_valid_awaiting_endpoint(
-				_proj_origin(actor), cell, endpoint_ability,
+				_awaiting_endpoint_origin(actor), cell, endpoint_ability,
 			)
 		):
-			var dash_face: int = _facing_toward(_proj_origin(actor), cell)
+			var dash_face: int = _facing_toward(_awaiting_endpoint_origin(actor), cell)
 			var mode: int = (
 				TacticalUnitLayer.DragPreviewAnim.ATTACK
 				if AbilitySystem.ability_is_offensive_dash(endpoint_ability)

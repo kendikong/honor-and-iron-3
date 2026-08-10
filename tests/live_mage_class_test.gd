@@ -16,7 +16,7 @@ const _CASES: Array[Dictionary] = [
 	{"id": &"mage_ice_shard", "target": _ENEMY_CELL, "kind": &"damage_status", "effect": GameEnums.EffectType.DAMAGE},
 	{"id": &"mage_chain_lightning", "target": _ENEMY_CELL, "kind": &"damage", "effect": GameEnums.EffectType.DAMAGE},
 	{"id": &"mage_arcane_push", "target": _ENEMY_CELL, "kind": &"damage_displacement", "effect": GameEnums.EffectType.DAMAGE},
-	{"id": &"mage_teleport", "target": _TILE_CELL, "kind": &"movement", "effect": GameEnums.EffectType.TELEPORT_CASTER},
+	{"id": &"mage_teleport", "target": Vector2i(4, 3), "kind": &"movement", "effect": GameEnums.EffectType.TELEPORT_CASTER},
 	{"id": &"mage_meteor", "target": _ENEMY_CELL, "kind": &"delayed_damage", "effect": GameEnums.EffectType.DAMAGE},
 	{"id": &"mage_black_hole", "target": _ENEMY_CELL, "kind": &"displacement", "effect": GameEnums.EffectType.PULL},
 	{"id": &"mage_time_warp", "target": _ALLY_CELL, "kind": &"ally_status", "effect": GameEnums.EffectType.DAMAGE_SELF},
@@ -68,7 +68,7 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	_overlay = _scene.get_node(
 		"WorldModulate/MapRoot/PlanningOverlay",
 	) as TacticalPlanningOverlay
-	_director.auto_run = false
+	_director.auto_run = String(case.get("kind", "")) == "movement"
 	var actor_id := _unit_id_at(_director.base_board, _ACTOR_CELL)
 	assert_int(actor_id).override_failure_message(
 		"%s: Mage actor missing from TestBattle" % case.id,
@@ -76,21 +76,24 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	if actor_id < 0:
 		return
 	var actor := _director.board.get_unit_by_id(actor_id)
+	actor.ability.points_left = maxi(actor.ability.points_left, 1)
+	actor.movement.points_left = maxi(actor.movement.points_left, 3)
 	var ability := _ability_by_id(actor, case.id)
 	_assert_contract(ability, case)
 	if ability == null:
 		return
-		_director.select_unit(actor_id)
-		await _MOVEMENT_QA.commit_premove_run_if_needed(
-			self,
-			runner,
-			_director,
-			_input,
-			actor_id,
-			ability,
-			_MOVEMENT_QA.default_premove_run_cell(_ACTOR_CELL, case.target),
-		)
-		_director.select_ability(_ability_index(actor, ability))
+	_director.select_unit(actor_id)
+	await _MOVEMENT_QA.commit_premove_run_if_needed(
+		self,
+		runner,
+		_director,
+		_input,
+		actor_id,
+		ability,
+		_MOVEMENT_QA.default_premove_run_cell(_ACTOR_CELL, case.target),
+		_overlay,
+	)
+	_director.select_ability(_ability_index(actor, ability))
 	await runner.simulate_frames(3, _DELTA_MS)
 	var target_cell: Vector2i = case.target
 	if ability.range_tiles <= 0:
@@ -146,7 +149,7 @@ func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	_overlay = _scene.get_node(
 		"WorldModulate/MapRoot/PlanningOverlay",
 	) as TacticalPlanningOverlay
-	_director.auto_run = false
+	_director.auto_run = String(case.get("kind", "")) == "movement"
 	var actor_id := _unit_id_at(_director.base_board, _ACTOR_CELL)
 	assert_int(actor_id).override_failure_message(
 		"%s [+]: Mage actor missing from TestBattle" % case.id,
@@ -158,21 +161,24 @@ func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	_director.call("_refresh_plan")
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	var actor := _director.board.get_unit_by_id(actor_id)
+	actor.ability.points_left = maxi(actor.ability.points_left, 1)
+	actor.movement.points_left = maxi(actor.movement.points_left, 3)
 	var ability := _ability_by_id(actor, case.id)
 	_assert_contract(ability, case)
 	if ability == null:
 		return
-		_director.select_unit(actor_id)
-		await _MOVEMENT_QA.commit_premove_run_if_needed(
-			self,
-			runner,
-			_director,
-			_input,
-			actor_id,
-			ability,
-			_MOVEMENT_QA.default_premove_run_cell(_ACTOR_CELL, case.target),
-		)
-		_director.select_ability(_ability_index(actor, ability))
+	_director.select_unit(actor_id)
+	await _MOVEMENT_QA.commit_premove_run_if_needed(
+		self,
+		runner,
+		_director,
+		_input,
+		actor_id,
+		ability,
+		_MOVEMENT_QA.default_premove_run_cell(_ACTOR_CELL, case.target),
+		_overlay,
+	)
+	_director.select_ability(_ability_index(actor, ability))
 	await runner.simulate_frames(3, _DELTA_MS)
 	var target_cell: Vector2i = case.target
 	if ability.range_tiles <= 0:
@@ -296,7 +302,10 @@ func _commit_click(runner: GdUnitSceneRunner, actor_id: int, cell: Vector2i) -> 
 		and AbilitySystem.planning_commit_flow(actor, ability)
 			== GameEnums.PlanningCommitFlow.AWAITING_TARGET
 	)
-	var first_cell: Vector2i = actor.position if should_arm else cell
+	var stand_cell: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+		_director, _director.board, actor_id,
+	)
+	var first_cell: Vector2i = stand_cell if should_arm else cell
 	var slots: Dictionary = _input._final_commit_slots_for_click_at_cell(
 		actor_id, first_cell, Vector2.ZERO,
 	)
@@ -305,6 +314,8 @@ func _commit_click(runner: GdUnitSceneRunner, actor_id: int, cell: Vector2i) -> 
 	_input.call("_paint_intent_slots_before_commit", actor_id, slots)
 	assert_bool(_director.commit_from_slots(actor_id, slots)).is_true()
 	if _director.find_awaiting_action(actor_id) != null:
+		_input.on_hover_moved(cell)
+		_input._flush_hover_heavy_sync()
 		slots = _input._build_commit_slots_at_cell(actor_id, cell)
 		if _slots_invalid(slots):
 			return slots

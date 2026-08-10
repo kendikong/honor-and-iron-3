@@ -15,7 +15,7 @@ if (-not (Test-Path $GodotPath)) {
 $env:LIVE_QA_PROFILE = "fast"
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-cleric-live.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-cleric-live.stderr.log"
-$godotArgs = @("--path", $projectRoot, "--headless", "-s", "-d",
+$godotArgs = @("--path", $projectRoot, "--headless", "-s",
 	$cmdTool, "-a", $suite, "--ignoreHeadlessMode")
 . (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $process = Start-Process -FilePath $GodotPath -ArgumentList $godotArgs `
