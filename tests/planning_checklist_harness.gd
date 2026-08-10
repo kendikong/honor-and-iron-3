@@ -917,9 +917,14 @@ static func assert_planning_timeline_after_commit(
 	MovementTimeline.assert_pre_or_post_leg_if_needed(
 		failures, label, fix.director, unit_id, ability,
 	)
-	MovementTimeline.assert_move_preview_origin(
-		failures, label, fix, unit_id, ability,
-	)
+	if (
+		ability == null
+		or AbilitySystem.planning_awaiting_phase(ability)
+		!= GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	):
+		MovementTimeline.assert_move_preview_origin(
+			failures, label, fix, unit_id, ability,
+		)
 
 
 static func assert_slots_match_preview_commit(

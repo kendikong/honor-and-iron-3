@@ -2768,6 +2768,29 @@ func _movement_skill_commits_tile_endpoint(
 	)
 
 
+func _tile_target_movement_skill_commits_at_cell(
+	actor: UnitState,
+	ability: AbilityData,
+	cell: Vector2i,
+) -> bool:
+	if actor == null or ability == null:
+		return false
+	if _is_awaiting_movement_endpoint(actor, ability):
+		return false
+	if (
+		AbilitySystem.active_targeting_flags(actor, ability)
+		& GameEnums.TargetingFlags.TILE
+	) == 0:
+		return false
+	if not AbilitySystem.ability_has_movement_effect(ability, actor):
+		return false
+	if not _in_ability_range_of_coord(actor, cell):
+		return false
+	if ability.is_pre_move_planner():
+		return true
+	return AbilitySystem.planning_commit_flow(actor, ability) == GameEnums.PlanningCommitFlow.IMMEDIATE
+
+
 func _drag_had_movement() -> bool:
 	if _drag_route.is_empty():
 		return false
@@ -3557,6 +3580,12 @@ func _empty_commit_slots() -> Dictionary:
 	return {"pre": [], "action": [], "post": [], "invalid": false}
 
 
+func _ability_plan_column(ability: AbilityData) -> String:
+	if ability != null and ability.is_movement_kind():
+		return "pre"
+	return "action"
+
+
 func _can_pair_run_move_with_ability(
 	actor: UnitState,
 	cell: Vector2i,
@@ -3884,7 +3913,7 @@ func _build_commit_slots_at_cell(
 							slots["invalid"] = "Select an allied charger first."
 							return slots
 						committed_target_id = awaiting_charge.target_unit_id
-					slots["action"].append(TimelineAction.make_ability(
+					slots[_ability_plan_column(ability)].append(TimelineAction.make_ability(
 						unit_id,
 						ability,
 						cell,
@@ -3920,6 +3949,7 @@ func _build_commit_slots_at_cell(
 				hover_unit == null
 				and AbilitySystem.ability_has_movement_effect(ability, actor)
 				and not _is_awaiting_movement_endpoint(actor, ability)
+				and not _tile_target_movement_skill_commits_at_cell(actor, ability, cell)
 				and _basic_move_allowed()
 				and _unit_move_slot_open(unit_id, cell)
 				and _drop_allows_move_tile(cell, legal_move_tiles, actor)
@@ -3964,7 +3994,7 @@ func _build_commit_slots_at_cell(
 						),
 					)
 					return slots
-				slots["action"].append(
+				slots[_ability_plan_column(ability)].append(
 					TimelineAction.make_ability(
 						unit_id,
 						ability,
@@ -3996,13 +4026,20 @@ func _build_commit_slots_at_cell(
 								if path.is_empty():
 									slots["invalid"] = "No valid path to target tile."
 									return slots
-							slots["action"].append(
+							slots[_ability_plan_column(ability)].append(
 								TimelineAction.make_ability(
 									unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION,
 									effective_waypoints,
 								),
 							)
 							return slots
+						slots[_ability_plan_column(ability)].append(
+							TimelineAction.make_ability(
+								unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION,
+								effective_waypoints,
+							),
+						)
+						return slots
 					else:
 						if target_pick_skill and not has_awaiting_action:
 							slots["action"].append(
@@ -4022,7 +4059,7 @@ func _build_commit_slots_at_cell(
 							if path_nm.is_empty():
 								slots["invalid"] = "No valid path to target tile."
 								return slots
-						slots["action"].append(
+						slots[_ability_plan_column(ability)].append(
 							TimelineAction.make_ability(
 								unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION,
 								effective_waypoints,

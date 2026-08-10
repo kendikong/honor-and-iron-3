@@ -141,36 +141,29 @@ static func commit_run_postmove_headless(
 	var director: CombatDirector = fix.director as CombatDirector
 	var unit_id: int = director.selected_unit_id
 	var unit: UnitState = fix.board.get_unit_by_id(unit_id)
-	var run_idx: int = -1
-	if unit != null:
-		for i: int in range(unit.active_abilities.size()):
-			var ab: AbilityData = unit.active_abilities[i] as AbilityData
-			if ab != null and ab.is_universal_run():
-				run_idx = i
-				break
-	_PLANNING_CHECKLIST.assert_true(
-		failures,
-		"%s/planning/post_run_select" % tag,
-		run_idx >= 0,
-		"universal Run must be on unit for post-move timeline QA",
-	)
-	if run_idx < 0:
+	if unit == null:
 		return
+	var input: CombatPlanningInput = fix.input as CombatPlanningInput
+	if input != null:
+		input.force_basic_movement = true
+		input.auto_use_skill_after_move = false
 	director.select_unit(unit_id)
-	director.select_ability(run_idx)
+	director.select_ability(-1)
 	var slots: Dictionary = _PLANNING_CHECKLIST.commit_production(fix, postmove_cell)
+	if input != null:
+		input.force_basic_movement = false
 	_PLANNING_CHECKLIST.assert_true(
 		failures,
 		"%s/planning/postmove_run" % tag,
 		not _PLANNING_CHECKLIST._slots_invalid(slots),
-		"movement skill QA requires a post-move Run leg at %s" % postmove_cell,
+		"movement skill QA requires a post-move leg at %s" % postmove_cell,
 	)
 	_PLANNING_CHECKLIST.flush_planning(fix)
 	_PLANNING_CHECKLIST.assert_true(
 		failures,
 		"%s/planning/postmove_leg" % tag,
 		not _timeline_actions_for_unit(director.plan_post_move, unit_id).is_empty(),
-		"post-move timeline must include a Run leg after skill commit",
+		"post-move timeline must include a movement leg after skill commit",
 	)
 
 

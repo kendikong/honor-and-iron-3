@@ -16,6 +16,110 @@ static func assert_true(
 		failures.append("%s: %s" % [tag, message])
 
 
+static func ability_has_effect(
+	ability: AbilityData, effect_type: GameEnums.EffectType, upgraded: bool = false,
+) -> bool:
+	if ability == null:
+		return false
+	var effects: Array = ability.upgraded_effects if upgraded else ability.effects
+	for effect: EffectData in effects:
+		if effect != null and effect.type == effect_type:
+			return true
+	return false
+
+
+static func make_plain_board(size: Vector2i) -> BoardState:
+	return _plain_board(size)
+
+
+static func archer_with_ability(ability_id: StringName) -> Dictionary:
+	return {"active_abilities": [factory_ability(ability_id)]}
+
+
+static func with_upgraded_ability(config: Dictionary, ability_id: StringName) -> Dictionary:
+	var cfg: Dictionary = config.duplicate(true)
+	var ups: Array = cfg.get("upgraded_abilities", []) as Array
+	if not ups.has(ability_id):
+		ups.append(ability_id)
+	cfg["upgraded_abilities"] = ups
+	return cfg
+
+
+static func place_archer(
+	board: BoardState, unit_id: int, pos: Vector2i, config: Dictionary = {},
+) -> UnitState:
+	var cfg: Dictionary = config.duplicate(true)
+	if not cfg.has("active_abilities"):
+		cfg["active_abilities"] = [DataLibrary.get_universal_run()]
+	var unit: UnitState = UnitState.create(
+		unit_id, archer_unit_data(), GameEnums.Team.PLAYER, pos, cfg,
+	)
+	board.units.append(unit)
+	GridSystem.set_occupant(board, pos, unit_id)
+	unit.movement.points_left = unit.movement.max_points
+	unit.ability.points_left = unit.ability.max_points
+	return unit
+
+
+static func place_dummy(
+	board: BoardState, unit_id: int, pos: Vector2i, config: Dictionary = {},
+) -> UnitState:
+	var def: UnitData = DataLibrary.get_training_dummy()
+	if def == null:
+		def = archer_unit_data()
+	var unit := _make_unit(def, unit_id, GameEnums.Team.ENEMY, pos, config.get("active_abilities", []), [])
+	board.units.append(unit)
+	GridSystem.set_occupant(board, pos, unit_id)
+	return unit
+
+
+static func ability_on_unit(unit: UnitState, ability_id: StringName) -> AbilityData:
+	if unit == null:
+		return null
+	for ab: AbilityData in unit.active_abilities:
+		if ab != null and ab.id == ability_id:
+			return ab
+	return null
+
+
+static func plan_ability(
+	unit_id: int,
+	ability: AbilityData,
+	target: Vector2i,
+	target_unit_id: int = -1,
+	timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION,
+) -> TimelineAction:
+	return TimelineAction.make_ability(unit_id, ability, target, target_unit_id, timing)
+
+
+static func simulate_plan(board: BoardState, plan: Timeline) -> SimResult:
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	var out := SimResult.new()
+	out.final_state = board
+	out.events = events
+	return out
+
+
+static func unit_hp(board: BoardState, unit_id: int) -> int:
+	var unit: UnitState = board.get_unit_by_id(unit_id)
+	return unit.health.current_hp if unit != null else 0
+
+
+static func assert_eq_cell(
+	failures: Array[String], tag: String, actual: Vector2i, expected: Vector2i,
+) -> void:
+	if actual != expected:
+		failures.append("%s: expected %s got %s" % [tag, expected, actual])
+
+
+static func assert_eq_int(
+	failures: Array[String], tag: String, actual: int, expected: int,
+) -> void:
+	if actual != expected:
+		failures.append("%s: expected %d got %d" % [tag, expected, actual])
+
+
 static func archer_unit_data() -> UnitData:
 	return FactoryTestHelpers.build_unit(ARCHER_ID)
 
@@ -54,6 +158,22 @@ static func run_data_contract(failures: Array[String]) -> void:
 	assert_true(failures, "archer/skills", definition.abilities.size() == 16)
 	assert_true(failures, "archer/innate", definition.innate_passives.size() == 1)
 	assert_true(failures, "archer/passives", definition.passives.size() == 15)
+
+	var sidestep := factory_ability(&"archer_sidestep")
+	assert_true(failures, "archer_sidestep/registered", sidestep != null)
+	if sidestep != null:
+		assert_true(
+			failures,
+			"archer_sidestep/premove",
+			sidestep.is_pre_move_planner(),
+			"Sidestep must be a PRE_MOVE planner skill",
+		)
+		assert_true(
+			failures,
+			"archer_sidestep/move_module",
+			ability_has_effect(sidestep, GameEnums.EffectType.MOVE, false),
+			"Sidestep must compile a MOVE module",
+		)
 
 	var expected_skills: Dictionary = {
 		&"archer_power_shot": [GameEnums.EffectType.DAMAGE, 3, 5, GameEnums.TargetShape.SINGLE],

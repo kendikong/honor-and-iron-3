@@ -55,8 +55,8 @@ static func _entries() -> Dictionary:
 			"tag": "charge_strike",
 			"mode": "click",
 			"actor_pos": Vector2i(1, 3),
-			"enemy_pos": Vector2i(4, 3),
-			"commit_cell": Vector2i(4, 3),
+			"enemy_pos": Vector2i(3, 3),
+			"commit_cell": Vector2i(3, 3),
 			"verify_no_jump": false,
 			"premove_cell": Vector2i(2, 3),
 			"assert_skill_modules": true,
@@ -69,8 +69,10 @@ static func _entries() -> Dictionary:
 			"actor_pos": Vector2i(1, 3),
 			"arm_cell": Vector2i(2, 3),
 			"commit_cell": Vector2i(4, 3),
+			"enemy_pos": Vector2i(3, 3),
 			"verify_no_jump": false,
 			"premove_cell": Vector2i(2, 3),
+			"module_assert": "violent_collision",
 		},
 		&"bruiser_belly_flop": {
 			"class_id": &"bruiser",
@@ -82,6 +84,7 @@ static func _entries() -> Dictionary:
 			"commit_cell": Vector2i(5, 3),
 			"verify_no_jump": false,
 			"premove_cell": Vector2i(3, 3),
+			"module_assert": "belly_flop",
 		},
 		&"bruiser_breaching_dash": {
 			"class_id": &"bruiser",
@@ -93,6 +96,7 @@ static func _entries() -> Dictionary:
 			"commit_cell": Vector2i(5, 3),
 			"verify_no_jump": false,
 			"premove_cell": Vector2i(4, 3),
+			"module_assert": "breaching_dash",
 		},
 		# --- Knight ---
 		&"knight_swap": {
@@ -131,10 +135,11 @@ static func _entries() -> Dictionary:
 			"class_id": &"archer",
 			"factory_id": &"archer_sidestep",
 			"tag": "sidestep",
-			"mode": "click",
+			"mode": "premove",
 			"actor_pos": Vector2i(4, 5),
-			"enemy_pos": Vector2i(6, 5),
-			"commit_cell": Vector2i(5, 5),
+			"enemy_pos": Vector2i(6, 6),
+			"commit_cell": Vector2i(3, 5),
+			"module_assert": "archer_sidestep",
 		},
 		# --- Lancer ---
 		&"lancer_push": {
@@ -228,7 +233,7 @@ static func _entries() -> Dictionary:
 			"class_id": &"mage",
 			"factory_id": &"mage_blink",
 			"tag": "blink",
-			"mode": "click",
+			"mode": "premove",
 			"actor_pos": Vector2i(4, 5),
 			"enemy_pos": Vector2i(6, 5),
 			"commit_cell": Vector2i(4, 4),
