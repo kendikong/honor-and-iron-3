@@ -1,9 +1,9 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** P3 Knight QA **PASS** · P6+ classes **implementation in progress, QA NOT PASS** — see [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md)  
+**Current phase:** P3 Knight QA **PASS** · P6+ classes **automated gauntlet PASS (2026-08-10)** · **owner sign-off NOT PASS** — see [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md)  
 **Active plan:** `docs/design/` pillar specs + [`verification-matrix.md`](docs/design/verification-matrix.md)  
 **Combat reference:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed; P2 done for now)  
-**Last updated:** 2026-08-08  
+**Last updated:** 2026-08-10  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
 ---
@@ -15,7 +15,18 @@
 | Class | Owner QA | Gate |
 |-------|----------|------|
 | Knight | **PASS** | [`KNIGHT_QA_GATE.md`](docs/KNIGHT_QA_GATE.md) |
-| Bruiser, Archer, Lancer, Mage, Cleric | **NOT PASS** | [`CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md) |
+| Bruiser, Archer, Lancer, Mage, Cleric | **NOT PASS** (owner) · **gauntlet automated PASS** | [`CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md) |
+
+### Non-Knight automated gauntlet (2026-08-10)
+
+| Check | Result |
+|-------|--------|
+| Gauntlet critic vs `CLASS_QA_BIBLE.md` | **PASS 86/100** (round 9; threshold 85) |
+| All five `run_<class>_qa_gate.ps1` + live | **PASS** — matrix 100% PASS, 0 contract errors |
+| Headless `get_tree` regression (Lancer smoke) | **Fixed** — `2371663af` |
+| Commits | `77cbfb71c` → `9a792d373` → `2371663af` |
+
+**Owner LOCK still requires:** F5 spot-check + flip row in `CLASS_QA_SIGNOFF.md` (agents must not mark PASS without owner).
 
 ---
 
