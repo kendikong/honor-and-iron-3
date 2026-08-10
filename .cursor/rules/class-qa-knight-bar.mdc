@@ -9,7 +9,7 @@ alwaysApply: true
 
 **Authoritative template:** `docs/KNIGHT_QA_GATE.md` (P3 LOCK) · **Clone scaffold:** `docs/_CLASS_QA_GATE_TEMPLATE.md` · **Process:** `docs/design/class-rollout.md` · **Planning overlay bar:** `docs/PLANNING_SKILL_QA_CHECKLIST.md`
 
-**Parent:** `.cursor/rules/qa-after-gameplay-changes.mdc` (which suite to run) · **Complements:** `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/skill-global-rules.mdc`, `.cursor/rules/move-preview-intent-truth.mdc`
+**Parent:** `.cursor/rules/qa-after-gameplay-changes.mdc` (which suite to run) · **All classes mandatory:** `.cursor/rules/class-qa-all-classes-mandatory.mdc` (never stop at one class; never ask owner if they want full QA) · **Complements:** `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/skill-global-rules.mdc`, `.cursor/rules/move-preview-intent-truth.mdc`
 
 ---
 

@@ -1,0 +1,56 @@
+---
+description: ABSOLUTE — all Bible classes need full Knight-bar QA; never stop early or ask owner if they want it
+alwaysApply: true
+---
+
+# All Classes — Full QA Mandatory (ABSOLUTE — NEVER ASK)
+
+**The owner has said this repeatedly. Do not make them say it again.**
+
+## Mandate (non-negotiable)
+
+Every shipped Bible class (**Bruiser, Archer, Lancer, Mage, Cleric**, and every future class) must reach **Knight-bar depth**:
+
+- `docs/<CLASS>_QA_GATE.md` — full matrix, meta-critic contract, three tiers
+- **Per-factory-row scenario** (`tests/skills/<id>_scenario.gd` / `tests/passives/<id>_scenario.gd`)
+- **Tier 1** `run_<class>_qa_gate.ps1` — **PASS**
+- **Tier 2 live** `run_<class>_live_qa.ps1` — **PASS**
+- Movement planning smoke for every movement skill (or dedicated scenario that proves the same commit path — **no silent skips**)
+- Matrix rows promoted toward **`PASS`** (not left at `HARNESS_ONLY` while claiming done)
+
+**Knight is the only class with owner sign-off today.** All others are **in scope until they match that bar** — not "optional next work."
+
+## Forbidden (instant rule violation)
+
+| Do | Why forbidden |
+|----|----------------|
+| Ask "want me to run Lancer live?" / "should I expand Archer matrix?" | Owner already answered: **yes, all classes, full depth** |
+| Stop when one class gate is green while others are shallow or untested | Task is **all classes**, not one gate |
+| Report "gates pass" and end turn with `HARNESS_ONLY` matrix / skipped movement smoke | Headless green ≠ class complete |
+| Remove skills from movement smoke "because complex" without replacing with per-skill planning proof | Coverage hole; fix the harness or add scenario |
+| Offer optional follow-ups instead of continuing | **Continue until blocked by a real error**, then fix and re-run |
+
+## Required agent behavior
+
+1. **Work the full class list** each session until time/context hard-stops — do not close a turn on a single-class win.
+2. **Run both gates** (Tier 1 + Tier 2 live) for **every** class touched or claimed complete.
+3. **Fix failures in a loop** — re-run the failing suite after each fix; do not hand-wave.
+4. **Changelog** must list **per-class** gate result (PASS/FAIL) and matrix counts when class files change.
+5. **No permission gate** for "expand QA" or "run live suite" — only code edits that change gameplay need `interpret-plan-permission.mdc`.
+
+## Session exit criteria (all must be true or document FAIL blockers)
+
+- [ ] `run_bruiser_qa_gate.ps1` + `run_bruiser_live_qa.ps1` — PASS
+- [ ] `run_archer_qa_gate.ps1` + `run_archer_live_qa.ps1` — PASS
+- [ ] `run_lancer_qa_gate.ps1` + `run_lancer_live_qa.ps1` — PASS
+- [ ] `run_mage_qa_gate.ps1` + `run_mage_live_qa.ps1` — PASS
+- [ ] `run_cleric_qa_gate.ps1` + `run_cleric_live_qa.ps1` — PASS (upgrade gate doc if still stub)
+- [ ] `run_planning_qa_gate.ps1` — PASS when planning/combat paths touched
+
+If any row is FAIL: **fix or report exact `[FAIL]` lines** — never imply the task is done.
+
+## Related rules
+
+- `.cursor/rules/class-qa-knight-bar.mdc` — what "full" means (matrix, scenarios, overlay parity)
+- `.cursor/rules/qa-after-gameplay-changes.mdc` — which suite to run after gameplay edits
+- `docs/CLASS_QA_SIGNOFF.md` — owner sign-off registry (only Knight PASS today)

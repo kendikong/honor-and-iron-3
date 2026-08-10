@@ -18,7 +18,7 @@ The core constitution is managed through Antigravity's Customizations. The core 
 - **Move preview = intent truth (absolute):** On-screen move preview is the intent system; commit ratifies it and must not change/re-render a different outcome — see `.cursor/rules/move-preview-intent-truth.mdc` (always on).
 - **QA after gameplay changes (absolute):** Any edit to sim, combat systems, planning/commit, or ability data **must** run the matching headless suite and report PASS or FAIL in Changelog before ending the turn — see `.cursor/rules/qa-after-gameplay-changes.mdc`.
 - **Automated QA = two planning suites:** **Tier 3 LIVE** — `run_planning_scene_acceptance.ps1` → `live_planning_scene_test.gd` (GdUnit + TestBattle, hidden window, **not** `--headless`). **Headless contracts** — `run_planning_headless_contracts.ps1` → `PlanningQaGate.tscn` (fixture harness). Do not conflate them with a `-Headless` flag on the live runner.
-- **Class QA Knight bar (absolute):** Only **Knight** has owner QA **PASS** — all other classes **NOT PASS** until redone — [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md) · `.cursor/rules/class-qa-knight-bar.mdc`
+- **Class QA Knight bar (absolute):** Only **Knight** has owner QA **PASS** — all other classes **NOT PASS** until redone — [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md) · `.cursor/rules/class-qa-knight-bar.mdc` · **All classes full QA mandatory (never stop / never ask):** `.cursor/rules/class-qa-all-classes-mandatory.mdc`
 - One pure `Simulator.simulate(state, timeline)`; preview == execution.
 - Simulation = plain RefCounted state, headless, never references Nodes.
 - Static typing, enums over strings, composition over inheritance, data over hardcoding.
