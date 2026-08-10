@@ -11,9 +11,11 @@
 
 ## 0. Owner summary (plain language)
 
+**Why this bible exists:** Class QA must catch skills that **look fine in automated tests but fail in F5** — wrong damage, wrong tiles, broken move preview, commit that jumps away from what the player saw. Every factory row, **including rows already marked PASS**, must be written or re-audited to this bar. A green gate script exit code is not enough if the scenario only checks metadata, `ABILITY_USED`, or a Manhattan range bubble. **Regression rule:** if a skill breaks tomorrow, the matching scenario or live case must fail before manual play finds it.
+
 | If this is green… | You can trust… | You still cannot trust… |
 |-------------------|----------------|------------------------|
-| **`run_<class>_qa_gate.ps1` PASS** | Every factory row has a scenario file; manifest aligned; headless runner did not crash; movement smoke ran | Every skill is fully proven — rows can still be `HARNESS_ONLY` mislabeled `PASS` until meta-critic approves |
+| **`run_<class>_qa_gate.ps1` PASS** | Every factory row has a scenario file; manifest aligned; headless runner did not crash; movement smoke ran | Every skill is fully proven — rows can still be `HARNESS_ONLY` mislabeled `PASS`; scenarios that pass shallow regex but fail TestBattle or show wrong red/blue tiles |
 | **Matrix row `PASS` (meta-critic approved)** | That skill/passive has Bible + sim + required planning proof per this bible | Pixels, animation feel, audio |
 | **`run_<class>_live_qa.ps1` PASS** | Scripted TestBattle cases: preview, overlay, commit, sim parity for included actives | Every matrix row — live is breadth sample; **headless per-row scenarios are completeness** |
 | **`CLASS_QA_SIGNOFF` PASS** | Owner accepted class LOCK | — |
@@ -170,6 +172,7 @@ Headless **production** stack: `ClassPlanningChecklistHarness.wire_board` → `P
 |------------|----------------|
 | PRE_MOVE module or movement skill | Premove hover, path/preview from projected stand, timeline PRE column |
 | POST_MOVE module | Postmove preview + commit slot in POST column |
+| MOVE (any) | **Blue move tiles** — legal reach from projected stand matches overlay; illegal tiles not blue (`docs/PLANNING_SKILL_QA_CHECKLIST.md` blue rules) |
 | ACTION with range from stand | Red tile contract at stand + hover stand |
 | MOVE + skill combo | Tier A or B: ghost/path + skill red re-anchor |
 | SWAP / positioning | Slot parity; swap may shift position preview post-commit (documented) |
@@ -334,6 +337,7 @@ Green live with shallow headless is **FAIL** under this bible.
 | Thin delegate ban | `Test-ScenarioContractShallow` — see §8.2 | **Shipped** |
 | AOE shaped rows | `run_aoe_footprint_qa_gate.ps1` | **Shipped** |
 | Layer A FULL per module | `assert_module_editor_fidelity` in harness | **Per-class rollout** |
+| Active with PRE/POST modules but no premove/postmove Layer C | Detect `ON_PRE`/`ON_POST` modules without `movement_planning_smoke` or premove path | **PLANNED** (doc ban today — §13) |
 
 Gate **must** call shipped helpers before Godot runner. Rows failing shallow contract cannot be matrix `PASS`.
 
@@ -462,6 +466,7 @@ Score each matrix row before `PASS`:
 
 | Pattern | Why FAIL |
 |---------|----------|
+| Scenario would still PASS if skill effect or overlay were removed | Test does not defend behavior — the F5-broken / test-green failure mode |
 | Matrix `PASS` with `factory_* != null` only | No behavior proof |
 | Sim-only when skill has PRE/POST modules | Missing move preview / slots |
 | `GridSystem` smoke disconnected from ability under test | Wrong geometry owner |
@@ -504,7 +509,7 @@ docs/KNIGHT_QA_GATE.md       (Knight instance — reference implementation)
 ## 16. Gauntlet stub (this document)
 
 ```text
-GOAL: Universal class QA spec — headless per-row completeness, editor fidelity (ModuleAuthoringRules scope), planning fixture, live depth bar, machine shallow-contract ban
+GOAL: Universal class QA bar for new AND existing rows — regression defense (skill works per Bible; preview/commit/red-blue tiles honest); reject shallow PASS; headless per-row completeness + live depth spot-check
 BAR: docs/CLASS_QA_BIBLE.md — §0 owner summary; §3 Layer A scope; §4.1 harness API; §8.1–8.2 enforcement; §9 Rule A/B/C + decision tree; §10.1 binary checklist; gold references; KNIGHT_QA_GATE links here
 PASS_THRESHOLD: 85
 RULES: class-qa-knight-bar.mdc, global-systems-first.mdc, move-preview-intent-truth.mdc
@@ -527,4 +532,4 @@ ARTIFACT: docs/CLASS_QA_BIBLE.md, tests/skills/shield_bash_scenario.gd, tests/sk
 
 ---
 
-*Version: 2026-08-09 rev 4 — gauntlet target ≥85. Knight instance: `KNIGHT_QA_GATE.md`. Shallow contract: `qa_gate_matrix_helpers.ps1`.*
+*Version: 2026-08-09 rev 5 — owner-intent bar: regression defense, red/blue tiles, anti-shallow PASS. Knight instance: `KNIGHT_QA_GATE.md`. Shallow contract: `qa_gate_matrix_helpers.ps1`.*
